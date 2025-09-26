@@ -1,650 +1,203 @@
-const STORAGE_KEY = 'agi-onebox-config-v1';
-const DEFAULT_CONFIG = {
-  orchestratorUrl: '',
-  apiToken: '',
-  statusInterval: 60,
+const $ = (sel) => document.querySelector(sel);
+const chat = $('#chat');
+const input = $('#box');
+const sendBtn = $('#send');
+const expertBtn = $('#expert');
+const modeBadge = $('#mode');
+const pills = document.querySelectorAll('.pill');
+const orchInput = $('#orch');
+const tokenInput = $('#tok');
+const saveBtn = $('#save');
+const connectBtn = $('#connect');
+
+const copy = {
+  planning: 'Let me prepare this…',
+  executing: 'Publishing to the network… this usually takes a few seconds.',
+  posted: (id, url) => `✅ Job <b>#${id ?? '?'}</b> is live. ${url ? `<a target="_blank" rel="noopener" href="${url}">Verify on chain</a>` : ''}`,
+  finalized: (id, url) => `✅ Job <b>#${id}</b> finalized. ${url ? `<a target="_blank" rel="noopener" href="${url}">Receipt</a>` : ''}`,
+  cancelled: 'Okay, cancelled.',
+  status: (s) => `Job <b>#${s.jobId}</b> is <b>${s.state}</b>${s.reward ? `. Reward ${s.reward}` : ''}${s.token ? ` ${s.token}` : ''}.`,
 };
 
-const errorDictionary = new Map([
-  ['InsufficientBalance', {
-    headline: 'You do not have enough AGIALPHA to fund this job.',
-    hint: 'Lower the reward or top up your balance; I can guide you through funding.',
-  }],
-  ['deadline', {
-    headline: 'The requested deadline is invalid.',
-    hint: 'Choose a date at least a few hours in the future.',
-  }],
-  ['allowance', {
-    headline: 'Token approvals are missing.',
-    hint: 'In Expert mode I can prepare the approval transaction for you.',
-  }],
-  ['network', {
-    headline: 'Unable to reach the orchestrator.',
-    hint: 'Check the configured URL or switch back to Demo Mode.',
-  }],
-]);
-
-const MAX_RECEIPTS = 5;
-
-const state = {
-  expert: false,
-  pendingIntent: null,
-  lastSummary: null,
-  config: loadConfig(),
-  statusTimer: null,
-  receipts: [],
+const ERRORS = {
+  INSUFFICIENT_BALANCE: 'You don’t have enough AGIALPHA to fund this job. Reduce the reward or top up.',
+  INSUFFICIENT_ALLOWANCE: 'Your wallet needs permission to use AGIALPHA. I can prepare an approval transaction.',
+  IPFS_FAILED: 'I couldn’t package your job details. Remove broken links and try again.',
+  DEADLINE_INVALID: 'That deadline is in the past. Pick at least 24 hours from now.',
+  NETWORK_CONGESTED: 'The network is busy; I’ll keep retrying for a moment.',
+  NO_WALLET: 'No EIP-1193 wallet detected. Install MetaMask, Rabby, or another compatible wallet.',
+  UNKNOWN: 'Something went wrong. Try rephrasing your request or adjust the reward/deadline.',
 };
 
-const dom = {
-  chat: document.getElementById('chat-log'),
-  input: document.getElementById('onebox-input'),
-  form: document.getElementById('composer'),
-  modeLabel: document.getElementById('mode-label'),
-  expertToggle: document.getElementById('expert-toggle'),
-  pills: document.querySelectorAll('.pill'),
-  settingsBtn: document.getElementById('settings-btn'),
-  settingsDialog: document.getElementById('settings-dialog'),
-  settingsForm: document.getElementById('settings-form'),
-  orchField: document.getElementById('orch-url'),
-  tokenField: document.getElementById('api-token'),
-  statusSelect: document.getElementById('status-interval'),
-  statusCards: document.getElementById('status-cards'),
-  statusEmpty: document.getElementById('status-empty'),
-  refreshStatus: document.getElementById('refresh-status'),
-  advancedToggle: document.getElementById('advanced-toggle'),
-  advancedPanel: document.getElementById('advanced-panel'),
-  advancedReceipts: document.getElementById('advanced-receipts'),
-  advancedEmpty: document.getElementById('advanced-empty'),
-};
+let expert = false;
+let ethProvider = null;
+let orchestrator = localStorage.getItem('onebox_orchestrator') || '';
+let apiToken = localStorage.getItem('onebox_api_token') || '';
 
-dom.orchField.value = state.config.orchestratorUrl;
-dom.tokenField.value = state.config.apiToken;
-dom.statusSelect.value = String(state.config.statusInterval);
-updateStatusTimer();
-renderAdvancedReceipts();
+orchInput.value = orchestrator;
+tokenInput.value = apiToken;
+updateMode();
 
-function loadConfig() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_CONFIG };
-    const parsed = JSON.parse(raw);
-    return { ...DEFAULT_CONFIG, ...parsed };
-  } catch (err) {
-    console.warn('Failed to load config', err);
-    return { ...DEFAULT_CONFIG };
-  }
+function addMessage(role, html) {
+  const node = document.createElement('div');
+  node.className = `msg ${role === 'user' ? 'm-user' : 'm-assist'}`;
+  node.innerHTML = html;
+  chat.appendChild(node);
+  chat.scrollTop = chat.scrollHeight;
 }
 
-function persistConfig() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.config));
+function addNote(text) {
+  addMessage('assist', `<div class="note">${text}</div>`);
 }
 
-function scrollChatToBottom() {
-  dom.chat.scrollTop = dom.chat.scrollHeight;
+async function plan(text) {
+  addMessage('assist', copy.planning);
+  const payload = { text, expert };
+  const res = await callApi('/onebox/plan', payload);
+  return res;
 }
 
-function renderMessage(role, content, options = {}) {
-  const article = document.createElement('article');
-  article.classList.add('msg', role);
-  if (options.className) article.classList.add(options.className);
-  if (typeof content === 'string') {
-    article.innerHTML = `<p class="msg-body">${content}</p>`;
-  } else {
-    article.append(...content);
-  }
-  dom.chat.appendChild(article);
-  scrollChatToBottom();
-  return article;
-}
+async function execute(intent) {
+  addMessage('assist', copy.executing);
+  const mode = expert ? 'wallet' : 'relayer';
+  const res = await callApi('/onebox/execute', { intent, mode });
 
-function renderNote(text) {
-  const note = document.createElement('p');
-  note.className = 'msg-note';
-  note.textContent = text;
-  renderMessage('assistant', note);
-}
-
-function renderConfirm(summary, intent) {
-  state.pendingIntent = intent;
-  state.lastSummary = summary;
-  const actions = document.createElement('div');
-  actions.className = 'msg-actions';
-
-  const yes = document.createElement('button');
-  yes.type = 'button';
-  yes.className = 'btn primary';
-  yes.textContent = 'Proceed';
-  yes.addEventListener('click', () => executeIntent(intent));
-
-  const cancel = document.createElement('button');
-  cancel.type = 'button';
-  cancel.className = 'btn';
-  cancel.textContent = 'Cancel';
-  cancel.addEventListener('click', () => {
-    state.pendingIntent = null;
-    state.lastSummary = null;
-    renderMessage('assistant', 'Okay, cancelled. Let me know if you want to try again.');
-  });
-
-  actions.append(yes, cancel);
-
-  const summaryPara = document.createElement('p');
-  summaryPara.className = 'msg-body';
-  summaryPara.textContent = summary;
-
-  const fragment = document.createDocumentFragment();
-  fragment.append(summaryPara, actions);
-
-  renderMessage('assistant', fragment, { className: 'confirm' });
-}
-
-async function handleFormSubmit(event) {
-  event.preventDefault();
-  const text = dom.input.value.trim();
-  if (!text) return;
-
-  renderMessage('user', escapeHtml(text));
-  dom.input.value = '';
-  await planIntent(text);
-}
-
-async function planIntent(text) {
-  try {
-    const { summary, intent, warnings } = await callPlanner(text);
-    if (warnings && warnings.length) {
-      warnings.forEach((warning) => renderNote(warning));
+  if (expert && res.to && res.data) {
+    if (!ethProvider) {
+      throw new Error('NO_WALLET');
     }
-    renderConfirm(summary, intent);
-  } catch (err) {
-    handleError(err);
-  }
-}
-
-async function executeIntent(intent) {
-  renderMessage('assistant', 'Working on it…');
-  try {
-    const response = await callExecutor(intent);
-    const { ok, jobId, txHash, receiptUrl } = response;
-    if (!ok) throw new Error(response.error || 'Execution failed');
-
-    addReceipt(intent, { jobId, txHash, receiptUrl }, state.lastSummary);
-
-    const fragment = document.createDocumentFragment();
-    const body = document.createElement('p');
-    body.className = 'msg-body';
-    if (jobId) {
-      body.innerHTML = `✅ Job <strong>#${jobId}</strong> is live.`;
+    const [from] = await ethProvider.request({ method: 'eth_requestAccounts' });
+    const txHash = await ethProvider.request({
+      method: 'eth_sendTransaction',
+      params: [{ from, to: res.to, data: res.data, value: res.value || '0x0' }],
+    });
+    const receiptUrl = (res.receiptUrl || '').includes('{tx}') ? res.receiptUrl.replace('{tx}', txHash) : res.receiptUrl;
+    if (intent.action === 'finalize_job') {
+      addMessage('assist', copy.finalized(res.jobId || '?', receiptUrl || ''));
     } else {
-      body.textContent = '✅ Request completed successfully.';
+      addMessage('assist', copy.posted(res.jobId || '?', receiptUrl || ''));
     }
-    const hint = document.createElement('p');
-    hint.className = 'msg-note';
-    hint.textContent = 'Advanced receipts holds the verification links if you need them.';
-    fragment.append(body, hint);
+    return;
+  }
 
-    renderMessage('assistant', fragment);
-    state.pendingIntent = null;
-    state.lastSummary = null;
-    refreshStatuses();
+  if (intent.action === 'finalize_job') {
+    addMessage('assist', copy.finalized(res.jobId, res.receiptUrl || ''));
+  } else {
+    addMessage('assist', copy.posted(res.jobId, res.receiptUrl || ''));
+  }
+}
+
+async function go() {
+  const text = input.value.trim();
+  if (!text) return;
+  addMessage('user', text);
+  input.value = '';
+  try {
+    const { summary, intent } = await plan(text);
+    if (intent.action === 'check_status') {
+      const id = intent.payload.jobId ?? extractJobId(text);
+      const status = await callApi(`/onebox/status?jobId=${id}`);
+      addMessage('assist', copy.status(status));
+      return;
+    }
+    confirm(summary, intent);
   } catch (err) {
     handleError(err);
   }
 }
 
-async function callPlanner(text) {
-  if (!state.config.orchestratorUrl) {
-    return demoPlanner(text);
-  }
+function confirm(summary, intent) {
+  const id = `c${Date.now()}`;
+  addMessage(
+    'assist',
+    `${summary}<div class="row" style="margin-top:10px"><button class="pill ok" id="${id}-y">Yes</button><button class="pill" id="${id}-n">Cancel</button></div>`,
+  );
+  setTimeout(() => {
+    const yes = document.getElementById(`${id}-y`);
+    const no = document.getElementById(`${id}-n`);
+    if (yes) yes.onclick = () => execute(intent);
+    if (no) no.onclick = () => addMessage('assist', copy.cancelled);
+  });
+}
 
-  const body = JSON.stringify({ text, expert: state.expert });
+async function callApi(path, body) {
+  if (!orchestrator) {
+    throw new Error('NETWORK_CONGESTED');
+  }
   const headers = { 'Content-Type': 'application/json' };
-  if (state.config.apiToken) {
-    headers['Authorization'] = `Bearer ${state.config.apiToken}`;
-  }
-
-  const res = await fetch(`${state.config.orchestratorUrl.replace(/\/$/, '')}/onebox/plan`, {
-    method: 'POST',
-    headers,
-    body,
-  });
+  if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
+  const init = body ? { method: 'POST', headers, body: JSON.stringify(body) } : { method: 'GET', headers };
+  const res = await fetch(`${orchestrator}${path}`, init);
   if (!res.ok) {
-    throw await enrichError('Planner error', res);
+    const text = await res.text();
+    throw new Error(text || 'UNKNOWN');
   }
   return res.json();
 }
 
-async function callExecutor(intent) {
-  if (!state.config.orchestratorUrl) {
-    return demoExecutor(intent);
-  }
-
-  const body = JSON.stringify({ intent, mode: state.expert ? 'wallet' : 'relayer' });
-  const headers = { 'Content-Type': 'application/json' };
-  if (state.config.apiToken) {
-    headers['Authorization'] = `Bearer ${state.config.apiToken}`;
-  }
-
-  const res = await fetch(`${state.config.orchestratorUrl.replace(/\/$/, '')}/onebox/execute`, {
-    method: 'POST',
-    headers,
-    body,
-  });
-  if (!res.ok) {
-    throw await enrichError('Execution error', res);
-  }
-  return res.json();
-}
-
-async function fetchStatuses() {
-  if (!state.config.orchestratorUrl) {
-    return demoStatuses();
-  }
-  const headers = {};
-  if (state.config.apiToken) {
-    headers['Authorization'] = `Bearer ${state.config.apiToken}`;
-  }
-  const res = await fetch(`${state.config.orchestratorUrl.replace(/\/$/, '')}/onebox/status`, { headers });
-  if (!res.ok) {
-    throw await enrichError('Status error', res);
-  }
-  return res.json();
-}
-
-async function refreshStatuses() {
-  try {
-    const data = await fetchStatuses();
-    renderStatuses(Array.isArray(data?.jobs) ? data.jobs : []);
-  } catch (err) {
-    console.warn(err);
-    renderNote('Could not refresh job status right now.');
-  }
-}
-
-function renderStatuses(jobs) {
-  dom.statusCards.innerHTML = '';
-  if (!jobs.length) {
-    dom.statusCards.appendChild(dom.statusEmpty);
-    dom.statusEmpty.hidden = false;
-    return;
-  }
-  dom.statusEmpty.hidden = true;
-
-  for (const job of jobs) {
-    const card = document.createElement('article');
-    card.className = 'status-card';
-    card.setAttribute('role', 'listitem');
-
-    const title = document.createElement('div');
-    title.className = 'status-title';
-    title.textContent = job.title || `Job #${job.jobId}`;
-
-    const statusLine = document.createElement('div');
-    statusLine.className = 'status-line';
-    const statusText = document.createElement('span');
-    statusText.textContent = (job.statusLabel || job.status || 'unknown').toUpperCase();
-    if ((job.status || '').toLowerCase() === 'finalized') {
-      statusText.className = 'status-ok';
-    }
-    const reward = document.createElement('span');
-    reward.textContent = job.reward ? `${job.reward} ${job.rewardToken || 'AGIALPHA'}` : '';
-    statusLine.append(statusText, reward);
-
-    const meta = document.createElement('div');
-    meta.className = 'status-meta';
-    const parts = [];
-    if (job.deadline) parts.push(`Deadline: ${job.deadline}`);
-    if (job.assignee) parts.push(`Assigned to ${job.assignee}`);
-    meta.textContent = parts.join(' · ');
-
-    card.append(title, statusLine, meta);
-    dom.statusCards.appendChild(card);
-  }
-}
-
-function addReceipt(intent, receipt, summary) {
-  const entry = {
-    jobId: Number.isFinite(receipt?.jobId) ? Number(receipt.jobId) : null,
-    txHash: receipt?.txHash || null,
-    receiptUrl: receipt?.receiptUrl || null,
-    summary: typeof summary === 'string' ? summary : '',
-    action: intent && typeof intent.action === 'string' ? intent.action : null,
-    intent: cloneIntent(intent),
-    timestamp: new Date().toISOString(),
-  };
-
-  state.receipts.unshift(entry);
-  if (state.receipts.length > MAX_RECEIPTS) {
-    state.receipts.length = MAX_RECEIPTS;
-  }
-  renderAdvancedReceipts();
-}
-
-function renderAdvancedReceipts() {
-  if (!dom.advancedReceipts || !dom.advancedEmpty) return;
-  dom.advancedReceipts.innerHTML = '';
-  if (!state.receipts.length) {
-    dom.advancedEmpty.hidden = false;
-    updateAdvancedToggleLabel();
-    return;
-  }
-  dom.advancedEmpty.hidden = true;
-
-  state.receipts.forEach((entry) => {
-    const card = document.createElement('article');
-    card.className = 'advanced-receipt';
-    card.setAttribute('role', 'listitem');
-
-    const header = document.createElement('header');
-    const title = document.createElement('div');
-    title.className = 'advanced-title';
-    title.textContent = formatReceiptTitle(entry);
-
-    const meta = document.createElement('div');
-    meta.className = 'advanced-meta';
-    if (entry.jobId) meta.appendChild(createMetaSpan(`Job #${entry.jobId}`));
-    if (entry.action) meta.appendChild(createMetaSpan(formatIntentAction(entry.action)));
-    meta.appendChild(createMetaSpan(formatTimestamp(entry.timestamp)));
-
-    header.append(title, meta);
-    card.appendChild(header);
-
-    const links = document.createElement('div');
-    links.className = 'advanced-links';
-    if (entry.receiptUrl) {
-      const link = document.createElement('a');
-      link.href = entry.receiptUrl;
-      link.target = '_blank';
-      link.rel = 'noopener';
-      link.textContent = 'Verify on chain';
-      links.appendChild(link);
-    }
-    if (!entry.receiptUrl && entry.txHash) {
-      links.appendChild(createMetaSpan(`Tx hash: ${entry.txHash}`));
-    }
-    if (links.childNodes.length) {
-      card.appendChild(links);
-    }
-
-    if (entry.intent) {
-      const details = document.createElement('details');
-      const summaryEl = document.createElement('summary');
-      summaryEl.textContent = 'View calldata & payload';
-      const pre = document.createElement('pre');
-      pre.className = 'advanced-json';
-      pre.textContent = JSON.stringify(entry.intent, null, 2);
-      details.append(summaryEl, pre);
-      card.appendChild(details);
-    }
-
-    dom.advancedReceipts.appendChild(card);
-  });
-
-  updateAdvancedToggleLabel();
-}
-
-function formatReceiptTitle(entry) {
-  const cleanedSummary = entry.summary
-    ? entry.summary.replace(/\s*(?:Shall I proceed|Proceed)[?.!]*$/i, '').trim()
-    : '';
-  if (cleanedSummary) {
-    return cleanedSummary;
-  }
-  const actionLabel = entry.action ? formatIntentAction(entry.action) : 'Action executed';
-  if (entry.jobId) {
-    return `${actionLabel} · Job #${entry.jobId}`;
-  }
-  return actionLabel;
-}
-
-function formatIntentAction(action) {
-  switch (action) {
-    case 'post_job':
-      return 'Posted job';
-    case 'finalize_job':
-      return 'Finalized job';
-    case 'check_status':
-      return 'Checked status';
-    default:
-      return action?.replace(/_/g, ' ') || 'Action executed';
-  }
-}
-
-function formatTimestamp(value) {
-  try {
-    const date = value ? new Date(value) : new Date();
-    if (Number.isNaN(date.getTime())) throw new Error('invalid');
-    return date.toLocaleString(undefined, { hour12: false });
-  } catch (err) {
-    return new Date().toLocaleString(undefined, { hour12: false });
-  }
-}
-
-function cloneIntent(intent) {
-  try {
-    return JSON.parse(JSON.stringify(intent));
-  } catch (err) {
-    return null;
-  }
-}
-
-function createMetaSpan(text) {
-  const span = document.createElement('span');
-  span.textContent = text;
-  return span;
-}
-
-function toggleExpertMode() {
-  state.expert = !state.expert;
-  dom.expertToggle.setAttribute('aria-pressed', String(state.expert));
-  dom.expertToggle.classList.toggle('active', state.expert);
-  dom.modeLabel.textContent = `Mode: ${state.expert ? 'Expert' : 'Guest'}`;
-  if (!state.expert) {
-    renderNote('Back in guest mode. I will execute through the orchestrator relayer.');
-  } else {
-    renderNote('Expert mode on. I can hand you calldata for signing if required.');
-  }
-}
-
-function toggleAdvanced() {
-  if (!dom.advancedToggle || !dom.advancedPanel) return;
-  const expanded = dom.advancedToggle.getAttribute('aria-expanded') === 'true';
-  const next = !expanded;
-  dom.advancedToggle.setAttribute('aria-expanded', String(next));
-  dom.advancedPanel.hidden = !next;
-  updateAdvancedToggleLabel();
-  if (next) {
-    renderAdvancedReceipts();
-  }
-}
-
-function updateAdvancedToggleLabel() {
-  if (!dom.advancedToggle) return;
-  const expanded = dom.advancedToggle.getAttribute('aria-expanded') === 'true';
-  const count = state.receipts.length;
-  const suffix = count > 0 ? ` (${count})` : '';
-  dom.advancedToggle.textContent = expanded
-    ? `Hide advanced receipts${suffix}`
-    : `Advanced receipts${suffix}`;
-}
-
-function openSettings() {
-  dom.orchField.value = state.config.orchestratorUrl;
-  dom.tokenField.value = state.config.apiToken;
-  dom.statusSelect.value = String(state.config.statusInterval);
-  dom.settingsDialog.showModal();
-}
-
-function applySettings(event) {
-  event.preventDefault();
-  if (dom.settingsDialog.returnValue === 'confirm') {
-    state.config.orchestratorUrl = dom.orchField.value.trim();
-    state.config.apiToken = dom.tokenField.value.trim();
-    state.config.statusInterval = Number(dom.statusSelect.value);
-    persistConfig();
-    updateStatusTimer();
-    renderNote(state.config.orchestratorUrl ? 'Connected to orchestrator.' : 'Demo Mode enabled. No network calls will be made.');
-  }
-}
-
-function updateStatusTimer() {
-  if (state.statusTimer) {
-    clearInterval(state.statusTimer);
-    state.statusTimer = null;
-  }
-  const interval = Number(state.config.statusInterval || 0);
-  if (interval > 0) {
-    state.statusTimer = setInterval(refreshStatuses, interval * 1000);
-  }
-}
-
-function escapeHtml(value) {
-  return value.replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  })[char]);
-}
-
-async function enrichError(prefix, response) {
-  const text = await response.text();
-  const error = new Error(`${prefix}: ${response.status}`);
-  error.details = text;
-  return error;
+function extractJobId(text) {
+  const m = text.match(/\d+/);
+  return m ? parseInt(m[0], 10) : 0;
 }
 
 function handleError(err) {
-  console.error(err);
-  const { headline, hint } = matchError(err);
-  const fragment = document.createDocumentFragment();
-  const p = document.createElement('p');
-  p.className = 'msg-body';
-  p.innerHTML = `⚠️ ${headline}`;
-  fragment.appendChild(p);
-  if (hint) {
-    const hintEl = document.createElement('p');
-    hintEl.className = 'msg-note';
-    hintEl.textContent = hint;
-    fragment.appendChild(hintEl);
-  }
-  renderMessage('assistant', fragment);
+  const code = normalizeError(err.message);
+  addMessage('assist', `⚠️ ${ERRORS[code] || ERRORS.UNKNOWN}`);
 }
 
-function matchError(err) {
-  if (err?.details) {
-    for (const [key, copy] of errorDictionary.entries()) {
-      if (err.details.includes(key)) return copy;
-    }
-    if (/429/.test(err.message)) {
-      return {
-        headline: 'You hit the rate limit.',
-        hint: 'Wait a moment before trying again. The orchestrator protects against abuse.',
-      };
-    }
-  }
-
-  if (err?.message?.includes('Failed to fetch')) {
-    return errorDictionary.get('network');
-  }
-
-  return {
-    headline: err?.message || 'Something went wrong.',
-    hint: 'Try rephrasing your request in one sentence. If the problem persists, check the orchestrator logs.',
-  };
+function normalizeError(raw = '') {
+  const upper = raw.toUpperCase();
+  if (upper.includes('BALANCE')) return 'INSUFFICIENT_BALANCE';
+  if (upper.includes('ALLOWANCE')) return 'INSUFFICIENT_ALLOWANCE';
+  if (upper.includes('IPFS')) return 'IPFS_FAILED';
+  if (upper.includes('DEADLINE')) return 'DEADLINE_INVALID';
+  if (upper.includes('NO_WALLET')) return 'NO_WALLET';
+  if (upper.includes('NETWORK')) return 'NETWORK_CONGESTED';
+  return 'UNKNOWN';
 }
 
-function demoPlanner(text) {
-  const action = inferDemoAction(text);
-  return {
-    summary: `I understood: ${text}. Ready to ${actionLabel(action)}. Shall I proceed?`,
-    intent: {
-      action,
-      payload: buildDemoPayload(text, action),
-      constraints: { maxFee: 'auto' },
-      userContext: {},
-    },
-    warnings: [],
-  };
+function updateMode() {
+  modeBadge.textContent = `Mode: ${expert ? 'Expert (wallet)' : 'Guest (walletless)'}`;
 }
 
-function actionLabel(action) {
-  switch (action) {
-    case 'finalize_job':
-      return 'finalize the job';
-    case 'check_status':
-      return 'check on that job';
-    default:
-      return 'post the job';
-  }
-}
-
-function inferDemoAction(text) {
-  const lc = text.toLowerCase();
-  if (lc.includes('final')) return 'finalize_job';
-  if (lc.includes('status') || lc.includes('check')) return 'check_status';
-  return 'post_job';
-}
-
-function buildDemoPayload(text, action) {
-  if (action === 'finalize_job' || action === 'check_status') {
-    const match = text.match(/(job\s*#?)(\d+)/i);
-    return { jobId: match ? Number(match[2]) : 123 };
-  }
-  return {
-    title: text,
-    description: text,
-    reward: '5.0',
-    rewardToken: 'AGIALPHA',
-    deadlineDays: 7,
-  };
-}
-
-function demoExecutor(intent) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ ok: true, jobId: Math.floor(Math.random() * 500) + 100, txHash: null, receiptUrl: null });
-    }, 800);
-  });
-}
-
-function demoStatuses() {
-  return {
-    jobs: state.pendingIntent ? [
-      {
-        jobId: 123,
-        title: state.lastSummary || 'Demo job',
-        status: 'open',
-        reward: '5.0',
-        rewardToken: 'AGIALPHA',
-        deadline: 'in 7 days',
-      },
-    ] : [],
-  };
-}
-
-function registerListeners() {
-  dom.form.addEventListener('submit', handleFormSubmit);
-  dom.expertToggle.addEventListener('click', toggleExpertMode);
-  dom.pills.forEach((pill) => pill.addEventListener('click', () => {
-    dom.input.value = pill.dataset.fill;
-    dom.input.focus();
-  }));
-  dom.settingsBtn.addEventListener('click', openSettings);
-  dom.settingsDialog.addEventListener('close', applySettings);
-  dom.refreshStatus.addEventListener('click', refreshStatuses);
-  if (dom.advancedToggle) {
-    dom.advancedToggle.addEventListener('click', toggleAdvanced);
-  }
-
-  dom.settingsForm.addEventListener('submit', (event) => {
+sendBtn.onclick = go;
+input.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
     event.preventDefault();
-    dom.settingsDialog.close('confirm');
+    go();
+  }
+});
+
+expertBtn.onclick = () => {
+  expert = !expert;
+  updateMode();
+};
+
+saveBtn.onclick = () => {
+  orchestrator = orchInput.value.trim();
+  apiToken = tokenInput.value.trim();
+  localStorage.setItem('onebox_orchestrator', orchestrator);
+  localStorage.setItem('onebox_api_token', apiToken);
+  addNote('Saved.');
+};
+
+connectBtn.onclick = async () => {
+  if (!window.ethereum) {
+    handleError(new Error('NO_WALLET'));
+    return;
+  }
+  ethProvider = window.ethereum;
+  try {
+    await ethProvider.request({ method: 'eth_requestAccounts' });
+    addNote('Wallet connected.');
+  } catch (err) {
+    handleError(err);
+  }
+};
+
+pills.forEach((pill) => {
+  pill.addEventListener('click', () => {
+    input.value = pill.dataset.example;
+    input.focus();
   });
-  dom.settingsDialog.addEventListener('cancel', () => dom.settingsDialog.close('cancel'));
-}
-
-registerListeners();
-refreshStatuses();
-
-dom.input.focus();
+});
