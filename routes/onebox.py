@@ -225,19 +225,56 @@ def _extract_job_id(text: str) -> Optional[int]:
     return None
 
 
+_STATUS_KEYWORDS = (
+    "status",
+    "state",
+    "progress",
+    "update",
+    "check",
+    "checking",
+)
+
+
+_FINALIZE_KEYWORDS = (
+    "finalize",
+    "finalise",
+    "finalized",
+    "finalised",
+    "complete",
+    "completed",
+    "completion",
+    "finish",
+    "finished",
+    "close",
+    "closing",
+    "wrap up",
+    "wrap-up",
+    "wrapup",
+)
+
+
+def _contains_keyword(lowered: str, keywords: Tuple[str, ...]) -> bool:
+    for keyword in keywords:
+        if " " in keyword:
+            if keyword in lowered:
+                return True
+        else:
+            if re.search(rf"\b{re.escape(keyword)}\b", lowered):
+                return True
+    return False
+
+
 def _looks_like_status_request(text: str, job_id: Optional[int]) -> bool:
     lowered = text.lower()
-    if not (
-        re.search(r"\bstatus\b", lowered)
-        or re.search(r"\bcheck(?:ing)?\b", lowered)
-    ):
+    if not _contains_keyword(lowered, _STATUS_KEYWORDS):
         return False
-    return "job" in lowered or job_id is not None or lowered.startswith(("status", "check"))
+    prefixes = tuple(keyword for keyword in ("status", "state", "check") if keyword)
+    return "job" in lowered or job_id is not None or lowered.startswith(prefixes)
 
 
 def _looks_like_finalize_request(text: str, job_id: Optional[int]) -> bool:
     lowered = text.lower()
-    if not re.search(r"\b(finali[sz]e|close|closing)\b", lowered):
+    if not _contains_keyword(lowered, _FINALIZE_KEYWORDS):
         return False
     return "job" in lowered or job_id is not None
 
@@ -379,21 +416,26 @@ async def _read_status(job_id: int) -> StatusResponse:
 
 def _summarize_intent(intent: JobIntent) -> str:
     payload = intent.payload
+    prefix = {
+        "post_job": "Detected job posting request. ",
+        "check_status": "Detected job status request. ",
+        "finalize_job": "Detected job finalization request. ",
+    }.get(intent.action, "")
     if intent.action == "post_job":
         reward = payload.reward or "1.0"
         deadline = payload.deadlineDays if payload.deadlineDays is not None else 7
         title = payload.title or "New Job"
-        return (
+        return prefix + (
             f'I will post a job “{title}” with reward {reward} '
             f"AGIALPHA and a {deadline}-day deadline. Proceed?"
         )
     if intent.action == "check_status":
         job_text = f"job {payload.jobId}" if payload.jobId is not None else "the requested job"
-        return f"I will check the status of {job_text}. Proceed?"
+        return prefix + f"I will check the status of {job_text}. Proceed?"
     if intent.action == "finalize_job":
         job_text = f"job {payload.jobId}" if payload.jobId is not None else "the requested job"
-        return f"I will finalize {job_text}. Proceed?"
-    return "I will process your request. Proceed?"
+        return prefix + f"I will finalize {job_text}. Proceed?"
+    return prefix + "I will process your request. Proceed?"
 
 
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])

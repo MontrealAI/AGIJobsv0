@@ -8,7 +8,58 @@ os.environ.setdefault("RPC_URL", "http://localhost:8545")
 try:
     import fastapi  # type: ignore  # noqa: F401
 except ModuleNotFoundError:
-    pass
+    fastapi = types.ModuleType("fastapi")
+
+    class _DummyAPIRouter:  # pragma: no cover - testing shim
+        def __init__(self, *args, **_kwargs):
+            self.exception_handlers = {}
+
+        def post(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            def _decorator(func):
+                return func
+
+            return _decorator
+
+        def get(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            def _decorator(func):
+                return func
+
+            return _decorator
+
+        def add_exception_handler(self, exc_class, handler):  # type: ignore[no-untyped-def]
+            self.exception_handlers[exc_class] = handler
+
+    def _depends(func=None):  # type: ignore[no-untyped-def]
+        return func
+
+    def _header(default=None, **_kwargs):  # type: ignore[no-untyped-def]
+        return default
+
+    class _HTTPException(Exception):
+        def __init__(self, status_code: int, detail=None) -> None:
+            super().__init__(detail)
+            self.status_code = status_code
+            self.detail = detail
+
+    class _Request:  # pragma: no cover - testing shim
+        pass
+
+    fastapi.APIRouter = _DummyAPIRouter  # type: ignore[attr-defined]
+    fastapi.Depends = _depends  # type: ignore[attr-defined]
+    fastapi.Header = _header  # type: ignore[attr-defined]
+    fastapi.HTTPException = _HTTPException  # type: ignore[attr-defined]
+    fastapi.Request = _Request  # type: ignore[attr-defined]
+    sys.modules["fastapi"] = fastapi
+
+    responses_module = types.ModuleType("fastapi.responses")
+
+    class _JSONResponse:  # pragma: no cover - testing shim
+        def __init__(self, *, status_code: int, content):
+            self.status_code = status_code
+            self.content = content
+
+    responses_module.JSONResponse = _JSONResponse  # type: ignore[attr-defined]
+    sys.modules["fastapi.responses"] = responses_module
 else:
     if not hasattr(fastapi.APIRouter, "add_exception_handler"):
         def _add_exception_handler(self, exc_class, handler):  # type: ignore[no-untyped-def]
@@ -21,7 +72,116 @@ else:
 try:
     import web3  # type: ignore  # noqa: F401
 except ModuleNotFoundError:
-    pass
+    web3 = types.ModuleType("web3")
+
+    class _DummyFunction:  # pragma: no cover - testing shim
+        def estimate_gas(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return 21000
+
+        def build_transaction(self, params):  # type: ignore[no-untyped-def]
+            tx = dict(params)
+            tx.setdefault("gas", 21000)
+            tx.setdefault("chainId", 0)
+            return tx
+
+    class _DummyContract:  # pragma: no cover - testing shim
+        address = "0x0000000000000000000000000000000000000000"
+
+        class _Functions:
+            def postJob(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+                return _DummyFunction()
+
+            def finalize(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+                return _DummyFunction()
+
+        class _Events:
+            class _JobCreated:
+                def process_receipt(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+                    return []
+
+            def JobCreated(self):  # type: ignore[no-untyped-def]
+                return self._JobCreated()
+
+        def encodeABI(self, *args, **_kwargs):  # type: ignore[no-untyped-def]
+            return "0x"
+
+        @property
+        def functions(self):  # type: ignore[no-untyped-def]
+            return self._Functions()
+
+        @property
+        def events(self):  # type: ignore[no-untyped-def]
+            return self._Events()
+
+    class _DummyAccount:  # pragma: no cover - testing shim
+        def __init__(self) -> None:
+            self.address = "0x0000000000000000000000000000000000000000"
+
+        def sign_transaction(self, tx):  # type: ignore[no-untyped-def]
+            class _Signed:
+                rawTransaction = b""
+
+            return _Signed()
+
+    class _DummyEth:  # pragma: no cover - testing shim
+        chain_id = 0
+        max_priority_fee = 1
+        account = types.SimpleNamespace(from_key=lambda *_args, **_kwargs: _DummyAccount())
+
+        def __init__(self) -> None:
+            self._contract = _DummyContract()
+
+        def contract(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return self._contract
+
+        def get_transaction_count(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return 0
+
+        def get_block(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return {}
+
+        def send_raw_transaction(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return b""
+
+        def wait_for_transaction_receipt(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return {}
+
+    class _DummyMiddleware:  # pragma: no cover - testing shim
+        def inject(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return None
+
+    class Web3:  # type: ignore[no-redef]
+        class HTTPProvider:  # pragma: no cover - testing shim
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+        def __init__(self, *_args, **_kwargs):
+            self.eth = _DummyEth()
+            self.middleware_onion = _DummyMiddleware()
+
+        @staticmethod
+        def to_checksum_address(addr):  # type: ignore[no-untyped-def]
+            return addr
+
+        @staticmethod
+        def to_wei(value, unit):  # type: ignore[no-untyped-def]
+            try:
+                if isinstance(value, str) and unit == "gwei":
+                    return int(value) * (10**9)
+                return int(value)
+            except Exception:
+                return 0
+
+    web3.Web3 = Web3  # type: ignore[attr-defined]
+    sys.modules["web3"] = web3
+
+    middleware_module = types.ModuleType("web3.middleware")
+
+    def geth_poa_middleware(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        return None
+
+    middleware_module.geth_poa_middleware = geth_poa_middleware  # type: ignore[attr-defined]
+    sys.modules["web3.middleware"] = middleware_module
 else:
     middleware_module = sys.modules.get("web3.middleware") or types.ModuleType("web3.middleware")
     if not hasattr(middleware_module, "geth_poa_middleware"):
@@ -31,6 +191,71 @@ else:
         middleware_module.geth_poa_middleware = _noop_geth_poa_middleware  # type: ignore[attr-defined]
         sys.modules["web3.middleware"] = middleware_module
 
+try:
+    import httpx  # type: ignore  # noqa: F401
+except ModuleNotFoundError:
+    class _DummyResponse:
+        status_code = 200
+        content = b""
+
+        def json(self) -> dict:
+            return {}
+
+    class _DummyAsyncClient:  # pragma: no cover - testing shim
+        def __init__(self, *args, **_kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc):
+            return False
+
+        async def post(self, *_args, **_kwargs):
+            return _DummyResponse()
+
+    httpx_module = types.SimpleNamespace(AsyncClient=_DummyAsyncClient)
+    sys.modules["httpx"] = httpx_module
+
+try:
+    from pydantic import BaseModel, Field  # type: ignore  # noqa: F401
+except ModuleNotFoundError:
+    _MISSING = object()
+
+    class _FieldInfo:
+        def __init__(self, default=_MISSING, default_factory=None, **_kwargs):
+            self.default = default
+            self.default_factory = default_factory
+
+    def Field(default=_MISSING, default_factory=None, **_kwargs):  # type: ignore[no-redef]
+        return _FieldInfo(default=default, default_factory=default_factory)
+
+    class BaseModel:  # type: ignore[no-redef]
+        def __init__(self, **data):
+            annotations = getattr(self, "__annotations__", {})
+            for name in annotations:
+                default = getattr(self.__class__, name, _MISSING)
+                if isinstance(default, _FieldInfo):
+                    if default.default_factory is not None:
+                        value = default.default_factory()
+                    elif default.default is not _MISSING:
+                        value = default.default
+                    else:
+                        value = None
+                elif default is not _MISSING:
+                    value = default
+                else:
+                    value = None
+                object.__setattr__(self, name, value)
+            for key, value in data.items():
+                object.__setattr__(self, key, value)
+
+        def dict(self, *args, **_kwargs):  # type: ignore[no-untyped-def]
+            annotations = getattr(self, "__annotations__", {})
+            return {name: getattr(self, name) for name in annotations}
+
+    sys.modules["pydantic"] = types.SimpleNamespace(BaseModel=BaseModel, Field=Field)
+
 from routes.onebox import PlanRequest, plan  # noqa: E402  pylint: disable=wrong-import-position
 
 
@@ -39,13 +264,27 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
         response = await plan(PlanRequest(text="Status of job 456"))
         self.assertEqual(response.intent.action, "check_status")
         self.assertEqual(response.intent.payload.jobId, 456)
+        self.assertIn("detected job status request", response.summary.lower())
         self.assertIn("status of job 456", response.summary.lower())
 
     async def test_finalize_intent_infers_job_id(self) -> None:
         response = await plan(PlanRequest(text="Finalize job 123"))
         self.assertEqual(response.intent.action, "finalize_job")
         self.assertEqual(response.intent.payload.jobId, 123)
+        self.assertIn("detected job finalization request", response.summary.lower())
         self.assertIn("finalize job 123", response.summary.lower())
+
+    async def test_state_keyword_maps_to_status_intent(self) -> None:
+        response = await plan(PlanRequest(text="What's the state of job 890?"))
+        self.assertEqual(response.intent.action, "check_status")
+        self.assertEqual(response.intent.payload.jobId, 890)
+        self.assertIn("detected job status request", response.summary.lower())
+
+    async def test_complete_keyword_maps_to_finalize_intent(self) -> None:
+        response = await plan(PlanRequest(text="Can you complete job 42 now?"))
+        self.assertEqual(response.intent.action, "finalize_job")
+        self.assertEqual(response.intent.payload.jobId, 42)
+        self.assertIn("detected job finalization request", response.summary.lower())
 
 
 if __name__ == "__main__":
