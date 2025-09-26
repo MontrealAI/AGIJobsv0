@@ -18,6 +18,7 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
 ## Quick start
 
 1. Run or obtain an AGI-Alpha orchestrator endpoint (see [AGI-Alpha-Agent-v0](https://github.com/MontrealAI/AGI-Alpha-Agent-v0)). Ensure CORS allows the origin the static page will be served from.
+   - Configure orchestrator environment variables such as `PINNER_TOKEN` (and optional `PINNER_ENDPOINT`) so server-side executions can pin metadata through your chosen IPFS service.
 2. Update [`config.js`](./config.js) with your orchestrator URLs (base + `/onebox` prefix), desired Account Abstraction settings, and any alternate IPFS gateways you want the Advanced receipts panel to surface.
 3. (Optional) Prepare web3.storage API tokens for team members. Tokens are stored client-side in `localStorage`.
 4. Serve the directory locally for development, e.g.:

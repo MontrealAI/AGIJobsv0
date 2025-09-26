@@ -134,27 +134,227 @@ export async function invokeAgent(
   }
 }
 
+const DEFAULT_IPFS_API = 'http://localhost:5001/api/v0';
+const DEFAULT_PINNER_ENDPOINT = 'https://api.web3.storage/upload';
+
+export interface UploadToIPFSOptions {
+  apiUrl?: string;
+  fileName?: string;
+  contentType?: string;
+  pinnerEndpoint?: string;
+  pinnerToken?: string;
+}
+
+export function parseIpfsAddResponse(body: string): string {
+  const trimmed = body.trim();
+  if (!trimmed) return '';
+  const lines = trimmed.split('\n');
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const line = lines[index].trim();
+    if (!line) continue;
+    try {
+      const parsed = JSON.parse(line) as Record<string, unknown>;
+      const hash = extractCidFromPinningResponse(parsed);
+      if (hash) return hash;
+    } catch {
+      // ignore lines that are not valid JSON
+    }
+  }
+  return '';
+}
+
+export function extractCidFromPinningResponse(payload: unknown): string {
+  if (!payload) {
+    return '';
+  }
+  if (typeof payload === 'string') {
+    const trimmed = payload.trim();
+    if (!trimmed) return '';
+    try {
+      return extractCidFromPinningResponse(JSON.parse(trimmed));
+    } catch {
+      return trimmed;
+    }
+  }
+  if (typeof payload !== 'object') {
+    return '';
+  }
+
+  const record = payload as Record<string, unknown>;
+
+  if (typeof record.Hash === 'string' && record.Hash) {
+    return record.Hash;
+  }
+  if (typeof record.cid === 'string' && record.cid) {
+    return record.cid;
+  }
+  if (typeof record.Cid === 'string' && record.Cid) {
+    return record.Cid;
+  }
+
+  const cidField = record.cid ?? record.Cid ?? record.value ?? record.data;
+  if (typeof cidField === 'string' && cidField) {
+    return cidField;
+  }
+  if (cidField && typeof cidField === 'object') {
+    const nested = cidField as Record<string, unknown>;
+    const candidate =
+      (typeof nested['/'] === 'string' && nested['/']) ||
+      (typeof nested.cid === 'string' && nested.cid) ||
+      (typeof nested.Cid === 'string' && nested.Cid) ||
+      (typeof nested.Hash === 'string' && nested.Hash);
+    if (candidate) {
+      return candidate;
+    }
+  }
+
+  if (typeof record.value === 'string' && record.value) {
+    return record.value;
+  }
+
+  if (typeof record.result === 'string' && record.result) {
+    return record.result;
+  }
+
+  return '';
+}
+
+function normalizeUploadOptions(
+  options?: string | UploadToIPFSOptions
+): UploadToIPFSOptions {
+  if (typeof options === 'string') {
+    return { apiUrl: options };
+  }
+  return options ?? {};
+}
+
+function ensureBlob(
+  content: any,
+  explicitType?: string
+): { blob: Blob; suggestedFileName: string } {
+  if (content instanceof Blob) {
+    const fileName = content.type === 'application/json' ? 'payload.json' : 'payload.bin';
+    return { blob: content, suggestedFileName: fileName };
+  }
+
+  let data: BlobPart;
+  let type = explicitType;
+  let suggestedFileName = 'payload.bin';
+
+  if (typeof content === 'string') {
+    data = content;
+    type = type ?? 'text/plain';
+    suggestedFileName = 'payload.txt';
+  } else if (content instanceof ArrayBuffer || ArrayBuffer.isView(content)) {
+    data = content instanceof ArrayBuffer ? new Uint8Array(content) : content;
+    type = type ?? 'application/octet-stream';
+  } else if (content && typeof content === 'object') {
+    data = JSON.stringify(content);
+    type = type ?? 'application/json';
+    suggestedFileName = 'payload.json';
+  } else {
+    data = String(content ?? '');
+    type = type ?? 'text/plain';
+    suggestedFileName = 'payload.txt';
+  }
+
+  const blob = new Blob([data], { type });
+  return { blob, suggestedFileName };
+}
+
+async function pinViaIpfsApi(
+  content: any,
+  options: UploadToIPFSOptions
+): Promise<string> {
+  const apiUrl = options.apiUrl ?? process.env.IPFS_API_URL ?? DEFAULT_IPFS_API;
+  const target = `${apiUrl.replace(/\/+$/, '')}/add`;
+  const { blob, suggestedFileName } = ensureBlob(content, options.contentType);
+  const form = new FormData();
+  form.append('file', blob, options.fileName ?? suggestedFileName);
+  const response = await fetch(target, { method: 'POST', body: form });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(
+      `IPFS API responded with ${response.status}: ${text.slice(0, 200)}`
+    );
+  }
+  const body = await response.text();
+  const cid = parseIpfsAddResponse(body);
+  if (!cid) {
+    throw new Error('IPFS API response did not include a CID');
+  }
+  return cid;
+}
+
+async function pinViaPinner(
+  content: any,
+  options: UploadToIPFSOptions,
+  token: string
+): Promise<string> {
+  const endpoint = (
+    options.pinnerEndpoint ??
+    process.env.PINNER_ENDPOINT ??
+    process.env.PINNER_URL ??
+    DEFAULT_PINNER_ENDPOINT
+  ).replace(/\/+$/, '');
+  const url = endpoint || DEFAULT_PINNER_ENDPOINT;
+  const { blob, suggestedFileName } = ensureBlob(content, options.contentType);
+  const buffer = Buffer.from(await blob.arrayBuffer());
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': blob.type || options.contentType || 'application/octet-stream',
+  };
+  const fileName = options.fileName ?? suggestedFileName;
+  if (fileName) {
+    headers['X-Name'] = fileName;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: buffer,
+  });
+
+  const responseText = await response.text();
+  if (!response.ok) {
+    throw new Error(
+      `Pinning service responded with ${response.status}: ${responseText.slice(0, 200)}`
+    );
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  let payload: unknown = responseText;
+  if (contentType.includes('application/json')) {
+    try {
+      payload = JSON.parse(responseText);
+    } catch {
+      // fall back to plain text parsing
+    }
+  }
+
+  const cid = extractCidFromPinningResponse(payload);
+  if (!cid) {
+    throw new Error('Pinning service response did not include a CID');
+  }
+  return cid;
+}
+
 export async function uploadToIPFS(
   content: any,
-  apiUrl = process.env.IPFS_API_URL || 'http://localhost:5001/api/v0'
+  options?: string | UploadToIPFSOptions
 ): Promise<string> {
-  const data = (
-    typeof content === 'string' || content instanceof Uint8Array
-      ? content
-      : JSON.stringify(content)
-  ) as any;
-  const form = new FormData();
-  form.append('file', new Blob([data]));
-  const res = await fetch(`${apiUrl}/add`, { method: 'POST', body: form });
-  const body = await res.text();
-  const lastLine = body.trim().split('\n').pop() || '{}';
-  const parsed = JSON.parse(lastLine);
-  return (
-    parsed.Hash ||
-    (parsed.Cid && (parsed.Cid['/'] || parsed.Cid.cid || parsed.Cid)) ||
-    parsed.cid ||
-    ''
-  );
+  const resolved = normalizeUploadOptions(options);
+  const token =
+    resolved.pinnerToken ??
+    process.env.PINNER_TOKEN ??
+    process.env.WEB3_STORAGE_TOKEN ??
+    '';
+
+  if (token) {
+    return pinViaPinner(content, resolved, token);
+  }
+
+  return pinViaIpfsApi(content, resolved);
 }
 
 export async function runJob(
