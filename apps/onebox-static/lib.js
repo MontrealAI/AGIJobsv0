@@ -1,4 +1,4 @@
-const SUPPORTED_INTENTS = [
+const INTENTS = new Set([
   "create_job",
   "apply_job",
   "submit_work",
@@ -8,129 +8,71 @@ const SUPPORTED_INTENTS = [
   "stake",
   "withdraw",
   "admin_set",
-];
+]);
 
-const CONFIRMATION_SUMMARY_LIMIT = 140;
-
-function isObject(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+export function validateICS(raw) {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Planner returned an invalid payload");
+  }
+  if (!INTENTS.has(raw.intent)) {
+    throw new Error(`Unsupported intent: ${raw.intent ?? "unknown"}`);
+  }
+  raw.params = raw.params ?? {};
+  raw.confirm = Boolean(raw.confirm);
+  return raw;
 }
 
-function makeTraceId() {
-  try {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID();
-    }
-  } catch (err) {
-    // ignore and fall through to fallback
+export function ensureSummary(ics) {
+  if (!ics.confirm) return ics;
+  if (typeof ics.summary === "string" && ics.summary.trim().length > 0 && ics.summary.length <= 140) {
+    return ics;
   }
-  return `trace-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+  ics.summary = "Confirm before executing value-moving action.";
+  return ics;
 }
 
-export function validateICS(payload) {
-  if (!isObject(payload)) {
-    throw new Error("Planner returned an invalid response");
+export async function pinJSON(data, endpoint) {
+  const token = localStorage.getItem("W3S_TOKEN") ?? "";
+  const headers = new Headers({ "Content-Type": "application/json" });
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
-
-  const {
-    intent,
-    params,
-    confirm = false,
-    summary,
-    confirmationText,
-    meta,
-  } = payload;
-
-  if (typeof intent !== "string" || !SUPPORTED_INTENTS.includes(intent)) {
-    throw new Error(`Unsupported intent: ${intent}`);
-  }
-
-  const normalized = {
-    ...payload,
-    intent,
-    params: isObject(params) ? { ...params } : {},
-    confirm: Boolean(confirm),
-    meta: {},
-  };
-
-  const confirmation =
-    typeof confirmationText === "string" && confirmationText.trim()
-      ? confirmationText.trim()
-      : typeof summary === "string" && summary.trim()
-        ? summary.trim()
-        : "";
-
-  if (normalized.confirm) {
-    if (!confirmation) {
-      throw new Error("Planner confirmation summary missing");
-    }
-    if (confirmation.length > CONFIRMATION_SUMMARY_LIMIT) {
-      throw new Error(
-        `Confirmation summary must be ${CONFIRMATION_SUMMARY_LIMIT} characters or fewer`,
-      );
-    }
-    normalized.summary = confirmation;
-  } else if (confirmation) {
-    normalized.summary = confirmation;
-  } else {
-    delete normalized.summary;
-  }
-
-  if (isObject(meta) && typeof meta.traceId === "string" && meta.traceId.trim()) {
-    normalized.meta.traceId = meta.traceId.trim();
-  } else {
-    normalized.meta.traceId = makeTraceId();
-  }
-
-  return normalized;
-}
-
-const DECIMALS = 18n;
-const TEN = 10n;
-
-export function toWei(amount) {
-  const [wholeRaw, fracRaw = ""] = String(amount).split(".");
-  const whole = BigInt(wholeRaw || "0");
-  const frac = fracRaw.padEnd(18, "0").slice(0, 18);
-  return whole * TEN ** DECIMALS + BigInt(frac || "0");
-}
-
-export function fmtAGIA(wei) {
-  const asString = BigInt(wei).toString().padStart(19, "0");
-  const head = asString.slice(0, -18) || "0";
-  const tail = asString.slice(-18).replace(/0+$/, "");
-  return tail ? `${head}.${tail}` : head;
-}
-
-async function postToW3S(body, contentType) {
-  const token = localStorage.getItem("W3S_TOKEN");
-  if (!token) {
-    throw new Error("Missing web3.storage token. Add it in Advanced settings.");
-  }
-
-  const response = await fetch("https://api.web3.storage/upload", {
+  const response = await fetch(endpoint, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(contentType ? { "Content-Type": contentType } : {}),
-    },
-    body,
+    headers,
+    body: JSON.stringify(data),
   });
-
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`IPFS pin failed: ${text}`);
+    throw new Error("Failed to pin JSON to IPFS");
   }
-
-  const { cid } = await response.json();
-  return { cid };
+  return response.json();
 }
 
-export async function pinJSON(data) {
-  return postToW3S(JSON.stringify(data), "application/json");
+export async function pinFile(file, endpoint) {
+  const token = localStorage.getItem("W3S_TOKEN") ?? "";
+  const headers = new Headers();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers,
+    body: file,
+  });
+  if (!response.ok) {
+    throw new Error("Failed to pin file to IPFS");
+  }
+  return response.json();
 }
 
-export async function pinFile(file) {
-  const bytes = await file.arrayBuffer();
-  return postToW3S(new Blob([bytes]));
+export function fmtAGIA(valueWei) {
+  const wei = typeof valueWei === "bigint" ? valueWei : BigInt(valueWei ?? 0);
+  const divisor = 10n ** 18n;
+  const whole = wei / divisor;
+  const fraction = wei % divisor;
+  if (fraction === 0n) {
+    return whole.toString();
+  }
+  const fractionStr = fraction.toString().padStart(18, "0").replace(/0+$/, "");
+  return `${whole.toString()}.${fractionStr}`;
 }
