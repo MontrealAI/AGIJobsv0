@@ -12,6 +12,8 @@ const SUPPORTED_INTENTS = [
 
 const CONFIRMATION_SUMMARY_LIMIT = 140;
 const META_VERSION = "agijobs.onebox/1.0.0";
+const AGIA_DECIMALS = 18n;
+const TEN = 10n;
 
 function isObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -80,6 +82,57 @@ export function validateICS(payload) {
   }
 
   return normalized;
+}
+
+function normalizeDecimalInput(amount) {
+  if (typeof amount === "bigint") {
+    return amount;
+  }
+  if (typeof amount === "number") {
+    if (!Number.isFinite(amount)) {
+      throw new Error("Invalid AGIA amount");
+    }
+    return normalizeDecimalInput(amount.toString());
+  }
+  if (typeof amount !== "string") {
+    return normalizeDecimalInput(String(amount));
+  }
+  const trimmed = amount.trim();
+  if (!trimmed) {
+    throw new Error("Invalid AGIA amount");
+  }
+  const negative = trimmed.startsWith("-");
+  const unsigned = negative ? trimmed.slice(1) : trimmed;
+  if (!/^\d*(?:\.\d*)?$/.test(unsigned)) {
+    throw new Error("Invalid AGIA amount");
+  }
+  const [head = "0", tail = ""] = unsigned.split(".");
+  const whole = head ? BigInt(head) : 0n;
+  const paddedFraction = `${tail}`.padEnd(Number(AGIA_DECIMALS), "0").slice(0, Number(AGIA_DECIMALS));
+  const fraction = paddedFraction ? BigInt(paddedFraction) : 0n;
+  const value = whole * TEN ** AGIA_DECIMALS + fraction;
+  return negative ? -value : value;
+}
+
+export function toWei(amount) {
+  return normalizeDecimalInput(amount);
+}
+
+export function formatAGIA(value, { minimumFractionDigits = 0, maximumFractionDigits = 6 } = {}) {
+  const amount = typeof value === "bigint" ? value : normalizeDecimalInput(value);
+  const negative = amount < 0n ? "-" : "";
+  const absolute = amount < 0n ? -amount : amount;
+  const whole = absolute / (TEN ** AGIA_DECIMALS);
+  const fraction = absolute % (TEN ** AGIA_DECIMALS);
+  let fractionText = fraction.toString().padStart(Number(AGIA_DECIMALS), "0");
+  if (maximumFractionDigits >= 0 && maximumFractionDigits < Number(AGIA_DECIMALS)) {
+    fractionText = fractionText.slice(0, maximumFractionDigits);
+  }
+  fractionText = fractionText.replace(/0+$/, "");
+  if (fractionText.length < minimumFractionDigits) {
+    fractionText = fractionText.padEnd(minimumFractionDigits, "0");
+  }
+  return fractionText ? `${negative}${whole}.${fractionText}` : `${negative}${whole}`;
 }
 
 export function needsAttachmentPin(ics) {

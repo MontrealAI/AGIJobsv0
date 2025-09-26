@@ -15,7 +15,7 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
 ## Quick start
 
 1. Run or obtain an AGI-Alpha orchestrator endpoint (see [AGI-Alpha-Agent-v0](https://github.com/MontrealAI/AGI-Alpha-Agent-v0)). Ensure CORS allows the origin the static page will be served from.
-2. Update [`config.js`](./config.js) with your orchestrator URLs and desired Account Abstraction settings.
+2. Update [`config.js`](./config.js) with your orchestrator URLs, desired Account Abstraction settings, and any alternate IPFS gateways you want the Advanced receipts panel to surface.
 3. (Optional) Prepare web3.storage API tokens for team members. Tokens are stored client-side in `localStorage`.
 4. Serve the directory locally for development, e.g.:
 
@@ -56,6 +56,11 @@ When the orchestrator returns ICS metadata indicating that an ENS identity is re
 - `web3.storage` tokens are retained in the user’s browser only. Encourage operators to issue per-origin scoped tokens.
 - The UI enforces a maximum history window (`HISTORY_LENGTH`) to limit prompt size; the orchestrator should also cap history depth.
 - Validate all ICS payloads server-side even if the client performs its own checks.
+
+## Utility helpers
+
+- [`toWei`](./lib.mjs) converts human-readable AGIALPHA amounts into 18-decimal `BigInt` values for simulations and spend-cap checks.
+- [`formatAGIA`](./lib.mjs) renders on-chain balances back into concise human units, trimming trailing decimals by default.
 
 ## Testing suggestions
 
