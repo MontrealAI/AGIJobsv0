@@ -297,6 +297,27 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.intent.payload.jobId, 42)
         self.assertIn("detected job finalization request", response.summary.lower())
 
+    async def test_stake_keyword_maps_to_stake_intent(self) -> None:
+        response = await plan(PlanRequest(text="Stake on job 555"))
+        self.assertEqual(response.intent.action, "stake")
+        self.assertEqual(response.intent.payload.jobId, 555)
+        self.assertIn("detected staking request", response.summary.lower())
+        self.assertIn("stake on job 555", response.summary.lower())
+
+    async def test_validate_keyword_maps_to_validate_intent(self) -> None:
+        response = await plan(PlanRequest(text="Please validate job 777"))
+        self.assertEqual(response.intent.action, "validate")
+        self.assertEqual(response.intent.payload.jobId, 777)
+        self.assertIn("detected validation request", response.summary.lower())
+        self.assertIn("validate job 777", response.summary.lower())
+
+    async def test_dispute_keyword_maps_to_dispute_intent(self) -> None:
+        response = await plan(PlanRequest(text="Dispute job 888 immediately"))
+        self.assertEqual(response.intent.action, "dispute")
+        self.assertEqual(response.intent.payload.jobId, 888)
+        self.assertIn("detected dispute request", response.summary.lower())
+        self.assertIn("dispute job 888", response.summary.lower())
+
 
 class DeadlineComputationTests(unittest.TestCase):
     def test_calculate_deadline_uses_epoch_seconds(self) -> None:
