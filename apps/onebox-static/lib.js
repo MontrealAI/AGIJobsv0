@@ -10,6 +10,8 @@ const INTENTS = [
   "admin_set",
 ];
 
+const CONFIRMATION_SUMMARY_LIMIT = 140;
+
 export function validateICS(value) {
   if (!value || typeof value !== "object") {
     throw new Error("Planner returned invalid payload");
@@ -19,8 +21,25 @@ export function validateICS(value) {
     throw new Error(`Unsupported intent: ${String(value.intent)}`);
   }
 
-  if (value.confirm && value.summary && value.summary.length > 140) {
-    throw new Error("Confirmation summary is too long");
+  const confirmationText =
+    typeof value.confirmationText === "string"
+      ? value.confirmationText.trim()
+      : "";
+  const fallbackSummary =
+    typeof value.summary === "string" ? value.summary.trim() : "";
+  const summary = confirmationText || fallbackSummary;
+
+  if (value.confirm) {
+    if (!summary) {
+      throw new Error("Planner confirmation summary missing");
+    }
+    if (summary.length > CONFIRMATION_SUMMARY_LIMIT) {
+      throw new Error("Confirmation summary is too long");
+    }
+  }
+
+  if (summary) {
+    value.summary = summary;
   }
 
   value.params = value.params ?? {};
