@@ -8,7 +8,7 @@ import {
 } from './config';
 
 const jobRegistryAbi = [
-  'event JobCreated(uint256 indexed jobId,address indexed employer,address agent,uint256 reward,uint256 stake,uint256 fee)',
+  'event JobCreated(uint256 indexed jobId,address indexed employer,address indexed agent,uint256 reward,uint256 stake,uint256 fee,bytes32 specHash,string uri)',
 ];
 
 const stakeManagerAbi = [
@@ -39,7 +39,9 @@ export function setupJobListener(
       assignedAgent: string,
       reward: bigint,
       stake: bigint,
-      fee: bigint
+      fee: bigint,
+      specHash: string,
+      uri: string
     ) => {
       if (assignedAgent !== ethers.ZeroAddress) return;
       const balance = await stakeManager.stakeOf(agentAddress, 0);
@@ -49,6 +51,8 @@ export function setupJobListener(
         reward: reward.toString(),
         stake: stake.toString(),
         fee: fee.toString(),
+        specHash,
+        uri,
       };
       await onJobDetected(jobId.toString(), details);
     }

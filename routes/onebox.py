@@ -7,6 +7,7 @@ import os
 import re
 import time
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import httpx
@@ -32,7 +33,9 @@ PINNER_KIND = os.getenv("PINNER_KIND", "").lower()  # pinata|web3storage|nftstor
 PINNER_ENDPOINT = os.getenv("PINNER_ENDPOINT", "")
 PINNER_TOKEN = os.getenv("PINNER_TOKEN", "")
 
-_MIN_ABI = [
+_ABI_PATH = Path(__file__).with_name("job_registry.abi.json")
+
+_DEFAULT_MIN_ABI = [
     {
         "inputs": [
             {"internalType": "uint256", "name": "reward", "type": "uint256"},
@@ -76,6 +79,12 @@ _MIN_ABI = [
         "inputs": [
             {"indexed": True, "internalType": "uint256", "name": "jobId", "type": "uint256"},
             {"indexed": True, "internalType": "address", "name": "employer", "type": "address"},
+            {"indexed": True, "internalType": "address", "name": "agent", "type": "address"},
+            {"indexed": False, "internalType": "uint256", "name": "reward", "type": "uint256"},
+            {"indexed": False, "internalType": "uint256", "name": "stake", "type": "uint256"},
+            {"indexed": False, "internalType": "uint256", "name": "fee", "type": "uint256"},
+            {"indexed": False, "internalType": "bytes32", "name": "specHash", "type": "bytes32"},
+            {"indexed": False, "internalType": "string", "name": "uri", "type": "string"},
         ],
         "name": "JobCreated",
         "type": "event",
@@ -90,6 +99,11 @@ _MIN_ABI = [
         "type": "function",
     },
 ]
+
+try:
+    _MIN_ABI = json.loads(_ABI_PATH.read_text())
+except (FileNotFoundError, json.JSONDecodeError):
+    _MIN_ABI = _DEFAULT_MIN_ABI
 
 _ABI = json.loads(os.getenv("JOB_REGISTRY_ABI_JSON", json.dumps(_MIN_ABI)))
 _UINT64_MAX = 2**64 - 1

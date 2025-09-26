@@ -263,6 +263,7 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     Payload,
     PlanRequest,
     _calculate_deadline_timestamp,
+    _decode_job_created,
     _UINT64_MAX,
     execute,
     plan,
@@ -338,6 +339,48 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
                 await execute(request)
 
         self.assertEqual(ctx.exception.detail, "DEADLINE_INVALID")
+
+
+class JobCreatedDecodingTests(unittest.TestCase):
+    def test_decode_job_created_with_full_event_payload(self) -> None:
+        receipt = {"logs": ["dummy"]}
+        event_args = {
+            "jobId": 123,
+            "employer": "0x0000000000000000000000000000000000000001",
+            "agent": "0x0000000000000000000000000000000000000002",
+            "reward": 10,
+            "stake": 5,
+            "fee": 1,
+            "specHash": "0x" + "00" * 32,
+            "uri": "ipfs://example",
+        }
+        job_created_event = mock.Mock()
+        job_created_event.process_receipt.return_value = [{"args": event_args}]
+
+        with mock.patch("routes.onebox.registry") as registry_mock:
+            registry_mock.events.JobCreated.return_value = job_created_event
+            last_job_id = registry_mock.functions.lastJobId
+            last_job_id.return_value.call.return_value = 0
+
+            job_id = _decode_job_created(receipt)
+
+        self.assertEqual(job_id, 123)
+        job_created_event.process_receipt.assert_called_once_with(receipt)
+        last_job_id.assert_not_called()
+
+    def test_decode_job_created_falls_back_to_last_job_id(self) -> None:
+        receipt = {"status": 1}
+        with mock.patch("routes.onebox.registry") as registry_mock:
+            job_created_event = registry_mock.events.JobCreated.return_value
+            job_created_event.process_receipt.return_value = []
+            last_job_id_call = registry_mock.functions.lastJobId.return_value
+            last_job_id_call.call.return_value = 77
+
+            job_id = _decode_job_created(receipt)
+
+        self.assertEqual(job_id, 77)
+        job_created_event.process_receipt.assert_called_once_with(receipt)
+        last_job_id_call.call.assert_called_once_with()
 
 
 if __name__ == "__main__":
