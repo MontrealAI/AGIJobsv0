@@ -1,7 +1,7 @@
 // apps/onebox/app.js
 const $ = s=>document.querySelector(s), chat=$('#chat'), box=$('#box'), mode=$('#mode');
 const sendBtn=$('#send'), expertBtn=$('#expert'), saveBtn=$('#save'), orchInput=$('#orch'), tokInput=$('#tok'), connectBtn=$('#connect');
-document.querySelectorAll('.pill').forEach(p=>p.onclick=()=>{box.value=p.dataset.example; box.focus();});
+document.querySelectorAll('.pill').forEach(p=>p.onclick=()=>box.value=p.dataset.example);
 
 const COPY={
   planning:"Let me prepare this…",
@@ -17,16 +17,11 @@ const ERRORS={
   IPFS_FAILED:"I couldn’t package your job details. Remove broken links and try again.",
   DEADLINE_INVALID:"That deadline is in the past. Pick at least 24 hours from now.",
   NETWORK_CONGESTED:"The network is busy; I’ll keep retrying for a moment.",
-  RELAYER_DISABLED:"The relayer is offline. Ask the operator to enable it or switch to Expert Mode.",
-  UNAUTHENTICATED:"This endpoint needs a valid API token. Check the Advanced settings.",
-  JOB_ID_REQUIRED:"Tell me which job id to work with first.",
-  MISSING_ORCHESTRATOR:"Set your orchestrator URL in Advanced.",
-  NO_WALLET:"No EIP-1193 wallet detected. Install MetaMask, Rabby, or a compatible provider.",
   UNKNOWN:"Something went wrong. Try rephrasing your request or adjust the reward/deadline."
 };
 
 let EXPERT=false, ETH=null;
-let ORCH=localStorage.getItem('ORCH_URL')||localStorage.getItem('onebox_orchestrator')||'', TOK=localStorage.getItem('ORCH_TOKEN')||localStorage.getItem('onebox_api_token')||'';
+let ORCH=localStorage.getItem('ORCH_URL')||'', TOK=localStorage.getItem('ORCH_TOKEN')||'';
 orchInput.value=ORCH; tokInput.value=TOK;
 
 function add(role,html){const d=document.createElement('div');d.className='msg '+(role==='user'?'m-user':'m-assist');d.innerHTML=html;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
@@ -34,28 +29,12 @@ function note(t){add('assist',`<div class="note">${t}</div>`)}
 function setMode(){mode.textContent='Mode: '+(EXPERT?'Expert (wallet)':'Guest (walletless)')}
 
 async function api(path, body){
-  if(!ORCH){throw new Error('MISSING_ORCHESTRATOR')}
+  if(!ORCH){throw new Error('Set your Orchestrator URL in Advanced')}
   const headers={'Content-Type':'application/json'}; if(TOK) headers['Authorization']='Bearer '+TOK;
   const r=await fetch(ORCH+path,{method: body? 'POST':'GET',headers,body: body? JSON.stringify(body):undefined});
   if(!r.ok){
-    let code='UNKNOWN';
-    let human;
-    try{
-      const payload=await r.json();
-      if(payload){
-        if(typeof payload.error==='string') code=payload.error.toUpperCase();
-        else if(typeof payload.detail==='string') code=payload.detail.toUpperCase();
-        if(typeof payload.message==='string') human=payload.message;
-      }
-    }catch{
-      try{
-        const text=await r.text();
-        if(text) code=text.toUpperCase();
-      }catch{}
-    }
-    const error=new Error(code);
-    if(human) error.humanMessage=human;
-    throw error;
+    let msg='UNKNOWN'; try{msg=(await r.text())||'UNKNOWN'}catch{}
+    throw new Error(msg.toUpperCase());
   }
   return await r.json();
 }
@@ -85,6 +64,7 @@ async function execute(intent){
     if(!ETH) throw new Error('NO_WALLET');
     const from=(await ETH.request({method:'eth_requestAccounts'}))[0];
     const txHash=await ETH.request({method:'eth_sendTransaction',params:[{from,to:j.to,data:j.data,value:j.value||'0x0'}]});
+    // The server's receiptUrl likely has a {tx} pattern; we replace tail if provided
     const url=(j.receiptUrl||'').replace(/0x[0-9a-fA-F]{64}.?$/, txHash);
     if(intent.action==='finalize_job') add('assist', COPY.finalized(j.jobId||'?', url||''));
     else add('assist', COPY.posted(j.jobId||'?', url||''));
@@ -110,10 +90,6 @@ async function go(){
 }
 
 function handleError(e){
-  if(e.humanMessage){
-    add('assist','⚠️ '+e.humanMessage);
-    return;
-  }
   const upper=(e.message||'').toUpperCase();
   const key = Object.keys(ERRORS).find(k=> upper.includes(k)) || 'UNKNOWN';
   add('assist','⚠️ '+ERRORS[key]);
@@ -121,7 +97,7 @@ function handleError(e){
 
 sendBtn.onclick=go; box.onkeydown=e=>{if(e.key==='Enter') go()};
 expertBtn.onclick=()=>{EXPERT=!EXPERT; setMode()};
-saveBtn.onclick=()=>{ORCH=orchInput.value.trim(); TOK=tokInput.value.trim(); localStorage.setItem('ORCH_URL',ORCH); localStorage.setItem('ORCH_TOKEN',TOK); localStorage.setItem('onebox_orchestrator',ORCH); localStorage.setItem('onebox_api_token',TOK); note('Saved.')};
+saveBtn.onclick=()=>{ORCH=orchInput.value.trim(); TOK=tokInput.value.trim(); localStorage.setItem('ORCH_URL',ORCH); localStorage.setItem('ORCH_TOKEN',TOK); note('Saved.')};
 connectBtn.onclick=async()=>{
   if(window.ethereum){ETH=window.ethereum; try{await ETH.request({method:'eth_requestAccounts'}); note('Wallet connected.');}catch{}}
   else{note('No EIP‑1193 provider found.')}
