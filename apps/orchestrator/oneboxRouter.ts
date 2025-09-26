@@ -26,6 +26,13 @@ import type {
 import { postJob } from './employer';
 import { finalizeJob } from './submission';
 import { JOB_REGISTRY_ADDRESS, RPC_URL } from './config';
+import {
+  now,
+  recordExecute,
+  recordPlan,
+  recordStatus,
+  renderMetrics,
+} from './oneboxMetrics';
 
 const STATUS_ABI = [
   'function nextJobId() view returns (uint256)',
@@ -237,31 +244,40 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
   const router = express.Router();
 
   router.post('/plan', async (req, res) => {
+    const start = now();
     try {
       const text = typeof req.body?.text === 'string' ? req.body.text : '';
       const expert = Boolean(req.body?.expert);
       const response = await service.plan(text, expert);
+      recordPlan(now() - start);
       res.json(response);
     } catch (error) {
+      recordPlan(now() - start, error);
       handleError(res, error);
     }
   });
 
   router.post('/execute', async (req, res) => {
+    const start = now();
+    let intentAction: string | undefined;
     try {
       const intent = req.body?.intent as JobIntent | undefined;
       if (!intent || typeof intent !== 'object') {
         throw new HttpError(400, 'Execution requires a validated intent payload.');
       }
+      intentAction = typeof intent.action === 'string' ? intent.action : undefined;
       const mode = req.body?.mode === 'wallet' ? 'wallet' : 'relayer';
       const response = await service.execute(intent, mode);
+      recordExecute(now() - start, intentAction);
       res.json(response);
     } catch (error) {
+      recordExecute(now() - start, intentAction, error);
       handleError(res, error);
     }
   });
 
   router.get('/status', async (req, res) => {
+    const start = now();
     try {
       const jobIdParam = req.query.jobId;
       const limitParam = req.query.limit;
@@ -277,10 +293,18 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
       }
 
       const response = await service.status(jobId, limit);
+      recordStatus(now() - start);
       res.json(response);
     } catch (error) {
+      recordStatus(now() - start, error);
       handleError(res, error);
     }
+  });
+
+  router.get('/metrics', (_req, res) => {
+    res.type('text/plain; version=0.0.4');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(renderMetrics());
   });
 
   return router;
