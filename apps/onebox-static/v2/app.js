@@ -84,7 +84,7 @@ function appendMessage(role, content) {
   const wrapper = document.createElement('div');
   wrapper.className = `msg ${role}`;
   if (typeof content === 'string') {
-    wrapper.innerHTML = content;
+    wrapper.textContent = content;
   } else if (content instanceof Node) {
     wrapper.appendChild(content);
   } else if (content !== undefined && content !== null) {
@@ -95,8 +95,17 @@ function appendMessage(role, content) {
   return wrapper;
 }
 
-function appendNote(html) {
-  appendMessage(MESSAGE_ROLE.ASSISTANT, `<p class="m-note">${html}</p>`);
+function appendNote(content) {
+  const note = document.createElement('p');
+  note.className = 'm-note';
+  if (typeof content === 'string') {
+    note.textContent = content;
+  } else if (content instanceof Node) {
+    note.appendChild(content);
+  } else if (content !== undefined && content !== null) {
+    note.textContent = String(content);
+  }
+  appendMessage(MESSAGE_ROLE.ASSISTANT, note);
 }
 
 function appendConfirmation(plan) {
@@ -196,7 +205,13 @@ async function executeIntent(intent) {
 
   if (!ORCH_URL) {
     window.setTimeout(() => {
-      appendMessage(MESSAGE_ROLE.ASSISTANT, '✅ Done. Job ID is <strong>#123</strong>.');
+      const fragment = document.createDocumentFragment();
+      fragment.append('✅ Done. Job ID is ');
+      const strong = document.createElement('strong');
+      strong.textContent = '#123';
+      fragment.appendChild(strong);
+      fragment.append('.');
+      appendMessage(MESSAGE_ROLE.ASSISTANT, fragment);
     }, 900);
     return;
   }
@@ -218,13 +233,22 @@ async function executeIntent(intent) {
     return;
   }
 
-  const receiptLink = payload.receiptUrl
-    ? ` <a href="${payload.receiptUrl}" target="_blank" rel="noopener">Receipt</a>`
-    : '';
-  appendMessage(
-    MESSAGE_ROLE.ASSISTANT,
-    `✅ Success. Job ID <strong>#${payload.jobId}</strong>.${receiptLink}`,
-  );
+  const fragment = document.createDocumentFragment();
+  fragment.append('✅ Success. Job ID ');
+  const strong = document.createElement('strong');
+  strong.textContent = `#${payload.jobId}`;
+  fragment.appendChild(strong);
+  fragment.append('.');
+  if (payload.receiptUrl) {
+    fragment.append(' ');
+    const link = document.createElement('a');
+    link.href = payload.receiptUrl;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Receipt';
+    fragment.appendChild(link);
+  }
+  appendMessage(MESSAGE_ROLE.ASSISTANT, fragment);
 
   if (ORCH_URL) {
     loadStatus(true).catch(() => {
