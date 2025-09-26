@@ -37,7 +37,6 @@ test('trims confirmationText and stores it as summary', () => {
   const normalized = validateICS(payload);
 
   assert.equal(normalized.summary, 'Send 5 AGIALPHA');
-  assert.equal(payload.summary, 'Send 5 AGIALPHA');
 });
 
 test('rejects confirm payloads missing a usable summary', () => {
@@ -57,7 +56,24 @@ test('rejects confirm payloads with summaries longer than 140 characters', () =>
     confirmationText: 'x'.repeat(141),
   };
 
-  assert.throws(() => validateICS(payload), /Confirmation summary is too long/);
+  assert.throws(
+    () => validateICS(payload),
+    /Confirmation summary must be 140 characters or fewer/,
+  );
+});
+
+test('generates a fallback traceId when none provided', () => {
+  const payload = {
+    ...BASE_INTENT,
+    confirm: true,
+    summary: 'Needs trace',
+  };
+
+  const normalized = validateICS(payload);
+
+  assert.ok(normalized.meta?.traceId);
+  assert.equal(typeof normalized.meta.traceId, 'string');
+  assert.ok(normalized.meta.traceId.trim().length > 0);
 });
 
 test('uses summary fallback when confirmationText missing', () => {

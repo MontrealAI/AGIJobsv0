@@ -1,4 +1,4 @@
-const INTENTS = [
+const SUPPORTED_INTENTS = [
   "create_job",
   "apply_job",
   "submit_work",
@@ -12,38 +12,77 @@ const INTENTS = [
 
 const CONFIRMATION_SUMMARY_LIMIT = 140;
 
-export function validateICS(value) {
-  if (!value || typeof value !== "object") {
-    throw new Error("Planner returned invalid payload");
+function isObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function makeTraceId() {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch (err) {
+    // ignore and fall through to fallback
+  }
+  return `trace-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+export function validateICS(payload) {
+  if (!isObject(payload)) {
+    throw new Error("Planner returned an invalid response");
   }
 
-  if (!INTENTS.includes(value.intent)) {
-    throw new Error(`Unsupported intent: ${String(value.intent)}`);
+  const {
+    intent,
+    params,
+    confirm = false,
+    summary,
+    confirmationText,
+    meta,
+  } = payload;
+
+  if (typeof intent !== "string" || !SUPPORTED_INTENTS.includes(intent)) {
+    throw new Error(`Unsupported intent: ${intent}`);
   }
 
-  const confirmationText =
-    typeof value.confirmationText === "string"
-      ? value.confirmationText.trim()
-      : "";
-  const fallbackSummary =
-    typeof value.summary === "string" ? value.summary.trim() : "";
-  const summary = confirmationText || fallbackSummary;
+  const normalized = {
+    ...payload,
+    intent,
+    params: isObject(params) ? { ...params } : {},
+    confirm: Boolean(confirm),
+    meta: {},
+  };
 
-  if (value.confirm) {
-    if (!summary) {
+  const confirmation =
+    typeof confirmationText === "string" && confirmationText.trim()
+      ? confirmationText.trim()
+      : typeof summary === "string" && summary.trim()
+        ? summary.trim()
+        : "";
+
+  if (normalized.confirm) {
+    if (!confirmation) {
       throw new Error("Planner confirmation summary missing");
     }
-    if (summary.length > CONFIRMATION_SUMMARY_LIMIT) {
-      throw new Error("Confirmation summary is too long");
+    if (confirmation.length > CONFIRMATION_SUMMARY_LIMIT) {
+      throw new Error(
+        `Confirmation summary must be ${CONFIRMATION_SUMMARY_LIMIT} characters or fewer`,
+      );
     }
+    normalized.summary = confirmation;
+  } else if (confirmation) {
+    normalized.summary = confirmation;
+  } else {
+    delete normalized.summary;
   }
 
-  if (summary) {
-    value.summary = summary;
+  if (isObject(meta) && typeof meta.traceId === "string" && meta.traceId.trim()) {
+    normalized.meta.traceId = meta.traceId.trim();
+  } else {
+    normalized.meta.traceId = makeTraceId();
   }
 
-  value.params = value.params ?? {};
-  return value;
+  return normalized;
 }
 
 const DECIMALS = 18n;
