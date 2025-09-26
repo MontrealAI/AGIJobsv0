@@ -43,11 +43,6 @@ abstract contract Governable {
         _;
     }
 
-    modifier onlyGovernor() {
-        _checkGovernor();
-        _;
-    }
-
     function setGovernance(address _governance) public onlyGovernance {
         _setGovernance(_governance);
     }
@@ -58,6 +53,11 @@ abstract contract Governable {
 
     /// @notice Compatibility helper for systems expecting Ownable-style `owner()`
     function owner() public view returns (address) {
+        return address(governance);
+    }
+
+    /// @notice Explicit accessor for governance timelock address.
+    function governanceAddress() public view returns (address) {
         return address(governance);
     }
 }
