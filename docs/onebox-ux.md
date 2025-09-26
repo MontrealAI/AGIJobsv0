@@ -14,7 +14,8 @@ The static bundle also exposes runtime configuration controls: operators can cha
 
 ## API surface (FastAPI stubs)
 
-Add the following endpoints to `AGI-Alpha-Agent-v0` (or reuse the ready-made Express router in `apps/orchestrator/oneboxRouter.ts`):
+Add the following endpoints to `AGI-Alpha-Agent-v0` (or reuse the ready-made Express router in `apps/orchestrator/oneboxRouter.ts`).
+A fully fleshed-out FastAPI router lives at [`routes/onebox.py`](../routes/onebox.py) for copy/paste deployment:
 
 ```py
 from fastapi import APIRouter, Depends, HTTPException
