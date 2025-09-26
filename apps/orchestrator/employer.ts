@@ -27,6 +27,7 @@ export async function postJob(spec: PostJobSpec): Promise<{
   jobId: string;
   jsonUri: string;
   markdownUri: string;
+  txHash: string;
 }> {
   const { wallet, metadata, dependencies = [], agentTypes } = spec;
   const reward = BigInt(spec.reward);
@@ -80,8 +81,26 @@ export async function postJob(spec: PostJobSpec): Promise<{
         jsonUri
       )
     : await registry.createJob(reward, deadline, specHash, jsonUri);
-  await tx.wait();
-  const jobId = (nextId + 1n).toString();
+  const receipt = await tx.wait();
+
+  let jobId = (nextId + 1n).toString();
+  const logs = receipt?.logs ?? [];
+  for (const log of logs) {
+    try {
+      const parsed = registry.interface.parseLog({
+        topics: Array.from(log.topics ?? []),
+        data: log.data,
+      });
+      if (parsed?.name === 'JobCreated' && parsed.args?.jobId !== undefined) {
+        const value = parsed.args.jobId as bigint | number | string;
+        jobId = typeof value === 'bigint' ? value.toString() : value.toString();
+        break;
+      }
+    } catch {
+      // Ignore logs that do not belong to the JobRegistry ABI
+    }
+  }
+  const txHash = receipt?.hash ?? tx.hash;
 
   const graph = loadJobGraph();
   graph[jobId] = dependencies.map((d) => d.toString());
@@ -102,5 +121,5 @@ export async function postJob(spec: PostJobSpec): Promise<{
     },
   });
 
-  return { jobId, jsonUri, markdownUri };
+  return { jobId, jsonUri, markdownUri, txHash };
 }

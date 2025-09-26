@@ -14,7 +14,7 @@ The static bundle also exposes runtime configuration controls: operators can cha
 
 ## API surface (FastAPI stubs)
 
-Add the following endpoints to `AGI-Alpha-Agent-v0`:
+Add the following endpoints to `AGI-Alpha-Agent-v0` (or reuse the ready-made Express router in `apps/orchestrator/oneboxRouter.ts`):
 
 ```py
 from fastapi import APIRouter, Depends, HTTPException
@@ -50,7 +50,15 @@ async def status(job_id: int | None = None, deps=Depends(auth_guard)):
     return await status_service.fetch(job_id=job_id)
 ```
 
-Leverage the existing FastAPI `api.py` structure: include the router, reuse the `API_TOKEN` auth dependency, and expose the endpoints in the OpenAPI schema.
+If you prefer TypeScript, run `ts-node --project apps/orchestrator/tsconfig.json apps/orchestrator/onebox-server.ts` to start the bundled Express service. It exposes `/onebox/*` plus `/healthz` and can be configured via:
+
+- `ONEBOX_RELAYER_PRIVATE_KEY`: signer used for guest/relayer execution.
+- `ONEBOX_PORT`: HTTP port (default `8080`).
+- `ONEBOX_EXPLORER_TX_BASE`: optional block explorer prefix for receipt links.
+- `ONEBOX_STATUS_LIMIT`: number of recent jobs returned by `/onebox/status`.
+- `ONEBOX_CORS_ALLOW`: CORS origin (default `*`).
+
+Leverage the existing FastAPI `api.py` structure or the Express server: include the router, reuse the `API_TOKEN` auth dependency, and expose the endpoints in the OpenAPI schema.
 
 ## Planner → executor contract
 
