@@ -1,101 +1,67 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>AGI Jobs — One‑Box</title>
-    <link rel="stylesheet" href="styles.css">
-  </head>
-  <body>
-    <div class="wrap">
-      <header class="header" role="banner">
-        <div>
-          <h1>AGI Jobs — One‑Box</h1>
-          <p class="tagline">Plan → Confirm → Execute. No blockchain jargon required.</p>
-        </div>
-        <div class="badges">
-          <span class="badge" id="mode-label" aria-live="polite">Mode: Guest</span>
-          <span class="badge badge-soft">Walletless by default</span>
-        </div>
-      </header>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AGI Jobs — One‑Box</title>
+<style>
+:root{--bg:#0b0f14;--fg:#f5f7fb;--muted:#a7b0be;--soft:#121923;--line:#1c2531;--acc:#7c5cff;--ok:#1bbf6b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui}
+.wrap{max-width:880px;margin:auto;padding:24px}
+.header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.badge{padding:4px 8px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:12px}
+.chat{display:flex;flex-direction:column;gap:12px;min-height:52vh;padding:12px;border:1px solid var(--line);border-radius:12px;background:#0e141c}
+.msg{max-width:75%;padding:12px 14px;border-radius:12px}
+.m-user{background:#1a2330;margin-left:auto}
+.m-assist{background:#121925;border:1px solid #1e2836}
+.note{font-size:13px;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.pill{padding:8px 12px;border-radius:999px;background:#182131;border:1px solid #273245;cursor:pointer}
+.pill.ok{background:#0e2a1c;border-color:#214b38;color:#7de6b2}
+.input{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+input[type=text]{flex:1;min-width:220px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:#0e141c;color:var(--fg)}
+button{padding:12px 16px;border-radius:12px;border:0;background:var(--acc);color:#fff;font-weight:600;cursor:pointer}
+button.secondary{background:#1a2330;color:var(--fg);border:1px solid #273245}
+.small{font-size:13px;color:var(--muted)}
+.sec{margin-top:18px;padding:12px;border:1px dashed #263142;border-radius:10px;background:#0c131c}
+.kbd{padding:2px 6px;border-radius:6px;background:#1a2330;border:1px solid #283446;color:#c8d0da;font-size:12px}
+a{color:#b7a8ff}
+@media (max-width:680px){.msg{max-width:100%}.header{flex-direction:column;align-items:flex-start}}
+</style>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1 style="margin:0;font-size:20px">AGI Jobs — One‑Box</h1>
+    <span class="badge" id="mode">Mode: Guest (walletless)</span>
+    <span class="badge">Web3‑native • IPFS‑hosted</span>
+  </div>
 
-      <section class="chat" aria-live="polite" aria-label="Conversation" role="log" id="chat-log">
-        <article class="msg assistant">
-          <p class="msg-body">Hi! Tell me what you need and I’ll orchestrate the job for you.</p>
-          <p class="msg-note">Try: <span class="example-text">Post a labeling job for 500 images; pay 5 AGIALPHA; 7 days.</span></p>
-        </article>
-      </section>
+  <div id="chat" class="chat" role="log" aria-live="polite">
+    <div class="msg m-assist">Hi! Tell me what you need and I’ll handle it.<div class="note">Try: <em>Post a labeling job for 500 images, pay 5 AGIALPHA, 7 days.</em></div></div>
+  </div>
 
-      <form class="composer" id="composer" autocomplete="off">
-        <label class="sr-only" for="onebox-input">Describe what you want to do</label>
-        <input id="onebox-input" type="text" required placeholder="Type here… Press Enter to send" spellcheck="true">
-        <button type="submit" class="btn primary" id="send-btn">Send</button>
-        <button type="button" class="btn" id="expert-toggle" aria-pressed="false">Expert</button>
-        <button type="button" class="btn" id="settings-btn" aria-haspopup="dialog" aria-controls="settings-dialog">Settings</button>
-      </form>
+  <div class="input">
+    <input id="box" type="text" placeholder="Type here… Press Enter to send" aria-label="Your request">
+    <button id="send">Send</button>
+    <button id="expert" class="secondary" title="Toggle Expert Mode (EIP‑1193 wallet)">Expert</button>
+  </div>
+  <div class="row small" style="margin-top:8px">
+    <div class="pill" data-example="Create a research task, 2 AGIALPHA, 48 days">Create a research task…</div>
+    <div class="pill" data-example="Finalize job 123">Finalize job…</div>
+    <div class="pill" data-example="Status of job 123">Status of job…</div>
+  </div>
 
-      <section class="quick-prompts" aria-label="Examples">
-        <button type="button" class="pill" data-fill="Create a research task; reward 2 AGIALPHA; deadline 48 hours">Create a research task…</button>
-        <button type="button" class="pill" data-fill="Finalize my last job">Finalize my last job</button>
-        <button type="button" class="pill" data-fill="What’s the status of job 123?">Check job 123</button>
-      </section>
-
-      <section class="status-board" aria-label="Recent jobs">
-        <header class="status-header">
-          <h2>Recent jobs</h2>
-          <button type="button" class="btn" id="refresh-status">Refresh</button>
-        </header>
-        <div class="status-cards" id="status-cards" role="list">
-          <div class="status-empty" id="status-empty">No jobs yet. I’ll keep this list fresh after you run a task.</div>
-        </div>
-      </section>
-
-      <section class="footnotes">
-        <p>This static site talks to the AGI‑Alpha Orchestrator <code>/onebox/*</code> endpoints. Configure the base URL in Settings.</p>
-        <p>Expert mode reveals wallet signing flows; guest mode uses the orchestrator’s relayer.</p>
-        <button type="button" class="btn ghost" id="advanced-toggle" aria-expanded="false" aria-controls="advanced-panel">
-          Advanced receipts
-        </button>
-      </section>
-
-      <section class="advanced" id="advanced-panel" hidden aria-label="Advanced receipts" role="region">
-        <div class="advanced-head">
-          <h2>Advanced receipts</h2>
-          <p class="advanced-note">Verification links and calldata appear here after you run a task.</p>
-        </div>
-        <div class="advanced-receipts" id="advanced-receipts" role="list"></div>
-        <p class="advanced-empty" id="advanced-empty">No receipts yet. They will show up here once you run something.</p>
-      </section>
+  <div class="sec small">
+    <b>Advanced</b>
+    <div class="row" style="margin-top:8px;gap:8px">
+      <label>Orchestrator URL <input id="orch" type="text" placeholder="https://your‑orchestrator.example" style="width:340px;margin-left:6px"></label>
+      <label>API Token <input id="tok" type="text" placeholder="(Bearer token)" style="width:220px;margin-left:6px"></label>
+      <button id="save" class="secondary">Save</button>
+      <button id="connect" class="secondary">Connect Wallet</button>
     </div>
+    <div class="small">Walletless by default. In Expert Mode, transactions are returned for you to sign via <span class="kbd">eth_sendTransaction</span>.</div>
+  </div>
 
-    <dialog id="settings-dialog" class="modal" aria-modal="true">
-      <form method="dialog" id="settings-form">
-        <h2>Settings</h2>
-        <label class="field">
-          <span>Orchestrator URL</span>
-          <input type="url" id="orch-url" placeholder="https://orchestrator.example">
-          <span class="hint">Leave blank to use Demo Mode (no network calls).</span>
-        </label>
-        <label class="field">
-          <span>API Token (optional)</span>
-          <input type="password" id="api-token" placeholder="Bearer token">
-        </label>
-        <label class="field">
-          <span>Auto refresh status every</span>
-          <select id="status-interval">
-            <option value="0">Never</option>
-            <option value="30">30 seconds</option>
-            <option value="60" selected>60 seconds</option>
-            <option value="120">2 minutes</option>
-          </select>
-        </label>
-        <menu>
-          <button value="cancel" class="btn">Cancel</button>
-          <button value="confirm" class="btn primary">Save</button>
-        </menu>
-      </form>
-    </dialog>
-
-    <script src="app.js" type="module"></script>
-  </body>
+  <div class="small" style="margin-top:12px">No hashes, no gas prompts by default. A “Verify on chain” link appears after success.</div>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
 </html>
