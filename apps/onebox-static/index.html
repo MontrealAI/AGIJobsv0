@@ -7,169 +7,28 @@
   <style>
     :root {
       color-scheme: light dark;
+      --primary: #1052d6;
+      --bg: #fafafa;
+      --card-bg: #ffffff;
+      --border: #dcdfe3;
+      --text: #111827;
+      --text-muted: #6b7280;
     }
-    body {
-      margin: 0;
-      font: 16px/1.5 "Inter", "Segoe UI", system-ui, sans-serif;
-      background: #f5f7fb;
-      color: #141c2f;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101828;
+        --card-bg: #111c31;
+        --border: #1f2a44;
+        --text: #f9fafb;
+        --text-muted: #9ca3af;
+      }
     }
-    header,
-    footer {
-      padding: 12px 16px;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(6px);
-      border-bottom: 1px solid rgba(20, 28, 47, 0.08);
+
+    * {
+      box-sizing: border-box;
     }
-    footer {
-      border-top: 1px solid rgba(20, 28, 47, 0.08);
-      border-bottom: none;
-    }
-    header b {
-      font-weight: 600;
-    }
-    #feed {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .msg {
-      max-width: 72ch;
-      padding: 12px 14px;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(20, 28, 47, 0.08);
-      background: #fff;
-      align-self: flex-start;
-      word-break: break-word;
-    }
-    .msg.me {
-      margin-left: auto;
-      background: linear-gradient(120deg, #1052d6, #4b8aff);
-      color: #fff;
-      box-shadow: 0 6px 16px rgba(16, 82, 214, 0.25);
-    }
-    form {
-      display: flex;
-      gap: 10px;
-      padding: 12px 16px 20px;
-      background: rgba(255, 255, 255, 0.9);
-      border-top: 1px solid rgba(20, 28, 47, 0.08);
-    }
-    #attachment-name {
-      font-size: 13px;
-      color: rgba(20, 28, 47, 0.7);
-      padding: 0 16px 8px;
-      min-height: 1.4em;
-    }
-    input[type="text"] {
-      flex: 1;
-      padding: 14px 16px;
-      border-radius: 14px;
-      border: 1px solid rgba(20, 28, 47, 0.12);
-      font-size: 16px;
-      background: rgba(255, 255, 255, 0.9);
-      transition: border 0.2s ease;
-    }
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #1052d6;
-      box-shadow: 0 0 0 3px rgba(16, 82, 214, 0.15);
-    }
-    button {
-      padding: 14px 20px;
-      border-radius: 14px;
-      border: none;
-      background: #1052d6;
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    #attach-button {
-      width: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      background: rgba(16, 82, 214, 0.12);
-      color: #1052d6;
-      box-shadow: none;
-    }
-    #attach-button:hover:not(:disabled) {
-      transform: none;
-      box-shadow: none;
-      background: rgba(16, 82, 214, 0.2);
-    }
-    button:disabled {
-      cursor: progress;
-      opacity: 0.7;
-    }
-    button:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 16px rgba(16, 82, 214, 0.25);
-    }
-    #advanced-panel {
-      font-size: 13px;
-      color: rgba(20, 28, 47, 0.75);
-      padding: 0 16px 12px;
-      display: none;
-      white-space: pre-line;
-    }
-    body.advanced #advanced-panel {
-      display: block;
-    }
-    #advanced-panel h2 {
-      margin: 0 0 8px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #0b2b5a;
-    }
-    #advanced-panel pre {
-      background: rgba(16, 82, 214, 0.08);
-      border-radius: 12px;
-      padding: 12px;
-      font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace;
-      max-height: 200px;
-      overflow: auto;
-      white-space: pre-wrap;
-    }
-    .adv-grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    }
-    #w3s-form {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    #w3s-form input {
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(20, 28, 47, 0.2);
-      font-size: 14px;
-    }
-    #w3s-form button {
-      align-self: flex-start;
-      padding: 10px 16px;
-      font-size: 14px;
-    }
-    #w3s-status {
-      margin: 0;
-      min-height: 1.4em;
-    }
-    footer a {
-      color: #1052d6;
-      text-decoration: none;
-      font-weight: 500;
-      cursor: pointer;
-    }
+
     .sr-only {
       position: absolute;
       width: 1px;
@@ -181,61 +40,136 @@
       white-space: nowrap;
       border: 0;
     }
-    @media (max-width: 640px) {
-      header,
-      footer,
-      form {
-        padding-left: 12px;
-        padding-right: 12px;
-      }
-      input[type="text"] {
-        font-size: 15px;
-      }
-      button {
-        padding: 12px 18px;
-      }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header, footer {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(6px);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      border-bottom: none;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    #feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      max-width: 72ch;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      word-break: break-word;
+    }
+
+    .msg.me {
+      margin-left: auto;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(6px);
+    }
+
+    input[type="text"], button {
+      font: inherit;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: inherit;
+      width: 100%;
+    }
+
+    button {
+      width: auto;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+    #adv {
+      font-size: 13px;
+      padding: 12px 16px;
+      border-top: 1px dashed var(--border);
+      color: var(--text-muted);
+      display: none;
+      white-space: pre-wrap;
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .adv-show #adv {
+      display: block;
+    }
+
+    a {
+      color: var(--primary);
     }
   </style>
 </head>
 <body>
   <header>
-    <b>AGI Jobs</b> — One-Box (gasless, walletless)
+    <strong>AGI Jobs</strong> — One-Box (gasless, walletless)
   </header>
-  <div id="feed" role="log" aria-live="polite"></div>
-  <form id="composer">
-    <input id="attachment" type="file" hidden />
-    <label class="sr-only" for="question">Request</label>
-    <button id="attach-button" type="button" aria-label="Attach a file">📎</button>
-    <input
-      id="question"
-      type="text"
-      placeholder='e.g., "Post a job: 500 images, 50 AGIALPHA, 7 days"'
-      aria-label="Type your request"
-      autocomplete="off"
-    />
+  <main>
+    <section id="feed" role="log" aria-live="polite" aria-label="Conversation"></section>
+    <section id="adv" aria-live="polite" aria-label="Advanced details"></section>
+  </main>
+  <form id="composer" autocomplete="off">
+    <label class="sr-only" for="prompt">Type your request</label>
+    <input id="prompt" type="text" placeholder='e.g., "Post a job: 500 images, 50 AGIALPHA, 7 days"' aria-required="true" />
     <button id="send" type="submit">Send</button>
   </form>
-  <div id="attachment-name" aria-live="polite"></div>
-  <div id="advanced-panel" aria-live="polite">
-    <div class="adv-grid">
-      <section>
-        <h2>Execution details</h2>
-        <pre id="adv-log" aria-live="polite"></pre>
-      </section>
-      <section>
-        <h2>web3.storage token</h2>
-        <form id="w3s-form">
-          <label class="sr-only" for="w3s-token">web3.storage API token</label>
-          <input id="w3s-token" type="text" placeholder="Paste token" autocomplete="off" />
-          <button type="submit">Save token</button>
-          <p id="w3s-status" role="status"></p>
-        </form>
-      </section>
-    </div>
-  </div>
   <footer>
-    <a href="#" id="advanced-toggle">Advanced</a>
+    <a href="#" id="toggle-advanced">Advanced</a>
   </footer>
-  <script type="module" src="./app.mjs"></script>
+
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
