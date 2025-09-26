@@ -29,10 +29,11 @@ The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RU
 | 2 | Configure CORS | Allow origins where the IPFS gateway will serve the UI, e.g. `https://w3s.link` or custom gateways. |
 | 3 | Set Account Abstraction credentials | Provision a bundler and sponsored Paymaster (Alchemy Account Kit or equivalent). Stake and fund them according to ERC-4337 requirements. |
 | 4 | Configure relayer fallback | If AA is unavailable, create an OpenZeppelin Defender Relayer with contract/function allowlists and daily spend caps. |
-| 5 | Populate [`apps/onebox-static/config.js`](../apps/onebox-static/config.js) | Update planner/executor URLs, AA chainId, and bundler label. |
-| 6 | Generate web3.storage tokens | Issue per-origin tokens to team members; tokens stay in-browser. Consider revocation schedules. |
-| 7 | Pin the static bundle to IPFS | `web3 storage upload apps/onebox-static` or your preferred pinning workflow. |
-| 8 | Share gateway URL & monitor | Provide the gateway link to users, monitor orchestrator logs, and top-up the Paymaster balance. |
+| 5 | Configure orchestrator IPFS pinning | Set `PINNER_TOKEN` (and optional `PINNER_ENDPOINT`) so the server can pin metadata through web3.storage or your chosen provider. |
+| 6 | Populate [`apps/onebox-static/config.js`](../apps/onebox-static/config.js) | Update planner/executor URLs, AA chainId, and bundler label. |
+| 7 | Generate web3.storage tokens | Issue per-origin tokens to team members; tokens stay in-browser. Consider revocation schedules. |
+| 8 | Pin the static bundle to IPFS | `web3 storage upload apps/onebox-static` or your preferred pinning workflow. |
+| 9 | Share gateway URL & monitor | Provide the gateway link to users, monitor orchestrator logs, and top-up the Paymaster balance. |
 
 ### Safe & governance handover (optional)
 
