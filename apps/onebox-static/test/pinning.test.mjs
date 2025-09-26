@@ -54,7 +54,7 @@ test('submit_work ICS with result uri keeps other result metadata', () => {
   });
 });
 
-test('maybePinPayload normalises submission params in app.js', async () => {
+test('maybePinPayload normalises submission params in app.mjs', async () => {
   const maybePinPayload = createMaybePinPayload({
     deepClone: (value) => JSON.parse(JSON.stringify(value)),
     IPFS_GATEWAY,
