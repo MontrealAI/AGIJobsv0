@@ -1,48 +1,80 @@
-# AGI Jobs One‑Box (Static)
+# AGI Jobs One-Box (Static UI)
 
-A single-textbox, IPFS-hostable client that speaks to the AGI‑Alpha Meta-Agent to plan intents for AGI Jobs v2 and executes them gaslessly via account abstraction or a relayer. The UI is framework-free (pure HTML/CSS/ES modules) so it can be uploaded directly to IPFS without a build step.
+A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-Agent orchestrator and executes against the AGIJobsv0 v2 contracts. The bundle is IPFS-ready (no build step) and relies on standards-based ES modules.
 
 ## Features
 
-- **Planner integration** – Sends the ongoing conversation to the AGI‑Alpha orchestrator `/plan` endpoint and validates the returned Intent-Constraint Schema (ICS) locally before execution.
-- **Gasless execution** – Delegates to the orchestrator `/execute` endpoint which is expected to drive an ERC‑4337 AA path with a sponsored paymaster, falling back to a relayer when AA is unavailable.
-- **ENS-aware UX** – Exposes confirmations and receipts in human language; advanced metadata (transaction hash, block, gateway links) is surfaced behind a toggle and rendered as structured key/value rows so the blockchain stays hidden by default.
-- **IPFS support** – Users can attach job specs or submissions that are pinned client-side via web3.storage before execution so contracts only reference immutable IPFS URIs.
-- **No build tooling** – Drop the folder into any static host or pin it to IPFS; configuration lives in `config.mjs`.
+- Natural-language chat surface that calls `/plan` and `/execute` on the AGI-Alpha orchestrator.
+- Client-side ICS (Intent-Constraint Schema) validation and guardrails for the supported AGI Jobs intents.
+- Two-step confirmations for value-moving transactions.
+- Integrated IPFS pinning using [`web3.storage`](https://docs-beta.web3.storage/getting-started/w3up-client/).
+- Advanced receipts toggle exposing transaction hashes, gas sponsorship info, and raw ICS payloads.
+- File upload hooks for orchestrator-provided attachment prompts.
+- Neutral static hosting footprint suited for IPFS pinning.
 
-## Getting started
+## Quick start
 
-1. Ensure the AGI‑Alpha orchestrator façade is reachable (see `config.mjs` for the expected `/plan` and `/execute` endpoints) with CORS enabled for the origin that will serve this UI.
-2. Edit `config.mjs` if needed to point at your orchestrator, chain, or bundler configuration.
-3. (Optional) Update the fallback IPFS gateways list if you have preferred gateways for receipts.
-4. Pin the `apps/onebox-static/` directory to IPFS (e.g. using [`web3.storage`](https://docs-beta.web3.storage/getting-started/w3up-client/)).
-5. Share the gateway URL. The UI will prompt for natural language instructions, obtain the ICS plan, show confirmation prompts when value moves, and then surface human-readable receipts.
+1. Run or obtain an AGI-Alpha orchestrator endpoint (see [AGI-Alpha-Agent-v0](https://github.com/MontrealAI/AGI-Alpha-Agent-v0)). Ensure CORS allows the origin the static page will be served from.
+2. Update [`config.js`](./config.js) with your orchestrator URLs and desired Account Abstraction settings.
+3. (Optional) Prepare web3.storage API tokens for team members. Tokens are stored client-side in `localStorage`.
+4. Serve the directory locally for development, e.g.:
 
-## Runtime expectations
+   ```bash
+   npx serve apps/onebox-static
+   ```
 
-- `PLAN_URL` and `EXEC_URL` must be HTTPS endpoints exposed by the AGI‑Alpha orchestrator integration described in the sprint plan.
-- `/execute` should respond with Server-Sent Events (`data: {json}\n\n`) reporting status, confirmation, receipt, and error events. The UI will display status updates inline and stream advanced metadata into the Advanced panel.
-- The orchestrator must enforce contract/function allowlists, spend caps, simulation-before-send and other safeguards; the UI assumes those server-side protections exist and does not include privileged keys.
+5. Pin the folder to IPFS when ready for production. `web3.storage` CLI example:
 
-## IPFS uploads via web3.storage
+   ```bash
+   web3 storage upload apps/onebox-static
+   ```
 
-The UI expects a `web3.storage` token to be stored in `localStorage` for the current browser origin. Use the **Advanced** toggle to paste or clear this token. Uploaded JSON and files will return:
+   Record the CID for gateway access, e.g. `https://w3s.link/ipfs/<CID>/index.html`.
 
-- `cid`: the raw CID
-- `cidLink`: `ipfs://` URI
-- `gateways`: array of HTTP gateway URLs derived from `config.js`
+## Orchestrator contract configuration
 
-After a successful pin the chat feed posts a summary bubble listing each CID so the operator gets immediate confirmation. The
-Advanced panel simultaneously refreshes with clickable gateway links for every pinned attachment and generated JSON payload, ma
-king it easy to open the content from any configured gateway without waiting for downstream receipts.
+The orchestrator is expected to encapsulate the v2 contract ABIs and addresses and to expose two HTTPS endpoints:
 
-These values are inserted into the ICS payload before execution when `create_job` requests are missing a `uri` field and the user supplied text or attachments.
+- `POST /plan`: accepts `{ message, history }` and returns a validated ICS object (see `/docs` in the orchestrator).
+- `POST /execute`: accepts `{ ics, aa }` and streams Server-Sent Events describing status updates, confirmations, receipts, and errors.
 
-## Customising confirmations
+The client enforces the intent allowlist defined in [`lib.js`](./lib.js). Owner-only operations must be blocked server-side unless the orchestrator verifies the caller is authorised.
 
-When `ics.confirm` is `true`, the UI requires a positive confirmation (`YES`) before continuing. Summaries longer than 140 characters are truncated client-side to keep confirmations concise per the product requirements.
+## Account Abstraction & relayer notes
 
-## Development notes
+- `AA_MODE.enabled = true` enables the ERC-4337 path. The orchestrator should construct sponsored `UserOperation`s via an Account Abstraction SDK such as [Alchemy’s aa-sdk](https://github.com/alchemyplatform/aa-sdk).
+- If AA is unavailable, set `AA_MODE.enabled = false` and let the orchestrator use an alternative relayer (e.g. OpenZeppelin Defender). Receipts should still stream through `/execute`.
+- Always simulate transactions before final submission and enforce spend caps per ICS trace id.
 
-This app intentionally avoids bundlers. If you need local linting or testing you can point your preferred tooling at this directory, but no build artifacts are produced. Any changes should remain compatible with evergreen browsers supporting ES modules, async/await, Fetch streaming, and the File API.
+## ENS-aware messaging
 
+When the orchestrator returns ICS metadata indicating that an ENS identity is required, the UI will reflect this in the confirmation summary. Ensure the orchestrator uses plain-language guidance (≤140 characters) so the confirmation message stays concise.
+
+## Security considerations
+
+- Secrets such as Paymaster private keys must **not** be embedded in this static bundle. Restrict orchestrator endpoints with allowlists and throttling.
+- `web3.storage` tokens are retained in the user’s browser only. Encourage operators to issue per-origin scoped tokens.
+- The UI enforces a maximum history window (`HISTORY_LENGTH`) to limit prompt size; the orchestrator should also cap history depth.
+- Validate all ICS payloads server-side even if the client performs its own checks.
+
+## Testing suggestions
+
+- Use Playwright to drive the static page through the “micro-job” happy path described in the main product spec.
+- Mock the orchestrator endpoints locally for unit testing ICS validation and confirmation flows.
+
+## Deployment via IPFS
+
+1. Confirm accessibility of orchestrator URLs via HTTPS from the target gateway.
+2. Upload the contents of `apps/onebox-static` to IPFS (web3.storage, Pinata, or similar).
+3. Optionally configure DNSLink for a custom domain pointing to the CID.
+4. Monitor orchestrator logs and paymaster balances; rotate tokens regularly.
+
+## Resetting local state
+
+Use the browser console to clear cached settings:
+
+```js
+localStorage.removeItem("W3S_TOKEN");
+```
+
+This forces the token prompt to reappear on the next upload attempt.

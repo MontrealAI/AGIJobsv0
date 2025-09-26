@@ -2,76 +2,144 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AGI Jobs — One‑Box</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AGI Jobs — One-Box</title>
+  <meta name="description" content="Gasless, walletless one-box interface for AGI Jobs v0" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%231052d6'/%3E%3Ctext x='50' y='62' font-family='Arial' font-size='52' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
   <style>
     :root {
       color-scheme: light dark;
-      --bg: #f5f7fb;
-      --surface: #ffffff;
-      --surface-alt: #edf1ff;
-      --text: #1a2333;
-      --muted: #5a6577;
-      --primary: #1052d6;
-      --danger: #c62828;
-      --radius: 14px;
-      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --bg: #fafafa;
+      --bg-card: #ffffff;
+      --bg-card-me: #1052d6;
+      --bg-header: rgba(255,255,255,0.85);
+      --border: #e6e6e6;
+      --text: #1f1f1f;
+      --text-inverse: #ffffff;
+      --accent: #1052d6;
+      --radius: 12px;
+      --shadow: 0 12px 32px rgba(16,82,214,0.15);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --bg-card: rgba(15,23,42,0.75);
+        --bg-card-me: rgba(37,99,235,0.85);
+        --bg-header: rgba(15,23,42,0.9);
+        --border: rgba(148,163,184,0.35);
+        --text: #e2e8f0;
+        --text-inverse: #f8fafc;
+        --accent: #60a5fa;
+        --shadow: 0 20px 45px rgba(37,99,235,0.25);
+      }
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
+      font: 16px/1.45 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
       display: flex;
       flex-direction: column;
     }
     header, footer {
-      padding: 12px 20px;
-      background: var(--surface);
-      box-shadow: 0 1px 0 rgba(16, 82, 214, 0.06);
-      z-index: 1;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+      background: var(--bg-header);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    header strong { font-weight: 600; }
+    footer {
+      border-top: 1px solid var(--border);
+      border-bottom: none;
+      top: auto;
+      bottom: 0;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+    }
+    header span {
+      display: block;
+      font-size: 13px;
+      opacity: 0.75;
+    }
     #feed {
       flex: 1;
       overflow-y: auto;
-      padding: 18px 20px 96px;
+      padding: 18px;
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
     .msg {
-      max-width: min(720px, 92%);
-      padding: 14px 16px;
-      background: var(--surface);
+      max-width: min(72ch, 100%);
+      padding: 12px 16px;
+      background: var(--bg-card);
       border-radius: var(--radius);
-      box-shadow: 0 8px 24px rgba(13, 32, 82, 0.08);
-      border: 1px solid rgba(16, 82, 214, 0.08);
-      line-height: 1.5;
-      white-space: pre-line;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      align-self: flex-start;
+      white-space: pre-wrap;
     }
     .msg.me {
-      margin-left: auto;
-      background: var(--primary);
-      color: #fff;
-      box-shadow: 0 8px 24px rgba(16, 82, 214, 0.16);
-      border-color: transparent;
+      background: var(--bg-card-me);
+      color: var(--text-inverse);
+      border: none;
+      align-self: flex-end;
     }
     form {
-      position: sticky;
-      bottom: 0;
-      background: linear-gradient(180deg, rgba(245,247,251,0) 0%, var(--bg) 60%);
-      padding: 16px 20px 20px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: end;
+      display: flex;
+      gap: 10px;
+      padding: 12px 18px 20px;
+      background: var(--bg);
     }
-    label { font-size: 12px; color: var(--muted); }
+    form input[type="text"], form textarea {
+      flex: 1;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      font: inherit;
+      background: var(--bg-card);
+      color: inherit;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+    form input:focus, form textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(16,82,214,0.25);
+    }
+    button {
+      padding: 14px 22px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--accent);
+      color: var(--text-inverse);
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    button:active {
+      transform: scale(0.98);
+      box-shadow: 0 4px 18px rgba(16,82,214,0.25);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    #adv {
+      font-size: 13px;
+      color: rgba(15,23,42,0.7);
+      padding: 0 18px 18px;
+      display: none;
+      word-break: break-word;
+    }
+    body.adv-show #adv { display: block; }
     .sr-only {
       position: absolute;
       width: 1px;
@@ -79,210 +147,31 @@
       padding: 0;
       margin: -1px;
       overflow: hidden;
-      clip: rect(0, 0, 0, 0);
+      clip: rect(0,0,0,0);
       border: 0;
     }
-    textarea, input[type="file"] {
-      width: 100%;
-      font: inherit;
-      padding: 12px 14px;
-      border-radius: var(--radius);
-      border: 1px solid rgba(16, 82, 214, 0.25);
-      background: var(--surface);
-      resize: vertical;
-      min-height: 68px;
-    }
-    textarea:focus, input[type="file"]:focus-visible {
-      outline: 2px solid rgba(16,82,214,0.45);
-      outline-offset: 2px;
-    }
-    button {
-      padding: 14px 22px;
-      border-radius: var(--radius);
-      border: none;
-      font-weight: 600;
-      background: var(--primary);
-      color: #fff;
-      cursor: pointer;
-      transition: transform 0.12s ease, box-shadow 0.12s ease;
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-    button:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 18px rgba(16, 82, 214, 0.26);
-    }
-    .hint {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 6px;
-    }
-    #advanced-panel {
-      display: none;
-      border-top: 1px solid rgba(16, 82, 214, 0.12);
-      padding: 14px 20px;
-      background: var(--surface);
-      font-size: 13px;
-      color: var(--muted);
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-    #advanced-panel .card {
-      border: 1px solid rgba(16, 82, 214, 0.12);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      margin-bottom: 12px;
-      background: var(--surface-alt);
-    }
-    #advanced-panel .card h2 {
-      margin: 0 0 8px;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-    }
-    #advanced-panel .status {
-      display: block;
-      font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-      font-size: 12px;
-      color: var(--muted);
-      background: rgba(16,82,214,0.08);
-      padding: 8px 10px;
-      border-radius: 10px;
-      word-break: break-word;
-      margin-top: 6px;
-    }
-    #advanced-panel .pin-summary {
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
-    #advanced-panel .pin-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    #advanced-panel .pin-list li {
-      border: 1px solid rgba(16,82,214,0.16);
-      border-radius: 10px;
-      padding: 8px 10px;
-      background: rgba(16,82,214,0.05);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    #advanced-panel .pin-label {
-      font-weight: 500;
-      color: var(--text);
-    }
-    #advanced-panel .pin-cid code {
-      background: rgba(16,82,214,0.08);
-      padding: 4px 6px;
-      border-radius: 6px;
-      font-size: 12px;
-    }
-    #advanced-panel .pin-gateways {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-    #advanced-panel .pin-gateways a {
-      font-size: 12px;
-      color: var(--primary);
-    }
-    #advanced-panel .advanced-kv {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    #advanced-panel .advanced-kv-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-      font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-      font-size: 12px;
-    }
-    #advanced-panel .advanced-kv-key {
-      font-weight: 600;
-      color: var(--text);
-      min-width: 96px;
-    }
-    #advanced-panel .advanced-kv-value {
-      flex: 1;
-    }
-    #advanced-panel .advanced-kv-value code {
-      background: rgba(16,82,214,0.08);
-      padding: 4px 6px;
-      border-radius: 6px;
-      display: inline-block;
-    }
-    #advanced-panel .advanced-kv-value pre {
-      margin: 0;
-      padding: 6px 8px;
-      border-radius: 8px;
-      background: rgba(16,82,214,0.08);
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    #advanced-panel button.inline {
-      padding: 8px 12px;
-      font-size: 12px;
-      border-radius: 10px;
-      background: transparent;
-      border: 1px solid rgba(16,82,214,0.45);
-      color: var(--primary);
-      box-shadow: none;
-    }
-    #advanced-panel button.inline:hover {
-      background: rgba(16, 82, 214, 0.08);
-    }
-    body.advanced #advanced-panel { display: block; }
-    footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-    }
-    footer a {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    @media (max-width: 640px) {
-      form {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 600px) {
+      header, footer { padding: 12px 14px; }
+      form { flex-direction: column; }
       button { width: 100%; }
     }
   </style>
 </head>
 <body>
   <header>
-    <strong>AGI Jobs — One‑Box</strong>
-    <div class="hint">Natural language control • Gasless • ENS aware • Powered by AGI‑Alpha</div>
+    <h1>AGI Jobs — One-Box</h1>
+    <span>Gasless, walletless Web3 interface powered by the AGI-Alpha orchestrator.</span>
   </header>
-  <main id="feed" role="log" aria-live="polite" aria-label="Conversation feed"></main>
-  <form id="composer">
-    <label for="question" class="sr-only">Describe what you want to do</label>
-    <textarea id="question" placeholder='Ex: "Post a labeling job for 500 images, reward 50 AGIALPHA, due in 7 days"' aria-label="Describe what you want to do" required></textarea>
-    <div>
-      <label for="attachment">Attach (optional)</label>
-      <input id="attachment" type="file" aria-label="Attachment" multiple />
-      <button type="submit" id="send">Send</button>
-    </div>
+  <main id="feed" role="log" aria-live="polite"></main>
+  <form id="chat-form">
+    <label class="sr-only" for="chat-input">Request</label>
+    <input id="chat-input" type="text" placeholder='e.g., "Post a job: 500 images, 50 AGIALPHA, 7 days"' autocomplete="off" />
+    <button id="send-btn" type="submit">Send</button>
   </form>
-  <section id="advanced-panel" aria-live="polite"></section>
+  <section id="adv" aria-live="polite"></section>
   <footer>
-    <span>Need a web3.storage token? Paste it in Advanced.</span>
-    <a id="advanced-toggle" href="#">Advanced</a>
+    <a id="toggle-advanced" href="#">Advanced</a>
   </footer>
-  <script type="module" src="./app.mjs"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
