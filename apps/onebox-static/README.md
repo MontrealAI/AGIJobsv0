@@ -6,7 +6,7 @@ A single-textbox, IPFS-hostable client that speaks to the AGI‑Alpha Meta-Agent
 
 - **Planner integration** – Sends the ongoing conversation to the AGI‑Alpha orchestrator `/plan` endpoint and validates the returned Intent-Constraint Schema (ICS) locally before execution.
 - **Gasless execution** – Delegates to the orchestrator `/execute` endpoint which is expected to drive an ERC‑4337 AA path with a sponsored paymaster, falling back to a relayer when AA is unavailable.
-- **ENS-aware UX** – Exposes confirmations and receipts in human language; advanced metadata (transaction hash, block, gateway links) is surfaced behind a toggle so the blockchain stays hidden by default.
+- **ENS-aware UX** – Exposes confirmations and receipts in human language; advanced metadata (transaction hash, block, gateway links) is surfaced behind a toggle and rendered as structured key/value rows so the blockchain stays hidden by default.
 - **IPFS support** – Users can attach job specs or submissions that are pinned client-side via web3.storage before execution so contracts only reference immutable IPFS URIs.
 - **No build tooling** – Drop the folder into any static host or pin it to IPFS; configuration lives in `config.mjs`.
 

@@ -154,6 +154,82 @@
       word-break: break-word;
       margin-top: 6px;
     }
+    #advanced-panel .pin-summary {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    #advanced-panel .pin-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #advanced-panel .pin-list li {
+      border: 1px solid rgba(16,82,214,0.16);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: rgba(16,82,214,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    #advanced-panel .pin-label {
+      font-weight: 500;
+      color: var(--text);
+    }
+    #advanced-panel .pin-cid code {
+      background: rgba(16,82,214,0.08);
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    #advanced-panel .pin-gateways {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    #advanced-panel .pin-gateways a {
+      font-size: 12px;
+      color: var(--primary);
+    }
+    #advanced-panel .advanced-kv {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #advanced-panel .advanced-kv-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      font-size: 12px;
+    }
+    #advanced-panel .advanced-kv-key {
+      font-weight: 600;
+      color: var(--text);
+      min-width: 96px;
+    }
+    #advanced-panel .advanced-kv-value {
+      flex: 1;
+    }
+    #advanced-panel .advanced-kv-value code {
+      background: rgba(16,82,214,0.08);
+      padding: 4px 6px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    #advanced-panel .advanced-kv-value pre {
+      margin: 0;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(16,82,214,0.08);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
     #advanced-panel button.inline {
       padding: 8px 12px;
       font-size: 12px;
