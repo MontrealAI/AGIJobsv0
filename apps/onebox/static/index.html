@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGI Jobs — One-Box</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="header">
+        <h1>AGI Jobs — One-Box</h1>
+        <span class="badge">Walletless by default</span>
+        <span id="mode" class="badge">Mode: Guest</span>
+      </header>
+
+      <section id="chat" class="chat" role="log" aria-live="polite">
+        <div class="msg m-assistant">
+          Hi! Tell me what you need and I’ll handle the rest.
+          <p class="m-note">Try: Post a labeling job for 500 images, pay 5 AGIALPHA, 7 days.</p>
+        </div>
+      </section>
+
+      <section class="input" aria-label="Interaction controls">
+        <label class="sr-only" for="box">Your request</label>
+        <input id="box" type="text" placeholder="Type here… Press Enter to send" autocomplete="off" />
+        <button id="send" type="button">Send</button>
+        <button id="expert" type="button" class="secondary" title="Toggle Expert Mode (wallet signing)">
+          Expert
+        </button>
+      </section>
+
+      <section class="row small" aria-label="Example prompts">
+        <button class="pill" type="button" data-example="Create a research task, 2 AGIALPHA, 48h">
+          Create a research task, 2 AGIALPHA, 48h
+        </button>
+        <button class="pill" type="button" data-example="Finalize my last job">Finalize my last job</button>
+        <button class="pill" type="button" data-example="What’s the status of job 123?">What’s the status of job 123?</button>
+      </section>
+
+      <hr />
+      <p class="small">
+        This demo can run without a backend. When connected, it talks to the AGI-Alpha Orchestrator
+        (<span class="kbd">/onebox/plan</span>, <span class="kbd">/onebox/execute</span>, <span class="kbd">/onebox/status</span>).
+      </p>
+    </div>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
