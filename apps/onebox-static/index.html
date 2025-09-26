@@ -7,201 +7,229 @@
   <style>
     :root {
       color-scheme: light dark;
-      --bg: #f5f7fb;
-      --fg: #0b1b3f;
-      --accent: #0f4cdd;
-      --accent-fg: #ffffff;
-      --border: rgba(15, 76, 221, 0.12);
     }
-    * { box-sizing: border-box; }
     body {
       margin: 0;
+      font: 16px/1.5 "Inter", "Segoe UI", system-ui, sans-serif;
+      background: #f5f7fb;
+      color: #141c2f;
       min-height: 100vh;
-      font: 16px/1.5 "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
-      background: var(--bg);
-      color: var(--fg);
       display: flex;
       flex-direction: column;
     }
-    header, footer {
-      padding: 12px 18px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.82);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 2;
+    header,
+    footer {
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(20, 28, 47, 0.08);
     }
     footer {
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(20, 28, 47, 0.08);
       border-bottom: none;
-      bottom: 0;
-      top: auto;
     }
-    header h1 {
-      margin: 0;
-      font-size: 1.05rem;
+    header b {
       font-weight: 600;
-    }
-    header p {
-      margin: 4px 0 0;
-      font-size: 0.9rem;
-      color: rgba(11, 27, 63, 0.7);
     }
     #feed {
       flex: 1;
       overflow-y: auto;
-      padding: 12px clamp(12px, 4vw, 24px);
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
     .msg {
-      max-width: min(76ch, 92%);
+      max-width: 72ch;
       padding: 12px 14px;
-      border-radius: 14px;
-      background: #ffffff;
-      border: 1px solid var(--border);
-      box-shadow: 0 4px 16px rgba(15, 76, 221, 0.08);
-      transition: transform 120ms ease;
-      white-space: pre-wrap;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(20, 28, 47, 0.08);
+      background: #fff;
+      align-self: flex-start;
       word-break: break-word;
     }
     .msg.me {
       margin-left: auto;
-      background: var(--accent);
-      color: var(--accent-fg);
-      border-color: transparent;
+      background: linear-gradient(120deg, #1052d6, #4b8aff);
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(16, 82, 214, 0.25);
     }
     form {
       display: flex;
-      gap: 8px;
-      padding: 12px clamp(12px, 4vw, 24px) 16px;
-      border-top: 1px solid var(--border);
+      gap: 10px;
+      padding: 12px 16px 20px;
       background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(20, 28, 47, 0.08);
     }
-    input[type="text"], input[type="file"] {
+    #attachment-name {
+      font-size: 13px;
+      color: rgba(20, 28, 47, 0.7);
+      padding: 0 16px 8px;
+      min-height: 1.4em;
+    }
+    input[type="text"] {
       flex: 1;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 1rem;
-      background: #fff;
-      color: inherit;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(20, 28, 47, 0.12);
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      transition: border 0.2s ease;
     }
-    input[type="file"] {
-      flex: unset;
-      max-width: 200px;
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #1052d6;
+      box-shadow: 0 0 0 3px rgba(16, 82, 214, 0.15);
     }
     button {
-      padding: 12px 18px;
-      border-radius: 12px;
+      padding: 14px 20px;
+      border-radius: 14px;
       border: none;
-      background: var(--accent);
-      color: var(--accent-fg);
+      background: #1052d6;
+      color: #fff;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 120ms ease, box-shadow 120ms ease;
-      box-shadow: 0 8px 20px rgba(15, 76, 221, 0.22);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    #attach-button {
+      width: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      background: rgba(16, 82, 214, 0.12);
+      color: #1052d6;
+      box-shadow: none;
+    }
+    #attach-button:hover:not(:disabled) {
+      transform: none;
+      box-shadow: none;
+      background: rgba(16, 82, 214, 0.2);
     }
     button:disabled {
-      opacity: 0.6;
-      cursor: wait;
-      box-shadow: none;
+      cursor: progress;
+      opacity: 0.7;
     }
-    button:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(16, 82, 214, 0.25);
     }
-    #advanced-panel {
+    #adv {
+      font-size: 13px;
+      color: rgba(20, 28, 47, 0.75);
+      padding: 0 16px 12px;
       display: none;
+      white-space: pre-line;
     }
-    body.advanced #advanced-panel {
-      display: flex;
-      font-size: 0.85rem;
-      padding: 0 clamp(12px, 4vw, 24px) 12px;
-      color: rgba(11, 27, 63, 0.75);
-      flex-direction: column;
-      gap: 12px;
+    .adv-show #adv {
+      display: block;
     }
-    body.advanced #advanced-panel .card {
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid var(--border);
+    #adv h2 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #0b2b5a;
+    }
+    #adv pre {
+      background: rgba(16, 82, 214, 0.08);
       border-radius: 12px;
-      padding: 12px 14px;
-      box-shadow: 0 8px 24px rgba(15, 76, 221, 0.12);
+      padding: 12px;
+      font-family: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace;
+      max-height: 200px;
+      overflow: auto;
+      white-space: pre-wrap;
     }
-    body.advanced #advanced-panel .status {
-      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      font-size: 0.75rem;
-      word-break: break-all;
-      color: rgba(11, 27, 63, 0.7);
+    .adv-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     }
-    body.advanced #advanced-panel button.inline {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      font-size: 0.8rem;
-      box-shadow: none;
+    #w3s-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    body.advanced #advanced-panel ul {
-      margin: 8px 0 0;
-      padding-left: 18px;
+    #w3s-form input {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(20, 28, 47, 0.2);
+      font-size: 14px;
     }
-    body.advanced #advanced-panel li {
-      margin-bottom: 4px;
+    #w3s-form button {
+      align-self: flex-start;
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+    #w3s-status {
+      margin: 0;
+      min-height: 1.4em;
     }
     footer a {
-      color: var(--accent);
+      color: #1052d6;
       text-decoration: none;
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
     }
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: rgba(15, 76, 221, 0.08);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
-    @media (max-width: 600px) {
-      header, footer {
-        padding: 10px 14px;
-      }
+    @media (max-width: 640px) {
+      header,
+      footer,
       form {
-        flex-direction: column;
-        padding: 10px 14px 14px;
+        padding-left: 12px;
+        padding-right: 12px;
       }
-      input[type="file"] {
-        max-width: 100%;
+      input[type="text"] {
+        font-size: 15px;
       }
       button {
-        width: 100%;
+        padding: 12px 18px;
       }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>AGI Jobs — One-Box <span class="chip">Gasless</span></h1>
-    <p aria-live="polite">Natural language planning with Meta-Agentic orchestration.</p>
+    <b>AGI Jobs</b> — One-Box (gasless, walletless)
   </header>
-  <main id="feed" role="log" aria-live="polite"></main>
-  <form id="composer" aria-label="Chat input">
-    <input id="question" type="text" placeholder="Post a job for 500 images rewarded 50 AGIALPHA" aria-label="Enter your request" required />
-    <input id="attachment" type="file" aria-label="Attach supporting file" />
-    <button id="send" type="submit">Send</button>
+  <div id="feed" role="log" aria-live="polite"></div>
+  <form id="prompt-form">
+    <input id="prompt-file" type="file" hidden />
+    <label class="sr-only" for="prompt-input">Request</label>
+    <button id="attach-button" type="button" aria-label="Attach a file">📎</button>
+    <input id="prompt-input" type="text" placeholder='e.g., "Post a job: 500 images, 50 AGIALPHA, 7 days"' aria-label="Type your request" autocomplete="off" />
+    <button id="prompt-submit" type="submit">Send</button>
   </form>
-  <section id="advanced-panel" aria-live="polite"></section>
+  <div id="attachment-name" aria-live="polite"></div>
+  <div id="adv" aria-live="polite">
+    <div class="adv-grid">
+      <section>
+        <h2>Execution details</h2>
+        <pre id="adv-log" aria-live="polite"></pre>
+      </section>
+      <section>
+        <h2>web3.storage token</h2>
+        <form id="w3s-form">
+          <label class="sr-only" for="w3s-token">web3.storage API token</label>
+          <input id="w3s-token" type="text" placeholder="Paste token" autocomplete="off" />
+          <button type="submit">Save token</button>
+          <p id="w3s-status" role="status"></p>
+        </form>
+      </section>
+    </div>
+  </div>
   <footer>
-    <a id="advanced-toggle" href="#">Toggle advanced details</a>
+    <a href="#" id="toggle-advanced">Advanced</a>
   </footer>
-  <script type="module" src="./app.mjs"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
