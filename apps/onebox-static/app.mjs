@@ -5,6 +5,9 @@ import {
   IPFS_TOKEN_STORAGE_KEY,
   AA_MODE,
 } from "./config.mjs";
+import { drainSSEBuffer, sanitizeSSEChunk } from "./sse-parser.mjs";
+
+export { drainSSEBuffer, sanitizeSSEChunk } from "./sse-parser.mjs";
 import {
   validateICS,
   needsAttachmentPin,
@@ -198,19 +201,6 @@ async function maybePinAttachments(ics, file) {
   return ics;
 }
 
-export function drainSSEBuffer(buffer, onChunk) {
-  let boundary = buffer.indexOf("\n\n");
-  while (boundary !== -1) {
-    const chunk = buffer.slice(0, boundary).trim();
-    if (chunk) {
-      onChunk(chunk);
-    }
-    buffer = buffer.slice(boundary + 2);
-    boundary = buffer.indexOf("\n\n");
-  }
-  return buffer;
-}
-
 async function executeICS(ics) {
   const response = await fetch(EXEC_URL, {
     method: "POST",
@@ -225,7 +215,7 @@ async function executeICS(ics) {
   let buffer = "";
   const handleChunk = (chunk) => {
     try {
-      const normalized = chunk.startsWith("data:") ? chunk.slice(5).trim() : chunk;
+      const normalized = sanitizeSSEChunk(chunk);
       if (!normalized) {
         return;
       }
@@ -246,7 +236,6 @@ async function executeICS(ics) {
       buffer += decoder.decode(value, { stream: !done });
     }
     if (buffer) {
-      buffer = buffer.replace(/\r\n/g, "\n");
       buffer = drainSSEBuffer(buffer, handleChunk);
     }
     if (done) break;
