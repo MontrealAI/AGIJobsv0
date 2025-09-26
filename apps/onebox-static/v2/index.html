@@ -41,6 +41,15 @@
           <span class="kbd">/onebox/execute</span>, <span class="kbd">/onebox/status</span>). Configure the endpoint via the
           browser console: <span class="kbd">localStorage.ORCH_URL = "https://your-orchestrator.example"</span>.
         </p>
+
+        <section class="status" aria-live="polite">
+          <div class="status-header">
+            <h2>Recent activity</h2>
+            <button id="status-refresh" type="button" class="secondary">Refresh</button>
+          </div>
+          <div id="status-list" class="status-list" role="list"></div>
+          <p id="status-note" class="small"></p>
+        </section>
       </main>
     </div>
 
