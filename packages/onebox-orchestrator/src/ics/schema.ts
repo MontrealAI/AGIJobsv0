@@ -13,15 +13,15 @@ export const INTENT_VALUES = [
 ] as const;
 
 const amountSchema = z
-  .string()
-  .or(z.number())
-  .or(z.bigint())
-  .transform((value) => (typeof value === 'string' ? value : value.toString()))
+  .union([z.string(), z.number(), z.bigint()])
+  .transform((value): string =>
+    typeof value === 'string' ? value : value.toString()
+  )
   .pipe(
     z
       .string()
       .trim()
-      .refine((value) => value.length > 0, {
+      .refine((value: string): boolean => value.length > 0, {
         message: 'Amount must not be empty',
       })
   );
