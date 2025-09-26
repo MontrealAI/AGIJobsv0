@@ -219,15 +219,19 @@ GET  /events/subscribe?jobId=... -> SSE stream of indexed events
 
 ## 7) CI/CD (all green or it doesn’t merge)
 
-`.github/workflows/onebox.yml`
+`.github/workflows/onebox-ci.yml`
 
-* **Jobs**
+* **Jobs** (current repo)
 
-  * `lint`: ESLint/Prettier for TS; Ruff/Black for Python.
-  * `build`: `npm ci && npm run build` (app, sdk, chain‑adapter), `pip install -r requirements.lock && pytest -q` (alpha‑bridge).
-  * `contracts`: `npm run compile`, `npm run test`, **`npm run verify:agialpha -- --skip-onchain`** (ensures `config/agialpha.json` ↔ constants). ([GitHub][1])
-  * `e2e`: Playwright—Anvil fork + seeded addresses; run **micro‑job** scenario end‑to‑end including burn delta and ENS negative case.
-  * `security`: `npm audit --audit-level=high`, `bandit -q -r services/alpha-bridge`, `gitleaks`, `actionlint`.
+  * `build`: installs One-Box and orchestrator dependencies, then runs both package builds and the orchestrator typecheck.
+  * `smoke-tests`: rebuilds orchestrator output and performs a minimal runtime import to guarantee the bundle can be required.
+
+* **Planned extensions** (add explicit jobs in the workflow when we introduce them)
+
+  * `lint` (ESLint/Prettier for TS; Ruff/Black for Python).
+  * `contracts` (`npm run compile`, `npm run test`, **`npm run verify:agialpha -- --skip-onchain`** to ensure `config/agialpha.json` ↔ constants). ([GitHub][1])
+  * `e2e` (Playwright—Anvil fork + seeded addresses; run **micro-job** scenario end-to-end including burn delta and ENS negative case).
+  * `security` (`npm audit --audit-level=high`, `bandit -q -r services/alpha-bridge`, `gitleaks`, `actionlint`).
 
 **Blocking rules**:
 
@@ -278,7 +282,7 @@ GET  /events/subscribe?jobId=... -> SSE stream of indexed events
 * `packages/orchestrator/` – ICS planner, tool router, and TypeScript wrappers for AGIJobs v2 modules.
 * `docs/onebox-sprint.md` – this file.
 * `docs/drill/` – artifacts from the micro‑job demonstration (screens, logs, totalSupply diffs).
-* CI workflow(s): `.github/workflows/onebox.yml` (build/test/e2e/security) + cache.
+* CI workflow(s): `.github/workflows/onebox-ci.yml` (current `build` + `smoke-tests`; extend with lint/e2e/security when added) + cache.
 * README patch: “Deployed Addresses” table, Etherscan links, and “Try the One‑Box” URL.
 
 ---
