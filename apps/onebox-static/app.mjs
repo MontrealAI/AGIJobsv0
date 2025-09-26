@@ -41,6 +41,61 @@ let history = [];
 let confirmCallback = null;
 let advancedLogEl = null;
 
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#39;";
+      default:
+        return char;
+    }
+  });
+}
+
+function formatGatewayLink(url, index) {
+  if (!url) return null;
+  let href = String(url).trim();
+  if (!href) return null;
+  try {
+    const parsed = new URL(href);
+    const label = parsed.hostname + parsed.pathname;
+    return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+  } catch (err) {
+    return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(href)}</a>`;
+  }
+}
+
+function formatAdvancedPin(entry) {
+  if (!entry || typeof entry !== "object") return "";
+  const label = entry.label ? escapeHtml(entry.label) : "Pinned CID";
+  const cid = entry.cid ? `<code>${escapeHtml(entry.cid)}</code>` : "";
+  const gateways = Array.isArray(entry.gateways) ? entry.gateways.map(formatGatewayLink).filter(Boolean) : [];
+  const gatewayHtml = gateways.length
+    ? `<div class="pin-gateways">${gateways.join(" ")}</div>`
+    : "";
+  return `<li><div class="pin-label">${label}</div><div class="pin-cid">${cid}</div>${gatewayHtml}</li>`;
+}
+
+function formatPinnedSummaryMessage(entries) {
+  if (!Array.isArray(entries) || !entries.length) return "";
+  const header = `📦 Pinned ${entries.length} item${entries.length === 1 ? "" : "s"} to IPFS:`;
+  const body = entries
+    .map((entry) => {
+      const label = entry.label ? entry.label : "Pinned item";
+      return `• ${label}: ${entry.cid}`;
+    })
+    .join("\n");
+  return `${header}\n${body}`;
+}
+
 function gatewayUrlsFor(cid) {
   if (!cid) return [];
   return IPFS_GATEWAYS.map((base) => {
@@ -92,13 +147,31 @@ if (hasDocument) {
   renderAdvancedPanel();
 }
 
-function setAdvancedLog(text) {
+function setAdvancedLog(data) {
   if (!advancedPanel) return;
   if (!advancedLogEl) {
     renderAdvancedPanel();
   }
   if (advancedLogEl) {
-    advancedLogEl.textContent = text || "—";
+    if (!data) {
+      advancedLogEl.textContent = "—";
+      return;
+    }
+
+    if (Array.isArray(data?.pins)) {
+      const items = data.pins.map(formatAdvancedPin).filter(Boolean).join("");
+      if (items) {
+        advancedLogEl.innerHTML = `<div class="pin-summary">Pinned items</div><ul class="pin-list">${items}</ul>`;
+        return;
+      }
+    }
+
+    if (typeof data === "string") {
+      advancedLogEl.textContent = data;
+      return;
+    }
+
+    advancedLogEl.textContent = String(data);
   }
 }
 
@@ -204,23 +277,42 @@ async function maybePinAttachments(ics, files) {
   }
 
   const pinnedFiles = [];
+  const pinSummaries = [];
   for (const file of attachments) {
     const result = await pinBlob(IPFS_ENDPOINT, token, file);
+    const gateways = gatewayUrlsFor(result.cid);
     pinnedFiles.push({
       cid: result.cid,
       uri: `ipfs://${result.cid}`,
-      gateways: gatewayUrlsFor(result.cid),
+      gateways,
       name: typeof file?.name === "string" ? file.name : undefined,
       size: typeof file?.size === "number" ? file.size : undefined,
+    });
+    pinSummaries.push({
+      label: file?.name ? `Attachment (${file.name})` : "Attachment",
+      cid: result.cid,
+      gateways,
     });
   }
 
   const prepared = prepareJobPayload(ics, pinnedFiles);
   if (!prepared || !prepared.payload) {
+    if (pinSummaries.length) {
+      pushMessage("assistant", formatPinnedSummaryMessage(pinSummaries));
+      setAdvancedLog({ pins: pinSummaries });
+    }
     return ics;
   }
   const { cid } = await pinJSON(IPFS_ENDPOINT, token, prepared.payload);
-  prepared.assign({ cid, gateways: gatewayUrlsFor(cid) });
+  const payloadGateways = gatewayUrlsFor(cid);
+  prepared.assign({ cid, gateways: payloadGateways });
+  pinSummaries.push({
+    label: `${prepared.payload.kind || "Payload"} JSON`,
+    cid,
+    gateways: payloadGateways,
+  });
+  pushMessage("assistant", formatPinnedSummaryMessage(pinSummaries));
+  setAdvancedLog({ pins: pinSummaries });
   return ics;
 }
 

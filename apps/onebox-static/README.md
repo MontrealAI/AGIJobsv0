@@ -32,6 +32,10 @@ The UI expects a `web3.storage` token to be stored in `localStorage` for the cur
 - `cidLink`: `ipfs://` URI
 - `gateways`: array of HTTP gateway URLs derived from `config.js`
 
+After a successful pin the chat feed posts a summary bubble listing each CID so the operator gets immediate confirmation. The
+Advanced panel simultaneously refreshes with clickable gateway links for every pinned attachment and generated JSON payload, ma
+king it easy to open the content from any configured gateway without waiting for downstream receipts.
+
 These values are inserted into the ICS payload before execution when `create_job` requests are missing a `uri` field and the user supplied text or attachments.
 
 ## Customising confirmations
