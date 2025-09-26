@@ -38,7 +38,7 @@
 
 * **Path**:
 
-  * `packages/onebox-sdk` (TS SDK; generated ABIs; typed wrappers for JobRegistry/StakeManager/etc.)
+  * `packages/orchestrator` (TS ICS planner; tool router; generated ABIs + typed wrappers for JobRegistry/StakeManager/etc.)
   * `services/chain-adapter` (Node/TypeScript HTTP microservice that executes on‑chain calls, simulates with `callStatic`, and submits via sponsor/4337)
   * `services/alpha-bridge` (Python façade talking to AGI‑Alpha‑Agent‑v0; rate‑limited, stateless JWT auth) ([GitHub][3])
 * **Behavior**
@@ -105,12 +105,12 @@ sequenceDiagram
   * `apps/onebox` (Next.js 14 / App Router) scaffold with CSR chat pane, system messages, file uploads.
   * `services/chain-adapter` (Node 20, Fastify) with routes: `/simulate`, `/execute`, `/estimate`, `/events/subscribe`.
   * `services/alpha-bridge` (Python 3.11, FastAPI) proxy to AGI‑Alpha‑Agent‑v0 `/:plan`, `/:tools` endpoints; add JWT guard. ([GitHub][3])
-* **ABIs & SDK**
+* **Orchestrator package**
 
-  * `packages/onebox-sdk`: generate type‑safe clients from compiled ABIs; import addresses from `docs/deployment-addresses.json` and fall back to per‑network `.env`.
+  * `packages/orchestrator`: extend ICS planner + tool routing with generated ABIs, contract factories, and config loaders from `docs/deployment-addresses.json`, falling back to per‑network `.env`.
 * **Acceptance**
 
-  * CI builds all 3 packages; SDK exposes `JobRegistry`, `StakeManager`, `ValidationModule`, `DisputeModule` wrappers.
+  * CI builds all 3 packages; orchestrator exports `JobRegistry`, `StakeManager`, `ValidationModule`, `DisputeModule` tool adapters.
 
 ### Day 3–4 — **ICS/Plan protocols & simulations**
 
@@ -203,7 +203,7 @@ GET  /events/subscribe?jobId=... -> SSE stream of indexed events
 ```
 
 * Allowed tools: `createJob`, `approveAndCreateJob`, `depositStake`, `applyForJob`, `submitWork`, `commitValidation`, `revealValidation`, `finalize`, `raiseDispute`, `resolveDispute`, owner setters.
-* Reads ABIs/addresses from `packages/onebox-sdk` (built from repo contracts).
+* Reads ABIs/addresses from `packages/orchestrator` (built from repo contracts).
 
 ---
 
@@ -275,7 +275,7 @@ GET  /events/subscribe?jobId=... -> SSE stream of indexed events
 * `apps/onebox/` – Next.js app (chat UI, Owner Console, drill helper).
 * `services/chain-adapter/` – Fastify service with 4337 integration and “simulate → execute” contract runner.
 * `services/alpha-bridge/` – FastAPI service proxying AGI‑Alpha‑Agent‑v0 planning endpoints. ([GitHub][3])
-* `packages/onebox-sdk/` – Type‑safe TS wrappers for AGIJobs v2 modules.
+* `packages/orchestrator/` – ICS planner, tool router, and TypeScript wrappers for AGIJobs v2 modules.
 * `docs/onebox-sprint.md` – this file.
 * `docs/drill/` – artifacts from the micro‑job demonstration (screens, logs, totalSupply diffs).
 * CI workflow(s): `.github/workflows/onebox.yml` (build/test/e2e/security) + cache.
