@@ -10,6 +10,8 @@ This document covers how the single-input One-Box interface interacts with the A
 
 Guest mode routes execution through the orchestrator relayer. Expert mode surfaces calldata so power users can sign with their own wallets (e.g. through viem/Web3Modal).
 
+The static bundle also exposes runtime configuration controls: operators can change the orchestrator base URL/prefix from the **Advanced** panel or via `?orchestrator=...&oneboxPrefix=...` query parameters. When unset, the client drops into a demo mode that simulates planner/executor responses without hitting the blockchain.
+
 ## API surface (FastAPI stubs)
 
 Add the following endpoints to `AGI-Alpha-Agent-v0`:

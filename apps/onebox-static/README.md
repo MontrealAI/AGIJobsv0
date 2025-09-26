@@ -11,6 +11,7 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
 - Advanced receipts toggle exposing transaction hashes, gas sponsorship info, and raw ICS payloads.
 - Drag-and-drop attachment support (plus orchestrator prompts) with client-side IPFS pinning backed by `web3.storage`.
 - Live job status board that polls `/onebox/status` for recent updates and renders walletless receipts.
+- Runtime-configurable orchestrator endpoint with a demo-mode fallback for offline testing.
 - Human-readable error dictionary that turns common revert strings and HTTP failures into actionable guidance.
 - Neutral static hosting footprint suited for IPFS pinning.
 
@@ -32,6 +33,12 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
    ```
 
    Record the CID for gateway access, e.g. `https://w3s.link/ipfs/<CID>/index.html`.
+
+## Runtime configuration & demo mode
+
+- **Advanced panel overrides**: Click the new **Orchestrator** controls to set the base URL (e.g. `https://alpha.example.com`) and prefix (default `/onebox`). Values are stored in `localStorage` under `AGIJOBS_ONEBOX_ORCHESTRATOR_BASE` / `_PREFIX`.
+- **URL parameters**: Append `?orchestrator=https://alpha.example.com&oneboxPrefix=/onebox` to the page URL to preconfigure the client. Use `?orchestrator=demo` to clear overrides and return to demo mode.
+- **Demo mode**: When no orchestrator is configured the planner/executor simulate responses locally. The chat will display warnings (no blockchain calls are made) until a live endpoint is supplied. Status polling is disabled in this mode.
 
 ## Orchestrator contract configuration
 
