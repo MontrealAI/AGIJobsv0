@@ -2,6 +2,7 @@ import os
 import sys
 import types
 import unittest
+from unittest import mock
 
 os.environ.setdefault("RPC_URL", "http://localhost:8545")
 
@@ -256,7 +257,16 @@ except ModuleNotFoundError:
 
     sys.modules["pydantic"] = types.SimpleNamespace(BaseModel=BaseModel, Field=Field)
 
-from routes.onebox import PlanRequest, plan  # noqa: E402  pylint: disable=wrong-import-position
+from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
+    ExecuteRequest,
+    JobIntent,
+    Payload,
+    PlanRequest,
+    _calculate_deadline_timestamp,
+    _UINT64_MAX,
+    execute,
+    plan,
+)
 
 
 class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
@@ -285,6 +295,49 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.intent.action, "finalize_job")
         self.assertEqual(response.intent.payload.jobId, 42)
         self.assertIn("detected job finalization request", response.summary.lower())
+
+
+class DeadlineComputationTests(unittest.TestCase):
+    def test_calculate_deadline_uses_epoch_seconds(self) -> None:
+        with mock.patch("routes.onebox.time.time", return_value=1_000_000):
+            deadline = _calculate_deadline_timestamp(2)
+        self.assertEqual(deadline, 1_000_000 + 2 * 86400)
+
+
+class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
+    async def test_execute_wallet_with_deadline_days_succeeds(self) -> None:
+        captured_metadata = {}
+
+        async def _fake_pin_json(metadata):
+            captured_metadata.update(metadata)
+            return "bafkdeadline"
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Example", reward="1", deadlineDays=3),
+        )
+        request = ExecuteRequest(intent=intent, mode="wallet")
+        with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
+            "routes.onebox.time.time", return_value=2_000_000
+        ), mock.patch("routes.onebox._compute_spec_hash", return_value=b"spec"):
+            response = await execute(request)
+
+        self.assertTrue(response.ok)
+        self.assertIn("deadline", captured_metadata)
+        self.assertEqual(captured_metadata["deadline"], 2_000_000 + 3 * 86400)
+
+    async def test_execute_rejects_deadline_overflow(self) -> None:
+        overflow_days = (_UINT64_MAX // 86400) + 1
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Overflow", reward="1", deadlineDays=overflow_days),
+        )
+        request = ExecuteRequest(intent=intent, mode="wallet")
+        with mock.patch("routes.onebox.time.time", return_value=0):
+            with self.assertRaises(fastapi.HTTPException) as ctx:
+                await execute(request)
+
+        self.assertEqual(ctx.exception.detail, "DEADLINE_INVALID")
 
 
 if __name__ == "__main__":
