@@ -1,4 +1,6 @@
-const INTENTS = new Set([
+import { WEB3_STORAGE_API } from "./config.js";
+
+const ALLOWED_INTENTS = [
   "create_job",
   "apply_job",
   "submit_work",
@@ -7,118 +9,171 @@ const INTENTS = new Set([
   "dispute",
   "stake",
   "withdraw",
-  "admin_set",
-]);
+  "admin_set"
+];
 
-const CONFIRMATION_LIMIT = 140;
+const BIG_TEN = 10n;
+const DECIMALS = 18n;
+const HISTORY_FORMAT_VERSION = 1;
 
-function makeTraceId() {
-  try {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID();
-    }
-  } catch (err) {
-    // ignore and fall back to timestamp-based id
-  }
-  return `trace-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+export function buildHistoryEnvelope(history) {
+  return history.map((entry) => ({
+    role: entry.role,
+    content: entry.content,
+    version: HISTORY_FORMAT_VERSION
+  }));
 }
 
-function isObject(value) {
-  return typeof value === "object" && value !== null;
+export function validateICS(json) {
+  if (!json || typeof json !== "object") {
+    throw new Error("Planner returned malformed ICS");
+  }
+  if (!ALLOWED_INTENTS.includes(json.intent)) {
+    throw new Error(`Unsupported intent: ${json.intent}`);
+  }
+  if (json.confirm && json.summary && json.summary.length > 140) {
+    console.warn("Summary exceeds 140 chars; truncating");
+    json.summary = `${json.summary.slice(0, 137)}...`;
+  }
+  json.params = json.params ?? {};
+  json.meta = json.meta ?? {};
+  return json;
 }
 
-export function validateICS(raw) {
-  if (!isObject(raw)) {
-    throw new Error("Planner returned an invalid payload");
-  }
-  if (!INTENTS.has(raw.intent)) {
-    throw new Error(`Unsupported intent: ${raw.intent ?? "unknown"}`);
-  }
-
-  const normalized = {
-    ...raw,
-    params: isObject(raw.params) ? { ...raw.params } : {},
-    confirm: Boolean(raw.confirm),
-    meta: isObject(raw.meta) ? { ...raw.meta } : {},
-  };
-
-  const confirmationText = typeof raw.confirmationText === "string" ? raw.confirmationText.trim() : "";
-  const summaryText = typeof raw.summary === "string" ? raw.summary.trim() : "";
-  const chosenSummary = confirmationText || summaryText;
-
-  if (normalized.confirm) {
-    if (!chosenSummary) {
-      throw new Error("Planner confirmation summary missing");
-    }
-    if (chosenSummary.length > CONFIRMATION_LIMIT) {
-      throw new Error(`Confirmation summary must be ${CONFIRMATION_LIMIT} characters or fewer`);
-    }
-    normalized.summary = chosenSummary;
-  } else if (chosenSummary) {
-    normalized.summary = chosenSummary;
-  }
-
-  if (typeof normalized.meta.traceId !== "string" || !normalized.meta.traceId.trim()) {
-    normalized.meta.traceId = makeTraceId();
-  } else {
-    normalized.meta.traceId = normalized.meta.traceId.trim();
-  }
-
-  return normalized;
+export function confirmSummary(ics) {
+  if (!ics.confirm) return null;
+  return ics.summary || "Please confirm before continuing.";
 }
 
-export function ensureSummary(ics) {
-  if (!ics || !ics.confirm) return ics;
-  if (typeof ics.summary === "string" && ics.summary.trim().length > 0 && ics.summary.length <= CONFIRMATION_LIMIT) {
-    ics.summary = ics.summary.trim();
+export async function ensureAttachmentCIDs(ics) {
+  if (!ics?.meta?.attachments?.length) {
+    if (ics.intent === "create_job" && ics.params?.job && !ics.params.job.uri && ics.params.job.description) {
+      const jobPayload = {
+        title: ics.params.job.title,
+        description: ics.params.job.description,
+        deadlineDays: ics.params.job.deadlineDays,
+        rewardAGIA: ics.params.job.rewardAGIA,
+        attachments: ics.params.job.attachments ?? []
+      };
+      const { cid } = await pinJSON(jobPayload);
+      ics.params.job.uri = `ipfs://${cid}`;
+    }
     return ics;
   }
-  ics.summary = "Confirm before executing value-moving action.";
+
+  const uploads = Array.isArray(ics.meta.attachments) ? ics.meta.attachments : [];
+  for (const request of uploads) {
+    const file = await pickFile(request.prompt || "Select a file to upload");
+    const { cid } = await pinFile(file);
+    if (request.fieldPath) {
+      applyFieldPath(ics, request.fieldPath, `ipfs://${cid}`);
+    }
+  }
   return ics;
 }
 
-export async function pinJSON(data, endpoint) {
-  const token = localStorage.getItem("W3S_TOKEN") ?? "";
-  const headers = new Headers({ "Content-Type": "application/json" });
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+function applyFieldPath(obj, path, value) {
+  const segments = path.replace(/\[(\d+)\]/g, ".$1").split(".");
+  let cursor = obj;
+  for (let i = 0; i < segments.length - 1; i += 1) {
+    const key = segments[i];
+    if (!(key in cursor)) cursor[key] = {};
+    cursor = cursor[key];
   }
-  const response = await fetch(endpoint, {
+  cursor[segments[segments.length - 1]] = value;
+}
+
+async function pickFile(promptLabel) {
+  if (promptLabel) {
+    window.alert(promptLabel);
+  }
+  if (window.showOpenFilePicker) {
+    const [handle] = await window.showOpenFilePicker({
+      multiple: false,
+      excludeAcceptAllOption: false
+    });
+    return handle.getFile();
+  }
+  return new Promise((resolve, reject) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "*";
+    input.style.display = "none";
+    document.body.appendChild(input);
+    input.addEventListener("change", () => {
+      const [file] = input.files || [];
+      document.body.removeChild(input);
+      if (!file) {
+        reject(new Error("No file selected"));
+        return;
+      }
+      resolve(file);
+    });
+    input.click();
+  });
+}
+
+export function formatError(error) {
+  if (!error) return "❌ Unknown error";
+  if (typeof error === "string") return `❌ ${error}`;
+  const message = error.message || error.toString();
+  return message.startsWith("❌") ? message : `❌ ${message}`;
+}
+
+export function toWei(amount) {
+  const [whole, fractional = ""] = String(amount).split(".");
+  const safeFraction = fractional.padEnd(Number(DECIMALS), "0");
+  const trimmedFraction = safeFraction.slice(0, Number(DECIMALS));
+  return BigInt(whole || "0") * BIG_TEN ** DECIMALS + BigInt(trimmedFraction || "0");
+}
+
+export function formatAGIA(wei) {
+  const value = BigInt(wei);
+  const head = value / (BIG_TEN ** DECIMALS);
+  const tail = value % (BIG_TEN ** DECIMALS);
+  const decimals = tail.toString().padStart(Number(DECIMALS), "0").replace(/0+$/, "");
+  return decimals ? `${head}.${decimals}` : head.toString();
+}
+
+export async function pinJSON(obj) {
+  const token = await ensureWeb3StorageToken();
+  const response = await fetch(WEB3_STORAGE_API, {
     method: "POST",
-    headers,
-    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(obj)
   });
   if (!response.ok) {
     throw new Error("Failed to pin JSON to IPFS");
   }
-  return response.json();
+  const data = await response.json();
+  return { cid: data.cid };
 }
 
-export async function pinFile(file, endpoint) {
-  const token = localStorage.getItem("W3S_TOKEN") ?? "";
-  const headers = new Headers();
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-  const response = await fetch(endpoint, {
+export async function pinFile(file) {
+  const token = await ensureWeb3StorageToken();
+  const response = await fetch(WEB3_STORAGE_API, {
     method: "POST",
-    headers,
-    body: file,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-NAME": encodeURIComponent(file.name)
+    },
+    body: file
   });
   if (!response.ok) {
     throw new Error("Failed to pin file to IPFS");
   }
-  return response.json();
+  const data = await response.json();
+  return { cid: data.cid };
 }
 
-export function fmtAGIA(valueWei) {
-  const wei = typeof valueWei === "bigint" ? valueWei : BigInt(valueWei ?? 0);
-  const divisor = 10n ** 18n;
-  const whole = wei / divisor;
-  const fraction = wei % divisor;
-  if (fraction === 0n) {
-    return whole.toString();
-  }
-  const fractionStr = fraction.toString().padStart(18, "0").replace(/0+$/, "");
-  return `${whole.toString()}.${fractionStr}`;
+async function ensureWeb3StorageToken() {
+  let token = localStorage.getItem("W3S_TOKEN");
+  if (token) return token;
+  token = window.prompt("Enter your web3.storage API token (stored locally)");
+  if (!token) throw new Error("web3.storage token required for uploads");
+  localStorage.setItem("W3S_TOKEN", token.trim());
+  return token.trim();
 }
