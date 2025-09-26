@@ -43,6 +43,11 @@
       font-size: 1.05rem;
       font-weight: 600;
     }
+    header p {
+      margin: 4px 0 0;
+      font-size: 0.9rem;
+      color: rgba(11, 27, 63, 0.7);
+    }
     #feed {
       flex: 1;
       overflow-y: auto;
@@ -114,9 +119,40 @@
       font-size: 0.85rem;
       padding: 0 clamp(12px, 4vw, 24px) 12px;
       color: rgba(11, 27, 63, 0.75);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    #advanced-panel .card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 24px rgba(15, 76, 221, 0.12);
+    }
+    #advanced-panel .status {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.75rem;
+      word-break: break-all;
+      color: rgba(11, 27, 63, 0.7);
+    }
+    #advanced-panel button.inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      box-shadow: none;
+    }
+    #advanced-panel ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+    #advanced-panel li {
+      margin-bottom: 4px;
     }
     body.advanced #advanced-panel {
-      display: block;
+      display: flex;
     }
     footer a {
       color: var(--accent);
@@ -142,6 +178,9 @@
       form {
         flex-direction: column;
         padding: 10px 14px 14px;
+      }
+      input[type="file"] {
+        max-width: 100%;
       }
       button {
         width: 100%;
