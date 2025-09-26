@@ -20,8 +20,11 @@
     "incremental": true,
     "baseUrl": "./src",
     "paths": {
-      "@agi/orchestrator/*": [
-        "../../../packages/orchestrator/src/*"
+      "@agijobs/onebox-orchestrator": [
+        "../../../packages/onebox-orchestrator/src/index.ts"
+      ],
+      "@agijobs/onebox-orchestrator/*": [
+        "../../../packages/onebox-orchestrator/src/*"
       ]
     },
     "types": [
