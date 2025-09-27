@@ -24,7 +24,7 @@ let EXPERT=false, ETH=null;
 let ORCH=localStorage.getItem('ORCH_URL')||'', TOK=localStorage.getItem('ORCH_TOKEN')||'';
 orchInput.value=ORCH; tokInput.value=TOK;
 
-function add(role,html){const d=document.createElement('div');d.className='msg '+(role==='user'?'m-user':'m-assist');d.innerHTML=html;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
+function add(role,html){const d=document.createElement('div');d.className='msg '+(role==='user'?'m-user':'m-assist');d.innerHTML=html;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d}
 function note(t){add('assist',`<div class="note">${t}</div>`)}
 function setMode(){mode.textContent='Mode: '+(EXPERT?'Expert (wallet)':'Guest (walletless)')}
 
@@ -40,12 +40,12 @@ async function api(path, body){
 }
 
 function confirmUI(summary,intent){
-  add('assist', summary + `<div class="row" style="margin-top:10px">
-    <button class="pill ok" id="yes">Yes</button><button class="pill" id="no">Cancel</button></div>`);
-  setTimeout(()=>{
-    document.getElementById('yes').onclick=()=>execute(intent);
-    document.getElementById('no').onclick=()=>add('assist', COPY.cancelled);
-  },0);
+  const wrapper=add('assist', summary + `<div class="row" style="margin-top:10px">
+    <button class="pill ok" data-confirm="yes">Yes</button><button class="pill" data-confirm="no">Cancel</button></div>`);
+  const yesBtn=wrapper.querySelector('[data-confirm="yes"]');
+  const noBtn=wrapper.querySelector('[data-confirm="no"]');
+  if(yesBtn) yesBtn.onclick=()=>execute(intent);
+  if(noBtn) noBtn.onclick=()=>add('assist', COPY.cancelled);
 }
 
 async function plan(text){
