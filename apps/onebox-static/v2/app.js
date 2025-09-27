@@ -58,42 +58,400 @@ function getStoredToken() {
   return typeof token === 'string' ? token : '';
 }
 
+const ERROR_FIELDS_TO_FOLLOW = [
+  'cause',
+  'error',
+  'errors',
+  'data',
+  'details',
+  'body',
+  'response',
+  'info',
+  'reason',
+];
+
+function pushUnique(array, value) {
+  if (!value && value !== 0) return;
+  const str = String(value).trim();
+  if (!str) return;
+  if (!array.includes(str)) {
+    array.push(str);
+  }
+}
+
+function collectErrorContext(err, state = { messages: [], codes: [], statuses: [] }, seen = new Set()) {
+  if (err === null || err === undefined) {
+    return state;
+  }
+  if (typeof err === 'string' || typeof err === 'number' || typeof err === 'bigint') {
+    pushUnique(state.messages, err);
+    return state;
+  }
+
+  if (seen.has(err)) {
+    return state;
+  }
+  seen.add(err);
+
+  if (err instanceof Error) {
+    pushUnique(state.messages, err.message || err.toString());
+    if ('code' in err && err.code !== undefined) {
+      pushUnique(state.codes, err.code);
+    }
+    if ('name' in err && err.name && err.name !== 'Error') {
+      pushUnique(state.codes, err.name);
+    }
+    if ('status' in err && Number.isFinite(err.status)) {
+      const status = Number(err.status);
+      if (!state.statuses.includes(status)) {
+        state.statuses.push(status);
+      }
+    }
+    if ('cause' in err) {
+      collectErrorContext(err.cause, state, seen);
+    }
+  }
+
+  if (typeof err === 'object' && err) {
+    if ('message' in err && err.message) {
+      pushUnique(state.messages, err.message);
+    }
+    if ('status' in err && Number.isFinite(err.status)) {
+      const status = Number(err.status);
+      if (!state.statuses.includes(status)) {
+        state.statuses.push(status);
+      }
+    }
+    if ('statusCode' in err && Number.isFinite(err.statusCode)) {
+      const status = Number(err.statusCode);
+      if (!state.statuses.includes(status)) {
+        state.statuses.push(status);
+      }
+    }
+    if ('code' in err && err.code !== undefined) {
+      pushUnique(state.codes, err.code);
+    }
+    if ('error' in err && typeof err.error === 'string') {
+      pushUnique(state.messages, err.error);
+    }
+    if ('statusText' in err && typeof err.statusText === 'string') {
+      pushUnique(state.messages, err.statusText);
+    }
+    for (const key of ERROR_FIELDS_TO_FOLLOW) {
+      if (key in err && err[key] !== undefined) {
+        collectErrorContext(err[key], state, seen);
+      }
+    }
+  }
+
+  return state;
+}
+
+function toLowerList(values) {
+  return values.map((value) => value.toLowerCase());
+}
+
+function buildMatcher(context) {
+  const lowerMessages = toLowerList(context.messages);
+  const lowerCodes = toLowerList(context.codes);
+  const status = context.statuses.length ? context.statuses[0] : undefined;
+  return {
+    primary: context.messages.find((value) => value && value.trim()),
+    status,
+    contains(fragment) {
+      if (!fragment) return false;
+      const needle = fragment.toLowerCase();
+      return lowerMessages.some((message) => message.includes(needle));
+    },
+    hasCode(code) {
+      if (!code) return false;
+      const needle = String(code).toLowerCase();
+      return lowerCodes.includes(needle);
+    },
+  };
+}
+
 const FRIENDLY_ERROR_RULES = [
   {
-    test: /insufficient/i,
+    id: 'insufficient_balance',
     message:
-      'You do not have enough AGIALPHA to cover this request. Lower the reward or top up your balance and try again.',
+      'You need more AGIALPHA available to cover the reward and stake. Tip: Top up or adjust the amounts.',
+    matches: (ctx) =>
+      ctx.contains('insufficient balance') ||
+      ctx.contains('insufficient funds') ||
+      ctx.contains('transfer amount exceeds balance') ||
+      ctx.contains('you need more agialpha'),
   },
   {
-    match: 'allowance',
+    id: 'insufficient_allowance',
     message:
-      'We need to refresh the AGIALPHA allowance before proceeding. I can retry that automatically—please try again in a moment.',
+      'Escrow allowance is missing. Tip: Approve AGIALPHA spending from your wallet so I can move the staked funds for you.',
+    matches: (ctx) =>
+      ctx.contains('insufficient allowance') ||
+      ctx.contains('insufficientallowance') ||
+      ctx.contains('exceeds allowance') ||
+      ctx.contains('allowance is not enough') ||
+      ctx.contains('approve agialpha spending'),
   },
   {
-    match: 'deadline',
-    message: 'Deadlines must be at least 24 hours in the future. Try extending the timeline.',
+    id: 'reward_zero',
+    message: 'Rewards must be greater than zero AGIALPHA. Tip: Set a positive reward before posting the job.',
+    matches: (ctx) =>
+      ctx.contains('zero reward') || ctx.contains('reward == 0') || ctx.contains('reward must be greater than zero'),
   },
   {
-    match: 'ens',
+    id: 'deadline_invalid',
     message:
-      'I could not confirm the required ENS identity. Make sure your agent subdomain is active before retrying.',
+      'The deadline needs to be at least one day in the future. Tip: Pick a deadline that is 24 hours or more from now.',
+    matches: (ctx) =>
+      ctx.contains('deadline must be') || ctx.contains('deadline is in the past') || ctx.contains('deadline < now'),
   },
   {
-    match: 'unauthor',
+    id: 'deadline_not_reached',
     message:
-      'This action needs an authorised orchestrator. Confirm you are using the official endpoint and try again.',
+      'That step isn’t available until the job deadline passes. Tip: Wait until the deadline or adjust the schedule before retrying.',
+    matches: (ctx) =>
+      ctx.contains('deadline notreached') || ctx.contains('deadline not reached') || ctx.contains('too early'),
   },
   {
-    match: 'planner',
-    message: 'The planner is unavailable right now. Give me a moment and try again.',
+    id: 'job_not_found',
+    message: 'I couldn’t find that job id on-chain. Tip: Check the job number or ask me for your recent jobs.',
+    matches: (ctx) => ctx.contains('jobnotfound') || ctx.contains('job not found') || ctx.contains('unknown job'),
   },
   {
-    match: 'timeout',
-    message: 'The orchestrator took too long to respond. Please retry shortly.',
+    id: 'role_employer_only',
+    message: 'Only the employer can complete that action. Tip: Sign in with the employer account or ask me to switch roles.',
+    matches: (ctx) => ctx.contains('onlyemployer') || ctx.contains('notemployer'),
   },
   {
-    match: 'network',
-    message: 'Network error. Check your connection or orchestrator URL and try again.',
+    id: 'role_validator_only',
+    message:
+      'This action is limited to assigned validators. Tip: Ensure your validator ENS is registered and selected for the job.',
+    matches: (ctx) =>
+      ctx.contains('notvalidator') || ctx.contains('validatorbanned') || ctx.contains('unauthorizedvalidator'),
+  },
+  {
+    id: 'role_operator_only',
+    message:
+      'Only the job operator can run that step. Tip: Have the operator account confirm the action or ask for a reassignment.',
+    matches: (ctx) => ctx.contains('notoperator') || ctx.contains('invalidcaller'),
+  },
+  {
+    id: 'role_governance_only',
+    message:
+      'Governance approval is required for this operation. Tip: Reach out to the governance team or use an approved governance key.',
+    matches: (ctx) => ctx.contains('notgovernance') || ctx.contains('notgovernanceorpauser'),
+  },
+  {
+    id: 'identity_required',
+    message:
+      'Identity verification is required before continuing. Tip: Finish identity verification in the Agent Gateway before using this one-box flow.',
+    matches: (ctx) =>
+      ctx.contains('ens name must') ||
+      ctx.contains('ens required') ||
+      ctx.contains('identityregistry not set') ||
+      ctx.contains('identity verification'),
+  },
+  {
+    id: 'stake_missing',
+    message: 'Stake the minimum AGIALPHA before continuing. Tip: Add funds or reduce the job’s stake size.',
+    matches: (ctx) =>
+      ctx.contains('nostake') ||
+      ctx.contains('stake required') ||
+      ctx.contains('stake missing') ||
+      ctx.contains('stake the minimum agialpha'),
+  },
+  {
+    id: 'stake_too_high',
+    message:
+      'The requested stake exceeds the allowed maximum. Tip: Lower the stake amount or split it into smaller deposits.',
+    matches: (ctx) => ctx.contains('stakeoverflow') || ctx.contains('amount too large'),
+  },
+  {
+    id: 'aa_paymaster_rejected',
+    message:
+      'The account abstraction paymaster rejected this request. Tip: Retry shortly or submit the transaction manually.',
+    matches: (ctx) =>
+      ctx.contains('paymaster rejected') ||
+      ctx.contains('managed paymaster error') ||
+      ctx.contains('paymaster returned empty sponsorship') ||
+      ctx.contains('aa_paymaster_rejected'),
+  },
+  {
+    id: 'invalid_state',
+    message:
+      'The job isn’t in the right state for that action yet. Tip: Check the job status and try the step that matches the current phase.',
+    matches: (ctx) =>
+      ctx.contains('invalidstate') ||
+      ctx.contains('cannotexpire') ||
+      ctx.contains('alreadytallied') ||
+      ctx.contains('revealpending'),
+  },
+  {
+    id: 'already_done',
+    message: 'This step has already been completed. Tip: No further action is needed unless circumstances change.',
+    matches: (ctx) =>
+      ctx.contains('already committed') ||
+      ctx.contains('already revealed') ||
+      ctx.contains('already applied') ||
+      ctx.contains('alreadylisted'),
+  },
+  {
+    id: 'burn_evidence_missing',
+    message:
+      'Burn evidence is missing or incomplete. Tip: Upload the burn receipt or wait for the validator to finish the burn.',
+    matches: (ctx) => ctx.contains('burnevidence') || ctx.contains('burnreceipt'),
+  },
+  {
+    id: 'validator_window_closed',
+    message: 'The validation window has already closed. Tip: Wait for the next cycle or escalate through disputes if needed.',
+    matches: (ctx) =>
+      ctx.contains('commitphaseclosed') ||
+      ctx.contains('revealphaseclosed') ||
+      ctx.contains('commit closed') ||
+      ctx.contains('reveal closed'),
+  },
+  {
+    id: 'validator_window_open',
+    message: 'Validator checks didn’t finish in time. Tip: Retry in a moment or contact support if it keeps failing.',
+    matches: (ctx) =>
+      ctx.contains('commitphaseactive') ||
+      ctx.contains('reveal pending') ||
+      ctx.contains('validators already selected') ||
+      ctx.contains('validation timeout'),
+  },
+  {
+    id: 'dispute_open',
+    message: 'A dispute is already open for this job. Tip: Wait for resolution before taking further action.',
+    matches: (ctx) =>
+      ctx.contains('dispute already open') ||
+      ctx.contains('dispute is already open') ||
+      ctx.contains('dispute open') ||
+      ctx.contains('disputed'),
+  },
+  {
+    id: 'network_fetch',
+    message:
+      'I couldn’t reach the orchestrator network. Tip: Check your internet connection or try again in a few seconds.',
+    matches: (ctx) =>
+      ctx.contains('failed to fetch') ||
+      ctx.contains('networkerror') ||
+      ctx.contains('network request failed') ||
+      ctx.contains('fetch event responded'),
+  },
+  {
+    id: 'timeout',
+    message: 'The blockchain RPC endpoint timed out. Tip: Try again or switch to a healthier provider.',
+    matches: (ctx) =>
+      ctx.contains('timeout') ||
+      ctx.contains('timed out') ||
+      ctx.contains('etimedout') ||
+      ctx.contains('rpc timed out'),
+  },
+  {
+    id: 'rate_limited',
+    message: 'You’re sending requests too quickly. Tip: Pause for a few seconds before trying again.',
+    matches: (ctx) => ctx.status === 429 || ctx.contains('too many requests'),
+  },
+  {
+    id: 'service_unavailable',
+    message: 'The relayer is offline right now. Tip: Switch to wallet mode or retry shortly.',
+    matches: (ctx) =>
+      ctx.status === 503 ||
+      ctx.contains('service unavailable') ||
+      ctx.contains('maintenance') ||
+      ctx.contains('relayer is offline') ||
+      ctx.contains('relayer is not configured'),
+  },
+  {
+    id: 'unauthorized',
+    message:
+      'The orchestrator rejected our credentials. Tip: Check that your API token is correct and hasn’t expired.',
+    matches: (ctx) => ctx.status === 401 || ctx.status === 403 || ctx.contains('unauthorized'),
+  },
+  {
+    id: 'not_found',
+    message: 'The orchestrator endpoint was not found. Tip: Verify the /onebox URLs in your configuration.',
+    matches: (ctx) => ctx.status === 404 || ctx.contains('not found'),
+  },
+  {
+    id: 'user_rejected',
+    message: 'You cancelled the wallet prompt. Tip: Restart the request and approve it when you’re ready.',
+    matches: (ctx) =>
+      ctx.hasCode('ACTION_REJECTED') ||
+      ctx.contains('user rejected') ||
+      ctx.contains('user denied') ||
+      ctx.contains('request rejected'),
+  },
+  {
+    id: 'gas_estimation',
+    message:
+      'I couldn’t estimate the gas for that transaction. Tip: Double-check the inputs or try again with slightly different parameters.',
+    matches: (ctx) =>
+      ctx.hasCode('UNPREDICTABLE_GAS_LIMIT') ||
+      ctx.contains('cannot estimate gas') ||
+      ctx.contains('gas required exceeds allowance'),
+  },
+  {
+    id: 'invalid_argument',
+    message:
+      'One of the inputs looks invalid. Tip: Use plain numbers for amounts and ensure addresses or ENS names are correct.',
+    matches: (ctx) =>
+      ctx.hasCode('INVALID_ARGUMENT') ||
+      ctx.contains('invalid bignumber') ||
+      ctx.contains('invalid argument'),
+  },
+  {
+    id: 'json_parse',
+    message:
+      'The orchestrator returned data in an unexpected format. Tip: Reload the page or retry—this can happen during upgrades.',
+    matches: (ctx) => ctx.contains('unexpected token') || ctx.contains('invalid json'),
+  },
+  {
+    id: 'quota_exceeded',
+    message:
+      'This action exceeds the configured spend cap. Tip: Reduce the reward or wait until the orchestrator refreshes its quota.',
+    matches: (ctx) => ctx.contains('spend cap') || ctx.contains('quota exceeded'),
+  },
+  {
+    id: 'attachment_missing',
+    message:
+      'Required attachments were missing from the request. Tip: Re-upload the files or drop them into the chat before confirming.',
+    matches: (ctx) => ctx.contains('attachment required') || ctx.contains('missing attachment'),
+  },
+  {
+    id: 'cid_mismatch',
+    message: 'The deliverable CID didn’t match what’s on record. Tip: Re-upload the correct artifact and try again.',
+    matches: (ctx) =>
+      ctx.contains('cid mismatch') ||
+      ctx.contains('cid does not match') ||
+      ctx.contains("cid didn't match") ||
+      ctx.contains('cid didn’t match'),
+  },
+  {
+    id: 'ipfs_failure',
+    message: 'I couldn’t package your job details. Tip: Remove broken links and try again.',
+    matches: (ctx) =>
+      ctx.contains('ipfs upload failed') ||
+      ctx.contains('ipfs response missing cid') ||
+      ctx.contains('pinning error') ||
+      ctx.contains("couldn't package your job details") ||
+      ctx.contains('couldn’t package your job details') ||
+      ctx.contains('pinning service is busy'),
+  },
+  {
+    id: 'simulation_failed',
+    message:
+      'Simulation failed before submission. Tip: Review the planner output or switch to Expert Mode for a detailed trace.',
+    matches: (ctx) => ctx.contains('simulation failed') || ctx.contains('failed simulation') || ctx.contains('sim revert'),
+  },
+  {
+    id: 'unknown_revert',
+    message: 'The transaction reverted without a known reason. Tip: Check the logs or retry with adjusted parameters.',
+    matches: (ctx) =>
+      ctx.contains('unknown revert') ||
+      ctx.contains('reverted without a known reason') ||
+      ctx.contains('unknown reason'),
   },
 ];
 
@@ -119,20 +477,40 @@ window.oneboxSetOrchestrator = function setOrchestrator(url) {
 };
 
 function friendlyError(input) {
-  if (!input) {
+  if (input === null || input === undefined) {
     return 'Something went wrong. Try again in a moment.';
   }
-  const raw = typeof input === 'string' ? input : input.message || String(input);
-  const normalised = raw.toLowerCase();
+
+  const context = collectErrorContext(input);
+  const matcher = buildMatcher(context);
+
   for (const rule of FRIENDLY_ERROR_RULES) {
-    if (rule.test && rule.test.test(raw)) {
-      return rule.message;
-    }
-    if (rule.match && normalised.includes(rule.match)) {
-      return rule.message;
+    try {
+      if (rule.matches(matcher)) {
+        return rule.message;
+      }
+    } catch (err) {
+      console.warn(`Error rule ${rule.id} threw during evaluation`, err);
     }
   }
-  return raw;
+
+  if (typeof input === 'string') {
+    const trimmed = input.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+    return 'Something went wrong. Try again in a moment.';
+  }
+
+  if (matcher.primary) {
+    return matcher.primary;
+  }
+
+  try {
+    return JSON.stringify(input);
+  } catch (err) {
+    return 'Something went wrong. Try again in a moment.';
+  }
 }
 
 function appendMessage(role, content) {
