@@ -75,6 +75,20 @@ const ERRORS = {
   RELAY_UNAVAILABLE: 'Relayer unavailable. Retry in a moment or switch to Expert mode.',
   JOB_ID_REQUIRED: 'I need a job ID for that action. Try “Finalize job 123”.',
   UNSUPPORTED_ACTION: 'That action is not supported yet. Try posting, finalizing, or checking status.',
+  IDENTITY_REQUIRED:
+    'An ENS identity is required before continuing. Register the appropriate *.agent.agi.eth or *.club.agi.eth subdomain and try again.',
+  STAKE_REQUIRED:
+    'You need to stake before you can continue. Stake the required AGIALPHA amount and retry the action.',
+  PAYMASTER_REJECT:
+    'The sponsored transaction was rejected by the paymaster. Top up the paymaster balance or switch to Expert mode to supply gas yourself.',
+  CID_MISMATCH:
+    'The attachment CID does not match the orchestrator record. Re-upload the file and confirm the CID before retrying.',
+  DISPUTE_OPENED:
+    'A dispute is already open for this job. Review the dispute status and follow the evidence workflow before retrying.',
+  RPC_TIMEOUT:
+    'The blockchain RPC timed out while handling your request. Retry shortly or point Advanced settings to a faster RPC endpoint.',
+  UNKNOWN_REVERT:
+    'The transaction reverted for an unknown reason. Check orchestrator logs or rerun in Expert mode to inspect the revert details.',
   UNKNOWN: 'Something went wrong. I logged the details so we can retry safely.',
 };
 
@@ -229,6 +243,12 @@ async function api(path, body) {
         code = payload.detail;
       } else if (payload?.detail?.code) {
         code = payload.detail.code;
+      } else if (typeof payload?.error === 'string') {
+        code = payload.error;
+      } else if (payload?.error?.code) {
+        code = payload.error.code;
+      } else if (typeof payload?.message === 'string') {
+        code = payload.message;
       }
     } catch (_) {
       try {
@@ -363,9 +383,47 @@ async function fetchStatus(jobId) {
   }
 }
 
+function resolveErrorKey(message) {
+  if (!message) {
+    return 'UNKNOWN';
+  }
+  const upper = message.toUpperCase();
+  const directMatch = Object.keys(ERRORS).find((code) => upper.includes(code));
+  if (directMatch) {
+    return directMatch;
+  }
+  if (upper.includes('ENS') || upper.includes('IDENTITY')) {
+    return 'IDENTITY_REQUIRED';
+  }
+  if (upper.includes('STAKE')) {
+    return 'STAKE_REQUIRED';
+  }
+  if (upper.includes('PAYMASTER') || upper.includes('AA SPONSOR')) {
+    return 'PAYMASTER_REJECT';
+  }
+  if (upper.includes('CID') && (upper.includes('MISMATCH') || upper.includes('DOES NOT MATCH'))) {
+    return 'CID_MISMATCH';
+  }
+  if (upper.includes('DISPUTE') && (upper.includes('OPEN') || upper.includes('ACTIVE'))) {
+    return 'DISPUTE_OPENED';
+  }
+  if (
+    upper.includes('TIMEOUT') ||
+    upper.includes('TIMED OUT') ||
+    upper.includes('ETIMEDOUT') ||
+    upper.includes('ABORTED')
+  ) {
+    return 'RPC_TIMEOUT';
+  }
+  if (upper.includes('REVERT')) {
+    return 'UNKNOWN_REVERT';
+  }
+  return 'UNKNOWN';
+}
+
 function handleError(error) {
   const message = (error && error.message ? error.message : 'UNKNOWN').toUpperCase();
-  const key = Object.keys(ERRORS).find((code) => message.includes(code)) || 'UNKNOWN';
+  const key = resolveErrorKey(message);
   console.error('One-box error', error);
   addMessage('assist', `<span class="error-text">⚠️ ${ERRORS[key]}</span>`);
 }
