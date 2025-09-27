@@ -46,6 +46,7 @@ function add(role,content){
   }
   chat.appendChild(d);
   chat.scrollTop=chat.scrollHeight;
+  return d;
 }
 function note(t){add('assist',`<div class="note">${t}</div>`)}
 function setMode(){mode.textContent='Mode: '+(EXPERT?'Expert (wallet)':'Guest (walletless)')}
@@ -73,23 +74,24 @@ function confirmUI(summary,intent){
 
   const yes=document.createElement('button');
   yes.className='pill ok';
-  yes.id='yes';
+  yes.setAttribute('data-role','confirm');
   yes.textContent='Yes';
 
   const no=document.createElement('button');
   no.className='pill';
-  no.id='no';
+  no.setAttribute('data-role','cancel');
   no.textContent='Cancel';
 
   row.appendChild(yes);
   row.appendChild(no);
   content.appendChild(row);
 
-  add('assist', content);
-  setTimeout(()=>{
-    document.getElementById('yes').onclick=()=>execute(intent);
-    document.getElementById('no').onclick=()=>add('assist', COPY.cancelled);
-  },0);
+  const message=add('assist', content);
+  const confirmBtn=message.querySelector('[data-role="confirm"]');
+  const cancelBtn=message.querySelector('[data-role="cancel"]');
+
+  if(confirmBtn) confirmBtn.onclick=()=>execute(intent);
+  if(cancelBtn) cancelBtn.onclick=()=>add('assist', COPY.cancelled);
 }
 
 async function plan(text){
