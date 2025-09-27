@@ -19,9 +19,26 @@ interface ITaxPolicy {
     /// @param allowed True to allow the address, false to revoke.
     function setAcknowledger(address acknowledger, bool allowed) external;
 
+    /// @notice Batch update acknowledger permissions with per-address flags.
+    /// @param acknowledgers Array of addresses to update.
+    /// @param allowed Boolean flags matching `acknowledgers` by index.
+    function setAcknowledgers(address[] calldata acknowledgers, bool[] calldata allowed) external;
+
+    /// @notice Clears the acknowledgement record for a user.
+    /// @param user Address whose acknowledgement should be revoked.
+    function revokeAcknowledgement(address user) external;
+
+    /// @notice Clears acknowledgement records for multiple users.
+    /// @param users Addresses whose acknowledgements should be revoked.
+    function revokeAcknowledgements(address[] calldata users) external;
+
     /// @notice Check if a user has acknowledged the policy.
     /// @param user Address of the participant.
     function hasAcknowledged(address user) external view returns (bool);
+
+    /// @notice Check if an address is authorised to call {acknowledgeFor}.
+    /// @param acknowledger Address of the delegate.
+    function acknowledgerAllowed(address acknowledger) external view returns (bool);
 
     /// @notice Returns the policy version a user has acknowledged.
     /// @param user Address of the participant.

@@ -26,6 +26,22 @@ contract BadTaxPolicy is ITaxPolicy {
 
     function setAcknowledger(address, bool) external {}
 
+    function setAcknowledgers(address[] calldata, bool[] calldata) external {}
+
+    function revokeAcknowledgement(address user) external {
+        acknowledgedVersion[user] = 0;
+    }
+
+    function revokeAcknowledgements(address[] calldata users) external {
+        for (uint256 i = 0; i < users.length; i++) {
+            acknowledgedVersion[users[i]] = 0;
+        }
+    }
+
+    function acknowledgerAllowed(address) external pure returns (bool) {
+        return false;
+    }
+
     function hasAcknowledged(address user) external view returns (bool) {
         return acknowledgedVersion[user] != 0;
     }

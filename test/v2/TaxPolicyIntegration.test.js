@@ -3,10 +3,10 @@ const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('JobRegistry tax policy integration', function () {
-  let owner, user, registry, policy;
+  let owner, user, delegate, registry, policy;
 
   beforeEach(async () => {
-    [owner, user] = await ethers.getSigners();
+    [owner, user, delegate] = await ethers.getSigners();
     const Registry = await ethers.getContractFactory(
       'contracts/v2/JobRegistry.sol:JobRegistry'
     );
@@ -69,6 +69,51 @@ describe('JobRegistry tax policy integration', function () {
       .to.emit(policy, 'PolicyAcknowledged')
       .withArgs(user.address, 1);
     expect(await policy.hasAcknowledged(user.address)).to.equal(true);
+  });
+
+  it('exposes acknowledger permissions and supports batch updates', async () => {
+    await expect(
+      policy
+        .connect(owner)
+        .setAcknowledgers(
+          [owner.address, delegate.address, user.address],
+          [true, true, false]
+        )
+    )
+      .to.emit(policy, 'AcknowledgerUpdated')
+      .withArgs(owner.address, true)
+      .and.to.emit(policy, 'AcknowledgerUpdated')
+      .withArgs(delegate.address, true)
+      .and.to.emit(policy, 'AcknowledgerUpdated')
+      .withArgs(user.address, false);
+
+    expect(await policy.acknowledgerAllowed(owner.address)).to.equal(true);
+    expect(await policy.acknowledgerAllowed(delegate.address)).to.equal(true);
+    expect(await policy.acknowledgerAllowed(user.address)).to.equal(false);
+
+    await expect(
+      policy
+        .connect(owner)
+        .setAcknowledgers([owner.address, delegate.address], [false, false])
+    )
+      .to.emit(policy, 'AcknowledgerUpdated')
+      .withArgs(owner.address, false)
+      .and.to.emit(policy, 'AcknowledgerUpdated')
+      .withArgs(delegate.address, false);
+
+    expect(await policy.acknowledgerAllowed(owner.address)).to.equal(false);
+    expect(await policy.acknowledgerAllowed(delegate.address)).to.equal(false);
+  });
+
+  it('rejects malformed batch acknowledger updates', async () => {
+    await expect(
+      policy.connect(owner).setAcknowledgers([owner.address], [])
+    ).to.be.revertedWithCustomError(policy, 'ArrayLengthMismatch');
+    await expect(
+      policy
+        .connect(owner)
+        .setAcknowledgers([ethers.ZeroAddress], [true])
+    ).to.be.revertedWithCustomError(policy, 'ZeroAcknowledgerAddress');
   });
 
   it('exposes acknowledged version for users', async () => {
@@ -164,4 +209,38 @@ describe('JobRegistry tax policy integration', function () {
       .to.be.revertedWithCustomError(registry, 'TaxPolicyNotAcknowledged')
       .withArgs(user.address);
   });
+  it('allows the owner to revoke acknowledgement records', async () => {
+    await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy.connect(user).acknowledge();
+    await policy.connect(delegate).acknowledge();
+
+    await expect(
+      policy.connect(owner).revokeAcknowledgement(user.address)
+    )
+      .to.emit(policy, 'AcknowledgementRevoked')
+      .withArgs(user.address, 1);
+
+    expect(await policy.hasAcknowledged(user.address)).to.equal(false);
+    expect(await policy.acknowledgedVersion(user.address)).to.equal(0);
+    expect(await policy.hasAcknowledged(delegate.address)).to.equal(true);
+
+    await expect(
+      policy
+        .connect(owner)
+        .revokeAcknowledgements([delegate.address, user.address])
+    )
+      .to.emit(policy, 'AcknowledgementRevoked')
+      .withArgs(delegate.address, 1)
+      .and.to.emit(policy, 'AcknowledgementRevoked')
+      .withArgs(user.address, 0);
+
+    expect(await policy.hasAcknowledged(delegate.address)).to.equal(false);
+  });
+
+  it('prevents revocation for the zero address', async () => {
+    await expect(
+      policy.connect(owner).revokeAcknowledgement(ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(policy, 'ZeroUserAddress');
+  });
 });
+
