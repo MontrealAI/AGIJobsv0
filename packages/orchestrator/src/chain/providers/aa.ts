@@ -1,5 +1,10 @@
 import { ethers } from "ethers";
-import { policyManager, extractPolicyContext, type PolicyCharge } from "../../policy/index.js";
+import {
+  policyManager,
+  extractPolicyContext,
+  type PolicyCharge,
+  type PolicyContext,
+} from "../../policy/index.js";
 import { deterministicWalletFromMnemonic } from "./signer.js";
 import { BundlerClient, type BundlerSendOptions } from "./bundler.js";
 import { ManagedPaymasterClient } from "./paymaster.js";
@@ -60,6 +65,40 @@ function parseRecordEnv(name: string): Record<string, unknown> | undefined {
     console.warn(`Failed to parse ${name}`, error);
   }
   return undefined;
+}
+
+function policyContextToPaymasterContext(context?: PolicyContext): Record<string, unknown> {
+  if (!context) {
+    return {};
+  }
+  const normalized: Record<string, unknown> = {};
+  if (context.userId) {
+    normalized.userId = context.userId;
+  }
+  if (context.jobId) {
+    normalized.jobId = context.jobId;
+  }
+  if (context.traceId) {
+    normalized.traceId = context.traceId;
+  }
+  if (context.jobBudgetWei !== undefined) {
+    normalized.jobBudgetWei = context.jobBudgetWei.toString();
+  }
+  return normalized;
+}
+
+function mergePaymasterContext(
+  base?: Record<string, unknown>,
+  policyContext?: PolicyContext
+): Record<string, unknown> | undefined {
+  const serializedPolicy = policyContextToPaymasterContext(policyContext);
+  if (!base && Object.keys(serializedPolicy).length === 0) {
+    return undefined;
+  }
+  return {
+    ...(base ?? {}),
+    ...serializedPolicy,
+  };
 }
 
 function parseStringRecordEnv(name: string): Record<string, string> | undefined {
@@ -372,7 +411,10 @@ export class AccountAbstractionSigner extends ethers.AbstractSigner {
     }
   }
 
-  private async buildUserOperation(tx: ethers.TransactionRequest): Promise<{
+  private async buildUserOperation(
+    tx: ethers.TransactionRequest,
+    policyContext?: PolicyContext
+  ): Promise<{
     userOp: UserOperationStruct;
     charge: PolicyCharge;
   }> {
@@ -413,11 +455,15 @@ export class AccountAbstractionSigner extends ethers.AbstractSigner {
     };
 
     if (this.config.paymaster) {
+      const paymasterContext = mergePaymasterContext(
+        this.config.paymasterContext,
+        policyContext
+      );
       const sponsorship = await this.config.paymaster.sponsorUserOperation({
         userOperation: userOp,
         entryPoint: this.config.entryPoint,
         chainId,
-        context: this.config.paymasterContext,
+        context: paymasterContext,
       });
       userOp = {
         ...userOp,
@@ -453,7 +499,7 @@ export class AccountAbstractionSigner extends ethers.AbstractSigner {
       policy.registerJobBudget(policyContext.jobId, policyContext.jobBudgetWei);
     }
 
-    const { userOp, charge } = await this.buildUserOperation(tx);
+    const { userOp, charge } = await this.buildUserOperation(tx, policyContext);
     const chainId = await this.ensureChainId();
     const hash = userOperationHash(userOp, this.config.entryPoint, chainId);
     userOp.signature = await this.sessionWallet.signMessage(ethers.getBytes(hash));
