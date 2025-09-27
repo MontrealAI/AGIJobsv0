@@ -407,6 +407,7 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 
 - **Static front-end**: [`apps/onebox/`](apps/onebox/) provides an IPFS-ready, single-input UI that talks to the AGI-Alpha orchestrator (`/onebox/*`).
 - **Shared data contracts**: [`packages/onebox-sdk/`](packages/onebox-sdk/) exports TypeScript interfaces for `JobIntent`, `PlanResponse`, and `ExecuteResponse`.
-- **Express router for `/onebox/*`**: [`apps/orchestrator/oneboxRouter.ts`](apps/orchestrator/oneboxRouter.ts) exposes `/onebox/plan`, `/onebox/execute`, `/onebox/status`, plus `/healthz`. Start it with `ts-node apps/orchestrator/onebox-server.ts` and configure via environment variables (`ONEBOX_RELAYER_PRIVATE_KEY`, `ONEBOX_PORT`, etc.).
-- **Metrics endpoint**: the same router now serves `GET /onebox/metrics`, returning Prometheus counters for plan, execute, and status requests (including per-intent execution labels).
+- **FastAPI router for `/onebox/*`**: [`routes/onebox.py`](routes/onebox.py) now ships a drop-in router with `/plan`, `/execute`, `/status`, `/healthz`, and `/metrics` plus Prometheus counters. Configure via `ONEBOX_RELAYER_PRIVATE_KEY`, `ONEBOX_API_TOKEN`, `ONEBOX_EXPLORER_TX_BASE`, `PINNER_*`, etc. and mount on the existing AGI-Alpha FastAPI server.
+- **Express router for `/onebox/*`**: [`apps/orchestrator/oneboxRouter.ts`](apps/orchestrator/oneboxRouter.ts) exposes the same surface for Node deployments. Start it with `ts-node apps/orchestrator/onebox-server.ts` and configure via environment variables (`ONEBOX_RELAYER_PRIVATE_KEY`, `ONEBOX_PORT`, etc.).
+- **Metrics endpoint**: both routers expose `GET /onebox/metrics`, returning Prometheus counters for plan, execute, and status requests (including per-intent execution labels).
 - **Integration guide**: see [`docs/onebox-ux.md`](docs/onebox-ux.md) for FastAPI stubs and deployment notes.

@@ -17,6 +17,10 @@ const ERRORS={
   IPFS_FAILED:"I couldn’t package your job details. Remove broken links and try again.",
   DEADLINE_INVALID:"That deadline is in the past. Pick at least 24 hours from now.",
   NETWORK_CONGESTED:"The network is busy; I’ll keep retrying for a moment.",
+  RELAYER_NOT_CONFIGURED:"The orchestrator isn’t configured to relay transactions yet. Ask the operator to set ONEBOX_RELAYER_PRIVATE_KEY.",
+  JOB_ID_REQUIRED:"I need a job ID to continue. Include the job number in your request.",
+  REQUEST_EMPTY:"Please describe what you need before sending.",
+  UNSUPPORTED_ACTION:"That action isn’t available yet. Try posting, checking status, or finalizing jobs.",
   UNKNOWN:"Something went wrong. Try rephrasing your request or adjust the reward/deadline."
 };
 
@@ -33,8 +37,24 @@ async function api(path, body){
   const headers={'Content-Type':'application/json'}; if(TOK) headers['Authorization']='Bearer '+TOK;
   const r=await fetch(ORCH+path,{method: body? 'POST':'GET',headers,body: body? JSON.stringify(body):undefined});
   if(!r.ok){
-    let msg='UNKNOWN'; try{msg=(await r.text())||'UNKNOWN'}catch{}
-    throw new Error(msg.toUpperCase());
+    let code='UNKNOWN';
+    try{
+      const raw=await r.text();
+      if(raw){
+        try{
+          const parsed=JSON.parse(raw);
+          if(typeof parsed==='string') code=parsed;
+          else if(parsed && typeof parsed==='object'){
+            if(typeof parsed.error==='string') code=parsed.error;
+            else if(typeof parsed.detail==='string') code=parsed.detail;
+            else if(parsed.detail && typeof parsed.detail==='object' && typeof parsed.detail.error==='string') code=parsed.detail.error;
+          }
+        }catch{
+          code=raw.trim()||'UNKNOWN';
+        }
+      }
+    }catch{}
+    throw new Error(code.toUpperCase());
   }
   return await r.json();
 }

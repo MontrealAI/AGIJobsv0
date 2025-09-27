@@ -15,7 +15,7 @@ The static bundle also exposes runtime configuration controls: operators can cha
 ## API surface (FastAPI stubs)
 
 Add the following endpoints to `AGI-Alpha-Agent-v0` (or reuse the ready-made Express router in `apps/orchestrator/oneboxRouter.ts`).
-A fully fleshed-out FastAPI router lives at [`routes/onebox.py`](../routes/onebox.py) for copy/paste deployment:
+A production-ready FastAPI router now ships in [`routes/onebox.py`](../routes/onebox.py); mount it directly on the existing API server to gain `/onebox/plan`, `/onebox/execute`, `/onebox/status`, `/onebox/healthz`, and `/onebox/metrics` with Prometheus instrumentation:
 
 ```py
 from fastapi import APIRouter, Depends, HTTPException
@@ -51,7 +51,7 @@ async def status(job_id: int | None = None, deps=Depends(auth_guard)):
     return await status_service.fetch(job_id=job_id)
 ```
 
-The Python implementation (`routes/onebox.py`) exposes the same `/onebox/plan`, `/onebox/execute`, and `/onebox/status` endpoints along with `GET /onebox/healthz` and a Prometheus-ready `GET /onebox/metrics` surface.
+The Python implementation (`routes/onebox.py`) exposes the same `/onebox/plan`, `/onebox/execute`, and `/onebox/status` endpoints along with `GET /onebox/healthz` and a Prometheus-ready `GET /onebox/metrics` surface. It also normalises planner output (reward and deadline inference, optional agent type hints) and decodes packed on-chain metadata for `/status` responses.
 
 If you prefer TypeScript, run `ts-node --project apps/orchestrator/tsconfig.json apps/orchestrator/onebox-server.ts` to start the bundled Express service. It exposes `/onebox/*` plus `/healthz` and can be configured via:
 
@@ -60,6 +60,17 @@ If you prefer TypeScript, run `ts-node --project apps/orchestrator/tsconfig.json
 - `ONEBOX_EXPLORER_TX_BASE`: optional block explorer prefix for receipt links.
 - `ONEBOX_STATUS_LIMIT`: number of recent jobs returned by `/onebox/status`.
 - `ONEBOX_CORS_ALLOW`: CORS origin (default `*`).
+
+### FastAPI / Python environment variables
+
+When running the FastAPI router from [`routes/onebox.py`](../routes/onebox.py), configure the orchestrator with:
+
+- `RPC_URL`, `CHAIN_ID`, `JOB_REGISTRY`, `AGIALPHA_TOKEN`: canonical chain information.
+- `ONEBOX_RELAYER_PRIVATE_KEY`: optional relayer signer for walletless execution (omit to require wallet mode).
+- `ONEBOX_API_TOKEN`: bearer token expected on every `/onebox/*` request.
+- `ONEBOX_EXPLORER_TX_BASE`: transaction receipt template (defaults to `https://explorer.example/tx/{tx}`).
+- `PINNER_KIND`, `PINNER_ENDPOINT`, `PINNER_TOKEN`: IPFS pinning backend configuration.
+- `AGIALPHA_DECIMALS`: token decimals (defaults to `18`, matching `config/agialpha.json`).
 
 Leverage the existing FastAPI `api.py` structure or the Express server: include the router, reuse the `API_TOKEN` auth dependency, and expose the endpoints in the OpenAPI schema.
 
@@ -89,7 +100,7 @@ The planner must output a `JobIntent` structure:
 
 ## Error handling
 
-The UI ships with an error dictionary for common failure strings (`InsufficientBalance`, `deadline`, `allowance`, etc.). Ensure the orchestrator raises structured errors with either:
+The UI ships with an error dictionary for common failure strings (`INSUFFICIENT_BALANCE`, `DEADLINE_INVALID`, `REQUEST_EMPTY`, etc.). Ensure the orchestrator raises structured errors with either:
 
 ```json
 {"error":"InsufficientBalance"}
@@ -99,13 +110,7 @@ or HTTP errors with readable `detail` fields. This allows the front-end to map t
 
 ## Status updates
 
-`/onebox/status` should aggregate:
-
-- live chain reads from `JobRegistry`
-- cached gateway events (`agent-gateway/` service)
-- computed fields: `statusLabel`, `reward` (decimal string), `deadline` (humanised)
-
-Return `jobs: [...]` with the latest entries first. Optional pagination can use `nextToken`.
+`/onebox/status` should aggregate live chain reads from `JobRegistry` (state, deadline, assignee) and, when available, cached gateway events from `agent-gateway/`. The default router decodes packed metadata so every response includes `state`, `reward`, `token`, `deadline`, and `assignee` with sub-300 ms reads. Extend with pagination tokens if you expose multi-job feeds.
 
 ## Deployment steps
 

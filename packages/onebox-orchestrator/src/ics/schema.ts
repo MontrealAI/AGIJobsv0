@@ -14,7 +14,7 @@ export const INTENT_VALUES = [
 
 const amountSchema = z
   .union([z.string(), z.number(), z.bigint()])
-  .transform((value): string =>
+  .transform((value: string | number | bigint): string =>
     typeof value === 'string' ? value : value.toString()
   )
   .pipe(
