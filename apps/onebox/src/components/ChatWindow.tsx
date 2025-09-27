@@ -9,6 +9,8 @@ import type {
 } from '@agijobs/onebox-sdk';
 import deploymentAddresses from '../../../../docs/deployment-addresses.json';
 import { defaultMessages } from '../lib/defaultMessages';
+import { ReceiptsPanel } from './ReceiptsPanel';
+import type { ExecutionReceipt } from './receiptTypes';
 
 const ORCHESTRATOR_BASE_URL = (
   process.env.NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL ??
@@ -20,16 +22,6 @@ const ORCHESTRATOR_TOKEN =
   process.env.NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_TOKEN ??
   process.env.NEXT_PUBLIC_ALPHA_ORCHESTRATOR_TOKEN ??
   '';
-
-type ExecutionReceipt = {
-  id: string;
-  jobId?: number;
-  specCid?: string;
-  reward?: string;
-  token?: string;
-  receiptUrl?: string;
-  createdAt: number;
-};
 
 type TextMessage = {
   id: string;
@@ -100,9 +92,6 @@ export function ChatWindow() {
     messageId: string;
     plan: PlanResponse;
   } | null>(null);
-  const [latestReceipt, setLatestReceipt] = useState<ExecutionReceipt | null>(
-    null
-  );
   const [receipts, setReceipts] = useState<ExecutionReceipt[]>([]);
   const [isExpertMode, setIsExpertMode] = useState(false);
   const [isExpertPanelOpen, setIsExpertPanelOpen] = useState(true);
@@ -152,6 +141,40 @@ export function ChatWindow() {
           return acc;
         }
 
+        const legacyReward =
+          typeof (candidate as { reward?: string }).reward === 'string' &&
+          (candidate as { reward?: string }).reward
+            ? (candidate as { reward?: string }).reward
+            : undefined;
+        const legacyToken =
+          typeof (candidate as { token?: string }).token === 'string' &&
+          (candidate as { token?: string }).token
+            ? (candidate as { token?: string }).token
+            : undefined;
+        const storedNetPayout =
+          typeof candidate.netPayout === 'string' &&
+          candidate.netPayout.length > 0
+            ? candidate.netPayout
+            : undefined;
+        const derivedNetPayout = legacyReward
+          ? legacyToken
+            ? `${legacyReward} ${legacyToken}`
+            : legacyReward
+          : undefined;
+        const { receiptUrl: receiptUrlCandidate } = candidate as {
+          receiptUrl?: unknown;
+        };
+        const legacyExplorerUrl =
+          typeof receiptUrlCandidate === 'string' &&
+          receiptUrlCandidate.length > 0
+            ? receiptUrlCandidate
+            : undefined;
+        const resolvedExplorerUrl =
+          typeof candidate.explorerUrl === 'string' &&
+          candidate.explorerUrl.length > 0
+            ? candidate.explorerUrl
+            : legacyExplorerUrl;
+
         const record: ExecutionReceipt = {
           id: candidate.id,
           jobId:
@@ -161,19 +184,8 @@ export function ChatWindow() {
             candidate.specCid.length > 0
               ? candidate.specCid
               : undefined,
-          reward:
-            typeof candidate.reward === 'string' && candidate.reward.length > 0
-              ? candidate.reward
-              : undefined,
-          token:
-            typeof candidate.token === 'string' && candidate.token.length > 0
-              ? candidate.token
-              : undefined,
-          receiptUrl:
-            typeof candidate.receiptUrl === 'string' &&
-            candidate.receiptUrl.length > 0
-              ? candidate.receiptUrl
-              : undefined,
+          netPayout: storedNetPayout ?? derivedNetPayout,
+          explorerUrl: resolvedExplorerUrl,
           createdAt:
             typeof candidate.createdAt === 'number'
               ? candidate.createdAt
@@ -188,7 +200,6 @@ export function ChatWindow() {
         valid.sort((a, b) => b.createdAt - a.createdAt);
         const limited = valid.slice(0, RECEIPT_HISTORY_LIMIT);
         setReceipts(limited);
-        setLatestReceipt(limited[0] ?? null);
       }
     } catch (error) {
       console.error('Failed to restore receipts from storage.', error);
@@ -206,20 +217,6 @@ export function ChatWindow() {
       JSON.stringify(receipts.slice(0, RECEIPT_HISTORY_LIMIT))
     );
   }, [receipts]);
-
-  useEffect(() => {
-    if (receipts.length === 0) {
-      if (latestReceipt !== null) {
-        setLatestReceipt(null);
-      }
-      return;
-    }
-
-    const [first] = receipts;
-    if (!latestReceipt || latestReceipt.id !== first.id) {
-      setLatestReceipt(first);
-    }
-  }, [latestReceipt, receipts]);
 
   const submitMessage = useCallback(
     async (prompt: string) => {
@@ -438,13 +435,19 @@ export function ChatWindow() {
         throw new Error(reason);
       }
 
+      const netPayout = [payload.reward, payload.token]
+        .filter(
+          (value): value is string =>
+            typeof value === 'string' && value.length > 0
+        )
+        .join(' ');
+
       const receipt: ExecutionReceipt = {
         id: createReceiptId(),
         jobId: payload.jobId,
         specCid: payload.specCid,
-        reward: payload.reward,
-        token: payload.token,
-        receiptUrl: payload.receiptUrl,
+        netPayout: netPayout.length > 0 ? netPayout : undefined,
+        explorerUrl: payload.receiptUrl,
         createdAt: Date.now(),
       };
 
@@ -455,17 +458,13 @@ export function ChatWindow() {
       if (receipt.specCid) {
         successLines.push(`CID: ${receipt.specCid}`);
       }
-      if (receipt.reward) {
-        const payoutLabel = receipt.token
-          ? `${receipt.reward} ${receipt.token}`
-          : receipt.reward;
-        successLines.push(`Payout: ${payoutLabel}`);
+      if (receipt.netPayout) {
+        successLines.push(`Payout: ${receipt.netPayout}`);
       }
-      if (receipt.receiptUrl) {
-        successLines.push(`Receipt: ${receipt.receiptUrl}`);
+      if (receipt.explorerUrl) {
+        successLines.push(`Receipt: ${receipt.explorerUrl}`);
       }
 
-      setLatestReceipt(receipt);
       setReceipts((current) => {
         const next = [receipt, ...current];
         return next.slice(0, RECEIPT_HISTORY_LIMIT);
@@ -485,13 +484,6 @@ export function ChatWindow() {
       setIsExecuting(false);
     }
   }, [isExpertMode, pendingPlan, updateMessageContent]);
-
-  const formatPayout = (receipt: ExecutionReceipt) => {
-    if (receipt.reward && receipt.token) {
-      return `${receipt.reward} ${receipt.token}`;
-    }
-    return receipt.reward ?? null;
-  };
 
   const contractEntries = useMemo(
     () =>
@@ -613,52 +605,61 @@ export function ChatWindow() {
           </div>
         ) : null}
         <div className="chat-history" role="log" aria-live="polite">
-          {messages.map((message) => (
-            <div key={message.id} className="chat-message">
-              <span className="chat-message-role">{message.role}</span>
-              <div className="chat-bubble">
-                {message.kind === 'plan' ? (
-                  <div className="plan-summary">
-                    <p>{message.plan.summary}</p>
-                    {message.plan.warnings &&
-                    message.plan.warnings.length > 0 ? (
-                      <ul className="plan-warnings">
-                        {message.plan.warnings.map(
-                          (warning: string, warningIndex: number) => (
+          {messages.map((message) => {
+            if (message.kind === 'plan') {
+              const warnings = Array.isArray(message.plan.warnings)
+                ? message.plan.warnings
+                : [];
+              const hasWarnings = warnings.length > 0;
+
+              return (
+                <div key={message.id} className="chat-message">
+                  <span className="chat-message-role">{message.role}</span>
+                  <div className="chat-bubble">
+                    <div className="plan-summary">
+                      <p>{message.plan.summary}</p>
+                      {hasWarnings ? (
+                        <ul className="plan-warnings">
+                          {warnings.map((warning: string, warningIndex: number) => (
                             <li key={warningIndex}>{warning}</li>
-                          )
-                        )}
-                      </ul>
-                    ) : null}
-                    {pendingPlan?.messageId === message.id ? (
-                      <div className="plan-actions">
-                        <button
-                          type="button"
-                          className="plan-button"
-                          onClick={() => {
-                            void handleExecutePlan();
-                          }}
-                          disabled={isExecuting}
-                        >
-                          Yes
-                        </button>
-                        <button
-                          type="button"
-                          className="plan-button plan-button-secondary"
-                          onClick={handleRejectPlan}
-                          disabled={isExecuting}
-                        >
-                          No
-                        </button>
-                      </div>
-                    ) : null}
+                          ))}
+                        </ul>
+                      ) : null}
+                      {pendingPlan?.messageId === message.id ? (
+                        <div className="plan-actions">
+                          <button
+                            type="button"
+                            className="plan-button"
+                            onClick={() => {
+                              void handleExecutePlan();
+                            }}
+                            disabled={isExecuting}
+                          >
+                            Yes
+                          </button>
+                          <button
+                            type="button"
+                            className="plan-button plan-button-secondary"
+                            onClick={handleRejectPlan}
+                            disabled={isExecuting}
+                          >
+                            No
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                ) : (
-                  message.content
-                )}
+                </div>
+              );
+            }
+
+            return (
+              <div key={message.id} className="chat-message">
+                <span className="chat-message-role">{message.role}</span>
+                <div className="chat-bubble">{message.content}</div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={bottomRef} />
         </div>
         <form
@@ -690,60 +691,7 @@ export function ChatWindow() {
           </div>
         </form>
       </div>
-      <aside
-        className="chat-receipts"
-        aria-live="polite"
-        aria-label="Recent receipts"
-      >
-        <h2 className="chat-receipts-title">Recent jobs</h2>
-        {latestReceipt ? (
-          <ul className="chat-receipts-list">
-            {receipts.map((receipt) => {
-              const payout = formatPayout(receipt);
-              return (
-                <li key={receipt.id} className="chat-receipts-item">
-                  {receipt.jobId !== undefined ? (
-                    <div className="chat-receipt-field">
-                      <span className="chat-receipt-label">Job ID</span>
-                      <span className="chat-receipt-value">
-                        #{receipt.jobId}
-                      </span>
-                    </div>
-                  ) : null}
-                  {receipt.specCid ? (
-                    <div className="chat-receipt-field">
-                      <span className="chat-receipt-label">CID</span>
-                      <span className="chat-receipt-value chat-receipt-monospace">
-                        {receipt.specCid}
-                      </span>
-                    </div>
-                  ) : null}
-                  {payout ? (
-                    <div className="chat-receipt-field">
-                      <span className="chat-receipt-label">Payout</span>
-                      <span className="chat-receipt-value">{payout}</span>
-                    </div>
-                  ) : null}
-                  {receipt.receiptUrl ? (
-                    <a
-                      className="chat-receipt-link"
-                      href={receipt.receiptUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View on explorer
-                    </a>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="chat-receipts-empty">
-            Execute a plan to see job details here.
-          </p>
-        )}
-      </aside>
+      <ReceiptsPanel receipts={receipts} />
     </div>
   );
 }
