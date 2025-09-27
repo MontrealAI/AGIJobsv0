@@ -267,11 +267,13 @@ export function ChatWindow() {
               {message.kind === 'plan' ? (
                 <div className="plan-summary">
                   <p>{message.plan.summary}</p>
-                  {message.plan.warnings?.length ? (
+                  {message.plan.warnings && message.plan.warnings.length > 0 ? (
                     <ul className="plan-warnings">
-                      {message.plan.warnings.map((warning, index) => (
-                        <li key={index}>{warning}</li>
-                      ))}
+                      {message.plan.warnings.map(
+                        (warning: string, warningIndex: number) => (
+                          <li key={warningIndex}>{warning}</li>
+                        )
+                      )}
                     </ul>
                   ) : null}
                   {pendingPlan?.messageId === message.id ? (

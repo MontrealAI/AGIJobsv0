@@ -26,6 +26,12 @@
       "@agijobs/onebox-orchestrator/*": [
         "../../../packages/onebox-orchestrator/src/*"
       ],
+      "@agijobs/onebox-sdk": [
+        "../../../packages/onebox-sdk/src/index.ts"
+      ],
+      "@agijobs/onebox-sdk/*": [
+        "../../../packages/onebox-sdk/src/*"
+      ],
       "zod": [
         "../node_modules/zod/index.d.ts"
       ],
