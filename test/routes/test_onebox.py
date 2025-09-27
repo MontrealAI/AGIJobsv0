@@ -317,9 +317,11 @@ import prometheus_client  # type: ignore  # noqa: E402  pylint: disable=wrong-im
 
 from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     ExecuteRequest,
+    health_router,
     JobIntent,
     Payload,
     PlanRequest,
+    router,
     Web3,
     _calculate_deadline_timestamp,
     _decode_job_created,
@@ -592,6 +594,21 @@ class HealthcheckTests(unittest.IsolatedAsyncioTestCase):
     async def test_healthcheck_returns_minimal_ok_payload(self) -> None:
         data = await healthcheck(_make_request())
         self.assertEqual(data, {"ok": True})
+
+
+class HealthcheckRouteTests(unittest.TestCase):
+    @unittest.skipUnless(hasattr(fastapi, "FastAPI"), "FastAPI application not available")
+    def test_health_endpoint_is_mounted_without_onebox_prefix(self) -> None:
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        app = FastAPI()
+        app.include_router(router)
+        app.include_router(health_router)
+
+        response = TestClient(app).get("/healthz")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ok": True})
 
 
 class MetricsEndpointTests(unittest.TestCase):
