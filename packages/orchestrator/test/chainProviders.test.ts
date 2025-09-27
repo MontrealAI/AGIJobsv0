@@ -1,7 +1,13 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
 
+import { ethers } from "ethers";
+
 import { getSignerForUser } from "../src/chain/provider.js";
+import {
+  AccountAbstractionSigner,
+  type AccountAbstractionConfig,
+} from "../src/chain/providers/aa.js";
 
 const relayerMnemonic = "test test test test test test test test test test test junk";
 const aaMnemonic = "test walk nut penalty hip pave soap entry language right filter choice";
@@ -78,4 +84,49 @@ test("aa mode derives deterministic session keys per user", async () => {
   } finally {
     restoreEnv(backup);
   }
+});
+
+test("aa signer falls back to bundler gas estimates for undeployed accounts", async () => {
+  const wallet = ethers.Wallet.createRandom();
+  const config: AccountAbstractionConfig = {
+    entryPoint: entryPointAddress,
+    bundlerUrl: "http://127.0.0.1:4337",
+    bundlerHeaders: {},
+    accountSalt: 0n,
+    verificationGasLimit: 1_500_000n,
+    preVerificationGas: 60_000n,
+    callGasBuffer: 25_000n,
+  };
+
+  const signer = new AccountAbstractionSigner(wallet, config);
+
+  let bundlerCalled = false;
+  const bundlerEstimates = {
+    callGasLimit: 100_000n,
+    preVerificationGas: 70_000n,
+    verificationGasLimit: 120_000n,
+  };
+
+  const bundlerClient = (signer as any).bundler;
+  bundlerClient.estimateUserOperationGas = async () => {
+    bundlerCalled = true;
+    return bundlerEstimates;
+  };
+
+  (signer as any).resolveInitCode = async () => "0x1234";
+  (signer as any).resolveNonce = async () => 0n;
+
+  const tx: ethers.TransactionRequest = {
+    to: wallet.address,
+    data: "0x",
+  };
+
+  const result = await (signer as any).buildUserOperation(tx);
+  const userOp = result.userOp;
+
+  assert.equal(bundlerCalled, true);
+  assert.equal(userOp.callGasLimit, bundlerEstimates.callGasLimit + config.callGasBuffer);
+  assert.equal(userOp.preVerificationGas, bundlerEstimates.preVerificationGas);
+  assert.equal(userOp.verificationGasLimit, bundlerEstimates.verificationGasLimit);
+  assert.notEqual(userOp.callGasLimit, config.callGasBuffer);
 });

@@ -219,27 +219,86 @@ export class AccountAbstractionSigner extends ethers.AbstractSigner {
     throw new Error("Account abstraction signer does not support signTransaction");
   }
 
-  async estimateCallGas(tx: ethers.TransactionRequest, sender: string): Promise<bigint> {
+  private async estimateCallGas(
+    tx: ethers.TransactionRequest,
+    sender: string,
+    context: {
+      initCode: string;
+      nonce: bigint;
+      callData: string;
+      maxFeePerGas: bigint;
+      maxPriorityFeePerGas: bigint;
+      preVerificationGas: bigint;
+      verificationGasLimit: bigint;
+      paymasterAndData: string;
+    }
+  ): Promise<{
+    callGasLimit: bigint;
+    preVerificationGas: bigint;
+    verificationGasLimit: bigint;
+  }> {
     if (tx.gasLimit !== undefined && tx.gasLimit !== null) {
-      return ethers.toBigInt(tx.gasLimit);
+      return {
+        callGasLimit: ethers.toBigInt(tx.gasLimit),
+        preVerificationGas: context.preVerificationGas,
+        verificationGasLimit: context.verificationGasLimit,
+      };
     }
+
     const provider = this.sessionWallet.provider;
-    if (!provider) {
-      return 0n;
+    let providerEstimate: bigint | null = null;
+
+    if (provider) {
+      try {
+        const estimate = await provider.estimateGas({
+          from: sender,
+          to: tx.to ?? undefined,
+          data: tx.data ?? undefined,
+          value: tx.value ?? undefined,
+        });
+        providerEstimate = BigInt(estimate);
+      } catch (error) {
+        console.warn("Gas estimation failed for user operation", error);
+      }
     }
+
+    if (providerEstimate !== null && providerEstimate > 0n) {
+      return {
+        callGasLimit: providerEstimate + this.config.callGasBuffer,
+        preVerificationGas: context.preVerificationGas,
+        verificationGasLimit: context.verificationGasLimit,
+      };
+    }
+
     try {
-      const estimate = await provider.estimateGas({
-        from: sender,
-        to: tx.to ?? undefined,
-        data: tx.data ?? undefined,
-        value: tx.value ?? undefined,
-      });
-      return BigInt(estimate) + this.config.callGasBuffer;
+      const bundlerEstimates = await this.bundler.estimateUserOperationGas(
+        {
+          sender,
+          nonce: context.nonce,
+          initCode: context.initCode,
+          callData: context.callData,
+          callGasLimit: 0n,
+          verificationGasLimit: context.verificationGasLimit,
+          preVerificationGas: context.preVerificationGas,
+          maxFeePerGas: context.maxFeePerGas,
+          maxPriorityFeePerGas: context.maxPriorityFeePerGas,
+          paymasterAndData: context.paymasterAndData,
+          signature: "0x",
+        },
+        this.config.entryPoint
+      );
+      return {
+        callGasLimit: bundlerEstimates.callGasLimit + this.config.callGasBuffer,
+        preVerificationGas: bundlerEstimates.preVerificationGas,
+        verificationGasLimit: bundlerEstimates.verificationGasLimit,
+      };
     } catch (error) {
-      console.warn("Gas estimation failed for user operation", error);
-      return (tx.gasLimit !== undefined && tx.gasLimit !== null
-        ? ethers.toBigInt(tx.gasLimit)
-        : 0n) + this.config.callGasBuffer;
+      console.warn("Bundler gas estimation failed for user operation", error);
+      return {
+        callGasLimit: this.config.callGasBuffer,
+        preVerificationGas: context.preVerificationGas,
+        verificationGasLimit: context.verificationGasLimit,
+      };
     }
   }
 
@@ -319,7 +378,6 @@ export class AccountAbstractionSigner extends ethers.AbstractSigner {
   }> {
     const sender = await this.getAddress();
     const chainId = await this.ensureChainId();
-    const callGasLimit = await this.estimateCallGas(tx, sender);
     const { maxFee, maxPriority } = await this.resolveFeeData();
     const initCode = await this.resolveInitCode(sender);
     const nonce = await this.resolveNonce(sender);
@@ -329,14 +387,25 @@ export class AccountAbstractionSigner extends ethers.AbstractSigner {
       tx.data ?? "0x",
     ]);
 
+    const gasEstimates = await this.estimateCallGas(tx, sender, {
+      initCode,
+      nonce,
+      callData,
+      maxFeePerGas: maxFee,
+      maxPriorityFeePerGas: maxPriority,
+      preVerificationGas: this.config.preVerificationGas,
+      verificationGasLimit: this.config.verificationGasLimit,
+      paymasterAndData: "0x",
+    });
+
     let userOp: UserOperationStruct = {
       sender,
       nonce,
       initCode,
       callData,
-      callGasLimit,
-      verificationGasLimit: this.config.verificationGasLimit,
-      preVerificationGas: this.config.preVerificationGas,
+      callGasLimit: gasEstimates.callGasLimit,
+      verificationGasLimit: gasEstimates.verificationGasLimit,
+      preVerificationGas: gasEstimates.preVerificationGas,
       maxFeePerGas: maxFee,
       maxPriorityFeePerGas: maxPriority,
       paymasterAndData: "0x",
