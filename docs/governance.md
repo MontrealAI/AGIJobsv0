@@ -32,7 +32,7 @@ executed.
    );
    ```
 3. After deployment the timelock or multisig becomes the only account
-   capable of invoking functions marked `onlyGovernor`.
+   capable of invoking functions marked `onlyGovernance`.
 
 ## Upgrading through the timelock
 

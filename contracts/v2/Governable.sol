@@ -43,11 +43,6 @@ abstract contract Governable {
         _;
     }
 
-    modifier onlyGovernor() {
-        _checkGovernor();
-        _;
-    }
-
     function setGovernance(address _governance) public onlyGovernance {
         _setGovernance(_governance);
     }
