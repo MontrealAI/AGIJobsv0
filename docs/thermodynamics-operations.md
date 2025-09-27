@@ -13,6 +13,21 @@ only submits transactions when `--execute` is supplied. It covers the
 `RewardEngineMB` distribution, settlers, thermodynamic constants and the
 `Thermostat` PID loop.
 
+### Thermostat-only adjustments
+
+Governance teams that only need to retune the `Thermostat` can use the focused
+helper instead of running the full thermodynamics pipeline:
+
+```
+AGIALPHA_NETWORK=mainnet npx hardhat run scripts/v2/updateThermostat.ts --network mainnet
+```
+
+The script reads either `config/thermostat.json` or the thermostat section of
+`config/thermodynamics.json`, prints the planned changes and supports `--execute`
+and `--json` just like the broader helper. It automatically falls back to the
+thermostat address recorded in `config/agialpha.json` or the reward-engine
+section when the thermostat config omits an explicit address.
+
 ## Configuration file
 
 Populate `config/thermodynamics.json` (or the

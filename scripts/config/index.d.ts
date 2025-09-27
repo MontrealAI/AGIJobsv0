@@ -288,6 +288,14 @@ export interface ThermodynamicsConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface ThermostatConfigResult {
+  config: ThermostatConfigInput;
+  path: string;
+  network?: SupportedNetwork;
+  source?: 'thermostat' | 'thermodynamics';
+  rewardEngineThermostat?: string;
+}
+
 export interface EnsRootConfig {
   label: string;
   name: string;
@@ -445,6 +453,9 @@ export function loadOwnerControlConfig(
 export function loadThermodynamicsConfig(
   options?: LoadOptions
 ): ThermodynamicsConfigResult;
+export function loadThermostatConfig(
+  options?: LoadOptions & { path?: string }
+): ThermostatConfigResult;
 export function loadRewardEngineConfig(
   options?: LoadOptions
 ): RewardEngineConfigResult;
