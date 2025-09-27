@@ -128,7 +128,7 @@ export function ChatWindow() {
             rows={2}
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Post a labeling job for 500 images, 50 AGIALPHA, 7 days"
+            placeholder="Describe what you need done…"
             className="chat-textarea"
           />
           <button
