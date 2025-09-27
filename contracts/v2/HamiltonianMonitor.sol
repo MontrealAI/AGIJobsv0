@@ -11,7 +11,7 @@ import {IHamiltonian} from "./interfaces/IHamiltonian.sol";
 ///      with components such as {StakeManager}.
 contract HamiltonianMonitor is Governable, IHamiltonian {
     /// @notice Maximum number of data points to retain in the rolling window.
-    uint256 public immutable window;
+    uint256 public window;
 
     /// @dev Circular buffer of recent dissipation values.
     uint256[] private dHistory;
@@ -29,11 +29,50 @@ contract HamiltonianMonitor is Governable, IHamiltonian {
     /// @notice Emitted whenever a new Hamiltonian value is recorded.
     event HamiltonianUpdated(int256 h);
 
+    /// @notice Emitted when governance clears the stored history.
+    event HistoryReset(uint256 previousCount);
+
+    /// @notice Emitted when governance updates the rolling window size.
+    event WindowUpdated(uint256 previousWindow, uint256 newWindow, bool historyCleared);
+
     /// @param _window Number of periods to include in the rolling averages.
     /// @param _governance Timelock or multisig with permission to update.
     constructor(uint256 _window, address _governance) Governable(_governance) {
         require(_window > 0, "window");
         window = _window;
+    }
+
+    /// @notice Update the rolling window size used for averages.
+    /// @dev Optionally clears the stored history to restart accumulation.
+    /// @param newWindow New number of periods to retain.
+    /// @param resetHistory Whether to clear all stored observations.
+    function setWindow(uint256 newWindow, bool resetHistory) external onlyGovernance {
+        require(newWindow > 0, "window");
+
+        uint256 previousWindow = window;
+        if (resetHistory) {
+            uint256 previousCount = dHistory.length;
+            _clearHistory();
+            window = newWindow;
+            emit HistoryReset(previousCount);
+            emit WindowUpdated(previousWindow, newWindow, true);
+            return;
+        }
+
+        if (previousWindow != newWindow) {
+            _normaliseHistory(newWindow);
+            window = newWindow;
+            emit WindowUpdated(previousWindow, newWindow, false);
+        } else {
+            _normaliseHistory(newWindow);
+        }
+    }
+
+    /// @notice Clear the stored dissipation and utility history.
+    function resetHistory() external onlyGovernance {
+        uint256 previousCount = dHistory.length;
+        _clearHistory();
+        emit HistoryReset(previousCount);
     }
 
     /// @notice Record new dissipation and utility measurements.
@@ -82,6 +121,66 @@ contract HamiltonianMonitor is Governable, IHamiltonian {
     function history() external view returns (uint256[] memory d, uint256[] memory u) {
         d = dHistory;
         u = uHistory;
+    }
+
+    function _clearHistory() private {
+        delete dHistory;
+        delete uHistory;
+        dSum = 0;
+        uSum = 0;
+        nextIndex = 0;
+    }
+
+    function _normaliseHistory(uint256 newWindow) private {
+        uint256 count = dHistory.length;
+        if (count == 0) {
+            nextIndex = 0;
+            return;
+        }
+
+        uint256 limit = count;
+        if (newWindow < limit) {
+            limit = newWindow;
+        }
+
+        uint256 start = nextIndex;
+        if (count > limit) {
+            start = (start + (count - limit)) % count;
+        } else if (start >= count) {
+            start = 0;
+        }
+
+        uint256[] memory tempD = new uint256[](limit);
+        uint256[] memory tempU = new uint256[](limit);
+        uint256 newSumD;
+        uint256 newSumU;
+
+        for (uint256 i = 0; i < limit; i++) {
+            uint256 idx = (start + i) % count;
+            uint256 dValue = dHistory[idx];
+            uint256 uValue = uHistory[idx];
+            tempD[i] = dValue;
+            tempU[i] = uValue;
+            newSumD += dValue;
+            newSumU += uValue;
+        }
+
+        delete dHistory;
+        delete uHistory;
+        for (uint256 i = 0; i < limit; i++) {
+            dHistory.push(tempD[i]);
+            uHistory.push(tempU[i]);
+        }
+        dSum = newSumD;
+        uSum = newSumU;
+
+        if (limit < newWindow) {
+            nextIndex = limit;
+        } else if (limit == 0) {
+            nextIndex = 0;
+        } else {
+            nextIndex = 0;
+        }
     }
 }
 

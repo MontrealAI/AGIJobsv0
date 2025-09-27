@@ -86,6 +86,16 @@ flowchart LR
 - **Employers** – Design jobs with clear requirements so agents expend minimal energy on speculation or rework, improving overall budget share.
 - **Operators** – Maintain energy‑efficient, highly available infrastructure and publish transparent metrics so the oracle can measure consumption accurately.
 
+### Hamiltonian monitor upkeep
+
+Governance can now retune the `HamiltonianMonitor` without redeploying. Update [`config/hamiltonian-monitor.json`](config/hamiltonian-monitor.json) with the desired window size and any observations to append, then preview the required transactions:
+
+```bash
+npx hardhat run scripts/v2/updateHamiltonianMonitor.ts --network <network>
+```
+
+Pass `--execute` once the dry run looks correct to submit the queued actions. Use `resetHistory: true` in the config to wipe accumulated observations and start fresh—either on its own or combined with a window change. The helper automatically skips recording duplicate observations if they already match the most recent on-chain history.
+
 ### Deploy defaults
 
 Spin up the full stack with a single helper script:
