@@ -96,6 +96,16 @@ npx hardhat run scripts/v2/updateHamiltonianMonitor.ts --network <network>
 
 Pass `--execute` once the dry run looks correct to submit the queued actions. Use `resetHistory: true` in the config to wipe accumulated observations and start fresh—either on its own or combined with a window change. The helper automatically skips recording duplicate observations if they already match the most recent on-chain history.
 
+### Energy oracle signer management
+
+Governance controls which off-chain measurement nodes can sign energy attestations. Update [`config/energy-oracle.json`](config/energy-oracle.json) (or its per-network override) with the authorised signer list. Run the helper to review the planned changes and, once satisfied, apply them on-chain:
+
+```bash
+npx hardhat run scripts/v2/updateEnergyOracle.ts --network <network>
+```
+
+Pass `--execute` to submit the transactions from the governance signer or timelock. The helper prints the existing signer set, highlights additions and removals, and supports `--json` for automation workflows. By default it keeps currently authorised signers that are not listed in the configuration; add `"retainUnknown": false` to prune any stale entries automatically.
+
 ### Deploy defaults
 
 Spin up the full stack with a single helper script:

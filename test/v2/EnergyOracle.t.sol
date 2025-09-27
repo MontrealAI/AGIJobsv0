@@ -15,6 +15,8 @@ contract EnergyOracleTest is Test {
         signerPk = 0xA11CE;
         signer = vm.addr(signerPk);
         oracle.setSigner(signer, true);
+        assertTrue(oracle.signers(signer));
+        assertEq(oracle.signerCount(), 1);
     }
 
     function _att() internal view returns (EnergyOracle.Attestation memory att) {
@@ -127,6 +129,11 @@ contract EnergyOracleTest is Test {
         oracle.setSigner(newSigner, true);
     }
 
+    function test_setSigner_rejects_zero_address() public {
+        vm.expectRevert(EnergyOracle.ZeroSigner.selector);
+        oracle.setSigner(address(0), true);
+    }
+
     function test_batch_set_signers_updates_permissions() public {
         address[] memory batch = new address[](3);
         bool[] memory statuses = new bool[](3);
@@ -140,8 +147,22 @@ contract EnergyOracleTest is Test {
         oracle.setSigners(batch, statuses);
 
         assertFalse(oracle.signers(signer));
+        assertFalse(oracle.isSigner(signer));
         assertTrue(oracle.signers(batch[1]));
+        assertTrue(oracle.isSigner(batch[1]));
         assertTrue(oracle.signers(batch[2]));
+        assertTrue(oracle.isSigner(batch[2]));
+        assertEq(oracle.signerCount(), 2);
+
+        address[] memory signersList = oracle.getSigners();
+        assertEq(signersList.length, 2);
+        bool foundFeed;
+        bool foundBob;
+        for (uint256 i = 0; i < signersList.length; ++i) {
+            if (signersList[i] == batch[1]) foundFeed = true;
+            if (signersList[i] == batch[2]) foundBob = true;
+        }
+        assertTrue(foundFeed && foundBob);
     }
 
     function test_batch_set_signers_rejects_length_mismatch() public {
@@ -149,6 +170,16 @@ contract EnergyOracleTest is Test {
         bool[] memory statuses = new bool[](1);
 
         vm.expectRevert(EnergyOracle.LengthMismatch.selector);
+        oracle.setSigners(batch, statuses);
+    }
+
+    function test_batch_set_signers_rejects_zero_address() public {
+        address[] memory batch = new address[](1);
+        bool[] memory statuses = new bool[](1);
+        batch[0] = address(0);
+        statuses[0] = true;
+
+        vm.expectRevert(EnergyOracle.ZeroSigner.selector);
         oracle.setSigners(batch, statuses);
     }
 

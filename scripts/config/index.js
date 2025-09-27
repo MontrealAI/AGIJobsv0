@@ -171,6 +171,26 @@ function ensureUint(
   return parsed.toString();
 }
 
+function parseBooleanFlag(value, label) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  const asString = String(value).trim().toLowerCase();
+  if (!asString) {
+    return undefined;
+  }
+  if (['true', '1', 'yes', 'y', 'on', 'enable', 'enabled'].includes(asString)) {
+    return true;
+  }
+  if (['false', '0', 'no', 'n', 'off', 'disable', 'disabled'].includes(asString)) {
+    return false;
+  }
+  throw new Error(`${label} must be a boolean value`);
+}
+
 function normaliseAliasEntry(value, label) {
   if (value === undefined || value === null) {
     throw new Error(`${label} alias entry is undefined`);
@@ -873,6 +893,75 @@ function loadFeePoolConfig(options = {}) {
     throw new Error(`Fee pool config not found at ${configPath}`);
   }
   const config = normaliseFeePoolConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
+function normaliseEnergyOracleConfig(config = {}) {
+  const result = {};
+
+  const signersInput = config.signers;
+  const signerSet = new Set();
+  const signers = [];
+
+  if (Array.isArray(signersInput)) {
+    signersInput.forEach((value, index) => {
+      if (value === undefined || value === null || value === '') {
+        return;
+      }
+      const address = ensureAddress(value, `energy-oracle.signers[${index}]`);
+      if (!signerSet.has(address)) {
+        signerSet.add(address);
+        signers.push(address);
+      }
+    });
+  } else if (signersInput && typeof signersInput === 'object') {
+    let index = 0;
+    for (const [key, enabled] of Object.entries(signersInput)) {
+      if (!enabled) {
+        index += 1;
+        continue;
+      }
+      const address = ensureAddress(
+        key,
+        `energy-oracle.signers[${index}]`
+      );
+      if (!signerSet.has(address)) {
+        signerSet.add(address);
+        signers.push(address);
+      }
+      index += 1;
+    }
+  } else if (signersInput !== undefined) {
+    throw new Error('energy-oracle.signers must be an array or object');
+  }
+
+  signers.sort((a, b) => a.localeCompare(b));
+  result.signers = signers;
+
+  const retainUnknown =
+    parseBooleanFlag(config.retainUnknown, 'energy-oracle.retainUnknown') ??
+    parseBooleanFlag(config.keepUnknown, 'energy-oracle.keepUnknown') ??
+    parseBooleanFlag(
+      config.allowAdditional,
+      'energy-oracle.allowAdditional'
+    );
+
+  if (retainUnknown !== undefined) {
+    result.retainUnknown = retainUnknown;
+  }
+
+  return result;
+}
+
+function loadEnergyOracleConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('energy-oracle', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Energy oracle config not found at ${configPath}`);
+  }
+  const config = normaliseEnergyOracleConfig(readJson(configPath));
   return { config, path: configPath, network };
 }
 
@@ -1795,6 +1884,7 @@ module.exports = {
   loadJobRegistryConfig,
   loadStakeManagerConfig,
   loadFeePoolConfig,
+  loadEnergyOracleConfig,
   loadPlatformIncentivesConfig,
   loadPlatformRegistryConfig,
   loadTaxPolicyConfig,
