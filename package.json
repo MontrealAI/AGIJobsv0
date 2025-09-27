@@ -43,6 +43,7 @@
     "thermostat:update": "npx hardhat run scripts/v2/updateThermostat.ts",
     "hamiltonian:update": "npx hardhat run scripts/v2/updateHamiltonianMonitor.ts",
     "platform:registry:update": "npx hardhat run scripts/v2/updatePlatformRegistry.ts",
+    "platform:registry:inspect": "npx hardhat run scripts/v2/inspectPlatformRegistry.ts",
     "namehash:mainnet": "node scripts/compute-namehash.js deployment-config/mainnet.json",
     "namehash:sepolia": "node scripts/compute-namehash.js deployment-config/sepolia.json",
     "deploy:protocol": "npx hardhat run scripts/deploy/providerAgnosticDeploy.ts",

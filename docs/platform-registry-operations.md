@@ -71,6 +71,27 @@ npm run platform:registry:update -- --network <network> [--execute]
 This wrapper simply forwards arguments to the Hardhat script and behaves
 identically to the raw `npx hardhat run` invocation.
 
+## Inspect on-chain state
+
+Before executing changes, you can generate a high-signal snapshot of the
+current PlatformRegistry configuration, active registrars and blacklist entries.
+
+```bash
+npm run platform:registry:inspect -- --network <network> [--json] \
+  [--from-block <number>] [--to-block <number>] [--batch-size <number>]
+```
+
+- Collects registrar/blacklist history directly from `RegistrarUpdated` and
+  `Blacklisted` events, highlighting any addresses missing from the JSON
+  configuration file.
+- Outputs a human-readable table by default and supports `--json` for pipelines
+  or change-management tooling.
+- Accepts optional block range arguments for RPC providers with limited log
+  windows. By default the helper scans from block 0 to the latest block.
+
+This inspection tool complements `updatePlatformRegistry.ts` by confirming the
+live state before submitting governance transactions.
+
 ## Operational tips
 
 - Keep `config/platform-registry.json` under version control so governance
