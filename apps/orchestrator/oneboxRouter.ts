@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import express from 'express';
 import {
   Contract,
@@ -33,6 +34,53 @@ import {
   recordStatus,
   renderMetrics,
 } from './oneboxMetrics';
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    correlationId?: string;
+  }
+}
+
+type LogLevel = 'info' | 'warn' | 'error';
+
+function logEvent(level: LogLevel, event: string, fields: Record<string, unknown>): void {
+  const entry = {
+    level,
+    event,
+    timestamp: new Date().toISOString(),
+    ...fields,
+  };
+  const payload = JSON.stringify(entry);
+  if (level === 'error') {
+    console.error(payload);
+  } else if (level === 'warn') {
+    console.warn(payload);
+  } else {
+    console.log(payload);
+  }
+}
+
+function getCorrelationId(req: express.Request): string {
+  if (req.correlationId) return req.correlationId;
+  const header = req.headers['x-correlation-id'] ?? req.headers['x-request-id'];
+  const value = Array.isArray(header) ? header[0] : header;
+  const correlationId = typeof value === 'string' && value.trim().length > 0 ? value.trim() : randomUUID();
+  req.correlationId = correlationId;
+  return correlationId;
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return typeof error === 'string' ? error : 'Unexpected error';
+}
+
+function statusFromError(error: unknown): number {
+  if (error instanceof HttpError) return error.status;
+  if (error && typeof (error as { status?: number }).status === 'number') {
+    return (error as { status: number }).status;
+  }
+  return 500;
+}
 
 const STATUS_ABI = [
   'function nextJobId() view returns (uint256)',
@@ -258,7 +306,9 @@ export class DefaultOneboxService implements OneboxService {
       const artifacts = await prepareJobArtifacts(metadata);
       return { jsonUri: artifacts.jsonUri, specHash: artifacts.specHash };
     } catch (error) {
-      console.error('Failed to prepare job metadata for wallet execution', error);
+      logEvent('error', 'onebox.prepare_wallet_artifacts_failed', {
+        error: errorMessage(error),
+      });
       throw new HttpError(
         502,
         'I could not package the job details for wallet execution. Please try again.'
@@ -320,9 +370,9 @@ export class DefaultOneboxService implements OneboxService {
         assignee: isZeroAddress(assignee) ? undefined : String(assignee),
       };
     } catch (error) {
-      console.warn('Failed to load job status', {
+      logEvent('warn', 'onebox.fetch_job_status_failed', {
         jobId: jobId.toString(),
-        error: error instanceof Error ? error.message : error,
+        error: errorMessage(error),
       });
       return undefined;
     }
@@ -332,47 +382,94 @@ export class DefaultOneboxService implements OneboxService {
 export function createOneboxRouter(service: OneboxService = new DefaultOneboxService()): express.Router {
   const router = express.Router();
 
+  router.use((req, res, next) => {
+    const correlationId = getCorrelationId(req);
+    res.setHeader('x-correlation-id', correlationId);
+    next();
+  });
+
   router.post('/plan', async (req, res) => {
     const start = now();
+    const correlationId = getCorrelationId(req);
+    let intentType = 'unknown';
+    let httpStatus = 200;
     try {
       const text = typeof req.body?.text === 'string' ? req.body.text : '';
       const expert = Boolean(req.body?.expert);
       const response = await service.plan(text, expert);
-      recordPlan(now() - start);
+      intentType = response.intent?.action ?? 'unknown';
+      logEvent('info', 'onebox.plan.success', {
+        correlationId,
+        intentType,
+        httpStatus,
+        expert,
+      });
       res.json(response);
     } catch (error) {
-      recordPlan(now() - start, error);
-      handleError(res, error);
+      httpStatus = statusFromError(error);
+      const level: LogLevel = httpStatus >= 500 ? 'error' : 'warn';
+      logEvent(level, 'onebox.plan.error', {
+        correlationId,
+        intentType,
+        httpStatus,
+        error: errorMessage(error),
+      });
+      handleError(req, res, error);
+    } finally {
+      recordPlan(intentType, httpStatus, now() - start);
     }
   });
 
   router.post('/execute', async (req, res) => {
     const start = now();
-    let intentAction: string | undefined;
+    const correlationId = getCorrelationId(req);
+    let intentType = 'unknown';
+    let httpStatus = 200;
+    let mode: 'wallet' | 'relayer' = 'relayer';
     try {
       const intent = req.body?.intent as JobIntent | undefined;
       if (!intent || typeof intent !== 'object') {
         throw new HttpError(400, 'Execution requires a validated intent payload.');
       }
-      intentAction = typeof intent.action === 'string' ? intent.action : undefined;
-      const mode = req.body?.mode === 'wallet' ? 'wallet' : 'relayer';
+      intentType = typeof intent.action === 'string' ? intent.action : 'unknown';
+      mode = req.body?.mode === 'wallet' ? 'wallet' : 'relayer';
       const response = await service.execute(intent, mode);
-      recordExecute(now() - start, intentAction);
+      logEvent('info', 'onebox.execute.success', {
+        correlationId,
+        intentType,
+        httpStatus,
+        mode,
+        jobId: response.jobId,
+        status: response.status,
+      });
       res.json(response);
     } catch (error) {
-      recordExecute(now() - start, intentAction, error);
-      handleError(res, error);
+      httpStatus = statusFromError(error);
+      const level: LogLevel = httpStatus >= 500 ? 'error' : 'warn';
+      logEvent(level, 'onebox.execute.error', {
+        correlationId,
+        intentType,
+        httpStatus,
+        mode,
+        error: errorMessage(error),
+      });
+      handleError(req, res, error);
+    } finally {
+      recordExecute(intentType, httpStatus, now() - start);
     }
   });
 
   router.get('/status', async (req, res) => {
     const start = now();
-    try {
-      const jobIdParam = req.query.jobId;
-      const limitParam = req.query.limit;
-      const jobId = jobIdParam !== undefined ? Number(jobIdParam) : undefined;
-      const limit = limitParam !== undefined ? Number(limitParam) : undefined;
+    const correlationId = getCorrelationId(req);
+    const intentType = 'status';
+    let httpStatus = 200;
+    const jobIdParam = req.query.jobId;
+    const limitParam = req.query.limit;
+    const jobId = jobIdParam !== undefined ? Number(jobIdParam) : undefined;
+    const limit = limitParam !== undefined ? Number(limitParam) : undefined;
 
+    try {
       if (jobId !== undefined && (!Number.isFinite(jobId) || jobId < 0)) {
         throw new HttpError(400, 'jobId must be a positive integer.');
       }
@@ -382,11 +479,28 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
       }
 
       const response = await service.status(jobId, limit);
-      recordStatus(now() - start);
+      logEvent('info', 'onebox.status.success', {
+        correlationId,
+        intentType,
+        httpStatus,
+        jobId,
+        limit,
+      });
       res.json(response);
     } catch (error) {
-      recordStatus(now() - start, error);
-      handleError(res, error);
+      httpStatus = statusFromError(error);
+      const level: LogLevel = httpStatus >= 500 ? 'error' : 'warn';
+      logEvent(level, 'onebox.status.error', {
+        correlationId,
+        intentType,
+        httpStatus,
+        jobId,
+        limit,
+        error: errorMessage(error),
+      });
+      handleError(req, res, error);
+    } finally {
+      recordStatus(intentType, httpStatus, now() - start);
     }
   });
 
@@ -399,15 +513,13 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
   return router;
 }
 
-function handleError(res: express.Response, error: unknown): void {
+function handleError(req: express.Request, res: express.Response, error: unknown): void {
   if (error instanceof HttpError) {
     res.status(error.status).json({ error: error.message });
     return;
   }
 
-  console.error('One-box router error', error);
-  const message = error instanceof Error ? error.message : 'Unexpected error';
-  res.status(500).json({ error: message });
+  res.status(500).json({ error: errorMessage(error) });
 }
 
 export function plannerIntentToJobIntent(
