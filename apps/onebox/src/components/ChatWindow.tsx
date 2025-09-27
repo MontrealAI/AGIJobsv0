@@ -1,7 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ExecuteResponse, PlanResponse } from '@agijobs/onebox-sdk';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type {
+  ExecuteRequest,
+  ExecuteResponse,
+  PlanRequest,
+  PlanResponse,
+} from '@agijobs/onebox-sdk';
+import deploymentAddresses from '../../../../docs/deployment-addresses.json';
 import { defaultMessages } from '../lib/defaultMessages';
 
 const ORCHESTRATOR_BASE_URL = (
@@ -46,6 +52,28 @@ const createReceiptId = () => crypto.randomUUID();
 const RECEIPTS_STORAGE_KEY = 'onebox:receipts';
 const RECEIPT_HISTORY_LIMIT = 5;
 
+type ErrorPayload = { error: string };
+
+const CONTRACT_ADDRESSES: Record<string, string> =
+  deploymentAddresses as Record<string, string>;
+
+const NETWORK_NAMES: Record<number, string> = {
+  1: 'Ethereum Mainnet',
+  5: 'Goerli',
+  10: 'Optimism',
+  56: 'BNB Smart Chain',
+  137: 'Polygon',
+  8453: 'Base',
+  11155111: 'Sepolia',
+};
+
+const resolveNetworkName = (chainId: number) =>
+  NETWORK_NAMES[chainId] ?? `Chain ${chainId}`;
+
+const toErrorPayload = (error: unknown): ErrorPayload => ({
+  error: error instanceof Error ? error.message : 'Unknown error',
+});
+
 export function ChatWindow() {
   const [messages, setMessages] = useState<ChatMessage[]>(
     defaultMessages as ChatMessage[]
@@ -61,11 +89,31 @@ export function ChatWindow() {
     null
   );
   const [receipts, setReceipts] = useState<ExecutionReceipt[]>([]);
+  const [isExpertMode, setIsExpertMode] = useState(false);
+  const [isExpertPanelOpen, setIsExpertPanelOpen] = useState(true);
+  const [planRequestPayload, setPlanRequestPayload] =
+    useState<PlanRequest | null>(null);
+  const [planResponsePayload, setPlanResponsePayload] = useState<
+    PlanResponse | ErrorPayload | null
+  >(null);
+  const [executeRequestPayload, setExecuteRequestPayload] =
+    useState<ExecuteRequest | null>(null);
+  const [executeResponsePayload, setExecuteResponsePayload] = useState<
+    ExecuteResponse | ErrorPayload | null
+  >(null);
+  const [lastPlan, setLastPlan] = useState<PlanResponse | null>(null);
+  const [lastExecute, setLastExecute] = useState<ExecuteResponse | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (isExpertMode) {
+      setIsExpertPanelOpen(true);
+    }
+  }, [isExpertMode]);
 
   useEffect(() => {
     try {
@@ -91,9 +139,11 @@ export function ChatWindow() {
 
         const record: ExecutionReceipt = {
           id: candidate.id,
-          jobId: typeof candidate.jobId === 'number' ? candidate.jobId : undefined,
+          jobId:
+            typeof candidate.jobId === 'number' ? candidate.jobId : undefined,
           specCid:
-            typeof candidate.specCid === 'string' && candidate.specCid.length > 0
+            typeof candidate.specCid === 'string' &&
+            candidate.specCid.length > 0
               ? candidate.specCid
               : undefined,
           reward:
@@ -156,74 +206,92 @@ export function ChatWindow() {
     }
   }, [latestReceipt, receipts]);
 
-  const submitMessage = useCallback(async (prompt: string) => {
-    const trimmed = prompt.trim();
-    if (!trimmed) {
-      return;
-    }
-
-    const userMessage: TextMessage = {
-      id: createMessageId(),
-      role: 'user',
-      kind: 'text',
-      content: trimmed,
-    };
-
-    setMessages((current) => [...current, userMessage]);
-    setInput('');
-    setIsLoading(true);
-    setPendingPlan(null);
-
-    try {
-      if (!ORCHESTRATOR_BASE_URL) {
-        throw new Error(
-          'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
-        );
+  const submitMessage = useCallback(
+    async (prompt: string) => {
+      const trimmed = prompt.trim();
+      if (!trimmed) {
+        return;
       }
 
-      const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/plan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(ORCHESTRATOR_TOKEN
-            ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
-            : {}),
-        },
-        body: JSON.stringify({ text: trimmed }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-
-      const payload = (await response.json()) as PlanResponse;
-
-      const planMessageId = createMessageId();
-      const assistantMessage: PlanMessage = {
-        id: planMessageId,
-        role: 'assistant',
-        kind: 'plan',
-        plan: payload,
-      };
-
-      setMessages((current) => [...current, assistantMessage]);
-      setPendingPlan({ messageId: planMessageId, plan: payload });
-    } catch (error) {
-      const assistantMessage: TextMessage = {
+      const userMessage: TextMessage = {
         id: createMessageId(),
-        role: 'assistant',
+        role: 'user',
         kind: 'text',
-        content:
-          error instanceof Error
-            ? `Something went wrong: ${error.message}`
-            : 'Something went wrong. Please try again.',
+        content: trimmed,
       };
 
-      setMessages((current) => [...current, assistantMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      setMessages((current) => [...current, userMessage]);
+      setInput('');
+      setIsLoading(true);
+      setPendingPlan(null);
+
+      const planRequestPayload: PlanRequest = {
+        text: trimmed,
+        expert: isExpertMode,
+      };
+      setPlanRequestPayload(planRequestPayload);
+      setPlanResponsePayload(null);
+      setExecuteRequestPayload(null);
+      setExecuteResponsePayload(null);
+      setLastPlan(null);
+      setLastExecute(null);
+
+      try {
+        if (!ORCHESTRATOR_BASE_URL) {
+          throw new Error(
+            'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
+          );
+        }
+
+        const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/plan`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(ORCHESTRATOR_TOKEN
+              ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
+              : {}),
+          },
+          body: JSON.stringify(planRequestPayload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const payload = (await response.json()) as PlanResponse;
+        setPlanResponsePayload(payload);
+        setLastPlan(payload);
+
+        const planMessageId = createMessageId();
+        const assistantMessage: PlanMessage = {
+          id: planMessageId,
+          role: 'assistant',
+          kind: 'plan',
+          plan: payload,
+        };
+
+        setMessages((current) => [...current, assistantMessage]);
+        setPendingPlan({ messageId: planMessageId, plan: payload });
+      } catch (error) {
+        setPlanResponsePayload(toErrorPayload(error));
+        setLastPlan(null);
+        const assistantMessage: TextMessage = {
+          id: createMessageId(),
+          role: 'assistant',
+          kind: 'text',
+          content:
+            error instanceof Error
+              ? `Something went wrong: ${error.message}`
+              : 'Something went wrong. Please try again.',
+        };
+
+        setMessages((current) => [...current, assistantMessage]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isExpertMode]
+  );
 
   const updateMessageContent = useCallback((id: string, content: string) => {
     setMessages((current) =>
@@ -303,6 +371,14 @@ export function ChatWindow() {
 
     setMessages((current) => [...current, progressMessage]);
 
+    const executeRequestPayload: ExecuteRequest = {
+      intent: plan.intent,
+      mode: 'relayer',
+    };
+    setExecuteRequestPayload(executeRequestPayload);
+    setExecuteResponsePayload(null);
+    let parsedExecuteResponse: ExecuteResponse | null = null;
+
     try {
       const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/execute`, {
         method: 'POST',
@@ -312,7 +388,7 @@ export function ChatWindow() {
             ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
             : {}),
         },
-        body: JSON.stringify({ intent: plan.intent, mode: 'relayer' }),
+        body: JSON.stringify(executeRequestPayload),
       });
 
       let raw = '';
@@ -338,6 +414,9 @@ export function ChatWindow() {
       }
 
       const payload = extractExecutePayload(raw);
+
+      parsedExecuteResponse = payload;
+      setExecuteResponsePayload(payload);
 
       if (!response.ok || !payload.ok) {
         const reason = payload.error ?? `Execution failed (${response.status})`;
@@ -378,15 +457,19 @@ export function ChatWindow() {
       });
       updateMessageContent(progressMessageId, successLines.join('\n'));
     } catch (error) {
+      if (parsedExecuteResponse === null) {
+        setExecuteResponsePayload(toErrorPayload(error));
+      }
       const message =
         error instanceof Error
           ? error.message
           : 'Execution failed. Please try again.';
       updateMessageContent(progressMessageId, `⚠️ ${message}`);
     } finally {
+      setLastExecute(parsedExecuteResponse);
       setIsExecuting(false);
     }
-  }, [pendingPlan, updateMessageContent]);
+  }, [isExpertMode, pendingPlan, updateMessageContent]);
 
   const formatPayout = (receipt: ExecutionReceipt) => {
     if (receipt.reward && receipt.token) {
@@ -395,9 +478,124 @@ export function ChatWindow() {
     return receipt.reward ?? null;
   };
 
+  const contractEntries = useMemo(
+    () =>
+      Object.entries(CONTRACT_ADDRESSES).filter(
+        ([key, value]) => key !== '_comment' && typeof value === 'string'
+      ),
+    []
+  );
+
+  const expertChainId = useMemo(() => {
+    if (lastExecute && typeof lastExecute.chainId === 'number') {
+      return lastExecute.chainId;
+    }
+
+    const candidate = lastPlan?.intent?.payload?.chainId;
+    if (typeof candidate === 'number') {
+      return candidate;
+    }
+
+    return undefined;
+  }, [lastExecute, lastPlan]);
+
+  const networkLabel = expertChainId
+    ? `${resolveNetworkName(expertChainId)} (${expertChainId})`
+    : 'Not available';
+
   return (
     <div className="chat-wrapper">
       <div className="chat-shell">
+        <div className="chat-toolbar">
+          <button
+            type="button"
+            className={`expert-toggle${isExpertMode ? ' is-active' : ''}`}
+            onClick={() => {
+              setIsExpertMode((current) => !current);
+            }}
+            aria-pressed={isExpertMode}
+          >
+            {isExpertMode ? 'Expert mode: on' : 'Expert mode: off'}
+          </button>
+        </div>
+        {isExpertMode ? (
+          <div className="expert-panel">
+            <div className="expert-panel-header">
+              <p className="expert-panel-title">Expert insights</p>
+              <button
+                type="button"
+                className="expert-panel-toggle"
+                onClick={() => {
+                  setIsExpertPanelOpen((current) => !current);
+                }}
+                aria-expanded={isExpertPanelOpen}
+              >
+                {isExpertPanelOpen ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            {isExpertPanelOpen ? (
+              <div className="expert-panel-body">
+                <div className="expert-meta">
+                  <div className="expert-meta-field">
+                    <span className="expert-meta-label">Network</span>
+                    <span className="expert-meta-value">{networkLabel}</span>
+                  </div>
+                </div>
+                <div className="expert-contracts">
+                  <span className="expert-section-title">
+                    Contract addresses
+                  </span>
+                  <ul className="expert-contracts-list">
+                    {contractEntries.map(([key, value]) => (
+                      <li key={key} className="expert-contract-item">
+                        <span className="expert-contract-name">{key}</span>
+                        <code className="expert-contract-address">{value}</code>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="expert-json-grid">
+                  <div>
+                    <span className="expert-section-title">Plan request</span>
+                    <pre className="expert-json-block">
+                      {planRequestPayload
+                        ? JSON.stringify(planRequestPayload, null, 2)
+                        : 'No plan request yet.'}
+                    </pre>
+                  </div>
+                  <div>
+                    <span className="expert-section-title">Plan response</span>
+                    <pre className="expert-json-block">
+                      {planResponsePayload
+                        ? JSON.stringify(planResponsePayload, null, 2)
+                        : 'No plan response yet.'}
+                    </pre>
+                  </div>
+                  <div>
+                    <span className="expert-section-title">
+                      Execute request
+                    </span>
+                    <pre className="expert-json-block">
+                      {executeRequestPayload
+                        ? JSON.stringify(executeRequestPayload, null, 2)
+                        : 'No execute request yet.'}
+                    </pre>
+                  </div>
+                  <div>
+                    <span className="expert-section-title">
+                      Execute response
+                    </span>
+                    <pre className="expert-json-block">
+                      {executeResponsePayload
+                        ? JSON.stringify(executeResponsePayload, null, 2)
+                        : 'No execute response yet.'}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <div className="chat-history" role="log" aria-live="polite">
           {messages.map((message) => (
             <div key={message.id} className="chat-message">
