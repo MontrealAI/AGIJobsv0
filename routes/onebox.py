@@ -1,7 +1,7 @@
 # routes/onebox.py
 # FastAPI router for a Web3-only, walletless-by-default "one-box" UX.
 # Exposes: POST /onebox/plan, POST /onebox/execute, GET /onebox/status,
-# plus /onebox/healthz and /onebox/metrics (Prometheus).
+# plus /healthz and /onebox/metrics (Prometheus).
 # Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
 
 import json
@@ -185,6 +185,7 @@ def _log_event(level: int, event: str, correlation_id: str, **fields: Any) -> No
 
 # ---------- API Router ----------
 router = APIRouter(prefix="/onebox", tags=["onebox"])
+health_router = APIRouter(tags=["health"])
 
 
 def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
@@ -846,7 +847,7 @@ async def status(request: Request, jobId: int):
         _TTO_SECONDS.labels(endpoint="status").observe(duration)
 
 
-@router.get("/healthz", dependencies=[Depends(require_api)])
+@health_router.get("/healthz", dependencies=[Depends(require_api)])
 async def healthcheck(request: Request):
     correlation_id = _get_correlation_id(request)
     _log_event(
@@ -879,6 +880,7 @@ __all__ = [
     "_decode_job_created",
     "_naive_parse",
     "execute",
+    "health_router",
     "healthcheck",
     "metrics_endpoint",
     "plan",
