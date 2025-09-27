@@ -3,7 +3,9 @@
 # Exposes: POST /onebox/plan, POST /onebox/execute, GET /onebox/status
 # Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
 
-import os, json, time, math, re, asyncio
+import os
+import json
+import re
 from decimal import Decimal
 from typing import Optional, Literal, List, Tuple, Dict, Any
 
@@ -82,7 +84,7 @@ class Attachment(BaseModel):
 class Payload(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    attachments: List[Attachment] = []
+    attachments: List[Attachment] = Field(default_factory=list)
     rewardToken: str = "AGIALPHA"
     reward: Optional[str] = None          # human amount, e.g. "5.0"
     deadlineDays: Optional[int] = None
@@ -91,8 +93,8 @@ class Payload(BaseModel):
 class JobIntent(BaseModel):
     action: Action
     payload: Payload
-    constraints: Dict[str, Any] = {}
-    userContext: Dict[str, Any] = {}
+    constraints: Dict[str, Any] = Field(default_factory=dict)
+    userContext: Dict[str, Any] = Field(default_factory=dict)
 
 class PlanRequest(BaseModel):
     text: str
