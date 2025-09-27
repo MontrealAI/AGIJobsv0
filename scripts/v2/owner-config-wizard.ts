@@ -7,6 +7,7 @@ import {
   loadJobRegistryConfig,
   loadStakeManagerConfig,
   loadFeePoolConfig,
+  inferNetworkKey,
   JobRegistryConfig,
   StakeManagerConfig,
   FeePoolConfig,
@@ -46,6 +47,14 @@ type AllowlistPromptResult =
 type WizardResult<T> = { config: T; changes: ChangeEntry[] };
 
 const HEADER = `AGIJobs Owner Configuration Wizard\n----------------------------------`;
+const SUPPORTED_NETWORKS = ['mainnet', 'sepolia'];
+const SUPPORTED_NETWORKS_LABEL = SUPPORTED_NETWORKS.join(', ');
+
+type CliOptions = {
+  network?: string;
+  networkSource?: string;
+  showHelp?: boolean;
+};
 
 function withDefaultLabel(question: string, current?: string): string {
   if (!current) {
@@ -328,6 +337,108 @@ function ensureDirectory(filePath: string): Promise<void> {
   return fs
     .mkdir(path.dirname(filePath), { recursive: true })
     .then(() => undefined);
+}
+
+function describeNetwork(network?: string, source?: string): string {
+  if (!network) {
+    return 'default (shared config files)';
+  }
+  if (source) {
+    return `${network} (via ${source})`;
+  }
+  return network;
+}
+
+function normaliseNetworkInput(
+  value: string | undefined,
+  source: string
+): string {
+  if (!value) {
+    throw new Error(`${source} requires a value`);
+  }
+  const resolved = inferNetworkKey(value);
+  if (!resolved) {
+    throw new Error(
+      `${source} expected one of ${SUPPORTED_NETWORKS_LABEL}, received "${value}"`
+    );
+  }
+  if (!SUPPORTED_NETWORKS.includes(resolved)) {
+    throw new Error(
+      `${source} references unsupported network "${resolved}". Supported networks: ${SUPPORTED_NETWORKS_LABEL}`
+    );
+  }
+  return resolved;
+}
+
+function parseCliOptions(argv: string[], env: NodeJS.ProcessEnv): CliOptions {
+  const options: CliOptions = {};
+
+  const envSources: Array<[string, string | undefined]> = [
+    ['OWNER_WIZARD_NETWORK', env.OWNER_WIZARD_NETWORK],
+    ['OWNER_CONFIG_NETWORK', env.OWNER_CONFIG_NETWORK],
+    ['OWNER_PLAN_NETWORK', env.OWNER_PLAN_NETWORK],
+    ['AGIALPHA_NETWORK', env.AGIALPHA_NETWORK],
+    ['AGJ_NETWORK', env.AGJ_NETWORK],
+    ['HARDHAT_NETWORK', env.HARDHAT_NETWORK],
+    ['TRUFFLE_NETWORK', env.TRUFFLE_NETWORK],
+  ];
+
+  for (const [key, value] of envSources) {
+    if (!value) continue;
+    const resolved = inferNetworkKey(value);
+    if (resolved && SUPPORTED_NETWORKS.includes(resolved)) {
+      options.network = resolved;
+      options.networkSource = `env:${key}`;
+      break;
+    }
+  }
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    switch (arg) {
+      case '--help':
+      case '-h':
+        options.showHelp = true;
+        break;
+      case '--network':
+      case '-n': {
+        const value = argv[i + 1];
+        options.network = normaliseNetworkInput(value, arg);
+        options.networkSource = arg;
+        i += 1;
+        break;
+      }
+      case '--mainnet':
+        options.network = 'mainnet';
+        options.networkSource = arg;
+        break;
+      case '--sepolia':
+        options.network = 'sepolia';
+        options.networkSource = arg;
+        break;
+      default:
+        if (arg.startsWith('-')) {
+          throw new Error(`Unknown argument ${arg}`);
+        }
+        throw new Error(`Unexpected positional argument ${arg}`);
+    }
+  }
+
+  return options;
+}
+
+function printUsage(): void {
+  console.log(`Usage: npm run owner:wizard -- [options]\n`);
+  console.log('Options:');
+  console.log('  -h, --help           Show this message and exit');
+  console.log(
+    '  -n, --network NAME   Select config network (mainnet | sepolia)'
+  );
+  console.log('      --mainnet        Shortcut for --network mainnet');
+  console.log('      --sepolia        Shortcut for --network sepolia');
+  console.log('\nExamples:');
+  console.log('  npm run owner:wizard -- --network mainnet');
+  console.log('  npm run owner:wizard -- --sepolia');
 }
 
 async function backupFile(filePath: string) {
@@ -936,17 +1047,39 @@ async function persistConfig(filePath: string, data: unknown) {
   console.log(`  Updated ${filePath}`);
 }
 
-async function main() {
+async function main(options: CliOptions) {
   console.log(HEADER);
+  const networkDescription = describeNetwork(
+    options.network,
+    options.networkSource
+  );
+  console.log(`Target network: ${networkDescription}`);
   const rl = createInterface({ input, output });
   try {
-    const { config: tokenConfig } = loadTokenConfig();
+    const { config: tokenConfig, path: tokenPath } = loadTokenConfig({
+      network: options.network,
+    });
     const decimals = tokenConfig.decimals ?? 18;
     const symbol = tokenConfig.symbol ?? '$AGIALPHA';
 
-    const jobRegistry = loadJobRegistryConfig({ persist: true });
-    const stakeManager = loadStakeManagerConfig({ persist: true });
-    const feePool = loadFeePoolConfig({ persist: true });
+    const jobRegistry = loadJobRegistryConfig({
+      persist: true,
+      network: options.network,
+    });
+    const stakeManager = loadStakeManagerConfig({
+      persist: true,
+      network: options.network,
+    });
+    const feePool = loadFeePoolConfig({
+      persist: true,
+      network: options.network,
+    });
+
+    console.log('\nLoaded configuration files:');
+    console.log(`  Token:         ${tokenPath}`);
+    console.log(`  Job Registry:  ${jobRegistry.path}`);
+    console.log(`  Stake Manager: ${stakeManager.path}`);
+    console.log(`  Fee Pool:      ${feePool.path}`);
 
     const jobResult = await configureJobRegistry(
       rl,
@@ -988,7 +1121,22 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error('\nOwner configuration wizard failed:', error);
-  process.exitCode = 1;
-});
+let cliOptions: CliOptions;
+try {
+  cliOptions = parseCliOptions(process.argv.slice(2), process.env);
+} catch (error: any) {
+  console.error('\nInvalid arguments:', error?.message ?? error);
+  printUsage();
+  process.exit(1);
+  throw error;
+}
+
+if (cliOptions.showHelp) {
+  printUsage();
+  process.exit(0);
+} else {
+  main(cliOptions).catch((error) => {
+    console.error('\nOwner configuration wizard failed:', error);
+    process.exitCode = 1;
+  });
+}
