@@ -232,6 +232,76 @@
       gap: 12px;
     }
 
+    .expert-panel {
+      display: block;
+      gap: 12px;
+    }
+
+    .expert-panel[hidden] {
+      display: none;
+    }
+
+    .expert-panel summary {
+      margin: 0;
+      font-size: 0.95rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      list-style: none;
+      outline: none;
+    }
+
+    .expert-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .expert-meta {
+      display: grid;
+      gap: 10px;
+    }
+
+    .expert-panel-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .expert-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .expert-value {
+      font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas,
+        'Liberation Mono', 'Courier New', monospace;
+      font-size: 0.85rem;
+      word-break: break-all;
+    }
+
+    .expert-json-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .expert-json {
+      margin: 0;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas,
+        'Liberation Mono', 'Courier New', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     .sec h2 {
       margin: 0;
       font-size: 0.95rem;
@@ -396,6 +466,33 @@
       </div>
 
       <div class="sidebar">
+        <details id="expert-panel" class="sec expert-panel" hidden>
+          <summary>Expert Details</summary>
+          <div class="expert-panel-content">
+            <div class="expert-meta">
+              <div>
+                <span class="expert-label">Network</span>
+                <span id="expert-network" class="expert-value">—</span>
+              </div>
+              <div>
+                <span class="expert-label">Contract</span>
+                <span id="expert-contract" class="expert-value">—</span>
+              </div>
+            </div>
+            <div class="expert-json-block">
+              <span class="expert-label">Latest Plan Response</span>
+              <pre id="expert-plan-json" class="expert-json">No plan response yet.</pre>
+            </div>
+            <div class="expert-json-block">
+              <span class="expert-label">Last Execute Request</span>
+              <pre id="expert-execute-request" class="expert-json">No execute request yet.</pre>
+            </div>
+            <div class="expert-json-block">
+              <span class="expert-label">Last Execute Response</span>
+              <pre id="expert-execute-response" class="expert-json">No execute response yet.</pre>
+            </div>
+          </div>
+        </details>
         <div class="sec">
           <h2>Advanced</h2>
           <label>

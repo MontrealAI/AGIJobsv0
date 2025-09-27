@@ -13,6 +13,12 @@ const modeBadge = $('#mode');
 const receiptList = $('#receipts-list');
 const receiptsEmpty = $('#receipts-empty');
 const clearReceiptsBtn = $('#clear-receipts');
+const expertPanel = $('#expert-panel');
+const expertNetwork = $('#expert-network');
+const expertContract = $('#expert-contract');
+const expertPlanJson = $('#expert-plan-json');
+const expertExecuteRequestJson = $('#expert-execute-request');
+const expertExecuteResponseJson = $('#expert-execute-response');
 
 const COPY = {
   planning: 'Planning your workflow…',
@@ -84,11 +90,15 @@ let orchestrator = localStorage.getItem(STORAGE_KEYS.orch) || '';
 let apiToken = localStorage.getItem(STORAGE_KEYS.token) || '';
 let receipts = loadReceipts();
 let isSubmitting = false;
+let lastPlanResponse = null;
+let lastExecuteRequest = null;
+let lastExecuteResponse = null;
 
 orchInput.value = orchestrator;
 tokenInput.value = apiToken;
 renderReceipts();
 setModeLabel();
+renderExpertDetails();
 
 function addMessage(role, html) {
   const node = document.createElement('div');
@@ -241,14 +251,20 @@ async function api(path, body) {
 
 async function planRequest(text) {
   addMessage('assist', COPY.planning);
-  return api('/onebox/plan', { text, expert: expertMode });
+  const response = await api('/onebox/plan', { text, expert: expertMode });
+  lastPlanResponse = response ?? null;
+  renderExpertDetails();
+  return response;
 }
 
 async function executeIntent(intent) {
   const progress = startProgress();
   try {
     const mode = expertMode ? 'wallet' : 'relayer';
-    const result = await api('/onebox/execute', { intent, mode });
+    lastExecuteRequest = { intent, mode };
+    const result = await api('/onebox/execute', lastExecuteRequest);
+    lastExecuteResponse = result ?? null;
+    renderExpertDetails();
 
     if (intent.action === 'check_status') {
       progress.complete();
@@ -310,6 +326,8 @@ async function executeIntent(intent) {
     }
   } catch (error) {
     progress.fail();
+    lastExecuteResponse = { error: error?.message || 'UNKNOWN_ERROR' };
+    renderExpertDetails();
     handleError(error);
   }
 }
@@ -346,6 +364,78 @@ function handleError(error) {
 function setModeLabel() {
   modeBadge.textContent = `Mode: ${expertMode ? 'Expert (wallet)' : 'Guest (walletless)'}`;
   expertBtn.textContent = expertMode ? 'Switch to Guest' : 'Expert Mode';
+  updateExpertPanelVisibility();
+}
+
+function updateExpertPanelVisibility() {
+  if (!expertPanel) return;
+  if (expertMode) {
+    expertPanel.hidden = false;
+  } else {
+    expertPanel.open = false;
+    expertPanel.hidden = true;
+  }
+}
+
+function resolveNetworkName(chainId) {
+  if (typeof chainId !== 'number') return null;
+  const names = {
+    1: 'Ethereum Mainnet',
+    5: 'Goerli Testnet',
+    10: 'OP Mainnet',
+    11155111: 'Sepolia Testnet',
+    42161: 'Arbitrum One',
+    8453: 'Base Mainnet',
+    84532: 'Base Sepolia',
+    137: 'Polygon PoS',
+  };
+  return names[chainId] || `Chain ${chainId}`;
+}
+
+function formatJson(value, fallback) {
+  if (!value) return fallback;
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (error) {
+    console.error('Failed to stringify expert payload', error);
+    return fallback;
+  }
+}
+
+function renderExpertDetails() {
+  if (!expertPanel) return;
+  const chainId =
+    (typeof lastExecuteResponse?.chainId === 'number' && lastExecuteResponse.chainId) ||
+    (typeof lastPlanResponse?.intent?.payload?.chainId === 'number' &&
+      lastPlanResponse.intent.payload.chainId) ||
+    null;
+  if (expertNetwork) {
+    expertNetwork.textContent = chainId ? `${resolveNetworkName(chainId)} (${chainId})` : '—';
+  }
+  if (expertContract) {
+    const contractAddress =
+      lastExecuteResponse?.to ||
+      lastExecuteRequest?.intent?.payload?.to ||
+      lastPlanResponse?.intent?.payload?.contractAddress ||
+      lastPlanResponse?.intent?.payload?.escrowAddress ||
+      null;
+    expertContract.textContent = contractAddress || '—';
+  }
+  if (expertPlanJson) {
+    expertPlanJson.textContent = formatJson(lastPlanResponse, 'No plan response yet.');
+  }
+  if (expertExecuteRequestJson) {
+    expertExecuteRequestJson.textContent = formatJson(
+      lastExecuteRequest,
+      'No execute request yet.',
+    );
+  }
+  if (expertExecuteResponseJson) {
+    expertExecuteResponseJson.textContent = formatJson(
+      lastExecuteResponse,
+      'No execute response yet.',
+    );
+  }
 }
 
 function disableForm(disabled) {
@@ -397,6 +487,9 @@ form.addEventListener('submit', async (event) => {
 expertBtn.addEventListener('click', () => {
   expertMode = !expertMode;
   setModeLabel();
+  if (expertMode) {
+    renderExpertDetails();
+  }
 });
 
 saveBtn.addEventListener('click', () => {
