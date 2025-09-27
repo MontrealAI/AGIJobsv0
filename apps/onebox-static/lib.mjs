@@ -568,22 +568,24 @@ function toLowerList(values) {
 export const FRIENDLY_ERROR_RULES = [
   {
     id: "insufficient_balance",
-    summary: "You don’t have enough AGIALPHA to fund this job.",
-    hint: "Lower the reward or top up your balance before trying again.",
+    summary: "You need more AGIALPHA available to cover the reward and stake.",
+    hint: "Top up or adjust the amounts.",
     matches: (ctx) =>
       ctx.contains("insufficient balance") ||
       ctx.contains("insufficient funds") ||
-      ctx.contains("transfer amount exceeds balance"),
+      ctx.contains("transfer amount exceeds balance") ||
+      ctx.contains("you need more agialpha"),
   },
   {
     id: "insufficient_allowance",
-    summary: "Your AGIALPHA allowance is too low for this request.",
-    hint: "Ask me to refresh allowances or approve spending from Expert Mode.",
+    summary: "Escrow allowance is missing.",
+    hint: "Approve AGIALPHA spending from your wallet so I can move the staked funds for you.",
     matches: (ctx) =>
       ctx.contains("insufficient allowance") ||
       ctx.contains("insufficientallowance") ||
       ctx.contains("exceeds allowance") ||
-      ctx.contains("allowance is not enough"),
+      ctx.contains("allowance is not enough") ||
+      ctx.contains("approve agialpha spending"),
   },
   {
     id: "reward_zero",
@@ -641,22 +643,39 @@ export const FRIENDLY_ERROR_RULES = [
   },
   {
     id: "identity_required",
-    summary: "An ENS identity is required before continuing.",
-    hint: "Register the appropriate *.agent.agi.eth or *.club.agi.eth subdomain and try again.",
+    summary: "Identity verification is required before continuing.",
+    hint: "Finish identity verification in the Agent Gateway before using this one-box flow.",
     matches: (ctx) =>
-      ctx.contains("ens name must") || ctx.contains("ens required") || ctx.contains("identityregistry not set"),
+      ctx.contains("ens name must") ||
+      ctx.contains("ens required") ||
+      ctx.contains("identityregistry not set") ||
+      ctx.contains("identity verification"),
   },
   {
     id: "stake_missing",
-    summary: "You need to stake before you can continue.",
-    hint: "Stake the required AGIALPHA amount and retry the action.",
-    matches: (ctx) => ctx.contains("nostake") || ctx.contains("stake required") || ctx.contains("stake missing"),
+    summary: "Stake the minimum AGIALPHA before continuing.",
+    hint: "Add funds or reduce the job’s stake size.",
+    matches: (ctx) =>
+      ctx.contains("nostake") ||
+      ctx.contains("stake required") ||
+      ctx.contains("stake missing") ||
+      ctx.contains("stake the minimum agialpha"),
   },
   {
     id: "stake_too_high",
     summary: "The requested stake exceeds the allowed maximum.",
     hint: "Lower the stake amount or split it into smaller deposits.",
     matches: (ctx) => ctx.contains("stakeoverflow") || ctx.contains("amount too large"),
+  },
+  {
+    id: "aa_paymaster_rejected",
+    summary: "The account abstraction paymaster rejected this request.",
+    hint: "Retry shortly or submit the transaction manually.",
+    matches: (ctx) =>
+      ctx.contains("paymaster rejected") ||
+      ctx.contains("managed paymaster error") ||
+      ctx.contains("paymaster returned empty sponsorship") ||
+      ctx.contains("aa_paymaster_rejected"),
   },
   {
     id: "invalid_state",
@@ -696,12 +715,23 @@ export const FRIENDLY_ERROR_RULES = [
   },
   {
     id: "validator_window_open",
-    summary: "Validation is still underway.",
-    hint: "Let validators finish before finalizing the job.",
+    summary: "Validator checks didn’t finish in time.",
+    hint: "Retry in a moment or contact support if it keeps failing.",
     matches: (ctx) =>
       ctx.contains("commitphaseactive") ||
       ctx.contains("reveal pending") ||
-      ctx.contains("validators already selected"),
+      ctx.contains("validators already selected") ||
+      ctx.contains("validation timeout"),
+  },
+  {
+    id: "dispute_open",
+    summary: "A dispute is already open for this job.",
+    hint: "Wait for resolution before taking further action.",
+    matches: (ctx) =>
+      ctx.contains("dispute already open") ||
+      ctx.contains("dispute is already open") ||
+      ctx.contains("dispute open") ||
+      ctx.contains("disputed"),
   },
   {
     id: "network_fetch",
@@ -715,9 +745,13 @@ export const FRIENDLY_ERROR_RULES = [
   },
   {
     id: "timeout",
-    summary: "The request timed out while waiting for the orchestrator.",
-    hint: "Retry in a moment—the network might be congested.",
-    matches: (ctx) => ctx.contains("timeout") || ctx.contains("timed out") || ctx.contains("etimedout"),
+    summary: "The blockchain RPC endpoint timed out.",
+    hint: "Try again or switch to a healthier provider.",
+    matches: (ctx) =>
+      ctx.contains("timeout") ||
+      ctx.contains("timed out") ||
+      ctx.contains("etimedout") ||
+      ctx.contains("rpc timed out"),
   },
   {
     id: "rate_limited",
@@ -727,9 +761,14 @@ export const FRIENDLY_ERROR_RULES = [
   },
   {
     id: "service_unavailable",
-    summary: "The orchestrator is temporarily unavailable.",
-    hint: "We’ll keep watching—try again shortly.",
-    matches: (ctx) => ctx.status === 503 || ctx.contains("service unavailable") || ctx.contains("maintenance"),
+    summary: "The relayer is offline right now.",
+    hint: "Switch to wallet mode or retry shortly.",
+    matches: (ctx) =>
+      ctx.status === 503 ||
+      ctx.contains("service unavailable") ||
+      ctx.contains("maintenance") ||
+      ctx.contains("relayer is offline") ||
+      ctx.contains("relayer is not configured"),
   },
   {
     id: "unauthorized",
@@ -790,17 +829,41 @@ export const FRIENDLY_ERROR_RULES = [
     matches: (ctx) => ctx.contains("attachment required") || ctx.contains("missing attachment"),
   },
   {
-    id: "ipfs_failure",
-    summary: "I couldn’t pin the payload to IPFS.",
-    hint: "Check your IPFS token or retry the upload after a short pause.",
+    id: "cid_mismatch",
+    summary: "The deliverable CID didn’t match what’s on record.",
+    hint: "Re-upload the correct artifact and try again.",
     matches: (ctx) =>
-      ctx.contains("ipfs upload failed") || ctx.contains("ipfs response missing cid") || ctx.contains("pinning error"),
+      ctx.contains("cid mismatch") ||
+      ctx.contains("cid does not match") ||
+      ctx.contains("cid didn't match") ||
+      ctx.contains("cid didn’t match"),
+  },
+  {
+    id: "ipfs_failure",
+    summary: "I couldn’t package your job details.",
+    hint: "Remove broken links and try again.",
+    matches: (ctx) =>
+      ctx.contains("ipfs upload failed") ||
+      ctx.contains("ipfs response missing cid") ||
+      ctx.contains("pinning error") ||
+      ctx.contains("couldn't package your job details") ||
+      ctx.contains("couldn’t package your job details") ||
+      ctx.contains("pinning service is busy"),
   },
   {
     id: "simulation_failed",
     summary: "Simulation failed before submission.",
     hint: "Review the planner output or switch to Expert Mode for a detailed trace.",
     matches: (ctx) => ctx.contains("simulation failed") || ctx.contains("failed simulation") || ctx.contains("sim revert"),
+  },
+  {
+    id: "unknown_revert",
+    summary: "The transaction reverted without a known reason.",
+    hint: "Check the logs or retry with adjusted parameters.",
+    matches: (ctx) =>
+      ctx.contains("unknown revert") ||
+      ctx.contains("reverted without a known reason") ||
+      ctx.contains("unknown reason"),
   },
 ];
 
