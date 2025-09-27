@@ -8,11 +8,13 @@ from decimal import Decimal
 from typing import Optional, Literal, List, Tuple, Dict, Any
 
 from fastapi import APIRouter, HTTPException, Depends, Header
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3._utils.events import get_event_data
 import httpx
+from functools import lru_cache
+from eth_account.signers.local import LocalAccount
 
 # ---------- Settings ----------
 RPC_URL = os.getenv("RPC_URL", "")
@@ -46,19 +48,44 @@ _MIN_ABI = [
 _ABI = json.loads(os.getenv("JOB_REGISTRY_ABI_JSON", json.dumps(_MIN_ABI)))
 
 # ---------- Web3 ----------
-if not RPC_URL:
-    raise RuntimeError("RPC_URL is required")
-w3 = Web3(Web3.HTTPProvider(RPC_URL, request_kwargs={"timeout": 45}))
-# PoA chains (Sepolia/others) sometimes need POA middleware:
-try:
-    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-except Exception:
-    pass
-if CHAIN_ID and w3.eth.chain_id != CHAIN_ID:
-    # Not fatal, but helpful to catch misconfig
-    pass
-registry = w3.eth.contract(address=JOB_REGISTRY, abi=_ABI)
-relayer = w3.eth.account.from_key(RELAYER_PK) if RELAYER_PK else None
+@lru_cache(maxsize=1)
+def get_registry() -> Tuple[Web3, Any, Optional[LocalAccount]]:
+    if not RPC_URL:
+        raise HTTPException(500, "RPC_URL is not configured")
+    if not JOB_REGISTRY or JOB_REGISTRY.lower() == "0x0000000000000000000000000000000000000000":
+        raise HTTPException(500, "JOB_REGISTRY address is not configured")
+
+    try:
+        w3 = Web3(Web3.HTTPProvider(RPC_URL, request_kwargs={"timeout": 45}))
+    except Exception as exc:
+        raise HTTPException(502, f"Failed to initialize Web3 provider: {exc}") from exc
+
+    # PoA chains (Sepolia/others) sometimes need POA middleware
+    try:
+        w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    except Exception:
+        pass
+
+    try:
+        current_chain = w3.eth.chain_id
+    except Exception as exc:
+        raise HTTPException(502, f"Failed to connect to RPC_URL: {exc}") from exc
+
+    if CHAIN_ID and current_chain != CHAIN_ID:
+        # Not fatal, but helpful to catch misconfig
+        pass
+
+    try:
+        registry = w3.eth.contract(address=JOB_REGISTRY, abi=_ABI)
+    except Exception as exc:
+        raise HTTPException(500, f"Failed to create registry contract: {exc}") from exc
+
+    try:
+        relayer = w3.eth.account.from_key(RELAYER_PK) if RELAYER_PK else None
+    except Exception as exc:
+        raise HTTPException(500, "Invalid RELAYER_PK provided") from exc
+
+    return w3, registry, relayer
 
 # ---------- API Router ----------
 router = APIRouter(prefix="/onebox", tags=["onebox"])
@@ -180,7 +207,7 @@ async def _pin_json(obj: dict) -> str:
         raise HTTPException(502, ERRORS["IPFS_FAILED"])
     return cid
 
-def _build_tx(func, sender: str) -> dict:
+def _build_tx(w3: Web3, func, sender: str) -> dict:
     # EIP-1559 defaults with estimation; fallback to legacy gasPrice if needed
     nonce = w3.eth.get_transaction_count(sender)
     try:
@@ -198,11 +225,11 @@ def _build_tx(func, sender: str) -> dict:
         tx["gasPrice"] = w3.to_wei("5", "gwei")
     return tx
 
-def _encode_wallet_call(func_name: str, args: list) -> Tuple[str, str]:
+def _encode_wallet_call(registry, func_name: str, args: list) -> Tuple[str, str]:
     data = registry.encodeABI(fn_name=func_name, args=args)
     return registry.address, data
 
-def _decode_job_created(receipt) -> Optional[int]:
+def _decode_job_created(w3: Web3, registry, receipt) -> Optional[int]:
     # Try to parse JobCreated(jobId, employer)
     try:
         evt_abi = next((a for a in _ABI if a.get("type")=="event" and a.get("name")=="JobCreated"), None)
@@ -223,7 +250,7 @@ def _decode_job_created(receipt) -> Optional[int]:
     except Exception:
         return None
 
-async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
+async def _send_relayer_tx(w3: Web3, relayer: Optional[LocalAccount], tx: dict) -> Tuple[str, dict]:
     if not relayer:
         raise HTTPException(400, "Relayer not configured")
     signed = relayer.sign_transaction(tx)
@@ -235,7 +262,7 @@ async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
     txh, receipt = await asyncio.to_thread(_send_and_wait)
     return txh, receipt
 
-async def _read_status(job_id: int) -> StatusResponse:
+async def _read_status(registry, job_id: int) -> StatusResponse:
     # NOTE: tailor to your contract (add views or parse events for richer state).
     # Here we only return 'open' unless your ABI exposes more.
     try:
@@ -273,6 +300,8 @@ async def execute(req: ExecuteRequest):
         if p.deadlineDays is None or p.deadlineDays <= 0:
             raise HTTPException(400, ERRORS["DEADLINE_INVALID"])
 
+        w3, registry, relayer = get_registry()
+
         # 1) Pin job spec to IPFS
         job_json = {
             "title": p.title or "New Job",
@@ -288,16 +317,16 @@ async def execute(req: ExecuteRequest):
 
         # 2) Wallet (expert) mode returns calldata, not executing server-side
         if req.mode == "wallet":
-            to, data = _encode_wallet_call("postJob", [uri, AGIALPHA_TOKEN, reward_wei, int(p.deadlineDays)])
+            to, data = _encode_wallet_call(registry, "postJob", [uri, AGIALPHA_TOKEN, reward_wei, int(p.deadlineDays)])
             return ExecuteResponse(ok=True, to=to, data=data, value="0x0", chainId=CHAIN_ID)
 
         # 3) Relayer mode (default)
         if not relayer:
             raise HTTPException(400, "Relayer not configured")
         func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, int(p.deadlineDays))
-        tx = _build_tx(func, relayer.address)
-        txh, receipt = await _send_relayer_tx(tx)
-        job_id = _decode_job_created(receipt)
+        tx = _build_tx(w3, func, relayer.address)
+        txh, receipt = await _send_relayer_tx(w3, relayer, tx)
+        job_id = _decode_job_created(w3, registry, receipt)
         return ExecuteResponse(
             ok=True,
             jobId=job_id,
@@ -310,15 +339,17 @@ async def execute(req: ExecuteRequest):
         if p.jobId is None:
             raise HTTPException(400, "jobId required")
 
+        w3, registry, relayer = get_registry()
+
         if req.mode == "wallet":
-            to, data = _encode_wallet_call("finalize", [int(p.jobId)])
+            to, data = _encode_wallet_call(registry, "finalize", [int(p.jobId)])
             return ExecuteResponse(ok=True, to=to, data=data, value="0x0", chainId=CHAIN_ID)
 
         if not relayer:
             raise HTTPException(400, "Relayer not configured")
         func = registry.functions.finalize(int(p.jobId))
-        tx = _build_tx(func, relayer.address)
-        txh, _receipt = await _send_relayer_tx(tx)
+        tx = _build_tx(w3, func, relayer.address)
+        txh, _receipt = await _send_relayer_tx(w3, relayer, tx)
         return ExecuteResponse(
             ok=True,
             jobId=int(p.jobId),
@@ -329,7 +360,8 @@ async def execute(req: ExecuteRequest):
     # CHECK STATUS (read-only)
     if it.action == "check_status":
         jid = int(p.jobId or 0)
-        st = await _read_status(jid)
+        _, registry, _ = get_registry()
+        st = await _read_status(registry, jid)
         # Not a mutation, but we keep response shape consistent
         return ExecuteResponse(ok=True, jobId=st.jobId)
 
@@ -337,4 +369,5 @@ async def execute(req: ExecuteRequest):
 
 @router.get("/status", response_model=StatusResponse, dependencies=[Depends(require_api)])
 async def status(jobId: int):
-    return await _read_status(jobId)
+    _, registry, _ = get_registry()
+    return await _read_status(registry, jobId)
