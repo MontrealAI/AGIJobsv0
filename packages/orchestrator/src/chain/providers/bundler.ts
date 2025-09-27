@@ -79,6 +79,27 @@ export class BundlerClient {
     return this.rpcRequest<string>("eth_sendUserOperation", [payload, entryPoint]);
   }
 
+  async estimateUserOperationGas(
+    userOp: UserOperationStruct,
+    entryPoint: string
+  ): Promise<{
+    callGasLimit: bigint;
+    preVerificationGas: bigint;
+    verificationGasLimit: bigint;
+  }> {
+    const payload = userOperationToJson(userOp);
+    const result = await this.rpcRequest<{
+      callGasLimit: string;
+      preVerificationGas: string;
+      verificationGasLimit: string;
+    }>("eth_estimateUserOperationGas", [payload, entryPoint]);
+    return {
+      callGasLimit: ethers.toBigInt(result.callGasLimit),
+      preVerificationGas: ethers.toBigInt(result.preVerificationGas),
+      verificationGasLimit: ethers.toBigInt(result.verificationGasLimit),
+    };
+  }
+
   async getUserOperationReceipt(userOpHash: string): Promise<UserOperationReceipt | null> {
     const receipt = await this.rpcRequest<UserOperationReceipt | null>("eth_getUserOperationReceipt", [userOpHash]);
     return receipt;
