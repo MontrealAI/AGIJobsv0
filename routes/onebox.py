@@ -220,10 +220,10 @@ def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
     if not _API_TOKEN:
         return
     if not auth or not auth.startswith("Bearer "):
-        raise HTTPException(401, "AUTH_MISSING")
+        raise _http_error(401, "AUTH_MISSING")
     token = auth.split(" ", 1)[1].strip()
     if token != _API_TOKEN:
-        raise HTTPException(401, "AUTH_INVALID")
+        raise _http_error(401, "AUTH_INVALID")
 
 
 # ---------- Models ----------
@@ -327,14 +327,38 @@ _STATE_MAP = {
 }
 
 _ERRORS = {
-    "INSUFFICIENT_BALANCE": "You don’t have enough AGIALPHA to fund this job. Reduce the reward or top up.",
-    "INSUFFICIENT_ALLOWANCE": "Your wallet needs permission to use AGIALPHA. I can prepare an approval transaction.",
-    "IPFS_FAILED": "I couldn’t package your job details. Remove broken links and try again.",
+    # Top user-facing errors surfaced to the client application
+    "AUTH_MISSING": "Include your API token so I can link this request to your identity. Start identity setup if you haven’t yet.",
+    "AUTH_INVALID": "Your API token didn’t match an active identity. Refresh your credentials or restart identity setup.",
+    "IDENTITY_SETUP_REQUIRED": "Finish identity verification in the Agent Gateway before using this one-box flow.",
+    "STAKE_REQUIRED": "Stake the minimum AGIALPHA before continuing. Add funds or reduce the job’s stake size.",
+    "INSUFFICIENT_BALANCE": "You need more AGIALPHA available to cover the reward and stake. Top up or adjust the amounts.",
+    "INSUFFICIENT_ALLOWANCE": "Approve AGIALPHA spending from your wallet so I can move the staked funds for you.",
+    "DEADLINE_INVALID": "Choose a deadline at least 24 hours out and within the protocol’s maximum window.",
+    "AA_PAYMASTER_REJECTED": "The account abstraction paymaster rejected this request. Retry shortly or submit the transaction manually.",
+    "VALIDATION_TIMEOUT": "Validator checks didn’t finish in time. Retry in a moment or contact support if it keeps failing.",
+    "DISPUTE_OPENED": "A dispute is already open for this job. Wait for resolution before taking further action.",
+    "CID_MISMATCH": "The deliverable CID didn’t match what’s on record. Re-upload the correct artifact and try again.",
+    "RPC_TIMEOUT": "The blockchain RPC endpoint timed out. Try again or switch to a healthier provider.",
+    "UNKNOWN_REVERT": "The transaction reverted without a known reason. Check the logs or retry with adjusted parameters.",
     "IPFS_TEMPORARY": "The pinning service is busy. Wait a moment and re-upload your request.",
-    "DEADLINE_INVALID": "That deadline is in the past. Pick at least 24 hours from now.",
-    "NETWORK_CONGESTED": "The network is busy; I’ll retry briefly.",
-    "UNKNOWN": "Something went wrong. I’ll log details and help you try again.",
+    "IPFS_FAILED": "I couldn’t package your job details. Remove broken links and try again.",
+    "RELAY_UNAVAILABLE": "The relayer is offline right now. Switch to wallet mode or retry shortly.",
+    "JOB_ID_REQUIRED": "Provide the jobId you want me to act on before continuing.",
+    "UNSUPPORTED_ACTION": "I didn’t understand that action. Rephrase the request or choose a supported workflow.",
+    "UNKNOWN": "Something went wrong on my side. I’ve logged it and you can retry once things settle down.",
 }
+
+
+def _error_detail(code: str) -> Dict[str, str]:
+    message = _ERRORS.get(code)
+    if message is None:
+        message = "Something went wrong. Reference code {} when contacting support.".format(code)
+    return {"code": code, "message": message}
+
+
+def _http_error(status_code: int, code: str) -> HTTPException:
+    return HTTPException(status_code, _error_detail(code))
 
 
 # ---------- Helpers ----------
@@ -387,14 +411,14 @@ def _parse_deadline_days(text: str) -> Optional[int]:
 
 def _calculate_deadline_timestamp(days: int) -> int:
     if days <= 0:
-        raise HTTPException(400, "DEADLINE_INVALID")
+        raise _http_error(400, "DEADLINE_INVALID")
     seconds = days * 86400
     if seconds > _UINT64_MAX:
-        raise HTTPException(400, "DEADLINE_INVALID")
+        raise _http_error(400, "DEADLINE_INVALID")
     now = int(time.time())
     deadline = now + seconds
     if deadline > _UINT64_MAX:
-        raise HTTPException(400, "DEADLINE_INVALID")
+        raise _http_error(400, "DEADLINE_INVALID")
     return deadline
 
 
@@ -852,8 +876,8 @@ async def _pin_bytes(content: bytes, content_type: str, file_name: str) -> Dict[
     if retryable_errors:
         last = retryable_errors[-1]
         logger.error("pinning service unavailable: %s (%s)", last, last.provider)
-        raise HTTPException(503, "IPFS_TEMPORARY") from retryable_errors[-1]
-    raise HTTPException(502, "IPFS_FAILED")
+        raise _http_error(503, "IPFS_TEMPORARY") from retryable_errors[-1]
+    raise _http_error(502, "IPFS_FAILED")
 
 
 async def _pin_json(obj: dict, file_name: str = "payload.json") -> Dict[str, Any]:
@@ -970,7 +994,7 @@ async def _read_status(job_id: int) -> StatusResponse:
 
 async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
     if not relayer:
-        raise HTTPException(400, "RELAY_UNAVAILABLE")
+        raise _http_error(400, "RELAY_UNAVAILABLE")
     signed = relayer.sign_transaction(tx)
     txh = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
     receipt = w3.eth.wait_for_transaction_receipt(txh, timeout=180)
@@ -1046,9 +1070,9 @@ async def execute(request: Request, req: ExecuteRequest):
     try:
         if intent.action == "post_job":
             if not payload.reward:
-                raise HTTPException(400, "INSUFFICIENT_BALANCE")
+                raise _http_error(400, "INSUFFICIENT_BALANCE")
             if payload.deadlineDays is None:
-                raise HTTPException(400, "DEADLINE_INVALID")
+                raise _http_error(400, "DEADLINE_INVALID")
 
             deadline_ts = _calculate_deadline_timestamp(int(payload.deadlineDays))
             job_payload = {
@@ -1066,7 +1090,7 @@ async def execute(request: Request, req: ExecuteRequest):
             spec_pin = await _pin_json(job_payload, "job-spec.json")
             cid = spec_pin.get("cid")
             if not cid:
-                raise HTTPException(502, "IPFS_FAILED")
+                raise _http_error(502, "IPFS_FAILED")
             uri = spec_pin.get("uri") or f"ipfs://{cid}"
             reward_wei = _to_wei(str(payload.reward))
 
@@ -1097,7 +1121,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
                 sender = relayer.address if relayer else intent.userContext.get("sender")
                 if not sender:
-                    raise HTTPException(400, "RELAY_UNAVAILABLE")
+                    raise _http_error(400, "RELAY_UNAVAILABLE")
                 tx = _build_tx(func, sender)
                 txh, receipt = await _send_relayer_tx(tx)
                 job_id = _decode_job_created(receipt)
@@ -1142,7 +1166,7 @@ async def execute(request: Request, req: ExecuteRequest):
 
         elif intent.action == "finalize_job":
             if payload.jobId is None:
-                raise HTTPException(400, "JOB_ID_REQUIRED")
+                raise _http_error(400, "JOB_ID_REQUIRED")
             if req.mode == "wallet":
                 to, data = _encode_wallet_call("finalize", [int(payload.jobId)])
                 response = ExecuteResponse(
@@ -1157,7 +1181,7 @@ async def execute(request: Request, req: ExecuteRequest):
             else:
                 func = registry.functions.finalize(int(payload.jobId))
                 if not relayer:
-                    raise HTTPException(400, "RELAY_UNAVAILABLE")
+                    raise _http_error(400, "RELAY_UNAVAILABLE")
                 tx = _build_tx(func, relayer.address)
                 txh, _receipt = await _send_relayer_tx(tx)
                 response = ExecuteResponse(
@@ -1187,7 +1211,7 @@ async def execute(request: Request, req: ExecuteRequest):
 
         elif intent.action == "check_status":
             if payload.jobId is None:
-                raise HTTPException(400, "JOB_ID_REQUIRED")
+                raise _http_error(400, "JOB_ID_REQUIRED")
             status = await _read_status(int(payload.jobId))
             response = ExecuteResponse(
                 ok=True,
@@ -1198,7 +1222,7 @@ async def execute(request: Request, req: ExecuteRequest):
             )
 
         else:
-            raise HTTPException(400, "UNSUPPORTED_ACTION")
+            raise _http_error(400, "UNSUPPORTED_ACTION")
 
     except HTTPException as exc:
         status_code = exc.status_code

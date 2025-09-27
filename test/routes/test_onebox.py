@@ -324,6 +324,8 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     router,
     Web3,
     _calculate_deadline_timestamp,
+    _error_detail,
+    _ERRORS,
     _decode_job_created,
     _read_status,
     _UINT64_MAX,
@@ -339,6 +341,14 @@ def _encode_metadata(state: int, deadline: int = 0, assigned_at: int = 0) -> int
     deadline_bits = (int(deadline) & ((1 << 64) - 1)) << 77
     assigned_bits = (int(assigned_at) & ((1 << 64) - 1)) << 141
     return state_bits | deadline_bits | assigned_bits
+
+
+class ErrorCatalogTests(unittest.TestCase):
+    def test_error_detail_matches_catalog(self) -> None:
+        for code, message in _ERRORS.items():
+            detail = _error_detail(code)
+            self.assertEqual(detail["code"], code)
+            self.assertEqual(detail["message"], message)
 
 
 class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
@@ -457,7 +467,9 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(fastapi.HTTPException) as exc:
                 await execute(request_ctx, execute_request)
 
-        self.assertEqual(exc.exception.detail, "DEADLINE_INVALID")
+        self.assertIsInstance(exc.exception.detail, dict)
+        self.assertEqual(exc.exception.detail["code"], "DEADLINE_INVALID")
+        self.assertEqual(exc.exception.detail["message"], _ERRORS["DEADLINE_INVALID"])
 
 
 class StatusReadTests(unittest.IsolatedAsyncioTestCase):
