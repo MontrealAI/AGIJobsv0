@@ -3,7 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AGI Jobs — One‑Box</title>
 <style>
-:root{--bg:#0b0f14;--fg:#f5f7fb;--muted:#a7b0be;--soft:#121923;--line:#1c2531;--acc:#7c5cff;--ok:#1bbf6b;--warn:#ffb020}
+:root{--bg:#0b0f14;--fg:#f5f7fb;--muted:#a7b0be;--soft:#121923;--line:#1c2531;--acc:#7c5cff;--ok:#1bbf6b}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui}
 .wrap{max-width:880px;margin:auto;padding:24px}
 .header{display:flex;gap:10px;align-items:center}
@@ -21,24 +21,6 @@ input[type=text]{flex:1;padding:14px 16px;border-radius:12px;border:1px solid va
 button{padding:12px 16px;border-radius:12px;border:0;background:var(--acc);color:#fff;font-weight:600;cursor:pointer}
 button.secondary{background:#1a2330;color:var(--fg);border:1px solid #273245}
 .small{font-size:13px;color:var(--muted)}
-.status{margin-top:18px;padding:16px;border:1px solid var(--line);border-radius:12px;background:#0e141c;display:flex;flex-direction:column;gap:10px}
-.status-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.status-title{font-weight:600;font-size:15px}
-.status-refresh{padding:8px 12px;border-radius:999px;background:#182131;border:1px solid #273245;color:var(--fg);cursor:pointer;font-size:13px}
-.status-refresh:hover{border-color:#36445a}
-.status-note{font-size:12px;color:var(--muted)}
-.status-empty{font-size:13px;color:var(--muted)}
-.status-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.status-item{border:1px solid #1c2531;border-radius:10px;padding:10px 12px;background:#111925;display:flex;flex-direction:column;gap:4px}
-.status-top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px}
-.status-id{font-weight:600}
-.status-chip{padding:4px 10px;border-radius:999px;font-size:12px;text-transform:capitalize;background:#182131;border:1px solid #253349;color:var(--fg)}
-.status-chip.open{color:#8ad8ff;border-color:#274760}
-.status-chip.finalized{color:#7de6b2;border-color:#214b38;background:#0e2a1c}
-.status-chip.disputed{color:#ffddb0;border-color:#5a3a0f;background:#26170a}
-.status-meta{font-size:12px;color:var(--muted)}
-.status-links{display:flex;gap:10px;font-size:12px}
-.status-links a{color:#b7a8ff}
 .sec{margin-top:18px;padding:12px;border:1px dashed #263142;border-radius:10px;background:#0c131c}
 .kbd{padding:2px 6px;border-radius:6px;background:#1a2330;border:1px solid #283446;color:#c8d0da;font-size:12px}
 a{color:#b7a8ff}
@@ -77,16 +59,6 @@ a{color:#b7a8ff}
   </div>
 
   <div class="small" style="margin-top:12px">No hashes, no gas prompts by default. A “Verify on chain” link appears after success.</div>
-
-  <section class="status" aria-live="polite">
-    <div class="status-header">
-      <span class="status-title">Recent jobs</span>
-      <button id="status-refresh" class="status-refresh" type="button">Refresh</button>
-    </div>
-    <div id="status-note" class="status-note" hidden></div>
-    <div id="status-empty" class="status-empty">Jobs you post (or request) will appear here.</div>
-    <ul id="status-list" class="status-list" aria-label="Recent job statuses"></ul>
-  </section>
 </div>
 <script type="module" src="./app.js"></script>
 </html>
