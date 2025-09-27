@@ -98,9 +98,15 @@ export interface JobStatusCard {
   assignee?: string;
 }
 
+export interface PlannerHistoryMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface PlanRequest {
   text: string;
   expert?: boolean;
+  history?: PlannerHistoryMessage[];
 }
 
 export interface ExecuteRequest {

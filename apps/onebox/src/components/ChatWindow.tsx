@@ -6,6 +6,7 @@ import type {
   ExecuteResponse,
   PlanRequest,
   PlanResponse,
+  PlannerHistoryMessage,
 } from '@agijobs/onebox-sdk';
 import deploymentAddresses from '../../../../docs/deployment-addresses.json';
 import { defaultMessages } from '../lib/defaultMessages';
@@ -38,6 +39,15 @@ type PlanMessage = {
 };
 
 type ChatMessage = TextMessage | PlanMessage;
+
+type ChatStage =
+  | 'idle'
+  | 'planning'
+  | 'planned'
+  | 'awaiting_confirmation'
+  | 'executing'
+  | 'completed'
+  | 'error';
 
 const createMessageId = () => crypto.randomUUID();
 const createReceiptId = () => crypto.randomUUID();
@@ -88,6 +98,9 @@ export function ChatWindow() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [stage, setStage] = useState<ChatStage>('idle');
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [executeError, setExecuteError] = useState<string | null>(null);
   const [pendingPlan, setPendingPlan] = useState<{
     messageId: string;
     plan: PlanResponse;
@@ -108,8 +121,10 @@ export function ChatWindow() {
   const [lastPlan, setLastPlan] = useState<PlanResponse | null>(null);
   const [lastExecute, setLastExecute] = useState<ExecuteResponse | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<ChatMessage[]>(messages);
 
   useEffect(() => {
+    messagesRef.current = messages;
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -218,6 +233,103 @@ export function ChatWindow() {
     );
   }, [receipts]);
 
+  const buildPlannerHistory = useCallback(
+    (sourceMessages?: ChatMessage[]): PlannerHistoryMessage[] => {
+      const base = sourceMessages ?? messagesRef.current;
+
+      return base
+        .map<PlannerHistoryMessage>((message) => {
+          if (message.kind === 'plan') {
+            return {
+              role: 'assistant',
+              content: message.plan.summary,
+            };
+          }
+
+          return {
+            role: message.role,
+            content: message.content,
+          };
+        })
+        .filter((entry) => entry.content.trim().length > 0);
+    },
+    [messagesRef]
+  );
+
+  const callPlan = useCallback(async (payload: PlanRequest) => {
+    if (!ORCHESTRATOR_BASE_URL) {
+      throw new Error(
+        'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
+      );
+    }
+
+    const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/plan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(ORCHESTRATOR_TOKEN
+          ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
+          : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    return (await response.json()) as PlanResponse;
+  }, []);
+
+  const presentPlanResponse = useCallback((payload: PlanResponse) => {
+    const planMessageId = createMessageId();
+    const assistantMessage: PlanMessage = {
+      id: planMessageId,
+      role: 'assistant',
+      kind: 'plan',
+      plan: payload,
+    };
+
+    setMessages((current) => [...current, assistantMessage]);
+    setPlanResponsePayload(payload);
+    setLastPlan(payload);
+    setPlanError(null);
+    setExecuteError(null);
+    setStage('planned');
+
+    if (payload.requiresConfirmation === false) {
+      setPendingPlan(null);
+    } else {
+      setPendingPlan({ messageId: planMessageId, plan: payload });
+      setStage('awaiting_confirmation');
+    }
+
+    return planMessageId;
+  }, []);
+
+  const handlePlanFailure = useCallback((error: unknown) => {
+    const payload = toErrorPayload(error);
+    setPlanResponsePayload(payload);
+    setLastPlan(null);
+    setPendingPlan(null);
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Something went wrong. Please try again.';
+
+    const assistantMessage: TextMessage = {
+      id: createMessageId(),
+      role: 'assistant',
+      kind: 'text',
+      content: `⚠️ ${message}`,
+    };
+
+    setMessages((current) => [...current, assistantMessage]);
+    setPlanError(message);
+    setStage('error');
+  }, []);
+
   const submitMessage = useCallback(
     async (prompt: string) => {
       const trimmed = prompt.trim();
@@ -232,78 +344,93 @@ export function ChatWindow() {
         content: trimmed,
       };
 
+      const history = buildPlannerHistory([
+        ...messagesRef.current,
+        userMessage,
+      ]);
+
+      const planPayload: PlanRequest = {
+        text: trimmed,
+        expert: isExpertMode,
+        history,
+      };
+
       setMessages((current) => [...current, userMessage]);
       setInput('');
       setIsLoading(true);
       setPendingPlan(null);
-
-      const planRequestPayload: PlanRequest = {
-        text: trimmed,
-        expert: isExpertMode,
-      };
-      setPlanRequestPayload(planRequestPayload);
+      setPlanRequestPayload(planPayload);
       setPlanResponsePayload(null);
       setExecuteRequestPayload(null);
       setExecuteResponsePayload(null);
       setLastPlan(null);
       setLastExecute(null);
+      setPlanError(null);
+      setExecuteError(null);
+      setStage('planning');
 
       try {
-        if (!ORCHESTRATOR_BASE_URL) {
-          throw new Error(
-            'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
-          );
-        }
-
-        const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/plan`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(ORCHESTRATOR_TOKEN
-              ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
-              : {}),
-          },
-          body: JSON.stringify(planRequestPayload),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        const payload = (await response.json()) as PlanResponse;
-        setPlanResponsePayload(payload);
-        setLastPlan(payload);
-
-        const planMessageId = createMessageId();
-        const assistantMessage: PlanMessage = {
-          id: planMessageId,
-          role: 'assistant',
-          kind: 'plan',
-          plan: payload,
-        };
-
-        setMessages((current) => [...current, assistantMessage]);
-        setPendingPlan({ messageId: planMessageId, plan: payload });
+        const payload = await callPlan(planPayload);
+        presentPlanResponse(payload);
       } catch (error) {
-        setPlanResponsePayload(toErrorPayload(error));
-        setLastPlan(null);
-        const assistantMessage: TextMessage = {
-          id: createMessageId(),
-          role: 'assistant',
-          kind: 'text',
-          content:
-            error instanceof Error
-              ? `Something went wrong: ${error.message}`
-              : 'Something went wrong. Please try again.',
-        };
-
-        setMessages((current) => [...current, assistantMessage]);
+        handlePlanFailure(error);
       } finally {
         setIsLoading(false);
       }
     },
-    [isExpertMode]
+    [
+      buildPlannerHistory,
+      callPlan,
+      handlePlanFailure,
+      isExpertMode,
+      presentPlanResponse,
+    ]
   );
+
+  const retryPlan = useCallback(async () => {
+    if (!planRequestPayload) {
+      return;
+    }
+
+    const history = buildPlannerHistory(messagesRef.current);
+    const payload: PlanRequest = {
+      ...planRequestPayload,
+      history,
+    };
+
+    setPlanRequestPayload(payload);
+    setPlanResponsePayload(null);
+    setExecuteRequestPayload(null);
+    setExecuteResponsePayload(null);
+    setLastPlan(null);
+    setLastExecute(null);
+    setPendingPlan(null);
+    setPlanError(null);
+    setExecuteError(null);
+    setIsLoading(true);
+    setStage('planning');
+
+    try {
+      const response = await callPlan(payload);
+      presentPlanResponse(response);
+    } catch (error) {
+      handlePlanFailure(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    buildPlannerHistory,
+    callPlan,
+    handlePlanFailure,
+    messagesRef,
+    planRequestPayload,
+    presentPlanResponse,
+  ]);
+
+  const handleCancelPlanError = useCallback(() => {
+    setPlanError(null);
+    setStage('idle');
+  }, []);
 
   const updateMessageContent = useCallback((id: string, content: string) => {
     setMessages((current) =>
@@ -324,6 +451,9 @@ export function ChatWindow() {
     }
 
     setPendingPlan(null);
+    setPlanError(null);
+    setExecuteError(null);
+    setStage('completed');
     const assistantMessage: TextMessage = {
       id: createMessageId(),
       role: 'assistant',
@@ -358,33 +488,39 @@ export function ChatWindow() {
     }
 
     if (!ORCHESTRATOR_BASE_URL) {
+      const message =
+        'Execution requires NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to be configured.';
       const assistantMessage: TextMessage = {
         id: createMessageId(),
         role: 'assistant',
         kind: 'text',
-        content:
-          'Execution requires NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to be configured.',
+        content: `⚠️ ${message}`,
       };
       setMessages((current) => [...current, assistantMessage]);
+      setExecuteError(message);
+      setStage('error');
       return;
     }
 
-    const { plan } = pendingPlan;
+    const planContext = pendingPlan;
     setPendingPlan(null);
+    setExecuteError(null);
+    setPlanError(null);
     setIsExecuting(true);
+    setStage('executing');
 
     const progressMessageId = createMessageId();
     const progressMessage: TextMessage = {
       id: progressMessageId,
       role: 'assistant',
       kind: 'text',
-      content: 'Working on it…',
+      content: 'Working on it •',
     };
 
     setMessages((current) => [...current, progressMessage]);
 
     const executeRequestPayload: ExecuteRequest = {
-      intent: plan.intent,
+      intent: planContext.plan.intent,
       mode: 'relayer',
     };
     setExecuteRequestPayload(executeRequestPayload);
@@ -416,8 +552,8 @@ export function ChatWindow() {
           }
 
           raw += decoder.decode(value, { stream: true });
-          dots = (dots + 1) % 4;
-          const suffix = '.'.repeat(dots === 0 ? 3 : dots);
+          dots = (dots + 1) % 3;
+          const suffix = ' •'.repeat(dots + 1);
           updateMessageContent(progressMessageId, `Working on it${suffix}`);
         }
         raw += decoder.decode();
@@ -470,6 +606,7 @@ export function ChatWindow() {
         return next.slice(0, RECEIPT_HISTORY_LIMIT);
       });
       updateMessageContent(progressMessageId, successLines.join('\n'));
+      setStage('completed');
     } catch (error) {
       if (parsedExecuteResponse === null) {
         setExecuteResponsePayload(toErrorPayload(error));
@@ -479,11 +616,25 @@ export function ChatWindow() {
           ? error.message
           : 'Execution failed. Please try again.';
       updateMessageContent(progressMessageId, `⚠️ ${message}`);
+      setExecuteError(message);
+      setPendingPlan(planContext);
+      setStage('awaiting_confirmation');
     } finally {
       setLastExecute(parsedExecuteResponse);
       setIsExecuting(false);
     }
-  }, [isExpertMode, pendingPlan, updateMessageContent]);
+  }, [pendingPlan, updateMessageContent]);
+
+  const handleRetryExecute = useCallback(() => {
+    setExecuteError(null);
+    void handleExecutePlan();
+  }, [handleExecutePlan]);
+
+  const handleCancelExecuteError = useCallback(() => {
+    setExecuteError(null);
+    setPendingPlan(null);
+    setStage('completed');
+  }, []);
 
   const contractEntries = useMemo(
     () =>
@@ -547,6 +698,10 @@ export function ChatWindow() {
                   <div className="expert-meta-field">
                     <span className="expert-meta-label">Network</span>
                     <span className="expert-meta-value">{networkLabel}</span>
+                  </div>
+                  <div className="expert-meta-field">
+                    <span className="expert-meta-label">Stage</span>
+                    <span className="expert-meta-value">{stage}</span>
                   </div>
                 </div>
                 <div className="expert-contracts">
@@ -662,6 +817,54 @@ export function ChatWindow() {
           })}
           <div ref={bottomRef} />
         </div>
+        {planError ? (
+          <div className="chat-error" role="alert">
+            <span className="chat-error-message">{planError}</span>
+            <div className="chat-error-actions">
+              <button
+                type="button"
+                className="chat-error-button"
+                onClick={() => {
+                  void retryPlan();
+                }}
+                disabled={isLoading || isExecuting}
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                className="chat-error-button chat-error-button-secondary"
+                onClick={handleCancelPlanError}
+                disabled={isExecuting}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {executeError ? (
+          <div className="chat-error" role="alert">
+            <span className="chat-error-message">{executeError}</span>
+            <div className="chat-error-actions">
+              <button
+                type="button"
+                className="chat-error-button"
+                onClick={handleRetryExecute}
+                disabled={isExecuting}
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                className="chat-error-button chat-error-button-secondary"
+                onClick={handleCancelExecuteError}
+                disabled={isExecuting}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : null}
         <form
           className="chat-form"
           onSubmit={(event) => {
