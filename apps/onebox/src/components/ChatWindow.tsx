@@ -436,7 +436,10 @@ export function ChatWindow() {
       }
 
       const netPayout = [payload.reward, payload.token]
-        .filter((value): value is string => typeof value === 'string' && value)
+        .filter(
+          (value): value is string =>
+            typeof value === 'string' && value.length > 0
+        )
         .join(' ');
 
       const receipt: ExecutionReceipt = {
@@ -602,52 +605,61 @@ export function ChatWindow() {
           </div>
         ) : null}
         <div className="chat-history" role="log" aria-live="polite">
-          {messages.map((message) => (
-            <div key={message.id} className="chat-message">
-              <span className="chat-message-role">{message.role}</span>
-              <div className="chat-bubble">
-                {message.kind === 'plan' ? (
-                  <div className="plan-summary">
-                    <p>{message.plan.summary}</p>
-                    {message.plan.warnings &&
-                    message.plan.warnings.length > 0 ? (
-                      <ul className="plan-warnings">
-                        {message.plan.warnings.map(
-                          (warning: string, warningIndex: number) => (
+          {messages.map((message) => {
+            if (message.kind === 'plan') {
+              const warnings = Array.isArray(message.plan.warnings)
+                ? message.plan.warnings
+                : [];
+              const hasWarnings = warnings.length > 0;
+
+              return (
+                <div key={message.id} className="chat-message">
+                  <span className="chat-message-role">{message.role}</span>
+                  <div className="chat-bubble">
+                    <div className="plan-summary">
+                      <p>{message.plan.summary}</p>
+                      {hasWarnings ? (
+                        <ul className="plan-warnings">
+                          {warnings.map((warning: string, warningIndex: number) => (
                             <li key={warningIndex}>{warning}</li>
-                          )
-                        )}
-                      </ul>
-                    ) : null}
-                    {pendingPlan?.messageId === message.id ? (
-                      <div className="plan-actions">
-                        <button
-                          type="button"
-                          className="plan-button"
-                          onClick={() => {
-                            void handleExecutePlan();
-                          }}
-                          disabled={isExecuting}
-                        >
-                          Yes
-                        </button>
-                        <button
-                          type="button"
-                          className="plan-button plan-button-secondary"
-                          onClick={handleRejectPlan}
-                          disabled={isExecuting}
-                        >
-                          No
-                        </button>
-                      </div>
-                    ) : null}
+                          ))}
+                        </ul>
+                      ) : null}
+                      {pendingPlan?.messageId === message.id ? (
+                        <div className="plan-actions">
+                          <button
+                            type="button"
+                            className="plan-button"
+                            onClick={() => {
+                              void handleExecutePlan();
+                            }}
+                            disabled={isExecuting}
+                          >
+                            Yes
+                          </button>
+                          <button
+                            type="button"
+                            className="plan-button plan-button-secondary"
+                            onClick={handleRejectPlan}
+                            disabled={isExecuting}
+                          >
+                            No
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                ) : (
-                  message.content
-                )}
+                </div>
+              );
+            }
+
+            return (
+              <div key={message.id} className="chat-message">
+                <span className="chat-message-role">{message.role}</span>
+                <div className="chat-bubble">{message.content}</div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={bottomRef} />
         </div>
         <form
