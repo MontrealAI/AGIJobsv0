@@ -23,7 +23,7 @@ import type {
   PlanResponse,
   StatusResponse,
 } from '../../packages/onebox-sdk/src';
-import { postJob } from './employer';
+import { postJob, prepareJobArtifacts } from './employer';
 import { finalizeJob } from './submission';
 import { JOB_REGISTRY_ADDRESS, RPC_URL } from './config';
 import {
@@ -37,6 +37,9 @@ import {
 const STATUS_ABI = [
   'function nextJobId() view returns (uint256)',
   'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)',
+  'function createJob(uint256 reward,uint64 deadline,bytes32 specHash,string uri) returns (uint256)',
+  'function createJobWithAgentTypes(uint256 reward,uint64 deadline,uint8 agentTypes,bytes32 specHash,string uri) returns (uint256)',
+  'function finalize(uint256 jobId)',
 ];
 
 const DEFAULT_STATUS_LIMIT = 5;
@@ -127,24 +130,11 @@ export class DefaultOneboxService implements OneboxService {
   }
 
   async execute(intent: JobIntent, mode: 'relayer' | 'wallet'): Promise<ExecuteResponse> {
-    if (mode === 'wallet') {
-      throw new HttpError(
-        501,
-        'Wallet execution is not available yet. Disable expert mode to continue with the relayer path.'
-      );
-    }
-
     switch (intent.action) {
       case 'post_job':
-        return this.executePostJob(intent);
-      case 'finalize_job': {
-        const jobId = normaliseJobId(intent.payload?.jobId);
-        if (!this.relayer) {
-          throw new HttpError(503, 'Relayer is not configured. Set ONEBOX_RELAYER_PRIVATE_KEY.');
-        }
-        await finalizeJob(jobId.toString(), this.relayer);
-        return { ok: true, jobId: Number(jobId) };
-      }
+        return this.executePostJob(intent, mode);
+      case 'finalize_job':
+        return this.executeFinalizeJob(intent, mode);
       case 'check_status':
         return {
           ok: true,
@@ -179,23 +169,47 @@ export class DefaultOneboxService implements OneboxService {
     return { jobs };
   }
 
-  private async executePostJob(intent: JobIntent): Promise<ExecuteResponse> {
-    if (!this.relayer) {
-      throw new HttpError(503, 'Relayer is not configured. Set ONEBOX_RELAYER_PRIVATE_KEY.');
-    }
-
+  private async executePostJob(
+    intent: JobIntent,
+    mode: 'relayer' | 'wallet'
+  ): Promise<ExecuteResponse> {
     const payload = intent.payload ?? {};
     const rewardWei = parseReward(payload.reward, this.tokenDecimals);
     const deadlineDays = parseDeadlineDays(payload.deadlineDays);
     const metadata = buildJobMetadata(intent, deadlineDays);
     const deadlineSeconds = Math.floor(Date.now() / 1000 + deadlineDays * 24 * 60 * 60);
+    const agentTypes = determineAgentTypes(intent);
+
+    if (mode === 'wallet') {
+      const artifacts = await this.prepareWalletArtifacts(metadata);
+      const fnName =
+        typeof agentTypes === 'number' ? 'createJobWithAgentTypes' : 'createJob';
+      const args =
+        typeof agentTypes === 'number'
+          ? [rewardWei, deadlineSeconds, agentTypes, artifacts.specHash, artifacts.jsonUri]
+          : [rewardWei, deadlineSeconds, artifacts.specHash, artifacts.jsonUri];
+      const data = this.registry.interface.encodeFunctionData(fnName, args);
+      const to = await this.resolveRegistryAddress();
+      const chainId = await this.resolveChainId();
+      return {
+        ok: true,
+        to,
+        data,
+        value: '0x0',
+        chainId,
+      };
+    }
+
+    if (!this.relayer) {
+      throw new HttpError(503, 'Relayer is not configured. Set ONEBOX_RELAYER_PRIVATE_KEY.');
+    }
 
     const { jobId, txHash } = await postJob({
       wallet: this.relayer,
       reward: rewardWei,
       deadline: deadlineSeconds,
       metadata,
-      agentTypes: typeof payload.agentTypes === 'number' ? payload.agentTypes : undefined,
+      agentTypes: typeof agentTypes === 'number' ? agentTypes : undefined,
     });
 
     const receiptUrl = buildReceiptUrl(this.explorerBaseUrl, txHash);
@@ -207,6 +221,82 @@ export class DefaultOneboxService implements OneboxService {
       txHash,
       receiptUrl,
     };
+  }
+
+  private async executeFinalizeJob(
+    intent: JobIntent,
+    mode: 'relayer' | 'wallet'
+  ): Promise<ExecuteResponse> {
+    const jobId = normaliseJobId(intent.payload?.jobId);
+
+    if (mode === 'wallet') {
+      const data = this.registry.interface.encodeFunctionData('finalize', [jobId]);
+      const to = await this.resolveRegistryAddress();
+      const chainId = await this.resolveChainId();
+      return {
+        ok: true,
+        jobId: Number(jobId),
+        to,
+        data,
+        value: '0x0',
+        chainId,
+      };
+    }
+
+    if (!this.relayer) {
+      throw new HttpError(503, 'Relayer is not configured. Set ONEBOX_RELAYER_PRIVATE_KEY.');
+    }
+
+    await finalizeJob(jobId.toString(), this.relayer);
+    return { ok: true, jobId: Number(jobId) };
+  }
+
+  private async prepareWalletArtifacts(
+    metadata: Record<string, unknown>
+  ): Promise<{ jsonUri: string; specHash: string }> {
+    try {
+      const artifacts = await prepareJobArtifacts(metadata);
+      return { jsonUri: artifacts.jsonUri, specHash: artifacts.specHash };
+    } catch (error) {
+      console.error('Failed to prepare job metadata for wallet execution', error);
+      throw new HttpError(
+        502,
+        'I could not package the job details for wallet execution. Please try again.'
+      );
+    }
+  }
+
+  private async resolveRegistryAddress(): Promise<string> {
+    const target = (this.registry as unknown as { target?: string }).target;
+    if (typeof target === 'string' && target) {
+      return target;
+    }
+    if (typeof (this.registry as { getAddress?: () => Promise<string> }).getAddress === 'function') {
+      return this.registry.getAddress();
+    }
+    throw new Error('Unable to determine registry address');
+  }
+
+  private async resolveChainId(): Promise<number> {
+    const network = await this.provider.getNetwork();
+    const raw = (network as { chainId: bigint | number | string }).chainId;
+    if (typeof raw === 'number') {
+      return raw;
+    }
+    if (typeof raw === 'bigint') {
+      const asNumber = Number(raw);
+      if (!Number.isSafeInteger(asNumber)) {
+        throw new Error('Chain id exceeds safe integer range');
+      }
+      return asNumber;
+    }
+    if (typeof raw === 'string') {
+      const parsed = Number.parseInt(raw, 10);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    throw new Error('Unsupported chain id from provider');
   }
 
   private async fetchJobCard(jobId: bigint): Promise<JobStatusCard | undefined> {
@@ -561,6 +651,22 @@ function buildJobMetadata(intent: JobIntent, deadlineDays: number): Record<strin
     createdAt: new Date().toISOString(),
     source: 'apps/orchestrator/onebox',
   };
+}
+
+function determineAgentTypes(intent: JobIntent): number | undefined {
+  const payloadAgentTypes = (intent.payload as Record<string, unknown> | undefined)?.['agentTypes'];
+  if (typeof payloadAgentTypes === 'number' && Number.isFinite(payloadAgentTypes)) {
+    const candidate = Math.trunc(payloadAgentTypes);
+    return candidate >= 0 ? candidate : undefined;
+  }
+
+  const constraintAgentTypes = intent.constraints?.['agentTypes'];
+  if (typeof constraintAgentTypes === 'number' && Number.isFinite(constraintAgentTypes)) {
+    const candidate = Math.trunc(constraintAgentTypes);
+    return candidate >= 0 ? candidate : undefined;
+  }
+
+  return undefined;
 }
 
 function parseReward(value: unknown, decimals: number): bigint {

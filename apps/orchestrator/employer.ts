@@ -23,6 +23,31 @@ export interface PostJobSpec {
   agentTypes?: number;
 }
 
+export interface JobArtifacts {
+  jsonUri: string;
+  markdownUri: string;
+  specHash: string;
+}
+
+export async function prepareJobArtifacts(metadata: any): Promise<JobArtifacts> {
+  const jsonSpec = JSON.stringify(metadata ?? {}, null, 2);
+  const jsonCid = await uploadToIPFS(jsonSpec);
+
+  const markdown = metadata?.markdown
+    ? metadata.markdown
+    : `# Job Specification\n\n\`\`\`json\n${jsonSpec}\n\`\`\`\n`;
+  const markdownCid = await uploadToIPFS(markdown);
+
+  const jsonUri = `ipfs://${jsonCid}`;
+  const markdownUri = `ipfs://${markdownCid}`;
+  const specWithUris = { ...metadata, json: jsonUri, markdown: markdownUri };
+  const specHash = ethers.keccak256(
+    ethers.toUtf8Bytes(JSON.stringify(specWithUris))
+  );
+
+  return { jsonUri, markdownUri, specHash };
+}
+
 export async function postJob(spec: PostJobSpec): Promise<{
   jobId: string;
   jsonUri: string;
@@ -51,18 +76,8 @@ export async function postJob(spec: PostJobSpec): Promise<{
     }
   }
 
-  const jsonSpec = JSON.stringify(metadata ?? {}, null, 2);
-  const jsonCid = await uploadToIPFS(jsonSpec);
-  const markdown = metadata?.markdown
-    ? metadata.markdown
-    : `# Job Specification\n\n\`\`\`json\n${jsonSpec}\n\`\`\`\n`;
-  const markdownCid = await uploadToIPFS(markdown);
-  const jsonUri = `ipfs://${jsonCid}`;
-  const markdownUri = `ipfs://${markdownCid}`;
+  const { jsonUri, markdownUri, specHash } = await prepareJobArtifacts(metadata);
   const specWithUris = { ...metadata, json: jsonUri, markdown: markdownUri };
-  const specHash = ethers.keccak256(
-    ethers.toUtf8Bytes(JSON.stringify(specWithUris))
-  );
 
   const provider = wallet.provider || new ethers.JsonRpcProvider(RPC_URL);
   const registry = new ethers.Contract(

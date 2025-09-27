@@ -246,7 +246,14 @@ function ensureBlob(
     type = type ?? 'text/plain';
     suggestedFileName = 'payload.txt';
   } else if (content instanceof ArrayBuffer || ArrayBuffer.isView(content)) {
-    data = content instanceof ArrayBuffer ? new Uint8Array(content) : content;
+    const buffer =
+      content instanceof ArrayBuffer
+        ? content
+        : ((content as ArrayBufferView).buffer.slice(
+            (content as ArrayBufferView).byteOffset,
+            (content as ArrayBufferView).byteOffset + (content as ArrayBufferView).byteLength
+          ) as ArrayBuffer);
+    data = new Uint8Array(buffer);
     type = type ?? 'application/octet-stream';
   } else if (content && typeof content === 'object') {
     data = JSON.stringify(content);
