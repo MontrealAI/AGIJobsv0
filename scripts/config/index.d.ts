@@ -153,6 +153,18 @@ export interface FeePoolConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface EnergyOracleConfig {
+  signers: string[];
+  retainUnknown?: boolean;
+  [key: string]: unknown;
+}
+
+export interface EnergyOracleConfigResult {
+  config: EnergyOracleConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export interface PlatformIncentivesConfig {
   address?: string;
   stakeManager?: string | null;
@@ -438,6 +450,9 @@ export function loadStakeManagerConfig(
   options?: LoadOptions
 ): StakeManagerConfigResult;
 export function loadFeePoolConfig(options?: LoadOptions): FeePoolConfigResult;
+export function loadEnergyOracleConfig(
+  options?: LoadOptions
+): EnergyOracleConfigResult;
 export function loadPlatformIncentivesConfig(
   options?: LoadOptions
 ): PlatformIncentivesConfigResult;

@@ -69,6 +69,18 @@ contract MockEnergyOracle is IEnergyOracle {
     function verify(Attestation calldata att, bytes calldata) external pure override returns (address) {
         return att.user; // treat user's address as signer for testing
     }
+
+    function isSigner(address) external pure override returns (bool) {
+        return true;
+    }
+
+    function signerCount() external pure override returns (uint256) {
+        return 0;
+    }
+
+    function getSigners() external pure override returns (address[] memory) {
+        return new address[](0);
+    }
 }
 
 contract RewardEngineMBHarness is RewardEngineMB {
