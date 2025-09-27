@@ -64,31 +64,130 @@ const COPY = {
   },
 };
 
+const ERROR_PATTERNS = [
+  {
+    key: 'ORCHESTRATOR_NOT_CONFIGURED',
+    needles: [
+      'ORCHESTRATOR_NOT_CONFIGURED',
+      'ORCH_NOT_SET',
+      'ORCHESTRATOR REQUIRED',
+      'NO ORCHESTRATOR',
+      'MISSING ORCHESTRATOR',
+      'SET YOUR ORCHESTRATOR',
+    ],
+  },
+  {
+    key: 'API_TOKEN_MISSING',
+    needles: [
+      'API_TOKEN_MISSING',
+      'AUTH_MISSING',
+      'TOKEN REQUIRED',
+      'API TOKEN REQUIRED',
+      'ADD YOUR API TOKEN',
+      'MISSING API TOKEN',
+    ],
+  },
+  {
+    key: 'API_TOKEN_INVALID',
+    needles: [
+      'API_TOKEN_INVALID',
+      'AUTH_INVALID',
+      'TOKEN INVALID',
+      'TOKEN REJECTED',
+      'UNAUTHORIZED',
+      'FORBIDDEN',
+    ],
+  },
+  {
+    key: 'IDENTITY_NOT_CONFIGURED',
+    needles: [
+      'IDENTITY_NOT_CONFIGURED',
+      'IDENTITY REQUIRED',
+      'IDENTITY NOT CONFIGURED',
+      'ENS REQUIRED',
+      'NO IDENTITY',
+      'MISSING IDENTITY',
+    ],
+  },
+  {
+    key: 'STAKE_REQUIRED',
+    needles: ['STAKE_REQUIRED', 'STAKE REQUIRED', 'MUST STAKE', 'NEED TO STAKE', 'STAKE BEFORE'],
+  },
+  {
+    key: 'ESCROW_BALANCE_LOW',
+    needles: [
+      'ESCROW_BALANCE_LOW',
+      'INSUFFICIENT BALANCE',
+      'NOT ENOUGH AGIALPHA',
+      'INSUFFICIENT FUNDS',
+      'BALANCE TOO LOW',
+    ],
+  },
+  {
+    key: 'ESCROW_ALLOWANCE_REQUIRED',
+    needles: [
+      'ESCROW_ALLOWANCE_REQUIRED',
+      'INSUFFICIENT ALLOWANCE',
+      'NEED ALLOWANCE',
+      'REQUIRE ALLOWANCE',
+      'ALLOWANCE REQUIRED',
+      'APPROVE SPENDING',
+    ],
+  },
+  {
+    key: 'PAYMASTER_REJECTED',
+    needles: [
+      'PAYMASTER_REJECTED',
+      'PAYMASTER_REJECT',
+      'PAYMASTER',
+      'AA PAYMASTER',
+      'AA SPONSOR',
+      'PAYMASTER ERROR',
+    ],
+  },
+  {
+    key: 'CID_MISMATCH',
+    needles: ['CID_MISMATCH', 'CID DOES NOT MATCH', 'CID MISMATCH'],
+  },
+  {
+    key: 'DISPUTE_OPEN',
+    needles: ['DISPUTE_OPEN', 'DISPUTE OPEN', 'DISPUTE OPENED', 'DISPUTE ACTIVE', 'ACTIVE DISPUTE'],
+  },
+  {
+    key: 'RPC_TIMEOUT',
+    needles: ['RPC_TIMEOUT', 'TIMEOUT', 'TIMED OUT', 'ETIMEDOUT', 'ABORTED'],
+  },
+  {
+    key: 'UNKNOWN_REVERT',
+    needles: ['UNKNOWN_REVERT', 'REVERT'],
+  },
+];
+
 const ERRORS = {
-  ORCH_NOT_SET: 'Set your orchestrator URL in Advanced before running jobs.',
-  AUTH_MISSING: 'Add your API token in Advanced to continue.',
-  AUTH_INVALID: 'The API token looks incorrect. Double-check and try again.',
-  INSUFFICIENT_BALANCE: 'Not enough AGIALPHA. Lower the reward or top up and retry.',
-  INSUFFICIENT_ALLOWANCE: 'We need allowance to use AGIALPHA. Enable approvals in Expert mode.',
-  IPFS_FAILED: 'IPFS pinning failed. Remove broken attachments or retry in a moment.',
-  DEADLINE_INVALID: 'Deadline must be at least 1 day and within protocol limits.',
-  RELAY_UNAVAILABLE: 'Relayer unavailable. Retry in a moment or switch to Expert mode.',
-  JOB_ID_REQUIRED: 'I need a job ID for that action. Try “Finalize job 123”.',
-  UNSUPPORTED_ACTION: 'That action is not supported yet. Try posting, finalizing, or checking status.',
-  IDENTITY_REQUIRED:
-    'An ENS identity is required before continuing. Register the appropriate *.agent.agi.eth or *.club.agi.eth subdomain and try again.',
+  ORCHESTRATOR_NOT_CONFIGURED:
+    'Connect an orchestrator under Advanced → Orchestrator URL, then run the job again.',
+  API_TOKEN_MISSING:
+    'Add your orchestrator API token under Advanced → API token and resend the request.',
+  API_TOKEN_INVALID:
+    'The API token was rejected. Mint a fresh token in the orchestrator console, update Advanced → API token, and retry.',
+  IDENTITY_NOT_CONFIGURED:
+    'This orchestrator is missing its identity pack. Sync the ENS roots/identity bundle and restart the orchestrator before retrying.',
   STAKE_REQUIRED:
-    'You need to stake before you can continue. Stake the required AGIALPHA amount and retry the action.',
-  PAYMASTER_REJECT:
-    'The sponsored transaction was rejected by the paymaster. Top up the paymaster balance or switch to Expert mode to supply gas yourself.',
+    'Staking is required for this action. Stake the required AGIALPHA via Stake Manager and rerun the command.',
+  ESCROW_BALANCE_LOW:
+    'Escrow balance is too low. Top up the funding wallet or lower the reward, then try again.',
+  ESCROW_ALLOWANCE_REQUIRED:
+    'Escrow allowance is missing. Approve AGIALPHA spending (Expert mode or wallet) and rerun the request.',
+  PAYMASTER_REJECTED:
+    'The account-abstraction paymaster rejected the request. Top up the paymaster or switch to Expert mode to cover gas yourself.',
   CID_MISMATCH:
-    'The attachment CID does not match the orchestrator record. Re-upload the file and confirm the CID before retrying.',
-  DISPUTE_OPENED:
-    'A dispute is already open for this job. Review the dispute status and follow the evidence workflow before retrying.',
+    'The attachment CID does not match the orchestrator record. Re-upload the artefact and confirm the CID before resubmitting.',
+  DISPUTE_OPEN:
+    'A dispute is already open for this job. Follow the dispute workflow to resolution before retrying.',
   RPC_TIMEOUT:
-    'The blockchain RPC timed out while handling your request. Retry shortly or point Advanced settings to a faster RPC endpoint.',
+    'The blockchain RPC timed out. Retry shortly or point Advanced settings at a faster RPC endpoint.',
   UNKNOWN_REVERT:
-    'The transaction reverted for an unknown reason. Check orchestrator logs or rerun in Expert mode to inspect the revert details.',
+    'The transaction reverted unexpectedly. Review orchestrator logs or rerun in Expert mode for detailed revert data.',
   UNKNOWN: 'Something went wrong. I logged the details so we can retry safely.',
 };
 
@@ -388,35 +487,10 @@ function resolveErrorKey(message) {
     return 'UNKNOWN';
   }
   const upper = message.toUpperCase();
-  const directMatch = Object.keys(ERRORS).find((code) => upper.includes(code));
-  if (directMatch) {
-    return directMatch;
-  }
-  if (upper.includes('ENS') || upper.includes('IDENTITY')) {
-    return 'IDENTITY_REQUIRED';
-  }
-  if (upper.includes('STAKE')) {
-    return 'STAKE_REQUIRED';
-  }
-  if (upper.includes('PAYMASTER') || upper.includes('AA SPONSOR')) {
-    return 'PAYMASTER_REJECT';
-  }
-  if (upper.includes('CID') && (upper.includes('MISMATCH') || upper.includes('DOES NOT MATCH'))) {
-    return 'CID_MISMATCH';
-  }
-  if (upper.includes('DISPUTE') && (upper.includes('OPEN') || upper.includes('ACTIVE'))) {
-    return 'DISPUTE_OPENED';
-  }
-  if (
-    upper.includes('TIMEOUT') ||
-    upper.includes('TIMED OUT') ||
-    upper.includes('ETIMEDOUT') ||
-    upper.includes('ABORTED')
-  ) {
-    return 'RPC_TIMEOUT';
-  }
-  if (upper.includes('REVERT')) {
-    return 'UNKNOWN_REVERT';
+  for (const pattern of ERROR_PATTERNS) {
+    if (pattern.needles.some((needle) => upper.includes(needle))) {
+      return pattern.key;
+    }
   }
   return 'UNKNOWN';
 }
