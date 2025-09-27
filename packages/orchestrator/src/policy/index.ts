@@ -208,10 +208,21 @@ class PolicyManager {
   }
 }
 
-const singleton = new PolicyManager();
+let singleton: PolicyManager | null = null;
+
+function getOrCreateSingleton(): PolicyManager {
+  if (!singleton) {
+    singleton = new PolicyManager();
+  }
+  return singleton;
+}
 
 export function policyManager(): PolicyManager {
-  return singleton;
+  return getOrCreateSingleton();
+}
+
+export function __resetPolicyForTests(): void {
+  singleton = null;
 }
 
 export function extractPolicyContext(value: unknown): PolicyContext {
