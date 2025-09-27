@@ -24,30 +24,7 @@ let EXPERT=false, ETH=null;
 let ORCH=localStorage.getItem('ORCH_URL')||'', TOK=localStorage.getItem('ORCH_TOKEN')||'';
 orchInput.value=ORCH; tokInput.value=TOK;
 
-function escapeHtml(str){
-  const div=document.createElement('div');
-  div.textContent=str??'';
-  return div.innerHTML;
-}
-
-function unescapeHtml(str){
-  const div=document.createElement('div');
-  div.innerHTML=str??'';
-  return div.textContent||'';
-}
-
-function add(role,content){
-  const d=document.createElement('div');
-  d.className='msg '+(role==='user'?'m-user':'m-assist');
-  if(content && typeof content==='object' && 'nodeType' in content){
-    d.appendChild(content);
-  }else{
-    d.innerHTML=content;
-  }
-  chat.appendChild(d);
-  chat.scrollTop=chat.scrollHeight;
-  return d;
-}
+function add(role,html){const d=document.createElement('div');d.className='msg '+(role==='user'?'m-user':'m-assist');d.innerHTML=html;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
 function note(t){add('assist',`<div class="note">${t}</div>`)}
 function setMode(){mode.textContent='Mode: '+(EXPERT?'Expert (wallet)':'Guest (walletless)')}
 
@@ -63,41 +40,12 @@ async function api(path, body){
 }
 
 function confirmUI(summary,intent){
-  const content=document.createElement('div');
-  const text=document.createElement('div');
-  text.textContent=unescapeHtml(summary??'');
-  content.appendChild(text);
-
-  const row=document.createElement('div');
-  row.className='row';
-  row.style.marginTop='10px';
-
-  const yes=document.createElement('button');
-  yes.className='pill ok';
-  yes.setAttribute('data-role','confirm');
-  yes.textContent='Yes';
-
-  const no=document.createElement('button');
-  no.className='pill';
-  no.setAttribute('data-role','cancel');
-  no.textContent='Cancel';
-
-  row.appendChild(yes);
-  row.appendChild(no);
-  content.appendChild(row);
-
-  const message=add('assist', content);
-  const confirmBtn=message.querySelector('[data-role="confirm"]');
-  const cancelBtn=message.querySelector('[data-role="cancel"]');
-
-  if(confirmBtn) confirmBtn.onclick=async()=>{
-    try{
-      await execute(intent);
-    }catch(e){
-      handleError(e);
-    }
-  };
-  if(cancelBtn) cancelBtn.onclick=()=>add('assist', COPY.cancelled);
+  add('assist', summary + `<div class="row" style="margin-top:10px">
+    <button class="pill ok" id="yes">Yes</button><button class="pill" id="no">Cancel</button></div>`);
+  setTimeout(()=>{
+    document.getElementById('yes').onclick=()=>execute(intent);
+    document.getElementById('no').onclick=()=>add('assist', COPY.cancelled);
+  },0);
 }
 
 async function plan(text){
@@ -128,7 +76,7 @@ async function execute(intent){
 
 async function go(){
   const text=box.value.trim(); if(!text) return;
-  add('user', escapeHtml(text)); box.value='';
+  add('user', text); box.value='';
   try{
     const {summary,intent} = await plan(text);
     // status shortcut
