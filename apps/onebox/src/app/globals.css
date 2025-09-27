@@ -8,7 +8,8 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
   background-color: #020617;
   color: #e2e8f0;
 }
@@ -91,6 +92,62 @@ button {
   font-size: 0.95rem;
   line-height: 1.6;
   color: #f8fafc;
+}
+
+.plan-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.plan-summary p {
+  margin: 0;
+}
+
+.plan-warnings {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.plan-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.plan-button {
+  flex: 0 0 auto;
+  min-width: 72px;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.6rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+  color: #0f172a;
+}
+
+.plan-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(35%);
+  opacity: 0.7;
+}
+
+.plan-button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.plan-button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.plan-button-secondary {
+  background: rgba(30, 41, 59, 0.9);
+  color: #e2e8f0;
+  border: 1px solid #334155;
 }
 
 .chat-form {
