@@ -64,6 +64,12 @@ export interface ExecuteResponse {
   jobId?: number;
   txHash?: string;
   receiptUrl?: string;
+  specCid?: string;
+  specHash?: string;
+  deadline?: number;
+  reward?: string;
+  token?: string;
+  status?: string;
   /** Target address for wallet execution flows. */
   to?: string;
   /** ABI-encoded calldata for wallet execution flows. */
