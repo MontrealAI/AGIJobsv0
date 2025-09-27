@@ -1110,6 +1110,20 @@ function normaliseTaxPolicyConfig(config = {}) {
     result.acknowledgers = mapped;
   }
 
+  if (Array.isArray(result.revokeAcknowledgements)) {
+    const cleaned = [];
+    for (let i = 0; i < result.revokeAcknowledgements.length; i += 1) {
+      const value = result.revokeAcknowledgements[i];
+      if (value === undefined || value === null || value === '') continue;
+      cleaned.push(
+        ensureAddress(value, `TaxPolicy revokeAcknowledgements[${i}]`, {
+          allowZero: false,
+        })
+      );
+    }
+    result.revokeAcknowledgements = cleaned;
+  }
+
   return result;
 }
 

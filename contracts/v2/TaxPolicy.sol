@@ -28,8 +28,22 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
     /// @notice Addresses allowed to acknowledge the policy for others.
     mapping(address => bool) private _acknowledgers;
 
+    /// @notice Emitted when an acknowledgement record is cleared by the owner.
+    /// @param user Address whose acknowledgement was revoked.
+    /// @param previousVersion Policy version that had been acknowledged prior to revocation.
+    event AcknowledgementRevoked(address indexed user, uint256 previousVersion);
+
     /// @notice Thrown when an unauthorized address attempts to acknowledge for another user.
     error NotAcknowledger();
+
+    /// @notice Thrown when batch updates provide mismatched array lengths.
+    error ArrayLengthMismatch();
+
+    /// @notice Thrown when attempting to authorise the zero address as an acknowledger.
+    error ZeroAcknowledgerAddress();
+
+    /// @notice Thrown when attempting to revoke acknowledgement for the zero address.
+    error ZeroUserAddress();
 
     /// @notice Emitted when the tax policy URI is updated.
     event TaxPolicyURIUpdated(string uri);
@@ -100,10 +114,58 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
     /// @dev When `allowed` is true, `acknowledger` must be a non-zero address representing a valid contract or EOA.
     /// @param acknowledger Address granted permission to acknowledge for users.
     /// @param allowed True to allow the address, false to revoke.
-    function setAcknowledger(address acknowledger, bool allowed) external onlyOwner {
-        if (allowed) require(acknowledger != address(0));
+    function _setAcknowledger(address acknowledger, bool allowed) private {
+        if (allowed && acknowledger == address(0)) revert ZeroAcknowledgerAddress();
         _acknowledgers[acknowledger] = allowed;
         emit AcknowledgerUpdated(acknowledger, allowed);
+    }
+
+    function _revokeAcknowledgement(address user) private {
+        if (user == address(0)) revert ZeroUserAddress();
+        uint256 previousVersion = _acknowledgedVersion[user];
+        delete _acknowledgedVersion[user];
+        emit AcknowledgementRevoked(user, previousVersion);
+    }
+
+    /// @notice Updates acknowledger permissions for a single address.
+    /// @param acknowledger Address granted or revoked permission to acknowledge on behalf of others.
+    /// @param allowed True to permit the address, false to revoke access.
+    function setAcknowledger(address acknowledger, bool allowed) external override onlyOwner {
+        _setAcknowledger(acknowledger, allowed);
+    }
+
+    /// @notice Batch update acknowledger permissions.
+    /// @param acknowledgers Array of addresses to configure.
+    /// @param allowed Array of boolean flags matching `acknowledgers` by index.
+    function setAcknowledgers(address[] calldata acknowledgers, bool[] calldata allowed)
+        external
+        override
+        onlyOwner
+    {
+        uint256 length = acknowledgers.length;
+        if (length != allowed.length) revert ArrayLengthMismatch();
+        for (uint256 i = 0; i < length; i++) {
+            _setAcknowledger(acknowledgers[i], allowed[i]);
+        }
+    }
+
+    /// @notice Clears the acknowledgement record for a user.
+    /// @param user Address whose acknowledgement should be revoked.
+    function revokeAcknowledgement(address user) public override onlyOwner {
+        _revokeAcknowledgement(user);
+    }
+
+    /// @notice Clears acknowledgement records for multiple users in a single transaction.
+    /// @param users Array of participant addresses to reset.
+    function revokeAcknowledgements(address[] calldata users)
+        external
+        override
+        onlyOwner
+    {
+        uint256 length = users.length;
+        for (uint256 i = 0; i < length; i++) {
+            _revokeAcknowledgement(users[i]);
+        }
     }
 
     /// @notice Record that the caller acknowledges the current tax policy.
@@ -144,6 +206,18 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
         returns (bool)
     {
         return _acknowledgedVersion[user] == _version;
+    }
+
+    /// @notice Returns whether an acknowledger has delegation permission.
+    /// @param acknowledger Address to query.
+    /// @return True when `acknowledger` may call {acknowledgeFor}.
+    function acknowledgerAllowed(address acknowledger)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _acknowledgers[acknowledger];
     }
 
     /// @notice Returns the policy version a user has acknowledged.

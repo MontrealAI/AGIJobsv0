@@ -203,6 +203,7 @@ export interface TaxPolicyConfig {
   acknowledgement?: string;
   bumpVersion?: boolean;
   acknowledgers?: Record<string, boolean>;
+  revokeAcknowledgements?: string[];
   [key: string]: unknown;
 }
 

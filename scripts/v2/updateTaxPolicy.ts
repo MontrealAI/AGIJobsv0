@@ -188,12 +188,69 @@ async function main() {
   }
 
   if (!cli.skipAcknowledgers && taxConfig.acknowledgers) {
-    for (const [address, allowed] of Object.entries(taxConfig.acknowledgers)) {
+    const ackEntries = Object.entries(taxConfig.acknowledgers).map(
+      ([address, allowed]) => ({
+        address: ethers.getAddress(address),
+        allowed: Boolean(allowed),
+      })
+    );
+
+    ackEntries.sort((a, b) => a.address.localeCompare(b.address));
+
+    const currentFlags = await Promise.all(
+      ackEntries.map((entry) => taxPolicy.acknowledgerAllowed(entry.address))
+    );
+
+    const updates = ackEntries.filter((entry, index) => {
+      return currentFlags[index] !== entry.allowed;
+    });
+
+    if (updates.length === 1) {
+      const [update] = updates;
       planned.push({
-        label: `Set acknowledger ${address}`,
+        label: `Set acknowledger ${update.address}`,
         method: 'setAcknowledger',
-        args: [address, allowed],
-        summary: `setAcknowledger(${address}, ${allowed})`,
+        args: [update.address, update.allowed],
+        summary: `setAcknowledger(${update.address}, ${update.allowed})`,
+      });
+    } else if (updates.length > 1) {
+      const addresses = updates.map((entry) => entry.address);
+      const allowedFlags = updates.map((entry) => entry.allowed);
+      planned.push({
+        label: `Batch update ${updates.length} acknowledgers`,
+        method: 'setAcknowledgers',
+        args: [addresses, allowedFlags],
+        summary: `setAcknowledgers([${addresses.join(', ')}], [${allowedFlags.join(', ')}])`,
+      });
+    }
+  }
+
+  if (taxConfig.revokeAcknowledgements && taxConfig.revokeAcknowledgements.length > 0) {
+    const revocations = Array.from(
+      new Set(
+        taxConfig.revokeAcknowledgements.map((address) => ethers.getAddress(address))
+      )
+    ).sort((a, b) => a.localeCompare(b));
+
+    const versions = await Promise.all(
+      revocations.map((address) => taxPolicy.acknowledgedVersion(address))
+    );
+
+    const pending = revocations.filter((_, index) => versions[index] !== 0n);
+
+    if (pending.length === 1) {
+      planned.push({
+        label: `Revoke acknowledgement for ${pending[0]}`,
+        method: 'revokeAcknowledgement',
+        args: [pending[0]],
+        summary: `revokeAcknowledgement(${pending[0]})`,
+      });
+    } else if (pending.length > 1) {
+      planned.push({
+        label: `Revoke acknowledgements for ${pending.length} users`,
+        method: 'revokeAcknowledgements',
+        args: [pending],
+        summary: `revokeAcknowledgements([${pending.join(', ')}])`,
       });
     }
   }
@@ -236,15 +293,6 @@ async function main() {
 
   if (!cli.execute) {
     console.log('\nDry run complete. Re-run with --execute to apply changes.');
-    if (
-      !cli.skipAcknowledgers &&
-      taxConfig.acknowledgers &&
-      Object.keys(taxConfig.acknowledgers).length > 0
-    ) {
-      console.log(
-        'Note: acknowledger permissions cannot be read on-chain. The script will call setAcknowledger for each entry when executed.'
-      );
-    }
     return;
   }
 

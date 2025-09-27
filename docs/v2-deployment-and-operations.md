@@ -291,7 +291,12 @@ To generate proofs:
   `npx hardhat run scripts/v2/updatePlatformIncentives.ts --network <network>`
   (rewires module addresses) and
   `npx hardhat run scripts/v2/updateTaxPolicy.ts --network <network>`
-  (updates policy URI, acknowledgement text, acknowledger allowlist, or bumps
-  the version). Both scripts read defaults from `config/*.json`, ensure the
-  connected signer controls the target contract, and print a human-readable
-  plan before executing.
+  (updates policy URI, acknowledgement text, acknowledger allowlist, clears
+  stale acknowledgements, or bumps the version). Both scripts read defaults from
+  `config/*.json`, ensure the connected signer controls the target contract, and
+  print a human-readable plan before executing.
+
+  Populate `config/tax-policy.json` with `acknowledgers` (address-to-boolean map)
+  and `revokeAcknowledgements` (array of addresses to reset). The helper now
+  fetches current allowlist status and acknowledgement versions so the plan only
+  includes the deltas that require on-chain transactions.
