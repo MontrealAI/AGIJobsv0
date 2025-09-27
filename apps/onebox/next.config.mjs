@@ -1,8 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const appDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(appDir, '..', '..');
+const require = createRequire(import.meta.url);
+const zodEntryPoint = require.resolve('zod');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -28,7 +31,8 @@ const nextConfig = {
 
     config.resolve.alias = {
       ...(config.resolve.alias ?? {}),
-      zod: path.join(rootNodeModules, 'zod')
+      zod: path.dirname(zodEntryPoint),
+      'zod$': zodEntryPoint
     };
 
     return config;
