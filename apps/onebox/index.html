@@ -1,64 +1,430 @@
 <!doctype html>
 <html lang="en">
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AGI Jobs — One‑Box</title>
-<style>
-:root{--bg:#0b0f14;--fg:#f5f7fb;--muted:#a7b0be;--soft:#121923;--line:#1c2531;--acc:#7c5cff;--ok:#1bbf6b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui}
-.wrap{max-width:880px;margin:auto;padding:24px}
-.header{display:flex;gap:10px;align-items:center}
-.badge{padding:4px 8px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:12px}
-.chat{display:flex;flex-direction:column;gap:12px;min-height:52vh;padding:12px;border:1px solid var(--line);border-radius:12px;background:#0e141c}
-.msg{max-width:75%;padding:12px 14px;border-radius:12px}
-.m-user{background:#1a2330;margin-left:auto}
-.m-assist{background:#121925;border:1px solid #1e2836}
-.note{font-size:13px;color:var(--muted)}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.pill{padding:8px 12px;border-radius:999px;background:#182131;border:1px solid #273245;cursor:pointer}
-.pill.ok{background:#0e2a1c;border-color:#214b38;color:#7de6b2}
-.input{display:flex;gap:8px;margin-top:12px}
-input[type=text]{flex:1;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:#0e141c;color:var(--fg)}
-button{padding:12px 16px;border-radius:12px;border:0;background:var(--acc);color:#fff;font-weight:600;cursor:pointer}
-button.secondary{background:#1a2330;color:var(--fg);border:1px solid #273245}
-.small{font-size:13px;color:var(--muted)}
-.sec{margin-top:18px;padding:12px;border:1px dashed #263142;border-radius:10px;background:#0c131c}
-.kbd{padding:2px 6px;border-radius:6px;background:#1a2330;border:1px solid #283446;color:#c8d0da;font-size:12px}
-a{color:#b7a8ff}
-</style>
-<div class="wrap">
-  <div class="header">
-    <h1 style="margin:0;font-size:20px">AGI Jobs — One‑Box</h1>
-    <span class="badge" id="mode">Mode: Guest (walletless)</span>
-    <span class="badge">Web3‑native • IPFS‑hosted</span>
-  </div>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AGI Jobs — One‑Box</title>
+  <style>
+    :root {
+      --bg: #060b12;
+      --fg: #f8fafc;
+      --muted: #94a3b8;
+      --soft: rgba(15, 23, 42, 0.7);
+      --line: #1e293b;
+      --accent: linear-gradient(135deg, #6366f1, #0ea5e9);
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
 
-  <div id="chat" class="chat" role="log" aria-live="polite">
-    <div class="msg m-assist">Hi! Tell me what you need and I’ll handle it.<div class="note">Try: <em>Post a labeling job for 500 images, pay 5 AGIALPHA, 7 days.</em></div></div>
-  </div>
+    * {
+      box-sizing: border-box;
+    }
 
-  <div class="input">
-    <input id="box" type="text" placeholder="Type here… Press Enter to send" aria-label="Your request">
-    <button id="send">Send</button>
-    <button id="expert" class="secondary" title="Toggle Expert Mode (EIP‑1193 wallet)">Expert</button>
-  </div>
-  <div class="row small" style="margin-top:8px">
-    <div class="pill" data-example="Create a research task, 2 AGIALPHA, 48 days">Create a research task…</div>
-    <div class="pill" data-example="Finalize job 123">Finalize job…</div>
-    <div class="pill" data-example="Status of job 123">Status of job…</div>
-  </div>
+    body {
+      margin: 0;
+      font: 16px/1.5 "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(circle at top, rgba(37, 99, 235, 0.08), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+    }
 
-  <div class="sec small">
-    <b>Advanced</b>
-    <div class="row" style="margin-top:8px;gap:8px">
-      <label>Orchestrator URL <input id="orch" type="text" placeholder="https://your‑orchestrator.example" style="width:340px;margin-left:6px"></label>
-      <label>API Token <input id="tok" type="text" placeholder="(Bearer token)" style="width:220px;margin-left:6px"></label>
-      <button id="save" class="secondary">Save</button>
-      <button id="connect" class="secondary">Connect Wallet</button>
+    a {
+      color: #c7d2fe;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 20px 72px;
+      display: grid;
+      gap: 24px;
+    }
+
+    @media (min-width: 980px) {
+      .wrap {
+        grid-template-columns: 1fr 320px;
+        align-items: flex-start;
+      }
+    }
+
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .badge {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.12);
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .chat-shell {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      min-height: 540px;
+      box-shadow: 0 20px 45px rgba(8, 47, 73, 0.25);
+    }
+
+    .chat-history {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .msg {
+      max-width: 82%;
+      padding: 16px 18px;
+      border-radius: 16px;
+      line-height: 1.6;
+      font-size: 0.96rem;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .m-user {
+      margin-left: auto;
+      background: rgba(79, 70, 229, 0.25);
+      border-color: rgba(129, 140, 248, 0.4);
+    }
+
+    .m-assist {
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .leadline {
+      display: block;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 6px;
+    }
+
+    .chat-form {
+      border-top: 1px solid var(--line);
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(2, 6, 23, 0.85);
+      border-radius: 0 0 18px 18px;
+    }
+
+    .chat-form label {
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    textarea {
+      flex: 1;
+      min-height: 4.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.92);
+      color: var(--fg);
+      padding: 14px 16px;
+      font-size: 1rem;
+      resize: none;
+    }
+
+    textarea:focus {
+      outline: 2px solid #38bdf8;
+      outline-offset: 2px;
+    }
+
+    .primary-btn {
+      padding: 0 22px;
+      min-height: 44px;
+      border-radius: 12px;
+      border: none;
+      background-image: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .primary-btn:disabled {
+      cursor: not-allowed;
+      filter: grayscale(45%);
+      opacity: 0.65;
+    }
+
+    .primary-btn:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 18px rgba(79, 70, 229, 0.35);
+    }
+
+    .ghost-btn {
+      padding: 0 18px;
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.65);
+      color: var(--fg);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .note {
+      display: block;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .sec {
+      padding: 20px;
+      border-radius: 14px;
+      border: 1px dashed rgba(148, 163, 184, 0.28);
+      background: rgba(15, 23, 42, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sec h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .sec label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sec input[type='text'] {
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--fg);
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    .sec-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .kbd {
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      font-size: 0.75rem;
+      color: #cbd5f5;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .receipt-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .receipt-card {
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 12px;
+      padding: 14px;
+      background: rgba(15, 23, 42, 0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.85rem;
+    }
+
+    .receipt-card strong {
+      font-size: 0.95rem;
+    }
+
+    .receipt-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      color: var(--muted);
+    }
+
+    .receipt-empty {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .progress {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .progress li {
+      position: relative;
+      padding-left: 22px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .progress li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.4em;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      border: 2px solid rgba(148, 163, 184, 0.35);
+      background: transparent;
+      transition: all 0.25s ease;
+    }
+
+    .progress li.is-active::before {
+      border-color: rgba(129, 140, 248, 0.9);
+      background: rgba(129, 140, 248, 0.7);
+    }
+
+    .progress li.is-done::before {
+      border-color: var(--success);
+      background: var(--success);
+    }
+
+    .error-text {
+      color: #fca5a5;
+      font-weight: 600;
+    }
+  </style>
+  <body>
+    <div class="wrap">
+      <div class="header">
+        <h1>AGI Jobs — One‑Box</h1>
+        <span class="badge" id="mode">Mode: Guest (walletless)</span>
+        <span class="badge">Ask → Confirm → Done + Receipt</span>
+      </div>
+
+      <div class="chat-shell">
+        <div id="chat" class="chat-history" role="log" aria-live="polite">
+          <div class="msg m-assist">
+            Hi! I can plan, run, and finalize your job.
+            <span class="leadline">Try: <em>Label 500 images, budget 5 AGIALPHA, 7 days.</em></span>
+          </div>
+        </div>
+        <form id="onebox-form" class="chat-form">
+          <label for="onebox-input">Describe what you need done</label>
+          <div class="chat-input-row">
+            <textarea
+              id="onebox-input"
+              placeholder="Describe what you need done… e.g. Label 500 images, 5 AGIALPHA, 7 days"
+            ></textarea>
+            <button type="submit" class="primary-btn" id="send">Send</button>
+            <button type="button" class="ghost-btn" id="expert" title="Toggle Expert Mode (wallet signing)">
+              Expert Mode
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="sec">
+        <h2>Shortcuts</h2>
+        <div class="pill-row">
+          <div class="pill" data-example="Post a research job, 3 AGIALPHA, 5 days">Research job</div>
+          <div class="pill" data-example="Finalize job 123">Finalize job</div>
+          <div class="pill" data-example="Status of job 123">Status check</div>
+        </div>
+        <span class="note">Walletless by default. Expert mode prepares calldata for your wallet via <span class="kbd">eth_sendTransaction</span>.</span>
+      </div>
+
+      <div class="sidebar">
+        <div class="sec">
+          <h2>Advanced</h2>
+          <label>
+            Orchestrator URL
+            <input id="orch" type="text" placeholder="https://your-orchestrator.example" />
+          </label>
+          <label>
+            API Token
+            <input id="tok" type="text" placeholder="(Bearer token)" />
+          </label>
+          <div class="sec-actions">
+            <button type="button" class="ghost-btn" id="save">Save</button>
+            <button type="button" class="ghost-btn" id="connect">Connect Wallet</button>
+            <button type="button" class="ghost-btn" id="clear-receipts">Clear Receipts</button>
+          </div>
+          <span class="note">No hashes or gas pop-ups for end users. Confirmations stay under 140 characters.</span>
+        </div>
+
+        <div class="sec">
+          <h2>Receipts</h2>
+          <div id="receipts-empty" class="receipt-empty">No receipts yet — run a job to see the audit trail.</div>
+          <ul id="receipts-list" class="receipt-list"></ul>
+        </div>
+      </div>
     </div>
-    <div class="small">Walletless by default. In Expert Mode, transactions are returned for you to sign via <span class="kbd">eth_sendTransaction</span>.</div>
-  </div>
 
-  <div class="small" style="margin-top:12px">No hashes, no gas prompts by default. A “Verify on chain” link appears after success.</div>
-</div>
-<script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
 </html>
