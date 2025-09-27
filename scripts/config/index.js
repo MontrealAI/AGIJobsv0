@@ -116,6 +116,14 @@ function ensureAddress(value, label, { allowZero = false } = {}) {
   return address;
 }
 
+function normaliseOptionalAddress(value, label) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const address = ensureAddress(value, label, { allowZero: true });
+  return address === ethers.ZeroAddress ? undefined : address;
+}
+
 function ensureBytes32(value) {
   if (value === undefined || value === null) {
     return ethers.ZeroHash;
@@ -135,7 +143,11 @@ function ensureBytes32(value) {
   return ethers.hexlify(prefixed);
 }
 
-function ensureUint(value, label, { allowZero = false, optional = false } = {}) {
+function ensureUint(
+  value,
+  label,
+  { allowZero = false, optional = false } = {}
+) {
   if (value === undefined || value === null || value === '') {
     if (optional) {
       return undefined;
@@ -340,9 +352,7 @@ function normaliseTokenAmount(value, label, { max, decimals = 18 } = {}) {
       }
       amount = ethers.parseUnits(String(value.amount), targetDecimals);
     } else {
-      throw new Error(
-        `${label} object must include a raw or amount property`
-      );
+      throw new Error(`${label} object must include a raw or amount property`);
     }
   } else {
     const trimmed = String(value).trim();
@@ -431,9 +441,7 @@ function normaliseDeploymentPlan(plan = {}) {
   }
 
   const rawOverrides =
-    plan.overrides && typeof plan.overrides === 'object'
-      ? plan.overrides
-      : {};
+    plan.overrides && typeof plan.overrides === 'object' ? plan.overrides : {};
 
   const econ = {};
   const feePct = normalisePercentage(rawOverrides.feePct, 'feePct');
@@ -474,10 +482,7 @@ function normaliseDeploymentPlan(plan = {}) {
     econ.revealWindow = revealWindow;
   }
 
-  const minStake = normaliseTokenAmount(
-    rawOverrides.minStake,
-    'minStake'
-  );
+  const minStake = normaliseTokenAmount(rawOverrides.minStake, 'minStake');
   if (minStake !== undefined) {
     econ.minStake = minStake;
   }
@@ -609,6 +614,129 @@ function loadJobRegistryConfig(options = {}) {
     throw new Error(`Job registry config not found at ${configPath}`);
   }
   const config = normaliseJobRegistryConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
+function normaliseOwnerControlModuleConfig(key, raw = {}) {
+  if (raw === null || raw === undefined) {
+    return undefined;
+  }
+
+  if (typeof raw === 'string') {
+    const owner = normaliseOptionalAddress(raw, `ownerControl.modules.${key}`);
+    return owner
+      ? {
+          owner,
+        }
+      : undefined;
+  }
+
+  if (typeof raw !== 'object') {
+    throw new Error(`ownerControl.modules.${key} must be a string or object`);
+  }
+
+  const entry = { ...raw };
+  const result = {};
+
+  if (entry.address !== undefined) {
+    const address = normaliseOptionalAddress(
+      entry.address,
+      `ownerControl.modules.${key}.address`
+    );
+    if (address) {
+      result.address = address;
+    }
+  }
+
+  if (entry.governance !== undefined) {
+    const governance = normaliseOptionalAddress(
+      entry.governance,
+      `ownerControl.modules.${key}.governance`
+    );
+    if (governance) {
+      result.governance = governance;
+    }
+  }
+
+  if (entry.owner !== undefined) {
+    const owner = normaliseOptionalAddress(
+      entry.owner,
+      `ownerControl.modules.${key}.owner`
+    );
+    if (owner) {
+      result.owner = owner;
+    }
+  }
+
+  if (entry.type !== undefined) {
+    const type = String(entry.type).trim();
+    if (type) {
+      result.type = type;
+    }
+  }
+
+  if (entry.label !== undefined) {
+    const label = String(entry.label).trim();
+    if (label) {
+      result.label = label;
+    }
+  }
+
+  if (entry.skip !== undefined) {
+    result.skip = Boolean(entry.skip);
+  }
+
+  if (entry.notes !== undefined) {
+    if (Array.isArray(entry.notes)) {
+      result.notes = entry.notes.map((note) => String(note));
+    } else {
+      result.notes = [String(entry.notes)];
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function normaliseOwnerControlConfig(config = {}) {
+  const result = {};
+
+  const governance = normaliseOptionalAddress(
+    config.governance,
+    'ownerControl.governance'
+  );
+  if (governance) {
+    result.governance = governance;
+  }
+
+  const owner = normaliseOptionalAddress(config.owner, 'ownerControl.owner');
+  if (owner) {
+    result.owner = owner;
+  }
+
+  if (config.modules && typeof config.modules === 'object') {
+    const modules = {};
+    for (const [key, value] of Object.entries(config.modules)) {
+      const entry = normaliseOwnerControlModuleConfig(key, value);
+      if (entry) {
+        modules[key] = entry;
+      }
+    }
+    result.modules = modules;
+  }
+
+  return result;
+}
+
+function loadOwnerControlConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('owner-control', network);
+  let rawConfig = {};
+  if (fs.existsSync(configPath)) {
+    rawConfig = readJson(configPath);
+  }
+  const config = normaliseOwnerControlConfig(rawConfig);
   return { config, path: configPath, network };
 }
 
@@ -1073,9 +1201,13 @@ function normaliseHamiltonianRecord(entry, index) {
   });
 
   if (entry.timestamp !== undefined && entry.timestamp !== null) {
-    record.timestamp = ensureUint(entry.timestamp, `records[${index}].timestamp`, {
-      allowZero: true,
-    });
+    record.timestamp = ensureUint(
+      entry.timestamp,
+      `records[${index}].timestamp`,
+      {
+        allowZero: true,
+      }
+    );
   }
 
   if (entry.note !== undefined && entry.note !== null) {
@@ -1093,11 +1225,9 @@ function normaliseHamiltonianMonitorConfig(raw = {}) {
   const config = {};
 
   if (raw.address !== undefined && raw.address !== null) {
-    config.address = ensureAddress(
-      raw.address,
-      'Hamiltonian monitor address',
-      { allowZero: true }
-    );
+    config.address = ensureAddress(raw.address, 'Hamiltonian monitor address', {
+      allowZero: true,
+    });
   }
 
   if (raw.window !== undefined && raw.window !== null && raw.window !== '') {
@@ -1570,6 +1700,7 @@ module.exports = {
   loadThermodynamicsConfig,
   loadRewardEngineConfig,
   loadHamiltonianMonitorConfig,
+  loadOwnerControlConfig,
   loadDeploymentPlan,
   inferNetworkKey,
 };
