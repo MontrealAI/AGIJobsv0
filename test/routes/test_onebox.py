@@ -221,6 +221,17 @@ except ModuleNotFoundError:
 
     middleware_module.geth_poa_middleware = geth_poa_middleware  # type: ignore[attr-defined]
     sys.modules["web3.middleware"] = middleware_module
+
+    utils_module = types.ModuleType("web3._utils")
+    events_module = types.ModuleType("web3._utils.events")
+
+    def _get_event_data(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        return {}
+
+    events_module.get_event_data = _get_event_data  # type: ignore[attr-defined]
+    utils_module.events = events_module  # type: ignore[attr-defined]
+    sys.modules["web3._utils"] = utils_module
+    sys.modules["web3._utils.events"] = events_module
 else:
     middleware_module = sys.modules.get("web3.middleware") or types.ModuleType("web3.middleware")
     if not hasattr(middleware_module, "geth_poa_middleware"):
@@ -322,6 +333,20 @@ def _encode_metadata(state: int, deadline: int = 0, assigned_at: int = 0) -> int
 
 
 class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
+    async def test_finalize_keyword_routes_to_finalize_action(self) -> None:
+        response = await plan(PlanRequest(text="Please finalize job 321"))
+        self.assertEqual(response.intent.action, "finalize_job")
+        self.assertEqual(response.intent.payload.jobId, 321)
+        self.assertIn("finalization request", response.summary.lower())
+        self.assertIn("job 321", response.summary.lower())
+
+    async def test_status_keyword_routes_to_status_action(self) -> None:
+        response = await plan(PlanRequest(text="Can you check status of job 654?"))
+        self.assertEqual(response.intent.action, "check_status")
+        self.assertEqual(response.intent.payload.jobId, 654)
+        self.assertIn("status request", response.summary.lower())
+        self.assertIn("job 654", response.summary.lower())
+
     async def test_status_intent_infers_job_id(self) -> None:
         response = await plan(PlanRequest(text="Status of job 456"))
         self.assertEqual(response.intent.action, "check_status")
