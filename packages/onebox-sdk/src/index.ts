@@ -38,6 +38,7 @@ export interface JobIntent {
     rewardToken?: string;
     deadlineDays?: number;
     attachments?: JobAttachment[];
+    agentTypes?: number;
   };
   constraints?: Record<string, unknown> & {
     maxFee?: string;
@@ -63,6 +64,14 @@ export interface ExecuteResponse {
   jobId?: number;
   txHash?: string;
   receiptUrl?: string;
+  /** Target address for wallet execution flows. */
+  to?: string;
+  /** ABI-encoded calldata for wallet execution flows. */
+  data?: string;
+  /** Hex-encoded value (in wei) to send with the transaction. */
+  value?: string;
+  /** Target chain id for the prepared transaction. */
+  chainId?: number;
   error?: string;
 }
 

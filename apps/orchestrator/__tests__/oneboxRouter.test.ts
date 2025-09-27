@@ -11,10 +11,12 @@ import {
   plannerIntentToJobIntent,
   formatDeadline,
   mapJobStateToStatus,
+  DefaultOneboxService,
 } from '../oneboxRouter';
 import { resetMetrics } from '../oneboxMetrics';
 import { finalizeJob } from '../submission';
 import * as execution from '../execution';
+import * as employer from '../employer';
 
 test('plannerIntentToJobIntent converts create_job envelope', () => {
   const envelope: IntentEnvelope = {
@@ -122,6 +124,48 @@ test('metrics endpoint exposes Prometheus counters', async () => {
   assert.match(body, /onebox_execute_requests_total 1/);
   assert.match(body, /onebox_execute_action_total\{action="post_job"\} 1/);
   assert.match(body, /onebox_status_requests_total 1/);
+});
+
+test('DefaultOneboxService produces calldata for wallet mode', async () => {
+  const artifactsMock = mock.method(employer, 'prepareJobArtifacts', async () => ({
+    jsonUri: 'ipfs://bafyjson',
+    markdownUri: 'ipfs://bafymarkdown',
+    specHash: '0x' + '1'.repeat(64),
+  }));
+
+  const provider = {
+    async getNetwork() {
+      return { chainId: 11155111n };
+    },
+  } as unknown as ethers.AbstractProvider;
+
+  const plannerStub = { plan: async () => ({}) } as unknown as any;
+
+  const service = new DefaultOneboxService({
+    planner: plannerStub,
+    provider,
+    registryAddress: '0x000000000000000000000000000000000000dEaD',
+  });
+
+  try {
+    const response = await service.execute(
+      {
+        action: 'post_job',
+        payload: { title: 'Wallet job', reward: '1', deadlineDays: 3 },
+        constraints: {},
+        userContext: {},
+      },
+      'wallet'
+    );
+
+    assert.equal(response.ok, true);
+    assert.equal(response.to, '0x000000000000000000000000000000000000dEaD');
+    assert.equal(response.value, '0x0');
+    assert.equal(response.chainId, 11155111);
+    assert.ok(response.data && response.data.startsWith('0x'));
+  } finally {
+    artifactsMock.mock.restore();
+  }
 });
 
 test('finalizeJob invokes registry finalize function', async () => {
