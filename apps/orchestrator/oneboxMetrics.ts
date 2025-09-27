@@ -1,125 +1,174 @@
 import { performance } from 'node:perf_hooks';
 
-type Outcome = 'success' | 'failure';
-
-type CounterSet = {
-  total: number;
-  success: number;
-  failure: number;
-  durationMs: number;
+type CounterLabels = {
+  intentType: string;
+  httpStatus: string;
 };
 
-type ExecuteCounters = CounterSet & {
-  byAction: Map<string, CounterSet>;
-};
+type CounterVec = Map<string, number>;
 
-interface MetricsSnapshot {
-  plan: CounterSet;
-  execute: ExecuteCounters;
-  status: CounterSet;
+interface HistogramEntry {
+  sum: number;
+  count: number;
+  buckets: number[];
 }
 
-const DEFAULT_COUNTERS = (): CounterSet => ({ total: 0, success: 0, failure: 0, durationMs: 0 });
-
-const metrics: MetricsSnapshot = {
-  plan: DEFAULT_COUNTERS(),
-  execute: { ...DEFAULT_COUNTERS(), byAction: new Map() },
-  status: DEFAULT_COUNTERS(),
-};
-
-function recordCounter(counter: CounterSet, outcome: Outcome, durationMs: number): void {
-  counter.total += 1;
-  if (outcome === 'success') {
-    counter.success += 1;
-  } else {
-    counter.failure += 1;
-  }
-  counter.durationMs += durationMs;
+interface MetricsState {
+  plan: CounterVec;
+  execute: CounterVec;
+  status: CounterVec;
+  histogram: Map<string, HistogramEntry>;
 }
 
-function recordExecuteAction(action: string | undefined, outcome: Outcome, durationMs: number): void {
-  if (!action) return;
-  const key = action.toLowerCase();
-  let entry = metrics.execute.byAction.get(key);
+const HISTOGRAM_BUCKETS = [0.1, 0.5, 1, 2.5, 5, 10];
+
+const metrics: MetricsState = {
+  plan: new Map(),
+  execute: new Map(),
+  status: new Map(),
+  histogram: new Map(),
+};
+
+function counterKey(labels: CounterLabels): string {
+  return `${labels.intentType}|${labels.httpStatus}`;
+}
+
+function parseCounterKey(key: string): CounterLabels {
+  const [intentType, httpStatus] = key.split('|', 2);
+  return {
+    intentType: intentType ?? 'unknown',
+    httpStatus: httpStatus ?? '0',
+  };
+}
+
+function incrementCounter(vec: CounterVec, labels: CounterLabels): void {
+  const key = counterKey(labels);
+  vec.set(key, (vec.get(key) ?? 0) + 1);
+}
+
+function observeHistogram(endpoint: string, seconds: number): void {
+  let entry = metrics.histogram.get(endpoint);
   if (!entry) {
-    entry = DEFAULT_COUNTERS();
-    metrics.execute.byAction.set(key, entry);
+    entry = {
+      sum: 0,
+      count: 0,
+      buckets: HISTOGRAM_BUCKETS.map(() => 0),
+    };
+    metrics.histogram.set(endpoint, entry);
   }
-  recordCounter(entry, outcome, durationMs);
-}
 
-function toOutcome(error: unknown): Outcome {
-  return error ? 'failure' : 'success';
-}
-
-function formatLine(name: string, value: number, labels?: Record<string, string>): string {
-  const pieces: string[] = [name];
-  if (labels && Object.keys(labels).length > 0) {
-    const encoded = Object.entries(labels)
-      .map(([key, val]) => `${key}="${escapeLabelValue(val)}"`)
-      .join(',');
-    pieces[0] += `{${encoded}}`;
+  entry.sum += seconds;
+  entry.count += 1;
+  for (let index = 0; index < HISTOGRAM_BUCKETS.length; index += 1) {
+    if (seconds <= HISTOGRAM_BUCKETS[index]) {
+      entry.buckets[index] += 1;
+    }
   }
-  pieces.push(String(value));
-  return pieces.join(' ');
 }
 
 function escapeLabelValue(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/"/g, '\\"');
 }
 
-function renderCounterMetrics(name: string, counter: CounterSet): string[] {
-  return [
-    `# HELP ${name}_requests_total Total ${name} requests received by the one-box orchestrator.`,
-    `# TYPE ${name}_requests_total counter`,
-    formatLine(`${name}_requests_total`, counter.total),
-    formatLine(`${name}_requests_success_total`, counter.success),
-    formatLine(`${name}_requests_failed_total`, counter.failure),
-    formatLine(`${name}_request_duration_ms_sum`, counter.durationMs),
-  ];
+function formatLine(name: string, value: number, labels?: Record<string, string>): string {
+  const parts: string[] = [name];
+  if (labels && Object.keys(labels).length > 0) {
+    const encoded = Object.entries(labels)
+      .map(([key, val]) => `${key}="${escapeLabelValue(val)}"`)
+      .join(',');
+    parts[0] += `{${encoded}}`;
+  }
+  parts.push(String(value));
+  return parts.join(' ');
+}
+
+function renderCounterVec(metricName: string, vec: CounterVec): string[] {
+  const lines: string[] = [];
+  lines.push(
+    `# HELP ${metricName} Total ${metricName.replace('_total', '')} requests handled by the one-box orchestrator.`,
+    `# TYPE ${metricName} counter`
+  );
+  for (const [key, value] of vec.entries()) {
+    const { intentType, httpStatus } = parseCounterKey(key);
+    lines.push(
+      formatLine(metricName, value, {
+        intent_type: intentType,
+        http_status: httpStatus,
+      })
+    );
+  }
+  return lines;
+}
+
+function renderHistogram(metricName: string): string[] {
+  const lines: string[] = [];
+  lines.push(
+    `# HELP ${metricName} End-to-end time to outcome in seconds for one-box requests.`,
+    `# TYPE ${metricName} histogram`
+  );
+  for (const [endpoint, entry] of metrics.histogram.entries()) {
+    let cumulative = 0;
+    for (let index = 0; index < HISTOGRAM_BUCKETS.length; index += 1) {
+      cumulative += entry.buckets[index];
+      lines.push(
+        formatLine(`${metricName}_bucket`, cumulative, {
+          endpoint,
+          le: String(HISTOGRAM_BUCKETS[index]),
+        })
+      );
+    }
+    lines.push(
+      formatLine(`${metricName}_bucket`, entry.count, { endpoint, le: '+Inf' }),
+      formatLine(`${metricName}_sum`, entry.sum, { endpoint }),
+      formatLine(`${metricName}_count`, entry.count, { endpoint })
+    );
+  }
+  return lines;
 }
 
 export function now(): number {
   return performance.now();
 }
 
-export function recordPlan(durationMs: number, error?: unknown): void {
-  recordCounter(metrics.plan, toOutcome(error), durationMs);
+function toCounterLabels(intentType: string, httpStatus: number | string): CounterLabels {
+  return {
+    intentType: intentType || 'unknown',
+    httpStatus: String(httpStatus || 0),
+  };
 }
 
-export function recordExecute(durationMs: number, action?: string, error?: unknown): void {
-  const outcome = toOutcome(error);
-  recordCounter(metrics.execute, outcome, durationMs);
-  recordExecuteAction(action, outcome, durationMs);
+export function recordPlan(intentType: string, httpStatus: number, durationMs: number): void {
+  incrementCounter(metrics.plan, toCounterLabels(intentType, httpStatus));
+  observeHistogram('plan', durationMs / 1000);
 }
 
-export function recordStatus(durationMs: number, error?: unknown): void {
-  recordCounter(metrics.status, toOutcome(error), durationMs);
+export function recordExecute(intentType: string, httpStatus: number, durationMs: number): void {
+  incrementCounter(metrics.execute, toCounterLabels(intentType, httpStatus));
+  observeHistogram('execute', durationMs / 1000);
+}
+
+export function recordStatus(intentType: string, httpStatus: number, durationMs: number): void {
+  incrementCounter(metrics.status, toCounterLabels(intentType, httpStatus));
+  observeHistogram('status', durationMs / 1000);
 }
 
 export function renderMetrics(): string {
   const lines: string[] = [];
-  lines.push(...renderCounterMetrics('onebox_plan', metrics.plan));
-  lines.push(...renderCounterMetrics('onebox_execute', metrics.execute));
-  for (const [action, counter] of metrics.execute.byAction.entries()) {
-    lines.push(
-      formatLine('onebox_execute_action_total', counter.total, { action }),
-      formatLine('onebox_execute_action_success_total', counter.success, { action }),
-      formatLine('onebox_execute_action_failed_total', counter.failure, { action }),
-      formatLine('onebox_execute_action_duration_ms_sum', counter.durationMs, { action })
-    );
-  }
-  lines.push(...renderCounterMetrics('onebox_status', metrics.status));
-  return lines.join('\n') + '\n';
+  lines.push(...renderCounterVec('plan_total', metrics.plan));
+  lines.push(...renderCounterVec('execute_total', metrics.execute));
+  lines.push(...renderCounterVec('status_total', metrics.status));
+  lines.push(...renderHistogram('time_to_outcome_seconds'));
+  return `${lines.join('\n')}\n`;
 }
 
 export function resetMetrics(): void {
-  metrics.plan = DEFAULT_COUNTERS();
-  metrics.execute = { ...DEFAULT_COUNTERS(), byAction: new Map() };
-  metrics.status = DEFAULT_COUNTERS();
+  metrics.plan.clear();
+  metrics.execute.clear();
+  metrics.status.clear();
+  metrics.histogram.clear();
 }
 
-export function withDuration<T>(fn: () => Promise<T>): Promise<{ value?: T; error?: unknown; durationMs: number }>; 
+export function withDuration<T>(fn: () => Promise<T>): Promise<{ value?: T; error?: unknown; durationMs: number }>;
 export function withDuration<T>(fn: () => T): { value?: T; error?: unknown; durationMs: number };
 export function withDuration<T>(fn: () => T | Promise<T>):
   | { value?: T; error?: unknown; durationMs: number }

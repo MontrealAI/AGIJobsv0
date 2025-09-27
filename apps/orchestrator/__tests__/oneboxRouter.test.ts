@@ -120,10 +120,10 @@ test('metrics endpoint exposes Prometheus counters', async () => {
   assert.equal(metricsResponse.status, 200);
   assert.equal(metricsResponse.headers['content-type'], 'text/plain; version=0.0.4; charset=utf-8');
   const body = metricsResponse.text;
-  assert.match(body, /onebox_plan_requests_total 1/);
-  assert.match(body, /onebox_execute_requests_total 1/);
-  assert.match(body, /onebox_execute_action_total\{action="post_job"\} 1/);
-  assert.match(body, /onebox_status_requests_total 1/);
+  assert.match(body, /plan_total\{intent_type="post_job",http_status="200"\} 1/);
+  assert.match(body, /execute_total\{intent_type="post_job",http_status="200"\} 1/);
+  assert.match(body, /status_total\{intent_type="status",http_status="200"\} 1/);
+  assert.match(body, /time_to_outcome_seconds_bucket\{endpoint="plan",le="\+Inf"\} 1/);
 });
 
 test('DefaultOneboxService produces calldata for wallet mode', async () => {

@@ -108,6 +108,13 @@ except ModuleNotFoundError:
     prometheus_client.generate_latest = _generate_latest  # type: ignore[attr-defined]
     sys.modules["prometheus_client"] = prometheus_client
 
+
+def _make_request(headers=None):  # type: ignore[no-untyped-def]
+    return types.SimpleNamespace(
+        headers=headers or {},
+        state=types.SimpleNamespace(),
+    )
+
 try:
     import web3  # type: ignore  # noqa: F401
 except ModuleNotFoundError:
@@ -334,61 +341,61 @@ def _encode_metadata(state: int, deadline: int = 0, assigned_at: int = 0) -> int
 
 class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
     async def test_finalize_keyword_routes_to_finalize_action(self) -> None:
-        response = await plan(PlanRequest(text="Please finalize job 321"))
+        response = await plan(_make_request(), PlanRequest(text="Please finalize job 321"))
         self.assertEqual(response.intent.action, "finalize_job")
         self.assertEqual(response.intent.payload.jobId, 321)
         self.assertIn("finalization request", response.summary.lower())
         self.assertIn("job 321", response.summary.lower())
 
     async def test_status_keyword_routes_to_status_action(self) -> None:
-        response = await plan(PlanRequest(text="Can you check status of job 654?"))
+        response = await plan(_make_request(), PlanRequest(text="Can you check status of job 654?"))
         self.assertEqual(response.intent.action, "check_status")
         self.assertEqual(response.intent.payload.jobId, 654)
         self.assertIn("status request", response.summary.lower())
         self.assertIn("job 654", response.summary.lower())
 
     async def test_status_intent_infers_job_id(self) -> None:
-        response = await plan(PlanRequest(text="Status of job 456"))
+        response = await plan(_make_request(), PlanRequest(text="Status of job 456"))
         self.assertEqual(response.intent.action, "check_status")
         self.assertEqual(response.intent.payload.jobId, 456)
         self.assertIn("detected job status request", response.summary.lower())
         self.assertIn("status of job 456", response.summary.lower())
 
     async def test_finalize_intent_infers_job_id(self) -> None:
-        response = await plan(PlanRequest(text="Finalize job 123"))
+        response = await plan(_make_request(), PlanRequest(text="Finalize job 123"))
         self.assertEqual(response.intent.action, "finalize_job")
         self.assertEqual(response.intent.payload.jobId, 123)
         self.assertIn("detected job finalization request", response.summary.lower())
         self.assertIn("finalize job 123", response.summary.lower())
 
     async def test_state_keyword_maps_to_status_intent(self) -> None:
-        response = await plan(PlanRequest(text="What's the state of job 890?"))
+        response = await plan(_make_request(), PlanRequest(text="What's the state of job 890?"))
         self.assertEqual(response.intent.action, "check_status")
         self.assertEqual(response.intent.payload.jobId, 890)
         self.assertIn("detected job status request", response.summary.lower())
 
     async def test_complete_keyword_maps_to_finalize_intent(self) -> None:
-        response = await plan(PlanRequest(text="Can you complete job 42 now?"))
+        response = await plan(_make_request(), PlanRequest(text="Can you complete job 42 now?"))
         self.assertEqual(response.intent.action, "finalize_job")
         self.assertEqual(response.intent.payload.jobId, 42)
         self.assertIn("detected job finalization request", response.summary.lower())
 
     async def test_stake_keyword_maps_to_stake_intent(self) -> None:
-        response = await plan(PlanRequest(text="Stake on job 555"))
+        response = await plan(_make_request(), PlanRequest(text="Stake on job 555"))
         self.assertEqual(response.intent.action, "stake")
         self.assertEqual(response.intent.payload.jobId, 555)
         self.assertIn("detected staking request", response.summary.lower())
         self.assertIn("stake on job 555", response.summary.lower())
 
     async def test_validate_keyword_maps_to_validate_intent(self) -> None:
-        response = await plan(PlanRequest(text="Please validate job 777"))
+        response = await plan(_make_request(), PlanRequest(text="Please validate job 777"))
         self.assertEqual(response.intent.action, "validate")
         self.assertEqual(response.intent.payload.jobId, 777)
         self.assertIn("detected validation request", response.summary.lower())
         self.assertIn("validate job 777", response.summary.lower())
 
     async def test_dispute_keyword_maps_to_dispute_intent(self) -> None:
-        response = await plan(PlanRequest(text="Dispute job 888 immediately"))
+        response = await plan(_make_request(), PlanRequest(text="Dispute job 888 immediately"))
         self.assertEqual(response.intent.action, "dispute")
         self.assertEqual(response.intent.payload.jobId, 888)
         self.assertIn("detected dispute request", response.summary.lower())
@@ -414,11 +421,12 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Example", reward="1", deadlineDays=3),
         )
-        request = ExecuteRequest(intent=intent, mode="wallet")
+        execute_request = ExecuteRequest(intent=intent, mode="wallet")
+        request_ctx = _make_request()
         with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
             "routes.onebox.time.time", return_value=2_000_000
         ), mock.patch("routes.onebox._compute_spec_hash", return_value=b"spec"):
-            response = await execute(request)
+            response = await execute(request_ctx, execute_request)
 
         self.assertTrue(response.ok)
         self.assertIn("deadline", captured_metadata)
@@ -430,12 +438,13 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Overflow", reward="1", deadlineDays=overflow_days),
         )
-        request = ExecuteRequest(intent=intent, mode="wallet")
+        execute_request = ExecuteRequest(intent=intent, mode="wallet")
+        request_ctx = _make_request()
         with mock.patch("routes.onebox.time.time", return_value=0):
-            with self.assertRaises(fastapi.HTTPException) as ctx:
-                await execute(request)
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await execute(request_ctx, execute_request)
 
-        self.assertEqual(ctx.exception.detail, "DEADLINE_INVALID")
+        self.assertEqual(exc.exception.detail, "DEADLINE_INVALID")
 
 
 class StatusReadTests(unittest.IsolatedAsyncioTestCase):
@@ -580,12 +589,9 @@ class JobCreatedDecodingTests(unittest.TestCase):
 
 
 class HealthcheckTests(unittest.IsolatedAsyncioTestCase):
-    async def test_healthcheck_exposes_registry_and_relayer_flag(self) -> None:
-        data = await healthcheck()
-        self.assertTrue(data["ok"])
-        self.assertIn("chainId", data)
-        self.assertIn("registry", data)
-        self.assertIn("relayerEnabled", data)
+    async def test_healthcheck_returns_minimal_ok_payload(self) -> None:
+        data = await healthcheck(_make_request())
+        self.assertEqual(data, {"ok": True})
 
 
 class MetricsEndpointTests(unittest.TestCase):

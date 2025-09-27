@@ -9,12 +9,13 @@ import logging
 import os
 import re
 import time
+import uuid
 from decimal import Decimal
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import httpx
 import prometheus_client
-from fastapi import APIRouter, Depends, Header, HTTPException, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from web3 import Web3
 from web3._utils.events import get_event_data
@@ -139,26 +140,48 @@ relayer = w3.eth.account.from_key(_RELAYER_PK) if _RELAYER_PK else None
 # ---------- Metrics ----------
 _METRICS_REGISTRY = prometheus_client.CollectorRegistry()
 _PLAN_TOTAL = prometheus_client.Counter(
-    "onebox_plan_total", "Total /onebox/plan calls", ["intent"], registry=_METRICS_REGISTRY
-)
-_EXECUTE_TOTAL = prometheus_client.Counter(
-    "onebox_execute_total",
-    "Total /onebox/execute calls",
-    ["intent", "mode", "status"],
+    "plan_total",
+    "Total /onebox/plan requests",
+    ["intent_type", "http_status"],
     registry=_METRICS_REGISTRY,
 )
-_EXECUTE_SECONDS = prometheus_client.Histogram(
-    "onebox_execute_seconds",
-    "Execution duration in seconds",
-    ["intent", "mode"],
+_EXECUTE_TOTAL = prometheus_client.Counter(
+    "execute_total",
+    "Total /onebox/execute requests",
+    ["intent_type", "http_status"],
     registry=_METRICS_REGISTRY,
 )
 _STATUS_TOTAL = prometheus_client.Counter(
-    "onebox_status_total",
-    "Total /onebox/status calls",
-    ["state"],
+    "status_total",
+    "Total /onebox/status requests",
+    ["intent_type", "http_status"],
     registry=_METRICS_REGISTRY,
 )
+_TTO_SECONDS = prometheus_client.Histogram(
+    "time_to_outcome_seconds",
+    "End-to-end time to outcome in seconds",
+    ["endpoint"],
+    registry=_METRICS_REGISTRY,
+)
+
+
+def _get_correlation_id(request: Request) -> str:
+    if hasattr(request.state, "correlation_id"):
+        return request.state.correlation_id  # type: ignore[attr-defined]
+    header = request.headers.get("X-Correlation-ID") or request.headers.get("X-Request-ID")
+    correlation_id = header.strip() if header and header.strip() else uuid.uuid4().hex
+    request.state.correlation_id = correlation_id  # type: ignore[attr-defined]
+    return correlation_id
+
+
+def _log_event(level: int, event: str, correlation_id: str, **fields: Any) -> None:
+    payload = {
+        "event": event,
+        "correlation_id": correlation_id,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    payload.update(fields)
+    logger.log(level, json.dumps(payload, sort_keys=True))
 
 # ---------- API Router ----------
 router = APIRouter(prefix="/onebox", tags=["onebox"])
@@ -557,24 +580,69 @@ async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
 
 # ---------- Routes ----------
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])
-async def plan(req: PlanRequest):
-    intent = _naive_parse(req.text)
-    summary, requires_confirmation, warnings = _summary_for_intent(intent, req.text)
-    _PLAN_TOTAL.labels(intent=intent.action).inc()
-    return PlanResponse(
-        summary=summary,
-        intent=intent,
-        requiresConfirmation=requires_confirmation,
-        warnings=warnings,
-    )
+async def plan(request: Request, req: PlanRequest):
+    start = time.perf_counter()
+    correlation_id = _get_correlation_id(request)
+    intent_type = "unknown"
+    status_code = 200
+
+    try:
+        intent = _naive_parse(req.text)
+        intent_type = intent.action
+        summary, requires_confirmation, warnings = _summary_for_intent(intent, req.text)
+        response = PlanResponse(
+            summary=summary,
+            intent=intent,
+            requiresConfirmation=requires_confirmation,
+            warnings=warnings,
+        )
+    except HTTPException as exc:
+        status_code = exc.status_code
+        _log_event(
+            logging.WARNING,
+            "onebox.plan.error",
+            correlation_id,
+            intent_type=intent_type,
+            http_status=status_code,
+            error=exc.detail,
+        )
+        raise
+    except Exception as exc:
+        status_code = 500
+        _log_event(
+            logging.ERROR,
+            "onebox.plan.error",
+            correlation_id,
+            intent_type=intent_type,
+            http_status=status_code,
+            error=str(exc),
+        )
+        raise
+    else:
+        _log_event(
+            logging.INFO,
+            "onebox.plan.success",
+            correlation_id,
+            intent_type=intent_type,
+            http_status=status_code,
+        )
+        return response
+    finally:
+        duration = time.perf_counter() - start
+        _PLAN_TOTAL.labels(intent_type=intent_type, http_status=str(status_code)).inc()
+        _TTO_SECONDS.labels(endpoint="plan").observe(duration)
+
+
 
 
 @router.post("/execute", response_model=ExecuteResponse, dependencies=[Depends(require_api)])
-async def execute(req: ExecuteRequest):
+async def execute(request: Request, req: ExecuteRequest):
+    start = time.perf_counter()
+    correlation_id = _get_correlation_id(request)
     intent = req.intent
     payload = intent.payload
-    labels = {"intent": intent.action, "mode": req.mode}
-    start = time.time()
+    intent_type = intent.action if intent and intent.action else "unknown"
+    status_code = 200
 
     try:
         if intent.action == "post_job":
@@ -605,9 +673,7 @@ async def execute(req: ExecuteRequest):
                     "postJob",
                     [uri, AGIALPHA_TOKEN, reward_wei, int(payload.deadlineDays)],
                 )
-                _EXECUTE_TOTAL.labels(status="prepared", **labels).inc()
-                _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
-                return ExecuteResponse(
+                response = ExecuteResponse(
                     ok=True,
                     to=to,
                     data=data,
@@ -620,39 +686,35 @@ async def execute(req: ExecuteRequest):
                     token=payload.rewardToken,
                     status="prepared",
                 )
+            else:
+                func = registry.functions.postJob(
+                    uri, AGIALPHA_TOKEN, reward_wei, int(payload.deadlineDays)
+                )
+                sender = relayer.address if relayer else intent.userContext.get("sender")
+                if not sender:
+                    raise HTTPException(400, "RELAY_UNAVAILABLE")
+                tx = _build_tx(func, sender)
+                txh, receipt = await _send_relayer_tx(tx)
+                job_id = _decode_job_created(receipt)
+                response = ExecuteResponse(
+                    ok=True,
+                    jobId=job_id,
+                    txHash=txh,
+                    receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
+                    specCid=cid,
+                    specHash="0x" + spec_hash.hex(),
+                    deadline=deadline_ts,
+                    reward=str(payload.reward),
+                    token=payload.rewardToken,
+                    status="submitted",
+                )
 
-            func = registry.functions.postJob(
-                uri, AGIALPHA_TOKEN, reward_wei, int(payload.deadlineDays)
-            )
-            sender = relayer.address if relayer else intent.userContext.get("sender")
-            if not sender:
-                raise HTTPException(400, "RELAY_UNAVAILABLE")
-            tx = _build_tx(func, sender)
-            txh, receipt = await _send_relayer_tx(tx)
-            job_id = _decode_job_created(receipt)
-            _EXECUTE_TOTAL.labels(status="ok", **labels).inc()
-            _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
-            return ExecuteResponse(
-                ok=True,
-                jobId=job_id,
-                txHash=txh,
-                receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
-                specCid=cid,
-                specHash="0x" + spec_hash.hex(),
-                deadline=deadline_ts,
-                reward=str(payload.reward),
-                token=payload.rewardToken,
-                status="submitted",
-            )
-
-        if intent.action == "finalize_job":
+        elif intent.action == "finalize_job":
             if payload.jobId is None:
                 raise HTTPException(400, "JOB_ID_REQUIRED")
             if req.mode == "wallet":
                 to, data = _encode_wallet_call("finalize", [int(payload.jobId)])
-                _EXECUTE_TOTAL.labels(status="prepared", **labels).inc()
-                _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
-                return ExecuteResponse(
+                response = ExecuteResponse(
                     ok=True,
                     to=to,
                     data=data,
@@ -661,29 +723,25 @@ async def execute(req: ExecuteRequest):
                     jobId=int(payload.jobId),
                     status="prepared",
                 )
-            func = registry.functions.finalize(int(payload.jobId))
-            if not relayer:
-                raise HTTPException(400, "RELAY_UNAVAILABLE")
-            tx = _build_tx(func, relayer.address)
-            txh, _receipt = await _send_relayer_tx(tx)
-            _EXECUTE_TOTAL.labels(status="ok", **labels).inc()
-            _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
-            return ExecuteResponse(
-                ok=True,
-                jobId=int(payload.jobId),
-                txHash=txh,
-                receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
-                status="finalized",
-            )
+            else:
+                func = registry.functions.finalize(int(payload.jobId))
+                if not relayer:
+                    raise HTTPException(400, "RELAY_UNAVAILABLE")
+                tx = _build_tx(func, relayer.address)
+                txh, _receipt = await _send_relayer_tx(tx)
+                response = ExecuteResponse(
+                    ok=True,
+                    jobId=int(payload.jobId),
+                    txHash=txh,
+                    receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
+                    status="finalized",
+                )
 
-        if intent.action == "check_status":
+        elif intent.action == "check_status":
             if payload.jobId is None:
                 raise HTTPException(400, "JOB_ID_REQUIRED")
             status = await _read_status(int(payload.jobId))
-            _STATUS_TOTAL.labels(state=status.state).inc()
-            _EXECUTE_TOTAL.labels(status="ok", **labels).inc()
-            _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
-            return ExecuteResponse(
+            response = ExecuteResponse(
                 ok=True,
                 jobId=status.jobId,
                 status=status.state,
@@ -691,28 +749,113 @@ async def execute(req: ExecuteRequest):
                 token=status.token,
             )
 
-        raise HTTPException(400, "UNSUPPORTED_ACTION")
+        else:
+            raise HTTPException(400, "UNSUPPORTED_ACTION")
+
     except HTTPException as exc:
-        _EXECUTE_TOTAL.labels(status="error", **labels).inc()
-        _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
-        raise exc
+        status_code = exc.status_code
+        _log_event(
+            logging.WARNING,
+            "onebox.execute.error",
+            correlation_id,
+            intent_type=intent_type,
+            http_status=status_code,
+            mode=req.mode,
+            error=exc.detail,
+        )
+        raise
+    except Exception as exc:
+        status_code = 500
+        _log_event(
+            logging.ERROR,
+            "onebox.execute.error",
+            correlation_id,
+            intent_type=intent_type,
+            http_status=status_code,
+            mode=req.mode,
+            error=str(exc),
+        )
+        raise
+    else:
+        fields: Dict[str, Any] = {
+            "intent_type": intent_type,
+            "http_status": status_code,
+            "mode": req.mode,
+        }
+        if response.jobId is not None:
+            fields["job_id"] = response.jobId
+        if response.status:
+            fields["status"] = response.status
+        if response.txHash:
+            fields["tx_hash"] = response.txHash
+        _log_event(logging.INFO, "onebox.execute.success", correlation_id, **fields)
+        return response
+    finally:
+        duration = time.perf_counter() - start
+        _EXECUTE_TOTAL.labels(intent_type=intent_type, http_status=str(status_code)).inc()
+        _TTO_SECONDS.labels(endpoint="execute").observe(duration)
 
 
 @router.get("/status", response_model=StatusResponse, dependencies=[Depends(require_api)])
-async def status(jobId: int):
-    status = await _read_status(jobId)
-    _STATUS_TOTAL.labels(state=status.state).inc()
-    return status
+async def status(request: Request, jobId: int):
+    start = time.perf_counter()
+    correlation_id = _get_correlation_id(request)
+    intent_type = "status"
+    status_code = 200
+
+    try:
+        result = await _read_status(jobId)
+    except HTTPException as exc:
+        status_code = exc.status_code
+        _log_event(
+            logging.WARNING,
+            "onebox.status.error",
+            correlation_id,
+            intent_type=intent_type,
+            http_status=status_code,
+            job_id=jobId,
+            error=exc.detail,
+        )
+        raise
+    except Exception as exc:
+        status_code = 500
+        _log_event(
+            logging.ERROR,
+            "onebox.status.error",
+            correlation_id,
+            intent_type=intent_type,
+            http_status=status_code,
+            job_id=jobId,
+            error=str(exc),
+        )
+        raise
+    else:
+        _log_event(
+            logging.INFO,
+            "onebox.status.success",
+            correlation_id,
+            intent_type=intent_type,
+            http_status=status_code,
+            job_id=jobId,
+            state=result.state,
+        )
+        return result
+    finally:
+        duration = time.perf_counter() - start
+        _STATUS_TOTAL.labels(intent_type=intent_type, http_status=str(status_code)).inc()
+        _TTO_SECONDS.labels(endpoint="status").observe(duration)
 
 
 @router.get("/healthz", dependencies=[Depends(require_api)])
-async def healthcheck():
-    return {
-        "ok": True,
-        "chainId": w3.eth.chain_id,
-        "registry": registry.address,
-        "relayerEnabled": bool(relayer),
-    }
+async def healthcheck(request: Request):
+    correlation_id = _get_correlation_id(request)
+    _log_event(
+        logging.INFO,
+        "onebox.healthz",
+        correlation_id,
+        status="ok",
+    )
+    return {"ok": True}
 
 
 @router.get("/metrics")
