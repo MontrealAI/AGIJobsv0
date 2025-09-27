@@ -3,7 +3,7 @@
 # Exposes: POST /onebox/plan, POST /onebox/execute, GET /onebox/status
 # Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
 
-import os, json, time, math, re, asyncio
+import os, json, time, math, re, asyncio, html
 from decimal import Decimal
 from typing import Optional, Literal, List, Tuple, Dict, Any
 
@@ -253,7 +253,8 @@ async def plan(req: PlanRequest):
     p = intent.payload
     reward = p.reward or "1.0"
     days = p.deadlineDays if p.deadlineDays is not None else 7
-    summary = f'I will post a job “{p.title}” with reward {reward} AGIALPHA and a {days}-day deadline. Proceed?'
+    safe_title = html.escape(p.title or "")
+    summary = f'I will post a job “{safe_title}” with reward {reward} AGIALPHA and a {days}-day deadline. Proceed?'
     return PlanResponse(summary=summary, intent=intent, requiresConfirmation=True, warnings=[])
 
 @router.post("/execute", response_model=ExecuteResponse, dependencies=[Depends(require_api)])
