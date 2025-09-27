@@ -44,7 +44,9 @@ export interface WorldModelObservation {
   inputSummary?: ContentSummary | null;
   outputSummary?: ContentSummary | null;
   outputCid?: string;
+  outputUrl?: string;
   signatureCid?: string;
+  signatureUrl?: string;
   signature?: string;
   signer?: string;
   digest?: string;
@@ -90,7 +92,9 @@ export interface RecordObservationInput {
   input?: unknown;
   output?: unknown;
   outputCid?: string;
+  outputUrl?: string;
   signatureCid?: string;
+  signatureUrl?: string;
   signature?: string;
   signer?: string;
   digest?: string;
@@ -168,7 +172,9 @@ export async function recordWorldModelObservation(
     startedAt: input.startedAt,
     completedAt: input.completedAt,
     outputCid: input.outputCid,
+    outputUrl: input.outputUrl,
     signatureCid: input.signatureCid,
+    signatureUrl: input.signatureUrl,
     signature: input.signature,
     signer: input.signer,
     digest: input.digest,

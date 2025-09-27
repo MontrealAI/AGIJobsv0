@@ -824,6 +824,7 @@ export class MetaOrchestrator {
         details: {
           resultRef,
           manifestCid: runResult.manifestCid,
+          manifestUrl: runResult.manifestUrl,
           finalStageCid: runResult.finalCid,
           stages: stages.map((s) => s.name),
           stageCount: runResult.snapshot.stageCount,

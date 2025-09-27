@@ -582,6 +582,9 @@ export function ChatWindow() {
         id: createReceiptId(),
         jobId: payload.jobId,
         specCid: payload.specCid,
+        specUrl: payload.specGatewayUrl ?? payload.specUri ?? undefined,
+        deliverableCid: payload.deliverableCid ?? undefined,
+        deliverableUrl: payload.deliverableGatewayUrl ?? payload.deliverableUri ?? undefined,
         netPayout: netPayout.length > 0 ? netPayout : undefined,
         explorerUrl: payload.receiptUrl,
         createdAt: Date.now(),
@@ -593,6 +596,9 @@ export function ChatWindow() {
       }
       if (receipt.specCid) {
         successLines.push(`CID: ${receipt.specCid}`);
+      }
+      if (receipt.deliverableCid) {
+        successLines.push(`Deliverable: ${receipt.deliverableCid}`);
       }
       if (receipt.netPayout) {
         successLines.push(`Payout: ${receipt.netPayout}`);

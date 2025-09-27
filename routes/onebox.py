@@ -4,12 +4,14 @@
 # plus /healthz and /onebox/metrics (Prometheus).
 # Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
 
+import asyncio
 import json
 import logging
 import os
 import re
 import time
 import uuid
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
@@ -17,6 +19,7 @@ import httpx
 import prometheus_client
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
+from urllib.parse import quote
 from web3 import Web3
 from web3._utils.events import get_event_data
 from web3.middleware import geth_poa_middleware
@@ -41,6 +44,31 @@ EXPLORER_TX_TPL = os.getenv(
 PINNER_KIND = os.getenv("PINNER_KIND", "").lower()
 PINNER_ENDPOINT = os.getenv("PINNER_ENDPOINT", "")
 PINNER_TOKEN = os.getenv("PINNER_TOKEN", "")
+WEB3_STORAGE_TOKEN = (
+    os.getenv("WEB3_STORAGE_TOKEN")
+    or os.getenv("WEB3STORAGE_TOKEN")
+    or (PINNER_TOKEN if PINNER_KIND in {"web3storage", "nftstorage"} else "")
+)
+WEB3_STORAGE_ENDPOINT = (
+    os.getenv("WEB3_STORAGE_ENDPOINT")
+    or os.getenv("WEB3STORAGE_ENDPOINT")
+    or "https://api.web3.storage"
+)
+PINATA_JWT = os.getenv("PINATA_JWT") or os.getenv("PINATA_TOKEN")
+PINATA_API_KEY = os.getenv("PINATA_API_KEY")
+PINATA_SECRET_API_KEY = os.getenv("PINATA_SECRET_API_KEY")
+PINATA_ENDPOINT = os.getenv("PINATA_ENDPOINT") or "https://api.pinata.cloud"
+PINATA_GATEWAY = (
+    os.getenv("PINATA_GATEWAY")
+    or os.getenv("PINATA_PUBLIC_GATEWAY")
+    or "https://gateway.pinata.cloud"
+)
+CUSTOM_GATEWAY = os.getenv("IPFS_GATEWAY_URL") or os.getenv("IPFS_PUBLIC_GATEWAY")
+DEFAULT_GATEWAYS = [
+    "https://w3s.link/ipfs/{cid}",
+    "https://ipfs.io/ipfs/{cid}",
+    "https://cloudflare-ipfs.com/ipfs/{cid}",
+]
 CORS_ALLOW_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "*").split(",")]
 
 if not RPC_URL:
@@ -257,6 +285,13 @@ class ExecuteResponse(BaseModel):
     txHash: Optional[str] = None
     receiptUrl: Optional[str] = None
     specCid: Optional[str] = None
+    specUri: Optional[str] = None
+    specGatewayUrl: Optional[str] = None
+    specGatewayUrls: Optional[List[str]] = None
+    deliverableCid: Optional[str] = None
+    deliverableUri: Optional[str] = None
+    deliverableGatewayUrl: Optional[str] = None
+    deliverableGatewayUrls: Optional[List[str]] = None
     specHash: Optional[str] = None
     deadline: Optional[int] = None
     reward: Optional[str] = None
@@ -295,6 +330,7 @@ _ERRORS = {
     "INSUFFICIENT_BALANCE": "You don’t have enough AGIALPHA to fund this job. Reduce the reward or top up.",
     "INSUFFICIENT_ALLOWANCE": "Your wallet needs permission to use AGIALPHA. I can prepare an approval transaction.",
     "IPFS_FAILED": "I couldn’t package your job details. Remove broken links and try again.",
+    "IPFS_TEMPORARY": "The pinning service is busy. Wait a moment and re-upload your request.",
     "DEADLINE_INVALID": "That deadline is in the past. Pick at least 24 hours from now.",
     "NETWORK_CONGESTED": "The network is busy; I’ll retry briefly.",
     "UNKNOWN": "Something went wrong. I’ll log details and help you try again.",
@@ -424,43 +460,405 @@ def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool
     return summary, True, warnings
 
 
-async def _pin_json(obj: dict) -> str:
-    if not PINNER_TOKEN or not PINNER_ENDPOINT:
-        logger.warning("pinning disabled; returning static CID")
-        return "bafkreigh2akiscaildcdevcidxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    headers: Dict[str, str] = {"Content-Type": "application/json"}
-    body: Any = obj
-    if PINNER_KIND == "pinata":
-        headers["Authorization"] = f"Bearer {PINNER_TOKEN}"
-        body = {"pinataContent": obj}
-    elif PINNER_KIND in {"web3storage", "nftstorage", "ipfs_http"}:
-        headers["Authorization"] = f"Bearer {PINNER_TOKEN}"
+@dataclass
+class PinningProvider:
+    name: str
+    endpoint: str
+    token: str
+    gateway_templates: List[str]
+
+
+class PinningError(Exception):
+    def __init__(self, message: str, provider: str, status: Optional[int] = None, retryable: bool = False):
+        super().__init__(message)
+        self.provider = provider
+        self.status = status
+        self.retryable = retryable
+
+
+def _detect_provider(endpoint: str, explicit: Optional[str] = None) -> str:
+    if explicit:
+        return explicit
+    host = ""
     try:
-        async with httpx.AsyncClient(timeout=45) as client:
-            response = await client.post(PINNER_ENDPOINT, headers=headers, json=body)
-    except httpx.RequestError as exc:  # pragma: no cover - network failures are runtime only
-        logger.error("pinning request failed: %s", exc)
-        raise HTTPException(502, "IPFS_FAILED") from exc
-    if response.status_code // 100 != 2:
-        logger.error("pinning service error: status=%s body=%s", response.status_code, response.text)
-        raise HTTPException(502, "IPFS_FAILED")
-    try:
-        payload = response.json() if response.content else {}
-    except ValueError as exc:
-        raise HTTPException(502, "IPFS_FAILED") from exc
-    cid = (
-        payload.get("IpfsHash")
-        or payload.get("cid")
-        or payload.get("Hash")
-        or payload.get("value")
-        or next(
-            (v for v in payload.values() if isinstance(v, str) and v.startswith("baf")),
-            None,
+        parsed = httpx.URL(endpoint)
+        host = (parsed.host or "").lower()
+    except Exception:
+        host = (endpoint or "").lower()
+    if "web3.storage" in host:
+        return "web3.storage"
+    if "nft.storage" in host:
+        return "nft.storage"
+    if "pinata" in host:
+        return "pinata"
+    return explicit or "pinning-service"
+
+
+def _strip_slashes(value: str) -> str:
+    return value.rstrip("/ ")
+
+
+def _ensure_upload_url(endpoint: str, provider: str) -> str:
+    trimmed = _strip_slashes(endpoint)
+    if provider == "pinata":
+        if trimmed.lower().endswith("pinning/pinfiletoipfs"):
+            return trimmed
+        return f"{trimmed}/pinning/pinFileToIPFS"
+    if trimmed.lower().endswith("/upload") or trimmed.lower().endswith("/pins"):
+        return trimmed
+    return f"{trimmed}/upload"
+
+
+def _provider_base_url(endpoint: str, provider: str) -> str:
+    trimmed = _strip_slashes(endpoint)
+    if provider == "pinata":
+        if trimmed.lower().endswith("pinning/pinfiletoipfs"):
+            return trimmed[: -len("/pinning/pinFileToIPFS")]
+    for suffix in ("/upload", "/pins"):
+        if trimmed.lower().endswith(suffix):
+            return trimmed[: -len(suffix)]
+    return trimmed
+
+
+def _build_auth_headers(provider: str, token: str) -> Dict[str, str]:
+    token = token.strip()
+    headers: Dict[str, str] = {}
+    if not token:
+        return headers
+    if provider == "pinata" and ":" in token and not token.lower().startswith("bearer "):
+        api_key, secret = token.split(":", 1)
+        headers["pinata_api_key"] = api_key.strip()
+        headers["pinata_secret_api_key"] = secret.strip()
+        return headers
+    if token.lower().startswith("bearer "):
+        headers["Authorization"] = token
+    else:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+def _is_retryable_status(status: int) -> bool:
+    return status >= 500 or status in {408, 409, 429}
+
+
+def _build_gateway_urls(cid: str, provider: str, templates: Optional[List[str]] = None) -> List[str]:
+    urls: List[str] = []
+    for template in templates or []:
+        url = template.format(cid=cid)
+        if url not in urls:
+            urls.append(url)
+    if provider in {"web3.storage", "nft.storage"}:
+        for tpl in ["https://w3s.link/ipfs/{cid}", "https://{cid}.ipfs.w3s.link"]:
+            url = tpl.format(cid=cid)
+            if url not in urls:
+                urls.append(url)
+    if provider == "pinata":
+        for tpl in ["https://gateway.pinata.cloud/ipfs/{cid}", "https://ipfs.pinata.cloud/ipfs/{cid}"]:
+            url = tpl.format(cid=cid)
+            if url not in urls:
+                urls.append(url)
+    for tpl in DEFAULT_GATEWAYS:
+        url = tpl.format(cid=cid)
+        if url not in urls:
+            urls.append(url)
+    return urls
+
+
+def _build_pin_result(
+    provider: str,
+    cid: str,
+    attempts: int,
+    status: Optional[str] = None,
+    request_id: Optional[str] = None,
+    size: Optional[int] = None,
+    pinned_at: Optional[str] = None,
+    templates: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    gateways = _build_gateway_urls(cid, provider, templates)
+    gateway_url = gateways[0] if gateways else f"https://ipfs.io/ipfs/{cid}"
+    return {
+        "cid": cid,
+        "uri": f"ipfs://{cid}",
+        "gatewayUrl": gateway_url,
+        "gatewayUrls": gateways,
+        "provider": provider,
+        "status": status,
+        "requestId": request_id,
+        "size": size,
+        "pinnedAt": pinned_at,
+        "attempts": attempts,
+    }
+
+
+def _resolve_pinners() -> List[PinningProvider]:
+    providers: List[PinningProvider] = []
+    seen: set[Tuple[str, str]] = set()
+
+    def add_provider(name: str, endpoint: str, token: str, gateway_templates: Optional[List[str]] = None) -> None:
+        key = (_strip_slashes(endpoint), token.strip())
+        if not key[0] or not key[1] or key in seen:
+            return
+        seen.add(key)
+        templates = list(gateway_templates or [])
+        if CUSTOM_GATEWAY:
+            templates.insert(0, f"{CUSTOM_GATEWAY.rstrip('/')}/ipfs/{{cid}}")
+        providers.append(
+            PinningProvider(
+                name=name,
+                endpoint=endpoint,
+                token=token,
+                gateway_templates=templates,
+            )
         )
+
+    if PINNER_ENDPOINT and PINNER_TOKEN:
+        add_provider(
+            _detect_provider(PINNER_ENDPOINT, PINNER_KIND or None),
+            PINNER_ENDPOINT,
+            PINNER_TOKEN,
+        )
+
+    if WEB3_STORAGE_TOKEN:
+        add_provider(
+            "web3.storage",
+            WEB3_STORAGE_ENDPOINT,
+            WEB3_STORAGE_TOKEN,
+            ["https://w3s.link/ipfs/{cid}", "https://{cid}.ipfs.w3s.link"],
+        )
+
+    pinata_token = PINATA_JWT
+    if not pinata_token and PINATA_API_KEY and PINATA_SECRET_API_KEY:
+        pinata_token = f"{PINATA_API_KEY}:{PINATA_SECRET_API_KEY}"
+    if pinata_token:
+        add_provider(
+            "pinata",
+            PINATA_ENDPOINT,
+            pinata_token,
+            [
+                f"{PINATA_GATEWAY.rstrip('/')}/ipfs/{{cid}}",
+                "https://gateway.pinata.cloud/ipfs/{cid}",
+                "https://ipfs.pinata.cloud/ipfs/{cid}",
+            ],
+        )
+
+    return providers
+
+
+def _extract_cid(payload: Any) -> Optional[str]:
+    if not payload:
+        return None
+    if isinstance(payload, str):
+        stripped = payload.strip()
+        if not stripped:
+            return None
+        try:
+            return _extract_cid(json.loads(stripped))
+        except ValueError:
+            return stripped
+    if isinstance(payload, dict):
+        for key in ("cid", "Cid", "IpfsHash", "Hash", "value"):
+            value = payload.get(key)
+            if isinstance(value, str) and value:
+                return value
+        nested = payload.get("pin") or payload.get("data") or payload.get("value")
+        if isinstance(nested, dict):
+            candidate = _extract_cid(nested)
+            if candidate:
+                return candidate
+        for value in payload.values():
+            if isinstance(value, dict):
+                candidate = _extract_cid(value)
+                if candidate:
+                    return candidate
+            if isinstance(value, str) and value.startswith("baf"):
+                return value
+    return None
+
+
+async def _fetch_pin_status(
+    provider: str, base_url: str, token: str, cid: str
+) -> Dict[str, Any]:
+    headers = _build_auth_headers(provider, token)
+    if not headers:
+        return {}
+    status_url = (
+        f"{_strip_slashes(base_url)}/data/pinList?cid={quote(cid)}"
+        if provider == "pinata"
+        else f"{_strip_slashes(base_url)}/pins/{cid}"
     )
-    if not cid:
-        raise HTTPException(502, "IPFS_FAILED")
-    return cid
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(status_url, headers=headers)
+    if response.status_code // 100 != 2:
+        if _is_retryable_status(response.status_code):
+            raise PinningError(
+                f"status check failed: {response.status_code}",
+                provider,
+                response.status_code,
+                True,
+            )
+        return {}
+    try:
+        data = response.json()
+    except ValueError:
+        return {}
+    if provider == "pinata":
+        rows = data.get("rows") if isinstance(data, dict) else None
+        first = rows[0] if isinstance(rows, list) and rows else None
+        if isinstance(first, dict):
+            return {
+                "status": first.get("status"),
+                "size": first.get("size") or first.get("pinSize"),
+                "pinned_at": first.get("date_pinned") or first.get("timestamp"),
+            }
+        return {}
+    pin = data.get("pin") if isinstance(data, dict) else None
+    status = data.get("status") if isinstance(data, dict) else None
+    size = data.get("pinSize") if isinstance(data, dict) else None
+    pinned_at = data.get("created") if isinstance(data, dict) else None
+    if isinstance(pin, dict):
+        status = pin.get("status") or status
+        size = pin.get("size") or size
+        pinned_at = pin.get("created") or pinned_at
+    return {"status": status, "size": size, "pinned_at": pinned_at}
+
+
+async def _pin_bytes(content: bytes, content_type: str, file_name: str) -> Dict[str, Any]:
+    providers = _resolve_pinners()
+    if not providers:
+        cid = "bafkreigh2akiscaildcdevcidxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        logger.warning("pinning disabled; returning static CID")
+        return _build_pin_result("static", cid, 0, "mock")
+
+    retryable_errors: List[PinningError] = []
+
+    for provider in providers:
+        upload_url = _ensure_upload_url(provider.endpoint, provider.name)
+        base_url = _provider_base_url(provider.endpoint, provider.name)
+        headers = _build_auth_headers(provider.name, provider.token)
+        attempts = 3
+        for attempt in range(1, attempts + 1):
+            try:
+                async with httpx.AsyncClient(timeout=45) as client:
+                    if provider.name == "pinata" and "pinata_api_key" not in headers:
+                        form_headers = headers.copy()
+                        files = {
+                            "file": (file_name, content, content_type),
+                        }
+                        metadata = {
+                            "name": file_name,
+                            "keyvalues": {"source": "onebox-server"},
+                        }
+                        response = await client.post(
+                            upload_url,
+                            headers=form_headers,
+                            files=files,
+                            data={"pinataMetadata": json.dumps(metadata)},
+                        )
+                    elif provider.name == "pinata":
+                        form_headers = headers.copy()
+                        files = {
+                            "file": (file_name, content, content_type),
+                        }
+                        metadata = {
+                            "name": file_name,
+                            "keyvalues": {"source": "onebox-server"},
+                        }
+                        response = await client.post(
+                            upload_url,
+                            headers=form_headers,
+                            files=files,
+                            data={"pinataMetadata": json.dumps(metadata)},
+                        )
+                    else:
+                        post_headers = headers.copy()
+                        post_headers.setdefault("Content-Type", content_type)
+                        if file_name:
+                            post_headers.setdefault("X-Name", file_name)
+                        response = await client.post(
+                            upload_url,
+                            headers=post_headers,
+                            content=content,
+                        )
+                body_text = response.text
+                if response.status_code // 100 != 2:
+                    raise PinningError(
+                        f"pinning service responded with {response.status_code}: {body_text[:200]}",
+                        provider.name,
+                        response.status_code,
+                        _is_retryable_status(response.status_code),
+                    )
+                payload: Any
+                if "application/json" in (response.headers.get("content-type") or ""):
+                    try:
+                        payload = response.json()
+                    except ValueError:
+                        payload = body_text
+                else:
+                    payload = body_text
+                cid = _extract_cid(payload)
+                if not cid:
+                    raise PinningError("pinning response missing CID", provider.name)
+                status = None
+                request_id = None
+                size = None
+                pinned_at = None
+                if isinstance(payload, dict):
+                    pin = payload.get("pin") if isinstance(payload.get("pin"), dict) else None
+                    request_id = payload.get("requestid") or payload.get("requestId")
+                    status = payload.get("status") or (pin.get("status") if pin else None)
+                    size = (
+                        pin.get("size")
+                        if pin and isinstance(pin.get("size"), (int, float))
+                        else payload.get("PinSize")
+                    )
+                    timestamp = payload.get("Timestamp") or payload.get("created")
+                    pinned_at = timestamp if isinstance(timestamp, str) else None
+                try:
+                    await asyncio.sleep(0.2)
+                    status_info = await _fetch_pin_status(
+                        provider.name, base_url, provider.token, cid
+                    )
+                    status = status_info.get("status") or status
+                    size = status_info.get("size") or size
+                    pinned_at = status_info.get("pinned_at") or pinned_at
+                except PinningError as exc:
+                    if exc.retryable:
+                        logger.warning("pin status check retryable error: %s", exc)
+                    else:
+                        logger.debug("pin status check non-retryable error: %s", exc)
+                return _build_pin_result(
+                    provider.name,
+                    cid,
+                    attempt,
+                    status=status or "pinned",
+                    request_id=request_id,
+                    size=int(size) if isinstance(size, (int, float)) else None,
+                    pinned_at=pinned_at,
+                    templates=provider.gateway_templates,
+                )
+            except (httpx.RequestError, PinningError) as exc:  # pragma: no cover - runtime only
+                error = exc if isinstance(exc, PinningError) else PinningError(str(exc), provider.name, retryable=True)
+                if not error.retryable or attempt == attempts:
+                    if isinstance(exc, PinningError):
+                        if not exc.retryable:
+                            raise
+                        retryable_errors.append(exc)
+                    else:
+                        retryable_errors.append(error)
+                    break
+                await asyncio.sleep(min(1.0 * attempt, 3.0))
+        else:
+            continue
+    if retryable_errors:
+        last = retryable_errors[-1]
+        logger.error("pinning service unavailable: %s (%s)", last, last.provider)
+        raise HTTPException(503, "IPFS_TEMPORARY") from retryable_errors[-1]
+    raise HTTPException(502, "IPFS_FAILED")
+
+
+async def _pin_json(obj: dict, file_name: str = "payload.json") -> Dict[str, Any]:
+    payload = json.dumps(obj, separators=(",", ":")).encode("utf-8")
+    return await _pin_bytes(payload, "application/json", file_name)
 
 
 def _build_tx(func, sender: str) -> dict:
@@ -665,8 +1063,11 @@ async def execute(request: Request, req: ExecuteRequest):
             }
             spec_hash = _compute_spec_hash(job_payload)
             job_payload["specHash"] = "0x" + spec_hash.hex()
-            cid = await _pin_json(job_payload)
-            uri = f"ipfs://{cid}"
+            spec_pin = await _pin_json(job_payload, "job-spec.json")
+            cid = spec_pin.get("cid")
+            if not cid:
+                raise HTTPException(502, "IPFS_FAILED")
+            uri = spec_pin.get("uri") or f"ipfs://{cid}"
             reward_wei = _to_wei(str(payload.reward))
 
             if req.mode == "wallet":
@@ -681,6 +1082,9 @@ async def execute(request: Request, req: ExecuteRequest):
                     value="0x0",
                     chainId=CHAIN_ID,
                     specCid=cid,
+                    specUri=uri,
+                    specGatewayUrl=spec_pin.get("gatewayUrl"),
+                    specGatewayUrls=spec_pin.get("gatewayUrls"),
                     specHash="0x" + spec_hash.hex(),
                     deadline=deadline_ts,
                     reward=str(payload.reward),
@@ -703,12 +1107,38 @@ async def execute(request: Request, req: ExecuteRequest):
                     txHash=txh,
                     receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
                     specCid=cid,
+                    specUri=uri,
+                    specGatewayUrl=spec_pin.get("gatewayUrl"),
+                    specGatewayUrls=spec_pin.get("gatewayUrls"),
                     specHash="0x" + spec_hash.hex(),
                     deadline=deadline_ts,
                     reward=str(payload.reward),
                     token=payload.rewardToken,
                     status="submitted",
                 )
+
+            deliverable_payload = {
+                "intent": intent.dict(),
+                "mode": req.mode,
+                "spec": {
+                    "cid": cid,
+                    "uri": uri,
+                    "gatewayUrl": spec_pin.get("gatewayUrl"),
+                    "gateways": spec_pin.get("gatewayUrls"),
+                },
+                "result": {
+                    "jobId": response.jobId,
+                    "txHash": response.txHash,
+                    "status": response.status,
+                    "receiptUrl": response.receiptUrl,
+                },
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+            deliverable_pin = await _pin_json(deliverable_payload, "job-deliverable.json")
+            response.deliverableCid = deliverable_pin.get("cid")
+            response.deliverableUri = deliverable_pin.get("uri")
+            response.deliverableGatewayUrl = deliverable_pin.get("gatewayUrl")
+            response.deliverableGatewayUrls = deliverable_pin.get("gatewayUrls")
 
         elif intent.action == "finalize_job":
             if payload.jobId is None:
@@ -737,6 +1167,23 @@ async def execute(request: Request, req: ExecuteRequest):
                     receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
                     status="finalized",
                 )
+
+            deliverable_payload = {
+                "intent": intent.dict(),
+                "mode": req.mode,
+                "result": {
+                    "jobId": response.jobId or int(payload.jobId),
+                    "txHash": response.txHash,
+                    "status": response.status,
+                    "receiptUrl": response.receiptUrl,
+                },
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+            deliverable_pin = await _pin_json(deliverable_payload, "job-deliverable.json")
+            response.deliverableCid = deliverable_pin.get("cid")
+            response.deliverableUri = deliverable_pin.get("uri")
+            response.deliverableGatewayUrl = deliverable_pin.get("gatewayUrl")
+            response.deliverableGatewayUrls = deliverable_pin.get("gatewayUrls")
 
         elif intent.action == "check_status":
             if payload.jobId is None:

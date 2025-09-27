@@ -76,6 +76,8 @@ export interface CompletedJobEvidence {
   summary: ChainJobSummary;
   resultRef: string;
   manifestCid: string;
+  manifestUrl?: string;
+  manifestGatewayUrls?: string[];
   finalCid: string | null;
   stageCids: string[];
   stageCount: number;
@@ -95,6 +97,8 @@ export interface DisputeEvidenceBundle {
   agent: AgentEvidenceProfile;
   orchestrator?: string;
   manifestCid: string;
+  manifestUrl?: string;
+  manifestGatewayUrls?: string[];
   resultRef: string;
   submittedAt?: string;
   classification: ClassificationResult;
@@ -131,6 +135,8 @@ export interface PreparedDisputeEvidence {
   hash: string;
   cid: string | null;
   uri: string | null;
+  gatewayUrl?: string | null;
+  gatewayUrls?: string[];
   preparedAt: string;
   payload: DisputeEvidenceBundle;
   filePath: string;
@@ -191,6 +197,8 @@ export async function prepareJobDisputeEvidence(
     agent: record.agent,
     orchestrator: record.orchestrator,
     manifestCid: record.manifestCid,
+    manifestUrl: record.manifestUrl,
+    manifestGatewayUrls: record.manifestGatewayUrls,
     resultRef: record.resultRef,
     submittedAt: record.submittedAt,
     classification: record.classification,
@@ -213,10 +221,14 @@ export async function prepareJobDisputeEvidence(
   const hash = ethers.keccak256(ethers.toUtf8Bytes(json));
   let cid: string | null = null;
   let uploadError: string | undefined;
+  let gatewayUrl: string | null | undefined;
+  let gatewayUrls: string[] | undefined;
   try {
-    const uploadedCid = await uploadToIPFS(bundle, options?.ipfsApiUrl);
-    if (uploadedCid && uploadedCid.trim().length > 0) {
-      cid = uploadedCid;
+    const uploaded = await uploadToIPFS(bundle, options?.ipfsApiUrl);
+    if (uploaded?.cid && uploaded.cid.trim().length > 0) {
+      cid = uploaded.cid;
+      gatewayUrl = uploaded.url;
+      gatewayUrls = uploaded.gatewayUrls;
     }
   } catch (err) {
     uploadError = err instanceof Error ? err.message : String(err);
@@ -227,6 +239,8 @@ export async function prepareJobDisputeEvidence(
     hash,
     cid,
     uri: cid ? `ipfs://${cid}` : null,
+    gatewayUrl: gatewayUrl ?? (cid ? `https://ipfs.io/ipfs/${cid}` : null),
+    gatewayUrls,
     preparedAt,
     payload: bundle,
     filePath: responseFile(record.jobId, preparedAt),
@@ -271,6 +285,8 @@ export function toCompletedJobEvidence(
     summary,
     resultRef,
     manifestCid: runResult.manifestCid,
+    manifestUrl: runResult.manifestUrl,
+    manifestGatewayUrls: runResult.manifestGatewayUrls,
     finalCid: runResult.finalCid,
     stageCids: runResult.stageCids,
     stageCount: runResult.snapshot.stageCount,
