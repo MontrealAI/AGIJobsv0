@@ -12,6 +12,7 @@ const policy = policyManager();
 export interface ForwarderConfig {
   address: string;
   gasBuffer: bigint;
+  fallbackGasLimit: bigint;
 }
 
 function resolveForwarder(): ForwarderConfig {
@@ -24,7 +25,10 @@ function resolveForwarder(): ForwarderConfig {
     throw new Error("EIP2771 trusted forwarder address must be configured");
   }
   const gasBufferRaw = process.env.EIP2771_GAS_BUFFER ?? process.env.RELAYER_GAS_BUFFER;
+  const fallbackGasRaw =
+    process.env.EIP2771_GAS_CEILING ?? process.env.RELAYER_GAS_CEILING;
   let gasBuffer = 25_000n;
+  let fallbackGasLimit = 750_000n;
   if (gasBufferRaw) {
     try {
       gasBuffer = BigInt(gasBufferRaw);
@@ -32,7 +36,17 @@ function resolveForwarder(): ForwarderConfig {
       console.warn("Failed to parse EIP2771_GAS_BUFFER", error);
     }
   }
-  return { address: ethers.getAddress(address), gasBuffer };
+  if (fallbackGasRaw) {
+    try {
+      fallbackGasLimit = BigInt(fallbackGasRaw);
+    } catch (error) {
+      console.warn("Failed to parse EIP2771_GAS_CEILING", error);
+    }
+  }
+  if (fallbackGasLimit < gasBuffer) {
+    fallbackGasLimit = gasBuffer;
+  }
+  return { address: ethers.getAddress(address), gasBuffer, fallbackGasLimit };
 }
 
 let forwarderConfigCache: ForwarderConfig | null = null;
@@ -42,6 +56,10 @@ function getForwarderConfig(): ForwarderConfig {
     forwarderConfigCache = resolveForwarder();
   }
   return forwarderConfigCache;
+}
+
+export function __resetForwarderConfigForTests() {
+  forwarderConfigCache = null;
 }
 
 export class MetaTxSigner extends ethers.AbstractSigner {
@@ -113,21 +131,27 @@ export class MetaTxSigner extends ethers.AbstractSigner {
     const config = getForwarderConfig();
     const from = await this.getAddress();
     const nonce: ethers.BigNumberish = await this.forwarder.getNonce(from);
-    let gasLimit = tx.gasLimit !== undefined && tx.gasLimit !== null ? ethers.toBigInt(tx.gasLimit) : 0n;
+    let gasLimit =
+      tx.gasLimit !== undefined && tx.gasLimit !== null ? ethers.toBigInt(tx.gasLimit) : 0n;
+    let usedFallback = false;
     if (gasLimit === 0n) {
       try {
         const estimate = await provider.estimateGas({
-          from: this.relayerWallet.address,
+          from: config.address,
           to: tx.to ?? undefined,
           data: tx.data ?? undefined,
           value: tx.value ?? undefined,
         });
         gasLimit = BigInt(estimate);
       } catch (error) {
+        usedFallback = true;
+        gasLimit = config.fallbackGasLimit;
         console.warn("Failed to estimate gas for meta-tx", error);
       }
     }
-    gasLimit += config.gasBuffer;
+    if (!usedFallback) {
+      gasLimit += config.gasBuffer;
+    }
     return {
       from,
       to: tx.to ?? ethers.ZeroAddress,
