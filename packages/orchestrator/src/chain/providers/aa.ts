@@ -586,3 +586,8 @@ export async function getAAProvider(userId: string) {
   return signer;
 }
 
+export function __resetAAConfigForTests() {
+  aaConfigCache = null;
+  aaSignerCache.clear();
+}
+

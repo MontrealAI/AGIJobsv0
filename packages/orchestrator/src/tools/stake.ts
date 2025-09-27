@@ -14,7 +14,7 @@ export async function* deposit(ics: StakeIntent) {
     const { amountAGIA, role } = ics.params.stake;
     const normalized = normalizeRole(role);
     const amountWei = toWei(amountAGIA);
-    const signer = await getSignerForUser(userId);
+    const signer = await getSignerForUser(userId, ics.meta?.txMode);
     const { erc20, stakeManager } = loadContracts(signer);
     const owner = await signer.getAddress();
     const spender = stakeManager.target as string;
@@ -52,7 +52,7 @@ export async function* withdraw(ics: WithdrawIntent) {
     const { amountAGIA, role } = ics.params.stake;
     const normalized = normalizeRole(role);
     const amountWei = toWei(amountAGIA);
-    const signer = await getSignerForUser(userId);
+    const signer = await getSignerForUser(userId, ics.meta?.txMode);
     const { stakeManager } = loadContracts(signer);
     const tx = await stakeManager.withdrawStake(
       normalized.index,

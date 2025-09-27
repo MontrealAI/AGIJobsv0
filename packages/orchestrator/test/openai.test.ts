@@ -7,6 +7,7 @@ import { validateICS } from "../src/ics.js";
 const meta = {
   traceId: "11111111-2222-4333-8444-555555555555",
   userId: "user-123",
+  txMode: "aa" as const,
 };
 
 test("create_job prompt yields valid ICS", async () => {
@@ -27,6 +28,7 @@ test("create_job prompt yields valid ICS", async () => {
   assert.equal(ics.params.job.deadline, 14);
   assert.equal(ics.meta?.traceId, meta.traceId);
   assert.equal(ics.meta?.userId, meta.userId);
+  assert.equal(ics.meta?.txMode, meta.txMode);
   assert.ok(ics.params.job.spec);
 });
 
@@ -45,6 +47,7 @@ test("apply_job prompt yields valid ICS", async () => {
   assert.equal(ics.params.jobId, 42);
   assert.equal(ics.params.ens.subdomain, "alice");
   assert.equal(ics.meta?.traceId, meta.traceId);
+  assert.equal(ics.meta?.txMode, meta.txMode);
 });
 
 test("submit_work prompt yields valid ICS", async () => {
@@ -63,6 +66,7 @@ test("submit_work prompt yields valid ICS", async () => {
   assert.equal(ics.params.jobId, 87);
   assert.equal(ics.params.ens.subdomain, "bob");
   assert.ok(ics.params.result.payload);
+  assert.equal(ics.meta?.txMode, meta.txMode);
 });
 
 test("finalize prompt yields valid ICS", async () => {
@@ -79,4 +83,5 @@ test("finalize prompt yields valid ICS", async () => {
   assert.equal(ics.intent, "finalize");
   assert.equal(ics.params.jobId, 73);
   assert.equal(ics.params.success, true);
+  assert.equal(ics.meta?.txMode, meta.txMode);
 });

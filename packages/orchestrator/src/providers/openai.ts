@@ -7,6 +7,7 @@ export type StreamOptions = {
 type MetaOptions = {
   traceId?: string;
   userId?: string;
+  txMode?: string;
 };
 
 export async function streamLLM(
@@ -77,10 +78,15 @@ export async function streamLLM(
 }
 
 function resolveMeta(meta?: MetaOptions) {
-  return {
+  const resolved: Required<Omit<MetaOptions, "txMode">> &
+    Partial<Pick<MetaOptions, "txMode">> = {
     traceId: meta?.traceId ?? "00000000-0000-4000-8000-000000000000",
     userId: meta?.userId ?? "user-sandbox",
-  } satisfies Required<MetaOptions>;
+  };
+  if (meta?.txMode) {
+    resolved.txMode = meta.txMode;
+  }
+  return resolved;
 }
 
 export function extractJobId(text: string): number | null {

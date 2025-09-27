@@ -6,6 +6,7 @@ import { ethers } from "ethers";
 import { getSignerForUser } from "../src/chain/provider.js";
 import {
   AccountAbstractionSigner,
+  __resetAAConfigForTests,
   type AccountAbstractionConfig,
 } from "../src/chain/providers/aa.js";
 import {
@@ -153,6 +154,45 @@ test("aa mode derives deterministic session keys per user", async () => {
     assert.notEqual(await aliceFirst.getAddress(), await bob.getAddress());
   } finally {
     restoreEnv(backup);
+  }
+});
+
+test("tx mode override selects the requested signer", async () => {
+  const backup = snapshotEnv([
+    "TX_MODE",
+    "AA_SESSION_MNEMONIC",
+    "AA_BUNDLER_RPC_URL",
+    "AA_ENTRY_POINT",
+    "RELAYER_MNEMONIC",
+    "RELAYER_USER_MNEMONIC",
+    "RELAYER_SPONSOR_MNEMONIC",
+    "EIP2771_TRUSTED_FORWARDER",
+  ]);
+
+  try {
+    process.env.TX_MODE = "relayer";
+    process.env.AA_SESSION_MNEMONIC = aaMnemonic;
+    process.env.AA_BUNDLER_RPC_URL = "http://127.0.0.1:4337";
+    process.env.AA_ENTRY_POINT = entryPointAddress;
+    process.env.RELAYER_MNEMONIC = relayerMnemonic;
+    process.env.RELAYER_USER_MNEMONIC = relayerMnemonic;
+    process.env.RELAYER_SPONSOR_MNEMONIC = relayerMnemonic;
+    process.env.EIP2771_TRUSTED_FORWARDER = forwarderAddress;
+    __resetAAConfigForTests();
+    resetForwarderConfig();
+
+    const aaSigner = await getSignerForUser("override-aa", "aa");
+    assert.ok(aaSigner instanceof AccountAbstractionSigner);
+
+    const relayerSigner = await getSignerForUser("override-relayer", "relayer");
+    assert.ok(relayerSigner instanceof MetaTxSigner);
+
+    const directSigner = await getSignerForUser("override-direct", "direct");
+    assert.ok(directSigner instanceof ethers.Wallet);
+  } finally {
+    restoreEnv(backup);
+    __resetAAConfigForTests();
+    resetForwarderConfig();
   }
 });
 

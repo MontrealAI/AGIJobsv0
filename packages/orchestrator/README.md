@@ -54,3 +54,9 @@ budget when they are created, and repeated API calls are throttled via a sliding
 th your paymaster allowances and per-job burn caps.
 
 Ensure these secrets are provisioned in the deployment environment so user requests always resolve to a stable signer.
+
+### Per-request overrides
+
+The orchestrator defaults to the transport specified by `TX_MODE`, but callers can override the signer on a per-request basis by
+including a `meta.txMode` field in the ICS payload. Supported values are `aa`, `relayer`/`2771`, and `direct`, which map to the
+ERC-4337 paymaster path, the EIP-2771 relayer, and raw key-based signing respectively.
