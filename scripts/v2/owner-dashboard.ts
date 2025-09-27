@@ -8,6 +8,9 @@ import {
   loadPlatformRegistryConfig,
   loadPlatformIncentivesConfig,
   loadTaxPolicyConfig,
+  loadIdentityRegistryConfig,
+  loadRewardEngineConfig,
+  loadThermodynamicsConfig,
   loadDeploymentPlan,
   inferNetworkKey,
 } from '../config';
@@ -37,6 +40,49 @@ const ADDRESS_BOOK = path.join(
   'docs',
   'deployment-addresses.json'
 );
+
+const ROLE_LABELS = ['Agent', 'Validator', 'Operator', 'Employer'] as const;
+
+function formatUnitsRounded(
+  value: bigint,
+  decimals: number,
+  precision = 4
+): string {
+  const raw = ethers.formatUnits(value, decimals);
+  const hasSign = raw.startsWith('-');
+  const unsigned = hasSign ? raw.slice(1) : raw;
+  if (!unsigned.includes('.')) {
+    return raw;
+  }
+  const [intPartRaw, fracPartRaw = ''] = unsigned.split('.');
+  const intPart = intPartRaw.length === 0 ? '0' : intPartRaw;
+  const trimmedFrac = fracPartRaw.slice(0, precision).replace(/0+$/, '');
+  const prefix = hasSign ? '-' : '';
+  if (trimmedFrac.length === 0) {
+    return `${prefix}${intPart}`;
+  }
+  return `${prefix}${intPart}.${trimmedFrac}`;
+}
+
+function formatPercentageWad(value: bigint | null): string | null {
+  if (value === null) return null;
+  return `${formatUnitsRounded(value, 16)}%`;
+}
+
+function formatWad(value: bigint | null, suffix = ''): string | null {
+  if (value === null) return null;
+  const formatted = formatUnitsRounded(value, 18);
+  return suffix ? `${formatted} ${suffix}` : formatted;
+}
+
+function formatTokenAmount(
+  value: bigint | null,
+  symbol = 'AGIALPHA',
+  decimals = 18
+): string | null {
+  if (value === null) return null;
+  return `${formatUnitsRounded(value, decimals)} ${symbol}`;
+}
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = { json: false };
@@ -127,6 +173,21 @@ async function callString(
     if (typeof value === 'string') {
       const trimmed = value.trim();
       return trimmed ? trimmed : null;
+    }
+  } catch (_) {
+    // ignore
+  }
+  return null;
+}
+
+async function callBoolean(
+  contract: Contract,
+  method: string
+): Promise<boolean | null> {
+  try {
+    const value = await contract[method]();
+    if (typeof value === 'boolean') {
+      return value;
     }
   } catch (_) {
     // ignore
@@ -369,6 +430,399 @@ async function collectSystemPauseSummary(
   };
 }
 
+async function collectRewardEngineSummary(
+  address: string
+): Promise<ModuleSummary> {
+  const rewardEngine = await ethers.getContractAt('RewardEngineMB', address);
+  const [
+    ownerAddress,
+    thermostat,
+    feePool,
+    reputation,
+    energyOracle,
+    treasury,
+    token,
+    kappaRaw,
+    manualTempRaw,
+    maxProofsRaw,
+  ] = await Promise.all([
+    resolveOwner(rewardEngine),
+    callString(rewardEngine, 'thermostat'),
+    callString(rewardEngine, 'feePool'),
+    callString(rewardEngine, 'reputation'),
+    callString(rewardEngine, 'energyOracle'),
+    callString(rewardEngine, 'treasury'),
+    callString(rewardEngine, 'token'),
+    callBigInt(rewardEngine, 'kappa'),
+    callBigInt(rewardEngine, 'temperature'),
+    callBigInt(rewardEngine, 'maxProofs'),
+  ]);
+
+  const roleShares: (string | null)[] = [];
+  const muValues: (string | null)[] = [];
+  const baselineValues: (string | null)[] = [];
+  for (let i = 0; i < ROLE_LABELS.length; i += 1) {
+    try {
+      const share = await rewardEngine.roleShare(i);
+      roleShares.push(formatPercentageWad(share));
+    } catch (_) {
+      roleShares.push(null);
+    }
+    try {
+      const mu = await rewardEngine.mu(i);
+      muValues.push(formatWad(mu, 'WAD'));
+    } catch (_) {
+      muValues.push(null);
+    }
+    try {
+      const baseline = await rewardEngine.baselineEnergy(i);
+      baselineValues.push(formatWad(baseline, 'WAD'));
+    } catch (_) {
+      baselineValues.push(null);
+    }
+  }
+
+  const metrics: ModuleMetric[] = [
+    { label: 'Governance', value: ownerAddress },
+    { label: 'Thermostat', value: normaliseAddress(thermostat) },
+    { label: 'FeePool', value: normaliseAddress(feePool) },
+    { label: 'ReputationEngine', value: normaliseAddress(reputation) },
+    { label: 'EnergyOracle', value: normaliseAddress(energyOracle) },
+    { label: 'Treasury', value: normaliseAddress(treasury) },
+    { label: 'Reward Token', value: normaliseAddress(token) },
+    {
+      label: 'Kappa (WAD)',
+      value: kappaRaw !== null ? formatWad(kappaRaw) : null,
+    },
+    {
+      label: 'Manual Temperature (raw)',
+      value: manualTempRaw !== null ? manualTempRaw.toString() : null,
+    },
+    {
+      label: 'Manual Temperature (WAD)',
+      value: manualTempRaw !== null ? formatWad(manualTempRaw, 'WAD') : null,
+    },
+    {
+      label: 'Max Proofs per Role',
+      value: maxProofsRaw !== null ? maxProofsRaw.toString() : null,
+    },
+  ];
+
+  ROLE_LABELS.forEach((role, index) => {
+    metrics.push({ label: `Role Share (${role})`, value: roleShares[index] });
+  });
+  ROLE_LABELS.forEach((role, index) => {
+    metrics.push({ label: `Mu (${role})`, value: muValues[index] });
+  });
+  ROLE_LABELS.forEach((role, index) => {
+    metrics.push({
+      label: `Baseline Energy (${role})`,
+      value: baselineValues[index],
+    });
+  });
+
+  return {
+    key: 'rewardEngine',
+    name: 'RewardEngineMB',
+    address,
+    metrics,
+  };
+}
+
+async function collectThermostatSummary(
+  address: string
+): Promise<ModuleSummary> {
+  const thermostat = await ethers.getContractAt('Thermostat', address);
+  const [
+    ownerAddress,
+    systemTemp,
+    minTemp,
+    maxTemp,
+    kp,
+    ki,
+    kd,
+    wEmission,
+    wBacklog,
+    wSla,
+    integralMin,
+    integralMax,
+  ] = await Promise.all([
+    resolveOwner(thermostat),
+    callBigInt(thermostat, 'systemTemperature'),
+    callBigInt(thermostat, 'minTemp'),
+    callBigInt(thermostat, 'maxTemp'),
+    callBigInt(thermostat, 'kp'),
+    callBigInt(thermostat, 'ki'),
+    callBigInt(thermostat, 'kd'),
+    callBigInt(thermostat, 'wEmission'),
+    callBigInt(thermostat, 'wBacklog'),
+    callBigInt(thermostat, 'wSla'),
+    callBigInt(thermostat, 'integralMin'),
+    callBigInt(thermostat, 'integralMax'),
+  ]);
+
+  const roleTemps: (string | null)[] = [];
+  for (let i = 0; i < ROLE_LABELS.length; i += 1) {
+    try {
+      const roleTemp = await thermostat.getRoleTemperature(i);
+      roleTemps.push(formatWad(roleTemp, 'WAD'));
+    } catch (_) {
+      roleTemps.push(null);
+    }
+  }
+
+  const metrics: ModuleMetric[] = [
+    { label: 'Governance', value: ownerAddress },
+    {
+      label: 'System Temperature (raw)',
+      value: systemTemp !== null ? systemTemp.toString() : null,
+    },
+    {
+      label: 'System Temperature (WAD)',
+      value: systemTemp !== null ? formatWad(systemTemp, 'WAD') : null,
+    },
+    {
+      label: 'Minimum Temperature (raw)',
+      value: minTemp !== null ? minTemp.toString() : null,
+    },
+    {
+      label: 'Minimum Temperature (WAD)',
+      value: minTemp !== null ? formatWad(minTemp, 'WAD') : null,
+    },
+    {
+      label: 'Maximum Temperature (raw)',
+      value: maxTemp !== null ? maxTemp.toString() : null,
+    },
+    {
+      label: 'Maximum Temperature (WAD)',
+      value: maxTemp !== null ? formatWad(maxTemp, 'WAD') : null,
+    },
+    { label: 'kP (raw)', value: kp !== null ? kp.toString() : null },
+    { label: 'kI (raw)', value: ki !== null ? ki.toString() : null },
+    { label: 'kD (raw)', value: kd !== null ? kd.toString() : null },
+    {
+      label: 'Emission Weight',
+      value: wEmission !== null ? wEmission.toString() : null,
+    },
+    {
+      label: 'Backlog Weight',
+      value: wBacklog !== null ? wBacklog.toString() : null,
+    },
+    { label: 'SLA Weight', value: wSla !== null ? wSla.toString() : null },
+    {
+      label: 'Integral Min (raw)',
+      value: integralMin !== null ? integralMin.toString() : null,
+    },
+    {
+      label: 'Integral Min (WAD)',
+      value: integralMin !== null ? formatWad(integralMin, 'WAD') : null,
+    },
+    {
+      label: 'Integral Max (raw)',
+      value: integralMax !== null ? integralMax.toString() : null,
+    },
+    {
+      label: 'Integral Max (WAD)',
+      value: integralMax !== null ? formatWad(integralMax, 'WAD') : null,
+    },
+  ];
+
+  ROLE_LABELS.forEach((role, index) => {
+    metrics.push({
+      label: `Role Temperature (${role})`,
+      value: roleTemps[index],
+    });
+  });
+
+  return {
+    key: 'thermostat',
+    name: 'Thermostat',
+    address,
+    metrics,
+  };
+}
+
+async function collectReputationEngineSummary(
+  address: string
+): Promise<ModuleSummary> {
+  const reputationEngine = await ethers.getContractAt(
+    'ReputationEngine',
+    address
+  );
+  const [
+    ownerAddress,
+    stakeManager,
+    premiumThreshold,
+    stakeWeight,
+    reputationWeight,
+    validationRewardPct,
+    pauser,
+    paused,
+    version,
+  ] = await Promise.all([
+    resolveOwner(reputationEngine),
+    callString(reputationEngine, 'stakeManager'),
+    callBigInt(reputationEngine, 'premiumThreshold'),
+    callBigInt(reputationEngine, 'stakeWeight'),
+    callBigInt(reputationEngine, 'reputationWeight'),
+    callBigInt(reputationEngine, 'validationRewardPercentage'),
+    callString(reputationEngine, 'pauser'),
+    callBoolean(reputationEngine, 'paused'),
+    callBigInt(reputationEngine, 'version'),
+  ]);
+
+  return {
+    key: 'reputationEngine',
+    name: 'ReputationEngine',
+    address,
+    metrics: [
+      { label: 'Owner', value: ownerAddress },
+      { label: 'StakeManager', value: normaliseAddress(stakeManager) },
+      {
+        label: 'Premium Threshold',
+        value:
+          premiumThreshold !== null
+            ? formatTokenAmount(premiumThreshold)
+            : null,
+      },
+      {
+        label: 'Stake Weight',
+        value: stakeWeight !== null ? formatWad(stakeWeight, 'WAD') : null,
+      },
+      {
+        label: 'Reputation Weight',
+        value:
+          reputationWeight !== null ? formatWad(reputationWeight, 'WAD') : null,
+      },
+      {
+        label: 'Validation Reward %',
+        value:
+          validationRewardPct !== null
+            ? `${formatUnitsRounded(validationRewardPct, 0)}%`
+            : null,
+      },
+      { label: 'Pauser', value: normaliseAddress(pauser) },
+      { label: 'Paused', value: paused },
+      {
+        label: 'Module Version',
+        value: version !== null ? version.toString() : null,
+      },
+    ],
+  };
+}
+
+async function collectIdentityRegistrySummary(
+  address: string
+): Promise<ModuleSummary> {
+  const identityRegistry = await ethers.getContractAt(
+    'IdentityRegistry',
+    address
+  );
+  const [
+    ownerAddress,
+    ens,
+    nameWrapper,
+    reputation,
+    attestationRegistry,
+    agentRootNode,
+    clubRootNode,
+    agentMerkleRoot,
+    validatorMerkleRoot,
+    agentAliases,
+    clubAliases,
+  ] = await Promise.all([
+    resolveOwner(identityRegistry),
+    callString(identityRegistry, 'ens'),
+    callString(identityRegistry, 'nameWrapper'),
+    callString(identityRegistry, 'reputationEngine'),
+    callString(identityRegistry, 'attestationRegistry'),
+    callString(identityRegistry, 'agentRootNode'),
+    callString(identityRegistry, 'clubRootNode'),
+    callString(identityRegistry, 'agentMerkleRoot'),
+    callString(identityRegistry, 'validatorMerkleRoot'),
+    (async () => {
+      try {
+        const roots: string[] =
+          await identityRegistry.getAgentRootNodeAliases();
+        return roots;
+      } catch (_) {
+        return null;
+      }
+    })(),
+    (async () => {
+      try {
+        const roots: string[] = await identityRegistry.getClubRootNodeAliases();
+        return roots;
+      } catch (_) {
+        return null;
+      }
+    })(),
+  ]);
+
+  return {
+    key: 'identityRegistry',
+    name: 'IdentityRegistry',
+    address,
+    metrics: [
+      { label: 'Owner', value: ownerAddress },
+      { label: 'ENS', value: normaliseAddress(ens) },
+      { label: 'NameWrapper', value: normaliseAddress(nameWrapper) },
+      { label: 'ReputationEngine', value: normaliseAddress(reputation) },
+      {
+        label: 'AttestationRegistry',
+        value: normaliseAddress(attestationRegistry),
+      },
+      { label: 'Agent Root Node', value: agentRootNode },
+      { label: 'Club Root Node', value: clubRootNode },
+      { label: 'Agent Merkle Root', value: agentMerkleRoot },
+      { label: 'Validator Merkle Root', value: validatorMerkleRoot },
+      {
+        label: 'Agent Root Aliases',
+        value:
+          agentAliases === null
+            ? null
+            : agentAliases.length > 0
+            ? agentAliases.join(', ')
+            : 'none',
+      },
+      {
+        label: 'Club Root Aliases',
+        value:
+          clubAliases === null
+            ? null
+            : clubAliases.length > 0
+            ? clubAliases.join(', ')
+            : 'none',
+      },
+    ],
+  };
+}
+
+async function collectPlatformIncentivesSummary(
+  address: string
+): Promise<ModuleSummary> {
+  const incentives = await ethers.getContractAt('PlatformIncentives', address);
+  const [ownerAddress, stakeManager, platformRegistry, jobRouter] =
+    await Promise.all([
+      resolveOwner(incentives),
+      callString(incentives, 'stakeManager'),
+      callString(incentives, 'platformRegistry'),
+      callString(incentives, 'jobRouter'),
+    ]);
+
+  return {
+    key: 'platformIncentives',
+    name: 'PlatformIncentives',
+    address,
+    metrics: [
+      { label: 'Owner', value: ownerAddress },
+      { label: 'StakeManager', value: normaliseAddress(stakeManager) },
+      { label: 'PlatformRegistry', value: normaliseAddress(platformRegistry) },
+      { label: 'JobRouter', value: normaliseAddress(jobRouter) },
+    ],
+  };
+}
+
 const COLLECTORS: Record<string, (address: string) => Promise<ModuleSummary>> =
   {
     stakeManager: collectStakeManagerSummary,
@@ -378,6 +832,11 @@ const COLLECTORS: Record<string, (address: string) => Promise<ModuleSummary>> =
     validationModule: collectValidationModuleSummary,
     platformRegistry: collectPlatformRegistrySummary,
     systemPause: collectSystemPauseSummary,
+    reputationEngine: collectReputationEngineSummary,
+    identityRegistry: collectIdentityRegistrySummary,
+    platformIncentives: collectPlatformIncentivesSummary,
+    rewardEngine: collectRewardEngineSummary,
+    thermostat: collectThermostatSummary,
   };
 
 function printModule(summary: ModuleSummary): void {
@@ -442,6 +901,21 @@ async function loadConfigSummary(configNetwork: string) {
   try {
     const { config } = loadTaxPolicyConfig({ network: configNetwork });
     result.taxPolicy = config;
+  } catch (_) {}
+
+  try {
+    const { config } = loadIdentityRegistryConfig({ network: configNetwork });
+    result.identityRegistry = config;
+  } catch (_) {}
+
+  try {
+    const { config } = loadRewardEngineConfig({ network: configNetwork });
+    result.rewardEngine = config;
+  } catch (_) {}
+
+  try {
+    const { config } = loadThermodynamicsConfig({ network: configNetwork });
+    result.thermodynamics = config;
   } catch (_) {}
 
   return result;

@@ -88,3 +88,34 @@ review each step, and submit it through your usual governance approval flow.
 
 When `--execute` is omitted the helper acts as a dry run, enabling governance to
 review or hand the plan to a multisig for offline execution.
+
+## Enhanced owner control dashboard
+
+Run `npm run owner:dashboard` to inspect the live deployment in a single view.
+The dashboard now audits every production-critical module referenced in
+`docs/deployment-addresses.json`, including the `RewardEngineMB`,
+`Thermostat`, `ReputationEngine`, `IdentityRegistry`, and `PlatformIncentives`
+contracts alongside the existing StakeManager, FeePool, JobRegistry,
+ValidationModule, PlatformRegistry, TaxPolicy, and SystemPause summaries.
+
+Key improvements:
+
+- **Full thermodynamics visibility** – the reward engine displays kappa,
+  manual fallback temperature, per-role shares, µ values, and baseline energy.
+- **Closed-loop monitoring** – the thermostat report shows raw and WAD-scaled
+  temperatures, PID gains, KPI weights, and role overrides so operators can
+  confirm feedback tuning.
+- **Reputation transparency** – premium thresholds, stake weights, validator
+  reward percentages, pauser, and current pause status surface directly from the
+  ReputationEngine.
+- **Identity assurance** – ENS, NameWrapper, attestation registry links, and
+  configured root hashes (plus aliases) provide an immediate health check on the
+  IdentityRegistry.
+- **Platform incentives hygiene** – all routing dependencies surface so teams can
+  validate staking automation before executing updates.
+
+Use `npm run owner:dashboard -- --json` for machine-readable output; the JSON now
+bundles the extended configuration snapshots (`identityRegistry`, `rewardEngine`,
+`thermodynamics`, etc.) to align off-chain plans with deployed state. This
+ensures the contract owner always retains an auditable, end-to-end view of every
+parameter that governs the AGI Jobs incentive economy.
