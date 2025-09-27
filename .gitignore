@@ -7,6 +7,9 @@ coverage.json
 
 .next/
 
+# TypeScript incremental builds
+*.tsbuildinfo
+
 # Ignore built scripts
 scripts/**/*.js
 !scripts/constants.js
