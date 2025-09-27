@@ -884,17 +884,25 @@ function loadTaxPolicyConfig(options = {}) {
   return { config, path: configPath, network };
 }
 
-function normaliseThermodynamicsConfig(config = {}) {
-  const result = { ...config };
+function normaliseRewardEngineConfig(config = {}) {
+  if (!config || typeof config !== 'object') {
+    return {};
+  }
 
-  if (result.rewardEngine && typeof result.rewardEngine === 'object') {
-    const reward = { ...result.rewardEngine };
+  const reward = { ...config };
 
-    if (reward.address !== undefined) {
+  if (reward.address !== undefined) {
+    if (reward.address === null || reward.address === '') {
+      delete reward.address;
+    } else {
       reward.address = ensureAddress(reward.address, 'RewardEngine address');
     }
+  }
 
-    if (reward.treasury !== undefined) {
+  if (reward.treasury !== undefined) {
+    if (reward.treasury === null || reward.treasury === '') {
+      reward.treasury = ethers.ZeroAddress;
+    } else {
       reward.treasury = ensureAddress(
         reward.treasury,
         'RewardEngine treasury',
@@ -903,27 +911,35 @@ function normaliseThermodynamicsConfig(config = {}) {
         }
       );
     }
+  }
 
-    if (reward.thermostat !== undefined) {
-      const allowZero = reward.thermostat === null || reward.thermostat === '';
-      reward.thermostat = allowZero
-        ? ethers.ZeroAddress
-        : ensureAddress(reward.thermostat, 'RewardEngine thermostat', {
-            allowZero: true,
-          });
+  if (reward.thermostat !== undefined) {
+    const allowZero = reward.thermostat === null || reward.thermostat === '';
+    reward.thermostat = allowZero
+      ? ethers.ZeroAddress
+      : ensureAddress(reward.thermostat, 'RewardEngine thermostat', {
+          allowZero: true,
+        });
+  }
+
+  if (reward.settlers && typeof reward.settlers === 'object') {
+    const mapped = {};
+    for (const [key, value] of Object.entries(reward.settlers)) {
+      if (value === undefined || value === null) continue;
+      const address = ensureAddress(key, `RewardEngine settler ${key}`);
+      mapped[address] = Boolean(value);
     }
+    reward.settlers = mapped;
+  }
 
-    if (reward.settlers && typeof reward.settlers === 'object') {
-      const mapped = {};
-      for (const [key, value] of Object.entries(reward.settlers)) {
-        if (value === undefined || value === null) continue;
-        const address = ensureAddress(key, `RewardEngine settler ${key}`);
-        mapped[address] = Boolean(value);
-      }
-      reward.settlers = mapped;
-    }
+  return reward;
+}
 
-    result.rewardEngine = reward;
+function normaliseThermodynamicsConfig(config = {}) {
+  const result = { ...config };
+
+  if (result.rewardEngine && typeof result.rewardEngine === 'object') {
+    result.rewardEngine = normaliseRewardEngineConfig(result.rewardEngine);
   }
 
   if (result.thermostat && typeof result.thermostat === 'object') {
@@ -965,6 +981,54 @@ function loadThermodynamicsConfig(options = {}) {
   }
   const config = normaliseThermodynamicsConfig(readJson(configPath));
   return { config, path: configPath, network };
+}
+
+function loadRewardEngineConfig(options = {}) {
+  const network = resolveNetwork(options);
+  let configPath = options.path ? path.resolve(options.path) : undefined;
+  let source = 'reward-engine';
+
+  if (configPath) {
+    if (!fs.existsSync(configPath)) {
+      throw new Error(`Reward engine config not found at ${configPath}`);
+    }
+  } else {
+    const candidate = findConfigPath('reward-engine', network);
+    if (fs.existsSync(candidate)) {
+      configPath = candidate;
+    } else {
+      const thermoPath = findConfigPath('thermodynamics', network);
+      if (!fs.existsSync(thermoPath)) {
+        throw new Error(
+          'Reward engine config not found. Create config/reward-engine.json or include a rewardEngine section in config/thermodynamics.json'
+        );
+      }
+      configPath = thermoPath;
+      source = 'thermodynamics';
+    }
+  }
+
+  if (!configPath) {
+    throw new Error('Unable to resolve reward engine config path');
+  }
+
+  const raw = readJson(configPath);
+
+  let rewardConfig;
+  if (raw && typeof raw === 'object' && raw.rewardEngine) {
+    rewardConfig = normaliseRewardEngineConfig(raw.rewardEngine);
+    source = 'thermodynamics';
+  } else {
+    rewardConfig = normaliseRewardEngineConfig(raw);
+  }
+
+  if (!rewardConfig || Object.keys(rewardConfig).length === 0) {
+    throw new Error(
+      `Reward engine configuration is empty in ${configPath}. Provide the required parameters.`
+    );
+  }
+
+  return { config: rewardConfig, path: configPath, network, source };
 }
 
 function normaliseRootEntry(key, root) {
@@ -1401,6 +1465,7 @@ module.exports = {
   loadPlatformRegistryConfig,
   loadTaxPolicyConfig,
   loadThermodynamicsConfig,
+  loadRewardEngineConfig,
   loadDeploymentPlan,
   inferNetworkKey,
 };

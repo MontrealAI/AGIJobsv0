@@ -196,6 +196,13 @@ export interface RewardEngineThermoConfig {
   [key: string]: unknown;
 }
 
+export interface RewardEngineConfigResult {
+  config: RewardEngineThermoConfig;
+  path: string;
+  network?: SupportedNetwork;
+  source?: 'reward-engine' | 'thermodynamics';
+}
+
 export interface ThermostatConfigInput {
   address?: string | null;
   systemTemperature?: number | string;
@@ -387,6 +394,9 @@ export function loadTaxPolicyConfig(
 export function loadThermodynamicsConfig(
   options?: LoadOptions
 ): ThermodynamicsConfigResult;
+export function loadRewardEngineConfig(
+  options?: LoadOptions
+): RewardEngineConfigResult;
 export function loadDeploymentPlan(
   options?: DeploymentPlanOptions
 ): DeploymentPlanResult;
