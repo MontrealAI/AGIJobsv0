@@ -1,0 +1,27 @@
+{
+  "address": "0x0000000000000000000000000000000000000000",
+  "treasury": "0x0000000000000000000000000000000000000000",
+  "thermostat": "0x0000000000000000000000000000000000000000",
+  "roleShares": {
+    "agent": 65,
+    "validator": 15,
+    "operator": 15,
+    "employer": 5
+  },
+  "mu": {
+    "agent": "0",
+    "validator": "0",
+    "operator": "0",
+    "employer": "0"
+  },
+  "baselineEnergy": {
+    "agent": "0",
+    "validator": "0",
+    "operator": "0",
+    "employer": "0"
+  },
+  "kappa": "1000000000000000000",
+  "maxProofs": 100,
+  "temperature": "1000000000000000000",
+  "settlers": {}
+}
