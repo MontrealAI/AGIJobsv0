@@ -79,36 +79,51 @@ export function ChatWindow() {
         return;
       }
 
-      const valid: ExecutionReceipt[] = parsed
-        .map((item) => {
-          if (!item || typeof item !== 'object') {
-            return null;
-          }
+      const valid = parsed.reduce<ExecutionReceipt[]>((acc, item) => {
+        if (!item || typeof item !== 'object') {
+          return acc;
+        }
 
-          const candidate = item as Partial<ExecutionReceipt>;
-          if (!candidate.id || typeof candidate.id !== 'string') {
-            return null;
-          }
+        const candidate = item as Partial<ExecutionReceipt>;
+        if (!candidate.id || typeof candidate.id !== 'string') {
+          return acc;
+        }
 
-          return {
-            id: candidate.id,
-            jobId: candidate.jobId,
-            specCid: candidate.specCid,
-            reward: candidate.reward,
-            token: candidate.token,
-            receiptUrl: candidate.receiptUrl,
-            createdAt:
-              typeof candidate.createdAt === 'number'
-                ? candidate.createdAt
-                : Date.now(),
-          } satisfies ExecutionReceipt;
-        })
-        .filter((item): item is ExecutionReceipt => item !== null)
-        .slice(0, RECEIPT_HISTORY_LIMIT);
+        const record: ExecutionReceipt = {
+          id: candidate.id,
+          jobId: typeof candidate.jobId === 'number' ? candidate.jobId : undefined,
+          specCid:
+            typeof candidate.specCid === 'string' && candidate.specCid.length > 0
+              ? candidate.specCid
+              : undefined,
+          reward:
+            typeof candidate.reward === 'string' && candidate.reward.length > 0
+              ? candidate.reward
+              : undefined,
+          token:
+            typeof candidate.token === 'string' && candidate.token.length > 0
+              ? candidate.token
+              : undefined,
+          receiptUrl:
+            typeof candidate.receiptUrl === 'string' &&
+            candidate.receiptUrl.length > 0
+              ? candidate.receiptUrl
+              : undefined,
+          createdAt:
+            typeof candidate.createdAt === 'number'
+              ? candidate.createdAt
+              : Date.now(),
+        };
+
+        acc.push(record);
+        return acc;
+      }, []);
 
       if (valid.length > 0) {
-        setReceipts(valid);
-        setLatestReceipt(valid[0] ?? null);
+        valid.sort((a, b) => b.createdAt - a.createdAt);
+        const limited = valid.slice(0, RECEIPT_HISTORY_LIMIT);
+        setReceipts(limited);
+        setLatestReceipt(limited[0] ?? null);
       }
     } catch (error) {
       console.error('Failed to restore receipts from storage.', error);
