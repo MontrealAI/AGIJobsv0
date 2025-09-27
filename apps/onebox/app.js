@@ -20,39 +20,58 @@ const STORAGE_KEYS = {
   STATUS_INTERVAL: 'ONEBOX_STATUS_INTERVAL',
   EXPERT_MODE: 'ONEBOX_EXPERT_MODE',
 };
-const DEFAULT_STATUS_INTERVAL = 30_000;
+const DEFAULT_STATUS_INTERVAL = 30000;
 
 const COPY = {
   planning: 'Let me prepare this…',
   executing: 'Publishing to the network… this usually takes a few seconds.',
   posted: (id, url) =>
     `✅ Job <b>#${id ?? '?'}</b> is live. ${
-      url ? `<a target="_blank" rel="noopener" href="${url}">Verify on chain</a>` : ''
+      url
+        ? `<a target="_blank" rel="noopener" href="${url}">Verify on chain</a>`
+        : ''
     }`,
   finalized: (id, url) =>
     `✅ Job <b>#${id}</b> finalized. ${
       url ? `<a target="_blank" rel="noopener" href="${url}">Receipt</a>` : ''
     }`,
   cancelled: 'Okay, cancelled.',
-  status: (s) =>
-    `Job <b>#${s.jobId}</b> is <b>${s.state}</b>${
-      s.reward ? `. Reward ${s.reward}` : ''
-    }${s.token ? ` ${s.token}` : ''}.`,
+  status: (s) => {
+    const label = formatStateLabel(s.statusLabel || s.state || s.status);
+    const token = s.token || s.rewardToken;
+    const reward = s.reward
+      ? `Reward ${s.reward}${token ? ` ${token}` : ''}`
+      : '';
+    const parts = [`Job <b>#${s.jobId}</b> is <b>${label || 'unknown'}</b>`];
+    if (reward) {
+      parts.push(reward);
+    }
+    return `${parts.join('. ')}.`;
+  },
 };
 
 const ERRORS = {
-  INSUFFICIENT_BALANCE: 'You don’t have enough AGIALPHA to fund this job. Reduce the reward or top up.',
-  INSUFFICIENT_ALLOWANCE: 'Your wallet needs permission to use AGIALPHA. I can prepare an approval transaction.',
-  IPFS_FAILED: 'I couldn’t package your job details. Remove broken links and try again.',
-  DEADLINE_INVALID: 'That deadline is in the past. Pick at least 24 hours from now.',
+  INSUFFICIENT_BALANCE:
+    'You don’t have enough AGIALPHA to fund this job. Reduce the reward or top up.',
+  INSUFFICIENT_ALLOWANCE:
+    'Your wallet needs permission to use AGIALPHA. I can prepare an approval transaction.',
+  IPFS_FAILED:
+    'I couldn’t package your job details. Remove broken links and try again.',
+  DEADLINE_INVALID:
+    'That deadline is in the past. Pick at least 24 hours from now.',
   NETWORK_CONGESTED: 'The network is busy; I’ll keep retrying for a moment.',
-  RELAYER_NOT_CONFIGURED: 'The orchestrator isn’t configured to relay transactions yet. Ask the operator to set ONEBOX_RELAYER_PRIVATE_KEY.',
-  JOB_ID_REQUIRED: 'I need a job ID to continue. Include the job number in your request.',
+  RELAYER_NOT_CONFIGURED:
+    'The orchestrator isn’t configured to relay transactions yet. Ask the operator to set ONEBOX_RELAYER_PRIVATE_KEY.',
+  JOB_ID_REQUIRED:
+    'I need a job ID to continue. Include the job number in your request.',
   REQUEST_EMPTY: 'Please describe what you need before sending.',
-  UNSUPPORTED_ACTION: 'That action isn’t available yet. Try posting, checking status, or finalizing jobs.',
+  UNSUPPORTED_ACTION:
+    'That action isn’t available yet. Try posting, checking status, or finalizing jobs.',
   NO_WALLET: 'Connect an EIP-1193 wallet before using Expert Mode.',
-  NETWORK_FAILURE: 'I couldn’t reach the orchestrator. Check the URL or try again in a moment.',
-  UNKNOWN: 'Something went wrong. Try rephrasing your request or adjust the reward/deadline.',
+  NETWORK_FAILURE:
+    'I couldn’t reach the orchestrator. Check the URL or try again in a moment.',
+  UNKNOWN:
+    'Something went wrong. Try rephrasing your request or adjust the reward/deadline.',
 };
 
 const DEMO_STATE = {
@@ -69,6 +88,63 @@ let bearerToken = (localStorage.getItem(STORAGE_KEYS.TOKEN) || '').trim();
 let statusInterval = readStatusInterval();
 let statusTimer = null;
 let demoMode = false;
+
+function formatStateLabel(value) {
+  if (!value) {
+    return 'Unknown';
+  }
+  return String(value)
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function normaliseStatusEntry(entry) {
+  if (!entry || entry.jobId === undefined || entry.jobId === null) {
+    return null;
+  }
+
+  const jobId = Number(entry.jobId);
+  if (!Number.isFinite(jobId) || jobId <= 0) {
+    return null;
+  }
+
+  const stateValue = entry.state || entry.status || undefined;
+  const statusLabel =
+    entry.statusLabel ||
+    (stateValue ? formatStateLabel(stateValue) : undefined);
+  const reward =
+    entry.reward === undefined || entry.reward === null
+      ? undefined
+      : formatReward(entry.reward);
+  const token = entry.token || entry.rewardToken || undefined;
+  const deadline = entry.deadline !== undefined ? entry.deadline : undefined;
+  const receiptUrl = entry.receiptUrl || entry.explorerUrl || undefined;
+
+  return {
+    jobId,
+    state: stateValue,
+    status: stateValue,
+    statusLabel,
+    reward,
+    token,
+    deadline,
+    assignee: entry.assignee,
+    receiptUrl,
+    explorerUrl: entry.explorerUrl,
+    updatedAt: entry.updatedAt ? Number(entry.updatedAt) : Date.now(),
+  };
+}
+
+function firstJobCard(response) {
+  if (!response) {
+    return null;
+  }
+  const jobs = response.jobs;
+  if (Array.isArray(jobs) && jobs.length > 0 && jobs[0]) {
+    return jobs[0];
+  }
+  return null;
+}
 
 hydrateFromQueryParams();
 
@@ -107,7 +183,9 @@ async function api(path, body) {
     headers.Authorization = `Bearer ${bearerToken}`;
   }
 
-  const url = path.startsWith('http') ? path : `${orchestratorUrl.replace(/\/$/, '')}${path}`;
+  const url = path.startsWith('http')
+    ? path
+    : `${orchestratorUrl.replace(/\/$/, '')}${path}`;
 
   try {
     const response = await fetch(url, {
@@ -130,7 +208,10 @@ async function api(path, body) {
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     if (message) {
-      if (message.toLowerCase().includes('fetch') || message.toLowerCase().includes('network')) {
+      if (
+        message.toLowerCase().includes('fetch') ||
+        message.toLowerCase().includes('network')
+      ) {
         throw new Error('NETWORK_FAILURE');
       }
       throw new Error(message);
@@ -153,7 +234,11 @@ async function extractErrorCode(response) {
       if (parsed && typeof parsed === 'object') {
         if (typeof parsed.error === 'string') return parsed.error;
         if (typeof parsed.detail === 'string') return parsed.detail;
-        if (parsed.detail && typeof parsed.detail === 'object' && typeof parsed.detail.error === 'string') {
+        if (
+          parsed.detail &&
+          typeof parsed.detail === 'object' &&
+          typeof parsed.detail.error === 'string'
+        ) {
           return parsed.detail.error;
         }
       }
@@ -163,7 +248,7 @@ async function extractErrorCode(response) {
       }
     }
     return raw.trim() || 'UNKNOWN';
-  } catch (err) {
+  } catch {
     return 'UNKNOWN';
   }
 }
@@ -187,7 +272,9 @@ function note(text) {
 
 function updateModeBadge() {
   if (modeBadge) {
-    modeBadge.textContent = `Mode: ${expertMode ? 'Expert (wallet)' : 'Guest (walletless)'}`;
+    modeBadge.textContent = `Mode: ${
+      expertMode ? 'Expert (wallet)' : 'Guest (walletless)'
+    }`;
     modeBadge.title = EXPERT_TOOLTIP[expertMode ? 'true' : 'false'];
   }
 }
@@ -240,12 +327,21 @@ async function execute(intent) {
         },
       ],
     });
-    const receiptUrl = (response.receiptUrl || '').replace(/0x[0-9a-fA-F]{64}.?$/, txHash);
+    const receiptUrl = (response.receiptUrl || '').replace(
+      /0x[0-9a-fA-F]{64}.?$/,
+      txHash
+    );
     if (intent.action === 'finalize_job') {
-      addMessage('assist', COPY.finalized(response.jobId || '?', receiptUrl || ''));
+      addMessage(
+        'assist',
+        COPY.finalized(response.jobId || '?', receiptUrl || '')
+      );
       rememberJob({ jobId: response.jobId, state: 'finalized', receiptUrl });
     } else {
-      addMessage('assist', COPY.posted(response.jobId || '?', receiptUrl || ''));
+      addMessage(
+        'assist',
+        COPY.posted(response.jobId || '?', receiptUrl || '')
+      );
       rememberJob({ jobId: response.jobId, state: 'open', receiptUrl });
     }
     renderTrackedJobs();
@@ -266,7 +362,9 @@ async function execute(intent) {
       state: 'open',
       reward: formatReward(intent.payload.reward),
       token: intent.payload.rewardToken || 'AGIALPHA',
-      deadline: intent.payload.deadlineDays ? humanDeadline(intent.payload.deadlineDays) : undefined,
+      deadline: intent.payload.deadlineDays
+        ? humanDeadline(intent.payload.deadlineDays)
+        : undefined,
     });
   }
   renderTrackedJobs();
@@ -286,10 +384,15 @@ async function go() {
 
     if (intent.action === 'check_status') {
       const jobId = resolveJobId(text, intent.payload?.jobId);
-      const status = await api(`/onebox/status?jobId=${jobId}`);
-      addMessage('assist', COPY.status(status));
-      rememberJob(status);
-      renderTrackedJobs();
+      const response = await api(`/onebox/status?jobId=${jobId}`);
+      const card = normaliseStatusEntry(firstJobCard(response));
+      if (card) {
+        addMessage('assist', COPY.status(card));
+        rememberJob(card);
+        renderTrackedJobs();
+      } else {
+        addMessage('assist', 'I couldn’t find updates for that job yet.');
+      }
       return;
     }
 
@@ -302,7 +405,8 @@ async function go() {
 function handleError(error) {
   const message = (error && error.message) || '';
   const upper = message.toUpperCase();
-  const key = Object.keys(ERRORS).find((code) => upper.includes(code)) || 'UNKNOWN';
+  const key =
+    Object.keys(ERRORS).find((code) => upper.includes(code)) || 'UNKNOWN';
   addMessage('assist', `⚠️ ${ERRORS[key]}`);
 }
 
@@ -322,19 +426,28 @@ function resolveJobId(text, fallback) {
 }
 
 function rememberJob(entry) {
-  if (!entry || !entry.jobId) {
+  const normalised = normaliseStatusEntry(entry);
+  if (!normalised) {
     return;
   }
-  const existing = trackedJobs.get(entry.jobId) || {};
-  trackedJobs.set(entry.jobId, {
-    ...existing,
-    ...entry,
-    updatedAt: Date.now(),
+  const existing = trackedJobs.get(normalised.jobId) || {};
+  const updatedAt = normalised.updatedAt ?? Date.now();
+  const merged = { ...existing };
+  Object.entries(normalised).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      merged[key] = value;
+    }
   });
+  merged.updatedAt = updatedAt;
+  trackedJobs.set(normalised.jobId, merged);
 }
 
 function renderTrackedJobs() {
-  renderStatuses(Array.from(trackedJobs.values()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)));
+  renderStatuses(
+    Array.from(trackedJobs.values()).sort(
+      (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)
+    )
+  );
 }
 
 function renderStatuses(list) {
@@ -357,13 +470,18 @@ function renderStatuses(list) {
     }
     const li = document.createElement('li');
     li.className = 'status-item';
-    const state = (item.state || 'unknown').toLowerCase();
-    const rewardText = item.reward ? `${item.reward}${item.token ? ` ${item.token}` : ''}` : '—';
+    const stateValue = item.state || item.status || 'unknown';
+    const stateClass = String(stateValue).toLowerCase().replace(/\s+/g, '-');
+    const rewardText = item.reward
+      ? `${item.reward}${item.token ? ` ${item.token}` : ''}`
+      : '—';
     const deadlineText = item.deadline ? describeDeadline(item.deadline) : '—';
     li.innerHTML = `
       <div class="status-top">
         <span class="status-id">#${item.jobId}</span>
-        <span class="status-chip ${state}">${state}</span>
+        <span class="status-chip ${stateClass}">${
+      item.statusLabel || formatStateLabel(stateValue)
+    }</span>
       </div>
       <div class="status-meta">Reward ${rewardText} · Deadline ${deadlineText}</div>
     `;
@@ -431,9 +549,12 @@ async function pollTrackedJobs() {
   );
   let changed = false;
   requests.forEach((result) => {
-    if (result.status === 'fulfilled' && result.value && result.value.jobId) {
-      rememberJob(result.value);
-      changed = true;
+    if (result.status === 'fulfilled') {
+      const card = normaliseStatusEntry(firstJobCard(result.value));
+      if (card) {
+        rememberJob(card);
+        changed = true;
+      }
     }
   });
   if (changed) {
@@ -453,7 +574,8 @@ function scheduleStatusPoll() {
     pollTrackedJobs().catch(() => {
       if (statusNote) {
         statusNote.hidden = false;
-        statusNote.textContent = 'Unable to refresh status right now. Retrying shortly…';
+        statusNote.textContent =
+          'Unable to refresh status right now. Retrying shortly…';
       }
     });
   }, statusInterval);
@@ -470,12 +592,20 @@ function readStatusInterval() {
 
 function hydrateFromQueryParams() {
   const params = new URLSearchParams(window.location.search);
-  const urlOverride = (params.get('orchestrator') || params.get('orch') || '').trim();
+  const urlOverride = (
+    params.get('orchestrator') ||
+    params.get('orch') ||
+    ''
+  ).trim();
   if (urlOverride) {
     orchestratorUrl = urlOverride;
     localStorage.setItem(STORAGE_KEYS.ORCH, orchestratorUrl);
   }
-  const tokenOverride = (params.get('token') || params.get('bearer') || '').trim();
+  const tokenOverride = (
+    params.get('token') ||
+    params.get('bearer') ||
+    ''
+  ).trim();
   if (tokenOverride) {
     bearerToken = tokenOverride;
     localStorage.setItem(STORAGE_KEYS.TOKEN, bearerToken);
@@ -520,7 +650,9 @@ function demoPlan(text) {
     };
   }
   if (lower.includes('final')) {
-    const jobId = extractJobId(clean) || (DEMO_STATE.jobs[0]?.jobId ?? DEMO_STATE.nextJobId - 1);
+    const jobId =
+      extractJobId(clean) ||
+      (DEMO_STATE.jobs[0]?.jobId ?? DEMO_STATE.nextJobId - 1);
     return {
       summary: `I’ll finalize job #${jobId}. Ready?`,
       intent: { action: 'finalize_job', payload: { jobId } },
@@ -531,7 +663,9 @@ function demoPlan(text) {
   const deadlineDays = extractDeadline(clean);
   const title = clean.length > 64 ? `${clean.slice(0, 61)}…` : clean;
   return {
-    summary: `I’ll post “${title}” with reward ${reward} AGIALPHA and deadline ${deadlineDays} day${deadlineDays === 1 ? '' : 's'}. Proceed?`,
+    summary: `I’ll post “${title}” with reward ${reward} AGIALPHA and deadline ${deadlineDays} day${
+      deadlineDays === 1 ? '' : 's'
+    }. Proceed?`,
     intent: {
       action: 'post_job',
       payload: {
@@ -555,7 +689,9 @@ function demoExecute(intent) {
     const reward = formatReward(intent.payload?.reward) || '5.0';
     const token = intent.payload?.rewardToken || 'AGIALPHA';
     const deadlineDays = intent.payload?.deadlineDays || 7;
-    const explorerUrl = `https://demo.explorer/tx/${jobId.toString(16).padStart(8, '0')}`;
+    const explorerUrl = `https://demo.explorer/tx/${jobId
+      .toString(16)
+      .padStart(8, '0')}`;
     const job = {
       jobId,
       state: 'open',
@@ -570,7 +706,10 @@ function demoExecute(intent) {
     return { jobId, receiptUrl: explorerUrl };
   }
   if (intent.action === 'finalize_job') {
-    const jobId = intent.payload?.jobId || DEMO_STATE.jobs[0]?.jobId || DEMO_STATE.nextJobId - 1;
+    const jobId =
+      intent.payload?.jobId ||
+      DEMO_STATE.jobs[0]?.jobId ||
+      DEMO_STATE.nextJobId - 1;
     const job = DEMO_STATE.jobs.find((j) => j.jobId === jobId);
     if (job) {
       job.state = 'finalized';
@@ -586,11 +725,19 @@ function demoExecute(intent) {
         updatedAt: Date.now(),
       });
     }
-    rememberJob({ jobId, state: 'finalized', receiptUrl: '#', updatedAt: Date.now() });
+    rememberJob({
+      jobId,
+      state: 'finalized',
+      receiptUrl: '#',
+      updatedAt: Date.now(),
+    });
     return { jobId, receiptUrl: '#' };
   }
   if (intent.action === 'check_status') {
-    const jobId = intent.payload?.jobId || DEMO_STATE.jobs[0]?.jobId || DEMO_STATE.nextJobId - 1;
+    const jobId =
+      intent.payload?.jobId ||
+      DEMO_STATE.jobs[0]?.jobId ||
+      DEMO_STATE.nextJobId - 1;
     return demoStatus(jobId);
   }
   throw new Error('UNSUPPORTED_ACTION');
@@ -598,26 +745,33 @@ function demoExecute(intent) {
 
 function demoStatus(jobId) {
   if (!jobId) {
-    return { jobId: 0, state: 'unknown' };
+    return { jobs: [] };
   }
   const job = DEMO_STATE.jobs.find((j) => j.jobId === jobId);
-  if (job) {
-    rememberJob(job);
-    renderTrackedJobs();
-    return job;
-  }
-  const fallback = {
-    jobId,
-    state: 'open',
-    reward: '5.0',
-    token: 'AGIALPHA',
-    deadline: '7 days',
-    explorerUrl: '#',
-    updatedAt: Date.now(),
-  };
-  rememberJob(fallback);
+  const card = job
+    ? {
+        jobId: job.jobId,
+        status: job.state || 'open',
+        statusLabel: formatStateLabel(job.state || 'open'),
+        reward: job.reward,
+        rewardToken: job.token,
+        deadline: job.deadline,
+        explorerUrl: job.explorerUrl,
+        updatedAt: job.updatedAt,
+      }
+    : {
+        jobId,
+        status: 'open',
+        statusLabel: 'Open',
+        reward: '5.0',
+        rewardToken: 'AGIALPHA',
+        deadline: '7 days',
+        explorerUrl: '#',
+        updatedAt: Date.now(),
+      };
+  rememberJob(card);
   renderTrackedJobs();
-  return fallback;
+  return { jobs: [card] };
 }
 
 function extractJobId(text) {
@@ -658,7 +812,11 @@ expertBtn.onclick = () => {
   expertMode = !expertMode;
   localStorage.setItem(STORAGE_KEYS.EXPERT_MODE, expertMode ? '1' : '0');
   updateModeBadge();
-  note(expertMode ? 'Expert Mode on. I’ll return calldata for signing.' : 'Guest Mode on. I’ll use the relayer when possible.');
+  note(
+    expertMode
+      ? 'Expert Mode on. I’ll return calldata for signing.'
+      : 'Guest Mode on. I’ll use the relayer when possible.'
+  );
 };
 
 saveBtn.onclick = () => {
@@ -669,7 +827,9 @@ saveBtn.onclick = () => {
   demoMode = !orchestratorUrl;
   note('Saved.');
   if (demoMode) {
-    note('Demo mode active. Requests will be simulated until an orchestrator URL is provided.');
+    note(
+      'Demo mode active. Requests will be simulated until an orchestrator URL is provided.'
+    );
   }
   scheduleStatusPoll();
   if (!demoMode) {
@@ -686,7 +846,8 @@ if (statusRefresh) {
       .catch(() => {
         if (statusNote) {
           statusNote.hidden = false;
-          statusNote.textContent = 'Unable to refresh status right now. Retrying shortly…';
+          statusNote.textContent =
+            'Unable to refresh status right now. Retrying shortly…';
         }
       });
   };
@@ -707,4 +868,3 @@ if (connectBtn) {
     }
   };
 }
-
