@@ -415,9 +415,20 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_wallet_with_deadline_days_succeeds(self) -> None:
         captured_metadata = {}
 
-        async def _fake_pin_json(metadata):
+        async def _fake_pin_json(metadata, file_name="payload.json"):
             captured_metadata.update(metadata)
-            return "bafkdeadline"
+            return {
+                "cid": "bafkdeadline",
+                "uri": "ipfs://bafkdeadline",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafkdeadline",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafkdeadline"],
+                "provider": "test",
+                "status": "pinned",
+                "requestId": file_name,
+                "size": None,
+                "pinnedAt": None,
+                "attempts": 1,
+            }
 
         intent = JobIntent(
             action="post_job",
