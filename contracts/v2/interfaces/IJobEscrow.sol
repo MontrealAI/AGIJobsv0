@@ -5,6 +5,7 @@ pragma solidity ^0.8.25;
 /// @notice Minimal interface for job escrow helpers
 interface IJobEscrow {
     event RewardPaid(uint256 indexed jobId, address indexed operator, uint256 amount);
+    event ResultTimeoutUpdated(uint256 timeout);
     /// @notice Post a new job and escrow the reward
     function postJob(uint256 reward, string calldata data, bytes32 seed) external returns (uint256);
 
@@ -19,4 +20,7 @@ interface IJobEscrow {
 
     /// @notice Acknowledge the tax policy and accept the job result
     function acknowledgeAndAcceptResult(uint256 jobId) external;
+
+    /// @notice Update the result acceptance timeout window.
+    function setResultTimeout(uint256 timeout) external;
 }
