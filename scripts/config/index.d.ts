@@ -203,6 +203,28 @@ export interface RewardEngineConfigResult {
   source?: 'reward-engine' | 'thermodynamics';
 }
 
+export interface HamiltonianMonitorRecordConfig {
+  d: string;
+  u: string;
+  timestamp?: string;
+  note?: string;
+  [key: string]: unknown;
+}
+
+export interface HamiltonianMonitorConfig {
+  address?: string;
+  window?: string;
+  resetHistory?: boolean;
+  records?: HamiltonianMonitorRecordConfig[];
+  [key: string]: unknown;
+}
+
+export interface HamiltonianMonitorConfigResult {
+  config: HamiltonianMonitorConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export interface ThermostatConfigInput {
   address?: string | null;
   systemTemperature?: number | string;
@@ -397,6 +419,9 @@ export function loadThermodynamicsConfig(
 export function loadRewardEngineConfig(
   options?: LoadOptions
 ): RewardEngineConfigResult;
+export function loadHamiltonianMonitorConfig(
+  options?: LoadOptions
+): HamiltonianMonitorConfigResult;
 export function loadDeploymentPlan(
   options?: DeploymentPlanOptions
 ): DeploymentPlanResult;

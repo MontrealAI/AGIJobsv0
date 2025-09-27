@@ -135,6 +135,30 @@ function ensureBytes32(value) {
   return ethers.hexlify(prefixed);
 }
 
+function ensureUint(value, label, { allowZero = false, optional = false } = {}) {
+  if (value === undefined || value === null || value === '') {
+    if (optional) {
+      return undefined;
+    }
+    throw new Error(`${label} is missing`);
+  }
+  const asString = typeof value === 'string' ? value.trim() : String(value);
+  if (!asString) {
+    if (optional) {
+      return undefined;
+    }
+    throw new Error(`${label} is missing`);
+  }
+  if (!/^\d+$/.test(asString)) {
+    throw new Error(`${label} must be a non-negative integer`);
+  }
+  const parsed = BigInt(asString);
+  if (!allowZero && parsed === 0n) {
+    throw new Error(`${label} must be greater than zero`);
+  }
+  return parsed.toString();
+}
+
 function normaliseAliasEntry(value, label) {
   if (value === undefined || value === null) {
     throw new Error(`${label} alias entry is undefined`);
@@ -1031,6 +1055,85 @@ function loadRewardEngineConfig(options = {}) {
   return { config: rewardConfig, path: configPath, network, source };
 }
 
+function normaliseHamiltonianRecord(entry, index) {
+  if (!entry || typeof entry !== 'object') {
+    throw new Error(`Hamiltonian records[${index}] must be an object`);
+  }
+
+  const record = {};
+  const dValue =
+    entry.d ?? entry.dissipation ?? entry.delta ?? entry.energy ?? entry.D;
+  const uValue = entry.u ?? entry.utility ?? entry.U;
+
+  record.d = ensureUint(dValue, `records[${index}].d`, {
+    allowZero: true,
+  });
+  record.u = ensureUint(uValue, `records[${index}].u`, {
+    allowZero: true,
+  });
+
+  if (entry.timestamp !== undefined && entry.timestamp !== null) {
+    record.timestamp = ensureUint(entry.timestamp, `records[${index}].timestamp`, {
+      allowZero: true,
+    });
+  }
+
+  if (entry.note !== undefined && entry.note !== null) {
+    record.note = String(entry.note);
+  }
+
+  return record;
+}
+
+function normaliseHamiltonianMonitorConfig(raw = {}) {
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('Hamiltonian monitor config must be an object');
+  }
+
+  const config = {};
+
+  if (raw.address !== undefined && raw.address !== null) {
+    config.address = ensureAddress(
+      raw.address,
+      'Hamiltonian monitor address',
+      { allowZero: true }
+    );
+  }
+
+  if (raw.window !== undefined && raw.window !== null && raw.window !== '') {
+    config.window = ensureUint(raw.window, 'window', { allowZero: false });
+  }
+
+  const resetValue =
+    raw.resetHistory ?? raw.reset ?? raw.clearHistory ?? raw.historyReset;
+  if (resetValue !== undefined) {
+    config.resetHistory = Boolean(resetValue);
+  }
+
+  if (Array.isArray(raw.records)) {
+    config.records = raw.records.map((entry, index) =>
+      normaliseHamiltonianRecord(entry, index)
+    );
+  }
+
+  return config;
+}
+
+function loadHamiltonianMonitorConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('hamiltonian-monitor', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(
+      `Hamiltonian monitor config not found at ${configPath}. Create config/hamiltonian-monitor.json or pass --config <path>`
+    );
+  }
+  const rawConfig = readJson(configPath);
+  const config = normaliseHamiltonianMonitorConfig(rawConfig);
+  return { config, path: configPath, network };
+}
+
 function normaliseRootEntry(key, root) {
   let source = root;
   if (typeof root === 'string') {
@@ -1466,6 +1569,7 @@ module.exports = {
   loadTaxPolicyConfig,
   loadThermodynamicsConfig,
   loadRewardEngineConfig,
+  loadHamiltonianMonitorConfig,
   loadDeploymentPlan,
   inferNetworkKey,
 };
