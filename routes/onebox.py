@@ -3,7 +3,7 @@
 # Exposes: POST /onebox/plan, POST /onebox/execute, GET /onebox/status
 # Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
 
-import os, json, re
+import os, json, re, asyncio
 from decimal import Decimal
 from typing import Optional, Literal, List, Tuple, Dict, Any
 
@@ -259,7 +259,9 @@ async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
         raise HTTPException(400, "Relayer not configured")
     signed = relayer.sign_transaction(tx)
     txh = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
-    receipt = w3.eth.wait_for_transaction_receipt(txh, timeout=180)
+    receipt = await asyncio.to_thread(
+        w3.eth.wait_for_transaction_receipt, txh, timeout=180
+    )
     return txh, dict(receipt)
 
 async def _read_status(job_id: int) -> StatusResponse:
