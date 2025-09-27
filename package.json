@@ -40,6 +40,7 @@
     "identity:register": "npx ts-node scripts/identity/manageEnsKeys.ts",
     "identity:update": "npx hardhat run scripts/v2/updateIdentityRegistry.ts",
     "reward-engine:update": "npx hardhat run scripts/v2/updateRewardEngine.ts",
+    "thermostat:update": "npx hardhat run scripts/v2/updateThermostat.ts",
     "hamiltonian:update": "npx hardhat run scripts/v2/updateHamiltonianMonitor.ts",
     "platform:registry:update": "npx hardhat run scripts/v2/updatePlatformRegistry.ts",
     "namehash:mainnet": "node scripts/compute-namehash.js deployment-config/mainnet.json",

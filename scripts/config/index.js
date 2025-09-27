@@ -1087,6 +1087,53 @@ function normaliseRewardEngineConfig(config = {}) {
   return reward;
 }
 
+const CLEAR_ROLE_TEMP_VALUES = new Set([
+  'unset',
+  'remove',
+  'clear',
+  'none',
+]);
+
+function normaliseThermostatConfig(config = {}) {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    throw new Error('Thermostat configuration must be an object');
+  }
+
+  const thermo = { ...config };
+
+  if (thermo.address !== undefined) {
+    const allowZero = thermo.address === null || thermo.address === '';
+    thermo.address = allowZero
+      ? ethers.ZeroAddress
+      : ensureAddress(thermo.address, 'Thermostat address', {
+          allowZero: true,
+        });
+  }
+
+  if (thermo.roleTemperatures && typeof thermo.roleTemperatures === 'object') {
+    const mapped = {};
+    for (const [key, value] of Object.entries(thermo.roleTemperatures)) {
+      if (value === undefined) continue;
+      if (value === null) {
+        mapped[key] = null;
+        continue;
+      }
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed) continue;
+        if (CLEAR_ROLE_TEMP_VALUES.has(trimmed.toLowerCase())) {
+          mapped[key] = null;
+          continue;
+        }
+      }
+      mapped[key] = value;
+    }
+    thermo.roleTemperatures = mapped;
+  }
+
+  return thermo;
+}
+
 function normaliseThermodynamicsConfig(config = {}) {
   const result = { ...config };
 
@@ -1095,29 +1142,7 @@ function normaliseThermodynamicsConfig(config = {}) {
   }
 
   if (result.thermostat && typeof result.thermostat === 'object') {
-    const thermo = { ...result.thermostat };
-
-    if (thermo.address !== undefined) {
-      const allowZero = thermo.address === null || thermo.address === '';
-      thermo.address = allowZero
-        ? ethers.ZeroAddress
-        : ensureAddress(thermo.address, 'Thermostat address', {
-            allowZero: true,
-          });
-    }
-
-    if (
-      thermo.roleTemperatures &&
-      typeof thermo.roleTemperatures === 'object'
-    ) {
-      const mapped = {};
-      for (const [key, value] of Object.entries(thermo.roleTemperatures)) {
-        mapped[key] = value;
-      }
-      thermo.roleTemperatures = mapped;
-    }
-
-    result.thermostat = thermo;
+    result.thermostat = normaliseThermostatConfig(result.thermostat);
   }
 
   return result;
@@ -1181,6 +1206,82 @@ function loadRewardEngineConfig(options = {}) {
   }
 
   return { config: rewardConfig, path: configPath, network, source };
+}
+
+function loadThermostatConfig(options = {}) {
+  const network = resolveNetwork(options);
+  let configPath = options.path ? path.resolve(options.path) : undefined;
+  let source = 'thermostat';
+  let rewardEngineThermostat;
+
+  if (configPath) {
+    if (!fs.existsSync(configPath)) {
+      throw new Error(`Thermostat config not found at ${configPath}`);
+    }
+  } else {
+    const thermostatPath = findConfigPath('thermostat', network);
+    if (fs.existsSync(thermostatPath)) {
+      configPath = thermostatPath;
+    } else {
+      const thermoPath = findConfigPath('thermodynamics', network);
+      if (!fs.existsSync(thermoPath)) {
+        throw new Error(
+          'Thermostat config not found. Create config/thermostat.json or include a thermostat section in config/thermodynamics.json'
+        );
+      }
+      configPath = thermoPath;
+      source = 'thermodynamics';
+    }
+  }
+
+  if (!configPath) {
+    throw new Error('Unable to resolve thermostat config path');
+  }
+
+  const raw = readJson(configPath);
+  if (!raw || typeof raw !== 'object') {
+    throw new Error(`Thermostat configuration in ${configPath} must be an object`);
+  }
+
+  let thermostatConfig;
+  if (source === 'thermodynamics') {
+    const thermoSection = raw.thermostat;
+    if (!thermoSection || typeof thermoSection !== 'object') {
+      throw new Error(
+        `Thermodynamics config at ${configPath} is missing a thermostat section`
+      );
+    }
+    thermostatConfig = normaliseThermostatConfig(thermoSection);
+    if (
+      raw.rewardEngine &&
+      typeof raw.rewardEngine === 'object' &&
+      raw.rewardEngine.thermostat !== undefined &&
+      raw.rewardEngine.thermostat !== null &&
+      raw.rewardEngine.thermostat !== ''
+    ) {
+      rewardEngineThermostat = ensureAddress(
+        raw.rewardEngine.thermostat,
+        'rewardEngine.thermostat',
+        { allowZero: true }
+      );
+    }
+  } else {
+    thermostatConfig = normaliseThermostatConfig(raw);
+  }
+
+  if (!thermostatConfig || Object.keys(thermostatConfig).length === 0) {
+    throw new Error(
+      `Thermostat configuration is empty in ${configPath}. Provide the required parameters.`
+    );
+  }
+
+  return {
+    config: thermostatConfig,
+    path: configPath,
+    network,
+    source,
+    rewardEngineThermostat,
+  };
 }
 
 function normaliseHamiltonianRecord(entry, index) {
@@ -1698,6 +1799,7 @@ module.exports = {
   loadPlatformRegistryConfig,
   loadTaxPolicyConfig,
   loadThermodynamicsConfig,
+  loadThermostatConfig,
   loadRewardEngineConfig,
   loadHamiltonianMonitorConfig,
   loadOwnerControlConfig,
