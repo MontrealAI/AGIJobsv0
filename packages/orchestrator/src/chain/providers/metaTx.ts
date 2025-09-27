@@ -9,7 +9,7 @@ const FORWARDER_ABI = [
 
 const policy = policyManager();
 
-interface ForwarderConfig {
+export interface ForwarderConfig {
   address: string;
   gasBuffer: bigint;
 }
@@ -44,7 +44,7 @@ function getForwarderConfig(): ForwarderConfig {
   return forwarderConfigCache;
 }
 
-class MetaTxSigner extends ethers.AbstractSigner {
+export class MetaTxSigner extends ethers.AbstractSigner {
   private readonly userWallet: ethers.Wallet;
 
   private readonly relayerWallet: ethers.Wallet;

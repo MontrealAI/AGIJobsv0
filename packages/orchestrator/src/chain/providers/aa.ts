@@ -17,7 +17,7 @@ const SIMPLE_ACCOUNT_FACTORY_ABI = [
   "function createAccount(address owner,uint256 salt) returns (address)",
 ];
 
-interface AccountAbstractionConfig {
+export interface AccountAbstractionConfig {
   entryPoint: string;
   bundlerUrl: string;
   bundlerHeaders: Record<string, string>;
@@ -146,7 +146,7 @@ const factoryInterface = new ethers.Interface(SIMPLE_ACCOUNT_FACTORY_ABI);
 
 const entryPointInterface = new ethers.Interface(ENTRY_POINT_ABI);
 
-class AccountAbstractionSigner extends ethers.AbstractSigner {
+export class AccountAbstractionSigner extends ethers.AbstractSigner {
   private smartAccountAddress?: string;
 
   private readonly config: AccountAbstractionConfig;
