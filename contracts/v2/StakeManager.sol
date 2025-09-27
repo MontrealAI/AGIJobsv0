@@ -318,6 +318,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool stakeRecommendationsUpdated,
         bool maxAGITypesUpdated,
         bool maxTotalPayoutPctUpdated,
+        bool paused,
+        bool unpaused,
         uint256 treasuryAllowlistUpdates
     );
 
@@ -381,6 +383,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 maxAGITypes;
         bool setMaxTotalPayoutPct;
         uint256 maxTotalPayoutPct;
+        bool pause;
+        bool unpause;
     }
 
     struct TreasuryAllowlistUpdate {
@@ -893,12 +897,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice Apply a batch of configuration updates in a single transaction.
-    /// @param config Packed configuration toggles and values to apply.
+    /// @param config Packed configuration toggles and values to apply. Supports pausing/unpausing via
+    ///        the `pause` and `unpause` flags for faster incident response.
     /// @param allowlistUpdates Treasury allowlist entries to update before applying setters.
     function applyConfiguration(
         ConfigUpdate calldata config,
         TreasuryAllowlistUpdate[] calldata allowlistUpdates
     ) external onlyGovernance {
+        if (config.pause && config.unpause) {
+            revert InvalidParams();
+        }
+
         uint256 allowlistLen = allowlistUpdates.length;
         for (uint256 i; i < allowlistLen; i++) {
             TreasuryAllowlistUpdate calldata entry = allowlistUpdates[i];
@@ -926,6 +935,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool stakeRecommendationsChanged;
         bool maxAGITypesChanged;
         bool maxTotalPayoutPctChanged;
+        bool pausedChanged;
+        bool unpausedChanged;
 
         if (config.setPauser) {
             _setPauser(config.pauser);
@@ -1043,6 +1054,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             if (validatorChanged) validatorRewardPctChanged = true;
         }
 
+        if (config.pause && !paused()) {
+            _pause();
+            pausedChanged = true;
+        }
+
+        if (config.unpause && paused()) {
+            _unpause();
+            unpausedChanged = true;
+        }
+
         emit ConfigurationApplied(
             msg.sender,
             pauserChanged,
@@ -1066,6 +1087,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             stakeRecommendationsChanged,
             maxAGITypesChanged,
             maxTotalPayoutPctChanged,
+            pausedChanged,
+            unpausedChanged,
             allowlistLen
         );
     }

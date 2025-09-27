@@ -168,7 +168,7 @@ flowchart LR
         SMCFG[ConfigUpdate
         • treasury & allowlist
         • fee/burn/validator %
-        • pauser & auto-tuning
+        • pauser, pause/unpause & auto-tuning
         • job/dispute modules]
         AL[AllowlistUpdate[]]
         SMCFG -->|1.| StakeManager
@@ -192,7 +192,7 @@ flowchart LR
     JRCFG -.via Safe bundle .-> GOV
 ```
 
-**StakeManager** – call `applyConfiguration(ConfigUpdate, TreasuryAllowlistUpdate[])` when you need to adjust protocol fees, pauser keys, dispute modules, or auto-stake tuning thresholds. Populate the `allowlistUpdates` array first so new treasury addresses are authorised before being set.
+**StakeManager** – call `applyConfiguration(ConfigUpdate, TreasuryAllowlistUpdate[])` when you need to adjust protocol fees, pauser keys, pause/unpause the system, dispute modules, or auto-stake tuning thresholds. Populate the `allowlistUpdates` array first so new treasury addresses are authorised before being set.
 
 **JobRegistry** – call `applyConfiguration(ConfigUpdate, AcknowledgerUpdate[], address[] ackModules)` to refresh ENS roots, rotate modules, update fee splits, or bump the agent authorisation cache. Passing `setModuleBundle=true` rewires the entire module graph and validates every version atomically.
 
