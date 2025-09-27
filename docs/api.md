@@ -120,6 +120,7 @@ Stores platform fees and distributes rewards.
 
 - `depositFee(amount)` – `StakeManager` deposits collected fees.
 - `claimRewards()` – stakers withdraw accumulated rewards.
+- `reward(to, amount)` – authorised rewarders may transfer surplus tokens, but the pool guarantees that `pendingFees` remain reserved for automated fee distribution and will revert with `InsufficientRewardBalance` if a transfer would reduce that balance.
 
 ```javascript
 await feePool.depositFee(feeAmount);

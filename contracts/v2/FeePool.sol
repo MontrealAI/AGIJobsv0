@@ -26,6 +26,8 @@ error InvalidTreasury();
 error InvalidTaxPolicy();
 error InvalidRecipient();
 error PolicyNotTaxExempt();
+/// @dev Attempted to transfer rewards that overlap with reserved pending fees.
+error InsufficientRewardBalance();
 /// @dev Caller is not the governance contract.
 error NotGovernance();
 /// @dev Caller is neither the owner nor the designated pauser.
@@ -247,6 +249,10 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         if (!rewarders[msg.sender]) revert NotRewarder();
         if (to == address(0)) revert InvalidRecipient();
         if (amount == 0) revert ZeroAmount();
+        uint256 totalBalance = token.balanceOf(address(this));
+        if (totalBalance <= pendingFees) revert InsufficientRewardBalance();
+        uint256 available = totalBalance - pendingFees;
+        if (amount > available) revert InsufficientRewardBalance();
         token.safeTransfer(to, amount);
         if (to == treasury) {
             treasuryRewards[to] += amount;
