@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import express from 'express';
 import {
   Contract,
@@ -80,6 +80,43 @@ function statusFromError(error: unknown): number {
     return (error as { status: number }).status;
   }
   return 500;
+}
+
+function timingSafeStringCompare(a: string, b: string): boolean {
+  const aBuffer = Buffer.from(a);
+  const bBuffer = Buffer.from(b);
+  if (aBuffer.length !== bBuffer.length) {
+    return false;
+  }
+  return timingSafeEqual(aBuffer, bBuffer);
+}
+
+function isValidBearer(header: string, secret: string): boolean {
+  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+  if (!match) return false;
+  const token = match[1].trim();
+  return timingSafeStringCompare(token, secret);
+}
+
+function isValidHmac(header: string, secret: string, req: express.Request): boolean {
+  const match = /^HMAC\s+(.+)$/i.exec(header.trim());
+  if (!match) return false;
+  const [timestampPart, signaturePart] = match[1].split(':');
+  if (!timestampPart || !signaturePart) return false;
+
+  const timestamp = Number(timestampPart);
+  if (!Number.isFinite(timestamp)) return false;
+
+  const nowMs = Date.now();
+  const timestampMs = timestamp * 1000;
+  const skewMs = Math.abs(nowMs - timestampMs);
+  if (skewMs > 5 * 60 * 1000) {
+    return false;
+  }
+
+  const canonical = `${req.method.toUpperCase()} ${req.originalUrl ?? req.url} ${timestampPart}`;
+  const expectedSignature = createHmac('sha256', secret).update(canonical).digest('hex');
+  return timingSafeStringCompare(signaturePart, expectedSignature);
 }
 
 const STATUS_ABI = [
@@ -380,7 +417,38 @@ export class DefaultOneboxService implements OneboxService {
 }
 
 export function createOneboxRouter(service: OneboxService = new DefaultOneboxService()): express.Router {
+  const expectedSecret = (process.env.ONEBOX_API_TOKEN ?? process.env.API_TOKEN ?? '').trim();
   const router = express.Router();
+
+  router.use((req, res, next) => {
+    if (!expectedSecret) {
+      logEvent('warn', 'onebox.auth.missing_secret', {
+        correlationId: getCorrelationId(req),
+      });
+      res.status(401).json({ error: 'API token not configured.' });
+      return;
+    }
+
+    const header = req.headers.authorization;
+    if (typeof header !== 'string' || header.trim().length === 0) {
+      logEvent('warn', 'onebox.auth.missing_header', {
+        correlationId: getCorrelationId(req),
+      });
+      res.status(401).json({ error: 'Missing authorization header.' });
+      return;
+    }
+
+    if (isValidBearer(header, expectedSecret) || isValidHmac(header, expectedSecret, req)) {
+      next();
+      return;
+    }
+
+    logEvent('warn', 'onebox.auth.invalid_token', {
+      correlationId: getCorrelationId(req),
+      scheme: header.split(' ')[0],
+    });
+    res.status(403).json({ error: 'Invalid authorization token.' });
+  });
 
   router.use((req, res, next) => {
     const correlationId = getCorrelationId(req);
