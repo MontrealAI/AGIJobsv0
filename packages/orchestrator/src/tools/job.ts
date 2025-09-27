@@ -7,7 +7,10 @@ import type {
 } from "../router.js";
 import { loadContracts } from "../chain/contracts.js";
 import { getSignerForUser } from "../chain/provider.js";
-import { formatError, pinToIpfs, toWei } from "./common.js";
+import { formatError, pinToIpfs, toWei, buildPolicyOverrides } from "./common.js";
+import { policyManager } from "../policy/index.js";
+
+const policy = policyManager();
 
 export async function* createJob(ics: CreateJobIntent) {
   const userId = ics.meta?.userId;
@@ -19,6 +22,7 @@ export async function* createJob(ics: CreateJobIntent) {
   try {
     const job = ics.params.job;
     const reward = toWei(job.rewardAGIA);
+    policy.validateJobCreationBudget(reward);
     const deadline = normalizeDeadline(job.deadline);
     yield "📦 Packaging job spec…\n";
     const specPayload = job.spec;
@@ -30,10 +34,19 @@ export async function* createJob(ics: CreateJobIntent) {
 
     const signer = await getSignerForUser(userId);
     const { jobRegistry } = loadContracts(signer);
-    const tx = await jobRegistry.createJob(reward, deadline, specHash, uri);
+    const tx = await jobRegistry.createJob(
+      reward,
+      deadline,
+      specHash,
+      uri,
+      buildPolicyOverrides(ics.meta, { jobBudgetWei: reward })
+    );
     yield `⛓️ Tx submitted: ${tx.hash}\n`;
     const receipt = await tx.wait();
     const jobId = extractJobId(jobRegistry, receipt);
+    if (jobId) {
+      policy.registerJobBudget(jobId, reward);
+    }
     yield `✅ Job posted${jobId ? ` with ID ${jobId}` : ""}.\n`;
   } catch (error: unknown) {
     yield formatError(error);
@@ -55,7 +68,8 @@ export async function* applyJob(ics: ApplyJobIntent) {
     const tx = await jobRegistry.applyForJob(
       jobId,
       ics.params.ens.subdomain,
-      proof
+      proof,
+      buildPolicyOverrides(ics.meta, { jobId })
     );
     yield `⛓️ Tx submitted: ${tx.hash}\n`;
     await tx.wait();
@@ -101,7 +115,8 @@ export async function* submitWork(ics: SubmitWorkIntent) {
       resultHash,
       resultURI,
       ens.subdomain,
-      proof
+      proof,
+      buildPolicyOverrides(ics.meta, { jobId })
     );
     yield `⛓️ Tx submitted: ${tx.hash}\n`;
     await tx.wait();
@@ -122,7 +137,11 @@ export async function* finalize(ics: FinalizeIntent) {
     const jobId = normalizeJobId(ics.params.jobId);
     const signer = await getSignerForUser(userId);
     const { jobRegistry } = loadContracts(signer);
-    const tx = await jobRegistry.finalizeAfterValidation(jobId, ics.params.success);
+    const tx = await jobRegistry.finalizeAfterValidation(
+      jobId,
+      ics.params.success,
+      buildPolicyOverrides(ics.meta, { jobId })
+    );
     yield `⛓️ Tx submitted: ${tx.hash}\n`;
     await tx.wait();
     yield `✅ Job #${jobId.toString()} finalized.\n`;
