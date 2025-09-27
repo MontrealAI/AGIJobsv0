@@ -4,7 +4,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('JobEscrow', function () {
   let token, routing, escrow, owner, employer, operator;
-  let initialBalance, decimals;
+  let initialBalance, decimals, defaultTimeout;
   const seed = ethers.ZeroHash;
 
   beforeEach(async () => {
@@ -23,6 +23,14 @@ describe('JobEscrow', function () {
       AGIALPHA
     );
     initialBalance = ethers.parseUnits('1', AGIALPHA_DECIMALS);
+
+    for (const signer of [owner, employer, operator]) {
+      const balance = await token.balanceOf(signer.address);
+      if (balance > 0n) {
+        await token.connect(signer).burn(balance);
+      }
+    }
+
     await token.mint(employer.address, initialBalance);
 
     // Mock RoutingModule that always returns operator
@@ -35,6 +43,7 @@ describe('JobEscrow', function () {
     escrow = await Escrow.deploy(await routing.getAddress());
 
     decimals = AGIALPHA_DECIMALS;
+    defaultTimeout = await escrow.resultTimeout();
   });
 
   it('runs normal job flow', async () => {
@@ -76,7 +85,7 @@ describe('JobEscrow', function () {
       (l) => l.fragment && l.fragment.name === 'JobPosted'
     ).args.jobId;
     await escrow.connect(operator).submitResult(jobId, 'res');
-    await time.increase(3 * 24 * 60 * 60 + 1);
+    await time.increase(defaultTimeout + 1n);
     await expect(escrow.connect(operator).acceptResult(jobId))
       .to.emit(escrow, 'RewardPaid')
       .withArgs(jobId, operator.address, reward)
@@ -96,6 +105,39 @@ describe('JobEscrow', function () {
     await expect(
       escrow.connect(operator).acceptResult(jobId)
     ).to.be.revertedWithCustomError(escrow, 'Timeout');
+  });
+
+  it('owner can adjust the timeout window', async () => {
+    const reward = ethers.parseUnits('0.0004', decimals);
+    const newTimeout = 12n * 60n * 60n; // 12 hours
+    await expect(
+      escrow.connect(owner).setResultTimeout(newTimeout)
+    )
+      .to.emit(escrow, 'ResultTimeoutUpdated')
+      .withArgs(newTimeout);
+    expect(await escrow.resultTimeout()).to.equal(newTimeout);
+
+    await token.connect(employer).approve(await escrow.getAddress(), reward);
+    const tx = await escrow.connect(employer).postJob(reward, 'job', seed);
+    const jobId = (await tx.wait()).logs.find(
+      (l) => l.fragment && l.fragment.name === 'JobPosted'
+    ).args.jobId;
+    await escrow.connect(operator).submitResult(jobId, 'res');
+
+    await expect(
+      escrow.connect(operator).acceptResult(jobId)
+    ).to.be.revertedWithCustomError(escrow, 'Timeout');
+
+    await time.increase(newTimeout + 1n);
+    await expect(escrow.connect(operator).acceptResult(jobId))
+      .to.emit(escrow, 'RewardPaid')
+      .withArgs(jobId, operator.address, reward);
+  });
+
+  it('rejects zero timeout configuration', async () => {
+    await expect(
+      escrow.connect(owner).setResultTimeout(0)
+    ).to.be.revertedWithCustomError(escrow, 'InvalidTimeout');
   });
 
   it('acknowledgeAndAcceptResult accepts and records acknowledgement', async () => {

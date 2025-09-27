@@ -22,6 +22,7 @@ error InvalidCaller();
 error Timeout();
 error NoEther();
 error InvalidTokenDecimals();
+error InvalidTimeout();
 
 /// @title JobEscrow
 /// @notice Minimal job management with escrowed payments in an 18-decimal
@@ -46,13 +47,15 @@ contract JobEscrow is Ownable, ReentrancyGuard {
         string result;
     }
 
-    uint256 public constant TIMEOUT = 3 days;
+    uint256 public constant DEFAULT_TIMEOUT = 3 days;
     /// @notice ERC20 token used for rewards (immutable $AGIALPHA)
     IERC20 public immutable token = IERC20(AGIALPHA);
     IRoutingModule public routingModule;
     uint256 public nextJobId;
     mapping(uint256 => Job) public jobs;
     address public jobRegistry;
+    /// @notice Window after submission during which only employers may accept results.
+    uint256 public resultTimeout;
 
     event RoutingModuleUpdated(address indexed routingModule);
     event JobRegistryUpdated(address indexed jobRegistry);
@@ -73,6 +76,7 @@ contract JobEscrow is Ownable, ReentrancyGuard {
     event ResultSubmitted(uint256 indexed jobId, string result);
     event RewardPaid(uint256 indexed jobId, address indexed operator, uint256 amount);
     event ResultAccepted(uint256 indexed jobId, address caller);
+    event ResultTimeoutUpdated(uint256 timeout);
 
     /// @param _routing Routing module used to select operators for new jobs.
     constructor(IRoutingModule _routing) Ownable(msg.sender) {
@@ -80,6 +84,8 @@ contract JobEscrow is Ownable, ReentrancyGuard {
             revert InvalidTokenDecimals();
         }
         routingModule = _routing;
+        resultTimeout = DEFAULT_TIMEOUT;
+        emit ResultTimeoutUpdated(DEFAULT_TIMEOUT);
     }
     
     // ---------------------------------------------------------------------
@@ -94,6 +100,14 @@ contract JobEscrow is Ownable, ReentrancyGuard {
     function setJobRegistry(address registry) external onlyOwner {
         jobRegistry = registry;
         emit JobRegistryUpdated(registry);
+    }
+
+    /// @notice Update the result acceptance timeout window.
+    /// @param timeout New timeout in seconds.
+    function setResultTimeout(uint256 timeout) external onlyOwner {
+        if (timeout == 0) revert InvalidTimeout();
+        resultTimeout = timeout;
+        emit ResultTimeoutUpdated(timeout);
     }
 
     /// @notice Post a new job and escrow the reward.
@@ -153,7 +167,7 @@ contract JobEscrow is Ownable, ReentrancyGuard {
         if (msg.sender == job.employer) {
             // employer approval
         } else if (msg.sender == job.operator) {
-            if (block.timestamp < job.submittedAt + TIMEOUT) revert Timeout();
+            if (block.timestamp < job.submittedAt + resultTimeout) revert Timeout();
         } else {
             revert InvalidCaller();
         }
