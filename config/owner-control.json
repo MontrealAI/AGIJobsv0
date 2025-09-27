@@ -1,0 +1,57 @@
+{
+  "governance": "0x0000000000000000000000000000000000000000",
+  "owner": "0x0000000000000000000000000000000000000000",
+  "modules": {
+    "stakeManager": {
+      "type": "governable"
+    },
+    "jobRegistry": {
+      "type": "governable"
+    },
+    "rewardEngine": {
+      "type": "governable"
+    },
+    "thermostat": {
+      "type": "governable"
+    },
+    "systemPause": {
+      "type": "governable"
+    },
+    "feePool": {
+      "type": "ownable"
+    },
+    "platformRegistry": {
+      "type": "ownable"
+    },
+    "platformIncentives": {
+      "type": "ownable"
+    },
+    "jobRouter": {
+      "type": "ownable"
+    },
+    "validationModule": {
+      "type": "ownable"
+    },
+    "reputationEngine": {
+      "type": "ownable"
+    },
+    "disputeModule": {
+      "type": "ownable"
+    },
+    "arbitratorCommittee": {
+      "type": "ownable"
+    },
+    "certificateNFT": {
+      "type": "ownable"
+    },
+    "taxPolicy": {
+      "type": "ownable2step"
+    },
+    "identityRegistry": {
+      "type": "ownable2step"
+    },
+    "attestationRegistry": {
+      "type": "ownable"
+    }
+  }
+}

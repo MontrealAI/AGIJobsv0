@@ -116,6 +116,23 @@ npx hardhat run scripts/v2/updateSystemPause.ts --network <network>
 
 The script performs a dry run by default, reporting any address, ownership or pauser mismatches. Re-run with `--execute` once all modules report `owner == SystemPause` to apply the wiring transaction safely.
 
+### Governance & ownership rotation
+
+Keep a single source of truth for governance and ownership targets in [`config/owner-control.json`](config/owner-control.json). Populate the `governance` (timelock or multisig) and `owner` defaults, then override individual modules as required. The helper supports `governable`, `ownable` and `ownable2step` contracts and can emit a Gnosis Safe transaction bundle for non-technical operators.
+
+```bash
+# Preview pending updates
+npm run owner:rotate -- --network <network>
+
+# Emit a Safe bundle and execute changes once the plan looks correct
+npm run owner:rotate -- --network <network> \
+  --safe owner-rotation.json \
+  --safe-name "AGIJobs Governance Rotation" \
+  --execute
+```
+
+The script validates deployed bytecode, highlights modules missing configuration, and warns if any `Ownable2Step` contract still requires `acceptOwnership()` by the new controller. Safe bundles include typed inputs for inspection inside the transaction builder UI.
+
 ### Mainnet Deployment
 
 For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)](docs/deploying-agijobs-v2-truffle-cli.md). Operators who prefer an automated checklist can launch the guided wizard:

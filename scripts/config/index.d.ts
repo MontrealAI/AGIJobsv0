@@ -19,6 +19,32 @@ export interface GovernanceConfig {
   [key: string]: unknown;
 }
 
+export type OwnerControlModuleType = 'governable' | 'ownable' | 'ownable2step';
+
+export interface OwnerControlModuleConfig {
+  address?: string;
+  governance?: string;
+  owner?: string;
+  type?: OwnerControlModuleType | string;
+  label?: string;
+  skip?: boolean;
+  notes?: string[];
+  [key: string]: unknown;
+}
+
+export interface OwnerControlConfig {
+  governance?: string;
+  owner?: string;
+  modules?: Record<string, OwnerControlModuleConfig>;
+  [key: string]: unknown;
+}
+
+export interface OwnerControlConfigResult {
+  config: OwnerControlConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export interface TokenConfigResult {
   config: TokenConfig;
   path: string;
@@ -413,6 +439,9 @@ export function loadPlatformRegistryConfig(
 export function loadTaxPolicyConfig(
   options?: LoadOptions
 ): TaxPolicyConfigResult;
+export function loadOwnerControlConfig(
+  options?: LoadOptions
+): OwnerControlConfigResult;
 export function loadThermodynamicsConfig(
   options?: LoadOptions
 ): ThermodynamicsConfigResult;
