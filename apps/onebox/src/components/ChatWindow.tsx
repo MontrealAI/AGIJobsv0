@@ -70,6 +70,21 @@ const NETWORK_NAMES: Record<number, string> = {
 const resolveNetworkName = (chainId: number) =>
   NETWORK_NAMES[chainId] ?? `Chain ${chainId}`;
 
+const normalizeChainId = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+};
+
 const toErrorPayload = (error: unknown): ErrorPayload => ({
   error: error instanceof Error ? error.message : 'Unknown error',
 });
@@ -487,13 +502,14 @@ export function ChatWindow() {
   );
 
   const expertChainId = useMemo(() => {
-    if (lastExecute && typeof lastExecute.chainId === 'number') {
-      return lastExecute.chainId;
+    const executeChainId = normalizeChainId(lastExecute?.chainId);
+    if (executeChainId !== undefined) {
+      return executeChainId;
     }
 
-    const candidate = lastPlan?.intent?.payload?.chainId;
-    if (typeof candidate === 'number') {
-      return candidate;
+    const payloadChainId = normalizeChainId(lastPlan?.intent?.payload?.chainId);
+    if (payloadChainId !== undefined) {
+      return payloadChainId;
     }
 
     return undefined;
