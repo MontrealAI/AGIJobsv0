@@ -191,6 +191,31 @@ describe('FeePool', function () {
     expect(await feePool.treasuryRewards(treasury.address)).to.equal(50n);
   });
 
+  it('prevents rewarders from depleting pending fees', async () => {
+    await feePool.connect(owner).setRewarder(owner.address, true);
+
+    const poolAddress = await feePool.getAddress();
+    await token.mint(poolAddress, 150);
+
+    const stakeManagerAddr = await stakeManager.getAddress();
+    await ethers.provider.send('hardhat_setBalance', [
+      stakeManagerAddr,
+      '0x56BC75E2D63100000',
+    ]);
+    const smSigner = await ethers.getImpersonatedSigner(stakeManagerAddr);
+    await feePool.connect(smSigner).depositFee(100);
+
+    await expect(
+      feePool.connect(owner).reward(owner.address, 60)
+    ).to.be.revertedWithCustomError(feePool, 'InsufficientRewardBalance');
+
+    await expect(feePool.connect(owner).reward(owner.address, 50)).to.not.be
+      .reverted;
+
+    expect(await feePool.pendingFees()).to.equal(100n);
+    expect(await token.balanceOf(poolAddress)).to.equal(100n);
+  });
+
   it('distributes rewards to validators when configured', async () => {
     // additional validator stakes
     await token.connect(user1).approve(await stakeManager.getAddress(), 100);
