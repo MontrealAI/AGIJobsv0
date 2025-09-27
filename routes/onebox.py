@@ -1,335 +1,745 @@
 # routes/onebox.py
 # FastAPI router for a Web3-only, walletless-by-default "one-box" UX.
-# Exposes: POST /onebox/plan, POST /onebox/execute, GET /onebox/status
+# Exposes: POST /onebox/plan, POST /onebox/execute, GET /onebox/status,
+# plus /onebox/healthz and /onebox/metrics (Prometheus).
 # Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
 
-import os, json, time, math, re, asyncio
+import json
+import logging
+import os
+import re
+import time
 from decimal import Decimal
-from typing import Optional, Literal, List, Tuple, Dict, Any
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
-from fastapi import APIRouter, HTTPException, Depends, Header
+import httpx
+import prometheus_client
+from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from pydantic import BaseModel, Field
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
 from web3._utils.events import get_event_data
-import httpx
+from web3.middleware import geth_poa_middleware
+
+logger = logging.getLogger(__name__)
 
 # ---------- Settings ----------
 RPC_URL = os.getenv("RPC_URL", "")
-CHAIN_ID = int(os.getenv("CHAIN_ID", "0"))
-JOB_REGISTRY = Web3.to_checksum_address(os.getenv("JOB_REGISTRY", "0x0000000000000000000000000000000000000000"))
-AGIALPHA_TOKEN = Web3.to_checksum_address(os.getenv("AGIALPHA_TOKEN", "0x0000000000000000000000000000000000000000"))
-RELAYER_PK = os.getenv("RELAYER_PK", "")
-API_TOKEN = os.getenv("API_TOKEN", "")
-EXPLORER_TX_TPL = os.getenv("EXPLORER_TX_TPL", "https://explorer.example/tx/{tx}")
-PINNER_KIND = os.getenv("PINNER_KIND", "").lower()  # pinata|web3storage|nftstorage|ipfs_http
+CHAIN_ID = int(os.getenv("CHAIN_ID", "0") or "0")
+JOB_REGISTRY = Web3.to_checksum_address(
+    os.getenv("JOB_REGISTRY", "0x0000000000000000000000000000000000000000")
+)
+AGIALPHA_TOKEN = Web3.to_checksum_address(
+    os.getenv("AGIALPHA_TOKEN", "0x0000000000000000000000000000000000000000")
+)
+AGIALPHA_DECIMALS = int(os.getenv("AGIALPHA_DECIMALS", "18") or "18")
+_RELAYER_PK = os.getenv("ONEBOX_RELAYER_PRIVATE_KEY") or os.getenv("RELAYER_PK", "")
+_API_TOKEN = os.getenv("ONEBOX_API_TOKEN") or os.getenv("API_TOKEN", "")
+EXPLORER_TX_TPL = os.getenv(
+    "ONEBOX_EXPLORER_TX_BASE", os.getenv("EXPLORER_TX_TPL", "https://explorer.example/tx/{tx}")
+)
+PINNER_KIND = os.getenv("PINNER_KIND", "").lower()
 PINNER_ENDPOINT = os.getenv("PINNER_ENDPOINT", "")
 PINNER_TOKEN = os.getenv("PINNER_TOKEN", "")
 CORS_ALLOW_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "*").split(",")]
 
+if not RPC_URL:
+    raise RuntimeError("RPC_URL is required")
+
 # Minimal ABI (override via JOB_REGISTRY_ABI_JSON for your deployed interface)
 _MIN_ABI = [
-  {"inputs":[{"internalType":"string","name":"uri","type":"string"},
-             {"internalType":"address","name":"rewardToken","type":"address"},
-             {"internalType":"uint256","name":"reward","type":"uint256"},
-             {"internalType":"uint256","name":"deadlineDays","type":"uint256"}],
-   "name":"postJob","outputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],
-   "stateMutability":"nonpayable","type":"function"},
-  {"inputs":[{"internalType":"uint256","name":"jobId","type":"uint256"}],
-   "name":"finalize","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"anonymous":False,"inputs":[{"indexed":True,"internalType":"uint256","name":"jobId","type":"uint256"},
-                               {"indexed":True,"internalType":"address","name":"employer","type":"address"}],
-   "name":"JobCreated","type":"event"},
-  {"inputs":[],"name":"lastJobId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],
-   "stateMutability":"view","type":"function"}
+    {
+        "inputs": [
+            {"internalType": "string", "name": "uri", "type": "string"},
+            {"internalType": "address", "name": "rewardToken", "type": "address"},
+            {"internalType": "uint256", "name": "reward", "type": "uint256"},
+            {"internalType": "uint256", "name": "deadlineDays", "type": "uint256"},
+        ],
+        "name": "postJob",
+        "outputs": [
+            {"internalType": "uint256", "name": "jobId", "type": "uint256"},
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    {
+        "inputs": [
+            {"internalType": "uint256", "name": "jobId", "type": "uint256"},
+        ],
+        "name": "finalize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    {
+        "anonymous": False,
+        "inputs": [
+            {
+                "indexed": True,
+                "internalType": "uint256",
+                "name": "jobId",
+                "type": "uint256",
+            },
+            {
+                "indexed": True,
+                "internalType": "address",
+                "name": "employer",
+                "type": "address",
+            },
+        ],
+        "name": "JobCreated",
+        "type": "event",
+    },
+    {
+        "inputs": [],
+        "name": "lastJobId",
+        "outputs": [
+            {"internalType": "uint256", "name": "", "type": "uint256"},
+        ],
+        "stateMutability": "view",
+        "type": "function",
+    },
+    {
+        "inputs": [
+            {"internalType": "uint256", "name": "", "type": "uint256"},
+        ],
+        "name": "jobs",
+        "outputs": [
+            {"internalType": "address", "name": "employer", "type": "address"},
+            {"internalType": "address", "name": "agent", "type": "address"},
+            {"internalType": "uint256", "name": "reward", "type": "uint256"},
+            {"internalType": "uint256", "name": "protocolFee", "type": "uint256"},
+            {"internalType": "uint256", "name": "stake", "type": "uint256"},
+            {"internalType": "uint8", "name": "state", "type": "uint8"},
+            {"internalType": "bool", "name": "active", "type": "bool"},
+            {"internalType": "uint256", "name": "createdAt", "type": "uint256"},
+            {"internalType": "uint256", "name": "deadline", "type": "uint256"},
+            {"internalType": "uint256", "name": "assignedAt", "type": "uint256"},
+            {"internalType": "bytes32", "name": "specHash", "type": "bytes32"},
+            {"internalType": "string", "name": "uri", "type": "string"},
+        ],
+        "stateMutability": "view",
+        "type": "function",
+    },
 ]
 _ABI = json.loads(os.getenv("JOB_REGISTRY_ABI_JSON", json.dumps(_MIN_ABI)))
 
 # ---------- Web3 ----------
-if not RPC_URL:
-    raise RuntimeError("RPC_URL is required")
 w3 = Web3(Web3.HTTPProvider(RPC_URL, request_kwargs={"timeout": 45}))
-# PoA chains (Sepolia/others) sometimes need POA middleware:
 try:
     w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-except Exception:
+except Exception:  # pragma: no cover - middleware injection is best effort
     pass
 if CHAIN_ID and w3.eth.chain_id != CHAIN_ID:
-    # Not fatal, but helpful to catch misconfig
-    pass
+    logger.warning(
+        "chain id mismatch: provider=%s expected=%s", w3.eth.chain_id, CHAIN_ID
+    )
 registry = w3.eth.contract(address=JOB_REGISTRY, abi=_ABI)
-relayer = w3.eth.account.from_key(RELAYER_PK) if RELAYER_PK else None
+relayer = w3.eth.account.from_key(_RELAYER_PK) if _RELAYER_PK else None
+
+# ---------- Metrics ----------
+_METRICS_REGISTRY = prometheus_client.CollectorRegistry()
+_PLAN_TOTAL = prometheus_client.Counter(
+    "onebox_plan_total", "Total /onebox/plan calls", ["intent"], registry=_METRICS_REGISTRY
+)
+_EXECUTE_TOTAL = prometheus_client.Counter(
+    "onebox_execute_total",
+    "Total /onebox/execute calls",
+    ["intent", "mode", "status"],
+    registry=_METRICS_REGISTRY,
+)
+_EXECUTE_SECONDS = prometheus_client.Histogram(
+    "onebox_execute_seconds",
+    "Execution duration in seconds",
+    ["intent", "mode"],
+    registry=_METRICS_REGISTRY,
+)
+_STATUS_TOTAL = prometheus_client.Counter(
+    "onebox_status_total",
+    "Total /onebox/status calls",
+    ["state"],
+    registry=_METRICS_REGISTRY,
+)
 
 # ---------- API Router ----------
 router = APIRouter(prefix="/onebox", tags=["onebox"])
 
+
 def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
-    if not API_TOKEN:
+    if not _API_TOKEN:
         return
     if not auth or not auth.startswith("Bearer "):
-        raise HTTPException(401, "missing bearer token")
+        raise HTTPException(401, "AUTH_MISSING")
     token = auth.split(" ", 1)[1].strip()
-    if token != API_TOKEN:
-        raise HTTPException(401, "invalid bearer token")
+    if token != _API_TOKEN:
+        raise HTTPException(401, "AUTH_INVALID")
+
 
 # ---------- Models ----------
-Action = Literal["post_job","finalize_job","check_status","stake","dispute","validate"]
+Action = Literal[
+    "post_job",
+    "finalize_job",
+    "check_status",
+    "stake",
+    "validate",
+    "dispute",
+]
+
 
 class Attachment(BaseModel):
     name: str
     ipfs: Optional[str] = None
+    type: Optional[str] = None
+    url: Optional[str] = None
+
 
 class Payload(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    attachments: List[Attachment] = []
+    attachments: List[Attachment] = Field(default_factory=list)
     rewardToken: str = "AGIALPHA"
-    reward: Optional[str] = None          # human amount, e.g. "5.0"
+    reward: Optional[str] = None
     deadlineDays: Optional[int] = None
     jobId: Optional[int] = None
+    agentTypes: Optional[int] = None
+
 
 class JobIntent(BaseModel):
     action: Action
     payload: Payload
-    constraints: Dict[str, Any] = {}
-    userContext: Dict[str, Any] = {}
+    constraints: Dict[str, Any] = Field(default_factory=dict)
+    userContext: Dict[str, Any] = Field(default_factory=dict)
+
 
 class PlanRequest(BaseModel):
     text: str
     expert: bool = False
 
+
 class PlanResponse(BaseModel):
     summary: str
     intent: JobIntent
     requiresConfirmation: bool = True
-    warnings: List[str] = []
+    warnings: List[str] = Field(default_factory=list)
+
 
 class ExecuteRequest(BaseModel):
     intent: JobIntent
-    mode: Literal["relayer","wallet"] = "relayer"
+    mode: Literal["relayer", "wallet"] = "relayer"
+
 
 class ExecuteResponse(BaseModel):
     ok: bool = True
     jobId: Optional[int] = None
     txHash: Optional[str] = None
     receiptUrl: Optional[str] = None
-    # wallet mode (return tx data to sign)
+    specCid: Optional[str] = None
+    specHash: Optional[str] = None
+    deadline: Optional[int] = None
+    reward: Optional[str] = None
+    token: Optional[str] = None
+    status: Optional[str] = None
     to: Optional[str] = None
     data: Optional[str] = None
     value: Optional[str] = None
     chainId: Optional[int] = None
+    error: Optional[str] = None
+
 
 class StatusResponse(BaseModel):
     jobId: int
-    state: Literal["open","assigned","completed","finalized","unknown"] = "unknown"
+    state: Literal["open", "assigned", "completed", "finalized", "unknown", "disputed"] = (
+        "unknown"
+    )
     reward: Optional[str] = None
     token: Optional[str] = None
     deadline: Optional[int] = None
     assignee: Optional[str] = None
 
-# ---------- Error dictionary (humanized) ----------
-ERRORS = {
+
+_UINT64_MAX = (1 << 64) - 1
+_STATE_MAP = {
+    0: "draft",
+    1: "open",
+    2: "assigned",
+    3: "review",
+    4: "completed",
+    5: "disputed",
+    6: "finalized",
+}
+
+_ERRORS = {
     "INSUFFICIENT_BALANCE": "You don’t have enough AGIALPHA to fund this job. Reduce the reward or top up.",
     "INSUFFICIENT_ALLOWANCE": "Your wallet needs permission to use AGIALPHA. I can prepare an approval transaction.",
     "IPFS_FAILED": "I couldn’t package your job details. Remove broken links and try again.",
     "DEADLINE_INVALID": "That deadline is in the past. Pick at least 24 hours from now.",
     "NETWORK_CONGESTED": "The network is busy; I’ll retry briefly.",
-    "UNKNOWN": "Something went wrong. I’ll log details and help you try again."
+    "UNKNOWN": "Something went wrong. I’ll log details and help you try again.",
 }
+
 
 # ---------- Helpers ----------
 def _to_wei(amount: str) -> int:
-    return int(Decimal(amount) * (10 ** 18))
+    return int(Decimal(amount) * Decimal(10**AGIALPHA_DECIMALS))
+
+
+def _format_reward(value: int) -> str:
+    precision = Decimal(10**AGIALPHA_DECIMALS)
+    return str(Decimal(value) / precision)
+
 
 def _normalize_title(text: str) -> str:
     s = re.sub(r"\s+", " ", text).strip()
     return s[:160] if s else "New Job"
 
+
+def _extract_job_id(text: str) -> Optional[int]:
+    match = re.search(r"job\s*#?\s*(\d+)", text, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    digits = re.search(r"\b(\d{1,8})\b", text)
+    return int(digits.group(1)) if digits else None
+
+
+def _detect_action(text: str) -> Optional[str]:
+    lowered = text.lower()
+    if any(token in lowered for token in ["finalize", "complete", "finish", "payout", "pay out"]):
+        return "finalize_job"
+    if any(token in lowered for token in ["status", "state", "progress", "check on"]):
+        return "check_status"
+    if "stake" in lowered:
+        return "stake"
+    if "validate" in lowered:
+        return "validate"
+    if "dispute" in lowered:
+        return "dispute"
+    return None
+
+
+def _parse_reward(text: str) -> Optional[str]:
+    amt = re.search(r"(\d+(?:\.\d+)?)\s*(?:agi|agialpha)", text, re.IGNORECASE)
+    return amt.group(1) if amt else None
+
+
+def _parse_deadline_days(text: str) -> Optional[int]:
+    match = re.search(r"(\d+)\s*(?:d|day|days)", text, re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
+
+def _calculate_deadline_timestamp(days: int) -> int:
+    if days <= 0:
+        raise HTTPException(400, "DEADLINE_INVALID")
+    seconds = days * 86400
+    if seconds > _UINT64_MAX:
+        raise HTTPException(400, "DEADLINE_INVALID")
+    now = int(time.time())
+    deadline = now + seconds
+    if deadline > _UINT64_MAX:
+        raise HTTPException(400, "DEADLINE_INVALID")
+    return deadline
+
+
+def _compute_spec_hash(payload: Dict[str, Any]) -> bytes:
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return Web3.keccak(canonical)
+
+
 def _naive_parse(text: str) -> JobIntent:
-    t = text.strip()
-    amt = re.search(r"(\d+(?:\.\d+)?)\s*agi(?:alpha)?", t, re.I)
-    days = re.search(r"(\d+)\s*(?:d|day|days)", t, re.I)
-    reward = amt.group(1) if amt else "1.0"
-    deadline = int(days.group(1)) if days else 7
-    title = _normalize_title(t)
-    return JobIntent(action="post_job", payload=Payload(title=title, reward=reward, deadlineDays=deadline))
+    action = _detect_action(text)
+    job_id = _extract_job_id(text) if action in {"finalize_job", "check_status", "stake", "validate", "dispute"} else None
+    if action:
+        payload = Payload(jobId=job_id)
+        return JobIntent(action=action, payload=payload)
+
+    reward = _parse_reward(text) or "1.0"
+    deadline_days = _parse_deadline_days(text) or 7
+    title = _normalize_title(text)
+    payload = Payload(title=title, reward=reward, deadlineDays=deadline_days)
+    return JobIntent(action="post_job", payload=payload)
+
+
+def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool, List[str]]:
+    warnings: List[str] = []
+    request_snippet = request_text.strip()
+    if intent.action == "finalize_job":
+        jid = intent.payload.jobId
+        summary = f"Detected job finalization request for job {jid}. Confirm to finalize job {jid}."
+        return summary, True, warnings
+    if intent.action == "check_status":
+        jid = intent.payload.jobId
+        summary = f"Detected job status request for job {jid}. ({request_snippet})"
+        return summary, False, warnings
+    if intent.action == "stake":
+        jid = intent.payload.jobId
+        summary = f"Detected staking request for job {jid}. ({request_snippet}) Confirm to continue."
+        return summary, True, warnings
+    if intent.action == "validate":
+        jid = intent.payload.jobId
+        summary = (
+            f"Detected validation request for job {jid}. ({request_snippet}) "
+            f"Confirm to assign validators."
+        )
+        return summary, True, warnings
+    if intent.action == "dispute":
+        jid = intent.payload.jobId
+        summary = (
+            f"Detected dispute request for job {jid}. ({request_snippet}) "
+            f"Confirm to escalate job {jid}."
+        )
+        return summary, True, warnings
+
+    payload = intent.payload
+    reward = payload.reward or _parse_reward(request_text) or "1.0"
+    days = payload.deadlineDays if payload.deadlineDays is not None else (_parse_deadline_days(request_text) or 7)
+    title = payload.title or _normalize_title(request_text)
+    summary = (
+        f'I will post a job "{title}" with reward {reward} AGIALPHA '
+        f"and a {days}-day deadline. Proceed?"
+    )
+    if len(summary) > 140:
+        summary = summary[:137] + "…"
+    return summary, True, warnings
+
 
 async def _pin_json(obj: dict) -> str:
     if not PINNER_TOKEN or not PINNER_ENDPOINT:
-        # Dev fallback (still returns a stable-looking CID)
+        logger.warning("pinning disabled; returning static CID")
         return "bafkreigh2akiscaildcdevcidxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    headers = {}
-    body = obj
+    headers: Dict[str, str] = {"Content-Type": "application/json"}
+    body: Any = obj
     if PINNER_KIND == "pinata":
-        headers = {"Authorization": f"Bearer {PINNER_TOKEN}", "Content-Type": "application/json"}
+        headers["Authorization"] = f"Bearer {PINNER_TOKEN}"
         body = {"pinataContent": obj}
-    elif PINNER_KIND in ("web3storage","nftstorage"):
-        headers = {"Authorization": f"Bearer {PINNER_TOKEN}", "Content-Type": "application/json"}
-    elif PINNER_KIND == "ipfs_http":
-        headers = {"Authorization": f"Bearer {PINNER_TOKEN}", "Content-Type": "application/json"}
-    async with httpx.AsyncClient(timeout=45) as x:
-        r = await x.post(PINNER_ENDPOINT, headers=headers, json=body)
-    if r.status_code // 100 != 2:
-        raise HTTPException(502, f"{ERRORS['IPFS_FAILED']} (pinner {r.status_code})")
-    j = r.json() if r.content else {}
-    cid = j.get("IpfsHash") or j.get("cid") or j.get("Hash") or j.get("value") or None
+    elif PINNER_KIND in {"web3storage", "nftstorage", "ipfs_http"}:
+        headers["Authorization"] = f"Bearer {PINNER_TOKEN}"
+    try:
+        async with httpx.AsyncClient(timeout=45) as client:
+            response = await client.post(PINNER_ENDPOINT, headers=headers, json=body)
+    except httpx.RequestError as exc:  # pragma: no cover - network failures are runtime only
+        logger.error("pinning request failed: %s", exc)
+        raise HTTPException(502, "IPFS_FAILED") from exc
+    if response.status_code // 100 != 2:
+        logger.error("pinning service error: status=%s body=%s", response.status_code, response.text)
+        raise HTTPException(502, "IPFS_FAILED")
+    try:
+        payload = response.json() if response.content else {}
+    except ValueError as exc:
+        raise HTTPException(502, "IPFS_FAILED") from exc
+    cid = (
+        payload.get("IpfsHash")
+        or payload.get("cid")
+        or payload.get("Hash")
+        or payload.get("value")
+        or next(
+            (v for v in payload.values() if isinstance(v, str) and v.startswith("baf")),
+            None,
+        )
+    )
     if not cid:
-        # Some pin APIs return nested structures; attempt to find a cid-ish value
-        cid = next((v for v in j.values() if isinstance(v, str) and v.startswith("baf")), None)
-    if not cid:
-        raise HTTPException(502, ERRORS["IPFS_FAILED"])
+        raise HTTPException(502, "IPFS_FAILED")
     return cid
 
+
 def _build_tx(func, sender: str) -> dict:
-    # EIP-1559 defaults with estimation; fallback to legacy gasPrice if needed
     nonce = w3.eth.get_transaction_count(sender)
     try:
         gas = func.estimate_gas({"from": sender})
-    except Exception:
+    except Exception:  # pragma: no cover - gas estimation is best effort
         gas = 300000
     tx = func.build_transaction({"from": sender, "nonce": nonce, "chainId": CHAIN_ID, "gas": gas})
-    # Try EIP-1559 fields
     try:
-        base = w3.eth.get_block("pending").baseFeePerGas
-        prio = w3.eth.max_priority_fee
-        tx["maxFeePerGas"] = int(base * 2) + prio
-        tx["maxPriorityFeePerGas"] = prio
-    except Exception:
+        base = w3.eth.get_block("pending").get("baseFeePerGas")
+        if base is not None:
+            prio = getattr(w3.eth, "max_priority_fee", lambda: 2_000_000_000)()
+            tx["maxFeePerGas"] = int(base) * 2 + int(prio)
+            tx["maxPriorityFeePerGas"] = int(prio)
+        else:
+            raise ValueError("no base fee")
+    except Exception:  # pragma: no cover - legacy chains fallback
         tx["gasPrice"] = w3.to_wei("5", "gwei")
     return tx
+
 
 def _encode_wallet_call(func_name: str, args: list) -> Tuple[str, str]:
     data = registry.encodeABI(fn_name=func_name, args=args)
     return registry.address, data
 
+
 def _decode_job_created(receipt) -> Optional[int]:
-    # Try to parse JobCreated(jobId, employer)
     try:
-        evt_abi = next((a for a in _ABI if a.get("type")=="event" and a.get("name")=="JobCreated"), None)
-        if not evt_abi:
-            return None
-        for lg in receipt["logs"]:
-            try:
-                ev = get_event_data(w3.codec, evt_abi, lg)
-                if ev and ev["event"] == "JobCreated":
-                    return int(ev["args"]["jobId"])
-            except Exception:
-                continue
+        job_created = registry.events.JobCreated()
+        events = job_created.process_receipt(receipt)
+        for event in events:
+            args = event.get("args") if isinstance(event, dict) else getattr(event, "args", {})
+            if args and "jobId" in args:
+                return int(args["jobId"])
     except Exception:
         pass
-    # Fallback: try a view if available
+    try:
+        event_abi = next(
+            (a for a in _ABI if a.get("type") == "event" and a.get("name") == "JobCreated"),
+            None,
+        )
+        if event_abi:
+            for log in receipt.get("logs", []):
+                try:
+                    event = get_event_data(w3.codec, event_abi, log)
+                    if event and event.get("event") == "JobCreated":
+                        return int(event["args"]["jobId"])
+                except Exception:
+                    continue
+    except Exception:
+        pass
     try:
         return int(registry.functions.lastJobId().call())
     except Exception:
         return None
 
+
+def _decode_metadata(packed: int) -> Tuple[int, Optional[int], Optional[int]]:
+    state = packed & 0x7
+    deadline = (packed >> 77) & _UINT64_MAX
+    assigned = (packed >> 141) & _UINT64_MAX
+    return int(state), int(deadline) or None, int(assigned) or None
+
+
+async def _read_status(job_id: int) -> StatusResponse:
+    try:
+        job = registry.functions.jobs(int(job_id)).call()
+    except Exception as exc:
+        logger.error("status read failed for %s: %s", job_id, exc)
+        return StatusResponse(jobId=job_id, state="unknown")
+
+    agent = None
+    reward = 0
+    deadline = None
+    state_label = "unknown"
+
+    if isinstance(job, dict):
+        agent = job.get("agent")
+        reward = int(job.get("reward", 0))
+        packed = int(job.get("packedMetadata", 0))
+        state_code, deadline, _assigned = _decode_metadata(packed)
+        state_label = _STATE_MAP.get(state_code, "unknown")
+    elif isinstance(job, (list, tuple)) and len(job) >= 6:
+        agent = job[1]
+        reward = int(job[2])
+        state_code = int(job[5])
+        state_label = _STATE_MAP.get(state_code, "unknown")
+        if len(job) > 8 and job[8]:
+            deadline = int(job[8])
+    else:  # pragma: no cover - unexpected ABI shapes
+        logger.warning("unknown job payload shape for job %s", job_id)
+
+    assignee = None
+    if agent and int(agent, 16) != 0:
+        assignee = Web3.to_checksum_address(agent)
+
+    reward_str = _format_reward(reward) if reward else None
+    response = StatusResponse(
+        jobId=int(job_id),
+        state="disputed" if state_label == "disputed" else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown",
+        reward=reward_str,
+        token=AGIALPHA_TOKEN,
+        deadline=deadline,
+        assignee=assignee,
+    )
+    return response
+
+
 async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
     if not relayer:
-        raise HTTPException(400, "Relayer not configured")
+        raise HTTPException(400, "RELAY_UNAVAILABLE")
     signed = relayer.sign_transaction(tx)
     txh = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
     receipt = w3.eth.wait_for_transaction_receipt(txh, timeout=180)
     return txh, dict(receipt)
 
-async def _read_status(job_id: int) -> StatusResponse:
-    # NOTE: tailor to your contract (add views or parse events for richer state).
-    # Here we only return 'open' unless your ABI exposes more.
-    try:
-        # Example if you have a view: (customize as needed)
-        # st = registry.functions.getJobState(job_id).call()
-        # mapping = {0:"open",1:"assigned",2:"completed",3:"finalized"}
-        # return StatusResponse(jobId=job_id, state=mapping.get(st,"unknown"))
-        return StatusResponse(jobId=job_id, state="open")
-    except Exception:
-        return StatusResponse(jobId=job_id, state="unknown")
 
 # ---------- Routes ----------
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])
 async def plan(req: PlanRequest):
-    # If you have a meta-agent planner, import and call it here; fallback is naive parse.
-    # from your_planner_module import plan_text_to_intent
-    # intent = plan_text_to_intent(req.text)
     intent = _naive_parse(req.text)
-    p = intent.payload
-    reward = p.reward or "1.0"
-    days = p.deadlineDays if p.deadlineDays is not None else 7
-    summary = f'I will post a job “{p.title}” with reward {reward} AGIALPHA and a {days}-day deadline. Proceed?'
-    return PlanResponse(summary=summary, intent=intent, requiresConfirmation=True, warnings=[])
+    summary, requires_confirmation, warnings = _summary_for_intent(intent, req.text)
+    _PLAN_TOTAL.labels(intent=intent.action).inc()
+    return PlanResponse(
+        summary=summary,
+        intent=intent,
+        requiresConfirmation=requires_confirmation,
+        warnings=warnings,
+    )
+
 
 @router.post("/execute", response_model=ExecuteResponse, dependencies=[Depends(require_api)])
 async def execute(req: ExecuteRequest):
-    it = req.intent
-    p = it.payload
+    intent = req.intent
+    payload = intent.payload
+    labels = {"intent": intent.action, "mode": req.mode}
+    start = time.time()
 
-    # POST JOB
-    if it.action == "post_job":
-        if not p.reward or Decimal(p.reward) <= 0:
-            raise HTTPException(400, ERRORS["INSUFFICIENT_BALANCE"])
-        if p.deadlineDays is None or p.deadlineDays <= 0:
-            raise HTTPException(400, ERRORS["DEADLINE_INVALID"])
+    try:
+        if intent.action == "post_job":
+            if not payload.reward:
+                raise HTTPException(400, "INSUFFICIENT_BALANCE")
+            if payload.deadlineDays is None:
+                raise HTTPException(400, "DEADLINE_INVALID")
 
-        # 1) Pin job spec to IPFS
-        job_json = {
-            "title": p.title or "New Job",
-            "description": p.description or "",
-            "attachments": [a.dict() for a in p.attachments],
-            "rewardToken": "AGIALPHA",
-            "reward": p.reward,
-            "deadlineDays": p.deadlineDays
-        }
-        cid = await _pin_json(job_json)
-        uri = f"ipfs://{cid}"
-        reward_wei = _to_wei(p.reward)
+            deadline_ts = _calculate_deadline_timestamp(int(payload.deadlineDays))
+            job_payload = {
+                "title": payload.title or "New Job",
+                "description": payload.description or "",
+                "attachments": [a.dict() for a in payload.attachments],
+                "rewardToken": payload.rewardToken or "AGIALPHA",
+                "reward": str(payload.reward),
+                "deadlineDays": int(payload.deadlineDays),
+                "deadline": deadline_ts,
+                "agentTypes": payload.agentTypes,
+            }
+            spec_hash = _compute_spec_hash(job_payload)
+            job_payload["specHash"] = "0x" + spec_hash.hex()
+            cid = await _pin_json(job_payload)
+            uri = f"ipfs://{cid}"
+            reward_wei = _to_wei(str(payload.reward))
 
-        # 2) Wallet (expert) mode returns calldata, not executing server-side
-        if req.mode == "wallet":
-            to, data = _encode_wallet_call("postJob", [uri, AGIALPHA_TOKEN, reward_wei, int(p.deadlineDays)])
-            return ExecuteResponse(ok=True, to=to, data=data, value="0x0", chainId=CHAIN_ID)
+            if req.mode == "wallet":
+                to, data = _encode_wallet_call(
+                    "postJob",
+                    [uri, AGIALPHA_TOKEN, reward_wei, int(payload.deadlineDays)],
+                )
+                _EXECUTE_TOTAL.labels(status="prepared", **labels).inc()
+                _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
+                return ExecuteResponse(
+                    ok=True,
+                    to=to,
+                    data=data,
+                    value="0x0",
+                    chainId=CHAIN_ID,
+                    specCid=cid,
+                    specHash="0x" + spec_hash.hex(),
+                    deadline=deadline_ts,
+                    reward=str(payload.reward),
+                    token=payload.rewardToken,
+                    status="prepared",
+                )
 
-        # 3) Relayer mode (default)
-        if not relayer:
-            raise HTTPException(400, "Relayer not configured")
-        func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, int(p.deadlineDays))
-        tx = _build_tx(func, relayer.address)
-        txh, receipt = await _send_relayer_tx(tx)
-        job_id = _decode_job_created(receipt)
-        return ExecuteResponse(
-            ok=True,
-            jobId=job_id,
-            txHash=txh,
-            receiptUrl=EXPLORER_TX_TPL.format(tx=txh)
-        )
+            func = registry.functions.postJob(
+                uri, AGIALPHA_TOKEN, reward_wei, int(payload.deadlineDays)
+            )
+            sender = relayer.address if relayer else intent.userContext.get("sender")
+            if not sender:
+                raise HTTPException(400, "RELAY_UNAVAILABLE")
+            tx = _build_tx(func, sender)
+            txh, receipt = await _send_relayer_tx(tx)
+            job_id = _decode_job_created(receipt)
+            _EXECUTE_TOTAL.labels(status="ok", **labels).inc()
+            _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
+            return ExecuteResponse(
+                ok=True,
+                jobId=job_id,
+                txHash=txh,
+                receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
+                specCid=cid,
+                specHash="0x" + spec_hash.hex(),
+                deadline=deadline_ts,
+                reward=str(payload.reward),
+                token=payload.rewardToken,
+                status="submitted",
+            )
 
-    # FINALIZE
-    if it.action == "finalize_job":
-        if p.jobId is None:
-            raise HTTPException(400, "jobId required")
+        if intent.action == "finalize_job":
+            if payload.jobId is None:
+                raise HTTPException(400, "JOB_ID_REQUIRED")
+            if req.mode == "wallet":
+                to, data = _encode_wallet_call("finalize", [int(payload.jobId)])
+                _EXECUTE_TOTAL.labels(status="prepared", **labels).inc()
+                _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
+                return ExecuteResponse(
+                    ok=True,
+                    to=to,
+                    data=data,
+                    value="0x0",
+                    chainId=CHAIN_ID,
+                    jobId=int(payload.jobId),
+                    status="prepared",
+                )
+            func = registry.functions.finalize(int(payload.jobId))
+            if not relayer:
+                raise HTTPException(400, "RELAY_UNAVAILABLE")
+            tx = _build_tx(func, relayer.address)
+            txh, _receipt = await _send_relayer_tx(tx)
+            _EXECUTE_TOTAL.labels(status="ok", **labels).inc()
+            _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
+            return ExecuteResponse(
+                ok=True,
+                jobId=int(payload.jobId),
+                txHash=txh,
+                receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
+                status="finalized",
+            )
 
-        if req.mode == "wallet":
-            to, data = _encode_wallet_call("finalize", [int(p.jobId)])
-            return ExecuteResponse(ok=True, to=to, data=data, value="0x0", chainId=CHAIN_ID)
+        if intent.action == "check_status":
+            if payload.jobId is None:
+                raise HTTPException(400, "JOB_ID_REQUIRED")
+            status = await _read_status(int(payload.jobId))
+            _STATUS_TOTAL.labels(state=status.state).inc()
+            _EXECUTE_TOTAL.labels(status="ok", **labels).inc()
+            _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
+            return ExecuteResponse(
+                ok=True,
+                jobId=status.jobId,
+                status=status.state,
+                reward=status.reward,
+                token=status.token,
+            )
 
-        if not relayer:
-            raise HTTPException(400, "Relayer not configured")
-        func = registry.functions.finalize(int(p.jobId))
-        tx = _build_tx(func, relayer.address)
-        txh, _receipt = await _send_relayer_tx(tx)
-        return ExecuteResponse(
-            ok=True,
-            jobId=int(p.jobId),
-            txHash=txh,
-            receiptUrl=EXPLORER_TX_TPL.format(tx=txh)
-        )
+        raise HTTPException(400, "UNSUPPORTED_ACTION")
+    except HTTPException as exc:
+        _EXECUTE_TOTAL.labels(status="error", **labels).inc()
+        _EXECUTE_SECONDS.labels(**labels).observe(time.time() - start)
+        raise exc
 
-    # CHECK STATUS (read-only)
-    if it.action == "check_status":
-        jid = int(p.jobId or 0)
-        st = await _read_status(jid)
-        # Not a mutation, but we keep response shape consistent
-        return ExecuteResponse(ok=True, jobId=st.jobId)
-
-    raise HTTPException(400, "unsupported action")
 
 @router.get("/status", response_model=StatusResponse, dependencies=[Depends(require_api)])
 async def status(jobId: int):
-    return await _read_status(jobId)
+    status = await _read_status(jobId)
+    _STATUS_TOTAL.labels(state=status.state).inc()
+    return status
+
+
+@router.get("/healthz", dependencies=[Depends(require_api)])
+async def healthcheck():
+    return {
+        "ok": True,
+        "chainId": w3.eth.chain_id,
+        "registry": registry.address,
+        "relayerEnabled": bool(relayer),
+    }
+
+
+@router.get("/metrics")
+def metrics_endpoint():
+    payload = prometheus_client.generate_latest(_METRICS_REGISTRY)
+    return Response(payload, media_type=prometheus_client.CONTENT_TYPE_LATEST)
+
+
+__all__ = [
+    "Action",
+    "Attachment",
+    "ExecuteRequest",
+    "ExecuteResponse",
+    "JobIntent",
+    "Payload",
+    "PlanRequest",
+    "PlanResponse",
+    "StatusResponse",
+    "_calculate_deadline_timestamp",
+    "_compute_spec_hash",
+    "_decode_job_created",
+    "_naive_parse",
+    "execute",
+    "healthcheck",
+    "metrics_endpoint",
+    "plan",
+    "status",
+    "_UINT64_MAX",
+    "_read_status",
+]
