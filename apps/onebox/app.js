@@ -90,7 +90,13 @@ function confirmUI(summary,intent){
   const confirmBtn=message.querySelector('[data-role="confirm"]');
   const cancelBtn=message.querySelector('[data-role="cancel"]');
 
-  if(confirmBtn) confirmBtn.onclick=()=>execute(intent);
+  if(confirmBtn) confirmBtn.onclick=async()=>{
+    try{
+      await execute(intent);
+    }catch(e){
+      handleError(e);
+    }
+  };
   if(cancelBtn) cancelBtn.onclick=()=>add('assist', COPY.cancelled);
 }
 
