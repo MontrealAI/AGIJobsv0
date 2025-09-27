@@ -19,6 +19,7 @@ export type PlanAndExecuteArgs = {
 type PlanMeta = {
   traceId?: string;
   userId?: string;
+  txMode?: string;
 };
 
 export async function* planAndExecute({

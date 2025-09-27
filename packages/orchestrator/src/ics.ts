@@ -11,10 +11,26 @@ const ensSchema = z.object({
   proof: z.array(bytes32Schema).optional(),
 });
 
+const txModeSchema = z
+  .enum([
+    "aa",
+    "account-abstraction",
+    "account_abstraction",
+    "4337",
+    "relayer",
+    "2771",
+    "meta-tx",
+    "meta_tx",
+    "direct",
+    "raw",
+  ])
+  .optional();
+
 const metaSchema = z
   .object({
     traceId: z.string().uuid().optional(),
     userId: z.string().min(1).optional(),
+    txMode: txModeSchema,
   })
   .optional();
 

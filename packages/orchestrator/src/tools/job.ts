@@ -32,7 +32,7 @@ export async function* createJob(ics: CreateJobIntent) {
     yield `📨 Spec pinned: ${uri}\n`;
     yield `🧾 specHash: ${specHash}\n`;
 
-    const signer = await getSignerForUser(userId);
+    const signer = await getSignerForUser(userId, ics.meta?.txMode);
     const { jobRegistry } = loadContracts(signer);
     const tx = await jobRegistry.createJob(
       reward,
@@ -62,7 +62,7 @@ export async function* applyJob(ics: ApplyJobIntent) {
 
   try {
     const jobId = normalizeJobId(ics.params.jobId);
-    const signer = await getSignerForUser(userId);
+    const signer = await getSignerForUser(userId, ics.meta?.txMode);
     const { jobRegistry } = loadContracts(signer);
     const proof = ics.params.ens.proof ?? [];
     const tx = await jobRegistry.applyForJob(
@@ -107,7 +107,7 @@ export async function* submitWork(ics: SubmitWorkIntent) {
     }
 
     const resultHash = result.hash ?? ethers.id(hashSource ?? resultURI);
-    const signer = await getSignerForUser(userId);
+    const signer = await getSignerForUser(userId, ics.meta?.txMode);
     const { jobRegistry } = loadContracts(signer);
     const proof = ens.proof ?? [];
     const tx = await jobRegistry.submit(
@@ -135,7 +135,7 @@ export async function* finalize(ics: FinalizeIntent) {
 
   try {
     const jobId = normalizeJobId(ics.params.jobId);
-    const signer = await getSignerForUser(userId);
+    const signer = await getSignerForUser(userId, ics.meta?.txMode);
     const { jobRegistry } = loadContracts(signer);
     const tx = await jobRegistry.finalizeAfterValidation(
       jobId,
