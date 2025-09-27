@@ -8,6 +8,7 @@ import {
   AccountAbstractionSigner,
   type AccountAbstractionConfig,
 } from "../src/chain/providers/aa.js";
+import type { ManagedPaymasterClient } from "../src/chain/providers/paymaster.js";
 
 const relayerMnemonic = "test test test test test test test test test test test junk";
 const aaMnemonic = "test walk nut penalty hip pave soap entry language right filter choice";
@@ -16,6 +17,11 @@ const entryPointAddress = "0x0000000000000000000000000000000000000002";
 
 function snapshotEnv(keys: string[]) {
   return keys.map((key) => ({ key, value: process.env[key] }));
+}
+
+function randomWallet(): ethers.Wallet {
+  const wallet = ethers.Wallet.createRandom();
+  return new ethers.Wallet(wallet.privateKey);
 }
 
 function restoreEnv(entries: { key: string; value: string | undefined }[]) {
@@ -87,7 +93,7 @@ test("aa mode derives deterministic session keys per user", async () => {
 });
 
 test("aa signer falls back to bundler gas estimates for undeployed accounts", async () => {
-  const wallet = ethers.Wallet.createRandom();
+  const wallet = randomWallet();
   const config: AccountAbstractionConfig = {
     entryPoint: entryPointAddress,
     bundlerUrl: "http://127.0.0.1:4337",
@@ -129,4 +135,65 @@ test("aa signer falls back to bundler gas estimates for undeployed accounts", as
   assert.equal(userOp.preVerificationGas, bundlerEstimates.preVerificationGas);
   assert.equal(userOp.verificationGasLimit, bundlerEstimates.verificationGasLimit);
   assert.notEqual(userOp.callGasLimit, config.callGasBuffer);
+});
+
+test("aa signer forwards policy context to managed paymaster", async () => {
+  const wallet = randomWallet();
+  const staticContext = { sponsor: "static", jobId: "static-job" };
+  const paymasterCalls: Array<{ context?: Record<string, unknown> }> = [];
+
+  const paymaster = {
+    sponsorUserOperation: async (params: {
+      context?: Record<string, unknown>;
+    }) => {
+      paymasterCalls.push({ context: params.context });
+      return { paymasterAndData: "0x" };
+    },
+  } as unknown as ManagedPaymasterClient;
+
+  const config: AccountAbstractionConfig = {
+    entryPoint: entryPointAddress,
+    bundlerUrl: "http://127.0.0.1:4337",
+    bundlerHeaders: {},
+    accountSalt: 0n,
+    verificationGasLimit: 1_500_000n,
+    preVerificationGas: 60_000n,
+    callGasBuffer: 25_000n,
+    paymaster,
+    paymasterContext: staticContext,
+  };
+
+  const signer = new AccountAbstractionSigner(wallet, config);
+
+  (signer as any).resolveInitCode = async () => "0x";
+  (signer as any).resolveNonce = async () => 0n;
+  (signer as any).ensureChainId = async () => 1n;
+  (signer as any).resolveFeeData = async () => ({ maxFee: 1n, maxPriority: 1n });
+  (signer as any).estimateCallGas = async () => ({
+    callGasLimit: 1000n,
+    preVerificationGas: config.preVerificationGas,
+    verificationGasLimit: config.verificationGasLimit,
+  });
+
+  const policyContext = {
+    userId: "user-1",
+    jobId: "job-42",
+    traceId: "trace-abc",
+    jobBudgetWei: 1234n,
+  };
+
+  const tx: ethers.TransactionRequest = {
+    to: wallet.address,
+    gasLimit: 1000n,
+  };
+
+  await (signer as any).buildUserOperation(tx, policyContext);
+
+  assert.equal(paymasterCalls.length, 1);
+  const context = paymasterCalls[0].context ?? {};
+  assert.equal(context.userId, policyContext.userId);
+  assert.equal(context.jobId, policyContext.jobId);
+  assert.equal(context.traceId, policyContext.traceId);
+  assert.equal(context.jobBudgetWei, policyContext.jobBudgetWei.toString());
+  assert.equal(context.sponsor, staticContext.sponsor);
 });
