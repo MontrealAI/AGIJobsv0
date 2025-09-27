@@ -3,12 +3,12 @@
 # Exposes: POST /onebox/plan, POST /onebox/execute, GET /onebox/status
 # Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
 
-import os, json, re, asyncio
+import os, json, time, math, re, asyncio
 from decimal import Decimal
 from typing import Optional, Literal, List, Tuple, Dict, Any
 
 from fastapi import APIRouter, HTTPException, Depends, Header
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from web3._utils.events import get_event_data
@@ -145,39 +145,8 @@ def _normalize_title(text: str) -> str:
     s = re.sub(r"\s+", " ", text).strip()
     return s[:160] if s else "New Job"
 
-_JOB_ID_PATTERNS = [
-    re.compile(r"job\s*(?:id|number|no\.?|#)?\s*(\d+)", re.I),
-    re.compile(r"#(\d+)", re.I),
-    re.compile(r"\b(\d+)\b"),
-]
-
-
-def _extract_job_id(text: str) -> Optional[int]:
-    for pattern in _JOB_ID_PATTERNS:
-        match = pattern.search(text)
-        if match:
-            try:
-                return int(match.group(1))
-            except (TypeError, ValueError):
-                continue
-    return None
-
-
 def _naive_parse(text: str) -> JobIntent:
     t = text.strip()
-    lowered = t.lower()
-
-    job_id = _extract_job_id(t)
-    if job_id is not None and re.search(r"\bfinaliz(?:e|ing|ation)?\b", lowered):
-        return JobIntent(action="finalize_job", payload=Payload(jobId=job_id))
-
-    if job_id is not None and (
-        re.search(r"\bcheck\s+status\b", lowered)
-        or re.search(r"\bstatus\b", lowered)
-        or re.search(r"\bstate\b", lowered)
-    ):
-        return JobIntent(action="check_status", payload=Payload(jobId=job_id))
-
     amt = re.search(r"(\d+(?:\.\d+)?)\s*agi(?:alpha)?", t, re.I)
     days = re.search(r"(\d+)\s*(?:d|day|days)", t, re.I)
     reward = amt.group(1) if amt else "1.0"
@@ -259,9 +228,7 @@ async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
         raise HTTPException(400, "Relayer not configured")
     signed = relayer.sign_transaction(tx)
     txh = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
-    receipt = await asyncio.to_thread(
-        w3.eth.wait_for_transaction_receipt, txh, timeout=180
-    )
+    receipt = w3.eth.wait_for_transaction_receipt(txh, timeout=180)
     return txh, dict(receipt)
 
 async def _read_status(job_id: int) -> StatusResponse:
@@ -284,15 +251,9 @@ async def plan(req: PlanRequest):
     # intent = plan_text_to_intent(req.text)
     intent = _naive_parse(req.text)
     p = intent.payload
-
-    if intent.action == "finalize_job" and p.jobId is not None:
-        summary = f"Detected job finalization request. I will finalize job {p.jobId}. Proceed?"
-    elif intent.action == "check_status" and p.jobId is not None:
-        summary = f"Detected job status request. I'll check the status of job {p.jobId}. Proceed?"
-    else:
-        reward = p.reward or "1.0"
-        days = p.deadlineDays if p.deadlineDays is not None else 7
-        summary = f'I will post a job “{p.title}” with reward {reward} AGIALPHA and a {days}-day deadline. Proceed?'
+    reward = p.reward or "1.0"
+    days = p.deadlineDays if p.deadlineDays is not None else 7
+    summary = f'I will post a job “{p.title}” with reward {reward} AGIALPHA and a {days}-day deadline. Proceed?'
     return PlanResponse(summary=summary, intent=intent, requiresConfirmation=True, warnings=[])
 
 @router.post("/execute", response_model=ExecuteResponse, dependencies=[Depends(require_api)])
