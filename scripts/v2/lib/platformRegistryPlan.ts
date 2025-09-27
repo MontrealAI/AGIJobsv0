@@ -75,6 +75,8 @@ export async function buildPlatformRegistryPlan(
     platformRegistry.pauser(),
   ]);
 
+  const currentMinStakeValue = BigInt(currentMinStake);
+
   const currentStakeManagerAddress =
     currentStakeManager === ethers.ZeroAddress
       ? ethers.ZeroAddress
@@ -103,6 +105,20 @@ export async function buildPlatformRegistryPlan(
   );
 
   const actions: PlannedAction[] = [];
+  const changeSummaries: string[] = [];
+  const configUpdate = {
+    setStakeManager: false,
+    stakeManager: currentStakeManagerAddress,
+    setReputationEngine: false,
+    reputationEngine: currentReputationEngineAddress,
+    setMinPlatformStake: false,
+    minPlatformStake: currentMinStakeValue,
+    setPauser: false,
+    pauser: currentPauserAddress,
+  };
+
+  const registrarUpdates: Array<{ registrar: string; allowed: boolean }> = [];
+  const blacklistUpdates: Array<{ operator: string; status: boolean }> = [];
   const runner: ContractRunner | null | undefined =
     platformRegistry.runner ??
     (platformRegistry as unknown as { provider?: ContractRunner }).provider;
@@ -112,13 +128,11 @@ export async function buildPlatformRegistryPlan(
     !sameAddress(desiredStakeManager, currentStakeManagerAddress)
   ) {
     await ensureModuleVersion(desiredStakeManager, 'StakeManager', runner);
-    actions.push({
-      label: `Update StakeManager to ${desiredStakeManager}`,
-      method: 'setStakeManager',
-      args: [desiredStakeManager],
-      current: currentStakeManagerAddress,
-      desired: desiredStakeManager,
-    });
+    configUpdate.setStakeManager = true;
+    configUpdate.stakeManager = desiredStakeManager;
+    changeSummaries.push(
+      `StakeManager: ${currentStakeManagerAddress} → ${desiredStakeManager}`
+    );
   }
 
   if (
@@ -130,30 +144,28 @@ export async function buildPlatformRegistryPlan(
       'ReputationEngine',
       runner
     );
-    actions.push({
-      label: `Update ReputationEngine to ${desiredReputationEngine}`,
-      method: 'setReputationEngine',
-      args: [desiredReputationEngine],
-      current: currentReputationEngineAddress,
-      desired: desiredReputationEngine,
-    });
+    configUpdate.setReputationEngine = true;
+    configUpdate.reputationEngine = desiredReputationEngine;
+    changeSummaries.push(
+      `ReputationEngine: ${currentReputationEngineAddress} → ${desiredReputationEngine}`
+    );
   }
 
   if (desiredMinStake !== undefined) {
-    const currentValue = BigInt(currentMinStake);
-    if (currentValue !== desiredMinStake) {
-      actions.push({
-        label: `Update minPlatformStake to ${formatToken(
+    if (currentMinStakeValue !== desiredMinStake) {
+      configUpdate.setMinPlatformStake = true;
+      configUpdate.minPlatformStake = desiredMinStake;
+      changeSummaries.push(
+        `minPlatformStake: ${formatToken(
+          currentMinStakeValue,
+          decimals,
+          symbol
+        )} → ${formatToken(
           desiredMinStake,
           decimals,
           symbol
-        )}`,
-        method: 'setMinPlatformStake',
-        args: [desiredMinStake],
-        current: formatToken(currentValue, decimals, symbol),
-        desired: formatToken(desiredMinStake, decimals, symbol),
-        notes: ['Value expressed in base units (18 decimals).'],
-      });
+        )} (base units: ${desiredMinStake.toString()})`
+      );
     }
   }
 
@@ -161,54 +173,81 @@ export async function buildPlatformRegistryPlan(
     desiredPauser !== undefined &&
     !sameAddress(desiredPauser, currentPauserAddress)
   ) {
-    actions.push({
-      label: `Update pauser to ${desiredPauser}`,
-      method: 'setPauser',
-      args: [desiredPauser],
-      current: currentPauserAddress,
-      desired: desiredPauser,
-    });
+    configUpdate.setPauser = true;
+    configUpdate.pauser = desiredPauser;
+    changeSummaries.push(
+      `Pauser: ${currentPauserAddress} → ${desiredPauser}`
+    );
   }
 
-  const registrarActions: PlannedAction[] = [];
   const registrarConfig = config.registrars || {};
   const sortedRegistrars = Object.keys(registrarConfig).sort((a, b) =>
     a.localeCompare(b)
   );
   for (const registrar of sortedRegistrars) {
+    const registrarAddress = ethers.getAddress(registrar);
     const desired = Boolean(registrarConfig[registrar]);
-    const current = Boolean(await platformRegistry.registrars(registrar));
+    const current = Boolean(
+      await platformRegistry.registrars(registrarAddress)
+    );
     if (current !== desired) {
-      registrarActions.push({
-        label: `${desired ? 'Authorize' : 'Revoke'} registrar ${registrar}`,
-        method: 'setRegistrar',
-        args: [registrar, desired],
-        current: current ? 'authorized' : 'revoked',
-        desired: desired ? 'authorized' : 'revoked',
+      registrarUpdates.push({
+        registrar: registrarAddress,
+        allowed: desired,
       });
+      changeSummaries.push(
+        `Registrar ${registrarAddress}: ${
+          current ? 'authorized' : 'revoked'
+        } → ${desired ? 'authorized' : 'revoked'}`
+      );
     }
   }
 
-  const blacklistActions: PlannedAction[] = [];
   const blacklistConfig = config.blacklist || {};
   const sortedBlacklist = Object.keys(blacklistConfig).sort((a, b) =>
     a.localeCompare(b)
   );
   for (const operator of sortedBlacklist) {
+    const operatorAddress = ethers.getAddress(operator);
     const desired = Boolean(blacklistConfig[operator]);
-    const current = Boolean(await platformRegistry.blacklist(operator));
+    const current = Boolean(
+      await platformRegistry.blacklist(operatorAddress)
+    );
     if (current !== desired) {
-      blacklistActions.push({
-        label: `${desired ? 'Blacklist' : 'Unblacklist'} operator ${operator}`,
-        method: 'setBlacklist',
-        args: [operator, desired],
-        current: current ? 'blacklisted' : 'cleared',
-        desired: desired ? 'blacklisted' : 'cleared',
+      blacklistUpdates.push({
+        operator: operatorAddress,
+        status: desired,
       });
+      changeSummaries.push(
+        `Blacklist ${operatorAddress}: ${
+          current ? 'blacklisted' : 'cleared'
+        } → ${desired ? 'blacklisted' : 'cleared'}`
+      );
     }
   }
 
-  actions.push(...registrarActions, ...blacklistActions);
+  const hasConfigChanges =
+    configUpdate.setStakeManager ||
+    configUpdate.setReputationEngine ||
+    configUpdate.setMinPlatformStake ||
+    configUpdate.setPauser;
+  const hasListChanges =
+    registrarUpdates.length > 0 || blacklistUpdates.length > 0;
+
+  if (hasConfigChanges || hasListChanges) {
+    const summaryNotes = changeSummaries.map((line) => `• ${line}`);
+    summaryNotes.push(
+      '• All updates executed atomically via applyConfiguration for consistency and reduced gas.'
+    );
+    actions.push({
+      label: `Apply ${changeSummaries.length} PlatformRegistry configuration update${
+        changeSummaries.length === 1 ? '' : 's'
+      }`,
+      method: 'applyConfiguration',
+      args: [configUpdate, registrarUpdates, blacklistUpdates],
+      notes: summaryNotes,
+    });
+  }
 
   const warnings: string[] = [];
   if (!sameAddress(ownerAddress, await platformRegistry.owner())) {
