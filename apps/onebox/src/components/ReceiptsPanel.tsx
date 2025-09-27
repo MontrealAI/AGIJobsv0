@@ -42,9 +42,37 @@ export function ReceiptsPanel({ receipts }: ReceiptsPanelProps) {
             ) : null}
             {receipt.specCid ? (
               <div className="chat-receipt-field">
-                <span className="chat-receipt-label">CID</span>
+                <span className="chat-receipt-label">Spec CID</span>
                 <span className="chat-receipt-value chat-receipt-monospace">
-                  {formatCid(receipt.specCid)}
+                  {receipt.specUrl ? (
+                    <a
+                      href={receipt.specUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {formatCid(receipt.specCid)}
+                    </a>
+                  ) : (
+                    formatCid(receipt.specCid)
+                  )}
+                </span>
+              </div>
+            ) : null}
+            {receipt.deliverableCid ? (
+              <div className="chat-receipt-field">
+                <span className="chat-receipt-label">Deliverable</span>
+                <span className="chat-receipt-value chat-receipt-monospace">
+                  {receipt.deliverableUrl ? (
+                    <a
+                      href={receipt.deliverableUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {formatCid(receipt.deliverableCid)}
+                    </a>
+                  ) : (
+                    formatCid(receipt.deliverableCid)
+                  )}
                 </span>
               </div>
             ) : null}

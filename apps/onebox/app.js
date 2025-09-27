@@ -295,6 +295,9 @@ async function executeIntent(intent) {
         reward: intent.payload.reward,
         token: intent.payload.rewardToken,
         specCid: result.specCid,
+        specGatewayUrl: result.specGatewayUrl,
+        deliverableCid: result.deliverableCid,
+        deliverableGatewayUrl: result.deliverableGatewayUrl,
         status: intent.action === 'finalize_job' ? 'finalized' : 'submitted',
       });
       storeReceipt(receipt);
@@ -315,6 +318,9 @@ async function executeIntent(intent) {
       reward: result.reward || intent.payload.reward,
       token: result.token || intent.payload.rewardToken,
       specCid: result.specCid,
+      specGatewayUrl: result.specGatewayUrl,
+      deliverableCid: result.deliverableCid,
+      deliverableGatewayUrl: result.deliverableGatewayUrl,
       url: result.receiptUrl,
       status: result.status || (intent.action === 'finalize_job' ? 'finalized' : 'submitted'),
     });
@@ -338,6 +344,9 @@ function buildReceipt(data) {
     tx: data.txHash ?? null,
     url: data.url ?? null,
     cid: data.specCid ?? null,
+    specUrl: data.specGatewayUrl ?? null,
+    deliverableCid: data.deliverableCid ?? null,
+    deliverableUrl: data.deliverableGatewayUrl ?? null,
     reward: data.reward ?? null,
     token: data.token ?? null,
     status: data.status ?? 'submitted',

@@ -65,6 +65,13 @@ export interface ExecuteResponse {
   txHash?: string;
   receiptUrl?: string;
   specCid?: string;
+  specUri?: string;
+  specGatewayUrl?: string;
+  specGatewayUrls?: string[];
+  deliverableCid?: string;
+  deliverableUri?: string;
+  deliverableGatewayUrl?: string;
+  deliverableGatewayUrls?: string[];
   specHash?: string;
   deadline?: number;
   reward?: string;

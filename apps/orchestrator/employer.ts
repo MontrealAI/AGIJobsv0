@@ -31,15 +31,17 @@ export interface JobArtifacts {
 
 export async function prepareJobArtifacts(metadata: any): Promise<JobArtifacts> {
   const jsonSpec = JSON.stringify(metadata ?? {}, null, 2);
-  const jsonCid = await uploadToIPFS(jsonSpec);
+  const jsonPin = await uploadToIPFS(jsonSpec);
+  const jsonCid = jsonPin.cid;
 
   const markdown = metadata?.markdown
     ? metadata.markdown
     : `# Job Specification\n\n\`\`\`json\n${jsonSpec}\n\`\`\`\n`;
-  const markdownCid = await uploadToIPFS(markdown);
+  const markdownPin = await uploadToIPFS(markdown);
+  const markdownCid = markdownPin.cid;
 
-  const jsonUri = `ipfs://${jsonCid}`;
-  const markdownUri = `ipfs://${markdownCid}`;
+  const jsonUri = jsonPin.uri ?? `ipfs://${jsonCid}`;
+  const markdownUri = markdownPin.uri ?? `ipfs://${markdownCid}`;
   const specWithUris = { ...metadata, json: jsonUri, markdown: markdownUri };
   const specHash = ethers.keccak256(
     ethers.toUtf8Bytes(JSON.stringify(specWithUris))
