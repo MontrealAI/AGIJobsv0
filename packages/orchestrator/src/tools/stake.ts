@@ -1,7 +1,7 @@
 import type { StakeIntent, WithdrawIntent } from "../router.js";
 import { loadContracts } from "../chain/contracts.js";
 import { getSignerForUser } from "../chain/provider.js";
-import { formatError, toWei } from "./common.js";
+import { formatError, toWei, buildPolicyOverrides } from "./common.js";
 
 export async function* deposit(ics: StakeIntent) {
   const userId = ics.meta?.userId;
@@ -20,11 +20,19 @@ export async function* deposit(ics: StakeIntent) {
     const spender = stakeManager.target as string;
     const allowance = await erc20.allowance(owner, spender);
     if (allowance < amountWei) {
-      const approveTx = await erc20.approve(spender, amountWei);
+      const approveTx = await erc20.approve(
+        spender,
+        amountWei,
+        buildPolicyOverrides(ics.meta)
+      );
       yield `🪙 Approving ${spender} to spend ${amountAGIA} AGIALPHA…\n`;
       await approveTx.wait();
     }
-    const tx = await stakeManager.depositStake(normalized.index, amountWei);
+    const tx = await stakeManager.depositStake(
+      normalized.index,
+      amountWei,
+      buildPolicyOverrides(ics.meta)
+    );
     yield `⛓️ Tx submitted: ${tx.hash}\n`;
     await tx.wait();
     yield `✅ Deposited ${amountAGIA} AGIALPHA for ${normalized.label} staking.\n`;
@@ -46,7 +54,11 @@ export async function* withdraw(ics: WithdrawIntent) {
     const amountWei = toWei(amountAGIA);
     const signer = await getSignerForUser(userId);
     const { stakeManager } = loadContracts(signer);
-    const tx = await stakeManager.withdrawStake(normalized.index, amountWei);
+    const tx = await stakeManager.withdrawStake(
+      normalized.index,
+      amountWei,
+      buildPolicyOverrides(ics.meta)
+    );
     yield `⛓️ Tx submitted: ${tx.hash}\n`;
     await tx.wait();
     yield `✅ Withdrawn ${amountAGIA} AGIALPHA from ${normalized.label} stake.\n`;
