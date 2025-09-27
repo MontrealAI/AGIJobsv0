@@ -227,9 +227,13 @@ async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
     if not relayer:
         raise HTTPException(400, "Relayer not configured")
     signed = relayer.sign_transaction(tx)
-    txh = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
-    receipt = w3.eth.wait_for_transaction_receipt(txh, timeout=180)
-    return txh, dict(receipt)
+    def _send_and_wait():
+        tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
+        receipt_obj = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=180)
+        return tx_hash, dict(receipt_obj)
+
+    txh, receipt = await asyncio.to_thread(_send_and_wait)
+    return txh, receipt
 
 async def _read_status(job_id: int) -> StatusResponse:
     # NOTE: tailor to your contract (add views or parse events for richer state).
