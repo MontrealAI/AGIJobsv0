@@ -3,12 +3,13 @@ import { build } from "esbuild";
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appDir = path.resolve(__dirname, "..");
 const distDir = path.join(appDir, "dist");
 const templatePath = path.join(appDir, "index.html");
+const configModuleUrl = pathToFileURL(path.join(appDir, "config.mjs"));
 
 const entryPoints = {
   app: "app.mjs",
@@ -88,6 +89,19 @@ await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 const template = await fs.readFile(templatePath, "utf8");
 const scriptEntry = manifest["app.mjs"];
 const stylesEntry = manifest["styles.css"];
+const { CONNECT_SRC_ORIGINS = [] } = await import(configModuleUrl.href);
+
+const formatConnectSrcDirective = (origins = []) => {
+  const entries = new Set(["'self'"]);
+  for (const origin of origins) {
+    if (typeof origin === "string" && origin.trim()) {
+      entries.add(origin.trim());
+    }
+  }
+  return Array.from(entries).join(" ");
+};
+
+const connectSrcDirective = formatConnectSrcDirective(CONNECT_SRC_ORIGINS);
 
 const formatIntegrityAttribute = (entry) =>
   `${entry.integrity.sha384} ${entry.integrity.sha512}`;
@@ -102,7 +116,8 @@ const html = template
   .replace(
     /\{\{\s*styles_css_integrity\s*\}\}/g,
     formatIntegrityAttribute(stylesEntry),
-  );
+  )
+  .replace(/\{\{\s*connect_src\s*\}\}/g, connectSrcDirective);
 
 await fs.writeFile(path.join(distDir, "index.html"), html);
 

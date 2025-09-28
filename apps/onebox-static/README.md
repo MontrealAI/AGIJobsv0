@@ -83,6 +83,12 @@ When the orchestrator returns ICS metadata indicating that an ENS identity is re
 - The UI enforces a maximum history window (`HISTORY_LENGTH`) to limit prompt size; the orchestrator should also cap history depth.
 - Validate all ICS payloads server-side even if the client performs its own checks.
 
+## Build outputs
+
+- The static bundle is fingerprinted: `esbuild` emits hashed filenames for JavaScript, CSS, and shared chunks while `dist/manifest.json` records the mapping.
+- The build step injects Subresource Integrity hashes (SHA-384 and SHA-512) for each hashed asset. Run `npm run verify:sri` to validate the manifest and HTML wiring.
+- Content Security Policy directives pull their `connect-src` list from [`CONNECT_SRC_ORIGINS`](./config.mjs). Update orchestrator, pinning, or gateway URLs in `config.mjs` to have them reflected automatically in the CSP meta tag.
+
 ## Utility helpers
 
 - [`toWei`](./lib.mjs) converts human-readable AGIALPHA amounts into 18-decimal `BigInt` values for simulations and spend-cap checks.
@@ -95,11 +101,46 @@ When the orchestrator returns ICS metadata indicating that an ENS identity is re
 
 ## Deployment via IPFS
 
+### Automated release & pinning
+
+Use the publish helper to build, verify, and push the bundle to multiple pinning providers before updating ENS content records:
+
+```bash
+WEB3_STORAGE_TOKEN=... \
+PINATA_JWT=... \
+ENS_NAME=onebox.yourname.eth \
+ENS_PRIVATE_KEY=... \
+ENS_RPC_URL=https://mainnet.example.com \
+npm run onebox:static:publish
+```
+
+The script:
+
+1. Executes the static build (`build.mjs`) and integrity audit (`verify-sri.mjs`) unless `--skip-build` is supplied.
+2. Packs `dist/` into a deterministic CAR file, calculates the root CID, and uploads the archive to [web3.storage](https://web3.storage) with the provided API token.
+3. Asks Pinata to pin the same CID (supports JWT or API key credentials). Optional `PINATA_HOST_NODES` can enumerate multiaddresses to speed replication.
+4. Writes `dist/release.json` summarising the CID, CAR path, manifest, pin status, and any ENS updates for later audits.
+5. Updates the ENS contenthash for `ENS_NAME` so the site resolves via `https://<name>.limo`, unless `--skip-ens` (or `--dry-run`) is used.
+
+Environment variable aliases: `W3S_TOKEN`, `PINATA_JWT_KEY`, `ONEBOX_ENS_NAME`, `ONEBOX_ENS_PRIVATE_KEY`, and `ONEBOX_ENS_RPC_URL` are also recognised.
+
+Release options:
+
+- `--dry-run`: builds and emits the CAR + `release.json` without touching any network services.
+- `--skip-web3`, `--skip-pinata`, `--skip-ens`: disable individual publishing steps when debugging.
+- `ONEBOX_RELEASE_LABEL`: override the default timestamp-based release name (useful for CI tags).
+
+### Manual checklist
+
 1. Confirm accessibility of orchestrator URLs via HTTPS from the target gateway.
-2. Run `npm run onebox:static:build` to refresh the hashed bundle in `apps/onebox-static/dist`.
-3. Upload the contents of `apps/onebox-static/dist` to IPFS (web3.storage, Pinata, or similar).
-4. Optionally configure DNSLink for a custom domain pointing to the CID.
+2. Run `npm run onebox:static:publish` (or `npm run onebox:static:build` for manual uploads) to refresh the hashed bundle in `apps/onebox-static/dist`.
+3. If skipping the automated pin, upload the contents of `apps/onebox-static/dist` (including the CAR and `release.json`) to your pinning providers.
+4. Set the ENS contenthash to the release CID. The publish script automates this step when credentials are provided.
 5. Monitor orchestrator logs and paymaster balances; rotate tokens regularly.
+
+### Availability SLO
+
+- Target 99.9% availability across two independent IPFS pinning services (e.g., web3.storage + Pinata). Monitor `release.json` outputs and provider dashboards to ensure both replicas remain healthy.
 
 ## Resetting local state
 

@@ -57,6 +57,7 @@
     "lint:fix": "solhint --fix 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --fix",
     "format:fix": "prettier --write \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\"",
     "onebox:static:build": "node apps/onebox-static/scripts/build.mjs",
+    "onebox:static:publish": "node apps/onebox-static/scripts/publish.mjs",
     "verify:sri": "node apps/onebox-static/scripts/verify-sri.mjs"
   },
   "keywords": [],
@@ -84,7 +85,8 @@
     "solidity-coverage": "^0.8.14",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "ipfs-car": "^0.9.2"
   },
   "dependencies": {
     "@pinata/sdk": "^2.1.0",
