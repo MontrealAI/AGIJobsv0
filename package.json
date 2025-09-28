@@ -63,7 +63,9 @@
     "onebox:verify-sri": "node apps/onebox/scripts/verify-sri.mjs",
     "onebox:static:build": "node apps/onebox-static/scripts/build.mjs",
     "onebox:static:publish": "node apps/onebox-static/scripts/publish.mjs",
-    "verify:sri": "node apps/onebox-static/scripts/verify-sri.mjs"
+    "verify:sri": "node apps/onebox-static/scripts/verify-sri.mjs",
+    "alpha-bridge:start": "node services/alpha-bridge/src/server.js",
+    "alpha-bridge:test": "node --test services/alpha-bridge/test/alpha-bridge.test.js"
   },
   "keywords": [],
   "author": "",
@@ -94,6 +96,10 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.0",
+    "@grpc/proto-loader": "^0.8.0",
+    "@grpc/grpc-js": "^1.11.3",
+    "@grpc/proto-loader": "^0.7.13",
     "@ipld/car": "^3.2.4",
     "@pinata/sdk": "^2.1.0",
     "@prb/math": "^4.0.1",
