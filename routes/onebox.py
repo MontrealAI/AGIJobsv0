@@ -27,6 +27,237 @@ from web3 import Web3
 from web3._utils.events import get_event_data
 from web3.middleware import geth_poa_middleware
 
+# --- BEGIN: /onebox/simulate (additive) --------------------------------------
+from fastapi import Request, HTTPException, Depends
+from pydantic import BaseModel, Field
+from decimal import Decimal, InvalidOperation
+from typing import Optional, List, Dict, Any
+import os, time, json, hashlib
+
+# Reuse existing router if defined; otherwise create a local one (harmless if unused).
+try:
+    router  # defined elsewhere in routes/onebox.py
+except NameError:  # fallback for isolated testing only
+    from fastapi import APIRouter
+    router = APIRouter(prefix="/onebox", tags=["onebox"])
+
+# Depend on the existing API gate in this file; fail early if missing.
+try:
+    require_api  # noqa: F401
+except NameError as _e:
+    raise RuntimeError("require_api dependency must be defined in routes/onebox.py before loading simulate endpoint") from _e
+
+# Prometheus metrics: define simulate counters/histogram only if not already present.
+try:
+    _SIMULATE_TOTAL  # noqa: F401
+except NameError:
+    from prometheus_client import Counter, Histogram
+    _SIMULATE_TOTAL = Counter(
+        "onebox_simulate_total",
+        "Total /onebox/simulate calls",
+        ["intent_type", "http_status"],
+    )
+    # Reuse the standard latency histogram if already present; else define a compatible one.
+    try:
+        _TTO_SECONDS  # noqa: F401
+    except NameError:
+        _TTO_SECONDS = Histogram(
+            "onebox_tto_seconds",
+            "Time-to-outcome across OneBox endpoints (seconds)",
+            ["endpoint"],
+        )
+
+# --------- Models ---------
+class SimulateRequest(BaseModel):
+    # Accept the exact PlanResponse.intent object (dict) returned by /onebox/plan to avoid tight coupling.
+    intent: Dict[str, Any]
+    planHash: Optional[str] = None
+    createdAt: Optional[str] = None
+
+
+class SimulateResponse(BaseModel):
+    summary: str
+    intent: Dict[str, Any]
+    risks: List[str] = Field(default_factory=list)
+    blockers: List[str] = Field(default_factory=list)
+    planHash: str
+    createdAt: str
+
+
+# --------- Helpers (self-contained, no side effects) ---------
+def _now_iso() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _sha256_json(obj: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(obj, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def _to_wei_decimal(amount: Decimal, decimals: int) -> int:
+    # Accurate decimal -> integer conversion without float
+    return int((amount * (Decimal(10) ** decimals)).quantize(Decimal(1)))
+
+
+def _get_decimals() -> int:
+    # Same default as AGIα: 18; owner can override via env
+    try:
+        return int(os.getenv("AGIALPHA_DECIMALS", "18"))
+    except Exception:
+        return 18
+
+
+def _owner_caps():
+    """
+    Owner-controlled caps (fallback when OrgPolicyStore is not wired here).
+    Set via env:
+      ORG_MAX_BUDGET_WEI=0 (no cap) or integer (wei)
+      ORG_MAX_DEADLINE_DAYS=0 (no cap) or integer
+    """
+    try:
+        max_budget_wei = int(os.getenv("ORG_MAX_BUDGET_WEI", "0"))
+    except Exception:
+        max_budget_wei = 0
+    try:
+        max_deadline_days = int(os.getenv("ORG_MAX_DEADLINE_DAYS", "0"))
+    except Exception:
+        max_deadline_days = 0
+    return max_budget_wei, max_deadline_days
+
+
+def _confirmation_summary(intent: Dict[str, Any]) -> str:
+    action = (intent.get("action") or "").lower()
+    payload = intent.get("payload") or {}
+    token = os.getenv("AGIALPHA_SYMBOL", "AGIALPHA")
+    fee_pct = os.getenv("FEE_PCT", "2")
+    burn_pct = os.getenv("BURN_PCT", "1")
+    try:
+        if action == "post_job":
+            reward = payload.get("reward")
+            deadline = payload.get("deadlineDays")
+            if reward is None or deadline is None:
+                return "Need reward and deadline to prepare this job."
+            # Normalize for display
+            reward_dec = Decimal(str(reward))
+            return f"Post job {reward_dec.normalize()} {token}, {int(deadline)} days. Fee {fee_pct}%, burn {burn_pct}%. Proceed?"
+        if action == "finalize_job":
+            jid = payload.get("jobId")
+            return f"Finalize job #{jid} and release escrow. Proceed?" if jid is not None else "Need jobId to finalize."
+        if action == "check_status":
+            jid = payload.get("jobId")
+            return f"Check status for job #{jid}." if jid is not None else "Check status."
+        return "Unsupported action."
+    except Exception:
+        return "Confirm plan. Proceed?"
+
+
+# --------- Endpoint ---------
+@router.post("/simulate", response_model=SimulateResponse, dependencies=[Depends(require_api)])
+async def simulate(request: Request, req: SimulateRequest):
+    """
+    Validates the planned intent against local/org policy and returns
+    - blockers (422) when execution must NOT proceed
+    - risks (200) as advisory signals
+    - confirmation summary for human review
+    Absolutely NO on-chain side effects here.
+    """
+    t0 = time.perf_counter()
+    intent = req.intent or {}
+    payload = intent.get("payload") or {}
+    action = (intent.get("action") or "").lower() or "unknown"
+
+    # Correlate with plan
+    plan_hash = (req.planHash or "").strip() or _sha256_json(intent)
+    created_at = (req.createdAt or "").strip() or _now_iso()
+
+    risks: List[str] = []
+    blockers: List[str] = []
+
+    # Core validation (self-contained; compatible with existing execute-stage checks)
+    try:
+        if action == "post_job":
+            reward = payload.get("reward")
+            deadline = payload.get("deadlineDays")
+
+            # Required field presence
+            if reward in (None, ""):
+                blockers.append("INSUFFICIENT_BALANCE")  # consistent with existing error dictionary
+            if deadline in (None, ""):
+                blockers.append("DEADLINE_INVALID")
+
+            # Semantic checks
+            if not blockers:
+                try:
+                    reward_dec = Decimal(str(reward))
+                except (InvalidOperation, TypeError):
+                    blockers.append("REWARD_INVALID")
+                else:
+                    # Basic incentives
+                    if reward_dec <= 0:
+                        risks.append("ZERO_REWARD")
+                    elif reward_dec < Decimal("1"):
+                        risks.append("LOW_REWARD")
+
+                    # Owner-driven caps (fallback if org-policy not in this context)
+                    max_budget_wei, max_deadline_days = _owner_caps()
+                    wei = _to_wei_decimal(reward_dec, _get_decimals())
+                    if max_budget_wei > 0 and wei > max_budget_wei:
+                        blockers.append("JOB_BUDGET_CAP_EXCEEDED")
+
+                    # Deadline checks
+                    try:
+                        dd = int(deadline)
+                    except Exception:
+                        blockers.append("DEADLINE_INVALID")
+                    else:
+                        if max_deadline_days > 0 and dd > max_deadline_days:
+                            blockers.append("JOB_DEADLINE_CAP_EXCEEDED")
+                        # heuristics (advisory)
+                        if dd <= 1:
+                            risks.append("SHORT_DEADLINE")
+                        elif dd >= 30:
+                            risks.append("LONG_DEADLINE")
+
+        elif action == "finalize_job":
+            if payload.get("jobId") is None:
+                blockers.append("JOB_ID_REQUIRED")
+
+        elif action == "check_status":
+            # read-only action; safe
+            pass
+
+        else:
+            blockers.append("UNSUPPORTED_ACTION")
+
+    except Exception as exc:
+        _SIMULATE_TOTAL.labels(intent_type=action, http_status="500").inc()
+        _TTO_SECONDS.labels(endpoint="simulate").observe(time.perf_counter() - t0)
+        raise HTTPException(status_code=500, detail={"code": "SIMULATE_ERROR", "message": str(exc)})
+
+    # Blockers => 422 with machine-readable list (UI will show friendly microcopy)
+    if blockers:
+        _SIMULATE_TOTAL.labels(intent_type=action, http_status="422").inc()
+        _TTO_SECONDS.labels(endpoint="simulate").observe(time.perf_counter() - t0)
+        raise HTTPException(status_code=422, detail={"blockers": blockers})
+
+    # Success => risks (advisory) + summary
+    _SIMULATE_TOTAL.labels(intent_type=action, http_status="200").inc()
+    _TTO_SECONDS.labels(endpoint="simulate").observe(time.perf_counter() - t0)
+    return SimulateResponse(
+        summary=_confirmation_summary(intent),
+        intent=intent,
+        risks=sorted(set(risks)),
+        blockers=[],
+        planHash=plan_hash,
+        createdAt=created_at,
+    )
+
+
+# --- END: /onebox/simulate ----------------------------------------------------
+
 logger = logging.getLogger(__name__)
 
 # ---------- Settings ----------
