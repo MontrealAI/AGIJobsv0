@@ -906,12 +906,25 @@ def _normalize_title(text: str) -> str:
     return s[:160] if s else "New Job"
 
 
+_JOB_ID_PATTERN = re.compile(
+    r"""
+    \bjob
+    (?:
+        \s*(?:\#|id(?:entifier)?|number|no\.?|num\.?)?
+    )
+    \s*[:#-]?
+    \s*(\d+)
+    \b
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
 def _extract_job_id(text: str) -> Optional[int]:
-    match = re.search(r"job\s*#?\s*(\d+)", text, re.IGNORECASE)
+    match = _JOB_ID_PATTERN.search(text)
     if match:
         return int(match.group(1))
-    digits = re.search(r"\b(\d{1,8})\b", text)
-    return int(digits.group(1)) if digits else None
+    return None
 
 
 def _format_job_id(job_id: Optional[int]) -> str:

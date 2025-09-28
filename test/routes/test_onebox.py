@@ -458,6 +458,15 @@ class PlannerValidationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("jobId", response.missingFields)
         self.assertFalse(response.requiresConfirmation)
 
+    async def test_plan_ignores_numbers_without_job_identifier(self) -> None:
+        response = await plan(
+            _make_request(), PlanRequest(text="Finalize the job in 2 days")
+        )
+        self.assertEqual(response.intent.action, "finalize_job")
+        self.assertIsNone(response.intent.payload.jobId)
+        self.assertIn("jobId", response.missingFields)
+        self.assertFalse(response.requiresConfirmation)
+
 
 class SimulatorTests(unittest.IsolatedAsyncioTestCase):
     async def test_simulate_post_job_success(self) -> None:
