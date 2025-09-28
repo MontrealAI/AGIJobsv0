@@ -41,9 +41,29 @@ def test_make_plan_requires_job_id_for_apply():
     plan = make_plan(PlanIn(input_text="Apply to the newest job"))
 
     assert plan.intent.kind == "apply"
-    assert "job_id" in plan.missing_fields
+    assert plan.missing_fields == ["job_id"]
     assert plan.intent.job_id is None
     assert plan.preview_summary.startswith("Apply to job")
+    assert plan.requires_confirmation is True
+
+
+def test_make_plan_requires_job_id_for_submit():
+    plan = make_plan(PlanIn(input_text="Submit my work for review"))
+
+    assert plan.intent.kind == "submit"
+    assert plan.missing_fields == ["job_id"]
+    assert plan.intent.job_id is None
+    assert plan.preview_summary.startswith("Submit deliverable for job")
+    assert plan.requires_confirmation is True
+
+
+def test_make_plan_requires_job_id_for_finalize():
+    plan = make_plan(PlanIn(input_text="Finalize the payout now"))
+
+    assert plan.intent.kind == "finalize"
+    assert plan.missing_fields == ["job_id"]
+    assert plan.intent.job_id is None
+    assert plan.preview_summary.startswith("Finalize payout for job")
     assert plan.requires_confirmation is True
 
 
