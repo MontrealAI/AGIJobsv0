@@ -91,6 +91,14 @@ module.exports = {
       accounts: resolveAccounts(['SEPOLIA_PRIVATE_KEY', 'TESTNET_PRIVATE_KEY']),
       chainId: 11155111,
     },
+    optimismSepolia: {
+      url: process.env.OP_SEPOLIA_RPC_URL || '',
+      accounts: resolveAccounts([
+        'OP_SEPOLIA_PRIVATE_KEY',
+        'TESTNET_PRIVATE_KEY',
+      ]),
+      chainId: 11155420,
+    },
   },
   mocha: {
     require: ['ts-node/register', './test/setup.js'],

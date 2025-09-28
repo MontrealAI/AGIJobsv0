@@ -222,6 +222,17 @@ Use the `examples/ethers-quickstart.js` script to interact with the deployed con
 
 The [API reference](docs/api-reference.md) describes every public contract function and includes TypeScript and Python snippets. For an event‑driven workflow check the minimal [agent gateway](examples/agent-gateway.js) that listens for `JobCreated` events and applies automatically.
 
+### Hardhat network configuration
+
+Hardhat reads RPC endpoints and private keys from environment variables when running scripts or compilation targets. Use the following variables to connect to public testnets:
+
+| Network           | RPC variable              | Private key variable(s)                                             | Notes |
+| ----------------- | ------------------------- | ------------------------------------------------------------------- | ----- |
+| Ethereum Sepolia  | `SEPOLIA_RPC_URL`         | `SEPOLIA_PRIVATE_KEY` (falls back to `TESTNET_PRIVATE_KEY` if unset) | Existing Sepolia rehearsals continue to work unchanged. |
+| Optimism Sepolia  | `OP_SEPOLIA_RPC_URL`      | `OP_SEPOLIA_PRIVATE_KEY` (falls back to `TESTNET_PRIVATE_KEY` if unset) | Enables the `--network optimismSepolia` Hardhat target. |
+
+Set the appropriate variables in your `.env` file (or export them in the shell) before invoking Hardhat commands such as `npx hardhat compile --network optimismSepolia` or deployment scripts.
+
 ### Network timeouts
 
 Outbound HTTP requests from the gateway, example agents and validator UI respect the `FETCH_TIMEOUT_MS` environment variable (default `5000` milliseconds). Browser clients read the value from `NEXT_PUBLIC_FETCH_TIMEOUT_MS`.
