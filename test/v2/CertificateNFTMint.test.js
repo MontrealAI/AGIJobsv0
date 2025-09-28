@@ -39,6 +39,23 @@ describe('CertificateNFT minting', function () {
       .withArgs(baseURI);
     expect(await nft.tokenURI(1)).to.equal('ipfs://base/1');
 
+    await expect(nft.updateBaseURI('ipfs://base-v2/'))
+      .to.emit(nft, 'BaseURIUpdated')
+      .withArgs(baseURI, 'ipfs://base-v2/');
+    expect(await nft.tokenURI(1)).to.equal('ipfs://base-v2/1');
+
+    await expect(nft.lockBaseURI())
+      .to.emit(nft, 'BaseURILocked')
+      .withArgs('ipfs://base-v2/');
+
+    await expect(nft.updateBaseURI('ipfs://base-v3/')).to.be.revertedWithCustomError(
+      nft,
+      'BaseURIAlreadyLocked'
+    );
+    await expect(nft.lockBaseURI()).to.be.revertedWithCustomError(
+      nft,
+      'BaseURIAlreadyLocked'
+    );
     await expect(nft.setBaseURI('ipfs://new/')).to.be.revertedWithCustomError(
       nft,
       'BaseURIAlreadySet'

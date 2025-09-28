@@ -37,12 +37,14 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     error EmptyBaseURI();
     error BaseURIAlreadySet();
     error BaseURIUnset();
+    error BaseURIAlreadyLocked();
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
 
     string private _baseTokenURI;
     bool private _baseURISet;
+    bool private _baseURILocked;
 
     IStakeManager public stakeManager;
 
@@ -60,6 +62,8 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
     event NFTDelisted(uint256 indexed tokenId);
     event BaseURISet(string baseURI);
+    event BaseURIUpdated(string previousBaseURI, string newBaseURI);
+    event BaseURILocked(string finalBaseURI);
 
     constructor(string memory name_, string memory symbol_)
         ERC721(name_, symbol_)
@@ -99,6 +103,42 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         _baseTokenURI = baseURI_;
         _baseURISet = true;
         emit BaseURISet(baseURI_);
+    }
+
+    /// @notice Returns true when the metadata base URI has been permanently locked.
+    function baseURILocked() external view returns (bool) {
+        return _baseURILocked;
+    }
+
+    /**
+     * @notice Update the metadata base URI after the initial configuration.
+     * @dev Preserves backwards compatibility by requiring the base URI to be
+     *      set once via {setBaseURI}. Subsequent updates can be applied at any
+     *      time until the URI is irrevocably locked with {lockBaseURI}. The
+     *      metadata string must be non-empty to prevent unintentionally
+     *      breaking consumer integrations.
+     * @param baseURI_ The new base URI for all certificate metadata.
+     */
+    function updateBaseURI(string calldata baseURI_) external onlyOwner {
+        if (!_baseURISet) revert BaseURIUnset();
+        if (_baseURILocked) revert BaseURIAlreadyLocked();
+        if (bytes(baseURI_).length == 0) revert EmptyBaseURI();
+        string memory previous = _baseTokenURI;
+        _baseTokenURI = baseURI_;
+        emit BaseURIUpdated(previous, baseURI_);
+    }
+
+    /**
+     * @notice Irreversibly prevent further base URI modifications.
+     * @dev Provides strong assurances for downstream integrators that the
+     *      metadata location is final once audits conclude. Cannot be undone
+     *      to avoid reintroducing mutability risk.
+     */
+    function lockBaseURI() external onlyOwner {
+        if (!_baseURISet) revert BaseURIUnset();
+        if (_baseURILocked) revert BaseURIAlreadyLocked();
+        _baseURILocked = true;
+        emit BaseURILocked(_baseTokenURI);
     }
 
     function pause() external onlyOwner {

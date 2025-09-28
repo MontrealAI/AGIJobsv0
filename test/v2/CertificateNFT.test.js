@@ -38,6 +38,27 @@ describe('CertificateNFT', function () {
       .withArgs(baseURI);
     expect(await nft.tokenURI(1)).to.equal('ipfs://module/1');
 
+    expect(await nft.baseURILocked()).to.equal(false);
+
+    const updatedBaseURI = 'ipfs://module-v2/';
+    await expect(nft.updateBaseURI(updatedBaseURI))
+      .to.emit(nft, 'BaseURIUpdated')
+      .withArgs(baseURI, updatedBaseURI);
+    expect(await nft.tokenURI(1)).to.equal('ipfs://module-v2/1');
+
+    await expect(nft.lockBaseURI())
+      .to.emit(nft, 'BaseURILocked')
+      .withArgs(updatedBaseURI);
+    expect(await nft.baseURILocked()).to.equal(true);
+
+    await expect(nft.updateBaseURI('ipfs://module-v3/')).to.be.revertedWithCustomError(
+      nft,
+      'BaseURIAlreadyLocked'
+    );
+    await expect(nft.lockBaseURI()).to.be.revertedWithCustomError(
+      nft,
+      'BaseURIAlreadyLocked'
+    );
     await expect(nft.setBaseURI('ipfs://other/')).to.be.revertedWithCustomError(
       nft,
       'BaseURIAlreadySet'

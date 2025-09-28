@@ -19,13 +19,17 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     mapping(uint256 => bytes32) public tokenHashes;
     string private _baseTokenURI;
     bool private _baseURISet;
+    bool private _baseURILocked;
 
     event JobRegistryUpdated(address registry);
     event BaseURISet(string baseURI);
+    event BaseURIUpdated(string previousBaseURI, string newBaseURI);
+    event BaseURILocked(string finalBaseURI);
 
     error EmptyBaseURI();
     error BaseURIAlreadySet();
     error BaseURIUnset();
+    error BaseURIAlreadyLocked();
 
     constructor(string memory name_, string memory symbol_)
         ERC721(name_, symbol_)
@@ -52,6 +56,35 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         _baseTokenURI = baseURI_;
         _baseURISet = true;
         emit BaseURISet(baseURI_);
+    }
+
+    /// @notice Returns true when the metadata base URI has been permanently locked.
+    function baseURILocked() external view returns (bool) {
+        return _baseURILocked;
+    }
+
+    /**
+     * @notice Update the metadata base URI after the initial configuration.
+     * @dev Maintains backwards compatibility with {setBaseURI} while giving
+     *      governance the flexibility to migrate metadata endpoints before
+     *      calling {lockBaseURI} to make the URI immutable.
+     * @param baseURI_ The new base URI for certificate metadata.
+     */
+    function updateBaseURI(string calldata baseURI_) external onlyOwner {
+        if (!_baseURISet) revert BaseURIUnset();
+        if (_baseURILocked) revert BaseURIAlreadyLocked();
+        if (bytes(baseURI_).length == 0) revert EmptyBaseURI();
+        string memory previous = _baseTokenURI;
+        _baseTokenURI = baseURI_;
+        emit BaseURIUpdated(previous, baseURI_);
+    }
+
+    /// @notice Irreversibly lock the base URI to guarantee metadata stability.
+    function lockBaseURI() external onlyOwner {
+        if (!_baseURISet) revert BaseURIUnset();
+        if (_baseURILocked) revert BaseURIAlreadyLocked();
+        _baseURILocked = true;
+        emit BaseURILocked(_baseTokenURI);
     }
 
     function mint(
