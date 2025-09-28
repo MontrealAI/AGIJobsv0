@@ -18,6 +18,12 @@ const appDir = path.resolve(__dirname, "..");
 const distDir = path.join(appDir, "dist");
 const manifestPath = path.join(distDir, "manifest.json");
 const configModuleUrl = pathToFileURL(path.join(appDir, "config.mjs"));
+const repoRoot = path.resolve(appDir, "..", "..");
+const deploymentConfigPath = path.join(
+  repoRoot,
+  "deployment-config",
+  "onebox-static.json",
+);
 const carOutputPath = path.join(distDir, "onebox.car");
 
 const args = new Set(process.argv.slice(2));
@@ -27,6 +33,8 @@ const skipPinata = args.has("--skip-pinata");
 const skipEns = args.has("--skip-ens");
 const dryRun = args.has("--dry-run");
 const skipHealth = args.has("--skip-health");
+
+const MAX_HISTORY_ENTRIES = 20;
 
 const log = (...messages) => console.log("[onebox:publish]", ...messages);
 
@@ -97,6 +105,116 @@ async function ensureBuildArtifacts() {
       "Static manifest missing. Run the build step or pass --skip-build only after generating dist/.",
     );
   }
+}
+
+async function loadDeploymentConfig() {
+  try {
+    const raw = await fs.readFile(deploymentConfigPath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return { latest: null, history: [] };
+    }
+    const history = Array.isArray(parsed.history) ? parsed.history : [];
+    return {
+      latest: parsed.latest ?? null,
+      history,
+    };
+  } catch (err) {
+    if (err?.code === "ENOENT") {
+      return { latest: null, history: [] };
+    }
+    if (err instanceof SyntaxError) {
+      throw formatError(
+        `Failed to parse ${path.relative(appDir, deploymentConfigPath)}: ${err.message}`,
+      );
+    }
+    throw formatError(
+      `Failed to read ${path.relative(appDir, deploymentConfigPath)}: ${err.message ?? err}`,
+    );
+  }
+}
+
+function summariseAvailability(checks) {
+  if (!checks || typeof checks !== "object") {
+    return { skipped: true };
+  }
+  if (checks.skipped) {
+    return { skipped: true };
+  }
+  return {
+    skipped: false,
+    successCount: checks.successCount ?? 0,
+    total: checks.total ?? 0,
+    sloTarget: checks.sloTarget ?? "99.9% availability across two pinning providers",
+    results: Array.isArray(checks.results) ? checks.results : [],
+  };
+}
+
+function summarisePins(web3Result, pinataResult) {
+  const web3Summary = web3Result
+    ? {
+        cid: web3Result.cid ?? null,
+        pins: web3Result.status?.pins ?? null,
+      }
+    : null;
+  const pinataSummary = pinataResult
+    ? {
+        requestId: pinataResult.requestId ?? null,
+        status: pinataResult.status ?? null,
+        hostNodes: pinataResult.hostNodes ?? null,
+      }
+    : null;
+  return { web3: web3Summary, pinata: pinataSummary };
+}
+
+async function updateDeploymentConfig({
+  release,
+  cid,
+  createdAt,
+  gateways,
+  web3Result,
+  pinataResult,
+  ensResult,
+  availability,
+  car,
+}) {
+  if (dryRun) {
+    log(
+      "Skipping deployment-config update (dry run). dist/release.json still captures the metadata.",
+    );
+    return;
+  }
+  const current = await loadDeploymentConfig();
+  const entry = {
+    release,
+    cid,
+    createdAt,
+    car,
+    gateways,
+    pins: summarisePins(web3Result, pinataResult),
+    ens: ensResult
+      ? {
+          name: ensResult.name ?? null,
+          resolver: ensResult.resolver ?? null,
+          txHash: ensResult.txHash ?? null,
+          gateway: ensResult.gateway ?? null,
+          contenthash: ensResult.contenthash ?? null,
+        }
+      : null,
+    availability: summariseAvailability(availability),
+  };
+  const historyWithoutDupes = (current.history || []).filter(
+    (item) => item && item.cid !== cid,
+  );
+  const nextHistory = [entry, ...historyWithoutDupes].slice(0, MAX_HISTORY_ENTRIES);
+  await fs.mkdir(path.dirname(deploymentConfigPath), { recursive: true });
+  await fs.writeFile(
+    deploymentConfigPath,
+    `${JSON.stringify({ latest: entry, history: nextHistory }, null, 2)}\n`,
+  );
+  log(
+    `Updated ${path.relative(appDir, deploymentConfigPath)} with latest release metadata.`,
+  );
 }
 
 async function createCarArchive() {
@@ -383,6 +501,17 @@ async function main() {
     path.join(distDir, "release.json"),
     `${JSON.stringify(releaseMetadata, null, 2)}\n`,
   );
+  await updateDeploymentConfig({
+    release: releaseName,
+    cid: rootCid,
+    createdAt: releaseMetadata.createdAt,
+    gateways: IPFS_GATEWAYS,
+    web3Result,
+    pinataResult,
+    ensResult,
+    availability: gatewayChecks,
+    car: releaseMetadata.car,
+  });
   log("Release metadata written to dist/release.json");
   log(`Root CID: ${rootCid}`);
   if (ensResult?.gateway) {
