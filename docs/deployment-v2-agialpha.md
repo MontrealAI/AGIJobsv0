@@ -12,15 +12,26 @@ This guide shows how to deploy the modular v2 contracts using the helper script 
    npm install
    ```
 
-2. Execute the helper:
+2. Execute the helper. Pass the network, governance owner and optionally a configuration file:
 
    ```bash
-   npx hardhat run scripts/v2/deployDefaults.ts --network <network> --governance <address>
+   npx hardhat run scripts/v2/deployDefaults.ts \
+     --network <network> \
+     --governance <address> \
+     --config deployment-config/deployer.sample.json
    ```
 
-   Use `--governance` to set the multisig or timelock owner and `--no-tax` to omit `TaxPolicy`.
+   Useful flags:
 
-3. The script deploys `Deployer.sol`, calls `deployDefaults` (or `deployDefaultsWithoutTaxPolicy`), prints module addresses and verifies each contract on Etherscan.
+   - `--config <path>` – load a JSON file describing economic, identity and tax parameters. A template lives at [`deployment-config/deployer.sample.json`](../deployment-config/deployer.sample.json).
+   - `--fee`, `--burn`, `--employer-slash`, `--treasury-slash` – override percentages from the command line (accepts integers or decimals ≤1.0).
+   - `--commit-window`, `--reveal-window` – customise validator windows using seconds or `1h`, `1d`, `1w` style suffixes.
+   - `--min-stake`, `--job-stake` – supply token amounts (e.g. `7500.5`) or hex base units.
+   - `--ens`, `--name-wrapper`, `--club-root`, `--agent-root`, `--validator-merkle`, `--agent-merkle` – override identity wiring with addresses or ENS names.
+   - `--tax-uri`, `--tax-description`, `--with-tax`, `--no-tax` – control `TaxPolicy` deployment and metadata. When custom metadata is provided the script automatically calls `setPolicy(uri, text)` as the governance signer (it will impersonate on `hardhat`/`localhost` networks).
+   - `--output <file>` – save a JSON deployment report with effective parameters and contract addresses.
+
+3. The script deploys `Deployer.sol`, calls `deployDefaults` (or `deployDefaultsWithoutTaxPolicy` when `--no-tax` is supplied), prints module addresses, applies requested governance updates (including the optional tax-policy metadata) and verifies each contract on Etherscan.
 
    Example output:
 
@@ -33,35 +44,39 @@ This guide shows how to deploy the modular v2 contracts using the helper script 
 
 ## 2. Configure token, ENS roots and fees
 
-The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% burn, and leaves ENS settings blank. To customise:
+The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% burn, and loads ENS data from `deployment-config/<network>.json`. Customise values with CLI flags or a config file instead of editing TypeScript:
 
-- Edit the script to call `deployer.deploy(econ, ids)` instead of `deployDefaults`.
+- Economic settings live under `econ`. Percentages accept integers (`5`) or decimals (`0.05`). Token amounts accept decimal strings or 0x-prefixed base units.
+- Identity settings accept either ENS names (automatically namehashed) or explicit `0x…` values. Leave Merkle roots unset to default to zero.
+- Tax settings enable or disable `TaxPolicy` and optionally supply replacement metadata. When governance is available the script automatically calls `setPolicy(uri, text)`.
 
-  - `econ.token` – ERC‑20 used by `StakeManager` and `FeePool`.
-  - `econ.feePct` / `econ.burnPct` – protocol fee and burn percentages (whole numbers, e.g. `5` for 5%).
-  - `ids.agentRootNode` / `ids.clubRootNode` – namehashes for `agent.agi.eth` and `club.agi.eth`.
-  - `ids.agentMerkleRoot` / `ids.validatorMerkleRoot` – optional allowlists for off‑chain membership proofs.
+Example JSON snippet:
 
-  Example custom configuration:
+```json
+{
+  "econ": {
+    "feePct": 6,
+    "burnPct": 4,
+    "commitWindow": "36h",
+    "revealWindow": 86400,
+    "minStake": "2500",
+    "jobStake": "100"
+  },
+  "identity": {
+    "clubRootNode": "club.agi.eth",
+    "agentRootNode": "agent.agi.eth",
+    "validatorMerkleRoot": "0x5c...",
+    "agentMerkleRoot": "0x00"
+  },
+  "tax": {
+    "enabled": true,
+    "uri": "ipfs://QmExample",
+    "description": "Taxes fall on employers, agents and validators"
+  }
+}
+```
 
-  ```ts
-  const econ = {
-    token: '0xYourToken',
-    feePct: 5,
-    burnPct: 5,
-  };
-
-  const ids = {
-    agentRootNode: namehash('agent.agi.eth'),
-    clubRootNode: namehash('club.agi.eth'),
-    agentMerkleRoot: ZeroHash,
-    validatorMerkleRoot: ZeroHash,
-  };
-
-  await deployer.deploy(econ, ids);
-  ```
-
-- After deployment the owner can still adjust parameters on‑chain with `JobRegistry.setFeePct` and `FeePool.setBurnPct`.
+After deployment the owner can still adjust parameters on-chain via the module setters (e.g. `JobRegistry.setFeePct`, `FeePool.setBurnPct`, `StakeManager.setSlashingPercentages`).
 
 ## 3. Post-deploy wiring
 

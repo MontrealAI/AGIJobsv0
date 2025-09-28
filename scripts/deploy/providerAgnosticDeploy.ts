@@ -1,6 +1,4 @@
 import * as fs from 'fs';
-import * as fs from 'fs';
-import * as fs from 'fs';
 import * as path from 'path';
 import { ethers, network, artifacts } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
