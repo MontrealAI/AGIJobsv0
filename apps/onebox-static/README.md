@@ -120,7 +120,8 @@ The script:
 2. Packs `dist/` into a deterministic CAR file, calculates the root CID, and uploads the archive to [web3.storage](https://web3.storage) with the provided API token.
 3. Asks Pinata to pin the same CID (supports JWT or API key credentials). Optional `PINATA_HOST_NODES` can enumerate multiaddresses to speed replication.
 4. Writes `dist/release.json` summarising the CID, CAR path, manifest, pin status, and any ENS updates for later audits.
-5. Updates the ENS contenthash for `ENS_NAME` so the site resolves via `https://<name>.limo`, unless `--skip-ens` (or `--dry-run`) is used.
+5. Probes every configured gateway (including the ENS `.limo` URL when set) and stores an availability report aligned with the 99.9% SLO target.
+6. Updates the ENS contenthash for `ENS_NAME` so the site resolves via `https://<name>.limo`, unless `--skip-ens` (or `--dry-run`) is used.
 
 Environment variable aliases: `W3S_TOKEN`, `PINATA_JWT_KEY`, `ONEBOX_ENS_NAME`, `ONEBOX_ENS_PRIVATE_KEY`, and `ONEBOX_ENS_RPC_URL` are also recognised.
 
@@ -128,6 +129,7 @@ Release options:
 
 - `--dry-run`: builds and emits the CAR + `release.json` without touching any network services.
 - `--skip-web3`, `--skip-pinata`, `--skip-ens`: disable individual publishing steps when debugging.
+- `--skip-health`: bypass the post-publish gateway availability probes.
 - `ONEBOX_RELEASE_LABEL`: override the default timestamp-based release name (useful for CI tags).
 
 ### Manual checklist

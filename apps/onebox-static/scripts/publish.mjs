@@ -2,6 +2,7 @@
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { performance } from "node:perf_hooks";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { CarReader } from "@ipld/car";
@@ -25,6 +26,7 @@ const skipWeb3 = args.has("--skip-web3");
 const skipPinata = args.has("--skip-pinata");
 const skipEns = args.has("--skip-ens");
 const dryRun = args.has("--dry-run");
+const skipHealth = args.has("--skip-health");
 
 const log = (...messages) => console.log("[onebox:publish]", ...messages);
 
@@ -151,6 +153,91 @@ async function uploadToWeb3Storage(rootCid, releaseName) {
   };
 }
 
+function normalizeGateway(base) {
+  if (typeof base !== "string") return "";
+  return base.endsWith("/") ? base : `${base}/`;
+}
+
+async function probeGateway(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  const startedAt = performance.now();
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "text/html,application/xhtml+xml" },
+    });
+    const duration = performance.now() - startedAt;
+    return {
+      url,
+      ok: response.ok,
+      status: response.status,
+      durationMs: Math.round(duration),
+      error: response.ok ? null : response.statusText || null,
+    };
+  } catch (err) {
+    const duration = performance.now() - startedAt;
+    return {
+      url,
+      ok: false,
+      status: null,
+      durationMs: Math.round(duration),
+      error: err?.message ?? String(err),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function checkGatewayAvailability(rootCid, gateways, ensGateway) {
+  if (dryRun || skipHealth) {
+    log("Skipping gateway availability checks (dry run or --skip-health)");
+    return { skipped: true, results: [] };
+  }
+
+  const checks = [];
+  const targets = [];
+
+  for (const gateway of gateways ?? []) {
+    if (typeof gateway !== "string" || !gateway.trim()) continue;
+    const normalized = normalizeGateway(gateway.trim());
+    targets.push(`${normalized}${rootCid}/index.html`);
+  }
+
+  if (ensGateway) {
+    targets.push(`${normalizeGateway(ensGateway)}index.html`);
+  }
+
+  if (!targets.length) {
+    return { skipped: true, results: [] };
+  }
+
+  log("Checking gateway availability...");
+  for (const targetUrl of targets) {
+    const result = await probeGateway(targetUrl);
+    checks.push(result);
+    if (result.ok) {
+      log(`Gateway OK (${result.status}) -> ${targetUrl}`);
+    } else {
+      log(
+        `Gateway FAILED${result.status ? ` (${result.status})` : ""} -> ${targetUrl} (${result.error ?? "unknown error"})`,
+      );
+    }
+  }
+
+  const successCount = checks.filter((entry) => entry.ok).length;
+  return {
+    skipped: false,
+    successCount,
+    total: checks.length,
+    sloTarget: "99.9% availability across two pinning providers",
+    results: checks,
+  };
+}
+
 async function pinWithPinata(rootCid, releaseName) {
   if (dryRun || skipPinata) {
     log("Skipping Pinata pin (dry run or --skip-pinata)");
@@ -268,6 +355,11 @@ async function main() {
   const pinataResult = await pinWithPinata(rootCid, releaseName);
   const ensResult = await updateEnsContenthash(rootCid);
   const { IPFS_GATEWAYS = [] } = await import(configModuleUrl.href);
+  const gatewayChecks = await checkGatewayAvailability(
+    rootCid,
+    IPFS_GATEWAYS,
+    ensResult?.gateway,
+  );
   const releaseMetadata = {
     createdAt: new Date().toISOString(),
     release: releaseName,
@@ -278,11 +370,13 @@ async function main() {
     web3Storage: web3Result,
     pinata: pinataResult,
     ens: ensResult,
+    availability: gatewayChecks,
     skipped: {
       build: skipBuild,
       web3: skipWeb3 || dryRun,
       pinata: skipPinata || dryRun,
       ens: skipEns || dryRun || !ensResult,
+      health: skipHealth || dryRun || gatewayChecks?.skipped,
     },
   };
   await fs.writeFile(
