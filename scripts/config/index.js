@@ -583,6 +583,22 @@ function loadTokenConfig(options = {}) {
 function normaliseJobRegistryConfig(config = {}) {
   const result = { ...config };
 
+  const setAddress = (key, label, { allowZero = false } = {}) => {
+    if (result[key] === undefined) {
+      return;
+    }
+    const raw = result[key];
+    if (raw === null || raw === '') {
+      if (allowZero) {
+        result[key] = ethers.ZeroAddress;
+      } else {
+        delete result[key];
+      }
+      return;
+    }
+    result[key] = ensureAddress(raw, label, { allowZero });
+  };
+
   if (result.treasury !== undefined) {
     result.treasury = ensureAddress(result.treasury, 'JobRegistry treasury', {
       allowZero: true,
@@ -595,6 +611,15 @@ function normaliseJobRegistryConfig(config = {}) {
       ? ethers.ZeroAddress
       : ensureAddress(result.taxPolicy, 'JobRegistry tax policy');
   }
+
+  setAddress('pauser', 'JobRegistry pauser', { allowZero: true });
+  setAddress('identityRegistry', 'JobRegistry identity registry');
+  setAddress('disputeModule', 'JobRegistry dispute module');
+  setAddress('validationModule', 'JobRegistry validation module');
+  setAddress('stakeManager', 'JobRegistry stake manager');
+  setAddress('reputationModule', 'JobRegistry reputation module');
+  setAddress('certificateNFT', 'JobRegistry certificate NFT');
+  setAddress('feePool', 'JobRegistry fee pool');
 
   if (result.jobStake !== undefined) {
     const raw = BigInt(result.jobStake);
@@ -610,6 +635,42 @@ function normaliseJobRegistryConfig(config = {}) {
       throw new Error('minAgentStake must be between 0 and 2^96-1');
     }
     result.minAgentStake = raw.toString();
+  }
+
+  if (result.agentRootNode !== undefined) {
+    result.agentRootNode = ensureBytes32(result.agentRootNode);
+  }
+
+  if (result.agentMerkleRoot !== undefined) {
+    result.agentMerkleRoot = ensureBytes32(result.agentMerkleRoot);
+  }
+
+  if (result.validatorRootNode !== undefined) {
+    result.validatorRootNode = ensureBytes32(result.validatorRootNode);
+  }
+
+  if (result.validatorMerkleRoot !== undefined) {
+    result.validatorMerkleRoot = ensureBytes32(result.validatorMerkleRoot);
+  }
+
+  if (result.agentAuthCacheDurationSeconds !== undefined) {
+    result.agentAuthCacheDurationSeconds = ensureUint(
+      result.agentAuthCacheDurationSeconds,
+      'JobRegistry agentAuthCacheDurationSeconds',
+      { allowZero: true, optional: true }
+    );
+  }
+
+  if (result.bumpAgentAuthCacheVersion !== undefined) {
+    const flag = parseBooleanFlag(
+      result.bumpAgentAuthCacheVersion,
+      'JobRegistry bumpAgentAuthCacheVersion'
+    );
+    if (flag === undefined) {
+      delete result.bumpAgentAuthCacheVersion;
+    } else {
+      result.bumpAgentAuthCacheVersion = flag;
+    }
   }
 
   if (result.acknowledgers && typeof result.acknowledgers === 'object') {
