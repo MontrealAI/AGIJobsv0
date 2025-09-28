@@ -118,6 +118,12 @@ export const ExecuteRequestSchema = z.object({
   approvals: z.array(z.string()).default([]),
 });
 
+export const ExecuteResponseSchema = z.object({
+  run_id: z.string(),
+  started_at: z.number().optional(),
+  plan_id: z.string(),
+});
+
 export type Attachment = z.infer<typeof AttachmentSchema>;
 export type JobIntent = z.infer<typeof JobIntentSchema>;
 export type StepOutput = z.infer<typeof StepOutputSchema>;
@@ -134,6 +140,7 @@ export type StatusResponse = z.infer<typeof StatusResponseSchema>;
 export type PlanRequest = z.infer<typeof PlanRequestSchema>;
 export type SimulateRequest = z.infer<typeof SimulateRequestSchema>;
 export type ExecuteRequest = z.infer<typeof ExecuteRequestSchema>;
+export type ExecuteResponse = z.infer<typeof ExecuteResponseSchema>;
 
 export function parsePlanResponse(value: unknown): PlanResponse {
   return PlanResponseSchema.parse(value);
@@ -145,5 +152,9 @@ export function parseSimulationResponse(value: unknown): SimulationResponse {
 
 export function parseStatusResponse(value: unknown): StatusResponse {
   return StatusResponseSchema.parse(value);
+}
+
+export function parseExecuteResponse(value: unknown): ExecuteResponse {
+  return ExecuteResponseSchema.parse(value);
 }
 
