@@ -143,6 +143,27 @@ npm run owner:rotate -- --network <network> \
 
 The script validates deployed bytecode, highlights modules missing configuration, and warns if any `Ownable2Step` contract still requires `acceptOwnership()` by the new controller. Safe bundles include typed inputs for inspection inside the transaction builder UI.
 
+### Unified owner parameter updates
+
+For day-to-day parameter maintenance run the consolidated helper, which loads every module configuration and builds a single execution plan:
+
+```bash
+# Preview all module changes defined in config/*.json
+npm run owner:update-all -- --network <network>
+
+# Limit the run to a subset or skip noisy modules
+npm run owner:update-all -- --network <network> --only=stakeManager,feePool
+npm run owner:update-all -- --network <network> --skip=energyOracle
+
+# Emit machine-readable output for Gnosis Safe or change-control pipelines
+npm run owner:update-all -- --network <network> --json > owner-plan.json
+
+# Submit transactions once the dry run looks correct
+npm run owner:update-all -- --network <network> --execute
+```
+
+The script resolves contract addresses from `config/*.json`, `.env` overrides and `config/agialpha.json`, verifies signer ownership and prints calldata for every proposed change. When invoked with `--execute`, each module action is submitted sequentially so a non-technical operator can review the dry-run output and immediately replay it against production. Optional `--only`/`--skip` filters make it easy to scope updates to specific subsystems without editing configuration files.
+
 ### Mainnet Deployment
 
 For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)](docs/deploying-agijobs-v2-truffle-cli.md). Operators who prefer an automated checklist can launch the guided wizard:
