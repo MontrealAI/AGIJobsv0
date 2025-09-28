@@ -918,6 +918,37 @@ _JOB_ID_PATTERN = re.compile(
     """,
     re.IGNORECASE | re.VERBOSE,
 )
+_JOB_WORD_PATTERN = re.compile(r"\bjob\b", re.IGNORECASE)
+_GENERIC_JOB_HANDLE_PATTERN = re.compile(r"#\s*\d+")
+
+_FINALIZE_PATTERNS = (
+    r"\bfinalize\b",
+    r"\bcomplete\b",
+    r"\bfinish\b",
+    r"\bpayout\b",
+    r"\bpay(?:\s+|-)out\b",
+)
+_STATUS_PATTERNS = (
+    r"\bstatus\b",
+    r"\bstate\b",
+    r"\bprogress\b",
+    r"\bcheck\s+on\b",
+)
+_STAKE_PATTERNS = (r"\bstake\b",)
+_VALIDATE_PATTERNS = (r"\bvalidate\b",)
+_DISPUTE_PATTERNS = (r"\bdispute\b",)
+
+
+def _matches_patterns(text: str, patterns: Tuple[str, ...]) -> bool:
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
+
+
+def _has_job_context(text: str) -> bool:
+    if _JOB_WORD_PATTERN.search(text):
+        return True
+    if _GENERIC_JOB_HANDLE_PATTERN.search(text):
+        return True
+    return _JOB_ID_PATTERN.search(text) is not None
 
 
 def _extract_job_id(text: str) -> Optional[int]:
@@ -934,16 +965,19 @@ def _format_job_id(job_id: Optional[int]) -> str:
 
 
 def _detect_action(text: str) -> Optional[str]:
-    lowered = text.lower()
-    if any(token in lowered for token in ["finalize", "complete", "finish", "payout", "pay out"]):
+    if not text:
+        return None
+
+    job_context = _has_job_context(text)
+    if job_context and _matches_patterns(text, _FINALIZE_PATTERNS):
         return "finalize_job"
-    if any(token in lowered for token in ["status", "state", "progress", "check on"]):
+    if job_context and _matches_patterns(text, _STATUS_PATTERNS):
         return "check_status"
-    if "stake" in lowered:
+    if job_context and _matches_patterns(text, _STAKE_PATTERNS):
         return "stake"
-    if "validate" in lowered:
+    if job_context and _matches_patterns(text, _VALIDATE_PATTERNS):
         return "validate"
-    if "dispute" in lowered:
+    if job_context and _matches_patterns(text, _DISPUTE_PATTERNS):
         return "dispute"
     return None
 

@@ -434,6 +434,20 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("detected dispute request", response.summary.lower())
         self.assertIn("dispute job 888", response.summary.lower())
 
+    async def test_mistake_does_not_trigger_stake_intent(self) -> None:
+        response = await plan(
+            _make_request(),
+            PlanRequest(text="That was a mistake on my part, let's prepare a new posting."),
+        )
+        self.assertEqual(response.intent.action, "post_job")
+
+    async def test_validate_without_job_context_defaults_to_post_job(self) -> None:
+        response = await plan(
+            _make_request(),
+            PlanRequest(text="We should validate the output thoroughly before sharing."),
+        )
+        self.assertEqual(response.intent.action, "post_job")
+
     async def test_post_job_summary_reports_fee_policy(self) -> None:
         response = await plan(_make_request(), PlanRequest(text="Please help me post a job"))
         self.assertEqual(response.intent.action, "post_job")
