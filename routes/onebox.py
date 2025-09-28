@@ -13,7 +13,7 @@ import re
 import threading
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any, Dict, List, Literal, Optional, Tuple
@@ -39,6 +39,9 @@ AGIALPHA_TOKEN = Web3.to_checksum_address(
     os.getenv("AGIALPHA_TOKEN", "0x0000000000000000000000000000000000000000")
 )
 AGIALPHA_DECIMALS = int(os.getenv("AGIALPHA_DECIMALS", "18") or "18")
+_DEFAULT_POLICY_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "storage", "org-policies.json")
+)
 _RELAYER_PK = os.getenv("ONEBOX_RELAYER_PRIVATE_KEY") or os.getenv("RELAYER_PK", "")
 _API_TOKEN = os.getenv("ONEBOX_API_TOKEN") or os.getenv("API_TOKEN", "")
 EXPLORER_TX_TPL = os.getenv(
@@ -502,6 +505,8 @@ _ERRORS = {
     "IPFS_FAILED": "I couldn’t package your job details. Remove broken links and try again.",
     "RELAY_UNAVAILABLE": "The relayer is offline right now. Switch to wallet mode or retry shortly.",
     "JOB_ID_REQUIRED": "Provide the jobId you want me to act on before continuing.",
+    "JOB_BUDGET_CAP_EXCEEDED": "Requested reward exceeds the configured cap for your organisation.",
+    "JOB_DEADLINE_CAP_EXCEEDED": "Requested deadline exceeds the configured cap for your organisation.",
     "UNSUPPORTED_ACTION": "I didn’t understand that action. Rephrase the request or choose a supported workflow.",
     "UNKNOWN": "Something went wrong on my side. I’ve logged it and you can retry once things settle down.",
 }
@@ -616,6 +621,229 @@ def _to_wei(amount: str) -> int:
 def _format_reward(value: int) -> str:
     precision = Decimal(10**AGIALPHA_DECIMALS)
     return str(Decimal(value) / precision)
+
+
+def _utcnow_iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _resolve_policy_path() -> str:
+    override = os.getenv("ONEBOX_POLICY_PATH")
+    if override and override.strip():
+        return os.path.abspath(override.strip())
+    return _DEFAULT_POLICY_PATH
+
+
+def _parse_default_max_budget() -> Optional[int]:
+    raw = os.getenv("ONEBOX_MAX_JOB_BUDGET_AGIA")
+    if not raw:
+        return None
+    trimmed = raw.strip()
+    if not trimmed:
+        return None
+    try:
+        value = Decimal(trimmed)
+    except InvalidOperation:
+        logger.warning("invalid ONEBOX_MAX_JOB_BUDGET_AGIA value: %s", raw)
+        return None
+    if value < 0:
+        logger.warning("invalid ONEBOX_MAX_JOB_BUDGET_AGIA value: %s", raw)
+        return None
+    quantized = (value * Decimal(10**AGIALPHA_DECIMALS)).to_integral_value(rounding=ROUND_HALF_UP)
+    return int(quantized)
+
+
+def _parse_default_max_duration() -> Optional[int]:
+    raw = os.getenv("ONEBOX_MAX_JOB_DURATION_DAYS")
+    if not raw:
+        return None
+    trimmed = raw.strip()
+    if not trimmed:
+        return None
+    try:
+        parsed = int(trimmed, 10)
+    except ValueError:
+        logger.warning("invalid ONEBOX_MAX_JOB_DURATION_DAYS value: %s", raw)
+        return None
+    if parsed <= 0:
+        logger.warning("invalid ONEBOX_MAX_JOB_DURATION_DAYS value: %s", raw)
+        return None
+    return parsed
+
+
+@dataclass
+class OrgPolicyRecord:
+    max_budget_wei: Optional[int] = None
+    max_duration_days: Optional[int] = None
+    updated_at: str = field(default_factory=_utcnow_iso)
+
+
+class OrgPolicyViolation(Exception):
+    def __init__(self, code: str, message: str, record: OrgPolicyRecord) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.record = record
+
+    def to_http_exception(self) -> HTTPException:
+        detail = _error_detail(self.code)
+        detail["message"] = self.message
+        return HTTPException(status_code=400, detail=detail)
+
+
+class OrgPolicyStore:
+    def __init__(
+        self,
+        *,
+        policy_path: Optional[str] = None,
+        default_max_budget_wei: Optional[int] = None,
+        default_max_duration_days: Optional[int] = None,
+    ) -> None:
+        self._policy_path = policy_path or _resolve_policy_path()
+        self._default_max_budget_wei = default_max_budget_wei
+        self._default_max_duration_days = default_max_duration_days
+        self._policies: Dict[str, OrgPolicyRecord] = {}
+        self._lock = threading.Lock()
+        self._load()
+
+    def _load(self) -> None:
+        try:
+            if not os.path.exists(self._policy_path):
+                return
+            with open(self._policy_path, "r", encoding="utf-8") as handle:
+                raw = handle.read()
+            if not raw:
+                return
+            data = json.loads(raw)
+            if not isinstance(data, dict):
+                return
+            for key, value in data.items():
+                if not isinstance(value, dict):
+                    continue
+                record = OrgPolicyRecord()
+                stored_budget = value.get("maxBudgetWei")
+                if isinstance(stored_budget, str):
+                    try:
+                        record.max_budget_wei = int(stored_budget, 10)
+                    except ValueError:
+                        pass
+                elif isinstance(stored_budget, int):
+                    record.max_budget_wei = stored_budget
+                stored_duration = value.get("maxDurationDays")
+                if isinstance(stored_duration, int) and stored_duration > 0:
+                    record.max_duration_days = stored_duration
+                updated_at = value.get("updatedAt")
+                if isinstance(updated_at, str) and updated_at.strip():
+                    record.updated_at = updated_at.strip()
+                self._policies[self._resolve_key(key)] = record
+        except Exception as exc:  # pragma: no cover - defensive loading
+            logger.warning("failed to load org policy store: %s", exc)
+
+    def _persist_locked(self) -> None:
+        try:
+            directory = os.path.dirname(self._policy_path)
+            if directory and not os.path.exists(directory):
+                os.makedirs(directory, exist_ok=True)
+            payload: Dict[str, Dict[str, Any]] = {}
+            for key, record in self._policies.items():
+                payload[key] = {
+                    "updatedAt": record.updated_at,
+                }
+                if record.max_budget_wei is not None:
+                    payload[key]["maxBudgetWei"] = str(record.max_budget_wei)
+                if record.max_duration_days is not None:
+                    payload[key]["maxDurationDays"] = record.max_duration_days
+            with open(self._policy_path, "w", encoding="utf-8") as handle:
+                json.dump(payload, handle, indent=2, sort_keys=True)
+        except Exception as exc:  # pragma: no cover - defensive persistence
+            logger.warning("failed to persist org policy store: %s", exc)
+
+    @staticmethod
+    def _resolve_key(org_id: Optional[str]) -> str:
+        if isinstance(org_id, str):
+            trimmed = org_id.strip()
+            if trimmed:
+                return trimmed
+        return "__default__"
+
+    def _get_or_create(self, org_id: Optional[str]) -> OrgPolicyRecord:
+        key = self._resolve_key(org_id)
+        record = self._policies.get(key)
+        if record is not None:
+            return record
+        record = OrgPolicyRecord(
+            max_budget_wei=self._default_max_budget_wei,
+            max_duration_days=self._default_max_duration_days,
+        )
+        self._policies[key] = record
+        if record.max_budget_wei is not None or record.max_duration_days is not None:
+            self._persist_locked()
+        return record
+
+    def enforce(self, org_id: Optional[str], reward_wei: int, deadline_days: int) -> OrgPolicyRecord:
+        with self._lock:
+            record = self._get_or_create(org_id)
+            if record.max_budget_wei is not None and reward_wei > record.max_budget_wei:
+                message = (
+                    "Requested budget {} AGIALPHA exceeds organisation cap of {} AGIALPHA.".format(
+                        _format_reward(reward_wei), _format_reward(record.max_budget_wei)
+                    )
+                )
+                raise OrgPolicyViolation("JOB_BUDGET_CAP_EXCEEDED", message, record)
+            if record.max_duration_days is not None and deadline_days > record.max_duration_days:
+                message = (
+                    "Requested deadline of {} days exceeds organisation cap of {} days.".format(
+                        deadline_days, record.max_duration_days
+                    )
+                )
+                raise OrgPolicyViolation("JOB_DEADLINE_CAP_EXCEEDED", message, record)
+            return record
+
+    def update(
+        self,
+        org_id: Optional[str],
+        *,
+        max_budget_wei: Optional[int] = None,
+        max_duration_days: Optional[int] = None,
+    ) -> None:
+        with self._lock:
+            record = self._get_or_create(org_id)
+            if max_budget_wei is not None:
+                record.max_budget_wei = max_budget_wei
+            if max_duration_days is not None:
+                record.max_duration_days = max_duration_days
+            record.updated_at = _utcnow_iso()
+            self._persist_locked()
+
+
+_ORG_POLICY_STORE: Optional[OrgPolicyStore] = None
+_ORG_POLICY_LOCK = threading.Lock()
+
+
+def _get_org_policy_store() -> OrgPolicyStore:
+    global _ORG_POLICY_STORE
+    if _ORG_POLICY_STORE is not None:
+        return _ORG_POLICY_STORE
+    with _ORG_POLICY_LOCK:
+        if _ORG_POLICY_STORE is not None:
+            return _ORG_POLICY_STORE
+        _ORG_POLICY_STORE = OrgPolicyStore(
+            policy_path=_resolve_policy_path(),
+            default_max_budget_wei=_parse_default_max_budget(),
+            default_max_duration_days=_parse_default_max_duration(),
+        )
+    return _ORG_POLICY_STORE
+
+
+def _resolve_org_identifier(intent: "JobIntent") -> Optional[str]:
+    context = intent.userContext or {}
+    if not isinstance(context, dict):
+        return None
+    for key in ("orgId", "organizationId", "tenantId", "teamId", "userId"):
+        value = context.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
 
 
 def _normalize_title(text: str) -> str:
@@ -1450,7 +1678,51 @@ async def execute(request: Request, req: ExecuteRequest):
             if payload.deadlineDays is None:
                 raise _http_error(400, "DEADLINE_INVALID")
 
-            deadline_ts = _calculate_deadline_timestamp(int(payload.deadlineDays))
+            reward_wei = _to_wei(str(payload.reward))
+            deadline_days = int(payload.deadlineDays)
+            org_identifier = _resolve_org_identifier(intent)
+            try:
+                policy_record = _get_org_policy_store().enforce(
+                    org_identifier, reward_wei, deadline_days
+                )
+            except OrgPolicyViolation as violation:
+                log_fields: Dict[str, Any] = {
+                    "intent_type": intent_type,
+                    "org_identifier": org_identifier or "__default__",
+                    "reward_wei": str(reward_wei),
+                    "deadline_days": deadline_days,
+                    "reason": violation.code,
+                }
+                if violation.record.max_budget_wei is not None:
+                    log_fields["max_budget_wei"] = str(violation.record.max_budget_wei)
+                if violation.record.max_duration_days is not None:
+                    log_fields["max_duration_days"] = violation.record.max_duration_days
+                _log_event(
+                    logging.WARNING,
+                    "onebox.policy.rejected",
+                    correlation_id,
+                    **log_fields,
+                )
+                raise violation.to_http_exception()
+            else:
+                log_fields = {
+                    "intent_type": intent_type,
+                    "org_identifier": org_identifier or "__default__",
+                    "reward_wei": str(reward_wei),
+                    "deadline_days": deadline_days,
+                }
+                if policy_record.max_budget_wei is not None:
+                    log_fields["max_budget_wei"] = str(policy_record.max_budget_wei)
+                if policy_record.max_duration_days is not None:
+                    log_fields["max_duration_days"] = policy_record.max_duration_days
+                _log_event(
+                    logging.INFO,
+                    "onebox.policy.accepted",
+                    correlation_id,
+                    **log_fields,
+                )
+
+            deadline_ts = _calculate_deadline_timestamp(deadline_days)
             fee_pct, burn_pct = _get_fee_policy()
             fee_amount, burn_amount = _calculate_fee_amounts(str(payload.reward), fee_pct, burn_pct)
             job_payload = {
@@ -1459,7 +1731,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 "attachments": [a.dict() for a in payload.attachments],
                 "rewardToken": payload.rewardToken or "AGIALPHA",
                 "reward": str(payload.reward),
-                "deadlineDays": int(payload.deadlineDays),
+                "deadlineDays": deadline_days,
                 "deadline": deadline_ts,
                 "agentTypes": payload.agentTypes,
             }
@@ -1470,12 +1742,11 @@ async def execute(request: Request, req: ExecuteRequest):
             if not cid:
                 raise _http_error(502, "IPFS_FAILED")
             uri = spec_pin.get("uri") or f"ipfs://{cid}"
-            reward_wei = _to_wei(str(payload.reward))
 
             if req.mode == "wallet":
                 to, data = _encode_wallet_call(
                     "postJob",
-                    [uri, AGIALPHA_TOKEN, reward_wei, int(payload.deadlineDays)],
+                    [uri, AGIALPHA_TOKEN, reward_wei, deadline_days],
                 )
                 response = ExecuteResponse(
                     ok=True,
@@ -1501,7 +1772,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
             else:
                 func = registry.functions.postJob(
-                    uri, AGIALPHA_TOKEN, reward_wei, int(payload.deadlineDays)
+                    uri, AGIALPHA_TOKEN, reward_wei, deadline_days
                 )
                 sender = relayer.address if relayer else intent.userContext.get("sender")
                 if not sender:
