@@ -56,6 +56,9 @@
     "lint:check": "solhint 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --max-warnings=0",
     "lint:fix": "solhint --fix 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --fix",
     "format:fix": "prettier --write \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\"",
+    "onebox:build": "node apps/onebox/scripts/build.mjs",
+    "onebox:publish": "node apps/onebox/scripts/publish.mjs",
+    "onebox:verify-sri": "node apps/onebox/scripts/verify-sri.mjs",
     "onebox:static:build": "node apps/onebox-static/scripts/build.mjs",
     "onebox:static:publish": "node apps/onebox-static/scripts/publish.mjs",
     "verify:sri": "node apps/onebox-static/scripts/verify-sri.mjs"
@@ -80,15 +83,16 @@
     "eslint-plugin-prettier": "^4.2.5",
     "hardhat": "^2.26.1",
     "hardhat-gas-reporter": "^2.3.0",
+    "ipfs-car": "^0.9.2",
     "prettier": "^2.8.8",
     "solhint": "^6.0.0",
     "solidity-coverage": "^0.8.14",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2",
-    "ipfs-car": "^0.9.2"
+    "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@ipld/car": "^3.2.4",
     "@pinata/sdk": "^2.1.0",
     "@prb/math": "^4.0.1",
     "content-hash": "^2.5.2",
@@ -97,8 +101,8 @@
     "express": "^4.21.2",
     "ipfs-http-client": "^60.0.0",
     "parse-duration": "^2.1.4",
-    "web3.storage": "^4.5.5",
     "web3": "^1.10.0",
+    "web3.storage": "^4.5.5",
     "ws": "^8.18.3",
     "zod": "^3.25.76"
   },

@@ -1,442 +1,34 @@
 <!doctype html>
 <html lang="en">
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AGI Jobs — One‑Box</title>
-  <style>
-    :root {
-      --bg: #060b12;
-      --fg: #f8fafc;
-      --muted: #94a3b8;
-      --soft: rgba(15, 23, 42, 0.7);
-      --line: #1e293b;
-      --accent: linear-gradient(135deg, #6366f1, #0ea5e9);
-      --success: #10b981;
-      --warning: #f59e0b;
-      color-scheme: dark;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font: 16px/1.5 "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-      background: radial-gradient(circle at top, rgba(37, 99, 235, 0.08), transparent 60%),
-        var(--bg);
-      color: var(--fg);
-      min-height: 100vh;
-    }
-
-    a {
-      color: #c7d2fe;
-    }
-
-    button {
-      font-family: inherit;
-    }
-
-    .wrap {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 32px 20px 72px;
-      display: grid;
-      gap: 24px;
-    }
-
-    @media (min-width: 980px) {
-      .wrap {
-        grid-template-columns: 1fr 320px;
-        align-items: flex-start;
-      }
-    }
-
-    .header {
-      grid-column: 1 / -1;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 1.5rem;
-      letter-spacing: -0.01em;
-    }
-
-    .badge {
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(148, 163, 184, 0.12);
-      color: var(--muted);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-    }
-
-    .chat-shell {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      display: flex;
-      flex-direction: column;
-      min-height: 540px;
-      box-shadow: 0 20px 45px rgba(8, 47, 73, 0.25);
-    }
-
-    .chat-history {
-      flex: 1;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      overflow-y: auto;
-    }
-
-    .msg {
-      max-width: 82%;
-      padding: 16px 18px;
-      border-radius: 16px;
-      line-height: 1.6;
-      font-size: 0.96rem;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid rgba(148, 163, 184, 0.1);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    }
-
-    .m-user {
-      margin-left: auto;
-      background: rgba(79, 70, 229, 0.25);
-      border-color: rgba(129, 140, 248, 0.4);
-    }
-
-    .m-assist {
-      background: rgba(15, 23, 42, 0.85);
-    }
-
-    .leadline {
-      display: block;
-      color: var(--muted);
-      font-size: 0.85rem;
-      margin-top: 6px;
-    }
-
-    .chat-form {
-      border-top: 1px solid var(--line);
-      padding: 20px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      background: rgba(2, 6, 23, 0.85);
-      border-radius: 0 0 18px 18px;
-    }
-
-    .chat-form label {
-      text-transform: uppercase;
-      font-size: 0.7rem;
-      letter-spacing: 0.18em;
-      color: var(--muted);
-    }
-
-    .chat-input-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    textarea {
-      flex: 1;
-      min-height: 4.5rem;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: rgba(15, 23, 42, 0.92);
-      color: var(--fg);
-      padding: 14px 16px;
-      font-size: 1rem;
-      resize: none;
-    }
-
-    textarea:focus {
-      outline: 2px solid #38bdf8;
-      outline-offset: 2px;
-    }
-
-    .primary-btn {
-      padding: 0 22px;
-      min-height: 44px;
-      border-radius: 12px;
-      border: none;
-      background-image: var(--accent);
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .primary-btn:disabled {
-      cursor: not-allowed;
-      filter: grayscale(45%);
-      opacity: 0.65;
-    }
-
-    .primary-btn:not(:disabled):hover {
-      transform: translateY(-1px);
-      box-shadow: 0 12px 18px rgba(79, 70, 229, 0.35);
-    }
-
-    .ghost-btn {
-      padding: 0 18px;
-      min-height: 44px;
-      border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      background: rgba(15, 23, 42, 0.65);
-      color: var(--fg);
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .pill-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .pill {
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(30, 41, 59, 0.75);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      cursor: pointer;
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    .note {
-      display: block;
-      color: var(--muted);
-      font-size: 0.85rem;
-      margin-top: 8px;
-    }
-
-    .sec {
-      padding: 20px;
-      border-radius: 14px;
-      border: 1px dashed rgba(148, 163, 184, 0.28);
-      background: rgba(15, 23, 42, 0.6);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .expert-panel {
-      display: block;
-      gap: 12px;
-    }
-
-    .expert-panel[hidden] {
-      display: none;
-    }
-
-    .expert-panel summary {
-      margin: 0;
-      font-size: 0.95rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      cursor: pointer;
-      list-style: none;
-      outline: none;
-    }
-
-    .expert-panel summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .expert-meta {
-      display: grid;
-      gap: 10px;
-    }
-
-    .expert-panel-content {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    .expert-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: var(--muted);
-    }
-
-    .expert-value {
-      font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas,
-        'Liberation Mono', 'Courier New', monospace;
-      font-size: 0.85rem;
-      word-break: break-all;
-    }
-
-    .expert-json-block {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .expert-json {
-      margin: 0;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 12px;
-      font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas,
-        'Liberation Mono', 'Courier New', monospace;
-      font-size: 0.8rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .sec h2 {
-      margin: 0;
-      font-size: 0.95rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .sec label {
-      font-size: 0.85rem;
-      color: var(--muted);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .sec input[type='text'] {
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      background: rgba(15, 23, 42, 0.85);
-      color: var(--fg);
-      padding: 10px 12px;
-      min-width: 0;
-    }
-
-    .sec-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .kbd {
-      padding: 2px 6px;
-      border-radius: 6px;
-      background: rgba(30, 41, 59, 0.85);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      font-size: 0.75rem;
-      color: #cbd5f5;
-    }
-
-    .sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .receipt-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .receipt-card {
-      border: 1px solid rgba(148, 163, 184, 0.28);
-      border-radius: 12px;
-      padding: 14px;
-      background: rgba(15, 23, 42, 0.7);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 0.85rem;
-    }
-
-    .receipt-card strong {
-      font-size: 0.95rem;
-    }
-
-    .receipt-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px 12px;
-      color: var(--muted);
-    }
-
-    .receipt-empty {
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-
-    .progress {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .progress li {
-      position: relative;
-      padding-left: 22px;
-      color: var(--muted);
-      font-size: 0.88rem;
-    }
-
-    .progress li::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0.4em;
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      border: 2px solid rgba(148, 163, 184, 0.35);
-      background: transparent;
-      transition: all 0.25s ease;
-    }
-
-    .progress li.is-active::before {
-      border-color: rgba(129, 140, 248, 0.9);
-      background: rgba(129, 140, 248, 0.7);
-    }
-
-    .progress li.is-done::before {
-      border-color: var(--success);
-      background: var(--success);
-    }
-
-    .error-text {
-      color: #fca5a5;
-      font-weight: 600;
-    }
-  </style>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AGI Jobs — One‑Box</title>
+    <meta
+      name="description"
+      content="Single-box interface for orchestrating AGI Jobs workflows with walletless and expert modes."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'none'; connect-src {{ connect_src }}; font-src 'self'; form-action 'self'; frame-ancestors 'self'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests"
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%2308121f'/%3E%3Ctext x='50' y='64' font-family='Inter,Arial,sans-serif' font-size='52' fill='%23f8fafc' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
+    <link
+      rel="stylesheet"
+      href="{{ styles_css_href }}"
+      integrity="{{ styles_css_integrity }}"
+      crossorigin="anonymous"
+    />
+  </head>
   <body>
     <div class="wrap">
-      <div class="header">
+      <header class="header">
         <h1>AGI Jobs — One‑Box</h1>
         <span class="badge" id="mode">Mode: Guest (walletless)</span>
         <span class="badge">Ask → Confirm → Done + Receipt</span>
-      </div>
+      </header>
 
-      <div class="chat-shell">
+      <section class="chat-shell">
         <div id="chat" class="chat-history" role="log" aria-live="polite">
           <div class="msg m-assist">Ask → Confirm → Done + Receipt.</div>
         </div>
@@ -453,19 +45,21 @@
             </button>
           </div>
         </form>
-      </div>
+      </section>
 
-      <div class="sec">
+      <section class="sec">
         <h2>Shortcuts</h2>
         <div class="pill-row">
-          <div class="pill" data-example="Post a research job, 3 AGIALPHA, 5 days">Research job</div>
-          <div class="pill" data-example="Finalize job 123">Finalize job</div>
-          <div class="pill" data-example="Status of job 123">Status check</div>
+          <button class="pill" type="button" data-example="Post a research job, 3 AGIALPHA, 5 days">Research job</button>
+          <button class="pill" type="button" data-example="Finalize job 123">Finalize job</button>
+          <button class="pill" type="button" data-example="Status of job 123">Status check</button>
         </div>
-        <span class="note">Walletless by default. Expert mode prepares calldata for your wallet via <span class="kbd">eth_sendTransaction</span>.</span>
-      </div>
+        <span class="note"
+          >Walletless by default. Expert mode prepares calldata for your wallet via <span class="kbd">eth_sendTransaction</span>.
+        </span>
+      </section>
 
-      <div class="sidebar">
+      <aside class="sidebar">
         <details id="expert-panel" class="sec expert-panel" hidden>
           <summary>Expert Details</summary>
           <div class="expert-panel-content">
@@ -493,7 +87,8 @@
             </div>
           </div>
         </details>
-        <div class="sec">
+
+        <section class="sec">
           <h2>Advanced</h2>
           <label>
             Orchestrator URL
@@ -509,16 +104,25 @@
             <button type="button" class="ghost-btn" id="clear-receipts">Clear Receipts</button>
           </div>
           <span class="note">No hashes or gas pop-ups for end users. Confirmations stay under 140 characters.</span>
-        </div>
+        </section>
 
-        <div class="sec">
+        <section class="sec">
           <h2>Receipts</h2>
           <div id="receipts-empty" class="receipt-empty">No receipts yet — run a job to see the audit trail.</div>
           <ul id="receipts-list" class="receipt-list"></ul>
-        </div>
-      </div>
+        </section>
+      </aside>
     </div>
 
-    <script type="module" src="./app.js"></script>
+    <noscript>
+      <p class="note">JavaScript is required for the AGI Jobs one-box interface.</p>
+    </noscript>
+
+    <script
+      type="module"
+      src="{{ app_js_src }}"
+      integrity="{{ app_js_integrity }}"
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>
