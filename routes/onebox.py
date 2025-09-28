@@ -229,6 +229,12 @@ _PLAN_TOTAL = prometheus_client.Counter(
     ["intent_type", "http_status"],
     registry=_METRICS_REGISTRY,
 )
+_SIMULATE_TOTAL = prometheus_client.Counter(
+    "simulate_total",
+    "Total /onebox/simulate requests",
+    ["intent_type", "http_status"],
+    registry=_METRICS_REGISTRY,
+)
 _EXECUTE_TOTAL = prometheus_client.Counter(
     "execute_total",
     "Total /onebox/execute requests",
@@ -418,6 +424,7 @@ class PlanResponse(BaseModel):
     requiresConfirmation: bool = True
     warnings: List[str] = Field(default_factory=list)
     planHash: str
+    missingFields: List[str] = Field(default_factory=list)
 
 
 class ExecuteRequest(BaseModel):
@@ -425,6 +432,21 @@ class ExecuteRequest(BaseModel):
     mode: Literal["relayer", "wallet"] = "relayer"
     planHash: Optional[str] = None
     createdAt: Optional[str] = None
+
+
+class SimulateRequest(BaseModel):
+    intent: JobIntent
+    planHash: Optional[str] = None
+    createdAt: Optional[str] = None
+
+
+class SimulateResponse(BaseModel):
+    summary: str
+    intent: JobIntent
+    risks: List[str] = Field(default_factory=list)
+    blockers: List[str] = Field(default_factory=list)
+    planHash: str
+    createdAt: str
 
 
 class ExecuteResponse(BaseModel):
@@ -488,6 +510,7 @@ _STATE_MAP = {
 
 _ERRORS = {
     # Top user-facing errors surfaced to the client application
+    "REQUEST_EMPTY": "Describe the job or action you want me to handle before continuing.",
     "AUTH_MISSING": "Include your API token so I can link this request to your identity. Start identity setup if you haven’t yet.",
     "AUTH_INVALID": "Your API token didn’t match an active identity. Refresh your credentials or restart identity setup.",
     "IDENTITY_SETUP_REQUIRED": "Finish identity verification in the Agent Gateway before using this one-box flow.",
@@ -507,6 +530,7 @@ _ERRORS = {
     "JOB_ID_REQUIRED": "Provide the jobId you want me to act on before continuing.",
     "JOB_BUDGET_CAP_EXCEEDED": "Requested reward exceeds the configured cap for your organisation.",
     "JOB_DEADLINE_CAP_EXCEEDED": "Requested deadline exceeds the configured cap for your organisation.",
+    "REWARD_INVALID": "Enter the reward as a numeric AGIALPHA amount before submitting.",
     "UNSUPPORTED_ACTION": "I didn’t understand that action. Rephrase the request or choose a supported workflow.",
     "UNKNOWN": "Something went wrong on my side. I’ve logged it and you can retry once things settle down.",
 }
@@ -915,8 +939,8 @@ def _naive_parse(text: str) -> JobIntent:
         payload = Payload(jobId=job_id)
         return JobIntent(action=action, payload=payload)
 
-    reward = _parse_reward(text) or "1.0"
-    deadline_days = _parse_deadline_days(text) or 7
+    reward = _parse_reward(text)
+    deadline_days = _parse_deadline_days(text)
     title = _normalize_title(text)
     payload = Payload(title=title, reward=reward, deadlineDays=deadline_days)
     return JobIntent(action="post_job", payload=payload)
@@ -976,6 +1000,22 @@ def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool
         f"Fee {fee_text}%, burn {burn_text}%. Proceed?"
     )
     return _ensure_summary_limit(summary), True, warnings
+
+
+def _detect_missing_fields(intent: JobIntent) -> List[str]:
+    missing: List[str] = []
+    payload = intent.payload
+    if intent.action == "post_job":
+        reward = getattr(payload, "reward", None)
+        if reward is None or (isinstance(reward, str) and not reward.strip()):
+            missing.append("reward")
+        deadline_days = getattr(payload, "deadlineDays", None)
+        if deadline_days is None:
+            missing.append("deadlineDays")
+    elif intent.action in {"finalize_job", "check_status", "stake", "validate", "dispute"}:
+        if getattr(payload, "jobId", None) is None:
+            missing.append("jobId")
+    return missing
 
 
 @dataclass
@@ -1603,9 +1643,14 @@ async def plan(request: Request, req: PlanRequest):
     status_code = 200
 
     try:
+        if not req.text or not req.text.strip():
+            raise _http_error(400, "REQUEST_EMPTY")
         intent = _naive_parse(req.text)
         intent_type = intent.action
         summary, requires_confirmation, warnings = _summary_for_intent(intent, req.text)
+        missing_fields = _detect_missing_fields(intent)
+        if missing_fields:
+            requires_confirmation = False
         plan_hash = _compute_plan_hash(intent)
         created_at = _current_timestamp()
         _store_plan_metadata(plan_hash, created_at)
@@ -1615,6 +1660,7 @@ async def plan(request: Request, req: PlanRequest):
             requiresConfirmation=requires_confirmation,
             warnings=warnings,
             planHash=plan_hash,
+            missingFields=missing_fields,
         )
     except HTTPException as exc:
         status_code = exc.status_code
@@ -1653,6 +1699,152 @@ async def plan(request: Request, req: PlanRequest):
         _TTO_SECONDS.labels(endpoint="plan").observe(duration)
 
 
+
+
+@router.post("/simulate", response_model=SimulateResponse, dependencies=[Depends(require_api)])
+async def simulate(request: Request, req: SimulateRequest):
+    start = time.perf_counter()
+    correlation_id = _get_correlation_id(request)
+    intent = req.intent
+    payload = intent.payload
+    intent_type = intent.action if intent and intent.action else "unknown"
+    status_code = 200
+    plan_hash = _normalize_plan_hash(req.planHash) or _compute_plan_hash(intent)
+    if not plan_hash:
+        raise _http_error(400, "PLAN_HASH_REQUIRED")
+    stored_created_at = _lookup_plan_timestamp(plan_hash)
+    request_created_at = _normalize_timestamp(req.createdAt)
+    created_at = stored_created_at or request_created_at or _current_timestamp()
+    _store_plan_metadata(plan_hash, created_at)
+
+    blockers: List[str] = []
+    risks: List[str] = []
+
+    try:
+        request_text = ""
+        context = intent.userContext if intent and intent.userContext else {}
+        if isinstance(context, dict):
+            for key in ("requestText", "originalText", "prompt", "text"):
+                candidate = context.get(key)
+                if isinstance(candidate, str) and candidate.strip():
+                    request_text = candidate
+                    break
+        summary, _requires_confirmation, warnings = _summary_for_intent(intent, request_text)
+        if warnings:
+            risks.extend(warnings)
+
+        if intent.action == "post_job":
+            reward_value = getattr(payload, "reward", None)
+            deadline_value = getattr(payload, "deadlineDays", None)
+            reward_wei: Optional[int] = None
+            deadline_days: Optional[int] = None
+
+            if reward_value is None or (isinstance(reward_value, str) and not reward_value.strip()):
+                blockers.append("INSUFFICIENT_BALANCE")
+            else:
+                try:
+                    reward_decimal = Decimal(str(reward_value))
+                except (InvalidOperation, ValueError, TypeError):
+                    blockers.append("REWARD_INVALID")
+                else:
+                    if reward_decimal <= Decimal(0):
+                        blockers.append("INSUFFICIENT_BALANCE")
+                    else:
+                        if reward_decimal < Decimal("1"):
+                            risks.append("LOW_REWARD")
+                        precision = Decimal(10) ** AGIALPHA_DECIMALS
+                        reward_wei = int(
+                            (reward_decimal * precision).to_integral_value(rounding=ROUND_HALF_UP)
+                        )
+
+            if deadline_value is None:
+                blockers.append("DEADLINE_INVALID")
+            else:
+                try:
+                    deadline_days = int(deadline_value)
+                except (ValueError, TypeError):
+                    blockers.append("DEADLINE_INVALID")
+                else:
+                    if deadline_days <= 0:
+                        blockers.append("DEADLINE_INVALID")
+                    elif deadline_days <= 2:
+                        risks.append("SHORT_DEADLINE")
+
+            if not blockers and reward_wei is not None and deadline_days is not None:
+                org_identifier = _resolve_org_identifier(intent)
+                try:
+                    _get_org_policy_store().enforce(org_identifier, reward_wei, deadline_days)
+                except OrgPolicyViolation as violation:
+                    blockers.append(violation.code)
+
+        elif intent.action in {"finalize_job", "stake", "validate", "dispute", "check_status"}:
+            if getattr(payload, "jobId", None) is None:
+                blockers.append("JOB_ID_REQUIRED")
+        else:
+            blockers.append("UNSUPPORTED_ACTION")
+
+        if blockers:
+            status_code = 422
+            detail: Dict[str, Any] = {
+                "blockers": blockers,
+                "planHash": plan_hash,
+                "createdAt": created_at,
+            }
+            if risks:
+                detail["risks"] = risks
+            raise HTTPException(status_code=422, detail=detail)
+
+        response = SimulateResponse(
+            summary=summary,
+            intent=intent,
+            risks=risks,
+            blockers=[],
+            planHash=plan_hash,
+            createdAt=created_at,
+        )
+    except HTTPException as exc:
+        status_code = exc.status_code
+        log_fields: Dict[str, Any] = {
+            "intent_type": intent_type,
+            "http_status": status_code,
+        }
+        detail = getattr(exc, "detail", None)
+        if status_code == 422 and isinstance(detail, dict):
+            blockers_detail = detail.get("blockers")
+            if isinstance(blockers_detail, list):
+                log_fields["blockers"] = ",".join(blockers_detail)
+            risks_detail = detail.get("risks")
+            if isinstance(risks_detail, list) and risks_detail:
+                log_fields["risks"] = ",".join(risks_detail)
+            _log_event(logging.WARNING, "onebox.simulate.blocked", correlation_id, **log_fields)
+        else:
+            log_fields["error"] = detail
+            _log_event(logging.WARNING, "onebox.simulate.error", correlation_id, **log_fields)
+        raise
+    except Exception as exc:
+        status_code = 500
+        _log_event(
+            logging.ERROR,
+            "onebox.simulate.error",
+            correlation_id,
+            intent_type=intent_type,
+            http_status=status_code,
+            error=str(exc),
+        )
+        raise
+    else:
+        log_fields: Dict[str, Any] = {
+            "intent_type": intent_type,
+            "http_status": status_code,
+        }
+        if risks:
+            log_fields["risks"] = ",".join(risks)
+        _log_event(logging.INFO, "onebox.simulate.success", correlation_id, **log_fields)
+        return response
+    finally:
+        duration = time.perf_counter() - start
+        _SIMULATE_TOTAL.labels(intent_type=intent_type, http_status=str(status_code)).inc()
+        _TTO_SECONDS.labels(endpoint="simulate").observe(duration)
 
 
 @router.post("/execute", response_model=ExecuteResponse, dependencies=[Depends(require_api)])
@@ -1976,6 +2168,8 @@ __all__ = [
     "Payload",
     "PlanRequest",
     "PlanResponse",
+    "SimulateRequest",
+    "SimulateResponse",
     "StatusResponse",
     "_calculate_deadline_timestamp",
     "_compute_spec_hash",
@@ -1986,6 +2180,7 @@ __all__ = [
     "healthcheck",
     "metrics_endpoint",
     "plan",
+    "simulate",
     "status",
     "_UINT64_MAX",
     "_read_status",

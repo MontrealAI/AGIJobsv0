@@ -330,9 +330,12 @@ import prometheus_client  # type: ignore  # noqa: E402  pylint: disable=wrong-im
 
 from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     ExecuteRequest,
+    SimulateRequest,
+    SimulateResponse,
     health_router,
     JobIntent,
     OrgPolicyStore,
+    OrgPolicyViolation,
     Payload,
     PlanRequest,
     router,
@@ -347,6 +350,7 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     healthcheck,
     metrics_endpoint,
     plan,
+    simulate,
 )
 
 
@@ -434,7 +438,61 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
             response.summary,
             "Post job 1.0 AGIALPHA, 7 days. Fee 5%, burn 2%. Proceed?",
         )
-        self.assertTrue(response.requiresConfirmation)
+        self.assertFalse(response.requiresConfirmation)
+        self.assertCountEqual(response.missingFields, ["reward", "deadlineDays"])
+
+
+class PlannerValidationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_plan_rejects_empty_request(self) -> None:
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await plan(_make_request(), PlanRequest(text="   "))
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "REQUEST_EMPTY")
+
+    async def test_plan_marks_finalize_without_job_id(self) -> None:
+        response = await plan(_make_request(), PlanRequest(text="Finalize the job please"))
+        self.assertEqual(response.intent.action, "finalize_job")
+        self.assertIn("jobId", response.missingFields)
+        self.assertFalse(response.requiresConfirmation)
+
+
+class SimulatorTests(unittest.IsolatedAsyncioTestCase):
+    async def test_simulate_post_job_success(self) -> None:
+        intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
+        response = await simulate(_make_request(), SimulateRequest(intent=intent))
+        self.assertIsInstance(response, SimulateResponse)
+        self.assertEqual(response.intent.payload.reward, "5")
+        self.assertEqual(response.blockers, [])
+        self.assertTrue(response.planHash.startswith("0x"))
+        self.assertIsNotNone(response.createdAt)
+
+    async def test_simulate_post_job_missing_reward_returns_blocker(self) -> None:
+        intent = JobIntent(action="post_job", payload=Payload(title="Label data", deadlineDays=7))
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await simulate(_make_request(), SimulateRequest(intent=intent))
+        self.assertEqual(exc.exception.status_code, 422)
+        detail = exc.exception.detail
+        self.assertIn("INSUFFICIENT_BALANCE", detail["blockers"])  # type: ignore[index]
+
+    async def test_simulate_policy_violation_returns_blocker(self) -> None:
+        intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="25", deadlineDays=7))
+        violation = OrgPolicyViolation(
+            "JOB_BUDGET_CAP_EXCEEDED",
+            "Too high",
+            types.SimpleNamespace(max_budget_wei=None, max_duration_days=None),
+        )
+
+        class _PolicyStore:
+            def enforce(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+                raise violation
+
+        with mock.patch("routes.onebox._get_org_policy_store", return_value=_PolicyStore()):
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await simulate(_make_request(), SimulateRequest(intent=intent))
+
+        self.assertEqual(exc.exception.status_code, 422)
+        detail = exc.exception.detail
+        self.assertIn("JOB_BUDGET_CAP_EXCEEDED", detail["blockers"])  # type: ignore[index]
 
 
 class DeadlineComputationTests(unittest.TestCase):
