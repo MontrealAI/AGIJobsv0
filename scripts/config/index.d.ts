@@ -254,6 +254,9 @@ export interface RewardEngineThermoConfig {
   address?: string;
   treasury?: string | null;
   thermostat?: string | null;
+  feePool?: string | null;
+  reputation?: string | null;
+  energyOracle?: string | null;
   roleShares?: Record<string, RoleShareInput>;
   mu?: Record<string, number | string>;
   baselineEnergy?: Record<string, number | string>;

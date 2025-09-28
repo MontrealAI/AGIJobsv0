@@ -1325,6 +1325,42 @@ function normaliseRewardEngineConfig(config = {}) {
         });
   }
 
+  if (reward.feePool !== undefined) {
+    if (reward.feePool === null || reward.feePool === '') {
+      delete reward.feePool;
+    } else {
+      reward.feePool = ensureAddress(
+        reward.feePool,
+        'RewardEngine feePool',
+        { allowZero: false }
+      );
+    }
+  }
+
+  if (reward.reputation !== undefined) {
+    if (reward.reputation === null || reward.reputation === '') {
+      delete reward.reputation;
+    } else {
+      reward.reputation = ensureAddress(
+        reward.reputation,
+        'RewardEngine reputation engine',
+        { allowZero: false }
+      );
+    }
+  }
+
+  if (reward.energyOracle !== undefined) {
+    if (reward.energyOracle === null || reward.energyOracle === '') {
+      delete reward.energyOracle;
+    } else {
+      reward.energyOracle = ensureAddress(
+        reward.energyOracle,
+        'RewardEngine energy oracle',
+        { allowZero: false }
+      );
+    }
+  }
+
   if (reward.settlers && typeof reward.settlers === 'object') {
     const mapped = {};
     for (const [key, value] of Object.entries(reward.settlers)) {

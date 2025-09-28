@@ -119,12 +119,18 @@ export async function buildRewardEnginePlan(
   const [
     currentTreasury,
     currentThermostat,
+    currentFeePool,
+    currentReputation,
+    currentEnergyOracle,
     currentKappa,
     currentMaxProofs,
     currentTemperature,
   ] = await Promise.all([
     rewardEngine.treasury(),
     rewardEngine.thermostat(),
+    rewardEngine.feePool(),
+    rewardEngine.reputation(),
+    rewardEngine.energyOracle(),
     rewardEngine.kappa(),
     rewardEngine.maxProofs(),
     rewardEngine.temperature(),
@@ -175,6 +181,52 @@ export async function buildRewardEnginePlan(
       args: [desiredThermostat],
       current: currentThermostatAddr,
       desired: desiredThermostat,
+    });
+  }
+
+  const desiredFeePool = normaliseAddress(config.feePool, { allowZero: false });
+  if (
+    desiredFeePool &&
+    !sameAddress(desiredFeePool, ethers.getAddress(currentFeePool))
+  ) {
+    actions.push({
+      label: `Update fee pool to ${desiredFeePool}`,
+      method: 'setFeePool',
+      args: [desiredFeePool],
+      current: ethers.getAddress(currentFeePool),
+      desired: desiredFeePool,
+    });
+  }
+
+  const desiredReputation = normaliseAddress(config.reputation, {
+    allowZero: false,
+  });
+  if (
+    desiredReputation &&
+    !sameAddress(desiredReputation, ethers.getAddress(currentReputation))
+  ) {
+    actions.push({
+      label: `Update reputation engine to ${desiredReputation}`,
+      method: 'setReputationEngine',
+      args: [desiredReputation],
+      current: ethers.getAddress(currentReputation),
+      desired: desiredReputation,
+    });
+  }
+
+  const desiredEnergyOracle = normaliseAddress(config.energyOracle, {
+    allowZero: false,
+  });
+  if (
+    desiredEnergyOracle &&
+    !sameAddress(desiredEnergyOracle, ethers.getAddress(currentEnergyOracle))
+  ) {
+    actions.push({
+      label: `Update energy oracle to ${desiredEnergyOracle}`,
+      method: 'setEnergyOracle',
+      args: [desiredEnergyOracle],
+      current: ethers.getAddress(currentEnergyOracle),
+      desired: desiredEnergyOracle,
     });
   }
 
