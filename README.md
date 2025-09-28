@@ -173,10 +173,19 @@ Confirm production ownership before executing sensitive changes. The verifier cr
 npm run owner:verify-control -- --network <network>
 
 # Machine-readable output with strict failure when ownership mismatches
-npm run owner:verify-control -- --network <network> --json --strict > owner-control-report.json
+AGJ_OWNER_VERIFY_OUTPUT=json AGJ_OWNER_VERIFY_STRICT=1 \
+  npm run owner:verify-control -- --network <network> > owner-control-report.json
+
+# Markdown dashboard ready for handoff to stakeholders
+AGJ_OWNER_VERIFY_OUTPUT=markdown \
+  npm run owner:verify-control -- --network <network> > owner-control-report.md
 ```
 
 Provide per-module addresses via `modules.<name>.address`, the `AGJ_<NAME>_ADDRESS` environment variable, or `--address name=0x…` at runtime. Use `--modules`/`--skip` to scope checks and `--address-book` to point at alternative deployment records. The command exits non-zero when `--strict` is enabled and any contract lacks the expected governance, keeping change-control pipelines safe for non-technical operators.
+
+Set `AGJ_OWNER_VERIFY_OUTPUT` to `json` or `markdown` (optionally abbreviated as `md`) to select the formatter when using the Hardhat runner. The environment variable `AGJ_OWNER_VERIFY_STRICT=1` triggers non-zero exits on mismatches, `AGJ_OWNER_VERIFY_MODULES` and `AGJ_OWNER_VERIFY_SKIP` accept comma-separated allow/deny lists, and `AGJ_OWNER_VERIFY_ADDRESS_BOOK` points to an alternative deployment address registry.
+
+> **Advanced:** Run the verifier directly via `node -r ts-node/register/transpile-only scripts/v2/verifyOwnerControl.ts --json --strict` when you want to pass CLI flags instead of environment variables.
 
 ### Mainnet Deployment
 

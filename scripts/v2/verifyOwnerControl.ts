@@ -1,14 +1,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ethers, network } from 'hardhat';
-import {
-  loadOwnerControlConfig,
-  inferNetworkKey,
-} from '../config';
-import type {
-  OwnerControlConfig,
-  OwnerControlModuleConfig,
-} from '../config';
+import { loadOwnerControlConfig, inferNetworkKey } from '../config';
+import type { OwnerControlConfig, OwnerControlModuleConfig } from '../config';
 import { sameAddress } from './lib/utils';
 
 type ModuleType = 'governable' | 'ownable' | 'ownable2step';
@@ -23,6 +17,7 @@ type ModuleStatus =
 
 type CliOptions = {
   json: boolean;
+  markdown: boolean;
   strict: boolean;
   configNetwork?: string;
   modules?: string[];
@@ -59,7 +54,11 @@ function normaliseModuleType(value?: string): ModuleType {
     return 'governable';
   }
   const lower = value.toLowerCase();
-  if (lower === 'governable' || lower === 'ownable' || lower === 'ownable2step') {
+  if (
+    lower === 'governable' ||
+    lower === 'ownable' ||
+    lower === 'ownable2step'
+  ) {
     return lower;
   }
   throw new Error(`Unsupported module type: ${value}`);
@@ -85,6 +84,7 @@ function envAddressKey(moduleKey: string): string {
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     json: false,
+    markdown: false,
     strict: false,
     addressOverrides: {},
   };
@@ -94,6 +94,9 @@ function parseArgs(argv: string[]): CliOptions {
     switch (arg) {
       case '--json':
         options.json = true;
+        break;
+      case '--markdown':
+        options.markdown = true;
         break;
       case '--strict':
       case '--require':
@@ -163,10 +166,49 @@ function parseArgs(argv: string[]): CliOptions {
     }
   }
 
+  if (!options.addressBookPath && process.env.AGJ_OWNER_VERIFY_ADDRESS_BOOK) {
+    options.addressBookPath = process.env.AGJ_OWNER_VERIFY_ADDRESS_BOOK;
+  }
+
+  if (!options.modules && process.env.AGJ_OWNER_VERIFY_MODULES) {
+    options.modules = process.env.AGJ_OWNER_VERIFY_MODULES.split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  if (!options.skip && process.env.AGJ_OWNER_VERIFY_SKIP) {
+    options.skip = process.env.AGJ_OWNER_VERIFY_SKIP.split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  if (!options.strict && process.env.AGJ_OWNER_VERIFY_STRICT) {
+    const value = process.env.AGJ_OWNER_VERIFY_STRICT.trim().toLowerCase();
+    if (value && value !== '0' && value !== 'false' && value !== 'no') {
+      options.strict = true;
+    }
+  }
+
+  if (!options.json && !options.markdown) {
+    const envOutput =
+      process.env.AGJ_OWNER_VERIFY_OUTPUT ??
+      process.env.AGJ_OWNER_VERIFY_FORMAT;
+    if (envOutput) {
+      const normalised = envOutput.trim().toLowerCase();
+      if (normalised === 'json') {
+        options.json = true;
+      } else if (normalised === 'markdown' || normalised === 'md') {
+        options.markdown = true;
+      }
+    }
+  }
+
   return options;
 }
 
-async function readAddressBook(filePath: string): Promise<Record<string, string>> {
+async function readAddressBook(
+  filePath: string
+): Promise<Record<string, string>> {
   try {
     const content = await fs.readFile(filePath, 'utf8');
     const parsed = JSON.parse(content);
@@ -175,7 +217,9 @@ async function readAddressBook(filePath: string): Promise<Record<string, string>
     }
     const entries: Record<string, string> = {};
     for (const [key, value] of Object.entries(parsed)) {
-      const address = normaliseAddress(typeof value === 'string' ? value : undefined);
+      const address = normaliseAddress(
+        typeof value === 'string' ? value : undefined
+      );
       if (address) {
         entries[key] = address;
       }
@@ -189,7 +233,10 @@ async function readAddressBook(filePath: string): Promise<Record<string, string>
   }
 }
 
-function matchModuleKey(target: string, candidates: string[]): string | undefined {
+function matchModuleKey(
+  target: string,
+  candidates: string[]
+): string | undefined {
   const lower = target.toLowerCase();
   return candidates.find((candidate) => candidate.toLowerCase() === lower);
 }
@@ -205,7 +252,10 @@ function resolveExpectedOwner(
   if (moduleType === 'governable' && module.governance) {
     const address = normaliseAddress(module.governance);
     if (address) {
-      sources.push({ owner: address, source: `modules.${moduleKey}.governance` });
+      sources.push({
+        owner: address,
+        source: `modules.${moduleKey}.governance`,
+      });
     }
   }
 
@@ -241,7 +291,10 @@ function resolveExpectedOwner(
   return sources[0] ?? {};
 }
 
-function resolveModuleLabel(key: string, module: OwnerControlModuleConfig): string {
+function resolveModuleLabel(
+  key: string,
+  module: OwnerControlModuleConfig
+): string {
   if (module.label) {
     return module.label;
   }
@@ -262,11 +315,17 @@ async function resolveModuleAddress(
 
   const overrideKey = matchModuleKey(key, Object.keys(overrides));
   if (overrideKey) {
-    candidates.push({ value: overrides[overrideKey], source: `--address ${overrideKey}` });
+    candidates.push({
+      value: overrides[overrideKey],
+      source: `--address ${overrideKey}`,
+    });
   }
 
   if (module.address) {
-    candidates.push({ value: module.address, source: `modules.${key}.address` });
+    candidates.push({
+      value: module.address,
+      source: `modules.${key}.address`,
+    });
   }
 
   const envKey = envAddressKey(key);
@@ -276,7 +335,10 @@ async function resolveModuleAddress(
 
   const addressBookKey = matchModuleKey(key, Object.keys(addressBook));
   if (addressBookKey) {
-    candidates.push({ value: addressBook[addressBookKey], source: `addressBook.${addressBookKey}` });
+    candidates.push({
+      value: addressBook[addressBookKey],
+      source: `addressBook.${addressBookKey}`,
+    });
   }
 
   for (const candidate of candidates) {
@@ -317,7 +379,10 @@ async function detectContractOwner(
       const contract = new ethers.Contract(address, governanceAbi, provider);
       try {
         const governance = await contract.governance();
-        if (typeof governance === 'string' && governance !== ethers.ZeroAddress) {
+        if (
+          typeof governance === 'string' &&
+          governance !== ethers.ZeroAddress
+        ) {
           return { owner: ethers.getAddress(governance), pending: null };
         }
       } catch (_) {
@@ -337,7 +402,10 @@ async function detectContractOwner(
         contract.owner(),
         contract.pendingOwner().catch(() => ethers.ZeroAddress),
       ]);
-      const pendingAddress = pending && pending !== ethers.ZeroAddress ? ethers.getAddress(pending) : null;
+      const pendingAddress =
+        pending && pending !== ethers.ZeroAddress
+          ? ethers.getAddress(pending)
+          : null;
       return { owner: ethers.getAddress(owner), pending: pendingAddress };
     }
     default:
@@ -371,7 +439,12 @@ async function verifyModule(
     notes.push(...module.notes);
   }
 
-  const addressResult = await resolveModuleAddress(key, module, addressBook, overrides);
+  const addressResult = await resolveModuleAddress(
+    key,
+    module,
+    addressBook,
+    overrides
+  );
   notes.push(...addressResult.notes);
 
   if (!addressResult.address) {
@@ -389,13 +462,18 @@ async function verifyModule(
       status: 'missing-address',
       notes: [
         ...notes,
-        `No address found for ${label}. Provide one via ${hintSources.join(' or ')}.`,
+        `No address found for ${label}. Provide one via ${hintSources.join(
+          ' or '
+        )}.`,
       ],
     };
   }
 
   try {
-    const { owner, pending } = await detectContractOwner(moduleType, addressResult.address);
+    const { owner, pending } = await detectContractOwner(
+      moduleType,
+      addressResult.address
+    );
     const check: ModuleCheck = {
       key,
       label,
@@ -431,7 +509,11 @@ async function verifyModule(
       return check;
     }
 
-    if (moduleType === 'ownable2step' && pending && !sameAddress(pending, expected.owner)) {
+    if (
+      moduleType === 'ownable2step' &&
+      pending &&
+      !sameAddress(pending, expected.owner)
+    ) {
       check.status = 'mismatch';
       check.notes = [
         ...notes,
@@ -529,7 +611,9 @@ function printHumanReadable(
 ) {
   console.log('AGIJobs Owner Control Verification');
   console.log('-----------------------------------');
-  console.log(`Runtime network: ${header.networkName} (chainId ${header.chainId})`);
+  console.log(
+    `Runtime network: ${header.networkName} (chainId ${header.chainId})`
+  );
   console.log(`Hardhat network: ${header.hardhatNetwork}`);
   console.log(`Config path: ${header.configPath}`);
   console.log(`Address book: ${header.addressBookPath}`);
@@ -541,7 +625,11 @@ function printHumanReadable(
   for (const result of results) {
     console.log(`${formatStatus(result.status)}  ${result.label}`);
     if (result.address) {
-      console.log(`    Address:   ${result.address}${result.addressSource ? ` (${result.addressSource})` : ''}`);
+      console.log(
+        `    Address:   ${result.address}${
+          result.addressSource ? ` (${result.addressSource})` : ''
+        }`
+      );
     }
     if (result.currentOwner) {
       console.log(`    Owner:     ${result.currentOwner}`);
@@ -579,8 +667,79 @@ function printHumanReadable(
   console.log('');
 }
 
+function printMarkdownReport(
+  header: {
+    chainId: bigint;
+    networkName: string;
+    hardhatNetwork: string;
+    signer?: string | null;
+    configPath: string;
+    addressBookPath: string;
+  },
+  results: ModuleCheck[]
+) {
+  console.log('# AGIJobs Owner Control Report');
+  console.log('');
+  console.log(
+    `- **Runtime network:** ${header.networkName} (chainId ${header.chainId})`
+  );
+  console.log(`- **Hardhat network alias:** ${header.hardhatNetwork}`);
+  console.log(`- **Owner control config:** \`${header.configPath}\``);
+  console.log(`- **Address book:** \`${header.addressBookPath}\``);
+  if (header.signer) {
+    console.log(`- **Connected signer:** \`${header.signer}\``);
+  }
+  console.log('');
+
+  console.log(
+    '| Module | Status | Owner | Expected | Pending | Address | Notes |'
+  );
+  console.log('| --- | --- | --- | --- | --- | --- | --- |');
+  for (const result of results) {
+    const owner = result.currentOwner ?? '';
+    const expected = result.expectedOwner
+      ? `${result.expectedOwner}${
+          result.expectedSource ? ` (${result.expectedSource})` : ''
+        }`
+      : '';
+    const pending = result.pendingOwner ?? '';
+    const address = result.address
+      ? `${result.address}${
+          result.addressSource ? ` (${result.addressSource})` : ''
+        }`
+      : '';
+    const notes = result.notes.length > 0 ? result.notes.join('<br/>') : '';
+    console.log(
+      `| ${result.label} | ${formatStatus(
+        result.status
+      )} | ${owner} | ${expected} | ${pending} | ${address} | ${notes} |`
+    );
+    if (result.error) {
+      console.log(`| ↳ Error | ❌ error |  |  |  |  | ${result.error} |`);
+    }
+  }
+
+  const summary = summariseResults(results);
+  console.log('');
+  console.log('## Summary');
+  console.log('');
+  console.log('| Status | Count |');
+  console.log('| --- | ---: |');
+  console.log(`| ✅ ok | ${summary.ok} |`);
+  console.log(`| ❌ mismatch | ${summary.mismatch} |`);
+  console.log(`| ⚠️ missing address | ${summary.missingAddress} |`);
+  console.log(`| ⚠️ missing expected | ${summary.missingExpected} |`);
+  console.log(`| ⏭️ skipped | ${summary.skipped} |`);
+  console.log(`| ❌ errors | ${summary.error} |`);
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
+  if (options.json && options.markdown) {
+    throw new Error(
+      'Choose either --json or --markdown output modes, not both.'
+    );
+  }
   const addressBookPath = options.addressBookPath
     ? path.resolve(options.addressBookPath)
     : DEFAULT_ADDRESS_BOOK;
@@ -608,10 +767,14 @@ async function main() {
     .sort((a, b) => a.localeCompare(b))
     .filter((key) => {
       if (options.modules && options.modules.length > 0) {
-        return options.modules.some((entry) => entry.toLowerCase() === key.toLowerCase());
+        return options.modules.some(
+          (entry) => entry.toLowerCase() === key.toLowerCase()
+        );
       }
       if (options.skip && options.skip.length > 0) {
-        return !options.skip.some((entry) => entry.toLowerCase() === key.toLowerCase());
+        return !options.skip.some(
+          (entry) => entry.toLowerCase() === key.toLowerCase()
+        );
       }
       return true;
     });
@@ -676,6 +839,18 @@ async function main() {
 
   if (options.json) {
     console.log(JSON.stringify(jsonOutput, null, 2));
+  } else if (options.markdown) {
+    printMarkdownReport(
+      {
+        chainId: networkInfo.chainId,
+        networkName: networkInfo.name,
+        hardhatNetwork,
+        signer: signerAddress,
+        configPath,
+        addressBookPath,
+      },
+      results
+    );
   } else {
     printHumanReadable(
       {
@@ -692,7 +867,10 @@ async function main() {
 
   if (options.strict) {
     const failures =
-      summary.mismatch + summary.missingAddress + summary.missingExpected + summary.error;
+      summary.mismatch +
+      summary.missingAddress +
+      summary.missingExpected +
+      summary.error;
     if (failures > 0) {
       throw new Error('Owner control verification failed.');
     }
