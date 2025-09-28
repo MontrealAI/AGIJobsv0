@@ -380,7 +380,17 @@ async function executeIntent(intent) {
   const progress = startProgress();
   try {
     const mode = expertMode ? 'wallet' : 'relayer';
-    lastExecuteRequest = { intent, mode };
+    const planHash =
+      lastPlanResponse &&
+      typeof lastPlanResponse.planHash === 'string' &&
+      lastPlanResponse.planHash.trim().length > 0
+        ? lastPlanResponse.planHash.trim()
+        : null;
+    if (!planHash) {
+      throw new Error('PLAN_HASH_REQUIRED');
+    }
+    const requestCreatedAt = new Date().toISOString();
+    lastExecuteRequest = { intent, mode, planHash, createdAt: requestCreatedAt };
     const result = await api('/onebox/execute', lastExecuteRequest);
     lastExecuteResponse = result ?? null;
     renderExpertDetails();
@@ -410,14 +420,19 @@ async function executeIntent(intent) {
       progress.complete();
       const receipt = buildReceipt({
         jobId: intent.payload.jobId,
+        planHash: result.planHash || planHash,
         txHash,
+        txHashes: result.txHashes || (result.txHash ? [result.txHash] : undefined),
         reward: intent.payload.reward,
         token: intent.payload.rewardToken,
         specCid: result.specCid,
         specGatewayUrl: result.specGatewayUrl,
         deliverableCid: result.deliverableCid,
         deliverableGatewayUrl: result.deliverableGatewayUrl,
+        receiptCid: result.receiptCid,
+        receiptUri: result.receiptUri,
         status: intent.action === 'finalize_job' ? 'finalized' : 'submitted',
+        timestamp: Date.parse(result.createdAt || requestCreatedAt) || Date.now(),
       });
       storeReceipt(receipt);
       const url = result.receiptUrl ? result.receiptUrl.replace(/0x[a-fA-F0-9]{64}/, txHash) : null;
@@ -433,15 +448,20 @@ async function executeIntent(intent) {
     progress.complete();
     const receipt = buildReceipt({
       jobId: result.jobId,
+      planHash: result.planHash || planHash,
       txHash: result.txHash,
+      txHashes: result.txHashes,
       reward: result.reward || intent.payload.reward,
       token: result.token || intent.payload.rewardToken,
       specCid: result.specCid,
       specGatewayUrl: result.specGatewayUrl,
       deliverableCid: result.deliverableCid,
       deliverableGatewayUrl: result.deliverableGatewayUrl,
+      receiptCid: result.receiptCid,
+      receiptUri: result.receiptUri,
       url: result.receiptUrl,
       status: result.status || (intent.action === 'finalize_job' ? 'finalized' : 'submitted'),
+      timestamp: Date.parse(result.createdAt || requestCreatedAt) || Date.now(),
     });
     storeReceipt(receipt);
     if (intent.action === 'finalize_job') {
@@ -460,7 +480,9 @@ async function executeIntent(intent) {
 function buildReceipt(data) {
   return {
     jobId: data.jobId ?? null,
+    planHash: data.planHash ?? null,
     tx: data.txHash ?? null,
+    txs: Array.isArray(data.txHashes) && data.txHashes.length ? data.txHashes : null,
     url: data.url ?? null,
     cid: data.specCid ?? null,
     specUrl: data.specGatewayUrl ?? null,
@@ -469,7 +491,12 @@ function buildReceipt(data) {
     reward: data.reward ?? null,
     token: data.token ?? null,
     status: data.status ?? 'submitted',
-    timestamp: Date.now(),
+    timestamp:
+      typeof data.timestamp === 'number' && Number.isFinite(data.timestamp)
+        ? data.timestamp
+        : Date.now(),
+    receiptCid: data.receiptCid ?? null,
+    receiptUri: data.receiptUri ?? null,
   };
 }
 

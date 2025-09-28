@@ -8,6 +8,9 @@ export type ExecutionReceipt = {
   specUrl?: string | null;
   deliverableCid?: string | null;
   deliverableUrl?: string | null;
+  receiptCid?: string | null;
+  receiptUri?: string | null;
+  receiptGatewayUrls?: string[];
   netPayout?: string;
   explorerUrl?: string;
   createdAt: number;

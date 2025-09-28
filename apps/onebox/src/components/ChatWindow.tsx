@@ -559,9 +559,25 @@ export function ChatWindow() {
 
     setMessages((current) => [...current, progressMessage]);
 
+    const planHash =
+      typeof planContext.plan.planHash === 'string' && planContext.plan.planHash.length > 0
+        ? planContext.plan.planHash
+        : null;
+    if (!planHash) {
+      const message = 'Planner did not provide a plan hash. Please request a new plan before executing.';
+      updateMessageContent(progressMessageId, `⚠️ ${message}`);
+      setExecuteError(message);
+      setIsExecuting(false);
+      setStage('error');
+      return;
+    }
+
+    const requestCreatedAt = new Date().toISOString();
     const executeRequestPayload: ExecuteRequest = {
       intent: planContext.plan.intent,
       mode: 'relayer',
+      planHash,
+      createdAt: requestCreatedAt,
     };
     setExecuteRequestPayload(executeRequestPayload);
     setExecuteResponsePayload(null);
@@ -618,23 +634,57 @@ export function ChatWindow() {
         )
         .join(' ');
 
-      const txHashes = payload.txHash ? [payload.txHash] : [];
+      const txHashes = payload.txHashes?.length
+        ? payload.txHashes
+        : payload.txHash
+        ? [payload.txHash]
+        : [];
+      const resolvedPlanHash =
+        (typeof payload.planHash === 'string' && payload.planHash.length > 0
+          ? payload.planHash
+          : null) ?? planHash;
+      const createdAtIso = payload.createdAt ?? requestCreatedAt;
+      const createdAtMs = createdAtIso ? Date.parse(createdAtIso) : Number.NaN;
+      const resolvedDeliverableCid =
+        payload.deliverableCid ?? payload.receiptCid ?? null;
+      const resolvedDeliverableUrl =
+        payload.deliverableGatewayUrl ??
+        payload.deliverableUri ??
+        payload.receiptGatewayUrl ??
+        payload.receiptUri ??
+        null;
       const receipt: ExecutionReceipt = {
         id: createReceiptId(),
         jobId: payload.jobId,
-        planHash: planContext.plan.planHash,
+        planHash: resolvedPlanHash ?? undefined,
         txHash: payload.txHash,
         txHashes: txHashes.length ? txHashes : undefined,
         specCid: payload.specCid,
         specUrl: payload.specGatewayUrl ?? payload.specUri ?? undefined,
-        deliverableCid: payload.deliverableCid ?? undefined,
-        deliverableUrl: payload.deliverableGatewayUrl ?? payload.deliverableUri ?? undefined,
+        deliverableCid: resolvedDeliverableCid ?? undefined,
+        deliverableUrl: resolvedDeliverableUrl ?? undefined,
         netPayout: netPayout.length > 0 ? netPayout : undefined,
         explorerUrl: payload.receiptUrl,
-        createdAt: Date.now(),
+        createdAt: Number.isFinite(createdAtMs) ? createdAtMs : Date.now(),
         reward: payload.reward,
         token: payload.token,
       };
+
+      if (payload.receiptCid && !receipt.deliverableCid) {
+        receipt.deliverableCid = payload.receiptCid;
+      }
+      if (payload.receiptGatewayUrls?.length && !receipt.deliverableUrl) {
+        receipt.deliverableUrl = payload.receiptGatewayUrls[0];
+      }
+      if (payload.receiptCid) {
+        receipt.receiptCid = payload.receiptCid;
+      }
+      if (payload.receiptUri) {
+        receipt.receiptUri = payload.receiptUri;
+      }
+      if (payload.receiptGatewayUrls?.length) {
+        receipt.receiptGatewayUrls = payload.receiptGatewayUrls;
+      }
 
       const successLines = ['✅ Success.'];
       if (receipt.jobId !== undefined) {
