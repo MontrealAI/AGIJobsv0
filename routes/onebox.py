@@ -21,6 +21,13 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 import httpx
 import prometheus_client
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
+from orchestrator.models import (
+    PlanIn as OrchestratorPlanIn,
+    PlanOut as OrchestratorPlanOut,
+    SimOut as OrchestratorSimOut,
+)
+from orchestrator.planner import make_plan as orchestrator_make_plan
+from orchestrator.simulator import simulate_plan as orchestrator_simulate_plan
 from pydantic import BaseModel, Field
 from urllib.parse import quote
 from web3 import Web3
@@ -379,6 +386,8 @@ Action = Literal[
     "stake",
     "validate",
     "dispute",
+    "apply",
+    "submit",
 ]
 
 
@@ -976,6 +985,77 @@ def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool
         f"Fee {fee_text}%, burn {burn_text}%. Proceed?"
     )
     return _ensure_summary_limit(summary), True, warnings
+
+
+def _convert_orchestration_intent(plan_out: OrchestratorPlanOut) -> JobIntent:
+    """Translate an orchestrator plan intent into the legacy one-box schema."""
+
+    intent = plan_out.intent
+    action_map = {
+        "post_job": "post_job",
+        "finalize": "finalize_job",
+        "apply": "apply",
+        "submit": "submit",
+    }
+    action = action_map.get(intent.kind)
+    if not action:
+        raise _http_error(400, "INTENT_UNSUPPORTED")
+
+    attachments = [
+        Attachment(name=item.name, ipfs=item.cid)
+        for item in intent.attachments
+        if item and item.name
+    ]
+
+    payload = Payload(
+        title=intent.title,
+        description=intent.description,
+        attachments=attachments,
+        rewardToken=plan_out.plan.budget.token,
+        reward=intent.reward_agialpha,
+        deadlineDays=intent.deadline_days,
+        jobId=intent.job_id,
+    )
+
+    constraints = dict(intent.constraints or {})
+
+    return JobIntent(
+        action=action,
+        payload=payload,
+        constraints=constraints,
+        userContext={},
+    )
+
+
+def _compose_plan_summary(plan_out: OrchestratorPlanOut, sim_out: OrchestratorSimOut) -> str:
+    """Combine planner preview and simulator confirmations for display."""
+
+    summary = (plan_out.preview_summary or "Proceed?").strip()
+    confirmations = " ".join(msg.strip() for msg in sim_out.confirmations if msg).strip()
+    if confirmations and summary.endswith("Proceed?"):
+        summary = f"{summary[:-len('Proceed?')].rstrip()} {confirmations} Proceed?"
+    elif confirmations:
+        summary = f"{summary} {confirmations}".strip()
+    return _ensure_summary_limit(summary)
+
+
+def _merge_plan_warnings(plan_out: OrchestratorPlanOut, sim_out: OrchestratorSimOut) -> List[str]:
+    """Deduplicate planner and simulator warnings into a single list."""
+
+    merged: List[str] = []
+
+    def _append(values: List[str]) -> None:
+        for value in values:
+            if not value:
+                continue
+            if value not in merged:
+                merged.append(value)
+
+    _append(plan_out.warnings)
+    _append([f"MISSING_{field.upper()}" for field in plan_out.missing_fields])
+    _append(sim_out.risks)
+    _append(sim_out.blockers)
+    return merged
 
 
 @dataclass
@@ -1603,9 +1683,25 @@ async def plan(request: Request, req: PlanRequest):
     status_code = 200
 
     try:
-        intent = _naive_parse(req.text)
-        intent_type = intent.action
-        summary, requires_confirmation, warnings = _summary_for_intent(intent, req.text)
+        clean_text = (req.text or "").strip()
+        if not clean_text:
+            raise _http_error(400, "INPUT_TEXT_REQUIRED")
+
+        fallback_action = _detect_action(clean_text)
+        if fallback_action in {"check_status", "stake", "validate", "dispute"}:
+            intent = _naive_parse(clean_text)
+            intent_type = intent.action
+            summary, requires_confirmation, warnings = _summary_for_intent(intent, clean_text)
+        else:
+            plan_in = OrchestratorPlanIn(input_text=clean_text)
+            plan_out = orchestrator_make_plan(plan_in)
+            sim_out = orchestrator_simulate_plan(plan_out.plan)
+            intent = _convert_orchestration_intent(plan_out)
+            intent_type = intent.action
+            summary = _compose_plan_summary(plan_out, sim_out)
+            requires_confirmation = plan_out.requires_confirmation
+            warnings = _merge_plan_warnings(plan_out, sim_out)
+
         plan_hash = _compute_plan_hash(intent)
         created_at = _current_timestamp()
         _store_plan_metadata(plan_hash, created_at)
