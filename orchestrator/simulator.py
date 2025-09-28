@@ -5,11 +5,14 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation
 from typing import Tuple
 
+from .config import format_percent, get_burn_fraction, get_fee_fraction
 from .models import OrchestrationPlan, SimOut
 
-FEE_PCT = Decimal("0.05")
-BURN_PCT = Decimal("0.02")
-_TOTAL_MULTIPLIER = Decimal("1") + FEE_PCT + BURN_PCT
+FEE_FRACTION = get_fee_fraction()
+BURN_FRACTION = get_burn_fraction()
+FEE_PERCENT_LABEL = format_percent(FEE_FRACTION)
+BURN_PERCENT_LABEL = format_percent(BURN_FRACTION)
+_TOTAL_MULTIPLIER = Decimal("1") + FEE_FRACTION + BURN_FRACTION
 
 
 def _safe_decimal(value: str | None) -> Decimal:
@@ -36,7 +39,10 @@ def simulate_plan(plan: OrchestrationPlan) -> SimOut:
 
     total_budget, total_fees = _estimate_budget(plan)
     confirmations = [
-        f"You’ll escrow {format(total_budget, 'f')} {plan.budget.token} (fee 5%, burn 2%).",
+        (
+            f"You’ll escrow {format(total_budget, 'f')} {plan.budget.token} "
+            f"(fee {FEE_PERCENT_LABEL}, burn {BURN_PERCENT_LABEL})."
+        ),
     ]
     if plan.policies.requireValidator:
         confirmations.append("This plan requires validator quorum (3 validators).")

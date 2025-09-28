@@ -8,6 +8,7 @@ from typing import List, Tuple
 
 from fastapi import HTTPException, status
 
+from .config import format_percent, get_burn_fraction, get_fee_fraction
 from .models import Attachment, JobIntent, OrchestrationPlan, PlanIn, PlanOut, Step
 from .simulator import simulate_plan
 
@@ -25,8 +26,10 @@ _REQUIRED_FIELDS_BY_INTENT = {
 
 DEFAULT_REWARD = Decimal("50")
 DEFAULT_DEADLINE_DAYS = 7
-FEE_PCT = Decimal("0.05")
-BURN_PCT = Decimal("0.02")
+FEE_FRACTION = get_fee_fraction()
+BURN_FRACTION = get_burn_fraction()
+FEE_PERCENT_LABEL = format_percent(FEE_FRACTION)
+BURN_PERCENT_LABEL = format_percent(BURN_FRACTION)
 
 
 def _infer_reward(text: str) -> Tuple[str | None, List[str]]:
@@ -195,9 +198,9 @@ def make_plan(req: PlanIn) -> PlanOut:
 
     total_budget = reward_decimal
     if intent_kind == "post_job":
-        total_budget = (reward_decimal * (Decimal("1") + FEE_PCT + BURN_PCT)).quantize(
-            Decimal("0.01")
-        )
+        total_budget = (
+            reward_decimal * (Decimal("1") + FEE_FRACTION + BURN_FRACTION)
+        ).quantize(Decimal("0.01"))
 
     plan = OrchestrationPlan.from_intent(
         intent,
@@ -216,7 +219,12 @@ def make_plan(req: PlanIn) -> PlanOut:
         summary_parts.append(f"Post job '{intent.title}'")
         summary_parts.append(f"escrowing {reward} AGIALPHA")
         summary_parts.append(f"duration {intent.deadline_days} day(s)")
-        summary_parts.append(f"total escrow {format(total_budget, 'f')} AGIALPHA (fee 5%, burn 2%)")
+        summary_parts.append(
+            (
+                f"total escrow {format(total_budget, 'f')} AGIALPHA "
+                f"(fee {FEE_PERCENT_LABEL}, burn {BURN_PERCENT_LABEL})"
+            )
+        )
     elif intent.kind == "apply":
         summary_parts.append(f"Apply to job {intent.job_id or '???'}")
     elif intent.kind == "submit":
