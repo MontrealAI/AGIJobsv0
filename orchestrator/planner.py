@@ -213,11 +213,15 @@ def make_plan(req: PlanIn) -> PlanOut:
         format(total_budget, "f"),
     )
 
+    blockers: List[str] = []
+
     simulation = None
     if intent.kind == "post_job":
         simulation = simulate_plan(plan)
         warnings.extend(simulation.risks)
         warnings.extend(simulation.blockers)
+        if simulation.blockers:
+            blockers.extend(simulation.blockers)
 
     summary_parts = []
     if intent.kind == "post_job":
@@ -251,6 +255,8 @@ def make_plan(req: PlanIn) -> PlanOut:
         summary_parts.append("Custom workflow ready")
     preview_summary = ", ".join(summary_parts) + ". Proceed?"
 
+    requires_confirmation = not missing and not blockers
+
     return PlanOut(
         intent=intent,
         plan=plan,
@@ -258,6 +264,6 @@ def make_plan(req: PlanIn) -> PlanOut:
         preview_summary=preview_summary,
         warnings=warnings,
         simulation=simulation,
-        requiresConfirmation=True,
+        requiresConfirmation=requires_confirmation,
     )
 

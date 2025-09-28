@@ -23,7 +23,7 @@ def test_make_plan_defaults_and_summary():
     assert plan.preview_summary.endswith("Proceed?")
     assert "DEFAULT_REWARD_APPLIED" in plan.warnings
     assert "DEFAULT_DEADLINE_APPLIED" in plan.warnings
-    assert plan.requires_confirmation is True
+    assert plan.requires_confirmation is False
     assert plan.plan.budget.max == "53.50"
     assert "escrowing 50.00 AGIALPHA (default)" in plan.preview_summary
     assert "total escrow 53.50 AGIALPHA" in plan.preview_summary
@@ -34,39 +34,39 @@ def test_make_plan_non_post_job_marks_missing_fields():
 
     assert plan.intent.kind == "finalize"
     assert plan.intent.job_id == 42
-    assert plan.missing_fields == []
+    assert plan.missing_fields == ["reward_agialpha", "deadline_days"]
     assert plan.preview_summary.startswith("Finalize payout")
-    assert plan.requires_confirmation is True
+    assert plan.requires_confirmation is False
 
 
 def test_make_plan_requires_job_id_for_apply():
     plan = make_plan(PlanIn(input_text="Apply to the newest job"))
 
     assert plan.intent.kind == "apply"
-    assert plan.missing_fields == ["job_id"]
+    assert plan.missing_fields == ["reward_agialpha", "deadline_days", "job_id"]
     assert plan.intent.job_id is None
     assert plan.preview_summary.startswith("Apply to job")
-    assert plan.requires_confirmation is True
+    assert plan.requires_confirmation is False
 
 
 def test_make_plan_requires_job_id_for_submit():
     plan = make_plan(PlanIn(input_text="Submit my work for review"))
 
     assert plan.intent.kind == "submit"
-    assert plan.missing_fields == ["job_id"]
+    assert plan.missing_fields == ["reward_agialpha", "deadline_days", "job_id"]
     assert plan.intent.job_id is None
     assert plan.preview_summary.startswith("Submit deliverable for job")
-    assert plan.requires_confirmation is True
+    assert plan.requires_confirmation is False
 
 
 def test_make_plan_requires_job_id_for_finalize():
     plan = make_plan(PlanIn(input_text="Finalize the payout now"))
 
     assert plan.intent.kind == "finalize"
-    assert plan.missing_fields == ["job_id"]
+    assert plan.missing_fields == ["reward_agialpha", "deadline_days", "job_id"]
     assert plan.intent.job_id is None
     assert plan.preview_summary.startswith("Finalize payout for job")
-    assert plan.requires_confirmation is True
+    assert plan.requires_confirmation is False
 
 
 def test_make_plan_invalid_reward_raises():
@@ -103,3 +103,27 @@ def test_missing_deadline_is_reported():
     assert plan.missing_fields == ["deadline_days"]
     assert "escrowing 200.00 AGIALPHA" in plan.preview_summary
     assert "duration 7 day(s) (default)" in plan.preview_summary
+
+
+def test_complete_plan_allows_auto_confirmation():
+    plan = make_plan(
+        PlanIn(input_text="Post a 50 AGI job with deadline 5 days")
+    )
+
+    assert plan.intent.kind == "post_job"
+    assert plan.missing_fields == []
+    assert plan.simulation is not None
+    assert plan.simulation.blockers == []
+    assert plan.requires_confirmation is True
+
+
+def test_blocked_plan_requires_confirmation():
+    plan = make_plan(
+        PlanIn(input_text="Post a 200 AGI job with deadline 5 days")
+    )
+
+    assert plan.intent.kind == "post_job"
+    assert plan.missing_fields == []
+    assert plan.simulation is not None
+    assert "OVER_BUDGET" in plan.simulation.blockers
+    assert plan.requires_confirmation is False
