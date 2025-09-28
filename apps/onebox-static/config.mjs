@@ -5,6 +5,9 @@ const RAW_IPFS_GATEWAYS = [
   "https://w3s.link/ipfs/",
   "https://ipfs.io/ipfs/",
 ];
+const RAW_HISTORY_LENGTH = 10;
+const RAW_STATUS_REFRESH_MS = 15_000;
+const RAW_STATUS_MAX_ITEMS = 4;
 
 function trimTrailingSlash(value) {
   if (typeof value !== "string") return "";
@@ -53,6 +56,11 @@ export const STATUS_URL = joinUrlSegments(ORCHESTRATOR_ROOT, "status");
 export const IPFS_ENDPOINT = RAW_IPFS_ENDPOINT;
 export const IPFS_TOKEN_STORAGE_KEY = "AGIJOBS_W3S_TOKEN";
 export const IPFS_GATEWAYS = RAW_IPFS_GATEWAYS.map((url) => url.trim()).filter(Boolean);
+export const HISTORY_LENGTH = RAW_HISTORY_LENGTH;
+export const STATUS_REFRESH_MS = RAW_STATUS_REFRESH_MS;
+export const STATUS_REFRESH_INTERVAL_MS = RAW_STATUS_REFRESH_MS;
+export const STATUS_POLL_INTERVAL_MS = RAW_STATUS_REFRESH_MS;
+export const STATUS_MAX_ITEMS = RAW_STATUS_MAX_ITEMS;
 export const CONNECT_SRC_ORIGINS = unique(
   [
     ORCHESTRATOR_BASE_URL,
