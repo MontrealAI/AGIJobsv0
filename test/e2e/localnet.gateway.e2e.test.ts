@@ -158,6 +158,15 @@ describe('Agent gateway localnet E2E', function () {
     const env = await deployLocalSystem();
     const { employer, agent, token, registry } = env;
 
+    const validationFactory = await ethers.getContractFactory(
+      'contracts/test/DeterministicValidationModule.sol:DeterministicValidationModule'
+    );
+    const validation = await validationFactory.deploy();
+    await validation.waitForDeployment();
+    await validation.setValidators([agent.address]);
+    await validation.setResult(true);
+    gatewayUtils.validation = validation;
+
     const registryProxy = gatewayUtils.registry as any;
     registryProxy.connect = (wallet: Wallet) => {
       const connected = registry.connect(wallet);
@@ -181,7 +190,6 @@ describe('Agent gateway localnet E2E', function () {
     };
     registryProxy.taxPolicy = async () => ethers.ZeroAddress;
 
-    gatewayUtils.validation = null;
     gatewayUtils.stakeManager = null;
 
     const subdomain = 'local-agent';
@@ -270,6 +278,53 @@ describe('Agent gateway localnet E2E', function () {
     expect(submittedJob.resultURI).to.equal('ipfs://bafy-local-cid-1');
 
     const initialAgentBalance = await token.balanceOf(agent.address);
+
+    const nonceBeforeCommit = await validation.jobNonce(jobId);
+    const deterministicSalt = `0x${'11'.repeat(32)}`;
+    const commitHash = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32'],
+      [jobId, nonceBeforeCommit, true, deterministicSalt]
+    );
+
+    const commitTx = await validation
+      .connect(agent)
+      .commitValidation(jobId, commitHash, subdomain, []);
+    await commitTx.wait();
+
+    const commitRecord = await validation.getCommitRecord(jobId, agent.address);
+    expect(commitRecord.commitHash).to.equal(commitHash);
+    expect(commitRecord.subdomain).to.equal(subdomain);
+    expect(commitRecord.nonce).to.equal(nonceBeforeCommit);
+    expect(commitRecord.exists).to.equal(true);
+
+    const revealTx = await validation
+      .connect(agent)
+      .revealValidation(jobId, true, deterministicSalt, subdomain, []);
+    await revealTx.wait();
+
+    const revealRecord = await validation.getRevealRecord(jobId, agent.address);
+    expect(revealRecord.approve).to.equal(true);
+    expect(revealRecord.salt).to.equal(deterministicSalt);
+    expect(revealRecord.subdomain).to.equal(subdomain);
+    expect(revealRecord.exists).to.equal(true);
+
+    expect(await validation.finalized(jobId)).to.equal(false);
+
+    const finalizeValidationTx = await validation.finalize(jobId);
+    await finalizeValidationTx.wait();
+
+    expect(await validation.finalized(jobId)).to.equal(true);
+    const [validators, participants, commitDeadline, revealDeadline, approvals, rejections, tallied, committeeSize] =
+      await validation.rounds(jobId);
+    expect(validators).to.deep.equal([agent.address]);
+    expect(participants).to.deep.equal([agent.address]);
+    expect(commitDeadline).to.equal(0n);
+    expect(revealDeadline).to.equal(0n);
+    expect(approvals).to.equal(1n);
+    expect(rejections).to.equal(0n);
+    expect(tallied).to.equal(true);
+    expect(committeeSize).to.equal(1n);
+    expect(await validation.jobNonce(jobId)).to.equal(nonceBeforeCommit + 1n);
 
     await registry
       .connect(agent)
