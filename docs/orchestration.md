@@ -11,7 +11,7 @@ This sprint introduces a planner → simulator → runner pipeline that powers t
 ## Simulator
 
 * `POST /onebox/simulate` checks the plan against budget caps, deadline limits, and intent-specific requirements before any transaction is prepared.
-* Returns human readable confirmations plus machine readable `risks` (soft warnings) and `blockers` (fatal issues). Planner warnings are echoed as risks so the UI can display them inline.
+* Returns human readable confirmations plus machine readable `risks` (soft warnings) and `blockers` (fatal issues). Planner warnings are echoed as risks so the UI can display them inline. Examples include `LOW_REWARD` for small budgets and `LONG_DEADLINE` when a job keeps funds locked for extended periods.
 * If any blockers are present the API responds with HTTP 422 and includes the `blockers` list in the response body. The client should gather additional input and retry planning.
 
 ## Runner

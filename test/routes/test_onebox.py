@@ -517,6 +517,19 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         detail = exc.exception.detail
         self.assertIn("INSUFFICIENT_BALANCE", detail["blockers"])  # type: ignore[index]
 
+    async def test_simulate_flags_long_deadline_as_risk(self) -> None:
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Map terrain", reward="5", deadlineDays=60),
+        )
+        plan_hash = _compute_plan_hash(intent)
+        response = await simulate(
+            _make_request(),
+            SimulateRequest(intent=intent, planHash=plan_hash),
+        )
+        self.assertEqual(response.blockers, [])
+        self.assertIn("LONG_DEADLINE", response.risks)
+
     async def test_simulate_policy_violation_returns_blocker(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="25", deadlineDays=7))
         violation = OrgPolicyViolation(
