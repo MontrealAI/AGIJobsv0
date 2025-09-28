@@ -1,0 +1,36 @@
+import os
+import sys
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from orchestrator.models import JobIntent, OrchestrationPlan, Step
+from orchestrator.simulator import simulate_plan
+
+
+def _build_plan(reward: str = "50.00") -> OrchestrationPlan:
+    intent = JobIntent(kind="post_job", title="Test", reward_agialpha=reward, deadline_days=7)
+    steps = [
+        Step(id="pin", name="Pin", kind="pin"),
+        Step(id="post", name="Post", kind="chain"),
+    ]
+    return OrchestrationPlan.from_intent(intent, steps, reward)
+
+
+def test_simulator_returns_budget_and_confirmation():
+    plan = _build_plan()
+    result = simulate_plan(plan)
+
+    assert result.est_budget == "53.50"
+    assert result.est_fees == "3.50"
+    assert "You’ll escrow" in result.confirmations[0]
+    assert not result.blockers
+
+
+def test_simulator_detects_missing_budget():
+    plan = _build_plan()
+    plan.budget.max = "0"
+    result = simulate_plan(plan)
+
+    assert "BUDGET_REQUIRED" in result.blockers

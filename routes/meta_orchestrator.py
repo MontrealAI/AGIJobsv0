@@ -15,7 +15,7 @@ from orchestrator.simulator import simulate_plan
 try:  # pragma: no cover - import guard for test environments
     from .onebox import require_api  # type: ignore
 except (RuntimeError, ImportError):  # pragma: no cover - fallback when core router not configured
-    def require_api(*_args, **_kwargs):  # type: ignore
+    def require_api() -> None:  # type: ignore
         return None
 
 

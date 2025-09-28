@@ -1,12 +1,15 @@
-"""Shared pydantic models for the meta-orchestrator service."""
+"""Shared Pydantic models for the meta-orchestrator service."""
 
 from __future__ import annotations
 
 import hashlib
+import json
 import time
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+
+from .policies import load_default_policy
 
 
 class Attachment(BaseModel):
@@ -69,6 +72,7 @@ class Policies(BaseModel):
 
 
 class OrchestrationPlan(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     plan_id: str
     steps: List[Step]
     budget: Budget
@@ -78,13 +82,27 @@ class OrchestrationPlan(BaseModel):
     def from_intent(intent: JobIntent, steps: List[Step], budget_max: str) -> "OrchestrationPlan":
         """Helper to build a plan with a deterministic identifier."""
 
-        payload = f"{intent.json(sort_keys=True)}:{int(time.time())}".encode()
+        intent_payload = intent.model_dump(mode="json", exclude_none=True, by_alias=True)
+        payload = f"{json.dumps(intent_payload, sort_keys=True)}:{int(time.time())}".encode()
         plan_id = hashlib.sha256(payload).hexdigest()
+
+        policy_payload = load_default_policy()
+        policy_allow = policy_payload.get("allowTools", []) or []
+        policy_deny = policy_payload.get("denyTools", []) or []
+        require_validator = bool(policy_payload.get("requireValidator", True))
+        policy_budget = policy_payload.get("budget", {}) or {}
+        budget_token = policy_budget.get("token", "AGIALPHA")
+        budget_max = budget_max or policy_budget.get("dailyMax", "0")
+
         return OrchestrationPlan(
             plan_id=plan_id,
             steps=steps,
-            budget=Budget(max=str(budget_max)),
-            policies=Policies(),
+            budget=Budget(token=budget_token, max=str(budget_max)),
+            policies=Policies(
+                allowTools=list(policy_allow),
+                denyTools=list(policy_deny),
+                requireValidator=require_validator,
+            ),
         )
 
 
@@ -94,10 +112,30 @@ class PlanIn(BaseModel):
 
 
 class PlanOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     intent: JobIntent
     plan: OrchestrationPlan
     missing_fields: List[str] = Field(default_factory=list)
     preview_summary: str
+    warnings: List[str] = Field(default_factory=list)
+    requires_confirmation: bool = Field(
+        default=True,
+        alias="requiresConfirmation",
+        serialization_alias="requiresConfirmation",
+    )
+
+    @field_validator("missing_fields")
+    @classmethod
+    def _dedupe_missing_fields(cls, values: List[str]) -> List[str]:  # noqa: D401
+        seen = set()
+        deduped: List[str] = []
+        for value in values:
+            if value in seen:
+                continue
+            seen.add(value)
+            deduped.append(value)
+        return deduped
 
 
 class SimIn(BaseModel):
@@ -153,16 +191,4 @@ class StatusOut(BaseModel):
     current: Optional[str] = None
     logs: List[str] = Field(default_factory=list)
     receipts: Optional[Receipt] = None
-
-
-@validator("missing_fields", allow_reuse=True)
-def _dedupe_missing_fields(cls, values: List[str]) -> List[str]:  # noqa: D401
-    seen = set()
-    deduped: List[str] = []
-    for value in values:
-        if value in seen:
-            continue
-        seen.add(value)
-        deduped.append(value)
-    return deduped
 
