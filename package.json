@@ -56,7 +56,8 @@
     "lint:check": "solhint 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --max-warnings=0",
     "lint:fix": "solhint --fix 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --fix",
     "format:fix": "prettier --write \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\"",
-    "onebox:static:build": "node apps/onebox-static/scripts/build.mjs"
+    "onebox:static:build": "node apps/onebox-static/scripts/build.mjs",
+    "verify:sri": "node apps/onebox-static/scripts/verify-sri.mjs"
   },
   "keywords": [],
   "author": "",

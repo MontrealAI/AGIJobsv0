@@ -11,7 +11,12 @@
   />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%231052d6'/%3E%3Ctext x='50' y='62' font-family='Arial' font-size='52' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
   <!-- Build template: assets injected by scripts/build.mjs -->
-  <link rel="stylesheet" href="{{ styles_css }}" />
+  <link
+    rel="stylesheet"
+    href="{{ styles_css_href }}"
+    integrity="{{ styles_css_integrity }}"
+    crossorigin="anonymous"
+  />
 </head>
 <body>
   <header>
@@ -60,6 +65,11 @@
     <p class="noscript-message">JavaScript is required for the AGI Jobs one-box interface.</p>
   </noscript>
 
-  <script type="module" src="{{ app_js }}"></script>
+  <script
+    type="module"
+    src="{{ app_js_src }}"
+    integrity="{{ app_js_integrity }}"
+    crossorigin="anonymous"
+  ></script>
 </body>
 </html>
