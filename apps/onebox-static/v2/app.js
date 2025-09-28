@@ -562,7 +562,7 @@ function appendConfirmation(plan) {
     yes.disabled = true;
     no.disabled = true;
     appendNote('Okay, executing now…');
-    executeIntent(plan.intent);
+    executeIntent(plan);
   });
 
   no.addEventListener('click', () => {
@@ -603,7 +603,24 @@ function normalizePlannerResponse(payload) {
       ? payload.requiresConfirmation
       : true;
 
-  return { summary, intent, warnings, requiresConfirmation };
+  const planHash =
+    typeof container.planHash === 'string' && container.planHash.trim()
+      ? container.planHash.trim()
+      : typeof payload.planHash === 'string' && payload.planHash.trim()
+      ? payload.planHash.trim()
+      : null;
+
+  const createdAtCandidate =
+    container.createdAt !== undefined ? container.createdAt : payload.createdAt !== undefined ? payload.createdAt : null;
+
+  const createdAt =
+    typeof createdAtCandidate === 'string' && createdAtCandidate.trim()
+      ? createdAtCandidate.trim()
+      : Number.isFinite(createdAtCandidate)
+      ? createdAtCandidate
+      : null;
+
+  return { summary, intent, warnings, requiresConfirmation, planHash, createdAt };
 }
 
 async function plan(text) {
@@ -613,6 +630,8 @@ async function plan(text) {
       intent: mockIntent(text),
       warnings: [],
       requiresConfirmation: true,
+      planHash: null,
+      createdAt: null,
     };
   }
 
@@ -633,8 +652,17 @@ async function plan(text) {
   return normalizePlannerResponse(payload);
 }
 
-async function executeIntent(intent) {
+async function executeIntent(plan) {
   appendMessage(MESSAGE_ROLE.ASSISTANT, 'Working on it…');
+
+  const intent = plan?.intent;
+  const planHash = plan?.planHash ?? null;
+  const createdAt = plan?.createdAt ?? null;
+
+  if (!intent || typeof intent !== 'object') {
+    appendMessage(MESSAGE_ROLE.ASSISTANT, '⚠️ Missing job intent. Try planning your request again.');
+    return;
+  }
 
   if (!orchestratorUrl) {
     window.setTimeout(() => {
@@ -649,12 +677,24 @@ async function executeIntent(intent) {
     return;
   }
 
+  const body = {
+    intent,
+    mode: expertMode ? 'wallet' : 'relayer',
+  };
+
+  if (planHash) {
+    body.planHash = planHash;
+  }
+  if (createdAt !== null && createdAt !== undefined && createdAt !== '') {
+    body.createdAt = createdAt;
+  }
+
   const response = await fetch(`${orchestratorUrl}/onebox/execute`, {
     method: 'POST',
     headers: withAuthHeaders({
       'Content-Type': 'application/json',
     }),
-    body: JSON.stringify({ intent, mode: expertMode ? 'wallet' : 'relayer' }),
+    body: JSON.stringify(body),
   });
 
   const payload = await safeJson(response);
@@ -741,7 +781,7 @@ function handlePlanSubmit(event) {
       if (planResult.requiresConfirmation === false) {
         const summary = planResult.summary || 'Executing now.';
         appendMessage(MESSAGE_ROLE.ASSISTANT, summary);
-        executeIntent(planResult.intent);
+        executeIntent(planResult);
         return;
       }
 
