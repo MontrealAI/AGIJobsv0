@@ -541,6 +541,20 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         detail = exc.exception.detail
         self.assertIn("JOB_BUDGET_CAP_EXCEEDED", detail["blockers"])  # type: ignore[index]
 
+    async def test_simulate_rejects_runner_unsupported_actions(self) -> None:
+        intent = JobIntent(action="stake", payload=Payload(jobId=123))
+        plan_hash = _compute_plan_hash(intent)
+
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await simulate(
+                _make_request(),
+                SimulateRequest(intent=intent, planHash=plan_hash),
+            )
+
+        self.assertEqual(exc.exception.status_code, 422)
+        detail = exc.exception.detail
+        self.assertIn("UNSUPPORTED_ACTION", detail["blockers"])  # type: ignore[index]
+
 
 class DeadlineComputationTests(unittest.TestCase):
     def test_calculate_deadline_uses_epoch_seconds(self) -> None:
