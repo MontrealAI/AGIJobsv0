@@ -1,0 +1,18 @@
+{
+  "intent": "create_job",
+  "params": {
+    "job": {
+      "rewardAGIA": "50.00",
+      "deadline": 5,
+      "spec": {
+        "description": "Post a 50 AGI job with deadline 5 days",
+        "title": "Post a 50 agi job with deadline 5 days"
+      },
+      "title": "Post a 50 agi job with deadline 5 days"
+    }
+  },
+  "confirm": true,
+  "meta": {
+    "traceId": "11111111-1111-1111-1111-111111111111"
+  }
+}

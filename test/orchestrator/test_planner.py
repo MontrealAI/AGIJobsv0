@@ -18,6 +18,7 @@ def test_make_plan_defaults_and_summary():
     assert plan.intent.reward_agialpha == "50.00"
     assert plan.intent.deadline_days == 7
     assert plan.missing_fields == ["reward_agialpha", "deadline_days"]
+    assert plan.ics is None
     assert plan.simulation is not None
     assert plan.simulation.est_budget == plan.plan.budget.max
     assert plan.preview_summary.endswith("Proceed?")
@@ -27,6 +28,10 @@ def test_make_plan_defaults_and_summary():
     assert plan.plan.budget.max == "53.50"
     assert "escrowing 50.00 AGIALPHA (default)" in plan.preview_summary
     assert "total escrow 53.50 AGIALPHA" in plan.preview_summary
+    assert (
+        plan.clarification_prompt
+        == "I still need a reward amount and a deadline before I can continue."
+    )
 
 
 def test_make_plan_non_post_job_marks_missing_fields():
@@ -37,6 +42,8 @@ def test_make_plan_non_post_job_marks_missing_fields():
     assert plan.missing_fields == ["reward_agialpha", "deadline_days"]
     assert plan.preview_summary.startswith("Finalize payout")
     assert plan.requires_confirmation is False
+    assert plan.ics is None
+    assert plan.clarification_prompt == "I still need a validation outcome before I can continue."
 
 
 def test_make_plan_requires_job_id_for_apply():
@@ -47,6 +54,11 @@ def test_make_plan_requires_job_id_for_apply():
     assert plan.intent.job_id is None
     assert plan.preview_summary.startswith("Apply to job")
     assert plan.requires_confirmation is False
+    assert plan.ics is None
+    assert (
+        plan.clarification_prompt
+        == "I still need a jobId and an ENS subdomain before I can continue."
+    )
 
 
 def test_make_plan_requires_job_id_for_submit():
@@ -57,6 +69,11 @@ def test_make_plan_requires_job_id_for_submit():
     assert plan.intent.job_id is None
     assert plan.preview_summary.startswith("Submit deliverable for job")
     assert plan.requires_confirmation is False
+    assert plan.ics is None
+    assert (
+        plan.clarification_prompt
+        == "I still need a jobId, an ENS subdomain and a result payload or URI before I can continue."
+    )
 
     step_ids = {step.id for step in plan.plan.steps}
     for step in plan.plan.steps:
@@ -72,6 +89,11 @@ def test_make_plan_requires_job_id_for_finalize():
     assert plan.intent.job_id is None
     assert plan.preview_summary.startswith("Finalize payout for job")
     assert plan.requires_confirmation is False
+    assert plan.ics is None
+    assert (
+        plan.clarification_prompt
+        == "I still need a jobId and a validation outcome before I can continue."
+    )
 
     step_ids = {step.id for step in plan.plan.steps}
     for step in plan.plan.steps:
@@ -103,6 +125,11 @@ def test_missing_reward_is_reported():
     assert "duration 5 day(s)" in plan.preview_summary
     assert "escrowing 50.00 AGIALPHA (default)" in plan.preview_summary
     assert plan.requires_confirmation is False
+    assert plan.ics is None
+    assert (
+        plan.clarification_prompt
+        == "I still need a reward amount before I can continue."
+    )
 
 
 def test_missing_deadline_is_reported():
@@ -115,6 +142,11 @@ def test_missing_deadline_is_reported():
     assert "escrowing 200.00 AGIALPHA" in plan.preview_summary
     assert "duration 7 day(s) (default)" in plan.preview_summary
     assert plan.requires_confirmation is False
+    assert plan.ics is None
+    assert (
+        plan.clarification_prompt
+        == "I still need a deadline before I can continue."
+    )
 
 
 def test_complete_plan_allows_auto_confirmation():
@@ -127,6 +159,10 @@ def test_complete_plan_allows_auto_confirmation():
     assert plan.simulation is not None
     assert plan.simulation.blockers == []
     assert plan.requires_confirmation is True
+    assert plan.ics is not None
+    assert plan.ics.get("confirm") is True
+    assert "traceId" in (plan.ics.get("meta") or {})
+    assert plan.clarification_prompt is None
 
 
 def test_blocked_plan_requires_confirmation():
@@ -139,3 +175,6 @@ def test_blocked_plan_requires_confirmation():
     assert plan.simulation is not None
     assert "OVER_BUDGET" in plan.simulation.blockers
     assert plan.requires_confirmation is False
+    assert plan.ics is not None
+    assert plan.ics.get("confirm") is False
+    assert "traceId" in (plan.ics.get("meta") or {})

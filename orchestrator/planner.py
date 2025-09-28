@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import copy
 import re
 from decimal import Decimal, InvalidOperation
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
+from uuid import uuid4
 
 from fastapi import HTTPException, status
 
@@ -30,6 +32,159 @@ FEE_FRACTION = get_fee_fraction()
 BURN_FRACTION = get_burn_fraction()
 FEE_PERCENT_LABEL = format_percent(FEE_FRACTION)
 BURN_PERCENT_LABEL = format_percent(BURN_FRACTION)
+
+
+def _generate_trace_id() -> str:
+    """Generate a unique trace identifier for ICS payloads."""
+
+    return str(uuid4())
+
+
+def _build_job_spec(intent: JobIntent) -> Dict[str, Any]:
+    """Construct a minimal job specification payload."""
+
+    spec: Dict[str, Any] = {"description": intent.description or ""}
+    if intent.title:
+        spec["title"] = intent.title
+
+    attachments = [attachment.model_dump(exclude_none=True) for attachment in intent.attachments]
+    if attachments:
+        spec["attachments"] = attachments
+
+    return spec
+
+
+def _build_ics_candidate(intent: JobIntent, missing_fields: List[str]) -> Dict[str, Any] | None:
+    """Create a partial ICS payload used for parity checks and clarifications."""
+
+    if intent.kind == "post_job":
+        reward = None if "reward_agialpha" in missing_fields else intent.reward_agialpha
+        deadline = None if "deadline_days" in missing_fields else intent.deadline_days
+        payload: Dict[str, Any] = {
+            "intent": "create_job",
+            "params": {
+                "job": {
+                    "rewardAGIA": reward,
+                    "deadline": deadline,
+                    "spec": _build_job_spec(intent),
+                }
+            },
+        }
+        if intent.title:
+            payload["params"]["job"]["title"] = intent.title
+        return payload
+
+    if intent.kind == "apply":
+        return {
+            "intent": "apply_job",
+            "params": {
+                "jobId": intent.job_id,
+                "ens": {"subdomain": None},
+            },
+        }
+
+    if intent.kind == "submit":
+        return {
+            "intent": "submit_work",
+            "params": {
+                "jobId": intent.job_id,
+                "result": {"payload": None, "uri": None},
+                "ens": {"subdomain": None},
+            },
+        }
+
+    if intent.kind == "finalize":
+        return {
+            "intent": "finalize",
+            "params": {
+                "jobId": intent.job_id,
+                "success": None,
+            },
+        }
+
+    return None
+
+
+def _ics_missing_fields(ics: Dict[str, Any]) -> List[str]:
+    intent = ics.get("intent")
+    params: Dict[str, Any] = ics.get("params") or {}
+
+    if intent == "create_job":
+        job: Dict[str, Any] = params.get("job") or {}
+        result: List[str] = []
+        if not job.get("title"):
+            result.append("a job title")
+        if not job.get("rewardAGIA"):
+            result.append("a reward amount")
+        if not job.get("deadline"):
+            result.append("a deadline")
+        if not job.get("spec"):
+            result.append("a job spec")
+        return result
+
+    if intent == "apply_job":
+        result: List[str] = []
+        if not params.get("jobId"):
+            result.append("a jobId")
+        ens = params.get("ens") or {}
+        if not ens.get("subdomain"):
+            result.append("an ENS subdomain")
+        return result
+
+    if intent == "submit_work":
+        result: List[str] = []
+        if not params.get("jobId"):
+            result.append("a jobId")
+        ens = (params.get("ens") or {})
+        if not ens.get("subdomain"):
+            result.append("an ENS subdomain")
+        result_payload = (params.get("result") or {})
+        has_payload = result_payload.get("payload") is not None or result_payload.get("uri")
+        if not has_payload:
+            result.append("a result payload or URI")
+        return result
+
+    if intent == "finalize":
+        result: List[str] = []
+        if not params.get("jobId"):
+            result.append("a jobId")
+        if not isinstance(params.get("success"), bool):
+            result.append("a validation outcome")
+        return result
+
+    if intent in {"validate", "dispute"}:
+        job_id = params.get("jobId")
+        if not isinstance(job_id, (int, str)) or job_id == "":
+            return ["a jobId"]
+        return []
+
+    if intent in {"stake", "withdraw"}:
+        stake = params.get("stake") or {}
+        missing: List[str] = []
+        if not stake.get("amountAGIA"):
+            missing.append("a stake amount")
+        if not stake.get("role"):
+            missing.append("a stake role")
+        return missing
+
+    return []
+
+
+def _ics_needs_info(ics: Dict[str, Any]) -> bool:
+    return bool(_ics_missing_fields(ics))
+
+
+def _ask_follow_up(ics: Dict[str, Any]) -> str:
+    missing = _ics_missing_fields(ics)
+    if not missing:
+        return "I need a bit more information."
+    if len(missing) == 1:
+        return f"I still need {missing[0]} before I can continue."
+    return (
+        "I still need "
+        + ", ".join(missing[:-1])
+        + f" and {missing[-1]} before I can continue."
+    )
 
 
 def _infer_reward(text: str) -> Tuple[str | None, List[str]]:
@@ -281,13 +436,28 @@ def make_plan(req: PlanIn) -> PlanOut:
 
     requires_confirmation = not missing and not blockers and not defaults_applied
 
+    ics_candidate = _build_ics_candidate(intent, missing)
+    clarification_prompt = None
+    ics_payload: Dict[str, Any] | None = None
+
+    if ics_candidate is not None:
+        if _ics_needs_info(ics_candidate):
+            clarification_prompt = _ask_follow_up(ics_candidate)
+        else:
+            decorated = copy.deepcopy(ics_candidate)
+            decorated["confirm"] = bool(requires_confirmation)
+            decorated["meta"] = {"traceId": _generate_trace_id()}
+            ics_payload = decorated
+
     return PlanOut(
         intent=intent,
         plan=plan,
+        ics=ics_payload,
         missing_fields=missing,
         preview_summary=preview_summary,
         warnings=warnings,
         simulation=simulation,
+        clarification_prompt=clarification_prompt,
         requiresConfirmation=requires_confirmation,
     )
 

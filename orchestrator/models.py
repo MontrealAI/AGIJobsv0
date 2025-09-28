@@ -122,10 +122,16 @@ class PlanOut(BaseModel):
 
     intent: JobIntent
     plan: OrchestrationPlan
+    ics: Dict[str, Any] | None = None
     missing_fields: List[str] = Field(default_factory=list)
     preview_summary: str
     warnings: List[str] = Field(default_factory=list)
     simulation: "SimOut | None" = None
+    clarification_prompt: str | None = Field(
+        default=None,
+        alias="clarificationPrompt",
+        serialization_alias="clarificationPrompt",
+    )
     requires_confirmation: bool = Field(
         default=True,
         alias="requiresConfirmation",
