@@ -1,0 +1,10 @@
+{
+  "tools": [
+    { "name": "ipfs.pin", "kind": "pin", "budget": "0.00", "enabled": true },
+    { "name": "job.post", "kind": "chain", "budget": "dynamic", "enabled": true },
+    { "name": "job.finalize", "kind": "chain", "budget": "dynamic", "enabled": true },
+    { "name": "validator.quorum", "kind": "validate", "budget": "0.10", "enabled": true },
+    { "name": "llm.generate", "kind": "llm", "budget": "0.05", "enabled": true },
+    { "name": "code.run", "kind": "sandbox", "budget": "0.00", "enabled": true }
+  ]
+}

@@ -22,46 +22,35 @@ const expertExecuteResponseJson = $('#expert-execute-response');
 
 const COPY = {
   planning: 'Planning your workflow…',
-  confirm: (summary) =>
-    `${summary}<div class="pill-row pill-row-confirm"><button class="primary-btn" id="confirm-yes" type="button">Yes, do it</button><button class="ghost-btn" id="confirm-no" type="button">Cancel</button></div>`,
+  planPreview: (summary) =>
+    `${summary}<div class="pill-row pill-row-confirm"><button class="primary-btn" id="plan-approve" type="button">Looks good</button><button class="ghost-btn" id="plan-cancel" type="button">Cancel</button></div>`,
+  missing: (fields) =>
+    `I still need a few details before we can simulate: <strong>${fields.join(', ')}</strong>.`,
+  simulating: 'Running safety checks and estimating budget…',
+  simulationPreview: (sim) => {
+    const risks = sim.risks && sim.risks.length ? `<br><strong>Risks:</strong> ${sim.risks.join(', ')}` : '';
+    return `Est. budget <strong>${sim.est_budget} AGIALPHA</strong> (fees ${sim.est_fees}).${
+      risks
+    }<div class="pill-row pill-row-confirm"><button class="primary-btn" id="sim-approve" type="button">Proceed to execute</button><button class="ghost-btn" id="sim-cancel" type="button">Cancel</button></div>`;
+  },
+  executing: 'Executing the plan…',
   cancelled: 'Okay, cancelled. Adjust the details and try again.',
-  progressSteps: [
-    'Creating job specification…',
-    'Securing escrow and sponsorship…',
-    'Posting spec to IPFS…',
-    'Inviting validators and agents…',
-  ],
-  posted: (receipt) =>
-    `✅ Posted. <strong>Job #${receipt.jobId ?? '?'}.</strong><br>Reward: ${receipt.reward ?? '—'} ${
-      receipt.token ?? 'AGIALPHA'
+  receipt: (receipt) =>
+    `🧾 <strong>Receipt ready.</strong><br>Plan: <code>${receipt.planHash ?? receipt.planId ?? '—'}</code>${
+      receipt.jobId ? `<br>Job: #${receipt.jobId}` : ''
     }${receipt.cid ? `<br>CID: <code>${receipt.cid}</code>` : ''}${
       receipt.url
-        ? `<br><a href="${receipt.url}" target="_blank" rel="noopener">View on explorer</a>`
+        ? `<br><a href="${receipt.url}" target="_blank" rel="noopener">Verify on chain</a>`
         : receipt.tx
         ? `<br>Tx: ${receipt.tx}`
         : ''
     }`,
-  finalized: (receipt) =>
-    `✅ Finalized. <strong>Job #${receipt.jobId ?? '?'}.</strong>${
-      receipt.url
-        ? `<br><a href="${receipt.url}" target="_blank" rel="noopener">Receipt</a>`
-        : receipt.tx
-        ? `<br>Tx: ${receipt.tx}`
-        : ''
-    }`,
-  status: (status) => {
-    const parts = [`Job <strong>#${status.jobId}</strong> is <strong>${status.state}</strong>.`];
-    if (status.reward) {
-      parts.push(`Reward ${status.reward} ${status.token ?? 'AGIALPHA'}`);
-    }
-    if (status.deadline) {
-      parts.push(`Deadline ${new Date(status.deadline * 1000).toLocaleString()}`);
-    }
-    if (status.assignee) {
-      parts.push(`Assignee ${status.assignee}`);
-    }
-    return parts.join('<br>');
-  },
+  progressSteps: [
+    'Planning orchestration…',
+    'Simulating costs and guardrails…',
+    'Executing orchestrated steps…',
+    'Gathering receipts…',
+  ],
 };
 
 const ERROR_PATTERNS = [
@@ -161,6 +150,22 @@ const ERROR_PATTERNS = [
     key: 'UNKNOWN_REVERT',
     needles: ['UNKNOWN_REVERT', 'REVERT'],
   },
+  {
+    key: 'BLOCKED',
+    needles: ['BLOCKED', 'BUDGET_REQUIRED'],
+  },
+  {
+    key: 'OVER_BUDGET',
+    needles: ['OVER_BUDGET'],
+  },
+  {
+    key: 'RUN_NOT_FOUND',
+    needles: ['RUN_NOT_FOUND'],
+  },
+  {
+    key: 'RUN_FAILED',
+    needles: ['RUN_FAILED'],
+  },
 ];
 
 const ERRORS = {
@@ -189,6 +194,14 @@ const ERRORS = {
   UNKNOWN_REVERT:
     'The transaction reverted unexpectedly. Review orchestrator logs or rerun in Expert mode for detailed revert data.',
   UNKNOWN: 'Something went wrong. I logged the details so we can retry safely.',
+  BLOCKED:
+    'Policy checks blocked this plan. Provide the missing fields or adjust the budget and try again.',
+  OVER_BUDGET:
+    'Simulation detected the plan is over budget. Lower the reward or raise the cap before retrying.',
+  RUN_NOT_FOUND:
+    'The run status could not be located. Refresh the page and try again.',
+  RUN_FAILED:
+    'The orchestrator reported a failure while executing the plan. Review the logs and resubmit once resolved.',
 };
 
 const STORAGE_KEYS = {
@@ -206,6 +219,8 @@ let isSubmitting = false;
 let lastPlanResponse = null;
 let lastExecuteRequest = null;
 let lastExecuteResponse = null;
+let lastSimulationResponse = null;
+let lastRunStatus = null;
 
 orchInput.value = orchestrator;
 tokenInput.value = apiToken;
@@ -308,6 +323,10 @@ function truncate(value) {
   return value.length > 18 ? `${value.slice(0, 8)}…${value.slice(-6)}` : value;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function storeReceipt(data) {
   receipts = [data, ...receipts].slice(0, 10);
   saveReceipts();
@@ -370,109 +389,87 @@ async function api(path, body) {
 
 async function planRequest(text) {
   addMessage('assist', COPY.planning);
-  const response = await api('/onebox/plan', { text, expert: expertMode });
+  lastSimulationResponse = null;
+  lastExecuteRequest = null;
+  lastExecuteResponse = null;
+  lastRunStatus = null;
+  const response = await api('/onebox/plan', { input_text: text });
   lastPlanResponse = response ?? null;
   renderExpertDetails();
   return response;
 }
 
-async function executeIntent(intent) {
-  const progress = startProgress();
-  try {
-    const mode = expertMode ? 'wallet' : 'relayer';
-    const planHash =
-      lastPlanResponse &&
-      typeof lastPlanResponse.planHash === 'string' &&
-      lastPlanResponse.planHash.trim().length > 0
-        ? lastPlanResponse.planHash.trim()
-        : null;
-    if (!planHash) {
-      throw new Error('PLAN_HASH_REQUIRED');
+async function simulatePlanRequest(plan) {
+  const response = await api('/onebox/simulate', { plan });
+  lastSimulationResponse = response ?? null;
+  renderExpertDetails();
+  return response;
+}
+
+async function executePlanRequest(plan, approvals = []) {
+  lastExecuteRequest = { plan, approvals };
+  const response = await api('/onebox/execute', lastExecuteRequest);
+  lastExecuteResponse = response ?? null;
+  renderExpertDetails();
+  return response;
+}
+
+async function pollRunStatus(runId, onUpdate) {
+  let status = null;
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    status = await api(`/onebox/status?run_id=${encodeURIComponent(runId)}`);
+    lastRunStatus = status ?? null;
+    if (typeof onUpdate === 'function') {
+      onUpdate(status);
     }
-    const requestCreatedAt = new Date().toISOString();
-    lastExecuteRequest = { intent, mode, planHash, createdAt: requestCreatedAt };
-    const result = await api('/onebox/execute', lastExecuteRequest);
-    lastExecuteResponse = result ?? null;
     renderExpertDetails();
-
-    if (intent.action === 'check_status') {
-      progress.complete();
-      addMessage('assist', COPY.status(result));
-      return;
+    if (!status || status.run.state === 'succeeded' || status.run.state === 'failed') {
+      break;
     }
+    await sleep(1000);
+  }
+  return status;
+}
 
-    if (mode === 'wallet' && result && result.to && result.data) {
-      if (!ethereum) {
-        throw new Error('RELAY_UNAVAILABLE');
-      }
-      const [from] = await ethereum.request({ method: 'eth_requestAccounts' });
-      const txHash = await ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [
-          {
-            from,
-            to: result.to,
-            data: result.data,
-            value: result.value || '0x0',
-          },
-        ],
-      });
+function renderRunSteps(status) {
+  if (!status || !Array.isArray(status.steps)) {
+    return '';
+  }
+  return `<ul class="step-status">${status.steps
+    .map((step) => `<li class="state-${step.state}">[${step.kind}] ${step.name}</li>`)
+    .join('')}</ul>`;
+}
+
+async function executePlanWithUi(plan, progress, statusNode) {
+  try {
+    statusNode.innerHTML = `${COPY.executing}`;
+    const response = await executePlanRequest(plan);
+    const runStatus = await pollRunStatus(response.run_id, (status) => {
+      statusNode.innerHTML = `${COPY.executing}<br>${renderRunSteps(status)}`;
+    });
+    if (runStatus && runStatus.run && runStatus.run.state === 'succeeded') {
       progress.complete();
       const receipt = buildReceipt({
-        jobId: intent.payload.jobId,
-        planHash: result.planHash || planHash,
-        txHash,
-        txHashes: result.txHashes || (result.txHash ? [result.txHash] : undefined),
-        reward: intent.payload.reward,
-        token: intent.payload.rewardToken,
-        specCid: result.specCid,
-        specGatewayUrl: result.specGatewayUrl,
-        deliverableCid: result.deliverableCid,
-        deliverableGatewayUrl: result.deliverableGatewayUrl,
-        receiptCid: result.receiptCid,
-        receiptUri: result.receiptUri,
-        status: intent.action === 'finalize_job' ? 'finalized' : 'submitted',
-        timestamp: Date.parse(result.createdAt || requestCreatedAt) || Date.now(),
+        jobId: runStatus.receipts?.job_id ?? null,
+        planHash: runStatus.run.plan_id,
+        planId: runStatus.run.plan_id,
+        txHash: runStatus.receipts?.txes?.[0] ?? null,
+        txHashes: runStatus.receipts?.txes ?? null,
+        specCid: runStatus.receipts?.cids?.[0] ?? null,
+        reward: lastPlanResponse?.plan?.budget?.max ?? null,
+        token: lastPlanResponse?.plan?.budget?.token ?? 'AGIALPHA',
+        status: 'succeeded',
+        timestamp: Date.now(),
       });
       storeReceipt(receipt);
-      const url = result.receiptUrl ? result.receiptUrl.replace(/0x[a-fA-F0-9]{64}/, txHash) : null;
-      receipt.url = url;
-      if (intent.action === 'finalize_job') {
-        addMessage('assist', COPY.finalized(receipt));
-      } else {
-        addMessage('assist', COPY.posted(receipt));
-      }
-      return;
-    }
-
-    progress.complete();
-    const receipt = buildReceipt({
-      jobId: result.jobId,
-      planHash: result.planHash || planHash,
-      txHash: result.txHash,
-      txHashes: result.txHashes,
-      reward: result.reward || intent.payload.reward,
-      token: result.token || intent.payload.rewardToken,
-      specCid: result.specCid,
-      specGatewayUrl: result.specGatewayUrl,
-      deliverableCid: result.deliverableCid,
-      deliverableGatewayUrl: result.deliverableGatewayUrl,
-      receiptCid: result.receiptCid,
-      receiptUri: result.receiptUri,
-      url: result.receiptUrl,
-      status: result.status || (intent.action === 'finalize_job' ? 'finalized' : 'submitted'),
-      timestamp: Date.parse(result.createdAt || requestCreatedAt) || Date.now(),
-    });
-    storeReceipt(receipt);
-    if (intent.action === 'finalize_job') {
-      addMessage('assist', COPY.finalized(receipt));
+      addMessage('assist', COPY.receipt(receipt));
     } else {
-      addMessage('assist', COPY.posted(receipt));
+      progress.fail();
+      throw new Error(runStatus?.run?.state || 'RUN_FAILED');
     }
   } catch (error) {
     progress.fail();
-    lastExecuteResponse = { error: error?.message || 'UNKNOWN_ERROR' };
-    renderExpertDetails();
+    statusNode.innerHTML = `<span class="error-text">⚠️ ${error?.message || 'Execution failed.'}</span>`;
     handleError(error);
   }
 }
@@ -481,6 +478,7 @@ function buildReceipt(data) {
   return {
     jobId: data.jobId ?? null,
     planHash: data.planHash ?? null,
+    planId: data.planId ?? null,
     tx: data.txHash ?? null,
     txs: Array.isArray(data.txHashes) && data.txHashes.length ? data.txHashes : null,
     url: data.url ?? null,
@@ -498,15 +496,6 @@ function buildReceipt(data) {
     receiptCid: data.receiptCid ?? null,
     receiptUri: data.receiptUri ?? null,
   };
-}
-
-async function fetchStatus(jobId) {
-  try {
-    const status = await api(`/onebox/status?jobId=${jobId}`);
-    addMessage('assist', COPY.status(status));
-  } catch (error) {
-    handleError(error);
-  }
 }
 
 function resolveErrorKey(message) {
@@ -572,36 +561,26 @@ function formatJson(value, fallback) {
 
 function renderExpertDetails() {
   if (!expertPanel) return;
-  const chainId =
-    (typeof lastExecuteResponse?.chainId === 'number' && lastExecuteResponse.chainId) ||
-    (typeof lastPlanResponse?.intent?.payload?.chainId === 'number' &&
-      lastPlanResponse.intent.payload.chainId) ||
-    null;
   if (expertNetwork) {
-    expertNetwork.textContent = chainId ? `${resolveNetworkName(chainId)} (${chainId})` : '—';
+    expertNetwork.textContent = '—';
   }
   if (expertContract) {
-    const contractAddress =
-      lastExecuteResponse?.to ||
-      lastExecuteRequest?.intent?.payload?.to ||
-      lastPlanResponse?.intent?.payload?.contractAddress ||
-      lastPlanResponse?.intent?.payload?.escrowAddress ||
-      null;
-    expertContract.textContent = contractAddress || '—';
+    expertContract.textContent = '—';
   }
   if (expertPlanJson) {
     expertPlanJson.textContent = formatJson(lastPlanResponse, 'No plan response yet.');
   }
   if (expertExecuteRequestJson) {
-    expertExecuteRequestJson.textContent = formatJson(
-      lastExecuteRequest,
-      'No execute request yet.',
-    );
+    expertExecuteRequestJson.textContent = formatJson(lastExecuteRequest, 'No execute request yet.');
   }
   if (expertExecuteResponseJson) {
     expertExecuteResponseJson.textContent = formatJson(
-      lastExecuteResponse,
-      'No execute response yet.',
+      {
+        simulation: lastSimulationResponse,
+        execute: lastExecuteResponse,
+        status: lastRunStatus,
+      },
+      'No execution data yet.',
     );
   }
 }
@@ -628,18 +607,52 @@ form.addEventListener('submit', async (event) => {
       handleError(new Error('UNKNOWN'));
       return;
     }
-    const { summary, intent } = plan;
-    if (intent.action === 'check_status' && intent.payload.jobId) {
-      await fetchStatus(intent.payload.jobId);
+    if (Array.isArray(plan.missing_fields) && plan.missing_fields.length) {
+      addMessage('assist', COPY.missing(plan.missing_fields));
       return;
     }
-    const confirmation = addMessage('assist', COPY.confirm(summary));
-    const yesBtn = confirmation.querySelector('#confirm-yes');
-    const noBtn = confirmation.querySelector('#confirm-no');
+    const confirmation = addMessage('assist', COPY.planPreview(plan.preview_summary));
+    const yesBtn = confirmation.querySelector('#plan-approve');
+    const noBtn = confirmation.querySelector('#plan-cancel');
     yesBtn?.addEventListener('click', () => {
+      if (!yesBtn || yesBtn.disabled) return;
       yesBtn.disabled = true;
-      noBtn.disabled = true;
-      void executeIntent(intent);
+      if (noBtn) noBtn.disabled = true;
+      disableForm(true);
+      const progress = startProgress();
+      const simulationMsg = addMessage('assist', COPY.simulating);
+      (async () => {
+        try {
+          const simulation = await simulatePlanRequest(plan.plan);
+          if (!simulation) {
+            throw new Error('BLOCKED');
+          }
+          simulationMsg.innerHTML = COPY.simulationPreview(simulation);
+          const simApprove = simulationMsg.querySelector('#sim-approve');
+          const simCancel = simulationMsg.querySelector('#sim-cancel');
+          simApprove?.addEventListener('click', () => {
+            if (!simApprove || simApprove.disabled) return;
+            simApprove.disabled = true;
+            if (simCancel) simCancel.disabled = true;
+            const execMsg = addMessage('assist', COPY.executing);
+            void executePlanWithUi(plan.plan, progress, execMsg).finally(() => {
+              disableForm(false);
+            });
+          });
+          simCancel?.addEventListener('click', () => {
+            if (simApprove) simApprove.disabled = true;
+            simCancel.disabled = true;
+            progress.fail();
+            disableForm(false);
+            addMessage('assist', COPY.cancelled);
+          });
+        } catch (error) {
+          progress.fail();
+          simulationMsg.innerHTML = `<span class="error-text">⚠️ Simulation failed.</span>`;
+          disableForm(false);
+          handleError(error);
+        }
+      })();
     });
     noBtn?.addEventListener('click', () => {
       yesBtn.disabled = true;

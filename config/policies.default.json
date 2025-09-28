@@ -1,0 +1,9 @@
+{
+  "allowTools": ["ipfs.pin", "job.post", "job.finalize", "validator.quorum", "llm.generate", "code.run"],
+  "denyTools": [],
+  "requireValidator": true,
+  "budget": {
+    "token": "AGIALPHA",
+    "dailyMax": "100.00"
+  }
+}

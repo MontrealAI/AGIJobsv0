@@ -1,14 +1,20 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  parsePlanResponse,
+  parseSimulationResponse,
+  parseExecuteResponse,
+  parseStatusResponse,
+} from '@agijobs/onebox-sdk';
 import type {
   ExecuteRequest,
   ExecuteResponse,
   PlanRequest,
   PlanResponse,
-  PlannerHistoryMessage,
+  SimulationResponse,
+  StatusResponse,
 } from '@agijobs/onebox-sdk';
-import deploymentAddresses from '../../../../docs/deployment-addresses.json';
 import { defaultMessages } from '../lib/defaultMessages';
 import { ReceiptsPanel } from './ReceiptsPanel';
 import type { ExecutionReceipt } from './receiptTypes';
@@ -24,6 +30,16 @@ const ORCHESTRATOR_TOKEN =
   process.env.NEXT_PUBLIC_ALPHA_ORCHESTRATOR_TOKEN ??
   '';
 
+const RECEIPTS_STORAGE_KEY = 'onebox:receipts';
+const RECEIPT_HISTORY_LIMIT = 5;
+const POLL_INTERVAL_MS = 1500;
+const MAX_POLL_ATTEMPTS = 40;
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const toErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Unknown error';
+
 type TextMessage = {
   id: string;
   role: 'user' | 'assistant';
@@ -38,101 +54,106 @@ type PlanMessage = {
   plan: PlanResponse;
 };
 
-type ChatMessage = TextMessage | PlanMessage;
+type SimulationMessage = {
+  id: string;
+  role: 'assistant';
+  kind: 'simulation';
+  simulation: SimulationResponse;
+};
+
+type StatusMessage = {
+  id: string;
+  role: 'assistant';
+  kind: 'status';
+  status: StatusResponse;
+};
+
+type ChatMessage = TextMessage | PlanMessage | SimulationMessage | StatusMessage;
 
 type ChatStage =
   | 'idle'
   | 'planning'
   | 'planned'
-  | 'awaiting_confirmation'
+  | 'simulating'
+  | 'awaiting_execute'
   | 'executing'
   | 'completed'
   | 'error';
 
 const createMessageId = () => crypto.randomUUID();
-const createReceiptId = () => crypto.randomUUID();
-const RECEIPTS_STORAGE_KEY = 'onebox:receipts';
-const RECEIPT_HISTORY_LIMIT = 5;
 
-type ErrorPayload = { error: string };
-
-const CONTRACT_ADDRESSES: Record<string, string> =
-  deploymentAddresses as Record<string, string>;
-
-const NETWORK_NAMES: Record<number, string> = {
-  1: 'Ethereum Mainnet',
-  5: 'Goerli',
-  10: 'Optimism',
-  56: 'BNB Smart Chain',
-  137: 'Polygon',
-  8453: 'Base',
-  11155111: 'Sepolia',
-};
-
-const resolveNetworkName = (chainId: number) =>
-  NETWORK_NAMES[chainId] ?? `Chain ${chainId}`;
-
-const normalizeChainId = (value: unknown): number | undefined => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
+const mapStatusToReceipt = (status: StatusResponse): ExecutionReceipt | null => {
+  const receipt = status.receipts;
+  if (!receipt) {
+    return null;
   }
 
-  if (typeof value === 'string') {
-    const parsed = Number.parseInt(value, 10);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
-  }
+  const firstCid = receipt.cids?.[0];
+  const firstTx = receipt.txes?.[0];
 
-  return undefined;
+  return {
+    id: status.run.id,
+    jobId: receipt.job_id ?? undefined,
+    planHash: receipt.plan_id ?? status.run.plan_id,
+    txHash: firstTx ?? undefined,
+    txHashes: receipt.txes?.length ? receipt.txes : undefined,
+    specCid: firstCid ?? undefined,
+    createdAt: Date.now(),
+    receiptCid: receipt.plan_id ?? undefined,
+    reward: undefined,
+    token: undefined,
+    explorerUrl: undefined,
+    netPayout: undefined,
+  };
 };
 
-const toErrorPayload = (error: unknown): ErrorPayload => ({
-  error: error instanceof Error ? error.message : 'Unknown error',
-});
+const formatSimulationSummary = (simulation: SimulationResponse) => {
+  const lines = [
+    `Est. budget: ${simulation.est_budget} (fees ${simulation.est_fees}).`,
+    `Est. duration: ${simulation.est_duration} hour(s).`,
+  ];
+  if (simulation.risks.length > 0) {
+    lines.push(`Risks: ${simulation.risks.join(', ')}.`);
+  }
+  if (simulation.confirmations.length > 0) {
+    lines.push(simulation.confirmations.join(' '));
+  }
+  return lines.join(' ');
+};
+
+const hasBlockingRisks = (simulation: SimulationResponse) =>
+  simulation.blockers.length > 0 || simulation.risks.includes('OVER_BUDGET');
 
 export function ChatWindow() {
   const [messages, setMessages] = useState<ChatMessage[]>(
     defaultMessages as ChatMessage[]
   );
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isExecuting, setIsExecuting] = useState(false);
   const [stage, setStage] = useState<ChatStage>('idle');
   const [planError, setPlanError] = useState<string | null>(null);
+  const [simulateError, setSimulateError] = useState<string | null>(null);
   const [executeError, setExecuteError] = useState<string | null>(null);
-  const [pendingPlan, setPendingPlan] = useState<{
-    messageId: string;
-    plan: PlanResponse;
-  } | null>(null);
+  const [activePlan, setActivePlan] = useState<PlanMessage | null>(null);
+  const [activeSimulation, setActiveSimulation] = useState<SimulationMessage | null>(
+    null
+  );
+  const [runStatusMessage, setRunStatusMessage] = useState<StatusMessage | null>(
+    null
+  );
   const [receipts, setReceipts] = useState<ExecutionReceipt[]>([]);
-  const [isExpertMode, setIsExpertMode] = useState(false);
-  const [isExpertPanelOpen, setIsExpertPanelOpen] = useState(true);
-  const [planRequestPayload, setPlanRequestPayload] =
-    useState<PlanRequest | null>(null);
-  const [planResponsePayload, setPlanResponsePayload] = useState<
-    PlanResponse | ErrorPayload | null
-  >(null);
-  const [executeRequestPayload, setExecuteRequestPayload] =
-    useState<ExecuteRequest | null>(null);
-  const [executeResponsePayload, setExecuteResponsePayload] = useState<
-    ExecuteResponse | ErrorPayload | null
-  >(null);
-  const [lastPlan, setLastPlan] = useState<PlanResponse | null>(null);
-  const [lastExecute, setLastExecute] = useState<ExecuteResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const messagesRef = useRef<ChatMessage[]>(messages);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    messagesRef.current = messages;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  useEffect(() => {
-    if (isExpertMode) {
-      setIsExpertPanelOpen(true);
-    }
-  }, [isExpertMode]);
 
   useEffect(() => {
     try {
@@ -140,60 +161,28 @@ export function ChatWindow() {
       if (!stored) {
         return;
       }
-
       const parsed = JSON.parse(stored) as unknown;
       if (!Array.isArray(parsed)) {
         return;
       }
-
       const valid = parsed.reduce<ExecutionReceipt[]>((acc, item) => {
         if (!item || typeof item !== 'object') {
           return acc;
         }
-
         const candidate = item as Partial<ExecutionReceipt>;
         if (!candidate.id || typeof candidate.id !== 'string') {
           return acc;
         }
-
-        const legacyReward =
-          typeof (candidate as { reward?: string }).reward === 'string' &&
-          (candidate as { reward?: string }).reward
-            ? (candidate as { reward?: string }).reward
-            : undefined;
-        const legacyToken =
-          typeof (candidate as { token?: string }).token === 'string' &&
-          (candidate as { token?: string }).token
-            ? (candidate as { token?: string }).token
-            : undefined;
-        const storedNetPayout =
-          typeof candidate.netPayout === 'string' &&
-          candidate.netPayout.length > 0
-            ? candidate.netPayout
-            : undefined;
-        const derivedNetPayout = legacyReward
-          ? legacyToken
-            ? `${legacyReward} ${legacyToken}`
-            : legacyReward
-          : undefined;
-        const { receiptUrl: receiptUrlCandidate } = candidate as {
-          receiptUrl?: unknown;
-        };
-        const legacyExplorerUrl =
-          typeof receiptUrlCandidate === 'string' &&
-          receiptUrlCandidate.length > 0
-            ? receiptUrlCandidate
-            : undefined;
-        const resolvedExplorerUrl =
-          typeof candidate.explorerUrl === 'string' &&
-          candidate.explorerUrl.length > 0
-            ? candidate.explorerUrl
-            : legacyExplorerUrl;
-
-        const record: ExecutionReceipt = {
+        const createdAt =
+          typeof candidate.createdAt === 'number' && Number.isFinite(candidate.createdAt)
+            ? candidate.createdAt
+            : Date.now();
+        acc.push({
           id: candidate.id,
           jobId:
-            typeof candidate.jobId === 'number' ? candidate.jobId : undefined,
+            typeof candidate.jobId === 'number' && Number.isFinite(candidate.jobId)
+              ? candidate.jobId
+              : undefined,
           planHash:
             typeof candidate.planHash === 'string' && candidate.planHash.length > 0
               ? candidate.planHash
@@ -203,14 +192,12 @@ export function ChatWindow() {
               ? candidate.txHash
               : undefined,
           txHashes: Array.isArray(candidate.txHashes)
-            ? candidate.txHashes.filter(
-                (value): value is string =>
-                  typeof value === 'string' && value.trim().length > 0
-              )
+            ? (candidate.txHashes.filter((value): value is string =>
+                typeof value === 'string'
+              ) as string[])
             : undefined,
           specCid:
-            typeof candidate.specCid === 'string' &&
-            candidate.specCid.length > 0
+            typeof candidate.specCid === 'string' && candidate.specCid.length > 0
               ? candidate.specCid
               : undefined,
           specUrl:
@@ -227,6 +214,27 @@ export function ChatWindow() {
             candidate.deliverableUrl.length > 0
               ? candidate.deliverableUrl
               : undefined,
+          receiptCid:
+            typeof candidate.receiptCid === 'string' && candidate.receiptCid.length > 0
+              ? candidate.receiptCid
+              : undefined,
+          receiptUri:
+            typeof candidate.receiptUri === 'string' && candidate.receiptUri.length > 0
+              ? candidate.receiptUri
+              : undefined,
+          receiptGatewayUrls: Array.isArray(candidate.receiptGatewayUrls)
+            ? (candidate.receiptGatewayUrls.filter((value): value is string =>
+                typeof value === 'string'
+              ) as string[])
+            : undefined,
+          netPayout:
+            typeof candidate.netPayout === 'string' && candidate.netPayout.length > 0
+              ? candidate.netPayout
+              : undefined,
+          explorerUrl:
+            typeof candidate.explorerUrl === 'string' && candidate.explorerUrl.length > 0
+              ? candidate.explorerUrl
+              : undefined,
           reward:
             typeof candidate.reward === 'string' && candidate.reward.length > 0
               ? candidate.reward
@@ -235,27 +243,11 @@ export function ChatWindow() {
             typeof candidate.token === 'string' && candidate.token.length > 0
               ? candidate.token
               : undefined,
-          netPayout: storedNetPayout ?? derivedNetPayout,
-          explorerUrl: resolvedExplorerUrl,
-          createdAt:
-            typeof candidate.createdAt === 'number'
-              ? candidate.createdAt
-              : Date.now(),
-        };
-
-        if (!record.txHashes && record.txHash) {
-          record.txHashes = [record.txHash];
-        }
-
-        acc.push(record);
+          createdAt,
+        });
         return acc;
       }, []);
-
-      if (valid.length > 0) {
-        valid.sort((a, b) => b.createdAt - a.createdAt);
-        const limited = valid.slice(0, RECEIPT_HISTORY_LIMIT);
-        setReceipts(limited);
-      }
+      setReceipts(valid);
     } catch (error) {
       console.error('Failed to restore receipts from storage.', error);
     }
@@ -266,34 +258,28 @@ export function ChatWindow() {
       localStorage.removeItem(RECEIPTS_STORAGE_KEY);
       return;
     }
-
     localStorage.setItem(
       RECEIPTS_STORAGE_KEY,
       JSON.stringify(receipts.slice(0, RECEIPT_HISTORY_LIMIT))
     );
   }, [receipts]);
 
-  const buildPlannerHistory = useCallback(
-    (sourceMessages?: ChatMessage[]): PlannerHistoryMessage[] => {
-      const base = sourceMessages ?? messagesRef.current;
+  const addMessage = useCallback((message: ChatMessage) => {
+    setMessages((current) => [...current, message]);
+  }, []);
 
-      return base
-        .map<PlannerHistoryMessage>((message) => {
-          if (message.kind === 'plan') {
-            return {
-              role: 'assistant',
-              content: message.plan.summary,
-            };
-          }
-
-          return {
-            role: message.role,
-            content: message.content,
-          };
-        })
-        .filter((entry) => entry.content.trim().length > 0);
+  const addTextMessage = useCallback(
+    (role: 'user' | 'assistant', content: string) => {
+      const message: TextMessage = {
+        id: createMessageId(),
+        role,
+        kind: 'text',
+        content,
+      };
+      addMessage(message);
+      return message;
     },
-    [messagesRef]
+    [addMessage]
   );
 
   const callPlan = useCallback(async (payload: PlanRequest) => {
@@ -302,7 +288,6 @@ export function ChatWindow() {
         'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
       );
     }
-
     const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/plan`, {
       method: 'POST',
       headers: {
@@ -313,62 +298,136 @@ export function ChatWindow() {
       },
       body: JSON.stringify(payload),
     });
-
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+      throw new Error(`Plan failed with status ${response.status}`);
     }
-
-    return (await response.json()) as PlanResponse;
+    return parsePlanResponse(await response.json());
   }, []);
 
-  const presentPlanResponse = useCallback((payload: PlanResponse) => {
-    const planMessageId = createMessageId();
-    const assistantMessage: PlanMessage = {
-      id: planMessageId,
-      role: 'assistant',
-      kind: 'plan',
-      plan: payload,
-    };
-
-    setMessages((current) => [...current, assistantMessage]);
-    setPlanResponsePayload(payload);
-    setLastPlan(payload);
-    setPlanError(null);
-    setExecuteError(null);
-    setStage('planned');
-
-    if (payload.requiresConfirmation === false) {
-      setPendingPlan(null);
-    } else {
-      setPendingPlan({ messageId: planMessageId, plan: payload });
-      setStage('awaiting_confirmation');
+  const callSimulate = useCallback(async (plan: PlanResponse['plan']) => {
+    if (!ORCHESTRATOR_BASE_URL) {
+      throw new Error(
+        'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
+      );
     }
-
-    return planMessageId;
+    const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/simulate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(ORCHESTRATOR_TOKEN
+          ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
+          : {}),
+      },
+      body: JSON.stringify({ plan }),
+    });
+    if (!response.ok) {
+      if (response.status === 422) {
+        const detail = await response.json();
+        const blockers = Array.isArray(detail?.blockers)
+          ? detail.blockers.join(', ')
+          : 'Blocked by guardrails.';
+        throw new Error(blockers);
+      }
+      throw new Error(`Simulation failed with status ${response.status}`);
+    }
+    return parseSimulationResponse(await response.json());
   }, []);
 
-  const handlePlanFailure = useCallback((error: unknown) => {
-    const payload = toErrorPayload(error);
-    setPlanResponsePayload(payload);
-    setLastPlan(null);
-    setPendingPlan(null);
-
-    const message =
-      error instanceof Error
-        ? error.message
-        : 'Something went wrong. Please try again.';
-
-    const assistantMessage: TextMessage = {
-      id: createMessageId(),
-      role: 'assistant',
-      kind: 'text',
-      content: `⚠️ ${message}`,
+  const callExecute = useCallback(async (plan: PlanResponse['plan']) => {
+    if (!ORCHESTRATOR_BASE_URL) {
+      throw new Error(
+        'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
+      );
+    }
+    const executePayload: ExecuteRequest = {
+      plan,
+      approvals: [],
     };
-
-    setMessages((current) => [...current, assistantMessage]);
-    setPlanError(message);
-    setStage('error');
+    const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/execute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(ORCHESTRATOR_TOKEN
+          ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
+          : {}),
+      },
+      body: JSON.stringify(executePayload),
+    });
+    if (!response.ok) {
+      throw new Error(`Execution failed with status ${response.status}`);
+    }
+    return parseExecuteResponse(await response.json());
   }, []);
+
+  const callStatus = useCallback(async (runId: string) => {
+    if (!ORCHESTRATOR_BASE_URL) {
+      throw new Error(
+        'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
+      );
+    }
+    const response = await fetch(
+      `${ORCHESTRATOR_BASE_URL}/onebox/status?run_id=${encodeURIComponent(runId)}`,
+      {
+        method: 'GET',
+        headers: {
+          ...(ORCHESTRATOR_TOKEN
+            ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
+            : {}),
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`Status failed with status ${response.status}`);
+    }
+    return parseStatusResponse(await response.json());
+  }, []);
+
+  const pollStatus = useCallback(
+    async (runId: string) => {
+      let lastStatus: StatusResponse | null = null;
+      for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt += 1) {
+        try {
+          const status = await callStatus(runId);
+          lastStatus = status;
+          if (!isMountedRef.current) {
+            return;
+          }
+          const statusMessage: StatusMessage = {
+            id: createMessageId(),
+            role: 'assistant',
+            kind: 'status',
+            status,
+          };
+          setRunStatusMessage(statusMessage);
+          setMessages((current) => [
+            ...current.filter((message) => message.kind !== 'status'),
+            statusMessage,
+          ]);
+          if (status.run.state === 'succeeded') {
+            const receipt = mapStatusToReceipt(status);
+            if (receipt) {
+              setReceipts((current) => [receipt, ...current]);
+            }
+            setStage('completed');
+            return;
+          }
+          if (status.run.state === 'failed') {
+            setExecuteError('Run failed. Please inspect orchestrator logs.');
+            setStage('error');
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to fetch run status', error);
+        }
+        await delay(POLL_INTERVAL_MS);
+      }
+      if (lastStatus) {
+        setExecuteError('Timed out waiting for run status.');
+        setStage('error');
+      }
+    },
+    [callStatus]
+  );
 
   const submitMessage = useCallback(
     async (prompt: string) => {
@@ -376,540 +435,168 @@ export function ChatWindow() {
       if (!trimmed) {
         return;
       }
-
-      const userMessage: TextMessage = {
-        id: createMessageId(),
-        role: 'user',
-        kind: 'text',
-        content: trimmed,
-      };
-
-      const history = buildPlannerHistory([
-        ...messagesRef.current,
-        userMessage,
-      ]);
-
-      const planPayload: PlanRequest = {
-        text: trimmed,
-        expert: isExpertMode,
-        history,
-      };
-
-      setMessages((current) => [...current, userMessage]);
+      addTextMessage('user', trimmed);
       setInput('');
       setIsLoading(true);
-      setPendingPlan(null);
-      setPlanRequestPayload(planPayload);
-      setPlanResponsePayload(null);
-      setExecuteRequestPayload(null);
-      setExecuteResponsePayload(null);
-      setLastPlan(null);
-      setLastExecute(null);
-      setPlanError(null);
-      setExecuteError(null);
       setStage('planning');
-
+      setPlanError(null);
+      setSimulateError(null);
+      setExecuteError(null);
+      setActivePlan(null);
+      setActiveSimulation(null);
+      setRunStatusMessage(null);
       try {
-        const payload = await callPlan(planPayload);
-        presentPlanResponse(payload);
+        const planPayload: PlanRequest = {
+          input_text: trimmed,
+        };
+        const result = await callPlan(planPayload);
+        const planMessage: PlanMessage = {
+          id: createMessageId(),
+          role: 'assistant',
+          kind: 'plan',
+          plan: result,
+        };
+        addMessage(planMessage);
+        setActivePlan(planMessage);
+        if (result.missing_fields.length > 0) {
+          const missingList = result.missing_fields.join(', ');
+          addTextMessage(
+            'assistant',
+            `I still need the following details before I can simulate: ${missingList}.`
+          );
+          setStage('idle');
+        } else {
+          addTextMessage(
+            'assistant',
+            result.preview_summary || 'Plan ready. Run simulation to continue.'
+          );
+          setStage('planned');
+        }
       } catch (error) {
-        handlePlanFailure(error);
+        const message = toErrorMessage(error);
+        addTextMessage('assistant', `⚠️ ${message}`);
+        setPlanError(message);
+        setStage('error');
       } finally {
         setIsLoading(false);
       }
     },
-    [
-      buildPlannerHistory,
-      callPlan,
-      handlePlanFailure,
-      isExpertMode,
-      presentPlanResponse,
-    ]
+    [addMessage, addTextMessage, callPlan]
   );
 
-  const retryPlan = useCallback(async () => {
-    if (!planRequestPayload) {
+  const handleSimulatePlan = useCallback(async () => {
+    if (!activePlan) {
       return;
     }
-
-    const history = buildPlannerHistory(messagesRef.current);
-    const payload: PlanRequest = {
-      ...planRequestPayload,
-      history,
-    };
-
-    setPlanRequestPayload(payload);
-    setPlanResponsePayload(null);
-    setExecuteRequestPayload(null);
-    setExecuteResponsePayload(null);
-    setLastPlan(null);
-    setLastExecute(null);
-    setPendingPlan(null);
-    setPlanError(null);
-    setExecuteError(null);
-    setIsLoading(true);
-    setStage('planning');
-
+    setStage('simulating');
+    setSimulateError(null);
     try {
-      const response = await callPlan(payload);
-      presentPlanResponse(response);
-    } catch (error) {
-      handlePlanFailure(error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    buildPlannerHistory,
-    callPlan,
-    handlePlanFailure,
-    messagesRef,
-    planRequestPayload,
-    presentPlanResponse,
-  ]);
-
-  const handleCancelPlanError = useCallback(() => {
-    setPlanError(null);
-    setStage('idle');
-  }, []);
-
-  const updateMessageContent = useCallback((id: string, content: string) => {
-    setMessages((current) =>
-      current.map((message) =>
-        message.id === id && message.kind === 'text'
-          ? {
-              ...message,
-              content,
-            }
-          : message
-      )
-    );
-  }, []);
-
-  const handleRejectPlan = useCallback(() => {
-    if (!pendingPlan) {
-      return;
-    }
-
-    setPendingPlan(null);
-    setPlanError(null);
-    setExecuteError(null);
-    setStage('completed');
-    const assistantMessage: TextMessage = {
-      id: createMessageId(),
-      role: 'assistant',
-      kind: 'text',
-      content: 'Understood. Adjust your request when you are ready.',
-    };
-
-    setMessages((current) => [...current, assistantMessage]);
-  }, [pendingPlan]);
-
-  const extractExecutePayload = (raw: string): ExecuteResponse => {
-    const segments = raw
-      .split(/\r?\n/)
-      .map((segment) => segment.replace(/^data:\s*/, '').trim())
-      .filter(Boolean)
-      .reverse();
-
-    for (const segment of segments) {
-      try {
-        return JSON.parse(segment) as ExecuteResponse;
-      } catch {
-        // Try the next segment.
-      }
-    }
-
-    throw new Error('Execution response did not include valid JSON payload.');
-  };
-
-  const handleExecutePlan = useCallback(async () => {
-    if (!pendingPlan) {
-      return;
-    }
-
-    if (!ORCHESTRATOR_BASE_URL) {
-      const message =
-        'Execution requires NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to be configured.';
-      const assistantMessage: TextMessage = {
+      const simulation = await callSimulate(activePlan.plan.plan);
+      const message: SimulationMessage = {
         id: createMessageId(),
         role: 'assistant',
-        kind: 'text',
-        content: `⚠️ ${message}`,
+        kind: 'simulation',
+        simulation,
       };
-      setMessages((current) => [...current, assistantMessage]);
-      setExecuteError(message);
-      setStage('error');
-      return;
-    }
-
-    const planContext = pendingPlan;
-    setPendingPlan(null);
-    setExecuteError(null);
-    setPlanError(null);
-    setIsExecuting(true);
-    setStage('executing');
-
-    const progressMessageId = createMessageId();
-    const progressMessage: TextMessage = {
-      id: progressMessageId,
-      role: 'assistant',
-      kind: 'text',
-      content: 'Working on it •',
-    };
-
-    setMessages((current) => [...current, progressMessage]);
-
-    const planHash =
-      typeof planContext.plan.planHash === 'string' && planContext.plan.planHash.length > 0
-        ? planContext.plan.planHash
-        : null;
-    if (!planHash) {
-      const message = 'Planner did not provide a plan hash. Please request a new plan before executing.';
-      updateMessageContent(progressMessageId, `⚠️ ${message}`);
-      setExecuteError(message);
-      setIsExecuting(false);
-      setStage('error');
-      return;
-    }
-
-    const requestCreatedAt = new Date().toISOString();
-    const executeRequestPayload: ExecuteRequest = {
-      intent: planContext.plan.intent,
-      mode: 'relayer',
-      planHash,
-      createdAt: requestCreatedAt,
-    };
-    setExecuteRequestPayload(executeRequestPayload);
-    setExecuteResponsePayload(null);
-    let parsedExecuteResponse: ExecuteResponse | null = null;
-
-    try {
-      const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(ORCHESTRATOR_TOKEN
-            ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
-            : {}),
-        },
-        body: JSON.stringify(executeRequestPayload),
-      });
-
-      let raw = '';
-      let dots = 0;
-
-      if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            break;
-          }
-
-          raw += decoder.decode(value, { stream: true });
-          dots = (dots + 1) % 3;
-          const suffix = ' •'.repeat(dots + 1);
-          updateMessageContent(progressMessageId, `Working on it${suffix}`);
-        }
-        raw += decoder.decode();
-      } else {
-        raw = await response.text();
+      addMessage(message);
+      setActiveSimulation(message);
+      addTextMessage('assistant', formatSimulationSummary(simulation));
+      if (hasBlockingRisks(simulation)) {
+        setSimulateError('Simulation flagged blockers. Adjust the plan and retry.');
+        setStage('error');
+        return;
       }
-
-      const payload = extractExecutePayload(raw);
-
-      parsedExecuteResponse = payload;
-      setExecuteResponsePayload(payload);
-
-      if (!response.ok || !payload.ok) {
-        const reason = payload.error ?? `Execution failed (${response.status})`;
-        throw new Error(reason);
-      }
-
-      const netPayout = [payload.reward, payload.token]
-        .filter(
-          (value): value is string =>
-            typeof value === 'string' && value.length > 0
-        )
-        .join(' ');
-
-      const txHashes = payload.txHashes?.length
-        ? payload.txHashes
-        : payload.txHash
-        ? [payload.txHash]
-        : [];
-      const resolvedPlanHash =
-        (typeof payload.planHash === 'string' && payload.planHash.length > 0
-          ? payload.planHash
-          : null) ?? planHash;
-      const createdAtIso = payload.createdAt ?? requestCreatedAt;
-      const createdAtMs = createdAtIso ? Date.parse(createdAtIso) : Number.NaN;
-      const resolvedDeliverableCid =
-        payload.deliverableCid ?? payload.receiptCid ?? null;
-      const resolvedDeliverableUrl =
-        payload.deliverableGatewayUrl ??
-        payload.deliverableUri ??
-        payload.receiptGatewayUrl ??
-        payload.receiptUri ??
-        null;
-      const receipt: ExecutionReceipt = {
-        id: createReceiptId(),
-        jobId: payload.jobId,
-        planHash: resolvedPlanHash ?? undefined,
-        txHash: payload.txHash,
-        txHashes: txHashes.length ? txHashes : undefined,
-        specCid: payload.specCid,
-        specUrl: payload.specGatewayUrl ?? payload.specUri ?? undefined,
-        deliverableCid: resolvedDeliverableCid ?? undefined,
-        deliverableUrl: resolvedDeliverableUrl ?? undefined,
-        netPayout: netPayout.length > 0 ? netPayout : undefined,
-        explorerUrl: payload.receiptUrl,
-        createdAt: Number.isFinite(createdAtMs) ? createdAtMs : Date.now(),
-        reward: payload.reward,
-        token: payload.token,
-      };
-
-      if (payload.receiptCid && !receipt.deliverableCid) {
-        receipt.deliverableCid = payload.receiptCid;
-      }
-      if (payload.receiptGatewayUrls?.length && !receipt.deliverableUrl) {
-        receipt.deliverableUrl = payload.receiptGatewayUrls[0];
-      }
-      if (payload.receiptCid) {
-        receipt.receiptCid = payload.receiptCid;
-      }
-      if (payload.receiptUri) {
-        receipt.receiptUri = payload.receiptUri;
-      }
-      if (payload.receiptGatewayUrls?.length) {
-        receipt.receiptGatewayUrls = payload.receiptGatewayUrls;
-      }
-
-      const successLines = ['✅ Success.'];
-      if (receipt.jobId !== undefined) {
-        successLines.push(`Job ID: ${receipt.jobId}`);
-      }
-      if (receipt.specCid) {
-        successLines.push(`CID: ${receipt.specCid}`);
-      }
-      if (receipt.deliverableCid) {
-        successLines.push(`Deliverable: ${receipt.deliverableCid}`);
-      }
-      if (receipt.netPayout) {
-        successLines.push(`Payout: ${receipt.netPayout}`);
-      }
-      if (receipt.reward && receipt.token) {
-        successLines.push(`Budget: ${receipt.reward} ${receipt.token}`);
-      }
-      if (receipt.txHash) {
-        successLines.push(`Tx: ${receipt.txHash}`);
-      }
-      if (receipt.planHash) {
-        successLines.push(`Plan: ${receipt.planHash}`);
-      }
-      if (receipt.explorerUrl) {
-        successLines.push(`Receipt: ${receipt.explorerUrl}`);
-      }
-
-      setReceipts((current) => {
-        const next = [receipt, ...current];
-        return next.slice(0, RECEIPT_HISTORY_LIMIT);
-      });
-      updateMessageContent(progressMessageId, successLines.join('\n'));
-      setStage('completed');
+      setStage('awaiting_execute');
     } catch (error) {
-      if (parsedExecuteResponse === null) {
-        setExecuteResponsePayload(toErrorPayload(error));
-      }
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Execution failed. Please try again.';
-      updateMessageContent(progressMessageId, `⚠️ ${message}`);
+      const message = toErrorMessage(error);
+      addTextMessage('assistant', `⚠️ ${message}`);
+      setSimulateError(message);
+      setStage('error');
+    }
+  }, [activePlan, addMessage, addTextMessage, callSimulate]);
+
+  const handleExecutePlan = useCallback(async () => {
+    if (!activePlan) {
+      return;
+    }
+    setStage('executing');
+    setExecuteError(null);
+    try {
+      const execution = await callExecute(activePlan.plan.plan);
+      addTextMessage(
+        'assistant',
+        `Execution started. Run ID: ${execution.run_id}. Monitoring progress…`
+      );
+      await pollStatus(execution.run_id);
+    } catch (error) {
+      const message = toErrorMessage(error);
+      addTextMessage('assistant', `⚠️ ${message}`);
       setExecuteError(message);
-      setPendingPlan(planContext);
-      setStage('awaiting_confirmation');
-    } finally {
-      setLastExecute(parsedExecuteResponse);
-      setIsExecuting(false);
+      setStage('error');
     }
-  }, [pendingPlan, updateMessageContent]);
+  }, [activePlan, addTextMessage, callExecute, pollStatus]);
 
-  const handleRetryExecute = useCallback(() => {
-    setExecuteError(null);
-    void handleExecutePlan();
-  }, [handleExecutePlan]);
+  const pendingPlanId = activePlan?.id;
+  const canSimulate = stage === 'planned' && !!activePlan;
+  const canExecute = stage === 'awaiting_execute' && !!activePlan && !!activeSimulation;
 
-  const handleCancelExecuteError = useCallback(() => {
-    setExecuteError(null);
-    setPendingPlan(null);
-    setStage('completed');
-  }, []);
-
-  const contractEntries = useMemo(
-    () =>
-      Object.entries(CONTRACT_ADDRESSES).filter(
-        ([key, value]) => key !== '_comment' && typeof value === 'string'
-      ),
-    []
-  );
-
-  const expertChainId = useMemo(() => {
-    const executeChainId = normalizeChainId(lastExecute?.chainId);
-    if (executeChainId !== undefined) {
-      return executeChainId;
+  const statusSummary = useMemo(() => {
+    if (!runStatusMessage) {
+      return null;
     }
-
-    const payloadChainId = normalizeChainId(lastPlan?.intent?.payload?.chainId);
-    if (payloadChainId !== undefined) {
-      return payloadChainId;
+    const { status } = runStatusMessage;
+    const state = status.run.state;
+    const lines = [`Run ${status.run.id} is ${state}.`];
+    if (status.current) {
+      lines.push(`Current step: ${status.current}.`);
     }
-
-    return undefined;
-  }, [lastExecute, lastPlan]);
-
-  const networkLabel = expertChainId
-    ? `${resolveNetworkName(expertChainId)} (${expertChainId})`
-    : 'Not available';
+    if (status.logs.length > 0) {
+      lines.push(status.logs[status.logs.length - 1]);
+    }
+    return lines.join(' ');
+  }, [runStatusMessage]);
 
   return (
     <div className="chat-wrapper">
       <div className="chat-shell">
-        <div className="chat-toolbar">
-          <button
-            type="button"
-            className={`expert-toggle${isExpertMode ? ' is-active' : ''}`}
-            onClick={() => {
-              setIsExpertMode((current) => !current);
-            }}
-            aria-pressed={isExpertMode}
-          >
-            {isExpertMode ? 'Expert mode: on' : 'Expert mode: off'}
-          </button>
-        </div>
-        {isExpertMode ? (
-          <div className="expert-panel">
-            <div className="expert-panel-header">
-              <p className="expert-panel-title">Expert insights</p>
-              <button
-                type="button"
-                className="expert-panel-toggle"
-                onClick={() => {
-                  setIsExpertPanelOpen((current) => !current);
-                }}
-                aria-expanded={isExpertPanelOpen}
-              >
-                {isExpertPanelOpen ? 'Hide' : 'Show'}
-              </button>
-            </div>
-            {isExpertPanelOpen ? (
-              <div className="expert-panel-body">
-                <div className="expert-meta">
-                  <div className="expert-meta-field">
-                    <span className="expert-meta-label">Network</span>
-                    <span className="expert-meta-value">{networkLabel}</span>
-                  </div>
-                  <div className="expert-meta-field">
-                    <span className="expert-meta-label">Stage</span>
-                    <span className="expert-meta-value">{stage}</span>
-                  </div>
-                </div>
-                <div className="expert-contracts">
-                  <span className="expert-section-title">
-                    Contract addresses
-                  </span>
-                  <ul className="expert-contracts-list">
-                    {contractEntries.map(([key, value]) => (
-                      <li key={key} className="expert-contract-item">
-                        <span className="expert-contract-name">{key}</span>
-                        <code className="expert-contract-address">{value}</code>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="expert-json-grid">
-                  <div>
-                    <span className="expert-section-title">Plan request</span>
-                    <pre className="expert-json-block">
-                      {planRequestPayload
-                        ? JSON.stringify(planRequestPayload, null, 2)
-                        : 'No plan request yet.'}
-                    </pre>
-                  </div>
-                  <div>
-                    <span className="expert-section-title">Plan response</span>
-                    <pre className="expert-json-block">
-                      {planResponsePayload
-                        ? JSON.stringify(planResponsePayload, null, 2)
-                        : 'No plan response yet.'}
-                    </pre>
-                  </div>
-                  <div>
-                    <span className="expert-section-title">
-                      Execute request
-                    </span>
-                    <pre className="expert-json-block">
-                      {executeRequestPayload
-                        ? JSON.stringify(executeRequestPayload, null, 2)
-                        : 'No execute request yet.'}
-                    </pre>
-                  </div>
-                  <div>
-                    <span className="expert-section-title">
-                      Execute response
-                    </span>
-                    <pre className="expert-json-block">
-                      {executeResponsePayload
-                        ? JSON.stringify(executeResponsePayload, null, 2)
-                        : 'No execute response yet.'}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
         <div className="chat-history" role="log" aria-live="polite">
           {messages.map((message) => {
             if (message.kind === 'plan') {
-              const warnings = Array.isArray(message.plan.warnings)
-                ? message.plan.warnings
-                : [];
-              const hasWarnings = warnings.length > 0;
-
+              const summary =
+                message.plan.preview_summary || 'Plan generated. Ready to simulate.';
               return (
                 <div key={message.id} className="chat-message">
                   <span className="chat-message-role">{message.role}</span>
                   <div className="chat-bubble">
                     <div className="plan-summary">
-                      <p>{message.plan.summary}</p>
-                      {hasWarnings ? (
-                        <ul className="plan-warnings">
-                          {warnings.map((warning: string, warningIndex: number) => (
-                            <li key={warningIndex}>{warning}</li>
-                          ))}
-                        </ul>
+                      <p>{summary}</p>
+                      {message.plan.missing_fields.length > 0 ? (
+                        <p>
+                          Missing fields: {message.plan.missing_fields.join(', ')}
+                        </p>
                       ) : null}
-                      {pendingPlan?.messageId === message.id ? (
+                      {pendingPlanId === message.id && canSimulate ? (
                         <div className="plan-actions">
                           <button
                             type="button"
                             className="plan-button"
                             onClick={() => {
-                              void handleExecutePlan();
+                              void handleSimulatePlan();
                             }}
-                            disabled={isExecuting}
+                            disabled={isLoading}
                           >
-                            Yes
+                            Simulate plan
                           </button>
                           <button
                             type="button"
                             className="plan-button plan-button-secondary"
-                            onClick={handleRejectPlan}
-                            disabled={isExecuting}
+                            onClick={() => {
+                              setActivePlan(null);
+                              setStage('idle');
+                            }}
+                            disabled={isLoading}
                           >
-                            No
+                            Cancel
                           </button>
                         </div>
                       ) : null}
@@ -918,7 +605,52 @@ export function ChatWindow() {
                 </div>
               );
             }
-
+            if (message.kind === 'simulation') {
+              return (
+                <div key={message.id} className="chat-message">
+                  <span className="chat-message-role">{message.role}</span>
+                  <div className="chat-bubble">
+                    <div className="plan-summary">
+                      <p>{formatSimulationSummary(message.simulation)}</p>
+                      {pendingPlanId === activePlan?.id && message.id === activeSimulation?.id &&
+                      canExecute ? (
+                        <div className="plan-actions">
+                          <button
+                            type="button"
+                            className="plan-button"
+                            onClick={() => {
+                              void handleExecutePlan();
+                            }}
+                            disabled={isLoading}
+                          >
+                            Execute plan
+                          </button>
+                          <button
+                            type="button"
+                            className="plan-button plan-button-secondary"
+                            onClick={() => {
+                              setActiveSimulation(null);
+                              setStage('planned');
+                            }}
+                            disabled={isLoading}
+                          >
+                            Back
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            if (message.kind === 'status') {
+              return (
+                <div key={message.id} className="chat-message">
+                  <span className="chat-message-role">{message.role}</span>
+                  <div className="chat-bubble">{statusSummary ?? 'Monitoring run…'}</div>
+                </div>
+              );
+            }
             return (
               <div key={message.id} className="chat-message">
                 <span className="chat-message-role">{message.role}</span>
@@ -931,49 +663,16 @@ export function ChatWindow() {
         {planError ? (
           <div className="chat-error" role="alert">
             <span className="chat-error-message">{planError}</span>
-            <div className="chat-error-actions">
-              <button
-                type="button"
-                className="chat-error-button"
-                onClick={() => {
-                  void retryPlan();
-                }}
-                disabled={isLoading || isExecuting}
-              >
-                Retry
-              </button>
-              <button
-                type="button"
-                className="chat-error-button chat-error-button-secondary"
-                onClick={handleCancelPlanError}
-                disabled={isExecuting}
-              >
-                Cancel
-              </button>
-            </div>
+          </div>
+        ) : null}
+        {simulateError ? (
+          <div className="chat-error" role="alert">
+            <span className="chat-error-message">{simulateError}</span>
           </div>
         ) : null}
         {executeError ? (
           <div className="chat-error" role="alert">
             <span className="chat-error-message">{executeError}</span>
-            <div className="chat-error-actions">
-              <button
-                type="button"
-                className="chat-error-button"
-                onClick={handleRetryExecute}
-                disabled={isExecuting}
-              >
-                Retry
-              </button>
-              <button
-                type="button"
-                className="chat-error-button chat-error-button-secondary"
-                onClick={handleCancelExecuteError}
-                disabled={isExecuting}
-              >
-                Cancel
-              </button>
-            </div>
           </div>
         ) : null}
         <form
@@ -997,7 +696,7 @@ export function ChatWindow() {
             />
             <button
               type="submit"
-              disabled={isLoading || isExecuting}
+              disabled={isLoading || stage === 'executing'}
               className="chat-send-button"
             >
               {isLoading ? 'Sending…' : 'Send'}

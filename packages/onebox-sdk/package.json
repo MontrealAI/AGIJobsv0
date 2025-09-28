@@ -11,5 +11,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.22.4"
+  }
 }
