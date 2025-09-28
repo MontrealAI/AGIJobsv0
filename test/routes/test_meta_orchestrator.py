@@ -32,6 +32,7 @@ def test_plan_simulate_execute_flow():
     assert plan_data["requiresConfirmation"] is True
     assert isinstance(plan_data["warnings"], list)
     assert plan_data["preview_summary"].endswith("Proceed?")
+    assert plan_data["simulation"]["est_budget"] == plan_data["plan"]["budget"]["max"]
 
     simulate_resp = client.post("/onebox/simulate", json={"plan": plan_data["plan"]})
     assert simulate_resp.status_code == 200

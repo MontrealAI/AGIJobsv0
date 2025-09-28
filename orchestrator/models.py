@@ -119,6 +119,7 @@ class PlanOut(BaseModel):
     missing_fields: List[str] = Field(default_factory=list)
     preview_summary: str
     warnings: List[str] = Field(default_factory=list)
+    simulation: "SimOut | None" = None
     requires_confirmation: bool = Field(
         default=True,
         alias="requiresConfirmation",
