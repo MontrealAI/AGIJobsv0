@@ -27,6 +27,16 @@ from web3 import Web3
 from web3._utils.events import get_event_data
 from web3.middleware import geth_poa_middleware
 
+
+def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
+    if not _API_TOKEN:
+        return
+    if not auth or not auth.startswith("Bearer "):
+        raise _http_error(401, "AUTH_MISSING")
+    token = auth.split(" ", 1)[1].strip()
+    if token != _API_TOKEN:
+        raise _http_error(401, "AUTH_INVALID")
+
 # --- BEGIN: /onebox/simulate (additive) --------------------------------------
 from fastapi import Request, HTTPException, Depends
 from pydantic import BaseModel, Field
@@ -307,6 +317,7 @@ DEFAULT_GATEWAYS = [
     "https://cloudflare-ipfs.com/ipfs/{cid}",
 ]
 CORS_ALLOW_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "*").split(",")]
+AGIALPHA_SYMBOL = os.getenv("AGIALPHA_SYMBOL", "AGIALPHA")
 
 if not RPC_URL:
     raise RuntimeError("RPC_URL is required")
@@ -441,10 +452,10 @@ def _parse_default_percentage(*env_keys: str, fallback: str) -> Decimal:
 
 
 _DEFAULT_FEE_PCT = _parse_default_percentage(
-    "ONEBOX_DEFAULT_FEE_PCT", "ONEBOX_FEE_PCT", fallback="5"
+    "ONEBOX_DEFAULT_FEE_PCT", "ONEBOX_FEE_PCT", "FEE_PCT", fallback="5"
 )
 _DEFAULT_BURN_PCT = _parse_default_percentage(
-    "ONEBOX_DEFAULT_BURN_PCT", "ONEBOX_BURN_PCT", fallback="2"
+    "ONEBOX_DEFAULT_BURN_PCT", "ONEBOX_BURN_PCT", "BURN_PCT", fallback="2"
 )
 
 _cached_fee_pct: Decimal = _DEFAULT_FEE_PCT
@@ -600,16 +611,6 @@ router = APIRouter(prefix="/onebox", tags=["onebox"])
 health_router = APIRouter(tags=["health"])
 
 
-def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
-    if not _API_TOKEN:
-        return
-    if not auth or not auth.startswith("Bearer "):
-        raise _http_error(401, "AUTH_MISSING")
-    token = auth.split(" ", 1)[1].strip()
-    if token != _API_TOKEN:
-        raise _http_error(401, "AUTH_INVALID")
-
-
 # ---------- Models ----------
 Action = Literal[
     "post_job",
@@ -632,7 +633,7 @@ class Payload(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     attachments: List[Attachment] = Field(default_factory=list)
-    rewardToken: str = "AGIALPHA"
+    rewardToken: str = AGIALPHA_SYMBOL
     reward: Optional[str] = None
     deadlineDays: Optional[int] = None
     jobId: Optional[int] = None
@@ -895,6 +896,18 @@ def _resolve_policy_path() -> str:
 
 
 def _parse_default_max_budget() -> Optional[int]:
+    owner_cap = os.getenv("ORG_MAX_BUDGET_WEI")
+    if owner_cap is not None:
+        trimmed_owner = owner_cap.strip()
+        if trimmed_owner:
+            try:
+                parsed_owner = int(trimmed_owner, 10)
+            except ValueError:
+                logger.warning("invalid ORG_MAX_BUDGET_WEI value: %s", owner_cap)
+            else:
+                if parsed_owner > 0:
+                    return parsed_owner
+                return None
     raw = os.getenv("ONEBOX_MAX_JOB_BUDGET_AGIA")
     if not raw:
         return None
@@ -914,6 +927,18 @@ def _parse_default_max_budget() -> Optional[int]:
 
 
 def _parse_default_max_duration() -> Optional[int]:
+    owner_cap = os.getenv("ORG_MAX_DEADLINE_DAYS")
+    if owner_cap is not None:
+        trimmed_owner = owner_cap.strip()
+        if trimmed_owner:
+            try:
+                parsed_owner = int(trimmed_owner, 10)
+            except ValueError:
+                logger.warning("invalid ORG_MAX_DEADLINE_DAYS value: %s", owner_cap)
+            else:
+                if parsed_owner > 0:
+                    return parsed_owner
+                return None
     raw = os.getenv("ONEBOX_MAX_JOB_DURATION_DAYS")
     if not raw:
         return None
@@ -1226,7 +1251,7 @@ def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool
         if payload.deadlineDays is not None
         else (_parse_deadline_days(request_text) or 7)
     )
-    token = (payload.rewardToken or "AGIALPHA").strip() or "AGIALPHA"
+    token = (payload.rewardToken or AGIALPHA_SYMBOL).strip() or AGIALPHA_SYMBOL
     fee_pct, burn_pct = _get_fee_policy()
     reward_text = str(reward).strip() or "0"
     fee_text = _format_percentage(fee_pct)
@@ -2165,7 +2190,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 "title": payload.title or "New Job",
                 "description": payload.description or "",
                 "attachments": [a.dict() for a in payload.attachments],
-                "rewardToken": payload.rewardToken or "AGIALPHA",
+                "rewardToken": payload.rewardToken or AGIALPHA_SYMBOL,
                 "reward": str(payload.reward),
                 "deadlineDays": deadline_days,
                 "deadline": deadline_ts,

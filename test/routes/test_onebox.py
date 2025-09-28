@@ -345,6 +345,8 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     _error_detail,
     _ERRORS,
     _decode_job_created,
+    _parse_default_max_budget,
+    _parse_default_max_duration,
     _read_status,
     _UINT64_MAX,
     execute,
@@ -545,6 +547,32 @@ class DeadlineComputationTests(unittest.TestCase):
         with mock.patch("routes.onebox.time.time", return_value=1_000_000):
             deadline = _calculate_deadline_timestamp(2)
         self.assertEqual(deadline, 1_000_000 + 2 * 86400)
+
+
+class OwnerCapParsingTests(unittest.TestCase):
+    def test_parse_default_max_budget_from_owner_env(self) -> None:
+        with mock.patch.dict(os.environ, {"ORG_MAX_BUDGET_WEI": "12345"}, clear=True):
+            self.assertEqual(_parse_default_max_budget(), 12345)
+
+    def test_parse_default_max_budget_zero_disables_cap(self) -> None:
+        with mock.patch.dict(os.environ, {"ORG_MAX_BUDGET_WEI": "0"}, clear=True):
+            self.assertIsNone(_parse_default_max_budget())
+
+    def test_parse_default_max_budget_invalid_owner_value(self) -> None:
+        with mock.patch.dict(os.environ, {"ORG_MAX_BUDGET_WEI": "not-a-number"}, clear=True):
+            self.assertIsNone(_parse_default_max_budget())
+
+    def test_parse_default_max_duration_from_owner_env(self) -> None:
+        with mock.patch.dict(os.environ, {"ORG_MAX_DEADLINE_DAYS": "21"}, clear=True):
+            self.assertEqual(_parse_default_max_duration(), 21)
+
+    def test_parse_default_max_duration_zero_disables_cap(self) -> None:
+        with mock.patch.dict(os.environ, {"ORG_MAX_DEADLINE_DAYS": "0"}, clear=True):
+            self.assertIsNone(_parse_default_max_duration())
+
+    def test_parse_default_max_duration_invalid_owner_value(self) -> None:
+        with mock.patch.dict(os.environ, {"ORG_MAX_DEADLINE_DAYS": "oops"}, clear=True):
+            self.assertIsNone(_parse_default_max_duration())
 
 
 class ExecutorPlanHashValidationTests(unittest.IsolatedAsyncioTestCase):
