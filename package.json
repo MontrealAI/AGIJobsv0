@@ -18,6 +18,7 @@
     "owner:plan:safe": "node scripts/v2/run-owner-plan.js --safe owner-safe-bundle.json --safe-name \"AGIJobs Owner Control Plan\"",
     "owner:wizard": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/owner-config-wizard.ts",
     "owner:dashboard": "npx hardhat run --no-compile scripts/v2/owner-dashboard.ts",
+    "owner:verify-control": "npx hardhat run --no-compile scripts/v2/verifyOwnerControl.ts",
     "owner:rotate": "npx hardhat run --no-compile scripts/v2/rotateGovernance.ts",
     "owner:update-all": "npx hardhat run --no-compile scripts/v2/updateAllModules.ts",
     "test": "hardhat test --no-compile",
