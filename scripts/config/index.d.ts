@@ -213,6 +213,21 @@ export interface TaxPolicyConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface RandaoCoordinatorConfig {
+  address?: string;
+  commitWindow?: number;
+  revealWindow?: number;
+  deposit?: string;
+  treasury?: string | null;
+  [key: string]: unknown;
+}
+
+export interface RandaoCoordinatorConfigResult {
+  config: RandaoCoordinatorConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export type RoleShareInput =
   | number
   | string
@@ -463,6 +478,9 @@ export function loadPlatformRegistryConfig(
 export function loadTaxPolicyConfig(
   options?: LoadOptions
 ): TaxPolicyConfigResult;
+export function loadRandaoCoordinatorConfig(
+  options?: LoadOptions
+): RandaoCoordinatorConfigResult;
 export function loadOwnerControlConfig(
   options?: LoadOptions
 ): OwnerControlConfigResult;

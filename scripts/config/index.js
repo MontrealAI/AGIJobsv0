@@ -1139,6 +1139,93 @@ function loadTaxPolicyConfig(options = {}) {
   return { config, path: configPath, network };
 }
 
+function normaliseRandaoCoordinatorConfig(config = {}) {
+  if (!config || typeof config !== 'object') {
+    return {};
+  }
+
+  const result = { ...config };
+
+  if (result.address !== undefined) {
+    if (result.address === null || result.address === '') {
+      delete result.address;
+    } else {
+      result.address = ensureAddress(
+        result.address,
+        'RandaoCoordinator address'
+      );
+    }
+  }
+
+  const commitWindowSource =
+    result.commitWindowSeconds ?? result.commitWindow ?? result.commitWindowDuration;
+  const revealWindowSource =
+    result.revealWindowSeconds ?? result.revealWindow ?? result.revealWindowDuration;
+
+  const commitWindow = normaliseDuration(
+    commitWindowSource,
+    'RandaoCoordinator commitWindow'
+  );
+  if (commitWindow !== undefined) {
+    result.commitWindow = commitWindow;
+  }
+
+  const revealWindow = normaliseDuration(
+    revealWindowSource,
+    'RandaoCoordinator revealWindow'
+  );
+  if (revealWindow !== undefined) {
+    result.revealWindow = revealWindow;
+  }
+
+  if (result.deposit !== undefined && result.deposit !== null && result.deposit !== '') {
+    const depositAmount = normaliseTokenAmount(
+      result.deposit,
+      'RandaoCoordinator deposit'
+    );
+    if (depositAmount !== undefined) {
+      result.deposit = depositAmount.toString();
+    } else {
+      delete result.deposit;
+    }
+  }
+
+  if (result.depositTokens !== undefined && result.depositTokens !== null) {
+    const depositAmount = normaliseTokenAmount(
+      { amount: result.depositTokens },
+      'RandaoCoordinator depositTokens'
+    );
+    result.deposit = depositAmount.toString();
+    delete result.depositTokens;
+  }
+
+  if (result.treasury !== undefined) {
+    if (result.treasury === null || result.treasury === '') {
+      result.treasury = ethers.ZeroAddress;
+    } else {
+      result.treasury = ensureAddress(
+        result.treasury,
+        'RandaoCoordinator treasury',
+        { allowZero: true }
+      );
+    }
+  }
+
+  return result;
+}
+
+function loadRandaoCoordinatorConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('randao-coordinator', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Randao coordinator config not found at ${configPath}`);
+  }
+  const config = normaliseRandaoCoordinatorConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
 function normaliseRewardEngineConfig(config = {}) {
   if (!config || typeof config !== 'object') {
     return {};
@@ -1902,6 +1989,7 @@ module.exports = {
   loadPlatformIncentivesConfig,
   loadPlatformRegistryConfig,
   loadTaxPolicyConfig,
+  loadRandaoCoordinatorConfig,
   loadThermodynamicsConfig,
   loadThermostatConfig,
   loadRewardEngineConfig,

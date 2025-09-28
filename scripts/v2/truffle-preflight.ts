@@ -20,6 +20,7 @@ import {
   loadPlatformRegistryConfig,
   loadPlatformIncentivesConfig,
   loadTaxPolicyConfig,
+  loadRandaoCoordinatorConfig,
 } from '../config';
 
 loadEnv();
@@ -497,6 +498,11 @@ function checkModuleConfigs(network: SupportedNetwork): CheckResult[] {
       'config/platform-incentives*.json',
     ],
     [() => loadTaxPolicyConfig({ network }), 'Tax policy config', 'config/tax-policy*.json'],
+    [
+      () => loadRandaoCoordinatorConfig({ network }),
+      'Randao coordinator config',
+      'config/randao-coordinator*.json',
+    ],
   ];
 
   for (const [loader, name, hint] of loaders) {

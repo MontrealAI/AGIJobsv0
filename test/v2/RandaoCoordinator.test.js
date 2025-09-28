@@ -123,6 +123,68 @@ describe('RandaoCoordinator', function () {
     const bal = await token.balanceOf(await randao.getAddress());
     expect(bal).to.equal(0n);
   });
+
+  it('allows the owner to retune windows, deposit, and treasury', async () => {
+    const [owner, participant, initialTreasury, newTreasury] =
+      await ethers.getSigners();
+    const Randao = await ethers.getContractFactory(
+      'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator'
+    );
+    const randao = await Randao.deploy(10, 20, 1n, initialTreasury.address);
+
+    await expect(randao.connect(participant).setCommitWindow(15)).to.be.revertedWithCustomError(
+      randao,
+      'OwnableUnauthorizedAccount'
+    );
+
+    await expect(randao.setCommitWindow(15))
+      .to.emit(randao, 'CommitWindowUpdated')
+      .withArgs(10, 15);
+    await expect(randao.setRevealWindow(25))
+      .to.emit(randao, 'RevealWindowUpdated')
+      .withArgs(20, 25);
+    await expect(randao.setDeposit(2n))
+      .to.emit(randao, 'DepositUpdated')
+      .withArgs(1n, 2n);
+    await expect(randao.setTreasury(newTreasury.address))
+      .to.emit(randao, 'TreasuryUpdated')
+      .withArgs(initialTreasury.address, newTreasury.address);
+
+    expect(await randao.commitWindow()).to.equal(15n);
+    expect(await randao.revealWindow()).to.equal(25n);
+    expect(await randao.deposit()).to.equal(2n);
+    expect(await randao.treasury()).to.equal(newTreasury.address);
+
+    const token = await ethers.getContractAt(
+      'contracts/test/MockERC20.sol:MockERC20',
+      AGIALPHA
+    );
+    const randaoAddress = await randao.getAddress();
+    await token.mint(participant.address, 2n);
+    await token.connect(participant).approve(randaoAddress, 2n);
+
+    const tag = tagFromNumber(99);
+    const secret = 7n;
+    const commitment = ethers.keccak256(
+      ethers.solidityPacked(
+        ['address', 'bytes32', 'uint256'],
+        [participant.address, tag, secret]
+      )
+    );
+    await randao.connect(participant).commit(tag, commitment);
+
+    expect(await token.balanceOf(randaoAddress)).to.equal(2n);
+
+    await time.increase(16); // enter reveal window
+    await time.increase(26); // allow reveal window to expire
+
+    await expect(randao.forfeit(tag, participant.address))
+      .to.emit(randao, 'DepositForfeited')
+      .withArgs(tag, participant.address, 2n);
+
+    expect(await token.balanceOf(randaoAddress)).to.equal(0n);
+    expect(await token.balanceOf(newTreasury.address)).to.equal(2n);
+  });
 });
 
 describe('ValidationModule fairness', function () {

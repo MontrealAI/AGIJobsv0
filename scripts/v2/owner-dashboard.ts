@@ -8,6 +8,7 @@ import {
   loadPlatformRegistryConfig,
   loadPlatformIncentivesConfig,
   loadTaxPolicyConfig,
+  loadRandaoCoordinatorConfig,
   loadIdentityRegistryConfig,
   loadRewardEngineConfig,
   loadThermodynamicsConfig,
@@ -82,6 +83,28 @@ function formatTokenAmount(
 ): string | null {
   if (value === null) return null;
   return `${formatUnitsRounded(value, decimals)} ${symbol}`;
+}
+
+function formatDurationSeconds(value: bigint | null): string | null {
+  if (value === null) return null;
+  const secondsNumber = Number(value);
+  if (!Number.isFinite(secondsNumber)) {
+    return `${value.toString()}s`;
+  }
+  if (secondsNumber === 0) {
+    return '0s';
+  }
+  const parts: string[] = [];
+  const days = Math.floor(secondsNumber / 86400);
+  const hours = Math.floor((secondsNumber % 86400) / 3600);
+  const minutes = Math.floor((secondsNumber % 3600) / 60);
+  const seconds = secondsNumber % 60;
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (seconds > 0 && parts.length < 2) parts.push(`${seconds}s`);
+  const summary = parts.length > 0 ? parts.join(' ') : `${secondsNumber}s`;
+  return `${summary} (${secondsNumber}s)`;
 }
 
 function parseArgs(argv: string[]): CliOptions {
@@ -823,6 +846,33 @@ async function collectPlatformIncentivesSummary(
   };
 }
 
+async function collectRandaoCoordinatorSummary(
+  address: string
+): Promise<ModuleSummary> {
+  const randao = await ethers.getContractAt('RandaoCoordinator', address);
+  const [ownerAddress, commitWindow, revealWindow, deposit, treasury] =
+    await Promise.all([
+      resolveOwner(randao),
+      callBigInt(randao, 'commitWindow'),
+      callBigInt(randao, 'revealWindow'),
+      callBigInt(randao, 'deposit'),
+      callString(randao, 'treasury'),
+    ]);
+
+  return {
+    key: 'randaoCoordinator',
+    name: 'RandaoCoordinator',
+    address,
+    metrics: [
+      { label: 'Owner', value: ownerAddress },
+      { label: 'Commit Window', value: formatDurationSeconds(commitWindow) },
+      { label: 'Reveal Window', value: formatDurationSeconds(revealWindow) },
+      { label: 'Deposit', value: formatTokenAmount(deposit) },
+      { label: 'Treasury', value: normaliseAddress(treasury) },
+    ],
+  };
+}
+
 const COLLECTORS: Record<string, (address: string) => Promise<ModuleSummary>> =
   {
     stakeManager: collectStakeManagerSummary,
@@ -835,6 +885,7 @@ const COLLECTORS: Record<string, (address: string) => Promise<ModuleSummary>> =
     reputationEngine: collectReputationEngineSummary,
     identityRegistry: collectIdentityRegistrySummary,
     platformIncentives: collectPlatformIncentivesSummary,
+    randaoCoordinator: collectRandaoCoordinatorSummary,
     rewardEngine: collectRewardEngineSummary,
     thermostat: collectThermostatSummary,
   };
@@ -901,6 +952,11 @@ async function loadConfigSummary(configNetwork: string) {
   try {
     const { config } = loadTaxPolicyConfig({ network: configNetwork });
     result.taxPolicy = config;
+  } catch (_) {}
+
+  try {
+    const { config } = loadRandaoCoordinatorConfig({ network: configNetwork });
+    result.randaoCoordinator = config;
   } catch (_) {}
 
   try {
