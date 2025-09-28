@@ -266,6 +266,8 @@ def _current_timestamp() -> str:
 def _normalize_plan_hash(value: Optional[str]) -> Optional[str]:
     if value is None:
         return None
+    if not isinstance(value, str):
+        raise _http_error(400, "PLAN_HASH_INVALID")
     trimmed = value.strip().lower()
     if not trimmed:
         return None
@@ -273,7 +275,7 @@ def _normalize_plan_hash(value: Optional[str]) -> Optional[str]:
         trimmed = f"0x{trimmed}"
     if re.fullmatch(r"0x[0-9a-f]{64}", trimmed):
         return trimmed
-    return trimmed
+    raise _http_error(400, "PLAN_HASH_INVALID")
 
 
 def _store_plan_metadata(plan_hash: str, created_at: str) -> None:
@@ -531,6 +533,8 @@ _ERRORS = {
     "JOB_BUDGET_CAP_EXCEEDED": "Requested reward exceeds the configured cap for your organisation.",
     "JOB_DEADLINE_CAP_EXCEEDED": "Requested deadline exceeds the configured cap for your organisation.",
     "REWARD_INVALID": "Enter the reward as a numeric AGIALPHA amount before submitting.",
+    "PLAN_HASH_INVALID": "Use the 32-byte plan hash from the planning step before continuing.",
+    "PLAN_HASH_MISMATCH": "The plan hash doesn’t match this request. Re-run planning and retry.",
     "UNSUPPORTED_ACTION": "I didn’t understand that action. Rephrase the request or choose a supported workflow.",
     "UNKNOWN": "Something went wrong on my side. I’ve logged it and you can retry once things settle down.",
 }
@@ -1709,7 +1713,11 @@ async def simulate(request: Request, req: SimulateRequest):
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
-    plan_hash = _normalize_plan_hash(req.planHash) or _compute_plan_hash(intent)
+    canonical_hash = _compute_plan_hash(intent)
+    provided_hash = _normalize_plan_hash(req.planHash)
+    if provided_hash is not None and provided_hash != canonical_hash:
+        raise _http_error(400, "PLAN_HASH_MISMATCH")
+    plan_hash = provided_hash or canonical_hash
     if not plan_hash:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
     stored_created_at = _lookup_plan_timestamp(plan_hash)
@@ -1855,7 +1863,11 @@ async def execute(request: Request, req: ExecuteRequest):
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
-    plan_hash = _normalize_plan_hash(req.planHash) or _compute_plan_hash(intent)
+    canonical_hash = _compute_plan_hash(intent)
+    provided_hash = _normalize_plan_hash(req.planHash)
+    if provided_hash is not None and provided_hash != canonical_hash:
+        raise _http_error(400, "PLAN_HASH_MISMATCH")
+    plan_hash = provided_hash or canonical_hash
     if not plan_hash:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
     stored_created_at = _lookup_plan_timestamp(plan_hash)
