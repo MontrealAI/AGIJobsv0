@@ -9,6 +9,7 @@ from typing import List, Tuple
 from fastapi import HTTPException, status
 
 from .models import Attachment, JobIntent, OrchestrationPlan, PlanIn, PlanOut, Step
+from .simulator import simulate_plan
 
 
 _REWARD_PATTERN = re.compile(r"(?P<amount>-?\d+(?:\.\d+)?)\s*(?:agi|agialpha)", re.IGNORECASE)
@@ -204,6 +205,12 @@ def make_plan(req: PlanIn) -> PlanOut:
         format(total_budget, "f"),
     )
 
+    simulation = None
+    if intent.kind == "post_job":
+        simulation = simulate_plan(plan)
+        warnings.extend(simulation.risks)
+        warnings.extend(simulation.blockers)
+
     summary_parts = []
     if intent.kind == "post_job":
         summary_parts.append(f"Post job '{intent.title}'")
@@ -226,6 +233,7 @@ def make_plan(req: PlanIn) -> PlanOut:
         missing_fields=missing,
         preview_summary=preview_summary,
         warnings=warnings,
+        simulation=simulation,
         requiresConfirmation=True,
     )
 

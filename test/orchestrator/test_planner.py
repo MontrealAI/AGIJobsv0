@@ -9,7 +9,6 @@ if ROOT not in sys.path:
 
 from orchestrator.models import PlanIn
 from orchestrator.planner import make_plan
-from orchestrator.simulator import simulate_plan
 
 
 def test_make_plan_defaults_and_summary():
@@ -18,6 +17,8 @@ def test_make_plan_defaults_and_summary():
     assert plan.intent.kind == "post_job"
     assert plan.intent.reward_agialpha == "50.00"
     assert plan.intent.deadline_days == 7
+    assert plan.simulation is not None
+    assert plan.simulation.est_budget == plan.plan.budget.max
     assert plan.preview_summary.endswith("Proceed?")
     assert "DEFAULT_REWARD_APPLIED" in plan.warnings
     assert "DEFAULT_DEADLINE_APPLIED" in plan.warnings
@@ -76,7 +77,6 @@ def test_make_plan_invalid_reward_raises():
 
 def test_default_plan_is_within_budget():
     plan_out = make_plan(PlanIn(input_text="Post a job for image labeling"))
-    sim = simulate_plan(plan_out.plan)
-
-    assert "OVER_BUDGET" not in sim.risks
-    assert sim.est_budget == plan_out.plan.budget.max
+    assert plan_out.simulation is not None
+    assert "OVER_BUDGET" not in plan_out.simulation.risks
+    assert plan_out.simulation.est_budget == plan_out.plan.budget.max
