@@ -150,11 +150,16 @@ def make_plan(req: PlanIn) -> PlanOut:
 
     warnings: List[str] = []
     missing: List[str] = []
+    defaults_applied = False
 
     if _missing_reward:
-        missing.extend(_missing_reward)
+        for field in _missing_reward:
+            if field not in missing:
+                missing.append(field)
     if _missing_deadline:
-        missing.extend(_missing_deadline)
+        for field in _missing_deadline:
+            if field not in missing:
+                missing.append(field)
 
     reward_decimal = Decimal("0")
 
@@ -163,6 +168,9 @@ def make_plan(req: PlanIn) -> PlanOut:
             reward_decimal = DEFAULT_REWARD.quantize(Decimal("0.01"))
             reward = format(reward_decimal, "f")
             warnings.append("DEFAULT_REWARD_APPLIED")
+            if "reward_agialpha" not in missing:
+                missing.append("reward_agialpha")
+            defaults_applied = True
         else:
             try:
                 reward_decimal = Decimal(reward)
@@ -176,6 +184,9 @@ def make_plan(req: PlanIn) -> PlanOut:
         if deadline is None:
             deadline = DEFAULT_DEADLINE_DAYS
             warnings.append("DEFAULT_DEADLINE_APPLIED")
+            if "deadline_days" not in missing:
+                missing.append("deadline_days")
+            defaults_applied = True
         elif deadline <= 0:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="DEADLINE_INVALID")
     required_fields = _REQUIRED_FIELDS_BY_INTENT.get(intent_kind, set())
@@ -255,7 +266,7 @@ def make_plan(req: PlanIn) -> PlanOut:
         summary_parts.append("Custom workflow ready")
     preview_summary = ", ".join(summary_parts) + ". Proceed?"
 
-    requires_confirmation = not missing and not blockers
+    requires_confirmation = not missing and not blockers and not defaults_applied
 
     return PlanOut(
         intent=intent,
