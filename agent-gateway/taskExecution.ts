@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ethers, Wallet } from 'ethers';
-import { create as createIpfsClient, IPFSHTTPClient } from 'ipfs-http-client';
+import type { IPFSHTTPClient } from 'ipfs-http-client';
 import { Job } from './types';
 import { AgentProfile, JobAnalysis } from './agentRegistry';
 import { AgentIdentity } from './identity';
@@ -140,11 +140,19 @@ const memoryHooks = new Set<OrchestrationMemoryHook>();
 const agentMemory = new Map<string, AgentMemoryEntry[]>();
 
 let agentInvoker: AgentEndpointInvoker = invokeAgentEndpoint;
+type IpfsFactory = () => IPFSHTTPClient | Promise<IPFSHTTPClient>;
 let ipfsClient: IPFSHTTPClient | null = null;
-let ipfsFactory: () => IPFSHTTPClient = () =>
-  createIpfsClient({
-    url: IPFS_API_URL,
-  });
+let ipfsFactory: IpfsFactory | null = null;
+let defaultIpfsClientPromise: Promise<IPFSHTTPClient> | null = null;
+
+async function resolveDefaultIpfsClient(): Promise<IPFSHTTPClient> {
+  if (!defaultIpfsClientPromise) {
+    defaultIpfsClientPromise = import('ipfs-http-client').then(({ create }) =>
+      create({ url: IPFS_API_URL })
+    );
+  }
+  return defaultIpfsClientPromise;
+}
 
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
@@ -311,15 +319,20 @@ async function notifyMemoryConsumers(
   }
 }
 
-function getIpfsClient(): IPFSHTTPClient {
-  if (!ipfsClient) {
-    ipfsClient = ipfsFactory();
+async function getIpfsClient(): Promise<IPFSHTTPClient> {
+  if (ipfsClient) {
+    return ipfsClient;
   }
+  if (ipfsFactory) {
+    ipfsClient = await Promise.resolve(ipfsFactory());
+    return ipfsClient;
+  }
+  ipfsClient = await resolveDefaultIpfsClient();
   return ipfsClient;
 }
 
 async function uploadToIpfs(content: string): Promise<string> {
-  const client = getIpfsClient();
+  const client = await getIpfsClient();
   const { cid } = await client.add(Buffer.from(content, 'utf8'), {
     cidVersion: 1,
     wrapWithDirectory: false,
@@ -334,10 +347,14 @@ export function setAgentEndpointInvoker(
 }
 
 export function setIpfsClientFactory(
-  factory: (() => IPFSHTTPClient) | null
+  factory: IpfsFactory | null
 ): void {
   ipfsClient = null;
-  ipfsFactory = factory ?? (() => createIpfsClient({ url: IPFS_API_URL }));
+  if (factory) {
+    ipfsFactory = factory;
+  } else {
+    ipfsFactory = null;
+  }
 }
 
 export function registerContextProvider(
