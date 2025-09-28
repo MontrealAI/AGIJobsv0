@@ -85,6 +85,11 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         _setPauser(_pauser);
     }
 
+    function _requireStakeManager() internal view returns (IStakeManager manager) {
+        manager = stakeManager;
+        require(address(manager) != address(0), "stake manager not set");
+    }
+
     /// @notice Deploys the PlatformRegistry.
     /// @param _stakeManager StakeManager contract.
     /// @param _reputationEngine Reputation engine used for scoring.
@@ -123,7 +128,8 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     function _register(address operator) internal {
         require(!registered[operator], "registered");
         require(!blacklist[operator], "blacklisted");
-        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
+        IStakeManager manager = _requireStakeManager();
+        uint256 stake = manager.stakeOf(operator, IStakeManager.Role.Platform);
         if (operator != owner()) {
             require(stake >= minPlatformStake, "stake");
         }
@@ -152,7 +158,8 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     function stakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
         require(!registered[msg.sender], "registered");
         require(!blacklist[msg.sender], "blacklisted");
-        stakeManager.depositStakeFor(
+        IStakeManager manager = _requireStakeManager();
+        manager.depositStakeFor(
             msg.sender,
             IStakeManager.Role.Platform,
             amount
@@ -170,7 +177,8 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      current tax policy if it has not been acknowledged yet.
      */
     function acknowledgeAndRegister() external whenNotPaused nonReentrant {
-        address registry = stakeManager.jobRegistry();
+        IStakeManager manager = _requireStakeManager();
+        address registry = manager.jobRegistry();
         if (registry != address(0)) {
             IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         }
@@ -188,11 +196,12 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     function acknowledgeStakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
         require(!registered[msg.sender], "registered");
         require(!blacklist[msg.sender], "blacklisted");
-        address registry = stakeManager.jobRegistry();
+        IStakeManager manager = _requireStakeManager();
+        address registry = manager.jobRegistry();
         if (registry != address(0)) {
             IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         }
-        stakeManager.depositStakeFor(
+        manager.depositStakeFor(
             msg.sender,
             IStakeManager.Role.Platform,
             amount
@@ -208,7 +217,8 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      */
     function acknowledgeAndDeregister() external whenNotPaused nonReentrant {
         require(registered[msg.sender], "not registered");
-        address registry = stakeManager.jobRegistry();
+        IStakeManager manager = _requireStakeManager();
+        address registry = manager.jobRegistry();
         if (registry != address(0)) {
             IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         }
@@ -237,7 +247,8 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         if (msg.sender != operator) {
             require(registrars[msg.sender], "registrar");
         }
-        address registry = stakeManager.jobRegistry();
+        IStakeManager manager = _requireStakeManager();
+        address registry = manager.jobRegistry();
         if (registry != address(0)) {
             IJobRegistryAck(registry).acknowledgeFor(operator);
         }
@@ -262,11 +273,12 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         }
         require(!registered[operator], "registered");
         require(!blacklist[operator], "blacklisted");
-        address registry = stakeManager.jobRegistry();
+        IStakeManager manager = _requireStakeManager();
+        address registry = manager.jobRegistry();
         if (registry != address(0)) {
             IJobRegistryAck(registry).acknowledgeFor(operator);
         }
-        stakeManager.depositStakeFor(
+        manager.depositStakeFor(
             operator,
             IStakeManager.Role.Platform,
             amount
@@ -277,20 +289,61 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Retrieve routing score for a platform based on stake and reputation.
     function getScore(address operator) public view returns (uint256) {
-        if (blacklist[operator] || reputationEngine.isBlacklisted(operator)) return 0;
-        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
+        IStakeManager manager = stakeManager;
+        IReputationEngine engine = reputationEngine;
+        if (address(manager) == address(0) || address(engine) == address(0)) {
+            return 0;
+        }
+        if (blacklist[operator] || engine.isBlacklisted(operator)) return 0;
+        uint256 stake = manager.stakeOf(operator, IStakeManager.Role.Platform);
         // Deployer may register without staking but receives no routing boost.
         if (operator == owner() && stake == 0) return 0;
-        uint256 rep = reputationEngine.reputation(operator);
-        uint256 ent = reputationEngine.entropy(operator);
+        uint256 rep = engine.reputation(operator);
+        uint256 ent = engine.entropy(operator);
         if (rep > ent) {
             rep -= ent;
         } else {
             rep = 0;
         }
-        uint256 stakeW = reputationEngine.stakeWeight();
-        uint256 repW = reputationEngine.reputationWeight();
+        uint256 stakeW = engine.stakeWeight();
+        uint256 repW = engine.reputationWeight();
         return ((stake * stakeW) + (rep * repW)) / TOKEN_SCALE;
+    }
+
+    /**
+     * @notice Return a consolidated snapshot of an operator's registry state.
+     * @dev Provides frontends and monitoring agents with a single call to
+     *      collect registry, staking and reputation data. Missing dependencies
+     *      are treated as zero values to remain backwards compatible with
+     *      partially initialised deployments.
+     */
+    function getOperatorStatus(address operator)
+        external
+        view
+        returns (
+            bool isRegistered,
+            bool isBlacklisted,
+            uint256 stake,
+            uint256 score,
+            uint256 reputationValue,
+            uint256 entropyValue
+        )
+    {
+        isRegistered = registered[operator];
+        isBlacklisted = blacklist[operator];
+
+        IStakeManager manager = stakeManager;
+        if (address(manager) != address(0)) {
+            stake = manager.stakeOf(operator, IStakeManager.Role.Platform);
+        }
+
+        IReputationEngine engine = reputationEngine;
+        if (address(engine) != address(0)) {
+            reputationValue = engine.reputation(operator);
+            entropyValue = engine.entropy(operator);
+        }
+
+        score = getScore(operator);
     }
 
     // ---------------------------------------------------------------
