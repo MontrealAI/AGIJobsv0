@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import tempfile
 import types
 import unittest
 from unittest import mock
@@ -331,6 +332,7 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     ExecuteRequest,
     health_router,
     JobIntent,
+    OrgPolicyStore,
     Payload,
     PlanRequest,
     router,
@@ -491,6 +493,97 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(exc.exception.detail, dict)
         self.assertEqual(exc.exception.detail["code"], "DEADLINE_INVALID")
         self.assertEqual(exc.exception.detail["message"], _ERRORS["DEADLINE_INVALID"])
+
+
+class OrgPolicyEnforcementTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
+        self._tempdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tempdir.cleanup)
+        policy_path = os.path.join(self._tempdir.name, "policies.json")
+        store = OrgPolicyStore(
+            policy_path=policy_path,
+            default_max_budget_wei=2 * 10**18,
+            default_max_duration_days=5,
+        )
+        self._store_patcher = mock.patch("routes.onebox._ORG_POLICY_STORE", store)
+        self._store_patcher.start()
+        self.addCleanup(self._store_patcher.stop)
+
+    async def test_execute_within_policy_logs_acceptance(self) -> None:
+        events = []
+
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            return {
+                "cid": "bafkpolicy",
+                "uri": "ipfs://bafkpolicy",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafkpolicy",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafkpolicy"],
+            }
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Policy", reward="1.5", deadlineDays=4),
+            userContext={"orgId": "acme"},
+        )
+        execute_request = ExecuteRequest(intent=intent, mode="wallet")
+        request_ctx = _make_request()
+
+        def _capture_event(level, event, correlation_id, **fields):  # type: ignore[no-untyped-def]
+            events.append((level, event, fields))
+
+        with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
+            "routes.onebox.time.time", return_value=2_000_000
+        ), mock.patch("routes.onebox._compute_spec_hash", return_value=b"policy"), mock.patch(
+            "routes.onebox._log_event", side_effect=_capture_event
+        ):
+            response = await execute(request_ctx, execute_request)
+
+        self.assertTrue(response.ok)
+        self.assertTrue(
+            any(event == "onebox.policy.accepted" for _, event, _ in events),
+            msg="expected acceptance event",
+        )
+
+    async def test_execute_rejected_when_budget_exceeds_cap(self) -> None:
+        events = []
+
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            return {
+                "cid": "bafkpolicy",
+                "uri": "ipfs://bafkpolicy",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafkpolicy",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafkpolicy"],
+            }
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Policy", reward="3", deadlineDays=4),
+            userContext={"orgId": "acme"},
+        )
+        execute_request = ExecuteRequest(intent=intent, mode="wallet")
+        request_ctx = _make_request()
+
+        def _capture_event(level, event, correlation_id, **fields):  # type: ignore[no-untyped-def]
+            events.append((level, event, fields))
+
+        with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
+            "routes.onebox.time.time", return_value=2_000_000
+        ), mock.patch("routes.onebox._compute_spec_hash", return_value=b"policy"), mock.patch(
+            "routes.onebox._log_event", side_effect=_capture_event
+        ):
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await execute(request_ctx, execute_request)
+
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertIsInstance(exc.exception.detail, dict)
+        self.assertEqual(exc.exception.detail.get("code"), "JOB_BUDGET_CAP_EXCEEDED")
+        self.assertTrue(
+            any(
+                event == "onebox.policy.rejected" and fields.get("reason") == "JOB_BUDGET_CAP_EXCEEDED"
+                for _, event, fields in events
+            ),
+            msg="expected rejection event",
+        )
 
 
 class StatusReadTests(unittest.IsolatedAsyncioTestCase):
