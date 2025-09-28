@@ -1820,6 +1820,8 @@ async def simulate(request: Request, req: SimulateRequest):
                         blockers.append("DEADLINE_INVALID")
                     elif deadline_days <= 2:
                         risks.append("SHORT_DEADLINE")
+                    elif deadline_days >= 45:
+                        risks.append("LONG_DEADLINE")
 
             if not blockers and reward_wei is not None and deadline_days is not None:
                 org_identifier = _resolve_org_identifier(intent)
