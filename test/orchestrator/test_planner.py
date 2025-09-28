@@ -17,6 +17,7 @@ def test_make_plan_defaults_and_summary():
     assert plan.intent.kind == "post_job"
     assert plan.intent.reward_agialpha == "50.00"
     assert plan.intent.deadline_days == 7
+    assert plan.missing_fields == ["reward_agialpha", "deadline_days"]
     assert plan.simulation is not None
     assert plan.simulation.est_budget == plan.plan.budget.max
     assert plan.preview_summary.endswith("Proceed?")
@@ -24,7 +25,7 @@ def test_make_plan_defaults_and_summary():
     assert "DEFAULT_DEADLINE_APPLIED" in plan.warnings
     assert plan.requires_confirmation is True
     assert plan.plan.budget.max == "53.50"
-    assert "escrowing 50.00 AGIALPHA" in plan.preview_summary
+    assert "escrowing 50.00 AGIALPHA (default)" in plan.preview_summary
     assert "total escrow 53.50 AGIALPHA" in plan.preview_summary
 
 
@@ -80,3 +81,25 @@ def test_default_plan_is_within_budget():
     assert plan_out.simulation is not None
     assert "OVER_BUDGET" not in plan_out.simulation.risks
     assert plan_out.simulation.est_budget == plan_out.plan.budget.max
+
+
+def test_missing_reward_is_reported():
+    plan = make_plan(PlanIn(input_text="Post a job with deadline in 5 days"))
+
+    assert plan.intent.kind == "post_job"
+    assert plan.intent.reward_agialpha == "50.00"
+    assert plan.intent.deadline_days == 5
+    assert plan.missing_fields == ["reward_agialpha"]
+    assert "duration 5 day(s)" in plan.preview_summary
+    assert "escrowing 50.00 AGIALPHA (default)" in plan.preview_summary
+
+
+def test_missing_deadline_is_reported():
+    plan = make_plan(PlanIn(input_text="Post a 200 AGI job"))
+
+    assert plan.intent.kind == "post_job"
+    assert plan.intent.reward_agialpha == "200.00"
+    assert plan.intent.deadline_days == 7
+    assert plan.missing_fields == ["deadline_days"]
+    assert "escrowing 200.00 AGIALPHA" in plan.preview_summary
+    assert "duration 7 day(s) (default)" in plan.preview_summary

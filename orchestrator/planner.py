@@ -151,6 +151,11 @@ def make_plan(req: PlanIn) -> PlanOut:
     warnings: List[str] = []
     missing: List[str] = []
 
+    if _missing_reward:
+        missing.extend(_missing_reward)
+    if _missing_deadline:
+        missing.extend(_missing_deadline)
+
     reward_decimal = Decimal("0")
 
     if intent_kind == "post_job":
@@ -217,8 +222,19 @@ def make_plan(req: PlanIn) -> PlanOut:
     summary_parts = []
     if intent.kind == "post_job":
         summary_parts.append(f"Post job '{intent.title}'")
-        summary_parts.append(f"escrowing {reward} AGIALPHA")
-        summary_parts.append(f"duration {intent.deadline_days} day(s)")
+        if reward is None:
+            summary_parts.append("escrowing ??? AGIALPHA")
+        elif intent_kind == "post_job" and "DEFAULT_REWARD_APPLIED" in warnings:
+            summary_parts.append(f"escrowing {reward} AGIALPHA (default)")
+        else:
+            summary_parts.append(f"escrowing {reward} AGIALPHA")
+
+        if deadline is None:
+            summary_parts.append("duration ??? day(s)")
+        elif intent_kind == "post_job" and "DEFAULT_DEADLINE_APPLIED" in warnings:
+            summary_parts.append(f"duration {intent.deadline_days} day(s) (default)")
+        else:
+            summary_parts.append(f"duration {intent.deadline_days} day(s)")
         summary_parts.append(
             (
                 f"total escrow {format(total_budget, 'f')} AGIALPHA "
