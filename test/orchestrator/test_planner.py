@@ -58,6 +58,11 @@ def test_make_plan_requires_job_id_for_submit():
     assert plan.preview_summary.startswith("Submit deliverable for job")
     assert plan.requires_confirmation is False
 
+    step_ids = {step.id for step in plan.plan.steps}
+    for step in plan.plan.steps:
+        for dependency in step.needs:
+            assert dependency in step_ids
+
 
 def test_make_plan_requires_job_id_for_finalize():
     plan = make_plan(PlanIn(input_text="Finalize the payout now"))
@@ -67,6 +72,11 @@ def test_make_plan_requires_job_id_for_finalize():
     assert plan.intent.job_id is None
     assert plan.preview_summary.startswith("Finalize payout for job")
     assert plan.requires_confirmation is False
+
+    step_ids = {step.id for step in plan.plan.steps}
+    for step in plan.plan.steps:
+        for dependency in step.needs:
+            assert dependency in step_ids
 
 
 def test_make_plan_invalid_reward_raises():
