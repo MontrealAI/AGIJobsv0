@@ -164,6 +164,20 @@ npm run owner:update-all -- --network <network> --execute
 
 The script resolves contract addresses from `config/*.json`, `.env` overrides and `config/agialpha.json`, verifies signer ownership and prints calldata for every proposed change. When invoked with `--execute`, each module action is submitted sequentially so a non-technical operator can review the dry-run output and immediately replay it against production. Optional `--only`/`--skip` filters make it easy to scope updates to specific subsystems without editing configuration files.
 
+### Owner control verification
+
+Confirm production ownership before executing sensitive changes. The verifier cross-references [`config/owner-control.json`](config/owner-control.json), environment overrides and [`docs/deployment-addresses.json`](docs/deployment-addresses.json) against live contract state, highlighting drift and pending `Ownable2Step` acceptances.
+
+```bash
+# Human-readable report
+npm run owner:verify-control -- --network <network>
+
+# Machine-readable output with strict failure when ownership mismatches
+npm run owner:verify-control -- --network <network> --json --strict > owner-control-report.json
+```
+
+Provide per-module addresses via `modules.<name>.address`, the `AGJ_<NAME>_ADDRESS` environment variable, or `--address name=0x…` at runtime. Use `--modules`/`--skip` to scope checks and `--address-book` to point at alternative deployment records. The command exits non-zero when `--strict` is enabled and any contract lacks the expected governance, keeping change-control pipelines safe for non-technical operators.
+
 ### Mainnet Deployment
 
 For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)](docs/deploying-agijobs-v2-truffle-cli.md). Operators who prefer an automated checklist can launch the guided wizard:
