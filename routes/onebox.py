@@ -5,6 +5,7 @@
 # Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -13,7 +14,8 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import httpx
@@ -244,6 +246,95 @@ _TTO_SECONDS = prometheus_client.Histogram(
 )
 
 
+_plan_cache_lock = threading.Lock()
+_plan_cache: Dict[str, str] = {}
+
+
+def _current_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _normalize_plan_hash(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    trimmed = value.strip().lower()
+    if not trimmed:
+        return None
+    if not trimmed.startswith("0x"):
+        trimmed = f"0x{trimmed}"
+    if re.fullmatch(r"0x[0-9a-f]{64}", trimmed):
+        return trimmed
+    return trimmed
+
+
+def _store_plan_metadata(plan_hash: str, created_at: str) -> None:
+    if not plan_hash:
+        return
+    with _plan_cache_lock:
+        _plan_cache[plan_hash] = created_at
+
+
+def _lookup_plan_timestamp(plan_hash: Optional[str]) -> Optional[str]:
+    if not plan_hash:
+        return None
+    with _plan_cache_lock:
+        return _plan_cache.get(plan_hash)
+
+
+def _normalize_timestamp(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        trimmed = value.strip()
+        if not trimmed:
+            return None
+        try:
+            if trimmed.endswith("Z"):
+                parsed = datetime.fromisoformat(trimmed.replace("Z", "+00:00"))
+            else:
+                parsed = datetime.fromisoformat(trimmed)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            else:
+                parsed = parsed.astimezone(timezone.utc)
+            return parsed.isoformat().replace("+00:00", "Z")
+        except ValueError:
+            try:
+                as_float = float(trimmed)
+            except ValueError:
+                return None
+            dt = datetime.fromtimestamp(as_float, tz=timezone.utc)
+            return dt.isoformat().replace("+00:00", "Z")
+    return None
+
+
+def _canonical_plan_envelope(intent: "JobIntent") -> Dict[str, Any]:
+    payload = json.loads(intent.json(exclude_none=True, by_alias=True))
+    return {"version": 1, "intent": payload}
+
+
+def _stable_stringify(value: Any) -> str:
+    if isinstance(value, list):
+        return "[" + ",".join(_stable_stringify(item) for item in value) + "]"
+    if isinstance(value, dict):
+        items = []
+        for key in sorted(value.keys()):
+            val = value[key]
+            if val is None:
+                continue
+            items.append(f"{json.dumps(str(key))}:{_stable_stringify(val)}")
+        return "{" + ",".join(items) + "}"
+    if isinstance(value, Decimal):
+        return json.dumps(str(value))
+    return json.dumps(value)
+
+
+def _compute_plan_hash(intent: "JobIntent") -> str:
+    envelope = _canonical_plan_envelope(intent)
+    canonical = _stable_stringify(envelope)
+    return "0x" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def _get_correlation_id(request: Request) -> str:
     if hasattr(request.state, "correlation_id"):
         return request.state.correlation_id  # type: ignore[attr-defined]
@@ -323,11 +414,14 @@ class PlanResponse(BaseModel):
     intent: JobIntent
     requiresConfirmation: bool = True
     warnings: List[str] = Field(default_factory=list)
+    planHash: str
 
 
 class ExecuteRequest(BaseModel):
     intent: JobIntent
     mode: Literal["relayer", "wallet"] = "relayer"
+    planHash: Optional[str] = None
+    createdAt: Optional[str] = None
 
 
 class ExecuteResponse(BaseModel):
@@ -343,6 +437,10 @@ class ExecuteResponse(BaseModel):
     deliverableUri: Optional[str] = None
     deliverableGatewayUrl: Optional[str] = None
     deliverableGatewayUrls: Optional[List[str]] = None
+    receiptCid: Optional[str] = None
+    receiptUri: Optional[str] = None
+    receiptGatewayUrl: Optional[str] = None
+    receiptGatewayUrls: Optional[List[str]] = None
     specHash: Optional[str] = None
     deadline: Optional[int] = None
     reward: Optional[str] = None
@@ -353,6 +451,14 @@ class ExecuteResponse(BaseModel):
     value: Optional[str] = None
     chainId: Optional[int] = None
     error: Optional[str] = None
+    planHash: Optional[str] = None
+    createdAt: Optional[str] = None
+    txHashes: Optional[List[str]] = None
+    receipt: Optional[Dict[str, Any]] = None
+    feePct: Optional[float] = None
+    burnPct: Optional[float] = None
+    feeAmount: Optional[str] = None
+    burnAmount: Optional[str] = None
 
 
 class StatusResponse(BaseModel):
@@ -1156,6 +1262,105 @@ async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
     return txh, dict(receipt)
 
 
+def _calculate_fee_amounts(reward: Optional[str], fee_pct: Decimal, burn_pct: Decimal) -> Tuple[Optional[str], Optional[str]]:
+    if not reward:
+        return None, None
+    try:
+        reward_decimal = Decimal(str(reward))
+    except (InvalidOperation, ValueError, TypeError):
+        return None, None
+    precision = Decimal(10) ** AGIALPHA_DECIMALS
+    reward_wei = (reward_decimal * precision).to_integral_value(rounding=ROUND_HALF_UP)
+    fee_amount_wei = (reward_wei * fee_pct / Decimal(100)).to_integral_value(rounding=ROUND_HALF_UP)
+    burn_amount_wei = (reward_wei * burn_pct / Decimal(100)).to_integral_value(rounding=ROUND_HALF_UP)
+    fee_amount = int(fee_amount_wei)
+    burn_amount = int(burn_amount_wei)
+    fee_str = _format_reward(fee_amount) if fee_amount else None
+    burn_str = _format_reward(burn_amount) if burn_amount else None
+    return fee_str, burn_str
+
+
+def _collect_tx_hashes(*candidates: Optional[Any]) -> List[str]:
+    seen: Dict[str, None] = {}
+    for candidate in candidates:
+        if isinstance(candidate, list):
+            for entry in candidate:
+                if isinstance(entry, str):
+                    trimmed = entry.strip()
+                    if trimmed:
+                        seen.setdefault(trimmed, None)
+        elif isinstance(candidate, str):
+            trimmed = candidate.strip()
+            if trimmed:
+                seen.setdefault(trimmed, None)
+    return list(seen.keys())
+
+
+def _build_receipt_payload(
+    response: "ExecuteResponse", plan_hash: Optional[str], created_at: Optional[str], tx_hashes: List[str]
+) -> Optional[Dict[str, Any]]:
+    if not tx_hashes or not plan_hash or not created_at:
+        return None
+    record: Dict[str, Any] = {
+        "planHash": plan_hash,
+        "jobId": response.jobId,
+        "txHashes": tx_hashes,
+        "timestamp": created_at,
+    }
+    relevant_cid = response.deliverableCid or response.specCid or response.receiptCid
+    if relevant_cid:
+        record["relevantCid"] = relevant_cid
+    if response.specCid:
+        record["specCid"] = response.specCid
+    if response.deliverableCid:
+        record["deliverableCid"] = response.deliverableCid
+    if response.receiptUrl:
+        record["receiptUrl"] = response.receiptUrl
+    if response.reward:
+        record["reward"] = response.reward
+    if response.token:
+        record["token"] = response.token
+    if response.status:
+        record["status"] = response.status
+    fees: Dict[str, Any] = {}
+    if response.feePct is not None:
+        fees["feePct"] = response.feePct
+    if response.feeAmount is not None:
+        fees["feeAmount"] = response.feeAmount
+    if response.burnPct is not None:
+        fees["burnPct"] = response.burnPct
+    if response.burnAmount is not None:
+        fees["burnAmount"] = response.burnAmount
+    if fees:
+        record["fees"] = fees
+    return record
+
+
+async def _attach_receipt_artifacts(response: "ExecuteResponse") -> None:
+    tx_hashes = _collect_tx_hashes(response.txHashes, response.txHash)
+    if tx_hashes:
+        response.txHashes = tx_hashes
+    else:
+        response.txHashes = None
+        return
+    receipt_payload = _build_receipt_payload(response, response.planHash, response.createdAt, tx_hashes)
+    if not receipt_payload:
+        return
+    response.receipt = receipt_payload
+    deliverable_pin = await _pin_json(receipt_payload, "job-deliverable.json")
+    cid = deliverable_pin.get("cid")
+    uri = deliverable_pin.get("uri")
+    gateway_url = deliverable_pin.get("gatewayUrl")
+    gateways = deliverable_pin.get("gatewayUrls")
+    response.deliverableCid = cid
+    response.deliverableUri = uri
+    response.deliverableGatewayUrl = gateway_url
+    response.deliverableGatewayUrls = gateways
+    response.receiptCid = cid
+    response.receiptUri = uri
+    response.receiptGatewayUrl = gateway_url
+    response.receiptGatewayUrls = gateways
+
 # ---------- Routes ----------
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])
 async def plan(request: Request, req: PlanRequest):
@@ -1168,11 +1373,15 @@ async def plan(request: Request, req: PlanRequest):
         intent = _naive_parse(req.text)
         intent_type = intent.action
         summary, requires_confirmation, warnings = _summary_for_intent(intent, req.text)
+        plan_hash = _compute_plan_hash(intent)
+        created_at = _current_timestamp()
+        _store_plan_metadata(plan_hash, created_at)
         response = PlanResponse(
             summary=summary,
             intent=intent,
             requiresConfirmation=requires_confirmation,
             warnings=warnings,
+            planHash=plan_hash,
         )
     except HTTPException as exc:
         status_code = exc.status_code
@@ -1221,6 +1430,13 @@ async def execute(request: Request, req: ExecuteRequest):
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
+    plan_hash = _normalize_plan_hash(req.planHash) or _compute_plan_hash(intent)
+    if not plan_hash:
+        raise _http_error(400, "PLAN_HASH_REQUIRED")
+    stored_created_at = _lookup_plan_timestamp(plan_hash)
+    request_created_at = _normalize_timestamp(req.createdAt)
+    created_at = stored_created_at or request_created_at or _current_timestamp()
+    _store_plan_metadata(plan_hash, created_at)
 
     try:
         if intent.action == "post_job":
@@ -1230,6 +1446,8 @@ async def execute(request: Request, req: ExecuteRequest):
                 raise _http_error(400, "DEADLINE_INVALID")
 
             deadline_ts = _calculate_deadline_timestamp(int(payload.deadlineDays))
+            fee_pct, burn_pct = _get_fee_policy()
+            fee_amount, burn_amount = _calculate_fee_amounts(str(payload.reward), fee_pct, burn_pct)
             job_payload = {
                 "title": payload.title or "New Job",
                 "description": payload.description or "",
@@ -1256,6 +1474,8 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
                 response = ExecuteResponse(
                     ok=True,
+                    planHash=plan_hash,
+                    createdAt=created_at,
                     to=to,
                     data=data,
                     value="0x0",
@@ -1269,6 +1489,10 @@ async def execute(request: Request, req: ExecuteRequest):
                     reward=str(payload.reward),
                     token=payload.rewardToken,
                     status="prepared",
+                    feePct=float(fee_pct),
+                    burnPct=float(burn_pct),
+                    feeAmount=fee_amount,
+                    burnAmount=burn_amount,
                 )
             else:
                 func = registry.functions.postJob(
@@ -1282,8 +1506,11 @@ async def execute(request: Request, req: ExecuteRequest):
                 job_id = _decode_job_created(receipt)
                 response = ExecuteResponse(
                     ok=True,
+                    planHash=plan_hash,
+                    createdAt=created_at,
                     jobId=job_id,
                     txHash=txh,
+                    txHashes=[txh] if txh else None,
                     receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
                     specCid=cid,
                     specUri=uri,
@@ -1294,30 +1521,12 @@ async def execute(request: Request, req: ExecuteRequest):
                     reward=str(payload.reward),
                     token=payload.rewardToken,
                     status="submitted",
+                    feePct=float(fee_pct),
+                    burnPct=float(burn_pct),
+                    feeAmount=fee_amount,
+                    burnAmount=burn_amount,
                 )
-
-            deliverable_payload = {
-                "intent": intent.dict(),
-                "mode": req.mode,
-                "spec": {
-                    "cid": cid,
-                    "uri": uri,
-                    "gatewayUrl": spec_pin.get("gatewayUrl"),
-                    "gateways": spec_pin.get("gatewayUrls"),
-                },
-                "result": {
-                    "jobId": response.jobId,
-                    "txHash": response.txHash,
-                    "status": response.status,
-                    "receiptUrl": response.receiptUrl,
-                },
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            }
-            deliverable_pin = await _pin_json(deliverable_payload, "job-deliverable.json")
-            response.deliverableCid = deliverable_pin.get("cid")
-            response.deliverableUri = deliverable_pin.get("uri")
-            response.deliverableGatewayUrl = deliverable_pin.get("gatewayUrl")
-            response.deliverableGatewayUrls = deliverable_pin.get("gatewayUrls")
+            await _attach_receipt_artifacts(response)
 
         elif intent.action == "finalize_job":
             if payload.jobId is None:
@@ -1326,6 +1535,8 @@ async def execute(request: Request, req: ExecuteRequest):
                 to, data = _encode_wallet_call("finalize", [int(payload.jobId)])
                 response = ExecuteResponse(
                     ok=True,
+                    planHash=plan_hash,
+                    createdAt=created_at,
                     to=to,
                     data=data,
                     value="0x0",
@@ -1341,28 +1552,15 @@ async def execute(request: Request, req: ExecuteRequest):
                 txh, _receipt = await _send_relayer_tx(tx)
                 response = ExecuteResponse(
                     ok=True,
+                    planHash=plan_hash,
+                    createdAt=created_at,
                     jobId=int(payload.jobId),
                     txHash=txh,
+                    txHashes=[txh] if txh else None,
                     receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
                     status="finalized",
                 )
-
-            deliverable_payload = {
-                "intent": intent.dict(),
-                "mode": req.mode,
-                "result": {
-                    "jobId": response.jobId or int(payload.jobId),
-                    "txHash": response.txHash,
-                    "status": response.status,
-                    "receiptUrl": response.receiptUrl,
-                },
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            }
-            deliverable_pin = await _pin_json(deliverable_payload, "job-deliverable.json")
-            response.deliverableCid = deliverable_pin.get("cid")
-            response.deliverableUri = deliverable_pin.get("uri")
-            response.deliverableGatewayUrl = deliverable_pin.get("gatewayUrl")
-            response.deliverableGatewayUrls = deliverable_pin.get("gatewayUrls")
+            await _attach_receipt_artifacts(response)
 
         elif intent.action == "check_status":
             if payload.jobId is None:
@@ -1374,6 +1572,8 @@ async def execute(request: Request, req: ExecuteRequest):
                 status=status.state,
                 reward=status.reward,
                 token=status.token,
+                planHash=plan_hash,
+                createdAt=created_at,
             )
 
         else:
