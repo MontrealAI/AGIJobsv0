@@ -80,18 +80,35 @@ The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RU
 
 ---
 
-## 5. Publishing to IPFS
+## 5. Automated publishing & ENS updates
 
-```bash
-# From repository root
-npm run onebox:static:build
-web3 storage upload apps/onebox-static/dist
-```
+The `scripts/onebox-static/release.mjs` helper automates the full release flow:
 
-- Store the resulting CID in deployment notes.
-- Optionally pin via multiple providers for resiliency.
-- Configure DNSLink (`_dnslink.example.com` TXT record) for custom domains.
-- Keep the generated `apps/onebox-static/dist/manifest.json` with the published bundle so gateways serve the hashed asset names referenced by `index.html`.
+1. Build the static assets: `npm run onebox:static:build`.
+2. Export the required environment variables (see below).
+3. Run `node scripts/onebox-static/release.mjs` to upload the new bundle, verify redundant pins, update ENS, and persist metadata.
+
+On success the script prints the root CID, known gateways, the ENS transaction hash, and the live `eth.limo` URL for handoff. It also updates `deployment-config/onebox-static.json` with a `latest` snapshot and appends an entry to `history` so SLO dashboards can track when each revision went live and which gateways should be probed.
+
+### Required secrets & environment
+
+| Variable | Purpose | Source |
+| -------- | ------- | ------ |
+| `ONEBOX_W3S_TOKEN` | API token for web3.storage uploads and pin verification. | web3.storage console (scoped to static hosting uploads). |
+| `ONEBOX_PINATA_JWT` | Pinata JWT for pinning the CID redundantly. | Pinata API keys. |
+| `ONEBOX_RPC_URL` | HTTPS RPC endpoint for the target network (e.g., Base mainnet). | Alchemy, Infura, or in-house node. |
+| `ONEBOX_SIGNER_KEY` | Hex-encoded private key authorised to update the ENS resolver. Store in a secure secret manager. | Deployment signer. |
+| `ONEBOX_ENS_RESOLVER` | Resolver contract that exposes `setContenthash`. | ENS registry/resolver configuration. |
+| `ONEBOX_ENS_NAME` | ENS name that should resolve to the published bundle (e.g., `onebox.alice.eth`). | ENS delegation plan. |
+| `ONEBOX_PINATA_GATEWAY` *(optional)* | Override for the shared Pinata gateway domain when generating URLs. | Pinata gateway configuration. |
+
+Ensure the signer has the necessary permissions on the resolver before running the release script.
+
+### Release metadata & monitoring
+
+- `deployment-config/onebox-static.json` now tracks the most recent release plus a rolling `history` array that captures the CID, release timestamp, ENS tx hash, and gateway URLs. Wire your uptime/SLO monitors to read this file and probe each gateway listed for the latest CID.
+- The script’s console output includes the canonical `https://<ens>.eth.limo` link that should be distributed to operators and end users.
+- Store the generated `apps/onebox-static/dist/manifest.json` with the pinned content so hashed asset names remain valid for gateways.
 
 ---
 
