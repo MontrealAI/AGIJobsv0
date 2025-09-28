@@ -9,10 +9,11 @@ import json
 import logging
 import os
 import re
+import threading
 import time
 import uuid
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import httpx
@@ -149,6 +150,24 @@ _MIN_ABI = [
         "stateMutability": "view",
         "type": "function",
     },
+    {
+        "inputs": [],
+        "name": "feePct",
+        "outputs": [
+            {"internalType": "uint256", "name": "", "type": "uint256"},
+        ],
+        "stateMutability": "view",
+        "type": "function",
+    },
+    {
+        "inputs": [],
+        "name": "stakeManager",
+        "outputs": [
+            {"internalType": "address", "name": "", "type": "address"},
+        ],
+        "stateMutability": "view",
+        "type": "function",
+    },
 ]
 _ABI = json.loads(os.getenv("JOB_REGISTRY_ABI_JSON", json.dumps(_MIN_ABI)))
 
@@ -164,6 +183,38 @@ if CHAIN_ID and w3.eth.chain_id != CHAIN_ID:
     )
 registry = w3.eth.contract(address=JOB_REGISTRY, abi=_ABI)
 relayer = w3.eth.account.from_key(_RELAYER_PK) if _RELAYER_PK else None
+
+
+def _parse_default_percentage(*env_keys: str, fallback: str) -> Decimal:
+    for key in env_keys:
+        raw = os.getenv(key)
+        if raw is None:
+            continue
+        value = raw.strip()
+        if not value:
+            continue
+        try:
+            parsed = Decimal(value)
+        except InvalidOperation:
+            logger.warning("invalid percentage configured for %s: %s", key, raw)
+            continue
+        if Decimal(0) <= parsed <= Decimal(100):
+            return parsed
+        logger.warning("percentage for %s out of range 0-100: %s", key, raw)
+    return Decimal(fallback)
+
+
+_DEFAULT_FEE_PCT = _parse_default_percentage(
+    "ONEBOX_DEFAULT_FEE_PCT", "ONEBOX_FEE_PCT", fallback="5"
+)
+_DEFAULT_BURN_PCT = _parse_default_percentage(
+    "ONEBOX_DEFAULT_BURN_PCT", "ONEBOX_BURN_PCT", fallback="2"
+)
+
+_cached_fee_pct: Decimal = _DEFAULT_FEE_PCT
+_cached_burn_pct: Decimal = _DEFAULT_BURN_PCT
+_fee_policy_loaded = False
+_fee_policy_lock = threading.Lock()
 
 # ---------- Metrics ----------
 _METRICS_REGISTRY = prometheus_client.CollectorRegistry()
@@ -362,6 +413,96 @@ def _http_error(status_code: int, code: str) -> HTTPException:
 
 
 # ---------- Helpers ----------
+_SUMMARY_SUFFIX = " Proceed?"
+_STAKE_MANAGER_ABI = [
+    {
+        "inputs": [],
+        "name": "burnPct",
+        "outputs": [
+            {"internalType": "uint256", "name": "", "type": "uint256"},
+        ],
+        "stateMutability": "view",
+        "type": "function",
+    }
+]
+
+
+def _ensure_summary_limit(value: str) -> str:
+    if len(value) <= 140:
+        return value
+    base = re.sub(r"\s*Proceed\?$", "", value)
+    truncated = base[: max(0, 140 - len(_SUMMARY_SUFFIX) - 1)].rstrip()
+    return f"{truncated}…{_SUMMARY_SUFFIX}"
+
+
+def _format_percentage(value: Decimal) -> str:
+    quantized = value.normalize()
+    text = format(quantized, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text or "0"
+
+
+def _parse_percentage_candidate(value: Any) -> Optional[Decimal]:
+    if value is None:
+        return None
+    try:
+        parsed = Decimal(value)
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+    if Decimal(0) <= parsed <= Decimal(100):
+        return parsed
+    return None
+
+
+def _get_fee_policy() -> Tuple[Decimal, Decimal]:
+    global _fee_policy_loaded, _cached_fee_pct, _cached_burn_pct
+    if _fee_policy_loaded:
+        return _cached_fee_pct, _cached_burn_pct
+    with _fee_policy_lock:
+        if _fee_policy_loaded:
+            return _cached_fee_pct, _cached_burn_pct
+        fee_pct = _DEFAULT_FEE_PCT
+        burn_pct = _DEFAULT_BURN_PCT
+        try:
+            fee_fn = getattr(registry.functions, "feePct", None)
+            if fee_fn is not None:
+                fee_raw = fee_fn().call()
+                parsed_fee = _parse_percentage_candidate(fee_raw)
+                if parsed_fee is not None:
+                    fee_pct = parsed_fee
+            stake_manager_fn = getattr(registry.functions, "stakeManager", None)
+            stake_manager_address = None
+            if stake_manager_fn is not None:
+                stake_manager_address = stake_manager_fn().call()
+            if isinstance(stake_manager_address, (bytes, bytearray)):
+                stake_manager_address = Web3.to_hex(stake_manager_address)
+            is_valid_address = False
+            if isinstance(stake_manager_address, str) and Web3.is_address(stake_manager_address):
+                try:
+                    is_valid_address = int(stake_manager_address, 16) != 0
+                except ValueError:
+                    is_valid_address = False
+            if is_valid_address:
+                stake_manager_contract = w3.eth.contract(
+                    address=Web3.to_checksum_address(stake_manager_address),
+                    abi=_STAKE_MANAGER_ABI,
+                )
+                try:
+                    burn_raw = stake_manager_contract.functions.burnPct().call()
+                    parsed_burn = _parse_percentage_candidate(burn_raw)
+                    if parsed_burn is not None:
+                        burn_pct = parsed_burn
+                except Exception as exc:
+                    logger.warning("failed to load burnPct: %s", exc)
+        except Exception as exc:
+            logger.warning("failed to load fee policy: %s", exc)
+        _cached_fee_pct = fee_pct
+        _cached_burn_pct = burn_pct
+        _fee_policy_loaded = True
+        return fee_pct, burn_pct
+
+
 def _to_wei(amount: str) -> int:
     return int(Decimal(amount) * Decimal(10**AGIALPHA_DECIMALS))
 
@@ -382,6 +523,12 @@ def _extract_job_id(text: str) -> Optional[int]:
         return int(match.group(1))
     digits = re.search(r"\b(\d{1,8})\b", text)
     return int(digits.group(1)) if digits else None
+
+
+def _format_job_id(job_id: Optional[int]) -> str:
+    if job_id is None:
+        return "#?"
+    return f"#{job_id}"
 
 
 def _detect_action(text: str) -> Optional[str]:
@@ -444,44 +591,52 @@ def _naive_parse(text: str) -> JobIntent:
 def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool, List[str]]:
     warnings: List[str] = []
     request_snippet = request_text.strip()
+    snippet = f" ({request_snippet})" if request_snippet else ""
     if intent.action == "finalize_job":
         jid = intent.payload.jobId
-        summary = f"Detected job finalization request for job {jid}. Confirm to finalize job {jid}."
-        return summary, True, warnings
+        summary = (
+            f"Detected job finalization request for job {_format_job_id(jid)}. "
+            f"Confirm to finalize job {_format_job_id(jid)}. Proceed?"
+        )
+        return _ensure_summary_limit(summary), True, warnings
     if intent.action == "check_status":
         jid = intent.payload.jobId
-        summary = f"Detected job status request for job {jid}. ({request_snippet})"
+        summary = f"Detected job status request for job {_format_job_id(jid)}.{snippet}".rstrip(".") + "."
         return summary, False, warnings
     if intent.action == "stake":
         jid = intent.payload.jobId
-        summary = f"Detected staking request for job {jid}. ({request_snippet}) Confirm to continue."
-        return summary, True, warnings
+        summary = (
+            f"Detected staking request for job {_format_job_id(jid)}.{snippet} "
+            "Confirm to continue. Proceed?"
+        )
+        return _ensure_summary_limit(summary), True, warnings
     if intent.action == "validate":
         jid = intent.payload.jobId
         summary = (
-            f"Detected validation request for job {jid}. ({request_snippet}) "
-            f"Confirm to assign validators."
+            f"Detected validation request for job {_format_job_id(jid)}.{snippet} "
+            "Confirm to assign validators. Proceed?"
         )
-        return summary, True, warnings
+        return _ensure_summary_limit(summary), True, warnings
     if intent.action == "dispute":
         jid = intent.payload.jobId
         summary = (
-            f"Detected dispute request for job {jid}. ({request_snippet}) "
-            f"Confirm to escalate job {jid}."
+            f"Detected dispute request for job {_format_job_id(jid)}.{snippet} "
+            f"Confirm to escalate job {_format_job_id(jid)}. Proceed?"
         )
-        return summary, True, warnings
+        return _ensure_summary_limit(summary), True, warnings
 
     payload = intent.payload
     reward = payload.reward or _parse_reward(request_text) or "1.0"
     days = payload.deadlineDays if payload.deadlineDays is not None else (_parse_deadline_days(request_text) or 7)
     title = payload.title or _normalize_title(request_text)
+    token = (payload.rewardToken or "AGIALPHA").strip() or "AGIALPHA"
+    fee_pct, burn_pct = _get_fee_policy()
     summary = (
-        f'I will post a job "{title}" with reward {reward} AGIALPHA '
-        f"and a {days}-day deadline. Proceed?"
+        f'Post job "{title}" with reward {reward} {token} '
+        f"and a {days}-day deadline. Fee {_format_percentage(fee_pct)}%, "
+        f"burn {_format_percentage(burn_pct)}%. Proceed?"
     )
-    if len(summary) > 140:
-        summary = summary[:137] + "…"
-    return summary, True, warnings
+    return _ensure_summary_limit(summary), True, warnings
 
 
 @dataclass
