@@ -34,16 +34,40 @@ def _estimate_budget(plan: OrchestrationPlan) -> Tuple[Decimal, Decimal]:
     return total_budget, fees_and_burn
 
 
+def _requires_budget(plan: OrchestrationPlan) -> bool:
+    """Return True if the plan contains an escrow/posting step."""
+
+    for step in plan.steps:
+        if step.kind != "chain":
+            continue
+        parts = [step.tool, step.id, step.name]
+        normalized = " ".join(
+            part.lower() for part in parts if isinstance(part, str) and part
+        )
+        if any(keyword in normalized for keyword in ("job.post", "post job", "post_job", "escrow")):
+            return True
+        if step.id and step.id.lower() in {"post", "post_job"}:
+            return True
+        if step.name and step.name.lower() in {"post", "post job"}:
+            return True
+    return False
+
+
 def simulate_plan(plan: OrchestrationPlan) -> SimOut:
     """Return budget/time estimates and guardrail feedback."""
 
     total_budget, total_fees = _estimate_budget(plan)
-    confirmations = [
-        (
-            f"You’ll escrow {format(total_budget, 'f')} {plan.budget.token} "
-            f"(fee {FEE_PERCENT_LABEL}, burn {BURN_PERCENT_LABEL})."
-        ),
-    ]
+    needs_budget = _requires_budget(plan)
+
+    if needs_budget:
+        confirmations = [
+            (
+                f"You’ll escrow {format(total_budget, 'f')} {plan.budget.token} "
+                f"(fee {FEE_PERCENT_LABEL}, burn {BURN_PERCENT_LABEL})."
+            ),
+        ]
+    else:
+        confirmations = ["No escrow required for this plan."]
     if plan.policies.requireValidator:
         confirmations.append("This plan requires validator quorum (3 validators).")
 
@@ -51,7 +75,7 @@ def simulate_plan(plan: OrchestrationPlan) -> SimOut:
     blockers: list[str] = []
 
     planned_budget = _safe_decimal(plan.budget.max)
-    if planned_budget <= 0:
+    if planned_budget <= 0 and needs_budget:
         blockers.append("BUDGET_REQUIRED")
 
     budget_cap = _safe_decimal(plan.budget.cap)

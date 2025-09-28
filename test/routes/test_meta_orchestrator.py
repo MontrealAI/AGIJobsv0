@@ -1,5 +1,7 @@
 """Black-box tests for the meta-orchestrator router."""
 
+from decimal import Decimal
+
 import pytest
 
 pytest.importorskip("fastapi")
@@ -8,7 +10,12 @@ pytest.importorskip("fastapi.testclient")
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from orchestrator.config import get_burn_fraction, get_fee_fraction
+from orchestrator.models import JobIntent, OrchestrationPlan, Step
 from routes.meta_orchestrator import router as meta_router
+
+FEE_FRACTION = get_fee_fraction()
+BURN_FRACTION = get_burn_fraction()
 
 
 def create_app() -> FastAPI:
@@ -55,3 +62,52 @@ def test_plan_simulate_execute_flow():
     assert final_status is not None
     assert final_status["run"]["state"] == "succeeded"
     assert final_status["receipts"]["plan_id"] == plan_data["plan"]["plan_id"]
+
+
+def _serialize_plan(plan: OrchestrationPlan) -> dict:
+    return plan.model_dump(mode="json")
+
+
+def _build_post_job_plan() -> OrchestrationPlan:
+    intent = JobIntent(kind="post_job", title="Job", reward_agialpha="25.00", deadline_days=7)
+    steps = [
+        Step(id="pin_spec", name="Pin", kind="pin", tool="ipfs.pin"),
+        Step(id="post_job", name="Post job", kind="chain", tool="job.post"),
+    ]
+    reward_decimal = Decimal("25.00")
+    total_budget = (
+        reward_decimal * (Decimal("1") + FEE_FRACTION + BURN_FRACTION)
+    ).quantize(Decimal("0.01"))
+    return OrchestrationPlan.from_intent(intent, steps, format(total_budget, "f"))
+
+
+def _build_finalize_plan() -> OrchestrationPlan:
+    intent = JobIntent(kind="finalize", job_id=42)
+    steps = [Step(id="finalize_payout", name="Finalize", kind="finalize", tool="job.finalize")]
+    return OrchestrationPlan.from_intent(intent, steps, "0")
+
+
+def test_simulate_allows_finalize_with_zero_budget():
+    app = create_app()
+    client = TestClient(app)
+
+    plan = _build_finalize_plan()
+    response = client.post("/onebox/simulate", json={"plan": _serialize_plan(plan)})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["blockers"] == []
+
+
+def test_simulate_blocks_post_job_without_budget():
+    app = create_app()
+    client = TestClient(app)
+
+    plan = _build_post_job_plan()
+    plan.budget.max = "0"
+    response = client.post("/onebox/simulate", json={"plan": _serialize_plan(plan)})
+
+    assert response.status_code == 422
+    payload = response.json()
+    assert payload["detail"]["code"] == "BLOCKED"
+    assert "BUDGET_REQUIRED" in payload["detail"]["blockers"]
