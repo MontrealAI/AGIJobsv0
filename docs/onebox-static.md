@@ -82,25 +82,26 @@ The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RU
 
 ## 5. Automated publishing & ENS updates
 
-The `scripts/onebox-static/release.mjs` helper automates the full release flow:
+The `apps/onebox-static/scripts/publish.mjs` helper (surfaced as `npm run onebox:static:publish`) automates the full release flow:
 
-1. Build the static assets: `npm run onebox:static:build`.
-2. Export the required environment variables (see below).
-3. Run `node scripts/onebox-static/release.mjs` to upload the new bundle, verify redundant pins, update ENS, and persist metadata.
+1. Unless `--skip-build` is supplied, it executes the hashed asset build (`npm run onebox:static:build`) and integrity audit (`npm run verify:sri`).
+2. It packs `dist/` into a deterministic CAR file, uploads the archive to web3.storage, and requests a redundant Pinata pin (each step can be disabled with `--skip-web3` or `--skip-pinata`).
+3. When ENS credentials are provided it sets the contenthash for the configured name and probes every configured gateway plus the `.limo` URL to measure cold-load performance against the 99.9% availability SLO (skip with `--skip-ens` or `--skip-health`).
 
-On success the script prints the root CID, known gateways, the ENS transaction hash, and the live `eth.limo` URL for handoff. It also updates `deployment-config/onebox-static.json` with a `latest` snapshot and appends an entry to `history` so SLO dashboards can track when each revision went live and which gateways should be probed.
+On success the script prints the root CID, known gateways, the ENS transaction hash, and the live `eth.limo` URL for handoff. It also writes `apps/onebox-static/dist/release.json` **and** updates `deployment-config/onebox-static.json` with a `latest` snapshot plus a rolling `history` array so SLO dashboards can track when each revision went live and which gateways should be probed.
 
 ### Required secrets & environment
 
 | Variable | Purpose | Source |
 | -------- | ------- | ------ |
-| `ONEBOX_W3S_TOKEN` | API token for web3.storage uploads and pin verification. | web3.storage console (scoped to static hosting uploads). |
-| `ONEBOX_PINATA_JWT` | Pinata JWT for pinning the CID redundantly. | Pinata API keys. |
-| `ONEBOX_RPC_URL` | HTTPS RPC endpoint for the target network (e.g., Base mainnet). | Alchemy, Infura, or in-house node. |
-| `ONEBOX_SIGNER_KEY` | Hex-encoded private key authorised to update the ENS resolver. Store in a secure secret manager. | Deployment signer. |
-| `ONEBOX_ENS_RESOLVER` | Resolver contract that exposes `setContenthash`. | ENS registry/resolver configuration. |
-| `ONEBOX_ENS_NAME` | ENS name that should resolve to the published bundle (e.g., `onebox.alice.eth`). | ENS delegation plan. |
-| `ONEBOX_PINATA_GATEWAY` *(optional)* | Override for the shared Pinata gateway domain when generating URLs. | Pinata gateway configuration. |
+| `WEB3_STORAGE_TOKEN` *(or `W3S_TOKEN`)* | API token for web3.storage uploads and pin verification. | web3.storage console (scoped to static hosting uploads). |
+| `PINATA_JWT` *(or `PINATA_API_KEY` + `PINATA_SECRET_API_KEY`)* | Credentials used to request a redundant pin via Pinata. | Pinata API keys. |
+| `PINATA_HOST_NODES` *(optional)* | Comma-separated multiaddrs to hint preferred Pinata pinning nodes. | Pinata gateway configuration. |
+| `ENS_NAME` *(or `ONEBOX_ENS_NAME`)* | ENS name that should resolve to the published bundle (e.g., `onebox.alice.eth`). | ENS delegation plan. |
+| `ENS_PRIVATE_KEY` *(or `ONEBOX_ENS_PRIVATE_KEY`)* | Hex-encoded private key authorised to update the ENS resolver. Store in a secure secret manager. | Deployment signer. |
+| `ENS_RPC_URL` *(or `ONEBOX_ENS_RPC_URL`)* | HTTPS RPC endpoint for the target network (e.g., Base mainnet). | Alchemy, Infura, or in-house node. |
+| `ENS_RESOLVER` *(optional)* | Resolver contract that exposes `setContenthash` if the default lookup should be overridden. | ENS registry/resolver configuration. |
+| `ONEBOX_RELEASE_LABEL` *(optional)* | Override for the default timestamp-based release name (useful for CI tagging). | Release automation. |
 
 Ensure the signer has the necessary permissions on the resolver before running the release script.
 
