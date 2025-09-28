@@ -6,7 +6,7 @@ This document covers how the single-input One-Box interface interacts with the A
 
 - **Front-end**: `apps/onebox/` — static HTML/CSS/JS that can be pinned to IPFS. It consumes the orchestrator over HTTPS.
 - **Shared types**: `packages/onebox-sdk/` — TypeScript definitions for the planner/executor/status payloads.
-- **Server**: extend the FastAPI app with `/onebox/plan`, `/onebox/execute`, `/onebox/status`.
+- **Server**: extend the FastAPI app with `/onebox/plan`, `/onebox/simulate`, `/onebox/execute`, `/onebox/status`.
 
 Guest mode routes execution through the orchestrator relayer. Expert mode surfaces calldata so power users can sign with their own wallets (e.g. through viem/Web3Modal).
 
@@ -15,7 +15,7 @@ The static bundle also exposes runtime configuration controls: operators can cha
 ## API surface (FastAPI stubs)
 
 Add the following endpoints to `AGI-Alpha-Agent-v0` (or reuse the ready-made Express router in `apps/orchestrator/oneboxRouter.ts`).
-A production-ready FastAPI router now ships in [`routes/onebox.py`](../routes/onebox.py); mount it directly on the existing API server to gain `/onebox/plan`, `/onebox/execute`, `/onebox/status`, `/onebox/healthz`, and `/onebox/metrics` with Prometheus instrumentation:
+A production-ready FastAPI router now ships in [`routes/onebox.py`](../routes/onebox.py); mount it directly on the existing API server to gain `/onebox/plan`, `/onebox/simulate`, `/onebox/execute`, `/onebox/status`, `/onebox/healthz`, and `/onebox/metrics` with Prometheus instrumentation:
 
 ```py
 from fastapi import APIRouter, Depends, HTTPException
@@ -96,7 +96,7 @@ The planner must output a `JobIntent` structure:
 }
 ```
 
-`packages/onebox-sdk` exports matching TypeScript interfaces, which keeps UI, orchestrator, and tooling aligned.
+`packages/onebox-sdk` exports matching TypeScript interfaces, which keeps UI, orchestrator, and tooling aligned. The Python router mirrors those shapes: `PlanResponse` includes a `missingFields` array so the UI can gather required values before moving to simulation, and `SimulateResponse` returns `risks` and `blockers` to differentiate warnings from fatal blockers (422 responses).
 
 ## Error handling
 
