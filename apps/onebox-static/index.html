@@ -7,7 +7,7 @@
   <meta name="description" content="Gasless, walletless one-box interface for AGI Jobs v0" />
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self' https://alpha-orchestrator.example.com https://api.web3.storage https://w3s.link https://ipfs.io; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self';"
+    content="default-src 'self'; style-src 'self'; script-src 'self'; connect-src {{ connect_src }}; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self';"
   />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%231052d6'/%3E%3Ctext x='50' y='62' font-family='Arial' font-size='52' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
   <!-- Build template: assets injected by scripts/build.mjs -->
