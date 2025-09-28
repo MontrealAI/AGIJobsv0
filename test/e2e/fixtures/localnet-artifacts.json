@@ -1,0 +1,27 @@
+{
+  "token": {
+    "initialMint": "1000",
+    "decimals": 18
+  },
+  "job": {
+    "subdomain": "local-agent",
+    "specHash": "0x518e448d72cef12acd9f1e4deba0930235c2e29bafc79c2526975d8c3b3d9785",
+    "uri": "ipfs://local-job",
+    "reward": "25",
+    "deadlineOffsetSeconds": 7200,
+    "analysisDescription": "Localnet pipeline"
+  },
+  "agent": {
+    "ensRoot": "agent.agi.eth",
+    "summary": "deterministic-output",
+    "resultCid": "bafy-local-cid-1",
+    "deterministicSalt": "0x1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "timestamps": {
+    "base": 1700000000
+  },
+  "expected": {
+    "resultURI": "ipfs://bafy-local-cid-1",
+    "submissionMethod": "submit"
+  }
+}

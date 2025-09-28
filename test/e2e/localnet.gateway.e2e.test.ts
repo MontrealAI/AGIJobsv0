@@ -6,7 +6,26 @@ import { ethers } from 'hardhat';
 import type { Wallet } from 'ethers';
 import type { IPFSHTTPClient } from 'ipfs-http-client';
 
-import { AGIALPHA_DECIMALS } from '../../scripts/constants';
+const FIXTURE_PATH = path.resolve(__dirname, 'fixtures/localnet-artifacts.json');
+const fixture = JSON.parse(fs.readFileSync(FIXTURE_PATH, 'utf8')) as {
+  token: { initialMint: string; decimals: number };
+  job: {
+    subdomain: string;
+    specHash: string;
+    uri: string;
+    reward: string;
+    deadlineOffsetSeconds: number;
+    analysisDescription: string;
+  };
+  agent: {
+    ensRoot: string;
+    summary: string;
+    resultCid: string;
+    deterministicSalt: string;
+  };
+  timestamps: { base: number };
+  expected: { resultURI: string; submissionMethod: string };
+};
 
 // The agent gateway utilities validate their environment eagerly when the
 // module loads. Seed the required variables with deterministic placeholders
@@ -44,10 +63,12 @@ import * as telemetry from '../../agent-gateway/telemetry';
 import * as learning from '../../agent-gateway/learning';
 import * as auditLogger from '../../shared/auditLogger';
 
-const RESULTS_DIR = path.resolve(
-  __dirname,
-  '../../agent-gateway/storage/results'
-);
+const { token: tokenFixture, job, agent: agentFixture, timestamps, expected } = fixture;
+
+const RESULT_DIRS = [
+  path.resolve(__dirname, '../../storage/results'),
+  path.resolve(__dirname, '../../agent-gateway/storage/results'),
+];
 
 const originalEnergyStart = energyMonitor.startEnergySpan;
 const originalEnergyEnd = energyMonitor.endEnergySpan;
@@ -58,8 +79,8 @@ const originalAuditRecord = auditLogger.recordAuditEvent;
 function createAgentProfile(agent: Wallet): AgentProfile {
   return {
     address: agent.address,
-    ensName: 'agent.local.agent.agi.eth',
-    label: 'local-agent',
+    ensName: `${job.subdomain}.${agentFixture.ensRoot}`,
+    label: job.subdomain,
     role: 'agent',
     categories: ['analysis'],
     skills: ['nlp'],
@@ -85,7 +106,7 @@ async function deployLocalSystem() {
   const registry = await registryFactory.deploy(await token.getAddress());
   await registry.waitForDeployment();
 
-  const initialBalance = ethers.parseUnits('1000', AGIALPHA_DECIMALS);
+  const initialBalance = ethers.parseUnits(tokenFixture.initialMint, tokenFixture.decimals);
   await token.connect(owner).transfer(employer.address, initialBalance);
   await token.connect(owner).transfer(agent.address, initialBalance);
 
@@ -102,17 +123,18 @@ describe('Agent gateway localnet E2E', function () {
   this.timeout(120_000);
 
   before(() => {
+    const isoBase = new Date(timestamps.base * 1000).toISOString();
     (energyMonitor as any).startEnergySpan = () => ({
       id: 'span',
-      startedAt: new Date().toISOString(),
+      startedAt: isoBase,
       cpuStart: { user: 0, system: 0 } as NodeJS.CpuUsage,
       hrtimeStart: BigInt(0),
       context: {},
     });
     (energyMonitor as any).endEnergySpan = async () => ({
       spanId: 'span',
-      startedAt: new Date().toISOString(),
-      finishedAt: new Date().toISOString(),
+      startedAt: isoBase,
+      finishedAt: isoBase,
       durationMs: 1,
       runtimeMs: 1,
       cpuTimeMs: 1,
@@ -142,14 +164,30 @@ describe('Agent gateway localnet E2E', function () {
     clearAgentMemory();
     setAgentEndpointInvoker(null);
     setIpfsClientFactory(null);
-    if (fs.existsSync(RESULTS_DIR)) {
-      for (const file of fs.readdirSync(RESULTS_DIR)) {
-        const target = path.join(RESULTS_DIR, file);
+    for (const dir of RESULT_DIRS) {
+      if (!fs.existsSync(dir)) {
+        continue;
+      }
+      for (const file of fs.readdirSync(dir)) {
+        const target = path.join(dir, file);
         try {
           fs.unlinkSync(target);
         } catch {
           /* ignore clean-up issues */
         }
+      }
+      try {
+        fs.rmSync(dir, { recursive: true, force: true });
+      } catch {
+        /* ignore directory removal issues */
+      }
+    }
+    const energyLog = path.resolve(__dirname, '../../data/energy-metrics.jsonl');
+    if (fs.existsSync(energyLog)) {
+      try {
+        fs.rmSync(energyLog);
+      } catch {
+        /* ignore clean-up issues */
       }
     }
   });
@@ -192,18 +230,20 @@ describe('Agent gateway localnet E2E', function () {
 
     gatewayUtils.stakeManager = null;
 
-    const subdomain = 'local-agent';
+    const subdomain = job.subdomain;
 
-    const reward = ethers.parseUnits('25', AGIALPHA_DECIMALS);
+    const reward = ethers.parseUnits(job.reward, tokenFixture.decimals);
     await token
       .connect(employer)
       .approve(await registry.getAddress(), reward);
 
     const latestBlock = await ethers.provider.getBlock('latest');
-    const baseTimestamp = latestBlock?.timestamp ?? Math.floor(Date.now() / 1000);
-    const deadline = BigInt(baseTimestamp + 7200);
-    const specHash = ethers.id('spec://local');
-    const jobUri = 'ipfs://local-job';
+    const currentTimestamp = Number(latestBlock?.timestamp ?? timestamps.base);
+    const scheduledTimestamp = Math.max(timestamps.base, currentTimestamp + 1);
+    await ethers.provider.send('evm_setNextBlockTimestamp', [scheduledTimestamp]);
+    const deadline = BigInt(scheduledTimestamp + job.deadlineOffsetSeconds);
+    const specHash = job.specHash as `0x${string}`;
+    const jobUri = job.uri;
 
     const createTx = await registry
       .connect(employer)
@@ -218,20 +258,20 @@ describe('Agent gateway localnet E2E', function () {
     const profile = createAgentProfile(agent);
     const identity: AgentIdentity = {
       address: agent.address,
-      ensName: `${subdomain}.agent.agi.eth`,
+      ensName: `${subdomain}.${agentFixture.ensRoot}`,
       label: subdomain,
       role: 'agent',
     };
 
     const chainJob = await registry.jobs(jobId);
-    const job: Job = {
+    const jobPayload: Job = {
       jobId: jobId.toString(),
       employer: chainJob.employer,
       agent: chainJob.agent,
       rewardRaw: chainJob.reward.toString(),
-      reward: ethers.formatUnits(chainJob.reward, AGIALPHA_DECIMALS),
+      reward: ethers.formatUnits(chainJob.reward, tokenFixture.decimals),
       stakeRaw: chainJob.stake.toString(),
-      stake: ethers.formatUnits(chainJob.stake, AGIALPHA_DECIMALS),
+      stake: ethers.formatUnits(chainJob.stake, tokenFixture.decimals),
       feeRaw: '0',
       fee: '0',
       specHash,
@@ -239,7 +279,7 @@ describe('Agent gateway localnet E2E', function () {
     };
 
     setAgentEndpointInvoker(async () => ({
-      summary: 'deterministic-output',
+      summary: agentFixture.summary,
       version: 1,
     }));
 
@@ -247,40 +287,40 @@ describe('Agent gateway localnet E2E', function () {
       () =>
         ({
           add: async () => ({
-            cid: { toString: () => 'bafy-local-cid-1' },
+            cid: { toString: () => agentFixture.resultCid },
           }),
         } as unknown as IPFSHTTPClient)
     );
 
     const context: TaskExecutionContext = {
-      job,
+      job: jobPayload,
       wallet: agent,
       profile,
       identity,
       analysis: {
         jobId: jobId.toString(),
-        reward: Number(ethers.formatUnits(reward, AGIALPHA_DECIMALS)),
+        reward: Number(ethers.formatUnits(reward, tokenFixture.decimals)),
         stake: 0,
         fee: 0,
         employer: chainJob.employer,
         category: 'analysis',
-        description: 'Localnet pipeline',
+        description: job.analysisDescription,
       },
     };
 
     const execution = await executeJob(context);
 
-    expect(execution.resultURI).to.equal('ipfs://bafy-local-cid-1');
-    expect(execution.submissionMethod).to.equal('submit');
+    expect(execution.resultURI).to.equal(expected.resultURI);
+    expect(execution.submissionMethod).to.equal(expected.submissionMethod);
 
     const submittedJob = await registry.job(jobId);
     expect(submittedJob.submitted).to.equal(true);
-    expect(submittedJob.resultURI).to.equal('ipfs://bafy-local-cid-1');
+    expect(submittedJob.resultURI).to.equal(expected.resultURI);
 
     const initialAgentBalance = await token.balanceOf(agent.address);
 
     const nonceBeforeCommit = await validation.jobNonce(jobId);
-    const deterministicSalt = `0x${'11'.repeat(32)}`;
+    const deterministicSalt = agentFixture.deterministicSalt as `0x${string}`;
     const commitHash = ethers.solidityPackedKeccak256(
       ['uint256', 'uint256', 'bool', 'bytes32'],
       [jobId, nonceBeforeCommit, true, deterministicSalt]
@@ -328,7 +368,7 @@ describe('Agent gateway localnet E2E', function () {
 
     await registry
       .connect(agent)
-      .finalizeJob(jobId, execution.resultURI ?? 'ipfs://bafy-local-cid-1');
+      .finalizeJob(jobId, execution.resultURI ?? expected.resultURI);
 
     const finalizedJob = await registry.job(jobId);
     expect(finalizedJob.finalized).to.equal(true);
