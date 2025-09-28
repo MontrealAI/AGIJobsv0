@@ -349,6 +349,7 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     _parse_default_max_duration,
     _read_status,
     _UINT64_MAX,
+    StatusResponse,
     execute,
     healthcheck,
     metrics_endpoint,
@@ -590,6 +591,56 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.status_code, 422)
         detail = exc.exception.detail
         self.assertIn("UNSUPPORTED_ACTION", detail["blockers"])  # type: ignore[index]
+
+    async def test_simulate_finalize_blocks_when_already_finalized(self) -> None:
+        intent = JobIntent(action="finalize_job", payload=Payload(jobId=55))
+        plan_hash = _compute_plan_hash(intent)
+        status = StatusResponse(jobId=55, state="finalized")
+
+        with mock.patch(
+            "routes.onebox._read_status", new=mock.AsyncMock(return_value=status)
+        ):
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await simulate(
+                    _make_request(),
+                    SimulateRequest(intent=intent, planHash=plan_hash),
+                )
+
+        self.assertEqual(exc.exception.status_code, 422)
+        detail = exc.exception.detail
+        self.assertIn("JOB_ALREADY_FINALIZED", detail["blockers"])  # type: ignore[index]
+
+    async def test_simulate_finalize_flags_unknown_status(self) -> None:
+        intent = JobIntent(action="finalize_job", payload=Payload(jobId=77))
+        plan_hash = _compute_plan_hash(intent)
+        status = StatusResponse(jobId=77, state="unknown")
+
+        with mock.patch(
+            "routes.onebox._read_status", new=mock.AsyncMock(return_value=status)
+        ):
+            response = await simulate(
+                _make_request(),
+                SimulateRequest(intent=intent, planHash=plan_hash),
+            )
+
+        self.assertEqual(response.blockers, [])
+        self.assertIn("STATUS_UNKNOWN", response.risks)
+
+    async def test_simulate_finalize_warns_when_job_not_ready(self) -> None:
+        intent = JobIntent(action="finalize_job", payload=Payload(jobId=88))
+        plan_hash = _compute_plan_hash(intent)
+        status = StatusResponse(jobId=88, state="open")
+
+        with mock.patch(
+            "routes.onebox._read_status", new=mock.AsyncMock(return_value=status)
+        ):
+            response = await simulate(
+                _make_request(),
+                SimulateRequest(intent=intent, planHash=plan_hash),
+            )
+
+        self.assertEqual(response.blockers, [])
+        self.assertIn("JOB_NOT_READY_FOR_FINALIZE", response.risks)
 
 
 class DeadlineComputationTests(unittest.TestCase):

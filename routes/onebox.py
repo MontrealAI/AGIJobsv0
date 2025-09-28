@@ -535,6 +535,10 @@ _ERRORS = {
     "JOB_BUDGET_CAP_EXCEEDED": "Requested reward exceeds the configured cap for your organisation.",
     "JOB_DEADLINE_CAP_EXCEEDED": "Requested deadline exceeds the configured cap for your organisation.",
     "REWARD_INVALID": "Enter the reward as a numeric AGIALPHA amount before submitting.",
+    "JOB_ALREADY_FINALIZED": "That job is already finalized. Choose a different job or request a status update.",
+    "JOB_IN_DISPUTE": "That job is currently disputed. Resolve the dispute before finalizing.",
+    "JOB_NOT_READY_FOR_FINALIZE": "This job is still in progress. Wait until it is completed before finalizing.",
+    "STATUS_UNKNOWN": "I couldn’t confirm the job status. Retry once the network responds.",
     "PLAN_HASH_REQUIRED": "Send the plan hash from the planning step so I can link this request to its original plan.",
     "PLAN_HASH_INVALID": "Use the 32-byte plan hash from the planning step before continuing.",
     "PLAN_HASH_MISMATCH": "The plan hash doesn’t match this request. Re-run planning and retry.",
@@ -1877,11 +1881,32 @@ async def simulate(request: Request, req: SimulateRequest):
                 except OrgPolicyViolation as violation:
                     blockers.append(violation.code)
 
-        elif intent.action in {"stake", "validate", "dispute"}:
-            blockers.append("UNSUPPORTED_ACTION")
-        elif intent.action in {"finalize_job", "check_status"}:
+        elif intent.action == "finalize_job":
+            job_identifier = getattr(payload, "jobId", None)
+            if job_identifier is None:
+                blockers.append("JOB_ID_REQUIRED")
+            else:
+                try:
+                    job_id_int = int(job_identifier)
+                except (TypeError, ValueError):
+                    blockers.append("JOB_ID_REQUIRED")
+                else:
+                    status = await _read_status(job_id_int)
+                    state = status.state or "unknown"
+                    if state == "finalized":
+                        blockers.append("JOB_ALREADY_FINALIZED")
+                    elif state == "disputed":
+                        blockers.append("JOB_IN_DISPUTE")
+                    elif state not in {"completed", "unknown"}:
+                        if "JOB_NOT_READY_FOR_FINALIZE" not in risks:
+                            risks.append("JOB_NOT_READY_FOR_FINALIZE")
+                    if state == "unknown" and "STATUS_UNKNOWN" not in risks:
+                        risks.append("STATUS_UNKNOWN")
+        elif intent.action == "check_status":
             if getattr(payload, "jobId", None) is None:
                 blockers.append("JOB_ID_REQUIRED")
+        elif intent.action in {"stake", "validate", "dispute"}:
+            blockers.append("UNSUPPORTED_ACTION")
         else:
             blockers.append("UNSUPPORTED_ACTION")
 
