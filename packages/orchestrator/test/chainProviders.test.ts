@@ -3,7 +3,10 @@ import test from "node:test";
 
 import { ethers } from "ethers";
 
-import { getSignerForUser } from "../src/chain/provider.js";
+import {
+  getSignerForUser,
+  __setAAProviderFactoryForTests,
+} from "../src/chain/provider.js";
 import {
   AccountAbstractionSigner,
   __resetAAConfigForTests,
@@ -350,6 +353,78 @@ test("meta-tx signer estimates gas from the trusted forwarder context", async ()
   } finally {
     resetForwarderConfig();
     restoreEnv(backup);
+  }
+});
+
+test("aa fallback routes to meta-tx signer on sepolia when AA provider fails", async () => {
+  const backup = snapshotEnv([
+    "TX_MODE",
+    "NETWORK",
+    "AA_BUNDLER_RPC_URL",
+    "AA_ENTRY_POINT",
+    "RELAYER_MNEMONIC",
+    "RELAYER_USER_MNEMONIC",
+    "RELAYER_SPONSOR_MNEMONIC",
+    "EIP2771_TRUSTED_FORWARDER",
+  ]);
+
+  try {
+    process.env.TX_MODE = "aa";
+    process.env.NETWORK = "sepolia";
+    process.env.AA_BUNDLER_RPC_URL = "http://127.0.0.1:4337";
+    process.env.AA_ENTRY_POINT = entryPointAddress;
+    process.env.RELAYER_MNEMONIC = relayerMnemonic;
+    process.env.RELAYER_USER_MNEMONIC = relayerMnemonic;
+    process.env.RELAYER_SPONSOR_MNEMONIC = relayerMnemonic;
+    process.env.EIP2771_TRUSTED_FORWARDER = forwarderAddress;
+
+    __setAAProviderFactoryForTests(async () => {
+      throw new Error("bundler unavailable");
+    });
+
+    const signer = await getSignerForUser("fallback-sepolia");
+    assert.ok(signer instanceof MetaTxSigner);
+  } finally {
+    __setAAProviderFactoryForTests();
+    restoreEnv(backup);
+    __resetAAConfigForTests();
+    resetForwarderConfig();
+  }
+});
+
+test("aa fallback flag forces 2771 fallback", async () => {
+  const backup = snapshotEnv([
+    "TX_MODE",
+    "AA_FALLBACK_TO_2771",
+    "AA_BUNDLER_RPC_URL",
+    "AA_ENTRY_POINT",
+    "RELAYER_MNEMONIC",
+    "RELAYER_USER_MNEMONIC",
+    "RELAYER_SPONSOR_MNEMONIC",
+    "EIP2771_TRUSTED_FORWARDER",
+  ]);
+
+  try {
+    process.env.TX_MODE = "aa";
+    process.env.AA_FALLBACK_TO_2771 = "true";
+    process.env.AA_BUNDLER_RPC_URL = "http://127.0.0.1:4337";
+    process.env.AA_ENTRY_POINT = entryPointAddress;
+    process.env.RELAYER_MNEMONIC = relayerMnemonic;
+    process.env.RELAYER_USER_MNEMONIC = relayerMnemonic;
+    process.env.RELAYER_SPONSOR_MNEMONIC = relayerMnemonic;
+    process.env.EIP2771_TRUSTED_FORWARDER = forwarderAddress;
+
+    __setAAProviderFactoryForTests(async () => {
+      throw new Error("managed paymaster rejected request");
+    });
+
+    const signer = await getSignerForUser("fallback-flagged");
+    assert.ok(signer instanceof MetaTxSigner);
+  } finally {
+    __setAAProviderFactoryForTests();
+    restoreEnv(backup);
+    __resetAAConfigForTests();
+    resetForwarderConfig();
   }
 });
 

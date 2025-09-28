@@ -20,6 +20,7 @@
     "owner:dashboard": "npx hardhat run --no-compile scripts/v2/owner-dashboard.ts",
     "owner:rotate": "npx hardhat run --no-compile scripts/v2/rotateGovernance.ts",
     "test": "hardhat test --no-compile",
+    "e2e:local": "hardhat test --no-compile test/e2e/localnet.gateway.e2e.test.ts",
     "echidna:commit-reveal": "docker run --rm -v \"$PWD\":/src -v \"$PWD/tools/forge-shim\":/usr/local/bin/forge:ro -w /src ghcr.io/crytic/echidna/echidna:v2.2.7 echidna-test ./contracts/test/CommitRevealEchidna.sol --contract CommitRevealEchidnaHarness --config echidna/commit-reveal.yaml",
     "echidna": "npm run echidna:commit-reveal",
     "coverage": "solidity-coverage",

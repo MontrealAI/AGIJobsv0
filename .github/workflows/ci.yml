@@ -156,3 +156,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Add your gas JSON check here if desired."
+
+  e2e:
+    name: E2E · Localnet & Orchestrator smoke
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Compile contracts & constants
+        run: npm run compile
+
+      - name: Local agent gateway e2e
+        run: npm run e2e:local
+
+      - name: Orchestrator chain provider tests
+        run: npm run test --workspace packages/orchestrator
