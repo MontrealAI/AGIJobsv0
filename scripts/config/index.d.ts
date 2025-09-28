@@ -65,6 +65,20 @@ export interface JobRegistryConfig {
   validatorRewardPct?: number | string;
   treasury?: string | null;
   taxPolicy?: string | null;
+  pauser?: string | null;
+  identityRegistry?: string | null;
+  disputeModule?: string | null;
+  validationModule?: string | null;
+  stakeManager?: string | null;
+  reputationModule?: string | null;
+  certificateNFT?: string | null;
+  feePool?: string | null;
+  agentRootNode?: string | null;
+  agentMerkleRoot?: string | null;
+  validatorRootNode?: string | null;
+  validatorMerkleRoot?: string | null;
+  agentAuthCacheDurationSeconds?: number | string;
+  bumpAgentAuthCacheVersion?: boolean | string;
   acknowledgers?: Record<string, boolean>;
   [key: string]: unknown;
 }
