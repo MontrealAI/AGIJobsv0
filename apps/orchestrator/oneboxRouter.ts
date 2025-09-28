@@ -19,6 +19,7 @@ import type {
   ConstraintForIntent,
 } from '../../packages/onebox-orchestrator/src/ics/types';
 import type {
+  ExecuteRequest,
   ExecuteResponse,
   JobAttachment,
   JobIntent,
@@ -27,6 +28,7 @@ import type {
   StatusResponse,
 } from '../../packages/onebox-sdk/src';
 import { postJob, prepareJobArtifacts } from './employer';
+import { uploadToIPFS } from './execution';
 import { finalizeJob } from './submission';
 import { JOB_REGISTRY_ADDRESS, RPC_URL } from './config';
 import {
@@ -273,8 +275,17 @@ class HttpError extends Error {
 
 export interface OneboxService {
   plan(text: string, expert?: boolean): Promise<PlanResponse>;
-  execute(intent: JobIntent, mode: 'relayer' | 'wallet'): Promise<ExecuteResponse>;
+  execute(
+    intent: JobIntent,
+    mode: 'relayer' | 'wallet',
+    options?: ExecuteOptions
+  ): Promise<ExecuteResponse>;
   status(jobId?: number, limit?: number): Promise<StatusResponse>;
+}
+
+interface ExecuteOptions {
+  planHash?: string;
+  createdAt?: string;
 }
 
 interface DefaultServiceOptions {
@@ -384,12 +395,16 @@ export class DefaultOneboxService implements OneboxService {
     };
   }
 
-  async execute(intent: JobIntent, mode: 'relayer' | 'wallet'): Promise<ExecuteResponse> {
+  async execute(
+    intent: JobIntent,
+    mode: 'relayer' | 'wallet',
+    options: ExecuteOptions = {}
+  ): Promise<ExecuteResponse> {
     switch (intent.action) {
       case 'post_job':
-        return this.executePostJob(intent, mode);
+        return this.executePostJob(intent, mode, options);
       case 'finalize_job':
-        return this.executeFinalizeJob(intent, mode);
+        return this.executeFinalizeJob(intent, mode, options);
       case 'check_status':
         return {
           ok: true,
@@ -426,7 +441,8 @@ export class DefaultOneboxService implements OneboxService {
 
   private async executePostJob(
     intent: JobIntent,
-    mode: 'relayer' | 'wallet'
+    mode: 'relayer' | 'wallet',
+    options: ExecuteOptions
   ): Promise<ExecuteResponse> {
     const payload = intent.payload ?? {};
     const rewardWei = parseReward(payload.reward, this.tokenDecimals);
@@ -436,6 +452,15 @@ export class DefaultOneboxService implements OneboxService {
     const agentTypes = determineAgentTypes(intent);
     const userId = extractUserId(intent);
     this.orgPolicy.enforce(userId, rewardWei, deadlineDays);
+
+    await this.ensureFeePolicy();
+    const planHash = options.planHash;
+    const createdAt = options.createdAt ?? new Date().toISOString();
+    const feePct = this.cachedFeePct ?? this.defaultFeePct;
+    const burnPct = this.cachedBurnPct ?? this.defaultBurnPct;
+    const { feeAmountWei, burnAmountWei } = calculateFeeBreakdown(rewardWei, feePct, burnPct);
+    const feeAmount = feeAmountWei > 0n ? formatRewardFromWei(feeAmountWei, this.tokenDecimals) : undefined;
+    const burnAmount = burnAmountWei > 0n ? formatRewardFromWei(burnAmountWei, this.tokenDecimals) : undefined;
 
     if (mode === 'wallet') {
       const artifacts = await this.prepareWalletArtifacts(metadata);
@@ -450,6 +475,12 @@ export class DefaultOneboxService implements OneboxService {
       const chainId = await this.resolveChainId();
       return {
         ok: true,
+        planHash,
+        createdAt,
+        feePct,
+        burnPct,
+        feeAmount,
+        burnAmount,
         to,
         data,
         value: '0x0',
@@ -477,8 +508,11 @@ export class DefaultOneboxService implements OneboxService {
 
     return {
       ok: true,
+      planHash,
+      createdAt,
       jobId: Number.isFinite(numericJobId) ? numericJobId : undefined,
       txHash,
+      txHashes: txHash ? [txHash] : undefined,
       receiptUrl,
       reward: rewardFormatted,
       token: metadata.rewardToken,
@@ -489,14 +523,21 @@ export class DefaultOneboxService implements OneboxService {
       specGatewayUrls: gatewayUrls.length ? gatewayUrls : undefined,
       specHash,
       deliverableCid: undefined,
+      feePct,
+      burnPct,
+      feeAmount,
+      burnAmount,
     };
   }
 
   private async executeFinalizeJob(
     intent: JobIntent,
-    mode: 'relayer' | 'wallet'
+    mode: 'relayer' | 'wallet',
+    options: ExecuteOptions
   ): Promise<ExecuteResponse> {
     const jobId = normaliseJobId(intent.payload?.jobId);
+    const planHash = options.planHash;
+    const createdAt = options.createdAt ?? new Date().toISOString();
 
     if (mode === 'wallet') {
       const data = this.registry.interface.encodeFunctionData('finalize', [jobId]);
@@ -505,6 +546,8 @@ export class DefaultOneboxService implements OneboxService {
       return {
         ok: true,
         jobId: Number(jobId),
+        planHash,
+        createdAt,
         to,
         data,
         value: '0x0',
@@ -520,7 +563,10 @@ export class DefaultOneboxService implements OneboxService {
     return {
       ok: true,
       jobId: Number(jobId),
+      planHash,
+      createdAt,
       txHash,
+      txHashes: txHash ? [txHash] : undefined,
       receiptUrl: txHash ? buildReceiptUrl(this.explorerBaseUrl, txHash) : undefined,
     };
   }
@@ -734,23 +780,38 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
     let intentType = 'unknown';
     let httpStatus = 200;
     let mode: 'wallet' | 'relayer' = 'relayer';
+    let planHash: string | undefined;
     try {
-      const intent = req.body?.intent as JobIntent | undefined;
+      const executeRequest = req.body as ExecuteRequest | undefined;
+      const intent = executeRequest?.intent as JobIntent | undefined;
       if (!intent || typeof intent !== 'object') {
         throw new HttpError(400, 'Execution requires a validated intent payload.');
       }
       intentType = typeof intent.action === 'string' ? intent.action : 'unknown';
-      mode = req.body?.mode === 'wallet' ? 'wallet' : 'relayer';
-      const response = await service.execute(intent, mode);
+      mode = executeRequest?.mode === 'wallet' ? 'wallet' : 'relayer';
+      planHash = normalizePlanHash(executeRequest?.planHash);
+      if (!planHash) {
+        throw new HttpError(400, 'Execution requires the planHash returned by /onebox/plan.');
+      }
+      const createdAt = normalizeRequestTimestamp(executeRequest?.createdAt);
+      const response = await service.execute(intent, mode, { planHash, createdAt });
+      const decorated = await decorateExecuteResponse(response, {
+        planHash,
+        createdAt,
+        mode,
+        correlationId,
+      });
       logEvent('info', 'onebox.execute.success', {
         correlationId,
         intentType,
         httpStatus,
         mode,
-        jobId: response.jobId,
-        status: response.status,
+        planHash,
+        jobId: decorated.jobId,
+        status: decorated.status,
+        receiptCid: decorated.receiptCid,
       });
-      res.json(response);
+      res.json(decorated);
     } catch (error) {
       httpStatus = statusFromError(error);
       const level: LogLevel = httpStatus >= 500 ? 'error' : 'warn';
@@ -758,6 +819,7 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
         correlationId,
         intentType,
         httpStatus,
+        planHash,
         mode,
         error: errorMessage(error),
       });
@@ -819,6 +881,205 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
   });
 
   return router;
+}
+
+interface DecorateExecuteOptions {
+  planHash: string;
+  createdAt?: string;
+  mode: 'wallet' | 'relayer';
+  correlationId: string;
+}
+
+function normalizePlanHash(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed;
+}
+
+function normalizeRequestTimestamp(value: unknown): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const date = new Date(trimmed);
+    if (Number.isNaN(date.getTime())) {
+      return undefined;
+    }
+    return date.toISOString();
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+  return undefined;
+}
+
+async function decorateExecuteResponse(
+  response: ExecuteResponse,
+  options: DecorateExecuteOptions
+): Promise<ExecuteResponse> {
+  const createdAt = response.createdAt ?? options.createdAt ?? new Date().toISOString();
+  const planHash = response.planHash ?? options.planHash;
+  const txHashes = collectTxHashes(response);
+  const decorated: ExecuteResponse = {
+    ...response,
+    planHash,
+    createdAt,
+    txHashes: txHashes.length ? txHashes : response.txHashes,
+  };
+
+  if (!decorated.ok || options.mode !== 'relayer') {
+    return decorated;
+  }
+
+  const receiptRecord = buildReceiptRecord(decorated, planHash, createdAt, txHashes);
+  if (!receiptRecord) {
+    return decorated;
+  }
+
+  decorated.receipt = receiptRecord;
+
+  try {
+    const pin = await uploadToIPFS(receiptRecord);
+    const uri = pin.uri ?? `ipfs://${pin.cid}`;
+    const gatewayUrls = pin.gatewayUrls?.length ? pin.gatewayUrls : undefined;
+    decorated.receiptCid = pin.cid;
+    decorated.receiptUri = uri;
+    decorated.receiptGatewayUrls = gatewayUrls;
+    decorated.receiptGatewayUrl = gatewayUrls ? gatewayUrls[0] : undefined;
+    const deliverableUrls = gatewayUrls ?? decorated.deliverableGatewayUrls;
+    decorated.deliverableCid = pin.cid;
+    decorated.deliverableUri = uri;
+    decorated.deliverableGatewayUrls = deliverableUrls;
+    decorated.deliverableGatewayUrl = deliverableUrls ? deliverableUrls[0] : undefined;
+    decorated.receipt = {
+      ...receiptRecord,
+      receiptCid: pin.cid,
+      receiptUri: uri,
+      receiptGatewayUrls: gatewayUrls,
+    };
+  } catch (error) {
+    logEvent('warn', 'onebox.execute.receipt_pin_failed', {
+      correlationId: options.correlationId,
+      planHash,
+      error: errorMessage(error),
+    });
+  }
+
+  return decorated;
+}
+
+function collectTxHashes(response: ExecuteResponse): string[] {
+  const hashes = new Set<string>();
+  const push = (value: unknown) => {
+    if (typeof value !== 'string') return;
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    hashes.add(trimmed);
+  };
+  if (Array.isArray(response.txHashes)) {
+    for (const entry of response.txHashes) {
+      push(entry);
+    }
+  }
+  push(response.txHash);
+  return Array.from(hashes);
+}
+
+function buildReceiptRecord(
+  response: ExecuteResponse,
+  planHash: string,
+  createdAt: string,
+  txHashes: string[]
+): Record<string, unknown> | null {
+  if (!txHashes.length) {
+    return null;
+  }
+
+  const record: Record<string, unknown> = {
+    planHash,
+    jobId: response.jobId,
+    txHashes,
+    timestamp: createdAt,
+  };
+
+  const relevantCid = response.deliverableCid ?? response.specCid ?? response.receiptCid;
+  if (relevantCid) {
+    record.relevantCid = relevantCid;
+  }
+  if (response.specCid) {
+    record.specCid = response.specCid;
+  }
+  if (response.deliverableCid) {
+    record.deliverableCid = response.deliverableCid;
+  }
+  if (response.receiptUrl) {
+    record.receiptUrl = response.receiptUrl;
+  }
+  if (response.reward) {
+    record.reward = response.reward;
+  }
+  if (response.token) {
+    record.token = response.token;
+  }
+  if (response.status) {
+    record.status = response.status;
+  }
+
+  const fees: Record<string, unknown> = {};
+  if (typeof response.feePct === 'number') {
+    fees.feePct = response.feePct;
+  }
+  if (typeof response.feeAmount === 'string') {
+    fees.feeAmount = response.feeAmount;
+  }
+  if (typeof response.burnPct === 'number') {
+    fees.burnPct = response.burnPct;
+  }
+  if (typeof response.burnAmount === 'string') {
+    fees.burnAmount = response.burnAmount;
+  }
+  if (Object.keys(fees).length > 0) {
+    record.fees = fees;
+  }
+
+  return record;
+}
+
+interface FeeBreakdown {
+  feeAmountWei: bigint;
+  burnAmountWei: bigint;
+}
+
+function calculateFeeBreakdown(
+  rewardWei: bigint,
+  feePct: number,
+  burnPct: number
+): FeeBreakdown {
+  return {
+    feeAmountWei: multiplyByPercentage(rewardWei, feePct),
+    burnAmountWei: multiplyByPercentage(rewardWei, burnPct),
+  };
+}
+
+function multiplyByPercentage(value: bigint, percentage: number): bigint {
+  if (!Number.isFinite(percentage) || percentage <= 0) {
+    return 0n;
+  }
+  const basisPoints = toBasisPoints(percentage);
+  if (basisPoints <= 0) {
+    return 0n;
+  }
+  return (value * BigInt(basisPoints)) / 1_000_000n;
+}
+
+function toBasisPoints(percentage: number): number {
+  if (!Number.isFinite(percentage)) {
+    return 0;
+  }
+  return Math.round(percentage * 10_000);
 }
 
 function handleError(req: express.Request, res: express.Response, error: unknown): void {

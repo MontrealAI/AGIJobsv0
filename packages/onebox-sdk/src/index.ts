@@ -64,6 +64,7 @@ export interface ExecuteResponse {
   ok: boolean;
   jobId?: number;
   txHash?: string;
+  txHashes?: string[];
   receiptUrl?: string;
   specCid?: string;
   specUri?: string;
@@ -78,6 +79,17 @@ export interface ExecuteResponse {
   reward?: string;
   token?: string;
   status?: string;
+  planHash?: string;
+  createdAt?: string;
+  receiptCid?: string;
+  receiptUri?: string;
+  receiptGatewayUrl?: string;
+  receiptGatewayUrls?: string[];
+  receipt?: Record<string, unknown>;
+  feePct?: number;
+  burnPct?: number;
+  feeAmount?: string;
+  burnAmount?: string;
   /** Target address for wallet execution flows. */
   to?: string;
   /** ABI-encoded calldata for wallet execution flows. */
@@ -120,4 +132,7 @@ export interface PlanRequest {
 export interface ExecuteRequest {
   intent: JobIntent;
   mode: 'relayer' | 'wallet';
+  planHash?: string;
+  createdAt?: string;
+  receiptCid?: string;
 }
