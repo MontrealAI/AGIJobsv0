@@ -7,9 +7,10 @@ structured planning → simulation → execution pipeline that future sprints ca
 extend with richer agent integrations.
 """
 
-from . import models, planner, policies, runner, simulator, tools  # noqa: F401
+from . import config, models, planner, policies, runner, simulator, tools  # noqa: F401
 
 __all__ = [
+    "config",
     "models",
     "planner",
     "policies",
