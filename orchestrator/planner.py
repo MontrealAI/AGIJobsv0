@@ -117,10 +117,23 @@ def _build_steps(intent: JobIntent) -> List[Step]:
         ),
     ]
 
+    trimmed_steps: List[Step] | None = None
+
     if intent.kind == "finalize":
-        return steps[-1:]
-    if intent.kind == "submit":
-        return steps[2:]
+        trimmed_steps = steps[-1:]
+    elif intent.kind == "submit":
+        trimmed_steps = steps[2:]
+
+    if trimmed_steps is not None:
+        remaining_ids = {step.id for step in trimmed_steps}
+        adjusted_steps = []
+        for step in trimmed_steps:
+            filtered_needs = [need for need in step.needs if need in remaining_ids]
+            if filtered_needs != step.needs:
+                step = step.model_copy(update={"needs": filtered_needs})
+            adjusted_steps.append(step)
+        return adjusted_steps
+
     if intent.kind == "apply":
         return [
             Step(
