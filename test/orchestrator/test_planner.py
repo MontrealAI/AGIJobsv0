@@ -9,6 +9,7 @@ if ROOT not in sys.path:
 
 from orchestrator.models import PlanIn
 from orchestrator.planner import make_plan
+from orchestrator.simulator import simulate_plan
 
 
 def test_make_plan_defaults_and_summary():
@@ -21,7 +22,9 @@ def test_make_plan_defaults_and_summary():
     assert "DEFAULT_REWARD_APPLIED" in plan.warnings
     assert "DEFAULT_DEADLINE_APPLIED" in plan.warnings
     assert plan.requires_confirmation is True
-    assert plan.plan.budget.max == "50.00"
+    assert plan.plan.budget.max == "53.50"
+    assert "escrowing 50.00 AGIALPHA" in plan.preview_summary
+    assert "total escrow 53.50 AGIALPHA" in plan.preview_summary
 
 
 def test_make_plan_non_post_job_marks_missing_fields():
@@ -49,3 +52,11 @@ def test_make_plan_invalid_reward_raises():
         make_plan(PlanIn(input_text="Post a job with 0 AGI reward"))
     with pytest.raises(Exception):
         make_plan(PlanIn(input_text="Post a job with -5 AGI reward"))
+
+
+def test_default_plan_is_within_budget():
+    plan_out = make_plan(PlanIn(input_text="Post a job for image labeling"))
+    sim = simulate_plan(plan_out.plan)
+
+    assert "OVER_BUDGET" not in sim.risks
+    assert sim.est_budget == plan_out.plan.budget.max

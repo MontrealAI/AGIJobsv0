@@ -1,12 +1,13 @@
 import os
 import sys
+from decimal import Decimal
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from orchestrator.models import JobIntent, OrchestrationPlan, Step
-from orchestrator.simulator import simulate_plan
+from orchestrator.simulator import BURN_PCT, FEE_PCT, simulate_plan
 
 
 def _build_plan(reward: str = "50.00") -> OrchestrationPlan:
@@ -15,7 +16,11 @@ def _build_plan(reward: str = "50.00") -> OrchestrationPlan:
         Step(id="pin", name="Pin", kind="pin"),
         Step(id="post", name="Post", kind="chain"),
     ]
-    return OrchestrationPlan.from_intent(intent, steps, reward)
+    reward_decimal = Decimal(reward)
+    total_budget = (
+        reward_decimal * (Decimal("1") + FEE_PCT + BURN_PCT)
+    ).quantize(Decimal("0.01"))
+    return OrchestrationPlan.from_intent(intent, steps, format(total_budget, "f"))
 
 
 def test_simulator_returns_budget_and_confirmation():
@@ -26,6 +31,7 @@ def test_simulator_returns_budget_and_confirmation():
     assert result.est_fees == "3.50"
     assert "You’ll escrow" in result.confirmations[0]
     assert not result.blockers
+    assert not result.risks
 
 
 def test_simulator_detects_missing_budget():

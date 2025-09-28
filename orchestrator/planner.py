@@ -189,12 +189,16 @@ def make_plan(req: PlanIn) -> PlanOut:
             reward_decimal = Decimal("0")
 
     total_budget = reward_decimal
-    budget_value = reward_decimal
     if intent_kind == "post_job":
-        total_budget = (reward_decimal * (Decimal("1") + FEE_PCT + BURN_PCT)).quantize(Decimal("0.01"))
-        budget_value = reward_decimal
+        total_budget = (reward_decimal * (Decimal("1") + FEE_PCT + BURN_PCT)).quantize(
+            Decimal("0.01")
+        )
 
-    plan = OrchestrationPlan.from_intent(intent, _build_steps(intent), format(budget_value, "f"))
+    plan = OrchestrationPlan.from_intent(
+        intent,
+        _build_steps(intent),
+        format(total_budget, "f"),
+    )
 
     summary_parts = []
     if intent.kind == "post_job":

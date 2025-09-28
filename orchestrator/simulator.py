@@ -9,6 +9,7 @@ from .models import OrchestrationPlan, SimOut
 
 FEE_PCT = Decimal("0.05")
 BURN_PCT = Decimal("0.02")
+_TOTAL_MULTIPLIER = Decimal("1") + FEE_PCT + BURN_PCT
 
 
 def _safe_decimal(value: str | None) -> Decimal:
@@ -21,10 +22,13 @@ def _safe_decimal(value: str | None) -> Decimal:
 
 
 def _estimate_budget(plan: OrchestrationPlan) -> Tuple[Decimal, Decimal]:
-    reward = _safe_decimal(plan.budget.max)
-    fees = (reward * FEE_PCT).quantize(Decimal("0.01"))
-    burn = (reward * BURN_PCT).quantize(Decimal("0.01"))
-    return reward + fees + burn, fees + burn
+    total_budget = _safe_decimal(plan.budget.max)
+    if total_budget <= 0:
+        return total_budget, Decimal("0")
+
+    reward = (total_budget / _TOTAL_MULTIPLIER).quantize(Decimal("0.01"))
+    fees_and_burn = (total_budget - reward).quantize(Decimal("0.01"))
+    return total_budget, fees_and_burn
 
 
 def simulate_plan(plan: OrchestrationPlan) -> SimOut:
