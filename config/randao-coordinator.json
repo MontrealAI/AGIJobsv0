@@ -1,0 +1,9 @@
+{
+  "commitWindow": "15m",
+  "revealWindow": "15m",
+  "deposit": {
+    "amount": "10",
+    "decimals": 18
+  },
+  "treasury": "0x0000000000000000000000000000000000000000"
+}

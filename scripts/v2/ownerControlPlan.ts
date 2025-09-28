@@ -11,6 +11,7 @@ import {
   loadTaxPolicyConfig,
   loadIdentityRegistryConfig,
   loadThermodynamicsConfig,
+  loadRandaoCoordinatorConfig,
 } from '../config';
 import { buildJobRegistryPlan } from './lib/jobRegistryPlan';
 import { buildStakeManagerPlan } from './lib/stakeManagerPlan';
@@ -21,6 +22,7 @@ import { buildTaxPolicyPlan } from './lib/taxPolicyPlan';
 import { buildIdentityRegistryPlan } from './lib/identityRegistryPlan';
 import { buildRewardEnginePlan } from './lib/rewardEnginePlan';
 import { buildThermostatPlan } from './lib/thermostatPlan';
+import { buildRandaoCoordinatorPlan } from './lib/randaoCoordinatorPlan';
 import { describeArgs, sameAddress } from './lib/utils';
 import type { ModulePlan, PlannedAction } from './lib/types';
 
@@ -472,6 +474,18 @@ async function main() {
     );
   }
 
+  let randaoConfig: ReturnType<typeof loadRandaoCoordinatorConfig> | null = null;
+  try {
+    randaoConfig = loadRandaoCoordinatorConfig({
+      network: network.name,
+      chainId: network.config?.chainId,
+    });
+  } catch (error) {
+    console.warn(
+      `Randao coordinator config not found or invalid: ${(error as Error).message}`
+    );
+  }
+
   const jobRegistryAddress = tokenConfig.modules?.jobRegistry;
   if (jobRegistryAddress) {
     const registryAddress = ethers.getAddress(jobRegistryAddress);
@@ -681,6 +695,33 @@ async function main() {
       });
       taxPlan.metadata = { ...(taxPlan.metadata || {}), owner };
       plans.push(taxPlan);
+    }
+  }
+
+  const randaoAddressCandidate =
+    tokenConfig.modules?.randaoCoordinator || randaoConfig?.config.address;
+  if (randaoAddressCandidate) {
+    const address = ethers.getAddress(randaoAddressCandidate);
+    if (address === ethers.ZeroAddress) {
+      console.warn('RandaoCoordinator address resolves to the zero address; skipping.');
+    } else {
+      const randao = await ethers.getContractAt(
+        'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator',
+        address
+      );
+      const owner = await ensureContractOwner(
+        'RandaoCoordinator',
+        randao,
+        signerAddress,
+        cli.execute
+      );
+      const plan = await buildRandaoCoordinatorPlan({
+        randao,
+        config: randaoConfig?.config || {},
+        configPath: randaoConfig?.path,
+      });
+      plan.metadata = { ...(plan.metadata || {}), owner };
+      plans.push(plan);
     }
   }
 

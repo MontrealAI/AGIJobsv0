@@ -15,17 +15,37 @@ import {AGIALPHA} from "./Constants.sol";
 ///         block.
 contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     /// @notice Duration of the commit phase in seconds.
-    uint256 public immutable commitWindow;
+    uint256 private _commitWindow;
     /// @notice Duration of the reveal phase in seconds.
-    uint256 public immutable revealWindow;
+    uint256 private _revealWindow;
     /// @notice Deposit required with each commit, forfeited if reveal is missed.
-    uint256 public immutable deposit;
+    uint256 private _deposit;
 
     /// @notice Address receiving forfeited deposits.
-    address public immutable treasury;
+    address private _treasury;
 
     /// @notice Token used for deposits.
     IERC20 public immutable token;
+
+    /// @notice Emitted when the commit window is updated by the owner.
+    /// @param previousWindow Previous window duration in seconds.
+    /// @param newWindow New window duration in seconds.
+    event CommitWindowUpdated(uint256 indexed previousWindow, uint256 indexed newWindow);
+
+    /// @notice Emitted when the reveal window is updated by the owner.
+    /// @param previousWindow Previous window duration in seconds.
+    /// @param newWindow New window duration in seconds.
+    event RevealWindowUpdated(uint256 indexed previousWindow, uint256 indexed newWindow);
+
+    /// @notice Emitted when the required deposit is updated by the owner.
+    /// @param previousDeposit Previous deposit amount in $AGIALPHA wei.
+    /// @param newDeposit New deposit amount in $AGIALPHA wei.
+    event DepositUpdated(uint256 indexed previousDeposit, uint256 indexed newDeposit);
+
+    /// @notice Emitted when the treasury address is updated by the owner.
+    /// @param previousTreasury Address that previously received forfeited deposits.
+    /// @param newTreasury Address that now receives forfeited deposits.
+    event TreasuryUpdated(address indexed previousTreasury, address indexed newTreasury);
 
     struct Round {
         uint256 commitDeadline;
@@ -45,16 +65,85 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     event DepositForfeited(bytes32 indexed tag, address indexed user, uint256 amount);
 
     constructor(
-        uint256 _commitWindow,
-        uint256 _revealWindow,
-        uint256 _deposit,
-        address _treasury
+        uint256 commitWindow_,
+        uint256 revealWindow_,
+        uint256 deposit_,
+        address treasury_
     ) Ownable(msg.sender) {
-        commitWindow = _commitWindow;
-        revealWindow = _revealWindow;
-        deposit = _deposit;
-        treasury = _treasury;
+        _commitWindow = commitWindow_;
+        _revealWindow = revealWindow_;
+        _deposit = deposit_;
+        _treasury = treasury_;
         token = IERC20(AGIALPHA);
+
+        emit CommitWindowUpdated(0, commitWindow_);
+        emit RevealWindowUpdated(0, revealWindow_);
+        emit DepositUpdated(0, deposit_);
+        emit TreasuryUpdated(address(0), treasury_);
+    }
+
+    /// @notice Current commit window duration in seconds.
+    function commitWindow() public view returns (uint256) {
+        return _commitWindow;
+    }
+
+    /// @notice Current reveal window duration in seconds.
+    function revealWindow() public view returns (uint256) {
+        return _revealWindow;
+    }
+
+    /// @notice Required deposit per commit in $AGIALPHA wei.
+    function deposit() public view returns (uint256) {
+        return _deposit;
+    }
+
+    /// @notice Address that receives forfeited deposits.
+    function treasury() public view returns (address) {
+        return _treasury;
+    }
+
+    /// @notice Updates the commit window duration.
+    /// @param newCommitWindow New commit window duration in seconds.
+    function setCommitWindow(uint256 newCommitWindow) external onlyOwner {
+        uint256 previous = _commitWindow;
+        if (previous == newCommitWindow) {
+            return;
+        }
+        _commitWindow = newCommitWindow;
+        emit CommitWindowUpdated(previous, newCommitWindow);
+    }
+
+    /// @notice Updates the reveal window duration.
+    /// @param newRevealWindow New reveal window duration in seconds.
+    function setRevealWindow(uint256 newRevealWindow) external onlyOwner {
+        uint256 previous = _revealWindow;
+        if (previous == newRevealWindow) {
+            return;
+        }
+        _revealWindow = newRevealWindow;
+        emit RevealWindowUpdated(previous, newRevealWindow);
+    }
+
+    /// @notice Updates the required deposit amount.
+    /// @param newDeposit New deposit amount in $AGIALPHA wei.
+    function setDeposit(uint256 newDeposit) external onlyOwner {
+        uint256 previous = _deposit;
+        if (previous == newDeposit) {
+            return;
+        }
+        _deposit = newDeposit;
+        emit DepositUpdated(previous, newDeposit);
+    }
+
+    /// @notice Updates the treasury address that receives forfeited deposits.
+    /// @param newTreasury Address that should receive forfeited deposits.
+    function setTreasury(address newTreasury) external onlyOwner {
+        address previous = _treasury;
+        if (previous == newTreasury) {
+            return;
+        }
+        _treasury = newTreasury;
+        emit TreasuryUpdated(previous, newTreasury);
     }
 
     /// @notice Commit a secret hash for a given tag.
@@ -62,15 +151,16 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     function commit(bytes32 tag, bytes32 commitment) external override {
         Round storage r = rounds[tag];
         if (r.commitDeadline == 0) {
-            r.commitDeadline = block.timestamp + commitWindow;
-            r.revealDeadline = r.commitDeadline + revealWindow;
+            r.commitDeadline = block.timestamp + _commitWindow;
+            r.revealDeadline = r.commitDeadline + _revealWindow;
         }
         if (block.timestamp > r.commitDeadline) revert("commit closed");
         if (commitments[tag][msg.sender] != bytes32(0)) revert("already committed");
-        if (!token.transferFrom(msg.sender, address(this), deposit))
+        uint256 currentDeposit = _deposit;
+        if (!token.transferFrom(msg.sender, address(this), currentDeposit))
             revert("transfer failed");
         commitments[tag][msg.sender] = commitment;
-        r.deposits[msg.sender] = deposit;
+        r.deposits[msg.sender] = currentDeposit;
         r.commits += 1;
         emit Committed(tag, msg.sender, commitment);
     }
@@ -113,7 +203,7 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         uint256 dep = r.deposits[user];
         if (dep == 0) revert("no deposit");
         r.deposits[user] = 0;
-        if (!token.transfer(treasury, dep)) revert("transfer failed");
+        if (!token.transfer(_treasury, dep)) revert("transfer failed");
         emit DepositForfeited(tag, user, dep);
     }
 
