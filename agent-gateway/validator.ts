@@ -116,6 +116,7 @@ interface ValidatorAssignmentSnapshot {
 const assignments = new Map<string, Map<string, ValidationAssignment>>();
 const submissions = new Map<string, SubmissionInfo>();
 const assignmentHistory: ValidatorAssignmentSnapshot[] = [];
+const fallbackTimers = new Map<string, NodeJS.Timeout>();
 
 const RESULT_DIR = path.resolve(__dirname, '../storage/results');
 const VALIDATOR_MAX_RETRIES = Number(process.env.VALIDATOR_MAX_RETRIES || '3');
@@ -130,6 +131,9 @@ const VALIDATOR_REVEAL_FALLBACK_MS = Number(
 );
 const VALIDATOR_HISTORY_LIMIT = Number(
   process.env.VALIDATOR_HISTORY_LIMIT || '50'
+);
+const VALIDATOR_FALLBACK_DELAY_MS = Number(
+  process.env.VALIDATOR_FALLBACK_DELAY_MS || '600000'
 );
 
 function getAssignmentBucket(jobId: string): Map<string, ValidationAssignment> {
@@ -147,6 +151,76 @@ function storeHistory(snapshot: ValidatorAssignmentSnapshot): void {
       assignmentHistory.length - VALIDATOR_HISTORY_LIMIT
     );
   }
+}
+
+function clearValidatorFallback(jobId: string): void {
+  const timer = fallbackTimers.get(jobId);
+  if (timer) {
+    clearTimeout(timer);
+    fallbackTimers.delete(jobId);
+  }
+}
+
+function scheduleValidatorFallback(jobId: string): void {
+  if (VALIDATOR_FALLBACK_DELAY_MS <= 0) {
+    return;
+  }
+  if (fallbackTimers.has(jobId)) {
+    return;
+  }
+  const timer = setTimeout(() => {
+    fallbackTimers.delete(jobId);
+    triggerValidatorFallback(jobId).catch((err) =>
+      console.error('validator fallback selection failed', err)
+    );
+  }, VALIDATOR_FALLBACK_DELAY_MS);
+  fallbackTimers.set(jobId, timer);
+}
+
+async function triggerValidatorFallback(jobId: string): Promise<void> {
+  if (!validation || VALIDATOR_FALLBACK_DELAY_MS <= 0) {
+    return;
+  }
+  const bucket = assignments.get(jobId);
+  if (bucket && bucket.size > 0) {
+    return;
+  }
+  const addresses = walletManager.list();
+  for (const address of addresses) {
+    const wallet = walletManager.get(address);
+    if (!wallet) continue;
+    try {
+      await ensureIdentity(wallet, 'validator');
+      await ensureStake(wallet, 0n, ROLE_VALIDATOR);
+      const writer = validation.connect(wallet) as unknown as {
+        selectValidators(jobId: string, entropy: string): Promise<ethers.TransactionResponse>;
+      };
+      const entropy = ethers.hexlify(ethers.randomBytes(32));
+      const tx = await writer.selectValidators(jobId, entropy);
+      await tx.wait();
+      await secureLogAction({
+        component: 'validator',
+        action: 'fallback-select',
+        jobId,
+        agent: wallet.address,
+        metadata: { entropy, txHash: tx.hash },
+        success: true,
+      });
+      // only trigger once per job
+      return;
+    } catch (err: any) {
+      await secureLogAction({
+        component: 'validator',
+        action: 'fallback-select-failed',
+        jobId,
+        agent: address,
+        metadata: { error: err?.message ?? String(err) },
+        success: false,
+      });
+    }
+  }
+  // Reschedule if no wallets succeeded
+  scheduleValidatorFallback(jobId);
 }
 
 function toSnapshot(
@@ -880,6 +954,9 @@ export async function handleValidatorSelection(
   validators: string[]
 ): Promise<void> {
   if (!validation) return;
+  if (validators.length > 0) {
+    clearValidatorFallback(jobId);
+  }
   const managed = new Set(
     walletManager.list().map((address) => address.toLowerCase())
   );
@@ -947,6 +1024,7 @@ export async function handleJobAwaitingValidation(
   submission: SubmissionInfo
 ): Promise<void> {
   submissions.set(submission.jobId, submission);
+  scheduleValidatorFallback(submission.jobId);
   const bucket = assignments.get(submission.jobId);
   if (!bucket) return;
   for (const assignment of bucket.values()) {
@@ -963,6 +1041,7 @@ export const handleJobSubmissionForValidators = handleJobAwaitingValidation;
 
 export function handleJobCompletionForValidators(jobId: string): void {
   submissions.delete(jobId);
+  clearValidatorFallback(jobId);
   const bucket = assignments.get(jobId);
   if (!bucket) return;
   for (const [address, assignment] of bucket.entries()) {
@@ -1110,4 +1189,8 @@ export function clearValidatorState(): void {
   assignments.clear();
   submissions.clear();
   assignmentHistory.length = 0;
+  for (const timer of fallbackTimers.values()) {
+    clearTimeout(timer);
+  }
+  fallbackTimers.clear();
 }

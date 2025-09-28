@@ -56,6 +56,7 @@ export interface PlanResponse {
   intent: JobIntent;
   requiresConfirmation?: boolean;
   warnings?: string[];
+  planHash?: string;
 }
 
 /** Response returned by `/onebox/execute`. */

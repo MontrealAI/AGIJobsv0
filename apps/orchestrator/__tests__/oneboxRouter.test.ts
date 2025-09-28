@@ -317,7 +317,7 @@ test('DefaultOneboxService produces calldata for wallet mode', async () => {
 });
 
 test('finalizeJob invokes registry finalize function', async () => {
-  const finalizeCall = mock.fn(async () => ({ wait: async () => undefined }));
+  const finalizeCall = mock.fn(async () => ({ hash: '0xabc', wait: async () => undefined }));
   const ethersModule = require('ethers') as { ethers: { Contract: new (...args: any[]) => unknown } };
   const originalDescriptor = Object.getOwnPropertyDescriptor(ethersModule.ethers, 'Contract');
   Object.defineProperty(ethersModule.ethers, 'Contract', {
@@ -338,9 +338,10 @@ test('finalizeJob invokes registry finalize function', async () => {
   } as unknown as Wallet;
 
   try {
-    await finalizeJob('42', wallet);
+    const result = await finalizeJob('42', wallet);
     assert.equal(finalizeCall.mock.calls.length, 1);
     assert.deepEqual(finalizeCall.mock.calls[0].arguments, ['42']);
+    assert.equal(result.txHash, '0xabc');
   } finally {
     if (originalDescriptor) {
       Object.defineProperty(ethersModule.ethers, 'Contract', originalDescriptor);

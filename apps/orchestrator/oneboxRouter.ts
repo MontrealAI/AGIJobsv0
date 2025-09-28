@@ -1,4 +1,6 @@
-import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createHmac, createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import express from 'express';
 import {
   Contract,
@@ -125,10 +127,142 @@ const STATUS_ABI = [
   'function createJob(uint256 reward,uint64 deadline,bytes32 specHash,string uri) returns (uint256)',
   'function createJobWithAgentTypes(uint256 reward,uint64 deadline,uint8 agentTypes,bytes32 specHash,string uri) returns (uint256)',
   'function finalize(uint256 jobId)',
+  'function feePct() view returns (uint256)',
+  'function stakeManager() view returns (address)',
 ];
 
 const DEFAULT_STATUS_LIMIT = 5;
 const DEFAULT_DEADLINE_DAYS = 7;
+const DEFAULT_FEE_PCT = Number.parseFloat(process.env.ONEBOX_DEFAULT_FEE_PCT ?? process.env.ONEBOX_FEE_PCT ?? '5');
+const DEFAULT_BURN_PCT = Number.parseFloat(process.env.ONEBOX_DEFAULT_BURN_PCT ?? process.env.ONEBOX_BURN_PCT ?? '2');
+const DEFAULT_POLICY_FILE = path.resolve(__dirname, '../storage/org-policies.json');
+
+const VALID_PERCENTAGE = (value: number) => Number.isFinite(value) && value >= 0;
+
+interface OrgPolicyRecord {
+  maxBudgetWei?: bigint;
+  maxDurationDays?: number;
+  updatedAt: string;
+}
+
+interface OrgPolicyStoreOptions {
+  policyPath?: string;
+  defaultMaxBudgetWei?: bigint;
+  defaultMaxDurationDays?: number;
+  tokenDecimals?: number;
+}
+
+class OrgPolicyStore {
+  private readonly filePath: string;
+
+  private readonly defaultMaxBudgetWei?: bigint;
+
+  private readonly defaultMaxDurationDays?: number;
+
+  private readonly policies = new Map<string, OrgPolicyRecord>();
+
+  private readonly tokenDecimals: number;
+
+  constructor(options: OrgPolicyStoreOptions = {}) {
+    this.filePath = options.policyPath ?? DEFAULT_POLICY_FILE;
+    this.defaultMaxBudgetWei = options.defaultMaxBudgetWei;
+    this.defaultMaxDurationDays = options.defaultMaxDurationDays;
+    this.tokenDecimals = options.tokenDecimals ?? 18;
+    this.loadFromDisk();
+  }
+
+  private loadFromDisk(): void {
+    try {
+      if (!fs.existsSync(this.filePath)) return;
+      const raw = fs.readFileSync(this.filePath, 'utf8');
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Record<string, { maxBudgetWei?: string; maxDurationDays?: number; updatedAt?: string }>;
+      for (const [key, value] of Object.entries(parsed)) {
+        const record: OrgPolicyRecord = {
+          updatedAt: value.updatedAt ?? new Date().toISOString(),
+        };
+        if (typeof value.maxBudgetWei === 'string' && value.maxBudgetWei.trim().length > 0) {
+          try {
+            record.maxBudgetWei = BigInt(value.maxBudgetWei);
+          } catch {
+            // ignore malformed persisted value
+          }
+        }
+        if (typeof value.maxDurationDays === 'number' && Number.isFinite(value.maxDurationDays) && value.maxDurationDays > 0) {
+          record.maxDurationDays = Math.trunc(value.maxDurationDays);
+        }
+        this.policies.set(key, record);
+      }
+    } catch (error) {
+      console.warn('Failed to load org policy store', error);
+    }
+  }
+
+  private persist(): void {
+    try {
+      const serialisable: Record<string, { maxBudgetWei?: string; maxDurationDays?: number; updatedAt: string }> = {};
+      for (const [key, value] of this.policies.entries()) {
+        serialisable[key] = {
+          ...(value.maxBudgetWei !== undefined ? { maxBudgetWei: value.maxBudgetWei.toString() } : {}),
+          ...(value.maxDurationDays !== undefined ? { maxDurationDays: value.maxDurationDays } : {}),
+          updatedAt: value.updatedAt,
+        };
+      }
+      const directory = path.dirname(this.filePath);
+      if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true });
+      }
+      fs.writeFileSync(this.filePath, JSON.stringify(serialisable, null, 2));
+    } catch (error) {
+      console.warn('Failed to persist org policy store', error);
+    }
+  }
+
+  private resolveKey(userId: string | undefined): string {
+    return userId && userId.trim() ? userId.trim() : '__default__';
+  }
+
+  private getOrCreate(userId: string | undefined): OrgPolicyRecord {
+    const key = this.resolveKey(userId);
+    const existing = this.policies.get(key);
+    if (existing) {
+      return existing;
+    }
+    const created: OrgPolicyRecord = {
+      maxBudgetWei: this.defaultMaxBudgetWei,
+      maxDurationDays: this.defaultMaxDurationDays,
+      updatedAt: new Date().toISOString(),
+    };
+    this.policies.set(key, created);
+    this.persist();
+    return created;
+  }
+
+  enforce(userId: string | undefined, rewardWei: bigint, deadlineDays: number): void {
+    const policy = this.getOrCreate(userId);
+    if (policy.maxBudgetWei !== undefined && rewardWei > policy.maxBudgetWei) {
+      throw new HttpError(
+        400,
+        `Requested budget ${ethers.formatUnits(rewardWei, this.tokenDecimals)} AGIALPHA exceeds organisation cap of ${ethers.formatUnits(policy.maxBudgetWei, this.tokenDecimals)} AGIALPHA.`
+      );
+    }
+    if (policy.maxDurationDays !== undefined && deadlineDays > policy.maxDurationDays) {
+      throw new HttpError(400, `Requested deadline of ${deadlineDays} days exceeds organisation cap of ${policy.maxDurationDays} days.`);
+    }
+  }
+
+  update(userId: string | undefined, overrides: Partial<OrgPolicyRecord>): void {
+    const policy = this.getOrCreate(userId);
+    if (overrides.maxBudgetWei !== undefined) {
+      policy.maxBudgetWei = overrides.maxBudgetWei;
+    }
+    if (overrides.maxDurationDays !== undefined) {
+      policy.maxDurationDays = overrides.maxDurationDays;
+    }
+    policy.updatedAt = new Date().toISOString();
+    this.persist();
+  }
+}
 
 class HttpError extends Error {
   constructor(public readonly status: number, message: string) {
@@ -166,6 +300,12 @@ export class DefaultOneboxService implements OneboxService {
   private readonly explorerBaseUrl?: string;
   private readonly tokenDecimals: number;
   private readonly defaultStatusLimit: number;
+  private readonly orgPolicy: OrgPolicyStore;
+  private readonly defaultFeePct: number;
+  private readonly defaultBurnPct: number;
+  private cachedFeePct?: number;
+  private cachedBurnPct?: number;
+  private feePolicyLoaded = false;
 
   constructor(options: DefaultServiceOptions = {}) {
     this.planner = options.planner ?? PlannerClient.fromEnv();
@@ -184,6 +324,35 @@ export class DefaultOneboxService implements OneboxService {
     this.explorerBaseUrl = options.explorerBaseUrl ?? process.env.ONEBOX_EXPLORER_TX_BASE ?? undefined;
     this.tokenDecimals = options.tokenDecimals ?? Number(process.env.ONEBOX_TOKEN_DECIMALS ?? 18);
     this.defaultStatusLimit = options.statusLimit ?? Number(process.env.ONEBOX_STATUS_LIMIT ?? DEFAULT_STATUS_LIMIT);
+
+    const defaultBudgetEnv = options.maxJobBudgetAgia ?? process.env.ONEBOX_MAX_JOB_BUDGET_AGIA;
+    const defaultDurationEnv = options.maxJobDurationDays ?? process.env.ONEBOX_MAX_JOB_DURATION_DAYS;
+    let defaultBudgetWei: bigint | undefined;
+    if (typeof defaultBudgetEnv === 'string' && defaultBudgetEnv.trim().length > 0) {
+      try {
+        defaultBudgetWei = ethers.parseUnits(defaultBudgetEnv.trim(), this.tokenDecimals);
+      } catch (error) {
+        console.warn('Failed to parse ONEBOX_MAX_JOB_BUDGET_AGIA', error);
+      }
+    }
+    let defaultDurationDays: number | undefined;
+    if (typeof defaultDurationEnv === 'string' && defaultDurationEnv.trim().length > 0) {
+      const parsed = Number.parseInt(defaultDurationEnv.trim(), 10);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        defaultDurationDays = parsed;
+      } else {
+        console.warn('Invalid ONEBOX_MAX_JOB_DURATION_DAYS value', defaultDurationEnv);
+      }
+    }
+    this.orgPolicy = new OrgPolicyStore({
+      policyPath: options.policyPath,
+      defaultMaxBudgetWei: defaultBudgetWei,
+      defaultMaxDurationDays: defaultDurationDays,
+      tokenDecimals: this.tokenDecimals,
+    });
+
+    this.defaultFeePct = VALID_PERCENTAGE(DEFAULT_FEE_PCT) ? DEFAULT_FEE_PCT : 5;
+    this.defaultBurnPct = VALID_PERCENTAGE(DEFAULT_BURN_PCT) ? DEFAULT_BURN_PCT : 2;
   }
 
   async plan(text: string, expert = false): Promise<PlanResponse> {
@@ -204,13 +373,14 @@ export class DefaultOneboxService implements OneboxService {
 
     const envelope = result.intent.data;
     const intent = plannerIntentToJobIntent(envelope, expert);
-    const { summary, warnings } = buildPlannerSummary(envelope, intent, result);
+    const { summary, warnings } = await this.buildPlannerSummary(envelope, intent, result);
 
     return {
       summary,
       intent,
       requiresConfirmation: envelope.payload.confirm ?? true,
       warnings,
+      planHash: computePlanHash(envelope),
     };
   }
 
@@ -264,6 +434,8 @@ export class DefaultOneboxService implements OneboxService {
     const metadata = buildJobMetadata(intent, deadlineDays);
     const deadlineSeconds = Math.floor(Date.now() / 1000 + deadlineDays * 24 * 60 * 60);
     const agentTypes = determineAgentTypes(intent);
+    const userId = extractUserId(intent);
+    this.orgPolicy.enforce(userId, rewardWei, deadlineDays);
 
     if (mode === 'wallet') {
       const artifacts = await this.prepareWalletArtifacts(metadata);
@@ -289,7 +461,7 @@ export class DefaultOneboxService implements OneboxService {
       throw new HttpError(503, 'Relayer is not configured. Set ONEBOX_RELAYER_PRIVATE_KEY.');
     }
 
-    const { jobId, txHash } = await postJob({
+    const { jobId, txHash, jsonUri, specHash } = await postJob({
       wallet: this.relayer,
       reward: rewardWei,
       deadline: deadlineSeconds,
@@ -299,12 +471,24 @@ export class DefaultOneboxService implements OneboxService {
 
     const receiptUrl = buildReceiptUrl(this.explorerBaseUrl, txHash);
     const numericJobId = Number.parseInt(jobId, 10);
+    const rewardFormatted = formatRewardFromWei(rewardWei, this.tokenDecimals);
+    const specCid = extractCid(jsonUri);
+    const gatewayUrls = buildGatewayUrls(jsonUri);
 
     return {
       ok: true,
       jobId: Number.isFinite(numericJobId) ? numericJobId : undefined,
       txHash,
       receiptUrl,
+      reward: rewardFormatted,
+      token: metadata.rewardToken,
+      deadline: deadlineSeconds,
+      specCid: specCid ?? undefined,
+      specUri: jsonUri,
+      specGatewayUrl: gatewayUrls[0],
+      specGatewayUrls: gatewayUrls.length ? gatewayUrls : undefined,
+      specHash,
+      deliverableCid: undefined,
     };
   }
 
@@ -332,8 +516,64 @@ export class DefaultOneboxService implements OneboxService {
       throw new HttpError(503, 'Relayer is not configured. Set ONEBOX_RELAYER_PRIVATE_KEY.');
     }
 
-    await finalizeJob(jobId.toString(), this.relayer);
-    return { ok: true, jobId: Number(jobId) };
+    const { txHash } = await finalizeJob(jobId.toString(), this.relayer);
+    return {
+      ok: true,
+      jobId: Number(jobId),
+      txHash,
+      receiptUrl: txHash ? buildReceiptUrl(this.explorerBaseUrl, txHash) : undefined,
+    };
+  }
+
+  private async ensureFeePolicy(): Promise<void> {
+    if (this.feePolicyLoaded) return;
+    try {
+      const feeRaw = await (this.registry as { feePct?: () => Promise<unknown> }).feePct?.();
+      if (feeRaw !== undefined) {
+        const parsedFee = Number(feeRaw);
+        if (VALID_PERCENTAGE(parsedFee)) {
+          this.cachedFeePct = parsedFee;
+        }
+      }
+      const stakeManagerAddress = await (this.registry as { stakeManager?: () => Promise<string> }).stakeManager?.();
+      if (stakeManagerAddress && ethers.isAddress(stakeManagerAddress) && stakeManagerAddress !== ethers.ZeroAddress) {
+        const stakeManager = new Contract(stakeManagerAddress, ['function burnPct() view returns (uint256)'], this.provider);
+        try {
+          const burnRaw = await stakeManager.burnPct();
+          const parsedBurn = Number(burnRaw);
+          if (VALID_PERCENTAGE(parsedBurn)) {
+            this.cachedBurnPct = parsedBurn;
+          }
+        } catch (error) {
+          logEvent('warn', 'onebox.fee_policy.burn_lookup_failed', {
+            error: errorMessage(error),
+          });
+        }
+      }
+    } catch (error) {
+      logEvent('warn', 'onebox.fee_policy.lookup_failed', { error: errorMessage(error) });
+    } finally {
+      if (!VALID_PERCENTAGE(this.cachedFeePct ?? NaN)) {
+        this.cachedFeePct = this.defaultFeePct;
+      }
+      if (!VALID_PERCENTAGE(this.cachedBurnPct ?? NaN)) {
+        this.cachedBurnPct = this.defaultBurnPct;
+      }
+      this.feePolicyLoaded = true;
+    }
+  }
+
+  private async buildPlannerSummary(
+    envelope: IntentEnvelope,
+    intent: JobIntent,
+    result: PlannerPlanResult
+  ): Promise<PlannerSummary> {
+    await this.ensureFeePolicy();
+    return buildPlannerSummary(envelope, intent, result, {
+      tokenDecimals: this.tokenDecimals,
+      feePct: this.cachedFeePct ?? this.defaultFeePct,
+      burnPct: this.cachedBurnPct ?? this.defaultBurnPct,
+    });
   }
 
   private async prepareWalletArtifacts(
@@ -724,10 +964,17 @@ export function plannerIntentToJobIntent(
   }
 }
 
+interface PlannerSummaryOptions {
+  tokenDecimals: number;
+  feePct: number;
+  burnPct: number;
+}
+
 function buildPlannerSummary(
   envelope: IntentEnvelope,
   intent: JobIntent,
-  result: PlannerPlanResult
+  result: PlannerPlanResult,
+  options: PlannerSummaryOptions
 ): PlannerSummary {
   const warnings: string[] = [];
   if (result.source === 'fallback') {
@@ -747,29 +994,31 @@ function buildPlannerSummary(
   let summary: string;
   switch (intent.action) {
     case 'post_job': {
-      const title = typeof intent.payload?.title === 'string' ? intent.payload.title : 'a job';
-      const reward = intent.payload?.reward ?? '?';
-      const rewardToken = intent.payload?.rewardToken ?? 'AGIALPHA';
-      const deadline = intent.payload?.deadlineDays ?? DEFAULT_DEADLINE_DAYS;
-      summary = `Post “${title}” paying ${reward} ${rewardToken} with a ${deadline}-day deadline.`;
+      const reward = formatRewardForSummary(intent.payload?.reward, options.tokenDecimals);
+      const rewardToken = typeof intent.payload?.rewardToken === 'string' && intent.payload.rewardToken.trim()
+        ? intent.payload.rewardToken.trim()
+        : 'AGIALPHA';
+      const deadlineRaw = Number(intent.payload?.deadlineDays ?? DEFAULT_DEADLINE_DAYS);
+      const deadline = Number.isFinite(deadlineRaw) && deadlineRaw > 0 ? Math.round(deadlineRaw) : DEFAULT_DEADLINE_DAYS;
+      const feePct = options.feePct;
+      const burnPct = options.burnPct;
+      summary = `Post job ${reward} ${rewardToken}, ${deadline} day${deadline === 1 ? '' : 's'}. Fee ${feePct}%, burn ${burnPct}%. Proceed?`;
       break;
     }
     case 'finalize_job':
-      summary = `Finalize job ${intent.payload?.jobId ?? ''}.`;
+      summary = `Finalize job ${formatJobId(intent.payload?.jobId)}. Proceed?`;
       break;
     case 'apply_job':
-      summary = `Apply to job ${intent.payload?.jobId ?? ''}.`;
+      summary = `Apply to job ${formatJobId(intent.payload?.jobId)}. Proceed?`;
       break;
     case 'validate':
-      summary = `Submit a ${intent.payload?.outcome ?? 'validation'} for job ${
-        intent.payload?.jobId ?? ''
-      }.`;
+      summary = `Submit ${String(intent.payload?.outcome ?? 'validation')} for job ${formatJobId(intent.payload?.jobId)}. Proceed?`;
       break;
     default:
-      summary = result.message || `Ready to run ${intent.action}.`;
+      summary = `${result.message || `Run ${intent.action}`}. Proceed?`;
   }
 
-  return { summary, warnings };
+  return { summary: ensureSummaryLimit(summary), warnings };
 }
 
 function buildUserContext(
@@ -984,6 +1233,102 @@ function formatReward(value: unknown, decimals: number): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function formatRewardFromWei(value: bigint, decimals: number): string {
+  const formatted = ethers.formatUnits(value, decimals);
+  const [whole, fractional = ''] = formatted.split('.');
+  const trimmedFraction = fractional.replace(/0+$/u, '').slice(0, 4);
+  return trimmedFraction.length > 0 ? `${whole}.${trimmedFraction}` : whole;
+}
+
+function formatRewardForSummary(value: unknown, decimals: number): string {
+  if (value === undefined || value === null) return '?';
+  try {
+    const wei =
+      typeof value === 'bigint'
+        ? value
+        : typeof value === 'number'
+        ? ethers.parseUnits(value.toString(), decimals)
+        : ethers.parseUnits(String(value), decimals);
+    return formatRewardFromWei(wei, decimals);
+  } catch {
+    return String(value);
+  }
+}
+
+function ensureSummaryLimit(value: string): string {
+  if (value.length <= 140) {
+    return value;
+  }
+  const suffix = ' Proceed?';
+  const base = value.replace(/\s*Proceed\?$/u, '');
+  const truncated = base.slice(0, Math.max(0, 140 - suffix.length - 1)).trimEnd();
+  return `${truncated}…${suffix}`;
+}
+
+function formatJobId(value: unknown): string {
+  if (typeof value === 'string' && value.trim()) {
+    return `#${value.replace(/^#/u, '')}`;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return `#${Math.trunc(value)}`;
+  }
+  if (typeof value === 'bigint') {
+    return `#${value.toString()}`;
+  }
+  return '#?';
+}
+
+function extractUserId(intent: JobIntent): string | undefined {
+  const context = intent.userContext as { userId?: unknown } | undefined;
+  if (context && typeof context.userId === 'string' && context.userId.trim()) {
+    return context.userId.trim();
+  }
+  return undefined;
+}
+
+function extractCid(uri: string | undefined): string | null {
+  if (!uri) return null;
+  const trimmed = uri.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('ipfs://')) {
+    return trimmed.slice('ipfs://'.length);
+  }
+  const match = /\/ipfs\/([^/?#]+)/u.exec(trimmed);
+  return match ? match[1] : null;
+}
+
+function buildGatewayUrls(uri: string | undefined): string[] {
+  const cid = extractCid(uri);
+  if (!cid) {
+    return uri ? [uri] : [];
+  }
+  return [
+    `https://w3s.link/ipfs/${cid}`,
+    `https://ipfs.io/ipfs/${cid}`,
+  ];
+}
+
+function computePlanHash(envelope: IntentEnvelope): string {
+  const canonical = stableStringify(envelope);
+  return `0x${createHash('sha256').update(canonical).digest('hex')}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(',')}]`;
+  }
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b));
+    const content = entries
+      .map(([key, val]) => `${JSON.stringify(key)}:${stableStringify(val)}`)
+      .join(',');
+    return `{${content}}`;
+  }
+  return JSON.stringify(value);
 }
 
 function isZeroAddress(value: unknown): boolean {

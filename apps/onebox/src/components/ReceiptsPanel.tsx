@@ -7,6 +7,11 @@ type ReceiptsPanelProps = {
 };
 
 const formatCid = (cid: string) => cid.trim();
+const formatHash = (hash: string) =>
+  hash.length > 16 ? `${hash.slice(0, 10)}…${hash.slice(-6)}` : hash;
+
+const formatTimestamp = (timestamp: number | undefined) =>
+  typeof timestamp === 'number' ? new Date(timestamp).toLocaleString() : undefined;
 
 export function ReceiptsPanel({ receipts }: ReceiptsPanelProps) {
   if (receipts.length === 0) {
@@ -38,6 +43,14 @@ export function ReceiptsPanel({ receipts }: ReceiptsPanelProps) {
               <div className="chat-receipt-field">
                 <span className="chat-receipt-label">Job ID</span>
                 <span className="chat-receipt-value">#{receipt.jobId}</span>
+              </div>
+            ) : null}
+            {receipt.planHash ? (
+              <div className="chat-receipt-field">
+                <span className="chat-receipt-label">Plan</span>
+                <span className="chat-receipt-value chat-receipt-monospace">
+                  {formatHash(receipt.planHash)}
+                </span>
               </div>
             ) : null}
             {receipt.specCid ? (
@@ -76,10 +89,34 @@ export function ReceiptsPanel({ receipts }: ReceiptsPanelProps) {
                 </span>
               </div>
             ) : null}
+            {receipt.reward && receipt.token ? (
+              <div className="chat-receipt-field">
+                <span className="chat-receipt-label">Reward</span>
+                <span className="chat-receipt-value">
+                  {receipt.reward} {receipt.token}
+                </span>
+              </div>
+            ) : null}
             {receipt.netPayout ? (
               <div className="chat-receipt-field">
                 <span className="chat-receipt-label">Net payout</span>
                 <span className="chat-receipt-value">{receipt.netPayout}</span>
+              </div>
+            ) : null}
+            {receipt.txHash ? (
+              <div className="chat-receipt-field">
+                <span className="chat-receipt-label">Tx hash</span>
+                <span className="chat-receipt-value chat-receipt-monospace">
+                  {formatHash(receipt.txHash)}
+                </span>
+              </div>
+            ) : null}
+            {formatTimestamp(receipt.createdAt) ? (
+              <div className="chat-receipt-field">
+                <span className="chat-receipt-label">Timestamp</span>
+                <span className="chat-receipt-value">
+                  {formatTimestamp(receipt.createdAt)}
+                </span>
               </div>
             ) : null}
             {receipt.explorerUrl ? (
