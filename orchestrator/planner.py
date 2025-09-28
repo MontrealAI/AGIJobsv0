@@ -16,6 +16,12 @@ _DEADLINE_PATTERN = re.compile(r"(?P<days>\d+)\s*(?:day|days)", re.IGNORECASE)
 _TITLE_PATTERN = re.compile(r"^(?P<title>[^.!?]{3,80})")
 _JOB_ID_PATTERN = re.compile(r"job\s*(?:#|id\s*)?(?P<job_id>\d+)", re.IGNORECASE)
 
+_REQUIRED_FIELDS_BY_INTENT = {
+    "apply": {"job_id"},
+    "submit": {"job_id"},
+    "finalize": {"job_id"},
+}
+
 DEFAULT_REWARD = Decimal("50")
 DEFAULT_DEADLINE_DAYS = 7
 FEE_PCT = Decimal("0.05")
@@ -132,8 +138,8 @@ def make_plan(req: PlanIn) -> PlanOut:
 
     attachments = list(req.attachments)
     intent_kind = _detect_intent_kind(text)
-    reward_raw, missing_reward = _infer_reward(text)
-    deadline_raw, missing_deadline = _infer_deadline(text)
+    reward_raw, _missing_reward = _infer_reward(text)
+    deadline_raw, _missing_deadline = _infer_deadline(text)
     reward = reward_raw
     deadline = deadline_raw
     job_id = _infer_job_id(text) if intent_kind != "post_job" else None
@@ -163,11 +169,9 @@ def make_plan(req: PlanIn) -> PlanOut:
             warnings.append("DEFAULT_DEADLINE_APPLIED")
         elif deadline <= 0:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="DEADLINE_INVALID")
-    elif intent_kind == "apply":
-        missing.extend(field for field in missing_reward if field not in missing)
-        missing.extend(field for field in missing_deadline if field not in missing)
+    required_fields = _REQUIRED_FIELDS_BY_INTENT.get(intent_kind, set())
 
-    if intent_kind in {"apply", "submit", "finalize"} and job_id is None:
+    if "job_id" in required_fields and job_id is None:
         missing.append("job_id")
 
     title = _infer_title(text)
