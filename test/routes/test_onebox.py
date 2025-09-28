@@ -460,12 +460,24 @@ class PlannerValidationTests(unittest.IsolatedAsyncioTestCase):
 class SimulatorTests(unittest.IsolatedAsyncioTestCase):
     async def test_simulate_post_job_success(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
-        response = await simulate(_make_request(), SimulateRequest(intent=intent))
+        plan_hash = _compute_plan_hash(intent)
+        response = await simulate(
+            _make_request(),
+            SimulateRequest(intent=intent, planHash=plan_hash),
+        )
         self.assertIsInstance(response, SimulateResponse)
         self.assertEqual(response.intent.payload.reward, "5")
         self.assertEqual(response.blockers, [])
         self.assertTrue(response.planHash.startswith("0x"))
         self.assertIsNotNone(response.createdAt)
+
+    async def test_simulate_rejects_missing_plan_hash(self) -> None:
+        intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await simulate(_make_request(), SimulateRequest(intent=intent))
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_REQUIRED")
+        self.assertEqual(exc.exception.detail["message"], _ERRORS["PLAN_HASH_REQUIRED"])
 
     async def test_simulate_rejects_invalid_plan_hash(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
@@ -493,8 +505,12 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_simulate_post_job_missing_reward_returns_blocker(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", deadlineDays=7))
+        plan_hash = _compute_plan_hash(intent)
         with self.assertRaises(fastapi.HTTPException) as exc:
-            await simulate(_make_request(), SimulateRequest(intent=intent))
+            await simulate(
+                _make_request(),
+                SimulateRequest(intent=intent, planHash=plan_hash),
+            )
         self.assertEqual(exc.exception.status_code, 422)
         detail = exc.exception.detail
         self.assertIn("INSUFFICIENT_BALANCE", detail["blockers"])  # type: ignore[index]
@@ -511,9 +527,13 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
             def enforce(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
                 raise violation
 
+        plan_hash = _compute_plan_hash(intent)
         with mock.patch("routes.onebox._get_org_policy_store", return_value=_PolicyStore()):
             with self.assertRaises(fastapi.HTTPException) as exc:
-                await simulate(_make_request(), SimulateRequest(intent=intent))
+                await simulate(
+                    _make_request(),
+                    SimulateRequest(intent=intent, planHash=plan_hash),
+                )
 
         self.assertEqual(exc.exception.status_code, 422)
         detail = exc.exception.detail
@@ -528,6 +548,14 @@ class DeadlineComputationTests(unittest.TestCase):
 
 
 class ExecutorPlanHashValidationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_execute_rejects_missing_plan_hash(self) -> None:
+        intent = JobIntent(action="check_status", payload=Payload(jobId=123))
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await execute(_make_request(), ExecuteRequest(intent=intent))
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_REQUIRED")
+        self.assertEqual(exc.exception.detail["message"], _ERRORS["PLAN_HASH_REQUIRED"])
+
     async def test_execute_rejects_invalid_plan_hash(self) -> None:
         intent = JobIntent(action="check_status", payload=Payload(jobId=123))
         with self.assertRaises(fastapi.HTTPException) as exc:
@@ -576,7 +604,8 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Example", reward="1", deadlineDays=3),
         )
-        execute_request = ExecuteRequest(intent=intent, mode="wallet")
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
         request_ctx = _make_request()
         with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
             "routes.onebox.time.time", return_value=2_000_000
@@ -593,7 +622,8 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Overflow", reward="1", deadlineDays=overflow_days),
         )
-        execute_request = ExecuteRequest(intent=intent, mode="wallet")
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
         request_ctx = _make_request()
         with mock.patch("routes.onebox.time.time", return_value=0):
             with self.assertRaises(fastapi.HTTPException) as exc:
@@ -634,7 +664,8 @@ class OrgPolicyEnforcementTests(unittest.IsolatedAsyncioTestCase):
             payload=Payload(title="Policy", reward="1.5", deadlineDays=4),
             userContext={"orgId": "acme"},
         )
-        execute_request = ExecuteRequest(intent=intent, mode="wallet")
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
         request_ctx = _make_request()
 
         def _capture_event(level, event, correlation_id, **fields):  # type: ignore[no-untyped-def]
@@ -669,7 +700,8 @@ class OrgPolicyEnforcementTests(unittest.IsolatedAsyncioTestCase):
             payload=Payload(title="Policy", reward="3", deadlineDays=4),
             userContext={"orgId": "acme"},
         )
-        execute_request = ExecuteRequest(intent=intent, mode="wallet")
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
         request_ctx = _make_request()
 
         def _capture_event(level, event, correlation_id, **fields):  # type: ignore[no-untyped-def]
