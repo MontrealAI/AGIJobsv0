@@ -43,6 +43,12 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
 
 The build emits a `manifest.json` inside `dist/` that records the hashed filenames used by `index.html`.
 
+## Content Security Policy
+
+- The production HTML template embeds a restrictive CSP meta tag: `default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self' https://alpha-orchestrator.example.com https://api.web3.storage https://w3s.link https://ipfs.io; …`.
+- Update the `connect-src` directive when pointing the client at different orchestrator, pinning, or gateway infrastructure. The helper export `CONNECT_SRC_ORIGINS` in [`config.mjs`](./config.mjs) / [`config.js`](./config.js) enumerates the origins that must be permitted.
+- Keep orchestrator, pinning, and gateway hosts aligned between your configuration files and the CSP meta tag before pinning to IPFS to avoid runtime fetch failures.
+
 ## Runtime configuration & demo mode
 
 - **Advanced panel overrides**: Click the new **Orchestrator** controls to set the base URL (e.g. `https://alpha.example.com`) and prefix (default `/onebox`). Values are stored in `localStorage` under `AGIJOBS_ONEBOX_ORCHESTRATOR_BASE` / `_PREFIX`.

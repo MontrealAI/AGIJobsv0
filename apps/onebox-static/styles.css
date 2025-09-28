@@ -42,6 +42,11 @@ body {
   color: var(--text);
 }
 
+.noscript-message {
+  padding: 16px;
+  text-align: center;
+}
+
 header {
   position: sticky;
   top: 0;
