@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import types
@@ -309,7 +310,18 @@ except ModuleNotFoundError:
 
         def dict(self, *args, **_kwargs):  # type: ignore[no-untyped-def]
             annotations = getattr(self, "__annotations__", {})
-            return {name: getattr(self, name) for name in annotations}
+            result = {}
+            for name in annotations:
+                value = getattr(self, name)
+                if hasattr(value, "dict"):
+                    value = value.dict(*args, **_kwargs)
+                elif isinstance(value, list):
+                    value = [item.dict(*args, **_kwargs) if hasattr(item, "dict") else item for item in value]
+                result[name] = value
+            return result
+
+        def json(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+            return json.dumps(self.dict(*args, **kwargs))
 
     sys.modules["pydantic"] = types.SimpleNamespace(BaseModel=BaseModel, Field=Field)
 
@@ -357,7 +369,7 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.intent.action, "finalize_job")
         self.assertEqual(response.intent.payload.jobId, 321)
         self.assertIn("finalization request", response.summary.lower())
-        self.assertIn("job 321", response.summary.lower())
+        self.assertIn("job #321", response.summary.lower())
 
     async def test_status_keyword_routes_to_status_action(self) -> None:
         response = await plan(_make_request(), PlanRequest(text="Can you check status of job 654?"))
@@ -378,7 +390,7 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.intent.action, "finalize_job")
         self.assertEqual(response.intent.payload.jobId, 123)
         self.assertIn("detected job finalization request", response.summary.lower())
-        self.assertIn("finalize job 123", response.summary.lower())
+        self.assertIn("finalize job #123", response.summary.lower())
 
     async def test_state_keyword_maps_to_status_intent(self) -> None:
         response = await plan(_make_request(), PlanRequest(text="What's the state of job 890?"))
@@ -412,6 +424,15 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.intent.payload.jobId, 888)
         self.assertIn("detected dispute request", response.summary.lower())
         self.assertIn("dispute job 888", response.summary.lower())
+
+    async def test_post_job_summary_reports_fee_policy(self) -> None:
+        response = await plan(_make_request(), PlanRequest(text="Please help me post a job"))
+        self.assertEqual(response.intent.action, "post_job")
+        self.assertEqual(
+            response.summary,
+            "Post job 1.0 AGIALPHA, 7 days. Fee 5%, burn 2%. Proceed?",
+        )
+        self.assertTrue(response.requiresConfirmation)
 
 
 class DeadlineComputationTests(unittest.TestCase):

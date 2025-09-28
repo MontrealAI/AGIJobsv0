@@ -733,14 +733,19 @@ def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool
 
     payload = intent.payload
     reward = payload.reward or _parse_reward(request_text) or "1.0"
-    days = payload.deadlineDays if payload.deadlineDays is not None else (_parse_deadline_days(request_text) or 7)
-    title = payload.title or _normalize_title(request_text)
+    days = (
+        payload.deadlineDays
+        if payload.deadlineDays is not None
+        else (_parse_deadline_days(request_text) or 7)
+    )
     token = (payload.rewardToken or "AGIALPHA").strip() or "AGIALPHA"
     fee_pct, burn_pct = _get_fee_policy()
+    reward_text = str(reward).strip() or "0"
+    fee_text = _format_percentage(fee_pct)
+    burn_text = _format_percentage(burn_pct)
     summary = (
-        f'Post job "{title}" with reward {reward} {token} '
-        f"and a {days}-day deadline. Fee {_format_percentage(fee_pct)}%, "
-        f"burn {_format_percentage(burn_pct)}%. Proceed?"
+        f"Post job {reward_text} {token}, {days} days. "
+        f"Fee {fee_text}%, burn {burn_text}%. Proceed?"
     )
     return _ensure_summary_limit(summary), True, warnings
 

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import sys
 import types
@@ -250,10 +251,29 @@ if "pydantic" not in sys.modules:
             for key, value in data.items():
                 object.__setattr__(self, key, value)
 
+        def dict(self, *args, **kwargs):
+            annotations = getattr(self, "__annotations__", {})
+            result = {}
+            for name in annotations:
+                value = getattr(self, name)
+                if hasattr(value, "dict"):
+                    value = value.dict(*args, **kwargs)
+                elif isinstance(value, list):
+                    value = [item.dict(*args, **kwargs) if hasattr(item, "dict") else item for item in value]
+                result[name] = value
+            return result
+
+        def json(self, *args, **kwargs):
+            return json.dumps(self.dict(*args, **kwargs))
+
     pydantic_module = types.SimpleNamespace(BaseModel=BaseModel, Field=Field)
     sys.modules["pydantic"] = pydantic_module
 
 from routes.onebox import PlanRequest, plan, _naive_parse
+
+
+def _make_request(headers=None):
+    return types.SimpleNamespace(headers=headers or {}, state=types.SimpleNamespace())
 
 
 def test_naive_parse_finalize_detects_job_id():
@@ -268,16 +288,26 @@ def test_naive_parse_status_detects_job_id():
     assert intent.payload.jobId == 555
 
 def test_plan_summarizes_finalize_intent():
-    response = asyncio.run(plan(PlanRequest(text="Finalize job 42")))
+    response = asyncio.run(plan(_make_request(), PlanRequest(text="Finalize job 42")))
     assert response.intent.action == "finalize_job"
     assert response.intent.payload.jobId == 42
     assert "finalization request" in response.summary.lower()
-    assert "finalize job 42" in response.summary.lower()
+    assert "finalize job #42" in response.summary.lower()
 
 
 def test_plan_summarizes_status_intent():
-    response = asyncio.run(plan(PlanRequest(text="Check status of job 101")))
+    response = asyncio.run(plan(_make_request(), PlanRequest(text="Check status of job 101")))
     assert response.intent.action == "check_status"
     assert response.intent.payload.jobId == 101
     assert "status request" in response.summary.lower()
     assert "status of job 101" in response.summary.lower()
+
+
+def test_plan_summarizes_post_job_intent():
+    response = asyncio.run(plan(_make_request(), PlanRequest(text="Help me post a job")))
+    assert response.intent.action == "post_job"
+    assert (
+        response.summary
+        == "Post job 1.0 AGIALPHA, 7 days. Fee 5%, burn 2%. Proceed?"
+    )
+    assert response.requiresConfirmation is True
