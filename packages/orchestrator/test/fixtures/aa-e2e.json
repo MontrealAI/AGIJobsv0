@@ -1,0 +1,107 @@
+{
+  "sepolia": {
+    "chainId": 11155111,
+    "entryPoint": "0x0000000000000000000000000000000000004337",
+    "session": {
+      "privateKey": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "tx": {
+      "to": "0x0000000000000000000000000000000000000005",
+      "data": "0x1234",
+      "value": "0x0"
+    },
+    "policy": {
+      "userId": "analyst.sepolia",
+      "jobId": "42",
+      "jobBudgetWei": "1000000000000000000"
+    },
+    "provider": {
+      "estimateGas": "0x2bf20"
+    },
+    "feeData": {
+      "maxFeePerGas": "0x2540be400",
+      "maxPriorityFeePerGas": "0x3b9aca00"
+    },
+    "config": {
+      "verificationGasLimit": "0x16e360",
+      "preVerificationGas": "0xea60",
+      "callGasBuffer": "0x61a8",
+      "paymasterContext": {
+        "network": "sepolia"
+      }
+    },
+    "nonce": "0x07",
+    "paymaster": {
+      "paymasterAndData": "0xdeadbeef",
+      "preVerificationGas": "0x1adb0",
+      "verificationGasLimit": "0x1c9c0",
+      "callGasLimit": "0x3a980"
+    },
+    "bundler": {
+      "userOpHash": "0x9f5f7c4f5c3ab1c4734b9ffdf6b903e5bb5a5e4c50bba1a52ecd822b1c4d9051",
+      "actualGasCost": "0x0",
+      "actualGasUsed": "0x0"
+    },
+    "expected": {
+      "transactionHash": "0xf47fcb2f12c8b12cc00cf78a0985e05d39a5927e1a5c1d22222d0331c5c0ffee",
+      "blockNumber": 12345678,
+      "blockHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "gasUsed": "0x3d090",
+      "status": 1,
+      "paymasterContext": {
+        "network": "sepolia",
+        "userId": "analyst.sepolia",
+        "jobId": "42",
+        "jobBudgetWei": "1000000000000000000"
+      }
+    }
+  },
+  "optimismSepolia": {
+    "chainId": 11155420,
+    "forwarder": {
+      "address": "0x0000000000000000000000000000000000000001",
+      "nonce": "0x02"
+    },
+    "user": {
+      "privateKey": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "relayer": {
+      "privateKey": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    "provider": {
+      "estimateGas": "0x249f0"
+    },
+    "feeData": {
+      "maxFeePerGas": "0x165a0bc00",
+      "maxPriorityFeePerGas": "0x59682f00"
+    },
+    "metaTx": {
+      "policy": {
+        "userId": "analyst.optimism",
+        "jobId": "84",
+        "jobBudgetWei": "500000000000000000"
+      },
+      "request": {
+        "to": "0x0000000000000000000000000000000000000009",
+        "data": "0xdeadbeef",
+        "value": "0x0"
+      },
+      "execute": {
+        "data": "0xabcdef",
+        "gasLimit": null
+      },
+      "response": {
+        "hash": "0xfeedfacefeedfacefeedfacefeedfacefeedfacefeedfacefeedfacefeedface",
+        "status": 1
+      }
+    },
+    "expected": {
+      "forwardRequest": {
+        "gas": "0x2ab98",
+        "nonce": "0x02"
+      },
+      "signature": "0x4d375a21d29d25326cc9c0cbdad5f2d33fb6031c9c86d05abf918b75f59e5a870e71e1386d943a095dbbd15ccccf9ca1c196b993117de8c76f12db3b5794b6011b",
+      "relayerGasLimit": "200000"
+    }
+  }
+}
