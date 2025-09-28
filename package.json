@@ -55,7 +55,8 @@
     "migrate:wizard": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/truffle-migration-wizard.ts",
     "lint:check": "solhint 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --max-warnings=0",
     "lint:fix": "solhint --fix 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --fix",
-    "format:fix": "prettier --write \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\""
+    "format:fix": "prettier --write \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\"",
+    "onebox:static:build": "node apps/onebox-static/scripts/build.mjs"
   },
   "keywords": [],
   "author": "",
@@ -72,6 +73,7 @@
     "@typescript-eslint/parser": "^8.13.0",
     "audit-ci": "^7.1.0",
     "dotenv": "^17.2.2",
+    "esbuild": "^0.24.2",
     "eslint": "^9.32.0",
     "eslint-plugin-prettier": "^4.2.5",
     "hardhat": "^2.26.1",

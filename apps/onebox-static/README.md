@@ -1,6 +1,6 @@
 # AGI Jobs One-Box (Static UI)
 
-A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-Agent orchestrator and executes against the AGIJobsv0 v2 contracts. The bundle is IPFS-ready (no build step) and relies on standards-based ES modules.
+A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-Agent orchestrator and executes against the AGIJobsv0 v2 contracts. The bundle is produced via a small build step that emits hashed, cache-friendly assets for IPFS pinning.
 
 ## Features
 
@@ -21,19 +21,27 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
    - Configure orchestrator environment variables such as `PINNER_TOKEN` (and optional `PINNER_ENDPOINT`) so server-side executions can pin metadata through your chosen IPFS service.
 2. Update [`config.js`](./config.js) with your orchestrator URLs (base + `/onebox` prefix), desired Account Abstraction settings, and any alternate IPFS gateways you want the Advanced receipts panel to surface.
 3. (Optional) Prepare web3.storage API tokens for team members. Tokens are stored client-side in `localStorage`.
-4. Serve the directory locally for development, e.g.:
+4. Build the production bundle with hashed asset names:
 
    ```bash
-   npx serve apps/onebox-static
+   npm run onebox:static:build
    ```
 
-5. Pin the folder to IPFS when ready for production. `web3.storage` CLI example:
+5. Serve the generated bundle locally for development validation, e.g.:
 
    ```bash
-   web3 storage upload apps/onebox-static
+   npx serve apps/onebox-static/dist
+   ```
+
+6. Pin the `dist/` folder to IPFS when ready for production. `web3.storage` CLI example:
+
+   ```bash
+   web3 storage upload apps/onebox-static/dist
    ```
 
    Record the CID for gateway access, e.g. `https://w3s.link/ipfs/<CID>/index.html`.
+
+The build emits a `manifest.json` inside `dist/` that records the hashed filenames used by `index.html`.
 
 ## Runtime configuration & demo mode
 
@@ -82,9 +90,10 @@ When the orchestrator returns ICS metadata indicating that an ENS identity is re
 ## Deployment via IPFS
 
 1. Confirm accessibility of orchestrator URLs via HTTPS from the target gateway.
-2. Upload the contents of `apps/onebox-static` to IPFS (web3.storage, Pinata, or similar).
-3. Optionally configure DNSLink for a custom domain pointing to the CID.
-4. Monitor orchestrator logs and paymaster balances; rotate tokens regularly.
+2. Run `npm run onebox:static:build` to refresh the hashed bundle in `apps/onebox-static/dist`.
+3. Upload the contents of `apps/onebox-static/dist` to IPFS (web3.storage, Pinata, or similar).
+4. Optionally configure DNSLink for a custom domain pointing to the CID.
+5. Monitor orchestrator logs and paymaster balances; rotate tokens regularly.
 
 ## Resetting local state
 
