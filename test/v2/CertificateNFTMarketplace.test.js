@@ -250,6 +250,24 @@ describe('CertificateNFT marketplace', function () {
 
   it('exposes deterministic metadata with an immutable base URI', async () => {
     expect(await nft.tokenURI(1)).to.equal('ipfs://certificates/1');
+
+    await expect(nft.updateBaseURI('ipfs://certificates-v2/'))
+      .to.emit(nft, 'BaseURIUpdated')
+      .withArgs('ipfs://certificates/', 'ipfs://certificates-v2/');
+    expect(await nft.tokenURI(1)).to.equal('ipfs://certificates-v2/1');
+
+    await expect(nft.lockBaseURI())
+      .to.emit(nft, 'BaseURILocked')
+      .withArgs('ipfs://certificates-v2/');
+
+    await expect(nft.updateBaseURI('ipfs://certificates-v3/')).to.be.revertedWithCustomError(
+      nft,
+      'BaseURIAlreadyLocked'
+    );
+    await expect(nft.lockBaseURI()).to.be.revertedWithCustomError(
+      nft,
+      'BaseURIAlreadyLocked'
+    );
     await expect(nft.setBaseURI('ipfs://other/')).to.be.revertedWithCustomError(
       nft,
       'BaseURIAlreadySet'
