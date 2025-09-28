@@ -533,6 +533,7 @@ _ERRORS = {
     "JOB_BUDGET_CAP_EXCEEDED": "Requested reward exceeds the configured cap for your organisation.",
     "JOB_DEADLINE_CAP_EXCEEDED": "Requested deadline exceeds the configured cap for your organisation.",
     "REWARD_INVALID": "Enter the reward as a numeric AGIALPHA amount before submitting.",
+    "PLAN_HASH_REQUIRED": "Send the plan hash from the planning step so I can link this request to its original plan.",
     "PLAN_HASH_INVALID": "Use the 32-byte plan hash from the planning step before continuing.",
     "PLAN_HASH_MISMATCH": "The plan hash doesn’t match this request. Re-run planning and retry.",
     "UNSUPPORTED_ACTION": "I didn’t understand that action. Rephrase the request or choose a supported workflow.",
@@ -1713,13 +1714,13 @@ async def simulate(request: Request, req: SimulateRequest):
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
-    canonical_hash = _compute_plan_hash(intent)
     provided_hash = _normalize_plan_hash(req.planHash)
-    if provided_hash is not None and provided_hash != canonical_hash:
-        raise _http_error(400, "PLAN_HASH_MISMATCH")
-    plan_hash = provided_hash or canonical_hash
-    if not plan_hash:
+    if provided_hash is None:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
+    canonical_hash = _compute_plan_hash(intent)
+    if provided_hash != canonical_hash:
+        raise _http_error(400, "PLAN_HASH_MISMATCH")
+    plan_hash = provided_hash
     stored_created_at = _lookup_plan_timestamp(plan_hash)
     request_created_at = _normalize_timestamp(req.createdAt)
     created_at = stored_created_at or request_created_at or _current_timestamp()
@@ -1863,13 +1864,13 @@ async def execute(request: Request, req: ExecuteRequest):
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
-    canonical_hash = _compute_plan_hash(intent)
     provided_hash = _normalize_plan_hash(req.planHash)
-    if provided_hash is not None and provided_hash != canonical_hash:
-        raise _http_error(400, "PLAN_HASH_MISMATCH")
-    plan_hash = provided_hash or canonical_hash
-    if not plan_hash:
+    if provided_hash is None:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
+    canonical_hash = _compute_plan_hash(intent)
+    if provided_hash != canonical_hash:
+        raise _http_error(400, "PLAN_HASH_MISMATCH")
+    plan_hash = provided_hash
     stored_created_at = _lookup_plan_timestamp(plan_hash)
     request_created_at = _normalize_timestamp(req.createdAt)
     created_at = stored_created_at or request_created_at or _current_timestamp()
