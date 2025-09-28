@@ -87,12 +87,15 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@pinata/sdk": "^2.1.0",
     "@prb/math": "^4.0.1",
+    "content-hash": "^2.5.2",
     "eth-ens-namehash": "^2.0.8",
     "ethers": "^6.15.0",
     "express": "^4.21.2",
     "ipfs-http-client": "^60.0.0",
     "parse-duration": "^2.1.4",
+    "web3.storage": "^4.5.5",
     "web3": "^1.10.0",
     "ws": "^8.18.3",
     "zod": "^3.25.76"
