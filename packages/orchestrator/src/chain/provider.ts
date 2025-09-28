@@ -22,10 +22,8 @@ function normalizeTxMode(value: string | undefined): NormalizedTxMode {
 const FALLBACK_NETWORK_KEYWORDS = new Set([
   "sepolia",
   "sep",
-  "op-sepolia",
-  "op_sepolia",
-  "optimism-sepolia",
-  "optimism_sepolia",
+  "opsepolia",
+  "optimismsepolia",
 ]);
 
 const FALLBACK_CHAIN_IDS = new Set([
@@ -41,6 +39,13 @@ function normalize(value?: string): string | undefined {
   return trimmed ? trimmed.toLowerCase() : undefined;
 }
 
+function normalizeNetworkKeyword(value?: string): string | undefined {
+  const normalized = normalize(value);
+  if (!normalized) return undefined;
+  const canonical = normalized.replace(/[-_\s]/g, "");
+  return canonical ? canonical : undefined;
+}
+
 function shouldFallbackToMetaTx(): boolean {
   const explicit = normalize(
     process.env.AA_FALLBACK_TO_2771 ?? process.env.AA_ALLOW_2771_FALLBACK
@@ -52,9 +57,9 @@ function shouldFallbackToMetaTx(): boolean {
     return false;
   }
   const networkCandidates = [
-    normalize(process.env.AA_NETWORK),
-    normalize(process.env.NETWORK),
-    normalize(process.env.HARDHAT_NETWORK),
+    normalizeNetworkKeyword(process.env.AA_NETWORK),
+    normalizeNetworkKeyword(process.env.NETWORK),
+    normalizeNetworkKeyword(process.env.HARDHAT_NETWORK),
   ];
   for (const candidate of networkCandidates) {
     if (candidate && FALLBACK_NETWORK_KEYWORDS.has(candidate)) {
