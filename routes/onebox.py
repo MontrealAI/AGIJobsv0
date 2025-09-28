@@ -1828,7 +1828,9 @@ async def simulate(request: Request, req: SimulateRequest):
                 except OrgPolicyViolation as violation:
                     blockers.append(violation.code)
 
-        elif intent.action in {"finalize_job", "stake", "validate", "dispute", "check_status"}:
+        elif intent.action in {"stake", "validate", "dispute"}:
+            blockers.append("UNSUPPORTED_ACTION")
+        elif intent.action in {"finalize_job", "check_status"}:
             if getattr(payload, "jobId", None) is None:
                 blockers.append("JOB_ID_REQUIRED")
         else:
