@@ -24,6 +24,8 @@ contract RoutingModule is Ownable {
     mapping(bytes32 => bytes32) public commits;
     mapping(bytes32 => uint256) public commitBlock;
 
+    uint256 internal constant REVEAL_WINDOW = 256;
+
     event OperatorRegistered(address indexed operator);
     event OperatorDeregistered(address indexed operator);
     event OperatorSelected(bytes32 indexed jobId, address indexed operator);
@@ -33,6 +35,8 @@ contract RoutingModule is Ownable {
     event StakeManagerUpdated(address indexed stakeManager);
     event MinStakeUpdated(uint256 stake);
     event Blacklisted(address indexed operator, bool status);
+    event CommitCleared(bytes32 indexed jobId, bytes32 commitHash, address indexed caller);
+    event StaleReveal(bytes32 indexed jobId, bytes32 commitHash);
 
     constructor(
         IStakeManager _stakeManager,
@@ -103,7 +107,11 @@ contract RoutingModule is Ownable {
     }
 
     function commit(bytes32 jobId, bytes32 commitHash) external {
-        require(commits[jobId] == bytes32(0), "committed");
+        bytes32 existing = commits[jobId];
+        if (existing != bytes32(0)) {
+            require(_isCommitExpired(jobId), "committed");
+            _clearCommit(jobId);
+        }
         commits[jobId] = commitHash;
         commitBlock[jobId] = block.number;
         emit SelectionCommitted(jobId, commitHash);
@@ -116,11 +124,22 @@ contract RoutingModule is Ownable {
     function selectOperator(bytes32 jobId, bytes32 seed) external returns (address selected) {
         bytes32 commitHash = commits[jobId];
         require(commitHash != bytes32(0), "no commit");
-        require(keccak256(abi.encode(seed)) == commitHash, "seed");
+
         uint256 committed = commitBlock[jobId];
+        if (_isCommitExpired(committed)) {
+            emit StaleReveal(jobId, commitHash);
+            _clearCommit(jobId);
+            return address(0);
+        }
+
+        require(keccak256(abi.encode(seed)) == commitHash, "seed");
         require(block.number > committed + 1, "reveal");
         bytes32 bh = blockhash(committed + 1);
-        require(bh != bytes32(0), "stale");
+        if (bh == bytes32(0)) {
+            emit StaleReveal(jobId, commitHash);
+            _clearCommit(jobId);
+            return address(0);
+        }
 
         uint256 totalWeight;
         uint256 len = operators.length;
@@ -139,8 +158,7 @@ contract RoutingModule is Ownable {
 
         if (totalWeight == 0) {
             emit OperatorSelected(jobId, address(0));
-            delete commits[jobId];
-            delete commitBlock[jobId];
+            _clearCommit(jobId);
             return address(0);
         }
 
@@ -165,8 +183,14 @@ contract RoutingModule is Ownable {
         }
 
         emit OperatorSelected(jobId, selected);
-        delete commits[jobId];
-        delete commitBlock[jobId];
+        _clearCommit(jobId);
+    }
+
+    function clearExpiredCommit(bytes32 jobId) external onlyOwner {
+        bytes32 commitHash = commits[jobId];
+        require(commitHash != bytes32(0), "no commit");
+        require(_isCommitExpired(jobId), "active");
+        _clearCommit(jobId);
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
@@ -182,6 +206,22 @@ contract RoutingModule is Ownable {
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
         revert("RoutingModule: no ether");
+    }
+
+    function _isCommitExpired(bytes32 jobId) internal view returns (bool) {
+        return _isCommitExpired(commitBlock[jobId]);
+    }
+
+    function _isCommitExpired(uint256 committedBlock) internal view returns (bool) {
+        return committedBlock != 0 && block.number > committedBlock + REVEAL_WINDOW;
+    }
+
+    function _clearCommit(bytes32 jobId) internal {
+        bytes32 existing = commits[jobId];
+        if (existing == bytes32(0)) return;
+        delete commits[jobId];
+        delete commitBlock[jobId];
+        emit CommitCleared(jobId, existing, msg.sender);
     }
 }
 
