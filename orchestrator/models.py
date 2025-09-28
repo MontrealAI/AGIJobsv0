@@ -63,6 +63,7 @@ class Step(BaseModel):
 class Budget(BaseModel):
     token: Literal["AGIALPHA"] = "AGIALPHA"
     max: str = "0"
+    cap: Optional[str] = None
 
 
 class Policies(BaseModel):
@@ -92,12 +93,17 @@ class OrchestrationPlan(BaseModel):
         require_validator = bool(policy_payload.get("requireValidator", True))
         policy_budget = policy_payload.get("budget", {}) or {}
         budget_token = policy_budget.get("token", "AGIALPHA")
-        budget_max = budget_max or policy_budget.get("dailyMax", "0")
+        policy_cap = policy_budget.get("dailyMax")
+        budget_max = budget_max or policy_cap or "0"
 
         return OrchestrationPlan(
             plan_id=plan_id,
             steps=steps,
-            budget=Budget(token=budget_token, max=str(budget_max)),
+            budget=Budget(
+                token=budget_token,
+                max=str(budget_max),
+                cap=str(policy_cap) if policy_cap is not None else None,
+            ),
             policies=Policies(
                 allowTools=list(policy_allow),
                 denyTools=list(policy_deny),
