@@ -92,6 +92,7 @@ def test_missing_reward_is_reported():
     assert plan.missing_fields == ["reward_agialpha"]
     assert "duration 5 day(s)" in plan.preview_summary
     assert "escrowing 50.00 AGIALPHA (default)" in plan.preview_summary
+    assert plan.requires_confirmation is False
 
 
 def test_missing_deadline_is_reported():
@@ -103,6 +104,7 @@ def test_missing_deadline_is_reported():
     assert plan.missing_fields == ["deadline_days"]
     assert "escrowing 200.00 AGIALPHA" in plan.preview_summary
     assert "duration 7 day(s) (default)" in plan.preview_summary
+    assert plan.requires_confirmation is False
 
 
 def test_complete_plan_allows_auto_confirmation():
