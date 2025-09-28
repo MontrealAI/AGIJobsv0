@@ -24,6 +24,7 @@ def _initial_status(plan: OrchestrationPlan) -> StatusOut:
         plan_id=plan.plan_id,
         state="pending",
         created_at=time.time(),
+        est_budget=plan.budget.max,
     )
     return StatusOut(run=run, steps=steps, current=None, logs=[])
 
@@ -50,7 +51,7 @@ def _mark_run(status: StatusOut, state: str) -> None:
 
 def _execute_step(step: Step, status: StatusOut, step_status: StepStatus) -> None:
     _apply_transition(status, step_status, "running", f"Starting {step.name}")
-    time.sleep(0.05)
+    time.sleep(0.001)
     _apply_transition(status, step_status, "completed", f"Completed {step.name}")
 
 
@@ -73,26 +74,32 @@ def start_run(plan: OrchestrationPlan, approvals: List[str]) -> RunInfo:
     with _LOCK:
         _RUNS[status.run.id] = status
 
+    run_id = status.run.id
+
     def _worker() -> None:
         with _LOCK:
-            status.run.state = "running"  # type: ignore[assignment]
-            status.run.started_at = time.time()
+            current_status = _RUNS.get(run_id)
+            if not current_status:
+                return
+            current_status.run.state = "running"  # type: ignore[assignment]
+            current_status.run.started_at = time.time()
+            _RUNS[run_id] = current_status
         for idx, step in enumerate(plan.steps):
             with _LOCK:
-                current_status = _RUNS.get(status.run.id)
+                current_status = _RUNS.get(run_id)
             if not current_status:
                 return
             step_status = current_status.steps[idx]
             _execute_step(step, current_status, step_status)
             with _LOCK:
-                _RUNS[status.run.id] = current_status
+                _RUNS[run_id] = current_status
         with _LOCK:
-            status = _RUNS.get(status.run.id)
-            if not status:
+            final_status = _RUNS.get(run_id)
+            if not final_status:
                 return
-            _mark_run(status, "succeeded")
-            status.receipts = _finalize_receipt(plan)
-            _RUNS[status.run.id] = status
+            _mark_run(final_status, "succeeded")
+            final_status.receipts = _finalize_receipt(plan)
+            _RUNS[run_id] = final_status
 
     thread = threading.Thread(target=_worker, daemon=True)
     thread.start()

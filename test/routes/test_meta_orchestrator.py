@@ -29,6 +29,9 @@ def test_plan_simulate_execute_flow():
     plan_data = plan_resp.json()
     assert plan_data["intent"]["kind"] == "post_job"
     assert plan_data["plan"]["steps"], "expected at least one step"
+    assert plan_data["requiresConfirmation"] is True
+    assert isinstance(plan_data["warnings"], list)
+    assert plan_data["preview_summary"].endswith("Proceed?")
 
     simulate_resp = client.post("/onebox/simulate", json={"plan": plan_data["plan"]})
     assert simulate_resp.status_code == 200

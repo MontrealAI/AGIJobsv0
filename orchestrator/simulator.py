@@ -32,15 +32,17 @@ def simulate_plan(plan: OrchestrationPlan) -> SimOut:
 
     total_budget, total_fees = _estimate_budget(plan)
     confirmations = [
-        f"You’ll escrow {plan.budget.max} AGIALPHA (fee 5%, burn 2%).",
-        "This plan requires 3 validators; est duration ~48h.",
+        f"You’ll escrow {format(total_budget, 'f')} {plan.budget.token} (fee 5%, burn 2%).",
     ]
+    if plan.policies.requireValidator:
+        confirmations.append("This plan requires validator quorum (3 validators).")
 
     risks: list[str] = []
     blockers: list[str] = []
-    if _safe_decimal(plan.budget.max) <= 0:
+    budget_cap = _safe_decimal(plan.budget.max)
+    if budget_cap <= 0:
         blockers.append("BUDGET_REQUIRED")
-    if total_budget > _safe_decimal(plan.budget.max):
+    if total_budget > budget_cap:
         risks.append("OVER_BUDGET")
 
     return SimOut(

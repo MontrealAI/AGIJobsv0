@@ -56,6 +56,8 @@ export const PlanResponseSchema = z.object({
   plan: OrchestrationPlanSchema,
   missing_fields: z.array(z.string()).default([]),
   preview_summary: z.string(),
+  warnings: z.array(z.string()).default([]),
+  requiresConfirmation: z.boolean().default(true),
 });
 
 export const SimulationResponseSchema = z.object({
