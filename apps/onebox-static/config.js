@@ -5,6 +5,8 @@ const RAW_IPFS_GATEWAYS = [
   "https://w3s.link/ipfs/",
   "https://ipfs.io/ipfs/",
 ];
+const RAW_STATUS_REFRESH_MS = 15_000;
+const RAW_STATUS_MAX_ITEMS = 4;
 
 function trimTrailingSlash(value) {
   if (typeof value !== "string") return "";
@@ -51,11 +53,15 @@ export const PLAN_URL = joinUrlSegments(ORCHESTRATOR_ROOT, "plan");
 export const EXEC_URL = joinUrlSegments(ORCHESTRATOR_ROOT, "execute");
 export const STATUS_URL = joinUrlSegments(ORCHESTRATOR_ROOT, "status");
 export const AA_MODE = { enabled: true, bundler: "alchemy", chainId: 1 };
-export const HISTORY_LENGTH = 6;
+export const HISTORY_LENGTH = 10;
 export const IPFS_ENDPOINT = RAW_IPFS_ENDPOINT;
 export const IPFS_TOKEN_STORAGE_KEY = "AGIJOBS_W3S_TOKEN";
 export const IPFS_GATEWAYS = RAW_IPFS_GATEWAYS.map((url) => url.trim()).filter(Boolean);
 export const WEB3_STORAGE_API = IPFS_ENDPOINT;
+export const STATUS_REFRESH_MS = RAW_STATUS_REFRESH_MS;
+export const STATUS_REFRESH_INTERVAL_MS = RAW_STATUS_REFRESH_MS;
+export const STATUS_POLL_INTERVAL_MS = RAW_STATUS_REFRESH_MS;
+export const STATUS_MAX_ITEMS = RAW_STATUS_MAX_ITEMS;
 export const CONNECT_SRC_ORIGINS = unique(
   [
     ORCHESTRATOR_BASE_URL,
