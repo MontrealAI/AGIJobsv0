@@ -341,6 +341,7 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     router,
     Web3,
     _calculate_deadline_timestamp,
+    _compute_plan_hash,
     _error_detail,
     _ERRORS,
     _decode_job_created,
@@ -466,6 +467,30 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(response.planHash.startswith("0x"))
         self.assertIsNotNone(response.createdAt)
 
+    async def test_simulate_rejects_invalid_plan_hash(self) -> None:
+        intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await simulate(
+                _make_request(),
+                SimulateRequest(intent=intent, planHash="0x1234"),
+            )
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_INVALID")
+
+    async def test_simulate_rejects_mismatched_plan_hash(self) -> None:
+        intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
+        canonical = _compute_plan_hash(intent)
+        mismatch = "0x" + "1" * 64
+        if mismatch == canonical:
+            mismatch = "0x" + "2" * 64
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await simulate(
+                _make_request(),
+                SimulateRequest(intent=intent, planHash=mismatch),
+            )
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_MISMATCH")
+
     async def test_simulate_post_job_missing_reward_returns_blocker(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", deadlineDays=7))
         with self.assertRaises(fastapi.HTTPException) as exc:
@@ -500,6 +525,32 @@ class DeadlineComputationTests(unittest.TestCase):
         with mock.patch("routes.onebox.time.time", return_value=1_000_000):
             deadline = _calculate_deadline_timestamp(2)
         self.assertEqual(deadline, 1_000_000 + 2 * 86400)
+
+
+class ExecutorPlanHashValidationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_execute_rejects_invalid_plan_hash(self) -> None:
+        intent = JobIntent(action="check_status", payload=Payload(jobId=123))
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await execute(
+                _make_request(),
+                ExecuteRequest(intent=intent, planHash="0x1234"),
+            )
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_INVALID")
+
+    async def test_execute_rejects_mismatched_plan_hash(self) -> None:
+        intent = JobIntent(action="check_status", payload=Payload(jobId=123))
+        canonical = _compute_plan_hash(intent)
+        mismatch = "0x" + "a" * 64
+        if mismatch == canonical:
+            mismatch = "0x" + "b" * 64
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await execute(
+                _make_request(),
+                ExecuteRequest(intent=intent, planHash=mismatch),
+            )
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_MISMATCH")
 
 
 class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
