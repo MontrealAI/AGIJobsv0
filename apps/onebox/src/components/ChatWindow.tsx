@@ -194,10 +194,46 @@ export function ChatWindow() {
           id: candidate.id,
           jobId:
             typeof candidate.jobId === 'number' ? candidate.jobId : undefined,
+          planHash:
+            typeof candidate.planHash === 'string' && candidate.planHash.length > 0
+              ? candidate.planHash
+              : undefined,
+          txHash:
+            typeof candidate.txHash === 'string' && candidate.txHash.length > 0
+              ? candidate.txHash
+              : undefined,
+          txHashes: Array.isArray(candidate.txHashes)
+            ? candidate.txHashes.filter(
+                (value): value is string =>
+                  typeof value === 'string' && value.trim().length > 0
+              )
+            : undefined,
           specCid:
             typeof candidate.specCid === 'string' &&
             candidate.specCid.length > 0
               ? candidate.specCid
+              : undefined,
+          specUrl:
+            typeof candidate.specUrl === 'string' && candidate.specUrl.length > 0
+              ? candidate.specUrl
+              : undefined,
+          deliverableCid:
+            typeof candidate.deliverableCid === 'string' &&
+            candidate.deliverableCid.length > 0
+              ? candidate.deliverableCid
+              : undefined,
+          deliverableUrl:
+            typeof candidate.deliverableUrl === 'string' &&
+            candidate.deliverableUrl.length > 0
+              ? candidate.deliverableUrl
+              : undefined,
+          reward:
+            typeof candidate.reward === 'string' && candidate.reward.length > 0
+              ? candidate.reward
+              : undefined,
+          token:
+            typeof candidate.token === 'string' && candidate.token.length > 0
+              ? candidate.token
               : undefined,
           netPayout: storedNetPayout ?? derivedNetPayout,
           explorerUrl: resolvedExplorerUrl,
@@ -206,6 +242,10 @@ export function ChatWindow() {
               ? candidate.createdAt
               : Date.now(),
         };
+
+        if (!record.txHashes && record.txHash) {
+          record.txHashes = [record.txHash];
+        }
 
         acc.push(record);
         return acc;
@@ -578,9 +618,13 @@ export function ChatWindow() {
         )
         .join(' ');
 
+      const txHashes = payload.txHash ? [payload.txHash] : [];
       const receipt: ExecutionReceipt = {
         id: createReceiptId(),
         jobId: payload.jobId,
+        planHash: planContext.plan.planHash,
+        txHash: payload.txHash,
+        txHashes: txHashes.length ? txHashes : undefined,
         specCid: payload.specCid,
         specUrl: payload.specGatewayUrl ?? payload.specUri ?? undefined,
         deliverableCid: payload.deliverableCid ?? undefined,
@@ -588,6 +632,8 @@ export function ChatWindow() {
         netPayout: netPayout.length > 0 ? netPayout : undefined,
         explorerUrl: payload.receiptUrl,
         createdAt: Date.now(),
+        reward: payload.reward,
+        token: payload.token,
       };
 
       const successLines = ['✅ Success.'];
@@ -602,6 +648,15 @@ export function ChatWindow() {
       }
       if (receipt.netPayout) {
         successLines.push(`Payout: ${receipt.netPayout}`);
+      }
+      if (receipt.reward && receipt.token) {
+        successLines.push(`Budget: ${receipt.reward} ${receipt.token}`);
+      }
+      if (receipt.txHash) {
+        successLines.push(`Tx: ${receipt.txHash}`);
+      }
+      if (receipt.planHash) {
+        successLines.push(`Plan: ${receipt.planHash}`);
       }
       if (receipt.explorerUrl) {
         successLines.push(`Receipt: ${receipt.explorerUrl}`);

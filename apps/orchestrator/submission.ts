@@ -7,7 +7,7 @@ const REGISTRY_ABI = ['function finalize(uint256 jobId) external'];
 export async function finalizeJob(
   jobId: string | number,
   wallet: Wallet
-): Promise<void> {
+): Promise<{ txHash: string }> {
   const provider = wallet.provider || new ethers.JsonRpcProvider(RPC_URL);
   const registry = new ethers.Contract(
     JOB_REGISTRY_ADDRESS,
@@ -25,4 +25,6 @@ export async function finalizeJob(
     state[id].completed = true;
   }
   saveState(state);
+
+  return { txHash: tx.hash };
 }
