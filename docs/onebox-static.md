@@ -1,6 +1,6 @@
 # One-Box Static Interface — Operator & User Guide
 
-This guide explains how to run, configure, and operate the **AGI Jobs v0 One-Box** interface located at [`apps/onebox-static`](../apps/onebox-static/). The UI is intentionally static so it can be pinned to IPFS and delivered from any gateway while delegating planning and execution to the AGI-Alpha orchestrator.
+This guide explains how to run, configure, and operate the **AGI Jobs v0 One-Box** interface located at [`apps/onebox-static`](../apps/onebox-static/). The UI is intentionally static so it can be pinned to IPFS and delivered from any gateway while delegating planning and execution to the AGI-Alpha orchestrator. A lightweight build step now produces hashed bundles in `apps/onebox-static/dist` alongside a manifest that maps logical asset names to their cache-busted counterparts.
 
 ---
 
@@ -32,8 +32,9 @@ The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RU
 | 5 | Configure orchestrator IPFS pinning | Set `PINNER_TOKEN` (and optional `PINNER_ENDPOINT`) so the server can pin metadata through web3.storage or your chosen provider. |
 | 6 | Populate [`apps/onebox-static/config.js`](../apps/onebox-static/config.js) | Update planner/executor URLs, AA chainId, and bundler label. |
 | 7 | Generate web3.storage tokens | Issue per-origin tokens to team members; tokens stay in-browser. Consider revocation schedules. |
-| 8 | Pin the static bundle to IPFS | `web3 storage upload apps/onebox-static` or your preferred pinning workflow. |
-| 9 | Share gateway URL & monitor | Provide the gateway link to users, monitor orchestrator logs, and top-up the Paymaster balance. |
+| 8 | Build the hashed static bundle | Run `npm run onebox:static:build` to populate `apps/onebox-static/dist`. |
+| 9 | Pin the generated bundle to IPFS | `web3 storage upload apps/onebox-static/dist` or your preferred pinning workflow. |
+| 10 | Share gateway URL & monitor | Provide the gateway link to users, monitor orchestrator logs, and top-up the Paymaster balance. |
 
 ### Safe & governance handover (optional)
 
@@ -83,12 +84,14 @@ The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RU
 
 ```bash
 # From repository root
-web3 storage upload apps/onebox-static
+npm run onebox:static:build
+web3 storage upload apps/onebox-static/dist
 ```
 
 - Store the resulting CID in deployment notes.
 - Optionally pin via multiple providers for resiliency.
 - Configure DNSLink (`_dnslink.example.com` TXT record) for custom domains.
+- Keep the generated `apps/onebox-static/dist/manifest.json` with the published bundle so gateways serve the hashed asset names referenced by `index.html`.
 
 ---
 
