@@ -56,6 +56,10 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     uint256 public maxProofs = 100;
     mapping(uint256 => bool) public epochSettled;
 
+    error InvalidFeePool();
+    error InvalidReputationEngine();
+    error InvalidEnergyOracle();
+
     /// @notice Fallback temperature when Thermostat is unset.
     int256 public temperature;
 
@@ -79,6 +83,9 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     event RewardBudget(
         uint256 indexed epoch, uint256 minted, uint256 dust, uint256 redistributed, uint256 distributionRatio
     );
+    event FeePoolUpdated(address indexed feePool);
+    event ReputationEngineUpdated(address indexed reputationEngine);
+    event EnergyOracleUpdated(address indexed energyOracle);
 
     constructor(
         Thermostat _thermostat,
@@ -197,6 +204,30 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     function setTemperature(int256 temp) external onlyGovernance {
         require(temp > 0, "temp");
         temperature = temp;
+    }
+
+    /// @notice Update the fee pool contract receiving freshly minted rewards.
+    /// @param _feePool Address of the replacement fee pool contract.
+    function setFeePool(IFeePool _feePool) external onlyGovernance {
+        if (address(_feePool) == address(0)) revert InvalidFeePool();
+        feePool = _feePool;
+        emit FeePoolUpdated(address(_feePool));
+    }
+
+    /// @notice Update the reputation engine used to adjust agent credibility.
+    /// @param _reputation Address of the replacement reputation engine.
+    function setReputationEngine(IReputationEngineV2 _reputation) external onlyGovernance {
+        if (address(_reputation) == address(0)) revert InvalidReputationEngine();
+        reputation = _reputation;
+        emit ReputationEngineUpdated(address(_reputation));
+    }
+
+    /// @notice Update the energy oracle verifying epoch attestations.
+    /// @param _energyOracle Address of the replacement energy oracle.
+    function setEnergyOracle(IEnergyOracle _energyOracle) external onlyGovernance {
+        if (address(_energyOracle) == address(0)) revert InvalidEnergyOracle();
+        energyOracle = _energyOracle;
+        emit EnergyOracleUpdated(address(_energyOracle));
     }
 
     /// @notice Distribute rewards for an epoch based on energy attestations.
