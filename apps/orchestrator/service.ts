@@ -73,9 +73,12 @@ const STAKE_MANAGER_ABI = [
 
 const VALIDATION_MODULE_ABI = [
   'event ValidatorsSelected(uint256 indexed jobId,address[] validators)',
+  'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
+  'event ValidationRevealed(uint256 indexed jobId,address indexed validator,bool approve,bytes32 burnTxHash,string subdomain)',
   'function jobNonce(uint256 jobId) view returns (uint256)',
   'function commitValidation(uint256 jobId,bytes32 commitHash,string subdomain,bytes32[] proof)',
   'function revealValidation(uint256 jobId,bool approve,bytes32 salt,string subdomain,bytes32[] proof)',
+  'function selectValidators(uint256 jobId,uint256 entropy)',
 ];
 
 const DISPUTE_MODULE_ABI = [
@@ -88,6 +91,9 @@ const DEFAULT_ASSIGNMENT_POLL_MS = Number(
 );
 const DEFAULT_REVEAL_DELAY_MS = Number(
   process.env.VALIDATION_REVEAL_DELAY_MS || 60000
+);
+const REVIEW_TIMEOUT_MS = Number(
+  process.env.VALIDATION_REVIEW_TIMEOUT_MS || 10 * 60 * 1000
 );
 
 export interface MetaOrchestratorConfig {
@@ -222,6 +228,9 @@ export class MetaOrchestrator {
   private readonly assignmentTimers = new Map<string, NodeJS.Timeout>();
   private readonly commitTimers = new Map<string, NodeJS.Timeout>();
   private readonly commits = new Map<string, CommitData>();
+  private readonly reviewTimers = new Map<string, NodeJS.Timeout>();
+  private readonly reviewSources = new Map<string, string>();
+  private readonly fallbackSelections = new Set<string>();
   private readonly completedJobs = new Map<string, CompletedJobEvidence>();
   private readonly disputeEvidence = new Map<string, PreparedDisputeEvidence>();
   private readonly watchdog = getWatchdog();
@@ -486,8 +495,12 @@ export class MetaOrchestrator {
     if (this.disputeModule) this.disputeModule.removeAllListeners();
     for (const timer of this.assignmentTimers.values()) clearInterval(timer);
     for (const timer of this.commitTimers.values()) clearTimeout(timer);
+    for (const timer of this.reviewTimers.values()) clearTimeout(timer);
     this.assignmentTimers.clear();
     this.commitTimers.clear();
+    this.reviewTimers.clear();
+    this.reviewSources.clear();
+    this.fallbackSelections.clear();
     this.appliedJobs.clear();
     this.commits.clear();
     this.disputeEvidence.clear();
@@ -536,6 +549,7 @@ export class MetaOrchestrator {
       const timer = this.assignmentTimers.get(key);
       if (timer) clearInterval(timer);
       this.assignmentTimers.delete(key);
+      this.clearReviewTimer(key, 'job-completed');
     });
 
     this.registry.on('JobCancelled', (jobId: bigint) => {
@@ -544,6 +558,7 @@ export class MetaOrchestrator {
       const timer = this.assignmentTimers.get(key);
       if (timer) clearInterval(timer);
       this.assignmentTimers.delete(key);
+      this.clearReviewTimer(key, 'job-cancelled');
       auditLog('job.cancelled', { jobId: key, details: {} });
       if (this.auditAnchor) {
         this.auditAnchor
@@ -551,6 +566,21 @@ export class MetaOrchestrator {
           .catch((err) => console.error('audit anchor trigger failed', err));
       }
     });
+
+    this.registry.on(
+      'ResultSubmitted',
+      (
+        jobId: bigint,
+        worker: string,
+        resultHash: string,
+        resultUri: string,
+        subdomain: string
+      ) => {
+        if (!this.running) return;
+        const key = jobId.toString();
+        this.beginReviewPhase(key, 'submission-detected');
+      }
+    );
 
     this.registry.on('JobDisputed', (jobId: bigint, caller: string) => {
       if (!this.running) return;
@@ -566,6 +596,20 @@ export class MetaOrchestrator {
           this.handleValidatorsSelected(jobId, validators).catch((err) => {
             console.error('Validator handler failed', err);
           });
+        }
+      );
+      this.validationModule.on(
+        'ValidationCommitted',
+        (jobId: bigint, validator: string) => {
+          if (!this.running) return;
+          this.handleValidationProgress(jobId, validator, 'commit');
+        }
+      );
+      this.validationModule.on(
+        'ValidationRevealed',
+        (jobId: bigint, validator: string) => {
+          if (!this.running) return;
+          this.handleValidationProgress(jobId, validator, 'reveal');
         }
       );
     }
@@ -593,6 +637,126 @@ export class MetaOrchestrator {
           );
         }
       );
+    }
+  }
+
+  private beginReviewPhase(jobId: string, source: string): void {
+    this.reviewSources.set(jobId, source);
+    if (this.reviewTimers.has(jobId)) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      this.handleReviewTimeout(jobId).catch((err) => {
+        console.error('review timeout handler failed', err);
+      });
+    }, REVIEW_TIMEOUT_MS);
+    this.reviewTimers.set(jobId, timer);
+    this.fallbackSelections.delete(jobId);
+    auditLog('validation.review_started', {
+      jobId,
+      details: { source, timeoutMs: REVIEW_TIMEOUT_MS },
+    });
+  }
+
+  private clearReviewTimer(jobId: string, reason?: string): void {
+    const timer = this.reviewTimers.get(jobId);
+    if (timer) {
+      clearTimeout(timer);
+    }
+    const hadTimer = this.reviewTimers.delete(jobId);
+    const source = this.reviewSources.get(jobId);
+    this.reviewSources.delete(jobId);
+    this.fallbackSelections.delete(jobId);
+    if (hadTimer && reason) {
+      auditLog('validation.review_cleared', {
+        jobId,
+        details: { reason, source },
+      });
+    }
+  }
+
+  private async handleReviewTimeout(jobId: string): Promise<void> {
+    const source = this.reviewSources.get(jobId) ?? 'unknown';
+    this.clearReviewTimer(jobId, 'review-timeout');
+    try {
+      await this.triggerFallbackValidator(BigInt(jobId), 'timeout');
+    } catch (err) {
+      console.error('fallback validator dispatch failed', err);
+      auditLog('validator.fallback_failed', {
+        jobId,
+        details: {
+          reason: 'timeout',
+          source,
+          error: err instanceof Error ? err.message : String(err),
+        },
+      });
+    }
+  }
+
+  private handleValidationProgress(
+    jobId: bigint,
+    validator: string,
+    phase: 'commit' | 'reveal'
+  ): void {
+    const key = jobId.toString();
+    if (!this.reviewTimers.has(key)) return;
+    this.clearReviewTimer(key, `on-${phase}`);
+    auditLog('validation.review_progress', {
+      jobId: key,
+      actor: validator,
+      details: { phase },
+    });
+  }
+
+  private getFallbackValidatorIdentity(): AgentIdentity | undefined {
+    return (
+      this.identityManager.getPrimary('validator') ||
+      this.validatorIdentities[0]
+    );
+  }
+
+  private async triggerFallbackValidator(
+    jobId: bigint,
+    reason: 'empty-selection' | 'timeout'
+  ): Promise<void> {
+    if (!this.validationModule) return;
+    const jobKey = jobId.toString();
+    if (this.fallbackSelections.has(jobKey)) return;
+    const identity = this.getFallbackValidatorIdentity();
+    if (!identity) return;
+    this.fallbackSelections.add(jobKey);
+    const wallet = identity.wallet.connect(this.provider);
+    const writer = this.validationModule.connect(wallet) as any;
+    const entropy = ethers.hexlify(ethers.randomBytes(32));
+    try {
+      const tx = await writer.selectValidators(jobId, entropy);
+      await tx.wait();
+      auditLog('validator.fallback', {
+        jobId: jobKey,
+        actor: identity.address,
+        details: {
+          reason,
+          entropy,
+          tx: tx.hash,
+        },
+      });
+    } catch (err) {
+      this.fallbackSelections.delete(jobKey);
+      throw err;
+    }
+    try {
+      await this.commitValidation(jobId, identity);
+    } catch (err) {
+      console.error('fallback commitValidation failed', err);
+      auditLog('validator.fallback_commit_failed', {
+        jobId: jobKey,
+        actor: identity.address,
+        details: {
+          reason,
+          error: err instanceof Error ? err.message : String(err),
+        },
+      });
+      this.fallbackSelections.delete(jobKey);
     }
   }
 
@@ -817,6 +981,7 @@ export class MetaOrchestrator {
         ? artifactCid
         : `ipfs://${artifactCid}`;
       await finalizeJob(jobId, state.wallet);
+      this.beginReviewPhase(jobId, 'submission-finalized');
       this.recordCompletedJob(jobId, state, runResult, resultRef, chainJob);
       auditLog('job.submitted', {
         jobId,
@@ -898,6 +1063,8 @@ export class MetaOrchestrator {
     validators: string[]
   ): Promise<void> {
     if (!this.validationModule || this.validatorIdentities.length === 0) return;
+    const jobKey = jobId.toString();
+    this.beginReviewPhase(jobKey, 'validators-selected');
     const lower = validators.map((v) => v.toLowerCase());
     for (const identity of this.validatorIdentities) {
       if (!lower.includes(identity.address.toLowerCase())) continue;
@@ -905,6 +1072,20 @@ export class MetaOrchestrator {
         await this.commitValidation(jobId, identity);
       } catch (err) {
         console.error('commitValidation failed', err);
+      }
+    }
+    if (validators.length === 0) {
+      try {
+        await this.triggerFallbackValidator(jobId, 'empty-selection');
+      } catch (err) {
+        console.error('fallback validator selection failed', err);
+        auditLog('validator.fallback_failed', {
+          jobId: jobKey,
+          details: {
+            reason: 'empty-selection',
+            error: err instanceof Error ? err.message : String(err),
+          },
+        });
       }
     }
   }
@@ -916,6 +1097,10 @@ export class MetaOrchestrator {
     if (!this.validationModule) return;
     const wallet = identity.wallet.connect(this.provider);
     const jobKey = jobId.toString();
+    const key = `${jobKey}:${identity.address.toLowerCase()}`;
+    if (this.commits.has(key)) {
+      return;
+    }
     let approve = false;
     try {
       const applied = this.appliedJobs.get(jobKey);
@@ -975,8 +1160,8 @@ export class MetaOrchestrator {
       actor: identity.address,
       details: { tx: tx.hash, approve },
     });
-    const key = `${jobKey}:${identity.address.toLowerCase()}`;
     this.commits.set(key, { wallet, salt, approve });
+    this.clearReviewTimer(jobKey, 'validator-commit');
     const timer = setTimeout(() => {
       this.revealValidation(jobId, identity).catch((err) => {
         console.error('revealValidation error', err);
@@ -1007,6 +1192,7 @@ export class MetaOrchestrator {
       actor: identity.address,
       details: { tx: tx.hash },
     });
+    this.clearReviewTimer(jobId.toString(), 'validator-reveal');
     this.commits.delete(key);
     const timer = this.commitTimers.get(key);
     if (timer) clearTimeout(timer);
