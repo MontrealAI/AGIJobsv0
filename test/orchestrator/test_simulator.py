@@ -6,8 +6,12 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+from orchestrator.config import get_burn_fraction, get_fee_fraction
 from orchestrator.models import JobIntent, OrchestrationPlan, Step
-from orchestrator.simulator import BURN_PCT, FEE_PCT, simulate_plan
+from orchestrator.simulator import simulate_plan
+
+FEE_FRACTION = get_fee_fraction()
+BURN_FRACTION = get_burn_fraction()
 
 
 def _build_plan(reward: str = "50.00") -> OrchestrationPlan:
@@ -18,7 +22,7 @@ def _build_plan(reward: str = "50.00") -> OrchestrationPlan:
     ]
     reward_decimal = Decimal(reward)
     total_budget = (
-        reward_decimal * (Decimal("1") + FEE_PCT + BURN_PCT)
+        reward_decimal * (Decimal("1") + FEE_FRACTION + BURN_FRACTION)
     ).quantize(Decimal("0.01"))
     return OrchestrationPlan.from_intent(intent, steps, format(total_budget, "f"))
 
@@ -40,3 +44,11 @@ def test_simulator_detects_missing_budget():
     result = simulate_plan(plan)
 
     assert "BUDGET_REQUIRED" in result.blockers
+
+
+def test_simulator_detects_over_budget():
+    plan = _build_plan(reward="150.00")
+    result = simulate_plan(plan)
+
+    assert "OVER_BUDGET" in result.risks
+    assert "OVER_BUDGET" in result.blockers

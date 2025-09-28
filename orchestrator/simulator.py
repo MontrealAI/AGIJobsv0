@@ -49,11 +49,16 @@ def simulate_plan(plan: OrchestrationPlan) -> SimOut:
 
     risks: list[str] = []
     blockers: list[str] = []
-    budget_cap = _safe_decimal(plan.budget.max)
-    if budget_cap <= 0:
+
+    planned_budget = _safe_decimal(plan.budget.max)
+    if planned_budget <= 0:
         blockers.append("BUDGET_REQUIRED")
-    if total_budget > budget_cap:
+
+    budget_cap = _safe_decimal(plan.budget.cap)
+    if budget_cap > 0 and planned_budget > budget_cap:
         risks.append("OVER_BUDGET")
+        if "OVER_BUDGET" not in blockers:
+            blockers.append("OVER_BUDGET")
 
     return SimOut(
         est_budget=format(total_budget, "f"),
