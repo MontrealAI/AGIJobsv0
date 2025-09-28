@@ -23,7 +23,7 @@ const expertExecuteResponseJson = $('#expert-execute-response');
 const COPY = {
   planning: 'Planning your workflow…',
   confirm: (summary) =>
-    `${summary}<div class="pill-row" style="margin-top:12px"><button class="primary-btn" id="confirm-yes" type="button">Yes, do it</button><button class="ghost-btn" id="confirm-no" type="button">Cancel</button></div>`,
+    `${summary}<div class="pill-row pill-row-confirm"><button class="primary-btn" id="confirm-yes" type="button">Yes, do it</button><button class="ghost-btn" id="confirm-no" type="button">Cancel</button></div>`,
   cancelled: 'Okay, cancelled. Adjust the details and try again.',
   progressSteps: [
     'Creating job specification…',

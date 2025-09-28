@@ -27,6 +27,7 @@ packages/orchestrator/dist/
 packages/orchestrator/dist-test/
 packages/onebox-orchestrator/dist/
 apps/onebox-static/dist/
+apps/onebox/dist/
 examples/agentic/runtime-agentic.jsonl
 !scripts/v2/run-owner-plan.js
 !scripts/v2/lib/
