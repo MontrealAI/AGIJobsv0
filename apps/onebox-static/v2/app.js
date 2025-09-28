@@ -596,6 +596,11 @@ function normalizePlannerResponse(payload) {
     : Array.isArray(payload.warnings)
     ? payload.warnings
     : [];
+  const missingFields = Array.isArray(container.missingFields)
+    ? container.missingFields
+    : Array.isArray(payload.missingFields)
+    ? payload.missingFields
+    : [];
   const requiresConfirmation =
     typeof container.requiresConfirmation === 'boolean'
       ? container.requiresConfirmation
@@ -620,7 +625,7 @@ function normalizePlannerResponse(payload) {
       ? createdAtCandidate
       : null;
 
-  return { summary, intent, warnings, requiresConfirmation, planHash, createdAt };
+  return { summary, intent, warnings, missingFields, requiresConfirmation, planHash, createdAt };
 }
 
 async function plan(text) {
@@ -629,6 +634,7 @@ async function plan(text) {
       summary: `I will ${text.replace(/^i\s*/i, '')}. Proceed?`,
       intent: mockIntent(text),
       warnings: [],
+      missingFields: [],
       requiresConfirmation: true,
       planHash: null,
       createdAt: null,
@@ -778,6 +784,15 @@ function handlePlanSubmit(event) {
           .forEach((warning) => appendNote(`⚠️ ${warning}`));
       }
 
+      const missingFields = Array.isArray(planResult.missingFields)
+        ? planResult.missingFields.filter((field) => typeof field === 'string' && field.trim())
+        : [];
+
+      if (missingFields.length) {
+        appendMissingFieldsRequest(planResult, missingFields);
+        return;
+      }
+
       if (planResult.requiresConfirmation === false) {
         const summary = planResult.summary || 'Executing now.';
         appendMessage(MESSAGE_ROLE.ASSISTANT, summary);
@@ -843,6 +858,75 @@ function formatDeadline(value) {
     return new Date(parsed).toLocaleString();
   }
   return text;
+}
+
+function humanizeMissingField(field) {
+  if (!field && field !== 0) return '';
+  const raw = String(field).trim();
+  if (!raw) return '';
+  const normalized = raw.toLowerCase();
+  switch (normalized) {
+    case 'reward':
+      return 'reward';
+    case 'rewardtoken':
+    case 'reward_token':
+      return 'reward token';
+    case 'deadlinedays':
+    case 'deadline':
+    case 'deadline_days':
+      return 'deadline';
+    case 'jobid':
+    case 'job_id':
+      return 'job ID';
+    default: {
+      const spaced = raw
+        .replace(/[_-]+/g, ' ')
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .trim();
+      return spaced ? spaced.toLowerCase() : raw;
+    }
+  }
+}
+
+function describeMissingFields(fields) {
+  const friendly = fields
+    .map((field) => humanizeMissingField(field))
+    .map((field) => field && field.trim())
+    .filter(Boolean);
+  if (!friendly.length) {
+    return { list: '', count: 0 };
+  }
+  if (friendly.length === 1) {
+    return { list: friendly[0], count: 1 };
+  }
+  if (friendly.length === 2) {
+    return { list: `${friendly[0]} and ${friendly[1]}`, count: 2 };
+  }
+  const head = friendly.slice(0, -1).join(', ');
+  const tail = friendly[friendly.length - 1];
+  return { list: `${head}, and ${tail}`, count: friendly.length };
+}
+
+function appendMissingFieldsRequest(plan, fields) {
+  const { list, count } = describeMissingFields(fields);
+  if (!count) return;
+
+  const container = document.createElement('div');
+
+  if (plan.summary) {
+    const summary = document.createElement('p');
+    summary.textContent = plan.summary;
+    container.appendChild(summary);
+  }
+
+  const prompt = document.createElement('p');
+  prompt.textContent =
+    count === 1
+      ? `I still need the ${list} before I can continue. Please provide it so I can finish planning.`
+      : `I still need the following details before I can continue: ${list}. Please provide them so I can finish planning.`;
+  container.appendChild(prompt);
+
+  appendMessage(MESSAGE_ROLE.ASSISTANT, container);
 }
 
 function normalizeStatusEntries(payload) {
