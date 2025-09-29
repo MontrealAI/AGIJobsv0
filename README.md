@@ -32,6 +32,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control verification](#owner-control-verification)
 - [Owner control playbook](#owner-control-playbook)
 - [Owner control blueprint](#owner-control-blueprint)
+- [Owner control command center](#owner-control-command-center)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
 
 ### Identity policy
@@ -205,6 +206,10 @@ Operators who prefer a narrative, non-technical runbook can follow the [Owner Co
 ### Owner control blueprint
 
 Change managers who need a single-page, production-ready operating model can use the [Owner Control Blueprint](docs/owner-control-blueprint.md). It maps each configurable subsystem to its JSON file, editing helper, execution script, and verification check, then layers in multiple Mermaid diagrams, emergency hotfix checklists, and governance artefact templates. The blueprint emphasises repeatable workflows for non-technical operators and highlights mandatory guard rails (`owner:update-all` dry runs, Safe bundles, `owner:verify-control`, and `owner:dashboard`) so updates remain safe, auditable, and reversible even during high-pressure incidents.
+
+### Owner control command center
+
+Need a single, visualised briefing before making governance changes? The new [Owner Command Center](docs/owner-control-command-center.md) combines Mermaid journey maps, validation matrices, and step-by-step scenario playbooks so a non-technical contract owner can stage, approve, execute, and verify any parameter update with complete confidence. Pair it with `npm run owner:surface` for a baseline snapshot, then follow the mission map checklists to close the loop from diff preview to post-change artefacts.
 
 ### Owner control quick reference CLI
 
