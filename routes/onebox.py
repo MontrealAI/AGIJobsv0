@@ -488,7 +488,7 @@ class Payload(BaseModel):
     reward: Optional[str] = None
     deadlineDays: Optional[int] = None
     jobId: Optional[int] = None
-    agentTypes: Optional[int] = None
+    agentTypes: List[str] = Field(default_factory=list)
 
 
 class JobIntent(BaseModel):
@@ -1170,10 +1170,27 @@ def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool
     reward_text = str(reward).strip() or "0"
     fee_text = _format_percentage(fee_pct)
     burn_text = _format_percentage(burn_pct)
-    summary = (
-        f"Post job {reward_text} {token}, {days} days. "
-        f"Fee {fee_text}%, burn {burn_text}%. Proceed?"
-    )
+    raw_agent_types = getattr(payload, "agentTypes", [])
+    agent_types: List[str] = []
+    if isinstance(raw_agent_types, (list, tuple, set)):
+        for value in raw_agent_types:
+            if isinstance(value, str):
+                normalized = value.strip()
+                if normalized:
+                    agent_types.append(normalized)
+            elif value is not None:
+                agent_types.append(str(value))
+    elif isinstance(raw_agent_types, str):
+        normalized = raw_agent_types.strip()
+        if normalized:
+            agent_types.append(normalized)
+    elif raw_agent_types not in (None, ""):
+        agent_types.append(str(raw_agent_types))
+
+    summary = f"Post job {reward_text} {token}, {days} days."
+    if agent_types:
+        summary += f" Agents {', '.join(agent_types)}."
+    summary += f" Fee {fee_text}%, burn {burn_text}%. Proceed?"
     if default_reward_applied:
         warnings.append("DEFAULT_REWARD_APPLIED")
     if default_deadline_applied:
