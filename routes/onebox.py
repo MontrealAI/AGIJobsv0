@@ -487,31 +487,42 @@ class OrgPolicyStore:
                     "maxDurationDays": self._default_max_duration_days,
                 }
         for key, value in data.items():
+            if not isinstance(value, dict):
+                logging.warning("Invalid policy entry for %s: expected dict, got %r", key, value)
+                continue
+
             record = OrgPolicyRecord()
+
             stored_budget = value.get("maxBudgetWei")
-            if isinstance(stored_budget, str):
+            if stored_budget is None or stored_budget == "":
+                record.max_budget_wei = self._default_max_budget_wei
+            elif isinstance(stored_budget, str):
                 try:
                     record.max_budget_wei = int(stored_budget)
                 except ValueError:
-                    record.max_budget_wei = None
+                    logging.warning("Invalid maxBudgetWei for %s: %r", key, stored_budget)
+                    record.max_budget_wei = self._default_max_budget_wei
             elif isinstance(stored_budget, (int, float)):
                 record.max_budget_wei = int(stored_budget)
+            else:
+                logging.warning("Unsupported maxBudgetWei type for %s: %r", key, type(stored_budget))
+                record.max_budget_wei = self._default_max_budget_wei
+
             stored_duration = value.get("maxDurationDays")
-            if isinstance(stored_duration, (int, str)):
+            if stored_duration is None or stored_duration == "":
+                record.max_duration_days = self._default_max_duration_days
+            elif isinstance(stored_duration, (int, float, str)):
                 try:
                     record.max_duration_days = int(stored_duration)
-                except ValueError:
-                    record.max_duration_days = None
-            record.max_budget_wei = (
-                record.max_budget_wei
-                if record.max_budget_wei is not None
-                else self._default_max_budget_wei
-            )
-            record.max_duration_days = (
-                record.max_duration_days
-                if record.max_duration_days is not None
-                else self._default_max_duration_days
-            )
+                except (TypeError, ValueError):
+                    logging.warning("Invalid maxDurationDays for %s: %r", key, stored_duration)
+                    record.max_duration_days = self._default_max_duration_days
+            else:
+                logging.warning(
+                    "Unsupported maxDurationDays type for %s: %r", key, type(stored_duration)
+                )
+                record.max_duration_days = self._default_max_duration_days
+
             self._policies[key] = record
 
     def _get_or_create(self, org_id: Optional[str]) -> OrgPolicyRecord:
