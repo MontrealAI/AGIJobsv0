@@ -767,6 +767,23 @@ class ExecutorPlanHashValidationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_MISMATCH")
 
 
+class ExecutorRewardValidationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_execute_rejects_non_numeric_reward(self) -> None:
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Invalid", reward="not-a-number", deadlineDays=1),
+        )
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
+
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await execute(_make_request(), execute_request)
+
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertIsInstance(exc.exception.detail, dict)
+        self.assertEqual(exc.exception.detail.get("code"), "REWARD_INVALID")
+
+
 class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_wallet_with_deadline_days_succeeds(self) -> None:
         captured_metadata = {}
