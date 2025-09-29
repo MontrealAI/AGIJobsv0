@@ -41,6 +41,9 @@ AGIALPHA_DECIMALS = int(os.getenv("AGIALPHA_DECIMALS", "18") or "18")
 _DEFAULT_POLICY_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "storage", "org-policies.json")
 )
+_ERROR_CATALOG_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "storage", "errors", "onebox.json")
+)
 
 _RELAYER_PK = os.getenv("ONEBOX_RELAYER_PRIVATE_KEY") or os.getenv("RELAYER_PK", "")
 _API_TOKEN = os.getenv("ONEBOX_API_TOKEN") or os.getenv("API_TOKEN", "")
@@ -297,38 +300,31 @@ class StatusResponse(BaseModel):
     token: Optional[str] = None
     deadline: Optional[int] = None
     assignee: Optional[str] = None
-_ERRORS = {
-    "REQUEST_EMPTY": "Describe the job or action you want me to handle before continuing.",
-    "AUTH_MISSING": "Include your API token so I can link this request to your identity. Start identity setup if you haven’t yet.",
-    "AUTH_INVALID": "Your API token didn’t match an active identity. Refresh your credentials or restart identity setup.",
-    "IDENTITY_SETUP_REQUIRED": "Finish identity verification in the Agent Gateway before using this one-box flow.",
-    "STAKE_REQUIRED": "Stake the minimum AGIALPHA before continuing. Add funds or reduce the job’s stake size.",
-    "INSUFFICIENT_BALANCE": "You need more AGIALPHA available to cover the reward and stake. Top up or adjust the amounts.",
-    "INSUFFICIENT_ALLOWANCE": "Approve AGIALPHA spending from your wallet so I can move the staked funds for you.",
-    "DEADLINE_INVALID": "Choose a deadline at least 24 hours out and within the protocol’s maximum window.",
-    "AA_PAYMASTER_REJECTED": "The account abstraction paymaster rejected this request. Retry shortly or submit the transaction manually.",
-    "VALIDATION_TIMEOUT": "Validator checks didn’t finish in time. Retry in a moment or contact support if it keeps failing.",
-    "DISPUTE_OPENED": "A dispute is already open for this job. Wait for resolution before taking further action.",
-    "CID_MISMATCH": "The deliverable CID didn’t match what’s on record. Re-upload the correct artifact and try again.",
-    "RPC_TIMEOUT": "The blockchain RPC endpoint timed out. Try again or switch to a healthier provider.",
-    "UNKNOWN_REVERT": "The transaction reverted without a known reason. Check the logs or retry with adjusted parameters.",
-    "IPFS_TEMPORARY": "The pinning service is busy. Wait a moment and re-upload your request.",
-    "IPFS_FAILED": "I couldn’t package your job details. Remove broken links and try again.",
-    "RELAY_UNAVAILABLE": "The relayer is offline right now. Switch to wallet mode or retry shortly.",
-    "JOB_ID_REQUIRED": "Provide the jobId you want me to act on before continuing.",
-    "JOB_BUDGET_CAP_EXCEEDED": "Requested reward exceeds the configured cap for your organisation.",
-    "JOB_DEADLINE_CAP_EXCEEDED": "Requested deadline exceeds the configured cap for your organisation.",
-    "REWARD_INVALID": "Enter the reward as a numeric AGIALPHA amount before submitting.",
-    "JOB_ALREADY_FINALIZED": "That job is already finalized. Choose a different job or request a status update.",
-    "JOB_IN_DISPUTE": "That job is currently disputed. Resolve the dispute before finalizing.",
-    "JOB_NOT_READY_FOR_FINALIZE": "This job is still in progress. Wait until it is completed before finalizing.",
-    "STATUS_UNKNOWN": "I couldn’t confirm the job status. Retry once the network responds.",
-    "PLAN_HASH_REQUIRED": "Send the plan hash from the planning step so I can link this request to its original plan.",
-    "PLAN_HASH_INVALID": "Use the 32-byte plan hash from the planning step before continuing.",
-    "PLAN_HASH_MISMATCH": "The plan hash doesn’t match this request. Re-run planning and retry.",
-    "UNSUPPORTED_ACTION": "I didn’t understand that action. Rephrase the request or choose a supported workflow.",
-    "UNKNOWN": "Something went wrong on my side. I’ve logged it and you can retry once things settle down.",
-}
+def _load_error_catalog(path: str = _ERROR_CATALOG_PATH) -> Dict[str, str]:
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except FileNotFoundError:
+        logging.error("Friendly error catalog missing at %%s", path)
+        return {}
+    except json.JSONDecodeError as exc:
+        logging.error("Failed to decode friendly error catalog %%s: %%s", path, exc)
+        return {}
+
+    if not isinstance(data, dict):
+        logging.error("Friendly error catalog at %%s is not a mapping", path)
+        return {}
+
+    catalog: Dict[str, str] = {}
+    for key, value in data.items():
+        if not isinstance(key, str) or not isinstance(value, str):
+            logging.debug("Skipping invalid friendly error entry: %%r -> %%r", key, value)
+            continue
+        catalog[key] = value
+    return catalog
+
+
+_ERRORS = _load_error_catalog()
 
 def _error_detail(code: str) -> Dict[str, str]:
     message = _ERRORS.get(code)

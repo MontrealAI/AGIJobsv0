@@ -9,7 +9,7 @@
     "compile:mainnet": "npm run compile -- --network mainnet",
     "compile:sepolia": "npm run compile -- --network sepolia",
     "lint": "npm run lint:check",
-    "pretest": "npx tsc --skipLibCheck scripts/constants.ts",
+    "pretest": "npx tsc --skipLibCheck scripts/constants.ts && node --test apps/onebox/test/error-catalog.test.mjs",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "wire:verify": "node scripts/run-wire-verify.js",
     "verify:wiring": "npm run wire:verify",

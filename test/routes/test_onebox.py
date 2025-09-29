@@ -349,6 +349,7 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     _summary_for_intent,
     _error_detail,
     _ERRORS,
+    _ERROR_CATALOG_PATH,
     _decode_job_created,
     _parse_default_max_budget,
     _parse_default_max_duration,
@@ -371,6 +372,12 @@ def _encode_metadata(state: int, deadline: int = 0, assigned_at: int = 0) -> int
 
 
 class ErrorCatalogTests(unittest.TestCase):
+    def test_error_catalog_matches_json_source(self) -> None:
+        with open(_ERROR_CATALOG_PATH, "r", encoding="utf-8") as handle:
+            catalog = json.load(handle)
+
+        self.assertEqual(catalog, _ERRORS)
+
     def test_error_detail_matches_catalog(self) -> None:
         for code, message in _ERRORS.items():
             detail = _error_detail(code)

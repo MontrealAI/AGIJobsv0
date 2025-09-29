@@ -1,4 +1,5 @@
 // apps/onebox/app.js
+import errorsCatalog from '../../storage/errors/onebox.json' assert { type: 'json' };
 const $ = (selector) => document.querySelector(selector);
 const chat = $('#chat');
 const box = $('#onebox-input');
@@ -189,41 +190,7 @@ const ERROR_PATTERNS = [
   },
 ];
 
-const ERRORS = {
-  ORCHESTRATOR_NOT_CONFIGURED:
-    'Connect an orchestrator under Advanced → Orchestrator URL, then run the job again.',
-  API_TOKEN_MISSING:
-    'Add your orchestrator API token under Advanced → API token and resend the request.',
-  API_TOKEN_INVALID:
-    'The API token was rejected. Mint a fresh token in the orchestrator console, update Advanced → API token, and retry.',
-  IDENTITY_NOT_CONFIGURED:
-    'This orchestrator is missing its identity pack. Sync the ENS roots/identity bundle and restart the orchestrator before retrying.',
-  STAKE_REQUIRED:
-    'Staking is required for this action. Stake the required AGIALPHA via Stake Manager and rerun the command.',
-  ESCROW_BALANCE_LOW:
-    'Escrow balance is too low. Top up the funding wallet or lower the reward, then try again.',
-  ESCROW_ALLOWANCE_REQUIRED:
-    'Escrow allowance is missing. Approve AGIALPHA spending (Expert mode or wallet) and rerun the request.',
-  PAYMASTER_REJECTED:
-    'The account-abstraction paymaster rejected the request. Top up the paymaster or switch to Expert mode to cover gas yourself.',
-  CID_MISMATCH:
-    'The attachment CID does not match the orchestrator record. Re-upload the artefact and confirm the CID before resubmitting.',
-  DISPUTE_OPEN:
-    'A dispute is already open for this job. Follow the dispute workflow to resolution before retrying.',
-  RPC_TIMEOUT:
-    'The blockchain RPC timed out. Retry shortly or point Advanced settings at a faster RPC endpoint.',
-  UNKNOWN_REVERT:
-    'The transaction reverted unexpectedly. Review orchestrator logs or rerun in Expert mode for detailed revert data.',
-  UNKNOWN: 'Something went wrong. I logged the details so we can retry safely.',
-  BLOCKED:
-    'Policy checks blocked this plan. Provide the missing fields or adjust the budget and try again.',
-  OVER_BUDGET:
-    'Simulation detected the plan is over budget. Lower the reward or raise the cap before retrying.',
-  RUN_NOT_FOUND:
-    'The run status could not be located. Refresh the page and try again.',
-  RUN_FAILED:
-    'The orchestrator reported a failure while executing the plan. Review the logs and resubmit once resolved.',
-};
+const ERRORS = errorsCatalog;
 
 const STORAGE_KEYS = {
   orch: 'ONEBOX_ORCH_URL',
