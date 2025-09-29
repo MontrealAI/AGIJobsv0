@@ -2,7 +2,25 @@ const fs = require('fs');
 const path = require('path');
 const { ethers } = require('ethers');
 const namehash = require('eth-ens-namehash');
-const parseDuration = require('parse-duration');
+const parseDurationImport = require('parse-duration');
+const parseDuration =
+  typeof parseDurationImport === 'function'
+    ? parseDurationImport
+    : parseDurationImport && typeof parseDurationImport.default === 'function'
+    ? parseDurationImport.default
+    : () => {
+        throw new Error(
+          'parse-duration module did not export a callable default'
+        );
+      };
+
+if (
+  parseDurationImport &&
+  typeof parseDurationImport === 'object' &&
+  parseDurationImport !== parseDuration
+) {
+  Object.assign(parseDuration, parseDurationImport);
+}
 
 const CONFIG_DIR = path.join(__dirname, '..', '..', 'config');
 const DEPLOYMENT_CONFIG_DIR = path.join(
@@ -185,7 +203,9 @@ function parseBooleanFlag(value, label) {
   if (['true', '1', 'yes', 'y', 'on', 'enable', 'enabled'].includes(asString)) {
     return true;
   }
-  if (['false', '0', 'no', 'n', 'off', 'disable', 'disabled'].includes(asString)) {
+  if (
+    ['false', '0', 'no', 'n', 'off', 'disable', 'disabled'].includes(asString)
+  ) {
     return false;
   }
   throw new Error(`${label} must be a boolean value`);
@@ -982,10 +1002,7 @@ function normaliseEnergyOracleConfig(config = {}) {
         index += 1;
         continue;
       }
-      const address = ensureAddress(
-        key,
-        `energy-oracle.signers[${index}]`
-      );
+      const address = ensureAddress(key, `energy-oracle.signers[${index}]`);
       if (!signerSet.has(address)) {
         signerSet.add(address);
         signers.push(address);
@@ -1002,10 +1019,7 @@ function normaliseEnergyOracleConfig(config = {}) {
   const retainUnknown =
     parseBooleanFlag(config.retainUnknown, 'energy-oracle.retainUnknown') ??
     parseBooleanFlag(config.keepUnknown, 'energy-oracle.keepUnknown') ??
-    parseBooleanFlag(
-      config.allowAdditional,
-      'energy-oracle.allowAdditional'
-    );
+    parseBooleanFlag(config.allowAdditional, 'energy-oracle.allowAdditional');
 
   if (retainUnknown !== undefined) {
     result.retainUnknown = retainUnknown;
@@ -1231,9 +1245,13 @@ function normaliseRandaoCoordinatorConfig(config = {}) {
   }
 
   const commitWindowSource =
-    result.commitWindowSeconds ?? result.commitWindow ?? result.commitWindowDuration;
+    result.commitWindowSeconds ??
+    result.commitWindow ??
+    result.commitWindowDuration;
   const revealWindowSource =
-    result.revealWindowSeconds ?? result.revealWindow ?? result.revealWindowDuration;
+    result.revealWindowSeconds ??
+    result.revealWindow ??
+    result.revealWindowDuration;
 
   const commitWindow = normaliseDuration(
     commitWindowSource,
@@ -1251,7 +1269,11 @@ function normaliseRandaoCoordinatorConfig(config = {}) {
     result.revealWindow = revealWindow;
   }
 
-  if (result.deposit !== undefined && result.deposit !== null && result.deposit !== '') {
+  if (
+    result.deposit !== undefined &&
+    result.deposit !== null &&
+    result.deposit !== ''
+  ) {
     const depositAmount = normaliseTokenAmount(
       result.deposit,
       'RandaoCoordinator deposit'
@@ -1349,11 +1371,9 @@ function normaliseRewardEngineConfig(config = {}) {
     if (reward.feePool === null || reward.feePool === '') {
       delete reward.feePool;
     } else {
-      reward.feePool = ensureAddress(
-        reward.feePool,
-        'RewardEngine feePool',
-        { allowZero: false }
-      );
+      reward.feePool = ensureAddress(reward.feePool, 'RewardEngine feePool', {
+        allowZero: false,
+      });
     }
   }
 
@@ -1394,12 +1414,7 @@ function normaliseRewardEngineConfig(config = {}) {
   return reward;
 }
 
-const CLEAR_ROLE_TEMP_VALUES = new Set([
-  'unset',
-  'remove',
-  'clear',
-  'none',
-]);
+const CLEAR_ROLE_TEMP_VALUES = new Set(['unset', 'remove', 'clear', 'none']);
 
 function normaliseThermostatConfig(config = {}) {
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
@@ -1547,7 +1562,9 @@ function loadThermostatConfig(options = {}) {
 
   const raw = readJson(configPath);
   if (!raw || typeof raw !== 'object') {
-    throw new Error(`Thermostat configuration in ${configPath} must be an object`);
+    throw new Error(
+      `Thermostat configuration in ${configPath} must be an object`
+    );
   }
 
   let thermostatConfig;
