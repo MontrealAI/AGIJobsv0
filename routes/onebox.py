@@ -19,6 +19,8 @@ from datetime import datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
+from urllib.parse import quote
+
 import httpx
 import prometheus_client
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
@@ -692,22 +694,25 @@ def _is_retryable_status(status: int) -> bool:
 
 def _build_gateway_urls(cid: str, provider: str, templates: Optional[List[str]] = None) -> List[str]:
     urls: List[str] = []
+    sanitized_cid = quote((cid or "").strip(), safe="")
+    if not sanitized_cid:
+        return urls
     for template in templates or []:
-        url = template.format(cid=cid)
+        url = template.format(cid=sanitized_cid)
         if url not in urls:
             urls.append(url)
     if provider in {"web3.storage", "nft.storage"}:
         for tpl in ["https://w3s.link/ipfs/{cid}", "https://{cid}.ipfs.w3s.link"]:
-            url = tpl.format(cid=cid)
+            url = tpl.format(cid=sanitized_cid)
             if url not in urls:
                 urls.append(url)
     if provider == "pinata":
         for tpl in ["https://gateway.pinata.cloud/ipfs/{cid}", "https://ipfs.pinata.cloud/ipfs/{cid}"]:
-            url = tpl.format(cid=cid)
+            url = tpl.format(cid=sanitized_cid)
             if url not in urls:
                 urls.append(url)
     for tpl in DEFAULT_GATEWAYS:
-        url = tpl.format(cid=cid)
+        url = tpl.format(cid=sanitized_cid)
         if url not in urls:
             urls.append(url)
     return urls
