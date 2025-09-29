@@ -522,6 +522,24 @@ def _lookup_plan_timestamp(plan_hash: str) -> Optional[str]:
     with _PLAN_LOCK:
         return _PLAN_METADATA.get(plan_hash)
 
+
+_STATUS_CACHE: Dict[int, "StatusResponse"] = {}
+_STATUS_CACHE_LOCK = threading.Lock()
+
+
+def _cache_status(status: "StatusResponse") -> None:
+    try:
+        job_id = int(status.jobId)
+    except (TypeError, ValueError):
+        return
+    with _STATUS_CACHE_LOCK:
+        _STATUS_CACHE[job_id] = status
+
+
+def _get_cached_status(job_id: int) -> Optional["StatusResponse"]:
+    with _STATUS_CACHE_LOCK:
+        return _STATUS_CACHE.get(job_id)
+
 def _detect_missing_fields(intent: JobIntent) -> List[str]:
     missing: List[str] = []
     payload = intent.payload
@@ -581,7 +599,12 @@ def _is_demo_mode(intent: JobIntent) -> bool:
             return nested
 
     return False
-def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool, List[str]]:
+def _summary_for_intent(
+    intent: JobIntent,
+    request_text: str,
+    *,
+    allow_network_fee: bool = True,
+) -> Tuple[str, bool, List[str]]:
     warnings: List[str] = []
     request_snippet = request_text.strip()
     snippet = f" ({request_snippet})" if request_snippet else ""
@@ -664,7 +687,7 @@ def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool
             missing_phrase = missing_labels[0]
         summary = summary.rstrip(".") + f" Missing {missing_phrase} details before proceeding."
     else:
-        fee_pct, burn_pct = _get_fee_policy()
+        fee_pct, burn_pct = _get_fee_policy(allow_network=allow_network_fee)
         if fee_pct is not None and burn_pct is not None:
             summary = summary.rstrip(".") + f" Protocol fee {fee_pct}%, burn {burn_pct}% of reward. Proceed?"
         else:
@@ -677,24 +700,45 @@ def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool
 
     return _ensure_summary_limit(summary), True, warnings
 
-def _get_fee_policy() -> Tuple[Optional[str], Optional[str]]:
+_FEE_POLICY_CACHE: Optional[Tuple[Optional[str], Optional[str]]] = None
+_FEE_POLICY_LOCK = threading.Lock()
+
+
+def _load_fee_policy_from_env() -> Tuple[Optional[str], Optional[str]]:
+    fee_pct_env = os.getenv("PROTOCOL_FEE_PCT", "2")
+    burn_pct_env = os.getenv("PROTOCOL_BURN_PCT", "1")
+    try:
+        fee = Decimal(fee_pct_env)
+    except InvalidOperation:
+        fee = Decimal(0)
+    try:
+        burn = Decimal(burn_pct_env)
+    except InvalidOperation:
+        burn = Decimal(0)
+    return _format_percentage(fee), _format_percentage(burn)
+
+
+def _get_fee_policy(*, allow_network: bool = True) -> Tuple[Optional[str], Optional[str]]:
+    global _FEE_POLICY_CACHE
+    with _FEE_POLICY_LOCK:
+        cached = _FEE_POLICY_CACHE
+    if cached is not None:
+        return cached
+
+    if not allow_network:
+        return _load_fee_policy_from_env()
+
     try:
         burn_pct_uint = registry.functions.burnPct().call()
         burn_pct_dec = Decimal(burn_pct_uint) / Decimal(100)
         fee_pct_dec = Decimal(2)
-        return _format_percentage(fee_pct_dec), _format_percentage(burn_pct_dec)
+        policy = _format_percentage(fee_pct_dec), _format_percentage(burn_pct_dec)
     except Exception:
-        fee_pct_env = os.getenv("PROTOCOL_FEE_PCT", "2")
-        burn_pct_env = os.getenv("PROTOCOL_BURN_PCT", "1")
-        try:
-            fee = Decimal(fee_pct_env)
-        except InvalidOperation:
-            fee = Decimal(0)
-        try:
-            burn = Decimal(burn_pct_env)
-        except InvalidOperation:
-            burn = Decimal(0)
-        return _format_percentage(fee), _format_percentage(burn)
+        policy = _load_fee_policy_from_env()
+
+    with _FEE_POLICY_LOCK:
+        _FEE_POLICY_CACHE = policy
+    return policy
 
 def _resolve_org_identifier(intent: JobIntent) -> Optional[str]:
     ctx = intent.userContext or {}
@@ -1070,7 +1114,11 @@ async def simulate(request: Request, req: SimulateRequest):
                 if isinstance(candidate, str) and candidate.strip():
                     request_text = candidate
                     break
-        summary, _requires_confirmation, warnings = _summary_for_intent(intent, request_text)
+        summary, _requires_confirmation, warnings = _summary_for_intent(
+            intent,
+            request_text,
+            allow_network_fee=False,
+        )
         if warnings:
             risks.extend(warnings)
 
@@ -1128,8 +1176,8 @@ async def simulate(request: Request, req: SimulateRequest):
                 except (TypeError, ValueError):
                     blockers.append("JOB_ID_REQUIRED")
                 else:
-                    status = await _read_status(job_id_int)
-                    state = status.state or "unknown"
+                    status = _get_cached_status(job_id_int)
+                    state = status.state if status and status.state else "unknown"
                     if state == "finalized":
                         blockers.append("JOB_ALREADY_FINALIZED")
                     elif state == "disputed":
@@ -1447,6 +1495,7 @@ async def status(request: Request, jobId: int):
         deadline=deadline,
         assignee=assignee,
     )
+    _cache_status(response)
     _log_event(logging.INFO, "onebox.status.success", correlation_id, intent_type=intent_type)
     return response
 
@@ -1532,7 +1581,9 @@ async def _read_status(job_id: int) -> StatusResponse:
     try:
         job = registry.functions.jobs(job_id).call()
     except Exception:
-        return StatusResponse(jobId=job_id, state="unknown")
+        response = StatusResponse(jobId=job_id, state="unknown")
+        _cache_status(response)
+        return response
     agent = None
     reward = None
     state_code = None
@@ -1549,7 +1600,7 @@ async def _read_status(job_id: int) -> StatusResponse:
     reward_str = _format_reward(reward) if reward is not None else None
     state_label = _STATE_MAP.get(state_code, "unknown")
     state_output = "disputed" if state_label == "disputed" else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown"
-    return StatusResponse(
+    response = StatusResponse(
         jobId=job_id,
         state=state_output,
         reward=reward_str,
@@ -1557,6 +1608,8 @@ async def _read_status(job_id: int) -> StatusResponse:
         deadline=deadline,
         assignee=assignee,
     )
+    _cache_status(response)
+    return response
 
 def _naive_parse(text: str) -> JobIntent:
     normalized = text.strip()
