@@ -1408,7 +1408,10 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
             else:
                 func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
-                sender = relayer.address if relayer else intent.userContext.get("sender")
+                user_context = intent.userContext if intent else None
+                sender = relayer.address if relayer else None
+                if not sender and isinstance(user_context, dict):
+                    sender = user_context.get("sender")
                 if not sender:
                     raise _http_error(400, "RELAY_UNAVAILABLE")
                 tx = _build_tx(func, sender)
@@ -1457,7 +1460,10 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
             else:
                 func = registry.functions.finalize(job_id_int)
-                sender = relayer.address if relayer else intent.userContext.get("sender")
+                user_context = intent.userContext if intent else None
+                sender = relayer.address if relayer else None
+                if not sender and isinstance(user_context, dict):
+                    sender = user_context.get("sender")
                 if not sender:
                     raise _http_error(400, "RELAY_UNAVAILABLE")
                 tx = _build_tx(func, sender)

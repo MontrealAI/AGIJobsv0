@@ -919,6 +919,49 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.detail["message"], _ERRORS["DEADLINE_INVALID"])
 
 
+class ExecutorRelayerFallbackTests(unittest.IsolatedAsyncioTestCase):
+    async def test_execute_relayer_without_sender_returns_relay_unavailable(self) -> None:
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            return {
+                "cid": "bafkrelayer",
+                "uri": "ipfs://bafkrelayer",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafkrelayer",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafkrelayer"],
+            }
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Example", reward="1", deadlineDays=1),
+        )
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, mode="relayer", planHash=plan_hash)
+        request_ctx = _make_request()
+
+        with mock.patch.object(onebox, "relayer", None), mock.patch(
+            "routes.onebox._pin_json", side_effect=_fake_pin_json
+        ), mock.patch("routes.onebox._compute_spec_hash", return_value=b"spec"):
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await execute(request_ctx, execute_request)
+
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertIsInstance(exc.exception.detail, dict)
+        self.assertEqual(exc.exception.detail.get("code"), "RELAY_UNAVAILABLE")
+
+    async def test_finalize_relayer_without_sender_returns_relay_unavailable(self) -> None:
+        intent = JobIntent(action="finalize_job", payload=Payload(jobId=123))
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
+        request_ctx = _make_request()
+
+        with mock.patch.object(onebox, "relayer", None):
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await execute(request_ctx, execute_request)
+
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertIsInstance(exc.exception.detail, dict)
+        self.assertEqual(exc.exception.detail.get("code"), "RELAY_UNAVAILABLE")
+
+
 class RelayerTransactionTests(unittest.IsolatedAsyncioTestCase):
     async def test_send_relayer_tx_allows_concurrent_tasks(self) -> None:
         loop = asyncio.get_running_loop()
