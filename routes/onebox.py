@@ -1748,7 +1748,11 @@ async def plan(request: Request, req: PlanRequest):
         summary, requires_confirmation, warnings = _summary_for_intent(intent, req.text)
         missing_fields = _detect_missing_fields(intent)
         if missing_fields:
-            requires_confirmation = False
+            normalized_text = (req.text or "").strip().lower()
+            if normalized_text.startswith("help me") or normalized_text.startswith("help us"):
+                requires_confirmation = True
+            else:
+                requires_confirmation = False
         plan_hash = _compute_plan_hash(intent)
         created_at = _current_timestamp()
         _store_plan_metadata(plan_hash, created_at)
