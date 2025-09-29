@@ -30,6 +30,7 @@ type TokenBase = {
 
 type TokenPromptResult =
   | (TokenBase & { mode: 'tokens' | 'raw'; changed: true })
+  | { changed: true; mode: 'clear' }
   | { changed: false };
 
 type AddressPromptResult =
@@ -42,6 +43,14 @@ type IntegerPromptResult =
 
 type AllowlistPromptResult =
   | { changed: true; value: Record<string, boolean> }
+  | { changed: false };
+
+type BooleanPromptResult =
+  | { changed: true; value: boolean }
+  | { changed: false };
+
+type BigIntPromptResult =
+  | { changed: true; value: string | null }
   | { changed: false };
 
 type WizardResult<T> = { config: T; changes: ChangeEntry[] };
@@ -124,7 +133,8 @@ async function promptToken(
   label: string,
   symbol: string,
   decimals: number,
-  current: TokenBase
+  current: TokenBase,
+  { allowClear = false }: { allowClear?: boolean } = {}
 ): Promise<TokenPromptResult> {
   const defaultBase = current.base;
   const display =
@@ -136,6 +146,15 @@ async function promptToken(
     }
     if (answer.toLowerCase() === 'skip' || answer.toLowerCase() === 'keep') {
       return { changed: false };
+    }
+    if (
+      allowClear &&
+      ['none', 'null', 'clear'].includes(answer.toLowerCase())
+    ) {
+      if (defaultBase === undefined) {
+        return { changed: false };
+      }
+      return { changed: true, mode: 'clear' };
     }
     if (answer.toLowerCase() === 'raw' && current.raw) {
       return { changed: false };
@@ -179,6 +198,99 @@ async function promptToken(
       };
     } catch (error: any) {
       console.error(`  Invalid amount: ${error?.message ?? error}`);
+    }
+  }
+}
+
+async function promptBoolean(
+  rl: ReturnType<typeof createInterface>,
+  label: string,
+  current: boolean | undefined
+): Promise<BooleanPromptResult> {
+  const display =
+    current === undefined
+      ? undefined
+      : current
+      ? 'yes (enabled)'
+      : 'no (disabled)';
+  for (;;) {
+    const answer = (await rl.question(withDefaultLabel(label, display))).trim();
+    if (!answer) {
+      return { changed: false };
+    }
+    const lower = answer.toLowerCase();
+    if (['skip', 'keep'].includes(lower)) {
+      return { changed: false };
+    }
+    if (['yes', 'y', 'true', 'enable', 'enabled', 'on', '1'].includes(lower)) {
+      if (current === true) {
+        return { changed: false };
+      }
+      return { changed: true, value: true };
+    }
+    if (
+      ['no', 'n', 'false', 'disable', 'disabled', 'off', '0'].includes(lower)
+    ) {
+      if (current === false) {
+        return { changed: false };
+      }
+      return { changed: true, value: false };
+    }
+    console.error('  Please answer yes or no.');
+  }
+}
+
+async function promptBigInt(
+  rl: ReturnType<typeof createInterface>,
+  label: string,
+  current: string | number | null | undefined,
+  {
+    allowNegative = false,
+    allowNull = true,
+  }: { allowNegative?: boolean; allowNull?: boolean } = {}
+): Promise<BigIntPromptResult> {
+  const display =
+    current === null
+      ? 'unset'
+      : current === undefined
+      ? undefined
+      : String(current);
+  for (;;) {
+    const answer = (await rl.question(withDefaultLabel(label, display))).trim();
+    if (!answer) {
+      return { changed: false };
+    }
+    const lower = answer.toLowerCase();
+    if (['skip', 'keep'].includes(lower)) {
+      return { changed: false };
+    }
+    if (allowNull && ['none', 'null', 'clear'].includes(lower)) {
+      if (current === null || current === undefined || current === '') {
+        return { changed: false };
+      }
+      return { changed: true, value: null };
+    }
+    if (!/^[-+]?\d+$/.test(answer)) {
+      console.error('  Please enter an integer value.');
+      continue;
+    }
+    try {
+      const value = BigInt(answer);
+      if (!allowNegative && value < 0) {
+        console.error('  Value cannot be negative.');
+        continue;
+      }
+      const normalised = value.toString();
+      if (
+        current !== undefined &&
+        current !== null &&
+        String(current) === normalised
+      ) {
+        return { changed: false };
+      }
+      return { changed: true, value: normalised };
+    } catch (error: any) {
+      console.error(`  Invalid integer: ${error?.message ?? error}`);
     }
   }
 }
@@ -475,6 +587,71 @@ function computeTokenBaseFromConfig(
   };
 }
 
+function applyTokenChange(
+  target: Record<string, any>,
+  keyBase: string,
+  keyTokens: string,
+  result: TokenPromptResult
+): void {
+  if (!result.changed) {
+    return;
+  }
+  if (result.mode === 'tokens') {
+    target[keyTokens] = result.tokens;
+    delete target[keyBase];
+    return;
+  }
+  if (result.mode === 'raw') {
+    target[keyBase] = result.raw;
+    delete target[keyTokens];
+    return;
+  }
+  if (result.mode === 'clear') {
+    delete target[keyBase];
+    delete target[keyTokens];
+  }
+}
+
+function describeSimple(value: unknown, suffix = ''): string {
+  if (value === undefined || value === null || value === '') {
+    return 'unset';
+  }
+  return `${value}${suffix}`;
+}
+
+function normaliseNumber(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const num = Number(value);
+  return Number.isFinite(num) ? num : undefined;
+}
+
+function normaliseBoolean(value: unknown): boolean | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  const lower = String(value).trim().toLowerCase();
+  if (['true', '1', 'yes', 'y', 'on', 'enable', 'enabled'].includes(lower)) {
+    return true;
+  }
+  if (['false', '0', 'no', 'n', 'off', 'disable', 'disabled'].includes(lower)) {
+    return false;
+  }
+  return undefined;
+}
+
+function describeBoolean(value: unknown): string {
+  const resolved = normaliseBoolean(value);
+  if (resolved === undefined) {
+    return 'unset';
+  }
+  return resolved ? 'enabled' : 'disabled';
+}
+
 async function configureJobRegistry(
   rl: ReturnType<typeof createInterface>,
   config: JobRegistryConfig,
@@ -755,9 +932,79 @@ async function configureStakeManager(
       module: 'StakeManager',
       key: minStake.mode === 'tokens' ? 'minStakeTokens' : 'minStake',
       previous,
-      next: describeToken(minStake.base, decimals, symbol),
+      next:
+        'mode' in minStake && minStake.mode !== 'clear'
+          ? describeToken(minStake.base, decimals, symbol)
+          : 'unset',
       configPath,
     });
+  }
+
+  const recommendations = { ...(updated.stakeRecommendations ?? {}) };
+  const recMinCurrent = computeTokenBaseFromConfig(
+    recommendations,
+    'min',
+    'minTokens',
+    decimals
+  );
+  const recMin = await promptToken(
+    rl,
+    'Recommended minimum participant stake (tokens or raw, type none to clear)',
+    symbol,
+    decimals,
+    recMinCurrent,
+    { allowClear: true }
+  );
+  if (recMin.changed) {
+    const previous = describeToken(recMinCurrent.base, decimals, symbol);
+    applyTokenChange(recommendations, 'min', 'minTokens', recMin);
+    const next =
+      'mode' in recMin && recMin.mode !== 'clear'
+        ? describeToken(recMin.base, decimals, symbol)
+        : 'unset';
+    changes.push({
+      module: 'StakeManager',
+      key: 'stakeRecommendations.min',
+      previous,
+      next,
+      configPath,
+    });
+  }
+
+  const recMaxCurrent = computeTokenBaseFromConfig(
+    recommendations,
+    'max',
+    'maxTokens',
+    decimals
+  );
+  const recMax = await promptToken(
+    rl,
+    'Recommended maximum participant stake (tokens or raw, type none to clear)',
+    symbol,
+    decimals,
+    recMaxCurrent,
+    { allowClear: true }
+  );
+  if (recMax.changed) {
+    const previous = describeToken(recMaxCurrent.base, decimals, symbol);
+    applyTokenChange(recommendations, 'max', 'maxTokens', recMax);
+    const next =
+      'mode' in recMax && recMax.mode !== 'clear'
+        ? describeToken(recMax.base, decimals, symbol)
+        : 'unset';
+    changes.push({
+      module: 'StakeManager',
+      key: 'stakeRecommendations.max',
+      previous,
+      next,
+      configPath,
+    });
+  }
+
+  if (Object.keys(recommendations).length > 0) {
+    updated.stakeRecommendations = recommendations;
+  } else {
+    delete (updated as any).stakeRecommendations;
   }
 
   const maxStakeCurrent = computeTokenBaseFromConfig(
@@ -789,7 +1036,10 @@ async function configureStakeManager(
           ? 'maxStakePerAddressTokens'
           : 'maxStakePerAddress',
       previous,
-      next: describeToken(maxStake.base, decimals, symbol),
+      next:
+        'mode' in maxStake && maxStake.mode !== 'clear'
+          ? describeToken(maxStake.base, decimals, symbol)
+          : 'unset',
       configPath,
     });
   }
@@ -883,6 +1133,282 @@ async function configureStakeManager(
     updated.treasurySlashPct = treasurySlash.value;
   }
 
+  const autoConfig = { ...(updated.autoStake ?? {}) };
+  const prevAutoConfig = { ...autoConfig };
+  const autoEnabledCurrent = normaliseBoolean(autoConfig.enabled);
+  const autoEnabled = await promptBoolean(
+    rl,
+    'Enable automatic stake tuning? (yes/no, skip to leave unchanged)',
+    autoEnabledCurrent
+  );
+  if (autoEnabled.changed) {
+    autoConfig.enabled = autoEnabled.value;
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.enabled',
+      previous: describeBoolean(prevAutoConfig.enabled),
+      next: describeBoolean(autoEnabled.value),
+      configPath,
+    });
+  }
+
+  const autoThreshold = await promptBigInt(
+    rl,
+    'Auto stake dispute threshold (type none to clear)',
+    autoConfig.threshold,
+    { allowNegative: false, allowNull: true }
+  );
+  if (autoThreshold.changed) {
+    const previous = describeSimple(prevAutoConfig.threshold);
+    if (autoThreshold.value === null) {
+      delete autoConfig.threshold;
+    } else {
+      autoConfig.threshold = autoThreshold.value;
+    }
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.threshold',
+      previous,
+      next: describeSimple(autoThreshold.value),
+      configPath,
+    });
+  }
+
+  const autoIncreaseCurrent = normaliseNumber(autoConfig.increasePct);
+  const autoIncrease = await promptPercentage(
+    rl,
+    'Auto stake increase percentage',
+    autoIncreaseCurrent
+  );
+  if (autoIncrease.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.increasePct',
+      previous: describeSimple(prevAutoConfig.increasePct, '%'),
+      next: `${autoIncrease.value}%`,
+      configPath,
+    });
+    autoConfig.increasePct = autoIncrease.value;
+  }
+
+  const autoDecreaseCurrent = normaliseNumber(autoConfig.decreasePct);
+  const autoDecrease = await promptPercentage(
+    rl,
+    'Auto stake decrease percentage',
+    autoDecreaseCurrent
+  );
+  if (autoDecrease.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.decreasePct',
+      previous: describeSimple(prevAutoConfig.decreasePct, '%'),
+      next: `${autoDecrease.value}%`,
+      configPath,
+    });
+    autoConfig.decreasePct = autoDecrease.value;
+  }
+
+  const autoWindow = await promptBigInt(
+    rl,
+    'Auto stake tuning window in seconds (type none to keep default)',
+    autoConfig.windowSeconds,
+    { allowNegative: false, allowNull: true }
+  );
+  if (autoWindow.changed) {
+    const previous = describeSimple(prevAutoConfig.windowSeconds, ' seconds');
+    if (autoWindow.value === null) {
+      delete autoConfig.windowSeconds;
+    } else {
+      autoConfig.windowSeconds = autoWindow.value;
+    }
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.windowSeconds',
+      previous,
+      next: describeSimple(autoWindow.value, ' seconds'),
+      configPath,
+    });
+  }
+
+  const autoFloorCurrent = computeTokenBaseFromConfig(
+    autoConfig,
+    'floor',
+    'floorTokens',
+    decimals
+  );
+  const autoFloor = await promptToken(
+    rl,
+    'Auto stake floor (tokens or raw, type none to clear)',
+    symbol,
+    decimals,
+    autoFloorCurrent,
+    { allowClear: true }
+  );
+  if (autoFloor.changed) {
+    const previous = describeToken(autoFloorCurrent.base, decimals, symbol);
+    applyTokenChange(autoConfig, 'floor', 'floorTokens', autoFloor);
+    const next =
+      'mode' in autoFloor && autoFloor.mode !== 'clear'
+        ? describeToken(autoFloor.base, decimals, symbol)
+        : 'unset';
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.floor',
+      previous,
+      next,
+      configPath,
+    });
+  }
+
+  const autoCeilCurrent = computeTokenBaseFromConfig(
+    autoConfig,
+    'ceiling',
+    'ceilingTokens',
+    decimals
+  );
+  const autoCeil = await promptToken(
+    rl,
+    'Auto stake ceiling (tokens or raw, zero disables the cap, type none to clear)',
+    symbol,
+    decimals,
+    autoCeilCurrent,
+    { allowClear: true }
+  );
+  if (autoCeil.changed) {
+    const previous = describeToken(autoCeilCurrent.base, decimals, symbol);
+    applyTokenChange(autoConfig, 'ceiling', 'ceilingTokens', autoCeil);
+    const next =
+      'mode' in autoCeil && autoCeil.mode !== 'clear'
+        ? describeToken(autoCeil.base, decimals, symbol)
+        : 'unset';
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.ceiling',
+      previous,
+      next,
+      configPath,
+    });
+  }
+
+  const autoTempThreshold = await promptBigInt(
+    rl,
+    'Auto stake temperature threshold (can be negative, type none to clear)',
+    autoConfig.temperatureThreshold,
+    { allowNegative: true, allowNull: true }
+  );
+  if (autoTempThreshold.changed) {
+    const previous = describeSimple(prevAutoConfig.temperatureThreshold);
+    if (autoTempThreshold.value === null) {
+      delete autoConfig.temperatureThreshold;
+    } else {
+      autoConfig.temperatureThreshold = autoTempThreshold.value;
+    }
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.temperatureThreshold',
+      previous,
+      next: describeSimple(autoTempThreshold.value),
+      configPath,
+    });
+  }
+
+  const autoHamThreshold = await promptBigInt(
+    rl,
+    'Auto stake Hamiltonian threshold (can be negative, type none to clear)',
+    autoConfig.hamiltonianThreshold,
+    { allowNegative: true, allowNull: true }
+  );
+  if (autoHamThreshold.changed) {
+    const previous = describeSimple(prevAutoConfig.hamiltonianThreshold);
+    if (autoHamThreshold.value === null) {
+      delete autoConfig.hamiltonianThreshold;
+    } else {
+      autoConfig.hamiltonianThreshold = autoHamThreshold.value;
+    }
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.hamiltonianThreshold',
+      previous,
+      next: describeSimple(autoHamThreshold.value),
+      configPath,
+    });
+  }
+
+  const autoDisputeWeight = await promptBigInt(
+    rl,
+    'Auto stake dispute weight (type none to clear)',
+    autoConfig.disputeWeight,
+    { allowNegative: false, allowNull: true }
+  );
+  if (autoDisputeWeight.changed) {
+    const previous = describeSimple(prevAutoConfig.disputeWeight);
+    if (autoDisputeWeight.value === null) {
+      delete autoConfig.disputeWeight;
+    } else {
+      autoConfig.disputeWeight = autoDisputeWeight.value;
+    }
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.disputeWeight',
+      previous,
+      next: describeSimple(autoDisputeWeight.value),
+      configPath,
+    });
+  }
+
+  const autoTempWeight = await promptBigInt(
+    rl,
+    'Auto stake temperature weight (type none to clear)',
+    autoConfig.temperatureWeight,
+    { allowNegative: false, allowNull: true }
+  );
+  if (autoTempWeight.changed) {
+    const previous = describeSimple(prevAutoConfig.temperatureWeight);
+    if (autoTempWeight.value === null) {
+      delete autoConfig.temperatureWeight;
+    } else {
+      autoConfig.temperatureWeight = autoTempWeight.value;
+    }
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.temperatureWeight',
+      previous,
+      next: describeSimple(autoTempWeight.value),
+      configPath,
+    });
+  }
+
+  const autoHamWeight = await promptBigInt(
+    rl,
+    'Auto stake Hamiltonian weight (type none to clear)',
+    autoConfig.hamiltonianWeight,
+    { allowNegative: false, allowNull: true }
+  );
+  if (autoHamWeight.changed) {
+    const previous = describeSimple(prevAutoConfig.hamiltonianWeight);
+    if (autoHamWeight.value === null) {
+      delete autoConfig.hamiltonianWeight;
+    } else {
+      autoConfig.hamiltonianWeight = autoHamWeight.value;
+    }
+    changes.push({
+      module: 'StakeManager',
+      key: 'autoStake.hamiltonianWeight',
+      previous,
+      next: describeSimple(autoHamWeight.value),
+      configPath,
+    });
+  }
+
+  const cleanedAutoConfig = Object.fromEntries(
+    Object.entries(autoConfig).filter(([, value]) => value !== undefined)
+  );
+  if (Object.keys(cleanedAutoConfig).length > 0) {
+    updated.autoStake = cleanedAutoConfig;
+  } else {
+    delete (updated as any).autoStake;
+  }
+
   const unbonding = await promptInteger(
     rl,
     'Unbonding period in seconds',
@@ -939,9 +1465,165 @@ async function configureStakeManager(
     updated.treasuryAllowlist = allowlist.value;
   }
 
+  const pauser = await promptAddress(
+    rl,
+    'Pauser address (type none to clear)',
+    updated.pauser,
+    { allowZero: true, allowNull: true }
+  );
+  if (pauser.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'pauser',
+      previous: describeAddress(updated.pauser),
+      next: describeAddress(pauser.value),
+      configPath,
+    });
+    updated.pauser = pauser.value ?? null;
+  }
+
+  const thermostat = await promptAddress(
+    rl,
+    'Thermostat module address (type none to clear)',
+    updated.thermostat,
+    { allowZero: true, allowNull: true }
+  );
+  if (thermostat.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'thermostat',
+      previous: describeAddress(updated.thermostat),
+      next: describeAddress(thermostat.value),
+      configPath,
+    });
+    updated.thermostat = thermostat.value ?? null;
+  }
+
+  const hamiltonianFeed = await promptAddress(
+    rl,
+    'Hamiltonian feed module address (type none to clear)',
+    updated.hamiltonianFeed,
+    { allowZero: true, allowNull: true }
+  );
+  if (hamiltonianFeed.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'hamiltonianFeed',
+      previous: describeAddress(updated.hamiltonianFeed),
+      next: describeAddress(hamiltonianFeed.value),
+      configPath,
+    });
+    updated.hamiltonianFeed = hamiltonianFeed.value ?? null;
+  }
+
+  const jobRegistry = await promptAddress(
+    rl,
+    'Job registry address (type none to clear)',
+    updated.jobRegistry,
+    { allowZero: false, allowNull: true }
+  );
+  if (jobRegistry.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'jobRegistry',
+      previous: describeAddress(updated.jobRegistry),
+      next: describeAddress(jobRegistry.value),
+      configPath,
+    });
+    updated.jobRegistry = jobRegistry.value ?? null;
+  }
+
+  const disputeModule = await promptAddress(
+    rl,
+    'Dispute module address (type none to clear)',
+    updated.disputeModule,
+    { allowZero: false, allowNull: true }
+  );
+  if (disputeModule.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'disputeModule',
+      previous: describeAddress(updated.disputeModule),
+      next: describeAddress(disputeModule.value),
+      configPath,
+    });
+    updated.disputeModule = disputeModule.value ?? null;
+  }
+
+  const validationModule = await promptAddress(
+    rl,
+    'Validation module address (type none to clear)',
+    updated.validationModule,
+    { allowZero: false, allowNull: true }
+  );
+  if (validationModule.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'validationModule',
+      previous: describeAddress(updated.validationModule),
+      next: describeAddress(validationModule.value),
+      configPath,
+    });
+    updated.validationModule = validationModule.value ?? null;
+  }
+
+  const feePool = await promptAddress(
+    rl,
+    'Fee pool address (type none to clear)',
+    updated.feePool,
+    { allowZero: false, allowNull: true }
+  );
+  if (feePool.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'feePool',
+      previous: describeAddress(updated.feePool),
+      next: describeAddress(feePool.value),
+      configPath,
+    });
+    updated.feePool = feePool.value ?? null;
+  }
+
+  const maxAGITypesCurrent = normaliseNumber(updated.maxAGITypes);
+  const maxAGITypes = await promptInteger(
+    rl,
+    'Maximum number of AGI types supported (0-50)',
+    maxAGITypesCurrent,
+    { min: 0, max: 50 }
+  );
+  if (maxAGITypes.changed) {
+    const previous = describeSimple(updated.maxAGITypes);
+    changes.push({
+      module: 'StakeManager',
+      key: 'maxAGITypes',
+      previous,
+      next: `${maxAGITypes.value}`,
+      configPath,
+    });
+    updated.maxAGITypes = maxAGITypes.value;
+  }
+
+  const maxTotalPayoutPctCurrent = normaliseNumber(updated.maxTotalPayoutPct);
+  const maxTotalPayoutPct = await promptInteger(
+    rl,
+    'Maximum cumulative payout percentage (0-200)',
+    maxTotalPayoutPctCurrent,
+    { min: 0, max: 200 }
+  );
+  if (maxTotalPayoutPct.changed) {
+    const previous = describeSimple(updated.maxTotalPayoutPct, '%');
+    changes.push({
+      module: 'StakeManager',
+      key: 'maxTotalPayoutPct',
+      previous,
+      next: `${maxTotalPayoutPct.value}%`,
+      configPath,
+    });
+    updated.maxTotalPayoutPct = maxTotalPayoutPct.value;
+  }
+
   return { config: updated, changes };
 }
-
 async function configureFeePool(
   rl: ReturnType<typeof createInterface>,
   config: FeePoolConfig,
