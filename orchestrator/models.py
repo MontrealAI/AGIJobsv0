@@ -67,9 +67,16 @@ class Budget(BaseModel):
 
 
 class Policies(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     allowTools: List[str] = Field(default_factory=list)
     denyTools: List[str] = Field(default_factory=list)
     requireValidator: bool = True
+    orgId: Optional[str] = None
+    organizationId: Optional[str] = None
+    tenantId: Optional[str] = None
+    teamId: Optional[str] = None
+    userId: Optional[str] = None
 
 
 class OrchestrationPlan(BaseModel):
@@ -78,6 +85,7 @@ class OrchestrationPlan(BaseModel):
     steps: List[Step]
     budget: Budget
     policies: Policies
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @staticmethod
     def from_intent(intent: JobIntent, steps: List[Step], budget_max: str) -> "OrchestrationPlan":
@@ -162,6 +170,12 @@ class SimOut(BaseModel):
     risks: List[str] = Field(default_factory=list)
     confirmations: List[str] = Field(default_factory=list)
     blockers: List[str] = Field(default_factory=list)
+    chain_calls: List[Dict[str, Any]] = Field(default_factory=list)
+    total_gas_estimate: Optional[str] = None
+    total_fee_wei: Optional[str] = None
+    fee_breakdown: Dict[str, str] = Field(default_factory=dict)
+    risk_details: List[Dict[str, str]] = Field(default_factory=list)
+    policy: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ExecIn(BaseModel):
