@@ -7,6 +7,7 @@ import tempfile
 import types
 import unittest
 import threading
+from typing import Any, Dict, Optional
 from unittest import mock
 
 os.environ.setdefault("RPC_URL", "http://localhost:8545")
@@ -1035,6 +1036,110 @@ class ExecutorRelayerFallbackTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(exc.exception.detail, dict)
         self.assertEqual(exc.exception.detail.get("code"), "RELAY_UNAVAILABLE")
 
+
+class ReceiptPinningMetadataTests(unittest.IsolatedAsyncioTestCase):
+    async def test_relayer_receipt_includes_policy_and_versions(self) -> None:
+        spec_cid = "bafkspec123"
+        receipt_cid = "bafkreceipt456"
+        captured_receipt_payload: Optional[Dict[str, Any]] = None
+
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            nonlocal captured_receipt_payload
+            if file_name == "job-spec.json":
+                return {
+                    "cid": spec_cid,
+                    "uri": f"ipfs://{spec_cid}",
+                    "gatewayUrl": f"https://ipfs.io/ipfs/{spec_cid}",
+                    "gatewayUrls": [f"https://ipfs.io/ipfs/{spec_cid}"],
+                }
+            if file_name == "job-deliverable.json":
+                captured_receipt_payload = json.loads(json.dumps(metadata))
+                return {
+                    "cid": receipt_cid,
+                    "uri": f"ipfs://{receipt_cid}",
+                    "gatewayUrl": f"https://ipfs.io/ipfs/{receipt_cid}",
+                    "gatewayUrls": [
+                        f"https://ipfs.io/ipfs/{receipt_cid}",
+                        f"https://dweb.link/ipfs/{receipt_cid}",
+                    ],
+                }
+            raise AssertionError(f"unexpected file name: {file_name}")
+
+        async def _fake_send_relayer_tx(tx):
+            return "0xtxhash", {"status": 1}
+
+        class _PolicyStore:
+            def __init__(self) -> None:
+                self.record = onebox.OrgPolicyRecord(
+                    max_budget_wei=5 * 10**18,
+                    max_duration_days=7,
+                )
+                self.record.updated_at = "2024-01-01T00:00:00+00:00"
+
+            def enforce(self, org_id, reward_wei, deadline_days):  # type: ignore[no-untyped-def]
+                return self.record
+
+        tooling_versions = {"router": "1.2.3", "commit": "abc123"}
+        relayer_account = types.SimpleNamespace(address="0x00000000000000000000000000000000000000Aa")
+        policy_store = _PolicyStore()
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Metadata", reward="1", deadlineDays=2),
+            userContext={"org": "acme"},
+        )
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
+        request_ctx = _make_request()
+
+        post_job_func = mock.Mock()
+        post_job_func.build_transaction.return_value = {"nonce": 1}
+
+        registry_mock = mock.Mock()
+        registry_mock.functions.postJob.return_value = post_job_func
+
+        with mock.patch.object(onebox, "relayer", relayer_account), mock.patch(
+            "routes.onebox._pin_json", side_effect=_fake_pin_json
+        ), mock.patch(
+            "routes.onebox._compute_spec_hash", return_value=b"spec"
+        ), mock.patch(
+            "routes.onebox._build_tx", return_value={"nonce": 1}
+        ) as build_tx_mock, mock.patch(
+            "routes.onebox._send_relayer_tx", side_effect=_fake_send_relayer_tx
+        ), mock.patch(
+            "routes.onebox._decode_job_created", return_value=77
+        ), mock.patch(
+            "routes.onebox._get_org_policy_store", return_value=policy_store
+        ), mock.patch(
+            "routes.onebox._collect_tooling_versions", return_value=tooling_versions
+        ), mock.patch(
+            "routes.onebox.registry", registry_mock
+        ):
+            response = await execute(request_ctx, execute_request)
+
+        self.assertTrue(response.ok)
+        self.assertEqual(response.jobId, 77)
+        self.assertEqual(response.signer, relayer_account.address)
+        self.assertEqual(response.toolingVersions, tooling_versions)
+        self.assertIsNotNone(response.policySnapshot)
+        assert response.policySnapshot is not None
+        self.assertEqual(response.policySnapshot.get("org"), "acme")
+        self.assertIn("maxBudgetWei", response.policySnapshot)
+        self.assertEqual(response.resultCid, receipt_cid)
+        self.assertEqual(response.resultGatewayUrl, f"https://ipfs.io/ipfs/{receipt_cid}")
+        self.assertIn(f"https://dweb.link/ipfs/{receipt_cid}", response.resultGatewayUrls or [])
+        self.assertIsNotNone(response.receipt)
+        assert response.receipt is not None
+        self.assertEqual(response.receipt.get("resultCid"), receipt_cid)
+
+        self.assertIsNotNone(captured_receipt_payload)
+        assert captured_receipt_payload is not None
+        self.assertIn("policySnapshot", captured_receipt_payload)
+        self.assertIn("toolingVersions", captured_receipt_payload)
+        self.assertEqual(captured_receipt_payload.get("signer"), relayer_account.address)
+        self.assertEqual(captured_receipt_payload.get("resultCid"), spec_cid)
+
+        build_tx_mock.assert_called_once()
 
 class RelayerTransactionTests(unittest.IsolatedAsyncioTestCase):
     async def test_send_relayer_tx_allows_concurrent_tasks(self) -> None:

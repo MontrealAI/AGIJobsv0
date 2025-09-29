@@ -292,6 +292,13 @@ class ExecuteResponse(BaseModel):
     burnPct: Optional[float] = None
     feeAmount: Optional[str] = None
     burnAmount: Optional[str] = None
+    policySnapshot: Optional[Dict[str, Any]] = None
+    toolingVersions: Optional[Dict[str, str]] = None
+    signer: Optional[str] = None
+    resultCid: Optional[str] = None
+    resultUri: Optional[str] = None
+    resultGatewayUrl: Optional[str] = None
+    resultGatewayUrls: Optional[List[str]] = None
 
 class StatusResponse(BaseModel):
     jobId: int
@@ -549,6 +556,45 @@ def _get_org_policy_store() -> OrgPolicyStore:
                 default_max_duration_days=_parse_default_max_duration(),
             )
     return _ORG_POLICY_STORE
+
+
+_TOOLING_VERSION_ENV_MAP: Dict[str, Tuple[str, ...]] = {
+    "router": ("ONEBOX_ROUTER_VERSION", "ONEBOX_VERSION"),
+    "sdk": ("ONEBOX_SDK_VERSION",),
+    "ui": ("ONEBOX_UI_VERSION", "ONEBOX_APP_VERSION"),
+    "cli": ("ONEBOX_CLI_VERSION",),
+    "build": ("ONEBOX_BUILD_ID", "BUILD_ID"),
+    "commit": ("GIT_SHA", "GIT_COMMIT", "COMMIT_SHA", "SOURCE_COMMIT"),
+}
+
+
+def _collect_tooling_versions() -> Optional[Dict[str, str]]:
+    versions: Dict[str, str] = {}
+    for label, candidates in _TOOLING_VERSION_ENV_MAP.items():
+        for env_name in candidates:
+            value = os.getenv(env_name)
+            if value:
+                versions[label] = value
+                break
+    for env_name, value in os.environ.items():
+        if env_name.startswith("ONEBOX_TOOL_") and value:
+            key = env_name.lower().replace("onebox_tool_", "tool-")
+            versions.setdefault(key, value)
+    return versions or None
+
+
+def _serialize_policy_snapshot(record: OrgPolicyRecord, org_identifier: Optional[str]) -> Dict[str, Any]:
+    snapshot: Dict[str, Any] = {
+        "org": org_identifier or "__default__",
+        "capturedAt": _current_timestamp(),
+    }
+    if record.max_budget_wei is not None:
+        snapshot["maxBudgetWei"] = str(record.max_budget_wei)
+    if record.max_duration_days is not None:
+        snapshot["maxDurationDays"] = record.max_duration_days
+    if record.updated_at:
+        snapshot["updatedAt"] = record.updated_at
+    return snapshot
 
 def _get_correlation_id(request: Request) -> str:
     return request.headers.get("X-Request-ID") or str(uuid.uuid4())
@@ -1053,6 +1099,14 @@ def _build_receipt_payload(response: ExecuteResponse, plan_hash: Optional[str], 
         "txHashes": tx_hashes,
         "timestamp": created_at,
     }
+    if response.policySnapshot:
+        record["policySnapshot"] = response.policySnapshot
+    if response.toolingVersions:
+        record["toolingVersions"] = response.toolingVersions
+    if response.signer:
+        record["signer"] = response.signer
+    if response.resultCid:
+        record["resultCid"] = response.resultCid
     relevant_cid = response.deliverableCid or response.specCid or response.receiptCid
     if relevant_cid:
         record["relevantCid"] = relevant_cid
@@ -1091,6 +1145,14 @@ async def _attach_receipt_artifacts(response: ExecuteResponse) -> None:
     receipt_payload = _build_receipt_payload(response, response.planHash, response.createdAt, tx_hashes)
     if not receipt_payload:
         return
+    initial_result_cid = (
+        response.resultCid
+        or response.deliverableCid
+        or response.specCid
+        or response.receiptCid
+    )
+    if initial_result_cid and "resultCid" not in receipt_payload:
+        receipt_payload["resultCid"] = initial_result_cid
     response.receipt = receipt_payload
     deliverable_pin = await _pin_json(receipt_payload, "job-deliverable.json")
     cid = deliverable_pin.get("cid")
@@ -1101,10 +1163,16 @@ async def _attach_receipt_artifacts(response: ExecuteResponse) -> None:
     response.deliverableUri = uri
     response.deliverableGatewayUrl = gateway_url
     response.deliverableGatewayUrls = gateways
+    response.resultCid = cid or response.resultCid
+    response.resultUri = uri or response.resultUri
+    response.resultGatewayUrl = gateway_url or response.resultGatewayUrl
+    response.resultGatewayUrls = gateways or response.resultGatewayUrls
     response.receiptCid = cid
     response.receiptUri = uri
     response.receiptGatewayUrl = gateway_url
     response.receiptGatewayUrls = gateways
+    if response.receipt is not None and cid:
+        response.receipt["resultCid"] = cid
 
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])
 async def plan(request: Request, req: PlanRequest):
@@ -1395,6 +1463,7 @@ async def execute(request: Request, req: ExecuteRequest):
     request_created_at = _current_timestamp() if not req.createdAt else _current_timestamp() if not str(req.createdAt).strip() else str(req.createdAt)
     created_at = stored_created_at or request_created_at or _current_timestamp()
     _store_plan_metadata(plan_hash, created_at)
+    tooling_versions = _collect_tooling_versions()
 
     try:
         if intent.action == "post_job":
@@ -1406,6 +1475,7 @@ async def execute(request: Request, req: ExecuteRequest):
             reward_wei = _to_wei(str(payload.reward))
             deadline_days = int(payload.deadlineDays)
             org_identifier = _resolve_org_identifier(intent)
+            policy_snapshot: Optional[Dict[str, Any]] = None
             try:
                 policy_record = _get_org_policy_store().enforce(org_identifier, reward_wei, deadline_days)
             except OrgPolicyViolation as violation:
@@ -1434,6 +1504,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 if policy_record.max_duration_days is not None:
                     log_fields["max_duration_days"] = policy_record.max_duration_days
                 _log_event(logging.INFO, "onebox.policy.accepted", correlation_id, **log_fields)
+                policy_snapshot = _serialize_policy_snapshot(policy_record, org_identifier)
 
             deadline_ts = _calculate_deadline_timestamp(deadline_days)
             fee_pct, burn_pct = _get_fee_policy()
@@ -1458,6 +1529,9 @@ async def execute(request: Request, req: ExecuteRequest):
 
             if req.mode == "wallet":
                 to, data = _encode_wallet_call("postJob", [uri, AGIALPHA_TOKEN, reward_wei, deadline_days])
+                signer_identity: Optional[str] = None
+                if isinstance(intent.userContext, dict):
+                    signer_identity = intent.userContext.get("sender")
                 response = ExecuteResponse(
                     ok=True,
                     planHash=display_plan_hash,
@@ -1479,6 +1553,13 @@ async def execute(request: Request, req: ExecuteRequest):
                     burnPct=float(burn_pct) if burn_pct is not None else None,
                     feeAmount=fee_amount,
                     burnAmount=burn_amount,
+                    policySnapshot=policy_snapshot,
+                    toolingVersions=tooling_versions,
+                    signer=signer_identity,
+                    resultCid=cid,
+                    resultUri=uri,
+                    resultGatewayUrl=spec_pin.get("gatewayUrl"),
+                    resultGatewayUrls=spec_pin.get("gatewayUrls"),
                 )
             else:
                 func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
@@ -1509,6 +1590,13 @@ async def execute(request: Request, req: ExecuteRequest):
                     burnPct=float(burn_pct) if burn_pct is not None else None,
                     feeAmount=fee_amount,
                     burnAmount=burn_amount,
+                    policySnapshot=policy_snapshot,
+                    toolingVersions=tooling_versions,
+                    signer=str(sender),
+                    resultCid=cid,
+                    resultUri=uri,
+                    resultGatewayUrl=spec_pin.get("gatewayUrl"),
+                    resultGatewayUrls=spec_pin.get("gatewayUrls"),
                 )
         elif intent.action == "finalize_job":
             if payload.jobId is None:
@@ -1519,6 +1607,9 @@ async def execute(request: Request, req: ExecuteRequest):
                 raise _http_error(400, "JOB_ID_REQUIRED")
             if req.mode == "wallet":
                 to, data = _encode_wallet_call("finalize", [job_id_int])
+                signer_identity: Optional[str] = None
+                if isinstance(intent.userContext, dict):
+                    signer_identity = intent.userContext.get("sender")
                 response = ExecuteResponse(
                     ok=True,
                     planHash=display_plan_hash,
@@ -1528,6 +1619,8 @@ async def execute(request: Request, req: ExecuteRequest):
                     value="0x0",
                     chainId=CHAIN_ID,
                     status="prepared",
+                    toolingVersions=tooling_versions,
+                    signer=signer_identity,
                 )
             else:
                 func = registry.functions.finalize(job_id_int)
@@ -1545,6 +1638,8 @@ async def execute(request: Request, req: ExecuteRequest):
                     txHashes=[txh] if txh else None,
                     receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
                     status="submitted",
+                    toolingVersions=tooling_versions,
+                    signer=str(sender),
                 )
         else:
             raise _http_error(400, "UNSUPPORTED_ACTION")
