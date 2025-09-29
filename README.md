@@ -199,6 +199,19 @@ Provide per-module addresses via `modules.<name>.address`, the `AGJ_<NAME>_ADDRE
 
 Operators who prefer a narrative, non-technical runbook can follow the [Owner Control Playbook](docs/owner-control-playbook.md). It packages the multi-module configuration workflow into illustrated checklists, Mermaid diagrams, and decision tables that walk through editing `config/*.json`, generating Safe bundles, executing transactions, and verifying the final state. The playbook also documents rollback paths, health monitoring commands, and operational safeguards so the contract owner keeps full, auditable control over every tunable parameter without touching Solidity internals.
 
+### Owner control quick reference CLI
+
+Generate a network-specific quick reference (complete with Mermaid diagrams and actionable checklists) straight from the committed configuration:
+
+```bash
+npm run owner:guide -- --network <network>
+
+# Export a Markdown artefact for sign-off packages
+npm run owner:guide -- --network mainnet --out runtime/mainnet-owner-guide.md
+```
+
+The helper reads `config/owner-control.json` plus all module overrides, then renders a Markdown playbook tailored to the selected network. Pair the CLI output with the [Owner Control Quick Reference](docs/owner-control-quick-reference.md) handout for non-technical reviewers.
+
 ### Mainnet Deployment
 
 For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)](docs/deploying-agijobs-v2-truffle-cli.md). Operators who prefer an automated checklist can launch the guided wizard:

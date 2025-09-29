@@ -16,6 +16,7 @@
     "owner:health": "npx hardhat run --no-compile scripts/owner-healthcheck.js",
     "owner:plan": "node scripts/v2/run-owner-plan.js",
     "owner:plan:safe": "node scripts/v2/run-owner-plan.js --safe owner-safe-bundle.json --safe-name \"AGIJobs Owner Control Plan\"",
+    "owner:guide": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlGuide.ts",
     "owner:wizard": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/owner-config-wizard.ts",
     "owner:dashboard": "npx hardhat run --no-compile scripts/v2/owner-dashboard.ts",
     "owner:verify-control": "npx hardhat run --no-compile scripts/v2/verifyOwnerControl.ts",
