@@ -85,6 +85,8 @@ AGIALPHA_SYMBOL = os.getenv("AGIALPHA_SYMBOL", "AGIALPHA")
 if not RPC_URL:
     raise RuntimeError("RPC_URL is required")
 
+_UINT64_MAX = (1 << 64) - 1
+
 _MIN_ABI = [
     {
         "inputs": [
@@ -154,7 +156,20 @@ if _RELAYER_PK:
         logging.error("Failed to load relayer key: %s", str(e))
         relayer = None
 
-registry = w3.eth.contract(address=JOB_REGISTRY, abi=_MIN_ABI)
+_registry_contract = w3.eth.contract(address=JOB_REGISTRY, abi=_MIN_ABI)
+
+
+class _RegistryWrapper:
+    def __init__(self, contract):
+        self._contract = contract
+        self.functions = contract.functions
+        self.address = contract.address
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._contract, name)
+
+
+registry = _RegistryWrapper(_registry_contract)
 
 def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
     if not _API_TOKEN:
@@ -227,6 +242,11 @@ class SimulateResponse(BaseModel):
     blockers: List[str] = Field(default_factory=list)
     planHash: str
     createdAt: str
+    estimatedBudget: Optional[str] = None
+    feePct: Optional[float] = None
+    feeAmount: Optional[str] = None
+    burnPct: Optional[float] = None
+    burnAmount: Optional[str] = None
 
 class ExecuteRequest(BaseModel):
     intent: JobIntent
@@ -335,6 +355,14 @@ def _format_percentage(value: Decimal) -> str:
         text = text.rstrip("0").rstrip(".")
     return text or "0"
 
+
+def _format_decimal_string(value: Decimal) -> str:
+    text = format(value.normalize(), "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text or "0"
+
+
 def _format_reward(value_wei: int) -> str:
     if value_wei is None:
         return ""
@@ -356,6 +384,15 @@ def _to_wei(amount_str: str) -> int:
         raise _http_error(400, "INSUFFICIENT_BALANCE")
     precision = Decimal(10) ** AGIALPHA_DECIMALS
     return int((decimal_value * precision).to_integral_value(rounding=ROUND_HALF_UP))
+
+
+def _decimal_from_optional(value: Optional[str]) -> Optional[Decimal]:
+    if value is None:
+        return None
+    try:
+        return Decimal(value)
+    except InvalidOperation:
+        return None
 
 @dataclass
 class OrgPolicyRecord:
@@ -471,6 +508,39 @@ class OrgPolicyStore:
 _ORG_POLICY_STORE: Optional[OrgPolicyStore] = None
 _ORG_POLICY_LOCK = threading.Lock()
 
+
+def _parse_default_max_budget() -> Optional[int]:
+    raw = os.getenv("ORG_MAX_BUDGET_WEI")
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if not text:
+        return None
+    try:
+        value = int(text, 10)
+    except ValueError:
+        return None
+    if value <= 0:
+        return None
+    return value
+
+
+def _parse_default_max_duration() -> Optional[int]:
+    raw = os.getenv("ORG_MAX_DEADLINE_DAYS")
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if not text:
+        return None
+    try:
+        value = int(text, 10)
+    except ValueError:
+        return None
+    if value <= 0:
+        return None
+    return value
+
+
 def _get_org_policy_store() -> OrgPolicyStore:
     global _ORG_POLICY_STORE
     if _ORG_POLICY_STORE is not None:
@@ -479,8 +549,8 @@ def _get_org_policy_store() -> OrgPolicyStore:
         if _ORG_POLICY_STORE is None:
             _ORG_POLICY_STORE = OrgPolicyStore(
                 policy_path=_DEFAULT_POLICY_PATH,
-                default_max_budget_wei=None,
-                default_max_duration_days=None,
+                default_max_budget_wei=_parse_default_max_budget(),
+                default_max_duration_days=_parse_default_max_duration(),
             )
     return _ORG_POLICY_STORE
 
@@ -498,12 +568,14 @@ def _compute_plan_hash(intent: JobIntent) -> str:
     encoded = json.dumps(intent_data, sort_keys=True).encode("utf-8")
     h = hashlib.sha256()
     h.update(encoded)
-    return h.hexdigest()
+    return "0x" + h.hexdigest()
 
 def _normalize_plan_hash(plan_hash: Optional[str]) -> Optional[str]:
     if not plan_hash:
         return None
-    hash_str = plan_hash.strip().lower()
+    hash_str = str(plan_hash).strip().lower()
+    if hash_str.startswith("0x"):
+        hash_str = hash_str[2:]
     if re.fullmatch(r"[0-9a-f]{64}", hash_str):
         return hash_str
     return None
@@ -515,12 +587,18 @@ _PLAN_METADATA: Dict[str, str] = {}
 _PLAN_LOCK = threading.Lock()
 
 def _store_plan_metadata(plan_hash: str, created_at: str) -> None:
+    normalized = _normalize_plan_hash(plan_hash)
+    if normalized is None:
+        return
     with _PLAN_LOCK:
-        _PLAN_METADATA[plan_hash] = created_at
+        _PLAN_METADATA[normalized] = created_at
 
 def _lookup_plan_timestamp(plan_hash: str) -> Optional[str]:
+    normalized = _normalize_plan_hash(plan_hash)
+    if normalized is None:
+        return None
     with _PLAN_LOCK:
-        return _PLAN_METADATA.get(plan_hash)
+        return _PLAN_METADATA.get(normalized)
 
 
 _STATUS_CACHE: Dict[int, "StatusResponse"] = {}
@@ -1092,10 +1170,11 @@ async def simulate(request: Request, req: SimulateRequest):
     provided_hash = _normalize_plan_hash(req.planHash)
     if provided_hash is None:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
-    canonical_hash = _compute_plan_hash(intent)
+    canonical_hash = _normalize_plan_hash(_compute_plan_hash(intent))
     if provided_hash != canonical_hash:
         raise _http_error(400, "PLAN_HASH_MISMATCH")
     plan_hash = provided_hash
+    display_plan_hash = f"0x{plan_hash}" if plan_hash is not None else None
 
     stored_created_at = _lookup_plan_timestamp(plan_hash)
     request_created_at = _current_timestamp() if not req.createdAt else _current_timestamp() if not str(req.createdAt).strip() else str(req.createdAt)
@@ -1104,6 +1183,11 @@ async def simulate(request: Request, req: SimulateRequest):
 
     blockers: List[str] = []
     risks: List[str] = []
+    estimated_budget: Optional[str] = None
+    fee_pct_value: Optional[float] = None
+    fee_amount_value: Optional[str] = None
+    burn_pct_value: Optional[float] = None
+    burn_amount_value: Optional[str] = None
 
     try:
         request_text = ""
@@ -1127,6 +1211,7 @@ async def simulate(request: Request, req: SimulateRequest):
             deadline_value = getattr(payload, "deadlineDays", None)
             reward_wei: Optional[int] = None
             deadline_days: Optional[int] = None
+            reward_decimal: Optional[Decimal] = None
 
             if reward_value is None or (isinstance(reward_value, str) and not str(reward_value).strip()):
                 blockers.append("INSUFFICIENT_BALANCE")
@@ -1143,6 +1228,30 @@ async def simulate(request: Request, req: SimulateRequest):
                             risks.append("LOW_REWARD")
                         precision = Decimal(10) ** AGIALPHA_DECIMALS
                         reward_wei = int((reward_decimal * precision).to_integral_value(rounding=ROUND_HALF_UP))
+
+                        fee_pct_str, burn_pct_str = _get_fee_policy(allow_network=False)
+                        fee_pct_dec = _decimal_from_optional(fee_pct_str)
+                        burn_pct_dec = _decimal_from_optional(burn_pct_str)
+                        fee_amount_str, burn_amount_str = _calculate_fee_amounts(
+                            _format_decimal_string(reward_decimal),
+                            fee_pct_dec or Decimal(0),
+                            burn_pct_dec or Decimal(0),
+                        )
+                        fee_amount_value = fee_amount_str
+                        burn_amount_value = burn_amount_str
+                        if fee_pct_dec is not None:
+                            fee_pct_value = float(fee_pct_dec)
+                        if burn_pct_dec is not None:
+                            burn_pct_value = float(burn_pct_dec)
+                        try:
+                            total_budget = reward_decimal
+                            if fee_amount_value is not None:
+                                total_budget += Decimal(fee_amount_value)
+                            if burn_amount_value is not None:
+                                total_budget += Decimal(burn_amount_value)
+                            estimated_budget = _format_decimal_string(total_budget)
+                        except (InvalidOperation, TypeError):
+                            estimated_budget = None
 
             if deadline_value is None:
                 blockers.append("DEADLINE_INVALID")
@@ -1201,11 +1310,21 @@ async def simulate(request: Request, req: SimulateRequest):
             status_code = 422
             detail: Dict[str, Any] = {
                 "blockers": blockers,
-                "planHash": plan_hash,
+                "planHash": display_plan_hash,
                 "createdAt": created_at,
             }
             if risks:
                 detail["risks"] = risks
+            if estimated_budget is not None:
+                detail["estimatedBudget"] = estimated_budget
+            if fee_pct_value is not None:
+                detail["feePct"] = fee_pct_value
+            if fee_amount_value is not None:
+                detail["feeAmount"] = fee_amount_value
+            if burn_pct_value is not None:
+                detail["burnPct"] = burn_pct_value
+            if burn_amount_value is not None:
+                detail["burnAmount"] = burn_amount_value
             raise HTTPException(status_code=422, detail=detail)
 
         response = SimulateResponse(
@@ -1213,8 +1332,13 @@ async def simulate(request: Request, req: SimulateRequest):
             intent=intent,
             risks=risks,
             blockers=[],
-            planHash=plan_hash,
+            planHash=display_plan_hash or "",
             createdAt=created_at,
+            estimatedBudget=estimated_budget,
+            feePct=fee_pct_value,
+            feeAmount=fee_amount_value,
+            burnPct=burn_pct_value,
+            burnAmount=burn_amount_value,
         )
     except HTTPException as exc:
         status_code = exc.status_code
@@ -1265,10 +1389,11 @@ async def execute(request: Request, req: ExecuteRequest):
     provided_hash = _normalize_plan_hash(req.planHash)
     if provided_hash is None:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
-    canonical_hash = _compute_plan_hash(intent)
+    canonical_hash = _normalize_plan_hash(_compute_plan_hash(intent))
     if provided_hash != canonical_hash:
         raise _http_error(400, "PLAN_HASH_MISMATCH")
     plan_hash = provided_hash
+    display_plan_hash = f"0x{plan_hash}"
 
     stored_created_at = _lookup_plan_timestamp(plan_hash)
     request_created_at = _current_timestamp() if not req.createdAt else _current_timestamp() if not str(req.createdAt).strip() else str(req.createdAt)
@@ -1339,7 +1464,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 to, data = _encode_wallet_call("postJob", [uri, AGIALPHA_TOKEN, reward_wei, deadline_days])
                 response = ExecuteResponse(
                     ok=True,
-                    planHash=plan_hash,
+                    planHash=display_plan_hash,
                     createdAt=created_at,
                     to=to,
                     data=data,
@@ -1369,7 +1494,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 job_id = _decode_job_created(receipt)
                 response = ExecuteResponse(
                     ok=True,
-                    planHash=plan_hash,
+                    planHash=display_plan_hash,
                     createdAt=created_at,
                     jobId=job_id,
                     txHash=txh,
@@ -1400,7 +1525,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 to, data = _encode_wallet_call("finalize", [job_id_int])
                 response = ExecuteResponse(
                     ok=True,
-                    planHash=plan_hash,
+                    planHash=display_plan_hash,
                     createdAt=created_at,
                     to=to,
                     data=data,
@@ -1417,7 +1542,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 txh, receipt = await _send_relayer_tx(tx)
                 response = ExecuteResponse(
                     ok=True,
-                    planHash=plan_hash,
+                    planHash=display_plan_hash,
                     createdAt=created_at,
                     jobId=job_id_int,
                     txHash=txh,
@@ -1515,6 +1640,9 @@ async def healthz():
 @health_router.get("/metrics")
 def metrics():
     return Response(prometheus_client.generate_latest(), media_type=prometheus_client.CONTENT_TYPE_LATEST)
+
+healthcheck = healthz
+metrics_endpoint = metrics
 
 _STATE_MAP = {
     0: "draft",

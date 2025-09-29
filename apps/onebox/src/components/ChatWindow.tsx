@@ -108,10 +108,37 @@ const mapStatusToReceipt = (status: StatusResponse): ExecutionReceipt | null => 
 };
 
 const formatSimulationSummary = (simulation: SimulationResponse) => {
-  const lines = [
-    `Est. budget: ${simulation.est_budget} (fees ${simulation.est_fees}).`,
-    `Est. duration: ${simulation.est_duration} hour(s).`,
-  ];
+  const budgetParts: string[] = [`Est. budget: ${simulation.estimatedBudget ?? '—'}`];
+  const feeSegments: string[] = [];
+  if (simulation.feeAmount) {
+    feeSegments.push(
+      `protocol fee ${simulation.feeAmount} AGIALPHA${
+        simulation.feePct !== undefined && simulation.feePct !== null
+          ? ` (${simulation.feePct}%)`
+          : ''
+      }`
+    );
+  } else if (simulation.feePct !== undefined && simulation.feePct !== null) {
+    feeSegments.push(`protocol fee ${simulation.feePct}%`);
+  }
+  if (simulation.burnAmount) {
+    feeSegments.push(
+      `burn ${simulation.burnAmount} AGIALPHA${
+        simulation.burnPct !== undefined && simulation.burnPct !== null
+          ? ` (${simulation.burnPct}%)`
+          : ''
+      }`
+    );
+  } else if (simulation.burnPct !== undefined && simulation.burnPct !== null) {
+    feeSegments.push(`burn ${simulation.burnPct}%`);
+  }
+  if (feeSegments.length > 0) {
+    budgetParts.push(`Fee projections: ${feeSegments.join('; ')}`);
+  }
+  const lines = [`${budgetParts.join('. ')}.`];
+  if (typeof simulation.est_duration === 'number') {
+    lines.push(`Est. duration: ${simulation.est_duration} hour(s).`);
+  }
   if (simulation.risks.length > 0) {
     lines.push(`Risks: ${simulation.risks.join(', ')}.`);
   }

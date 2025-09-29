@@ -29,7 +29,28 @@ const COPY = {
   simulating: 'Running safety checks and estimating budget…',
   simulationPreview: (sim) => {
     const risks = sim.risks && sim.risks.length ? `<br><strong>Risks:</strong> ${sim.risks.join(', ')}` : '';
-    return `Est. budget <strong>${sim.est_budget} AGIALPHA</strong> (fees ${sim.est_fees}).${
+    const budget = sim.estimatedBudget ? `${sim.estimatedBudget} AGIALPHA` : '—';
+    const feeSegments = [];
+    if (sim.feeAmount) {
+      feeSegments.push(
+        `protocol fee ${sim.feeAmount} AGIALPHA${
+          sim.feePct !== undefined && sim.feePct !== null ? ` (${sim.feePct}%)` : ''
+        }`
+      );
+    } else if (sim.feePct !== undefined && sim.feePct !== null) {
+      feeSegments.push(`protocol fee ${sim.feePct}%`);
+    }
+    if (sim.burnAmount) {
+      feeSegments.push(
+        `burn ${sim.burnAmount} AGIALPHA${
+          sim.burnPct !== undefined && sim.burnPct !== null ? ` (${sim.burnPct}%)` : ''
+        }`
+      );
+    } else if (sim.burnPct !== undefined && sim.burnPct !== null) {
+      feeSegments.push(`burn ${sim.burnPct}%`);
+    }
+    const feeSummary = feeSegments.length ? ` Fee projections: ${feeSegments.join('; ')}.` : '';
+    return `Est. budget <strong>${budget}</strong>.${feeSummary ? feeSummary : ''}${
       risks
     }<div class="pill-row pill-row-confirm"><button class="primary-btn" id="sim-approve" type="button">Proceed to execute</button><button class="ghost-btn" id="sim-cancel" type="button">Cancel</button></div>`;
   },
