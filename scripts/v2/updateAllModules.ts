@@ -47,6 +47,34 @@ interface CliOptions {
   skip: Set<ModuleKey>;
 }
 
+function parseBooleanEnv(value?: string | null): boolean | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const normalised = value.trim().toLowerCase();
+  if (!normalised) {
+    return undefined;
+  }
+  if (['1', 'true', 'yes', 'y', 'on'].includes(normalised)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'n', 'off'].includes(normalised)) {
+    return false;
+  }
+  return undefined;
+}
+
+function parseListEnv(value?: string | null): string[] | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const entries = value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  return entries.length > 0 ? entries : undefined;
+}
+
 type ModuleKey =
   | 'stakeManager'
   | 'feePool'
@@ -167,12 +195,18 @@ function parseModuleKey(value: string): ModuleKey {
 
 function parseCliOptions(argv: string[]): CliOptions {
   const options: CliOptions = { execute: false, json: false, skip: new Set() };
+  let executeSetByCli = false;
+  let jsonSetByCli = false;
+  let onlySetByCli = false;
+
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--execute') {
       options.execute = true;
+      executeSetByCli = true;
     } else if (arg === '--json') {
       options.json = true;
+      jsonSetByCli = true;
     } else if (arg.startsWith('--only=')) {
       const [, raw] = arg.split('=');
       if (!raw) {
@@ -180,6 +214,7 @@ function parseCliOptions(argv: string[]): CliOptions {
       }
       const parts = raw.split(',').map(parseModuleKey);
       options.only = new Set(parts);
+      onlySetByCli = true;
     } else if (arg === '--only') {
       const value = argv[i + 1];
       if (!value) {
@@ -187,6 +222,7 @@ function parseCliOptions(argv: string[]): CliOptions {
       }
       const parts = value.split(',').map(parseModuleKey);
       options.only = new Set(parts);
+      onlySetByCli = true;
       i += 1;
     } else if (arg.startsWith('--skip=')) {
       const [, raw] = arg.split('=');
@@ -207,6 +243,35 @@ function parseCliOptions(argv: string[]): CliOptions {
       i += 1;
     }
   }
+
+  const envExecute = parseBooleanEnv(process.env.OWNER_UPDATE_ALL_EXECUTE);
+  if (!executeSetByCli && envExecute !== undefined) {
+    options.execute = envExecute;
+  }
+
+  const envJson = parseBooleanEnv(process.env.OWNER_UPDATE_ALL_JSON);
+  if (!jsonSetByCli && envJson !== undefined) {
+    options.json = envJson;
+  }
+
+  const envOnly = parseListEnv(process.env.OWNER_UPDATE_ALL_ONLY);
+  if (!onlySetByCli && envOnly) {
+    options.only = new Set(envOnly.map(parseModuleKey));
+  }
+
+  const envSkip = parseListEnv(process.env.OWNER_UPDATE_ALL_SKIP);
+  if (envSkip) {
+    envSkip.forEach((entry) => {
+      try {
+        options.skip.add(parseModuleKey(entry));
+      } catch (error) {
+        throw new Error(
+          `Invalid module in OWNER_UPDATE_ALL_SKIP: ${entry} (${(error as Error).message})`
+        );
+      }
+    });
+  }
+
   return options;
 }
 

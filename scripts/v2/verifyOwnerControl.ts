@@ -82,22 +82,82 @@ function envAddressKey(moduleKey: string): string {
   return `AGJ_${upper}_ADDRESS`;
 }
 
+function parseBooleanEnv(value?: string | null): boolean | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const normalised = value.trim().toLowerCase();
+  if (!normalised) {
+    return undefined;
+  }
+  if (['1', 'true', 'yes', 'y', 'on'].includes(normalised)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'n', 'off'].includes(normalised)) {
+    return false;
+  }
+  return undefined;
+}
+
+function parseListEnv(value?: string | null): string[] | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const entries = value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  return entries.length > 0 ? entries : undefined;
+}
+
+function parseOverridesEnv(
+  value?: string | null
+): Record<string, string> | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const entries = value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (entries.length === 0) {
+    return undefined;
+  }
+  const overrides: Record<string, string> = {};
+  for (const entry of entries) {
+    const [key, addr] = entry.split('=');
+    if (!key || !addr) {
+      throw new Error(
+        `OWNER_VERIFY_ADDRESS_OVERRIDES entries must be <module>=<address>; received "${entry}"`
+      );
+    }
+    overrides[key.trim()] = addr.trim();
+  }
+  return overrides;
+}
+
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     json: false,
     strict: false,
     addressOverrides: {},
   };
+  let jsonSetByCli = false;
+  let strictSetByCli = false;
+  let modulesSetByCli = false;
+  let addressBookSetByCli = false;
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     switch (arg) {
       case '--json':
         options.json = true;
+        jsonSetByCli = true;
         break;
       case '--strict':
       case '--require':
         options.strict = true;
+        strictSetByCli = true;
         break;
       case '--config-network':
       case '--network-config': {
@@ -119,6 +179,7 @@ function parseArgs(argv: string[]): CliOptions {
           .split(',')
           .map((entry) => entry.trim())
           .filter(Boolean);
+        modulesSetByCli = true;
         i += 1;
         break;
       }
@@ -141,6 +202,7 @@ function parseArgs(argv: string[]): CliOptions {
           throw new Error('--address-book requires a file path');
         }
         options.addressBookPath = value;
+        addressBookSetByCli = true;
         i += 1;
         break;
       }
@@ -161,6 +223,45 @@ function parseArgs(argv: string[]): CliOptions {
       default:
         throw new Error(`Unknown argument: ${arg}`);
     }
+  }
+
+  const envJson = parseBooleanEnv(process.env.OWNER_VERIFY_JSON);
+  if (!jsonSetByCli && envJson !== undefined) {
+    options.json = envJson;
+  }
+
+  const envStrict = parseBooleanEnv(process.env.OWNER_VERIFY_STRICT);
+  if (!strictSetByCli && envStrict !== undefined) {
+    options.strict = envStrict;
+  }
+
+  if (!options.configNetwork && process.env.OWNER_VERIFY_CONFIG_NETWORK) {
+    options.configNetwork = process.env.OWNER_VERIFY_CONFIG_NETWORK.trim();
+  }
+
+  const envModules = parseListEnv(process.env.OWNER_VERIFY_MODULES);
+  if (!modulesSetByCli && envModules) {
+    options.modules = envModules;
+  }
+
+  const envSkip = parseListEnv(process.env.OWNER_VERIFY_SKIP);
+  if (envSkip && envSkip.length > 0) {
+    const existing = new Set(options.skip ?? []);
+    envSkip.forEach((entry) => existing.add(entry));
+    options.skip = Array.from(existing);
+  }
+
+  if (!addressBookSetByCli && process.env.OWNER_VERIFY_ADDRESS_BOOK) {
+    options.addressBookPath = process.env.OWNER_VERIFY_ADDRESS_BOOK.trim();
+  }
+
+  const envOverrides = parseOverridesEnv(process.env.OWNER_VERIFY_ADDRESS_OVERRIDES);
+  if (envOverrides) {
+    const merged: Record<string, string> = { ...envOverrides };
+    for (const [key, value] of Object.entries(options.addressOverrides)) {
+      merged[key] = value;
+    }
+    options.addressOverrides = merged;
   }
 
   return options;
