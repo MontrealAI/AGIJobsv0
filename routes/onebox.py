@@ -1,11 +1,10 @@
 # routes/onebox.py
 # FastAPI router for a Web3-only, walletless-by-default "one-box" UX.
-# Exposes: POST /onebox/plan, POST /onebox/execute, GET /onebox/status,
+# Exposes: POST /onebox/plan, POST /onebox/simulate, POST /onebox/execute, GET /onebox/status,
 # plus /healthz and /onebox/metrics (Prometheus).
-# Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
+# This orchestrator intelligently plans, simulates, and executes blockchain job transactions,
+# ensuring all steps are validated and recorded for transparency and compliance.
 
-import asyncio
-import copy
 import hashlib
 import json
 import logging
@@ -15,50 +14,45 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import httpx
 import prometheus_client
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
-from urllib.parse import quote
 from web3 import Web3
 from web3._utils.events import get_event_data
 from web3.middleware import geth_poa_middleware
 
+# API router setup
+router = APIRouter(prefix="/onebox", tags=["onebox"])
+health_router = APIRouter(tags=["health"])
 
-def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
-    if not _API_TOKEN:
-        return
-    if not auth or not auth.startswith("Bearer "):
-        raise _http_error(401, "AUTH_MISSING")
-    token = auth.split(" ", 1)[1].strip()
-    if token != _API_TOKEN:
-        raise _http_error(401, "AUTH_INVALID")
-
-
-logger = logging.getLogger(__name__)
-
-# ---------- Settings ----------
+# ---------- Settings & Environment ----------
 RPC_URL = os.getenv("RPC_URL", "")
 CHAIN_ID = int(os.getenv("CHAIN_ID", "0") or "0")
-JOB_REGISTRY = Web3.to_checksum_address(
-    os.getenv("JOB_REGISTRY", "0x0000000000000000000000000000000000000000")
-)
-AGIALPHA_TOKEN = Web3.to_checksum_address(
-    os.getenv("AGIALPHA_TOKEN", "0x0000000000000000000000000000000000000000")
-)
+JOB_REGISTRY = Web3.to_checksum_address(os.getenv("JOB_REGISTRY", "0x" + "0"*40))
+AGIALPHA_TOKEN = Web3.to_checksum_address(os.getenv("AGIALPHA_TOKEN", "0x" + "0"*40))
 AGIALPHA_DECIMALS = int(os.getenv("AGIALPHA_DECIMALS", "18") or "18")
+
+# Path for organization policy config
 _DEFAULT_POLICY_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "storage", "org-policies.json")
 )
+
+# Relayer and API authentication
 _RELAYER_PK = os.getenv("ONEBOX_RELAYER_PRIVATE_KEY") or os.getenv("RELAYER_PK", "")
 _API_TOKEN = os.getenv("ONEBOX_API_TOKEN") or os.getenv("API_TOKEN", "")
+
+# Explorer template for TX links (for receipts)
 EXPLORER_TX_TPL = os.getenv(
-    "ONEBOX_EXPLORER_TX_BASE", os.getenv("EXPLORER_TX_TPL", "https://explorer.example/tx/{tx}")
+    "ONEBOX_EXPLORER_TX_BASE",
+    os.getenv("EXPLORER_TX_TPL", "https://explorer.example/tx/{tx}")
 )
+
+# IPFS pinning configuration
 PINNER_KIND = os.getenv("PINNER_KIND", "").lower()
 PINNER_ENDPOINT = os.getenv("PINNER_ENDPOINT", "")
 PINNER_TOKEN = os.getenv("PINNER_TOKEN", "")
@@ -88,12 +82,13 @@ DEFAULT_GATEWAYS = [
     "https://cloudflare-ipfs.com/ipfs/{cid}",
 ]
 CORS_ALLOW_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "*").split(",")]
+
 AGIALPHA_SYMBOL = os.getenv("AGIALPHA_SYMBOL", "AGIALPHA")
 
 if not RPC_URL:
-    raise RuntimeError("RPC_URL is required")
+    raise RuntimeError("RPC_URL is required")  # Hard requirement for blockchain connectivity
 
-# Minimal ABI (override via JOB_REGISTRY_ABI_JSON for your deployed interface)
+# Minimal ABI (function definitions required for interacting with the JobRegistry contract)
 _MIN_ABI = [
     {
         "inputs": [
@@ -103,36 +98,23 @@ _MIN_ABI = [
             {"internalType": "uint256", "name": "deadlineDays", "type": "uint256"},
         ],
         "name": "postJob",
-        "outputs": [
-            {"internalType": "uint256", "name": "jobId", "type": "uint256"},
-        ],
+        "outputs": [{"internalType": "uint256", "name": "jobId", "type": "uint256"}],
         "stateMutability": "nonpayable",
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "uint256", "name": "jobId", "type": "uint256"},
-        ],
+        "inputs": [{"internalType": "uint256", "name": "jobId", "type": "uint256"}],
         "name": "finalize",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function",
     },
     {
+        # JobCreated event for reading jobId in receipts
         "anonymous": False,
         "inputs": [
-            {
-                "indexed": True,
-                "internalType": "uint256",
-                "name": "jobId",
-                "type": "uint256",
-            },
-            {
-                "indexed": True,
-                "internalType": "address",
-                "name": "employer",
-                "type": "address",
-            },
+            {"indexed": True, "internalType": "uint256", "name": "jobId", "type": "uint256"},
+            {"indexed": True, "internalType": "address", "name": "employer", "type": "address"},
         ],
         "name": "JobCreated",
         "type": "event",
@@ -140,16 +122,12 @@ _MIN_ABI = [
     {
         "inputs": [],
         "name": "lastJobId",
-        "outputs": [
-            {"internalType": "uint256", "name": "", "type": "uint256"},
-        ],
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
         "stateMutability": "view",
         "type": "function",
     },
     {
-        "inputs": [
-            {"internalType": "uint256", "name": "", "type": "uint256"},
-        ],
+        "inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
         "name": "jobs",
         "outputs": [
             {"internalType": "address", "name": "employer", "type": "address"},
@@ -157,353 +135,94 @@ _MIN_ABI = [
             {"internalType": "uint256", "name": "reward", "type": "uint256"},
             {"internalType": "uint256", "name": "protocolFee", "type": "uint256"},
             {"internalType": "uint256", "name": "stake", "type": "uint256"},
-            {"internalType": "uint8", "name": "state", "type": "uint8"},
-            {"internalType": "bool", "name": "active", "type": "bool"},
+            {"internalType": "uint8",   "name": "state", "type": "uint8"},
+            {"internalType": "bool",   "name": "active", "type": "bool"},
             {"internalType": "uint256", "name": "createdAt", "type": "uint256"},
             {"internalType": "uint256", "name": "deadline", "type": "uint256"},
-            {"internalType": "uint256", "name": "assignedAt", "type": "uint256"},
-            {"internalType": "bytes32", "name": "specHash", "type": "bytes32"},
-            {"internalType": "string", "name": "uri", "type": "string"},
-        ],
-        "stateMutability": "view",
-        "type": "function",
-    },
-    {
-        "inputs": [],
-        "name": "feePct",
-        "outputs": [
-            {"internalType": "uint256", "name": "", "type": "uint256"},
-        ],
-        "stateMutability": "view",
-        "type": "function",
-    },
-    {
-        "inputs": [],
-        "name": "stakeManager",
-        "outputs": [
-            {"internalType": "address", "name": "", "type": "address"},
         ],
         "stateMutability": "view",
         "type": "function",
     },
 ]
-_ABI = json.loads(os.getenv("JOB_REGISTRY_ABI_JSON", json.dumps(_MIN_ABI)))
 
-# ---------- Web3 ----------
-w3 = Web3(Web3.HTTPProvider(RPC_URL, request_kwargs={"timeout": 45}))
+# Web3 setup
+w3 = Web3(Web3.HTTPProvider(RPC_URL, request_kwargs={"timeout": 30}))
+# If connected to a PoA chain (like some testnets), inject middleware
 try:
     w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-except Exception:  # pragma: no cover - middleware injection is best effort
+except ValueError:
     pass
-if CHAIN_ID and w3.eth.chain_id != CHAIN_ID:
-    logger.warning(
-        "chain id mismatch: provider=%s expected=%s", w3.eth.chain_id, CHAIN_ID
-    )
-registry = w3.eth.contract(address=JOB_REGISTRY, abi=_ABI)
-relayer = w3.eth.account.from_key(_RELAYER_PK) if _RELAYER_PK else None
 
+# If a relayer private key is provided, set up account for signing transactions
+relayer = None
+if _RELAYER_PK:
+    try:
+        relayer = w3.eth.account.from_key(_RELAYER_PK)
+    except Exception as e:
+        logging.error("Failed to load relayer key: %s", str(e))
+        relayer = None
 
-def _parse_default_percentage(*env_keys: str, fallback: str) -> Decimal:
-    for key in env_keys:
-        raw = os.getenv(key)
-        if raw is None:
-            continue
-        value = raw.strip()
-        if not value:
-            continue
-        try:
-            parsed = Decimal(value)
-        except InvalidOperation:
-            logger.warning("invalid percentage configured for %s: %s", key, raw)
-            continue
-        if Decimal(0) <= parsed <= Decimal(100):
-            return parsed
-        logger.warning("percentage for %s out of range 0-100: %s", key, raw)
-    return Decimal(fallback)
+# Contract instance for JobRegistry
+registry = w3.eth.contract(address=JOB_REGISTRY, abi=_MIN_ABI)
 
+# Utility to require API token if set
+def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
+    """Dependency to enforce API token authentication for onebox routes."""
+    if not _API_TOKEN:
+        return  # No token required if not set
+    if not auth or not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail={"code": "AUTH_MISSING", "message": _ERRORS["AUTH_MISSING"]})
+    token = auth.split(" ", 1)[1].strip()
+    if token != _API_TOKEN:
+        raise HTTPException(status_code=401, detail={"code": "AUTH_INVALID", "message": _ERRORS["AUTH_INVALID"]})
 
-_DEFAULT_FEE_PCT = _parse_default_percentage(
-    "ONEBOX_DEFAULT_FEE_PCT", "ONEBOX_FEE_PCT", "FEE_PCT", fallback="5"
-)
-_DEFAULT_BURN_PCT = _parse_default_percentage(
-    "ONEBOX_DEFAULT_BURN_PCT", "ONEBOX_BURN_PCT", "BURN_PCT", fallback="2"
-)
-
-_cached_fee_pct: Decimal = _DEFAULT_FEE_PCT
-_cached_burn_pct: Decimal = _DEFAULT_BURN_PCT
-_fee_policy_loaded = False
-_fee_policy_lock = threading.Lock()
+logger = logging.getLogger(__name__)
 
 # ---------- Metrics ----------
-_METRICS_REGISTRY = prometheus_client.CollectorRegistry()
+# Prometheus metrics to monitor the orchestrator's performance
 _PLAN_TOTAL = prometheus_client.Counter(
-    "plan_total",
-    "Total /onebox/plan requests",
-    ["intent_type", "http_status"],
-    registry=_METRICS_REGISTRY,
-)
-_SIMULATE_TOTAL = prometheus_client.Counter(
-    "simulate_total",
-    "Total /onebox/simulate requests",
-    ["intent_type", "http_status"],
-    registry=_METRICS_REGISTRY,
+    "plan_total", "Total /onebox/plan requests", ["intent_type", "http_status"]
 )
 _EXECUTE_TOTAL = prometheus_client.Counter(
-    "execute_total",
-    "Total /onebox/execute requests",
-    ["intent_type", "http_status"],
-    registry=_METRICS_REGISTRY,
+    "execute_total", "Total /onebox/execute requests", ["intent_type", "http_status"]
 )
-_STATUS_TOTAL = prometheus_client.Counter(
-    "status_total",
-    "Total /onebox/status requests",
-    ["intent_type", "http_status"],
-    registry=_METRICS_REGISTRY,
+_SIMULATE_TOTAL = prometheus_client.Counter(
+    "simulate_total", "Total /onebox/simulate requests", ["intent_type", "http_status"]
 )
 _TTO_SECONDS = prometheus_client.Histogram(
-    "time_to_outcome_seconds",
-    "End-to-end time to outcome in seconds",
-    ["endpoint"],
-    registry=_METRICS_REGISTRY,
+    "onebox_tto_seconds", "Onebox endpoint turnaround time (seconds)", ["endpoint"]
 )
 
-
-@dataclass
-class PlanMetadata:
-    created_at: str
-    canonical: Dict[str, Any] = field(default_factory=dict)
-    missing_fields: List[str] = field(default_factory=list)
-
-
-_plan_cache_lock = threading.Lock()
-_plan_cache: Dict[str, PlanMetadata] = {}
-
-
-def _current_timestamp() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _normalize_plan_hash(value: Optional[str]) -> Optional[str]:
-    if value is None:
-        return None
-    if not isinstance(value, str):
-        raise _http_error(400, "PLAN_HASH_INVALID")
-    trimmed = value.strip().lower()
-    if not trimmed:
-        return None
-    if not trimmed.startswith("0x"):
-        trimmed = f"0x{trimmed}"
-    if re.fullmatch(r"0x[0-9a-f]{64}", trimmed):
-        return trimmed
-    raise _http_error(400, "PLAN_HASH_INVALID")
-
-
-def _store_plan_metadata(
-    plan_hash: str,
-    *,
-    created_at: str,
-    canonical: Dict[str, Any],
-    missing_fields: List[str],
-    previous_hash: Optional[str] = None,
-) -> None:
-    if not plan_hash:
-        return
-    metadata = PlanMetadata(
-        created_at=created_at,
-        canonical=copy.deepcopy(canonical),
-        missing_fields=list(missing_fields),
-    )
-    with _plan_cache_lock:
-        if previous_hash and previous_hash != plan_hash:
-            _plan_cache.pop(previous_hash, None)
-        _plan_cache[plan_hash] = metadata
-
-
-def _lookup_plan_metadata(plan_hash: Optional[str]) -> Optional[PlanMetadata]:
-    if not plan_hash:
-        return None
-    with _plan_cache_lock:
-        metadata = _plan_cache.get(plan_hash)
-        if not metadata:
-            return None
-        return PlanMetadata(
-            created_at=metadata.created_at,
-            canonical=copy.deepcopy(metadata.canonical),
-            missing_fields=list(metadata.missing_fields),
-        )
-
-
-def _normalize_timestamp(value: Optional[str]) -> Optional[str]:
-    if value is None:
-        return None
-    if isinstance(value, str):
-        trimmed = value.strip()
-        if not trimmed:
-            return None
-        try:
-            if trimmed.endswith("Z"):
-                parsed = datetime.fromisoformat(trimmed.replace("Z", "+00:00"))
-            else:
-                parsed = datetime.fromisoformat(trimmed)
-            if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=timezone.utc)
-            else:
-                parsed = parsed.astimezone(timezone.utc)
-            return parsed.isoformat().replace("+00:00", "Z")
-        except ValueError:
-            try:
-                as_float = float(trimmed)
-            except ValueError:
-                return None
-            dt = datetime.fromtimestamp(as_float, tz=timezone.utc)
-            return dt.isoformat().replace("+00:00", "Z")
-    return None
-
-
-def _canonical_plan_envelope(intent: "JobIntent") -> Dict[str, Any]:
-    payload = json.loads(intent.json(exclude_none=True, by_alias=True))
-    return {"version": 1, "intent": payload}
-
-
-def _stable_stringify(value: Any) -> str:
-    if isinstance(value, list):
-        return "[" + ",".join(_stable_stringify(item) for item in value) + "]"
-    if isinstance(value, dict):
-        items = []
-        for key in sorted(value.keys()):
-            val = value[key]
-            if val is None:
-                continue
-            items.append(f"{json.dumps(str(key))}:{_stable_stringify(val)}")
-        return "{" + ",".join(items) + "}"
-    if isinstance(value, Decimal):
-        return json.dumps(str(value))
-    return json.dumps(value)
-
-
-def _compute_plan_hash_from_envelope(envelope: Dict[str, Any]) -> str:
-    canonical = _stable_stringify(envelope)
-    return "0x" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-
-
-def _compute_plan_hash(intent: "JobIntent") -> str:
-    envelope = _canonical_plan_envelope(intent)
-    return _compute_plan_hash_from_envelope(envelope)
-
-
-_PathSegment = Union[str, int]
-
-
-def _flatten_structure(
-    value: Any, path: Tuple[_PathSegment, ...] = ()
-) -> Dict[Tuple[_PathSegment, ...], Any]:
-    items: Dict[Tuple[_PathSegment, ...], Any] = {}
-    if isinstance(value, dict):
-        if not value:
-            items[path] = "__empty_dict__"
-        for key in sorted(value.keys()):
-            items.update(_flatten_structure(value[key], path + (str(key),)))
-        return items
-    if isinstance(value, list):
-        if not value:
-            items[path] = "__empty_list__"
-        for idx, element in enumerate(value):
-            items.update(_flatten_structure(element, path + (idx,)))
-        return items
-    items[path] = value
-    return items
-
-
-def _allowed_missing_field_paths(
-    missing_fields: List[str],
-) -> Set[Tuple[_PathSegment, ...]]:
-    return {("intent", "payload", field) for field in missing_fields}
-
-
-def _differences_confined_to_missing_fields(
-    original: Dict[str, Any],
-    updated: Dict[str, Any],
-    missing_fields: List[str],
-) -> bool:
-    if not missing_fields:
-        return False
-    allowed_paths = _allowed_missing_field_paths(missing_fields)
-    original_flat = _flatten_structure(original)
-    updated_flat = _flatten_structure(updated)
-    all_paths = set(original_flat.keys()) | set(updated_flat.keys())
-    for path in all_paths:
-        if path in allowed_paths:
-            continue
-        if original_flat.get(path) != updated_flat.get(path):
-            return False
-    return True
-
-
-def _get_correlation_id(request: Request) -> str:
-    if hasattr(request.state, "correlation_id"):
-        return request.state.correlation_id  # type: ignore[attr-defined]
-    header = request.headers.get("X-Correlation-ID") or request.headers.get("X-Request-ID")
-    correlation_id = header.strip() if header and header.strip() else uuid.uuid4().hex
-    request.state.correlation_id = correlation_id  # type: ignore[attr-defined]
-    return correlation_id
-
-
-def _log_event(level: int, event: str, correlation_id: str, **fields: Any) -> None:
-    payload = {
-        "event": event,
-        "correlation_id": correlation_id,
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    }
-    payload.update(fields)
-    logger.log(level, json.dumps(payload, sort_keys=True))
-
-# ---------- API Router ----------
-router = APIRouter(prefix="/onebox", tags=["onebox"])
-health_router = APIRouter(tags=["health"])
-
-
-# ---------- Models ----------
-Action = Literal[
-    "post_job",
-    "finalize_job",
-    "check_status",
-    "stake",
-    "validate",
-    "dispute",
-]
-
-
+# ---------- Data Models ----------
 class Attachment(BaseModel):
-    name: str
-    ipfs: Optional[str] = None
+    """Represents an attachment to a job (e.g., a file or link)."""
+    uri: str
+    name: Optional[str] = None
     type: Optional[str] = None
-    url: Optional[str] = None
 
-
-class Payload(BaseModel):
+class JobPayload(BaseModel):
+    """Represents the details of a job for posting or interacting."""
     title: Optional[str] = None
     description: Optional[str] = None
     attachments: List[Attachment] = Field(default_factory=list)
-    rewardToken: str = AGIALPHA_SYMBOL
-    reward: Optional[str] = None
+    rewardToken: Optional[str] = None
+    reward: Optional[str] = None  # using string for flexibility in numeric input
     deadlineDays: Optional[int] = None
-    jobId: Optional[int] = None
     agentTypes: List[str] = Field(default_factory=list)
-
+    jobId: Optional[int] = None  # for job-specific actions (finalize, check_status, etc.)
 
 class JobIntent(BaseModel):
-    action: Action
-    payload: Payload
-    constraints: Dict[str, Any] = Field(default_factory=dict)
-    userContext: Dict[str, Any] = Field(default_factory=dict)
-
+    """Encapsulates a user intent extracted from natural language."""
+    action: str
+    payload: JobPayload
+    userContext: Optional[Dict[str, Any]] = None  # context (like identity info)
 
 class PlanRequest(BaseModel):
+    """Request model for the planner (natural language input)."""
     text: str
-    expert: bool = False
-
 
 class PlanResponse(BaseModel):
+    """Response model for the planner, providing a structured intent and summary."""
     summary: str
     intent: JobIntent
     requiresConfirmation: bool = True
@@ -511,21 +230,14 @@ class PlanResponse(BaseModel):
     planHash: str
     missingFields: List[str] = Field(default_factory=list)
 
-
-class ExecuteRequest(BaseModel):
-    intent: JobIntent
-    mode: Literal["relayer", "wallet"] = "relayer"
-    planHash: Optional[str] = None
-    createdAt: Optional[str] = None
-
-
 class SimulateRequest(BaseModel):
+    """Request model for simulation, containing the intent to simulate."""
     intent: JobIntent
     planHash: Optional[str] = None
     createdAt: Optional[str] = None
-
 
 class SimulateResponse(BaseModel):
+    """Response model for simulation, detailing the plan's viability."""
     summary: str
     intent: JobIntent
     risks: List[str] = Field(default_factory=list)
@@ -533,8 +245,15 @@ class SimulateResponse(BaseModel):
     planHash: str
     createdAt: str
 
+class ExecuteRequest(BaseModel):
+    """Request model for execution, with mode (relayer or wallet) and intent."""
+    intent: JobIntent
+    planHash: Optional[str] = None
+    createdAt: Optional[str] = None
+    mode: Literal["relayer", "wallet"] = "relayer"
 
 class ExecuteResponse(BaseModel):
+    """Response model for execution results or transaction preparation."""
     ok: bool = True
     jobId: Optional[int] = None
     txHash: Optional[str] = None
@@ -556,10 +275,10 @@ class ExecuteResponse(BaseModel):
     reward: Optional[str] = None
     token: Optional[str] = None
     status: Optional[str] = None
-    to: Optional[str] = None
-    data: Optional[str] = None
-    value: Optional[str] = None
-    chainId: Optional[int] = None
+    to: Optional[str] = None       # For wallet mode: transaction 'to' address
+    data: Optional[str] = None     # For wallet mode: transaction 'data' payload
+    value: Optional[str] = None    # For wallet mode: transaction 'value' (usually "0x0")
+    chainId: Optional[int] = None  # For wallet mode: chain ID for the transaction
     error: Optional[str] = None
     planHash: Optional[str] = None
     createdAt: Optional[str] = None
@@ -570,31 +289,18 @@ class ExecuteResponse(BaseModel):
     feeAmount: Optional[str] = None
     burnAmount: Optional[str] = None
 
-
 class StatusResponse(BaseModel):
+    """Response model for job status queries."""
     jobId: int
-    state: Literal["open", "assigned", "completed", "finalized", "unknown", "disputed"] = (
-        "unknown"
-    )
+    state: Literal["open", "assigned", "completed", "finalized", "unknown", "disputed"] = "unknown"
     reward: Optional[str] = None
     token: Optional[str] = None
     deadline: Optional[int] = None
     assignee: Optional[str] = None
 
-
-_UINT64_MAX = (1 << 64) - 1
-_STATE_MAP = {
-    0: "draft",
-    1: "open",
-    2: "assigned",
-    3: "review",
-    4: "completed",
-    5: "disputed",
-    6: "finalized",
-}
-
+# ---------- Error Handling ----------
 _ERRORS = {
-    # Top user-facing errors surfaced to the client application
+    # User-facing error codes and messages for common issues
     "REQUEST_EMPTY": "Describe the job or action you want me to handle before continuing.",
     "AUTH_MISSING": "Include your API token so I can link this request to your identity. Start identity setup if you haven’t yet.",
     "AUTH_INVALID": "Your API token didn’t match an active identity. Refresh your credentials or restart identity setup.",
@@ -629,29 +335,20 @@ _ERRORS = {
 
 
 def _error_detail(code: str) -> Dict[str, str]:
+    """Build a standardized error detail dict from an error code."""
     message = _ERRORS.get(code)
     if message is None:
-        message = "Something went wrong. Reference code {} when contacting support.".format(code)
+        message = f"Something went wrong. Reference code {code} when contacting support."
     return {"code": code, "message": message}
 
 
 def _http_error(status_code: int, code: str) -> HTTPException:
+    """Helper to raise HTTPException with our standardized error response."""
     return HTTPException(status_code, _error_detail(code))
 
 
-# ---------- Helpers ----------
+# ---------- Helper Functions ----------
 _SUMMARY_SUFFIX = " Proceed?"
-_STAKE_MANAGER_ABI = [
-    {
-        "inputs": [],
-        "name": "burnPct",
-        "outputs": [
-            {"internalType": "uint256", "name": "", "type": "uint256"},
-        ],
-        "stateMutability": "view",
-        "type": "function",
-    }
-]
 
 
 def _ensure_summary_limit(value: str) -> str:
@@ -663,6 +360,7 @@ def _ensure_summary_limit(value: str) -> str:
 
 
 def _format_percentage(value: Decimal) -> str:
+    """Format Decimal percentage as a string without trailing zeros (e.g., Decimal('2.00') -> '2')."""
     quantized = value.normalize()
     text = format(quantized, "f")
     if "." in text:
@@ -670,247 +368,104 @@ def _format_percentage(value: Decimal) -> str:
     return text or "0"
 
 
-def _parse_percentage_candidate(value: Any) -> Optional[Decimal]:
-    if value is None:
-        return None
+def _format_reward(value_wei: int) -> str:
+    """Format a token amount in wei into a human-readable token amount string with decimals."""
+    if value_wei is None:
+        return ""
     try:
-        parsed = Decimal(value)
-    except (InvalidOperation, TypeError, ValueError):
-        return None
-    if Decimal(0) <= parsed <= Decimal(100):
-        return parsed
-    return None
+        value = Decimal(value_wei) / (Decimal(10) ** AGIALPHA_DECIMALS)
+        formatted = format(value.normalize(), "f")
+        if "." in formatted:
+            formatted = formatted.rstrip("0").rstrip(".")
+        return formatted
+    except Exception:
+        return str(value_wei)
 
 
-def _get_fee_policy() -> Tuple[Decimal, Decimal]:
-    global _fee_policy_loaded, _cached_fee_pct, _cached_burn_pct
-    if _fee_policy_loaded:
-        return _cached_fee_pct, _cached_burn_pct
-    with _fee_policy_lock:
-        if _fee_policy_loaded:
-            return _cached_fee_pct, _cached_burn_pct
-        fee_pct = _DEFAULT_FEE_PCT
-        burn_pct = _DEFAULT_BURN_PCT
-        try:
-            fee_fn = getattr(registry.functions, "feePct", None)
-            if fee_fn is not None:
-                fee_raw = fee_fn().call()
-                parsed_fee = _parse_percentage_candidate(fee_raw)
-                if parsed_fee is not None:
-                    fee_pct = parsed_fee
-            stake_manager_fn = getattr(registry.functions, "stakeManager", None)
-            stake_manager_address = None
-            if stake_manager_fn is not None:
-                stake_manager_address = stake_manager_fn().call()
-            if isinstance(stake_manager_address, (bytes, bytearray)):
-                stake_manager_address = Web3.to_hex(stake_manager_address)
-            is_valid_address = False
-            if isinstance(stake_manager_address, str) and Web3.is_address(stake_manager_address):
-                try:
-                    is_valid_address = int(stake_manager_address, 16) != 0
-                except ValueError:
-                    is_valid_address = False
-            if is_valid_address:
-                stake_manager_contract = w3.eth.contract(
-                    address=Web3.to_checksum_address(stake_manager_address),
-                    abi=_STAKE_MANAGER_ABI,
-                )
-                try:
-                    burn_raw = stake_manager_contract.functions.burnPct().call()
-                    parsed_burn = _parse_percentage_candidate(burn_raw)
-                    if parsed_burn is not None:
-                        burn_pct = parsed_burn
-                except Exception as exc:
-                    logger.warning("failed to load burnPct: %s", exc)
-        except Exception as exc:
-            logger.warning("failed to load fee policy: %s", exc)
-        _cached_fee_pct = fee_pct
-        _cached_burn_pct = burn_pct
-        _fee_policy_loaded = True
-        return fee_pct, burn_pct
-
-
-def _to_wei(amount: str) -> int:
+def _to_wei(amount_str: str) -> int:
+    """Convert a human-readable token amount string to wei (int) based on AGIALPHA_DECIMALS."""
     try:
-        value = Decimal(amount)
-    except (InvalidOperation, TypeError, ValueError) as exc:
-        raise _http_error(400, "REWARD_INVALID") from exc
-    if value < 0:
-        raise _http_error(400, "REWARD_INVALID")
-    return int(value * Decimal(10**AGIALPHA_DECIMALS))
-
-
-def _format_reward(value: int) -> str:
-    precision = Decimal(10**AGIALPHA_DECIMALS)
-    return str(Decimal(value) / precision)
-
-
-def _utcnow_iso() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _resolve_policy_path() -> str:
-    override = os.getenv("ONEBOX_POLICY_PATH")
-    if override and override.strip():
-        return os.path.abspath(override.strip())
-    return _DEFAULT_POLICY_PATH
-
-
-def _parse_default_max_budget() -> Optional[int]:
-    owner_cap = os.getenv("ORG_MAX_BUDGET_WEI")
-    if owner_cap is not None:
-        trimmed_owner = owner_cap.strip()
-        if trimmed_owner:
-            try:
-                parsed_owner = int(trimmed_owner, 10)
-            except ValueError:
-                logger.warning("invalid ORG_MAX_BUDGET_WEI value: %s", owner_cap)
-            else:
-                if parsed_owner > 0:
-                    return parsed_owner
-                return None
-    raw = os.getenv("ONEBOX_MAX_JOB_BUDGET_AGIA")
-    if not raw:
-        return None
-    trimmed = raw.strip()
-    if not trimmed:
-        return None
-    try:
-        value = Decimal(trimmed)
+        decimal_value = Decimal(amount_str)
     except InvalidOperation:
-        logger.warning("invalid ONEBOX_MAX_JOB_BUDGET_AGIA value: %s", raw)
-        return None
-    if value < 0:
-        logger.warning("invalid ONEBOX_MAX_JOB_BUDGET_AGIA value: %s", raw)
-        return None
-    quantized = (value * Decimal(10**AGIALPHA_DECIMALS)).to_integral_value(rounding=ROUND_HALF_UP)
-    return int(quantized)
-
-
-def _parse_default_max_duration() -> Optional[int]:
-    owner_cap = os.getenv("ORG_MAX_DEADLINE_DAYS")
-    if owner_cap is not None:
-        trimmed_owner = owner_cap.strip()
-        if trimmed_owner:
-            try:
-                parsed_owner = int(trimmed_owner, 10)
-            except ValueError:
-                logger.warning("invalid ORG_MAX_DEADLINE_DAYS value: %s", owner_cap)
-            else:
-                if parsed_owner > 0:
-                    return parsed_owner
-                return None
-    raw = os.getenv("ONEBOX_MAX_JOB_DURATION_DAYS")
-    if not raw:
-        return None
-    trimmed = raw.strip()
-    if not trimmed:
-        return None
-    try:
-        parsed = int(trimmed, 10)
-    except ValueError:
-        logger.warning("invalid ONEBOX_MAX_JOB_DURATION_DAYS value: %s", raw)
-        return None
-    if parsed <= 0:
-        logger.warning("invalid ONEBOX_MAX_JOB_DURATION_DAYS value: %s", raw)
-        return None
-    return parsed
+        raise _http_error(400, "REWARD_INVALID")
+    if decimal_value < 0:
+        raise _http_error(400, "INSUFFICIENT_BALANCE")
+    precision = Decimal(10) ** AGIALPHA_DECIMALS
+    wei_value = int((decimal_value * precision).to_integral_value(rounding=ROUND_HALF_UP))
+    return wei_value
 
 
 @dataclass
 class OrgPolicyRecord:
+    """Record of an organisation's job policy limits."""
     max_budget_wei: Optional[int] = None
     max_duration_days: Optional[int] = None
-    updated_at: str = field(default_factory=_utcnow_iso)
+    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class OrgPolicyViolation(Exception):
+    """Custom exception for violations of organisational policies."""
+
     def __init__(self, code: str, message: str, record: OrgPolicyRecord) -> None:
         super().__init__(message)
         self.code = code
-        self.message = message
         self.record = record
 
     def to_http_exception(self) -> HTTPException:
-        detail = _error_detail(self.code)
-        detail["message"] = self.message
-        return HTTPException(status_code=400, detail=detail)
+        """Convert this violation to an HTTPException with appropriate detail."""
+        return HTTPException(status_code=400, detail=_error_detail(self.code))
 
 
 class OrgPolicyStore:
+    """Stores and enforces budget/deadline policies for organisations."""
+
     def __init__(
         self,
         *,
         policy_path: Optional[str] = None,
         default_max_budget_wei: Optional[int] = None,
         default_max_duration_days: Optional[int] = None,
-    ) -> None:
-        self._policy_path = policy_path or _resolve_policy_path()
+    ):
+        self._policy_path = policy_path or _DEFAULT_POLICY_PATH
         self._default_max_budget_wei = default_max_budget_wei
         self._default_max_duration_days = default_max_duration_days
         self._policies: Dict[str, OrgPolicyRecord] = {}
         self._lock = threading.Lock()
         self._load()
 
+    def _resolve_key(self, org_id: Optional[str]) -> str:
+        return str(org_id or "__default__")
+
     def _load(self) -> None:
+        """Load policies from a JSON file if it exists."""
         try:
-            if not os.path.exists(self._policy_path):
-                return
-            with open(self._policy_path, "r", encoding="utf-8") as handle:
-                raw = handle.read()
-            if not raw:
-                return
-            data = json.loads(raw)
-            if not isinstance(data, dict):
-                return
-            for key, value in data.items():
-                if not isinstance(value, dict):
-                    continue
-                record = OrgPolicyRecord()
-                stored_budget = value.get("maxBudgetWei")
-                if isinstance(stored_budget, str):
-                    try:
-                        record.max_budget_wei = int(stored_budget, 10)
-                    except ValueError:
-                        pass
-                elif isinstance(stored_budget, int):
-                    record.max_budget_wei = stored_budget
-                stored_duration = value.get("maxDurationDays")
-                if isinstance(stored_duration, int) and stored_duration > 0:
-                    record.max_duration_days = stored_duration
-                updated_at = value.get("updatedAt")
-                if isinstance(updated_at, str) and updated_at.strip():
-                    record.updated_at = updated_at.strip()
-                self._policies[self._resolve_key(key)] = record
-        except Exception as exc:  # pragma: no cover - defensive loading
-            logger.warning("failed to load org policy store: %s", exc)
-
-    def _persist_locked(self) -> None:
-        try:
-            directory = os.path.dirname(self._policy_path)
-            if directory and not os.path.exists(directory):
-                os.makedirs(directory, exist_ok=True)
-            payload: Dict[str, Dict[str, Any]] = {}
-            for key, record in self._policies.items():
-                payload[key] = {
-                    "updatedAt": record.updated_at,
-                }
-                if record.max_budget_wei is not None:
-                    payload[key]["maxBudgetWei"] = str(record.max_budget_wei)
-                if record.max_duration_days is not None:
-                    payload[key]["maxDurationDays"] = record.max_duration_days
-            with open(self._policy_path, "w", encoding="utf-8") as handle:
-                json.dump(payload, handle, indent=2, sort_keys=True)
-        except Exception as exc:  # pragma: no cover - defensive persistence
-            logger.warning("failed to persist org policy store: %s", exc)
-
-    @staticmethod
-    def _resolve_key(org_id: Optional[str]) -> str:
-        if isinstance(org_id, str):
-            trimmed = org_id.strip()
-            if trimmed:
-                return trimmed
-        return "__default__"
+            with open(self._policy_path, "r") as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            data = {}
+        for key, value in data.items():
+            record = OrgPolicyRecord()
+            stored_budget = value.get("maxBudgetWei")
+            if isinstance(stored_budget, str):
+                try:
+                    record.max_budget_wei = int(stored_budget)
+                except ValueError:
+                    record.max_budget_wei = None
+            elif isinstance(stored_budget, (int, float)):
+                record.max_budget_wei = int(stored_budget)
+            stored_duration = value.get("maxDurationDays")
+            if isinstance(stored_duration, (int, str)):
+                try:
+                    record.max_duration_days = int(stored_duration)
+                except ValueError:
+                    record.max_duration_days = None
+            record.max_budget_wei = (
+                record.max_budget_wei if record.max_budget_wei is not None else default_max_budget_wei
+            )
+            record.max_duration_days = (
+                record.max_duration_days if record.max_duration_days is not None else default_max_duration_days
+            )
+            self._policies[key] = record
 
     def _get_or_create(self, org_id: Optional[str]) -> OrgPolicyRecord:
         key = self._resolve_key(org_id)
@@ -922,8 +477,6 @@ class OrgPolicyStore:
             max_duration_days=self._default_max_duration_days,
         )
         self._policies[key] = record
-        if record.max_budget_wei is not None or record.max_duration_days is not None:
-            self._persist_locked()
         return record
 
     def enforce(self, org_id: Optional[str], reward_wei: int, deadline_days: int) -> OrgPolicyRecord:
@@ -931,277 +484,101 @@ class OrgPolicyStore:
             record = self._get_or_create(org_id)
             if record.max_budget_wei is not None and reward_wei > record.max_budget_wei:
                 message = (
-                    "Requested budget {} AGIALPHA exceeds organisation cap of {} AGIALPHA.".format(
-                        _format_reward(reward_wei), _format_reward(record.max_budget_wei)
-                    )
+                    f"Requested reward of {reward_wei} wei exceeds organisation cap of {record.max_budget_wei} wei."
                 )
                 raise OrgPolicyViolation("JOB_BUDGET_CAP_EXCEEDED", message, record)
             if record.max_duration_days is not None and deadline_days > record.max_duration_days:
                 message = (
-                    "Requested deadline of {} days exceeds organisation cap of {} days.".format(
-                        deadline_days, record.max_duration_days
-                    )
+                    f"Requested deadline of {deadline_days} days exceeds organisation cap of {record.max_duration_days} days."
                 )
                 raise OrgPolicyViolation("JOB_DEADLINE_CAP_EXCEEDED", message, record)
             return record
 
-    def update(
-        self,
-        org_id: Optional[str],
-        *,
-        max_budget_wei: Optional[int] = None,
-        max_duration_days: Optional[int] = None,
-    ) -> None:
+    def update(self, org_id: Optional[str], max_budget_wei: Optional[int], max_duration_days: Optional[int]) -> None:
         with self._lock:
+            key = self._resolve_key(org_id)
             record = self._get_or_create(org_id)
-            if max_budget_wei is not None:
-                record.max_budget_wei = max_budget_wei
-            if max_duration_days is not None:
-                record.max_duration_days = max_duration_days
-            record.updated_at = _utcnow_iso()
-            self._persist_locked()
+            record.max_budget_wei = max_budget_wei
+            record.max_duration_days = max_duration_days
+            record.updated_at = datetime.now(timezone.utc).isoformat()
+            self._policies[key] = record
+            try:
+                os.makedirs(os.path.dirname(self._policy_path), exist_ok=True)
+                with open(self._policy_path, "w") as f:
+                    data = {
+                        k: {
+                            "maxBudgetWei": str(v.max_budget_wei) if v.max_budget_wei is not None else None,
+                            "maxDurationDays": v.max_duration_days,
+                            "updatedAt": v.updated_at,
+                        }
+                        for k, v in self._policies.items()
+                    }
+                    json.dump(data, f, indent=2)
+            except Exception as e:
+                logging.error("Failed to persist org policy update: %s", e)
 
 
 _ORG_POLICY_STORE: Optional[OrgPolicyStore] = None
 _ORG_POLICY_LOCK = threading.Lock()
-
 
 def _get_org_policy_store() -> OrgPolicyStore:
     global _ORG_POLICY_STORE
     if _ORG_POLICY_STORE is not None:
         return _ORG_POLICY_STORE
     with _ORG_POLICY_LOCK:
-        if _ORG_POLICY_STORE is not None:
-            return _ORG_POLICY_STORE
-        _ORG_POLICY_STORE = OrgPolicyStore(
-            policy_path=_resolve_policy_path(),
-            default_max_budget_wei=_parse_default_max_budget(),
-            default_max_duration_days=_parse_default_max_duration(),
-        )
+        if _ORG_POLICY_STORE is None:
+            _ORG_POLICY_STORE = OrgPolicyStore(
+                policy_path=_DEFAULT_POLICY_PATH,
+                default_max_budget_wei=None,
+                default_max_duration_days=None,
+            )
     return _ORG_POLICY_STORE
 
 
-def _resolve_org_identifier(intent: "JobIntent") -> Optional[str]:
-    context = intent.userContext or {}
-    if not isinstance(context, dict):
-        return None
-    for key in ("orgId", "organizationId", "tenantId", "teamId", "userId"):
-        value = context.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return None
-
-
-def _normalize_title(text: str) -> str:
-    s = re.sub(r"\s+", " ", text).strip()
-    return s[:160] if s else "New Job"
-
-
-_JOB_ID_PATTERN = re.compile(
-    r"""
-    \bjob
-    (?:
-        \s*(?:\#|id(?:entifier)?|number|no\.?|num\.?)?
-    )
-    \s*[:#-]?
-    \s*(\d+)
-    \b
-    """,
-    re.IGNORECASE | re.VERBOSE,
-)
-_JOB_WORD_PATTERN = re.compile(r"\bjob\b", re.IGNORECASE)
-_GENERIC_JOB_HANDLE_PATTERN = re.compile(r"#\s*\d+")
-
-_FINALIZE_PATTERNS = (
-    r"\bfinalize\b",
-    r"\bcomplete\b",
-    r"\bfinish\b",
-    r"\bpayout\b",
-    r"\bpay(?:\s+|-)out\b",
-)
-_STATUS_PATTERNS = (
-    r"\bstatus\b",
-    r"\bstate\b",
-    r"\bprogress\b",
-    r"\bcheck\s+on\b",
-)
-_STAKE_PATTERNS = (r"\bstake\b",)
-_VALIDATE_PATTERNS = (r"\bvalidate\b",)
-_DISPUTE_PATTERNS = (r"\bdispute\b",)
-
-
-def _matches_patterns(text: str, patterns: Tuple[str, ...]) -> bool:
-    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
-
-
-def _has_job_context(text: str) -> bool:
-    if _JOB_WORD_PATTERN.search(text):
-        return True
-    if _GENERIC_JOB_HANDLE_PATTERN.search(text):
-        return True
-    return _JOB_ID_PATTERN.search(text) is not None
-
-
-def _extract_job_id(text: str) -> Optional[int]:
-    match = _JOB_ID_PATTERN.search(text)
-    if match:
-        return int(match.group(1))
-    return None
-
-
-def _format_job_id(job_id: Optional[int]) -> str:
-    if job_id is None:
-        return "#?"
-    return f"#{job_id}"
-
-
-def _detect_action(text: str) -> Optional[str]:
-    if not text:
-        return None
-
-    job_context = _has_job_context(text)
-    if job_context and _matches_patterns(text, _FINALIZE_PATTERNS):
-        return "finalize_job"
-    if job_context and _matches_patterns(text, _STATUS_PATTERNS):
-        return "check_status"
-    if job_context and _matches_patterns(text, _STAKE_PATTERNS):
-        return "stake"
-    if job_context and _matches_patterns(text, _VALIDATE_PATTERNS):
-        return "validate"
-    if job_context and _matches_patterns(text, _DISPUTE_PATTERNS):
-        return "dispute"
-    return None
-
-
-def _parse_reward(text: str) -> Optional[str]:
-    amt = re.search(r"(\d+(?:\.\d+)?)\s*(?:agi|agialpha)", text, re.IGNORECASE)
-    return amt.group(1) if amt else None
-
-
-def _parse_deadline_days(text: str) -> Optional[int]:
-    match = re.search(r"(\d+)\s*(?:d|day|days)", text, re.IGNORECASE)
-    return int(match.group(1)) if match else None
+def _get_correlation_id(request: Request) -> str:
+    return request.headers.get("X-Request-ID") or str(uuid.uuid4())
 
 
 def _calculate_deadline_timestamp(days: int) -> int:
-    if days <= 0:
-        raise _http_error(400, "DEADLINE_INVALID")
-    seconds = days * 86400
-    if seconds > _UINT64_MAX:
-        raise _http_error(400, "DEADLINE_INVALID")
-    now = int(time.time())
-    deadline = now + seconds
-    if deadline > _UINT64_MAX:
-        raise _http_error(400, "DEADLINE_INVALID")
-    return deadline
+    now = datetime.now(timezone.utc)
+    target = now + timedelta(days=days)
+    eod = target.replace(hour=23, minute=59, second=59, microsecond=0)
+    return int(eod.timestamp())
 
 
-def _compute_spec_hash(payload: Dict[str, Any]) -> bytes:
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
-    return Web3.keccak(canonical)
+def _compute_plan_hash(intent: JobIntent) -> str:
+    intent_data = intent.dict(exclude={"userContext"}, by_alias=True)
+    encoded = json.dumps(intent_data, sort_keys=True).encode("utf-8")
+    h = hashlib.sha256()
+    h.update(encoded)
+    return h.hexdigest()
 
 
-def _naive_parse(text: str) -> JobIntent:
-    action = _detect_action(text)
-    job_id = _extract_job_id(text) if action in {"finalize_job", "check_status", "stake", "validate", "dispute"} else None
-    if action:
-        payload = Payload(jobId=job_id)
-        return JobIntent(action=action, payload=payload)
-
-    reward = _parse_reward(text)
-    deadline_days = _parse_deadline_days(text)
-    title = _normalize_title(text)
-    payload = Payload(title=title, reward=reward, deadlineDays=deadline_days)
-    return JobIntent(action="post_job", payload=payload)
+def _normalize_plan_hash(plan_hash: Optional[str]) -> Optional[str]:
+    if not plan_hash:
+        return None
+    hash_str = plan_hash.strip().lower()
+    if re.fullmatch(r"[0-9a-f]{64}", hash_str):
+        return hash_str
+    return None
 
 
-def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool, List[str]]:
-    warnings: List[str] = []
-    request_snippet = request_text.strip()
-    snippet = f" ({request_snippet})" if request_snippet else ""
-    if intent.action == "finalize_job":
-        jid = intent.payload.jobId
-        summary = (
-            f"Detected job finalization request for job {_format_job_id(jid)}. "
-            f"Confirm to finalize job {_format_job_id(jid)}. Proceed?"
-        )
-        return _ensure_summary_limit(summary), True, warnings
-    if intent.action == "check_status":
-        jid = intent.payload.jobId
-        summary = f"Detected job status request for job {_format_job_id(jid)}.{snippet}".rstrip(".") + "."
-        return summary, False, warnings
-    if intent.action == "stake":
-        jid = intent.payload.jobId
-        summary = (
-            f"Detected staking request for job {_format_job_id(jid)}.{snippet} "
-            "Confirm to continue. Proceed?"
-        )
-        return _ensure_summary_limit(summary), True, warnings
-    if intent.action == "validate":
-        jid = intent.payload.jobId
-        summary = (
-            f"Detected validation request for job {_format_job_id(jid)}.{snippet} "
-            "Confirm to assign validators. Proceed?"
-        )
-        return _ensure_summary_limit(summary), True, warnings
-    if intent.action == "dispute":
-        jid = intent.payload.jobId
-        summary = (
-            f"Detected dispute request for job {_format_job_id(jid)}.{snippet} "
-            f"Confirm to escalate job {_format_job_id(jid)}. Proceed?"
-        )
-        return _ensure_summary_limit(summary), True, warnings
+def _current_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
-    payload = intent.payload
-    reward = payload.reward
-    default_reward_applied = False
-    if reward is None or (isinstance(reward, str) and not reward.strip()):
-        parsed_reward = _parse_reward(request_text)
-        if parsed_reward is not None:
-            reward = parsed_reward
-        else:
-            reward = "1.0"
-            default_reward_applied = True
-    days = payload.deadlineDays
-    default_deadline_applied = False
-    if days is None:
-        parsed_days = _parse_deadline_days(request_text)
-        if parsed_days is not None:
-            days = parsed_days
-        else:
-            days = 7
-            default_deadline_applied = True
-    token = (payload.rewardToken or AGIALPHA_SYMBOL).strip() or AGIALPHA_SYMBOL
-    fee_pct, burn_pct = _get_fee_policy()
-    reward_text = str(reward).strip() or "0"
-    fee_text = _format_percentage(fee_pct)
-    burn_text = _format_percentage(burn_pct)
-    raw_agent_types = getattr(payload, "agentTypes", [])
-    agent_types: List[str] = []
-    if isinstance(raw_agent_types, (list, tuple, set)):
-        for value in raw_agent_types:
-            if isinstance(value, str):
-                normalized = value.strip()
-                if normalized:
-                    agent_types.append(normalized)
-            elif value is not None:
-                agent_types.append(str(value))
-    elif isinstance(raw_agent_types, str):
-        normalized = raw_agent_types.strip()
-        if normalized:
-            agent_types.append(normalized)
-    elif raw_agent_types not in (None, ""):
-        agent_types.append(str(raw_agent_types))
 
-    summary = f"Post job {reward_text} {token}, {days} days."
-    if agent_types:
-        summary += f" Agents {', '.join(agent_types)}."
-    summary += f" Fee {fee_text}%, burn {burn_text}%. Proceed?"
-    if default_reward_applied:
-        warnings.append("DEFAULT_REWARD_APPLIED")
-    if default_deadline_applied:
-        warnings.append("DEFAULT_DEADLINE_APPLIED")
-    return _ensure_summary_limit(summary), True, warnings
+_PLAN_METADATA: Dict[str, str] = {}
+_PLAN_LOCK = threading.Lock()
+
+
+def _store_plan_metadata(plan_hash: str, created_at: str) -> None:
+    with _PLAN_LOCK:
+        _PLAN_METADATA[plan_hash] = created_at
+
+
+def _lookup_plan_timestamp(plan_hash: str) -> Optional[str]:
+    with _PLAN_LOCK:
+        return _PLAN_METADATA.get(plan_hash)
 
 
 def _detect_missing_fields(intent: JobIntent) -> List[str]:
@@ -1209,7 +586,7 @@ def _detect_missing_fields(intent: JobIntent) -> List[str]:
     payload = intent.payload
     if intent.action == "post_job":
         reward = getattr(payload, "reward", None)
-        if reward is None or (isinstance(reward, str) and not reward.strip()):
+        if reward is None or (isinstance(reward, str) and not str(reward).strip()):
             missing.append("reward")
         deadline_days = getattr(payload, "deadlineDays", None)
         if deadline_days is None:
@@ -1218,6 +595,99 @@ def _detect_missing_fields(intent: JobIntent) -> List[str]:
         if getattr(payload, "jobId", None) is None:
             missing.append("jobId")
     return missing
+
+
+def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool, List[str]]:
+    warnings: List[str] = []
+    request_snippet = request_text.strip()
+    snippet = f" ({request_snippet})" if request_snippet else ""
+    summary = ""
+    requires_confirmation = True
+
+    if intent.action == "finalize_job":
+        jid = intent.payload.jobId
+        summary = f"Detected request to finalize job #{jid}.{snippet}".rstrip(".") + "."
+        return _ensure_summary_limit(summary), True, warnings
+    if intent.action == "check_status":
+        jid = intent.payload.jobId
+        summary = f"Detected job status request for job #{jid}.{snippet}".rstrip(".") + "."
+        return summary, False, warnings
+    if intent.action == "stake":
+        jid = intent.payload.jobId
+        summary = f"Detected request to stake on job #{jid}.{snippet}".rstrip(".") + "."
+        return _ensure_summary_limit(summary), True, warnings
+    if intent.action == "validate":
+        jid = intent.payload.jobId
+        summary = f"Detected request to validate job #{jid}.{snippet}".rstrip(".") + "."
+        return _ensure_summary_limit(summary), True, warnings
+    if intent.action == "dispute":
+        jid = intent.payload.jobId
+        summary = f"Detected request to dispute job #{jid}.{snippet}".rstrip(".") + "."
+        return _ensure_summary_limit(summary), True, warnings
+
+    payload = intent.payload
+    reward = payload.reward
+    deadline = payload.deadlineDays
+    title = payload.title or "New Job"
+    default_reward_applied = False
+    default_deadline_applied = False
+    if reward is None or (isinstance(reward, str) and not str(reward).strip()):
+        reward = "1.0"
+        default_reward_applied = True
+    if deadline is None:
+        deadline = 7
+        default_deadline_applied = True
+
+    try:
+        reward_val = Decimal(str(reward))
+    except Exception:
+        reward_val = None
+    reward_str = f"{reward} {AGIALPHA_SYMBOL}" if reward_val is not None else f"{reward} (invalid)"
+    deadline_str = f"{deadline} day{'s' if str(deadline) != '1' else ''}"
+    summary = (
+        f"Detected request to post a job '{title}' with reward {reward_str}, deadline {deadline_str}.{snippet}".rstrip(".")
+        + "."
+    )
+    fee_pct, burn_pct = _get_fee_policy()
+    if fee_pct is not None and burn_pct is not None:
+        summary = summary.rstrip(".") + f" Protocol fee {fee_pct}%, burn {burn_pct}% of reward. Proceed?"
+    else:
+        summary = summary.rstrip(".") + " Proceed?"
+
+    if default_reward_applied:
+        warnings.append("DEFAULT_REWARD_APPLIED")
+    if default_deadline_applied:
+        warnings.append("DEFAULT_DEADLINE_APPLIED")
+
+    return _ensure_summary_limit(summary), True, warnings
+
+
+def _get_fee_policy() -> Tuple[Optional[str], Optional[str]]:
+    try:
+        burn_pct_uint = registry.functions.burnPct().call()
+        burn_pct_dec = Decimal(burn_pct_uint) / Decimal(100)
+        fee_pct_dec = Decimal(2)
+        return _format_percentage(fee_pct_dec), _format_percentage(burn_pct_dec)
+    except Exception:
+        fee_pct_env = os.getenv("PROTOCOL_FEE_PCT", "2")
+        burn_pct_env = os.getenv("PROTOCOL_BURN_PCT", "1")
+        try:
+            fee = Decimal(fee_pct_env)
+        except InvalidOperation:
+            fee = Decimal(0)
+        try:
+            burn = Decimal(burn_pct_env)
+        except InvalidOperation:
+            burn = Decimal(0)
+        return _format_percentage(fee), _format_percentage(burn)
+
+
+def _resolve_org_identifier(intent: JobIntent) -> Optional[str]:
+    ctx = intent.userContext or {}
+    org = ctx.get("org") or ctx.get("organisation") or ctx.get("organization")
+    if org:
+        return str(org)
+    return None
 
 
 @dataclass
@@ -1363,369 +833,73 @@ def _resolve_pinners() -> List[PinningProvider]:
         if CUSTOM_GATEWAY:
             templates.insert(0, f"{CUSTOM_GATEWAY.rstrip('/')}/ipfs/{{cid}}")
         providers.append(
-            PinningProvider(
-                name=name,
-                endpoint=endpoint,
-                token=token,
-                gateway_templates=templates,
-            )
+            PinningProvider(name=name, endpoint=endpoint, token=token, gateway_templates=templates)
         )
 
     if PINNER_ENDPOINT and PINNER_TOKEN:
-        add_provider(
-            _detect_provider(PINNER_ENDPOINT, PINNER_KIND or None),
-            PINNER_ENDPOINT,
-            PINNER_TOKEN,
-        )
-
-    if WEB3_STORAGE_TOKEN:
-        add_provider(
-            "web3.storage",
-            WEB3_STORAGE_ENDPOINT,
-            WEB3_STORAGE_TOKEN,
-            ["https://w3s.link/ipfs/{cid}", "https://{cid}.ipfs.w3s.link"],
-        )
-
-    pinata_token = PINATA_JWT
-    if not pinata_token and PINATA_API_KEY and PINATA_SECRET_API_KEY:
-        pinata_token = f"{PINATA_API_KEY}:{PINATA_SECRET_API_KEY}"
-    if pinata_token:
-        add_provider(
-            "pinata",
-            PINATA_ENDPOINT,
-            pinata_token,
-            [
-                f"{PINATA_GATEWAY.rstrip('/')}/ipfs/{{cid}}",
-                "https://gateway.pinata.cloud/ipfs/{cid}",
-                "https://ipfs.pinata.cloud/ipfs/{cid}",
-            ],
-        )
+        add_provider(PINNER_KIND or "custom", PINNER_ENDPOINT, PINNER_TOKEN)
+    if WEB3_STORAGE_TOKEN and (PINNER_KIND in {"web3storage", "nftstorage"} or not PINNER_ENDPOINT):
+        kind = PINNER_KIND if PINNER_KIND in {"web3storage", "nftstorage"} else "web3.storage"
+        endpoint = WEB3_STORAGE_ENDPOINT if kind == "web3.storage" else "https://api.nft.storage"
+        add_provider(kind, endpoint, WEB3_STORAGE_TOKEN)
+    if PINATA_API_KEY and PINATA_SECRET_API_KEY:
+        token = f"{PINATA_API_KEY}:{PINATA_SECRET_API_KEY}"
+        add_provider("pinata", PINATA_ENDPOINT, token, [PINATA_GATEWAY])
+    if PINATA_JWT and not (PINATA_API_KEY and PINATA_SECRET_API_KEY):
+        add_provider("pinata", PINATA_ENDPOINT, f"Bearer {PINATA_JWT}", [PINATA_GATEWAY])
 
     return providers
 
 
-def _extract_cid(payload: Any) -> Optional[str]:
-    if not payload:
-        return None
-    if isinstance(payload, str):
-        stripped = payload.strip()
-        if not stripped:
-            return None
-        try:
-            return _extract_cid(json.loads(stripped))
-        except ValueError:
-            return stripped
-    if isinstance(payload, dict):
-        for key in ("cid", "Cid", "IpfsHash", "Hash", "value"):
-            value = payload.get(key)
-            if isinstance(value, str) and value:
-                return value
-        nested = payload.get("pin") or payload.get("data") or payload.get("value")
-        if isinstance(nested, dict):
-            candidate = _extract_cid(nested)
-            if candidate:
-                return candidate
-        for value in payload.values():
-            if isinstance(value, dict):
-                candidate = _extract_cid(value)
-                if candidate:
-                    return candidate
-            if isinstance(value, str) and value.startswith("baf"):
-                return value
-    return None
-
-
-async def _fetch_pin_status(
-    provider: str, base_url: str, token: str, cid: str
-) -> Dict[str, Any]:
-    headers = _build_auth_headers(provider, token)
-    if not headers:
-        return {}
-    status_url = (
-        f"{_strip_slashes(base_url)}/data/pinList?cid={quote(cid)}"
-        if provider == "pinata"
-        else f"{_strip_slashes(base_url)}/pins/{cid}"
-    )
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.get(status_url, headers=headers)
-    if response.status_code // 100 != 2:
-        if _is_retryable_status(response.status_code):
-            raise PinningError(
-                f"status check failed: {response.status_code}",
-                provider,
-                response.status_code,
-                True,
-            )
-        return {}
-    try:
-        data = response.json()
-    except ValueError:
-        return {}
-    if provider == "pinata":
-        rows = data.get("rows") if isinstance(data, dict) else None
-        first = rows[0] if isinstance(rows, list) and rows else None
-        if isinstance(first, dict):
-            return {
-                "status": first.get("status"),
-                "size": first.get("size") or first.get("pinSize"),
-                "pinned_at": first.get("date_pinned") or first.get("timestamp"),
-            }
-        return {}
-    pin = data.get("pin") if isinstance(data, dict) else None
-    status = data.get("status") if isinstance(data, dict) else None
-    size = data.get("pinSize") if isinstance(data, dict) else None
-    pinned_at = data.get("created") if isinstance(data, dict) else None
-    if isinstance(pin, dict):
-        status = pin.get("status") or status
-        size = pin.get("size") or size
-        pinned_at = pin.get("created") or pinned_at
-    return {"status": status, "size": size, "pinned_at": pinned_at}
-
-
-async def _pin_bytes(content: bytes, content_type: str, file_name: str) -> Dict[str, Any]:
+async def _pin_json(data: dict, file_name: str) -> dict:
     providers = _resolve_pinners()
     if not providers:
-        cid = "bafkreigh2akiscaildcdevcidxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        logger.warning("pinning disabled; returning static CID")
-        return _build_pin_result("static", cid, 0, "mock")
-
-    retryable_errors: List[PinningError] = []
-
+        raise PinningError("No pinning providers configured", provider="none")
+    errors = []
     for provider in providers:
-        upload_url = _ensure_upload_url(provider.endpoint, provider.name)
-        base_url = _provider_base_url(provider.endpoint, provider.name)
+        url = _ensure_upload_url(provider.endpoint, provider.name)
         headers = _build_auth_headers(provider.name, provider.token)
-        attempts = 3
-        for attempt in range(1, attempts + 1):
-            try:
-                async with httpx.AsyncClient(timeout=45) as client:
-                    if provider.name == "pinata" and "pinata_api_key" not in headers:
-                        form_headers = headers.copy()
-                        files = {
-                            "file": (file_name, content, content_type),
-                        }
-                        metadata = {
-                            "name": file_name,
-                            "keyvalues": {"source": "onebox-server"},
-                        }
-                        response = await client.post(
-                            upload_url,
-                            headers=form_headers,
-                            files=files,
-                            data={"pinataMetadata": json.dumps(metadata)},
-                        )
-                    elif provider.name == "pinata":
-                        form_headers = headers.copy()
-                        files = {
-                            "file": (file_name, content, content_type),
-                        }
-                        metadata = {
-                            "name": file_name,
-                            "keyvalues": {"source": "onebox-server"},
-                        }
-                        response = await client.post(
-                            upload_url,
-                            headers=form_headers,
-                            files=files,
-                            data={"pinataMetadata": json.dumps(metadata)},
-                        )
-                    else:
-                        post_headers = headers.copy()
-                        post_headers.setdefault("Content-Type", content_type)
-                        if file_name:
-                            post_headers.setdefault("X-Name", file_name)
-                        response = await client.post(
-                            upload_url,
-                            headers=post_headers,
-                            content=content,
-                        )
-                body_text = response.text
-                if response.status_code // 100 != 2:
-                    raise PinningError(
-                        f"pinning service responded with {response.status_code}: {body_text[:200]}",
-                        provider.name,
-                        response.status_code,
-                        _is_retryable_status(response.status_code),
+        try:
+            files = {"file": (file_name, json.dumps(data), "application/json")}
+        except Exception as e:
+            raise PinningError(f"Failed to serialize JSON for pinning: {e}", provider=provider.name)
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                res = await client.post(url, headers=headers, files=files)
+                if res.status_code in (200, 201):
+                    res_json = res.json()
+                    cid = res_json.get("cid") or res_json.get("IpfsHash") or res_json.get("hash")
+                    if not cid:
+                        raise PinningError("Missing CID in pinning response", provider=provider.name)
+                    return _build_pin_result(
+                        provider=provider.name,
+                        cid=cid,
+                        attempts=1,
+                        status=res_json.get("status") or "pinned",
+                        request_id=res_json.get("requestId") or res_json.get("id"),
+                        size=res_json.get("size"),
+                        pinned_at=res_json.get("created") or res_json.get("timestamp"),
                     )
-                payload: Any
-                if "application/json" in (response.headers.get("content-type") or ""):
-                    try:
-                        payload = response.json()
-                    except ValueError:
-                        payload = body_text
+                if _is_retryable_status(res.status_code):
+                    errors.append((provider.name, res.status_code, res.text))
+                    continue
                 else:
-                    payload = body_text
-                cid = _extract_cid(payload)
-                if not cid:
-                    raise PinningError("pinning response missing CID", provider.name)
-                status = None
-                request_id = None
-                size = None
-                pinned_at = None
-                if isinstance(payload, dict):
-                    pin = payload.get("pin") if isinstance(payload.get("pin"), dict) else None
-                    request_id = payload.get("requestid") or payload.get("requestId")
-                    status = payload.get("status") or (pin.get("status") if pin else None)
-                    size = (
-                        pin.get("size")
-                        if pin and isinstance(pin.get("size"), (int, float))
-                        else payload.get("PinSize")
-                    )
-                    timestamp = payload.get("Timestamp") or payload.get("created")
-                    pinned_at = timestamp if isinstance(timestamp, str) else None
-                try:
-                    await asyncio.sleep(0.2)
-                    status_info = await _fetch_pin_status(
-                        provider.name, base_url, provider.token, cid
-                    )
-                    status = status_info.get("status") or status
-                    size = status_info.get("size") or size
-                    pinned_at = status_info.get("pinned_at") or pinned_at
-                except PinningError as exc:
-                    if exc.retryable:
-                        logger.warning("pin status check retryable error: %s", exc)
-                    else:
-                        logger.debug("pin status check non-retryable error: %s", exc)
-                return _build_pin_result(
-                    provider.name,
-                    cid,
-                    attempt,
-                    status=status or "pinned",
-                    request_id=request_id,
-                    size=int(size) if isinstance(size, (int, float)) else None,
-                    pinned_at=pinned_at,
-                    templates=provider.gateway_templates,
-                )
-            except (httpx.RequestError, PinningError) as exc:  # pragma: no cover - runtime only
-                error = exc if isinstance(exc, PinningError) else PinningError(str(exc), provider.name, retryable=True)
-                if not error.retryable or attempt == attempts:
-                    if isinstance(exc, PinningError):
-                        if not exc.retryable:
-                            raise
-                        retryable_errors.append(exc)
-                    else:
-                        retryable_errors.append(error)
-                    break
-                await asyncio.sleep(min(1.0 * attempt, 3.0))
-        else:
+                    err_msg = f"Pinning service {provider.name} failed: {res.status_code} {res.text}"
+                    raise PinningError(err_msg, provider=provider.name, status=res.status_code)
+        except Exception as e:
+            errors.append((provider.name, getattr(e, "status", None) or 0, str(e)))
             continue
-    if retryable_errors:
-        last = retryable_errors[-1]
-        logger.error("pinning service unavailable: %s (%s)", last, last.provider)
-        raise _http_error(503, "IPFS_TEMPORARY") from retryable_errors[-1]
-    raise _http_error(502, "IPFS_FAILED")
-
-
-async def _pin_json(obj: dict, file_name: str = "payload.json") -> Dict[str, Any]:
-    payload = json.dumps(obj, separators=(",", ":")).encode("utf-8")
-    return await _pin_bytes(payload, "application/json", file_name)
+    logging.error("All pinning attempts failed: %s", errors)
+    raise PinningError("All configured pinning services failed", provider="all")
 
 
 def _build_tx(func, sender: str) -> dict:
-    nonce = w3.eth.get_transaction_count(sender)
-    try:
-        gas = func.estimate_gas({"from": sender})
-    except Exception:  # pragma: no cover - gas estimation is best effort
-        gas = 300000
-    tx = func.build_transaction({"from": sender, "nonce": nonce, "chainId": CHAIN_ID, "gas": gas})
-    try:
-        base = w3.eth.get_block("pending").get("baseFeePerGas")
-        if base is not None:
-            prio = getattr(w3.eth, "max_priority_fee", lambda: 2_000_000_000)()
-            tx["maxFeePerGas"] = int(base) * 2 + int(prio)
-            tx["maxPriorityFeePerGas"] = int(prio)
-        else:
-            raise ValueError("no base fee")
-    except Exception:  # pragma: no cover - legacy chains fallback
-        tx["gasPrice"] = w3.to_wei("5", "gwei")
+    tx = func.build_transaction({"from": sender, "nonce": w3.eth.get_transaction_count(sender)})
+    if CHAIN_ID:
+        tx["chainId"] = CHAIN_ID
+    tx.setdefault("gas", min(w3.eth.get_block("latest").gasLimit, 500000))
+    tx.setdefault("gasPrice", w3.eth.gas_price)
     return tx
-
-
-def _encode_wallet_call(func_name: str, args: list) -> Tuple[str, str]:
-    data = registry.encodeABI(fn_name=func_name, args=args)
-    return registry.address, data
-
-
-def _decode_job_created(receipt) -> Optional[int]:
-    try:
-        job_created = registry.events.JobCreated()
-        events = job_created.process_receipt(receipt)
-        for event in events:
-            args = event.get("args") if isinstance(event, dict) else getattr(event, "args", {})
-            if args and "jobId" in args:
-                return int(args["jobId"])
-    except Exception:
-        pass
-    try:
-        event_abi = next(
-            (a for a in _ABI if a.get("type") == "event" and a.get("name") == "JobCreated"),
-            None,
-        )
-        if event_abi:
-            for log in receipt.get("logs", []):
-                try:
-                    event = get_event_data(w3.codec, event_abi, log)
-                    if event and event.get("event") == "JobCreated":
-                        return int(event["args"]["jobId"])
-                except Exception:
-                    continue
-    except Exception:
-        pass
-    try:
-        return int(registry.functions.lastJobId().call())
-    except Exception:
-        return None
-
-
-def _decode_metadata(packed: int) -> Tuple[int, Optional[int], Optional[int]]:
-    state = packed & 0x7
-    deadline = (packed >> 77) & _UINT64_MAX
-    assigned = (packed >> 141) & _UINT64_MAX
-    return int(state), int(deadline) or None, int(assigned) or None
-
-
-async def _read_status(job_id: int) -> StatusResponse:
-    try:
-        job = registry.functions.jobs(int(job_id)).call()
-    except Exception as exc:
-        logger.error("status read failed for %s: %s", job_id, exc)
-        return StatusResponse(jobId=job_id, state="unknown")
-
-    agent = None
-    reward = 0
-    deadline = None
-    state_label = "unknown"
-
-    if isinstance(job, dict):
-        agent = job.get("agent")
-        reward = int(job.get("reward", 0))
-        packed = int(job.get("packedMetadata", 0))
-        state_code, deadline, _assigned = _decode_metadata(packed)
-        state_label = _STATE_MAP.get(state_code, "unknown")
-    elif isinstance(job, (list, tuple)) and len(job) >= 6:
-        agent = job[1]
-        reward = int(job[2])
-        state_code = int(job[5])
-        state_label = _STATE_MAP.get(state_code, "unknown")
-        if len(job) > 8 and job[8]:
-            deadline = int(job[8])
-    else:  # pragma: no cover - unexpected ABI shapes
-        logger.warning("unknown job payload shape for job %s", job_id)
-
-    assignee = None
-    if agent and int(agent, 16) != 0:
-        assignee = Web3.to_checksum_address(agent)
-
-    reward_str = _format_reward(reward) if reward else None
-    response = StatusResponse(
-        jobId=int(job_id),
-        state="disputed" if state_label == "disputed" else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown",
-        reward=reward_str,
-        token=AGIALPHA_TOKEN,
-        deadline=deadline,
-        assignee=assignee,
-    )
-    return response
 
 
 async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
@@ -1733,26 +907,8 @@ async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
         raise _http_error(400, "RELAY_UNAVAILABLE")
     signed = relayer.sign_transaction(tx)
     txh = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
-    receipt = await asyncio.to_thread(w3.eth.wait_for_transaction_receipt, txh, timeout=180)
+    receipt = w3.eth.wait_for_transaction_receipt(txh, timeout=180)
     return txh, dict(receipt)
-
-
-def _calculate_fee_amounts(reward: Optional[str], fee_pct: Decimal, burn_pct: Decimal) -> Tuple[Optional[str], Optional[str]]:
-    if not reward:
-        return None, None
-    try:
-        reward_decimal = Decimal(str(reward))
-    except (InvalidOperation, ValueError, TypeError):
-        return None, None
-    precision = Decimal(10) ** AGIALPHA_DECIMALS
-    reward_wei = (reward_decimal * precision).to_integral_value(rounding=ROUND_HALF_UP)
-    fee_amount_wei = (reward_wei * fee_pct / Decimal(100)).to_integral_value(rounding=ROUND_HALF_UP)
-    burn_amount_wei = (reward_wei * burn_pct / Decimal(100)).to_integral_value(rounding=ROUND_HALF_UP)
-    fee_amount = int(fee_amount_wei)
-    burn_amount = int(burn_amount_wei)
-    fee_str = _format_reward(fee_amount) if fee_amount else None
-    burn_str = _format_reward(burn_amount) if burn_amount else None
-    return fee_str, burn_str
 
 
 def _collect_tx_hashes(*candidates: Optional[Any]) -> List[str]:
@@ -1772,7 +928,10 @@ def _collect_tx_hashes(*candidates: Optional[Any]) -> List[str]:
 
 
 def _build_receipt_payload(
-    response: "ExecuteResponse", plan_hash: Optional[str], created_at: Optional[str], tx_hashes: List[str]
+    response: ExecuteResponse,
+    plan_hash: Optional[str],
+    created_at: Optional[str],
+    tx_hashes: List[str],
 ) -> Optional[Dict[str, Any]]:
     if not tx_hashes or not plan_hash or not created_at:
         return None
@@ -1811,7 +970,7 @@ def _build_receipt_payload(
     return record
 
 
-async def _attach_receipt_artifacts(response: "ExecuteResponse") -> None:
+async def _attach_receipt_artifacts(response: ExecuteResponse) -> None:
     tx_hashes = _collect_tx_hashes(response.txHashes, response.txHash)
     if tx_hashes:
         response.txHashes = tx_hashes
@@ -1836,9 +995,13 @@ async def _attach_receipt_artifacts(response: "ExecuteResponse") -> None:
     response.receiptGatewayUrl = gateway_url
     response.receiptGatewayUrls = gateways
 
-# ---------- Routes ----------
+
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])
 async def plan(request: Request, req: PlanRequest):
+    """
+    Planner endpoint: Parses a natural-language job request into a JobIntent and summary.
+    Returns a plan with intent, summary, potential warnings, missing fields, and a planHash.
+    """
     start = time.perf_counter()
     correlation_id = _get_correlation_id(request)
     intent_type = "unknown"
@@ -1852,20 +1015,11 @@ async def plan(request: Request, req: PlanRequest):
         summary, requires_confirmation, warnings = _summary_for_intent(intent, req.text)
         missing_fields = _detect_missing_fields(intent)
         if missing_fields:
-            normalized_text = (req.text or "").strip().lower()
-            if normalized_text.startswith("help me") or normalized_text.startswith("help us"):
-                requires_confirmation = True
-            else:
-                requires_confirmation = False
-        plan_envelope = _canonical_plan_envelope(intent)
-        plan_hash = _compute_plan_hash_from_envelope(plan_envelope)
+            requires_confirmation = False
+        plan_hash = _compute_plan_hash(intent)
         created_at = _current_timestamp()
-        _store_plan_metadata(
-            plan_hash,
-            created_at=created_at,
-            canonical=plan_envelope,
-            missing_fields=missing_fields,
-        )
+        _store_plan_metadata(plan_hash, created_at)
+
         response = PlanResponse(
             summary=summary,
             intent=intent,
@@ -1874,16 +1028,16 @@ async def plan(request: Request, req: PlanRequest):
             planHash=plan_hash,
             missingFields=missing_fields,
         )
+        _log_event(logging.INFO, "onebox.plan.success", correlation_id, intent_type=intent_type)
+        return response
+
     except HTTPException as exc:
         status_code = exc.status_code
-        _log_event(
-            logging.WARNING,
-            "onebox.plan.error",
-            correlation_id,
-            intent_type=intent_type,
-            http_status=status_code,
-            error=exc.detail,
-        )
+        detail = getattr(exc, "detail", None)
+        log_fields = {"intent_type": intent_type, "http_status": status_code}
+        if detail and isinstance(detail, dict) and detail.get("code"):
+            log_fields["error"] = detail["code"]
+        _log_event(logging.WARNING, "onebox.plan.failed", correlation_id, **log_fields)
         raise
     except Exception as exc:
         status_code = 500
@@ -1896,63 +1050,40 @@ async def plan(request: Request, req: PlanRequest):
             error=str(exc),
         )
         raise
-    else:
-        _log_event(
-            logging.INFO,
-            "onebox.plan.success",
-            correlation_id,
-            intent_type=intent_type,
-            http_status=status_code,
-        )
-        return response
     finally:
         duration = time.perf_counter() - start
         _PLAN_TOTAL.labels(intent_type=intent_type, http_status=str(status_code)).inc()
         _TTO_SECONDS.labels(endpoint="plan").observe(duration)
 
 
-
-
 @router.post("/simulate", response_model=SimulateResponse, dependencies=[Depends(require_api)])
 async def simulate(request: Request, req: SimulateRequest):
+    """Simulator endpoint: Validates a planned JobIntent against policies and current on-chain state."""
     start = time.perf_counter()
     correlation_id = _get_correlation_id(request)
     intent = req.intent
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
+
     provided_hash = _normalize_plan_hash(req.planHash)
     if provided_hash is None:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
-    request_created_at = _normalize_timestamp(req.createdAt)
-    plan_envelope = _canonical_plan_envelope(intent)
-    canonical_hash = _compute_plan_hash_from_envelope(plan_envelope)
-    metadata = _lookup_plan_metadata(provided_hash)
-    previous_hash = None
+    canonical_hash = _compute_plan_hash(intent)
     if provided_hash != canonical_hash:
-        if metadata is None:
-            raise _http_error(400, "PLAN_HASH_MISMATCH")
-        if not _differences_confined_to_missing_fields(
-            metadata.canonical, plan_envelope, metadata.missing_fields
-        ):
-            raise _http_error(400, "PLAN_HASH_MISMATCH")
-        plan_hash = canonical_hash
-        created_at = metadata.created_at or request_created_at or _current_timestamp()
-        previous_hash = provided_hash
-    else:
-        plan_hash = provided_hash
-        if metadata and metadata.created_at:
-            created_at = metadata.created_at
-        else:
-            created_at = request_created_at or _current_timestamp()
-    missing_fields = _detect_missing_fields(intent)
-    _store_plan_metadata(
-        plan_hash,
-        created_at=created_at,
-        canonical=plan_envelope,
-        missing_fields=missing_fields,
-        previous_hash=previous_hash,
+        raise _http_error(400, "PLAN_HASH_MISMATCH")
+    plan_hash = provided_hash
+
+    stored_created_at = _lookup_plan_timestamp(plan_hash)
+    request_created_at = (
+        _current_timestamp()
+        if not req.createdAt
+        else _current_timestamp()
+        if not str(req.createdAt).strip()
+        else str(req.createdAt)
     )
+    created_at = stored_created_at or request_created_at or _current_timestamp()
+    _store_plan_metadata(plan_hash, created_at)
 
     blockers: List[str] = []
     risks: List[str] = []
@@ -1976,7 +1107,7 @@ async def simulate(request: Request, req: SimulateRequest):
             reward_wei: Optional[int] = None
             deadline_days: Optional[int] = None
 
-            if reward_value is None or (isinstance(reward_value, str) and not reward_value.strip()):
+            if reward_value is None or (isinstance(reward_value, str) and not str(reward_value).strip()):
                 blockers.append("INSUFFICIENT_BALANCE")
             else:
                 try:
@@ -1990,9 +1121,7 @@ async def simulate(request: Request, req: SimulateRequest):
                         if reward_decimal < Decimal("1"):
                             risks.append("LOW_REWARD")
                         precision = Decimal(10) ** AGIALPHA_DECIMALS
-                        reward_wei = int(
-                            (reward_decimal * precision).to_integral_value(rounding=ROUND_HALF_UP)
-                        )
+                        reward_wei = int((reward_decimal * precision).to_integral_value(rounding=ROUND_HALF_UP))
 
             if deadline_value is None:
                 blockers.append("DEADLINE_INVALID")
@@ -2037,9 +1166,11 @@ async def simulate(request: Request, req: SimulateRequest):
                             risks.append("JOB_NOT_READY_FOR_FINALIZE")
                     if state == "unknown" and "STATUS_UNKNOWN" not in risks:
                         risks.append("STATUS_UNKNOWN")
+
         elif intent.action == "check_status":
             if getattr(payload, "jobId", None) is None:
                 blockers.append("JOB_ID_REQUIRED")
+
         elif intent.action in {"stake", "validate", "dispute"}:
             blockers.append("UNSUPPORTED_ACTION")
         else:
@@ -2066,11 +1197,8 @@ async def simulate(request: Request, req: SimulateRequest):
         )
     except HTTPException as exc:
         status_code = exc.status_code
-        log_fields: Dict[str, Any] = {
-            "intent_type": intent_type,
-            "http_status": status_code,
-        }
         detail = getattr(exc, "detail", None)
+        log_fields: Dict[str, Any] = {"intent_type": intent_type, "http_status": status_code}
         if status_code == 422 and isinstance(detail, dict):
             blockers_detail = detail.get("blockers")
             if isinstance(blockers_detail, list):
@@ -2080,7 +1208,7 @@ async def simulate(request: Request, req: SimulateRequest):
                 log_fields["risks"] = ",".join(risks_detail)
             _log_event(logging.WARNING, "onebox.simulate.blocked", correlation_id, **log_fields)
         else:
-            log_fields["error"] = detail
+            log_fields["error"] = detail if detail else "UNKNOWN_ERROR"
             _log_event(logging.WARNING, "onebox.simulate.error", correlation_id, **log_fields)
         raise
     except Exception as exc:
@@ -2095,10 +1223,7 @@ async def simulate(request: Request, req: SimulateRequest):
         )
         raise
     else:
-        log_fields: Dict[str, Any] = {
-            "intent_type": intent_type,
-            "http_status": status_code,
-        }
+        log_fields: Dict[str, Any] = {"intent_type": intent_type, "http_status": status_code}
         if risks:
             log_fields["risks"] = ",".join(risks)
         _log_event(logging.INFO, "onebox.simulate.success", correlation_id, **log_fields)
@@ -2111,44 +1236,32 @@ async def simulate(request: Request, req: SimulateRequest):
 
 @router.post("/execute", response_model=ExecuteResponse, dependencies=[Depends(require_api)])
 async def execute(request: Request, req: ExecuteRequest):
+    """Runner endpoint: Executes a previously planned intent via relayer or wallet mode."""
     start = time.perf_counter()
     correlation_id = _get_correlation_id(request)
     intent = req.intent
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
+
     provided_hash = _normalize_plan_hash(req.planHash)
     if provided_hash is None:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
-    request_created_at = _normalize_timestamp(req.createdAt)
-    plan_envelope = _canonical_plan_envelope(intent)
-    canonical_hash = _compute_plan_hash_from_envelope(plan_envelope)
-    metadata = _lookup_plan_metadata(provided_hash)
-    previous_hash = None
+    canonical_hash = _compute_plan_hash(intent)
     if provided_hash != canonical_hash:
-        if metadata is None:
-            raise _http_error(400, "PLAN_HASH_MISMATCH")
-        if not _differences_confined_to_missing_fields(
-            metadata.canonical, plan_envelope, metadata.missing_fields
-        ):
-            raise _http_error(400, "PLAN_HASH_MISMATCH")
-        plan_hash = canonical_hash
-        created_at = metadata.created_at or request_created_at or _current_timestamp()
-        previous_hash = provided_hash
-    else:
-        plan_hash = provided_hash
-        if metadata and metadata.created_at:
-            created_at = metadata.created_at
-        else:
-            created_at = request_created_at or _current_timestamp()
-    missing_fields = _detect_missing_fields(intent)
-    _store_plan_metadata(
-        plan_hash,
-        created_at=created_at,
-        canonical=plan_envelope,
-        missing_fields=missing_fields,
-        previous_hash=previous_hash,
+        raise _http_error(400, "PLAN_HASH_MISMATCH")
+    plan_hash = provided_hash
+
+    stored_created_at = _lookup_plan_timestamp(plan_hash)
+    request_created_at = (
+        _current_timestamp()
+        if not req.createdAt
+        else _current_timestamp()
+        if not str(req.createdAt).strip()
+        else str(req.createdAt)
     )
+    created_at = stored_created_at or request_created_at or _current_timestamp()
+    _store_plan_metadata(plan_hash, created_at)
 
     try:
         if intent.action == "post_job":
@@ -2161,9 +1274,7 @@ async def execute(request: Request, req: ExecuteRequest):
             deadline_days = int(payload.deadlineDays)
             org_identifier = _resolve_org_identifier(intent)
             try:
-                policy_record = _get_org_policy_store().enforce(
-                    org_identifier, reward_wei, deadline_days
-                )
+                policy_record = _get_org_policy_store().enforce(org_identifier, reward_wei, deadline_days)
             except OrgPolicyViolation as violation:
                 log_fields: Dict[str, Any] = {
                     "intent_type": intent_type,
@@ -2176,12 +1287,7 @@ async def execute(request: Request, req: ExecuteRequest):
                     log_fields["max_budget_wei"] = str(violation.record.max_budget_wei)
                 if violation.record.max_duration_days is not None:
                     log_fields["max_duration_days"] = violation.record.max_duration_days
-                _log_event(
-                    logging.WARNING,
-                    "onebox.policy.rejected",
-                    correlation_id,
-                    **log_fields,
-                )
+                _log_event(logging.WARNING, "onebox.policy.rejected", correlation_id, **log_fields)
                 raise violation.to_http_exception()
             else:
                 log_fields = {
@@ -2194,16 +1300,13 @@ async def execute(request: Request, req: ExecuteRequest):
                     log_fields["max_budget_wei"] = str(policy_record.max_budget_wei)
                 if policy_record.max_duration_days is not None:
                     log_fields["max_duration_days"] = policy_record.max_duration_days
-                _log_event(
-                    logging.INFO,
-                    "onebox.policy.accepted",
-                    correlation_id,
-                    **log_fields,
-                )
+                _log_event(logging.INFO, "onebox.policy.accepted", correlation_id, **log_fields)
 
             deadline_ts = _calculate_deadline_timestamp(deadline_days)
             fee_pct, burn_pct = _get_fee_policy()
-            fee_amount, burn_amount = _calculate_fee_amounts(str(payload.reward), fee_pct, burn_pct)
+            fee_amount, burn_amount = _calculate_fee_amounts(
+                str(payload.reward), Decimal(fee_pct or "0"), Decimal(burn_pct or "0")
+            )
             job_payload = {
                 "title": payload.title or "New Job",
                 "description": payload.description or "",
@@ -2223,10 +1326,7 @@ async def execute(request: Request, req: ExecuteRequest):
             uri = spec_pin.get("uri") or f"ipfs://{cid}"
 
             if req.mode == "wallet":
-                to, data = _encode_wallet_call(
-                    "postJob",
-                    [uri, AGIALPHA_TOKEN, reward_wei, deadline_days],
-                )
+                to, data = _encode_wallet_call("postJob", [uri, AGIALPHA_TOKEN, reward_wei, deadline_days])
                 response = ExecuteResponse(
                     ok=True,
                     planHash=plan_hash,
@@ -2242,17 +1342,15 @@ async def execute(request: Request, req: ExecuteRequest):
                     specHash="0x" + spec_hash.hex(),
                     deadline=deadline_ts,
                     reward=str(payload.reward),
-                    token=payload.rewardToken,
+                    token=payload.rewardToken or AGIALPHA_SYMBOL,
                     status="prepared",
-                    feePct=float(fee_pct),
-                    burnPct=float(burn_pct),
+                    feePct=float(fee_pct) if fee_pct is not None else None,
+                    burnPct=float(burn_pct) if burn_pct is not None else None,
                     feeAmount=fee_amount,
                     burnAmount=burn_amount,
                 )
             else:
-                func = registry.functions.postJob(
-                    uri, AGIALPHA_TOKEN, reward_wei, deadline_days
-                )
+                func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
                 sender = relayer.address if relayer else intent.userContext.get("sender")
                 if not sender:
                     raise _http_error(400, "RELAY_UNAVAILABLE")
@@ -2274,20 +1372,22 @@ async def execute(request: Request, req: ExecuteRequest):
                     specHash="0x" + spec_hash.hex(),
                     deadline=deadline_ts,
                     reward=str(payload.reward),
-                    token=payload.rewardToken,
+                    token=payload.rewardToken or AGIALPHA_SYMBOL,
                     status="submitted",
-                    feePct=float(fee_pct),
-                    burnPct=float(burn_pct),
+                    feePct=float(fee_pct) if fee_pct is not None else None,
+                    burnPct=float(burn_pct) if burn_pct is not None else None,
                     feeAmount=fee_amount,
                     burnAmount=burn_amount,
                 )
-            await _attach_receipt_artifacts(response)
-
         elif intent.action == "finalize_job":
             if payload.jobId is None:
                 raise _http_error(400, "JOB_ID_REQUIRED")
+            try:
+                job_id_int = int(payload.jobId)
+            except (TypeError, ValueError):
+                raise _http_error(400, "JOB_ID_REQUIRED")
             if req.mode == "wallet":
-                to, data = _encode_wallet_call("finalize", [int(payload.jobId)])
+                to, data = _encode_wallet_call("finalize", [job_id_int])
                 response = ExecuteResponse(
                     ok=True,
                     planHash=plan_hash,
@@ -2296,55 +1396,45 @@ async def execute(request: Request, req: ExecuteRequest):
                     data=data,
                     value="0x0",
                     chainId=CHAIN_ID,
-                    jobId=int(payload.jobId),
                     status="prepared",
                 )
             else:
-                func = registry.functions.finalize(int(payload.jobId))
-                if not relayer:
+                func = registry.functions.finalize(job_id_int)
+                sender = relayer.address if relayer else intent.userContext.get("sender")
+                if not sender:
                     raise _http_error(400, "RELAY_UNAVAILABLE")
-                tx = _build_tx(func, relayer.address)
-                txh, _receipt = await _send_relayer_tx(tx)
+                tx = _build_tx(func, sender)
+                txh, receipt = await _send_relayer_tx(tx)
                 response = ExecuteResponse(
                     ok=True,
                     planHash=plan_hash,
                     createdAt=created_at,
-                    jobId=int(payload.jobId),
+                    jobId=job_id_int,
                     txHash=txh,
                     txHashes=[txh] if txh else None,
                     receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
-                    status="finalized",
+                    status="submitted",
                 )
-            await _attach_receipt_artifacts(response)
-
-        elif intent.action == "check_status":
-            if payload.jobId is None:
-                raise _http_error(400, "JOB_ID_REQUIRED")
-            status = await _read_status(int(payload.jobId))
-            response = ExecuteResponse(
-                ok=True,
-                jobId=status.jobId,
-                status=status.state,
-                reward=status.reward,
-                token=status.token,
-                planHash=plan_hash,
-                createdAt=created_at,
-            )
-
         else:
             raise _http_error(400, "UNSUPPORTED_ACTION")
 
+        if req.mode != "wallet":
+            await _attach_receipt_artifacts(response)
+            response.status = response.status or "completed"
+        else:
+            response.status = response.status or "prepared"
+
+        response.ok = True
+        _log_event(logging.INFO, "onebox.execute.success", correlation_id, intent_type=intent_type)
+        return response
+
     except HTTPException as exc:
         status_code = exc.status_code
-        _log_event(
-            logging.WARNING,
-            "onebox.execute.error",
-            correlation_id,
-            intent_type=intent_type,
-            http_status=status_code,
-            mode=req.mode,
-            error=exc.detail,
-        )
+        detail = getattr(exc, "detail", None)
+        log_fields = {"intent_type": intent_type, "http_status": status_code}
+        if detail and isinstance(detail, dict) and detail.get("code"):
+            log_fields["error"] = detail["code"]
+        _log_event(logging.WARNING, "onebox.execute.failed", correlation_id, **log_fields)
         raise
     except Exception as exc:
         status_code = 500
@@ -2354,24 +1444,9 @@ async def execute(request: Request, req: ExecuteRequest):
             correlation_id,
             intent_type=intent_type,
             http_status=status_code,
-            mode=req.mode,
             error=str(exc),
         )
         raise
-    else:
-        fields: Dict[str, Any] = {
-            "intent_type": intent_type,
-            "http_status": status_code,
-            "mode": req.mode,
-        }
-        if response.jobId is not None:
-            fields["job_id"] = response.jobId
-        if response.status:
-            fields["status"] = response.status
-        if response.txHash:
-            fields["tx_hash"] = response.txHash
-        _log_event(logging.INFO, "onebox.execute.success", correlation_id, **fields)
-        return response
     finally:
         duration = time.perf_counter() - start
         _EXECUTE_TOTAL.labels(intent_type=intent_type, http_status=str(status_code)).inc()
@@ -2380,95 +1455,203 @@ async def execute(request: Request, req: ExecuteRequest):
 
 @router.get("/status", response_model=StatusResponse, dependencies=[Depends(require_api)])
 async def status(request: Request, jobId: int):
-    start = time.perf_counter()
+    """Retrieve on-chain status for a given job ID."""
     correlation_id = _get_correlation_id(request)
-    intent_type = "status"
-    status_code = 200
+    intent_type = "check_status"
+    job_id = jobId
 
     try:
-        result = await _read_status(jobId)
-    except HTTPException as exc:
-        status_code = exc.status_code
-        _log_event(
-            logging.WARNING,
-            "onebox.status.error",
-            correlation_id,
-            intent_type=intent_type,
-            http_status=status_code,
-            job_id=jobId,
-            error=exc.detail,
-        )
-        raise
-    except Exception as exc:
-        status_code = 500
-        _log_event(
-            logging.ERROR,
-            "onebox.status.error",
-            correlation_id,
-            intent_type=intent_type,
-            http_status=status_code,
-            job_id=jobId,
-            error=str(exc),
-        )
-        raise
+        job = registry.functions.jobs(job_id).call()
+    except Exception as e:
+        logger.error("Job status retrieval failed for job %s: %s", job_id, e)
+        return StatusResponse(jobId=job_id, state="unknown")
+
+    agent = None
+    reward = None
+    state_code = None
+    deadline = None
+    if isinstance(job, (list, tuple)) and len(job) >= 6:
+        agent = job[1]
+        reward = int(job[2])
+        state_code = int(job[5])
+        if len(job) > 8 and job[8]:
+            deadline = int(job[8])
     else:
-        _log_event(
-            logging.INFO,
-            "onebox.status.success",
-            correlation_id,
-            intent_type=intent_type,
-            http_status=status_code,
-            job_id=jobId,
-            state=result.state,
-        )
-        return result
-    finally:
-        duration = time.perf_counter() - start
-        _STATUS_TOTAL.labels(intent_type=intent_type, http_status=str(status_code)).inc()
-        _TTO_SECONDS.labels(endpoint="status").observe(duration)
+        logger.warning("unknown job payload shape for job %s", job_id)
 
-
-@health_router.get("/healthz", dependencies=[Depends(require_api)])
-async def healthcheck(request: Request):
-    correlation_id = _get_correlation_id(request)
-    _log_event(
-        logging.INFO,
-        "onebox.healthz",
-        correlation_id,
-        status="ok",
+    assignee = None
+    if agent and int(agent, 16) != 0:
+        assignee = Web3.to_checksum_address(agent)
+    reward_str = _format_reward(reward) if reward is not None else None
+    state_label = _STATE_MAP.get(state_code, "unknown")
+    state_output = (
+        "disputed"
+        if state_label == "disputed"
+        else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown"
     )
-    return {"ok": True}
+
+    response = StatusResponse(
+        jobId=int(job_id),
+        state=state_output,
+        reward=reward_str,
+        token=AGIALPHA_TOKEN,
+        deadline=deadline,
+        assignee=assignee,
+    )
+    _log_event(logging.INFO, "onebox.status.success", correlation_id, intent_type=intent_type)
+    return response
 
 
-@router.get("/metrics")
-def metrics_endpoint():
-    payload = prometheus_client.generate_latest(_METRICS_REGISTRY)
-    return Response(payload, media_type=prometheus_client.CONTENT_TYPE_LATEST)
+_STATE_MAP = {
+    0: "draft",
+    1: "open",
+    2: "assigned",
+    3: "review",
+    4: "completed",
+    5: "disputed",
+    6: "finalized",
+}
 
 
-__all__ = [
-    "Action",
-    "Attachment",
-    "ExecuteRequest",
-    "ExecuteResponse",
-    "JobIntent",
-    "Payload",
-    "PlanRequest",
-    "PlanResponse",
-    "SimulateRequest",
-    "SimulateResponse",
-    "StatusResponse",
-    "_calculate_deadline_timestamp",
-    "_compute_spec_hash",
-    "_decode_job_created",
-    "_naive_parse",
-    "execute",
-    "health_router",
-    "healthcheck",
-    "metrics_endpoint",
-    "plan",
-    "simulate",
-    "status",
-    "_UINT64_MAX",
-    "_read_status",
-]
+def _calculate_fee_amounts(reward: str, fee_pct: Decimal, burn_pct: Decimal) -> Tuple[str, str]:
+    try:
+        reward_dec = Decimal(reward)
+    except InvalidOperation:
+        return "0", "0"
+    fee_amount = (reward_dec * fee_pct / Decimal(100)).normalize()
+    burn_amount = (reward_dec * burn_pct / Decimal(100)).normalize()
+    def _fmt(val: Decimal) -> str:
+        text = format(val, "f")
+        if "." in text:
+            text = text.rstrip("0").rstrip(".")
+        return text or "0"
+
+    return _fmt(fee_amount), _fmt(burn_amount)
+
+
+def _compute_spec_hash(payload: Dict[str, Any]) -> bytes:
+    canonical = json.dumps(payload, sort_keys=True).encode("utf-8")
+    return hashlib.sha256(canonical).digest()
+
+
+def _encode_wallet_call(method: str, args: List[Any]) -> Tuple[str, str]:
+    try:
+        func = getattr(registry.functions, method)(*args)
+    except AttributeError as exc:
+        raise _http_error(400, "UNSUPPORTED_ACTION") from exc
+    tx = func.build_transaction({"from": registry.address})
+    data = tx.get("data")
+    if not isinstance(data, str):
+        raise _http_error(500, "UNKNOWN")
+    return registry.address, data
+
+
+def _decode_job_created(receipt: Dict[str, Any]) -> Optional[int]:
+    try:
+        logs = receipt.get("logs") or []
+        for log in logs:
+            if not isinstance(log, dict):
+                continue
+            if log.get("address", "").lower() != registry.address.lower():
+                continue
+            topics = log.get("topics")
+            if not topics:
+                continue
+            event_abi = next((item for item in _MIN_ABI if item.get("type") == "event" and item.get("name") == "JobCreated"), None)
+            if not event_abi:
+                continue
+            event = get_event_data(w3.codec, event_abi, log)
+            job_id = event["args"].get("jobId")
+            if job_id is not None:
+                return int(job_id)
+    except Exception as exc:
+        logger.warning("Failed to decode JobCreated event: %s", exc)
+    return None
+
+
+async def _read_status(job_id: int) -> StatusResponse:
+    try:
+        job = registry.functions.jobs(job_id).call()
+    except Exception:
+        return StatusResponse(jobId=job_id, state="unknown")
+    agent = None
+    reward = None
+    state_code = None
+    deadline = None
+    if isinstance(job, (list, tuple)) and len(job) >= 6:
+        agent = job[1]
+        reward = int(job[2])
+        state_code = int(job[5])
+        if len(job) > 8 and job[8]:
+            deadline = int(job[8])
+    assignee = None
+    if agent and int(agent, 16) != 0:
+        assignee = Web3.to_checksum_address(agent)
+    reward_str = _format_reward(reward) if reward is not None else None
+    state_label = _STATE_MAP.get(state_code, "unknown")
+    state_output = (
+        "disputed"
+        if state_label == "disputed"
+        else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown"
+    )
+    return StatusResponse(
+        jobId=job_id,
+        state=state_output,
+        reward=reward_str,
+        token=AGIALPHA_TOKEN,
+        deadline=deadline,
+        assignee=assignee,
+    )
+
+
+def _log_event(level: int, event: str, correlation_id: str, **kwargs: Any) -> None:
+    extra = {"event": event, "cid": correlation_id}
+    extra.update(kwargs or {})
+    logger.log(level, f"{event} | cid={correlation_id} | " + " ".join(f"{k}={v}" for k, v in kwargs.items()), extra=extra)
+
+
+@health_router.get("/healthz")
+async def healthz():
+    try:
+        _ = w3.eth.block_number
+    except Exception as e:
+        raise HTTPException(status_code=503, detail={"code": "RPC_UNAVAILABLE", "message": str(e)})
+    return {"status": "ok"}
+
+
+@health_router.get("/metrics")
+def metrics():
+    return Response(prometheus_client.generate_latest(), media_type=prometheus_client.CONTENT_TYPE_LATEST)
+
+
+def _naive_parse(text: str) -> JobIntent:
+    normalized = text.strip()
+    lower = normalized.lower()
+    payload = JobPayload()
+
+    match = re.search(r"finaliz(e|ing)\s+job\s+#?(\d+)", lower)
+    if match:
+        payload.jobId = int(match.group(2))
+        return JobIntent(action="finalize_job", payload=payload)
+
+    match = re.search(r"status\s+(?:for|of)\s+job\s+#?(\d+)", lower)
+    if match:
+        payload.jobId = int(match.group(1))
+        return JobIntent(action="check_status", payload=payload)
+
+    match = re.search(r"post\s+job\s+#?(\d+)", lower)
+    if match:
+        payload.title = normalized
+        return JobIntent(action="post_job", payload=payload)
+
+    reward_match = re.search(r"(\d+(?:\.\d+)?)\s*(agia|agialpha|token)", lower)
+    if reward_match:
+        payload.reward = reward_match.group(1)
+    deadline_match = re.search(r"(\d+)\s*(?:day|days|d)\b", lower)
+    if deadline_match:
+        payload.deadlineDays = int(deadline_match.group(1))
+    title = normalized.split(".")[0].strip()
+    if title:
+        payload.title = title
+
+    return JobIntent(action="post_job", payload=payload)
