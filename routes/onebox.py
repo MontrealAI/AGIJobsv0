@@ -1733,7 +1733,7 @@ async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
         raise _http_error(400, "RELAY_UNAVAILABLE")
     signed = relayer.sign_transaction(tx)
     txh = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
-    receipt = w3.eth.wait_for_transaction_receipt(txh, timeout=180)
+    receipt = await asyncio.to_thread(w3.eth.wait_for_transaction_receipt, txh, timeout=180)
     return txh, dict(receipt)
 
 
