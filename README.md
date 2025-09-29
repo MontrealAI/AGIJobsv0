@@ -35,6 +35,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control command center](#owner-control-command-center)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
 - [Owner control handbook](#owner-control-handbook)
+- [Owner mission control](#owner-mission-control)
 
 ### Identity policy
 
@@ -236,6 +237,23 @@ deploy updates confidently. Export the live surface with
 `npm run owner:surface -- --network <network> --format markdown --out
 reports/<network>-owner-surface.md` and attach the resulting artefact to the
 runbook template shipped in the handbook for instant change-control packages.
+
+### Owner mission control
+
+Prefer a single command that orchestrates the surface snapshot, plan,
+verification and telemetry sweep? Run the consolidated helper:
+
+```bash
+npm run owner:mission-control -- --network <network> --out runtime/<network>-mission.md
+```
+
+Mission control stitches the four core owner scripts together, emits a Markdown
+or JSON report (complete with Mermaid flow, metrics and logs), and respects new
+environment overrides (`OWNER_UPDATE_ALL_JSON`, `OWNER_VERIFY_JSON`,
+`OWNER_DASHBOARD_JSON`, and friends) so non-technical operators can automate
+dry-runs, Safe reviews and production verification. The full playbook lives in
+[docs/owner-mission-control.md](docs/owner-mission-control.md) with journey maps,
+step tables and troubleshooting guidance.
 
 ### Mainnet Deployment
 

@@ -44,6 +44,23 @@ const ADDRESS_BOOK = path.join(
 
 const ROLE_LABELS = ['Agent', 'Validator', 'Operator', 'Employer'] as const;
 
+function parseBooleanEnv(value?: string | null): boolean | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const normalised = value.trim().toLowerCase();
+  if (!normalised) {
+    return undefined;
+  }
+  if (['1', 'true', 'yes', 'y', 'on'].includes(normalised)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'n', 'off'].includes(normalised)) {
+    return false;
+  }
+  return undefined;
+}
+
 function formatUnitsRounded(
   value: bigint,
   decimals: number,
@@ -147,10 +164,13 @@ function formatDurationSeconds(value: bigint | null): string | null {
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = { json: false };
+  let jsonSetByCli = false;
+  let configNetworkSetByCli = false;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--json') {
       options.json = true;
+      jsonSetByCli = true;
     } else if (arg === '--config-network' || arg === '--network-config') {
       const value = argv[i + 1];
       if (!value) {
@@ -158,8 +178,19 @@ function parseArgs(argv: string[]): CliOptions {
       }
       options.configNetwork = value;
       i += 1;
+      configNetworkSetByCli = true;
     }
   }
+
+  const envJson = parseBooleanEnv(process.env.OWNER_DASHBOARD_JSON);
+  if (!jsonSetByCli && envJson !== undefined) {
+    options.json = envJson;
+  }
+
+  if (!configNetworkSetByCli && process.env.OWNER_DASHBOARD_CONFIG_NETWORK) {
+    options.configNetwork = process.env.OWNER_DASHBOARD_CONFIG_NETWORK.trim();
+  }
+
   return options;
 }
 
