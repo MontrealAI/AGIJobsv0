@@ -28,6 +28,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Agent/Validator Identity – ENS subdomain registration](#agentvalidator-identity--ens-subdomain-registration)
 - [Documentation](#documentation)
 - [One-Box UX](#one-box-ux)
+- [Owner control playbook](#owner-control-playbook)
 
 ### Identity policy
 
@@ -177,6 +178,10 @@ npm run owner:verify-control -- --network <network> --json --strict > owner-cont
 ```
 
 Provide per-module addresses via `modules.<name>.address`, the `AGJ_<NAME>_ADDRESS` environment variable, or `--address name=0x…` at runtime. Use `--modules`/`--skip` to scope checks and `--address-book` to point at alternative deployment records. The command exits non-zero when `--strict` is enabled and any contract lacks the expected governance, keeping change-control pipelines safe for non-technical operators.
+
+### Owner control playbook
+
+Operators who prefer a narrative, non-technical runbook can follow the [Owner Control Playbook](docs/owner-control-playbook.md). It packages the multi-module configuration workflow into illustrated checklists, Mermaid diagrams, and decision tables that walk through editing `config/*.json`, generating Safe bundles, executing transactions, and verifying the final state. The playbook also documents rollback paths, health monitoring commands, and operational safeguards so the contract owner keeps full, auditable control over every tunable parameter without touching Solidity internals.
 
 ### Mainnet Deployment
 
