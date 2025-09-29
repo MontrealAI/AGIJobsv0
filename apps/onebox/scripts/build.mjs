@@ -11,6 +11,7 @@ const templatePath = path.join(appDir, "index.html");
 const configModuleUrl = pathToFileURL(path.join(appDir, "config.mjs"));
 
 const assets = ["app.js", "styles.css"];
+const errorCatalogSource = path.resolve(__dirname, "../../..", "storage", "errors", "onebox.json");
 
 const fingerprint = (buffer) =>
   createHash("sha256").update(buffer).digest("hex").slice(0, 16);
@@ -37,6 +38,10 @@ for (const asset of assets) {
     integrity: computeIntegrity(buffer),
   };
 }
+
+const errorCatalogTarget = path.join(distDir, "storage", "errors", "onebox.json");
+await fs.mkdir(path.dirname(errorCatalogTarget), { recursive: true });
+await fs.copyFile(errorCatalogSource, errorCatalogTarget);
 
 const manifestPath = path.join(distDir, "manifest.json");
 await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
