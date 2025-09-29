@@ -29,6 +29,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Documentation](#documentation)
 - [One-Box UX](#one-box-ux)
 - [Owner control playbook](#owner-control-playbook)
+- [Owner control surface snapshot](#owner-control-surface-snapshot)
 
 ### Identity policy
 
@@ -164,6 +165,21 @@ npm run owner:update-all -- --network <network> --execute
 ```
 
 The script resolves contract addresses from `config/*.json`, `.env` overrides and `config/agialpha.json`, verifies signer ownership and prints calldata for every proposed change. When invoked with `--execute`, each module action is submitted sequentially so a non-technical operator can review the dry-run output and immediately replay it against production. Optional `--only`/`--skip` filters make it easy to scope updates to specific subsystems without editing configuration files.
+
+### Owner control surface snapshot
+
+Before touching production, render the offline control surface to confirm every module has a defined owner, governance target,
+and healthy configuration file:
+
+```bash
+npm run owner:surface -- --network <network>
+
+# Generate Markdown or JSON artefacts for change control
+npm run owner:surface -- --network <network> --format markdown > owner-surface.md
+npm run owner:surface -- --network <network> --json --out owner-surface.json
+```
+
+The report cross-references `config/agialpha.json`, `config/owner-control.json`, and the per-module JSON files, computing SHA-256 hashes so operators can attach tamper-evident artefacts to governance records. Consult the [Owner Control Surface report](docs/owner-control-surface.md) for illustrated guidance and interpretation tips.
 
 ### Owner control verification
 
