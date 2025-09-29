@@ -1,0 +1,63 @@
+{
+  "agialphaToken": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "abi": [
+      "function allowance(address owner, address spender) view returns (uint256)",
+      "function approve(address spender, uint256 amount) returns (bool)",
+      "function balanceOf(address account) view returns (uint256)",
+      "function decimals() view returns (uint8)",
+      "function symbol() view returns (string)"
+    ]
+  },
+  "jobRegistry": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "abi": [
+      "event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)",
+      "function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri) returns (uint256)",
+      "function applyForJob(uint256 jobId, string subdomain, bytes32[] proof)",
+      "function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes32[] proof)",
+      "function finalizeAfterValidation(uint256 jobId, bool success)",
+      "function raiseDispute(uint256 jobId, string reason)",
+      "function feePct() view returns (uint256)",
+      "function validatorRewardPct() view returns (uint256)",
+      "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)"
+    ]
+  },
+  "stakeManager": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "abi": [
+      "function depositStake(uint8 role, uint256 amount)",
+      "function withdrawStake(uint8 role, uint256 amount)",
+      "function feePct() view returns (uint256)",
+      "function burnPct() view returns (uint256)",
+      "function validatorRewardPct() view returns (uint256)"
+    ]
+  },
+  "validationModule": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "abi": [
+      "function commitVote(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)",
+      "function revealVote(uint256 jobId, bool approve, bytes32 burnTxHash, bytes32 salt, string subdomain, bytes32[] proof)",
+      "function finalize(uint256 jobId) returns (bool)",
+      "function forceFinalize(uint256 jobId) returns (bool)",
+      "function validatorsPerJob() view returns (uint256)",
+      "function maxValidatorsPerJob() view returns (uint256)",
+      "function revealDeadline(uint256 jobId) view returns (uint64)",
+      "function earlyFinalizeDelay() view returns (uint64)"
+    ]
+  },
+  "disputeModule": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "abi": [
+      "function raiseDispute(uint256 jobId, address claimant, bytes32 evidenceHash, string reason)",
+      "function disputeFee() view returns (uint256)"
+    ]
+  },
+  "feePool": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "abi": [
+      "function burnPct() view returns (uint256)",
+      "function treasury() view returns (address)"
+    ]
+  }
+}

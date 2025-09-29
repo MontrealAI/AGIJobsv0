@@ -3,9 +3,9 @@ import { getAAProvider as getAAProviderImpl } from "./providers/aa.js";
 import { getMetaTxSigner } from "./providers/metaTx.js";
 import { getRelayerWallet } from "./providers/relayer.js";
 
-type NormalizedTxMode = "relayer" | "aa" | "direct";
+export type NormalizedTxMode = "relayer" | "aa" | "direct";
 
-function normalizeTxMode(value: string | undefined): NormalizedTxMode {
+export function resolveTxMode(value?: string): NormalizedTxMode {
   const raw = (value ?? process.env.TX_MODE ?? "relayer").trim().toLowerCase();
   if (!raw) {
     return "relayer";
@@ -87,7 +87,7 @@ export function __setAAProviderFactoryForTests(factory?: AAProviderFactory) {
 }
 
 export async function getSignerForUser(userId: string, overrideMode?: string) {
-  const mode = normalizeTxMode(overrideMode);
+  const mode = resolveTxMode(overrideMode);
   if (mode === "aa") {
     try {
       return await aaProviderFactory(userId);

@@ -23,6 +23,28 @@ export type {
   WithdrawIntent,
 } from "./ics.js";
 
+export {
+  createJobDryRun,
+  createJobExecute,
+  applyJobDryRun,
+  applyJobExecute,
+  submitWorkDryRun,
+  submitWorkExecute,
+  finalizeDryRun,
+  finalizeExecute,
+} from "./tools/job.js";
+
+export {
+  depositDryRun,
+  depositExecute,
+  withdrawDryRun,
+  withdrawExecute,
+} from "./tools/stake.js";
+
+export { validateDryRun, validateExecute } from "./tools/validation.js";
+
+export { disputeDryRun, disputeExecute } from "./tools/dispute.js";
+
 type AsyncGeneratorString = AsyncGenerator<string, void, unknown>;
 
 export function route(ics: ICSType): AsyncGeneratorString {
