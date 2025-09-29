@@ -200,6 +200,10 @@ class JobIntent(BaseModel):
     payload: JobPayload
     userContext: Optional[Dict[str, Any]] = None
 
+
+# Backwards-compatible alias for tests and external callers expecting Payload symbol
+Payload = JobPayload
+
 class PlanRequest(BaseModel):
     text: str
 
@@ -532,6 +536,51 @@ def _detect_missing_fields(intent: JobIntent) -> List[str]:
         if getattr(payload, "jobId", None) is None:
             missing.append("jobId")
     return missing
+
+
+def _coerce_boolish(value: Any) -> Optional[bool]:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float, Decimal)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if not normalized:
+            return None
+        if normalized in {"true", "1", "yes", "on", "demo"}:
+            return True
+        if normalized in {"false", "0", "no", "off"}:
+            return False
+    return None
+
+
+def _is_demo_mode(intent: JobIntent) -> bool:
+    ctx = intent.userContext
+    if not isinstance(ctx, dict):
+        return False
+
+    def _check_mapping(mapping: Dict[str, Any]) -> Optional[bool]:
+        for key in ("demoMode", "demo_mode", "demo"):
+            if key in mapping:
+                coerced = _coerce_boolish(mapping[key])
+                if coerced is not None:
+                    return coerced
+        mode_val = mapping.get("mode")
+        if isinstance(mode_val, str) and mode_val.strip().lower() == "demo":
+            return True
+        return None
+
+    direct = _check_mapping(ctx)
+    if direct is not None:
+        return direct
+
+    constraints = ctx.get("constraints")
+    if isinstance(constraints, dict):
+        nested = _check_mapping(constraints)
+        if nested is not None:
+            return nested
+
+    return False
 def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool, List[str]]:
     warnings: List[str] = []
     request_snippet = request_text.strip()
@@ -566,25 +615,60 @@ def _summary_for_intent(intent: JobIntent, request_text: str) -> Tuple[str, bool
     title = payload.title or "New Job"
     default_reward_applied = False
     default_deadline_applied = False
-    if reward is None or (isinstance(reward, str) and not str(reward).strip()):
-        reward = "1.0"
-        default_reward_applied = True
-    if deadline is None:
-        deadline = 7
-        default_deadline_applied = True
+    demo_mode = _is_demo_mode(intent)
+    reward_missing = reward is None or (isinstance(reward, str) and not str(reward).strip())
+    deadline_missing = deadline is None
 
-    try:
-        reward_val = Decimal(str(reward))
-    except Exception:
-        reward_val = None
-    reward_str = f"{reward} {AGIALPHA_SYMBOL}" if reward_val is not None else f"{reward} (invalid)"
-    deadline_str = f"{deadline} day{'s' if str(deadline) != '1' else ''}"
-    summary = f"Detected request to post a job '{title}' with reward {reward_str}, deadline {deadline_str}.{snippet}".rstrip(".") + "."
-    fee_pct, burn_pct = _get_fee_policy()
-    if fee_pct is not None and burn_pct is not None:
-        summary = summary.rstrip(".") + f" Protocol fee {fee_pct}%, burn {burn_pct}% of reward. Proceed?"
+    reward_display = reward
+    deadline_display = deadline
+
+    if demo_mode:
+        if reward_missing:
+            reward_display = "1.0"
+            default_reward_applied = True
+        if deadline_missing:
+            deadline_display = 7
+            default_deadline_applied = True
+
+    if demo_mode or not reward_missing:
+        try:
+            reward_val = Decimal(str(reward_display))
+        except Exception:
+            reward_val = None
+        if reward_val is not None:
+            reward_str = f"{reward_display} {AGIALPHA_SYMBOL}"
+        else:
+            reward_str = f"{reward_display} (invalid)"
     else:
-        summary = summary.rstrip(".") + " Proceed?"
+        reward_str = "(not provided)"
+
+    if demo_mode or not deadline_missing:
+        deadline_value = deadline_display if deadline_display is not None else ""
+        deadline_str = f"{deadline_value} day{'s' if str(deadline_value) != '1' else ''}"
+    else:
+        deadline_str = "(not provided)"
+
+    summary = (
+        f"Detected request to post a job '{title}' with reward {reward_str}, deadline {deadline_str}.{snippet}"
+    ).rstrip(".") + "."
+
+    if not demo_mode and (reward_missing or deadline_missing):
+        missing_labels: List[str] = []
+        if reward_missing:
+            missing_labels.append("reward")
+        if deadline_missing:
+            missing_labels.append("deadline")
+        if len(missing_labels) == 2:
+            missing_phrase = " and ".join(missing_labels)
+        else:
+            missing_phrase = missing_labels[0]
+        summary = summary.rstrip(".") + f" Missing {missing_phrase} details before proceeding."
+    else:
+        fee_pct, burn_pct = _get_fee_policy()
+        if fee_pct is not None and burn_pct is not None:
+            summary = summary.rstrip(".") + f" Protocol fee {fee_pct}%, burn {burn_pct}% of reward. Proceed?"
+        else:
+            summary = summary.rstrip(".") + " Proceed?"
 
     if default_reward_applied:
         warnings.append("DEFAULT_REWARD_APPLIED")

@@ -269,7 +269,14 @@ if "pydantic" not in sys.modules:
     pydantic_module = types.SimpleNamespace(BaseModel=BaseModel, Field=Field)
     sys.modules["pydantic"] = pydantic_module
 
-from routes.onebox import PlanRequest, plan, _naive_parse
+from routes.onebox import (
+    JobIntent,
+    Payload,
+    PlanRequest,
+    _summary_for_intent,
+    _naive_parse,
+    plan,
+)
 
 
 def _make_request(headers=None):
@@ -306,8 +313,19 @@ def test_plan_summarizes_status_intent():
 def test_plan_summarizes_post_job_intent():
     response = asyncio.run(plan(_make_request(), PlanRequest(text="Help me post a job")))
     assert response.intent.action == "post_job"
-    assert (
-        response.summary
-        == "Post job 1.0 AGIALPHA, 7 days. Fee 5%, burn 2%. Proceed?"
+    assert "(not provided)" in response.summary
+    assert "Missing reward and deadline details" in response.summary
+    assert response.requiresConfirmation is False
+
+
+def test_summary_applies_demo_defaults():
+    intent = JobIntent(action="post_job", payload=Payload(), userContext={"mode": "demo"})
+    summary, requires_confirmation, warnings = _summary_for_intent(
+        intent, "Help me post a job"
     )
-    assert response.requiresConfirmation is True
+    assert requires_confirmation is True
+    assert "1.0 AGIALPHA" in summary
+    assert "7 day" in summary
+    assert "Protocol fee" in summary
+    assert "DEFAULT_REWARD_APPLIED" in warnings
+    assert "DEFAULT_DEADLINE_APPLIED" in warnings
