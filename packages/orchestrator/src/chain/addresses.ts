@@ -1,7 +1,14 @@
+import { getAllContractMetadata } from "./metadata.js";
+
+const metadata = getAllContractMetadata();
+
 export const CONTRACT_ADDRESSES = {
-  AGIALPHA_TOKEN: process.env.AGIALPHA_TOKEN ?? "0x0000000000000000000000000000000000000000",
-  STAKE_MANAGER: process.env.STAKE_MANAGER ?? "0x0000000000000000000000000000000000000000",
-  JOB_REGISTRY: process.env.JOB_REGISTRY ?? "0x0000000000000000000000000000000000000000",
-  VALIDATION_MODULE: process.env.VALIDATION_MODULE ?? "0x0000000000000000000000000000000000000000",
-  DISPUTE_MODULE: process.env.DISPUTE_MODULE ?? "0x0000000000000000000000000000000000000000",
+  AGIALPHA_TOKEN: metadata.agialphaToken.address,
+  STAKE_MANAGER: metadata.stakeManager.address,
+  JOB_REGISTRY: metadata.jobRegistry.address,
+  VALIDATION_MODULE: metadata.validationModule.address,
+  DISPUTE_MODULE: metadata.disputeModule.address,
+  FEE_POOL: metadata.feePool.address,
 };
+
+export const CONTRACT_METADATA = metadata;

@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { rpc, resolveTxMode, type NormalizedTxMode } from "../chain/provider.js";
 
 type PolicyMeta = {
   userId?: string;
@@ -55,6 +56,29 @@ export function buildPolicyOverrides(meta: PolicyMeta, extras: PolicyExtras = {}
 
 export type Yieldable = AsyncGenerator<string, void, unknown>;
 
+export interface PreparedCallStep {
+  label: string;
+  to: string;
+  data: string;
+  value: string;
+  gasEstimate?: string;
+  result?: unknown;
+}
+
+export interface DryRunResult {
+  from: string;
+  txMode: NormalizedTxMode;
+  calls: PreparedCallStep[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface ExecutionStepResult {
+  label: string;
+  txHash: string;
+  receipt: ethers.TransactionReceipt;
+  metadata?: Record<string, unknown>;
+}
+
 export async function* withSimulation<T>(
   step: string,
   runner: () => Promise<T>
@@ -74,4 +98,48 @@ export function formatError(error: unknown): string {
     return `❌ ${error.message}\n`;
   }
   return "❌ Unknown error\n";
+}
+
+export function hexlify(value: ethers.BigNumberish | null | undefined): string {
+  if (value === undefined || value === null) {
+    return "0x0";
+  }
+  if (typeof value === "number" || typeof value === "bigint") {
+    return ethers.toBeHex(value);
+  }
+  return ethers.hexlify(value);
+}
+
+export async function simulateContractCall(
+  signer: ethers.Signer,
+  tx: ethers.TransactionRequest,
+  decode?: (raw: string) => unknown
+): Promise<{ gasEstimate: bigint; returnData: string; decoded?: unknown }> {
+  const provider = signer.provider ?? rpc();
+  const from = tx.from ?? (await signer.getAddress());
+  const request: ethers.TransactionRequest = {
+    ...tx,
+    from,
+  };
+  const gasEstimate = await signer.estimateGas(request);
+  const returnData = await provider.call(request);
+  return {
+    gasEstimate: BigInt(gasEstimate),
+    returnData,
+    decoded: decode ? decode(returnData) : undefined,
+  };
+}
+
+export function buildDryRunResult(
+  from: string,
+  txMode: string | undefined,
+  calls: PreparedCallStep[],
+  metadata?: Record<string, unknown>
+): DryRunResult {
+  return {
+    from,
+    txMode: resolveTxMode(txMode),
+    calls,
+    metadata,
+  };
 }
