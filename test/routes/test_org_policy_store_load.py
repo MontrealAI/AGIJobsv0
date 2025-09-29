@@ -41,3 +41,17 @@ def test_load_respects_overrides_from_file(temp_policy_file):
     record = store._policies["acme"]
     assert record.max_budget_wei == 3 * 10**18
     assert record.max_duration_days == 4
+
+
+def test_load_without_file_uses_defaults(tmp_path):
+    policy_path = tmp_path / "missing.json"
+
+    store = OrgPolicyStore(
+        policy_path=str(policy_path),
+        default_max_budget_wei=5 * 10**17,
+        default_max_duration_days=3,
+    )
+
+    record = store._policies["__default__"]
+    assert record.max_budget_wei == 5 * 10**17
+    assert record.max_duration_days == 3

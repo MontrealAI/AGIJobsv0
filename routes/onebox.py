@@ -24,7 +24,12 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from web3 import Web3
 from web3._utils.events import get_event_data
-from web3.middleware import geth_poa_middleware
+try:
+    from web3.middleware import geth_poa_middleware
+except ImportError:  # pragma: no cover - compatibility shim for newer web3 versions
+    from web3.middleware.proof_of_authority import (
+        ExtraDataToPOAMiddleware as geth_poa_middleware,
+    )
 
 # API router setup
 router = APIRouter(prefix="/onebox", tags=["onebox"])
@@ -473,6 +478,14 @@ class OrgPolicyStore:
                 data = json.load(f)
         except FileNotFoundError:
             data = {}
+            if (
+                self._default_max_budget_wei is not None
+                or self._default_max_duration_days is not None
+            ):
+                data["__default__"] = {
+                    "maxBudgetWei": self._default_max_budget_wei,
+                    "maxDurationDays": self._default_max_duration_days,
+                }
         for key, value in data.items():
             record = OrgPolicyRecord()
             stored_budget = value.get("maxBudgetWei")
