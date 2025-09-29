@@ -46,6 +46,18 @@ def test_simulator_returns_budget_and_confirmation():
     assert result.est_budget == "53.50"
     assert result.est_fees == "3.50"
     assert "You’ll escrow" in result.confirmations[0]
+    assert any("Simulated" in msg for msg in result.confirmations)
+    expected_protocol = (Decimal("50") * FEE_FRACTION).quantize(Decimal("0.01"))
+    expected_burn = (Decimal("50") * BURN_FRACTION).quantize(Decimal("0.01"))
+    assert result.fee_breakdown == {
+        "reward": "50.00",
+        "protocol_fee": format(expected_protocol, "f"),
+        "burn_fee": format(expected_burn, "f"),
+        "total_budget": "53.50",
+        "est_fees": "3.50",
+    }
+    assert len(result.chain_calls) == 1
+    assert result.chain_calls[0]["status"] == "skipped"
     assert not result.blockers
     assert not result.risks
 
@@ -56,6 +68,7 @@ def test_simulator_detects_missing_budget():
     result = simulate_plan(plan)
 
     assert "BUDGET_REQUIRED" in result.blockers
+    assert "BUDGET_REQUIRED" in result.risks
 
 
 def test_simulator_detects_over_budget():
