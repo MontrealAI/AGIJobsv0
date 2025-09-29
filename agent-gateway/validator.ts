@@ -16,7 +16,7 @@ import {
   endEnergySpan,
   EnergySample,
 } from '../shared/energyMonitor';
-import { publishEnergySample } from './telemetry';
+import { publishEnergySample, recordValidationFlowMetrics } from './telemetry';
 import { appendTrainingRecord } from '../shared/trainingRecords';
 import { secureLogAction } from './security';
 import { summarizeContent } from '../shared/worldModel';
@@ -135,6 +135,256 @@ const VALIDATOR_HISTORY_LIMIT = Number(
 const VALIDATOR_FALLBACK_DELAY_MS = Number(
   process.env.VALIDATOR_FALLBACK_DELAY_MS || '600000'
 );
+
+const VALIDATION_ANOMALY_WINDOW_MS = Math.max(
+  60_000,
+  Number(process.env.VALIDATION_ANOMALY_WINDOW_MS || '900000')
+);
+const VALIDATION_ANOMALY_RATE_THRESHOLD = Math.max(
+  0.01,
+  Math.min(1, Number(process.env.VALIDATION_ANOMALY_RATE_THRESHOLD || '0.4'))
+);
+const VALIDATION_ANOMALY_MIN_SAMPLES = Math.max(
+  3,
+  Number(process.env.VALIDATION_ANOMALY_MIN_SAMPLES || '5')
+);
+const VALIDATION_ANOMALY_PAUSE_MS = Math.max(
+  60_000,
+  Number(process.env.VALIDATION_ANOMALY_PAUSE_MS || '300000')
+);
+const VALIDATION_RECOVERY_DRILL_INTERVAL_MS = Math.max(
+  30_000,
+  Number(process.env.VALIDATION_RECOVERY_DRILL_INTERVAL_MS || '120000')
+);
+const VALIDATION_RECOVERY_SUCCESS_THRESHOLD = Math.max(
+  0.05,
+  VALIDATION_ANOMALY_RATE_THRESHOLD / 2
+);
+
+interface ValidationOutcomeEntry {
+  timestamp: number;
+  jobId: string;
+  validator: string;
+  success: boolean;
+  reason?: string;
+  stage?: string;
+}
+
+let validationOutcomes: ValidationOutcomeEntry[] = [];
+let validationPausedUntil = 0;
+let validationPauseTriggeredAt: number | null = null;
+let validationPauseReason: string | null = null;
+let validationPauseCount = 0;
+let validationRecoveryTimer: NodeJS.Timeout | null = null;
+
+function isValidationFlowPaused(): boolean {
+  return Date.now() < validationPausedUntil;
+}
+
+function pruneValidationOutcomes(now: number): void {
+  const cutoff = now - VALIDATION_ANOMALY_WINDOW_MS;
+  validationOutcomes = validationOutcomes.filter(
+    (entry) => entry.timestamp >= cutoff
+  );
+}
+
+function computeValidationStats(now: number = Date.now()): {
+  failureRate: number;
+  sampleSize: number;
+} {
+  pruneValidationOutcomes(now);
+  const sampleSize = validationOutcomes.length;
+  if (sampleSize === 0) {
+    return { failureRate: 0, sampleSize: 0 };
+  }
+  const failures = validationOutcomes.reduce(
+    (total, entry) => total + (entry.success ? 0 : 1),
+    0
+  );
+  return { failureRate: failures / sampleSize, sampleSize };
+}
+
+function scheduleValidationRecoveryDrill(): void {
+  if (!isValidationFlowPaused()) {
+    if (validationRecoveryTimer) {
+      clearTimeout(validationRecoveryTimer);
+      validationRecoveryTimer = null;
+    }
+    return;
+  }
+  const remaining = Math.max(0, validationPausedUntil - Date.now());
+  const delay = Math.min(
+    Math.max(30_000, remaining),
+    VALIDATION_RECOVERY_DRILL_INTERVAL_MS
+  );
+  if (validationRecoveryTimer) {
+    clearTimeout(validationRecoveryTimer);
+  }
+  validationRecoveryTimer = setTimeout(() => {
+    validationRecoveryTimer = null;
+    performValidationRecoveryDrill().catch((err) =>
+      console.warn('validation recovery drill failed', err)
+    );
+  }, delay);
+}
+
+async function resumeValidationFlow(reason: string): Promise<void> {
+  if (!isValidationFlowPaused()) {
+    return;
+  }
+  const triggeredAt = validationPauseTriggeredAt;
+  validationPausedUntil = Date.now();
+  validationPauseTriggeredAt = null;
+  validationPauseReason = null;
+  await secureLogAction({
+    component: 'validator',
+    action: 'validation-flow-resumed',
+    success: true,
+    metadata: {
+      reason,
+      triggeredAt: triggeredAt
+        ? new Date(triggeredAt).toISOString()
+        : undefined,
+    },
+  });
+  const stats = computeValidationStats();
+  recordValidationFlowMetrics({
+    failureRate: stats.failureRate,
+    sampleSize: stats.sampleSize,
+    paused: false,
+    triggeredAt: triggeredAt ? new Date(triggeredAt).toISOString() : null,
+    resumeAt: new Date().toISOString(),
+    reason: null,
+  });
+  scheduleValidationRecoveryDrill();
+}
+
+async function performValidationRecoveryDrill(): Promise<void> {
+  const stats = computeValidationStats();
+  await secureLogAction({
+    component: 'validator',
+    action: 'validation-recovery-drill',
+    success: true,
+    metadata: {
+      paused: isValidationFlowPaused(),
+      failureRate: stats.failureRate,
+      sampleSize: stats.sampleSize,
+      pauseCount: validationPauseCount,
+      resumeAt: new Date(validationPausedUntil).toISOString(),
+    },
+  });
+  if (!isValidationFlowPaused()) {
+    recordValidationFlowMetrics({
+      failureRate: stats.failureRate,
+      sampleSize: stats.sampleSize,
+      paused: false,
+      triggeredAt: null,
+      resumeAt: new Date().toISOString(),
+      reason: null,
+    });
+    return;
+  }
+  if (Date.now() >= validationPausedUntil) {
+    await resumeValidationFlow('pause-window-expired');
+    return;
+  }
+  scheduleValidationRecoveryDrill();
+}
+
+async function triggerValidationPause(params: {
+  jobId: string;
+  validator: string;
+  reason: string;
+}): Promise<void> {
+  const now = Date.now();
+  validationPauseReason = params.reason;
+  validationPauseTriggeredAt = now;
+  validationPausedUntil = now + VALIDATION_ANOMALY_PAUSE_MS;
+  validationPauseCount += 1;
+  await secureLogAction({
+    component: 'validator',
+    action: 'validation-flow-paused',
+    jobId: params.jobId,
+    agent: params.validator,
+    success: false,
+    metadata: {
+      reason: params.reason,
+      pauseMs: VALIDATION_ANOMALY_PAUSE_MS,
+      pauseCount: validationPauseCount,
+    },
+  });
+  scheduleValidatorFallback(params.jobId);
+  scheduleValidationRecoveryDrill();
+  const stats = computeValidationStats(now);
+  recordValidationFlowMetrics({
+    failureRate: stats.failureRate,
+    sampleSize: stats.sampleSize,
+    paused: true,
+    triggeredAt: new Date(now).toISOString(),
+    resumeAt: new Date(validationPausedUntil).toISOString(),
+    reason: params.reason,
+  });
+}
+
+async function recordValidationOutcome(event: {
+  jobId: string;
+  validator: string;
+  success: boolean;
+  reason?: string;
+  stage?: string;
+}): Promise<void> {
+  const now = Date.now();
+  validationOutcomes.push({
+    timestamp: now,
+    jobId: event.jobId,
+    validator: event.validator,
+    success: event.success,
+    reason: event.reason,
+    stage: event.stage,
+  });
+  const stats = computeValidationStats(now);
+  const paused = isValidationFlowPaused();
+  if (
+    !event.success &&
+    !paused &&
+    stats.sampleSize >= VALIDATION_ANOMALY_MIN_SAMPLES &&
+    stats.failureRate >= VALIDATION_ANOMALY_RATE_THRESHOLD
+  ) {
+    await triggerValidationPause({
+      jobId: event.jobId,
+      validator: event.validator,
+      reason: event.reason || 'failure-rate-threshold',
+    });
+  } else if (
+    paused &&
+    stats.sampleSize >= Math.max(1, VALIDATION_ANOMALY_MIN_SAMPLES / 2) &&
+    stats.failureRate <= VALIDATION_RECOVERY_SUCCESS_THRESHOLD
+  ) {
+    await resumeValidationFlow('failure-rate-recovered');
+  } else {
+    recordValidationFlowMetrics({
+      failureRate: stats.failureRate,
+      sampleSize: stats.sampleSize,
+      paused: isValidationFlowPaused(),
+      triggeredAt: validationPauseTriggeredAt
+        ? new Date(validationPauseTriggeredAt).toISOString()
+        : null,
+      resumeAt: isValidationFlowPaused()
+        ? new Date(validationPausedUntil).toISOString()
+        : null,
+      reason: validationPauseReason,
+    });
+  }
+}
+
+recordValidationFlowMetrics({
+  failureRate: 0,
+  sampleSize: 0,
+  paused: false,
+  triggeredAt: null,
+  resumeAt: null,
+  reason: null,
+});
 
 function getAssignmentBucket(jobId: string): Map<string, ValidationAssignment> {
   if (!assignments.has(jobId)) {
@@ -794,6 +1044,28 @@ async function evaluateAndCommit(
   if (assignment.attempts >= VALIDATOR_MAX_RETRIES) {
     return;
   }
+  if (isValidationFlowPaused()) {
+    assignment.processing = false;
+    assignment.status = 'failed';
+    assignment.error = 'validation-flow-paused';
+    await secureLogAction({
+      component: 'validator',
+      action: 'anomaly-paused',
+      jobId: submission.jobId,
+      agent: assignment.wallet.address,
+      metadata: { reason: validationPauseReason },
+      success: false,
+    });
+    await recordValidationOutcome({
+      jobId: submission.jobId,
+      validator: assignment.wallet.address,
+      success: false,
+      reason: validationPauseReason || 'validation-flow-paused',
+      stage: 'anomaly-guard',
+    });
+    scheduleValidatorFallback(submission.jobId);
+    return;
+  }
   assignment.processing = true;
   assignment.attempts += 1;
   assignment.status = 'evaluating';
@@ -823,6 +1095,13 @@ async function evaluateAndCommit(
       agent: assignment.wallet.address,
       metadata: { error: assignment.error },
       success: false,
+    });
+    await recordValidationOutcome({
+      jobId: submission.jobId,
+      validator: assignment.wallet.address,
+      success: false,
+      reason: assignment.error,
+      stage: 'stake',
     });
     return;
   }
@@ -920,6 +1199,13 @@ async function evaluateAndCommit(
       metadata: { error: assignment.error },
       success: false,
     });
+    await recordValidationOutcome({
+      jobId: submission.jobId,
+      validator: assignment.wallet.address,
+      success: false,
+      reason: assignment.error,
+      stage: 'commit',
+    });
     if (assignment.attempts < VALIDATOR_MAX_RETRIES) {
       setTimeout(() => {
         evaluateAndCommit(submission, assignment).catch((error) =>
@@ -947,6 +1233,13 @@ async function evaluateAndCommit(
   } catch (err) {
     console.warn('Failed to schedule validator reveal', err);
   }
+
+  await recordValidationOutcome({
+    jobId: submission.jobId,
+    validator: assignment.wallet.address,
+    success: true,
+    stage: 'commit',
+  });
 }
 
 export async function handleValidatorSelection(

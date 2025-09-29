@@ -21,6 +21,7 @@ import {
   telemetryQueueLength,
   getEnergyAnomalyReport,
   getEnergyAnomalyParameters,
+  getPrometheusRegistry,
 } from './telemetry';
 import { listValidatorAssignments } from './validator';
 import {
@@ -65,6 +66,17 @@ import { evaluateSystemHealth } from './systemHealth';
 
 const app = express();
 app.use(express.json());
+
+app.get('/metrics', async (_req, res) => {
+  try {
+    const registry = getPrometheusRegistry();
+    res.set('Content-Type', registry.contentType);
+    const metrics = await registry.metrics();
+    res.send(metrics);
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || String(err) });
+  }
+});
 
 let nonce = ethers.hexlify(ethers.randomBytes(16));
 function rotateNonce() {

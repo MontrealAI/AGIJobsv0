@@ -4,6 +4,7 @@ import { Wallet } from 'ethers';
 import { postJob, EmployerJobSpec } from './employer';
 import { orchestratorWallet } from './utils';
 import { secureLogAction } from './security';
+import { recordPlannerTrace } from './telemetry';
 
 export type JobPlanStatus =
   | 'draft'
@@ -499,6 +500,13 @@ export async function createJobPlan(
       success: true,
       metadata: { planId, taskCount: taskRecords.length },
     });
+    await recordPlannerTrace({
+      planId,
+      event: 'plan-created',
+      timestamp: now,
+      success: true,
+      metadata: { taskCount: taskRecords.length },
+    });
     return clonePlan(plan);
   });
 }
@@ -551,6 +559,15 @@ async function postPlanTask(
       txHash: record.txHash,
     },
   });
+  await recordPlannerTrace({
+    planId: plan.planId,
+    event: 'task-posted',
+    taskId: task.id,
+    jobId: task.jobId,
+    timestamp: postedAt,
+    success: true,
+    metadata: { txHash: record.txHash },
+  });
 }
 
 export async function launchJobPlan(
@@ -597,6 +614,12 @@ export async function launchJobPlan(
         success: true,
         metadata: { planId: plan.planId },
       });
+      await recordPlannerTrace({
+        planId: plan.planId,
+        event: 'plan-activated',
+        timestamp: activatedAt,
+        success: true,
+      });
     }
 
     let readyTasks = plan.tasks.filter((task) => task.state === 'pending');
@@ -642,6 +665,14 @@ export async function launchJobPlan(
             taskId: task.id,
             error: message,
           },
+        });
+        await recordPlannerTrace({
+          planId: plan.planId,
+          event: 'task-post-failed',
+          taskId: task.id,
+          timestamp: new Date().toISOString(),
+          success: false,
+          metadata: { error: message },
         });
       }
     }
@@ -716,13 +747,22 @@ export async function handleJobCompletion(
       success,
       metadata: { planId: plan.planId, taskId: task.id },
     });
+    await recordPlannerTrace({
+      planId: plan.planId,
+      event: success ? 'task-completed' : 'task-failed',
+      taskId: task.id,
+      jobId,
+      timestamp: task.completedAt,
+      success,
+    });
     jobIndex.delete(jobId);
 
     if (!success) {
       if (plan.status !== 'failed') {
         plan.status = 'failed';
+        const failedAt = new Date().toISOString();
         appendHistory(plan, {
-          timestamp: new Date().toISOString(),
+          timestamp: failedAt,
           event: 'plan-failed',
           taskId: task.id,
           jobId,
@@ -734,6 +774,15 @@ export async function handleJobCompletion(
           success: false,
           metadata: { planId: plan.planId, failingTask: task.id },
         });
+        await recordPlannerTrace({
+          planId: plan.planId,
+          event: 'plan-failed',
+          taskId: task.id,
+          jobId,
+          timestamp: failedAt,
+          success: false,
+          metadata: { failingTask: task.id },
+        });
       }
     } else {
       const remaining = plan.tasks.filter(
@@ -741,8 +790,9 @@ export async function handleJobCompletion(
       );
       if (remaining.length === 0) {
         plan.status = 'completed';
+        const completedAt = new Date().toISOString();
         appendHistory(plan, {
-          timestamp: new Date().toISOString(),
+          timestamp: completedAt,
           event: 'plan-completed',
         });
         await secureLogAction({
@@ -750,6 +800,12 @@ export async function handleJobCompletion(
           action: 'plan-completed',
           success: true,
           metadata: { planId: plan.planId },
+        });
+        await recordPlannerTrace({
+          planId: plan.planId,
+          event: 'plan-completed',
+          timestamp: completedAt,
+          success: true,
         });
       } else if (
         plan.status === 'active' &&

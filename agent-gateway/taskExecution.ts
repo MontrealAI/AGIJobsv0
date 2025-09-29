@@ -15,6 +15,8 @@ import { recordAuditEvent } from '../shared/auditLogger';
 import {
   publishEnergySample,
   recordJobEnergyMetrics,
+  recordRunnerTrace,
+  recordGasMetric,
   startJobInvocationMetrics,
   finishJobInvocationMetrics,
   type JobInvocationMetrics,
@@ -524,6 +526,23 @@ export async function executeJob(
   let invocation: AgentTaskRunResult | null = null;
 
   try {
+    await recordRunnerTrace({
+      jobId: job.jobId,
+      agent: wallet.address,
+      status: 'started',
+      submissionMethod: 'none',
+      timestamp: new Date().toISOString(),
+      metadata: {
+        category: analysis.category,
+        agentLabel: identity.label,
+        reward: job.reward,
+      },
+    });
+  } catch (err) {
+    console.warn('Failed to record runner start trace', err);
+  }
+
+  try {
     invocation = await runAgentTask(profile, context);
     rawOutput = invocation.output;
     const serialised = serialiseResult(rawOutput);
@@ -572,8 +591,40 @@ export async function executeJob(
       throw new Error('Failed to submit job result transaction');
     }
 
-    await tx.wait();
+    const receipt = (await tx.wait()) as ethers.TransactionReceipt;
     txHash = tx.hash;
+    const gasUsedBigInt = receipt?.gasUsed ?? 0n;
+    const gasUsed = Number(gasUsedBigInt);
+    const priceSource = receipt as unknown as {
+      effectiveGasPrice?: bigint;
+      gasPrice?: bigint;
+    };
+    const effectiveGasPriceBigInt =
+      priceSource.effectiveGasPrice ?? priceSource.gasPrice ?? 0n;
+    const effectiveGasPrice = Number(effectiveGasPriceBigInt);
+    const gasCost =
+      Number.isFinite(gasUsed) && Number.isFinite(effectiveGasPrice)
+        ? gasUsed * effectiveGasPrice
+        : undefined;
+    try {
+      await recordGasMetric({
+        jobId: job.jobId,
+        agent: wallet.address,
+        txHash,
+        method: submissionMethod,
+        gasUsed: Number.isFinite(gasUsed) ? gasUsed : undefined,
+        effectiveGasPriceWei: Number.isFinite(effectiveGasPrice)
+          ? effectiveGasPrice
+          : undefined,
+        gasCostWei: gasCost,
+        blockNumber: (receipt as any)?.blockNumber,
+        success: true,
+        timestamp: new Date().toISOString(),
+        metadata: { category: analysis.category },
+      });
+    } catch (err) {
+      console.warn('Failed to record submission gas metric', err);
+    }
 
     await notifyMemoryConsumers(context, {
       cid: resultCid,
@@ -651,6 +702,21 @@ export async function executeJob(
       },
       wallet
     );
+    if (txHash) {
+      try {
+        await recordGasMetric({
+          jobId: job.jobId,
+          agent: wallet.address,
+          txHash,
+          method: submissionMethod,
+          success: false,
+          timestamp: new Date().toISOString(),
+          metadata: { error: error.message, category: analysis.category },
+        });
+      } catch (metricErr) {
+        console.warn('Failed to record failed submission gas metric', metricErr);
+      }
+    }
     throw error;
   } finally {
     energySample = await endEnergySpan(span, {
@@ -693,6 +759,26 @@ export async function executeJob(
       resultURI,
       resultHash,
     });
+    try {
+      await recordRunnerTrace({
+        jobId: job.jobId,
+        agent: wallet.address,
+        status: error ? 'failed' : 'completed',
+        submissionMethod,
+        durationMs: invocation?.metrics?.wallTimeMs,
+        rewardValue,
+        energyEstimate: energySample?.energyEstimate ?? null,
+        txHash: txHash || undefined,
+        metadata: {
+          category: analysis.category,
+          agentLabel: identity.label,
+          error: error?.message,
+          resultURI: resultURI || undefined,
+        },
+      });
+    } catch (traceErr) {
+      console.warn('Failed to record runner completion trace', traceErr);
+    }
   }
 
   if (!energySample) {
