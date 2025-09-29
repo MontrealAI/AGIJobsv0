@@ -784,6 +784,38 @@ class ExecutorRewardValidationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.detail.get("code"), "REWARD_INVALID")
 
 
+class ExecuteEndpointRegressionTests(unittest.TestCase):
+    @unittest.skipUnless(hasattr(fastapi, "FastAPI"), "FastAPI application not available")
+    def test_execute_endpoint_returns_reward_invalid_for_bad_reward(self) -> None:
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Invalid", reward="not-a-number", deadlineDays=1),
+        )
+        plan_hash = _compute_plan_hash(intent)
+        app = FastAPI()
+        app.include_router(router)
+
+        intent_payload = intent.dict() if hasattr(intent, "dict") else intent.model_dump()
+        with mock.patch("routes.onebox._API_TOKEN", ""):
+            response = TestClient(app).post(
+                "/onebox/execute",
+                json={
+                    "intent": intent_payload,
+                    "planHash": plan_hash,
+                    "mode": "wallet",
+                },
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {"detail": {"code": "REWARD_INVALID", "message": _ERRORS["REWARD_INVALID"]}},
+        )
+
+
 class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_wallet_with_deadline_days_succeeds(self) -> None:
         captured_metadata = {}
