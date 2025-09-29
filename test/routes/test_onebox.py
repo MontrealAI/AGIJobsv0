@@ -343,6 +343,7 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     Web3,
     _calculate_deadline_timestamp,
     _compute_plan_hash,
+    _summary_for_intent,
     _error_detail,
     _ERRORS,
     _decode_job_created,
@@ -459,6 +460,18 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertFalse(response.requiresConfirmation)
         self.assertCountEqual(response.missingFields, ["reward", "deadlineDays"])
+
+    async def test_post_job_summary_includes_agent_types(self) -> None:
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(reward="2", deadlineDays=10, agentTypes=["coder"]),
+        )
+        summary, requires_confirmation, warnings = _summary_for_intent(
+            intent, "Please help me post a job"
+        )
+        self.assertTrue(requires_confirmation)
+        self.assertEqual(warnings, [])
+        self.assertIn("Agents coder", summary)
 
 
 class PlannerValidationTests(unittest.IsolatedAsyncioTestCase):
@@ -788,6 +801,33 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(response.ok)
         self.assertIn("deadline", captured_metadata)
         self.assertEqual(captured_metadata["deadline"], 2_000_000 + 3 * 86400)
+
+    async def test_execute_wallet_propagates_agent_types_list(self) -> None:
+        captured_metadata = {}
+
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            captured_metadata.update(metadata)
+            return {
+                "cid": "bafkagenttypes",
+                "uri": "ipfs://bafkagenttypes",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafkagenttypes",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafkagenttypes"],
+            }
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Example", reward="1", deadlineDays=3, agentTypes=["coder"]),
+        )
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
+        request_ctx = _make_request()
+        with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
+            "routes.onebox.time.time", return_value=2_000_000
+        ), mock.patch("routes.onebox._compute_spec_hash", return_value=b"spec"):
+            response = await execute(request_ctx, execute_request)
+
+        self.assertTrue(response.ok)
+        self.assertEqual(captured_metadata.get("agentTypes"), ["coder"])
 
     async def test_execute_rejects_deadline_overflow(self) -> None:
         overflow_days = (_UINT64_MAX // 86400) + 1
