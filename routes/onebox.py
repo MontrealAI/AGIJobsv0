@@ -974,6 +974,27 @@ async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
     return txh, dict(receipt)
 
 
+def _require_sender(intent: Optional[JobIntent]) -> str:
+    """Resolve the sender address for relayer transactions or raise a clear error."""
+
+    relayer_sender = getattr(relayer, "address", None) if relayer else None
+    if relayer_sender:
+        return relayer_sender
+
+    user_context = getattr(intent, "userContext", None) if intent else None
+    sender: Optional[str] = None
+    if isinstance(user_context, dict):
+        sender = (user_context or {}).get("sender")
+
+    if sender:
+        return sender
+
+    detail = _error_detail("RELAY_UNAVAILABLE")
+    detail["reason"] = "MISSING_SENDER"
+    detail["hint"] = "No relayer configured and no userContext.sender was provided."
+    raise HTTPException(400, detail)
+
+
 def _collect_tx_hashes(*candidates: Optional[Any]) -> List[str]:
     seen: Dict[str, None] = {}
     for candidate in candidates:
@@ -1422,12 +1443,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
             else:
                 func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
-                user_context = intent.userContext if intent else None
-                sender = relayer.address if relayer else None
-                if not sender and isinstance(user_context, dict):
-                    sender = user_context.get("sender")
-                if not sender:
-                    raise _http_error(400, "RELAY_UNAVAILABLE")
+                sender = _require_sender(intent)
                 tx = _build_tx(func, sender)
                 txh, receipt = await _send_relayer_tx(tx)
                 job_id = _decode_job_created(receipt)
@@ -1474,12 +1490,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
             else:
                 func = registry.functions.finalize(job_id_int)
-                user_context = intent.userContext if intent else None
-                sender = relayer.address if relayer else None
-                if not sender and isinstance(user_context, dict):
-                    sender = user_context.get("sender")
-                if not sender:
-                    raise _http_error(400, "RELAY_UNAVAILABLE")
+                sender = _require_sender(intent)
                 tx = _build_tx(func, sender)
                 txh, receipt = await _send_relayer_tx(tx)
                 response = ExecuteResponse(
