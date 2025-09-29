@@ -20,7 +20,14 @@
       "function raiseDispute(uint256 jobId, string reason)",
       "function feePct() view returns (uint256)",
       "function validatorRewardPct() view returns (uint256)",
-      "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)"
+      "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)",
+      "function jobStake() view returns (uint96)",
+      "function maxJobReward() view returns (uint256)",
+      "function maxJobDuration() view returns (uint256)",
+      "function setJobStake(uint96 stake)",
+      "function setMaxJobReward(uint256 maxReward)",
+      "function setJobDurationLimit(uint256 limit)",
+      "function setJobParameters(uint256 maxReward, uint256 stake)"
     ]
   },
   "stakeManager": {
@@ -28,9 +35,16 @@
     "abi": [
       "function depositStake(uint8 role, uint256 amount)",
       "function withdrawStake(uint8 role, uint256 amount)",
+      "function minStake() view returns (uint256)",
       "function feePct() view returns (uint256)",
       "function burnPct() view returns (uint256)",
-      "function validatorRewardPct() view returns (uint256)"
+      "function validatorRewardPct() view returns (uint256)",
+      "function treasury() view returns (address)",
+      "function setMinStake(uint256 _minStake)",
+      "function setFeePct(uint256 pct)",
+      "function setBurnPct(uint256 pct)",
+      "function setValidatorRewardPct(uint256 pct)",
+      "function setTreasury(address _treasury)"
     ]
   },
   "validationModule": {
@@ -57,7 +71,9 @@
     "address": "0x0000000000000000000000000000000000000000",
     "abi": [
       "function burnPct() view returns (uint256)",
-      "function treasury() view returns (address)"
+      "function treasury() view returns (address)",
+      "function setBurnPct(uint256 pct)",
+      "function setTreasury(address _treasury)"
     ]
   }
 }

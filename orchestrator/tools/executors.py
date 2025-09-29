@@ -59,6 +59,7 @@ _STEP_TO_INTENT = {
     "stake.withdraw": "withdraw",
     "validator.commit": "validate",
     "validator.dispute": "dispute",
+    "governance.set": "admin_set",
 }
 
 

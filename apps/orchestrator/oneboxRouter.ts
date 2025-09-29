@@ -38,6 +38,7 @@ import {
   recordStatus,
   renderMetrics,
 } from './oneboxMetrics';
+import { ownerGovernanceSnapshot, ownerPreviewAction } from './ownerConsole';
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -878,6 +879,64 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
     res.type('text/plain; version=0.0.4');
     res.setHeader('Cache-Control', 'no-store');
     res.send(renderMetrics());
+  });
+
+  router.get('/governance/snapshot', async (req, res) => {
+    const correlationId = getCorrelationId(req);
+    try {
+      const snapshot = await ownerGovernanceSnapshot();
+      logEvent('info', 'onebox.governance.snapshot', { correlationId });
+      res.json(snapshot);
+    } catch (error) {
+      const httpStatus = statusFromError(error);
+      const level: LogLevel = httpStatus >= 500 ? 'error' : 'warn';
+      logEvent(level, 'onebox.governance.snapshot_error', {
+        correlationId,
+        httpStatus,
+        error: errorMessage(error),
+      });
+      handleError(req, res, error);
+    }
+  });
+
+  router.post('/governance/preview', async (req, res) => {
+    const correlationId = getCorrelationId(req);
+    let httpStatus = 200;
+    try {
+      const body = (req.body ?? {}) as {
+        key?: unknown;
+        value?: unknown;
+        meta?: { traceId?: string; userId?: string; safe?: string };
+        persist?: boolean;
+      };
+      if (typeof body.key !== 'string' || !body.key.trim()) {
+        throw new HttpError(400, 'Governance preview requires a key field.');
+      }
+      const preview = await ownerPreviewAction({
+        key: body.key.trim(),
+        value: body.value,
+        meta: {
+          traceId: body.meta?.traceId ?? correlationId,
+          userId: body.meta?.userId,
+          safe: body.meta?.safe,
+        },
+        persist: body.persist,
+      });
+      logEvent('info', 'onebox.governance.preview', {
+        correlationId,
+        key: body.key.trim(),
+      });
+      res.json(preview);
+    } catch (error) {
+      httpStatus = statusFromError(error);
+      const level: LogLevel = httpStatus >= 500 ? 'error' : 'warn';
+      logEvent(level, 'onebox.governance.preview_error', {
+        correlationId,
+        httpStatus,
+        error: errorMessage(error),
+      });
+      handleError(req, res, error);
+    }
   });
 
   return router;

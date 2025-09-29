@@ -78,6 +78,14 @@ const sendButton = hasDocument ? document.getElementById("send") : null;
 const advancedToggle = hasDocument ? document.getElementById("advanced-toggle") : null;
 const advancedPanel = hasDocument ? document.getElementById("advanced-panel") : null;
 const statusBoard = hasDocument ? document.getElementById("status-board") : null;
+const ownerConsole = hasDocument ? document.getElementById("owner-console") : null;
+const ownerSnapshotEl = hasDocument ? document.getElementById("owner-snapshot") : null;
+const ownerPreviewEl = hasDocument ? document.getElementById("owner-preview") : null;
+const ownerRefreshBtn = hasDocument ? document.getElementById("owner-refresh") : null;
+const ownerForm = hasDocument ? document.getElementById("owner-form") : null;
+const ownerKeySelect = hasDocument ? document.getElementById("owner-key") : null;
+const ownerValueInput = hasDocument ? document.getElementById("owner-value") : null;
+const ownerValueHint = hasDocument ? document.getElementById("owner-value-hint") : null;
 
 const storage = (() => {
   try {
@@ -97,6 +105,10 @@ if (hasDocument) {
   applyUrlOverrides();
 }
 
+if (ownerConsole) {
+  initOwnerConsole();
+}
+
 let endpoints = resolveEndpoints();
 let lastModeDescriptor = null;
 
@@ -110,6 +122,53 @@ let advancedLogEl = null;
 let statusTimer = null;
 let statusLoading = false;
 let lastStatusFingerprint = "";
+
+const OWNER_ACTIONS = {
+  'stakeManager.setMinStake': {
+    placeholder: '100',
+    hint: 'AGIA amount converted to wei. Example: 250 for 250 AGIA.',
+  },
+  'stakeManager.setFeePct': {
+    placeholder: '5',
+    hint: 'Fee percentage (0-100).',
+  },
+  'stakeManager.setBurnPct': {
+    placeholder: '2',
+    hint: 'Burn percentage distributed from fees.',
+  },
+  'stakeManager.setValidatorRewardPct': {
+    placeholder: '15',
+    hint: 'Validator reward percentage (0-100).',
+  },
+  'stakeManager.setTreasury': {
+    placeholder: '0x0000...dead',
+    hint: 'Destination address or burn address.',
+  },
+  'jobRegistry.setJobStake': {
+    placeholder: '50',
+    hint: 'Minimum stake (AGIA) required per job.',
+  },
+  'jobRegistry.setMaxJobReward': {
+    placeholder: '500',
+    hint: 'Maximum reward allowed per job in AGIA.',
+  },
+  'jobRegistry.setJobDurationLimit': {
+    placeholder: '{"days": 7}',
+    hint: 'Provide seconds or JSON like {"days": 7}.',
+  },
+  'jobRegistry.setJobParameters': {
+    placeholder: '{"maxReward": "500", "jobStake": "50"}',
+    hint: 'JSON object with maxReward and jobStake fields (AGIA).',
+  },
+  'feePool.setBurnPct': {
+    placeholder: '1',
+    hint: 'Protocol burn percentage (0-100).',
+  },
+  'feePool.setTreasury': {
+    placeholder: '0x0000...beef',
+    hint: 'Treasury recipient address.',
+  },
+};
 
 function sanitizeUrlCandidate(value) {
   if (typeof value !== "string") return null;
@@ -940,6 +999,106 @@ function setBusy(state) {
   if (attachmentInput) {
     attachmentInput.disabled = state;
   }
+}
+
+function ownerActionInfo(key) {
+  const info = OWNER_ACTIONS[key];
+  if (info) return info;
+  return { placeholder: '', hint: 'Provide raw numbers or JSON for this action.' };
+}
+
+function updateOwnerHints() {
+  if (!ownerKeySelect || !ownerValueInput) return;
+  const selected = ownerActionInfo(ownerKeySelect.value);
+  if (selected.placeholder !== undefined && ownerValueInput.value.trim() === '') {
+    ownerValueInput.placeholder = selected.placeholder;
+  }
+  if (ownerValueHint) {
+    ownerValueHint.textContent = selected.hint;
+  }
+}
+
+function ownerApiUrl(...segments) {
+  return joinUrlSegments(endpoints.base, endpoints.prefix, ...segments);
+}
+
+async function refreshOwnerSnapshot() {
+  if (!ownerSnapshotEl) return;
+  const url = ownerApiUrl('governance', 'snapshot');
+  if (!url) {
+    ownerSnapshotEl.textContent = 'Configure an orchestrator base URL to load governance parameters.';
+    return;
+  }
+  ownerSnapshotEl.textContent = 'Loading snapshot…';
+  try {
+    const response = await fetch(url, { method: 'GET' });
+    if (!response.ok) {
+      throw new Error(`Snapshot error (${response.status})`);
+    }
+    const payload = await response.json();
+    ownerSnapshotEl.textContent = JSON.stringify(payload, null, 2);
+  } catch (error) {
+    ownerSnapshotEl.textContent = `⚠️ ${error instanceof Error ? error.message : 'Snapshot unavailable'}`;
+  }
+}
+
+function parseOwnerValue(raw) {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch (error) {
+    if (/^(true|false)$/i.test(trimmed)) {
+      return trimmed.toLowerCase() === 'true';
+    }
+    if (!Number.isNaN(Number(trimmed))) {
+      return Number(trimmed);
+    }
+    return trimmed;
+  }
+}
+
+async function submitOwnerPreview(event) {
+  event.preventDefault();
+  if (!ownerKeySelect || !ownerPreviewEl) return;
+  const key = ownerKeySelect.value;
+  const value = ownerValueInput ? parseOwnerValue(ownerValueInput.value) : null;
+  const url = ownerApiUrl('governance', 'preview');
+  if (!url) {
+    ownerPreviewEl.textContent = 'Configure an orchestrator base URL to generate a preview.';
+    return;
+  }
+  ownerPreviewEl.textContent = 'Preparing preview…';
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        key,
+        value,
+        meta: { traceId: crypto.randomUUID?.() },
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`Preview error (${response.status})`);
+    }
+    const payload = await response.json();
+    ownerPreviewEl.textContent = JSON.stringify(payload, null, 2);
+  } catch (error) {
+    ownerPreviewEl.textContent = `⚠️ ${error instanceof Error ? error.message : 'Preview unavailable'}`;
+  }
+}
+
+function initOwnerConsole() {
+  updateOwnerHints();
+  refreshOwnerSnapshot();
+  ownerKeySelect?.addEventListener('change', updateOwnerHints);
+  ownerRefreshBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    refreshOwnerSnapshot();
+  });
+  ownerForm?.addEventListener('submit', submitOwnerPreview);
 }
 
 async function plannerRequest(prompt) {
