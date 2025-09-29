@@ -184,6 +184,7 @@ export interface PlatformIncentivesConfig {
   stakeManager?: string | null;
   platformRegistry?: string | null;
   jobRouter?: string | null;
+  maxDiscountPct?: number | string | null;
   [key: string]: unknown;
 }
 

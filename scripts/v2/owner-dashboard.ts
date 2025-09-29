@@ -825,12 +825,13 @@ async function collectPlatformIncentivesSummary(
   address: string
 ): Promise<ModuleSummary> {
   const incentives = await ethers.getContractAt('PlatformIncentives', address);
-  const [ownerAddress, stakeManager, platformRegistry, jobRouter] =
+  const [ownerAddress, stakeManager, platformRegistry, jobRouter, maxDiscount] =
     await Promise.all([
       resolveOwner(incentives),
       callString(incentives, 'stakeManager'),
       callString(incentives, 'platformRegistry'),
       callString(incentives, 'jobRouter'),
+      callBigInt(incentives, 'maxDiscountPct'),
     ]);
 
   return {
@@ -842,6 +843,10 @@ async function collectPlatformIncentivesSummary(
       { label: 'StakeManager', value: normaliseAddress(stakeManager) },
       { label: 'PlatformRegistry', value: normaliseAddress(platformRegistry) },
       { label: 'JobRouter', value: normaliseAddress(jobRouter) },
+      {
+        label: 'Max Discount %',
+        value: maxDiscount !== null ? `${maxDiscount.toString()}%` : null,
+      },
     ],
   };
 }

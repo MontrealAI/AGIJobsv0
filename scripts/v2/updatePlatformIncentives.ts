@@ -56,6 +56,10 @@ function describeAddress(label: string, value: string): string {
   return `${label}: ${normalised}`;
 }
 
+function describePercentage(label: string, value: number): string {
+  return `${label}: ${value}%`;
+}
+
 async function resolveContractAddress(
   cli: CliOptions,
   configAddress?: string,
@@ -114,12 +118,18 @@ async function main() {
     );
   }
 
-  const [currentStakeManager, currentPlatformRegistry, currentJobRouter] =
-    await Promise.all([
-      platformIncentives.stakeManager(),
-      platformIncentives.platformRegistry(),
-      platformIncentives.jobRouter(),
-    ]);
+  const [
+    currentStakeManager,
+    currentPlatformRegistry,
+    currentJobRouter,
+    currentMaxDiscountPctRaw,
+  ] = await Promise.all([
+    platformIncentives.stakeManager(),
+    platformIncentives.platformRegistry(),
+    platformIncentives.jobRouter(),
+    platformIncentives.maxDiscountPct(),
+  ]);
+  const currentMaxDiscountPct = Number(currentMaxDiscountPctRaw.toString());
 
   const desiredStakeManager =
     incentivesConfig.stakeManager !== undefined
@@ -133,33 +143,51 @@ async function main() {
     incentivesConfig.jobRouter !== undefined
       ? ethers.getAddress(incentivesConfig.jobRouter)
       : undefined;
+  const desiredMaxDiscountPct =
+    Object.prototype.hasOwnProperty.call(
+      incentivesConfig,
+      'maxDiscountPct'
+    ) &&
+    incentivesConfig.maxDiscountPct !== undefined
+      ? Number(incentivesConfig.maxDiscountPct)
+      : undefined;
 
   const current = {
     stakeManager: ethers.getAddress(currentStakeManager),
     platformRegistry: ethers.getAddress(currentPlatformRegistry),
     jobRouter: ethers.getAddress(currentJobRouter),
+    maxDiscountPct: currentMaxDiscountPct,
   };
 
   const target = {
     stakeManager: desiredStakeManager ?? current.stakeManager,
     platformRegistry: desiredPlatformRegistry ?? current.platformRegistry,
     jobRouter: desiredJobRouter ?? current.jobRouter,
+    maxDiscountPct:
+      desiredMaxDiscountPct !== undefined
+        ? desiredMaxDiscountPct
+        : current.maxDiscountPct,
   };
 
   const planned: PlannedAction[] = [];
-  const changedFields: string[] = [];
 
-  for (const key of Object.keys(target) as (keyof typeof target)[]) {
-    if (!sameAddress(current[key], target[key])) {
-      changedFields.push(key);
-    }
-  }
-
-  if (changedFields.length > 0) {
+  if (
+    !sameAddress(current.stakeManager, target.stakeManager) ||
+    !sameAddress(current.platformRegistry, target.platformRegistry) ||
+    !sameAddress(current.jobRouter, target.jobRouter)
+  ) {
     planned.push({
       label: 'Update module wiring',
       method: 'setModules',
       args: [target.stakeManager, target.platformRegistry, target.jobRouter],
+    });
+  }
+
+  if (current.maxDiscountPct !== target.maxDiscountPct) {
+    planned.push({
+      label: 'Update maximum fee discount percentage',
+      method: 'setMaxDiscountPct',
+      args: [target.maxDiscountPct.toString()],
     });
   }
 
@@ -172,22 +200,43 @@ async function main() {
     describeAddress('Current platformRegistry', current.platformRegistry)
   );
   console.log(describeAddress('Current jobRouter', current.jobRouter));
+  console.log(
+    describePercentage('Current maxDiscountPct', current.maxDiscountPct)
+  );
 
-  if (changedFields.length === 0) {
+  if (planned.length === 0) {
     console.log(
-      '\nNo module updates required. All addresses already match the configuration.'
+      '\nNo updates required. All configuration values already match the on-chain state.'
     );
     return;
   }
 
   console.log('\nPlanned updates:');
-  for (const field of changedFields) {
-    console.log(
-      `- ${field}: ${describeAddress(
-        'current',
-        current[field]
-      )} -> ${describeAddress('target', target[field])}`
-    );
+  for (const action of planned) {
+    if (action.method === 'setModules') {
+      console.log(
+        `- stakeManager/platformRegistry/jobRouter: ${describeAddress(
+          'current stakeManager',
+          current.stakeManager
+        )} | ${describeAddress(
+          'current platformRegistry',
+          current.platformRegistry
+        )} | ${describeAddress('current jobRouter', current.jobRouter)} -> ${describeAddress(
+          'target stakeManager',
+          target.stakeManager
+        )} | ${describeAddress(
+          'target platformRegistry',
+          target.platformRegistry
+        )} | ${describeAddress('target jobRouter', target.jobRouter)}`
+      );
+    } else if (action.method === 'setMaxDiscountPct') {
+      console.log(
+        `- maxDiscountPct: ${describePercentage(
+          'current',
+          current.maxDiscountPct
+        )} -> ${describePercentage('target', target.maxDiscountPct)}`
+      );
+    }
   }
 
   if (!cli.execute) {

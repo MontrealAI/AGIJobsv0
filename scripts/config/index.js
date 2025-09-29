@@ -1052,6 +1052,18 @@ function normalisePlatformIncentivesConfig(config = {}) {
     }
   }
 
+  if (Object.prototype.hasOwnProperty.call(result, 'maxDiscountPct')) {
+    const value = result.maxDiscountPct;
+    if (value === null || value === undefined || value === '') {
+      delete result.maxDiscountPct;
+    } else {
+      result.maxDiscountPct = normalisePercentage(
+        value,
+        'PlatformIncentives maxDiscountPct'
+      );
+    }
+  }
+
   return result;
 }
 

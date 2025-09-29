@@ -18,12 +18,19 @@ export async function buildPlatformIncentivesPlan(
   const address = await platformIncentives.getAddress();
   const iface = platformIncentives.interface;
 
-  const [currentStakeManager, currentPlatformRegistry, currentJobRouter] =
-    await Promise.all([
-      platformIncentives.stakeManager(),
-      platformIncentives.platformRegistry(),
-      platformIncentives.jobRouter(),
-    ]);
+  const [
+    currentStakeManager,
+    currentPlatformRegistry,
+    currentJobRouter,
+    currentMaxDiscountPctRaw,
+  ] = await Promise.all([
+    platformIncentives.stakeManager(),
+    platformIncentives.platformRegistry(),
+    platformIncentives.jobRouter(),
+    platformIncentives.maxDiscountPct(),
+  ]);
+
+  const currentMaxDiscountPct = BigInt(currentMaxDiscountPctRaw.toString());
 
   const desiredStakeManager = normaliseAddress(config.stakeManager);
   const desiredPlatformRegistry = normaliseAddress(config.platformRegistry);
@@ -46,6 +53,14 @@ export async function buildPlatformIncentivesPlan(
     (currentJobRouter ? ethers.getAddress(currentJobRouter) : undefined) ??
     ethers.ZeroAddress;
 
+  const hasConfigMaxDiscount = Object.prototype.hasOwnProperty.call(
+    config,
+    'maxDiscountPct'
+  );
+  const desiredMaxDiscountPct = hasConfigMaxDiscount
+    ? BigInt(Number(config.maxDiscountPct))
+    : undefined;
+
   const actions: PlannedAction[] = [];
 
   if (
@@ -60,6 +75,19 @@ export async function buildPlatformIncentivesPlan(
       args: [stakeManagerAddress, platformRegistryAddress, jobRouterAddress],
       current: `${currentStakeManager}, ${currentPlatformRegistry}, ${currentJobRouter}`,
       desired: `${stakeManagerAddress}, ${platformRegistryAddress}, ${jobRouterAddress}`,
+    });
+  }
+
+  if (
+    desiredMaxDiscountPct !== undefined &&
+    desiredMaxDiscountPct !== currentMaxDiscountPct
+  ) {
+    actions.push({
+      label: 'Update maximum fee discount percentage',
+      method: 'setMaxDiscountPct',
+      args: [desiredMaxDiscountPct],
+      current: `${currentMaxDiscountPct}%`,
+      desired: `${desiredMaxDiscountPct}%`,
     });
   }
 
