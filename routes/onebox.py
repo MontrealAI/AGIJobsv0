@@ -5,6 +5,7 @@
 # Everything chain-related (keys, gas, ABIs, pinning) stays on the server.
 
 import asyncio
+import copy
 import hashlib
 import json
 import logging
@@ -16,7 +17,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
 
 import httpx
 import prometheus_client
@@ -267,8 +268,15 @@ _TTO_SECONDS = prometheus_client.Histogram(
 )
 
 
+@dataclass
+class PlanMetadata:
+    created_at: str
+    canonical: Dict[str, Any] = field(default_factory=dict)
+    missing_fields: List[str] = field(default_factory=list)
+
+
 _plan_cache_lock = threading.Lock()
-_plan_cache: Dict[str, str] = {}
+_plan_cache: Dict[str, PlanMetadata] = {}
 
 
 def _current_timestamp() -> str:
@@ -290,18 +298,39 @@ def _normalize_plan_hash(value: Optional[str]) -> Optional[str]:
     raise _http_error(400, "PLAN_HASH_INVALID")
 
 
-def _store_plan_metadata(plan_hash: str, created_at: str) -> None:
+def _store_plan_metadata(
+    plan_hash: str,
+    *,
+    created_at: str,
+    canonical: Dict[str, Any],
+    missing_fields: List[str],
+    previous_hash: Optional[str] = None,
+) -> None:
     if not plan_hash:
         return
+    metadata = PlanMetadata(
+        created_at=created_at,
+        canonical=copy.deepcopy(canonical),
+        missing_fields=list(missing_fields),
+    )
     with _plan_cache_lock:
-        _plan_cache[plan_hash] = created_at
+        if previous_hash and previous_hash != plan_hash:
+            _plan_cache.pop(previous_hash, None)
+        _plan_cache[plan_hash] = metadata
 
 
-def _lookup_plan_timestamp(plan_hash: Optional[str]) -> Optional[str]:
+def _lookup_plan_metadata(plan_hash: Optional[str]) -> Optional[PlanMetadata]:
     if not plan_hash:
         return None
     with _plan_cache_lock:
-        return _plan_cache.get(plan_hash)
+        metadata = _plan_cache.get(plan_hash)
+        if not metadata:
+            return None
+        return PlanMetadata(
+            created_at=metadata.created_at,
+            canonical=copy.deepcopy(metadata.canonical),
+            missing_fields=list(metadata.missing_fields),
+        )
 
 
 def _normalize_timestamp(value: Optional[str]) -> Optional[str]:
@@ -352,10 +381,62 @@ def _stable_stringify(value: Any) -> str:
     return json.dumps(value)
 
 
-def _compute_plan_hash(intent: "JobIntent") -> str:
-    envelope = _canonical_plan_envelope(intent)
+def _compute_plan_hash_from_envelope(envelope: Dict[str, Any]) -> str:
     canonical = _stable_stringify(envelope)
     return "0x" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _compute_plan_hash(intent: "JobIntent") -> str:
+    envelope = _canonical_plan_envelope(intent)
+    return _compute_plan_hash_from_envelope(envelope)
+
+
+_PathSegment = Union[str, int]
+
+
+def _flatten_structure(
+    value: Any, path: Tuple[_PathSegment, ...] = ()
+) -> Dict[Tuple[_PathSegment, ...], Any]:
+    items: Dict[Tuple[_PathSegment, ...], Any] = {}
+    if isinstance(value, dict):
+        if not value:
+            items[path] = "__empty_dict__"
+        for key in sorted(value.keys()):
+            items.update(_flatten_structure(value[key], path + (str(key),)))
+        return items
+    if isinstance(value, list):
+        if not value:
+            items[path] = "__empty_list__"
+        for idx, element in enumerate(value):
+            items.update(_flatten_structure(element, path + (idx,)))
+        return items
+    items[path] = value
+    return items
+
+
+def _allowed_missing_field_paths(
+    missing_fields: List[str],
+) -> Set[Tuple[_PathSegment, ...]]:
+    return {("intent", "payload", field) for field in missing_fields}
+
+
+def _differences_confined_to_missing_fields(
+    original: Dict[str, Any],
+    updated: Dict[str, Any],
+    missing_fields: List[str],
+) -> bool:
+    if not missing_fields:
+        return False
+    allowed_paths = _allowed_missing_field_paths(missing_fields)
+    original_flat = _flatten_structure(original)
+    updated_flat = _flatten_structure(updated)
+    all_paths = set(original_flat.keys()) | set(updated_flat.keys())
+    for path in all_paths:
+        if path in allowed_paths:
+            continue
+        if original_flat.get(path) != updated_flat.get(path):
+            return False
+    return True
 
 
 def _get_correlation_id(request: Request) -> str:
@@ -1753,9 +1834,15 @@ async def plan(request: Request, req: PlanRequest):
                 requires_confirmation = True
             else:
                 requires_confirmation = False
-        plan_hash = _compute_plan_hash(intent)
+        plan_envelope = _canonical_plan_envelope(intent)
+        plan_hash = _compute_plan_hash_from_envelope(plan_envelope)
         created_at = _current_timestamp()
-        _store_plan_metadata(plan_hash, created_at)
+        _store_plan_metadata(
+            plan_hash,
+            created_at=created_at,
+            canonical=plan_envelope,
+            missing_fields=missing_fields,
+        )
         response = PlanResponse(
             summary=summary,
             intent=intent,
@@ -1814,14 +1901,35 @@ async def simulate(request: Request, req: SimulateRequest):
     provided_hash = _normalize_plan_hash(req.planHash)
     if provided_hash is None:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
-    canonical_hash = _compute_plan_hash(intent)
-    if provided_hash != canonical_hash:
-        raise _http_error(400, "PLAN_HASH_MISMATCH")
-    plan_hash = provided_hash
-    stored_created_at = _lookup_plan_timestamp(plan_hash)
     request_created_at = _normalize_timestamp(req.createdAt)
-    created_at = stored_created_at or request_created_at or _current_timestamp()
-    _store_plan_metadata(plan_hash, created_at)
+    plan_envelope = _canonical_plan_envelope(intent)
+    canonical_hash = _compute_plan_hash_from_envelope(plan_envelope)
+    metadata = _lookup_plan_metadata(provided_hash)
+    previous_hash = None
+    if provided_hash != canonical_hash:
+        if metadata is None:
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+        if not _differences_confined_to_missing_fields(
+            metadata.canonical, plan_envelope, metadata.missing_fields
+        ):
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+        plan_hash = canonical_hash
+        created_at = metadata.created_at or request_created_at or _current_timestamp()
+        previous_hash = provided_hash
+    else:
+        plan_hash = provided_hash
+        if metadata and metadata.created_at:
+            created_at = metadata.created_at
+        else:
+            created_at = request_created_at or _current_timestamp()
+    missing_fields = _detect_missing_fields(intent)
+    _store_plan_metadata(
+        plan_hash,
+        created_at=created_at,
+        canonical=plan_envelope,
+        missing_fields=missing_fields,
+        previous_hash=previous_hash,
+    )
 
     blockers: List[str] = []
     risks: List[str] = []
@@ -1989,14 +2097,35 @@ async def execute(request: Request, req: ExecuteRequest):
     provided_hash = _normalize_plan_hash(req.planHash)
     if provided_hash is None:
         raise _http_error(400, "PLAN_HASH_REQUIRED")
-    canonical_hash = _compute_plan_hash(intent)
-    if provided_hash != canonical_hash:
-        raise _http_error(400, "PLAN_HASH_MISMATCH")
-    plan_hash = provided_hash
-    stored_created_at = _lookup_plan_timestamp(plan_hash)
     request_created_at = _normalize_timestamp(req.createdAt)
-    created_at = stored_created_at or request_created_at or _current_timestamp()
-    _store_plan_metadata(plan_hash, created_at)
+    plan_envelope = _canonical_plan_envelope(intent)
+    canonical_hash = _compute_plan_hash_from_envelope(plan_envelope)
+    metadata = _lookup_plan_metadata(provided_hash)
+    previous_hash = None
+    if provided_hash != canonical_hash:
+        if metadata is None:
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+        if not _differences_confined_to_missing_fields(
+            metadata.canonical, plan_envelope, metadata.missing_fields
+        ):
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+        plan_hash = canonical_hash
+        created_at = metadata.created_at or request_created_at or _current_timestamp()
+        previous_hash = provided_hash
+    else:
+        plan_hash = provided_hash
+        if metadata and metadata.created_at:
+            created_at = metadata.created_at
+        else:
+            created_at = request_created_at or _current_timestamp()
+    missing_fields = _detect_missing_fields(intent)
+    _store_plan_metadata(
+        plan_hash,
+        created_at=created_at,
+        canonical=plan_envelope,
+        missing_fields=missing_fields,
+        previous_hash=previous_hash,
+    )
 
     try:
         if intent.action == "post_job":

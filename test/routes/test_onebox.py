@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import sys
@@ -641,6 +642,49 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.blockers, [])
         self.assertIn("JOB_NOT_READY_FOR_FINALIZE", response.risks)
+
+
+class PlanHashUpgradeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_plan_missing_reward_then_supply_before_simulate_and_execute(self) -> None:
+        plan_response = await plan(
+            _make_request(), PlanRequest(text="Please help me post a job for 5 days")
+        )
+        self.assertEqual(plan_response.intent.action, "post_job")
+        self.assertIn("reward", plan_response.missingFields)
+        original_hash = plan_response.planHash
+
+        updated_intent = copy.deepcopy(plan_response.intent)
+        updated_intent.payload.reward = "10"
+
+        simulate_response = await simulate(
+            _make_request(), SimulateRequest(intent=updated_intent, planHash=original_hash)
+        )
+        self.assertEqual(simulate_response.blockers, [])
+        self.assertNotEqual(simulate_response.planHash, original_hash)
+        self.assertEqual(simulate_response.planHash, _compute_plan_hash(updated_intent))
+
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            return {
+                "cid": "bafyplanupgrade",
+                "uri": "ipfs://bafyplanupgrade",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafyplanupgrade",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafyplanupgrade"],
+            }
+
+        execute_request = ExecuteRequest(
+            intent=updated_intent,
+            mode="wallet",
+            planHash=simulate_response.planHash,
+            createdAt=simulate_response.createdAt,
+        )
+        with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
+            "routes.onebox._compute_spec_hash", return_value=b"spec"
+        ), mock.patch("routes.onebox.time.time", return_value=1_234_567):
+            execute_response = await execute(_make_request(), execute_request)
+
+        self.assertTrue(execute_response.ok)
+        self.assertEqual(execute_response.planHash, simulate_response.planHash)
+        self.assertEqual(execute_response.createdAt, simulate_response.createdAt)
 
 
 class DeadlineComputationTests(unittest.TestCase):
