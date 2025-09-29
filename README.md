@@ -28,8 +28,11 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Agent/Validator Identity – ENS subdomain registration](#agentvalidator-identity--ens-subdomain-registration)
 - [Documentation](#documentation)
 - [One-Box UX](#one-box-ux)
-- [Owner control playbook](#owner-control-playbook)
 - [Owner control surface snapshot](#owner-control-surface-snapshot)
+- [Owner control verification](#owner-control-verification)
+- [Owner control playbook](#owner-control-playbook)
+- [Owner control blueprint](#owner-control-blueprint)
+- [Owner control quick reference CLI](#owner-control-quick-reference-cli)
 
 ### Identity policy
 
@@ -198,6 +201,10 @@ Provide per-module addresses via `modules.<name>.address`, the `AGJ_<NAME>_ADDRE
 ### Owner control playbook
 
 Operators who prefer a narrative, non-technical runbook can follow the [Owner Control Playbook](docs/owner-control-playbook.md). It packages the multi-module configuration workflow into illustrated checklists, Mermaid diagrams, and decision tables that walk through editing `config/*.json`, generating Safe bundles, executing transactions, and verifying the final state. The playbook also documents rollback paths, health monitoring commands, and operational safeguards so the contract owner keeps full, auditable control over every tunable parameter without touching Solidity internals.
+
+### Owner control blueprint
+
+Change managers who need a single-page, production-ready operating model can use the [Owner Control Blueprint](docs/owner-control-blueprint.md). It maps each configurable subsystem to its JSON file, editing helper, execution script, and verification check, then layers in multiple Mermaid diagrams, emergency hotfix checklists, and governance artefact templates. The blueprint emphasises repeatable workflows for non-technical operators and highlights mandatory guard rails (`owner:update-all` dry runs, Safe bundles, `owner:verify-control`, and `owner:dashboard`) so updates remain safe, auditable, and reversible even during high-pressure incidents.
 
 ### Owner control quick reference CLI
 
