@@ -38,6 +38,52 @@
     <aside id="advanced-panel" aria-live="polite" aria-label="Advanced details"></aside>
   </main>
 
+  <section
+    id="owner-console"
+    class="owner-console"
+    aria-live="polite"
+    aria-label="Owner governance console"
+  >
+    <div class="owner-console__header">
+      <h2>Owner Console</h2>
+      <div class="owner-console__actions">
+        <button id="owner-refresh" type="button">Refresh Snapshot</button>
+      </div>
+    </div>
+    <p class="owner-console__hint">
+      Review on-chain governance parameters and draft multi-sig ready updates without leaving the chat.
+    </p>
+    <pre id="owner-snapshot" class="owner-console__pre" aria-live="polite">Snapshot not loaded yet.</pre>
+    <form id="owner-form" class="owner-console__form">
+      <label for="owner-key">Governance action</label>
+      <select id="owner-key" aria-describedby="owner-value-hint">
+        <option value="stakeManager.setMinStake">StakeManager · setMinStake (AGIA)</option>
+        <option value="stakeManager.setFeePct">StakeManager · setFeePct (%)</option>
+        <option value="stakeManager.setBurnPct">StakeManager · setBurnPct (%)</option>
+        <option value="stakeManager.setValidatorRewardPct">StakeManager · setValidatorRewardPct (%)</option>
+        <option value="stakeManager.setTreasury">StakeManager · setTreasury (address)</option>
+        <option value="jobRegistry.setJobStake">JobRegistry · setJobStake (AGIA)</option>
+        <option value="jobRegistry.setMaxJobReward">JobRegistry · setMaxJobReward (AGIA)</option>
+        <option value="jobRegistry.setJobDurationLimit">JobRegistry · setJobDurationLimit</option>
+        <option value="jobRegistry.setJobParameters">JobRegistry · setJobParameters</option>
+        <option value="feePool.setBurnPct">FeePool · setBurnPct (%)</option>
+        <option value="feePool.setTreasury">FeePool · setTreasury (address)</option>
+      </select>
+      <label for="owner-value">Proposed value</label>
+      <textarea
+        id="owner-value"
+        class="owner-console__textarea"
+        aria-describedby="owner-value-hint"
+        placeholder="Enter a number, address, or JSON payload"
+      ></textarea>
+      <p id="owner-value-hint" class="owner-console__hint">
+        Provide raw numbers for AGIA/percentages, ENS/0x addresses, or JSON (e.g., {"maxReward": "500", "jobStake": "50"}).
+      </p>
+      <button id="owner-preview-btn" type="submit">Preview Multi-Sig Bundle</button>
+    </form>
+    <pre id="owner-preview" class="owner-console__pre" aria-live="polite">Preview will appear here.</pre>
+  </section>
+
   <form id="composer">
     <div class="field">
       <label for="question">Describe what you want to do</label>
