@@ -947,6 +947,34 @@ class ExecutorRelayerFallbackTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(exc.exception.detail, dict)
         self.assertEqual(exc.exception.detail.get("code"), "RELAY_UNAVAILABLE")
 
+    async def test_execute_plan_intent_without_user_context_returns_relay_unavailable(self) -> None:
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            return {
+                "cid": "bafkplan",
+                "uri": "ipfs://bafkplan",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafkplan",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafkplan"],
+            }
+
+        plan_response = await plan(
+            _make_request(), PlanRequest(text="Post a job offering 2 AGIALPHA within 3 days")
+        )
+        execute_request = ExecuteRequest(
+            intent=plan_response.intent, mode="relayer", planHash=plan_response.planHash
+        )
+        request_ctx = _make_request()
+
+        with mock.patch.object(onebox, "relayer", None), mock.patch(
+            "routes.onebox._pin_json", side_effect=_fake_pin_json
+        ), mock.patch("routes.onebox._compute_spec_hash", return_value=b"spec"):
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await execute(request_ctx, execute_request)
+
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertIsInstance(exc.exception.detail, dict)
+        self.assertEqual(exc.exception.detail.get("code"), "RELAY_UNAVAILABLE")
+        self.assertEqual(exc.exception.detail.get("reason"), "MISSING_SENDER")
+
     async def test_finalize_relayer_without_sender_returns_relay_unavailable(self) -> None:
         intent = JobIntent(action="finalize_job", payload=Payload(jobId=123))
         plan_hash = _compute_plan_hash(intent)
