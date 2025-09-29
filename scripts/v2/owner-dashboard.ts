@@ -85,6 +85,44 @@ function formatTokenAmount(
   return `${formatUnitsRounded(value, decimals)} ${symbol}`;
 }
 
+async function resolveTokenMetadata(
+  tokenAddress: string | null
+): Promise<{ symbol: string; decimals: number }> {
+  if (!tokenAddress || tokenAddress === ethers.ZeroAddress) {
+    return { symbol: 'AGIALPHA', decimals: 18 };
+  }
+
+  const contract = new ethers.Contract(
+    tokenAddress,
+    ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'],
+    ethers.provider
+  );
+
+  let symbol = 'AGIALPHA';
+  let decimals = 18;
+
+  try {
+    const resolved = await contract.symbol();
+    if (typeof resolved === 'string' && resolved.length > 0) {
+      symbol = resolved;
+    }
+  } catch (_) {
+    // ignore missing symbol metadata
+  }
+
+  try {
+    const resolved = await contract.decimals();
+    const parsed = Number(resolved);
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 255) {
+      decimals = parsed;
+    }
+  } catch (_) {
+    // ignore missing decimals metadata
+  }
+
+  return { symbol, decimals };
+}
+
 function formatDurationSeconds(value: bigint | null): string | null {
   if (value === null) return null;
   const secondsNumber = Number(value);
@@ -855,14 +893,18 @@ async function collectRandaoCoordinatorSummary(
   address: string
 ): Promise<ModuleSummary> {
   const randao = await ethers.getContractAt('RandaoCoordinator', address);
-  const [ownerAddress, commitWindow, revealWindow, deposit, treasury] =
+  const [ownerAddress, commitWindow, revealWindow, deposit, treasury, token] =
     await Promise.all([
       resolveOwner(randao),
       callBigInt(randao, 'commitWindow'),
       callBigInt(randao, 'revealWindow'),
       callBigInt(randao, 'deposit'),
       callString(randao, 'treasury'),
+      callString(randao, 'token'),
     ]);
+
+  const tokenAddress = token ? ethers.getAddress(token) : null;
+  const tokenMetadata = await resolveTokenMetadata(tokenAddress);
 
   return {
     key: 'randaoCoordinator',
@@ -872,7 +914,11 @@ async function collectRandaoCoordinatorSummary(
       { label: 'Owner', value: ownerAddress },
       { label: 'Commit Window', value: formatDurationSeconds(commitWindow) },
       { label: 'Reveal Window', value: formatDurationSeconds(revealWindow) },
-      { label: 'Deposit', value: formatTokenAmount(deposit) },
+      {
+        label: 'Deposit',
+        value: formatTokenAmount(deposit, tokenMetadata.symbol, tokenMetadata.decimals),
+      },
+      { label: 'Token', value: normaliseAddress(tokenAddress ?? undefined) },
       { label: 'Treasury', value: normaliseAddress(treasury) },
     ],
   };

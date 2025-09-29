@@ -233,6 +233,7 @@ export interface RandaoCoordinatorConfig {
   commitWindow?: number;
   revealWindow?: number;
   deposit?: string;
+  token?: string;
   treasury?: string | null;
   [key: string]: unknown;
 }

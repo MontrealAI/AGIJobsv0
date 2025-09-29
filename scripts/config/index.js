@@ -1272,6 +1272,14 @@ function normaliseRandaoCoordinatorConfig(config = {}) {
     delete result.depositTokens;
   }
 
+  if (result.token !== undefined) {
+    if (result.token === null || result.token === '') {
+      delete result.token;
+    } else {
+      result.token = ensureAddress(result.token, 'RandaoCoordinator token');
+    }
+  }
+
   if (result.treasury !== undefined) {
     if (result.treasury === null || result.treasury === '') {
       result.treasury = ethers.ZeroAddress;
