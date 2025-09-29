@@ -521,6 +521,21 @@ class PlannerValidationTests(unittest.IsolatedAsyncioTestCase):
 
 
 class SimulatorTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
+        self._registry_patcher = mock.patch.object(
+            onebox.registry,
+            "functions",
+            new=mock.MagicMock(),
+        )
+        self._registry_functions = self._registry_patcher.start()
+        onebox._STATUS_CACHE.clear()
+
+    async def asyncTearDown(self) -> None:
+        try:
+            self.assertEqual(self._registry_functions.mock_calls, [])
+        finally:
+            self._registry_patcher.stop()
+
     async def test_simulate_post_job_success(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
         plan_hash = _compute_plan_hash(intent)
@@ -644,9 +659,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         plan_hash = _compute_plan_hash(intent)
         status = StatusResponse(jobId=55, state="finalized")
 
-        with mock.patch(
-            "routes.onebox._read_status", new=mock.AsyncMock(return_value=status)
-        ):
+        with mock.patch("routes.onebox._get_cached_status", return_value=status):
             with self.assertRaises(fastapi.HTTPException) as exc:
                 await simulate(
                     _make_request(),
@@ -662,9 +675,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         plan_hash = _compute_plan_hash(intent)
         status = StatusResponse(jobId=77, state="unknown")
 
-        with mock.patch(
-            "routes.onebox._read_status", new=mock.AsyncMock(return_value=status)
-        ):
+        with mock.patch("routes.onebox._get_cached_status", return_value=status):
             response = await simulate(
                 _make_request(),
                 SimulateRequest(intent=intent, planHash=plan_hash),
@@ -678,9 +689,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         plan_hash = _compute_plan_hash(intent)
         status = StatusResponse(jobId=88, state="open")
 
-        with mock.patch(
-            "routes.onebox._read_status", new=mock.AsyncMock(return_value=status)
-        ):
+        with mock.patch("routes.onebox._get_cached_status", return_value=status):
             response = await simulate(
                 _make_request(),
                 SimulateRequest(intent=intent, planHash=plan_hash),
