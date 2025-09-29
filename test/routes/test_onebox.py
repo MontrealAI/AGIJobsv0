@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import json
 import os
@@ -5,6 +6,7 @@ import sys
 import tempfile
 import types
 import unittest
+import threading
 from unittest import mock
 
 os.environ.setdefault("RPC_URL", "http://localhost:8545")
@@ -328,6 +330,7 @@ except ModuleNotFoundError:
     sys.modules["pydantic"] = types.SimpleNamespace(BaseModel=BaseModel, Field=Field)
 
 import prometheus_client  # type: ignore  # noqa: E402  pylint: disable=wrong-import-position
+import routes.onebox as onebox  # noqa: E402  pylint: disable=wrong-import-position
 
 from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     ExecuteRequest,
@@ -894,6 +897,52 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(exc.exception.detail, dict)
         self.assertEqual(exc.exception.detail["code"], "DEADLINE_INVALID")
         self.assertEqual(exc.exception.detail["message"], _ERRORS["DEADLINE_INVALID"])
+
+
+class RelayerTransactionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_send_relayer_tx_allows_concurrent_tasks(self) -> None:
+        loop = asyncio.get_running_loop()
+        wait_started = asyncio.Event()
+        release = threading.Event()
+        receipt_payload = {"status": 1}
+        tx = {"nonce": 7}
+
+        mock_relayer = mock.Mock()
+        mock_relayer.address = "0x0000000000000000000000000000000000000000"
+        mock_relayer.sign_transaction.return_value = types.SimpleNamespace(rawTransaction=b"\xaa")
+
+        def _fake_wait(tx_hash: str, timeout: int = 180):
+            loop.call_soon_threadsafe(wait_started.set)
+            if not release.wait(timeout=1):
+                raise AssertionError("release signal not triggered")
+            return receipt_payload
+
+        expected_tx_hash = b"\x99".hex()
+
+        with mock.patch.object(onebox, "relayer", mock_relayer), mock.patch.object(
+            onebox.w3.eth, "send_raw_transaction", return_value=b"\x99"
+        ) as send_mock, mock.patch.object(
+            onebox.w3.eth, "wait_for_transaction_receipt", side_effect=_fake_wait
+        ) as wait_mock:
+            send_task = asyncio.create_task(onebox._send_relayer_tx(tx))
+
+            async def _other_task() -> str:
+                await wait_started.wait()
+                return "progressed"
+
+            other_task = asyncio.create_task(_other_task())
+            other_result = await asyncio.wait_for(other_task, timeout=1)
+            self.assertEqual(other_result, "progressed")
+            self.assertFalse(send_task.done())
+
+            release.set()
+            tx_hash, receipt = await asyncio.wait_for(send_task, timeout=1)
+
+        self.assertEqual(tx_hash, expected_tx_hash)
+        self.assertEqual(receipt, receipt_payload)
+        mock_relayer.sign_transaction.assert_called_once_with(tx)
+        send_mock.assert_called_once_with(mock_relayer.sign_transaction.return_value.rawTransaction)
+        wait_mock.assert_called_once_with(expected_tx_hash, timeout=180)
 
 
 class OrgPolicyEnforcementTests(unittest.IsolatedAsyncioTestCase):
