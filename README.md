@@ -34,6 +34,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control blueprint](#owner-control-blueprint)
 - [Owner control command center](#owner-control-command-center)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
+- [Owner control handbook](#owner-control-handbook)
 
 ### Identity policy
 
@@ -223,6 +224,18 @@ npm run owner:guide -- --network mainnet --out runtime/mainnet-owner-guide.md
 ```
 
 The helper reads `config/owner-control.json` plus all module overrides, then renders a Markdown playbook tailored to the selected network. Pair the CLI output with the [Owner Control Quick Reference](docs/owner-control-quick-reference.md) handout for non-technical reviewers.
+
+### Owner control handbook
+
+Need a zero-to-production operating manual that stitches the snapshot, update,
+verification and compliance workflows together? The new [Owner Control
+Handbook](docs/owner-control-handbook.md) distills every owner-facing script into
+step-by-step instructions, Mermaid control-loop diagrams, safety checklists and
+troubleshooting matrices so a contract owner with no Solidity background can
+deploy updates confidently. Export the live surface with
+`npm run owner:surface -- --network <network> --format markdown --out
+reports/<network>-owner-surface.md` and attach the resulting artefact to the
+runbook template shipped in the handbook for instant change-control packages.
 
 ### Mainnet Deployment
 
