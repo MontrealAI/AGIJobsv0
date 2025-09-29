@@ -588,13 +588,15 @@ def _compute_plan_hash(intent: JobIntent) -> str:
     return h.hexdigest()
 
 
-def _normalize_plan_hash(plan_hash: Optional[str]) -> Optional[str]:
-    if not plan_hash:
-        return None
-    hash_str = plan_hash.strip().lower()
-    if re.fullmatch(r"[0-9a-f]{64}", hash_str):
-        return hash_str
-    return None
+def _normalize_plan_hash(plan_hash: Optional[str]) -> str:
+    if plan_hash is None:
+        raise ValueError("plan hash missing")
+    hash_str = str(plan_hash).strip().lower()
+    if not hash_str:
+        raise ValueError("plan hash empty")
+    if not re.fullmatch(r"[0-9a-f]{64}", hash_str):
+        raise ValueError("plan hash invalid")
+    return hash_str
 
 
 def _current_timestamp() -> str:
@@ -1100,9 +1102,13 @@ async def simulate(request: Request, req: SimulateRequest):
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
 
-    provided_hash = _normalize_plan_hash(req.planHash)
-    if provided_hash is None:
+    raw_plan_hash = req.planHash
+    if raw_plan_hash is None or not str(raw_plan_hash).strip():
         raise _http_error(400, "PLAN_HASH_REQUIRED")
+    try:
+        provided_hash = _normalize_plan_hash(raw_plan_hash)
+    except ValueError:
+        raise _http_error(400, "PLAN_HASH_INVALID")
     canonical_hash = _compute_plan_hash(intent)
     if provided_hash != canonical_hash:
         raise _http_error(400, "PLAN_HASH_MISMATCH")
@@ -1278,9 +1284,13 @@ async def execute(request: Request, req: ExecuteRequest):
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
 
-    provided_hash = _normalize_plan_hash(req.planHash)
-    if provided_hash is None:
+    raw_plan_hash = req.planHash
+    if raw_plan_hash is None or not str(raw_plan_hash).strip():
         raise _http_error(400, "PLAN_HASH_REQUIRED")
+    try:
+        provided_hash = _normalize_plan_hash(raw_plan_hash)
+    except ValueError:
+        raise _http_error(400, "PLAN_HASH_INVALID")
     canonical_hash = _compute_plan_hash(intent)
     if provided_hash != canonical_hash:
         raise _http_error(400, "PLAN_HASH_MISMATCH")

@@ -522,6 +522,16 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_REQUIRED")
         self.assertEqual(exc.exception.detail["message"], _ERRORS["PLAN_HASH_REQUIRED"])
 
+    async def test_simulate_rejects_blank_plan_hash(self) -> None:
+        intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await simulate(
+                _make_request(),
+                SimulateRequest(intent=intent, planHash="   "),
+            )
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_REQUIRED")
+
     async def test_simulate_rejects_invalid_plan_hash(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
         with self.assertRaises(fastapi.HTTPException) as exc:
@@ -535,9 +545,9 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
     async def test_simulate_rejects_mismatched_plan_hash(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
         canonical = _compute_plan_hash(intent)
-        mismatch = "0x" + "1" * 64
+        mismatch = "1" * 64
         if mismatch == canonical:
-            mismatch = "0x" + "2" * 64
+            mismatch = "2" * 64
         with self.assertRaises(fastapi.HTTPException) as exc:
             await simulate(
                 _make_request(),
@@ -745,6 +755,16 @@ class ExecutorPlanHashValidationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_REQUIRED")
         self.assertEqual(exc.exception.detail["message"], _ERRORS["PLAN_HASH_REQUIRED"])
 
+    async def test_execute_rejects_blank_plan_hash(self) -> None:
+        intent = JobIntent(action="check_status", payload=Payload(jobId=123))
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await execute(
+                _make_request(),
+                ExecuteRequest(intent=intent, planHash=""),
+            )
+        self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_REQUIRED")
+
     async def test_execute_rejects_invalid_plan_hash(self) -> None:
         intent = JobIntent(action="check_status", payload=Payload(jobId=123))
         with self.assertRaises(fastapi.HTTPException) as exc:
@@ -758,9 +778,9 @@ class ExecutorPlanHashValidationTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_mismatched_plan_hash(self) -> None:
         intent = JobIntent(action="check_status", payload=Payload(jobId=123))
         canonical = _compute_plan_hash(intent)
-        mismatch = "0x" + "a" * 64
+        mismatch = "a" * 64
         if mismatch == canonical:
-            mismatch = "0x" + "b" * 64
+            mismatch = "b" * 64
         with self.assertRaises(fastapi.HTTPException) as exc:
             await execute(
                 _make_request(),
