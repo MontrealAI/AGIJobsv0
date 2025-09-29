@@ -61,9 +61,18 @@ export const PlanResponseSchema = z.object({
 });
 
 export const SimulationResponseSchema = z.object({
-  est_budget: z.string(),
-  est_fees: z.string(),
-  est_duration: z.number().int(),
+  summary: z.string().optional(),
+  intent: JobIntentSchema.optional(),
+  planHash: z.string().optional(),
+  createdAt: z.string().optional(),
+  estimatedBudget: z.string().optional(),
+  feePct: z.number().optional(),
+  feeAmount: z.string().optional(),
+  burnPct: z.number().optional(),
+  burnAmount: z.string().optional(),
+  est_budget: z.string().optional(),
+  est_fees: z.string().optional(),
+  est_duration: z.number().int().optional(),
   risks: z.array(z.string()).default([]),
   confirmations: z.array(z.string()).default([]),
   blockers: z.array(z.string()).default([]),
@@ -149,7 +158,12 @@ export function parsePlanResponse(value: unknown): PlanResponse {
 }
 
 export function parseSimulationResponse(value: unknown): SimulationResponse {
-  return SimulationResponseSchema.parse(value);
+  const parsed = SimulationResponseSchema.parse(value);
+  return {
+    ...parsed,
+    estimatedBudget: parsed.estimatedBudget ?? parsed.est_budget,
+    feeAmount: parsed.feeAmount ?? parsed.est_fees,
+  };
 }
 
 export function parseStatusResponse(value: unknown): StatusResponse {

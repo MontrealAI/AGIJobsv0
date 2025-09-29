@@ -548,6 +548,11 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.blockers, [])
         self.assertTrue(response.planHash.startswith("0x"))
         self.assertIsNotNone(response.createdAt)
+        self.assertEqual(response.estimatedBudget, "5.15")
+        self.assertEqual(response.feePct, 2.0)
+        self.assertEqual(response.feeAmount, "0.1")
+        self.assertEqual(response.burnPct, 1.0)
+        self.assertEqual(response.burnAmount, "0.05")
 
     async def test_simulate_rejects_missing_plan_hash(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
@@ -639,6 +644,11 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.status_code, 422)
         detail = exc.exception.detail
         self.assertIn("JOB_BUDGET_CAP_EXCEEDED", detail["blockers"])  # type: ignore[index]
+        self.assertEqual(detail["estimatedBudget"], "25.75")  # type: ignore[index]
+        self.assertEqual(detail["feePct"], 2.0)  # type: ignore[index]
+        self.assertEqual(detail["feeAmount"], "0.5")  # type: ignore[index]
+        self.assertEqual(detail["burnPct"], 1.0)  # type: ignore[index]
+        self.assertEqual(detail["burnAmount"], "0.25")  # type: ignore[index]
 
     async def test_simulate_rejects_runner_unsupported_actions(self) -> None:
         intent = JobIntent(action="stake", payload=Payload(jobId=123))
