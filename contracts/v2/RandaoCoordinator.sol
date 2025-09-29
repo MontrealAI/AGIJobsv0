@@ -3,8 +3,9 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IRandaoCoordinator} from "./interfaces/IRandaoCoordinator.sol";
-import {AGIALPHA} from "./Constants.sol";
+import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
 
 /// @title RandaoCoordinator
 /// @notice Simple commit-reveal randomness aggregator with penalties for
@@ -25,7 +26,24 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     address private _treasury;
 
     /// @notice Token used for deposits.
-    IERC20 public immutable token;
+    IERC20 public token;
+
+    /// @notice Emitted when the deposit token is updated by the owner.
+    /// @param previousToken Address of the previous ERC20 token.
+    /// @param newToken Address of the new ERC20 token.
+    event TokenUpdated(address indexed previousToken, address indexed newToken);
+
+    /// @dev Reverts when attempting to set the zero address as the token.
+    error ZeroTokenAddress();
+
+    /// @dev Reverts when attempting to change the token while deposits are held.
+    error OutstandingDeposits();
+
+    /// @dev Reverts when the provided token reports unsupported decimals.
+    error InvalidTokenDecimals(uint8 actualDecimals);
+
+    /// @dev Reverts when the provided token does not implement ERC20 metadata.
+    error TokenMetadataUnavailable();
 
     /// @notice Emitted when the commit window is updated by the owner.
     /// @param previousWindow Previous window duration in seconds.
@@ -144,6 +162,32 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         }
         _treasury = newTreasury;
         emit TreasuryUpdated(previous, newTreasury);
+    }
+
+    /// @notice Updates the ERC20 token used for deposits.
+    /// @param newToken Address of the ERC20 token with 18 decimals.
+    function setToken(address newToken) external onlyOwner {
+        if (newToken == address(0)) revert ZeroTokenAddress();
+
+        address previous = address(token);
+        if (previous == newToken) {
+            return;
+        }
+
+        if (IERC20(previous).balanceOf(address(this)) != 0) {
+            revert OutstandingDeposits();
+        }
+
+        try IERC20Metadata(newToken).decimals() returns (uint8 decimals) {
+            if (decimals != AGIALPHA_DECIMALS) {
+                revert InvalidTokenDecimals(decimals);
+            }
+        } catch {
+            revert TokenMetadataUnavailable();
+        }
+
+        token = IERC20(newToken);
+        emit TokenUpdated(previous, newToken);
     }
 
     /// @notice Commit a secret hash for a given tag.

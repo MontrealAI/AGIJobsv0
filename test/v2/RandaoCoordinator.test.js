@@ -1,3 +1,4 @@
+require('../setup');
 const { expect } = require('chai');
 const { ethers, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
@@ -22,6 +23,8 @@ describe('RandaoCoordinator', function () {
     );
     await token.mint(a.address, DEPOSIT);
     await token.mint(b.address, DEPOSIT);
+    expect(await token.balanceOf(a.address)).to.equal(DEPOSIT);
+    expect(await token.balanceOf(b.address)).to.equal(DEPOSIT);
     await token.connect(a).approve(await randao.getAddress(), DEPOSIT);
     await token.connect(b).approve(await randao.getAddress(), DEPOSIT);
     const tag = tagFromNumber(1);
@@ -184,6 +187,115 @@ describe('RandaoCoordinator', function () {
 
     expect(await token.balanceOf(randaoAddress)).to.equal(0n);
     expect(await token.balanceOf(newTreasury.address)).to.equal(2n);
+  });
+  it('allows the owner to update the deposit token when idle', async () => {
+    const [owner, participant, treasury] = await ethers.getSigners();
+    const Randao = await ethers.getContractFactory(
+      'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator'
+    );
+    const randao = await Randao.deploy(10, 20, 1n, treasury.address);
+
+    const MockToken = await ethers.getContractFactory(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    const newToken = await MockToken.deploy();
+    const newTokenAddress = await newToken.getAddress();
+
+    await expect(randao.setToken(newTokenAddress))
+      .to.emit(randao, 'TokenUpdated')
+      .withArgs(AGIALPHA, newTokenAddress);
+
+    expect(await randao.token()).to.equal(newTokenAddress);
+
+    await newToken.mint(participant.address, 5n);
+    await newToken.connect(participant).approve(await randao.getAddress(), 5n);
+
+    const tag = tagFromNumber(123);
+    const secret = 11n;
+    const commitment = ethers.keccak256(
+      ethers.solidityPacked(
+        ['address', 'bytes32', 'uint256'],
+        [participant.address, tag, secret]
+      )
+    );
+
+    await randao.connect(participant).commit(tag, commitment);
+
+    await time.increase(15);
+    await randao.connect(participant).reveal(tag, secret);
+
+    expect(await newToken.balanceOf(await randao.getAddress())).to.equal(0n);
+  });
+
+  it('prevents token updates when deposits are outstanding', async () => {
+    const [owner, participant, treasury] = await ethers.getSigners();
+    const Randao = await ethers.getContractFactory(
+      'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator'
+    );
+    const randao = await Randao.deploy(10, 20, 1n, treasury.address);
+
+    const token = await ethers.getContractAt(
+      'contracts/test/MockERC20.sol:MockERC20',
+      AGIALPHA
+    );
+
+    await token.mint(participant.address, 1n);
+    await token.connect(participant).approve(await randao.getAddress(), 1n);
+
+    const tag = tagFromNumber(321);
+    const secret = 7n;
+    const commitment = ethers.keccak256(
+      ethers.solidityPacked(
+        ['address', 'bytes32', 'uint256'],
+        [participant.address, tag, secret]
+      )
+    );
+
+    await randao.connect(participant).commit(tag, commitment);
+
+    const MockToken = await ethers.getContractFactory(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    const newToken = await MockToken.deploy();
+
+    await expect(randao.setToken(await newToken.getAddress()))
+      .to.be.revertedWithCustomError(randao, 'OutstandingDeposits');
+
+    await time.increase(11);
+    await randao.connect(participant).reveal(tag, secret);
+
+    await expect(randao.setToken(await newToken.getAddress()))
+      .to.emit(randao, 'TokenUpdated');
+  });
+
+  it('validates token metadata during updates', async () => {
+    const [owner, treasury] = await ethers.getSigners();
+    const Randao = await ethers.getContractFactory(
+      'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator'
+    );
+    const randao = await Randao.deploy(10, 20, 1n, treasury.address);
+
+    await expect(randao.setToken(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+      randao,
+      'ZeroTokenAddress'
+    );
+
+    const Token6 = await ethers.getContractFactory(
+      'contracts/test/MockERC206Decimals.sol:MockERC206Decimals'
+    );
+    const token6 = await Token6.deploy();
+
+    await expect(randao.setToken(await token6.getAddress()))
+      .to.be.revertedWithCustomError(randao, 'InvalidTokenDecimals')
+      .withArgs(6);
+
+    const TokenNoMeta = await ethers.getContractFactory(
+      'contracts/test/MockERC20NoMetadata.sol:MockERC20NoMetadata'
+    );
+    const tokenNoMeta = await TokenNoMeta.deploy();
+
+    await expect(randao.setToken(await tokenNoMeta.getAddress()))
+      .to.be.revertedWithCustomError(randao, 'TokenMetadataUnavailable');
   });
 });
 
