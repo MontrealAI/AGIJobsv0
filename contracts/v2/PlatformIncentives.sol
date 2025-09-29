@@ -18,8 +18,14 @@ contract PlatformIncentives is Ownable {
     IPlatformRegistryFull public platformRegistry;
     IJobRouter public jobRouter;
 
-    /// @notice Maximum discount percentage applied to protocol fees.
-    uint256 public constant MAX_DISCOUNT_PCT = 20;
+    /// @notice Upper bound on the discount percentage that can be configured.
+    uint256 public constant MAX_DISCOUNT_PCT_LIMIT = 100;
+
+    /// @notice Default maximum discount percentage applied to protocol fees.
+    uint256 public constant DEFAULT_MAX_DISCOUNT_PCT = 20;
+
+    /// @notice Configurable maximum discount percentage applied to protocol fees.
+    uint256 public maxDiscountPct;
 
     event ModulesUpdated(
         address indexed stakeManager,
@@ -27,6 +33,7 @@ contract PlatformIncentives is Ownable {
         address indexed jobRouter
     );
     event Activated(address indexed operator, uint256 amount);
+    event MaxDiscountPctUpdated(uint256 previousPct, uint256 newPct);
 
     constructor(
         IStakeManager _stakeManager,
@@ -53,6 +60,9 @@ contract PlatformIncentives is Ownable {
                 address(_jobRouter)
             );
         }
+
+        maxDiscountPct = DEFAULT_MAX_DISCOUNT_PCT;
+        emit MaxDiscountPctUpdated(0, DEFAULT_MAX_DISCOUNT_PCT);
     }
 
     // ---------------------------------------------------------------------
@@ -69,6 +79,16 @@ contract PlatformIncentives is Ownable {
         platformRegistry = _platformRegistry;
         jobRouter = _jobRouter;
         emit ModulesUpdated(address(_stakeManager), address(_platformRegistry), address(_jobRouter));
+    }
+
+    /// @notice Update the maximum fee discount percentage applied to employers.
+    /// @dev Value must be between 0 and {MAX_DISCOUNT_PCT_LIMIT} inclusive.
+    /// @param newPct New maximum discount percentage to apply.
+    function setMaxDiscountPct(uint256 newPct) external onlyOwner {
+        require(newPct <= MAX_DISCOUNT_PCT_LIMIT, "pct");
+        uint256 previous = maxDiscountPct;
+        maxDiscountPct = newPct;
+        emit MaxDiscountPctUpdated(previous, newPct);
     }
 
     /**
@@ -130,7 +150,7 @@ contract PlatformIncentives is Ownable {
         address registry = stakeManager.jobRegistry();
         if (registry == address(0)) return 0;
         uint256 score = IJobRegistry(registry).getEmployerScore(employer);
-        return (score * MAX_DISCOUNT_PCT) / TOKEN_SCALE;
+        return (score * maxDiscountPct) / TOKEN_SCALE;
     }
 
     /// @notice Apply fee discount to a given amount for an employer.

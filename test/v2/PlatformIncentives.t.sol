@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Test} from "forge-std/Test.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
-import {AGIALPHA} from "../../contracts/v2/Constants.sol";
+import {AGIALPHA, TOKEN_SCALE} from "../../contracts/v2/Constants.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {
     PlatformRegistry,
@@ -19,6 +19,23 @@ import {MockJobRegistry} from "../../contracts/legacy/MockV2.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {ITaxPolicy} from "../../contracts/v2/interfaces/ITaxPolicy.sol";
 
+contract EmployerScoreRegistry is MockJobRegistry {
+    uint256 private score;
+
+    function setEmployerScore(uint256 newScore) external {
+        score = newScore;
+    }
+
+    function getEmployerScore(address)
+        external
+        view
+        override
+        returns (uint256)
+    {
+        return score;
+    }
+}
+
 contract PlatformIncentivesTest is Test {
     AGIALPHAToken token;
     StakeManager stakeManager;
@@ -26,7 +43,7 @@ contract PlatformIncentivesTest is Test {
     JobRouter jobRouter;
     FeePool feePool;
     PlatformIncentives incentives;
-    MockJobRegistry jobRegistry;
+    EmployerScoreRegistry jobRegistry;
 
     address operator = address(0xBEEF);
 
@@ -34,7 +51,7 @@ contract PlatformIncentivesTest is Test {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
-        jobRegistry = new MockJobRegistry();
+        jobRegistry = new EmployerScoreRegistry();
         jobRegistry.setTaxPolicyVersion(1);
         stakeManager = new StakeManager(0, 0, 0, address(this), address(jobRegistry), address(0), address(this));
         platformRegistry = new PlatformRegistry(
@@ -99,5 +116,44 @@ contract PlatformIncentivesTest is Test {
         vm.prank(operator);
         vm.expectRevert(bytes("amount"));
         incentives.stakeAndActivate(0);
+    }
+
+    function testDefaultMaxDiscountPct() public {
+        assertEq(incentives.maxDiscountPct(), incentives.DEFAULT_MAX_DISCOUNT_PCT());
+    }
+
+    function testOwnerCanUpdateMaxDiscountPct() public {
+        uint256 previous = incentives.maxDiscountPct();
+        uint256 target = 15;
+        vm.expectEmit(true, true, true, true, address(incentives));
+        emit PlatformIncentives.MaxDiscountPctUpdated(previous, target);
+        incentives.setMaxDiscountPct(target);
+        assertEq(incentives.maxDiscountPct(), target);
+    }
+
+    function testSetMaxDiscountPctRevertsAboveLimit() public {
+        uint256 limit = incentives.MAX_DISCOUNT_PCT_LIMIT();
+        vm.expectRevert(bytes("pct"));
+        incentives.setMaxDiscountPct(limit + 1);
+    }
+
+    function testNonOwnerCannotSetMaxDiscountPct() public {
+        vm.prank(operator);
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "OwnableUnauthorizedAccount(address)",
+                operator
+            )
+        );
+        incentives.setMaxDiscountPct(10);
+    }
+
+    function testMaxDiscountPctAdjustsDiscount() public {
+        address employer = address(0xB0B);
+        jobRegistry.setEmployerScore(TOKEN_SCALE);
+        assertEq(incentives.getFeeDiscount(employer), 20);
+
+        incentives.setMaxDiscountPct(5);
+        assertEq(incentives.getFeeDiscount(employer), 5);
     }
 }
