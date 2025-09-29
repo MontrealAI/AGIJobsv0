@@ -157,6 +157,7 @@ export type SubmitWorkIntent = z.infer<typeof SubmitWorkIntentSchema>;
 export type FinalizeIntent = z.infer<typeof FinalizeIntentSchema>;
 export type StakeIntent = z.infer<typeof StakeIntentSchema>;
 export type WithdrawIntent = z.infer<typeof WithdrawIntentSchema>;
+export type AdminSetIntent = z.infer<typeof AdminSetIntentSchema>;
 
 export function validateICS(payload: string): ICSType {
   return ICSSchema.parse(JSON.parse(payload));

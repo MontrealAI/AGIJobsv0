@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { AdminSetIntent } from "../router.js";
+import type { AdminSetIntent } from "../ics.js";
 import { loadContracts } from "../chain/contracts.js";
 import { getSignerForUser, rpc } from "../chain/provider.js";
 import {
@@ -378,6 +378,19 @@ function normalizeDuration(value: unknown): bigint {
   throw new Error("Unsupported duration value");
 }
 
+function normalizeBigNumberish(
+  value: unknown,
+  fallback: string | number | bigint = 0n
+): string | number | bigint {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "bigint") {
+    return value;
+  }
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+  throw new Error("Unsupported numeric value");
+}
+
 const ACTION_DEFINITIONS: ActionDefinition[] = [
   {
     key: "stakeManager.setMinStake",
@@ -564,8 +577,13 @@ const ACTION_DEFINITIONS: ActionDefinition[] = [
         throw new Error("setJobParameters requires an object value");
       }
       const record = value as Record<string, unknown>;
-      const maxReward = toWei(record.maxReward ?? record.maxJobReward ?? 0);
-      const stake = toWei(record.jobStake ?? record.stake ?? 0);
+      const maxRewardInput = normalizeBigNumberish(
+        record.maxReward ?? record.maxJobReward,
+        0n
+      );
+      const stakeInput = normalizeBigNumberish(record.jobStake ?? record.stake, 0n);
+      const maxReward = toWei(maxRewardInput);
+      const stake = toWei(stakeInput);
       const beforeReward = ctx.snapshot.onChain.jobRegistry?.maxJobReward;
       const beforeRewardLabel = ctx.snapshot.onChain.jobRegistry?.maxJobRewardLabel;
       const beforeStake = ctx.snapshot.onChain.jobRegistry?.jobStake;
@@ -671,12 +689,18 @@ function encodeSafeBundle(
   snapshot: GovernanceSnapshot,
   meta: SafeBundleMeta
 ): SafeBundle {
-  const fragment = contract.getFunction(definition.method);
+  const fragment = contract.interface.getFunction(definition.method);
+  if (!fragment) {
+    throw new Error(
+      `Missing ABI fragment for ${definition.module}.${definition.method}`
+    );
+  }
   const inputs = fragment.inputs ?? [];
   const contractInputsValues: Record<string, string> = {};
   inputs.forEach((input, index) => {
     const value = args[index];
-    contractInputsValues[input.name || `arg${index}`] = serializeValue(value);
+    const inputName = input.name && input.name.length ? input.name : `arg${index}`;
+    contractInputsValues[inputName] = serializeValue(value);
   });
 
   const tx: SafeBundleTransaction = {

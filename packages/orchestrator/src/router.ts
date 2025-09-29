@@ -11,6 +11,7 @@ import type {
   StakeIntent,
   SubmitWorkIntent,
   WithdrawIntent,
+  AdminSetIntent,
 } from "./ics.js";
 
 export { validateICS, ICSSchema } from "./ics.js";
@@ -22,6 +23,7 @@ export type {
   StakeIntent,
   SubmitWorkIntent,
   WithdrawIntent,
+  AdminSetIntent,
 } from "./ics.js";
 
 export {
@@ -72,7 +74,8 @@ export function route(ics: ICSType): AsyncGeneratorString {
       return governance.adminSet(ics);
     default:
       return (async function* unsupported() {
-        yield `Unsupported intent: ${ics.intent}\n`;
+        const fallbackIntent = (ics as { intent?: string }).intent ?? "unknown";
+        yield `Unsupported intent: ${fallbackIntent}\n`;
       })();
   }
 }
