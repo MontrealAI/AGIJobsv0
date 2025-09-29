@@ -1,0 +1,43 @@
+import json
+import os
+import pytest
+
+os.environ.setdefault("RPC_URL", "http://localhost:8545")
+
+from routes.onebox import OrgPolicyStore
+
+
+@pytest.fixture()
+def temp_policy_file(tmp_path):
+    policy_path = tmp_path / "policies.json"
+    return policy_path
+
+
+def test_load_applies_defaults_when_values_missing(temp_policy_file):
+    temp_policy_file.write_text(json.dumps({"acme": {"maxBudgetWei": str(10**18)}}))
+
+    store = OrgPolicyStore(
+        policy_path=str(temp_policy_file),
+        default_max_budget_wei=2 * 10**18,
+        default_max_duration_days=7,
+    )
+
+    record = store._policies["acme"]
+    assert record.max_budget_wei == 10**18
+    assert record.max_duration_days == 7
+
+
+def test_load_respects_overrides_from_file(temp_policy_file):
+    temp_policy_file.write_text(
+        json.dumps({"acme": {"maxBudgetWei": str(3 * 10**18), "maxDurationDays": 4}})
+    )
+
+    store = OrgPolicyStore(
+        policy_path=str(temp_policy_file),
+        default_max_budget_wei=2 * 10**18,
+        default_max_duration_days=7,
+    )
+
+    record = store._policies["acme"]
+    assert record.max_budget_wei == 3 * 10**18
+    assert record.max_duration_days == 4

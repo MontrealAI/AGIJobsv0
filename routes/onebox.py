@@ -88,6 +88,33 @@ AGIALPHA_SYMBOL = os.getenv("AGIALPHA_SYMBOL", "AGIALPHA")
 if not RPC_URL:
     raise RuntimeError("RPC_URL is required")  # Hard requirement for blockchain connectivity
 
+
+def _parse_default_max_budget() -> Optional[int]:
+    raw_value = os.getenv("ORG_MAX_BUDGET_WEI")
+    if not raw_value:
+        return None
+    try:
+        parsed = int(raw_value)
+    except (TypeError, ValueError):
+        logging.warning("Invalid ORG_MAX_BUDGET_WEI value: %s", raw_value)
+        return None
+    return parsed if parsed > 0 else None
+
+
+def _parse_default_max_duration() -> Optional[int]:
+    raw_value = os.getenv("ORG_MAX_DEADLINE_DAYS")
+    if not raw_value:
+        return None
+    try:
+        parsed = int(raw_value)
+    except (TypeError, ValueError):
+        logging.warning("Invalid ORG_MAX_DEADLINE_DAYS value: %s", raw_value)
+        return None
+    return parsed if parsed > 0 else None
+
+
+_UINT64_MAX = 2**64 - 1
+
 # Minimal ABI (function definitions required for interacting with the JobRegistry contract)
 _MIN_ABI = [
     {
@@ -210,6 +237,9 @@ class JobPayload(BaseModel):
     deadlineDays: Optional[int] = None
     agentTypes: List[str] = Field(default_factory=list)
     jobId: Optional[int] = None  # for job-specific actions (finalize, check_status, etc.)
+
+# Backwards compatibility alias for older imports and tests.
+Payload = JobPayload
 
 class JobIntent(BaseModel):
     """Encapsulates a user intent extracted from natural language."""
@@ -460,10 +490,14 @@ class OrgPolicyStore:
                 except ValueError:
                     record.max_duration_days = None
             record.max_budget_wei = (
-                record.max_budget_wei if record.max_budget_wei is not None else default_max_budget_wei
+                record.max_budget_wei
+                if record.max_budget_wei is not None
+                else self._default_max_budget_wei
             )
             record.max_duration_days = (
-                record.max_duration_days if record.max_duration_days is not None else default_max_duration_days
+                record.max_duration_days
+                if record.max_duration_days is not None
+                else self._default_max_duration_days
             )
             self._policies[key] = record
 
@@ -529,8 +563,8 @@ def _get_org_policy_store() -> OrgPolicyStore:
         if _ORG_POLICY_STORE is None:
             _ORG_POLICY_STORE = OrgPolicyStore(
                 policy_path=_DEFAULT_POLICY_PATH,
-                default_max_budget_wei=None,
-                default_max_duration_days=None,
+                default_max_budget_wei=_parse_default_max_budget(),
+                default_max_duration_days=_parse_default_max_duration(),
             )
     return _ORG_POLICY_STORE
 
