@@ -731,7 +731,10 @@ def _get_fee_policy() -> Tuple[Decimal, Decimal]:
 
 
 def _to_wei(amount: str) -> int:
-    return int(Decimal(amount) * Decimal(10**AGIALPHA_DECIMALS))
+    value = Decimal(amount)
+    if value <= 0:
+        raise ValueError("amount must be positive")
+    return int(value * Decimal(10**AGIALPHA_DECIMALS))
 
 
 def _format_reward(value: int) -> str:
@@ -2151,7 +2154,10 @@ async def execute(request: Request, req: ExecuteRequest):
             if payload.deadlineDays is None:
                 raise _http_error(400, "DEADLINE_INVALID")
 
-            reward_wei = _to_wei(str(payload.reward))
+            try:
+                reward_wei = _to_wei(str(payload.reward))
+            except (InvalidOperation, ValueError, TypeError) as exc:
+                raise _http_error(400, "REWARD_INVALID") from exc
             deadline_days = int(payload.deadlineDays)
             org_identifier = _resolve_org_identifier(intent)
             try:
