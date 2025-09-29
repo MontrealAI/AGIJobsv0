@@ -454,15 +454,35 @@ class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(response.intent.action, "post_job")
 
-    async def test_post_job_summary_reports_fee_policy(self) -> None:
+    async def test_post_job_summary_highlights_missing_details_outside_demo(self) -> None:
         response = await plan(_make_request(), PlanRequest(text="Please help me post a job"))
         self.assertEqual(response.intent.action, "post_job")
-        self.assertEqual(
-            response.summary,
-            "Post job 1.0 AGIALPHA, 7 days. Fee 5%, burn 2%. Proceed?",
-        )
+        self.assertIn("(not provided)", response.summary)
+        self.assertIn("Missing reward and deadline details", response.summary)
+        self.assertIsNone(response.intent.payload.reward)
+        self.assertIsNone(response.intent.payload.deadlineDays)
         self.assertFalse(response.requiresConfirmation)
         self.assertCountEqual(response.missingFields, ["reward", "deadlineDays"])
+
+    async def test_demo_mode_summary_applies_default_values(self) -> None:
+        intent = JobIntent(action="post_job", payload=Payload(), userContext={"demoMode": True})
+        summary, requires_confirmation, warnings = _summary_for_intent(
+            intent, "Please help me post a job"
+        )
+        self.assertTrue(requires_confirmation)
+        self.assertIn("1.0 AGIALPHA", summary)
+        self.assertIn("7 day", summary)
+        self.assertIn("Protocol fee", summary)
+        self.assertIn("DEFAULT_REWARD_APPLIED", warnings)
+        self.assertIn("DEFAULT_DEADLINE_APPLIED", warnings)
+
+    async def test_demo_mode_detected_from_mode_string(self) -> None:
+        intent = JobIntent(action="post_job", payload=Payload(), userContext={"mode": "demo"})
+        summary, _requires_confirmation, warnings = _summary_for_intent(
+            intent, "Post job"
+        )
+        self.assertIn("1.0 AGIALPHA", summary)
+        self.assertIn("DEFAULT_REWARD_APPLIED", warnings)
 
     async def test_post_job_summary_includes_agent_types(self) -> None:
         intent = JobIntent(
