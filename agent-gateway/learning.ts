@@ -9,6 +9,7 @@ import {
   recordSpawnRequest as storeSpawnRequest,
   getSpawnRequests as loadSpawnRequests,
 } from '../shared/spawnManager';
+import { cloneEligibleAgents } from './agentFactory';
 
 interface RetrainingTask {
   agent: string;
@@ -22,6 +23,18 @@ const TRAINING_DIR = path.resolve(__dirname, '../storage/training');
 const RETRAINING_PATH = path.join(TRAINING_DIR, 'retraining-queue.json');
 const LEARNING_DIR = path.resolve(__dirname, '../storage/learning');
 const LEARNING_RECORDS_PATH = path.join(LEARNING_DIR, 'records.jsonl');
+
+const CONTINUOUS_LEARNING_ENABLED =
+  process.env.LEARNING_AUTOSPAWN_ENABLED !== 'false';
+const CONTINUOUS_LEARNING_DEBOUNCE_MS = Math.max(
+  30_000,
+  Number(process.env.LEARNING_AUTOSPAWN_DEBOUNCE_MS || '120000')
+);
+
+let learningSweepTimer: NodeJS.Timeout | null = null;
+let learningSweepPending = false;
+let lastLearningSweep = 0;
+let pendingLearningReason: string | null = null;
 
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
@@ -249,6 +262,53 @@ async function appendLearningRecord(record: LearningRecord): Promise<void> {
   await fs.promises.appendFile(LEARNING_RECORDS_PATH, `${line}\n`, 'utf8');
 }
 
+async function runLearningSweep(reason: string): Promise<void> {
+  if (!CONTINUOUS_LEARNING_ENABLED) {
+    return;
+  }
+  learningSweepPending = true;
+  try {
+    const requests = await loadSpawnRequests();
+    if (!requests.length) {
+      return;
+    }
+    await cloneEligibleAgents({
+      notes: [
+        `continuous-learning:${reason}`,
+        `requests:${requests.length}`,
+      ],
+    });
+  } catch (err) {
+    console.warn('Continuous learning sweep failed', err);
+  } finally {
+    lastLearningSweep = Date.now();
+    learningSweepPending = false;
+  }
+}
+
+function scheduleLearningSweep(reason: string): void {
+  if (!CONTINUOUS_LEARNING_ENABLED) {
+    return;
+  }
+  pendingLearningReason = reason;
+  const now = Date.now();
+  const elapsed = now - lastLearningSweep;
+  if (!learningSweepPending && elapsed >= CONTINUOUS_LEARNING_DEBOUNCE_MS) {
+    void runLearningSweep(reason);
+    return;
+  }
+  if (learningSweepTimer) {
+    clearTimeout(learningSweepTimer);
+  }
+  const delay = Math.max(0, CONTINUOUS_LEARNING_DEBOUNCE_MS - elapsed);
+  learningSweepTimer = setTimeout(() => {
+    learningSweepTimer = null;
+    const sweepReason = pendingLearningReason || reason;
+    pendingLearningReason = null;
+    void runLearningSweep(sweepReason);
+  }, delay);
+}
+
 export async function notifyTrainingOutcome(
   outcome: TrainingOutcome
 ): Promise<void> {
@@ -342,6 +402,14 @@ export async function notifyTrainingOutcome(
   ) {
     await storeSpawnRequest(analysis.category, job.jobId);
   }
+
+  const sweepReasonParts = [
+    success ? 'execution-success' : 'execution-failure',
+  ];
+  if (analysis.category) {
+    sweepReasonParts.push(`category:${analysis.category}`);
+  }
+  scheduleLearningSweep(sweepReasonParts.join('|'));
 }
 
 export async function getRetrainingQueue(): Promise<RetrainingTask[]> {

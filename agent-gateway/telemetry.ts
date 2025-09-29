@@ -1,7 +1,15 @@
+import crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { ethers } from 'ethers';
+import {
+  Registry,
+  collectDefaultMetrics,
+  Counter,
+  Gauge,
+  Histogram,
+} from 'prom-client';
 import { EnergySample } from '../shared/energyMonitor';
 import { orchestratorWallet, agents, FETCH_TIMEOUT_MS } from './utils';
 import {
@@ -15,6 +23,7 @@ import {
   secureLogAction,
   quarantineManager,
 } from './security';
+import { triggerAuditAnchor } from './auditAnchoring';
 
 export const ENERGY_ORACLE_URL = process.env.ENERGY_ORACLE_URL || '';
 export const ENERGY_ORACLE_TOKEN = process.env.ENERGY_ORACLE_TOKEN || '';
@@ -26,6 +35,9 @@ const REQUIRE_TELEMETRY_SIGNATURE =
 
 const TELEMETRY_DIR = path.resolve(__dirname, '../storage/telemetry');
 const TELEMETRY_OUTBOX = path.join(TELEMETRY_DIR, 'telemetry-queue.json');
+const PLANNER_TRACE_PATH = path.join(TELEMETRY_DIR, 'planner-traces.jsonl');
+const RUNNER_TRACE_PATH = path.join(TELEMETRY_DIR, 'runner-traces.jsonl');
+const GAS_METRICS_PATH = path.join(TELEMETRY_DIR, 'gas-metrics.jsonl');
 
 let queue: EnergySample[] = [];
 let loaded = false;
@@ -39,6 +51,101 @@ const ENERGY_METRICS_PATH = path.resolve(
   __dirname,
   '../data/energy-metrics.jsonl'
 );
+
+const TELEMETRY_AUTO_ANCHOR_THRESHOLD = ensurePositiveInteger(
+  Number(process.env.TELEMETRY_AUTO_ANCHOR_THRESHOLD || '20'),
+  10
+);
+const TELEMETRY_AUTO_ANCHOR_COOLDOWN_MS = Math.max(
+  60_000,
+  Number(process.env.TELEMETRY_AUTO_ANCHOR_COOLDOWN_MS || '300000')
+);
+
+let telemetryEventsSinceAnchor = 0;
+let telemetryAnchorPending = false;
+let lastTelemetryAnchor = 0;
+
+const prometheusRegistry = new Registry();
+prometheusRegistry.setDefaultLabels({ service: 'agent-gateway' });
+collectDefaultMetrics({ register: prometheusRegistry });
+
+const plannerEventCounter = new Counter({
+  name: 'agi_gateway_planner_events_total',
+  help: 'Total planner lifecycle events recorded by the gateway.',
+  labelNames: ['event', 'outcome'],
+  registers: [prometheusRegistry],
+});
+
+const runnerEventCounter = new Counter({
+  name: 'agi_gateway_runner_events_total',
+  help: 'Total runner execution events recorded by the gateway.',
+  labelNames: ['status', 'method'],
+  registers: [prometheusRegistry],
+});
+
+const runnerDurationHistogram = new Histogram({
+  name: 'agi_gateway_runner_duration_seconds',
+  help: 'Wall clock duration of agent task executions.',
+  labelNames: ['status', 'method'],
+  buckets: [0.25, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300, 600],
+  registers: [prometheusRegistry],
+});
+
+const gasUsedHistogram = new Histogram({
+  name: 'agi_gateway_submission_gas_used',
+  help: 'Gas used by result submission transactions.',
+  labelNames: ['method', 'success'],
+  buckets: [30_000, 60_000, 90_000, 120_000, 180_000, 240_000, 320_000, 480_000, 640_000],
+  registers: [prometheusRegistry],
+});
+
+const gasCostGauge = new Gauge({
+  name: 'agi_gateway_submission_gas_cost_wei',
+  help: 'Last observed gas cost (gasUsed * effectiveGasPrice) per submission method.',
+  labelNames: ['method'],
+  registers: [prometheusRegistry],
+});
+
+const energyEstimateHistogram = new Histogram({
+  name: 'agi_gateway_energy_estimate',
+  help: 'Energy estimate distribution per job execution.',
+  labelNames: ['agent', 'success'],
+  buckets: [10, 25, 50, 100, 250, 500, 1_000, 2_500, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000],
+  registers: [prometheusRegistry],
+});
+
+const energyDurationHistogram = new Histogram({
+  name: 'agi_gateway_energy_duration_seconds',
+  help: 'Execution wall clock duration derived from telemetry.',
+  labelNames: ['agent', 'success'],
+  buckets: [0.25, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300, 600],
+  registers: [prometheusRegistry],
+});
+
+const telemetryQueueGauge = new Gauge({
+  name: 'agi_gateway_telemetry_queue_length',
+  help: 'Number of telemetry samples queued for flush.',
+  registers: [prometheusRegistry],
+});
+
+const validationFailureGauge = new Gauge({
+  name: 'agi_gateway_validation_failure_rate',
+  help: 'Rolling validation failure rate over the configured window.',
+  labelNames: ['state'],
+  registers: [prometheusRegistry],
+});
+
+const validationSampleGauge = new Gauge({
+  name: 'agi_gateway_validation_window_samples',
+  help: 'Number of validation attempts considered in the rolling window.',
+  registers: [prometheusRegistry],
+});
+
+const validationFlowGauge = new Gauge({
+  name: 'agi_gateway_validation_flow_paused',
+  help: 'Indicates whether validation execution flow is currently paused.',
+  registers: [prometheusRegistry],
+});
 
 const COMPLEXITY_ORDER = [
   'O(1)',
@@ -236,6 +343,45 @@ export interface EnergyMetricRecord extends JobInvocationMetrics {
   anomalyScore?: number;
 }
 
+export interface PlannerTraceEvent {
+  planId: string;
+  event: string;
+  timestamp?: string;
+  taskId?: string;
+  jobId?: string;
+  success?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+export type RunnerTraceStatus = 'started' | 'completed' | 'failed';
+
+export interface RunnerTraceEvent {
+  jobId: string;
+  agent: string;
+  status: RunnerTraceStatus;
+  timestamp?: string;
+  submissionMethod?: 'finalizeJob' | 'submit' | 'none';
+  durationMs?: number;
+  rewardValue?: number;
+  energyEstimate?: number | null;
+  txHash?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface SubmissionGasMetric {
+  jobId: string;
+  agent: string;
+  txHash: string;
+  method: 'finalizeJob' | 'submit';
+  gasUsed?: number;
+  effectiveGasPriceWei?: number;
+  gasCostWei?: number;
+  blockNumber?: number;
+  success: boolean;
+  timestamp?: string;
+  metadata?: Record<string, unknown>;
+}
+
 interface AgentEfficiencyAggregate {
   agent: string;
   jobCount: number;
@@ -365,6 +511,7 @@ async function appendEnergyMetric(record: EnergyMetricRecord): Promise<void> {
     `${JSON.stringify(record)}\n`,
     'utf8'
   );
+  await requestTelemetryAnchor();
 }
 
 function notifyAgentOfAnomaly(
@@ -656,9 +803,144 @@ export async function recordJobEnergyMetrics(params: {
     metadata,
   };
 
+  const agentLabel = normaliseAgent(record.agent);
+  const successLabel = record.jobSuccess ? 'true' : 'false';
+  const safeEnergy = Number.isFinite(record.energyEstimate)
+    ? Math.max(0, record.energyEstimate)
+    : 0;
+  const safeDurationSeconds = Number.isFinite(record.wallTimeMs)
+    ? Math.max(0, record.wallTimeMs / 1000)
+    : 0;
+
+  try {
+    energyEstimateHistogram.observe(
+      { agent: agentLabel, success: successLabel },
+      safeEnergy
+    );
+    energyDurationHistogram.observe(
+      { agent: agentLabel, success: successLabel },
+      safeDurationSeconds
+    );
+  } catch (err) {
+    console.warn('Failed to record energy metrics to Prometheus', err);
+  }
+
   await appendEnergyMetric(record);
   await handleEnergyAnomalies(record);
   return record;
+}
+
+export async function recordPlannerTrace(
+  event: PlannerTraceEvent
+): Promise<void> {
+  const timestamp = event.timestamp ?? new Date().toISOString();
+  const outcome = event.success === false ? 'failed' : 'ok';
+  try {
+    plannerEventCounter.inc({ event: event.event, outcome });
+  } catch (err) {
+    console.warn('Failed to update planner Prometheus metrics', err);
+  }
+  await appendAnchoredTelemetry(PLANNER_TRACE_PATH, 'planner-trace', {
+    planId: event.planId,
+    traceEvent: event.event,
+    taskId: event.taskId,
+    jobId: event.jobId,
+    success: event.success,
+    metadata: event.metadata,
+    timestamp,
+  });
+}
+
+export async function recordRunnerTrace(
+  event: RunnerTraceEvent
+): Promise<void> {
+  const timestamp = event.timestamp ?? new Date().toISOString();
+  const method = event.submissionMethod ?? 'none';
+  try {
+    runnerEventCounter.inc({ status: event.status, method });
+    if (
+      typeof event.durationMs === 'number' &&
+      Number.isFinite(event.durationMs)
+    ) {
+      runnerDurationHistogram.observe(
+        { status: event.status, method },
+        Math.max(0, event.durationMs / 1000)
+      );
+    }
+  } catch (err) {
+    console.warn('Failed to update runner Prometheus metrics', err);
+  }
+  await appendAnchoredTelemetry(RUNNER_TRACE_PATH, 'runner-trace', {
+    jobId: event.jobId,
+    agent: event.agent,
+    status: event.status,
+    method,
+    durationMs: event.durationMs,
+    rewardValue: event.rewardValue,
+    energyEstimate: event.energyEstimate,
+    txHash: event.txHash,
+    metadata: event.metadata,
+    timestamp,
+  });
+}
+
+export async function recordGasMetric(
+  metric: SubmissionGasMetric
+): Promise<void> {
+  const timestamp = metric.timestamp ?? new Date().toISOString();
+  const method = metric.method;
+  const outcome = metric.success ? 'true' : 'false';
+  try {
+    if (typeof metric.gasUsed === 'number' && Number.isFinite(metric.gasUsed)) {
+      gasUsedHistogram.observe(
+        { method, success: outcome },
+        Math.max(0, metric.gasUsed)
+      );
+      const price = Number.isFinite(metric.effectiveGasPriceWei ?? 0)
+        ? Math.max(0, metric.effectiveGasPriceWei ?? 0)
+        : undefined;
+      const cost = Number.isFinite(metric.gasCostWei ?? 0)
+        ? Math.max(0, metric.gasCostWei ?? 0)
+        : price
+        ? Math.max(0, price * metric.gasUsed)
+        : undefined;
+      if (typeof cost === 'number' && Number.isFinite(cost)) {
+        gasCostGauge.set({ method }, cost);
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to update gas Prometheus metrics', err);
+  }
+  await appendAnchoredTelemetry(GAS_METRICS_PATH, 'gas-metric', {
+    jobId: metric.jobId,
+    agent: metric.agent,
+    method,
+    txHash: metric.txHash,
+    gasUsed: metric.gasUsed,
+    effectiveGasPriceWei: metric.effectiveGasPriceWei,
+    gasCostWei: metric.gasCostWei,
+    blockNumber: metric.blockNumber,
+    success: metric.success,
+    metadata: metric.metadata,
+    timestamp,
+  });
+}
+
+export function recordValidationFlowMetrics(state: {
+  failureRate: number;
+  sampleSize: number;
+  paused: boolean;
+  triggeredAt?: string | null;
+  resumeAt?: string | null;
+  reason?: string | null;
+}): void {
+  const rate = Number.isFinite(state.failureRate)
+    ? Math.max(0, state.failureRate)
+    : 0;
+  validationFailureGauge.set({ state: 'active' }, rate);
+  validationFailureGauge.set({ state: 'paused' }, state.paused ? rate : 0);
+  validationSampleGauge.set(Math.max(0, state.sampleSize));
+  validationFlowGauge.set(state.paused ? 1 : 0);
 }
 
 export async function getAgentEfficiencyStats(): Promise<
@@ -775,6 +1057,80 @@ function ensureDir(dir: string): void {
   }
 }
 
+interface AnchoredTelemetryRecord<T> {
+  component: 'telemetry';
+  event: string;
+  timestamp: string;
+  payload: T;
+  integrity: { algorithm: string; digest: string };
+}
+
+function buildAnchoredTelemetryRecord<T extends Record<string, unknown>>(
+  event: string,
+  payload: T & { timestamp?: string }
+): AnchoredTelemetryRecord<T> {
+  const { timestamp, ...rest } = payload;
+  const emittedAt =
+    typeof timestamp === 'string' && timestamp.length > 0
+      ? timestamp
+      : new Date().toISOString();
+  const basePayload = { ...rest, timestamp: emittedAt } as T & {
+    timestamp: string;
+  };
+  const digestSource = JSON.stringify({ event, ...basePayload });
+  const digest = crypto
+    .createHash('sha256')
+    .update(digestSource)
+    .digest('hex');
+  return {
+    component: 'telemetry',
+    event,
+    timestamp: emittedAt,
+    payload: basePayload as T,
+    integrity: { algorithm: 'sha256', digest: `sha256:${digest}` },
+  };
+}
+
+async function appendAnchoredTelemetry<T extends Record<string, unknown>>(
+  file: string,
+  event: string,
+  payload: T & { timestamp?: string }
+): Promise<void> {
+  const record = buildAnchoredTelemetryRecord(event, payload);
+  ensureDir(path.dirname(file));
+  await fs.promises.appendFile(
+    file,
+    `${JSON.stringify(record)}\n`,
+    'utf8'
+  );
+  await requestTelemetryAnchor();
+}
+
+async function requestTelemetryAnchor(): Promise<void> {
+  telemetryEventsSinceAnchor += 1;
+  const now = Date.now();
+  const withinCooldown = now - lastTelemetryAnchor < TELEMETRY_AUTO_ANCHOR_COOLDOWN_MS;
+  if (
+    telemetryEventsSinceAnchor < TELEMETRY_AUTO_ANCHOR_THRESHOLD &&
+    withinCooldown
+  ) {
+    return;
+  }
+  if (telemetryAnchorPending) {
+    return;
+  }
+  telemetryAnchorPending = true;
+  telemetryEventsSinceAnchor = 0;
+  try {
+    await triggerAuditAnchor({ minNewEvents: 1 });
+    lastTelemetryAnchor = Date.now();
+  } catch (err) {
+    console.warn('telemetry auto-anchoring failed', err);
+  } finally {
+    telemetryAnchorPending = false;
+  }
+}
+
 async function loadQueue(): Promise<void> {
   if (loaded) return;
   loaded = true;
@@ -787,6 +1143,7 @@ async function loadQueue(): Promise<void> {
     }
     queue = [];
   }
+  telemetryQueueGauge.set(queue.length);
 }
 
 async function persistQueue(): Promise<void> {
@@ -796,6 +1153,7 @@ async function persistQueue(): Promise<void> {
     JSON.stringify(queue, null, 2),
     'utf8'
   );
+  telemetryQueueGauge.set(queue.length);
 }
 
 async function resolveSignerMetadata(): Promise<{
@@ -984,4 +1342,8 @@ export function stopTelemetryService(): void {
 
 export function telemetryQueueLength(): number {
   return queue.length;
+}
+
+export function getPrometheusRegistry(): Registry {
+  return prometheusRegistry;
 }
