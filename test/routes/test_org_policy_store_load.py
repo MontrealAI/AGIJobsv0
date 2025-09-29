@@ -43,6 +43,16 @@ def test_load_respects_overrides_from_file(temp_policy_file):
     assert record.max_duration_days == 4
 
 
+def test_load_with_missing_values_and_no_defaults(temp_policy_file):
+    temp_policy_file.write_text(json.dumps({"acme": {}}))
+
+    store = OrgPolicyStore(policy_path=str(temp_policy_file))
+
+    record = store._policies["acme"]
+    assert record.max_budget_wei is None
+    assert record.max_duration_days is None
+
+
 def test_load_without_file_uses_defaults(tmp_path):
     policy_path = tmp_path / "missing.json"
 
