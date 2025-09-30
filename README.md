@@ -34,6 +34,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control blueprint](#owner-control-blueprint)
 - [Owner control command center](#owner-control-command-center)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
+- [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
 - [Owner control handbook](#owner-control-handbook)
 - [Owner mission control](#owner-mission-control)
 - [Owner control visual guide](#owner-control-visual-guide)
@@ -226,6 +227,17 @@ npm run owner:guide -- --network mainnet --out runtime/mainnet-owner-guide.md
 ```
 
 The helper reads `config/owner-control.json` plus all module overrides, then renders a Markdown playbook tailored to the selected network. Pair the CLI output with the [Owner Control Quick Reference](docs/owner-control-quick-reference.md) handout for non-technical reviewers.
+
+### Owner control zero-downtime guide
+
+For a production-ready runbook that emphasises audit trails, Safe bundles and rollback planning, follow the [Owner Control Zero-Downtime Guide](docs/owner-control-zero-downtime-guide.md). It layers:
+
+- Pre-flight environment and credential checks so operators never push misconfigured JSON on-chain.
+- Mermaid pipeline diagrams that illustrate the closed loop across `owner:surface`, `owner:update-all`, `owner:mission-control`, and `owner:verify-control`.
+- Step-by-step instructions that call out `HARDHAT_NETWORK` usage for `owner:plan`, JSON teeing for dry runs, and Safe bundle generation.
+- Troubleshooting, sign-off templates, and continuous-improvement loops so compliance teams can archive provable change-control artefacts.
+
+Because every command is copy/paste-ready, non-technical coordinators can execute complex parameter updates without interrupting live markets while retaining full governance oversight.
 
 ### Owner control handbook
 
