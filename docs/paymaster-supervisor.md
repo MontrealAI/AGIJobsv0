@@ -63,6 +63,23 @@ Use `KMSSigner` to plug a cloud KMS/HSM implementation and supply a client objec
 `sign(key_id, message, digest)` coroutine. A deterministic `LocalDebugSigner` is provided for
 local development and testing.
 
+### Environment variables
+
+The supervisor automatically selects a signer based on the environment:
+
+- `PAYMASTER_KMS_KEY_URI` (required for production) – full Google Cloud KMS
+  crypto key version resource used for sponsorship signatures.
+- `PAYMASTER_KMS_REGION` – optional region hint; when set, the client connects to
+  `<region>-kms.googleapis.com` unless `PAYMASTER_KMS_ENDPOINT` overrides it.
+- `PAYMASTER_KMS_ENDPOINT` – optional custom endpoint for private service
+  connect or emulators.
+- `PAYMASTER_KMS_DIGEST` – digest algorithm used when calling KMS (defaults to
+  `sha256`).
+- `PAYMASTER_LOCAL_SIGNER_SECRET` – development override that forces the
+  in-process deterministic signer.
+
+If no KMS key URI is configured the application falls back to the local debug signer.
+
 ### Hot reloading
 
 Every `reload_interval_seconds`, the supervisor checks for modifications to the YAML file

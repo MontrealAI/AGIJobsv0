@@ -1,5 +1,9 @@
 {{- $global := .Values.global | default (dict) -}}
 {{- $ratelimits := (index $global "ratelimits") | default (dict) -}}
+{{- $secrets := (index $global "secrets") | default (dict) -}}
+{{- $kms := (index $secrets "kmsKeys") | default (dict) -}}
+{{- $kmsSettings := (index $global "kms") | default (dict) -}}
+{{- $kmsEnv := .Values.env.kms | default (dict) -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,6 +39,29 @@ spec:
               value: {{ default (index $ratelimits "requestsPerSecond") .Values.env.extra.requestsPerSecond | quote }}
             - name: RATE_LIMIT_BURST
               value: {{ default (index $ratelimits "burst") .Values.env.extra.burst | quote }}
+            {{- $kmsKey := default (index $kms "paymaster") (index $kmsEnv "keyUri") -}}
+            {{- if $kmsKey }}
+            - name: PAYMASTER_KMS_KEY_URI
+              value: {{ $kmsKey | quote }}
+            {{- end }}
+            {{- $kmsEndpoint := default (default "" (index $kmsSettings "endpoint")) (index $kmsEnv "endpoint") -}}
+            {{- if $kmsEndpoint }}
+            - name: PAYMASTER_KMS_ENDPOINT
+              value: {{ $kmsEndpoint | quote }}
+            {{- end }}
+            {{- $kmsRegion := default (default "" (index $kmsSettings "region")) (index $kmsEnv "region") -}}
+            {{- if $kmsRegion }}
+            - name: PAYMASTER_KMS_REGION
+              value: {{ $kmsRegion | quote }}
+            {{- end }}
+            {{- $kmsDigest := default "sha256" (index $kmsEnv "digest") -}}
+            - name: PAYMASTER_KMS_DIGEST
+              value: {{ $kmsDigest | quote }}
+            {{- $localSecret := default "" (index $kmsEnv "localDebugSecret") -}}
+            {{- if $localSecret }}
+            - name: PAYMASTER_LOCAL_SIGNER_SECRET
+              value: {{ $localSecret | quote }}
+            {{- end }}
           envFrom:
             {{- range .Values.secretRefs }}
             - secretRef:
