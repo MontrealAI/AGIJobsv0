@@ -1,51 +1,41 @@
-# Monitoring Dashboard
+# Observability & SLO Guide
 
-The repository includes a CLI/web dashboard for tracking reward minting and token burning.
+The Sprint 3 observability stack is centered on Prometheus, Grafana, and Alertmanager. Helm installs provision scrape
+configs, SLO recording rules, and dashboards so that a non-technical operator can open Grafana and immediately view the
+health of the AGI stack without manual wiring.
 
-## Reward/Burn Dashboard
+## Prometheus
 
-`scripts/monitor/reward-burn-dashboard.ts` listens to `RewardBudget` and `SlashingStats` events and aggregates
-values per epoch. It reports how many tokens were minted and burned and computes the `burned / minted`
-ratio. An alert is emitted when the ratio diverges from `1.0` by more than a configurable threshold.
+`monitoring/prometheus/prometheus.yml` configures service discovery for every charted workload (orchestrator, bundler,
+paymaster supervisor, attester, IPFS, and the graph-node). Metrics are scraped every 30 seconds from the `http` or
+`metrics` ports that the Helm charts expose. Recording rules in `monitoring/prometheus/rules.yaml` derive the SLO
+signals used throughout this sprint:
 
-### Usage
+- `service:tto_seconds:rate5m` — p95 onboarding latency sourced from the orchestrator histogram.
+- `service:cpvo_usd:rate5m` — cost per verified operation, aggregated from paymaster metrics.
+- `service:bundler_success_rate:ratio5m` — successfully sponsored operations divided by all attempts.
+- `service:sponsored_ops_total:rate5m` and `service:sponsored_ops_rejections:rate5m` — throughput and policy guardrail
+  visibility for the paymaster supervisor.
+- `service:ipfs_pin_latency_seconds:p95` — 95th percentile pin completion time, backing the IPFS backlog runbook.
+- `service:subgraph_lag_blocks` — graph-node head delay measured in blocks for alerting on indexing lag.
 
-```bash
-RPC_URL=https://rpc.example.org \
-REWARD_ENGINE=0xRewardEngineAddress \
-STAKE_MANAGER=0xStakeManagerAddress \
-ALERT_THRESHOLD=0.1 \ # optional, default 10%
-PORT=3000 \            # optional, exposes JSON metrics
-npx ts-node scripts/monitor/reward-burn-dashboard.ts
-```
+Prometheus watches the rule file automatically; no manual reloads are needed during Helm bootstrap.
 
-Metrics for all processed epochs are exposed at `http://localhost:PORT` as JSON while the script logs
-anomalies and epoch summaries to the console.
+## Grafana
 
-### Thresholds
+`monitoring/grafana/dashboard-agi-ops.json` ships a single-pane dashboard titled **AGI Stack SLOs**. Each panel visualises
+one of the recording rules above, and the dashboard links directly to the runbook collection so operators can pivot from
+metrics to procedures in one click. Import the JSON into Grafana or use it as a ConfigMap in your Helm release.
 
-`ALERT_THRESHOLD` defines the acceptable divergence between minted and burned tokens per epoch.
-A value of `0.1` means the `burned/minted` ratio can differ from `1.0` by up to 10% before an alert is triggered.
+## Alerting
 
-## Hamiltonian State Monitor
+`monitoring/prometheus/rules.yaml` also defines alerting rules for gas depletion, sponsorship rejection spikes, and bundler
+revert spikes. Every alert carries both a `runbook` label and an annotation so that Alertmanager templates can embed the
+link in PagerDuty and Slack notifications. `monitoring/alertmanager/alerts.yaml` demonstrates how those annotations are
+surfaced for on-call responders.
 
-`scripts/monitor/hamiltonian-state.ts` derives a coarse grained Hamiltonian for the
-protocol economy. For each epoch it aggregates `RewardBudget` and `SlashingStats`
-events, computes dissipation `D = minted + burned - redistributed` and utility
-`U = redistributed`, and reports `H = D - λ·U` where `λ` defaults to `1`.
+## Runbook Integration
 
-### Usage
-
-```bash
-RPC_URL=https://rpc.example.org \
-REWARD_ENGINE=0xRewardEngineAddress \
-STAKE_MANAGER=0xStakeManagerAddress \
-LAMBDA=1 \             # optional, scales utility weight
-PORT=3001 \            # optional, exposes JSON metrics
-MAX_EPOCHS=100 \      # optional, retain last 100 epochs
-npx ts-node scripts/monitor/hamiltonian-state.ts
-```
-
-The script logs the Hamiltonian for each processed epoch and serves the latest
-metrics at `http://localhost:PORT`. Only the most recent `MAX_EPOCHS` epochs
-are kept in memory (default `100`).
+The alert runbooks referenced in the rules align with the SRE runbooks under `docs/sre-runbooks.md`. Grafana dashboards,
+Prometheus recordings, and Alertmanager notifications all point to the same URL set so operators receive a consistent
+response plan regardless of entry point.
