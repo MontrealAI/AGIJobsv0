@@ -1,6 +1,7 @@
 import { spawnSync } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
 
 const DEFAULT_NETWORK = process.env.HARDHAT_NETWORK || 'hardhat';
 
@@ -16,6 +17,8 @@ interface CliOptions {
   format: OutputFormat;
   includeMermaid: boolean;
   outPath?: string;
+  bundlePath?: string;
+  bundleBaseName?: string;
   help?: boolean;
   run: Record<StepKey, boolean>;
 }
@@ -171,6 +174,26 @@ function parseArgs(argv: string[]): CliOptions {
         i += 1;
         break;
       }
+      case '--bundle':
+      case '--bundle-dir': {
+        const value = argv[i + 1];
+        if (!value) {
+          throw new Error(`${arg} requires a directory path`);
+        }
+        options.bundlePath = value;
+        i += 1;
+        break;
+      }
+      case '--bundle-name':
+      case '--bundle-basename': {
+        const value = argv[i + 1];
+        if (!value) {
+          throw new Error(`${arg} requires a base name`);
+        }
+        options.bundleBaseName = value;
+        i += 1;
+        break;
+      }
       case '--no-mermaid':
         options.includeMermaid = false;
         break;
@@ -243,6 +266,16 @@ function parseArgs(argv: string[]): CliOptions {
   return options;
 }
 
+function sanitizeBaseName(value: string, fallback: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+  const cleaned = trimmed.replace(/[^a-zA-Z0-9-_]+/g, '-').replace(/-+/g, '-');
+  const normalised = cleaned.replace(/^-+/, '').replace(/-+$/, '');
+  return normalised.length > 0 ? normalised : fallback;
+}
+
 function safeParseJson(candidate: string): any | undefined {
   try {
     return JSON.parse(candidate);
@@ -276,7 +309,13 @@ function extractJsonFromOutput(output: string): ExtractedJson {
         start = i;
       } else if (trimmed.startsWith('[')) {
         const next = trimmed[1];
-        if (next === '{' || next === '[' || next === '"' || next === ']' || next === undefined) {
+        if (
+          next === '{' ||
+          next === '[' ||
+          next === '"' ||
+          next === ']' ||
+          next === undefined
+        ) {
           start = i;
         }
       }
@@ -402,7 +441,9 @@ function renderMarkdown(options: CliOptions, reports: StepReport[]): string {
   lines.push('');
   lines.push(`- **Network:** \`${options.network}\``);
   lines.push(`- **Generated:** ${now}`);
-  lines.push(`- **Overall status:** ${statusEmoji(overall)} \`${overall.toUpperCase()}\``);
+  lines.push(
+    `- **Overall status:** ${statusEmoji(overall)} \`${overall.toUpperCase()}\``
+  );
   lines.push('');
 
   if (options.includeMermaid) {
@@ -420,8 +461,12 @@ function renderMarkdown(options: CliOptions, reports: StepReport[]): string {
     }
     mermaidLines.push(...nodes);
     for (const [from, to] of edges) {
-      const fromEnabled = reports.find((report) => report.key === (from as StepKey));
-      const toEnabled = reports.find((report) => report.key === (to as StepKey));
+      const fromEnabled = reports.find(
+        (report) => report.key === (from as StepKey)
+      );
+      const toEnabled = reports.find(
+        (report) => report.key === (to as StepKey)
+      );
       if (
         fromEnabled &&
         toEnabled &&
@@ -440,7 +485,9 @@ function renderMarkdown(options: CliOptions, reports: StepReport[]): string {
     lines.push(`## ${report.title}`);
     lines.push('');
     lines.push(
-      `${statusEmoji(report.status)} **Status:** \`${report.status.toUpperCase()}\` — ${report.summary}`
+      `${statusEmoji(
+        report.status
+      )} **Status:** \`${report.status.toUpperCase()}\` — ${report.summary}`
     );
     if (report.command.length > 0) {
       lines.push(`- **Command:** \`${formatCommand(report.command)}\``);
@@ -569,6 +616,120 @@ function render(options: CliOptions, reports: StepReport[]): string {
   }
 }
 
+type BundleFile = {
+  format: 'markdown' | 'json' | 'human' | 'manifest' | 'checksums';
+  filename: string;
+  absolutePath: string;
+  sha256: string;
+  bytes: number;
+};
+
+async function computeSha256(
+  filePath: string
+): Promise<{ hash: string; bytes: number }> {
+  const buffer = await fs.readFile(filePath);
+  const hash = createHash('sha256').update(buffer).digest('hex');
+  return { hash, bytes: buffer.length };
+}
+
+async function writeBundle(
+  options: CliOptions,
+  reports: StepReport[]
+): Promise<void> {
+  if (!options.bundlePath) {
+    return;
+  }
+
+  const outDir = path.resolve(options.bundlePath);
+  await fs.mkdir(outDir, { recursive: true });
+
+  const fallbackBase = `mission-control-${options.network}`;
+  const baseName = sanitizeBaseName(
+    options.bundleBaseName ?? fallbackBase,
+    fallbackBase
+  );
+
+  const markdownContent = renderMarkdown(
+    { ...options, format: 'markdown' },
+    reports
+  );
+  const jsonContent = renderJson({ ...options, format: 'json' }, reports);
+  const humanContent = renderHuman({ ...options, format: 'human' }, reports);
+
+  const outputs = [
+    { format: 'markdown' as const, extension: '.md', content: markdownContent },
+    { format: 'json' as const, extension: '.json', content: jsonContent },
+    { format: 'human' as const, extension: '.txt', content: humanContent },
+  ];
+
+  const writtenFiles: BundleFile[] = [];
+  for (const output of outputs) {
+    const filename = `${baseName}${output.extension}`;
+    const absolutePath = path.join(outDir, filename);
+    const payload = output.content.endsWith('\n')
+      ? output.content
+      : `${output.content}\n`;
+    await fs.writeFile(absolutePath, payload);
+    const { hash, bytes } = await computeSha256(absolutePath);
+    writtenFiles.push({
+      format: output.format,
+      filename,
+      absolutePath,
+      sha256: hash,
+      bytes,
+    });
+  }
+
+  const manifestPath = path.join(outDir, `${baseName}.manifest.json`);
+  const manifest = {
+    network: options.network,
+    baseName,
+    generatedAt: new Date().toISOString(),
+    overallStatus: computeOverallStatus(reports),
+    includeMermaid: options.includeMermaid,
+    steps: reports.map((report) => ({
+      key: report.key,
+      title: report.title,
+      status: report.status,
+      summary: report.summary,
+      metrics: report.metrics,
+      command: report.command,
+      env: report.env,
+      durationMs: report.durationMs,
+    })),
+    files: writtenFiles.map(({ format, filename, sha256, bytes }) => ({
+      format,
+      file: filename,
+      sha256,
+      bytes,
+    })),
+  };
+  const manifestContent = `${JSON.stringify(manifest, null, 2)}\n`;
+  await fs.writeFile(manifestPath, manifestContent);
+  const manifestMeta = await computeSha256(manifestPath);
+  writtenFiles.push({
+    format: 'manifest',
+    filename: path.basename(manifestPath),
+    absolutePath: manifestPath,
+    sha256: manifestMeta.hash,
+    bytes: manifestMeta.bytes,
+  });
+
+  const checksumLines = writtenFiles.map(
+    (file) => `${file.sha256}  ${file.filename}`
+  );
+  const checksumsPath = path.join(outDir, `${baseName}.checksums.txt`);
+  await fs.writeFile(checksumsPath, `${checksumLines.join('\n')}\n`);
+  const checksumsMeta = await computeSha256(checksumsPath);
+  writtenFiles.push({
+    format: 'checksums',
+    filename: path.basename(checksumsPath),
+    absolutePath: checksumsPath,
+    sha256: checksumsMeta.hash,
+    bytes: checksumsMeta.bytes,
+  });
+}
+
 function analyzeSurface(context: StepExecutionContext): StepAnalysis {
   const data = context.json;
   if (!data || !Array.isArray(data.reports)) {
@@ -626,7 +787,8 @@ function analyzePlan(context: StepExecutionContext): StepAnalysis {
   }
   const totalActions = Number(data.totalActions ?? 0);
   const pendingModules = data.modules.filter(
-    (module: any) => Number(module.totalActions ?? module.actions?.length ?? 0) > 0
+    (module: any) =>
+      Number(module.totalActions ?? module.actions?.length ?? 0) > 0
   );
   const status: StepStatus = totalActions > 0 ? 'warning' : 'success';
   const summary =
@@ -689,7 +851,9 @@ function analyzeVerify(context: StepExecutionContext): StepAnalysis {
           Array.isArray(result.notes) && result.notes.length > 0
             ? ` — ${result.notes[0]}`
             : '';
-        problems.push(`${result.label || result.key}: ${result.status}${notes}`);
+        problems.push(
+          `${result.label || result.key}: ${result.status}${notes}`
+        );
       });
   }
   if (problems.length === 0) {
@@ -735,14 +899,20 @@ function analyzeDashboard(context: StepExecutionContext): StepAnalysis {
   const details: string[] = [];
   if (errored.length > 0) {
     errored.slice(0, 5).forEach((module: any) => {
-      const firstError = module.metrics.find((metric: any) => metric.label === 'error');
+      const firstError = module.metrics.find(
+        (metric: any) => metric.label === 'error'
+      );
       details.push(
-        `${module.name || module.key}: ${firstError?.value || 'Failed to load metrics'}`
+        `${module.name || module.key}: ${
+          firstError?.value || 'Failed to load metrics'
+        }`
       );
     });
   } else if (missing.length > 0) {
     missing.slice(0, 5).forEach((module: any) => {
-      details.push(`${module.name || module.key}: address not in deployment records`);
+      details.push(
+        `${module.name || module.key}: address not in deployment records`
+      );
     });
   }
   if (details.length === 0) {
@@ -862,7 +1032,9 @@ function runStep(definition: StepDefinition, options: CliOptions): StepReport {
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
   const exitCode = result.status ?? (result.error ? 1 : 0);
-  const extraction = definition.expectsJson ? extractJsonFromOutput(stdout) : { logs: [] };
+  const extraction = definition.expectsJson
+    ? extractJsonFromOutput(stdout)
+    : { logs: [] };
   const logs = mergeLogs(extraction.logs ?? [], stderr);
 
   const context: StepExecutionContext = {
@@ -978,6 +1150,8 @@ function printHelp(): void {
     '  --json                     Shortcut for --format json',
     '  --human                    Shortcut for --format human',
     '  --out <path>               Write report to a file instead of stdout',
+    '  --bundle <dir>             Emit a multi-format bundle (md/json/txt + manifest/checksums) into <dir>',
+    '  --bundle-name <name>       Override bundle base filename (default: mission-control-<network>)',
     '  --no-mermaid               Disable Mermaid diagram in markdown output',
     '  --skip <steps>             Comma-separated list of steps to skip',
     '  --only <steps>             Run only the listed steps (comma separated)',
@@ -1021,6 +1195,9 @@ async function main(): Promise<void> {
   }
 
   const rendered = render(options, reports);
+  if (options.bundlePath) {
+    await writeBundle(options, reports);
+  }
   if (options.outPath) {
     const outFile = path.resolve(options.outPath);
     await fs.mkdir(path.dirname(outFile), { recursive: true });

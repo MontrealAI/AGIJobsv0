@@ -6,6 +6,10 @@
 > **Goal:** Provide a production-ready, copy/paste friendly guide for inspecting,
 > updating and validating every owner-editable parameter without writing code.
 
+> **Bundle Exports:** Need tamper-evident artefacts for auditors? Pair the commands
+> below with the bundle workflow in
+> [`docs/owner-mission-bundle.md`](./owner-mission-bundle.md).
+
 ---
 
 ## Command Quick Reference
@@ -90,12 +94,14 @@ control without direct Solidity interaction.
 ## Step-by-Step Owner Workflow
 
 1. **Inspect the current state**
+
    - Run `npm run owner:surface -- --network <network>`.
    - Review highlighted warnings (yellow) and errors (red). Hovering text in the
      terminal shows missing configuration files or mismatched addresses.
    - For audit trails, rerun with `--format markdown --out reports/<network>-owner-surface.md`.
 
 2. **Plan configuration edits**
+
    - Edit the relevant JSON file under `config/` (for example,
      `config/thermodynamics.json`). Every key is documented inline within the
      files and mirrors the Solidity setter signature.
@@ -103,6 +109,7 @@ control without direct Solidity interaction.
      reference the network and expected on-chain impact.
 
 3. **Validate against live contracts**
+
    - Execute `npm run owner:update-all -- --network <network>`.
    - The script loads every config module, compares against on-chain state and
      prints a transaction plan without sending transactions.
@@ -110,6 +117,7 @@ control without direct Solidity interaction.
      RPC traces before proceeding.
 
 4. **Execute the plan**
+
    - Once the dry run is correct, append `--execute` to broadcast the batched
      transactions from the configured signer.
    - Hardware wallets and multisigs are supported: specify
@@ -126,17 +134,17 @@ control without direct Solidity interaction.
 
 ## Parameter Inventory
 
-| Module | Key Controls | Setter Commands |
-| ------ | ------------ | --------------- |
-| `JobRegistry` | Job fee rates, treasury address, per-role caps | `npm run owner:update-all` (reads `config/job-registry.json`) |
-| `StakeManager` | Minimum/maximum stake, cooldown windows, treasury | `npm run owner:update-all` (reads `config/stake-manager.json`) |
-| `FeePool` | Burn percentage, treasury allowlist | `npm run owner:update-all` (reads `config/fee-pool.json`) |
-| `RewardEngineMB` | Free-energy budget split, chemical potentials | `npm run owner:update-all` (reads `config/thermodynamics.json`) |
-| `Thermostat` | PID gains, target entropy, max adjustments | `npm run owner:update-all` (reads `config/thermostat.json`) |
-| `HamiltonianMonitor` | Observation window, reset flag | `npm run owner:update-all` (reads `config/hamiltonian-monitor.json`) |
-| `EnergyOracle` | Authorised signers, quorum requirements | `npm run owner:update-all` (reads `config/energy-oracle.json`) |
-| `TaxPolicy` | Tax brackets, exemptions, treasury routing | `npm run owner:update-all` (reads `config/tax-policy.json`) |
-| `SystemPause` | Module wiring, pause guardians | `npm run owner:update-all` (reads `config/system-pause.json`) |
+| Module               | Key Controls                                      | Setter Commands                                                      |
+| -------------------- | ------------------------------------------------- | -------------------------------------------------------------------- |
+| `JobRegistry`        | Job fee rates, treasury address, per-role caps    | `npm run owner:update-all` (reads `config/job-registry.json`)        |
+| `StakeManager`       | Minimum/maximum stake, cooldown windows, treasury | `npm run owner:update-all` (reads `config/stake-manager.json`)       |
+| `FeePool`            | Burn percentage, treasury allowlist               | `npm run owner:update-all` (reads `config/fee-pool.json`)            |
+| `RewardEngineMB`     | Free-energy budget split, chemical potentials     | `npm run owner:update-all` (reads `config/thermodynamics.json`)      |
+| `Thermostat`         | PID gains, target entropy, max adjustments        | `npm run owner:update-all` (reads `config/thermostat.json`)          |
+| `HamiltonianMonitor` | Observation window, reset flag                    | `npm run owner:update-all` (reads `config/hamiltonian-monitor.json`) |
+| `EnergyOracle`       | Authorised signers, quorum requirements           | `npm run owner:update-all` (reads `config/energy-oracle.json`)       |
+| `TaxPolicy`          | Tax brackets, exemptions, treasury routing        | `npm run owner:update-all` (reads `config/tax-policy.json`)          |
+| `SystemPause`        | Module wiring, pause guardians                    | `npm run owner:update-all` (reads `config/system-pause.json`)        |
 
 Every configuration file supports per-network overrides. Place a file named
 `config/<module>.<network>.json` next to the default to specialise a deployment
@@ -161,12 +169,12 @@ without forking the repository.
 
 ## Troubleshooting Matrix
 
-| Symptom | Diagnosis Steps | Resolution |
-| ------- | --------------- | ---------- |
-| `owner:surface` throws `Unknown argument` | Ensure extra flags are placed after `--` so `npm` passes them through. | `npm run owner:surface -- --network sepolia --format markdown` |
-| Update scripts fail with `CALL_EXCEPTION` | The executing signer lacks the required role (owner/governance). | Re-run `owner:verify-control` and rotate ownership if necessary. |
-| Markdown export missing sections | One or more config files are absent. | Copy the template from `config/templates` and adjust values. |
-| Multisig bundle rejected | Safe transaction nonce mismatch. | Pull the latest Safe state and increment `--safe-nonce` accordingly. |
+| Symptom                                   | Diagnosis Steps                                                        | Resolution                                                           |
+| ----------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `owner:surface` throws `Unknown argument` | Ensure extra flags are placed after `--` so `npm` passes them through. | `npm run owner:surface -- --network sepolia --format markdown`       |
+| Update scripts fail with `CALL_EXCEPTION` | The executing signer lacks the required role (owner/governance).       | Re-run `owner:verify-control` and rotate ownership if necessary.     |
+| Markdown export missing sections          | One or more config files are absent.                                   | Copy the template from `config/templates` and adjust values.         |
+| Multisig bundle rejected                  | Safe transaction nonce mismatch.                                       | Pull the latest Safe state and increment `--safe-nonce` accordingly. |
 
 ---
 
@@ -216,4 +224,3 @@ sign-off from the Emergency Council.
 - **2025-01-12:** Initial publication of the Owner Control Handbook. Aligns with
   repository scripts `owner:surface`, `owner:update-all`, `owner:verify-control`,
   and `owner:rotate`.
-
