@@ -250,7 +250,6 @@ class AccountAbstractionExecutor:
             paymaster = PaymasterClient(
                 paymaster_url,
                 api_key=os.getenv("AA_PAYMASTER_API_KEY") or os.getenv("PAYMASTER_API_KEY"),
-                method=os.getenv("AA_PAYMASTER_METHOD") or "pm_sponsorUserOperation",
                 headers={str(k): str(v) for k, v in paymaster_headers.items()},
                 context=paymaster_context,
             )
