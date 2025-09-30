@@ -280,11 +280,22 @@ class AccountAbstractionExecutor:
         )
 
     async def execute(self, tx: Dict[str, Any], context: AAExecutionContext) -> AccountAbstractionResult:
-        gas_estimate = _int_from_quantity(tx.get("gas"))
-        reservation = self._gas_policy.reserve(context.org_identifier, gas_estimate)
+        user_op, session_account, details = self._build_user_operation(tx, context)
+        total_gas = details["total_gas"]
+        max_fee_per_gas = details["max_fee_per_gas"]
+        reservation = self._gas_policy.reserve(context.org_identifier, total_gas)
+        estimated_cost = total_gas * max_fee_per_gas
         try:
-            user_op, session_account = self._build_user_operation(tx, context, gas_estimate)
-            paymaster_payload = await self._maybe_sponsor(user_op, context)
+            paymaster_payload = await self._maybe_sponsor(
+                user_op,
+                context,
+                total_gas=total_gas,
+                estimated_cost_wei=estimated_cost,
+                target=details.get("target"),
+                selector=details.get("selector"),
+                call_value=details.get("call_value", 0),
+                max_fee_per_gas=max_fee_per_gas,
+            )
             if paymaster_payload:
                 user_op.update(paymaster_payload)
             user_op_hash = await self._submit(user_op)
@@ -322,13 +333,28 @@ class AccountAbstractionExecutor:
         self,
         user_op: Dict[str, Any],
         context: AAExecutionContext,
+        *,
+        total_gas: int,
+        estimated_cost_wei: int,
+        target: Optional[str],
+        selector: Optional[str],
+        call_value: int,
+        max_fee_per_gas: int,
     ) -> Optional[Dict[str, Any]]:
         if not self._paymaster:
             return None
         try:
             result = await self._paymaster.sponsor_user_operation(
                 user_op,
-                context=self._build_paymaster_context(context),
+                context=self._build_paymaster_context(
+                    context,
+                    total_gas=total_gas,
+                    estimated_cost_wei=estimated_cost_wei,
+                    target=target,
+                    selector=selector,
+                    call_value=call_value,
+                    max_fee_per_gas=max_fee_per_gas,
+                ),
             )
         except PaymasterError as exc:
             raise AAPaymasterRejection(str(exc)) from exc
@@ -355,7 +381,17 @@ class AccountAbstractionExecutor:
         except BundlerError as exc:
             raise AABundlerError(str(exc), simulation=exc.is_simulation_error) from exc
 
-    def _build_paymaster_context(self, context: AAExecutionContext) -> Dict[str, Any]:
+    def _build_paymaster_context(
+        self,
+        context: AAExecutionContext,
+        *,
+        total_gas: int,
+        estimated_cost_wei: int,
+        target: Optional[str],
+        selector: Optional[str],
+        call_value: int,
+        max_fee_per_gas: int,
+    ) -> Dict[str, Any]:
         payload = dict(self._paymaster_context)
         if context.org_identifier and "org" not in payload:
             payload["org"] = context.org_identifier
@@ -363,6 +399,15 @@ class AccountAbstractionExecutor:
             payload["planHash"] = context.plan_hash
         if context.correlation_id and "traceId" not in payload:
             payload["traceId"] = context.correlation_id
+        payload.setdefault("total_gas_limit", total_gas)
+        payload.setdefault("estimated_cost_wei", str(estimated_cost_wei))
+        payload.setdefault("max_fee_per_gas", str(max_fee_per_gas))
+        if call_value:
+            payload.setdefault("call_value", str(call_value))
+        if target:
+            payload.setdefault("target", str(target).lower())
+        if selector:
+            payload.setdefault("selector", selector)
         metadata = context.metadata or {}
         for key, value in metadata.items():
             payload.setdefault(key, value)
@@ -372,8 +417,7 @@ class AccountAbstractionExecutor:
         self,
         tx: Dict[str, Any],
         context: AAExecutionContext,
-        gas_estimate: int,
-    ) -> tuple[Dict[str, Any], Any]:
+    ) -> tuple[Dict[str, Any], Any, Dict[str, Any]]:
         call_data = tx.get("data") or "0x"
         if isinstance(call_data, bytes):
             call_data = "0x" + call_data.hex()
@@ -386,6 +430,7 @@ class AccountAbstractionExecutor:
         max_priority_fee_per_gas = _int_from_quantity(
             tx.get("maxPriorityFeePerGas") or tx.get("max_priority_fee_per_gas") or max_fee_per_gas
         )
+        gas_estimate = _int_from_quantity(tx.get("gas"))
         call_gas_limit = gas_estimate + self._call_gas_buffer
         if call_gas_limit <= 0:
             call_gas_limit = self._call_gas_buffer
@@ -406,7 +451,19 @@ class AccountAbstractionExecutor:
         if value:
             user_op["callValue"] = hex(value)
         user_op["signature"] = self._sign_user_operation(session_account, user_op)
-        return user_op, session_account
+        total_gas = call_gas_limit + self._verification_gas_limit + self._pre_verification_gas
+        selector = None
+        if isinstance(call_data, str) and call_data.startswith("0x") and len(call_data) >= 10:
+            selector = call_data[:10].lower()
+        metadata = {
+            "total_gas": total_gas,
+            "max_fee_per_gas": max_fee_per_gas,
+            "max_priority_fee_per_gas": max_priority_fee_per_gas,
+            "target": str(tx.get("to") or "").lower() if tx.get("to") else None,
+            "selector": selector,
+            "call_value": value,
+        }
+        return user_op, session_account, metadata
 
     def _derive_session_account(self, tx: Dict[str, Any], context: AAExecutionContext):
         hasher = hashlib.sha256()

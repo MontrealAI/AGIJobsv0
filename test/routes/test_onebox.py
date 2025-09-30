@@ -335,6 +335,7 @@ import routes.onebox as onebox  # noqa: E402  pylint: disable=wrong-import-posit
 
 from orchestrator.aa import (  # noqa: E402  pylint: disable=wrong-import-position
     AABundlerError,
+    AAPaymasterRejection,
     AAPolicyRejection,
     AccountAbstractionResult,
 )
@@ -1162,6 +1163,52 @@ class AccountAbstractionIntegrationTests(unittest.IsolatedAsyncioTestCase):
         class _Executor:
             async def execute(self, tx, context):  # type: ignore[no-untyped-def]
                 raise AAPolicyRejection("policy rejected")
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Example", reward="1", deadlineDays=1),
+            userContext={"org": "acme"},
+        )
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
+        request_ctx = _make_request()
+
+        with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
+            "routes.onebox._compute_spec_hash", return_value=b"spec"
+        ), mock.patch(
+            "routes.onebox._build_tx", return_value={"gas": 30_000}
+        ), mock.patch(
+            "routes.onebox._get_org_policy_store", return_value=_PolicyStore()
+        ), mock.patch(
+            "routes.onebox._collect_tooling_versions", return_value={}
+        ), mock.patch(
+            "routes.onebox._get_aa_executor", return_value=_Executor()
+        ), mock.patch.object(
+            onebox, "relayer", types.SimpleNamespace(address="0xRelayer"), create=True
+        ):
+            response = await execute(request_ctx, execute_request)
+
+        self.assertIsNone(response.txHash)
+        self.assertEqual(response.status, "prepared")
+        self.assertIsNotNone(response.to)
+        self.assertEqual(response.signer, None)
+
+    async def test_paymaster_rejection_falls_back_to_wallet_flow(self) -> None:
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            return {
+                "cid": "bafkpaymaster",
+                "uri": "ipfs://bafkpaymaster",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafkpaymaster",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafkpaymaster"],
+            }
+
+        class _PolicyStore:
+            def enforce(self, org_id, reward_wei, deadline_days):  # type: ignore[no-untyped-def]
+                return onebox.OrgPolicyRecord(max_budget_wei=None, max_duration_days=None)
+
+        class _Executor:
+            async def execute(self, tx, context):  # type: ignore[no-untyped-def]
+                raise AAPaymasterRejection("paymaster rejected")
 
         intent = JobIntent(
             action="post_job",
