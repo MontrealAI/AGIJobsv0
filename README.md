@@ -217,6 +217,10 @@ Change managers who need a single-page, production-ready operating model can use
 
 Need a single, visualised briefing before making governance changes? The new [Owner Command Center](docs/owner-control-command-center.md) combines Mermaid journey maps, validation matrices, and step-by-step scenario playbooks so a non-technical contract owner can stage, approve, execute, and verify any parameter update with complete confidence. Pair it with `npm run owner:surface` for a baseline snapshot, then follow the mission map checklists to close the loop from diff preview to post-change artefacts.
 
+### Owner control operations playbook
+
+Looking for a single document that unifies configuration entry points, execution commands, verification steps, and recovery flows? The [Owner Control Operations Playbook](docs/owner-control-operations.md) packages the entire governance control surface into layered Mermaid diagrams, rapid-change checklists, and failure-recovery matrices. It summarises which JSON manifests back each subsystem, how to dry-run and execute the corresponding Hardhat helpers, and how to archive evidence for compliance teams—all tuned for non-technical operators running production-critical environments.
+
 ### Owner control doctor
 
 Before broadcasting any change, run the automated readiness sweep to surface missing addresses, invalid reward splits and unassigned guardians:
