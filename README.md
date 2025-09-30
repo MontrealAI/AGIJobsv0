@@ -36,6 +36,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
 - [Owner control handbook](#owner-control-handbook)
 - [Owner mission control](#owner-mission-control)
+- [Owner control visual guide](#owner-control-visual-guide)
 
 ### Identity policy
 
@@ -254,6 +255,26 @@ environment overrides (`OWNER_UPDATE_ALL_JSON`, `OWNER_VERIFY_JSON`,
 dry-runs, Safe reviews and production verification. The full playbook lives in
 [docs/owner-mission-control.md](docs/owner-mission-control.md) with journey maps,
 step tables and troubleshooting guidance.
+
+### Owner control visual guide
+
+Need a single command that renders an **owner authority map** for auditors or
+ops reviews? Run the visual generator to produce a ready-to-share Markdown
+report with Mermaid diagrams and a control matrix:
+
+```bash
+OWNER_MERMAID_OUTPUT=storage/owner-dashboards/<network>-$(date +%F).md \
+  npm run owner:diagram -- --network <network>
+```
+
+The helper powers the new [Owner Control Visual Guide](docs/owner-control-visual-guide.md),
+highlighting missing addresses, mismatched controllers, and pending ownership
+acceptances. Supply overrides via environment variables such as
+`OWNER_MERMAID_ADDRESS_OVERRIDES="stakeManager=0x..."` or
+`AGJ_STAKE_MANAGER_ADDRESS=0x...` so the contract owner retains full control without
+editing source files. Pair the generated diagram with
+`npm run owner:verify-control` to close the loop between visualization and
+transaction execution.
 
 ### Mainnet Deployment
 
