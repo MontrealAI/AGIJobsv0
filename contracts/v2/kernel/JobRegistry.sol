@@ -172,11 +172,15 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
         if (limit > 0 && active > limit) revert TooManyJobs();
 
         uint256 minValidatorStake = config.minValidatorStake();
-        for (uint256 i = 0; i < validators.length; i++) {
+        uint256 validatorCount = validators.length;
+        for (uint256 i = 0; i < validatorCount; i++) {
             address validator = validators[i];
             if (validator == address(0)) revert InvalidValidators();
             if (stakeManager.stakeOf(validator) < minValidatorStake) {
                 revert ValidatorStakeTooLow(validator);
+            }
+            for (uint256 j = 0; j < i; j++) {
+                if (validators[j] == validator) revert InvalidValidators();
             }
         }
 

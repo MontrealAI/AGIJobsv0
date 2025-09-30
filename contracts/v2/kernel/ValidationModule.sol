@@ -70,12 +70,22 @@ contract ValidationModule is Ownable {
     }
 
     function configureRound(uint256 jobId, address[] calldata validators) external onlyJobRegistry {
-        if (validators.length < config.minValidators()) revert InvalidValidators();
+        uint256 validatorCount = validators.length;
+        if (validatorCount < config.minValidators()) revert InvalidValidators();
         Round storage round = rounds[jobId];
         if (round.configured) revert AlreadyConfigured();
-        round.validators = validators;
+        address[] memory uniqueValidators = new address[](validatorCount);
+        for (uint256 i = 0; i < validatorCount; i++) {
+            address validator = validators[i];
+            if (validator == address(0)) revert InvalidValidators();
+            for (uint256 j = 0; j < i; j++) {
+                if (uniqueValidators[j] == validator) revert InvalidValidators();
+            }
+            uniqueValidators[i] = validator;
+        }
+        round.validators = uniqueValidators;
         round.configured = true;
-        emit RoundConfigured(jobId, validators);
+        emit RoundConfigured(jobId, uniqueValidators);
     }
 
     function startRound(uint256 jobId) external onlyJobRegistry {
