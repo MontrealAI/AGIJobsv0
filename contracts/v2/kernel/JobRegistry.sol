@@ -37,6 +37,7 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
 
     mapping(uint256 => Job) public jobs;
     mapping(address => uint256) public activeJobs;
+    mapping(uint256 => address[]) private jobValidators;
 
     event OpsTreasuryUpdated(address indexed treasury);
     event StakeManagerUpdated(address indexed manager);
@@ -164,7 +165,7 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
         if (deadline <= block.timestamp) revert InvalidDeadline();
         uint256 maxDuration = config.maxJobDuration();
         if (deadline - block.timestamp > maxDuration) revert InvalidDeadline();
-        if (stakeManager.stakeOf(agent) < config.minAgentStake()) revert InsufficientStake();
+        if (stakeManager.availableStakeOf(agent) < config.minAgentStake()) revert InsufficientStake();
         if (validators.length < config.minValidators()) revert InvalidValidators();
 
         uint256 active = activeJobs[agent] + 1;
@@ -176,7 +177,7 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
         for (uint256 i = 0; i < validatorCount; i++) {
             address validator = validators[i];
             if (validator == address(0)) revert InvalidValidators();
-            if (stakeManager.stakeOf(validator) < minValidatorStake) {
+            if (stakeManager.availableStakeOf(validator) < minValidatorStake) {
                 revert ValidatorStakeTooLow(validator);
             }
             for (uint256 j = 0; j < i; j++) {
@@ -198,6 +199,14 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
         });
         activeJobs[agent] = active;
 
+        uint256 validatorCount = validators.length;
+        address[] storage storedValidators = jobValidators[jobId];
+        for (uint256 i = 0; i < validatorCount; i++) {
+            storedValidators.push(validators[i]);
+        }
+
+        stakeManager.lockStake(agent, jobId, config.minAgentStake());
+
         escrowVault.deposit(jobId, msg.sender, reward);
         validationModule.configureRound(jobId, validators);
 
@@ -214,6 +223,7 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
 
         job.submitted = true;
         job.submittedAt = uint64(block.timestamp);
+        _lockValidators(jobId);
         validationModule.startRound(jobId);
         emit JobSubmitted(jobId);
     }
@@ -231,6 +241,7 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
         }
         escrowVault.refund(jobId, job.employer);
         _slashParticipant(jobId, job.agent, config.maliciousSlashBps(), "ttl_expired");
+        _unlockJob(jobId);
         emit JobCancelled(jobId);
     }
 
@@ -335,6 +346,27 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
             escrowVault.refund(jobId, job.employer);
         }
 
+        _unlockJob(jobId);
         emit JobFinalized(jobId, success);
+    }
+
+    function _lockValidators(uint256 jobId) internal {
+        address[] storage validators = jobValidators[jobId];
+        uint256 minStake = config.minValidatorStake();
+        for (uint256 i = 0; i < validators.length; i++) {
+            stakeManager.lockStake(validators[i], jobId, minStake);
+        }
+    }
+
+    function _unlockJob(uint256 jobId) internal {
+        Job storage job = jobs[jobId];
+        stakeManager.unlockAll(job.agent, jobId);
+
+        address[] storage validators = jobValidators[jobId];
+        for (uint256 i = 0; i < validators.length; i++) {
+            stakeManager.unlockAll(validators[i], jobId);
+        }
+
+        delete jobValidators[jobId];
     }
 }

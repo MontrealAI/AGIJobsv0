@@ -188,6 +188,30 @@ contract KernelPipelineTest is Test {
         assertEq(token.balanceOf(escrowVault.BURN_ADDRESS()), split.burnAmount);
     }
 
+    function testWithdrawalBlockedWhileJobActiveAndSlashApplies() public {
+        uint256 reward = 60 ether;
+        uint64 deadline = uint64(block.timestamp + 2 days);
+        vm.prank(employer);
+        uint256 jobId = jobRegistry.createJob(agent, validators, reward, deadline, keccak256("locked"));
+
+        // Agent stake is locked for the job preventing full withdrawal.
+        vm.prank(agent);
+        vm.expectRevert(KernelStakeManager.InsufficientStake.selector);
+        stakeManager.withdraw(agent, 50 ether);
+
+        // Advance time past the deadline to trigger expiration and slashing.
+        vm.warp(deadline + 1);
+        vm.prank(employer);
+        jobRegistry.cancelExpiredJob(jobId);
+
+        uint256 slashBps = config.maliciousSlashBps();
+        uint256 expectedStake = 50 ether - ((50 ether * slashBps) / stakeManager.BPS_DENOMINATOR());
+
+        assertEq(stakeManager.stakeOf(agent), expectedStake);
+        assertEq(stakeManager.lockedStakeForJob(agent, jobId), 0);
+        assertEq(stakeManager.availableStakeOf(agent), expectedStake);
+    }
+
     function testNoRevealSlashesAndRefunds() public {
         uint256 reward = 80 ether;
         uint64 deadline = uint64(block.timestamp + 2 days);
