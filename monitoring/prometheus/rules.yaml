@@ -27,6 +27,7 @@ groups:
         annotations:
           summary: Paymaster gas wallet below 0.05 ETH
           description: Top up the configured treasury wallet before sponsorship halts.
+          runbook: https://docs.example.com/runbooks/paymaster-gas
       - alert: SponsorshipRejectionSpike
         expr: service:sponsored_ops_rejections:rate5m > 5
         for: 10m
@@ -36,6 +37,7 @@ groups:
         annotations:
           summary: Sponsored operation rejections increasing
           description: Investigate upstream AA flow or contract configuration issues.
+          runbook: https://docs.example.com/runbooks/rejection-spike
       - alert: BundlerRevertSpike
         expr: rate(bundler_operations_total{status="reverted"}[5m]) > 2
         for: 5m
@@ -45,3 +47,4 @@ groups:
         annotations:
           summary: Bundler revert spike detected
           description: Review recent deployments and mempool conditions.
+          runbook: https://docs.example.com/runbooks/revert-spike

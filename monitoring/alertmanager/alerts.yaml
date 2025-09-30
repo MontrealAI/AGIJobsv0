@@ -13,8 +13,10 @@ receivers:
     pagerduty_configs:
       - routing_key: '{{ pagerduty_routing_key }}'
         description: '{{ .CommonAnnotations.summary }}'
+        details:
+          runbook: '{{ .CommonAnnotations.runbook }}'
   - name: slack
     slack_configs:
       - channel: '#agi-ops'
-        text: '{{ template "slack.default.text" . }}'
+        text: '{{ template "slack.default.text" . }}\nRunbook: {{ .CommonAnnotations.runbook }}'
 templates: []
