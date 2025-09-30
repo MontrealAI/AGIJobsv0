@@ -1,0 +1,23 @@
+replicaCount: 1
+image:
+  repository: graphprotocol/graph-node
+  tag: v0.33.0
+  digest: ""
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  queryPort: 8000
+  statusPort: 8020
+  rpcPort: 8030
+resources: {}
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+env:
+  postgresHost: postgres
+  postgresUser: graph
+  postgresPasswordSecret: graph-node-db
+  ipfsURL: http://ipfs:5001
+  ethereumRPC: []

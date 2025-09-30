@@ -1,0 +1,19 @@
+{{- $global := .Values.global | default (dict) -}}
+{{- $cors := (index $global "cors") | default (dict) -}}
+{{- $ratelimits := (index $global "ratelimits") | default (dict) -}}
+{{- $allowedOrigins := (default (index $cors "allowedOrigins") .Values.env.cors.allowedOrigins) | default (list) -}}
+{{- $allowedMethods := (default (index $cors "allowedMethods") .Values.env.cors.allowedMethods) | default (list) -}}
+{{- $allowedHeaders := (default (index $cors "allowedHeaders") .Values.env.cors.allowedHeaders) | default (list) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "orchestrator.fullname" . }}-config
+  labels:
+    {{- include "orchestrator.labels" . | nindent 4 }}
+data:
+  cors.allowedOrigins: {{ join "," $allowedOrigins | quote }}
+  cors.allowedMethods: {{ join "," $allowedMethods | quote }}
+  cors.allowedHeaders: {{ join "," $allowedHeaders | quote }}
+  cors.allowCredentials: {{ default (index $cors "allowCredentials") .Values.env.cors.allowCredentials | quote }}
+  rateLimit.requestsPerSecond: {{ default (index $ratelimits "requestsPerSecond") .Values.env.ratelimits.requestsPerSecond | quote }}
+  rateLimit.burst: {{ default (index $ratelimits "burst") .Values.env.ratelimits.burst | quote }}

@@ -1,0 +1,47 @@
+groups:
+  - name: orchestrator.slo
+    interval: 30s
+    rules:
+      - record: service:tto_seconds:rate5m
+        expr: histogram_quantile(0.95, sum(rate(orchestrator_time_to_onboard_seconds_bucket[5m])) by (le))
+      - record: service:cpvo_usd:rate5m
+        expr: sum(rate(paymaster_cost_per_verified_operation_usd[5m]))
+      - record: service:bundler_success_rate:ratio5m
+        expr: sum(rate(bundler_operations_total{status="success"}[5m])) / clamp_min(sum(rate(bundler_operations_total[5m])), 1)
+      - record: service:sponsored_ops_total:rate5m
+        expr: sum(rate(paymaster_sponsored_operations_total[5m]))
+      - record: service:sponsored_ops_rejections:rate5m
+        expr: sum(rate(paymaster_sponsored_operations_total{result="rejected"}[5m]))
+      - record: service:ipfs_pin_latency_seconds:p95
+        expr: histogram_quantile(0.95, sum(rate(ipfs_pin_duration_seconds_bucket[5m])) by (le))
+      - record: service:subgraph_lag_blocks
+        expr: max(max_over_time(graph_subgraph_head_block{deployment=~".*"}[5m]) - max_over_time(graph_chain_head_block{network=~".*"}[5m]))
+  - name: orchestrator.alerts
+    rules:
+      - alert: LowGasBalance
+        expr: min(eth_wallet_balance_wei{wallet="paymaster"}) < 5e16
+        for: 5m
+        labels:
+          severity: critical
+          runbook: https://docs.example.com/runbooks/paymaster-gas
+        annotations:
+          summary: Paymaster gas wallet below 0.05 ETH
+          description: Top up the configured treasury wallet before sponsorship halts.
+      - alert: SponsorshipRejectionSpike
+        expr: service:sponsored_ops_rejections:rate5m > 5
+        for: 10m
+        labels:
+          severity: warning
+          runbook: https://docs.example.com/runbooks/rejection-spike
+        annotations:
+          summary: Sponsored operation rejections increasing
+          description: Investigate upstream AA flow or contract configuration issues.
+      - alert: BundlerRevertSpike
+        expr: rate(bundler_operations_total{status="reverted"}[5m]) > 2
+        for: 5m
+        labels:
+          severity: warning
+          runbook: https://docs.example.com/runbooks/revert-spike
+        annotations:
+          summary: Bundler revert spike detected
+          description: Review recent deployments and mempool conditions.

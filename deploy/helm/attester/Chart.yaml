@@ -1,0 +1,6 @@
+apiVersion: v2
+name: attester
+version: 0.1.0
+description: attester service chart
+appVersion: "0.1.0"
+type: application

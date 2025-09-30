@@ -1,0 +1,58 @@
+{{- $global := .Values.global | default (dict) -}}
+{{- $secrets := (index $global "secrets") | default (dict) -}}
+{{- $kms := (index $secrets "kmsKeys") | default (dict) -}}
+{{- $contracts := (index $global "contracts") | default (dict) -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "attester.fullname" . }}
+  labels:
+    {{- include "attester.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "attester.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "attester.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ default (include "attester.fullname" .) .Values.serviceAccount.name }}
+      {{- end }}
+      containers:
+        - name: attester
+          image: {{ include "attester.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.env.logLevel | quote }}
+            - name: KMS_KEY_URI
+              value: {{ default (index $kms "attester") .Values.env.kmsKey | quote }}
+            - name: EAS_SCHEMA_UID
+              value: {{ default (index $contracts "easSchemaUID") .Values.env.schemaUID | quote }}
+          envFrom:
+            {{- range .Values.secretRefs }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.probe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probe.path }}
+              port: {{ .Values.probe.port }}
+            initialDelaySeconds: {{ .Values.probe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probe.path }}
+              port: {{ .Values.probe.port }}
+            initialDelaySeconds: {{ .Values.probe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probe.periodSeconds }}
+          {{- end }}

@@ -1,0 +1,129 @@
+global:
+  environment: testnet
+  chain:
+    id: 1
+    rpcURLs: []
+    fallbackRPCURLs: []
+  contracts:
+    bundler: "0x"
+    paymaster: "0x"
+    easRegistry: "0x"
+    easSchemaUID: "0x"
+  cors:
+    allowedOrigins:
+      - "https://example.com"
+    allowedMethods:
+      - GET
+      - POST
+    allowedHeaders:
+      - Authorization
+      - Content-Type
+    allowCredentials: false
+  ratelimits:
+    requestsPerSecond: 20
+    burst: 40
+  secrets:
+    kmsKeys:
+      attester: projects/sample/locations/global/keyRings/app/cryptoKeys/attester
+      paymaster: projects/sample/locations/global/keyRings/app/cryptoKeys/paymaster
+    externalSecretStore: aws
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+  imagePullSecrets: []
+  tls:
+    enabled: true
+    secretName: agi-tls
+  ingress:
+    host: agi.example.com
+    className: nginx
+    tls:
+      enabled: true
+      secretName: agi-tls
+
+orchestrator:
+  image:
+    repository: ghcr.io/example/orchestrator
+    tag: "0.1.0"
+    digest: ""
+  service:
+    port: 8000
+  env:
+    logLevel: info
+    cors: {}
+    ratelimits: {}
+  resources: {}
+
+bundler:
+  image:
+    repository: ghcr.io/example/bundler
+    tag: "0.1.0"
+    digest: ""
+  service:
+    port: 3000
+  resources: {}
+
+paymaster-supervisor:
+  image:
+    repository: ghcr.io/example/paymaster-supervisor
+    tag: "0.1.0"
+    digest: ""
+  service:
+    port: 4000
+  resources: {}
+
+ipfs:
+  image:
+    repository: ipfs/kubo
+    tag: v0.22.0
+    digest: ""
+  service:
+    port: 5001
+  config:
+    swarmPort: 4001
+  resources: {}
+
+graph-node:
+  image:
+    repository: graphprotocol/graph-node
+    tag: v0.33.0
+    digest: ""
+  service:
+    queryPort: 8000
+    statusPort: 8020
+    rpcPort: 8030
+  resources: {}
+
+postgres:
+  image:
+    repository: postgres
+    tag: 15
+    digest: ""
+  service:
+    port: 5432
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources: {}
+
+attester:
+  image:
+    repository: ghcr.io/example/attester
+    tag: "0.1.0"
+    digest: ""
+  service:
+    port: 7000
+  resources: {}
+
+ingress:
+  annotations:
+    nginx.ingress.kubernetes.io/hsts: "true"
+    nginx.ingress.kubernetes.io/hsts-max-age: "63072000"
+    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+  rateLimit:
+    enabled: true
+    requestsPerMinute: 120
+    burst: 60

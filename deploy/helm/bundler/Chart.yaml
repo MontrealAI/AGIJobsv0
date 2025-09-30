@@ -1,0 +1,6 @@
+apiVersion: v2
+name: bundler
+version: 0.1.0
+description: bundler service chart
+appVersion: "0.1.0"
+type: application

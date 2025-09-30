@@ -1,0 +1,88 @@
+{
+  "title": "AGI Stack SLOs",
+  "uid": "agi-slos",
+  "version": 1,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Time to Onboard p95",
+      "targets": [
+        {
+          "expr": "service:tto_seconds:rate5m",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Cost per Verified Operation (USD)",
+      "targets": [
+        {
+          "expr": "service:cpvo_usd:rate5m",
+          "legendFormat": "USD"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Bundler Success Rate",
+      "targets": [
+        {
+          "expr": "service:bundler_success_rate:ratio5m",
+          "legendFormat": "success rate"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "IPFS Pinning p95",
+      "targets": [
+        {
+          "expr": "service:ipfs_pin_latency_seconds:p95",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Subgraph Lag",
+      "targets": [
+        {
+          "expr": "service:subgraph_lag_blocks",
+          "legendFormat": "lag"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        }
+      }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "Runbooks",
+      "url": "https://docs.example.com/runbooks"
+    }
+  ]
+}

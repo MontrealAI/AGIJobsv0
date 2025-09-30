@@ -1,0 +1,64 @@
+{{- $global := .Values.global | default (dict) -}}
+{{- $chain := (index $global "chain") | default (dict) -}}
+{{- $contracts := (index $global "contracts") | default (dict) -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bundler.fullname" . }}
+  labels:
+    {{- include "bundler.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "bundler.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "bundler.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ default (include "bundler.fullname" .) .Values.serviceAccount.name }}
+      {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: bundler
+          image: {{ include "bundler.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.env.logLevel | quote }}
+            - name: CHAIN_ID
+              value: {{ default (index $chain "id") .Values.env.extra.chainId | quote }}
+            - name: PAYMASTER_ADDRESS
+              value: {{ default (index $contracts "paymaster") .Values.env.extra.paymaster | quote }}
+            - name: RELAYER_URL
+              value: {{ .Values.env.relayerURL | default "" | quote }}
+          envFrom:
+            {{- range .Values.secretRefs }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.probe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probe.path }}
+              port: {{ .Values.probe.port }}
+            initialDelaySeconds: {{ .Values.probe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probe.path }}
+              port: {{ .Values.probe.port }}
+            initialDelaySeconds: {{ .Values.probe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probe.periodSeconds }}
+          {{- end }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ipfs
+version: 0.1.0
+description: ipfs service chart
+appVersion: "0.1.0"
+type: application

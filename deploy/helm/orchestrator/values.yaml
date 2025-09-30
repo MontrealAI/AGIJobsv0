@@ -1,0 +1,33 @@
+replicaCount: 1
+image:
+  repository: ghcr.io/example/orchestrator
+  tag: "0.1.0"
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+service:
+  type: ClusterIP
+  port: 8000
+resources: {}
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+env:
+  logLevel: info
+  maxRequestBytes: 1048576
+  cors: {}
+  ratelimits: {}
+  extra: {}
+secretRefs: []
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+probe:
+  enabled: true
+  path: /healthz
+  port: http
+  initialDelaySeconds: 10
+  periodSeconds: 30
