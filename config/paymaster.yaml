@@ -1,0 +1,13 @@
+chain_id: 11155111
+paymaster_address: "0x000000000000000000000000000000000000dead"
+balance_threshold_wei: 500000000000000000
+max_user_operation_gas: 2500000
+default_daily_cap_wei: 100000000000000000
+reload_interval_seconds: 2
+orgs:
+  engineering:
+    daily_cap_wei: 200000000000000000
+whitelist:
+  - target: "0x000000000000000000000000000000000000beef"
+    selectors:
+      - "0x12345678"
