@@ -11,6 +11,7 @@
     "test": "tsc -p tsconfig.test.json && node --test --experimental-specifier-resolution=node dist-test/test"
   },
   "dependencies": {
+    "@agi/receipt-attestation": "file:../../attestation/eas",
     "ethers": "6.15.0",
     "multiformats": "^13.4.1",
     "zod": "3.23.8"

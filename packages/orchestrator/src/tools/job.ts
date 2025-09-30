@@ -22,6 +22,7 @@ import {
 } from "./common.js";
 import { policyManager } from "../policy/index.js";
 import { CONTRACT_ADDRESSES } from "../chain/addresses.js";
+import { decorateWithAttestation } from "../attestation/index.js";
 
 const policy = policyManager();
 
@@ -393,21 +394,33 @@ export async function submitWorkExecute(
   const receipt = await tx.wait();
   const feeSettings = await gatherFeeSettings(jobRegistry, stakeManager, feePool);
 
+  const baseMetadata: Record<string, unknown> = {
+    jobId: prepared.jobId.toString(),
+    resultHash: prepared.resultHash,
+    resultUri: prepared.resultUri,
+    resultCid: prepared.resultPin?.cid,
+    resultProvider: prepared.resultPin?.provider,
+    resultMirrors: prepared.resultPin?.mirrors,
+    subdomain: prepared.subdomain,
+    ...serializeFeeSettings(feeSettings),
+  };
+
+  const metadata = await decorateWithAttestation("EXECUTION", baseMetadata, {
+    cid: prepared.resultPin?.cid,
+    uri: prepared.resultUri,
+    context: {
+      phase: "submission",
+      jobId: prepared.jobId.toString(),
+      txHash: tx.hash,
+    },
+  });
+
   return [
     {
       label: "JobRegistry.submit",
       txHash: tx.hash,
       receipt,
-      metadata: {
-        jobId: prepared.jobId.toString(),
-        resultHash: prepared.resultHash,
-        resultUri: prepared.resultUri,
-        resultCid: prepared.resultPin?.cid,
-        resultProvider: prepared.resultPin?.provider,
-        resultMirrors: prepared.resultPin?.mirrors,
-        subdomain: prepared.subdomain,
-        ...serializeFeeSettings(feeSettings),
-      },
+      metadata,
     },
   ];
 }
@@ -457,16 +470,27 @@ export async function finalizeExecute(
   const receipt = await tx.wait();
   const feeSettings = await gatherFeeSettings(jobRegistry, stakeManager, feePool);
 
+  const baseMetadata: Record<string, unknown> = {
+    jobId: jobId.toString(),
+    success: ics.params.success,
+    ...serializeFeeSettings(feeSettings),
+  };
+
+  const metadata = await decorateWithAttestation("EXECUTION", baseMetadata, {
+    context: {
+      phase: "finalization",
+      jobId: jobId.toString(),
+      success: ics.params.success,
+      txHash: tx.hash,
+    },
+  });
+
   return [
     {
       label: "JobRegistry.finalizeAfterValidation",
       txHash: tx.hash,
       receipt,
-      metadata: {
-        jobId: jobId.toString(),
-        success: ics.params.success,
-        ...serializeFeeSettings(feeSettings),
-      },
+      metadata,
     },
   ];
 }

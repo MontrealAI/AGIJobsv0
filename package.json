@@ -9,7 +9,7 @@
     "compile:mainnet": "npm run compile -- --network mainnet",
     "compile:sepolia": "npm run compile -- --network sepolia",
     "lint": "npm run lint:check",
-    "pretest": "npx tsc --skipLibCheck scripts/constants.ts && node --test apps/onebox/test/error-catalog.test.mjs",
+    "pretest": "npx tsc --skipLibCheck scripts/constants.ts && node --test apps/onebox/test/error-catalog.test.mjs attestation/eas/test/receipt-digest.test.mjs",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "wire:verify": "node scripts/run-wire-verify.js",
     "verify:wiring": "npm run wire:verify",
@@ -102,6 +102,8 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.11.3",
     "@grpc/proto-loader": "^0.7.13",
+    "@aws-sdk/client-kms": "^3.899.0",
+    "@ethereum-attestation-service/eas-sdk": "^2.9.0",
     "@ipld/car": "^3.2.4",
     "@pinata/sdk": "^2.1.0",
     "@prb/math": "^4.0.1",

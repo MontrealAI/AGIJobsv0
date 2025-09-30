@@ -22,6 +22,7 @@ import {
   type JobInvocationMetrics,
 } from './telemetry';
 import { notifyTrainingOutcome } from './learning';
+import { attestExecutionReceipt } from './attestation';
 
 export interface TaskExecutionContext {
   job: Job;
@@ -38,11 +39,16 @@ export interface TaskExecutionResult {
   resultHash: string;
   payloadDigest: string;
   resultSignature: string;
-  outputPath: string;
-  energy: EnergySample;
+  outputPath: string | null;
+  energy: EnergySample | null;
   rawOutput: unknown;
   submissionMethod: 'finalizeJob' | 'submit';
   invocationMetrics?: JobInvocationMetrics;
+  receiptDigest: string;
+  receiptAttestationUid?: string;
+  receiptAttestationTxHash?: string;
+  receiptAttestationCid?: string | null;
+  receiptAttestationUri?: string | null;
 }
 
 export interface AgentMemoryEntry {
@@ -524,6 +530,11 @@ export async function executeJob(
   let energySample: EnergySample | null = null;
   let submissionMethod: 'finalizeJob' | 'submit' = 'submit';
   let invocation: AgentTaskRunResult | null = null;
+  let receiptDigest = '';
+  let receiptAttestationUid: string | undefined;
+  let receiptAttestationTxHash: string | undefined;
+  let receiptAttestationCid: string | null | undefined;
+  let receiptAttestationUri: string | null | undefined;
 
   try {
     await recordRunnerTrace({
@@ -641,6 +652,37 @@ export async function executeJob(
       error: invocation.error?.message,
     });
 
+    const receiptPayload: Record<string, unknown> = {
+      jobId: job.jobId,
+      agent: wallet.address,
+      txHash,
+      resultCid,
+      resultUri: resultURI,
+      resultHash,
+      payloadDigest,
+      submissionMethod,
+      timestamp: new Date().toISOString(),
+    };
+
+    const attestationOutcome = await attestExecutionReceipt(receiptPayload, {
+      cid: resultCid || undefined,
+      uri: resultURI || undefined,
+      context: {
+        jobId: job.jobId,
+        agent: wallet.address,
+        phase: submissionMethod,
+        txHash,
+      },
+    });
+
+    receiptDigest = attestationOutcome.digest;
+    if (attestationOutcome.attestation) {
+      receiptAttestationUid = attestationOutcome.attestation.uid;
+      receiptAttestationTxHash = attestationOutcome.attestation.txHash;
+      receiptAttestationCid = attestationOutcome.attestation.cid ?? null;
+      receiptAttestationUri = attestationOutcome.attestation.uri ?? null;
+    }
+
     await recordAuditEvent(
       {
         component: 'task-execution',
@@ -655,6 +697,8 @@ export async function executeJob(
           payloadDigest,
           resultSignature,
           submissionMethod,
+          receiptDigest,
+          receiptAttestationUid,
         },
         success: true,
       },
@@ -784,6 +828,7 @@ export async function executeJob(
   if (!energySample) {
     throw new Error('Energy sample missing after task execution');
   }
+
   return {
     txHash,
     resultURI,
@@ -796,5 +841,10 @@ export async function executeJob(
     rawOutput,
     submissionMethod,
     invocationMetrics: invocation?.metrics,
+    receiptDigest,
+    receiptAttestationUid,
+    receiptAttestationTxHash,
+    receiptAttestationCid,
+    receiptAttestationUri,
   };
 }

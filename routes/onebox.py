@@ -10,6 +10,7 @@ import inspect
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import threading
@@ -259,6 +260,12 @@ class PlanResponse(BaseModel):
     warnings: List[str] = Field(default_factory=list)
     planHash: str
     missingFields: List[str] = Field(default_factory=list)
+    receipt: Optional[Dict[str, Any]] = None
+    receiptDigest: Optional[str] = None
+    receiptAttestationUid: Optional[str] = None
+    receiptAttestationTxHash: Optional[str] = None
+    receiptAttestationCid: Optional[str] = None
+    receiptAttestationUri: Optional[str] = None
 
 class SimulateRequest(BaseModel):
     intent: JobIntent
@@ -279,6 +286,12 @@ class SimulateResponse(BaseModel):
     feeAmount: Optional[str] = None
     burnPct: Optional[float] = None
     burnAmount: Optional[str] = None
+    receipt: Optional[Dict[str, Any]] = None
+    receiptDigest: Optional[str] = None
+    receiptAttestationUid: Optional[str] = None
+    receiptAttestationTxHash: Optional[str] = None
+    receiptAttestationCid: Optional[str] = None
+    receiptAttestationUri: Optional[str] = None
 
 class ExecuteRequest(BaseModel):
     intent: JobIntent
@@ -318,6 +331,11 @@ class ExecuteResponse(BaseModel):
     txHashes: Optional[List[str]] = None
     receipt: Optional[Dict[str, Any]] = None
     feePct: Optional[float] = None
+    receiptDigest: Optional[str] = None
+    receiptAttestationUid: Optional[str] = None
+    receiptAttestationTxHash: Optional[str] = None
+    receiptAttestationCid: Optional[str] = None
+    receiptAttestationUri: Optional[str] = None
     burnPct: Optional[float] = None
     feeAmount: Optional[str] = None
     burnAmount: Optional[str] = None
@@ -775,6 +793,78 @@ def _compute_plan_hash(intent: JobIntent) -> str:
     h = hashlib.sha256()
     h.update(encoded)
     return "0x" + h.hexdigest()
+
+def _normalize_for_digest(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, (bool, str)):
+        return value
+    if isinstance(value, Decimal):
+        try:
+            return f"decimal:{value.normalize()}"
+        except Exception:
+            return f"decimal:{value}"
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        if math.isfinite(value):
+            return value
+        return str(value)
+    if isinstance(value, (bytes, bytearray)):
+        return Web3.to_hex(value)
+    if isinstance(value, (list, tuple)):
+        return [_normalize_for_digest(item) for item in value]
+    if isinstance(value, set):
+        normalized = [_normalize_for_digest(item) for item in value]
+        normalized.sort(key=lambda entry: json.dumps(entry, sort_keys=True, separators=(",", ":")))
+        return normalized
+    if isinstance(value, dict):
+        items = sorted((str(k), _normalize_for_digest(v)) for k, v in value.items())
+        return {k: v for k, v in items}
+    if hasattr(value, "model_dump"):
+        try:
+            return _normalize_for_digest(value.model_dump(mode="json"))
+        except Exception:
+            pass
+    if hasattr(value, "dict"):
+        try:
+            return _normalize_for_digest(value.dict())
+        except Exception:
+            pass
+    if hasattr(value, "__iter__") and not isinstance(value, (bytes, bytearray, str)):
+        try:
+            return [_normalize_for_digest(item) for item in list(value)]
+        except Exception:
+            pass
+    try:
+        return json.loads(json.dumps(value, default=str))
+    except Exception:
+        return str(value)
+
+
+def _compute_receipt_digest(payload: Any) -> str:
+    normalized = _normalize_for_digest(payload)
+    serialized = json.dumps(normalized, separators=(",", ":"), ensure_ascii=False)
+    digest_bytes = Web3.keccak(text=serialized)
+    return Web3.to_hex(digest_bytes)
+
+
+def _finalize_receipt_metadata(metadata: Dict[str, Any]) -> Tuple[Dict[str, Any], str]:
+    cleaned = {key: value for key, value in metadata.items() if value is not None}
+    digest = _compute_receipt_digest(cleaned)
+    enriched = dict(cleaned)
+    enriched["receiptDigest"] = digest
+    sorted_metadata = json.loads(json.dumps(enriched, sort_keys=True, default=str))
+    return sorted_metadata, digest
+
+
+def _propagate_attestation_fields(target: Any, metadata: Dict[str, Any]) -> None:
+    digest = metadata.get("receiptDigest")
+    if digest is not None and hasattr(target, "receiptDigest"):
+        setattr(target, "receiptDigest", digest)
+    for attr in ("receiptAttestationUid", "receiptAttestationTxHash", "receiptAttestationCid", "receiptAttestationUri"):
+        if hasattr(target, attr):
+            setattr(target, attr, metadata.get(attr))
 
 def _normalize_plan_hash(plan_hash: Optional[str]) -> Optional[str]:
     if not plan_hash:
@@ -1500,7 +1590,10 @@ async def _attach_receipt_artifacts(response: ExecuteResponse) -> None:
     response.receiptGatewayUrl = gateway_url
     response.receiptGatewayUrls = gateways
     if response.receipt is not None:
-        response.receipt = json.loads(json.dumps(response.receipt, sort_keys=True))
+        receipt_metadata, receipt_digest = _finalize_receipt_metadata(response.receipt)
+        response.receipt = receipt_metadata
+        response.receiptDigest = receipt_digest
+        _propagate_attestation_fields(response, receipt_metadata)
 
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])
 async def plan(request: Request, req: PlanRequest):
@@ -1522,6 +1615,17 @@ async def plan(request: Request, req: PlanRequest):
         created_at = _current_timestamp()
         _store_plan_metadata(plan_hash, created_at)
 
+        plan_metadata: Dict[str, Any] = {
+            "summary": summary,
+            "intent": intent.model_dump(mode="json"),
+            "requiresConfirmation": requires_confirmation,
+            "warnings": warnings,
+            "planHash": plan_hash,
+        }
+        if missing_fields:
+            plan_metadata["missingFields"] = missing_fields
+        plan_receipt, plan_digest = _finalize_receipt_metadata(plan_metadata)
+
         response = PlanResponse(
             summary=summary,
             intent=intent,
@@ -1529,7 +1633,10 @@ async def plan(request: Request, req: PlanRequest):
             warnings=warnings,
             planHash=plan_hash,
             missingFields=missing_fields,
+            receipt=plan_receipt,
+            receiptDigest=plan_digest,
         )
+        _propagate_attestation_fields(response, plan_receipt)
         _log_event(logging.INFO, "onebox.plan.success", correlation_id, intent_type=intent_type)
         return response
 
@@ -1773,6 +1880,29 @@ async def simulate(request: Request, req: SimulateRequest):
                 detail["burnAmount"] = burn_amount_value
             raise HTTPException(status_code=422, detail=detail)
 
+        simulation_metadata: Dict[str, Any] = {
+            "summary": summary,
+            "intent": intent.model_dump(mode="json"),
+            "risks": risk_messages,
+            "riskCodes": risk_codes,
+            "riskDetails": risk_details,
+            "blockers": [],
+            "planHash": display_plan_hash or "",
+            "createdAt": created_at,
+        }
+        if estimated_budget is not None:
+            simulation_metadata["estimatedBudget"] = estimated_budget
+        if fee_pct_value is not None:
+            simulation_metadata["feePct"] = fee_pct_value
+        if fee_amount_value is not None:
+            simulation_metadata["feeAmount"] = fee_amount_value
+        if burn_pct_value is not None:
+            simulation_metadata["burnPct"] = burn_pct_value
+        if burn_amount_value is not None:
+            simulation_metadata["burnAmount"] = burn_amount_value
+
+        simulation_receipt, simulation_digest = _finalize_receipt_metadata(simulation_metadata)
+
         response = SimulateResponse(
             summary=summary,
             intent=intent,
@@ -1787,7 +1917,10 @@ async def simulate(request: Request, req: SimulateRequest):
             feeAmount=fee_amount_value,
             burnPct=burn_pct_value,
             burnAmount=burn_amount_value,
+            receipt=simulation_receipt,
+            receiptDigest=simulation_digest,
         )
+        _propagate_attestation_fields(response, simulation_receipt)
     except HTTPException as exc:
         status_code = exc.status_code
         detail = getattr(exc, "detail", None)
