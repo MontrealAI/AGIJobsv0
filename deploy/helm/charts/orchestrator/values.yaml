@@ -1,0 +1,16 @@
+image:
+  repository: ghcr.io/example/orchestrator
+  tag: latest
+  digest: ""
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 80
+resources: {}
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  cpuTargetPercentage: 70
+env: {}
+secrets: {}

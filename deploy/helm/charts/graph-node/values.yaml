@@ -1,0 +1,19 @@
+image:
+  repository: graphprotocol/graph-node
+  tag: latest
+  digest: ""
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8000
+postgres:
+  host: postgres
+  port: 5432
+  database: subgraph
+  user: subgraph
+  passwordSecret: ""
+  passwordSecretKey: password
+ethereum:
+  rpc: []
+env: {}
+resources: {}

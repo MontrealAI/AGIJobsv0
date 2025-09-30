@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bundler.fullname" . }}-env
+  labels:
+    {{- include "bundler.labels" . | nindent 4 }}
+data:
+  CHAIN_ID: "{{ .Values.global.chainId }}"
+  ENTRYPOINT_ADDRESS: "{{ .Values.global.contracts.entryPoint }}"
+  PAYMASTER_ADDRESS: "{{ .Values.global.contracts.paymaster }}"
+{{- range $key, $value := .Values.env }}
+  {{ $key }}: "{{ $value }}"
+{{- end }}

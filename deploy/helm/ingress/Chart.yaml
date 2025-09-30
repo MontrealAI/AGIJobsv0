@@ -1,6 +1,0 @@
-apiVersion: v2
-name: ingress
-version: 0.1.0
-description: ingress service chart
-appVersion: "0.1.0"
-type: application

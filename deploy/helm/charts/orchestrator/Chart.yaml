@@ -1,0 +1,5 @@
+apiVersion: v2
+name: orchestrator
+version: 0.1.0
+description: FastAPI orchestrator for sponsored AA flows.
+type: application

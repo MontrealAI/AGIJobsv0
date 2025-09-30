@@ -21,7 +21,7 @@ This guide shows auditors how to validate sponsored operation receipts and EAS a
 
 1. Copy the `schemaUID` from `eas.json`.
 2. Visit the EAS explorer and search by UID.
-3. Confirm the schema matches the documented `global.contracts.easSchemaUID`.
+3. Confirm the schema matches the documented `global.contracts.eas.schemaUID`.
 4. Verify the attester address equals the Attester service’s KMS-backed signer.
 
 ## 4. Rehydrate IPFS Assets

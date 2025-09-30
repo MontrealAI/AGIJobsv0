@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ipfs.fullname" . }}
+  labels:
+    {{- include "ipfs.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "ipfs.fullname" . }}-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "ipfs.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ipfs.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: ipfs
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{- if .Values.image.digest }}@{{ .Values.image.digest }}{{- end }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: api
+              containerPort: {{ .Values.service.apiPort }}
+            - name: swarm
+              containerPort: {{ .Values.service.swarmPort }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/ipfs
+          env:
+            - name: LIBP2P_FORCE_PNET
+              value: "1"
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.persistence.storageClass | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}

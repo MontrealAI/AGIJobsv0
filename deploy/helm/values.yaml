@@ -1,0 +1,137 @@
+global:
+  chainId: 11155111
+  rpc:
+    primary: https://sepolia.example.org
+    fallback: https://rpc-backup.example.org
+  contracts:
+    entryPoint: "0x0000000000000000000000000000000000000000"
+    paymaster: "0x0000000000000000000000000000000000000000"
+    aaRegistry: "0x0000000000000000000000000000000000000000"
+    eas:
+      schemaUID: "0x0000000000000000000000000000000000000000000000000000000000000000"
+  cors:
+    allowOrigins:
+      - https://operator.example.org
+    allowMethods: [GET, POST]
+    allowHeaders: [Content-Type, Authorization]
+  rateLimits:
+    orchestrator:
+      rps: 20
+      burst: 50
+    bundler:
+      rps: 50
+      burst: 200
+  secrets:
+    kmsKeyring: projects/sample/locations/global/keyRings/aa-stack
+    orchestratorEnv: ""
+    attesterKeyUri: projects/sample/locations/global/keyRings/aa-stack/cryptoKeys/attester
+    paymasterKeyUri: projects/sample/locations/global/keyRings/aa-stack/cryptoKeys/paymaster
+  autoscaling:
+    minReplicas: 2
+    maxReplicas: 6
+    cpuTargetPercentage: 70
+
+orchestrator:
+  image:
+    repository: ghcr.io/example/orchestrator
+    tag: "v1.2.3"
+    digest: "sha256:example"
+  service:
+    type: ClusterIP
+    port: 80
+  env:
+    LOG_LEVEL: info
+    ENABLE_CORS: true
+
+bundler:
+  image:
+    repository: ghcr.io/example/bundler
+    tag: "v1.2.3"
+    digest: "sha256:example"
+  service:
+    type: ClusterIP
+    port: 3000
+  env:
+    RELAY_URL: https://relay.example.org
+
+paymaster-supervisor:
+  image:
+    repository: ghcr.io/example/paymaster-supervisor
+    tag: "v1.2.3"
+    digest: "sha256:example"
+  service:
+    type: ClusterIP
+    port: 8080
+  env:
+    TREASURY_ADDRESS: "0x1111111111111111111111111111111111111111"
+
+ipfs:
+  image:
+    repository: ipfs/kubo
+    tag: v0.24.0
+    digest: "sha256:example"
+  service:
+    type: ClusterIP
+    port: 5001
+  persistence:
+    enabled: true
+    size: 200Gi
+
+postgres:
+  image:
+    repository: postgres
+    tag: "15"
+    digest: "sha256:example"
+  persistence:
+    storageClass: fast
+    size: 200Gi
+  auth:
+    username: subgraph
+    database: subgraph
+    existingSecret: "subgraph-postgres"
+
+graph-node:
+  image:
+    repository: graphprotocol/graph-node
+    tag: v0.33.0
+    digest: "sha256:example"
+  service:
+    type: ClusterIP
+    port: 8000
+  env:
+    ETHEREUM_RPC: https://eth.example.org
+
+attester:
+  image:
+    repository: ghcr.io/example/attester
+    tag: "v1.2.3"
+    digest: "sha256:example"
+  service:
+    type: ClusterIP
+    port: 8787
+  env:
+    ATTESTER_ADDRESS: "0x2222222222222222222222222222222222222222"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.example.org
+  tls:
+    enabled: true
+    secretName: aa-stack-tls
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/hsts: "true"
+    nginx.ingress.kubernetes.io/hsts-max-age: "63072000"
+    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "2m"
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "2"
+  services:
+    orchestrator:
+      serviceName: ""
+      servicePort: 80
+    bundler:
+      serviceName: ""
+      servicePort: 3000

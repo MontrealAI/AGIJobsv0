@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bundler.fullname" . }}
+  labels:
+    {{- include "bundler.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.autoscaling.minReplicas }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "bundler.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "bundler.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/env-configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: bundler
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{- if .Values.image.digest }}@{{ .Values.image.digest }}{{- end }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: http
+          envFrom:
+            - configMapRef:
+                name: {{ include "bundler.fullname" . }}-env
+            - secretRef:
+                name: {{ include "bundler.fullname" . }}-secrets
+          resources: {{- toYaml .Values.resources | nindent 12 }}

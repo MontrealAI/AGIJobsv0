@@ -1,0 +1,14 @@
+enabled: true
+className: nginx
+host: example.org
+tls:
+  enabled: true
+  secretName: example-tls
+annotations: {}
+services:
+  orchestrator:
+    serviceName: orchestrator
+    servicePort: 80
+  bundler:
+    serviceName: bundler
+    servicePort: 80

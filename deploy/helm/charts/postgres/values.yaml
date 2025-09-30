@@ -1,0 +1,15 @@
+image:
+  repository: postgres
+  tag: "15"
+  digest: ""
+  pullPolicy: IfNotPresent
+auth:
+  username: subgraph
+  database: subgraph
+  existingSecret: ""
+persistence:
+  storageClass: standard
+  size: 100Gi
+service:
+  port: 5432
+resources: {}
