@@ -1,0 +1,80 @@
+type ProtocolStats @entity {
+  id: ID!
+  totalJobs: Int!
+  openJobs: Int!
+  finalizedJobs: Int!
+  totalEscrowed: BigInt!
+  totalStaked: BigInt!
+  totalSlashed: BigInt!
+  totalValidatorVotes: Int!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+}
+
+type Job @entity {
+  id: ID!
+  jobId: BigInt!
+  employer: Bytes!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+  finalizedAtBlock: BigInt
+  finalizedAtTimestamp: BigInt
+  reward: BigInt!
+  stake: BigInt!
+  fee: BigInt!
+  escrowed: BigInt!
+  state: String!
+  assignedTo: Bytes
+  validatorQuorum: Int!
+  approvals: Int!
+  rejections: Int!
+  uri: String
+  specHash: Bytes
+  votes: [ValidatorVote!]! @derivedFrom(field: "job")
+}
+
+type Stake @entity {
+  id: ID!
+  user: Bytes!
+  role: String!
+  currentBalance: BigInt!
+  totalDeposited: BigInt!
+  totalSlashed: BigInt!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+}
+
+type StakeAggregate @entity {
+  id: ID!
+  role: String!
+  currentBalance: BigInt!
+  totalDeposited: BigInt!
+  totalSlashed: BigInt!
+  participantCount: Int!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+}
+
+type Validator @entity {
+  id: ID!
+  address: Bytes!
+  totalVotes: Int!
+  totalApprovals: Int!
+  totalRejections: Int!
+  lastVotedAtBlock: BigInt
+  lastVotedAtTimestamp: BigInt
+  stake: Stake
+  votes: [ValidatorVote!]! @derivedFrom(field: "validator")
+}
+
+type ValidatorVote @entity {
+  id: ID!
+  job: Job!
+  validator: Validator!
+  approved: Boolean!
+  burnTxHash: Bytes
+  revealedAtBlock: BigInt!
+  revealedAtTimestamp: BigInt!
+}

@@ -1,0 +1,13 @@
+{
+  "extends": "matchstick-as/asconfig.json",
+  "targets": {
+    "debug": {
+      "outFile": "build/debug.wasm",
+      "sourceMap": true
+    },
+    "release": {
+      "outFile": "build/release.wasm",
+      "sourceMap": false
+    }
+  }
+}

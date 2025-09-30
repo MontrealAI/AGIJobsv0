@@ -1,0 +1,26 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "jobId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "employer", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "agent", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "reward", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "stake", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "fee", "type": "uint256" },
+      { "indexed": false, "internalType": "bytes32", "name": "specHash", "type": "bytes32" },
+      { "indexed": false, "internalType": "string", "name": "uri", "type": "string" }
+    ],
+    "name": "JobCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "jobId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "worker", "type": "address" }
+    ],
+    "name": "JobFinalized",
+    "type": "event"
+  }
+]

@@ -19,6 +19,7 @@ scripts/**/*.js
 !scripts/run-coverage.js
 !scripts/verify-wiring.js
 !scripts/run-wire-verify.js
+!scripts/subgraph-e2e.js
 build/
 lib/
 !apps/onebox/src/lib/

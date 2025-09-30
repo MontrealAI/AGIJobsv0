@@ -1,0 +1,74 @@
+specVersion: 0.0.7
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: JobRegistry
+    network: hardhat
+    source:
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+      abi: JobRegistry
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Job
+        - ProtocolStats
+      abis:
+        - name: JobRegistry
+          file: ./abis/JobRegistry.json
+      eventHandlers:
+        - event: JobCreated(indexed uint256,indexed address,indexed address,uint256,uint256,uint256,bytes32,string)
+          handler: handleJobCreated
+        - event: JobFinalized(indexed uint256,indexed address)
+          handler: handleJobFinalized
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: StakeManager
+    network: hardhat
+    source:
+      address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+      abi: StakeManager
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Stake
+        - StakeAggregate
+        - ProtocolStats
+      abis:
+        - name: StakeManager
+          file: ./abis/StakeManager.json
+      eventHandlers:
+        - event: StakeDeposited(indexed address,indexed uint8,uint256)
+          handler: handleStakeDeposited
+        - event: StakeSlashed(indexed address,uint8,indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleStakeSlashed
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: ValidationModule
+    network: hardhat
+    source:
+      address: "0x9fE46736679d2D9a65F0992F2272De9f3c7Fa6e0"
+      abi: ValidationModule
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Validator
+        - ValidatorVote
+        - Job
+        - ProtocolStats
+      abis:
+        - name: ValidationModule
+          file: ./abis/ValidationModule.json
+      eventHandlers:
+        - event: ValidationRevealed(indexed uint256,indexed address,bool,bytes32,string)
+          handler: handleValidatorVoted
+      file: ./src/mapping.ts

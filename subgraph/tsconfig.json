@@ -1,0 +1,7 @@
+{
+  "extends": "@graphprotocol/graph-ts/types/tsconfig.json",
+  "include": ["src", "tests"],
+  "compilerOptions": {
+    "strict": true
+  }
+}
