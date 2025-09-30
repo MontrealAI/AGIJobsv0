@@ -280,6 +280,9 @@ contract Deployer is Ownable {
             address(0),
             address(this)
         );
+        if (governance != address(0)) {
+            stake.setTreasuryAllowlist(governance, true);
+        }
         address[] memory ackInit = new address[](1);
         ackInit[0] = address(stake);
         JobRegistry registry = new JobRegistry(
