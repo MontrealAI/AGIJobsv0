@@ -380,9 +380,40 @@ for step-by-step usage guidance.
 
 ## Quick Start
 
-Use the `examples/ethers-quickstart.js` script to interact with the deployed contracts. Export `RPC_URL`, `PRIVATE_KEY`, `JOB_REGISTRY`, `STAKE_MANAGER`, `VALIDATION_MODULE` and `ATTESTATION_REGISTRY`.
+Use the `examples/ethers-quickstart.js` script to interact with the deployed contracts. Export `RPC_URL`, `PRIVATE_KEY`, `JOB_REGISTRY`, `STAKE_MANAGER`, `VALIDATION_MODULE` and `ATTESTATION_REGISTRY`. Wrap each helper in an async IIFE when executing from `node -e` so the process awaits transaction receipts before exiting.
 
 The [API reference](docs/api-reference.md) describes every public contract function and includes TypeScript and Python snippets. For an event‑driven workflow check the minimal [agent gateway](examples/agent-gateway.js) that listens for `JobCreated` events and applies automatically.
+
+### Validator workflow automation
+
+The quick-start helper now derives commit/reveal pre-images on your behalf. Call `computeValidationCommit(jobId, approve, options)` to inspect the generated hashes before broadcasting, or use `validate(jobId, approve, options)` to execute the full commit → reveal → (optional) finalize flow. The helper fetches the live `jobNonce`, `DOMAIN_SEPARATOR`, and `specHash`, pads your Merkle proof, and returns the final plan (`commitHash`, `salt`, `burnTxHash`) so you can archive it alongside governance artefacts.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant V as Validator
+    participant Helper as Quickstart Helper
+    participant VM as ValidationModule
+    participant JR as JobRegistry
+    V->>Helper: validate(jobId, approve, { subdomain, proof, ... })
+    Helper->>JR: getSpecHash(jobId)
+    Helper->>VM: jobNonce(jobId), DOMAIN_SEPARATOR()
+    Helper->>Helper: derive outcomeHash & commitHash
+    Helper->>VM: commitValidation(...)
+    Helper->>VM: revealValidation(...)
+    alt skipFinalize = false
+        Helper->>VM: finalize(jobId)
+    end
+    Helper-->>V: plan { commitHash, salt, burnTxHash }
+```
+
+Key options accepted by both helpers:
+
+- `subdomain` – ENS label used for the validator identity check (e.g. `alice`).
+- `proof` – array of bytes32 Merkle proofs when validator allowlists are active.
+- `burnTxHash` – optional burn receipt hash (`'auto'` generates a random placeholder that you can overwrite later).
+- `salt` – provide your own bytes32 salt or let the helper mint a random value (`'auto'`/`'random'`).
+- `skipFinalize` – set to `true` to stop after revealing (useful while the finalize window is still locked).
 
 ### Hardhat network configuration
 
@@ -402,19 +433,37 @@ Outbound HTTP requests from the gateway, example agents and validator UI respect
 ### Post a job
 
 ```bash
-node -e "require('./examples/ethers-quickstart').postJob()"
+node -e "(async () => { await require('./examples/ethers-quickstart').postJob(); })()"
 ```
 
 ### Stake tokens
 
 ```bash
-node -e "require('./examples/ethers-quickstart').stake('1')"
+node -e "(async () => { await require('./examples/ethers-quickstart').stake('1'); })()"
 ```
 
 ### Validate a submission
 
 ```bash
-node -e "require('./examples/ethers-quickstart').validate(1, '0xhash', '0xlabel', [], true, '0xsalt')"
+node -e "(async () => {
+  const plan = await require('./examples/ethers-quickstart').validate(1, true, {
+    subdomain: 'validator',
+    proof: [],
+    skipFinalize: true
+  });
+  console.log(plan);
+})()"
+```
+
+Need the hash ahead of time for Safe review? Derive it without broadcasting:
+
+```bash
+node -e "(async () => {
+  const { commitHash, salt } = await require('./examples/ethers-quickstart').computeValidationCommit(1, true, {
+    burnTxHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+  });
+  console.log({ commitHash, salt });
+})()"
 ```
 
 ### Raise a dispute
