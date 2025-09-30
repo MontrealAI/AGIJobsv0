@@ -17,6 +17,7 @@ import {
   toWei,
   type DryRunResult,
   type ExecutionStepResult,
+  type PinResult,
   type PreparedCallStep,
 } from "./common.js";
 import { policyManager } from "../policy/index.js";
@@ -30,8 +31,18 @@ type PreparedCreateJobParams = {
   specPayload: unknown;
   specHash: string;
   specUri: string;
+  specPin: PinResult;
   overrides: Record<string, unknown>;
   title?: string;
+};
+
+type PreparedSubmitWorkParams = {
+  jobId: bigint;
+  resultUri: string;
+  resultHash: string;
+  subdomain: string;
+  proof: unknown[];
+  resultPin?: PinResult;
 };
 
 type FeeSettings = {
@@ -151,7 +162,8 @@ async function prepareCreateJobParams(
   const specPayload = job.spec;
   const serializedSpec = JSON.stringify(specPayload);
   const specHash = ethers.id(serializedSpec);
-  const specUri = await pinToIpfs(specPayload);
+  const specPin = await pinToIpfs(specPayload);
+  const specUri = specPin.uri;
   const overrides = buildPolicyOverrides(ics.meta, { jobBudgetWei: rewardWei });
   return {
     rewardWei,
@@ -159,14 +171,18 @@ async function prepareCreateJobParams(
     specPayload,
     specHash,
     specUri,
+    specPin,
     overrides,
     title: job.title,
   };
 }
 
-export async function createJobDryRun(ics: CreateJobIntent): Promise<DryRunResult> {
+export async function createJobDryRun(
+  ics: CreateJobIntent,
+  precomputed?: PreparedCreateJobParams
+): Promise<DryRunResult> {
   const userId = requireUserId(ics.meta);
-  const prepared = await prepareCreateJobParams(ics);
+  const prepared = precomputed ?? (await prepareCreateJobParams(ics));
   const signer = await getSignerForUser(userId, ics.meta?.txMode);
   const { jobRegistry, stakeManager, feePool } = loadContracts(signer);
 
@@ -200,6 +216,9 @@ export async function createJobDryRun(ics: CreateJobIntent): Promise<DryRunResul
     deadline: prepared.deadline.toString(),
     specHash: prepared.specHash,
     specUri: prepared.specUri,
+    specCid: prepared.specPin.cid,
+    specProvider: prepared.specPin.provider,
+    specMirrors: prepared.specPin.mirrors,
     title: prepared.title,
     ...serializeFeeSettings(feeSettings),
   };
@@ -208,10 +227,11 @@ export async function createJobDryRun(ics: CreateJobIntent): Promise<DryRunResul
 }
 
 export async function createJobExecute(
-  ics: CreateJobIntent
+  ics: CreateJobIntent,
+  precomputed?: PreparedCreateJobParams
 ): Promise<ExecutionStepResult[]> {
   const userId = requireUserId(ics.meta);
-  const prepared = await prepareCreateJobParams(ics);
+  const prepared = precomputed ?? (await prepareCreateJobParams(ics));
   const signer = await getSignerForUser(userId, ics.meta?.txMode);
   const { jobRegistry, stakeManager, feePool } = loadContracts(signer);
 
@@ -235,6 +255,9 @@ export async function createJobExecute(
     deadline: prepared.deadline.toString(),
     specHash: prepared.specHash,
     specUri: prepared.specUri,
+    specCid: prepared.specPin.cid,
+    specProvider: prepared.specPin.provider,
+    specMirrors: prepared.specPin.mirrors,
     title: prepared.title,
     jobId,
     ...serializeFeeSettings(feeSettings),
@@ -333,6 +356,7 @@ export async function submitWorkDryRun(ics: SubmitWorkIntent): Promise<DryRunRes
   const call = buildCallStep("JobRegistry.submit", jobRegistry, tx, simulation.gasEstimate, {
     jobId: prepared.jobId.toString(),
     resultUri: prepared.resultUri,
+    resultCid: prepared.resultPin?.cid,
   });
 
   const feeSettings = await gatherFeeSettings(jobRegistry, stakeManager, feePool);
@@ -340,6 +364,9 @@ export async function submitWorkDryRun(ics: SubmitWorkIntent): Promise<DryRunRes
     jobId: prepared.jobId.toString(),
     resultHash: prepared.resultHash,
     resultUri: prepared.resultUri,
+    resultCid: prepared.resultPin?.cid,
+    resultProvider: prepared.resultPin?.provider,
+    resultMirrors: prepared.resultPin?.mirrors,
     subdomain: prepared.subdomain,
     ...serializeFeeSettings(feeSettings),
   };
@@ -375,6 +402,9 @@ export async function submitWorkExecute(
         jobId: prepared.jobId.toString(),
         resultHash: prepared.resultHash,
         resultUri: prepared.resultUri,
+        resultCid: prepared.resultPin?.cid,
+        resultProvider: prepared.resultPin?.provider,
+        resultMirrors: prepared.resultPin?.mirrors,
         subdomain: prepared.subdomain,
         ...serializeFeeSettings(feeSettings),
       },
@@ -443,13 +473,20 @@ export async function finalizeExecute(
 
 export async function* createJob(ics: CreateJobIntent) {
   try {
-    const dryRun = await createJobDryRun(ics);
+    const prepared = await prepareCreateJobParams(ics);
+    const packagingDetails: string[] = [`📦 Packaging job spec → ${prepared.specUri}`];
+    const arweaveMirror = prepared.specPin.mirrors?.arweave?.uri;
+    if (arweaveMirror) {
+      packagingDetails.push(`mirrored at ${arweaveMirror}`);
+    }
+    yield `${packagingDetails.join(" | ")}\n`;
+    const dryRun = await createJobDryRun(ics, prepared);
     yield renderDryRunSummary("Create job", dryRun);
     if (ics.confirm === false) {
       yield "🧪 Dry-run completed. Set confirm=true to execute.\n";
       return;
     }
-    const [execution] = await createJobExecute(ics);
+    const [execution] = await createJobExecute(ics, prepared);
     const jobId = execution.metadata?.jobId as string | undefined;
     yield `⛓️ Tx submitted: ${execution.txHash}\n`;
     yield `✅ Job posted${jobId ? ` with ID ${jobId}` : ""}.\n`;
@@ -581,13 +618,15 @@ function normalizeJobId(jobId: SubmitWorkIntent["params"]["jobId"]): bigint {
   return BigInt(trimmed);
 }
 
-async function prepareSubmitWorkParams(ics: SubmitWorkIntent) {
+async function prepareSubmitWorkParams(ics: SubmitWorkIntent): Promise<PreparedSubmitWorkParams> {
   const jobId = normalizeJobId(ics.params.jobId);
   const { result, ens } = ics.params;
   let resultURI = result.uri;
   let hashSource: string | undefined;
+  let resultPin: PinResult | undefined;
   if (result.payload !== undefined) {
-    resultURI = await pinToIpfs(result.payload);
+    resultPin = await pinToIpfs(result.payload);
+    resultURI = resultPin.uri;
     hashSource = JSON.stringify(result.payload);
   } else if (resultURI) {
     hashSource = resultURI;
@@ -603,6 +642,7 @@ async function prepareSubmitWorkParams(ics: SubmitWorkIntent) {
     resultHash,
     subdomain: ens.subdomain,
     proof,
+    resultPin,
   };
 }
 

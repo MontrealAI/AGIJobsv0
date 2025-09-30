@@ -1,5 +1,14 @@
 import { ethers } from "ethers";
 import { rpc, resolveTxMode, type NormalizedTxMode } from "../chain/provider.js";
+import {
+  createIpfsUploader,
+  resolveArweaveConfig,
+  resolveProvidersFromEnv,
+  type IpfsUploader,
+  type PinResult,
+} from "../../../../storage/ipfs/index.js";
+
+export type { PinResult } from "../../../../storage/ipfs/index.js";
 
 type PolicyMeta = {
   userId?: string;
@@ -11,11 +20,51 @@ type PolicyExtras = {
   jobBudgetWei?: bigint;
 };
 
-export async function pinToIpfs(payload: unknown): Promise<string> {
-  // Placeholder – integrate with IPFS or web3.storage in production.
-  const serialized = JSON.stringify(payload);
-  const digest = ethers.id(serialized).slice(2, 10);
-  return `ipfs://stub-${digest}`;
+let sharedUploader: IpfsUploader | null = null;
+
+type PinToIpfsOptions = {
+  mirrorToArweave?: boolean;
+  filename?: string;
+  contentType?: string;
+};
+
+function ensureUploader(): IpfsUploader {
+  if (sharedUploader) {
+    return sharedUploader;
+  }
+  const providers = resolveProvidersFromEnv(process.env);
+  const arweave = resolveArweaveConfig(process.env);
+  sharedUploader = createIpfsUploader({
+    providers,
+    mirrorToArweave: arweave?.enabled ?? false,
+    arweave: arweave ?? undefined,
+  });
+  return sharedUploader;
+}
+
+export function setIpfsUploader(uploader: IpfsUploader | null) {
+  sharedUploader = uploader;
+}
+
+function inferFilename(payload: unknown, preferred?: string): string | undefined {
+  if (preferred) return preferred;
+  if (payload && typeof payload === "object") {
+    return "payload.json";
+  }
+  if (typeof payload === "string") {
+    return payload.trim().startsWith("{") ? "payload.json" : "payload.txt";
+  }
+  return undefined;
+}
+
+export async function pinToIpfs(payload: unknown, options: PinToIpfsOptions = {}): Promise<PinResult> {
+  const uploader = ensureUploader();
+  const filename = inferFilename(payload, options.filename);
+  return uploader.pin(payload, {
+    mirrorToArweave: options.mirrorToArweave,
+    filename,
+    contentType: options.contentType,
+  });
 }
 
 export function toWei(amount: string | number | bigint): bigint {
