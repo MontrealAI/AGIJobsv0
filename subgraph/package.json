@@ -1,0 +1,19 @@
+{
+  "name": "agi-jobs-subgraph",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "lint": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "test": "graph test"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "0.56.0",
+    "@graphprotocol/graph-ts": "0.34.0",
+    "assemblyscript": "0.27.7",
+    "matchstick-as": "0.6.0",
+    "prettier": "3.2.5"
+  }
+}
