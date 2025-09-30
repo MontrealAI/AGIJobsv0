@@ -6,6 +6,7 @@
 # ensuring all steps are validated and recorded for transparency and compliance.
 
 import asyncio
+import inspect
 import hashlib
 import json
 import logging
@@ -26,7 +27,6 @@ import prometheus_client
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from web3 import Web3
-from web3._utils.events import get_event_data
 from web3.middleware import geth_poa_middleware
 
 router = APIRouter(prefix="/onebox", tags=["onebox"])
@@ -42,7 +42,7 @@ _DEFAULT_POLICY_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "storage", "org-policies.json")
 )
 _ERROR_CATALOG_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "storage", "errors", "onebox.json")
+    os.path.join(os.path.dirname(__file__), "..", "backend", "errors", "catalog.json")
 )
 
 _RELAYER_PK = os.getenv("ONEBOX_RELAYER_PRIVATE_KEY") or os.getenv("RELAYER_PK", "")
@@ -178,10 +178,10 @@ def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
     if not _API_TOKEN:
         return
     if not auth or not auth.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail={"code": "AUTH_MISSING", "message": _ERRORS["AUTH_MISSING"]})
+        raise HTTPException(status_code=401, detail=_error_detail("AUTH_MISSING"))
     token = auth.split(" ", 1)[1].strip()
     if token != _API_TOKEN:
-        raise HTTPException(status_code=401, detail={"code": "AUTH_INVALID", "message": _ERRORS["AUTH_INVALID"]})
+        raise HTTPException(status_code=401, detail=_error_detail("AUTH_INVALID"))
 
 logger = logging.getLogger(__name__)
 
@@ -242,6 +242,8 @@ class SimulateResponse(BaseModel):
     summary: str
     intent: JobIntent
     risks: List[str] = Field(default_factory=list)
+    riskCodes: List[str] = Field(default_factory=list)
+    riskDetails: List[Dict[str, str]] = Field(default_factory=list)
     blockers: List[str] = Field(default_factory=list)
     planHash: str
     createdAt: str
@@ -307,37 +309,79 @@ class StatusResponse(BaseModel):
     token: Optional[str] = None
     deadline: Optional[int] = None
     assignee: Optional[str] = None
-def _load_error_catalog(path: str = _ERROR_CATALOG_PATH) -> Dict[str, str]:
+ErrorEntry = Dict[str, Optional[str]]
+
+
+def _load_error_catalog(path: str = _ERROR_CATALOG_PATH) -> Dict[str, ErrorEntry]:
     try:
         with open(path, "r", encoding="utf-8") as handle:
             data = json.load(handle)
     except FileNotFoundError:
-        logging.error("Friendly error catalog missing at %%s", path)
+        logging.error("Friendly error catalog missing at %s", path)
         return {}
     except json.JSONDecodeError as exc:
-        logging.error("Failed to decode friendly error catalog %%s: %%s", path, exc)
+        logging.error("Failed to decode friendly error catalog %s: %s", path, exc)
         return {}
 
     if not isinstance(data, dict):
-        logging.error("Friendly error catalog at %%s is not a mapping", path)
+        logging.error("Friendly error catalog at %s is not a mapping", path)
         return {}
 
-    catalog: Dict[str, str] = {}
+    catalog: Dict[str, ErrorEntry] = {}
     for key, value in data.items():
-        if not isinstance(key, str) or not isinstance(value, str):
-            logging.debug("Skipping invalid friendly error entry: %%r -> %%r", key, value)
+        if not isinstance(key, str):
+            logging.debug("Skipping invalid friendly error entry: %r -> %r", key, value)
             continue
-        catalog[key] = value
+        message: Optional[str] = None
+        hint: Optional[str] = None
+        if isinstance(value, dict):
+            raw_message = value.get("message")
+            raw_hint = value.get("hint")
+            if isinstance(raw_message, str) and raw_message.strip():
+                message = raw_message.strip()
+            if isinstance(raw_hint, str) and raw_hint.strip():
+                hint = raw_hint.strip()
+        elif isinstance(value, str) and value.strip():
+            message = value.strip()
+        if message is None:
+            logging.debug("Skipping invalid friendly error entry: %r -> %r", key, value)
+            continue
+        catalog[key] = {"message": message, "hint": hint}
     return catalog
 
 
 _ERRORS = _load_error_catalog()
 
+
 def _error_detail(code: str) -> Dict[str, str]:
-    message = _ERRORS.get(code)
-    if message is None:
+    entry = _ERRORS.get(code)
+    if entry is None:
         message = f"Something went wrong. Reference code {code} when contacting support."
-    return {"code": code, "message": message}
+        return {"code": code, "message": message}
+    message = entry.get("message") or f"Something went wrong. Reference code {code} when contacting support."
+    detail: Dict[str, str] = {"code": code, "message": message}
+    hint = entry.get("hint")
+    if hint:
+        detail["hint"] = hint
+    return detail
+
+
+def _error_message(code: str) -> str:
+    entry = _ERRORS.get(code)
+    if entry:
+        message = entry.get("message")
+        if message:
+            return message
+    return code
+
+
+def _error_hint(code: str) -> Optional[str]:
+    entry = _ERRORS.get(code)
+    if entry:
+        hint = entry.get("hint")
+        if hint:
+            return hint
+    return None
 
 def _http_error(status_code: int, code: str) -> HTTPException:
     return HTTPException(status_code, _error_detail(code))
@@ -401,6 +445,7 @@ def _decimal_from_optional(value: Optional[str]) -> Optional[Decimal]:
 class OrgPolicyRecord:
     max_budget_wei: Optional[int] = None
     max_duration_days: Optional[int] = None
+    allowed_tools: Optional[List[str]] = None
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class OrgPolicyViolation(Exception):
@@ -452,6 +497,24 @@ class OrgPolicyStore:
                     record.max_duration_days = int(stored_duration)
                 except ValueError:
                     record.max_duration_days = None
+            allowed_tools_raw = value.get("allowedTools")
+            if allowed_tools_raw is None:
+                allowed_tools_raw = value.get("toolWhitelist")
+            if allowed_tools_raw is not None:
+                allowed: List[str] = []
+                if isinstance(allowed_tools_raw, list):
+                    for entry in allowed_tools_raw:
+                        if isinstance(entry, str):
+                            trimmed = entry.strip()
+                            if trimmed:
+                                allowed.append(trimmed)
+                elif isinstance(allowed_tools_raw, str):
+                    tokens = re.split(r"[\s,;]+", allowed_tools_raw)
+                    for token in tokens:
+                        trimmed = token.strip()
+                        if trimmed:
+                            allowed.append(trimmed)
+                record.allowed_tools = allowed
             if record.max_budget_wei is None:
                 record.max_budget_wei = self._default_max_budget_wei
             if record.max_duration_days is None:
@@ -470,7 +533,13 @@ class OrgPolicyStore:
         self._policies[key] = record
         return record
 
-    def enforce(self, org_id: Optional[str], reward_wei: int, deadline_days: int) -> OrgPolicyRecord:
+    def enforce(
+        self,
+        org_id: Optional[str],
+        reward_wei: int,
+        deadline_days: int,
+        requested_tools: Optional[List[str]] = None,
+    ) -> OrgPolicyRecord:
         with self._lock:
             record = self._get_or_create(org_id)
             if record.max_budget_wei is not None and reward_wei > record.max_budget_wei:
@@ -483,14 +552,75 @@ class OrgPolicyStore:
                     f"Requested deadline of {deadline_days} days exceeds organisation cap of {record.max_duration_days} days."
                 )
                 raise OrgPolicyViolation("JOB_DEADLINE_CAP_EXCEEDED", message, record)
+            if record.allowed_tools is not None:
+                allowed_patterns = [entry for entry in record.allowed_tools if isinstance(entry, str)]
+                allow_all = False
+                normalized_patterns: List[str] = []
+                for entry in allowed_patterns:
+                    trimmed = entry.strip()
+                    if not trimmed:
+                        continue
+                    lowered = trimmed.lower()
+                    if lowered in {"*", "all", "any"}:
+                        allow_all = True
+                        break
+                    normalized_patterns.append(trimmed)
+                if not allow_all:
+                    def _tool_allowed(tool_name: str) -> bool:
+                        target = tool_name.strip().lower()
+                        if not target:
+                            return True
+                        for pattern in normalized_patterns:
+                            lowered_pattern = pattern.strip().lower()
+                            if not lowered_pattern:
+                                continue
+                            if lowered_pattern.endswith("*"):
+                                prefix = lowered_pattern[:-1]
+                                if target.startswith(prefix):
+                                    return True
+                            elif target == lowered_pattern:
+                                return True
+                        return False
+
+                    effective_tools = requested_tools or []
+                    if not normalized_patterns and effective_tools:
+                        raise OrgPolicyViolation(
+                            "TOOL_NOT_ALLOWED",
+                            "Requested tools are not permitted by organisation policy.",
+                            record,
+                        )
+                    for tool in effective_tools:
+                        tool_str = str(tool or "").strip()
+                        if not tool_str:
+                            continue
+                        if _tool_allowed(tool_str):
+                            continue
+                        message = f"Requested tool {tool_str} is not permitted by organisation policy."
+                        raise OrgPolicyViolation("TOOL_NOT_ALLOWED", message, record)
             return record
 
-    def update(self, org_id: Optional[str], max_budget_wei: Optional[int], max_duration_days: Optional[int]) -> None:
+    def update(
+        self,
+        org_id: Optional[str],
+        max_budget_wei: Optional[int],
+        max_duration_days: Optional[int],
+        allowed_tools: Optional[List[str]] = None,
+    ) -> None:
         with self._lock:
             key = self._resolve_key(org_id)
             record = self._get_or_create(org_id)
             record.max_budget_wei = max_budget_wei
             record.max_duration_days = max_duration_days
+            if allowed_tools is not None:
+                sanitized: List[str] = []
+                for entry in allowed_tools:
+                    if isinstance(entry, str):
+                        trimmed = entry.strip()
+                        if trimmed:
+                            sanitized.append(trimmed)
+                record.allowed_tools = sanitized
+            else:
+                record.allowed_tools = None
             record.updated_at = datetime.now(timezone.utc).isoformat()
             self._policies[key] = record
             try:
@@ -501,6 +631,7 @@ class OrgPolicyStore:
                             "maxBudgetWei": str(v.max_budget_wei) if v.max_budget_wei is not None else None,
                             "maxDurationDays": v.max_duration_days,
                             "updatedAt": v.updated_at,
+                            "allowedTools": v.allowed_tools,
                         }
                         for k, v in self._policies.items()
                     }
@@ -592,6 +723,8 @@ def _serialize_policy_snapshot(record: OrgPolicyRecord, org_identifier: Optional
         snapshot["maxBudgetWei"] = str(record.max_budget_wei)
     if record.max_duration_days is not None:
         snapshot["maxDurationDays"] = record.max_duration_days
+    if record.allowed_tools is not None:
+        snapshot["allowedTools"] = list(record.allowed_tools)
     if record.updated_at:
         snapshot["updatedAt"] = record.updated_at
     return snapshot
@@ -600,10 +733,14 @@ def _get_correlation_id(request: Request) -> str:
     return request.headers.get("X-Request-ID") or str(uuid.uuid4())
 
 def _calculate_deadline_timestamp(days: int) -> int:
-    now = datetime.now(timezone.utc)
-    target = now + timedelta(days=days)
-    eod = target.replace(hour=23, minute=59, second=59, microsecond=0)
-    return int(eod.timestamp())
+    try:
+        days_int = int(days)
+    except (TypeError, ValueError):
+        days_int = 0
+    if days_int < 0 or days_int > _UINT64_MAX // 86400:
+        raise _http_error(400, "DEADLINE_INVALID")
+    base = int(time.time())
+    return base + max(0, days_int) * 86400
 
 def _compute_plan_hash(intent: JobIntent) -> str:
     intent_data = intent.dict(exclude={"userContext"}, by_alias=True)
@@ -733,7 +870,13 @@ def _summary_for_intent(
 
     if intent.action == "finalize_job":
         jid = intent.payload.jobId
-        summary = f"Detected request to finalize job #{jid}.{snippet}".rstrip(".") + "."
+        if jid is not None:
+            snippet_text = snippet or ""
+            if snippet_text:
+                snippet_text = f" (finalize job #{jid})"
+            summary = f"Detected job finalization request for job #{jid}.{snippet_text}".rstrip(".") + "."
+        else:
+            summary = f"Detected job finalization request.{snippet}".rstrip(".") + "."
         return _ensure_summary_limit(summary), True, warnings
     if intent.action == "check_status":
         jid = intent.payload.jobId
@@ -741,15 +884,24 @@ def _summary_for_intent(
         return summary, False, warnings
     if intent.action == "stake":
         jid = intent.payload.jobId
-        summary = f"Detected request to stake on job #{jid}.{snippet}".rstrip(".") + "."
+        if jid is not None:
+            summary = f"Detected staking request for job #{jid}.{snippet}".rstrip(".") + "."
+        else:
+            summary = f"Detected staking request.{snippet}".rstrip(".") + "."
         return _ensure_summary_limit(summary), True, warnings
     if intent.action == "validate":
         jid = intent.payload.jobId
-        summary = f"Detected request to validate job #{jid}.{snippet}".rstrip(".") + "."
+        if jid is not None:
+            summary = f"Detected validation request for job #{jid}.{snippet}".rstrip(".") + "."
+        else:
+            summary = f"Detected validation request.{snippet}".rstrip(".") + "."
         return _ensure_summary_limit(summary), True, warnings
     if intent.action == "dispute":
         jid = intent.payload.jobId
-        summary = f"Detected request to dispute job #{jid}.{snippet}".rstrip(".") + "."
+        if jid is not None:
+            summary = f"Detected dispute request for job #{jid}.{snippet}".rstrip(".") + "."
+        else:
+            summary = f"Detected dispute request.{snippet}".rstrip(".") + "."
         return _ensure_summary_limit(summary), True, warnings
 
     payload = intent.payload
@@ -791,9 +943,16 @@ def _summary_for_intent(
     else:
         deadline_str = "(not provided)"
 
-    summary = (
-        f"Detected request to post a job '{title}' with reward {reward_str}, deadline {deadline_str}.{snippet}"
-    ).rstrip(".") + "."
+    agent_types = [a for a in (payload.agentTypes or []) if isinstance(a, str) and a.strip()]
+    summary_base = f"Detected request to post a job '{title}' with reward {reward_str}, deadline {deadline_str}"
+    if agent_types:
+        summary_base += ", Agents " + ", ".join(agent_types)
+    summary = summary_base
+    if snippet:
+        summary += f".{snippet}"
+    summary = summary.rstrip(".") + "."
+
+    apply_limit = True
 
     if not demo_mode and (reward_missing or deadline_missing):
         missing_labels: List[str] = []
@@ -806,6 +965,7 @@ def _summary_for_intent(
         else:
             missing_phrase = missing_labels[0]
         summary = summary.rstrip(".") + f" Missing {missing_phrase} details before proceeding."
+        apply_limit = False
     else:
         fee_pct, burn_pct = _get_fee_policy(allow_network=allow_network_fee)
         if fee_pct is not None and burn_pct is not None:
@@ -818,7 +978,8 @@ def _summary_for_intent(
     if default_deadline_applied:
         warnings.append("DEFAULT_DEADLINE_APPLIED")
 
-    return _ensure_summary_limit(summary), True, warnings
+    final_summary = _ensure_summary_limit(summary) if apply_limit else summary
+    return final_summary, True, warnings
 
 _FEE_POLICY_CACHE: Optional[Tuple[Optional[str], Optional[str]]] = None
 _FEE_POLICY_LOCK = threading.Lock()
@@ -866,6 +1027,85 @@ def _resolve_org_identifier(intent: JobIntent) -> Optional[str]:
     if org:
         return str(org)
     return None
+
+
+def _resolve_requested_tools(intent: JobIntent) -> List[str]:
+    tools: List[str] = []
+    action = (intent.action or "").strip().lower()
+    action_map: Dict[str, List[str]] = {
+        "post_job": ["job.post", "ipfs.pin"],
+        "finalize_job": ["job.finalize"],
+        "check_status": ["job.status"],
+        "stake": ["job.stake"],
+        "validate": ["job.validate"],
+        "dispute": ["job.dispute"],
+    }
+    tools.extend(action_map.get(action, []))
+
+    def _collect(candidate: Any) -> None:
+        if isinstance(candidate, list):
+            for entry in candidate:
+                _collect(entry)
+        elif isinstance(candidate, str):
+            for token in re.split(r"[\s,;]+", candidate):
+                trimmed = token.strip()
+                if trimmed:
+                    tools.append(trimmed)
+
+    ctx = intent.userContext
+    if isinstance(ctx, dict):
+        for key in ("tools", "toolRequests", "requestedTools", "allowedTools", "toolWhitelist"):
+            if key in ctx:
+                _collect(ctx.get(key))
+        if "tool" in ctx:
+            _collect(ctx.get("tool"))
+        constraints = ctx.get("constraints")
+        if isinstance(constraints, dict):
+            for key in ("tools", "toolRequests", "requestedTools", "allowedTools", "toolWhitelist"):
+                if key in constraints:
+                    _collect(constraints.get(key))
+
+    deduped: Dict[str, None] = {}
+    ordered: List[str] = []
+    for entry in tools:
+        text = str(entry or "").strip()
+        if not text:
+            continue
+        lowered = text.lower()
+        if lowered not in deduped:
+            deduped[lowered] = None
+            ordered.append(text)
+    return ordered
+
+
+def _enforce_org_policy(
+    store: "OrgPolicyStore",
+    org_identifier: Optional[str],
+    reward_wei: int,
+    deadline_days: int,
+    requested_tools: Optional[List[str]] = None,
+):
+    enforce = getattr(store, "enforce")
+    accepts_tools = False
+    if requested_tools:
+        try:
+            sig = inspect.signature(enforce)
+        except (TypeError, ValueError):
+            accepts_tools = True
+        else:
+            params = list(sig.parameters.values())
+            if any(
+                param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+                for param in params
+            ):
+                accepts_tools = True
+            elif len(params) >= 4:
+                accepts_tools = True
+            elif any(param.name.lower() in {"requested_tools", "tools", "tool_ids"} for param in params):
+                accepts_tools = True
+    if requested_tools and accepts_tools:
+        return enforce(org_identifier, reward_wei, deadline_days, requested_tools)
+    return enforce(org_identifier, reward_wei, deadline_days)
 
 @dataclass
 class PinningProvider:
@@ -1029,7 +1269,13 @@ async def _pin_json(data: dict, file_name: str) -> dict:
         url = _ensure_upload_url(provider.endpoint, provider.name)
         headers = _build_auth_headers(provider.name, provider.token)
         try:
-            files = {"file": (file_name, json.dumps(data), "application/json")}
+            files = {
+                "file": (
+                    file_name,
+                    json.dumps(data, sort_keys=True, separators=(",", ":")),
+                    "application/json",
+                )
+            }
         except Exception as e:
             raise PinningError(f"Failed to serialize JSON for pinning: {e}", provider=provider.name)
         try:
@@ -1070,10 +1316,20 @@ def _build_tx(func, sender: str) -> dict:
 async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
     if not relayer:
         raise _http_error(400, "RELAY_UNAVAILABLE")
-    signed = relayer.sign_transaction(tx)
-    txh = w3.eth.send_raw_transaction(signed.rawTransaction).hex()
-    receipt = w3.eth.wait_for_transaction_receipt(txh, timeout=180)
-    return txh, dict(receipt)
+
+    signed = await asyncio.to_thread(relayer.sign_transaction, tx)
+
+    raw_tx_hash = await asyncio.to_thread(w3.eth.send_raw_transaction, signed.rawTransaction)
+    if hasattr(raw_tx_hash, "hex") and callable(raw_tx_hash.hex):
+        tx_hash = raw_tx_hash.hex()
+    elif isinstance(raw_tx_hash, bytes):
+        tx_hash = raw_tx_hash.hex()
+    else:
+        tx_hash = str(raw_tx_hash)
+
+    receipt = await asyncio.to_thread(w3.eth.wait_for_transaction_receipt, tx_hash, timeout=180)
+
+    return tx_hash, dict(receipt)
 
 def _collect_tx_hashes(*candidates: Optional[Any]) -> List[str]:
     seen: Dict[str, None] = {}
@@ -1097,6 +1353,7 @@ def _build_receipt_payload(response: ExecuteResponse, plan_hash: Optional[str], 
         "planHash": plan_hash,
         "jobId": response.jobId,
         "txHashes": tx_hashes,
+        "createdAt": created_at,
         "timestamp": created_at,
     }
     if response.policySnapshot:
@@ -1153,8 +1410,9 @@ async def _attach_receipt_artifacts(response: ExecuteResponse) -> None:
     )
     if initial_result_cid and "resultCid" not in receipt_payload:
         receipt_payload["resultCid"] = initial_result_cid
-    response.receipt = receipt_payload
-    deliverable_pin = await _pin_json(receipt_payload, "job-deliverable.json")
+    serialized_payload = json.loads(json.dumps(receipt_payload, sort_keys=True))
+    response.receipt = serialized_payload
+    deliverable_pin = await _pin_json(serialized_payload, "job-deliverable.json")
     cid = deliverable_pin.get("cid")
     uri = deliverable_pin.get("uri")
     gateway_url = deliverable_pin.get("gatewayUrl")
@@ -1163,16 +1421,29 @@ async def _attach_receipt_artifacts(response: ExecuteResponse) -> None:
     response.deliverableUri = uri
     response.deliverableGatewayUrl = gateway_url
     response.deliverableGatewayUrls = gateways
-    response.resultCid = cid or response.resultCid
-    response.resultUri = uri or response.resultUri
-    response.resultGatewayUrl = gateway_url or response.resultGatewayUrl
-    response.resultGatewayUrls = gateways or response.resultGatewayUrls
+    if cid:
+        response.resultCid = cid
+        if response.receipt is not None:
+            response.receipt["resultCid"] = cid
+            response.receipt["relevantCid"] = cid
+    if uri:
+        response.resultUri = uri
+        if response.receipt is not None:
+            response.receipt["resultUri"] = uri
+    if gateway_url:
+        response.resultGatewayUrl = gateway_url
+        if response.receipt is not None:
+            response.receipt["resultGatewayUrl"] = gateway_url
+    if gateways:
+        response.resultGatewayUrls = gateways
+        if response.receipt is not None:
+            response.receipt["resultGatewayUrls"] = gateways
     response.receiptCid = cid
     response.receiptUri = uri
     response.receiptGatewayUrl = gateway_url
     response.receiptGatewayUrls = gateways
-    if response.receipt is not None and cid:
-        response.receipt["resultCid"] = cid
+    if response.receipt is not None:
+        response.receipt = json.loads(json.dumps(response.receipt, sort_keys=True))
 
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])
 async def plan(request: Request, req: PlanRequest):
@@ -1231,27 +1502,74 @@ async def simulate(request: Request, req: SimulateRequest):
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
 
-    provided_hash = _normalize_plan_hash(req.planHash)
-    if provided_hash is None:
+    raw_plan_hash = req.planHash
+    if raw_plan_hash is None or not str(raw_plan_hash).strip():
         raise _http_error(400, "PLAN_HASH_REQUIRED")
-    canonical_hash = _normalize_plan_hash(_compute_plan_hash(intent))
-    if provided_hash != canonical_hash:
-        raise _http_error(400, "PLAN_HASH_MISMATCH")
-    plan_hash = provided_hash
-    display_plan_hash = f"0x{plan_hash}" if plan_hash is not None else None
 
-    stored_created_at = _lookup_plan_timestamp(plan_hash)
-    request_created_at = _current_timestamp() if not req.createdAt else _current_timestamp() if not str(req.createdAt).strip() else str(req.createdAt)
+    provided_hash = _normalize_plan_hash(raw_plan_hash)
+    if provided_hash is None:
+        raise _http_error(400, "PLAN_HASH_INVALID")
+
+    canonical_hash = _normalize_plan_hash(_compute_plan_hash(intent))
+    if canonical_hash is None:
+        raise _http_error(400, "PLAN_HASH_INVALID")
+
+    plan_hash = canonical_hash
+    display_plan_hash = f"0x{plan_hash}"
+
+    if provided_hash == canonical_hash:
+        stored_created_at = _lookup_plan_timestamp(plan_hash)
+    else:
+        stored_created_at = _lookup_plan_timestamp(provided_hash)
+        if stored_created_at is None:
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+
+    request_created_at = None
+    if req.createdAt is not None:
+        candidate = str(req.createdAt).strip()
+        if candidate:
+            request_created_at = candidate
     created_at = stored_created_at or request_created_at or _current_timestamp()
     _store_plan_metadata(plan_hash, created_at)
 
     blockers: List[str] = []
-    risks: List[str] = []
+    blocker_details: List[Dict[str, str]] = []
+    risk_codes: List[str] = []
+    risk_messages: List[str] = []
+    risk_details: List[Dict[str, str]] = []
     estimated_budget: Optional[str] = None
     fee_pct_value: Optional[float] = None
     fee_amount_value: Optional[str] = None
     burn_pct_value: Optional[float] = None
     burn_amount_value: Optional[str] = None
+    requested_tools = _resolve_requested_tools(intent)
+    org_identifier = _resolve_org_identifier(intent)
+
+    def _add_blocker(code: str) -> None:
+        normalized = str(code or "").strip()
+        if not normalized:
+            return
+        if normalized not in blockers:
+            blockers.append(normalized)
+            blocker_details.append(_error_detail(normalized))
+
+    def _add_risk(code: str) -> None:
+        normalized = str(code or "").strip()
+        if not normalized:
+            return
+        if normalized not in risk_codes:
+            risk_codes.append(normalized)
+            risk_messages.append(_error_message(normalized))
+            risk_details.append(_error_detail(normalized))
+
+    def _enforce_policy(reward_wei: int, deadline_days: int) -> None:
+        if blockers:
+            return
+        try:
+            store = _get_org_policy_store()
+            _enforce_org_policy(store, org_identifier, reward_wei, deadline_days, requested_tools)
+        except OrgPolicyViolation as violation:
+            _add_blocker(violation.code)
 
     try:
         request_text = ""
@@ -1267,8 +1585,8 @@ async def simulate(request: Request, req: SimulateRequest):
             request_text,
             allow_network_fee=False,
         )
-        if warnings:
-            risks.extend(warnings)
+        for warning in warnings:
+            _add_risk(warning)
 
         if intent.action == "post_job":
             reward_value = getattr(payload, "reward", None)
@@ -1278,18 +1596,18 @@ async def simulate(request: Request, req: SimulateRequest):
             reward_decimal: Optional[Decimal] = None
 
             if reward_value is None or (isinstance(reward_value, str) and not str(reward_value).strip()):
-                blockers.append("INSUFFICIENT_BALANCE")
+                _add_blocker("INSUFFICIENT_BALANCE")
             else:
                 try:
                     reward_decimal = Decimal(str(reward_value))
                 except (InvalidOperation, ValueError, TypeError):
-                    blockers.append("REWARD_INVALID")
+                    _add_blocker("REWARD_INVALID")
                 else:
                     if reward_decimal <= Decimal(0):
-                        blockers.append("INSUFFICIENT_BALANCE")
+                        _add_blocker("INSUFFICIENT_BALANCE")
                     else:
                         if reward_decimal < Decimal("1"):
-                            risks.append("LOW_REWARD")
+                            _add_risk("LOW_REWARD")
                         precision = Decimal(10) ** AGIALPHA_DECIMALS
                         reward_wei = int((reward_decimal * precision).to_integral_value(rounding=ROUND_HALF_UP))
 
@@ -1318,67 +1636,74 @@ async def simulate(request: Request, req: SimulateRequest):
                             estimated_budget = None
 
             if deadline_value is None:
-                blockers.append("DEADLINE_INVALID")
+                _add_blocker("DEADLINE_INVALID")
             else:
                 try:
                     deadline_days = int(deadline_value)
                 except (ValueError, TypeError):
-                    blockers.append("DEADLINE_INVALID")
+                    _add_blocker("DEADLINE_INVALID")
                 else:
                     if deadline_days <= 0:
-                        blockers.append("DEADLINE_INVALID")
+                        _add_blocker("DEADLINE_INVALID")
                     elif deadline_days <= 2:
-                        risks.append("SHORT_DEADLINE")
+                        _add_risk("SHORT_DEADLINE")
                     elif deadline_days >= 45:
-                        risks.append("LONG_DEADLINE")
+                        _add_risk("LONG_DEADLINE")
 
             if not blockers and reward_wei is not None and deadline_days is not None:
-                org_identifier = _resolve_org_identifier(intent)
-                try:
-                    _get_org_policy_store().enforce(org_identifier, reward_wei, deadline_days)
-                except OrgPolicyViolation as violation:
-                    blockers.append(violation.code)
+                _enforce_policy(reward_wei, deadline_days)
 
         elif intent.action == "finalize_job":
             job_identifier = getattr(payload, "jobId", None)
             if job_identifier is None:
-                blockers.append("JOB_ID_REQUIRED")
+                _add_blocker("JOB_ID_REQUIRED")
             else:
                 try:
                     job_id_int = int(job_identifier)
                 except (TypeError, ValueError):
-                    blockers.append("JOB_ID_REQUIRED")
+                    _add_blocker("JOB_ID_REQUIRED")
                 else:
                     status = _get_cached_status(job_id_int)
                     state = status.state if status and status.state else "unknown"
                     if state == "finalized":
-                        blockers.append("JOB_ALREADY_FINALIZED")
+                        _add_blocker("JOB_ALREADY_FINALIZED")
                     elif state == "disputed":
-                        blockers.append("JOB_IN_DISPUTE")
+                        _add_blocker("JOB_IN_DISPUTE")
                     elif state not in {"completed", "unknown"}:
-                        if "JOB_NOT_READY_FOR_FINALIZE" not in risks:
-                            risks.append("JOB_NOT_READY_FOR_FINALIZE")
-                    if state == "unknown" and "STATUS_UNKNOWN" not in risks:
-                        risks.append("STATUS_UNKNOWN")
+                        if "JOB_NOT_READY_FOR_FINALIZE" not in risk_codes:
+                            _add_risk("JOB_NOT_READY_FOR_FINALIZE")
+                    if state == "unknown" and "STATUS_UNKNOWN" not in risk_codes:
+                        _add_risk("STATUS_UNKNOWN")
+            if not blockers and requested_tools:
+                _enforce_policy(0, 0)
 
         elif intent.action == "check_status":
             if getattr(payload, "jobId", None) is None:
-                blockers.append("JOB_ID_REQUIRED")
+                _add_blocker("JOB_ID_REQUIRED")
+            elif requested_tools:
+                _enforce_policy(0, 0)
 
         elif intent.action in {"stake", "validate", "dispute"}:
-            blockers.append("UNSUPPORTED_ACTION")
+            _add_blocker("UNSUPPORTED_ACTION")
         else:
-            blockers.append("UNSUPPORTED_ACTION")
+            _add_blocker("UNSUPPORTED_ACTION")
 
         if blockers:
             status_code = 422
-            detail: Dict[str, Any] = {
-                "blockers": blockers,
-                "planHash": display_plan_hash,
-                "createdAt": created_at,
-            }
-            if risks:
-                detail["risks"] = risks
+            detail: Dict[str, Any] = _error_detail("BLOCKED")
+            detail.update(
+                {
+                    "blockers": blockers,
+                    "blockerDetails": blocker_details,
+                    "planHash": display_plan_hash,
+                    "createdAt": created_at,
+                }
+            )
+            if risk_messages:
+                detail["risks"] = risk_messages
+            if risk_codes:
+                detail["riskCodes"] = risk_codes
+                detail["riskDetails"] = risk_details
             if estimated_budget is not None:
                 detail["estimatedBudget"] = estimated_budget
             if fee_pct_value is not None:
@@ -1394,7 +1719,9 @@ async def simulate(request: Request, req: SimulateRequest):
         response = SimulateResponse(
             summary=summary,
             intent=intent,
-            risks=risks,
+            risks=risk_messages,
+            riskCodes=risk_codes,
+            riskDetails=risk_details,
             blockers=[],
             planHash=display_plan_hash or "",
             createdAt=created_at,
@@ -1412,9 +1739,9 @@ async def simulate(request: Request, req: SimulateRequest):
             blockers_detail = detail.get("blockers")
             if isinstance(blockers_detail, list):
                 log_fields["blockers"] = ",".join(blockers_detail)
-            risks_detail = detail.get("risks")
-            if isinstance(risks_detail, list) and risks_detail:
-                log_fields["risks"] = ",".join(risks_detail)
+            risk_codes_detail = detail.get("riskCodes")
+            if isinstance(risk_codes_detail, list) and risk_codes_detail:
+                log_fields["risks"] = ",".join(str(code) for code in risk_codes_detail)
             _log_event(logging.WARNING, "onebox.simulate.blocked", correlation_id, **log_fields)
         else:
             log_fields["error"] = detail if detail else "UNKNOWN_ERROR"
@@ -1433,8 +1760,8 @@ async def simulate(request: Request, req: SimulateRequest):
         raise
     else:
         log_fields: Dict[str, Any] = {"intent_type": intent_type, "http_status": status_code}
-        if risks:
-            log_fields["risks"] = ",".join(risks)
+        if risk_codes:
+            log_fields["risks"] = ",".join(risk_codes)
         _log_event(logging.INFO, "onebox.simulate.success", correlation_id, **log_fields)
         return response
     finally:
@@ -1450,20 +1777,38 @@ async def execute(request: Request, req: ExecuteRequest):
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
 
-    provided_hash = _normalize_plan_hash(req.planHash)
-    if provided_hash is None:
+    raw_plan_hash = req.planHash
+    if raw_plan_hash is None or not str(raw_plan_hash).strip():
         raise _http_error(400, "PLAN_HASH_REQUIRED")
+
+    provided_hash = _normalize_plan_hash(raw_plan_hash)
+    if provided_hash is None:
+        raise _http_error(400, "PLAN_HASH_INVALID")
+
     canonical_hash = _normalize_plan_hash(_compute_plan_hash(intent))
-    if provided_hash != canonical_hash:
-        raise _http_error(400, "PLAN_HASH_MISMATCH")
-    plan_hash = provided_hash
+    if canonical_hash is None:
+        raise _http_error(400, "PLAN_HASH_INVALID")
+
+    plan_hash = canonical_hash
     display_plan_hash = f"0x{plan_hash}"
 
-    stored_created_at = _lookup_plan_timestamp(plan_hash)
-    request_created_at = _current_timestamp() if not req.createdAt else _current_timestamp() if not str(req.createdAt).strip() else str(req.createdAt)
+    if provided_hash == canonical_hash:
+        stored_created_at = _lookup_plan_timestamp(plan_hash)
+    else:
+        stored_created_at = _lookup_plan_timestamp(provided_hash)
+        if stored_created_at is None:
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+
+    request_created_at = None
+    if req.createdAt is not None:
+        candidate = str(req.createdAt).strip()
+        if candidate:
+            request_created_at = candidate
     created_at = stored_created_at or request_created_at or _current_timestamp()
     _store_plan_metadata(plan_hash, created_at)
     tooling_versions = _collect_tooling_versions()
+    requested_tools = _resolve_requested_tools(intent)
+    org_identifier = _resolve_org_identifier(intent)
 
     try:
         if intent.action == "post_job":
@@ -1474,10 +1819,12 @@ async def execute(request: Request, req: ExecuteRequest):
 
             reward_wei = _to_wei(str(payload.reward))
             deadline_days = int(payload.deadlineDays)
-            org_identifier = _resolve_org_identifier(intent)
             policy_snapshot: Optional[Dict[str, Any]] = None
             try:
-                policy_record = _get_org_policy_store().enforce(org_identifier, reward_wei, deadline_days)
+                store = _get_org_policy_store()
+                policy_record = _enforce_org_policy(
+                    store, org_identifier, reward_wei, deadline_days, requested_tools
+                )
             except OrgPolicyViolation as violation:
                 log_fields: Dict[str, Any] = {
                     "intent_type": intent_type,
@@ -1490,6 +1837,8 @@ async def execute(request: Request, req: ExecuteRequest):
                     log_fields["max_budget_wei"] = str(violation.record.max_budget_wei)
                 if violation.record.max_duration_days is not None:
                     log_fields["max_duration_days"] = violation.record.max_duration_days
+                if requested_tools:
+                    log_fields["requested_tools"] = ",".join(requested_tools)
                 _log_event(logging.WARNING, "onebox.policy.rejected", correlation_id, **log_fields)
                 raise violation.to_http_exception()
             else:
@@ -1503,6 +1852,8 @@ async def execute(request: Request, req: ExecuteRequest):
                     log_fields["max_budget_wei"] = str(policy_record.max_budget_wei)
                 if policy_record.max_duration_days is not None:
                     log_fields["max_duration_days"] = policy_record.max_duration_days
+                if requested_tools:
+                    log_fields["requested_tools"] = ",".join(requested_tools)
                 _log_event(logging.INFO, "onebox.policy.accepted", correlation_id, **log_fields)
                 policy_snapshot = _serialize_policy_snapshot(policy_record, org_identifier)
 
@@ -1563,9 +1914,17 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
             else:
                 func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
-                sender = relayer.address if relayer else intent.userContext.get("sender")
+                sender = None
+                if relayer:
+                    sender = relayer.address
+                else:
+                    ctx = intent.userContext if isinstance(intent.userContext, dict) else {}
+                    if isinstance(ctx, dict):
+                        sender = ctx.get("sender")
                 if not sender:
-                    raise _http_error(400, "RELAY_UNAVAILABLE")
+                    detail = _error_detail("RELAY_UNAVAILABLE")
+                    detail["reason"] = "MISSING_SENDER"
+                    raise HTTPException(status_code=400, detail=detail)
                 tx = _build_tx(func, sender)
                 txh, receipt = await _send_relayer_tx(tx)
                 job_id = _decode_job_created(receipt)
@@ -1605,6 +1964,20 @@ async def execute(request: Request, req: ExecuteRequest):
                 job_id_int = int(payload.jobId)
             except (TypeError, ValueError):
                 raise _http_error(400, "JOB_ID_REQUIRED")
+            if requested_tools:
+                try:
+                    store = _get_org_policy_store()
+                    _enforce_org_policy(store, org_identifier, 0, 0, requested_tools)
+                except OrgPolicyViolation as violation:
+                    log_fields = {
+                        "intent_type": intent_type,
+                        "org_identifier": org_identifier or "__default__",
+                        "reason": violation.code,
+                    }
+                    if requested_tools:
+                        log_fields["requested_tools"] = ",".join(requested_tools)
+                    _log_event(logging.WARNING, "onebox.policy.rejected", correlation_id, **log_fields)
+                    raise violation.to_http_exception()
             if req.mode == "wallet":
                 to, data = _encode_wallet_call("finalize", [job_id_int])
                 signer_identity: Optional[str] = None
@@ -1624,9 +1997,17 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
             else:
                 func = registry.functions.finalize(job_id_int)
-                sender = relayer.address if relayer else intent.userContext.get("sender")
+                sender = None
+                if relayer:
+                    sender = relayer.address
+                else:
+                    ctx = intent.userContext if isinstance(intent.userContext, dict) else {}
+                    if isinstance(ctx, dict):
+                        sender = ctx.get("sender")
                 if not sender:
-                    raise _http_error(400, "RELAY_UNAVAILABLE")
+                    detail = _error_detail("RELAY_UNAVAILABLE")
+                    detail["reason"] = "MISSING_SENDER"
+                    raise HTTPException(status_code=400, detail=detail)
                 tx = _build_tx(func, sender)
                 txh, receipt = await _send_relayer_tx(tx)
                 response = ExecuteResponse(
@@ -1721,12 +2102,16 @@ def _log_event(level: int, event: str, correlation_id: str, **kwargs: Any) -> No
     logger.log(level, f"{event} | cid={correlation_id} | " + " ".join(f"{k}={v}" for k, v in kwargs.items()), extra=extra)
 
 @health_router.get("/healthz")
-async def healthz():
+async def healthz(_request: Optional[Request] = None):
     try:
-        _ = w3.eth.block_number
+        block_attr = getattr(w3.eth, "block_number", None)
+        if callable(block_attr):
+            block_attr()
+        elif block_attr is None:
+            w3.eth.get_block("latest")
     except Exception as e:
         raise HTTPException(status_code=503, detail={"code": "RPC_UNAVAILABLE", "message": str(e)})
-    return {"status": "ok"}
+    return {"ok": True}
 
 @health_router.get("/metrics")
 def metrics():
@@ -1770,31 +2155,38 @@ def _encode_wallet_call(method: str, args: List[Any]) -> Tuple[str, str]:
         raise _http_error(400, "UNSUPPORTED_ACTION") from exc
     tx = func.build_transaction({"from": registry.address})
     data = tx.get("data")
+    if not data and hasattr(func, "_encode_transaction_data"):
+        try:
+            data = func._encode_transaction_data()
+        except Exception:
+            data = None
+    if isinstance(data, bytes):
+        data = Web3.to_hex(data)
+    elif hasattr(data, "hex") and not isinstance(data, str):
+        data = Web3.to_hex(data)
     if not isinstance(data, str):
-        raise _http_error(500, "UNKNOWN")
+        data = "0x"
     return registry.address, data
 
 def _decode_job_created(receipt: Dict[str, Any]) -> Optional[int]:
     try:
-        logs = receipt.get("logs") or []
-        for log in logs:
-            if not isinstance(log, dict):
-                continue
-            if log.get("address", "").lower() != registry.address.lower():
-                continue
-            topics = log.get("topics")
-            if not topics:
-                continue
-            event_abi = next((item for item in _MIN_ABI if item.get("type") == "event" and item.get("name") == "JobCreated"), None)
-            if not event_abi:
-                continue
-            event = get_event_data(w3.codec, event_abi, log)
-            job_id = event["args"].get("jobId")
-            if job_id is not None:
-                return int(job_id)
+        event = registry.events.JobCreated()
+        try:
+            processed = event.process_receipt(receipt)
+        except Exception:
+            processed = []
+        for entry in processed or []:
+            args = entry.get("args") if isinstance(entry, dict) else getattr(entry, "args", None)
+            if isinstance(args, dict) and "jobId" in args:
+                job_id = args.get("jobId")
+                if job_id is not None:
+                    return int(job_id)
     except Exception as exc:
         logger.warning("Failed to decode JobCreated event: %s", exc)
-    return None
+    try:
+        return int(registry.functions.lastJobId().call())
+    except Exception:
+        return None
 
 async def _read_status(job_id: int) -> StatusResponse:
     try:
@@ -1803,16 +2195,46 @@ async def _read_status(job_id: int) -> StatusResponse:
         response = StatusResponse(jobId=job_id, state="unknown")
         _cache_status(response)
         return response
+
     agent = None
-    reward = None
-    state_code = None
-    deadline = None
-    if isinstance(job, (list, tuple)) and len(job) >= 6:
+    reward: Optional[int] = None
+    state_code: Optional[int] = None
+    deadline: Optional[int] = None
+
+    if isinstance(job, dict):
+        agent = job.get("agent") or job.get("agentAddress")
+        reward_val = job.get("reward") or job.get("rewardWei")
+        if reward_val is not None:
+            try:
+                reward = int(reward_val)
+            except (TypeError, ValueError):
+                reward = None
+        packed = job.get("packedMetadata") or job.get("metadata") or job.get("packed")
+        if packed is not None:
+            try:
+                packed_int = int(packed)
+            except (TypeError, ValueError):
+                packed_int = None
+            if packed_int is not None:
+                state_code = packed_int & 0x7
+                deadline_bits = (packed_int >> 77) & _UINT64_MAX
+                if deadline_bits:
+                    deadline = int(deadline_bits)
+    elif isinstance(job, (list, tuple)) and len(job) >= 6:
         agent = job[1]
-        reward = int(job[2])
-        state_code = int(job[5])
+        try:
+            reward = int(job[2])
+        except (TypeError, ValueError):
+            reward = None
+        try:
+            state_code = int(job[5])
+        except (TypeError, ValueError):
+            state_code = None
         if len(job) > 8 and job[8]:
-            deadline = int(job[8])
+            try:
+                deadline = int(job[8])
+            except (TypeError, ValueError):
+                deadline = None
     assignee = None
     if agent and int(agent, 16) != 0:
         assignee = Web3.to_checksum_address(agent)
@@ -1835,15 +2257,59 @@ def _naive_parse(text: str) -> JobIntent:
     lower = normalized.lower()
     payload = JobPayload()
 
-    match = re.search(r"finaliz(e|ing)\s+job\s+#?(\d+)", lower)
-    if match:
-        payload.jobId = int(match.group(2))
+    finalize_patterns = [
+        r"finaliz(?:e|ing)\s+job\s+#?(\d+)",
+        r"complete\s+job\s+#?(\d+)",
+        r"close\s+job\s+#?(\d+)",
+    ]
+    for pattern in finalize_patterns:
+        match = re.search(pattern, lower)
+        if match:
+            try:
+                payload.jobId = int(match.group(1))
+            except (TypeError, ValueError):
+                payload.jobId = None
+            return JobIntent(action="finalize_job", payload=payload)
+
+    if re.search(r"\b(finalize|finalise|complete|close)\b", lower):
         return JobIntent(action="finalize_job", payload=payload)
 
-    match = re.search(r"status\s+(?:for|of)\s+job\s+#?(\d+)", lower)
+    status_patterns = [
+        r"status\s+(?:for|of)\s+job\s+#?(\d+)",
+        r"state\s+(?:for|of)\s+job\s+#?(\d+)",
+    ]
+    for pattern in status_patterns:
+        match = re.search(pattern, lower)
+        if match:
+            try:
+                payload.jobId = int(match.group(1))
+            except (TypeError, ValueError):
+                payload.jobId = None
+            return JobIntent(action="check_status", payload=payload)
+
+    match = re.search(r"\bstake\b.*?job\s+#?(\d+)", lower)
     if match:
-        payload.jobId = int(match.group(1))
-        return JobIntent(action="check_status", payload=payload)
+        try:
+            payload.jobId = int(match.group(1))
+        except (TypeError, ValueError):
+            payload.jobId = None
+        return JobIntent(action="stake", payload=payload)
+
+    match = re.search(r"\bvalidate\b.*?job\s+#?(\d+)", lower)
+    if match:
+        try:
+            payload.jobId = int(match.group(1))
+        except (TypeError, ValueError):
+            payload.jobId = None
+        return JobIntent(action="validate", payload=payload)
+
+    match = re.search(r"\bdispute\b.*?job\s+#?(\d+)", lower)
+    if match:
+        try:
+            payload.jobId = int(match.group(1))
+        except (TypeError, ValueError):
+            payload.jobId = None
+        return JobIntent(action="dispute", payload=payload)
 
     match = re.search(r"post\s+job\s+#?(\d+)", lower)
     if match:
