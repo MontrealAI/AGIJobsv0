@@ -21,15 +21,41 @@ const expertPlanJson = $('#expert-plan-json');
 const expertExecuteRequestJson = $('#expert-execute-request');
 const expertExecuteResponseJson = $('#expert-execute-response');
 
+const formatLatency = (ms) => {
+  if (typeof ms !== 'number' || Number.isNaN(ms) || !Number.isFinite(ms)) {
+    return null;
+  }
+  if (ms < 1) return '<1ms';
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+};
+
+const renderRiskBadges = (risks) => {
+  if (!Array.isArray(risks) || risks.length === 0) {
+    return '<div class="risk-badges"><span class="risk-badge ok">No blockers detected</span></div>';
+  }
+  return `<div class="risk-badges">${risks
+    .map((risk) => `<span class="risk-badge">${risk}</span>`)
+    .join('')}</div>`;
+};
+
 const COPY = {
   planning: 'Planning your workflow…',
-  planPreview: (summary) =>
-    `${summary}<div class="pill-row pill-row-confirm"><button class="primary-btn" id="plan-approve" type="button">Looks good</button><button class="ghost-btn" id="plan-cancel" type="button">Cancel</button></div>`,
+  planPreview: (summary, meta = {}) => {
+    const latency = formatLatency(meta.latencyMs);
+    const metaRow = latency
+      ? `<div class="meta-row"><span class="meta-chip">Plan ready in ${latency}</span></div>`
+      : '';
+    return `${metaRow}${summary}<div class="pill-row pill-row-confirm"><button class="primary-btn" id="plan-approve" type="button">YES — simulate</button><button class="ghost-btn" id="plan-cancel" type="button">NO</button></div>`;
+  },
   missing: (fields) =>
     `I still need a few details before we can simulate: <strong>${fields.join(', ')}</strong>.`,
   simulating: 'Running safety checks and estimating budget…',
-  simulationPreview: (sim) => {
-    const risks = sim.risks && sim.risks.length ? `<br><strong>Risks:</strong> ${sim.risks.join(', ')}` : '';
+  simulationPreview: (sim, meta = {}) => {
+    const latency = formatLatency(meta.latencyMs);
+    const metaRow = latency
+      ? `<div class="meta-row"><span class="meta-chip">Checks ready in ${latency}</span></div>`
+      : '';
     const budget = sim.estimatedBudget ? `${sim.estimatedBudget} AGIALPHA` : '—';
     const feeSegments = [];
     if (sim.feeAmount) {
@@ -51,9 +77,8 @@ const COPY = {
       feeSegments.push(`burn ${sim.burnPct}%`);
     }
     const feeSummary = feeSegments.length ? ` Fee projections: ${feeSegments.join('; ')}.` : '';
-    return `Est. budget <strong>${budget}</strong>.${feeSummary ? feeSummary : ''}${
-      risks
-    }<div class="pill-row pill-row-confirm"><button class="primary-btn" id="sim-approve" type="button">Proceed to execute</button><button class="ghost-btn" id="sim-cancel" type="button">Cancel</button></div>`;
+    const risks = renderRiskBadges(sim.risks);
+    return `${metaRow}Est. budget <strong>${budget}</strong>.${feeSummary ? feeSummary : ''}${risks}<div class="pill-row pill-row-confirm"><button class="primary-btn" id="sim-approve" type="button">YES — execute</button><button class="ghost-btn" id="sim-cancel" type="button">NO</button></div>`;
   },
   executing: 'Executing the plan…',
   cancelled: 'Okay, cancelled. Adjust the details and try again.',
@@ -381,14 +406,26 @@ async function planRequest(text) {
   lastExecuteRequest = null;
   lastExecuteResponse = null;
   lastRunStatus = null;
+  const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const response = await api('/onebox/plan', { input_text: text });
+  const ended = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const latencyMs = Math.max(0, ended - started);
+  if (response && typeof response === 'object') {
+    response.__meta = { ...(response.__meta || {}), latencyMs };
+  }
   lastPlanResponse = response ?? null;
   renderExpertDetails();
   return response;
 }
 
 async function simulatePlanRequest(plan) {
+  const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const response = await api('/onebox/simulate', { plan });
+  const ended = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const latencyMs = Math.max(0, ended - started);
+  if (response && typeof response === 'object') {
+    response.__meta = { ...(response.__meta || {}), latencyMs };
+  }
   lastSimulationResponse = response ?? null;
   renderExpertDetails();
   return response;
@@ -602,7 +639,10 @@ form.addEventListener('submit', async (event) => {
       addMessage('assist', COPY.missing(plan.missing_fields));
       return;
     }
-    const confirmation = addMessage('assist', COPY.planPreview(plan.preview_summary));
+    const confirmation = addMessage(
+      'assist',
+      COPY.planPreview(plan.preview_summary, plan?.__meta || {}),
+    );
     const yesBtn = confirmation.querySelector('#plan-approve');
     const noBtn = confirmation.querySelector('#plan-cancel');
     yesBtn?.addEventListener('click', () => {
@@ -618,7 +658,7 @@ form.addEventListener('submit', async (event) => {
           if (!simulation) {
             throw new Error('BLOCKED');
           }
-          simulationMsg.innerHTML = COPY.simulationPreview(simulation);
+          simulationMsg.innerHTML = COPY.simulationPreview(simulation, simulation.__meta || {});
           const simApprove = simulationMsg.querySelector('#sim-approve');
           const simCancel = simulationMsg.querySelector('#sim-cancel');
           simApprove?.addEventListener('click', () => {
