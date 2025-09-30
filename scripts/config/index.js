@@ -506,6 +506,13 @@ function normaliseDeploymentPlan(plan = {}) {
   if (treasurySlashPct !== undefined) {
     econ.treasurySlashPct = treasurySlashPct;
   }
+  const validatorSlashRewardPct = normalisePercentage(
+    rawOverrides.validatorSlashRewardPct,
+    'validatorSlashRewardPct'
+  );
+  if (validatorSlashRewardPct !== undefined) {
+    econ.validatorSlashRewardPct = validatorSlashRewardPct;
+  }
 
   const commitWindow = normaliseDuration(
     rawOverrides.commitWindow,

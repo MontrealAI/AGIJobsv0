@@ -34,6 +34,7 @@ contract StakeManagerSlashTest is Test {
         token = AGIALPHAToken(payable(AGIALPHA));
         stake = new StakeManagerHarness(1e18, 0, 100, address(1), address(this), address(this), address(this));
         stake.setValidatorRewardPct(10);
+        stake.setValidatorSlashRewardPct(10);
     }
 
     function _depositValidator(address val) internal {
@@ -89,7 +90,7 @@ contract StakeManagerSlashTest is Test {
         vm.prank(address(this));
         stake.slash(user, StakeManager.Role.Validator, amount, address(0), validators);
 
-        uint256 expected = (amount * stake.validatorRewardPct()) / 100 / n;
+        uint256 expected = (amount * stake.validatorSlashRewardPct()) / 100 / n;
         for (uint256 i; i < n; ++i) {
             uint256 gained = token.balanceOf(validators[i]) - beforeBal[i];
             assertEq(gained, expected);

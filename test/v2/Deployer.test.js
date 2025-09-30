@@ -158,6 +158,7 @@ describe('Deployer', function () {
     expect(await registryC.disputeModule()).to.equal(dispute);
     expect(await registryC.certificateNFT()).to.equal(certificate);
     expect(await registryC.feePool()).to.equal(feePool);
+    expect(await stakeC.validatorSlashRewardPct()).to.equal(0);
     expect(await registryC.taxPolicy()).to.equal(taxPolicy);
     expect(await registryC.identityRegistry()).to.equal(identityRegistryAddr);
     expect(await validationC.jobRegistry()).to.equal(registry);

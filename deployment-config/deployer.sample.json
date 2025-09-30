@@ -10,6 +10,7 @@
     "burnPct": 5,
     "employerSlashPct": 10,
     "treasurySlashPct": 90,
+    "validatorSlashRewardPct": 0,
     "commitWindow": "1d",
     "revealWindow": "1d",
     "minStake": "1000",

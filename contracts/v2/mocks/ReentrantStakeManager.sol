@@ -17,6 +17,7 @@ contract ReentrantStakeManager is IStakeManager {
 
     bool public attackSlash;
     uint256 public attackJobId;
+    uint256 public validatorSlashRewardPctValue;
 
     function setJobRegistry(address j) external { jobRegistry = j; }
 
@@ -82,6 +83,12 @@ contract ReentrantStakeManager is IStakeManager {
     function setFeePool(IFeePool) external override {}
     function setBurnPct(uint256) external override {}
     function setValidatorRewardPct(uint256) external override {}
+    function setValidatorSlashRewardPct(uint256 pct) external override {
+        validatorSlashRewardPctValue = pct;
+    }
+    function setSlashingDistribution(uint256, uint256, uint256 pct) external override {
+        validatorSlashRewardPctValue = pct;
+    }
     function autoTuneStakes(bool) external override {}
     function configureAutoStake(
         uint256,
@@ -118,6 +125,10 @@ contract ReentrantStakeManager is IStakeManager {
 
     function getTotalPayoutPct(address) external pure override returns (uint256) {
         return 100;
+    }
+
+    function validatorSlashRewardPct() external view override returns (uint256) {
+        return validatorSlashRewardPctValue;
     }
 
     function burnPct() external pure override returns (uint256) {

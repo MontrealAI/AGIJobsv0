@@ -54,6 +54,7 @@ contract Deployer is Ownable {
         uint256 burnPct; // portion of fees burned by FeePool
         uint256 employerSlashPct; // slashed stake sent to employer
         uint256 treasurySlashPct; // slashed stake sent to treasury
+        uint256 validatorSlashRewardPct; // slashed stake distributed to validators
         uint256 commitWindow; // validator commit window in seconds
         uint256 revealWindow; // validator reveal window in seconds
         uint256 minStake; // global minimum stake in StakeManager (18 decimals)
@@ -267,8 +268,12 @@ contract Deployer is Ownable {
         uint256 minStake = econ.minStake == 0 ? TOKEN_SCALE : econ.minStake;
         uint256 employerSlashPct = econ.employerSlashPct;
         uint256 treasurySlashPct = econ.treasurySlashPct;
-        if (employerSlashPct + treasurySlashPct == 0) {
+        uint256 validatorSlashPct = econ.validatorSlashRewardPct;
+        uint256 slashTotal = employerSlashPct + treasurySlashPct + validatorSlashPct;
+        if (slashTotal == 0) {
             treasurySlashPct = 100;
+        } else {
+            require(slashTotal <= 100, "invalid slash split");
         }
         uint96 jobStake = econ.jobStake;
         StakeManager stake = new StakeManager(
@@ -280,6 +285,9 @@ contract Deployer is Ownable {
             address(0),
             address(this)
         );
+        if (validatorSlashPct != 0) {
+            stake.setValidatorSlashRewardPct(validatorSlashPct);
+        }
         if (governance != address(0)) {
             stake.setTreasuryAllowlist(governance, true);
         }

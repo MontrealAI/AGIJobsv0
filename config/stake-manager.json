@@ -5,6 +5,7 @@
   "feePct": 5,
   "burnPct": 5,
   "validatorRewardPct": 10,
+  "validatorSlashRewardPct": 0,
   "treasury": "0x0000000000000000000000000000000000000000",
   "treasuryAllowlist": {},
   "unbondingPeriodSeconds": 604800,

@@ -128,6 +128,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice percentage of slashed amount sent to treasury (out of 100)
     uint256 public treasurySlashPct;
 
+    /// @notice percentage of slashed amount distributed to validators (out of 100)
+    uint256 public validatorSlashRewardPct;
+
     /// @notice staked balance per user and role
     mapping(address => mapping(Role => uint256)) public stakes;
 
@@ -281,6 +284,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event ValidationModuleUpdated(address indexed module);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
+    event ValidatorSlashRewardPctUpdated(uint256 validatorSlashRewardPct);
     event TreasuryUpdated(address indexed treasury);
     event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event JobRegistryUpdated(address indexed registry);
@@ -353,6 +357,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool setSlashingPercentages;
         uint256 employerSlashPct;
         uint256 treasurySlashPct;
+        bool setValidatorSlashRewardPct;
+        uint256 validatorSlashRewardPct;
         bool setTreasury;
         address treasury;
         bool setJobRegistry;
@@ -627,13 +633,28 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _setMinStake(_minStake);
     }
 
-    /// @dev internal helper to update slashing percentages
-    function _setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) internal {
-        if (_employerSlashPct > 100 || _treasurySlashPct > 100) revert InvalidPercentage();
-        if (_employerSlashPct + _treasurySlashPct > 100) revert InvalidPercentage();
+    /// @dev internal helper to update slashing distribution percentages
+    function _setSlashingDistribution(
+        uint256 _employerSlashPct,
+        uint256 _treasurySlashPct,
+        uint256 _validatorSlashPct
+    ) internal {
+        if (_employerSlashPct > 100 || _treasurySlashPct > 100 || _validatorSlashPct > 100) {
+            revert InvalidPercentage();
+        }
+        if (_employerSlashPct + _treasurySlashPct + _validatorSlashPct > 100) {
+            revert InvalidPercentage();
+        }
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
+        validatorSlashRewardPct = _validatorSlashPct;
         emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
+        emit ValidatorSlashRewardPctUpdated(_validatorSlashPct);
+    }
+
+    /// @dev internal helper to update slashing percentages without changing validator rewards
+    function _setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) internal {
+        _setSlashingDistribution(_employerSlashPct, _treasurySlashPct, validatorSlashRewardPct);
     }
 
     /// @dev internal helper to burn tokens
@@ -655,14 +676,32 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param _employerSlashPct percentage sent to employer (0-100)
     /// @param _treasurySlashPct percentage sent to treasury (0-100)
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external onlyGovernance {
-        _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
+        _setSlashingDistribution(_employerSlashPct, _treasurySlashPct, validatorSlashRewardPct);
     }
 
     /// @notice update slashing percentages (alias)
     /// @param _employerSlashPct percentage sent to employer (0-100)
     /// @param _treasurySlashPct percentage sent to treasury (0-100)
     function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external onlyGovernance {
-        _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
+        _setSlashingDistribution(_employerSlashPct, _treasurySlashPct, validatorSlashRewardPct);
+    }
+
+    /// @notice update the validator share of slashed stakes
+    /// @param _validatorSlashPct percentage of the total slashed amount distributed to validators (0-100)
+    function setValidatorSlashRewardPct(uint256 _validatorSlashPct) external onlyGovernance {
+        _setSlashingDistribution(employerSlashPct, treasurySlashPct, _validatorSlashPct);
+    }
+
+    /// @notice update the full slashing distribution across employer, treasury and validators
+    /// @param _employerSlashPct percentage sent to the employer (0-100)
+    /// @param _treasurySlashPct percentage sent to the treasury (0-100)
+    /// @param _validatorSlashPct percentage sent to validators (0-100)
+    function setSlashingDistribution(
+        uint256 _employerSlashPct,
+        uint256 _treasurySlashPct,
+        uint256 _validatorSlashPct
+    ) external onlyGovernance {
+        _setSlashingDistribution(_employerSlashPct, _treasurySlashPct, _validatorSlashPct);
     }
 
     function _setTreasury(address _treasury) internal {
@@ -975,8 +1014,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             minStakeChanged = true;
         }
 
-        if (config.setSlashingPercentages) {
-            _setSlashingPercentages(config.employerSlashPct, config.treasurySlashPct);
+        if (config.setSlashingPercentages || config.setValidatorSlashRewardPct) {
+            uint256 employerPct = config.setSlashingPercentages
+                ? config.employerSlashPct
+                : employerSlashPct;
+            uint256 treasuryPct = config.setSlashingPercentages
+                ? config.treasurySlashPct
+                : treasurySlashPct;
+            uint256 validatorPct = config.setValidatorSlashRewardPct
+                ? config.validatorSlashRewardPct
+                : validatorSlashRewardPct;
+            _setSlashingDistribution(employerPct, treasuryPct, validatorPct);
             slashingChanged = true;
         }
 
@@ -1822,18 +1870,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         require(validators.length <= MAX_VALIDATORS, "too many validators");
         uint256 staked = stakes[user][role];
         if (staked < amount) revert InsufficientStake();
-        if (employerSlashPct + treasurySlashPct > 100) revert InvalidPercentage();
+        if (employerSlashPct + treasurySlashPct + validatorSlashRewardPct > 100) revert InvalidPercentage();
         if (treasury != address(0) && !treasuryAllowlist[treasury]) {
             revert InvalidTreasury();
         }
 
-        uint256 employerShare = (amount * employerSlashPct) / 100;
-        uint256 treasuryShare = (amount * treasurySlashPct) / 100;
-        uint256 burnShare = (amount * (100 - employerSlashPct - treasurySlashPct)) / 100;
-        uint256 distributed = employerShare + treasuryShare + burnShare;
-        if (distributed < amount) {
-            burnShare += amount - distributed;
-        }
+        uint256 validatorTarget = (amount * validatorSlashRewardPct) / 100;
+        uint256 baseAmount = amount - validatorTarget;
+        uint256 employerShare = (baseAmount * employerSlashPct) / 100;
+        uint256 treasuryShare = (baseAmount * treasurySlashPct) / 100;
+        uint256 burnShare = baseAmount - employerShare - treasuryShare;
 
         uint256 newStake = staked - amount;
 
@@ -1883,39 +1929,34 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
 
         uint256 validatorShare;
-        if (validatorRewardPct > 0 && validators.length > 0) {
-            uint256 base = burnShare > 0 ? burnShare : treasuryShare;
-            validatorShare = (base * validatorRewardPct) / 100;
-            if (validatorShare > 0) {
-                if (burnShare > 0) burnShare -= validatorShare;
-                else treasuryShare -= validatorShare;
-
-                uint256 total;
-                uint256 len = validators.length;
+        if (validatorTarget > 0) {
+            uint256 len = validators.length;
+            if (len == 0) {
+                burnShare += validatorTarget;
+            } else {
                 uint256[] memory vals = new uint256[](len);
+                uint256 total;
                 for (uint256 i; i < len; ++i) {
                     uint256 s = stakes[validators[i]][Role.Validator];
                     vals[i] = s;
                     total += s;
                 }
                 if (total > 0) {
-                    uint256 remaining = validatorShare;
+                    uint256 remaining = validatorTarget;
                     for (uint256 i; i < len; ++i) {
-                        uint256 reward = (validatorShare * vals[i]) / total;
+                        uint256 reward = (validatorTarget * vals[i]) / total;
                         if (reward > 0) {
                             remaining -= reward;
                             token.safeTransfer(validators[i], reward);
                             emit RewardValidator(validators[i], reward, bytes32(0));
                         }
                     }
+                    validatorShare = validatorTarget - remaining;
                     if (remaining > 0) {
-                        if (burnShare > 0) burnShare += remaining;
-                        else treasuryShare += remaining;
+                        burnShare += remaining;
                     }
                 } else {
-                    if (burnShare > 0) burnShare += validatorShare;
-                    else treasuryShare += validatorShare;
-                    validatorShare = 0;
+                    burnShare += validatorTarget;
                 }
             }
         }

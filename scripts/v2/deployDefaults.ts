@@ -17,6 +17,7 @@ interface EconConfig {
   burnPct?: unknown;
   employerSlashPct?: unknown;
   treasurySlashPct?: unknown;
+  validatorSlashRewardPct?: unknown;
   commitWindow?: unknown;
   revealWindow?: unknown;
   minStake?: unknown;
@@ -346,6 +347,11 @@ async function main() {
       toStringOrUndefined(cli['treasury-slash']) ?? econConfig.treasurySlashPct,
       'Treasury slash percentage'
     ),
+    validatorSlashRewardPct: parsePercentage(
+      toStringOrUndefined(cli['validator-slash']) ??
+        econConfig.validatorSlashRewardPct,
+      'Validator slash reward percentage'
+    ),
     commitWindow: parseDuration(
       toStringOrUndefined(cli['commit-window']) ?? econConfig.commitWindow,
       'Commit window'
@@ -364,11 +370,18 @@ async function main() {
     ),
   };
 
-  if (econ.employerSlashPct !== 0 || econ.treasurySlashPct !== 0) {
-    const total = econ.employerSlashPct + econ.treasurySlashPct;
+  if (
+    econ.employerSlashPct !== 0 ||
+    econ.treasurySlashPct !== 0 ||
+    econ.validatorSlashRewardPct !== 0
+  ) {
+    const total =
+      econ.employerSlashPct +
+      econ.treasurySlashPct +
+      econ.validatorSlashRewardPct;
     if (total !== 100) {
       throw new Error(
-        'Employer slash percentage plus treasury slash percentage must equal 100 when either is set'
+        'Employer, treasury and validator slash percentages must sum to 100 when any is set'
       );
     }
   }
@@ -388,6 +401,7 @@ async function main() {
     econ.burnPct !== 0 ||
     econ.employerSlashPct !== 0 ||
     econ.treasurySlashPct !== 0 ||
+    econ.validatorSlashRewardPct !== 0 ||
     econ.commitWindow !== 0 ||
     econ.revealWindow !== 0 ||
     econ.minStake !== 0n ||
@@ -500,6 +514,12 @@ async function main() {
     econ.employerSlashPct === 0 && econ.treasurySlashPct === 0
       ? 100
       : econ.treasurySlashPct;
+  const effectiveValidatorSlash =
+    econ.employerSlashPct === 0 &&
+    econ.treasurySlashPct === 0 &&
+    econ.validatorSlashRewardPct === 0
+      ? 0
+      : econ.validatorSlashRewardPct;
   const effectiveCommitWindow =
     econ.commitWindow === 0 ? 86_400 : econ.commitWindow;
   const effectiveRevealWindow =
@@ -515,6 +535,7 @@ async function main() {
       burnPct: `${effectiveBurnPct}%`,
       employerSlashPct: `${effectiveEmployerSlash}%`,
       treasurySlashPct: `${effectiveTreasurySlash}%`,
+      validatorSlashRewardPct: `${effectiveValidatorSlash}%`,
       commitWindowSeconds: effectiveCommitWindow,
       revealWindowSeconds: effectiveRevealWindow,
       minStakeWei: effectiveMinStake.toString(),
@@ -703,6 +724,7 @@ async function main() {
         burnPct: effectiveBurnPct,
         employerSlashPct: effectiveEmployerSlash,
         treasurySlashPct: effectiveTreasurySlash,
+        validatorSlashRewardPct: effectiveValidatorSlash,
         commitWindow: effectiveCommitWindow,
         revealWindow: effectiveRevealWindow,
         minStake: effectiveMinStake.toString(),

@@ -1114,6 +1114,25 @@ async function configureStakeManager(
     updated.employerSlashPct = employerSlash.value;
   }
 
+  const validatorSlash = await promptPercentage(
+    rl,
+    'Validator slash reward percentage (from slashed funds)',
+    updated.validatorSlashRewardPct
+  );
+  if (validatorSlash.changed) {
+    changes.push({
+      module: 'StakeManager',
+      key: 'validatorSlashRewardPct',
+      previous:
+        updated.validatorSlashRewardPct !== undefined
+          ? `${updated.validatorSlashRewardPct}%`
+          : 'unset',
+      next: `${validatorSlash.value}%`,
+      configPath,
+    });
+    updated.validatorSlashRewardPct = validatorSlash.value;
+  }
+
   const treasurySlash = await promptPercentage(
     rl,
     'Treasury slash percentage (from slashed funds)',

@@ -33,6 +33,18 @@ describe('StakeManager slashing configuration', function () {
       stakeManager.setSlashingPercentages(60, 50)
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
   });
+
+  it('rejects validator slash reward percentage above 100', async () => {
+    await expect(
+      stakeManager.setValidatorSlashRewardPct(101)
+    ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
+  });
+
+  it('rejects distributions whose sum exceeds 100', async () => {
+    await expect(
+      stakeManager.setSlashingDistribution(40, 30, 40)
+    ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
+  });
 });
 
 describe('StakeManager multi-validator slashing', function () {
@@ -134,6 +146,7 @@ describe('StakeManager multi-validator slashing', function () {
       owner.address
     );
     await stakeManager.connect(owner).setValidatorRewardPct(20);
+    await stakeManager.connect(owner).setValidatorSlashRewardPct(20);
     await stakeManager
       .connect(owner)
       .setTreasuryAllowlist(treasury.address, true);

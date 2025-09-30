@@ -56,6 +56,7 @@ interface IStakeManager {
     event ModulesUpdated(address jobRegistry, address disputeModule);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
+    event ValidatorSlashRewardPctUpdated(uint256 validatorSlashRewardPct);
     event TreasuryUpdated(address indexed treasury);
     event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event MaxStakePerAddressUpdated(uint256 maxStake);
@@ -174,6 +175,9 @@ interface IStakeManager {
     /// @notice Current burn percentage applied to rewards
     function burnPct() external view returns (uint256);
 
+    /// @notice Validator share of slashed stakes
+    function validatorSlashRewardPct() external view returns (uint256);
+
     /// @notice Cap on total payout percentage across AGI types
     function maxTotalPayoutPct() external view returns (uint256);
 
@@ -229,6 +233,12 @@ interface IStakeManager {
     function setMinStake(uint256 _minStake) external;
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
+    function setValidatorSlashRewardPct(uint256 _validatorSlashPct) external;
+    function setSlashingDistribution(
+        uint256 _employerSlashPct,
+        uint256 _treasurySlashPct,
+        uint256 _validatorSlashPct
+    ) external;
     function setTreasury(address _treasury) external;
     function setTreasuryAllowlist(address _treasury, bool allowed) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
