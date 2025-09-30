@@ -1,0 +1,12 @@
+{
+  "ORCHESTRATOR_NOT_CONFIGURED": "Configure the orchestrator before issuing plan or execute requests.",
+  "API_TOKEN_MISSING": "Include your orchestrator API token in the Authorization header.",
+  "API_TOKEN_INVALID": "The supplied orchestrator API token is invalid or expired.",
+  "ESCROW_BALANCE_LOW": "Top up the orchestrator escrow balance to continue submitting transactions.",
+  "RUN_FAILED": "The orchestrator run failed; inspect logs for detailed failure context.",
+  "REQUEST_EMPTY": "Provide a non-empty request payload to proceed.",
+  "AUTH_MISSING": "Authorization is required for this endpoint.",
+  "PLAN_HASH_REQUIRED": "Submit the planHash returned by /onebox/plan before executing.",
+  "REWARD_INVALID": "The supplied reward value is invalid for the current network configuration.",
+  "UNKNOWN": "An unknown error occurred; retry or contact support."
+}

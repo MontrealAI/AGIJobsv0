@@ -58,6 +58,12 @@ export const PlanResponseSchema = z.object({
   preview_summary: z.string(),
   warnings: z.array(z.string()).default([]),
   requiresConfirmation: z.boolean().default(true),
+  receipt: z.record(z.any()).optional(),
+  receiptDigest: z.string().optional(),
+  receiptAttestationUid: z.string().optional(),
+  receiptAttestationTxHash: z.string().optional(),
+  receiptAttestationCid: z.string().optional(),
+  receiptAttestationUri: z.string().optional(),
 });
 
 export const SimulationResponseSchema = z.object({
@@ -76,6 +82,12 @@ export const SimulationResponseSchema = z.object({
   risks: z.array(z.string()).default([]),
   confirmations: z.array(z.string()).default([]),
   blockers: z.array(z.string()).default([]),
+  receipt: z.record(z.any()).optional(),
+  receiptDigest: z.string().optional(),
+  receiptAttestationUid: z.string().optional(),
+  receiptAttestationTxHash: z.string().optional(),
+  receiptAttestationCid: z.string().optional(),
+  receiptAttestationUri: z.string().optional(),
 });
 
 export const StepStatusSchema = z.object({
@@ -133,6 +145,12 @@ export const ExecuteResponseSchema = z.object({
   run_id: z.string(),
   started_at: z.number().optional(),
   plan_id: z.string(),
+  receipt: z.record(z.any()).optional(),
+  receiptDigest: z.string().optional(),
+  receiptAttestationUid: z.string().optional(),
+  receiptAttestationTxHash: z.string().optional(),
+  receiptAttestationCid: z.string().optional(),
+  receiptAttestationUri: z.string().optional(),
 });
 
 export type Attachment = z.infer<typeof AttachmentSchema>;

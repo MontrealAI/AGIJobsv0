@@ -6,6 +6,23 @@ ownership check performed by `IdentityRegistry` and can participate using the
 delegated wallet. For setting up the base ENS records and issuing
 subdomains see [ens-identity-setup.md](ens-identity-setup.md).
 
+## Receipt attestations (EAS)
+
+Orchestrator and agent services can optionally emit [Ethereum Attestation Service](https://attest.sh/) receipts for plan, simulation, and execution stages. Configure the attester via `config/attestation.eas.json` or the `RECEIPT_ATTESTATION_*` environment variables:
+
+| Setting | Description |
+| --- | --- |
+| `RECEIPT_ATTESTATION_EAS_ADDRESS` | EAS contract address on the target network. |
+| `RECEIPT_ATTESTATION_SCHEMA_UID` | Published schema UID for the receipt payload. |
+| `RECEIPT_ATTESTATION_KMS_KEY_ID` | AWS KMS key ARN/ID used to sign attestations. |
+| `RECEIPT_ATTESTATION_KMS_REGION` | Optional AWS region override. |
+| `RECEIPT_ATTESTATION_KMS_ENDPOINT` | Optional localstack/custom endpoint override. |
+| `RECEIPT_ATTESTATION_RPC_URL` | RPC endpoint used when submitting attestations. |
+| `RECEIPT_ATTESTATION_DEFAULT_RECIPIENT` | Default attestation recipient wallet (optional). |
+| `RECEIPT_ATTESTATION_DISABLE` | Set to `true`/`1` to disable attestation entirely. |
+
+When enabled, API responses expose a deterministic `receiptDigest` alongside any attestation metadata (`receiptAttestationUid`, `receiptAttestationTxHash`, etc.). The helper `verifyRecordedAttestation` in `packages/orchestrator/src/attestation` can be used to confirm that a stored UID resolves to the expected digest and CID.
+
 ## Deployment
 
 Deploy the registry and wire it into `IdentityRegistry` so that consumer modules

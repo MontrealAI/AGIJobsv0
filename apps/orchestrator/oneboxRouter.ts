@@ -38,6 +38,7 @@ import {
   recordStatus,
   renderMetrics,
 } from './oneboxMetrics';
+import { decorateReceipt } from './attestation';
 import { ownerGovernanceSnapshot, ownerPreviewAction } from './ownerConsole';
 
 declare module 'express-serve-static-core' {
@@ -752,14 +753,17 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
       const text = typeof req.body?.text === 'string' ? req.body.text : '';
       const expert = Boolean(req.body?.expert);
       const response = await service.plan(text, expert);
-      intentType = response.intent?.action ?? 'unknown';
+      const decorated = await decoratePlanResponse(response);
+      intentType = decorated.intent?.action ?? 'unknown';
       logEvent('info', 'onebox.plan.success', {
         correlationId,
         intentType,
         httpStatus,
         expert,
+        receiptDigest: decorated.receiptDigest,
+        receiptAttestationUid: decorated.receiptAttestationUid,
       });
-      res.json(response);
+      res.json(decorated);
     } catch (error) {
       httpStatus = statusFromError(error);
       const level: LogLevel = httpStatus >= 500 ? 'error' : 'warn';
@@ -942,6 +946,18 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
   return router;
 }
 
+interface ReceiptAttestationFields {
+  receipt?: Record<string, unknown>;
+  receiptDigest?: string;
+  receiptAttestationUid?: string;
+  receiptAttestationTxHash?: string;
+  receiptAttestationCid?: string | null;
+  receiptAttestationUri?: string | null;
+}
+
+type PlanResponseWithReceipt = PlanResponse & ReceiptAttestationFields;
+type ExecuteResponseWithReceipt = ExecuteResponse & ReceiptAttestationFields;
+
 interface DecorateExecuteOptions {
   planHash: string;
   createdAt?: string;
@@ -975,14 +991,41 @@ function normalizeRequestTimestamp(value: unknown): string | undefined {
   return undefined;
 }
 
+async function decoratePlanResponse(response: PlanResponse): Promise<PlanResponseWithReceipt> {
+  const metadata: Record<string, unknown> = {
+    summary: response.summary,
+    intent: response.intent,
+    requiresConfirmation: response.requiresConfirmation,
+    warnings: response.warnings,
+    planHash: response.planHash,
+  };
+  if (Array.isArray((response as any).missingFields)) {
+    metadata.missingFields = (response as any).missingFields;
+  }
+  const attested = await decorateReceipt('PLAN', metadata, {
+    context: {
+      planHash: response.planHash,
+    },
+  });
+  return {
+    ...response,
+    receipt: attested.metadata,
+    receiptDigest: attested.digest,
+    receiptAttestationUid: attested.attestationUid,
+    receiptAttestationTxHash: attested.attestationTxHash,
+    receiptAttestationCid: attested.attestationCid ?? null,
+    receiptAttestationUri: attested.attestationUri ?? null,
+  };
+}
+
 async function decorateExecuteResponse(
   response: ExecuteResponse,
   options: DecorateExecuteOptions
-): Promise<ExecuteResponse> {
+): Promise<ExecuteResponseWithReceipt> {
   const createdAt = response.createdAt ?? options.createdAt ?? new Date().toISOString();
   const planHash = response.planHash ?? options.planHash;
   const txHashes = collectTxHashes(response);
-  const decorated: ExecuteResponse = {
+  const decorated: ExecuteResponseWithReceipt = {
     ...response,
     planHash,
     createdAt,
@@ -1027,7 +1070,43 @@ async function decorateExecuteResponse(
     });
   }
 
+  await applyExecutionReceiptAttestation(decorated, decorated.receipt ?? receiptRecord, {
+    planHash,
+    createdAt,
+    txHashes,
+  });
+
   return decorated;
+}
+
+async function applyExecutionReceiptAttestation(
+  response: ExecuteResponseWithReceipt,
+  receiptRecord: Record<string, unknown> | null,
+  context: { planHash: string; createdAt: string; txHashes: string[] }
+): Promise<void> {
+  if (!receiptRecord) {
+    return;
+  }
+  const attested = await decorateReceipt('EXECUTION', receiptRecord, {
+    cid:
+      response.receiptCid ?? response.deliverableCid ?? response.specCid ?? null,
+    uri:
+      response.receiptUri ?? response.deliverableUri ?? response.specUri ?? null,
+    context: {
+      planHash: context.planHash,
+      createdAt: context.createdAt,
+      jobId: response.jobId,
+      txHashes: context.txHashes,
+    },
+  });
+  response.receipt = attested.metadata;
+  response.receiptDigest = attested.digest;
+  response.receiptAttestationUid = attested.attestationUid;
+  response.receiptAttestationTxHash = attested.attestationTxHash;
+  response.receiptAttestationCid =
+    attested.attestationCid ?? response.receiptCid ?? response.deliverableCid ?? null;
+  response.receiptAttestationUri =
+    attested.attestationUri ?? response.receiptUri ?? response.deliverableUri ?? null;
 }
 
 function collectTxHashes(response: ExecuteResponse): string[] {
