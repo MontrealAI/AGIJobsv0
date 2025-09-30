@@ -144,6 +144,9 @@ interface IValidationModule {
     /// @notice Configure the penalty applied when validators fail to reveal.
     function setNonRevealPenalty(uint256 penaltyBps, uint256 banBlocks) external;
 
+    /// @notice Update quorum requirements for validator reveals.
+    function setRevealQuorum(uint256 pct, uint256 minValidators) external;
+
     /// @notice Update the cool-off delay before early finalization is permitted.
     function setEarlyFinalizeDelay(uint256 delay) external;
 

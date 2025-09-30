@@ -104,6 +104,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     // absolute number of validator approvals required
     uint256 public requiredValidatorApprovals;
 
+    /// @notice Minimum percentage of the committee that must reveal for quorum.
+    uint256 public revealQuorumPct = 100;
+
+    /// @notice Absolute floor on the number of reveals required for quorum.
+    uint256 public minRevealValidators = DEFAULT_MIN_VALIDATORS;
+
     // pool of validators
     address[] public validatorPool;
     // maximum number of pool entries to sample on-chain
@@ -198,6 +204,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorPoolSampleSizeUpdated(uint256 size);
     event MaxValidatorPoolSizeUpdated(uint256 size);
     event ValidatorAuthCacheDurationUpdated(uint256 duration);
+    event RevealQuorumUpdated(uint256 pct, uint256 minValidators);
     event ValidatorAuthCacheVersionBumped(uint256 version);
     event SelectionReset(uint256 indexed jobId);
     event PauserUpdated(address indexed pauser);
@@ -239,6 +246,20 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         nonRevealPenaltyBps = penaltyBps;
         nonRevealBanBlocks = banBlocks;
         emit NonRevealPenaltyUpdated(penaltyBps, banBlocks);
+    }
+
+    /// @notice Update the reveal quorum requirements.
+    /// @param pct Percentage of the committee that must reveal (0-100).
+    /// @param minValidators_ Absolute minimum number of reveals required.
+    function setRevealQuorum(uint256 pct, uint256 minValidators_)
+        external
+        onlyOwner
+    {
+        if (pct > 100) revert InvalidPercentage();
+        if (minValidators_ == 0) revert InvalidValidatorBounds();
+        revealQuorumPct = pct;
+        minRevealValidators = minValidators_;
+        emit RevealQuorumUpdated(pct, minValidators_);
     }
 
     /// @notice Update the cool-off delay before early finalization is permitted.
@@ -312,6 +333,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         maxValidators =
             _maxValidators == 0 ? DEFAULT_MAX_VALIDATORS : _maxValidators;
         if (minValidators < 3) revert InvalidValidatorBounds();
+        minRevealValidators = minValidators;
         emit ValidatorBoundsUpdated(minValidators, maxValidators);
         validatorsPerJob = minValidators;
         emit ValidatorsPerJobUpdated(validatorsPerJob);
@@ -1254,9 +1276,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             ? validatorsPerJob
             : r.committeeSize;
         if (committee > maxValidatorsPerJob) committee = maxValidatorsPerJob;
+        uint256 quorumTarget = _quorumTarget(committee);
         if (
+            quorumTarget > 0 &&
             r.earlyFinalizeEligibleAt == 0 &&
-            r.revealedCount >= committee
+            r.revealedCount >= quorumTarget
         ) {
             r.earlyFinalizeEligibleAt = uint64(
                 block.timestamp + earlyFinalizeDelay
@@ -1373,7 +1397,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             revert RevealPending();
         uint256 size = r.committeeSize == 0 ? validatorsPerJob : r.committeeSize;
         if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
-        if (r.revealedCount >= size) {
+        uint256 quorumTarget = _quorumTarget(size);
+        if (quorumTarget == 0 || r.revealedCount >= quorumTarget) {
             return _finalize(jobId);
         }
         r.earlyFinalizeEligibleAt = 0;
@@ -1418,6 +1443,33 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         return false;
     }
 
+    function _quorumTarget(uint256 committee) internal view returns (uint256) {
+        if (committee == 0) {
+            return 0;
+        }
+        uint256 pct = revealQuorumPct;
+        uint256 pctCount;
+        if (pct == 0) {
+            pctCount = 0;
+        } else {
+            uint256 numerator = committee * pct;
+            pctCount = numerator / 100;
+            if (numerator % 100 != 0) {
+                unchecked {
+                    pctCount += 1;
+                }
+            }
+        }
+        uint256 minCount = minRevealValidators;
+        if (minCount > committee) {
+            minCount = committee;
+        }
+        if (pctCount < minCount) {
+            return minCount;
+        }
+        return pctCount;
+    }
+
     function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
         if (r.tallied) revert AlreadyTallied();
@@ -1434,7 +1486,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             ? validatorsPerJob
             : r.committeeSize;
         if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
-        bool quorum = r.revealedCount >= size;
+        uint256 quorumTarget = _quorumTarget(size);
+        bool quorum = quorumTarget == 0 || r.revealedCount >= quorumTarget;
         uint256 approvalCount;
         uint256 vlen = r.validators.length;
         if (vlen > maxValidatorsPerJob) vlen = maxValidatorsPerJob;

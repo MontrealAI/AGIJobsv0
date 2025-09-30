@@ -94,6 +94,8 @@ contract ValidationStub is IValidationModule {
 
     function setNonRevealPenalty(uint256, uint256) external override {}
 
+    function setRevealQuorum(uint256, uint256) external override {}
+
     function setEarlyFinalizeDelay(uint256) external override {}
 
     function setForceFinalizeGrace(uint256) external override {}

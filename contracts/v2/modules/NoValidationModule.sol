@@ -132,6 +132,9 @@ contract NoValidationModule is IValidationModule, Ownable {
     function setNonRevealPenalty(uint256, uint256) external pure override {}
 
     /// @inheritdoc IValidationModule
+    function setRevealQuorum(uint256, uint256) external pure override {}
+
+    /// @inheritdoc IValidationModule
     function setEarlyFinalizeDelay(uint256) external pure override {}
 
     function setForceFinalizeGrace(uint256) external pure override {}
