@@ -75,6 +75,20 @@ contract KernelPipelineTest is Test {
         vm.stopPrank();
     }
 
+    function _job(uint256 jobId) internal view returns (KernelJobRegistry.Job memory job) {
+        (
+            job.employer,
+            job.agent,
+            job.reward,
+            job.deadline,
+            job.submittedAt,
+            job.submitted,
+            job.finalized,
+            job.success,
+            job.specHash
+        ) = jobRegistry.jobs(jobId);
+    }
+
     function testHappyPathValidationAndPayout() public {
         uint256 reward = 120 ether;
         uint64 deadline = uint64(block.timestamp + 3 days);
@@ -148,6 +162,8 @@ contract KernelPipelineTest is Test {
     function testNoRevealSlashesAndRefunds() public {
         uint256 reward = 80 ether;
         uint64 deadline = uint64(block.timestamp + 2 days);
+        uint256 employerInitial = token.balanceOf(employer);
+        uint256 validatorInitialStake = stakeManager.stakeOf(validators[1]);
         vm.prank(employer);
         uint256 jobId = jobRegistry.createJob(agent, validators, reward, deadline, keccak256("job2"));
 
@@ -172,14 +188,100 @@ contract KernelPipelineTest is Test {
         assertTrue(finalized);
         assertFalse(success);
 
-        // Employer refunded escrow and credited with slashed stake from non-revealer.
-        assertEq(token.balanceOf(employer), reward);
+        // Employer refunded escrow and credited with exact slashed stake from non-revealer.
+        assertEq(token.balanceOf(employer), employerInitial);
         uint256 pending = stakeManager.pendingWithdrawals(employer);
-        assertGt(pending, 0);
+        uint256 expectedSlash = (validatorInitialStake * config.noRevealSlashBps()) / 10_000;
+        assertEq(pending, expectedSlash);
+        assertEq(stakeManager.stakeOf(validators[1]), validatorInitialStake - expectedSlash);
 
         // Claim slashed amount.
         vm.prank(employer);
         stakeManager.claim();
-        assertGt(token.balanceOf(employer), reward);
+        assertEq(token.balanceOf(employer), employerInitial + pending);
+        assertEq(stakeManager.pendingWithdrawals(employer), 0);
+    }
+
+    function testValidationRejectionSlashesAgent() public {
+        uint256 reward = 100 ether;
+        uint64 deadline = uint64(block.timestamp + 4 days);
+        uint256 employerInitial = token.balanceOf(employer);
+        uint256 agentInitialStake = stakeManager.stakeOf(agent);
+        vm.prank(employer);
+        uint256 jobId = jobRegistry.createJob(agent, validators, reward, deadline, keccak256("job3"));
+
+        vm.prank(agent);
+        jobRegistry.submitResult(jobId);
+
+        bytes32[] memory salts = new bytes32[](validators.length);
+        bool[] memory approvals = new bool[](validators.length);
+        approvals[0] = true;
+        approvals[1] = false;
+
+        for (uint256 i = 0; i < validators.length; i++) {
+            salts[i] = keccak256(abi.encodePacked("reveal", i));
+            bytes32 commitment = keccak256(abi.encodePacked(jobId, validators[i], approvals[i], salts[i]));
+            vm.prank(validators[i]);
+            validationModule.commit(jobId, commitment);
+        }
+
+        vm.warp(block.timestamp + config.commitWindow() + 1);
+
+        for (uint256 i = 0; i < validators.length; i++) {
+            vm.prank(validators[i]);
+            validationModule.reveal(jobId, approvals[i], salts[i]);
+        }
+
+        validationModule.finalize(jobId);
+
+        KernelJobRegistry.Job memory job = _job(jobId);
+        assertTrue(job.finalized);
+        assertFalse(job.success);
+
+        uint256 expectedSlash = (agentInitialStake * config.maliciousSlashBps()) / 10_000;
+        assertEq(stakeManager.stakeOf(agent), agentInitialStake - expectedSlash);
+        assertEq(stakeManager.pendingWithdrawals(employer), expectedSlash);
+
+        // Claim the slashed stake and ensure the employer is made whole plus compensation.
+        vm.prank(employer);
+        stakeManager.claim();
+        assertEq(token.balanceOf(employer), employerInitial + expectedSlash);
+        assertEq(stakeManager.pendingWithdrawals(employer), 0);
+
+        // No rewards distributed when validation rejects.
+        assertEq(token.balanceOf(agent), 0);
+        assertEq(token.balanceOf(validators[0]), 0);
+        assertEq(token.balanceOf(validators[1]), 0);
+        assertEq(escrowVault.balanceOf(jobId), 0);
+    }
+
+    function testCancelExpiredJobSlashesAgentAndRefundsEmployer() public {
+        uint256 reward = 90 ether;
+        uint64 deadline = uint64(block.timestamp + 1 days);
+        uint256 employerInitial = token.balanceOf(employer);
+        uint256 agentInitialStake = stakeManager.stakeOf(agent);
+        vm.prank(employer);
+        uint256 jobId = jobRegistry.createJob(agent, validators, reward, deadline, keccak256("job4"));
+
+        // Advance beyond the deadline so the job expires without submission.
+        vm.warp(uint256(deadline) + 1);
+
+        vm.prank(employer);
+        jobRegistry.cancelExpiredJob(jobId);
+
+        KernelJobRegistry.Job memory job = _job(jobId);
+        assertTrue(job.finalized);
+        assertFalse(job.success);
+        assertEq(escrowVault.balanceOf(jobId), 0);
+
+        uint256 expectedSlash = (agentInitialStake * config.maliciousSlashBps()) / 10_000;
+        assertEq(stakeManager.stakeOf(agent), agentInitialStake - expectedSlash);
+        assertEq(stakeManager.pendingWithdrawals(employer), expectedSlash);
+        assertEq(jobRegistry.activeJobs(agent), 0);
+
+        vm.prank(employer);
+        stakeManager.claim();
+        assertEq(token.balanceOf(employer), employerInitial + expectedSlash);
+        assertEq(stakeManager.pendingWithdrawals(employer), 0);
     }
 }
