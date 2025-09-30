@@ -369,9 +369,33 @@ describe("mapping handlers", () => {
 
     assert.fieldEquals("Job", "2", "validatorQuorum", "1");
     assert.fieldEquals("Job", "2", "approvals", "1");
+    assert.fieldEquals("Job", "2", "state", "Validating");
     assert.fieldEquals("Validator", voter.toHexString(), "totalVotes", "1");
-    const voteId =
-      reveal.transaction.hash.toHexString() + ":" + reveal.logIndex.toString();
+    const voteId = "2:" + voter.toHexString();
     assert.fieldEquals("ValidatorVote", voteId, "approved", "true");
+    assert.fieldEquals(
+      "ValidatorVote",
+      voteId,
+      "txHash",
+      reveal.transaction.hash.toHexString(),
+    );
+
+    const changeVote = createValidationRevealedEvent(
+      2,
+      voter,
+      false,
+      Bytes.fromHexString(
+        "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      ) as Bytes,
+      7,
+    );
+    handleValidatorVoted(changeVote);
+
+    assert.fieldEquals("Job", "2", "validatorQuorum", "1");
+    assert.fieldEquals("Job", "2", "approvals", "0");
+    assert.fieldEquals("Job", "2", "rejections", "1");
+    assert.fieldEquals("Validator", voter.toHexString(), "totalVotes", "1");
+    assert.fieldEquals("ProtocolStats", "agi-jobs", "totalValidatorVotes", "1");
+    assert.fieldEquals("ValidatorVote", voteId, "approved", "false");
   });
 });

@@ -23,6 +23,10 @@ import {
 const ZERO = BigInt.zero();
 const PROTOCOL_ID = "agi-jobs";
 
+function safeDecrement(value: i32): i32 {
+  return value > 0 ? value - 1 : 0;
+}
+
 function getOrCreateProtocol(): ProtocolStats {
   let stats = ProtocolStats.load(PROTOCOL_ID);
   if (stats == null) {
@@ -263,16 +267,6 @@ export function handleValidatorVoted(event: ValidationRevealed): void {
     job.updatedAtTimestamp = event.block.timestamp;
   }
 
-  job.validatorQuorum += 1;
-  if (event.params.approve) {
-    job.approvals += 1;
-  } else {
-    job.rejections += 1;
-  }
-  job.updatedAtBlock = event.block.number;
-  job.updatedAtTimestamp = event.block.timestamp;
-  job.save();
-
   const validatorId = event.params.validator.toHexString();
   let validator = Validator.load(validatorId);
   if (validator == null) {
@@ -282,12 +276,40 @@ export function handleValidatorVoted(event: ValidationRevealed): void {
     validator.totalApprovals = 0;
     validator.totalRejections = 0;
   }
-  validator.totalVotes += 1;
+  const voteId = job.id + ":" + validatorId;
+  let vote = ValidatorVote.load(voteId);
+  let hadPrevious = false;
+  let previousApproval = false;
+  if (vote == null) {
+    vote = new ValidatorVote(voteId);
+    vote.job = job.id;
+    vote.validator = validator.id;
+  } else {
+    hadPrevious = true;
+    previousApproval = vote.approved;
+  }
+
+  if (hadPrevious) {
+    job.validatorQuorum = safeDecrement(job.validatorQuorum);
+    validator.totalVotes = safeDecrement(validator.totalVotes);
+    if (previousApproval) {
+      job.approvals = safeDecrement(job.approvals);
+      validator.totalApprovals = safeDecrement(validator.totalApprovals);
+    } else {
+      job.rejections = safeDecrement(job.rejections);
+      validator.totalRejections = safeDecrement(validator.totalRejections);
+    }
+  }
+
+  job.validatorQuorum += 1;
   if (event.params.approve) {
+    job.approvals += 1;
     validator.totalApprovals += 1;
   } else {
+    job.rejections += 1;
     validator.totalRejections += 1;
   }
+  validator.totalVotes += 1;
   validator.lastVotedAtBlock = event.block.number;
   validator.lastVotedAtTimestamp = event.block.timestamp;
 
@@ -297,19 +319,25 @@ export function handleValidatorVoted(event: ValidationRevealed): void {
   }
   validator.save();
 
-  const voteId =
-    event.transaction.hash.toHexString() + ":" + event.logIndex.toString();
-  const vote = new ValidatorVote(voteId);
-  vote.job = job.id;
-  vote.validator = validator.id;
   vote.approved = event.params.approve;
   vote.burnTxHash = event.params.burnTxHash;
+  vote.txHash = event.transaction.hash;
+  vote.logIndex = event.logIndex;
   vote.revealedAtBlock = event.block.number;
   vote.revealedAtTimestamp = event.block.timestamp;
   vote.save();
 
+  if (job.state != "Finalized") {
+    job.state = "Validating";
+  }
+  job.updatedAtBlock = event.block.number;
+  job.updatedAtTimestamp = event.block.timestamp;
+  job.save();
+
   const stats = getOrCreateProtocol();
-  stats.totalValidatorVotes += 1;
+  if (!hadPrevious) {
+    stats.totalValidatorVotes += 1;
+  }
   touchProtocol(stats, event);
   stats.save();
 }
