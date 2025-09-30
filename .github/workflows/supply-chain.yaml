@@ -71,7 +71,7 @@ jobs:
         run: |
           cosign sign ${{ env.REGISTRY }}/${{ env.SERVICE }}@${{ steps.build.outputs.digest }}
       - name: Generate provenance
-        uses: slsa-framework/slsa-github-generator/actions/upload-provenance@v2
+        uses: slsa-framework/slsa-github-generator/actions/upload-provenance@v1
         with:
           subject-path: |
             ghcr.io/agi/protocol/${{ env.SERVICE }}@${{ steps.build.outputs.digest }}
