@@ -89,6 +89,35 @@ contract KernelPipelineTest is Test {
         ) = jobRegistry.jobs(jobId);
     }
 
+    function testCreateJobRevertsOnDuplicateValidators() public {
+        address[] memory duplicateValidators = new address[](2);
+        duplicateValidators[0] = validators[0];
+        duplicateValidators[1] = validators[0];
+
+        vm.expectRevert(KernelJobRegistry.InvalidValidators.selector);
+        vm.prank(employer);
+        jobRegistry.createJob(
+            agent,
+            duplicateValidators,
+            60 ether,
+            uint64(block.timestamp + 2 days),
+            keccak256("duplicate-validators")
+        );
+    }
+
+    function testCreateJobSucceedsWithUniqueValidatorsAfterDuplicateCheck() public {
+        vm.prank(employer);
+        uint256 jobId = jobRegistry.createJob(
+            agent,
+            validators,
+            70 ether,
+            uint64(block.timestamp + 2 days),
+            keccak256("unique-validators")
+        );
+
+        assertEq(jobRegistry.nextJobId(), jobId + 1);
+    }
+
     function testHappyPathValidationAndPayout() public {
         uint256 reward = 120 ether;
         uint64 deadline = uint64(block.timestamp + 3 days);
