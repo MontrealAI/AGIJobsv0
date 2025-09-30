@@ -20,6 +20,7 @@
     "owner:wizard": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/owner-config-wizard.ts",
     "owner:dashboard": "npx hardhat run --no-compile scripts/v2/owner-dashboard.ts",
     "owner:diagram": "npx hardhat run --no-compile scripts/v2/renderOwnerMermaid.ts",
+    "owner:parameters": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerParameterMatrix.ts",
     "owner:mission-control": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerMissionControl.ts",
     "owner:verify-control": "npx hardhat run --no-compile scripts/v2/verifyOwnerControl.ts",
     "owner:rotate": "npx hardhat run --no-compile scripts/v2/rotateGovernance.ts",

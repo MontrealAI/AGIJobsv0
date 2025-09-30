@@ -38,6 +38,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control handbook](#owner-control-handbook)
 - [Owner mission control](#owner-mission-control)
 - [Owner control visual guide](#owner-control-visual-guide)
+- [Owner parameter matrix](#owner-parameter-matrix)
 
 ### Identity policy
 
@@ -287,6 +288,22 @@ acceptances. Supply overrides via environment variables such as
 editing source files. Pair the generated diagram with
 `npm run owner:verify-control` to close the loop between visualization and
 transaction execution.
+
+### Owner parameter matrix
+
+Generate a network-aware control sheet for every configurable module in one go:
+
+```bash
+npm run owner:parameters -- --network <network> --out reports/<network>-parameter-matrix.md
+```
+
+The script expands per-module JSON into Markdown tables, injects copy/paste update
+and verification commands, and embeds Mermaid control-loop diagrams so a
+non-technical owner can stage, execute, and audit parameter changes without
+touching Solidity. Explore the full workflow in the
+[Owner Parameter Matrix guide](docs/owner-parameter-matrix.md) and pair it with
+`npm run owner:surface` plus `npm run owner:verify-control` to archive a complete
+change-control artefact set.
 
 ### Mainnet Deployment
 
