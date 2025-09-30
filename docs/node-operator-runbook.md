@@ -7,6 +7,9 @@ This runbook is designed for non-technical operators. Every workflow is achievab
 - Access to the AGI Stack Operator Portal with multi-factor authentication.
 - Access to the treasury wallet view-only dashboard.
 - PagerDuty or Slack mobile app for receiving alerts.
+- Paymaster supervisor deployment configured with `PAYMASTER_KMS_KEY_URI` and
+  related KMS settings (region or endpoint) so signatures are produced by the
+  managed key.
 
 ## Adjust Sponsored Fee Rates
 

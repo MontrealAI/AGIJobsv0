@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -10,7 +12,11 @@ from fastapi.responses import JSONResponse, Response
 
 from .config import load_config
 from .service import PaymasterSupervisor
-from .signers import LocalDebugSigner, Signer
+from .signers import KMSSigner, LocalDebugSigner, Signer
+from .kms import GoogleKMSClient
+
+
+logger = logging.getLogger(__name__)
 
 
 class SimpleBalanceFetcher:
@@ -37,7 +43,7 @@ def create_app(
     config = load_config(config_path)
     supervisor = PaymasterSupervisor(
         config_path=Path(config_path),
-        signer=signer or LocalDebugSigner(b"debug"),
+        signer=signer or _select_signer(),
         balance_fetcher=balance_fetcher or SimpleBalanceFetcher(balance=config.balance_threshold_wei * 2),
     )
     app = FastAPI(title="Paymaster Supervisor", version="0.1.0")
@@ -81,3 +87,36 @@ def create_app(
         return JSONResponse(result)
 
     return app
+
+
+def _select_signer() -> Signer:
+    """Return the signer implementation based on environment variables."""
+
+    local_secret = os.getenv("PAYMASTER_LOCAL_SIGNER_SECRET")
+    if local_secret:
+        logger.info("Using local debug signer from PAYMASTER_LOCAL_SIGNER_SECRET override")
+        return LocalDebugSigner(local_secret.encode("utf-8"))
+
+    kms_key = os.getenv("PAYMASTER_KMS_KEY_URI")
+    if kms_key:
+        digest = os.getenv("PAYMASTER_KMS_DIGEST", "sha256")
+        endpoint = os.getenv("PAYMASTER_KMS_ENDPOINT")
+        region = os.getenv("PAYMASTER_KMS_REGION")
+        if not endpoint and region:
+            normalized_region = region.lower()
+            endpoint = (
+                "cloudkms.googleapis.com"
+                if normalized_region == "global"
+                else f"{region}-kms.googleapis.com"
+            )
+        try:
+            client = GoogleKMSClient(endpoint=endpoint or None)
+        except RuntimeError as exc:  # pragma: no cover - depends on optional dependency
+            raise RuntimeError(
+                "PAYMASTER_KMS_KEY_URI is set but google-cloud-kms is not installed"
+            ) from exc
+        logger.info("Using Google Cloud KMS signer", extra={"endpoint": endpoint, "digest": digest})
+        return KMSSigner(client, key_id=kms_key, digest=digest)
+
+    logger.warning("No PAYMASTER_KMS_KEY_URI provided; falling back to LocalDebugSigner")
+    return LocalDebugSigner(b"debug")

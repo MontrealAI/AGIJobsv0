@@ -24,7 +24,7 @@ class KmsClient(Protocol):  # pragma: no cover - protocol
 class KMSSigner:
     """KMS-backed signer that delegates to a remote key manager."""
 
-    def __init__(self, client: KmsClient, *, key_id: str, digest: str = "keccak") -> None:
+    def __init__(self, client: KmsClient, *, key_id: str, digest: str = "sha256") -> None:
         self._client = client
         self._key_id = key_id
         self._digest = digest
@@ -32,7 +32,11 @@ class KMSSigner:
     async def sign_user_operation(self, message: bytes) -> bytes:
         """Request the remote HSM to sign the message."""
 
-        return await self._client.sign(key_id=self._key_id, message=message, digest=self._digest)
+        return await self._client.sign(
+            key_id=self._key_id,
+            message=message,
+            digest=self._digest.lower(),
+        )
 
 
 class LocalDebugSigner:

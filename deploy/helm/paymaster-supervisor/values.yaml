@@ -18,6 +18,12 @@ env:
   logLevel: info
   allowlist: []
   extra: {}
+  kms:
+    keyUri: ""
+    endpoint: ""
+    region: ""
+    digest: sha256
+    localDebugSecret: ""
 secretRefs: []
 serviceAccount:
   create: true

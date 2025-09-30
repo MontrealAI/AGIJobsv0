@@ -27,6 +27,9 @@ global:
       attester: projects/sample/locations/global/keyRings/app/cryptoKeys/attester
       paymaster: projects/sample/locations/global/keyRings/app/cryptoKeys/paymaster
     externalSecretStore: aws
+  kms:
+    region: global
+    endpoint: ""
   autoscaling:
     enabled: true
     minReplicas: 2
