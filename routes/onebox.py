@@ -29,6 +29,14 @@ from pydantic import BaseModel, Field
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
+from orchestrator.aa import (
+    AABundlerError,
+    AAConfigurationError,
+    AAExecutionContext,
+    AAPaymasterRejection,
+    AAPolicyRejection,
+    AccountAbstractionExecutor,
+)
 router = APIRouter(prefix="/onebox", tags=["onebox"])
 health_router = APIRouter(tags=["health"])
 
@@ -173,6 +181,25 @@ class _RegistryWrapper:
 
 
 registry = _RegistryWrapper(_registry_contract)
+
+
+_AA_EXECUTOR_SENTINEL = object()
+_AA_EXECUTOR_STATE: object = _AA_EXECUTOR_SENTINEL
+_AA_EXECUTOR_LOCK = threading.Lock()
+
+
+def _get_aa_executor() -> Optional[AccountAbstractionExecutor]:
+    global _AA_EXECUTOR_STATE
+    with _AA_EXECUTOR_LOCK:
+        state = _AA_EXECUTOR_STATE
+        if state is _AA_EXECUTOR_SENTINEL:
+            try:
+                state = AccountAbstractionExecutor.from_env()
+            except AAConfigurationError as exc:
+                logging.info("AA executor not configured: %s", exc)
+                state = None
+            _AA_EXECUTOR_STATE = state
+        return state if isinstance(state, AccountAbstractionExecutor) else None
 
 def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
     if not _API_TOKEN:
@@ -1313,7 +1340,37 @@ def _build_tx(func, sender: str) -> dict:
     tx.setdefault("gasPrice", w3.eth.gas_price)
     return tx
 
-async def _send_relayer_tx(tx: dict) -> Tuple[str, dict]:
+async def _send_relayer_tx(
+    tx: dict,
+    *,
+    mode: Literal["legacy", "relayer"] = "legacy",
+    context: Optional[AAExecutionContext] = None,
+) -> Tuple[str, dict]:
+    if mode == "relayer":
+        executor = _get_aa_executor()
+        if executor:
+            if context is None:
+                raise RuntimeError("AAExecutionContext is required for relayer mode")
+            try:
+                result = await executor.execute(tx, context)
+            except AAPolicyRejection:
+                raise
+            except AAPaymasterRejection as exc:
+                detail = _error_detail("AA_PAYMASTER_REJECTED")
+                detail["reason"] = str(exc)
+                raise HTTPException(status_code=502, detail=detail) from exc
+            except AABundlerError as exc:
+                if exc.is_simulation_error:
+                    detail = _error_detail("AA_SIMULATION_FAILED")
+                    detail["reason"] = str(exc)
+                    raise HTTPException(status_code=422, detail=detail) from exc
+                detail = _error_detail("RELAY_UNAVAILABLE")
+                detail["reason"] = "BUNDLER_ERROR"
+                raise HTTPException(status_code=502, detail=detail) from exc
+            receipt_payload = dict(result.receipt or {})
+            receipt_payload.setdefault("userOpHash", result.user_operation_hash)
+            return result.transaction_hash, receipt_payload
+
     if not relayer:
         raise _http_error(400, "RELAY_UNAVAILABLE")
 
@@ -1878,41 +1935,49 @@ async def execute(request: Request, req: ExecuteRequest):
                 raise _http_error(502, "IPFS_FAILED")
             uri = spec_pin.get("uri") or f"ipfs://{cid}"
 
-            if req.mode == "wallet":
+            base_response_kwargs: Dict[str, Any] = {
+                "ok": True,
+                "planHash": display_plan_hash,
+                "createdAt": created_at,
+                "specCid": cid,
+                "specUri": uri,
+                "specGatewayUrl": spec_pin.get("gatewayUrl"),
+                "specGatewayUrls": spec_pin.get("gatewayUrls"),
+                "specHash": "0x" + spec_hash.hex(),
+                "deadline": deadline_ts,
+                "reward": str(payload.reward),
+                "token": payload.rewardToken or AGIALPHA_SYMBOL,
+                "feePct": float(fee_pct) if fee_pct is not None else None,
+                "burnPct": float(burn_pct) if burn_pct is not None else None,
+                "feeAmount": fee_amount,
+                "burnAmount": burn_amount,
+                "policySnapshot": policy_snapshot,
+                "toolingVersions": tooling_versions,
+                "resultCid": cid,
+                "resultUri": uri,
+                "resultGatewayUrl": spec_pin.get("gatewayUrl"),
+                "resultGatewayUrls": spec_pin.get("gatewayUrls"),
+            }
+
+            wallet_response: Optional[ExecuteResponse] = None
+            relayed_response: Optional[ExecuteResponse] = None
+
+            def _build_wallet_response() -> ExecuteResponse:
                 to, data = _encode_wallet_call("postJob", [uri, AGIALPHA_TOKEN, reward_wei, deadline_days])
                 signer_identity: Optional[str] = None
                 if isinstance(intent.userContext, dict):
                     signer_identity = intent.userContext.get("sender")
-                response = ExecuteResponse(
-                    ok=True,
-                    planHash=display_plan_hash,
-                    createdAt=created_at,
+                return ExecuteResponse(
+                    **base_response_kwargs,
                     to=to,
                     data=data,
                     value="0x0",
                     chainId=CHAIN_ID,
-                    specCid=cid,
-                    specUri=uri,
-                    specGatewayUrl=spec_pin.get("gatewayUrl"),
-                    specGatewayUrls=spec_pin.get("gatewayUrls"),
-                    specHash="0x" + spec_hash.hex(),
-                    deadline=deadline_ts,
-                    reward=str(payload.reward),
-                    token=payload.rewardToken or AGIALPHA_SYMBOL,
                     status="prepared",
-                    feePct=float(fee_pct) if fee_pct is not None else None,
-                    burnPct=float(burn_pct) if burn_pct is not None else None,
-                    feeAmount=fee_amount,
-                    burnAmount=burn_amount,
-                    policySnapshot=policy_snapshot,
-                    toolingVersions=tooling_versions,
                     signer=signer_identity,
-                    resultCid=cid,
-                    resultUri=uri,
-                    resultGatewayUrl=spec_pin.get("gatewayUrl"),
-                    resultGatewayUrls=spec_pin.get("gatewayUrls"),
                 )
-            else:
+
+            if req.mode != "wallet":
                 func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
                 sender = None
                 if relayer:
@@ -1926,37 +1991,37 @@ async def execute(request: Request, req: ExecuteRequest):
                     detail["reason"] = "MISSING_SENDER"
                     raise HTTPException(status_code=400, detail=detail)
                 tx = _build_tx(func, sender)
-                txh, receipt = await _send_relayer_tx(tx)
-                job_id = _decode_job_created(receipt)
-                response = ExecuteResponse(
-                    ok=True,
-                    planHash=display_plan_hash,
-                    createdAt=created_at,
-                    jobId=job_id,
-                    txHash=txh,
-                    txHashes=[txh] if txh else None,
-                    receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
-                    specCid=cid,
-                    specUri=uri,
-                    specGatewayUrl=spec_pin.get("gatewayUrl"),
-                    specGatewayUrls=spec_pin.get("gatewayUrls"),
-                    specHash="0x" + spec_hash.hex(),
-                    deadline=deadline_ts,
-                    reward=str(payload.reward),
-                    token=payload.rewardToken or AGIALPHA_SYMBOL,
-                    status="submitted",
-                    feePct=float(fee_pct) if fee_pct is not None else None,
-                    burnPct=float(burn_pct) if burn_pct is not None else None,
-                    feeAmount=fee_amount,
-                    burnAmount=burn_amount,
-                    policySnapshot=policy_snapshot,
-                    toolingVersions=tooling_versions,
-                    signer=str(sender),
-                    resultCid=cid,
-                    resultUri=uri,
-                    resultGatewayUrl=spec_pin.get("gatewayUrl"),
-                    resultGatewayUrls=spec_pin.get("gatewayUrls"),
+                aa_context = AAExecutionContext(
+                    org_identifier=org_identifier,
+                    intent_type=intent_type,
+                    correlation_id=correlation_id,
+                    plan_hash=display_plan_hash,
+                    created_at=created_at,
+                    metadata={"action": intent.action or ""},
                 )
+                try:
+                    txh, receipt = await _send_relayer_tx(tx, mode="relayer", context=aa_context)
+                except AAPolicyRejection:
+                    wallet_response = _build_wallet_response()
+                else:
+                    job_id = _decode_job_created(receipt)
+                    relayed_response = ExecuteResponse(
+                        **base_response_kwargs,
+                        jobId=job_id,
+                        txHash=txh,
+                        txHashes=[txh] if txh else None,
+                        receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
+                        status="submitted",
+                        signer=str(sender),
+                        receipt=receipt,
+                    )
+
+            if req.mode == "wallet" or wallet_response:
+                response = wallet_response or _build_wallet_response()
+            else:
+                response = relayed_response
+                if response is None:
+                    raise _http_error(500, "UNKNOWN")
         elif intent.action == "finalize_job":
             if payload.jobId is None:
                 raise _http_error(400, "JOB_ID_REQUIRED")
@@ -1978,12 +2043,15 @@ async def execute(request: Request, req: ExecuteRequest):
                         log_fields["requested_tools"] = ",".join(requested_tools)
                     _log_event(logging.WARNING, "onebox.policy.rejected", correlation_id, **log_fields)
                     raise violation.to_http_exception()
-            if req.mode == "wallet":
+            wallet_response: Optional[ExecuteResponse] = None
+            relayed_response: Optional[ExecuteResponse] = None
+
+            def _build_wallet_response() -> ExecuteResponse:
                 to, data = _encode_wallet_call("finalize", [job_id_int])
                 signer_identity: Optional[str] = None
                 if isinstance(intent.userContext, dict):
                     signer_identity = intent.userContext.get("sender")
-                response = ExecuteResponse(
+                return ExecuteResponse(
                     ok=True,
                     planHash=display_plan_hash,
                     createdAt=created_at,
@@ -1995,7 +2063,8 @@ async def execute(request: Request, req: ExecuteRequest):
                     toolingVersions=tooling_versions,
                     signer=signer_identity,
                 )
-            else:
+
+            if req.mode != "wallet":
                 func = registry.functions.finalize(job_id_int)
                 sender = None
                 if relayer:
@@ -2009,19 +2078,39 @@ async def execute(request: Request, req: ExecuteRequest):
                     detail["reason"] = "MISSING_SENDER"
                     raise HTTPException(status_code=400, detail=detail)
                 tx = _build_tx(func, sender)
-                txh, receipt = await _send_relayer_tx(tx)
-                response = ExecuteResponse(
-                    ok=True,
-                    planHash=display_plan_hash,
-                    createdAt=created_at,
-                    jobId=job_id_int,
-                    txHash=txh,
-                    txHashes=[txh] if txh else None,
-                    receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
-                    status="submitted",
-                    toolingVersions=tooling_versions,
-                    signer=str(sender),
+                aa_context = AAExecutionContext(
+                    org_identifier=org_identifier,
+                    intent_type=intent_type,
+                    correlation_id=correlation_id,
+                    plan_hash=display_plan_hash,
+                    created_at=created_at,
+                    metadata={"action": intent.action or ""},
                 )
+                try:
+                    txh, receipt = await _send_relayer_tx(tx, mode="relayer", context=aa_context)
+                except AAPolicyRejection:
+                    wallet_response = _build_wallet_response()
+                else:
+                    relayed_response = ExecuteResponse(
+                        ok=True,
+                        planHash=display_plan_hash,
+                        createdAt=created_at,
+                        jobId=job_id_int,
+                        txHash=txh,
+                        txHashes=[txh] if txh else None,
+                        receiptUrl=EXPLORER_TX_TPL.format(tx=txh),
+                        status="submitted",
+                        toolingVersions=tooling_versions,
+                        signer=str(sender),
+                        receipt=receipt,
+                    )
+
+            if req.mode == "wallet" or wallet_response:
+                response = wallet_response or _build_wallet_response()
+            else:
+                response = relayed_response
+                if response is None:
+                    raise _http_error(500, "UNKNOWN")
         else:
             raise _http_error(400, "UNSUPPORTED_ACTION")
 

@@ -6,7 +6,18 @@ from importlib import import_module
 from types import ModuleType
 from typing import Dict
 
-_MODULES = ["config", "models", "planner", "policies", "runner", "simulator", "tools", "events", "state"]
+_MODULES = [
+    "config",
+    "models",
+    "planner",
+    "policies",
+    "runner",
+    "simulator",
+    "tools",
+    "events",
+    "state",
+    "aa",
+]
 __all__ = list(_MODULES)
 
 
@@ -23,11 +34,16 @@ def _load_optional(name: str) -> ModuleType | None:
         raise
 
 
-def _expose_modules() -> Dict[str, ModuleType | None]:
-    exported: Dict[str, ModuleType | None] = {}
-    for name in _MODULES:
-        exported[name] = _load_optional(name)
-    return exported
+_CACHE: Dict[str, ModuleType | None] = {}
 
 
-globals().update(_expose_modules())
+def __getattr__(name: str) -> ModuleType | None:
+    if name not in _MODULES:
+        raise AttributeError(name)
+    if name not in _CACHE:
+        _CACHE[name] = _load_optional(name)
+    return _CACHE[name]
+
+
+def __dir__() -> list[str]:
+    return sorted(set(__all__ + list(globals().keys())))

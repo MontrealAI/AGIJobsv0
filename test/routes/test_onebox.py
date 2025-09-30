@@ -333,6 +333,11 @@ except ModuleNotFoundError:
 import prometheus_client  # type: ignore  # noqa: E402  pylint: disable=wrong-import-position
 import routes.onebox as onebox  # noqa: E402  pylint: disable=wrong-import-position
 
+from orchestrator.aa import (  # noqa: E402  pylint: disable=wrong-import-position
+    AABundlerError,
+    AAPolicyRejection,
+    AccountAbstractionResult,
+)
 from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     ExecuteRequest,
     SimulateRequest,
@@ -1060,6 +1065,175 @@ class ExecutorRelayerFallbackTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.detail.get("code"), "RELAY_UNAVAILABLE")
 
 
+class AccountAbstractionIntegrationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_execute_post_job_uses_account_abstraction_executor(self) -> None:
+        spec_cid = "bafkaaexec"
+        receipt_payload = {"status": 1}
+        tooling_versions = {"router": "1.0.0"}
+
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            return {
+                "cid": spec_cid,
+                "uri": f"ipfs://{spec_cid}",
+                "gatewayUrl": f"https://ipfs.io/ipfs/{spec_cid}",
+                "gatewayUrls": [f"https://ipfs.io/ipfs/{spec_cid}"],
+            }
+
+        class _PolicyStore:
+            def __init__(self) -> None:
+                self.record = onebox.OrgPolicyRecord(max_budget_wei=10**19, max_duration_days=30)
+                self.record.updated_at = "2024-01-01T00:00:00+00:00"
+
+            def enforce(self, org_id, reward_wei, deadline_days):  # type: ignore[no-untyped-def]
+                return self.record
+
+        class _Executor:
+            def __init__(self) -> None:
+                self.calls: list[tuple[dict, Any]] = []
+
+            async def execute(self, tx, context):  # type: ignore[no-untyped-def]
+                self.calls.append((tx, context))
+                return AccountAbstractionResult(
+                    user_operation={"sender": "0xSession"},
+                    user_operation_hash="0xuserop",
+                    transaction_hash="0xtxn",
+                    receipt=dict(receipt_payload),
+                )
+
+        executor = _Executor()
+
+        registry_mock = mock.Mock()
+        registry_mock.functions.postJob.return_value = mock.Mock()
+
+        policy_store = _PolicyStore()
+        plan_intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Example", reward="1", deadlineDays=2),
+            userContext={"org": "acme"},
+        )
+        plan_hash = _compute_plan_hash(plan_intent)
+        execute_request = ExecuteRequest(intent=plan_intent, planHash=plan_hash)
+        request_ctx = _make_request()
+
+        with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
+            "routes.onebox._compute_spec_hash", return_value=b"spec"
+        ), mock.patch(
+            "routes.onebox._build_tx",
+            return_value={"gas": 50_000, "data": "0xdead", "to": "0xjob"},
+        ), mock.patch(
+            "routes.onebox._decode_job_created", return_value=99
+        ), mock.patch(
+            "routes.onebox._get_org_policy_store", return_value=policy_store
+        ), mock.patch(
+            "routes.onebox._collect_tooling_versions", return_value=tooling_versions
+        ), mock.patch(
+            "routes.onebox._get_aa_executor", return_value=executor
+        ), mock.patch(
+            "routes.onebox.registry", registry_mock
+        ), mock.patch.object(
+            onebox, "relayer", types.SimpleNamespace(address="0xRelayer"), create=True
+        ):
+            response = await execute(request_ctx, execute_request)
+
+        self.assertEqual(response.jobId, 99)
+        self.assertEqual(response.txHash, "0xtxn")
+        self.assertTrue(response.receiptUrl.endswith("0xtxn"))
+        self.assertEqual(response.status, "submitted")
+        self.assertEqual(response.toolingVersions, tooling_versions)
+        self.assertEqual(len(executor.calls), 1)
+        _, ctx = executor.calls[0]
+        self.assertIsNotNone(ctx)
+        assert ctx is not None
+        self.assertEqual(ctx.org_identifier, "acme")
+
+    async def test_policy_rejection_falls_back_to_wallet_flow(self) -> None:
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            return {
+                "cid": "bafkpolicy",
+                "uri": "ipfs://bafkpolicy",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafkpolicy",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafkpolicy"],
+            }
+
+        class _PolicyStore:
+            def enforce(self, org_id, reward_wei, deadline_days):  # type: ignore[no-untyped-def]
+                return onebox.OrgPolicyRecord(max_budget_wei=None, max_duration_days=None)
+
+        class _Executor:
+            async def execute(self, tx, context):  # type: ignore[no-untyped-def]
+                raise AAPolicyRejection("policy rejected")
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Example", reward="1", deadlineDays=1),
+            userContext={"org": "acme"},
+        )
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
+        request_ctx = _make_request()
+
+        with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
+            "routes.onebox._compute_spec_hash", return_value=b"spec"
+        ), mock.patch(
+            "routes.onebox._build_tx", return_value={"gas": 30_000}
+        ), mock.patch(
+            "routes.onebox._get_org_policy_store", return_value=_PolicyStore()
+        ), mock.patch(
+            "routes.onebox._collect_tooling_versions", return_value={}
+        ), mock.patch(
+            "routes.onebox._get_aa_executor", return_value=_Executor()
+        ), mock.patch.object(
+            onebox, "relayer", types.SimpleNamespace(address="0xRelayer"), create=True
+        ):
+            response = await execute(request_ctx, execute_request)
+
+        self.assertIsNone(response.txHash)
+        self.assertEqual(response.status, "prepared")
+        self.assertIsNotNone(response.to)
+        self.assertEqual(response.signer, None)
+
+    async def test_bundler_simulation_error_surfaces_http_422(self) -> None:
+        async def _fake_pin_json(metadata, file_name="payload.json"):
+            return {
+                "cid": "bafkfail",
+                "uri": "ipfs://bafkfail",
+                "gatewayUrl": "https://ipfs.io/ipfs/bafkfail",
+                "gatewayUrls": ["https://ipfs.io/ipfs/bafkfail"],
+            }
+
+        class _Executor:
+            async def execute(self, tx, context):  # type: ignore[no-untyped-def]
+                raise AABundlerError("simulation failed", simulation=True)
+
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Example", reward="1", deadlineDays=1),
+            userContext={"org": "acme"},
+        )
+        plan_hash = _compute_plan_hash(intent)
+        execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
+        request_ctx = _make_request()
+
+        with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
+            "routes.onebox._compute_spec_hash", return_value=b"spec"
+        ), mock.patch(
+            "routes.onebox._build_tx", return_value={"gas": 30_000}
+        ), mock.patch(
+            "routes.onebox._get_org_policy_store", return_value=onebox.OrgPolicyStore()
+        ), mock.patch(
+            "routes.onebox._collect_tooling_versions", return_value={}
+        ), mock.patch(
+            "routes.onebox._get_aa_executor", return_value=_Executor()
+        ), mock.patch.object(
+            onebox, "relayer", types.SimpleNamespace(address="0xRelayer"), create=True
+        ):
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await execute(request_ctx, execute_request)
+
+        self.assertEqual(exc.exception.status_code, 422)
+        self.assertEqual(exc.exception.detail.get("code"), "AA_SIMULATION_FAILED")
+
+
 class ReceiptPinningMetadataTests(unittest.IsolatedAsyncioTestCase):
     async def test_relayer_receipt_includes_policy_and_versions(self) -> None:
         spec_cid = "bafkspec123"
@@ -1088,7 +1262,7 @@ class ReceiptPinningMetadataTests(unittest.IsolatedAsyncioTestCase):
                 }
             raise AssertionError(f"unexpected file name: {file_name}")
 
-        async def _fake_send_relayer_tx(tx):
+        async def _fake_send_relayer_tx(tx, *, mode="legacy", context=None):  # type: ignore[unused-argument]
             return "0xtxhash", {"status": 1}
 
         class _PolicyStore:
@@ -1189,7 +1363,7 @@ class RelayerTransactionTests(unittest.IsolatedAsyncioTestCase):
         ) as send_mock, mock.patch.object(
             onebox.w3.eth, "wait_for_transaction_receipt", side_effect=_fake_wait
         ) as wait_mock:
-            send_task = asyncio.create_task(onebox._send_relayer_tx(tx))
+            send_task = asyncio.create_task(onebox._send_relayer_tx(tx, mode="legacy"))
 
             async def _other_task() -> str:
                 await wait_started.wait()
