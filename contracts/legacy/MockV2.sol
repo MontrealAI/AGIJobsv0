@@ -23,6 +23,7 @@ contract MockStakeManager is IStakeManager {
     address public disputeModule;
     address public override jobRegistry;
     uint256 public burnPctValue;
+    uint256 public validatorSlashRewardPctValue;
 
     function setJobRegistry(address j) external { jobRegistry = j; }
 
@@ -87,6 +88,15 @@ contract MockStakeManager is IStakeManager {
         burnPctValue = pct;
     }
     function setValidatorRewardPct(uint256) external override {}
+    function setValidatorSlashRewardPct(uint256 pct) external override {
+        validatorSlashRewardPctValue = pct;
+    }
+    function setSlashingDistribution(uint256, uint256, uint256 pct) external override {
+        validatorSlashRewardPctValue = pct;
+    }
+    function validatorSlashRewardPct() external view override returns (uint256) {
+        return validatorSlashRewardPctValue;
+    }
     function autoTuneStakes(bool) external override {}
     function configureAutoStake(
         uint256,

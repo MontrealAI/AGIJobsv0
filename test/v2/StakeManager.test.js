@@ -602,6 +602,18 @@ describe('StakeManager', function () {
     expect(await stakeManager.treasurySlashPct()).to.equal(40);
   });
 
+  it('allows governance to configure validator slash rewards', async () => {
+    await expect(
+      stakeManager.connect(user).setValidatorSlashRewardPct(15)
+    ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
+    await expect(
+      stakeManager.connect(owner).setValidatorSlashRewardPct(15)
+    )
+      .to.emit(stakeManager, 'ValidatorSlashRewardPctUpdated')
+      .withArgs(15);
+    expect(await stakeManager.validatorSlashRewardPct()).to.equal(15);
+  });
+
   it('allows slashing percentages that sum under 100', async () => {
     await expect(stakeManager.connect(owner).setSlashingPercentages(60, 20))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')

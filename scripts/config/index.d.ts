@@ -121,6 +121,7 @@ export interface StakeManagerConfig {
   feePct?: number | string;
   burnPct?: number | string;
   validatorRewardPct?: number | string;
+  validatorSlashRewardPct?: number | string;
   employerSlashPct?: number | string;
   treasurySlashPct?: number | string;
   treasury?: string | null;

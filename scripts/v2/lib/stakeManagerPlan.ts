@@ -48,6 +48,7 @@ export async function buildStakeManagerPlan(
     currentFeePct,
     currentBurnPct,
     currentValidatorRewardPct,
+    currentValidatorSlashPct,
     currentEmployerSlashPct,
     currentTreasurySlashPct,
     currentTreasury,
@@ -80,6 +81,7 @@ export async function buildStakeManagerPlan(
     stakeManager.feePct(),
     stakeManager.burnPct(),
     stakeManager.validatorRewardPct(),
+    stakeManager.validatorSlashRewardPct(),
     stakeManager.employerSlashPct(),
     stakeManager.treasurySlashPct(),
     stakeManager.treasury(),
@@ -130,6 +132,10 @@ export async function buildStakeManagerPlan(
   const desiredValidatorPct = parsePercentage(
     config.validatorRewardPct,
     'validatorRewardPct'
+  );
+  const desiredValidatorSlashPct = parsePercentage(
+    config.validatorSlashRewardPct,
+    'validatorSlashRewardPct'
   );
   const desiredEmployerSlashPct = parsePercentage(
     config.employerSlashPct,
@@ -551,23 +557,33 @@ export async function buildStakeManagerPlan(
 
   if (
     desiredEmployerSlashPct !== undefined ||
-    desiredTreasurySlashPct !== undefined
+    desiredTreasurySlashPct !== undefined ||
+    desiredValidatorSlashPct !== undefined
   ) {
     const employerTarget = desiredEmployerSlashPct ?? Number(currentEmployerSlashPct);
     const treasuryTarget = desiredTreasurySlashPct ?? Number(currentTreasurySlashPct);
-    if (employerTarget + treasuryTarget > 100) {
-      throw new Error('employerSlashPct + treasurySlashPct cannot exceed 100');
+    const validatorTarget = desiredValidatorSlashPct ?? Number(currentValidatorSlashPct);
+    if (employerTarget + treasuryTarget + validatorTarget > 100) {
+      throw new Error(
+        'employerSlashPct + treasurySlashPct + validatorSlashRewardPct cannot exceed 100'
+      );
     }
     const currentEmployer = Number(currentEmployerSlashPct);
     const currentTreasuryPct = Number(currentTreasurySlashPct);
-    if (employerTarget !== currentEmployer || treasuryTarget !== currentTreasuryPct) {
+    const currentValidatorSlash = Number(currentValidatorSlashPct);
+    if (
+      employerTarget !== currentEmployer ||
+      treasuryTarget !== currentTreasuryPct ||
+      validatorTarget !== currentValidatorSlash
+    ) {
       actions.push({
-        label: `Update slashing percentages (employer ${employerTarget}%, treasury ${treasuryTarget}%)`,
-        method: 'setSlashingPercentages',
-        args: [employerTarget, treasuryTarget],
-        current: `employer ${currentEmployer}%, treasury ${currentTreasuryPct}%`,
-        desired: `employer ${employerTarget}%, treasury ${treasuryTarget}%`,
-        notes: ['Employer + treasury percentages must not exceed 100%.'],
+        label:
+          `Update slashing distribution (employer ${employerTarget}%, treasury ${treasuryTarget}%, validators ${validatorTarget}%)`,
+        method: 'setSlashingDistribution',
+        args: [employerTarget, treasuryTarget, validatorTarget],
+        current: `employer ${currentEmployer}%, treasury ${currentTreasuryPct}%, validators ${currentValidatorSlash}%`,
+        desired: `employer ${employerTarget}%, treasury ${treasuryTarget}%, validators ${validatorTarget}%`,
+        notes: ['Distribution percentages must sum to 100 or less.'],
       });
     }
   }
