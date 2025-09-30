@@ -20,7 +20,9 @@
 
 ## Sponsorship Rejection Spike
 
-1. Inspect Grafana panel for rejection breakdown by dApp.
+1. Inspect the Grafana panel "Sponsorship Rejections by Result" (derived from
+   `rate(paymaster_sponsored_operations_rejections_total[5m])`) to understand
+   which policy guardrails are firing.
 2. Review Paymaster Supervisor logs for policy enforcement messages.
 3. If due to contract upgrades, coordinate rollback or whitelist update via Policy Playbook.
 4. If due to chain reorg, switch orchestrator to fallback RPC using Portal failover control.

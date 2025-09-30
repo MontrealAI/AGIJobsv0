@@ -65,14 +65,14 @@ class PaymasterSupervisor:
         self._org_spend: Dict[str, tuple[_dt.date, int]] = {}
         self._metrics_registry = CollectorRegistry()  # type: ignore[call-arg]
         self._sponsored_ops = Counter(
-            "sponsored_ops_total",
+            "paymaster_sponsored_operations_total",
             "Count of user operations sponsored",
             registry=self._metrics_registry,
         )
         self._rejections = Counter(
-            "rejections_total",
+            "paymaster_sponsored_operations_rejections_total",
             "Count of sponsorship rejections",
-            labelnames=("reason",),
+            labelnames=("result",),
             registry=self._metrics_registry,
         )
         self._reload_task: Optional[asyncio.Task[None]] = None

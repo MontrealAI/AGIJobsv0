@@ -15,8 +15,9 @@ application with:
 
 - `POST /v1/sponsor` – request sponsorship for a user operation.
 - `GET /healthz` and `GET /readyz` – surface balance-aware health status.
-- `GET /metrics` – Prometheus metrics (`sponsored_ops_total` and
-  `rejections_total{reason}`) describing sponsorship outcomes.
+- `GET /metrics` – Prometheus metrics (`paymaster_sponsored_operations_total` and
+  `paymaster_sponsored_operations_rejections_total{result}`) describing sponsorship
+  outcomes.
 
 ## Configuration schema (`config/paymaster.yaml`)
 
