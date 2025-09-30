@@ -1,0 +1,15 @@
+className: nginx
+annotations: {}
+host: agi.example.com
+tls:
+  enabled: true
+  secretName: agi-tls
+rateLimit:
+  enabled: true
+  requestsPerMinute: 120
+  burst: 60
+serviceTargets:
+  - name: orchestrator
+    port: 8000
+    path: /
+    pathType: Prefix

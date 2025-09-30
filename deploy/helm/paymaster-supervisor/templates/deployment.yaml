@@ -1,0 +1,58 @@
+{{- $global := .Values.global | default (dict) -}}
+{{- $ratelimits := (index $global "ratelimits") | default (dict) -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "paymaster-supervisor.fullname" . }}
+  labels:
+    {{- include "paymaster-supervisor.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "paymaster-supervisor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "paymaster-supervisor.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ default (include "paymaster-supervisor.fullname" .) .Values.serviceAccount.name }}
+      {{- end }}
+      containers:
+        - name: paymaster-supervisor
+          image: {{ include "paymaster-supervisor.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.env.logLevel | quote }}
+            - name: ALLOWLIST
+              value: {{ join "," .Values.env.allowlist | quote }}
+            - name: RATE_LIMIT_RPS
+              value: {{ default (index $ratelimits "requestsPerSecond") .Values.env.extra.requestsPerSecond | quote }}
+            - name: RATE_LIMIT_BURST
+              value: {{ default (index $ratelimits "burst") .Values.env.extra.burst | quote }}
+          envFrom:
+            {{- range .Values.secretRefs }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.probe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probe.path }}
+              port: {{ .Values.probe.port }}
+            initialDelaySeconds: {{ .Values.probe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probe.path }}
+              port: {{ .Values.probe.port }}
+            initialDelaySeconds: {{ .Values.probe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probe.periodSeconds }}
+          {{- end }}

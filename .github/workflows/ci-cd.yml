@@ -1,0 +1,155 @@
+name: CI/CD Supply Chain
+
+on:
+  push:
+    branches:
+      - main
+      - release/**
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+  actions: read
+
+env:
+  REGISTRY: ghcr.io/${{ github.repository }}
+  CACHE_VERSION: v1
+
+jobs:
+  build:
+    name: Build & Sign
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [orchestrator, bundler, paymaster-supervisor, attester]
+        network: [testnet, mainnet]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ env.CACHE_VERSION }}-${{ matrix.target }}-${{ matrix.network }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ env.CACHE_VERSION }}-${{ matrix.target }}-${{ matrix.network }}-
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ matrix.target }}
+          tags: |
+            type=raw,value=${{ matrix.network }}-${{ github.sha }}
+            type=raw,value=${{ matrix.network }}-latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            type=raw,value=${{ matrix.network }}-${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/') }}
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/docker/${{ matrix.target }}.Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          provenance: false
+          sbom: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Move cache
+        if: always()
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      - name: Generate SBOM
+        id: sbom
+        uses: anchore/syft-action@v1
+        with:
+          image: ${{ env.REGISTRY }}/${{ matrix.target }}@${{ steps.build.outputs.digest }}
+          output-file: sbom-${{ matrix.target }}-${{ matrix.network }}.spdx.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.target }}-${{ matrix.network }}
+          path: ${{ steps.sbom.outputs.output-file }}
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.3.0
+      - name: Sign image
+        if: github.event_name != 'pull_request'
+        env:
+          COSIGN_YES: 'true'
+          COSIGN_EXPERIMENTAL: 'true'
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          if [ -n "$COSIGN_KEY" ]; then
+            echo "$COSIGN_KEY" | base64 -d > cosign.key
+            cosign sign --key cosign.key ${{ env.REGISTRY }}/${{ matrix.target }}@${{ steps.build.outputs.digest }}
+          else
+            echo "COSIGN_KEY not configured, skipping signature";
+          fi
+      - name: Generate provenance predicate
+        if: github.event_name != 'pull_request'
+        run: |
+          cat <<'JSON' > predicate.json
+          {
+            "buildType": "https://slsa.dev/container/v1",
+            "invocation": {
+              "parameters": {
+                "target": "${{ matrix.target }}",
+                "network": "${{ matrix.network }}"
+              }
+            },
+            "metadata": {
+              "buildInvocationId": "${{ github.run_id }}",
+              "completeness": {
+                "parameters": true
+              }
+            }
+          }
+JSON
+      - name: Attest provenance
+        if: github.event_name != 'pull_request'
+        env:
+          COSIGN_YES: 'true'
+        run: |
+          cosign attest --predicate predicate.json --type slsaprovenance ${{ env.REGISTRY }}/${{ matrix.target }}@${{ steps.build.outputs.digest }}
+      - name: Publish image digest summary
+        run: |
+          echo "${{ matrix.target }} (${{ matrix.network }}): ${{ steps.build.outputs.digest }}" >> image-digests.txt
+      - name: Upload digest summary
+        if: matrix.network == 'mainnet' && matrix.target == 'orchestrator'
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-digests
+          path: image-digests.txt
+
+  helm-test:
+    name: Helm Lint
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Helm dependency build
+        run: |
+          helm dependency build deploy/helm/agi-stack
+      - name: Helm lint
+        run: |
+          helm lint deploy/helm/agi-stack

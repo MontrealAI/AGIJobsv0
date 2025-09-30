@@ -1,0 +1,6 @@
+apiVersion: v2
+name: paymaster-supervisor
+version: 0.1.0
+description: paymaster-supervisor service chart
+appVersion: "0.1.0"
+type: application

@@ -1,0 +1,16 @@
+image:
+  repository: postgres
+  tag: "15"
+  digest: ""
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 5432
+postgresUser: graph
+postgresPassword: changeme
+postgresDatabase: graph
+persistence:
+  enabled: true
+  size: 20Gi
+  storageClass: ""
+resources: {}

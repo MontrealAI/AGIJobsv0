@@ -1,0 +1,20 @@
+route:
+  receiver: pagerduty
+  group_by: ['alertname']
+  routes:
+    - match:
+        severity: critical
+      receiver: pagerduty
+    - match:
+        severity: warning
+      receiver: slack
+receivers:
+  - name: pagerduty
+    pagerduty_configs:
+      - routing_key: '{{ pagerduty_routing_key }}'
+        description: '{{ .CommonAnnotations.summary }}'
+  - name: slack
+    slack_configs:
+      - channel: '#agi-ops'
+        text: '{{ template "slack.default.text" . }}'
+templates: []

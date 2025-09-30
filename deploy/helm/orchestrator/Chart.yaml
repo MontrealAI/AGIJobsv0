@@ -1,0 +1,6 @@
+apiVersion: v2
+name: orchestrator
+version: 0.1.0
+description: Orchestrator FastAPI service
+appVersion: "0.1.0"
+type: application
