@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.global.pauseSwitch.configMap }}
+  labels:
+    app.kubernetes.io/name: agi-stack
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  {{ .Values.global.pauseSwitch.key }}: {{ default "false" .Values.global.pauseSwitch.default | quote }}

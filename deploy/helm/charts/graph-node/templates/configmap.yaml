@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "graphNode.fullname" . }}-config
+  labels:
+    app.kubernetes.io/name: graph-node
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  config.toml: |
+    [store]
+    connection = "postgresql://{{ default "graph" .Values.config.postgres.username | urlquery }}:{{ "${POSTGRES_PASSWORD}" }}@{{ default (printf "%s-postgres" .Release.Name) .Values.config.postgres.host }}:5432/{{ .Values.config.postgres.database }}"
+
+    [chains]
+{{- range .Values.config.ethereumNetworks }}
+    [[chains.networks]]
+    name = "{{ .name }}"
+    label = "{{ .name }}"
+    provider = "{{ .rpc }}"
+{{- end }}
+
+    [ipfs]
+    address = "{{ default (printf "http://%s-ipfs:5001" .Release.Name) .Values.config.ipfs.endpoint }}"

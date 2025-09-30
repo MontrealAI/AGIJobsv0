@@ -3,13 +3,14 @@ kind: Service
 metadata:
   name: {{ include "orchestrator.fullname" . }}
   labels:
-    {{- include "orchestrator.labels" . | nindent 4 }}
+    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   type: {{ .Values.service.type }}
-  selector:
-    {{- include "orchestrator.labels" . | nindent 4 }}
   ports:
-    - name: http
-      port: {{ .Values.service.port }}
-      targetPort: http
-      protocol: TCP
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+      name: http
+  selector:
+    app.kubernetes.io/name: orchestrator
+    app.kubernetes.io/instance: {{ .Release.Name }}

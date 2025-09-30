@@ -3,26 +3,14 @@ kind: Service
 metadata:
   name: {{ include "postgres.fullname" . }}
   labels:
-    {{- include "postgres.labels" . | nindent 4 }}
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  selector:
-    {{- include "postgres.labels" . | nindent 4 }}
+  type: {{ .Values.service.type }}
   ports:
-    - name: postgres
-      port: {{ .Values.service.port }}
+    - port: {{ .Values.service.port }}
       targetPort: postgres
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "postgres.fullname" . }}-headless
-  labels:
-    {{- include "postgres.labels" . | nindent 4 }}
-spec:
-  clusterIP: None
+      name: postgres
   selector:
-    {{- include "postgres.labels" . | nindent 4 }}
-  ports:
-    - name: postgres
-      port: {{ .Values.service.port }}
-      targetPort: postgres
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/instance: {{ .Release.Name }}

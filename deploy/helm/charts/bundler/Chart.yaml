@@ -1,5 +1,5 @@
 apiVersion: v2
 name: bundler
+description: ERC-4337 bundler deployment
 version: 0.1.0
-type: application
-description: Placeholder
+appVersion: "0.1.0"

@@ -1,0 +1,20 @@
+{{- if and (.Values.monitoring.enabled | default false) (.Values.global.monitoring.enabled | default false) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "ipfs.fullname" . }}
+  labels:
+    release: prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.global.monitoring.serviceMonitorNamespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ipfs
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  endpoints:
+    - port: api
+      path: /debug/metrics/prometheus
+      interval: 30s
+{{- end }}

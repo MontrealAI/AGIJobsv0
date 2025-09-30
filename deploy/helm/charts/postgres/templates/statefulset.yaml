@@ -3,44 +3,48 @@ kind: StatefulSet
 metadata:
   name: {{ include "postgres.fullname" . }}
   labels:
-    {{- include "postgres.labels" . | nindent 4 }}
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  serviceName: {{ include "postgres.fullname" . }}-headless
+  serviceName: {{ include "postgres.fullname" . }}
   replicas: 1
   selector:
     matchLabels:
-      {{- include "postgres.labels" . | nindent 6 }}
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        {{- include "postgres.labels" . | nindent 8 }}
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: postgres
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{- if .Values.image.digest }}@{{ .Values.image.digest }}{{- end }}"
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.config.database | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.config.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.existingSecret }}
+                  key: POSTGRES_PASSWORD
           ports:
             - containerPort: {{ .Values.service.port }}
               name: postgres
-          env:
-            - name: POSTGRES_DB
-              value: {{ .Values.auth.database | quote }}
-            - name: POSTGRES_USER
-              value: {{ .Values.auth.username | quote }}
-          envFrom:
-            {{- if .Values.auth.existingSecret }}
-            - secretRef:
-                name: {{ .Values.auth.existingSecret }}
-            {{- end }}
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
   volumeClaimTemplates:
     - metadata:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: {{ .Values.persistence.storageClass | quote }}
         resources:
           requests:
             storage: {{ .Values.persistence.size }}

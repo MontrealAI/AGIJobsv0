@@ -1,13 +1,9 @@
 apiVersion: v2
-name: aa-stack
+name: agi-stack
+description: Helm chart for deploying the AGI jobs stack in a single pass.
+type: application
 version: 0.1.0
-description: Unified chart for account abstraction stack components.
-icon: https://example.com/icon.png
-home: https://github.com/example/agi-stack
-keywords:
-  - account-abstraction
-  - bundler
-  - attestations
+appVersion: "0.1.0"
 dependencies:
   - name: orchestrator
     version: 0.1.0

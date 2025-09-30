@@ -1,137 +1,200 @@
+# Global configuration shared across the stack
 global:
   chainId: 11155111
+  network: sepolia
   rpc:
-    primary: https://sepolia.example.org
-    fallback: https://rpc-backup.example.org
+    primary: https://ethereum-sepolia.publicnode.com
+    fallback: []
   contracts:
     entryPoint: "0x0000000000000000000000000000000000000000"
     paymaster: "0x0000000000000000000000000000000000000000"
-    aaRegistry: "0x0000000000000000000000000000000000000000"
-    eas:
-      schemaUID: "0x0000000000000000000000000000000000000000000000000000000000000000"
+    attester: "0x0000000000000000000000000000000000000000"
+  eas:
+    schemaUID: "0x0000000000000000000000000000000000000000000000000000000000000000"
+    verifierUrl: https://eas.example.com
   cors:
-    allowOrigins:
-      - https://operator.example.org
-    allowMethods: [GET, POST]
-    allowHeaders: [Content-Type, Authorization]
+    allowedOrigins:
+      - https://operator.example.com
+    allowedHeaders:
+      - Authorization
+      - Content-Type
   rateLimits:
     orchestrator:
-      rps: 20
+      requestsPerMinute: 300
       burst: 50
     bundler:
-      rps: 50
-      burst: 200
+      requestsPerMinute: 120
+      burst: 30
+    attester:
+      requestsPerMinute: 60
+      burst: 15
   secrets:
-    kmsKeyring: projects/sample/locations/global/keyRings/aa-stack
-    orchestratorEnv: ""
-    attesterKeyUri: projects/sample/locations/global/keyRings/aa-stack/cryptoKeys/attester
-    paymasterKeyUri: projects/sample/locations/global/keyRings/aa-stack/cryptoKeys/paymaster
+    kmsKeyRing: projects/example/locations/global/keyRings/agi
+    orchestrator:
+      secretName: orchestrator-secrets
+      kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/orchestrator
+    paymaster:
+      secretName: paymaster-secrets
+      kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/paymaster
+    attester:
+      secretName: attester-secrets
+      kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/attester
+  image:
+    pullPolicy: IfNotPresent
+    repositoryPrefix: ghcr.io/agi/jobs
+    tag: latest
+    digestOverrides: {}
   autoscaling:
+    enabled: true
     minReplicas: 2
-    maxReplicas: 6
-    cpuTargetPercentage: 70
+    maxReplicas: 5
+    cpuTargetPercentage: 60
+  storage:
+    ipfs:
+      size: 50Gi
+    postgres:
+      size: 20Gi
+  monitoring:
+    enabled: true
+    serviceMonitorNamespace: monitoring
+    alertRoutingKey: agi-stack
+  pauseSwitch:
+    configMap: agi-operations
+    key: pause
+    default: "false"
 
 orchestrator:
   image:
-    repository: ghcr.io/example/orchestrator
-    tag: "v1.2.3"
-    digest: "sha256:example"
+    repository: ghcr.io/agi/jobs/orchestrator
+    tag: latest
+    digest: ""
+    pullPolicy: IfNotPresent
+  env:
+    logLevel: info
+    corsOrigins:
+      - https://operator.example.com
+    kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/orchestrator
+    maxRequestBytes: 1048576
   service:
     type: ClusterIP
-    port: 80
-  env:
-    LOG_LEVEL: info
-    ENABLE_CORS: true
+    port: 8000
+  rateLimit:
+    requestsPerMinute: 300
+    burst: 50
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    cpuTargetPercentage: 60
 
 bundler:
   image:
-    repository: ghcr.io/example/bundler
-    tag: "v1.2.3"
-    digest: "sha256:example"
+    repository: ghcr.io/agi/jobs/bundler
+    tag: latest
+    digest: ""
+    pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 3000
-  env:
-    RELAY_URL: https://relay.example.org
+  config:
+    rpcUrl: https://ethereum-sepolia.publicnode.com
+    entryPoint: "0x0000000000000000000000000000000000000000"
+    bundleIntervalSeconds: 5
 
 paymaster-supervisor:
   image:
-    repository: ghcr.io/example/paymaster-supervisor
-    tag: "v1.2.3"
-    digest: "sha256:example"
+    repository: ghcr.io/agi/jobs/paymaster-supervisor
+    tag: latest
+    digest: ""
+    pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 8080
-  env:
-    TREASURY_ADDRESS: "0x1111111111111111111111111111111111111111"
+  config:
+    rpcUrl: https://ethereum-sepolia.publicnode.com
+    paymasterAddress: "0x0000000000000000000000000000000000000000"
+    kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/paymaster
+    treasuryAddress: "0x0000000000000000000000000000000000000000"
+    sponsorshipBudgetUsd: 100.0
+
+attester:
+  image:
+    repository: ghcr.io/agi/jobs/attester
+    tag: latest
+    digest: ""
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 7000
+  config:
+    rpcUrl: https://ethereum-sepolia.publicnode.com
+    easSchemaUid: "0x0000000000000000000000000000000000000000000000000000000000000000"
+    kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/attester
+    corsOrigins:
+      - https://operator.example.com
 
 ipfs:
   image:
-    repository: ipfs/kubo
-    tag: v0.24.0
-    digest: "sha256:example"
+    repository: ipfs/go-ipfs
+    tag: v0.23.0
+    pullPolicy: IfNotPresent
+  service:
+    apiPort: 5001
+    swarmPort: 4001
+    gatewayPort: 8080
+  persistence:
+    size: 50Gi
+
+graph-node:
+  image:
+    repository: ghcr.io/graphprotocol/graph-node
+    tag: v0.32.0
+    pullPolicy: IfNotPresent
   service:
     type: ClusterIP
-    port: 5001
-  persistence:
-    enabled: true
-    size: 200Gi
+    port: 8000
+  config:
+    ethereumNetworks:
+      - name: sepolia
+        rpc: https://ethereum-sepolia.publicnode.com
+    postgres:
+      host: ""
+      database: subgraph
+      userSecret: graph-node-postgres
+    ipfs:
+      endpoint: ""
 
 postgres:
   image:
     repository: postgres
-    tag: "15"
-    digest: "sha256:example"
+    tag: "14"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5432
   persistence:
-    storageClass: fast
-    size: 200Gi
-  auth:
-    username: subgraph
+    size: 20Gi
+  config:
     database: subgraph
-    existingSecret: "subgraph-postgres"
-
-graph-node:
-  image:
-    repository: graphprotocol/graph-node
-    tag: v0.33.0
-    digest: "sha256:example"
-  service:
-    type: ClusterIP
-    port: 8000
-  env:
-    ETHEREUM_RPC: https://eth.example.org
-
-attester:
-  image:
-    repository: ghcr.io/example/attester
-    tag: "v1.2.3"
-    digest: "sha256:example"
-  service:
-    type: ClusterIP
-    port: 8787
-  env:
-    ATTESTER_ADDRESS: "0x2222222222222222222222222222222222222222"
+    username: graph
+    existingSecret: graph-node-postgres
 
 ingress:
   enabled: true
-  className: nginx
-  host: api.example.org
-  tls:
-    enabled: true
-    secretName: aa-stack-tls
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/hsts: "true"
-    nginx.ingress.kubernetes.io/hsts-max-age: "63072000"
-    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "2m"
-    nginx.ingress.kubernetes.io/limit-rps: "20"
-    nginx.ingress.kubernetes.io/limit-burst-multiplier: "2"
-  services:
-    orchestrator:
-      serviceName: ""
-      servicePort: 80
-    bundler:
-      serviceName: ""
+  ingressClassName: nginx
+  defaultTlsSecret: agi-stack-tls
+  hosts:
+    - host: orchestrator.example.com
+      serviceName: orchestrator
+      servicePort: 8000
+    - host: bundler.example.com
+      serviceName: bundler
       servicePort: 3000
+    - host: attester.example.com
+      serviceName: attester
+      servicePort: 7000
+  security:
+    hstsMaxAge: 63072000
+    includeSubdomains: true
+    preload: true
+    wafAnnotation: "true"

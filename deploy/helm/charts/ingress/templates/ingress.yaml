@@ -2,31 +2,36 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ printf "%s-gateway" .Release.Name | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-shared" .Release.Name }}
   annotations:
-{{- range $key, $value := .Values.annotations }}
-    {{ $key }}: {{ $value | quote }}
-{{- end }}
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/hsts: "true"
+    nginx.ingress.kubernetes.io/hsts-max-age: "{{ .Values.security.hstsMaxAge }}"
+    nginx.ingress.kubernetes.io/hsts-include-subdomains: "{{ ternary "true" "false" (.Values.security.includeSubdomains | default true) }}"
+    nginx.ingress.kubernetes.io/hsts-preload: "{{ ternary "true" "false" (.Values.security.preload | default true) }}"
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/limit-rpm: "{{ default 300 .Values.rateLimitRpm }}"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "1"
+    nginx.ingress.kubernetes.io/enable-modsecurity: {{ .Values.security.wafAnnotation | quote }}
 spec:
-  ingressClassName: {{ .Values.className }}
-  {{- if and .Values.tls.enabled .Values.tls.secretName }}
+  ingressClassName: {{ .Values.ingressClassName }}
   tls:
-    - hosts:
-        - {{ .Values.host }}
-      secretName: {{ .Values.tls.secretName }}
-  {{- end }}
+    - secretName: {{ .Values.defaultTlsSecret }}
+      hosts:
+{{- range .Values.hosts }}
+        - {{ .host }}
+{{- end }}
   rules:
-    - host: {{ .Values.host }}
+{{- range .Values.hosts }}
+    - host: {{ .host }}
       http:
         paths:
-{{- range $name, $service := .Values.services }}
-          {{- $svcName := default (printf "%s-%s" $.Release.Name $name) $service.serviceName }}
-          - path: /{{ $name }}
+          - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ $svcName }}
+                name: {{ printf "%s-%s" $.Release.Name .serviceName }}
                 port:
-                  number: {{ default 80 $service.servicePort }}
+                  number: {{ .servicePort }}
 {{- end }}
 {{- end }}

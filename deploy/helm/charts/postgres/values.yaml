@@ -1,15 +1,16 @@
 image:
   repository: postgres
-  tag: "15"
-  digest: ""
+  tag: "14"
   pullPolicy: IfNotPresent
-auth:
-  username: subgraph
-  database: subgraph
-  existingSecret: ""
-persistence:
-  storageClass: standard
-  size: 100Gi
 service:
+  type: ClusterIP
   port: 5432
 resources: {}
+persistence:
+  size: 20Gi
+config:
+  database: subgraph
+  username: graph
+  existingSecret: graph-node-postgres
+monitoring:
+  enabled: true

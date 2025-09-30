@@ -3,13 +3,14 @@ kind: Service
 metadata:
   name: {{ include "bundler.fullname" . }}
   labels:
-    {{- include "bundler.labels" . | nindent 4 }}
+    app.kubernetes.io/name: bundler
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   type: {{ .Values.service.type }}
-  selector:
-    {{- include "bundler.labels" . | nindent 4 }}
   ports:
-    - name: http
-      port: {{ .Values.service.port }}
+    - port: {{ .Values.service.port }}
       targetPort: http
-      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: bundler
+    app.kubernetes.io/instance: {{ .Release.Name }}

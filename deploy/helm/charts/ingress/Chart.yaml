@@ -1,5 +1,5 @@
 apiVersion: v2
 name: ingress
+description: Shared TLS ingress rules for the AGI stack
 version: 0.1.0
-type: application
-description: TLS ingress resources for external APIs.
+appVersion: "0.1.0"
