@@ -1,0 +1,21 @@
+route:
+  receiver: sre-oncall
+  routes:
+    - match:
+        alertname: GasTreasuryLow
+      receiver: finance-escalation
+receivers:
+  - name: sre-oncall
+    slack_configs:
+      - channel: "#aa-pager"
+        text: |-
+          *{{ .CommonAnnotations.summary }}*
+          {{ .CommonAnnotations.description }}
+          Runbook: {{ .CommonAnnotations.runbook_url }}
+  - name: finance-escalation
+    email_configs:
+      - to: treasury@example.com
+        html: |-
+          <p><strong>{{ .CommonAnnotations.summary }}</strong></p>
+          <p>{{ .CommonAnnotations.description }}</p>
+          <p>Runbook: <a href="{{ .CommonAnnotations.runbook_url }}">here</a></p>

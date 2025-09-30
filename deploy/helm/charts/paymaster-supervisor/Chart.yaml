@@ -1,5 +1,6 @@
 apiVersion: v2
 name: paymaster-supervisor
-description: Paymaster supervisor managing sponsorship policy
 version: 0.1.0
-appVersion: "0.1.0"
+description: Paymaster supervisor service with KMS-backed key access
+appVersion: "0.5.0"
+type: application

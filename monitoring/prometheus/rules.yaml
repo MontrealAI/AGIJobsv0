@@ -1,50 +1,48 @@
-groups:
-  - name: orchestrator.slo
-    interval: 30s
-    rules:
-      - record: service:tto_seconds:rate5m
-        expr: histogram_quantile(0.95, sum(rate(orchestrator_time_to_onboard_seconds_bucket[5m])) by (le))
-      - record: service:cpvo_usd:rate5m
-        expr: sum(rate(paymaster_cost_per_verified_operation_usd[5m]))
-      - record: service:bundler_success_rate:ratio5m
-        expr: sum(rate(bundler_operations_total{status="success"}[5m])) / clamp_min(sum(rate(bundler_operations_total[5m])), 1)
-      - record: service:sponsored_ops_total:rate5m
-        expr: sum(rate(paymaster_sponsored_operations_total[5m]))
-      - record: service:sponsored_ops_rejections:rate5m
-        expr: sum(rate(paymaster_sponsored_operations_rejections_total[5m]))
-      - record: service:ipfs_pin_latency_seconds:p95
-        expr: histogram_quantile(0.95, sum(rate(ipfs_pin_duration_seconds_bucket[5m])) by (le))
-      - record: service:subgraph_lag_blocks
-        expr: max(max_over_time(graph_subgraph_head_block{deployment=~".*"}[5m]) - max_over_time(graph_chain_head_block{network=~".*"}[5m]))
-  - name: orchestrator.alerts
-    rules:
-      - alert: LowGasBalance
-        expr: min(eth_wallet_balance_wei{wallet="paymaster"}) < 5e16
-        for: 5m
-        labels:
-          severity: critical
-          runbook: https://docs.agijobsv0.dev/runbooks/paymaster-gas
-        annotations:
-          summary: Paymaster gas wallet below 0.05 ETH
-          description: Top up the configured treasury wallet before sponsorship halts.
-          runbook: https://docs.agijobsv0.dev/runbooks/paymaster-gas
-      - alert: SponsorshipRejectionSpike
-        expr: service:sponsored_ops_rejections:rate5m > 5
-        for: 10m
-        labels:
-          severity: warning
-          runbook: https://docs.agijobsv0.dev/runbooks/rejection-spike
-        annotations:
-          summary: Sponsored operation rejections increasing
-          description: Investigate upstream AA flow or contract configuration issues.
-          runbook: https://docs.agijobsv0.dev/runbooks/rejection-spike
-      - alert: BundlerRevertSpike
-        expr: rate(bundler_operations_total{status="reverted"}[5m]) > 2
-        for: 5m
-        labels:
-          severity: warning
-          runbook: https://docs.agijobsv0.dev/runbooks/revert-spike
-        annotations:
-          summary: Bundler revert spike detected
-          description: Review recent deployments and mempool conditions.
-          runbook: https://docs.agijobsv0.dev/runbooks/revert-spike
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: aa-slo-rules
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: slo.latency
+      rules:
+        - record: aa:tto_seconds:avg5m
+          expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="orchestrator"}[5m])) by (le))
+        - record: aa:cpvo_usd:avg5m
+          expr: avg_over_time(paymaster_sponsored_cost_usd[5m])
+        - record: aa:success_rate:ratio5m
+          expr: sum(rate(orchestrator_requests_total{status!~"5.."}[5m])) / sum(rate(orchestrator_requests_total[5m]))
+        - record: aa:sponsored_ops_total:sum5m
+          expr: sum(rate(paymaster_sponsored_operations_total[5m]))
+        - record: aa:sponsored_ops_rejections:sum5m
+          expr: sum(rate(paymaster_rejections_total[5m]))
+        - record: aa:ipfs_pin_latency_seconds:p95
+          expr: histogram_quantile(0.95, sum(rate(ipfs_pin_latency_seconds_bucket[5m])) by (le))
+        - record: aa:subgraph_lag_seconds:max
+          expr: max(graph_node_subgraph_lag_seconds)
+    - name: alerts
+      rules:
+        - alert: GasTreasuryLow
+          expr: min(paymaster_treasury_balance_usd) < 200
+          for: 10m
+          annotations:
+            summary: "Paymaster treasury under $200"
+            description: "Top-up the paymaster treasury to avoid rejected sponsorships."
+            runbook_url: https://docs.example.com/runbooks/paymaster-top-up
+        - alert: SponsorshipRejectSpike
+          expr: increase(paymaster_rejections_total[5m]) > 10
+          for: 10m
+          annotations:
+            summary: "Paymaster rejection spike"
+            description: "Investigate RPC health, gas price, and schema validity."
+            runbook_url: https://docs.example.com/runbooks/rejections
+        - alert: SponsoredRevertSpike
+          expr: increase(orchestrator_reverted_operations_total[5m]) > 5
+          for: 5m
+          annotations:
+            summary: "Sponsored operations reverting"
+            description: "Review upstream contracts and mempool health."
+            runbook_url: https://docs.example.com/runbooks/revert-spike

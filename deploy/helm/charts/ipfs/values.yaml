@@ -1,17 +1,16 @@
+global: {}
+replicaCount: 1
 image:
-  repository: ipfs/go-ipfs
-  tag: v0.23.0
+  repository: ipfs
+  tag: latest
+  digest: ""
   pullPolicy: IfNotPresent
 service:
   apiPort: 5001
-  swarmPort: 4001
   gatewayPort: 8080
 persistence:
   enabled: true
-  size: 50Gi
+  size: 100Gi
+  storageClassName: null
 resources: {}
-config:
-  profile: server
-  swarmKeySecret: ""
-monitoring:
-  enabled: true
+podAnnotations: {}

@@ -1,43 +1,40 @@
 # Receipts & EAS Verification Guide
 
-This guide helps auditors and integrators validate that attestation receipts emitted by the AGI stack correspond to on-chain EAS attestations.
+This document explains how to retrieve sponsorship receipts and verify their associated attestations.
 
-## Retrieve a Receipt
-1. Log into the Operator Control Plane (OCP).
-2. Navigate to **Receipts** and locate the desired job.
-3. Download the JSON payload via **Download Receipt**.
+## Retrieve receipts
+1. Access the Operator Console and open **Receipts**.
+2. Filter by User Operation hash, wallet address, or time range.
+3. Click the receipt row to open the detail drawer.
+4. Download the receipt JSON or view inline. The payload includes:
+   - `userOpHash`
+   - `sponsor`
+   - `paymasterStake`
+   - `attestationUID`
+   - `ipfsCid`
 
-## Receipt Structure
-```json
-{
-  "jobId": "uuid",
-  "requestHash": "0x...",
-  "attester": "0x...",
-  "schemaUID": "0x...",
-  "attestationUID": "0x...",
-  "timestamp": 1700000000,
-  "signature": "0x..."
-}
-```
+## Verify IPFS content
+1. Click **Open in IPFS Gateway**. The console requests the configured gateway using the pinned CID.
+2. The response is hashed client-side to ensure integrity.
+3. If verification fails, the console displays the mismatch and provides a retry link.
 
-## Verify the EAS Attestation
-1. Open the EAS Explorer at `https://easscan.org/attestation/<attestationUID>`.
-2. Confirm the attester matches the receipt and the schema UID equals `receipt.schemaUID`.
-3. Ensure the attestation payload hash equals `receipt.requestHash`.
+## Verify EAS attestation
+1. Click **Verify attestation** in the drawer.
+2. The console queries the EAS RPC for the provided `attestationUID`.
+3. Validation passes when:
+   - `schema` equals the configured `global.eas.schemaUid`.
+   - The attestation is not revoked or expired.
+   - The `recipient` matches the smart account on the receipt.
+4. On success, the UI displays a green badge and allows exporting a signed PDF certificate.
 
-## Validate the Signature
-1. Use the browser-based verifier at `https://docs.agistack.dev/tools/receipt-verify`.
-2. Upload the JSON receipt.
-3. The tool checks the signature against the configured attester public key and displays a green check.
-4. Alternatively, use the CLI:
-   ```bash
-   npx @eas-project/verify --attestation <attestationUID>
-   ```
+## Manual verification (fallback)
+If the console is unavailable:
+1. Use https://easscan.org and paste the attestation UID.
+2. Ensure the schema matches the value in `deploy/helm/values.yaml`.
+3. Download the IPFS payload from the `ipfsCid` using an IPFS gateway (e.g., https://ipfs.io/ipfs/).
+4. Compare the JSON `checksum` against the attestation `data` field.
 
 ## Troubleshooting
-- **Mismatch attester** – Confirm the attestation originated from the correct network (see `receipt.chainId`).
-- **Signature invalid** – Rotate the attester key using the KMS playbook and re-issue the attestation.
-- **No attestation found** – Wait for the subgraph to catch up (monitor "Subgraph Lag" panel).
-
-## Change Log
-- v1.0 – Initial receipts verification workflow.
+- **CID not found**: Check IPFS pod logs for pin backlog alerts.
+- **Schema mismatch**: Confirm the attester deployment is using the latest config map.
+- **Revoked attestation**: escalate to security per the incident response guide.

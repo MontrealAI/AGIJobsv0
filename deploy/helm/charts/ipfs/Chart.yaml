@@ -1,5 +1,6 @@
 apiVersion: v2
 name: ipfs
-description: IPFS node with pinning configuration
 version: 0.1.0
-appVersion: "0.1.0"
+description: IPFS pinning node for sponsorship receipts
+appVersion: "0.21.0"
+type: application
