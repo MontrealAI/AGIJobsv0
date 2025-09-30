@@ -17,7 +17,25 @@ type RawContracts = {
   feePool: RawContractEntry;
 };
 
-const rawContracts = requireJson("../../../config/contracts.orchestrator.json") as RawContracts;
+const CONTRACT_CONFIG_CANDIDATES = [
+  "../../../config/contracts.orchestrator.json",
+  "../../../../config/contracts.orchestrator.json",
+  "../../../../../config/contracts.orchestrator.json",
+] as const;
+
+const rawContracts: RawContracts = (() => {
+  let lastConfigError: unknown;
+  for (const candidate of CONTRACT_CONFIG_CANDIDATES) {
+    try {
+      return requireJson(candidate) as RawContracts;
+    } catch (error) {
+      lastConfigError = error;
+    }
+  }
+  throw lastConfigError instanceof Error
+    ? lastConfigError
+    : new Error("Failed to load orchestrator contract metadata");
+})();
 
 export type ContractKey = keyof typeof rawContracts;
 
