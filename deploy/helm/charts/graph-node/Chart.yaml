@@ -1,0 +1,5 @@
+apiVersion: v2
+name: graph-node
+version: 0.1.0
+type: application
+description: Graph node for indexing contracts.

@@ -1,4 +1,0 @@
-The AGI stack is now deploying.
-
-To verify the installation run:
-  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }}

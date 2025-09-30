@@ -1,0 +1,32 @@
+{{- if .Values.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ printf "%s-gateway" .Release.Name | trunc 63 | trimSuffix "-" }}
+  annotations:
+{{- range $key, $value := .Values.annotations }}
+    {{ $key }}: {{ $value | quote }}
+{{- end }}
+spec:
+  ingressClassName: {{ .Values.className }}
+  {{- if and .Values.tls.enabled .Values.tls.secretName }}
+  tls:
+    - hosts:
+        - {{ .Values.host }}
+      secretName: {{ .Values.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.host }}
+      http:
+        paths:
+{{- range $name, $service := .Values.services }}
+          {{- $svcName := default (printf "%s-%s" $.Release.Name $name) $service.serviceName }}
+          - path: /{{ $name }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $svcName }}
+                port:
+                  number: {{ default 80 $service.servicePort }}
+{{- end }}
+{{- end }}

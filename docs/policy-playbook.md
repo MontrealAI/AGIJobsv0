@@ -26,12 +26,14 @@ All changes are executed through the Operator Portal with KMS-backed signatures.
 3. Upon dual approval, the Paymaster Supervisor API executes an update transaction using a dedicated KMS key.
 4. CI/CD pipeline records the change hash in the provenance log artifact.
 5. Grafana annotation is created for visibility.
+6. Helm values are updated via signed PR to ensure rate-limit and ingress policies remain immutable.
 
 ## Emergency Controls
 
 - **Pause Switch** – Immediately halts sponsorship. Only Security Stewards can activate.
 - **Rate-Limit Override** – Temporarily increases rate limits to absorb legitimate traffic surges; auto expires in 60 minutes.
 - **RPC Failover** – Switches orchestrator RPC URLs to fallback set.
+- **WAF Rule Push** – Applies emergency IP blocklist to ingress controller; requires Security Steward approval and expires after 4 hours.
 
 ## Review Cadence
 

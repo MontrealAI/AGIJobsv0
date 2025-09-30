@@ -1,0 +1,35 @@
+apiVersion: v2
+name: aa-stack
+version: 0.1.0
+description: Unified chart for account abstraction stack components.
+icon: https://example.com/icon.png
+home: https://github.com/example/agi-stack
+keywords:
+  - account-abstraction
+  - bundler
+  - attestations
+dependencies:
+  - name: orchestrator
+    version: 0.1.0
+    repository: "file://charts/orchestrator"
+  - name: bundler
+    version: 0.1.0
+    repository: "file://charts/bundler"
+  - name: paymaster-supervisor
+    version: 0.1.0
+    repository: "file://charts/paymaster-supervisor"
+  - name: ipfs
+    version: 0.1.0
+    repository: "file://charts/ipfs"
+  - name: graph-node
+    version: 0.1.0
+    repository: "file://charts/graph-node"
+  - name: postgres
+    version: 0.1.0
+    repository: "file://charts/postgres"
+  - name: attester
+    version: 0.1.0
+    repository: "file://charts/attester"
+  - name: ingress
+    version: 0.1.0
+    repository: "file://charts/ingress"

@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "orchestrator.fullname" . }}-env
+  labels:
+    {{- include "orchestrator.labels" . | nindent 4 }}
+data:
+  CHAIN_ID: "{{ .Values.global.chainId }}"
+  RPC_URL: "{{ .Values.global.rpc.primary }}"
+  RPC_URL_FALLBACK: "{{ .Values.global.rpc.fallback }}"
+  ENTRYPOINT_ADDRESS: "{{ .Values.global.contracts.entryPoint }}"
+  PAYMASTER_ADDRESS: "{{ .Values.global.contracts.paymaster }}"
+  AA_REGISTRY_ADDRESS: "{{ .Values.global.contracts.aaRegistry }}"
+  EAS_SCHEMA_UID: "{{ .Values.global.contracts.eas.schemaUID }}"
+  LOG_LEVEL: "{{ default "info" (index .Values.env "LOG_LEVEL") }}"
+  ENABLE_CORS: "{{ ternary "true" "false" (default true (index .Values.env "ENABLE_CORS")) }}"
+  CORS_ALLOW_ORIGINS: "{{ join "," .Values.global.cors.allowOrigins }}"
+  RATE_LIMIT_RPS: "{{ .Values.global.rateLimits.orchestrator.rps }}"
+  RATE_LIMIT_BURST: "{{ .Values.global.rateLimits.orchestrator.burst }}"
+{{- range $key, $value := .Values.env }}
+  {{- if and (ne $key "LOG_LEVEL") (ne $key "ENABLE_CORS") }}
+  {{ $key }}: "{{ $value }}"
+  {{- end }}
+{{- end }}

@@ -1,0 +1,14 @@
+image:
+  repository: ipfs/kubo
+  tag: latest
+  digest: ""
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  apiPort: 5001
+  swarmPort: 4001
+persistence:
+  enabled: true
+  storageClass: standard
+  size: 100Gi
+resources: {}

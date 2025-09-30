@@ -1,6 +1,0 @@
-apiVersion: v2
-name: postgres
-version: 0.1.0
-description: postgres service chart
-appVersion: "0.1.0"
-type: application

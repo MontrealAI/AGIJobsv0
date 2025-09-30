@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "orchestrator.fullname" . }}
+  labels:
+    {{- include "orchestrator.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.autoscaling.minReplicas }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "orchestrator.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "orchestrator.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/env-configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: orchestrator
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{- if .Values.image.digest }}@{{ .Values.image.digest }}{{- end }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: {{ include "orchestrator.fullname" . }}-env
+            - secretRef:
+                name: {{ include "orchestrator.fullname" . }}-secrets
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http

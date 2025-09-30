@@ -16,7 +16,7 @@ Trust boundaries exist between the Kubernetes cluster, external RPC providers, I
 | TM-1 | Chain reorg invalidates sponsored ops | Use fallback RPC, replay pending ops, alert via BundlerRevertSpike |
 | TM-2 | RPC outage causes downtime | Fallback RPC URLs, health probes, portal failover control |
 | TM-3 | IPFS pin backlog delays receipts | Autoscaling IPFS, monitoring `service:ipfs_pin_latency_seconds:p95` |
-| TM-4 | Account abstraction abuse (spam ops) | Rate limits, allowlists, WAF on ingress |
+| TM-4 | Account abstraction abuse (spam ops) | Rate limits, allowlists, WAF on ingress, emergency pause switch |
 | TM-5 | Key compromise | Workload identity, KMS HSM, strict pod security |
 
 ## Tabletop Exercise Playbook
@@ -43,7 +43,7 @@ Trust boundaries exist between the Kubernetes cluster, external RPC providers, I
 1. Generate synthetic burst above configured rate limit.
 2. Confirm ingress WAF and paymaster supervisor rejections increase.
 3. Apply policy update using Policy Playbook.
-4. Resume normal operations and verify `SponsorshipRejectionSpike` alert clears.
+4. Validate the pause switch using Operator Portal "Safety" control, then resume normal operations once `SponsorshipRejectionSpike` alert clears.
 
 ## Residual Risks
 
