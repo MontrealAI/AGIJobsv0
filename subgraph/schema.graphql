@@ -75,6 +75,8 @@ type ValidatorVote @entity {
   validator: Validator!
   approved: Boolean!
   burnTxHash: Bytes
+  txHash: Bytes!
+  logIndex: BigInt!
   revealedAtBlock: BigInt!
   revealedAtTimestamp: BigInt!
 }
