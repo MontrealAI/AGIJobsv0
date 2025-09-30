@@ -3,11 +3,10 @@ kind: Service
 metadata:
   name: {{ include "ipfs.fullname" . }}
   labels:
-    {{- include "ipfs.labels" . | nindent 4 }}
+    app.kubernetes.io/name: ipfs
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  type: {{ .Values.service.type }}
-  selector:
-    {{- include "ipfs.labels" . | nindent 4 }}
+  clusterIP: None
   ports:
     - name: api
       port: {{ .Values.service.apiPort }}
@@ -15,18 +14,9 @@ spec:
     - name: swarm
       port: {{ .Values.service.swarmPort }}
       targetPort: swarm
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "ipfs.fullname" . }}-headless
-  labels:
-    {{- include "ipfs.labels" . | nindent 4 }}
-spec:
-  clusterIP: None
+    - name: gateway
+      port: {{ .Values.service.gatewayPort }}
+      targetPort: gateway
   selector:
-    {{- include "ipfs.labels" . | nindent 4 }}
-  ports:
-    - name: api
-      port: {{ .Values.service.apiPort }}
-      targetPort: api
+    app.kubernetes.io/name: ipfs
+    app.kubernetes.io/instance: {{ .Release.Name }}

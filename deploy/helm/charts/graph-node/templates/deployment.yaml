@@ -1,58 +1,51 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "graph-node.fullname" . }}
+  name: {{ include "graphNode.fullname" . }}
   labels:
-    {{- include "graph-node.labels" . | nindent 4 }}
+    app.kubernetes.io/name: graph-node
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  replicas: 1
+  replicas: {{ default 1 .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "graph-node.labels" . | nindent 6 }}
+      app.kubernetes.io/name: graph-node
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
-        {{- include "graph-node.labels" . | nindent 8 }}
+        app.kubernetes.io/name: graph-node
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: graph-node
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{- if .Values.image.digest }}@{{ .Values.image.digest }}{{- end }}"
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: GRAPH_LOG
+              value: info
+            - name: RUST_LOG
+              value: info
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.postgres.userSecret }}
+                  key: POSTGRES_PASSWORD
+          args:
+            - run
+            - --config
+            - /etc/graph/config.toml
           ports:
             - containerPort: {{ .Values.service.port }}
               name: http
-          env:
-            {{- if (index .Values.env "ETHEREUM_RPC") }}
-            - name: ETHEREUM_RPC
-              value: "{{ index .Values.env "ETHEREUM_RPC" }}"
-            {{- else if .Values.ethereum.rpc }}
-            - name: ETHEREUM_RPC
-              value: "{{ join "," .Values.ethereum.rpc }}"
-            {{- end }}
-            - name: POSTGRES_HOST
-              value: {{ .Values.postgres.host | quote }}
-            - name: POSTGRES_PORT
-              value: "{{ .Values.postgres.port }}"
-            - name: POSTGRES_USER
-              value: {{ .Values.postgres.user | quote }}
-            - name: POSTGRES_DB
-              value: {{ .Values.postgres.database | quote }}
-            {{- range $key, $value := .Values.env }}
-            {{- if ne $key "ETHEREUM_RPC" }}
-            - name: {{ $key }}
-              value: "{{ $value }}"
-            {{- end }}
-            {{- end }}
-          envFrom:
-            {{- if .Values.postgres.passwordSecret }}
-            - secretRef:
-                name: {{ .Values.postgres.passwordSecret }}
-            {{- end }}
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/graph
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "graphNode.fullname" . }}-config

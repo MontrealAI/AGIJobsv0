@@ -1,16 +1,29 @@
 image:
-  repository: ghcr.io/example/orchestrator
-  tag: latest
+  repository: ghcr.io/agi/jobs/orchestrator
+  tag: ""
   digest: ""
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP
-  port: 80
+  port: 8000
+env:
+  logLevel: info
+  corsOrigins: []
+  kmsKey: ""
+  maxRequestBytes: 1048576
 resources: {}
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 2
   maxReplicas: 5
-  cpuTargetPercentage: 70
-env: {}
-secrets: {}
+  cpuTargetPercentage: 60
+ingress:
+  enabled: false
+  className: nginx
+  host: orchestrator.example.com
+  tlsSecret: orchestrator-tls
+rateLimit:
+  requestsPerMinute: 300
+  burst: 50
+monitoring:
+  enabled: true

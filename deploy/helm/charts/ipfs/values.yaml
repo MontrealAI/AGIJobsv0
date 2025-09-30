@@ -1,14 +1,17 @@
 image:
-  repository: ipfs/kubo
-  tag: latest
-  digest: ""
+  repository: ipfs/go-ipfs
+  tag: v0.23.0
   pullPolicy: IfNotPresent
 service:
-  type: ClusterIP
   apiPort: 5001
   swarmPort: 4001
+  gatewayPort: 8080
 persistence:
   enabled: true
-  storageClass: standard
-  size: 100Gi
+  size: 50Gi
 resources: {}
+config:
+  profile: server
+  swarmKeySecret: ""
+monitoring:
+  enabled: true
