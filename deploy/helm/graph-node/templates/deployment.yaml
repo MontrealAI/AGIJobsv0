@@ -27,14 +27,14 @@ spec:
               containerPort: {{ .Values.service.rpcPort }}
           env:
             - name: postgres_host
-              value: {{ .Values.env.postgresHost | quote }}
+              value: {{ default (include "graph-node.postgresFullname" .) .Values.env.postgresHost | quote }}
             - name: postgres_user
               value: {{ .Values.env.postgresUser | quote }}
             - name: postgres_pass
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.env.postgresPasswordSecret }}
-                  key: password
+                  name: {{ default (include "graph-node.postgresFullname" .) .Values.env.postgresPasswordSecret }}
+                  key: postgres-password
             - name: ipfs
               value: {{ .Values.env.ipfsURL | quote }}
             - name: ethereum

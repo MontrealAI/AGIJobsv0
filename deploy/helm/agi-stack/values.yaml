@@ -98,6 +98,10 @@ graph-node:
     statusPort: 8020
     rpcPort: 8030
   resources: {}
+  # Override to point graph-node at an external Postgres instance if required
+  env:
+    postgresHost: ""
+    postgresPasswordSecret: ""
 
 postgres:
   image:

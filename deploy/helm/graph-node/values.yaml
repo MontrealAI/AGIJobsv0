@@ -16,8 +16,9 @@ autoscaling:
   maxReplicas: 3
   targetCPUUtilizationPercentage: 80
 env:
-  postgresHost: postgres
+  # Defaults derive from the postgres subchart fullname when unset
+  postgresHost: ""
   postgresUser: graph
-  postgresPasswordSecret: graph-node-db
+  postgresPasswordSecret: ""
   ipfsURL: http://ipfs:5001
   ethereumRPC: []

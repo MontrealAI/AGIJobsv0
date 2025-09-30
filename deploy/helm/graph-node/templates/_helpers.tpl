@@ -26,3 +26,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s:%s" .Values.image.repository .Values.image.tag -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "graph-node.postgresFullname" -}}
+{{- printf "%s-%s" .Release.Name "postgres" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
