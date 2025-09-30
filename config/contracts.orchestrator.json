@@ -75,5 +75,27 @@
       "function setBurnPct(uint256 pct)",
       "function setTreasury(address _treasury)"
     ]
+  },
+  "systemPause": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "abi": [
+      "function pauseAll()",
+      "function unpauseAll()"
+    ]
+  },
+  "identityRegistry": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "abi": [
+      "function setAgentRootNode(bytes32 node)",
+      "function setClubRootNode(bytes32 node)",
+      "function setAgentMerkleRoot(bytes32 root)",
+      "function setValidatorMerkleRoot(bytes32 root)",
+      "function setENS(address ens)",
+      "function setNameWrapper(address wrapper)",
+      "function addAdditionalAgent(address agent)",
+      "function removeAdditionalAgent(address agent)",
+      "function addAdditionalValidator(address validator)",
+      "function removeAdditionalValidator(address validator)"
+    ]
   }
 }

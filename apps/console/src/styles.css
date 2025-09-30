@@ -1,0 +1,258 @@
+:root {
+  color-scheme: light dark;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  background-color: #0e1014;
+  color: #f2f5f8;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top left, rgba(34, 71, 166, 0.35), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(135, 88, 255, 0.25), transparent 60%),
+    #0e1014;
+}
+
+a {
+  color: #7ab8ff;
+}
+
+a:hover {
+  color: #c5dfff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.app-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+h1 {
+  margin-bottom: 1.5rem;
+  font-size: 2.25rem;
+  letter-spacing: -0.01em;
+}
+
+.panel-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.panel {
+  background: rgba(20, 24, 32, 0.85);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+
+.panel section + section {
+  margin-top: 1.25rem;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(242, 245, 248, 0.75);
+  margin-bottom: 0.35rem;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(8, 10, 14, 0.65);
+  color: inherit;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(122, 184, 255, 0.75);
+  background: rgba(8, 10, 14, 0.85);
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  background: linear-gradient(120deg, #4481ff 0%, #8a5bff 100%);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+button.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(242, 245, 248, 0.9);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(72, 121, 255, 0.35);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.stat-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  color: rgba(242, 245, 248, 0.7);
+}
+
+.stat-card p {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+pre {
+  margin: 0;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.table-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+th,
+td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.token-input {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.helper-text {
+  font-size: 0.75rem;
+  color: rgba(242, 245, 248, 0.6);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  display: inline-block;
+}
+
+.status-dot.ok {
+  background: #3dd68c;
+}
+
+.status-dot.warn {
+  background: #f9a620;
+}
+
+.status-dot.error {
+  background: #ff5f5f;
+}
+
+.json-inline {
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, 'Source Code Pro', monospace;
+  font-size: 0.85rem;
+}
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.actions-row button {
+  flex: 1 1 140px;
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 1.75rem 1rem 3rem;
+  }
+
+  .panel {
+    padding: 1.2rem;
+  }
+}

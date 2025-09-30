@@ -19,6 +19,7 @@ import {
 const GOVERNANCE_STORAGE = path.resolve(process.cwd(), "storage", "governance");
 const OWNER_CONTROL_CONFIG = path.resolve(process.cwd(), "config", "owner-control.json");
 const THERMODYNAMICS_CONFIG = path.resolve(process.cwd(), "config", "thermodynamics.json");
+const IDENTITY_CONFIG = path.resolve(process.cwd(), "config", "identity-registry.json");
 
 interface GovernanceSnapshot {
   timestamp: string;
@@ -173,14 +174,33 @@ async function safeReadAddress(contract: ethers.Contract, fn: string): Promise<s
   }
 }
 
+async function safeReadBytes32(contract: ethers.Contract, fn: string): Promise<string | undefined> {
+  try {
+    const callable = contract.getFunction(fn);
+    const value = await callable.staticCall();
+    if (typeof value === "string" && value.trim()) {
+      return ethers.hexlify(value);
+    }
+    if (value && typeof (value as { toString: () => string }).toString === "function") {
+      return ethers.hexlify((value as { toString: () => string }).toString());
+    }
+    return undefined;
+  } catch (error) {
+    console.warn(`Failed to read ${fn} from contract`, error);
+    return undefined;
+  }
+}
+
 async function loadGovernanceConfigs(): Promise<Record<string, unknown>> {
-  const [ownerControl, thermodynamics] = await Promise.all([
+  const [ownerControl, thermodynamics, identity] = await Promise.all([
     readJsonFile(OWNER_CONTROL_CONFIG),
     readJsonFile(THERMODYNAMICS_CONFIG),
+    readJsonFile(IDENTITY_CONFIG),
   ]);
   return {
     ownerControl,
     thermodynamics,
+    identity,
   };
 }
 
@@ -216,7 +236,7 @@ function formatDuration(value: bigint | undefined): string | undefined {
 async function buildGovernanceSnapshot(): Promise<GovernanceSnapshot> {
   const provider = rpc();
   const network = await provider.getNetwork();
-  const { stakeManager, jobRegistry, feePool } = loadContracts(provider);
+  const { stakeManager, jobRegistry, feePool, identityRegistry } = loadContracts(provider);
 
   const [
     minStake,
@@ -231,6 +251,10 @@ async function buildGovernanceSnapshot(): Promise<GovernanceSnapshot> {
     registryValidator,
     feePoolBurn,
     feePoolTreasury,
+    agentRootNode,
+    clubRootNode,
+    agentMerkleRoot,
+    validatorMerkleRoot,
   ] = await Promise.all([
     safeReadBigInt(stakeManager, "minStake"),
     safeReadBigInt(stakeManager, "feePct"),
@@ -244,9 +268,22 @@ async function buildGovernanceSnapshot(): Promise<GovernanceSnapshot> {
     safeReadBigInt(jobRegistry, "validatorRewardPct"),
     safeReadBigInt(feePool, "burnPct"),
     safeReadAddress(feePool, "treasury"),
+    safeReadBytes32(identityRegistry, "agentRootNode"),
+    safeReadBytes32(identityRegistry, "clubRootNode"),
+    safeReadBytes32(identityRegistry, "agentMerkleRoot"),
+    safeReadBytes32(identityRegistry, "validatorMerkleRoot"),
   ]);
 
   const configs = await loadGovernanceConfigs();
+
+  const identityConfig = (configs.identity as
+    | {
+        agentRootNode?: string;
+        clubRootNode?: string;
+        agentMerkleRoot?: string;
+        validatorMerkleRoot?: string;
+      }
+    | undefined) ?? {};
 
   const snapshot: GovernanceSnapshot = {
     timestamp: new Date().toISOString(),
@@ -283,8 +320,32 @@ async function buildGovernanceSnapshot(): Promise<GovernanceSnapshot> {
         burnPctLabel: formatPercent(feePoolBurn) ?? "0%",
         treasury: feePoolTreasury ?? ethers.ZeroAddress,
       },
+      identityRegistry: {
+        address: (identityRegistry.target as string) ?? ethers.ZeroAddress,
+        agentRootNode: agentRootNode ?? ethers.ZeroHash,
+        clubRootNode: clubRootNode ?? ethers.ZeroHash,
+        agentMerkleRoot: agentMerkleRoot ?? ethers.ZeroHash,
+        validatorMerkleRoot: validatorMerkleRoot ?? ethers.ZeroHash,
+      },
     },
-    configs,
+    configs: {
+      ...configs,
+      identity: {
+        agentRootNode: identityConfig.agentRootNode ?? agentRootNode ?? undefined,
+        clubRootNode: identityConfig.clubRootNode ?? clubRootNode ?? undefined,
+        agentMerkleRoot: identityConfig.agentMerkleRoot ?? agentMerkleRoot ?? undefined,
+        validatorMerkleRoot:
+          identityConfig.validatorMerkleRoot ?? validatorMerkleRoot ?? undefined,
+        ens:
+          typeof (identityConfig as { ens?: string }).ens === "string"
+            ? (identityConfig as { ens?: string }).ens
+            : undefined,
+        nameWrapper:
+          typeof (identityConfig as { nameWrapper?: string }).nameWrapper === "string"
+            ? (identityConfig as { nameWrapper?: string }).nameWrapper
+            : undefined,
+      },
+    },
   };
 
   return snapshot;
@@ -389,6 +450,17 @@ function normalizeBigNumberish(
     return fallback;
   }
   throw new Error("Unsupported numeric value");
+}
+
+function normalizeBytes32(value: unknown): string {
+  if (typeof value !== "string") {
+    throw new Error("Value must be a 32-byte hex string.");
+  }
+  const trimmed = value.trim();
+  if (!/^0x[0-9a-fA-F]{64}$/.test(trimmed)) {
+    throw new Error("Value must be a 32-byte hex string.");
+  }
+  return trimmed.toLowerCase();
 }
 
 const ACTION_DEFINITIONS: ActionDefinition[] = [
@@ -614,6 +686,27 @@ const ACTION_DEFINITIONS: ActionDefinition[] = [
     },
   },
   {
+    key: "jobRegistry.setValidatorRewardPct",
+    module: "jobRegistry",
+    method: "setValidatorRewardPct",
+    async prepare(value, ctx) {
+      const pct = normalizePercent(value);
+      const before = ctx.snapshot.onChain.jobRegistry?.validatorRewardPct;
+      const beforeLabel = ctx.snapshot.onChain.jobRegistry?.validatorRewardPctLabel;
+      return {
+        args: [pct],
+        diff: buildDiffRecord({
+          before,
+          beforeLabel,
+          after: pct.toString(),
+          afterLabel: `${pct}%`,
+          units: "%",
+        }),
+        metadata: { pct },
+      };
+    },
+  },
+  {
     key: "feePool.setBurnPct",
     module: "feePool",
     method: "setBurnPct",
@@ -645,6 +738,170 @@ const ACTION_DEFINITIONS: ActionDefinition[] = [
         args: [address],
         diff: buildDiffRecord({ before, after: address }),
         metadata: { address },
+      };
+    },
+  },
+  {
+    key: "systemPause.pauseAll",
+    module: "systemPause",
+    method: "pauseAll",
+    async prepare(_value, _ctx) {
+      return {
+        args: [],
+        diff: { status: "paused" },
+        metadata: { action: "pauseAll" },
+      };
+    },
+  },
+  {
+    key: "systemPause.unpauseAll",
+    module: "systemPause",
+    method: "unpauseAll",
+    async prepare(_value, _ctx) {
+      return {
+        args: [],
+        diff: { status: "active" },
+        metadata: { action: "unpauseAll" },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.setAgentRootNode",
+    module: "identityRegistry",
+    method: "setAgentRootNode",
+    async prepare(value, ctx) {
+      const node = normalizeBytes32(value);
+      const before = ctx.snapshot.onChain.identityRegistry?.agentRootNode;
+      return {
+        args: [node],
+        diff: buildDiffRecord({ before, after: node }),
+        metadata: { node },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.setClubRootNode",
+    module: "identityRegistry",
+    method: "setClubRootNode",
+    async prepare(value, ctx) {
+      const node = normalizeBytes32(value);
+      const before = ctx.snapshot.onChain.identityRegistry?.clubRootNode;
+      return {
+        args: [node],
+        diff: buildDiffRecord({ before, after: node }),
+        metadata: { node },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.setAgentMerkleRoot",
+    module: "identityRegistry",
+    method: "setAgentMerkleRoot",
+    async prepare(value, ctx) {
+      const root = normalizeBytes32(value);
+      const before = ctx.snapshot.onChain.identityRegistry?.agentMerkleRoot;
+      return {
+        args: [root],
+        diff: buildDiffRecord({ before, after: root }),
+        metadata: { root },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.setValidatorMerkleRoot",
+    module: "identityRegistry",
+    method: "setValidatorMerkleRoot",
+    async prepare(value, ctx) {
+      const root = normalizeBytes32(value);
+      const before = ctx.snapshot.onChain.identityRegistry?.validatorMerkleRoot;
+      return {
+        args: [root],
+        diff: buildDiffRecord({ before, after: root }),
+        metadata: { root },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.setENS",
+    module: "identityRegistry",
+    method: "setENS",
+    async prepare(value, ctx) {
+      const address = normalizeAddress(value);
+      const identitySnapshot =
+        (ctx.snapshot.configs.identity as { ens?: string } | undefined) ?? {};
+      const before = identitySnapshot.ens;
+      return {
+        args: [address],
+        diff: buildDiffRecord({ before, after: address }),
+        metadata: { address },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.setNameWrapper",
+    module: "identityRegistry",
+    method: "setNameWrapper",
+    async prepare(value, ctx) {
+      const address = normalizeAddress(value);
+      const identitySnapshot =
+        (ctx.snapshot.configs.identity as { nameWrapper?: string } | undefined) ?? {};
+      const before = identitySnapshot.nameWrapper;
+      return {
+        args: [address],
+        diff: buildDiffRecord({ before, after: address }),
+        metadata: { address },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.addAdditionalAgent",
+    module: "identityRegistry",
+    method: "addAdditionalAgent",
+    async prepare(value) {
+      const address = normalizeAddress(value);
+      return {
+        args: [address],
+        diff: { agent: buildDiffRecord({ before: "false", after: "true" }) },
+        metadata: { address, allowed: true },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.removeAdditionalAgent",
+    module: "identityRegistry",
+    method: "removeAdditionalAgent",
+    async prepare(value) {
+      const address = normalizeAddress(value);
+      return {
+        args: [address],
+        diff: { agent: buildDiffRecord({ before: "true", after: "false" }) },
+        metadata: { address, allowed: false },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.addAdditionalValidator",
+    module: "identityRegistry",
+    method: "addAdditionalValidator",
+    async prepare(value) {
+      const address = normalizeAddress(value);
+      return {
+        args: [address],
+        diff: { validator: buildDiffRecord({ before: "false", after: "true" }) },
+        metadata: { address, allowed: true },
+      };
+    },
+  },
+  {
+    key: "identityRegistry.removeAdditionalValidator",
+    module: "identityRegistry",
+    method: "removeAdditionalValidator",
+    async prepare(value) {
+      const address = normalizeAddress(value);
+      return {
+        args: [address],
+        diff: { validator: buildDiffRecord({ before: "true", after: "false" }) },
+        metadata: { address, allowed: false },
       };
     },
   },

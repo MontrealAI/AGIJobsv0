@@ -40,6 +40,7 @@ import {
 } from './oneboxMetrics';
 import { decorateReceipt } from './attestation';
 import { ownerGovernanceSnapshot, ownerPreviewAction } from './ownerConsole';
+import { listReceipts, saveReceipt } from './receiptStore';
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -943,6 +944,34 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
     }
   });
 
+  router.get('/governance/receipts', async (req, res) => {
+    const correlationId = getCorrelationId(req);
+    try {
+      const planHashParam = typeof req.query.planHash === 'string' ? req.query.planHash.trim() : '';
+      const planHash = planHashParam ? planHashParam : undefined;
+      const jobIdParam = typeof req.query.jobId === 'string' ? Number(req.query.jobId) : undefined;
+      const jobId = Number.isFinite(jobIdParam) ? jobIdParam : undefined;
+      const limitParam = typeof req.query.limit === 'string' ? Number(req.query.limit) : undefined;
+      const receipts = await listReceipts({ planHash, jobId, limit: limitParam });
+      logEvent('info', 'onebox.governance.receipts', {
+        correlationId,
+        planHash,
+        jobId,
+        count: receipts.length,
+      });
+      res.json({ receipts });
+    } catch (error) {
+      const httpStatus = statusFromError(error);
+      const level: LogLevel = httpStatus >= 500 ? 'error' : 'warn';
+      logEvent(level, 'onebox.governance.receipts_error', {
+        correlationId,
+        httpStatus,
+        error: errorMessage(error),
+      });
+      handleError(req, res, error);
+    }
+  });
+
   return router;
 }
 
@@ -955,7 +984,9 @@ interface ReceiptAttestationFields {
   receiptAttestationUri?: string | null;
 }
 
-type PlanResponseWithReceipt = PlanResponse & ReceiptAttestationFields;
+type PlanResponseWithReceipt = PlanResponse & ReceiptAttestationFields & {
+  createdAt?: string;
+};
 type ExecuteResponseWithReceipt = ExecuteResponse & ReceiptAttestationFields;
 
 interface DecorateExecuteOptions {
@@ -1002,13 +1033,15 @@ async function decoratePlanResponse(response: PlanResponse): Promise<PlanRespons
   if (Array.isArray((response as any).missingFields)) {
     metadata.missingFields = (response as any).missingFields;
   }
+  const createdAt = new Date().toISOString();
   const attested = await decorateReceipt('PLAN', metadata, {
     context: {
       planHash: response.planHash,
     },
   });
-  return {
+  const decorated: PlanResponseWithReceipt = {
     ...response,
+    createdAt,
     receipt: attested.metadata,
     receiptDigest: attested.digest,
     receiptAttestationUid: attested.attestationUid,
@@ -1016,6 +1049,25 @@ async function decoratePlanResponse(response: PlanResponse): Promise<PlanRespons
     receiptAttestationCid: attested.attestationCid ?? null,
     receiptAttestationUri: attested.attestationUri ?? null,
   };
+  try {
+    await saveReceipt({
+      kind: 'PLAN',
+      planHash: response.planHash,
+      createdAt,
+      txHashes: [],
+      attestationUid: decorated.receiptAttestationUid ?? null,
+      attestationTxHash: decorated.receiptAttestationTxHash ?? null,
+      attestationCid: decorated.receiptAttestationCid ?? null,
+      receipt: decorated.receipt ?? null,
+      payload: {
+        summary: response.summary,
+        warnings: response.warnings,
+      },
+    });
+  } catch (error) {
+    console.warn('Failed to persist plan receipt', error);
+  }
+  return decorated;
 }
 
 async function decorateExecuteResponse(
@@ -1075,6 +1127,29 @@ async function decorateExecuteResponse(
     createdAt,
     txHashes,
   });
+
+  try {
+    await saveReceipt({
+      kind: 'EXECUTION',
+      planHash,
+      jobId: decorated.jobId,
+      createdAt,
+      txHashes,
+      attestationUid: decorated.receiptAttestationUid ?? null,
+      attestationTxHash: decorated.receiptAttestationTxHash ?? null,
+      attestationCid: decorated.receiptAttestationCid ?? null,
+      receipt: decorated.receipt ?? null,
+      payload: {
+        status: decorated.status,
+        reward: decorated.reward,
+        burnAmount: decorated.burnAmount,
+        feeAmount: decorated.feeAmount,
+        token: decorated.token,
+      },
+    });
+  } catch (error) {
+    console.warn('Failed to persist execution receipt', error);
+  }
 
   return decorated;
 }

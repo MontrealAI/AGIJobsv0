@@ -9,6 +9,8 @@ type ContractInstances = {
   validationModule: ethers.Contract;
   disputeModule: ethers.Contract;
   feePool: ethers.Contract;
+  systemPause: ethers.Contract;
+  identityRegistry: ethers.Contract;
 };
 
 function instantiate(
@@ -30,5 +32,7 @@ export function loadContracts(
     validationModule: instantiate("validationModule", signerOrProvider),
     disputeModule: instantiate("disputeModule", signerOrProvider),
     feePool: instantiate("feePool", signerOrProvider),
+    systemPause: instantiate("systemPause", signerOrProvider),
+    identityRegistry: instantiate("identityRegistry", signerOrProvider),
   };
 }
