@@ -1,8 +1,9 @@
-chain_id: 11155111
-paymaster_address: "0x000000000000000000000000000000000000dead"
-balance_threshold_wei: 500000000000000000
-max_user_operation_gas: 2500000
-default_daily_cap_wei: 100000000000000000
+chainId: 11155111
+paymasterAddr: "0x000000000000000000000000000000000000dead"
+balanceThresholdWei: 500000000000000000
+maxUserOperationGas: 2500000
+maxFeePerGasWei: 150000000000
+defaultDailyCapWei: 100000000000000000
 reload_interval_seconds: 2
 orgs:
   engineering:

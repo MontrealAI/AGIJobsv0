@@ -104,7 +104,7 @@ class PaymasterSupervisor:
 
         context = context or {}
         org_id = str(context.get("org")) if context.get("org") is not None else None
-        estimated_cost = int(context.get("estimated_cost_wei") or 0)
+        estimated_cost = _parse_int(context.get("estimated_cost_wei"))
         if estimated_cost <= 0:
             self._rejections.labels("missing_cost").inc()
             raise PermissionError("estimated_cost_wei is required")
@@ -112,19 +112,28 @@ class PaymasterSupervisor:
         async with self._config_lock:
             config = self._config
 
-        selector = _extract_selector(user_operation.get("callData"))
-        target = user_operation.get("target") or user_operation.get("to")
+        selector = context.get("selector") if context else None
+        if not selector:
+            selector = _extract_selector(user_operation.get("callData"))
+        target = context.get("target") if context else None
+        if not target:
+            target = user_operation.get("target") or user_operation.get("to")
         if not config.method_is_allowed(target, selector):
             self._rejections.labels("method_not_allowed").inc()
             raise PermissionError("call not permitted by whitelist")
 
-        call_gas = int(user_operation.get("callGasLimit") or 0)
-        verification_gas = int(user_operation.get("verificationGasLimit") or 0)
-        pre_verification_gas = int(user_operation.get("preVerificationGas") or 0)
+        call_gas = _parse_int(user_operation.get("callGasLimit"))
+        verification_gas = _parse_int(user_operation.get("verificationGasLimit"))
+        pre_verification_gas = _parse_int(user_operation.get("preVerificationGas"))
         total_gas = call_gas + verification_gas + pre_verification_gas
         if total_gas > config.max_user_operation_gas:
             self._rejections.labels("gas_cap_exceeded").inc()
             raise PermissionError("user operation exceeds configured gas cap")
+
+        max_fee_per_gas = _parse_int(user_operation.get("maxFeePerGas"))
+        if config.max_fee_per_gas_wei is not None and max_fee_per_gas > config.max_fee_per_gas_wei:
+            self._rejections.labels("fee_cap_exceeded").inc()
+            raise PermissionError("maxFeePerGas exceeds configured cap")
 
         cap = config.org_cap(org_id)
         org_key = org_id or "default"
@@ -208,6 +217,26 @@ def _extract_selector(call_data: Any) -> Optional[str]:
     if not isinstance(call_data, str) or not call_data.startswith("0x") or len(call_data) < 10:
         return None
     return call_data[:10].lower()
+
+
+def _parse_int(value: Any) -> int:
+    if value is None:
+        return 0
+    if isinstance(value, int):
+        return value
+    if isinstance(value, bool):  # guard against booleans being treated as ints
+        return int(value)
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return 0
+        try:
+            return int(text, 0)
+        except ValueError:
+            return 0
+    return 0
 
 
 import contextlib  # placed at end to avoid circular import issues

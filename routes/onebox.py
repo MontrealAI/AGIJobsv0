@@ -821,16 +821,9 @@ def _normalize_for_digest(value: Any) -> Any:
     if isinstance(value, dict):
         items = sorted((str(k), _normalize_for_digest(v)) for k, v in value.items())
         return {k: v for k, v in items}
-    if hasattr(value, "model_dump"):
-        try:
-            return _normalize_for_digest(value.model_dump(mode="json"))
-        except Exception:
-            pass
-    if hasattr(value, "dict"):
-        try:
-            return _normalize_for_digest(value.dict())
-        except Exception:
-            pass
+    dumped = _maybe_model_dump(value)
+    if dumped is not None and dumped is not value:
+        return _normalize_for_digest(dumped)
     if hasattr(value, "__iter__") and not isinstance(value, (bytes, bytearray, str)):
         try:
             return [_normalize_for_digest(item) for item in list(value)]
@@ -842,11 +835,51 @@ def _normalize_for_digest(value: Any) -> Any:
         return str(value)
 
 
+def _maybe_model_dump(value: Any) -> Any:
+    if hasattr(value, "model_dump"):
+        try:
+            return value.model_dump(mode="json")
+        except TypeError:
+            try:
+                return value.model_dump()
+            except Exception:
+                pass
+        except Exception:
+            pass
+    if hasattr(value, "dict"):
+        try:
+            return value.dict()
+        except Exception:
+            pass
+    return value
+
+
 def _compute_receipt_digest(payload: Any) -> str:
     normalized = _normalize_for_digest(payload)
     serialized = json.dumps(normalized, separators=(",", ":"), ensure_ascii=False)
-    digest_bytes = Web3.keccak(text=serialized)
-    return Web3.to_hex(digest_bytes)
+    data_bytes = serialized.encode("utf-8")
+    keccak_fn = getattr(Web3, "keccak", None)
+    digest_bytes: bytes
+    if callable(keccak_fn):
+        try:
+            digest_bytes = keccak_fn(text=serialized)  # type: ignore[arg-type]
+        except TypeError:
+            digest_bytes = keccak_fn(data_bytes)  # type: ignore[arg-type]
+    else:
+        try:
+            from eth_hash.auto import keccak as _auto_keccak
+
+            digest_bytes = _auto_keccak(data_bytes)
+        except Exception:
+            digest_bytes = hashlib.sha3_256(data_bytes).digest()
+    return _to_hex(digest_bytes)
+
+
+def _to_hex(data: bytes) -> str:
+    to_hex_fn = getattr(Web3, "to_hex", None)
+    if callable(to_hex_fn):
+        return to_hex_fn(data)
+    return "0x" + data.hex()
 
 
 def _finalize_receipt_metadata(metadata: Dict[str, Any]) -> Tuple[Dict[str, Any], str]:
@@ -1443,12 +1476,8 @@ async def _send_relayer_tx(
                 raise RuntimeError("AAExecutionContext is required for relayer mode")
             try:
                 result = await executor.execute(tx, context)
-            except AAPolicyRejection:
+            except (AAPolicyRejection, AAPaymasterRejection):
                 raise
-            except AAPaymasterRejection as exc:
-                detail = _error_detail("AA_PAYMASTER_REJECTED")
-                detail["reason"] = str(exc)
-                raise HTTPException(status_code=502, detail=detail) from exc
             except AABundlerError as exc:
                 if exc.is_simulation_error:
                     detail = _error_detail("AA_SIMULATION_FAILED")
@@ -1617,7 +1646,7 @@ async def plan(request: Request, req: PlanRequest):
 
         plan_metadata: Dict[str, Any] = {
             "summary": summary,
-            "intent": intent.model_dump(mode="json"),
+            "intent": _maybe_model_dump(intent),
             "requiresConfirmation": requires_confirmation,
             "warnings": warnings,
             "planHash": plan_hash,
@@ -1882,7 +1911,7 @@ async def simulate(request: Request, req: SimulateRequest):
 
         simulation_metadata: Dict[str, Any] = {
             "summary": summary,
-            "intent": intent.model_dump(mode="json"),
+            "intent": _maybe_model_dump(intent),
             "risks": risk_messages,
             "riskCodes": risk_codes,
             "riskDetails": risk_details,
@@ -2134,7 +2163,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
                 try:
                     txh, receipt = await _send_relayer_tx(tx, mode="relayer", context=aa_context)
-                except AAPolicyRejection:
+                except (AAPolicyRejection, AAPaymasterRejection):
                     wallet_response = _build_wallet_response()
                 else:
                     job_id = _decode_job_created(receipt)
@@ -2221,7 +2250,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
                 try:
                     txh, receipt = await _send_relayer_tx(tx, mode="relayer", context=aa_context)
-                except AAPolicyRejection:
+                except (AAPolicyRejection, AAPaymasterRejection):
                     wallet_response = _build_wallet_response()
                 else:
                     relayed_response = ExecuteResponse(

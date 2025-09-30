@@ -54,6 +54,7 @@ class PaymasterConfig:
     whitelist: List[MethodWhitelist] = field(default_factory=list)
     orgs: Dict[str, OrgPolicy] = field(default_factory=dict)
     default_daily_cap_wei: Optional[int] = None
+    max_fee_per_gas_wei: Optional[int] = None
     reload_interval_seconds: int = 10
 
     def __post_init__(self) -> None:
@@ -66,6 +67,9 @@ class PaymasterConfig:
             raise ValueError("balance_threshold_wei must be non-negative")
         if not isinstance(self.max_user_operation_gas, int) or self.max_user_operation_gas <= 0:
             raise ValueError("max_user_operation_gas must be positive")
+        if self.max_fee_per_gas_wei is not None:
+            if not isinstance(self.max_fee_per_gas_wei, int) or self.max_fee_per_gas_wei <= 0:
+                raise ValueError("max_fee_per_gas_wei must be a positive integer when provided")
         if self.default_daily_cap_wei is not None:
             if not isinstance(self.default_daily_cap_wei, int) or self.default_daily_cap_wei < 0:
                 raise ValueError("default_daily_cap_wei must be non-negative")
@@ -74,22 +78,36 @@ class PaymasterConfig:
 
     @classmethod
     def from_mapping(cls, data: Dict[str, Any]) -> "PaymasterConfig":
-        whitelist_data = data.get("whitelist", []) or []
+        def _resolve(*keys: str, default: Any = None) -> Any:
+            for key in keys:
+                if key in data:
+                    return data[key]
+            return default
+
+        whitelist_data = _resolve("whitelist", "methodWhitelist", default=[]) or []
         whitelist = [MethodWhitelist(**item) for item in whitelist_data]
+        org_configs = _resolve("orgs", "orgCaps", default={}) or {}
         orgs_map = {}
-        for org_id, org_conf in (data.get("orgs") or {}).items():
+        for org_id, org_conf in org_configs.items():
             orgs_map[str(org_id)] = OrgPolicy(**org_conf)
         return cls(
-            chain_id=int(data["chain_id"]),
-            paymaster_address=str(data["paymaster_address"]),
-            balance_threshold_wei=int(data.get("balance_threshold_wei", 0)),
-            max_user_operation_gas=int(data["max_user_operation_gas"]),
+            chain_id=int(_resolve("chain_id", "chainId")),
+            paymaster_address=str(_resolve("paymaster_address", "paymasterAddr", "paymasterAddress")),
+            balance_threshold_wei=int(_resolve("balance_threshold_wei", "balanceThresholdWei", default=0)),
+            max_user_operation_gas=int(_resolve("max_user_operation_gas", "maxUserOperationGas")),
             whitelist=whitelist,
             orgs=orgs_map,
             default_daily_cap_wei=(
-                int(data["default_daily_cap_wei"]) if data.get("default_daily_cap_wei") is not None else None
+                int(_resolve("default_daily_cap_wei", "defaultDailyCapWei"))
+                if _resolve("default_daily_cap_wei", "defaultDailyCapWei") is not None
+                else None
             ),
-            reload_interval_seconds=int(data.get("reload_interval_seconds", 10)),
+            max_fee_per_gas_wei=(
+                int(_resolve("max_fee_per_gas_wei", "maxFeePerGasWei", "maxFeePerGas"))
+                if _resolve("max_fee_per_gas_wei", "maxFeePerGasWei", "maxFeePerGas") is not None
+                else None
+            ),
+            reload_interval_seconds=int(_resolve("reload_interval_seconds", "reloadIntervalSeconds", default=10)),
         )
 
     def org_cap(self, org_id: Optional[str]) -> Optional[int]:

@@ -77,7 +77,7 @@ def create_app(
         try:
             result = await supervisor.sponsor(user_operation, context=context)
         except PermissionError as exc:
-            raise HTTPException(status_code=403, detail=str(exc)) from exc
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         return JSONResponse(result)
 
     return app

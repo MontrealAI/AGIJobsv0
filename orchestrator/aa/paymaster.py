@@ -48,18 +48,18 @@ class PaymasterClient:
         url = self._url.rstrip("/") + "/v1/sponsor"
         async with httpx.AsyncClient(timeout=self._timeout, headers=headers) as client:
             response = await client.post(url, json=request_payload)
-        if response.status_code == 403:
-            try:
-                detail = response.json().get("detail")
-            except Exception:  # pragma: no cover - best effort
-                detail = "paymaster rejected request"
-            raise PaymasterError(str(detail), code=403)
-        if response.status_code >= 400:
-            raise PaymasterError(f"Paymaster HTTP {response.status_code}", code=response.status_code)
         try:
             data = response.json()
         except json.JSONDecodeError as exc:  # pragma: no cover - defensive
-            raise PaymasterError("Invalid paymaster response") from exc
+            data = None
+        if response.status_code >= 400:
+            detail: Any = None
+            if isinstance(data, dict):
+                detail = data.get("detail") or data.get("error")
+            message = str(detail) if detail else f"Paymaster HTTP {response.status_code}"
+            raise PaymasterError(message, code=response.status_code)
+        if data is None:
+            raise PaymasterError("Invalid paymaster response")
         if not isinstance(data, dict):
             raise PaymasterError("Paymaster returned an invalid sponsorship payload")
         return data
