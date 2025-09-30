@@ -1,5 +1,5 @@
 // apps/onebox/app.js
-import errorsCatalog from '../../storage/errors/onebox.json' assert { type: 'json' };
+import errorsCatalog from '../../backend/errors/catalog.json' assert { type: 'json' };
 const $ = (selector) => document.querySelector(selector);
 const chat = $('#chat');
 const box = $('#onebox-input');
@@ -503,7 +503,10 @@ function handleError(error) {
   const message = (error && error.message ? error.message : 'UNKNOWN').toUpperCase();
   const key = resolveErrorKey(message);
   console.error('One-box error', error);
-  addMessage('assist', `<span class="error-text">⚠️ ${ERRORS[key]}</span>`);
+  const entry = ERRORS[key];
+  const friendly = entry && entry.message ? entry.message : key;
+  const hint = entry && entry.hint ? ` ${entry.hint}` : '';
+  addMessage('assist', `<span class="error-text">⚠️ ${friendly}${hint}</span>`);
 }
 
 function setModeLabel() {

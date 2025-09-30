@@ -349,6 +349,7 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     _compute_plan_hash,
     _summary_for_intent,
     _error_detail,
+    _error_message,
     _ERRORS,
     _ERROR_CATALOG_PATH,
     _decode_job_created,
@@ -380,10 +381,15 @@ class ErrorCatalogTests(unittest.TestCase):
         self.assertEqual(catalog, _ERRORS)
 
     def test_error_detail_matches_catalog(self) -> None:
-        for code, message in _ERRORS.items():
+        for code, entry in _ERRORS.items():
             detail = _error_detail(code)
             self.assertEqual(detail["code"], code)
-            self.assertEqual(detail["message"], message)
+            self.assertEqual(detail["message"], entry["message"])
+            hint = entry.get("hint")
+            if hint:
+                self.assertEqual(detail.get("hint"), hint)
+            else:
+                self.assertNotIn("hint", detail)
 
 
 class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
@@ -568,7 +574,9 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
             await simulate(_make_request(), SimulateRequest(intent=intent))
         self.assertEqual(exc.exception.status_code, 400)
         self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_REQUIRED")
-        self.assertEqual(exc.exception.detail["message"], _ERRORS["PLAN_HASH_REQUIRED"])
+        self.assertEqual(
+            exc.exception.detail["message"], _ERRORS["PLAN_HASH_REQUIRED"]["message"]
+        )
 
     async def test_simulate_rejects_blank_plan_hash(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
@@ -627,7 +635,11 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
             SimulateRequest(intent=intent, planHash=plan_hash),
         )
         self.assertEqual(response.blockers, [])
-        self.assertIn("LONG_DEADLINE", response.risks)
+        self.assertIn("LONG_DEADLINE", response.riskCodes)
+        self.assertIn(_error_message("LONG_DEADLINE"), response.risks)
+        self.assertTrue(
+            any(detail["code"] == "LONG_DEADLINE" for detail in response.riskDetails)
+        )
 
     async def test_simulate_policy_violation_returns_blocker(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="25", deadlineDays=7))
@@ -700,7 +712,8 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(response.blockers, [])
-        self.assertIn("STATUS_UNKNOWN", response.risks)
+        self.assertIn("STATUS_UNKNOWN", response.riskCodes)
+        self.assertIn(_error_message("STATUS_UNKNOWN"), response.risks)
 
     async def test_simulate_finalize_warns_when_job_not_ready(self) -> None:
         intent = JobIntent(action="finalize_job", payload=Payload(jobId=88))
@@ -714,7 +727,8 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(response.blockers, [])
-        self.assertIn("JOB_NOT_READY_FOR_FINALIZE", response.risks)
+        self.assertIn("JOB_NOT_READY_FOR_FINALIZE", response.riskCodes)
+        self.assertIn(_error_message("JOB_NOT_READY_FOR_FINALIZE"), response.risks)
 
 
 class PlanHashUpgradeTests(unittest.IsolatedAsyncioTestCase):
@@ -800,7 +814,9 @@ class ExecutorPlanHashValidationTests(unittest.IsolatedAsyncioTestCase):
             await execute(_make_request(), ExecuteRequest(intent=intent))
         self.assertEqual(exc.exception.status_code, 400)
         self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_REQUIRED")
-        self.assertEqual(exc.exception.detail["message"], _ERRORS["PLAN_HASH_REQUIRED"])
+        self.assertEqual(
+            exc.exception.detail["message"], _ERRORS["PLAN_HASH_REQUIRED"]["message"]
+        )
 
     async def test_execute_rejects_blank_plan_hash(self) -> None:
         intent = JobIntent(action="check_status", payload=Payload(jobId=123))
@@ -882,7 +898,12 @@ class ExecuteEndpointRegressionTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.json(),
-            {"detail": {"code": "REWARD_INVALID", "message": _ERRORS["REWARD_INVALID"]}},
+            {
+                "detail": {
+                    "code": "REWARD_INVALID",
+                    "message": _ERRORS["REWARD_INVALID"]["message"],
+                }
+            },
         )
 
 
@@ -963,7 +984,9 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsInstance(exc.exception.detail, dict)
         self.assertEqual(exc.exception.detail["code"], "DEADLINE_INVALID")
-        self.assertEqual(exc.exception.detail["message"], _ERRORS["DEADLINE_INVALID"])
+        self.assertEqual(
+            exc.exception.detail["message"], _ERRORS["DEADLINE_INVALID"]["message"]
+        )
 
 
 class ExecutorRelayerFallbackTests(unittest.IsolatedAsyncioTestCase):
