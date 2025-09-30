@@ -1,16 +1,11 @@
-import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum } from '@graphprotocol/graph-ts';
 
-import {
-  JobCreated,
-  JobFinalized,
-} from "../generated/JobRegistry/JobRegistry";
+import { JobCreated, JobFinalized } from '../generated/JobRegistry/JobRegistry';
 import {
   StakeDeposited,
   StakeSlashed,
-} from "../generated/StakeManager/StakeManager";
-import {
-  ValidationRevealed,
-} from "../generated/ValidationModule/ValidationModule";
+} from '../generated/StakeManager/StakeManager';
+import { ValidationRevealed } from '../generated/ValidationModule/ValidationModule';
 import {
   Job,
   ProtocolStats,
@@ -18,10 +13,10 @@ import {
   StakeAggregate,
   Validator,
   ValidatorVote,
-} from "../generated/schema";
+} from '../generated/schema';
 
 const ZERO = BigInt.zero();
-const PROTOCOL_ID = "agi-jobs";
+const PROTOCOL_ID = 'agi-jobs';
 
 function safeDecrement(value: i32): i32 {
   return value > 0 ? value - 1 : 0;
@@ -51,24 +46,22 @@ function touchProtocol(stats: ProtocolStats, event: ethereum.Event): void {
 
 function roleName(role: i32): string {
   if (role == 0) {
-    return "Agent";
+    return 'Agent';
   }
   if (role == 1) {
-    return "Validator";
+    return 'Validator';
   }
   if (role == 2) {
-    return "Platform";
+    return 'Platform';
   }
-  return "Unknown";
+  return 'Unknown';
 }
 
 function stakeId(address: Address, role: string): string {
-  return address.toHexString() + ":" + role;
+  return address.toHexString() + ':' + role;
 }
 
-function getOrCreateStakeAggregate(
-  role: string,
-): StakeAggregate {
+function getOrCreateStakeAggregate(role: string): StakeAggregate {
   let aggregate = StakeAggregate.load(role);
   if (aggregate == null) {
     aggregate = new StakeAggregate(role);
@@ -86,6 +79,8 @@ function getOrCreateStakeAggregate(
 export function handleJobCreated(event: JobCreated): void {
   const jobId = event.params.jobId.toString();
   let job = Job.load(jobId);
+  const assigned = !event.params.agent.equals(Address.zero());
+
   if (job == null) {
     job = new Job(jobId);
     job.jobId = event.params.jobId;
@@ -94,7 +89,6 @@ export function handleJobCreated(event: JobCreated): void {
     job.stake = event.params.stake;
     job.fee = event.params.fee;
     job.escrowed = event.params.reward.plus(event.params.stake);
-    job.state = "Created";
     job.validatorQuorum = 0;
     job.approvals = 0;
     job.rejections = 0;
@@ -104,8 +98,12 @@ export function handleJobCreated(event: JobCreated): void {
     job.createdAtTimestamp = event.block.timestamp;
   }
 
-  if (!event.params.agent.equals(Address.zero())) {
+  if (assigned) {
     job.assignedTo = event.params.agent;
+    job.state = 'Assigned';
+  } else {
+    job.assignedTo = null;
+    job.state = 'Open';
   }
 
   job.updatedAtBlock = event.block.number;
@@ -129,7 +127,7 @@ export function handleJobFinalized(event: JobFinalized): void {
   }
 
   const previousEscrow = job.escrowed;
-  job.state = "Finalized";
+  job.state = 'Finalized';
   job.assignedTo = event.params.worker;
   job.escrowed = ZERO;
   job.finalizedAtBlock = event.block.number;
@@ -257,7 +255,7 @@ export function handleValidatorVoted(event: ValidationRevealed): void {
     job.stake = ZERO;
     job.fee = ZERO;
     job.escrowed = ZERO;
-    job.state = "Unknown";
+    job.state = 'Unknown';
     job.validatorQuorum = 0;
     job.approvals = 0;
     job.rejections = 0;
@@ -276,7 +274,7 @@ export function handleValidatorVoted(event: ValidationRevealed): void {
     validator.totalApprovals = 0;
     validator.totalRejections = 0;
   }
-  const voteId = job.id + ":" + validatorId;
+  const voteId = job.id + ':' + validatorId;
   let vote = ValidatorVote.load(voteId);
   let hadPrevious = false;
   let previousApproval = false;
@@ -313,7 +311,7 @@ export function handleValidatorVoted(event: ValidationRevealed): void {
   validator.lastVotedAtBlock = event.block.number;
   validator.lastVotedAtTimestamp = event.block.timestamp;
 
-  const stake = Stake.load(stakeId(event.params.validator, "Validator"));
+  const stake = Stake.load(stakeId(event.params.validator, 'Validator'));
   if (stake != null) {
     validator.stake = stake.id;
   }
@@ -327,8 +325,8 @@ export function handleValidatorVoted(event: ValidationRevealed): void {
   vote.revealedAtTimestamp = event.block.timestamp;
   vote.save();
 
-  if (job.state != "Finalized") {
-    job.state = "Validating";
+  if (job.state != 'Finalized') {
+    job.state = 'Validating';
   }
   job.updatedAtBlock = event.block.number;
   job.updatedAtTimestamp = event.block.timestamp;
