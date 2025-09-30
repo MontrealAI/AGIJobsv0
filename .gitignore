@@ -32,3 +32,6 @@ apps/onebox/dist/
 examples/agentic/runtime-agentic.jsonl
 !scripts/v2/run-owner-plan.js
 !scripts/v2/lib/
+
+apps/console/dist/
+apps/console/node_modules/

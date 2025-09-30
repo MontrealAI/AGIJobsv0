@@ -15,6 +15,8 @@ type RawContracts = {
   validationModule: RawContractEntry;
   disputeModule: RawContractEntry;
   feePool: RawContractEntry;
+  systemPause: RawContractEntry;
+  identityRegistry: RawContractEntry;
 };
 
 const CONTRACT_CONFIG_CANDIDATES = [
@@ -51,6 +53,8 @@ const ENV_OVERRIDES: Record<ContractKey, readonly string[]> = {
   validationModule: ["VALIDATION_MODULE", "VALIDATION_MODULE_ADDRESS"],
   disputeModule: ["DISPUTE_MODULE", "DISPUTE_MODULE_ADDRESS"],
   feePool: ["FEE_POOL", "FEE_POOL_ADDRESS"],
+  systemPause: ["SYSTEM_PAUSE", "SYSTEM_PAUSE_ADDRESS"],
+  identityRegistry: ["IDENTITY_REGISTRY", "IDENTITY_REGISTRY_ADDRESS"],
 };
 
 function normalizeAddress(value: string | undefined): string | undefined {
@@ -104,5 +108,7 @@ export function getAllContractMetadata(): Record<ContractKey, ContractMetadata> 
     validationModule: getContractMetadata("validationModule"),
     disputeModule: getContractMetadata("disputeModule"),
     feePool: getContractMetadata("feePool"),
+    systemPause: getContractMetadata("systemPause"),
+    identityRegistry: getContractMetadata("identityRegistry"),
   };
 }
