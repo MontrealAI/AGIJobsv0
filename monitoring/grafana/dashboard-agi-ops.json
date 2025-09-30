@@ -1,7 +1,7 @@
 {
   "title": "AGI Stack SLOs",
   "uid": "agi-slos",
-  "version": 1,
+  "version": 2,
   "panels": [
     {
       "type": "timeseries",
@@ -42,6 +42,38 @@
           "unit": "percentunit",
           "min": 0,
           "max": 1
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Sponsored Operations Rate",
+      "targets": [
+        {
+          "expr": "service:sponsored_ops_total:rate5m",
+          "legendFormat": "sponsored ops/min"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Sponsorship Rejections by Result",
+      "targets": [
+        {
+          "expr": "sum by (result) (rate(paymaster_sponsored_operations_rejections_total[5m]))",
+          "legendFormat": "{{result}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0
         }
       }
     },

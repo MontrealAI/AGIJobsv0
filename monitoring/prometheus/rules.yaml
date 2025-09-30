@@ -11,7 +11,7 @@ groups:
       - record: service:sponsored_ops_total:rate5m
         expr: sum(rate(paymaster_sponsored_operations_total[5m]))
       - record: service:sponsored_ops_rejections:rate5m
-        expr: sum(rate(paymaster_sponsored_operations_total{result="rejected"}[5m]))
+        expr: sum(rate(paymaster_sponsored_operations_rejections_total[5m]))
       - record: service:ipfs_pin_latency_seconds:p95
         expr: histogram_quantile(0.95, sum(rate(ipfs_pin_duration_seconds_bucket[5m])) by (le))
       - record: service:subgraph_lag_blocks
