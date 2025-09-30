@@ -35,6 +35,10 @@
     "message": "The account abstraction paymaster rejected this request.",
     "hint": "Retry shortly or submit the transaction manually if the sponsor is depleted."
   },
+  "AA_SIMULATION_FAILED": {
+    "message": "The bundler simulation rejected this account abstraction request.",
+    "hint": "Review the encoded call data or execute the transaction manually in wallet mode."
+  },
   "PAYMASTER_REJECTED": {
     "message": "The account-abstraction paymaster rejected the request.",
     "hint": "Top up the paymaster or switch to Expert mode to cover gas yourself."
