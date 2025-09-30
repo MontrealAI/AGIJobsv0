@@ -13,6 +13,12 @@ metadata:
     nginx.ingress.kubernetes.io/limit-rpm: "{{ default 300 .Values.rateLimitRpm }}"
     nginx.ingress.kubernetes.io/limit-burst-multiplier: "1"
     nginx.ingress.kubernetes.io/enable-modsecurity: {{ .Values.security.wafAnnotation | quote }}
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "{{ .Values.security.corsAllowOrigin }}"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "{{ join "," (.Values.security.corsAllowHeaders | default (list "Authorization" "Content-Type")) }}"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "{{ join "," (.Values.security.corsAllowMethods | default (list "GET" "POST")) }}"
+    nginx.ingress.kubernetes.io/proxy-body-size: "{{ default "1m" .Values.security.proxyBodySize }}"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "{{ default "60s" .Values.security.requestTimeout }}"
 spec:
   ingressClassName: {{ .Values.ingressClassName }}
   tls:

@@ -29,20 +29,22 @@ global:
       requestsPerMinute: 60
       burst: 15
   secrets:
-    kmsKeyRing: projects/example/locations/global/keyRings/agi
+    kmsKeyring: projects/example/locations/global/keyRings/agi
     orchestrator:
       secretName: orchestrator-secrets
-      kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/orchestrator
+      kmsKeyUri: projects/example/locations/global/keyRings/agi/cryptoKeys/orchestrator
+      environment: production
     paymaster:
       secretName: paymaster-secrets
-      kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/paymaster
+      kmsKeyUri: projects/example/locations/global/keyRings/agi/cryptoKeys/paymaster
+      treasuryAddress: "0x0000000000000000000000000000000000000000"
     attester:
       secretName: attester-secrets
-      kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/attester
+      kmsKeyUri: projects/example/locations/global/keyRings/agi/cryptoKeys/attester
   image:
     pullPolicy: IfNotPresent
     repositoryPrefix: ghcr.io/agi/jobs
-    tag: latest
+    tag: ""
     digestOverrides: {}
   autoscaling:
     enabled: true
@@ -66,13 +68,16 @@ global:
 orchestrator:
   image:
     repository: ghcr.io/agi/jobs/orchestrator
-    tag: latest
-    digest: ""
+    tag: ""
+    digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
     pullPolicy: IfNotPresent
   env:
     logLevel: info
     corsOrigins:
       - https://operator.example.com
+    corsHeaders:
+      - Authorization
+      - Content-Type
     kmsKey: projects/example/locations/global/keyRings/agi/cryptoKeys/orchestrator
     maxRequestBytes: 1048576
   service:
@@ -90,8 +95,8 @@ orchestrator:
 bundler:
   image:
     repository: ghcr.io/agi/jobs/bundler
-    tag: latest
-    digest: ""
+    tag: ""
+    digest: sha256:2222222222222222222222222222222222222222222222222222222222222222
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -104,8 +109,8 @@ bundler:
 paymaster-supervisor:
   image:
     repository: ghcr.io/agi/jobs/paymaster-supervisor
-    tag: latest
-    digest: ""
+    tag: ""
+    digest: sha256:3333333333333333333333333333333333333333333333333333333333333333
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -120,8 +125,8 @@ paymaster-supervisor:
 attester:
   image:
     repository: ghcr.io/agi/jobs/attester
-    tag: latest
-    digest: ""
+    tag: ""
+    digest: sha256:4444444444444444444444444444444444444444444444444444444444444444
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -198,3 +203,12 @@ ingress:
     includeSubdomains: true
     preload: true
     wafAnnotation: "true"
+    corsAllowOrigin: https://operator.example.com
+    corsAllowHeaders:
+      - Authorization
+      - Content-Type
+    corsAllowMethods:
+      - GET
+      - POST
+    proxyBodySize: 1m
+    requestTimeout: 60s

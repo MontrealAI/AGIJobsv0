@@ -23,24 +23,29 @@ global:
   contracts:
     entryPoint: "0x..."
     paymaster: "0x..."
-    aaRegistry: "0x..."
-    eas:
-      schemaUID: "0x..."
+    attester: "0x..."
+  eas:
+    schemaUID: "0x..."
   cors:
-    allowOrigins:
+    allowedOrigins:
       - https://portal.example.com
   rateLimits:
     orchestrator:
-      rps: 40
+      requestsPerMinute: 240
       burst: 80
     bundler:
-      rps: 100
-      burst: 200
+      requestsPerMinute: 600
+      burst: 120
   secrets:
     kmsKeyring: projects/app/locations/global/keyRings/prod
-    orchestratorEnv: ""
-    attesterKeyUri: projects/app/.../attester
-    paymasterKeyUri: projects/app/.../paymaster
+    orchestrator:
+      kmsKeyUri: projects/app/.../orchestrator
+      environment: production
+    paymaster:
+      kmsKeyUri: projects/app/.../paymaster
+      treasuryAddress: "0x..."
+    attester:
+      kmsKeyUri: projects/app/.../attester
 orchestrator:
   image:
     repository: ghcr.io/company/orchestrator
@@ -60,10 +65,14 @@ attester:
     repository: ghcr.io/company/attester
     digest: sha256:...
 ingress:
-  host: agi.example.com
-  tls:
-    enabled: true
-    secretName: agi-stack-tls
+  hosts:
+    - host: orchestrator.example.com
+      serviceName: orchestrator
+      servicePort: 8000
+  defaultTlsSecret: agi-stack-tls
+  security:
+    corsAllowOrigin: https://portal.example.com
+    proxyBodySize: 1m
 ```
 
 ## 2. Fetch Dependencies
@@ -78,7 +87,11 @@ helm dependency build deploy/helm
 helm install agi-stack deploy/helm -f bootstrap-values.yaml
 ```
 
-The dependencies include orchestrator, bundler, paymaster supervisor, IPFS, graph-node, postgres, attester, and ingress. Helm renders pinned image digests by default when `.Values.<component>.image.digest` is provided, guaranteeing immutability.
+```bash
+helm test agi-stack
+```
+
+The dependencies include orchestrator, bundler, paymaster supervisor, IPFS, graph-node, postgres, attester, and ingress. Helm renders pinned image digests by default when `.Values.<component>.image.digest` is provided, guaranteeing immutability, and the included test verifies the pause switch wiring post-install.
 
 ## 4. Validate Install
 

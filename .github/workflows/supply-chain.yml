@@ -9,7 +9,45 @@ on:
   workflow_dispatch:
 
 jobs:
+  enforce-digests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PyYAML
+        run: pip install --disable-pip-version-check pyyaml
+
+      - name: Validate Helm image digests
+        run: |
+          python - <<'PY'
+          import sys
+          import yaml
+
+          required_components = [
+              "orchestrator",
+              "bundler",
+              "paymaster-supervisor",
+              "attester",
+          ]
+
+          with open("deploy/helm/values.yaml", "r", encoding="utf-8") as handle:
+              values = yaml.safe_load(handle)
+
+          missing = []
+          for component in required_components:
+              image_cfg = values.get(component, {}).get("image", {})
+              digest = image_cfg.get("digest") or values.get("global", {}).get("image", {}).get("digestOverrides", {}).get(component)
+              tag = image_cfg.get("tag") or values.get("global", {}).get("image", {}).get("tag")
+
+              if not digest and (not tag or tag == "latest"):
+                  missing.append(component)
+
+          if missing:
+              sys.exit(f"Missing immutable image digests or pinned tags for: {', '.join(missing)}")
+          PY
+
   build-attest:
+    needs: enforce-digests
     runs-on: ubuntu-latest
     permissions:
       contents: read

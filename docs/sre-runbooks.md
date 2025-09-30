@@ -4,12 +4,12 @@
 
 | Scenario | Trigger | Runbook Link |
 | -------- | ------- | ------------ |
-| Paymaster gas low | `LowGasBalance` alert | https://docs.example.com/runbooks/paymaster-gas |
-| Sponsorship rejection spike | `SponsorshipRejectionSpike` alert | https://docs.example.com/runbooks/rejection-spike |
-| Bundler reverts spike | `BundlerRevertSpike` alert | https://docs.example.com/runbooks/revert-spike |
-| IPFS backlog | Dashboard panel "IPFS Pinning p95" > 60s | https://docs.example.com/runbooks/ipfs-backlog |
-| Subgraph lag | `service:subgraph_lag_blocks` > 40 | https://docs.example.com/runbooks/subgraph-lag |
-| RPC outage | `orchestrator_rpc_requests_failed_total` increase | https://docs.example.com/runbooks/rpc-outage |
+| Paymaster gas low | `LowGasBalance` alert | https://docs.agijobsv0.dev/runbooks/paymaster-gas |
+| Sponsorship rejection spike | `SponsorshipRejectionSpike` alert | https://docs.agijobsv0.dev/runbooks/rejection-spike |
+| Bundler reverts spike | `BundlerRevertSpike` alert | https://docs.agijobsv0.dev/runbooks/revert-spike |
+| IPFS backlog | Dashboard panel "IPFS Pinning p95" > 60s | https://docs.agijobsv0.dev/runbooks/ipfs-backlog |
+| Subgraph lag | `service:subgraph_lag_blocks` > 40 | https://docs.agijobsv0.dev/runbooks/subgraph-lag |
+| RPC outage | `orchestrator_rpc_requests_failed_total` increase | https://docs.agijobsv0.dev/runbooks/rpc-outage |
 
 ## CI Artifact Reference
 

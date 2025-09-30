@@ -2,6 +2,17 @@
   "title": "AGI Stack SLOs",
   "uid": "agi-slos",
   "version": 2,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "targetBlank": true,
+      "title": "SRE Runbooks",
+      "type": "link",
+      "url": "https://docs.agijobsv0.dev/runbooks"
+    }
+  ],
   "panels": [
     {
       "type": "timeseries",

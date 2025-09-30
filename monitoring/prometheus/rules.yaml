@@ -23,28 +23,28 @@ groups:
         for: 5m
         labels:
           severity: critical
-          runbook: https://docs.agistack.dev/runbooks/paymaster-gas
+          runbook: https://docs.agijobsv0.dev/runbooks/paymaster-gas
         annotations:
           summary: Paymaster gas wallet below 0.05 ETH
           description: Top up the configured treasury wallet before sponsorship halts.
-          runbook: https://docs.agistack.dev/runbooks/paymaster-gas
+          runbook: https://docs.agijobsv0.dev/runbooks/paymaster-gas
       - alert: SponsorshipRejectionSpike
         expr: service:sponsored_ops_rejections:rate5m > 5
         for: 10m
         labels:
           severity: warning
-          runbook: https://docs.agistack.dev/runbooks/rejection-spike
+          runbook: https://docs.agijobsv0.dev/runbooks/rejection-spike
         annotations:
           summary: Sponsored operation rejections increasing
           description: Investigate upstream AA flow or contract configuration issues.
-          runbook: https://docs.agistack.dev/runbooks/rejection-spike
+          runbook: https://docs.agijobsv0.dev/runbooks/rejection-spike
       - alert: BundlerRevertSpike
         expr: rate(bundler_operations_total{status="reverted"}[5m]) > 2
         for: 5m
         labels:
           severity: warning
-          runbook: https://docs.agistack.dev/runbooks/revert-spike
+          runbook: https://docs.agijobsv0.dev/runbooks/revert-spike
         annotations:
           summary: Bundler revert spike detected
           description: Review recent deployments and mempool conditions.
-          runbook: https://docs.agistack.dev/runbooks/revert-spike
+          runbook: https://docs.agijobsv0.dev/runbooks/revert-spike
