@@ -21,7 +21,9 @@ spec:
     spec:
       containers:
         - name: graph-node
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          {{- $digest := coalesce .Values.image.digest (dig "image" "digestOverrides" "graph-node" .Values.global) }}
+          {{- $tag := coalesce .Values.image.tag (dig "image" "tag" .Values.global) }}
+          image: {{ .Values.image.repository }}{{- if $digest -}}@{{ $digest }}{{- else -}}:{{ required "image.tag must be provided when no digest is configured for graph-node" $tag }}{{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: GRAPH_LOG

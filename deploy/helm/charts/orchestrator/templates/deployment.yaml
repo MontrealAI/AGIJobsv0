@@ -22,13 +22,19 @@ spec:
     spec:
       containers:
         - name: orchestrator
-          image: {{ .Values.image.repository }}{{- if .Values.image.digest -}}@{{ .Values.image.digest }}{{- else -}}:{{ default .Chart.AppVersion .Values.image.tag }}{{- end }}
+          {{- $repoPrefix := default "" (dig "image" "repositoryPrefix" .Values.global) }}
+          {{- $repository := default (printf "%s/orchestrator" $repoPrefix | trimPrefix "/") .Values.image.repository }}
+          {{- $digest := coalesce .Values.image.digest (dig "image" "digestOverrides" "orchestrator" .Values.global) }}
+          {{- $tag := coalesce .Values.image.tag (dig "image" "tag" .Values.global) }}
+          image: {{ $repository }}{{- if $digest -}}@{{ $digest }}{{- else -}}:{{ required "image.tag must be provided when no digest is configured for orchestrator" $tag }}{{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: LOG_LEVEL
               value: {{ .Values.env.logLevel | quote }}
             - name: CORS_ALLOWED_ORIGINS
-              value: {{ join "," .Values.env.corsOrigins | quote }}
+              value: {{ join "," (default (.Values.global.cors.allowedOrigins | default (list)) .Values.env.corsOrigins) | quote }}
+            - name: CORS_ALLOWED_HEADERS
+              value: {{ join "," (default (.Values.global.cors.allowedHeaders | default (list)) .Values.env.corsHeaders) | quote }}
             - name: KMS_KEY_URI
               value: {{ .Values.env.kmsKey | quote }}
             - name: ENTRY_POINT_ADDRESS

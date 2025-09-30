@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ printf "%s-pause-switch" .Release.Name }}
+  labels:
+    app.kubernetes.io/name: agi-stack
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: pause-switch-check
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          set -eu
+          if [ ! -f "/pause/{{ .Values.global.pauseSwitch.key }}" ]; then
+            echo "pause switch key missing"
+            exit 1
+          fi
+          value=$(cat /pause/{{ .Values.global.pauseSwitch.key }})
+          echo "pause switch value: $value"
+      volumeMounts:
+        - name: pause-switch
+          mountPath: /pause
+  volumes:
+    - name: pause-switch
+      configMap:
+        name: {{ .Values.global.pauseSwitch.configMap }}

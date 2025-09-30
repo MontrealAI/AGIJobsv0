@@ -17,6 +17,7 @@ This runbook is designed for non-technical operators. Every workflow is achievab
 2. Select **Fee Schedule** and choose the target chain (Testnet/Mainnet).
 3. Use the slider to set the base sponsorship fee in gwei. Tooltips show the resulting USD equivalent (sourced from the cpvo_usd metric).
 4. Click **Preview** to confirm the change and **Submit**. The portal creates a signed policy update via the Paymaster Supervisor API. No CLI steps are required.
+5. Review the confirmation banner which links to the [Sponsorship Policy Playbook](policy-playbook.md) for post-change validation.
 
 ## Top Up Gas Treasury
 

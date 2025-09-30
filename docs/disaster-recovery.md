@@ -18,9 +18,10 @@
 1. **Provision Cluster** – Create new Kubernetes cluster in standby region with identical node pools.
 2. **Restore Postgres** – Apply latest snapshot and promote replica.
 3. **Rehydrate IPFS** – Restore pinset via `ipfs pin add --recursive` from backup.
-4. **Deploy Stack** – Run `helm install agi-stack deploy/helm -f bootstrap-values.yaml` and pin image digests using `images-<component>-<network>` artifacts from CI.
-5. **Rebuild Subgraph** – Trigger Graph Node resync, monitor lag panel until under 20 blocks.
-6. **Validation** – Execute synthetic sponsored operation and verify receipt via portal.
+4. **Rehydrate Secrets** – Re-create KMS backed secrets by binding the workload identity to the restored namespace and confirming the SecretProviderClass synchronises attester/paymaster materials (no private keys on disk).
+5. **Deploy Stack** – Run `helm install agi-stack deploy/helm -f bootstrap-values.yaml` and pin image digests using `images-<component>-<network>` artifacts from CI.
+6. **Rebuild Subgraph** – Trigger Graph Node resync, monitor lag panel until under 20 blocks.
+7. **Validation** – Execute synthetic sponsored operation and verify receipt via portal.
 
 ## Communication Plan
 
