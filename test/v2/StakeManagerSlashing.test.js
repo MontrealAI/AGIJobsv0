@@ -231,3 +231,142 @@ describe('StakeManager multi-validator slashing', function () {
     expect(await token.balanceOf(treasury.address)).to.equal(16n * ONE);
   });
 });
+
+describe('StakeManager deployer integration', function () {
+  const Role = { Agent: 0, Validator: 1 };
+  const ONE = 10n ** 18n;
+  let owner, governance, agent, employer;
+  let token, stakeManager, registrySigner, taxPolicy;
+
+  beforeEach(async () => {
+    [owner, governance, agent, employer] = await ethers.getSigners();
+
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
+
+    const supplySlot = '0x' + (2).toString(16).padStart(64, '0');
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      supplySlot,
+      ethers.toBeHex(3000n * ONE, 32),
+    ]);
+
+    for (const addr of [agent.address, governance.address]) {
+      const balSlot = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 0]
+        )
+      );
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        balSlot,
+        ethers.toBeHex(1000n * ONE, 32),
+      ]);
+      const ackSlot = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 6]
+        )
+      );
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        ackSlot,
+        ethers.toBeHex(1n, 32),
+      ]);
+    }
+
+    const Deployer = await ethers.getContractFactory(
+      'contracts/v2/Deployer.sol:Deployer'
+    );
+    const deployer = await Deployer.connect(owner).deploy();
+    await deployer.waitForDeployment();
+
+    const ids = {
+      ens: ethers.ZeroAddress,
+      nameWrapper: ethers.ZeroAddress,
+      clubRootNode: ethers.ZeroHash,
+      agentRootNode: ethers.ZeroHash,
+      validatorMerkleRoot: ethers.ZeroHash,
+      agentMerkleRoot: ethers.ZeroHash,
+    };
+
+    const deployment = await deployer.deployDefaults.staticCall(
+      ids,
+      governance.address
+    );
+    await deployer.deployDefaults(ids, governance.address);
+
+    const stakeAddr = deployment[0];
+    const jobRegistryAddr = deployment[1];
+    const taxPolicyAddr = deployment[10];
+
+    stakeManager = await ethers.getContractAt(
+      'contracts/v2/StakeManager.sol:StakeManager',
+      stakeAddr
+    );
+    registrySigner = await ethers.getImpersonatedSigner(jobRegistryAddr);
+    taxPolicy = await ethers.getContractAt(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy',
+      taxPolicyAddr
+    );
+
+    await ethers.provider.send('hardhat_setBalance', [
+      jobRegistryAddr,
+      '0x56BC75E2D63100000',
+    ]);
+
+    const stakeAck = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [stakeAddr, 6]
+      )
+    );
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      stakeAck,
+      ethers.toBeHex(1n, 32),
+    ]);
+
+    if (taxPolicyAddr !== ethers.ZeroAddress) {
+      await taxPolicy.connect(agent).acknowledge();
+    }
+
+    await token.connect(agent).approve(stakeAddr, 1000n * ONE);
+    await stakeManager.connect(agent).depositStake(Role.Agent, 100n * ONE);
+  });
+
+  it('allowlists the treasury during deployment', async () => {
+    expect(await stakeManager.treasury()).to.equal(governance.address);
+    expect(
+      await stakeManager.treasuryAllowlist(governance.address)
+    ).to.equal(true);
+
+    const slashAmount = 40n * ONE;
+    const beforeBalance = await token.balanceOf(governance.address);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        ['slash(address,uint8,uint256,address,address[])'](
+          agent.address,
+          Role.Agent,
+          slashAmount,
+          employer.address,
+          []
+        )
+    ).not.to.be.reverted;
+
+    const afterBalance = await token.balanceOf(governance.address);
+    expect(afterBalance - beforeBalance).to.equal(slashAmount);
+  });
+});
