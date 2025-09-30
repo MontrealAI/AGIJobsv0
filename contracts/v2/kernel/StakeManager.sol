@@ -20,6 +20,18 @@ contract KernelStakeManager is Ownable, ReentrancyGuard {
     /// @notice staking balance for each participant.
     mapping(address => uint256) private _stakes;
 
+    /// @notice total locked stake for each participant.
+    mapping(address => uint256) private _lockedStakes;
+
+    /// @notice per-job locked stake for each participant.
+    mapping(address => mapping(uint256 => uint256)) private _jobLocks;
+
+    /// @notice active job ids for each participant used to prune locks on slash.
+    mapping(address => uint256[]) private _activeLocks;
+
+    /// @notice index tracker for active locks (index + 1 to differentiate missing entries).
+    mapping(address => mapping(uint256 => uint256)) private _lockIndex;
+
     /// @notice queued withdrawals and slash rewards awaiting manual claim.
     mapping(address => uint256) public pendingWithdrawals;
 
@@ -30,6 +42,8 @@ contract KernelStakeManager is Ownable, ReentrancyGuard {
     event StakeDeposited(address indexed who, uint256 amount);
     event StakeWithdrawn(address indexed who, uint256 amount);
     event WithdrawalClaimed(address indexed who, uint256 amount);
+    event StakeLocked(address indexed operator, address indexed who, uint256 indexed jobId, uint256 amount);
+    event StakeUnlocked(address indexed operator, address indexed who, uint256 indexed jobId, uint256 amount);
     event StakeSlashed(
         address indexed who,
         uint256 bps,
@@ -61,6 +75,24 @@ contract KernelStakeManager is Ownable, ReentrancyGuard {
         return _stakes[who];
     }
 
+    /// @notice Total locked stake for a participant.
+    function lockedStakeOf(address who) external view returns (uint256) {
+        return _lockedStakes[who];
+    }
+
+    /// @notice Locked stake for a participant dedicated to a specific job.
+    function lockedStakeForJob(address who, uint256 jobId) external view returns (uint256) {
+        return _jobLocks[who][jobId];
+    }
+
+    /// @notice Available stake that can be withdrawn or re-locked.
+    function availableStakeOf(address who) public view returns (uint256) {
+        uint256 stake = _stakes[who];
+        uint256 locked = _lockedStakes[who];
+        if (stake <= locked) return 0;
+        return stake - locked;
+    }
+
     /// @notice Deposit $AGIALPHA for `who`.
     /// @param who Address receiving the staked balance.
     /// @param amount Token amount to deposit.
@@ -85,9 +117,66 @@ contract KernelStakeManager is Ownable, ReentrancyGuard {
 
         uint256 balance = _stakes[who];
         if (balance < amount) revert InsufficientStake();
+        if (availableStakeOf(who) < amount) revert InsufficientStake();
         _stakes[who] = balance - amount;
         pendingWithdrawals[who] += amount;
         emit StakeWithdrawn(who, amount);
+    }
+
+    /// @notice Lock stake for a specific job preventing premature withdrawals.
+    function lockStake(address who, uint256 jobId, uint256 amount) external {
+        if (!operators[msg.sender]) revert NotAuthorized();
+        if (who == address(0)) revert ZeroAddress();
+        if (amount == 0) revert ZeroAmount();
+
+        uint256 available = availableStakeOf(who);
+        if (available < amount) revert InsufficientStake();
+
+        _jobLocks[who][jobId] += amount;
+        _lockedStakes[who] += amount;
+
+        if (_lockIndex[who][jobId] == 0) {
+            _activeLocks[who].push(jobId);
+            _lockIndex[who][jobId] = _activeLocks[who].length;
+        }
+
+        emit StakeLocked(msg.sender, who, jobId, amount);
+    }
+
+    /// @notice Unlock a portion of stake reserved for a job.
+    function unlockStake(address who, uint256 jobId, uint256 amount) external {
+        if (!operators[msg.sender]) revert NotAuthorized();
+        if (who == address(0)) revert ZeroAddress();
+        if (amount == 0) revert ZeroAmount();
+
+        uint256 lockedAmount = _jobLocks[who][jobId];
+        if (lockedAmount < amount) revert InsufficientStake();
+
+        _jobLocks[who][jobId] = lockedAmount - amount;
+        _lockedStakes[who] -= amount;
+
+        if (_jobLocks[who][jobId] == 0) {
+            _removeLock(who, jobId);
+        }
+
+        emit StakeUnlocked(msg.sender, who, jobId, amount);
+    }
+
+    /// @notice Unlock the entire stake reserved for a job.
+    function unlockAll(address who, uint256 jobId) external {
+        if (!operators[msg.sender]) revert NotAuthorized();
+        if (who == address(0)) revert ZeroAddress();
+
+        uint256 lockedAmount = _jobLocks[who][jobId];
+        if (lockedAmount == 0) {
+            return;
+        }
+
+        _jobLocks[who][jobId] = 0;
+        _lockedStakes[who] -= lockedAmount;
+        _removeLock(who, jobId);
+
+        emit StakeUnlocked(msg.sender, who, jobId, lockedAmount);
     }
 
     /// @notice Slash a percentage of stake from `who` and credit the
@@ -111,6 +200,7 @@ contract KernelStakeManager is Ownable, ReentrancyGuard {
 
         _stakes[who] = balance - amount;
         pendingWithdrawals[beneficiary] += amount;
+        _normalizeLocks(who);
         emit StakeSlashed(who, bps, beneficiary, reason, amount);
     }
 
@@ -121,5 +211,52 @@ contract KernelStakeManager is Ownable, ReentrancyGuard {
         pendingWithdrawals[msg.sender] = 0;
         stakingToken.safeTransfer(msg.sender, amount);
         emit WithdrawalClaimed(msg.sender, amount);
+    }
+
+    function _removeLock(address who, uint256 jobId) internal {
+        uint256 indexPlusOne = _lockIndex[who][jobId];
+        if (indexPlusOne == 0) return;
+
+        uint256 index = indexPlusOne - 1;
+        uint256 lastIndex = _activeLocks[who].length - 1;
+
+        if (index != lastIndex) {
+            uint256 lastJobId = _activeLocks[who][lastIndex];
+            _activeLocks[who][index] = lastJobId;
+            _lockIndex[who][lastJobId] = index + 1;
+        }
+
+        _activeLocks[who].pop();
+        _lockIndex[who][jobId] = 0;
+    }
+
+    function _normalizeLocks(address who) internal {
+        uint256 stake = _stakes[who];
+        uint256 locked = _lockedStakes[who];
+        if (locked <= stake) return;
+
+        uint256 excess = locked - stake;
+        uint256[] storage jobIds = _activeLocks[who];
+
+        while (excess > 0 && jobIds.length > 0) {
+            uint256 lastIdx = jobIds.length - 1;
+            uint256 jobId = jobIds[lastIdx];
+            uint256 lockedAmount = _jobLocks[who][jobId];
+
+            uint256 deduction = lockedAmount > excess ? excess : lockedAmount;
+            _jobLocks[who][jobId] = lockedAmount - deduction;
+            _lockedStakes[who] -= deduction;
+            excess -= deduction;
+
+            if (_jobLocks[who][jobId] == 0) {
+                jobIds.pop();
+                _lockIndex[who][jobId] = 0;
+            }
+        }
+
+        if (excess != 0) {
+            // Should be unreachable, but guard against inconsistent accounting.
+            revert InsufficientStake();
+        }
     }
 }
