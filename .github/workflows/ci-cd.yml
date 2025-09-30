@@ -132,13 +132,12 @@ JSON
           cosign attest --predicate predicate.json --type slsaprovenance ${{ env.REGISTRY }}/${{ matrix.target }}@${{ steps.build.outputs.digest }}
       - name: Publish image digest summary
         run: |
-          echo "${{ matrix.target }} (${{ matrix.network }}): ${{ steps.build.outputs.digest }}" >> image-digests.txt
+          echo "${{ matrix.target }} (${{ matrix.network }}): ${{ steps.build.outputs.digest }}" > image-digest-${{ matrix.target }}-${{ matrix.network }}.txt
       - name: Upload digest summary
-        if: matrix.network == 'mainnet' && matrix.target == 'orchestrator'
         uses: actions/upload-artifact@v4
         with:
-          name: image-digests
-          path: image-digests.txt
+          name: image-digest-${{ matrix.target }}-${{ matrix.network }}
+          path: image-digest-${{ matrix.target }}-${{ matrix.network }}.txt
 
   helm-test:
     name: Helm Lint
