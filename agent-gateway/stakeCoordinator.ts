@@ -38,6 +38,19 @@ export interface StakeActionReceipt {
   txHash: string;
 }
 
+async function transferTokens(
+  wallet: Wallet,
+  destination: string,
+  amount: bigint
+): Promise<StakeActionReceipt> {
+  const tx = await (tokenContract.connect(wallet) as any).transfer(
+    destination,
+    amount
+  );
+  await tx.wait();
+  return { method: 'transfer', txHash: tx.hash };
+}
+
 export interface ClaimActionResult extends StakeActionReceipt {
   type: 'withdraw' | 'transfer' | 'restake' | 'approval';
   amountRaw: string;
@@ -272,6 +285,14 @@ export async function increaseStake(
   const current = await getStakeBalance(wallet.address, role);
   await ensureStake(wallet, current + amount, role);
 }
+
+type IncreaseStakeHandler = (
+  wallet: Wallet,
+  amount: bigint,
+  role: number
+) => Promise<void>;
+
+let increaseStakeHandler: IncreaseStakeHandler = increaseStake;
 
 function formatAmount(value: bigint): string {
   try {
@@ -514,10 +535,20 @@ let getTokenBalanceImpl: TokenBalanceFetcher = getTokenBalance;
 let getStakeBalanceImpl: StakeBalanceFetcher = getStakeBalance;
 let withdrawStakeAmountImpl: WithdrawHandler = withdrawStakeAmount;
 
+type TokenTransferHandler = (
+  wallet: Wallet,
+  destination: string,
+  amount: bigint
+) => Promise<StakeActionReceipt>;
+
+let transferTokensImpl: TokenTransferHandler = transferTokens;
+
 export interface StakeCoordinatorTestOverrides {
   getTokenBalance?: TokenBalanceFetcher;
   getStakeBalance?: StakeBalanceFetcher;
   withdrawStakeAmount?: WithdrawHandler;
+  increaseStake?: IncreaseStakeHandler;
+  transferTokens?: TokenTransferHandler;
 }
 
 export function __setStakeCoordinatorTestOverrides(
@@ -532,12 +563,20 @@ export function __setStakeCoordinatorTestOverrides(
   if (overrides.withdrawStakeAmount) {
     withdrawStakeAmountImpl = overrides.withdrawStakeAmount;
   }
+  if (overrides.increaseStake) {
+    increaseStakeHandler = overrides.increaseStake;
+  }
+  if (overrides.transferTokens) {
+    transferTokensImpl = overrides.transferTokens;
+  }
 }
 
 export function __resetStakeCoordinatorTestOverrides(): void {
   getTokenBalanceImpl = getTokenBalance;
   getStakeBalanceImpl = getStakeBalance;
   withdrawStakeAmountImpl = withdrawStakeAmount;
+  increaseStakeHandler = increaseStake;
+  transferTokensImpl = transferTokens;
 }
 
 function formatAction(
@@ -590,9 +629,6 @@ export async function autoClaimRewards(
   let currentBalance = await getTokenBalanceImpl(wallet.address);
   const restakeAmount = await resolveRestakeAmount(options, currentBalance);
   let transferAmount = options.amount ?? currentBalance;
-  if (restakeAmount > 0n && restakeAmount > transferAmount) {
-    transferAmount = restakeAmount;
-  }
   let destination = options.destination;
   if (typeof destination === 'string') {
     try {
@@ -602,39 +638,31 @@ export async function autoClaimRewards(
     }
   }
 
+  if (restakeAmount > 0n) {
+    if (!stakeManager) {
+      throw new Error('StakeManager not configured; cannot restake rewards');
+    }
+    await increaseStakeHandler(wallet, restakeAmount, role);
+    actions.push(
+      formatAction('restake', restakeAmount, {
+        method: 'stake',
+        txHash: 'stake-adjustment',
+      })
+    );
+    currentBalance = await getTokenBalanceImpl(wallet.address);
+  }
+
+  if (transferAmount > currentBalance) {
+    transferAmount = currentBalance;
+  }
+
   if (
     destination &&
     transferAmount > 0n &&
     destination.toLowerCase() !== wallet.address.toLowerCase()
   ) {
-    const tx = await (tokenContract.connect(wallet) as any).transfer(
-      destination,
-      transferAmount
-    );
-    await tx.wait();
-    actions.push({
-      type: 'transfer',
-      method: 'transfer',
-      txHash: tx.hash,
-      amountRaw: transferAmount.toString(),
-      amountFormatted: formatAmount(transferAmount),
-      destination,
-    });
-    currentBalance = await getTokenBalanceImpl(wallet.address);
-  }
-
-  if (restakeAmount > 0n) {
-    if (!stakeManager) {
-      throw new Error('StakeManager not configured; cannot restake rewards');
-    }
-    await increaseStake(wallet, restakeAmount, role);
-    actions.push({
-      type: 'restake',
-      method: 'stake',
-      txHash: 'stake-adjustment',
-      amountRaw: restakeAmount.toString(),
-      amountFormatted: formatAmount(restakeAmount),
-    });
+    const receipt = await transferTokensImpl(wallet, destination, transferAmount);
+    actions.push(formatAction('transfer', transferAmount, receipt, destination));
     currentBalance = await getTokenBalanceImpl(wallet.address);
   }
 

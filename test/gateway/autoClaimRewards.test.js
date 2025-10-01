@@ -105,4 +105,79 @@ describe('autoClaimRewards', function () {
 
     expect(result.actions).to.have.length(0);
   });
+
+  it('restakes a percentage before transferring rewards to a destination', async function () {
+    let balance = 100n;
+    let restakedAmount = 0n;
+    const transfers = [];
+
+    __setStakeCoordinatorTestOverrides({
+      getTokenBalance: async () => balance,
+      increaseStake: async (_, amount) => {
+        restakedAmount = amount;
+        balance -= amount;
+      },
+      transferTokens: async (_, to, amount) => {
+        transfers.push({ to, amount });
+        balance -= amount;
+        return { method: 'transfer', txHash: '0xtransfer' };
+      },
+    });
+
+    const destination = Wallet.createRandom().address;
+
+    const result = await autoClaimRewards(wallet, {
+      restakePercent: '40%',
+      amount: 50n,
+      destination,
+    });
+
+    expect(restakedAmount).to.equal(40n);
+    expect(transfers).to.have.length(1);
+    expect(transfers[0].amount).to.equal(50n);
+    expect(transfers[0].to.toLowerCase()).to.equal(destination.toLowerCase());
+    expect(result.actions.map((action) => action.type)).to.deep.equal([
+      'restake',
+      'transfer',
+    ]);
+    expect(result.actions[0].amountRaw).to.equal('40');
+    expect(result.actions[1].amountRaw).to.equal('50');
+    expect(result.endingBalanceRaw).to.equal('10');
+  });
+
+  it('limits transfer amount when restaking a large explicit amount', async function () {
+    let balance = 100n;
+    let restakeCalls = [];
+    const transfers = [];
+
+    __setStakeCoordinatorTestOverrides({
+      getTokenBalance: async () => balance,
+      increaseStake: async (_, amount) => {
+        restakeCalls.push(amount);
+        balance -= amount;
+      },
+      transferTokens: async (_, to, amount) => {
+        transfers.push({ to, amount });
+        balance -= amount;
+        return { method: 'transfer', txHash: '0xtransfer-reduced' };
+      },
+    });
+
+    const destination = Wallet.createRandom().address;
+
+    const result = await autoClaimRewards(wallet, {
+      restakeAmount: 80n,
+      amount: 50n,
+      destination,
+    });
+
+    expect(restakeCalls).to.deep.equal([80n]);
+    expect(transfers).to.have.length(1);
+    expect(transfers[0].amount).to.equal(20n);
+    expect(result.actions.map((action) => action.amountRaw)).to.deep.equal([
+      '80',
+      '20',
+    ]);
+    expect(result.endingBalanceRaw).to.equal('0');
+  });
 });
