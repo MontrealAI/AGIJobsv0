@@ -1241,6 +1241,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _;
     }
 
+    modifier onlyValidatorSlasher() {
+        address sender = msg.sender;
+        if (sender != disputeModule && sender != address(validationModule)) revert Unauthorized();
+        _;
+    }
+
     /// @notice lock a portion of a user's stake for a period of time
     /// @param user address whose stake is being locked
     /// @param amount token amount with 18 decimals
@@ -2111,7 +2117,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param recipient address receiving the slashed share
     function slash(address user, uint256 amount, address recipient)
         external
-        onlyDisputeModule
+        onlyValidatorSlasher
         whenNotPaused
         nonReentrant
     {
@@ -2121,7 +2127,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     function slash(address user, uint256 amount, address recipient, address[] calldata validators)
         external
-        onlyDisputeModule
+        onlyValidatorSlasher
         whenNotPaused
         nonReentrant
     {

@@ -146,7 +146,6 @@ describe('StakeManager multi-validator slashing', function () {
       owner.address
     );
     await stakeManager.connect(owner).setValidatorRewardPct(20);
-    await stakeManager.connect(owner).setValidatorSlashRewardPct(20);
     await stakeManager
       .connect(owner)
       .setTreasuryAllowlist(treasury.address, true);
@@ -180,13 +179,19 @@ describe('StakeManager multi-validator slashing', function () {
   });
 
   it('slashes and rewards validators based on stake and reputation', async () => {
+    const amount = 40n * ONE;
+    await stakeManager.connect(owner).setSlashingDistribution(0, 80, 20);
+    const validatorReward = (amount * 20n) / 100n;
+    const baseAmount = amount - validatorReward;
+    const expectedTreasuryShare = (baseAmount * 80n) / 100n;
+
     await expect(
       stakeManager
         .connect(registrySigner)
         ['slash(address,uint8,uint256,address,address[])'](
           agent.address,
           Role.Agent,
-          40n * ONE,
+          amount,
           employer.address,
           [val1.address, val2.address]
         )
@@ -200,7 +205,7 @@ describe('StakeManager multi-validator slashing', function () {
 
     expect(await token.balanceOf(val1.address)).to.equal(902n * ONE);
     expect(await token.balanceOf(val2.address)).to.equal(706n * ONE);
-    expect(await token.balanceOf(treasury.address)).to.equal(32n * ONE);
+    expect(await token.balanceOf(treasury.address)).to.equal(expectedTreasuryShare);
 
     const agentGain = 100n;
     await engine
@@ -242,6 +247,192 @@ describe('StakeManager multi-validator slashing', function () {
 
     expect(await token.balanceOf(employer.address)).to.equal(24n * ONE);
     expect(await token.balanceOf(treasury.address)).to.equal(16n * ONE);
+  });
+});
+
+describe('StakeManager validator slashing via validation module', function () {
+  const Role = { Validator: 1 };
+  const ONE = 10n ** 18n;
+  let owner, treasury, badValidator, goodValidator1, goodValidator2, employer;
+  let token, stakeManager, validationSigner;
+
+  beforeEach(async () => {
+    [owner, treasury, badValidator, goodValidator1, goodValidator2, employer] =
+      await ethers.getSigners();
+
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
+
+    const addresses = [
+      badValidator.address,
+      goodValidator1.address,
+      goodValidator2.address,
+      treasury.address,
+      employer.address,
+    ];
+    const supplySlot = '0x' + (2).toString(16).padStart(64, '0');
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      supplySlot,
+      ethers.toBeHex(5000n * ONE, 32),
+    ]);
+    for (const addr of addresses) {
+      const balSlot = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 0]
+        )
+      );
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        balSlot,
+        ethers.toBeHex(1000n * ONE, 32),
+      ]);
+      const ackSlot = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 6]
+        )
+      );
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        ackSlot,
+        ethers.toBeHex(1n, 32),
+      ]);
+    }
+
+    const JobReg = await ethers.getContractFactory(
+      'contracts/v2/mocks/JobRegistryAckStub.sol:JobRegistryAckStub'
+    );
+    const jobRegistry = await JobReg.deploy(ethers.ZeroAddress);
+    const regAddr = await jobRegistry.getAddress();
+    await ethers.provider.send('hardhat_setBalance', [
+      regAddr,
+      '0x56BC75E2D63100000',
+    ]);
+    const StakeManager = await ethers.getContractFactory(
+      'contracts/v2/StakeManager.sol:StakeManager'
+    );
+    stakeManager = await StakeManager.deploy(
+      0,
+      60,
+      40,
+      treasury.address,
+      regAddr,
+      ethers.ZeroAddress,
+      owner.address
+    );
+    await stakeManager.connect(owner).setTreasuryAllowlist(treasury.address, true);
+    await stakeManager.connect(owner).setSlashingDistribution(40, 40, 20);
+
+    const stakeAddr = await stakeManager.getAddress();
+    const stakeAck = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [stakeAddr, 6])
+    );
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      stakeAck,
+      ethers.toBeHex(1n, 32),
+    ]);
+
+    await token.connect(badValidator).approve(stakeAddr, 1000n * ONE);
+    await token.connect(goodValidator1).approve(stakeAddr, 1000n * ONE);
+    await token.connect(goodValidator2).approve(stakeAddr, 1000n * ONE);
+
+    await stakeManager.connect(badValidator).depositStake(Role.Validator, 100n * ONE);
+    await stakeManager
+      .connect(goodValidator1)
+      .depositStake(Role.Validator, 30n * ONE);
+    await stakeManager
+      .connect(goodValidator2)
+      .depositStake(Role.Validator, 10n * ONE);
+
+    const ValidationModule = await ethers.getContractFactory(
+      'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
+    );
+    const validationModule = await ValidationModule.deploy();
+    await validationModule.setJobRegistry(regAddr);
+    await validationModule.setValidators([
+      goodValidator1.address,
+      goodValidator2.address,
+    ]);
+    const validationAddr = await validationModule.getAddress();
+    await stakeManager.connect(owner).setValidationModule(validationAddr);
+    validationSigner = await ethers.getImpersonatedSigner(validationAddr);
+    await ethers.provider.send('hardhat_setBalance', [
+      validationAddr,
+      '0x56BC75E2D63100000',
+    ]);
+  });
+
+  it('allows the validation module to slash validators and distribute rewards', async () => {
+    const amount = 40n * ONE;
+    const expectedValidatorReward = (amount * 20n) / 100n;
+    const baseAmount = amount - expectedValidatorReward;
+    const expectedEmployerShare = (baseAmount * 40n) / 100n;
+    const expectedTreasuryShare = (baseAmount * 40n) / 100n;
+
+    const validatorStakeBefore = await stakeManager.stakeOf(
+      badValidator.address,
+      Role.Validator
+    );
+    const val1Before = await token.balanceOf(goodValidator1.address);
+    const val2Before = await token.balanceOf(goodValidator2.address);
+    const treasuryBefore = await token.balanceOf(treasury.address);
+    const employerBefore = await token.balanceOf(employer.address);
+
+    await expect(
+      stakeManager
+        .connect(validationSigner)
+        ['slash(address,uint256,address,address[])'](
+          badValidator.address,
+          amount,
+          employer.address,
+          [goodValidator1.address, goodValidator2.address]
+        )
+    )
+      .to.emit(stakeManager, 'RewardValidator')
+      .withArgs(goodValidator1.address, 6n * ONE, ethers.ZeroHash)
+      .and.to.emit(stakeManager, 'RewardValidator')
+      .withArgs(goodValidator2.address, 2n * ONE, ethers.ZeroHash)
+      .and.to.emit(stakeManager, 'StakeSlashed')
+      .withArgs(
+        badValidator.address,
+        Role.Validator,
+        employer.address,
+        treasury.address,
+        expectedEmployerShare,
+        expectedTreasuryShare,
+        baseAmount - expectedEmployerShare - expectedTreasuryShare
+      );
+
+    const remainingStake = await stakeManager.stakeOf(
+      badValidator.address,
+      Role.Validator
+    );
+    expect(remainingStake).to.equal(validatorStakeBefore - amount);
+
+    const val1Balance = await token.balanceOf(goodValidator1.address);
+    const val2Balance = await token.balanceOf(goodValidator2.address);
+    expect(val1Balance - val1Before).to.equal(6n * ONE);
+    expect(val2Balance - val2Before).to.equal(2n * ONE);
+
+    const treasuryBalance = await token.balanceOf(treasury.address);
+    const employerBalance = await token.balanceOf(employer.address);
+    expect(treasuryBalance - treasuryBefore).to.equal(expectedTreasuryShare);
+    expect(employerBalance - employerBefore).to.equal(expectedEmployerShare);
+
+    const validatorRewardPaid = val1Balance - val1Before + (val2Balance - val2Before);
+    expect(validatorRewardPaid).to.equal(expectedValidatorReward);
   });
 });
 
