@@ -327,6 +327,7 @@ async function main() {
     governance
   );
   await pause.waitForDeployment();
+  const pauseAddress = await pause.getAddress();
   await pause
     .connect(governanceSigner)
     .setModules(
@@ -339,6 +340,16 @@ async function main() {
       await reputation.getAddress(),
       await committee.getAddress()
     );
+  await registry.connect(governanceSigner).setPauser(pauseAddress);
+  await stake.connect(governanceSigner).setPauser(pauseAddress);
+  await validation.connect(governanceSigner).setPauser(pauseAddress);
+  await dispute.connect(governanceSigner).setPauser(pauseAddress);
+  await platformRegistry
+    .connect(governanceSigner)
+    .setPauser(pauseAddress);
+  await feePool.connect(governanceSigner).setPauser(pauseAddress);
+  await reputation.connect(governanceSigner).setPauser(pauseAddress);
+  await committee.connect(governanceSigner).setPauser(pauseAddress);
   await stake.connect(governanceSigner).setGovernance(await pause.getAddress());
   await registry
     .connect(governanceSigner)
