@@ -129,6 +129,9 @@ interface IStakeManager {
         bool applyBoost
     ) external;
 
+    /// @notice refund escrowed funds without fees or burns
+    function refundEscrow(bytes32 jobId, address to, uint256 amount) external;
+
     /// @notice release previously locked stake for a user
     function releaseStake(address user, uint256 amount) external;
 

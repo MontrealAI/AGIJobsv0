@@ -2304,12 +2304,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     fundsRedirected = true;
                 }
                 if (job.reward > 0) {
-                    stakeManager.releaseReward(
+                    stakeManager.refundEscrow(
                         jobKey,
-                        job.employer,
                         recipient,
-                        uint256(job.reward) + fee,
-                        false
+                        uint256(job.reward) + fee
                     );
                 }
                 if (job.stake > 0) {
@@ -2379,12 +2377,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _setState(job, State.Cancelled);
         if (address(stakeManager) != address(0) && job.reward > 0) {
             uint256 fee = (uint256(job.reward) * _getFeePct(job)) / 100;
-            stakeManager.releaseReward(
+            stakeManager.refundEscrow(
                 bytes32(jobId),
                 job.employer,
-                job.employer,
-                uint256(job.reward) + fee,
-                false
+                uint256(job.reward) + fee
             );
         }
         _clearValidatorData(jobId);
@@ -2456,7 +2452,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             uint256 fee = (uint256(reward) * feePctSnapshot) / 100;
             uint256 totalRefund = uint256(reward) + fee;
             if (totalRefund > 0) {
-                stakeManager.releaseReward(jobKey, employer, employer, totalRefund, false);
+                stakeManager.refundEscrow(jobKey, employer, totalRefund);
             }
             if (stakeAmount > 0 && agent != address(0)) {
                 stakeManager.slash(
