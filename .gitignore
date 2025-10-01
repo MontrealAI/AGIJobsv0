@@ -23,6 +23,7 @@ scripts/**/*.js
 build/
 lib/
 !apps/onebox/src/lib/
+!apps/enterprise-portal/src/lib/
 agent-gateway/dist/
 packages/orchestrator/dist/
 packages/orchestrator/dist-test/
