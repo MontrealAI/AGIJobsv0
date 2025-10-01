@@ -26,6 +26,7 @@
     "owner:command-center": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerCommandCenter.ts",
     "owner:mission-control": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerMissionControl.ts",
     "owner:atlas": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlAtlas.ts",
+    "owner:blueprint": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlBlueprint.ts",
     "owner:verify-control": "npx hardhat run --no-compile scripts/v2/verifyOwnerControl.ts",
     "owner:rotate": "npx hardhat run --no-compile scripts/v2/rotateGovernance.ts",
     "owner:update-all": "npx hardhat run --no-compile scripts/v2/updateAllModules.ts",
