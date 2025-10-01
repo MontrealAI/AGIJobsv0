@@ -4,20 +4,16 @@ import { formatUnits } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 import { phaseToTagColor } from '../lib/jobStatus';
 import type { JobSummary, JobTimelineEvent } from '../types';
-import { formatDurationBetween } from '../lib/time';
 import { portalConfig } from '../lib/contracts';
 import { resolveResourceUri } from '../lib/uri';
 import { useJobMetadata } from '../hooks/useJobMetadata';
-
-const formatTimestamp = (timestamp?: number) => {
-  if (!timestamp) return '—';
-  return new Date(timestamp * 1000).toLocaleString();
-};
-
-const shortenAddress = (value?: string) => {
-  if (!value) return '—';
-  return `${value.slice(0, 6)}…${value.slice(-4)}`;
-};
+import {
+  deriveStatusBanner,
+  formatTimestamp,
+  relativeTime,
+  safeDurationBetween,
+  shortenAddress,
+} from './JobLifecycleDashboard.helpers';
 
 const formatTokenAmount = (value: bigint) => {
   try {
@@ -37,21 +33,6 @@ const formatTokenDisplay = (value?: bigint) => {
   return symbol ? `${amount} ${symbol}` : amount;
 };
 
-const safeDurationBetween = (from: number, to: number) => {
-  try {
-    return formatDurationBetween(from, to);
-  } catch {
-    return undefined;
-  }
-};
-
-const relativeTime = (
-  timestamp: number | undefined,
-  now: number
-): string | undefined => {
-  if (!timestamp) return undefined;
-  return safeDurationBetween(timestamp, now);
-};
 
 const Timeline = ({ events }: { events: JobTimelineEvent[] }) => (
   <div className="timeline">
@@ -164,80 +145,11 @@ export const JobLifecycleDashboard = ({
 
   const statusBanner = useMemo(() => {
     if (!selectedJob) return undefined;
-    const validatorProgress = selectedJob.totalValidators
-      ? `${selectedJob.validatorVotes ?? 0} of ${
-          selectedJob.totalValidators
-        } votes`
-      : undefined;
-    const agentLabel = shortenAddress(selectedJob.agent);
-    const createdRelative = relativeTime(
-      selectedJob.createdAt ?? selectedJob.lastUpdated,
-      now
-    );
-    const submittedRelative = relativeTime(selectedJob.resultSubmittedAt, now);
-    const validationRelative = relativeTime(
-      selectedJob.validationStartedAt,
-      now
-    );
-
-    switch (selectedJob.phase) {
-      case 'Created':
-        return {
-          message: `Job posted${
-            createdRelative ? ` ${createdRelative}` : ''
-          }. Awaiting agent assignment.`,
-          variant: 'alert',
-        } as const;
-      case 'Assigned':
-        return {
-          message: `Assigned to ${agentLabel}. Deliverable due by ${formatTimestamp(
-            selectedJob.deadline
-          )}.`,
-          variant: 'alert',
-        } as const;
-      case 'Submitted':
-        return {
-          message: `Deliverable submitted${
-            submittedRelative ? ` ${submittedRelative}` : ''
-          }. Awaiting validator review.`,
-          variant: 'alert',
-        } as const;
-      case 'InValidation':
-        return {
-          message: `In validation${
-            validationRelative ? ` since ${validationRelative}` : ''
-          } — ${validatorProgress ?? 'awaiting committee formation'}${
-            validationCountdown
-              ? `. Decision window closes ${validationCountdown}.`
-              : ''
-          }`,
-          variant: 'alert',
-        } as const;
-      case 'Finalized':
-        return {
-          message: `Job finalized on ${formatTimestamp(
-            selectedJob.lastUpdated
-          )}. Payouts settled and certificates issued.`,
-          variant: 'alert success',
-        } as const;
-      case 'Disputed':
-        return {
-          message: `Dispute raised${
-            validationRelative ? ` ${validationRelative}` : ''
-          }. Monitor validator votes and SLA evidence.`,
-          variant: 'alert error',
-        } as const;
-      case 'Cancelled':
-      case 'Expired':
-        return {
-          message: `Job is no longer active. Last update ${formatTimestamp(
-            selectedJob.lastUpdated
-          )}.`,
-          variant: 'alert error',
-        } as const;
-      default:
-        return undefined;
-    }
+    return deriveStatusBanner({
+      job: selectedJob,
+      now,
+      validationCountdown,
+    });
   }, [now, selectedJob, validationCountdown]);
 
   return (

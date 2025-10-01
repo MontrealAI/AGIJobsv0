@@ -23,6 +23,7 @@ const JOB_EVENT_NAMES = [
   'AgentAssigned',
   'ResultSubmitted',
   'ValidationStartTriggered',
+  'JobCompleted',
   'JobFinalized',
   'JobDisputed',
 ] as const;
@@ -198,6 +199,7 @@ const toTimelineEvent = (
     AgentAssigned: 'Agent assignment confirmed',
     ResultSubmitted: 'Agent deliverables submitted',
     ValidationStartTriggered: 'Validator committee engaged',
+    JobCompleted: 'Validator committee reached an outcome',
     JobFinalized: 'Job finalized and payout settled',
     JobDisputed: 'Dispute raised for this job',
   };
@@ -206,6 +208,7 @@ const toTimelineEvent = (
     AgentAssigned: 'Assigned',
     ResultSubmitted: 'Submitted',
     ValidationStartTriggered: 'InValidation',
+    JobCompleted: 'Validated',
     JobFinalized: 'Finalized',
     JobDisputed: 'Disputed',
   };
@@ -422,7 +425,10 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
           createdArgs: createdEvent?.meta?.args,
         });
 
-        const phase = jobStateToPhase(statusValue);
+        let phase = jobStateToPhase(statusValue);
+        if (phase === 'Submitted' && validationEvent) {
+          phase = 'InValidation';
+        }
         const summary: JobSummary = {
           jobId,
           employer,

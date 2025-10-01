@@ -11,7 +11,7 @@ export const jobStateToPhase = (state: number): JobPhase => {
     case 3:
       return 'Submitted';
     case 4:
-      return 'InValidation';
+      return 'Validated';
     case 5:
       return 'Disputed';
     case 6:
@@ -33,6 +33,8 @@ export const phaseToTagColor = (phase: JobPhase): string => {
       return 'purple';
     case 'InValidation':
       return 'orange';
+    case 'Validated':
+      return 'green';
     case 'Finalized':
       return 'green';
     case 'Disputed':

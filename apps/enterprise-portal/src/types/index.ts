@@ -3,6 +3,7 @@ export type JobPhase =
   | 'Assigned'
   | 'Submitted'
   | 'InValidation'
+  | 'Validated'
   | 'Finalized'
   | 'Disputed'
   | 'Expired'
