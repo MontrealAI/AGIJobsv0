@@ -240,6 +240,39 @@ contract DisputeModule is Ownable, Pausable {
         }
     }
 
+    /// @notice Governance-only helper to raise a dispute without charging fees.
+    /// @dev Used during incident response to escalate stuck jobs. Caller is the
+    ///      timelock/SystemPause via the JobRegistry.
+    function raiseGovernanceDispute(uint256 jobId, string calldata reason)
+        external
+        onlyOwner
+        whenNotPaused
+    {
+        require(bytes(reason).length != 0, "reason");
+        Dispute storage d = disputes[jobId];
+        require(d.raisedAt == 0, "disputed");
+
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        address claimant = job.employer;
+        if (claimant == address(0)) {
+            claimant = job.agent;
+        }
+        require(claimant != address(0), "job");
+
+        d.claimant = claimant;
+        d.raisedAt = block.timestamp;
+        d.resolved = false;
+        d.fee = 0;
+        d.evidenceHash = bytes32(0);
+        d.reason = reason;
+
+        emit DisputeRaised(jobId, claimant, bytes32(0), reason);
+
+        if (committee != address(0)) {
+            ArbitratorCommittee(committee).openCase(jobId);
+        }
+    }
+
     /// @notice Resolve an existing dispute after the dispute window elapses.
     /// @param jobId Identifier of the disputed job.
     /// @param employerWins True if the employer prevails.

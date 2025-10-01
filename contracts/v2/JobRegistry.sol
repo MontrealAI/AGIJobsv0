@@ -77,6 +77,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error BurnAmountTooLow();
     error InsufficientAgentStake(uint256 required, uint256 actual);
     error MaxActiveJobsReached(uint256 limit);
+    error InvalidEscalationState(uint8 state);
 
     enum State {
         None,
@@ -228,7 +229,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     function decodeJobMetadata(uint256 packed)
-        external
+        public
         pure
         returns (JobMetadata memory)
     {
@@ -958,6 +959,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event JobExpired(uint256 indexed jobId, address indexed caller);
     event JobTimedOut(uint256 indexed jobId, address indexed caller);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
+    event JobEscalatedByGovernance(
+        uint256 indexed jobId,
+        address indexed caller,
+        string reason
+    );
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
@@ -2039,6 +2045,32 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         )
     {
         _dispute(jobId, evidenceHash, reason);
+    }
+
+    /// @notice Escalate a stalled validation into the dispute process.
+    /// @dev Callable only by governance (timelock/SystemPause) as part of the incident response playbook.
+    /// @param jobId Identifier of the job requiring manual intervention.
+    /// @param reason Context string explaining the escalation.
+    function escalateToDispute(uint256 jobId, string calldata reason)
+        external
+        onlyGovernance
+        whenNotPaused
+        nonReentrant
+    {
+        Job storage job = jobs[jobId];
+        JobMetadata memory metadata = decodeJobMetadata(job.packedMetadata);
+        State state = metadata.state;
+        if (!(state == State.Submitted || state == State.Completed)) {
+            revert InvalidEscalationState(uint8(state));
+        }
+        _setState(job, State.Disputed);
+        string memory rationale = bytes(reason).length == 0
+            ? "governance-escalation"
+            : reason;
+        if (address(disputeModule) != address(0)) {
+            disputeModule.raiseGovernanceDispute(jobId, rationale);
+        }
+        emit JobEscalatedByGovernance(jobId, msg.sender, rationale);
     }
 
     /// @notice Backwards-compatible wrapper for legacy integrations.

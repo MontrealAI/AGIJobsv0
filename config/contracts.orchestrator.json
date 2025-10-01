@@ -17,10 +17,14 @@
       "function applyForJob(uint256 jobId, string subdomain, bytes32[] proof)",
       "function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes32[] proof)",
       "function finalizeAfterValidation(uint256 jobId, bool success)",
+      "function dispute(uint256 jobId, bytes32 evidenceHash, string reason)",
       "function raiseDispute(uint256 jobId, string reason)",
+      "function raiseDispute(uint256 jobId, bytes32 evidenceHash)",
+      "function escalateToDispute(uint256 jobId, string reason)",
       "function feePct() view returns (uint256)",
       "function validatorRewardPct() view returns (uint256)",
       "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)",
+      "function getSpecHash(uint256 jobId) view returns (bytes32)",
       "function jobStake() view returns (uint96)",
       "function maxJobReward() view returns (uint256)",
       "function maxJobDuration() view returns (uint256)",
@@ -57,13 +61,20 @@
       "function validatorsPerJob() view returns (uint256)",
       "function maxValidatorsPerJob() view returns (uint256)",
       "function revealDeadline(uint256 jobId) view returns (uint64)",
-      "function earlyFinalizeDelay() view returns (uint64)"
+      "function earlyFinalizeDelay() view returns (uint64)",
+      "function rounds(uint256 jobId) view returns (address[] validators,address[] participants,uint256 commitDeadline,uint256 revealDeadline,uint256 approvals,uint256 rejections,uint256 revealedCount,bool tallied,uint256 committeeSize,uint64 earlyFinalizeEligibleAt,bool earlyFinalized)",
+      "function jobNonce(uint256 jobId) view returns (uint256)",
+      "function DOMAIN_SEPARATOR() view returns (bytes32)",
+      "function failoverStates(uint256 jobId) view returns (uint8 action,uint64 extensions,uint64 lastExtendedTo,uint64 lastTriggeredAt,bool escalated)",
+      "function triggerFailover(uint256 jobId, uint8 action, uint64 extension, string reason)"
     ]
   },
   "disputeModule": {
     "address": "0x0000000000000000000000000000000000000000",
     "abi": [
       "function raiseDispute(uint256 jobId, address claimant, bytes32 evidenceHash, string reason)",
+      "function raiseGovernanceDispute(uint256 jobId, string reason)",
+      "function disputes(uint256 jobId) view returns (address claimant,uint256 raisedAt,bool resolved,uint256 fee,bytes32 evidenceHash,string reason)",
       "function disputeFee() view returns (uint256)"
     ]
   },
@@ -80,7 +91,8 @@
     "address": "0x0000000000000000000000000000000000000000",
     "abi": [
       "function pauseAll()",
-      "function unpauseAll()"
+      "function unpauseAll()",
+      "function triggerValidationFailover(uint256 jobId, uint8 action, uint64 extension, string reason)"
     ]
   },
   "identityRegistry": {

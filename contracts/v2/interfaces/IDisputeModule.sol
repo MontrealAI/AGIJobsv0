@@ -13,6 +13,8 @@ interface IDisputeModule {
         string calldata reason
     ) external;
 
+    function raiseGovernanceDispute(uint256 jobId, string calldata reason) external;
+
     function resolveDispute(uint256 jobId, bool employerWins) external;
 
     function slashValidator(

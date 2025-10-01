@@ -74,7 +74,8 @@
     "onebox:static:publish": "node apps/onebox-static/scripts/publish.mjs",
     "verify:sri": "node apps/onebox-static/scripts/verify-sri.mjs",
     "alpha-bridge:start": "node services/alpha-bridge/src/server.js",
-    "alpha-bridge:test": "node --test services/alpha-bridge/test/alpha-bridge.test.js"
+    "alpha-bridge:test": "node --test services/alpha-bridge/test/alpha-bridge.test.js",
+    "validator:cli": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/validator/cli.ts"
   },
   "keywords": [],
   "author": "",
@@ -87,6 +88,7 @@
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.12",
     "@types/ws": "^8.5.10",
+    "@types/yargs": "^17.0.32",
     "@typescript-eslint/eslint-plugin": "^8.13.0",
     "@typescript-eslint/parser": "^8.13.0",
     "audit-ci": "^7.1.0",
@@ -122,6 +124,7 @@
     "web3": "^1.10.0",
     "web3.storage": "^4.5.5",
     "ws": "^8.18.3",
+    "yargs": "^17.7.2",
     "zod": "^3.25.76"
   },
   "overrides": {

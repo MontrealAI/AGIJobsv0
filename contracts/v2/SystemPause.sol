@@ -46,6 +46,13 @@ contract SystemPause is Governable, ReentrancyGuard {
         address arbitratorCommittee
     );
 
+    event ValidationFailoverForwarded(
+        uint256 indexed jobId,
+        ValidationModule.FailoverAction action,
+        uint64 extension,
+        string reason
+    );
+
     constructor(
         JobRegistry _jobRegistry,
         StakeManager _stakeManager,
@@ -193,6 +200,21 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool.unpause();
         reputationEngine.unpause();
         arbitratorCommittee.unpause();
+    }
+
+    /// @notice Forward a validation failover instruction to the ValidationModule.
+    /// @param jobId Identifier of the job being adjusted.
+    /// @param action Failover action (extend reveal window or escalate dispute).
+    /// @param extension Additional seconds appended to the reveal window when extending.
+    /// @param reason Context string recorded for monitoring.
+    function triggerValidationFailover(
+        uint256 jobId,
+        ValidationModule.FailoverAction action,
+        uint64 extension,
+        string calldata reason
+    ) external onlyGovernance {
+        validationModule.triggerFailover(jobId, action, extension, reason);
+        emit ValidationFailoverForwarded(jobId, action, extension, reason);
     }
 
     function _setPausers() internal {
