@@ -1622,6 +1622,29 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
     }
 
+    /// @notice Refund escrowed funds to the employer without applying fees or burns.
+    /// @param jobId Unique job identifier whose escrow is refunded.
+    /// @param to Recipient of the refund.
+    /// @param amount Token amount with 18 decimals to refund.
+    function refundEscrow(bytes32 jobId, address to, uint256 amount)
+        external
+        onlyJobRegistry
+        whenNotPaused
+        nonReentrant
+    {
+        if (amount == 0) {
+            return;
+        }
+        if (to == address(0)) revert InvalidRecipient();
+
+        uint256 escrow = jobEscrows[jobId];
+        if (escrow < amount) revert InsufficientEscrow();
+
+        jobEscrows[jobId] = escrow - amount;
+        token.safeTransfer(to, amount);
+        emit StakeReleased(jobId, to, amount);
+    }
+
     /// @notice Release funds previously locked via {lock}.
     /// @dev Does not adjust job-specific escrows; the caller must ensure
     ///      sufficient balance was locked earlier. Fees accumulate in the

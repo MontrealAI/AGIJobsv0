@@ -214,6 +214,8 @@ describe('job finalization integration', function () {
     await rep.connect(owner).add(agent.address, 5);
 
     const { jobId, fee } = await setupJob(false);
+    const feePoolAddress = await feePool.getAddress();
+    const feePoolBefore = await token.balanceOf(feePoolAddress);
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, false);
@@ -249,6 +251,8 @@ describe('job finalization integration', function () {
       reward + fee + stakeRequired
     );
     expect(agentAfter).to.equal(agentBefore);
+    const feePoolAfter = await token.balanceOf(feePoolAddress);
+    expect(feePoolAfter).to.equal(feePoolBefore);
     expect(await rep.reputation(agent.address)).to.equal(4);
     expect(await nft.balanceOf(agent.address)).to.equal(0n);
   });
@@ -269,9 +273,13 @@ describe('job finalization integration', function () {
     const disputeSigner = await ethers.getSigner(dispute.target);
     const agentBefore = await token.balanceOf(agent.address);
     const employerBefore = await token.balanceOf(employer.address);
+    const v1Before = await token.balanceOf(validator1.address);
+    const v2Before = await token.balanceOf(validator2.address);
     await expect(registry.connect(disputeSigner).resolveDispute(jobId, false))
       .to.emit(registry, 'DisputeResolved')
       .withArgs(jobId, false);
+    const validatorsAfterDispute = await registry.getJobValidators(jobId);
+    expect(validatorsAfterDispute).to.have.lengthOf(0);
     const burnTxHash3 = ethers.ZeroHash;
     await registry
       .connect(employer)
@@ -292,8 +300,8 @@ describe('job finalization integration', function () {
     // module, so the agent receives the full reward.
     expect(agentAfter - agentBefore).to.equal(reward);
     expect(employerAfter).to.equal(employerBefore);
-    expect(v1Bal).to.equal(0n);
-    expect(v2Bal).to.equal(0n);
+    expect(v1Bal - v1Before).to.equal(0n);
+    expect(v2Bal - v2Before).to.equal(0n);
     expect(await rep.reputation(agent.address)).to.equal(152n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
@@ -367,6 +375,8 @@ describe('job finalization integration', function () {
 
     const agentStakeBefore = await stakeManager.stakeOf(agent.address, 0);
     const employerBeforeClaim = await token.balanceOf(employer.address);
+    const feePoolAddress = await feePool.getAddress();
+    const feePoolBefore = await token.balanceOf(feePoolAddress);
 
     await expect(registry.connect(employer).claimTimeout(jobId))
       .to.emit(registry, 'JobTimedOut')
@@ -380,6 +390,9 @@ describe('job finalization integration', function () {
 
     const agentStakeAfter = await stakeManager.stakeOf(agent.address, 0);
     expect(agentStakeAfter).to.equal(agentStakeBefore - stakeRequired);
+
+    const feePoolAfter = await token.balanceOf(feePoolAddress);
+    expect(feePoolAfter).to.equal(feePoolBefore);
 
     const stats = await registry.employerStats(employer.address);
     expect(stats.failed).to.equal(1n);

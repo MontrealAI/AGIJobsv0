@@ -506,6 +506,8 @@ describe('JobRegistry integration', function () {
   });
 
   it('allows employer to cancel before completion', async () => {
+    const feePoolAddress = await feePool.getAddress();
+    const employerBeforeCreate = await token.balanceOf(employer.address);
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
@@ -514,15 +516,26 @@ describe('JobRegistry integration', function () {
     await registry
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
+    const employerAfterCreate = await token.balanceOf(employer.address);
+    expect(employerBeforeCreate - employerAfterCreate).to.equal(
+      BigInt(reward)
+    );
+    const feePoolBeforeCancel = await token.balanceOf(feePoolAddress);
     const jobId = 1;
     await expect(registry.connect(employer).cancelJob(jobId))
       .to.emit(registry, 'JobCancelled')
       .withArgs(jobId);
+    const employerAfterCancel = await token.balanceOf(employer.address);
+    expect(employerAfterCancel).to.equal(employerBeforeCreate);
+    const feePoolAfterCancel = await token.balanceOf(feePoolAddress);
+    expect(feePoolAfterCancel).to.equal(feePoolBeforeCancel);
     const job = enrichJob(await registry.jobs(jobId));
     expect(job.state).to.equal(7); // Cancelled enum value
   });
 
   it('allows owner to delist unassigned job', async () => {
+    const feePoolAddress = await feePool.getAddress();
+    const employerBeforeCreate = await token.balanceOf(employer.address);
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
@@ -531,10 +544,19 @@ describe('JobRegistry integration', function () {
     await registry
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
+    const employerAfterCreate = await token.balanceOf(employer.address);
+    expect(employerBeforeCreate - employerAfterCreate).to.equal(
+      BigInt(reward)
+    );
+    const feePoolBeforeCancel = await token.balanceOf(feePoolAddress);
     const jobId = 1;
     await expect(registry.connect(owner).delistJob(jobId))
       .to.emit(registry, 'JobCancelled')
       .withArgs(jobId);
+    const employerAfterCancel = await token.balanceOf(employer.address);
+    expect(employerAfterCancel).to.equal(employerBeforeCreate);
+    const feePoolAfterCancel = await token.balanceOf(feePoolAddress);
+    expect(feePoolAfterCancel).to.equal(feePoolBeforeCancel);
     const job = enrichJob(await registry.jobs(jobId));
     expect(job.state).to.equal(7);
   });
