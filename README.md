@@ -216,7 +216,7 @@ Operators who prefer a narrative, non-technical runbook can follow the [Owner Co
 
 ### Owner control blueprint
 
-Change managers who need a single-page, production-ready operating model can use the [Owner Control Blueprint](docs/owner-control-blueprint.md). It maps each configurable subsystem to its JSON file, editing helper, execution script, and verification check, then layers in multiple Mermaid diagrams, emergency hotfix checklists, and governance artefact templates. The blueprint emphasises repeatable workflows for non-technical operators and highlights mandatory guard rails (`owner:update-all` dry runs, Safe bundles, `owner:verify-control`, and `owner:dashboard`) so updates remain safe, auditable, and reversible even during high-pressure incidents.
+Change managers who need a single-page, production-ready operating model can use the [Owner Control Blueprint](docs/owner-control-blueprint.md). It maps each configurable subsystem to its JSON file, editing helper, execution script, and verification check, then layers in multiple Mermaid diagrams, emergency hotfix checklists, and governance artefact templates. Generate the latest values directly from `config/*.json` with `npm run owner:blueprint -- --network <network>` (add `--out reports/<network>-blueprint.md` for archival Markdown or `--format json` for automation pipelines). The blueprint emphasises repeatable workflows for non-technical operators and highlights mandatory guard rails (`owner:update-all` dry runs, Safe bundles, `owner:verify-control`, and `owner:dashboard`) so updates remain safe, auditable, and reversible even during high-pressure incidents.
 
 ### Owner control command center
 

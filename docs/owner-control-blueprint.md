@@ -2,6 +2,24 @@
 
 > **Goal.** Give the contract owner (multisig, timelock, or trusted operator) a single, illustrated operations blueprint for safely editing every tunable parameter in `contracts/v2` and getting the change into production without touching Solidity. The focus is on high assurance, reversible workflows that a non-technical coordinator can follow during live incidents or planned upgrades.
 
+> **Command shortcut:** Generate a fresh, data-backed blueprint from the committed configuration with:
+>
+> ```bash
+> npm run owner:blueprint -- --network <network> \
+>   --out reports/<network>-blueprint.md
+> ```
+>
+> Append `--format human` for a chat-friendly briefing or `--format json` for automation workflows. The CLI pulls live values from `config/*.json`, stamps the generation time, and embeds Mermaid diagrams unless `--no-diagrams` is supplied—perfect for non-technical owners who need verifiable, auditable artefacts in seconds.
+
+### CLI generator options
+
+| Flag | Purpose |
+| --- | --- |
+| `--network <name>` | Injects the network into update/verify commands and picks network-specific overrides when present. |
+| `--format markdown|human|json` | Switch between the richly formatted Markdown report, a chat-ready text briefing, or structured JSON for automation. |
+| `--out <path>` | Persist the blueprint to disk (directories are created automatically). |
+| `--no-diagrams` | Suppress Mermaid diagrams for environments that cannot render them. |
+
 ## Audience & Operating Posture
 
 - **Primary reader:** Protocol owner or change manager who approves configuration changes but does not ship Solidity.
