@@ -30,6 +30,31 @@ export interface DeliverableContributor {
   metadata?: Record<string, unknown>;
 }
 
+export interface ContributorContribution {
+  deliverableId: string;
+  jobId: string;
+  submittedAt: string;
+  primary: boolean;
+  role?: string;
+  label?: string;
+  signature?: string;
+  payloadDigest?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface JobContributorSummary {
+  address: string;
+  ensNames: string[];
+  roles: string[];
+  labels: string[];
+  signatures: string[];
+  payloadDigests: string[];
+  contributionCount: number;
+  firstContributionAt: string;
+  lastContributionAt: string;
+  contributions: ContributorContribution[];
+}
+
 export interface AgentDeliverableRecord {
   id: string;
   jobId: string;
@@ -122,6 +147,10 @@ interface QueryOptions {
   jobId?: string;
   agent?: string;
   limit?: number;
+}
+
+export interface ContributorQueryOptions extends QueryOptions {
+  includePrimary?: boolean;
 }
 
 function ensureDirectory(dir: string, mode: number = 0o700): void {
@@ -425,6 +454,168 @@ export function listTelemetryReports(
 ): AgentTelemetryRecord[] {
   const selected = selectRecords(telemetryReports, options, 'recordedAt');
   return selected.map((record) => clone(record));
+}
+
+interface ContributorAccumulator {
+  summary: JobContributorSummary;
+  ensNames: Set<string>;
+  roles: Set<string>;
+  labels: Set<string>;
+  signatures: Set<string>;
+  payloadDigests: Set<string>;
+}
+
+function createAccumulator(address: string): ContributorAccumulator {
+  return {
+    summary: {
+      address,
+      ensNames: [],
+      roles: [],
+      labels: [],
+      signatures: [],
+      payloadDigests: [],
+      contributionCount: 0,
+      firstContributionAt: '',
+      lastContributionAt: '',
+      contributions: [],
+    },
+    ensNames: new Set<string>(),
+    roles: new Set<string>(),
+    labels: new Set<string>(),
+    signatures: new Set<string>(),
+    payloadDigests: new Set<string>(),
+  };
+}
+
+function sortedValues(values: Set<string>): string[] {
+  return Array.from(values).sort((a, b) => a.localeCompare(b));
+}
+
+function appendContribution(
+  accumulators: Map<string, ContributorAccumulator>,
+  address: string,
+  detail: ContributorContribution,
+  ens?: string
+): void {
+  const normalisedAddress = normaliseAddress(address);
+  const key = normalisedAddress.toLowerCase();
+  let accumulator = accumulators.get(key);
+  if (!accumulator) {
+    accumulator = createAccumulator(normalisedAddress);
+    accumulators.set(key, accumulator);
+  }
+
+  if (ens && ens.trim().length > 0) {
+    accumulator.ensNames.add(ens.trim());
+  }
+  if (detail.role) {
+    accumulator.roles.add(detail.role);
+  }
+  if (detail.label) {
+    accumulator.labels.add(detail.label);
+  }
+  if (detail.signature) {
+    accumulator.signatures.add(detail.signature);
+  }
+  if (detail.payloadDigest) {
+    accumulator.payloadDigests.add(detail.payloadDigest);
+  }
+
+  const contribution: ContributorContribution = {
+    deliverableId: detail.deliverableId,
+    jobId: detail.jobId,
+    submittedAt: detail.submittedAt,
+    primary: detail.primary,
+    role: detail.role,
+    label: detail.label,
+    signature: detail.signature,
+    payloadDigest: detail.payloadDigest,
+    metadata: detail.metadata ? clone(detail.metadata) : undefined,
+  };
+
+  accumulator.summary.contributions.push(contribution);
+
+  const { summary } = accumulator;
+  if (!summary.firstContributionAt || detail.submittedAt < summary.firstContributionAt) {
+    summary.firstContributionAt = detail.submittedAt;
+  }
+  if (!summary.lastContributionAt || detail.submittedAt > summary.lastContributionAt) {
+    summary.lastContributionAt = detail.submittedAt;
+  }
+}
+
+export function listContributorSummaries(
+  options: ContributorQueryOptions = {}
+): JobContributorSummary[] {
+  const includePrimary = options.includePrimary !== false;
+  const selected = selectRecords(deliverables, options, 'submittedAt');
+  const accumulators = new Map<string, ContributorAccumulator>();
+
+  for (const record of selected) {
+    if (includePrimary) {
+      appendContribution(
+        accumulators,
+        record.agent,
+        {
+          deliverableId: record.id,
+          jobId: record.jobId,
+          submittedAt: record.submittedAt,
+          primary: true,
+          role: 'primary',
+          metadata: record.metadata ? clone(record.metadata) : undefined,
+        }
+      );
+    }
+    if (record.contributors) {
+      for (const contributor of record.contributors) {
+        appendContribution(
+          accumulators,
+          contributor.address,
+          {
+            deliverableId: record.id,
+            jobId: record.jobId,
+            submittedAt: record.submittedAt,
+            primary: false,
+            role: contributor.role,
+            label: contributor.label,
+            signature: contributor.signature,
+            payloadDigest: contributor.payloadDigest,
+            metadata: contributor.metadata
+              ? clone(contributor.metadata)
+              : undefined,
+          },
+          contributor.ens
+        );
+      }
+    }
+  }
+
+  const summaries: JobContributorSummary[] = [];
+  for (const accumulator of accumulators.values()) {
+    const { summary } = accumulator;
+    summary.contributions.sort((a, b) =>
+      b.submittedAt.localeCompare(a.submittedAt)
+    );
+    summary.contributionCount = summary.contributions.length;
+    if (summary.contributions.length > 0) {
+      summary.lastContributionAt = summary.contributions[0].submittedAt;
+      summary.firstContributionAt =
+        summary.contributions[summary.contributions.length - 1].submittedAt;
+    } else {
+      summary.lastContributionAt = '';
+      summary.firstContributionAt = '';
+    }
+    summary.ensNames = sortedValues(accumulator.ensNames);
+    summary.roles = sortedValues(accumulator.roles);
+    summary.labels = sortedValues(accumulator.labels);
+    summary.signatures = sortedValues(accumulator.signatures);
+    summary.payloadDigests = sortedValues(accumulator.payloadDigests);
+    summaries.push(clone(summary));
+  }
+
+  return summaries.sort((a, b) =>
+    b.lastContributionAt.localeCompare(a.lastContributionAt)
+  );
 }
 
 function findById<T extends { id: string }>(records: T[], id: string): T | null {

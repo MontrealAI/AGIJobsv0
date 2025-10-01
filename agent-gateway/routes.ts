@@ -77,6 +77,8 @@ import {
   getTelemetryReportById,
   loadStoredPayload,
   type DeliverableContributor,
+  listContributorSummaries,
+  type ContributorQueryOptions,
 } from './deliverableStore';
 import {
   ensureStake,
@@ -1554,6 +1556,48 @@ app.post(
       const status = message && message.includes('signature') ? 400 : 500;
       res.status(status).json({ error: message });
     }
+  }
+);
+
+app.get(
+  '/jobs/:id/contributors',
+  (req: express.Request, res: express.Response) => {
+    const includePrimaryParam =
+      req.query.includePrimary ?? req.query.includeLead ?? req.query.primary;
+    const includePrimary =
+      includePrimaryParam === undefined
+        ? true
+        : parseBooleanFlag(includePrimaryParam);
+    const leadFilter = pickQueryValue(req.query.agent);
+    const options: ContributorQueryOptions = {
+      jobId: req.params.id,
+      includePrimary,
+    };
+    if (leadFilter) {
+      options.agent = leadFilter;
+    }
+    let summaries = listContributorSummaries(options);
+    const addressFilter = pickQueryValue(
+      req.query.address ?? req.query.contributor
+    );
+    if (addressFilter) {
+      let normalised: string | null = null;
+      try {
+        normalised = ethers.getAddress(addressFilter).toLowerCase();
+      } catch {
+        normalised = addressFilter.trim().toLowerCase();
+      }
+      summaries = summaries.filter((entry) => {
+        if (!normalised) return true;
+        return (
+          entry.address.toLowerCase() === normalised ||
+          entry.ensNames.some(
+            (name) => name.toLowerCase() === normalised
+          )
+        );
+      });
+    }
+    res.json(summaries);
   }
 );
 

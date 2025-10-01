@@ -110,6 +110,7 @@ GET  /efficiency/:agent[?category=categoryKey]
 GET  /telemetry/insights[?limit=10&includeJobs=true&jobsPerAgent=5]
 GET  /telemetry/insights/:agent[?includeJobs=true&jobLimit=5]
 GET  /telemetry/insights/:agent/jobs/:jobId
+GET  /jobs/:id/contributors[?includePrimary=false&address=0x...]
 GET  /opportunities/backtest[?limit=200&minConfidence=0.3&maxAgeHours=48]
 GET  /opportunities[?limit=25]
 GET  /opportunities/:jobId
@@ -163,7 +164,7 @@ gRPC service on `GRPC_PORT`. The protobuf definition lives at
 `agent-gateway/protos/agent_gateway.proto` and includes RPCs for submitting
 deliverables (`SubmitResult`), streaming heartbeats and Alpha-AGI telemetry
 (`RecordHeartbeat`/`RecordTelemetry`), querying the full job context
-(`GetJobInfo`), and orchestrating staking or reward claims
+(`GetJobInfo`, including contributor summaries for multi-agent workflows), and orchestrating staking or reward claims
 (`EnsureStake`/`GetStake`/`AutoClaimRewards`).
 
 Each RPC expects the caller to authenticate with a managed wallet, mirroring
