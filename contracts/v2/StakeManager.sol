@@ -1226,6 +1226,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _;
     }
 
+    modifier onlySlasher(Role role) {
+        address sender = msg.sender;
+        if (sender != jobRegistry) {
+            if (role != Role.Validator || sender != address(validationModule)) {
+                revert OnlyJobRegistry();
+            }
+        }
+        _;
+    }
+
     modifier onlyDisputeModule() {
         if (msg.sender != disputeModule) revert OnlyDisputeModule();
         _;
@@ -2043,7 +2053,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param employer recipient of the employer share
     function slash(address user, Role role, uint256 amount, address employer)
         external
-        onlyJobRegistry
+        onlySlasher(role)
         whenNotPaused
         nonReentrant
     {
@@ -2053,7 +2063,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     function slash(address user, Role role, uint256 amount, address employer, address[] calldata validators)
         external
-        onlyJobRegistry
+        onlySlasher(role)
         whenNotPaused
         nonReentrant
     {
