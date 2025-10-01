@@ -48,7 +48,7 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Lint
+      - name: Lint (strict)
         run: npm run lint:check
 
       - name: Start Ganache (deterministic)
