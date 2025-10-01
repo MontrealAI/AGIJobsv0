@@ -159,6 +159,22 @@ contract MockStakeManager is IStakeManager {
         totalStakes[Role.Validator] -= amount;
     }
 
+    function governanceSlash(
+        address user,
+        Role role,
+        uint256 pctBps,
+        address
+    ) external override returns (uint256 amount) {
+        uint256 stake = _stakes[user][role];
+        amount = (stake * pctBps) / 10_000;
+        if (amount > stake) {
+            amount = stake;
+        }
+        _stakes[user][role] = stake - amount;
+        totalStakes[role] -= amount;
+        return amount;
+    }
+
     function slash(
         address user,
         uint256 amount,
@@ -673,6 +689,13 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     }
 
     function raiseDispute(uint256 jobId, string calldata reason) external {
+        _dispute(jobId, bytes32(0), reason);
+    }
+
+    function escalateToDispute(uint256 jobId, string calldata reason) external override {
+        if (address(disputeModule) != address(0)) {
+            disputeModule.raiseGovernanceDispute(jobId, reason);
+        }
         _dispute(jobId, bytes32(0), reason);
     }
 

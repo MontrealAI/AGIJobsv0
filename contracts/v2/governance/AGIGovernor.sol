@@ -25,8 +25,8 @@ contract AGIGovernor is
     constructor(
         IVotes votingToken,
         TimelockController timelock,
-        uint256 votingDelayBlocks,
-        uint256 votingPeriodBlocks,
+        uint48 votingDelayBlocks,
+        uint32 votingPeriodBlocks,
         uint256 proposalThresholdVotes,
         uint256 quorumFraction
     )
@@ -99,14 +99,28 @@ contract AGIGovernor is
         return super.proposalThreshold();
     }
 
-    function _execute(
+    function _queueOperations(
+        uint256 proposalId,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    )
+        internal
+        override(Governor, GovernorTimelockControl)
+        returns (uint48)
+    {
+        return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
+    }
+
+    function _executeOperations(
         uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) internal override(Governor, GovernorTimelockControl) {
-        super._execute(proposalId, targets, values, calldatas, descriptionHash);
+        super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
     }
 
     function _cancel(
@@ -116,6 +130,15 @@ contract AGIGovernor is
         bytes32 descriptionHash
     ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
         return super._cancel(targets, values, calldatas, descriptionHash);
+    }
+
+    function proposalNeedsQueuing(uint256 proposalId)
+        public
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (bool)
+    {
+        return super.proposalNeedsQueuing(proposalId);
     }
 
     function _executor()
@@ -130,7 +153,7 @@ contract AGIGovernor is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(Governor, GovernorTimelockControl)
+        override(Governor)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

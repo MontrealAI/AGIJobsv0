@@ -202,6 +202,28 @@ contract OracleValidationModule is IValidationModule, Ownable {
 
     function bumpValidatorAuthCacheVersion() external pure override {}
 
+    function triggerFailover(
+        uint256,
+        IValidationModule.FailoverAction,
+        uint64,
+        string calldata
+    ) external pure override {}
+
+    function failoverStates(uint256)
+        external
+        pure
+        override
+        returns (
+            IValidationModule.FailoverAction action,
+            uint64 extensions,
+            uint64 lastExtendedTo,
+            uint64 lastTriggeredAt,
+            bool escalated
+        )
+    {
+        return (IValidationModule.FailoverAction.None, 0, 0, 0, false);
+    }
+
     /// @dev Reject direct ETH transfers to keep the module tax neutral.
     receive() external payable {
         revert("OracleValidationModule: no ether");
