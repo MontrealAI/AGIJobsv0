@@ -44,10 +44,20 @@ authenticate the request.
 
 ## Authentication
 
-Wallet endpoints are protected by either an API key or a signed message.
-Clients can supply the shared secret set in `GATEWAY_API_KEY` via the
-`X-Api-Key` header. Alternatively sign the string `Agent Gateway Auth` and
-send the signature and address using `X-Signature` and `X-Address` headers.
+Wallet endpoints are protected by either an API key or a nonce-based signed
+message. Clients can supply the shared secret set in `GATEWAY_API_KEY` via the
+`X-Api-Key` header. To use wallet signatures, first fetch the current
+challenge:
+
+```bash
+curl http://localhost:3000/auth/challenge
+```
+
+Sign the `challenge` field (the static message `Agent Gateway Auth`
+concatenated with the current nonce) and send the result alongside the wallet
+address using `X-Signature` and `X-Address` headers. Unauthorized responses
+also include the latest challenge so agents can immediately retry after
+signing.
 
 ## Registering Agents
 
