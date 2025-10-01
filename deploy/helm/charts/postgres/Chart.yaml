@@ -1,5 +1,6 @@
 apiVersion: v2
 name: postgres
-description: Postgres backing store for subgraph
 version: 0.1.0
-appVersion: "14"
+description: Postgres database backing the subgraph
+appVersion: "15"
+type: application

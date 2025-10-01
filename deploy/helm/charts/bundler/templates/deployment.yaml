@@ -1,42 +1,62 @@
+{{- $global := default (dict) .Values.global -}}
+{{- $contracts := default (dict) $global.contracts -}}
+{{- $rpc := default (dict) $global.rpc -}}
+{{- $observability := default (dict) $global.observability -}}
+{{- $ratelimits := default (dict) $global.ratelimits -}}
+{{- $secrets := default (dict) $global.secrets -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "bundler.fullname" . }}
   labels:
-    app.kubernetes.io/name: bundler
+    app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: bundler
 spec:
-  replicas: {{ default 1 .Values.replicaCount }}
+  replicas: {{ .Values.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: bundler
+      app.kubernetes.io/name: {{ .Chart.Name }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if (default false $observability.prometheusScrape) }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.port }}"
+        {{- end }}
+        {{- range $k, $v := .Values.podAnnotations }}
+        {{ $k }}: {{ $v | quote }}
+        {{- end }}
       labels:
-        app.kubernetes.io/name: bundler
+        app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: bundler
-          {{- $repoPrefix := default "" (dig "image" "repositoryPrefix" .Values.global) }}
-          {{- $repository := default (printf "%s/bundler" $repoPrefix | trimPrefix "/") .Values.image.repository }}
-          {{- $digest := coalesce .Values.image.digest (dig "image" "digestOverrides" "bundler" .Values.global) }}
-          {{- $tag := coalesce .Values.image.tag (dig "image" "tag" .Values.global) }}
-          image: {{ $repository }}{{- if $digest -}}@{{ $digest }}{{- else -}}:{{ required "image.tag must be provided when no digest is configured for bundler" $tag }}{{- end }}
+          image: {{ include "bundler.imageWithDigest" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: RPC_URL
-              value: {{ default (dig "rpc" "primary" .Values.global) .Values.config.rpcUrl | required "config.rpcUrl or global.rpc.primary must be set" | quote }}
-            - name: ENTRY_POINT_ADDRESS
-              value: {{ default (dig "contracts" "entryPoint" .Values.global) .Values.config.entryPoint | required "config.entryPoint or global.contracts.entryPoint must be set" | quote }}
-            - name: BUNDLE_INTERVAL_SECONDS
-              value: {{ default 5 .Values.config.bundleIntervalSeconds | quote }}
           ports:
             - containerPort: {{ .Values.service.port }}
               name: http
+          env:
+            - name: ENTRYPOINT_ADDRESS
+              value: {{ default "" $contracts.entryPoint | quote }}
+            - name: PAYMASTER_ADDRESS
+              value: {{ default "" $contracts.paymaster | quote }}
+            - name: BUNDLER_PRIVATE_RPC
+              value: {{ default "" $rpc.primary | quote }}
+            - name: RATE_LIMIT_ENABLED
+              value: {{ default false $ratelimits.enabled | quote }}
+            - name: RATE_LIMIT_BURST
+              value: {{ default 20 $ratelimits.burst | quote }}
+            - name: RATE_LIMIT_RPS
+              value: {{ default 10 $ratelimits.requestsPerSecond | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ default (printf "%s-runtime" (include "bundler.fullname" .)) $secrets.runtimeSecretName }}
+            {{- range .Values.extraEnvFrom }}
+            - {{ toYaml . | nindent 12 }}
+            {{- end }}
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
