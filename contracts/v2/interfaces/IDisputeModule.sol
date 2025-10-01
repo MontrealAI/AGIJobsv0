@@ -17,6 +17,12 @@ interface IDisputeModule {
 
     function resolveDispute(uint256 jobId, bool employerWins) external;
 
+    function submitEvidence(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string calldata uri
+    ) external;
+
     function slashValidator(
         address juror,
         uint256 amount,
