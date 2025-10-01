@@ -29,6 +29,16 @@ interface ControlSummary {
   description: string;
 }
 
+type RiskLevel = 'nominal' | 'warning' | 'critical';
+
+type IssueSeverity = 'warning' | 'critical';
+
+interface ModuleIssue {
+  severity: IssueSeverity;
+  message: string;
+  recommendation?: string;
+}
+
 interface ModuleSummary {
   key: string;
   label: string;
@@ -39,6 +49,8 @@ interface ModuleSummary {
   verifyCommand?: string;
   controls: ControlSummary[];
   notes?: string[];
+  riskLevel: RiskLevel;
+  issues: ModuleIssue[];
 }
 
 interface ReportContext {
@@ -54,10 +66,137 @@ interface ReportContext {
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
+const RISK_LABELS: Record<RiskLevel, string> = {
+  nominal: 'Nominal',
+  warning: 'Needs attention',
+  critical: 'Action required',
+};
+
+const RISK_EMOJIS: Record<RiskLevel, string> = {
+  nominal: '✅',
+  warning: '⚠️',
+  critical: '❌',
+};
+
+const RISK_CLASSES: Record<RiskLevel, string> = {
+  nominal: 'risk_nominal',
+  warning: 'risk_warning',
+  critical: 'risk_critical',
+};
+
+const RISK_BADGES: Record<RiskLevel, string> = {
+  nominal: 'Nominal',
+  warning: 'Needs attention',
+  critical: 'Action required',
+};
+
 interface LoaderResult {
   config: any;
   path: string;
   network?: string;
+}
+
+function escalateRiskLevel(current: RiskLevel, severity: IssueSeverity): RiskLevel {
+  if (severity === 'critical') {
+    return 'critical';
+  }
+  return current === 'nominal' ? 'warning' : current;
+}
+
+function createIssueTracker() {
+  const issues: ModuleIssue[] = [];
+  let level: RiskLevel = 'nominal';
+  return {
+    issues,
+    register(severity: IssueSeverity, message: string, recommendation?: string) {
+      issues.push({ severity, message, recommendation });
+      level = escalateRiskLevel(level, severity);
+    },
+    get riskLevel(): RiskLevel {
+      return level;
+    },
+  };
+}
+
+function isUnsetAddressValue(value: unknown): boolean {
+  if (value === undefined || value === null) {
+    return true;
+  }
+  const text = String(value).trim();
+  if (!text) {
+    return true;
+  }
+  try {
+    return ethers.getAddress(text) === ZERO_ADDRESS;
+  } catch (_error) {
+    return true;
+  }
+}
+
+function isMissing(value: unknown): boolean {
+  if (value === undefined || value === null) {
+    return true;
+  }
+  if (typeof value === 'string' && !value.trim()) {
+    return true;
+  }
+  return false;
+}
+
+function isZeroLike(value: unknown): boolean {
+  if (value === undefined || value === null) {
+    return true;
+  }
+  if (typeof value === 'number') {
+    return value === 0;
+  }
+  if (typeof value === 'bigint') {
+    return value === BigInt(0);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed || /^0+(\.0+)?$/.test(trimmed)) {
+      return true;
+    }
+    try {
+      return BigInt(trimmed) === BigInt(0);
+    } catch (_error) {
+      const numeric = Number(trimmed);
+      return Number.isFinite(numeric) ? numeric === 0 : false;
+    }
+  }
+  return false;
+}
+
+function normaliseNumber(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function escapeMarkdownTable(value: string): string {
+  return value.replace(/\|/g, '\\|').replace(/\n/g, '<br />');
+}
+
+function riskEmoji(level: RiskLevel): string {
+  return RISK_EMOJIS[level];
+}
+
+function riskLabel(level: RiskLevel): string {
+  return RISK_LABELS[level];
+}
+
+function riskClassName(level: RiskLevel): string {
+  return RISK_CLASSES[level];
+}
+
+function riskBadge(level: RiskLevel): string {
+  return RISK_BADGES[level];
 }
 
 function buildFallbackCandidates(key: string, network?: string): string[] {
@@ -216,6 +355,30 @@ function buildOwnerModule(context: ReportContext, ownerConfig: any): ModuleSumma
     const typed = entry as { skip?: boolean } | undefined;
     return Boolean(typed?.skip);
   }).length;
+  const tracker = createIssueTracker();
+  const ownerUnset = isUnsetAddressValue(context.ownerDefault);
+  const governanceUnset = isUnsetAddressValue(context.governanceDefault);
+  if (ownerUnset) {
+    tracker.register(
+      'critical',
+      'Owner default controller is unset. All Ownable modules will reject rotations.',
+      'Populate `owner` in config/owner-control.json with the production multisig or timelock.'
+    );
+  }
+  if (governanceUnset) {
+    tracker.register(
+      'warning',
+      'Governance default is unset. Governable modules fall back to owner, reducing safety.',
+      'Set `governance` in config/owner-control.json to the governance controller address.'
+    );
+  }
+  if (moduleCount === 0) {
+    tracker.register(
+      'warning',
+      'No modules are configured under owner control. Updates cannot be orchestrated centrally.',
+      'Add modules to config/owner-control.json to describe ownership expectations.'
+    );
+  }
 
   return {
     key: 'ownerControl',
@@ -246,12 +409,38 @@ function buildOwnerModule(context: ReportContext, ownerConfig: any): ModuleSumma
       'Run the preview command before every change to capture the current control surface.',
       'Use --safe to generate a Gnosis Safe bundle for multi-sig execution.',
     ],
+    riskLevel: tracker.riskLevel,
+    issues: tracker.issues,
   };
 }
 
 function buildFeePoolModule(context: ReportContext, feePool: any): ModuleSummary {
   const allowlist = Object.keys(feePool?.treasuryAllowlist ?? {}).length;
   const rewarders = Object.keys(feePool?.rewarders ?? {}).length;
+  const tracker = createIssueTracker();
+  const burnPct = normaliseNumber(feePool?.burnPct) ?? 0;
+  if (burnPct < 0 || burnPct > 100) {
+    tracker.register(
+      'critical',
+      `Burn percentage ${burnPct}% is outside the 0-100% range.`,
+      'Update `burnPct` in config/fee-pool.json to a value between 0 and 100.'
+    );
+  }
+  const treasuryUnset = isUnsetAddressValue(feePool?.treasury);
+  if (treasuryUnset && burnPct < 100) {
+    tracker.register(
+      'warning',
+      'Treasury is unset while burn percentage is below 100%. Residual fees will be lost.',
+      'Set `treasury` to a valid recipient or increase `burnPct` to 100%.'
+    );
+  }
+  if (allowlist > 0 && treasuryUnset) {
+    tracker.register(
+      'warning',
+      'Treasury allowlist entries exist but treasury address is unset.',
+      'Either clear the allowlist or configure `treasury` in config/fee-pool.json.'
+    );
+  }
   return {
     key: 'feePool',
     label: 'Fee Pool',
@@ -282,10 +471,42 @@ function buildFeePoolModule(context: ReportContext, feePool: any): ModuleSummary
         description: 'Active rewarder contracts permitted to pull rewards.',
       },
     ],
+    riskLevel: tracker.riskLevel,
+    issues: tracker.issues,
   };
 }
 
 function buildJobRegistryModule(context: ReportContext, jobRegistry: any): ModuleSummary {
+  const tracker = createIssueTracker();
+  if (isZeroLike(jobRegistry?.jobStakeTokens)) {
+    tracker.register(
+      'warning',
+      'Job stake requirement is zero. Employers can post jobs without bonded funds.',
+      'Set `jobStakeTokens` in config/job-registry.json to a positive value.'
+    );
+  }
+  if (isZeroLike(jobRegistry?.minAgentStakeTokens)) {
+    tracker.register(
+      'warning',
+      'Minimum agent stake is zero. Agents can accept jobs without collateral.',
+      'Raise `minAgentStakeTokens` in config/job-registry.json to enforce staking.'
+    );
+  }
+  const feePct = normaliseNumber(jobRegistry?.feePct) ?? 0;
+  if (feePct < 0 || feePct > 100) {
+    tracker.register(
+      'critical',
+      `Protocol fee ${feePct}% is outside the 0-100% range.`,
+      'Clamp `feePct` in config/job-registry.json between 0 and 100.'
+    );
+  }
+  if (isUnsetAddressValue(jobRegistry?.treasury) && feePct > 0) {
+    tracker.register(
+      'warning',
+      'Treasury is unset while fees are enabled. Protocol fees will be burned.',
+      'Set `treasury` to a treasury address or disable fees.'
+    );
+  }
   return {
     key: 'jobRegistry',
     label: 'Job Registry',
@@ -316,11 +537,63 @@ function buildJobRegistryModule(context: ReportContext, jobRegistry: any): Modul
         description: 'Optional treasury recipient for fees collected by the registry.',
       },
     ],
+    riskLevel: tracker.riskLevel,
+    issues: tracker.issues,
   };
 }
 
 function buildStakeManagerModule(context: ReportContext, stakeManager: any): ModuleSummary {
   const autoStake = stakeManager?.autoStake ?? {};
+  const tracker = createIssueTracker();
+  if (isZeroLike(stakeManager?.minStakeTokens)) {
+    tracker.register(
+      'warning',
+      'Minimum stake is zero. Agents can operate without collateral.',
+      'Set `minStakeTokens` in config/stake-manager.json to a positive value.'
+    );
+  }
+  const unbonding = normaliseNumber(stakeManager?.unbondingPeriodSeconds) ?? 0;
+  if (unbonding <= 0) {
+    tracker.register(
+      'warning',
+      'Unbonding period is zero. Stake withdrawals become instantaneous.',
+      'Increase `unbondingPeriodSeconds` to enforce a cooling-off period.'
+    );
+  }
+  const burnPct = normaliseNumber(stakeManager?.burnPct) ?? 0;
+  if (burnPct < 0 || burnPct > 100) {
+    tracker.register(
+      'critical',
+      `StakeManager burn percentage ${burnPct}% is outside 0-100%.`,
+      'Adjust `burnPct` in config/stake-manager.json to be within bounds.'
+    );
+  }
+  if (isUnsetAddressValue(stakeManager?.treasury) && burnPct > 0 && burnPct < 100) {
+    tracker.register(
+      'warning',
+      'Treasury unset while burns are partial. Slashed funds will be lost.',
+      'Configure `treasury` or set `burnPct` to 0 or 100 depending on policy.'
+    );
+  }
+  if (autoStake?.enabled) {
+    const floorZero = isZeroLike(autoStake.floorTokens);
+    const ceilingZero = isZeroLike(autoStake.ceilingTokens);
+    if (floorZero && ceilingZero) {
+      tracker.register(
+        'warning',
+        'Auto-stake enabled but floor and ceiling tokens are zero.',
+        'Populate `autoStake.floorTokens` and `autoStake.ceilingTokens` with realistic bounds.'
+      );
+    }
+    const threshold = normaliseNumber(autoStake.threshold);
+    if (threshold === undefined || threshold <= 0) {
+      tracker.register(
+        'warning',
+        'Auto-stake threshold is missing or zero.',
+        'Set `autoStake.threshold` to the percentage deviation that should trigger adjustments.'
+      );
+    }
+  }
   return {
     key: 'stakeManager',
     label: 'Stake Manager',
@@ -351,6 +624,8 @@ function buildStakeManagerModule(context: ReportContext, stakeManager: any): Mod
         description: 'Automatic stake tuning based on Hamiltonian/temperature data.',
       },
     ],
+    riskLevel: tracker.riskLevel,
+    issues: tracker.issues,
   };
 }
 
@@ -358,6 +633,68 @@ function buildThermodynamicsModule(context: ReportContext, thermodynamics: any):
   const shares = thermodynamics?.rewardEngine?.roleShares ?? {};
   const pid = thermodynamics?.thermostat?.pid ?? {};
   const bounds = thermodynamics?.thermostat?.bounds ?? {};
+  const tracker = createIssueTracker();
+  const requiredShares: Array<'agent' | 'validator' | 'operator' | 'employer'> = [
+    'agent',
+    'validator',
+    'operator',
+    'employer',
+  ];
+  const shareValues = requiredShares.map((role) => normaliseNumber((shares as any)[role]));
+  shareValues.forEach((value, index) => {
+    if (value === undefined) {
+      tracker.register(
+        'critical',
+        `Missing ${requiredShares[index]} role share.`,
+        'Set each roleShares entry to a percentage that sums to 100.'
+      );
+    }
+  });
+  const totalShare = shareValues.reduce((sum, value) => sum + (value ?? 0), 0);
+  if (Number.isFinite(totalShare) && Math.abs(totalShare - 100) > 0.001) {
+    tracker.register(
+      'warning',
+      `Role shares sum to ${totalShare.toFixed(2)}%.`,
+      'Adjust roleShares so that the total equals 100% to avoid reward drift.'
+    );
+  }
+  const systemTemperature = normaliseNumber(thermodynamics?.thermostat?.systemTemperature);
+  if (systemTemperature === undefined || systemTemperature <= 0) {
+    tracker.register(
+      'warning',
+      'System temperature is unset or zero.',
+      'Configure `thermostat.systemTemperature` to the calibrated base temperature (scaled by 1e18).'
+    );
+  }
+  const minBound = normaliseNumber(bounds.min);
+  const maxBound = normaliseNumber(bounds.max);
+  if (
+    minBound !== undefined &&
+    maxBound !== undefined &&
+    Number.isFinite(minBound) &&
+    Number.isFinite(maxBound) &&
+    minBound >= maxBound
+  ) {
+    tracker.register(
+      'warning',
+      `Thermostat bounds are inverted (min ${bounds.min}, max ${bounds.max}).`,
+      'Ensure `bounds.min` is lower than `bounds.max` in config/thermodynamics.json.'
+    );
+  }
+  if (isUnsetAddressValue(thermodynamics?.rewardEngine?.address)) {
+    tracker.register(
+      'warning',
+      'Reward engine address is unset.',
+      'Populate `rewardEngine.address` once deployed to enable automated verification.'
+    );
+  }
+  if (isUnsetAddressValue(thermodynamics?.thermostat?.address)) {
+    tracker.register(
+      'warning',
+      'Thermostat address is unset.',
+      'Set `thermostat.address` in config/thermodynamics.json after deployment.'
+    );
+  }
   return {
     key: 'thermodynamics',
     label: 'Thermodynamics & Reward Engine',
@@ -389,11 +726,21 @@ function buildThermodynamicsModule(context: ReportContext, thermodynamics: any):
         description: 'Minimum and maximum allowable thermostat temperature.',
       },
     ],
+    riskLevel: tracker.riskLevel,
+    issues: tracker.issues,
   };
 }
 
 function buildEnergyOracleModule(context: ReportContext, energyOracle: any): ModuleSummary {
   const signerCount = (energyOracle?.signers ?? []).length;
+  const tracker = createIssueTracker();
+  if (signerCount === 0) {
+    tracker.register(
+      'critical',
+      'No authorised energy oracle signers configured.',
+      'List at least one signer in config/energy-oracle.json before going live.'
+    );
+  }
   return {
     key: 'energyOracle',
     label: 'Energy Oracle',
@@ -414,11 +761,29 @@ function buildEnergyOracleModule(context: ReportContext, energyOracle: any): Mod
         description: 'Whether to keep signers present on-chain but absent from configuration.',
       },
     ],
+    riskLevel: tracker.riskLevel,
+    issues: tracker.issues,
   };
 }
 
 function buildHamiltonianModule(context: ReportContext, monitor: any): ModuleSummary {
   const records = monitor?.records ?? [];
+  const tracker = createIssueTracker();
+  const windowSize = normaliseNumber(monitor?.window);
+  if (windowSize === undefined || windowSize <= 0) {
+    tracker.register(
+      'warning',
+      'Hamiltonian monitor window is unset or zero.',
+      'Set `window` in `config/hamiltonian-monitor.json` to the number of epochs to retain.'
+    );
+  }
+  if (isUnsetAddressValue(monitor?.address)) {
+    tracker.register(
+      'warning',
+      'Hamiltonian monitor address is unset.',
+      'Populate `address` once deployed for end-to-end verification.'
+    );
+  }
   return {
     key: 'hamiltonianMonitor',
     label: 'Hamiltonian Monitor',
@@ -444,12 +809,29 @@ function buildHamiltonianModule(context: ReportContext, monitor: any): ModuleSum
         description: 'If true, helper will wipe on-chain monitor history on next update.',
       },
     ],
+    riskLevel: tracker.riskLevel,
+    issues: tracker.issues,
   };
 }
 
 function buildTaxPolicyModule(context: ReportContext, taxPolicy: any): ModuleSummary {
   const acknowledgers = Object.keys(taxPolicy?.acknowledgers ?? {}).length;
   const revocations = taxPolicy?.revokeAcknowledgements ?? [];
+  const tracker = createIssueTracker();
+  if (isMissing(taxPolicy?.policyURI)) {
+    tracker.register(
+      'warning',
+      'Tax policy URI is unset.',
+      'Set `policyURI` in config/tax-policy.json to an IPFS or HTTPS location.'
+    );
+  }
+  if (isMissing(taxPolicy?.acknowledgement)) {
+    tracker.register(
+      'warning',
+      'Acknowledgement text is missing.',
+      'Define `acknowledgement` to require explicit acceptance from participants.'
+    );
+  }
   return {
     key: 'taxPolicy',
     label: 'Tax Policy',
@@ -480,6 +862,8 @@ function buildTaxPolicyModule(context: ReportContext, taxPolicy: any): ModuleSum
         description: 'Acknowledgements to revoke on next execution.',
       },
     ],
+    riskLevel: tracker.riskLevel,
+    issues: tracker.issues,
   };
 }
 
@@ -518,6 +902,23 @@ function renderHuman(context: ReportContext, modules: ModuleSummary[], includeMe
   lines.push(`• Governance default: ${context.governanceDefault ? formatAddress(context.governanceDefault) : 'Unset'}`);
   lines.push('');
 
+  lines.push('Flight readiness dashboard');
+  lines.push('-'.repeat(26));
+  const anyIssues = modules.some((module) => module.issues.length > 0);
+  modules.forEach((module) => {
+    const statusLine = `${riskEmoji(module.riskLevel)} ${module.label} – ${riskLabel(module.riskLevel)}`;
+    lines.push(statusLine);
+    module.issues.forEach((issue) => {
+      const severity = issue.severity === 'critical' ? 'CRITICAL' : 'WARNING';
+      const action = issue.recommendation ? ` Action: ${issue.recommendation}` : '';
+      lines.push(`   • ${severity}: ${issue.message}${action}`);
+    });
+  });
+  if (!anyIssues) {
+    lines.push('All modules nominal.');
+  }
+  lines.push('');
+
   modules.forEach((module) => {
     lines.push(`Module: ${module.label}`);
     lines.push('-'.repeat(8 + module.label.length));
@@ -538,6 +939,13 @@ function renderHuman(context: ReportContext, modules: ModuleSummary[], includeMe
       lines.push(`  - ${control.name}: ${control.value}`);
       lines.push(`      ${control.description}`);
     });
+    if (module.issues.length) {
+      module.issues.forEach((issue) => {
+        const prefix = issue.severity === 'critical' ? '❌' : '⚠️';
+        const action = issue.recommendation ? ` Action: ${issue.recommendation}` : '';
+        lines.push(`      ${prefix} ${issue.message}${action}`);
+      });
+    }
     if (module.notes?.length) {
       module.notes.forEach((note) => lines.push(`      Note: ${note}`));
     }
@@ -562,6 +970,31 @@ function renderMarkdown(context: ReportContext, modules: ModuleSummary[], includ
   lines.push(`- **Decimals:** ${context.tokenDecimals}`);
   lines.push(`- **Owner default:** ${context.ownerDefault ? formatAddress(context.ownerDefault) : 'Unset'}`);
   lines.push(`- **Governance default:** ${context.governanceDefault ? formatAddress(context.governanceDefault) : 'Unset'}`);
+  lines.push('');
+
+  lines.push('## Flight Readiness Dashboard');
+  lines.push('');
+  lines.push('| Module | Status | Issues | Recommended Actions |');
+  lines.push('| --- | --- | --- | --- |');
+  modules.forEach((module) => {
+    const status = `${riskEmoji(module.riskLevel)} ${riskLabel(module.riskLevel)}`;
+    if (module.issues.length === 0) {
+      lines.push(`| ${module.label} | ${status} | _None_ | _None_ |`);
+      return;
+    }
+    const issuesText = module.issues
+      .map((issue) => {
+        const severity = issue.severity === 'critical' ? '**Critical**' : '**Warning**';
+        return `${severity} ${issue.message}`;
+      })
+      .join('<br />');
+    const actionText = module.issues
+      .map((issue) => issue.recommendation ?? 'See documentation for remediation steps.')
+      .join('<br />');
+    lines.push(
+      `| ${module.label} | ${status} | ${escapeMarkdownTable(issuesText)} | ${escapeMarkdownTable(actionText)} |`
+    );
+  });
   lines.push('');
 
   modules.forEach((module) => {
@@ -590,6 +1023,14 @@ function renderMarkdown(context: ReportContext, modules: ModuleSummary[], includ
       lines.push('');
       module.notes.forEach((note) => lines.push(`> ${note}`));
     }
+    if (module.issues.length) {
+      lines.push('');
+      module.issues.forEach((issue) => {
+        const prefix = issue.severity === 'critical' ? '❌' : '⚠️';
+        const action = issue.recommendation ? ` — _${issue.recommendation}_` : '';
+        lines.push(`> ${prefix} **${issue.severity === 'critical' ? 'Critical' : 'Warning'}:** ${issue.message}${action}`);
+      });
+    }
     lines.push('');
   });
 
@@ -603,14 +1044,27 @@ function renderMarkdown(context: ReportContext, modules: ModuleSummary[], includ
   return lines.join('\n');
 }
 
+function moduleNodeId(module: ModuleSummary): string {
+  const raw = module.key || module.label;
+  const cleaned = raw.replace(/[^a-zA-Z0-9]/g, '_');
+  return cleaned ? cleaned.toUpperCase() : 'MODULE';
+}
+
 function renderMermaid(context: ReportContext, modules: ModuleSummary[]): string {
   const lines: string[] = [];
   lines.push('```mermaid');
   lines.push('flowchart LR');
+  lines.push('    classDef risk_nominal fill:#ecfdf5,stroke:#047857,stroke-width:1px;');
+  lines.push('    classDef risk_warning fill:#fef3c7,stroke:#b45309,stroke-width:1px;');
+  lines.push('    classDef risk_critical fill:#fee2e2,stroke:#b91c1c,stroke-width:1px;');
+  const ownerModule = modules.find((module) => module.key === 'ownerControl');
+  const ownerClass = ownerModule ? riskClassName(ownerModule.riskLevel) : riskClassName('nominal');
   lines.push('    subgraph Governance');
   lines.push(`        OWNER[Owner Default\\n${shortenAddress(context.ownerDefault)}]`);
   lines.push(`        GOV[Governance Default\\n${shortenAddress(context.governanceDefault)}]`);
   lines.push('    end');
+  lines.push(`    class OWNER ${ownerClass};`);
+  lines.push(`    class GOV ${ownerClass};`);
   modules
     .filter((module) => module.key !== 'ownerControl')
     .forEach((module) => {
@@ -618,8 +1072,13 @@ function renderMermaid(context: ReportContext, modules: ModuleSummary[]): string
         .slice(0, 2)
         .map((control) => `${control.name}: ${control.value}`)
         .join('\\n');
-      lines.push(`    OWNER --> ${module.key.toUpperCase()}[${module.label}\\n${highlight}]`);
-      lines.push(`    GOV --> ${module.key.toUpperCase()}[${module.label}\\n${highlight}]`);
+      const nodeId = moduleNodeId(module);
+      const badge = riskBadge(module.riskLevel);
+      const block = highlight ? `\\n${highlight}` : '';
+      lines.push(`    ${nodeId}[${module.label}\\n${badge}${block}]`);
+      lines.push(`    OWNER --> ${nodeId}`);
+      lines.push(`    GOV --> ${nodeId}`);
+      lines.push(`    class ${nodeId} ${riskClassName(module.riskLevel)};`);
     });
   lines.push('```');
   return lines.join('\n');
