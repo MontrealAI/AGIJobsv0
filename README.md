@@ -35,6 +35,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control command center](#owner-control-command-center)
 - [Owner control doctor](#owner-control-doctor)
 - [Owner control audit](#owner-control-audit)
+- [Owner control systems map](#owner-control-systems-map)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
 - [Owner control non-technical guide](#owner-control-non-technical-guide)
 - [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
@@ -251,6 +252,10 @@ npm run owner:audit -- --network <network> --out reports/<network>-owner-audit.m
 ```
 
 The CLI loads every module loader used by `owner:update-all`, verifies the JSON manifests parse cleanly, records SHA-256 hashes for `config/agialpha*.json` and `config/owner-control*.json`, and prints a table of owner/governance/token targets with ✅/⚠️/❌ statuses. Each row links to the dedicated Hardhat helper and the relevant operations handbook so the contract owner can adjust parameters without touching Solidity. The Markdown output embeds Mermaid diagrams, actionable remediation notes and copy/paste commands, while `--format human` and `--format json` support chat summaries and automation pipelines respectively. Full usage guidance lives in [docs/owner-control-audit.md](docs/owner-control-audit.md).
+
+### Owner control systems map
+
+Need an executive-level orientation that connects business intent to every governance lever? The [Owner Control Systems Map](docs/owner-control-systems-map.md) stitches together a topology of owners → JSON configs → CLI tooling → on-chain modules, a sequenced execution checklist, and a parameter reference so you can retune the platform without touching Solidity. Use it when onboarding new decision-makers or preparing production runbooks that demand visual context, command palettes, and non-technical drills in a single, shareable document.
 
 ### Owner control quick reference CLI
 
