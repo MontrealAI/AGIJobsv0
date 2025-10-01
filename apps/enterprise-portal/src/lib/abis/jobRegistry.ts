@@ -6,10 +6,10 @@ export const jobRegistryAbi = [
       { name: 'reward', type: 'uint256' },
       { name: 'deadline', type: 'uint64' },
       { name: 'specHash', type: 'bytes32' },
-      { name: 'uri', type: 'string' }
+      { name: 'uri', type: 'string' },
     ],
     outputs: [{ name: 'jobId', type: 'uint256' }],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -19,10 +19,10 @@ export const jobRegistryAbi = [
       { name: 'deadline', type: 'uint64' },
       { name: 'agentTypes', type: 'uint8' },
       { name: 'specHash', type: 'bytes32' },
-      { name: 'uri', type: 'string' }
+      { name: 'uri', type: 'string' },
     ],
     outputs: [{ name: 'jobId', type: 'uint256' }],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -31,10 +31,10 @@ export const jobRegistryAbi = [
       { name: 'reward', type: 'uint256' },
       { name: 'deadline', type: 'uint64' },
       { name: 'specHash', type: 'bytes32' },
-      { name: 'uri', type: 'string' }
+      { name: 'uri', type: 'string' },
     ],
     outputs: [{ name: 'jobId', type: 'uint256' }],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -44,45 +44,72 @@ export const jobRegistryAbi = [
       { name: 'deadline', type: 'uint64' },
       { name: 'agentTypes', type: 'uint8' },
       { name: 'specHash', type: 'bytes32' },
-      { name: 'uri', type: 'string' }
+      { name: 'uri', type: 'string' },
     ],
     outputs: [{ name: 'jobId', type: 'uint256' }],
-    stateMutability: 'nonpayable'
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
-    name: 'job',
+    name: 'jobs',
     inputs: [{ name: 'jobId', type: 'uint256' }],
     outputs: [
-      { name: 'employer', type: 'address' },
-      { name: 'worker', type: 'address' },
-      { name: 'reward', type: 'uint256' },
-      { name: 'stake', type: 'uint256' },
-      { name: 'fee', type: 'uint256' },
-      { name: 'createdAt', type: 'uint64' },
-      { name: 'deadline', type: 'uint64' },
-      { name: 'state', type: 'uint8' },
-      { name: 'specHash', type: 'bytes32' },
-      { name: 'uri', type: 'string' }
+      {
+        name: '',
+        type: 'tuple',
+        components: [
+          { name: 'employer', type: 'address' },
+          { name: 'agent', type: 'address' },
+          { name: 'reward', type: 'uint128' },
+          { name: 'stake', type: 'uint96' },
+          { name: 'burnReceiptAmount', type: 'uint128' },
+          { name: 'uriHash', type: 'bytes32' },
+          { name: 'resultHash', type: 'bytes32' },
+          { name: 'specHash', type: 'bytes32' },
+          { name: 'packedMetadata', type: 'uint256' },
+        ],
+      },
     ],
-    stateMutability: 'view'
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'decodeJobMetadata',
+    inputs: [{ name: 'packed', type: 'uint256' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        components: [
+          { name: 'state', type: 'uint8' },
+          { name: 'success', type: 'bool' },
+          { name: 'burnConfirmed', type: 'bool' },
+          { name: 'agentTypes', type: 'uint8' },
+          { name: 'feePct', type: 'uint32' },
+          { name: 'agentPct', type: 'uint32' },
+          { name: 'deadline', type: 'uint64' },
+          { name: 'assignedAt', type: 'uint64' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'function',
     name: 'getJobValidators',
     inputs: [{ name: 'jobId', type: 'uint256' }],
     outputs: [{ name: '', type: 'address[]' }],
-    stateMutability: 'view'
+    stateMutability: 'view',
   },
   {
     type: 'function',
     name: 'getJobValidatorVote',
     inputs: [
       { name: 'jobId', type: 'uint256' },
-      { name: 'validator', type: 'address' }
+      { name: 'validator', type: 'address' },
     ],
     outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'view'
+    stateMutability: 'view',
   },
   {
     type: 'event',
@@ -95,8 +122,8 @@ export const jobRegistryAbi = [
       { name: 'stake', type: 'uint256', indexed: false },
       { name: 'fee', type: 'uint256', indexed: false },
       { name: 'specHash', type: 'bytes32', indexed: false },
-      { name: 'uri', type: 'string', indexed: false }
-    ]
+      { name: 'uri', type: 'string', indexed: false },
+    ],
   },
   {
     type: 'event',
@@ -104,8 +131,8 @@ export const jobRegistryAbi = [
     inputs: [
       { name: 'jobId', type: 'uint256', indexed: true },
       { name: 'agent', type: 'address', indexed: true },
-      { name: 'subdomain', type: 'string', indexed: false }
-    ]
+      { name: 'subdomain', type: 'string', indexed: false },
+    ],
   },
   {
     type: 'event',
@@ -115,28 +142,28 @@ export const jobRegistryAbi = [
       { name: 'worker', type: 'address', indexed: true },
       { name: 'resultHash', type: 'bytes32', indexed: false },
       { name: 'resultURI', type: 'string', indexed: false },
-      { name: 'subdomain', type: 'string', indexed: false }
-    ]
+      { name: 'subdomain', type: 'string', indexed: false },
+    ],
   },
   {
     type: 'event',
     name: 'ValidationStartTriggered',
-    inputs: [{ name: 'jobId', type: 'uint256', indexed: true }]
+    inputs: [{ name: 'jobId', type: 'uint256', indexed: true }],
   },
   {
     type: 'event',
     name: 'JobFinalized',
     inputs: [
       { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'worker', type: 'address', indexed: true }
-    ]
+      { name: 'worker', type: 'address', indexed: true },
+    ],
   },
   {
     type: 'event',
     name: 'JobDisputed',
     inputs: [
       { name: 'jobId', type: 'uint256', indexed: true },
-      { name: 'caller', type: 'address', indexed: true }
-    ]
-  }
+      { name: 'caller', type: 'address', indexed: true },
+    ],
+  },
 ] as const;
