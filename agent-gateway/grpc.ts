@@ -1,7 +1,7 @@
 import path from 'path';
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
-import { Wallet } from 'ethers';
+import { Wallet, ethers } from 'ethers';
 import {
   walletManager,
   checkEnsSubdomain,
@@ -42,6 +42,14 @@ import {
 import { getRewardPayouts } from './events';
 import { publishEnergySample } from './telemetry';
 import { serialiseChainJob } from './jobSerialization';
+import {
+  buildJobContributorSummary,
+  buildAgentContributionHistory,
+  type ContributionDetailSummary,
+  type ContributorProfileSummary,
+  type JobContributorSummary as JobContributorSummaryResult,
+  type AgentContributionHistorySummary,
+} from './contributorSummary';
 
 interface ProtoTelemetryPayload {
   payload_json?: string;
@@ -144,6 +152,89 @@ interface AutoClaimRewardsRequestMessage {
   role?: string;
   withdraw_stake?: boolean | null;
   acknowledge?: boolean | null;
+}
+
+interface ContributionDetailMessage {
+  job_id?: string;
+  deliverable_id?: string;
+  submitted_at?: string;
+  success?: boolean;
+  submission_method?: string;
+  tx_hash?: string;
+  source?: string;
+  contributor_role?: string;
+  contributor_label?: string;
+  result_uri?: string;
+  result_cid?: string;
+  result_ref?: string;
+  result_hash?: string;
+  digest?: string;
+  signature?: string;
+  payload_digest?: string;
+  proof_json?: string;
+  telemetry?: StoredPayloadReferenceMessage;
+  deliverable_metadata_json?: string;
+  contributor_metadata_json?: string;
+}
+
+interface ContributorProfileMessage {
+  address?: string;
+  ens?: string;
+  label?: string;
+  role?: string;
+  manifest_categories?: string[];
+  total_contributions?: number;
+  successful_contributions?: number;
+  failed_contributions?: number;
+  first_contribution_at?: string;
+  last_contribution_at?: string;
+  signatures?: string[];
+  payload_digests?: string[];
+  contributions?: ContributionDetailMessage[];
+}
+
+interface JobContributorSummaryMessage {
+  job_id?: string;
+  deliverable_count?: number;
+  last_submission_at?: string;
+  contributors?: ContributorProfileMessage[];
+}
+
+interface AgentContributionHistoryMessage {
+  agent?: string;
+  ens?: string;
+  label?: string;
+  role?: string;
+  manifest_categories?: string[];
+  total_contributions?: number;
+  successful_contributions?: number;
+  failed_contributions?: number;
+  unique_jobs?: number;
+  first_contribution_at?: string;
+  last_contribution_at?: string;
+  signatures?: string[];
+  payload_digests?: string[];
+  contributions?: ContributionDetailMessage[];
+}
+
+interface GetJobContributorsRequestMessage {
+  job_id?: string;
+  refresh_identity?: boolean | null;
+}
+
+interface GetJobContributorsResponseMessage {
+  summary?: JobContributorSummaryMessage;
+}
+
+interface GetAgentContributionHistoryRequestMessage {
+  agent_address?: string;
+  wallet_address?: string;
+  limit?: number;
+  refresh_identity?: boolean | null;
+}
+
+interface GetAgentContributionHistoryResponseMessage {
+  history?: AgentContributionHistoryMessage;
 }
 
 interface StoredPayloadReferenceMessage {
@@ -643,6 +734,99 @@ function mapClaimActions(actions: any[]): ClaimActionMessage[] {
   }));
 }
 
+function safeJsonString(value: unknown): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function mapContributionDetail(
+  detail: ContributionDetailSummary
+): ContributionDetailMessage {
+  const message: ContributionDetailMessage = {
+    job_id: detail.jobId,
+    deliverable_id: detail.deliverableId,
+    submitted_at: detail.submittedAt,
+    success: detail.success,
+    submission_method: detail.submissionMethod,
+    tx_hash: detail.txHash,
+    source: detail.source,
+    contributor_role: detail.contributorRole,
+    contributor_label: detail.contributorLabel,
+    result_uri: detail.resultUri,
+    result_cid: detail.resultCid,
+    result_ref: detail.resultRef,
+    result_hash: detail.resultHash,
+    digest: detail.digest,
+    signature: detail.signature,
+    payload_digest: detail.payloadDigest,
+    telemetry: toStoredPayloadMessage(detail.telemetry),
+    deliverable_metadata_json: safeJsonString(detail.deliverableMetadata),
+    contributor_metadata_json: safeJsonString(detail.contributorMetadata),
+  };
+  if (detail.proof) {
+    message.proof_json = safeJsonString(detail.proof);
+  }
+  return message;
+}
+
+function mapContributorProfile(
+  profile: ContributorProfileSummary
+): ContributorProfileMessage {
+  return {
+    address: profile.address,
+    ens: profile.ens,
+    label: profile.label,
+    role: profile.role,
+    manifest_categories: profile.manifestCategories,
+    total_contributions: profile.totalContributions,
+    successful_contributions: profile.successfulContributions,
+    failed_contributions: profile.failedContributions,
+    first_contribution_at: profile.firstContributionAt,
+    last_contribution_at: profile.lastContributionAt,
+    signatures: profile.signatures,
+    payload_digests: profile.payloadDigests,
+    contributions: profile.contributions.map(mapContributionDetail),
+  };
+}
+
+function mapJobContributorSummary(
+  summary: JobContributorSummaryResult
+): JobContributorSummaryMessage {
+  return {
+    job_id: summary.jobId,
+    deliverable_count: summary.deliverableCount,
+    last_submission_at: summary.lastSubmissionAt,
+    contributors: summary.contributors.map(mapContributorProfile),
+  };
+}
+
+function mapAgentContributionHistory(
+  summary: AgentContributionHistorySummary
+): AgentContributionHistoryMessage {
+  return {
+    agent: summary.agent,
+    ens: summary.ens,
+    label: summary.label,
+    role: summary.role,
+    manifest_categories: summary.manifestCategories,
+    total_contributions: summary.totalContributions,
+    successful_contributions: summary.successfulContributions,
+    failed_contributions: summary.failedContributions,
+    unique_jobs: summary.uniqueJobs,
+    first_contribution_at: summary.firstContributionAt,
+    last_contribution_at: summary.lastContributionAt,
+    signatures: summary.signatures,
+    payload_digests: summary.payloadDigests,
+    contributions: summary.contributions.map(mapContributionDetail),
+  };
+}
+
 async function resolveWallet(
   walletAddress?: string,
   agentAddress?: string
@@ -666,6 +850,28 @@ async function resolveWallet(
     throw new Error('wallet is not managed by the gateway');
   }
   return wallet;
+}
+
+async function resolveContributionAddress(
+  request: GetAgentContributionHistoryRequestMessage
+): Promise<string> {
+  const agentCandidate = request.agent_address?.trim();
+  if (agentCandidate) {
+    const resolved = await resolveAgentAddress(agentCandidate);
+    if (!resolved) {
+      throw new Error('agent address could not be resolved');
+    }
+    return resolved;
+  }
+  const walletCandidate = request.wallet_address?.trim();
+  if (walletCandidate) {
+    try {
+      return ethers.getAddress(walletCandidate);
+    } catch {
+      throw new Error('wallet_address must be a valid address');
+    }
+  }
+  throw new Error('agent_address or wallet_address is required');
 }
 
 function handleContributorParsing(
@@ -980,6 +1186,63 @@ async function handleGetJobInfo(
   callback(null, response);
 }
 
+async function handleGetJobContributors(
+  call: grpc.ServerUnaryCall<
+    GetJobContributorsRequestMessage,
+    GetJobContributorsResponseMessage
+  >,
+  callback: UnaryCallback<GetJobContributorsResponseMessage>
+): Promise<void> {
+  const jobId = call.request.job_id?.trim();
+  if (!jobId) {
+    callback(createServiceError(grpc.status.INVALID_ARGUMENT, 'job_id is required'), null);
+    return;
+  }
+  try {
+    const summary = await buildJobContributorSummary(jobId, {
+      refreshIdentity: call.request.refresh_identity === true,
+    });
+    const response: GetJobContributorsResponseMessage = {
+      summary: mapJobContributorSummary(summary),
+    };
+    callback(null, response);
+  } catch (err) {
+    respondWithError(callback, err, grpc.status.INTERNAL);
+  }
+}
+
+async function handleGetAgentContributionHistory(
+  call: grpc.ServerUnaryCall<
+    GetAgentContributionHistoryRequestMessage,
+    GetAgentContributionHistoryResponseMessage
+  >,
+  callback: UnaryCallback<GetAgentContributionHistoryResponseMessage>
+): Promise<void> {
+  let address: string;
+  try {
+    address = await resolveContributionAddress(call.request);
+  } catch (err) {
+    respondWithError(callback, err, grpc.status.INVALID_ARGUMENT);
+    return;
+  }
+  const limit =
+    call.request.limit !== undefined && call.request.limit !== null
+      ? call.request.limit
+      : undefined;
+  try {
+    const history = await buildAgentContributionHistory(address, {
+      limit,
+      refreshIdentity: call.request.refresh_identity === true,
+    });
+    const response: GetAgentContributionHistoryResponseMessage = {
+      history: mapAgentContributionHistory(history),
+    };
+    callback(null, response);
+  } catch (err) {
+    respondWithError(callback, err, grpc.status.INTERNAL);
+  }
+}
+
 async function handleEnsureStake(
   call: grpc.ServerUnaryCall<EnsureStakeRequestMessage, EnsureStakeResponseMessage>,
   callback: UnaryCallback<EnsureStakeResponseMessage>
@@ -1143,6 +1406,28 @@ const handlers: grpc.UntypedServiceImplementation = {
     callback: UnaryCallback<GetJobInfoResponseMessage>
   ) {
     handleGetJobInfo(call, callback).catch((err) => {
+      respondWithError(callback, err, grpc.status.INTERNAL);
+    });
+  },
+  GetJobContributors(
+    call: grpc.ServerUnaryCall<
+      GetJobContributorsRequestMessage,
+      GetJobContributorsResponseMessage
+    >,
+    callback: UnaryCallback<GetJobContributorsResponseMessage>
+  ) {
+    handleGetJobContributors(call, callback).catch((err) => {
+      respondWithError(callback, err, grpc.status.INTERNAL);
+    });
+  },
+  GetAgentContributionHistory(
+    call: grpc.ServerUnaryCall<
+      GetAgentContributionHistoryRequestMessage,
+      GetAgentContributionHistoryResponseMessage
+    >,
+    callback: UnaryCallback<GetAgentContributionHistoryResponseMessage>
+  ) {
+    handleGetAgentContributionHistory(call, callback).catch((err) => {
       respondWithError(callback, err, grpc.status.INTERNAL);
     });
   },

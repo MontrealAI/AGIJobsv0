@@ -103,6 +103,69 @@ message TelemetryRecord {
   string status = 10;
 }
 
+message ContributionDetail {
+  string job_id = 1;
+  string deliverable_id = 2;
+  string submitted_at = 3;
+  bool success = 4;
+  string submission_method = 5;
+  string tx_hash = 6;
+  string source = 7;
+  string contributor_role = 8;
+  string contributor_label = 9;
+  string result_uri = 10;
+  string result_cid = 11;
+  string result_ref = 12;
+  string result_hash = 13;
+  string digest = 14;
+  string signature = 15;
+  string payload_digest = 16;
+  string proof_json = 17;
+  StoredPayloadReference telemetry = 18;
+  string deliverable_metadata_json = 19;
+  string contributor_metadata_json = 20;
+}
+
+message ContributorProfile {
+  string address = 1;
+  string ens = 2;
+  string label = 3;
+  string role = 4;
+  repeated string manifest_categories = 5;
+  uint32 total_contributions = 6;
+  uint32 successful_contributions = 7;
+  uint32 failed_contributions = 8;
+  string first_contribution_at = 9;
+  string last_contribution_at = 10;
+  repeated string signatures = 11;
+  repeated string payload_digests = 12;
+  repeated ContributionDetail contributions = 13;
+}
+
+message JobContributorSummary {
+  string job_id = 1;
+  uint32 deliverable_count = 2;
+  string last_submission_at = 3;
+  repeated ContributorProfile contributors = 4;
+}
+
+message AgentContributionHistory {
+  string agent = 1;
+  string ens = 2;
+  string label = 3;
+  string role = 4;
+  repeated string manifest_categories = 5;
+  uint32 total_contributions = 6;
+  uint32 successful_contributions = 7;
+  uint32 failed_contributions = 8;
+  uint32 unique_jobs = 9;
+  string first_contribution_at = 10;
+  string last_contribution_at = 11;
+  repeated string signatures = 12;
+  repeated string payload_digests = 13;
+  repeated ContributionDetail contributions = 14;
+}
+
 message RewardPayoutRecord {
   string tx_hash = 1;
   string amount_raw = 2;
@@ -257,6 +320,26 @@ message AutoClaimRewardsResponse {
   string restaked_formatted = 8;
 }
 
+message GetJobContributorsRequest {
+  string job_id = 1;
+  optional bool refresh_identity = 2;
+}
+
+message GetJobContributorsResponse {
+  JobContributorSummary summary = 1;
+}
+
+message GetAgentContributionHistoryRequest {
+  string agent_address = 1;
+  string wallet_address = 2;
+  optional uint32 limit = 3;
+  optional bool refresh_identity = 4;
+}
+
+message GetAgentContributionHistoryResponse {
+  AgentContributionHistory history = 1;
+}
+
 service AgentGateway {
   rpc SubmitResult(SubmitResultRequest) returns (SubmitResultResponse);
   rpc RecordHeartbeat(RecordHeartbeatRequest) returns (RecordHeartbeatResponse);
@@ -265,4 +348,6 @@ service AgentGateway {
   rpc EnsureStake(EnsureStakeRequest) returns (EnsureStakeResponse);
   rpc GetStake(GetStakeRequest) returns (GetStakeResponse);
   rpc AutoClaimRewards(AutoClaimRewardsRequest) returns (AutoClaimRewardsResponse);
+  rpc GetJobContributors(GetJobContributorsRequest) returns (GetJobContributorsResponse);
+  rpc GetAgentContributionHistory(GetAgentContributionHistoryRequest) returns (GetAgentContributionHistoryResponse);
 }
