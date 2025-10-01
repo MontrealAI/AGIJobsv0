@@ -1,13 +1,28 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
-import { verifyDeliverableSignature } from '../lib/crypto';
+import { hashDeliverableBytes, verifyDeliverableSignature } from '../lib/crypto';
 import { resolveResourceUri } from '../lib/uri';
 import type { JobTimelineEvent } from '../types';
 
 interface Props {
   events: JobTimelineEvent[];
 }
+
+const formatBytes = (value?: number): string | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    return undefined;
+  }
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let amount = value;
+  let unitIndex = 0;
+  while (amount >= 1024 && unitIndex < units.length - 1) {
+    amount /= 1024;
+    unitIndex += 1;
+  }
+  const decimals = amount < 10 && unitIndex > 0 ? 1 : 0;
+  return `${amount.toFixed(decimals)} ${units[unitIndex]}`;
+};
 
 export const DeliverableVerificationPanel = ({ events }: Props) => {
   const [jobId, setJobId] = useState('');
@@ -18,6 +33,11 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
   const [verification, setVerification] = useState<string>();
   const [error, setError] = useState<string>();
   const [verifying, setVerifying] = useState(false);
+  const [normalizedHash, setNormalizedHash] = useState<string>();
+  const [recoveredSigner, setRecoveredSigner] = useState<string>();
+  const [computedHash, setComputedHash] = useState<string>();
+  const [payloadBytes, setPayloadBytes] = useState<number>();
+  const readablePayloadSize = formatBytes(payloadBytes);
 
   const recentSubmissions = useMemo(() => {
     return events
@@ -53,6 +73,12 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
     } else {
       setCid('');
     }
+    setVerification(undefined);
+    setError(undefined);
+    setNormalizedHash(undefined);
+    setRecoveredSigner(undefined);
+    setComputedHash(undefined);
+    setPayloadBytes(undefined);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -60,15 +86,54 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
     setVerifying(true);
     setVerification(undefined);
     setError(undefined);
+    setNormalizedHash(undefined);
+    setRecoveredSigner(undefined);
+    setComputedHash(undefined);
+    setPayloadBytes(undefined);
     try {
+      let fetchedHash: string | undefined;
+      let downloadedBytes: number | undefined;
+      const resolvedCid = cid ? resolveResourceUri(cid) ?? cid : undefined;
+      if (resolvedCid) {
+        const response = await fetch(resolvedCid);
+        if (!response.ok) {
+          throw new Error(`Failed to download deliverable (${response.status} ${response.statusText}).`);
+        }
+        const buffer = await response.arrayBuffer();
+        downloadedBytes = buffer.byteLength;
+        fetchedHash = hashDeliverableBytes(buffer);
+      }
+
       const result = await verifyDeliverableSignature(signature, resultHash, agentAddress);
+      const normalized = result.normalizedHash;
+
+      setNormalizedHash(normalized);
+      setRecoveredSigner(result.recoveredAddress);
+      setComputedHash(fetchedHash);
+      setPayloadBytes(downloadedBytes);
+
       if (!result.matchesHash) {
         setError('Result hash must be a 32-byte hex string prefixed with 0x.');
-      } else if (!result.matchesAgent) {
-        setError(`Signature valid but recovered ${result.recoveredAddress}, not the assigned agent.`);
-      } else {
-        setVerification('Deliverable integrity verified — signature matches the assigned agent and provided result hash.');
+        return;
       }
+
+      if (!result.matchesAgent) {
+        setError(`Signature valid but recovered ${result.recoveredAddress}, not the assigned agent.`);
+        return;
+      }
+
+      if (fetchedHash && fetchedHash.toLowerCase() !== normalized.toLowerCase()) {
+        setError(
+          `Downloaded deliverable hash ${fetchedHash} does not match the on-chain result hash ${normalized}.`
+        );
+        return;
+      }
+
+      const summary: string[] = ['Signature verified against the assigned agent.'];
+      if (fetchedHash) {
+        summary.push('Downloaded deliverable hash matches the recorded on-chain result hash.');
+      }
+      setVerification(summary.join(' '));
     } catch (err) {
       setError((err as Error).message ?? 'Signature verification failed');
     } finally {
@@ -144,6 +209,18 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
         {verification && <div className="alert success">{verification}</div>}
         {error && <div className="alert error">{error}</div>}
       </form>
+      {(normalizedHash || computedHash || recoveredSigner) && (
+        <div className="code-block">
+          {normalizedHash && <div>On-chain result hash: {normalizedHash}</div>}
+          {computedHash && (
+            <div>
+              Downloaded deliverable hash: {computedHash}
+              {readablePayloadSize && <div className="small">Payload size: {readablePayloadSize}</div>}
+            </div>
+          )}
+          {recoveredSigner && <div>Recovered signer: {recoveredSigner}</div>}
+        </div>
+      )}
       {recentSubmissions.length > 0 && (
         <div style={{ marginTop: '1.5rem' }}>
           <h3>Recent submissions</h3>
