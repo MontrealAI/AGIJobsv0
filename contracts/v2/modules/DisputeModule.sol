@@ -62,6 +62,12 @@ contract DisputeModule is Ownable, Pausable {
         address indexed resolver,
         bool employerWins
     );
+    event EvidenceSubmitted(
+        uint256 indexed jobId,
+        address indexed submitter,
+        bytes32 indexed evidenceHash,
+        string uri
+    );
     event JurorSlashed(
         address indexed juror,
         uint256 amount,
@@ -157,6 +163,10 @@ contract DisputeModule is Ownable, Pausable {
         committee = newCommittee;
         emit CommitteeUpdated(newCommittee);
     }
+
+    error NoActiveDispute();
+    error EvidenceRequired();
+    error UnauthorizedEvidenceSubmitter(address submitter);
 
     /// @notice Configure the dispute fee in token units (18 decimals).
     /// @param fee New dispute fee in token units (18 decimals); 0 disables the fee.
@@ -330,6 +340,44 @@ contract DisputeModule is Ownable, Pausable {
     /// @notice Backwards-compatible alias for older integrations.
     function resolve(uint256 jobId, bool employerWins) external {
         resolveDispute(jobId, employerWins);
+    }
+
+    /// @notice Submit additional evidence or context for an existing dispute.
+    /// @dev Emits an {EvidenceSubmitted} event; no on-chain storage is mutated to
+    ///      keep costs minimal while retaining an auditable trail.
+    /// @param jobId Identifier of the job under dispute.
+    /// @param evidenceHash Optional keccak256 hash of off-chain evidence blob.
+    /// @param uri Optional URI or plaintext description for human reviewers.
+    function submitEvidence(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string calldata uri
+    ) external whenNotPaused {
+        Dispute storage d = disputes[jobId];
+        if (d.raisedAt == 0 || d.resolved) revert NoActiveDispute();
+        if (evidenceHash == bytes32(0) && bytes(uri).length == 0) {
+            revert EvidenceRequired();
+        }
+
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        bool authorized = msg.sender == job.agent || msg.sender == job.employer;
+        if (!authorized) {
+            address valModule = address(jobRegistry.validationModule());
+            if (valModule != address(0)) {
+                address[] memory committeeMembers = IValidationModule(valModule).validators(jobId);
+                for (uint256 i; i < committeeMembers.length; ++i) {
+                    if (committeeMembers[i] == msg.sender) {
+                        authorized = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!authorized) {
+            revert UnauthorizedEvidenceSubmitter(msg.sender);
+        }
+
+        emit EvidenceSubmitted(jobId, msg.sender, evidenceHash, uri);
     }
 
     /// @notice Slash a validator for absenteeism during dispute resolution.

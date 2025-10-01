@@ -63,7 +63,7 @@ function normalizeHex(value: string, length = 32): string {
   if (!/^0x[0-9a-fA-F]+$/u.test(trimmed)) {
     throw new Error(`Value ${value} is not valid hex`);
   }
-  if ((trimmed.length - 2) !== length * 2) {
+  if (trimmed.length - 2 !== length * 2) {
     throw new Error(`Expected ${length} byte hex string, received ${value}`);
   }
   return trimmed.toLowerCase();
@@ -101,7 +101,9 @@ async function saveIdentity(record: IdentityRecord): Promise<void> {
 async function listIdentities(): Promise<string[]> {
   try {
     const entries = await fs.readdir(IDENTITY_DIR);
-    return entries.filter((name) => name.endsWith('.json')).map((file) => file.replace(/\.json$/u, ''));
+    return entries
+      .filter((name) => name.endsWith('.json'))
+      .map((file) => file.replace(/\.json$/u, ''));
   } catch (err: unknown) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       return [];
@@ -110,17 +112,26 @@ async function listIdentities(): Promise<string[]> {
   }
 }
 
-async function saveCommitRecord(label: string, record: CommitRecord): Promise<void> {
+async function saveCommitRecord(
+  label: string,
+  record: CommitRecord
+): Promise<void> {
   const filePath = path.join(COMMIT_DIR, `${label}-${record.jobId}.json`);
   await writeJson(filePath, record);
 }
 
-async function loadCommitRecord(label: string, jobId: string): Promise<CommitRecord> {
+async function loadCommitRecord(
+  label: string,
+  jobId: string
+): Promise<CommitRecord> {
   const filePath = path.join(COMMIT_DIR, `${label}-${jobId}.json`);
   return readJson<CommitRecord>(filePath);
 }
 
-async function tryLoadCommitRecord(label: string, jobId: string): Promise<CommitRecord | null> {
+async function tryLoadCommitRecord(
+  label: string,
+  jobId: string
+): Promise<CommitRecord | null> {
   try {
     return await loadCommitRecord(label, jobId);
   } catch (err: unknown) {
@@ -135,12 +146,16 @@ async function loadProof(proofFile?: string): Promise<string[] | undefined> {
   if (!proofFile) return undefined;
   const value = await readJson<unknown>(path.resolve(proofFile));
   if (!Array.isArray(value)) {
-    throw new Error(`Proof file ${proofFile} must contain an array of hex strings`);
+    throw new Error(
+      `Proof file ${proofFile} must contain an array of hex strings`
+    );
   }
   return value.map((entry) => normalizeHex(String(entry)));
 }
 
-function isSigner(value: ethers.JsonRpcProvider | ethers.Signer): value is ethers.Signer {
+function isSigner(
+  value: ethers.JsonRpcProvider | ethers.Signer
+): value is ethers.Signer {
   return typeof (value as ethers.Signer).getAddress === 'function';
 }
 
@@ -157,15 +172,31 @@ async function loadContracts(
   return {
     provider,
     signer,
-    token: new ethers.Contract(config.agialphaToken.address, config.agialphaToken.abi, provider),
-    stakeManager: new ethers.Contract(config.stakeManager.address, config.stakeManager.abi, provider),
+    token: new ethers.Contract(
+      config.agialphaToken.address,
+      config.agialphaToken.abi,
+      provider
+    ),
+    stakeManager: new ethers.Contract(
+      config.stakeManager.address,
+      config.stakeManager.abi,
+      provider
+    ),
     validationModule: new ethers.Contract(
       config.validationModule.address,
       config.validationModule.abi,
       provider
     ),
-    jobRegistry: new ethers.Contract(config.jobRegistry.address, config.jobRegistry.abi, provider),
-    disputeModule: new ethers.Contract(config.disputeModule.address, config.disputeModule.abi, provider),
+    jobRegistry: new ethers.Contract(
+      config.jobRegistry.address,
+      config.jobRegistry.abi,
+      provider
+    ),
+    disputeModule: new ethers.Contract(
+      config.disputeModule.address,
+      config.disputeModule.abi,
+      provider
+    ),
   };
 }
 
@@ -189,7 +220,9 @@ async function requireCommitWindow(
   const commitDeadline: bigint = round.commitDeadline as bigint;
   const revealDeadline: bigint = round.revealDeadline as bigint;
   if (commitDeadline === 0n) {
-    throw new Error(`Job ${jobId} has no active commit window for validator ${label}`);
+    throw new Error(
+      `Job ${jobId} has no active commit window for validator ${label}`
+    );
   }
   return { commitDeadline, revealDeadline };
 }
@@ -209,7 +242,10 @@ async function computeCommitHash(
   const network = await validationModule.provider.getNetwork();
   const abiCoder = ethers.AbiCoder.defaultAbiCoder();
   const outcomeHash = ethers.keccak256(
-    abiCoder.encode(['uint256', 'bytes32', 'bool', 'bytes32'], [nonce, specHash, approve, burnTxHash])
+    abiCoder.encode(
+      ['uint256', 'bytes32', 'bool', 'bytes32'],
+      [nonce, specHash, approve, burnTxHash]
+    )
   );
   const commitHash = ethers.keccak256(
     abiCoder.encode(
@@ -357,23 +393,44 @@ const cli = yargs(hideBin(process.argv))
         }),
     async (args) => {
       const label = String(args.label).toLowerCase();
-      await withIdentity(label, async (identity, wallet) => {
-        const { token, stakeManager } = await loadContracts(wallet, args.config as string | undefined);
-        const decimals: number = await token.decimals();
-        const amount = ethers.parseUnits(String(args.amount), decimals);
-        const roleMap: Record<string, number> = { agent: 0, validator: 1, platform: 2 };
-        const role = roleMap[String(args.role ?? 'validator').toLowerCase()] ?? 1;
-        const allowance: bigint = await token.allowance(wallet.address, stakeManager.target as string);
-        if (allowance < amount) {
-          const approvalTx = await token.connect(wallet).approve(stakeManager.target as string, amount);
-          console.log(`Approving ${amount.toString()} tokens... ${approvalTx.hash}`);
-          await approvalTx.wait();
-        }
-        const depositTx = await stakeManager.connect(wallet).depositStake(role, amount);
-        console.log(`Depositing stake... ${depositTx.hash}`);
-        await depositTx.wait();
-        console.log('Stake deposited successfully.');
-      }, args.rpc as string | undefined);
+      await withIdentity(
+        label,
+        async (identity, wallet) => {
+          const { token, stakeManager } = await loadContracts(
+            wallet,
+            args.config as string | undefined
+          );
+          const decimals: number = await token.decimals();
+          const amount = ethers.parseUnits(String(args.amount), decimals);
+          const roleMap: Record<string, number> = {
+            agent: 0,
+            validator: 1,
+            platform: 2,
+          };
+          const role =
+            roleMap[String(args.role ?? 'validator').toLowerCase()] ?? 1;
+          const allowance: bigint = await token.allowance(
+            wallet.address,
+            stakeManager.target as string
+          );
+          if (allowance < amount) {
+            const approvalTx = await token
+              .connect(wallet)
+              .approve(stakeManager.target as string, amount);
+            console.log(
+              `Approving ${amount.toString()} tokens... ${approvalTx.hash}`
+            );
+            await approvalTx.wait();
+          }
+          const depositTx = await stakeManager
+            .connect(wallet)
+            .depositStake(role, amount);
+          console.log(`Depositing stake... ${depositTx.hash}`);
+          await depositTx.wait();
+          console.log('Stake deposited successfully.');
+        },
+        args.rpc as string | undefined
+      );
     }
   )
   .command(
@@ -390,17 +447,33 @@ const cli = yargs(hideBin(process.argv))
         }),
     async (args) => {
       const label = String(args.label).toLowerCase();
-      await withIdentity(label, async (identity, wallet) => {
-        const { stakeManager, token } = await loadContracts(wallet, args.config as string | undefined);
-        const decimals: number = await token.decimals();
-        const amount = ethers.parseUnits(String(args.amount), decimals);
-        const roleMap: Record<string, number> = { agent: 0, validator: 1, platform: 2 };
-        const role = roleMap[String(args.role ?? 'validator').toLowerCase()] ?? 1;
-        const tx = await stakeManager.connect(wallet).withdrawStake(role, amount);
-        console.log(`Withdrawing stake... ${tx.hash}`);
-        await tx.wait();
-        console.log('Withdraw request submitted. Remember to finalize after unbonding.');
-      }, args.rpc as string | undefined);
+      await withIdentity(
+        label,
+        async (identity, wallet) => {
+          const { stakeManager, token } = await loadContracts(
+            wallet,
+            args.config as string | undefined
+          );
+          const decimals: number = await token.decimals();
+          const amount = ethers.parseUnits(String(args.amount), decimals);
+          const roleMap: Record<string, number> = {
+            agent: 0,
+            validator: 1,
+            platform: 2,
+          };
+          const role =
+            roleMap[String(args.role ?? 'validator').toLowerCase()] ?? 1;
+          const tx = await stakeManager
+            .connect(wallet)
+            .withdrawStake(role, amount);
+          console.log(`Withdrawing stake... ${tx.hash}`);
+          await tx.wait();
+          console.log(
+            'Withdraw request submitted. Remember to finalize after unbonding.'
+          );
+        },
+        args.rpc as string | undefined
+      );
     }
   )
   .command(
@@ -409,18 +482,30 @@ const cli = yargs(hideBin(process.argv))
     (yargsBuilder) =>
       yargsBuilder
         .positional('jobId', { type: 'string', demandOption: true })
-        .option('label', { type: 'string', describe: 'Optional identity for context' }),
+        .option('label', {
+          type: 'string',
+          describe: 'Optional identity for context',
+        }),
     async (args) => {
       const provider = buildProvider(args.rpc as string | undefined);
-      const { validationModule } = await loadContracts(provider, args.config as string | undefined);
+      const { validationModule } = await loadContracts(
+        provider,
+        args.config as string | undefined
+      );
       const jobId = BigInt(String(args.jobId));
       const round = await validationModule.rounds(jobId);
-      console.log(`Commit deadline: ${formatTimestamp(round.commitDeadline as bigint)}`);
-      console.log(`Reveal deadline: ${formatTimestamp(round.revealDeadline as bigint)}`);
+      console.log(
+        `Commit deadline: ${formatTimestamp(round.commitDeadline as bigint)}`
+      );
+      console.log(
+        `Reveal deadline: ${formatTimestamp(round.revealDeadline as bigint)}`
+      );
       const failover = await validationModule.failoverStates(jobId);
       if (failover.lastTriggeredAt && failover.lastTriggeredAt !== 0n) {
         console.log(
-          `Failover: action=${failover.action} lastTriggered=${formatTimestamp(failover.lastTriggeredAt)} extensions=${failover.extensions}`
+          `Failover: action=${failover.action} lastTriggered=${formatTimestamp(
+            failover.lastTriggeredAt
+          )} extensions=${failover.extensions}`
         );
       }
     }
@@ -433,52 +518,77 @@ const cli = yargs(hideBin(process.argv))
         .positional('jobId', { type: 'string', demandOption: true })
         .option('label', { type: 'string', demandOption: true })
         .option('approve', { type: 'boolean', default: true })
-        .option('burn', { type: 'string', describe: 'Optional burn receipt hash (0x...)' })
-        .option('salt', { type: 'string', describe: 'Optional hex salt for deterministic commits' })
-        .option('proof-file', { type: 'string', describe: 'Override proof path' }),
+        .option('burn', {
+          type: 'string',
+          describe: 'Optional burn receipt hash (0x...)',
+        })
+        .option('salt', {
+          type: 'string',
+          describe: 'Optional hex salt for deterministic commits',
+        })
+        .option('proof-file', {
+          type: 'string',
+          describe: 'Override proof path',
+        }),
     async (args) => {
       const jobId = BigInt(String(args.jobId));
       const label = String(args.label).toLowerCase();
-      await withIdentity(label, async (identity, wallet) => {
-        const { validationModule, jobRegistry } = await loadContracts(wallet, args.config as string | undefined);
-        const proof = (await loadProof(args['proof-file'])) ?? identity.proof ?? [];
-        if (!proof.length) {
-          console.warn('Warning: submitting vote without ENS proof.');
-        }
-        const { commitDeadline } = await requireCommitWindow(validationModule, jobId, label);
-        const latestBlock = await wallet.provider!.getBlock('latest');
-        if (latestBlock && BigInt(latestBlock.timestamp) > commitDeadline) {
-          console.warn('Commit deadline has passed; transaction may revert.');
-        }
-        const burnHash = args.burn ? normalizeHex(String(args.burn)) : ethers.ZeroHash;
-        const salt = args.salt ? normalizeHex(String(args.salt)) : ethers.hexlify(ethers.randomBytes(32));
-        const { commitHash } = await computeCommitHash(
-          validationModule,
-          jobRegistry,
-          jobId,
-          wallet.address,
-          Boolean(args.approve),
-          burnHash,
-          salt
-        );
-        const tx = await validationModule
-          .connect(wallet)
-          .commitVote(jobId, commitHash, identity.subdomain, proof);
-        console.log(`Commit submitted: ${tx.hash}`);
-        await tx.wait();
-        const record: CommitRecord = {
-          jobId: jobId.toString(),
-          validator: wallet.address,
-          approve: Boolean(args.approve),
-          burnTxHash: burnHash,
-          salt,
-          commitHash,
-          createdAt: new Date().toISOString(),
-          txHash: tx.hash,
-        };
-        await saveCommitRecord(label, record);
-        console.log(`Stored commit metadata for job ${jobId}`);
-      }, args.rpc as string | undefined);
+      await withIdentity(
+        label,
+        async (identity, wallet) => {
+          const { validationModule, jobRegistry } = await loadContracts(
+            wallet,
+            args.config as string | undefined
+          );
+          const proof =
+            (await loadProof(args['proof-file'])) ?? identity.proof ?? [];
+          if (!proof.length) {
+            console.warn('Warning: submitting vote without ENS proof.');
+          }
+          const { commitDeadline } = await requireCommitWindow(
+            validationModule,
+            jobId,
+            label
+          );
+          const latestBlock = await wallet.provider!.getBlock('latest');
+          if (latestBlock && BigInt(latestBlock.timestamp) > commitDeadline) {
+            console.warn('Commit deadline has passed; transaction may revert.');
+          }
+          const burnHash = args.burn
+            ? normalizeHex(String(args.burn))
+            : ethers.ZeroHash;
+          const salt = args.salt
+            ? normalizeHex(String(args.salt))
+            : ethers.hexlify(ethers.randomBytes(32));
+          const { commitHash } = await computeCommitHash(
+            validationModule,
+            jobRegistry,
+            jobId,
+            wallet.address,
+            Boolean(args.approve),
+            burnHash,
+            salt
+          );
+          const tx = await validationModule
+            .connect(wallet)
+            .commitVote(jobId, commitHash, identity.subdomain, proof);
+          console.log(`Commit submitted: ${tx.hash}`);
+          await tx.wait();
+          const record: CommitRecord = {
+            jobId: jobId.toString(),
+            validator: wallet.address,
+            approve: Boolean(args.approve),
+            burnTxHash: burnHash,
+            salt,
+            commitHash,
+            createdAt: new Date().toISOString(),
+            txHash: tx.hash,
+          };
+          await saveCommitRecord(label, record);
+          console.log(`Stored commit metadata for job ${jobId}`);
+        },
+        args.rpc as string | undefined
+      );
     }
   )
   .command(
@@ -491,45 +601,65 @@ const cli = yargs(hideBin(process.argv))
         .option('force', {
           type: 'boolean',
           default: false,
-          describe: 'Bypass commit window warning (only use if you know the phase is open)',
+          describe:
+            'Bypass commit window warning (only use if you know the phase is open)',
         })
-        .option('proof-file', { type: 'string', describe: 'Override proof path' }),
+        .option('proof-file', {
+          type: 'string',
+          describe: 'Override proof path',
+        }),
     async (args) => {
       const jobId = BigInt(String(args.jobId));
       const label = String(args.label).toLowerCase();
-      await withIdentity(label, async (identity, wallet) => {
-        const commit = await tryLoadCommitRecord(label, jobId.toString());
-        if (!commit) {
-          throw new Error(`No stored commit metadata for job ${jobId}. Run vote commit first.`);
-        }
-        const { validationModule } = await loadContracts(wallet, args.config as string | undefined);
-        const proof = (await loadProof(args['proof-file'])) ?? identity.proof ?? [];
-        const { commitDeadline, revealDeadline } = await requireCommitWindow(validationModule, jobId, label);
-        const latestBlock = await wallet.provider!.getBlock('latest');
-        if (latestBlock) {
-          const now = BigInt(latestBlock.timestamp);
-          if (!args.force && now <= commitDeadline) {
-            console.warn('Reveal attempted before commit phase has ended. Use --force to override.');
-            return;
+      await withIdentity(
+        label,
+        async (identity, wallet) => {
+          const commit = await tryLoadCommitRecord(label, jobId.toString());
+          if (!commit) {
+            throw new Error(
+              `No stored commit metadata for job ${jobId}. Run vote commit first.`
+            );
           }
-          if (now > revealDeadline) {
-            console.warn('Reveal window has closed; transaction may revert.');
-          }
-        }
-        const tx = await validationModule
-          .connect(wallet)
-          .revealVote(
-            jobId,
-            commit.approve,
-            commit.burnTxHash,
-            commit.salt,
-            identity.subdomain,
-            proof
+          const { validationModule } = await loadContracts(
+            wallet,
+            args.config as string | undefined
           );
-        console.log(`Reveal submitted: ${tx.hash}`);
-        await tx.wait();
-        console.log('Reveal confirmed on-chain.');
-      }, args.rpc as string | undefined);
+          const proof =
+            (await loadProof(args['proof-file'])) ?? identity.proof ?? [];
+          const { commitDeadline, revealDeadline } = await requireCommitWindow(
+            validationModule,
+            jobId,
+            label
+          );
+          const latestBlock = await wallet.provider!.getBlock('latest');
+          if (latestBlock) {
+            const now = BigInt(latestBlock.timestamp);
+            if (!args.force && now <= commitDeadline) {
+              console.warn(
+                'Reveal attempted before commit phase has ended. Use --force to override.'
+              );
+              return;
+            }
+            if (now > revealDeadline) {
+              console.warn('Reveal window has closed; transaction may revert.');
+            }
+          }
+          const tx = await validationModule
+            .connect(wallet)
+            .revealVote(
+              jobId,
+              commit.approve,
+              commit.burnTxHash,
+              commit.salt,
+              identity.subdomain,
+              proof
+            );
+          console.log(`Reveal submitted: ${tx.hash}`);
+          await tx.wait();
+          console.log('Reveal confirmed on-chain.');
+        },
+        args.rpc as string | undefined
+      );
     }
   )
   .command(
@@ -539,7 +669,10 @@ const cli = yargs(hideBin(process.argv))
       yargsBuilder
         .positional('jobId', { type: 'string', demandOption: true })
         .option('label', { type: 'string', demandOption: true })
-        .option('reason', { type: 'string', describe: 'Plain-text or URI reason' })
+        .option('reason', {
+          type: 'string',
+          describe: 'Plain-text or URI reason',
+        })
         .option('evidence', {
           type: 'string',
           describe: 'Optional evidence hash (hex string) recorded on-chain',
@@ -548,34 +681,105 @@ const cli = yargs(hideBin(process.argv))
       const jobId = BigInt(String(args.jobId));
       const label = String(args.label).toLowerCase();
       const reason = args.reason ? String(args.reason) : '';
-      const evidence = args.evidence ? normalizeHex(String(args.evidence)) : ethers.ZeroHash;
+      const evidence = args.evidence
+        ? normalizeHex(String(args.evidence))
+        : ethers.ZeroHash;
       if (!reason && evidence === ethers.ZeroHash) {
-        throw new Error('Provide either --reason or --evidence when raising a challenge.');
+        throw new Error(
+          'Provide either --reason or --evidence when raising a challenge.'
+        );
       }
-      await withIdentity(label, async (identity, wallet) => {
-        const { jobRegistry } = await loadContracts(wallet, args.config as string | undefined);
-        let tx;
-        if (evidence !== ethers.ZeroHash && reason) {
-          tx = await jobRegistry.connect(wallet).dispute(jobId, evidence, reason);
-        } else if (evidence !== ethers.ZeroHash) {
-          tx = await jobRegistry.connect(wallet).raiseDispute(jobId, evidence);
-        } else {
-          tx = await jobRegistry.connect(wallet).raiseDispute(jobId, reason);
-        }
-        console.log(`Dispute raised: ${tx.hash}`);
-        await tx.wait();
-      }, args.rpc as string | undefined);
+      await withIdentity(
+        label,
+        async (identity, wallet) => {
+          const { jobRegistry } = await loadContracts(
+            wallet,
+            args.config as string | undefined
+          );
+          let tx;
+          if (evidence !== ethers.ZeroHash && reason) {
+            tx = await jobRegistry
+              .connect(wallet)
+              .dispute(jobId, evidence, reason);
+          } else if (evidence !== ethers.ZeroHash) {
+            tx = await jobRegistry
+              .connect(wallet)
+              .raiseDispute(jobId, evidence);
+          } else {
+            tx = await jobRegistry.connect(wallet).raiseDispute(jobId, reason);
+          }
+          console.log(`Dispute raised: ${tx.hash}`);
+          await tx.wait();
+        },
+        args.rpc as string | undefined
+      );
+    }
+  )
+  .command(
+    'challenge respond <jobId>',
+    'Submit counter-evidence for an active dispute',
+    (yargsBuilder) =>
+      yargsBuilder
+        .positional('jobId', { type: 'string', demandOption: true })
+        .option('label', { type: 'string', demandOption: true })
+        .option('uri', {
+          type: 'string',
+          describe: 'URI or plaintext note describing your response',
+        })
+        .option('evidence', {
+          type: 'string',
+          describe: 'Keccak256 hash of supporting evidence (0x...)',
+        }),
+    async (args) => {
+      const jobId = BigInt(String(args.jobId));
+      const label = String(args.label).toLowerCase();
+      const note = args.uri ? String(args.uri) : '';
+      const evidenceHash = args.evidence
+        ? normalizeHex(String(args.evidence))
+        : ethers.ZeroHash;
+      if (!note && evidenceHash === ethers.ZeroHash) {
+        throw new Error(
+          'Provide either --uri or --evidence when responding to a challenge.'
+        );
+      }
+      await withIdentity(
+        label,
+        async (_identity, wallet) => {
+          const { disputeModule } = await loadContracts(
+            wallet,
+            args.config as string | undefined
+          );
+          const dispute = await disputeModule.disputes(jobId);
+          if (!dispute || dispute.raisedAt === 0n) {
+            throw new Error(`No dispute is active for job ${jobId}`);
+          }
+          if (dispute.resolved) {
+            throw new Error(
+              `Dispute for job ${jobId} has already been resolved.`
+            );
+          }
+          const tx = await disputeModule
+            .connect(wallet)
+            .submitEvidence(jobId, evidenceHash, note);
+          console.log(`Submitted evidence: ${tx.hash}`);
+          await tx.wait();
+          console.log('Response recorded on-chain.');
+        },
+        args.rpc as string | undefined
+      );
     }
   )
   .command(
     'challenge status <jobId>',
     'Inspect dispute status for a job',
     (yargsBuilder) =>
-      yargsBuilder
-        .positional('jobId', { type: 'string', demandOption: true }),
+      yargsBuilder.positional('jobId', { type: 'string', demandOption: true }),
     async (args) => {
       const provider = buildProvider(args.rpc as string | undefined);
-      const { disputeModule } = await loadContracts(provider, args.config as string | undefined);
+      const { disputeModule } = await loadContracts(
+        provider,
+        args.config as string | undefined
+      );
       const jobId = BigInt(String(args.jobId));
       const dispute = await disputeModule.disputes(jobId);
       if (!dispute || dispute.raisedAt === 0n) {

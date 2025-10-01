@@ -48,7 +48,10 @@ Validators can use `scripts/validator/cli.ts` to:
 - deposit or withdraw validator stake,
 - commit and reveal votes with automatic hash generation and
   deadline warnings, and
-- raise or inspect disputes ("challenges") when job results are contested.
+- raise, respond to, or inspect disputes ("challenges") when job results are
+  contested. The new `challenge respond` command emits an on-chain evidence
+  event so arbitrators and the community can review counter-claims during an
+  incident.
 
 The CLI reads the same configuration JSON as the orchestrator tooling and will
 emit warnings if a reveal is attempted before the commit window closes.

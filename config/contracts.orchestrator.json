@@ -74,6 +74,7 @@
     "abi": [
       "function raiseDispute(uint256 jobId, address claimant, bytes32 evidenceHash, string reason)",
       "function raiseGovernanceDispute(uint256 jobId, string reason)",
+      "function submitEvidence(uint256 jobId, bytes32 evidenceHash, string uri)",
       "function disputes(uint256 jobId) view returns (address claimant,uint256 raisedAt,bool resolved,uint256 fee,bytes32 evidenceHash,string reason)",
       "function disputeFee() view returns (uint256)"
     ]
