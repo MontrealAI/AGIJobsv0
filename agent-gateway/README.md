@@ -84,8 +84,26 @@ or a cloud KMS.
 Wallet-related endpoints require credentials. Clients may either:
 
 - Provide `GATEWAY_API_KEY` via the `X-Api-Key` header, or
-- Sign the string `Agent Gateway Auth` and send the signature and address in
-  `X-Signature` and `X-Address` headers.
+- Retrieve the current challenge and sign it with a managed wallet.
+
+Signature authentication is nonce-based. Call `GET /auth/challenge` to obtain the
+current nonce and challenge payload:
+
+```bash
+curl http://localhost:3000/auth/challenge
+# { "nonce": "0x...", "message": "Agent Gateway Auth", "challenge": "Agent Gateway Auth0x..." }
+```
+
+Sign the `challenge` field (equivalent to concatenating `message` and `nonce`)
+and include the result in the headers:
+
+```
+X-Address: 0xYourWallet
+X-Signature: 0xSignatureOf("Agent Gateway Auth" + nonce)
+```
+
+Unauthorized requests also echo the latest challenge so agents can retry
+without an additional round-trip.
 
 Example using an API key:
 

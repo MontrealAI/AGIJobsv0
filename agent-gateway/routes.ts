@@ -128,6 +128,14 @@ function rotateNonce() {
   nonce = ethers.hexlify(ethers.randomBytes(16));
 }
 
+app.get('/auth/challenge', (_req, res) => {
+  res.json({
+    nonce,
+    message: AUTH_MESSAGE,
+    challenge: `${AUTH_MESSAGE}${nonce}`,
+  });
+});
+
 function authMiddleware(
   req: express.Request,
   res: express.Response,
@@ -140,6 +148,10 @@ function authMiddleware(
   const address = req.header('x-address');
   if (signature && address) {
     try {
+      // Agents sign the static AUTH_MESSAGE concatenated with the most recent
+      // nonce retrieved from /auth/challenge. The nonce is only rotated after a
+      // signature has been verified to ensure concurrent requests cannot render
+      // an in-flight challenge invalid.
       const recovered = ethers
         .verifyMessage(AUTH_MESSAGE + nonce, signature)
         .toLowerCase();
@@ -152,7 +164,12 @@ function authMiddleware(
     }
   }
 
-  res.status(401).json({ error: 'unauthorized' });
+  res.status(401).json({
+    error: 'unauthorized',
+    nonce,
+    message: AUTH_MESSAGE,
+    challenge: `${AUTH_MESSAGE}${nonce}`,
+  });
 }
 
 function plannerErrorStatus(err: unknown): number {
