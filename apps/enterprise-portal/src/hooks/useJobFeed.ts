@@ -353,12 +353,21 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
               0
             )
           : 0;
+        const successValue = metadataRecord
+          ? Boolean(metadataRecord.success ?? metadataRecord[1] ?? false)
+          : undefined;
+        const burnConfirmedValue = metadataRecord
+          ? Boolean(metadataRecord.burnConfirmed ?? metadataRecord[2] ?? false)
+          : undefined;
+        const agentTypesValue = metadataRecord
+          ? normaliseNumber(metadataRecord.agentTypes ?? metadataRecord[3], 0)
+          : undefined;
         const feePctValue = metadataRecord
-          ? normaliseBigInt(
-              metadataRecord.feePct ?? metadataRecord[4] ?? 0n,
-              0n
-            )
-          : 0n;
+          ? normaliseNumber(metadataRecord.feePct ?? metadataRecord[4], 0)
+          : undefined;
+        const agentPctValue = metadataRecord
+          ? normaliseNumber(metadataRecord.agentPct ?? metadataRecord[5], 0)
+          : undefined;
         const deadlineValue = metadataRecord
           ? normaliseNumber(metadataRecord.deadline ?? metadataRecord[6], 0)
           : 0;
@@ -403,7 +412,10 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
           normaliseHex(jobRecord.uriHash ?? jobRecord[5]) ?? ZERO_HASH;
         const specHashValue =
           normaliseHex(jobRecord.specHash ?? jobRecord[7]) ?? '0x';
-        const fee = feePctValue > 0n ? (reward * feePctValue) / 100n : 0n;
+        const fee =
+          typeof feePctValue === 'number' && feePctValue > 0
+            ? (reward * BigInt(feePctValue)) / 100n
+            : 0n;
         const specUri = deriveSpecUri({
           specHash: specHashValue,
           uriHash: uriHashValue,
@@ -418,6 +430,12 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
           reward,
           stake,
           fee,
+          status: statusValue,
+          success: successValue,
+          burnConfirmed: burnConfirmedValue,
+          agentTypes: agentTypesValue,
+          feePct: feePctValue,
+          agentPct: agentPctValue,
           deadline: deadlineValue,
           specHash: specHashValue,
           specUri,
