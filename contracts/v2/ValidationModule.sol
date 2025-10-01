@@ -56,6 +56,10 @@ error UnauthorizedCaller();
 error ValidatorBanned();
 error InvalidPenalty();
 error InvalidForceFinalizeGrace();
+error InvalidFailoverAction();
+error RevealExtensionRequired();
+error FailoverEscalated();
+error NoActiveRound();
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -155,7 +159,22 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bool earlyFinalized;
     }
 
+    enum FailoverAction {
+        None,
+        ExtendReveal,
+        EscalateDispute
+    }
+
+    struct FailoverState {
+        FailoverAction lastAction;
+        uint64 extensions;
+        uint64 lastExtendedTo;
+        uint64 lastTriggeredAt;
+        bool escalated;
+    }
+
     mapping(uint256 => Round) public rounds;
+    mapping(uint256 => FailoverState) public failoverStates;
     mapping(uint256 => mapping(address => mapping(uint256 => bytes32))) public commitments;
     mapping(uint256 => mapping(address => bool)) public revealed;
     mapping(uint256 => mapping(address => bool)) public votes;
@@ -220,6 +239,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event AutoApprovalTargetUpdated(bool enabled);
     event ValidatorBanApplied(address indexed validator, uint256 untilBlock);
     event SelectionSeedRecorded(uint256 indexed jobId, bytes32 seed);
+    event ValidationFailover(
+        uint256 indexed jobId,
+        FailoverAction action,
+        uint256 newRevealDeadline,
+        string reason
+    );
     /// @notice Emitted when a validator's ENS identity is verified.
     event ValidatorIdentityVerified(
         address indexed validator,
@@ -282,6 +307,53 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (grace == 0) revert InvalidForceFinalizeGrace();
         forceFinalizeGrace = grace;
         emit ForceFinalizeGraceUpdated(grace);
+    }
+
+    /// @notice Trigger a circuit-breaker style failover for an in-flight validation round.
+    /// @param jobId Identifier of the job whose validation flow is being adjusted.
+    /// @param action Failover action to execute (reveal extension or dispute escalation).
+    /// @param extension Additional seconds to append to the reveal window when extending.
+    /// @param reason Human-readable context for observability purposes.
+    function triggerFailover(
+        uint256 jobId,
+        FailoverAction action,
+        uint64 extension,
+        string calldata reason
+    ) external onlyOwner whenNotPaused {
+        if (action == FailoverAction.None) revert InvalidFailoverAction();
+        Round storage r = rounds[jobId];
+        if (r.commitDeadline == 0) revert NoActiveRound();
+        if (r.tallied) revert AlreadyTallied();
+
+        FailoverState storage state = failoverStates[jobId];
+        string memory rationale = bytes(reason).length == 0
+            ? "validation-failover"
+            : reason;
+
+        if (action == FailoverAction.ExtendReveal) {
+            if (extension == 0) revert RevealExtensionRequired();
+            uint256 newDeadline = r.revealDeadline + extension;
+            r.revealDeadline = newDeadline;
+            state.lastAction = FailoverAction.ExtendReveal;
+            state.extensions += 1;
+            state.lastExtendedTo = uint64(newDeadline);
+            state.lastTriggeredAt = uint64(block.timestamp);
+            emit ValidationFailover(jobId, action, newDeadline, rationale);
+            return;
+        }
+
+        if (action == FailoverAction.EscalateDispute) {
+            if (state.escalated) revert FailoverEscalated();
+            state.escalated = true;
+            state.lastAction = FailoverAction.EscalateDispute;
+            state.lastTriggeredAt = uint64(block.timestamp);
+            uint256 deadline = r.revealDeadline;
+            jobRegistry.escalateToDispute(jobId, rationale);
+            emit ValidationFailover(jobId, action, deadline, rationale);
+            return;
+        }
+
+        revert InvalidFailoverAction();
     }
     event ValidatorPoolRotationUpdated(uint256 newRotation);
     event RandaoCoordinatorUpdated(address coordinator);
@@ -1680,6 +1752,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         delete rounds[jobId];
         delete jobNonce[jobId];
         delete selectionSeeds[jobId];
+        delete failoverStates[jobId];
     }
 
     /// @notice Reset the validation nonce for a job after finalization or dispute resolution.

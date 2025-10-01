@@ -264,6 +264,13 @@ interface IStakeManager {
         address[] calldata validators
     ) external;
 
+    function governanceSlash(
+        address user,
+        Role role,
+        uint256 pctBps,
+        address beneficiary
+    ) external returns (uint256 amount);
+
     /// @notice owner configuration helpers
     function setMinStake(uint256 _minStake) external;
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;

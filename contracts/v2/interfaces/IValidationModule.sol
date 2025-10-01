@@ -11,6 +11,12 @@ interface IValidationModule {
         Rotating,
         Reservoir
     }
+
+    enum FailoverAction {
+        None,
+        ExtendReveal,
+        EscalateDispute
+    }
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event ValidationCommitted(
         uint256 indexed jobId,
@@ -36,6 +42,12 @@ interface IValidationModule {
         uint256 indexed jobId,
         uint256 revealed,
         uint256 quorumTarget
+    );
+    event ValidationFailover(
+        uint256 indexed jobId,
+        FailoverAction action,
+        uint256 newRevealDeadline,
+        string reason
     );
     event ValidatorSubdomainUpdated(address indexed validator, string subdomain);
     event SelectionStrategyUpdated(SelectionStrategy strategy);
@@ -105,6 +117,19 @@ interface IValidationModule {
     /// @param jobId Identifier of the job
     /// @return success True if validators approved the job
     function forceFinalize(uint256 jobId) external returns (bool success);
+
+
+    /// @notice Execute a circuit-breaker style failover for an in-flight validation round.
+    /// @param jobId Identifier of the job in question.
+    /// @param action Failover action (extend the reveal window or escalate to dispute).
+    /// @param extension Additional seconds added to the reveal window when extending.
+    /// @param reason Human readable reason emitted for transparency.
+    function triggerFailover(
+        uint256 jobId,
+        FailoverAction action,
+        uint64 extension,
+        string calldata reason
+    ) external;
 
 
     /// @notice Batch update core validation parameters
@@ -190,5 +215,16 @@ interface IValidationModule {
         uint256 jobId,
         address validator
     ) external view returns (bool approved);
+
+    function failoverStates(uint256 jobId)
+        external
+        view
+        returns (
+            FailoverAction action,
+            uint64 extensions,
+            uint64 lastExtendedTo,
+            uint64 lastTriggeredAt,
+            bool escalated
+        );
 }
 

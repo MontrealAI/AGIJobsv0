@@ -279,6 +279,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 validatorShare,
         uint256 burnShare
     );
+    event GovernanceSlash(
+        address indexed user,
+        Role indexed role,
+        address indexed beneficiary,
+        uint256 amount,
+        uint256 pctBps,
+        address caller
+    );
     event EscrowPenaltyApplied(
         bytes32 indexed jobId,
         address indexed recipient,
@@ -2484,6 +2492,36 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         } else {
             _slash(user, Role.Validator, amount, recipient, validators);
         }
+    }
+
+    /// @notice Governance-controlled emergency slashing helper.
+    /// @dev Allows the timelock controller to claw back a percentage of stake
+    ///      from a malicious participant and redirect it to a beneficiary.
+    /// @param user Address of the staker whose funds are being slashed.
+    /// @param role Stake role being slashed.
+    /// @param pctBps Percentage of the user's stake to slash expressed in basis points (1/100 of a percent).
+    /// @param beneficiary Address receiving the employer share of the slash.
+    /// @return amount Amount of tokens removed from the user's stake (18 decimals).
+    function governanceSlash(
+        address user,
+        Role role,
+        uint256 pctBps,
+        address beneficiary
+    ) external onlyGovernance whenNotPaused nonReentrant returns (uint256 amount) {
+        if (user == address(0)) revert InvalidUser();
+        if (beneficiary == address(0)) revert InvalidRecipient();
+        if (pctBps == 0 || pctBps > 10_000) revert InvalidPercentage();
+
+        uint256 stake = stakes[user][role];
+        if (stake == 0) revert InsufficientStake();
+
+        amount = (stake * pctBps) / 10_000;
+        if (amount == 0) revert InvalidAmount();
+
+        address[] memory empty;
+        _slash(user, role, amount, beneficiary, empty);
+        emit GovernanceSlash(user, role, beneficiary, amount, pctBps, msg.sender);
+        return amount;
     }
 
     /// @notice Return the total stake deposited by a user for a role

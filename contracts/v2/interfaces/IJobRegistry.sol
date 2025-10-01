@@ -371,6 +371,9 @@ interface IJobRegistry {
     /// @notice Convenience overload for providing a plain-text reason only.
     function raiseDispute(uint256 jobId, string calldata reason) external;
 
+    /// @notice Governance-only escalation helper to move a job into dispute flow.
+    function escalateToDispute(uint256 jobId, string calldata reason) external;
+
     /// @notice Acknowledge tax policy if needed and raise a dispute with evidence
     /// @param jobId Identifier of the disputed job
     /// @param evidenceHash Keccak256 hash of the evidence (optional)
