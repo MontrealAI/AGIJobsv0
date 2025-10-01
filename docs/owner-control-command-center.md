@@ -57,6 +57,39 @@ The CLI hydrates `config/owner-control.json`, `config/*` module manifests, and t
 
 Point `--output` at a shared folder to produce artefacts for audits, or run without arguments for an on-demand terminal dashboard.
 
+## Flight Readiness Dashboard (new)
+
+Every invocation of `owner:command-center` now emits a **Flight Readiness Dashboard** ahead of the detailed module breakdown. It classifies each surface as:
+
+- `✅ Nominal` – configuration is internally consistent.
+- `⚠️ Needs attention` – configuration is usable but should be reviewed before production deployment.
+- `❌ Action required` – blocking defects detected; remediation is required prior to launch.
+
+The dashboard pairs each signal with recommended actions, letting non-technical operators focus on the precise commands or configuration edits required. For example:
+
+| Module | Status | Action |
+| --- | --- | --- |
+| Stake Manager | ⚠️ Needs attention | Increase `unbondingPeriodSeconds` to enforce an exit cooldown. |
+| Energy Oracle | ❌ Action required | Populate `config/energy-oracle.json` with at least one authorised signer. |
+
+```mermaid
+flowchart LR
+    classDef risk_nominal fill:#ecfdf5,stroke:#047857,stroke-width:1px;
+    classDef risk_warning fill:#fef3c7,stroke:#b45309,stroke-width:1px;
+    classDef risk_critical fill:#fee2e2,stroke:#b91c1c,stroke-width:1px;
+
+    OWNER([Owner default]):::risk_warning
+    GOV([Governance default]):::risk_warning
+    OWNER --> STAKEMANAGER[Stake Manager\nNeeds attention]
+    GOV --> STAKEMANAGER
+    STAKEMANAGER:::risk_warning
+    OWNER --> ENERGYORACLE[Energy Oracle\nAction required]
+    GOV --> ENERGYORACLE
+    ENERGYORACLE:::risk_critical
+```
+
+This visual appears inside the Markdown export and mirrors the terminal summary, providing instant situational awareness inside incident reports or change tickets.
+
 ## Parameter Surfaces at a Glance
 
 | Layer | Key Decisions | Configuration Files | Preview Command | Execution Command | Verification |
