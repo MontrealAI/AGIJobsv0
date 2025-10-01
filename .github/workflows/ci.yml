@@ -48,10 +48,8 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Lint (best-effort)
-        run: |
-          npx --yes solhint -V >/dev/null 2>&1 && npx solhint 'contracts/**/*.sol' || true
-          npx --yes eslint -v   >/dev/null 2>&1 && npx eslint . --ext .js,.cjs,.mjs || true
+      - name: Lint
+        run: npm run lint:check
 
       - name: Start Ganache (deterministic)
         run: |
