@@ -500,6 +500,46 @@ async function getTokenBalance(address: string): Promise<bigint> {
   }
 }
 
+type TokenBalanceFetcher = (address: string) => Promise<bigint>;
+type StakeBalanceFetcher = (address: string, role?: number) => Promise<bigint>;
+
+type WithdrawHandler = (
+  wallet: Wallet,
+  amount: bigint,
+  role: number,
+  options?: { acknowledge?: boolean }
+) => Promise<StakeActionReceipt>;
+
+let getTokenBalanceImpl: TokenBalanceFetcher = getTokenBalance;
+let getStakeBalanceImpl: StakeBalanceFetcher = getStakeBalance;
+let withdrawStakeAmountImpl: WithdrawHandler = withdrawStakeAmount;
+
+export interface StakeCoordinatorTestOverrides {
+  getTokenBalance?: TokenBalanceFetcher;
+  getStakeBalance?: StakeBalanceFetcher;
+  withdrawStakeAmount?: WithdrawHandler;
+}
+
+export function __setStakeCoordinatorTestOverrides(
+  overrides: StakeCoordinatorTestOverrides
+): void {
+  if (overrides.getTokenBalance) {
+    getTokenBalanceImpl = overrides.getTokenBalance;
+  }
+  if (overrides.getStakeBalance) {
+    getStakeBalanceImpl = overrides.getStakeBalance;
+  }
+  if (overrides.withdrawStakeAmount) {
+    withdrawStakeAmountImpl = overrides.withdrawStakeAmount;
+  }
+}
+
+export function __resetStakeCoordinatorTestOverrides(): void {
+  getTokenBalanceImpl = getTokenBalance;
+  getStakeBalanceImpl = getStakeBalance;
+  withdrawStakeAmountImpl = withdrawStakeAmount;
+}
+
 function formatAction(
   type: ClaimActionResult['type'],
   amount: bigint,
@@ -522,24 +562,32 @@ export async function autoClaimRewards(
 ): Promise<AutoClaimResult> {
   const role = options.role ?? ROLE_AGENT;
   const actions: ClaimActionResult[] = [];
-  const startingBalance = await getTokenBalance(wallet.address);
+  const startingBalance = await getTokenBalanceImpl(wallet.address);
 
   if (options.withdrawStake) {
     if (!stakeManager) {
       throw new Error('StakeManager not configured; cannot withdraw stake');
     }
-    const withdrawAmount = options.amount ?? startingBalance;
+    const withdrawAmount =
+      options.amount !== undefined
+        ? options.amount
+        : await getStakeBalanceImpl(wallet.address, role);
     if (withdrawAmount > 0n) {
-      const receipt = await withdrawStakeAmount(wallet, withdrawAmount, role, {
-        acknowledge: options.acknowledge !== false,
-      });
+      const receipt = await withdrawStakeAmountImpl(
+        wallet,
+        withdrawAmount,
+        role,
+        {
+          acknowledge: options.acknowledge !== false,
+        }
+      );
       actions.push(
         formatAction('withdraw', withdrawAmount, receipt)
       );
     }
   }
 
-  let currentBalance = await getTokenBalance(wallet.address);
+  let currentBalance = await getTokenBalanceImpl(wallet.address);
   const restakeAmount = await resolveRestakeAmount(options, currentBalance);
   let transferAmount = options.amount ?? currentBalance;
   if (restakeAmount > 0n && restakeAmount > transferAmount) {
@@ -572,7 +620,7 @@ export async function autoClaimRewards(
       amountFormatted: formatAmount(transferAmount),
       destination,
     });
-    currentBalance = await getTokenBalance(wallet.address);
+    currentBalance = await getTokenBalanceImpl(wallet.address);
   }
 
   if (restakeAmount > 0n) {
@@ -587,7 +635,7 @@ export async function autoClaimRewards(
       amountRaw: restakeAmount.toString(),
       amountFormatted: formatAmount(restakeAmount),
     });
-    currentBalance = await getTokenBalance(wallet.address);
+    currentBalance = await getTokenBalanceImpl(wallet.address);
   }
 
   return {
