@@ -216,7 +216,16 @@ Change managers who need a single-page, production-ready operating model can use
 
 ### Owner control command center
 
-Need a single, visualised briefing before making governance changes? The new [Owner Command Center](docs/owner-control-command-center.md) combines Mermaid journey maps, validation matrices, and step-by-step scenario playbooks so a non-technical contract owner can stage, approve, execute, and verify any parameter update with complete confidence. Pair it with `npm run owner:surface` for a baseline snapshot, then follow the mission map checklists to close the loop from diff preview to post-change artefacts.
+Need a single, visualised briefing before making governance changes? The new [Owner Command Center](docs/owner-control-command-center.md) combines Mermaid journey maps, validation matrices, and step-by-step scenario playbooks so a non-technical contract owner can stage, approve, execute, and verify any parameter update with complete confidence. Pair it with `npm run owner:surface` for a baseline snapshot, then follow the mission map checklists to close the loop from diff preview to post-change artefacts. Operators who prefer a live, auto-generated digest can now run:
+
+```bash
+npm run owner:command-center -- --network <network>
+
+# Export Markdown with diagrams for change tickets
+npm run owner:command-center -- --network mainnet --format markdown --out reports/mainnet-command-center.md
+```
+
+The CLI cross-loads every governance configuration, highlights editable knobs (burn ratios, treasuries, PID gains, signer sets, tax policy text, and more), and renders an optional Mermaid flow linking governance owners to each subsystem. It is safe to run before every change window, requires no Solidity knowledge, and produces artefacts that non-technical reviewers can file directly into compliance workflows.
 
 ### Owner control operations playbook
 

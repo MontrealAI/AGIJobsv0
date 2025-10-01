@@ -32,6 +32,31 @@ mindmap
 
 Use the map as the default operating procedure for any parameter change. Each stage links to concrete commands below, so teams can assign duties without cross-training on Solidity internals.
 
+## Command-Line Quickstart
+
+Generate a live briefing—including Markdown tables, human-readable summaries, and an optional Mermaid governance flow—directly from the committed configuration:
+
+```bash
+# Human-readable digest
+npm run owner:command-center -- --network <network>
+
+# Markdown export with diagrams for your change ticket
+npm run owner:command-center -- --network <network> --format markdown --out runtime/<network>-command-center.md
+
+# Skip diagrams when pasting into plain-text systems
+npm run owner:command-center -- --network <network> --no-mermaid
+```
+
+The CLI hydrates `config/owner-control.json`, `config/*` module manifests, and the `$AGIALPHA` token constants in one pass. Each module summary highlights:
+
+- **Config path** – where the contract owner edits parameters.
+- **Preview command** – the dry-run helper to validate edits before execution.
+- **Execute command** – the exact transaction bundle trigger.
+- **Verify command** – the post-change sanity check.
+- **Key knobs** – burn ratios, treasuries, PID gains, signer allowlists, policy URIs, and other production levers.
+
+Point `--output` at a shared folder to produce artefacts for audits, or run without arguments for an on-demand terminal dashboard.
+
 ## Parameter Surfaces at a Glance
 
 | Layer | Key Decisions | Configuration Files | Preview Command | Execution Command | Verification |
