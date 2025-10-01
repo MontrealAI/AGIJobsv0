@@ -205,6 +205,22 @@ contract ReentrantStakeManager is IStakeManager {
         totalStakes[Role.Validator] -= amount;
     }
 
+    function governanceSlash(
+        address user,
+        Role role,
+        uint256 pctBps,
+        address
+    ) external override returns (uint256 amount) {
+        uint256 stake = _stakes[user][role];
+        amount = (stake * pctBps) / 10_000;
+        if (amount > stake) {
+            amount = stake;
+        }
+        _stakes[user][role] = stake - amount;
+        totalStakes[role] -= amount;
+        return amount;
+    }
+
     function slash(
         address user,
         uint256 amount,

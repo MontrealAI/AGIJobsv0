@@ -34,6 +34,12 @@ contract KlerosDisputeModule is IDisputeModule {
         string reason
     );
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
+    event EvidenceSubmitted(
+        uint256 indexed jobId,
+        address indexed submitter,
+        bytes32 evidenceHash,
+        string uri
+    );
 
     /// @notice Job registry that created disputes originate from.
     IJobRegistry public immutable jobRegistry;
@@ -101,6 +107,20 @@ contract KlerosDisputeModule is IDisputeModule {
     }
 
     /// @inheritdoc IDisputeModule
+    function raiseGovernanceDispute(uint256 jobId, string calldata reason)
+        external
+        override
+        onlyJobRegistry
+    {
+        if (bytes(reason).length == 0) revert ZeroEvidence();
+        bytes32 payload = keccak256(bytes(reason));
+        if (arbitrator != address(0)) {
+            IArbitrationService(arbitrator).createDispute(jobId, address(this), payload);
+        }
+        emit DisputeRaised(jobId, address(this), payload, reason);
+    }
+
+    /// @inheritdoc IDisputeModule
     function resolveDispute(uint256 jobId, bool employerWins)
         public
         override
@@ -122,6 +142,15 @@ contract KlerosDisputeModule is IDisputeModule {
         address
     ) external pure override {
         revert Unsupported();
+    }
+
+    /// @inheritdoc IDisputeModule
+    function submitEvidence(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string calldata uri
+    ) external override {
+        emit EvidenceSubmitted(jobId, msg.sender, evidenceHash, uri);
     }
 
     // ---------------------------------------------------------------------

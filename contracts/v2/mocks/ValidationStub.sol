@@ -125,5 +125,27 @@ contract ValidationStub is IValidationModule {
 
     function bumpValidatorAuthCacheVersion() external override {}
 
+    function triggerFailover(
+        uint256,
+        IValidationModule.FailoverAction,
+        uint64,
+        string calldata
+    ) external override {}
+
+    function failoverStates(uint256)
+        external
+        pure
+        override
+        returns (
+            IValidationModule.FailoverAction action,
+            uint64 extensions,
+            uint64 lastExtendedTo,
+            uint64 lastTriggeredAt,
+            bool escalated
+        )
+    {
+        return (IValidationModule.FailoverAction.None, 0, 0, 0, false);
+    }
+
 }
 
