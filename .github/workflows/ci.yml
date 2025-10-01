@@ -207,3 +207,33 @@ jobs:
 
       - name: Mainnet fork lifecycle drill
         run: npm run test:fork
+
+  foundry:
+    name: Foundry · Forge tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+          cache: true
+
+      - name: Cache Foundry dependencies
+        id: cache-lib
+        uses: actions/cache@b9e0e1c65e96f695fc6683f9c166a4f3dc304024
+        with:
+          path: lib
+          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml') }}
+          restore-keys: ${{ runner.os }}-foundry-
+
+      - name: Install Forge libraries
+        if: steps.cache-lib.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p lib
+          forge install foundry-rs/forge-std --no-git
+
+      - name: Run Forge tests
+        run: forge test --ffi
