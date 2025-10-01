@@ -32,6 +32,31 @@ message DeliverableContributor {
   string metadata_json = 7;
 }
 
+message ContributorContribution {
+  string deliverable_id = 1;
+  string job_id = 2;
+  string submitted_at = 3;
+  bool primary = 4;
+  string role = 5;
+  string label = 6;
+  string signature = 7;
+  string payload_digest = 8;
+  string metadata_json = 9;
+}
+
+message ContributorSummary {
+  string address = 1;
+  repeated string ens_names = 2;
+  repeated string roles = 3;
+  repeated string labels = 4;
+  repeated string signatures = 5;
+  repeated string payload_digests = 6;
+  uint32 contribution_count = 7;
+  string first_contribution_at = 8;
+  string last_contribution_at = 9;
+  repeated ContributorContribution contributions = 10;
+}
+
 message DeliverableRecord {
   string id = 1;
   string job_id = 2;
@@ -167,6 +192,7 @@ message GetJobInfoResponse {
   repeated HeartbeatRecord heartbeats = 5;
   repeated TelemetryRecord telemetry = 6;
   repeated RewardPayoutRecord payouts = 7;
+  repeated ContributorSummary contributors = 8;
 }
 
 message EnsureStakeRequest {

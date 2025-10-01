@@ -20,6 +20,9 @@ import {
   type AgentTelemetryRecord,
   type StoredPayloadReference,
   type DeliverableContributor,
+  listContributorSummaries,
+  type JobContributorSummary,
+  type ContributorContribution,
 } from './deliverableStore';
 import {
   parseTokenAmount,
@@ -163,6 +166,31 @@ interface DeliverableContributorMessage {
   metadata_json?: string;
 }
 
+interface ContributorContributionMessage {
+  deliverable_id?: string;
+  job_id?: string;
+  submitted_at?: string;
+  primary?: boolean;
+  role?: string;
+  label?: string;
+  signature?: string;
+  payload_digest?: string;
+  metadata_json?: string;
+}
+
+interface ContributorSummaryMessage {
+  address?: string;
+  ens_names?: string[];
+  roles?: string[];
+  labels?: string[];
+  signatures?: string[];
+  payload_digests?: string[];
+  contribution_count?: number;
+  first_contribution_at?: string;
+  last_contribution_at?: string;
+  contributions?: ContributorContributionMessage[];
+}
+
 interface DeliverableRecordMessage {
   id?: string;
   job_id?: string;
@@ -246,6 +274,7 @@ interface GetJobInfoResponseMessage {
   heartbeats?: HeartbeatRecordMessage[];
   telemetry?: TelemetryRecordMessage[];
   payouts?: RewardPayoutRecordMessage[];
+  contributors?: ContributorSummaryMessage[];
 }
 
 interface EnsureStakeResponseMessage {
@@ -519,6 +548,71 @@ function mapTelemetry(record: AgentTelemetryRecord): TelemetryRecordMessage {
   if (record.status) {
     message.status = record.status;
   }
+  return message;
+}
+
+function mapContributorContribution(
+  contribution: ContributorContribution
+): ContributorContributionMessage {
+  const message: ContributorContributionMessage = {
+    deliverable_id: contribution.deliverableId,
+    job_id: contribution.jobId,
+    submitted_at: contribution.submittedAt,
+    primary: contribution.primary,
+  };
+  if (contribution.role) {
+    message.role = contribution.role;
+  }
+  if (contribution.label) {
+    message.label = contribution.label;
+  }
+  if (contribution.signature) {
+    message.signature = contribution.signature;
+  }
+  if (contribution.payloadDigest) {
+    message.payload_digest = contribution.payloadDigest;
+  }
+  if (contribution.metadata) {
+    try {
+      message.metadata_json = JSON.stringify(contribution.metadata);
+    } catch {
+      message.metadata_json = String(contribution.metadata);
+    }
+  }
+  return message;
+}
+
+function mapContributorSummary(
+  summary: JobContributorSummary
+): ContributorSummaryMessage {
+  const message: ContributorSummaryMessage = {
+    address: summary.address,
+    contribution_count: summary.contributionCount,
+  };
+  if (summary.ensNames.length > 0) {
+    message.ens_names = summary.ensNames;
+  }
+  if (summary.roles.length > 0) {
+    message.roles = summary.roles;
+  }
+  if (summary.labels.length > 0) {
+    message.labels = summary.labels;
+  }
+  if (summary.signatures.length > 0) {
+    message.signatures = summary.signatures;
+  }
+  if (summary.payloadDigests.length > 0) {
+    message.payload_digests = summary.payloadDigests;
+  }
+  if (summary.firstContributionAt) {
+    message.first_contribution_at = summary.firstContributionAt;
+  }
+  if (summary.lastContributionAt) {
+    message.last_contribution_at = summary.lastContributionAt;
+  }
+  message.contributions = summary.contributions.map(
+    mapContributorContribution
+  );
   return message;
 }
 
@@ -879,6 +973,10 @@ async function handleGetJobInfo(
     telemetry: listTelemetryReports({ jobId, limit: telemetryLimit }).map(mapTelemetry),
     payouts: mapPayouts(getRewardPayouts(jobId)),
   };
+  const contributors = listContributorSummaries({ jobId });
+  if (contributors.length > 0) {
+    response.contributors = contributors.map(mapContributorSummary);
+  }
   callback(null, response);
 }
 
