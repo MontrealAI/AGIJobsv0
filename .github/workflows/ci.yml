@@ -182,3 +182,30 @@ jobs:
 
       - name: Orchestrator chain provider tests
         run: npm run test --workspace packages/orchestrator
+
+  fork-drill:
+    name: Mainnet fork drill
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ secrets.MAINNET_RPC_URL != '' }}
+    env:
+      MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+      SKIP_MOCK_AGIALPHA: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Mainnet fork lifecycle drill
+        run: npm run test:fork

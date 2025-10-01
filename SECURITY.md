@@ -22,6 +22,14 @@ When updating module addresses, ensure the transaction emits the expected events
 
 See [docs/security-deployment-guide.md](docs/security-deployment-guide.md) for a step-by-step guide that combines ownership transfers, pauser configuration, and emergency response procedures into a single checklist suitable for production launches.
 
+## Audit Drill Catalogue
+
+The reproducible scenarios that external reviewers should execute ahead of an
+audit are catalogued in
+[`docs/security/audit-test-vectors.md`](docs/security/audit-test-vectors.md).
+They include the new mainnet fork lifecycle drill (`npm run test:fork`) and the
+validator dispute flows that demonstrate slashing behaviour.
+
 ## Static Analysis Commands
 
 - **Slither:** `slither . --solc-remaps @openzeppelin=node_modules/@openzeppelin/`
