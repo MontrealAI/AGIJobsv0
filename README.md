@@ -713,6 +713,7 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [Production deployment guide](docs/deployment-guide-production.md)
 - [AGIJobs v2 sprint plan and deployment guide](docs/agi-jobs-v2-production-deployment-guide.md)
 - [Production deployment handbook](docs/production-deployment-handbook.md)
+- [Operations guide for contract owners](docs/operations_guide.md)
 - [API reference and SDK snippets](docs/api-reference.md)
 - [Job registry configuration guide](docs/job-registry-configuration.md)
 - [FeePool configuration guide](docs/fee-pool-configuration.md)
