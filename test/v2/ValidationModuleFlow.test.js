@@ -448,7 +448,9 @@ describe('ValidationModule finalize flows', function () {
     await validation.connect(v3).commitValidation(1, commit3, '', []);
     await advance(61); // end commit
     await advance(61 + 3600 + 1); // end reveal + grace
-    await validation.forceFinalize(1);
+    await expect(validation.forceFinalize(1))
+      .to.emit(validation, 'ValidationQuorumFailed')
+      .withArgs(1, 0, 3n);
     await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
     const job = enrichJob(await jobRegistry.jobs(1));
@@ -490,7 +492,10 @@ describe('ValidationModule finalize flows', function () {
     const beforeV4 = await stakeManager.stakeOf(v4.address, 1);
     await advance(61); // end commit
     await advance(61 + 3600 + 1); // end reveal + grace
-    await validation.forceFinalize(1);
+    const expectedQuorum = await validation.minRevealValidators();
+    await expect(validation.forceFinalize(1))
+      .to.emit(validation, 'ValidationQuorumFailed')
+      .withArgs(1, 0, expectedQuorum);
     await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
     const isV4Selected = chosen.includes(v4.address);
