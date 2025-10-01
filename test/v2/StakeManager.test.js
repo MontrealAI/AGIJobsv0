@@ -128,7 +128,7 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseReward(jobId, employer.address, user.address, 200)
+        .releaseReward(jobId, employer.address, user.address, 200, true)
     )
       .to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobId, user.address, 200);

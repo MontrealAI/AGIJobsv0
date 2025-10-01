@@ -112,7 +112,12 @@ describe('StakeManager release', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .release(user2.address, user1.address, ethers.parseEther('100'))
+        .release(
+          user2.address,
+          user1.address,
+          ethers.parseEther('100'),
+          true
+        )
     )
       .to.emit(stakeManager, 'StakeReleased')
       .withArgs(
@@ -163,7 +168,8 @@ describe('StakeManager release', function () {
           jobId,
           user2.address,
           user1.address,
-          ethers.parseEther('100')
+          ethers.parseEther('100'),
+          true
         )
     )
       .to.emit(stakeManager, 'StakeReleased')
@@ -192,6 +198,55 @@ describe('StakeManager release', function () {
     ).to.equal(ethers.parseEther('5'));
     expect((await token.balanceOf(user2.address)) - before2).to.equal(
       ethers.parseEther('15')
+    );
+  });
+
+  it('allows refunds to bypass AGI payout boosts', async () => {
+    const jobId = ethers.encodeBytes32String('refund');
+    const MockNFT = await ethers.getContractFactory(
+      'contracts/legacy/MockERC721.sol:MockERC721'
+    );
+    const nft = await MockNFT.deploy();
+    await stakeManager.connect(owner).addAGIType(await nft.getAddress(), 150);
+    await nft.mint(user2.address);
+
+    await stakeManager.connect(owner).setFeePct(0);
+    await stakeManager.connect(owner).setBurnPct(0);
+
+    const balanceBeforeLock = await token.balanceOf(user2.address);
+
+    await stakeManager
+      .connect(registrySigner)
+      .lockReward(jobId, user2.address, ethers.parseEther('100'));
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .releaseReward(
+          jobId,
+          user2.address,
+          user2.address,
+          ethers.parseEther('100'),
+          true
+        )
+    ).to.be.revertedWithCustomError(stakeManager, 'InsufficientEscrow');
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .releaseReward(
+          jobId,
+          user2.address,
+          user2.address,
+          ethers.parseEther('100'),
+          false
+        )
+    )
+      .to.emit(stakeManager, 'RewardPaid')
+      .withArgs(jobId, user2.address, ethers.parseEther('100'));
+
+    expect(await token.balanceOf(user2.address)).to.equal(
+      balanceBeforeLock
     );
   });
 

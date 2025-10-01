@@ -1569,13 +1569,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev Deposits fees into the FeePool without distributing them;
     ///      an external process should call `FeePool.distributeFees()`
     ///      periodically to settle rewards.
-    function releaseReward(bytes32 jobId, address employer, address to, uint256 amount)
+    /// @param applyBoost When true, applies AGI NFT payout multipliers to `amount`.
+    function releaseReward(
+        bytes32 jobId,
+        address employer,
+        address to,
+        uint256 amount,
+        bool applyBoost
+    )
         external
         onlyJobRegistry
         whenNotPaused
         nonReentrant
     {
-        uint256 pct = getTotalPayoutPct(to);
+        uint256 pct = applyBoost ? getTotalPayoutPct(to) : 100;
         uint256 modified = (amount * pct) / 100;
         uint256 feeAmount = (modified * feePct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
@@ -1622,14 +1629,15 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param employer address providing burn approval
     /// @param to Recipient receiving the tokens.
     /// @param amount Base token amount with 18 decimals before AGI bonus.
-    function release(address employer, address to, uint256 amount)
+    /// @param applyBoost When true, applies AGI NFT payout multipliers to `amount`.
+    function release(address employer, address to, uint256 amount, bool applyBoost)
         external
         onlyJobRegistry
         whenNotPaused
         nonReentrant
     {
         // apply AGI type payout modifier
-        uint256 pct = getTotalPayoutPct(to);
+        uint256 pct = applyBoost ? getTotalPayoutPct(to) : 100;
         uint256 modified = (amount * pct) / 100;
 
         // apply protocol fees and burn on the modified amount
