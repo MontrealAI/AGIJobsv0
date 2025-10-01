@@ -27,6 +27,12 @@ export interface JobSummary {
   reward: bigint;
   stake: bigint;
   fee: bigint;
+  status: number;
+  success?: boolean;
+  burnConfirmed?: boolean;
+  agentTypes?: number;
+  feePct?: number;
+  agentPct?: number;
   deadline: number;
   specHash: string;
   specUri?: string;
