@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createReadOnlyProvider, getJobRegistryContract } from '../lib/contracts';
 import { jobStateToPhase } from '../lib/jobStatus';
 import type { JobSummary, JobTimelineEvent } from '../types';
+import { computeFromBlock } from './useJobFeed.helpers';
 
 const JOB_EVENT_NAMES = [
   'JobCreated',
@@ -96,12 +97,17 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
   const [error, setError] = useState<string>();
   const provider = useMemo(() => createReadOnlyProvider(), []);
 
+  const resolveFromBlock = useCallback(
+    () => computeFromBlock(provider, { jobId: options.jobId }),
+    [options.jobId, provider]
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(undefined);
     try {
       const contract = getJobRegistryContract(provider);
-      const fromBlock = options.jobId ? undefined : (await provider.getBlockNumber()) - 50_000;
+      const fromBlock = await resolveFromBlock();
       const logs: EventLog[] = [];
       for (const eventName of JOB_EVENT_NAMES) {
         const filterFactory = (contract.filters as Record<string, (...args: never[]) => EventFilter>)[eventName];
@@ -157,7 +163,7 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
     } finally {
       setLoading(false);
     }
-  }, [options.jobId, provider]);
+  }, [options.jobId, provider, resolveFromBlock]);
 
   useEffect(() => {
     load().catch((err) => console.error(err));
