@@ -56,7 +56,7 @@ Agents and validators must own ENS subdomains under `agent.agi.eth` and `club.ag
 
 ### AGIALPHA configuration
 
-Token parameters are defined once in [`config/agialpha.json`](config/agialpha.json). Run `npm run compile` after editing this file to regenerate `contracts/v2/Constants.sol` with the canonical token address, symbol, name, decimals, scaling factor and burn address. Any change to `config/agialpha.json` must be followed by `npm run compile` or the constants check in CI will fail.
+Token parameters are defined once in [`config/agialpha.json`](config/agialpha.json). Run `npm run compile` after editing this file to regenerate `contracts/v2/Constants.sol` with the canonical token address, symbol, name, decimals, scaling factor and burn address. Any change to `config/agialpha.json` must be followed by `npm run compile` or the constants check in CI will fail. See the non-technical [Token Operations Control Guide](docs/token-operations.md) for a checklist, Mermaid diagrams and a zero-downtime rollout plan.
 
 `npm run compile` validates the configured addresses, ERC‑20 metadata and decimals before writing the Solidity constants. The command halts if the token or burn addresses are malformed, zero (where disallowed), the symbol/name fields are empty or the decimals fall outside the supported `0-255` range, preventing a bad configuration from reaching production contracts.
 
@@ -115,7 +115,7 @@ Pass `--execute` once the dry run looks correct to submit the queued actions. Us
 
 ### Energy oracle signer management
 
-Governance controls which off-chain measurement nodes can sign energy attestations. Update [`config/energy-oracle.json`](config/energy-oracle.json) (or its per-network override) with the authorised signer list. Run the helper to review the planned changes and, once satisfied, apply them on-chain:
+Governance controls which off-chain measurement nodes can sign energy attestations. Update [`config/energy-oracle.json`](config/energy-oracle.json) (or its per-network override) with the authorised signer list. Run the helper to review the planned changes and, once satisfied, apply them on-chain. The [Energy Oracle Operations Guide](docs/energy-oracle-operations.md) covers signer due diligence, quorum rotations and verification workflows with step-by-step diagrams:
 
 ```bash
 npx hardhat run scripts/v2/updateEnergyOracle.ts --network <network>
