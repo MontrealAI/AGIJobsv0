@@ -37,6 +37,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control audit](#owner-control-audit)
 - [Owner control systems map](#owner-control-systems-map)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
+- [Owner control master checklist](#owner-control-master-checklist)
 - [Owner control non-technical guide](#owner-control-non-technical-guide)
 - [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
 - [Owner control handbook](#owner-control-handbook)
@@ -269,6 +270,10 @@ npm run owner:guide -- --network mainnet --out runtime/mainnet-owner-guide.md
 ```
 
 The helper reads `config/owner-control.json` plus all module overrides, then renders a Markdown playbook tailored to the selected network. Pair the CLI output with the [Owner Control Quick Reference](docs/owner-control-quick-reference.md) handout for non-technical reviewers.
+
+### Owner control master checklist
+
+Need a one-stop, checkbox-driven procedure that keeps governance, execution and verification perfectly aligned? The [Owner Control Master Checklist](docs/owner-control-master-checklist.md) distils every prerequisite, command and artefact into a production-ready worksheet. It layers Mermaid mind maps, flowcharts, sequences and Gantt timelines with copy/paste command snippets so non-technical owners can capture baselines, run the wizard, dry-run updates, execute `owner:update-all`, verify the system and archive artefacts without skipping a step. Print it for war rooms or attach the Markdown file to change tickets so auditors can confirm every control lever was handled precisely.
 
 ### Owner control non-technical guide
 
