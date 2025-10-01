@@ -18,6 +18,33 @@ const JOB_EVENT_NAMES = [
 
 type JobEventName = (typeof JOB_EVENT_NAMES)[number];
 
+const normaliseString = (value: unknown): string | undefined => {
+  if (!value) return undefined;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'bigint') return String(value);
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const normalised = normaliseString(entry);
+      if (normalised) return normalised;
+    }
+  }
+  if (typeof value === 'object' && 'toString' in (value as { toString?: () => string })) {
+    return (value as { toString: () => string }).toString();
+  }
+  return undefined;
+};
+
+const extractResultDetails = (
+  args: unknown
+): { resultHash?: string; resultURI?: string } => {
+  if (!args) return {};
+  const record = args as Record<string, unknown>;
+  const arrayArgs = Array.isArray(args) ? (args as unknown[]) : undefined;
+  const resultHash = normaliseString(record.resultHash ?? arrayArgs?.[2]);
+  const resultURI = normaliseString(record.resultURI ?? arrayArgs?.[3]);
+  return { resultHash, resultURI };
+};
+
 interface UseJobFeedOptions {
   employer?: string;
   jobId?: bigint;
@@ -136,17 +163,37 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
         .filter((evt) => (options.jobId ? evt.jobId === options.jobId : true));
       const timeline = await hydrateTimestamps(provider, timelineRaw);
 
-      const jobIdSet = new Set(timeline.map((evt) => evt.jobId.toString()));
-      if (options.jobId) {
-        jobIdSet.add(options.jobId.toString());
+      const eventsByJob = new Map<string, JobTimelineEvent[]>();
+      for (const item of timeline) {
+        const jobKey = item.jobId.toString();
+        if (!eventsByJob.has(jobKey)) {
+          eventsByJob.set(jobKey, []);
+        }
+        eventsByJob.get(jobKey)!.push(item);
       }
-      const jobIds = Array.from(jobIdSet);
-      const summaries: JobSummary[] = [];
-      for (const idStr of jobIds) {
+
+      if (options.jobId && !eventsByJob.has(options.jobId.toString())) {
+        eventsByJob.set(options.jobId.toString(), []);
+      }
+
+      const jobIdStrings = Array.from(eventsByJob.keys());
+      const summaryMap = new Map<string, JobSummary>();
+      for (const idStr of jobIdStrings) {
         const jobId = BigInt(idStr);
         const jobData = await contract.job(jobId);
         const phase = jobStateToPhase(Number(jobData.state ?? jobData[7] ?? 0));
-        const relatedEvents = timeline.filter((evt) => evt.jobId === jobId);
+        const relatedEvents = eventsByJob.get(idStr) ?? [];
+        const createdEvent = relatedEvents.find((evt) => evt.name === 'JobCreated');
+        const assignedEvent = relatedEvents.find((evt) => evt.name === 'AgentAssigned');
+        const resultEvent = [...relatedEvents]
+          .filter((evt) => evt.name === 'ResultSubmitted')
+          .sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0))
+          .pop();
+        const validationEvent = [...relatedEvents]
+          .filter((evt) => evt.name === 'ValidationStartTriggered')
+          .sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0))
+          .pop();
+        const { resultHash, resultURI } = extractResultDetails(resultEvent?.meta?.args);
         const summary: JobSummary = {
           jobId,
           employer: String(jobData.employer ?? jobData[0]),
@@ -158,9 +205,16 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
           specHash: String(jobData.specHash ?? jobData[8] ?? '0x'),
           uri: String(jobData.uri ?? jobData[9] ?? ''),
           phase,
-          lastUpdated: relatedEvents.reduce((acc, evt) => Math.max(acc, evt.timestamp ?? 0), 0)
+          lastUpdated: relatedEvents.reduce((acc, evt) => Math.max(acc, evt.timestamp ?? 0), 0),
+          createdAt: createdEvent?.timestamp,
+          assignedAt: assignedEvent?.timestamp,
+          resultSubmittedAt: resultEvent?.timestamp,
+          resultHash,
+          resultUri: resultURI,
+          validationStartedAt: validationEvent?.timestamp,
+          validationEndsAt: Number(jobData.deadline ?? jobData[6] ?? 0) || undefined
         };
-        summaries.push(summary);
+        summaryMap.set(idStr, summary);
       }
 
       const validatorMap = new Map<string, Map<string, ValidatorInsight>>();
@@ -186,7 +240,7 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
         return insight;
       };
 
-      for (const idStr of jobIds) {
+      for (const idStr of jobIdStrings) {
         const jobId = BigInt(idStr);
         try {
           const committee = await (contract as unknown as { getJobValidators: (jobId: bigint) => Promise<string[]> }).getJobValidators(jobId);
@@ -301,6 +355,31 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
         });
         await Promise.allSettled(stakeFetches);
       }
+
+      summaryMap.forEach((summary, idStr) => {
+        const validatorsForJob = validatorMap.get(idStr);
+        if (!validatorsForJob || validatorsForJob.size === 0) {
+          summary.totalValidators = 0;
+          summary.validatorVotes = 0;
+          summary.stakedByValidators = 0n;
+          return;
+        }
+        let votes = 0;
+        let totalStake = 0n;
+        validatorsForJob.forEach((insight) => {
+          if (insight.vote) {
+            votes += 1;
+          }
+          if (typeof insight.stake === 'bigint') {
+            totalStake += insight.stake;
+          }
+        });
+        summary.totalValidators = validatorsForJob.size;
+        summary.validatorVotes = votes;
+        summary.stakedByValidators = totalStake;
+      });
+
+      const summaries = Array.from(summaryMap.values()).sort((a, b) => Number(b.jobId - a.jobId));
 
       const validatorList = Array.from(validatorMap.values()).flatMap((collection) => Array.from(collection.values()));
 
