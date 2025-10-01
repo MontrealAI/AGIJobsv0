@@ -29,6 +29,12 @@ import { handleJobCompletion as handlePlanJobCompletion } from './jobPlanner';
 
 const rewardPayoutCache = new Map<string, RewardPayout[]>();
 
+export function getRewardPayouts(jobId: string): RewardPayout[] {
+  const key = jobId.toString();
+  const payouts = rewardPayoutCache.get(key);
+  return payouts ? [...payouts] : [];
+}
+
 type JobCreatedCallback = (event: JobCreatedEvent) => void | Promise<void>;
 
 interface EventCallbacks {

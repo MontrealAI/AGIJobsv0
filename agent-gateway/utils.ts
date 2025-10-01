@@ -126,11 +126,12 @@ const { config: agialpha } = loadTokenConfig({
 });
 
 const {
-  address: AGIALPHA_ADDRESS,
+  address: AGIALPHA_ADDRESS_INTERNAL,
   decimals: AGIALPHA_DECIMALS,
   symbol: AGIALPHA_SYMBOL,
   name: AGIALPHA_NAME,
 } = agialpha;
+export const AGIALPHA_ADDRESS = AGIALPHA_ADDRESS_INTERNAL;
 if (AGIALPHA_SYMBOL.trim().length === 0) {
   throw new Error('config/agialpha.json is missing token symbol');
 }
@@ -168,6 +169,10 @@ const STAKE_MANAGER_ABI = [
   'function depositStake(uint8 role, uint256 amount)',
   'function stakeOf(address user, uint8 role) view returns (uint256)',
   'function minStake() view returns (uint256)',
+  'function requestWithdraw(uint8 role, uint256 amount)',
+  'function finalizeWithdraw(uint8 role)',
+  'function withdrawStake(uint8 role, uint256 amount)',
+  'function acknowledgeAndWithdraw(uint8 role, uint256 amount)',
 ];
 
 // Minimal ABI for ValidationModule interactions
