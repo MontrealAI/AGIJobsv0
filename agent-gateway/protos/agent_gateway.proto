@@ -258,6 +258,11 @@ message AutoClaimRewardsResponse {
   string restaked_formatted = 8;
 }
 
+// All RPCs require authentication metadata. Provide `x-api-key` when the
+// gateway is configured with a shared key, or include both `x-address` and
+// `x-signature` metadata headers where the signature is over the string
+// `Agent Gateway Auth` concatenated with the latest nonce issued by the
+// gateway. The nonce rotates after each successful signature validation.
 service AgentGateway {
   rpc SubmitResult(SubmitResultRequest) returns (SubmitResultResponse);
   rpc RecordHeartbeat(RecordHeartbeatRequest) returns (RecordHeartbeatResponse);

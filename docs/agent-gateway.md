@@ -32,7 +32,10 @@ The server will:
   - `POST /jobs/:id/apply` – call `applyForJob` for the given job ID.
   - `POST /jobs/:id/submit` – call `submit` with a JSON body `{ "result": "..." }`.
 
-Wallet requests must include `X-Api-Key` or a signature of `Agent Gateway Auth` in
-`X-Signature` with the address in `X-Address`.
+Wallet requests must include `X-Api-Key` or a signature of `Agent Gateway Auth`
+in `X-Signature` with the address in `X-Address`. gRPC clients must send the
+same credentials in request metadata: include `x-api-key` when using the shared
+secret or provide both `x-address` and `x-signature` where the signature covers
+`Agent Gateway Auth` and the most recent nonce issued by the gateway.
 
 WebSocket clients can connect to `ws://localhost:PORT` to receive push notifications of new jobs.

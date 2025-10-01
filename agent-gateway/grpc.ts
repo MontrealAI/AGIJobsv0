@@ -1,13 +1,15 @@
 import path from 'path';
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
-import { Wallet } from 'ethers';
+import { Wallet, ethers } from 'ethers';
 import {
   walletManager,
   checkEnsSubdomain,
   jobs,
   registry,
   GRPC_PORT,
+  GATEWAY_API_KEY,
+  AUTH_MESSAGE,
 } from './utils';
 import {
   listDeliverables,
@@ -318,6 +320,54 @@ interface AgentGatewayProtoGrpcType {
 type UnaryCallback<T> = grpc.sendUnaryData<T>;
 
 let serverInstance: grpc.Server | null = null;
+
+let authNonce = ethers.hexlify(ethers.randomBytes(16));
+
+function rotateAuthNonce(): void {
+  authNonce = ethers.hexlify(ethers.randomBytes(16));
+}
+
+function extractMetadataValue(metadata: grpc.Metadata, key: string): string | undefined {
+  const values = metadata.get(key);
+  if (!values || values.length === 0) {
+    return undefined;
+  }
+  const value = values[0];
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (Buffer.isBuffer(value)) {
+    return value.toString('utf8');
+  }
+  return undefined;
+}
+
+function authenticateCall(
+  call: grpc.ServerUnaryCall<unknown, unknown>
+): grpc.ServiceError | null {
+  const apiKey = extractMetadataValue(call.metadata, 'x-api-key');
+  if (GATEWAY_API_KEY && apiKey === GATEWAY_API_KEY) {
+    return null;
+  }
+
+  const signature = extractMetadataValue(call.metadata, 'x-signature');
+  const address = extractMetadataValue(call.metadata, 'x-address');
+  if (signature && address) {
+    try {
+      const recovered = ethers
+        .verifyMessage(AUTH_MESSAGE + authNonce, signature)
+        .toLowerCase();
+      if (recovered === address.toLowerCase()) {
+        rotateAuthNonce();
+        return null;
+      }
+    } catch {
+      // fall through to unauthorized
+    }
+  }
+
+  return createServiceError(grpc.status.UNAUTHENTICATED, 'unauthorized');
+}
 
 function createServiceError(
   code: grpc.status,
@@ -703,6 +753,11 @@ async function handleSubmitResult(
   call: grpc.ServerUnaryCall<SubmitResultRequestMessage, SubmitResultResponseMessage>,
   callback: UnaryCallback<SubmitResultResponseMessage>
 ): Promise<void> {
+  const authError = authenticateCall(call);
+  if (authError) {
+    callback(authError, null);
+    return;
+  }
   const request = call.request;
   const jobId = request.job_id?.trim();
   if (!jobId) {
@@ -809,6 +864,11 @@ async function handleRecordHeartbeat(
   call: grpc.ServerUnaryCall<RecordHeartbeatRequestMessage, HeartbeatRecordMessage>,
   callback: UnaryCallback<HeartbeatRecordMessage>
 ): Promise<void> {
+  const authError = authenticateCall(call);
+  if (authError) {
+    callback(authError, null);
+    return;
+  }
   const request = call.request;
   const jobId = request.job_id?.trim();
   if (!jobId) {
@@ -858,6 +918,11 @@ async function handleRecordTelemetry(
   call: grpc.ServerUnaryCall<RecordTelemetryRequestMessage, RecordTelemetryResponseMessage>,
   callback: UnaryCallback<RecordTelemetryResponseMessage>
 ): Promise<void> {
+  const authError = authenticateCall(call);
+  if (authError) {
+    callback(authError, null);
+    return;
+  }
   const request = call.request;
   const jobId = request.job_id?.trim();
   if (!jobId) {
@@ -940,6 +1005,11 @@ async function handleGetJobInfo(
   call: grpc.ServerUnaryCall<GetJobInfoRequestMessage, GetJobInfoResponseMessage>,
   callback: UnaryCallback<GetJobInfoResponseMessage>
 ): Promise<void> {
+  const authError = authenticateCall(call);
+  if (authError) {
+    callback(authError, null);
+    return;
+  }
   const request = call.request;
   const jobId = request.job_id?.trim();
   if (!jobId) {
@@ -986,6 +1056,11 @@ async function handleEnsureStake(
   call: grpc.ServerUnaryCall<EnsureStakeRequestMessage, EnsureStakeResponseMessage>,
   callback: UnaryCallback<EnsureStakeResponseMessage>
 ): Promise<void> {
+  const authError = authenticateCall(call);
+  if (authError) {
+    callback(authError, null);
+    return;
+  }
   const request = call.request;
   let wallet: Wallet;
   try {
@@ -1031,6 +1106,11 @@ async function handleGetStake(
   call: grpc.ServerUnaryCall<GetStakeRequestMessage, GetStakeResponseMessage>,
   callback: UnaryCallback<GetStakeResponseMessage>
 ): Promise<void> {
+  const authError = authenticateCall(call);
+  if (authError) {
+    callback(authError, null);
+    return;
+  }
   const request = call.request;
   const resolved = request.agent_address
     ? await resolveAgentAddress(request.agent_address)
@@ -1063,6 +1143,11 @@ async function handleAutoClaimRewards(
   call: grpc.ServerUnaryCall<AutoClaimRewardsRequestMessage, AutoClaimRewardsResponseMessage>,
   callback: UnaryCallback<AutoClaimRewardsResponseMessage>
 ): Promise<void> {
+  const authError = authenticateCall(call);
+  if (authError) {
+    callback(authError, null);
+    return;
+  }
   const request = call.request;
   let wallet: Wallet;
   try {
