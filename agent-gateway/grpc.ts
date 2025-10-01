@@ -275,6 +275,7 @@ interface GetJobInfoResponseMessage {
   telemetry?: TelemetryRecordMessage[];
   payouts?: RewardPayoutRecordMessage[];
   contributors?: ContributorSummaryMessage[];
+  contributor_count?: number;
 }
 
 interface EnsureStakeResponseMessage {
@@ -974,6 +975,7 @@ async function handleGetJobInfo(
     payouts: mapPayouts(getRewardPayouts(jobId)),
   };
   const contributors = listContributorSummaries({ jobId });
+  response.contributor_count = contributors.length;
   if (contributors.length > 0) {
     response.contributors = contributors.map(mapContributorSummary);
   }
