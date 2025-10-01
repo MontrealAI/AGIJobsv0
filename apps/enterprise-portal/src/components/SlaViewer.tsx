@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { SlaDocument } from '../types';
+import { resolveResourceUri } from '../lib/uri';
 
 const parseSla = (payload: unknown): SlaDocument => {
   const record = payload as Record<string, unknown>;
@@ -20,12 +21,16 @@ export const SlaViewer = () => {
   const [document, setDocument] = useState<SlaDocument>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const resolvedInput = useMemo(() => resolveResourceUri(uri) ?? uri, [uri]);
 
   const loadSla = async () => {
     setLoading(true);
     setError(undefined);
     try {
-      const response = await fetch(uri);
+      if (!resolvedInput) {
+        throw new Error('Provide a valid SLA URI to fetch metadata.');
+      }
+      const response = await fetch(resolvedInput);
       if (!response.ok) {
         throw new Error(`Failed to fetch SLA: ${response.status} ${response.statusText}`);
       }
@@ -73,7 +78,7 @@ export const SlaViewer = () => {
             <div>
               <div className="stat-label">Source</div>
               <div className="stat-value" style={{ fontSize: '0.85rem' }}>
-                <a href={document.uri || uri} target="_blank" rel="noreferrer">
+                <a href={resolveResourceUri(document.uri || uri) ?? uri} target="_blank" rel="noreferrer">
                   {document.uri || uri}
                 </a>
               </div>

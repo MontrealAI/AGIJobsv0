@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { verifyDeliverableSignature } from '../lib/crypto';
+import { resolveResourceUri } from '../lib/uri';
 import type { JobTimelineEvent } from '../types';
 
 interface Props {
@@ -49,6 +50,8 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
     }
     if (typeof submission.resultUri === 'string') {
       setCid(submission.resultUri);
+    } else {
+      setCid('');
     }
   };
 
@@ -133,7 +136,7 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
             {verifying ? 'Verifying…' : 'Verify deliverable'}
           </button>
           {cid && (
-            <a className="tag purple" href={cid} target="_blank" rel="noreferrer">
+            <a className="tag purple" href={resolveResourceUri(cid) ?? cid} target="_blank" rel="noreferrer">
               Open deliverable
             </a>
           )}
@@ -163,7 +166,11 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
                     <td>{submission.timestamp ? new Date(submission.timestamp * 1000).toLocaleString() : '—'}</td>
                     <td>
                       {submission.resultUri ? (
-                        <a href={submission.resultUri} target="_blank" rel="noreferrer">
+                        <a
+                          href={resolveResourceUri(submission.resultUri) ?? submission.resultUri}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           Open file
                         </a>
                       ) : (
