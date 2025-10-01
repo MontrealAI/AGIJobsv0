@@ -34,6 +34,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control blueprint](#owner-control-blueprint)
 - [Owner control command center](#owner-control-command-center)
 - [Owner control doctor](#owner-control-doctor)
+- [Owner control audit](#owner-control-audit)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
 - [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
 - [Owner control handbook](#owner-control-handbook)
@@ -230,6 +231,16 @@ npm run owner:doctor -- --network <network>
 ```
 
 Use `--strict` to fail on warnings inside CI and `--json` to feed dashboards or alerting bots. The command emits a severity-sorted punch list (with copy/paste remediation steps) so a non-technical operator can fix the highlighted configuration issues, rerun the doctor, and only proceed once the report is fully green. Full guidance, diagrams and automation patterns live in [docs/owner-control-doctor.md](docs/owner-control-doctor.md).
+
+### Owner control audit
+
+Need a cryptographically hashed, compliance-ready snapshot before executing owner transactions? Run the audit helper:
+
+```bash
+npm run owner:audit -- --network <network> --out reports/<network>-owner-audit.md
+```
+
+The CLI loads every module loader used by `owner:update-all`, verifies the JSON manifests parse cleanly, records SHA-256 hashes for `config/agialpha*.json` and `config/owner-control*.json`, and prints a table of owner/governance/token targets with ✅/⚠️/❌ statuses. Each row links to the dedicated Hardhat helper and the relevant operations handbook so the contract owner can adjust parameters without touching Solidity. The Markdown output embeds Mermaid diagrams, actionable remediation notes and copy/paste commands, while `--format human` and `--format json` support chat summaries and automation pipelines respectively. Full usage guidance lives in [docs/owner-control-audit.md](docs/owner-control-audit.md).
 
 ### Owner control quick reference CLI
 
