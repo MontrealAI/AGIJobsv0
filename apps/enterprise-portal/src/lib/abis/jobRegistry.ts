@@ -68,6 +68,23 @@ export const jobRegistryAbi = [
     stateMutability: 'view'
   },
   {
+    type: 'function',
+    name: 'getJobValidators',
+    inputs: [{ name: 'jobId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'address[]' }],
+    stateMutability: 'view'
+  },
+  {
+    type: 'function',
+    name: 'getJobValidatorVote',
+    inputs: [
+      { name: 'jobId', type: 'uint256' },
+      { name: 'validator', type: 'address' }
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view'
+  },
+  {
     type: 'event',
     name: 'JobCreated',
     inputs: [

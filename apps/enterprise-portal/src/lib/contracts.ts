@@ -2,6 +2,7 @@ import { Contract, JsonRpcProvider, Signer } from 'ethers';
 import { jobRegistryAbi } from './abis/jobRegistry';
 import { taxPolicyAbi } from './abis/taxPolicy';
 import { certificateNftAbi } from './abis/certificateNft';
+import { validationModuleAbi } from './abis/validationModule';
 import { loadPortalConfiguration } from './config';
 
 export const portalConfig = loadPortalConfiguration();
@@ -45,6 +46,23 @@ export const getCertificateNFTContract = (signerOrProvider?: Signer | JsonRpcPro
     return providerCache.get(key)!;
   }
   const contract = new Contract(portalConfig.certificateNFTAddress, certificateNftAbi, conn);
+  if (!signerOrProvider) {
+    providerCache.set(key, contract);
+  }
+  return contract;
+};
+
+export const getValidationModuleContract = (
+  signerOrProvider?: Signer | JsonRpcProvider
+) => {
+  const address = portalConfig.validationModuleAddress;
+  if (!address) return undefined;
+  const conn = signerOrProvider ?? createReadOnlyProvider();
+  const key = `validationModule:${conn instanceof JsonRpcProvider ? 'provider' : 'signer'}`;
+  if (!signerOrProvider && providerCache.has(key)) {
+    return providerCache.get(key)!;
+  }
+  const contract = new Contract(address, validationModuleAbi, conn);
   if (!signerOrProvider) {
     providerCache.set(key, contract);
   }

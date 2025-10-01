@@ -40,10 +40,15 @@ export interface JobSummary {
 }
 
 export interface ValidatorInsight {
+  jobId: bigint;
   validator: string;
   vote?: 'approve' | 'reject' | 'timeout';
-  stake: bigint;
+  stake?: bigint;
+  selectedAt?: number;
+  committedAt?: number;
+  commitTx?: string;
   revealedAt?: number;
+  revealTx?: string;
   comment?: string;
 }
 

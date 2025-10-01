@@ -10,14 +10,18 @@ import { SlaViewer } from './SlaViewer';
 import { useJobFeed } from '../hooks/useJobFeed';
 
 export const PortalPage = () => {
-  const { jobs, events, loading, error } = useJobFeed({ watch: true });
+  const { jobs, events, validators, loading, error, hasValidationModule } = useJobFeed({ watch: true });
 
   return (
     <div className="grid" style={{ gap: '2.5rem' }}>
       <ConnectionPanel />
       <JobSubmissionForm />
       <JobLifecycleDashboard jobs={jobs} events={events} loading={loading} error={error} />
-      <ValidatorLogPanel events={events} />
+      <ValidatorLogPanel
+        validators={validators}
+        loading={loading}
+        hasValidationModule={hasValidationModule}
+      />
       <div className="grid two-column">
         <DeliverableVerificationPanel events={events} />
         <div className="grid">

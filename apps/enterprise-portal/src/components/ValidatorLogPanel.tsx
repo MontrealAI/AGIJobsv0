@@ -1,72 +1,156 @@
 'use client';
 
+import { formatUnits } from 'ethers';
 import { useMemo } from 'react';
-import type { JobTimelineEvent, ValidatorInsight } from '../types';
+import { portalConfig } from '../lib/contracts';
+import type { ValidatorInsight } from '../types';
 
-const deriveValidatorInsights = (events: JobTimelineEvent[]): ValidatorInsight[] => {
-  const insights = new Map<string, ValidatorInsight>();
-  for (const event of events) {
-    if (!event.actor) continue;
-    const existing = insights.get(event.actor) ?? { validator: event.actor, stake: 0n };
-    if (event.name === 'ValidationStartTriggered') {
-      existing.vote = undefined;
+type ValidatorPanelStatus = 'pending' | 'selected' | 'committed' | 'revealed';
+
+interface DerivedInsight extends ValidatorInsight {
+  status: ValidatorPanelStatus;
+  lastTimestamp?: number;
+}
+
+const deriveValidatorInsights = (records: ValidatorInsight[]): DerivedInsight[] => {
+  const deduped = new Map<string, DerivedInsight>();
+  for (const record of records) {
+    const key = `${record.jobId.toString()}:${record.validator.toLowerCase()}`;
+    const status: ValidatorPanelStatus = record.revealedAt
+      ? 'revealed'
+      : record.committedAt
+        ? 'committed'
+        : record.selectedAt
+          ? 'selected'
+          : 'pending';
+    const lastTimestamp = record.revealedAt ?? record.committedAt ?? record.selectedAt;
+    const existing = deduped.get(key);
+    if (!existing || (lastTimestamp ?? 0) > (existing.lastTimestamp ?? 0)) {
+      deduped.set(key, {
+        ...record,
+        status,
+        lastTimestamp
+      });
+    } else if (existing && typeof existing.stake === 'undefined' && typeof record.stake === 'bigint') {
+      deduped.set(key, {
+        ...existing,
+        stake: record.stake
+      });
     }
-    if (event.name === 'JobFinalized') {
-      existing.vote = 'approve';
-      existing.revealedAt = event.timestamp;
-    }
-    if (event.name === 'JobDisputed') {
-      existing.vote = 'reject';
-      existing.revealedAt = event.timestamp;
-    }
-    insights.set(event.actor, existing);
   }
-  return Array.from(insights.values());
+  return Array.from(deduped.values()).sort((a, b) => {
+    const timeA = a.lastTimestamp ?? 0;
+    const timeB = b.lastTimestamp ?? 0;
+    if (timeA !== timeB) return timeB - timeA;
+    if (a.jobId !== b.jobId) return Number(b.jobId - a.jobId);
+    return a.validator.localeCompare(b.validator);
+  });
 };
 
-export const ValidatorLogPanel = ({ events }: { events: JobTimelineEvent[] }) => {
-  const validatorEvents = useMemo(
-    () => events.filter((evt) => ['ValidationStartTriggered', 'JobFinalized', 'JobDisputed'].includes(evt.name)),
-    [events]
-  );
-  const insights = useMemo(() => deriveValidatorInsights(validatorEvents), [validatorEvents]);
+const formatStake = (stake?: bigint) => {
+  if (typeof stake !== 'bigint') return '—';
+  try {
+    const formatted = Number.parseFloat(formatUnits(stake, 18)).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    return `${formatted} ${portalConfig.stakingTokenSymbol ?? 'STAKE'}`;
+  } catch (err) {
+    return `${stake.toString()} wei`;
+  }
+};
+
+const formatTimestamp = (timestamp?: number) => {
+  if (!timestamp) return '—';
+  return new Date(timestamp * 1000).toLocaleString();
+};
+
+const formatStatus = (status: ValidatorPanelStatus) => {
+  switch (status) {
+    case 'revealed':
+      return { label: 'Reveal submitted', className: 'tag green' };
+    case 'committed':
+      return { label: 'Commit posted', className: 'tag purple' };
+    case 'selected':
+      return { label: 'Selected', className: 'tag orange' };
+    default:
+      return { label: 'Pending selection', className: 'tag purple' };
+  }
+};
+
+const formatVote = (vote?: ValidatorInsight['vote']) => {
+  if (!vote) return { label: '—', className: 'tag purple' };
+  if (vote === 'approve') return { label: 'APPROVE', className: 'tag green' };
+  if (vote === 'reject') return { label: 'REJECT', className: 'tag red' };
+  return { label: 'TIMEOUT', className: 'tag orange' };
+};
+
+interface Props {
+  validators: ValidatorInsight[];
+  loading: boolean;
+  hasValidationModule: boolean;
+}
+
+export const ValidatorLogPanel = ({ validators, loading, hasValidationModule }: Props) => {
+  const insights = useMemo(() => deriveValidatorInsights(validators), [validators]);
+  const hasCommitteeData = insights.length > 0;
 
   return (
     <section>
       <div className="card-title">
         <div>
           <h2>Validator Committee Activity</h2>
-          <p>Live visibility into commit / reveal outcomes, validator votes, and dispute escalations.</p>
+          <p>Commit / reveal lifecycle, stakes, and vote outcomes sourced from on-chain committee signals.</p>
         </div>
         <div className="tag orange">Validation</div>
       </div>
       <table className="table">
         <thead>
           <tr>
+            <th>Job</th>
             <th>Validator</th>
+            <th>Stake</th>
+            <th>Status</th>
             <th>Vote</th>
-            <th>Last action</th>
+            <th>Last update</th>
           </tr>
         </thead>
         <tbody>
-          {insights.map((insight) => (
-            <tr key={insight.validator}>
-              <td>{`${insight.validator.slice(0, 6)}…${insight.validator.slice(-4)}`}</td>
-              <td>
-                <span className={`tag ${insight.vote === 'approve' ? 'green' : insight.vote === 'reject' ? 'red' : 'purple'}`}>
-                  {insight.vote ? insight.vote.toUpperCase() : 'PENDING'}
-                </span>
-              </td>
-              <td>{insight.revealedAt ? new Date(insight.revealedAt * 1000).toLocaleString() : 'Awaiting reveal'}</td>
-            </tr>
-          ))}
+          {insights.map((insight) => {
+            const statusTag = formatStatus(insight.status);
+            const voteTag = formatVote(insight.vote);
+            return (
+              <tr key={`${insight.jobId.toString()}:${insight.validator}`}>
+                <td>#{insight.jobId.toString()}</td>
+                <td>{`${insight.validator.slice(0, 6)}…${insight.validator.slice(-4)}`}</td>
+                <td>{formatStake(insight.stake)}</td>
+                <td>
+                  <span className={statusTag.className}>{statusTag.label}</span>
+                </td>
+                <td>
+                  <span className={voteTag.className}>{voteTag.label}</span>
+                </td>
+                <td>{formatTimestamp(insight.lastTimestamp)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-      {insights.length === 0 && <div className="small">No validator actions recorded yet.</div>}
-      <div className="alert" style={{ marginTop: '1rem' }}>
-        The panel listens to JobRegistry validation events and surfaces them in near real-time. Off-chain automation can enrich
-        entries with stake sizes and commit / reveal metadata by combining ValidationModule logs via the same pattern.
-      </div>
+      {!hasCommitteeData && !loading && (
+        <div className="small">No validator committee information available yet.</div>
+      )}
+      {!hasValidationModule && (
+        <div className="alert" style={{ marginTop: '1rem' }}>
+          Validation module address is not configured for this deployment. Committee membership is derived from JobRegistry
+          snapshots only, so commit / reveal activity may be unavailable.
+        </div>
+      )}
+      {hasValidationModule && (
+        <div className="alert" style={{ marginTop: '1rem' }}>
+          Committee insights combine <code>JobRegistry.getJobValidators</code> responses with ValidationModule commit and reveal
+          logs. Entries update automatically as validators act on-chain.
+        </div>
+      )}
     </section>
   );
 };
