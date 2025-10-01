@@ -85,6 +85,28 @@ const formatVote = (vote?: ValidatorInsight['vote']) => {
   return { label: 'TIMEOUT', className: 'tag orange' };
 };
 
+const renderTransactions = (insight: DerivedInsight) => {
+  const links: { label: string; hash: string }[] = [];
+  if (insight.commitTx) {
+    links.push({ label: 'Commit', hash: insight.commitTx });
+  }
+  if (insight.revealTx) {
+    links.push({ label: 'Reveal', hash: insight.revealTx });
+  }
+  if (links.length === 0) {
+    return '—';
+  }
+  return (
+    <div className="chip-row">
+      {links.map((link) => (
+        <a key={`${insight.jobId.toString()}:${link.hash}`} className="chip" href={`https://sepolia.etherscan.io/tx/${link.hash}`} target="_blank" rel="noreferrer">
+          {link.label}
+        </a>
+      ))}
+    </div>
+  );
+};
+
 interface Props {
   validators: ValidatorInsight[];
   loading: boolean;
@@ -113,6 +135,8 @@ export const ValidatorLogPanel = ({ validators, loading, hasValidationModule }: 
             <th>Status</th>
             <th>Vote</th>
             <th>Last update</th>
+            <th>Transactions</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody>
@@ -131,6 +155,8 @@ export const ValidatorLogPanel = ({ validators, loading, hasValidationModule }: 
                   <span className={voteTag.className}>{voteTag.label}</span>
                 </td>
                 <td>{formatTimestamp(insight.lastTimestamp)}</td>
+                <td>{renderTransactions(insight)}</td>
+                <td>{insight.comment ?? '—'}</td>
               </tr>
             );
           })}

@@ -29,7 +29,10 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
           timestamp: evt.timestamp,
           resultHash:
             (args?.resultHash as string | undefined) ??
-            (Array.isArray(args) ? (args[2] as string | undefined) : undefined)
+            (Array.isArray(args) ? (args[2] as string | undefined) : undefined),
+          resultUri:
+            (args?.resultURI as string | undefined) ??
+            (Array.isArray(args) ? (args[3] as string | undefined) : undefined)
         };
       })
       .slice(-5)
@@ -43,6 +46,9 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
     }
     if (typeof submission.resultHash === 'string') {
       setResultHash(submission.resultHash);
+    }
+    if (typeof submission.resultUri === 'string') {
+      setCid(submission.resultUri);
     }
   };
 
@@ -145,6 +151,7 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
                   <th>Job</th>
                   <th>Agent</th>
                   <th>Submitted</th>
+                  <th>Deliverable</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -154,6 +161,15 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
                     <td>#{submission.jobId}</td>
                     <td>{submission.worker ? `${submission.worker.slice(0, 6)}…${submission.worker.slice(-4)}` : '—'}</td>
                     <td>{submission.timestamp ? new Date(submission.timestamp * 1000).toLocaleString() : '—'}</td>
+                    <td>
+                      {submission.resultUri ? (
+                        <a href={submission.resultUri} target="_blank" rel="noreferrer">
+                          Open file
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td>
                       <button className="secondary" type="button" onClick={() => populateFromEvent(submission)}>
                         Load details

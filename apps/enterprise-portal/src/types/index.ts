@@ -32,6 +32,11 @@ export interface JobSummary {
   uri: string;
   phase: JobPhase;
   lastUpdated: number;
+  createdAt?: number;
+  assignedAt?: number;
+  resultSubmittedAt?: number;
+  resultHash?: string;
+  resultUri?: string;
   totalValidators?: number;
   validatorVotes?: number;
   validationEndsAt?: number;
