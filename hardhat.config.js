@@ -47,15 +47,19 @@ function resolveAccounts(envKeys) {
 }
 
 const coverageOnly = process.env.COVERAGE_ONLY === '1';
+const isCoverageRun =
+  process.env.HARDHAT_COVERAGE === 'true' || process.env.HARDHAT_COVERAGE === '1';
 
 const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
 
+const solidityVersions = isCoverageRun ? [SOLIDITY_VERSIONS[0]] : SOLIDITY_VERSIONS;
+
 const solidityConfig = {
-  compilers: SOLIDITY_VERSIONS.map((version) => ({
+  compilers: solidityVersions.map((version) => ({
     version,
     settings: {
-      optimizer: { enabled: true, runs: 200 },
-      viaIR: true,
+      optimizer: { enabled: !isCoverageRun, runs: isCoverageRun ? 0 : 200 },
+      viaIR: !isCoverageRun,
       evmVersion: 'cancun',
     },
   })),

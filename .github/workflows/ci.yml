@@ -62,8 +62,8 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Coverage (if configured)
-        run: npx --yes solidity-coverage || echo "coverage not configured; skipping"
+      - name: Coverage
+        run: npm run coverage
 
       - name: Enforce coverage threshold
         run: node scripts/check-coverage.js $COVERAGE_MIN

@@ -234,7 +234,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     /// @param epoch The epoch identifier to settle.
     /// @param data Batches of signed attestations and paid cost data.
     function settleEpoch(uint256 epoch, EpochData calldata data) external nonReentrant
-    /// #if_succeeds {:msg "budget >= redistributed"} budget >= redistributed;
+    /// #if_succeeds budget >= redistributed;
     {
         require(settlers[msg.sender], "not settler");
         require(!epochSettled[epoch], "settled");

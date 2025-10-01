@@ -34,7 +34,7 @@
     "e2e:local": "hardhat test --no-compile test/e2e/localnet.gateway.e2e.test.ts",
     "echidna:commit-reveal": "docker run --rm -v \"$PWD\":/src -v \"$PWD/tools/forge-shim\":/usr/local/bin/forge:ro -w /src ghcr.io/crytic/echidna/echidna:v2.2.7 echidna-test ./contracts/test/CommitRevealEchidna.sol --contract CommitRevealEchidnaHarness --config echidna/commit-reveal.yaml",
     "echidna": "npm run echidna:commit-reveal",
-    "coverage": "solidity-coverage",
+    "coverage": "node scripts/ci/run-coverage.js",
     "coverage:report": "node scripts/run-coverage.js",
     "coverage:check": "node scripts/check-coverage.js",
     "coverage:full": "npm run coverage:report",
