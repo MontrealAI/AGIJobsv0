@@ -193,6 +193,7 @@ message GetJobInfoResponse {
   repeated TelemetryRecord telemetry = 6;
   repeated RewardPayoutRecord payouts = 7;
   repeated ContributorSummary contributors = 8;
+  uint32 contributor_count = 9;
 }
 
 message EnsureStakeRequest {

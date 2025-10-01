@@ -723,6 +723,23 @@ app.get('/jobs/:id', async (req: express.Request, res: express.Response) => {
   const deliverableLimit = parsePositiveInteger(req.query.deliverables);
   const heartbeatLimit = parsePositiveInteger(req.query.heartbeats);
   const telemetryLimit = parsePositiveInteger(req.query.telemetry);
+  const includeContributorsParam =
+    req.query.includeContributors ??
+    (req.query as Record<string, unknown>).include_contributors ??
+    req.query.contributors;
+  const includeContributors =
+    includeContributorsParam === undefined
+      ? true
+      : parseBooleanFlag(includeContributorsParam);
+  const includePrimaryParam =
+    req.query.includePrimary ??
+    req.query.includeLead ??
+    req.query.primary ??
+    (req.query as Record<string, unknown>).contributorsIncludePrimary;
+  const includePrimary =
+    includePrimaryParam === undefined
+      ? true
+      : parseBooleanFlag(includePrimaryParam);
   let chainJob: Record<string, unknown> | null = null;
   try {
     const onChain = await registry.jobs(jobId);
@@ -730,6 +747,9 @@ app.get('/jobs/:id', async (req: express.Request, res: express.Response) => {
   } catch (err) {
     console.warn('Failed to load job from registry', jobId, err);
   }
+  const contributorSummaries = includeContributors
+    ? listContributorSummaries({ jobId, includePrimary })
+    : [];
   res.json({
     jobId,
     job: jobs.get(jobId) || null,
@@ -738,6 +758,8 @@ app.get('/jobs/:id', async (req: express.Request, res: express.Response) => {
     heartbeats: listHeartbeats({ jobId, limit: heartbeatLimit }),
     telemetry: listTelemetryReports({ jobId, limit: telemetryLimit }),
     payouts: getRewardPayouts(jobId),
+    contributors: includeContributors ? contributorSummaries : undefined,
+    contributorCount: includeContributors ? contributorSummaries.length : undefined,
   });
 });
 
