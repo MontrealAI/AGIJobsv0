@@ -12,6 +12,7 @@ import {
   GATEWAY_API_KEY,
   AUTH_MESSAGE,
   provider,
+  TOKEN_DECIMALS,
 } from './utils';
 import { postJob, listPostedJobs } from './employer';
 import { getRetrainingQueue, getSpawnRequests } from './learning';
@@ -22,6 +23,7 @@ import {
   getEnergyAnomalyReport,
   getEnergyAnomalyParameters,
   getPrometheusRegistry,
+  publishEnergySample,
 } from './telemetry';
 import { listValidatorAssignments } from './validator';
 import {
@@ -63,6 +65,33 @@ import {
 } from './thermodynamics';
 import { buildPerformanceDashboard } from './performanceDashboard';
 import { evaluateSystemHealth } from './systemHealth';
+import {
+  recordDeliverable,
+  listDeliverables,
+  recordHeartbeat,
+  listHeartbeats,
+  recordTelemetryReport,
+  listTelemetryReports,
+  getDeliverableById,
+  getHeartbeatById,
+  getTelemetryReportById,
+  loadStoredPayload,
+  type DeliverableContributor,
+} from './deliverableStore';
+import {
+  ensureStake,
+  getStakeBalance,
+  getMinStake,
+  requestStakeWithdrawal,
+  finalizeStakeWithdrawal,
+  withdrawStakeAmount,
+  autoClaimRewards,
+  ROLE_AGENT,
+  ROLE_VALIDATOR,
+  ROLE_PLATFORM,
+  acknowledgeTaxPolicy as ensureTaxAcknowledgement,
+} from './stakeCoordinator';
+import { getRewardPayouts } from './events';
 
 const app = express();
 app.use(express.json());
@@ -192,6 +221,243 @@ function parseFloatParam(value: unknown): number | undefined {
     return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
+}
+
+function parseTokenAmount(value: unknown): bigint | undefined {
+  if (typeof value === 'bigint') {
+    return value >= 0n ? value : undefined;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      return undefined;
+    }
+    try {
+      return ethers.parseUnits(value.toString(), TOKEN_DECIMALS);
+    } catch {
+      return undefined;
+    }
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    try {
+      return ethers.parseUnits(trimmed, TOKEN_DECIMALS);
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+function formatTokenAmount(value: bigint): string {
+  try {
+    return ethers.formatUnits(value, TOKEN_DECIMALS);
+  } catch {
+    return value.toString();
+  }
+}
+
+async function resolveAgentAddress(raw: string): Promise<string | null> {
+  const identifier = raw?.trim();
+  if (!identifier) {
+    return null;
+  }
+  if (identifier.endsWith('.eth')) {
+    try {
+      const resolved = await provider.resolveName(identifier);
+      if (resolved) {
+        return ethers.getAddress(resolved);
+      }
+    } catch (err) {
+      console.warn('ENS resolve failed for agent lookup', identifier, err);
+    }
+  }
+  if (ethers.isAddress(identifier)) {
+    return ethers.getAddress(identifier);
+  }
+  return null;
+}
+
+function parseRoleInput(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+    return Math.floor(value);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) {
+      return ROLE_AGENT;
+    }
+    if (trimmed === 'agent') return ROLE_AGENT;
+    if (trimmed === 'validator') return ROLE_VALIDATOR;
+    if (trimmed === 'platform') return ROLE_PLATFORM;
+    const parsed = Number.parseInt(trimmed, 10);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+  return ROLE_AGENT;
+}
+
+function normaliseMetadata(
+  value: unknown
+): Record<string, unknown> | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+  return value as Record<string, unknown>;
+}
+
+function parseContributors(
+  raw: unknown
+): DeliverableContributor[] | undefined {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+  const contributors: DeliverableContributor[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const address = (entry as { address?: unknown }).address;
+    if (typeof address !== 'string') {
+      continue;
+    }
+    let normalised: string;
+    try {
+      normalised = ethers.getAddress(address);
+    } catch {
+      normalised = address.toLowerCase();
+    }
+    const contributor: DeliverableContributor = { address: normalised };
+    const ens = (entry as { ens?: unknown }).ens;
+    if (typeof ens === 'string' && ens.trim().length > 0) {
+      contributor.ens = ens.trim();
+    }
+    const role = (entry as { role?: unknown }).role;
+    if (typeof role === 'string' && role.trim().length > 0) {
+      contributor.role = role.trim();
+    }
+    const label = (entry as { label?: unknown }).label;
+    if (typeof label === 'string' && label.trim().length > 0) {
+      contributor.label = label.trim();
+    }
+    const metadata = (entry as { metadata?: unknown }).metadata;
+    if (metadata && typeof metadata === 'object') {
+      contributor.metadata = metadata as Record<string, unknown>;
+    }
+    const payload = (entry as { payload?: unknown }).payload;
+    const signature = (entry as { signature?: unknown }).signature;
+    const payloadDigest = (entry as { payloadDigest?: unknown }).payloadDigest;
+    if (typeof signature === 'string' && signature.trim().length > 0) {
+      if (payload !== undefined) {
+        let canonical: string;
+        try {
+          canonical =
+            typeof payload === 'string' ? payload : JSON.stringify(payload);
+        } catch {
+          canonical = String(payload);
+        }
+        try {
+          const recovered = ethers
+            .verifyMessage(canonical, signature)
+            .toLowerCase();
+          if (recovered !== normalised.toLowerCase()) {
+            throw new Error('mismatch');
+          }
+          contributor.signature = signature;
+          contributor.payloadDigest = ethers.hashMessage(canonical);
+        } catch (err) {
+          throw new Error(
+            `Contributor signature verification failed for ${address}: ${String(
+              (err as Error)?.message || err
+            )}`
+          );
+        }
+      } else {
+        contributor.signature = signature;
+        if (typeof payloadDigest === 'string' && payloadDigest.trim().length > 0) {
+          contributor.payloadDigest = payloadDigest.trim();
+        }
+      }
+    } else if (
+      typeof payloadDigest === 'string' &&
+      payloadDigest.trim().length > 0
+    ) {
+      contributor.payloadDigest = payloadDigest.trim();
+    }
+    contributors.push(contributor);
+  }
+  return contributors.length > 0 ? contributors : undefined;
+}
+
+function serialiseChainJob(entry: any): Record<string, unknown> | null {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  const plain: Record<string, unknown> = {};
+  const employer = entry.employer ?? entry[0];
+  if (typeof employer === 'string') {
+    plain.employer = employer;
+  }
+  const agent = entry.agent ?? entry[1];
+  if (typeof agent === 'string') {
+    plain.agent = agent;
+  }
+  const rewardValue = entry.reward ?? entry[2];
+  if (rewardValue !== undefined) {
+    try {
+      const value = BigInt(rewardValue.toString());
+      plain.rewardRaw = value.toString();
+      plain.rewardFormatted = formatTokenAmount(value);
+    } catch {
+      plain.rewardRaw = rewardValue?.toString?.();
+    }
+  }
+  const stakeValue = entry.stake ?? entry[3];
+  if (stakeValue !== undefined) {
+    try {
+      const value = BigInt(stakeValue.toString());
+      plain.stakeRaw = value.toString();
+      plain.stakeFormatted = formatTokenAmount(value);
+    } catch {
+      plain.stakeRaw = stakeValue?.toString?.();
+    }
+  }
+  const feePct = entry.feePct ?? entry[4];
+  if (feePct !== undefined) {
+    plain.feePct = Number(feePct);
+  }
+  const state = entry.state ?? entry[5];
+  if (state !== undefined) {
+    plain.state = Number(state);
+  }
+  const success = entry.success ?? entry[6];
+  if (success !== undefined) {
+    plain.success = Boolean(success);
+  }
+  const agentTypes = entry.agentTypes ?? entry[7];
+  if (agentTypes !== undefined) {
+    plain.agentTypes = Number(agentTypes);
+  }
+  const deadline = entry.deadline ?? entry[8];
+  if (deadline !== undefined) {
+    plain.deadline = Number(deadline);
+  }
+  const assignedAt = entry.assignedAt ?? entry[9];
+  if (assignedAt !== undefined) {
+    plain.assignedAt = Number(assignedAt);
+  }
+  const uriHash = entry.uriHash ?? entry[10];
+  if (uriHash) {
+    plain.uriHash = uriHash;
+  }
+  const resultHash = entry.resultHash ?? entry[11];
+  if (resultHash) {
+    plain.resultHash = resultHash;
+  }
+  return plain;
 }
 
 class GatewayError extends Error {
@@ -458,10 +724,402 @@ app.get('/agents', (req: express.Request, res: express.Response) => {
   );
 });
 
+app.get(
+  '/agents/:agent/jobs',
+  async (req: express.Request, res: express.Response) => {
+    const address = await resolveAgentAddress(req.params.agent);
+    if (!address) {
+      res.status(400).json({ error: 'invalid-agent' });
+      return;
+    }
+    const role = parseRoleInput(req.query.role);
+    const deliverableLimit = parsePositiveInteger(req.query.deliverables);
+    const heartbeatLimit = parsePositiveInteger(req.query.heartbeats);
+    const telemetryLimit = parsePositiveInteger(req.query.telemetry);
+    let stakeBalance: bigint | undefined;
+    let minStake: bigint | undefined;
+    try {
+      stakeBalance = await getStakeBalance(address, role);
+    } catch (err) {
+      console.warn('stake balance lookup failed', address, err);
+    }
+    try {
+      minStake = await getMinStake();
+    } catch (err) {
+      console.warn('min stake lookup failed', err);
+    }
+    const assignedJobs = Array.from(jobs.values()).filter(
+      (job) => job.agent && job.agent.toLowerCase() === address.toLowerCase()
+    );
+    const pending =
+      pendingJobs.get(address) || pendingJobs.get(address.toLowerCase()) || [];
+    res.json({
+      agent: address,
+      role,
+      stakeBalanceRaw: stakeBalance?.toString() ?? null,
+      stakeBalanceFormatted:
+        stakeBalance !== undefined ? formatTokenAmount(stakeBalance) : null,
+      minStakeRaw: minStake?.toString() ?? null,
+      minStakeFormatted:
+        minStake !== undefined ? formatTokenAmount(minStake) : null,
+      assignedJobs,
+      pendingJobs: pending,
+      deliverables: listDeliverables({
+        agent: address,
+        limit: deliverableLimit,
+      }),
+      heartbeats: listHeartbeats({
+        agent: address,
+        limit: heartbeatLimit,
+      }),
+      telemetry: listTelemetryReports({
+        agent: address,
+        limit: telemetryLimit,
+      }),
+    });
+  }
+);
+
+app.get(
+  '/agents/:agent/stake',
+  async (req: express.Request, res: express.Response) => {
+    const address = await resolveAgentAddress(req.params.agent);
+    if (!address) {
+      res.status(400).json({ error: 'invalid-agent' });
+      return;
+    }
+    const role = parseRoleInput(req.query.role);
+    try {
+      const [balance, minStake] = await Promise.all([
+        getStakeBalance(address, role),
+        getMinStake(),
+      ]);
+      res.json({
+        agent: address,
+        role,
+        stakeBalanceRaw: balance.toString(),
+        stakeBalanceFormatted: formatTokenAmount(balance),
+        minStakeRaw: minStake.toString(),
+        minStakeFormatted: formatTokenAmount(minStake),
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || String(err) });
+    }
+  }
+);
+
+app.post(
+  '/agents/:agent/stake/ensure',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const address = await resolveAgentAddress(req.params.agent);
+    if (!address) {
+      res.status(400).json({ error: 'invalid-agent' });
+      return;
+    }
+    const wallet = walletManager.get(address);
+    if (!wallet) {
+      res.status(400).json({ error: 'unknown wallet' });
+      return;
+    }
+    const body = req.body as Record<string, unknown>;
+    const role = parseRoleInput(body?.role ?? req.query.role);
+    const requiredStake = parseTokenAmount(
+      (body?.requiredStake ?? body?.targetStake) as unknown
+    );
+    const amount = parseTokenAmount(body?.amount);
+    if (requiredStake === undefined && amount === undefined) {
+      res
+        .status(400)
+        .json({ error: 'requiredStake or amount must be provided' });
+      return;
+    }
+    try {
+      if (requiredStake !== undefined) {
+        await ensureStake(wallet, requiredStake, role);
+      } else if (amount !== undefined) {
+        const current = await getStakeBalance(wallet.address, role);
+        await ensureStake(wallet, current + amount, role);
+      }
+      const balance = await getStakeBalance(wallet.address, role);
+      res.json({
+        agent: wallet.address,
+        role,
+        stakeBalanceRaw: balance.toString(),
+        stakeBalanceFormatted: formatTokenAmount(balance),
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || String(err) });
+    }
+  }
+);
+
+app.post(
+  '/agents/:agent/stake/request-withdraw',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const address = await resolveAgentAddress(req.params.agent);
+    if (!address) {
+      res.status(400).json({ error: 'invalid-agent' });
+      return;
+    }
+    const wallet = walletManager.get(address);
+    if (!wallet) {
+      res.status(400).json({ error: 'unknown wallet' });
+      return;
+    }
+    const body = req.body as Record<string, unknown>;
+    const amount = parseTokenAmount(body?.amount);
+    if (amount === undefined || amount <= 0n) {
+      res.status(400).json({ error: 'amount must be greater than zero' });
+      return;
+    }
+    const role = parseRoleInput(body?.role ?? req.query.role);
+    try {
+      const receipt = await requestStakeWithdrawal(wallet, amount, role);
+      res.json({
+        agent: wallet.address,
+        role,
+        method: receipt.method,
+        tx: receipt.txHash,
+        amountRaw: amount.toString(),
+        amountFormatted: formatTokenAmount(amount),
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || String(err) });
+    }
+  }
+);
+
+app.post(
+  '/agents/:agent/stake/finalize-withdraw',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const address = await resolveAgentAddress(req.params.agent);
+    if (!address) {
+      res.status(400).json({ error: 'invalid-agent' });
+      return;
+    }
+    const wallet = walletManager.get(address);
+    if (!wallet) {
+      res.status(400).json({ error: 'unknown wallet' });
+      return;
+    }
+    const role = parseRoleInput(req.body?.role ?? req.query.role);
+    try {
+      const receipt = await finalizeStakeWithdrawal(wallet, role);
+      res.json({
+        agent: wallet.address,
+        role,
+        method: receipt.method,
+        tx: receipt.txHash,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || String(err) });
+    }
+  }
+);
+
+app.post(
+  '/agents/:agent/stake/withdraw',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const address = await resolveAgentAddress(req.params.agent);
+    if (!address) {
+      res.status(400).json({ error: 'invalid-agent' });
+      return;
+    }
+    const wallet = walletManager.get(address);
+    if (!wallet) {
+      res.status(400).json({ error: 'unknown wallet' });
+      return;
+    }
+    const body = req.body as Record<string, unknown>;
+    const amount = parseTokenAmount(body?.amount);
+    if (amount === undefined || amount <= 0n) {
+      res.status(400).json({ error: 'amount must be greater than zero' });
+      return;
+    }
+    const role = parseRoleInput(body?.role ?? req.query.role);
+    try {
+      const receipt = await withdrawStakeAmount(wallet, amount, role, {
+        acknowledge: body?.acknowledge !== false,
+      });
+      res.json({
+        agent: wallet.address,
+        role,
+        method: receipt.method,
+        tx: receipt.txHash,
+        amountRaw: amount.toString(),
+        amountFormatted: formatTokenAmount(amount),
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || String(err) });
+    }
+  }
+);
+
+app.post(
+  '/agents/:agent/rewards/claim',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const address = await resolveAgentAddress(req.params.agent);
+    if (!address) {
+      res.status(400).json({ error: 'invalid-agent' });
+      return;
+    }
+    const wallet = walletManager.get(address);
+    if (!wallet) {
+      res.status(400).json({ error: 'unknown wallet' });
+      return;
+    }
+    const body = req.body as Record<string, unknown>;
+    const role = parseRoleInput(body?.role ?? req.query.role);
+    const amount = parseTokenAmount(body?.amount);
+    const restakeAmount = parseTokenAmount(body?.restakeAmount);
+    const restakePercent = body?.restakePercent ?? body?.restakePercentage;
+    const destination =
+      typeof body?.destination === 'string' ? body?.destination : undefined;
+    try {
+      const result = await autoClaimRewards(wallet, {
+        amount: amount,
+        restakeAmount,
+        restakePercent:
+          typeof restakePercent === 'number' || typeof restakePercent === 'string'
+            ? restakePercent
+            : undefined,
+        destination,
+        role,
+        withdrawStake: parseBooleanFlag(body?.withdrawStake),
+        acknowledge: body?.acknowledge !== false,
+      });
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || String(err) });
+    }
+  }
+);
+
 // REST endpoint to list jobs
 app.get('/jobs', (req: express.Request, res: express.Response) => {
   res.json(Array.from(jobs.values()));
 });
+
+app.get('/jobs/:id', async (req: express.Request, res: express.Response) => {
+  const jobId = req.params.id;
+  const deliverableLimit = parsePositiveInteger(req.query.deliverables);
+  const heartbeatLimit = parsePositiveInteger(req.query.heartbeats);
+  const telemetryLimit = parsePositiveInteger(req.query.telemetry);
+  let chainJob: Record<string, unknown> | null = null;
+  try {
+    const onChain = await registry.jobs(jobId);
+    chainJob = serialiseChainJob(onChain);
+  } catch (err) {
+    console.warn('Failed to load job from registry', jobId, err);
+  }
+  res.json({
+    jobId,
+    job: jobs.get(jobId) || null,
+    chain: chainJob,
+    deliverables: listDeliverables({ jobId, limit: deliverableLimit }),
+    heartbeats: listHeartbeats({ jobId, limit: heartbeatLimit }),
+    telemetry: listTelemetryReports({ jobId, limit: telemetryLimit }),
+    payouts: getRewardPayouts(jobId),
+  });
+});
+
+app.get(
+  '/jobs/:id/deliverables',
+  (req: express.Request, res: express.Response) => {
+    const limit = parsePositiveInteger(req.query.limit);
+    const agentFilter = pickQueryValue(req.query.agent);
+    const records = listDeliverables({
+      jobId: req.params.id,
+      agent: agentFilter,
+      limit,
+    });
+    res.json(records);
+  }
+);
+
+app.get(
+  '/jobs/:id/heartbeats',
+  (req: express.Request, res: express.Response) => {
+    const limit = parsePositiveInteger(req.query.limit);
+    const agentFilter = pickQueryValue(req.query.agent);
+    res.json(
+      listHeartbeats({ jobId: req.params.id, agent: agentFilter, limit })
+    );
+  }
+);
+
+app.get(
+  '/jobs/:id/telemetry',
+  (req: express.Request, res: express.Response) => {
+    const limit = parsePositiveInteger(req.query.limit);
+    const agentFilter = pickQueryValue(req.query.agent);
+    res.json(
+      listTelemetryReports({ jobId: req.params.id, agent: agentFilter, limit })
+    );
+  }
+);
+
+app.get(
+  '/deliverables/:id',
+  (req: express.Request, res: express.Response) => {
+    const record = getDeliverableById(req.params.id);
+    if (!record) {
+      res.status(404).json({ error: 'not-found' });
+      return;
+    }
+    const includeTelemetry = parseBooleanFlag(
+      req.query.includeTelemetry ?? req.query.includePayload
+    );
+    const response: Record<string, unknown> = { ...record };
+    if (includeTelemetry) {
+      response.telemetryPayload = loadStoredPayload(record.telemetry);
+    }
+    res.json(response);
+  }
+);
+
+app.get(
+  '/heartbeats/:id',
+  (req: express.Request, res: express.Response) => {
+    const record = getHeartbeatById(req.params.id);
+    if (!record) {
+      res.status(404).json({ error: 'not-found' });
+      return;
+    }
+    const includeTelemetry = parseBooleanFlag(
+      req.query.includeTelemetry ?? req.query.includePayload
+    );
+    const response: Record<string, unknown> = { ...record };
+    if (includeTelemetry) {
+      response.telemetryPayload = loadStoredPayload(record.telemetry);
+    }
+    res.json(response);
+  }
+);
+
+app.get(
+  '/telemetry/reports/:id',
+  (req: express.Request, res: express.Response) => {
+    const record = getTelemetryReportById(req.params.id);
+    if (!record) {
+      res.status(404).json({ error: 'not-found' });
+      return;
+    }
+    const includePayload = parseBooleanFlag(
+      req.query.includePayload ?? req.query.include ?? req.query.payload
+    );
+    const response: Record<string, unknown> = { ...record };
+    if (includePayload) {
+      response.payloadContents = loadStoredPayload(record.payload);
+    }
+    res.json(response);
+  }
+);
 
 app.get('/telemetry', (req: express.Request, res: express.Response) => {
   res.json({ pending: telemetryQueueLength() });
@@ -1065,14 +1723,295 @@ app.post(
     }
     try {
       const hash = ethers.id(result || '');
+      await ensureTaxAcknowledgement(wallet);
       const tx = await (registry as any)
         .connect(wallet)
         .submit(req.params.id, hash, result || '', '', '0x');
       await tx.wait();
-      res.json({ tx: tx.hash });
+      const deliverable = recordDeliverable({
+        jobId: req.params.id,
+        agent: wallet.address,
+        success: true,
+        resultUri: result || undefined,
+        resultHash: hash,
+        metadata: {
+          source: 'legacy-submit-endpoint',
+        },
+        submissionMethod: 'submit',
+        txHash: tx.hash,
+      });
+      res.json({ tx: tx.hash, deliverable });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
+  }
+);
+
+app.post(
+  '/jobs/:id/deliverables',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const body = (req.body || {}) as Record<string, unknown>;
+    const address = typeof body.address === 'string' ? body.address : '';
+    if (!address) {
+      res.status(400).json({ error: 'address is required' });
+      return;
+    }
+    const wallet = walletManager.get(address);
+    if (!wallet) {
+      res.status(400).json({ error: 'unknown wallet' });
+      return;
+    }
+    try {
+      await checkEnsSubdomain(wallet.address);
+    } catch (err: any) {
+      res.status(400).json({ error: err?.message || String(err) });
+      return;
+    }
+
+    const jobId = req.params.id;
+    const resultUri = typeof body.resultUri === 'string' ? body.resultUri : '';
+    const resultCid = typeof body.resultCid === 'string' ? body.resultCid : '';
+    const resultRef =
+      typeof body.resultRef === 'string' && body.resultRef
+        ? body.resultRef
+        : resultCid || resultUri;
+    let resultHash =
+      typeof body.resultHash === 'string' && body.resultHash
+        ? body.resultHash
+        : resultRef
+        ? ethers.id(resultRef)
+        : ethers.ZeroHash;
+    const proofBytes =
+      typeof body.proofBytes === 'string' && body.proofBytes
+        ? body.proofBytes
+        : typeof body.proof === 'string' && body.proof
+        ? body.proof
+        : '0x';
+
+    const signature =
+      typeof body.signature === 'string' && body.signature
+        ? body.signature
+        : undefined;
+    const signedPayload = (body as { signedPayload?: unknown }).signedPayload;
+    if (signature && signedPayload !== undefined) {
+      let canonical: string;
+      try {
+        canonical =
+          typeof signedPayload === 'string'
+            ? signedPayload
+            : JSON.stringify(signedPayload);
+      } catch {
+        canonical = String(signedPayload);
+      }
+      try {
+        const recovered = ethers
+          .verifyMessage(canonical, signature)
+          .toLowerCase();
+        if (recovered !== wallet.address.toLowerCase()) {
+          res.status(400).json({ error: 'signature mismatch' });
+          return;
+        }
+      } catch (err) {
+        res.status(400).json({ error: `invalid signature: ${String(err)}` });
+        return;
+      }
+    }
+
+    let submissionMethod: 'finalizeJob' | 'submit' | 'none' = 'none';
+    let txHash: string | undefined;
+    const preferFinalize = body.finalize !== false && Boolean(resultRef);
+    try {
+      await ensureTaxAcknowledgement(wallet);
+      if (preferFinalize && resultRef) {
+        try {
+          const tx = await (registry as any)
+            .connect(wallet)
+            .finalizeJob(jobId, resultRef);
+          await tx.wait();
+          submissionMethod = 'finalizeJob';
+          txHash = tx.hash;
+        } catch (err) {
+          if (body.finalizeOnly) {
+            throw err;
+          }
+          console.warn('finalizeJob failed, falling back to submit', err);
+        }
+      }
+      if (submissionMethod !== 'finalizeJob') {
+        const submissionUri = resultUri || resultRef || '';
+        const tx = await (registry as any)
+          .connect(wallet)
+          .submit(jobId, resultHash, submissionUri, '', proofBytes || '0x');
+        await tx.wait();
+        submissionMethod = 'submit';
+        txHash = tx.hash;
+      }
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || String(err) });
+      return;
+    }
+
+    let contributors: DeliverableContributor[] | undefined;
+    try {
+      contributors = parseContributors(body.contributors);
+    } catch (err: any) {
+      res.status(400).json({ error: err?.message || String(err) });
+      return;
+    }
+
+    const deliverable = recordDeliverable({
+      jobId,
+      agent: wallet.address,
+      success: body.success !== false,
+      resultUri: resultUri || resultRef || undefined,
+      resultCid: resultCid || undefined,
+      resultRef: resultRef || undefined,
+      resultHash,
+      digest: typeof body.digest === 'string' ? body.digest : undefined,
+      signature,
+      proof:
+        typeof body.proof === 'object' && body.proof
+          ? (body.proof as Record<string, unknown>)
+          : typeof body.proof === 'string' && body.proof
+          ? { raw: body.proof }
+          : undefined,
+      metadata: normaliseMetadata(body.metadata),
+      telemetry: (body as { telemetry?: unknown }).telemetry,
+      telemetryCid:
+        typeof body.telemetryCid === 'string' ? body.telemetryCid : undefined,
+      telemetryUri:
+        typeof body.telemetryUri === 'string' ? body.telemetryUri : undefined,
+      contributors,
+      submissionMethod,
+      txHash,
+    });
+
+    res.json({
+      tx: txHash,
+      method: submissionMethod,
+      resultHash,
+      deliverable,
+    });
+  }
+);
+
+app.post(
+  '/jobs/:id/heartbeat',
+  authMiddleware,
+  (req: express.Request, res: express.Response) => {
+    const body = (req.body || {}) as Record<string, unknown>;
+    const address = typeof body.address === 'string' ? body.address : '';
+    if (!address) {
+      res.status(400).json({ error: 'address is required' });
+      return;
+    }
+    const wallet = walletManager.get(address);
+    if (!wallet) {
+      res.status(400).json({ error: 'unknown wallet' });
+      return;
+    }
+    const status = typeof body.status === 'string' ? body.status.trim() : '';
+    if (!status) {
+      res.status(400).json({ error: 'status is required' });
+      return;
+    }
+    const record = recordHeartbeat({
+      jobId: req.params.id,
+      agent: wallet.address,
+      status,
+      note: typeof body.note === 'string' ? body.note : undefined,
+      telemetry: (body as { telemetry?: unknown }).telemetry,
+      telemetryCid:
+        typeof body.telemetryCid === 'string' ? body.telemetryCid : undefined,
+      telemetryUri:
+        typeof body.telemetryUri === 'string' ? body.telemetryUri : undefined,
+      metadata: normaliseMetadata(body.metadata),
+    });
+    res.json(record);
+  }
+);
+
+app.post(
+  '/jobs/:id/telemetry',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const body = (req.body || {}) as Record<string, unknown>;
+    const address = typeof body.address === 'string' ? body.address : '';
+    if (!address) {
+      res.status(400).json({ error: 'address is required' });
+      return;
+    }
+    const wallet = walletManager.get(address);
+    if (!wallet) {
+      res.status(400).json({ error: 'unknown wallet' });
+      return;
+    }
+    const { address: _ignored, ...payload } = body;
+    const canonicalPayload =
+      (payload as { payload?: unknown }).payload ??
+      (payload as { metrics?: unknown }).metrics ??
+      (payload as { telemetry?: unknown }).telemetry ??
+      payload;
+    const record = recordTelemetryReport({
+      jobId: req.params.id,
+      agent: wallet.address,
+      payload: canonicalPayload,
+      cid:
+        typeof body.cid === 'string'
+          ? body.cid
+          : typeof body.telemetryCid === 'string'
+          ? body.telemetryCid
+          : undefined,
+      uri:
+        typeof body.uri === 'string'
+          ? body.uri
+          : typeof body.telemetryUri === 'string'
+          ? body.telemetryUri
+          : undefined,
+      signature:
+        typeof body.signature === 'string' ? body.signature : undefined,
+      proof: normaliseMetadata(body.proof),
+      metadata: normaliseMetadata(body.metadata),
+      spanId: typeof body.spanId === 'string' ? body.spanId : undefined,
+      status: typeof body.status === 'string' ? body.status : undefined,
+    });
+
+    const samples: unknown[] = [];
+    if (Array.isArray((body as { samples?: unknown }).samples)) {
+      samples.push(...((body as { samples: unknown[] }).samples || []));
+    }
+    if (Array.isArray((body as { energySamples?: unknown }).energySamples)) {
+      samples.push(...((body as { energySamples: unknown[] }).energySamples || []));
+    }
+    if ((body as { sample?: unknown }).sample) {
+      samples.push((body as { sample: unknown }).sample);
+    }
+    if ((body as { energySample?: unknown }).energySample) {
+      samples.push((body as { energySample: unknown }).energySample);
+    }
+
+    let published = 0;
+    for (const sample of samples) {
+      if (sample && typeof sample === 'object') {
+        try {
+          const enriched = {
+            ...(sample as Record<string, unknown>),
+            jobId: req.params.id,
+            agent: wallet.address,
+          };
+          await publishEnergySample(enriched as any);
+          published += 1;
+        } catch (err) {
+          console.warn('Failed to publish telemetry sample', err);
+        }
+      }
+    }
+
+    res.json({
+      telemetry: record,
+      energySamplesPublished: published,
+    });
   }
 );
 

@@ -21,6 +21,10 @@ import {
   finishJobInvocationMetrics,
   type JobInvocationMetrics,
 } from './telemetry';
+import {
+  recordDeliverable,
+  recordTelemetryReport,
+} from './deliverableStore';
 import { notifyTrainingOutcome } from './learning';
 import { attestExecutionReceipt } from './attestation';
 
@@ -504,6 +508,27 @@ export async function runAgentTask(
     },
   });
 
+  try {
+    recordTelemetryReport({
+      jobId: jobSpec.job.jobId,
+      agent: agent.address,
+      payload: {
+        metrics,
+        orchestration,
+        error: error?.message,
+        endpointInvoked,
+      },
+      metadata: {
+        category: jobSpec.analysis.category,
+        agentLabel: jobSpec.identity.label,
+        endpoint: agent.endpoint,
+      },
+      status: error ? 'failed' : 'completed',
+    });
+  } catch (storeErr) {
+    console.warn('Failed to persist invocation telemetry', storeErr);
+  }
+
   return { output, payload, orchestration, error, metrics };
 }
 
@@ -704,6 +729,32 @@ export async function executeJob(
       },
       wallet
     );
+    try {
+      recordDeliverable({
+        jobId: job.jobId,
+        agent: wallet.address,
+        success: true,
+        resultUri: resultURI || undefined,
+        resultCid: resultCid || undefined,
+        resultRef: resultURI || undefined,
+        resultHash,
+        digest: payloadDigest,
+        signature: resultSignature,
+        metadata: {
+          category: analysis.category,
+          agentLabel: identity.label,
+          orchestrated: true,
+        },
+        telemetry: {
+          metrics: invocation?.metrics,
+          energySample,
+        },
+        submissionMethod,
+        txHash,
+      });
+    } catch (storeErr) {
+      console.warn('Failed to persist deliverable record', storeErr);
+    }
   } catch (err: any) {
     error = err instanceof Error ? err : new Error(err?.message || String(err));
 
@@ -746,6 +797,33 @@ export async function executeJob(
       },
       wallet
     );
+    try {
+      recordDeliverable({
+        jobId: job.jobId,
+        agent: wallet.address,
+        success: false,
+        resultUri: resultURI || undefined,
+        resultCid: resultCid || undefined,
+        resultRef: resultURI || undefined,
+        resultHash: resultHash || undefined,
+        digest: payloadDigest || undefined,
+        signature: resultSignature || undefined,
+        metadata: {
+          category: analysis.category,
+          agentLabel: identity.label,
+          orchestrated: true,
+          error: error.message,
+        },
+        telemetry: {
+          metrics: invocation?.metrics,
+          energySample,
+        },
+        submissionMethod,
+        txHash,
+      });
+    } catch (storeErr) {
+      console.warn('Failed to persist deliverable failure record', storeErr);
+    }
     if (txHash) {
       try {
         await recordGasMetric({
