@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, network, artifacts } = require('hardhat');
+const { AGIALPHA } = require('../../scripts/constants');
 
 describe('ValidationModule V2', function () {
   let owner, employer, v1, v2, v3;
@@ -629,5 +630,228 @@ describe('ValidationModule V2', function () {
       .to.emit(identity, 'AdditionalValidatorUpdated')
       .withArgs(extra.address, false);
     expect(await identity.additionalValidators(extra.address)).to.equal(false);
+  });
+
+  describe('with real StakeManager', function () {
+    let tokenReal,
+      stakeManagerReal,
+      jobRegistryReal,
+      validationReal,
+      identityReal;
+    let admin,
+      employerAccount,
+      validatorA,
+      validatorB,
+      validatorC;
+    let burnHashReal;
+
+    beforeEach(async () => {
+      [admin, employerAccount, validatorA, validatorB, validatorC] =
+        await ethers.getSigners();
+      burnHashReal = ethers.keccak256(
+        ethers.toUtf8Bytes('real-stake-burn')
+      );
+
+      const erc20Artifact = await artifacts.readArtifact(
+        'contracts/test/MockERC20.sol:MockERC20'
+      );
+      await network.provider.send('hardhat_setCode', [
+        AGIALPHA,
+        erc20Artifact.deployedBytecode,
+      ]);
+      tokenReal = await ethers.getContractAt(
+        'contracts/test/MockERC20.sol:MockERC20',
+        AGIALPHA
+      );
+
+      const mintAmount = ethers.parseEther('1000');
+      for (const signer of [
+        admin,
+        employerAccount,
+        validatorA,
+        validatorB,
+        validatorC,
+      ]) {
+        await tokenReal.mint(signer.address, mintAmount);
+      }
+
+      const Stake = await ethers.getContractFactory(
+        'contracts/v2/StakeManager.sol:StakeManager'
+      );
+      stakeManagerReal = await Stake.deploy(
+        0,
+        100,
+        0,
+        ethers.ZeroAddress,
+        ethers.ZeroAddress,
+        ethers.ZeroAddress,
+        admin.address
+      );
+      await stakeManagerReal.waitForDeployment();
+
+      const JobMock = await ethers.getContractFactory(
+        'contracts/legacy/MockV2.sol:MockJobRegistry'
+      );
+      jobRegistryReal = await JobMock.deploy();
+      await jobRegistryReal.waitForDeployment();
+
+      const Validation = await ethers.getContractFactory(
+        'contracts/v2/ValidationModule.sol:ValidationModule'
+      );
+      validationReal = await Validation.deploy(
+        await jobRegistryReal.getAddress(),
+        await stakeManagerReal.getAddress(),
+        60,
+        60,
+        3,
+        3,
+        []
+      );
+      await validationReal.waitForDeployment();
+
+      await jobRegistryReal.setStakeManager(
+        await stakeManagerReal.getAddress()
+      );
+      await jobRegistryReal.setValidationModule(
+        await validationReal.getAddress()
+      );
+      await stakeManagerReal
+        .connect(admin)
+        .setJobRegistry(await jobRegistryReal.getAddress());
+      await stakeManagerReal
+        .connect(admin)
+        .setValidationModule(await validationReal.getAddress());
+
+      const Identity = await ethers.getContractFactory(
+        'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
+      );
+      identityReal = await Identity.deploy();
+      await identityReal.waitForDeployment();
+      await validationReal
+        .connect(admin)
+        .setIdentityRegistry(await identityReal.getAddress());
+      await identityReal.setClubRootNode(ethers.ZeroHash);
+      await identityReal.setAgentRootNode(ethers.ZeroHash);
+      await identityReal.addAdditionalValidator(validatorA.address);
+      await identityReal.addAdditionalValidator(validatorB.address);
+      await identityReal.addAdditionalValidator(validatorC.address);
+
+      await validationReal
+        .connect(admin)
+        .setValidatorPool([
+          validatorA.address,
+          validatorB.address,
+          validatorC.address,
+        ]);
+
+      const stakes = [
+        ethers.parseEther('100'),
+        ethers.parseEther('50'),
+        ethers.parseEther('10'),
+      ];
+      const validators = [validatorA, validatorB, validatorC];
+      for (let i = 0; i < validators.length; i++) {
+        await tokenReal
+          .connect(validators[i])
+          .approve(
+            await stakeManagerReal.getAddress(),
+            stakes[i]
+          );
+        await stakeManagerReal
+          .connect(validators[i])
+          .depositStake(1, stakes[i]);
+      }
+
+      const jobStruct = {
+        employer: employerAccount.address,
+        agent: ethers.ZeroAddress,
+        reward: 0,
+        stake: 0,
+        success: false,
+        status: 3,
+        uriHash: ethers.ZeroHash,
+        resultHash: ethers.ZeroHash,
+      };
+      await jobRegistryReal.setJob(1, jobStruct);
+      await jobRegistryReal
+        .connect(employerAccount)
+        .submitBurnReceipt(1, burnHashReal, 0, 0);
+    });
+
+    async function selectReal(jobId, entropy = 0) {
+      await validationReal
+        .connect(validatorA)
+        .selectValidators(jobId, entropy);
+      const selectionTarget = await validationReal.selectionBlock(jobId);
+      await validationReal
+        .connect(validatorB)
+        .selectValidators(jobId, entropy + 1);
+
+      while (BigInt(await ethers.provider.getBlockNumber()) <= selectionTarget) {
+        await ethers.provider.send('evm_mine', []);
+      }
+
+      return validationReal
+        .connect(validatorA)
+        .selectValidators(jobId, 0);
+    }
+
+    it('slashes validators through real StakeManager access control', async () => {
+      await selectReal(1);
+      const salt1 = ethers.keccak256(ethers.toUtf8Bytes('salt1'));
+      const salt2 = ethers.keccak256(ethers.toUtf8Bytes('salt2'));
+      const salt3 = ethers.keccak256(ethers.toUtf8Bytes('salt3'));
+      const nonce = await validationReal.jobNonce(1);
+      const commit1 = ethers.solidityPackedKeccak256(
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+        [1n, nonce, true, burnHashReal, salt1, ethers.ZeroHash]
+      );
+      const commit2 = ethers.solidityPackedKeccak256(
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+        [1n, nonce, true, burnHashReal, salt2, ethers.ZeroHash]
+      );
+      const commit3 = ethers.solidityPackedKeccak256(
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+        [1n, nonce, false, burnHashReal, salt3, ethers.ZeroHash]
+      );
+
+      await (
+        await validationReal
+          .connect(validatorA)
+          .commitValidation(1, commit1, '', [])
+      ).wait();
+      await (
+        await validationReal
+          .connect(validatorB)
+          .commitValidation(1, commit2, '', [])
+      ).wait();
+      await (
+        await validationReal
+          .connect(validatorC)
+          .commitValidation(1, commit3, '', [])
+      ).wait();
+
+      await advance(61);
+      const before = await stakeManagerReal.stakeOf(
+        validatorC.address,
+        1
+      );
+
+      await validationReal
+        .connect(validatorA)
+        .revealValidation(1, true, burnHashReal, salt1, '', []);
+      await validationReal
+        .connect(validatorB)
+        .revealValidation(1, true, burnHashReal, salt2, '', []);
+      await validationReal
+        .connect(validatorC)
+        .revealValidation(1, false, burnHashReal, salt3, '', []);
+
+      await advance(61);
+      await validationReal.finalize(1);
+
+      const after = await stakeManagerReal.stakeOf(validatorC.address, 1);
+      expect(after).to.equal(before / 2n);
+    });
   });
 });
