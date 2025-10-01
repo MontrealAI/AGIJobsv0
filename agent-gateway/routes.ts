@@ -79,6 +79,10 @@ import {
   type DeliverableContributor,
 } from './deliverableStore';
 import {
+  buildAgentContributionHistory,
+  buildJobContributorSummary,
+} from './contributorSummary';
+import {
   ensureStake,
   getStakeBalance,
   getMinStake,
@@ -492,6 +496,30 @@ app.get(
 );
 
 app.get(
+  '/agents/:agent/contributions',
+  async (req: express.Request, res: express.Response) => {
+    const address = await resolveAgentAddress(req.params.agent);
+    if (!address) {
+      res.status(400).json({ error: 'invalid-agent' });
+      return;
+    }
+    const limit = parsePositiveInteger(req.query.limit);
+    const refresh = parseBooleanFlag(
+      req.query.refreshIdentity ?? req.query.refresh
+    );
+    try {
+      const history = await buildAgentContributionHistory(address, {
+        limit,
+        refreshIdentity: refresh,
+      });
+      res.json(history);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || String(err) });
+    }
+  }
+);
+
+app.get(
   '/agents/:agent/stake',
   async (req: express.Request, res: express.Response) => {
     const address = await resolveAgentAddress(req.params.agent);
@@ -750,6 +778,23 @@ app.get(
       limit,
     });
     res.json(records);
+  }
+);
+
+app.get(
+  '/jobs/:id/contributors',
+  async (req: express.Request, res: express.Response) => {
+    const refresh = parseBooleanFlag(
+      req.query.refreshIdentity ?? req.query.refresh
+    );
+    try {
+      const summary = await buildJobContributorSummary(req.params.id, {
+        refreshIdentity: refresh,
+      });
+      res.json(summary);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || String(err) });
+    }
   }
 );
 
