@@ -36,6 +36,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control doctor](#owner-control-doctor)
 - [Owner control audit](#owner-control-audit)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
+- [Owner control non-technical guide](#owner-control-non-technical-guide)
 - [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
 - [Owner control handbook](#owner-control-handbook)
 - [Owner mission control](#owner-mission-control)
@@ -263,6 +264,17 @@ npm run owner:guide -- --network mainnet --out runtime/mainnet-owner-guide.md
 ```
 
 The helper reads `config/owner-control.json` plus all module overrides, then renders a Markdown playbook tailored to the selected network. Pair the CLI output with the [Owner Control Quick Reference](docs/owner-control-quick-reference.md) handout for non-technical reviewers.
+
+### Owner control non-technical guide
+
+Need a **no-code**, compliance-ready runbook for production changes? Follow the
+[Owner Control Non-Technical Guide](docs/owner-control-non-technical-guide.md).
+It distils the wizard, batch-update and verification helpers into a sequenced
+workflow with mind-map and sequence-diagram Mermaid illustrations, annotated
+commands and receipt capture conventions so a business owner can update
+treasuries, reward weights and signer lists safely. Copy/paste the snippets,
+commit the generated Markdown/JSON artefacts, and hand the bundle to auditors or
+stakeholders without ever touching Solidity.
 
 ### Owner control zero-downtime guide
 

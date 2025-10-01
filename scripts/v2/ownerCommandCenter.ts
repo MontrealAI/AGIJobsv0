@@ -384,7 +384,11 @@ function buildOwnerModule(context: ReportContext, ownerConfig: any): ModuleSumma
     key: 'ownerControl',
     label: 'Owner & Governance Routing',
     configPath: context.ownerConfigPath,
-    docs: ['docs/owner-control-command-center.md', 'docs/owner-control-surface.md'],
+    docs: [
+      'docs/owner-control-command-center.md',
+      'docs/owner-control-surface.md',
+      'docs/owner-control-non-technical-guide.md',
+    ],
     previewCommand: `npm run owner:surface -- --network ${context.networkPlaceholder}`,
     executeCommand: `npm run owner:update-all -- --network ${context.networkPlaceholder} --execute`,
     verifyCommand: `npm run owner:verify-control -- --network ${context.networkPlaceholder}`,
