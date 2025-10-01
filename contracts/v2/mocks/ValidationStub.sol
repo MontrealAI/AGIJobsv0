@@ -90,6 +90,8 @@ contract ValidationStub is IValidationModule {
 
     function setApprovalThreshold(uint256) external override {}
 
+    function setAutoApprovalTarget(bool) external override {}
+
     function setValidatorSlashingPct(uint256) external override {}
 
     function setNonRevealPenalty(uint256, uint256) external override {}

@@ -149,6 +149,9 @@ contract OracleValidationModule is IValidationModule, Ownable {
     function setApprovalThreshold(uint256) external pure override {}
 
     /// @inheritdoc IValidationModule
+    function setAutoApprovalTarget(bool) external pure override {}
+
+    /// @inheritdoc IValidationModule
     function setValidatorSlashingPct(uint256) external pure override {}
 
     /// @inheritdoc IValidationModule
