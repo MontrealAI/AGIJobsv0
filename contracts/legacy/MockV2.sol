@@ -40,9 +40,9 @@ contract MockStakeManager is IStakeManager {
     function lockStake(address, uint256, uint64) external override {}
     function lockReward(bytes32, address, uint256) external override {}
     function lock(address, uint256) external override {}
-    function releaseReward(bytes32, address, address, uint256) external override {}
+    function releaseReward(bytes32, address, address, uint256, bool) external override {}
     function releaseStake(address, uint256) external override {}
-    function release(address, address, uint256) external override {}
+    function release(address, address, uint256, bool) external override {}
     function finalizeJobFunds(
         bytes32,
         address,
@@ -716,7 +716,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         bool success = _getSuccess(job);
         if (address(_stakeManager) != address(0) && job.reward > 0) {
             address recipient = success ? job.agent : job.employer;
-            _stakeManager.release(job.employer, recipient, job.reward);
+            _stakeManager.release(job.employer, recipient, job.reward, success);
             if (!success) {
                 _stakeManager.slash(job.agent, IStakeManager.Role.Agent, job.stake, recipient);
             }
@@ -744,7 +744,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         require(msg.sender == job.employer || msg.sender == owner(), "unauthorized");
         _setStatus(job, Status.Cancelled);
         if (address(_stakeManager) != address(0) && job.reward > 0) {
-            _stakeManager.release(job.employer, job.employer, job.reward);
+            _stakeManager.release(job.employer, job.employer, job.reward, false);
         }
         emit JobCancelled(jobId);
     }

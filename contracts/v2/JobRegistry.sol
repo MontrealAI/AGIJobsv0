@@ -2235,7 +2235,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                             jobKey,
                             job.employer,
                             payee,
-                            validatorReward
+                            validatorReward,
+                            true
                         );
                     }
                 }
@@ -2307,7 +2308,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                         jobKey,
                         job.employer,
                         recipient,
-                        uint256(job.reward) + fee
+                        uint256(job.reward) + fee,
+                        false
                     );
                 }
                 if (job.stake > 0) {
@@ -2381,7 +2383,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 bytes32(jobId),
                 job.employer,
                 job.employer,
-                uint256(job.reward) + fee
+                uint256(job.reward) + fee,
+                false
             );
         }
         _clearValidatorData(jobId);
@@ -2453,7 +2456,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             uint256 fee = (uint256(reward) * feePctSnapshot) / 100;
             uint256 totalRefund = uint256(reward) + fee;
             if (totalRefund > 0) {
-                stakeManager.releaseReward(jobKey, employer, employer, totalRefund);
+                stakeManager.releaseReward(jobKey, employer, employer, totalRefund, false);
             }
             if (stakeAmount > 0 && agent != address(0)) {
                 stakeManager.slash(

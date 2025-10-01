@@ -125,7 +125,8 @@ interface IStakeManager {
         bytes32 jobId,
         address employer,
         address to,
-        uint256 amount
+        uint256 amount,
+        bool applyBoost
     ) external;
 
     /// @notice release previously locked stake for a user
@@ -135,7 +136,7 @@ interface IStakeManager {
     /// @param employer employer responsible for burns
     /// @param to recipient of the tokens
     /// @param amount base token amount with 18 decimals before bonuses
-    function release(address employer, address to, uint256 amount) external;
+    function release(address employer, address to, uint256 amount, bool applyBoost) external;
 
     /// @notice finalize job funds by paying agent and forwarding fees
     function finalizeJobFunds(

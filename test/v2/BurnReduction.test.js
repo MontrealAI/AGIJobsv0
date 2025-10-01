@@ -115,7 +115,8 @@ describe('StakeManager burn reduction', function () {
           jobId,
           employer.address,
           agent.address,
-          ethers.parseEther('100')
+          ethers.parseEther('100'),
+          true
         )
     )
       .to.emit(stakeManager, 'StakeReleased')

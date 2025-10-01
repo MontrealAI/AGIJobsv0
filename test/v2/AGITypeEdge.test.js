@@ -91,7 +91,7 @@ describe('StakeManager AGIType bonuses', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseReward(jobId, employer.address, agent.address, 100)
+        .releaseReward(jobId, employer.address, agent.address, 100, true)
     )
       .to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobId, agent.address, 175);
@@ -115,7 +115,7 @@ describe('StakeManager AGIType bonuses', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseReward(jobId, employer.address, agent.address, 100)
+        .releaseReward(jobId, employer.address, agent.address, 100, true)
     )
       .to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobId, agent.address, 100);
@@ -152,7 +152,7 @@ describe('StakeManager AGIType bonuses', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseReward(jobId, employer.address, agent.address, 100)
+        .releaseReward(jobId, employer.address, agent.address, 100, true)
     ).to.be.revertedWithCustomError(stakeManager, 'InsufficientEscrow');
   });
 
