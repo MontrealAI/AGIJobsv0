@@ -1,0 +1,242 @@
+syntax = "proto3";
+
+package agentgateway.v1;
+
+message StoredPayloadReference {
+  string cid = 1;
+  string uri = 2;
+  string path = 3;
+  string digest = 4;
+  uint64 bytes = 5;
+  string stored_at = 6;
+  string inline_json = 7;
+}
+
+message TelemetryPayload {
+  string payload_json = 1;
+  string cid = 2;
+  string uri = 3;
+}
+
+message TelemetrySample {
+  string payload_json = 1;
+}
+
+message DeliverableContributor {
+  string address = 1;
+  string ens = 2;
+  string role = 3;
+  string label = 4;
+  string signature = 5;
+  string payload_digest = 6;
+  string metadata_json = 7;
+}
+
+message DeliverableRecord {
+  string id = 1;
+  string job_id = 2;
+  string agent = 3;
+  string submitted_at = 4;
+  bool success = 5;
+  string result_uri = 6;
+  string result_cid = 7;
+  string result_ref = 8;
+  string result_hash = 9;
+  string digest = 10;
+  string signature = 11;
+  StoredPayloadReference telemetry = 12;
+  repeated DeliverableContributor contributors = 13;
+  string submission_method = 14;
+  string tx_hash = 15;
+  string metadata_json = 16;
+  string proof_json = 17;
+  string telemetry_cid = 18;
+  string telemetry_uri = 19;
+}
+
+message HeartbeatRecord {
+  string id = 1;
+  string job_id = 2;
+  string agent = 3;
+  string status = 4;
+  string recorded_at = 5;
+  string note = 6;
+  StoredPayloadReference telemetry = 7;
+  string metadata_json = 8;
+}
+
+message TelemetryRecord {
+  string id = 1;
+  string job_id = 2;
+  string agent = 3;
+  string recorded_at = 4;
+  StoredPayloadReference payload = 5;
+  string signature = 6;
+  string proof_json = 7;
+  string metadata_json = 8;
+  string span_id = 9;
+  string status = 10;
+}
+
+message RewardPayoutRecord {
+  string tx_hash = 1;
+  string amount_raw = 2;
+  string amount_formatted = 3;
+  string recipient = 4;
+  string timestamp = 5;
+}
+
+message SubmitResultRequest {
+  string job_id = 1;
+  string wallet_address = 2;
+  string agent_address = 3;
+  string result_uri = 4;
+  string result_cid = 5;
+  string result_ref = 6;
+  string result_hash = 7;
+  string proof_bytes = 8;
+  string proof_json = 9;
+  optional bool success = 10;
+  optional bool finalize = 11;
+  optional bool finalize_only = 12;
+  string metadata_json = 13;
+  TelemetryPayload telemetry = 14;
+  repeated DeliverableContributor contributors = 15;
+  string digest = 16;
+  string signature = 17;
+  string signed_payload = 18;
+  string telemetry_cid = 19;
+  string telemetry_uri = 20;
+}
+
+message SubmitResultResponse {
+  string tx_hash = 1;
+  string submission_method = 2;
+  string result_hash = 3;
+  DeliverableRecord deliverable = 4;
+}
+
+message RecordHeartbeatRequest {
+  string job_id = 1;
+  string wallet_address = 2;
+  string agent_address = 3;
+  string status = 4;
+  string note = 5;
+  TelemetryPayload telemetry = 6;
+  string metadata_json = 7;
+  string telemetry_cid = 8;
+  string telemetry_uri = 9;
+}
+
+message RecordHeartbeatResponse {
+  HeartbeatRecord heartbeat = 1;
+}
+
+message RecordTelemetryRequest {
+  string job_id = 1;
+  string wallet_address = 2;
+  string agent_address = 3;
+  TelemetryPayload telemetry = 4;
+  string signature = 5;
+  string proof_json = 6;
+  string metadata_json = 7;
+  string span_id = 8;
+  string status = 9;
+  repeated TelemetrySample samples = 10;
+  string telemetry_cid = 11;
+  string telemetry_uri = 12;
+}
+
+message RecordTelemetryResponse {
+  TelemetryRecord telemetry = 1;
+  uint32 energy_samples_published = 2;
+}
+
+message GetJobInfoRequest {
+  string job_id = 1;
+  uint32 deliverable_limit = 2;
+  uint32 heartbeat_limit = 3;
+  uint32 telemetry_limit = 4;
+}
+
+message GetJobInfoResponse {
+  string job_id = 1;
+  string job_json = 2;
+  string chain_json = 3;
+  repeated DeliverableRecord deliverables = 4;
+  repeated HeartbeatRecord heartbeats = 5;
+  repeated TelemetryRecord telemetry = 6;
+  repeated RewardPayoutRecord payouts = 7;
+}
+
+message EnsureStakeRequest {
+  string wallet_address = 1;
+  string agent_address = 2;
+  string required_stake = 3;
+  string amount = 4;
+  string role = 5;
+}
+
+message EnsureStakeResponse {
+  string agent = 1;
+  int32 role = 2;
+  string stake_balance_raw = 3;
+  string stake_balance_formatted = 4;
+}
+
+message GetStakeRequest {
+  string agent_address = 1;
+  string role = 2;
+}
+
+message GetStakeResponse {
+  string agent = 1;
+  int32 role = 2;
+  string stake_balance_raw = 3;
+  string stake_balance_formatted = 4;
+  string min_stake_raw = 5;
+  string min_stake_formatted = 6;
+}
+
+message ClaimAction {
+  string type = 1;
+  string method = 2;
+  string tx_hash = 3;
+  string amount_raw = 4;
+  string amount_formatted = 5;
+  string destination = 6;
+}
+
+message AutoClaimRewardsRequest {
+  string wallet_address = 1;
+  string agent_address = 2;
+  string amount = 3;
+  string restake_amount = 4;
+  string restake_percent_text = 5;
+  double restake_percent = 6;
+  string destination = 7;
+  string role = 8;
+  optional bool withdraw_stake = 9;
+  optional bool acknowledge = 10;
+}
+
+message AutoClaimRewardsResponse {
+  string agent = 1;
+  string starting_balance_raw = 2;
+  string starting_balance_formatted = 3;
+  string ending_balance_raw = 4;
+  string ending_balance_formatted = 5;
+  repeated ClaimAction actions = 6;
+  string restaked_raw = 7;
+  string restaked_formatted = 8;
+}
+
+service AgentGateway {
+  rpc SubmitResult(SubmitResultRequest) returns (SubmitResultResponse);
+  rpc RecordHeartbeat(RecordHeartbeatRequest) returns (RecordHeartbeatResponse);
+  rpc RecordTelemetry(RecordTelemetryRequest) returns (RecordTelemetryResponse);
+  rpc GetJobInfo(GetJobInfoRequest) returns (GetJobInfoResponse);
+  rpc EnsureStake(EnsureStakeRequest) returns (EnsureStakeResponse);
+  rpc GetStake(GetStakeRequest) returns (GetStakeResponse);
+  rpc AutoClaimRewards(AutoClaimRewardsRequest) returns (AutoClaimRewardsResponse);
+}

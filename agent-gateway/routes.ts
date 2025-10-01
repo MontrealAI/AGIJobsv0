@@ -91,7 +91,21 @@ import {
   ROLE_PLATFORM,
   acknowledgeTaxPolicy as ensureTaxAcknowledgement,
 } from './stakeCoordinator';
+import {
+  parseBooleanFlag,
+  parsePositiveInteger,
+  pickQueryValue,
+  parseFloatParam,
+  parseTokenAmount,
+  formatTokenAmount,
+  resolveAgentAddress,
+  parseRoleInput,
+  normaliseMetadata,
+  parseContributors,
+} from './apiHelpers';
 import { getRewardPayouts } from './events';
+import { submitDeliverable } from './agentActions';
+import { serialiseChainJob } from './jobSerialization';
 
 const app = express();
 app.use(express.json());
@@ -157,309 +171,6 @@ function plannerErrorStatus(err: unknown): number {
   }
   return 500;
 }
-
-function parseBooleanFlag(value: unknown): boolean {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-  if (typeof value === 'number') {
-    return value === 1;
-  }
-  if (typeof value === 'string') {
-    const normalised = value.trim().toLowerCase();
-    return ['true', '1', 'yes', 'y', 'on', 'enabled'].includes(normalised);
-  }
-  return false;
-}
-
-function parsePositiveInteger(value: unknown): number | undefined {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return Math.floor(value);
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return undefined;
-    }
-    const parsed = Number.parseInt(trimmed, 10);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
-  }
-  return undefined;
-}
-
-function pickQueryValue(value: unknown): string | undefined {
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
-  }
-  if (Array.isArray(value)) {
-    for (const entry of value) {
-      if (typeof entry !== 'string') {
-        continue;
-      }
-      const trimmed = entry.trim();
-      if (trimmed.length > 0) {
-        return trimmed;
-      }
-    }
-  }
-  return undefined;
-}
-
-function parseFloatParam(value: unknown): number | undefined {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return undefined;
-    }
-    const parsed = Number.parseFloat(trimmed);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-  return undefined;
-}
-
-function parseTokenAmount(value: unknown): bigint | undefined {
-  if (typeof value === 'bigint') {
-    return value >= 0n ? value : undefined;
-  }
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) {
-      return undefined;
-    }
-    try {
-      return ethers.parseUnits(value.toString(), TOKEN_DECIMALS);
-    } catch {
-      return undefined;
-    }
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return undefined;
-    }
-    try {
-      return ethers.parseUnits(trimmed, TOKEN_DECIMALS);
-    } catch {
-      return undefined;
-    }
-  }
-  return undefined;
-}
-
-function formatTokenAmount(value: bigint): string {
-  try {
-    return ethers.formatUnits(value, TOKEN_DECIMALS);
-  } catch {
-    return value.toString();
-  }
-}
-
-async function resolveAgentAddress(raw: string): Promise<string | null> {
-  const identifier = raw?.trim();
-  if (!identifier) {
-    return null;
-  }
-  if (identifier.endsWith('.eth')) {
-    try {
-      const resolved = await provider.resolveName(identifier);
-      if (resolved) {
-        return ethers.getAddress(resolved);
-      }
-    } catch (err) {
-      console.warn('ENS resolve failed for agent lookup', identifier, err);
-    }
-  }
-  if (ethers.isAddress(identifier)) {
-    return ethers.getAddress(identifier);
-  }
-  return null;
-}
-
-function parseRoleInput(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
-    return Math.floor(value);
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim().toLowerCase();
-    if (!trimmed) {
-      return ROLE_AGENT;
-    }
-    if (trimmed === 'agent') return ROLE_AGENT;
-    if (trimmed === 'validator') return ROLE_VALIDATOR;
-    if (trimmed === 'platform') return ROLE_PLATFORM;
-    const parsed = Number.parseInt(trimmed, 10);
-    if (Number.isFinite(parsed) && parsed >= 0) {
-      return parsed;
-    }
-  }
-  return ROLE_AGENT;
-}
-
-function normaliseMetadata(
-  value: unknown
-): Record<string, unknown> | undefined {
-  if (!value || typeof value !== 'object') {
-    return undefined;
-  }
-  return value as Record<string, unknown>;
-}
-
-function parseContributors(
-  raw: unknown
-): DeliverableContributor[] | undefined {
-  if (!Array.isArray(raw)) {
-    return undefined;
-  }
-  const contributors: DeliverableContributor[] = [];
-  for (const entry of raw) {
-    if (!entry || typeof entry !== 'object') {
-      continue;
-    }
-    const address = (entry as { address?: unknown }).address;
-    if (typeof address !== 'string') {
-      continue;
-    }
-    let normalised: string;
-    try {
-      normalised = ethers.getAddress(address);
-    } catch {
-      normalised = address.toLowerCase();
-    }
-    const contributor: DeliverableContributor = { address: normalised };
-    const ens = (entry as { ens?: unknown }).ens;
-    if (typeof ens === 'string' && ens.trim().length > 0) {
-      contributor.ens = ens.trim();
-    }
-    const role = (entry as { role?: unknown }).role;
-    if (typeof role === 'string' && role.trim().length > 0) {
-      contributor.role = role.trim();
-    }
-    const label = (entry as { label?: unknown }).label;
-    if (typeof label === 'string' && label.trim().length > 0) {
-      contributor.label = label.trim();
-    }
-    const metadata = (entry as { metadata?: unknown }).metadata;
-    if (metadata && typeof metadata === 'object') {
-      contributor.metadata = metadata as Record<string, unknown>;
-    }
-    const payload = (entry as { payload?: unknown }).payload;
-    const signature = (entry as { signature?: unknown }).signature;
-    const payloadDigest = (entry as { payloadDigest?: unknown }).payloadDigest;
-    if (typeof signature === 'string' && signature.trim().length > 0) {
-      if (payload !== undefined) {
-        let canonical: string;
-        try {
-          canonical =
-            typeof payload === 'string' ? payload : JSON.stringify(payload);
-        } catch {
-          canonical = String(payload);
-        }
-        try {
-          const recovered = ethers
-            .verifyMessage(canonical, signature)
-            .toLowerCase();
-          if (recovered !== normalised.toLowerCase()) {
-            throw new Error('mismatch');
-          }
-          contributor.signature = signature;
-          contributor.payloadDigest = ethers.hashMessage(canonical);
-        } catch (err) {
-          throw new Error(
-            `Contributor signature verification failed for ${address}: ${String(
-              (err as Error)?.message || err
-            )}`
-          );
-        }
-      } else {
-        contributor.signature = signature;
-        if (typeof payloadDigest === 'string' && payloadDigest.trim().length > 0) {
-          contributor.payloadDigest = payloadDigest.trim();
-        }
-      }
-    } else if (
-      typeof payloadDigest === 'string' &&
-      payloadDigest.trim().length > 0
-    ) {
-      contributor.payloadDigest = payloadDigest.trim();
-    }
-    contributors.push(contributor);
-  }
-  return contributors.length > 0 ? contributors : undefined;
-}
-
-function serialiseChainJob(entry: any): Record<string, unknown> | null {
-  if (!entry || typeof entry !== 'object') {
-    return null;
-  }
-  const plain: Record<string, unknown> = {};
-  const employer = entry.employer ?? entry[0];
-  if (typeof employer === 'string') {
-    plain.employer = employer;
-  }
-  const agent = entry.agent ?? entry[1];
-  if (typeof agent === 'string') {
-    plain.agent = agent;
-  }
-  const rewardValue = entry.reward ?? entry[2];
-  if (rewardValue !== undefined) {
-    try {
-      const value = BigInt(rewardValue.toString());
-      plain.rewardRaw = value.toString();
-      plain.rewardFormatted = formatTokenAmount(value);
-    } catch {
-      plain.rewardRaw = rewardValue?.toString?.();
-    }
-  }
-  const stakeValue = entry.stake ?? entry[3];
-  if (stakeValue !== undefined) {
-    try {
-      const value = BigInt(stakeValue.toString());
-      plain.stakeRaw = value.toString();
-      plain.stakeFormatted = formatTokenAmount(value);
-    } catch {
-      plain.stakeRaw = stakeValue?.toString?.();
-    }
-  }
-  const feePct = entry.feePct ?? entry[4];
-  if (feePct !== undefined) {
-    plain.feePct = Number(feePct);
-  }
-  const state = entry.state ?? entry[5];
-  if (state !== undefined) {
-    plain.state = Number(state);
-  }
-  const success = entry.success ?? entry[6];
-  if (success !== undefined) {
-    plain.success = Boolean(success);
-  }
-  const agentTypes = entry.agentTypes ?? entry[7];
-  if (agentTypes !== undefined) {
-    plain.agentTypes = Number(agentTypes);
-  }
-  const deadline = entry.deadline ?? entry[8];
-  if (deadline !== undefined) {
-    plain.deadline = Number(deadline);
-  }
-  const assignedAt = entry.assignedAt ?? entry[9];
-  if (assignedAt !== undefined) {
-    plain.assignedAt = Number(assignedAt);
-  }
-  const uriHash = entry.uriHash ?? entry[10];
-  if (uriHash) {
-    plain.uriHash = uriHash;
-  }
-  const resultHash = entry.resultHash ?? entry[11];
-  if (resultHash) {
-    plain.resultHash = resultHash;
-  }
-  return plain;
-}
-
 class GatewayError extends Error {
   status: number;
 
@@ -1789,69 +1500,6 @@ app.post(
         ? body.proof
         : '0x';
 
-    const signature =
-      typeof body.signature === 'string' && body.signature
-        ? body.signature
-        : undefined;
-    const signedPayload = (body as { signedPayload?: unknown }).signedPayload;
-    if (signature && signedPayload !== undefined) {
-      let canonical: string;
-      try {
-        canonical =
-          typeof signedPayload === 'string'
-            ? signedPayload
-            : JSON.stringify(signedPayload);
-      } catch {
-        canonical = String(signedPayload);
-      }
-      try {
-        const recovered = ethers
-          .verifyMessage(canonical, signature)
-          .toLowerCase();
-        if (recovered !== wallet.address.toLowerCase()) {
-          res.status(400).json({ error: 'signature mismatch' });
-          return;
-        }
-      } catch (err) {
-        res.status(400).json({ error: `invalid signature: ${String(err)}` });
-        return;
-      }
-    }
-
-    let submissionMethod: 'finalizeJob' | 'submit' | 'none' = 'none';
-    let txHash: string | undefined;
-    const preferFinalize = body.finalize !== false && Boolean(resultRef);
-    try {
-      await ensureTaxAcknowledgement(wallet);
-      if (preferFinalize && resultRef) {
-        try {
-          const tx = await (registry as any)
-            .connect(wallet)
-            .finalizeJob(jobId, resultRef);
-          await tx.wait();
-          submissionMethod = 'finalizeJob';
-          txHash = tx.hash;
-        } catch (err) {
-          if (body.finalizeOnly) {
-            throw err;
-          }
-          console.warn('finalizeJob failed, falling back to submit', err);
-        }
-      }
-      if (submissionMethod !== 'finalizeJob') {
-        const submissionUri = resultUri || resultRef || '';
-        const tx = await (registry as any)
-          .connect(wallet)
-          .submit(jobId, resultHash, submissionUri, '', proofBytes || '0x');
-        await tx.wait();
-        submissionMethod = 'submit';
-        txHash = tx.hash;
-      }
-    } catch (err: any) {
-      res.status(500).json({ error: err?.message || String(err) });
-      return;
-    }
-
     let contributors: DeliverableContributor[] | undefined;
     try {
       contributors = parseContributors(body.contributors);
@@ -1859,40 +1507,53 @@ app.post(
       res.status(400).json({ error: err?.message || String(err) });
       return;
     }
+    const signature =
+      typeof body.signature === 'string' && body.signature
+        ? body.signature
+        : undefined;
+    const signedPayload = (body as { signedPayload?: unknown }).signedPayload;
+    const preferFinalize = body.finalize !== false && Boolean(resultRef);
+    try {
+      const submission = await submitDeliverable({
+        jobId,
+        wallet,
+        resultUri,
+        resultCid,
+        resultRef,
+        resultHash,
+        proofBytes,
+        proof: (body as { proof?: unknown }).proof,
+        success: body.success !== false,
+        finalize: body.finalize !== false,
+        finalizeOnly: Boolean(body.finalizeOnly),
+        preferFinalize,
+        metadata: normaliseMetadata(body.metadata),
+        telemetry: (body as { telemetry?: unknown }).telemetry,
+        telemetryCid:
+          typeof body.telemetryCid === 'string'
+            ? body.telemetryCid
+            : undefined,
+        telemetryUri:
+          typeof body.telemetryUri === 'string'
+            ? body.telemetryUri
+            : undefined,
+        contributors,
+        digest: typeof body.digest === 'string' ? body.digest : undefined,
+        signature,
+        signedPayload,
+      });
 
-    const deliverable = recordDeliverable({
-      jobId,
-      agent: wallet.address,
-      success: body.success !== false,
-      resultUri: resultUri || resultRef || undefined,
-      resultCid: resultCid || undefined,
-      resultRef: resultRef || undefined,
-      resultHash,
-      digest: typeof body.digest === 'string' ? body.digest : undefined,
-      signature,
-      proof:
-        typeof body.proof === 'object' && body.proof
-          ? (body.proof as Record<string, unknown>)
-          : typeof body.proof === 'string' && body.proof
-          ? { raw: body.proof }
-          : undefined,
-      metadata: normaliseMetadata(body.metadata),
-      telemetry: (body as { telemetry?: unknown }).telemetry,
-      telemetryCid:
-        typeof body.telemetryCid === 'string' ? body.telemetryCid : undefined,
-      telemetryUri:
-        typeof body.telemetryUri === 'string' ? body.telemetryUri : undefined,
-      contributors,
-      submissionMethod,
-      txHash,
-    });
-
-    res.json({
-      tx: txHash,
-      method: submissionMethod,
-      resultHash,
-      deliverable,
-    });
+      res.json({
+        tx: submission.txHash,
+        method: submission.submissionMethod,
+        resultHash: submission.resultHash,
+        deliverable: submission.deliverable,
+      });
+    } catch (err: any) {
+      const message = err?.message || String(err);
+      const status = message && message.includes('signature') ? 400 : 500;
+      res.status(status).json({ error: message });
+    }
   }
 );
 

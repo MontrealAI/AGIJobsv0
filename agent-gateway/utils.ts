@@ -68,6 +68,10 @@ export const FETCH_TIMEOUT_MS = parseIntegerEnv('FETCH_TIMEOUT_MS', 5000, {
   min: 1,
 });
 export const PORT = parseIntegerEnv('PORT', 3000, { min: 1, max: 65535 });
+export const GRPC_PORT = parseIntegerEnv('GRPC_PORT', 50051, {
+  min: 0,
+  max: 65535,
+});
 
 const STALE_JOB_FLOOR_MS = 60 * 1000;
 const SWEEP_INTERVAL_FLOOR_MS = 1000;
