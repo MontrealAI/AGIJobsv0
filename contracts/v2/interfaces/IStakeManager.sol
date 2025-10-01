@@ -38,6 +38,16 @@ interface IStakeManager {
         uint256 treasuryShare,
         uint256 burnShare
     );
+    event EscrowPenaltyApplied(
+        bytes32 indexed jobId,
+        address indexed recipient,
+        uint256 amount,
+        uint256 employerShare,
+        uint256 treasuryShare,
+        uint256 operatorShare,
+        uint256 validatorShare,
+        uint256 burnShare
+    );
     /// @notice Emitted when stake is slashed from a participant.
     /// @param agent Address whose stake was reduced.
     /// @param amount Total amount slashed from the agent.
@@ -56,7 +66,15 @@ interface IStakeManager {
     event ModulesUpdated(address jobRegistry, address disputeModule);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
+    event OperatorSlashPctUpdated(uint256 operatorSlashPct);
     event ValidatorSlashRewardPctUpdated(uint256 validatorSlashRewardPct);
+    event SlashDistributionUpdated(
+        uint256 employerSlashPct,
+        uint256 treasurySlashPct,
+        uint256 operatorSlashPct,
+        uint256 validatorSlashRewardPct
+    );
+    event OperatorSlashShareAllocated(address indexed user, Role indexed role, uint256 amount);
     event TreasuryUpdated(address indexed treasury);
     event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event MaxStakePerAddressUpdated(uint256 maxStake);
@@ -131,6 +149,17 @@ interface IStakeManager {
 
     /// @notice refund escrowed funds without fees or burns
     function refundEscrow(bytes32 jobId, address to, uint256 amount) external;
+
+    /// @notice redistribute escrowed funds according to the configured slash distribution
+    function redistributeEscrow(bytes32 jobId, address recipient, uint256 amount) external;
+
+    /// @notice redistribute escrowed funds with validator weighting
+    function redistributeEscrow(
+        bytes32 jobId,
+        address recipient,
+        uint256 amount,
+        address[] calldata validators
+    ) external;
 
     /// @notice release previously locked stake for a user
     function releaseStake(address user, uint256 amount) external;
@@ -243,6 +272,15 @@ interface IStakeManager {
         uint256 _treasurySlashPct,
         uint256 _validatorSlashPct
     ) external;
+
+    function setOperatorSlashPct(uint256 _operatorSlashPct) external;
+
+    function setSlashDistribution(
+        uint256 _employerSlashPct,
+        uint256 _treasurySlashPct,
+        uint256 _operatorSlashPct,
+        uint256 _validatorSlashPct
+    ) external;
     function setTreasury(address _treasury) external;
     function setTreasuryAllowlist(address _treasury, bool allowed) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
@@ -294,4 +332,3 @@ interface IStakeManager {
     /// @dev Returns 100 when the user holds no approved NFTs.
     function getTotalPayoutPct(address user) external view returns (uint256);
 }
-

@@ -45,10 +45,45 @@ describe('StakeManager slashing configuration', function () {
       stakeManager.setSlashingDistribution(40, 30, 40)
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
   });
+
+  it('updates operator slash percentage via governance', async () => {
+    await expect(
+      stakeManager.connect(owner).setSlashingPercentages(40, 40)
+    )
+      .to.emit(stakeManager, 'SlashingPercentagesUpdated')
+      .withArgs(40, 40);
+
+    await expect(
+      stakeManager.connect(owner).setOperatorSlashPct(10)
+    )
+      .to.emit(stakeManager, 'OperatorSlashPctUpdated')
+      .withArgs(10);
+
+    expect(await stakeManager.operatorSlashPct()).to.equal(10);
+
+    await expect(
+      stakeManager.connect(owner).setOperatorSlashPct(101)
+    ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
+  });
+
+  it('supports updating the full slash distribution in one call', async () => {
+    await expect(
+      stakeManager
+        .connect(owner)
+        .setSlashDistribution(25, 25, 20, 30)
+    )
+      .to.emit(stakeManager, 'SlashDistributionUpdated')
+      .withArgs(25, 25, 20, 30);
+
+    expect(await stakeManager.employerSlashPct()).to.equal(25);
+    expect(await stakeManager.treasurySlashPct()).to.equal(25);
+    expect(await stakeManager.operatorSlashPct()).to.equal(20);
+    expect(await stakeManager.validatorSlashRewardPct()).to.equal(30);
+  });
 });
 
 describe('StakeManager multi-validator slashing', function () {
-  const Role = { Agent: 0, Validator: 1 };
+  const Role = { Agent: 0, Validator: 1, Platform: 2 };
   const ONE = 10n ** 18n;
   let owner, treasury, agent, val1, val2, employer;
   let token, stakeManager, registrySigner, engine;
@@ -68,7 +103,7 @@ describe('StakeManager multi-validator slashing', function () {
       AGIALPHA
     );
 
-    const addresses = [agent.address, val1.address, val2.address];
+    const addresses = [agent.address, val1.address, val2.address, employer.address];
     const supplySlot = '0x' + (2).toString(16).padStart(64, '0');
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
@@ -223,6 +258,9 @@ describe('StakeManager multi-validator slashing', function () {
     await stakeManager.connect(owner).setValidatorRewardPct(0);
     await stakeManager.connect(owner).setSlashingPercentages(60, 40);
 
+    const employerStart = await token.balanceOf(employer.address);
+    const treasuryStart = await token.balanceOf(treasury.address);
+
     await expect(
       stakeManager
         .connect(registrySigner)
@@ -245,8 +283,111 @@ describe('StakeManager multi-validator slashing', function () {
         0
       );
 
-    expect(await token.balanceOf(employer.address)).to.equal(24n * ONE);
-    expect(await token.balanceOf(treasury.address)).to.equal(16n * ONE);
+    const employerEnd = await token.balanceOf(employer.address);
+    const treasuryEnd = await token.balanceOf(treasury.address);
+
+    expect(employerEnd - employerStart).to.equal(24n * ONE);
+    expect(treasuryEnd - treasuryStart).to.equal(16n * ONE);
+  });
+
+  it('routes operator slash share into the reward pool', async () => {
+    await stakeManager.connect(owner).setValidatorRewardPct(0);
+    await stakeManager
+      .connect(owner)
+      .setSlashDistribution(30, 30, 40, 0);
+
+    const amount = 50n * ONE;
+    const operatorShare = (amount * 40n) / 100n;
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        ['slash(address,uint8,uint256,address,address[])'](
+          agent.address,
+          Role.Agent,
+          amount,
+          employer.address,
+          []
+        )
+    )
+      .to.emit(stakeManager, 'OperatorSlashShareAllocated')
+      .withArgs(agent.address, Role.Agent, operatorShare)
+      .and.to.emit(stakeManager, 'RewardPoolUpdated')
+      .withArgs(operatorShare);
+
+    expect(await stakeManager.operatorRewardPool()).to.equal(operatorShare);
+  });
+
+  it('redistributes escrow according to slash distribution', async () => {
+    await stakeManager
+      .connect(owner)
+      .setSlashDistribution(60, 20, 10, 10);
+
+    const jobId = ethers.encodeBytes32String('escrow-slash');
+    const amount = 100n * ONE;
+
+    await token.connect(employer).approve(await stakeManager.getAddress(), amount);
+    await stakeManager
+      .connect(registrySigner)
+      .lockReward(jobId, employer.address, amount);
+
+    const employerStart = await token.balanceOf(employer.address);
+    const treasuryStart = await token.balanceOf(treasury.address);
+    const val1Start = await token.balanceOf(val1.address);
+    const val2Start = await token.balanceOf(val2.address);
+
+    const validatorTarget = (amount * 10n) / 100n;
+    const baseAmount = amount - validatorTarget;
+    const expectedEmployer = (baseAmount * 60n) / 100n;
+    const expectedTreasury = (baseAmount * 20n) / 100n;
+    const expectedOperator = (baseAmount * 10n) / 100n;
+
+    const val1Stake = await stakeManager.stakes(val1.address, Role.Validator);
+    const val2Stake = await stakeManager.stakes(val2.address, Role.Validator);
+    const totalStake = val1Stake + val2Stake;
+    const val1Reward = (validatorTarget * val1Stake) / totalStake;
+    const val2Reward = (validatorTarget * val2Stake) / totalStake;
+    const validatorDistributed = val1Reward + val2Reward;
+    const burnRemainder = validatorTarget - validatorDistributed;
+    const expectedBurn =
+      baseAmount - expectedEmployer - expectedTreasury - expectedOperator + burnRemainder;
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        ['redistributeEscrow(bytes32,address,uint256,address[])'](
+          jobId,
+          employer.address,
+          amount,
+          [val1.address, val2.address]
+        )
+    )
+      .to.emit(stakeManager, 'EscrowPenaltyApplied')
+      .withArgs(
+        jobId,
+        employer.address,
+        amount,
+        expectedEmployer,
+        expectedTreasury,
+        expectedOperator,
+        validatorDistributed,
+        expectedBurn
+      )
+      .and.to.emit(stakeManager, 'OperatorSlashShareAllocated')
+      .withArgs(ethers.ZeroAddress, Role.Platform, expectedOperator)
+      .and.to.emit(stakeManager, 'RewardPoolUpdated')
+      .withArgs(expectedOperator);
+
+    expect(await token.balanceOf(employer.address)).to.equal(
+      employerStart + expectedEmployer
+    );
+    expect(await token.balanceOf(treasury.address)).to.equal(
+      treasuryStart + expectedTreasury
+    );
+    expect(await stakeManager.operatorRewardPool()).to.equal(expectedOperator);
+    expect(await token.balanceOf(val1.address)).to.equal(val1Start + val1Reward);
+    expect(await token.balanceOf(val2.address)).to.equal(val2Start + val2Reward);
+    expect(await stakeManager.jobEscrows(jobId)).to.equal(0);
   });
 });
 

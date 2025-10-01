@@ -42,6 +42,8 @@ contract MockStakeManager is IStakeManager {
     function lock(address, uint256) external override {}
     function releaseReward(bytes32, address, address, uint256, bool) external override {}
     function refundEscrow(bytes32, address, uint256) external override {}
+    function redistributeEscrow(bytes32, address, uint256) external override {}
+    function redistributeEscrow(bytes32, address, uint256, address[] calldata) external override {}
     function releaseStake(address, uint256) external override {}
     function release(address, address, uint256, bool) external override {}
     function finalizeJobFunds(
@@ -93,6 +95,10 @@ contract MockStakeManager is IStakeManager {
         validatorSlashRewardPctValue = pct;
     }
     function setSlashingDistribution(uint256, uint256, uint256 pct) external override {
+        validatorSlashRewardPctValue = pct;
+    }
+    function setOperatorSlashPct(uint256) external override {}
+    function setSlashDistribution(uint256, uint256, uint256, uint256 pct) external override {
         validatorSlashRewardPctValue = pct;
     }
     function validatorSlashRewardPct() external view override returns (uint256) {
