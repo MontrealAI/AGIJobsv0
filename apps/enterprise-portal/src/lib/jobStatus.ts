@@ -2,6 +2,8 @@ import type { JobPhase } from '../types';
 
 export const jobStateToPhase = (state: number): JobPhase => {
   switch (state) {
+    case 0:
+      return 'Created';
     case 1:
       return 'Created';
     case 2:
