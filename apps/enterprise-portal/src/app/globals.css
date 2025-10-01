@@ -289,3 +289,26 @@ button.secondary {
   background: rgba(255, 255, 255, 0.08);
   font-size: 0.75rem;
 }
+
+.surface-card {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 16, 26, 0.7);
+}
+
+.surface-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.metadata-list {
+  margin: 0.5rem 0 0.5rem 1.25rem;
+  padding: 0;
+  color: rgba(197, 202, 214, 0.85);
+}
+
+.metadata-list li {
+  margin-bottom: 0.35rem;
+}

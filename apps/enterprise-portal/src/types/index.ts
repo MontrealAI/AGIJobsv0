@@ -87,6 +87,28 @@ export interface SlaDocument {
   successCriteria: string[];
 }
 
+export interface JobSlaReference {
+  uri?: string;
+  title?: string;
+  summary?: string;
+  version?: string;
+  requiresSignature?: boolean;
+  obligations: string[];
+  successCriteria: string[];
+}
+
+export interface JobSpecificationMetadata {
+  title?: string;
+  description?: string;
+  requiredSkills: string[];
+  deliverables: string[];
+  attachments: string[];
+  reward?: string;
+  ttlHours?: number;
+  sla?: JobSlaReference;
+  raw: unknown;
+}
+
 export interface PortalConfiguration {
   chainId: number;
   jobRegistryAddress: string;

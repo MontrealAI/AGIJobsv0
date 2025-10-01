@@ -6,6 +6,8 @@ import { phaseToTagColor } from '../lib/jobStatus';
 import type { JobSummary, JobTimelineEvent } from '../types';
 import { formatDurationBetween } from '../lib/time';
 import { portalConfig } from '../lib/contracts';
+import { resolveResourceUri } from '../lib/uri';
+import { useJobMetadata } from '../hooks/useJobMetadata';
 
 const formatTimestamp = (timestamp?: number) => {
   if (!timestamp) return '—';
@@ -59,6 +61,7 @@ const Timeline = ({ events }: { events: JobTimelineEvent[] }) => (
           : Array.isArray(args)
             ? (args[3] as string | undefined)
             : undefined;
+      const resolvedResultUri = resolveResourceUri(resultUri) ?? resultUri;
       return (
         <div className="timeline-item" key={event.id}>
           <div className={`tag ${phaseToTagColor(event.phase)}`} style={{ marginBottom: '0.5rem' }}>
@@ -68,8 +71,8 @@ const Timeline = ({ events }: { events: JobTimelineEvent[] }) => (
           <div className="small">{formatTimestamp(event.timestamp)}</div>
           <p>{event.description}</p>
           {event.actor && <div className="small">Actor: {shortenAddress(event.actor)}</div>}
-          {resultUri && (
-            <a className="small" href={resultUri} target="_blank" rel="noreferrer">
+          {resolvedResultUri && (
+            <a className="small" href={resolvedResultUri} target="_blank" rel="noreferrer">
               View deliverable
             </a>
           )}
@@ -117,6 +120,9 @@ export const JobLifecycleDashboard = ({ jobs, events, loading, error }: Props) =
     () => events.filter((event) => (selectedJobId ? event.jobId === selectedJobId : false)),
     [events, selectedJobId]
   );
+
+  const { metadata, loading: metadataLoading, error: metadataError, resolvedUri: resolvedSpecUri, refresh: refreshMetadata } =
+    useJobMetadata(selectedJob?.uri);
 
   const validationCountdown = useMemo(() => {
     if (!selectedJob) return undefined;
@@ -267,19 +273,144 @@ export const JobLifecycleDashboard = ({ jobs, events, loading, error }: Props) =
                 {selectedJob.uri && (
                   <div>
                     URI:{' '}
-                    <a href={selectedJob.uri} target="_blank" rel="noreferrer">
+                    <a href={resolvedSpecUri ?? selectedJob.uri} target="_blank" rel="noreferrer">
                       {selectedJob.uri}
                     </a>
                   </div>
                 )}
               </div>
+              {metadataLoading && <div className="small">Loading job metadata…</div>}
+              {metadataError && <div className="alert error">{metadataError}</div>}
+              {metadata && (
+                <div className="surface-card">
+                  <div className="card-title" style={{ marginBottom: '0.5rem' }}>
+                    <div>
+                      <h3>Specification overview</h3>
+                      <p className="small" style={{ marginTop: '0.35rem' }}>
+                        Details resolved from the job metadata URI. Use these snapshots to verify requirements with your
+                        compliance and delivery teams.
+                      </p>
+                    </div>
+                    <button className="secondary" type="button" onClick={refreshMetadata}>
+                      Refresh
+                    </button>
+                  </div>
+                  {metadata.title && (
+                    <div>
+                      <div className="stat-label">Title</div>
+                      <div className="stat-value" style={{ fontSize: '1rem', marginTop: '0.25rem' }}>
+                        {metadata.title}
+                      </div>
+                    </div>
+                  )}
+                  {metadata.description && <p style={{ marginTop: '0.75rem' }}>{metadata.description}</p>}
+                  <div className="data-grid" style={{ marginTop: '1rem' }}>
+                    {typeof metadata.ttlHours !== 'undefined' && (
+                      <div>
+                        <div className="stat-label">TTL (hours)</div>
+                        <div className="stat-value" style={{ fontSize: '1.1rem' }}>{metadata.ttlHours}</div>
+                      </div>
+                    )}
+                    {metadata.reward && (
+                      <div>
+                        <div className="stat-label">Proposed reward</div>
+                        <div className="stat-value" style={{ fontSize: '1.1rem' }}>{metadata.reward}</div>
+                      </div>
+                    )}
+                    {metadata.attachments.length > 0 && (
+                      <div>
+                        <div className="stat-label">Reference materials</div>
+                        <div className="chip-row" style={{ marginTop: '0.5rem' }}>
+                          {metadata.attachments.map((attachment) => {
+                            const resolvedAttachment = resolveResourceUri(attachment) ?? attachment;
+                            return (
+                              <a key={attachment} className="chip" href={resolvedAttachment} target="_blank" rel="noreferrer">
+                                {attachment}
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {metadata.requiredSkills.length > 0 && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <div className="stat-label">Required skills</div>
+                      <div className="chip-row">
+                        {metadata.requiredSkills.map((skill) => (
+                          <span className="chip" key={skill}>
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {metadata.deliverables.length > 0 && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <div className="stat-label">Expected deliverables</div>
+                      <ul className="metadata-list">
+                        {metadata.deliverables.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {metadata.sla && (
+                    <div className="alert" style={{ marginTop: '1rem' }}>
+                      {metadata.sla.title ? `${metadata.sla.title} — ` : ''}SLA attached
+                      {metadata.sla.version ? ` (v${metadata.sla.version})` : ''}.
+                      {metadata.sla.requiresSignature && ' Agent signature required before assignment.'}
+                      {metadata.sla.summary && (
+                        <span>
+                          {' '}
+                          {metadata.sla.summary}
+                        </span>
+                      )}
+                      {metadata.sla.uri && (
+                        <span>
+                          {' '}
+                          <a href={resolveResourceUri(metadata.sla.uri) ?? metadata.sla.uri} target="_blank" rel="noreferrer">
+                            Open SLA document
+                          </a>
+                        </span>
+                      )}
+                      {(metadata.sla.obligations.length > 0 || metadata.sla.successCriteria.length > 0) && (
+                        <div style={{ marginTop: '0.75rem' }}>
+                          {metadata.sla.obligations.length > 0 && (
+                            <>
+                              <div className="stat-label">Obligations</div>
+                              <ul className="metadata-list">
+                                {metadata.sla.obligations.map((item) => (
+                                  <li key={item}>{item}</li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+                          {metadata.sla.successCriteria.length > 0 && (
+                            <>
+                              <div className="stat-label" style={{ marginTop: '0.75rem' }}>
+                                Success criteria
+                              </div>
+                              <ul className="metadata-list">
+                                {metadata.sla.successCriteria.map((item) => (
+                                  <li key={item}>{item}</li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               {selectedJob.resultUri && (
                 <div className="code-block">
                   <strong>Latest deliverable</strong>
                   {selectedJob.resultHash && <div>Result hash: {selectedJob.resultHash}</div>}
                   <div>
                     URI:{' '}
-                    <a href={selectedJob.resultUri} target="_blank" rel="noreferrer">
+                    <a href={resolveResourceUri(selectedJob.resultUri) ?? selectedJob.resultUri} target="_blank" rel="noreferrer">
                       {selectedJob.resultUri}
                     </a>
                   </div>
