@@ -5,6 +5,7 @@ import { AgentProfile, JobAnalysis } from './agentRegistry';
 import { EnergySample } from '../shared/energyMonitor';
 import { appendTrainingRecord } from '../shared/trainingRecords';
 import { TOKEN_DECIMALS } from './utils';
+import { normaliseMetadata } from './apiHelpers';
 import {
   recordSpawnRequest as storeSpawnRequest,
   getSpawnRequests as loadSpawnRequests,
@@ -158,15 +159,6 @@ export interface LearningRecord {
 function normaliseSkills(values?: string[] | null): string[] {
   if (!values) return [];
   return values.filter((value): value is string => typeof value === 'string');
-}
-
-function normaliseMetadata(
-  metadata?: unknown
-): Record<string, unknown> | undefined {
-  if (!metadata || typeof metadata !== 'object') {
-    return undefined;
-  }
-  return metadata as Record<string, unknown>;
 }
 
 function formatJobRecord(job: Job, analysis: JobAnalysis): LearningJobRecord {

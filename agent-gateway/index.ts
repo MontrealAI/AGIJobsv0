@@ -17,6 +17,7 @@ import {
   stopAuditAnchoringService,
 } from './auditAnchoring';
 import { initJobPlanner, resumeActivePlans } from './jobPlanner';
+import { startGrpcServer, stopGrpcServer } from './grpc';
 
 let server: http.Server;
 let wss: WebSocketServer;
@@ -27,6 +28,7 @@ async function startGateway(): Promise<void> {
   await initJobPlanner();
   await startTelemetryService();
   await startAuditAnchoringService();
+  await startGrpcServer();
 
   server = http.createServer(app);
   wss = new WebSocketServer({ server });
@@ -51,21 +53,31 @@ startGateway().catch((err) => {
   process.exit(1);
 });
 
-function shutdown(): void {
+async function shutdown(): Promise<void> {
   console.log('Shutting down agent gateway...');
   if (wss) wss.close();
   stopSweeper();
   stopTelemetryService();
   stopAuditAnchoringService();
+  await stopGrpcServer();
   if (server) {
-    server.close(() => process.exit(0));
-  } else {
-    process.exit(0);
+    await new Promise<void>((resolve) => server.close(() => resolve()));
   }
+  process.exit(0);
 }
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.on('SIGINT', () => {
+  shutdown().catch((err) => {
+    console.error('Shutdown failed', err);
+    process.exit(1);
+  });
+});
+process.on('SIGTERM', () => {
+  shutdown().catch((err) => {
+    console.error('Shutdown failed', err);
+    process.exit(1);
+  });
+});
 
 export { app };
 export const getServer = () => server;

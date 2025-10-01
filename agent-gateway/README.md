@@ -15,6 +15,7 @@ Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.
 - `KEYSTORE_URL` HTTPS endpoint returning private keys managed by the gateway
 - `KEYSTORE_TOKEN` authentication token for the keystore API
 - `PORT` (default `3000`)
+- `GRPC_PORT` (default `50051`) gRPC interface for agent automation
 - `BOT_WALLET` address of a managed wallet used for automated finalize/cancel actions (optional). If a tax policy is active, this wallet must first call `JobRegistry.acknowledgeTaxPolicy()`.
 - `GATEWAY_API_KEY` shared secret for API-key authentication (optional)
 - `ENERGY_ORACLE_URL` endpoint that accepts telemetry payloads (optional – required for operator rewards)
@@ -154,5 +155,20 @@ anchors (newest last) alongside scheduler telemetry, while the authenticated
 number of new events required for that cycle. Anchoring requests sign the
 Merkle root with the orchestrator wallet so downstream auditors can verify
 lineage without trusting the gateway.
+
+## gRPC API
+
+For autonomous agents that prefer a binary protocol, the gateway exposes a
+gRPC service on `GRPC_PORT`. The protobuf definition lives at
+`agent-gateway/protos/agent_gateway.proto` and includes RPCs for submitting
+deliverables (`SubmitResult`), streaming heartbeats and Alpha-AGI telemetry
+(`RecordHeartbeat`/`RecordTelemetry`), querying the full job context
+(`GetJobInfo`), and orchestrating staking or reward claims
+(`EnsureStake`/`GetStake`/`AutoClaimRewards`).
+
+Each RPC expects the caller to authenticate with a managed wallet, mirroring
+the REST API. That makes it straightforward to plug multi-agent orchestrators
+directly into the gateway without additional transport glue, while still
+capturing telemetry, contributor signatures, and on-chain proofs end to end.
 
 See `../examples` for SDK usage in Python and TypeScript.
