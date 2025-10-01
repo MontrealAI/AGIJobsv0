@@ -46,7 +46,7 @@ dataSources:
       eventHandlers:
         - event: StakeDeposited(indexed address,indexed uint8,uint256)
           handler: handleStakeDeposited
-        - event: StakeSlashed(indexed address,uint8,indexed address,indexed address,uint256,uint256,uint256)
+        - event: StakeSlashed(indexed address,uint8,indexed address,indexed address,uint256,uint256,uint256,uint256,uint256)
           handler: handleStakeSlashed
       file: ./src/mapping.ts
   - kind: ethereum

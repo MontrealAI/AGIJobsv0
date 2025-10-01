@@ -158,6 +158,8 @@ function createStakeSlashedEvent(
   treasury: Address,
   employerShare: i32,
   treasuryShare: i32,
+  operatorShare: i32,
+  validatorShare: i32,
   burnShare: i32,
   blockNumber: i32
 ): StakeSlashed {
@@ -195,6 +197,18 @@ function createStakeSlashedEvent(
     new ethereum.EventParam(
       'treasuryShare',
       ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(treasuryShare))
+    )
+  );
+  mock.parameters.push(
+    new ethereum.EventParam(
+      'operatorShare',
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(operatorShare))
+    )
+  );
+  mock.parameters.push(
+    new ethereum.EventParam(
+      'validatorShare',
+      ethereum.Value.fromUnsignedBigInt(BigInt.fromI32(validatorShare))
     )
   );
   mock.parameters.push(
@@ -310,6 +324,8 @@ describe('mapping handlers', () => {
       Address.zero(),
       50,
       25,
+      0,
+      0,
       25,
       3
     );

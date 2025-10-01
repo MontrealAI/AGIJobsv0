@@ -275,6 +275,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address indexed treasury,
         uint256 employerShare,
         uint256 treasuryShare,
+        uint256 operatorShare,
+        uint256 validatorShare,
         uint256 burnShare
     );
     event EscrowPenaltyApplied(
@@ -2369,7 +2371,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 redistributed = employerShare + treasuryShare + operatorShare + validatorShare;
         uint256 ratio = redistributed > 0 ? (burnShare * TOKEN_SCALE) / redistributed : 0;
         emit Slash(user, amount, validators.length > 0 ? validators[0] : recipient);
-        emit StakeSlashed(user, role, recipient, treasury, employerShare, treasuryShare, burnShare);
+        emit StakeSlashed(
+            user,
+            role,
+            recipient,
+            treasury,
+            employerShare,
+            treasuryShare,
+            operatorShare,
+            validatorShare,
+            burnShare
+        );
         emit SlashingStats(block.timestamp, 0, burnShare, redistributed, ratio);
     }
 

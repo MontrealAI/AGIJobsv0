@@ -145,7 +145,7 @@ describe('StakeManager', function () {
         )
     )
       .to.emit(stakeManager, 'StakeSlashed')
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0);
+      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0, 0, 0);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await stakeManager.totalStake(0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
@@ -606,6 +606,7 @@ describe('StakeManager', function () {
     await expect(
       stakeManager.connect(user).setValidatorSlashRewardPct(15)
     ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
+    await stakeManager.connect(owner).setSlashingPercentages(60, 20);
     await expect(
       stakeManager.connect(owner).setValidatorSlashRewardPct(15)
     )
@@ -1043,7 +1044,7 @@ describe('StakeManager', function () {
         )
     )
       .to.emit(stakeManager, 'StakeSlashed')
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0)
+      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0, 0, 0)
       .and.to.emit(stakeManager, 'StakeUnlocked')
       .withArgs(user.address, 100);
 

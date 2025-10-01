@@ -73,8 +73,16 @@ export class StakeSlashed__Params {
     return this._event.parameters[5].value.toBigInt();
   }
 
-  get burnShare(): BigInt {
+  get operatorShare(): BigInt {
     return this._event.parameters[6].value.toBigInt();
+  }
+
+  get validatorShare(): BigInt {
+    return this._event.parameters[7].value.toBigInt();
+  }
+
+  get burnShare(): BigInt {
+    return this._event.parameters[8].value.toBigInt();
   }
 }
 

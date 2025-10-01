@@ -36,6 +36,8 @@ interface IStakeManager {
         address indexed treasury,
         uint256 employerShare,
         uint256 treasuryShare,
+        uint256 operatorShare,
+        uint256 validatorShare,
         uint256 burnShare
     );
     event EscrowPenaltyApplied(
