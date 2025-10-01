@@ -146,17 +146,6 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_arbitratorCommittee).code.length == 0
         ) revert InvalidArbitratorCommittee(address(_arbitratorCommittee));
 
-        _requireModuleOwnership(
-            _jobRegistry,
-            _stakeManager,
-            _validationModule,
-            _disputeModule,
-            _platformRegistry,
-            _feePool,
-            _reputationEngine,
-            _arbitratorCommittee
-        );
-
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
         validationModule = _validationModule;
@@ -165,7 +154,6 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool = _feePool;
         reputationEngine = _reputationEngine;
         arbitratorCommittee = _arbitratorCommittee;
-        _setPausers();
         emit ModulesUpdated(
             address(_jobRegistry),
             address(_stakeManager),
@@ -176,6 +164,23 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_reputationEngine),
             address(_arbitratorCommittee)
         );
+    }
+
+    /// @notice Re-assign SystemPause as the pauser for all managed modules.
+    /// @dev Requires ownership of each module to have been transferred to this contract.
+    function refreshPausers() external onlyGovernance {
+        _requireModuleOwnership(
+            jobRegistry,
+            stakeManager,
+            validationModule,
+            disputeModule,
+            platformRegistry,
+            feePool,
+            reputationEngine,
+            arbitratorCommittee
+        );
+
+        _setPausers();
     }
 
     /// @notice Pause all core modules.

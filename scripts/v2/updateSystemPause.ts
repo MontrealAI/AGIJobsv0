@@ -342,21 +342,36 @@ async function main() {
   }
 
   const actions: PlannedAction[] = [];
-  const shouldUpdateModules =
-    differences.length > 0 ||
-    (!cli.skipRefresh && (cli.forceRefresh || pauserIssues.length > 0));
 
-  if (shouldUpdateModules) {
+  if (differences.length) {
     const notes: string[] = [];
-    if (differences.length) {
-      for (const key of differences) {
-        notes.push(`${key}: ${current[key]} -> ${modules[key]}`);
+    for (const key of differences) {
+      notes.push(`${key}: ${current[key]} -> ${modules[key]}`);
+    }
+    actions.push({
+      label: 'Update SystemPause module wiring',
+      method: 'setModules',
+      args: MODULE_KEYS.map((key) => modules[key]),
+      contract: pause,
+      notes,
+    });
+  }
+
+  const needsRefresh =
+    !cli.skipRefresh &&
+    (cli.forceRefresh || pauserIssues.length > 0 || differences.length > 0);
+
+  if (needsRefresh) {
+    const notes: string[] = [];
+    if (pauserIssues.length) {
+      for (const note of pauserIssues) {
+        notes.push(note);
       }
     }
-    if (!differences.length && pauserIssues.length) {
-      notes.push(
-        'No address changes detected; reapplying pauser roles to SystemPause.'
-      );
+    if (differences.length) {
+      notes.push('Refreshing pauser roles after module wiring changes.');
+    } else if (cli.forceRefresh) {
+      notes.push('Forced refresh requested; reapplying pauser roles.');
     }
     if (ownershipIssues.length) {
       notes.push(
@@ -364,9 +379,9 @@ async function main() {
       );
     }
     actions.push({
-      label: 'Update SystemPause module wiring',
-      method: 'setModules',
-      args: MODULE_KEYS.map((key) => modules[key]),
+      label: 'Refresh SystemPause pauser roles',
+      method: 'refreshPausers',
+      args: [],
       contract: pause,
       notes,
     });

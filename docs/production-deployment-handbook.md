@@ -115,6 +115,10 @@ boundaries within minutes.
 1. Rotate ownership with `npm run owner:rotate -- --network <network> --safe owner-rotation.json --safe-name "AGIJobs Governance Rotation"`.
 2. Multisig signers review the generated Safe bundle; broadcast once unanimously approved.
 3. Confirm success via `npm run owner:verify-control -- --network <network>`.
+4. When each module lists `SystemPause` as owner/governance, execute
+   `SystemPause.refreshPausers()` (for example via
+   `npx hardhat run scripts/v2/updateSystemPause.ts --network <network> --refresh --execute`)
+   so the pause helper regains pauser rights before the next incident drill.
 
 ### Step 4 – Monitoring Enablement
 
