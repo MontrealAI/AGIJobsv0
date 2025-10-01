@@ -1401,6 +1401,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (quorumTarget == 0 || r.revealedCount >= quorumTarget) {
             return _finalize(jobId);
         }
+        emit ValidationQuorumFailed(jobId, r.revealedCount, quorumTarget);
         r.earlyFinalizeEligibleAt = 0;
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
@@ -1497,6 +1498,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 unchecked { ++approvalCount; }
             }
             unchecked { ++i; }
+        }
+        if (!quorum && quorumTarget > 0) {
+            emit ValidationQuorumFailed(jobId, r.revealedCount, quorumTarget);
         }
         if (quorum && total > 0) {
             bool thresholdMet =

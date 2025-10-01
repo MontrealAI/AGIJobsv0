@@ -32,6 +32,11 @@ interface IValidationModule {
         uint256 rejections
     );
     event ValidationResult(uint256 indexed jobId, bool success);
+    event ValidationQuorumFailed(
+        uint256 indexed jobId,
+        uint256 revealed,
+        uint256 quorumTarget
+    );
     event ValidatorSubdomainUpdated(address indexed validator, string subdomain);
     event SelectionStrategyUpdated(SelectionStrategy strategy);
     event ParametersUpdated(

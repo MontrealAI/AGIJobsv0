@@ -199,9 +199,9 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
         });
         activeJobs[agent] = active;
 
-        uint256 validatorCount = validators.length;
+        uint256 validatorTotal = validators.length;
         address[] storage storedValidators = jobValidators[jobId];
-        for (uint256 i = 0; i < validatorCount; i++) {
+        for (uint256 i = 0; i < validatorTotal; i++) {
             storedValidators.push(validators[i]);
         }
 
