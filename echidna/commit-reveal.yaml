@@ -6,7 +6,15 @@
 # mode so that Echidna stops immediately on counterexamples.
 testMode: assertion
 corpusDir: echidna/corpus/commit-reveal
-seed: 1
+# Use deterministic seeds so CI remains reproducible while still
+# exploring different commit/reveal paths locally.
+seed: 1337
+
+# Limit the sequence length and the total number of executed steps so the job
+# stays fast enough for PR CI while still stressing the commit/reveal flow.
+seqLen: 32
+testLimit: 4000
+maxSteps: 200000
 
 # Force crytic-compile to use the bundled solc compiler so the Echidna
 # container does not require Foundry's `forge` binary.

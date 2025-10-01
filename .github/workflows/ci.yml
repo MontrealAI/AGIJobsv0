@@ -117,21 +117,27 @@ jobs:
       - run: echo "Docker not available; skipping Slither in PR CI."
 
   echidna-pr:
-    name: Echidna smoke (PR)
+    name: Echidna commit/reveal (PR)
     needs: [build, detect-docker]
     runs-on: ubuntu-latest
     if: needs.detect-docker.outputs.has == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - name: Echidna (assertion-mode smoke, framework-free)
+      - name: Echidna (commit/reveal invariants)
         run: |
-          docker run --rm -u root -v "$PWD":/src -w /src "$ECHIDNA_IMAGE" \
-            echidna-test ./contracts/test/EchidnaSmoke.sol \
-              --contract EchidnaSmoke \
-              --test-mode assertion \
+          docker run --rm -u root \
+            -v "$PWD":/src \
+            -v "$PWD/tools/forge-shim":/usr/local/bin/forge:ro \
+            -w /src \
+            "$ECHIDNA_IMAGE" \
+            echidna-test ./contracts/test/CommitRevealEchidna.sol \
+              --contract CommitRevealEchidnaHarness \
+              --config echidna/commit-reveal.yaml \
+              --seq-len 32 \
+              --max-steps 200000 \
+              --seed 1337 \
               --format text \
-              --seq-len 64 \
               --crytic-args '--compile-force-framework solc --solc-remaps @openzeppelin=node_modules/@openzeppelin'
   echidna-no-docker:
     name: Echidna smoke (Docker unavailable)
