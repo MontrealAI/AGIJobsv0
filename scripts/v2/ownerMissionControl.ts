@@ -20,6 +20,7 @@ interface CliOptions {
   bundlePath?: string;
   bundleBaseName?: string;
   help?: boolean;
+  strict: boolean;
   run: Record<StepKey, boolean>;
 }
 
@@ -124,6 +125,7 @@ function parseArgs(argv: string[]): CliOptions {
     network: DEFAULT_NETWORK,
     format: 'markdown',
     includeMermaid: true,
+    strict: false,
     run,
   };
   let onlyApplied = false;
@@ -194,6 +196,15 @@ function parseArgs(argv: string[]): CliOptions {
         i += 1;
         break;
       }
+      case '--strict':
+      case '--fail-on-warn':
+      case '--fail-on-warning':
+        options.strict = true;
+        break;
+      case '--allow-warnings':
+      case '--no-strict':
+        options.strict = false;
+        break;
       case '--no-mermaid':
         options.includeMermaid = false;
         break;
@@ -1152,6 +1163,8 @@ function printHelp(): void {
     '  --out <path>               Write report to a file instead of stdout',
     '  --bundle <dir>             Emit a multi-format bundle (md/json/txt + manifest/checksums) into <dir>',
     '  --bundle-name <name>       Override bundle base filename (default: mission-control-<network>)',
+    '  --strict                   Exit with non-zero status on warnings as well as errors',
+    '  --allow-warnings           Reset --strict behaviour (warnings keep exit code 0)',
     '  --no-mermaid               Disable Mermaid diagram in markdown output',
     '  --skip <steps>             Comma-separated list of steps to skip',
     '  --only <steps>             Run only the listed steps (comma separated)',
@@ -1207,6 +1220,11 @@ async function main(): Promise<void> {
     if (!rendered.endsWith('\n')) {
       process.stdout.write('\n');
     }
+  }
+
+  const overall = computeOverallStatus(reports);
+  if (overall === 'error' || (overall === 'warning' && options.strict)) {
+    process.exitCode = 1;
   }
 }
 

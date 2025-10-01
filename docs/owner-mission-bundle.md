@@ -17,6 +17,12 @@ npm run owner:mission-control -- \
   --network <network> \
   --bundle runtime/bundles \
   --bundle-name mission-control-<stamp>
+# Fail the pipeline on ⚠️ warnings as well as ❌ errors
+npm run owner:mission-control -- \
+  --network <network> \
+  --bundle runtime/bundles \
+  --bundle-name mission-control-<stamp> \
+  --strict
 ```
 
 - `--bundle` points at the folder that should receive the artefacts (it will be
@@ -75,8 +81,9 @@ Hashes use lowercase hex-encoded SHA-256 digests that match `sha256sum` and
    - JSON → automation, regression diffing, compliance archives.
    - TXT → non-technical operator logs or mobile readers.
 6. **Re-run** mission control against production RPC once governance signs off.
-   The new bundle should produce matching hashes except for live network
-   differences.
+   Add `--strict` so any lingering warnings halt the deployment rather than
+   slipping into production unnoticed. The new bundle should produce matching
+   hashes except for live network differences.
 
 ---
 

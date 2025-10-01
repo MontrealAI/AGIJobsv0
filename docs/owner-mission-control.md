@@ -40,7 +40,9 @@ The helper executes four guardrail-heavy stages, merges JSON outputs, then rende
      --bundle-name mission-control-dryrun
    ```
 5. Open `runtime/mission-control.md` or the bundle artefacts for the aggregated status report.
-6. Repeat with production RPC once the dry run is clean.
+6. Repeat with production RPC once the dry run is clean. Add `--strict` during
+   sign-off windows to force a non-zero exit when warnings appear so CI/CD
+   pipelines or manual operators cannot miss yellow flags.
 
 ## Step Reference Matrix
 
@@ -57,6 +59,17 @@ The helper executes four guardrail-heavy stages, merges JSON outputs, then rende
 - `--format json` – Machine-readable snapshot for pipelines or automated diffing.
 - `--format human` – Console-friendly plaintext with emoji statuses.
 - `--no-mermaid` – Disable diagrams when rendering for terminals without Mermaid support.
+
+## Exit Codes & Strict Mode
+
+- Mission control now returns exit code **1** whenever a step reports
+  `❌ ERROR`, regardless of other settings.
+- Pass `--strict` (or `--fail-on-warn`) to promote `⚠️ WARNING` outcomes to a
+  non-zero exit status as well. This keeps automated deployments, Safe
+  workflows, and CI pipelines from ignoring configuration drift or missing
+  owners.
+- Use `--allow-warnings` (or `--no-strict`) to restore the previous behaviour
+  where warnings still exit successfully.
 
 ## Mission Bundle Export
 
