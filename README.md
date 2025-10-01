@@ -327,13 +327,17 @@ verification and telemetry sweep? Run the consolidated helper:
 
 ```bash
 npm run owner:mission-control -- --network <network> --out runtime/<network>-mission.md
+# Treat warnings as failures during high-stakes runs
+npm run owner:mission-control -- --network <network> --strict
 ```
 
 Mission control stitches the four core owner scripts together, emits a Markdown
 or JSON report (complete with Mermaid flow, metrics and logs), and respects new
 environment overrides (`OWNER_UPDATE_ALL_JSON`, `OWNER_VERIFY_JSON`,
 `OWNER_DASHBOARD_JSON`, and friends) so non-technical operators can automate
-dry-runs, Safe reviews and production verification. The full playbook lives in
+dry-runs, Safe reviews and production verification. Combine `--strict` with
+change-control pipelines to force a non-zero exit code whenever the summary
+contains warnings or errors. The full playbook lives in
 [docs/owner-mission-control.md](docs/owner-mission-control.md) with journey maps,
 step tables and troubleshooting guidance.
 
