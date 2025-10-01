@@ -28,7 +28,7 @@ Handles staking, escrow and slashing of the $AGIALPHA token. NFT ownership boost
 
 - `StakeDeposited(address indexed user, Role indexed role, uint256 amount)`
 - `StakeWithdrawn(address indexed user, Role indexed role, uint256 amount)`
-- `StakeSlashed(address indexed user, Role role, address indexed employer, address indexed treasury, uint256 employerShare, uint256 treasuryShare, uint256 burnShare)`
+- `StakeSlashed(address indexed user, Role role, address indexed employer, address indexed treasury, uint256 employerShare, uint256 treasuryShare, uint256 operatorShare, uint256 validatorShare, uint256 burnShare)`
 - `StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount)`
 - `StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount)`
 - `RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount)`

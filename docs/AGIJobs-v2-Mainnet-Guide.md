@@ -121,7 +121,7 @@
 
     - `event StakeDeposited(address indexed user, uint8 indexed role, uint256 amount);`
     - `event StakeWithdrawn(address indexed user, uint8 indexed role, uint256 amount);`
-    - `event StakeSlashed(address indexed user, uint8 indexed role, address indexed employer, address indexed treasury, uint256 employerShare, uint256 treasuryShare, uint256 burnShare);`
+    - `event StakeSlashed(address indexed user, uint8 indexed role, address indexed employer, address indexed treasury, uint256 employerShare, uint256 treasuryShare, uint256 operatorShare, uint256 validatorShare, uint256 burnShare);`
     - `event JobFunded(uint256 indexed jobId, address indexed employer, uint256 amount);`
     - `event RewardPaid(uint256 indexed jobId, address indexed agent, uint256 amount);`
     - `event FeeAccrued(uint256 indexed jobId, uint256 amount);`

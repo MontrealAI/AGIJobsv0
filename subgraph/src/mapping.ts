@@ -197,6 +197,8 @@ export function handleStakeSlashed(event: StakeSlashed): void {
   const stake = Stake.load(id);
   const slashAmount = event.params.employerShare
     .plus(event.params.treasuryShare)
+    .plus(event.params.operatorShare)
+    .plus(event.params.validatorShare)
     .plus(event.params.burnShare);
 
   let reduced = ZERO;

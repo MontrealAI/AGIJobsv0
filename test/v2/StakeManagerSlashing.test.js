@@ -280,7 +280,9 @@ describe('StakeManager multi-validator slashing', function () {
         treasury.address,
         24n * ONE,
         16n * ONE,
-        0
+        0n,
+        0n,
+        0n
       );
 
     const employerEnd = await token.balanceOf(employer.address);
@@ -521,6 +523,7 @@ describe('StakeManager validator slashing via validation module', function () {
     const baseAmount = amount - expectedValidatorReward;
     const expectedEmployerShare = (baseAmount * 40n) / 100n;
     const expectedTreasuryShare = (baseAmount * 40n) / 100n;
+    const expectedBurnShare = baseAmount - expectedEmployerShare - expectedTreasuryShare;
 
     const validatorStakeBefore = await stakeManager.stakeOf(
       badValidator.address,
@@ -553,7 +556,9 @@ describe('StakeManager validator slashing via validation module', function () {
         treasury.address,
         expectedEmployerShare,
         expectedTreasuryShare,
-        baseAmount - expectedEmployerShare - expectedTreasuryShare
+        0n,
+        expectedValidatorReward,
+        expectedBurnShare
       );
 
     const remainingStake = await stakeManager.stakeOf(

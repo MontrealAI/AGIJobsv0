@@ -18,6 +18,8 @@
       { "indexed": true, "internalType": "address", "name": "treasury", "type": "address" },
       { "indexed": false, "internalType": "uint256", "name": "employerShare", "type": "uint256" },
       { "indexed": false, "internalType": "uint256", "name": "treasuryShare", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "operatorShare", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "validatorShare", "type": "uint256" },
       { "indexed": false, "internalType": "uint256", "name": "burnShare", "type": "uint256" }
     ],
     "name": "StakeSlashed",
