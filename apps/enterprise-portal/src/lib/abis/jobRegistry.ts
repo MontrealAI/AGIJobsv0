@@ -81,7 +81,7 @@ export const jobRegistryAbi = [
         name: '',
         type: 'tuple',
         components: [
-          { name: 'state', type: 'uint8' },
+          { name: 'status', type: 'uint8' },
           { name: 'success', type: 'bool' },
           { name: 'burnConfirmed', type: 'bool' },
           { name: 'agentTypes', type: 'uint8' },
@@ -92,7 +92,7 @@ export const jobRegistryAbi = [
         ],
       },
     ],
-    stateMutability: 'view',
+    stateMutability: 'pure',
   },
   {
     type: 'function',
@@ -122,7 +122,16 @@ export const jobRegistryAbi = [
       { name: 'stake', type: 'uint256', indexed: false },
       { name: 'fee', type: 'uint256', indexed: false },
       { name: 'specHash', type: 'bytes32', indexed: false },
-      { name: 'uri', type: 'string', indexed: false },
+      { name: 'uriHash', type: 'bytes32', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ApplicationSubmitted',
+    inputs: [
+      { name: 'jobId', type: 'uint256', indexed: true },
+      { name: 'applicant', type: 'address', indexed: true },
+      { name: 'subdomain', type: 'string', indexed: false },
     ],
   },
   {

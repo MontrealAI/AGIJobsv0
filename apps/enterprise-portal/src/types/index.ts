@@ -29,7 +29,8 @@ export interface JobSummary {
   fee: bigint;
   deadline: number;
   specHash: string;
-  uri: string;
+  specUri?: string;
+  uriHash?: string;
   phase: JobPhase;
   lastUpdated: number;
   createdAt?: number;

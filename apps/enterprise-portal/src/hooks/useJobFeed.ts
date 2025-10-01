@@ -1,6 +1,12 @@
 'use client';
 
-import { EventFilter, EventLog, JsonRpcProvider } from 'ethers';
+import {
+  EventFilter,
+  EventLog,
+  JsonRpcProvider,
+  keccak256,
+  toUtf8Bytes,
+} from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createReadOnlyProvider,
@@ -22,6 +28,13 @@ const JOB_EVENT_NAMES = [
 ] as const;
 
 type JobEventName = (typeof JOB_EVENT_NAMES)[number];
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ZERO_HASH =
+  '0x0000000000000000000000000000000000000000000000000000000000000000';
+const HEX_32_REGEX = /^0x[0-9a-fA-F]{64}$/;
+
+const isHex32 = (value: string): boolean => HEX_32_REGEX.test(value);
 
 const normaliseString = (value: unknown): string | undefined => {
   if (!value) return undefined;
@@ -73,6 +86,14 @@ const normaliseBigInt = (value: unknown, fallback = 0n): bigint => {
   return fallback;
 };
 
+const normaliseHex = (value: unknown): string | undefined => {
+  const str = normaliseString(value)?.trim();
+  if (!str) return undefined;
+  const prefixed = str.startsWith('0x') ? str : `0x${str}`;
+  if (!isHex32(prefixed)) return undefined;
+  return prefixed.toLowerCase();
+};
+
 const normaliseNumber = (value: unknown, fallback = 0): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'bigint') return Number(value);
@@ -81,6 +102,70 @@ const normaliseNumber = (value: unknown, fallback = 0): number => {
     if (Number.isFinite(parsed)) return parsed;
   }
   return fallback;
+};
+
+const hashMatches = (candidate: string, expected: string): boolean => {
+  try {
+    const hashed = keccak256(toUtf8Bytes(candidate));
+    return hashed.toLowerCase() === expected.toLowerCase();
+  } catch (err) {
+    console.warn('Unable to compare uri hash', candidate, err);
+    return false;
+  }
+};
+
+const deriveSpecUri = (params: {
+  specHash?: string;
+  uriHash?: string;
+  createdArgs?: unknown;
+}): string | undefined => {
+  const { specHash, uriHash, createdArgs } = params;
+  const expectedHash =
+    uriHash && uriHash !== ZERO_HASH && isHex32(uriHash)
+      ? uriHash.toLowerCase()
+      : undefined;
+
+  const eventUri = (() => {
+    if (!createdArgs) return undefined;
+    const record = createdArgs as Record<string, unknown>;
+    const arrayArgs = Array.isArray(createdArgs)
+      ? (createdArgs as unknown[])
+      : undefined;
+    const candidate = normaliseString(
+      record.uri ??
+        record.metadataURI ??
+        record.specUri ??
+        (arrayArgs ? arrayArgs[7] : undefined)
+    );
+    if (!candidate) return undefined;
+    const trimmed = candidate.trim();
+    if (!trimmed) return undefined;
+    if (!expectedHash && isHex32(trimmed)) return undefined;
+    return trimmed;
+  })();
+
+  const validatedEventUri =
+    eventUri && (!expectedHash || hashMatches(eventUri, expectedHash))
+      ? eventUri
+      : undefined;
+
+  const specDerived = (() => {
+    const hash = specHash?.toLowerCase();
+    if (!hash || hash === ZERO_HASH) return undefined;
+    const suffix = hash.startsWith('0x') ? hash.slice(2) : hash;
+    if (!suffix) return undefined;
+    return `ipfs://job-spec/${suffix}`;
+  })();
+
+  const validatedSpecUri =
+    specDerived && (!expectedHash || hashMatches(specDerived, expectedHash))
+      ? specDerived
+      : undefined;
+
+  if (validatedEventUri) return validatedEventUri;
+  if (validatedSpecUri) return validatedSpecUri;
+  if (!expectedHash) return eventUri ?? specDerived;
+  return undefined;
 };
 
 interface UseJobFeedOptions {
@@ -260,8 +345,13 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
           );
         }
 
-        const stateValue = metadataRecord
-          ? normaliseNumber(metadataRecord.state ?? metadataRecord[0], 0)
+        const statusValue = metadataRecord
+          ? normaliseNumber(
+              metadataRecord.status ??
+                metadataRecord.state ??
+                metadataRecord[0],
+              0
+            )
           : 0;
         const feePctValue = metadataRecord
           ? normaliseBigInt(
@@ -293,17 +383,14 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
           .pop();
         const { resultHash: submittedResultHash, resultURI } =
           extractResultDetails(resultEvent?.meta?.args);
-        const storedResultHash = normaliseString(
+        const storedResultHash = normaliseHex(
           jobRecord.resultHash ?? jobRecord[6]
         );
         const employer =
-          normaliseString(jobRecord.employer ?? jobRecord[0]) ??
-          '0x0000000000000000000000000000000000000000';
+          normaliseString(jobRecord.employer ?? jobRecord[0]) ?? ZERO_ADDRESS;
         const agentRaw = normaliseString(jobRecord.agent ?? jobRecord[1]);
         const agent =
-          agentRaw && agentRaw !== '0x0000000000000000000000000000000000000000'
-            ? agentRaw
-            : undefined;
+          agentRaw && agentRaw !== ZERO_ADDRESS ? agentRaw : undefined;
         const reward = normaliseBigInt(
           jobRecord.reward ?? jobRecord[2] ?? 0n,
           0n
@@ -312,19 +399,18 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
           jobRecord.stake ?? jobRecord[3] ?? 0n,
           0n
         );
+        const uriHashValue =
+          normaliseHex(jobRecord.uriHash ?? jobRecord[5]) ?? ZERO_HASH;
+        const specHashValue =
+          normaliseHex(jobRecord.specHash ?? jobRecord[7]) ?? '0x';
         const fee = feePctValue > 0n ? (reward * feePctValue) / 100n : 0n;
-        const specHash =
-          normaliseString(jobRecord.specHash ?? jobRecord[7]) ?? '0x';
-        const createdArgs = createdEvent?.meta?.args;
-        const specUri =
-          normaliseString(
-            (createdArgs as { uri?: unknown })?.uri ??
-              (Array.isArray(createdArgs)
-                ? (createdArgs as unknown[])[7]
-                : undefined)
-          ) ?? '';
+        const specUri = deriveSpecUri({
+          specHash: specHashValue,
+          uriHash: uriHashValue,
+          createdArgs: createdEvent?.meta?.args,
+        });
 
-        const phase = jobStateToPhase(stateValue);
+        const phase = jobStateToPhase(statusValue);
         const summary: JobSummary = {
           jobId,
           employer,
@@ -333,8 +419,9 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
           stake,
           fee,
           deadline: deadlineValue,
-          specHash,
-          uri: specUri,
+          specHash: specHashValue,
+          specUri,
+          uriHash: uriHashValue !== ZERO_HASH ? uriHashValue : undefined,
           phase,
           lastUpdated: relatedEvents.reduce(
             (acc, evt) => Math.max(acc, evt.timestamp ?? 0),
@@ -345,7 +432,11 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
             assignedEvent?.timestamp ??
             (assignedAtOnchain ? assignedAtOnchain : undefined),
           resultSubmittedAt: resultEvent?.timestamp,
-          resultHash: submittedResultHash ?? storedResultHash,
+          resultHash:
+            submittedResultHash ??
+            (storedResultHash && storedResultHash !== ZERO_HASH
+              ? storedResultHash
+              : undefined),
           resultUri: resultURI,
           validationStartedAt: validationEvent?.timestamp,
           validationEndsAt: deadlineValue || undefined,
@@ -388,10 +479,7 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
             }
           ).getJobValidators(jobId);
           committee.forEach((address) => {
-            if (
-              address &&
-              address !== '0x0000000000000000000000000000000000000000'
-            ) {
+            if (address && address !== ZERO_ADDRESS) {
               ensureInsight(jobId, String(address));
             }
           });
