@@ -38,6 +38,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control systems map](#owner-control-systems-map)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
 - [Owner control master checklist](#owner-control-master-checklist)
+- [Owner control atlas](#owner-control-atlas)
 - [Owner control non-technical guide](#owner-control-non-technical-guide)
 - [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
 - [Owner control handbook](#owner-control-handbook)
@@ -274,6 +275,16 @@ The helper reads `config/owner-control.json` plus all module overrides, then ren
 ### Owner control master checklist
 
 Need a one-stop, checkbox-driven procedure that keeps governance, execution and verification perfectly aligned? The [Owner Control Master Checklist](docs/owner-control-master-checklist.md) distils every prerequisite, command and artefact into a production-ready worksheet. It layers Mermaid mind maps, flowcharts, sequences and Gantt timelines with copy/paste command snippets so non-technical owners can capture baselines, run the wizard, dry-run updates, execute `owner:update-all`, verify the system and archive artefacts without skipping a step. Print it for war rooms or attach the Markdown file to change tickets so auditors can confirm every control lever was handled precisely.
+
+### Owner control atlas
+
+Need a single artefact that fuses the owner envelope, per-module parameters, recommended commands and live health checks? Run the new Atlas generator:
+
+```bash
+npm run owner:atlas -- --network <network>
+```
+
+Export with `--out reports/<network>-owner-atlas.md` to archive a Markdown briefing, choose `--format human` for a condensed terminal digest, or `--format json` for dashboard integrations. The Atlas automatically lists every module managed by the owner, highlights zero-address treasuries, missing signers and unbalanced reward weights, and embeds a Mermaid topology that maps JSON manifests → Hardhat helpers → deployed contracts. See [docs/owner-control-atlas.md](docs/owner-control-atlas.md) for a fully illustrated walkthrough.
 
 ### Owner control non-technical guide
 
