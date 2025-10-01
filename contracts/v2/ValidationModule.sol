@@ -94,18 +94,24 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     uint256 public constant DEFAULT_REVEAL_WINDOW = 1 days;
     uint256 public constant DEFAULT_MIN_VALIDATORS = 3;
     uint256 public constant DEFAULT_MAX_VALIDATORS = 3;
+    uint256 public constant DEFAULT_APPROVAL_THRESHOLD = 67;
+    uint256 public constant DEFAULT_REVEAL_QUORUM_PCT = 67;
     uint256 public constant DEFAULT_FORCE_FINALIZE_GRACE = 1 hours;
     uint256 public forceFinalizeGrace = DEFAULT_FORCE_FINALIZE_GRACE;
 
     // slashing percentage applied to validator stake for incorrect votes
     uint256 public validatorSlashingPercentage = 50;
     // percentage of total stake required for approval
-    uint256 public approvalThreshold = 50;
+    uint256 public approvalThreshold = DEFAULT_APPROVAL_THRESHOLD;
     // absolute number of validator approvals required
     uint256 public requiredValidatorApprovals;
 
+    /// @notice Whether the approval count should auto-track the configured
+    ///         supermajority percentage.
+    bool public autoApprovalTarget = true;
+
     /// @notice Minimum percentage of the committee that must reveal for quorum.
-    uint256 public revealQuorumPct = 100;
+    uint256 public revealQuorumPct = DEFAULT_REVEAL_QUORUM_PCT;
 
     /// @notice Absolute floor on the number of reveals required for quorum.
     uint256 public minRevealValidators = DEFAULT_MIN_VALIDATORS;
@@ -211,6 +217,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event NonRevealPenaltyUpdated(uint256 penaltyBps, uint256 banBlocks);
     event EarlyFinalizeDelayUpdated(uint256 delay);
     event ForceFinalizeGraceUpdated(uint256 grace);
+    event AutoApprovalTargetUpdated(bool enabled);
     event ValidatorBanApplied(address indexed validator, uint256 untilBlock);
     event SelectionSeedRecorded(uint256 indexed jobId, bytes32 seed);
     /// @notice Emitted when a validator's ENS identity is verified.
@@ -337,6 +344,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         emit ValidatorBoundsUpdated(minValidators, maxValidators);
         validatorsPerJob = minValidators;
         emit ValidatorsPerJobUpdated(validatorsPerJob);
+
+        _syncRequiredValidatorApprovals();
 
         emit ApprovalThresholdUpdated(approvalThreshold);
 
@@ -526,7 +535,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         maxValidators = validatorCount;
         commitWindow = commitDur;
         revealWindow = revealDur;
-        _clampRequiredValidatorApprovals();
+        _syncRequiredValidatorApprovals();
         emit ValidatorBoundsUpdated(validatorCount, validatorCount);
         emit ValidatorsPerJobUpdated(validatorCount);
         emit TimingUpdated(commitDur, revealDur);
@@ -615,7 +624,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             validatorsPerJob = maxVals;
             emit ValidatorsPerJobUpdated(maxVals);
         }
-        _clampRequiredValidatorApprovals();
+        _syncRequiredValidatorApprovals();
         emit ValidatorBoundsUpdated(minVals, maxVals);
     }
 
@@ -628,7 +637,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             count > maxValidatorsPerJob
         ) revert InvalidValidatorBounds();
         validatorsPerJob = count;
-        _clampRequiredValidatorApprovals();
+        _syncRequiredValidatorApprovals();
         emit ValidatorsPerJobUpdated(count);
     }
 
@@ -637,6 +646,36 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (requiredValidatorApprovals > validatorsPerJob) {
             requiredValidatorApprovals = validatorsPerJob;
             emit RequiredValidatorApprovalsUpdated(validatorsPerJob);
+        }
+    }
+
+    function _approvalTarget(uint256 committee, uint256 pct)
+        internal
+        pure
+        returns (uint256)
+    {
+        if (committee == 0 || pct == 0) {
+            return 0;
+        }
+        uint256 numerator = committee * pct;
+        uint256 target = numerator / 100;
+        if (numerator % 100 != 0) {
+            unchecked {
+                ++target;
+            }
+        }
+        return target;
+    }
+
+    function _syncRequiredValidatorApprovals() internal {
+        if (autoApprovalTarget) {
+            uint256 target = _approvalTarget(validatorsPerJob, approvalThreshold);
+            if (requiredValidatorApprovals != target) {
+                requiredValidatorApprovals = target;
+                emit RequiredValidatorApprovalsUpdated(target);
+            }
+        } else {
+            _clampRequiredValidatorApprovals();
         }
     }
 
@@ -681,14 +720,34 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (pct == 0 || pct > 100) revert InvalidPercentage();
         approvalThreshold = pct;
         emit ApprovalThresholdUpdated(pct);
+        _syncRequiredValidatorApprovals();
     }
 
     /// @notice Set the required number of validator approvals.
     function setRequiredValidatorApprovals(uint256 count) external override onlyOwner {
         if (count == 0 || count > maxValidators) revert InvalidApprovals();
         if (count > validatorsPerJob) count = validatorsPerJob;
+        if (autoApprovalTarget) {
+            autoApprovalTarget = false;
+            emit AutoApprovalTargetUpdated(false);
+        }
         requiredValidatorApprovals = count;
         emit RequiredValidatorApprovalsUpdated(count);
+    }
+
+    /// @notice Toggle automatic supermajority targeting for required approvals.
+    /// @param enabled When true, the approval count tracks the configured threshold.
+    function setAutoApprovalTarget(bool enabled) external override onlyOwner {
+        if (autoApprovalTarget == enabled) {
+            return;
+        }
+        autoApprovalTarget = enabled;
+        emit AutoApprovalTargetUpdated(enabled);
+        if (enabled) {
+            _syncRequiredValidatorApprovals();
+        } else {
+            _clampRequiredValidatorApprovals();
+        }
     }
 
     /// @inheritdoc IValidationModule

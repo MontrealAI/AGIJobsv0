@@ -22,6 +22,20 @@ describe('ValidationModule required approvals', function () {
     await validation.waitForDeployment();
   });
 
+  it('defaults to automatic supermajority approvals', async () => {
+    expect(await validation.autoApprovalTarget()).to.equal(true);
+    expect(await validation.requiredValidatorApprovals()).to.equal(3n);
+
+    await validation.connect(owner).setValidatorsPerJob(4);
+    expect(await validation.requiredValidatorApprovals()).to.equal(3n);
+
+    await validation.connect(owner).setApprovalThreshold(75);
+    expect(await validation.requiredValidatorApprovals()).to.equal(3n);
+
+    await validation.connect(owner).setApprovalThreshold(80);
+    expect(await validation.requiredValidatorApprovals()).to.equal(4n);
+  });
+
   it('reverts for invalid counts', async () => {
     await expect(
       validation.connect(owner).setRequiredValidatorApprovals(0)
@@ -34,6 +48,7 @@ describe('ValidationModule required approvals', function () {
   it('updates and clamps to committee size', async () => {
     await validation.connect(owner).setRequiredValidatorApprovals(2);
     expect(await validation.requiredValidatorApprovals()).to.equal(2n);
+    expect(await validation.autoApprovalTarget()).to.equal(false);
 
     await validation.connect(owner).setRequiredValidatorApprovals(4);
     expect(await validation.requiredValidatorApprovals()).to.equal(3n);
@@ -43,6 +58,10 @@ describe('ValidationModule required approvals', function () {
     expect(await validation.requiredValidatorApprovals()).to.equal(4n);
 
     await validation.connect(owner).setValidatorsPerJob(3);
+    expect(await validation.requiredValidatorApprovals()).to.equal(3n);
+
+    await validation.connect(owner).setAutoApprovalTarget(true);
+    expect(await validation.autoApprovalTarget()).to.equal(true);
     expect(await validation.requiredValidatorApprovals()).to.equal(3n);
   });
 });

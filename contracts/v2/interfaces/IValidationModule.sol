@@ -143,6 +143,9 @@ interface IValidationModule {
     /// @notice Update approval threshold percentage
     function setApprovalThreshold(uint256 pct) external;
 
+    /// @notice Toggle automatic tracking of the supermajority approval target.
+    function setAutoApprovalTarget(bool enabled) external;
+
     /// @notice Update percentage of stake slashed for incorrect validator votes
     function setValidatorSlashingPct(uint256 pct) external;
 
