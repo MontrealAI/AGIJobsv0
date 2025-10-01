@@ -247,6 +247,7 @@ async function main() {
   );
   const installer = await Installer.deploy();
   await installer.waitForDeployment();
+  await installer.transferOwnership(governance);
 
   await registry.setGovernance(await installer.getAddress());
   await stake.setGovernance(await installer.getAddress());
@@ -282,6 +283,9 @@ async function main() {
       ethers.ZeroHash,
       []
     );
+
+  await committee.transferOwnership(governance);
+  await attestation.transferOwnership(governance);
 
   const feePct = typeof args.feePct === 'string' ? Number(args.feePct) : 5;
   await registry.connect(governanceSigner).setFeePct(feePct);
@@ -344,33 +348,12 @@ async function main() {
   await stake.connect(governanceSigner).setPauser(pauseAddress);
   await validation.connect(governanceSigner).setPauser(pauseAddress);
   await dispute.connect(governanceSigner).setPauser(pauseAddress);
-  await platformRegistry
-    .connect(governanceSigner)
-    .setPauser(pauseAddress);
+  await platformRegistry.connect(governanceSigner).setPauser(pauseAddress);
   await feePool.connect(governanceSigner).setPauser(pauseAddress);
   await reputation.connect(governanceSigner).setPauser(pauseAddress);
   await committee.connect(governanceSigner).setPauser(pauseAddress);
-  await stake.connect(governanceSigner).setGovernance(await pause.getAddress());
-  await registry
-    .connect(governanceSigner)
-    .setGovernance(await pause.getAddress());
-  await validation
-    .connect(governanceSigner)
-    .transferOwnership(await pause.getAddress());
-  await dispute
-    .connect(governanceSigner)
-    .transferOwnership(await pause.getAddress());
-  await platformRegistry
-    .connect(governanceSigner)
-    .transferOwnership(await pause.getAddress());
-  await feePool
-    .connect(governanceSigner)
-    .transferOwnership(await pause.getAddress());
-  await reputation
-    .connect(governanceSigner)
-    .transferOwnership(await pause.getAddress());
-  await committee.transferOwnership(await pause.getAddress());
-  await attestation.transferOwnership(await pause.getAddress());
+  await stake.connect(governanceSigner).setGovernance(governance);
+  await registry.connect(governanceSigner).setGovernance(governance);
 
   console.log('JobRegistry deployed to:', await registry.getAddress());
   console.log('ValidationModule:', await validation.getAddress());
@@ -515,6 +498,7 @@ async function main() {
     await platformRegistry.getAddress(),
     await feePool.getAddress(),
     await reputation.getAddress(),
+    await committee.getAddress(),
     governance,
   ]);
   await verify(await installer.getAddress(), []);

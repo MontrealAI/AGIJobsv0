@@ -39,8 +39,8 @@ import {TOKEN_SCALE} from "./Constants.sol";
 /// @title Deployer
 /// @notice One shot helper that deploys and wires the core module set.
 /// @dev Each module is deployed with default parameters (zero values) and
-///      ownership is transferred to the SystemPause contract or a supplied
-///      governance address once wiring is complete.
+///      ownership is transferred to the supplied governance address once
+///      wiring is complete.
 contract Deployer is Ownable {
     bool public deployed;
 
@@ -422,20 +422,20 @@ contract Deployer is Ownable {
             committee,
             governance
         );
-        // hand over governance to SystemPause
-        stake.setGovernance(address(pause));
-        registry.setGovernance(address(pause));
+        // restore governance to the supplied timelock / multisig address
+        stake.setGovernance(governance);
+        registry.setGovernance(governance);
 
         // Transfer ownership
-        validation.transferOwnership(address(pause));
-        reputation.transferOwnership(address(pause));
-        dispute.transferOwnership(address(pause));
-        committee.transferOwnership(address(pause));
+        validation.transferOwnership(governance);
+        reputation.transferOwnership(governance);
+        dispute.transferOwnership(governance);
+        committee.transferOwnership(governance);
         certificate.transferOwnership(governance);
-        pRegistry.transferOwnership(address(pause));
+        pRegistry.transferOwnership(governance);
         router.transferOwnership(governance);
         incentives.transferOwnership(governance);
-        pool.transferOwnership(address(pause));
+        pool.transferOwnership(governance);
         if (address(policy) != address(0)) {
             policy.transferOwnership(governance);
         }

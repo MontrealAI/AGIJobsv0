@@ -18,6 +18,8 @@ type ModuleAddresses = Record<ModuleKey, string>;
 
 type ModuleConfig = Partial<Record<ModuleKey, string>> & {
   systemPause?: string;
+  owner?: string;
+  governance?: string;
 };
 
 interface CliOptions {
@@ -27,6 +29,8 @@ interface CliOptions {
   overrides: Partial<Record<ModuleKey, string>>;
   forceRefresh: boolean;
   skipRefresh: boolean;
+  owner?: string;
+  governance?: string;
 }
 
 interface PlannedAction {
@@ -116,6 +120,32 @@ function parseArgs(argv: string[]): CliOptions {
       options.skipRefresh = true;
       continue;
     }
+    if (arg === '--owner' || arg === '--expected-owner') {
+      const value = argv[i + 1];
+      if (!value) {
+        throw new Error(`${arg} requires an address`);
+      }
+      const address = ethers.getAddress(value);
+      if (address === ethers.ZeroAddress) {
+        throw new Error(`${arg} cannot be the zero address`);
+      }
+      options.owner = address;
+      i += 1;
+      continue;
+    }
+    if (arg === '--governance') {
+      const value = argv[i + 1];
+      if (!value) {
+        throw new Error('--governance requires an address');
+      }
+      const address = ethers.getAddress(value);
+      if (address === ethers.ZeroAddress) {
+        throw new Error('--governance cannot be the zero address');
+      }
+      options.governance = address;
+      i += 1;
+      continue;
+    }
     const key = FLAG_TO_KEY.get(arg);
     if (key) {
       const value = argv[i + 1];
@@ -175,6 +205,16 @@ function readModuleConfig(filePath: string): ModuleConfig {
   const pauseValue = raw.systemPause ?? modules.systemPause ?? raw.system_pause;
   if (typeof pauseValue === 'string' && pauseValue.trim()) {
     result.systemPause = pauseValue;
+  }
+
+  const ownerValue = raw.owner ?? raw.expectedOwner ?? modules.owner;
+  if (typeof ownerValue === 'string' && ownerValue.trim()) {
+    result.owner = ownerValue;
+  }
+
+  const governanceValue = raw.governance ?? modules.governance;
+  if (typeof governanceValue === 'string' && governanceValue.trim()) {
+    result.governance = governanceValue;
   }
 
   return result;
@@ -260,6 +300,22 @@ async function main() {
     'SystemPause address'
   );
 
+  const governanceOwnerCandidate =
+    cli.owner ??
+    cli.governance ??
+    configModules.owner ??
+    configModules.governance ??
+    tokenConfig.governance?.timelock ??
+    tokenConfig.governance?.govSafe;
+  const expectedOwner = governanceOwnerCandidate
+    ? ensureAddress(governanceOwnerCandidate, 'governance owner')
+    : undefined;
+  if (!expectedOwner) {
+    console.warn(
+      'No governance owner configured; module ownership checks will be skipped.'
+    );
+  }
+
   const pause = await ethers.getContractAt(
     'contracts/v2/SystemPause.sol:SystemPause',
     pauseAddress
@@ -293,6 +349,7 @@ async function main() {
 
   const ownershipIssues: string[] = [];
   const pauserIssues: string[] = [];
+  const moduleOwners: Partial<Record<ModuleKey, string>> = {};
 
   for (const key of MODULE_KEYS) {
     const target = modules[key];
@@ -304,12 +361,15 @@ async function main() {
     let owner: string;
     try {
       owner = await inspection.owner();
+      moduleOwners[key] = owner;
     } catch (error) {
       ownershipIssues.push(`${key}: owner() not available`);
       continue;
     }
-    if (!sameAddress(owner, pauseAddress)) {
-      ownershipIssues.push(`${key}: owner is ${owner}`);
+    if (expectedOwner && !sameAddress(owner, expectedOwner)) {
+      ownershipIssues.push(
+        `${key}: owner is ${owner} (expected ${expectedOwner})`
+      );
     }
 
     try {
@@ -342,6 +402,9 @@ async function main() {
   }
 
   const actions: PlannedAction[] = [];
+  const pauseOwnsAll = MODULE_KEYS.every((key) =>
+    sameAddress(moduleOwners[key], pauseAddress)
+  );
 
   if (differences.length) {
     const notes: string[] = [];
@@ -373,18 +436,22 @@ async function main() {
     } else if (cli.forceRefresh) {
       notes.push('Forced refresh requested; reapplying pauser roles.');
     }
-    if (ownershipIssues.length) {
+    if (!pauseOwnsAll) {
       notes.push(
-        'Action will revert until ownership is transferred to SystemPause.'
+        'Skipping refresh: SystemPause is not the owner of all modules. Update pauser roles via the governance owner if required.'
       );
+      console.warn(
+        '\nSkipping SystemPause.refreshPausers because SystemPause is not the owner of all modules.'
+      );
+    } else {
+      actions.push({
+        label: 'Refresh SystemPause pauser roles',
+        method: 'refreshPausers',
+        args: [],
+        contract: pause,
+        notes,
+      });
     }
-    actions.push({
-      label: 'Refresh SystemPause pauser roles',
-      method: 'refreshPausers',
-      args: [],
-      contract: pause,
-      notes,
-    });
   }
 
   await executeActions(actions, cli.execute);
