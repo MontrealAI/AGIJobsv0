@@ -27,6 +27,15 @@ export MAINNET_FORK_BLOCK=21543789
 | Stake invariants & withdrawal bounds | `npx hardhat test --no-compile test/v2/StakeManagerSlashing.test.js` | Validates that withdrawals and slashing never exceed the staked balance. |
 | Commit-reveal fuzz harness | `npm run echidna` | Runs Echidna assertions on the commit/reveal harness covering validator misbehaviour search space. |
 
+### Governance access controls (new)
+
+| Scenario | Command | Purpose |
+| --- | --- | --- |
+| Timelock adjusts minimum stake | `npx hardhat test test/v2/security/stakeManagerGovernance.test.ts --grep "timelock controller"` | Validates that only the DAO timelock can change StakeManager thresholds. |
+| Arbitrary callers are rejected | `npx hardhat test test/v2/security/stakeManagerGovernance.test.ts --grep "rejects arbitrary callers"` | Randomly generated wallets revert with `NotGovernance`, exercising the permission boundary. |
+
+These tests live in [`test/v2/security/stakeManagerGovernance.test.ts`](../../test/v2/security/stakeManagerGovernance.test.ts) and impersonate the production timelock while replaying the StakeManager bytecode at the canonical `$AGIALPHA` address. Capture the console output and include it with the auditor hand-off bundle.
+
 Each scenario logs success/failure details that should be attached to the audit
 package.  Store raw outputs under `internal_docs/security/drills/` when preparing
 an external report.
