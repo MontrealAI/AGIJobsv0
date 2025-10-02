@@ -1,6 +1,6 @@
 # Owner Configuration Audit
 
-- Generated: `2025-10-02T00:24:33.932Z`
+- Generated: `2025-10-02T00:31:08.487Z`
 - Network context: `sepolia`
 - Token config: `config/agialpha.sepolia.json` (sha256: `a6ce5c39468c7ad8445ee1f2007b588e648e049c36f5b8abca5c5329f0510286`)
 - Owner control config: `config/owner-control.json` (sha256: `8e69e8923d19fcb111b3fdc631c25351ec54a987eb9518c47fd9a4609d9f5c6f`)
