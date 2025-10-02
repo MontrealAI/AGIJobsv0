@@ -118,7 +118,7 @@ await certificate.mint(agent, jobId, 'ipfs://cert.json');
 
 Stores platform fees and distributes rewards.
 
-- `depositFee(amount)` – `StakeManager` deposits collected fees.
+- `depositFee(amount)` – `StakeManager` deposits collected fees, burns the configured share, and escrows the net amount.
 - `claimRewards()` – stakers withdraw accumulated rewards.
 - `reward(to, amount)` – authorised rewarders may transfer surplus tokens, but the pool guarantees that `pendingFees` remain reserved for automated fee distribution and will revert with `InsufficientRewardBalance` if a transfer would reduce that balance.
 

@@ -68,18 +68,15 @@ contract FeePoolTest {
         token.mint(address(feePool), 1 * TOKEN);
         vm.prank(address(stakeManager));
         feePool.depositFee(1 * TOKEN);
-        feePool.distributeFees();
-        uint256 expected = feePool.ACCUMULATOR_SCALE() / 3;
-        require(feePool.cumulativePerToken() == expected, "acc");
         uint256 burnAmount = (TOKEN * feePool.burnPct()) / 100;
         uint256 distribute = TOKEN - burnAmount;
+        feePool.distributeFees();
         uint256 total = stakeManager.totalStake(IStakeManager.Role.Platform);
+        uint256 expected = (distribute * feePool.ACCUMULATOR_SCALE()) / total;
+        require(feePool.cumulativePerToken() == expected, "acc");
         uint256 perToken = (distribute * feePool.ACCUMULATOR_SCALE()) / total;
         uint256 accounted = (perToken * total) / feePool.ACCUMULATOR_SCALE();
-        require(
-            token.balanceOf(address(feePool)) == accounted,
-            "bal"
-        );
+        require(token.balanceOf(address(feePool)) == accounted, "bal");
     }
 
     function testContribute() public {
@@ -128,7 +125,6 @@ contract FeePoolTest {
         uint256 supplyBefore = token.totalSupply();
         vm.prank(address(stakeManager));
         feePool.depositFee(TOKEN);
-        feePool.distributeFees();
         uint256 burnAmount = (TOKEN * feePool.burnPct()) / 100;
         require(token.totalSupply() == supplyBefore - burnAmount, "supply");
     }
@@ -149,9 +145,8 @@ contract FeePoolTest {
         stakeManager.setStake(alice, IStakeManager.Role.Platform, 1 * TOKEN);
         nbToken.mint(address(feePool), TOKEN);
         vm.prank(address(stakeManager));
-        feePool.depositFee(TOKEN);
         vm.expectRevert(TokenNotBurnable.selector);
-        feePool.distributeFees();
+        feePool.depositFee(TOKEN);
     }
 
     function testGovernanceWithdrawBurnsWhenBurnAddressIsZero() public {
@@ -199,9 +194,18 @@ contract FeePoolTest {
         feePool.claimRewards();
         vm.prank(bob);
         feePool.claimRewards();
-        require(token.balanceOf(alice) == 316_666_666_666_666_666, "alice");
-        require(token.balanceOf(bob) == 633_333_333_333_333_333, "bob");
-        uint256 distribute = TOKEN - ((TOKEN * feePool.burnPct()) / 100);
+        uint256 total = stakeManager.totalStake(IStakeManager.Role.Platform);
+        uint256 burnAmount = (TOKEN * feePool.burnPct()) / 100;
+        uint256 distribute = TOKEN - burnAmount;
+        uint256 perToken = (distribute * feePool.ACCUMULATOR_SCALE()) / total;
+        uint256 aliceExpected =
+            (stakeManager.stakeOf(alice, IStakeManager.Role.Platform) * perToken) /
+            feePool.ACCUMULATOR_SCALE();
+        uint256 bobExpected =
+            (stakeManager.stakeOf(bob, IStakeManager.Role.Platform) * perToken) /
+            feePool.ACCUMULATOR_SCALE();
+        require(token.balanceOf(alice) == aliceExpected, "alice");
+        require(token.balanceOf(bob) == bobExpected, "bob");
         require(
             token.balanceOf(alice) + token.balanceOf(bob) == distribute,
             "sum"

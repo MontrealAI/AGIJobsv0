@@ -143,6 +143,26 @@ describe('FeePool', function () {
     expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
   });
 
+  it('burns configured share when fees are deposited', async () => {
+    await feePool.connect(owner).setBurnPct(5);
+    const amount = 200;
+    await token.mint(await feePool.getAddress(), amount);
+    const stakeManagerAddr = await stakeManager.getAddress();
+    await ethers.provider.send('hardhat_setBalance', [
+      stakeManagerAddr,
+      '0x56BC75E2D63100000',
+    ]);
+    const smSigner = await ethers.getImpersonatedSigner(stakeManagerAddr);
+    const burn = Math.floor((amount * 5) / 100);
+    await expect(feePool.connect(smSigner).depositFee(amount))
+      .to.emit(feePool, 'FeesBurned')
+      .withArgs(smSigner.address, burn);
+    expect(await feePool.pendingFees()).to.equal(BigInt(amount - burn));
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(
+      BigInt(amount - burn)
+    );
+  });
+
   it('accounts for NFT multipliers when distributing rewards', async () => {
     const MockNFT = await ethers.getContractFactory(
       'contracts/legacy/MockERC721.sol:MockERC721'
@@ -321,12 +341,8 @@ describe('FeePool', function () {
         )
     ).to.not.be.reverted;
 
-    expect(await feePool.pendingFees()).to.equal(0n);
-    const rewardRole = await feePool.rewardRole();
-    const totalStake = await stakeManager.totalBoostedStake(Number(rewardRole));
-    const scale = await feePool.ACCUMULATOR_SCALE();
-    const expectedPerToken = (feeAmount * scale) / totalStake;
-    expect(await feePool.cumulativePerToken()).to.equal(expectedPerToken);
+    expect(await feePool.pendingFees()).to.equal(feeAmount);
+    expect(await feePool.cumulativePerToken()).to.equal(0n);
 
     await policy.connect(user1).acknowledge();
     await policy.connect(user2).acknowledge();

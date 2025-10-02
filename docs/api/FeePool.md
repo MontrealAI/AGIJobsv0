@@ -4,9 +4,9 @@ Holds platform fees and distributes rewards.
 
 ## Functions
 
-- `depositFee(uint256 amount)` – StakeManager deposits collected fees.
+- `depositFee(uint256 amount)` – StakeManager deposits collected fees, burns the configured `burnPct`, and escrows the remainder.
 - `contribute(uint256 amount)` – anyone can add to the reward pool.
-- `distributeFees()` – move accumulated fees to the reward pool and burn portion.
+- `distributeFees()` – move accumulated fees to the reward pool; burns only occur during `depositFee`.
 - `claimRewards()` – stakers claim their share of rewards.
 - `governanceWithdraw(address to, uint256 amount)` – governance timelock emergency withdrawal.
 - `setStakeManager(address manager)` – owner wires modules.
