@@ -21,7 +21,8 @@ sequenceDiagram
     VM->>JR: result
 ```
 
-Majority approval releases rewards; any minority can escalate to the `DisputeModule` by paying a dispute fee.
+Majority approval releases rewards; any minority can escalate to the `DisputeModule` by paying a dispute fee. With the revised
+default `approvalThreshold` of 66%, two validators in a three-member committee now satisfy the majority requirement.
 
 ## Slashing & Redistribution
 

@@ -108,7 +108,7 @@ Call `revealValidation(jobId, approveBit, salt)` within the **reveal window**.
 
 **Finalize**  
 Anyone can call `finalize(jobId)` after reveal closes. The job passes if:
-- Reveals ≥ `minValidators` **and** approvals meet `approvalThreshold` (e.g., ≥⅔).  
+- Reveals ≥ `minValidators` **and** approvals meet `approvalThreshold` (default 66%, so two approvals finalise a three-validator round).
 - Results route rewards/penalties; reputation updates are emitted.
 
 ```mermaid
@@ -178,7 +178,7 @@ pie title Reward Budget (illustrative)
 - `burnPct` / treasury routing — fee policy.
 
 > **Typical starting points (tune per chain latency & volume):**  
-> `minStake`: ≥ 2–5× max per‑job validator payout • `K`: 5–9 • `approvalThreshold`: ≥66.7% • `commitWindow`: 30–60 min • `revealWindow`: 15–30 min.
+> `minStake`: ≥ 2–5× max per‑job validator payout • `K`: 5–9 • `approvalThreshold`: ≥66% (two approvals in a three-member committee) • `commitWindow`: 30–60 min • `revealWindow`: 15–30 min.
 
 ---
 
