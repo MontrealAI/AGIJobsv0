@@ -198,6 +198,7 @@ async function main() {
     []
   );
   await registry.setIdentityRegistry(await identity.getAddress());
+  await dispute.setTaxPolicy(await tax.getAddress());
   await validation.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
 

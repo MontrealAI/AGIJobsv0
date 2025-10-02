@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IDisputeModule} from "../interfaces/IDisputeModule.sol";
+import {ITaxPolicy} from "../interfaces/ITaxPolicy.sol";
 
 /// @title KlerosDisputeModule
 /// @notice Minimal dispute module that forwards disputes to an external
@@ -25,6 +26,8 @@ contract KlerosDisputeModule is IDisputeModule {
     error ZeroEvidence();
     /// @dev Function is not supported.
     error Unsupported();
+    error InvalidTaxPolicy();
+    error PolicyNotTaxExempt();
 
     event GovernanceUpdated(address governance);
     event DisputeRaised(
@@ -46,6 +49,11 @@ contract KlerosDisputeModule is IDisputeModule {
 
     /// @notice External arbitration service responsible for resolving disputes.
     address public arbitrator;
+
+    /// @notice Tax policy accepted by employers, agents, and validators.
+    ITaxPolicy public taxPolicy;
+
+    event TaxPolicyUpdated(address indexed policy);
 
     /// @dev Restrict functions to governance.
     modifier onlyGovernance() {
@@ -87,6 +95,11 @@ contract KlerosDisputeModule is IDisputeModule {
     /// @notice Update the arbitration service address.
     function setArbitrator(address _arbitrator) external onlyGovernance {
         arbitrator = _arbitrator;
+    }
+
+    /// @inheritdoc IDisputeModule
+    function setTaxPolicy(ITaxPolicy policy) external override onlyGovernance {
+        _setTaxPolicy(policy);
     }
 
     /// @inheritdoc IDisputeModule
@@ -151,6 +164,13 @@ contract KlerosDisputeModule is IDisputeModule {
         string calldata uri
     ) external override {
         emit EvidenceSubmitted(jobId, msg.sender, evidenceHash, uri);
+    }
+
+    function _setTaxPolicy(ITaxPolicy policy) internal {
+        if (address(policy) == address(0)) revert InvalidTaxPolicy();
+        if (!policy.isTaxExempt()) revert PolicyNotTaxExempt();
+        taxPolicy = policy;
+        emit TaxPolicyUpdated(address(policy));
     }
 
     // ---------------------------------------------------------------------

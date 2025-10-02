@@ -40,4 +40,33 @@ describe('DisputeModule module ether rejection', function () {
   it('reports tax exemption', async () => {
     expect(await dispute.isTaxExempt()).to.equal(true);
   });
+
+  it('allows owner to set tax policy when exempt', async () => {
+    const Policy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const policy = await Policy.deploy('ipfs://policy', 'ack');
+    await policy.waitForDeployment();
+    await expect(
+      dispute.connect(owner).setTaxPolicy(await policy.getAddress())
+    )
+      .to.emit(dispute, 'TaxPolicyUpdated')
+      .withArgs(await policy.getAddress());
+    expect(await dispute.taxPolicy()).to.equal(await policy.getAddress());
+  });
+
+  it('reverts when setting invalid tax policy', async () => {
+    await expect(
+      dispute.connect(owner).setTaxPolicy(ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(dispute, 'InvalidTaxPolicy');
+
+    const NonExempt = await ethers.getContractFactory(
+      'contracts/v2/mocks/TaxPolicyNonExempt.sol:TaxPolicyNonExempt'
+    );
+    const mockPolicy = await NonExempt.deploy();
+    await mockPolicy.waitForDeployment();
+    await expect(
+      dispute.connect(owner).setTaxPolicy(await mockPolicy.getAddress())
+    ).to.be.revertedWithCustomError(dispute, 'PolicyNotTaxExempt');
+  });
 });

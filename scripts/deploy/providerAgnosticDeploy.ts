@@ -355,6 +355,7 @@ async function deployContracts(ctx: DeploymentContext) {
   );
   await registry.setIdentityRegistry(await identity.getAddress());
   await registry.setTaxPolicy(await taxPolicy.getAddress());
+  await dispute.setTaxPolicy(await taxPolicy.getAddress());
 
   await reputation.setCaller(await registry.getAddress(), true);
   await reputation.setCaller(await validation.getAddress(), true);
