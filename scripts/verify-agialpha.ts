@@ -1,9 +1,127 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ethers } from 'ethers';
+import type { Agent } from 'http';
 import { loadTokenConfig, inferNetworkKey } from './config';
 
+type FetchGetUrlFunc = ReturnType<typeof ethers.FetchRequest.createGetUrlFunc>;
+
 const { path: defaultConfigPath } = loadTokenConfig();
+let fetchProxyRegistered = false;
+
+function lowerCase(value: string): string {
+  return value.toLowerCase();
+}
+
+function parseNoProxyHosts(): string[] {
+  const raw =
+    process.env.NO_PROXY ||
+    process.env.no_proxy ||
+    process.env.NOPROXY ||
+    process.env.noproxy;
+  if (!raw) {
+    return [];
+  }
+  return raw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0)
+    .map((entry) => entry.replace(/^\./, '').toLowerCase());
+}
+
+function hostMatchesNoProxy(host: string, patterns: string[]): boolean {
+  if (!host) {
+    return false;
+  }
+  const target = lowerCase(host);
+  return patterns.some((pattern) => {
+    if (pattern === '*') {
+      return true;
+    }
+    const [hostPattern] = pattern.split(':');
+    if (!hostPattern) {
+      return false;
+    }
+    if (target === hostPattern) {
+      return true;
+    }
+    return target.endsWith(`.${hostPattern}`);
+  });
+}
+
+function getProxyUrl(): string | null {
+  return (
+    process.env.VERIFY_RPC_PROXY_URL ||
+    process.env.HTTPS_PROXY ||
+    process.env.https_proxy ||
+    process.env.HTTP_PROXY ||
+    process.env.http_proxy ||
+    null
+  );
+}
+
+function resolveProxyAgent(proxyUrl: string): Agent | null {
+  if (!proxyUrl) {
+    return null;
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { HttpsProxyAgent } = require('https-proxy-agent');
+    return new HttpsProxyAgent(proxyUrl);
+  } catch (err) {
+    console.warn(
+      `Unable to configure HTTPS proxy agent (${(err as Error).message}); proceeding without proxy.`
+    );
+    return null;
+  }
+}
+
+function registerFetchProxySupport(): void {
+  if (fetchProxyRegistered) {
+    return;
+  }
+  const proxyUrl = getProxyUrl();
+  if (!proxyUrl) {
+    fetchProxyRegistered = true;
+    return;
+  }
+  const noProxyPatterns = parseNoProxyHosts();
+  const defaultGetUrl = ethers.FetchRequest.createGetUrlFunc();
+  const agent = resolveProxyAgent(proxyUrl);
+  let proxiedGetUrl: FetchGetUrlFunc | null = null;
+
+  const shouldBypass = (targetUrl: URL): boolean =>
+    targetUrl.protocol !== 'https:' ||
+    hostMatchesNoProxy(targetUrl.hostname, noProxyPatterns);
+
+  const getProxiedGetUrl = (): FetchGetUrlFunc => {
+    if (!proxiedGetUrl) {
+      if (!agent) {
+        proxiedGetUrl = defaultGetUrl;
+      } else {
+        proxiedGetUrl = ethers.FetchRequest.createGetUrlFunc({ agent });
+      }
+    }
+    return proxiedGetUrl;
+  };
+
+  ethers.FetchRequest.registerGetUrl(async (request, signal) => {
+    try {
+      const targetUrl = new URL(request.url);
+      if (shouldBypass(targetUrl)) {
+        return defaultGetUrl(request, signal);
+      }
+      return getProxiedGetUrl()(request, signal);
+    } catch (err) {
+      console.warn(
+        `Proxy routing fallback triggered for ${request.url}: ${(err as Error).message}`
+      );
+      return defaultGetUrl(request, signal);
+    }
+  });
+
+  fetchProxyRegistered = true;
+}
 const defaultConstantsPath = path.join(
   __dirname,
   '..',
@@ -278,6 +396,7 @@ export async function verifyAgialpha(
   const skipOnChain = Boolean(options.skipOnChain);
   const fetcher = options.fetchMetadata ?? fetchTokenMetadata;
   const rpcUrl = resolveRpcUrl(options);
+  registerFetchProxySupport();
   const provider =
     options.provider ?? (rpcUrl ? new ethers.JsonRpcProvider(rpcUrl) : null);
 

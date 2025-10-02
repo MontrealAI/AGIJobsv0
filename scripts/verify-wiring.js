@@ -10,6 +10,110 @@ const {
 const { ethers } = require('ethers');
 const { AGIALPHA } = require('./constants');
 
+let proxySupportRegistered = false;
+
+function parseNoProxyEnv() {
+  const raw =
+    process.env.WIRE_VERIFY_NO_PROXY ||
+    process.env.NO_PROXY ||
+    process.env.no_proxy ||
+    process.env.NOPROXY ||
+    process.env.noproxy;
+  if (!raw) {
+    return [];
+  }
+  return raw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0)
+    .map((entry) => entry.replace(/^\./, '').toLowerCase());
+}
+
+function shouldBypassProxy(hostname, patterns) {
+  if (!hostname) {
+    return false;
+  }
+  const target = hostname.toLowerCase();
+  return patterns.some((pattern) => {
+    if (pattern === '*') {
+      return true;
+    }
+    const [hostPattern] = pattern.split(':');
+    if (!hostPattern) {
+      return false;
+    }
+    if (target === hostPattern) {
+      return true;
+    }
+    return target.endsWith(`.${hostPattern}`);
+  });
+}
+
+function resolveProxyUrl() {
+  return (
+    process.env.WIRE_VERIFY_PROXY_URL ||
+    process.env.HTTPS_PROXY ||
+    process.env.https_proxy ||
+    process.env.HTTP_PROXY ||
+    process.env.http_proxy ||
+    null
+  );
+}
+
+function configureFetchProxySupport() {
+  if (proxySupportRegistered) {
+    return;
+  }
+  const proxyUrl = resolveProxyUrl();
+  if (!proxyUrl) {
+    proxySupportRegistered = true;
+    return;
+  }
+  const patterns = parseNoProxyEnv();
+  const defaultGetUrl = ethers.FetchRequest.createGetUrlFunc();
+  let proxiedGetUrl = null;
+  let agent = null;
+
+  try {
+    const { HttpsProxyAgent } = require('https-proxy-agent');
+    agent = new HttpsProxyAgent(proxyUrl);
+  } catch (err) {
+    console.warn(
+      `Unable to configure HTTPS proxy agent (${err.message}); continuing without proxy.`
+    );
+  }
+
+  const getProxied = () => {
+    if (!proxiedGetUrl) {
+      if (agent) {
+        proxiedGetUrl = ethers.FetchRequest.createGetUrlFunc({ agent });
+      } else {
+        proxiedGetUrl = defaultGetUrl;
+      }
+    }
+    return proxiedGetUrl;
+  };
+
+  ethers.FetchRequest.registerGetUrl(async (request, signal) => {
+    try {
+      const url = new URL(request.url);
+      if (url.protocol !== 'https:' || shouldBypassProxy(url.hostname, patterns)) {
+        return defaultGetUrl(request, signal);
+      }
+      return getProxied()(request, signal);
+    } catch (err) {
+      console.warn(
+        `Proxy routing fallback triggered for ${request.url}: ${err.message}`
+      );
+      return defaultGetUrl(request, signal);
+    }
+  });
+
+  proxySupportRegistered = true;
+}
+
+configureFetchProxySupport();
+
 const ZERO_ADDRESS = ethers.ZeroAddress;
 const ZERO_HASH = ethers.ZeroHash;
 const OWNABLE_FRAGMENT = 'function owner() view returns (address)';
