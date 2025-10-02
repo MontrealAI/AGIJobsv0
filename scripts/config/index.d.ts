@@ -89,6 +89,22 @@ export interface JobRegistryConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface DisputeModuleConfig {
+  address?: string | null;
+  jobRegistry?: string | null;
+  stakeManager?: string | null;
+  committee?: string | null;
+  pauser?: string | null;
+  taxPolicy?: string | null;
+  [key: string]: unknown;
+}
+
+export interface DisputeModuleConfigResult {
+  config: DisputeModuleConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export interface StakeRecommendationsConfig {
   min?: string;
   minTokens?: string | number;
@@ -482,6 +498,9 @@ export function loadIdentityRegistryConfig(
 export function loadJobRegistryConfig(
   options?: LoadOptions
 ): JobRegistryConfigResult;
+export function loadDisputeModuleConfig(
+  options?: LoadOptions
+): DisputeModuleConfigResult;
 export function loadStakeManagerConfig(
   options?: LoadOptions
 ): StakeManagerConfigResult;
