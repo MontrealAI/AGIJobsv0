@@ -175,6 +175,10 @@ const registryAbi = [
   'function getSpecHash(uint256 jobId) view returns (bytes32)',
 ];
 const stakeAbi = ['function depositStake(uint8 role, uint256 amount)'];
+const erc20Abi = [
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+];
 const validationAbi = [
   'function commitValidation(uint256 jobId, bytes32 hash, string subdomain, bytes32[] proof)',
   'function revealValidation(uint256 jobId, bool approve, bytes32 burnTxHash, bytes32 salt, string subdomain, bytes32[] proof)',
@@ -198,6 +202,11 @@ const stakeManager = new ethers.Contract(
   stakeAbi,
   signer
 );
+const agialphaToken = new ethers.Contract(
+  requireEnv('AGIALPHA_TOKEN'),
+  erc20Abi,
+  signer
+);
 const validation = new ethers.Contract(
   requireEnv('VALIDATION_MODULE'),
   validationAbi,
@@ -218,6 +227,34 @@ async function postJob(amount = '1') {
   const deadline = Math.floor(Date.now() / 1000) + 3600;
   const specHash = ethers.id('spec');
   await registry.createJob(reward, deadline, specHash, 'ipfs://job');
+}
+
+async function acknowledgeTaxPolicy() {
+  const tx = await registry.acknowledgeTaxPolicy();
+  await tx.wait();
+}
+
+async function approveStake(amount) {
+  const parsed = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
+  const owner = await signer.getAddress();
+  const stakeManagerAddress =
+    typeof stakeManager.target === 'string'
+      ? stakeManager.target
+      : await stakeManager.getAddress();
+  const allowance = await agialphaToken.allowance(
+    owner,
+    stakeManagerAddress
+  );
+  if (allowance >= parsed) {
+    return;
+  }
+  const tx = await agialphaToken.approve(stakeManagerAddress, parsed);
+  await tx.wait();
+}
+
+async function prepareStake(amount) {
+  await acknowledgeTaxPolicy();
+  await approveStake(amount);
 }
 
 async function stake(amount) {
@@ -331,6 +368,9 @@ async function revoke(name, role, delegate) {
 
 module.exports = {
   postJob,
+  acknowledgeTaxPolicy,
+  approveStake,
+  prepareStake,
   stake,
   apply,
   submit,

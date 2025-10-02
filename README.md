@@ -473,7 +473,7 @@ for step-by-step usage guidance.
 
 ## Quick Start
 
-Use the `examples/ethers-quickstart.js` script to interact with the deployed contracts. Export `RPC_URL`, `PRIVATE_KEY`, `JOB_REGISTRY`, `STAKE_MANAGER`, `VALIDATION_MODULE` and `ATTESTATION_REGISTRY`. Wrap each helper in an async IIFE when executing from `node -e` so the process awaits transaction receipts before exiting.
+Use the `examples/ethers-quickstart.js` script to interact with the deployed contracts. Export `RPC_URL`, `PRIVATE_KEY`, `JOB_REGISTRY`, `STAKE_MANAGER`, `VALIDATION_MODULE`, `ATTESTATION_REGISTRY`, and `AGIALPHA_TOKEN`. Wrap each helper in an async IIFE when executing from `node -e` so the process awaits transaction receipts before exiting.
 
 The [API reference](docs/api-reference.md) describes every public contract function and includes TypeScript and Python snippets. For an event‑driven workflow check the minimal [agent gateway](examples/agent-gateway.js) that listens for `JobCreated` events and applies automatically.
 
@@ -531,9 +531,15 @@ node -e "(async () => { await require('./examples/ethers-quickstart').postJob();
 
 ### Stake tokens
 
+`StakeManager.depositStake` checks that the caller already accepted the tax policy and granted an allowance. Mirror the fork-test harness by acknowledging and approving before depositing:
+
 ```bash
+node -e "(async () => { await require('./examples/ethers-quickstart').acknowledgeTaxPolicy(); })()"
+node -e "(async () => { await require('./examples/ethers-quickstart').approveStake('1'); })()"
 node -e "(async () => { await require('./examples/ethers-quickstart').stake('1'); })()"
 ```
+
+Prefer to minimise manual sequencing? Call `prepareStake(amount)` to bundle the acknowledgement and approval before running `stake(amount)`.
 
 ### Validate a submission
 
