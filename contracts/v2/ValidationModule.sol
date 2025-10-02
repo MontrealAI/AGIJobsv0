@@ -173,6 +173,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     mapping(uint256 => mapping(address => bool)) public revealed;
     mapping(uint256 => mapping(address => bool)) public votes;
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
+    mapping(uint256 => mapping(address => uint256)) public validatorStakeLocks;
     mapping(uint256 => mapping(address => bool)) private _validatorLookup;
     mapping(uint256 => uint256) public jobNonce;
     // Aggregated entropy contributed by job parties prior to final selection.
@@ -1167,10 +1168,17 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
         }
 
+        uint256 lockDuration = commitWindow + revealWindow + forceFinalizeGrace;
+        if (lockDuration > type(uint64).max) revert InvalidWindows();
+        uint64 lockTime = uint64(lockDuration);
+
         for (uint256 i; i < size;) {
             address val = selected[i];
-            validatorStakes[jobId][val] = stakes[i];
+            uint256 stakeAmount = stakes[i];
+            validatorStakes[jobId][val] = stakeAmount;
+            validatorStakeLocks[jobId][val] = stakeAmount;
             _validatorLookup[jobId][val] = true;
+            stakeManager.lockValidatorStake(val, stakeAmount, lockTime);
             unchecked {
                 ++i;
             }
@@ -1542,6 +1550,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                         penalty,
                         job.employer
                     );
+                    _reduceValidatorLock(jobId, val, penalty);
                 }
                 if (nonRevealBanBlocks != 0) {
                     uint256 untilBlock = block.number + nonRevealBanBlocks;
@@ -1692,6 +1701,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                         penalty,
                         job.employer
                     );
+                    _reduceValidatorLock(jobId, val, penalty);
                 }
                 if (nonRevealBanBlocks != 0) {
                     uint256 untilBlock = block.number + nonRevealBanBlocks;
@@ -1706,6 +1716,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                         slashAmount,
                         job.employer
                     );
+                    _reduceValidatorLock(jobId, val, slashAmount);
                 }
             }
             unchecked { ++i; }
@@ -1720,6 +1731,21 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         return success;
     }
 
+    function _reduceValidatorLock(uint256 jobId, address val, uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+        uint256 locked = validatorStakeLocks[jobId][val];
+        if (locked == 0) {
+            return;
+        }
+        if (amount >= locked) {
+            validatorStakeLocks[jobId][val] = 0;
+        } else {
+            validatorStakeLocks[jobId][val] = locked - amount;
+        }
+    }
+
     function _cleanup(uint256 jobId) internal {
         uint256 nonce = jobNonce[jobId];
         Round storage r = rounds[jobId];
@@ -1731,6 +1757,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             delete commitments[jobId][val][nonce];
             delete revealed[jobId][val];
             delete votes[jobId][val];
+            uint256 lockAmount = validatorStakeLocks[jobId][val];
+            if (lockAmount != 0) {
+                stakeManager.unlockValidatorStake(val, lockAmount);
+            }
+            delete validatorStakeLocks[jobId][val];
             delete validatorStakes[jobId][val];
             delete _validatorLookup[jobId][val];
             unchecked {

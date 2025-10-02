@@ -43,6 +43,7 @@ contract ValidatorSelectionFuzz is Test {
             new address[](0)
         );
         validation.setIdentityRegistry(IIdentityRegistry(address(identity)));
+        stake.setValidationModule(address(validation));
     }
 
     function testFuzz_validatorSelection(uint8 poolSize, uint8 selectCount) public {

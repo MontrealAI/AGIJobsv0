@@ -155,6 +155,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice unlock timestamp for a user's locked stake
     mapping(address => uint64) public unlockTime;
 
+    /// @notice portion of a user's locked stake attributed to the job registry
+    mapping(address => uint256) public jobRegistryLockedStake;
+
+    /// @notice portion of a user's locked stake attributed to the validation module
+    mapping(address => uint256) public validatorModuleLockedStake;
+
     struct Unbond {
         uint256 amt;
         uint64 unlockAt;
@@ -1601,6 +1607,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _;
     }
 
+    modifier onlyValidationModule() {
+        address module = address(validationModule);
+        if (module == address(0)) revert ValidationModuleNotSet();
+        if (msg.sender != module) revert Unauthorized();
+        _;
+    }
+
     modifier onlySlasher(Role role) {
         address sender = msg.sender;
         if (sender != jobRegistry) {
@@ -1627,33 +1640,128 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param amount token amount with 18 decimals
     /// @param lockTime seconds until the stake unlocks
     function lockStake(address user, uint256 amount, uint64 lockTime) external onlyJobRegistry whenNotPaused {
-        uint256 total = stakes[user][Role.Agent] + stakes[user][Role.Validator] + stakes[user][Role.Platform];
-        if (total < lockedStakes[user] + amount) revert InsufficientStake();
-        uint64 newUnlock = uint64(block.timestamp + lockTime);
-        if (newUnlock > unlockTime[user]) {
-            unlockTime[user] = newUnlock;
-        }
-        lockedStakes[user] += amount;
-        emit StakeTimeLocked(user, amount, unlockTime[user]);
+        _lockStake(user, amount, lockTime);
+        jobRegistryLockedStake[user] += amount;
     }
 
     /// @notice release previously locked stake for a user
     /// @param user address whose stake is being unlocked
     /// @param amount token amount with 18 decimals to unlock
     function releaseStake(address user, uint256 amount) external onlyJobRegistry whenNotPaused {
-        uint256 locked = lockedStakes[user];
+        uint256 registryLocked = jobRegistryLockedStake[user];
+        if (registryLocked < amount) revert InsufficientLocked();
+        jobRegistryLockedStake[user] = registryLocked - amount;
+        _unlockStake(user, amount);
+    }
+
+    /// @notice lock validator stake for a validation round
+    /// @param user validator address whose stake is being locked
+    /// @param amount token amount with 18 decimals
+    /// @param lockTime seconds until the stake unlocks
+    function lockValidatorStake(address user, uint256 amount, uint64 lockTime)
+        external
+        onlyValidationModule
+        whenNotPaused
+    {
+        _lockStake(user, amount, lockTime);
+        validatorModuleLockedStake[user] += amount;
+    }
+
+    /// @notice release validator stake locked for validation
+    /// @param user validator address whose stake is being unlocked
+    /// @param amount token amount with 18 decimals to unlock
+    function unlockValidatorStake(address user, uint256 amount)
+        external
+        onlyValidationModule
+        whenNotPaused
+    {
+        uint256 locked = validatorModuleLockedStake[user];
         if (locked < amount) revert InsufficientLocked();
-        lockedStakes[user] = locked - amount;
-        if (lockedStakes[user] == 0) {
-            unlockTime[user] = 0;
-        }
-        emit StakeUnlocked(user, amount);
+        validatorModuleLockedStake[user] = locked - amount;
+        _unlockStake(user, amount);
     }
 
     /// @dev internal stake deposit routine shared by deposit helpers
     function _minimumStakeFor(Role role) internal view returns (uint256) {
         uint256 overrideMin = roleMinimumStake[role];
         return overrideMin == 0 ? minStake : overrideMin;
+    }
+
+    function _lockStake(address user, uint256 amount, uint64 lockTime) internal {
+        if (amount == 0 && lockTime == 0) {
+            return;
+        }
+        uint256 total =
+            stakes[user][Role.Agent] +
+            stakes[user][Role.Validator] +
+            stakes[user][Role.Platform];
+        if (total < lockedStakes[user] + amount) revert InsufficientStake();
+        if (lockTime != 0) {
+            uint64 newUnlock = uint64(block.timestamp + lockTime);
+            if (newUnlock > unlockTime[user]) {
+                unlockTime[user] = newUnlock;
+            }
+        }
+        lockedStakes[user] += amount;
+        emit StakeTimeLocked(user, amount, unlockTime[user]);
+    }
+
+    function _unlockStake(address user, uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+        uint256 locked = lockedStakes[user];
+        if (locked < amount) revert InsufficientLocked();
+        uint256 newLocked = locked - amount;
+        lockedStakes[user] = newLocked;
+        if (newLocked == 0) {
+            unlockTime[user] = 0;
+        }
+        emit StakeUnlocked(user, amount);
+    }
+
+    function _deductLockShares(
+        address user,
+        uint256 amount,
+        bool prioritizeValidator
+    ) internal {
+        if (amount == 0) {
+            return;
+        }
+
+        if (prioritizeValidator) {
+            uint256 validatorLocked = validatorModuleLockedStake[user];
+            if (validatorLocked != 0) {
+                uint256 reduction = amount < validatorLocked ? amount : validatorLocked;
+                validatorModuleLockedStake[user] = validatorLocked - reduction;
+                amount -= reduction;
+            }
+        } else {
+            uint256 registryLocked = jobRegistryLockedStake[user];
+            if (registryLocked != 0) {
+                uint256 reduction = amount < registryLocked ? amount : registryLocked;
+                jobRegistryLockedStake[user] = registryLocked - reduction;
+                amount -= reduction;
+            }
+        }
+
+        if (amount == 0) {
+            return;
+        }
+
+        if (prioritizeValidator) {
+            uint256 registryLocked = jobRegistryLockedStake[user];
+            if (registryLocked != 0) {
+                uint256 reduction = amount < registryLocked ? amount : registryLocked;
+                jobRegistryLockedStake[user] = registryLocked - reduction;
+            }
+        } else {
+            uint256 validatorLocked = validatorModuleLockedStake[user];
+            if (validatorLocked != 0) {
+                uint256 reduction = amount < validatorLocked ? amount : validatorLocked;
+                validatorModuleLockedStake[user] = validatorLocked - reduction;
+            }
+        }
     }
 
     function _deposit(address user, Role role, uint256 amount) internal {
@@ -1854,6 +1962,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             } else {
                 lockedStakes[user] = 0;
                 unlockTime[user] = 0;
+                if (jobRegistryLockedStake[user] != 0) {
+                    jobRegistryLockedStake[user] = 0;
+                }
+                if (validatorModuleLockedStake[user] != 0) {
+                    validatorModuleLockedStake[user] = 0;
+                }
                 emit StakeUnlocked(user, locked);
             }
         }
@@ -2386,9 +2500,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             if (amount >= locked) {
                 lockedStakes[user] = 0;
                 unlockTime[user] = 0;
+                if (jobRegistryLockedStake[user] != 0) {
+                    jobRegistryLockedStake[user] = 0;
+                }
+                if (validatorModuleLockedStake[user] != 0) {
+                    validatorModuleLockedStake[user] = 0;
+                }
                 emit StakeUnlocked(user, locked);
             } else {
                 lockedStakes[user] = locked - amount;
+                _deductLockShares(user, amount, role == Role.Validator);
             }
         }
 
