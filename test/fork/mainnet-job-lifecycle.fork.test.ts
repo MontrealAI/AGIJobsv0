@@ -48,6 +48,7 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
         },
       ],
     });
+    await network.provider.send('hardhat_setNextBlockBaseFeePerGas', ['0x0']);
 
     const token = await ethers.getContractAt(
       '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol:IERC20Metadata',
@@ -121,6 +122,14 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       owner.address
     );
 
+    const TaxPolicy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      'ipfs://policy',
+      'All taxes on participants; contract and owner exempt'
+    );
+
     const Reputation = await ethers.getContractFactory(
       'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
@@ -141,6 +150,7 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       ethers.ZeroHash,
       ethers.ZeroHash
     );
+    await identity.addAdditionalAgent(agent.address);
 
     const NFT = await ethers.getContractFactory(
       'contracts/v2/CertificateNFT.sol:CertificateNFT'
@@ -174,6 +184,16 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       moderator.address
     );
 
+    const FeePool = await ethers.getContractFactory(
+      'contracts/v2/FeePool.sol:FeePool'
+    );
+    const feePool = await FeePool.deploy(
+      await stake.getAddress(),
+      0,
+      treasury.address,
+      await taxPolicy.getAddress()
+    );
+
     await stake.setModules(
       await registry.getAddress(),
       await dispute.getAddress()
@@ -187,20 +207,31 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       await reputation.getAddress(),
       await dispute.getAddress(),
       await nft.getAddress(),
-      ethers.ZeroAddress,
+      await feePool.getAddress(),
       []
     );
+    await registry.setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.setAcknowledger(await registry.getAddress(), true);
+    await feePool.setStakeManager(await stake.getAddress());
+    await feePool.setTreasury(treasury.address);
+    await feePool.setRewarder(await validation.getAddress(), true);
     await registry.setIdentityRegistry(await identity.getAddress());
     await reputation.setCaller(await registry.getAddress(), true);
-    await reputation.setPremiumThreshold(10);
+    await reputation.setPremiumThreshold(0);
 
     const token = await ethers.getContractAt(
       '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol:IERC20Metadata',
       AGIALPHA
     );
 
+    await registry.connect(employer).acknowledgeTaxPolicy();
+    await registry.connect(agent).acknowledgeTaxPolicy();
+
     const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
+    expect(
+      await token.allowance(agent.address, await stake.getAddress())
+    ).to.equal(stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
 
     const subdomain = 'agent';
@@ -211,9 +242,19 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       )
     );
     await wrapper.setOwner(BigInt(subnode), agent.address);
+    expect(
+      await identity.isAuthorizedAgent(agent.address, subdomain, [])
+    ).to.equal(true);
 
     const reward = ethers.parseUnits(JOB_REWARD, AGIALPHA_DECIMALS);
-    await token.connect(employer).approve(await stake.getAddress(), reward);
+    const feePct = await registry.feePct();
+    const rewardWithFee = (reward * (100n + feePct)) / 100n;
+    await token
+      .connect(employer)
+      .approve(await stake.getAddress(), rewardWithFee);
+    expect(
+      await token.allowance(employer.address, await stake.getAddress())
+    ).to.equal(rewardWithFee);
     const deadline = BigInt((await time.latest()) + 3600);
     const specHash = ethers.id('spec');
     await registry
