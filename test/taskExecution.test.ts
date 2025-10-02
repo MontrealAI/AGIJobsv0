@@ -22,6 +22,7 @@ import * as energyMonitor from '../shared/energyMonitor';
 import * as telemetry from '../agent-gateway/telemetry';
 import * as learning from '../agent-gateway/learning';
 import * as auditLogger from '../shared/auditLogger';
+import * as certificateMetadata from '../agent-gateway/certificateMetadata';
 
 interface InvocationRecord {
   endpoint: string;
@@ -92,6 +93,7 @@ const originalAudit = auditLogger.recordAuditEvent;
 const registryAny = registry as any;
 const originalRegistryConnect = registryAny.connect;
 const originalRegistryTaxPolicy = registryAny.taxPolicy;
+const originalPublishCertificate = certificateMetadata.publishCertificateMetadata;
 
 before(() => {
   (energyMonitor as any).startEnergySpan = () => ({
@@ -120,6 +122,7 @@ before(() => {
   (telemetry as any).publishEnergySample = async () => {};
   (learning as any).notifyTrainingOutcome = async () => {};
   (auditLogger as any).recordAuditEvent = async () => ({} as any);
+  (certificateMetadata as any).publishCertificateMetadata = async () => null;
 });
 
 after(() => {
@@ -128,6 +131,8 @@ after(() => {
   (telemetry as any).publishEnergySample = originalPublish;
   (learning as any).notifyTrainingOutcome = originalNotify;
   (auditLogger as any).recordAuditEvent = originalAudit;
+  (certificateMetadata as any).publishCertificateMetadata =
+    originalPublishCertificate;
   registryAny.connect = originalRegistryConnect;
   registryAny.taxPolicy = originalRegistryTaxPolicy;
 });

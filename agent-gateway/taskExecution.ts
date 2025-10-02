@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { ethers, Wallet } from 'ethers';
-import type { IPFSHTTPClient } from 'ipfs-http-client';
 import { Job } from './types';
 import { AgentProfile, JobAnalysis } from './agentRegistry';
 import { AgentIdentity } from './identity';
@@ -27,6 +26,10 @@ import {
 } from './deliverableStore';
 import { notifyTrainingOutcome } from './learning';
 import { attestExecutionReceipt } from './attestation';
+import { getIpfsClient } from './ipfsClient';
+import { publishCertificateMetadata } from './certificateMetadata';
+
+export { setIpfsClientFactory } from './ipfsClient';
 
 export interface TaskExecutionContext {
   job: Job;
@@ -144,7 +147,6 @@ export type AgentEndpointInvoker = (
 ) => Promise<unknown>;
 
 const RESULT_DIR = path.resolve(__dirname, '../storage/results');
-const IPFS_API_URL = process.env.IPFS_API_URL || 'http://127.0.0.1:5001';
 const MAX_MEMORY_ENTRIES = Number(process.env.AGENT_MEMORY_LIMIT || '5');
 
 const contextProviders = new Set<OrchestrationContextProvider>();
@@ -152,19 +154,6 @@ const memoryHooks = new Set<OrchestrationMemoryHook>();
 const agentMemory = new Map<string, AgentMemoryEntry[]>();
 
 let agentInvoker: AgentEndpointInvoker = invokeAgentEndpoint;
-type IpfsFactory = () => IPFSHTTPClient | Promise<IPFSHTTPClient>;
-let ipfsClient: IPFSHTTPClient | null = null;
-let ipfsFactory: IpfsFactory | null = null;
-let defaultIpfsClientPromise: Promise<IPFSHTTPClient> | null = null;
-
-async function resolveDefaultIpfsClient(): Promise<IPFSHTTPClient> {
-  if (!defaultIpfsClientPromise) {
-    defaultIpfsClientPromise = import('ipfs-http-client').then(({ create }) =>
-      create({ url: IPFS_API_URL })
-    );
-  }
-  return defaultIpfsClientPromise;
-}
 
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
@@ -331,18 +320,6 @@ async function notifyMemoryConsumers(
   }
 }
 
-async function getIpfsClient(): Promise<IPFSHTTPClient> {
-  if (ipfsClient) {
-    return ipfsClient;
-  }
-  if (ipfsFactory) {
-    ipfsClient = await Promise.resolve(ipfsFactory());
-    return ipfsClient;
-  }
-  ipfsClient = await resolveDefaultIpfsClient();
-  return ipfsClient;
-}
-
 async function uploadToIpfs(content: string): Promise<string> {
   const client = await getIpfsClient();
   const { cid } = await client.add(Buffer.from(content, 'utf8'), {
@@ -356,17 +333,6 @@ export function setAgentEndpointInvoker(
   invoker: AgentEndpointInvoker | null
 ): void {
   agentInvoker = invoker ?? invokeAgentEndpoint;
-}
-
-export function setIpfsClientFactory(
-  factory: IpfsFactory | null
-): void {
-  ipfsClient = null;
-  if (factory) {
-    ipfsFactory = factory;
-  } else {
-    ipfsFactory = null;
-  }
 }
 
 export function registerContextProvider(
@@ -729,11 +695,37 @@ export async function executeJob(
       },
       wallet
     );
+    const submittedAt = new Date().toISOString();
+    let certificateMetadata;
+    try {
+      certificateMetadata = await publishCertificateMetadata({
+        jobId: job.jobId,
+        agent: wallet.address,
+        resultHash,
+        resultUri: resultURI || undefined,
+        resultCid: resultCid || undefined,
+        signature: resultSignature,
+        success: true,
+        submittedAt,
+        submissionMethod,
+        txHash,
+        job: {
+          employer: job.employer,
+          agent: wallet.address,
+          specUri: job.uri,
+          specHash: job.specHash,
+        },
+      });
+    } catch (metaErr) {
+      console.warn('Failed to publish certificate metadata', metaErr);
+    }
+
     try {
       recordDeliverable({
         jobId: job.jobId,
         agent: wallet.address,
         success: true,
+        submittedAt,
         resultUri: resultURI || undefined,
         resultCid: resultCid || undefined,
         resultRef: resultURI || undefined,
@@ -751,6 +743,9 @@ export async function executeJob(
         },
         submissionMethod,
         txHash,
+        certificateMetadataUri: certificateMetadata?.uri,
+        certificateMetadataCid: certificateMetadata?.cid,
+        certificateMetadataIpnsName: certificateMetadata?.ipnsName,
       });
     } catch (storeErr) {
       console.warn('Failed to persist deliverable record', storeErr);

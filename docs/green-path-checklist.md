@@ -78,6 +78,7 @@ This checklist distills the ten baseline hardening tasks required to operate AGI
 - [ ] Set the certificate NFT base URI via `CertificateNFT.setBaseURI('ipfs://<CID>/')`.
 - [ ] Ensure `ValidationModule.finalize(jobId)` triggers certificate minting and payout release.
 - [ ] Include SLA terms and cryptographic proofs in job metadata for employer verification.
+- [ ] Configure the gateway's certificate metadata pipeline (`CERTIFICATE_MFS_PATH`, `CERTIFICATE_IPNS_KEY`) and publish deliverable signatures to IPFS/IPNS for on-chain verification.
 
 ## ☑️ 10. End-to-end rehearsal (fork + testnet), then publish the green light
 

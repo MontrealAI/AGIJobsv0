@@ -24,6 +24,10 @@ Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.
 - `AUDIT_ANCHOR_INTERVAL_MS` cadence for Merkle anchoring the audit log (default `21600000`, i.e. 6 hours)
 - `AUDIT_ANCHOR_MIN_NEW_EVENTS` minimum number of new audit records required before an automated anchor is attempted (default `5`)
 - `AUDIT_ANCHOR_START_DELAY_MS` optional delay before the first anchoring cycle begins (default `0`)
+- `CERTIFICATE_MFS_PATH` IPFS MFS directory that stores per-job certificate metadata (default `/certificates`)
+- `CERTIFICATE_IPNS_KEY` optional IPNS key name used when publishing the certificate metadata directory
+- `CERTIFICATE_BASE_URI` base URI passed to `CertificateNFT.setBaseURI`, typically an `ipfs://` or IPNS prefix ending with `/`
+- `CERTIFICATE_LOCK_BASE_URI` set to `true` to invoke `CertificateNFT.lockBaseURI()` immediately after deployment
 
 Copy `.env.example` to `.env` and adjust values for your network:
 
@@ -36,6 +40,17 @@ registrar helper. The agent factory uses this file together with the
 environment variables above to claim `<label>.agent.agi.eth`,
 `<label>.club.agi.eth`, or `<label>.a.agi.eth` automatically and verifies the
 reverse lookup before persisting an identity file.
+
+## Certificate metadata
+
+When a job submission succeeds the gateway now writes a certificate metadata
+document to the configured IPFS node. Each record includes the result hash,
+agent signature, deliverable CID/URI, and any SLA reference extracted from the
+job spec. The metadata files live under `CERTIFICATE_MFS_PATH` and, when
+`CERTIFICATE_IPNS_KEY` is provided, the directory CID is republished via IPNS so
+that the on-chain `CertificateNFT` base URI remains stable. Set
+`CERTIFICATE_BASE_URI` during deployment to ensure `tokenURI(tokenId)` resolves
+to these proofs.
 
 ## Usage
 

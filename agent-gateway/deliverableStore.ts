@@ -73,6 +73,9 @@ export interface AgentDeliverableRecord {
   contributors?: DeliverableContributor[];
   submissionMethod?: 'finalizeJob' | 'submit' | 'none';
   txHash?: string;
+  certificateMetadataUri?: string;
+  certificateMetadataCid?: string;
+  certificateMetadataIpnsName?: string;
 }
 
 export interface DeliverableInput {
@@ -93,6 +96,10 @@ export interface DeliverableInput {
   contributors?: DeliverableContributor[];
   submissionMethod?: 'finalizeJob' | 'submit' | 'none';
   txHash?: string;
+  submittedAt?: string;
+  certificateMetadataUri?: string;
+  certificateMetadataCid?: string;
+  certificateMetadataIpnsName?: string;
 }
 
 export interface AgentHeartbeatRecord {
@@ -344,11 +351,12 @@ function selectRecords<T extends { jobId: string; agent: string }>(
 export function recordDeliverable(
   input: DeliverableInput
 ): AgentDeliverableRecord {
+  const submittedAt = input.submittedAt ?? new Date().toISOString();
   const record: AgentDeliverableRecord = {
     id: randomUUID(),
     jobId: String(input.jobId),
     agent: normaliseAddress(input.agent),
-    submittedAt: new Date().toISOString(),
+    submittedAt,
     success: input.success !== false,
     resultUri: input.resultUri,
     resultCid: input.resultCid,
@@ -371,6 +379,9 @@ export function recordDeliverable(
       : undefined,
     submissionMethod: input.submissionMethod,
     txHash: input.txHash,
+    certificateMetadataUri: input.certificateMetadataUri,
+    certificateMetadataCid: input.certificateMetadataCid,
+    certificateMetadataIpnsName: input.certificateMetadataIpnsName,
   };
   deliverables.push(record);
   appendRecord(DELIVERABLES_PATH, record);

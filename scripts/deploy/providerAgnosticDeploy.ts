@@ -342,6 +342,15 @@ async function deployContracts(ctx: DeploymentContext) {
 
   await certificate.setJobRegistry(await registry.getAddress());
 
+  const baseUriEnv = process.env.CERTIFICATE_BASE_URI?.trim();
+  if (baseUriEnv && baseUriEnv.length > 0) {
+    const baseUri = baseUriEnv.endsWith('/') ? baseUriEnv : `${baseUriEnv}/`;
+    await certificate.setBaseURI(baseUri);
+    if (/^true$/i.test(process.env.CERTIFICATE_LOCK_BASE_URI ?? '')) {
+      await certificate.lockBaseURI();
+    }
+  }
+
   await feePool.setStakeManager(await stake.getAddress());
 
   await registry.setModules(
