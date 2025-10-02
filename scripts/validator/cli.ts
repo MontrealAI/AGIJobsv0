@@ -3,6 +3,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
+import type { ContractTransactionResponse } from 'ethers';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -67,6 +68,69 @@ function normalizeHex(value: string, length = 32): string {
     throw new Error(`Expected ${length} byte hex string, received ${value}`);
   }
   return trimmed.toLowerCase();
+}
+
+type RaiseDisputeCall = {
+  evidenceHash?: string;
+  reason?: string;
+  overrides?: Record<string, unknown>;
+};
+
+export function raiseDisputeWithOverloads(
+  contract: ethers.Contract,
+  jobId: bigint,
+  options: RaiseDisputeCall,
+  wallet?: ethers.Signer
+): Promise<ContractTransactionResponse> {
+  const connection = wallet ? contract.connect(wallet) : contract;
+  const { evidenceHash, reason, overrides } = options;
+  const hasOverrides =
+    overrides && typeof overrides === 'object' && Object.keys(overrides).length;
+
+  const invoke = (
+    method: unknown,
+    args: unknown[]
+  ): Promise<ContractTransactionResponse> => {
+    if (typeof method !== 'function') {
+      throw new Error('Registry overload is unavailable');
+    }
+    return (method as (...fnArgs: unknown[]) => Promise<ContractTransactionResponse>)(
+      ...args
+    );
+  };
+
+  if (evidenceHash && evidenceHash !== ethers.ZeroHash) {
+    if (reason && reason.trim().length > 0) {
+      if (hasOverrides) {
+        return connection.dispute(jobId, evidenceHash, reason, overrides);
+      }
+      return connection.dispute(jobId, evidenceHash, reason);
+    }
+
+    const method =
+      (connection as unknown as Record<string, unknown>)[
+        'raiseDispute(uint256,bytes32)'
+      ];
+    return invoke(
+      method,
+      hasOverrides
+        ? [jobId, evidenceHash, overrides]
+        : [jobId, evidenceHash]
+    );
+  }
+
+  if (!reason || reason.trim().length === 0) {
+    throw new Error('Provide either reason or evidence for the dispute');
+  }
+
+  const method =
+    (connection as unknown as Record<string, unknown>)[
+      'raiseDispute(uint256,string)'
+    ];
+  return invoke(
+    method,
+    hasOverrides ? [jobId, reason, overrides] : [jobId, reason]
+  );
 }
 
 function deriveSubdomain(ens: string): string {
@@ -696,18 +760,16 @@ const cli = yargs(hideBin(process.argv))
             wallet,
             args.config as string | undefined
           );
-          let tx;
-          if (evidence !== ethers.ZeroHash && reason) {
-            tx = await jobRegistry
-              .connect(wallet)
-              .dispute(jobId, evidence, reason);
-          } else if (evidence !== ethers.ZeroHash) {
-            tx = await jobRegistry
-              .connect(wallet)
-              .raiseDispute(jobId, evidence);
-          } else {
-            tx = await jobRegistry.connect(wallet).raiseDispute(jobId, reason);
-          }
+          const tx = await raiseDisputeWithOverloads(
+            jobRegistry,
+            jobId,
+            {
+              evidenceHash:
+                evidence !== ethers.ZeroHash ? ethers.zeroPadValue(evidence, 32) : undefined,
+              reason: reason || undefined,
+            },
+            wallet
+          );
           console.log(`Dispute raised: ${tx.hash}`);
           await tx.wait();
         },
@@ -797,4 +859,8 @@ const cli = yargs(hideBin(process.argv))
   .strict()
   .help();
 
-cli.parse();
+if (require.main === module) {
+  cli.parse();
+}
+
+export const __test__ = { raiseDisputeWithOverloads };
