@@ -262,7 +262,8 @@ async function deployContracts(ctx: DeploymentContext) {
     ethers.ZeroAddress,
     disputeFee,
     disputeWindow,
-    ethers.ZeroAddress
+    ethers.ZeroAddress,
+    ctx.governanceTarget
   );
   await dispute.waitForDeployment();
 

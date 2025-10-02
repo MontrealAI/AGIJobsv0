@@ -97,7 +97,8 @@ describe('multi-operator job lifecycle', function () {
       await registry.getAddress(),
       0,
       0,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
 
     const FeePoolF = await ethers.getContractFactory(

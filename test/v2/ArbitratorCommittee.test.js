@@ -54,7 +54,8 @@ describe('ArbitratorCommittee', function () {
       await registry.getAddress(),
       FEE,
       10n,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await dispute.waitForDeployment();
     await registry.setDisputeModule(await dispute.getAddress());

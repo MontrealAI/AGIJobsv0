@@ -90,7 +90,8 @@ async function deployFullSystem() {
     await registry.getAddress(),
     0,
     0,
-    moderator.address
+    moderator.address,
+    owner.address
   );
   await dispute.waitForDeployment();
   await dispute.setStakeManager(await stake.getAddress());

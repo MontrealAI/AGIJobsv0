@@ -91,7 +91,8 @@ describe('Employer reputation', function () {
       await registry.getAddress(),
       0,
       0,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await dispute.connect(owner).setDisputeFee(disputeFee);
     const Policy = await ethers.getContractFactory(

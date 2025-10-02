@@ -90,7 +90,8 @@ async function deployFullSystem() {
     await registry.getAddress(),
     0,
     0,
-    moderator.address
+    moderator.address,
+    owner.address
   );
   await dispute.waitForDeployment();
   await dispute.setStakeManager(await stake.getAddress());
@@ -209,12 +210,24 @@ describe('job lifecycle with dispute and validator failure', function () {
     await registry
       .connect(agent)
       .dispute(1, ethers.id('evidence'), 'ipfs://evidence');
-    const hash = ethers.solidityPackedKeccak256(
-      ['address', 'uint256', 'bool'],
-      [await dispute.getAddress(), 1, false]
+    await dispute.connect(owner).setDisputeWindow(0);
+    await dispute.connect(owner).setModerator(owner.address, 1);
+    await dispute.connect(owner).setModerator(moderator.address, 1);
+    const typeHash = ethers.id(
+      'ResolveDispute(uint256 jobId,bool employerWins,address module,uint256 chainId)'
     );
-    const sig = await owner.signMessage(ethers.getBytes(hash));
-    await dispute.connect(owner).resolveDispute(1, false);
+    const network = await ethers.provider.getNetwork();
+    const structHash = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['bytes32', 'uint256', 'bool', 'address', 'uint256'],
+        [typeHash, 1n, false, await dispute.getAddress(), network.chainId]
+      )
+    );
+    const sigOwner = await owner.signMessage(ethers.getBytes(structHash));
+    const sigModerator = await moderator.signMessage(ethers.getBytes(structHash));
+    await dispute
+      .connect(moderator)
+      .resolveWithSignatures(1, false, [sigOwner, sigModerator]);
     await registry.connect(employer).finalize(1);
 
     {

@@ -1,24 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
 import {ITaxPolicy} from "../interfaces/ITaxPolicy.sol";
 import {TOKEN_SCALE} from "../Constants.sol";
 import {ArbitratorCommittee} from "../ArbitratorCommittee.sol";
+import {Governable} from "../Governable.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes and resolves them after a
-/// dispute window.
+/// dispute window with optional moderator or committee oversight.
 /// @dev Maintains tax neutrality by rejecting ether and escrowing only token
 ///      based dispute fees via the StakeManager. Assumes all token amounts use
 ///      18 decimals (`1 token == TOKEN_SCALE` units).
-contract DisputeModule is Ownable, Pausable {
+contract DisputeModule is Governable, Pausable {
+
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
+
+    /// @dev Typed data hash for moderator approvals.
+    bytes32 private constant _RESOLVE_TYPEHASH =
+        keccak256(
+            "ResolveDispute(uint256 jobId,bool employerWins,address module,uint256 chainId)"
+        );
 
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
@@ -38,6 +47,7 @@ contract DisputeModule is Ownable, Pausable {
     /// @notice Address of the arbitrator committee contract.
     address public committee;
 
+    /// @notice Optional pauser delegate authorised by governance.
     address public pauser;
 
     /// @notice Tax policy accepted by employers, agents, and validators.
@@ -54,6 +64,12 @@ contract DisputeModule is Ownable, Pausable {
 
     /// @dev Tracks active disputes by jobId.
     mapping(uint256 => Dispute) public disputes;
+
+    /// @notice Moderator voting weight expressed as whole numbers.
+    mapping(address => uint96) public moderatorWeights;
+
+    /// @notice Aggregate moderator weight used when evaluating quorum.
+    uint96 public totalModeratorWeight;
 
     event DisputeRaised(
         uint256 indexed jobId,
@@ -78,19 +94,7 @@ contract DisputeModule is Ownable, Pausable {
         address indexed employer
     );
     event PauserUpdated(address indexed pauser);
-
-    modifier onlyOwnerOrPauser() {
-        require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
-        );
-        _;
-    }
-
-    function setPauser(address _pauser) external onlyOwner {
-        pauser = _pauser;
-        emit PauserUpdated(_pauser);
-    }
+    event ModeratorUpdated(address indexed moderator, uint256 weight);
     event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
     event JobRegistryUpdated(IJobRegistry newRegistry);
@@ -101,17 +105,29 @@ contract DisputeModule is Ownable, Pausable {
 
     error InvalidTaxPolicy();
     error PolicyNotTaxExempt();
+    error NoActiveDispute();
+    error EvidenceRequired();
+    error UnauthorizedEvidenceSubmitter(address submitter);
+    error InvalidModerator(address moderator);
+    error InvalidModeratorWeight();
+    error DuplicateModeratorSignature(address moderator);
+    error InsufficientModeratorWeight(uint256 supplied, uint256 total);
+    error NoModeratorsConfigured();
+    error UnauthorizedResolver(address caller);
+    error NotGovernanceOrPauser();
 
     /// @param _jobRegistry Address of the JobRegistry contract.
     /// @param _disputeFee Initial dispute fee in token units (18 decimals); defaults to TOKEN_SCALE.
     /// @param _disputeWindow Minimum time in seconds before resolution; defaults to 1 day.
     /// @param _committee Address of the arbitrator committee contract.
+    /// @param _governance Timelock or multisig controlling privileged actions.
     constructor(
         IJobRegistry _jobRegistry,
         uint256 _disputeFee,
         uint256 _disputeWindow,
-        address _committee
-    ) Ownable(msg.sender) {
+        address _committee,
+        address _governance
+    ) Governable(_governance) {
         if (address(_jobRegistry) != address(0)) {
             jobRegistry = _jobRegistry;
             emit JobRegistryUpdated(_jobRegistry);
@@ -123,6 +139,7 @@ contract DisputeModule is Ownable, Pausable {
 
         disputeWindow = _disputeWindow > 0 ? _disputeWindow : 1 days;
         emit DisputeWindowUpdated(disputeWindow);
+
         committee = _committee;
         emit CommitteeUpdated(_committee);
     }
@@ -134,14 +151,14 @@ contract DisputeModule is Ownable, Pausable {
     }
 
     // ---------------------------------------------------------------------
-    // Owner setters (use Etherscan's "Write Contract" tab)
+    // Governance configuration
     // ---------------------------------------------------------------------
 
     /// @notice Update the JobRegistry reference.
     /// @param newRegistry New JobRegistry contract implementing IJobRegistry.
     function setJobRegistry(IJobRegistry newRegistry)
         external
-        onlyOwner
+        onlyGovernance
         whenNotPaused
     {
         jobRegistry = newRegistry;
@@ -153,7 +170,7 @@ contract DisputeModule is Ownable, Pausable {
     /// @param newManager New StakeManager contract implementing IStakeManager.
     function setStakeManager(IStakeManager newManager)
         external
-        onlyOwner
+        onlyGovernance
         whenNotPaused
     {
         stakeManager = newManager;
@@ -165,7 +182,7 @@ contract DisputeModule is Ownable, Pausable {
     /// @param newCommittee New committee contract address.
     function setCommittee(address newCommittee)
         external
-        onlyOwner
+        onlyGovernance
         whenNotPaused
     {
         committee = newCommittee;
@@ -176,21 +193,17 @@ contract DisputeModule is Ownable, Pausable {
     /// @param policy Address of the TaxPolicy contract employers and agents acknowledge.
     function setTaxPolicy(ITaxPolicy policy)
         external
-        onlyOwner
+        onlyGovernance
         whenNotPaused
     {
         _setTaxPolicy(policy);
     }
 
-    error NoActiveDispute();
-    error EvidenceRequired();
-    error UnauthorizedEvidenceSubmitter(address submitter);
-
     /// @notice Configure the dispute fee in token units (18 decimals).
     /// @param fee New dispute fee in token units (18 decimals); 0 disables the fee.
     function setDisputeFee(uint256 fee)
         external
-        onlyOwner
+        onlyGovernance
         whenNotPaused
     {
         disputeFee = fee;
@@ -201,22 +214,70 @@ contract DisputeModule is Ownable, Pausable {
     /// @param window Minimum time before a dispute can be resolved.
     function setDisputeWindow(uint256 window)
         external
-        onlyOwner
+        onlyGovernance
         whenNotPaused
     {
         disputeWindow = window;
         emit DisputeWindowUpdated(window);
     }
 
+    /// @notice Assign or update a moderator's voting weight.
+    /// @param moderator Address receiving the specified weight.
+    /// @param weight Non-zero weight enables the moderator; zero removes them.
+    function setModerator(address moderator, uint96 weight) external onlyGovernance {
+        if (moderator == address(0)) revert InvalidModerator(moderator);
+        uint96 current = moderatorWeights[moderator];
+        if (weight == current) revert InvalidModeratorWeight();
+
+        if (current > 0) {
+            totalModeratorWeight -= current;
+        }
+        if (weight > 0) {
+            totalModeratorWeight += weight;
+            moderatorWeights[moderator] = weight;
+        } else {
+            delete moderatorWeights[moderator];
+        }
+
+        emit ModeratorUpdated(moderator, weight);
+    }
+
+    /// @notice Convenience helper mirroring {setModerator} removal semantics.
+    function removeModerator(address moderator) external onlyGovernance {
+        uint96 current = moderatorWeights[moderator];
+        if (current == 0) revert InvalidModeratorWeight();
+        totalModeratorWeight -= current;
+        delete moderatorWeights[moderator];
+        emit ModeratorUpdated(moderator, 0);
+    }
+
+    /// @notice Sets or clears an address permitted to pause dispute processing.
+    function setPauser(address _pauser) external onlyGovernance {
+        pauser = _pauser;
+        emit PauserUpdated(_pauser);
+    }
+
+    function _checkGovernanceOrPauser() internal view {
+        if (msg.sender != address(governance) && msg.sender != pauser) {
+            revert NotGovernanceOrPauser();
+        }
+    }
+
     /// @notice Pause dispute operations.
-    function pause() external onlyOwnerOrPauser {
+    function pause() external {
+        _checkGovernanceOrPauser();
         _pause();
     }
 
     /// @notice Resume dispute operations.
-    function unpause() external onlyOwnerOrPauser {
+    function unpause() external {
+        _checkGovernanceOrPauser();
         _unpause();
     }
+
+    // ---------------------------------------------------------------------
+    // Dispute lifecycle
+    // ---------------------------------------------------------------------
 
     /// @notice Raise a dispute by posting the dispute fee and supplying a
     /// hash of off-chain evidence.
@@ -254,12 +315,12 @@ contract DisputeModule is Ownable, Pausable {
             sm.recordDispute();
         }
 
-        disputes[jobId].claimant = claimant;
-        disputes[jobId].raisedAt = block.timestamp;
-        disputes[jobId].resolved = false;
-        disputes[jobId].fee = disputeFee;
-        disputes[jobId].evidenceHash = evidenceHash;
-        disputes[jobId].reason = reason;
+        d.claimant = claimant;
+        d.raisedAt = block.timestamp;
+        d.resolved = false;
+        d.fee = disputeFee;
+        d.evidenceHash = evidenceHash;
+        d.reason = reason;
 
         emit DisputeRaised(jobId, claimant, evidenceHash, reason);
 
@@ -273,7 +334,7 @@ contract DisputeModule is Ownable, Pausable {
     ///      timelock/SystemPause via the JobRegistry.
     function raiseGovernanceDispute(uint256 jobId, string calldata reason)
         external
-        onlyOwner
+        onlyGovernance
         whenNotPaused
     {
         require(bytes(reason).length != 0, "reason");
@@ -304,60 +365,55 @@ contract DisputeModule is Ownable, Pausable {
     /// @notice Resolve an existing dispute after the dispute window elapses.
     /// @param jobId Identifier of the disputed job.
     /// @param employerWins True if the employer prevails.
-    /// @dev Only callable by the arbitrator committee.
     function resolveDispute(uint256 jobId, bool employerWins)
         public
         whenNotPaused
     {
-        require(msg.sender == committee, "not committee");
-        Dispute storage d = disputes[jobId];
-        require(d.raisedAt != 0 && !d.resolved, "no dispute");
-        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
-        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-
-        d.resolved = true;
-
-        address employer = job.employer;
-        address recipient = employerWins ? employer : d.claimant;
-        uint256 fee = d.fee;
-        delete disputes[jobId];
-
-        jobRegistry.resolveDispute(jobId, employerWins);
-
-        IStakeManager sm = _stakeManager();
-        if (fee > 0 && address(sm) != address(0)) {
-            sm.payDisputeFee(recipient, fee);
-        }
-
-        if (!employerWins && address(sm) != address(0)) {
-            address valMod = address(jobRegistry.validationModule());
-            if (valMod != address(0)) {
-                address[] memory validators = IValidationModule(valMod).validators(jobId);
-                uint256 count;
-                for (uint256 i; i < validators.length; ++i) {
-                    if (IValidationModule(valMod).votes(jobId, validators[i])) {
-                        ++count;
-                    }
-                }
-                address[] memory participants = new address[](count);
-                uint256 p;
-                for (uint256 i; i < validators.length; ++i) {
-                    address v = validators[i];
-                    if (IValidationModule(valMod).votes(jobId, v)) {
-                        participants[p++] = v;
-                    } else {
-                        sm.slash(v, fee, employer, participants);
-                    }
-                }
-            }
-        }
-
-        emit DisputeResolved(jobId, msg.sender, employerWins);
+        _checkDirectResolutionAuthority(msg.sender);
+        _resolve(jobId, employerWins, msg.sender);
     }
 
     /// @notice Backwards-compatible alias for older integrations.
     function resolve(uint256 jobId, bool employerWins) external {
         resolveDispute(jobId, employerWins);
+    }
+
+    /// @notice Resolve an existing dispute using off-chain moderator approvals.
+    /// @param signatures Moderator signatures proving quorum agreement.
+    function resolveWithSignatures(
+        uint256 jobId,
+        bool employerWins,
+        bytes[] calldata signatures
+    ) external whenNotPaused {
+        if (signatures.length == 0) revert InvalidModeratorWeight();
+        Dispute storage d = disputes[jobId];
+        require(d.raisedAt != 0 && !d.resolved, "no dispute");
+        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+
+        uint96 totalWeight = totalModeratorWeight;
+        if (totalWeight == 0) revert NoModeratorsConfigured();
+
+        bytes32 digest = resolutionMessageHash(jobId, employerWins);
+        uint96 accumulated;
+        address[] memory seen = new address[](signatures.length);
+        for (uint256 i; i < signatures.length; ++i) {
+            address signer = ECDSA.recover(digest, signatures[i]);
+            uint96 weight = moderatorWeights[signer];
+            if (weight == 0) revert InvalidModerator(signer);
+            for (uint256 j; j < i; ++j) {
+                if (seen[j] == signer) {
+                    revert DuplicateModeratorSignature(signer);
+                }
+            }
+            seen[i] = signer;
+            accumulated += weight;
+        }
+
+        if (accumulated * 2 <= totalWeight) {
+            revert InsufficientModeratorWeight(accumulated, totalWeight);
+        }
+
+        _resolve(jobId, employerWins, msg.sender);
     }
 
     /// @notice Submit additional evidence or context for an existing dispute.
@@ -408,7 +464,7 @@ contract DisputeModule is Ownable, Pausable {
         uint256 amount,
         address employer
     ) external whenNotPaused {
-        require(msg.sender == committee, "not committee");
+        if (msg.sender != committee) revert UnauthorizedResolver(msg.sender);
         IStakeManager sm = _stakeManager();
         if (address(sm) != address(0) && amount > 0) {
             sm.slash(juror, amount, employer);
@@ -430,11 +486,85 @@ contract DisputeModule is Ownable, Pausable {
         emit TaxPolicyUpdated(address(policy));
     }
 
+    function _checkDirectResolutionAuthority(address caller) internal view {
+        if (caller == committee) {
+            return;
+        }
+        uint96 weight = moderatorWeights[caller];
+        if (weight > 0 && weight * 2 > totalModeratorWeight) {
+            return;
+        }
+        if (caller == address(governance)) {
+            return;
+        }
+        revert UnauthorizedResolver(caller);
+    }
+
+    function _resolve(uint256 jobId, bool employerWins, address resolver) internal {
+        Dispute storage d = disputes[jobId];
+        require(d.raisedAt != 0 && !d.resolved, "no dispute");
+        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+
+        d.resolved = true;
+
+        address employer = job.employer;
+        address recipient = employerWins ? employer : d.claimant;
+        uint256 fee = d.fee;
+        delete disputes[jobId];
+
+        jobRegistry.resolveDispute(jobId, employerWins);
+
+        IStakeManager sm = _stakeManager();
+        if (fee > 0 && address(sm) != address(0)) {
+            sm.payDisputeFee(recipient, fee);
+        }
+
+        if (!employerWins && address(sm) != address(0)) {
+            address valMod = address(jobRegistry.validationModule());
+            if (valMod != address(0)) {
+                address[] memory validators = IValidationModule(valMod).validators(jobId);
+                uint256 count;
+                for (uint256 i; i < validators.length; ++i) {
+                    if (IValidationModule(valMod).votes(jobId, validators[i])) {
+                        ++count;
+                    }
+                }
+                address[] memory participants = new address[](count);
+                uint256 p;
+                for (uint256 i; i < validators.length; ++i) {
+                    address v = validators[i];
+                    if (IValidationModule(valMod).votes(jobId, v)) {
+                        participants[p++] = v;
+                    } else {
+                        sm.slash(v, fee, employer, participants);
+                    }
+                }
+            }
+        }
+
+        emit DisputeResolved(jobId, resolver, employerWins);
+    }
+
+    /// @notice Returns the digest moderators must sign when approving a resolution.
+    function resolutionMessageHash(uint256 jobId, bool employerWins)
+        public
+        view
+        returns (bytes32)
+    {
+        bytes32 structHash = keccak256(
+            abi.encode(_RESOLVE_TYPEHASH, jobId, employerWins, address(this), block.chainid)
+        );
+        return MessageHashUtils.toEthSignedMessageHash(structHash);
+    }
+
     /// @notice Confirms the module and its owner cannot accrue tax liabilities.
     /// @return Always true, signalling perpetual tax exemption.
     function isTaxExempt() external pure returns (bool) {
         return true;
     }
+
     // ---------------------------------------------------------------
     // Ether rejection
     // ---------------------------------------------------------------

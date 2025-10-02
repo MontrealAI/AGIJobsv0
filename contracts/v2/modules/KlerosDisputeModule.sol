@@ -143,6 +143,15 @@ contract KlerosDisputeModule is IDisputeModule {
         emit DisputeResolved(jobId, employerWins);
     }
 
+    /// @inheritdoc IDisputeModule
+    function resolveWithSignatures(
+        uint256,
+        bool,
+        bytes[] calldata
+    ) external pure override {
+        revert Unsupported();
+    }
+
     /// @notice Backwards compatible alias for existing integrations.
     function resolve(uint256 jobId, bool employerWins) external onlyArbitrator {
         resolveDispute(jobId, employerWins);
