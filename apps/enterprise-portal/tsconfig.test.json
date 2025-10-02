@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "emitDeclarationOnly": false,
+    "declaration": false,
+    "declarationMap": false,
+    "module": "es2020",
+    "outDir": "./dist-test",
+    "rootDir": "."
+  },
+  "include": [
+    "src/lib/crypto.ts",
+    "test/verifyDeliverableSignature.test.ts",
+    "test/global.d.ts"
+  ]
+}

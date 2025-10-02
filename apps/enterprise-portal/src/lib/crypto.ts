@@ -1,4 +1,10 @@
-import { keccak256, toUtf8Bytes, verifyMessage } from 'ethers';
+import {
+  keccak256,
+  toUtf8Bytes,
+  verifyMessage,
+  getBytes,
+  isHexString
+} from 'ethers';
 
 type Hex = `0x${string}`;
 
@@ -8,8 +14,6 @@ export interface VerificationResult {
   matchesHash: boolean;
   normalizedHash: string;
 }
-
-const HASH_32_REGEX = /^0x[0-9a-fA-F]{64}$/;
 
 const orderValue = (value: unknown): unknown => {
   if (Array.isArray(value)) {
@@ -52,9 +56,11 @@ export const verifyDeliverableSignature = async (
   agentAddress: string
 ): Promise<VerificationResult> => {
   const normalizedHash = expectedHash.trim();
-  const recovered = await verifyMessage(normalizedHash, signature);
+  const isHashHex = isHexString(normalizedHash, 32);
+  const message = isHashHex ? getBytes(normalizedHash) : normalizedHash;
+  const recovered = await verifyMessage(message, signature);
   const matchesAgent = recovered.toLowerCase() === agentAddress.toLowerCase();
-  const matchesHash = HASH_32_REGEX.test(normalizedHash);
+  const matchesHash = isHashHex;
   return {
     recoveredAddress: recovered,
     matchesAgent,
