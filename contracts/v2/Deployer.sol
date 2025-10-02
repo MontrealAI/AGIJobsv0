@@ -325,7 +325,8 @@ contract Deployer is Ownable {
             IJobRegistry(address(registry)),
             0,
             0,
-            address(0)
+            address(0),
+            governance
         );
 
         ArbitratorCommittee committee = new ArbitratorCommittee(

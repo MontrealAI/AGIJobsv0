@@ -93,7 +93,8 @@ async function main() {
     await registry.getAddress(),
     0,
     0,
-    ethers.ZeroAddress
+    ethers.ZeroAddress,
+    deployer.address
   );
   await dispute.waitForDeployment();
   const Committee = await ethers.getContractFactory(

@@ -16,7 +16,8 @@ describe('DisputeModule module ether rejection', function () {
       await registry.getAddress(),
       0,
       0,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await dispute.waitForDeployment();
   });

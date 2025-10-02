@@ -85,6 +85,7 @@ async function deploySystem() {
     await registry.getAddress(),
     0,
     0,
+    owner.address,
     owner.address
   );
   await dispute.waitForDeployment();

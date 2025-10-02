@@ -97,6 +97,7 @@ describe('comprehensive job flows', function () {
       await registry.getAddress(),
       0,
       0,
+      owner.address,
       owner.address
     );
     await dispute.setDisputeFee(disputeFee);

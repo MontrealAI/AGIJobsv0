@@ -93,7 +93,8 @@ describe('job finalization integration', function () {
       await registry.getAddress(),
       0,
       0,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await dispute.connect(owner).setDisputeFee(0);
     await dispute.connect(owner).setDisputeWindow(0);

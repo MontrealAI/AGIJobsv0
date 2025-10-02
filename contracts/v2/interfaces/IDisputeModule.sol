@@ -21,6 +21,12 @@ interface IDisputeModule {
 
     function resolveDispute(uint256 jobId, bool employerWins) external;
 
+    function resolveWithSignatures(
+        uint256 jobId,
+        bool employerWins,
+        bytes[] calldata signatures
+    ) external;
+
     function submitEvidence(
         uint256 jobId,
         bytes32 evidenceHash,

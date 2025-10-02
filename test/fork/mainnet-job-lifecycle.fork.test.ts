@@ -181,7 +181,8 @@ describeFork('Mainnet fork · job lifecycle drill', function () {
       await registry.getAddress(),
       0,
       0,
-      moderator.address
+      moderator.address,
+      owner.address
     );
 
     const FeePool = await ethers.getContractFactory(

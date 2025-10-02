@@ -187,7 +187,8 @@ async function main() {
     await registry.getAddress(),
     appealFee,
     disputeWindow,
-    ethers.ZeroAddress
+    ethers.ZeroAddress,
+    governance
   );
   await dispute.waitForDeployment();
   const Committee = await ethers.getContractFactory(

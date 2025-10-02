@@ -82,7 +82,8 @@ describe('Job expiration boundary', function () {
       await registry.getAddress(),
       0,
       0,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await stakeManager
       .connect(owner)
