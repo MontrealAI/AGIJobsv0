@@ -2,12 +2,19 @@ import type { Contract } from 'ethers';
 import { ethers } from 'ethers';
 import type { DisputeModuleConfig } from '../../config';
 import { ModulePlan, PlannedAction } from './types';
-import { normaliseAddress, sameAddress } from './utils';
+import {
+  formatToken,
+  normaliseAddress,
+  parseTokenAmount,
+  sameAddress,
+} from './utils';
 
 interface DisputeModulePlanInput {
   dispute: Contract;
   config: DisputeModuleConfig;
   configPath?: string;
+  decimals: number;
+  symbol: string;
 }
 
 function formatAddress(value: string | undefined): string {
@@ -45,7 +52,7 @@ function pushAddressUpdate(
 export async function buildDisputeModulePlan(
   input: DisputeModulePlanInput
 ): Promise<ModulePlan> {
-  const { dispute, config, configPath } = input;
+  const { dispute, config, configPath, decimals, symbol } = input;
 
   const [
     currentJobRegistry,
@@ -53,12 +60,14 @@ export async function buildDisputeModulePlan(
     currentCommittee,
     currentPauser,
     currentTaxPolicy,
+    currentDisputeFee,
   ] = await Promise.all([
     dispute.jobRegistry(),
     dispute.stakeManager(),
     dispute.committee(),
     dispute.pauser(),
     dispute.taxPolicy(),
+    dispute.disputeFee(),
   ]);
 
   const currentJobRegistryAddress = ethers.getAddress(currentJobRegistry);
@@ -66,6 +75,7 @@ export async function buildDisputeModulePlan(
   const currentCommitteeAddress = ethers.getAddress(currentCommittee);
   const currentPauserAddress = ethers.getAddress(currentPauser);
   const currentTaxPolicyAddress = ethers.getAddress(currentTaxPolicy);
+  const currentDisputeFeeValue = BigInt(currentDisputeFee);
 
   const desiredJobRegistry = normaliseAddress(config.jobRegistry, {
     allowZero: false,
@@ -82,6 +92,12 @@ export async function buildDisputeModulePlan(
   const desiredTaxPolicy = normaliseAddress(config.taxPolicy, {
     allowZero: false,
   });
+  const desiredDisputeFee = parseTokenAmount(
+    config.disputeFee,
+    config.disputeFeeTokens,
+    decimals,
+    'disputeFee'
+  );
 
   const actions: PlannedAction[] = [];
 
@@ -114,6 +130,26 @@ export async function buildDisputeModulePlan(
     'setPauser',
     'pauser'
   );
+
+  if (
+    desiredDisputeFee !== undefined &&
+    desiredDisputeFee !== currentDisputeFeeValue
+  ) {
+    actions.push({
+      label: `Set dispute fee to ${formatToken(
+        desiredDisputeFee,
+        decimals,
+        symbol
+      )}`,
+      method: 'setDisputeFee',
+      args: [desiredDisputeFee],
+      current: formatToken(currentDisputeFeeValue, decimals, symbol),
+      desired: formatToken(desiredDisputeFee, decimals, symbol),
+      notes: [
+        'Refund the dispute fee to the prevailing party when resolving disputes to discourage abuse.',
+      ],
+    });
+  }
 
   if (
     desiredTaxPolicy &&

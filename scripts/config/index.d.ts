@@ -96,6 +96,8 @@ export interface DisputeModuleConfig {
   committee?: string | null;
   pauser?: string | null;
   taxPolicy?: string | null;
+  disputeFee?: string | number | null;
+  disputeFeeTokens?: string | number | null;
   [key: string]: unknown;
 }
 
