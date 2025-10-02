@@ -422,8 +422,8 @@ async function runIntegrationScenario(
     validators.map((validator) => validator.address)
   );
   await validation.setValidatorsPerJob(validators.length);
-  await validation.setCommitWindow(30);
-  await validation.setRevealWindow(30);
+  await validation.setCommitWindow(1800);
+  await validation.setRevealWindow(1800);
   await validation.setRequiredValidatorApprovals(validators.length);
 
   await registry.setJobParameters(ethers.parseUnits('100000', decimals), 0);

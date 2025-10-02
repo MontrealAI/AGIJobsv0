@@ -308,8 +308,9 @@
 
 ### A) Safe defaults (owner may tune later)
 
-- `commitWindow = 86400` (24h), `revealWindow = 86400`
-- `minValidators = 1`, `maxValidators = 3`
+- `commitWindow = 1800` (30m), `revealWindow = 1800`
+- `minValidators = 3`, `maxValidators = 5`
+- Baseline committees: operate with 3-validator draws initially, leaving headroom to scale toward 5 as throughput data allows.
 - `JobRegistry.feePctBps = 500` (5%)
 - `FeePool.burnPct = 5` (start small; can increase)
 - `StakeManager.minStake = 1e18` (1 $AGIALPHA) per role  

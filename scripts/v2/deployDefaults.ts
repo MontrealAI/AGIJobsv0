@@ -521,9 +521,9 @@ async function main() {
       ? 0
       : econ.validatorSlashRewardPct;
   const effectiveCommitWindow =
-    econ.commitWindow === 0 ? 86_400 : econ.commitWindow;
+    econ.commitWindow === 0 ? 1_800 : econ.commitWindow;
   const effectiveRevealWindow =
-    econ.revealWindow === 0 ? 86_400 : econ.revealWindow;
+    econ.revealWindow === 0 ? 1_800 : econ.revealWindow;
   const defaultStake = ethers.parseUnits('1', AGIALPHA_DECIMALS);
   const effectiveMinStake = econ.minStake === 0n ? defaultStake : econ.minStake;
   const effectiveJobStake = econ.jobStake === 0n ? defaultStake : econ.jobStake;

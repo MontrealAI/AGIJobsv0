@@ -36,7 +36,7 @@ Deploy each contract through Etherscan and note its address. Verify the source c
    - `verifyAgent`/`verifyValidator` return `(ok, node, viaWrapper, viaMerkle)` and emit `ENSVerified`; modules that call them re-emit `AgentIdentityVerified` or `ValidatorIdentityVerified`.
 4. **ValidationModule**
    - Parameters: `_jobRegistry` placeholder, `stakeManager`, `commitWindow`, `revealWindow`, `minValidators`, `maxValidators`, `validatorPool` (usually empty array).
-   - Recommended defaults: `commitWindow` = `86400`, `revealWindow` = `86400`, `minValidators` = `1`, `maxValidators` = `3`.
+   - Recommended defaults: `commitWindow` = `1800`, `revealWindow` = `1800`, `minValidators` = `3`, `maxValidators` = `5`.
 5. **DisputeModule**
    - Parameters: `_jobRegistry` placeholder, `disputeFee`, `disputeWindow`, `moderator` (or `0x0`).
    - Set `disputeFee` to `0` for a free dispute process or provide a value in wei (e.g. `1e18` for 1 $AGIALPHA).
