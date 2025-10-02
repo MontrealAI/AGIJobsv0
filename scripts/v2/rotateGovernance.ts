@@ -13,14 +13,29 @@ import { describeArgs, sameAddress } from './lib/utils';
 
 type ModuleType = OwnerControlModuleType;
 
+type ExtraActionPosition = 'before' | 'after';
+
+interface EnsureGovernanceExtraDefinition {
+  kind: 'ensureGovernance';
+  method: 'setGovernance';
+  read: 'governance';
+  abi: string[];
+  note?: string;
+  position?: ExtraActionPosition;
+}
+
+type ModuleExtraDefinition = EnsureGovernanceExtraDefinition;
+
 interface ModuleDefinition {
   key: string;
   label: string;
   type: ModuleType;
+  extras?: ModuleExtraDefinition[];
 }
 
 interface ModuleOverride extends OwnerControlModuleConfig {
   notes?: string[];
+  extras?: ModuleExtraDefinition[];
 }
 
 interface CliOptions {
@@ -121,7 +136,24 @@ const DEFAULT_MODULES: Record<string, ModuleDefinition> = {
     label: 'CertificateNFT',
     type: 'ownable',
   },
-  feePool: { key: 'feePool', label: 'FeePool', type: 'ownable' },
+  feePool: {
+    key: 'feePool',
+    label: 'FeePool',
+    type: 'ownable',
+    extras: [
+      {
+        kind: 'ensureGovernance',
+        method: 'setGovernance',
+        read: 'governance',
+        abi: [
+          'function governance() view returns (address)',
+          'function setGovernance(address _governance)',
+        ],
+        note: 'Align FeePool.governance so emergency withdrawals require the multisig/timelock.',
+        position: 'before',
+      },
+    ],
+  },
   platformRegistry: {
     key: 'platformRegistry',
     label: 'PlatformRegistry',
@@ -376,7 +408,86 @@ function determineModuleDefinition(
     );
   }
   const label = override?.label || base?.label || moduleKey;
-  return { key: moduleKey, label, type: typeCandidate };
+  const extras = override?.extras || base?.extras;
+  return { key: moduleKey, label, type: typeCandidate, extras };
+}
+
+interface ExtraActionPlan {
+  pre: RotationAction[];
+  post: RotationAction[];
+  satisfied: boolean;
+}
+
+async function evaluateModuleExtras(
+  definition: ModuleDefinition,
+  moduleKey: string,
+  moduleName: string,
+  moduleAddress: string,
+  desired: { value?: string; source?: string },
+  currentOwner: string | undefined,
+  pendingOwner: string | undefined,
+  contract: Contract
+): Promise<ExtraActionPlan> {
+  const extras = definition.extras || [];
+  if (extras.length === 0 || !desired.value) {
+    return { pre: [], post: [], satisfied: true };
+  }
+
+  const pre: RotationAction[] = [];
+  const post: RotationAction[] = [];
+
+  for (const extra of extras) {
+    switch (extra.kind) {
+      case 'ensureGovernance': {
+        const currentGovernance = await readAddress(contract, extra.read);
+        if (
+          currentGovernance &&
+          sameAddress(currentGovernance, desired.value)
+        ) {
+          break;
+        }
+        const args: [string] = [desired.value];
+        const calldata = contract.interface.encodeFunctionData(
+          extra.method,
+          args
+        );
+        const notes: string[] = [];
+        if (desired.source) {
+          notes.push(`Target derived from ${desired.source}`);
+        }
+        if (extra.note) {
+          notes.push(extra.note);
+        }
+        const action: RotationAction = {
+          moduleKey,
+          moduleName,
+          type: definition.type,
+          address: moduleAddress,
+          method: extra.method,
+          args,
+          currentOwner,
+          desiredOwner: desired.value,
+          pendingOwner,
+          targetSource: desired.source,
+          notes,
+          contract,
+          calldata,
+        };
+        if ((extra.position || 'after') === 'before') {
+          pre.push(action);
+        } else {
+          post.push(action);
+        }
+        break;
+      }
+      default:
+        throw new Error(
+          `Unsupported extra action ${extra.kind} for module ${moduleKey}`
+        );
+    }
+  }
+
+  return { pre, post, satisfied: pre.length === 0 && post.length === 0 };
 }
 
 async function buildRotationPlan(
@@ -461,7 +572,16 @@ async function buildRotationPlan(
       continue;
     }
 
-    const abi = ABI_BY_TYPE[type];
+    const abi = [...ABI_BY_TYPE[type]];
+    if (definition.extras) {
+      for (const extra of definition.extras) {
+        for (const fragment of extra.abi) {
+          if (!abi.includes(fragment)) {
+            abi.push(fragment);
+          }
+        }
+      }
+    }
     const contract = await ethers.getContractAt(abi, moduleAddress);
     const currentOwner = await readAddress(contract, 'owner');
     const pendingOwner =
@@ -469,13 +589,28 @@ async function buildRotationPlan(
         ? undefined
         : await readAddress(contract, 'pendingOwner');
 
+    const extraPlan = await evaluateModuleExtras(
+      definition,
+      moduleKey,
+      moduleName,
+      moduleAddress,
+      desired,
+      currentOwner,
+      pendingOwner,
+      contract
+    );
+
     if (currentOwner && sameAddress(currentOwner, desired.value)) {
-      plan.upToDate.push({
-        moduleKey,
-        moduleName,
-        address: moduleAddress,
-        owner: currentOwner,
-      });
+      if (extraPlan.satisfied) {
+        plan.upToDate.push({
+          moduleKey,
+          moduleName,
+          address: moduleAddress,
+          owner: currentOwner,
+        });
+      } else {
+        plan.actions.push(...extraPlan.pre, ...extraPlan.post);
+      }
       continue;
     }
 
@@ -483,7 +618,8 @@ async function buildRotationPlan(
       type === 'ownable2step' &&
       pendingOwner &&
       sameAddress(pendingOwner, desired.value) &&
-      !sameAddress(currentOwner, desired.value)
+      !sameAddress(currentOwner, desired.value) &&
+      extraPlan.satisfied
     ) {
       plan.pendingAcceptances.push({
         moduleKey,
@@ -517,6 +653,8 @@ async function buildRotationPlan(
       );
     }
 
+    plan.actions.push(...extraPlan.pre);
+
     plan.actions.push({
       moduleKey,
       moduleName,
@@ -532,6 +670,8 @@ async function buildRotationPlan(
       contract,
       calldata,
     });
+
+    plan.actions.push(...extraPlan.post);
   }
 
   return plan;
