@@ -18,7 +18,7 @@ describe('end-to-end job lifecycle', function () {
   const stakeRequired = ethers.parseUnits('200', AGIALPHA_DECIMALS);
   const platformStake = ethers.parseUnits('500', AGIALPHA_DECIMALS);
   const feePct = 10;
-  const disputeFee = 0n;
+  const disputeFee = ethers.parseUnits('1', AGIALPHA_DECIMALS);
 
   beforeEach(async () => {
     [owner, employer, agent, platform] = await ethers.getSigners();
@@ -137,6 +137,7 @@ describe('end-to-end job lifecycle', function () {
     await stakeManager.setJobRegistry(await registry.getAddress());
     await stakeManager.setValidationModule(await validation.getAddress());
     await stakeManager.setDisputeModule(await dispute.getAddress());
+    await stakeManager.setFeePct(feePct);
     await stakeManager.setSlashingPercentages(100, 0);
     await nft.setJobRegistry(await registry.getAddress());
     await rep.setAuthorizedCaller(await registry.getAddress(), true);
@@ -165,7 +166,10 @@ describe('end-to-end job lifecycle', function () {
     // agent stakes
     await token
       .connect(agent)
-      .approve(await stakeManager.getAddress(), stakeRequired);
+      .approve(
+        await stakeManager.getAddress(),
+        stakeRequired + disputeFee
+      );
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
     // employer funds job
     await token
@@ -191,7 +195,7 @@ describe('end-to-end job lifecycle', function () {
     await registry.connect(employer).finalize(jobId);
 
     // fee distributed to stakers
-    expect(await feePool.pendingFees()).to.equal(0);
+    expect(await feePool.pendingFees()).to.equal(fee);
     const before = await token.balanceOf(platform.address);
     await feePool.connect(platform).claimRewards();
     const after = await token.balanceOf(platform.address);
