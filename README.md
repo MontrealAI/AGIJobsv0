@@ -268,16 +268,20 @@ Need an executive-level orientation that connects business intent to every gover
 
 ### Owner control quick reference CLI
 
-Generate a network-specific quick reference (complete with Mermaid diagrams and actionable checklists) straight from the committed configuration:
+Need a single command that fuses governance defaults, token wiring, stake economics, reward thermodynamics and signer rosters into an auditor-ready brief? Run the quickstart helper:
 
 ```bash
-npm run owner:guide -- --network <network>
+# Human-readable console digest with Mermaid diagram
+npm run owner:quickstart -- --network <network>
 
-# Export a Markdown artefact for sign-off packages
-npm run owner:guide -- --network mainnet --out runtime/mainnet-owner-guide.md
+# Markdown artefact for change tickets or Safe bundles
+npm run owner:quickstart -- --network mainnet --format markdown --out reports/mainnet-owner-quickstart.md
+
+# Machine-friendly JSON for CI enforcement or dashboards
+npm run owner:quickstart -- --network mainnet --format json --out reports/mainnet-owner-quickstart.json
 ```
 
-The helper reads `config/owner-control.json` plus all module overrides, then renders a Markdown playbook tailored to the selected network. Pair the CLI output with the [Owner Control Quick Reference](docs/owner-control-quick-reference.md) handout for non-technical reviewers.
+The CLI stitches together `config/owner-control.json`, `config/agialpha*.json`, `config/stake-manager.json`, `config/fee-pool.json`, `config/reward-engine.json`, `config/thermodynamics.json`, `config/hamiltonian-monitor.json` and `config/energy-oracle.json`, then prints a deterministic operational checklist that mirrors the `owner:update-all` workflow. Full usage guidance—including troubleshooting tables, Mermaid diagrams and automation tips—lives in [docs/owner-control-quick-reference-cli.md](docs/owner-control-quick-reference-cli.md).
 
 ### Owner control master checklist
 
