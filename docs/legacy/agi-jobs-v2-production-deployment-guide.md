@@ -39,7 +39,7 @@ Deploy each contract via **Contract → Deploy** on Etherscan, supplying constru
    - `_commitWindow`: seconds for the commit phase, e.g. `86400` (24h) or `0` for default.
    - `_revealWindow`: seconds for the reveal phase, e.g. `86400` (24h) or `0` for default.
    - `_minValidators`: usually `1`.
-   - `_maxValidators`: typically `3`.
+- `_maxValidators`: typically `5` (paired with a 3-validator minimum for 3-of-5 committees).
    - `_validatorPool`: preset validator addresses or `[]` for open participation.
 5. **DisputeModule**
    - `_jobRegistry`: `0x0` (set later).

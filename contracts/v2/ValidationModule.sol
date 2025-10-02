@@ -94,10 +94,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     /// @notice Hard limit on the number of validators any single job may use.
     uint256 public maxValidatorsPerJob = 100;
 
-    uint256 public constant DEFAULT_COMMIT_WINDOW = 1 days;
-    uint256 public constant DEFAULT_REVEAL_WINDOW = 1 days;
+    uint256 public constant DEFAULT_COMMIT_WINDOW = 30 minutes;
+    uint256 public constant DEFAULT_REVEAL_WINDOW = 30 minutes;
     uint256 public constant DEFAULT_MIN_VALIDATORS = 3;
-    uint256 public constant DEFAULT_MAX_VALIDATORS = 3;
+    uint256 public constant DEFAULT_MAX_VALIDATORS = 5;
     uint256 public constant DEFAULT_APPROVAL_THRESHOLD = 67;
     uint256 public constant DEFAULT_REVEAL_QUORUM_PCT = 67;
     uint256 public constant DEFAULT_FORCE_FINALIZE_GRACE = 1 hours;

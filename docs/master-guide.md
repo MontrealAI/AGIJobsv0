@@ -118,10 +118,10 @@ Deploy in this order. For any constructor parameter that expects an address that
 
    - `jobRegistry`: `0x0` (wire later)
    - `stakeManager`: StakeManager address
-   - `commitWindow`: e.g., `86400` (24h)
-   - `revealWindow`: e.g., `86400` (24h)
-   - `minValidators`: e.g., `1`
-   - `maxValidators`: e.g., `3`
+   - `commitWindow`: e.g., `1800` (30m)
+   - `revealWindow`: e.g., `1800` (30m)
+   - `minValidators`: e.g., `3`
+   - `maxValidators`: e.g., `5`
    - `validatorPool`: `[]` (open) or addresses
 
 5. **DisputeModule**
@@ -659,8 +659,8 @@ Record each address.
 
    - `_jobRegistry`: `0x0` (wire later)
    - `_stakeManager`: (1)
-   - `commitWindow`,`revealWindow`: e.g. `86400`,`86400`
-   - `minValidators`,`maxValidators`: e.g. `1`,`3`
+   - `commitWindow`,`revealWindow`: e.g. `1800`,`1800`
+   - `minValidators`,`maxValidators`: e.g. `3`,`5`
 
 5. **DisputeModule**
 
