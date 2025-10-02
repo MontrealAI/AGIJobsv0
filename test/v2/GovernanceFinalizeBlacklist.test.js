@@ -132,10 +132,10 @@ describe('JobRegistry governance finalization', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
 
     await rep.connect(owner).blacklist(agent.address, true);
     await setJobState(jobId, true);
@@ -163,10 +163,10 @@ describe('JobRegistry governance finalization', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
 
     await rep.connect(owner).blacklist(employer.address, true);
     await setJobState(jobId, false);

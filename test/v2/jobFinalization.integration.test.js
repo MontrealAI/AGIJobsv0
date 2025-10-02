@@ -174,11 +174,11 @@ describe('job finalization integration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).acknowledgeAndApply(jobId, '', []);
+    await registry.connect(agent).acknowledgeAndApply(jobId, 'agent', []);
     await validation.setResult(result);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('result'), 'result', '', []);
+      .submit(jobId, ethers.id('result'), 'result', 'agent', []);
     return { jobId, fee, vReward };
   }
 
@@ -364,7 +364,7 @@ describe('job finalization integration', function () {
       .createJob(reward, deadline, specHash, 'timeout://job');
 
     const jobId = 1;
-    await registry.connect(agent).acknowledgeAndApply(jobId, '', []);
+    await registry.connect(agent).acknowledgeAndApply(jobId, 'agent', []);
 
     await expect(
       registry.connect(employer).claimTimeout(jobId)
@@ -422,11 +422,11 @@ describe('job finalization integration', function () {
       .createJob(reward, deadline, specHash, 'uri');
 
     const jobId = 1;
-    await registry.connect(agent).acknowledgeAndApply(jobId, '', []);
+    await registry.connect(agent).acknowledgeAndApply(jobId, 'agent', []);
     await validation.setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('result'), 'result', '', []);
+      .submit(jobId, ethers.id('result'), 'result', 'agent', []);
 
     await validation.finalize(jobId);
     await registry.connect(employer).finalize(jobId);

@@ -220,13 +220,13 @@ describe('ValidationModule quorum penalties', function () {
       chainId
     );
 
-    await validation.connect(v1).commitValidation(jobId, commitHash, '', []);
+    await validation.connect(v1).commitValidation(jobId, commitHash, 'validator', []);
 
     await advance(COMMIT_WINDOW + 1);
 
     await validation
       .connect(v1)
-      .revealValidation(jobId, true, burnTxHash, salt, '', []);
+      .revealValidation(jobId, true, burnTxHash, salt, 'validator', []);
 
     await advance(REVEAL_WINDOW + 1);
     const grace = await validation.forceFinalizeGrace();

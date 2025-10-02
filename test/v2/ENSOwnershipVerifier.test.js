@@ -147,27 +147,27 @@ describe('ENSOwnershipVerifier verification', function () {
 
   it('requires merkle proof without subdomain and invalidates on root update', async () => {
     expect(
-      await verifier.verifyAgent.staticCall(agent.address, '', [])
+      await verifier.verifyAgent.staticCall(agent.address, 'agent', [])
     ).to.equal(false);
     expect(
-      await verifier.verifyValidator.staticCall(validator.address, '', [])
+      await verifier.verifyValidator.staticCall(validator.address, 'validator', [])
     ).to.equal(false);
 
-    const agentLeaf = leaf(agent.address, '');
-    const validatorLeaf = leaf(validator.address, '');
+    const agentLeaf = leaf(agent.address, 'agent');
+    const validatorLeaf = leaf(validator.address, 'validator');
     await verifier.setAgentMerkleRoot(agentLeaf);
     await verifier.setValidatorMerkleRoot(validatorLeaf);
 
-    const txA = await verifier.verifyAgent(agent.address, '', []);
+    const txA = await verifier.verifyAgent(agent.address, 'agent', []);
     await txA.wait();
-    const txV = await verifier.verifyValidator(validator.address, '', []);
+    const txV = await verifier.verifyValidator(validator.address, 'validator', []);
     await txV.wait();
 
     expect(
-      await verifier.verifyAgent.staticCall(agent.address, '', [])
+      await verifier.verifyAgent.staticCall(agent.address, 'agent', [])
     ).to.equal(true);
     expect(
-      await verifier.verifyValidator.staticCall(validator.address, '', [])
+      await verifier.verifyValidator.staticCall(validator.address, 'validator', [])
     ).to.equal(true);
 
     const newRoot = ethers.id('newRoot');
@@ -175,10 +175,10 @@ describe('ENSOwnershipVerifier verification', function () {
     await verifier.setValidatorMerkleRoot(newRoot);
 
     expect(
-      await verifier.verifyAgent.staticCall(agent.address, '', [])
+      await verifier.verifyAgent.staticCall(agent.address, 'agent', [])
     ).to.equal(false);
     expect(
-      await verifier.verifyValidator.staticCall(validator.address, '', [])
+      await verifier.verifyValidator.staticCall(validator.address, 'validator', [])
     ).to.equal(false);
   });
 

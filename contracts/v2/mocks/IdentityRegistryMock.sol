@@ -8,6 +8,12 @@ contract IdentityRegistryMock is Ownable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
+    error EmptySubdomain();
+
+    function _assertSubdomain(string memory subdomain) private pure {
+        if (bytes(subdomain).length == 0) revert EmptySubdomain();
+    }
+
     address public ens;
     address public nameWrapper;
     address public reputationEngine;
@@ -98,44 +104,48 @@ contract IdentityRegistryMock is Ownable {
 
     function isAuthorizedAgent(
         address claimant,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     ) external view returns (bool) {
         claimant; // silence unused
+        _assertSubdomain(subdomain);
         return true;
     }
 
     function isAuthorizedValidator(
         address claimant,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     ) external view returns (bool) {
         claimant; // silence unused
+        _assertSubdomain(subdomain);
         return true;
     }
 
     function verifyAgent(
         address claimant,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     )
         external
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
         claimant; // silence unused
+        _assertSubdomain(subdomain);
         node = bytes32(0);
         ok = true;
     }
 
     function verifyValidator(
         address claimant,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     )
         external
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
         claimant; // silence unused
+        _assertSubdomain(subdomain);
         node = bytes32(0);
         ok = true;
     }

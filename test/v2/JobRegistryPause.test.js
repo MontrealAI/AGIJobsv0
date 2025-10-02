@@ -59,17 +59,17 @@ describe('JobRegistry pause', function () {
 
     await registry.connect(owner).pause();
     await expect(
-      registry.connect(agent).applyForJob(1, '', [])
+      registry.connect(agent).applyForJob(1, 'agent', [])
     ).to.be.revertedWithCustomError(registry, 'EnforcedPause');
 
     await registry.connect(owner).unpause();
-    await expect(registry.connect(agent).applyForJob(1, '', []))
+    await expect(registry.connect(agent).applyForJob(1, 'agent', []))
       .to.emit(registry, 'AgentIdentityVerified')
-      .withArgs(agent.address, ethers.ZeroHash, '', false, false)
+      .withArgs(agent.address, ethers.ZeroHash, 'agent', false, false)
       .and.to.emit(registry, 'ApplicationSubmitted')
-      .withArgs(1, agent.address, '')
+      .withArgs(1, agent.address, 'agent')
       .and.to.emit(registry, 'AgentAssigned')
-      .withArgs(1, agent.address, '');
+      .withArgs(1, agent.address, 'agent');
   });
 
   it('pauses job expiration', async () => {
@@ -77,7 +77,7 @@ describe('JobRegistry pause', function () {
     const specHash = ethers.id('spec');
 
     await registry.connect(employer).createJob(1, deadline, specHash, 'uri');
-    await registry.connect(agent).applyForJob(1, '', []);
+    await registry.connect(agent).applyForJob(1, 'agent', []);
 
     await time.increase(200);
 

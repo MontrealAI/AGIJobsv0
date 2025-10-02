@@ -122,10 +122,10 @@ describe('Job finalization with contract employer', function () {
       'uri'
     );
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
 
     await setJobState(jobId, true);
     const burnTxHash = ethers.ZeroHash;
@@ -158,10 +158,10 @@ describe('Job finalization with contract employer', function () {
       'uri'
     );
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
 
     await setJobState(jobId, true);
     await registry.connect(owner).finalize(jobId);

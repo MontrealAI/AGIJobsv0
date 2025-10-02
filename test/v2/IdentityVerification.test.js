@@ -220,19 +220,19 @@ describe('Identity verification enforcement', function () {
         [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
       );
       await expect(
-        validation.connect(signer).commitValidation(1, commit, '', [])
+        validation.connect(signer).commitValidation(1, commit, 'validator', [])
       ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
 
       await identity.addAdditionalValidator(val);
       await (
-        await validation.connect(signer).commitValidation(1, commit, '', [])
+        await validation.connect(signer).commitValidation(1, commit, 'validator', [])
       ).wait();
       await advance(61);
       await identity.removeAdditionalValidator(val);
       await expect(
         validation
           .connect(signer)
-          .revealValidation(1, true, burnTxHash, salt, '', [])
+          .revealValidation(1, true, burnTxHash, salt, 'validator', [])
       ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
     });
   });

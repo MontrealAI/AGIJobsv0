@@ -13,6 +13,7 @@ error ZeroNode();
 error UnauthorizedAgent();
 error EtherNotAccepted();
 error IncompatibleReputationEngine();
+error EmptySubdomain();
 
 /// @title IdentityRegistry
 /// @notice Verifies ENS subdomain ownership and tracks manual allowlists
@@ -121,6 +122,10 @@ contract IdentityRegistry is Ownable2Step {
         bytes32 agentMerkleRoot;
         bool setValidatorMerkleRoot;
         bytes32 validatorMerkleRoot;
+    }
+
+    function _assertSubdomain(string memory subdomain) private pure {
+        if (bytes(subdomain).length == 0) revert EmptySubdomain();
     }
 
     struct AdditionalAgentConfig {
@@ -592,6 +597,7 @@ contract IdentityRegistry is Ownable2Step {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal view returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        _assertSubdomain(subdomain);
         if (agentRootNode != bytes32(0)) {
             (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
                 ens,
@@ -640,6 +646,7 @@ contract IdentityRegistry is Ownable2Step {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal view returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        _assertSubdomain(subdomain);
         if (clubRootNode != bytes32(0)) {
             (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
                 ens,
@@ -688,6 +695,7 @@ contract IdentityRegistry is Ownable2Step {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        _assertSubdomain(subdomain);
         if (agentRootNode != bytes32(0)) {
             (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
                 ens,
@@ -736,6 +744,7 @@ contract IdentityRegistry is Ownable2Step {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        _assertSubdomain(subdomain);
         if (clubRootNode != bytes32(0)) {
             (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
                 ens,
@@ -784,6 +793,7 @@ contract IdentityRegistry is Ownable2Step {
         string calldata subdomain,
         bytes32[] calldata proof
     ) public view returns (bool) {
+        _assertSubdomain(subdomain);
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
@@ -834,6 +844,7 @@ contract IdentityRegistry is Ownable2Step {
         string calldata subdomain,
         bytes32[] calldata proof
     ) public view returns (bool) {
+        _assertSubdomain(subdomain);
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
@@ -887,6 +898,7 @@ contract IdentityRegistry is Ownable2Step {
         internal
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
+        _assertSubdomain(subdomain);
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
@@ -984,6 +996,7 @@ contract IdentityRegistry is Ownable2Step {
         external
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
+        _assertSubdomain(subdomain);
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)

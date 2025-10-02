@@ -143,18 +143,18 @@ describe('ValidationModule committee size', function () {
 
     await validation
       .connect(signerMap[selected[0].toLowerCase()])
-      .commitValidation(4, commit1, '', []);
+      .commitValidation(4, commit1, 'validator', []);
     await validation
       .connect(signerMap[selected[1].toLowerCase()])
-      .commitValidation(4, commit2, '', []);
+      .commitValidation(4, commit2, 'validator', []);
 
     await advance(61);
     await validation
       .connect(signerMap[selected[0].toLowerCase()])
-      .revealValidation(4, true, burnTxHash, salt1, '', []);
+      .revealValidation(4, true, burnTxHash, salt1, 'validator', []);
     await validation
       .connect(signerMap[selected[1].toLowerCase()])
-      .revealValidation(4, true, burnTxHash, salt2, '', []);
+      .revealValidation(4, true, burnTxHash, salt2, 'validator', []);
     await advance(61);
 
     expect(await validation.finalize.staticCall(4)).to.equal(false);

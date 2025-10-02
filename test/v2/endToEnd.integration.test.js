@@ -177,11 +177,11 @@ describe('end-to-end job lifecycle', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.connect(owner).setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('result'), 'result', '', []);
+      .submit(jobId, ethers.id('result'), 'result', 'agent', []);
     await validation.finalize(jobId);
     const burnTxHash = ethers.ZeroHash;
     await registry
