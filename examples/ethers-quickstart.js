@@ -17,6 +17,31 @@ const signer = new ethers.Wallet(requireEnv('PRIVATE_KEY'), provider);
 
 const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 
+function isBytes32Hash(value) {
+  return typeof value === 'string' && ethers.isHexString(value, 32);
+}
+
+function callRaiseDispute(registryContract, jobId, payload, overrides) {
+  const hasOverrides =
+    overrides && typeof overrides === 'object' && Object.keys(overrides).length;
+
+  if (isBytes32Hash(payload)) {
+    const method = registryContract['raiseDispute(uint256,bytes32)'];
+    if (typeof method !== 'function') {
+      throw new Error('Registry is missing raiseDispute(uint256,bytes32)');
+    }
+    const args = [jobId, ethers.zeroPadValue(payload, 32)];
+    return hasOverrides ? method(...args, overrides) : method(...args);
+  }
+
+  const method = registryContract['raiseDispute(uint256,string)'];
+  if (typeof method !== 'function') {
+    throw new Error('Registry is missing raiseDispute(uint256,string)');
+  }
+  const args = [jobId, payload];
+  return hasOverrides ? method(...args, overrides) : method(...args);
+}
+
 function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -349,11 +374,7 @@ async function validate(jobId, commitOrApprove, ...rest) {
 }
 
 async function dispute(jobId, evidence) {
-  if (evidence.startsWith('0x') && evidence.length === 66) {
-    await registry.raiseDispute(jobId, evidence);
-    return;
-  }
-  await registry.raiseDispute(jobId, evidence);
+  await callRaiseDispute(registry, jobId, evidence);
 }
 
 async function attest(name, role, delegate) {
@@ -379,4 +400,8 @@ module.exports = {
   attest,
   revoke,
   computeValidationCommit,
+  __test__: {
+    callRaiseDispute,
+    isBytes32Hash,
+  },
 };
