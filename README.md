@@ -114,6 +114,8 @@ npx hardhat run scripts/v2/updateHamiltonianMonitor.ts --network <network>
 
 Pass `--execute` once the dry run looks correct to submit the queued actions. Use `resetHistory: true` in the config to wipe accumulated observations and start fresh—either on its own or combined with a window change. The helper automatically skips recording duplicate observations if they already match the most recent on-chain history.
 
+> **Observe thermodynamics live:** Generate human, Markdown, CSV or JSON Hamiltonian reports with \`npm run hamiltonian:report\`. The script computes aggregate H/G stats, normalises budgets into token units, and can append block timestamps for compliance artefacts. See [docs/hamiltonian-monitor.md](docs/hamiltonian-monitor.md) for full examples.
+
 ### Energy oracle signer management
 
 Governance controls which off-chain measurement nodes can sign energy attestations. Update [`config/energy-oracle.json`](config/energy-oracle.json) (or its per-network override) with the authorised signer list. Run the helper to review the planned changes and, once satisfied, apply them on-chain. The [Energy Oracle Operations Guide](docs/energy-oracle-operations.md) covers signer due diligence, quorum rotations and verification workflows with step-by-step diagrams:
