@@ -39,6 +39,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
 - [Owner control master checklist](#owner-control-master-checklist)
 - [Owner control atlas](#owner-control-atlas)
+- [Owner control change ticket](#owner-control-change-ticket)
 - [Owner control non-technical guide](#owner-control-non-technical-guide)
 - [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
 - [Owner control handbook](#owner-control-handbook)
@@ -300,6 +301,22 @@ npm run owner:atlas -- --network <network>
 
 Export with `--out reports/<network>-owner-atlas.md` to archive a Markdown briefing, choose `--format human` for a condensed terminal digest, or `--format json` for dashboard integrations. The Atlas automatically lists every module managed by the owner, highlights zero-address treasuries, missing signers and unbalanced reward weights, and embeds a Mermaid topology that maps JSON manifests → Hardhat helpers → deployed contracts. See [docs/owner-control-atlas.md](docs/owner-control-atlas.md) for a fully illustrated walkthrough.
 
+### Owner control change ticket
+
+Need a pre-filled change-management packet that a non-technical owner can hand to governance, compliance and auditors? Generate the new change ticket:
+
+```bash
+npm run owner:change-ticket -- --network <network>
+
+# Capture a Markdown artefact for approval workflows
+npm run owner:change-ticket -- --network mainnet --format markdown --out reports/mainnet-owner-change-ticket.md
+
+# Produce a JSON payload for bots or CI checks
+npm run owner:change-ticket -- --network mainnet --format json --out reports/mainnet-owner-change-ticket.json
+```
+
+The helper loads every owner-facing configuration manifest, hashes them with SHA-256, and emits a sequenced stage plan (baseline → plan → execute → verify → archive) alongside module-specific update/verify commands. Each ticket embeds a Mermaid flow, attachment checklist and links to the relevant illustrated handbooks, making it trivial for the contract owner to coordinate Safe signers, document intent and prove that every adjustable parameter stayed under explicit control. Full guidance lives in [docs/owner-control-change-ticket.md](docs/owner-control-change-ticket.md).
+
 ### Owner control non-technical guide
 
 Need a **no-code**, compliance-ready runbook for production changes? Follow the
@@ -537,10 +554,10 @@ Key options accepted by both helpers:
 
 Hardhat reads RPC endpoints and private keys from environment variables when running scripts or compilation targets. Use the following variables to connect to public testnets:
 
-| Network           | RPC variable              | Private key variable(s)                                             | Notes |
-| ----------------- | ------------------------- | ------------------------------------------------------------------- | ----- |
-| Ethereum Sepolia  | `SEPOLIA_RPC_URL`         | `SEPOLIA_PRIVATE_KEY` (falls back to `TESTNET_PRIVATE_KEY` if unset) | Existing Sepolia rehearsals continue to work unchanged. |
-| Optimism Sepolia  | `OP_SEPOLIA_RPC_URL`      | `OP_SEPOLIA_PRIVATE_KEY` (falls back to `TESTNET_PRIVATE_KEY` if unset) | Enables the `--network optimismSepolia` Hardhat target. |
+| Network          | RPC variable         | Private key variable(s)                                                 | Notes                                                   |
+| ---------------- | -------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------- |
+| Ethereum Sepolia | `SEPOLIA_RPC_URL`    | `SEPOLIA_PRIVATE_KEY` (falls back to `TESTNET_PRIVATE_KEY` if unset)    | Existing Sepolia rehearsals continue to work unchanged. |
+| Optimism Sepolia | `OP_SEPOLIA_RPC_URL` | `OP_SEPOLIA_PRIVATE_KEY` (falls back to `TESTNET_PRIVATE_KEY` if unset) | Enables the `--network optimismSepolia` Hardhat target. |
 
 Set the appropriate variables in your `.env` file (or export them in the shell) before invoking Hardhat commands such as `npx hardhat compile --network optimismSepolia` or deployment scripts.
 
