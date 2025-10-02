@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+import {ITaxPolicy} from "./ITaxPolicy.sol";
+
 /// @title IDisputeModule
 /// @notice Minimal interface for the dispute module used by the arbitrator committee.
 interface IDisputeModule {
     function version() external view returns (uint256);
+
+    function setTaxPolicy(ITaxPolicy policy) external;
 
     function raiseDispute(
         uint256 jobId,

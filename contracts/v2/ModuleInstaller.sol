@@ -102,6 +102,7 @@ contract ModuleInstaller is Ownable {
         );
         if (address(taxPolicy) != address(0)) {
             jobRegistry.setTaxPolicy(taxPolicy);
+            disputeModule.setTaxPolicy(taxPolicy);
         }
         jobRegistry.setIdentityRegistry(identityRegistry);
         validationModule.setIdentityRegistry(identityRegistry);

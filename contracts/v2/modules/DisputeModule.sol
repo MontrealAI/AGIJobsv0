@@ -6,6 +6,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
+import {ITaxPolicy} from "../interfaces/ITaxPolicy.sol";
 import {TOKEN_SCALE} from "../Constants.sol";
 import {ArbitratorCommittee} from "../ArbitratorCommittee.sol";
 
@@ -38,6 +39,9 @@ contract DisputeModule is Ownable, Pausable {
     address public committee;
 
     address public pauser;
+
+    /// @notice Tax policy accepted by employers, agents, and validators.
+    ITaxPolicy public taxPolicy;
 
     struct Dispute {
         address claimant;
@@ -93,6 +97,10 @@ contract DisputeModule is Ownable, Pausable {
     event StakeManagerUpdated(IStakeManager newManager);
     event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
     event CommitteeUpdated(address indexed committee);
+    event TaxPolicyUpdated(address indexed policy);
+
+    error InvalidTaxPolicy();
+    error PolicyNotTaxExempt();
 
     /// @param _jobRegistry Address of the JobRegistry contract.
     /// @param _disputeFee Initial dispute fee in token units (18 decimals); defaults to TOKEN_SCALE.
@@ -162,6 +170,16 @@ contract DisputeModule is Ownable, Pausable {
     {
         committee = newCommittee;
         emit CommitteeUpdated(newCommittee);
+    }
+
+    /// @notice Update the tax policy contract.
+    /// @param policy Address of the TaxPolicy contract employers and agents acknowledge.
+    function setTaxPolicy(ITaxPolicy policy)
+        external
+        onlyOwner
+        whenNotPaused
+    {
+        _setTaxPolicy(policy);
     }
 
     error NoActiveDispute();
@@ -405,6 +423,13 @@ contract DisputeModule is Ownable, Pausable {
         return IStakeManager(jobRegistry.stakeManager());
     }
 
+    function _setTaxPolicy(ITaxPolicy policy) internal {
+        if (address(policy) == address(0)) revert InvalidTaxPolicy();
+        if (!policy.isTaxExempt()) revert PolicyNotTaxExempt();
+        taxPolicy = policy;
+        emit TaxPolicyUpdated(address(policy));
+    }
+
     /// @notice Confirms the module and its owner cannot accrue tax liabilities.
     /// @return Always true, signalling perpetual tax exemption.
     function isTaxExempt() external pure returns (bool) {
@@ -424,4 +449,3 @@ contract DisputeModule is Ownable, Pausable {
         revert("DisputeModule: no ether");
     }
 }
-
