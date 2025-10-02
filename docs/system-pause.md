@@ -14,6 +14,34 @@ non-zero address pointing to a deployed contract. The contract reverts with
 `InvalidDisputeModule`, `InvalidPlatformRegistry`, `InvalidFeePool`, or
 `InvalidReputationEngine` if validation fails.
 
+## Governance and Runbook
+
+- Keep `SystemPause.owner()` pointed at the existing DAO timelock or multisig.
+  That governance address is the only actor allowed to call
+  `pauseAll()`, `unpauseAll()`, `setModules()`, or `refreshPausers()`.
+- Transfer ownership of every pausable module (JobRegistry, StakeManager,
+  ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine,
+  ArbitratorCommittee) to the deployed `SystemPause` contract before wiring
+  updates. Without ownership the helper cannot reapply pauser roles.
+- Run a dry run to confirm wiring and ownership before sending transactions:
+
+  ```bash
+  npx hardhat run scripts/v2/updateSystemPause.ts --network <network>
+  ```
+
+  The script aborts if any module is not owned by `SystemPause`, ensuring a
+  single on-chain switch guards every critical flow.
+- Re-run with `--execute` once the dry run is clean to update module wiring and
+  refresh the pauser roles under governance control.
+
+### Emergency operations
+
+1. **Pause** – From the timelock or multisig, call `SystemPause.pauseAll()` to
+   halt job creation, staking, validation, disputes, and platform registry
+   updates in a single transaction.
+2. **Resume** – When the incident is resolved, call `SystemPause.unpauseAll()`
+   from the same governance address to bring the system back online.
+
 ## Hardhat CLI
 
 ```sh
