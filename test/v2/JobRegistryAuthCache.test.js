@@ -70,6 +70,43 @@ describe('JobRegistry agent auth cache', function () {
     return jobId;
   }
 
+  it('records agent subdomains on initial verification', async () => {
+    const first = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(first, 'alpha', [])
+    )
+      .to.emit(registry, 'AgentSubdomainUpdated')
+      .withArgs(agent.address, 'alpha');
+    expect(await registry.agentSubdomains(agent.address)).to.equal('alpha');
+
+    const second = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(second, 'alpha', [])
+    ).to.not.emit(registry, 'AgentSubdomainUpdated');
+  });
+
+  it('forces a new ENS proof when subdomain changes', async () => {
+    const first = await createJob();
+    await registry.connect(agent).applyForJob(first, 'alpha', []);
+
+    const second = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(second, 'beta', [])
+    )
+      .to.emit(registry, 'AgentSubdomainUpdated')
+      .withArgs(agent.address, 'beta');
+  });
+
+  it('rejects empty subdomains even with a warm cache', async () => {
+    const first = await createJob();
+    await registry.connect(agent).applyForJob(first, 'alpha', []);
+
+    const second = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(second, '', [])
+    ).to.be.revertedWithCustomError(registry, 'EmptySubdomain');
+  });
+
   it('skips repeat ENS checks and expires cache', async () => {
     const first = await createJob();
     const tx1 = await registry.connect(agent).applyForJob(first, 'a', []);

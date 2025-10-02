@@ -78,6 +78,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error InsufficientAgentStake(uint256 required, uint256 actual);
     error MaxActiveJobsReached(uint256 limit);
     error InvalidEscalationState(uint8 state);
+    error EmptySubdomain();
 
     enum State {
         None,
@@ -685,6 +686,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     mapping(address => uint256) public agentAuthVersion;
     uint256 public agentAuthCacheVersion;
     uint256 public agentAuthCacheDuration = 1 days;
+    mapping(address => string) public agentSubdomains;
 
     /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
     /// version for callers other than the owner, dispute module, or validation module.
@@ -762,6 +764,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         bool viaWrapper,
         bool viaMerkle
     );
+    event AgentSubdomainUpdated(address indexed agent, string subdomain);
 
     // job parameter template event
     event JobParametersUpdated(
@@ -1688,11 +1691,23 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (address(reputationEngine) != address(0)) {
             if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedAgent();
         }
+        if (bytes(subdomain).length == 0) revert EmptySubdomain();
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
         bool authorized =
             agentAuthCache[msg.sender] &&
             agentAuthExpiry[msg.sender] > block.timestamp &&
             agentAuthVersion[msg.sender] == agentAuthCacheVersion;
+        string memory cachedSubdomain = agentSubdomains[msg.sender];
+        bool hasCached = bytes(cachedSubdomain).length != 0;
+        bytes32 providedHash = keccak256(bytes(subdomain));
+        bytes32 cachedHash;
+        if (hasCached) {
+            cachedHash = keccak256(bytes(cachedSubdomain));
+        }
+        bool cachedMatches = hasCached && cachedHash == providedHash;
+        if (authorized && !cachedMatches) {
+            authorized = false;
+        }
         bytes32 node;
         bool viaWrapper;
         bool viaMerkle;
@@ -1711,6 +1726,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 agentAuthExpiry[msg.sender] =
                     block.timestamp + agentAuthCacheDuration;
                 agentAuthVersion[msg.sender] = agentAuthCacheVersion;
+                if (!cachedMatches) {
+                    agentSubdomains[msg.sender] = subdomain;
+                    emit AgentSubdomainUpdated(msg.sender, subdomain);
+                    cachedMatches = true;
+                }
             }
         }
         if (!authorized) revert NotAuthorizedAgent();
@@ -1844,7 +1864,16 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedAgent();
             if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
+        if (bytes(subdomain).length == 0) revert EmptySubdomain();
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
+        string memory cachedSubdomain = agentSubdomains[msg.sender];
+        bool hasCached = bytes(cachedSubdomain).length != 0;
+        bytes32 cachedHash;
+        if (hasCached) {
+            cachedHash = keccak256(bytes(cachedSubdomain));
+        }
+        bytes32 providedHash = keccak256(bytes(subdomain));
+        bool cachedMatches = hasCached && cachedHash == providedHash;
         (bool authorized, bytes32 node, bool viaWrapper, bool viaMerkle) =
             identityRegistry.verifyAgent(msg.sender, subdomain, proof);
         if (!authorized) revert NotAuthorizedAgent();
@@ -1855,6 +1884,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             viaWrapper,
             viaMerkle
         );
+        if (!cachedMatches) {
+            agentSubdomains[msg.sender] = subdomain;
+            emit AgentSubdomainUpdated(msg.sender, subdomain);
+        }
         uint8 agentTypes = _getAgentTypes(job);
         if (agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
