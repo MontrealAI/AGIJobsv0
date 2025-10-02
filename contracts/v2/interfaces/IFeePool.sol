@@ -8,6 +8,7 @@ interface IFeePool {
     function version() external view returns (uint256);
 
     /// @notice notify the pool about newly received fees
+    /// @dev The pool burns the configured percentage and escrows the remainder for stakers.
     /// @param amount amount of tokens transferred to the pool scaled to 18 decimals
     function depositFee(uint256 amount) external;
 

@@ -224,7 +224,14 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// @param amount fee amount with 18 decimals
     function depositFee(uint256 amount) external onlyStakeManager whenNotPaused nonReentrant {
         if (amount == 0) revert ZeroAmount();
-        pendingFees += amount;
+        uint256 burnAmount = (amount * burnPct) / 100;
+        if (burnAmount > 0) {
+            _burnFees(msg.sender, burnAmount);
+        }
+        uint256 netAmount = amount - burnAmount;
+        if (netAmount > 0) {
+            pendingFees += netAmount;
+        }
         emit FeeDeposited(msg.sender, amount);
     }
 
@@ -279,12 +286,6 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         uint256 amount = pendingFees;
         if (amount == 0) return;
         pendingFees = 0;
-
-        uint256 burnAmount = (amount * burnPct) / 100;
-        if (burnAmount > 0) {
-            _burnFees(msg.sender, burnAmount);
-        }
-        amount -= burnAmount;
 
         uint256 total = stakeManager.totalBoostedStake(rewardRole);
         if (total == 0) {

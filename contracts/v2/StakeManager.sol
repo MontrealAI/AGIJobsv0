@@ -2159,7 +2159,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             if (address(_feePool) != address(0)) {
                 token.safeTransfer(address(_feePool), feeAmount);
                 _feePool.depositFee(feeAmount);
-                _feePool.distributeFees();
                 emit StakeReleased(jobId, address(_feePool), feeAmount);
             } else {
                 token.safeTransfer(employer, feeAmount);
@@ -2354,7 +2353,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             if (recipient == address(feePool) && address(feePool) != address(0)) {
                 token.safeTransfer(address(feePool), employerShare);
                 feePool.depositFee(employerShare);
-                feePool.distributeFees();
             } else {
                 token.safeTransfer(recipient, employerShare);
             }
