@@ -14,6 +14,7 @@ import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
+import {IAuditModule} from "./interfaces/IAuditModule.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -43,6 +44,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error InvalidReputationModule();
     error InvalidDisputeModule();
     error InvalidCertificateNFT();
+    error InvalidAuditModule();
     error PolicyNotTaxExempt();
     error InvalidFeePool();
     error InvalidIdentityRegistry();
@@ -428,6 +430,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     IReputationEngine public reputationEngine;
     IDisputeModule public disputeModule;
     ICertificateNFT public certificateNFT;
+    IAuditModule public auditModule;
     ITaxPolicy public taxPolicy;
     IFeePool public feePool;
     IIdentityRegistry public identityRegistry;
@@ -481,6 +484,19 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         validationModule = module;
         emit ValidationModuleUpdated(address(module));
         emit ModuleUpdated("ValidationModule", address(module));
+    }
+
+    function _setAuditModule(IAuditModule module) internal {
+        if (address(module) == address(0)) {
+            auditModule = module;
+            emit AuditModuleUpdated(address(module));
+            emit ModuleUpdated("AuditModule", address(module));
+            return;
+        }
+        if (module.version() == 0) revert InvalidAuditModule();
+        auditModule = module;
+        emit AuditModuleUpdated(address(module));
+        emit ModuleUpdated("AuditModule", address(module));
     }
 
     function _setStakeManager(IStakeManager _stakeMgr) internal {
@@ -721,6 +737,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event ReputationEngineUpdated(address engine);
     event DisputeModuleUpdated(address module);
     event CertificateNFTUpdated(address nft);
+    event AuditModuleUpdated(address module);
+    event AuditModuleCallbackFailed(uint256 indexed jobId, bytes data);
     event IdentityRegistryUpdated(address identityRegistry);
     event ValidatorRewardPctUpdated(uint256 pct);
     event PauserUpdated(address indexed pauser);
@@ -785,6 +803,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         bool stakeManagerUpdated,
         bool reputationModuleUpdated,
         bool certificateNFTUpdated,
+        bool auditModuleUpdated,
         bool feePoolUpdated,
         bool taxPolicyUpdated,
         bool treasuryUpdated,
@@ -826,6 +845,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         address disputeModule;
         bool setValidationModule;
         address validationModule;
+        bool setAuditModule;
+        address auditModule;
         bool setStakeManager;
         address stakeManager;
         bool setReputationModule;
@@ -1091,6 +1112,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _setValidationModule(module);
     }
 
+    /// @notice Update the audit module used for post-completion spot checks.
+    /// @param module Address of the audit module contract (zero to disable).
+    function setAuditModule(IAuditModule module) external onlyGovernance {
+        _setAuditModule(module);
+    }
+
     /// @notice Update the stake manager reference.
     /// @param manager StakeManager contract address.
     function setStakeManager(IStakeManager manager) external onlyGovernance {
@@ -1323,6 +1350,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         bool stakeManagerUpdated;
         bool reputationModuleUpdated;
         bool certificateNFTUpdated;
+        bool auditModuleUpdated;
         bool feePoolUpdated;
         bool taxPolicyUpdated;
         bool treasuryUpdated;
@@ -1394,6 +1422,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (config.setValidationModule) {
             _setValidationModule(IValidationModule(config.validationModule));
             validationModuleUpdated = true;
+            modulesUpdated = true;
+        }
+
+        if (config.setAuditModule) {
+            _setAuditModule(IAuditModule(config.auditModule));
+            auditModuleUpdated = true;
             modulesUpdated = true;
         }
 
@@ -1517,6 +1551,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             stakeManagerUpdated,
             reputationModuleUpdated,
             certificateNFTUpdated,
+            auditModuleUpdated,
             feePoolUpdated,
             taxPolicyUpdated,
             treasuryUpdated,
@@ -2396,6 +2431,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             employerStats[job.employer].failed++;
         }
         emit JobFinalized(jobId, job.agent);
+        if (address(auditModule) != address(0)) {
+            try auditModule.onJobFinalized(jobId, job.agent, success, job.resultHash) {
+            } catch (bytes memory err) {
+                emit AuditModuleCallbackFailed(jobId, err);
+            }
+        }
         if (isGov) {
             emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
         }
