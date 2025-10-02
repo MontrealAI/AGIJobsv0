@@ -79,6 +79,8 @@ contract MockStakeManager is IStakeManager {
     function payDisputeFee(address, uint256) external override {}
 
     function setMinStake(uint256) external override {}
+    function setRoleMinimums(uint256, uint256, uint256) external override {}
+    function setRoleMinimum(Role, uint256) external override {}
     function setSlashingPercentages(uint256, uint256) external override {}
     function setSlashingParameters(uint256, uint256) external override {}
     function setTreasury(address) external override {}
@@ -197,6 +199,10 @@ contract MockStakeManager is IStakeManager {
 
     function totalBoostedStake(Role role) external view override returns (uint256) {
         return totalStakes[role];
+    }
+
+    function roleMinimumStake(Role) external pure override returns (uint256) {
+        return 0;
     }
 
     function getTotalPayoutPct(address) external pure override returns (uint256) {

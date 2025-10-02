@@ -113,6 +113,16 @@ export interface StakeRecommendationsConfig {
   [key: string]: unknown;
 }
 
+export interface RoleMinimumsConfig {
+  agent?: string;
+  agentTokens?: string | number;
+  validator?: string;
+  validatorTokens?: string | number;
+  platform?: string;
+  platformTokens?: string | number;
+  [key: string]: unknown;
+}
+
 export interface AutoStakeConfig {
   enabled?: boolean | string;
   threshold?: number | string;
@@ -134,6 +144,7 @@ export interface AutoStakeConfig {
 export interface StakeManagerConfig {
   minStake?: string;
   minStakeTokens?: string | number;
+  roleMinimums?: RoleMinimumsConfig;
   feePct?: number | string;
   burnPct?: number | string;
   validatorRewardPct?: number | string;

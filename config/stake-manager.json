@@ -1,5 +1,5 @@
 {
-  "minStakeTokens": "10",
+  "minStakeTokens": "100",
   "employerSlashPct": 50,
   "treasurySlashPct": 50,
   "feePct": 5,
@@ -11,8 +11,13 @@
   "unbondingPeriodSeconds": 604800,
   "maxStakePerAddressTokens": "0",
   "stakeRecommendations": {
-    "minTokens": "10",
+    "minTokens": "100",
     "maxTokens": "0"
+  },
+  "roleMinimums": {
+    "agentTokens": "100",
+    "validatorTokens": "1000",
+    "platformTokens": "0"
   },
   "autoStake": {
     "enabled": false,
@@ -20,7 +25,7 @@
     "increasePct": 20,
     "decreasePct": 10,
     "windowSeconds": 604800,
-    "floorTokens": "10",
+    "floorTokens": "100",
     "ceilingTokens": "0",
     "temperatureThreshold": 0,
     "hamiltonianThreshold": 0,
