@@ -98,7 +98,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     uint256 public constant DEFAULT_REVEAL_WINDOW = 30 minutes;
     uint256 public constant DEFAULT_MIN_VALIDATORS = 3;
     uint256 public constant DEFAULT_MAX_VALIDATORS = 5;
-    uint256 public constant DEFAULT_APPROVAL_THRESHOLD = 67;
+    uint256 public constant DEFAULT_APPROVAL_THRESHOLD = 66;
     uint256 public constant DEFAULT_REVEAL_QUORUM_PCT = 67;
     uint256 public constant DEFAULT_FORCE_FINALIZE_GRACE = 1 hours;
     uint256 public forceFinalizeGrace = DEFAULT_FORCE_FINALIZE_GRACE;

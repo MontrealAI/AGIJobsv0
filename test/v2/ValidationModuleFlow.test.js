@@ -162,7 +162,7 @@ describe('ValidationModule finalize flows', function () {
       1,
       nonce,
       v2.address,
-      false,
+      true,
       burnTxHash,
       salt2,
       specHash,
@@ -192,11 +192,12 @@ describe('ValidationModule finalize flows', function () {
       .revealValidation(1, true, burnTxHash, salt1, 'validator', []);
     await validation
       .connect(v2)
-      .revealValidation(1, false, burnTxHash, salt2, 'validator', []);
+      .revealValidation(1, true, burnTxHash, salt2, 'validator', []);
     await validation
       .connect(v3)
       .revealValidation(1, false, burnTxHash, salt3, 'validator', []);
     await advance(61);
+    expect(await validation.callStatic.finalize(1)).to.equal(true);
     await validation.finalize(1);
     await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
