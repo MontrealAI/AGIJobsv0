@@ -401,11 +401,9 @@ async function main() {
     for (const note of ownershipIssues) {
       console.warn(` - ${note}`);
     }
-    if (cli.execute) {
-      throw new Error(
-        'Resolve ownership mismatches before executing wiring updates.'
-      );
-    }
+    throw new Error(
+      'SystemPause must own every module before wiring updates can proceed. Transfer ownership and rerun the script.'
+    );
   }
 
   if (pauserIssues.length) {
