@@ -138,7 +138,7 @@ describe('JobRegistry integration', function () {
     await policy.connect(employer).acknowledge();
     await policy.connect(agent).acknowledge();
 
-    await token.mint(employer.address, 1000);
+    await token.mint(employer.address, 100000);
     await token.mint(agent.address, 1000);
 
     await token
@@ -232,6 +232,56 @@ describe('JobRegistry integration', function () {
     expect(await rep.reputation(agent.address)).to.equal(0);
     expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
+  });
+
+  it('routes protocol fees through the FeePool and burns the configured share', async () => {
+    const rewardAmount = 10000;
+    const feePct = 5;
+    const burnPct = 1;
+    const feeAmount = (BigInt(rewardAmount) * BigInt(feePct)) / 100n;
+    const burnAmount = (feeAmount * BigInt(burnPct)) / 100n;
+    const netFee = feeAmount - burnAmount;
+
+    await registry.connect(owner).setJobParameters(rewardAmount, stake);
+    await registry.connect(owner).setFeePct(feePct);
+    await feePool.connect(owner).setBurnPct(burnPct);
+
+    const totalFunding = BigInt(rewardAmount) + feeAmount;
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), totalFunding);
+
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('spec-fee');
+
+    await registry
+      .connect(employer)
+      ['createJob(uint256,uint64,bytes32,string)'](
+        rewardAmount,
+        deadline,
+        specHash,
+        'fee-uri'
+      );
+
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId, 'agent-fee', []);
+    await validation.connect(owner).setResult(true);
+    await validation.connect(owner).setValidators([owner.address]);
+    await registry
+      .connect(agent)
+      .submit(jobId, ethers.id('fee-result'), 'fee-result', 'agent-fee', []);
+    await validation.finalize(jobId);
+
+    const finalizeTx = registry.connect(employer).finalize(jobId);
+    const stakeManagerAddr = await stakeManager.getAddress();
+    await expect(finalizeTx)
+      .to.emit(feePool, 'FeeDeposited')
+      .withArgs(stakeManagerAddr, feeAmount)
+      .and.to.emit(feePool, 'FeesBurned')
+      .withArgs(stakeManagerAddr, burnAmount);
+
+    expect(await feePool.pendingFees()).to.equal(netFee);
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(netFee);
   });
 
   it('acknowledges and applies in one call for zero-stake jobs', async () => {
