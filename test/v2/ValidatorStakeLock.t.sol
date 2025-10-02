@@ -12,21 +12,22 @@ import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
-contract ValidationFinalizeGas is Test {
-    ValidationModule validation;
-    StakeManager stake;
-    IdentityRegistryToggle identity;
-    AGIALPHAToken token;
-    MockJobRegistry jobRegistry;
+error PendingPenalty();
 
-    bytes32 constant burnTxHash = keccak256("burn");
+contract ValidatorStakeLockTest is Test {
+    ValidationModule internal validation;
+    StakeManager internal stake;
+    IdentityRegistryToggle internal identity;
+    AGIALPHAToken internal token;
+    MockJobRegistry internal jobRegistry;
 
-    address employer = address(0xE);
-    address agent = address(0xA);
-    address[3] validators;
+    bytes32 internal constant burnTxHash = keccak256("burn");
+
+    address internal employer = address(0xE);
+    address internal agent = address(0xA);
+    address[3] internal validators;
 
     function setUp() public {
-        // deploy AGIALPHA token mock
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
@@ -37,30 +38,30 @@ contract ValidationFinalizeGas is Test {
 
         identity = new IdentityRegistryToggle();
 
-        // three validators
         validators[0] = address(0x1);
         validators[1] = address(0x2);
         validators[2] = address(0x3);
 
-        for (uint256 i; i < 3; ++i) {
-            identity.addAdditionalValidator(validators[i]);
-            token.mint(validators[i], 1e18);
-            vm.startPrank(validators[i]);
+        for (uint256 i; i < validators.length; ++i) {
+            address val = validators[i];
+            identity.addAdditionalValidator(val);
+            token.mint(val, 1e18);
+            vm.startPrank(val);
             token.approve(address(stake), 1e18);
-            stake.depositStake(StakeManager.Role.Validator, 1e18);
+            stake.depositStake(IStakeManager.Role.Validator, 1e18);
             vm.stopPrank();
         }
 
-        address[] memory pool = new address[](3);
-        for (uint256 i; i < 3; ++i) {
+        address[] memory pool = new address[](validators.length);
+        for (uint256 i; i < validators.length; ++i) {
             pool[i] = validators[i];
         }
 
         validation = new ValidationModule(
             IJobRegistry(address(jobRegistry)),
             IStakeManager(address(stake)),
-            1,
-            1,
+            10,
+            10,
             3,
             10,
             pool
@@ -69,8 +70,7 @@ contract ValidationFinalizeGas is Test {
         stake.setValidationModule(address(validation));
     }
 
-    function _prepareJob() internal returns (uint256 jobId) {
-        jobId = 1;
+    function _prepareJob(uint256 jobId) internal returns (address[] memory selected) {
         MockJobRegistry.LegacyJob memory job;
         job.employer = employer;
         job.agent = agent;
@@ -86,7 +86,7 @@ contract ValidationFinalizeGas is Test {
         vm.prank(address(jobRegistry));
         validation.start(jobId, 0);
         vm.roll(block.number + 2);
-        validation.selectValidators(jobId, 0);
+        selected = validation.selectValidators(jobId, 0);
     }
 
     function _commitAndReveal(uint256 jobId) internal {
@@ -105,21 +105,53 @@ contract ValidationFinalizeGas is Test {
         }
     }
 
-    function testFinalizeGas() public {
-        uint256 jobId = _prepareJob();
-        vm.pauseGasMetering();
+    function testValidatorCannotFinalizeWithdrawalWhileAssigned() public {
+        stake.setUnbondingPeriod(1 hours);
+        address validator = validators[0];
+
+        vm.prank(validator);
+        stake.requestWithdraw(IStakeManager.Role.Validator, 1e18);
+
+        vm.warp(block.timestamp + stake.unbondingPeriod());
+
+        uint256 jobId = 1;
+        address[] memory selected = _prepareJob(jobId);
+        assertEq(selected.length, validators.length);
+        assertEq(stake.validatorModuleLockedStake(validator), 1e18);
+
+        vm.prank(validator);
+        vm.expectRevert(PendingPenalty.selector);
+        stake.finalizeWithdraw(IStakeManager.Role.Validator);
+
         _commitAndReveal(jobId);
-        vm.resumeGasMetering();
         validation.finalize(jobId);
+
+        assertEq(stake.validatorModuleLockedStake(validator), 0);
+
+        uint256 beforeBal = token.balanceOf(validator);
+        vm.prank(validator);
+        stake.finalizeWithdraw(IStakeManager.Role.Validator);
+        assertEq(token.balanceOf(validator), beforeBal + 1e18);
     }
 
-    function testForceFinalizeGas() public {
-        uint256 jobId = _prepareJob();
-        // skip reveals
-        vm.warp(block.timestamp + 1 + 1 + validation.forceFinalizeGrace() + 1);
-        vm.pauseGasMetering();
-        vm.resumeGasMetering();
+    function testSlashingSucceedsWithShortUnbondingPeriod() public {
+        stake.setUnbondingPeriod(1);
+        address validator = validators[0];
+
+        vm.prank(validator);
+        stake.requestWithdraw(IStakeManager.Role.Validator, 1e18);
+        vm.warp(block.timestamp + 2);
+
+        uint256 jobId = 2;
+        _prepareJob(jobId);
+        assertEq(stake.validatorModuleLockedStake(validator), 1e18);
+
+        uint256 advance = validation.commitWindow() + validation.revealWindow() + validation.forceFinalizeGrace() + 1;
+        vm.warp(block.timestamp + advance);
         validation.forceFinalize(jobId);
+
+        uint256 expected = 1e18 - ((1e18 * validation.nonRevealPenaltyBps()) / 10_000);
+        assertEq(stake.stakes(validator, IStakeManager.Role.Validator), expected);
+        assertEq(stake.validatorModuleLockedStake(validator), 0);
     }
 }
-

@@ -38,6 +38,7 @@ contract MockStakeManager is IStakeManager {
     function acknowledgeAndWithdraw(Role, uint256) external override {}
     function withdrawStake(Role, uint256) external override {}
     function lockStake(address, uint256, uint64) external override {}
+    function lockValidatorStake(address, uint256, uint64) external override {}
     function lockReward(bytes32, address, uint256) external override {}
     function lock(address, uint256) external override {}
     function releaseReward(bytes32, address, address, uint256, bool) external override {}
@@ -45,6 +46,7 @@ contract MockStakeManager is IStakeManager {
     function redistributeEscrow(bytes32, address, uint256) external override {}
     function redistributeEscrow(bytes32, address, uint256, address[] calldata) external override {}
     function releaseStake(address, uint256) external override {}
+    function unlockValidatorStake(address, uint256) external override {}
     function release(address, address, uint256, bool) external override {}
     function finalizeJobFunds(
         bytes32,
