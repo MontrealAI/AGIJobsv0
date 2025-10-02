@@ -38,6 +38,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control audit](#owner-control-audit)
 - [Owner control systems map](#owner-control-systems-map)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
+- [Owner control pulse](#owner-control-pulse)
 - [Owner control master checklist](#owner-control-master-checklist)
 - [Owner control atlas](#owner-control-atlas)
 - [Owner control change ticket](#owner-control-change-ticket)
@@ -307,6 +308,29 @@ npm run owner:quickstart -- --network mainnet --format json --out reports/mainne
 ```
 
 The CLI stitches together `config/owner-control.json`, `config/agialpha*.json`, `config/stake-manager.json`, `config/fee-pool.json`, `config/reward-engine.json`, `config/thermodynamics.json`, `config/hamiltonian-monitor.json` and `config/energy-oracle.json`, then prints a deterministic operational checklist that mirrors the `owner:update-all` workflow. Full usage guidance—including troubleshooting tables, Mermaid diagrams and automation tips—lives in [docs/owner-control-quick-reference-cli.md](docs/owner-control-quick-reference-cli.md).
+
+### Owner control pulse
+
+Need an at-a-glance health score before approving a governance rotation or signing a Safe batch? The pulse helper wraps `verifyOwnerControl` into a colour-graded dashboard that non-technical owners can run in under a minute:
+
+```bash
+# Interactive terminal dashboard with JSON snapshot footer
+npm run owner:pulse -- --network <network>
+
+# Markdown artefact for change tickets or executive briefings
+OWNER_PULSE_FORMAT=markdown OWNER_PULSE_OUT=reports/mainnet-owner-pulse.md \
+  npm run owner:pulse -- --network mainnet
+
+# JSON-only output for bots, monitors or spreadsheets
+OWNER_PULSE_FORMAT=json OWNER_PULSE_OUT=reports/mainnet-owner-pulse.json \
+  npm run owner:pulse -- --network mainnet
+```
+
+> **Note:** Hardhat consumes unknown flags before the script runs. Use the
+> `OWNER_PULSE_*` environment variables when running via `npm run owner:pulse` or
+> invoke Hardhat directly with a trailing `--` to pass custom flags.
+
+The command scores every module, highlights mismatches, missing addresses and pending acceptOwnership calls, and emits both human-friendly and machine-readable summaries. Use the Markdown export to drop a Mermaid systems snapshot into a war-room deck, or pipe the JSON payload into monitoring dashboards to catch regressions automatically. Full illustrations, diagrams and workflow guidance live in [docs/owner-control-pulse.md](docs/owner-control-pulse.md).
 
 ### Owner control master checklist
 
