@@ -339,6 +339,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             state.lastTriggeredAt = uint64(block.timestamp);
             uint256 deadline = r.revealDeadline;
             jobRegistry.escalateToDispute(jobId, rationale);
+            _cleanup(jobId);
             emit ValidationFailover(jobId, action, deadline, rationale);
             return;
         }
@@ -1168,17 +1169,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
         }
 
-        uint256 lockDuration = commitWindow + revealWindow + forceFinalizeGrace;
-        if (lockDuration > type(uint64).max) revert InvalidWindows();
-        uint64 lockTime = uint64(lockDuration);
-
         for (uint256 i; i < size;) {
             address val = selected[i];
             uint256 stakeAmount = stakes[i];
             validatorStakes[jobId][val] = stakeAmount;
             validatorStakeLocks[jobId][val] = stakeAmount;
             _validatorLookup[jobId][val] = true;
-            stakeManager.lockValidatorStake(val, stakeAmount, lockTime);
             unchecked {
                 ++i;
             }
@@ -1187,6 +1183,19 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         r.validators = selected;
         r.commitDeadline = block.timestamp + commitWindow;
         r.revealDeadline = r.commitDeadline + revealWindow;
+
+        uint256 lockDuration = commitWindow + revealWindow + forceFinalizeGrace;
+        if (lockDuration > type(uint64).max) revert InvalidWindows();
+        uint64 lockTime = uint64(lockDuration);
+
+        for (uint256 i; i < size;) {
+            address val = selected[i];
+            uint256 stakeAmount = validatorStakeLocks[jobId][val];
+            stakeManager.lockValidatorStake(jobId, val, stakeAmount, lockTime);
+            unchecked {
+                ++i;
+            }
+        }
 
         // Clear stored entropy and target block after finalization.
         delete pendingEntropy[jobId];
@@ -1759,7 +1768,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             delete votes[jobId][val];
             uint256 lockAmount = validatorStakeLocks[jobId][val];
             if (lockAmount != 0) {
-                stakeManager.unlockValidatorStake(val, lockAmount);
+                stakeManager.unlockValidatorStake(jobId, val, lockAmount);
             }
             delete validatorStakeLocks[jobId][val];
             delete validatorStakes[jobId][val];

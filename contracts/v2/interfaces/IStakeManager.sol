@@ -65,6 +65,9 @@ interface IStakeManager {
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address module);
     event ValidationModuleUpdated(address module);
+    event ValidatorLockManagerUpdated(address indexed manager, bool allowed);
+    event ValidatorStakeLocked(uint256 indexed jobId, address indexed validator, uint256 amount, uint64 unlockTime);
+    event ValidatorStakeUnlocked(uint256 indexed jobId, address indexed validator, uint256 amount);
     event ModulesUpdated(address jobRegistry, address disputeModule);
     event MinStakeUpdated(uint256 minStake);
     event RoleMinimumUpdated(Role indexed role, uint256 minStake);
@@ -140,11 +143,15 @@ interface IStakeManager {
     /// @param lockTime seconds until the stake unlocks
     function lockStake(address user, uint256 amount, uint64 lockTime) external;
 
+    /// @notice update the allowlist of addresses permitted to manage validator locks
+    function setValidatorLockManager(address manager, bool allowed) external;
+
     /// @notice lock validator stake for a validation round
+    /// @param jobId identifier of the job requesting validation
     /// @param user validator address whose stake is being locked
     /// @param amount token amount with 18 decimals
     /// @param lockTime seconds until the stake unlocks
-    function lockValidatorStake(address user, uint256 amount, uint64 lockTime) external;
+    function lockValidatorStake(uint256 jobId, address user, uint256 amount, uint64 lockTime) external;
 
     /// @notice lock job reward from an employer
     function lockReward(bytes32 jobId, address from, uint256 amount) external;
@@ -183,7 +190,7 @@ interface IStakeManager {
     function releaseStake(address user, uint256 amount) external;
 
     /// @notice release stake locked for validation
-    function unlockValidatorStake(address user, uint256 amount) external;
+    function unlockValidatorStake(uint256 jobId, address user, uint256 amount) external;
 
     /// @notice release funds locked via {lock}
     /// @param employer employer responsible for burns

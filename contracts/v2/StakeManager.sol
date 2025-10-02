@@ -119,6 +119,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice ValidationModule providing validator lists
     IValidationModule public validationModule;
 
+    /// @notice Additional addresses permitted to manage validator stake locks
+    mapping(address => bool) public validatorLockManagers;
+
     /// @notice minimum required stake
     uint256 public minStake;
 
@@ -322,6 +325,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
     event ValidationModuleUpdated(address indexed module);
+    event ValidatorLockManagerUpdated(address indexed manager, bool allowed);
+    event ValidatorStakeLocked(uint256 indexed jobId, address indexed validator, uint256 amount, uint64 unlockTime);
+    event ValidatorStakeUnlocked(uint256 indexed jobId, address indexed validator, uint256 amount);
     event MinStakeUpdated(uint256 minStake);
     event RoleMinimumUpdated(Role indexed role, uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
@@ -1141,6 +1147,15 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _setValidationModule(module);
     }
 
+    /// @notice update the allowlist of additional validator lock managers
+    /// @param manager address permitted to manage validator stake locks
+    /// @param allowed true to allow, false to revoke
+    function setValidatorLockManager(address manager, bool allowed) external onlyGovernance {
+        if (manager == address(0)) revert InvalidUser();
+        validatorLockManagers[manager] = allowed;
+        emit ValidatorLockManagerUpdated(manager, allowed);
+    }
+
     function _setModules(address _jobRegistry, address _disputeModule) internal {
         if (_jobRegistry == address(0) || _disputeModule == address(0)) revert InvalidModule();
         if (IJobRegistry(_jobRegistry).version() != 2) revert InvalidJobRegistry();
@@ -1607,10 +1622,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _;
     }
 
-    modifier onlyValidationModule() {
+    modifier onlyValidatorLockManager() {
         address module = address(validationModule);
         if (module == address(0)) revert ValidationModuleNotSet();
-        if (msg.sender != module) revert Unauthorized();
+        address sender = msg.sender;
+        if (sender != module && !validatorLockManagers[sender]) revert Unauthorized();
         _;
     }
 
@@ -1655,30 +1671,34 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice lock validator stake for a validation round
+    /// @param jobId identifier of the job requesting validation
     /// @param user validator address whose stake is being locked
     /// @param amount token amount with 18 decimals
     /// @param lockTime seconds until the stake unlocks
-    function lockValidatorStake(address user, uint256 amount, uint64 lockTime)
+    function lockValidatorStake(uint256 jobId, address user, uint256 amount, uint64 lockTime)
         external
-        onlyValidationModule
+        onlyValidatorLockManager
         whenNotPaused
     {
         _lockStake(user, amount, lockTime);
         validatorModuleLockedStake[user] += amount;
+        emit ValidatorStakeLocked(jobId, user, amount, unlockTime[user]);
     }
 
     /// @notice release validator stake locked for validation
+    /// @param jobId identifier of the job releasing the lock
     /// @param user validator address whose stake is being unlocked
     /// @param amount token amount with 18 decimals to unlock
-    function unlockValidatorStake(address user, uint256 amount)
+    function unlockValidatorStake(uint256 jobId, address user, uint256 amount)
         external
-        onlyValidationModule
+        onlyValidatorLockManager
         whenNotPaused
     {
         uint256 locked = validatorModuleLockedStake[user];
         if (locked < amount) revert InsufficientLocked();
         validatorModuleLockedStake[user] = locked - amount;
         _unlockStake(user, amount);
+        emit ValidatorStakeUnlocked(jobId, user, amount);
     }
 
     /// @dev internal stake deposit routine shared by deposit helpers

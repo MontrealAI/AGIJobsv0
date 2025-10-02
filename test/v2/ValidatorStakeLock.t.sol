@@ -13,6 +13,7 @@ import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
 error PendingPenalty();
+error InsufficientLocked();
 
 contract ValidatorStakeLockTest is Test {
     ValidationModule internal validation;
@@ -124,7 +125,8 @@ contract ValidatorStakeLockTest is Test {
         stake.finalizeWithdraw(IStakeManager.Role.Validator);
 
         _commitAndReveal(jobId);
-        validation.finalize(jobId);
+        bool success = validation.finalize(jobId);
+        assertTrue(success);
 
         assertEq(stake.validatorModuleLockedStake(validator), 0);
 
@@ -132,6 +134,22 @@ contract ValidatorStakeLockTest is Test {
         vm.prank(validator);
         stake.finalizeWithdraw(IStakeManager.Role.Validator);
         assertEq(token.balanceOf(validator), beforeBal + 1e18);
+    }
+
+    function testValidatorWithdrawStakeRevertsDuringActiveJob() public {
+        uint256 jobId = 11;
+        address validator = validators[0];
+
+        _prepareJob(jobId);
+        assertEq(stake.validatorModuleLockedStake(validator), 1e18);
+
+        vm.prank(validator);
+        vm.expectRevert(InsufficientLocked.selector);
+        stake.withdrawStake(IStakeManager.Role.Validator, 1e18);
+
+        _commitAndReveal(jobId);
+        bool success = validation.finalize(jobId);
+        assertTrue(success);
     }
 
     function testSlashingSucceedsWithShortUnbondingPeriod() public {
