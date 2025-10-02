@@ -1,7 +1,9 @@
 # FeePool configuration guide
 
 The `FeePool` contract routes protocol fees, burns a configurable share and
-streams the remainder to the staker role of your choice. The
+streams the remainder to the staker role of your choice. During the pilot
+phase the baseline configuration burns **1%** and leaves the treasury as the
+zero address so rounding dust is destroyed instead of being custodied. The
 `scripts/v2/updateFeePool.ts` helper keeps every owner-controlled parameter in
 sync with `config/fee-pool.json` so the contract owner can retune the module
 without touching Etherscan.
@@ -32,7 +34,7 @@ updated before running the script against a live deployment.
 {
   "stakeManager": "0x1234...",
   "rewardRole": "platform",
-  "burnPct": 5,
+  "burnPct": 1,
   "treasury": "0xabcd...",
   "treasuryAllowlist": {
     "0xabcd...": true
@@ -47,6 +49,10 @@ updated before running the script against a live deployment.
 ```
 
 - Use checksum addresses; the config loader normalises and validates them.
+- Keep the treasury set to `0x0` while fee burns are the only sink. Future
+  treasury destinations must be added to the allowlist and approved through the
+  owner ops workflow (`npm run owner:plan` followed by
+  `npm run owner:update-all`).
 - Leave optional entries out (or set to `0x0`) when you do not wish to change
   the on-chain value.
 - Treasury addresses must be present in the allowlist (set to `true`) before

@@ -163,7 +163,7 @@ contract Deployer is Ownable {
     }
 
     /// @notice Deploy and wire all modules using module defaults.
-    /// @dev Mirrors module constants: 5% fee, 5% burn and a TOKEN_SCALE minimum stake.
+    /// @dev Mirrors module constants: 5% fee, 1% burn and a TOKEN_SCALE minimum stake.
     /// @return stakeManager Address of the StakeManager
     /// @return jobRegistry Address of the JobRegistry
     /// @return validationModule Address of the ValidationModule
@@ -199,7 +199,7 @@ contract Deployer is Ownable {
     }
 
     /// @notice Deploy and wire modules with defaults and no TaxPolicy.
-    /// @dev Mirrors module constants: 5% fee, 5% burn and a TOKEN_SCALE minimum stake.
+    /// @dev Mirrors module constants: 5% fee, 1% burn and a TOKEN_SCALE minimum stake.
     /// @return stakeManager Address of the StakeManager
     /// @return jobRegistry Address of the JobRegistry
     /// @return validationModule Address of the ValidationModule
@@ -260,7 +260,7 @@ contract Deployer is Ownable {
         require(governance != address(0), "governance");
 
         uint256 feePct = econ.feePct == 0 ? 5 : econ.feePct;
-        uint256 burnPct = econ.burnPct == 0 ? 5 : econ.burnPct;
+        uint256 burnPct = econ.burnPct == 0 ? 1 : econ.burnPct;
         uint256 commitWindow =
             econ.commitWindow == 0 ? 1 days : econ.commitWindow;
         uint256 revealWindow =

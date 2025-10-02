@@ -140,7 +140,7 @@ Deploy in this order. For any constructor parameter that expects an address that
 
    - `token`: `$AGIALPHA`
    - `stakeManager`: StakeManager address
-   - `burnPct`: basis points (e.g., `500` = 5%)
+   - `burnPct`: percentage points (`1` = 1%)
    - `treasury`: treasury receiver for remainder/dust
 
 8. **PlatformRegistry** _(optional)_
@@ -677,7 +677,7 @@ Record each address.
 
    - `_token`: `$AGIALPHA`
    - `_stakeManager`: (1)
-   - `_burnPct`: e.g. `5` (or `0` initially)
+- `_burnPct`: e.g. `1` for the pilot baseline (or `0` initially)
    - `_treasury`: treasury/multisig
 
 8. _(Optional)_ **PlatformRegistry**, **JobRouter**, **PlatformIncentives**

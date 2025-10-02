@@ -7,7 +7,7 @@
   },
   "econ": {
     "feePct": 5,
-    "burnPct": 5,
+    "burnPct": 1,
     "employerSlashPct": 10,
     "treasurySlashPct": 90,
     "validatorSlashRewardPct": 0,

@@ -139,7 +139,7 @@ const STATUS_ABI = [
 const DEFAULT_STATUS_LIMIT = 5;
 const DEFAULT_DEADLINE_DAYS = 7;
 const DEFAULT_FEE_PCT = Number.parseFloat(process.env.ONEBOX_DEFAULT_FEE_PCT ?? process.env.ONEBOX_FEE_PCT ?? '5');
-const DEFAULT_BURN_PCT = Number.parseFloat(process.env.ONEBOX_DEFAULT_BURN_PCT ?? process.env.ONEBOX_BURN_PCT ?? '2');
+const DEFAULT_BURN_PCT = Number.parseFloat(process.env.ONEBOX_DEFAULT_BURN_PCT ?? process.env.ONEBOX_BURN_PCT ?? '1');
 const DEFAULT_POLICY_FILE = path.resolve(__dirname, '../storage/org-policies.json');
 
 const VALID_PERCENTAGE = (value: number) => Number.isFinite(value) && value >= 0;
