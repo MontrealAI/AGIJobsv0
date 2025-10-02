@@ -79,11 +79,32 @@ export interface CertificateBadge {
   tokenId: bigint;
   jobId: bigint;
   metadataURI: string;
-  slaURI?: string;
+  metadataCid?: string;
+  metadataGatewayURI?: string;
+  metadataName?: string;
+  metadataDescription?: string;
+  uriHash?: string;
+  slaUri?: string;
   issuedAt: number;
   employer: string;
   agent: string;
   description: string;
+  resultHash?: string;
+  metadataResultHash?: string;
+  hashMatchesOnChain?: boolean;
+  deliverableUri?: string;
+  deliverableCid?: string;
+  signature?: string;
+  signatureVerified?: boolean;
+  verification?: {
+    normalizedHash?: string;
+    recoveredAddress?: string;
+    matchesAgent: boolean;
+    matchesHash: boolean;
+  };
+  verificationMessage?: string;
+  verificationError?: string;
+  metadataError?: string;
 }
 
 export interface SlaDocument {
