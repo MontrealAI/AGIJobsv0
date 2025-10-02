@@ -3,7 +3,7 @@
   "employerSlashPct": 50,
   "treasurySlashPct": 50,
   "feePct": 5,
-  "burnPct": 5,
+  "burnPct": 1,
   "validatorRewardPct": 10,
   "validatorSlashRewardPct": 0,
   "treasury": "0x0000000000000000000000000000000000000000",

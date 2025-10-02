@@ -51,7 +51,7 @@ The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RU
    - “Apply for job #123.”
    - “Finalize job #123.”
 3. The orchestrator responds with clarifying questions if required fields are missing. The UI echoes them in the chat feed.
-4. When the ICS would move tokens or stake, the UI shows a ≤140-character confirmation line (“Post job 50 AGIALPHA, 7 days, fee 5%, burn 2%?”). Respond with **YES** to continue or **NO** to cancel.
+4. When the ICS would move tokens or stake, the UI shows a ≤140-character confirmation line (“Post job 50 AGIALPHA, 7 days, fee 5%, burn 1%?”). Respond with **YES** to continue or **NO** to cancel.
 5. For jobs or submissions requiring attachments, the UI triggers a file picker and uploads the file to IPFS via web3.storage. The CID is inserted into the ICS before execution.
 6. Execution status and receipts stream into the chat. Advanced details (tx hash, block number, AA/relayer metadata) appear under the **Advanced** toggle.
 7. A live status board underneath the chat polls `/onebox/status` for recent jobs so users can rejoin ongoing workflows without refreshing.

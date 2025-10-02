@@ -45,7 +45,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     using SafeERC20 for IERC20;
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
-    uint256 public constant DEFAULT_BURN_PCT = 5;
+    uint256 public constant DEFAULT_BURN_PCT = 1;
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 

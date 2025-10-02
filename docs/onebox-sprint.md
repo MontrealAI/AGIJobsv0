@@ -165,7 +165,7 @@ The chat replies with:
 
 1. **Clarify** missing fields (deadline, accuracy, dataset location).
 2. **Plan summary** (auto‑approval, chosen validator count, fee/burn snapshot).
-3. **Confirm** (human‑readable: “You’ll escrow 50 AGIALPHA, fee 5%, burn 2%, validators x2”).
+3. **Confirm** (human‑readable: “You’ll escrow 50 AGIALPHA, fee 5%, burn 1%, validators x2”).
 4. **Execute** (gasless).
 5. **Live updates** with **Etherscan links** (from the repo’s lifecycle). ([GitHub][1])
 

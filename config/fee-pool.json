@@ -1,7 +1,7 @@
 {
   "stakeManager": "0x0000000000000000000000000000000000000000",
   "rewardRole": "platform",
-  "burnPct": 5,
+  "burnPct": 1,
   "treasury": "0x0000000000000000000000000000000000000000",
   "treasuryAllowlist": {},
   "governance": "0x0000000000000000000000000000000000000000",

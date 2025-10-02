@@ -312,7 +312,7 @@
 - `minValidators = 3`, `maxValidators = 5`
 - Baseline committees: operate with 3-validator draws initially, leaving headroom to scale toward 5 as throughput data allows.
 - `JobRegistry.feePctBps = 500` (5%)
-- `FeePool.burnPct = 5` (start small; can increase)
+- `FeePool.burnPct = 1` (pilot baseline; revisit post-governance)
 - `StakeManager.minStake = 1e18` (1 $AGIALPHA) per role  
   (Adjust to your economics; document changes in governance log.) :contentReference[oaicite:60]{index=60}
 

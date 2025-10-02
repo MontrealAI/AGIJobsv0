@@ -171,7 +171,7 @@ module.exports = async function (deployer, network, accounts) {
   const governance = process.env.GOVERNANCE_ADDRESS || accounts[0];
   const withTax = !process.env.NO_TAX;
   const feePct = process.env.FEE_PCT ? parseInt(process.env.FEE_PCT) : 5;
-  const burnPct = process.env.BURN_PCT ? parseInt(process.env.BURN_PCT) : 5;
+  const burnPct = process.env.BURN_PCT ? parseInt(process.env.BURN_PCT) : 1;
 
   await deployer.deploy(Deployer);
   const instance = await Deployer.deployed();
@@ -200,14 +200,14 @@ module.exports = async function (deployer, network, accounts) {
 
   let receipt;
   if (withTax) {
-    if (feePct !== 5 || burnPct !== 5) {
-      receipt = await instance.deploy(econ, ids, governance);
+    if (feePct !== 5 || burnPct !== 1) {
+        receipt = await instance.deploy(econ, ids, governance);
     } else {
-      receipt = await instance.deployDefaults(ids, governance);
+        receipt = await instance.deployDefaults(ids, governance);
     }
   } else {
-    if (feePct !== 5 || burnPct !== 5) {
-      receipt = await instance.deployWithoutTaxPolicy(econ, ids, governance);
+    if (feePct !== 5 || burnPct !== 1) {
+        receipt = await instance.deployWithoutTaxPolicy(econ, ids, governance);
     } else {
       receipt = await instance.deployDefaultsWithoutTaxPolicy(ids, governance);
     }

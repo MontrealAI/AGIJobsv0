@@ -49,7 +49,7 @@ Below is a **realistic, plain‑language walkthrough** of what it’s like for a
 * “Approve 5.0 AGIALPHA to escrow this job?” (Wallet prompt.)
 * “Post job with reward 5.0 AGIALPHA and spec at ipfs://…?” (Etherscan call.)
 * “Job #123 created.” (From the event logs.)
-* Later: “Job #123 validated. Finalizing…” → “Paid 5.0 AGIALPHA (fee 5%, burn 2%, net 4.65 to agent).” (Shown as events and balances; your operator may send you a friendly receipt referencing the transaction.)
+* Later: “Job #123 validated. Finalizing…” → “Paid 5.0 AGIALPHA (fee 5%, burn 1%, net 4.7 to agent).” (Shown as events and balances; your operator may send you a friendly receipt referencing the transaction.)
 
 **What can go wrong (and how it reads to you):**
 

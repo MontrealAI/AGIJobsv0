@@ -44,7 +44,7 @@ This guide shows how to deploy the modular v2 contracts using the helper script 
 
 ## 2. Configure token, ENS roots and fees
 
-The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% burn, and loads ENS data from `deployment-config/<network>.json`. Customise values with CLI flags or a config file instead of editing TypeScript:
+The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 1% burn, and loads ENS data from `deployment-config/<network>.json`. Customise values with CLI flags or a config file instead of editing TypeScript:
 
 - Economic settings live under `econ`. Percentages accept integers (`5`) or decimals (`0.05`). Token amounts accept decimal strings or 0x-prefixed base units.
 - Identity settings accept either ENS names (automatically namehashed) or explicit `0x…` values. Leave Merkle roots unset to default to zero.
@@ -76,7 +76,7 @@ Example JSON snippet:
 }
 ```
 
-After deployment the owner can still adjust parameters on-chain via the module setters (e.g. `JobRegistry.setFeePct`, `FeePool.setBurnPct`, `StakeManager.setSlashingPercentages`).
+After deployment the owner can still adjust parameters on-chain via the module setters (e.g. `JobRegistry.setFeePct`, `FeePool.setBurnPct`, `StakeManager.setSlashingPercentages`). Run these adjustments through the owner ops workflow (`npm run owner:plan` then `npm run owner:update-all`) so every change remains auditable.
 
 ## 3. Post-deploy wiring
 

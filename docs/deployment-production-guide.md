@@ -44,7 +44,7 @@ Deploy each contract through Etherscan and note its address. Verify the source c
    - Parameters: collection `name` and `symbol` (e.g. "AGI Jobs Certificate", "AGIJOB").
 7. **FeePool**
    - Parameters: `_token`, `_stakeManager`, `_burnPct`, `_treasury`.
-   - `burnPct` is a percentage (`0`–`100`). For a 5% burn enter `5`; use `0` to disable burning initially.
+   - `burnPct` is a percentage (`0`–`100`). Enter `1` for the 1% pilot baseline; use `0` to disable burning entirely.
 8. **PlatformRegistry** _(optional)_
    - Parameters: `stakeManager`, `reputationEngine`, `minStake`.
 9. **JobRouter** _(optional)_
@@ -115,7 +115,7 @@ Source: [`contracts/v2/FeePool.sol`](../contracts/v2/FeePool.sol)
 
 ### Fee Handling & Treasury
 
-`JobRegistry` forwards protocol fees to `FeePool`. When an employer finalizes a job, the pool burns the configured `burnPct` and holds the remainder for platform stakers. `StakeManager.setTreasury`, `JobRegistry.setTreasury`, and `FeePool.setTreasury` route slashed stakes or blacklisted payouts to a governance-controlled treasury, while any undistributed fees are burned if no stakers are present. The platform never keeps fees or burned tokens.
+`JobRegistry` forwards protocol fees to `FeePool`. When an employer finalizes a job, the pool burns the configured `burnPct` and holds the remainder for platform stakers. `StakeManager.setTreasury`, `JobRegistry.setTreasury`, and `FeePool.setTreasury` route slashed stakes or blacklisted payouts to a governance-controlled treasury, while any undistributed fees are burned if no stakers are present. The platform never keeps fees or burned tokens. Adjustments must flow through the owner ops workflow (`npm run owner:plan`, review, then `npm run owner:update-all`) so the audit trail covers every change.
 
 ### Owner Updatability
 
