@@ -45,6 +45,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner mission control](#owner-mission-control)
 - [Owner control visual guide](#owner-control-visual-guide)
 - [Owner parameter matrix](#owner-parameter-matrix)
+- [Production launch blueprint](#production-launch-blueprint)
 
 ### Identity policy
 
@@ -382,6 +383,20 @@ touching Solidity. Explore the full workflow in the
 [Owner Parameter Matrix guide](docs/owner-parameter-matrix.md) and pair it with
 `npm run owner:surface` plus `npm run owner:verify-control` to archive a complete
 change-control artefact set.
+
+### Production launch blueprint
+
+Need a single, production-ready playbook that connects planning, dry runs, execution,
+telemetry and recovery? Read the
+[`Production Launch Blueprint`](docs/production-launch-blueprint.md). It packages:
+
+- **Mermaid systems maps** clarifying how configs, scripts and ownership interplay.
+- **Copy/paste checklists** covering preparation, execution ladders and launch gates.
+- **Recovery and monitoring tables** so the contract owner can pause, roll back or
+  rotate signers without writing Solidity or TypeScript.
+
+Drop the blueprint into your change tickets so non-technical stakeholders can follow
+along without context switching across multiple docs.
 
 ### Mainnet Deployment
 
