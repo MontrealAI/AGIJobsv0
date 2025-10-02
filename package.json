@@ -23,6 +23,7 @@
     "owner:doctor": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlDoctor.ts",
     "owner:audit": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerConfigAudit.ts",
     "owner:parameters": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerParameterMatrix.ts",
+    "owner:quickstart": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlQuickstart.ts",
     "owner:command-center": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerCommandCenter.ts",
     "owner:mission-control": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerMissionControl.ts",
     "owner:atlas": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlAtlas.ts",
