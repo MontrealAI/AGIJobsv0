@@ -316,6 +316,26 @@ function summariseStakeManager(
   if (minStake) {
     rows.push({ label: 'Minimum stake', value: minStake });
   }
+  const roleMinimums = config?.roleMinimums;
+  if (roleMinimums) {
+    const describe = (
+      raw: any,
+      tokens: any
+    ): string =>
+      formatTokenWithRaw(
+        raw,
+        tokens,
+        context.tokenDecimals,
+        context.tokenSymbol
+      ) ?? 'disabled';
+    rows.push({
+      label: 'Role minimums',
+      value: `agent ${describe(roleMinimums.agent, roleMinimums.agentTokens)}, validator ${describe(
+        roleMinimums.validator,
+        roleMinimums.validatorTokens
+      )}, platform ${describe(roleMinimums.platform, roleMinimums.platformTokens)}`,
+    });
+  }
   const maxStake = formatTokenWithRaw(
     config?.maxStakePerAddress,
     config?.maxStakePerAddressTokens,

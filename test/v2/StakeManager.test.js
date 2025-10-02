@@ -591,6 +591,74 @@ describe('StakeManager', function () {
     await stakeManager.connect(user).withdrawStake(1, 100);
   });
 
+  it('supports role-specific minimum stake overrides', async () => {
+    await stakeManager.connect(owner).setMinStake(100);
+
+    const JobRegistry = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const taxPolicy = await TaxPolicy.deploy('ipfs://policy', 'ack');
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await taxPolicy.connect(user).acknowledge();
+
+    await expect(
+      stakeManager.connect(owner).setRoleMinimums(100, 1000, 0)
+    )
+      .to.emit(stakeManager, 'RoleMinimumUpdated')
+      .withArgs(0, 100n)
+      .and.to.emit(stakeManager, 'RoleMinimumUpdated')
+      .withArgs(1, 1000n)
+      .and.to.emit(stakeManager, 'RoleMinimumUpdated')
+      .withArgs(2, 0n);
+
+    expect(await stakeManager.roleMinimumStake(0)).to.equal(100n);
+    expect(await stakeManager.roleMinimumStake(1)).to.equal(1000n);
+    expect(await stakeManager.roleMinimumStake(2)).to.equal(0n);
+
+    await token.mint(user.address, 200);
+    await token
+      .connect(user)
+      .approve(await stakeManager.getAddress(), 2000);
+
+    await stakeManager.connect(user).depositStake(0, 100);
+    await expect(
+      stakeManager.connect(user).depositStake(1, 100)
+    ).to.be.revertedWithCustomError(stakeManager, 'BelowMinimumStake');
+    await stakeManager.connect(user).depositStake(1, 1000);
+
+    await expect(
+      stakeManager.connect(user).withdrawStake(0, 1)
+    ).to.be.revertedWithCustomError(stakeManager, 'BelowMinimumStake');
+    await expect(
+      stakeManager.connect(user).withdrawStake(1, 10)
+    ).to.be.revertedWithCustomError(stakeManager, 'BelowMinimumStake');
+
+    await stakeManager.connect(user).withdrawStake(0, 100);
+    await stakeManager.connect(user).withdrawStake(1, 1000);
+  });
+
   it('restricts slashing percentage updates to owner', async () => {
     await expect(
       stakeManager.connect(user).setSlashingPercentages(60, 40)

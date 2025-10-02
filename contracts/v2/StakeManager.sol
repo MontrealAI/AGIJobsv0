@@ -122,6 +122,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice minimum required stake
     uint256 public minStake;
 
+    /// @notice optional per-role minimum stake overrides (0 -> fallback to {minStake})
+    mapping(Role => uint256) public roleMinimumStake;
+
     /// @notice percentage of slashed amount sent to employer (out of 100)
     uint256 public employerSlashPct;
 
@@ -314,6 +317,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event DisputeModuleUpdated(address indexed module);
     event ValidationModuleUpdated(address indexed module);
     event MinStakeUpdated(uint256 minStake);
+    event RoleMinimumUpdated(Role indexed role, uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event OperatorSlashPctUpdated(uint256 operatorSlashPct);
     event ValidatorSlashRewardPctUpdated(uint256 validatorSlashRewardPct);
@@ -347,6 +351,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool autoStakeTuningUpdated,
         bool autoStakeConfigUpdated,
         bool minStakeUpdated,
+        bool roleMinimumsUpdated,
         bool slashingUpdated,
         bool operatorSlashPctUpdated,
         bool treasuryUpdated,
@@ -395,6 +400,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         AutoStakeSettings autoStakeSettings;
         bool setMinStake;
         uint256 minStake;
+        bool setRoleMinimums;
+        uint256 agentMinStake;
+        uint256 validatorMinStake;
+        uint256 platformMinStake;
         bool setSlashingPercentages;
         uint256 employerSlashPct;
         uint256 treasurySlashPct;
@@ -668,6 +677,29 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (_minStake == 0) revert InvalidMinStake();
         minStake = _minStake;
         emit MinStakeUpdated(_minStake);
+    }
+
+    function _setRoleMinimum(Role role, uint256 amount) internal {
+        if (role > Role.Platform) revert InvalidRole();
+        roleMinimumStake[role] = amount;
+        emit RoleMinimumUpdated(role, amount);
+    }
+
+    /// @notice update the minimum stake override for a specific role
+    /// @param role participant role whose override should change
+    /// @param amount minimum stake in 18 decimal tokens (0 disables the override)
+    function setRoleMinimum(Role role, uint256 amount) external onlyGovernance {
+        _setRoleMinimum(role, amount);
+    }
+
+    /// @notice update minimum stake overrides for all roles in a single call
+    /// @param agent minimum stake for agents (0 disables override)
+    /// @param validator minimum stake for validators (0 disables override)
+    /// @param platform minimum stake for platforms (0 disables override)
+    function setRoleMinimums(uint256 agent, uint256 validator, uint256 platform) external onlyGovernance {
+        _setRoleMinimum(Role.Agent, agent);
+        _setRoleMinimum(Role.Validator, validator);
+        _setRoleMinimum(Role.Platform, platform);
     }
 
     /// @notice update the minimum stake required
@@ -1285,6 +1317,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool autoStakeTuningChanged;
         bool autoStakeConfigChanged;
         bool minStakeChanged;
+        bool roleMinimumsChanged;
         bool slashingChanged;
         bool treasuryChanged;
         bool jobRegistryChanged;
@@ -1339,6 +1372,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (config.setMinStake) {
             _setMinStake(config.minStake);
             minStakeChanged = true;
+        }
+
+        if (config.setRoleMinimums) {
+            _setRoleMinimum(Role.Agent, config.agentMinStake);
+            _setRoleMinimum(Role.Validator, config.validatorMinStake);
+            _setRoleMinimum(Role.Platform, config.platformMinStake);
+            roleMinimumsChanged = true;
         }
 
         if (config.setSlashingPercentages || config.setValidatorSlashRewardPct || config.setOperatorSlashPct) {
@@ -1453,6 +1493,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             autoStakeTuningChanged,
             autoStakeConfigChanged,
             minStakeChanged,
+            roleMinimumsChanged,
             slashingChanged,
             operatorSlashPctChanged,
             treasuryChanged,
@@ -1610,10 +1651,15 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @dev internal stake deposit routine shared by deposit helpers
+    function _minimumStakeFor(Role role) internal view returns (uint256) {
+        uint256 overrideMin = roleMinimumStake[role];
+        return overrideMin == 0 ? minStake : overrideMin;
+    }
+
     function _deposit(address user, Role role, uint256 amount) internal {
         uint256 oldStake = stakes[user][role];
         uint256 newStake = oldStake + amount;
-        if (newStake < minStake) revert BelowMinimumStake();
+        if (newStake < _minimumStakeFor(role)) revert BelowMinimumStake();
         if (maxStakePerAddress > 0) {
             uint256 total =
                 stakes[user][Role.Agent] + stakes[user][Role.Validator] + stakes[user][Role.Platform] + amount;
@@ -1750,7 +1796,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 staked = stakes[msg.sender][role];
         if (staked < amount) revert InsufficientStake();
         uint256 newStake = staked - amount;
-        if (newStake != 0 && newStake < minStake) revert BelowMinimumStake();
+        uint256 roleMin = _minimumStakeFor(role);
+        if (newStake != 0 && newStake < roleMin) revert BelowMinimumStake();
 
         uint256 locked = lockedStakes[msg.sender];
         uint64 unlock = unlockTime[msg.sender];
@@ -1794,7 +1841,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 staked = stakes[user][role];
         if (staked < amount) revert InsufficientStake();
         uint256 newStake = staked - amount;
-        if (newStake != 0 && newStake < minStake) revert BelowMinimumStake();
+        uint256 roleMin = _minimumStakeFor(role);
+        if (newStake != 0 && newStake < roleMin) revert BelowMinimumStake();
 
         uint256 locked = lockedStakes[user];
         uint64 unlock = unlockTime[user];

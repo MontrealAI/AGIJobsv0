@@ -67,6 +67,7 @@ interface IStakeManager {
     event ValidationModuleUpdated(address module);
     event ModulesUpdated(address jobRegistry, address disputeModule);
     event MinStakeUpdated(uint256 minStake);
+    event RoleMinimumUpdated(Role indexed role, uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event OperatorSlashPctUpdated(uint256 operatorSlashPct);
     event ValidatorSlashRewardPctUpdated(uint256 validatorSlashRewardPct);
@@ -123,6 +124,15 @@ interface IStakeManager {
 
     /// @notice acknowledge the tax policy and withdraw stake in one call
     function acknowledgeAndWithdraw(Role role, uint256 amount) external;
+
+    /// @notice view the minimum stake override for a role (0 => fallback to global min)
+    function roleMinimumStake(Role role) external view returns (uint256);
+
+    /// @notice update minimum stake overrides for all roles
+    function setRoleMinimums(uint256 agent, uint256 validator, uint256 platform) external;
+
+    /// @notice update the minimum stake override for a single role
+    function setRoleMinimum(Role role, uint256 amount) external;
 
     /// @notice lock a portion of a user's stake for a period of time
     /// @param user address whose stake is being locked

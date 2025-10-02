@@ -45,6 +45,9 @@ export async function buildStakeManagerPlan(
 
   const [
     currentMinStake,
+    currentAgentRoleMin,
+    currentValidatorRoleMin,
+    currentPlatformRoleMin,
     currentFeePct,
     currentBurnPct,
     currentValidatorRewardPct,
@@ -78,6 +81,9 @@ export async function buildStakeManagerPlan(
     currentAGITypes,
   ] = await Promise.all([
     stakeManager.minStake(),
+    stakeManager.roleMinimumStake(0),
+    stakeManager.roleMinimumStake(1),
+    stakeManager.roleMinimumStake(2),
     stakeManager.feePct(),
     stakeManager.burnPct(),
     stakeManager.validatorRewardPct(),
@@ -121,6 +127,33 @@ export async function buildStakeManagerPlan(
     decimals,
     'minStake'
   );
+
+  const roleMinimums = config.roleMinimums ?? {};
+  const desiredAgentRoleMin = parseTokenAmount(
+    (roleMinimums as any).agent,
+    (roleMinimums as any).agentTokens,
+    decimals,
+    'roleMinimums.agent'
+  );
+  const desiredValidatorRoleMin = parseTokenAmount(
+    (roleMinimums as any).validator,
+    (roleMinimums as any).validatorTokens,
+    decimals,
+    'roleMinimums.validator'
+  );
+  const desiredPlatformRoleMin = parseTokenAmount(
+    (roleMinimums as any).platform,
+    (roleMinimums as any).platformTokens,
+    decimals,
+    'roleMinimums.platform'
+  );
+
+  const formatRoleMinimums = (agent: bigint, validator: bigint, platform: bigint): string =>
+    [
+      `agent=${agent === 0n ? 'disabled' : formatToken(agent, decimals, symbol)}`,
+      `validator=${validator === 0n ? 'disabled' : formatToken(validator, decimals, symbol)}`,
+      `platform=${platform === 0n ? 'disabled' : formatToken(platform, decimals, symbol)}`,
+    ].join(', ');
   const desiredMaxStake = parseTokenAmount(
     config.maxStakePerAddress,
     config.maxStakePerAddressTokens,
@@ -477,6 +510,38 @@ export async function buildStakeManagerPlan(
       current: formatToken(currentMinStakeValue, decimals, symbol),
       desired: formatToken(desiredMinStake, decimals, symbol),
     });
+  }
+
+  const currentAgentRoleMinValue = currentAgentRoleMin as bigint;
+  const currentValidatorRoleMinValue = currentValidatorRoleMin as bigint;
+  const currentPlatformRoleMinValue = currentPlatformRoleMin as bigint;
+  const roleMinimumsConfigured =
+    desiredAgentRoleMin !== undefined ||
+    desiredValidatorRoleMin !== undefined ||
+    desiredPlatformRoleMin !== undefined;
+
+  if (roleMinimumsConfigured) {
+    const agentTarget = desiredAgentRoleMin ?? currentAgentRoleMinValue;
+    const validatorTarget = desiredValidatorRoleMin ?? currentValidatorRoleMinValue;
+    const platformTarget = desiredPlatformRoleMin ?? currentPlatformRoleMinValue;
+    const hasRoleChange =
+      agentTarget !== currentAgentRoleMinValue ||
+      validatorTarget !== currentValidatorRoleMinValue ||
+      platformTarget !== currentPlatformRoleMinValue;
+
+    if (hasRoleChange) {
+      actions.push({
+        label: 'Update role minimum stakes',
+        method: 'setRoleMinimums',
+        args: [agentTarget, validatorTarget, platformTarget],
+        current: formatRoleMinimums(
+          currentAgentRoleMinValue,
+          currentValidatorRoleMinValue,
+          currentPlatformRoleMinValue
+        ),
+        desired: formatRoleMinimums(agentTarget, validatorTarget, platformTarget),
+      });
+    }
   }
 
   if (

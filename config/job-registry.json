@@ -1,6 +1,6 @@
 {
   "jobStakeTokens": "1",
-  "minAgentStakeTokens": "10",
+  "minAgentStakeTokens": "100",
   "maxJobRewardTokens": "1000",
   "jobDurationLimitSeconds": 604800,
   "maxActiveJobsPerAgent": 3,

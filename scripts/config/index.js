@@ -959,6 +959,10 @@ function normaliseStakeManagerConfig(config = {}) {
     result.stakeRecommendations = { ...result.stakeRecommendations };
   }
 
+  if (result.roleMinimums && typeof result.roleMinimums === 'object') {
+    result.roleMinimums = { ...result.roleMinimums };
+  }
+
   return result;
 }
 
