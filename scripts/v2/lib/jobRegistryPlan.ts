@@ -301,48 +301,63 @@ export async function buildJobRegistryPlan(
     'identity registry',
     ['Ensure the target identity registry reports version() == 2.']
   );
-  enqueueModuleUpdate(
-    desiredDisputeModule,
-    currentDisputeModuleAddress,
-    'setDisputeModule',
-    'dispute module',
-    ['Ensure the dispute module reports version() == 2.']
+
+  const moduleBundleCurrent = {
+    validation: currentValidationModuleAddress,
+    stakeManager: currentStakeManagerAddress,
+    reputation: currentReputationModuleAddress,
+    dispute: currentDisputeModuleAddress,
+    certificate: currentCertificateNFTAddress,
+    feePool: currentFeePoolAddress,
+  } as const;
+
+  const moduleBundleDesired = {
+    validation: desiredValidationModule ?? moduleBundleCurrent.validation,
+    stakeManager: desiredStakeManager ?? moduleBundleCurrent.stakeManager,
+    reputation: desiredReputationModule ?? moduleBundleCurrent.reputation,
+    dispute: desiredDisputeModule ?? moduleBundleCurrent.dispute,
+    certificate: desiredCertificateNFT ?? moduleBundleCurrent.certificate,
+    feePool: desiredFeePool ?? moduleBundleCurrent.feePool,
+  } as const;
+
+  const modulesDiffer = (
+    Object.keys(moduleBundleCurrent) as (keyof typeof moduleBundleCurrent)[]
+  ).some(
+    (key) => !sameAddress(moduleBundleDesired[key], moduleBundleCurrent[key])
   );
-  enqueueModuleUpdate(
-    desiredValidationModule,
-    currentValidationModuleAddress,
-    'setValidationModule',
-    'validation module',
-    ['Ensure the validation module reports version() == 2.']
-  );
-  enqueueModuleUpdate(
-    desiredStakeManager,
-    currentStakeManagerAddress,
-    'setStakeManager',
-    'stake manager',
-    ['Ensure the stake manager reports version() == 2.']
-  );
-  enqueueModuleUpdate(
-    desiredReputationModule,
-    currentReputationModuleAddress,
-    'setReputationEngine',
-    'reputation engine',
-    ['Ensure the reputation engine reports version() == 2.']
-  );
-  enqueueModuleUpdate(
-    desiredCertificateNFT,
-    currentCertificateNFTAddress,
-    'setCertificateNFT',
-    'certificate NFT',
-    ['Ensure the certificate NFT reports version() == 2.']
-  );
-  enqueueModuleUpdate(
-    desiredFeePool,
-    currentFeePoolAddress,
-    'setFeePool',
-    'fee pool',
-    ['Ensure the fee pool reports version() == 2.']
-  );
+
+  const describeModuleBundle = (bundle: typeof moduleBundleCurrent): string =>
+    [
+      `validation=${formatAddressWithStatus(bundle.validation)}`,
+      `stake=${formatAddressWithStatus(bundle.stakeManager)}`,
+      `reputation=${formatAddressWithStatus(bundle.reputation)}`,
+      `dispute=${formatAddressWithStatus(bundle.dispute)}`,
+      `certificate=${formatAddressWithStatus(bundle.certificate)}`,
+      `feePool=${formatAddressWithStatus(bundle.feePool)}`,
+    ].join(', ');
+
+  if (modulesDiffer) {
+    actions.push({
+      label:
+        'Update module bundle (validation, stake, reputation, dispute, certificate, fee pool)',
+      method: 'setModules',
+      args: [
+        moduleBundleDesired.validation,
+        moduleBundleDesired.stakeManager,
+        moduleBundleDesired.reputation,
+        moduleBundleDesired.dispute,
+        moduleBundleDesired.certificate,
+        moduleBundleDesired.feePool,
+        [],
+      ],
+      current: describeModuleBundle(moduleBundleCurrent),
+      desired: describeModuleBundle(moduleBundleDesired),
+      notes: [
+        'Apply after verifying each module reports version() == 2.',
+        'Keeps job creation → validation → dispute routing deterministic.',
+      ],
+    });
+  }
 
   const identityNotesBase: string[] = [];
   if (currentIdentityRegistryAddress === ethers.ZeroAddress) {

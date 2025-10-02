@@ -725,6 +725,66 @@ function loadJobRegistryConfig(options = {}) {
   return { config, path: configPath, network };
 }
 
+function normaliseDisputeModuleConfig(config = {}) {
+  const result = { ...config };
+
+  if (result.address !== undefined) {
+    if (result.address === null || result.address === '') {
+      delete result.address;
+    } else {
+      const address = ensureAddress(result.address, 'DisputeModule address', {
+        allowZero: true,
+      });
+      if (address === ethers.ZeroAddress) {
+        delete result.address;
+      } else {
+        result.address = address;
+      }
+    }
+  }
+
+  const setAddress = (key, label, { allowZeroValue = false } = {}) => {
+    if (result[key] === undefined) {
+      return;
+    }
+    const raw = result[key];
+    if (raw === null || raw === '') {
+      if (allowZeroValue) {
+        result[key] = ethers.ZeroAddress;
+      } else {
+        delete result[key];
+      }
+      return;
+    }
+    const address = ensureAddress(raw, label, { allowZero: true });
+    if (!allowZeroValue && address === ethers.ZeroAddress) {
+      delete result[key];
+      return;
+    }
+    result[key] = address;
+  };
+
+  setAddress('jobRegistry', 'DisputeModule job registry');
+  setAddress('stakeManager', 'DisputeModule stake manager');
+  setAddress('committee', 'DisputeModule committee', { allowZeroValue: true });
+  setAddress('pauser', 'DisputeModule pauser', { allowZeroValue: true });
+  setAddress('taxPolicy', 'DisputeModule tax policy');
+
+  return result;
+}
+
+function loadDisputeModuleConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('dispute-module', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Dispute module config not found at ${configPath}`);
+  }
+  const config = normaliseDisputeModuleConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
 function normaliseOwnerControlModuleConfig(key, raw = {}) {
   if (raw === null || raw === undefined) {
     return undefined;
@@ -2136,6 +2196,7 @@ module.exports = {
   loadRewardEngineConfig,
   loadHamiltonianMonitorConfig,
   loadOwnerControlConfig,
+  loadDisputeModuleConfig,
   loadDeploymentPlan,
   inferNetworkKey,
 };

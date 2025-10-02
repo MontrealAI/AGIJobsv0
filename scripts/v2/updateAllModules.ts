@@ -15,6 +15,7 @@ import {
   loadEnergyOracleConfig,
   loadTaxPolicyConfig,
   loadIdentityRegistryConfig,
+  loadDisputeModuleConfig,
   type TokenConfigResult,
   type StakeManagerConfigResult,
   type FeePoolConfigResult,
@@ -27,6 +28,7 @@ import {
   type EnergyOracleConfigResult,
   type TaxPolicyConfigResult,
   type IdentityRegistryConfigResult,
+  type DisputeModuleConfigResult,
 } from '../config';
 import { buildStakeManagerPlan } from './lib/stakeManagerPlan';
 import { buildFeePoolPlan } from './lib/feePoolPlan';
@@ -39,6 +41,7 @@ import { buildRandaoCoordinatorPlan } from './lib/randaoCoordinatorPlan';
 import { buildEnergyOraclePlan } from './lib/energyOraclePlan';
 import { buildTaxPolicyPlan } from './lib/taxPolicyPlan';
 import { buildIdentityRegistryPlan } from './lib/identityRegistryPlan';
+import { buildDisputeModulePlan } from './lib/disputeModulePlan';
 import type { ModulePlan, PlannedAction } from './lib/types';
 import { describeArgs, sameAddress } from './lib/utils';
 
@@ -132,6 +135,7 @@ type ModuleKey =
   | 'stakeManager'
   | 'feePool'
   | 'jobRegistry'
+  | 'disputeModule'
   | 'platformRegistry'
   | 'platformIncentives'
   | 'rewardEngine'
@@ -145,6 +149,7 @@ const MODULE_ORDER: ModuleKey[] = [
   'stakeManager',
   'feePool',
   'jobRegistry',
+  'disputeModule',
   'platformRegistry',
   'platformIncentives',
   'rewardEngine',
@@ -165,6 +170,9 @@ const MODULE_ALIASES: Record<string, ModuleKey> = {
   job: 'jobRegistry',
   'job-registry': 'jobRegistry',
   jobregistry: 'jobRegistry',
+  dispute: 'disputeModule',
+  'dispute-module': 'disputeModule',
+  disputemodule: 'disputeModule',
   platform: 'platformRegistry',
   registry: 'platformRegistry',
   'platform-registry': 'platformRegistry',
@@ -681,6 +689,27 @@ const MODULE_DEFINITIONS: Record<ModuleKey, ModuleDefinition<any>> = {
         symbol,
       });
     },
+  },
+  disputeModule: {
+    key: 'disputeModule',
+    label: 'DisputeModule',
+    artifact: 'contracts/v2/modules/DisputeModule.sol:DisputeModule',
+    loadConfig: (ctx: LoadContext) =>
+      loadDisputeModuleConfig({ network: ctx.network, chainId: ctx.chainId }),
+    resolveAddress: ({ moduleConfig, tokenConfig }) => {
+      const configAddress = (moduleConfig.config as any).address;
+      return (
+        configAddress ||
+        tokenConfig.config.modules?.disputeModule ||
+        tokenConfig.config.contracts?.disputeModule
+      );
+    },
+    buildPlan: async ({ contract, moduleConfig }) =>
+      buildDisputeModulePlan({
+        dispute: contract,
+        config: moduleConfig.config,
+        configPath: moduleConfig.path,
+      }),
   },
   platformRegistry: {
     key: 'platformRegistry',
