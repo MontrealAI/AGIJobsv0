@@ -11,6 +11,12 @@
 - `FeePool.treasury` is the zero address, so rounding dust and any governance withdrawals default to burning.
 - All residual fees remain in `FeePool` and accrue to the platform staker role until they claim through `FeePool.claimRewards`.
 
+## Finalization Mechanics (Pilot)
+1. The employer (or governance) calls `JobRegistry.finalize(jobId)`, which forwards the protocol fee portion of the escrow to `StakeManager.finalizeJobFundsWithPct`.
+2. `StakeManager` transfers that fee to the configured `FeePool` and immediately calls `FeePool.depositFee(amount)`, ensuring the registry never custodies user funds.
+3. `FeePool` burns `burnPct` (currently 1%) of the transferred amount and records the remainder as `pendingFees` for platform stakers. Because the treasury remains `address(0)`, any rounding dust is also burned, eliminating leakage.
+4. Operators adjust the fee percentage, burn ratio, or future treasury destinations exclusively via the owner ops workflow (`npm run owner:plan` ➝ `npm run owner:update-all`) so every economic change is pre-audited and reproducible.
+
 ## Proposed Post-Pilot Split
 When the DAO ratifies a treasury address:
 
