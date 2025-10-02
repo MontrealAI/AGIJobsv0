@@ -27,6 +27,10 @@ graph TD
 | ReputationEngine | Updates reputation, enforces blacklists.                   |
 | CertificateNFT   | Mints ERC‑721 certificates for completed jobs.             |
 
+For a detailed look at the collusion-resistant validation flow—including
+randomized juries, commit–reveal voting, and dispute escalations—see
+[anti-collusion-validation.md](anti-collusion-validation.md).
+
 ## Universal Incentive System
 
 The v2 contracts share a unified incentive model built around the 18‑decimal **$AGIALPHA** token. Core modules—`StakeManager`, `PlatformRegistry`, `JobRouter`, `FeePool`, and `PlatformIncentives`—coordinate staking, job routing, and fee distribution:
