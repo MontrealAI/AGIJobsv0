@@ -30,7 +30,10 @@ non-zero address pointing to a deployed contract. The contract reverts with
   ```
 
   The script aborts if any module is not owned by `SystemPause`, ensuring a
-  single on-chain switch guards every critical flow.
+  single on-chain switch guards every critical flow. The on-chain
+  `SystemPause.setModules` call also reverts when a module has not transferred
+  ownership to the pause contract, so governance cannot wire an address that
+  cannot be halted during an emergency.
 - Re-run with `--execute` once the dry run is clean to update module wiring and
   refresh the pauser roles under governance control.
 

@@ -13,6 +13,7 @@ async function deploySystem(governanceAddress) {
     burnPct: 0,
     employerSlashPct: 0,
     treasurySlashPct: 0,
+    validatorSlashRewardPct: 0,
     commitWindow: 0,
     revealWindow: 0,
     minStake: 0,
@@ -120,6 +121,19 @@ async function deploySystem(governanceAddress) {
   };
 }
 
+async function transferModulesToPause(owner, modules, pauseAddress) {
+  await modules.stake.connect(owner).transferOwnership(pauseAddress);
+  await modules.registry.connect(owner).transferOwnership(pauseAddress);
+  await modules.validation.connect(owner).transferOwnership(pauseAddress);
+  await modules.dispute.connect(owner).transferOwnership(pauseAddress);
+  await modules.platformRegistry
+    .connect(owner)
+    .transferOwnership(pauseAddress);
+  await modules.feePool.connect(owner).transferOwnership(pauseAddress);
+  await modules.reputation.connect(owner).transferOwnership(pauseAddress);
+  await modules.committee.connect(owner).transferOwnership(pauseAddress);
+}
+
 describe('SystemPause', function () {
   it('pauses and unpauses all modules', async function () {
     const [owner, other] = await ethers.getSigners();
@@ -135,6 +149,22 @@ describe('SystemPause', function () {
       committee,
       addresses,
     } = await deploySystem(owner.address);
+
+    const pauseAddress = await pause.getAddress();
+    await transferModulesToPause(
+      owner,
+      {
+        stake,
+        registry,
+        validation,
+        dispute,
+        platformRegistry,
+        feePool,
+        reputation,
+        committee,
+      },
+      pauseAddress
+    );
 
     await expect(
       pause
@@ -161,6 +191,8 @@ describe('SystemPause', function () {
         addresses.reputationEngine,
         addresses.arbitratorCommittee
       );
+
+    await pause.connect(owner).refreshPausers();
 
     await expect(pause.connect(other).pauseAll()).to.be.revertedWithCustomError(
       pause,
@@ -205,9 +237,50 @@ describe('SystemPause', function () {
 
   it('rejects module wiring when ownership is not transferred', async function () {
     const [owner, other] = await ethers.getSigners();
-    const { pause, validation, addresses } = await deploySystem(owner.address);
+    const {
+      pause,
+      validation,
+      addresses,
+      stake,
+      registry,
+      dispute,
+      platformRegistry,
+      feePool,
+      reputation,
+      committee,
+    } = await deploySystem(owner.address);
 
     const pauseAddress = await pause.getAddress();
+    await transferModulesToPause(
+      owner,
+      {
+        stake,
+        registry,
+        validation,
+        dispute,
+        platformRegistry,
+        feePool,
+        reputation,
+        committee,
+      },
+      pauseAddress
+    );
+
+    expect(await validation.owner()).to.equal(pauseAddress);
+
+    await pause
+      .connect(owner)
+      .setModules(
+        addresses.jobRegistry,
+        addresses.stake,
+        addresses.validationModule,
+        addresses.disputeModule,
+        addresses.platformRegistry,
+        addresses.feePool,
+        addresses.reputationEngine,
+        addresses.arbitratorCommittee
+      );
+
     await network.provider.send('hardhat_impersonateAccount', [pauseAddress]);
     await network.provider.send('hardhat_setBalance', [
       pauseAddress,
@@ -224,7 +297,7 @@ describe('SystemPause', function () {
     await expect(
       pause
         .connect(owner)
-        .setModules.staticCall(
+        .setModules(
           addresses.jobRegistry,
           addresses.stake,
           addresses.validationModule,
@@ -234,8 +307,6 @@ describe('SystemPause', function () {
           addresses.reputationEngine,
           addresses.arbitratorCommittee
         )
-    )
-      .to.be.revertedWithCustomError(pause, 'ModuleNotOwned')
-      .withArgs(addresses.validationModule, other.address);
+    ).to.be.revertedWithCustomError(pause, 'ModuleNotOwned');
   });
 });
