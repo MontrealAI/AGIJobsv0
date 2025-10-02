@@ -643,7 +643,10 @@ single key can change parameters:
 
    The script reads `docs/deployment-addresses.json` and issues the
    appropriate `setGovernance` or `transferOwnership` calls for each
-   deployed module.
+   deployed module. For two-step ownable contracts (`TaxPolicy`,
+   `IdentityRegistry`) it initiates the transfer and confirms the
+   multisig/timelock is the pending owner—signers must still execute
+   `acceptOwnership()` from the new control wallet.
 
 3. To rotate governance later, the current multisig executes
    `setGovernance(newOwner)` or `transferOwnership(newOwner)` as

@@ -48,13 +48,13 @@ async function main() {
     'reputationEngine',
     'disputeModule',
     'certificateNFT',
-    'taxPolicy',
     'feePool',
     'platformRegistry',
     'jobRouter',
     'platformIncentives',
     'systemPause',
   ];
+  const ownable2Step = ['taxPolicy', 'identityRegistry'];
 
   const governableAbi = [
     'function setGovernance(address)',
@@ -63,6 +63,11 @@ async function main() {
   const ownableAbi = [
     'function transferOwnership(address)',
     'function owner() view returns (address)',
+  ];
+  const ownable2StepAbi = [
+    'function transferOwnership(address)',
+    'function owner() view returns (address)',
+    'function pendingOwner() view returns (address)',
   ];
 
   for (const name of governable) {
@@ -115,6 +120,43 @@ async function main() {
       throw new Error(`${name}: ownership transfer failed`);
     }
     console.log(`${name}: ownership transferred to ${newOwner}`);
+  }
+
+  for (const name of ownable2Step) {
+    const addr = addresses[name];
+    if (!addr || addr === ethers.ZeroAddress) {
+      console.log(`Skipping ${name}: no address`);
+      continue;
+    }
+    const code = await ethers.provider.getCode(addr);
+    if (code === '0x') {
+      console.log(`Skipping ${name}: not deployed at ${addr}`);
+      continue;
+    }
+    const contract = await ethers.getContractAt(
+      ownable2StepAbi,
+      addr,
+      signer,
+    );
+    const current = (await contract.owner()).toLowerCase();
+    if (current === lowerOwner) {
+      console.log(`${name} already owned by ${newOwner}`);
+      continue;
+    }
+    const pending = (await contract.pendingOwner()).toLowerCase();
+    if (pending === lowerOwner) {
+      console.log(`${name} already pending acceptance by ${newOwner}`);
+      continue;
+    }
+    const tx = await contract.transferOwnership(newOwner);
+    await tx.wait();
+    const updatedPending = (await contract.pendingOwner()).toLowerCase();
+    if (updatedPending !== lowerOwner) {
+      throw new Error(`${name}: ownership transfer initiation failed`);
+    }
+    console.log(
+      `${name}: ownership transfer initiated. ${newOwner} must call acceptOwnership().`,
+    );
   }
 }
 
