@@ -770,6 +770,35 @@ function normaliseDisputeModuleConfig(config = {}) {
   setAddress('pauser', 'DisputeModule pauser', { allowZeroValue: true });
   setAddress('taxPolicy', 'DisputeModule tax policy');
 
+  if (result.disputeFee !== undefined) {
+    const value = result.disputeFee;
+    if (value === null || value === '') {
+      delete result.disputeFee;
+    } else {
+      try {
+        result.disputeFee = BigInt(value).toString();
+      } catch (error) {
+        throw new Error(
+          `DisputeModule disputeFee must be an integer string: ${
+            error?.message || error
+          }`
+        );
+      }
+    }
+  }
+
+  if (result.disputeFeeTokens !== undefined) {
+    const value = result.disputeFeeTokens;
+    if (value === null) {
+      delete result.disputeFeeTokens;
+    } else {
+      result.disputeFeeTokens = String(value).trim();
+      if (!result.disputeFeeTokens) {
+        delete result.disputeFeeTokens;
+      }
+    }
+  }
+
   return result;
 }
 

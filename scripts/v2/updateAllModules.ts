@@ -704,12 +704,17 @@ const MODULE_DEFINITIONS: Record<ModuleKey, ModuleDefinition<any>> = {
         tokenConfig.config.contracts?.disputeModule
       );
     },
-    buildPlan: async ({ contract, moduleConfig }) =>
-      buildDisputeModulePlan({
+    buildPlan: async ({ contract, moduleConfig, tokenConfig }) => {
+      const decimals = Number(tokenConfig.config.decimals ?? 18);
+      const symbol = tokenConfig.config.symbol || 'AGIALPHA';
+      return buildDisputeModulePlan({
         dispute: contract,
         config: moduleConfig.config,
         configPath: moduleConfig.path,
-      }),
+        decimals,
+        symbol,
+      });
+    },
   },
   platformRegistry: {
     key: 'platformRegistry',
