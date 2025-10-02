@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
+const { anyValue } = require('@nomicfoundation/hardhat-chai-matchers/withArgs');
 const { enrichJob } = require('../utils/jobMetadata');
 
 describe('JobRegistry integration', function () {
@@ -14,15 +15,15 @@ describe('JobRegistry integration', function () {
     policy,
     identity;
   const { address: AGIALPHA } = require('../../config/agialpha.json');
-  let owner, employer, agent, treasury;
-  let feePool;
+  let owner, employer, agent, treasury, auditor;
+  let feePool, audit;
 
   const reward = 100;
   const stake = 200;
   const disputeFee = 1_000_000_000_000_000_000n;
 
   beforeEach(async () => {
-    [owner, employer, agent, treasury] = await ethers.getSigners();
+    [owner, employer, agent, treasury, auditor] = await ethers.getSigners();
     const artifact = await artifacts.readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
@@ -238,6 +239,70 @@ describe('JobRegistry integration', function () {
     expect(await rep.reputation(agent.address)).to.equal(0);
     expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
+  });
+
+  it('schedules audits for finalized jobs and applies penalties on failure', async () => {
+    const Audit = await ethers.getContractFactory(
+      'contracts/v2/AuditModule.sol:AuditModule'
+    );
+    audit = await Audit.deploy(
+      await registry.getAddress(),
+      await rep.getAddress()
+    );
+    await registry.connect(owner).setAuditModule(await audit.getAddress());
+    await audit.connect(owner).setAuditProbabilityBps(10_000);
+    await audit.connect(owner).setAuditPenalty(5);
+    await audit.connect(owner).setAuditor(auditor.address, true);
+    await rep.connect(owner).setCaller(await audit.getAddress(), true);
+
+    await token
+      .connect(employer)
+      .approve(
+        await stakeManager.getAddress(),
+        BigInt(reward) + (BigInt(reward) * 10n) / 100n
+      );
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('audit-spec');
+    await registry
+      .connect(employer)
+      ['createJob(uint256,uint64,bytes32,string)'](
+        reward,
+        deadline,
+        specHash,
+        'uri'
+      );
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
+    await validation.connect(owner).setResult(true);
+    const committee = [owner.address, treasury.address];
+    await validation.connect(owner).setValidators(committee);
+    const resultHash = ethers.id('audit-result');
+    await registry
+      .connect(agent)
+      .submit(jobId, resultHash, 'result', 'agent', []);
+    await validation.finalize(jobId);
+
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(audit, 'AuditScheduled')
+      .withArgs(jobId, agent.address, resultHash, anyValue);
+
+    const scheduled = await audit.audits(jobId);
+    expect(scheduled.agent).to.equal(agent.address);
+    expect(scheduled.completed).to.equal(false);
+    expect(scheduled.passed).to.equal(false);
+    expect(scheduled.resultHash).to.equal(resultHash);
+
+    await expect(
+      audit.connect(auditor).recordAudit(jobId, false, 'spot check failure')
+    )
+      .to.emit(audit, 'AuditRecorded')
+      .withArgs(jobId, auditor.address, false, 'spot check failure')
+      .and.to.emit(audit, 'AuditPenaltyApplied')
+      .withArgs(jobId, agent.address, 5);
+
+    const updated = await audit.audits(jobId);
+    expect(updated.completed).to.equal(true);
+    expect(updated.passed).to.equal(false);
   });
 
   it('routes protocol fees through the FeePool and burns the configured share', async () => {
@@ -638,7 +703,7 @@ describe('JobRegistry integration', function () {
 
     await expect(
       dispute.connect(agent).setDisputeFee(1)
-    ).to.be.revertedWithCustomError(dispute, 'OwnableUnauthorizedAccount');
+    ).to.be.revertedWithCustomError(dispute, 'NotGovernance');
   });
 
   it('validates fee percentage caps', async () => {
