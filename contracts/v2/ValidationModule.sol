@@ -143,7 +143,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     mapping(address => uint256) public validatorAuthExpiry;
     mapping(address => uint256) public validatorAuthVersion;
     uint256 public validatorAuthCacheVersion;
-    uint256 public validatorAuthCacheDuration = 1 days;
+    uint256 public validatorAuthCacheDuration;
 
     struct Round {
         address[] validators;

@@ -51,9 +51,6 @@ describe('JobRegistry agent auth cache', function () {
     await registry.connect(owner).setJobDurationLimit(1000);
     await registry.connect(owner).setFeePct(0);
     await registry.connect(owner).setJobParameters(0, 0);
-    await expect(registry.connect(owner).setAgentAuthCacheDuration(5))
-      .to.emit(registry, 'AgentAuthCacheDurationUpdated')
-      .withArgs(5);
   });
 
   it('reverts when enabling zero acknowledger', async () => {
@@ -108,6 +105,10 @@ describe('JobRegistry agent auth cache', function () {
   });
 
   it('skips repeat ENS checks and expires cache', async () => {
+    await expect(registry.connect(owner).setAgentAuthCacheDuration(5))
+      .to.emit(registry, 'AgentAuthCacheDurationUpdated')
+      .withArgs(5);
+
     const first = await createJob();
     const tx1 = await registry.connect(agent).applyForJob(first, 'a', []);
     const gas1 = (await tx1.wait()).gasUsed;
@@ -124,6 +125,18 @@ describe('JobRegistry agent auth cache', function () {
     const tx3 = await registry.connect(agent).applyForJob(third, 'a', []);
     const gas3 = (await tx3.wait()).gasUsed;
     expect(gas3).to.be.gt(gas2);
+  });
+
+  it('requires ENS verification on every apply when cache disabled', async () => {
+    const first = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(first, 'alpha', [])
+    ).to.emit(registry, 'AgentIdentityVerified');
+
+    const second = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(second, 'alpha', [])
+    ).to.emit(registry, 'AgentIdentityVerified');
   });
 
   it('invalidates cached authorization on root update', async () => {

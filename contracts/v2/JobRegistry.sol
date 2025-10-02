@@ -685,7 +685,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     mapping(address => uint256) public agentAuthExpiry;
     mapping(address => uint256) public agentAuthVersion;
     uint256 public agentAuthCacheVersion;
-    uint256 public agentAuthCacheDuration = 1 days;
+    uint256 public agentAuthCacheDuration;
     mapping(address => string) public agentSubdomains;
 
     /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
