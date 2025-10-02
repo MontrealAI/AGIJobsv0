@@ -27,7 +27,7 @@ The current AGIJobsv0 contracts already enforce ENS-based identity checks. Agent
 ### 4. Enhance Caching & Performance
 
 - Test the identity caches so entries expire after the configured duration and invalidate when cache versions change (`bumpAgentAuthCacheVersion` / `bumpValidatorAuthCacheVersion`).
-- Keep the default cache duration at 24 hours but allow the owner to adjust via `setAgentAuthCacheDuration` and `setValidatorAuthCacheDuration` if needed.
+- Set the default cache duration to zero so every application and commit enforces a fresh ENS proof; allow governance to increase it later via `setAgentAuthCacheDuration` and `setValidatorAuthCacheDuration` if operationally justified.
 - Encourage combining actions (e.g., `acknowledgeAndApply`, `stakeAndApply`) to amortize checks.
 - **Outcome:** Identity verification remains performant even as usage scales.
 

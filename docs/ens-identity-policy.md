@@ -10,6 +10,7 @@ The protocol recognises `agent.agi.eth` and `alpha.agent.agi.eth` (and likewise 
 - **Validators** must own a subdomain under `club.agi.eth` for committing or revealing validation results.
 - Owner controlled allowlists and Merkle proofs exist only for emergency governance and migration. Regular participants are expected to use ENS.
 - Attestations may be recorded in `AttestationRegistry` to cache successful checks and reduce gas usage, but they do not bypass the ENS requirement.
+- Authorization caches default to a zero-second lifetime so every application and validation commit performs a fresh ENS verification. Governance may raise the cache duration after confirming ENS roots and allowlists are correct.
 
 ## Temporary allowlisting
 

@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 - Bumped all `contracts/v2` module `version` constants to `2` and updated related checks and documentation.
 - `RandaoCoordinator.random` now mixes the XORed seed with `block.prevrandao` for block-dependent entropy.
+- Default identity cache durations for agents and validators are now zero so every job application and validation commit requires a fresh ENS proof; governance can extend the cache via on-chain setters if necessary.
 
 ## v1
 
