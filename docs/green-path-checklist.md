@@ -82,7 +82,7 @@ This checklist distills the ten baseline hardening tasks required to operate AGI
 
 ## ☑️ 10. End-to-end rehearsal (fork + testnet), then publish the green light
 
-- [ ] Run the quickstart E2E script suite (post job, stake, validate, finalize, dispute) on a fork and public testnet.
+- [ ] Run the quickstart E2E script suite (post job, stake, validate, finalize, dispute) on a fork and public testnet. Ensure the staking rehearsal calls `JobRegistry.acknowledgeTaxPolicy()` and pre-approves the `StakeManager` for the stake amount before invoking the helper.
 - [ ] Validate parity against Etherscan write-tab workflows.
 - [ ] Export ownership reports (`owner:guide`, `owner:audit`) and publish gas/coverage artifacts to `reports/`.
 - [ ] Test emergency pause/unpause procedures in a sandbox environment.
