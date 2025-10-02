@@ -25,7 +25,9 @@ incident.
   ```
 
   The script now fails if any module is not owned by `SystemPause`, preventing
-  partial wiring. Re-run the same command with `--execute` once the dry run is
+  partial wiring. `SystemPause.setModules` enforces the same rule on-chain,
+  reverting if governance attempts to wire an address that is not already owned
+  by the pause contract. Re-run the command with `--execute` once the dry run is
   clean to apply module or pauser updates.
 
 ## Circuit Breaker Operations

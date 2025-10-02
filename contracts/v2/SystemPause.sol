@@ -146,6 +146,17 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_arbitratorCommittee).code.length == 0
         ) revert InvalidArbitratorCommittee(address(_arbitratorCommittee));
 
+        _requireModuleOwnership(
+            _jobRegistry,
+            _stakeManager,
+            _validationModule,
+            _disputeModule,
+            _platformRegistry,
+            _feePool,
+            _reputationEngine,
+            _arbitratorCommittee
+        );
+
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
         validationModule = _validationModule;
