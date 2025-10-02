@@ -1,6 +1,6 @@
 # Owner Configuration Audit
 
-- Generated: `2025-10-02T00:31:08.487Z`
+- Generated: `2025-10-02T18:50:29.333Z`
 - Network context: `sepolia`
 - Token config: `config/agialpha.sepolia.json` (sha256: `a6ce5c39468c7ad8445ee1f2007b588e648e049c36f5b8abca5c5329f0510286`)
 - Owner control config: `config/owner-control.json` (sha256: `8e69e8923d19fcb111b3fdc631c25351ec54a987eb9518c47fd9a4609d9f5c6f`)
@@ -20,9 +20,9 @@ flowchart TD
 
 | Module | Owner | Governance | Token mapping | Config hashes | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Stake Manager | n/a | ❌ (governance address missing) | ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder) | `0af8356d03…` | Governance target missing in owner-control config.<br/>Populate config/agialpha*.json → modules.stakeManager with the deployed address. |
-| Fee Pool | ❌ (owner address missing) | n/a | ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder) | `10d8022911…` | Owner address missing in owner-control config.<br/>Populate config/agialpha*.json → modules.feePool with the deployed address. |
-| Job Registry | n/a | ❌ (governance address missing) | ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder) | `67eadce60f…` | Governance target missing in owner-control config.<br/>Populate config/agialpha*.json → modules.jobRegistry with the deployed address.<br/>Loader failed: JobRegistry tax policy cannot be the zero address |
+| Stake Manager | n/a | ❌ (governance address missing) | ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder) | `68bee81829…` | Governance target missing in owner-control config.<br/>Populate config/agialpha*.json → modules.stakeManager with the deployed address. |
+| Fee Pool | ❌ (owner address missing) | n/a | ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder) | `f5d10c0e1b…` | Owner address missing in owner-control config.<br/>Populate config/agialpha*.json → modules.feePool with the deployed address. |
+| Job Registry | n/a | ❌ (governance address missing) | ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder) | `c3d4b7a5c6…` | Governance target missing in owner-control config.<br/>Populate config/agialpha*.json → modules.jobRegistry with the deployed address.<br/>Loader failed: JobRegistry tax policy cannot be the zero address |
 | Platform Registry | ❌ (owner address missing) | n/a | ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder) | `8e734d8488…` | Owner address missing in owner-control config.<br/>Populate config/agialpha*.json → modules.platformRegistry with the deployed address.<br/>Loader failed: PlatformRegistry address cannot be the zero address |
 | Platform Incentives | ❌ (owner address missing) | n/a | ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder) | `3ebb65bac0…` | Owner address missing in owner-control config.<br/>Populate config/agialpha*.json → modules.platformIncentives with the deployed address. |
 | Reward Engine | n/a | ❌ (governance address missing) | n/a | `09b97dd68d…` | Governance target missing in owner-control config.<br/>Loader failed: RewardEngine address cannot be the zero address |
@@ -44,7 +44,7 @@ Controls minimum stake levels, treasury routing, slashing weights and the auto-s
 - **Governance target:** ❌ (governance address missing)
 - **Token mapping:** ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder)
 - **Configuration files:**
-  - `config/stake-manager.json` (sha256: `0af8356d0336118f843885906ce6e10f79b1a3d493b96be57d01ea148a578bd0`, 1230 bytes)
+  - `config/stake-manager.json` (sha256: `68bee818297ad49f87027417234ffe4a2b5b94a2d71addcd6ef6262bcfbf024c`, 1341 bytes)
 - **Update commands:**
   - `npm run owner:update-all -- --network <network> --only=stakeManager`
   - `npx hardhat run scripts/v2/updateStakeManager.ts --network <network>`
@@ -66,7 +66,7 @@ Burns protocol fees, routes the remainder to the treasury and tracks authorised 
 - **Owner target:** ❌ (owner address missing)
 - **Token mapping:** ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder)
 - **Configuration files:**
-  - `config/fee-pool.json` (sha256: `10d802291159527869171ce1f8ca55417f53b51431c929b880c073e4248400e8`, 398 bytes)
+  - `config/fee-pool.json` (sha256: `f5d10c0e1b256f0ed63a732823013d799d98a752459d9df35e2e1e822ea2520f`, 398 bytes)
 - **Update commands:**
   - `npm run owner:update-all -- --network <network> --only=feePool`
   - `npx hardhat run scripts/v2/updateFeePool.ts --network <network>`
@@ -88,7 +88,7 @@ Defines job stakes, validator rewards, fee percentages and registry integrations
 - **Governance target:** ❌ (governance address missing)
 - **Token mapping:** ⚠️ 0x0000000000000000000000000000000000000000 (zero address placeholder)
 - **Configuration files:**
-  - `config/job-registry.json` (sha256: `67eadce60fea13b0289833d2f40d8a33203f17340301b68b3765960c795da8ce`, 386 bytes)
+  - `config/job-registry.json` (sha256: `c3d4b7a5c68e4ebd5886dbab6715a6e8a56d09569e70abf70488c433d03b747f`, 387 bytes)
 - **Update commands:**
   - `npm run owner:update-all -- --network <network> --only=jobRegistry`
   - `npx hardhat run scripts/v2/updateJobRegistry.ts --network <network>`
