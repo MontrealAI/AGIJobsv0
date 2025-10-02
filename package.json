@@ -79,7 +79,8 @@
     "verify:sri": "node apps/onebox-static/scripts/verify-sri.mjs",
     "alpha-bridge:start": "node services/alpha-bridge/src/server.js",
     "alpha-bridge:test": "node --test services/alpha-bridge/test/alpha-bridge.test.js",
-    "validator:cli": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/validator/cli.ts"
+    "validator:cli": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/validator/cli.ts",
+    "hamiltonian:report": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/hamiltonian-tracker.ts"
   },
   "keywords": [],
   "author": "",
