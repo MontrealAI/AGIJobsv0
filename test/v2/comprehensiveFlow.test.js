@@ -175,11 +175,11 @@ describe('comprehensive job flows', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('result'), 'result', '', []);
+      .submit(jobId, ethers.id('result'), 'result', 'agent', []);
     await validation.finalize(jobId);
     const burnTxHash = ethers.ZeroHash;
     await registry
@@ -216,7 +216,7 @@ describe('comprehensive job flows', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     await expect(
-      registry.connect(agent).applyForJob(1, '', [])
+      registry.connect(agent).applyForJob(1, 'agent', [])
     ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
   });
 
@@ -236,11 +236,11 @@ describe('comprehensive job flows', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.setResult(false);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('bad'), 'bad', '', []);
+      .submit(jobId, ethers.id('bad'), 'bad', 'agent', []);
     await validation.finalize(jobId);
     // fund and impersonate dispute module to resolve
     await network.provider.send('hardhat_setBalance', [
@@ -283,7 +283,7 @@ describe('comprehensive job flows', function () {
       .createJob(reward, deadline, specHash, 'uri');
     await rep.setBlacklist(agent.address, true);
     await expect(
-      registry.connect(agent).applyForJob(1, '', [])
+      registry.connect(agent).applyForJob(1, 'agent', [])
     ).to.be.revertedWithCustomError(registry, 'BlacklistedAgent');
   });
 

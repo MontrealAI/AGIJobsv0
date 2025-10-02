@@ -112,14 +112,14 @@ describe('JobRegistry payout snapshot', function () {
   it('uses snapshot when NFT transferred after assignment', async () => {
     await nft.mint(agent.address);
     const { reward, jobId } = await createJob();
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     let job = enrichJob(await registry.jobs(jobId));
     expect(job.agentPct).to.equal(150n);
     await nft.connect(agent).transferFrom(agent.address, other.address, 0n);
 
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
     await validation.setResult(true);
     await validation.finalize(jobId);
 
@@ -132,14 +132,14 @@ describe('JobRegistry payout snapshot', function () {
 
   it('ignores NFTs gained after assignment', async () => {
     const { reward, jobId } = await createJob();
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     let job = enrichJob(await registry.jobs(jobId));
     expect(job.agentPct).to.equal(100n);
     await nft.mint(agent.address);
 
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
     await validation.setResult(true);
     await validation.finalize(jobId);
 

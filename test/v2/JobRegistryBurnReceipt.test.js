@@ -103,9 +103,9 @@ describe('JobRegistry burn receipt validation', function () {
       .createJob(reward, deadline, specHash, 'ipfs://job');
     const jobId = 1;
 
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     const resHash = ethers.keccak256(ethers.toUtf8Bytes('result'));
-    await registry.connect(agent).submit(jobId, resHash, 'ipfs://res', '', []);
+    await registry.connect(agent).submit(jobId, resHash, 'ipfs://res', 'agent', []);
     await validation.setResult(true);
     await validation.finalize(jobId);
 
@@ -275,11 +275,11 @@ describe('Validation burn evidence gating', function () {
       .connect(employer)
       .createJob(1, deadline, specHash, 'ipfs://job');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     const resultHash = ethers.keccak256(ethers.toUtf8Bytes('result'));
     await registry
       .connect(agent)
-      .submit(jobId, resultHash, 'ipfs://res', '', []);
+      .submit(jobId, resultHash, 'ipfs://res', 'agent', []);
     return { jobId, resultHash };
   }
 

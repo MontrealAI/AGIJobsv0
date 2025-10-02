@@ -8,6 +8,12 @@ contract IdentityRegistryToggle is Ownable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
+    error EmptySubdomain();
+
+    function _assertSubdomain(string memory subdomain) private pure {
+        if (bytes(subdomain).length == 0) revert EmptySubdomain();
+    }
+
     bool public result;
     bytes32 public clubRootNode;
     bytes32 public agentRootNode;
@@ -91,29 +97,31 @@ contract IdentityRegistryToggle is Ownable {
 
     function isAuthorizedAgent(
         address claimant,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     ) external view returns (bool) {
         if (additionalAgents[claimant]) {
             return true;
         }
+        _assertSubdomain(subdomain);
         return result;
     }
 
     function isAuthorizedValidator(
         address claimant,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     ) external view returns (bool) {
         if (additionalValidators[claimant]) {
             return true;
         }
+        _assertSubdomain(subdomain);
         return result;
     }
 
     function verifyAgent(
         address claimant,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     )
         external
@@ -125,11 +133,12 @@ contract IdentityRegistryToggle is Ownable {
         } else {
             ok = result;
         }
+        _assertSubdomain(subdomain);
     }
 
     function verifyValidator(
         address claimant,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     )
         external
@@ -141,6 +150,7 @@ contract IdentityRegistryToggle is Ownable {
         } else {
             ok = result;
         }
+        _assertSubdomain(subdomain);
     }
 }
 

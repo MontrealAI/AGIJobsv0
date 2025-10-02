@@ -147,7 +147,7 @@ describe('Job expiration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await time.increase(200);
     await expect(
       registry.connect(treasury).cancelExpiredJob(jobId)
@@ -173,7 +173,7 @@ describe('Job expiration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await expect(
       registry.connect(employer).cancelExpiredJob(jobId)
     ).to.be.revertedWithCustomError(registry, 'DeadlineNotReached');
@@ -187,7 +187,7 @@ describe('Job expiration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await time.increase(120);
     await expect(
       registry.connect(employer).cancelExpiredJob(jobId)

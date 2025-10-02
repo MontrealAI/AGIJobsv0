@@ -4,6 +4,8 @@ const { ethers } = hre;
 
 const AGENT_ROOT = ethers.namehash('agent.agi.eth');
 const CLUB_ROOT = ethers.namehash('club.agi.eth');
+const AGENT_LABEL = 'agent';
+const VALIDATOR_LABEL = 'validator';
 
 // Tests for ENS ownership verification through IdentityRegistry
 
@@ -95,20 +97,22 @@ describe('IdentityRegistry ENS verification', function () {
     );
 
     // validator verified by merkle proof
-    const vLeaf = leaf(validator.address, '');
+    const vLeaf = leaf(validator.address, VALIDATOR_LABEL);
     await id.setValidatorMerkleRoot(vLeaf);
     const validatorCheck = await id.verifyValidator.staticCall(
       validator.address,
-      '',
+      VALIDATOR_LABEL,
       []
     );
     expect(validatorCheck[0]).to.equal(true);
     expect(
-      (await id.verifyValidator.staticCall(validator.address, 'bad', []))[0]
+      (
+        await id.verifyValidator.staticCall(validator.address, 'bad', [])
+      )[0]
     ).to.equal(false);
 
     // agent verified via resolver fallback
-    const label = 'agent';
+    const label = AGENT_LABEL;
     const node = ethers.keccak256(
       ethers.solidityPacked(
         ['bytes32', 'bytes32'],
@@ -152,14 +156,14 @@ describe('IdentityRegistry ENS verification', function () {
     // blacklist blocks verification even if allowlisted
     await rep.blacklist(alice.address, true);
     expect(
-      (await id.verifyAgent.staticCall(alice.address, '', []))[0]
+      (await id.verifyAgent.staticCall(alice.address, AGENT_LABEL, []))[0]
     ).to.equal(false);
     await rep.blacklist(alice.address, false);
 
     // additional allowlist bypasses ENS requirements
     await id.addAdditionalAgent(alice.address);
     expect(
-      (await id.verifyAgent.staticCall(alice.address, '', []))[0]
+      (await id.verifyAgent.staticCall(alice.address, AGENT_LABEL, []))[0]
     ).to.equal(true);
   });
 
@@ -375,7 +379,7 @@ describe('IdentityRegistry ENS verification', function () {
     // allowlist should succeed without ENS
     await id.addAdditionalAgent(agent.address);
     expect(
-      (await id.verifyAgent.staticCall(agent.address, '', []))[0]
+      (await id.verifyAgent.staticCall(agent.address, AGENT_LABEL, []))[0]
     ).to.equal(true);
 
     // attestation should also succeed
@@ -388,7 +392,7 @@ describe('IdentityRegistry ENS verification', function () {
     );
     await id.setAttestationRegistry(await attest.getAddress());
 
-    const label = 'val';
+    const label = VALIDATOR_LABEL;
     const node = ethers.keccak256(
       ethers.solidityPacked(
         ['bytes32', 'bytes32'],
@@ -480,30 +484,30 @@ describe('IdentityRegistry ENS verification', function () {
     );
 
     await id.addAdditionalAgent(agent.address);
-    const agentEmptyNode = ethers.keccak256(
+    const agentNode = ethers.keccak256(
       ethers.solidityPacked(
         ['bytes32', 'bytes32'],
-        [AGENT_ROOT, ethers.id('')]
+        [AGENT_ROOT, ethers.id(AGENT_LABEL)]
       )
     );
-    const clubEmptyNode = ethers.keccak256(
+    const clubNode = ethers.keccak256(
       ethers.solidityPacked(
         ['bytes32', 'bytes32'],
-        [CLUB_ROOT, ethers.id('')]
+        [CLUB_ROOT, ethers.id(VALIDATOR_LABEL)]
       )
     );
-    await expect(id.verifyAgent(agent.address, '', []))
+    await expect(id.verifyAgent(agent.address, AGENT_LABEL, []))
       .to.emit(id, 'IdentityVerified')
-      .withArgs(agent.address, 0, agentEmptyNode, '')
+      .withArgs(agent.address, 0, agentNode, AGENT_LABEL)
       .and.to.emit(id, 'AdditionalAgentUsed')
-      .withArgs(agent.address, '');
+      .withArgs(agent.address, AGENT_LABEL);
 
     await id.addAdditionalValidator(validator.address);
-    await expect(id.verifyValidator(validator.address, '', []))
+    await expect(id.verifyValidator(validator.address, VALIDATOR_LABEL, []))
       .to.emit(id, 'IdentityVerified')
-      .withArgs(validator.address, 1, clubEmptyNode, '')
+      .withArgs(validator.address, 1, clubNode, VALIDATOR_LABEL)
       .and.to.emit(id, 'AdditionalValidatorUsed')
-      .withArgs(validator.address, '');
+      .withArgs(validator.address, VALIDATOR_LABEL);
   });
 
   it('authorization helpers handle allowlists', async () => {
@@ -534,15 +538,21 @@ describe('IdentityRegistry ENS verification', function () {
     );
 
     await id.addAdditionalAgent(agent.address);
-    expect(await id.isAuthorizedAgent(agent.address, '', [])).to.equal(true);
+    expect(
+      await id.isAuthorizedAgent(agent.address, AGENT_LABEL, [])
+    ).to.equal(true);
 
     await id.addAdditionalValidator(validator.address);
     expect(
-      await id.isAuthorizedValidator.staticCall(validator.address, '', [])
+      await id.isAuthorizedValidator.staticCall(
+        validator.address,
+        VALIDATOR_LABEL,
+        []
+      )
     ).to.equal(true);
-    await expect(id.verifyValidator(validator.address, '', []))
+    await expect(id.verifyValidator(validator.address, VALIDATOR_LABEL, []))
       .to.emit(id, 'AdditionalValidatorUsed')
-      .withArgs(validator.address, '');
+      .withArgs(validator.address, VALIDATOR_LABEL);
   });
 
   it('requires new owner to accept ownership', async () => {

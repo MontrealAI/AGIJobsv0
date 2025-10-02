@@ -127,14 +127,14 @@ describe('ValidationModule access controls', function () {
       [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await expect(
-      validation.connect(signer).commitValidation(1, commit, '', [])
+      validation.connect(signer).commitValidation(1, commit, 'validator', [])
     ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
 
     // allow commit then block reveal
     await identity.addAdditionalValidator(val);
     await toggle.setResult(true);
     await (
-      await validation.connect(signer).commitValidation(1, commit, '', [])
+      await validation.connect(signer).commitValidation(1, commit, 'validator', [])
     ).wait();
     await advance(61);
     await identity.removeAdditionalValidator(val);
@@ -142,7 +142,7 @@ describe('ValidationModule access controls', function () {
     await expect(
       validation
         .connect(signer)
-        .revealValidation(1, true, burnTxHash, salt, '', [])
+        .revealValidation(1, true, burnTxHash, salt, 'validator', [])
     ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
   });
 
@@ -168,19 +168,19 @@ describe('ValidationModule access controls', function () {
     );
     await reputation.setBlacklist(val, true);
     await expect(
-      validation.connect(signer).commitValidation(1, commit, '', [])
+      validation.connect(signer).commitValidation(1, commit, 'validator', [])
     ).to.be.revertedWithCustomError(validation, 'BlacklistedValidator');
 
     await reputation.setBlacklist(val, false);
     await (
-      await validation.connect(signer).commitValidation(1, commit, '', [])
+      await validation.connect(signer).commitValidation(1, commit, 'validator', [])
     ).wait();
     await advance(61);
     await reputation.setBlacklist(val, true);
     await expect(
       validation
         .connect(signer)
-        .revealValidation(1, true, burnTxHash, salt, '', [])
+        .revealValidation(1, true, burnTxHash, salt, 'validator', [])
     ).to.be.revertedWithCustomError(validation, 'BlacklistedValidator');
   });
 
@@ -218,33 +218,33 @@ describe('ValidationModule access controls', function () {
     await (
       await validation
         .connect(signerMap[vA.toLowerCase()])
-        .commitValidation(1, commitA, '', [])
+        .commitValidation(1, commitA, 'validator', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vB.toLowerCase()])
-        .commitValidation(1, commitB, '', [])
+        .commitValidation(1, commitB, 'validator', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vC.toLowerCase()])
-        .commitValidation(1, commitC, '', [])
+        .commitValidation(1, commitC, 'validator', [])
     ).wait();
     await advance(61);
     await (
       await validation
         .connect(signerMap[vA.toLowerCase()])
-        .revealValidation(1, false, burnTxHash, saltA, '', [])
+        .revealValidation(1, false, burnTxHash, saltA, 'validator', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vB.toLowerCase()])
-        .revealValidation(1, false, burnTxHash, saltB, '', [])
+        .revealValidation(1, false, burnTxHash, saltB, 'validator', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vC.toLowerCase()])
-        .revealValidation(1, false, burnTxHash, saltC, '', [])
+        .revealValidation(1, false, burnTxHash, saltC, 'validator', [])
     ).wait();
     await advance(61);
     await validation.finalize(1);
@@ -283,33 +283,33 @@ describe('ValidationModule access controls', function () {
     await (
       await validation
         .connect(signerMap[vA.toLowerCase()])
-        .commitValidation(1, c1, '', [])
+        .commitValidation(1, c1, 'validator', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vB.toLowerCase()])
-        .commitValidation(1, c2, '', [])
+        .commitValidation(1, c2, 'validator', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vC.toLowerCase()])
-        .commitValidation(1, c3, '', [])
+        .commitValidation(1, c3, 'validator', [])
     ).wait();
     await advance(61);
     await (
       await validation
         .connect(signerMap[vA.toLowerCase()])
-        .revealValidation(1, true, burnTxHash, s1, '', [])
+        .revealValidation(1, true, burnTxHash, s1, 'validator', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vB.toLowerCase()])
-        .revealValidation(1, true, burnTxHash, s2, '', [])
+        .revealValidation(1, true, burnTxHash, s2, 'validator', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vC.toLowerCase()])
-        .revealValidation(1, true, burnTxHash, s3, '', [])
+        .revealValidation(1, true, burnTxHash, s3, 'validator', [])
     ).wait();
     await advance(61);
     await validation.finalize(1);

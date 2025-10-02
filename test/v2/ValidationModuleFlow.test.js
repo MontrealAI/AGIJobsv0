@@ -176,22 +176,22 @@ describe('ValidationModule finalize flows', function () {
       domain,
       chainId
     );
-    await validation.connect(v1).commitValidation(1, commit1, '', []);
-    await validation.connect(v2).commitValidation(1, commit2, '', []);
-    await validation.connect(v3).commitValidation(1, commit3, '', []);
+    await validation.connect(v1).commitValidation(1, commit1, 'validator', []);
+    await validation.connect(v2).commitValidation(1, commit2, 'validator', []);
+    await validation.connect(v3).commitValidation(1, commit3, 'validator', []);
     expect(await validation.validatorStakes(1, v1.address)).to.equal(
       ethers.parseEther('100')
     );
     await advance(61);
     await validation
       .connect(v1)
-      .revealValidation(1, true, burnTxHash, salt1, '', []);
+      .revealValidation(1, true, burnTxHash, salt1, 'validator', []);
     await validation
       .connect(v2)
-      .revealValidation(1, false, burnTxHash, salt2, '', []);
+      .revealValidation(1, false, burnTxHash, salt2, 'validator', []);
     await validation
       .connect(v3)
-      .revealValidation(1, false, burnTxHash, salt3, '', []);
+      .revealValidation(1, false, burnTxHash, salt3, 'validator', []);
     await advance(61);
     await validation.finalize(1);
     await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
@@ -245,9 +245,9 @@ describe('ValidationModule finalize flows', function () {
       domain,
       chainId
     );
-    await validation.connect(v1).commitValidation(1, commit1, '', []);
-    await validation.connect(v2).commitValidation(1, commit2, '', []);
-    await validation.connect(v3).commitValidation(1, commit3, '', []);
+    await validation.connect(v1).commitValidation(1, commit1, 'validator', []);
+    await validation.connect(v2).commitValidation(1, commit2, 'validator', []);
+    await validation.connect(v3).commitValidation(1, commit3, 'validator', []);
     await expect(validation.finalize(1)).to.be.revertedWithCustomError(
       validation,
       'RevealPending'
@@ -265,7 +265,7 @@ describe('ValidationModule finalize flows', function () {
     );
     await advance(61);
     await expect(
-      validation.connect(v1).commitValidation(1, commit, '', [])
+      validation.connect(v1).commitValidation(1, commit, 'validator', [])
     ).to.be.revertedWithCustomError(validation, 'CommitPhaseClosed');
   });
 
@@ -289,19 +289,19 @@ describe('ValidationModule finalize flows', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, true, burnTxHash, salt3, ethers.ZeroHash]
     );
-    await validation.connect(v1).commitValidation(1, commit1, '', []);
-    await validation.connect(v2).commitValidation(1, commit2, '', []);
-    await validation.connect(v3).commitValidation(1, commit3, '', []);
+    await validation.connect(v1).commitValidation(1, commit1, 'validator', []);
+    await validation.connect(v2).commitValidation(1, commit2, 'validator', []);
+    await validation.connect(v3).commitValidation(1, commit3, 'validator', []);
     await advance(61);
     await validation
       .connect(v1)
-      .revealValidation(1, false, burnTxHash, salt1, '', []);
+      .revealValidation(1, false, burnTxHash, salt1, 'validator', []);
     await validation
       .connect(v2)
-      .revealValidation(1, false, burnTxHash, salt2, '', []);
+      .revealValidation(1, false, burnTxHash, salt2, 'validator', []);
     await validation
       .connect(v3)
-      .revealValidation(1, true, burnTxHash, salt3, '', []);
+      .revealValidation(1, true, burnTxHash, salt3, 'validator', []);
     await advance(61);
     await validation.finalize(1);
     const job = enrichJob(await jobRegistry.jobs(1));
@@ -327,11 +327,11 @@ describe('ValidationModule finalize flows', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
-    await validation.connect(v1).commitValidation(1, commit, '', []);
+    await validation.connect(v1).commitValidation(1, commit, 'validator', []);
     await advance(61); // end commit
     await advance(61); // end reveal
     await expect(
-      validation.connect(v1).revealValidation(1, true, burnTxHash, salt, '', [])
+      validation.connect(v1).revealValidation(1, true, burnTxHash, salt, 'validator', [])
     ).to.be.revertedWithCustomError(validation, 'RevealPhaseClosed');
   });
 
@@ -364,13 +364,13 @@ describe('ValidationModule finalize flows', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, true, burnTxHash, salt3, ethers.ZeroHash]
     );
-    await validation.connect(v1).commitValidation(1, commit1, '', []);
-    await validation.connect(v2).commitValidation(1, commit2, '', []);
-    await validation.connect(v3).commitValidation(1, commit3, '', []);
+    await validation.connect(v1).commitValidation(1, commit1, 'validator', []);
+    await validation.connect(v2).commitValidation(1, commit2, 'validator', []);
+    await validation.connect(v3).commitValidation(1, commit3, 'validator', []);
     await advance(61);
     await validation
       .connect(v1)
-      .revealValidation(1, true, burnTxHash, salt1, '', []);
+      .revealValidation(1, true, burnTxHash, salt1, 'validator', []);
     await advance(61);
     await validation.finalize(1);
     expect(await stakeManager.stakeOf(v1.address, 1)).to.equal(
@@ -443,9 +443,9 @@ describe('ValidationModule finalize flows', function () {
       domain,
       chainId
     );
-    await validation.connect(v1).commitValidation(1, commit1, '', []);
-    await validation.connect(v2).commitValidation(1, commit2, '', []);
-    await validation.connect(v3).commitValidation(1, commit3, '', []);
+    await validation.connect(v1).commitValidation(1, commit1, 'validator', []);
+    await validation.connect(v2).commitValidation(1, commit2, 'validator', []);
+    await validation.connect(v3).commitValidation(1, commit3, 'validator', []);
     await advance(61); // end commit
     await advance(61 + 3600 + 1); // end reveal + grace
     await expect(validation.forceFinalize(1))
@@ -541,19 +541,19 @@ describe('ValidationModule finalize flows', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, false, burnTxHash, salt3, ethers.ZeroHash]
     );
-    await validation.connect(v1).commitValidation(1, commit1, '', []);
-    await validation.connect(v2).commitValidation(1, commit2, '', []);
-    await validation.connect(v3).commitValidation(1, commit3, '', []);
+    await validation.connect(v1).commitValidation(1, commit1, 'validator', []);
+    await validation.connect(v2).commitValidation(1, commit2, 'validator', []);
+    await validation.connect(v3).commitValidation(1, commit3, 'validator', []);
     await advance(61);
     await validation
       .connect(v1)
-      .revealValidation(1, true, burnTxHash, salt1, '', []);
+      .revealValidation(1, true, burnTxHash, salt1, 'validator', []);
     await validation
       .connect(v2)
-      .revealValidation(1, false, burnTxHash, salt2, '', []);
+      .revealValidation(1, false, burnTxHash, salt2, 'validator', []);
     await validation
       .connect(v3)
-      .revealValidation(1, false, burnTxHash, salt3, '', []);
+      .revealValidation(1, false, burnTxHash, salt3, 'validator', []);
     await advance(61);
     await validation.finalize(1);
     const job = enrichJob(await jobRegistry.jobs(1));

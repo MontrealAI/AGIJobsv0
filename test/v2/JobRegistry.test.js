@@ -191,24 +191,24 @@ describe('JobRegistry integration', function () {
     const created = await registry.jobs(1);
     expect(created.specHash).to.equal(specHash);
     const jobId = 1;
-    await expect(registry.connect(agent).applyForJob(jobId, '', []))
+    await expect(registry.connect(agent).applyForJob(jobId, 'agent', []))
       .to.emit(registry, 'AgentIdentityVerified')
-      .withArgs(agent.address, ethers.ZeroHash, '', false, false)
+      .withArgs(agent.address, ethers.ZeroHash, 'agent', false, false)
       .and.to.emit(registry, 'ApplicationSubmitted')
-      .withArgs(jobId, agent.address, '')
+      .withArgs(jobId, agent.address, 'agent')
       .and.to.emit(registry, 'AgentAssigned')
-      .withArgs(jobId, agent.address, '');
+      .withArgs(jobId, agent.address, 'agent');
     await validation.connect(owner).setResult(true);
     const committee = [owner.address, treasury.address];
     await validation.connect(owner).setValidators(committee);
     const resultHash = ethers.id('result');
     await expect(
-      registry.connect(agent).submit(jobId, resultHash, 'result', '', [])
+      registry.connect(agent).submit(jobId, resultHash, 'result', 'agent', [])
     )
       .to.emit(registry, 'AgentIdentityVerified')
-      .withArgs(agent.address, ethers.ZeroHash, '', false, false)
+      .withArgs(agent.address, ethers.ZeroHash, 'agent', false, false)
       .and.to.emit(registry, 'ResultSubmitted')
-      .withArgs(jobId, agent.address, resultHash, 'result', '');
+      .withArgs(jobId, agent.address, resultHash, 'result', 'agent');
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, true);
@@ -250,13 +250,13 @@ describe('JobRegistry integration', function () {
         specHash,
         'uri'
       );
-    await expect(registry.connect(newAgent).acknowledgeAndApply(1, '', []))
+    await expect(registry.connect(newAgent).acknowledgeAndApply(1, 'agent', []))
       .to.emit(registry, 'AgentIdentityVerified')
-      .withArgs(newAgent.address, ethers.ZeroHash, '', false, false)
+      .withArgs(newAgent.address, ethers.ZeroHash, 'agent', false, false)
       .and.to.emit(registry, 'ApplicationSubmitted')
-      .withArgs(1, newAgent.address, '')
+      .withArgs(1, newAgent.address, 'agent')
       .and.to.emit(registry, 'AgentAssigned')
-      .withArgs(1, newAgent.address, '');
+      .withArgs(1, newAgent.address, 'agent');
     expect(await policy.hasAcknowledged(newAgent.address)).to.equal(true);
   });
 
@@ -280,12 +280,12 @@ describe('JobRegistry integration', function () {
         'uri'
       );
 
-    await expect(registry.connect(agent).applyForJob(1, '', []))
+    await expect(registry.connect(agent).applyForJob(1, 'agent', []))
       .to.emit(registry, 'AgentAssigned')
-      .withArgs(1, agent.address, '');
+      .withArgs(1, agent.address, 'agent');
 
     await expect(
-      registry.connect(secondAgent).applyForJob(1, '', [])
+      registry.connect(secondAgent).applyForJob(1, 'agent', [])
     ).to.be.revertedWithCustomError(registry, 'NotOpen');
 
     const job = await registry.jobs(1);
@@ -325,11 +325,11 @@ describe('JobRegistry integration', function () {
         'uri'
       );
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.connect(owner).setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('result'), 'result', '', []);
+      .submit(jobId, ethers.id('result'), 'result', 'agent', []);
     await validation.finalize(jobId);
     const burnTxHash = ethers.ZeroHash;
     const burnAmt = (BigInt(reward) * 10n) / 100n;
@@ -357,11 +357,11 @@ describe('JobRegistry integration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.connect(owner).setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
     await validation.finalize(jobId);
     await policy.connect(treasury).acknowledge();
     await expect(
@@ -381,11 +381,11 @@ describe('JobRegistry integration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.connect(owner).setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('result'), 'result', '', []);
+      .submit(jobId, ethers.id('result'), 'result', 'agent', []);
     await validation.finalize(jobId);
     const burnTxHash2 = ethers.ZeroHash;
     await registry
@@ -412,11 +412,11 @@ describe('JobRegistry integration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.connect(owner).setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
     await validation.finalize(jobId);
     await expect(
       registry.connect(agent).finalize(jobId)
@@ -436,11 +436,11 @@ describe('JobRegistry integration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.connect(owner).setResult(false);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
     await validation.finalize(jobId);
     const registryAddr = await registry.getAddress();
     await network.provider.send('hardhat_setBalance', [
@@ -477,10 +477,10 @@ describe('JobRegistry integration', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
     const validationAddr = await validation.getAddress();
     await ethers.provider.send('hardhat_impersonateAccount', [validationAddr]);
     await ethers.provider.send('hardhat_setBalance', [
@@ -611,11 +611,11 @@ describe('JobRegistry integration', function () {
         'uri'
       );
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.connect(owner).setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('result'), 'result', '', []);
+      .submit(jobId, ethers.id('result'), 'result', 'agent', []);
     await validation.finalize(jobId);
     await registry.connect(employer).finalize(jobId);
 
@@ -740,7 +740,7 @@ describe('JobRegistry integration', function () {
 
     await stakeManager.connect(agent).withdrawStake(0, stake);
 
-    await expect(registry.connect(agent).applyForJob(jobId, '', []))
+    await expect(registry.connect(agent).applyForJob(jobId, 'agent', []))
       .to.be.revertedWithCustomError(registry, 'InsufficientAgentStake')
       .withArgs(minStake, 0);
 
@@ -749,12 +749,12 @@ describe('JobRegistry integration', function () {
       .approve(await stakeManager.getAddress(), minStake);
     await stakeManager.connect(agent).depositStake(0, minStake);
 
-    await expect(registry.connect(agent).applyForJob(jobId, '', []))
+    await expect(registry.connect(agent).applyForJob(jobId, 'agent', []))
       .to.emit(registry, 'AgentIdentityVerified')
-      .withArgs(agent.address, ethers.ZeroHash, '', false, false)
+      .withArgs(agent.address, ethers.ZeroHash, 'agent', false, false)
       .and.to.emit(registry, 'ApplicationSubmitted')
-      .withArgs(jobId, agent.address, '')
+      .withArgs(jobId, agent.address, 'agent')
       .and.to.emit(registry, 'AgentAssigned')
-      .withArgs(jobId, agent.address, '');
+      .withArgs(jobId, agent.address, 'agent');
   });
 });

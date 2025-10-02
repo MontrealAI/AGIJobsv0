@@ -190,7 +190,7 @@ describe('Commit-reveal job lifecycle', function () {
     );
     await wrapper.setOwner(BigInt(node), agent.address);
 
-    const vLeaf = leaf(validator.address, '');
+    const vLeaf = leaf(validator.address, 'validator');
     await identity.setValidatorMerkleRoot(vLeaf);
 
     await token.connect(agent).approve(await stake.getAddress(), stakeAmt);
@@ -224,11 +224,11 @@ describe('Commit-reveal job lifecycle', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, true, burnTxHash, salt, specHash]
     );
-    await validation.connect(validator).commitValidation(1, commit, '', []);
+    await validation.connect(validator).commitValidation(1, commit, 'validator', []);
     await time.increase(2);
     await validation
       .connect(validator)
-      .revealValidation(1, true, burnTxHash, salt, '', []);
+      .revealValidation(1, true, burnTxHash, salt, 'validator', []);
     await time.increase(2);
     await validation.finalize(1);
     await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
@@ -270,7 +270,7 @@ describe('Commit-reveal job lifecycle', function () {
       )
     );
     await wrapper.setOwner(BigInt(node), agent.address);
-    const vLeaf = leaf(validator.address, '');
+    const vLeaf = leaf(validator.address, 'validator');
     await identity.setValidatorMerkleRoot(vLeaf);
 
     await token.connect(agent).approve(await stake.getAddress(), stakeAmt);
@@ -304,11 +304,11 @@ describe('Commit-reveal job lifecycle', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, false, burnTxHash, salt, specHash]
     );
-    await validation.connect(validator).commitValidation(1, commit, '', []);
+    await validation.connect(validator).commitValidation(1, commit, 'validator', []);
     await time.increase(2);
     await validation
       .connect(validator)
-      .revealValidation(1, false, burnTxHash, salt, '', []);
+      .revealValidation(1, false, burnTxHash, salt, 'validator', []);
     await time.increase(2);
     await validation.finalize(1);
 

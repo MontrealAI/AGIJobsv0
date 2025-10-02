@@ -167,11 +167,11 @@ describe('Employer reputation', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.connect(owner).setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
     await validation.finalize(jobId);
     await registry.connect(employer).finalize(jobId);
     const [successful, failed] = await registry.getEmployerReputation(
@@ -193,11 +193,11 @@ describe('Employer reputation', function () {
       .connect(employer)
       .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, '', []);
+    await registry.connect(agent).applyForJob(jobId, 'agent', []);
     await validation.connect(owner).setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id('res'), 'res', '', []);
+      .submit(jobId, ethers.id('res'), 'res', 'agent', []);
     await validation.finalize(jobId);
     await registry
       .connect(agent)
