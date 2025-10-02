@@ -33,6 +33,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control playbook](#owner-control-playbook)
 - [Owner control blueprint](#owner-control-blueprint)
 - [Owner control command center](#owner-control-command-center)
+- [Owner control index](#owner-control-index)
 - [Owner control doctor](#owner-control-doctor)
 - [Owner control audit](#owner-control-audit)
 - [Owner control systems map](#owner-control-systems-map)
@@ -241,6 +242,26 @@ npm run owner:command-center -- --network mainnet --format markdown --out report
 ```
 
 The CLI cross-loads every governance configuration, highlights editable knobs (burn ratios, treasuries, PID gains, signer sets, tax policy text, and more), and renders an optional Mermaid flow linking governance owners to each subsystem. It is safe to run before every change window, requires no Solidity knowledge, and produces artefacts that non-technical reviewers can file directly into compliance workflows.
+
+### Owner control index
+
+The [Owner Control Index](docs/owner-control-index.md) consolidates every editable parameter, config manifest, and CLI helper into a single flight deck so contract owners can retune the platform without hunting through multiple guides. It layers a zero-downtime workflow, Mermaid diagrams, tables, and hardened checklists on top of the existing toolchain.
+
+```mermaid
+flowchart LR
+    Edit[Edit config/*.json] --> Guard[npm run owner:doctor]
+    Guard --> Plan[npm run owner:plan]
+    Plan --> Execute[npx hardhat run scripts/v2/update*.ts --network <net> --execute]
+    Execute --> Verify[npm run owner:verify-control]
+    Verify --> Archive[npm run owner:audit]
+```
+
+- **One-stop catalogue.** Scan a domain-to-config table that links every subsystem (thermodynamics, tax policy, signer sets, treasury routing, pause wiring, etc.) to the exact JSON manifest, update helper, and verification command.
+- **Production-safe workflow.** Follow the zero-downtime checklist covering `owner:surface`, `owner:doctor`, `owner:plan`, Safe bundle export, execution, and post-change verification.
+- **Visual orientation.** Reuse the included Mermaid flight-deck and mind-map diagrams inside executive briefings or change tickets.
+- **Full-stack dry runs.** Kick off `npm run owner:update-all -- --network <network>` to simulate the entire update suite before enabling `--execute` on the specific modules you intend to change.
+
+Link the index directly from compliance tickets so approvers see the latest guidance without needing Solidity expertise.
 
 ### Owner control operations playbook
 
