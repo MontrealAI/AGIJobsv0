@@ -4,8 +4,9 @@ import {
   type AgentDeliverableRecord,
   type DeliverableContributor,
 } from './deliverableStore';
-import { registry } from './utils';
+import { registry, jobs } from './utils';
 import { acknowledgeTaxPolicy as ensureTaxAcknowledgement } from './stakeCoordinator';
+import { publishCertificateMetadata } from './certificateMetadata';
 
 type SubmissionMethod = 'finalizeJob' | 'submit' | 'none';
 
@@ -169,10 +170,39 @@ export async function submitDeliverable(
     }
   }
 
+  const submittedAt = new Date().toISOString();
+  const cachedJob = jobs.get(jobId);
+  let certificateMetadata;
+  try {
+    certificateMetadata = await publishCertificateMetadata({
+      jobId,
+      agent: wallet.address,
+      resultHash: resolvedHash,
+      resultUri: resultUri || resolvedResultRef || undefined,
+      resultCid: resultCid || undefined,
+      signature,
+      success: success !== false,
+      submittedAt,
+      submissionMethod,
+      txHash,
+      job: cachedJob
+        ? {
+            employer: cachedJob.employer,
+            agent: cachedJob.agent,
+            specUri: cachedJob.uri,
+            specHash: cachedJob.specHash,
+          }
+        : undefined,
+    });
+  } catch (metaErr) {
+    console.warn('Failed to publish certificate metadata', metaErr);
+  }
+
   const deliverable = recordDeliverable({
     jobId,
     agent: wallet.address,
     success: success !== false,
+    submittedAt,
     resultUri: resultUri || resolvedResultRef || undefined,
     resultCid: resultCid || undefined,
     resultRef: resolvedResultRef || undefined,
@@ -187,6 +217,9 @@ export async function submitDeliverable(
     contributors,
     submissionMethod,
     txHash,
+    certificateMetadataUri: certificateMetadata?.uri,
+    certificateMetadataCid: certificateMetadata?.cid,
+    certificateMetadataIpnsName: certificateMetadata?.ipnsName,
   });
 
   return {

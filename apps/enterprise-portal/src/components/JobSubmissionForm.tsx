@@ -60,7 +60,12 @@ export const JobSubmissionForm = () => {
       requiredSkills: skills,
       ttlHours: Number(form.ttl) || 0,
       metadataURI: form.uri,
-      sla: form.requiresSla ? { uri: form.slaUri } : undefined
+      sla: form.requiresSla
+        ? {
+            uri: form.slaUri,
+            requiresSignature: true
+          }
+        : undefined
     };
   }, [form]);
 
