@@ -19,7 +19,7 @@ describe('JobRegistry integration', function () {
 
   const reward = 100;
   const stake = 200;
-  const disputeFee = 0;
+  const disputeFee = 1_000_000_000_000_000_000n;
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
@@ -139,11 +139,14 @@ describe('JobRegistry integration', function () {
     await policy.connect(agent).acknowledge();
 
     await token.mint(employer.address, 100000);
-    await token.mint(agent.address, 1000);
+    await token.mint(agent.address, disputeFee + 1000n);
 
     await token
       .connect(agent)
-      .approve(await stakeManager.getAddress(), stake + disputeFee);
+      .approve(
+        await stakeManager.getAddress(),
+        BigInt(stake) + disputeFee
+      );
     await stakeManager.connect(agent).depositStake(0, stake);
     await stakeManager
       .connect(owner)
@@ -228,7 +231,9 @@ describe('JobRegistry integration', function () {
       expect(await registry.getJobValidatorVote(jobId, member)).to.equal(false);
     }
 
-    expect(await token.balanceOf(agent.address)).to.equal(900);
+    expect(await token.balanceOf(agent.address)).to.equal(
+      disputeFee + 900n
+    );
     expect(await rep.reputation(agent.address)).to.equal(0);
     expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);

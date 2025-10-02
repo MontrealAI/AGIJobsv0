@@ -256,7 +256,7 @@ async function deployContracts(ctx: DeploymentContext) {
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
-  const disputeFee = parseUnits(process.env.DISPUTE_FEE || '0', decimals);
+  const disputeFee = parseUnits(process.env.DISPUTE_FEE || '1', decimals);
   const disputeWindow = Number(process.env.DISPUTE_WINDOW || 86400);
   const dispute = await Dispute.deploy(
     ethers.ZeroAddress,

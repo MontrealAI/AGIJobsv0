@@ -7,7 +7,7 @@ describe('comprehensive job flows', function () {
   const reward = ethers.parseUnits('1000', AGIALPHA_DECIMALS);
   const stakeRequired = ethers.parseUnits('200', AGIALPHA_DECIMALS);
   const feePct = 10;
-  const disputeFee = 0n;
+  const disputeFee = ethers.parseUnits('1', AGIALPHA_DECIMALS);
 
   let token,
     stakeManager,
@@ -164,7 +164,10 @@ describe('comprehensive job flows', function () {
     await identity.addAdditionalAgent(agent.address);
     await token
       .connect(agent)
-      .approve(await stakeManager.getAddress(), stakeRequired);
+      .approve(
+        await stakeManager.getAddress(),
+        stakeRequired + disputeFee
+      );
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
     await token
       .connect(employer)
