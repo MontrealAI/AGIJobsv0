@@ -307,12 +307,12 @@ async function main() {
     configModules.governance ??
     tokenConfig.governance?.timelock ??
     tokenConfig.governance?.govSafe;
-  const expectedOwner = governanceOwnerCandidate
+  const expectedGovernanceOwner = governanceOwnerCandidate
     ? ensureAddress(governanceOwnerCandidate, 'governance owner')
     : undefined;
-  if (!expectedOwner) {
+  if (!expectedGovernanceOwner) {
     console.warn(
-      'No governance owner configured; module ownership checks will be skipped.'
+      'No governance owner configured; SystemPause ownership check will be skipped.'
     );
   }
 
@@ -327,6 +327,20 @@ async function main() {
     throw new Error(
       `Signer ${signerAddress} is not the governance owner (${ownerAddress}) of SystemPause`
     );
+  }
+
+  if (
+    expectedGovernanceOwner &&
+    !sameAddress(ownerAddress, expectedGovernanceOwner)
+  ) {
+    console.warn(
+      `\nSystemPause owner is ${ownerAddress} (expected ${expectedGovernanceOwner}).`
+    );
+    if (cli.execute) {
+      throw new Error(
+        'SystemPause governance owner mismatch detected. Update governance ownership before executing wiring updates.'
+      );
+    }
   }
 
   const current: ModuleAddresses = {
@@ -366,9 +380,9 @@ async function main() {
       ownershipIssues.push(`${key}: owner() not available`);
       continue;
     }
-    if (expectedOwner && !sameAddress(owner, expectedOwner)) {
+    if (!sameAddress(owner, pauseAddress)) {
       ownershipIssues.push(
-        `${key}: owner is ${owner} (expected ${expectedOwner})`
+        `${key}: owner is ${owner} (expected SystemPause ${pauseAddress})`
       );
     }
 

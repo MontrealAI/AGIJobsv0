@@ -7,6 +7,27 @@ executors) can pause the protocol, extend validation windows, or escalate a job
 into the dispute process when the validator network is experiencing an
 incident.
 
+## Guardians and Access Control
+
+- **SystemPause ownership.** Transfer ownership of every pausable module
+  (JobRegistry, StakeManager, ValidationModule, DisputeModule, PlatformRegistry,
+  FeePool, ReputationEngine, ArbitratorCommittee) to the deployed
+  `SystemPause` contract. This ensures the global circuit breaker is the sole
+  owner capable of assigning pausers on those contracts.
+- **Governance authority.** Keep the `SystemPause` governance owner pointed at
+  the existing timelock or multisig. Only that address can call
+  `pauseAll()`, `unpauseAll()`, `setModules()`, or `refreshPausers()`.
+- **Operational check.** Before changing wiring, run a dry run to confirm the
+  configuration:
+
+  ```bash
+  npx hardhat run scripts/v2/updateSystemPause.ts --network <network>
+  ```
+
+  The script now fails if any module is not owned by `SystemPause`, preventing
+  partial wiring. Re-run the same command with `--execute` once the dry run is
+  clean to apply module or pauser updates.
+
 ## Circuit Breaker Operations
 
 1. **Pause the network** – Use the `SystemPause.pauseAll()` helper to freeze all
