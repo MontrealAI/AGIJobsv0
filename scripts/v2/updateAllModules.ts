@@ -1,5 +1,7 @@
+import { promises as fs } from 'fs';
+import path from 'path';
 import { ethers, network } from 'hardhat';
-import type { Contract } from 'ethers';
+import type { Contract, Interface, ParamType } from 'ethers';
 import {
   loadTokenConfig,
   loadStakeManagerConfig,
@@ -45,6 +47,49 @@ interface CliOptions {
   json: boolean;
   only?: Set<ModuleKey>;
   skip: Set<ModuleKey>;
+  safeOut?: string;
+  safeName?: string;
+  safeDescription?: string;
+}
+
+interface SafeContractInputMeta {
+  name: string;
+  type: string;
+}
+
+interface SafeContractMethodMeta {
+  name: string;
+  payable: boolean;
+  stateMutability: string;
+  inputs: SafeContractInputMeta[];
+}
+
+interface SafeTransactionEntry {
+  to: string;
+  value: string;
+  data: string;
+  description?: string;
+  contractInputsValues?: Record<string, string>;
+  contractMethod?: SafeContractMethodMeta;
+}
+
+interface SafeBundle {
+  version: string;
+  chainId: number;
+  createdAt: string;
+  meta: {
+    name: string;
+    description: string;
+    txBuilderVersion: string;
+  };
+  transactions: SafeTransactionEntry[];
+}
+
+interface ResolvedFragment {
+  signature: string;
+  name: string;
+  stateMutability: string;
+  inputs: ParamType[];
 }
 
 function parseBooleanEnv(value?: string | null): boolean | undefined {
@@ -73,6 +118,14 @@ function parseListEnv(value?: string | null): string[] | undefined {
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
   return entries.length > 0 ? entries : undefined;
+}
+
+function parseStringEnv(value?: string | null): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 type ModuleKey =
@@ -198,6 +251,9 @@ function parseCliOptions(argv: string[]): CliOptions {
   let executeSetByCli = false;
   let jsonSetByCli = false;
   let onlySetByCli = false;
+  let safeOutSetByCli = false;
+  let safeNameSetByCli = false;
+  let safeDescriptionSetByCli = false;
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -241,6 +297,30 @@ function parseCliOptions(argv: string[]): CliOptions {
         .split(',')
         .forEach((entry) => options.skip.add(parseModuleKey(entry)));
       i += 1;
+    } else if (arg === '--safe' || arg === '--safe-out') {
+      const value = argv[i + 1];
+      if (!value) {
+        throw new Error(`${arg} requires a file path`);
+      }
+      options.safeOut = value;
+      safeOutSetByCli = true;
+      i += 1;
+    } else if (arg === '--safe-name') {
+      const value = argv[i + 1];
+      if (!value) {
+        throw new Error('--safe-name requires a value');
+      }
+      options.safeName = value;
+      safeNameSetByCli = true;
+      i += 1;
+    } else if (arg === '--safe-desc' || arg === '--safe-description') {
+      const value = argv[i + 1];
+      if (!value) {
+        throw new Error(`${arg} requires a value`);
+      }
+      options.safeDescription = value;
+      safeDescriptionSetByCli = true;
+      i += 1;
     }
   }
 
@@ -265,11 +345,29 @@ function parseCliOptions(argv: string[]): CliOptions {
       try {
         options.skip.add(parseModuleKey(entry));
       } catch (error) {
+        const reason = (error as Error).message;
         throw new Error(
-          `Invalid module in OWNER_UPDATE_ALL_SKIP: ${entry} (${(error as Error).message})`
+          `Invalid module in OWNER_UPDATE_ALL_SKIP: ${entry} (${reason})`
         );
       }
     });
+  }
+
+  const envSafeOut = parseStringEnv(process.env.OWNER_UPDATE_ALL_SAFE_OUT);
+  if (!safeOutSetByCli && envSafeOut) {
+    options.safeOut = envSafeOut;
+  }
+
+  const envSafeName = parseStringEnv(process.env.OWNER_UPDATE_ALL_SAFE_NAME);
+  if (!safeNameSetByCli && envSafeName) {
+    options.safeName = envSafeName;
+  }
+
+  const envSafeDescription = parseStringEnv(
+    process.env.OWNER_UPDATE_ALL_SAFE_DESCRIPTION
+  );
+  if (!safeDescriptionSetByCli && envSafeDescription) {
+    options.safeDescription = envSafeDescription;
   }
 
   return options;
@@ -304,6 +402,202 @@ function addMetadata(
   metadata: Record<string, unknown>
 ): void {
   plan.metadata = { ...(plan.metadata ?? {}), ...metadata };
+}
+
+function normaliseInputName(param: ParamType, index: number): string {
+  if (param.name && param.name.length > 0) {
+    return param.name;
+  }
+  return `arg${index + 1}`;
+}
+
+function encodeFunctionData(
+  iface: Interface | undefined,
+  method: string,
+  args: unknown[]
+): string | undefined {
+  if (!iface) {
+    return undefined;
+  }
+  try {
+    return iface.encodeFunctionData(method, args);
+  } catch (_) {
+    return undefined;
+  }
+}
+
+function resolveFunctionFragment(
+  iface: Interface | undefined,
+  method: string
+): ResolvedFragment | null {
+  if (!iface) {
+    return null;
+  }
+  try {
+    const fragment = iface.getFunction(method);
+    return {
+      signature: fragment.format(),
+      name: fragment.name,
+      stateMutability: fragment.stateMutability,
+      inputs: fragment.inputs,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function enrichPlanActions(plan: ModulePlan): void {
+  const primaryIface = plan.iface as Interface | undefined;
+  const fallbackIface = plan.contract?.interface as Interface | undefined;
+  for (const action of plan.actions) {
+    const args = Array.isArray(action.args) ? action.args : [];
+    const encoded =
+      action.calldata ??
+      encodeFunctionData(primaryIface, action.method, args) ??
+      encodeFunctionData(fallbackIface, action.method, args);
+    if (encoded) {
+      action.calldata = encoded;
+    }
+    const fragment =
+      resolveFunctionFragment(primaryIface, action.method) ??
+      resolveFunctionFragment(fallbackIface, action.method);
+    if (fragment) {
+      action.signature = fragment.signature;
+      action.functionName = fragment.name;
+      action.stateMutability = fragment.stateMutability;
+      action.inputs = fragment.inputs.map((input, index) => ({
+        name: normaliseInputName(input, index),
+        type: input.type,
+      }));
+    }
+    if (action.value === undefined || action.value === null) {
+      action.value = '0';
+    } else if (typeof action.value !== 'string') {
+      action.value = String(action.value);
+    }
+  }
+}
+
+function stringifyWithBigInt(value: unknown): string {
+  return JSON.stringify(
+    value,
+    (_key, innerValue) =>
+      typeof innerValue === 'bigint' ? innerValue.toString() : innerValue,
+    2
+  );
+}
+
+function formatSafeInputValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return 'null';
+  }
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+  if (value instanceof Uint8Array) {
+    return ethers.hexlify(value);
+  }
+  if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+    return JSON.stringify(value, (_key, inner) =>
+      typeof inner === 'bigint' ? inner.toString() : inner
+    );
+  }
+  return String(value);
+}
+
+function buildSafeTransactions(
+  plans: ModuleExecutionPlan<any>[]
+): SafeTransactionEntry[] {
+  const transactions: SafeTransactionEntry[] = [];
+  for (const entry of plans) {
+    const modulePlan = entry.plan;
+    if (!modulePlan.address) {
+      throw new Error(
+        `${entry.definition.label}: plan is missing a resolved contract address`
+      );
+    }
+    for (const action of modulePlan.actions) {
+      if (!action.calldata) {
+        throw new Error(
+          `${entry.definition.label}: missing calldata for ${action.method}`
+        );
+      }
+      const value =
+        typeof action.value === 'string'
+          ? action.value
+          : String(action.value ?? '0');
+      const tx: SafeTransactionEntry = {
+        to: modulePlan.address,
+        value,
+        data: action.calldata,
+        description: action.label,
+      };
+      if (
+        action.inputs &&
+        action.inputs.length > 0 &&
+        action.args &&
+        action.args.length === action.inputs.length
+      ) {
+        const mapped: Record<string, string> = {};
+        action.inputs.forEach((input, index) => {
+          mapped[input.name] = formatSafeInputValue(action.args[index]);
+        });
+        if (Object.keys(mapped).length > 0) {
+          tx.contractInputsValues = mapped;
+        }
+      }
+      if (action.functionName && action.stateMutability && action.inputs) {
+        tx.contractMethod = {
+          name: action.functionName,
+          payable: action.stateMutability === 'payable',
+          stateMutability: action.stateMutability,
+          inputs: action.inputs,
+        };
+      }
+      transactions.push(tx);
+    }
+  }
+  return transactions;
+}
+
+async function writeSafeBundle(
+  destination: string,
+  chainId: number,
+  transactions: SafeTransactionEntry[],
+  options: { name?: string; description?: string }
+): Promise<void> {
+  if (!Number.isFinite(chainId)) {
+    throw new Error('Chain ID required to emit Safe transaction bundle.');
+  }
+  if (!transactions.length) {
+    console.warn(
+      'No actions detected – writing an empty Safe bundle for traceability.'
+    );
+  }
+  const bundle: SafeBundle = {
+    version: '1.0',
+    chainId,
+    createdAt: new Date().toISOString(),
+    meta: {
+      name: options.name || 'AGIJobs owner:update-all bundle',
+      description:
+        options.description ||
+        'Autogenerated multisig bundle for AGIJobs owner:update-all execution.',
+      txBuilderVersion: '1.16.6',
+    },
+    transactions,
+  };
+  const dir = path.dirname(destination);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(destination, `${JSON.stringify(bundle, null, 2)}\n`);
+}
+
+async function resolveChainId(): Promise<number> {
+  if (typeof network.config?.chainId === 'number') {
+    return network.config.chainId;
+  }
+  const resolved = await ethers.provider.getNetwork();
+  return Number(resolved.chainId);
 }
 
 const MODULE_DEFINITIONS: Record<ModuleKey, ModuleDefinition<any>> = {
@@ -709,6 +1003,7 @@ async function buildModulePlan<TConfig extends AnyConfigResult>(
     configPath: moduleConfig.path,
     configSource: (moduleConfig as any).source,
   });
+  enrichPlanActions(plan);
   return {
     definition,
     moduleConfig,
@@ -822,7 +1117,7 @@ async function main(): Promise<void> {
         metadata: entry.plan.metadata,
       })),
     };
-    console.log(JSON.stringify(output, null, 2));
+    console.log(stringifyWithBigInt(output));
     return;
   }
 
@@ -833,6 +1128,19 @@ async function main(): Promise<void> {
     0
   );
   console.log(`\nTotal planned actions: ${totalActions}`);
+
+  if (cli.safeOut) {
+    const chainId = await resolveChainId();
+    const transactions = buildSafeTransactions(plans);
+    await writeSafeBundle(cli.safeOut, chainId, transactions, {
+      name: cli.safeName,
+      description: cli.safeDescription,
+    });
+    const suffix = transactions.length === 1 ? '' : 's';
+    console.log(
+      `\nGnosis Safe bundle written to ${cli.safeOut} (${transactions.length} transaction${suffix}).`
+    );
+  }
 
   if (cli.execute) {
     console.log('\nSubmitting transactions...');
