@@ -1,0 +1,129 @@
+{
+  // 🔐 Global governance controller (multisig or timelock). Replace with your production address.
+  "governance": "0x0000000000000000000000000000000000000000",
+  // 👑 Default owner fallback used when a module does not override the owner address. Replace with your operational owner.
+  "owner": "0x0000000000000000000000000000000000000000",
+  "modules": {
+    // === Core staking control ===
+    "stakeManager": {
+      "type": "governable",
+      // On-chain address for the StakeManager proxy/implementation.
+      "address": "0x0000000000000000000000000000000000000000",
+      // Optional override for governance (falls back to the global governance address).
+      "governance": "0x0000000000000000000000000000000000000000",
+      // Optional override for owner (falls back to the global owner address).
+      "owner": "0x0000000000000000000000000000000000000000",
+      // Set to true to exclude this module from automated updates while keeping it documented.
+      "skip": false,
+      // Notes appear in reports (owner:surface, owner:atlas, owner:mission-control).
+      "notes": [
+        "Treasury Safe: safe.agijobs.eth",
+        "Validator committee rotates quarterly"
+      ]
+    },
+    // === Job lifecycle configuration ===
+    "jobRegistry": {
+      "type": "governable",
+      "address": "0x0000000000000000000000000000000000000000",
+      "governance": "0x0000000000000000000000000000000000000000",
+      "owner": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Keep in sync with config/job-registry.json",
+        "Requires pauser ownership hand-off before SystemPause updates"
+      ]
+    },
+    // === Reward distribution ===
+    "rewardEngine": {
+      "type": "governable",
+      "address": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Thermodynamics weights live in config/thermodynamics.json",
+        "Verify Gibbs parameters with npm run owner:dashboard"
+      ]
+    },
+    // === Thermostat governor ===
+    "thermostat": {
+      "type": "governable",
+      "address": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Pair changes with Thermodynamics update helper"
+      ]
+    },
+    // === Emergency pause ===
+    "systemPause": {
+      "type": "governable",
+      "address": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "All pausable modules must transfer ownership before wiring"
+      ]
+    },
+    // === Fee routing ===
+    "feePool": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000",
+      "owner": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Treasury allowlist lives in config/fee-pool.json"
+      ]
+    },
+    "platformRegistry": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Mirrors config/platform-registry.json"
+      ]
+    },
+    "platformIncentives": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Incentive weights defined in config/platform-incentives.json"
+      ]
+    },
+    "jobRouter": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000"
+    },
+    "validationModule": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000"
+    },
+    "reputationEngine": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000"
+    },
+    "disputeModule": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Committee membership tracked via config/dispute-module.json"
+      ]
+    },
+    "arbitratorCommittee": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000"
+    },
+    "certificateNFT": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000"
+    },
+    "taxPolicy": {
+      "type": "ownable2step",
+      "address": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Requires acceptOwnership call after governance rotation"
+      ]
+    },
+    "identityRegistry": {
+      "type": "ownable2step",
+      "address": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Ensure ENS controller matches config/identity-registry.json"
+      ]
+    },
+    "attestationRegistry": {
+      "type": "ownable",
+      "address": "0x0000000000000000000000000000000000000000"
+    }
+  }
+}

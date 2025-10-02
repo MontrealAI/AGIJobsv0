@@ -42,6 +42,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control non-technical guide](#owner-control-non-technical-guide)
 - [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
 - [Owner control handbook](#owner-control-handbook)
+- [Owner control configuration template](#owner-control-configuration-template)
 - [Owner mission control](#owner-mission-control)
 - [Owner control visual guide](#owner-control-visual-guide)
 - [Owner parameter matrix](#owner-parameter-matrix)
@@ -332,6 +333,24 @@ deploy updates confidently. Export the live surface with
 `npm run owner:surface -- --network <network> --format markdown --out
 reports/<network>-owner-surface.md` and attach the resulting artefact to the
 runbook template shipped in the handbook for instant change-control packages.
+
+### Owner control configuration template
+
+Want a guided starting point for `config/owner-control.json` that stays in sync
+with the automation pipeline? Copy-edit the annotated
+[`config/owner-control.sample.jsonc`](config/owner-control.sample.jsonc) and run
+the new helper:
+
+```bash
+npm run owner:template -- --force            # write config/owner-control.json
+npm run owner:template -- --stdout | tee /tmp/owner-control.json
+```
+
+The CLI strips comments, formats the JSON deterministically, and refuses to
+overwrite your working file unless `--force` is present. Pair it with
+`docs/owner-control-configuration-template.md` for Mermaid diagrams, field
+reference tables, and a change-control Gantt chart that non-technical owners can
+follow step-by-step before executing `npm run owner:update-all`.
 
 ### Owner mission control
 
