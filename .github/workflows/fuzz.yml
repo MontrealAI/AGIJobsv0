@@ -1,0 +1,54 @@
+name: fuzz
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 1 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  forge-fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Cache forge libraries
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: lib
+          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml') }}
+          restore-keys: ${{ runner.os }}-foundry-
+
+      - name: Install forge libraries
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p lib
+          forge install foundry-rs/forge-std --no-git
+
+      - name: Run fuzzing invariants
+        env:
+          FOUNDRY_PROFILE: default
+        run: |
+          forge test -vvvv --ffi --fuzz-runs 256 \
+            --match-contract 'CommitReveal|Stake|Fee|Slashing'

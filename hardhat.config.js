@@ -3,6 +3,7 @@ require('dotenv').config();
 require('@nomicfoundation/hardhat-toolbox');
 require('hardhat-gas-reporter');
 require('solidity-coverage');
+require('hardhat-contract-sizer');
 
 function normalisePrivateKey(value) {
   if (value === undefined || value === null) {
@@ -48,11 +49,14 @@ function resolveAccounts(envKeys) {
 
 const coverageOnly = process.env.COVERAGE_ONLY === '1';
 const isCoverageRun =
-  process.env.HARDHAT_COVERAGE === 'true' || process.env.HARDHAT_COVERAGE === '1';
+  process.env.HARDHAT_COVERAGE === 'true' ||
+  process.env.HARDHAT_COVERAGE === '1';
 
 const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
 
-const solidityVersions = isCoverageRun ? [SOLIDITY_VERSIONS[0]] : SOLIDITY_VERSIONS;
+const solidityVersions = isCoverageRun
+  ? [SOLIDITY_VERSIONS[0]]
+  : SOLIDITY_VERSIONS;
 
 const solidityConfig = {
   compilers: solidityVersions.map((version) => ({
@@ -112,6 +116,11 @@ module.exports = {
     enabled: true,
     currency: 'USD',
     showTimeSpent: true,
+  },
+  contractSizer: {
+    alphaSort: true,
+    runOnCompile: false,
+    strict: true,
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,

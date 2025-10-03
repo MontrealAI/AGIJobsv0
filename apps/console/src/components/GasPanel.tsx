@@ -10,7 +10,7 @@ function extractInterestingMetrics(metrics: string): string[] {
       (line) =>
         line &&
         !line.startsWith('#') &&
-        /paymaster|gas|sponsor|aa_|balance|eth_rpc/i.test(line),
+        /paymaster|gas|sponsor|aa_|balance|eth_rpc/i.test(line)
     )
     .slice(0, 12);
 }
@@ -38,7 +38,9 @@ function expandExponential(value: string): string {
     }
     const integer = digits.slice(0, boundary);
     const fraction = digits.slice(boundary);
-    return fraction.length ? `${sign}${integer}.${fraction}` : `${sign}${integer}`;
+    return fraction.length
+      ? `${sign}${integer}.${fraction}`
+      : `${sign}${integer}`;
   }
   const shift = Math.abs(exponent);
   if (shift >= intLength) {
@@ -47,7 +49,9 @@ function expandExponential(value: string): string {
   }
   const integer = digits.slice(0, intLength - shift);
   const fraction = digits.slice(intLength - shift);
-  return fraction.length ? `${sign}${integer}.${fraction}` : `${sign}${integer}`;
+  return fraction.length
+    ? `${sign}${integer}.${fraction}`
+    : `${sign}${integer}`;
 }
 
 function formatBalance(raw?: string): {
@@ -65,7 +69,10 @@ function formatBalance(raw?: string): {
   }
   const agia = numeric / 1e18;
   const precision = agia >= 1 ? 2 : 4;
-  const display = agia.toFixed(precision).replace(/\.0+$/, '').replace(/(\.\d*?[1-9])0+$/, '$1');
+  const display = agia
+    .toFixed(precision)
+    .replace(/\.0+$/, '')
+    .replace(/(\.\d*?[1-9])0+$/, '$1');
   return { label: `${display} AGIA`, low: agia < 25, approx: agia };
 }
 
@@ -98,7 +105,7 @@ function extractPaymasterInfo(metrics: string): PaymasterInfo | null {
     if (!line) continue;
     if (!info.balanceRaw) {
       const balanceMatch = line.match(
-        /paymaster[_-]?balance(?:\{[^}]*address="([^"}]+)"[^}]*\})?\s+([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/i,
+        /paymaster[_-]?balance(?:\{[^}]*address="([^"}]+)"[^}]*\})?\s+([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/i
       );
       if (balanceMatch) {
         info.address = info.address ?? balanceMatch[1];
@@ -116,7 +123,11 @@ function extractPaymasterInfo(metrics: string): PaymasterInfo | null {
         continue;
       }
     }
-    if (!info.updatedLabel && /paymaster/i.test(line) && /(timestamp|updated)/i.test(line)) {
+    if (
+      !info.updatedLabel &&
+      /paymaster/i.test(line) &&
+      /(timestamp|updated)/i.test(line)
+    ) {
       const ts = line.match(/([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)(?!.*\d)/);
       info.updatedLabel = formatTimestamp(ts?.[1]) ?? undefined;
     }
@@ -136,9 +147,14 @@ export function GasPanel() {
   const [error, setError] = useState<string | null>(null);
   const [paymasterAddress, setPaymasterAddress] = useState('');
   const [topUpAmount, setTopUpAmount] = useState('');
-  const [paymasterInfo, setPaymasterInfo] = useState<PaymasterInfo | null>(null);
+  const [paymasterInfo, setPaymasterInfo] = useState<PaymasterInfo | null>(
+    null
+  );
 
-  const interestingMetrics = useMemo(() => extractInterestingMetrics(metrics), [metrics]);
+  const interestingMetrics = useMemo(
+    () => extractInterestingMetrics(metrics),
+    [metrics]
+  );
 
   useEffect(() => {
     if (!config) {
@@ -204,14 +220,18 @@ export function GasPanel() {
         return null;
       }
       const wei = ethers.parseUnits(numeric, 18);
-      const link = `ethereum:${paymasterAddress}?value=${ethers.toQuantity(wei)}`;
+      const link = `ethereum:${paymasterAddress}?value=${ethers.toQuantity(
+        wei
+      )}`;
       return {
         wei: wei.toString(),
         formatted: `${numeric} AGIA`,
         link,
       };
-    } catch (error) {
-      return { error: 'Invalid amount. Ensure it uses dot decimal notation.' } as const;
+    } catch {
+      return {
+        error: 'Invalid amount. Ensure it uses dot decimal notation.',
+      } as const;
     }
   }, [paymasterAddress, topUpAmount]);
 
@@ -223,7 +243,11 @@ export function GasPanel() {
     <div className="panel">
       <h2>Gas &amp; Paymaster</h2>
       <div className="actions-row">
-        <button type="button" onClick={refreshMetrics} disabled={refreshing || !config}>
+        <button
+          type="button"
+          onClick={refreshMetrics}
+          disabled={refreshing || !config}
+        >
           {refreshing ? 'Refreshing…' : 'Refresh Metrics'}
         </button>
       </div>
@@ -238,7 +262,9 @@ export function GasPanel() {
           <pre className="json-inline">{interestingMetrics.join('\n')}</pre>
         </section>
       ) : (
-        <p className="helper-text">Metrics will appear once the orchestrator exposes /metrics.</p>
+        <p className="helper-text">
+          Metrics will appear once the orchestrator exposes /metrics.
+        </p>
       )}
 
       {paymasterInfo && (
@@ -251,33 +277,49 @@ export function GasPanel() {
             </div>
             <div>
               <span className="paymaster-label">Approx. Balance</span>
-              <span className={paymasterInfo.lowBalance ? 'paymaster-balance low' : 'paymaster-balance'}>
+              <span
+                className={
+                  paymasterInfo.lowBalance
+                    ? 'paymaster-balance low'
+                    : 'paymaster-balance'
+                }
+              >
                 {paymasterInfo.balanceLabel ?? paymasterInfo.balanceRaw ?? '—'}
               </span>
             </div>
           </div>
           {paymasterInfo.updatedLabel && (
-            <p className="helper-text">Last metric update: {paymasterInfo.updatedLabel}</p>
+            <p className="helper-text">
+              Last metric update: {paymasterInfo.updatedLabel}
+            </p>
           )}
           {paymasterAlert && (
             <p className="paymaster-alert" role="alert">
               {paymasterAlert}
             </p>
           )}
-          {paymasterInfo.address && paymasterInfo.address !== paymasterAddress && (
-            <div className="actions-row">
-              <button type="button" className="secondary" onClick={() => setPaymasterAddress(paymasterInfo.address ?? '')}>
-                Use detected address
-              </button>
-            </div>
-          )}
+          {paymasterInfo.address &&
+            paymasterInfo.address !== paymasterAddress && (
+              <div className="actions-row">
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() =>
+                    setPaymasterAddress(paymasterInfo.address ?? '')
+                  }
+                >
+                  Use detected address
+                </button>
+              </div>
+            )}
         </section>
       )}
 
       <section>
         <h3>Top-up Helper</h3>
         <p className="helper-text">
-          Generate an ethereum: link for topping up the managed paymaster. Amounts are interpreted as AGIA (18 decimals).
+          Generate an ethereum: link for topping up the managed paymaster.
+          Amounts are interpreted as AGIA (18 decimals).
         </p>
         <div className="token-input">
           <div>

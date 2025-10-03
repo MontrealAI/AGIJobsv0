@@ -1018,12 +1018,25 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     validatorAuthExpiry[candidate] > block.timestamp;
                 if (!authorized) {
                     string memory subdomain = validatorSubdomains[candidate];
-                    bytes32[] memory proof;
-                    (authorized, , , ) = identityRegistry.verifyValidator(
-                        candidate,
-                        subdomain,
-                        proof
-                    );
+                    bool skipVerification;
+                    if (bytes(subdomain).length == 0) {
+                        if (!identityRegistry.additionalValidators(candidate)) {
+                            unchecked {
+                                ++i;
+                            }
+                            continue;
+                        }
+                        authorized = true;
+                        skipVerification = true;
+                    }
+                    if (!skipVerification) {
+                        bytes32[] memory proof;
+                        (authorized, , , ) = identityRegistry.verifyValidator(
+                            candidate,
+                            subdomain,
+                            proof
+                        );
+                    }
                     if (authorized) {
                         validatorAuthCache[candidate] = true;
                         validatorAuthExpiry[candidate] =
@@ -1088,12 +1101,25 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     validatorAuthExpiry[candidate] > block.timestamp;
                 if (!authorized) {
                     string memory subdomain = validatorSubdomains[candidate];
-                    bytes32[] memory proof;
-                    (authorized, , , ) = identityRegistry.verifyValidator(
-                        candidate,
-                        subdomain,
-                        proof
-                    );
+                    bool skipVerification;
+                    if (bytes(subdomain).length == 0) {
+                        if (!identityRegistry.additionalValidators(candidate)) {
+                            unchecked {
+                                ++i;
+                            }
+                            continue;
+                        }
+                        authorized = true;
+                        skipVerification = true;
+                    }
+                    if (!skipVerification) {
+                        bytes32[] memory proof;
+                        (authorized, , , ) = identityRegistry.verifyValidator(
+                            candidate,
+                            subdomain,
+                            proof
+                        );
+                    }
                     if (authorized) {
                         validatorAuthCache[candidate] = true;
                         validatorAuthExpiry[candidate] =

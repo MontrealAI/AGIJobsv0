@@ -1,0 +1,190 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semver (e.g. 1.2.3)'
+        required: false
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::Version is required."; exit 1; fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Version must follow semver."; exit 1; fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify changelog contains version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! grep -q "^## v$VERSION" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md missing section for v$VERSION";
+            exit 1;
+          fi
+
+      - name: Build contracts
+        run: npm run compile
+
+      - name: Package TypeChain artifacts
+        run: |
+          npx hardhat typechain
+          npm run abi:export -- --out reports/abis/head
+
+      - name: Upload release preparation artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-prep
+          path: |
+            reports/abis/head
+            typechain-types
+            deployment-config
+
+  npm-publish:
+    needs: prepare
+    if: ${{ secrets.NPM_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish npm packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          for pkg in packages/onebox-sdk packages/onebox-orchestrator packages/storage; do
+            if jq -e '.private == true' "$pkg/package.json" >/dev/null 2>&1; then
+              echo "Skipping $pkg (private)";
+              continue;
+            fi
+            if ! jq -e '.version' "$pkg/package.json" >/dev/null 2>&1; then
+              echo "Skipping $pkg (missing version)";
+              continue;
+            fi
+            npm publish "$pkg" --access public --provenance;
+          done
+
+  docker-publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: node-runner
+            context: .
+            dockerfile: deploy/docker/orchestrator.Dockerfile
+          - name: validator-runner
+            context: .
+            dockerfile: deploy/docker/attester.Dockerfile
+          - name: gateway
+            context: .
+            dockerfile: agent-gateway/Dockerfile
+          - name: webapp
+            context: .
+            dockerfile: apps/enterprise-portal/Dockerfile
+          - name: owner-console
+            context: apps/console
+            dockerfile: Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.name }}
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
+          provenance: true
+          sbom: true
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign container images
+        env:
+          COSIGN_EXPERIMENTAL: '1'
+        run: |
+          cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
+          cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
+
+      - name: Write image digest file
+        run: echo "${{ steps.build.outputs.digest }}" > digest.txt
+
+      - name: Publish image digests
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}-release-digest
+          path: digest.txt

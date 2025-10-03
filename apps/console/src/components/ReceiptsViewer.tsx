@@ -103,7 +103,11 @@ export function ReceiptsViewer() {
                       <td>{receipt.txHashes?.slice(0, 2).join(', ') ?? '—'}</td>
                       <td>
                         {receipt.attestationUid ? (
-                          <a href={`${EAS_BASE_URL}${receipt.attestationUid}`} target="_blank" rel="noreferrer">
+                          <a
+                            href={`${EAS_BASE_URL}${receipt.attestationUid}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
                             {receipt.attestationUid.slice(0, 10)}…
                           </a>
                         ) : (
@@ -128,7 +132,9 @@ export function ReceiptsViewer() {
           {expanded !== null && receipts[expanded] && (
             <div style={{ marginTop: '1rem' }}>
               <h4>Receipt Payload</h4>
-              <pre className="json-inline">{JSON.stringify(receipts[expanded], null, 2)}</pre>
+              <pre className="json-inline">
+                {JSON.stringify(receipts[expanded], null, 2)}
+              </pre>
             </div>
           )}
         </section>

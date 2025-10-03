@@ -1,4 +1,11 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 type FetchMode = 'json' | 'text';
 
@@ -10,7 +17,11 @@ export interface ApiConfig {
 interface ApiContextValue {
   config: ApiConfig | null;
   setConfig: (config: ApiConfig | null) => void;
-  request: <T = unknown>(path: string, init?: RequestInit, mode?: FetchMode) => Promise<T>;
+  request: <T = unknown>(
+    path: string,
+    init?: RequestInit,
+    mode?: FetchMode
+  ) => Promise<T>;
 }
 
 const STORAGE_KEY = 'agi-console.api-config';
@@ -34,7 +45,10 @@ function loadStoredConfig(): ApiConfig | null {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ApiConfig>;
-    if (typeof parsed.baseUrl === 'string' && typeof parsed.token === 'string') {
+    if (
+      typeof parsed.baseUrl === 'string' &&
+      typeof parsed.token === 'string'
+    ) {
       return {
         baseUrl: normalizeBaseUrl(parsed.baseUrl),
         token: parsed.token.trim(),
@@ -47,7 +61,9 @@ function loadStoredConfig(): ApiConfig | null {
 }
 
 export function ApiProvider({ children }: { children: React.ReactNode }) {
-  const [config, setConfigState] = useState<ApiConfig | null>(() => loadStoredConfig());
+  const [config, setConfigState] = useState<ApiConfig | null>(() =>
+    loadStoredConfig()
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -66,7 +82,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const request = useCallback(
-    async <T = unknown>(
+    async <T = unknown,>(
       path: string,
       init?: RequestInit,
       mode: FetchMode = 'json'
@@ -83,13 +99,19 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       if (config.token) {
         headers.set('Authorization', `Bearer ${config.token}`);
       }
-      if (!headers.has('Content-Type') && init?.body && typeof init.body === 'string') {
+      if (
+        !headers.has('Content-Type') &&
+        init?.body &&
+        typeof init.body === 'string'
+      ) {
         headers.set('Content-Type', 'application/json');
       }
       const response = await fetch(url, { ...init, headers });
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`(${response.status}) ${errorText || response.statusText}`);
+        throw new Error(
+          `(${response.status}) ${errorText || response.statusText}`
+        );
       }
       if (mode === 'text') {
         return (await response.text()) as unknown as T;

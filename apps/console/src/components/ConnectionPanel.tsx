@@ -24,8 +24,12 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
   const [token, setToken] = useState(config?.token ?? '');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [walletStatus, setWalletStatus] = useState<WalletStatus>({ state: 'idle' });
-  const [passkeyStatus, setPasskeyStatus] = useState<PasskeyStatus>({ state: 'idle' });
+  const [walletStatus, setWalletStatus] = useState<WalletStatus>({
+    state: 'idle',
+  });
+  const [passkeyStatus, setPasskeyStatus] = useState<PasskeyStatus>({
+    state: 'idle',
+  });
 
   useEffect(() => {
     if (config) {
@@ -42,7 +46,10 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
     }
   }, []);
 
-  const canSave = useMemo(() => baseUrl.trim().length > 0 && token.trim().length > 0, [baseUrl, token]);
+  const canSave = useMemo(
+    () => baseUrl.trim().length > 0 && token.trim().length > 0,
+    [baseUrl, token]
+  );
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,7 +65,9 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
       setMessage('Configuration saved.');
       onConfigSaved?.(cleaned);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Failed to store configuration');
+      setMessage(
+        error instanceof Error ? error.message : 'Failed to store configuration'
+      );
     } finally {
       setSaving(false);
     }
@@ -66,28 +75,44 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
 
   async function connectWallet() {
     if (!(window as any).ethereum) {
-      setWalletStatus({ state: 'error', message: 'No EIP-1193 provider detected. Install MetaMask or another wallet.' });
+      setWalletStatus({
+        state: 'error',
+        message:
+          'No EIP-1193 provider detected. Install MetaMask or another wallet.',
+      });
       return;
     }
     try {
       setWalletStatus({ state: 'idle' });
-      const accounts = (await (window as any).ethereum.request({ method: 'eth_requestAccounts' })) as string[];
+      const accounts = (await (window as any).ethereum.request({
+        method: 'eth_requestAccounts',
+      })) as string[];
       if (accounts && accounts.length > 0) {
         setWalletStatus({ state: 'connected', address: accounts[0] });
       } else {
-        setWalletStatus({ state: 'error', message: 'Wallet connection rejected.' });
+        setWalletStatus({
+          state: 'error',
+          message: 'Wallet connection rejected.',
+        });
       }
     } catch (error) {
       setWalletStatus({
         state: 'error',
-        message: error instanceof Error ? error.message : 'Failed to connect wallet.',
+        message:
+          error instanceof Error ? error.message : 'Failed to connect wallet.',
       });
     }
   }
 
   async function registerPasskey() {
-    if (!('credentials' in navigator) || typeof PublicKeyCredential === 'undefined') {
-      setPasskeyStatus({ state: 'error', message: 'WebAuthn APIs are not available in this browser.' });
+    if (
+      !('credentials' in navigator) ||
+      typeof PublicKeyCredential === 'undefined'
+    ) {
+      setPasskeyStatus({
+        state: 'error',
+        message: 'WebAuthn APIs are not available in this browser.',
+      });
       return;
     }
     try {
@@ -120,20 +145,32 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
     } catch (error) {
       setPasskeyStatus({
         state: 'error',
-        message: error instanceof Error ? error.message : 'Failed to register passkey.',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to register passkey.',
       });
     }
   }
 
   async function verifyPasskey() {
-    if (!('credentials' in navigator) || typeof PublicKeyCredential === 'undefined') {
-      setPasskeyStatus({ state: 'error', message: 'WebAuthn APIs are not available in this browser.' });
+    if (
+      !('credentials' in navigator) ||
+      typeof PublicKeyCredential === 'undefined'
+    ) {
+      setPasskeyStatus({
+        state: 'error',
+        message: 'WebAuthn APIs are not available in this browser.',
+      });
       return;
     }
     try {
       const storedId = window.localStorage.getItem(PASSKEY_STORAGE_KEY);
       if (!storedId) {
-        setPasskeyStatus({ state: 'error', message: 'Register a passkey first.' });
+        setPasskeyStatus({
+          state: 'error',
+          message: 'Register a passkey first.',
+        });
         return;
       }
       const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -153,11 +190,15 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
       if (!credential) {
         throw new Error('Passkey authentication cancelled.');
       }
-      setPasskeyStatus({ state: 'verified', timestamp: new Date().toISOString() });
+      setPasskeyStatus({
+        state: 'verified',
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
       setPasskeyStatus({
         state: 'error',
-        message: error instanceof Error ? error.message : 'Failed to verify passkey.',
+        message:
+          error instanceof Error ? error.message : 'Failed to verify passkey.',
       });
     }
   }
@@ -245,10 +286,15 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
           </button>
         </div>
         {passkeyStatus.state === 'ready' && (
-          <p className="helper-text">Passkey stored: {shorten(passkeyStatus.credentialId)}</p>
+          <p className="helper-text">
+            Passkey stored: {shorten(passkeyStatus.credentialId)}
+          </p>
         )}
         {passkeyStatus.state === 'verified' && (
-          <p className="helper-text">Last verification: {new Date(passkeyStatus.timestamp).toLocaleString()}</p>
+          <p className="helper-text">
+            Last verification:{' '}
+            {new Date(passkeyStatus.timestamp).toLocaleString()}
+          </p>
         )}
         {passkeyStatus.state === 'error' && (
           <p className="helper-text" role="alert">
@@ -266,12 +312,18 @@ function bufferToBase64Url(buffer: ArrayBuffer): string {
   bytes.forEach((b) => {
     binary += String.fromCharCode(b);
   });
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
 }
 
 function base64UrlToBuffer(value: string): ArrayBuffer {
   const padded = value.replace(/-/g, '+').replace(/_/g, '/');
-  const base64 = padded.padEnd(padded.length + ((4 - (padded.length % 4)) % 4), '=');
+  const base64 = padded.padEnd(
+    padded.length + ((4 - (padded.length % 4)) % 4),
+    '='
+  );
   const binary = atob(base64);
   const buffer = new ArrayBuffer(binary.length);
   const view = new Uint8Array(buffer);
