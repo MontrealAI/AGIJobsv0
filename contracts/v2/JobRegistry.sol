@@ -1023,7 +1023,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         IValidationModule _validation,
         IStakeManager _stakeMgr,
         IReputationEngine _reputation,
-        IDisputeModule _dispute,
+        IDisputeModule _disputeModule,
         ICertificateNFT _certNFT,
         IFeePool _feePool,
         ITaxPolicy _policy,
@@ -1056,11 +1056,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             emit ReputationEngineUpdated(address(_reputation));
             emit ModuleUpdated("ReputationEngine", address(_reputation));
         }
-        if (address(_dispute) != address(0)) {
-            if (_dispute.version() != 2) revert InvalidDisputeModule();
-            disputeModule = _dispute;
-            emit DisputeModuleUpdated(address(_dispute));
-            emit ModuleUpdated("DisputeModule", address(_dispute));
+        if (address(_disputeModule) != address(0)) {
+            if (_disputeModule.version() != 2) revert InvalidDisputeModule();
+            disputeModule = _disputeModule;
+            emit DisputeModuleUpdated(address(_disputeModule));
+            emit ModuleUpdated("DisputeModule", address(_disputeModule));
         }
         if (address(_certNFT) != address(0)) {
             if (_certNFT.version() != 2) revert InvalidCertificateNFT();
@@ -1097,7 +1097,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         IValidationModule _validation,
         IStakeManager _stakeMgr,
         IReputationEngine _reputation,
-        IDisputeModule _dispute,
+        IDisputeModule _disputeModule,
         ICertificateNFT _certNFT,
         IFeePool _feePool,
         address[] calldata _ackModules
@@ -1106,7 +1106,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             validation: _validation,
             stakeManager: _stakeMgr,
             reputation: _reputation,
-            dispute: _dispute,
+            dispute: _disputeModule,
             certificateNFT: _certNFT,
             feePool: _feePool
         });
