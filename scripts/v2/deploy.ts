@@ -1,4 +1,4 @@
-import { ethers, run, network } from 'hardhat';
+import { ethers, run, network, artifacts } from 'hardhat';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
@@ -86,15 +86,25 @@ async function main() {
     tokenAddress = await token.getAddress();
   } catch (error) {
     if (network.name === 'hardhat') {
-      const MockToken = await ethers.getContractFactory(
-        'contracts/test/MockERC20.sol:MockERC20',
+      const agiArtifact = await artifacts.readArtifact(
+        'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       );
-      const mockToken = await MockToken.deploy();
-      await mockToken.waitForDeployment();
-      tokenAddress = await mockToken.getAddress();
-      tokenDecimals = Number(await mockToken.decimals());
+      await network.provider.send('hardhat_setCode', [
+        AGIALPHA,
+        agiArtifact.deployedBytecode,
+      ]);
+      const [defaultSigner] = await ethers.getSigners();
+      const ownerSlot = ethers.toBeHex(5, 32);
+      const ownerValue = ethers.zeroPadValue(defaultSigner.address, 32);
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        ownerSlot,
+        ownerValue,
+      ]);
+      tokenDecimals = AGIALPHA_DECIMALS;
+      tokenAddress = AGIALPHA;
       console.warn(
-        `⚠️  AGIALPHA token not available on ${network.name}; deployed mock token at ${tokenAddress}`,
+        `⚠️  AGIALPHA token not available on ${network.name}; injected mock bytecode at ${tokenAddress}`,
       );
     } else {
       throw error;
@@ -160,8 +170,8 @@ async function main() {
     await stake.getAddress(),
     60,
     60,
-    1,
     3,
+    5,
     []
   );
   await validation.waitForDeployment();
@@ -170,7 +180,7 @@ async function main() {
   const Reputation = await ethers.getContractFactory(
     'contracts/v2/ReputationEngine.sol:ReputationEngine'
   );
-  const reputation = await Reputation.deploy();
+  const reputation = await Reputation.deploy(await stake.getAddress());
   await reputation.waitForDeployment();
 
   const Identity = await ethers.getContractFactory(
@@ -308,6 +318,26 @@ async function main() {
   await tax.transferOwnership(await installer.getAddress());
   await identity.transferOwnership(await installer.getAddress());
 
+  if (network.name === 'hardhat') {
+    const installerAddress = await installer.getAddress();
+    await network.provider.send('hardhat_impersonateAccount', [installerAddress]);
+    const installerSigner = await ethers.getSigner(installerAddress);
+    try {
+      await network.provider.send('hardhat_setBalance', [
+        installerAddress,
+        ethers.toBeHex(ethers.parseEther('1')),
+      ]);
+      await identity.connect(installerSigner).acceptOwnership();
+      try {
+        await tax.connect(installerSigner).acceptOwnership();
+      } catch (taxError) {
+        console.warn('⚠️  Unable to auto-accept TaxPolicy ownership', taxError);
+      }
+    } finally {
+      await network.provider.send('hardhat_stopImpersonatingAccount', [installerAddress]);
+    }
+  }
+
   await installer
     .connect(governanceSigner)
     .initialize(
@@ -379,18 +409,6 @@ async function main() {
   );
   await pause.waitForDeployment();
   const pauseAddress = await pause.getAddress();
-  await pause
-    .connect(governanceSigner)
-    .setModules(
-      await registry.getAddress(),
-      await stake.getAddress(),
-      await validation.getAddress(),
-      await dispute.getAddress(),
-      await platformRegistry.getAddress(),
-      await feePool.getAddress(),
-      await reputation.getAddress(),
-      await committee.getAddress()
-    );
   await registry.connect(governanceSigner).setPauser(pauseAddress);
   await stake.connect(governanceSigner).setPauser(pauseAddress);
   await validation.connect(governanceSigner).setPauser(pauseAddress);
