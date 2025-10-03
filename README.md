@@ -39,6 +39,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control audit](#owner-control-audit)
 - [Owner control systems map](#owner-control-systems-map)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
+- [Owner control snapshot kit](#owner-control-snapshot-kit)
 - [Owner control pulse](#owner-control-pulse)
 - [Owner control master checklist](#owner-control-master-checklist)
 - [Owner control atlas](#owner-control-atlas)
@@ -310,6 +311,19 @@ npm run owner:quickstart -- --network mainnet --format json --out reports/mainne
 ```
 
 The CLI stitches together `config/owner-control.json`, `config/agialpha*.json`, `config/stake-manager.json`, `config/fee-pool.json`, `config/reward-engine.json`, `config/thermodynamics.json`, `config/hamiltonian-monitor.json` and `config/energy-oracle.json`, then prints a deterministic operational checklist that mirrors the `owner:update-all` workflow. Full usage guidance—including troubleshooting tables, Mermaid diagrams and automation tips—lives in [docs/owner-control-quick-reference-cli.md](docs/owner-control-quick-reference-cli.md).
+
+### Owner control snapshot kit
+
+Need a zero-friction dossier that proves every adjustable parameter, the exact JSON used, and the commands to retune them? Generate the snapshot kit:
+
+```bash
+npm run owner:snapshot -- --network <network>
+
+# Optional: direct output to a custom folder and skip Mermaid diagrams
+npm run owner:snapshot -- --network mainnet --out reports/mainnet/control-kit --no-mermaid
+```
+
+The helper copies every owner-governed config into `reports/<network>/owner-control-snapshot-<timestamp>/`, computes SHA-256 hashes for tamper evidence, and writes a Markdown briefing that cross-links remediation guides. Each subsystem section embeds Mermaid diagrams, update/verify command palettes and flattened parameter tables so non-technical reviewers can approve changes without opening Solidity. A machine-readable `manifest.json` summarises source paths, hashes and regeneration commands for CI or Safe pipelines. Full illustrations, compliance tips and troubleshooting advice live in [docs/owner-control-snapshot.md](docs/owner-control-snapshot.md).
 
 ### Owner control pulse
 
