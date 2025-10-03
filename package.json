@@ -21,6 +21,7 @@
     "owner:dashboard": "npx hardhat run --no-compile scripts/v2/owner-dashboard.ts",
     "owner:diagram": "npx hardhat run --no-compile scripts/v2/renderOwnerMermaid.ts",
     "owner:doctor": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlDoctor.ts",
+    "owner:emergency": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerEmergencyRunbook.ts",
     "owner:audit": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerConfigAudit.ts",
     "owner:parameters": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerParameterMatrix.ts",
     "owner:quickstart": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlQuickstart.ts",
