@@ -188,6 +188,31 @@ describe('RandaoCoordinator', function () {
     expect(await token.balanceOf(randaoAddress)).to.equal(0n);
     expect(await token.balanceOf(newTreasury.address)).to.equal(2n);
   });
+
+  it('rejects zero commit and reveal windows', async () => {
+    const [, , treasury] = await ethers.getSigners();
+    const Randao = await ethers.getContractFactory(
+      'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator'
+    );
+
+    await expect(Randao.deploy(0, 10, DEPOSIT, treasury.address)).to.be.revertedWith(
+      'Commit window must be greater than zero'
+    );
+
+    await expect(Randao.deploy(10, 0, DEPOSIT, treasury.address)).to.be.revertedWith(
+      'Reveal window must be greater than zero'
+    );
+
+    const randao = await Randao.deploy(10, 10, DEPOSIT, treasury.address);
+
+    await expect(randao.setCommitWindow(0)).to.be.revertedWith(
+      'Commit window must be greater than zero'
+    );
+
+    await expect(randao.setRevealWindow(0)).to.be.revertedWith(
+      'Reveal window must be greater than zero'
+    );
+  });
   it('allows the owner to update the deposit token when idle', async () => {
     const [owner, participant, treasury] = await ethers.getSigners();
     const Randao = await ethers.getContractFactory(
@@ -348,6 +373,10 @@ describe('ValidationModule fairness', function () {
 
     await validation.setIdentityRegistry(await identity.getAddress());
     await validation.setValidatorPool([v1.address, v2.address, v3.address]);
+    await validation.setValidatorSubdomains(
+      [v1.address, v2.address, v3.address],
+      ['v1', 'v2', 'v3']
+    );
     await validation.setRandaoCoordinator(await randao.getAddress());
     await validation.setParameters(3, 1, 1, 50, 50);
     await validation.setJobRegistry(await job.getAddress());

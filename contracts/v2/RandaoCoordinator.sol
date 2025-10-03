@@ -88,6 +88,8 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         uint256 deposit_,
         address treasury_
     ) Ownable(msg.sender) {
+        require(commitWindow_ > 0, "Commit window must be greater than zero");
+        require(revealWindow_ > 0, "Reveal window must be greater than zero");
         _commitWindow = commitWindow_;
         _revealWindow = revealWindow_;
         _deposit = deposit_;
@@ -123,6 +125,7 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     /// @notice Updates the commit window duration.
     /// @param newCommitWindow New commit window duration in seconds.
     function setCommitWindow(uint256 newCommitWindow) external onlyOwner {
+        require(newCommitWindow > 0, "Commit window must be greater than zero");
         uint256 previous = _commitWindow;
         if (previous == newCommitWindow) {
             return;
@@ -134,6 +137,7 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     /// @notice Updates the reveal window duration.
     /// @param newRevealWindow New reveal window duration in seconds.
     function setRevealWindow(uint256 newRevealWindow) external onlyOwner {
+        require(newRevealWindow > 0, "Reveal window must be greater than zero");
         uint256 previous = _revealWindow;
         if (previous == newRevealWindow) {
             return;
