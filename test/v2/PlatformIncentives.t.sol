@@ -20,19 +20,13 @@ import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {ITaxPolicy} from "../../contracts/v2/interfaces/ITaxPolicy.sol";
 
 contract EmployerScoreRegistry is MockJobRegistry {
-    uint256 private score;
-
-    function setEmployerScore(uint256 newScore) external {
-        score = newScore;
-    }
-
     function getEmployerScore(address)
-        external
-        view
+        public
+        pure
         override
         returns (uint256)
     {
-        return score;
+        return TOKEN_SCALE;
     }
 }
 
@@ -150,7 +144,6 @@ contract PlatformIncentivesTest is Test {
 
     function testMaxDiscountPctAdjustsDiscount() public {
         address employer = address(0xB0B);
-        jobRegistry.setEmployerScore(TOKEN_SCALE);
         assertEq(incentives.getFeeDiscount(employer), 20);
 
         incentives.setMaxDiscountPct(5);

@@ -794,18 +794,18 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             return (0, validatorTarget);
         }
         uint256[] memory stakesCache = new uint256[](len);
-        uint256 totalStake;
+        uint256 totalStakeSum;
         for (uint256 i; i < len; ++i) {
             uint256 stakeAmt = stakes[validators[i]][Role.Validator];
             stakesCache[i] = stakeAmt;
-            totalStake += stakeAmt;
+            totalStakeSum += stakeAmt;
         }
-        if (totalStake == 0) {
+        if (totalStakeSum == 0) {
             return (0, validatorTarget);
         }
         remainder = validatorTarget;
         for (uint256 i; i < len; ++i) {
-            uint256 reward = (validatorTarget * stakesCache[i]) / totalStake;
+            uint256 reward = (validatorTarget * stakesCache[i]) / totalStakeSum;
             if (reward > 0) {
                 remainder -= reward;
                 validatorShare += reward;
@@ -902,13 +902,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     ) internal returns (SlashPayout memory totals) {
         uint256 len = validators.length;
         uint256[] memory stakesCache = new uint256[](len);
-        uint256 totalStake;
+        uint256 totalStakeSum;
         for (uint256 i; i < len; ++i) {
             uint256 stakeAmt = stakes[validators[i]][Role.Validator];
             stakesCache[i] = stakeAmt;
-            totalStake += stakeAmt;
+            totalStakeSum += stakeAmt;
         }
-        if (totalStake == 0) {
+        if (totalStakeSum == 0) {
             address[] memory empty;
             totals = _distributeEscrowPenalty(jobId, recipient, amount, empty, true);
             return totals;
@@ -923,7 +923,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             for (uint256 i = start; i < end; ++i) {
                 chunkStake += stakesCache[i];
             }
-            uint256 chunkAmount = (amount * chunkStake) / totalStake;
+            uint256 chunkAmount = (amount * chunkStake) / totalStakeSum;
             if (end == len && allocated + chunkAmount < amount) {
                 chunkAmount = amount - allocated;
             }

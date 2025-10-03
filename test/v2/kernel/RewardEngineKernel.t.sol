@@ -14,8 +14,9 @@ contract RewardEngineKernelTest is Test {
     }
 
     function testDefaultSplitSumsBelowDenominator() public {
-        (uint256 agents,, uint256 ops, uint256 employer, uint256 burn) = _currentBps();
-        assertLt(agents + engine.splits().validatorsBps + ops + employer + burn, 10_001);
+        (uint256 agents, uint256 validators, uint256 ops, uint256 employer, uint256 burn) =
+            _currentBps();
+        assertLt(agents + validators + ops + employer + burn, 10_001);
     }
 
     function testSplitProducesExpectedAmounts() public {
