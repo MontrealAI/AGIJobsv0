@@ -44,6 +44,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control change ticket](#owner-control-change-ticket)
 - [Owner control non-technical guide](#owner-control-non-technical-guide)
 - [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
+- [Owner control emergency runbook](#owner-control-emergency-runbook)
 - [Owner control handbook](#owner-control-handbook)
 - [Owner control configuration template](#owner-control-configuration-template)
 - [Owner mission control](#owner-mission-control)
@@ -383,6 +384,20 @@ For a production-ready runbook that emphasises audit trails, Safe bundles and ro
 - Troubleshooting, sign-off templates, and continuous-improvement loops so compliance teams can archive provable change-control artefacts.
 
 Because every command is copy/paste-ready, non-technical coordinators can execute complex parameter updates without interrupting live markets while retaining full governance oversight.
+
+### Owner control emergency runbook
+
+Freeze and harden the platform under incident timelines with the [Owner Control Emergency Runbook](docs/owner-control-emergency-runbook.md). Pair it with the CLI helper to generate a network-aware binder for the current deployment:
+
+```bash
+npm run owner:emergency -- --network <network> \
+  --format markdown \
+  --out reports/<network>/emergency-runbook.md
+```
+
+- Outputs command checklists, validation criteria, Mermaid diagrams and follow-up actions scoped to the selected network.
+- Supports `--no-mermaid` (plain text) and `--format json` for automation pipelines and ticketing bots.
+- Aligns with `owner:surface`, `owner:rotate`, `owner:update-all`, `owner:audit`, `owner:mission-control` and `owner:command-center` so responders can execute the playbook without improvisation.
 
 ### Owner control handbook
 
