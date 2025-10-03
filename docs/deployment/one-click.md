@@ -14,13 +14,8 @@ so operators can launch safely with minimal manual steps.
 
 ## Step 1: Prepare configuration
 
-1. Copy the environment template and tailor values for your deployment:
-
-   ```bash
-   cp deployment-config/oneclick.env.example deployment-config/oneclick.env
-   ```
-
-   Update RPC URLs, API tokens, and address placeholders once contracts have been deployed.
+1. Review `deployment-config/oneclick.env`, which ships with conservative defaults suitable for local testing. Update RPC URLs,
+   API tokens, and address placeholders once contracts have been deployed.
 
 2. Customise `deployment-config/deployer.sample.json` and commit a copy (for example
    `deployment-config/sepolia.json`). Key fields:
@@ -50,8 +45,15 @@ Outputs:
 
 ## Step 3: Configure the runtime environment
 
-Update `deployment-config/oneclick.env` with the addresses from `latest-deployment.json`. The key variables consumed by the
-containers are:
+Update `deployment-config/oneclick.env` with the addresses from `latest-deployment.json`. You can do this automatically with
+the helper script:
+
+```bash
+npm run deploy:env -- --input deployment-config/latest-deployment.json
+```
+
+The script copies values from the deployment artefacts into the environment file while preserving existing comments and
+settings. The key variables consumed by the containers are:
 
 - `JOB_REGISTRY`, `STAKE_MANAGER_ADDRESS`, `VALIDATION_MODULE_ADDRESS`, `DISPUTE_MODULE_ADDRESS`, `REPUTATION_ENGINE_ADDRESS`
 - `SYSTEM_PAUSE_ADDRESS` (used to unpause later)

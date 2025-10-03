@@ -1,6 +1,5 @@
 node_modules/
 .env
-deployment-config/oneclick.env
 artifacts/
 cache/
 coverage/
