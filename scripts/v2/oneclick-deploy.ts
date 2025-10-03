@@ -55,11 +55,25 @@ function parseArgs(): Args {
   return args;
 }
 
-function ensureAddress(value: string | undefined, label: string): string {
-  if (!value) {
+function ensureAddress(
+  value: string | undefined,
+  label: string,
+  { allowZero = false, optional = false }: { allowZero?: boolean; optional?: boolean } = {},
+): string | undefined {
+  if (value === undefined || value === null || value === '') {
+    if (optional) {
+      return undefined;
+    }
     throw new Error(`${label} address is required`);
   }
-  return ethers.getAddress(value);
+  const address = ethers.getAddress(value);
+  if (!allowZero && address === ethers.ZeroAddress) {
+    if (optional) {
+      return undefined;
+    }
+    throw new Error(`${label} address cannot be zero`);
+  }
+  return address;
 }
 
 function parseSeconds(value: string | number | undefined): number {
@@ -131,10 +145,18 @@ async function main() {
   const config = await loadConfig(configPath);
 
   const network = (args.network as string) ?? config.network ?? process.env.HARDHAT_NETWORK ?? 'sepolia';
-  const governance = ensureAddress(config.governance, 'governance');
+  const configuredGovernance = ensureAddress(config.governance, 'governance', {
+    optional: true,
+    allowZero: true,
+  });
+  const governance =
+    configuredGovernance && configuredGovernance !== ethers.ZeroAddress
+      ? configuredGovernance
+      : undefined;
 
   const econ = config.econ || {};
-  const treasuryAddress = econ.treasury ? ensureAddress(econ.treasury, 'treasury') : ethers.ZeroAddress;
+  const treasuryAddress =
+    ensureAddress(econ.treasury, 'treasury', { optional: true, allowZero: true }) ?? ethers.ZeroAddress;
   const feePct = econ.feePct ?? 5;
   const burnPct = econ.burnPct ?? 0;
   const minStake = formatToken(econ.minStake);
@@ -142,9 +164,10 @@ async function main() {
   const appealFee = formatToken(econ.appealFee);
   const disputeWindow = parseSeconds(econ.disputeWindow);
 
+  const summaryGovernance = governance ?? 'deployer (auto)';
   const summary = [
     ['Network', network],
-    ['Governance', governance],
+    ['Governance', summaryGovernance],
     ['Treasury', treasuryAddress],
     ['Fee %', String(feePct)],
     ['Burn %', String(burnPct)],
@@ -165,34 +188,35 @@ async function main() {
     return;
   }
 
-  const hardhatArgs = [
-    'run',
-    '--no-compile',
-    '--network',
-    network,
-    path.join('scripts', 'v2', 'deploy.ts'),
-    '--governance',
-    governance,
-    '--treasury',
-    treasuryAddress,
-    '--feePct',
-    String(feePct),
-    '--burnPct',
-    String(burnPct),
-    '--minStake',
-    minStake,
-    '--minPlatformStake',
-    minPlatformStake,
-  ];
+  const deployEnv: NodeJS.ProcessEnv = {
+    ONECLICK_TREASURY: treasuryAddress,
+    ONECLICK_FEE_PCT: String(feePct),
+    ONECLICK_BURN_PCT: String(burnPct),
+    ONECLICK_MIN_STAKE: minStake,
+    ONECLICK_MIN_PLATFORM_STAKE: minPlatformStake,
+  };
+
+  if (governance) {
+    deployEnv.ONECLICK_GOVERNANCE = governance;
+  }
 
   if (appealFee && appealFee !== '0') {
-    hardhatArgs.push('--appealFee', appealFee);
+    deployEnv.ONECLICK_APPEAL_FEE = appealFee;
   }
   if (disputeWindow > 0) {
-    hardhatArgs.push('--disputeWindow', disputeWindow.toString());
+    deployEnv.ONECLICK_DISPUTE_WINDOW = disputeWindow.toString();
   }
 
-  await runHardhat(hardhatArgs, {});
+  await runHardhat(
+    [
+      'run',
+      '--no-compile',
+      '--network',
+      network,
+      path.join('scripts', 'v2', 'deploy.ts'),
+    ],
+    deployEnv,
+  );
 
   const addressesPath = path.join('docs', 'deployment-addresses.json');
   const outputPath = config.output ? path.resolve(config.output) : path.resolve('deployment-config', 'latest-deployment.json');
@@ -207,12 +231,11 @@ async function main() {
       '--network',
       network,
       path.join('scripts', 'v2', 'apply-secure-defaults.ts'),
-      '--config',
-      path.resolve(configPath),
-      '--addresses',
-      addressesPath,
     ],
-    {},
+    {
+      ONECLICK_CONFIG_PATH: path.resolve(configPath),
+      ONECLICK_ADDRESSES_PATH: addressesPath,
+    },
   );
 
   console.log('✅ Contracts deployed and secured. Update your environment variables with the new addresses.');
