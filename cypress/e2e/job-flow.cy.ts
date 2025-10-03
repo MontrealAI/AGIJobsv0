@@ -50,7 +50,8 @@ describe('Owner governance job flow', () => {
     cy.wait('@receipts');
     cy.contains('job.finalized');
     cy.contains('Details').click();
-    cy.get('[data-testid="receipt-status-value"]', { timeout: 10000 }).should(
+    cy.findByTestId('receipt-details', { timeout: 10000 }).should('exist');
+    cy.findByTestId('receipt-status-value', { timeout: 10000 }).should(
       'have.text',
       'agent_win'
     );

@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+import './commands';
 
 Cypress.on('window:before:load', (win) => {
   try {
