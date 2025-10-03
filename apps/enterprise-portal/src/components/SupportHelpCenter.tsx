@@ -5,15 +5,15 @@ import { useTranslation } from '../context/LanguageContext';
 const resources = [
   {
     key: 'helpCenter.employerGuide',
-    href: 'https://github.com/MontrealAI/AGIJobsv0/tree/main/docs/employer',
+    href: 'https://github.com/MontrealAI/AGIJobsv0/blob/main/docs/user-guides/employer.md',
   },
   {
     key: 'helpCenter.agentGuide',
-    href: 'https://github.com/MontrealAI/AGIJobsv0/tree/main/docs/agent',
+    href: 'https://github.com/MontrealAI/AGIJobsv0/blob/main/docs/user-guides/agent.md',
   },
   {
     key: 'helpCenter.validatorGuide',
-    href: 'https://github.com/MontrealAI/AGIJobsv0/tree/main/docs/validator',
+    href: 'https://github.com/MontrealAI/AGIJobsv0/blob/main/docs/user-guides/validator.md',
   },
   {
     key: 'helpCenter.faq',
