@@ -70,8 +70,9 @@ export function ReceiptsViewer() {
   }
 
   const activeReceipt = expanded !== null ? receipts[expanded] : null;
-  const metadataStatus = readMetadataValue(activeReceipt?.metadata, 'status');
   const metadataOutcome = readMetadataValue(activeReceipt?.metadata, 'outcome');
+  const metadataStatus =
+    readMetadataValue(activeReceipt?.metadata, 'status') ?? metadataOutcome;
 
   return (
     <div className="panel">
