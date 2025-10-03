@@ -33,6 +33,7 @@ describe('agent gateway configuration validation', function () {
     envBackup.KEYSTORE_URL = process.env.KEYSTORE_URL;
     envBackup.JOB_REGISTRY_ADDRESS = process.env.JOB_REGISTRY_ADDRESS;
     envBackup.VALIDATION_MODULE_ADDRESS = process.env.VALIDATION_MODULE_ADDRESS;
+    envBackup.STAKE_MANAGER_ADDRESS = process.env.STAKE_MANAGER_ADDRESS;
 
     process.env.RPC_URL = 'http://localhost:8545';
     process.env.PORT = '3000';
@@ -42,6 +43,7 @@ describe('agent gateway configuration validation', function () {
     process.env.KEYSTORE_URL = 'https://keystore.local/keys';
     process.env.JOB_REGISTRY_ADDRESS = DUMMY_ADDRESS;
     process.env.VALIDATION_MODULE_ADDRESS = DUMMY_ADDRESS;
+    process.env.STAKE_MANAGER_ADDRESS = DUMMY_ADDRESS;
   });
 
   afterEach(function () {
@@ -53,6 +55,7 @@ describe('agent gateway configuration validation', function () {
     process.env.KEYSTORE_URL = envBackup.KEYSTORE_URL;
     process.env.JOB_REGISTRY_ADDRESS = envBackup.JOB_REGISTRY_ADDRESS;
     process.env.VALIDATION_MODULE_ADDRESS = envBackup.VALIDATION_MODULE_ADDRESS;
+    process.env.STAKE_MANAGER_ADDRESS = envBackup.STAKE_MANAGER_ADDRESS;
 
     clearModuleCache();
   });

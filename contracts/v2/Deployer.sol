@@ -321,19 +321,18 @@ contract Deployer is Ownable {
             IStakeManager(address(stake))
         );
 
+        ArbitratorCommittee committee = new ArbitratorCommittee(
+            IJobRegistry(address(registry)),
+            IDisputeModule(address(0))
+        );
         DisputeModule dispute = new DisputeModule(
             IJobRegistry(address(registry)),
             0,
             0,
-            address(0),
-            governance
+            address(committee),
+            address(this)
         );
-
-        ArbitratorCommittee committee = new ArbitratorCommittee(
-            IJobRegistry(address(registry)),
-            IDisputeModule(address(dispute))
-        );
-        dispute.setCommittee(address(committee));
+        committee.setDisputeModule(IDisputeModule(address(dispute)));
 
         CertificateNFT certificate = new CertificateNFT("Cert", "CERT");
         certificate.setJobRegistry(address(registry));
@@ -423,20 +422,20 @@ contract Deployer is Ownable {
             committee,
             governance
         );
-        // restore governance to the supplied timelock / multisig address
-        stake.setGovernance(governance);
-        registry.setGovernance(governance);
+        // restore governance to the pause controller
+        stake.setGovernance(address(pause));
+        registry.setGovernance(address(pause));
+        dispute.setGovernance(address(pause));
 
         // Transfer ownership
-        validation.transferOwnership(governance);
-        reputation.transferOwnership(governance);
-        dispute.transferOwnership(governance);
-        committee.transferOwnership(governance);
+        validation.transferOwnership(address(pause));
+        reputation.transferOwnership(address(pause));
+        committee.transferOwnership(address(pause));
         certificate.transferOwnership(governance);
-        pRegistry.transferOwnership(governance);
+        pRegistry.transferOwnership(address(pause));
         router.transferOwnership(governance);
         incentives.transferOwnership(governance);
-        pool.transferOwnership(governance);
+        pool.transferOwnership(address(pause));
         if (address(policy) != address(0)) {
             policy.transferOwnership(governance);
         }

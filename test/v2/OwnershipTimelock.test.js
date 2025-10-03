@@ -15,6 +15,7 @@ describe('Timelock ownership', function () {
       burnPct: 0,
       employerSlashPct: 0,
       treasurySlashPct: 0,
+      validatorSlashRewardPct: 0,
       commitWindow: 0,
       revealWindow: 0,
       minStake: 0,

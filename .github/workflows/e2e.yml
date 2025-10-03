@@ -48,10 +48,10 @@ jobs:
           set -euo pipefail
           if [ -n "${MAINNET_RPC_URL:-}" ]; then
             echo "Starting anvil with mainnet fork"
-            (anvil --fork-url "$MAINNET_RPC_URL" --host 127.0.0.1 --port 8545 --chain-id 31337 --block-time 2 &)
+            anvil --fork-url "$MAINNET_RPC_URL" --host 127.0.0.1 --port 8545 --chain-id 31337 --block-time 2 &
           else
             echo "Starting local anvil without fork"
-            (anvil --host 127.0.0.1 --port 8545 --chain-id 31337 --block-time 2 &)
+            anvil --host 127.0.0.1 --port 8545 --chain-id 31337 --block-time 2 &
           fi
           echo "anvil-pid=$!" >> "$GITHUB_OUTPUT"
           sleep 5
