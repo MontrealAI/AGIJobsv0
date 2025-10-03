@@ -44,6 +44,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control master checklist](#owner-control-master-checklist)
 - [Owner control atlas](#owner-control-atlas)
 - [Owner control change ticket](#owner-control-change-ticket)
+- [Owner update plan kit](#owner-update-plan-kit)
 - [Owner control non-technical guide](#owner-control-non-technical-guide)
 - [Owner control zero-downtime guide](#owner-control-zero-downtime-guide)
 - [Owner control emergency runbook](#owner-control-emergency-runbook)
@@ -377,6 +378,36 @@ npm run owner:change-ticket -- --network mainnet --format json --out reports/mai
 ```
 
 The helper loads every owner-facing configuration manifest, hashes them with SHA-256, and emits a sequenced stage plan (baseline → plan → execute → verify → archive) alongside module-specific update/verify commands. Each ticket embeds a Mermaid flow, attachment checklist and links to the relevant illustrated handbooks, making it trivial for the contract owner to coordinate Safe signers, document intent and prove that every adjustable parameter stayed under explicit control. Full guidance lives in [docs/owner-control-change-ticket.md](docs/owner-control-change-ticket.md).
+
+### Owner update plan kit
+
+Pair the change ticket with the [Owner Update Plan Kit](docs/owner-update-plan-kit.md)
+to generate the executable dossier before touching production. Run the helper to
+produce Markdown, JSON or Safe-bundle artefacts that mirror the exact payload
+`owner:update-all` will submit:
+
+```bash
+npm run owner:plan -- --network <network> --out \
+  reports/<network>/owner-plan-$(date +%Y%m%d%H%M).md
+
+# Optional: build a multisig-ready batch
+npm run owner:plan -- --network <network> --safe \
+  reports/<network>/owner-plan-safe.json
+```
+
+```mermaid
+flowchart TD
+    A[Draft config/*.json changes] --> B[npm run owner:plan]
+    B --> C{Plan approved?}
+    C -- Yes --> D[npm run owner:update-all --execute]
+    D --> E[npm run owner:verify-control]
+    E --> F[Archive plan + receipts]
+    C -- No --> A
+```
+
+The kit spells out environment flags (`OWNER_PLAN_*`), embeds troubleshooting
+checklists, and ships a change-ticket snippet so non-technical operators can
+attach the right artefacts automatically.
 
 ### Owner control non-technical guide
 
