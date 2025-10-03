@@ -1,0 +1,17 @@
+# Default owners for all files
+* @MontrealAI/maintainers
+
+# Critical smart contract surfaces
+contracts/** @MontrealAI/maintainers
+migrations/** @MontrealAI/maintainers
+scripts/** @MontrealAI/maintainers
+hardhat.config.js @MontrealAI/maintainers
+foundry.toml @MontrealAI/maintainers
+
+# Front-end and orchestration apps
+apps/** @MontrealAI/maintainers
+services/** @MontrealAI/maintainers
+
+# CI/CD pipelines and infrastructure
+.github/** @MontrealAI/maintainers
+compose.yaml @MontrealAI/maintainers

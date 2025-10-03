@@ -4,6 +4,7 @@ require('@nomicfoundation/hardhat-toolbox');
 require('hardhat-gas-reporter');
 require('solidity-coverage');
 require('hardhat-contract-sizer');
+const path = require('path');
 
 function normalisePrivateKey(value) {
   if (value === undefined || value === null) {
@@ -73,6 +74,10 @@ const pathsConfig = coverageOnly
   ? { sources: './contracts/coverage', tests: './test' }
   : { sources: './contracts', tests: './test' };
 
+const gasReportPath = process.env.HARDHAT_GAS_REPORT_PATH
+  ? path.resolve(process.env.HARDHAT_GAS_REPORT_PATH)
+  : undefined;
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: solidityConfig,
@@ -116,6 +121,8 @@ module.exports = {
     enabled: true,
     currency: 'USD',
     showTimeSpent: true,
+    outputFile: gasReportPath,
+    noColors: Boolean(gasReportPath),
   },
   contractSizer: {
     alphaSort: true,
