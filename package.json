@@ -56,6 +56,7 @@
     "webapp:e2e": "start-server-and-test \"npm --prefix apps/console run preview -- --host 0.0.0.0 --port 4173\" http://127.0.0.1:4173 \"cypress run --config-file cypress.config.ts\"",
     "security:audit": "audit-ci --config ./audit-ci.json",
     "gas:check": "FOUNDRY_PROFILE=gas forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot --check",
+    "gas:report": "mkdir -p reports/gas && REPORT_GAS=true HARDHAT_GAS_REPORT_PATH=reports/gas/hardhat-gas-report.txt hardhat test --no-compile",
     "gas:snapshot": "FOUNDRY_PROFILE=gas forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot",
     "gateway": "npm run build:gateway && node agent-gateway/dist/index.js",
     "build:gateway": "tsc -p agent-gateway/tsconfig.json",

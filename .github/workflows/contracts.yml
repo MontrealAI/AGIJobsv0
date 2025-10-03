@@ -98,6 +98,10 @@ jobs:
         if: matrix.node == '20'
         run: npm run gas:check
 
+      - name: Generate gas report
+        if: matrix.node == '20'
+        run: npm run gas:report
+
       - name: Contract size analysis
         if: matrix.node == '20'
         run: npm run contract:size
@@ -170,6 +174,7 @@ jobs:
           if [ -d typechain-types ]; then cp -r typechain-types artifact-bundle/contracts/typechain-types; fi
           cp -r deployment-config artifact-bundle/contracts/deployment-config
           if [ -f gas-snapshots/.gas-snapshot ]; then cp gas-snapshots/.gas-snapshot artifact-bundle/contracts/gas-snapshot.txt; fi
+          if [ -f reports/gas/hardhat-gas-report.txt ]; then cp reports/gas/hardhat-gas-report.txt artifact-bundle/contracts/gas-report.txt; fi
           if [ -f coverage/lcov.info ]; then cp coverage/lcov.info artifact-bundle/contracts/lcov.info; fi
           if [ -f coverage/badge.json ]; then cp coverage/badge.json artifact-bundle/contracts/coverage-badge.json; fi
           if [ -d subgraph ]; then

@@ -17,3 +17,5 @@ To keep `main` deployable at all times, enable the following rules in the GitHub
 6. **Require linear history** to simplify audit trails.
 
 Update CODEOWNERS so that contract, security, and deployment changes always receive the appropriate review before merge.
+
+> ℹ️ The repository's `.github/settings.yml` and `.github/CODEOWNERS` files codify these requirements so they can be enforced consistently via the GitHub Settings app.
