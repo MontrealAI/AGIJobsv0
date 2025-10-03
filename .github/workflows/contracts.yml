@@ -49,11 +49,20 @@ jobs:
       - name: Compile contracts (sepolia)
         run: npm run compile:sepolia
 
+      - name: Compile contracts (mainnet)
+        run: npm run compile:mainnet
+
       - name: Generate typechain bindings
         run: npx hardhat typechain
 
       - name: Hardhat unit tests
         run: npm test
+
+      - name: Generate gas report
+        if: matrix.node == '20'
+        run: |
+          mkdir -p reports/gas
+          npm run gas:report
 
       - name: Solidity coverage
         if: matrix.node == '20'
@@ -172,6 +181,7 @@ jobs:
           if [ -f gas-snapshots/.gas-snapshot ]; then cp gas-snapshots/.gas-snapshot artifact-bundle/contracts/gas-snapshot.txt; fi
           if [ -f coverage/lcov.info ]; then cp coverage/lcov.info artifact-bundle/contracts/lcov.info; fi
           if [ -f coverage/badge.json ]; then cp coverage/badge.json artifact-bundle/contracts/coverage-badge.json; fi
+          if [ -f reports/gas/gas-report.txt ]; then cp reports/gas/gas-report.txt artifact-bundle/contracts/gas-report.txt; fi
           if [ -d subgraph ]; then
             mkdir -p artifact-bundle/contracts/subgraph
             if [ -f subgraph/schema.graphql ]; then cp subgraph/schema.graphql artifact-bundle/contracts/subgraph/schema.graphql; fi
