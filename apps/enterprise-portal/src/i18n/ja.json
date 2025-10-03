@@ -1,0 +1,111 @@
+{
+  "app": {
+    "title": "AGI Jobs アシスタントポータル",
+    "subtitle": "会話型UIでジョブの作成・確認・検証を行います。"
+  },
+  "language": {
+    "label": "言語"
+  },
+  "common": {
+    "yes": "はい",
+    "no": "いいえ"
+  },
+  "employer": {
+    "greeting": "こんにちは。AGI Jobs にジョブを登録しましょう。",
+    "prompt": {
+      "task": "どのようなタスクが必要ですか？",
+      "description": "了解です。成功条件を詳しく教えてください。",
+      "skills": "必要なスキルや適したエージェントは？",
+      "reward": "報酬額を入力してください。",
+      "deadline": "成果物の期限はいつですか？",
+      "attachments": "参考リンクやファイルがあれば共有してください（任意）。",
+      "sla": "開始前にSLA同意が必要ですか？",
+      "ttl": "バリデーターのレビュー時間（時間）を設定してください。",
+      "agents": "参加可能なエージェントタイプを選択してください。"
+    },
+    "placeholder": {
+      "task": "四半期レポートの作成",
+      "description": "範囲、データソース、期待成果を記載…",
+      "skills": "コンプライアンス, レポート, Python",
+      "reward": "500",
+      "attachments": "https://example.com/brief.pdf",
+      "deadline": "",
+      "ttl": "72"
+    },
+    "actions": {
+      "continue": "次へ",
+      "back": "戻る",
+      "confirm": "ジョブを送信",
+      "edit": "編集",
+      "restart": "別のジョブを作成"
+    },
+    "summary": {
+      "title": "内容を確認",
+      "reward": "報酬",
+      "deadline": "期限",
+      "skills": "スキル",
+      "attachments": "参考資料",
+      "sla": "SLA必須",
+      "ttl": "検証期間",
+      "agents": "対象エージェント",
+      "none": "未設定"
+    },
+    "agentLabels": {
+      "1": "ジェネラリスト",
+      "3": "ジェネラリスト + スペシャリスト",
+      "7": "マルチロール"
+    },
+    "status": {
+      "submitting": "送信中…",
+      "success": "ジョブが登録されました！",
+      "tx": "トランザクションを表示"
+    }
+  },
+  "agent": {
+    "title": "ジョブフィード",
+    "subtitle": "新着ジョブがここに表示されます。",
+    "empty": "現在利用可能なジョブはありません。",
+    "accept": "承諾",
+    "decline": "辞退",
+    "deadline": "期限",
+    "reward": "報酬"
+  },
+  "validator": {
+    "title": "検証キュー",
+    "subtitle": "ポータル内でレビューと判断を完結できます。",
+    "empty": "レビュー待ちの成果物はありません。",
+    "approve": "承認",
+    "reject": "却下",
+    "comment": "送信者へのメモ",
+    "result": "結果URI"
+  },
+  "help": {
+    "title": "ヘルプセンター",
+    "subtitle": "作業中に役立つガイドとFAQ。",
+    "faq": {
+      "agents": "高単価ジョブに応募するには？",
+      "deadlines": "公開後に期限を延長できますか？",
+      "disputes": "結果に異議を唱えるとどうなりますか？"
+    },
+    "guides": {
+      "employer": "依頼者ガイド",
+      "agent": "エージェント登録",
+      "validator": "バリデーター手引き"
+    },
+    "cta": "ドキュメントを開く"
+  },
+  "support": {
+    "checklist": {
+      "title": "スタートチェックリスト",
+      "wallet": "ウォレット接続済み",
+      "ens": "ENS確認済み",
+      "stake": "ステーク済み",
+      "job": "ジョブ公開済み",
+      "tip": "困ったときはサポートウィジェットに質問してください。"
+    }
+  },
+  "status": {
+    "loading": "読み込み中…",
+    "error": "問題が発生しました。"
+  }
+}

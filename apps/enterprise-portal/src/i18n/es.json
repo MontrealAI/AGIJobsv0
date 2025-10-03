@@ -1,0 +1,111 @@
+{
+  "app": {
+    "title": "Portal asistente AGI Jobs",
+    "subtitle": "Crea, revisa y valida trabajos con una experiencia conversacional."
+  },
+  "language": {
+    "label": "Idioma"
+  },
+  "common": {
+    "yes": "Sí",
+    "no": "No"
+  },
+  "employer": {
+    "greeting": "Hola. Vamos a publicar tu nuevo trabajo en AGI Jobs.",
+    "prompt": {
+      "task": "¿Qué tarea necesitas realizar?",
+      "description": "Perfecto. ¿Puedes agregar detalles para que el agente sepa qué entregar?",
+      "skills": "¿Qué habilidades o perfiles encajan mejor?",
+      "reward": "¿Qué recompensa quieres ofrecer?",
+      "deadline": "¿Cuándo debe entregarse el resultado?",
+      "attachments": "Comparte enlaces o archivos útiles (opcional).",
+      "sla": "¿Necesitas una aceptación de SLA antes de comenzar?",
+      "ttl": "¿Cuántas horas para la revisión de validadores?",
+      "agents": "Selecciona los tipos de agentes elegibles."
+    },
+    "placeholder": {
+      "task": "Elaborar un informe trimestral",
+      "description": "Incluye alcance, fuentes de datos y entregables…",
+      "skills": "Cumplimiento, Reportes, Python",
+      "reward": "500",
+      "attachments": "https://example.com/brief.pdf",
+      "deadline": "",
+      "ttl": "72"
+    },
+    "actions": {
+      "continue": "Continuar",
+      "back": "Atrás",
+      "confirm": "Publicar trabajo",
+      "edit": "Editar",
+      "restart": "Crear otro trabajo"
+    },
+    "summary": {
+      "title": "Confirma los detalles",
+      "reward": "Recompensa",
+      "deadline": "Fecha límite",
+      "skills": "Habilidades",
+      "attachments": "Material de referencia",
+      "sla": "SLA requerido",
+      "ttl": "Ventana de validación",
+      "agents": "Tipos de agentes",
+      "none": "No proporcionado"
+    },
+    "agentLabels": {
+      "1": "Generalista",
+      "3": "Generalista + Especialista",
+      "7": "Multirrol"
+    },
+    "status": {
+      "submitting": "Publicando trabajo…",
+      "success": "¡Trabajo publicado!",
+      "tx": "Ver transacción"
+    }
+  },
+  "agent": {
+    "title": "Bandeja de oportunidades",
+    "subtitle": "Los trabajos recién publicados aparecerán aquí.",
+    "empty": "No hay trabajos abiertos por ahora.",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "deadline": "Fecha límite",
+    "reward": "Recompensa"
+  },
+  "validator": {
+    "title": "Cola de validación",
+    "subtitle": "Revisa los entregables y registra tu decisión sin salir del portal.",
+    "empty": "Sin entregas pendientes.",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "comment": "Añadir nota",
+    "result": "URI del resultado"
+  },
+  "help": {
+    "title": "Centro de ayuda",
+    "subtitle": "Guías y respuestas rápidas mientras trabajas.",
+    "faq": {
+      "agents": "¿Cómo accedo a trabajos mejor pagados?",
+      "deadlines": "¿Puedo extender una fecha límite?",
+      "disputes": "¿Qué sucede si disputo un resultado?"
+    },
+    "guides": {
+      "employer": "Guía para empleadores",
+      "agent": "Guía de agentes",
+      "validator": "Manual de validadores"
+    },
+    "cta": "Abrir documentación"
+  },
+  "support": {
+    "checklist": {
+      "title": "Lista de inicio",
+      "wallet": "Billetera conectada",
+      "ens": "Identidad ENS verificada",
+      "stake": "Stake depositado",
+      "job": "Trabajo publicado",
+      "tip": "¿Necesitas ayuda? Usa el asistente integrado."
+    }
+  },
+  "status": {
+    "loading": "Cargando…",
+    "error": "Algo salió mal."
+  }
+}

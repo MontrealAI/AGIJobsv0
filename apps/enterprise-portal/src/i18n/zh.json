@@ -1,0 +1,111 @@
+{
+  "app": {
+    "title": "AGI Jobs 助手门户",
+    "subtitle": "通过对话式界面创建、跟踪并验证任务。"
+  },
+  "language": {
+    "label": "语言"
+  },
+  "common": {
+    "yes": "是",
+    "no": "否"
+  },
+  "employer": {
+    "greeting": "您好，让我们在 AGI Jobs 上发布一个任务。",
+    "prompt": {
+      "task": "您需要完成什么任务？",
+      "description": "好的，请补充更多细节，让代理清楚交付内容。",
+      "skills": "适合的技能或代理类型有哪些？",
+      "reward": "计划提供多少奖励？",
+      "deadline": "结果最晚何时交付？",
+      "attachments": "提供相关链接或文件（可选）。",
+      "sla": "是否需要代理先确认 SLA？",
+      "ttl": "验证者需要多少小时完成审核？",
+      "agents": "选择允许申请的代理类型。"
+    },
+    "placeholder": {
+      "task": "撰写季度合规报告",
+      "description": "包含范围、数据来源及交付要求…",
+      "skills": "合规, 报告, Python",
+      "reward": "500",
+      "attachments": "https://example.com/brief.pdf",
+      "deadline": "",
+      "ttl": "72"
+    },
+    "actions": {
+      "continue": "继续",
+      "back": "返回",
+      "confirm": "提交任务",
+      "edit": "编辑",
+      "restart": "发布另一个任务"
+    },
+    "summary": {
+      "title": "确认任务信息",
+      "reward": "奖励",
+      "deadline": "截止时间",
+      "skills": "技能",
+      "attachments": "参考资料",
+      "sla": "是否需要 SLA",
+      "ttl": "验证窗口",
+      "agents": "可参与代理",
+      "none": "未提供"
+    },
+    "agentLabels": {
+      "1": "通用型",
+      "3": "通用型 + 专家",
+      "7": "多角色"
+    },
+    "status": {
+      "submitting": "正在提交…",
+      "success": "任务发布成功！",
+      "tx": "查看交易"
+    }
+  },
+  "agent": {
+    "title": "机会列表",
+    "subtitle": "最新发布的任务会出现在这里。",
+    "empty": "暂无可接任务。",
+    "accept": "接受",
+    "decline": "拒绝",
+    "deadline": "截止时间",
+    "reward": "奖励"
+  },
+  "validator": {
+    "title": "验证队列",
+    "subtitle": "在门户内即可完成审查与决定。",
+    "empty": "目前没有待审核的结果。",
+    "approve": "通过",
+    "reject": "驳回",
+    "comment": "给提交者的备注",
+    "result": "结果 URI"
+  },
+  "help": {
+    "title": "帮助中心",
+    "subtitle": "边操作边查看的指南与常见问题。",
+    "faq": {
+      "agents": "如何解锁高价值任务？",
+      "deadlines": "发布后可以延长截止日期吗？",
+      "disputes": "如果发起争议会怎样？"
+    },
+    "guides": {
+      "employer": "雇主指南",
+      "agent": "代理入门",
+      "validator": "验证者手册"
+    },
+    "cta": "打开完整文档"
+  },
+  "support": {
+    "checklist": {
+      "title": "上线检查表",
+      "wallet": "钱包已连接",
+      "ens": "ENS 身份已验证",
+      "stake": "质押已完成",
+      "job": "任务已发布",
+      "tip": "需要帮助？使用右下角的助手。"
+    }
+  },
+  "status": {
+    "loading": "加载中…",
+    "error": "发生错误。"
+  }
+}

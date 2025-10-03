@@ -1,126 +1,39 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
-import { parseUnits } from 'ethers';
-import { useWeb3 } from '../context/Web3Context';
-import { getJobRegistryContract, portalConfig } from '../lib/contracts';
-import { computeSpecHash } from '../lib/crypto';
-
-interface FormState {
-  title: string;
-  description: string;
-  reward: string;
-  deadline: string;
-  ttl: string;
-  skills: string;
-  uri: string;
-  requiresSla: boolean;
-  slaUri: string;
-  agentTypes: string;
-}
-
-const initialState: FormState = {
-  title: '',
-  description: '',
-  reward: '',
-  deadline: '',
-  ttl: '72',
-  skills: '',
-  uri: '',
-  requiresSla: false,
-  slaUri: '',
-  agentTypes: '3'
-};
+import { ChangeEvent, FormEvent, useState } from 'react';
+import { portalConfig } from '../lib/contracts';
+import { defaultJobDraft, JobDraft, useJobCreation } from '../hooks/useJobCreation';
 
 export const JobSubmissionForm = () => {
-  const { signer, address, hasAcknowledged } = useWeb3();
-  const [form, setForm] = useState<FormState>(initialState);
-  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState<JobDraft>(defaultJobDraft);
   const [txHash, setTxHash] = useState<string>();
   const [jobId, setJobId] = useState<bigint>();
-  const [error, setError] = useState<string>();
+  const { creating, error, submit, resetError, specHash } = useJobCreation(form);
 
-  const rewardInWei = useMemo(() => {
-    if (!form.reward) return 0n;
-    try {
-      return parseUnits(form.reward, 18);
-    } catch (err) {
-      return 0n;
-    }
-  }, [form.reward]);
-
-  const specPayload = useMemo(() => {
-    const skills = form.skills
-      .split(',')
-      .map((skill) => skill.trim())
-      .filter(Boolean);
-    return {
-      title: form.title,
-      description: form.description,
-      requiredSkills: skills,
-      ttlHours: Number(form.ttl) || 0,
-      metadataURI: form.uri,
-      sla: form.requiresSla
-        ? {
-            uri: form.slaUri,
-            requiresSignature: true
-          }
-        : undefined
-    };
-  }, [form]);
-
-  const specHash = useMemo(() => computeSpecHash(specPayload), [specPayload]);
-
-  const handleChange = (field: keyof FormState) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (field: keyof JobDraft) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = event.target.type === 'checkbox' ? (event.target as HTMLInputElement).checked : event.target.value;
     setForm((current) => ({ ...current, [field]: value }));
+    if (error) {
+      resetError();
+    }
   };
 
   const handleAgentTypesChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setForm((current) => ({ ...current, agentTypes: event.target.value }));
+    if (error) {
+      resetError();
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!signer || !address) {
-      setError('Connect a verified wallet before submitting a job.');
-      return;
-    }
-    setCreating(true);
-    setError(undefined);
     try {
-      const contract = getJobRegistryContract(signer);
-      const now = Math.floor(Date.now() / 1000);
-      const ttlSeconds = Number(form.ttl) * 3600;
-      const deadlineSeconds = form.deadline
-        ? Math.floor(new Date(form.deadline).getTime() / 1000)
-        : now + ttlSeconds;
-      const uri = form.uri || `ipfs://job-spec/${specHash}`;
-      const agentTypes = Number(form.agentTypes);
-      const method = hasAcknowledged ? 'createJobWithAgentTypes' : 'acknowledgeAndCreateJobWithAgentTypes';
-      const registryAddress = await contract.getAddress();
-      const tx = await contract[method](rewardInWei, BigInt(deadlineSeconds), agentTypes, specHash, uri);
-      setTxHash(tx.hash);
-      const receipt = await tx.wait?.();
-      const jobLog = receipt?.logs?.find(
-        (log: any) => typeof log.address === 'string' && log.address.toLowerCase() === registryAddress.toLowerCase()
-      );
-      if (jobLog) {
-        try {
-          const parsed = contract.interface.parseLog(jobLog);
-          if (parsed?.name === 'JobCreated' && parsed.args?.jobId) {
-            setJobId(BigInt(parsed.args.jobId));
-          }
-        } catch (parseError) {
-          console.error('Failed to parse JobCreated log', parseError);
-        }
-      }
-      setForm(initialState);
+      const result = await submit();
+      setTxHash(result.txHash);
+      setJobId(result.jobId);
+      setForm(defaultJobDraft);
     } catch (err) {
       console.error(err);
-      setError((err as Error).message ?? 'Failed to create job');
-    } finally {
-      setCreating(false);
     }
   };
 
@@ -256,7 +169,7 @@ export const JobSubmissionForm = () => {
           <strong>Spec Hash:</strong> {specHash}
         </div>
         <div className="inline-actions">
-          <button className="primary" type="submit" disabled={creating || !signer}>
+          <button className="primary" type="submit" disabled={creating}>
             {creating ? 'Submitting job…' : 'Register job on-chain'}
           </button>
           {txHash && (

@@ -1,0 +1,111 @@
+{
+  "app": {
+    "title": "Portail assistant AGI Jobs",
+    "subtitle": "Créez, suivez et validez les missions avec une interface conversationnelle."
+  },
+  "language": {
+    "label": "Langue"
+  },
+  "common": {
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "employer": {
+    "greeting": "Bonjour ! Créons votre nouvelle mission sur AGI Jobs.",
+    "prompt": {
+      "task": "Quelle tâche devez-vous accomplir ?",
+      "description": "Parfait. Pouvez-vous ajouter des détails pour que les agents sachent ce qu'ils doivent livrer ?",
+      "skills": "Quelles compétences ou profils conviennent ?",
+      "reward": "Quelle récompense souhaitez-vous proposer ?",
+      "deadline": "Quand le résultat doit-il être livré ?",
+      "attachments": "Partagez des liens ou fichiers utiles (optionnel).",
+      "sla": "Souhaitez-vous un accord de niveau de service avant le démarrage ?",
+      "ttl": "Combien d'heures pour la validation ?",
+      "agents": "Choisissez les archétypes d'agents autorisés."
+    },
+    "placeholder": {
+      "task": "Rédiger un rapport de conformité trimestriel",
+      "description": "Inclure le périmètre, les données sources et les attentes…",
+      "skills": "Conformité, Reporting, Python",
+      "reward": "500",
+      "attachments": "https://example.com/brief.pdf",
+      "deadline": "",
+      "ttl": "72"
+    },
+    "actions": {
+      "continue": "Continuer",
+      "back": "Retour",
+      "confirm": "Publier la mission",
+      "edit": "Modifier",
+      "restart": "Créer une autre mission"
+    },
+    "summary": {
+      "title": "Confirmer les détails",
+      "reward": "Récompense",
+      "deadline": "Échéance",
+      "skills": "Compétences",
+      "attachments": "Ressources",
+      "sla": "SLA requis",
+      "ttl": "Fenêtre de validation",
+      "agents": "Types d'agents",
+      "none": "Non renseigné"
+    },
+    "agentLabels": {
+      "1": "Généraliste",
+      "3": "Généraliste + Spécialiste",
+      "7": "Multi-rôle"
+    },
+    "status": {
+      "submitting": "Publication en cours…",
+      "success": "Mission publiée !",
+      "tx": "Voir la transaction"
+    }
+  },
+  "agent": {
+    "title": "Flux d'opportunités",
+    "subtitle": "Les nouvelles missions apparaissent ici pour un tri rapide.",
+    "empty": "Aucune mission ouverte pour le moment.",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "deadline": "Échéance",
+    "reward": "Récompense"
+  },
+  "validator": {
+    "title": "File de validation",
+    "subtitle": "Examinez les livrables et consignez votre décision sans quitter le portail.",
+    "empty": "Aucun livrable à examiner.",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "comment": "Ajouter une note",
+    "result": "URI du résultat"
+  },
+  "help": {
+    "title": "Centre d'aide",
+    "subtitle": "Guides et réponses rapides pendant votre travail.",
+    "faq": {
+      "agents": "Comment accéder à des missions mieux rémunérées ?",
+      "deadlines": "Puis-je prolonger une échéance après publication ?",
+      "disputes": "Que se passe-t-il en cas de contestation ?"
+    },
+    "guides": {
+      "employer": "Guide employeur",
+      "agent": "Onboarding agent",
+      "validator": "Guide validateur"
+    },
+    "cta": "Ouvrir la documentation"
+  },
+  "support": {
+    "checklist": {
+      "title": "Checklist de mise en service",
+      "wallet": "Portefeuille connecté",
+      "ens": "Identité ENS vérifiée",
+      "stake": "Stake déposé",
+      "job": "Mission publiée",
+      "tip": "Besoin d'aide ? Parlez au widget d'assistance."
+    }
+  },
+  "status": {
+    "loading": "Chargement…",
+    "error": "Une erreur est survenue."
+  }
+}
