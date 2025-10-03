@@ -59,8 +59,11 @@ Follow the [One-Click Deployment Guide](./deployment/one-click.md) for a full wa
    npm run deploy:oneclick:wizard -- --config deployment-config/sepolia.json --network sepolia
    ```
 
-   The wizard ensures `deployment-config/oneclick.env` exists, validates required environment variables, and stages the
-   deployment artefacts for the next steps.
+   The wizard verifies `deployment-config/oneclick.env` exists (seeding it from the template if needed), runs the same
+   `npm run deploy:oneclick` flow, rewrites the environment file with the emitted addresses, and can launch Docker Compose.
+   Make sure `deployment-config/oneclick.env` and your config JSON (for example `deployment-config/deployer.sample.json`
+   copied to an environment-specific file) already include the governance, RPC, and credential values the prompts will
+   confirm.
 
 ### 2. Deploy Smart Contracts
 

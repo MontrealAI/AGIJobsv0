@@ -53,8 +53,10 @@ so operators can launch safely with minimal manual steps.
   [`docs/owner-control-non-technical-guide.md`](../owner-control-non-technical-guide.md),
   [`docs/operations_guide.md`](../operations_guide.md), and the detailed sections below mirror every command emitted by the
   automation scripts, complete with screenshots/log samples.
-- **Wizard & prompts** – The deployment wizard asks human-friendly questions (governance multisig, RPC URLs, optional Compose
-  launch) and catches common mistakes before submitting transactions.
+- **Wizard & prompts** – The deployment wizard verifies the `deployment-config/oneclick.env` file exists, runs
+  `npm run deploy:oneclick` under the hood, rewrites the environment file with the emitted addresses, and can trigger Docker
+  Compose for you. It expects governance signers, RPC URLs, and other required inputs to already be populated in the config
+  files before you launch it, surfacing prompts only for confirmation.
 - **Auditable artefacts** – Address books, `.env` files, and Compose overrides are generated automatically and stored under
   version control-friendly paths so operators can file change tickets, share bundles with auditors, or restore systems quickly.
 
@@ -74,11 +76,14 @@ Prefer a guided experience? Run the wizard once you have Node.js and Docker inst
 npm run deploy:oneclick:wizard -- --config deployment-config/sepolia.json --network sepolia
 ```
 
-The wizard ensures `deployment-config/oneclick.env` exists (copying from the bundled
-template if necessary), executes the contract deployment, rewrites the environment file
-with the emitted addresses, and optionally launches `docker compose` for you. Supply
-`--yes --compose` to accept all prompts automatically; add `--env <path>` or
-`--compose-file <path>` when customising secrets or Kubernetes translations.
+The wizard first checks that `deployment-config/oneclick.env` is present (copying from
+the bundled template if necessary), runs the full `npm run deploy:oneclick` flow,
+rewrites the environment file with the emitted addresses, and optionally launches
+`docker compose` for you. Provide `--yes --compose` to accept all prompts
+automatically; add `--env <path>` or `--compose-file <path>` when customising secrets
+or Kubernetes translations. Ensure `deployment-config/deployer.sample.json` (or your
+environment-specific copy) and `deployment-config/oneclick.env` already contain the
+governance, RPC, and credential values the wizard will validate.
 
 Want a single command with no prompts? Use the non-interactive wrapper, which simply
 forwards any flags to the wizard but defaults to launching Docker Compose in detached
