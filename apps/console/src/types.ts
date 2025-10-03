@@ -78,4 +78,5 @@ export interface StoredReceiptRecord {
   attestationCid?: string | null;
   receipt?: Record<string, unknown> | null;
   payload?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
 }

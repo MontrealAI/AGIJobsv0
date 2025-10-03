@@ -45,6 +45,7 @@ jobs:
 
       - name: Cypress E2E
         env:
+          TERM: xterm
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
         run: npm run webapp:e2e
 

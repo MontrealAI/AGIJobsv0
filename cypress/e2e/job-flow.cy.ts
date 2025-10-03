@@ -29,18 +29,7 @@ describe('Owner governance job flow', () => {
 
     cy.intercept('GET', /https:\/\/orchestrator\.example\/governance\/receipts.*/, {
       statusCode: 200,
-      body: {
-        receipts: [
-          {
-            kind: 'job.finalized',
-            planHash: '0xplan',
-            jobId: '42',
-            txHashes: ['0xabc', '0xdef'],
-            attestationUid: '0xattestation',
-            metadata: { status: 'paid', outcome: 'agent_win' },
-          },
-        ],
-      },
+      fixture: 'governance/receipts-agent-win.json',
     }).as('receipts');
   });
 
@@ -61,6 +50,9 @@ describe('Owner governance job flow', () => {
     cy.wait('@receipts');
     cy.contains('job.finalized');
     cy.contains('Details').click();
-    cy.contains('status: agent_win');
+    cy.get('[data-testid="receipt-status-value"]', { timeout: 10000 }).should(
+      'have.text',
+      'agent_win'
+    );
   });
 });

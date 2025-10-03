@@ -1,0 +1,15 @@
+{
+  "receipts": [
+    {
+      "kind": "job.finalized",
+      "planHash": "0xplan",
+      "jobId": "42",
+      "txHashes": ["0xabc", "0xdef"],
+      "attestationUid": "0xattestation",
+      "metadata": {
+        "status": "paid",
+        "outcome": "agent_win"
+      }
+    }
+  ]
+}

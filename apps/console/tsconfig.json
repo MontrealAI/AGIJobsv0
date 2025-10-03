@@ -9,7 +9,10 @@
     "esModuleInterop": true,
     "strict": true,
     "noEmit": true,
-    "baseUrl": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "types": ["vite/client"]
   },
   "include": ["src"]

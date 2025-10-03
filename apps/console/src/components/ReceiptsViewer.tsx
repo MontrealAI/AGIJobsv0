@@ -13,6 +13,32 @@ export function ReceiptsViewer() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
 
+  function readMetadataValue(
+    metadata: StoredReceiptRecord['metadata'],
+    key: string
+  ): string | null {
+    if (!metadata || typeof metadata !== 'object') {
+      return null;
+    }
+    const record = metadata as Record<string, unknown>;
+    const value = record[key];
+    if (value === undefined || value === null) {
+      return null;
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    try {
+      return JSON.stringify(value);
+    } catch (error) {
+      console.warn('Failed to serialise metadata value', error);
+      return null;
+    }
+  }
+
   async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!config) return;
@@ -42,6 +68,10 @@ export function ReceiptsViewer() {
       setLoading(false);
     }
   }
+
+  const activeReceipt = expanded !== null ? receipts[expanded] : null;
+  const metadataStatus = readMetadataValue(activeReceipt?.metadata, 'status');
+  const metadataOutcome = readMetadataValue(activeReceipt?.metadata, 'outcome');
 
   return (
     <div className="panel">
@@ -129,11 +159,27 @@ export function ReceiptsViewer() {
               </tbody>
             </table>
           </div>
-          {expanded !== null && receipts[expanded] && (
-            <div style={{ marginTop: '1rem' }}>
+          {activeReceipt && (
+            <div data-testid="receipt-details" style={{ marginTop: '1rem' }}>
               <h4>Receipt Payload</h4>
+              {metadataStatus && (
+                <p data-testid="receipt-status">
+                  Status:{' '}
+                  <span data-testid="receipt-status-value">
+                    {metadataStatus}
+                  </span>
+                </p>
+              )}
+              {metadataOutcome && (
+                <p data-testid="receipt-outcome">
+                  Outcome:{' '}
+                  <span data-testid="receipt-outcome-value">
+                    {metadataOutcome}
+                  </span>
+                </p>
+              )}
               <pre className="json-inline">
-                {JSON.stringify(receipts[expanded], null, 2)}
+                {JSON.stringify(activeReceipt, null, 2)}
               </pre>
             </div>
           )}
