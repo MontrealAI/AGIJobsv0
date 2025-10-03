@@ -76,17 +76,7 @@ contract KernelPipelineTest is Test {
     }
 
     function _job(uint256 jobId) internal view returns (KernelJobRegistry.Job memory job) {
-        (
-            job.employer,
-            job.agent,
-            job.reward,
-            job.deadline,
-            job.submittedAt,
-            job.submitted,
-            job.finalized,
-            job.success,
-            job.specHash
-        ) = jobRegistry.jobs(jobId);
+        job = jobRegistry.jobs(jobId);
     }
 
     function testCreateJobRevertsOnDuplicateValidators() public {
@@ -153,10 +143,10 @@ contract KernelPipelineTest is Test {
         validationModule.finalize(jobId);
 
         // Ensure job finalized successfully.
-        (,,, uint64 deadlineStored,, bool finalized, bool success,,,) = jobRegistry.jobs(jobId);
-        assertEq(deadlineStored, deadline);
-        assertTrue(finalized);
-        assertTrue(success);
+        KernelJobRegistry.Job memory storedJob = jobRegistry.jobs(jobId);
+        assertEq(storedJob.deadline, deadline);
+        assertTrue(storedJob.finalized);
+        assertTrue(storedJob.success);
 
         RewardEngine.SplitResult memory split = rewardEngine.split(jobId, reward);
 
@@ -237,9 +227,9 @@ contract KernelPipelineTest is Test {
         vm.warp(block.timestamp + config.revealWindow() + 1);
         validationModule.finalize(jobId);
 
-        (, , , , , bool finalized, bool success, , ,) = jobRegistry.jobs(jobId);
-        assertTrue(finalized);
-        assertFalse(success);
+        KernelJobRegistry.Job memory quorumJob = jobRegistry.jobs(jobId);
+        assertTrue(quorumJob.finalized);
+        assertFalse(quorumJob.success);
 
         // Employer refunded escrow and credited with exact slashed stake from non-revealer.
         assertEq(token.balanceOf(employer), employerInitial);

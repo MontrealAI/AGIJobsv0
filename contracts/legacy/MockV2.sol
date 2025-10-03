@@ -819,8 +819,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         return (0, 0);
     }
 
-    function getEmployerScore(address) external pure override returns (uint256) {
-        return 0;
+    function getEmployerScore(address) external pure virtual override returns (uint256) {
+        return 1e18;
     }
 }
 
