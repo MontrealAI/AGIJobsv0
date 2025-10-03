@@ -14,6 +14,18 @@ so operators can launch safely with minimal manual steps.
 
 ## Step 1: Prepare configuration
 
+Prefer a guided experience? Run the wizard once you have Node.js and Docker installed:
+
+```bash
+npm run deploy:oneclick:wizard -- --config deployment-config/sepolia.json --network sepolia
+```
+
+The wizard ensures `deployment-config/oneclick.env` exists (copying from the bundled
+template if necessary), executes the contract deployment, rewrites the environment file
+with the emitted addresses, and optionally launches `docker compose` for you. Supply
+`--yes --compose` to accept all prompts automatically; add `--env <path>` or
+`--compose-file <path>` when customising secrets or Kubernetes translations.
+
 1. Review `deployment-config/oneclick.env`, which ships with conservative defaults suitable for local testing. Update RPC URLs,
    API tokens, and address placeholders once contracts have been deployed.
 

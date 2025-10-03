@@ -67,6 +67,7 @@
     "namehash:sepolia": "node scripts/compute-namehash.js deployment-config/sepolia.json",
     "deploy:protocol": "npx hardhat run scripts/deploy/providerAgnosticDeploy.ts",
     "deploy:oneclick": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/oneclick-deploy.ts",
+    "deploy:oneclick:wizard": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/oneclick-wizard.ts",
     "deploy:env": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/generate-oneclick-env.ts",
     "deploy:checklist": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/deployment-checklist.ts",
     "subgraph:e2e": "node scripts/subgraph-e2e.js",
