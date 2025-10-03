@@ -4,6 +4,56 @@ This guide walks through the new "one-click" experience for provisioning AGI Job
 component into container images, automates contract deployment, applies secure defaults, and documents the final configuration
 so operators can launch safely with minimal manual steps.
 
+## Key Capabilities at a Glance
+
+### Containerized All-in-One Package
+
+- **Pre-built services** – Every off-chain component (orchestrator, APIs, agent/validator gateways, notification collector,
+  employer & validator front-ends, paymaster supervisor, mock bundler, etc.) ships with a hardened Dockerfile and is wired
+  together through [`compose.yaml`](../../compose.yaml). For Kubernetes adopters, the Compose file translates cleanly to Helm or
+  Kustomize using the provided environment variables.
+- **Single command bootstrapping** – `npm run deploy:oneclick:auto` optionally invokes `docker compose up` with the generated
+  `.env`, so non-technical operators can go from repository clone to a running stack with a single terminal command.
+- **Environment-driven configuration** – Containers read secrets and runtime endpoints from `deployment-config/oneclick.env`.
+  Operators do not touch per-service config files; updating RPC URLs, API tokens, or contract addresses is achieved by editing
+  environment variables only.
+- **Consistent volumes** – Compose volumes (for orchestrator history, gateway storage, notification audit logs, etc.) ensure
+  state persists across restarts and remain compatible with local development, staging, and production servers.
+
+### Automated Network Configuration
+
+- **Declarative JSON plans** – Deployment parameters (governance multisig, staking economics, ENS roots, validator timing) live
+  in `deployment-config/*.json`. The helper scripts load these files and execute the necessary Hardhat tasks without manual
+  Solidity interaction.
+- **Scripted orchestration** – `npm run deploy:oneclick` deploys the entire contract suite, links modules, seeds ENS data, and
+  exports a canonical address book (`deployment-config/latest-deployment.json`). Optional flags let operators skip Compose or
+  inject network-specific overrides while still relying on the same automation entry point.
+- **Namehash helpers & verification** – CLI helpers compute ENS namehashes and validate configuration before a single
+  transaction is broadcast, reducing the likelihood of typo-driven downtime.
+
+### Secure Default Settings
+
+- **Paused by default** – The deployment script toggles `SystemPause.pauseAll()` immediately after module wiring so operators
+  must explicitly unpause through governance when they are ready to go live.
+- **Conservative limits** – Initial job caps, validator commit/reveal windows, dispute horizons, and stake requirements are
+  enforced from the `secureDefaults` block in the JSON config. The provided templates favour short horizons and low ceilings so
+  a new network launches in a tightly controlled state.
+- **Treasury-first slashing** – `StakeManager` defaults to directing slashed tokens entirely to the treasury, avoiding accidental
+  payouts during early testing.
+- **Allowlist bootstrapping** – Configuration files accept optional agent/validator allowlists that are applied automatically,
+  letting operators start with a known set of participants before opening registration more broadly.
+
+### Clear Deployment Guide & Support
+
+- **Non-technical documentation** – Step-by-step walkthroughs in
+  [`docs/owner-control-non-technical-guide.md`](../owner-control-non-technical-guide.md),
+  [`docs/operations_guide.md`](../operations_guide.md), and the detailed sections below mirror every command emitted by the
+  automation scripts, complete with screenshots/log samples.
+- **Wizard & prompts** – The deployment wizard asks human-friendly questions (governance multisig, RPC URLs, optional Compose
+  launch) and catches common mistakes before submitting transactions.
+- **Auditable artefacts** – Address books, `.env` files, and Compose overrides are generated automatically and stored under
+  version control-friendly paths so operators can file change tickets, share bundles with auditors, or restore systems quickly.
+
 ## Prerequisites
 
 1. **Node.js 20+** – install dependencies and run the deployment scripts.
