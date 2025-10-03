@@ -80,6 +80,15 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
         ok = true;
     }
 
+    function verifyNode(
+        address,
+        string calldata,
+        bytes32[] calldata
+    ) external pure returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        ok = true;
+        node = bytes32(0);
+    }
+
     // profile metadata - no-ops
     function setAgentProfileURI(address, string calldata) external {}
 
@@ -99,6 +108,7 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     function setReputationEngine(address) external {}
     function setAgentRootNode(bytes32) external {}
     function setClubRootNode(bytes32) external {}
+    function setNodeRootNode(bytes32) external {}
     function setAgentMerkleRoot(bytes32) external {}
     function setValidatorMerkleRoot(bytes32) external {}
 
@@ -107,6 +117,8 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     function removeAdditionalAgent(address) external {}
     function addAdditionalValidator(address) external {}
     function removeAdditionalValidator(address) external {}
+    function addAdditionalNodeOperator(address) external {}
+    function removeAdditionalNodeOperator(address) external {}
 
     function setAgentType(address, AgentType) external {}
 
@@ -115,6 +127,10 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     }
 
     function additionalValidators(address) external pure returns (bool) {
+        return true;
+    }
+
+    function additionalNodeOperators(address) external pure returns (bool) {
         return true;
     }
 
