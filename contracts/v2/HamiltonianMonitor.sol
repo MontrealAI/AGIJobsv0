@@ -45,12 +45,12 @@ contract HamiltonianMonitor is Governable, IHamiltonian {
     /// @notice Update the rolling window size used for averages.
     /// @dev Optionally clears the stored history to restart accumulation.
     /// @param newWindow New number of periods to retain.
-    /// @param resetHistory Whether to clear all stored observations.
-    function setWindow(uint256 newWindow, bool resetHistory) external onlyGovernance {
+    /// @param resetHistoryFlag Whether to clear all stored observations.
+    function setWindow(uint256 newWindow, bool resetHistoryFlag) external onlyGovernance {
         require(newWindow > 0, "window");
 
         uint256 previousWindow = window;
-        if (resetHistory) {
+        if (resetHistoryFlag) {
             uint256 previousCount = dHistory.length;
             _clearHistory();
             window = newWindow;

@@ -49,7 +49,7 @@ contract ValidatorStakeLockTest is Test {
             token.mint(val, 1e18);
             vm.startPrank(val);
             token.approve(address(stake), 1e18);
-            stake.depositStake(IStakeManager.Role.Validator, 1e18);
+            stake.depositStake(StakeManager.Role.Validator, 1e18);
             vm.stopPrank();
         }
 
@@ -111,7 +111,7 @@ contract ValidatorStakeLockTest is Test {
         address validator = validators[0];
 
         vm.prank(validator);
-        stake.requestWithdraw(IStakeManager.Role.Validator, 1e18);
+        stake.requestWithdraw(StakeManager.Role.Validator, 1e18);
 
         vm.warp(block.timestamp + stake.unbondingPeriod());
 
@@ -122,7 +122,7 @@ contract ValidatorStakeLockTest is Test {
 
         vm.prank(validator);
         vm.expectRevert(PendingPenalty.selector);
-        stake.finalizeWithdraw(IStakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManager.Role.Validator);
 
         _commitAndReveal(jobId);
         bool success = validation.finalize(jobId);
@@ -132,7 +132,7 @@ contract ValidatorStakeLockTest is Test {
 
         uint256 beforeBal = token.balanceOf(validator);
         vm.prank(validator);
-        stake.finalizeWithdraw(IStakeManager.Role.Validator);
+        stake.finalizeWithdraw(StakeManager.Role.Validator);
         assertEq(token.balanceOf(validator), beforeBal + 1e18);
     }
 
@@ -145,7 +145,7 @@ contract ValidatorStakeLockTest is Test {
 
         vm.prank(validator);
         vm.expectRevert(InsufficientLocked.selector);
-        stake.withdrawStake(IStakeManager.Role.Validator, 1e18);
+        stake.withdrawStake(StakeManager.Role.Validator, 1e18);
 
         _commitAndReveal(jobId);
         bool success = validation.finalize(jobId);
@@ -157,7 +157,7 @@ contract ValidatorStakeLockTest is Test {
         address validator = validators[0];
 
         vm.prank(validator);
-        stake.requestWithdraw(IStakeManager.Role.Validator, 1e18);
+        stake.requestWithdraw(StakeManager.Role.Validator, 1e18);
         vm.warp(block.timestamp + 2);
 
         uint256 jobId = 2;
@@ -169,7 +169,7 @@ contract ValidatorStakeLockTest is Test {
         validation.forceFinalize(jobId);
 
         uint256 expected = 1e18 - ((1e18 * validation.nonRevealPenaltyBps()) / 10_000);
-        assertEq(stake.stakes(validator, IStakeManager.Role.Validator), expected);
+        assertEq(stake.stakes(validator, StakeManager.Role.Validator), expected);
         assertEq(stake.validatorModuleLockedStake(validator), 0);
     }
 }
