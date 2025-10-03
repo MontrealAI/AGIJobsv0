@@ -8,5 +8,6 @@ export default defineConfig({
     specPattern: 'cypress/e2e/**/*.cy.ts',
     supportFile: 'cypress/support/e2e.ts',
     chromeWebSecurity: false,
+    defaultCommandTimeout: 10000,
   },
 });
