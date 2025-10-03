@@ -507,6 +507,9 @@ along without context switching across multiple docs.
   mock AA providers, Alpha bridge, validator UI, and enterprise front-end with sensible defaults. The repository now ships a
   ready-to-edit `deployment-config/oneclick.env`; update any secrets and run `docker compose --env-file
   deployment-config/oneclick.env up --build` for a fully wired stack.
+- **Hands-off launcher:** `npm run deploy:oneclick:auto -- --config <path> --network <network>` runs the entire wizard in
+  non-interactive mode. The helper confirms the `.env` template exists, deploys contracts, applies secure defaults, rewrites
+  `deployment-config/oneclick.env`, and starts Docker Compose in detached mode unless you pass `--attach` or `--no-compose`.
 - **Automated contract bootstrap:** `npm run deploy:oneclick -- --config <path> --network <network>` executes the Hardhat
   deployment, copies the generated address book, and enforces secure launch defaults (paused modules, capped job rewards,
   minimal validator windows) as defined in [`deployment-config/deployer.sample.json`](deployment-config/deployer.sample.json).
@@ -517,6 +520,9 @@ along without context switching across multiple docs.
   if Docker is unavailable.
 - **Step-by-step runbook:** see [docs/deployment/one-click.md](docs/deployment/one-click.md) for the full workflow, including
   prerequisites, environment preparation, post-launch checklist, and troubleshooting tips.
+- **Configuration reference:** [docs/deployment/automated-network-configuration.md](docs/deployment/automated-network-configuration.md)
+  explains how the JSON config maps to on-chain actions, the helper commands that populate ENS namehashes, and how to customise
+  treasury, staking, and validator defaults without writing Solidity.
 
 ### Mainnet Deployment
 

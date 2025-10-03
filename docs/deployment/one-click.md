@@ -26,6 +26,17 @@ with the emitted addresses, and optionally launches `docker compose` for you. Su
 `--yes --compose` to accept all prompts automatically; add `--env <path>` or
 `--compose-file <path>` when customising secrets or Kubernetes translations.
 
+Want a single command with no prompts? Use the non-interactive wrapper, which simply
+forwards any flags to the wizard but defaults to launching Docker Compose in detached
+mode:
+
+```bash
+npm run deploy:oneclick:auto -- --config deployment-config/sepolia.json --network sepolia
+```
+
+Add `--attach` to stream Compose logs or `--no-compose` if you only need the deployment
+artifacts.
+
 1. Review `deployment-config/oneclick.env`, which ships with conservative defaults suitable for local testing. Update RPC URLs,
    API tokens, and address placeholders once contracts have been deployed.
 
