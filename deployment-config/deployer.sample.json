@@ -1,6 +1,6 @@
 {
   "network": "localhost",
-  "governance": "0x0123456789aBcDEF0123456789abCDef01234567",
+  "governance": "0x0000000000000000000000000000000000000000",
   "tax": {
     "enabled": true,
     "uri": "ipfs://QmExamplePolicyHash",
