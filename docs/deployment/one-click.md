@@ -38,8 +38,10 @@ so operators can launch safely with minimal manual steps.
 - **Conservative limits** – Initial job caps, validator commit/reveal windows, dispute horizons, and stake requirements are
   enforced from the `secureDefaults` block in the JSON config. The provided templates favour short horizons and low ceilings so
   a new network launches in a tightly controlled state.
-- **Treasury-first slashing** – `StakeManager` defaults to directing slashed tokens entirely to the treasury, avoiding accidental
-  payouts during early testing.
+- **Treasury-first slashing** – `StakeManager` defaults to routing 90% of slashed stakes to the treasury and the remaining 10%
+  to the employer, with `validatorSlashRewardPct` disabled. Adjust `treasurySlashPct`, `employerSlashPct`, and
+  `validatorSlashRewardPct` in `deployment-config/*.json` before running `npm run deploy:oneclick` if you prefer a 100% treasury
+  configuration.
 - **Allowlist bootstrapping** – Configuration files accept optional agent/validator allowlists that are applied automatically,
   letting operators start with a known set of participants before opening registration more broadly.
 
