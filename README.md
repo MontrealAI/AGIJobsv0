@@ -20,6 +20,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Fee handling and treasury](#fee-handling-and-treasury)
 - [Thermodynamic Incentives](#thermodynamic-incentives)
 - [Deploy defaults](#deploy-defaults)
+- [One-Click Deployment](#one-click-deployment)
 - [Mainnet Deployment](#mainnet-deployment)
 - [Migrating from legacy](#migrating-from-legacy)
 - [Quick Start](#quick-start)
@@ -499,6 +500,18 @@ telemetry and recovery? Read the
 
 Drop the blueprint into your change tickets so non-technical stakeholders can follow
 along without context switching across multiple docs.
+
+### One-Click Deployment
+
+- **Docker Compose bundle:** `compose.yaml` packages the meta API, orchestrator, agent/validator gateway, notification sink,
+  mock AA providers, Alpha bridge, validator UI, and enterprise front-end with sensible defaults. Copy
+  `deployment-config/oneclick.env.example` to `deployment-config/oneclick.env`, customise addresses, then run
+  `docker compose --env-file deployment-config/oneclick.env up --build` for a fully wired stack.
+- **Automated contract bootstrap:** `npm run deploy:oneclick -- --config <path> --network <network>` executes the Hardhat
+  deployment, copies the generated address book, and enforces secure launch defaults (paused modules, capped job rewards,
+  minimal validator windows) as defined in [`deployment-config/deployer.sample.json`](deployment-config/deployer.sample.json).
+- **Step-by-step runbook:** see [docs/deployment/one-click.md](docs/deployment/one-click.md) for the full workflow, including
+  prerequisites, environment preparation, post-launch checklist, and troubleshooting tips.
 
 ### Mainnet Deployment
 
