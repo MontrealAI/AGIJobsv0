@@ -6,20 +6,48 @@ interface ActionDefinition {
   key: string;
   label: string;
   hint?: string;
-  kind: 'string' | 'number' | 'token' | 'percent' | 'json' | 'address' | 'bytes32' | 'none';
+  kind:
+    | 'string'
+    | 'number'
+    | 'token'
+    | 'percent'
+    | 'json'
+    | 'address'
+    | 'bytes32'
+    | 'none';
 }
 
 const ACTIONS: ActionDefinition[] = [
-  { key: 'stakeManager.setFeePct', label: 'StakeManager · setFeePct', kind: 'percent', hint: 'Percentage (0-100).' },
-  { key: 'stakeManager.setBurnPct', label: 'StakeManager · setBurnPct', kind: 'percent', hint: 'Percentage (0-100).' },
+  {
+    key: 'stakeManager.setFeePct',
+    label: 'StakeManager · setFeePct',
+    kind: 'percent',
+    hint: 'Percentage (0-100).',
+  },
+  {
+    key: 'stakeManager.setBurnPct',
+    label: 'StakeManager · setBurnPct',
+    kind: 'percent',
+    hint: 'Percentage (0-100).',
+  },
   {
     key: 'stakeManager.setValidatorRewardPct',
     label: 'StakeManager · setValidatorRewardPct',
     kind: 'percent',
     hint: 'Percentage (0-100).',
   },
-  { key: 'stakeManager.setTreasury', label: 'StakeManager · setTreasury', kind: 'address', hint: '0x-prefixed address.' },
-  { key: 'jobRegistry.setJobStake', label: 'JobRegistry · setJobStake', kind: 'token', hint: 'AGIA amount (decimals allowed).' },
+  {
+    key: 'stakeManager.setTreasury',
+    label: 'StakeManager · setTreasury',
+    kind: 'address',
+    hint: '0x-prefixed address.',
+  },
+  {
+    key: 'jobRegistry.setJobStake',
+    label: 'JobRegistry · setJobStake',
+    kind: 'token',
+    hint: 'AGIA amount (decimals allowed).',
+  },
   {
     key: 'jobRegistry.setMaxJobReward',
     label: 'JobRegistry · setMaxJobReward',
@@ -44,18 +72,78 @@ const ACTIONS: ActionDefinition[] = [
     kind: 'percent',
     hint: 'Percentage (0-100).',
   },
-  { key: 'feePool.setBurnPct', label: 'FeePool · setBurnPct', kind: 'percent', hint: 'Percentage (0-100).' },
-  { key: 'feePool.setTreasury', label: 'FeePool · setTreasury', kind: 'address', hint: '0x-prefixed address.' },
-  { key: 'systemPause.pauseAll', label: 'SystemPause · pauseAll', kind: 'none', hint: 'Halts JobRegistry, StakeManager, validators and fee flow.' },
-  { key: 'systemPause.unpauseAll', label: 'SystemPause · unpauseAll', kind: 'none', hint: 'Restores normal protocol operations.' },
-  { key: 'identityRegistry.setAgentRootNode', label: 'IdentityRegistry · setAgentRootNode', kind: 'bytes32', hint: 'Namehash for agent.agi.eth.' },
-  { key: 'identityRegistry.setClubRootNode', label: 'IdentityRegistry · setClubRootNode', kind: 'bytes32', hint: 'Namehash for club.agi.eth.' },
-  { key: 'identityRegistry.setAgentMerkleRoot', label: 'IdentityRegistry · setAgentMerkleRoot', kind: 'bytes32', hint: 'Merkle root for emergency agent allowlist.' },
-  { key: 'identityRegistry.setValidatorMerkleRoot', label: 'IdentityRegistry · setValidatorMerkleRoot', kind: 'bytes32', hint: 'Merkle root for validator allowlist.' },
-  { key: 'identityRegistry.setENS', label: 'IdentityRegistry · setENS', kind: 'address', hint: 'ENS registry address.' },
-  { key: 'identityRegistry.setNameWrapper', label: 'IdentityRegistry · setNameWrapper', kind: 'address', hint: 'NameWrapper contract address.' },
-  { key: 'identityRegistry.addAdditionalAgent', label: 'IdentityRegistry · addAdditionalAgent', kind: 'address', hint: 'Whitelisted agent address.' },
-  { key: 'identityRegistry.removeAdditionalAgent', label: 'IdentityRegistry · removeAdditionalAgent', kind: 'address', hint: 'Address to remove from agent allowlist.' },
+  {
+    key: 'feePool.setBurnPct',
+    label: 'FeePool · setBurnPct',
+    kind: 'percent',
+    hint: 'Percentage (0-100).',
+  },
+  {
+    key: 'feePool.setTreasury',
+    label: 'FeePool · setTreasury',
+    kind: 'address',
+    hint: '0x-prefixed address.',
+  },
+  {
+    key: 'systemPause.pauseAll',
+    label: 'SystemPause · pauseAll',
+    kind: 'none',
+    hint: 'Halts JobRegistry, StakeManager, validators and fee flow.',
+  },
+  {
+    key: 'systemPause.unpauseAll',
+    label: 'SystemPause · unpauseAll',
+    kind: 'none',
+    hint: 'Restores normal protocol operations.',
+  },
+  {
+    key: 'identityRegistry.setAgentRootNode',
+    label: 'IdentityRegistry · setAgentRootNode',
+    kind: 'bytes32',
+    hint: 'Namehash for agent.agi.eth.',
+  },
+  {
+    key: 'identityRegistry.setClubRootNode',
+    label: 'IdentityRegistry · setClubRootNode',
+    kind: 'bytes32',
+    hint: 'Namehash for club.agi.eth.',
+  },
+  {
+    key: 'identityRegistry.setAgentMerkleRoot',
+    label: 'IdentityRegistry · setAgentMerkleRoot',
+    kind: 'bytes32',
+    hint: 'Merkle root for emergency agent allowlist.',
+  },
+  {
+    key: 'identityRegistry.setValidatorMerkleRoot',
+    label: 'IdentityRegistry · setValidatorMerkleRoot',
+    kind: 'bytes32',
+    hint: 'Merkle root for validator allowlist.',
+  },
+  {
+    key: 'identityRegistry.setENS',
+    label: 'IdentityRegistry · setENS',
+    kind: 'address',
+    hint: 'ENS registry address.',
+  },
+  {
+    key: 'identityRegistry.setNameWrapper',
+    label: 'IdentityRegistry · setNameWrapper',
+    kind: 'address',
+    hint: 'NameWrapper contract address.',
+  },
+  {
+    key: 'identityRegistry.addAdditionalAgent',
+    label: 'IdentityRegistry · addAdditionalAgent',
+    kind: 'address',
+    hint: 'Whitelisted agent address.',
+  },
+  {
+    key: 'identityRegistry.removeAdditionalAgent',
+    label: 'IdentityRegistry · removeAdditionalAgent',
+    kind: 'address',
+    hint: 'Address to remove from agent allowlist.',
+  },
   {
     key: 'identityRegistry.addAdditionalValidator',
     label: 'IdentityRegistry · addAdditionalValidator',
@@ -75,7 +163,10 @@ interface GovernanceActionFormProps {
   onAfterSubmit?: () => void;
 }
 
-export function GovernanceActionForm({ onPreview, onAfterSubmit }: GovernanceActionFormProps) {
+export function GovernanceActionForm({
+  onPreview,
+  onAfterSubmit,
+}: GovernanceActionFormProps) {
   const { request } = useApi();
   const [selectedKey, setSelectedKey] = useState<string>(ACTIONS[0].key);
   const [value, setValue] = useState('');
@@ -85,7 +176,10 @@ export function GovernanceActionForm({ onPreview, onAfterSubmit }: GovernanceAct
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<GovernancePreviewResult | null>(null);
 
-  const definition = useMemo(() => ACTIONS.find((action) => action.key === selectedKey) ?? ACTIONS[0], [selectedKey]);
+  const definition = useMemo(
+    () => ACTIONS.find((action) => action.key === selectedKey) ?? ACTIONS[0],
+    [selectedKey]
+  );
 
   const requiresValue = definition.kind !== 'none';
 
@@ -95,7 +189,9 @@ export function GovernanceActionForm({ onPreview, onAfterSubmit }: GovernanceAct
     setLoading(true);
     setPreview(null);
     try {
-      const parsedValue = requiresValue ? normaliseValue(value, definition.kind) : null;
+      const parsedValue = requiresValue
+        ? normaliseValue(value, definition.kind)
+        : null;
       const body = {
         key: selectedKey,
         value: parsedValue,
@@ -104,15 +200,20 @@ export function GovernanceActionForm({ onPreview, onAfterSubmit }: GovernanceAct
         },
         persist,
       };
-      const result = await request<GovernancePreviewResult>('governance/preview', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
+      const result = await request<GovernancePreviewResult>(
+        'governance/preview',
+        {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }
+      );
       setPreview(result);
       onPreview?.(result);
       onAfterSubmit?.();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Preview failed.');
+      setError(
+        submitError instanceof Error ? submitError.message : 'Preview failed.'
+      );
     } finally {
       setLoading(false);
     }
@@ -192,16 +293,24 @@ export function GovernanceActionForm({ onPreview, onAfterSubmit }: GovernanceAct
       {preview && (
         <section>
           <h3>Preview Result</h3>
-          <p className="helper-text">Bundle digest: {preview.bundle?.digest ?? 'n/a'}</p>
+          <p className="helper-text">
+            Bundle digest: {preview.bundle?.digest ?? 'n/a'}
+          </p>
           {preview.diff && (
             <>
               <h4>Diff</h4>
-              <pre className="json-inline">{JSON.stringify(preview.diff, null, 2)}</pre>
+              <pre className="json-inline">
+                {JSON.stringify(preview.diff, null, 2)}
+              </pre>
             </>
           )}
           <h4>Call Parameters</h4>
-          <pre className="json-inline">{JSON.stringify(preview.args, null, 2)}</pre>
-          {preview.auditFile && <p className="helper-text">Audit stored at: {preview.auditFile}</p>}
+          <pre className="json-inline">
+            {JSON.stringify(preview.args, null, 2)}
+          </pre>
+          {preview.auditFile && (
+            <p className="helper-text">Audit stored at: {preview.auditFile}</p>
+          )}
         </section>
       )}
     </div>
@@ -215,7 +324,7 @@ function normaliseValue(raw: string, kind: ActionDefinition['kind']) {
     case 'json': {
       try {
         return JSON.parse(trimmed);
-      } catch (error) {
+      } catch {
         throw new Error('Provide valid JSON payload.');
       }
     }

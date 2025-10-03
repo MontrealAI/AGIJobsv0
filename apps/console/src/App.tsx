@@ -24,7 +24,11 @@ function AppShell() {
       const data = await request<GovernanceSnapshot>('governance/snapshot');
       setSnapshot(data);
     } catch (error) {
-      setSnapshotError(error instanceof Error ? error.message : 'Failed to load governance snapshot.');
+      setSnapshotError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to load governance snapshot.'
+      );
     } finally {
       setSnapshotLoading(false);
     }
@@ -36,14 +40,18 @@ function AppShell() {
       return;
     }
     refreshSnapshot();
-  }, [config?.baseUrl, config?.token, refreshSnapshot]);
+  }, [config, refreshSnapshot]);
 
   return (
     <div className="app-shell">
       <h1>AGI Jobs Owner Console</h1>
       <div className="panel-grid">
         <ConnectionPanel onConfigSaved={() => setSnapshot(null)} />
-        <PoliciesPanel snapshot={snapshot} refreshing={snapshotLoading} onRefresh={refreshSnapshot} />
+        <PoliciesPanel
+          snapshot={snapshot}
+          refreshing={snapshotLoading}
+          onRefresh={refreshSnapshot}
+        />
         <GovernanceActionForm onAfterSubmit={refreshSnapshot} />
         <GasPanel />
         <ReceiptsViewer />
