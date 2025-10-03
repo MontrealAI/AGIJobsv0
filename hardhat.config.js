@@ -113,9 +113,11 @@ module.exports = {
     require: ['ts-node/register', './test/setup.js'],
   },
   gasReporter: {
-    enabled: true,
+    enabled: process.env.REPORT_GAS === 'true',
     currency: 'USD',
     showTimeSpent: true,
+    noColors: true,
+    outputFile: 'reports/gas/gas-report.txt',
   },
   contractSizer: {
     alphaSort: true,
