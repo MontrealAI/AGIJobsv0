@@ -303,13 +303,13 @@ describe('Commit-reveal job lifecycle', function () {
     const salt = ethers.id('salt');
     const commit = ethers.solidityPackedKeccak256(
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
-      [1n, nonce, false, burnTxHash, salt, specHash]
+      [1n, nonce, true, burnTxHash, salt, specHash]
     );
     await validation.connect(validator).commitValidation(1, commit, 'validator', []);
     await time.increase(2);
     await validation
       .connect(validator)
-      .revealValidation(1, false, burnTxHash, salt, 'validator', []);
+      .revealValidation(1, true, burnTxHash, salt, 'validator', []);
     await time.increase(2);
     await validation.finalize(1);
 
@@ -321,11 +321,19 @@ describe('Commit-reveal job lifecycle', function () {
       [await env.dispute.getAddress(), 1, true]
     );
     const sig = await moderator.signMessage(ethers.getBytes(hash));
+    const validatorStakeBefore = await stake.stakeOf(
+      validator.address,
+      Role.Validator
+    );
+    const disputeFee = await env.dispute.disputeFee();
     await env.dispute.connect(moderator).resolveDispute(1, true);
     await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 
     expect(await stake.stakeOf(agent.address, Role.Agent)).to.equal(0);
+    expect(await stake.stakeOf(validator.address, Role.Validator)).to.equal(
+      validatorStakeBefore - disputeFee
+    );
     expect(await token.balanceOf(employer.address)).to.equal(
       ethers.parseUnits('1001', AGIALPHA_DECIMALS)
     );
