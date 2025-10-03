@@ -46,6 +46,14 @@
     "coverage:check": "node scripts/check-coverage.js",
     "coverage:full": "npm run coverage:report",
     "check:coverage": "node scripts/check-coverage.js 90",
+    "check:access-control": "node scripts/ci/check-access-control-coverage.js",
+    "abi:export": "node scripts/ci/export-abis.js",
+    "abi:diff": "node scripts/ci/check-abi-diff.js",
+    "contract:size": "npx hardhat size-contracts",
+    "webapp:build": "npm run build --prefix apps/console",
+    "webapp:lint": "npm run lint --prefix apps/console",
+    "webapp:typecheck": "npm run typecheck --prefix apps/console",
+    "webapp:e2e": "start-server-and-test \"npm --prefix apps/console run preview -- --host 0.0.0.0 --port 4173\" http://127.0.0.1:4173 \"cypress run --config-file cypress.config.ts\"",
     "security:audit": "audit-ci --config ./audit-ci.json",
     "gas:check": "FOUNDRY_PROFILE=gas forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot --check",
     "gas:snapshot": "FOUNDRY_PROFILE=gas forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot",
@@ -117,7 +125,11 @@
     "solidity-coverage": "^0.8.14",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "cypress": "^13.15.0",
+    "start-server-and-test": "^2.0.10",
+    "hardhat-contract-sizer": "^2.10.0",
+    "license-checker": "^25.0.1"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.11.3",

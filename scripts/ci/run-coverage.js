@@ -19,7 +19,12 @@ const binName = process.platform === 'win32' ? 'hardhat.cmd' : 'hardhat';
 const localBin = join(process.cwd(), 'node_modules', '.bin', binName);
 const command = existsSync(localBin) ? localBin : binName;
 
-const args = ['coverage', '--config', 'hardhat.coverage.config.js', ...process.argv.slice(2)];
+const args = [
+  'coverage',
+  '--config',
+  'hardhat.coverage.config.js',
+  ...process.argv.slice(2),
+];
 
 const result = spawnSync(command, args, {
   stdio: 'inherit',

@@ -1,0 +1,105 @@
+name: security
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  id-token: write
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --redact --verbose
+
+      - name: npm audit (fail on high)
+        run: npm audit --audit-level=high
+
+      - name: License checker
+        run: |
+          mkdir -p reports
+          npx license-checker --summary --production --development --out reports/license-summary.txt
+
+      - name: Slither static analysis
+        run: |
+          docker run --rm \
+            -v "$PWD":/src \
+            -w /src \
+            trailofbits/eth-security-toolbox:nightly-20240902 \
+            slither . --fail-high --exclude-dependencies --sarif slither.sarif
+
+      - name: Upload Slither SARIF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slither-sarif
+          path: slither.sarif
+
+      - name: Mythril quick scan
+        run: |
+          docker run --rm \
+            -v "$PWD":/src \
+            -w /src \
+            mythril/myth:0.24.3 \
+            analyze contracts/v2/modules/JobRegistryModule.sol \
+              --execution-timeout 120 \
+              --solc-args "--base-path . --include-path node_modules --allow-paths .,node_modules" \
+              --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
+
+      - name: Generate SBOM (SPDX JSON)
+        uses: anchore/sbom-action@v0.17.5
+        with:
+          path: .
+          format: spdx-json
+          output-file: reports/sbom/spdx.json
+
+      - name: Upload security artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-artifacts
+          path: |
+            reports/license-summary.txt
+            reports/sbom/spdx.json
+
+      - name: Generate provenance attestation
+        uses: slsa-framework/slsa-github-generator/actions/attest-generic@v2
+        with:
+          predicate-type: https://slsa.dev/provenance/v1
+          subject-path: reports/sbom/spdx.json
+          out-file: reports/provenance.intoto.jsonl
+
+      - name: Upload provenance statement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: provenance
+          path: reports/provenance.intoto.jsonl
