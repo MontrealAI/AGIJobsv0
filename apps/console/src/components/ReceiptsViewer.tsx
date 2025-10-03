@@ -13,6 +13,19 @@ export function ReceiptsViewer() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
 
+  const getMetadataValue = (
+    metadata: Record<string, unknown> | null | undefined,
+    key: string
+  ): string | undefined => {
+    if (!metadata) return undefined;
+    const value = metadata[key];
+    return typeof value === 'string' ? value : undefined;
+  };
+
+  const expandedReceipt = expanded !== null ? receipts[expanded] ?? null : null;
+  const expandedStatus = getMetadataValue(expandedReceipt?.metadata, 'status');
+  const expandedOutcome = getMetadataValue(expandedReceipt?.metadata, 'outcome');
+
   async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!config) return;
@@ -129,11 +142,27 @@ export function ReceiptsViewer() {
               </tbody>
             </table>
           </div>
-          {expanded !== null && receipts[expanded] && (
+          {expandedReceipt && (
             <div style={{ marginTop: '1rem' }}>
               <h4>Receipt Payload</h4>
-              <pre className="json-inline">
-                {JSON.stringify(receipts[expanded], null, 2)}
+              {(expandedStatus || expandedOutcome) && (
+                <dl className="metadata-grid" data-testid="receipt-metadata">
+                  {expandedStatus && (
+                    <>
+                      <dt>Status</dt>
+                      <dd data-testid="receipt-status">{expandedStatus}</dd>
+                    </>
+                  )}
+                  {expandedOutcome && (
+                    <>
+                      <dt>Outcome</dt>
+                      <dd data-testid="receipt-outcome">{expandedOutcome}</dd>
+                    </>
+                  )}
+                </dl>
+              )}
+              <pre className="json-inline" data-testid="receipt-raw-json">
+                {JSON.stringify(expandedReceipt, null, 2)}
               </pre>
             </div>
           )}

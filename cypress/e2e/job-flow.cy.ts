@@ -61,6 +61,6 @@ describe('Owner governance job flow', () => {
     cy.wait('@receipts');
     cy.contains('job.finalized');
     cy.contains('Details').click();
-    cy.contains('status: agent_win');
+    cy.get('[data-testid="receipt-outcome"]', { timeout: 10000 }).should('have.text', 'agent_win');
   });
 });
