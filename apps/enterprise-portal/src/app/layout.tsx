@@ -1,5 +1,6 @@
 import './globals.css';
 import type { ReactNode } from 'react';
+import { LocalizationProvider } from '../context/LocalizationContext';
 
 export const metadata = {
   title: 'AGI Jobs Enterprise Portal',
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <main>{children}</main>
+        <LocalizationProvider>
+          <main>{children}</main>
+        </LocalizationProvider>
       </body>
     </html>
   );

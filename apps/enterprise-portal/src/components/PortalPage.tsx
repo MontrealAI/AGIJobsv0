@@ -1,28 +1,46 @@
 'use client';
 
 import { ConnectionPanel } from './ConnectionPanel';
-import { JobSubmissionForm } from './JobSubmissionForm';
 import { JobLifecycleDashboard } from './JobLifecycleDashboard';
 import { DeliverableVerificationPanel } from './DeliverableVerificationPanel';
-import { ValidatorLogPanel } from './ValidatorLogPanel';
 import { CertificateGallery } from './CertificateGallery';
 import { SlaViewer } from './SlaViewer';
 import { useJobFeed } from '../hooks/useJobFeed';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { ConversationalJobComposer } from './ConversationalJobComposer';
+import { AgentOpportunitiesPanel } from './AgentOpportunitiesPanel';
+import { ValidatorInbox } from './ValidatorInbox';
+import { HelpCenterDrawer } from './HelpCenterDrawer';
+import { SupportChecklist } from './SupportChecklist';
+import { useLocalization } from '../context/LocalizationContext';
 
 export const PortalPage = () => {
-  const { jobs, events, validators, loading, error, hasValidationModule } = useJobFeed({ watch: true });
+  const { jobs, events, loading, error } = useJobFeed({ watch: true });
+  const { t } = useLocalization();
 
   return (
-    <div className="grid" style={{ gap: '2.5rem' }}>
-      <ConnectionPanel />
-      <JobSubmissionForm />
-      <JobLifecycleDashboard jobs={jobs} events={events} loading={loading} error={error} />
-      <ValidatorLogPanel
-        validators={validators}
-        loading={loading}
-        hasValidationModule={hasValidationModule}
-      />
-      <div className="grid two-column">
+    <div className="portal-shell">
+      <header className="portal-header">
+        <div>
+          <h1>{t('app.title')}</h1>
+          <p>{t('app.subtitle')}</p>
+        </div>
+        <LanguageSwitcher />
+      </header>
+      <div className="portal-grid">
+        <div className="primary-column">
+          <ConnectionPanel />
+          <ConversationalJobComposer />
+          <JobLifecycleDashboard jobs={jobs} events={events} loading={loading} error={error} />
+        </div>
+        <aside className="secondary-column">
+          <AgentOpportunitiesPanel jobs={jobs} loading={loading} error={error} />
+          <ValidatorInbox events={events} loading={loading} />
+          <SupportChecklist />
+          <HelpCenterDrawer />
+        </aside>
+      </div>
+      <div className="portal-lower-grid">
         <DeliverableVerificationPanel events={events} />
         <div className="grid">
           <CertificateGallery />

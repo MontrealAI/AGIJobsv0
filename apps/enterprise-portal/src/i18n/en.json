@@ -1,0 +1,111 @@
+{
+  "app": {
+    "title": "AGI Jobs Assistant Portal",
+    "subtitle": "Create, review, and validate autonomous job workflows with a conversational interface."
+  },
+  "language": {
+    "label": "Language"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "employer": {
+    "greeting": "Hi there! Let's register your new job on AGI Jobs.",
+    "prompt": {
+      "task": "What task do you need done?",
+      "description": "Great. Could you add more detail so agents know exactly what success looks like?",
+      "skills": "Which skills or agent profiles are a good fit?",
+      "reward": "What reward would you like to offer?",
+      "deadline": "When should the result be delivered?",
+      "attachments": "Share any links or files an agent will need (optional).",
+      "sla": "Do you require an SLA acknowledgement before an agent starts?",
+      "ttl": "How long should validators have to review the submission (hours)?",
+      "agents": "Pick which agent archetypes can apply."
+    },
+    "placeholder": {
+      "task": "Draft a quarterly compliance report",
+      "description": "Include the scope, data sources, and handover expectations…",
+      "skills": "Compliance, Reporting, Python",
+      "reward": "500",
+      "attachments": "https://example.com/brief.pdf",
+      "deadline": "",
+      "ttl": "72"
+    },
+    "actions": {
+      "continue": "Continue",
+      "back": "Back",
+      "confirm": "Submit job",
+      "edit": "Edit",
+      "restart": "Start another job"
+    },
+    "summary": {
+      "title": "Confirm job details",
+      "reward": "Reward",
+      "deadline": "Deadline",
+      "skills": "Skills",
+      "attachments": "Reference material",
+      "sla": "SLA required",
+      "ttl": "Validator review window",
+      "agents": "Eligible agent types",
+      "none": "Not provided"
+    },
+    "agentLabels": {
+      "1": "Generalist",
+      "3": "Generalist + Specialist",
+      "7": "Multi-role"
+    },
+    "status": {
+      "submitting": "Submitting job…",
+      "success": "Job submitted successfully!",
+      "tx": "View transaction"
+    }
+  },
+  "agent": {
+    "title": "Opportunities feed",
+    "subtitle": "Newly published jobs will appear here for quick triage.",
+    "empty": "No open jobs yet. Check back soon!",
+    "accept": "Accept job",
+    "decline": "Decline",
+    "deadline": "Deadline",
+    "reward": "Reward"
+  },
+  "validator": {
+    "title": "Validator queue",
+    "subtitle": "Review submissions and record your decision without leaving the portal.",
+    "empty": "No submissions awaiting review right now.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "comment": "Add a note for the submitter",
+    "result": "Result URI"
+  },
+  "help": {
+    "title": "Help center",
+    "subtitle": "Guides and quick answers while you work.",
+    "faq": {
+      "agents": "How do I qualify for higher paying jobs?",
+      "deadlines": "Can I extend a deadline after publishing?",
+      "disputes": "What happens if I dispute a result?"
+    },
+    "guides": {
+      "employer": "Employer guide",
+      "agent": "Agent onboarding",
+      "validator": "Validator handbook"
+    },
+    "cta": "Open full documentation"
+  },
+  "support": {
+    "checklist": {
+      "title": "Go-live checklist",
+      "wallet": "Wallet connected",
+      "ens": "ENS identity verified",
+      "stake": "Stake deposited",
+      "job": "Job published",
+      "tip": "Need help? Ask the assistant widget in the corner."
+    }
+  },
+  "status": {
+    "loading": "Loading…",
+    "error": "Something went wrong."
+  }
+}
