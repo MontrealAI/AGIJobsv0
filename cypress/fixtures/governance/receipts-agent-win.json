@@ -7,7 +7,7 @@
       "txHashes": ["0xabc", "0xdef"],
       "attestationUid": "0xattestation",
       "metadata": {
-        "status": "paid",
+        "status": "agent_win",
         "outcome": "agent_win"
       }
     }
