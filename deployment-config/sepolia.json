@@ -46,8 +46,8 @@
     "pauseOnLaunch": true,
     "maxJobRewardAgia": 25,
     "maxJobDurationSeconds": 86400,
-    "validatorCommitWindowSeconds": 1,
-    "validatorRevealWindowSeconds": 1
+    "validatorCommitWindowSeconds": 60,
+    "validatorRevealWindowSeconds": 60
   },
   "output": "deployment-config/latest-deployment.sepolia.json"
 }
