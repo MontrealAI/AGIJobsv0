@@ -514,6 +514,9 @@ along without context switching across multiple docs.
   deployment, copies the generated address book, and enforces secure launch defaults (paused modules, capped job rewards,
   minimal validator windows) as defined in [`deployment-config/deployer.sample.json`](deployment-config/deployer.sample.json).
   Follow up with `npm run deploy:env` to inject the resulting addresses into `deployment-config/oneclick.env` automatically.
+- **Identity allowlists:** The one-click helpers leave the agent and validator allowlists empty. Once the deployment completes,
+  synchronise the desired entries via `npm run identity:update -- --network <network>` (or `scripts/v2/updateIdentityRegistry.ts`)
+  using the `config/identity-registry*.json` files so `IdentityRegistry` matches your intended roster.
 - **Guided wizard:** `npm run deploy:oneclick:wizard -- --config <path>` stitches the deployment, environment update, and optional
   Docker Compose launch into a single interactive prompt (pass `--yes --compose` for non-interactive runs). The helper ensures
   the `.env` template exists, forwards custom `--network`, `--env` or `--compose-file` flags, and prints the final manual commands
