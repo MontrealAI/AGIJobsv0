@@ -45,7 +45,10 @@ Behind the scenes the script:
 2. Sets ENS registry and root nodes via `IdentityRegistry`.
 3. Connects `JobRegistry`, `StakeManager`, and `ValidationModule` together.
 4. Locks down the launch configuration (pause switch, staking minimums, job caps,
-   validator commit/reveal windows, slashing distribution).
+   validator commit/reveal windows, slashing distribution). The deployment script
+   boots the `ValidationModule` with a 60 second commit window and a 60 second
+   reveal window, so validators always begin with non-zero deadlines before any
+   overrides are applied.
 5. Writes the resulting addresses to both `docs/deployment-addresses.json` and the
    configured `output` path for operators.
 
@@ -83,15 +86,21 @@ logs or `--no-compose` to skip container startup.
 Deployments begin in a locked-down posture:
 
 - `SystemPause.pauseAll()` is executed if the pause contract is present.
-- Job rewards and durations are capped, and validator commit/reveal windows default to
-  zero until explicitly set.
+- Job rewards and durations are capped, and validator commit/reveal windows are
+  populated from `secureDefaults.validatorCommitWindowSeconds` and
+  `secureDefaults.validatorRevealWindowSeconds` (falling back to the
+  `econ.commitWindow`/`econ.revealWindow` strings). The out-of-the-box
+  configuration sets these windows to non-zero values, so validators never start
+  in a "disabled" state unless operators explicitly override them to `0`.
 - Slashing sends 100% of funds to the treasury by default, preventing accidental user
   payouts.
 - Only the configured governance address can relax these controls through the dedicated
   owner-control scripts.
 
 These defaults prevent an operator from unintentionally launching an unsafe configuration
-while still giving them straightforward knobs to adjust once they are ready.
+while still giving them straightforward knobs to adjust once they are ready. To change
+the validator timing guardrails, edit the `secureDefaults` block in the relevant
+`deployment-config/*.json` file before running the helper.
 
 ## 6. Production playbooks for non-technical operators
 
