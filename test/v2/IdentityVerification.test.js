@@ -235,5 +235,28 @@ describe('Identity verification enforcement', function () {
           .revealValidation(1, true, burnTxHash, salt, 'validator', [])
       ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
     });
+
+    it('rejects node operators without allowlist or attestations', async () => {
+      await identity.setNodeRootNode(ethers.namehash('node.agi.eth'));
+      const result = await identity.verifyNode.staticCall(v1.address, 'node1', []);
+      expect(result[0]).to.equal(false);
+    });
+
+    it('allows node allowlisted operators to pass validator verification', async () => {
+      await identity.setNodeRootNode(ethers.namehash('node.agi.eth'));
+      await identity.addAdditionalNodeOperator(v1.address);
+      const validatorResult = await identity.verifyValidator.staticCall(
+        v1.address,
+        'node1',
+        []
+      );
+      expect(validatorResult[0]).to.equal(true);
+      const nodeResult = await identity.verifyNode.staticCall(
+        v1.address,
+        'node1',
+        []
+      );
+      expect(nodeResult[0]).to.equal(true);
+    });
   });
 });

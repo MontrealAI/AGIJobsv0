@@ -135,6 +135,16 @@ describe('IdentityRegistry setters', function () {
     });
   });
 
+  describe('setNodeRootNode', function () {
+    it('updates and emits event for valid node root', async () => {
+      const nodeRoot = ethers.namehash('node.agi.eth');
+      await expect(identity.setNodeRootNode(nodeRoot))
+        .to.emit(identity, 'NodeRootNodeUpdated')
+        .withArgs(nodeRoot);
+      expect(await identity.nodeRootNode()).to.equal(nodeRoot);
+    });
+  });
+
   describe('configureMainnet', function () {
     it('sets the NameWrapper to the mainnet address', async () => {
       const mainnetWrapper = await identity.MAINNET_NAME_WRAPPER();
@@ -142,8 +152,12 @@ describe('IdentityRegistry setters', function () {
       expect(await identity.nameWrapper()).to.equal(mainnetWrapper);
       const alphaAgent = await identity.MAINNET_ALPHA_AGENT_ROOT_NODE();
       const alphaClub = await identity.MAINNET_ALPHA_CLUB_ROOT_NODE();
+      const nodeRoot = await identity.MAINNET_NODE_ROOT_NODE();
+      const alphaNode = await identity.MAINNET_ALPHA_NODE_ROOT_NODE();
       expect(await identity.isAgentRootNodeAlias(alphaAgent)).to.equal(true);
       expect(await identity.isClubRootNodeAlias(alphaClub)).to.equal(true);
+      expect(await identity.nodeRootNode()).to.equal(nodeRoot);
+      expect(await identity.isNodeRootNodeAlias(alphaNode)).to.equal(true);
     });
   });
 
@@ -151,22 +165,31 @@ describe('IdentityRegistry setters', function () {
     it('allows the owner to manage aliases explicitly', async () => {
       const agentAlias = ethers.keccak256(ethers.toUtf8Bytes('manualAgent'));
       const clubAlias = ethers.keccak256(ethers.toUtf8Bytes('manualClub'));
+      const nodeAlias = ethers.keccak256(ethers.toUtf8Bytes('manualNode'));
       await expect(identity.addAgentRootNodeAlias(agentAlias))
         .to.emit(identity, 'AgentRootNodeAliasUpdated')
         .withArgs(agentAlias, true);
       await expect(identity.addClubRootNodeAlias(clubAlias))
         .to.emit(identity, 'ClubRootNodeAliasUpdated')
         .withArgs(clubAlias, true);
+      await expect(identity.addNodeRootNodeAlias(nodeAlias))
+        .to.emit(identity, 'NodeRootNodeAliasUpdated')
+        .withArgs(nodeAlias, true);
       expect(await identity.isAgentRootNodeAlias(agentAlias)).to.equal(true);
       expect(await identity.isClubRootNodeAlias(clubAlias)).to.equal(true);
+      expect(await identity.isNodeRootNodeAlias(nodeAlias)).to.equal(true);
       await expect(identity.removeAgentRootNodeAlias(agentAlias))
         .to.emit(identity, 'AgentRootNodeAliasUpdated')
         .withArgs(agentAlias, false);
       await expect(identity.removeClubRootNodeAlias(clubAlias))
         .to.emit(identity, 'ClubRootNodeAliasUpdated')
         .withArgs(clubAlias, false);
+      await expect(identity.removeNodeRootNodeAlias(nodeAlias))
+        .to.emit(identity, 'NodeRootNodeAliasUpdated')
+        .withArgs(nodeAlias, false);
       expect(await identity.isAgentRootNodeAlias(agentAlias)).to.equal(false);
       expect(await identity.isClubRootNodeAlias(clubAlias)).to.equal(false);
+      expect(await identity.isNodeRootNodeAlias(nodeAlias)).to.equal(false);
     });
 
     it('reverts when attempting to manage zero-value aliases', async () => {
@@ -175,6 +198,9 @@ describe('IdentityRegistry setters', function () {
       ).to.be.revertedWithCustomError(identity, 'ZeroNode');
       await expect(
         identity.removeClubRootNodeAlias(ethers.ZeroHash)
+      ).to.be.revertedWithCustomError(identity, 'ZeroNode');
+      await expect(
+        identity.addNodeRootNodeAlias(ethers.ZeroHash)
       ).to.be.revertedWithCustomError(identity, 'ZeroNode');
     });
   });
@@ -215,6 +241,27 @@ describe('IdentityRegistry setters', function () {
       );
       await wrapper.setOwner(BigInt(node), validator.address);
       const result = await identity.verifyValidator.staticCall(
+        validator.address,
+        label,
+        []
+      );
+      expect(result[0]).to.equal(true);
+    });
+
+    it('verifies node operators using the alpha node root alias', async () => {
+      const nodeRoot = ethers.namehash('node.agi.eth');
+      const alphaNodeRoot = ethers.namehash('alpha.node.agi.eth');
+      await identity.setNodeRootNode(nodeRoot);
+      await identity.addNodeRootNodeAlias(alphaNodeRoot);
+      const label = 'operator';
+      const nodeHash = ethers.keccak256(
+        ethers.solidityPacked(
+          ['bytes32', 'bytes32'],
+          [alphaNodeRoot, ethers.id(label)]
+        )
+      );
+      await wrapper.setOwner(BigInt(nodeHash), validator.address);
+      const result = await identity.verifyNode.staticCall(
         validator.address,
         label,
         []
@@ -266,6 +313,8 @@ describe('IdentityRegistry setters', function () {
         agentRootNode: ethers.keccak256(ethers.toUtf8Bytes('agentRoot')),
         setClubRootNode: true,
         clubRootNode: ethers.keccak256(ethers.toUtf8Bytes('clubRoot')),
+        setNodeRootNode: true,
+        nodeRootNode: ethers.keccak256(ethers.toUtf8Bytes('nodeRoot')),
         setAgentMerkleRoot: true,
         agentMerkleRoot: ethers.keccak256(ethers.toUtf8Bytes('agentMerkle')),
         setValidatorMerkleRoot: true,
@@ -281,14 +330,19 @@ describe('IdentityRegistry setters', function () {
       const validatorUpdates = [
         { validator: validator.address, allowed: true },
       ];
+      const nodeUpdates = [{ nodeOperator: validator.address, allowed: true }];
       const agentAliasNode = ethers.keccak256(
         ethers.toUtf8Bytes('aliasAgentNode')
       );
       const clubAliasNode = ethers.keccak256(
         ethers.toUtf8Bytes('aliasClubNode')
       );
+      const nodeAliasNode = ethers.keccak256(
+        ethers.toUtf8Bytes('aliasNodeRoot')
+      );
       const agentAliasUpdates = [{ node: agentAliasNode, allowed: true }];
       const clubAliasUpdates = [{ node: clubAliasNode, allowed: true }];
+      const nodeAliasUpdates = [{ node: nodeAliasNode, allowed: true }];
       const agentTypeUpdates = [{ agent: agent.address, agentType: 1 }];
 
       await expect(
@@ -296,8 +350,10 @@ describe('IdentityRegistry setters', function () {
           config,
           agentUpdates,
           validatorUpdates,
+          nodeUpdates,
           agentAliasUpdates,
           clubAliasUpdates,
+          nodeAliasUpdates,
           agentTypeUpdates
         )
       )
@@ -312,14 +368,18 @@ describe('IdentityRegistry setters', function () {
           true,
           true,
           true,
+          true,
           BigInt(agentUpdates.length),
           BigInt(validatorUpdates.length),
+          BigInt(nodeUpdates.length),
           BigInt(agentTypeUpdates.length)
         )
         .and.to.emit(identity, 'AgentRootNodeAliasUpdated')
         .withArgs(agentAliasNode, true)
         .and.to.emit(identity, 'ClubRootNodeAliasUpdated')
-        .withArgs(clubAliasNode, true);
+        .withArgs(clubAliasNode, true)
+        .and.to.emit(identity, 'NodeRootNodeAliasUpdated')
+        .withArgs(nodeAliasNode, true);
 
       expect(await identity.ens()).to.equal(await newEns.getAddress());
       expect(await identity.nameWrapper()).to.equal(
@@ -333,6 +393,7 @@ describe('IdentityRegistry setters', function () {
       );
       expect(await identity.agentRootNode()).to.equal(config.agentRootNode);
       expect(await identity.clubRootNode()).to.equal(config.clubRootNode);
+      expect(await identity.nodeRootNode()).to.equal(config.nodeRootNode);
       expect(await identity.agentMerkleRoot()).to.equal(config.agentMerkleRoot);
       expect(await identity.validatorMerkleRoot()).to.equal(
         config.validatorMerkleRoot
@@ -342,9 +403,13 @@ describe('IdentityRegistry setters', function () {
       expect(await identity.additionalValidators(validator.address)).to.equal(
         true
       );
+      expect(await identity.additionalNodeOperators(validator.address)).to.equal(
+        true
+      );
       expect(await identity.getAgentType(agent.address)).to.equal(1n);
       expect(await identity.isAgentRootNodeAlias(agentAliasNode)).to.equal(true);
       expect(await identity.isClubRootNodeAlias(clubAliasNode)).to.equal(true);
+      expect(await identity.isNodeRootNodeAlias(nodeAliasNode)).to.equal(true);
     });
 
     it('reverts when provided invalid configuration values', async () => {
@@ -363,11 +428,15 @@ describe('IdentityRegistry setters', function () {
             agentRootNode: ethers.ZeroHash,
             setClubRootNode: false,
             clubRootNode: ethers.ZeroHash,
+            setNodeRootNode: false,
+            nodeRootNode: ethers.ZeroHash,
             setAgentMerkleRoot: false,
             agentMerkleRoot: ethers.ZeroHash,
             setValidatorMerkleRoot: false,
             validatorMerkleRoot: ethers.ZeroHash,
           },
+          [],
+          [],
           [],
           [],
           [],

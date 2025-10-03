@@ -15,7 +15,8 @@ contract AttestationRegistry is Ownable {
     /// @dev Roles that can be attested for a name.
     enum Role {
         Agent,
-        Validator
+        Validator,
+        Node
     }
 
     IENS public ens;

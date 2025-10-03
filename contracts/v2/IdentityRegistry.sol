@@ -33,19 +33,23 @@ contract IdentityRegistry is Ownable2Step {
 
     bytes32 public agentRootNode;
     bytes32 public clubRootNode;
+    bytes32 public nodeRootNode;
     bytes32 public agentMerkleRoot;
     bytes32 public validatorMerkleRoot;
 
     mapping(address => bool) public additionalAgents;
     mapping(address => bool) public additionalValidators;
+    mapping(address => bool) public additionalNodeOperators;
     mapping(address => AgentType) public agentTypes;
     /// @notice Optional metadata URI describing agent capabilities.
     mapping(address => string) public agentProfileURI;
 
     bytes32[] private agentRootNodeAliases;
     bytes32[] private clubRootNodeAliases;
+    bytes32[] private nodeRootNodeAliases;
     mapping(bytes32 => bool) private agentRootNodeAliasSet;
     mapping(bytes32 => bool) private clubRootNodeAliasSet;
+    mapping(bytes32 => bool) private nodeRootNodeAliasSet;
 
     event ENSUpdated(address indexed ens);
     event NameWrapperUpdated(address indexed nameWrapper);
@@ -53,14 +57,18 @@ contract IdentityRegistry is Ownable2Step {
     event AttestationRegistryUpdated(address indexed attestationRegistry);
     event AgentRootNodeUpdated(bytes32 indexed agentRootNode);
     event ClubRootNodeUpdated(bytes32 indexed clubRootNode);
+    event NodeRootNodeUpdated(bytes32 indexed nodeRootNode);
     event AgentMerkleRootUpdated(bytes32 indexed agentMerkleRoot);
     event ValidatorMerkleRootUpdated(bytes32 indexed validatorMerkleRoot);
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
+    event AdditionalNodeOperatorUpdated(address indexed nodeOperator, bool allowed);
     event AdditionalAgentUsed(address indexed agent, string subdomain);
     event AdditionalValidatorUsed(address indexed validator, string subdomain);
+    event AdditionalNodeOperatorUsed(address indexed nodeOperator, string subdomain);
     event AgentRootNodeAliasUpdated(bytes32 indexed node, bool allowed);
     event ClubRootNodeAliasUpdated(bytes32 indexed node, bool allowed);
+    event NodeRootNodeAliasUpdated(bytes32 indexed node, bool allowed);
     event IdentityVerified(
         address indexed user,
         AttestationRegistry.Role indexed role,
@@ -87,7 +95,8 @@ contract IdentityRegistry is Ownable2Step {
         address indexed ens,
         address indexed nameWrapper,
         bytes32 indexed agentRoot,
-        bytes32 clubRoot
+        bytes32 clubRoot,
+        bytes32 nodeRoot
     );
 
     event ConfigurationApplied(
@@ -98,10 +107,12 @@ contract IdentityRegistry is Ownable2Step {
         bool attestationRegistryUpdated,
         bool agentRootUpdated,
         bool clubRootUpdated,
+        bool nodeRootUpdated,
         bool agentMerkleRootUpdated,
         bool validatorMerkleRootUpdated,
         uint256 additionalAgentUpdates,
         uint256 additionalValidatorUpdates,
+        uint256 additionalNodeUpdates,
         uint256 agentTypeUpdates
     );
 
@@ -118,6 +129,8 @@ contract IdentityRegistry is Ownable2Step {
         bytes32 agentRootNode;
         bool setClubRootNode;
         bytes32 clubRootNode;
+        bool setNodeRootNode;
+        bytes32 nodeRootNode;
         bool setAgentMerkleRoot;
         bytes32 agentMerkleRoot;
         bool setValidatorMerkleRoot;
@@ -135,6 +148,11 @@ contract IdentityRegistry is Ownable2Step {
 
     struct AdditionalValidatorConfig {
         address validator;
+        bool allowed;
+    }
+
+    struct AdditionalNodeOperatorConfig {
+        address nodeOperator;
         bool allowed;
     }
 
@@ -160,6 +178,10 @@ contract IdentityRegistry is Ownable2Step {
         0xc74b6c5e8a0d97ed1fe28755da7d06a84593b4de92f6582327bc40f41d6c2d5e;
     bytes32 public constant MAINNET_ALPHA_CLUB_ROOT_NODE =
         0x6487f659ec6f3fbd424b18b685728450d2559e4d68768393f9c689b2b6e5405e;
+    bytes32 public constant MAINNET_NODE_ROOT_NODE =
+        0xa26287e1184492446ad67d7dcdb51be050d4144ddda21bb3ba5926a8bf5c5731;
+    bytes32 public constant MAINNET_ALPHA_NODE_ROOT_NODE =
+        0x2d936bd2c82bc0aaa072a9d3c6d87aad1c1ec6a245f991129efb6ecc9fed57c4;
 
     constructor(
         IENS _ens,
@@ -221,6 +243,10 @@ contract IdentityRegistry is Ownable2Step {
         _setClubRootNode(root);
     }
 
+    function setNodeRootNode(bytes32 root) public onlyOwner {
+        _setNodeRootNode(root);
+    }
+
     function getAgentRootNodeAliases() external view returns (bytes32[] memory) {
         return agentRootNodeAliases;
     }
@@ -229,12 +255,20 @@ contract IdentityRegistry is Ownable2Step {
         return clubRootNodeAliases;
     }
 
+    function getNodeRootNodeAliases() external view returns (bytes32[] memory) {
+        return nodeRootNodeAliases;
+    }
+
     function isAgentRootNodeAlias(bytes32 node) external view returns (bool) {
         return agentRootNodeAliasSet[node];
     }
 
     function isClubRootNodeAlias(bytes32 node) external view returns (bool) {
         return clubRootNodeAliasSet[node];
+    }
+
+    function isNodeRootNodeAlias(bytes32 node) external view returns (bool) {
+        return nodeRootNodeAliasSet[node];
     }
 
     function addAgentRootNodeAlias(bytes32 node) external onlyOwner {
@@ -253,19 +287,30 @@ contract IdentityRegistry is Ownable2Step {
         _removeClubRootNodeAlias(node);
     }
 
+    function addNodeRootNodeAlias(bytes32 node) external onlyOwner {
+        _addNodeRootNodeAlias(node);
+    }
+
+    function removeNodeRootNodeAlias(bytes32 node) external onlyOwner {
+        _removeNodeRootNodeAlias(node);
+    }
+
     /// @notice Configure the registry with canonical mainnet ENS settings.
     function configureMainnet() external onlyOwner {
         _setENS(MAINNET_ENS);
         _setNameWrapper(MAINNET_NAME_WRAPPER);
         _setAgentRootNode(MAINNET_AGENT_ROOT_NODE);
         _setClubRootNode(MAINNET_CLUB_ROOT_NODE);
+        _setNodeRootNode(MAINNET_NODE_ROOT_NODE);
         _addAgentRootNodeAlias(MAINNET_ALPHA_AGENT_ROOT_NODE);
         _addClubRootNodeAlias(MAINNET_ALPHA_CLUB_ROOT_NODE);
+        _addNodeRootNodeAlias(MAINNET_ALPHA_NODE_ROOT_NODE);
         emit MainnetConfigured(
             MAINNET_ENS,
             MAINNET_NAME_WRAPPER,
             MAINNET_AGENT_ROOT_NODE,
-            MAINNET_CLUB_ROOT_NODE
+            MAINNET_CLUB_ROOT_NODE,
+            MAINNET_NODE_ROOT_NODE
         );
     }
 
@@ -293,6 +338,14 @@ contract IdentityRegistry is Ownable2Step {
         _setAdditionalValidator(validator, false);
     }
 
+    function addAdditionalNodeOperator(address nodeOperator) external onlyOwner {
+        _setAdditionalNodeOperator(nodeOperator, true);
+    }
+
+    function removeAdditionalNodeOperator(address nodeOperator) external onlyOwner {
+        _setAdditionalNodeOperator(nodeOperator, false);
+    }
+
     function setAgentType(address agent, AgentType agentType) external onlyOwner {
         _setAgentType(agent, agentType);
     }
@@ -301,8 +354,10 @@ contract IdentityRegistry is Ownable2Step {
         ConfigUpdate calldata config,
         AdditionalAgentConfig[] calldata agentUpdates,
         AdditionalValidatorConfig[] calldata validatorUpdates,
+        AdditionalNodeOperatorConfig[] calldata nodeUpdates,
         RootNodeAliasConfig[] calldata agentRootAliasUpdates,
         RootNodeAliasConfig[] calldata clubRootAliasUpdates,
+        RootNodeAliasConfig[] calldata nodeRootAliasUpdates,
         AgentTypeConfig[] calldata agentTypeUpdates
     ) external onlyOwner {
         bool ensUpdated;
@@ -311,6 +366,7 @@ contract IdentityRegistry is Ownable2Step {
         bool attestationUpdated;
         bool agentRootUpdated;
         bool clubRootUpdated;
+        bool nodeRootUpdated;
         bool agentMerkleUpdated;
         bool validatorMerkleUpdated;
 
@@ -344,6 +400,11 @@ contract IdentityRegistry is Ownable2Step {
             clubRootUpdated = true;
         }
 
+        if (config.setNodeRootNode) {
+            _setNodeRootNode(config.nodeRootNode);
+            nodeRootUpdated = true;
+        }
+
         if (config.setAgentMerkleRoot) {
             _setAgentMerkleRoot(config.agentMerkleRoot);
             agentMerkleUpdated = true;
@@ -366,6 +427,12 @@ contract IdentityRegistry is Ownable2Step {
             _setAdditionalValidator(update.validator, update.allowed);
         }
 
+        uint256 nodeLen = nodeUpdates.length;
+        for (uint256 i; i < nodeLen; i++) {
+            AdditionalNodeOperatorConfig calldata nodeUpdate = nodeUpdates[i];
+            _setAdditionalNodeOperator(nodeUpdate.nodeOperator, nodeUpdate.allowed);
+        }
+
         uint256 agentAliasLen = agentRootAliasUpdates.length;
         for (uint256 i; i < agentAliasLen; i++) {
             RootNodeAliasConfig calldata update = agentRootAliasUpdates[i];
@@ -386,6 +453,16 @@ contract IdentityRegistry is Ownable2Step {
             }
         }
 
+        uint256 nodeAliasLen = nodeRootAliasUpdates.length;
+        for (uint256 i; i < nodeAliasLen; i++) {
+            RootNodeAliasConfig calldata update = nodeRootAliasUpdates[i];
+            if (update.allowed) {
+                _addNodeRootNodeAlias(update.node);
+            } else {
+                _removeNodeRootNodeAlias(update.node);
+            }
+        }
+
         uint256 agentTypeLen = agentTypeUpdates.length;
         for (uint256 i; i < agentTypeLen; i++) {
             AgentTypeConfig calldata update = agentTypeUpdates[i];
@@ -400,10 +477,12 @@ contract IdentityRegistry is Ownable2Step {
             attestationUpdated,
             agentRootUpdated,
             clubRootUpdated,
+            nodeRootUpdated,
             agentMerkleUpdated,
             validatorMerkleUpdated,
             agentLen,
             validatorLen,
+            nodeLen,
             agentTypeLen
         );
     }
@@ -453,6 +532,11 @@ contract IdentityRegistry is Ownable2Step {
         emit ClubRootNodeUpdated(root);
     }
 
+    function _setNodeRootNode(bytes32 root) internal {
+        nodeRootNode = root;
+        emit NodeRootNodeUpdated(root);
+    }
+
     function _setAgentMerkleRoot(bytes32 root) internal {
         agentMerkleRoot = root;
         emit AgentMerkleRootUpdated(root);
@@ -477,6 +561,14 @@ contract IdentityRegistry is Ownable2Step {
         }
         additionalValidators[validator] = allowed;
         emit AdditionalValidatorUpdated(validator, allowed);
+    }
+
+    function _setAdditionalNodeOperator(address nodeOperator, bool allowed) internal {
+        if (allowed && nodeOperator == address(0)) {
+            revert ZeroAddress();
+        }
+        additionalNodeOperators[nodeOperator] = allowed;
+        emit AdditionalNodeOperatorUpdated(nodeOperator, allowed);
     }
 
     function _addAgentRootNodeAlias(bytes32 node) internal {
@@ -543,6 +635,39 @@ contract IdentityRegistry is Ownable2Step {
             }
         }
         emit ClubRootNodeAliasUpdated(node, false);
+    }
+
+    function _addNodeRootNodeAlias(bytes32 node) internal {
+        if (node == bytes32(0)) {
+            revert ZeroNode();
+        }
+        if (nodeRootNodeAliasSet[node] || node == nodeRootNode) {
+            return;
+        }
+        nodeRootNodeAliasSet[node] = true;
+        nodeRootNodeAliases.push(node);
+        emit NodeRootNodeAliasUpdated(node, true);
+    }
+
+    function _removeNodeRootNodeAlias(bytes32 node) internal {
+        if (node == bytes32(0)) {
+            revert ZeroNode();
+        }
+        if (!nodeRootNodeAliasSet[node]) {
+            return;
+        }
+        nodeRootNodeAliasSet[node] = false;
+        uint256 len = nodeRootNodeAliases.length;
+        for (uint256 i; i < len; i++) {
+            if (nodeRootNodeAliases[i] == node) {
+                if (i != len - 1) {
+                    nodeRootNodeAliases[i] = nodeRootNodeAliases[len - 1];
+                }
+                nodeRootNodeAliases.pop();
+                break;
+            }
+        }
+        emit NodeRootNodeAliasUpdated(node, false);
     }
 
     function _setAgentType(address agent, AgentType agentType) internal {
@@ -690,6 +815,69 @@ contract IdentityRegistry is Ownable2Step {
         }
     }
 
+    function _checkNodeENSOwnership(
+        address claimant,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) internal view returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        _assertSubdomain(subdomain);
+        if (nodeRootNode != bytes32(0)) {
+            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
+                ens,
+                nameWrapper,
+                nodeRootNode,
+                validatorMerkleRoot,
+                claimant,
+                subdomain,
+                proof
+            );
+            if (ok) {
+                return (ok, node, viaWrapper, viaMerkle);
+            }
+        }
+
+        uint256 aliasLen = nodeRootNodeAliases.length;
+        for (uint256 i; i < aliasLen; i++) {
+            bytes32 aliasRoot = nodeRootNodeAliases[i];
+            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
+                ens,
+                nameWrapper,
+                aliasRoot,
+                validatorMerkleRoot,
+                claimant,
+                subdomain,
+                proof
+            );
+            if (ok) {
+                return (ok, node, viaWrapper, viaMerkle);
+            }
+        }
+
+        if (nodeRootNode != bytes32(0)) {
+            node = keccak256(
+                abi.encodePacked(nodeRootNode, keccak256(bytes(subdomain)))
+            );
+        } else if (aliasLen != 0) {
+            node = keccak256(
+                abi.encodePacked(nodeRootNodeAliases[0], keccak256(bytes(subdomain)))
+            );
+        }
+    }
+
+    function _deriveNodeFromLabel(bytes32 root, bytes32[] storage aliases, bytes32 label)
+        internal
+        view
+        returns (bytes32)
+    {
+        if (root != bytes32(0)) {
+            return keccak256(abi.encodePacked(root, label));
+        }
+        if (aliases.length != 0) {
+            return keccak256(abi.encodePacked(aliases[0], label));
+        }
+        return bytes32(0);
+    }
+
     function _verifyAgentENSOwnership(
         address claimant,
         string calldata subdomain,
@@ -788,6 +976,55 @@ contract IdentityRegistry is Ownable2Step {
         }
     }
 
+    function _verifyNodeENSOwnership(
+        address claimant,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) internal returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        _assertSubdomain(subdomain);
+        if (nodeRootNode != bytes32(0)) {
+            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
+                ens,
+                nameWrapper,
+                nodeRootNode,
+                validatorMerkleRoot,
+                claimant,
+                subdomain,
+                proof
+            );
+            if (ok) {
+                return (ok, node, viaWrapper, viaMerkle);
+            }
+        }
+
+        uint256 aliasLen = nodeRootNodeAliases.length;
+        for (uint256 i; i < aliasLen; i++) {
+            bytes32 aliasRoot = nodeRootNodeAliases[i];
+            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
+                ens,
+                nameWrapper,
+                aliasRoot,
+                validatorMerkleRoot,
+                claimant,
+                subdomain,
+                proof
+            );
+            if (ok) {
+                return (ok, node, viaWrapper, viaMerkle);
+            }
+        }
+
+        if (nodeRootNode != bytes32(0)) {
+            node = keccak256(
+                abi.encodePacked(nodeRootNode, keccak256(bytes(subdomain)))
+            );
+        } else if (aliasLen != 0) {
+            node = keccak256(
+                abi.encodePacked(nodeRootNodeAliases[0], keccak256(bytes(subdomain)))
+            );
+        }
+    }
+
     function isAuthorizedAgent(
         address claimant,
         string calldata subdomain,
@@ -854,6 +1091,9 @@ contract IdentityRegistry is Ownable2Step {
         if (additionalValidators[claimant]) {
             return true;
         }
+        if (additionalNodeOperators[claimant]) {
+            return true;
+        }
         if (address(attestationRegistry) != address(0)) {
             bytes32 labelHash = keccak256(bytes(subdomain));
             if (clubRootNode != bytes32(0)) {
@@ -885,8 +1125,41 @@ contract IdentityRegistry is Ownable2Step {
                     return true;
                 }
             }
+            if (nodeRootNode != bytes32(0)) {
+                bytes32 node = keccak256(
+                    abi.encodePacked(nodeRootNode, labelHash)
+                );
+                if (
+                    attestationRegistry.isAttested(
+                        node,
+                        AttestationRegistry.Role.Node,
+                        claimant
+                    )
+                ) {
+                    return true;
+                }
+            }
+            uint256 nodeAliasLen = nodeRootNodeAliases.length;
+            for (uint256 i; i < nodeAliasLen; i++) {
+                bytes32 aliasNode = keccak256(
+                    abi.encodePacked(nodeRootNodeAliases[i], labelHash)
+                );
+                if (
+                    attestationRegistry.isAttested(
+                        aliasNode,
+                        AttestationRegistry.Role.Node,
+                        claimant
+                    )
+                ) {
+                    return true;
+                }
+            }
         }
         (bool ok, , , ) = _checkValidatorENSOwnership(claimant, subdomain, proof);
+        if (ok) {
+            return true;
+        }
+        (ok, , , ) = _checkNodeENSOwnership(claimant, subdomain, proof);
         return ok;
     }
 
@@ -988,6 +1261,79 @@ contract IdentityRegistry is Ownable2Step {
         }
     }
 
+    function _verifyNode(
+        address claimant,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) internal returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        _assertSubdomain(subdomain);
+        if (
+            address(reputationEngine) != address(0) &&
+            reputationEngine.isBlacklisted(claimant)
+        ) {
+            return (false, bytes32(0), false, false);
+        }
+
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        bytes32 derivedNode = _deriveNodeFromLabel(
+            nodeRootNode,
+            nodeRootNodeAliases,
+            labelHash
+        );
+
+        if (additionalNodeOperators[claimant]) {
+            emit AdditionalNodeOperatorUsed(claimant, subdomain);
+            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            return (true, derivedNode, false, false);
+        }
+
+        if (address(attestationRegistry) != address(0)) {
+            if (
+                derivedNode != bytes32(0) &&
+                attestationRegistry.isAttested(
+                    derivedNode,
+                    AttestationRegistry.Role.Node,
+                    claimant
+                )
+            ) {
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                return (true, derivedNode, false, false);
+            }
+
+            uint256 aliasLen = nodeRootNodeAliases.length;
+            for (uint256 i; i < aliasLen; i++) {
+                bytes32 aliasRoot = nodeRootNodeAliases[i];
+                bytes32 aliasNode = keccak256(
+                    abi.encodePacked(aliasRoot, labelHash)
+                );
+                if (
+                    attestationRegistry.isAttested(
+                        aliasNode,
+                        AttestationRegistry.Role.Node,
+                        claimant
+                    )
+                ) {
+                    emit ENSIdentityVerifier.OwnershipVerified(
+                        claimant,
+                        subdomain
+                    );
+                    return (true, aliasNode, false, false);
+                }
+            }
+        }
+
+        (ok, node, viaWrapper, viaMerkle) = _verifyNodeENSOwnership(
+            claimant,
+            subdomain,
+            proof
+        );
+        if (ok) {
+            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+        }
+
+        return (ok, node, viaWrapper, viaMerkle);
+    }
+
     function verifyValidator(
         address claimant,
         string calldata subdomain,
@@ -1004,23 +1350,27 @@ contract IdentityRegistry is Ownable2Step {
             return (false, bytes32(0), false, false);
         }
         bytes32 labelHash = keccak256(bytes(subdomain));
-        if (clubRootNode != bytes32(0)) {
-            node = keccak256(abi.encodePacked(clubRootNode, labelHash));
-        }
+        bytes32 validatorNode = _deriveNodeFromLabel(
+            clubRootNode,
+            clubRootNodeAliases,
+            labelHash
+        );
+        node = validatorNode;
         if (additionalValidators[claimant]) {
             emit AdditionalValidatorUsed(claimant, subdomain);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             ok = true;
         } else if (address(attestationRegistry) != address(0)) {
             if (
-                node != bytes32(0) &&
+                validatorNode != bytes32(0) &&
                 attestationRegistry.isAttested(
-                    node,
+                    validatorNode,
                     AttestationRegistry.Role.Validator,
                     claimant
                 )
             ) {
                 emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                node = validatorNode;
                 ok = true;
             } else {
                 uint256 aliasLen = clubRootNodeAliases.length;
@@ -1048,8 +1398,18 @@ contract IdentityRegistry is Ownable2Step {
             }
         }
         if (!ok) {
-            (ok, node, viaWrapper, viaMerkle) =
-                _verifyValidatorENSOwnership(claimant, subdomain, proof);
+            (ok, node, viaWrapper, viaMerkle) = _verifyValidatorENSOwnership(
+                claimant,
+                subdomain,
+                proof
+            );
+            if (!ok) {
+                (ok, node, viaWrapper, viaMerkle) = _verifyNode(
+                    claimant,
+                    subdomain,
+                    proof
+                );
+            }
         }
         if (ok) {
             emit IdentityVerified(
@@ -1063,6 +1423,32 @@ contract IdentityRegistry is Ownable2Step {
             emit IdentityVerificationFailed(
                 claimant,
                 AttestationRegistry.Role.Validator,
+                subdomain
+            );
+        }
+    }
+
+    function verifyNode(
+        address claimant,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    )
+        external
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+    {
+        (ok, node, viaWrapper, viaMerkle) = _verifyNode(claimant, subdomain, proof);
+        if (ok) {
+            emit IdentityVerified(
+                claimant,
+                AttestationRegistry.Role.Node,
+                node,
+                subdomain
+            );
+            emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
+        } else {
+            emit IdentityVerificationFailed(
+                claimant,
+                AttestationRegistry.Role.Node,
                 subdomain
             );
         }
