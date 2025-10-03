@@ -2,6 +2,18 @@ import { useState } from 'react';
 import { useApi } from '../context/ApiContext';
 import { StoredReceiptRecord } from '../types';
 
+function extractMetadataField(
+  metadata: Record<string, unknown> | null | undefined,
+  key: string
+): string | null {
+  if (!metadata || typeof metadata !== 'object') {
+    return null;
+  }
+  const record = metadata as Record<string, unknown>;
+  const value = record[key];
+  return typeof value === 'string' ? value : null;
+}
+
 const EAS_BASE_URL = 'https://easscan.org/attestation/';
 
 export function ReceiptsViewer() {
@@ -42,6 +54,11 @@ export function ReceiptsViewer() {
       setLoading(false);
     }
   }
+
+  const activeReceipt = expanded !== null ? receipts[expanded] ?? null : null;
+  const activeMetadata = activeReceipt?.metadata ?? activeReceipt?.payload ?? null;
+  const activeStatus = extractMetadataField(activeMetadata, 'status');
+  const activeOutcome = extractMetadataField(activeMetadata, 'outcome');
 
   return (
     <div className="panel">
@@ -129,11 +146,27 @@ export function ReceiptsViewer() {
               </tbody>
             </table>
           </div>
-          {expanded !== null && receipts[expanded] && (
+          {activeReceipt && (
             <div style={{ marginTop: '1rem' }}>
               <h4>Receipt Payload</h4>
+              {(activeStatus || activeOutcome) && (
+                <dl className="metadata-list">
+                  {activeStatus && (
+                    <>
+                      <dt>Status</dt>
+                      <dd data-testid="receipt-status">{activeStatus}</dd>
+                    </>
+                  )}
+                  {activeOutcome && (
+                    <>
+                      <dt>Outcome</dt>
+                      <dd data-testid="receipt-outcome">{activeOutcome}</dd>
+                    </>
+                  )}
+                </dl>
+              )}
               <pre className="json-inline">
-                {JSON.stringify(receipts[expanded], null, 2)}
+                {JSON.stringify(activeReceipt, null, 2)}
               </pre>
             </div>
           )}

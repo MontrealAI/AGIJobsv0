@@ -68,7 +68,7 @@ export interface GovernancePreviewResult {
 }
 
 export interface StoredReceiptRecord {
-  kind: 'PLAN' | 'EXECUTION';
+  kind: string;
   planHash: string;
   jobId?: number;
   createdAt: string;
@@ -78,4 +78,5 @@ export interface StoredReceiptRecord {
   attestationCid?: string | null;
   receipt?: Record<string, unknown> | null;
   payload?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
 }

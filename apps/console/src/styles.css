@@ -211,6 +211,24 @@ tbody tr:hover {
   color: rgba(242, 245, 248, 0.6);
 }
 
+.metadata-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.metadata-list dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(242, 245, 248, 0.6);
+}
+
+.metadata-list dd {
+  margin: 0;
+  font-weight: 600;
+}
+
 .status-dot {
   width: 10px;
   height: 10px;
