@@ -42,8 +42,10 @@ so operators can launch safely with minimal manual steps.
   to the employer, with `validatorSlashRewardPct` disabled. Adjust `treasurySlashPct`, `employerSlashPct`, and
   `validatorSlashRewardPct` in `deployment-config/*.json` before running `npm run deploy:oneclick` if you prefer a 100% treasury
   configuration.
-- **Allowlist bootstrapping** – Configuration files accept optional agent/validator allowlists that are applied automatically,
-  letting operators start with a known set of participants before opening registration more broadly.
+- **Allowlist bootstrapping** – Configuration files capture optional agent/validator allowlists, but the one-click deployment
+  does **not** seed them automatically. After contracts are live, sync the desired entries via
+  `npm run identity:update -- --network <network>` (or run `scripts/v2/updateIdentityRegistry.ts`) using the
+  `config/identity-registry*.json` files so the `IdentityRegistry` reflects your intended allowlists.
 
 ### Clear Deployment Guide & Support
 

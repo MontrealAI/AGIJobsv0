@@ -102,6 +102,10 @@ sequenceDiagram
    Add `--attach` to stream logs interactively. Reference the service list in the [one-click guide](./deployment/one-click.md#step-4-launch-the-container-stack)
    for exposed ports and responsibilities.
 
+   > **Identity allowlists:** The one-click deployment intentionally leaves the agent and validator allowlists empty. After
+   > verifying the contracts, apply any required entries with `npm run identity:update -- --network <network>` (or run
+   > `scripts/v2/updateIdentityRegistry.ts`) based on the committed `config/identity-registry*.json` files.
+
 ### 4. Roll Out Service Updates
 
 1. Commit code changes following repo coding standards.
