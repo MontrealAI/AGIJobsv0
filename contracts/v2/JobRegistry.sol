@@ -286,6 +286,25 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         return jobValidatorVotes[jobId][validator];
     }
 
+    function validatorCommittee(uint256 jobId)
+        external
+        view
+        returns (address[] memory validators, bool[] memory approvals)
+    {
+        address[] storage stored = jobValidators[jobId];
+        uint256 length = stored.length;
+        validators = new address[](length);
+        approvals = new bool[](length);
+        for (uint256 i; i < length;) {
+            address validator = stored[i];
+            validators[i] = validator;
+            approvals[i] = jobValidatorVotes[jobId][validator];
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
     function getSpecHash(uint256 jobId) external view returns (bytes32) {
         return jobs[jobId].specHash;
     }

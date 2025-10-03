@@ -424,6 +424,16 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         return false;
     }
 
+    function validatorCommittee(uint256)
+        external
+        pure
+        override
+        returns (address[] memory validators, bool[] memory approvals)
+    {
+        validators = new address[](0);
+        approvals = new bool[](0);
+    }
+
     function submitBurnReceipt(
         uint256 jobId,
         bytes32 burnTxHash,

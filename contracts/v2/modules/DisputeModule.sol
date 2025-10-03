@@ -506,6 +506,8 @@ contract DisputeModule is Governable, Pausable {
         require(block.timestamp >= d.raisedAt + disputeWindow, "window");
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        (address[] memory validators, bool[] memory votes) =
+            jobRegistry.validatorCommittee(jobId);
 
         d.resolved = true;
 
@@ -521,25 +523,30 @@ contract DisputeModule is Governable, Pausable {
             sm.payDisputeFee(recipient, fee);
         }
 
-        if (!employerWins && address(sm) != address(0)) {
-            address valMod = address(jobRegistry.validationModule());
-            if (valMod != address(0)) {
-                address[] memory validators = IValidationModule(valMod).validators(jobId);
-                uint256 count;
-                for (uint256 i; i < validators.length; ++i) {
-                    if (IValidationModule(valMod).votes(jobId, validators[i])) {
-                        ++count;
-                    }
+        if (
+            address(sm) != address(0) &&
+            validators.length > 0 &&
+            votes.length == validators.length &&
+            fee > 0
+        ) {
+            uint256 correctCount;
+            for (uint256 i; i < validators.length; ++i) {
+                if (votes[i] != employerWins) {
+                    ++correctCount;
                 }
-                address[] memory participants = new address[](count);
-                uint256 p;
-                for (uint256 i; i < validators.length; ++i) {
-                    address v = validators[i];
-                    if (IValidationModule(valMod).votes(jobId, v)) {
-                        participants[p++] = v;
-                    } else {
-                        sm.slash(v, fee, employer, participants);
-                    }
+            }
+
+            address[] memory participants = new address[](correctCount);
+            uint256 index;
+            for (uint256 i; i < validators.length; ++i) {
+                if (votes[i] != employerWins) {
+                    participants[index++] = validators[i];
+                }
+            }
+
+            for (uint256 i; i < validators.length; ++i) {
+                if (votes[i] == employerWins) {
+                    sm.slash(validators[i], fee, employer, participants);
                 }
             }
         }
