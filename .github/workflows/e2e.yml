@@ -17,6 +17,9 @@ jobs:
   orchestrator-e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      TERM: xterm
+      CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
     steps:
       - name: Checkout
         uses: actions/checkout@v4
