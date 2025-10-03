@@ -23,20 +23,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - image: node-runner
+        image:
+          - name: node-runner
             context: .
             file: deploy/docker/orchestrator.Dockerfile
-          - image: validator-runner
+          - name: validator-runner
             context: .
             file: deploy/docker/attester.Dockerfile
-          - image: gateway
+          - name: gateway
             context: .
             file: agent-gateway/Dockerfile
-          - image: webapp
+          - name: webapp
             context: .
             file: apps/enterprise-portal/Dockerfile
-          - image: owner-console
+          - name: owner-console
             context: apps/console
             file: Dockerfile
     steps:
@@ -70,32 +70,32 @@ jobs:
         id: build-pr
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.file }}
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.file }}
           platforms: linux/amd64
           load: true
           push: false
           provenance: false
           sbom: false
           outputs: type=docker
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image }}:latest
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}:latest
 
       - name: Build & Push (main/tags, multi-arch, attestations)
         if: github.event_name != 'pull_request'
         id: build-push
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.file }}
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.file }}
           platforms: linux/amd64,linux/arm64
           load: false
           push: true
           provenance: mode=max
           sbom: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image }}:latest
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}:latest
 
       - name: Trivy scan
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.build-pr.outputs.imageid
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -113,5 +113,5 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.image }}-digest
+          name: ${{ matrix.image.name }}-digest
           path: digest.txt

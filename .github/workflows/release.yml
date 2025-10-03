@@ -163,11 +163,12 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
             ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
-          provenance: true
+          provenance: mode=max
           sbom: true
 
       - name: Install cosign

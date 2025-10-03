@@ -3,7 +3,11 @@
   "compilerOptions": {
     "types": ["cypress", "node"],
     "noEmit": true,
-    "allowJs": false
+    "allowJs": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/console/src/*"]
+    }
   },
   "include": ["cypress/**/*.ts"]
 }
