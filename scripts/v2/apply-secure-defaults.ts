@@ -211,8 +211,29 @@ async function applySecureDefaults(config: DeployConfig, addresses: AddressBook)
 
 async function main() {
   const args = parseArgs();
-  const configPath = (args.config as string) ?? path.join('deployment-config', 'deployer.sample.json');
-  const addressesPath = (args.addresses as string) ?? path.join('docs', 'deployment-addresses.json');
+  const getArg = (key: string): string | boolean | undefined => {
+    if (Object.prototype.hasOwnProperty.call(args, key)) {
+      return args[key];
+    }
+    const lower = key.toLowerCase();
+    if (lower !== key && Object.prototype.hasOwnProperty.call(args, lower)) {
+      return args[lower];
+    }
+    const envKey = `ONECLICK_${key
+      .replace(/([A-Z])/g, '_$1')
+      .replace(/__/g, '_')
+      .toUpperCase()}`;
+    if (process.env[envKey] !== undefined) {
+      return process.env[envKey];
+    }
+    return undefined;
+  };
+
+  const configPath =
+    (getArg('config') as string) ??
+    path.join('deployment-config', 'deployer.sample.json');
+  const addressesPath =
+    (getArg('addresses') as string) ?? path.join('docs', 'deployment-addresses.json');
 
   const config = await readJson<DeployConfig>(configPath);
   const addresses = await readJson<AddressBook>(addressesPath);

@@ -1,10 +1,27 @@
 {
+  "network": "mainnet",
   "governance": "0x0000000000000000000000000000000000000000",
   "agialpha": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
-  "overrides": {
-    "feePct": 0.02,
-    "burnPct": 0.05,
-    "ensRoots": {
+  "tax": {
+    "enabled": true,
+    "uri": "ipfs://QmExamplePolicyHash",
+    "description": "All taxes on participants; contract and owner exempt"
+  },
+  "econ": {
+    "feePct": 5,
+    "burnPct": 1,
+    "employerSlashPct": 10,
+    "treasurySlashPct": 90,
+    "validatorSlashRewardPct": 0,
+    "commitWindow": "1d",
+    "revealWindow": "1d",
+    "minStake": "1000",
+    "jobStake": "500"
+  },
+  "identity": {
+    "ens": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+    "nameWrapper": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+    "roots": {
       "agentRoot": {
         "name": "agent.agi.eth",
         "hash": "0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d"
@@ -21,6 +38,16 @@
         "name": "",
         "hash": "0x0000000000000000000000000000000000000000000000000000000000000000"
       }
-    }
-  }
+    },
+    "validatorMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "agentMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "secureDefaults": {
+    "pauseOnLaunch": true,
+    "maxJobRewardAgia": 25,
+    "maxJobDurationSeconds": 86400,
+    "validatorCommitWindowSeconds": 1,
+    "validatorRevealWindowSeconds": 1
+  },
+  "output": "deployment-config/latest-deployment.mainnet.json"
 }

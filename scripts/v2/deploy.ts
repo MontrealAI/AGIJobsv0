@@ -38,9 +38,27 @@ async function verify(address: string, args: any[] = []) {
 async function main() {
   const [deployer] = await ethers.getSigners();
   const args = parseArgs();
+  const getArg = (key: string): string | boolean | undefined => {
+    if (Object.prototype.hasOwnProperty.call(args, key)) {
+      return args[key];
+    }
+    const lower = key.toLowerCase();
+    if (lower !== key && Object.prototype.hasOwnProperty.call(args, lower)) {
+      return args[lower];
+    }
+    const envKey = `ONECLICK_${key
+      .replace(/([A-Z])/g, '_$1')
+      .replace(/__/g, '_')
+      .toUpperCase()}`;
+    if (process.env[envKey] !== undefined) {
+      return process.env[envKey];
+    }
+    return undefined;
+  };
 
+  const governanceArg = getArg('governance');
   const governance =
-    typeof args.governance === 'string' ? args.governance : deployer.address;
+    typeof governanceArg === 'string' ? governanceArg : deployer.address;
   const governanceSigner = await ethers.getSigner(governance);
 
   const { config: ensConfig } = loadEnsConfig({
@@ -57,13 +75,33 @@ async function main() {
   }
   const nameWrapperAddress = ensConfig.nameWrapper || ethers.ZeroAddress;
 
-  const token = await ethers.getContractAt(
-    ['function decimals() view returns (uint8)'],
-    AGIALPHA
-  );
-  const decimals = Number(await token.decimals());
-  if (decimals !== 18) {
-    throw new Error(`AGIALPHA token must have 18 decimals, got ${decimals}`);
+  let tokenAddress = AGIALPHA;
+  let tokenDecimals: number | undefined;
+  try {
+    const token = await ethers.getContractAt(
+      ['function decimals() view returns (uint8)'],
+      tokenAddress,
+    );
+    tokenDecimals = Number(await token.decimals());
+    tokenAddress = await token.getAddress();
+  } catch (error) {
+    if (network.name === 'hardhat') {
+      const MockToken = await ethers.getContractFactory(
+        'contracts/test/MockERC20.sol:MockERC20',
+      );
+      const mockToken = await MockToken.deploy();
+      await mockToken.waitForDeployment();
+      tokenAddress = await mockToken.getAddress();
+      tokenDecimals = Number(await mockToken.decimals());
+      console.warn(
+        `⚠️  AGIALPHA token not available on ${network.name}; deployed mock token at ${tokenAddress}`,
+      );
+    } else {
+      throw error;
+    }
+  }
+  if (tokenDecimals !== 18) {
+    throw new Error(`AGIALPHA token must have 18 decimals, got ${tokenDecimals}`);
   }
 
   // -------------------------------------------------------------------------
@@ -73,8 +111,9 @@ async function main() {
   const Stake = await ethers.getContractFactory(
     'contracts/v2/StakeManager.sol:StakeManager'
   );
+  const treasuryArg = getArg('treasury');
   const treasury =
-    typeof args.treasury === 'string' ? args.treasury : ethers.ZeroAddress;
+    typeof treasuryArg === 'string' ? treasuryArg : ethers.ZeroAddress;
   const stake = await Stake.deploy(
     0,
     0,
@@ -175,14 +214,17 @@ async function main() {
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
+  const appealFeeArg = getArg('appealFee');
   const appealFee = ethers.parseUnits(
-    typeof args.appealFee === 'string' ? args.appealFee : '0',
+    typeof appealFeeArg === 'string' ? appealFeeArg : '0',
     AGIALPHA_DECIMALS
   );
+  const disputeWindowArg = getArg('disputeWindow');
   const disputeWindow =
-    typeof args.disputeWindow === 'string' ? Number(args.disputeWindow) : 0;
+    typeof disputeWindowArg === 'string' ? Number(disputeWindowArg) : 0;
+  const moderatorArg = getArg('moderator');
   const moderator =
-    typeof args.moderator === 'string' ? args.moderator : ethers.ZeroAddress;
+    typeof moderatorArg === 'string' ? moderatorArg : ethers.ZeroAddress;
   const dispute = await Dispute.deploy(
     await registry.getAddress(),
     appealFee,
@@ -204,7 +246,9 @@ async function main() {
   const FeePool = await ethers.getContractFactory(
     'contracts/v2/FeePool.sol:FeePool'
   );
-  const burnPct = typeof args.burnPct === 'string' ? parseInt(args.burnPct) : 0;
+  const burnPctArg = getArg('burnPct');
+  const burnPct =
+    typeof burnPctArg === 'string' ? Number(burnPctArg) : 0;
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
     burnPct,
@@ -216,8 +260,9 @@ async function main() {
   const PlatformRegistry = await ethers.getContractFactory(
     'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
   );
+  const minPlatformStakeArg = getArg('minPlatformStake');
   const minPlatformStake = ethers.parseUnits(
-    typeof args.minPlatformStake === 'string' ? args.minPlatformStake : '1000',
+    typeof minPlatformStakeArg === 'string' ? minPlatformStakeArg : '1000',
     AGIALPHA_DECIMALS
   );
   const platformRegistry = await PlatformRegistry.deploy(
@@ -288,14 +333,15 @@ async function main() {
   await committee.transferOwnership(governance);
   await attestation.transferOwnership(governance);
 
-  const feePct = typeof args.feePct === 'string' ? Number(args.feePct) : 5;
+  const feePctArg = getArg('feePct');
+  const feePct = typeof feePctArg === 'string' ? Number(feePctArg) : 5;
   await registry.connect(governanceSigner).setFeePct(feePct);
 
-  const burnPct = typeof args.burnPct === 'string' ? Number(args.burnPct) : 0;
   await feePool.connect(governanceSigner).setBurnPct(burnPct);
 
+  const minStakeArg = getArg('minStake');
   const minStake = ethers.parseUnits(
-    typeof args.minStake === 'string' ? args.minStake : '0',
+    typeof minStakeArg === 'string' ? minStakeArg : '0',
     AGIALPHA_DECIMALS
   );
   await stake.connect(governanceSigner).setMinStake(minStake);
@@ -390,7 +436,7 @@ async function main() {
   console.log('PlatformIncentives:', await incentives.getAddress());
 
   const addresses = {
-    token: AGIALPHA,
+    token: tokenAddress,
     stakeManager: await stake.getAddress(),
     jobRegistry: await registry.getAddress(),
     validationModule: await validation.getAddress(),
