@@ -1,4 +1,5 @@
 {
+  "network": "localhost",
   "governance": "0x0123456789aBcDEF0123456789abCDef01234567",
   "tax": {
     "enabled": true,
@@ -23,6 +24,13 @@
     "agentRootNode": "agent.agi.eth",
     "validatorMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
     "agentMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "secureDefaults": {
+    "pauseOnLaunch": true,
+    "maxJobRewardAgia": 25,
+    "maxJobDurationSeconds": 86400,
+    "validatorCommitWindowSeconds": 1,
+    "validatorRevealWindowSeconds": 1
   },
   "output": "deployment-config/latest-deployment.json"
 }

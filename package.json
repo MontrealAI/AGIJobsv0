@@ -66,6 +66,7 @@
     "namehash:mainnet": "node scripts/compute-namehash.js deployment-config/mainnet.json",
     "namehash:sepolia": "node scripts/compute-namehash.js deployment-config/sepolia.json",
     "deploy:protocol": "npx hardhat run scripts/deploy/providerAgnosticDeploy.ts",
+    "deploy:oneclick": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/oneclick-deploy.ts",
     "deploy:checklist": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/deployment-checklist.ts",
     "subgraph:e2e": "node scripts/subgraph-e2e.js",
     "migrate:mainnet": "TRUFFLE_NETWORK=mainnet npm run compile:mainnet && npx truffle migrate --network mainnet --reset && TRUFFLE_NETWORK=mainnet npm run wire:verify",

@@ -1,0 +1,14 @@
+# Generated for one-click deployment images
+.git
+.gitignore
+**/node_modules
+**/__pycache__
+**/*.py[cod]
+reports
+coverage
+artifacts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.DS_Store
