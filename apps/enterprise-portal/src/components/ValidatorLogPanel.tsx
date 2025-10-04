@@ -55,7 +55,7 @@ const formatStake = (stake?: bigint) => {
       maximumFractionDigits: 2
     });
     return `${formatted} ${portalConfig.stakingTokenSymbol ?? 'STAKE'}`;
-  } catch (err) {
+  } catch {
     return `${stake.toString()} wei`;
   }
 };

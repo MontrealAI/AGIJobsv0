@@ -34,6 +34,9 @@ jobs:
       - name: Install console dependencies
         run: npm ci --prefix apps/console
 
+      - name: Install enterprise portal dependencies
+        run: npm ci --prefix apps/enterprise-portal
+
       - name: Type-check webapp
         run: npm run webapp:typecheck
 

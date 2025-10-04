@@ -24,6 +24,14 @@ const formatBytes = (value?: number): string | undefined => {
   return `${amount.toFixed(decimals)} ${units[unitIndex]}`;
 };
 
+const toStringOrUndefined = (value: unknown): string | undefined => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'bigint') {
+    return value.toString();
+  }
+  return undefined;
+};
+
 export const DeliverableVerificationPanel = ({ events }: Props) => {
   const [jobId, setJobId] = useState('');
   const [agentAddress, setAgentAddress] = useState('');
@@ -43,17 +51,22 @@ export const DeliverableVerificationPanel = ({ events }: Props) => {
     return events
       .filter((evt) => evt.name === 'ResultSubmitted')
       .map((evt) => {
-        const args = evt.meta?.args as any;
+        const args = evt.meta?.args;
+        const argsRecord =
+          args && typeof args === 'object' && !Array.isArray(args)
+            ? (args as Record<string, unknown>)
+            : undefined;
+        const argsArray = Array.isArray(args) ? args : undefined;
         return {
           jobId: evt.jobId.toString(),
           worker: evt.actor,
           timestamp: evt.timestamp,
           resultHash:
-            (args?.resultHash as string | undefined) ??
-            (Array.isArray(args) ? (args[2] as string | undefined) : undefined),
+            toStringOrUndefined(argsRecord?.resultHash) ??
+            (argsArray ? toStringOrUndefined(argsArray[2]) : undefined),
           resultUri:
-            (args?.resultURI as string | undefined) ??
-            (Array.isArray(args) ? (args[3] as string | undefined) : undefined)
+            toStringOrUndefined(argsRecord?.resultURI) ??
+            (argsArray ? toStringOrUndefined(argsArray[3]) : undefined)
         };
       })
       .slice(-5)

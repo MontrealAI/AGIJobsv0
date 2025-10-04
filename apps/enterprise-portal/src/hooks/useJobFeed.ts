@@ -283,7 +283,7 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
       const logs: EventLog[] = [];
       for (const eventName of JOB_EVENT_NAMES) {
         const filterFactory = (
-          contract.filters as Record<string, (...args: never[]) => EventFilter>
+          contract.filters as Record<string, (...args: unknown[]) => EventFilter>
         )[eventName];
         if (!filterFactory) continue;
         const filter = filterFactory();
@@ -520,7 +520,7 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
         const moduleLogs: EventLog[] = [];
         const vmFilters = validationModule.filters as Record<
           string,
-          (...args: never[]) => EventFilter
+          (...args: unknown[]) => EventFilter
         >;
         const selectedFilter = vmFilters.ValidatorsSelected(
           options.jobId ?? null
@@ -533,18 +533,18 @@ export const useJobFeed = (options: UseJobFeedOptions = {}): JobFeedState => {
           options.jobId ?? null,
           null
         );
-        const selectedLogs = await validationModule.queryFilter(
-          selectedFilter,
-          fromBlock
-        );
-        const commitLogs = await validationModule.queryFilter(
-          commitFilter,
-          fromBlock
-        );
-        const revealLogs = await validationModule.queryFilter(
-          revealFilter,
-          fromBlock
-        );
+        const moduleQuery = (
+          validationModule as unknown as {
+            queryFilter: (
+              f: EventFilter,
+              fromBlock?: number,
+              toBlock?: number
+            ) => Promise<EventLog[]>;
+          }
+        ).queryFilter.bind(validationModule);
+        const selectedLogs = await moduleQuery(selectedFilter, fromBlock);
+        const commitLogs = await moduleQuery(commitFilter, fromBlock);
+        const revealLogs = await moduleQuery(revealFilter, fromBlock);
         moduleLogs.push(...selectedLogs, ...commitLogs, ...revealLogs);
 
         const blockNumbers = Array.from(
