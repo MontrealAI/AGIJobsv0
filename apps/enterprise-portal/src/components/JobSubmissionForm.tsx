@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { parseUnits } from 'ethers';
+import type { Log } from 'ethers';
 import { useWeb3 } from '../context/Web3Context';
 import { getJobRegistryContract, portalConfig } from '../lib/contracts';
 import { computeSpecHash } from '../lib/crypto';
@@ -44,7 +45,7 @@ export const JobSubmissionForm = () => {
     if (!form.reward) return 0n;
     try {
       return parseUnits(form.reward, 18);
-    } catch (err) {
+    } catch {
       return 0n;
     }
   }, [form.reward]);
@@ -102,8 +103,10 @@ export const JobSubmissionForm = () => {
       const tx = await contract[method](rewardInWei, BigInt(deadlineSeconds), agentTypes, specHash, uri);
       setTxHash(tx.hash);
       const receipt = await tx.wait?.();
-      const jobLog = receipt?.logs?.find(
-        (log: any) => typeof log.address === 'string' && log.address.toLowerCase() === registryAddress.toLowerCase()
+      const logs: readonly Log[] = receipt?.logs ?? [];
+      const jobLog = logs.find(
+        (log) =>
+          typeof log.address === 'string' && log.address.toLowerCase() === registryAddress.toLowerCase()
       );
       if (jobLog) {
         try {

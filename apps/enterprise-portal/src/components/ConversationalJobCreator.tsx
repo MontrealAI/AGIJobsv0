@@ -24,6 +24,10 @@ const dateLocales: Record<string, string> = {
   ja: 'ja-JP',
 };
 
+const assertNever = (value: never): never => {
+  throw new Error(`Unhandled conversational job creator state: ${String(value)}`);
+};
+
 type StepId =
   | 'title'
   | 'description'
@@ -752,10 +756,8 @@ export const ConversationalJobCreator = () => {
         </div>
         );
       }
-      default: {
-        const exhaustiveCheck: never = message;
-        return null;
-      }
+      default:
+        return assertNever(message);
     }
   };
 

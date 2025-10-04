@@ -427,7 +427,7 @@ const parseCertificateMetadata = (
   const candidates = collectCandidates(payload);
 
   const deliverableUriCandidate =
-    directDeliverableUris[0] ??
+    directDeliverableUris.at(0) ??
     pickCandidate(
       candidates.uris,
       ['deliverable', 'result', 'work', 'evidence'],
@@ -435,7 +435,7 @@ const parseCertificateMetadata = (
     )?.value;
 
   const deliverableCidCandidate =
-    directDeliverableCids[0] ??
+    directDeliverableCids.at(0) ??
     pickCandidate(
       candidates.cids,
       ['deliverable', 'result', 'work', 'evidence'],
@@ -746,7 +746,7 @@ export const useCertificates = (owner?: string): CertificateState => {
       const filterFactory = (
         certificateContract.filters as Record<
           string,
-          (...args: never[]) => EventFilter
+          (...args: unknown[]) => EventFilter
         >
       ).CertificateMinted;
       if (!filterFactory) {
