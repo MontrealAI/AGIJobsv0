@@ -88,6 +88,80 @@ describe('OwnerConfigurator', function () {
     expect(returnData).to.equal('0x');
   });
 
+  it('processes batched configuration calls atomically', async function () {
+    const moduleAddress = await target.getAddress();
+    const firstValue = 99n;
+    const secondValue = 123n;
+    const firstCall = {
+      target: moduleAddress,
+      callData: target.interface.encodeFunctionData('setValue', [firstValue]),
+      moduleKey: MODULE_KEY,
+      parameterKey: PARAMETER_KEY,
+      oldValue: abiCoder.encode(['uint256'], [0n]),
+      newValue: abiCoder.encode(['uint256'], [firstValue]),
+    };
+    const secondCall = {
+      target: moduleAddress,
+      callData: target.interface.encodeFunctionData('setValue', [secondValue]),
+      moduleKey: MODULE_KEY,
+      parameterKey: PARAMETER_KEY,
+      oldValue: abiCoder.encode(['uint256'], [firstValue]),
+      newValue: abiCoder.encode(['uint256'], [secondValue]),
+    };
+
+    const tx = await configurator
+      .connect(owner)
+      .configureBatch([firstCall, secondCall]);
+
+    await expect(tx)
+      .to.emit(configurator, 'ParameterUpdated')
+      .withArgs(
+        MODULE_KEY,
+        PARAMETER_KEY,
+        firstCall.oldValue,
+        firstCall.newValue,
+        owner.address
+      )
+      .and.to.emit(configurator, 'ParameterUpdated')
+      .withArgs(
+        MODULE_KEY,
+        PARAMETER_KEY,
+        secondCall.oldValue,
+        secondCall.newValue,
+        owner.address
+      );
+
+    const batchResult = await configurator
+      .connect(owner)
+      .configureBatch.staticCall([firstCall, secondCall]);
+
+    expect(batchResult).to.deep.equal(['0x', '0x']);
+    expect(await target.currentValue()).to.equal(secondValue);
+    expect(await target.lastCaller()).to.equal(await configurator.getAddress());
+  });
+
+  it('reverts a batch when any call targets the zero address', async function () {
+    const callData = target.interface.encodeFunctionData('setValue', [1n]);
+
+    await expect(
+      configurator
+        .connect(owner)
+        .configureBatch([
+          {
+            target: ethers.ZeroAddress,
+            callData,
+            moduleKey: MODULE_KEY,
+            parameterKey: PARAMETER_KEY,
+            oldValue: '0x',
+            newValue: '0x',
+          },
+        ])
+    ).to.be.revertedWithCustomError(
+      configurator,
+      'OwnerConfigurator__ZeroTarget'
+    );
+  });
+
   it('rejects zero-address targets before attempting a call', async function () {
     const callData = target.interface.encodeFunctionData('setValue', [1n]);
 
