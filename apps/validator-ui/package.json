@@ -22,5 +22,8 @@
     "@testing-library/react": "^16.1.0",
     "jsdom": "^24.0.0",
     "vitest": "^1.6.1"
+  },
+  "overrides": {
+    "cross-spawn": "^7.0.5"
   }
 }

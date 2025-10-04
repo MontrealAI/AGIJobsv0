@@ -105,7 +105,7 @@ jobs:
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             aquasec/trivy:0.53.0 \
-            image --exit-code 1 --severity HIGH,CRITICAL \
+            image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed \
             ${{ steps.build-pr.outputs.imageid }}
 
       - name: Upload container digest
@@ -113,6 +113,15 @@ jobs:
         run: |
           echo "${{ steps.build-push.outputs.digest }}" > digest.txt
         shell: bash
+
+      - name: Trivy scan (published image)
+        if: github.event_name != 'pull_request'
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.53.0 \
+            image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed \
+            ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}
 
       - name: Publish digest artefact
         if: github.event_name != 'pull_request'

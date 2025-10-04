@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim AS base
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -7,17 +7,18 @@ RUN npm ci
 
 COPY apps ./apps
 
-RUN npx tsc -p apps/operator/tsconfig.json \
-  && npm prune --omit=dev
+RUN npx tsc -p apps/operator/tsconfig.json
 
-FROM node:20-bookworm-slim
+FROM node:20-bookworm-slim AS runner
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/apps/operator/dist ./apps/operator/dist
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/apps/operator/dist ./apps/operator/dist
 COPY apps/operator/telemetry.ts ./apps/operator/telemetry.ts
 COPY apps/operator/tsconfig.json ./apps/operator/tsconfig.json
 
