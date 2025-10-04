@@ -10,39 +10,33 @@ The diagram below shows the canonical change pipeline. Each stage emits artefact
 
 ```mermaid
 flowchart LR
-    subgraph Config[Edit & Stage]
-        C1[config/*.json
-        Network overrides]
-        C2[Draft change ticket
-        (docs/owner-control-change-ticket.md)]
+    subgraph Config["Edit & Stage"]
+        C1["config/*.json<br/>Network overrides"]
+        C2["Draft change ticket<br/>(docs/owner-control-change-ticket.md)"]
     end
-    subgraph Analyse[Assess]
-        A1[npm run owner:doctor
-        Safety gate]
-        A2[npm run owner:parameters
-        Parameter matrix]
-        A3[npm run owner:dashboard
-        Live contract scan]
+
+    subgraph Analyse["Assess"]
+        A1["npm run owner:doctor<br/>Safety gate"]
+        A2["npm run owner:parameters<br/>Parameter matrix"]
+        A3["npm run owner:dashboard<br/>Live contract scan"]
     end
-    subgraph Plan[Plan & Approve]
-        P1[npm run owner:plan
-        diff preview]
-        P2[npm run owner:command-center
-        narrative brief]
-        P3[npm run owner:blueprint
-        compliance packet]
+
+    subgraph Plan["Plan & Approve"]
+        P1["npm run owner:plan<br/>diff preview"]
+        P2["npm run owner:command-center<br/>narrative brief"]
+        P3["npm run owner:blueprint<br/>compliance packet"]
     end
-    subgraph Execute[Execute]
-        E1[npm run owner:rotate
-        Ownership/governance]
-        E2[npx hardhat run scripts/v2/update*.ts --network <net> --execute]
-        E3[Safe bundle
-        (owner:plan:safe)]
+
+    subgraph Execute["Execute"]
+        E1["npm run owner:rotate<br/>Ownership/governance"]
+        E2["npx hardhat run scripts/v2/update*.ts --network &lt;net&gt; --execute"]
+        E3["Safe bundle<br/>(owner:plan:safe)"]
     end
-    subgraph Verify[Verify & Archive]
-        V1[npm run owner:verify-control]
-        V2[npm run owner:audit]
-        V3[npm run hamiltonian:report]
+
+    subgraph Verify["Verify & Archive"]
+        V1["npm run owner:verify-control"]
+        V2["npm run owner:audit"]
+        V3["npm run hamiltonian:report"]
     end
 
     Config --> Analyse --> Plan --> Execute --> Verify
