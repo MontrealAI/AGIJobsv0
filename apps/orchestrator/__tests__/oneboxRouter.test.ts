@@ -6,13 +6,15 @@ import type { Wallet } from 'ethers';
 import express from 'express';
 import request from 'supertest';
 import type { IntentEnvelope } from '../../../packages/onebox-orchestrator/src/ics/types';
-import type { PlanResponse, StatusResponse } from '../../../packages/onebox-sdk/src';
 import {
   createOneboxRouter,
   plannerIntentToJobIntent,
   formatDeadline,
   mapJobStateToStatus,
   DefaultOneboxService,
+  type OneboxPlanResponse,
+  type OneboxExecuteResponse,
+  type StatusResponse,
 } from '../oneboxRouter';
 import { resetMetrics } from '../oneboxMetrics';
 import { finalizeJob } from '../submission';
@@ -41,10 +43,11 @@ test('plannerIntentToJobIntent converts create_job envelope', () => {
   };
 
   const intent = plannerIntentToJobIntent(envelope);
-  assert.equal(intent.action, 'post_job');
-  assert.equal(intent.payload?.title, 'Label 500 images');
-  assert.equal(intent.payload?.deadlineDays, 7);
-  assert.ok(Array.isArray(intent.payload?.attachments));
+  assert.equal(intent.kind, 'post_job');
+  assert.equal(intent.title, 'Label 500 images');
+  assert.equal(intent.deadline_days, 7);
+  assert.ok(Array.isArray(intent.attachments));
+  assert.equal(intent.attachments?.[0]?.cid, 'bafyExample');
 });
 
 test('formatDeadline renders relative descriptions', () => {
@@ -59,6 +62,33 @@ test('mapJobStateToStatus returns sensible defaults', () => {
 });
 
 const TEST_TOKEN = 'test-token';
+
+function makePlanResponse(overrides: Partial<OneboxPlanResponse> = {}): OneboxPlanResponse {
+  const base: OneboxPlanResponse = {
+    summary: 'Summary',
+    preview_summary: 'Summary',
+    intent: {
+      kind: 'post_job',
+      title: 'Example',
+      description: 'Example description',
+      reward_agialpha: '1',
+      deadline_days: 7,
+      attachments: [],
+      constraints: {},
+    },
+    plan: {
+      plan_id: 'plan-123',
+      steps: [],
+      budget: { token: 'AGIALPHA', max: '0' },
+      policies: { allowTools: [], denyTools: [], requireValidator: true },
+    },
+    missing_fields: [],
+    warnings: [],
+    requiresConfirmation: true,
+    planHash: '0xplan',
+  };
+  return { ...base, ...overrides };
+}
 
 function withRouter<T>(
   service: Parameters<typeof createOneboxRouter>[0],
@@ -85,17 +115,12 @@ function withRouter<T>(
   }
 }
 
-function authorised(requestBuilder: request.Test): request.Test {
+function authorised<T extends { set(field: string, value: string): T }>(requestBuilder: T): T {
   return requestBuilder.set('Authorization', `Bearer ${TEST_TOKEN}`);
 }
 
 test('onebox router plan route delegates to service', async () => {
-  const planResponse: PlanResponse = {
-    summary: 'Summary',
-    intent: { action: 'post_job', payload: {} },
-    requiresConfirmation: true,
-    warnings: [],
-  };
+  const planResponse = makePlanResponse();
 
   await withRouter(
     {
@@ -103,7 +128,7 @@ test('onebox router plan route delegates to service', async () => {
         return planResponse;
       },
       async execute() {
-        return { ok: true };
+        return { ok: true } as OneboxExecuteResponse;
       },
       async status(): Promise<StatusResponse> {
         return { jobs: [] };
@@ -129,15 +154,10 @@ test('plan route responds with 401 when token missing', async () => {
   try {
     const router = createOneboxRouter({
       async plan() {
-        return {
-          summary: 'Summary',
-          intent: { action: 'post_job', payload: {} },
-          requiresConfirmation: true,
-          warnings: [],
-        } satisfies PlanResponse;
+        return makePlanResponse();
       },
       async execute() {
-        return { ok: true };
+        return { ok: true } as OneboxExecuteResponse;
       },
       async status(): Promise<StatusResponse> {
         return { jobs: [] };
@@ -169,15 +189,10 @@ test('plan route responds with 403 for invalid token', async () => {
   await withRouter(
     {
       async plan() {
-        return {
-          summary: 'Summary',
-          intent: { action: 'post_job', payload: {} },
-          requiresConfirmation: true,
-          warnings: [],
-        } satisfies PlanResponse;
+        return makePlanResponse();
       },
       async execute() {
-        return { ok: true };
+        return { ok: true } as OneboxExecuteResponse;
       },
       async status(): Promise<StatusResponse> {
         return { jobs: [] };
@@ -201,15 +216,10 @@ test('plan route accepts valid HMAC authorization', async () => {
   await withRouter(
     {
       async plan() {
-        return {
-          summary: 'Summary',
-          intent: { action: 'post_job', payload: {} },
-          requiresConfirmation: true,
-          warnings: [],
-        } satisfies PlanResponse;
+        return makePlanResponse();
       },
       async execute() {
-        return { ok: true };
+        return { ok: true } as OneboxExecuteResponse;
       },
       async status(): Promise<StatusResponse> {
         return { jobs: [] };
@@ -239,15 +249,10 @@ test('metrics endpoint exposes Prometheus counters', async () => {
   await withRouter(
     {
       async plan() {
-        return {
-          summary: 'Summary',
-          intent: { action: 'post_job', payload: {} },
-          requiresConfirmation: true,
-          warnings: [],
-        } satisfies PlanResponse;
+        return makePlanResponse();
       },
       async execute() {
-        return { ok: true };
+        return { ok: true } as OneboxExecuteResponse;
       },
       async status(): Promise<StatusResponse> {
         return { jobs: [] };
@@ -259,7 +264,19 @@ test('metrics endpoint exposes Prometheus counters', async () => {
       app.use('/onebox', router);
 
       await authorised(request(app).post('/onebox/plan')).send({ text: 'Create a job' });
-      await authorised(request(app).post('/onebox/execute')).send({ intent: { action: 'post_job', payload: {} }, mode: 'relayer' });
+      await authorised(request(app).post('/onebox/execute')).send({
+        intent: {
+          kind: 'post_job',
+          title: 'Example',
+          description: 'Example description',
+          reward_agialpha: '1',
+          deadline_days: 7,
+          attachments: [],
+          constraints: {},
+        },
+        mode: 'relayer',
+        planHash: '0xplan',
+      });
       await authorised(request(app).get('/onebox/status'));
 
       const metricsResponse = await authorised(request(app).get('/onebox/metrics'));
@@ -298,10 +315,13 @@ test('DefaultOneboxService produces calldata for wallet mode', async () => {
   try {
     const response = await service.execute(
       {
-        action: 'post_job',
-        payload: { title: 'Wallet job', reward: '1', deadlineDays: 3 },
+        kind: 'post_job',
+        title: 'Wallet job',
+        description: 'Wallet execution test',
+        reward_agialpha: '1',
+        deadline_days: 3,
+        attachments: [],
         constraints: {},
-        userContext: {},
       },
       'wallet'
     );

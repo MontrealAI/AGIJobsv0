@@ -19,13 +19,10 @@ import type {
   ConstraintForIntent,
 } from '../../packages/onebox-orchestrator/src/ics/types';
 import type {
-  ExecuteRequest,
   ExecuteResponse,
-  JobAttachment,
+  Attachment,
   JobIntent,
-  JobStatusCard,
   PlanResponse,
-  StatusResponse,
 } from '../../packages/onebox-sdk/src';
 import { postJob, prepareJobArtifacts } from './employer';
 import { uploadToIPFS } from './execution';
@@ -276,13 +273,66 @@ class HttpError extends Error {
   }
 }
 
+type OneboxPlanResponse = PlanResponse & { planHash: string; summary: string };
+
+type OneboxExecuteResponse = ExecuteResponse & {
+  ok?: boolean;
+  planHash?: string;
+  createdAt?: string;
+  jobId?: number;
+  txHash?: string;
+  txHashes?: string[];
+  receiptUrl?: string;
+  reward?: string;
+  token?: string;
+  status?: string;
+  feePct?: number;
+  burnPct?: number;
+  feeAmount?: string;
+  burnAmount?: string;
+  deliverableCid?: string;
+  deliverableUri?: string;
+  deliverableGatewayUrls?: string[];
+  deliverableGatewayUrl?: string;
+  specCid?: string | null;
+  specHash?: string | undefined;
+  specUri?: string;
+  specGatewayUrl?: string;
+  specGatewayUrls?: string[];
+  receiptCid?: string;
+  receiptUri?: string;
+  receiptGatewayUrl?: string;
+  receiptGatewayUrls?: string[];
+  deadline?: number;
+  to?: string;
+  data?: string;
+  value?: string;
+  chainId?: number;
+};
+
+type JobAttachment = Attachment;
+
+interface JobStatusCard {
+  jobId: number;
+  status: string;
+  statusLabel: string;
+  reward?: string;
+  rewardToken?: string;
+  deadline?: string;
+  assignee?: string;
+}
+
+interface StatusResponse {
+  jobs: JobStatusCard[];
+}
+
 export interface OneboxService {
-  plan(text: string, expert?: boolean): Promise<PlanResponse>;
+  plan(text: string, expert?: boolean): Promise<OneboxPlanResponse>;
   execute(
     intent: JobIntent,
     mode: 'relayer' | 'wallet',
     options?: ExecuteOptions
-  ): Promise<ExecuteResponse>;
+  ): Promise<OneboxExecuteResponse>;
   status(jobId?: number, limit?: number): Promise<StatusResponse>;
 }
 
@@ -299,6 +349,9 @@ interface DefaultServiceOptions {
   explorerBaseUrl?: string;
   tokenDecimals?: number;
   statusLimit?: number;
+  maxJobBudgetAgia?: string;
+  maxJobDurationDays?: string;
+  policyPath?: string;
 }
 
 interface PlannerSummary {
@@ -369,7 +422,7 @@ export class DefaultOneboxService implements OneboxService {
     this.defaultBurnPct = VALID_PERCENTAGE(DEFAULT_BURN_PCT) ? DEFAULT_BURN_PCT : 2;
   }
 
-  async plan(text: string, expert = false): Promise<PlanResponse> {
+  async plan(text: string, expert = false): Promise<OneboxPlanResponse> {
     const trimmed = text.trim();
     if (!trimmed) {
       throw new HttpError(400, 'Provide a description of what you would like to do.');
@@ -389,12 +442,21 @@ export class DefaultOneboxService implements OneboxService {
     const intent = plannerIntentToJobIntent(envelope, expert);
     const { summary, warnings } = await this.buildPlannerSummary(envelope, intent, result);
 
+    const planHash = computePlanHash(envelope);
     return {
       summary,
+      preview_summary: summary,
       intent,
       requiresConfirmation: envelope.payload.confirm ?? true,
       warnings,
-      planHash: computePlanHash(envelope),
+      missing_fields: [],
+      plan: {
+        plan_id: planHash,
+        steps: [],
+        budget: { token: 'AGIALPHA', max: intent.reward_agialpha ?? '0' },
+        policies: { allowTools: [], denyTools: [], requireValidator: true },
+      },
+      planHash,
     };
   }
 
@@ -402,19 +464,14 @@ export class DefaultOneboxService implements OneboxService {
     intent: JobIntent,
     mode: 'relayer' | 'wallet',
     options: ExecuteOptions = {}
-  ): Promise<ExecuteResponse> {
-    switch (intent.action) {
+  ): Promise<OneboxExecuteResponse> {
+    switch (intent.kind) {
       case 'post_job':
         return this.executePostJob(intent, mode, options);
-      case 'finalize_job':
+      case 'finalize':
         return this.executeFinalizeJob(intent, mode, options);
-      case 'check_status':
-        return {
-          ok: true,
-          jobId: intent.payload?.jobId ? Number(normaliseJobId(intent.payload.jobId)) : undefined,
-        };
       default:
-        throw new HttpError(400, `Intent ${intent.action} is not supported yet.`);
+        throw new HttpError(400, `Intent ${intent.kind} is not supported yet.`);
     }
   }
 
@@ -446,10 +503,9 @@ export class DefaultOneboxService implements OneboxService {
     intent: JobIntent,
     mode: 'relayer' | 'wallet',
     options: ExecuteOptions
-  ): Promise<ExecuteResponse> {
-    const payload = intent.payload ?? {};
-    const rewardWei = parseReward(payload.reward, this.tokenDecimals);
-    const deadlineDays = parseDeadlineDays(payload.deadlineDays);
+  ): Promise<OneboxExecuteResponse> {
+    const rewardWei = parseReward(intent.reward_agialpha, this.tokenDecimals);
+    const deadlineDays = parseDeadlineDays(intent.deadline_days);
     const metadata = buildJobMetadata(intent, deadlineDays);
     const deadlineSeconds = Math.floor(Date.now() / 1000 + deadlineDays * 24 * 60 * 60);
     const agentTypes = determineAgentTypes(intent);
@@ -478,6 +534,9 @@ export class DefaultOneboxService implements OneboxService {
       const chainId = await this.resolveChainId();
       return {
         ok: true,
+        run_id: randomUUID(),
+        plan_id: planHash ?? randomUUID(),
+        started_at: Date.now(),
         planHash,
         createdAt,
         feePct,
@@ -495,7 +554,7 @@ export class DefaultOneboxService implements OneboxService {
       throw new HttpError(503, 'Relayer is not configured. Set ONEBOX_RELAYER_PRIVATE_KEY.');
     }
 
-    const { jobId, txHash, jsonUri, specHash } = await postJob({
+    const { jobId, txHash, jsonUri } = await postJob({
       wallet: this.relayer,
       reward: rewardWei,
       deadline: deadlineSeconds,
@@ -508,28 +567,47 @@ export class DefaultOneboxService implements OneboxService {
     const rewardFormatted = formatRewardFromWei(rewardWei, this.tokenDecimals);
     const specCid = extractCid(jsonUri);
     const gatewayUrls = buildGatewayUrls(jsonUri);
+    const rewardToken =
+      typeof metadata.rewardToken === 'string' && metadata.rewardToken.trim()
+        ? metadata.rewardToken
+        : 'AGIALPHA';
+    metadata.rewardToken = rewardToken;
+
+    const runId = randomUUID();
+    const planId = planHash ?? runId;
+    const receipt = {
+      plan_id: planId,
+      job_id: Number.isFinite(numericJobId) ? numericJobId : undefined,
+      txes: txHash ? [txHash] : [],
+      cids: specCid ? [specCid] : [],
+      payouts: [],
+      timings: { executed_at: createdAt },
+    } satisfies Record<string, unknown>;
 
     return {
       ok: true,
+      run_id: runId,
+      plan_id: planId,
+      started_at: Date.now(),
       planHash,
       createdAt,
       jobId: Number.isFinite(numericJobId) ? numericJobId : undefined,
       txHash,
-      txHashes: txHash ? [txHash] : undefined,
       receiptUrl,
       reward: rewardFormatted,
-      token: metadata.rewardToken,
+      token: rewardToken,
       deadline: deadlineSeconds,
       specCid: specCid ?? undefined,
       specUri: jsonUri,
       specGatewayUrl: gatewayUrls[0],
       specGatewayUrls: gatewayUrls.length ? gatewayUrls : undefined,
-      specHash,
+      specHash: undefined,
       deliverableCid: undefined,
       feePct,
       burnPct,
       feeAmount,
       burnAmount,
+      receipt,
     };
   }
 
@@ -537,8 +615,8 @@ export class DefaultOneboxService implements OneboxService {
     intent: JobIntent,
     mode: 'relayer' | 'wallet',
     options: ExecuteOptions
-  ): Promise<ExecuteResponse> {
-    const jobId = normaliseJobId(intent.payload?.jobId);
+  ): Promise<OneboxExecuteResponse> {
+    const jobId = normaliseJobId(intent.job_id);
     const planHash = options.planHash;
     const createdAt = options.createdAt ?? new Date().toISOString();
 
@@ -548,6 +626,9 @@ export class DefaultOneboxService implements OneboxService {
       const chainId = await this.resolveChainId();
       return {
         ok: true,
+        run_id: randomUUID(),
+        plan_id: planHash ?? randomUUID(),
+        started_at: Date.now(),
         jobId: Number(jobId),
         planHash,
         createdAt,
@@ -563,14 +644,28 @@ export class DefaultOneboxService implements OneboxService {
     }
 
     const { txHash } = await finalizeJob(jobId.toString(), this.relayer);
+    const runId = randomUUID();
+    const planId = planHash ?? runId;
+    const receipt = {
+      plan_id: planId,
+      job_id: Number(jobId),
+      txes: txHash ? [txHash] : [],
+      cids: [],
+      payouts: [],
+      timings: { executed_at: createdAt },
+    } satisfies Record<string, unknown>;
+
     return {
       ok: true,
+      run_id: runId,
+      plan_id: planId,
+      started_at: Date.now(),
       jobId: Number(jobId),
       planHash,
       createdAt,
       txHash,
-      txHashes: txHash ? [txHash] : undefined,
       receiptUrl: txHash ? buildReceiptUrl(this.explorerBaseUrl, txHash) : undefined,
+      receipt,
     };
   }
 
@@ -755,7 +850,7 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
       const expert = Boolean(req.body?.expert);
       const response = await service.plan(text, expert);
       const decorated = await decoratePlanResponse(response);
-      intentType = decorated.intent?.action ?? 'unknown';
+      intentType = decorated.intent?.kind ?? 'unknown';
       logEvent('info', 'onebox.plan.success', {
         correlationId,
         intentType,
@@ -788,12 +883,12 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
     let mode: 'wallet' | 'relayer' = 'relayer';
     let planHash: string | undefined;
     try {
-      const executeRequest = req.body as ExecuteRequest | undefined;
+      const executeRequest = req.body as OneboxExecuteRequest | undefined;
       const intent = executeRequest?.intent as JobIntent | undefined;
       if (!intent || typeof intent !== 'object') {
         throw new HttpError(400, 'Execution requires a validated intent payload.');
       }
-      intentType = typeof intent.action === 'string' ? intent.action : 'unknown';
+      intentType = typeof intent.kind === 'string' ? intent.kind : 'unknown';
       mode = executeRequest?.mode === 'wallet' ? 'wallet' : 'relayer';
       planHash = normalizePlanHash(executeRequest?.planHash);
       if (!planHash) {
@@ -984,16 +1079,25 @@ interface ReceiptAttestationFields {
   receiptAttestationUri?: string | null;
 }
 
-type PlanResponseWithReceipt = PlanResponse & ReceiptAttestationFields & {
+export type { OneboxPlanResponse, OneboxExecuteResponse, StatusResponse };
+
+type PlanResponseWithReceipt = OneboxPlanResponse & ReceiptAttestationFields & {
   createdAt?: string;
 };
-type ExecuteResponseWithReceipt = ExecuteResponse & ReceiptAttestationFields;
+type ExecuteResponseWithReceipt = OneboxExecuteResponse & ReceiptAttestationFields;
 
 interface DecorateExecuteOptions {
   planHash: string;
   createdAt?: string;
   mode: 'wallet' | 'relayer';
   correlationId: string;
+}
+
+interface OneboxExecuteRequest {
+  intent?: JobIntent;
+  mode?: 'relayer' | 'wallet';
+  planHash?: string;
+  createdAt?: string | number;
 }
 
 function normalizePlanHash(value: unknown): string | undefined {
@@ -1022,7 +1126,7 @@ function normalizeRequestTimestamp(value: unknown): string | undefined {
   return undefined;
 }
 
-async function decoratePlanResponse(response: PlanResponse): Promise<PlanResponseWithReceipt> {
+async function decoratePlanResponse(response: OneboxPlanResponse): Promise<PlanResponseWithReceipt> {
   const metadata: Record<string, unknown> = {
     summary: response.summary,
     intent: response.intent,
@@ -1046,8 +1150,8 @@ async function decoratePlanResponse(response: PlanResponse): Promise<PlanRespons
     receiptDigest: attested.digest,
     receiptAttestationUid: attested.attestationUid,
     receiptAttestationTxHash: attested.attestationTxHash,
-    receiptAttestationCid: attested.attestationCid ?? null,
-    receiptAttestationUri: attested.attestationUri ?? null,
+    receiptAttestationCid: attested.attestationCid ?? undefined,
+    receiptAttestationUri: attested.attestationUri ?? undefined,
   };
   try {
     await saveReceipt({
@@ -1071,11 +1175,17 @@ async function decoratePlanResponse(response: PlanResponse): Promise<PlanRespons
 }
 
 async function decorateExecuteResponse(
-  response: ExecuteResponse,
+  response: OneboxExecuteResponse,
   options: DecorateExecuteOptions
 ): Promise<ExecuteResponseWithReceipt> {
   const createdAt = response.createdAt ?? options.createdAt ?? new Date().toISOString();
-  const planHash = response.planHash ?? options.planHash;
+  const planHash = response.planHash ?? response.plan_id ?? options.planHash;
+  if (!planHash) {
+    return {
+      ...response,
+      createdAt,
+    } as ExecuteResponseWithReceipt;
+  }
   const txHashes = collectTxHashes(response);
   const decorated: ExecuteResponseWithReceipt = {
     ...response,
@@ -1088,7 +1198,9 @@ async function decorateExecuteResponse(
     return decorated;
   }
 
-  const receiptRecord = buildReceiptRecord(decorated, planHash, createdAt, txHashes);
+  const receiptRecord =
+    normaliseExecuteReceipt(decorated, planHash, createdAt, txHashes) ??
+    buildReceiptRecord(decorated, planHash, createdAt, txHashes);
   if (!receiptRecord) {
     return decorated;
   }
@@ -1179,12 +1291,12 @@ async function applyExecutionReceiptAttestation(
   response.receiptAttestationUid = attested.attestationUid;
   response.receiptAttestationTxHash = attested.attestationTxHash;
   response.receiptAttestationCid =
-    attested.attestationCid ?? response.receiptCid ?? response.deliverableCid ?? null;
+    attested.attestationCid ?? response.receiptCid ?? response.deliverableCid ?? undefined;
   response.receiptAttestationUri =
-    attested.attestationUri ?? response.receiptUri ?? response.deliverableUri ?? null;
+    attested.attestationUri ?? response.receiptUri ?? response.deliverableUri ?? undefined;
 }
 
-function collectTxHashes(response: ExecuteResponse): string[] {
+function collectTxHashes(response: OneboxExecuteResponse): string[] {
   const hashes = new Set<string>();
   const push = (value: unknown) => {
     if (typeof value !== 'string') return;
@@ -1192,6 +1304,12 @@ function collectTxHashes(response: ExecuteResponse): string[] {
     if (!trimmed) return;
     hashes.add(trimmed);
   };
+  const receiptTxes = (response.receipt as { txes?: unknown } | undefined)?.txes;
+  if (Array.isArray(receiptTxes)) {
+    for (const entry of receiptTxes) {
+      push(entry);
+    }
+  }
   if (Array.isArray(response.txHashes)) {
     for (const entry of response.txHashes) {
       push(entry);
@@ -1201,8 +1319,45 @@ function collectTxHashes(response: ExecuteResponse): string[] {
   return Array.from(hashes);
 }
 
+function normaliseExecuteReceipt(
+  response: OneboxExecuteResponse,
+  planHash: string | undefined,
+  createdAt: string,
+  txHashes: string[]
+): Record<string, unknown> | null {
+  const receipt = response.receipt;
+  if (!receipt || typeof receipt !== 'object') {
+    return null;
+  }
+
+  const record = { ...(receipt as Record<string, unknown>) };
+  if (!record.plan_id && planHash) {
+    record.plan_id = planHash;
+  }
+  if (response.jobId !== undefined && record.job_id === undefined) {
+    record.job_id = response.jobId;
+  }
+  if (!Array.isArray((record as { txes?: unknown }).txes) && txHashes.length) {
+    (record as { txes?: string[] }).txes = txHashes;
+  }
+  const cidCandidate = response.deliverableCid ?? response.specCid ?? response.receiptCid;
+  if (cidCandidate) {
+    const current = Array.isArray((record as { cids?: unknown }).cids)
+      ? ([...(record as { cids: unknown[] }).cids] as string[])
+      : [];
+    if (!current.includes(cidCandidate)) {
+      current.push(cidCandidate);
+    }
+    (record as { cids?: string[] }).cids = current;
+  }
+  if (!(record as { timings?: unknown }).timings) {
+    (record as { timings?: Record<string, unknown> }).timings = { executed_at: createdAt };
+  }
+  return record;
+}
+
 function buildReceiptRecord(
-  response: ExecuteResponse,
+  response: OneboxExecuteResponse,
   planHash: string,
   createdAt: string,
   txHashes: string[]
@@ -1315,6 +1470,13 @@ export function plannerIntentToJobIntent(
   if (envelope.payload.confirmationText) {
     constraints.confirmationText = envelope.payload.confirmationText;
   }
+  const userContext = buildUserContext(envelope.payload.meta, expert);
+  if (userContext) {
+    constraints.userContext = userContext;
+    if (typeof userContext.userId === 'string') {
+      constraints.userId = userContext.userId;
+    }
+  }
 
   switch (envelope.intent) {
     case 'create_job': {
@@ -1325,115 +1487,124 @@ export function plannerIntentToJobIntent(
       if (createParams.autoApprove !== undefined) {
         constraints.autoApprove = createParams.autoApprove;
       }
+      if (job.rewardTokenSymbol) {
+        constraints.rewardToken = job.rewardTokenSymbol;
+      }
       return {
-        action: 'post_job',
-        payload: {
-          title: job.title,
-          description: job.description,
-          reward: job.rewardAmount,
-          rewardToken: job.rewardTokenSymbol ?? 'AGIALPHA',
-          deadlineDays: job.deadlineDays,
-          attachments: normaliseAttachments(job.attachments),
-        },
+        kind: 'post_job',
+        title: job.title,
+        description: job.description,
+        reward_agialpha: job.rewardAmount,
+        deadline_days: job.deadlineDays,
+        attachments: normaliseAttachments(job.attachments),
         constraints,
-        userContext: buildUserContext(envelope.payload.meta, expert),
       };
     }
     case 'finalize':
       return {
-        action: 'finalize_job',
-        payload: {
-          jobId: toSerializableId(
-            (envelope.payload as ConstraintForIntent<'finalize'>).params.jobId
-          ),
-        },
+        kind: 'finalize',
+        job_id: Number(normaliseJobId((envelope.payload as ConstraintForIntent<'finalize'>).params.jobId)),
+        attachments: [],
         constraints,
-        userContext: buildUserContext(envelope.payload.meta, expert),
       };
     case 'apply_job':
       const applyParams = (
         envelope.payload as ConstraintForIntent<'apply_job'>
       ).params;
       return {
-        action: 'apply_job',
-        payload: {
-          jobId: toSerializableId(applyParams.jobId),
+        kind: 'apply',
+        job_id: Number(normaliseJobId(applyParams.jobId)),
+        attachments: [],
+        constraints: {
+          ...constraints,
           ensName: applyParams.ensName,
           stakeAmount: applyParams.stakeAmount,
         },
-        constraints,
-        userContext: buildUserContext(envelope.payload.meta, expert),
       };
     case 'submit_work':
       const submitParams = (
         envelope.payload as ConstraintForIntent<'submit_work'>
       ).params;
       return {
-        action: 'submit_work',
-        payload: {
-          jobId: toSerializableId(submitParams.jobId),
+        kind: 'submit',
+        job_id: Number(normaliseJobId(submitParams.jobId)),
+        attachments: [],
+        constraints: {
+          ...constraints,
           result: submitParams.result,
         },
-        constraints,
-        userContext: buildUserContext(envelope.payload.meta, expert),
       };
     case 'validate':
       const validateParams = (
         envelope.payload as ConstraintForIntent<'validate'>
       ).params;
       return {
-        action: 'validate',
-        payload: {
-          jobId: toSerializableId(validateParams.jobId),
+        kind: 'custom',
+        job_id: Number(normaliseJobId(validateParams.jobId)),
+        attachments: [],
+        constraints: {
+          ...constraints,
+          action: 'validate',
           outcome: validateParams.outcome,
           notes: validateParams.notes,
         },
-        constraints,
-        userContext: buildUserContext(envelope.payload.meta, expert),
       };
     case 'dispute':
       const disputeParams = (
         envelope.payload as ConstraintForIntent<'dispute'>
       ).params;
       return {
-        action: 'dispute',
-        payload: {
-          jobId: toSerializableId(disputeParams.jobId),
+        kind: 'custom',
+        job_id: Number(normaliseJobId(disputeParams.jobId)),
+        attachments: [],
+        constraints: {
+          ...constraints,
+          action: 'dispute',
           reason: disputeParams.reason,
           evidenceUri: disputeParams.evidenceUri,
         },
-        constraints,
-        userContext: buildUserContext(envelope.payload.meta, expert),
       };
     case 'stake':
       const stakeParams = (
         envelope.payload as ConstraintForIntent<'stake'>
       ).params;
       return {
-        action: 'stake',
-        payload: { amount: stakeParams.amount, role: stakeParams.role },
-        constraints,
-        userContext: buildUserContext(envelope.payload.meta, expert),
+        kind: 'custom',
+        attachments: [],
+        constraints: {
+          ...constraints,
+          action: 'stake',
+          amount: stakeParams.amount,
+          role: stakeParams.role,
+        },
       };
     case 'withdraw':
       const withdrawParams = (
         envelope.payload as ConstraintForIntent<'withdraw'>
       ).params;
       return {
-        action: 'withdraw',
-        payload: { amount: withdrawParams.amount, role: withdrawParams.role },
-        constraints,
-        userContext: buildUserContext(envelope.payload.meta, expert),
+        kind: 'custom',
+        attachments: [],
+        constraints: {
+          ...constraints,
+          action: 'withdraw',
+          amount: withdrawParams.amount,
+          role: withdrawParams.role,
+        },
       };
     case 'admin_set':
       const adminParams = (
         envelope.payload as ConstraintForIntent<'admin_set'>
       ).params;
       return {
-        action: 'admin_set',
-        payload: { key: adminParams.key, value: adminParams.value },
-        constraints,
-        userContext: buildUserContext(envelope.payload.meta, expert),
+        kind: 'custom',
+        attachments: [],
+        constraints: {
+          ...constraints,
+          action: 'admin_set',
+          key: adminParams.key,
+          value: adminParams.value,
+        },
       };
   }
 }
@@ -1466,30 +1637,31 @@ function buildPlannerSummary(
   }
 
   let summary: string;
-  switch (intent.action) {
+  switch (intent.kind) {
     case 'post_job': {
-      const reward = formatRewardForSummary(intent.payload?.reward, options.tokenDecimals);
-      const rewardToken = typeof intent.payload?.rewardToken === 'string' && intent.payload.rewardToken.trim()
-        ? intent.payload.rewardToken.trim()
-        : 'AGIALPHA';
-      const deadlineRaw = Number(intent.payload?.deadlineDays ?? DEFAULT_DEADLINE_DAYS);
+      const reward = formatRewardForSummary(intent.reward_agialpha, options.tokenDecimals);
+      const rewardToken =
+        typeof intent.constraints?.rewardToken === 'string' && intent.constraints.rewardToken.trim()
+          ? String(intent.constraints.rewardToken).trim()
+          : 'AGIALPHA';
+      const deadlineRaw = Number(intent.deadline_days ?? DEFAULT_DEADLINE_DAYS);
       const deadline = Number.isFinite(deadlineRaw) && deadlineRaw > 0 ? Math.round(deadlineRaw) : DEFAULT_DEADLINE_DAYS;
       const feePct = options.feePct;
       const burnPct = options.burnPct;
       summary = `Post job ${reward} ${rewardToken}, ${deadline} day${deadline === 1 ? '' : 's'}. Fee ${feePct}%, burn ${burnPct}%. Proceed?`;
       break;
     }
-    case 'finalize_job':
-      summary = `Finalize job ${formatJobId(intent.payload?.jobId)}. Proceed?`;
+    case 'finalize':
+      summary = `Finalize job ${formatJobId(intent.job_id)}. Proceed?`;
       break;
-    case 'apply_job':
-      summary = `Apply to job ${formatJobId(intent.payload?.jobId)}. Proceed?`;
+    case 'apply':
+      summary = `Apply to job ${formatJobId(intent.job_id)}. Proceed?`;
       break;
-    case 'validate':
-      summary = `Submit ${String(intent.payload?.outcome ?? 'validation')} for job ${formatJobId(intent.payload?.jobId)}. Proceed?`;
+    case 'submit':
+      summary = `Submit work for job ${formatJobId(intent.job_id)}. Proceed?`;
       break;
     default:
-      summary = `${result.message || `Run ${intent.action}`}. Proceed?`;
+      summary = `${result.message || `Run ${intent.kind}`}. Proceed?`;
   }
 
   return { summary: ensureSummaryLimit(summary), warnings };
@@ -1515,20 +1687,37 @@ function normaliseAttachments(input: unknown): JobAttachment[] {
       if (typeof entry === 'string') {
         const trimmed = entry.trim();
         if (!trimmed) return undefined;
+        const cid = extractCid(trimmed);
+        if (!cid) return undefined;
         return {
           name: deriveAttachmentName(trimmed, index),
-          ipfs: trimmed.startsWith('ipfs://') ? trimmed : undefined,
-          url: trimmed.startsWith('ipfs://') ? undefined : trimmed,
+          cid,
         };
       }
       if (entry && typeof entry === 'object') {
-        const { name, ipfs, url, type } = entry as Record<string, unknown>;
-        return {
-          name: typeof name === 'string' && name ? name : deriveAttachmentName(String(url ?? ipfs ?? ''), index),
-          ipfs: typeof ipfs === 'string' ? ipfs : undefined,
-          url: typeof url === 'string' ? url : undefined,
-          type: typeof type === 'string' ? type : undefined,
+        const { name, cid, ipfs, url, size } = entry as Record<string, unknown>;
+        const resolvedCid =
+          typeof cid === 'string' && cid.trim()
+            ? cid.trim()
+            : typeof ipfs === 'string' && ipfs.trim()
+            ? extractCid(ipfs)
+            : typeof url === 'string'
+            ? extractCid(url)
+            : undefined;
+        if (!resolvedCid) {
+          return undefined;
+        }
+        const attachment: JobAttachment = {
+          name:
+            typeof name === 'string' && name
+              ? name
+              : deriveAttachmentName(String(cid ?? ipfs ?? url ?? resolvedCid), index),
+          cid: resolvedCid,
         };
+        if (typeof size === 'number' && Number.isFinite(size) && size >= 0) {
+          attachment.size = Math.trunc(size);
+        }
+        return attachment;
       }
       return undefined;
     })
@@ -1542,30 +1731,29 @@ function deriveAttachmentName(value: string, index: number): string {
 }
 
 function buildJobMetadata(intent: JobIntent, deadlineDays: number): Record<string, unknown> {
+  const constraints = intent.constraints ?? {};
+  const rewardToken =
+    typeof constraints.rewardToken === 'string' && constraints.rewardToken.trim()
+      ? String(constraints.rewardToken).trim()
+      : 'AGIALPHA';
   return {
-    title: intent.payload?.title ?? 'Untitled job',
-    description: intent.payload?.description ?? '',
-    reward: intent.payload?.reward,
-    rewardToken: intent.payload?.rewardToken ?? 'AGIALPHA',
+    title: intent.title ?? 'Untitled job',
+    description: intent.description ?? '',
+    reward: intent.reward_agialpha,
+    rewardToken,
     deadlineDays,
-    attachments: intent.payload?.attachments ?? [],
-    constraints: intent.constraints ?? {},
-    userContext: intent.userContext ?? {},
+    attachments: intent.attachments ?? [],
+    constraints,
+    userContext: constraints.userContext ?? {},
     createdAt: new Date().toISOString(),
     source: 'apps/orchestrator/onebox',
   };
 }
 
 function determineAgentTypes(intent: JobIntent): number | undefined {
-  const payloadAgentTypes = (intent.payload as Record<string, unknown> | undefined)?.['agentTypes'];
-  if (typeof payloadAgentTypes === 'number' && Number.isFinite(payloadAgentTypes)) {
-    const candidate = Math.trunc(payloadAgentTypes);
-    return candidate >= 0 ? candidate : undefined;
-  }
-
-  const constraintAgentTypes = intent.constraints?.['agentTypes'];
-  if (typeof constraintAgentTypes === 'number' && Number.isFinite(constraintAgentTypes)) {
-    const candidate = Math.trunc(constraintAgentTypes);
+  const rawAgentTypes = intent.constraints?.['agentTypes'] ?? intent.constraints?.['agent_types'];
+  if (typeof rawAgentTypes === 'number' && Number.isFinite(rawAgentTypes)) {
+    const candidate = Math.trunc(rawAgentTypes);
     return candidate >= 0 ? candidate : undefined;
   }
 
@@ -1755,9 +1943,13 @@ function formatJobId(value: unknown): string {
 }
 
 function extractUserId(intent: JobIntent): string | undefined {
-  const context = intent.userContext as { userId?: unknown } | undefined;
+  const context = intent.constraints?.userContext as { userId?: unknown } | undefined;
   if (context && typeof context.userId === 'string' && context.userId.trim()) {
     return context.userId.trim();
+  }
+  const direct = intent.constraints?.userId;
+  if (typeof direct === 'string' && direct.trim()) {
+    return direct.trim();
   }
   return undefined;
 }
