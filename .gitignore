@@ -18,6 +18,10 @@ scripts/**/*.js
 !scripts/check-coverage.js
 !scripts/run-coverage.js
 !scripts/ci/run-coverage.js
+!scripts/ci/check-access-control-coverage.js
+!scripts/ci/generate-coverage-badge.js
+!scripts/ci/export-abis.js
+!scripts/ci/check-abi-diff.js
 !scripts/verify-wiring.js
 !scripts/run-wire-verify.js
 !scripts/subgraph-e2e.js

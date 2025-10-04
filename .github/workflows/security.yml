@@ -35,6 +35,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare report directories
+        run: |
+          mkdir -p reports
+          mkdir -p reports/sbom
+
       - name: Run gitleaks
         uses: gitleaks/gitleaks-action@v2
         with:
