@@ -80,6 +80,13 @@ interface IStakeManager {
         uint256 operatorSlashPct,
         uint256 validatorSlashRewardPct
     );
+    event SlashPercentsUpdated(
+        uint256 employerSlashPct,
+        uint256 treasurySlashPct,
+        uint256 validatorSlashRewardPct,
+        uint256 operatorSlashPct,
+        uint256 burnSlashPct
+    );
     event OperatorSlashShareAllocated(address indexed user, Role indexed role, uint256 amount);
     event TreasuryUpdated(address indexed treasury);
     event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
@@ -299,6 +306,14 @@ interface IStakeManager {
 
     /// @notice owner configuration helpers
     function setMinStake(uint256 _minStake) external;
+    function setSlashPercents(
+        uint16 employerSlashPct,
+        uint16 treasurySlashPct,
+        uint16 validatorSlashPct,
+        uint16 operatorSlashPct,
+        uint16 burnSlashPct
+    ) external;
+
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setValidatorSlashRewardPct(uint256 _validatorSlashPct) external;

@@ -41,7 +41,7 @@ The AGI Jobs v2 system preserves an owner-first operating model. A single Owner 
 | ValidationModule | `setLateRevealPenalty(uint16)` | Basis points | uint16 |
 | StakeManager | `setMinStake(uint8,uint256)` | Role => stake amount | uint256 |
 | StakeManager | `setUnbondingPeriod(uint256)` | Seconds | uint256 |
-| StakeManager | `setSlashPercents(uint16,uint16,uint16,uint16)` | bps per offense | uint16 |
+| StakeManager | `setSlashPercents(uint16,uint16,uint16,uint16,uint16)` | bps per offense | uint16 |
 | StakeManager | `setTreasury(address)` | Treasury receiver | address |
 | StakeManager | `setTreasuryAllowlist(address,bool)` | Access control | address,bool |
 | StakeManager | `rescueERC20(address,address,uint256)` | Token, to, amount | addresses,uint256 |
