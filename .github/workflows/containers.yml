@@ -27,18 +27,23 @@ jobs:
           - name: node-runner
             context: .
             file: deploy/docker/orchestrator.Dockerfile
+            tag: node-runner:latest
           - name: validator-runner
             context: .
             file: deploy/docker/attester.Dockerfile
+            tag: validator-runner:latest
           - name: gateway
             context: .
             file: agent-gateway/Dockerfile
+            tag: gateway:latest
           - name: webapp
             context: .
             file: apps/enterprise-portal/Dockerfile
+            tag: webapp:latest
           - name: owner-console
             context: apps/console
             file: Dockerfile
+            tag: owner-console:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,7 +83,7 @@ jobs:
           provenance: false
           sbom: false
           outputs: type=docker
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}:latest
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}
 
       - name: Build & Push (main/tags, multi-arch, attestations)
         if: github.event_name != 'pull_request'
@@ -92,7 +97,7 @@ jobs:
           push: true
           provenance: mode=max
           sbom: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.name }}:latest
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}
 
       - name: Trivy scan
         if: github.event_name == 'pull_request' && steps.build-pr.outputs.imageid
