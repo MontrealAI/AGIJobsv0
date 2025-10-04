@@ -8,7 +8,7 @@ import {AGIALPHA, BURN_ADDRESS} from "../../contracts/v2/Constants.sol";
 
 contract StakeManagerBurnHarness is StakeManager {
     constructor(address gov)
-        StakeManager(1e18, 0, 100, address(0), address(0), address(0), gov)
+        StakeManager(1e18, 0, 10_000, address(0), address(0), address(0), gov)
     {}
 
     function exposedBurn(uint256 amt) external {

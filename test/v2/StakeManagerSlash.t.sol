@@ -32,9 +32,9 @@ contract StakeManagerSlashTest is Test {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManagerHarness(1e18, 0, 100, address(1), address(this), address(this), address(this));
+        stake = new StakeManagerHarness(1e18, 0, 10_000, address(1), address(this), address(this), address(this));
         stake.setValidatorRewardPct(10);
-        stake.setValidatorSlashRewardPct(10);
+        stake.setValidatorSlashRewardPct(1_000);
     }
 
     function _depositValidator(address val) internal {
@@ -90,10 +90,36 @@ contract StakeManagerSlashTest is Test {
         vm.prank(address(this));
         stake.slash(user, StakeManager.Role.Validator, amount, address(0), validators);
 
-        uint256 expected = (amount * stake.validatorSlashRewardPct()) / 100 / n;
+        uint256 expected = (amount * stake.validatorSlashRewardPct()) / 10_000 / n;
         for (uint256 i; i < n; ++i) {
             uint256 gained = token.balanceOf(validators[i]) - beforeBal[i];
             assertEq(gained, expected);
         }
+    }
+
+    function testSetSlashPercentsEmitsTelemetry() public {
+        uint16 employer = 5_000;
+        uint16 treasury = 3_000;
+        uint16 validators = 1_000;
+        uint16 operators = 500;
+        uint16 burn = 500;
+
+        vm.expectEmit(false, false, false, true);
+        emit StakeManager.SlashDistributionUpdated(employer, treasury, operators, validators);
+        vm.expectEmit(false, false, false, true);
+        emit StakeManager.SlashPercentsUpdated(employer, treasury, validators, operators, burn);
+
+        stake.setSlashPercents(employer, treasury, validators, operators, burn);
+
+        assertEq(stake.employerSlashPct(), employer);
+        assertEq(stake.treasurySlashPct(), treasury);
+        assertEq(stake.validatorSlashRewardPct(), validators);
+        assertEq(stake.operatorSlashPct(), operators);
+        assertEq(stake.burnSlashPct(), burn);
+    }
+
+    function testSetSlashPercentsRevertsWhenTotalExceedsBps() public {
+        vm.expectRevert(StakeManager.InvalidPercentage.selector);
+        stake.setSlashPercents(6_000, 3_000, 1_500, 0, 1_000);
     }
 }

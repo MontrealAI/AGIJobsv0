@@ -84,6 +84,7 @@ contract MockStakeManager is IStakeManager {
     function setMinStake(uint256) external override {}
     function setRoleMinimums(uint256, uint256, uint256) external override {}
     function setRoleMinimum(Role, uint256) external override {}
+    function setSlashPercents(uint16, uint16, uint16, uint16, uint16) external override {}
     function setSlashingPercentages(uint256, uint256) external override {}
     function setSlashingParameters(uint256, uint256) external override {}
     function setTreasury(address) external override {}
