@@ -1,4 +1,7 @@
-const { artifacts, network } = require('hardhat');
+const fs = require('fs');
+const path = require('path');
+const hre = require('hardhat');
+const { artifacts, network } = hre;
 const { AGIALPHA } = require('../scripts/constants');
 
 process.env.RPC_URL = 'http://localhost:8545';
@@ -12,14 +15,55 @@ const shouldMockAgialpha = process.env.SKIP_MOCK_AGIALPHA !== '1';
 let snapshotId;
 
 before(async function () {
+  this.timeout(900000);
   if (!shouldMockAgialpha) {
     snapshotId = await network.provider.send('evm_snapshot');
     return;
   }
   // Load the test utility ERC20 used to stub the AGIALPHA token
-  const artifact = await artifacts.readArtifact(
-    'contracts/test/MockERC20.sol:MockERC20'
+  const mockArtifactPath = path.join(
+    hre.config.paths.artifacts,
+    'contracts',
+    'test',
+    'MockERC20.sol',
+    'MockERC20.json'
   );
+  let artifact;
+  try {
+    artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+  } catch (error) {
+    if (
+      error?.message?.includes('Artifact for contract') ||
+      error?.message?.includes('not found')
+    ) {
+      if (!fs.existsSync(mockArtifactPath)) {
+        const originalCompilers = hre.config.solidity.compilers.map((compiler) => ({
+          ...compiler,
+          settings: { ...compiler.settings },
+        }));
+        try {
+          if (originalCompilers.length > 0) {
+            hre.config.solidity.compilers = [
+              {
+                ...originalCompilers[0],
+                settings: { ...originalCompilers[0].settings },
+              },
+            ];
+          }
+          await hre.run('compile');
+        } finally {
+          hre.config.solidity.compilers = originalCompilers;
+        }
+      }
+      artifact = await artifacts.readArtifact(
+        'contracts/test/MockERC20.sol:MockERC20'
+      );
+    } else {
+      throw error;
+    }
+  }
   await network.provider.send('hardhat_setCode', [
     AGIALPHA,
     artifact.deployedBytecode,
