@@ -59,5 +59,35 @@ contract StakeManagerBurnTest is Test {
             assertEq(BURN_ADDRESS, address(0));
         }
     }
+
+    function testSetFeePctEmitsWhenValueChanges() public {
+        uint256 target = 12;
+        vm.expectEmit(false, false, false, true, address(stake));
+        emit StakeManager.FeePctUpdated(target);
+        stake.setFeePct(target);
+        assertEq(stake.feePct(), target, "fee pct not updated");
+    }
+
+    function testSetFeePctNoEmitWhenUnchanged() public {
+        uint256 current = stake.feePct();
+        vm.recordLogs();
+        stake.setFeePct(current);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        assertEq(logs.length, 0, "unexpected events emitted");
+        assertEq(stake.feePct(), current, "fee pct changed unexpectedly");
+    }
+
+    function testSetMinStakeEmitsAndUpdates() public {
+        uint256 target = 2e18;
+        vm.expectEmit(false, false, false, true, address(stake));
+        emit StakeManager.MinStakeUpdated(target);
+        stake.setMinStake(target);
+        assertEq(stake.minStake(), target, "min stake not updated");
+    }
+
+    function testSetMinStakeZeroReverts() public {
+        vm.expectRevert(StakeManager.InvalidMinStake.selector);
+        stake.setMinStake(0);
+    }
 }
 
