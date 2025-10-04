@@ -45,7 +45,7 @@ jobs:
 
       - name: Compile
         env:
-          COVERAGE_MIN: '90'
+          COVERAGE_MIN: 90
         run: |
           node --loader ts-node/esm scripts/generate-constants.ts
           npx hardhat compile
