@@ -18,12 +18,14 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 COPY --from=builder /install /usr/local
+
+# Copy only the modules required to serve the API at runtime.
 COPY services/meta_api ./services/meta_api
 COPY orchestrator ./orchestrator
 COPY routes ./routes
-COPY storage ./storage
-COPY backend ./backend
+COPY backend/errors ./backend/errors
 COPY config ./config
+COPY storage ./storage
 
 ENV PYTHONPATH=/app
 

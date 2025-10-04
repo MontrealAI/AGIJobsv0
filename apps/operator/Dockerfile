@@ -5,7 +5,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY apps ./apps
+COPY apps/operator/tsconfig.json ./apps/operator/tsconfig.json
+COPY apps/operator/telemetry.ts ./apps/operator/telemetry.ts
 
 RUN npx tsc -p apps/operator/tsconfig.json
 
@@ -19,8 +20,6 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/apps/operator/dist ./apps/operator/dist
-COPY apps/operator/telemetry.ts ./apps/operator/telemetry.ts
-COPY apps/operator/tsconfig.json ./apps/operator/tsconfig.json
 
 VOLUME ["/data/logs", "/data/state"]
 ENV ENERGY_LOG_DIR=/data/logs
