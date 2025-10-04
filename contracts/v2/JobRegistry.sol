@@ -1788,13 +1788,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
         }
         if (!authorized) revert NotAuthorizedAgent();
-        uint8 agentTypes = _getAgentTypes(job);
-        if (agentTypes > 0) {
-            IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
-                msg.sender
-            );
-            if ((agentTypes & (1 << uint8(aType))) == 0)
-                revert AgentTypeNotAllowed();
+        {
+            uint8 agentTypes = _getAgentTypes(job);
+            if (agentTypes > 0) {
+                IIdentityRegistry.AgentType aType = identityRegistry
+                    .getAgentType(msg.sender);
+                if ((agentTypes & (1 << uint8(aType))) == 0)
+                    revert AgentTypeNotAllowed();
+            }
         }
         if (address(reputationEngine) != address(0)) {
             reputationEngine.onApply(msg.sender);
@@ -1911,71 +1912,124 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         nonReentrant
     {
         Job storage job = jobs[jobId];
+        address agent = msg.sender;
+        _validateSubmission(job, agent, subdomain);
+        _verifyAgentIdentityWithCache(agent, subdomain, proof);
+        _enforceAgentType(job, agent);
+        _recordSubmission(job, jobId, agent, resultHash, resultURI, subdomain);
+        _triggerValidation(jobId, agent, resultHash);
+    }
+
+    function _verifyAgentIdentity(
+        address agent,
+        string calldata subdomain,
+        bytes32[] calldata proof,
+        bool cachedMatches
+    ) internal {
+        (bool authorized, bytes32 node, bool viaWrapper, bool viaMerkle) =
+            identityRegistry.verifyAgent(agent, subdomain, proof);
+        if (!authorized) revert NotAuthorizedAgent();
+        emit AgentIdentityVerified(agent, node, subdomain, viaWrapper, viaMerkle);
+        if (!cachedMatches) {
+            agentSubdomains[agent] = subdomain;
+            emit AgentSubdomainUpdated(agent, subdomain);
+        }
+    }
+
+    function _validateSubmission(
+        Job storage job,
+        address agent,
+        string calldata subdomain
+    ) internal view {
         if (_getState(job) != State.Applied) revert InvalidJobState();
-        if (msg.sender != job.agent) revert OnlyAgent();
+        if (agent != job.agent) revert OnlyAgent();
         if (block.timestamp > _getDeadline(job)) revert DeadlinePassed();
         if (address(reputationEngine) != address(0)) {
-            if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedAgent();
+            if (reputationEngine.isBlacklisted(agent)) revert BlacklistedAgent();
             if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
         if (bytes(subdomain).length == 0) revert EmptySubdomain();
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        string memory cachedSubdomain = agentSubdomains[msg.sender];
-        bool hasCached = bytes(cachedSubdomain).length != 0;
-        bytes32 cachedHash;
-        if (hasCached) {
-            cachedHash = keccak256(bytes(cachedSubdomain));
+    }
+
+    function _verifyAgentIdentityWithCache(
+        address agent,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) internal {
+        bool cachedMatches;
+        string memory cachedSubdomain = agentSubdomains[agent];
+        if (bytes(cachedSubdomain).length != 0) {
+            cachedMatches =
+                keccak256(bytes(cachedSubdomain)) ==
+                keccak256(bytes(subdomain));
         }
-        bytes32 providedHash = keccak256(bytes(subdomain));
-        bool cachedMatches = hasCached && cachedHash == providedHash;
-        (bool authorized, bytes32 node, bool viaWrapper, bool viaMerkle) =
-            identityRegistry.verifyAgent(msg.sender, subdomain, proof);
-        if (!authorized) revert NotAuthorizedAgent();
-        emit AgentIdentityVerified(
-            msg.sender,
-            node,
-            subdomain,
-            viaWrapper,
-            viaMerkle
-        );
-        if (!cachedMatches) {
-            agentSubdomains[msg.sender] = subdomain;
-            emit AgentSubdomainUpdated(msg.sender, subdomain);
-        }
+        _verifyAgentIdentity(agent, subdomain, proof, cachedMatches);
+    }
+
+    function _enforceAgentType(Job storage job, address agent) internal view {
         uint8 agentTypes = _getAgentTypes(job);
         if (agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
-                msg.sender
+                agent
             );
             if ((agentTypes & (1 << uint8(aType))) == 0)
                 revert AgentTypeNotAllowed();
         }
+    }
+
+    function _recordSubmission(
+        Job storage job,
+        uint256 jobId,
+        address agent,
+        bytes32 resultHash,
+        string calldata resultURI,
+        string calldata subdomain
+    ) internal {
         job.resultHash = resultHash;
         _setState(job, State.Submitted);
-        emit ResultSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
-        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
-        if (address(validationModule) != address(0)) {
-            uint256 entropy = uint256(
-                keccak256(
-                    abi.encodePacked(
-                        jobId,
-                        msg.sender,
-                        resultHash,
-                        block.timestamp,
-                        block.prevrandao,
-                        blockhash(block.number - 1)
-                    )
-                )
-            );
-            (bool burnRequired, bool burnSatisfied) = burnEvidenceStatus(jobId);
-            if (burnRequired && !burnSatisfied) {
-                pendingValidationEntropy[jobId] = entropy;
-                validationStartPending[jobId] = true;
-                emit ValidationStartPending(jobId);
-            } else {
-                _startValidation(jobId, entropy);
-            }
+        _emitSubmissionEvents(jobId, agent, resultHash, resultURI, subdomain);
+    }
+
+    function _triggerValidation(
+        uint256 jobId,
+        address agent,
+        bytes32 resultHash
+    ) internal {
+        if (address(validationModule) == address(0)) {
+            return;
         }
+        uint256 entropy = uint256(
+            keccak256(
+                abi.encodePacked(
+                    jobId,
+                    agent,
+                    resultHash,
+                    block.timestamp,
+                    block.prevrandao,
+                    blockhash(block.number - 1)
+                )
+            )
+        );
+        (bool burnRequired, bool burnSatisfied) = burnEvidenceStatus(jobId);
+        if (burnRequired && !burnSatisfied) {
+            pendingValidationEntropy[jobId] = entropy;
+            validationStartPending[jobId] = true;
+            emit ValidationStartPending(jobId);
+        } else {
+            _startValidation(jobId, entropy);
+        }
+    }
+
+    function _emitSubmissionEvents(
+        uint256 jobId,
+        address agent,
+        bytes32 resultHash,
+        string calldata resultURI,
+        string calldata subdomain
+    ) internal {
+        emit ResultSubmitted(jobId, agent, resultHash, resultURI, subdomain);
+        emit JobSubmitted(jobId, agent, resultHash, resultURI, subdomain);
     }
 
     /// @notice Acknowledge the tax policy and submit work in one call.
