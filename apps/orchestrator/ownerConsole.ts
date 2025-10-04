@@ -1,8 +1,20 @@
-import {
-  loadGovernanceSnapshot,
-  previewGovernanceAction,
-  type GovernancePreview,
-} from '../../packages/orchestrator/src/tools/governance.js';
+type GovernancePreview = {
+  summary?: string;
+  warnings?: string[];
+  details?: Record<string, unknown>;
+};
+
+const governanceTools = require('../../packages/orchestrator/src/tools/governance.js') as {
+  loadGovernanceSnapshot: () => Promise<Record<string, unknown>>;
+  previewGovernanceAction: (input: {
+    key: string;
+    value: unknown;
+    meta?: Record<string, unknown>;
+    persist?: boolean;
+  }) => Promise<GovernancePreview>;
+};
+
+const { loadGovernanceSnapshot, previewGovernanceAction } = governanceTools;
 
 export interface OwnerPreviewRequest {
   key: string;

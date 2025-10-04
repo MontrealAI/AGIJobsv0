@@ -7,10 +7,16 @@
     "resolveJsonModule": true,
     "lib": ["ES2020", "DOM"],
     "moduleResolution": "node",
-    "types": ["node"],
+    "typeRoots": ["./types", "./node_modules/@types", "../node_modules/@types"],
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "**/*.d.ts"],
+  "exclude": [
+    "../packages/**/*",
+    "../../packages/**/*",
+    "../packages/orchestrator/**/*.ts",
+    "../../packages/orchestrator/**/*.ts"
+  ]
 }
