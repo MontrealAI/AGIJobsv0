@@ -35,13 +35,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Orchestrator tsc
+        run: npx tsc -p apps/orchestrator/tsconfig.json
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
 
-      - name: Compile contracts
-        run: npm run compile
+      - name: Compile
+        env:
+          COVERAGE_MIN: '90'
+        run: |
+          node --loader ts-node/esm scripts/generate-constants.ts
+          npx hardhat compile
 
       - name: Start anvil mainnet fork
         id: anvil

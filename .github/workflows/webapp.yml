@@ -40,8 +40,11 @@ jobs:
       - name: Lint webapp
         run: npm run webapp:lint
 
-      - name: Build webapp
+      - name: Owner console build
         run: npm run webapp:build
+
+      - name: Webapp build
+        run: npm --prefix apps/enterprise-portal run build
 
       - name: Cypress E2E
         env:
