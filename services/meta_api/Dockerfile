@@ -1,4 +1,4 @@
-FROM python:3.11-slim AS base
+FROM python:3.11-slim AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -7,9 +7,25 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 COPY services/meta_api/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-COPY . .
+FROM python:3.11-slim AS runner
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
+
+WORKDIR /app
+
+COPY --from=builder /install /usr/local
+
+# Copy only the modules required to serve the API at runtime.
+COPY services/meta_api ./services/meta_api
+COPY orchestrator ./orchestrator
+COPY routes ./routes
+COPY backend/errors ./backend/errors
+COPY config ./config
+COPY storage ./storage
 
 ENV PYTHONPATH=/app
 
