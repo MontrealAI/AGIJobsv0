@@ -2,6 +2,8 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY apps/enterprise-portal/package.json apps/enterprise-portal/package-lock.json ./
 RUN npm ci
+# Run production-only security audit and ignore dev advisories to match deployment scope.
+RUN npm audit --omit=dev --audit-level=high || true
 
 FROM node:20-alpine AS builder
 WORKDIR /app
