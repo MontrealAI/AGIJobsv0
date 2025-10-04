@@ -31,6 +31,13 @@ contract IdentityRegistry is Ownable2Step {
     IReputationEngine public reputationEngine;
     AttestationRegistry public attestationRegistry;
 
+    struct VerificationResult {
+        bool ok;
+        bytes32 node;
+        bool viaWrapper;
+        bool viaMerkle;
+    }
+
     bytes32 public agentRootNode;
     bytes32 public clubRootNode;
     bytes32 public nodeRootNode;
@@ -1229,16 +1236,17 @@ contract IdentityRegistry is Ownable2Step {
         external
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
-        (ok, node, viaWrapper, viaMerkle) =
+        VerificationResult memory result;
+        (result.ok, result.node, result.viaWrapper, result.viaMerkle) =
             _verifyAgent(claimant, subdomain, proof);
-        if (ok) {
+        if (result.ok) {
             if (additionalAgents[claimant]) {
                 emit AdditionalAgentUsed(claimant, subdomain);
                 emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             } else if (
                 address(attestationRegistry) != address(0) &&
                 attestationRegistry.isAttested(
-                    node,
+                    result.node,
                     AttestationRegistry.Role.Agent,
                     claimant
                 )
@@ -1248,10 +1256,16 @@ contract IdentityRegistry is Ownable2Step {
             emit IdentityVerified(
                 claimant,
                 AttestationRegistry.Role.Agent,
-                node,
+                result.node,
                 subdomain
             );
-            emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
+            emit ENSVerified(
+                claimant,
+                result.node,
+                subdomain,
+                result.viaWrapper,
+                result.viaMerkle
+            );
         } else {
             emit IdentityVerificationFailed(
                 claimant,
@@ -1259,6 +1273,12 @@ contract IdentityRegistry is Ownable2Step {
                 subdomain
             );
         }
+        return (
+            result.ok,
+            result.node,
+            result.viaWrapper,
+            result.viaMerkle
+        );
     }
 
     function _verifyNode(
@@ -1342,6 +1362,7 @@ contract IdentityRegistry is Ownable2Step {
         external
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
+        VerificationResult memory result;
         _assertSubdomain(subdomain);
         if (
             address(reputationEngine) != address(0) &&
@@ -1355,11 +1376,11 @@ contract IdentityRegistry is Ownable2Step {
             clubRootNodeAliases,
             labelHash
         );
-        node = validatorNode;
+        result.node = validatorNode;
         if (additionalValidators[claimant]) {
             emit AdditionalValidatorUsed(claimant, subdomain);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-            ok = true;
+            result.ok = true;
         } else if (address(attestationRegistry) != address(0)) {
             if (
                 validatorNode != bytes32(0) &&
@@ -1370,8 +1391,8 @@ contract IdentityRegistry is Ownable2Step {
                 )
             ) {
                 emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-                node = validatorNode;
-                ok = true;
+                result.node = validatorNode;
+                result.ok = true;
             } else {
                 uint256 aliasLen = clubRootNodeAliases.length;
                 for (uint256 i; i < aliasLen; i++) {
@@ -1390,35 +1411,43 @@ contract IdentityRegistry is Ownable2Step {
                             claimant,
                             subdomain
                         );
-                        node = aliasNode;
-                        ok = true;
+                        result.node = aliasNode;
+                        result.ok = true;
                         break;
                     }
                 }
             }
         }
-        if (!ok) {
-            (ok, node, viaWrapper, viaMerkle) = _verifyValidatorENSOwnership(
-                claimant,
-                subdomain,
-                proof
-            );
-            if (!ok) {
-                (ok, node, viaWrapper, viaMerkle) = _verifyNode(
+        if (!result.ok) {
+            (result.ok, result.node, result.viaWrapper, result.viaMerkle) =
+                _verifyValidatorENSOwnership(
                     claimant,
                     subdomain,
                     proof
                 );
+            if (!result.ok) {
+                (result.ok, result.node, result.viaWrapper, result.viaMerkle) =
+                    _verifyNode(
+                        claimant,
+                        subdomain,
+                        proof
+                    );
             }
         }
-        if (ok) {
+        if (result.ok) {
             emit IdentityVerified(
                 claimant,
                 AttestationRegistry.Role.Validator,
-                node,
+                result.node,
                 subdomain
             );
-            emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
+            emit ENSVerified(
+                claimant,
+                result.node,
+                subdomain,
+                result.viaWrapper,
+                result.viaMerkle
+            );
         } else {
             emit IdentityVerificationFailed(
                 claimant,
@@ -1426,6 +1455,12 @@ contract IdentityRegistry is Ownable2Step {
                 subdomain
             );
         }
+        return (
+            result.ok,
+            result.node,
+            result.viaWrapper,
+            result.viaMerkle
+        );
     }
 
     function verifyNode(
@@ -1436,15 +1471,23 @@ contract IdentityRegistry is Ownable2Step {
         external
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
-        (ok, node, viaWrapper, viaMerkle) = _verifyNode(claimant, subdomain, proof);
-        if (ok) {
+        VerificationResult memory result;
+        (result.ok, result.node, result.viaWrapper, result.viaMerkle) =
+            _verifyNode(claimant, subdomain, proof);
+        if (result.ok) {
             emit IdentityVerified(
                 claimant,
                 AttestationRegistry.Role.Node,
-                node,
+                result.node,
                 subdomain
             );
-            emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
+            emit ENSVerified(
+                claimant,
+                result.node,
+                subdomain,
+                result.viaWrapper,
+                result.viaMerkle
+            );
         } else {
             emit IdentityVerificationFailed(
                 claimant,
@@ -1452,6 +1495,12 @@ contract IdentityRegistry is Ownable2Step {
                 subdomain
             );
         }
+        return (
+            result.ok,
+            result.node,
+            result.viaWrapper,
+            result.viaMerkle
+        );
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
