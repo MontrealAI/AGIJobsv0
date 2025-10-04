@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable2Step} from "../utils/Ownable2Step.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 /// @title OwnerConfigurator
@@ -36,8 +35,35 @@ contract OwnerConfigurator is Ownable2Step {
     ///        configuration. Passing `address(0)` defaults ownership to the
     ///        deployer to simplify local testing.
     constructor(address initialOwner)
-        Ownable(initialOwner == address(0) ? _msgSender() : initialOwner)
+        Ownable2Step(initialOwner == address(0) ? _msgSender() : initialOwner)
     {}
+
+    struct ConfigurationCall {
+        address target;
+        bytes callData;
+        bytes32 moduleKey;
+        bytes32 parameterKey;
+        bytes oldValue;
+        bytes newValue;
+    }
+
+    function _applyConfiguration(ConfigurationCall memory call)
+        internal
+        returns (bytes memory returnData)
+    {
+        if (call.target == address(0)) {
+            revert OwnerConfigurator__ZeroTarget();
+        }
+
+        returnData = call.target.functionCall(call.callData);
+        emit ParameterUpdated(
+            call.moduleKey,
+            call.parameterKey,
+            call.oldValue,
+            call.newValue,
+            _msgSender()
+        );
+    }
 
     /// @notice Executes an owner-authorized configuration call on a target
     ///         contract and emits a structured event describing the change.
@@ -60,11 +86,28 @@ contract OwnerConfigurator is Ownable2Step {
         bytes calldata oldValue,
         bytes calldata newValue
     ) external onlyOwner returns (bytes memory returnData) {
-        if (target == address(0)) {
-            revert OwnerConfigurator__ZeroTarget();
-        }
+        ConfigurationCall memory call = ConfigurationCall({
+            target: target,
+            callData: callData,
+            moduleKey: moduleKey,
+            parameterKey: parameterKey,
+            oldValue: oldValue,
+            newValue: newValue
+        });
 
-        returnData = target.functionCall(callData);
-        emit ParameterUpdated(moduleKey, parameterKey, oldValue, newValue, _msgSender());
+        returnData = _applyConfiguration(call);
+    }
+
+    function configureBatch(ConfigurationCall[] calldata calls)
+        external
+        onlyOwner
+        returns (bytes[] memory returnData)
+    {
+        uint256 length = calls.length;
+        returnData = new bytes[](length);
+
+        for (uint256 i = 0; i < length; i++) {
+            returnData[i] = _applyConfiguration(calls[i]);
+        }
     }
 }
