@@ -528,9 +528,17 @@ The script expands per-module JSON into Markdown tables, injects copy/paste upda
 and verification commands, and embeds Mermaid control-loop diagrams so a
 non-technical owner can stage, execute, and audit parameter changes without
 touching Solidity. Explore the full workflow in the
-[Owner Parameter Matrix guide](docs/owner-parameter-matrix.md) and pair it with
-`npm run owner:surface` plus `npm run owner:verify-control` to archive a complete
-change-control artefact set.
+[Owner Parameter Matrix guide](docs/owner-parameter-matrix.md)—it now ships with:
+
+- **Quick-start blueprints** for non-technical operators, complete with Mermaid
+  flowcharts and sequence diagrams covering staging, execution, and validation.
+- **Parameter family tables** mapping each config file to the helper scripts
+  required to update and verify it.
+- **Risk/verification gates** that call out when to escalate into
+  `owner:mission-control`, `owner:verify-control`, or the emergency runbook.
+
+Pair the matrix with `npm run owner:surface` plus `npm run owner:verify-control`
+to archive a complete change-control artefact set.
 
 ### Production launch blueprint
 

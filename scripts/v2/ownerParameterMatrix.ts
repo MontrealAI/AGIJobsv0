@@ -222,7 +222,11 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       title: '$AGIALPHA token constants',
       summary:
         'Canonical ERC-20 metadata and module addresses consumed by Solidity constants and TypeScript clients.',
-      documentation: ['docs/token-operations.md', 'docs/thermodynamics-operations.md'],
+      documentation: [
+        'docs/owner-parameter-matrix.md',
+        'docs/token-operations.md',
+        'docs/thermodynamics-operations.md',
+      ],
       updateCommands: ['npm run compile'],
       verifyCommands: ['npm run verify:agialpha -- --rpc <https-or-ws-url>'],
       fallbackConfigPath: 'config/agialpha.json',
@@ -234,6 +238,7 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       summary:
         'Controls staking minimums, slashing weights, treasury routing, and validator incentives.',
       documentation: [
+        'docs/owner-parameter-matrix.md',
         'docs/owner-control-handbook.md',
         'docs/owner-control-command-center.md',
         'docs/thermodynamics-operations.md',
@@ -250,6 +255,7 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       title: 'JobRegistry policy',
       summary: 'Job posting thresholds, fee splits, and lifecycle limits for employer contracts.',
       documentation: [
+        'docs/owner-parameter-matrix.md',
         'docs/owner-control-playbook.md',
         'docs/owner-control-zero-downtime-guide.md',
       ],
@@ -265,7 +271,7 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       title: 'FeePool distribution',
       summary:
         'Treasury routing, burn percentages, and payout pacing for escrowed protocol fees.',
-      documentation: ['docs/owner-control-visual-guide.md'],
+      documentation: ['docs/owner-parameter-matrix.md', 'docs/owner-control-visual-guide.md'],
       updateCommands: ['npx hardhat run scripts/v2/updateFeePool.ts --network <network>'],
       verifyCommands: ['npm run owner:verify-control -- --network <network> --modules=feePool'],
       fallbackConfigPath: 'config/fee-pool.json',
@@ -277,6 +283,7 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       summary:
         'Energy budgeting, reward weights, and PID control surfaces that tune incentive gradients.',
       documentation: [
+        'docs/owner-parameter-matrix.md',
         'docs/thermodynamic-incentives.md',
         'docs/thermodynamics-operations.md',
         'docs/reward-settlement-process.md',
@@ -294,7 +301,7 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       title: 'HamiltonianMonitor windows',
       summary:
         'Observation window, historical energy records, and telemetry for system temperature guards.',
-      documentation: ['docs/thermodynamics-operations.md'],
+      documentation: ['docs/owner-parameter-matrix.md', 'docs/thermodynamics-operations.md'],
       updateCommands: ['npx hardhat run scripts/v2/updateHamiltonianMonitor.ts --network <network>'],
       verifyCommands: ['npm run owner:verify-control -- --network <network> --modules=rewardEngine'],
       fallbackConfigPath: 'config/hamiltonian-monitor.json',
@@ -306,6 +313,7 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       summary:
         'Authorised measurement nodes and quorum settings for the energy attestation oracle.',
       documentation: [
+        'docs/owner-parameter-matrix.md',
         'docs/energy-oracle-operations.md',
         'docs/owner-control-command-center.md',
       ],
@@ -321,7 +329,7 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       id: 'taxPolicy',
       title: 'TaxPolicy controls',
       summary: 'Dynamic levy brackets for employer jobs and treasury burn ratios.',
-      documentation: ['docs/owner-control-command-center.md'],
+      documentation: ['docs/owner-parameter-matrix.md', 'docs/owner-control-command-center.md'],
       updateCommands: ['npx hardhat run scripts/v2/updateTaxPolicy.ts --network <network>'],
       verifyCommands: ['npm run owner:verify-control -- --network <network> --modules=taxPolicy'],
       fallbackConfigPath: 'config/tax-policy.json',
@@ -331,7 +339,7 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       id: 'platformIncentives',
       title: 'PlatformIncentives weights',
       summary: 'Bonus multipliers, vesting schedules, and autopayout tolerances for ecosystem partners.',
-      documentation: ['docs/owner-control-visual-guide.md'],
+      documentation: ['docs/owner-parameter-matrix.md', 'docs/owner-control-visual-guide.md'],
       updateCommands: ['npx hardhat run scripts/v2/updatePlatformIncentives.ts --network <network>'],
       verifyCommands: ['npm run owner:verify-control -- --network <network> --modules=platformIncentives'],
       fallbackConfigPath: 'config/platform-incentives.json',
@@ -342,6 +350,7 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
       title: 'IdentityRegistry configuration',
       summary: 'ENS registries, root nodes, and emergency allowlists for identity proofs.',
       documentation: [
+        'docs/owner-parameter-matrix.md',
         'docs/ens-identity-policy.md',
         'docs/ens-identity-setup.md',
       ],
