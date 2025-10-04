@@ -1,6 +1,6 @@
-# Owner Control Matrix (Draft)
+# Owner Control Matrix
 
-> **Status:** Draft coordination document for implementing the Owner Configurator surface area across all v2 contracts. This file enumerates the parameters that must remain owner-upgradeable and will be updated as modules are finalized.
+> **Status:** Reflects the live owner/governance surface for the deployed v2 modules. Update this matrix whenever a setter or emitted event signature changes in `contracts/v2/*`.
 
 ## Overview
 
@@ -8,9 +8,9 @@ The AGI Jobs v2 system preserves an owner-first operating model. A single Owner 
 
 ### Operating Principles
 
-1. **Single Source of Truth** – Every mutable parameter appears here with the contract that guards it and the emitted `ParameterUpdated` event identifier.
+1. **Single Source of Truth** – Every mutable parameter appears here with the contract that guards it and the module-specific event(s) emitted on update.
 2. **Idempotent Batched Updates** – The configurator will expose batch setters that no-op when the requested value already matches on-chain state.
-3. **Auditability** – Each change must emit `ParameterUpdated(name, oldValue, newValue, msg.sender)` and be indexed for the owner console and subgraph.
+3. **Auditability** – Each change must emit the concrete `...Updated` event(s) listed here and be indexed for the owner console and subgraph.
 4. **Safe Compatibility** – All configuration flows will be Safe Transaction Builder compatible and surfaced in the Owner Console UI.
 
 ---
@@ -19,70 +19,90 @@ The AGI Jobs v2 system preserves an owner-first operating model. A single Owner 
 
 | Module | Setter | Parameter | Units / Notes |
 | ------ | ------ | --------- | ------------- |
-| JobRegistry | `setValidationModule(address)` | Validation module proxy | address |
-| JobRegistry | `setDisputeModule(address)` | Dispute module proxy | address |
-| JobRegistry | `setIdentityRegistry(address)` | Identity registry | address |
-| JobRegistry | `setFeePool(address)` | Fee pool address | address |
-| JobRegistry | `setTaxPolicy(address)` | Tax policy contract | address |
-| JobRegistry | `setCertificateNFT(address)` | Certificate NFT contract | address |
-| JobRegistry | `setRouter(address)` | Jobs router | address |
-| JobRegistry | `setMaxJobDuration(uint256)` | Upper bound in seconds | uint256 |
-| JobRegistry | `setMinJobReward(uint256)` | Minimum payment amount | uint256 |
-| JobRegistry | `setJobCreateWhitelist(bool)` | Toggle allowlist | bool |
-| JobRegistry | `setJobCreateMerkleRoot(bytes32)` | Allowlist root | bytes32 |
-| ValidationModule | `setCommitWindow(uint256)` | Seconds | uint256 |
-| ValidationModule | `setRevealWindow(uint256)` | Seconds | uint256 |
-| ValidationModule | `setValidatorBounds(uint256,uint256)` | min,max committee | uint256 |
-| ValidationModule | `setQuorum(uint16)` | Percentage (basis points) | uint16 |
-| ValidationModule | `setApprovalThreshold(uint16)` | Percentage (basis points) | uint16 |
-| ValidationModule | `setRandProvider(address)` | Randomness provider | address |
-| ValidationModule | `setVRFParams(uint64,bytes32,uint32,uint16)` | subId,keyHash,gasLimit,confirmations | mixed |
-| ValidationModule | `setNoRevealPenalty(uint16)` | Basis points | uint16 |
-| ValidationModule | `setLateRevealPenalty(uint16)` | Basis points | uint16 |
-| StakeManager | `setMinStake(uint8,uint256)` | Role => stake amount | uint256 |
-| StakeManager | `setUnbondingPeriod(uint256)` | Seconds | uint256 |
-| StakeManager | `setSlashPercents(uint16,uint16,uint16,uint16)` | bps per offense | uint16 |
-| StakeManager | `setTreasury(address)` | Treasury receiver | address |
-| StakeManager | `setTreasuryAllowlist(address,bool)` | Access control | address,bool |
-| StakeManager | `rescueERC20(address,address,uint256)` | Token, to, amount | addresses,uint256 |
-| StakeManager | `rescueETH(address,uint256)` | Recipient, amount | address,uint256 |
-| IdentityRegistry | `setAgentRootNode(bytes32)` | ENS node | bytes32 |
-| IdentityRegistry | `setValidatorRootNode(bytes32)` | ENS node | bytes32 |
-| IdentityRegistry | `setAgentMerkleRoot(bytes32)` | Allowlist root | bytes32 |
-| IdentityRegistry | `setValidatorMerkleRoot(bytes32)` | Allowlist root | bytes32 |
-| IdentityRegistry | `setAttestor(address,bool)` | Attestor allowlist | address,bool |
-| IdentityRegistry | `setENSResolver(address)` | ENS resolver | address |
-| DisputeModule | `setDisputeFee(uint256)` | Fee amount | uint256 |
-| DisputeModule | `setAppealWindow(uint256)` | Seconds | uint256 |
-| DisputeModule | `setMaxRounds(uint8)` | Arbitration rounds | uint8 |
-| DisputeModule | `setArbitratorCommittee(address)` | Committee contract | address |
-| DisputeModule | `setModerator(address,bool)` | Moderator ACL | address,bool |
-| ReputationEngine | `setWeights(uint16,uint16,uint16,uint16)` | success,fail,slash,decay | uint16 |
-| ReputationEngine | `setPremiumThreshold(uint256)` | Score threshold | uint256 |
-| ReputationEngine | `setBlacklist(address,bool)` | Exclusion list | address,bool |
-| FeePool | `setBurnPct(uint16)` | Basis points | uint16 |
-| FeePool | `setTreasury(address)` | Treasury recipient | address |
-| FeePool | `setSplit(uint16,uint16,uint16,uint16,uint16)` | agents,validators,operators,employers,treasury | uint16 |
-| CertificateNFT | `setBaseURI(string)` | Metadata URI | string |
-| CertificateNFT | `setMinter(address)` | Authorized minter | address |
-| CertificateNFT | `pause()` / `unpause()` | Circuit breaker | - |
-| SystemPause | `pauseAll()` | Global stop | - |
-| SystemPause | `unpauseAll()` | Resume | - |
-| SystemPause | `setPauser(address)` | Emergency delegate | address |
-| RandomnessWrapper | `setCoordinator(address)` | VRF coordinator | address |
-| RandomnessWrapper | `setSubId(uint64)` | Subscription id | uint64 |
-| RandomnessWrapper | `withdrawLINK(address,uint256)` | Rescue LINK | address,uint256 |
-| NodeRegistry | `setMinSpecs(bytes32)` | Hash of requirements | bytes32 |
-| NodeRegistry | `setHeartbeatWindow(uint256)` | Seconds | uint256 |
-| NodeRegistry | `setTEERequired(bool)` | Toggle attestation | bool |
-| NodeRegistry | `setMinNodeStake(uint256)` | Stake threshold | uint256 |
-| NodeRegistry | `setOperatorFeeBps(uint16)` | Fee share | uint16 |
+| JobRegistry | `setValidationModule(IValidationModule)` | Validation module proxy | Emits `ValidationModuleUpdated` + `ModuleUpdated`. |
+| JobRegistry | `setDisputeModule(IDisputeModule)` | Dispute module proxy | Emits `DisputeModuleUpdated` + `ModuleUpdated`. |
+| JobRegistry | `setIdentityRegistry(IIdentityRegistry)` | Identity registry | Emits `IdentityRegistryUpdated` + `ModuleUpdated`. |
+| JobRegistry | `setStakeManager(IStakeManager)` | Stake manager | Emits `StakeManagerUpdated` + `ModuleUpdated`. |
+| JobRegistry | `setReputationEngine(IReputationEngine)` | Reputation engine | Emits `ReputationEngineUpdated` + `ModuleUpdated`. |
+| JobRegistry | `setCertificateNFT(ICertificateNFT)` | Certificate NFT contract | Emits `CertificateNFTUpdated` + `ModuleUpdated`. |
+| JobRegistry | `setFeePool(IFeePool)` | Fee pool address | Emits `FeePoolUpdated` + `ModuleUpdated`. |
+| JobRegistry | `setTaxPolicy(ITaxPolicy)` | Tax policy contract | Emits `TaxPolicyUpdated` + `ModuleUpdated`. |
+| JobRegistry | `setTreasury(address)` | Treasury receiver | Emits `TreasuryUpdated`. |
+| JobRegistry | `setJobStake(uint96)` | Required stake per job | Emits `JobParametersUpdated`. |
+| JobRegistry | `setMinAgentStake(uint256)` | Global agent stake floor | Emits `JobParametersUpdated`. |
+| JobRegistry | `setFeePct(uint256)` | Protocol fee percentage | Emits `FeePctUpdated`. |
+| JobRegistry | `setValidatorRewardPct(uint256)` | Validator share of job reward | Emits `ValidatorRewardPctUpdated`. |
+| JobRegistry | `setMaxJobReward(uint256)` | Maximum job payment | Emits `JobParametersUpdated`. |
+| JobRegistry | `setJobDurationLimit(uint256)` | Maximum job duration (seconds) | Emits `JobParametersUpdated`. |
+| JobRegistry | `setMaxActiveJobsPerAgent(uint256)` | Concurrent job cap | Emits `MaxActiveJobsPerAgentUpdated`. |
+| JobRegistry | `setAgentRootNode(bytes32)` | ENS root for agents | Emits `AgentRootNodeUpdated`. |
+| JobRegistry | `setAgentMerkleRoot(bytes32)` | Agent allowlist root | Emits `AgentMerkleRootUpdated`. |
+| JobRegistry | `setValidatorRootNode(bytes32)` | ENS root for validators | Emits `ValidatorRootNodeUpdated`. |
+| JobRegistry | `setValidatorMerkleRoot(bytes32)` | Validator allowlist root | Emits `ValidatorMerkleRootUpdated`. |
+| JobRegistry | `setAgentAuthCacheDuration(uint256)` | Authorization cache seconds | Emits `AgentAuthCacheDurationUpdated`. |
+| ValidationModule | `setCommitWindow(uint256)` | Commit window (seconds) | Emits `CommitWindowUpdated`. |
+| ValidationModule | `setRevealWindow(uint256)` | Reveal window (seconds) | Emits `RevealWindowUpdated`. |
+| ValidationModule | `setValidatorBounds(uint256,uint256)` | Min/max validator committee | Emits `ValidatorBoundsUpdated`. |
+| ValidationModule | `setRevealQuorum(uint256,uint256)` | Reveal quorum %, min validators | Emits `RevealQuorumUpdated`. |
+| ValidationModule | `setApprovalThreshold(uint256)` | Approval threshold (%) | Emits `ApprovalThresholdUpdated`. |
+| ValidationModule | `setNonRevealPenalty(uint256,uint256)` | Penalty bps & ban blocks | Emits `NonRevealPenaltyUpdated`. |
+| ValidationModule | `setValidatorSlashingPct(uint256)` | Slashing share for validators | Emits `ValidatorSlashingPctUpdated`. |
+| ValidationModule | `setRandaoCoordinator(IRandaoCoordinator)` | Randomness coordinator | Emits `RandaoCoordinatorUpdated`. |
+| ValidationModule | `setValidatorPoolSampleSize(uint256)` | Sample size | Emits `ValidatorPoolSampleSizeUpdated`. |
+| ValidationModule | `setMaxValidatorPoolSize(uint256)` | Pool cap | Emits `MaxValidatorPoolSizeUpdated`. |
+| ValidationModule | `setValidatorAuthCacheDuration(uint256)` | Cache duration (seconds) | Emits `ValidatorAuthCacheDurationUpdated`. |
+| ValidationModule | `setAutoApprovalTarget(bool)` | Toggle auto-approval | Emits `AutoApprovalTargetUpdated`. |
+| StakeManager | `setMinStake(uint256)` | Global minimum stake | Emits `MinStakeUpdated`. |
+| StakeManager | `setRoleMinimum(Role,uint256)` | Role-specific minimums | Emits `RoleMinimumUpdated`. |
+| StakeManager | `setSlashDistribution(uint256,uint256,uint256,uint256)` | Employer/treasury/operator/validator percentages | Emits `SlashDistributionUpdated` alongside component events. |
+| StakeManager | `setTreasury(address)` | Treasury receiver | Emits `TreasuryUpdated`. |
+| StakeManager | `setTreasuryAllowlist(address,bool)` | Treasury ACL | Emits `TreasuryAllowlistUpdated`. |
+| StakeManager | `setFeePct(uint256)` | Protocol fee % on stakes | Emits `FeePctUpdated`. |
+| StakeManager | `setBurnPct(uint256)` | Burn % | Emits `BurnPctUpdated`. |
+| StakeManager | `setValidatorRewardPct(uint256)` | Validator reward % | Emits `ValidatorRewardPctUpdated`. |
+| StakeManager | `setUnbondingPeriod(uint256)` | Unbonding delay (seconds) | Emits `UnbondingPeriodUpdated`. |
+| StakeManager | `setMaxStakePerAddress(uint256)` | Stake cap per address | Emits `MaxStakePerAddressUpdated`. |
+| IdentityRegistry | `setENS(address)` | ENS registry | Emits `ENSUpdated`. |
+| IdentityRegistry | `setNameWrapper(address)` | ENS name wrapper | Emits `NameWrapperUpdated`. |
+| IdentityRegistry | `setReputationEngine(address)` | Reputation engine | Emits `ReputationEngineUpdated`. |
+| IdentityRegistry | `setAttestationRegistry(address)` | Attestation registry | Emits `AttestationRegistryUpdated`. |
+| IdentityRegistry | `setAgentRootNode(bytes32)` | Agent ENS node | Emits `AgentRootNodeUpdated`. |
+| IdentityRegistry | `setClubRootNode(bytes32)` | Validator ENS node | Emits `ClubRootNodeUpdated`. |
+| IdentityRegistry | `setNodeRootNode(bytes32)` | Node operator ENS node | Emits `NodeRootNodeUpdated`. |
+| IdentityRegistry | `setAgentMerkleRoot(bytes32)` | Agent allowlist root | Emits `AgentMerkleRootUpdated`. |
+| IdentityRegistry | `setValidatorMerkleRoot(bytes32)` | Validator allowlist root | Emits `ValidatorMerkleRootUpdated`. |
+| DisputeModule | `setDisputeFee(uint256)` | Fee amount (18 decimals) | Emits `DisputeFeeUpdated`. |
+| DisputeModule | `setDisputeWindow(uint256)` | Resolution window (seconds) | Emits `DisputeWindowUpdated`. |
+| DisputeModule | `setCommittee(address)` | Arbitration committee | Emits `CommitteeUpdated`. |
+| DisputeModule | `setTaxPolicy(ITaxPolicy)` | Tax policy | Emits `TaxPolicyUpdated`. |
+| DisputeModule | `setModerator(address,uint96)` | Moderator weight | Emits `ModeratorUpdated`. |
+| DisputeModule | `setPauser(address)` | Emergency delegate | Emits `PauserUpdated`. |
+| ReputationEngine | `setScoringWeights(uint256,uint256)` | Stake & reputation weights | Emits `ScoringWeightsUpdated`. |
+| ReputationEngine | `setValidationRewardPercentage(uint256)` | Reward % | Emits `ValidationRewardPercentageUpdated`. |
+| ReputationEngine | `setPremiumThreshold(uint256)` | Score threshold | Emits `PremiumThresholdUpdated`. |
+| ReputationEngine | `setBlacklist(address,bool)` | Exclusion list | Emits `BlacklistUpdated`. |
+| FeePool | `setBurnPct(uint256)` | Burn percentage | Emits `BurnPctUpdated`. |
+| FeePool | `setTreasury(address)` | Treasury recipient | Emits `TreasuryUpdated`. |
+| FeePool | `setTreasuryAllowlist(address,bool)` | Treasury ACL | Emits `TreasuryAllowlistUpdated`. |
+| FeePool | `setRewardRole(IStakeManager.Role)` | Reward bucket role | Emits `RewardRoleUpdated`. |
+| FeePool | `setTaxPolicy(ITaxPolicy)` | Tax policy | Emits `TaxPolicyUpdated`. |
+| CertificateNFT | `setJobRegistry(address)` | Job registry | Emits `JobRegistryUpdated`. |
+| CertificateNFT | `setStakeManager(address)` | Stake manager | Emits `StakeManagerUpdated`. |
+| CertificateNFT | `setBaseURI(string)` | Metadata base URI | Emits `BaseURIUpdated`. |
+| SystemPause | `setModules(JobRegistry,StakeManager,ValidationModule,DisputeModule,PlatformRegistry,FeePool,ReputationEngine,ArbitratorCommittee)` | Managed modules | Emits `ModulesUpdated`. |
+| SystemPause | `pauseAll()` | Global stop | Emits module-level `Paused` events. |
+| SystemPause | `unpauseAll()` | Resume | Emits module-level `Unpaused` events. |
+| RandaoCoordinator | `setCommitWindow(uint256)` | Commit window (seconds) | Emits `CommitWindowUpdated`. |
+| RandaoCoordinator | `setRevealWindow(uint256)` | Reveal window (seconds) | Emits `RevealWindowUpdated`. |
+| RandaoCoordinator | `setDeposit(uint256)` | Coordinator deposit | Emits `DepositUpdated`. |
+| RandaoCoordinator | `setTreasury(address)` | Treasury recipient | Emits `TreasuryUpdated`. |
+| RandaoCoordinator | `setToken(address)` | Payment token | Emits `TokenUpdated`. |
 
 ---
 
 ## Event Naming
 
-All setter actions emit a canonical `ParameterUpdated(bytes32 indexed name, bytes32 indexed field, bytes oldValue, bytes newValue, address indexed actor)` event. The `name` encodes the module (e.g., `JOB_REGISTRY`) and `field` encodes the parameter (e.g., `SET_VALIDATION_MODULE`).
+Each setter emits the module-specific `...Updated` events referenced in the matrix above. Consumers should subscribe to those concrete events (and any paired aggregate events such as `ModuleUpdated`) instead of assuming a single shared `ParameterUpdated` schema.
 
 ## Next Steps
 
