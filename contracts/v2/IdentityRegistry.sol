@@ -721,10 +721,10 @@ contract IdentityRegistry is Ownable2Step {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) internal view returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+    ) internal view returns (bool ok) {
         _assertSubdomain(subdomain);
         if (agentRootNode != bytes32(0)) {
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
+            (ok, , , ) = ENSIdentityVerifier.checkOwnership(
                 ens,
                 nameWrapper,
                 agentRootNode,
@@ -734,46 +734,37 @@ contract IdentityRegistry is Ownable2Step {
                 proof
             );
             if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
+                return true;
             }
         }
 
         uint256 aliasLen = agentRootNodeAliases.length;
         for (uint256 i; i < aliasLen; i++) {
-            bytes32 aliasRoot = agentRootNodeAliases[i];
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
+            (ok, , , ) = ENSIdentityVerifier.checkOwnership(
                 ens,
                 nameWrapper,
-                aliasRoot,
+                agentRootNodeAliases[i],
                 agentMerkleRoot,
                 claimant,
                 subdomain,
                 proof
             );
             if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
+                return true;
             }
         }
 
-        if (agentRootNode != bytes32(0)) {
-            node = keccak256(
-                abi.encodePacked(agentRootNode, keccak256(bytes(subdomain)))
-            );
-        } else if (aliasLen != 0) {
-            node = keccak256(
-                abi.encodePacked(agentRootNodeAliases[0], keccak256(bytes(subdomain)))
-            );
-        }
+        return false;
     }
 
     function _checkValidatorENSOwnership(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) internal view returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+    ) internal view returns (bool ok) {
         _assertSubdomain(subdomain);
         if (clubRootNode != bytes32(0)) {
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
+            (ok, , , ) = ENSIdentityVerifier.checkOwnership(
                 ens,
                 nameWrapper,
                 clubRootNode,
@@ -783,46 +774,37 @@ contract IdentityRegistry is Ownable2Step {
                 proof
             );
             if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
+                return true;
             }
         }
 
         uint256 aliasLen = clubRootNodeAliases.length;
         for (uint256 i; i < aliasLen; i++) {
-            bytes32 aliasRoot = clubRootNodeAliases[i];
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
+            (ok, , , ) = ENSIdentityVerifier.checkOwnership(
                 ens,
                 nameWrapper,
-                aliasRoot,
+                clubRootNodeAliases[i],
                 validatorMerkleRoot,
                 claimant,
                 subdomain,
                 proof
             );
             if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
+                return true;
             }
         }
 
-        if (clubRootNode != bytes32(0)) {
-            node = keccak256(
-                abi.encodePacked(clubRootNode, keccak256(bytes(subdomain)))
-            );
-        } else if (aliasLen != 0) {
-            node = keccak256(
-                abi.encodePacked(clubRootNodeAliases[0], keccak256(bytes(subdomain)))
-            );
-        }
+        return false;
     }
 
     function _checkNodeENSOwnership(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) internal view returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+    ) internal view returns (bool ok) {
         _assertSubdomain(subdomain);
         if (nodeRootNode != bytes32(0)) {
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
+            (ok, , , ) = ENSIdentityVerifier.checkOwnership(
                 ens,
                 nameWrapper,
                 nodeRootNode,
@@ -832,36 +814,27 @@ contract IdentityRegistry is Ownable2Step {
                 proof
             );
             if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
+                return true;
             }
         }
 
         uint256 aliasLen = nodeRootNodeAliases.length;
         for (uint256 i; i < aliasLen; i++) {
-            bytes32 aliasRoot = nodeRootNodeAliases[i];
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.checkOwnership(
+            (ok, , , ) = ENSIdentityVerifier.checkOwnership(
                 ens,
                 nameWrapper,
-                aliasRoot,
+                nodeRootNodeAliases[i],
                 validatorMerkleRoot,
                 claimant,
                 subdomain,
                 proof
             );
             if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
+                return true;
             }
         }
 
-        if (nodeRootNode != bytes32(0)) {
-            node = keccak256(
-                abi.encodePacked(nodeRootNode, keccak256(bytes(subdomain)))
-            );
-        } else if (aliasLen != 0) {
-            node = keccak256(
-                abi.encodePacked(nodeRootNodeAliases[0], keccak256(bytes(subdomain)))
-            );
-        }
+        return false;
     }
 
     function _deriveNodeFromLabel(bytes32 root, bytes32[] storage aliases, bytes32 label)
@@ -878,53 +851,64 @@ contract IdentityRegistry is Ownable2Step {
         return bytes32(0);
     }
 
+    function _verifyOwnership(
+        bytes32 root,
+        bytes32[] storage aliases,
+        bytes32 merkleRoot,
+        address claimant,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) private returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        _assertSubdomain(subdomain);
+        if (root != bytes32(0)) {
+            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
+                ens,
+                nameWrapper,
+                root,
+                merkleRoot,
+                claimant,
+                subdomain,
+                proof
+            );
+            if (ok) {
+                return (true, node, viaWrapper, viaMerkle);
+            }
+        }
+
+        uint256 aliasLen = aliases.length;
+        for (uint256 i; i < aliasLen; i++) {
+            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
+                ens,
+                nameWrapper,
+                aliases[i],
+                merkleRoot,
+                claimant,
+                subdomain,
+                proof
+            );
+            if (ok) {
+                return (true, node, viaWrapper, viaMerkle);
+            }
+        }
+
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        node = _deriveNodeFromLabel(root, aliases, labelHash);
+        return (false, node, false, false);
+    }
+
     function _verifyAgentENSOwnership(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
-        _assertSubdomain(subdomain);
-        if (agentRootNode != bytes32(0)) {
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
-                ens,
-                nameWrapper,
-                agentRootNode,
-                agentMerkleRoot,
-                claimant,
-                subdomain,
-                proof
-            );
-            if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
-            }
-        }
-
-        uint256 aliasLen = agentRootNodeAliases.length;
-        for (uint256 i; i < aliasLen; i++) {
-            bytes32 aliasRoot = agentRootNodeAliases[i];
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
-                ens,
-                nameWrapper,
-                aliasRoot,
-                agentMerkleRoot,
-                claimant,
-                subdomain,
-                proof
-            );
-            if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
-            }
-        }
-
-        if (agentRootNode != bytes32(0)) {
-            node = keccak256(
-                abi.encodePacked(agentRootNode, keccak256(bytes(subdomain)))
-            );
-        } else if (aliasLen != 0) {
-            node = keccak256(
-                abi.encodePacked(agentRootNodeAliases[0], keccak256(bytes(subdomain)))
-            );
-        }
+        return _verifyOwnership(
+            agentRootNode,
+            agentRootNodeAliases,
+            agentMerkleRoot,
+            claimant,
+            subdomain,
+            proof
+        );
     }
 
     function _verifyValidatorENSOwnership(
@@ -932,48 +916,14 @@ contract IdentityRegistry is Ownable2Step {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
-        _assertSubdomain(subdomain);
-        if (clubRootNode != bytes32(0)) {
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
-                ens,
-                nameWrapper,
-                clubRootNode,
-                validatorMerkleRoot,
-                claimant,
-                subdomain,
-                proof
-            );
-            if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
-            }
-        }
-
-        uint256 aliasLen = clubRootNodeAliases.length;
-        for (uint256 i; i < aliasLen; i++) {
-            bytes32 aliasRoot = clubRootNodeAliases[i];
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
-                ens,
-                nameWrapper,
-                aliasRoot,
-                validatorMerkleRoot,
-                claimant,
-                subdomain,
-                proof
-            );
-            if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
-            }
-        }
-
-        if (clubRootNode != bytes32(0)) {
-            node = keccak256(
-                abi.encodePacked(clubRootNode, keccak256(bytes(subdomain)))
-            );
-        } else if (aliasLen != 0) {
-            node = keccak256(
-                abi.encodePacked(clubRootNodeAliases[0], keccak256(bytes(subdomain)))
-            );
-        }
+        return _verifyOwnership(
+            clubRootNode,
+            clubRootNodeAliases,
+            validatorMerkleRoot,
+            claimant,
+            subdomain,
+            proof
+        );
     }
 
     function _verifyNodeENSOwnership(
@@ -981,48 +931,14 @@ contract IdentityRegistry is Ownable2Step {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
-        _assertSubdomain(subdomain);
-        if (nodeRootNode != bytes32(0)) {
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
-                ens,
-                nameWrapper,
-                nodeRootNode,
-                validatorMerkleRoot,
-                claimant,
-                subdomain,
-                proof
-            );
-            if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
-            }
-        }
-
-        uint256 aliasLen = nodeRootNodeAliases.length;
-        for (uint256 i; i < aliasLen; i++) {
-            bytes32 aliasRoot = nodeRootNodeAliases[i];
-            (ok, node, viaWrapper, viaMerkle) = ENSIdentityVerifier.verifyOwnership(
-                ens,
-                nameWrapper,
-                aliasRoot,
-                validatorMerkleRoot,
-                claimant,
-                subdomain,
-                proof
-            );
-            if (ok) {
-                return (ok, node, viaWrapper, viaMerkle);
-            }
-        }
-
-        if (nodeRootNode != bytes32(0)) {
-            node = keccak256(
-                abi.encodePacked(nodeRootNode, keccak256(bytes(subdomain)))
-            );
-        } else if (aliasLen != 0) {
-            node = keccak256(
-                abi.encodePacked(nodeRootNodeAliases[0], keccak256(bytes(subdomain)))
-            );
-        }
+        return _verifyOwnership(
+            nodeRootNode,
+            nodeRootNodeAliases,
+            validatorMerkleRoot,
+            claimant,
+            subdomain,
+            proof
+        );
     }
 
     function isAuthorizedAgent(
@@ -1072,8 +988,7 @@ contract IdentityRegistry is Ownable2Step {
                 }
             }
         }
-        (bool ok, , , ) = _checkAgentENSOwnership(claimant, subdomain, proof);
-        return ok;
+        return _checkAgentENSOwnership(claimant, subdomain, proof);
     }
 
     function isAuthorizedValidator(
@@ -1155,12 +1070,10 @@ contract IdentityRegistry is Ownable2Step {
                 }
             }
         }
-        (bool ok, , , ) = _checkValidatorENSOwnership(claimant, subdomain, proof);
-        if (ok) {
+        if (_checkValidatorENSOwnership(claimant, subdomain, proof)) {
             return true;
         }
-        (ok, , , ) = _checkNodeENSOwnership(claimant, subdomain, proof);
-        return ok;
+        return _checkNodeENSOwnership(claimant, subdomain, proof);
     }
 
     function _verifyAgent(
