@@ -590,74 +590,78 @@ export const ConversationalJobCreator = () => {
   }, []);
 
   const renderMessageContent = (message: ChatMessage): ReactNode => {
-    if (message.kind === 'text') {
-      return <p>{t(message.key, message.params)}</p>;
-    }
-    if (message.kind === 'status') {
-      return (
-        <div className="chat-status">
-          <p>{t(message.key, message.params)}</p>
-          {message.txHash && explorerBase && (
-            <a
-              className="chat-link"
-              href={`${explorerBase}/tx/${message.txHash}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {message.txHash.slice(0, 10)}…
-            </a>
-          )}
-        </div>
-      );
-    }
-    if (message.kind === 'text' || message.kind === 'status') return null;
-    if (message.kind === 'attachments') {
-      return (
-        <div>
-          <p>
-            {message.attachments.length > 0
-              ? t('chat.attachments.added')
-              : t('chat.attachments.none')}
-          </p>
-          {message.attachments.length > 0 && (
-            <ul className="chat-list">
-              {message.attachments.map((file) => (
-                <li key={file.name}>
-                  {file.name}{' '}
-                  <span className="chat-meta">
-                    ({(file.size / 1024).toFixed(1)} KB)
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {message.uri && <p className="chat-meta">{message.uri}</p>}
-        </div>
-      );
-    }
-    if (message.kind === 'summary') {
-      const summary = message;
-      const skills = summary.form.skills
-        ? summary.form.skills
-            .split(',')
-            .map((skill) => skill.trim())
-            .filter(Boolean)
-        : [];
-      const deadlineText = summary.form.deadline
-        ? (() => {
-            const parsed = new Date(summary.form.deadline);
-            if (!Number.isNaN(parsed.getTime())) {
-              const localeId = dateLocales[locale] ?? locale;
-              return new Intl.DateTimeFormat(localeId, {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-              }).format(parsed);
-            }
-            return summary.form.deadline;
-          })()
-        : t('chat.summary.deadlineUnset');
-      return (
-        <div>
+    switch (message.kind) {
+      case 'text': {
+        if ('key' in message) {
+          return <p>{t(message.key, message.params)}</p>;
+        }
+        if ('text' in message) {
+          return <p>{message.text}</p>;
+        }
+        return null;
+      }
+      case 'status':
+        return (
+          <div className="chat-status">
+            <p>{t(message.key, message.params)}</p>
+            {message.txHash && explorerBase && (
+              <a
+                className="chat-link"
+                href={`${explorerBase}/tx/${message.txHash}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {message.txHash.slice(0, 10)}…
+              </a>
+            )}
+          </div>
+        );
+      case 'attachments':
+        return (
+          <div>
+            <p>
+              {message.attachments.length > 0
+                ? t('chat.attachments.added')
+                : t('chat.attachments.none')}
+            </p>
+            {message.attachments.length > 0 && (
+              <ul className="chat-list">
+                {message.attachments.map((file) => (
+                  <li key={file.name}>
+                    {file.name}{' '}
+                    <span className="chat-meta">
+                      ({(file.size / 1024).toFixed(1)} KB)
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {message.uri && <p className="chat-meta">{message.uri}</p>}
+          </div>
+        );
+      case 'summary': {
+        const summary = message;
+        const skills = summary.form.skills
+          ? summary.form.skills
+              .split(',')
+              .map((skill) => skill.trim())
+              .filter(Boolean)
+          : [];
+        const deadlineText = summary.form.deadline
+          ? (() => {
+              const parsed = new Date(summary.form.deadline);
+              if (!Number.isNaN(parsed.getTime())) {
+                const localeId = dateLocales[locale] ?? locale;
+                return new Intl.DateTimeFormat(localeId, {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                }).format(parsed);
+              }
+              return summary.form.deadline;
+            })()
+          : t('chat.summary.deadlineUnset');
+        return (
+          <div>
           <h3 className="chat-heading">{t('chat.summary.heading')}</h3>
           <dl className="chat-summary">
             <div>
@@ -742,9 +746,13 @@ export const ConversationalJobCreator = () => {
             </div>
           </dl>
         </div>
-      );
+        );
+      }
+      default: {
+        const exhaustiveCheck: never = message;
+        return null;
+      }
     }
-    return null;
   };
 
   const renderMessage = (message: ChatMessage) => (
