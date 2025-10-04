@@ -121,5 +121,21 @@ contract ValidationFinalizeGas is Test {
         vm.resumeGasMetering();
         validation.forceFinalize(jobId);
     }
+
+    function testSetCommitWindowEmitsAndUpdates() public {
+        uint256 newWindow = validation.commitWindow() + 5;
+        uint256 reveal = validation.revealWindow();
+        vm.expectEmit(false, false, false, true, address(validation));
+        emit ValidationModule.TimingUpdated(newWindow, reveal);
+        vm.expectEmit(false, false, false, true, address(validation));
+        emit ValidationModule.CommitWindowUpdated(newWindow);
+        validation.setCommitWindow(newWindow);
+        assertEq(validation.commitWindow(), newWindow, "commit window not updated");
+    }
+
+    function testSetCommitWindowZeroReverts() public {
+        vm.expectRevert(ValidationModule.InvalidCommitWindow.selector);
+        validation.setCommitWindow(0);
+    }
 }
 

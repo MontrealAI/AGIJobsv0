@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+import "forge-std/Test.sol";
 import "contracts/v2/FeePool.sol";
 import "contracts/v2/interfaces/IFeePool.sol";
 import "contracts/legacy/MockV2.sol";
@@ -275,6 +276,34 @@ contract FeePoolTest {
         feePool.pause();
         vm.expectRevert();
         feePool.distributeFees();
+    }
+}
+
+contract FeePoolConfigurationTest is Test {
+    FeePool feePool;
+    MockStakeManager stakeManager;
+
+    function setUp() public {
+        stakeManager = new MockStakeManager();
+        feePool = new FeePool(
+            IStakeManager(address(stakeManager)),
+            0,
+            address(0),
+            ITaxPolicy(address(0))
+        );
+    }
+
+    function testSetBurnPctEmitsAndUpdates() public {
+        uint256 target = 7;
+        vm.expectEmit(false, false, false, true, address(feePool));
+        emit FeePool.BurnPctUpdated(target);
+        feePool.setBurnPct(target);
+        assertEq(feePool.burnPct(), target, "burn pct not updated");
+    }
+
+    function testSetBurnPctAboveHundredReverts() public {
+        vm.expectRevert(FeePool.InvalidPercentage.selector);
+        feePool.setBurnPct(101);
     }
 }
 
