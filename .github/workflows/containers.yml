@@ -100,13 +100,15 @@ jobs:
           tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}
 
       - name: Trivy scan
-        if: github.event_name == 'pull_request' && steps.build-pr.outputs.imageid
+        if: github.event_name != 'pull_request'
+        env:
+          IMAGE_REF: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}@${{ steps.build-push.outputs.digest }}
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             aquasec/trivy:0.53.0 \
             image --exit-code 1 --severity HIGH,CRITICAL \
-            ${{ steps.build-pr.outputs.imageid }}
+            "$IMAGE_REF"
 
       - name: Upload container digest
         if: github.event_name != 'pull_request'

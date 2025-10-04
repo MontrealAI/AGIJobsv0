@@ -43,8 +43,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Compile contracts (default)
-        run: npm run compile
+      - name: Compile
+        env:
+          COVERAGE_MIN: '90'
+        run: |
+          node --loader ts-node/esm scripts/generate-constants.ts
+          npx hardhat compile
 
       - name: Compile contracts (sepolia)
         run: npm run compile:sepolia
@@ -98,6 +102,10 @@ jobs:
         run: |
           mkdir -p lib
           forge install foundry-rs/forge-std --no-git
+
+      - name: Foundry tests
+        if: matrix.node == '20'
+        run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
 
       - name: Gas snapshot
         if: matrix.node == '20'
