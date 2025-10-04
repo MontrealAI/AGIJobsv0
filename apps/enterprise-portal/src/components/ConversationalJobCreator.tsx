@@ -593,7 +593,11 @@ export const ConversationalJobCreator = () => {
     switch (message.kind) {
       case 'text': {
         if ('key' in message) {
-          return <p>{t(message.key, message.params)}</p>;
+          const params =
+            'params' in message
+              ? (message.params as Record<string, string | number> | undefined)
+              : undefined;
+          return <p>{t(message.key, params)}</p>;
         }
         if ('text' in message) {
           return <p>{message.text}</p>;
