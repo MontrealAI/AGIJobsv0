@@ -47,7 +47,7 @@ jobs:
 
       - name: Compile (scripts & constants)
         run: |
-          node --loader ts-node/esm scripts/generate-constants.ts
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
           npx hardhat compile
 
       - name: Build Safe execution plan
