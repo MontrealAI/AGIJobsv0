@@ -938,6 +938,7 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [FeePool configuration guide](docs/fee-pool-configuration.md)
 - [StakeManager configuration guide](docs/stake-manager-configuration.md)
 - [PlatformRegistry operations guide](docs/platform-registry-operations.md)
+- [CI readiness checklist](docs/ci/v2-ci-readiness.md)
 - [One-Box UX overview](docs/onebox-ux.md)
 - [Agent gateway example](examples/agent-gateway.js)
 

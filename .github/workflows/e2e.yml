@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   orchestrator-e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       TERM: xterm
@@ -31,6 +31,18 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/console/package-lock.json
+            apps/enterprise-portal/package-lock.json
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('apps/console/package-lock.json', 'apps/enterprise-portal/package-lock.json') }}
+          restore-keys: |
+            cypress-${{ runner.os }}-
 
       - name: Install dependencies
         run: npm ci
