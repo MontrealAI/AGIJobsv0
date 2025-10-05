@@ -25,6 +25,8 @@ jobs:
     name: contracts · node ${{ matrix.node }}
     runs-on: ubuntu-latest
     timeout-minutes: 75
+    env:
+      MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
     strategy:
       fail-fast: false
       matrix:
@@ -55,7 +57,12 @@ jobs:
         run: npm run compile:sepolia
 
       - name: Compile contracts (mainnet)
+        if: env.MAINNET_RPC_URL != ''
         run: npm run compile:mainnet
+
+      - name: Skip mainnet compile (missing RPC)
+        if: env.MAINNET_RPC_URL == ''
+        run: echo 'MAINNET_RPC_URL not configured; skipping mainnet compile.'
 
       - name: Generate typechain bindings
         run: npx hardhat typechain
