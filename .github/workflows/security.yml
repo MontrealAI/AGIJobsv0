@@ -12,6 +12,7 @@ permissions:
   contents: read
   security-events: write
   id-token: write
+  attestations: write
 
 concurrency:
   group: security-${{ github.workflow }}-${{ github.ref }}
@@ -90,43 +91,16 @@ jobs:
             reports/license-summary.txt
             reports/sbom/spdx.json
 
-      - name: Prepare provenance subjects
+      - name: Generate SBOM provenance attestation
         if: startsWith(github.ref, 'refs/tags/')
-        id: provenance-subjects
-        run: |
-          set -euo pipefail
-          sha_value=$(sha256sum reports/sbom/spdx.json | awk '{print $1}')
-          subject_line="${sha_value}  reports/sbom/spdx.json"
-          if command -v base64 >/dev/null 2>&1; then
-            if [ "$(uname)" = "Darwin" ]; then
-              encoded=$(printf "%s" "$subject_line" | base64)
-            else
-              encoded=$(printf "%s" "$subject_line" | base64 -w0)
-            fi
-          else
-            echo "base64 utility not found" >&2
-            exit 1
-          fi
-          echo "value=$encoded" >> "$GITHUB_OUTPUT"
-
-      - name: Generate provenance attestation
-        if: startsWith(github.ref, 'refs/tags/')
-        id: generate-provenance
-        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+        id: sbom-provenance
+        uses: actions/attest-build-provenance@v1
         with:
-          base64-subjects: ${{ steps.provenance-subjects.outputs.value }}
-          provenance-name: provenance.intoto.jsonl
+          subject-path: reports/sbom/spdx.json
 
-      - name: Download provenance attestation
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ steps.generate-provenance.outputs.provenance-name }}
-          path: reports
-
-      - name: Upload provenance statement
+      - name: Upload SBOM attestation bundle
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
-          name: provenance
-          path: reports/provenance.intoto.jsonl
+          name: sbom-provenance
+          path: ${{ steps.sbom-provenance.outputs.bundle-path }}
