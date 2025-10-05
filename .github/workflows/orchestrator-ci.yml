@@ -1,0 +1,32 @@
+name: orchestrator-ci
+
+on:
+  pull_request:
+    paths:
+      - "apps/orchestrator/**"
+      - ".github/workflows/orchestrator-ci.yml"
+  push:
+    branches: [ main ]
+    paths:
+      - "apps/orchestrator/**"
+      - ".github/workflows/orchestrator-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orchestrator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tsc:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Orchestrator tsc
+        run: npx tsc -p apps/orchestrator/tsconfig.json

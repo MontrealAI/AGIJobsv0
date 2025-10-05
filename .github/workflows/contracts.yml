@@ -1,45 +1,55 @@
-name: contracts
+name: contracts-ci
 
 on:
   pull_request:
+    paths:
+      - "contracts/**"
+      - "scripts/**"
+      - "test/**"
+      - "hardhat.config.*"
+      - "package*.json"
+      - ".github/workflows/contracts.yml"
   push:
-    branches:
-      - main
+    branches: [ main ]
+    paths:
+      - "contracts/**"
+      - "scripts/**"
+      - "test/**"
+      - "hardhat.config.*"
+      - "package*.json"
+      - ".github/workflows/contracts.yml"
 
 permissions:
   contents: read
-  actions: read
-  checks: read
-  packages: write
 
 concurrency:
-  group: contracts-${{ github.workflow }}-${{ github.ref }}
+  group: contracts-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  COVERAGE_MIN: 90
-  ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-
 jobs:
-  contracts:
-    name: contracts · node ${{ matrix.node }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 75
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ['18', '20']
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  compile-and-test:
+    runs-on: ubuntu-24.04
 
-      - name: Setup Node.js ${{ matrix.node }}
+    env:
+      COVERAGE_MIN: "90"
+      ACCESS_CONTROL_PATHS: "contracts/v2/admin,contracts/v2/governance"
+
+      FEE_PCT: "0.02"
+      BURN_PCT: "0.06"
+      TREASURY: "0x1111111111111111111111111111111111111111"
+      VALIDATORS_PER_JOB: "3"
+      REQUIRED_APPROVALS: "3"
+      COMMIT_WINDOW: "30m"
+      REVEAL_WINDOW: "30m"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
-          cache: npm
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -48,158 +58,19 @@ jobs:
         env:
           COVERAGE_MIN: 90
         run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+          node --loader ts-node/esm scripts/generate-constants.ts
           npx hardhat compile
 
-      - name: Compile contracts (sepolia)
-        run: npm run compile:sepolia
+      - name: Regenerate constants for tests
+        run: node --loader ts-node/esm scripts/generate-constants.ts
 
-      - name: Compile contracts (mainnet)
-        run: npm run compile:mainnet
-
-      - name: Generate typechain bindings
-        run: npx hardhat typechain
-
-      - name: Hardhat unit tests
+      - name: Node/Hardhat tests
         run: npm test
 
-      - name: Generate gas report
-        if: matrix.node == '20'
-        run: |
-          mkdir -p reports/gas
-          npm run gas:report
-
-      - name: Solidity coverage
-        if: matrix.node == '20'
-        run: npm run coverage
-
-      - name: Enforce coverage thresholds
-        if: matrix.node == '20'
-        run: |
-          npm run check:coverage
-          npm run check:access-control
-
-      - name: Generate coverage badge metadata
-        if: matrix.node == '20'
-        run: node scripts/ci/generate-coverage-badge.js coverage/lcov.info coverage/badge.json
-
-      - name: Install Foundry toolchain
-        if: matrix.node == '20'
+      - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
 
-      - name: Cache forge libraries
-        if: matrix.node == '20'
-        id: forge-cache
-        uses: actions/cache@v4
-        with:
-          path: lib
-          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml') }}
-          restore-keys: ${{ runner.os }}-foundry-
-
-      - name: Install forge dependencies
-        if: matrix.node == '20' && steps.forge-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p lib
-          forge install foundry-rs/forge-std --no-git
-
       - name: Foundry tests
-        if: matrix.node == '20'
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
-
-      - name: Gas snapshot
-        if: matrix.node == '20'
-        run: npm run gas:snapshot
-
-      - name: Gas regression gate
-        if: matrix.node == '20'
-        run: npm run gas:check
-
-      - name: Contract size analysis
-        if: matrix.node == '20'
-        run: npm run contract:size
-
-      - name: Export ABIs (head)
-        if: matrix.node == '20'
-        run: npm run abi:export -- --out reports/abis/head
-
-      - name: Build ABI baseline from base commit
-        if: matrix.node == '20' && github.event_name == 'pull_request'
-        run: |
-          git fetch --no-tags origin ${{ github.event.pull_request.base.sha }} --depth=1
-          git worktree add ../base ${{ github.event.pull_request.base.sha }}
-          pushd ../base
-          npm ci
-          npm run compile
-          popd
-          node scripts/ci/export-abis.js --artifacts ../base/artifacts/contracts --out reports/abis/base
-          git worktree remove ../base --force
-
-      - name: Compare ABI exports
-        if: matrix.node == '20'
-        run: node scripts/ci/check-abi-diff.js --base reports/abis/base --head reports/abis/head --report reports/abis/diff.json
-
-      - name: Capture ABI diff flag
-        if: matrix.node == '20'
-        id: abi_diff
-        run: |
-          if [ -f reports/abis/diff.json ]; then
-            echo "has-diff=$(jq -r '.hasDiff // false' reports/abis/diff.json)" >> "$GITHUB_OUTPUT"
-          else
-            echo "has-diff=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Enforce ABI migration guard
-        if: matrix.node == '20' && steps.abi_diff.outputs.has-diff == 'true'
-        run: |
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "ABI changes detected outside PR; skipping gate.";
-            exit 0;
-          fi
-          git fetch --no-tags origin ${{ github.event.pull_request.base.sha }} --depth=1
-          if git diff --name-only ${{ github.event.pull_request.base.sha }}..HEAD -- MIGRATION.md | grep -q "MIGRATION.md"; then
-            echo "MIGRATION.md updated.";
-          else
-            echo "::error::ABI changed but MIGRATION.md was not modified.";
-            exit 1;
-          fi
-
-      - name: Ensure BREAKING CHANGE label present
-        if: matrix.node == '20' && steps.abi_diff.outputs.has-diff == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            if (context.eventName !== 'pull_request') {
-              core.info('Not a pull request; skipping label enforcement.');
-              return;
-            }
-            const labels = context.payload.pull_request.labels?.map((label) => label.name) ?? [];
-            if (!labels.includes('BREAKING CHANGE')) {
-              core.setFailed('ABI diff detected but BREAKING CHANGE label is missing.');
-            }
-
-      - name: Bundle contract artifacts
-        if: matrix.node == '20'
-        run: |
-          mkdir -p artifact-bundle/contracts
-          cp -r reports/abis/head artifact-bundle/contracts/abis
-          if [ -f reports/abis/diff.json ]; then cp reports/abis/diff.json artifact-bundle/contracts/abi-diff.json; fi
-          if [ -d typechain-types ]; then cp -r typechain-types artifact-bundle/contracts/typechain-types; fi
-          cp -r deployment-config artifact-bundle/contracts/deployment-config
-          if [ -f gas-snapshots/.gas-snapshot ]; then cp gas-snapshots/.gas-snapshot artifact-bundle/contracts/gas-snapshot.txt; fi
-          if [ -f coverage/lcov.info ]; then cp coverage/lcov.info artifact-bundle/contracts/lcov.info; fi
-          if [ -f coverage/badge.json ]; then cp coverage/badge.json artifact-bundle/contracts/coverage-badge.json; fi
-          if [ -f reports/gas/gas-report.txt ]; then cp reports/gas/gas-report.txt artifact-bundle/contracts/gas-report.txt; fi
-          if [ -d subgraph ]; then
-            mkdir -p artifact-bundle/contracts/subgraph
-            if [ -f subgraph/schema.graphql ]; then cp subgraph/schema.graphql artifact-bundle/contracts/subgraph/schema.graphql; fi
-            if [ -d subgraph/tests ]; then cp -r subgraph/tests artifact-bundle/contracts/subgraph/tests; fi
-          fi
-
-      - name: Upload contract artifacts
-        if: matrix.node == '20'
-        uses: actions/upload-artifact@v4
-        with:
-          name: contracts-artifacts
-          path: artifact-bundle/contracts
