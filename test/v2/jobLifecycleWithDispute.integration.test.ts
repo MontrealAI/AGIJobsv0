@@ -11,7 +11,8 @@ enum Role {
 }
 
 async function deployFullSystem() {
-  const [owner, employer, agent, v1, v2, moderator] = await ethers.getSigners();
+  const [owner, employer, agent, v1, v2, v3, moderator] =
+    await ethers.getSigners();
 
   const artifact = await artifacts.readArtifact(
     'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
@@ -36,6 +37,7 @@ async function deployFullSystem() {
   await token.mint(agent.address, mint);
   await token.mint(v1.address, mint);
   await token.mint(v2.address, mint);
+  await token.mint(v3.address, mint);
 
   const Stake = await ethers.getContractFactory(
     'contracts/v2/StakeManager.sol:StakeManager'
@@ -44,7 +46,7 @@ async function deployFullSystem() {
     0,
     0,
     0,
-    owner.address,
+    ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     owner.address
@@ -60,6 +62,10 @@ async function deployFullSystem() {
   );
   const identity = await Identity.deploy();
   await identity.setResult(true);
+  await identity.addAdditionalValidator(v1.address);
+  await identity.addAdditionalValidator(v2.address);
+  await identity.addAdditionalValidator(v3.address);
+  await identity.addAdditionalAgent(agent.address);
 
   const Validation = await ethers.getContractFactory(
     'contracts/v2/ValidationModule.sol:ValidationModule'
@@ -67,10 +73,10 @@ async function deployFullSystem() {
   const validation = await Validation.deploy(
     ethers.ZeroAddress,
     await stake.getAddress(),
-    1,
-    1,
-    1,
-    5,
+    0,
+    0,
+    0,
+    0,
     []
   );
 
@@ -95,6 +101,8 @@ async function deployFullSystem() {
     [],
     owner.address
   );
+  await nft.connect(owner).setJobRegistry(await registry.getAddress());
+  await nft.connect(owner).setStakeManager(await stake.getAddress());
 
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
@@ -103,30 +111,60 @@ async function deployFullSystem() {
     await registry.getAddress(),
     0,
     0,
-    moderator.address,
+    ethers.ZeroAddress,
     owner.address
   );
   await dispute.waitForDeployment();
-  await dispute.setStakeManager(await stake.getAddress());
+  await dispute.connect(owner).setStakeManager(await stake.getAddress());
 
-  await stake.setModules(
-    await registry.getAddress(),
-    await dispute.getAddress()
+  const FeePool = await ethers.getContractFactory(
+    'contracts/v2/FeePool.sol:FeePool'
   );
-  await validation.setJobRegistry(await registry.getAddress());
-  await validation.setIdentityRegistry(await identity.getAddress());
-  await validation.setValidatorPool([v1.address, v2.address]);
-  await validation.setValidatorsPerJob(2);
-  await registry.setModules(
-    await validation.getAddress(),
+  const feePool = await FeePool.deploy(
     await stake.getAddress(),
-    await reputation.getAddress(),
-    await dispute.getAddress(),
-    await nft.getAddress(),
+    0,
     ethers.ZeroAddress,
-    []
+    ethers.ZeroAddress
   );
-  await reputation.setCaller(await registry.getAddress(), true);
+  await stake.connect(owner).setFeePool(await feePool.getAddress());
+
+  await stake
+    .connect(owner)
+    .setModules(
+      await registry.getAddress(),
+      await dispute.getAddress()
+    );
+  await stake
+    .connect(owner)
+    .setValidationModule(await validation.getAddress());
+  await validation.connect(owner).setJobRegistry(await registry.getAddress());
+  await validation
+    .connect(owner)
+    .setIdentityRegistry(await identity.getAddress());
+  expect(await stake.disputeModule()).to.equal(await dispute.getAddress());
+  expect(await dispute.stakeManager()).to.equal(await stake.getAddress());
+  expect(await dispute.jobRegistry()).to.equal(await registry.getAddress());
+  await validation
+    .connect(owner)
+    .setValidatorPool([v1.address, v2.address, v3.address]);
+  await validation.connect(owner).setValidatorsPerJob(3);
+  await validation.connect(owner).setRevealQuorum(0, 2);
+  await registry
+    .connect(owner)
+    .setModules(
+      await validation.getAddress(),
+      await stake.getAddress(),
+      await reputation.getAddress(),
+      await dispute.getAddress(),
+      await nft.getAddress(),
+      await feePool.getAddress(),
+      []
+    );
+  expect(await registry.disputeModule()).to.equal(await dispute.getAddress());
+  await registry
+    .connect(owner)
+    .setIdentityRegistry(await identity.getAddress());
+  await reputation.connect(owner).setCaller(await registry.getAddress(), true);
 
   return {
     owner,
@@ -134,6 +172,7 @@ async function deployFullSystem() {
     agent,
     v1,
     v2,
+    v3,
     moderator,
     token,
     stake,
@@ -147,10 +186,12 @@ describe('job lifecycle with dispute and validator failure', function () {
   it('handles validator non-participation and dispute resolution', async () => {
     const env = await deployFullSystem();
     const {
+      owner,
       employer,
       agent,
       v1,
       v2,
+      v3,
       token,
       stake,
       validation,
@@ -160,7 +201,7 @@ describe('job lifecycle with dispute and validator failure', function () {
     } = env;
 
     const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
-    for (const signer of [agent, v1, v2]) {
+    for (const signer of [agent, v1, v2, v3]) {
       await token
         .connect(signer)
         .approve(await stake.getAddress(), stakeAmount);
@@ -170,7 +211,11 @@ describe('job lifecycle with dispute and validator failure', function () {
     const initialAgentBalance = await token.balanceOf(agent.address);
 
     const reward = ethers.parseUnits('100', AGIALPHA_DECIMALS);
-    await token.connect(employer).approve(await stake.getAddress(), reward);
+    const feePct = await registry.feePct();
+    const fee = (reward * feePct) / 100n;
+    await token
+      .connect(employer)
+      .approve(await stake.getAddress(), reward + fee);
     const deadline = BigInt((await time.latest()) + 3600);
     const specHash = ethers.id('spec');
     await registry
@@ -184,6 +229,13 @@ describe('job lifecycle with dispute and validator failure', function () {
     const burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
     await registry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
     await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
+
+    await time.increase(1);
+    await validation.connect(employer).selectValidators(1, 0);
+    const round = await validation.rounds(1);
+    const commitDeadline = round.commitDeadline;
+    const revealDeadline = round.revealDeadline;
+    expect(commitDeadline).to.be.gt(0n);
 
     const nonce = await validation.jobNonce(1);
     const salt1 = ethers.randomBytes(32);
@@ -202,13 +254,32 @@ describe('job lifecycle with dispute and validator failure', function () {
       )
     );
     await validation.connect(v2).commitValidation(1, commit2, 'validator', []);
+    const salt3 = ethers.randomBytes(32);
+    const commit3 = ethers.keccak256(
+      ethers.solidityPacked(
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+        [1n, nonce, false, burnTxHash, salt3, specHash]
+      )
+    );
+    await validation.connect(v3).commitValidation(1, commit3, 'validator', []);
 
-    await time.increase(2);
+    const now = BigInt(await time.latest());
+    const waitForReveal = commitDeadline - now + 1n;
+    if (waitForReveal > 0n) {
+      await time.increase(Number(waitForReveal));
+    }
     await validation
       .connect(v1)
       .revealValidation(1, true, burnTxHash, salt1, 'validator', []);
+    await validation
+      .connect(v3)
+      .revealValidation(1, false, burnTxHash, salt3, 'validator', []);
     // v2 fails to reveal
-    await time.increase(2);
+    const nowAfterReveal = BigInt(await time.latest());
+    const waitForFinalize = revealDeadline - nowAfterReveal + 1n;
+    if (waitForFinalize > 0n) {
+      await time.increase(Number(waitForFinalize));
+    }
     await validation.finalize(1);
 
     expect(await stake.stakes(v2.address, Role.Validator)).to.be.lt(
@@ -218,11 +289,15 @@ describe('job lifecycle with dispute and validator failure', function () {
       const job = await registry.jobs(1);
       const metadata = decodeJobMetadata(job.packedMetadata);
       expect(metadata.state).to.equal(5); // Disputed
+      expect(job.agent).to.equal(agent.address);
+      expect(job.employer).to.equal(employer.address);
+      expect(metadata.success).to.be.false;
     }
-
+    await dispute.connect(owner).setDisputeFee(0);
+    expect(await dispute.disputeFee()).to.equal(0n);
     await registry
       .connect(agent)
-      .dispute(1, ethers.id('evidence'), 'ipfs://evidence');
+      ['raiseDispute(uint256,bytes32)'](1, ethers.id('ipfs://evidence'));
     await dispute.connect(owner).setDisputeWindow(0);
     await dispute.connect(owner).setModerator(owner.address, 1);
     await dispute.connect(owner).setModerator(moderator.address, 1);
