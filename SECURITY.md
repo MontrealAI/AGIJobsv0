@@ -44,17 +44,21 @@ Three advisories are intentionally allowlisted because the upstream projects tha
 provide Truffle compatibility and the Solidity compiler toolchain have not yet
 published patched releases:
 
-- `GHSA-p8p7-x288-28g6` and `GHSA-3h5v-q93c-6h6q` stem from the legacy `request`
-  stack required by `@truffle/hdwallet-provider`. The provider is only required
-  for backwards-compatible Truffle migrations; production deployments should
-  prefer the Hardhat scripts shipped in `scripts/deploy`. We monitor the
-  dependency for updates and will remove the allowlist once the maintainer ships
-  a patched release or when we fully deprecate the Truffle path.
+- `GHSA-p8p7-x288-28g6`, `GHSA-2j4c-9qqq-896r`, and `GHSA-hhf6-3xpg-pggx` stem from
+  the legacy `web3`/`request` stack required by `@truffle/hdwallet-provider`. The
+  provider is only needed for backwards-compatible Truffle migrations; production
+  deployments should prefer the Hardhat scripts shipped in `scripts/deploy`.
+  We monitor the dependency for updates and will remove the allowlist once the
+  maintainer ships a patched release or when we fully deprecate the Truffle path.
 - `GHSA-52f5-9888-hmc6` is inherited from the official `solc` npm package used by
   Hardhat. The compiler team has acknowledged the issue and is tracking a fix;
   no alternative package exists today. The vulnerability requires a malicious
   symlink in a caller-controlled temporary directory, which our tooling never
   exposes because all invocations run inside isolated build sandboxes.
+- `GHSA-rx8g-88g5-qh64` comes from `min-document`, another transitive dependency of
+  the Truffle compatibility stack. The affected modules are only used by the
+  legacy migration tooling; the vulnerability is mitigated the same way as the
+  other Truffle-related advisories above.
 
 The audit report is stored in `audit-ci.json` together with the allowlist so that
 any future pipeline run will fail immediately when new advisories appear.
