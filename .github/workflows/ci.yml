@@ -12,10 +12,22 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+  FEE_PCT: '0.02'
+  BURN_PCT: '0.06'
+  TREASURY: '0x1111111111111111111111111111111111111111'
+  VALIDATORS_PER_JOB: '3'
+  REQUIRED_APPROVALS: '3'
+  COMMIT_WINDOW: '30m'
+  REVEAL_WINDOW: '30m'
+  COVERAGE_MIN: '90'
+
 jobs:
   lint:
     name: Lint & static checks
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -31,16 +43,7 @@ jobs:
   contracts:
     name: Contracts compile & tests
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
-      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '0.02'
-      BURN_PCT: '0.06'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -48,6 +51,13 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+      - name: Cache Hardhat compiler builds
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/hardhat-nodejs
+          key: ${{ runner.os }}-hardhat-solc-${{ hashFiles('hardhat.config.*', 'package-lock.json', 'scripts/generate-constants.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-hardhat-solc-
       - name: Install dependencies
         run: npm ci
       - name: Compile contracts
@@ -69,10 +79,11 @@ jobs:
 
   coverage:
     name: Coverage thresholds
-    needs: contracts
+    needs:
+      - lint
+      - contracts
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -80,8 +91,17 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+      - name: Cache Hardhat compiler builds
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/hardhat-nodejs
+          key: ${{ runner.os }}-hardhat-solc-${{ hashFiles('hardhat.config.*', 'package-lock.json', 'scripts/generate-constants.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-hardhat-solc-
       - name: Install dependencies
         run: npm ci
+      - name: Regenerate constants for coverage run
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Generate coverage report
         run: npm run coverage
       - name: Check access control coverage
