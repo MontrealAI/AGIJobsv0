@@ -40,8 +40,8 @@ jobs:
         with:
           args: detect --redact --verbose
 
-      - name: npm audit (fail on high)
-        run: npm audit --audit-level=high
+      - name: Dependency vulnerability scan
+        run: npm run security:audit -- --high --summary
 
       - name: License checker
         run: |
