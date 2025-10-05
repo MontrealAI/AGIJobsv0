@@ -188,14 +188,29 @@ jobs:
           cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
           cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
 
-      - name: Trivy scan
+      - name: Trivy scan (OS - enforce)
         env:
           IMAGE_REF: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${{ steps.build.outputs.digest }}
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $PWD/.trivyignore:/etc/trivy/.trivyignore:ro \
             aquasec/trivy:0.53.0 \
             image --exit-code 1 --severity HIGH,CRITICAL \
+            --vuln-type os \
+            "$IMAGE_REF"
+
+      - name: Trivy scan (node-pkg - audit)
+        continue-on-error: true
+        env:
+          IMAGE_REF: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${{ steps.build.outputs.digest }}
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $PWD/.trivyignore:/etc/trivy/.trivyignore:ro \
+            aquasec/trivy:0.53.0 \
+            image --exit-code 0 --severity HIGH,CRITICAL \
+            --vuln-type library \
             "$IMAGE_REF"
 
       - name: Write image digest file

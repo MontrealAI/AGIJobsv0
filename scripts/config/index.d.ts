@@ -551,3 +551,4 @@ export function loadHamiltonianMonitorConfig(
 export function loadDeploymentPlan(
   options?: DeploymentPlanOptions
 ): DeploymentPlanResult;
+export function ms(value: any, fallbackMs?: number): number;
