@@ -181,11 +181,9 @@ export async function main() {
   const scale = BigInt(10) ** BigInt(decimals);
 
   const feePct = normalisePercentage(process.env.FEE_PCT, 'FEE_PCT', '0.02');
-  const parseDurationModule = await import('parse-duration');
-  const parseDuration: ParseDurationFn =
-    typeof parseDurationModule === 'function'
-      ? parseDurationModule
-      : parseDurationModule.default;
+  const { default: parseDuration } = (await import('parse-duration')) as {
+    default: ParseDurationFn | undefined;
+  };
   if (typeof parseDuration !== 'function') {
     throw new Error('Failed to load parse-duration');
   }

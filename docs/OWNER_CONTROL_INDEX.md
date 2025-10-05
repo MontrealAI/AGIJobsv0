@@ -71,10 +71,13 @@ flowchart LR
 
 When the release checklist is green and stakeholders approve, trigger the GitHub Action to produce a multisig-ready execution plan:
 
-1. Open **GitHub → Actions → `release-mainnet` → Run workflow**.
-2. Select `mainnet` or `sepolia`, type **YES** into the confirmation box, and start the run.
-3. Download the emitted artifact (`safe-bundle-<network>.zip`), extract `plan.json`, and upload it to your Safe for signing.
-4. Collect the required approvals in the Safe UI, execute the bundle, then archive the signed transaction hash alongside the plan.
+> **60-second launch checklist (non-technical owner).**
+> 1. Open **GitHub → Actions → `release-mainnet` → Run workflow**.
+> 2. Pick the target network (`mainnet` or `sepolia`).
+> 3. Type **YES** in the confirmation box and start the run.
+> 4. Download the artifact named `safe-bundle-<network>` when the workflow completes.
+> 5. Upload the enclosed `plan.json` in your Safe UI, collect the required approvals, and execute.
+> 6. Archive the executed transaction hash alongside the plan — you are done.
 
 ## Parameter catalogue
 
