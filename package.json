@@ -66,6 +66,7 @@
     "onebox:server": "ts-node --project apps/orchestrator/tsconfig.json apps/orchestrator/onebox-server.ts",
     "format": "npm run format:fix",
     "format:check": "prettier --check \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\"",
+    "ci:smoke": "node -e \"console.log('CI smoke check')\"",
     "identity:register": "npx ts-node scripts/identity/manageEnsKeys.ts",
     "identity:update": "npx hardhat run scripts/v2/updateIdentityRegistry.ts",
     "reward-engine:update": "npx hardhat run scripts/v2/updateRewardEngine.ts",
