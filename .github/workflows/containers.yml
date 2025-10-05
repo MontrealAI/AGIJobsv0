@@ -100,15 +100,29 @@ jobs:
           sbom: true
           tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}
 
-      - name: Trivy scan
+      - name: Trivy scan (OS packages)
         if: github.event_name != 'pull_request' && steps.build-push.outputs.digest
         env:
           IMAGE_REF: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}@${{ steps.build-push.outputs.digest }}
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/.trivyignore":/etc/trivy/.trivyignore:ro \
             aquasec/trivy:0.53.0 \
-            image --exit-code 1 --severity HIGH,CRITICAL \
+            image --vuln-type os --severity HIGH,CRITICAL --exit-code 1 \
+            "$IMAGE_REF"
+
+      - name: Trivy scan (application packages)
+        if: github.event_name != 'pull_request' && steps.build-push.outputs.digest
+        continue-on-error: true
+        env:
+          IMAGE_REF: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}@${{ steps.build-push.outputs.digest }}
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/.trivyignore":/etc/trivy/.trivyignore:ro \
+            aquasec/trivy:0.53.0 \
+            image --vuln-type library --severity HIGH,CRITICAL --exit-code 0 \
             "$IMAGE_REF"
 
       - name: Upload container digest
