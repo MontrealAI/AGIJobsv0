@@ -19,15 +19,15 @@ permissions:
   packages: read
 
 jobs:
-  guardrails:
+  guard:
     runs-on: ubuntu-24.04
     steps:
       - name: Confirm
         run: |
           test "${{ inputs.confirm }}" = "YES" || { echo "Deployment not confirmed"; exit 1; }
 
-  build-plan:
-    needs: guardrails
+  plan:
+    needs: guard
     runs-on: ubuntu-24.04
     env:
       FEE_PCT: '0.02'
@@ -47,7 +47,9 @@ jobs:
 
       - name: Compile (scripts & constants)
         run: |
-          node --loader ts-node/esm scripts/generate-constants.ts
+          npx ts-node --esm --transpile-only scripts/generate-constants.ts \
+          || node --import 'data:text/javascript,import { register } from "node:module";import { pathToFileURL } from "node:url";register("ts-node/esm", pathToFileURL("./"));' scripts/generate-constants.ts \
+          || (npx esbuild scripts/generate-constants.ts --bundle --platform=node --format=esm --outfile=.tmp/generate-constants.mjs && node .tmp/generate-constants.mjs)
           npx hardhat compile
 
       - name: Build Safe execution plan
@@ -56,7 +58,7 @@ jobs:
           SAFE_ADDRESS: ${{ secrets.SAFE_ADDRESS }}
         run: |
           npx hardhat run scripts/v2/plan-deploy.ts --network ${{ inputs.network }} > plan.json
-          jq -r . plan.json >/dev/null 2>&1 || echo "{}" > plan.json
+          jq -e . plan.json >/dev/null 2>&1 || echo "{}" > plan.json
 
       - uses: actions/upload-artifact@v4
         with:
