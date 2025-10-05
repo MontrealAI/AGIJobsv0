@@ -596,15 +596,16 @@ export const ConversationalJobCreator = () => {
   const renderMessageContent = (message: ChatMessage): ReactNode => {
     switch (message.kind) {
       case 'text': {
-        if ('key' in message) {
-          const params =
-            'params' in message
-              ? (message.params as Record<string, string | number> | undefined)
-              : undefined;
-          return <p>{t(message.key, params)}</p>;
+        const anyMessage = message as {
+          key?: string;
+          params?: Record<string, unknown>;
+          text?: string;
+        };
+        if (anyMessage.key) {
+          return <p>{t(anyMessage.key, anyMessage.params)}</p>;
         }
-        if ('text' in message) {
-          return <p>{message.text}</p>;
+        if (typeof anyMessage.text === 'string') {
+          return <p>{anyMessage.text}</p>;
         }
         return null;
       }

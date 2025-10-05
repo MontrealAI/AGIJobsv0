@@ -2,25 +2,111 @@ const fs = require('fs');
 const path = require('path');
 const { ethers } = require('ethers');
 const namehash = require('eth-ens-namehash');
-const parseDurationImport = require('parse-duration');
-const parseDuration =
-  typeof parseDurationImport === 'function'
-    ? parseDurationImport
-    : parseDurationImport && typeof parseDurationImport.default === 'function'
-    ? parseDurationImport.default
-    : () => {
-        throw new Error(
-          'parse-duration module did not export a callable default'
-        );
-      };
+let parseDuration;
+let parseDurationLoaded = false;
 
-if (
-  parseDurationImport &&
-  typeof parseDurationImport === 'object' &&
-  parseDurationImport !== parseDuration
-) {
-  Object.assign(parseDuration, parseDurationImport);
+const scheduleDynamicImport = () => {
+  if (parseDurationLoaded) return;
+  parseDurationLoaded = true;
+  try {
+    const promise = Function('specifier', 'return import(specifier);')(
+      'parse-duration'
+    );
+    Promise.resolve(promise)
+      .then((mod) => {
+        if (typeof mod?.default === 'function') {
+          parseDuration = mod.default;
+        } else if (typeof mod === 'function') {
+          parseDuration = mod;
+        }
+      })
+      .catch(() => {
+        parseDuration = null;
+      });
+  } catch (err) {
+    // Dynamic import not supported in this runtime – fall back to manual parser.
+    parseDuration = null;
+  }
+};
+
+try {
+  const imported = require('parse-duration');
+  if (typeof imported === 'function') {
+    parseDuration = imported;
+    parseDurationLoaded = true;
+  } else if (imported && typeof imported.default === 'function') {
+    parseDuration = imported.default;
+    parseDurationLoaded = true;
+  } else {
+    scheduleDynamicImport();
+  }
+} catch (err) {
+  scheduleDynamicImport();
 }
+
+const UNIT_TO_MS = new Map([
+  ['ms', 1],
+  ['s', 1000],
+  ['m', 60 * 1000],
+  ['h', 60 * 60 * 1000],
+  ['d', 24 * 60 * 60 * 1000],
+  ['w', 7 * 24 * 60 * 60 * 1000],
+]);
+
+const fallbackParseDuration = (value) => {
+  if (value === undefined || value === null) return Number.NaN;
+  const text = String(value).trim();
+  if (!text) return Number.NaN;
+  const parts = text.match(/(-?\d+(?:\.\d+)?)([a-zA-Z]*)/g);
+  if (!parts) return Number.NaN;
+  let total = 0;
+  for (const part of parts) {
+    const match = part.match(/(-?\d+(?:\.\d+)?)([a-zA-Z]*)/);
+    if (!match) return Number.NaN;
+    const amount = Number(match[1]);
+    if (!Number.isFinite(amount)) return Number.NaN;
+    const unitKey = match[2]?.toLowerCase() || 'ms';
+    const factor = UNIT_TO_MS.get(unitKey);
+    if (!factor) return Number.NaN;
+    total += amount * factor;
+  }
+  return total;
+};
+
+const parseDurationSafe = (value) => {
+  if (typeof parseDuration === 'function') {
+    try {
+      return parseDuration(value);
+    } catch (err) {
+      // ignore and fall back
+    }
+  }
+  const maybePromise = parseDuration;
+  if (maybePromise && typeof maybePromise.then === 'function') {
+    Promise.resolve(maybePromise)
+      .then((mod) => {
+        if (typeof mod?.default === 'function') {
+          parseDuration = mod.default;
+        } else if (typeof mod === 'function') {
+          parseDuration = mod;
+        } else {
+          parseDuration = null;
+        }
+      })
+      .catch(() => {
+        parseDuration = null;
+      });
+  }
+  return fallbackParseDuration(value);
+};
+
+const ms = (value, fallbackMs = 0) => {
+  if (value === undefined || value === null || value === '') {
+    return fallbackMs;
+  }
+  const result = parseDurationSafe(value);
+  return Number.isFinite(result) ? result : fallbackMs;
+};
 
 const CONFIG_DIR = path.join(__dirname, '..', '..', 'config');
 const DEPLOYMENT_CONFIG_DIR = path.join(
@@ -2232,4 +2318,5 @@ module.exports = {
   loadDisputeModuleConfig,
   loadDeploymentPlan,
   inferNetworkKey,
+  ms,
 };

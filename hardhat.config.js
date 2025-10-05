@@ -62,8 +62,12 @@ const solidityConfig = {
   compilers: solidityVersions.map((version) => ({
     version,
     settings: {
-      optimizer: { enabled: !isCoverageRun, runs: isCoverageRun ? 0 : 200 },
-      viaIR: !isCoverageRun,
+      optimizer: {
+        enabled: !isCoverageRun,
+        runs: isCoverageRun ? 0 : 200,
+        details: { yul: false },
+      },
+      viaIR: false,
       evmVersion: 'cancun',
     },
   })),

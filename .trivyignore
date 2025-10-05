@@ -1,0 +1,7 @@
+# Node package vulnerabilities that are NOT present at runtime or are mitigated:
+# Reason: transitive dependency in dev-only tooling, not shipped in final images.
+# Expiry: 2026-01-31 (review quarterly)
+CVE-2019-10790  # taffydb – dev transitive; not bundled in runtime images
+# These are patched via overrides, this ignore is a safety net during propagation.
+CVE-2024-21538  # cross-spawn – override to >=7.0.5
+CVE-2024-37890  # ws – override to >=8.17.1
