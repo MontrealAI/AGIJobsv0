@@ -90,16 +90,42 @@ jobs:
             reports/license-summary.txt
             reports/sbom/spdx.json
 
+      - name: Prepare provenance subjects
+        if: startsWith(github.ref, 'refs/tags/')
+        id: provenance-subjects
+        run: |
+          set -euo pipefail
+          sha_value=$(sha256sum reports/sbom/spdx.json | awk '{print $1}')
+          subject_line="${sha_value}  reports/sbom/spdx.json"
+          if command -v base64 >/dev/null 2>&1; then
+            if [ "$(uname)" = "Darwin" ]; then
+              encoded=$(printf "%s" "$subject_line" | base64)
+            else
+              encoded=$(printf "%s" "$subject_line" | base64 -w0)
+            fi
+          else
+            echo "base64 utility not found" >&2
+            exit 1
+          fi
+          echo "value=$encoded" >> "$GITHUB_OUTPUT"
+
       - name: Generate provenance attestation
         if: startsWith(github.ref, 'refs/tags/')
-        uses: slsa-framework/slsa-github-generator/actions/delegator-generic@v2.0.0
+        id: generate-provenance
+        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
         with:
-          predicate-type: https://slsa.dev/provenance/v1
-          subject-path: reports/sbom/spdx.json
-          out-file: reports/provenance.intoto.jsonl
+          base64-subjects: ${{ steps.provenance-subjects.outputs.value }}
+          provenance-name: provenance.intoto.jsonl
+
+      - name: Download provenance attestation
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.generate-provenance.outputs.provenance-name }}
+          path: reports
 
       - name: Upload provenance statement
-        if: always()
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: provenance
