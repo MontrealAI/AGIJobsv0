@@ -122,7 +122,7 @@ contract StakeManagerAccountingInvariant is StdInvariant, Test {
         taxPolicy = new TaxPolicy("ipfs://policy", "ack");
 
         JobRegistryAckRecorder ack = new JobRegistryAckRecorder(taxPolicy);
-        stake = new StakeManager(1e18, 50, 50, address(0), address(ack), address(0), address(timelock));
+        stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(ack), address(0), address(timelock));
 
         handler = new StakeManagerHandler(stake, token, taxPolicy, address(this));
         taxPolicy.setAcknowledger(address(handler), true);

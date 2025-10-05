@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import {StakeManager, InvalidPercentage} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
+import {ITaxPolicy} from "../../contracts/v2/interfaces/ITaxPolicy.sol";
 
 contract StakeManagerHarness is StakeManager {
     constructor(
@@ -27,14 +28,21 @@ contract StakeManagerHarness is StakeManager {
 contract StakeManagerSlashTest is Test {
     StakeManagerHarness stake;
     AGIALPHAToken token;
-
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManagerHarness(1e18, 0, 10_000, address(1), address(this), address(this), address(this));
+        stake = new StakeManagerHarness(1e18, 0, 10_000, address(0), address(this), address(this), address(this));
+        stake.setSlashingPercentages(0, 9_000);
         stake.setValidatorRewardPct(10);
         stake.setValidatorSlashRewardPct(1_000);
+        vm.prank(address(stake));
+        token.acceptTerms();
+    }
+
+    function taxPolicy() external pure returns (ITaxPolicy) {
+        return ITaxPolicy(address(0));
     }
 
     function _depositValidator(address val) internal {

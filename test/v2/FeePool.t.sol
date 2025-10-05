@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {AGIALPHA} from "contracts/v2/Constants.sol";
 import {ITaxPolicy} from "contracts/v2/interfaces/ITaxPolicy.sol";
+import {AGIALPHAToken} from "contracts/test/AGIALPHAToken.sol";
 
 contract TestToken is ERC20 {
     constructor() ERC20("Test", "TST") {}
@@ -26,7 +27,7 @@ contract NonBurnableToken is ERC20 {
 contract FeePoolTest is Test {
 
     FeePool feePool;
-    TestToken token;
+    AGIALPHAToken token;
     MockStakeManager stakeManager;
     address jobRegistry = address(0x123);
     address alice = address(0xA1);
@@ -43,9 +44,10 @@ contract FeePoolTest is Test {
     }
 
     function setUp() public {
-        TestToken impl = new TestToken();
+        AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
-        token = TestToken(AGIALPHA);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
+        token = AGIALPHAToken(payable(AGIALPHA));
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
         feePool = new FeePool(stakeManager, 0, address(0), ITaxPolicy(address(0)));
@@ -224,18 +226,20 @@ contract FeePoolTest is Test {
     }
 
     function testConstructorTreasuryCannotBeOwner() public {
-        TestToken impl = new TestToken();
+        AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
-        token = TestToken(AGIALPHA);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
+        token = AGIALPHAToken(payable(AGIALPHA));
         stakeManager = new MockStakeManager();
         vm.expectRevert(InvalidTreasury.selector);
         new FeePool(stakeManager, 0, address(this), ITaxPolicy(address(0)));
     }
 
     function testConstructorAllowsNonZeroTreasury() public {
-        TestToken impl = new TestToken();
+        AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
-        token = TestToken(AGIALPHA);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
+        token = AGIALPHAToken(payable(AGIALPHA));
         stakeManager = new MockStakeManager();
         address treasuryAddr = address(0xBEEF);
         FeePool fp = new FeePool(stakeManager, 0, treasuryAddr, ITaxPolicy(address(0)));
@@ -244,9 +248,10 @@ contract FeePoolTest is Test {
     }
 
     function testNoStakersBurnsFees() public {
-        TestToken impl = new TestToken();
+        AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
-        token = TestToken(AGIALPHA);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
+        token = AGIALPHAToken(payable(AGIALPHA));
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
         feePool = new FeePool(stakeManager, 0, address(0), ITaxPolicy(address(0)));
@@ -273,6 +278,9 @@ contract FeePoolConfigurationTest is Test {
     MockStakeManager stakeManager;
 
     function setUp() public {
+        AGIALPHAToken impl = new AGIALPHAToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         stakeManager = new MockStakeManager();
         feePool = new FeePool(
             IStakeManager(address(stakeManager)),
