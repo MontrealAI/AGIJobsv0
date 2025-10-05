@@ -680,7 +680,7 @@ describe('ValidationModule V2', function () {
       );
       stakeManagerReal = await Stake.deploy(
         0,
-        100,
+        10_000,
         0,
         ethers.ZeroAddress,
         ethers.ZeroAddress,

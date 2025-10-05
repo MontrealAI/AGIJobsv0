@@ -5,6 +5,8 @@ test = 'test/v2'
 libs = ['lib', 'node_modules']
 remappings = ['@openzeppelin/contracts=node_modules/@openzeppelin/contracts']
 via_ir = true
+optimizer = true
+optimizer_runs = 200
 gas_reports = ['FeePool', 'JobRouter']
 
 [profile.gas]
@@ -13,3 +15,5 @@ test = 'test/gas'
 libs = ['lib', 'node_modules']
 remappings = ['@openzeppelin/contracts=node_modules/@openzeppelin/contracts']
 via_ir = true
+optimizer = true
+optimizer_runs = 200

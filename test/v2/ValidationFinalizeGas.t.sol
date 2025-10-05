@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
-import {ValidationModule} from "../../contracts/v2/ValidationModule.sol";
+import {ValidationModule, InvalidCommitWindow} from "../../contracts/v2/ValidationModule.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {IdentityRegistryToggle} from "../../contracts/v2/mocks/IdentityRegistryToggle.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
@@ -134,7 +134,7 @@ contract ValidationFinalizeGas is Test {
     }
 
     function testSetCommitWindowZeroReverts() public {
-        vm.expectRevert(ValidationModule.InvalidCommitWindow.selector);
+        vm.expectRevert(InvalidCommitWindow.selector);
         validation.setCommitWindow(0);
     }
 }

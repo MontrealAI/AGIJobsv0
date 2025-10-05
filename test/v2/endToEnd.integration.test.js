@@ -46,7 +46,7 @@ describe('end-to-end job lifecycle', function () {
     );
     stakeManager = await Stake.deploy(
       0,
-      100,
+      10_000,
       0,
       ethers.ZeroAddress,
       ethers.ZeroAddress,

@@ -24,7 +24,7 @@ async function deployStakeManager() {
   const stake = await Stake.deploy(
     ethers.parseEther('1'),
     0,
-    100,
+    10_000,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,

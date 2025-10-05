@@ -42,7 +42,7 @@ jobs:
             tag: webapp:latest
           - name: owner-console
             context: apps/console
-            file: Dockerfile
+            file: apps/console/Dockerfile
             tag: owner-console:latest
     steps:
       - name: Checkout

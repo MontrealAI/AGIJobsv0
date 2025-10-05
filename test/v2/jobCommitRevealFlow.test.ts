@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { ethers } from 'hardhat';
+import { artifacts, ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
-import { AGIALPHA_DECIMALS } from '../../scripts/constants';
+import { AGIALPHA, AGIALPHA_DECIMALS } from '../../scripts/constants';
 
 function leaf(addr: string, label: string) {
   return ethers.keccak256(
@@ -22,10 +22,24 @@ async function deploySystem() {
   const [owner, employer, agent, validator, buyer, moderator] =
     await ethers.getSigners();
 
-  const Token = await ethers.getContractFactory(
+  const artifact = await artifacts.readArtifact(
     'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
   );
-  const token = await Token.deploy();
+  await ethers.provider.send('hardhat_setCode', [
+    AGIALPHA,
+    artifact.deployedBytecode,
+  ]);
+  const ownerSlotValue = ethers.zeroPadValue(owner.address, 32);
+  const ownerSlot = ethers.toBeHex(5, 32);
+  await ethers.provider.send('hardhat_setStorageAt', [
+    AGIALPHA,
+    ownerSlot,
+    ownerSlotValue,
+  ]);
+  const token = await ethers.getContractAt(
+    'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+    AGIALPHA
+  );
   const mint = ethers.parseUnits('1000', AGIALPHA_DECIMALS);
   await token.mint(employer.address, mint);
   await token.mint(agent.address, mint);
@@ -36,11 +50,10 @@ async function deploySystem() {
     'contracts/v2/StakeManager.sol:StakeManager'
   );
   const stake = await Stake.deploy(
-    await token.getAddress(),
     0,
     0,
     0,
-    owner.address,
+    ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     owner.address
