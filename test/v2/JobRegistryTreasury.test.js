@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('JobRegistry Treasury', function () {
   const { AGIALPHA } = require('../../scripts/constants');
@@ -9,7 +10,7 @@ describe('JobRegistry Treasury', function () {
   beforeEach(async function () {
     [owner, treasury] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [
@@ -53,7 +54,7 @@ describe('JobRegistry Treasury', function () {
   });
 
   afterEach(async function () {
-    const mock = await artifacts.readArtifact(
+    const mock = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

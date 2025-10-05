@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts } = require('hardhat');
+const { ethers } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('StakeManager auto stake tuning', function () {
@@ -8,7 +9,7 @@ describe('StakeManager auto stake tuning', function () {
 
   beforeEach(async () => {
     [owner, dispute] = await ethers.getSigners();
-    const mock = await artifacts.readArtifact(
+    const mock = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await ethers.provider.send('hardhat_setCode', [

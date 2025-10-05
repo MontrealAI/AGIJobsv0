@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, network, artifacts } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 
 const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
 
@@ -87,7 +88,7 @@ describe('RoutingModule commit-reveal flow', function () {
       ethers.toBeHex(REVEAL_WINDOW + 5n),
     ]);
 
-    const MockToken = await artifacts.readArtifact(
+    const MockToken = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

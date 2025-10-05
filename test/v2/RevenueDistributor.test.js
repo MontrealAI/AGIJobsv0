@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 const { AGIALPHA } = require('../../scripts/constants');
 
 describe('RevenueDistributor', function () {
@@ -8,7 +9,7 @@ describe('RevenueDistributor', function () {
   beforeEach(async () => {
     [owner, op1, op2, op3, payer] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [
@@ -85,7 +86,7 @@ describe('RevenueDistributor', function () {
 
 describe('RevenueDistributor constructor', function () {
   it('deploys when $AGIALPHA has 18 decimals', async () => {
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [
@@ -102,7 +103,7 @@ describe('RevenueDistributor constructor', function () {
   });
 
   it('reverts when $AGIALPHA decimals are not 18', async () => {
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC206Decimals.sol:MockERC206Decimals'
     );
     await network.provider.send('hardhat_setCode', [

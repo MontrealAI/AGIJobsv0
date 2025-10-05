@@ -1,6 +1,7 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('RewardEngineMB thermodynamic metrics', function () {
   let owner, treasury, token, engine, feePool;
@@ -9,7 +10,7 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     await network.provider.send('hardhat_reset');
     [owner, treasury] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [

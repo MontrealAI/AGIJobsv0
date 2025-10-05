@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('StakeManager burn reduction', function () {
   let token, stakeManager, jobRegistry, feePool, registrySigner;
@@ -8,7 +9,7 @@ describe('StakeManager burn reduction', function () {
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
     const { AGIALPHA } = require('../../scripts/constants');
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

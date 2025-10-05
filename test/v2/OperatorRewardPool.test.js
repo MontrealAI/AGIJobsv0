@@ -1,12 +1,13 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('Operator reward pool', function () {
   let owner, employer, agent, stakeManager, jobRegistry, registrySigner, token;
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
     const { AGIALPHA } = require('../../scripts/constants');
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

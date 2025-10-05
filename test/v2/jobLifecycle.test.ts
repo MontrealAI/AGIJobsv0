@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import { artifacts, ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
+import { ethers } from 'hardhat';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../../scripts/constants';
+import { readArtifact } from '../utils/artifacts';
 
 enum Role {
   Agent,
@@ -13,7 +15,7 @@ async function deploySystem() {
   const [owner, employer, agent, validator, buyer, moderator] =
     await ethers.getSigners();
 
-  const artifact = await artifacts.readArtifact(
+  const artifact = await readArtifact(
     'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
   );
   await ethers.provider.send('hardhat_setCode', [
