@@ -12,6 +12,7 @@ permissions:
   contents: read
   security-events: write
   id-token: write
+  attestations: write
 
 concurrency:
   group: security-${{ github.workflow }}-${{ github.ref }}
@@ -91,15 +92,25 @@ jobs:
             reports/sbom/spdx.json
 
       - name: Generate provenance attestation
+        id: provenance
         if: startsWith(github.ref, 'refs/tags/')
-        uses: slsa-framework/slsa-github-generator/actions/delegator-generic@v2.0.0
+        uses: actions/attest-build-provenance@v1
         with:
-          predicate-type: https://slsa.dev/provenance/v1
           subject-path: reports/sbom/spdx.json
-          out-file: reports/provenance.intoto.jsonl
+
+      - name: Prepare provenance bundle artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p reports
+          bundle_path="${{ steps.provenance.outputs.bundle-path }}"
+          if [ ! -f "$bundle_path" ]; then
+            echo "Expected provenance bundle not found at $bundle_path" >&2
+            exit 1
+          fi
+          cp "$bundle_path" reports/provenance.intoto.jsonl
 
       - name: Upload provenance statement
-        if: always()
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: provenance
