@@ -44,7 +44,7 @@ async function deployFullSystem() {
     0,
     0,
     0,
-    owner.address,
+    employer.address,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     owner.address
