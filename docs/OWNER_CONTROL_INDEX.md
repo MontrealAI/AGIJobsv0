@@ -67,6 +67,15 @@ flowchart LR
 
 > **Non-technical mode.** Run `npm run owner:quickstart -- --network <network>` for a wizard that asks plain-language questions and emits a tailored checklist covering the workflow above.
 
+## Mainnet release (Safe bundle)
+
+When the release checklist is green and stakeholders approve, trigger the GitHub Action to produce a multisig-ready execution plan:
+
+1. Open **GitHub → Actions → `release-mainnet` → Run workflow**.
+2. Select `mainnet` or `sepolia`, type **YES** into the confirmation box, and start the run.
+3. Download the emitted artifact (`safe-bundle-<network>.zip`), extract `plan.json`, and upload it to your Safe for signing.
+4. Collect the required approvals in the Safe UI, execute the bundle, then archive the signed transaction hash alongside the plan.
+
 ## Parameter catalogue
 
 | Domain | Config manifest(s) | Primary CLI entry point | On-chain targets | Verification & telemetry |
