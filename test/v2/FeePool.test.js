@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('FeePool', function () {
   let token,
@@ -19,7 +20,7 @@ describe('FeePool', function () {
   beforeEach(async () => {
     [owner, user1, user2, user3, employer, treasury] =
       await ethers.getSigners();
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [
@@ -543,7 +544,7 @@ describe('FeePool with no stakers', function () {
 
   beforeEach(async () => {
     [owner, contributor, , , treasury] = await ethers.getSigners();
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

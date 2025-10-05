@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 describe('JobRegistry governance finalization', function () {
   const { AGIALPHA } = require('../../scripts/constants');
@@ -12,7 +13,7 @@ describe('JobRegistry governance finalization', function () {
     await network.provider.send('hardhat_reset');
     [owner, employer, agent, treasury] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

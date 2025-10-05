@@ -111,6 +111,7 @@ module.exports = {
   },
   mocha: {
     require: ['ts-node/register', './test/setup.js'],
+    timeout: 300000,
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS === 'true',

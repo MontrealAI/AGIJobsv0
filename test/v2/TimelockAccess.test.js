@@ -1,6 +1,7 @@
 const { expect } = require('chai');
-const { ethers, network, artifacts } = require('hardhat');
+const { ethers, network } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('Timelock access control', function () {
   it('reverts direct calls and executes after timelock delay', async function () {
@@ -18,7 +19,7 @@ describe('Timelock access control', function () {
     await timelock.grantRole(executorRole, admin.address);
 
     // mock staking token at AGIALPHA address
-    const mock = await artifacts.readArtifact(
+    const mock = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

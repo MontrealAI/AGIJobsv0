@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 const FEE = 10n ** 18n;
 
@@ -8,7 +9,7 @@ describe('ArbitratorCommittee', function () {
     const [owner, employer, agent, v1, v2, v3] = await ethers.getSigners();
 
     const { AGIALPHA } = require('../../scripts/constants');
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

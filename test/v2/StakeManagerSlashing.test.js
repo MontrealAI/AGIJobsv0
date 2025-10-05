@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 const { AGIALPHA } = require('../../scripts/constants');
 
 describe('StakeManager slashing configuration', function () {
@@ -7,7 +8,7 @@ describe('StakeManager slashing configuration', function () {
 
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [
@@ -91,7 +92,7 @@ describe('StakeManager multi-validator slashing', function () {
   beforeEach(async () => {
     [owner, treasury, agent, val1, val2, employer] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [
@@ -403,7 +404,7 @@ describe('StakeManager validator slashing via validation module', function () {
     [owner, treasury, badValidator, goodValidator1, goodValidator2, employer] =
       await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [
@@ -591,7 +592,7 @@ describe('StakeManager deployer integration', function () {
   beforeEach(async () => {
     [owner, governance, agent, employer] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [
@@ -734,7 +735,7 @@ describe('StakeManager governance emergency slash', function () {
   beforeEach(async () => {
     [owner, treasury, validator, beneficiary] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [
