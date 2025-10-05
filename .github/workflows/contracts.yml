@@ -40,6 +40,10 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/console/package-lock.json
+            apps/enterprise-portal/package-lock.json
 
       - name: Install dependencies
         run: npm ci
