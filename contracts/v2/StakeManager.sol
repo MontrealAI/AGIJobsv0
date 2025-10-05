@@ -663,18 +663,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
-        if (_employerSlashPct > SLASH_BPS_DENOMINATOR || _treasurySlashPct > SLASH_BPS_DENOMINATOR) {
-            revert InvalidPercentage();
-        }
-        if (_employerSlashPct + _treasurySlashPct == 0) {
+        uint16 employerPct = _normalizeToBps(_employerSlashPct);
+        uint16 treasuryPct = _normalizeToBps(_treasurySlashPct);
+        if (uint256(employerPct) + treasuryPct == 0) {
             employerSlashPct = 0;
             treasurySlashPct = SLASH_BPS_DENOMINATOR;
         } else {
-            if (_employerSlashPct + _treasurySlashPct != SLASH_BPS_DENOMINATOR) {
+            if (uint256(employerPct) + treasuryPct != SLASH_BPS_DENOMINATOR) {
                 revert InvalidPercentage();
             }
-            employerSlashPct = _employerSlashPct;
-            treasurySlashPct = _treasurySlashPct;
+            employerSlashPct = employerPct;
+            treasurySlashPct = treasuryPct;
         }
         burnSlashPct = 0;
         emit SlashingPercentagesUpdated(employerSlashPct, treasurySlashPct);
@@ -742,9 +741,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (value > SLASH_BPS_DENOMINATOR) revert InvalidPercentage();
     }
 
-    function _toBps(uint256 value) private pure returns (uint16) {
+    function _normalizeToBps(uint256 value) private pure returns (uint16) {
+        if (value == 0) return 0;
+        if (value <= 100) {
+            value *= SLASH_BPS_DENOMINATOR / 100;
+        }
         if (value > SLASH_BPS_DENOMINATOR) revert InvalidPercentage();
         return uint16(value);
+    }
+
+    function _toBps(uint256 value) private pure returns (uint16) {
+        return _normalizeToBps(value);
     }
 
     /// @dev internal helper to update slashing distribution percentages

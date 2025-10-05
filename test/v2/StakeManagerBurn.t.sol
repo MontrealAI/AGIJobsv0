@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
-import {StakeManager, TokenNotBurnable} from "../../contracts/v2/StakeManager.sol";
+import {StakeManager, TokenNotBurnable, InvalidMinStake} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA, BURN_ADDRESS} from "../../contracts/v2/Constants.sol";
 
@@ -86,7 +86,7 @@ contract StakeManagerBurnTest is Test {
     }
 
     function testSetMinStakeZeroReverts() public {
-        vm.expectRevert(StakeManager.InvalidMinStake.selector);
+        vm.expectRevert(InvalidMinStake.selector);
         stake.setMinStake(0);
     }
 }

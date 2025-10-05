@@ -10,16 +10,6 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 import {AGIALPHA} from "contracts/v2/Constants.sol";
 import {ITaxPolicy} from "contracts/v2/interfaces/ITaxPolicy.sol";
 
-// minimal cheatcode interface
-interface Vm {
-    function prank(address) external;
-    function startPrank(address) external;
-    function stopPrank() external;
-    function etch(address, bytes memory) external;
-    function expectRevert() external;
-    function expectRevert(bytes4) external;
-}
-
 contract TestToken is ERC20 {
     constructor() ERC20("Test", "TST") {}
     function decimals() public pure override returns (uint8) { return 18; }
@@ -33,9 +23,7 @@ contract NonBurnableToken is ERC20 {
     function mint(address to, uint256 amount) external { _mint(to, amount); }
 }
 
-contract FeePoolTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
-
+contract FeePoolTest is Test {
     FeePool feePool;
     TestToken token;
     MockStakeManager stakeManager;
@@ -302,7 +290,7 @@ contract FeePoolConfigurationTest is Test {
     }
 
     function testSetBurnPctAboveHundredReverts() public {
-        vm.expectRevert(FeePool.InvalidPercentage.selector);
+        vm.expectRevert(InvalidPercentage.selector);
         feePool.setBurnPct(101);
     }
 }
