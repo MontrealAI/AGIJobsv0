@@ -48,6 +48,7 @@
     "coverage:full": "npm run coverage:report",
     "check:coverage": "node scripts/check-coverage.js 90",
     "check:access-control": "node scripts/ci/check-access-control-coverage.js",
+    "ci:v2": "bash scripts/ci/run-v2-ci.sh",
     "abi:export": "node scripts/ci/export-abis.js",
     "abi:diff": "node scripts/ci/check-abi-diff.js",
     "contract:size": "npx hardhat size-contracts",
