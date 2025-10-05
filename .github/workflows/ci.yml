@@ -72,6 +72,14 @@ jobs:
     needs: contracts
     runs-on: ubuntu-24.04
     env:
+      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+      FEE_PCT: '0.02'
+      BURN_PCT: '0.06'
+      TREASURY: '0x1111111111111111111111111111111111111111'
+      VALIDATORS_PER_JOB: '3'
+      REQUIRED_APPROVALS: '3'
+      COMMIT_WINDOW: '30m'
+      REVEAL_WINDOW: '30m'
       COVERAGE_MIN: '90'
     steps:
       - uses: actions/checkout@v4
@@ -82,6 +90,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Regenerate constants for coverage run
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Generate coverage report
         run: npm run coverage
       - name: Check access control coverage
