@@ -141,7 +141,7 @@ jobs:
             dockerfile: apps/enterprise-portal/Dockerfile
           - name: owner-console
             context: apps/console
-            dockerfile: Dockerfile
+            dockerfile: apps/console/Dockerfile
     steps:
       - name: Checkout
         uses: actions/checkout@v4
