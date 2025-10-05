@@ -28,6 +28,10 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/console/package-lock.json
+            apps/enterprise-portal/package-lock.json
 
       - name: Install repository dependencies
         run: npm ci
@@ -38,6 +42,12 @@ jobs:
       - name: Install enterprise portal dependencies
         run: npm ci --prefix apps/enterprise-portal
 
+      - name: Type-check enterprise portal
+        run: npm run webapp:portal:typecheck
+
+      - name: Lint enterprise portal
+        run: npm run webapp:portal:lint
+
       - name: Type-check webapp
         run: npm run webapp:typecheck
 
@@ -47,8 +57,8 @@ jobs:
       - name: Owner console build
         run: npm run webapp:build
 
-      - name: Webapp build
-        run: npm --prefix apps/enterprise-portal run build
+      - name: Enterprise portal build
+        run: npm run webapp:portal:build
 
       - name: Cypress E2E
         env:
@@ -56,9 +66,20 @@ jobs:
           CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
         run: npm run webapp:e2e
 
-      - name: Upload webapp artefacts
+      - name: Upload owner console artefacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: owner-console-dist
           path: apps/console/dist
+          if-no-files-found: ignore
+
+      - name: Upload enterprise portal artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterprise-portal-dist
+          path: |
+            apps/enterprise-portal/.next
+            apps/enterprise-portal/public
+          if-no-files-found: ignore
