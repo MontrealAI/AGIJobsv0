@@ -76,6 +76,8 @@ When the release checklist is green and stakeholders approve, trigger the GitHub
 3. Download the emitted artifact (`safe-bundle-<network>.zip`), extract `plan.json`, and upload it to your Safe for signing.
 4. Collect the required approvals in the Safe UI, execute the bundle, then archive the signed transaction hash alongside the plan.
 
+> **One-page checklist.** Actions → `release-mainnet` → pick the target network → type `YES` → download `safe-bundle-<net>` → upload in Safe → collect approvals → execute → done.
+
 ## Parameter catalogue
 
 | Domain | Config manifest(s) | Primary CLI entry point | On-chain targets | Verification & telemetry |

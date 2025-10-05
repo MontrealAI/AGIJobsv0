@@ -47,7 +47,10 @@ jobs:
 
       - name: Compile (scripts & constants)
         run: |
-          node --loader ts-node/esm scripts/generate-constants.ts
+          mkdir -p .tmp
+          npx ts-node --esm --transpile-only scripts/generate-constants.ts \
+          || node --import 'data:text/javascript,import { register } from "node:module";import { pathToFileURL } from "node:url";register("ts-node/esm", pathToFileURL("./"));' scripts/generate-constants.ts \
+          || (npx esbuild scripts/generate-constants.ts --bundle --platform=node --format=esm --outfile=.tmp/generate-constants.mjs && node .tmp/generate-constants.mjs)
           npx hardhat compile
 
       - name: Build Safe execution plan
