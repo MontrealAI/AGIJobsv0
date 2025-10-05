@@ -49,6 +49,10 @@ describe('ValidationModule validator auth cache', function () {
     await validation
       .connect(owner)
       .setValidatorPool([v1.address, v2.address, v3.address]);
+    await validation.connect(owner).setValidatorSubdomains(
+      [v1.address, v2.address, v3.address],
+      ['v1', 'v2', 'v3']
+    );
   });
 
   async function createJob(id) {

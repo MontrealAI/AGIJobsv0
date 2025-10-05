@@ -2,6 +2,9 @@ const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
+const toBps = (pct) => BigInt(pct) * 100n;
+const BPS = 10_000n;
+
 describe('StakeManager', function () {
   const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
   let token, stakeManager, owner, user, employer, treasury;
@@ -665,9 +668,9 @@ describe('StakeManager', function () {
     ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await expect(stakeManager.connect(owner).setSlashingPercentages(60, 40))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
-      .withArgs(60, 40);
-    expect(await stakeManager.employerSlashPct()).to.equal(60);
-    expect(await stakeManager.treasurySlashPct()).to.equal(40);
+      .withArgs(toBps(60), toBps(40));
+    expect(await stakeManager.employerSlashPct()).to.equal(toBps(60));
+    expect(await stakeManager.treasurySlashPct()).to.equal(toBps(40));
   });
 
   it('allows governance to configure validator slash rewards', async () => {
@@ -679,16 +682,16 @@ describe('StakeManager', function () {
       stakeManager.connect(owner).setValidatorSlashRewardPct(15)
     )
       .to.emit(stakeManager, 'ValidatorSlashRewardPctUpdated')
-      .withArgs(15);
-    expect(await stakeManager.validatorSlashRewardPct()).to.equal(15);
+      .withArgs(toBps(15));
+    expect(await stakeManager.validatorSlashRewardPct()).to.equal(toBps(15));
   });
 
   it('allows slashing percentages that sum under 100', async () => {
     await expect(stakeManager.connect(owner).setSlashingPercentages(60, 20))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
-      .withArgs(60, 20);
-    expect(await stakeManager.employerSlashPct()).to.equal(60);
-    expect(await stakeManager.treasurySlashPct()).to.equal(20);
+      .withArgs(toBps(60), toBps(20));
+    expect(await stakeManager.employerSlashPct()).to.equal(toBps(60));
+    expect(await stakeManager.treasurySlashPct()).to.equal(toBps(20));
   });
 
   it('slashes full amount when percentages sum to 100', async () => {
@@ -724,7 +727,7 @@ describe('StakeManager', function () {
 
   it('reverts when slashing percentages sum over 100', async () => {
     await expect(
-      stakeManager.connect(owner).setSlashingPercentages(60, 50)
+      stakeManager.connect(owner).setSlashingPercentages(10100, 0)
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
   });
 
@@ -763,7 +766,7 @@ describe('StakeManager', function () {
 
   it('reverts when individual slashing percentage exceeds 100', async () => {
     await expect(
-      stakeManager.connect(owner).setSlashingPercentages(101, 0)
+      stakeManager.connect(owner).setSlashingPercentages(10100, 0)
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
   });
 
@@ -1284,7 +1287,7 @@ describe('StakeManager', function () {
     ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await expect(stakeManager.connect(owner).setSlashingPercentages(40, 60))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
-      .withArgs(40n, 60n);
+      .withArgs(toBps(40), toBps(60));
   });
 
   it('acknowledgeAndDeposit records acknowledgement and restricts callers', async () => {

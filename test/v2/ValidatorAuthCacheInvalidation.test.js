@@ -66,6 +66,10 @@ describe('JobRegistry validator auth cache', function () {
     await validation
       .connect(owner)
       .setValidatorPool([v1.address, v2.address, v3.address]);
+    await validation.connect(owner).setValidatorSubdomains(
+      [v1.address, v2.address, v3.address],
+      ['v1', 'v2', 'v3']
+    );
     await validation.connect(owner).setValidatorAuthCacheDuration(1000);
 
     await stakeManager.setStake(v1.address, 1, ethers.parseEther('100'));

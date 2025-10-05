@@ -15,6 +15,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 
 ## Table of Contents
 
+- [CI green path](#ci-green-path)
 - [Identity policy](#identity-policy)
 - [AGIALPHA configuration](#agialpha-configuration)
 - [Fee handling and treasury](#fee-handling-and-treasury)
@@ -54,6 +55,16 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Owner control visual guide](#owner-control-visual-guide)
 - [Owner parameter matrix](#owner-parameter-matrix)
 - [Production launch blueprint](#production-launch-blueprint)
+
+## CI green path
+
+Run the full v2 quality gate locally with a single command:
+
+```bash
+npm run ci:v2
+```
+
+The helper mirrors the GitHub Actions workflows, including linting, Hardhat/Foundry tests, the local orchestrator integration and Cypress UI coverage. It prints each step before execution and stops on the first failure, so non-technical operators get the same signal as CI. For a detailed mapping between status checks, workflows and manual commands, see [docs/ci/v2-green-path.md](docs/ci/v2-green-path.md).
 
 ### Identity policy
 

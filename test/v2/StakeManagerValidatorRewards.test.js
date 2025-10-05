@@ -104,6 +104,7 @@ describe('StakeManager validator slash rewards', function () {
     await stakeManager
       .connect(owner)
       .setTreasuryAllowlist(treasury.address, true);
+    await stakeManager.connect(owner).setSlashDistribution(0, 80, 0, 20);
 
     const stakeAddr = await stakeManager.getAddress();
     const stakeAck = ethers.keccak256(
@@ -163,7 +164,7 @@ describe('StakeManager validator slash rewards', function () {
         []
       );
 
-    expect(await token.balanceOf(treasury.address)).to.equal(40n * ONE);
+    expect(await token.balanceOf(treasury.address)).to.equal(32n * ONE);
     expect(await token.balanceOf(val1.address)).to.equal(1000n * ONE);
   });
 
@@ -178,7 +179,7 @@ describe('StakeManager validator slash rewards', function () {
         [val1.address, val2.address]
       );
 
-    expect(await token.balanceOf(treasury.address)).to.equal(40n * ONE);
+    expect(await token.balanceOf(treasury.address)).to.equal(32n * ONE);
     expect(await token.balanceOf(val1.address)).to.equal(1000n * ONE);
     expect(await token.balanceOf(val2.address)).to.equal(1000n * ONE);
   });
