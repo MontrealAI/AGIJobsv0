@@ -26,22 +26,21 @@ concurrency:
   group: contracts-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+  FEE_PCT: '0.02'
+  BURN_PCT: '0.06'
+  TREASURY: '0x1111111111111111111111111111111111111111'
+  VALIDATORS_PER_JOB: '3'
+  REQUIRED_APPROVALS: '3'
+  COMMIT_WINDOW: '30m'
+  REVEAL_WINDOW: '30m'
+  COVERAGE_MIN: '90'
+
 jobs:
   compile-and-test:
     runs-on: ubuntu-24.04
-
-    env:
-      COVERAGE_MIN: '90'
-      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-
-      FEE_PCT: '0.02'
-      BURN_PCT: '0.06'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
-
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -50,6 +49,14 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+
+      - name: Cache Hardhat compiler builds
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/hardhat-nodejs
+          key: ${{ runner.os }}-hardhat-solc-${{ hashFiles('hardhat.config.*', 'package-lock.json', 'scripts/generate-constants.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-hardhat-solc-
 
       - name: Install dependencies
         run: npm ci
