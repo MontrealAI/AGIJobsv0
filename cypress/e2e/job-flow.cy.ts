@@ -1,10 +1,5 @@
 describe('Owner governance job flow', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/jobs/*/status', {
-      statusCode: 200,
-      fixture: 'status-agent-win.json',
-    }).as('jobStatus');
-
     cy.intercept('GET', 'https://orchestrator.example/governance/snapshot', {
       statusCode: 200,
       body: {
@@ -41,7 +36,7 @@ describe('Owner governance job flow', () => {
   it('previews configuration updates and inspects receipts', () => {
     cy.visit('/');
     cy.wait('@snapshot');
-    cy.wait('@jobStatus');
+    cy.contains('AGI Jobs Owner Console');
 
     cy.get('#governance-key').select('jobRegistry.setJobStake');
     cy.get('#governance-value').clear().type('150');
