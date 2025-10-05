@@ -27,6 +27,10 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            apps/console/package-lock.json
+            apps/enterprise-portal/package-lock.json
       - run: npm ci
       - name: Orchestrator tsc
         run: npx tsc -p apps/orchestrator/tsconfig.json
