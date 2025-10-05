@@ -20,6 +20,8 @@ concurrency:
 jobs:
   security-suite:
     runs-on: ubuntu-latest
+    outputs:
+      sbom-digest: ${{ steps.sbom-digest.outputs.base64_subjects }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,6 +83,14 @@ jobs:
           format: spdx-json
           output-file: reports/sbom/spdx.json
 
+      - name: Compute SBOM digest
+        id: sbom-digest
+        run: |
+          set -euo pipefail
+          test -f reports/sbom/spdx.json
+          DIGEST=$(sha256sum reports/sbom/spdx.json | base64 -w0)
+          echo "base64_subjects=$DIGEST" >> "$GITHUB_OUTPUT"
+
       - name: Upload security artefacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -90,16 +100,36 @@ jobs:
             reports/license-summary.txt
             reports/sbom/spdx.json
 
-      - name: Generate provenance attestation
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: slsa-framework/slsa-github-generator/actions/delegator-generic@v2.0.0
+  sbom-provenance:
+    needs: security-suite
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: ${{ needs.security-suite.outputs.sbom-digest }}
+      provenance-name: sbom-provenance.intoto.jsonl
+
+  publish-provenance:
+    needs: sbom-provenance
+    if: ${{ needs.sbom-provenance.result == 'success' && needs.sbom-provenance.outputs.provenance-name != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download provenance artifact
+        uses: actions/download-artifact@v4
         with:
-          predicate-type: https://slsa.dev/provenance/v1
-          subject-path: reports/sbom/spdx.json
-          out-file: reports/provenance.intoto.jsonl
+          name: ${{ needs.sbom-provenance.outputs.provenance-name }}
+          path: reports
+
+      - name: Prepare provenance artifact
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          mv "reports/${{ needs.sbom-provenance.outputs.provenance-name }}" reports/provenance.intoto.jsonl
 
       - name: Upload provenance statement
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: provenance
