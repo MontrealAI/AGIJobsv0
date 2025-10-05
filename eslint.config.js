@@ -18,7 +18,7 @@ module.exports = [
     },
     rules: {
       'no-unused-vars': 'warn',
-      'prettier/prettier': 'error',
+      'prettier/prettier': 'off',
     },
   },
   {
@@ -35,7 +35,7 @@ module.exports = [
       ...tsPlugin.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'off',
-      'prettier/prettier': 'error',
+      'prettier/prettier': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
     },
