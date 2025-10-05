@@ -20,6 +20,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -100,7 +101,7 @@ jobs:
           tags: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}
 
       - name: Trivy scan
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.build-push.outputs.digest
         env:
           IMAGE_REF: ghcr.io/${{ env.REPO_OWNER_LC }}/${{ matrix.image.tag }}@${{ steps.build-push.outputs.digest }}
         run: |
