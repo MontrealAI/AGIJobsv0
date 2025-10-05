@@ -1,39 +1,39 @@
-name: contracts-ci
+name: ci
 
 on:
   pull_request:
-    paths:
-      - 'contracts/**'
-      - 'scripts/**'
-      - 'test/**'
-      - 'hardhat.config.*'
-      - 'package*.json'
-      - '.github/workflows/contracts.yml'
   push:
     branches: [main]
-    paths:
-      - 'contracts/**'
-      - 'scripts/**'
-      - 'test/**'
-      - 'hardhat.config.*'
-      - 'package*.json'
-      - '.github/workflows/contracts.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: contracts-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  compile-and-test:
+  lint:
+    name: Lint & static checks
     runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Prettier formatting check
+        run: npm run format:check
 
+  contracts:
+    name: Contracts compile & tests
+    runs-on: ubuntu-24.04
     env:
       COVERAGE_MIN: '90'
       ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-
       FEE_PCT: '0.02'
       BURN_PCT: '0.06'
       TREASURY: '0x1111111111111111111111111111111111111111'
@@ -41,36 +41,50 @@ jobs:
       REQUIRED_APPROVALS: '3'
       COMMIT_WINDOW: '30m'
       REVEAL_WINDOW: '30m'
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-
+          cache: npm
       - name: Install dependencies
         run: npm ci
-
-      - name: Compile
-        env:
-          COVERAGE_MIN: 90
+      - name: Compile contracts
         run: |
           node --loader ts-node/esm scripts/generate-constants.ts
           npx hardhat compile
-
       - name: Regenerate constants for tests
         run: node --loader ts-node/esm scripts/generate-constants.ts
-
-      - name: Node/Hardhat tests
+      - name: Hardhat tests
         run: npm test
-
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
-
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
+      - name: ABI diff check
+        run: npm run abi:diff
+
+  coverage:
+    name: Coverage thresholds
+    needs: contracts
+    runs-on: ubuntu-24.04
+    env:
+      COVERAGE_MIN: '90'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate coverage report
+        run: npm run coverage
+      - name: Check access control coverage
+        run: npm run check:access-control
+      - name: Enforce coverage threshold
+        run: npm run check:coverage

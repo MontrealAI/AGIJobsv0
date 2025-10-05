@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       network:
-        description: "Deploy target"
+        description: 'Deploy target'
         type: choice
-        options: [ mainnet, sepolia ]
+        options: [mainnet, sepolia]
         default: mainnet
       confirm:
-        description: "Type YES to confirm"
+        description: 'Type YES to confirm'
         required: true
-        default: "NO"
+        default: 'NO'
 
 permissions:
   contents: read
@@ -30,19 +30,19 @@ jobs:
     needs: guardrails
     runs-on: ubuntu-24.04
     env:
-      FEE_PCT: "0.02"
-      BURN_PCT: "0.06"
-      TREASURY: "0x1111111111111111111111111111111111111111"
-      VALIDATORS_PER_JOB: "3"
-      REQUIRED_APPROVALS: "3"
-      COMMIT_WINDOW: "30m"
-      REVEAL_WINDOW: "30m"
+      FEE_PCT: '0.02'
+      BURN_PCT: '0.06'
+      TREASURY: '0x1111111111111111111111111111111111111111'
+      VALIDATORS_PER_JOB: '3'
+      REQUIRED_APPROVALS: '3'
+      COMMIT_WINDOW: '30m'
+      REVEAL_WINDOW: '30m'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
       - run: npm ci
 
       - name: Compile (scripts & constants)

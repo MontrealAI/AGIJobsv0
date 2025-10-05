@@ -3,13 +3,13 @@ name: apps-images
 on:
   pull_request:
     paths:
-      - "apps/**"
-      - ".github/workflows/apps-images.yml"
+      - 'apps/**'
+      - '.github/workflows/apps-images.yml'
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - "apps/**"
-      - ".github/workflows/apps-images.yml"
+      - 'apps/**'
+      - '.github/workflows/apps-images.yml'
 
 permissions:
   contents: read
@@ -92,8 +92,8 @@ jobs:
       - name: Setup Node for web build
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install root deps
         run: npm ci
