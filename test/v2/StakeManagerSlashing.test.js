@@ -2,6 +2,9 @@ const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { AGIALPHA } = require('../../scripts/constants');
 
+const toBps = (pct) => BigInt(pct) * 100n;
+const BPS = 10_000n;
+
 describe('StakeManager slashing configuration', function () {
   let owner, stakeManager;
 
@@ -34,6 +37,14 @@ describe('StakeManager slashing configuration', function () {
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
   });
 
+  it('accepts basis point inputs for slashing percentages', async () => {
+    await expect(
+      stakeManager.connect(owner).setSlashingPercentages(5000, 5000)
+    )
+      .to.emit(stakeManager, 'SlashingPercentagesUpdated')
+      .withArgs(toBps(50), toBps(50));
+  });
+
   it('rejects validator slash reward percentage above 100', async () => {
     await expect(
       stakeManager.setValidatorSlashRewardPct(101)
@@ -51,18 +62,18 @@ describe('StakeManager slashing configuration', function () {
       stakeManager.connect(owner).setSlashingPercentages(40, 40)
     )
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
-      .withArgs(40, 40);
+      .withArgs(toBps(40), toBps(40));
 
     await expect(
       stakeManager.connect(owner).setOperatorSlashPct(10)
     )
       .to.emit(stakeManager, 'OperatorSlashPctUpdated')
-      .withArgs(10);
+      .withArgs(toBps(10));
 
-    expect(await stakeManager.operatorSlashPct()).to.equal(10);
+    expect(await stakeManager.operatorSlashPct()).to.equal(toBps(10));
 
     await expect(
-      stakeManager.connect(owner).setOperatorSlashPct(101)
+      stakeManager.connect(owner).setOperatorSlashPct(10_001)
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
   });
 
@@ -73,12 +84,12 @@ describe('StakeManager slashing configuration', function () {
         .setSlashDistribution(25, 25, 20, 30)
     )
       .to.emit(stakeManager, 'SlashDistributionUpdated')
-      .withArgs(25, 25, 20, 30);
+      .withArgs(toBps(25), toBps(25), toBps(20), toBps(30));
 
-    expect(await stakeManager.employerSlashPct()).to.equal(25);
-    expect(await stakeManager.treasurySlashPct()).to.equal(25);
-    expect(await stakeManager.operatorSlashPct()).to.equal(20);
-    expect(await stakeManager.validatorSlashRewardPct()).to.equal(30);
+    expect(await stakeManager.employerSlashPct()).to.equal(toBps(25));
+    expect(await stakeManager.treasurySlashPct()).to.equal(toBps(25));
+    expect(await stakeManager.operatorSlashPct()).to.equal(toBps(20));
+    expect(await stakeManager.validatorSlashRewardPct()).to.equal(toBps(30));
   });
 });
 
@@ -216,9 +227,8 @@ describe('StakeManager multi-validator slashing', function () {
   it('slashes and rewards validators based on stake and reputation', async () => {
     const amount = 40n * ONE;
     await stakeManager.connect(owner).setSlashingDistribution(0, 80, 20);
-    const validatorReward = (amount * 20n) / 100n;
-    const baseAmount = amount - validatorReward;
-    const expectedTreasuryShare = (baseAmount * 80n) / 100n;
+    const validatorReward = (amount * toBps(20)) / BPS;
+    const expectedTreasuryShare = (amount * toBps(80)) / BPS;
 
     await expect(
       stakeManager
@@ -299,7 +309,7 @@ describe('StakeManager multi-validator slashing', function () {
       .setSlashDistribution(30, 30, 40, 0);
 
     const amount = 50n * ONE;
-    const operatorShare = (amount * 40n) / 100n;
+    const operatorShare = (amount * toBps(40)) / BPS;
 
     await expect(
       stakeManager
@@ -338,11 +348,10 @@ describe('StakeManager multi-validator slashing', function () {
     const val1Start = await token.balanceOf(val1.address);
     const val2Start = await token.balanceOf(val2.address);
 
-    const validatorTarget = (amount * 10n) / 100n;
-    const baseAmount = amount - validatorTarget;
-    const expectedEmployer = (baseAmount * 60n) / 100n;
-    const expectedTreasury = (baseAmount * 20n) / 100n;
-    const expectedOperator = (baseAmount * 10n) / 100n;
+    const validatorTarget = (amount * toBps(10)) / BPS;
+    const expectedEmployer = (amount * toBps(60)) / BPS;
+    const expectedTreasury = (amount * toBps(20)) / BPS;
+    const expectedOperator = (amount * toBps(10)) / BPS;
 
     const val1Stake = await stakeManager.stakes(val1.address, Role.Validator);
     const val2Stake = await stakeManager.stakes(val2.address, Role.Validator);
@@ -350,9 +359,8 @@ describe('StakeManager multi-validator slashing', function () {
     const val1Reward = (validatorTarget * val1Stake) / totalStake;
     const val2Reward = (validatorTarget * val2Stake) / totalStake;
     const validatorDistributed = val1Reward + val2Reward;
-    const burnRemainder = validatorTarget - validatorDistributed;
-    const expectedBurn =
-      baseAmount - expectedEmployer - expectedTreasury - expectedOperator + burnRemainder;
+    const distributed = expectedEmployer + expectedTreasury + expectedOperator + validatorDistributed;
+    const expectedBurn = amount - distributed;
 
     await expect(
       stakeManager
@@ -519,11 +527,11 @@ describe('StakeManager validator slashing via validation module', function () {
 
   it('allows the validation module to slash validators and distribute rewards', async () => {
     const amount = 40n * ONE;
-    const expectedValidatorReward = (amount * 20n) / 100n;
-    const baseAmount = amount - expectedValidatorReward;
-    const expectedEmployerShare = (baseAmount * 40n) / 100n;
-    const expectedTreasuryShare = (baseAmount * 40n) / 100n;
-    const expectedBurnShare = baseAmount - expectedEmployerShare - expectedTreasuryShare;
+    const expectedValidatorReward = (amount * toBps(20)) / BPS;
+    const expectedEmployerShare = (amount * toBps(40)) / BPS;
+    const expectedTreasuryShare = (amount * toBps(40)) / BPS;
+    const expectedBurnShare =
+      amount - (expectedEmployerShare + expectedTreasuryShare + expectedValidatorReward);
 
     const validatorStakeBefore = await stakeManager.stakeOf(
       badValidator.address,
@@ -790,6 +798,14 @@ describe('StakeManager governance emergency slash', function () {
     await stakeManager.connect(owner).setValidatorRewardPct(0);
     await stakeManager.connect(owner).setOperatorSlashPct(0);
 
+    const MockRegistry = await ethers.getContractFactory(
+      'contracts/legacy/MockV2.sol:MockJobRegistry'
+    );
+    const mockRegistry = await MockRegistry.deploy();
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await mockRegistry.getAddress());
+
     const stakeAddr = await stakeManager.getAddress();
     const stakeAckSlot = ethers.keccak256(
       ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [stakeAddr, 6])
@@ -832,11 +848,11 @@ describe('StakeManager governance emergency slash', function () {
     expect(totalStake).to.equal(200n * ONE - slashAmount);
 
     const beneficiaryEnd = await token.balanceOf(beneficiary.address);
-    const employerShare = (slashAmount * 60n) / 100n;
+    const employerShare = (slashAmount * toBps(60)) / BPS;
     expect(beneficiaryEnd - beneficiaryStart).to.equal(employerShare);
 
     const treasuryEnd = await token.balanceOf(treasury.address);
-    const treasuryShare = (slashAmount * 40n) / 100n;
+    const treasuryShare = (slashAmount * toBps(40)) / BPS;
     expect(treasuryEnd - treasuryStart).to.equal(treasuryShare);
   });
 

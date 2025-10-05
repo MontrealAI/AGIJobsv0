@@ -212,13 +212,14 @@ describe('multi-operator job lifecycle', function () {
     await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash);
     await registry.connect(employer).finalize(jobId);
 
-    expect(await feePool.pendingFees()).to.equal(0);
+    expect(await feePool.pendingFees()).to.equal(fee);
     const before1 = await token.balanceOf(platform1.address);
     const before2 = await token.balanceOf(platform2.address);
     await feePool.connect(platform1).claimRewards();
     await feePool.connect(platform2).claimRewards();
     const after1 = await token.balanceOf(platform1.address);
     const after2 = await token.balanceOf(platform2.address);
+    expect(await feePool.pendingFees()).to.equal(0);
     const total = platformStake1 + platformStake2;
     expect(after1 - before1).to.equal((fee * platformStake1) / total);
     expect(after2 - before2).to.equal((fee * platformStake2) / total);

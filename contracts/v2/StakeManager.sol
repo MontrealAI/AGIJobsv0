@@ -643,8 +643,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Deploys the StakeManager.
     /// @param _minStake Minimum stake required to participate. Defaults to
     /// DEFAULT_MIN_STAKE when set to zero.
-    /// @param _employerSlashPct Basis points of the slashed amount sent to employer (0-10_000).
-    /// @param _treasurySlashPct Basis points of the slashed amount sent to treasury (0-10_000).
+    /// @param _employerSlashPct Percentage or basis points of the slashed amount sent to employer.
+    ///        Accepts integers in the range 0-100 (interpreted as percentages) or 0-10_000 (basis points).
+    /// @param _treasurySlashPct Percentage or basis points of the slashed amount sent to treasury.
+    ///        Accepts integers in the range 0-100 (interpreted as percentages) or 0-10_000 (basis points).
     /// @param _treasury Address receiving treasury share of slashed stake. Use zero
     /// address to burn the treasury portion.
     /// @param _jobRegistry JobRegistry enforcing tax acknowledgements.
@@ -663,18 +665,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
-        if (_employerSlashPct > SLASH_BPS_DENOMINATOR || _treasurySlashPct > SLASH_BPS_DENOMINATOR) {
-            revert InvalidPercentage();
-        }
-        if (_employerSlashPct + _treasurySlashPct == 0) {
+        uint256 employerSlashBps = _normalizeSlashPct(_employerSlashPct);
+        uint256 treasurySlashBps = _normalizeSlashPct(_treasurySlashPct);
+        if (employerSlashBps + treasurySlashBps == 0) {
             employerSlashPct = 0;
             treasurySlashPct = SLASH_BPS_DENOMINATOR;
         } else {
-            if (_employerSlashPct + _treasurySlashPct != SLASH_BPS_DENOMINATOR) {
+            if (employerSlashBps + treasurySlashBps != SLASH_BPS_DENOMINATOR) {
                 revert InvalidPercentage();
             }
-            employerSlashPct = _employerSlashPct;
-            treasurySlashPct = _treasurySlashPct;
+            employerSlashPct = employerSlashBps;
+            treasurySlashPct = treasurySlashBps;
         }
         burnSlashPct = 0;
         emit SlashingPercentagesUpdated(employerSlashPct, treasurySlashPct);
@@ -742,9 +743,23 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (value > SLASH_BPS_DENOMINATOR) revert InvalidPercentage();
     }
 
+    function _normalizeSlashPct(uint256 value) private pure returns (uint256) {
+        if (value == 0) {
+            return 0;
+        }
+        if (value <= 100) {
+            return value * 100;
+        }
+        if (value <= SLASH_BPS_DENOMINATOR) {
+            return value;
+        }
+        revert InvalidPercentage();
+    }
+
     function _toBps(uint256 value) private pure returns (uint16) {
-        if (value > SLASH_BPS_DENOMINATOR) revert InvalidPercentage();
-        return uint16(value);
+        uint256 normalized = _normalizeSlashPct(value);
+        if (normalized > SLASH_BPS_DENOMINATOR) revert InvalidPercentage();
+        return uint16(normalized);
     }
 
     /// @dev internal helper to update slashing distribution percentages
@@ -1067,8 +1082,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice update slashing percentage splits
-    /// @param _employerSlashPct basis points sent to employer (0-10_000)
-    /// @param _treasurySlashPct basis points sent to treasury (0-10_000)
+    /// @param _employerSlashPct Percentage (0-100) or basis points (0-10_000) sent to employer
+    /// @param _treasurySlashPct Percentage (0-100) or basis points (0-10_000) sent to treasury
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external onlyGovernance {
         _applySlashDistribution(
             _toBps(_employerSlashPct),
@@ -1080,8 +1095,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice update slashing percentages (alias)
-    /// @param _employerSlashPct basis points sent to employer (0-10_000)
-    /// @param _treasurySlashPct basis points sent to treasury (0-10_000)
+    /// @param _employerSlashPct Percentage (0-100) or basis points (0-10_000) sent to employer
+    /// @param _treasurySlashPct Percentage (0-100) or basis points (0-10_000) sent to treasury
     function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external onlyGovernance {
         _applySlashDistribution(
             _toBps(_employerSlashPct),
@@ -1093,7 +1108,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice update the validator share of slashed stakes
-    /// @param _validatorSlashPct basis points of the total slashed amount distributed to validators (0-10_000)
+    /// @param _validatorSlashPct Percentage (0-100) or basis points (0-10_000) of the total slashed amount distributed to validators
     function setValidatorSlashRewardPct(uint256 _validatorSlashPct) external onlyGovernance {
         _applySlashDistribution(
             _toBps(employerSlashPct),
@@ -1105,9 +1120,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice update the full slashing distribution across employer, treasury and validators
-    /// @param _employerSlashPct basis points sent to the employer (0-10_000)
-    /// @param _treasurySlashPct basis points sent to the treasury (0-10_000)
-    /// @param _validatorSlashPct basis points sent to validators (0-10_000)
+    /// @param _employerSlashPct Percentage (0-100) or basis points (0-10_000) sent to the employer
+    /// @param _treasurySlashPct Percentage (0-100) or basis points (0-10_000) sent to the treasury
+    /// @param _validatorSlashPct Percentage (0-100) or basis points (0-10_000) sent to validators
     function setSlashingDistribution(
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct,
@@ -1123,7 +1138,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice update the operator share of slashed stakes
-    /// @param _operatorSlashPct basis points of the total slashed amount added to the operator reward pool (0-10_000)
+    /// @param _operatorSlashPct Percentage (0-100) or basis points (0-10_000) of the total slashed amount added to the operator reward pool
     function setOperatorSlashPct(uint256 _operatorSlashPct) external onlyGovernance {
         _applySlashDistribution(
             _toBps(employerSlashPct),
@@ -1135,10 +1150,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice update the full slashing distribution across employer, treasury, operator reward pool and validators
-    /// @param _employerSlashPct basis points sent to the employer (0-10_000)
-    /// @param _treasurySlashPct basis points sent to the treasury (0-10_000)
-    /// @param _operatorSlashPct basis points sent to the operator reward pool (0-10_000)
-    /// @param _validatorSlashPct basis points sent to validators (0-10_000)
+    /// @param _employerSlashPct Percentage (0-100) or basis points (0-10_000) sent to the employer
+    /// @param _treasurySlashPct Percentage (0-100) or basis points (0-10_000) sent to the treasury
+    /// @param _operatorSlashPct Percentage (0-100) or basis points (0-10_000) sent to the operator reward pool
+    /// @param _validatorSlashPct Percentage (0-100) or basis points (0-10_000) sent to validators
     function setSlashDistribution(
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct,

@@ -121,17 +121,21 @@ async function deploySystem(governanceAddress) {
   };
 }
 
+async function transferIfNeeded(contract, owner, pauseAddress) {
+  if ((await contract.owner()) !== pauseAddress) {
+    await contract.connect(owner).transferOwnership(pauseAddress);
+  }
+}
+
 async function transferModulesToPause(owner, modules, pauseAddress) {
-  await modules.stake.connect(owner).transferOwnership(pauseAddress);
-  await modules.registry.connect(owner).transferOwnership(pauseAddress);
-  await modules.validation.connect(owner).transferOwnership(pauseAddress);
-  await modules.dispute.connect(owner).transferOwnership(pauseAddress);
-  await modules.platformRegistry
-    .connect(owner)
-    .transferOwnership(pauseAddress);
-  await modules.feePool.connect(owner).transferOwnership(pauseAddress);
-  await modules.reputation.connect(owner).transferOwnership(pauseAddress);
-  await modules.committee.connect(owner).transferOwnership(pauseAddress);
+  await transferIfNeeded(modules.stake, owner, pauseAddress);
+  await transferIfNeeded(modules.registry, owner, pauseAddress);
+  await transferIfNeeded(modules.validation, owner, pauseAddress);
+  await transferIfNeeded(modules.dispute, owner, pauseAddress);
+  await transferIfNeeded(modules.platformRegistry, owner, pauseAddress);
+  await transferIfNeeded(modules.feePool, owner, pauseAddress);
+  await transferIfNeeded(modules.reputation, owner, pauseAddress);
+  await transferIfNeeded(modules.committee, owner, pauseAddress);
 }
 
 describe('SystemPause', function () {

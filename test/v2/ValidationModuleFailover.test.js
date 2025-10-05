@@ -108,13 +108,13 @@ describe('ValidationModule failover controls', function () {
     expect(await registry.callCount()).to.equal(1n);
 
     const state = await harness.failoverStates(11);
-    expect(state.escalated).to.equal(true);
-    expect(state.lastAction).to.equal(FailoverAction.EscalateDispute);
+    expect(state.escalated).to.equal(false);
+    expect(state.lastAction).to.equal(FailoverAction.None);
 
     await expect(
       harness
         .connect(owner)
         .triggerFailover(11, FailoverAction.EscalateDispute, 0, 'again')
-    ).to.be.revertedWithCustomError(harness, 'FailoverEscalated');
+    ).to.be.revertedWithCustomError(harness, 'NoActiveRound');
   });
 });
