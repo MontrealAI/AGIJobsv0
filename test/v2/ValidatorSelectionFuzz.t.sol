@@ -26,7 +26,7 @@ contract ValidatorSelectionFuzz is Test {
         stake = new StakeManager(
             1e18,
             0,
-            100,
+            10_000,
             address(this),
             address(0),
             address(0),

@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import {StakeManager, MaxStakeExceeded, BelowMinimumStake, InvalidParams} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ITaxPolicy} from "../../contracts/v2/interfaces/ITaxPolicy.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
 contract StakeManagerFuzz is Test {
@@ -14,8 +15,16 @@ contract StakeManagerFuzz is Test {
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(1e18, 50, 50, address(this), address(this), address(this), address(this));
+        stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(this), address(this), address(this));
+        stake.setMinStake(1);
+        vm.prank(address(stake));
+        token.acceptTerms();
+    }
+
+    function taxPolicy() external pure returns (ITaxPolicy) {
+        return ITaxPolicy(address(0));
     }
 
     function _deposit(address user, uint256 amount, StakeManager.Role role) internal {
@@ -37,8 +46,11 @@ contract StakeManagerFuzz is Test {
 
     function testFuzz_maxStakePerAddress(uint256 limit, uint256 first, uint256 second) public {
         vm.assume(limit >= stake.minStake());
+        vm.assume(limit < 1e24);
         vm.assume(first >= stake.minStake());
+        vm.assume(first < 1e24);
         vm.assume(second >= stake.minStake());
+        vm.assume(second < 1e24);
         stake.setMaxStakePerAddress(limit);
         vm.assume(first <= limit);
         _deposit(address(2), first, StakeManager.Role.Agent);
@@ -65,6 +77,8 @@ contract StakeManagerFuzz is Test {
         uint256 maxRec
     ) public {
         vm.assume(minRec >= stake.minStake());
+        vm.assume(minRec > stake.minStake());
+        vm.assume(minRec < 1e24);
         vm.assume(maxRec > minRec);
         vm.assume(maxRec < 1e24);
         stake.setStakeRecommendations(minRec, maxRec);

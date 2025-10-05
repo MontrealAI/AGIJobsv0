@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
+import {ITaxPolicy} from "../../contracts/v2/interfaces/ITaxPolicy.sol";
 
 error UnbondLocked();
 error Jailed();
@@ -21,13 +22,21 @@ contract StakeManagerUnbond is Test {
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(1e18, 50, 50, address(this), address(this), address(this), address(this));
+        stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(this), address(this), address(this));
+        stake.setMinStake(1);
+        vm.prank(address(stake));
+        token.acceptTerms();
         token.mint(user, 1e18);
         vm.prank(user);
         token.approve(address(stake), 1e18);
         vm.prank(user);
         stake.depositStake(StakeManager.Role.Validator, 1e18);
+    }
+
+    function taxPolicy() external pure returns (ITaxPolicy) {
+        return ITaxPolicy(address(0));
     }
 
     function _request(uint256 amount) internal {

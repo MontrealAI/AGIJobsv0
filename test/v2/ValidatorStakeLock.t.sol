@@ -11,6 +11,7 @@ import {IJobRegistry} from "../../contracts/v2/interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
+import {ITaxPolicy} from "../../contracts/v2/interfaces/ITaxPolicy.sol";
 
 error PendingPenalty();
 error InsufficientLocked();
@@ -31,9 +32,13 @@ contract ValidatorStakeLockTest is Test {
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
 
-        stake = new StakeManager(1e18, 0, 100, address(this), address(0), address(0), address(this));
+        stake = new StakeManager(1e18, 0, 10_000, address(0), address(0), address(0), address(this));
+        stake.setMinStake(1);
+        vm.prank(address(stake));
+        token.acceptTerms();
         jobRegistry = new MockJobRegistry();
         stake.setJobRegistry(address(jobRegistry));
 
@@ -69,6 +74,19 @@ contract ValidatorStakeLockTest is Test {
         );
         validation.setIdentityRegistry(IIdentityRegistry(address(identity)));
         stake.setValidationModule(address(validation));
+        string[] memory subs = new string[](validators.length);
+        for (uint256 i; i < validators.length; ++i) {
+            subs[i] = "validator";
+        }
+        validation.setValidatorSubdomains(pool, subs);
+        for (uint256 i; i < validators.length; ++i) {
+            string memory configured = validation.validatorSubdomains(validators[i]);
+            require(bytes(configured).length != 0, "validator subdomain not set");
+        }
+    }
+
+    function taxPolicy() external pure returns (ITaxPolicy) {
+        return ITaxPolicy(address(0));
     }
 
     function _prepareJob(uint256 jobId) internal returns (address[] memory selected) {
@@ -91,6 +109,16 @@ contract ValidatorStakeLockTest is Test {
     }
 
     function _commitAndReveal(uint256 jobId) internal {
+        string[] memory subs = new string[](validators.length);
+        uint256 revealDeadline = validation.revealDeadline(jobId);
+        uint256 commitDeadline;
+        if (revealDeadline != 0) {
+            uint256 window = validation.revealWindow();
+            if (revealDeadline >= window) {
+                commitDeadline = revealDeadline - window;
+            }
+        }
+
         for (uint256 i; i < validators.length; ++i) {
             address val = validators[i];
             bytes32 salt = bytes32(uint256(i + 1));
@@ -98,11 +126,27 @@ contract ValidatorStakeLockTest is Test {
             bytes32 commitHash = keccak256(
                 abi.encodePacked(jobId, nonce, true, burnTxHash, salt, bytes32(0))
             );
+            string memory subdomain = validation.validatorSubdomains(val);
+            subs[i] = subdomain;
             vm.prank(val);
-            validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
-            vm.warp(block.timestamp + 2);
+            validation.commitValidation(jobId, commitHash, subdomain, new bytes32[](0));
+        }
+
+        if (commitDeadline != 0 && block.timestamp <= commitDeadline) {
+            vm.warp(commitDeadline + 1);
+        } else {
+            vm.warp(block.timestamp + validation.commitWindow() + 1);
+        }
+
+        for (uint256 i; i < validators.length; ++i) {
+            address val = validators[i];
+            bytes32 salt = bytes32(uint256(i + 1));
             vm.prank(val);
-            validation.revealValidation(jobId, true, burnTxHash, salt, "", new bytes32[](0));
+            validation.revealValidation(jobId, true, burnTxHash, salt, subs[i], new bytes32[](0));
+        }
+
+        if (revealDeadline != 0 && block.timestamp <= revealDeadline) {
+            vm.warp(revealDeadline + 1);
         }
     }
 
