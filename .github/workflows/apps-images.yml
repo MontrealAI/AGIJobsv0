@@ -161,7 +161,7 @@ jobs:
       actions: read
       id-token: write
       contents: read
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: ${{ toJson(format('ghcr.io/{0}/owner-console@{1}', github.repository_owner, needs.console.outputs.digest)) }}
 
@@ -172,6 +172,6 @@ jobs:
       actions: read
       id-token: write
       contents: read
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: ${{ toJson(format('ghcr.io/{0}/webapp@{1}', github.repository_owner, needs.portal.outputs.digest)) }}
