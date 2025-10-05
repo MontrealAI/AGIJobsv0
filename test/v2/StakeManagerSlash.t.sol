@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
-import {StakeManager} from "../../contracts/v2/StakeManager.sol";
+import {StakeManager, InvalidPercentage} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
@@ -119,7 +119,7 @@ contract StakeManagerSlashTest is Test {
     }
 
     function testSetSlashPercentsRevertsWhenTotalExceedsBps() public {
-        vm.expectRevert(StakeManager.InvalidPercentage.selector);
+        vm.expectRevert(InvalidPercentage.selector);
         stake.setSlashPercents(6_000, 3_000, 1_500, 0, 1_000);
     }
 }

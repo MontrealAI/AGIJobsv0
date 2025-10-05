@@ -3,6 +3,9 @@ pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 import {IdentityRegistry, ZeroAddress} from "../../contracts/v2/IdentityRegistry.sol";
+import {IENS} from "../../contracts/v2/interfaces/IENS.sol";
+import {INameWrapper} from "../../contracts/v2/interfaces/INameWrapper.sol";
+import {IReputationEngine} from "../../contracts/v2/interfaces/IReputationEngine.sol";
 
 contract IdentityRegistryConfigTest is Test {
     IdentityRegistry identity;

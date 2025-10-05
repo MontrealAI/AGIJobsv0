@@ -76,7 +76,29 @@ contract KernelPipelineTest is Test {
     }
 
     function _job(uint256 jobId) internal view returns (KernelJobRegistry.Job memory job) {
-        job = jobRegistry.jobs(jobId);
+        (
+            address employer_,
+            address agent_,
+            uint256 reward_,
+            uint64 deadline_,
+            uint64 submittedAt_,
+            bool submitted_,
+            bool finalized_,
+            bool success_,
+            bytes32 specHash_
+        ) = jobRegistry.jobs(jobId);
+
+        job = KernelJobRegistry.Job({
+            employer: employer_,
+            agent: agent_,
+            reward: reward_,
+            deadline: deadline_,
+            submittedAt: submittedAt_,
+            submitted: submitted_,
+            finalized: finalized_,
+            success: success_,
+            specHash: specHash_
+        });
     }
 
     function testCreateJobRevertsOnDuplicateValidators() public {
@@ -143,7 +165,7 @@ contract KernelPipelineTest is Test {
         validationModule.finalize(jobId);
 
         // Ensure job finalized successfully.
-        KernelJobRegistry.Job memory storedJob = jobRegistry.jobs(jobId);
+        KernelJobRegistry.Job memory storedJob = _job(jobId);
         assertEq(storedJob.deadline, deadline);
         assertTrue(storedJob.finalized);
         assertTrue(storedJob.success);
@@ -227,7 +249,7 @@ contract KernelPipelineTest is Test {
         vm.warp(block.timestamp + config.revealWindow() + 1);
         validationModule.finalize(jobId);
 
-        KernelJobRegistry.Job memory quorumJob = jobRegistry.jobs(jobId);
+        KernelJobRegistry.Job memory quorumJob = _job(jobId);
         assertTrue(quorumJob.finalized);
         assertFalse(quorumJob.success);
 

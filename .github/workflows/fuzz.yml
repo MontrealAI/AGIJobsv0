@@ -46,6 +46,13 @@ jobs:
           mkdir -p lib
           forge install foundry-rs/forge-std --no-git
 
+      - name: Compile
+        env:
+          COVERAGE_MIN: 90
+        run: |
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+          npx hardhat compile
+
       - name: Run fuzzing invariants
         env:
           FOUNDRY_PROFILE: default

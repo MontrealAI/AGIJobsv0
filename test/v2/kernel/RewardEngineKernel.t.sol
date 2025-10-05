@@ -21,7 +21,7 @@ contract RewardEngineKernelTest is Test {
 
     function testSplitProducesExpectedAmounts() public {
         RewardEngine.SplitResult memory split = engine.split(1, 100 ether);
-        RewardEngine.SplitConfig memory config = engine.splits();
+        RewardEngine.SplitConfig memory config = _splitConfig();
         assertEq(split.agentAmount, (100 ether * config.agentsBps) / 10_000);
         assertEq(split.validatorAmount, (100 ether * config.validatorsBps) / 10_000);
         assertEq(split.opsAmount, (100 ether * config.opsBps) / 10_000);
@@ -39,7 +39,7 @@ contract RewardEngineKernelTest is Test {
         });
         vm.prank(governance);
         engine.setSplits(config);
-        RewardEngine.SplitConfig memory updated = engine.splits();
+        RewardEngine.SplitConfig memory updated = _splitConfig();
         assertEq(updated.validatorsBps, 3_000);
     }
 
@@ -57,7 +57,7 @@ contract RewardEngineKernelTest is Test {
     }
 
     function _currentBps() internal view returns (uint256, uint256, uint256, uint256, uint256) {
-        RewardEngine.SplitConfig memory config = engine.splits();
+        RewardEngine.SplitConfig memory config = _splitConfig();
         return (
             config.agentsBps,
             config.validatorsBps,
@@ -65,5 +65,23 @@ contract RewardEngineKernelTest is Test {
             config.employerRebateBps,
             config.burnBps
         );
+    }
+
+    function _splitConfig() internal view returns (RewardEngine.SplitConfig memory config) {
+        (
+            uint256 agents,
+            uint256 validators,
+            uint256 ops,
+            uint256 employer,
+            uint256 burn
+        ) = engine.splits();
+
+        config = RewardEngine.SplitConfig({
+            agentsBps: agents,
+            validatorsBps: validators,
+            opsBps: ops,
+            employerRebateBps: employer,
+            burnBps: burn
+        });
     }
 }
