@@ -25,6 +25,7 @@ interface IStakeManager {
     /// @notice Emitted when an employer finalizes a job's funds.
     /// @dev Signals that any subsequent burn events stem from employer action.
     event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
+    event JobFundsFinalizedByGovernance(bytes32 indexed jobId, address indexed employer);
     /// @notice Emitted when the operator reward pool balance changes.
     event RewardPoolUpdated(uint256 balance);
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
