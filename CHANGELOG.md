@@ -4,9 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## v2
 
+- Rebuilt the CI workflow to run on Ubuntu 24.04 with dedicated Tests, Foundry, and Coverage thresholds jobs that enforce a 90% coverage gate and publish coverage artifacts.
 - Bumped all `contracts/v2` module `version` constants to `2` and updated related checks and documentation.
 - `RandaoCoordinator.random` now mixes the XORed seed with `block.prevrandao` for block-dependent entropy.
 - Default identity cache durations for agents and validators are now zero so every job application and validation commit requires a fresh ENS proof; governance can extend the cache via on-chain setters if necessary.
+- Added scripted ABI exports with diff checking, ensured coverage enforcement scripts skip gracefully when artifacts are absent, and vendored forge-std so Foundry fuzzing runs without extra setup.
 
 ## v1
 

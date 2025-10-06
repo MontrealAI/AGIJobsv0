@@ -311,14 +311,18 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     ) external onlyOwner whenNotPaused {
         if (action == IValidationModule.FailoverAction.None)
             revert InvalidFailoverAction();
-        Round storage r = rounds[jobId];
-        if (r.commitDeadline == 0) revert NoActiveRound();
-        if (r.tallied) revert AlreadyTallied();
-
         FailoverState storage state = failoverStates[jobId];
         string memory rationale = bytes(reason).length == 0
             ? "validation-failover"
             : reason;
+
+        if (action == IValidationModule.FailoverAction.EscalateDispute) {
+            if (state.escalated) revert FailoverEscalated();
+        }
+
+        Round storage r = rounds[jobId];
+        if (r.commitDeadline == 0) revert NoActiveRound();
+        if (r.tallied) revert AlreadyTallied();
 
         if (action == IValidationModule.FailoverAction.ExtendReveal) {
             if (extension == 0) revert RevealExtensionRequired();
@@ -333,7 +337,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
 
         if (action == IValidationModule.FailoverAction.EscalateDispute) {
-            if (state.escalated) revert FailoverEscalated();
             state.escalated = true;
             state.lastAction = IValidationModule.FailoverAction.EscalateDispute;
             state.lastTriggeredAt = uint64(block.timestamp);
@@ -841,6 +844,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // verified on-chain via ENS ownership.
         if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
 
+        // Reset any failover history when starting a fresh round.
+        if (selectionBlock[jobId] == 0 && r.commitDeadline == 0) {
+            delete failoverStates[jobId];
+        }
         // If selection has not been initiated, seed the entropy pool and set the
         // target block whose hash will anchor the final randomness.
         if (selectionBlock[jobId] == 0) {
@@ -1807,7 +1814,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         delete rounds[jobId];
         delete jobNonce[jobId];
         delete selectionSeeds[jobId];
-        delete failoverStates[jobId];
     }
 
     /// @notice Reset the validation nonce for a job after finalization or dispute resolution.

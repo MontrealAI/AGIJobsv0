@@ -1,40 +1,160 @@
 [
   {
     "inputs": [
-      { "internalType": "uint256", "name": "reward", "type": "uint256" },
-      { "internalType": "uint64", "name": "deadline", "type": "uint64" },
-      { "internalType": "bytes32", "name": "specHash", "type": "bytes32" },
-      { "internalType": "string", "name": "uri", "type": "string" }
+      {
+        "internalType": "uint256",
+        "name": "reward",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "deadline",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "specHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "uri",
+        "type": "string"
+      }
     ],
     "name": "createJob",
     "outputs": [
-      { "internalType": "uint256", "name": "jobId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "jobId",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "reward", "type": "uint256" },
-      { "internalType": "uint64", "name": "deadline", "type": "uint64" },
-      { "internalType": "uint8", "name": "agentTypes", "type": "uint8" },
-      { "internalType": "bytes32", "name": "specHash", "type": "bytes32" },
-      { "internalType": "string", "name": "uri", "type": "string" }
+      {
+        "internalType": "uint256",
+        "name": "reward",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "deadline",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "agentTypes",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "specHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "uri",
+        "type": "string"
+      }
     ],
     "name": "createJobWithAgentTypes",
     "outputs": [
-      { "internalType": "uint256", "name": "jobId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "jobId",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "jobId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "jobId",
+        "type": "uint256"
+      }
     ],
     "name": "finalize",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "jobs",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "employer",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "agent",
+        "type": "address"
+      },
+      {
+        "internalType": "uint128",
+        "name": "reward",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint96",
+        "name": "stake",
+        "type": "uint96"
+      },
+      {
+        "internalType": "uint128",
+        "name": "burnReceiptAmount",
+        "type": "uint128"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "uriHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "resultHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "specHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "packedMetadata",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextJobId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -91,14 +211,5 @@
     ],
     "name": "JobCreated",
     "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "lastJobId",
-    "outputs": [
-      { "internalType": "uint256", "name": "", "type": "uint256" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   }
 ]

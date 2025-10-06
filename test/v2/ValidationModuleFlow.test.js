@@ -197,7 +197,7 @@ describe('ValidationModule finalize flows', function () {
       .connect(v3)
       .revealValidation(1, false, burnTxHash, salt3, 'validator', []);
     await advance(61);
-    expect(await validation.callStatic.finalize(1)).to.equal(true);
+    expect(await validation.finalize.staticCall(1)).to.equal(true);
     await validation.finalize(1);
     await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);

@@ -122,16 +122,21 @@ async function deploySystem(governanceAddress) {
 }
 
 async function transferModulesToPause(owner, modules, pauseAddress) {
-  await modules.stake.connect(owner).transferOwnership(pauseAddress);
-  await modules.registry.connect(owner).transferOwnership(pauseAddress);
-  await modules.validation.connect(owner).transferOwnership(pauseAddress);
-  await modules.dispute.connect(owner).transferOwnership(pauseAddress);
-  await modules.platformRegistry
-    .connect(owner)
-    .transferOwnership(pauseAddress);
-  await modules.feePool.connect(owner).transferOwnership(pauseAddress);
-  await modules.reputation.connect(owner).transferOwnership(pauseAddress);
-  await modules.committee.connect(owner).transferOwnership(pauseAddress);
+  const maybeTransfer = async (contract) => {
+    if ((await contract.owner()) === pauseAddress) {
+      return;
+    }
+    await contract.connect(owner).transferOwnership(pauseAddress);
+  };
+
+  await maybeTransfer(modules.stake);
+  await maybeTransfer(modules.registry);
+  await maybeTransfer(modules.validation);
+  await maybeTransfer(modules.dispute);
+  await maybeTransfer(modules.platformRegistry);
+  await maybeTransfer(modules.feePool);
+  await maybeTransfer(modules.reputation);
+  await maybeTransfer(modules.committee);
 }
 
 describe('SystemPause', function () {
