@@ -1641,28 +1641,28 @@ class JobCreatedDecodingTests(unittest.TestCase):
 
         with mock.patch("routes.onebox.registry") as registry_mock:
             registry_mock.events.JobCreated.return_value = job_created_event
-            last_job_id = registry_mock.functions.lastJobId
-            last_job_id.return_value.call.return_value = 0
+            next_job_id = registry_mock.functions.nextJobId
+            next_job_id.return_value.call.return_value = 0
 
             job_id = _decode_job_created(receipt)
 
         self.assertEqual(job_id, 123)
         job_created_event.process_receipt.assert_called_once_with(receipt)
-        last_job_id.assert_not_called()
+        next_job_id.assert_not_called()
 
-    def test_decode_job_created_falls_back_to_last_job_id(self) -> None:
+    def test_decode_job_created_falls_back_to_next_job_id(self) -> None:
         receipt = {"status": 1}
         with mock.patch("routes.onebox.registry") as registry_mock:
             job_created_event = registry_mock.events.JobCreated.return_value
             job_created_event.process_receipt.return_value = []
-            last_job_id_call = registry_mock.functions.lastJobId.return_value
-            last_job_id_call.call.return_value = 77
+            next_job_id_call = registry_mock.functions.nextJobId.return_value
+            next_job_id_call.call.return_value = 77
 
             job_id = _decode_job_created(receipt)
 
         self.assertEqual(job_id, 77)
         job_created_event.process_receipt.assert_called_once_with(receipt)
-        last_job_id_call.call.assert_called_once_with()
+        next_job_id_call.call.assert_called_once_with()
 
 
 class HealthcheckTests(unittest.IsolatedAsyncioTestCase):

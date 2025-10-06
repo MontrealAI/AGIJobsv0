@@ -130,7 +130,7 @@ _MIN_ABI = [
     },
     {
         "inputs": [],
-        "name": "lastJobId",
+        "name": "nextJobId",
         "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
         "stateMutability": "view",
         "type": "function",
@@ -2435,7 +2435,7 @@ def _decode_job_created(receipt: Dict[str, Any]) -> Optional[int]:
     except Exception as exc:
         logger.warning("Failed to decode JobCreated event: %s", exc)
     try:
-        return int(registry.functions.lastJobId().call())
+        return int(registry.functions.nextJobId().call())
     except Exception:
         return None
 
