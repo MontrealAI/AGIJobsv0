@@ -36,7 +36,7 @@ Hardhat automatically picks the right config variant based on `--network`,
 | `MIN_STAKE`                                 | Optional minimum agent stake (tokens with 18 decimals).                                                                                             |
 | `EMPLOYER_SLASH_PCT` / `TREASURY_SLASH_PCT` | Optional StakeManager slashing split (0–100).                                                                                                       |
 | `DISPUTE_FEE` / `DISPUTE_WINDOW`            | Optional dispute configuration.                                                                                                                     |
-| `COMMIT_WINDOW` / `REVEAL_WINDOW`           | Validator commit/reveal windows (seconds).                                                                                                          |
+| `COMMIT_WINDOW_S` / `REVEAL_WINDOW_S`           | Validator commit/reveal windows (seconds).                                                                                                          |
 | `MIN_VALIDATORS` / `MAX_VALIDATORS`         | Validation committee bounds.                                                                                                                        |
 | `JOB_FEE_PCT` / `JOB_STAKE`                 | Initial JobRegistry fee percentage and stake requirement.                                                                                           |
 | `FEEPOOL_BURN_PCT`                          | Portion of collected fees to burn (0–100).                                                                                                          |

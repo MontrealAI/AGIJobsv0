@@ -224,8 +224,12 @@ async function deployContracts(ctx: DeploymentContext) {
   const Validation = await ethers.getContractFactory(
     'contracts/v2/ValidationModule.sol:ValidationModule'
   );
-  const commitWindow = Number(process.env.COMMIT_WINDOW || 3600);
-  const revealWindow = Number(process.env.REVEAL_WINDOW || 3600);
+  const commitWindow = Number(
+    process.env.COMMIT_WINDOW_S ?? process.env.COMMIT_WINDOW ?? 3600
+  );
+  const revealWindow = Number(
+    process.env.REVEAL_WINDOW_S ?? process.env.REVEAL_WINDOW ?? 3600
+  );
   const minValidators = Number(process.env.MIN_VALIDATORS || 3);
   const maxValidators = Number(process.env.MAX_VALIDATORS || 3);
   const validation = await Validation.deploy(
