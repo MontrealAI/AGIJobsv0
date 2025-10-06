@@ -3,13 +3,13 @@
 const fs = require('fs'), p = 'coverage/lcov.info';
 const min = Number(process.argv[2] || process.env.COVERAGE_MIN || 90);
 if (!fs.existsSync(p)) {
-  console.log('⚠️ coverage/lcov.info not found; skipping coverage check.');
-  process.exit(0);
+  console.error('❌ coverage/lcov.info not found; did coverage generation run?');
+  process.exit(1);
 }
 const txt = fs.readFileSync(p, 'utf8').trim();
 if (!txt) {
-  console.log('⚠️ coverage report is empty; run npm run coverage before enforcing thresholds.');
-  process.exit(0);
+  console.error('❌ coverage report is empty; run npm run coverage before enforcing thresholds.');
+  process.exit(1);
 }
 let totalFound = 0,
   totalHit = 0,
@@ -50,8 +50,8 @@ for (const ln of txt.split(/\r?\n/)) {
   }
 }
 if (totalFound === 0) {
-  console.log('⚠️ no executable lines detected in coverage report; skipping threshold enforcement.');
-  process.exit(0);
+  console.error('❌ coverage report contains no executable lines; refusing to skip threshold enforcement.');
+  process.exit(1);
 }
 const pct = (totalHit / totalFound) * 100;
 console.log(`Coverage: ${pct.toFixed(2)}% (min=${min}%)`);
