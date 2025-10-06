@@ -1345,10 +1345,12 @@ function normaliseRandaoCoordinatorConfig(config = {}) {
   }
 
   const commitWindowSource =
+    result.commitWindowS ??
     result.commitWindowSeconds ??
     result.commitWindow ??
     result.commitWindowDuration;
   const revealWindowSource =
+    result.revealWindowS ??
     result.revealWindowSeconds ??
     result.revealWindow ??
     result.revealWindowDuration;

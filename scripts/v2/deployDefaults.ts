@@ -536,8 +536,8 @@ async function main() {
       employerSlashPct: `${effectiveEmployerSlash}%`,
       treasurySlashPct: `${effectiveTreasurySlash}%`,
       validatorSlashRewardPct: `${effectiveValidatorSlash}%`,
-      commitWindowSeconds: effectiveCommitWindow,
-      revealWindowSeconds: effectiveRevealWindow,
+      commitWindowS: effectiveCommitWindow,
+      revealWindowS: effectiveRevealWindow,
       minStakeWei: effectiveMinStake.toString(),
       jobStakeWei: effectiveJobStake.toString(),
     }).map(([parameter, value]) => ({ parameter, value }))
