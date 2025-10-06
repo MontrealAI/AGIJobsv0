@@ -129,6 +129,7 @@
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
+    "c8": "^9.1.0",
     "cypress": "^13.15.0",
     "start-server-and-test": "^2.0.10",
     "hardhat-contract-sizer": "^2.10.0",
