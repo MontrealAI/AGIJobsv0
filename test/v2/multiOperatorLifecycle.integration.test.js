@@ -212,7 +212,7 @@ describe('multi-operator job lifecycle', function () {
     await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash);
     await registry.connect(employer).finalize(jobId);
 
-    expect(await feePool.pendingFees()).to.equal(0);
+    expect(await feePool.pendingFees()).to.equal(fee);
     const before1 = await token.balanceOf(platform1.address);
     const before2 = await token.balanceOf(platform2.address);
     await feePool.connect(platform1).claimRewards();
