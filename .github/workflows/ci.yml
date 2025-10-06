@@ -92,7 +92,7 @@ jobs:
       - name: Install Foundry dependencies
         run: forge install foundry-rs/forge-std
       - name: Foundry tests
-        run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
+        run: forge test -vvvv --ffi --fuzz-runs 256
 
   coverage:
     name: Coverage thresholds
@@ -101,6 +101,14 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       COVERAGE_MIN: '90'
+      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+      FEE_PCT: '2'
+      BURN_PCT: '6'
+      TREASURY: '0x1111111111111111111111111111111111111111'
+      VALIDATORS_PER_JOB: '3'
+      REQUIRED_APPROVALS: '3'
+      COMMIT_WINDOW: '30m'
+      REVEAL_WINDOW: '30m'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -110,6 +118,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Regenerate constants for coverage
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Generate coverage report
         run: npm run coverage
       - name: Check access control coverage
@@ -122,4 +132,4 @@ jobs:
           path: coverage/lcov.info
           if-no-files-found: error
       - name: Enforce coverage threshold
-        run: npm run check:coverage
+        run: node scripts/check-coverage.js "$COVERAGE_MIN"
