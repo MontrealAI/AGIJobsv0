@@ -27,8 +27,8 @@ export const PROTOCOL_DEFAULTS: ProtocolDefaults = {
   "treasury": "0x1111111111111111111111111111111111111111",
   "validatorsPerJob": 3,
   "requiredApprovals": 3,
-  "commitWindow": "30m",
+  "commitWindow": "1800",
   "commitWindowSeconds": 1800,
-  "revealWindow": "30m",
+  "revealWindow": "1800",
   "revealWindowSeconds": 1800
 } as const;
