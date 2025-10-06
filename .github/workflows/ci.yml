@@ -23,13 +23,14 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Prettier formatting check
         run: npm run format:check
 
-  contracts:
-    name: Contracts compile & tests
+  tests:
+    name: Tests
     runs-on: ubuntu-24.04
     env:
       COVERAGE_MIN: '90'
@@ -48,31 +49,32 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Generate constants
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Compile contracts
-        run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
+        run: npx hardhat compile
       - name: Regenerate constants for tests
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Hardhat tests
         run: npm test
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: stable
-      - name: Foundry tests
-        run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
       - name: ABI diff check
         run: npm run abi:diff
 
-  coverage:
-    name: Coverage thresholds
-    needs: contracts
+  foundry:
+    name: Foundry
     runs-on: ubuntu-24.04
     env:
-      COVERAGE_MIN: '90'
+      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+      FEE_PCT: '0.02'
+      BURN_PCT: '0.06'
+      TREASURY: '0x1111111111111111111111111111111111111111'
+      VALIDATORS_PER_JOB: '3'
+      REQUIRED_APPROVALS: '3'
+      COMMIT_WINDOW: '30m'
+      REVEAL_WINDOW: '30m'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -80,11 +82,58 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Generate constants
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+      - name: Compile contracts
+        run: npx hardhat compile
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Foundry tests
+        run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
+
+  coverage:
+    name: Coverage thresholds
+    needs: tests
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    env:
+      COVERAGE_MIN: '90'
+      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+      FEE_PCT: '0.02'
+      BURN_PCT: '0.06'
+      TREASURY: '0x1111111111111111111111111111111111111111'
+      VALIDATORS_PER_JOB: '3'
+      REQUIRED_APPROVALS: '3'
+      COMMIT_WINDOW: '30m'
+      REVEAL_WINDOW: '30m'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate constants
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+      - name: Compile contracts
+        run: npx hardhat compile
       - name: Generate coverage report
         run: npm run coverage
       - name: Check access control coverage
         run: npm run check:access-control
       - name: Enforce coverage threshold
-        run: npm run check:coverage
+        run: node scripts/check-coverage.js "$COVERAGE_MIN"
+      - name: Upload coverage artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/
+          if-no-files-found: error
