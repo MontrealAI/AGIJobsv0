@@ -312,10 +312,14 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (action == IValidationModule.FailoverAction.None)
             revert InvalidFailoverAction();
         Round storage r = rounds[jobId];
+        FailoverState storage state = failoverStates[jobId];
+        if (
+            state.escalated &&
+            action == IValidationModule.FailoverAction.EscalateDispute
+        ) revert FailoverEscalated();
         if (r.commitDeadline == 0) revert NoActiveRound();
         if (r.tallied) revert AlreadyTallied();
 
-        FailoverState storage state = failoverStates[jobId];
         string memory rationale = bytes(reason).length == 0
             ? "validation-failover"
             : reason;
@@ -334,12 +338,18 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         if (action == IValidationModule.FailoverAction.EscalateDispute) {
             if (state.escalated) revert FailoverEscalated();
-            state.escalated = true;
-            state.lastAction = IValidationModule.FailoverAction.EscalateDispute;
-            state.lastTriggeredAt = uint64(block.timestamp);
+            uint64 triggeredAt = uint64(block.timestamp);
+            uint64 lastExtendedTo = state.lastExtendedTo;
+            uint64 extensionCount = state.extensions;
             uint256 deadline = r.revealDeadline;
             jobRegistry.escalateToDispute(jobId, rationale);
             _cleanup(jobId);
+            FailoverState storage persisted = failoverStates[jobId];
+            persisted.escalated = true;
+            persisted.lastAction = IValidationModule.FailoverAction.EscalateDispute;
+            persisted.lastTriggeredAt = triggeredAt;
+            persisted.lastExtendedTo = lastExtendedTo;
+            persisted.extensions = extensionCount;
             emit ValidationFailover(jobId, action, deadline, rationale);
             return;
         }
@@ -827,6 +837,15 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         returns (address[] memory selected)
     {
         Round storage r = rounds[jobId];
+        if (r.commitDeadline == 0 && selectionBlock[jobId] == 0) {
+            FailoverState storage state = failoverStates[jobId];
+            if (
+                state.lastAction != IValidationModule.FailoverAction.None ||
+                state.escalated
+            ) {
+                delete failoverStates[jobId];
+            }
+        }
         IJobRegistry registry = jobRegistry;
         address registryAddr = address(registry);
         if (registryAddr != address(0)) {

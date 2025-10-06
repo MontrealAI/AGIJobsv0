@@ -24,7 +24,7 @@ describe('ValidationModule required approvals', function () {
 
   it('defaults to automatic supermajority approvals', async () => {
     expect(await validation.autoApprovalTarget()).to.equal(true);
-    expect(await validation.requiredValidatorApprovals()).to.equal(3n);
+    expect(await validation.requiredValidatorApprovals()).to.equal(2n);
 
     await validation.connect(owner).setValidatorsPerJob(4);
     expect(await validation.requiredValidatorApprovals()).to.equal(3n);
@@ -62,6 +62,6 @@ describe('ValidationModule required approvals', function () {
 
     await validation.connect(owner).setAutoApprovalTarget(true);
     expect(await validation.autoApprovalTarget()).to.equal(true);
-    expect(await validation.requiredValidatorApprovals()).to.equal(3n);
+    expect(await validation.requiredValidatorApprovals()).to.equal(2n);
   });
 });
