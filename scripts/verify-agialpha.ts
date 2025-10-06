@@ -65,7 +65,6 @@ function resolveProxyAgent(proxyUrl: string): Agent | null {
     return null;
   }
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { HttpsProxyAgent } = require('https-proxy-agent');
     return new HttpsProxyAgent(proxyUrl);
   } catch (err) {

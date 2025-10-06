@@ -332,11 +332,9 @@ if (require.main === module) {
   instance
     .listen()
     .then(({ port }) => {
-      // eslint-disable-next-line no-console
       console.log(`alpha-bridge listening on port ${port}`);
     })
     .catch((error) => {
-      // eslint-disable-next-line no-console
       console.error("alpha-bridge failed to start", error);
       process.exitCode = 1;
     });
