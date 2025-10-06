@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -28,14 +28,14 @@ jobs:
       - name: Prettier formatting check
         run: npm run format:check
 
-  contracts:
-    name: Contracts compile & tests
+  tests:
+    name: Tests
     runs-on: ubuntu-24.04
     env:
       COVERAGE_MIN: '90'
       ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '0.02'
-      BURN_PCT: '0.06'
+      FEE_PCT: '2'
+      BURN_PCT: '6'
       TREASURY: '0x1111111111111111111111111111111111111111'
       VALIDATORS_PER_JOB: '3'
       REQUIRED_APPROVALS: '3'
@@ -58,18 +58,46 @@ jobs:
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Hardhat tests
         run: npm test
+      - name: ABI diff check
+        run: npm run abi:diff
+
+  foundry:
+    name: Foundry
+    needs: tests
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    env:
+      FEE_PCT: '2'
+      BURN_PCT: '6'
+      TREASURY: '0x1111111111111111111111111111111111111111'
+      VALIDATORS_PER_JOB: '3'
+      REQUIRED_APPROVALS: '3'
+      COMMIT_WINDOW: '30m'
+      REVEAL_WINDOW: '30m'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Regenerate constants for Foundry
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
+      - name: Install Foundry dependencies
+        run: forge install foundry-rs/forge-std
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
-      - name: ABI diff check
-        run: npm run abi:diff
 
   coverage:
     name: Coverage thresholds
-    needs: contracts
+    needs: tests
+    if: ${{ always() }}
     runs-on: ubuntu-24.04
     env:
       COVERAGE_MIN: '90'
@@ -86,5 +114,12 @@ jobs:
         run: npm run coverage
       - name: Check access control coverage
         run: npm run check:access-control
+      - name: Upload coverage artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          if-no-files-found: error
       - name: Enforce coverage threshold
         run: npm run check:coverage

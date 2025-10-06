@@ -785,6 +785,12 @@ describe('StakeManager governance emergency slash', function () {
       owner.address
     );
 
+    const JobMock = await ethers.getContractFactory(
+      'contracts/legacy/MockV2.sol:MockJobRegistry'
+    );
+    const jobRegistry = await JobMock.deploy();
+    await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
+
     await stakeManager.connect(owner).setTreasuryAllowlist(treasury.address, true);
     await stakeManager.connect(owner).setSlashingPercentages(60, 40);
     await stakeManager.connect(owner).setValidatorRewardPct(0);
