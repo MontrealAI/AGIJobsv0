@@ -18,3 +18,12 @@ uint256 constant TOKEN_SCALE = 1000000000000000000;
 
 // Address used for burning tokens.
 address constant BURN_ADDRESS = 0x0000000000000000000000000000000000000000;
+
+// Default economic configuration (percentages expressed as whole points).
+uint256 constant FEE_PCT = 2;
+uint256 constant BURN_PCT = 6;
+uint256 constant VALIDATORS_PER_JOB = 3;
+uint256 constant REQUIRED_APPROVALS = 3;
+uint256 constant COMMIT_WINDOW_S = 1800;
+uint256 constant REVEAL_WINDOW_S = 1800;
+address constant TREASURY = 0x1111111111111111111111111111111111111111;

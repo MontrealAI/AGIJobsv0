@@ -1,21 +1,52 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { ethers } from 'ethers';
 
-let ethersLib: typeof import('ethers') | undefined;
+import { loadTokenConfig } from './config';
 
-function getEthers(): typeof import('ethers') {
-  if (!ethersLib) {
-    throw new Error('Ethers library not initialised');
+type PositiveIntOptions = {
+  minimum?: number;
+  maximum?: number;
+};
+
+function parsePositiveInt(
+  raw: string | undefined,
+  label: string,
+  fallback: number,
+  { minimum = 1, maximum }: PositiveIntOptions = {}
+): number {
+  const source = raw?.trim();
+  const input = source === undefined || source === '' ? `${fallback}` : source;
+  if (!/^[-+]?\d+$/.test(input)) {
+    throw new Error(`${label} must be an integer value`);
   }
-  return ethersLib;
+  const value = Number.parseInt(input, 10);
+  if (!Number.isFinite(value)) {
+    throw new Error(`${label} is not a finite integer`);
+  }
+  if (value < minimum) {
+    throw new Error(`${label} must be at least ${minimum}`);
+  }
+  if (maximum !== undefined && value > maximum) {
+    throw new Error(`${label} must be <= ${maximum}`);
+  }
+  return value;
+}
+
+function parsePercentPoints(
+  raw: string | undefined,
+  label: string,
+  fallback: number
+): number {
+  const value = parsePositiveInt(raw, label, fallback, { minimum: 1, maximum: 100 });
+  return value;
 }
 
 function assertAddress(
-  value: string,
+  value: string | undefined,
   label: string,
   { allowZero = false }: { allowZero?: boolean } = {}
 ): string {
-  const ethers = getEthers();
   if (!value || typeof value !== 'string') {
     throw new Error(`${label} is required`);
   }
@@ -80,199 +111,145 @@ for (let i = 0; i < process.argv.length; i++) {
   }
 }
 
-function assertPositiveInteger(
-  value: string,
-  label: string,
-  { minimum = 1 }: { minimum?: number } = {}
-): number {
-  if (!/^\d+$/.test(value)) {
-    throw new Error(`${label} must be an integer`);
-  }
-  const numeric = Number.parseInt(value, 10);
-  if (!Number.isFinite(numeric) || numeric < minimum) {
-    throw new Error(`${label} must be >= ${minimum}`);
-  }
-  return numeric;
-}
-
-function formatDecimalString(value: number): string {
-  return value.toLocaleString('en-US', {
-    useGrouping: false,
-    maximumFractionDigits: 18,
-  });
-}
-
-function normalisePercentage(
-  raw: string | undefined,
-  label: string,
-  fallback: string
-) {
-  const input = (raw ?? fallback).trim();
-  if (!input) {
-    throw new Error(`${label} is required`);
-  }
-  const numeric = Number.parseFloat(input);
-  if (!Number.isFinite(numeric) || numeric < 0) {
-    throw new Error(`${label} must be a non-negative number`);
-  }
-  const decimal = numeric > 1 ? numeric / 100 : numeric;
-  if (decimal > 1) {
-    throw new Error(`${label} cannot exceed 100%`);
-  }
-  const basisPoints = Math.round(decimal * 10_000);
-  return {
-    input,
-    decimal,
-    percent: decimal * 100,
-    basisPoints,
-    decimalString: formatDecimalString(decimal),
-  };
-}
-
-type ParseDurationFn = (value: string, unit?: string) => number | null;
-
-function normaliseDurationInput(
-  raw: string | undefined,
-  label: string,
-  fallback: string,
-  parseDuration: ParseDurationFn
-) {
-  const input = (raw ?? fallback).trim();
-  if (!input) {
-    throw new Error(`${label} is required`);
-  }
-  const milliseconds = parseDuration(input);
-  if (milliseconds === null || milliseconds === undefined) {
-    throw new Error(`${label} must be a valid duration string`);
-  }
-  if (!Number.isFinite(milliseconds) || milliseconds <= 0) {
-    throw new Error(`${label} must be greater than zero`);
-  }
-  const seconds = Math.floor(milliseconds / 1000);
-  if (seconds <= 0) {
-    throw new Error(`${label} must be at least one second`);
-  }
-  return {
-    input,
-    seconds,
-  };
+function formatDecimalFromPercent(points: number): string {
+  return (points / 100).toFixed(2);
 }
 
 export async function main() {
-  const ethersModule = (await import('ethers')) as unknown as {
-    ethers?: typeof import('ethers');
-  } & typeof import('ethers');
-  ethersLib = ethersModule.ethers ?? (ethersModule as typeof import('ethers'));
-  const { loadTokenConfig } = await import('./config/index.js');
-  const { config } = loadTokenConfig({ network: networkArg });
+  const {
+    config: { address, decimals, symbol, name, burnAddress },
+  } = loadTokenConfig({ network: networkArg });
 
-  const address = assertAddress(config.address, 'AGIALPHA address');
-  const decimals = assertDecimals(config.decimals);
-  const burnAddress = assertAddress(
-    config.burnAddress ?? getEthers().ZeroAddress,
+  const agiAlphaAddress = assertAddress(address, 'AGIALPHA address');
+  const decimalsValue = assertDecimals(decimals);
+  const burnAddressValue = assertAddress(
+    burnAddress ?? ethers.ZeroAddress,
     'burn address',
-    {
-      allowZero: true,
-    }
+    { allowZero: true }
   );
-  const symbol = assertSymbol(config.symbol, 'AGIALPHA symbol');
-  const name = assertName(config.name, 'AGIALPHA name');
+  const tokenSymbol = assertSymbol(symbol, 'AGIALPHA symbol');
+  const tokenName = assertName(name, 'AGIALPHA name');
 
-  const scale = BigInt(10) ** BigInt(decimals);
-
-  const feePct = normalisePercentage(process.env.FEE_PCT, 'FEE_PCT', '0.02');
-  const parseDurationModule = await import('parse-duration');
-  const parseDuration: ParseDurationFn =
-    typeof parseDurationModule === 'function'
-      ? parseDurationModule
-      : parseDurationModule.default;
-  if (typeof parseDuration !== 'function') {
-    throw new Error('Failed to load parse-duration');
+  const feePctPoints = parsePercentPoints(process.env.FEE_PCT, 'FEE_PCT', 2);
+  const burnPctPoints = parsePercentPoints(process.env.BURN_PCT, 'BURN_PCT', 6);
+  const validatorsPerJob = parsePositiveInt(
+    process.env.VALIDATORS_PER_JOB,
+    'VALIDATORS_PER_JOB',
+    3,
+    { minimum: 1 }
+  );
+  const requiredApprovals = parsePositiveInt(
+    process.env.REQUIRED_APPROVALS,
+    'REQUIRED_APPROVALS',
+    validatorsPerJob,
+    { minimum: 1 }
+  );
+  if (requiredApprovals > validatorsPerJob) {
+    throw new Error('REQUIRED_APPROVALS cannot exceed VALIDATORS_PER_JOB');
   }
 
-  const burnPct = normalisePercentage(
-    process.env.BURN_PCT,
-    'BURN_PCT',
-    '0.06'
+  const commitWindowSeconds = parsePositiveInt(
+    process.env.COMMIT_WINDOW_S,
+    'COMMIT_WINDOW_S',
+    1800,
+    { minimum: 1 }
   );
+  const revealWindowSeconds = parsePositiveInt(
+    process.env.REVEAL_WINDOW_S,
+    'REVEAL_WINDOW_S',
+    1800,
+    { minimum: 1 }
+  );
+
   const treasury = assertAddress(
     process.env.TREASURY ?? '0x1111111111111111111111111111111111111111',
     'TREASURY'
   );
-  const validatorsPerJob = assertPositiveInteger(
-    (process.env.VALIDATORS_PER_JOB ?? '3').trim(),
-    'VALIDATORS_PER_JOB'
-  );
-  const requiredApprovals = assertPositiveInteger(
-    (process.env.REQUIRED_APPROVALS ?? '3').trim(),
-    'REQUIRED_APPROVALS'
-  );
-  if (requiredApprovals > validatorsPerJob) {
-    throw new Error(
-      'REQUIRED_APPROVALS cannot exceed VALIDATORS_PER_JOB in CI defaults'
-    );
-  }
-  const commitWindow = normaliseDurationInput(
-    process.env.COMMIT_WINDOW,
-    'COMMIT_WINDOW',
-    '30m',
-    parseDuration
-  );
-  const revealWindow = normaliseDurationInput(
-    process.env.REVEAL_WINDOW,
-    'REVEAL_WINDOW',
-    '30m',
-    parseDuration
-  );
 
-  const content = `// SPDX-License-Identifier: MIT\npragma solidity ^0.8.25;\n\n// Shared AGI Jobs v2 constants.\n// @dev Auto-generated by scripts/generate-constants.ts\n// Canonical $AGIALPHA token on Ethereum mainnet.\naddress constant AGIALPHA = ${address};\n\n// Standard decimals for $AGIALPHA.\nuint8 constant AGIALPHA_DECIMALS = ${decimals};\n\n// ERC-20 metadata for $AGIALPHA.\nstring constant AGIALPHA_SYMBOL = ${JSON.stringify(
-    symbol
-  )};\nstring constant AGIALPHA_NAME = ${JSON.stringify(
-    name
-  )};\n\n// Base unit scaling factor for $AGIALPHA (10 ** decimals).\nuint256 constant TOKEN_SCALE = ${scale};\n\n// Address used for burning tokens.\naddress constant BURN_ADDRESS = ${burnAddress};\n`;
+  const scale = BigInt(10) ** BigInt(decimalsValue);
 
-  const outPath = path.join(__dirname, '..', 'contracts', 'v2', 'Constants.sol');
-  fs.writeFileSync(outPath, content);
-  console.log(`Generated ${outPath}`);
+  const constantsSol = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+
+// Shared AGI Jobs v2 constants.
+// @dev Auto-generated by scripts/generate-constants.ts
+// Canonical $AGIALPHA token on Ethereum mainnet.
+address constant AGIALPHA = ${agiAlphaAddress};
+
+// Standard decimals for $AGIALPHA.
+uint8 constant AGIALPHA_DECIMALS = ${decimalsValue};
+
+// ERC-20 metadata for $AGIALPHA.
+string constant AGIALPHA_SYMBOL = ${JSON.stringify(tokenSymbol)};
+string constant AGIALPHA_NAME = ${JSON.stringify(tokenName)};
+
+// Base unit scaling factor for $AGIALPHA (10 ** decimals).
+uint256 constant TOKEN_SCALE = ${scale};
+
+// Address used for burning tokens.
+address constant BURN_ADDRESS = ${burnAddressValue};
+
+// Default economic configuration (percentages expressed as whole points).
+uint256 constant FEE_PCT = ${feePctPoints};
+uint256 constant BURN_PCT = ${burnPctPoints};
+uint256 constant VALIDATORS_PER_JOB = ${validatorsPerJob};
+uint256 constant REQUIRED_APPROVALS = ${requiredApprovals};
+uint256 constant COMMIT_WINDOW_S = ${commitWindowSeconds};
+uint256 constant REVEAL_WINDOW_S = ${revealWindowSeconds};
+address constant TREASURY = ${treasury};
+`;
+
+  const constantsPath = path.join(__dirname, '..', 'contracts', 'v2', 'Constants.sol');
+  fs.writeFileSync(constantsPath, constantsSol);
+  console.log(`Generated ${constantsPath}`);
+
+  const feePctDecimal = formatDecimalFromPercent(feePctPoints);
+  const burnPctDecimal = formatDecimalFromPercent(burnPctPoints);
+  const commitWindowLabel = `${commitWindowSeconds}s`;
+  const revealWindowLabel = `${revealWindowSeconds}s`;
+
+  const protocolDefaults = {
+    feePct: feePctDecimal,
+    feePctPercent: feePctPoints,
+    feePctBasisPoints: feePctPoints * 100,
+    feePctPoints,
+    burnPct: burnPctDecimal,
+    burnPctPercent: burnPctPoints,
+    burnPctBasisPoints: burnPctPoints * 100,
+    burnPctPoints,
+    treasury,
+    validatorsPerJob,
+    requiredApprovals,
+    commitWindow: commitWindowLabel,
+    commitWindowSeconds,
+    commitWindowS: commitWindowSeconds,
+    revealWindow: revealWindowLabel,
+    revealWindowSeconds,
+    revealWindowS: revealWindowSeconds,
+  } as const;
 
   const generatedDir = path.join(__dirname, 'generated');
   fs.mkdirSync(generatedDir, { recursive: true });
 
-  const protocolDefaults = {
-    feePct: feePct.decimalString,
-    feePctPercent: feePct.percent,
-    feePctBasisPoints: feePct.basisPoints,
-    burnPct: burnPct.decimalString,
-    burnPctPercent: burnPct.percent,
-    burnPctBasisPoints: burnPct.basisPoints,
-    treasury,
-    validatorsPerJob,
-    requiredApprovals,
-    commitWindow: commitWindow.input,
-    commitWindowSeconds: commitWindow.seconds,
-    revealWindow: revealWindow.input,
-    revealWindowSeconds: revealWindow.seconds,
-  };
-
-  const generatedTs = `// Auto-generated by scripts/generate-constants.ts\n// Do not edit manually.\n\nexport interface ProtocolDefaults {\n  feePct: string;\n  feePctPercent: number;\n  feePctBasisPoints: number;\n  burnPct: string;\n  burnPctPercent: number;\n  burnPctBasisPoints: number;\n  treasury: string;\n  validatorsPerJob: number;\n  requiredApprovals: number;\n  commitWindow: string;\n  commitWindowSeconds: number;\n  revealWindow: string;\n  revealWindowSeconds: number;\n}\n\nexport const PROTOCOL_DEFAULTS: ProtocolDefaults = ${JSON.stringify(
+  const protocolDefaultsTs = `// Auto-generated by scripts/generate-constants.ts\n// Do not edit manually.\n\nexport interface ProtocolDefaults {\n  feePct: string;\n  feePctPercent: number;\n  feePctBasisPoints: number;\n  feePctPoints: number;\n  burnPct: string;\n  burnPctPercent: number;\n  burnPctBasisPoints: number;\n  burnPctPoints: number;\n  treasury: string;\n  validatorsPerJob: number;\n  requiredApprovals: number;\n  commitWindow: string;\n  commitWindowSeconds: number;\n  commitWindowS: number;\n  revealWindow: string;\n  revealWindowSeconds: number;\n  revealWindowS: number;\n}\n\nexport const PROTOCOL_DEFAULTS: ProtocolDefaults = ${JSON.stringify(
     protocolDefaults,
     null,
     2
   )} as const;\n`;
 
   const generatedTsPath = path.join(generatedDir, 'protocol-defaults.ts');
-  fs.writeFileSync(generatedTsPath, generatedTs);
+  fs.writeFileSync(generatedTsPath, protocolDefaultsTs);
   console.log(`Generated ${generatedTsPath}`);
 
-  const generatedJsonPath = path.join(
+  const generatedJsonDir = path.join(
     __dirname,
     '..',
     'deployment-config',
     'generated'
   );
-  fs.mkdirSync(generatedJsonPath, { recursive: true });
+  fs.mkdirSync(generatedJsonDir, { recursive: true });
   const protocolDefaultsJsonPath = path.join(
-    generatedJsonPath,
+    generatedJsonDir,
     'protocol-defaults.json'
   );
   fs.writeFileSync(
