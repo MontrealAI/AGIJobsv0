@@ -114,6 +114,23 @@ function parsePct(value: string | number | undefined): number {
   return Math.round(scaled);
 }
 
+function parseSecondsEnv(
+  value: string | undefined | null,
+  fallback: number,
+  label: string
+): number {
+  const raw = value === undefined || value === null ? '' : String(value);
+  const input = raw.trim() || String(fallback);
+  if (!/^\d+$/.test(input)) {
+    throw new Error(`${label} must be provided in whole seconds`);
+  }
+  const seconds = Number.parseInt(input, 10);
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    throw new Error(`${label} must be greater than zero seconds`);
+  }
+  return seconds;
+}
+
 async function ensureLocalToken(
   tokenConfig: TokenConfig
 ): Promise<{ tokenAddress: string; tokenIsMock: boolean }> {
@@ -224,8 +241,16 @@ async function deployContracts(ctx: DeploymentContext) {
   const Validation = await ethers.getContractFactory(
     'contracts/v2/ValidationModule.sol:ValidationModule'
   );
-  const commitWindow = Number(process.env.COMMIT_WINDOW || 3600);
-  const revealWindow = Number(process.env.REVEAL_WINDOW || 3600);
+  const commitWindow = parseSecondsEnv(
+    process.env.COMMIT_WINDOW_S ?? process.env.COMMIT_WINDOW,
+    3600,
+    process.env.COMMIT_WINDOW_S !== undefined ? 'COMMIT_WINDOW_S' : 'COMMIT_WINDOW'
+  );
+  const revealWindow = parseSecondsEnv(
+    process.env.REVEAL_WINDOW_S ?? process.env.REVEAL_WINDOW,
+    3600,
+    process.env.REVEAL_WINDOW_S !== undefined ? 'REVEAL_WINDOW_S' : 'REVEAL_WINDOW'
+  );
   const minValidators = Number(process.env.MIN_VALIDATORS || 3);
   const maxValidators = Number(process.env.MAX_VALIDATORS || 3);
   const validation = await Validation.deploy(
