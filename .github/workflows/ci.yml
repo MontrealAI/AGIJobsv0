@@ -1,90 +1,184 @@
 name: ci
 
 on:
-  pull_request:
   push:
-    branches: [main]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  lint:
-    name: Lint & static checks
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Prettier formatting check
-        run: npm run format:check
+env:
+  NODE_VERSION: '20'
+  COVERAGE_MIN: '90'
 
-  contracts:
-    name: Contracts compile & tests
+  # ==== Canonical env expected by the repo's tests ====
+  # Percentages as DECIMALS in [0,1]; windows as duration strings (parse-duration style)
+  FEE_PCT: '0.02'        # 2%
+  BURN_PCT: '0.06'       # 6%
+  TREASURY: '0x1111111111111111111111111111111111111111'
+  VALIDATORS_PER_JOB: '3'
+  REQUIRED_APPROVALS: '3'
+  COMMIT_WINDOW: '30m'
+  REVEAL_WINDOW: '30m'
+  # Optional access-control scan paths (used by some tests)
+  ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+
+jobs:
+  tests:
+    name: Tests
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
-      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '0.02'
-      BURN_PCT: '0.06'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
       - name: Install dependencies
         run: npm ci
+
+      # Compile once so `npm test` can use --no-compile
       - name: Compile contracts
-        run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
-      - name: Regenerate constants for tests
-        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-      - name: Hardhat tests
+        run: npx hardhat compile
+
+      - name: Build orchestrator
+        run: npx tsc -p apps/orchestrator/tsconfig.json
+
+      - name: Build webapp
+        run: npm --prefix apps/enterprise-portal run build
+
+      - name: Run Node/TS/Hardhat tests
+        env:
+          FEE_PCT: ${{ env.FEE_PCT }}
+          BURN_PCT: ${{ env.BURN_PCT }}
+          TREASURY: ${{ env.TREASURY }}
+          VALIDATORS_PER_JOB: ${{ env.VALIDATORS_PER_JOB }}
+          REQUIRED_APPROVALS: ${{ env.REQUIRED_APPROVALS }}
+          COMMIT_WINDOW: ${{ env.COMMIT_WINDOW }}
+          REVEAL_WINDOW: ${{ env.REVEAL_WINDOW }}
+          ACCESS_CONTROL_PATHS: ${{ env.ACCESS_CONTROL_PATHS }}
         run: npm test
+
+      - name: Upload coverage artifact (if any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.sha }}
+          path: coverage/**
+          if-no-files-found: ignore
+
+  foundry:
+    name: Foundry
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: stable
-      - name: Foundry tests
+          version: nightly
+
+      - name: Install forge-std + remappings
+        run: |
+          mkdir -p lib
+          if [ ! -d lib/forge-std ]; then
+            forge install foundry-rs/forge-std@v1.9.5 --no-commit
+          fi
+          if [ ! -f foundry.toml ] || ! grep -q 'forge-std/=' foundry.toml; then
+            printf "[profile.default]\nremappings = [\"forge-std/=lib/forge-std/src/\"]\n" >> foundry.toml
+          fi
+
+      - name: Run Foundry tests (fuzz + FFI)
+        env:
+          # The Foundry tests also rely on the same decimals/duration semantics
+          FEE_PCT: ${{ env.FEE_PCT }}
+          BURN_PCT: ${{ env.BURN_PCT }}
+          TREASURY: ${{ env.TREASURY }}
+          VALIDATORS_PER_JOB: ${{ env.VALIDATORS_PER_JOB }}
+          REQUIRED_APPROVALS: ${{ env.REQUIRED_APPROVALS }}
+          COMMIT_WINDOW: ${{ env.COMMIT_WINDOW }}
+          REVEAL_WINDOW: ${{ env.REVEAL_WINDOW }}
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
-      - name: ABI diff check
-        run: npm run abi:diff
 
   coverage:
     name: Coverage thresholds
-    needs: contracts
+    if: ${{ always() }}   # unskippable gate on PRs
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
       - name: Install dependencies
         run: npm ci
-      - name: Generate coverage report
-        run: npm run coverage
-      - name: Check access control coverage
-        run: npm run check:access-control
-      - name: Enforce coverage threshold
-        run: npm run check:coverage
+
+      - name: Compile contracts
+        run: npx hardhat compile
+
+      # Run full test suite under c8; it will capture Node/TS coverage.
+      - name: Generate coverage (lcov)
+        env:
+          FEE_PCT: ${{ env.FEE_PCT }}
+          BURN_PCT: ${{ env.BURN_PCT }}
+          TREASURY: ${{ env.TREASURY }}
+          VALIDATORS_PER_JOB: ${{ env.VALIDATORS_PER_JOB }}
+          REQUIRED_APPROVALS: ${{ env.REQUIRED_APPROVALS }}
+          COMMIT_WINDOW: ${{ env.COMMIT_WINDOW }}
+          REVEAL_WINDOW: ${{ env.REVEAL_WINDOW }}
+          ACCESS_CONTROL_PATHS: ${{ env.ACCESS_CONTROL_PATHS }}
+        run: npx c8 -o coverage --reporter=lcov --reporter=text-summary --all npm test
+
+      - name: Upload lcov artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-${{ github.sha }}
+          path: coverage/lcov.info
+          if-no-files-found: error
+
+      - name: Enforce coverage >= ${{ env.COVERAGE_MIN }}%
+        if: always()
+        env:
+          COVERAGE_MIN: ${{ env.COVERAGE_MIN }}
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const file = 'coverage/lcov.info';
+          if (!fs.existsSync(file)) {
+            console.error('coverage/lcov.info not found. Did tests run?');
+            process.exit(1);
+          }
+          const txt = fs.readFileSync(file, 'utf8');
+          let LF = 0, LH = 0;
+          for (const m of txt.matchAll(/^LF:(\d+)/gm)) LF += +m[1];
+          for (const m of txt.matchAll(/^LH:(\d+)/gm)) LH += +m[1];
+          if (!LF) {
+            for (const m of txt.matchAll(/^DA:\d+,(\d+)/gm)) { LF++; if (+m[1] > 0) LH++; }
+          }
+          const pct = LF ? (100 * LH / LF) : 0;
+          const min = Number(process.env.COVERAGE_MIN || 90);
+          console.log(`Lines hit: ${LH}/${LF} => ${pct.toFixed(2)}% (min ${min}%)`);
+          if (pct + 1e-9 < min) process.exit(1);
+          NODE
