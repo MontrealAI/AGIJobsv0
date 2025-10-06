@@ -34,8 +34,8 @@ jobs:
     env:
       COVERAGE_MIN: '90'
       ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '0.02'
-      BURN_PCT: '0.06'
+      FEE_PCT: '2'
+      BURN_PCT: '6'
       TREASURY: '0x1111111111111111111111111111111111111111'
       VALIDATORS_PER_JOB: '3'
       REQUIRED_APPROVALS: '3'
@@ -67,8 +67,8 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     env:
-      FEE_PCT: '0.02'
-      BURN_PCT: '0.06'
+      FEE_PCT: '2'
+      BURN_PCT: '6'
       TREASURY: '0x1111111111111111111111111111111111111111'
       VALIDATORS_PER_JOB: '3'
       REQUIRED_APPROVALS: '3'
