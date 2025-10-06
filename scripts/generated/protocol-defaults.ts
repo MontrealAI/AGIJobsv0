@@ -2,33 +2,29 @@
 // Do not edit manually.
 
 export interface ProtocolDefaults {
-  feePct: string;
+  feePct: number;
   feePctPercent: number;
   feePctBasisPoints: number;
-  burnPct: string;
+  burnPct: number;
   burnPctPercent: number;
   burnPctBasisPoints: number;
   treasury: string;
   validatorsPerJob: number;
   requiredApprovals: number;
-  commitWindow: string;
   commitWindowSeconds: number;
-  revealWindow: string;
   revealWindowSeconds: number;
 }
 
 export const PROTOCOL_DEFAULTS: ProtocolDefaults = {
-  "feePct": "0.02",
+  "feePct": 2,
   "feePctPercent": 2,
   "feePctBasisPoints": 200,
-  "burnPct": "0.06",
+  "burnPct": 6,
   "burnPctPercent": 6,
   "burnPctBasisPoints": 600,
   "treasury": "0x1111111111111111111111111111111111111111",
   "validatorsPerJob": 3,
   "requiredApprovals": 3,
-  "commitWindow": "30m",
   "commitWindowSeconds": 1800,
-  "revealWindow": "30m",
   "revealWindowSeconds": 1800
 } as const;
