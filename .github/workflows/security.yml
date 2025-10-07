@@ -112,7 +112,10 @@ jobs:
       - name: Generate provenance attestation
         if: startsWith(github.ref, 'refs/tags/')
         id: generate-provenance
-        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+        # v2.0.0 currently references a non-existent actions/delegator-generic path on
+        # GitHub-hosted Ubuntu 24.04 runners, so we stay on the latest v1 release until
+        # the upstream issue is resolved.
+        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.10.0
         with:
           base64-subjects: ${{ steps.provenance-subjects.outputs.value }}
           provenance-name: provenance.intoto.jsonl
