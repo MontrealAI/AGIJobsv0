@@ -4,6 +4,10 @@ artifacts/
 cache/
 coverage/
 coverage.json
+!contracts/coverage/
+!contracts/coverage/**
+!test/coverage/
+!test/coverage/**
 
 .next/
 
@@ -22,6 +26,7 @@ scripts/**/*.js
 !scripts/ci/check-abi-diff.js
 !scripts/ci/export-abis.js
 !scripts/ci/abi-targets.js
+!scripts/ci/remap-coverage-paths.js
 !scripts/verify-wiring.js
 !scripts/run-wire-verify.js
 !scripts/subgraph-e2e.js
