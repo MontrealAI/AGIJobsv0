@@ -56,17 +56,21 @@ jobs:
         run: |
           set -euo pipefail
           forge_out="$(mktemp -d)"
+          forge_build_info="$(mktemp -d)"
           forge_cache="$(mktemp -d)"
           cleanup() {
-            rm -rf "$forge_out" "$forge_cache"
+            rm -rf "$forge_out" "$forge_build_info" "$forge_cache"
           }
           trap cleanup EXIT
-          mkdir -p "${forge_out}/build-info"
-          chmod 0777 "$forge_out" "${forge_out}/build-info" "$forge_cache"
+          chmod 0777 "$forge_out" "$forge_build_info" "$forge_cache"
           docker run --rm \
             -v "$PWD":/src \
-            -v "${forge_out}":/src/out \
-            -v "${forge_cache}":/src/cache \
+            -v "${forge_out}":/tmp/forge-out \
+            -v "${forge_build_info}":/tmp/forge-build-info \
+            -v "${forge_cache}":/tmp/forge-cache \
+            -e FOUNDRY_OUT=/tmp/forge-out \
+            -e FOUNDRY_BUILD_INFO_PATH=/tmp/forge-build-info \
+            -e FOUNDRY_CACHE_PATH=/tmp/forge-cache \
             -w /src \
             trailofbits/eth-security-toolbox:nightly-20240902 \
             bash -lc 'set -euo pipefail; slither . --fail-high --exclude-dependencies --sarif slither.sarif'
