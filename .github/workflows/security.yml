@@ -62,9 +62,12 @@ jobs:
             rm -rf "$forge_out" "$forge_build_info" "$forge_cache"
           }
           trap cleanup EXIT
+          mkdir -p "${forge_build_info}" "${forge_cache}" "${forge_out}"
           chmod 0777 "$forge_out" "$forge_build_info" "$forge_cache"
+          uid="$(id -u)"
+          gid="$(id -g)"
           docker run --rm \
-            --user 0:0 \
+            --user "${uid}:${gid}" \
             -v "$PWD":/src \
             -v "${forge_out}":/tmp/forge-out \
             -v "${forge_build_info}":/tmp/forge-build-info \
