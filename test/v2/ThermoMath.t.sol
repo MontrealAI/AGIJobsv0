@@ -10,7 +10,7 @@ int256 constant MAX_EXP_INPUT = 133_084258667509499440;
 int256 constant MIN_EXP_INPUT = -41_446531673892822322;
 
 contract ThermoMathTest is Test {
-    function test_weights_normalize() public {
+    function test_weights_normalize() public pure {
         int256[] memory E = new int256[](3);
         uint256[] memory g = new uint256[](3);
         E[0] = 1e18; E[1] = 2e18; E[2] = 3e18;
@@ -24,7 +24,7 @@ contract ThermoMathTest is Test {
         assertEq(sum, 1e18, "normalized");
     }
 
-    function test_weights_uniform_when_equal_energy() public {
+    function test_weights_uniform_when_equal_energy() public pure {
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
         E[0] = 1e18; E[1] = 1e18;
@@ -34,7 +34,7 @@ contract ThermoMathTest is Test {
         assertApproxEqAbs(w[1], 5e17, 1e12);
     }
 
-    function test_lower_energy_gets_higher_weight() public {
+    function test_lower_energy_gets_higher_weight() public pure {
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
         E[0] = 1e18; // lower energy
@@ -44,7 +44,7 @@ contract ThermoMathTest is Test {
         assertGt(w[0], w[1], "lower energy should weigh more");
     }
 
-    function test_weight_ratio_matches_exp() public {
+    function test_weight_ratio_matches_exp() public pure {
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
         E[0] = 1e18;
@@ -57,7 +57,7 @@ contract ThermoMathTest is Test {
         assertApproxEqAbs(ratio, uint256(expected), 1e12);
     }
 
-    function test_degeneracy_scales_weights() public {
+    function test_degeneracy_scales_weights() public pure {
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
         E[0] = 1e18; E[1] = 1e18; // equal energies
@@ -126,7 +126,7 @@ contract ThermoMathTest is Test {
         ThermoMath.mbWeights(E, g, 1e18, 0);
     }
 
-    function testFuzz_weight_boundary_normalizes(int256 x) public {
+    function testFuzz_weight_boundary_normalizes(int256 x) public pure {
         vm.assume(x >= MIN_EXP_INPUT && x <= MAX_EXP_INPUT);
         uint256 expX = uint256(SD59x18.unwrap(exp(SD59x18.wrap(x))));
         vm.assume(expX > 0);
@@ -139,7 +139,7 @@ contract ThermoMathTest is Test {
         assertEq(w[0], 1e18, "normalized");
     }
 
-    function test_extreme_energy_skew_normalizes() public {
+    function test_extreme_energy_skew_normalizes() public pure {
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
         E[0] = 1e18;
@@ -153,7 +153,7 @@ contract ThermoMathTest is Test {
         assertLt(w[1], 1000, "high energy negligible");
     }
 
-    function test_extreme_degeneracy_normalizes() public {
+    function test_extreme_degeneracy_normalizes() public pure {
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
         E[0] = 0;
@@ -167,7 +167,7 @@ contract ThermoMathTest is Test {
         assertApproxEqAbs(sum, 1e18, 1, "normalized");
     }
 
-    function test_energy_near_exp_bounds_normalizes() public {
+    function test_energy_near_exp_bounds_normalizes() public pure {
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
         E[0] = 0;

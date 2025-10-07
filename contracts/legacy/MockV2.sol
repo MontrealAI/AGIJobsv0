@@ -892,7 +892,7 @@ contract MockReputationEngine is IReputationEngine {
         _blacklist[user] = val;
     }
 
-    function onApply(address user) external override {
+    function onApply(address user) external view override {
         require(!_blacklist[user], "blacklisted");
         require(_rep[user] >= threshold, "insufficient reputation");
     }
