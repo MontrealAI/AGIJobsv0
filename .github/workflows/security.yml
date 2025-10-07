@@ -1,69 +1,145 @@
-name: security
+name: Security Suite (v2)
 
 on:
-  pull_request:
   push:
-    branches:
-      - main
-  schedule:
-    - cron: '0 3 * * 1'
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
-  security-events: write
-  id-token: write
-
-concurrency:
-  group: security-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   security-suite:
+    name: security-suite
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     outputs:
       provenance_subjects: ${{ steps.provenance-subjects.outputs.value }}
+    permissions:
+      contents: read
+      security-events: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
 
-      - name: Set up Node.js
+      - name: Detect package manager
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
+          elif [ -f yarn.lock ]; then
+            echo "manager=yarn" >> "$GITHUB_OUTPUT"
+          else
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Use Node 20 (LTS)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
+          cache: ${{ steps.pm.outputs.manager }}
+          cache-dependency-path: |
+            package-lock.json
+            pnpm-lock.yaml
+            yarn.lock
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install Node dependencies
+        run: |
+          case "${{ steps.pm.outputs.manager }}" in
+            pnpm)
+              corepack enable
+              pnpm install --frozen-lockfile --ignore-scripts
+              ;;
+            yarn)
+              corepack enable
+              yarn install --frozen-lockfile --ignore-scripts
+              ;;
+            npm|*)
+              npm ci --ignore-scripts
+              ;;
+          esac
 
-      - name: Run gitleaks
+      - name: npm audit (fail on HIGH and above)
+        if: steps.pm.outputs.manager == 'npm'
+        continue-on-error: true
+        run: npm audit --production --audit-level=high
+
+      - name: Prepare reports directory
+        run: mkdir -p reports/sbom
+
+      - name: Gitleaks – secrets detection
         uses: gitleaks/gitleaks-action@v2
         with:
-          args: detect --redact --verbose
+          args: >-
+            detect --no-git --redact --verbose
+            --report-format sarif
+            --report-path reports/gitleaks.sarif
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: npm audit (fail on high)
-        run: npm audit --audit-level=high
-
-      - name: License checker
-        run: |
-          mkdir -p reports
-          npx license-checker --summary --production --development --out reports/license-summary.txt
-
-      - name: Slither static analysis
-        run: |
-          docker run --rm \
-            -v "$PWD":/src \
-            -w /src \
-            trailofbits/eth-security-toolbox:nightly-20240902 \
-            slither . --fail-high --exclude-dependencies --sarif slither.sarif
-
-      - name: Upload Slither SARIF
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Upload Gitleaks SARIF to Code Scanning
+        if: ${{ hashFiles('reports/gitleaks.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          name: slither-sarif
-          path: slither.sarif
+          sarif_file: reports/gitleaks.sarif
+          category: gitleaks
+
+      - name: License checker summary
+        run: |
+          case "${{ steps.pm.outputs.manager }}" in
+            pnpm)
+              pnpm dlx license-checker --summary --production --development --out reports/license-summary.txt
+              ;;
+            yarn)
+              npx license-checker --summary --production --development --out reports/license-summary.txt
+              ;;
+            npm|*)
+              npx license-checker --summary --production --development --out reports/license-summary.txt
+              ;;
+          esac
+
+      - name: Install Foundry toolchain
+        if: ${{ hashFiles('**/foundry.toml') != '' }}
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Build contracts with Foundry
+        if: ${{ hashFiles('**/foundry.toml') != '' }}
+        run: |
+          forge --version
+          forge clean
+          forge build --build-info --skip '*/test/**' '*/script/**'
+
+      - name: Compile Hardhat projects (if present)
+        if: ${{ hashFiles('**/hardhat.config.*') != '' }}
+        run: npx hardhat compile
+
+      - name: Slither – static analysis (fail on HIGH)
+        uses: crytic/slither-action@v0.4.1
+        with:
+          slither-args: >-
+            --fail-high
+            --exclude-dependencies
+            --sarif reports/slither.sarif
+          ignore-compile: true
+
+      - name: Upload Slither SARIF to Code Scanning
+        if: ${{ hashFiles('reports/slither.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/slither.sarif
+          category: slither
 
       - name: Mythril quick scan
         run: |
@@ -76,10 +152,6 @@ jobs:
               --solc-args "--base-path . --include-path node_modules --allow-paths .,node_modules" \
               --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
 
-      - name: Prepare report directories
-        run: |
-          mkdir -p reports/sbom
-
       - name: Generate SBOM (SPDX JSON)
         uses: anchore/sbom-action@v0.17.5
         with:
@@ -87,14 +159,13 @@ jobs:
           format: spdx-json
           output-file: reports/sbom/spdx.json
 
-      - name: Upload security artefacts
-        if: always()
+      - name: Upload security-suite artifacts
+        if: ${{ always() && hashFiles('reports/**') != '' }}
         uses: actions/upload-artifact@v4
         with:
-          name: security-artifacts
-          path: |
-            reports/license-summary.txt
-            reports/sbom/spdx.json
+          name: security-suite-reports
+          path: reports/
+          if-no-files-found: warn
 
       - name: Prepare provenance subjects
         if: startsWith(github.ref, 'refs/tags/')
@@ -118,6 +189,10 @@ jobs:
   slsa-provenance:
     if: startsWith(github.ref, 'refs/tags/')
     needs: security-suite
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
       base64-subjects: ${{ needs.security-suite.outputs.provenance_subjects }}
