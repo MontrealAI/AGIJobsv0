@@ -84,7 +84,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Gitleaks SARIF
-        if: always()
+        if: always() && hashFiles('reports/gitleaks.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reports/gitleaks.sarif
@@ -110,27 +110,30 @@ jobs:
           esac
 
       - name: Install Foundry
+        if: ${{ hashFiles('**/foundry.toml') != '' }}
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
       - name: Build contracts with build-info
+        if: ${{ hashFiles('**/foundry.toml') != '' }}
         run: |
           forge --version
           forge clean
           forge build --build-info --skip '*/test/**' '*/script/**'
 
       - name: Slither static analysis
-        uses: crytic/slither-action@v0.3.3
+        uses: crytic/slither-action@v0.4.1
         with:
           target: .
           slither-args: >-
             --sarif reports/slither.sarif
             --exclude-dependencies
             --fail-high
+          ignore-compile: true
 
       - name: Upload Slither SARIF
-        if: always()
+        if: always() && hashFiles('reports/slither.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reports/slither.sarif
