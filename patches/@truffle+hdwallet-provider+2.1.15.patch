@@ -1,0 +1,13 @@
+diff --git a/node_modules/@truffle/hdwallet-provider/package.json b/node_modules/@truffle/hdwallet-provider/package.json
+index d8f9f062..42a73c99 100644
+--- a/node_modules/@truffle/hdwallet-provider/package.json
++++ b/node_modules/@truffle/hdwallet-provider/package.json
+@@ -31,7 +31,7 @@
+     "ethereum-cryptography": "1.1.2",
+     "ethereum-protocol": "^1.0.1",
+     "ethereumjs-util": "^7.1.5",
+-    "web3": "1.10.0",
++    "web3": "^4.16.0",
+     "web3-provider-engine": "16.0.3"
+   },
+   "devDependencies": {
