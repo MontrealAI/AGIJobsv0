@@ -2,9 +2,9 @@ name: security-suite
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
   schedule:
     - cron: '0 3 * * 1'
   workflow_dispatch:
@@ -123,14 +123,15 @@ jobs:
           forge build --build-info --skip '*/test/**' '*/script/**'
 
       - name: Slither static analysis
+        id: slither
         uses: crytic/slither-action@v0.4.1
         with:
           target: .
-          slither-args: >-
-            --sarif reports/slither.sarif
-            --exclude-dependencies
-            --fail-high
           ignore-compile: true
+          fail-on: high
+          sarif: reports/slither.sarif
+          slither-args: >-
+            --exclude-dependencies
 
       - name: Upload Slither SARIF
         if: always() && hashFiles('reports/slither.sarif') != ''
