@@ -25,17 +25,29 @@ contract ValidationFinalizeGas is Test {
     address agent = address(0xA);
     address[3] validators;
 
+    address constant TREASURY = address(0xF00D);
+    string[3] validatorSubdomains = [
+        "validator-one",
+        "validator-two",
+        "validator-three"
+    ];
+
     function setUp() public {
         // deploy AGIALPHA token mock
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
 
-        stake = new StakeManager(1e18, 0, 10_000, address(this), address(0), address(0), address(this));
+        stake = new StakeManager(1e18, 0, 10_000, TREASURY, address(0), address(0), address(this));
+        stake.setTreasuryAllowlist(TREASURY, true);
+        vm.prank(address(stake));
+        token.acceptTerms();
         jobRegistry = new MockJobRegistry();
         stake.setJobRegistry(address(jobRegistry));
 
         identity = new IdentityRegistryToggle();
+        identity.addAdditionalAgent(agent);
 
         // three validators
         validators[0] = address(0x1);
@@ -46,6 +58,7 @@ contract ValidationFinalizeGas is Test {
             identity.addAdditionalValidator(validators[i]);
             token.mint(validators[i], 1e18);
             vm.startPrank(validators[i]);
+            token.acceptTerms();
             token.approve(address(stake), 1e18);
             stake.depositStake(StakeManager.Role.Validator, 1e18);
             vm.stopPrank();
@@ -67,6 +80,14 @@ contract ValidationFinalizeGas is Test {
         );
         validation.setIdentityRegistry(IIdentityRegistry(address(identity)));
         stake.setValidationModule(address(validation));
+
+        address[] memory accounts = new address[](3);
+        string[] memory subdomains = new string[](3);
+        for (uint256 i; i < 3; ++i) {
+            accounts[i] = validators[i];
+            subdomains[i] = validatorSubdomains[i];
+        }
+        validation.setValidatorSubdomains(accounts, subdomains);
     }
 
     function _prepareJob() internal returns (uint256 jobId) {
@@ -90,18 +111,37 @@ contract ValidationFinalizeGas is Test {
     }
 
     function _commitAndReveal(uint256 jobId) internal {
+        bytes32[] memory salts = new bytes32[](validators.length);
         for (uint256 i; i < validators.length; ++i) {
             address val = validators[i];
             bytes32 salt = bytes32(uint256(i + 1));
+            salts[i] = salt;
             uint256 nonce = validation.jobNonce(jobId);
             bytes32 commitHash = keccak256(
                 abi.encodePacked(jobId, nonce, true, burnTxHash, salt, bytes32(0))
             );
             vm.prank(val);
-            validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
-            vm.warp(block.timestamp + 2);
+            validation.commitValidation(
+                jobId,
+                commitHash,
+                validatorSubdomains[i],
+                new bytes32[](0)
+            );
+        }
+
+        vm.warp(block.timestamp + validation.commitWindow() + 1);
+
+        for (uint256 i; i < validators.length; ++i) {
+            address val = validators[i];
             vm.prank(val);
-            validation.revealValidation(jobId, true, burnTxHash, salt, "", new bytes32[](0));
+            validation.revealValidation(
+                jobId,
+                true,
+                burnTxHash,
+                salts[i],
+                validatorSubdomains[i],
+                new bytes32[](0)
+            );
         }
     }
 
