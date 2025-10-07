@@ -55,31 +55,14 @@ jobs:
       - name: Slither static analysis
         run: |
           set -euo pipefail
-          forge_out="$(mktemp -d)"
-          forge_build_info="$(mktemp -d)"
-          forge_cache="$(mktemp -d)"
-          cleanup() {
-            rm -rf "$forge_out" "$forge_build_info" "$forge_cache"
-          }
-          trap cleanup EXIT
-          mkdir -p "${forge_build_info}" "${forge_cache}" "${forge_out}"
-          chmod 0777 "$forge_out" "$forge_build_info" "$forge_cache"
-          uid="$(id -u)"
-          gid="$(id -g)"
           docker run --rm \
-            --user "${uid}:${gid}" \
             -v "$PWD":/src \
-            -v "${forge_out}":/tmp/forge-out \
-            -v "${forge_build_info}":/tmp/forge-build-info \
-            -v "${forge_cache}":/tmp/forge-cache \
+            -w /src \
             -e FOUNDRY_OUT=/tmp/forge-out \
             -e FOUNDRY_BUILD_INFO_PATH=/tmp/forge-build-info \
             -e FOUNDRY_CACHE_PATH=/tmp/forge-cache \
-            -e PATH="/home/ethsec/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
-            -e HOME=/tmp \
-            -w /src \
             trailofbits/eth-security-toolbox:nightly-20240902 \
-            bash -c 'set -euo pipefail; slither . --fail-high --exclude-dependencies --sarif slither.sarif'
+            bash -lc 'set -euo pipefail; mkdir -p "$FOUNDRY_OUT" "$FOUNDRY_BUILD_INFO_PATH" "$FOUNDRY_CACHE_PATH"; slither . --fail-high --exclude-dependencies --sarif slither.sarif'
 
       - name: Upload Slither SARIF
         if: always()
