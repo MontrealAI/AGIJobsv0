@@ -106,7 +106,7 @@ contract IdentityRegistryMock is Ownable {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata
-    ) external view returns (bool) {
+    ) external pure returns (bool) {
         claimant; // silence unused
         _assertSubdomain(subdomain);
         return true;
@@ -116,7 +116,7 @@ contract IdentityRegistryMock is Ownable {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata
-    ) external view returns (bool) {
+    ) external pure returns (bool) {
         claimant; // silence unused
         _assertSubdomain(subdomain);
         return true;
@@ -126,28 +126,20 @@ contract IdentityRegistryMock is Ownable {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata
-    )
-        external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
-    {
+    ) external pure returns (bool, bytes32, bool, bool) {
         claimant; // silence unused
         _assertSubdomain(subdomain);
-        node = bytes32(0);
-        ok = true;
+        return (true, bytes32(0), false, false);
     }
 
     function verifyValidator(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata
-    )
-        external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
-    {
+    ) external pure returns (bool, bytes32, bool, bool) {
         claimant; // silence unused
         _assertSubdomain(subdomain);
-        node = bytes32(0);
-        ok = true;
+        return (true, bytes32(0), false, false);
     }
 }
 

@@ -43,11 +43,11 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     }
 
     // IIdentityRegistry stubs
-    function isAuthorizedAgent(address, string calldata, bytes32[] calldata) external view returns (bool) {
+    function isAuthorizedAgent(address, string calldata, bytes32[] calldata) external pure returns (bool) {
         return true;
     }
 
-    function isAuthorizedValidator(address, string calldata, bytes32[] calldata) external view returns (bool) {
+    function isAuthorizedValidator(address, string calldata, bytes32[] calldata) external pure returns (bool) {
         return true;
     }
 
@@ -55,21 +55,15 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
         address,
         string calldata,
         bytes32[] calldata
-    )
-        external
-        pure
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
-    {
-        node = bytes32(0);
-        ok = true;
+    ) external pure returns (bool, bytes32, bool, bool) {
+        return (true, bytes32(0), false, false);
     }
 
     function verifyValidator(
         address,
         string calldata,
         bytes32[] calldata
-    ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
-        node = bytes32(0);
+    ) external returns (bool, bytes32, bool, bool) {
         if (attack == Attack.Commit) {
             attack = Attack.None;
             validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
@@ -77,16 +71,15 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
             attack = Attack.None;
             validation.revealValidation(jobId, approve, burnTxHash, salt, "", new bytes32[](0));
         }
-        ok = true;
+        return (true, bytes32(0), false, false);
     }
 
     function verifyNode(
         address,
         string calldata,
         bytes32[] calldata
-    ) external pure returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
-        ok = true;
-        node = bytes32(0);
+    ) external pure returns (bool, bytes32, bool, bool) {
+        return (true, bytes32(0), false, false);
     }
 
     // profile metadata - no-ops
