@@ -75,9 +75,11 @@ jobs:
             -e FOUNDRY_OUT=/tmp/forge-out \
             -e FOUNDRY_BUILD_INFO_PATH=/tmp/forge-build-info \
             -e FOUNDRY_CACHE_PATH=/tmp/forge-cache \
+            -e PATH="/home/ethsec/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+            -e HOME=/tmp \
             -w /src \
             trailofbits/eth-security-toolbox:nightly-20240902 \
-            bash -lc 'set -euo pipefail; slither . --fail-high --exclude-dependencies --sarif slither.sarif'
+            bash -c 'set -euo pipefail; slither . --fail-high --exclude-dependencies --sarif slither.sarif'
 
       - name: Upload Slither SARIF
         if: always()
