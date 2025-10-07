@@ -987,6 +987,20 @@ contract IdentityRegistry is Ownable2Step {
                     return true;
                 }
             }
+            if (agentRootNode == bytes32(0) && aliasLen == 0) {
+                bytes32 rootlessNode = keccak256(
+                    abi.encodePacked(bytes32(0), labelHash)
+                );
+                if (
+                    attestationRegistry.isAttested(
+                        rootlessNode,
+                        AttestationRegistry.Role.Agent,
+                        claimant
+                    )
+                ) {
+                    return true;
+                }
+            }
         }
         return _checkAgentENSOwnership(claimant, subdomain, proof);
     }
@@ -1040,6 +1054,20 @@ contract IdentityRegistry is Ownable2Step {
                     return true;
                 }
             }
+            if (clubRootNode == bytes32(0) && aliasLen == 0) {
+                bytes32 rootlessNode = keccak256(
+                    abi.encodePacked(bytes32(0), labelHash)
+                );
+                if (
+                    attestationRegistry.isAttested(
+                        rootlessNode,
+                        AttestationRegistry.Role.Validator,
+                        claimant
+                    )
+                ) {
+                    return true;
+                }
+            }
             if (nodeRootNode != bytes32(0)) {
                 bytes32 node = keccak256(
                     abi.encodePacked(nodeRootNode, labelHash)
@@ -1062,6 +1090,20 @@ contract IdentityRegistry is Ownable2Step {
                 if (
                     attestationRegistry.isAttested(
                         aliasNode,
+                        AttestationRegistry.Role.Node,
+                        claimant
+                    )
+                ) {
+                    return true;
+                }
+            }
+            if (nodeRootNode == bytes32(0) && nodeAliasLen == 0) {
+                bytes32 rootlessNode = keccak256(
+                    abi.encodePacked(bytes32(0), labelHash)
+                );
+                if (
+                    attestationRegistry.isAttested(
+                        rootlessNode,
                         AttestationRegistry.Role.Node,
                         claimant
                     )
