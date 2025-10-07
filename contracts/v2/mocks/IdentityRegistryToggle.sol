@@ -123,34 +123,20 @@ contract IdentityRegistryToggle is Ownable {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata
-    )
-        external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
-    {
-        node = bytes32(0);
-        if (additionalAgents[claimant]) {
-            ok = true;
-        } else {
-            ok = result;
-        }
+    ) external view returns (bool, bytes32, bool, bool) {
+        bool ok = additionalAgents[claimant] ? true : result;
         _assertSubdomain(subdomain);
+        return (ok, bytes32(0), false, false);
     }
 
     function verifyValidator(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata
-    )
-        external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
-    {
-        node = bytes32(0);
-        if (additionalValidators[claimant]) {
-            ok = true;
-        } else {
-            ok = result;
-        }
+    ) external view returns (bool, bytes32, bool, bool) {
+        bool ok = additionalValidators[claimant] ? true : result;
         _assertSubdomain(subdomain);
+        return (ok, bytes32(0), false, false);
     }
 }
 

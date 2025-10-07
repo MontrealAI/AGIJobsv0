@@ -13,6 +13,7 @@ import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
 int256 constant MAX_EXP_INPUT = 133_084258667509499440;
 int256 constant MIN_EXP_INPUT = -41_446531673892822322;
+int256 constant MAX_SAFE_ENERGY = type(int256).max / int256(1e18);
 
 contract MockFeePool is IFeePool {
     mapping(address => uint256) public rewards;
@@ -369,6 +370,7 @@ contract RewardEngineMBTest is Test {
         vm.assume(T >= thermo.minTemp() && T <= thermo.maxTemp());
         int256 minE = e1 < e2 ? e1 : e2;
         int256 maxE = e1 > e2 ? e1 : e2;
+        vm.assume(minE >= -MAX_SAFE_ENERGY && maxE <= MAX_SAFE_ENERGY);
         int256 upper = (0 - minE) * 1e18 / T;
         int256 lower = (0 - maxE) * 1e18 / T;
         vm.assume(upper <= MAX_EXP_INPUT && lower >= MIN_EXP_INPUT);

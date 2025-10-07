@@ -2437,6 +2437,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         IFeePool _feePool,
         bool byGovernance
     ) internal {
+        byGovernance; // silence unused parameter (reserved for governance overrides)
         emit JobFundsFinalized(jobId, employer);
 
         uint256 rewardSpent = reward;
