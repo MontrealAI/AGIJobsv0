@@ -13,6 +13,7 @@ import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
 int256 constant MAX_EXP_INPUT = 133_084258667509499440;
 int256 constant MIN_EXP_INPUT = -41_446531673892822322;
+int256 constant MAX_LINEAR_EXP_ARG = type(int256).max / int256(1e18);
 
 contract MockFeePool is IFeePool {
     mapping(address => uint256) public rewards;
@@ -350,7 +351,7 @@ contract RewardEngineMBTest is Test {
         assertApproxEqAbs(pool.rewards(a2), expected2, 1);
     }
 
-    function test_mbWeights_sums_to_1e18() public {
+    function test_mbWeights_sums_to_1e18() public pure {
         int256[] memory E = new int256[](3);
         uint256[] memory g = new uint256[](3);
         E[0] = 1e18;
@@ -364,11 +365,13 @@ contract RewardEngineMBTest is Test {
         assertApproxEqAbs(sum, 1e18, 1);
     }
 
-    function testFuzz_mbWeights_normalization(int256 e1, int256 e2, int256 T) public {
+    function testFuzz_mbWeights_normalization(int256 e1, int256 e2, int256 T) public view {
         vm.assume(T > 0);
         vm.assume(T >= thermo.minTemp() && T <= thermo.maxTemp());
         int256 minE = e1 < e2 ? e1 : e2;
         int256 maxE = e1 > e2 ? e1 : e2;
+        vm.assume(minE >= -MAX_LINEAR_EXP_ARG);
+        vm.assume(maxE <= MAX_LINEAR_EXP_ARG);
         int256 upper = (0 - minE) * 1e18 / T;
         int256 lower = (0 - maxE) * 1e18 / T;
         vm.assume(upper <= MAX_EXP_INPUT && lower >= MIN_EXP_INPUT);

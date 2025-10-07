@@ -13,7 +13,7 @@ contract RewardEngineKernelTest is Test {
         engine = new RewardEngine(governance);
     }
 
-    function testDefaultSplitSumsBelowDenominator() public {
+    function testDefaultSplitSumsBelowDenominator() public view {
         (uint256 agents, uint256 validators, uint256 ops, uint256 employer, uint256 burn) =
             _currentBps();
         assertLt(agents + validators + ops + employer + burn, 10_001);
