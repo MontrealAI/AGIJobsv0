@@ -2,9 +2,10 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {CertificateNFT} from "../../contracts/v2/modules/CertificateNFT.sol";
 
-contract CertificateNFTConfigTest is Test {
+contract CertificateNFTConfigTest is Test, IERC721Receiver {
     CertificateNFT nft;
 
     function setUp() public {
@@ -39,5 +40,14 @@ contract CertificateNFTConfigTest is Test {
     function testSetBaseURIEmptyReverts() public {
         vm.expectRevert(CertificateNFT.EmptyBaseURI.selector);
         nft.setBaseURI("");
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
     }
 }
