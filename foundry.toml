@@ -8,6 +8,7 @@ via_ir = true
 optimizer = true
 optimizer_runs = 200
 gas_reports = ['FeePool', 'JobRouter']
+evm_version = "cancun"
 
 [profile.gas]
 src = 'contracts/gas'
