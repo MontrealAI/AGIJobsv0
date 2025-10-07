@@ -13,6 +13,7 @@ import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
 int256 constant MAX_EXP_INPUT = 133_084258667509499440;
 int256 constant MIN_EXP_INPUT = -41_446531673892822322;
+uint256 constant MAX_ENERGY_MAGNITUDE = type(uint256).max / 1e18;
 int256 constant MAX_LINEAR_EXP_ARG = type(int256).max / int256(1e18);
 
 contract MockFeePool is IFeePool {
@@ -368,12 +369,23 @@ contract RewardEngineMBTest is Test {
     function testFuzz_mbWeights_normalization(int256 e1, int256 e2, int256 T) public view {
         vm.assume(T > 0);
         vm.assume(T >= thermo.minTemp() && T <= thermo.maxTemp());
+        vm.assume(e1 != type(int256).min && e2 != type(int256).min);
+
         int256 minE = e1 < e2 ? e1 : e2;
         int256 maxE = e1 > e2 ? e1 : e2;
-        vm.assume(minE >= -MAX_LINEAR_EXP_ARG);
-        vm.assume(maxE <= MAX_LINEAR_EXP_ARG);
-        int256 upper = (0 - minE) * 1e18 / T;
-        int256 lower = (0 - maxE) * 1e18 / T;
+
+        uint256 absMin = uint256(minE < 0 ? -minE : minE);
+        uint256 absMax = uint256(maxE < 0 ? -maxE : maxE);
+        uint256 peak = absMin > absMax ? absMin : absMax;
+        vm.assume(peak <= MAX_ENERGY_MAGNITUDE);
+
+        uint256 tMag = uint256(int256(T));
+        uint256 upperMag = (absMin * 1e18) / tMag;
+        uint256 lowerMag = (absMax * 1e18) / tMag;
+
+        int256 upper = minE <= 0 ? int256(upperMag) : -int256(upperMag);
+        int256 lower = maxE >= 0 ? -int256(lowerMag) : int256(lowerMag);
+
         vm.assume(upper <= MAX_EXP_INPUT && lower >= MIN_EXP_INPUT);
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
