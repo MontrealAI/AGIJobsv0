@@ -369,6 +369,9 @@ contract RewardEngineMBTest is Test {
         vm.assume(T >= thermo.minTemp() && T <= thermo.maxTemp());
         int256 minE = e1 < e2 ? e1 : e2;
         int256 maxE = e1 > e2 ? e1 : e2;
+        int256 limit = type(int256).max / int256(1e18);
+        vm.assume(minE <= limit && minE >= -limit);
+        vm.assume(maxE <= limit && maxE >= -limit);
         int256 upper = (0 - minE) * 1e18 / T;
         int256 lower = (0 - maxE) * 1e18 / T;
         vm.assume(upper <= MAX_EXP_INPUT && lower >= MIN_EXP_INPUT);

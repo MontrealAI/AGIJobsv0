@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## v2
 
 - Hardened the CI workflow so the Tests, Foundry, and Coverage thresholds jobs run on Ubuntu 24.04, regenerate generated constants when needed, enforce the 90% coverage gate without being skippable, publish `coverage/lcov.info` artifacts for inspection, and execute the full Hardhat coverage suite so access-control modules are accounted for.
+- Documented the CI status badge in the README and enabled dependency-lock-aware npm caching in every job to keep the gate fast while remaining enforceable on `main` and pull requests.
 - Bumped all `contracts/v2` module `version` constants to `2` and updated related checks and documentation.
 - `RandaoCoordinator.random` now mixes the XORed seed with `block.prevrandao` for block-dependent entropy.
 - Default identity cache durations for agents and validators are now zero so every job application and validation commit requires a fresh ENS proof; governance can extend the cache via on-chain setters if necessary.
