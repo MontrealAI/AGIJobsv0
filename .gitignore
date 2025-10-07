@@ -48,3 +48,6 @@ examples/agentic/runtime-agentic.jsonl
 
 apps/console/dist/
 apps/console/node_modules/
+
+# Foundry dependencies
+lib/
