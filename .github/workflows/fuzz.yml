@@ -45,7 +45,11 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p lib
-          forge install foundry-rs/forge-std --no-git
+          if [ ! -d lib/forge-std ]; then
+            forge install foundry-rs/forge-std --no-git
+          else
+            echo 'forge-std already present; skipping install.'
+          fi
 
       - name: Compile
         env:

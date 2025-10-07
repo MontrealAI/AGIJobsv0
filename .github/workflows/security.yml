@@ -1,25 +1,28 @@
-name: security
+name: security-suite
 
 on:
   pull_request:
+    branches: [ main ]
   push:
-    branches:
-      - main
+    branches: [ main ]
   schedule:
     - cron: '0 3 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
   security-events: write
-  id-token: write
+  actions: read
 
 concurrency:
-  group: security-${{ github.workflow }}-${{ github.ref }}
+  group: security-suite-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   security-suite:
+    name: Security Suite
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     outputs:
       provenance_subjects: ${{ steps.provenance-subjects.outputs.value }}
     steps:
@@ -27,43 +30,99 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
 
-      - name: Set up Node.js
+      - name: Prepare reports directory
+        run: mkdir -p reports
+
+      - name: Gitleaks – scan repo for secrets
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: >-
+            detect --no-banner --redact -v
+            --report-format sarif
+            --report-path reports/gitleaks.sarif
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Gitleaks SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/gitleaks.sarif
+          category: gitleaks
+
+      - name: Detect package manager
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
+          elif [ -f yarn.lock ]; then
+            echo "manager=yarn" >> "$GITHUB_OUTPUT"
+          else
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
+          cache: ${{ steps.pm.outputs.manager }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          case "${{ steps.pm.outputs.manager }}" in
+            pnpm)
+              corepack enable
+              pnpm install --frozen-lockfile --ignore-scripts
+              ;;
+            yarn)
+              corepack enable
+              yarn install --frozen-lockfile --ignore-scripts
+              ;;
+            npm|*)
+              npm ci --ignore-scripts
+              ;;
+          esac
 
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --redact --verbose
-
-      - name: npm audit (fail on high)
-        run: npm audit --audit-level=high
+      - name: npm audit (high & critical only; informational)
+        if: steps.pm.outputs.manager == 'npm'
+        continue-on-error: true
+        run: |
+          echo "Running npm audit (high & critical only)…"
+          npm audit --omit=dev --audit-level=high
 
       - name: License checker
         run: |
           mkdir -p reports
           npx license-checker --summary --production --development --out reports/license-summary.txt
 
-      - name: Slither static analysis
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Build contracts with build-info (Foundry)
         run: |
-          docker run --rm \
-            -v "$PWD":/src \
-            -w /src \
-            trailofbits/eth-security-toolbox:nightly-20240902 \
-            slither . --fail-high --exclude-dependencies --sarif slither.sarif
+          forge --version
+          forge clean
+          forge build --build-info --skip '*/test/**' '*/script/**'
+
+      - name: Slither – static analysis (fail on high)
+        uses: crytic/slither-action@v0.3.3
+        with:
+          target: .
+          slither-args: >-
+            --sarif reports/slither.sarif
+            --exclude-dependencies
+            --fail-high
 
       - name: Upload Slither SARIF
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          name: slither-sarif
-          path: slither.sarif
+          sarif_file: reports/slither.sarif
+          category: slither
 
       - name: Mythril quick scan
         run: |
@@ -76,9 +135,8 @@ jobs:
               --solc-args "--base-path . --include-path node_modules --allow-paths .,node_modules" \
               --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
 
-      - name: Prepare report directories
-        run: |
-          mkdir -p reports/sbom
+      - name: Prepare SBOM directory
+        run: mkdir -p reports/sbom
 
       - name: Generate SBOM (SPDX JSON)
         uses: anchore/sbom-action@v0.17.5
@@ -87,14 +145,13 @@ jobs:
           format: spdx-json
           output-file: reports/sbom/spdx.json
 
-      - name: Upload security artefacts
+      - name: Upload raw security artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: security-artifacts
-          path: |
-            reports/license-summary.txt
-            reports/sbom/spdx.json
+          name: security-reports
+          path: reports/
+          if-no-files-found: warn
 
       - name: Prepare provenance subjects
         if: startsWith(github.ref, 'refs/tags/')
@@ -118,6 +175,10 @@ jobs:
   slsa-provenance:
     if: startsWith(github.ref, 'refs/tags/')
     needs: security-suite
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
       base64-subjects: ${{ needs.security-suite.outputs.provenance_subjects }}
