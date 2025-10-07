@@ -64,6 +64,7 @@ jobs:
           trap cleanup EXIT
           chmod 0777 "$forge_out" "$forge_build_info" "$forge_cache"
           docker run --rm \
+            --user 0:0 \
             -v "$PWD":/src \
             -v "${forge_out}":/tmp/forge-out \
             -v "${forge_build_info}":/tmp/forge-build-info \
