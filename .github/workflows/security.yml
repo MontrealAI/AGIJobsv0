@@ -39,6 +39,8 @@ jobs:
 
       - name: Run gitleaks
         uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: detect --redact --verbose
 
@@ -52,11 +54,15 @@ jobs:
 
       - name: Slither static analysis
         run: |
+          set -euo pipefail
           docker run --rm \
             -v "$PWD":/src \
             -w /src \
+            -e FOUNDRY_OUT=/tmp/forge-out \
+            -e FOUNDRY_BUILD_INFO_PATH=/tmp/forge-build-info \
+            -e FOUNDRY_CACHE_PATH=/tmp/forge-cache \
             trailofbits/eth-security-toolbox:nightly-20240902 \
-            slither . --fail-high --exclude-dependencies --sarif slither.sarif
+            bash -lc 'set -euo pipefail; mkdir -p "$FOUNDRY_OUT" "$FOUNDRY_BUILD_INFO_PATH" "$FOUNDRY_CACHE_PATH"; slither . --fail-high --exclude-dependencies --sarif slither.sarif'
 
       - name: Upload Slither SARIF
         if: always()
@@ -118,6 +124,10 @@ jobs:
   slsa-provenance:
     if: startsWith(github.ref, 'refs/tags/')
     needs: security-suite
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
       base64-subjects: ${{ needs.security-suite.outputs.provenance_subjects }}
