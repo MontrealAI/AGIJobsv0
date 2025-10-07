@@ -8,6 +8,7 @@ import {ThermoMath} from "../../contracts/v2/libraries/ThermoMath.sol";
 import {IReputationEngineV2} from "../../contracts/v2/interfaces/IReputationEngineV2.sol";
 import {IFeePool} from "../../contracts/v2/interfaces/IFeePool.sol";
 import {IEnergyOracle} from "../../contracts/v2/interfaces/IEnergyOracle.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
@@ -166,11 +167,24 @@ contract RewardEngineMBTest is Test {
         p.sig = bytes("");
     }
 
+    function _canScale(int256 value, int256 T) internal pure returns (bool) {
+        if (value == type(int256).min) {
+            return false;
+        }
+        int256 diff = -value;
+        int256 absDiff = diff >= 0 ? diff : -diff;
+        int256 maxDiff = type(int256).max / int256(1e18);
+        if (absDiff > maxDiff) {
+            return false;
+        }
+        int256 scaled = (diff * int256(1e18)) / T;
+        return scaled <= MAX_EXP_INPUT && scaled >= MIN_EXP_INPUT;
+    }
+
     function test_settleEpochDistributesBudget() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
         a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
-        a[0].att.uPre = 1e18;
         data.agents = a;
         RewardEngineMB.Proof[] memory v = new RewardEngineMB.Proof[](1);
         v[0] = _proof(validator, int256(1e18), 1, RewardEngineMB.Role.Validator);
@@ -200,6 +214,7 @@ contract RewardEngineMBTest is Test {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
         a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
+        a[0].att.uPre = 1e18;
         data.agents = a;
         RewardEngineMB.Proof[] memory v = new RewardEngineMB.Proof[](1);
         v[0] = _proof(validator, int256(1e18), 1, RewardEngineMB.Role.Validator);
@@ -369,9 +384,8 @@ contract RewardEngineMBTest is Test {
         vm.assume(T >= thermo.minTemp() && T <= thermo.maxTemp());
         int256 minE = e1 < e2 ? e1 : e2;
         int256 maxE = e1 > e2 ? e1 : e2;
-        int256 upper = (0 - minE) * 1e18 / T;
-        int256 lower = (0 - maxE) * 1e18 / T;
-        vm.assume(upper <= MAX_EXP_INPUT && lower >= MIN_EXP_INPUT);
+        vm.assume(_canScale(minE, T));
+        vm.assume(_canScale(maxE, T));
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
         E[0] = e1;
@@ -453,7 +467,7 @@ contract RewardEngineMBTest is Test {
 
         engine.settleEpoch(1, data);
 
-        uint256 bucket = pool.total();
+        uint256 bucket = (pool.total() * engine.roleShare(RewardEngineMB.Role.Agent)) / 1e18;
         uint256 expectedLow = bucket * (wMu[0] * rd.degeneracies[0]) / sumMu;
         uint256 expectedHigh = bucket * (wMu[1] * rd.degeneracies[1]) / sumMu;
 
@@ -481,11 +495,10 @@ contract RewardEngineMBTest is Test {
 
     function test_replay_nonce_same_epoch_reverts() public {
         RewardEngineMB.EpochData memory data;
-        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](2);
         a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
+        a[1] = _proof(agent, int256(2e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
-
-        engine.settleEpoch(1, data);
 
         vm.expectRevert(abi.encodeWithSelector(RewardEngineMB.Replay.selector, address(oracle)));
         engine.settleEpoch(1, data);
@@ -581,9 +594,15 @@ contract RewardEngineMBTest is Test {
         a[0].att.uPre = 1e18;
         a[1] = _proof(address(0xA2), int256(2e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
-        engine.setKappa(1);
-        vm.expectRevert(bytes("treasury"));
-        engine.settleEpoch(1, data);
+
+        RewardEngineMB eng = new RewardEngineMB(thermo, pool, rep, oracle, address(this));
+        eng.setSettler(address(this), true);
+        bytes32 ownerSlot = bytes32(uint256(5));
+        vm.store(AGIALPHA, ownerSlot, bytes32(uint256(uint160(address(eng)))));
+        eng.setKappa(1);
+
+        vm.expectRevert(RewardEngineMB.TreasuryNotSet.selector);
+        eng.settleEpoch(1, data);
     }
 
     function test_proof_array_length_bound() public {
@@ -610,7 +629,7 @@ contract RewardEngineMBTest is Test {
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
         a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
-        vm.expectRevert("ReentrancyGuard: reentrant call");
+        vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
         eng.settleEpoch(1, data);
     }
 }

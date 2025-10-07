@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { spawnSync } = require('child_process');
 const { existsSync, rmSync, statSync } = require('fs');
-const { join } = require('path');
+const { join, resolve } = require('path');
 
 const COVERAGE_DIR = join(process.cwd(), 'coverage');
 const LCOV_PATH = join(COVERAGE_DIR, 'lcov.info');
@@ -15,20 +15,18 @@ if (existsSync(COVERAGE_DIR)) {
   }
 }
 
-const binName = process.platform === 'win32' ? 'hardhat.cmd' : 'hardhat';
-const localBin = join(process.cwd(), 'node_modules', '.bin', binName);
-const command = existsSync(localBin) ? localBin : binName;
+const env = { ...process.env };
+if (!('COVERAGE_ONLY' in env)) {
+  env.COVERAGE_ONLY = '1';
+}
 
-const args = [
-  'coverage',
-  '--config',
-  'hardhat.coverage.config.js',
-  ...process.argv.slice(2),
-];
+const runner = process.execPath;
+const script = resolve(__dirname, '..', 'run-coverage.js');
+const args = [script, ...process.argv.slice(2)];
 
-const result = spawnSync(command, args, {
+const result = spawnSync(runner, args, {
   stdio: 'inherit',
-  shell: process.platform === 'win32' && !existsSync(localBin),
+  env,
 });
 
 if (result.error) {

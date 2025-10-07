@@ -69,6 +69,7 @@ contract IntegrationTest {
     address jobRegistryAddr = address(0x123);
     address platform1 = address(0x1);
     address platform2 = address(0x2);
+    address treasury = address(0xBEEF);
 
     uint256 constant TOKEN = 1e18;
 
@@ -79,7 +80,7 @@ contract IntegrationTest {
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistryAddr);
         registry = new MockPlatformRegistry();
-        feePool = new FeePool(stakeManager, 0, address(this), ITaxPolicy(address(0)));
+        feePool = new FeePool(stakeManager, 0, treasury, ITaxPolicy(address(0)));
         router = new JobRouter(registry);
     }
 

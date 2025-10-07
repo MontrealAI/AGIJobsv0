@@ -18,6 +18,8 @@ contract AttestationRegistryTest is Test {
     address owner = address(0x1);
     address agent = address(0x2);
     address validator = address(0x3);
+    bytes32 agentRoot;
+    bytes32 validatorRoot;
 
     function setUp() public {
         ens = new MockENS();
@@ -31,14 +33,18 @@ contract AttestationRegistryTest is Test {
             bytes32(0)
         );
         identity.setAttestationRegistry(address(attest));
+        agentRoot = keccak256("agent.root");
+        validatorRoot = keccak256("validator.root");
+        identity.setAgentRootNode(agentRoot);
+        identity.setClubRootNode(validatorRoot);
     }
 
-    function _node(string memory label) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(bytes32(0), keccak256(bytes(label))));
+    function _node(bytes32 root, string memory label) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(root, keccak256(bytes(label))));
     }
 
     function testAttestAndRevoke() public {
-        bytes32 node = _node("alice");
+        bytes32 node = _node(agentRoot, "alice");
         wrapper.setOwner(uint256(node), owner);
         vm.prank(owner);
         attest.attest(node, AttestationRegistry.Role.Agent, agent);
@@ -49,7 +55,7 @@ contract AttestationRegistryTest is Test {
     }
 
     function testAttestZeroAddressReverts() public {
-        bytes32 node = _node("alice");
+        bytes32 node = _node(agentRoot, "alice");
         wrapper.setOwner(uint256(node), owner);
         vm.expectRevert(ZeroAddress.selector);
         vm.prank(owner);
@@ -57,13 +63,13 @@ contract AttestationRegistryTest is Test {
     }
 
     function testIdentityIntegration() public {
-        bytes32 aNode = _node("agent");
+        bytes32 aNode = _node(agentRoot, "agent");
         wrapper.setOwner(uint256(aNode), owner);
         vm.prank(owner);
         attest.attest(aNode, AttestationRegistry.Role.Agent, agent);
         assertTrue(identity.isAuthorizedAgent(agent, "agent", new bytes32[](0)));
 
-        bytes32 vNode = _node("validator");
+        bytes32 vNode = _node(validatorRoot, "validator");
         wrapper.setOwner(uint256(vNode), owner);
         vm.prank(owner);
         attest.attest(vNode, AttestationRegistry.Role.Validator, validator);

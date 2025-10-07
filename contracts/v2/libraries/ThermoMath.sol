@@ -16,6 +16,20 @@ library ThermoMath {
     error ExpInputOutOfBounds();
     error WeightOverflow();
 
+    function _scaleExponent(int256 diff, int256 T) private pure returns (int256 scaled) {
+        if (diff == type(int256).min) {
+            revert ExpInputOutOfBounds();
+        }
+        int256 absDiff = diff >= 0 ? diff : -diff;
+        int256 maxDiff = type(int256).max / WAD;
+        if (absDiff > maxDiff) {
+            revert ExpInputOutOfBounds();
+        }
+        unchecked {
+            scaled = (diff * WAD) / T;
+        }
+    }
+
     /// @dev uses PRBMath's fixed-point exponential
     function _exp(int256 x) private pure returns (uint256) {
         if (x > MAX_EXP_INPUT || x < MIN_EXP_INPUT) {
@@ -23,6 +37,15 @@ library ThermoMath {
         }
         int256 result = SD59x18.unwrap(exp(SD59x18.wrap(x)));
         return uint256(result);
+    }
+
+    function _safeSub(int256 a, int256 b) private pure returns (int256 result) {
+        unchecked {
+            result = a - b;
+        }
+        if ((b > 0 && result > a) || (b < 0 && result < a)) {
+            revert ExpInputOutOfBounds();
+        }
     }
 
     /// @notice Compute e^x where x is a signed 18-decimal fixed-point number.
@@ -53,15 +76,18 @@ library ThermoMath {
             if (Ei > maxE) maxE = Ei;
             if (Ei < minE) minE = Ei;
         }
-        int256 upper = ((mu - minE) * WAD) / T;
-        int256 lower = ((mu - maxE) * WAD) / T;
+        int256 upper = _scaleExponent(_safeSub(mu, minE), T);
+        int256 lower = _scaleExponent(_safeSub(mu, maxE), T);
         if (upper > MAX_EXP_INPUT || lower < MIN_EXP_INPUT) revert ExpInputOutOfBounds();
         for (uint256 i = 0; i < n; i++) {
-            int256 x = ((mu - E[i]) * WAD) / T;
+            int256 x = _scaleExponent(_safeSub(mu, E[i]), T);
             uint256 e = _exp(x);
             if (g[i] > type(uint256).max / e) revert WeightOverflow();
             uint256 weight = g[i] * e;
             raw[i] = weight;
+            if (sum > type(uint256).max - weight) {
+                revert WeightOverflow();
+            }
             sum += weight;
         }
         if (sum == 0) return w;

@@ -24,6 +24,7 @@ contract ValidationFinalizeGas is Test {
     address employer = address(0xE);
     address agent = address(0xA);
     address[3] validators;
+    address treasury = address(0xC0FFEE);
 
     function setUp() public {
         // deploy AGIALPHA token mock
@@ -31,7 +32,7 @@ contract ValidationFinalizeGas is Test {
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
 
-        stake = new StakeManager(1e18, 0, 10_000, address(this), address(0), address(0), address(this));
+        stake = new StakeManager(1e18, 0, 10_000, treasury, address(0), address(0), address(this));
         jobRegistry = new MockJobRegistry();
         stake.setJobRegistry(address(jobRegistry));
 

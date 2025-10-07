@@ -18,6 +18,7 @@ contract ValidatorSelectionFuzz is Test {
     IdentityRegistryToggle identity;
     AGIALPHAToken token;
     mapping(address => uint256) index;
+    address treasury = address(0xC0FFEE);
 
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
@@ -27,7 +28,7 @@ contract ValidatorSelectionFuzz is Test {
             1e18,
             0,
             10_000,
-            address(this),
+            treasury,
             address(0),
             address(0),
             address(this)
