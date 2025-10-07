@@ -86,16 +86,30 @@ jobs:
 
   npm-publish:
     needs: prepare
-    if: ${{ secrets.NPM_TOKEN != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Detect npm token
+        id: npm-token
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [[ -n "${NPM_TOKEN}" ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "✅ NPM token detected. Proceeding with publish job." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ NPM token not provided. Skipping npm publish." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Checkout
+        if: ${{ steps.npm-token.outputs.publish == 'true' }}
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set up Node.js
+        if: ${{ steps.npm-token.outputs.publish == 'true' }}
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -103,9 +117,11 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
+        if: ${{ steps.npm-token.outputs.publish == 'true' }}
         run: npm ci
 
       - name: Publish npm packages
+        if: ${{ steps.npm-token.outputs.publish == 'true' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
