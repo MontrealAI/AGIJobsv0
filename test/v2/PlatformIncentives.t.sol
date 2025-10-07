@@ -40,6 +40,7 @@ contract PlatformIncentivesTest is Test {
     EmployerScoreRegistry jobRegistry;
 
     address operator = address(0xBEEF);
+    address treasury = address(0xBADD);
 
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
@@ -47,19 +48,14 @@ contract PlatformIncentivesTest is Test {
         token = AGIALPHAToken(payable(AGIALPHA));
         jobRegistry = new EmployerScoreRegistry();
         jobRegistry.setTaxPolicyVersion(1);
-        stakeManager = new StakeManager(0, 0, 0, address(this), address(jobRegistry), address(0), address(this));
+        stakeManager = new StakeManager(0, 0, 0, treasury, address(jobRegistry), address(0), address(this));
         platformRegistry = new PlatformRegistry(
             IStakeManager(address(stakeManager)),
             PlatformReputationEngine(address(0)),
             1e18
         );
         jobRouter = new JobRouter(IPlatformRegistry(address(platformRegistry)));
-        feePool = new FeePool(
-            IStakeManager(address(stakeManager)),
-            0,
-            address(this),
-            ITaxPolicy(address(0))
-        );
+        feePool = new FeePool(IStakeManager(address(stakeManager)), 0, treasury, ITaxPolicy(address(0)));
         incentives = new PlatformIncentives(
             IStakeManager(address(stakeManager)),
             IPlatformRegistryFull(address(platformRegistry)),

@@ -6,6 +6,7 @@ import {CertificateNFT} from "../../contracts/v2/modules/CertificateNFT.sol";
 
 contract CertificateNFTConfigTest is Test {
     CertificateNFT nft;
+    address recipient = address(0xCAFE);
 
     function setUp() public {
         nft = new CertificateNFT("Certificate", "CERT");
@@ -17,7 +18,7 @@ contract CertificateNFTConfigTest is Test {
         vm.expectEmit(false, false, false, true, address(nft));
         emit CertificateNFT.BaseURISet(base);
         nft.setBaseURI(base);
-        uint256 tokenId = nft.mint(address(this), 1, bytes32(uint256(1)));
+        uint256 tokenId = nft.mint(recipient, 1, bytes32(uint256(1)));
         assertEq(nft.tokenURI(tokenId), string(abi.encodePacked(base, "1")), "base URI not applied");
     }
 
@@ -28,7 +29,7 @@ contract CertificateNFTConfigTest is Test {
         vm.expectEmit(false, false, false, true, address(nft));
         emit CertificateNFT.BaseURIUpdated(initialBase, updatedBase);
         nft.updateBaseURI(updatedBase);
-        uint256 tokenId = nft.mint(address(this), 2, bytes32(uint256(2)));
+        uint256 tokenId = nft.mint(recipient, 2, bytes32(uint256(2)));
         assertEq(
             nft.tokenURI(tokenId),
             string(abi.encodePacked(updatedBase, "2")),
