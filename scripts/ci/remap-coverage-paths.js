@@ -13,9 +13,18 @@ if (!fs.existsSync(coverageFile)) {
 }
 
 const mappings = new Map([
-  ['contracts/coverage/OwnerConfiguratorHarness.sol', 'contracts/v2/admin/OwnerConfigurator.sol'],
-  ['contracts/coverage/GovernorHarness.sol', 'contracts/v2/governance/AGIGovernor.sol'],
-  ['contracts/coverage/TimelockHarness.sol', 'contracts/v2/governance/AGITimelock.sol'],
+  [
+    'contracts/coverage/OwnerConfiguratorHarness.sol',
+    'contracts/v2/admin/OwnerConfigurator.sol',
+  ],
+  [
+    'contracts/coverage/GovernorHarness.sol',
+    'contracts/v2/governance/AGIGovernor.sol',
+  ],
+  [
+    'contracts/coverage/TimelockHarness.sol',
+    'contracts/v2/governance/AGITimelock.sol',
+  ],
 ]);
 
 const original = fs.readFileSync(coverageFile, 'utf8');
@@ -57,7 +66,11 @@ for (const line of lines) {
 pushBlock(currentBlock);
 
 const flattened = remappedBlocks
-  .map((block) => (block.length === 1 && block[0] === 'end_of_record' ? block[0] : block.join('\n')))
+  .map((block) =>
+    block.length === 1 && block[0] === 'end_of_record'
+      ? block[0]
+      : block.join('\n')
+  )
   .join('\n');
 
 fs.writeFileSync(coverageFile, `${flattened}\n`);
