@@ -1242,7 +1242,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function start(
         uint256 jobId,
         uint256 entropy
-    ) external override whenNotPaused nonReentrant returns (address[] memory selected) {
+    ) external override whenNotPaused nonReentrant returns (address[] memory) {
         if (msg.sender != address(jobRegistry)) revert OnlyJobRegistry();
         IJobRegistry.Job memory jobSnapshot = jobRegistry.jobs(jobId);
         IJobRegistry.JobMetadata memory meta = jobRegistry.decodeJobMetadata(
@@ -1267,6 +1267,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         entropyContributorCount[jobId] = 1;
         entropyContributed[jobId][round][msg.sender] = true;
         selectionBlock[jobId] = block.number + 1;
+
+        return new address[](0);
     }
 
     /// @notice Internal commit logic shared by overloads.

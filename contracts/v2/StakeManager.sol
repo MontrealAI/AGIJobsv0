@@ -2408,8 +2408,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         IFeePool _feePool,
         bool byGovernance
     ) external onlyJobRegistry whenNotPaused nonReentrant {
+        byGovernance; // silence unused parameter warning
         uint256 pct = getTotalPayoutPct(agent);
-        _finalizeJobFunds(jobId, employer, agent, pct, reward, validatorReward, fee, _feePool, byGovernance);
+        _finalizeJobFunds(jobId, employer, agent, pct, reward, validatorReward, fee, _feePool);
     }
 
     function finalizeJobFundsWithPct(
@@ -2423,7 +2424,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         IFeePool _feePool,
         bool byGovernance
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        _finalizeJobFunds(jobId, employer, agent, agentPct, reward, validatorReward, fee, _feePool, byGovernance);
+        byGovernance; // silence unused parameter warning
+        _finalizeJobFunds(jobId, employer, agent, agentPct, reward, validatorReward, fee, _feePool);
     }
 
     function _finalizeJobFunds(
@@ -2434,8 +2436,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 reward,
         uint256 validatorReward,
         uint256 fee,
-        IFeePool _feePool,
-        bool byGovernance
+        IFeePool _feePool
     ) internal {
         emit JobFundsFinalized(jobId, employer);
 

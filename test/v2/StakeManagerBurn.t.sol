@@ -54,7 +54,7 @@ contract StakeManagerBurnTest is Test {
         stake.exposedBurn(1);
     }
 
-    function invariant_burnAddressZeroWhenBurnPctPositive() public {
+    function invariant_burnAddressZeroWhenBurnPctPositive() public view {
         if (stake.burnPct() > 0) {
             assertEq(BURN_ADDRESS, address(0));
         }

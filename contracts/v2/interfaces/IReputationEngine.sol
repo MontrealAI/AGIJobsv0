@@ -87,7 +87,7 @@ interface IReputationEngine {
     function setBlacklist(address user, bool status) external;
 
     /// @notice Job lifecycle hooks
-    function onApply(address user) external;
+    function onApply(address user) external view;
 
     function onFinalize(address user, bool success, uint256 payout, uint256 duration) external;
 

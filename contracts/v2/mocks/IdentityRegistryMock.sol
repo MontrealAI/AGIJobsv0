@@ -103,51 +103,47 @@ contract IdentityRegistryMock is Ownable {
     }
 
     function isAuthorizedAgent(
-        address claimant,
+        address /* claimant */,
         string calldata subdomain,
         bytes32[] calldata
-    ) external view returns (bool) {
-        claimant; // silence unused
+    ) external pure returns (bool) {
         _assertSubdomain(subdomain);
         return true;
     }
 
     function isAuthorizedValidator(
-        address claimant,
+        address /* claimant */,
         string calldata subdomain,
         bytes32[] calldata
-    ) external view returns (bool) {
-        claimant; // silence unused
+    ) external pure returns (bool) {
         _assertSubdomain(subdomain);
         return true;
     }
 
     function verifyAgent(
-        address claimant,
+        address /* claimant */,
         string calldata subdomain,
         bytes32[] calldata
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        pure
+        returns (bool ok, bytes32 node, bool, bool)
     {
-        claimant; // silence unused
         _assertSubdomain(subdomain);
-        node = bytes32(0);
-        ok = true;
+        return (true, bytes32(0), false, false);
     }
 
     function verifyValidator(
-        address claimant,
+        address /* claimant */,
         string calldata subdomain,
         bytes32[] calldata
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        pure
+        returns (bool ok, bytes32 node, bool, bool)
     {
-        claimant; // silence unused
         _assertSubdomain(subdomain);
-        node = bytes32(0);
-        ok = true;
+        return (true, bytes32(0), false, false);
     }
 }
 
