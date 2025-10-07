@@ -18,20 +18,13 @@ contract ValidatorSelectionFuzz is Test {
     IdentityRegistryToggle identity;
     AGIALPHAToken token;
     mapping(address => uint256) index;
+    address treasury = address(0xD00D);
 
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(
-            1e18,
-            0,
-            10_000,
-            address(this),
-            address(0),
-            address(0),
-            address(this)
-        );
+        stake = new StakeManager(1e18, 0, 10_000, treasury, address(0), address(0), address(this));
         identity = new IdentityRegistryToggle();
         validation = new ValidationModule(
             IJobRegistry(address(0)),
