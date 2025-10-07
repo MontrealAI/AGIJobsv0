@@ -62,6 +62,8 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     {
         node = bytes32(0);
         ok = true;
+        viaWrapper = false;
+        viaMerkle = false;
     }
 
     function verifyValidator(
@@ -78,6 +80,8 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
             validation.revealValidation(jobId, approve, burnTxHash, salt, "", new bytes32[](0));
         }
         ok = true;
+        viaWrapper = false;
+        viaMerkle = false;
     }
 
     function verifyNode(
@@ -87,6 +91,8 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     ) external pure returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
         ok = true;
         node = bytes32(0);
+        viaWrapper = false;
+        viaMerkle = false;
     }
 
     // profile metadata - no-ops

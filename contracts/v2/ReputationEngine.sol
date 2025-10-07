@@ -251,7 +251,7 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     // ---------------------------------------------------------------------
 
     /// @notice Ensure an applicant meets premium requirements and is not blacklisted.
-    function onApply(address user) external onlyCaller whenNotPaused {
+    function onApply(address user) external view onlyCaller whenNotPaused {
         require(!blacklisted[user], "Blacklisted agent");
         require(reputation[user] >= premiumThreshold, "insufficient reputation");
     }

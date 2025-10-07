@@ -128,6 +128,8 @@ contract IdentityRegistryToggle is Ownable {
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
         node = bytes32(0);
+        viaWrapper = false;
+        viaMerkle = false;
         if (additionalAgents[claimant]) {
             ok = true;
         } else {
@@ -145,6 +147,8 @@ contract IdentityRegistryToggle is Ownable {
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
         node = bytes32(0);
+        viaWrapper = false;
+        viaMerkle = false;
         if (additionalValidators[claimant]) {
             ok = true;
         } else {

@@ -2435,7 +2435,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 validatorReward,
         uint256 fee,
         IFeePool _feePool,
-        bool byGovernance
+        bool /* byGovernance */
     ) internal {
         emit JobFundsFinalized(jobId, employer);
 
