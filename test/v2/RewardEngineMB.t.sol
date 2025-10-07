@@ -367,10 +367,17 @@ contract RewardEngineMBTest is Test {
     function testFuzz_mbWeights_normalization(int256 e1, int256 e2, int256 T) public {
         vm.assume(T > 0);
         vm.assume(T >= thermo.minTemp() && T <= thermo.maxTemp());
+        vm.assume(e1 != type(int256).min);
+        vm.assume(e2 != type(int256).min);
         int256 minE = e1 < e2 ? e1 : e2;
         int256 maxE = e1 > e2 ? e1 : e2;
-        int256 upper = (0 - minE) * 1e18 / T;
-        int256 lower = (0 - maxE) * 1e18 / T;
+        int256 diffMax = -minE;
+        int256 diffMin = -maxE;
+        int256 scaleLimit = type(int256).max / 1e18;
+        vm.assume(diffMax <= scaleLimit && diffMax >= -scaleLimit);
+        vm.assume(diffMin <= scaleLimit && diffMin >= -scaleLimit);
+        int256 upper = (diffMax * 1e18) / T;
+        int256 lower = (diffMin * 1e18) / T;
         vm.assume(upper <= MAX_EXP_INPUT && lower >= MIN_EXP_INPUT);
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);

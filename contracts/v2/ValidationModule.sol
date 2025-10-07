@@ -1267,6 +1267,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         entropyContributorCount[jobId] = 1;
         entropyContributed[jobId][round][msg.sender] = true;
         selectionBlock[jobId] = block.number + 1;
+        selected; // silence unused return variable; selection occurs during finalization
     }
 
     /// @notice Internal commit logic shared by overloads.

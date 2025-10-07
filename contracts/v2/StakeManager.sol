@@ -2395,6 +2395,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param employer address of the employer triggering finalization
     /// @param agent recipient of the job reward
     /// @param reward base amount paid to the agent with 18 decimals before AGI bonus
+    /// @param validatorReward total reward set aside for validators prior to agent payout
     /// @param fee amount forwarded to the fee pool with 18 decimals
     /// @param _feePool fee pool contract receiving protocol fees
     /// @param byGovernance true when governance is forcing finalization
@@ -2437,6 +2438,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         IFeePool _feePool,
         bool byGovernance
     ) internal {
+        byGovernance; // silence unused parameter without altering signature
         emit JobFundsFinalized(jobId, employer);
 
         uint256 rewardSpent = reward;

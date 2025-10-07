@@ -125,9 +125,12 @@ contract IdentityRegistryToggle is Ownable {
         bytes32[] calldata
     )
         external
+        view
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
         node = bytes32(0);
+        viaWrapper = false;
+        viaMerkle = false;
         if (additionalAgents[claimant]) {
             ok = true;
         } else {
@@ -142,9 +145,12 @@ contract IdentityRegistryToggle is Ownable {
         bytes32[] calldata
     )
         external
+        view
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
         node = bytes32(0);
+        viaWrapper = false;
+        viaMerkle = false;
         if (additionalValidators[claimant]) {
             ok = true;
         } else {

@@ -62,6 +62,8 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     {
         node = bytes32(0);
         ok = true;
+        viaWrapper = false;
+        viaMerkle = false;
     }
 
     function verifyValidator(
@@ -70,6 +72,8 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
         bytes32[] calldata
     ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
         node = bytes32(0);
+        viaWrapper = false;
+        viaMerkle = false;
         if (attack == Attack.Commit) {
             attack = Attack.None;
             validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
@@ -87,6 +91,8 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     ) external pure returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
         ok = true;
         node = bytes32(0);
+        viaWrapper = false;
+        viaMerkle = false;
     }
 
     // profile metadata - no-ops
