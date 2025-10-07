@@ -3,6 +3,8 @@ node_modules/
 artifacts/
 cache/
 coverage/
+!test/coverage/
+!test/coverage/**
 coverage.json
 
 .next/

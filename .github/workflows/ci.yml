@@ -89,8 +89,6 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
-      - name: Install Foundry dependencies
-        run: forge install foundry-rs/forge-std
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256
 
