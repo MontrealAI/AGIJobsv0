@@ -16,6 +16,7 @@ permissions:
   packages: write
   security-events: write
   id-token: write
+  attestations: write
 
 concurrency:
   group: apps-${{ github.ref }}
@@ -81,6 +82,22 @@ jobs:
               --severity HIGH,CRITICAL \
               --exit-code 0 \
               ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}
+
+      - name: Attest Console image provenance
+        if: github.ref == 'refs/heads/main'
+        id: attest-console
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/owner-console
+          subject-digest: ${{ steps.get_digest.outputs.digest }}
+          push-to-registry: true
+
+      - name: Upload Console attestation bundle
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: owner-console-provenance
+          path: ${{ steps.attest-console.outputs.bundle-path }}
 
   portal:
     runs-on: ubuntu-24.04
@@ -154,24 +171,18 @@ jobs:
               --exit-code 0 \
               ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
 
-  provenance-console:
-    if: github.ref == 'refs/heads/main'
-    needs: [console]
-    permissions:
-      actions: read
-      id-token: write
-      contents: read
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
-    with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/owner-console@{1}', github.repository_owner, needs.console.outputs.digest)) }}
+      - name: Attest Portal image provenance
+        if: github.ref == 'refs/heads/main'
+        id: attest-portal
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/webapp
+          subject-digest: ${{ steps.get_digest.outputs.digest }}
+          push-to-registry: true
 
-  provenance-portal:
-    if: github.ref == 'refs/heads/main'
-    needs: [portal]
-    permissions:
-      actions: read
-      id-token: write
-      contents: read
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
-    with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/webapp@{1}', github.repository_owner, needs.portal.outputs.digest)) }}
+      - name: Upload Portal attestation bundle
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-provenance
+          path: ${{ steps.attest-portal.outputs.bundle-path }}
