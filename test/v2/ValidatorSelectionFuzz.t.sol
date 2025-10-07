@@ -11,34 +11,45 @@ import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
+import {MockJobRegistry} from "../../contracts/legacy/MockV2.sol";
 
 contract ValidatorSelectionFuzz is Test {
     StakeManager stake;
     ValidationModule validation;
     IdentityRegistryToggle identity;
     AGIALPHAToken token;
+    MockJobRegistry jobRegistry;
     mapping(address => uint256) index;
+
+    address constant TREASURY = address(0xDEAD);
+    address constant ENTROPY_HELPER = address(0xBEEF);
 
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
+        vm.store(AGIALPHA, bytes32(uint256(5)), bytes32(uint256(uint160(address(this)))));
         token = AGIALPHAToken(payable(AGIALPHA));
         stake = new StakeManager(
             1e18,
             0,
             10_000,
-            address(this),
+            TREASURY,
             address(0),
             address(0),
             address(this)
         );
+        stake.setTreasuryAllowlist(TREASURY, true);
+        vm.prank(address(stake));
+        token.acceptTerms();
+        jobRegistry = new MockJobRegistry();
+        stake.setJobRegistry(address(jobRegistry));
         identity = new IdentityRegistryToggle();
         validation = new ValidationModule(
-            IJobRegistry(address(0)),
+            IJobRegistry(address(jobRegistry)),
             IStakeManager(address(stake)),
             1,
             1,
-            1,
+            3,
             10,
             new address[](0)
         );
@@ -46,15 +57,30 @@ contract ValidatorSelectionFuzz is Test {
         stake.setValidationModule(address(validation));
     }
 
+    function _select(uint256 jobId, uint256 entropySeed)
+        internal
+        returns (address[] memory selected)
+    {
+        validation.selectValidators(jobId, entropySeed);
+        vm.prank(ENTROPY_HELPER);
+        validation.selectValidators(jobId, entropySeed + 1);
+        vm.roll(block.number + 2);
+        selected = validation.selectValidators(jobId, entropySeed + 2);
+        validation.resetJobNonce(jobId);
+        validation.resetSelection(jobId);
+    }
+
     function testFuzz_validatorSelection(uint8 poolSize, uint8 selectCount) public {
-        vm.assume(poolSize > 0 && poolSize <= 10);
-        vm.assume(selectCount > 0 && selectCount <= poolSize);
+        vm.assume(poolSize >= 3 && poolSize <= 10);
+        vm.assume(selectCount >= 3 && selectCount <= poolSize);
         address[] memory pool = new address[](poolSize);
         for (uint8 i; i < poolSize; i++) {
             address val = address(uint160(uint256(keccak256(abi.encode(i + 1)))));
             pool[i] = val;
             identity.addAdditionalValidator(val);
             token.mint(val, 1e18);
+            vm.prank(val);
+            token.acceptTerms();
             vm.prank(val);
             token.approve(address(stake), 1e18);
             vm.prank(val);
@@ -63,7 +89,7 @@ contract ValidatorSelectionFuzz is Test {
         validation.setValidatorPool(pool);
         validation.setValidatorsPerJob(selectCount);
         validation.setValidatorPoolSampleSize(selectCount);
-        address[] memory selected = validation.selectValidators(1, 1);
+        address[] memory selected = _select(1, 1);
         assertEq(selected.length, selectCount);
         for (uint256 i; i < selected.length; i++) {
             for (uint256 j = i + 1; j < selected.length; j++) {
@@ -84,6 +110,8 @@ contract ValidatorSelectionFuzz is Test {
             identity.addAdditionalValidator(val);
             token.mint(val, 1e18);
             vm.prank(val);
+            token.acceptTerms();
+            vm.prank(val);
             token.approve(address(stake), 1e18);
             vm.prank(val);
             stake.depositStake(StakeManager.Role.Validator, 1e18);
@@ -96,7 +124,7 @@ contract ValidatorSelectionFuzz is Test {
         uint256[] memory counts = new uint256[](poolSize);
         for (uint256 j; j < iterations; j++) {
             vm.roll(block.number + 1);
-            address[] memory sel = validation.selectValidators(j + 1, 1);
+            address[] memory sel = _select(j + 1, 1);
             for (uint256 k; k < sel.length; k++) {
                 counts[index[sel[k]]] += 1;
             }
@@ -111,7 +139,7 @@ contract ValidatorSelectionFuzz is Test {
         uint256[] memory countsRev = new uint256[](poolSize);
         for (uint256 j; j < iterations; j++) {
             vm.roll(block.number + 1);
-            address[] memory sel = validation.selectValidators(iterations + j + 1, 1);
+            address[] memory sel = _select(iterations + j + 1, 1);
             for (uint256 k; k < sel.length; k++) {
                 countsRev[index[sel[k]]] += 1;
             }
@@ -137,6 +165,8 @@ contract ValidatorSelectionFuzz is Test {
             identity.addAdditionalValidator(val);
             token.mint(val, 1e18);
             vm.prank(val);
+            token.acceptTerms();
+            vm.prank(val);
             token.approve(address(stake), 1e18);
             vm.prank(val);
             stake.depositStake(StakeManager.Role.Validator, 1e18);
@@ -149,7 +179,7 @@ contract ValidatorSelectionFuzz is Test {
         uint256[] memory counts = new uint256[](poolSize);
         for (uint256 j; j < iterations; j++) {
             vm.roll(block.number + 1);
-            address[] memory sel = validation.selectValidators(j + 1, 1);
+            address[] memory sel = _select(j + 1, 1);
             for (uint256 k; k < sel.length; k++) {
                 counts[index[sel[k]]] += 1;
             }
