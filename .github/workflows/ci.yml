@@ -23,6 +23,7 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Prettier formatting check
@@ -48,6 +49,7 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Compile contracts
@@ -81,6 +83,7 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Regenerate constants for Foundry
@@ -121,6 +124,7 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Regenerate constants for coverage

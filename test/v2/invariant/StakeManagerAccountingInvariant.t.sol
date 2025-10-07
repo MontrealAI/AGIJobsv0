@@ -130,14 +130,14 @@ contract StakeManagerAccountingInvariant is StdInvariant, Test {
         targetContract(address(handler));
     }
 
-    function invariant_totalStakeAccounting() public {
+    function invariant_totalStakeAccounting() public view {
         uint256 agentSum = handler.totalTrackedStake(StakeManager.Role.Agent);
         uint256 validatorSum = handler.totalTrackedStake(StakeManager.Role.Validator);
         assertEq(agentSum, stake.totalStakes(StakeManager.Role.Agent), "agent stake mismatch");
         assertEq(validatorSum, stake.totalStakes(StakeManager.Role.Validator), "validator stake mismatch");
     }
 
-    function invariant_stakeManagerSolvent() public {
+    function invariant_stakeManagerSolvent() public view {
         uint256 liabilities = stake.totalStakes(StakeManager.Role.Agent)
             + stake.totalStakes(StakeManager.Role.Validator) + stake.totalStakes(StakeManager.Role.Platform)
             + stake.operatorRewardPool();

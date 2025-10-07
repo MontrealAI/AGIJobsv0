@@ -125,7 +125,8 @@ contract IdentityRegistryToggle is Ownable {
         bytes32[] calldata
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        view
+        returns (bool ok, bytes32 node, bool, bool)
     {
         node = bytes32(0);
         if (additionalAgents[claimant]) {
@@ -134,6 +135,7 @@ contract IdentityRegistryToggle is Ownable {
             ok = result;
         }
         _assertSubdomain(subdomain);
+        return (ok, node, false, false);
     }
 
     function verifyValidator(
@@ -142,7 +144,8 @@ contract IdentityRegistryToggle is Ownable {
         bytes32[] calldata
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        view
+        returns (bool ok, bytes32 node, bool, bool)
     {
         node = bytes32(0);
         if (additionalValidators[claimant]) {
@@ -151,6 +154,7 @@ contract IdentityRegistryToggle is Ownable {
             ok = result;
         }
         _assertSubdomain(subdomain);
+        return (ok, node, false, false);
     }
 }
 

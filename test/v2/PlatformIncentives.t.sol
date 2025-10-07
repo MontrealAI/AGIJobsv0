@@ -112,7 +112,7 @@ contract PlatformIncentivesTest is Test {
         incentives.stakeAndActivate(0);
     }
 
-    function testDefaultMaxDiscountPct() public {
+    function testDefaultMaxDiscountPct() public view {
         assertEq(incentives.maxDiscountPct(), incentives.DEFAULT_MAX_DISCOUNT_PCT());
     }
 

@@ -848,7 +848,7 @@ contract IdentityRegistry is Ownable2Step {
         if (aliases.length != 0) {
             return keccak256(abi.encodePacked(aliases[0], label));
         }
-        return bytes32(0);
+        return keccak256(abi.encodePacked(bytes32(0), label));
     }
 
     function _verifyOwnership(
@@ -987,6 +987,20 @@ contract IdentityRegistry is Ownable2Step {
                     return true;
                 }
             }
+            if (agentRootNode == bytes32(0) && aliasLen == 0) {
+                bytes32 fallbackNode = keccak256(
+                    abi.encodePacked(bytes32(0), labelHash)
+                );
+                if (
+                    attestationRegistry.isAttested(
+                        fallbackNode,
+                        AttestationRegistry.Role.Agent,
+                        claimant
+                    )
+                ) {
+                    return true;
+                }
+            }
         }
         return _checkAgentENSOwnership(claimant, subdomain, proof);
     }
@@ -1033,6 +1047,20 @@ contract IdentityRegistry is Ownable2Step {
                 if (
                     attestationRegistry.isAttested(
                         aliasNode,
+                        AttestationRegistry.Role.Validator,
+                        claimant
+                    )
+                ) {
+                    return true;
+                }
+            }
+            if (clubRootNode == bytes32(0) && aliasLen == 0) {
+                bytes32 fallbackNode = keccak256(
+                    abi.encodePacked(bytes32(0), labelHash)
+                );
+                if (
+                    attestationRegistry.isAttested(
+                        fallbackNode,
                         AttestationRegistry.Role.Validator,
                         claimant
                     )
