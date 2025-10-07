@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import { SD59x18 } from "@prb/math/src/sd59x18/ValueType.sol";
-import { exp } from "@prb/math/src/sd59x18/Math.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SD59x18} from "@prb/math/src/sd59x18/ValueType.sol";
+import {exp} from "@prb/math/src/sd59x18/Math.sol";
 
 /// @title ThermoMath
 /// @notice Utility functions for computing approximate Maxwell-Boltzmann weights.
@@ -66,7 +67,7 @@ library ThermoMath {
         }
         if (sum == 0) return w;
         for (uint256 i = 0; i < n; i++) {
-            w[i] = (raw[i] * uint256(WAD)) / sum;
+            w[i] = Math.mulDiv(raw[i], uint256(WAD), sum);
         }
     }
 }

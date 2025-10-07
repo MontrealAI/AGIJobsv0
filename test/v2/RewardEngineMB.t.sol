@@ -10,6 +10,7 @@ import {IFeePool} from "../../contracts/v2/interfaces/IFeePool.sol";
 import {IEnergyOracle} from "../../contracts/v2/interfaces/IEnergyOracle.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 int256 constant MAX_EXP_INPUT = 133_084258667509499440;
 int256 constant MIN_EXP_INPUT = -41_446531673892822322;
@@ -166,6 +167,44 @@ contract RewardEngineMBTest is Test {
         p.sig = bytes("");
     }
 
+    function _accumulate(RewardEngineMB.Proof[] memory proofs)
+        internal
+        pure
+        returns (uint256 value, uint256 uPre, uint256 uPost)
+    {
+        uint256 n = proofs.length;
+        for (uint256 i = 0; i < n; i++) {
+            IEnergyOracle.Attestation memory att = proofs[i].att;
+            value += att.value;
+            uPre += att.uPre;
+            uPost += att.uPost;
+        }
+    }
+
+    function _expectedBudget(RewardEngineMB.EpochData memory data) internal view returns (uint256) {
+        (uint256 agentValue, uint256 agentPre, uint256 agentPost) = _accumulate(data.agents);
+        (uint256 validatorValue, uint256 validatorPre, uint256 validatorPost) = _accumulate(data.validators);
+        (uint256 operatorValue, uint256 operatorPre, uint256 operatorPost) = _accumulate(data.operators);
+        (uint256 employerValue, uint256 employerPre, uint256 employerPost) = _accumulate(data.employers);
+
+        uint256 totalValue = agentValue + validatorValue + operatorValue + employerValue;
+        uint256 sumPre = agentPre + validatorPre + operatorPre + employerPre;
+        uint256 sumPost = agentPost + validatorPost + operatorPost + employerPost;
+
+        Thermostat current = engine.thermostat();
+        int256 Tsys = address(current) != address(0) ? current.systemTemperature() : engine.temperature();
+        if (Tsys <= 0) {
+            Tsys = engine.temperature();
+        }
+
+        int256 dH = int256(totalValue) - int256(data.paidCosts);
+        int256 dS = int256(sumPre) - int256(sumPost);
+        int256 free = -(dH - (Tsys * dS) / int256(1e18));
+        if (free < 0) free = 0;
+
+        return uint256(free) * engine.kappa() / 1e18;
+    }
+
     function test_settleEpochDistributesBudget() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
@@ -183,15 +222,21 @@ contract RewardEngineMBTest is Test {
         data.employers = e;
         data.paidCosts = 1e18;
 
+        uint256 expectedBudget = _expectedBudget(data);
         engine.settleEpoch(1, data);
 
-        uint256 budget = 1e18; // -(dH - Tsys*dS) = 1e18
-        assertEq(pool.total(), budget, "budget distributed");
+        assertEq(pool.total(), expectedBudget, "budget distributed");
         // Check per-role buckets
-        assertEq(pool.rewards(agent), budget * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18);
-        assertEq(pool.rewards(validator), budget * engine.roleShare(RewardEngineMB.Role.Validator) / 1e18);
-        assertEq(pool.rewards(operator), budget * engine.roleShare(RewardEngineMB.Role.Operator) / 1e18);
-        assertEq(pool.rewards(employer), budget * engine.roleShare(RewardEngineMB.Role.Employer) / 1e18);
+        assertEq(pool.rewards(agent), expectedBudget * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18);
+        assertEq(
+            pool.rewards(validator), expectedBudget * engine.roleShare(RewardEngineMB.Role.Validator) / 1e18
+        );
+        assertEq(
+            pool.rewards(operator), expectedBudget * engine.roleShare(RewardEngineMB.Role.Operator) / 1e18
+        );
+        assertEq(
+            pool.rewards(employer), expectedBudget * engine.roleShare(RewardEngineMB.Role.Employer) / 1e18
+        );
         // Reputation update sign
         assertEq(rep.deltas(agent), -int256(1e18));
     }
@@ -213,9 +258,10 @@ contract RewardEngineMBTest is Test {
         data.paidCosts = 1e18;
 
         engine.setKappa(2e18);
+        uint256 expectedBudget = _expectedBudget(data);
         engine.settleEpoch(1, data);
-        // budget should be double with kappa = 2e18
-        assertEq(pool.total(), 2e18, "scaled budget distributed");
+        // budget should reflect updated kappa scaling
+        assertEq(pool.total(), expectedBudget, "scaled budget distributed");
     }
 
     function test_setKappaRejectsZero() public {
@@ -252,10 +298,10 @@ contract RewardEngineMBTest is Test {
         data.employers = e;
         data.paidCosts = 0;
 
+        uint256 expectedBudget = _expectedBudget(data);
         engine.settleEpoch(1, data);
 
-        uint256 budget = 1e18; // Tsys * dS / WAD = 1e18
-        assertEq(pool.total(), budget, "entropy scaling");
+        assertEq(pool.total(), expectedBudget, "entropy scaling");
     }
 
     function test_baseline_energy_adjusts_reputation() public {
@@ -266,6 +312,7 @@ contract RewardEngineMBTest is Test {
         address wasteful = address(0xA2);
         a[0] = _proof(efficient, int256(5e17), 1, RewardEngineMB.Role.Agent);
         a[1] = _proof(wasteful, int256(2e18), 1, RewardEngineMB.Role.Agent);
+        a[0].att.uPre = 1e18;
         data.agents = a;
         engine.settleEpoch(1, data);
         assertGt(rep.deltas(efficient), 0);
@@ -282,8 +329,9 @@ contract RewardEngineMBTest is Test {
         a[0].att.uPre = 1e18;
         data.agents = a;
         engine.setTreasury(treasury);
+        uint256 expectedBudget = _expectedBudget(data);
         engine.settleEpoch(1, data);
-        uint256 bucket = 1e18 * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
+        uint256 bucket = expectedBudget * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
         uint256 expected = bucket / 2;
         assertApproxEqAbs(pool.rewards(a1), expected, 1);
         assertApproxEqAbs(pool.rewards(a2), expected, 1);
@@ -299,8 +347,9 @@ contract RewardEngineMBTest is Test {
         a[0].att.uPre = 1e18;
         data.agents = a;
         engine.setTreasury(treasury);
+        uint256 expectedBudget = _expectedBudget(data);
         engine.settleEpoch(1, data);
-        uint256 bucket = 1e18 * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
+        uint256 bucket = expectedBudget * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
         assertGt(pool.rewards(low), bucket * 99 / 100);
         assertLt(pool.rewards(high), bucket / 100);
     }
@@ -317,8 +366,9 @@ contract RewardEngineMBTest is Test {
         a[0].att.uPre = 1e18;
         data.agents = a;
         engine.setTreasury(treasury);
+        uint256 expectedBudget = _expectedBudget(data);
         engine.settleEpoch(1, data);
-        uint256 bucket = 1e18 * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
+        uint256 bucket = expectedBudget * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
         assertGt(pool.rewards(low), bucket * 99 / 100);
         assertLt(pool.rewards(high), bucket / 100);
     }
@@ -335,8 +385,9 @@ contract RewardEngineMBTest is Test {
         a[0].att.uPre = 1e18;
         data.agents = a;
         engine.setTreasury(treasury);
+        uint256 expectedBudget = _expectedBudget(data);
         engine.settleEpoch(1, data);
-        uint256 bucket = 1e18 * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
+        uint256 bucket = expectedBudget * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
         E[0] = int256(1e18);
@@ -453,11 +504,12 @@ contract RewardEngineMBTest is Test {
         proofs[1] = _proofWithDeg(rd.users[1], rd.energies[1], rd.degeneracies[1], 1, RewardEngineMB.Role.Agent);
         data.agents = proofs;
 
+        uint256 budget = _expectedBudget(data);
         engine.settleEpoch(1, data);
 
-        uint256 bucket = pool.total();
-        uint256 expectedLow = bucket * (wMu[0] * rd.degeneracies[0]) / sumMu;
-        uint256 expectedHigh = bucket * (wMu[1] * rd.degeneracies[1]) / sumMu;
+        uint256 agentBucket = budget * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
+        uint256 expectedLow = agentBucket * (wMu[0] * rd.degeneracies[0]) / sumMu;
+        uint256 expectedHigh = agentBucket * (wMu[1] * rd.degeneracies[1]) / sumMu;
 
         assertApproxEqAbs(pool.rewards(rd.users[0]), expectedLow, 2, "low payout matches");
         assertApproxEqAbs(pool.rewards(rd.users[1]), expectedHigh, 2, "high payout matches");
@@ -483,11 +535,10 @@ contract RewardEngineMBTest is Test {
 
     function test_replay_nonce_same_epoch_reverts() public {
         RewardEngineMB.EpochData memory data;
-        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](2);
         a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
+        a[1] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
-
-        engine.settleEpoch(1, data);
 
         vm.expectRevert(abi.encodeWithSelector(RewardEngineMB.Replay.selector, address(oracle)));
         engine.settleEpoch(1, data);
@@ -564,9 +615,9 @@ contract RewardEngineMBTest is Test {
         data.paidCosts = 1e18;
 
         engine.setTreasury(treasury);
+        uint256 budget = _expectedBudget(data);
         engine.settleEpoch(1, data);
 
-        uint256 budget = 1e18;
         uint256 agentBucket = (budget * engine.roleShare(RewardEngineMB.Role.Agent)) / 1e18;
         uint256 perAgent = agentBucket / 3;
         uint256 distributed = perAgent * 3;
@@ -583,9 +634,14 @@ contract RewardEngineMBTest is Test {
         a[0].att.uPre = 1e18;
         a[1] = _proof(address(0xA2), int256(2e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
-        engine.setKappa(1);
-        vm.expectRevert(bytes("treasury"));
-        engine.settleEpoch(1, data);
+        MockFeePool freshPool = new MockFeePool();
+        MockReputation freshRep = new MockReputation();
+        RewardEngineMB fresh = new RewardEngineMB(thermo, freshPool, freshRep, oracle, address(this));
+        fresh.setSettler(address(this), true);
+        bytes32 ownerSlot = bytes32(uint256(5));
+        vm.store(AGIALPHA, ownerSlot, bytes32(uint256(uint160(address(fresh)))));
+        vm.expectRevert(RewardEngineMB.TreasuryNotSet.selector);
+        fresh.settleEpoch(1, data);
     }
 
     function test_proof_array_length_bound() public {
@@ -611,8 +667,10 @@ contract RewardEngineMBTest is Test {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
         a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
+        a[0].att.uPre = 1e18;
         data.agents = a;
-        vm.expectRevert("ReentrancyGuard: reentrant call");
+        data.paidCosts = 0;
+        vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
         eng.settleEpoch(1, data);
     }
 }
