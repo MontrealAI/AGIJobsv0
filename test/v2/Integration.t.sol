@@ -79,7 +79,8 @@ contract IntegrationTest {
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistryAddr);
         registry = new MockPlatformRegistry();
-        feePool = new FeePool(stakeManager, 0, address(this), ITaxPolicy(address(0)));
+        feePool = new FeePool(stakeManager, 0, address(0xBEEF), ITaxPolicy(address(0)));
+        feePool.setBurnPct(0);
         router = new JobRouter(registry);
     }
 
@@ -121,11 +122,22 @@ contract IntegrationTest {
         feePool.claimRewards();
         vm.prank(platform2);
         feePool.claimRewards();
-        uint256 expected1 = amount * stake1 / (stake1 + stake2);
+        uint256 perToken = feePool.cumulativePerToken();
+        uint256 scale = feePool.ACCUMULATOR_SCALE();
         uint256 bal1 = token.balanceOf(platform1);
         uint256 bal2 = token.balanceOf(platform2);
-        require(bal1 + 1 >= expected1 && expected1 + 1 >= bal1, "fuzz1");
-        require(bal1 + bal2 + token.balanceOf(address(feePool)) == amount, "sum");
+        uint256 payoutPct1 = stakeManager.getTotalPayoutPct(platform1);
+        uint256 payoutPct2 = stakeManager.getTotalPayoutPct(platform2);
+        uint256 boosted1 = (stake1 * payoutPct1) / 100;
+        uint256 boosted2 = (stake2 * payoutPct2) / 100;
+        uint256 expected1 = (boosted1 * perToken) / scale;
+        uint256 expected2 = (boosted2 * perToken) / scale;
+        require(bal1 == expected1, "fuzz1");
+        require(bal2 == expected2, "fuzz2");
+        uint256 accounted = expected1 + expected2;
+        address treasury = feePool.treasury();
+        uint256 treasuryBalance = treasury == address(0) ? 0 : token.balanceOf(treasury);
+        require(accounted + treasuryBalance + token.balanceOf(address(feePool)) == amount, "sum");
     }
 
     function testFuzzRoutingFairness(uint64 st1, uint64 st2, bytes32 seed) public {
