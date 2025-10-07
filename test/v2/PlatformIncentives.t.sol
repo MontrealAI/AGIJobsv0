@@ -40,14 +40,22 @@ contract PlatformIncentivesTest is Test {
     EmployerScoreRegistry jobRegistry;
 
     address operator = address(0xBEEF);
+    address treasury = address(0xCAFE);
 
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
+        bytes32 ownerSlot = bytes32(uint256(5));
+        vm.store(AGIALPHA, ownerSlot, bytes32(uint256(uint160(address(this)))));
+        assertEq(token.owner(), address(this), "token owner");
+        bytes32 ackSlotOwner = keccak256(abi.encode(address(this), uint256(6)));
+        bytes32 ackSlotOperator = keccak256(abi.encode(operator, uint256(6)));
+        vm.store(AGIALPHA, ackSlotOwner, bytes32(uint256(1)));
+        vm.store(AGIALPHA, ackSlotOperator, bytes32(uint256(1)));
         jobRegistry = new EmployerScoreRegistry();
         jobRegistry.setTaxPolicyVersion(1);
-        stakeManager = new StakeManager(0, 0, 0, address(this), address(jobRegistry), address(0), address(this));
+        stakeManager = new StakeManager(0, 0, 0, treasury, address(jobRegistry), address(0), address(this));
         platformRegistry = new PlatformRegistry(
             IStakeManager(address(stakeManager)),
             PlatformReputationEngine(address(0)),
@@ -57,9 +65,12 @@ contract PlatformIncentivesTest is Test {
         feePool = new FeePool(
             IStakeManager(address(stakeManager)),
             0,
-            address(this),
+            address(0),
             ITaxPolicy(address(0))
         );
+        bytes32 ackSlotFeePool = keccak256(abi.encode(address(feePool), uint256(6)));
+        vm.store(AGIALPHA, ackSlotFeePool, bytes32(uint256(1)));
+        feePool.setBurnPct(0);
         incentives = new PlatformIncentives(
             IStakeManager(address(stakeManager)),
             IPlatformRegistryFull(address(platformRegistry)),
