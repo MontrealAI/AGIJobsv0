@@ -71,7 +71,7 @@ export default function Home() {
       }
     }
     loadJobs();
-  }, []);
+  }, [setError, setMessage]);
 
   async function vote(jobId: string, approve: boolean, specHash: string) {
     if (!(window as any).ethereum) {

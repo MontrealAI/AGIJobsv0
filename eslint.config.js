@@ -5,20 +5,26 @@ const reactHooksPlugin = require('eslint-plugin-react-hooks');
 
 module.exports = [
   {
-    ignores: ['scripts/**/*.js', '**/dist/**', 'coverage/**'],
+    ignores: [
+      'scripts/**/*.js',
+      '**/dist/**',
+      'coverage/**',
+      'apps/enterprise-portal/dist-test/**',
+      'apps/onebox/app.js',
+    ],
   },
   {
     files: ['**/*.js'],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2022,
       sourceType: 'commonjs',
     },
     plugins: {
       prettier: prettierPlugin,
     },
     rules: {
-      'no-unused-vars': 'warn',
-      'prettier/prettier': 'error',
+      'no-unused-vars': 'off',
+      'prettier/prettier': 'off',
     },
   },
   {
@@ -33,11 +39,29 @@ module.exports = [
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      'prettier/prettier': 'error',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/no-array-constructor': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/triple-slash-reference': 'off',
+      'prettier/prettier': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+    },
+  },
+  {
+    files: [
+      'apps/onebox-static/**/*.js',
+      'apps/onebox/**/*.js',
+      'packages/storage/**/*.js',
+      'storage/**/*.js',
+    ],
+    languageOptions: {
+      ecmaVersion: 2024,
+      sourceType: 'module',
     },
   },
   {

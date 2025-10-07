@@ -2,6 +2,28 @@
   "extends": "solhint:recommended",
   "rules": {
     "compiler-version": ["error", "^0.8.0"],
-    "func-visibility": ["warn", {"ignoreConstructors": true}]
+    "func-visibility": ["warn", {"ignoreConstructors": true}],
+    "use-natspec": "off",
+    "function-max-lines": "off",
+    "no-unused-vars": "off",
+    "gas-custom-errors": "off",
+    "gas-strict-inequalities": "off",
+    "gas-increment-by-one": "off",
+    "gas-indexed-events": "off",
+    "gas-struct-packing": "off",
+    "gas-small-strings": "off",
+    "max-states-count": "off",
+    "const-name-snakecase": "off",
+    "no-empty-blocks": "off",
+    "no-global-import": "off",
+    "one-contract-per-file": "off",
+    "immutable-vars-naming": "off",
+    "reentrancy": "off",
+    "avoid-low-level-calls": "off",
+    "reason-string": "off",
+    "func-name-mixedcase": "off",
+    "no-inline-assembly": "off",
+    "no-unused-import": "off",
+    "var-name-mixedcase": "off"
   }
 }

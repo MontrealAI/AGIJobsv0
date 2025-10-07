@@ -589,7 +589,6 @@ function checkTruffleScripts(): CheckResult[] {
 function checkTruffleConfig(network: SupportedNetwork): CheckResult[] {
   const results: CheckResult[] = [];
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
     const truffleConfig = require('../../truffle-config');
     const entry = truffleConfig?.networks?.[network];
     if (!entry) {

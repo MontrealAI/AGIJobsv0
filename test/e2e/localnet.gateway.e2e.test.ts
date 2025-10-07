@@ -45,7 +45,6 @@ process.env.KEYSTORE_URL = process.env.KEYSTORE_URL ||
   'http://127.0.0.1:65535/keystore.json';
 
 // Import agent gateway helpers *after* seeding the environment.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const gatewayUtils = require('../../agent-gateway/utils');
 
 import type { TaskExecutionContext } from '../../agent-gateway/taskExecution';
