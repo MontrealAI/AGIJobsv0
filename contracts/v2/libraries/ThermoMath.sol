@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import { SD59x18 } from "@prb/math/src/sd59x18/ValueType.sol";
 import { exp } from "@prb/math/src/sd59x18/Math.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @title ThermoMath
 /// @notice Utility functions for computing approximate Maxwell-Boltzmann weights.
@@ -62,11 +63,41 @@ library ThermoMath {
             if (g[i] > type(uint256).max / e) revert WeightOverflow();
             uint256 weight = g[i] * e;
             raw[i] = weight;
+            if (weight > type(uint256).max - sum) revert WeightOverflow();
             sum += weight;
         }
         if (sum == 0) return w;
+        uint256 wad = uint256(WAD);
+        uint256[] memory remainders = new uint256[](n);
+        uint256 total;
         for (uint256 i = 0; i < n; i++) {
-            w[i] = (raw[i] * uint256(WAD)) / sum;
+            uint256 weightWad = Math.mulDiv(raw[i], wad, sum);
+            w[i] = weightWad;
+            total += weightWad;
+            remainders[i] = mulmod(raw[i], wad, sum);
+        }
+        if (total == wad) return w;
+        uint256 deficit = wad - total;
+        while (deficit > 0) {
+            uint256 bestIndex;
+            uint256 bestRemainder;
+            for (uint256 i = 0; i < n; i++) {
+                uint256 remainder = remainders[i];
+                if (remainder > bestRemainder) {
+                    bestRemainder = remainder;
+                    bestIndex = i;
+                }
+            }
+            if (bestRemainder == 0) {
+                for (uint256 i = 0; i < n && deficit > 0; i++) {
+                    w[i] += 1;
+                    deficit -= 1;
+                }
+                break;
+            }
+            w[bestIndex] += 1;
+            remainders[bestIndex] = 0;
+            deficit -= 1;
         }
     }
 }
