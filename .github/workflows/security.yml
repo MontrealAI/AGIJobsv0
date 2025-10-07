@@ -57,8 +57,11 @@ jobs:
           docker run --rm \
             -v "$PWD":/src \
             -w /src \
+            -e FOUNDRY_OUT=/tmp/forge-out \
+            -e FOUNDRY_BUILD_INFO_PATH=/tmp/forge-build-info \
+            -e FOUNDRY_CACHE_PATH=/tmp/forge-cache \
             trailofbits/eth-security-toolbox:nightly-20240902 \
-            slither . --fail-high --exclude-dependencies --sarif slither.sarif
+            bash -lc 'set -euo pipefail; mkdir -p "$FOUNDRY_OUT" "$FOUNDRY_BUILD_INFO_PATH" "$FOUNDRY_CACHE_PATH" && slither . --fail-high --exclude-dependencies --sarif slither.sarif'
 
       - name: Upload Slither SARIF
         if: always()
