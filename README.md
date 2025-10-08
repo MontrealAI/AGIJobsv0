@@ -24,6 +24,24 @@ The `ci (v2)` GitHub Actions workflow enforces quality gates on every pull reque
 - **Coverage thresholds** – regenerates constants, recomputes coverage, enforces the 90% minimum, and uploads the LCOV artifact.
 - **Summary gate** – publishes a human-readable status table and fails the workflow if any upstream job is unsuccessful, giving non-technical reviewers a single green/red indicator.
 
+```mermaid
+flowchart LR
+    classDef job fill:#ecfeff,stroke:#06b6d4,color:#0e7490;
+    classDef gate fill:#f5f3ff,stroke:#7c3aed,color:#5b21b6;
+
+    PR[PR → main]:::job --> Lint[Lint & static checks]:::job
+    Main[Push → main]:::job --> Lint
+    Manual[Manual run]:::job --> Lint
+
+    PR --> Tests[Tests]:::job
+    Main --> Tests
+    Manual --> Tests
+
+    Tests --> Foundry[Foundry]:::job --> Summary{{CI summary}}:::gate
+    Tests --> Coverage[Coverage thresholds]:::job --> Summary
+    Lint --> Summary
+```
+
 Branch protection can now point at the `CI summary` check so that every job listed above must succeed before merges or deployments proceed. A non-technical maintainer can follow the [CI v2 operations guide](docs/v2-ci-operations.md) for a diagrammed overview of the workflow, required status checks, and day-to-day troubleshooting steps.
 
 ## Table of Contents
