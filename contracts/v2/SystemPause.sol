@@ -230,6 +230,9 @@ contract SystemPause is Governable, ReentrancyGuard {
         string calldata reason
     ) external onlyGovernance {
         validationModule.triggerFailover(jobId, action, extension, reason);
+        // slither-disable-next-line reentrancy-events
+        // Downstream modules are trusted protocol components; emitting afterwards keeps
+        // observability without mutating state post-interaction.
         emit ValidationFailoverForwarded(jobId, action, extension, reason);
     }
 
