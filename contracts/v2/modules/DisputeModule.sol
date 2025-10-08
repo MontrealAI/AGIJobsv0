@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
@@ -18,7 +19,7 @@ import {Governable} from "../Governable.sol";
 /// @dev Maintains tax neutrality by rejecting ether and escrowing only token
 ///      based dispute fees via the StakeManager. Assumes all token amounts use
 ///      18 decimals (`1 token == TOKEN_SCALE` units).
-contract DisputeModule is Governable, Pausable {
+contract DisputeModule is Governable, Pausable, ReentrancyGuard {
 
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
@@ -463,12 +464,15 @@ contract DisputeModule is Governable, Pausable {
         address juror,
         uint256 amount,
         address employer
-    ) external whenNotPaused {
+    ) external whenNotPaused nonReentrant {
         if (msg.sender != committee) revert UnauthorizedResolver(msg.sender);
         IStakeManager sm = _stakeManager();
         if (address(sm) != address(0) && amount > 0) {
             sm.slash(juror, amount, employer);
         }
+        // slither-disable-next-line reentrancy-events
+        // Slashing interacts with the trusted stake manager; emitting afterwards logs
+        // the outcome without mutating module state, avoiding exploitable patterns.
         emit JurorSlashed(juror, amount, employer);
     }
 
