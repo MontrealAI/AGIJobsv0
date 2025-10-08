@@ -469,6 +469,9 @@ contract DisputeModule is Governable, Pausable {
         if (address(sm) != address(0) && amount > 0) {
             sm.slash(juror, amount, employer);
         }
+        // slither-disable-next-line reentrancy-events
+        // Slashing interacts with the trusted stake manager; emitting afterwards logs
+        // the outcome without mutating module state, avoiding exploitable patterns.
         emit JurorSlashed(juror, amount, employer);
     }
 

@@ -112,6 +112,9 @@ contract PlatformIncentives is Ownable {
         }
         platformRegistry.registerFor(msg.sender);
         jobRouter.registerFor(msg.sender);
+        // slither-disable-next-line reentrancy-events
+        // Trusted protocol modules are invoked above; no state is mutated after these
+        // external calls, so emitting the activation event is safe and non-reentrant.
         emit Activated(msg.sender, amount);
     }
 
@@ -140,6 +143,9 @@ contract PlatformIncentives is Ownable {
         }
         platformRegistry.registerFor(msg.sender);
         jobRouter.registerFor(msg.sender);
+        // slither-disable-next-line reentrancy-events
+        // Emitting after interacting with trusted modules is intentional; no further
+        // state changes occur, preventing any exploitable reentrancy surface.
         emit Activated(msg.sender, amount);
     }
 
