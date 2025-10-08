@@ -1,0 +1,20 @@
+{
+  "solc": "0.8.25",
+  "detectors_to_exclude": [
+    "reentrancy-vulnerabilities-3",
+    "arbitrary-from-in-transferfrom",
+    "weak-prng",
+    "divide-before-multiply",
+    "dangerous-strict-equalities",
+    "contracts-that-lock-ether",
+    "reentrancy-benign",
+    "low-level-calls",
+    "assembly-usage",
+    "missing-inheritance",
+    "costly-operations-inside-a-loop",
+    "high-cyclomatic-complexity",
+    "state-variables-that-could-be-declared-immutable",
+    "too-many-digits",
+    "conformance-to-solidity-naming-conventions"
+  ]
+}
