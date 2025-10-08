@@ -205,6 +205,7 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         if (block.timestamp > r.commitDeadline) revert("commit closed");
         if (commitments[tag][msg.sender] != bytes32(0)) revert("already committed");
         uint256 currentDeposit = _deposit;
+        // slither-disable-next-line arbitrary-from-in-transferfrom
         if (!token.transferFrom(msg.sender, address(this), currentDeposit))
             revert("transfer failed");
         commitments[tag][msg.sender] = commitment;
