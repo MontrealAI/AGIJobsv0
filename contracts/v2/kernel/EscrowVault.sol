@@ -52,8 +52,8 @@ contract EscrowVault is Ownable, ReentrancyGuard {
     function deposit(uint256 jobId, address from, uint256 amount) external onlyController nonReentrant {
         if (from == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
-        token.safeTransferFrom(from, address(this), amount);
         _escrowed[jobId] += amount;
+        token.safeTransferFrom(from, address(this), amount);
         emit EscrowDeposited(jobId, from, amount);
     }
 

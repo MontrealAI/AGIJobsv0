@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "./interfaces/IJobRouter.sol";
@@ -13,9 +14,12 @@ import {TOKEN_SCALE} from "./Constants.sol";
 /// @notice Helper that stakes $AGIALPHA for platform operators and registers them
 ///         for routing and fee sharing. The contract holds no tokens and remains
 ///         tax neutral.
-contract PlatformIncentives is Ownable {
+contract PlatformIncentives is Ownable, ReentrancyGuard {
+    /// @custom:security non-reentrant Trusted module wired via governance; calls are guarded by ReentrancyGuard
     IStakeManager public stakeManager;
+    /// @custom:security non-reentrant Platform registry is a core protocol module invoked only after local state updates
     IPlatformRegistryFull public platformRegistry;
+    /// @custom:security non-reentrant Router is a trusted protocol dependency without external callbacks into user code
     IJobRouter public jobRouter;
 
     /// @notice Upper bound on the discount percentage that can be configured.
@@ -100,7 +104,7 @@ contract PlatformIncentives is Ownable {
      *      owner may pass `0` to register without incentives.
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
-    function stakeAndActivate(uint256 amount) external {
+    function stakeAndActivate(uint256 amount) external nonReentrant {
         if (amount > 0) {
             stakeManager.depositStakeFor(
                 msg.sender,
@@ -112,6 +116,9 @@ contract PlatformIncentives is Ownable {
         }
         platformRegistry.registerFor(msg.sender);
         jobRouter.registerFor(msg.sender);
+        // slither-disable-next-line reentrancy-events
+        // Trusted protocol modules are invoked above; no state is mutated after these
+        // external calls, so emitting the activation event is safe and non-reentrant.
         emit Activated(msg.sender, amount);
     }
 
@@ -123,7 +130,7 @@ contract PlatformIncentives is Ownable {
      *      policy via the linked JobRegistry.
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
-    function acknowledgeStakeAndActivate(uint256 amount) external {
+    function acknowledgeStakeAndActivate(uint256 amount) external nonReentrant {
         address registry = stakeManager.jobRegistry();
         if (registry != address(0)) {
             IJobRegistryAck(registry).acknowledgeFor(msg.sender);
@@ -140,6 +147,9 @@ contract PlatformIncentives is Ownable {
         }
         platformRegistry.registerFor(msg.sender);
         jobRouter.registerFor(msg.sender);
+        // slither-disable-next-line reentrancy-events
+        // Emitting after interacting with trusted modules is intentional; no further
+        // state changes occur, preventing any exploitable reentrancy surface.
         emit Activated(msg.sender, amount);
     }
 

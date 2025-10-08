@@ -44,6 +44,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     Thermostat public thermostat;
     IFeePool public feePool;
     IReputationEngineV2 public reputation;
+    /// @custom:security non-reentrant Energy oracle is governance-controlled and cannot invoke arbitrary callbacks.
     IEnergyOracle public energyOracle;
     IERC20Mintable public immutable token = IERC20Mintable(AGIALPHA);
 
@@ -324,10 +325,11 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
             IEnergyOracle.Attestation calldata att = proofs[i].att;
             require(att.energy >= 0 && att.degeneracy > 0, "att");
             if (att.epochId != epoch || att.role != uint8(role)) revert InvalidProof(address(energyOracle));
+            uint256 previousNonce = usedNonces[att.user][epoch];
+            if (att.nonce <= previousNonce) revert Replay(address(energyOracle));
+            usedNonces[att.user][epoch] = att.nonce;
             address signer = energyOracle.verify(att, proofs[i].sig);
             if (signer == address(0)) revert InvalidProof(address(energyOracle));
-            if (att.nonce <= usedNonces[att.user][epoch]) revert Replay(address(energyOracle));
-            usedNonces[att.user][epoch] = att.nonce;
             value += att.value;
             uPre += att.uPre;
             uPost += att.uPost;

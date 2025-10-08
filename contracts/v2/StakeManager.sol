@@ -106,6 +106,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     uint16 private constant SLASH_BPS_DENOMINATOR = 10_000;
 
     /// @notice FeePool receiving protocol fees
+    /// @custom:security non-reentrant Fee pool is protocol-controlled and trusted for token transfers.
     IFeePool public feePool;
 
     /// @notice address receiving the treasury share of slashed stake
@@ -115,11 +116,15 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     mapping(address => bool) public treasuryAllowlist;
 
     /// @notice JobRegistry contract tracking tax policy acknowledgements
+    /// @custom:security non-reentrant Job registry is governed and cannot introduce user-supplied reentrancy.
     address public jobRegistry;
+    /// @custom:security non-reentrant Dispute module is governance-controlled and audited.
+    address public disputeModule;
 
     address public pauser;
 
     /// @notice ValidationModule providing validator lists
+    /// @custom:security non-reentrant Validation module is protocol-owned and interacts after state writes.
     IValidationModule public validationModule;
 
     /// @notice Additional addresses permitted to manage validator stake locks
@@ -2210,8 +2215,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param from employer providing the escrow
     /// @param amount token amount with 18 decimals; employer must approve first
     function lockReward(bytes32 jobId, address from, uint256 amount) external onlyJobRegistry whenNotPaused {
-        token.safeTransferFrom(from, address(this), amount);
         jobEscrows[jobId] += amount;
+        token.safeTransferFrom(from, address(this), amount);
         emit StakeEscrowLocked(jobId, from, amount);
     }
 
@@ -2222,8 +2227,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param from Address providing the funds; must approve first.
     /// @param amount Token amount with 18 decimals to lock.
     function lock(address from, uint256 amount) external onlyJobRegistry whenNotPaused {
-        token.safeTransferFrom(from, address(this), amount);
         emit StakeEscrowLocked(bytes32(0), from, amount);
+        token.safeTransferFrom(from, address(this), amount);
     }
 
     /// @notice release locked job reward to recipient applying any AGI type bonus
@@ -2591,8 +2596,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param payer address providing the fee, must approve first
     /// @param amount token amount with 18 decimals
     function lockDisputeFee(address payer, uint256 amount) external onlyDisputeModule whenNotPaused nonReentrant {
-        token.safeTransferFrom(payer, address(this), amount);
         emit DisputeFeeLocked(payer, amount);
+        token.safeTransferFrom(payer, address(this), amount);
     }
 
     /// @notice pay a locked dispute fee to the recipient
