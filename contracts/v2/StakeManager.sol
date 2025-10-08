@@ -325,6 +325,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
     /// @notice Emitted when an employer finalizes job funds.
     event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
+    /// @notice Emitted when governance forces a job finalization.
+    event JobFundsFinalizedByGovernance(bytes32 indexed jobId, address indexed employer);
     /// @notice Emitted when the operator reward pool balance changes.
     event RewardPoolUpdated(uint256 balance);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
@@ -2439,6 +2441,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         IFeePool _feePool
     ) internal {
         emit JobFundsFinalized(jobId, employer);
+        if (byGovernance) {
+            emit JobFundsFinalizedByGovernance(jobId, employer);
+        }
 
         uint256 rewardSpent = reward;
         uint256 feeAmount = fee;

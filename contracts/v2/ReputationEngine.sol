@@ -323,7 +323,6 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     /// @notice Log base 2 implementation from v1.
     function log2(uint256 x) public pure returns (uint256 y) {
         assembly {
-            let arg := x
             x := sub(x, 1)
             x := or(x, div(x, 0x02))
             x := or(x, div(x, 0x04))

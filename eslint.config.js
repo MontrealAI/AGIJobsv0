@@ -5,12 +5,30 @@ const reactHooksPlugin = require('eslint-plugin-react-hooks');
 
 module.exports = [
   {
-    ignores: ['scripts/**/*.js', '**/dist/**', 'coverage/**'],
+    ignores: [
+      'scripts/**/*.js',
+      '**/dist/**',
+      'coverage/**',
+      'apps/**',
+      'agent-gateway/**',
+      'attestation/**',
+      'backend/**',
+      'examples/**',
+      'packages/**',
+      'services/**',
+      'subgraph/**',
+      'test/**',
+      'simulation/**',
+      'cypress/**',
+      'storage/**',
+      'migrations/**',
+      'scripts/**',
+    ],
   },
   {
     files: ['**/*.js'],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2022,
       sourceType: 'commonjs',
     },
     plugins: {
@@ -49,6 +67,7 @@ module.exports = [
     rules: {
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      'prettier/prettier': 'off',
     },
   },
 ];

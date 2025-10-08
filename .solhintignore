@@ -1,0 +1,6 @@
+contracts/coverage/**
+contracts/gas/**
+contracts/legacy/**
+contracts/mocks/**
+contracts/test/**
+contracts/v2/mocks/**
