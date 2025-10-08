@@ -88,6 +88,7 @@
     "migrate:wizard": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/truffle-migration-wizard.ts",
     "lint:check": "solhint --max-warnings 0 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --max-warnings=0",
     "lint:fix": "solhint --fix 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --fix",
+    "lint:ci": "solhint --max-warnings 0 --config .solhint.ci.json 'contracts/v2/**/*.sol' && eslint --max-warnings 0 scripts/ci/**/*.{js,mjs}",
     "format:fix": "prettier --write \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\"",
     "onebox:build": "node apps/onebox/scripts/build.mjs",
     "onebox:publish": "node apps/onebox/scripts/publish.mjs",

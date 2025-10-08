@@ -10,8 +10,22 @@ module.exports = [
   {
     files: ['**/*.js'],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2021,
       sourceType: 'commonjs',
+    },
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    rules: {
+      'no-unused-vars': 'warn',
+      'prettier/prettier': 'error',
+    },
+  },
+  {
+    files: ['**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2021,
+      sourceType: 'module',
     },
     plugins: {
       prettier: prettierPlugin,

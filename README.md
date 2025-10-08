@@ -14,6 +14,18 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - Node.js 20.x LTS and npm 10+
 - Run `nvm use` to select the version from `.nvmrc`.
 
+## Continuous Integration (CI v2)
+
+The `ci (v2)` GitHub Actions workflow enforces quality gates on every pull request and on the `main` branch. The pipeline fan-out mirrors how operators review production releases:
+
+- **Lint & static checks** – runs Prettier, ESLint and Solhint with production-safe rules to guarantee formatting and Solidity hygiene.
+- **Tests** – compiles contracts, regenerates shared constants, and executes the full Hardhat suite together with ABI drift detection.
+- **Foundry** – reuses the generated constants, installs Foundry with a warm cache, and executes high signal fuzz tests.
+- **Coverage thresholds** – regenerates constants, recomputes coverage, enforces the 90% minimum, and uploads the LCOV artifact.
+- **Summary gate** – publishes a human-readable status table and fails the workflow if any upstream job is unsuccessful, giving non-technical reviewers a single green/red indicator.
+
+Branch protection can now point at the `CI summary` check so that every job listed above must succeed before merges or deployments proceed.
+
 ## Table of Contents
 
 - [Identity policy](#identity-policy)
