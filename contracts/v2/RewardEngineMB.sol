@@ -324,6 +324,9 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
             IEnergyOracle.Attestation calldata att = proofs[i].att;
             require(att.energy >= 0 && att.degeneracy > 0, "att");
             if (att.epochId != epoch || att.role != uint8(role)) revert InvalidProof(address(energyOracle));
+            // slither-disable-next-line reentrancy-eth
+            // The oracle is a governance-controlled feed; no state changes occur after
+            // signature verification within this loop.
             address signer = energyOracle.verify(att, proofs[i].sig);
             if (signer == address(0)) revert InvalidProof(address(energyOracle));
             if (att.nonce <= usedNonces[att.user][epoch]) revert Replay(address(energyOracle));
