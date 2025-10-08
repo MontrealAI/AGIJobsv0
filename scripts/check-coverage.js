@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable */
 const fs = require('fs'), p = 'coverage/lcov.info';
 const min = Number(process.argv[2] || process.env.COVERAGE_MIN || 90);
 if (!fs.existsSync(p)) {
