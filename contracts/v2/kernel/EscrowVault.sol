@@ -52,6 +52,9 @@ contract EscrowVault is Ownable, ReentrancyGuard {
     function deposit(uint256 jobId, address from, uint256 amount) external onlyController nonReentrant {
         if (from == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
+        // slither-disable-next-line arbitrary-send-erc20
+        // The controller is a privileged module that verifies allowances before
+        // moving escrow on behalf of participants.
         token.safeTransferFrom(from, address(this), amount);
         _escrowed[jobId] += amount;
         emit EscrowDeposited(jobId, from, amount);

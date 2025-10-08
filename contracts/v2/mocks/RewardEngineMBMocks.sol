@@ -2,12 +2,13 @@
 pragma solidity ^0.8.25;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IFeePool} from "../interfaces/IFeePool.sol";
 import {IReputationEngineV2} from "../interfaces/IReputationEngineV2.sol";
 import {IEnergyOracle} from "../interfaces/IEnergyOracle.sol";
 import {AGIALPHA} from "../Constants.sol";
 
-contract MockFeePool is IFeePool {
+contract MockFeePool is IFeePool, ReentrancyGuard {
     mapping(address => uint256) public rewards;
     uint256 public total;
     IERC20 public immutable token = IERC20(AGIALPHA);
@@ -26,10 +27,13 @@ contract MockFeePool is IFeePool {
 
     event Rewarded(address indexed to, uint256 amount);
 
-    function reward(address to, uint256 amount) external override {
+    function reward(address to, uint256 amount) external override nonReentrant {
         rewards[to] += amount;
         total += amount;
         require(token.transfer(to, amount), "MockFeePool: transfer failed");
+        // slither-disable-next-line reentrancy-events
+        // Mock contracts support test scenarios; the post-transfer event mirrors
+        // production behavior without altering state after the external token call.
         emit Rewarded(to, amount);
     }
 }
