@@ -87,6 +87,7 @@ Branch protection can now point at the `CI summary` check so that every job list
 - [Owner parameter matrix](#owner-parameter-matrix)
 - [Owner control parameter playbook](#owner-control-parameter-playbook)
 - [Production launch blueprint](#production-launch-blueprint)
+- [Production readiness index](docs/production/deployment-readiness-index.md)
 
 ### Identity policy
 
@@ -592,6 +593,17 @@ telemetry and recovery? Read the
 
 Drop the blueprint into your change tickets so non-technical stakeholders can follow
 along without context switching across multiple docs.
+
+### Production readiness index
+
+Need an at-a-glance indicator that every institutional launch dependency is green?
+Consult the new [Production Readiness Index](docs/production/deployment-readiness-index.md).
+It consolidates the CI v2 enforcement proof, owner-control drills, deployment manifest
+sync checks, and cadence reminders into a single table so a non-technical coordinator
+can demand evidence before authorising go-live. Each row links to the command that
+generates machine-verifiable artefacts plus an independent verification path, ensuring
+the contract owner retains full control (including pause authority) while satisfying
+auditors.
 
 ### One-Click Deployment
 
