@@ -310,6 +310,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         emit EpochSettled(epoch, budget, dH, dS, Tsys, dust);
     }
 
+    // slither-disable-next-line reentrancy-no-eth -- invoked only from settleEpoch which is nonReentrant
     function _aggregate(Proof[] calldata proofs, uint256 epoch, Role role)
         internal
         returns (RoleData memory rd, uint256 value, uint256 uPre, uint256 uPost)

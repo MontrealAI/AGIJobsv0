@@ -1725,6 +1725,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         jobId = _createJob(reward, deadline, agentTypes, specHash, uri);
     }
 
+    // slither-disable-next-line reentrancy-no-eth -- guarded by nonReentrant external wrappers before identity verification
     function _applyForJob(
         uint256 jobId,
         string calldata subdomain,
@@ -2279,6 +2280,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _finalize(jobId);
     }
 
+    // slither-disable-next-line reentrancy-no-eth -- executes under the parent nonReentrant context during job finalization
     function _finalize(uint256 jobId) internal whenNotPaused {
         Job storage job = jobs[jobId];
         if (_getState(job) != State.Completed) revert NotReady();

@@ -1361,6 +1361,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
 
     /// @notice Internal reveal logic shared by overloads.
+    // slither-disable-next-line reentrancy-no-eth -- external entrypoints applying this logic are nonReentrant
     function _revealValidation(
         uint256 jobId,
         bool approve,
@@ -1655,6 +1656,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         return pctCount;
     }
 
+    // slither-disable-next-line reentrancy-no-eth -- called only from nonReentrant public flows while finishing rounds
     function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
         if (r.tallied) revert AlreadyTallied();
@@ -1801,6 +1803,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
     }
 
+    // slither-disable-next-line reentrancy-no-eth -- cleanup executes under the same guarded contexts as _finalize/reset
     function _cleanup(uint256 jobId) internal {
         uint256 nonce = jobNonce[jobId];
         Round storage r = rounds[jobId];

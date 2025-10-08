@@ -101,6 +101,7 @@ contract PlatformIncentives is Ownable, ReentrancyGuard {
      *      owner may pass `0` to register without incentives.
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
+    // slither-disable-next-line reentrancy-no-eth -- stake/registration flows run under OZ ReentrancyGuard
     function stakeAndActivate(uint256 amount) external nonReentrant {
         if (amount > 0) {
             stakeManager.depositStakeFor(

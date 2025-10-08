@@ -954,6 +954,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
     }
 
+    // slither-disable-next-line reentrancy-no-eth -- dispatched exclusively from nonReentrant entrypoints when redistributing escrow
     function _redistributeEscrowBatched(
         bytes32 jobId,
         address recipient,
@@ -2731,6 +2732,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @dev helper to process validator lists exceeding MAX_VALIDATORS
+    // slither-disable-next-line reentrancy-no-eth -- dispatched exclusively from nonReentrant entrypoints when slashing batches
     function _slashBatched(address user, Role role, uint256 amount, address recipient, address[] calldata validators)
         internal
     {

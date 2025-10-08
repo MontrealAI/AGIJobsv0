@@ -193,6 +193,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      acknowledged yet.
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
+    // slither-disable-next-line reentrancy-no-eth -- protected by nonReentrant modifier and trusted stake/job registry hooks
     function acknowledgeStakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
         require(!registered[msg.sender], "registered");
         require(!blacklist[msg.sender], "blacklisted");
@@ -215,6 +216,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      * @dev Invoking this helper implicitly accepts the current tax policy via
      *      the associated `JobRegistry` when set.
      */
+    // slither-disable-next-line reentrancy-no-eth -- protected by nonReentrant modifier and trusted stake/job registry hooks
     function acknowledgeAndDeregister() external whenNotPaused nonReentrant {
         require(registered[msg.sender], "not registered");
         IStakeManager manager = _requireStakeManager();
@@ -243,6 +245,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      the tax policy for the operator if needed.
      * @param operator Address to be registered.
      */
+    // slither-disable-next-line reentrancy-no-eth -- protected by nonReentrant modifier and trusted stake/job registry hooks
     function acknowledgeAndRegisterFor(address operator) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
             require(registrars[msg.sender], "registrar");
@@ -264,6 +267,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      * @param operator Address to be registered.
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
+    // slither-disable-next-line reentrancy-no-eth -- protected by nonReentrant modifier and trusted stake/job registry hooks
     function acknowledgeStakeAndRegisterFor(
         address operator,
         uint256 amount
