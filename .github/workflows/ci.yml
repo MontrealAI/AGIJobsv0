@@ -1,9 +1,14 @@
-name: ci
+name: CI v2
 
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
 
 permissions:
   contents: read
@@ -12,26 +17,34 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: '20.18.0'
+  NPM_FLAGS: '--no-audit --no-fund'
+
 jobs:
   lint:
     name: Lint & static checks
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm ci $NPM_FLAGS
       - name: Prettier formatting check
         run: npm run format:check
+      - name: ESLint/Solhint suite
+        run: npm run lint:check
 
   tests:
     name: Tests
     runs-on: ubuntu-24.04
+    timeout-minutes: 120
     env:
       COVERAGE_MIN: '90'
       ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
@@ -47,11 +60,18 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm ci $NPM_FLAGS
+      - name: Prime Hardhat cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/hardhat-nodejs
+            ~/.cache/hardhat
+          key: hardhat-${{ runner.os }}-${{ hashFiles('package-lock.json', 'hardhat.config.js') }}
       - name: Compile contracts
         run: |
           npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
@@ -62,12 +82,15 @@ jobs:
         run: npm test
       - name: ABI diff check
         run: npm run abi:diff
+      - name: Verify AGIALPHA constants
+        run: npm run verify:agialpha
 
   foundry:
     name: Foundry
     needs: tests
     if: ${{ always() }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     env:
       FEE_PCT: '2'
       BURN_PCT: '6'
@@ -81,17 +104,25 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm ci $NPM_FLAGS
       - name: Regenerate constants for Foundry
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
+      - name: Cache forge dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.foundry/cache
+            ~/.foundry/bin
+            ~/.cache/foundry
+          key: foundry-${{ runner.os }}-${{ hashFiles('foundry.toml') }}
       - name: Ensure forge-std dependency
         run: |
           if [ ! -d lib/forge-std ]; then
@@ -107,6 +138,7 @@ jobs:
     needs: tests
     if: ${{ always() }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     env:
       COVERAGE_MIN: '90'
       ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
@@ -122,11 +154,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm ci $NPM_FLAGS
       - name: Regenerate constants for coverage
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Generate coverage report
