@@ -66,7 +66,7 @@ flowchart LR
 | ---- | ------- | ------------- | ------------ |
 | **Ownership** | Decide who can pause, upgrade, or retune each subsystem. | `config/owner-control.json` | `npm run owner:surface`, `npm run owner:rotate`, `npm run owner:verify-control` |
 | **Economic parameters** | Adjust fees, stakes, reward thermodynamics, and treasuries. | `config/job-registry.json`, `config/stake-manager.json`, `config/fee-pool.json`, `config/thermodynamics.json` | `npm run owner:wizard`, `npm run owner:update-all -- --only=<module>` |
-| **Operational guardians** | Update allowlists, energy signers, pause wiring, or monitoring settings. | `config/identity-registry.json`, `config/energy-oracle.json`, `config/system-pause.json`, `config/hamiltonian-monitor.json` | `npm run owner:wizard`, `npm run owner:update-all -- --only=<module>` |
+| **Operational guardians** | Update allowlists, energy signers, pause wiring, or monitoring settings. | `config/identity-registry.json`, `config/energy-oracle.json`, `config/agialpha.json` (`modules.systemPause`), `config/hamiltonian-monitor.json` | `npm run owner:wizard`, `npx hardhat run scripts/v2/updateSystemPause.ts --network <network>`, `npm run owner:update-all -- --only=<module>` |
 | **Network overrides** | Tailor the same deployment recipe to different chains. | `config/<name>.<network>.json`, `deployment-config/<network>.json` | Add `--network <network>` to every command |
 
 Each lane moves independently yet feeds the same verification loop. Use Git branches
