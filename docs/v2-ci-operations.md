@@ -37,15 +37,15 @@ All three entry points converge on the same job graph, keeping the `CI summary` 
 
 ## Required jobs and branch protection
 
-Enable branch protection on `main` with these required status checks:
+Enable branch protection on `main` with these required status checks (copy the contexts exactly as they appear in the GitHub UI):
 
-| Check name | Source job | Notes |
+| Check context | Source job | Notes |
 | --- | --- | --- |
-| `Lint & static checks` | `lint` job | Blocks merge when linting fails. |
-| `Tests` | `tests` job | Runs Hardhat compilation and the main test suite. |
-| `Foundry` | `foundry` job | Always runs after the `tests` job, even when it fails, to expose fuzz failures. |
-| `Coverage thresholds` | `coverage` job | Enforces `COVERAGE_MIN` and access-control coverage. |
-| `CI summary` | `summary` job | Fails when any dependency job fails so the PR badge stays red. |
+| `ci (v2) / Lint & static checks` | `lint` job | Blocks merge when linting fails. |
+| `ci (v2) / Tests` | `tests` job | Runs Hardhat compilation and the main test suite. |
+| `ci (v2) / Foundry` | `foundry` job | Always runs after the `tests` job, even when it fails, to expose fuzz failures. |
+| `ci (v2) / Coverage thresholds` | `coverage` job | Enforces `COVERAGE_MIN` and access-control coverage. |
+| `ci (v2) / CI summary` | `summary` job | Fails when any dependency job fails so the PR badge stays red. |
 
 > ✅ **Tip:** In GitHub branch protection, mark `Require branches to be up to date` to guarantee pull requests re-run the workflow when `main` advances.
 
@@ -60,9 +60,22 @@ gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled
 
 The first command should list the five required contexts above in order. The second confirms admins are also blocked when the pipeline is red.
 
+### Companion workflow checks
+
+Keep the rest of the release surface visible by marking the following workflows as required checks as well:
+
+| Workflow | Job context | Purpose |
+| --- | --- | --- |
+| `.github/workflows/e2e.yml` | `e2e / orchestrator-e2e` | Executes forked-mainnet drills and dispute flows end to end. |
+| `.github/workflows/fuzz.yml` | `fuzz / forge-fuzz` | Runs the nightly-grade Foundry fuzz suite on every PR. |
+| `.github/workflows/webapp.yml` | `webapp / webapp-ci` | Lints, type-checks, builds, and smoke-tests both web frontends. |
+| `.github/workflows/containers.yml` | `containers / build` | Asserts Docker images build and pass enforced Trivy scans. |
+
+> 📌 **Path-filtered option:** When you want Docker provenance for UI updates, also require `apps-images / console` and `apps-images / portal`. These jobs only trigger when files under `apps/**` change, so skip them if your project relies on wide fan-out PRs that seldom touch the UIs.
+
 ## Pull request hygiene checklist
 
-1. Confirm that the **Checks** tab shows all five required jobs in the table above.
+1. Confirm that the **Checks** tab shows all five required `ci (v2)` contexts above plus the companion workflows you have marked as required.
 2. Inspect the **Artifacts** section for `coverage-lcov` when coverage needs auditing.
 3. Review the `CI summary` job output for a condensed Markdown table of job results.
 4. When re-running failed jobs, choose **Re-run failed jobs** to keep historical logs.
