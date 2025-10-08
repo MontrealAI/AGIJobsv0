@@ -638,7 +638,7 @@ The wizard validates `.env` secrets, highlights ENS configuration drift, prints 
 - **Command-line launch coordinators:** the [AGIJobs v0 Institutional Truffle Mainnet Playbook](docs/truffle-mainnet-playbook.md) packages the full CLI workflow with diagrams, rehearsals and owner-control checkpoints suitable for non-technical operators.
 
 - [docs/deployment-production-guide.md](docs/deployment-production-guide.md) – step-by-step walkthrough for deploying AGI Jobs v2 using only a web browser and Etherscan.
-- [docs/deployment-guide-production.md](docs/deployment-guide-production.md) – production deployment checklist.
+- [docs/production-deployment-handbook.md](docs/production-deployment-handbook.md) – production deployment checklist.
 - [docs/agi-jobs-v2-production-deployment-guide.md](docs/agi-jobs-v2-production-deployment-guide.md) – non‑technical guide highlighting best practices such as true token burning and owner updatability.
 - [docs/burn-receipts.md](docs/burn-receipts.md) – employer-side token burn process and validator verification.
 - [docs/expired-unclaimed-handling.md](docs/expired-unclaimed-handling.md) – guidance for expired stakes and unclaimed fees.
@@ -977,11 +977,12 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [Module and interface reference](docs/v2-module-interface-reference.md)
 - [Etherscan interaction guide](docs/etherscan-guide.md)
 - [Deployment walkthrough with $AGIALPHA](docs/deployment-v2-agialpha.md)
-- [Production deployment guide](docs/deployment-guide-production.md)
+- [Production deployment guide](docs/deployment-production-guide.md)
 - [AGIJobs v2 sprint plan and deployment guide](docs/agi-jobs-v2-production-deployment-guide.md)
 - [Institutional deployment blueprint (non-technical owners)](docs/production/v2-institutional-deployment-blueprint.md)
 - [Production deployment handbook](docs/production-deployment-handbook.md)
 - [Operations guide for contract owners](docs/operations_guide.md)
+- [Documentation maintenance playbook](docs/documentation-maintenance-playbook.md)
 - [API reference and SDK snippets](docs/api-reference.md)
 - [Job registry configuration guide](docs/job-registry-configuration.md)
 - [FeePool configuration guide](docs/fee-pool-configuration.md)

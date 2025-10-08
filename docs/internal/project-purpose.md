@@ -35,4 +35,4 @@ sequenceDiagram
     AGI-->>Employer: Return remaining escrow
 ```
 
-For a standalone diagram, see [architecture.md](architecture.md).
+For a standalone diagram, see [architecture overview](../architecture.md).

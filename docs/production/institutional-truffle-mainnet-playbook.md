@@ -267,6 +267,6 @@ graph TD
 - [Non-Technical Mainnet Deployment Runbook (Truffle)](./nontechnical-mainnet-deployment.md)
 - [Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)](../deploying-agijobs-v2-truffle-cli.md)
 - [`migrations/` folder](../../migrations) for exact execution logic.
-- [`docs/production/deployment-production-guide.md`](./deployment-production-guide.md) for broader operational context.
+- [`docs/production/deployment-production-guide.md`](../deployment-production-guide.md) for broader operational context.
 
 Maintain this playbook as a living document—update it after every production launch to capture lessons learned and keep the process audit-ready.

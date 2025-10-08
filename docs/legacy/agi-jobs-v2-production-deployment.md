@@ -45,7 +45,7 @@ builds, address recording and safe ownership controls.
 2. From the governance account, call `initialize` with all module addresses.
    Ownership is returned automatically.
 3. Confirm `Initialized`/`OwnershipTransferred` events and record the final
-   addresses. See [module-installer.md](module-installer.md) for details.
+   addresses. See [module-installer](../module-installer.md) for details.
 
 ## Manual Wiring Fallback
 
@@ -63,7 +63,7 @@ certificate, feePool, new address[](0))`.
 
 - Transfer ownership of every module to the governance contract.
 - Enable emergency controls such as
-  [SystemPause](system-pause.md) if required.
+  [SystemPause](../system-pause.md) if required.
 - Configure ENS roots, Merkle allowlists and protocol fees through their
   respective setters.
 - Save final contract addresses for future upgrades and monitoring.
@@ -80,7 +80,7 @@ The system relies on governance-owned setters to adjust economics after launch:
 ## Recording Deployment Addresses
 
 All deployed contract addresses should be tracked in
-[docs/deployment-addresses.json](deployment-addresses.json). After a contract is
+[docs/deployment-addresses.json](../deployment-addresses.json). After a contract is
 verified on Etherscan, edit this file and replace the placeholder address with
 the value from the deployment transaction:
 
@@ -104,7 +104,7 @@ the current addresses.
 - **Verification & records:** Every contract should be verified on Etherscan
   and documented with its address and block number.
 - **Pause readiness:** Keep the system pausable and test `pauseAll`/`unpauseAll`
-  before user funds are at risk. See [system-pause.md](system-pause.md).
+  before user funds are at risk. See [System Pause runbook](../system-pause.md).
 
 Following these steps results in a reproducible, auditable and upgradeable
 AGI Jobs v2 deployment.
