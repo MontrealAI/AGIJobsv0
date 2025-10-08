@@ -128,10 +128,9 @@ jobs:
         with:
           target: .
           ignore-compile: true
-          fail-on: none
+          fail-on: high
           sarif: reports/slither.sarif
           slither-args: >-
-            --fail-high
             --exclude-dependencies
 
       - name: Upload Slither SARIF
