@@ -11,8 +11,17 @@ transaction. After deployment you must complete two governance steps:
 Each module address passed to the constructor or `setModules` must be a
 non-zero address pointing to a deployed contract. The contract reverts with
 `InvalidJobRegistry`, `InvalidStakeManager`, `InvalidValidationModule`,
-`InvalidDisputeModule`, `InvalidPlatformRegistry`, `InvalidFeePool`, or
-`InvalidReputationEngine` if validation fails.
+`InvalidDisputeModule`, `InvalidPlatformRegistry`, `InvalidFeePool`,
+`InvalidReputationEngine`, or `InvalidArbitratorCommittee` if validation fails.
+
+All wiring metadata lives alongside the other protocol manifests inside
+`config/agialpha.json` (and optional network overrides such as
+`config/agialpha.mainnet.json`). Populate the `modules.systemPause` section with
+the deployed `SystemPause` address together with module pointers for
+`jobRegistry`, `stakeManager`, `validationModule`, `disputeModule`,
+`platformRegistry`, `feePool`, `reputationEngine`, and `arbitratorCommittee`.
+`scripts/v2/updateSystemPause.ts` reads the manifest automatically and accepts
+`--config <path>` when a bespoke JSON file is required.
 
 ## Governance and Runbook
 
@@ -23,19 +32,22 @@ non-zero address pointing to a deployed contract. The contract reverts with
   ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine,
   ArbitratorCommittee) to the deployed `SystemPause` contract before wiring
   updates. Without ownership the helper cannot reapply pauser roles.
-- Run a dry run to confirm wiring and ownership before sending transactions:
+- Run a dry run to confirm wiring, ownership, and pauser status before sending
+  transactions:
 
   ```bash
   npx hardhat run scripts/v2/updateSystemPause.ts --network <network>
   ```
 
-  The script aborts if any module is not owned by `SystemPause`, ensuring a
-  single on-chain switch guards every critical flow. The on-chain
-  `SystemPause.setModules` call also reverts when a module has not transferred
-  ownership to the pause contract, so governance cannot wire an address that
-  cannot be halted during an emergency.
-- Re-run with `--execute` once the dry run is clean to update module wiring and
-  refresh the pauser roles under governance control.
+  Run without `--execute` to inspect differences and ownership status. The
+  helper aborts when a module is not owned or pausable by `SystemPause`, keeping
+  the emergency switch authoritative. Re-run with `--execute` once the dry run
+  is clean to update module wiring and refresh the pauser roles under
+  governance control.
+- Pass explicit overrides (for example `--arbitrator-committee <address>`) to
+  test new module deployments before the manifest is updated.
+- After any change, record the dry-run and execution artefacts under
+  `runtime/<network>/` and attach them to the owner control ticket.
 
 ### Emergency operations
 
@@ -58,7 +70,8 @@ npx hardhat console --network <network>
     "<dispute>",
     "<platformRegistry>",
     "<feePool>",
-    "<reputation>"
+    "<reputation>",
+    "<arbitratorCommittee>"
   );
 > await pause.connect(gov).refreshPausers();
 > await pause.connect(gov).pauseAll();
@@ -74,3 +87,5 @@ npx hardhat console --network <network>
 3. After transferring module ownership to `SystemPause`, call
    `refreshPausers` so the helper can pause each contract.
 4. Invoke `pauseAll` to stop the system or `unpauseAll` to resume.
+5. Update the corresponding `config/agialpha.<network>.json` entry and commit
+   the manifest change so future dry runs stay in sync.

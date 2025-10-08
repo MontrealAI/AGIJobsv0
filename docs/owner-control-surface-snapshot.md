@@ -40,7 +40,7 @@ mindmap
 | Layer | Primary knobs | Artefact | Change helper | Verification |
 | --- | --- | --- | --- | --- |
 | **Governance root** | `owner`, `guardian`, `pauser` addresses | `config/owner-control.json` | `npm run owner:rotate -- --network <network>` | `npm run owner:verify-control -- --network <network>` |
-| **Safety net** | `SystemPause` wiring, module pause status | `config/system-pause.json` | `npx hardhat run scripts/v2/updateSystemPause.ts --network <network> --execute` | `npm run owner:verify-control -- --modules systemPause`<br>`npx hardhat run scripts/v2/updateSystemPause.ts --network <network> --status` |
+| **Safety net** | `SystemPause` wiring, module pause status | `config/agialpha.json` (`modules.systemPause` & module addresses) | `npx hardhat run scripts/v2/updateSystemPause.ts --network <network> --execute` | `npm run owner:verify-control -- --modules systemPause`<br>Dry run `npx hardhat run scripts/v2/updateSystemPause.ts --network <network>` |
 | **Economic parameters** | Thermodynamic shares, PID, burns, treasuries | `config/thermodynamics.json` (thermostat block), `config/fee-pool.json` | `npm run owner:update-all -- --only rewardEngine,thermostat,feePool` | `npm run owner:verify-control -- --modules rewardEngine,thermostat,feePool` |
 | **Market access** | Job fees, escrow stake, identity roots, emergency allowlists | `config/job-registry.json`, `config/identity-registry.json` | `npm run owner:update-all -- --only jobRegistry,identityRegistry` | `npm run owner:verify-control -- --modules jobRegistry,identityRegistry` |
 | **Capital risk** | Min stakes, fee splits, treasury allowlists | `config/stake-manager.json` | `npm run owner:update-all -- --only stakeManager` | `npm run owner:verify-control -- --modules stakeManager` |

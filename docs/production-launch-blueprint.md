@@ -40,7 +40,7 @@ graph LR
 | Energy oracle signers | `config/energy-oracle.json` | `npx hardhat run scripts/v2/updateEnergyOracle.ts --network <network>` | Signer addresses, threshold, retain policy |
 | Token constants | `config/agialpha.json` | `npm run compile` + `npm run verify:agialpha -- --rpc <url>` | Token address, decimals, naming, burn sink |
 | Identity registry | `config/identity-registry.<network>.json` | `npm run identity:update -- --network <network>` | ENS subdomain mapping, emergency allowlist |
-| Pause graph | `config/system-pause.json` | `npx hardhat run scripts/v2/updateSystemPause.ts --network <network>` | Pausable modules, guardians, acceptance windows |
+| Pause graph | `config/agialpha.json` (`modules.systemPause`) | `npx hardhat run scripts/v2/updateSystemPause.ts --network <network>` | Pausable modules, guardians, acceptance windows |
 
 > **Tip:** Every script accepts `--dry-run` (default) or `--execute`. Never bypass the dry
 > run when operating against a production network.

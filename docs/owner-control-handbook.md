@@ -144,7 +144,7 @@ control without direct Solidity interaction.
 | `HamiltonianMonitor` | Observation window, reset flag                    | `npm run owner:update-all` (reads `config/hamiltonian-monitor.json`) |
 | `EnergyOracle`       | Authorised signers, quorum requirements           | `npm run owner:update-all` (reads `config/energy-oracle.json`)       |
 | `TaxPolicy`          | Tax brackets, exemptions, treasury routing        | `npm run owner:update-all` (reads `config/tax-policy.json`)          |
-| `SystemPause`        | Module wiring, pause guardians                    | `npm run owner:update-all` (reads `config/system-pause.json`)        |
+| `SystemPause`        | Module wiring, pause guardians                    | `npx hardhat run scripts/v2/updateSystemPause.ts --network <network>` (reads `config/agialpha.json` → `modules.systemPause`) |
 
 Every configuration file supports per-network overrides. Place a file named
 `config/<module>.<network>.json` next to the default to specialise a deployment
