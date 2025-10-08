@@ -1,12 +1,30 @@
-name: ci
+name: v2-ci
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NODE_VERSION: '20'
+  COVERAGE_MIN: '90'
+  ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+  FEE_PCT: '2'
+  BURN_PCT: '6'
+  TREASURY: '0x1111111111111111111111111111111111111111'
+  VALIDATORS_PER_JOB: '3'
+  REQUIRED_APPROVALS: '3'
+  COMMIT_WINDOW: '30m'
+  REVEAL_WINDOW: '30m'
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -14,80 +32,87 @@ concurrency:
 
 jobs:
   lint:
-    name: Lint & static checks
+    name: Formatting & security guard
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Prettier formatting check
         run: npm run format:check
+      - name: High severity dependency audit
+        run: npm audit --omit dev --audit-level=high
+      - name: Lint summary
+        if: ${{ success() }}
+        run: |
+          {
+            echo '## Formatting & security guard job';
+            echo '';
+            echo '- Prettier spot-checks passed ✅';
+            echo '- High severity dependency audit clean ✅';
+          } >> "$GITHUB_STEP_SUMMARY"
 
   tests:
     name: Tests
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
-      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '2'
-      BURN_PCT: '6'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Compile contracts
-        run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
+        run: npm run compile
       - name: Regenerate constants for tests
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Hardhat tests
         run: npm test
       - name: ABI diff check
         run: npm run abi:diff
+      - name: Contract size report
+        run: npm run contract:size
+      - name: Tests summary
+        if: ${{ success() }}
+        run: |
+          {
+            echo '## Test job';
+            echo '';
+            echo '- Hardhat tests ✅';
+            echo '- ABI diff & contract size checks ✅';
+          } >> "$GITHUB_STEP_SUMMARY"
 
   foundry:
     name: Foundry
     needs: tests
-    if: ${{ always() }}
+    if: ${{ needs.tests.result == 'success' }}
     runs-on: ubuntu-24.04
-    env:
-      FEE_PCT: '2'
-      BURN_PCT: '6'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Regenerate constants for Foundry
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+      - name: Cache Foundry toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.foundry
+          key: foundry-${{ runner.os }}-${{ hashFiles('foundry.toml') }}
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -95,34 +120,32 @@ jobs:
       - name: Ensure forge-std dependency
         run: |
           if [ ! -d lib/forge-std ]; then
-            forge install foundry-rs/forge-std;
+            forge install foundry-rs/forge-std --no-commit --quiet;
           else
             echo 'forge-std already present; skipping install.';
           fi
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256
+      - name: Foundry summary
+        if: ${{ success() }}
+        run: |
+          {
+            echo '## Foundry job';
+            echo '';
+            echo '- Forge fuzz tests ✅';
+          } >> "$GITHUB_STEP_SUMMARY"
 
   coverage:
     name: Coverage thresholds
     needs: tests
-    if: ${{ always() }}
+    if: ${{ needs.tests.result == 'success' }}
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
-      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '2'
-      BURN_PCT: '6'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install dependencies
@@ -144,3 +167,49 @@ jobs:
           if-no-files-found: error
       - name: Enforce coverage threshold
         run: node scripts/check-coverage.js "$COVERAGE_MIN"
+      - name: Coverage summary
+        if: ${{ success() }}
+        run: |
+          {
+            echo '## Coverage job';
+            echo '';
+            echo "- Coverage threshold >= ${COVERAGE_MIN}% ✅";
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  ci-status:
+    name: CI status gate
+    if: ${{ always() }}
+    needs:
+      - lint
+      - tests
+      - foundry
+      - coverage
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Evaluate overall result
+        run: |
+          declare -A results=(
+            [lint]="${{ needs.lint.result }}"
+            [tests]="${{ needs.tests.result }}"
+            [foundry]="${{ needs.foundry.result }}"
+            [coverage]="${{ needs.coverage.result }}"
+          )
+
+          failed=false
+          for job in "${!results[@]}"; do
+            if [[ "${results[$job]}" != "success" ]]; then
+              echo "Job $job finished with status ${results[$job]}" >> "$GITHUB_STEP_SUMMARY"
+              failed=true
+            fi
+          done
+
+          if [[ "$failed" == true ]]; then
+            echo "::error::One or more CI jobs failed"
+            exit 1
+          fi
+
+          {
+            echo '## V2 CI summary';
+            echo '';
+            echo '- All required jobs succeeded ✅';
+          } >> "$GITHUB_STEP_SUMMARY"
