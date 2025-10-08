@@ -129,6 +129,7 @@ jobs:
           target: .
           ignore-compile: true
           fail-on: high
+          fail-pedantic: false
           sarif: reports/slither.sarif
           slither-args: >-
             --exclude-dependencies
