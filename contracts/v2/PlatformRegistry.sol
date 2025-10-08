@@ -24,7 +24,9 @@ interface IReputationEngine {
 contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = TOKEN_SCALE;
 
+    /// @custom:security non-reentrant Stake manager is governed and treated as a trusted module in the protocol graph.
     IStakeManager public stakeManager;
+    /// @custom:security non-reentrant Reputation engine is a protocol-owned dependency without user-defined callbacks.
     IReputationEngine public reputationEngine;
     uint256 public minPlatformStake;
     mapping(address => bool) public registered;

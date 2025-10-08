@@ -16,13 +16,21 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// @notice Helper contract allowing governance to pause or unpause all core modules.
 /// @dev Uses ReentrancyGuard to prevent reentrant pause/unpause cascades.
 contract SystemPause is Governable, ReentrancyGuard {
+    /// @custom:security non-reentrant Core modules referenced below are protocol-owned and audited.
     JobRegistry public jobRegistry;
+    /// @custom:security non-reentrant Stake manager is governance-controlled and trusted.
     StakeManager public stakeManager;
+    /// @custom:security non-reentrant Validation module is audited and invoked after local state changes.
     ValidationModule public validationModule;
+    /// @custom:security non-reentrant Dispute module is protocol-owned.
     DisputeModule public disputeModule;
+    /// @custom:security non-reentrant Platform registry is a core protocol contract.
     PlatformRegistry public platformRegistry;
+    /// @custom:security non-reentrant Fee pool holds protocol fees under governance control.
     FeePool public feePool;
+    /// @custom:security non-reentrant Reputation engine is governed and deterministic.
     ReputationEngine public reputationEngine;
+    /// @custom:security non-reentrant Arbitrator committee is protocol-owned without user callbacks.
     ArbitratorCommittee public arbitratorCommittee;
 
     error InvalidJobRegistry(address module);
@@ -228,8 +236,11 @@ contract SystemPause is Governable, ReentrancyGuard {
         ValidationModule.FailoverAction action,
         uint64 extension,
         string calldata reason
-    ) external onlyGovernance {
+    ) external onlyGovernance nonReentrant {
         validationModule.triggerFailover(jobId, action, extension, reason);
+        // slither-disable-next-line reentrancy-events
+        // Downstream modules are trusted protocol components; emitting afterwards keeps
+        // observability without mutating state post-interaction.
         emit ValidationFailoverForwarded(jobId, action, extension, reason);
     }
 

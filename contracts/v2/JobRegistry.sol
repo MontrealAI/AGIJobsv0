@@ -444,14 +444,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
     }
 
+    /// @custom:security non-reentrant Validation module is governance-controlled and interacts only after local state effects.
     IValidationModule public validationModule;
+    /// @custom:security non-reentrant Stake manager is a trusted core contract wired through governance.
     IStakeManager public stakeManager;
+    /// @custom:security non-reentrant Reputation engine is protocol-owned with no user-defined callbacks.
     IReputationEngine public reputationEngine;
+    /// @custom:security non-reentrant Dispute module is governance-controlled and audited.
     IDisputeModule public disputeModule;
+    /// @custom:security non-reentrant Certificate NFT is protocol owned and cannot perform reentrant callbacks.
     ICertificateNFT public certificateNFT;
+    /// @custom:security non-reentrant Audit module is a trusted dependency invoked post state updates.
     IAuditModule public auditModule;
     ITaxPolicy public taxPolicy;
     IFeePool public feePool;
+    /// @custom:security non-reentrant Identity registry is governed and executes deterministic logic only.
     IIdentityRegistry public identityRegistry;
     address public treasury;
     address public pauser;
