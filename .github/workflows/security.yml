@@ -1,0 +1,130 @@
+name: security-suite
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  security-events: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    name: CodeQL (javascript, typescript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript,typescript
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+
+  slither:
+    name: Slither (contracts/v2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Foundry build (with build-info)
+        run: |
+          forge --version
+          forge clean
+          forge build --build-info
+
+      - name: Slither analysis
+        uses: crytic/slither-action@v0.3.4
+        with:
+          target: .
+          slither-args: |
+            --fail-high
+            --exclude-dependencies
+            --sarif slither.sarif
+            contracts/v2
+
+      - name: Upload SARIF (Slither)
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: slither.sarif
+
+  scorecard:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ossf/scorecard-action@v2.4.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: false
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+  sbom:
+    name: SBOM (SPDX)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0.17.6
+        with:
+          output-file: sbom.spdx.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-spdx
+          path: sbom.spdx.json
+          if-no-files-found: error
+
+  provenance:
+    name: Build Provenance
+    needs: [codeql, slither, scorecard, sbom]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: ./**
