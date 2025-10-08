@@ -970,7 +970,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         if (totalStakeSum == 0) {
             address[] memory empty;
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             totals = _distributeEscrowPenalty(jobId, recipient, amount, empty, true);
             return totals;
         }
@@ -992,7 +992,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             for (uint256 i = start; i < end; ++i) {
                 slice[i - start] = validators[i];
             }
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             SlashPayout memory part = _distributeEscrowPenalty(jobId, recipient, chunkAmount, slice, true);
             totals.employerShare += part.employerShare;
             totals.treasuryShare += part.treasuryShare;
@@ -1005,7 +1005,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         if (allocated < amount) {
             address[] memory empty;
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             SlashPayout memory remainder =
                 _distributeEscrowPenalty(jobId, recipient, amount - allocated, empty, true);
             totals.employerShare += remainder.employerShare;
@@ -2762,7 +2762,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         if (total == 0) {
             address[] memory empty;
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             // Slashing delegates to internal logic that interacts with trusted
             // modules only after all state updates occur in this scope.
             _slash(user, role, amount, recipient, empty);
@@ -2786,7 +2786,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             for (uint256 i = start; i < end; ++i) {
                 slice[i - start] = validators[i];
             }
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             _slash(user, role, chunkAmount, recipient, slice);
             allocated += chunkAmount;
             start = end;
@@ -2794,7 +2794,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         if (allocated < amount) {
             address[] memory empty;
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             _slash(user, role, amount - allocated, recipient, empty);
         }
     }
@@ -2811,7 +2811,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         nonReentrant
     {
         address[] memory validators;
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line reentrancy-eth
         _slash(user, role, amount, employer, validators);
     }
 
@@ -2824,7 +2824,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (validators.length > MAX_VALIDATORS) {
             _slashBatched(user, role, amount, employer, validators);
         } else {
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             _slash(user, role, amount, employer, validators);
         }
     }
@@ -2840,7 +2840,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         nonReentrant
     {
         address[] memory validators;
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line reentrancy-eth
         _slash(user, Role.Validator, amount, recipient, validators);
     }
 
@@ -2853,7 +2853,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (validators.length > MAX_VALIDATORS) {
             _slashBatched(user, Role.Validator, amount, recipient, validators);
         } else {
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             _slash(user, Role.Validator, amount, recipient, validators);
         }
     }
@@ -2883,7 +2883,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (amount == 0) revert InvalidAmount();
 
         address[] memory empty;
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line reentrancy-eth
         _slash(user, role, amount, beneficiary, empty);
         emit GovernanceSlash(user, role, beneficiary, amount, pctBps, msg.sender);
         return amount;

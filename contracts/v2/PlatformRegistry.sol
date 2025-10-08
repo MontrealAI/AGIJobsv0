@@ -199,12 +199,12 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             // The acknowledgement contract is governance owned; local state is updated
             // before delegating to it.
             IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         }
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line reentrancy-eth
         // Deposits are routed through the trusted stake manager once validation has
         // completed; no state is changed afterwards.
         manager.depositStakeFor(
@@ -226,7 +226,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         }
         registered[msg.sender] = false;
@@ -257,7 +257,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             IJobRegistryAck(registry).acknowledgeFor(operator);
         }
         _register(operator);
@@ -284,10 +284,10 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             IJobRegistryAck(registry).acknowledgeFor(operator);
         }
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line reentrancy-eth
         manager.depositStakeFor(
             operator,
             IStakeManager.Role.Platform,

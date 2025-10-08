@@ -341,7 +341,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             state.lastAction = IValidationModule.FailoverAction.EscalateDispute;
             state.lastTriggeredAt = uint64(block.timestamp);
             uint256 deadline = r.revealDeadline;
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line reentrancy-eth
         // The job registry escalation hook is trusted and the ValidationModule performs
         // no state changes after invoking it in this failover path.
         jobRegistry.escalateToDispute(jobId, rationale);
@@ -1046,7 +1046,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     }
                     if (!skipVerification) {
                         bytes32[] memory proof;
-                        // slither-disable-next-line reentrancy-no-eth
+                        // slither-disable-next-line reentrancy-eth
                         // Validator eligibility checks query the trusted identity registry
                         // without mutating local state afterwards.
                         (authorized, , , ) = identityRegistry.verifyValidator(
@@ -1135,7 +1135,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     }
                     if (!skipVerification) {
                         bytes32[] memory proof;
-                        // slither-disable-next-line reentrancy-no-eth
+                        // slither-disable-next-line reentrancy-eth
                         // Validator eligibility checks query the trusted identity registry
                         // without mutating local state afterwards.
                         (authorized, , , ) = identityRegistry.verifyValidator(
@@ -1241,7 +1241,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         for (uint256 i; i < size;) {
             address val = selected[i];
             uint256 stakeAmount = validatorStakeLocks[jobId][val];
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             // Locking stake delegates to the trusted stake manager after local stake
             // accounting is complete.
             stakeManager.lockValidatorStake(jobId, val, stakeAmount, lockTime);
@@ -1316,7 +1316,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
         if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
         if (!_isValidator(jobId, msg.sender)) revert NotValidator();
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line reentrancy-eth
         // Identity verification executes within the trusted registry; the ValidationModule
         // performs no state writes between the call and its subsequent checks.
         (bool authorized, bytes32 node, bool viaWrapper, bool viaMerkle) =
@@ -1745,7 +1745,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 }
             }
 
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             // Reputation engine is a trusted module; no state writes occur after the
             // call other than emitting events, so this does not open a reentrancy vector.
             reputationEngine.updateScores(
@@ -1758,7 +1758,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 payout,
                 duration
             );
-            // slither-disable-next-line reentrancy-no-eth
+            // slither-disable-next-line reentrancy-eth
             // The job registry is part of the same governance-controlled suite; state
             // mutations in this contract are complete before delegating to it.
             jobRegistry.markReputationProcessed(jobId);
@@ -1771,7 +1771,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             if (!revealed[jobId][val]) {
                 uint256 penalty = (stake * nonRevealPenaltyBps) / 10_000;
                 if (penalty > 0) {
-                    // slither-disable-next-line reentrancy-no-eth
+                    // slither-disable-next-line reentrancy-eth
                     // Slashing interacts with the trusted stake manager after all
                     // ValidationModule state relevant to this validator has been settled.
                     stakeManager.slash(
@@ -1789,7 +1789,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 }
             } else if (votes[jobId][val] != success) {
                 if (slashAmount > 0) {
-                    // slither-disable-next-line reentrancy-no-eth
+                    // slither-disable-next-line reentrancy-eth
                     // Slashing interacts with the trusted stake manager after all
                     // ValidationModule state relevant to this validator has been settled.
                     stakeManager.slash(
@@ -1808,7 +1808,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         emit ValidationTallied(jobId, success, r.approvals, r.rejections);
         emit ValidationResult(jobId, success);
 
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line reentrancy-eth
         // Notify the job registry only after local state has been reset; the registry
         // is trusted infrastructure and cannot exploit the call.
         jobRegistry.onValidationResult(jobId, success, r.validators);
@@ -1849,7 +1849,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 // malicious implementation cannot observe stale balances during
                 // a reentrant call.
                 validatorStakeLocks[jobId][val] = 0;
-                // slither-disable-next-line reentrancy-no-eth
+                // slither-disable-next-line reentrancy-eth
                 // The stake manager is a governance-controlled module; our state has
                 // been cleared prior to the call, preventing observable inconsistency.
                 stakeManager.unlockValidatorStake(jobId, val, lockAmount);

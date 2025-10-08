@@ -229,7 +229,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         uint64 extension,
         string calldata reason
     ) external onlyGovernance nonReentrant {
-        // slither-disable-next-line reentrancy-no-eth
+        // slither-disable-next-line reentrancy-eth
         // The validation module is a trusted subsystem; SystemPause performs no additional
         // mutations after forwarding the instruction.
         validationModule.triggerFailover(jobId, action, extension, reason);
