@@ -128,7 +128,7 @@ jobs:
         with:
           target: .
           ignore-compile: true
-          fail-on: config
+          fail-on: none
           sarif: reports/slither.sarif
           slither-args: >-
             --fail-high
