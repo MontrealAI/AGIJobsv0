@@ -257,7 +257,7 @@ npm run owner:verify-control -- --network <network>
 npm run owner:verify-control -- --network <network> --json --strict > owner-control-report.json
 ```
 
-Provide per-module addresses via `modules.<name>.address`, the `AGJ_<NAME>_ADDRESS` environment variable, or `--address name=0x…` at runtime. Use `--modules`/`--skip` to scope checks and `--address-book` to point at alternative deployment records. The command exits non-zero when `--strict` is enabled and any contract lacks the expected governance, keeping change-control pipelines safe for non-technical operators.
+Provide per-module addresses via `modules.<name>.address`, the `AGJ_<NAME>_ADDRESS` environment variable, or `--address name=0x…` at runtime. Use `--modules`/`--skip` to scope checks and `--address-book` to point at alternative deployment records. The command exits non-zero when `--strict` is enabled and any contract lacks the expected governance, keeping change-control pipelines safe for non-technical operators. For a step-by-step evidence workflow (including JSON export patterns, module scope tips, and troubleshooting), see the [Owner Control Verification Guide](docs/owner-control-verification.md).
 
 ### Owner control playbook
 
@@ -356,7 +356,7 @@ npm run owner:snapshot -- --network <network>
 npm run owner:snapshot -- --network mainnet --out reports/mainnet/control-kit --no-mermaid
 ```
 
-The helper copies every owner-governed config into `reports/<network>/owner-control-snapshot-<timestamp>/`, computes SHA-256 hashes for tamper evidence, and writes a Markdown briefing that cross-links remediation guides. Each subsystem section embeds Mermaid diagrams, update/verify command palettes and flattened parameter tables so non-technical reviewers can approve changes without opening Solidity. A machine-readable `manifest.json` summarises source paths, hashes and regeneration commands for CI or Safe pipelines. Full illustrations, compliance tips and troubleshooting advice live in [docs/owner-control-snapshot.md](docs/owner-control-snapshot.md).
+The helper copies every owner-governed config into `reports/<network>/owner-control-snapshot-<timestamp>/`, computes SHA-256 hashes for tamper evidence, and writes a Markdown briefing that cross-links remediation guides. Each subsystem section embeds Mermaid diagrams, update/verify command palettes and flattened parameter tables so non-technical reviewers can approve changes without opening Solidity. A machine-readable `manifest.json` summarises source paths, hashes and regeneration commands for CI or Safe pipelines. Extended examples, approval checklists, and integration ideas live in [docs/owner-control-snapshot-kit.md](docs/owner-control-snapshot-kit.md) (with additional context in [docs/owner-control-snapshot.md](docs/owner-control-snapshot.md)).
 
 ### Owner control pulse
 
