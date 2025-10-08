@@ -1,6 +1,11 @@
 # AGIJobs v2 Module & Interface Reference
 
-This document condenses the production-scale architecture into standalone modules, each with a minimal interface and owner-only governance hooks. It is a companion to `docs/architecture-v2.md` and `docs/deployment-v2-agialpha.md` and focuses on contract boundaries and Solidity structure tips. All modules now expose `version()` returning **2** so other components can verify compatibility during upgrades. The reputation system is implemented by a single contract, `contracts/v2/ReputationEngine.sol`, which replaces the former module variant.
+This document condenses the production-scale architecture into standalone modules, each with a minimal interface and owner/governance hooks. It is a companion to `docs/architecture-v2.md` and `docs/deployment-v2-agialpha.md` and focuses on contract boundaries plus Solidity structure tips. All modules expose `version()` returning **2** so other components can verify compatibility during upgrades. The reputation system is implemented by a single contract, `contracts/v2/ReputationEngine.sol`, which replaces the former module variant.
+
+> **Authoritative source:** Interfaces live under [`contracts/v2/interfaces/`](../contracts/v2/interfaces) and are consumed by both
+> the Hardhat + Foundry test suites and `npm run abi:diff`. If a selector changes,
+> regenerate docs by running `npm run owner:parameters -- --format markdown` and
+> update the tables below instead of copying snippets by hand.
 
 ## Module Graph
 
@@ -20,74 +25,17 @@ graph LR
 
 ## Core Interfaces (Solidity ^0.8.20)
 
-```solidity
-interface IJobRegistry {
-    event JobCreated(
-        uint256 indexed jobId,
-        address indexed employer,
-        address indexed agent,
-        uint256 reward,
-        uint256 stake,
-        uint256 fee
-    );
-    event AdditionalAgentUpdated(address indexed agent, bool allowed);
-    function createJob(string calldata details, uint256 reward) external;
-    function setModules(
-        address validation,
-        address stake,
-        address reputation,
-        address dispute,
-        address certificate
-    ) external;
-    function addAdditionalAgent(address agent) external;
-    function removeAdditionalAgent(address agent) external;
-}
-
-interface IStakeManager {
-    function depositStake(uint256 amount) external;
-    function lockReward(address from, uint256 amount) external;
-    function payReward(address to, uint256 amount) external;
-    function slash(address offender, address beneficiary, uint256 amount) external; // `beneficiary` must not be zero when employer share > 0
-}
-
-interface IValidationModule {
-    event AdditionalValidatorUpdated(address indexed validator, bool allowed);
-    function commit(uint256 jobId, bytes32 hash) external;
-    function reveal(uint256 jobId, bool verdict, bytes32 salt) external;
-    function finalize(uint256 jobId) external;
-    function setParameters(uint256 commitWindow, uint256 revealWindow, uint256 minValidators) external;
-    function addAdditionalValidator(address validator) external;
-    function removeAdditionalValidator(address validator) external;
-}
-
-interface IReputationEngine {
-    function addSuccess(address user, uint256 weight) external;
-    function addFailure(address user, uint256 weight) external;
-    function reputationOf(address user) external view returns (uint256);
-    function blacklist(address user, bool status) external;
-}
-
-interface IDisputeModule {
-    function raiseDispute(
-        uint256 jobId,
-        address claimant,
-        string calldata evidence
-    ) external;
-    function resolve(
-        uint256 jobId,
-        bool employerWins,
-        bytes[] calldata signatures
-    ) external;
-    function addModerator(address moderator, uint256 weight) external;
-    function removeModerator(address moderator) external;
-    function setJobRegistry(IJobRegistry newRegistry) external;
-    function setStakeManager(IStakeManager newManager) external;
-}
-
-interface ICertificateNFT {
-    function mintCertificate(address employer, uint256 jobId) external;
-}
-```
+| Contract | Key methods (see interface for full detail) | Control guard |
+| --- | --- | --- |
+| `IJobRegistry` | Job lifecycle (`createJob`, `submitResult`, `finalize`), module wiring (`setModules`, `setIdentityRegistry`), allowlists (`addAdditionalAgent`, `removeAdditionalAgent`), acknowledger ACLs, fee/treasury tuning. | `onlyGovernance` / `onlyGovernanceOrPauser`【F:contracts/v2/JobRegistry.sol†L1096-L1273】 |
+| `IStakeManager` | Stake deposits, reward locking, slashing, treasury routing, module wiring (`setModules`, `setValidationModule`). | `onlyGovernance`【F:contracts/v2/StakeManager.sol†L720-L1439】 |
+| `IValidationModule` | Commit/reveal flow, validator selection, quorum windows, randomness + pool management. | `onlyOwner` (governance-owned)【F:contracts/v2/ValidationModule.sol†L254-L807】 |
+| `IReputationEngine` & `IReputationEngineV2` | Reputation adjustments, premium thresholds, blacklist management, μ parameter feeds. | `onlyGovernance`【F:contracts/v2/RewardEngineMB.sol†L112-L227】 |
+| `IDisputeModule` | Dispute intake/resolution, moderator + committee management, module wiring. | `onlyGovernance`【F:contracts/v2/modules/DisputeModule.sol†L73-L219】 |
+| `ICertificateNFT` | Issue credentials, tune base URI, manage minters, pause/unpause gating. | `onlyOwner`【F:contracts/v2/CertificateNFT.sol†L41-L115】 |
+| `IEnergyOracle` | Verify energy attestations, signer management. | `onlyGovernance`【F:contracts/v2/EnergyOracle.sol†L21-L57】 |
+| `IThermostat` | PID tuning, role temperatures, safety bounds. | `onlyGovernance`【F:contracts/v2/Thermostat.sol†L52-L107】 |
+| `IHamiltonian` (`HamiltonianMonitor`) | Observation window, history reset, observation ingestion. | `onlyGovernance`【F:contracts/v2/HamiltonianMonitor.sol†L38-L144】 |
 
 ## Solidity Structure Recommendations
 
@@ -111,3 +59,4 @@ All setters are `onlyOwner`. v2 assumes the 18‑decimal [$AGIALPHA](https://eth
 - Modules are immutable once deployed; to upgrade a component the owner deploys a new module and calls `JobRegistry.setModules` with the replacement address.
 - Parameter tweaks emit dedicated events (`ParameterUpdated`, `ModuleUpdated`) so off-chain tooling and multisigs can monitor governance moves.
 - Minimal, single-purpose setters keep Etherscan interactions straightforward for non-technical owners while ensuring clear on-chain audit trails.
+- The [owner-control-authority-reference](owner-control-authority-reference.md) links each governance lever to CLI helpers so non-technical operators can execute Safe bundles without reading Solidity.

@@ -65,6 +65,7 @@ Branch protection can now point at the `CI summary` check so that every job list
 - [Owner control playbook](#owner-control-playbook)
 - [Owner control blueprint](#owner-control-blueprint)
 - [Owner control command center](#owner-control-command-center)
+- [Owner control authority reference](#owner-control-authority-reference)
 - [Owner control index](#owner-control-index)
 - [Owner control doctor](#owner-control-doctor)
 - [Owner control audit](#owner-control-audit)
@@ -279,6 +280,10 @@ npm run owner:command-center -- --network mainnet --format markdown --out report
 ```
 
 The CLI cross-loads every governance configuration, highlights editable knobs (burn ratios, treasuries, PID gains, signer sets, tax policy text, and more), and renders an optional Mermaid flow linking governance owners to each subsystem. It is safe to run before every change window, requires no Solidity knowledge, and produces artefacts that non-technical reviewers can file directly into compliance workflows.
+
+### Owner control authority reference
+
+Avoid guessing which contract exposes a particular setter by consulting the [Owner Control Authority Reference](docs/owner-control-authority-reference.md). The table maps each subsystem to its access modifier, config manifest, OwnerConfigurator command, and live Solidity source so you always know which Safe bundle to execute. The guide also explains how to regenerate the matrix with `npm run owner:parameters` and how CI’s ABI drift checks keep the documentation synchronized with the contracts.【F:docs/owner-control-authority-reference.md†L1-L53】【F:docs/owner-control-authority-reference.md†L55-L78】
 
 ### Owner control index
 

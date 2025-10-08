@@ -1,6 +1,9 @@
-# Owner Control Matrix (Draft)
+# Owner Control Matrix
 
-> **Status:** Draft coordination document for implementing the Owner Configurator surface area across all v2 contracts. This file enumerates the parameters that must remain owner-upgradeable and will be updated as modules are finalized.
+> **Status:** Production reference. Pair this matrix with
+> [owner-control-authority-reference.md](owner-control-authority-reference.md)
+> for the canonical, source-linked list of setters surfaced through the
+> OwnerConfigurator and governance scripts.
 
 ## Overview
 
@@ -17,66 +20,15 @@ The AGI Jobs v2 system preserves an owner-first operating model. A single Owner 
 
 ## Owner Configurator Surface
 
-| Module | Setter | Parameter | Units / Notes |
-| ------ | ------ | --------- | ------------- |
-| JobRegistry | `setValidationModule(address)` | Validation module proxy | address |
-| JobRegistry | `setDisputeModule(address)` | Dispute module proxy | address |
-| JobRegistry | `setIdentityRegistry(address)` | Identity registry | address |
-| JobRegistry | `setFeePool(address)` | Fee pool address | address |
-| JobRegistry | `setTaxPolicy(address)` | Tax policy contract | address |
-| JobRegistry | `setCertificateNFT(address)` | Certificate NFT contract | address |
-| JobRegistry | `setRouter(address)` | Jobs router | address |
-| JobRegistry | `setMaxJobDuration(uint256)` | Upper bound in seconds | uint256 |
-| JobRegistry | `setMinJobReward(uint256)` | Minimum payment amount | uint256 |
-| JobRegistry | `setJobCreateWhitelist(bool)` | Toggle allowlist | bool |
-| JobRegistry | `setJobCreateMerkleRoot(bytes32)` | Allowlist root | bytes32 |
-| ValidationModule | `setCommitWindow(uint256)` | Seconds | uint256 |
-| ValidationModule | `setRevealWindow(uint256)` | Seconds | uint256 |
-| ValidationModule | `setValidatorBounds(uint256,uint256)` | min,max committee | uint256 |
-| ValidationModule | `setQuorum(uint16)` | Percentage (basis points) | uint16 |
-| ValidationModule | `setApprovalThreshold(uint16)` | Percentage (basis points) | uint16 |
-| ValidationModule | `setRandProvider(address)` | Randomness provider | address |
-| ValidationModule | `setVRFParams(uint64,bytes32,uint32,uint16)` | subId,keyHash,gasLimit,confirmations | mixed |
-| ValidationModule | `setNoRevealPenalty(uint16)` | Basis points | uint16 |
-| ValidationModule | `setLateRevealPenalty(uint16)` | Basis points | uint16 |
-| StakeManager | `setMinStake(uint8,uint256)` | Role => stake amount | uint256 |
-| StakeManager | `setUnbondingPeriod(uint256)` | Seconds | uint256 |
-| StakeManager | `setSlashPercents(uint16,uint16,uint16,uint16,uint16)` | bps per offense | uint16 |
-| StakeManager | `setTreasury(address)` | Treasury receiver | address |
-| StakeManager | `setTreasuryAllowlist(address,bool)` | Access control | address,bool |
-| StakeManager | `rescueERC20(address,address,uint256)` | Token, to, amount | addresses,uint256 |
-| StakeManager | `rescueETH(address,uint256)` | Recipient, amount | address,uint256 |
-| IdentityRegistry | `setAgentRootNode(bytes32)` | ENS node | bytes32 |
-| IdentityRegistry | `setValidatorRootNode(bytes32)` | ENS node | bytes32 |
-| IdentityRegistry | `setAgentMerkleRoot(bytes32)` | Allowlist root | bytes32 |
-| IdentityRegistry | `setValidatorMerkleRoot(bytes32)` | Allowlist root | bytes32 |
-| IdentityRegistry | `setAttestor(address,bool)` | Attestor allowlist | address,bool |
-| IdentityRegistry | `setENSResolver(address)` | ENS resolver | address |
-| DisputeModule | `setDisputeFee(uint256)` | Fee amount | uint256 |
-| DisputeModule | `setAppealWindow(uint256)` | Seconds | uint256 |
-| DisputeModule | `setMaxRounds(uint8)` | Arbitration rounds | uint8 |
-| DisputeModule | `setArbitratorCommittee(address)` | Committee contract | address |
-| DisputeModule | `setModerator(address,bool)` | Moderator ACL | address,bool |
-| ReputationEngine | `setWeights(uint16,uint16,uint16,uint16)` | success,fail,slash,decay | uint16 |
-| ReputationEngine | `setPremiumThreshold(uint256)` | Score threshold | uint256 |
-| ReputationEngine | `setBlacklist(address,bool)` | Exclusion list | address,bool |
-| FeePool | `setBurnPct(uint16)` | Basis points | uint16 |
-| FeePool | `setTreasury(address)` | Treasury recipient | address |
-| FeePool | `setSplit(uint16,uint16,uint16,uint16,uint16)` | agents,validators,operators,employers,treasury | uint16 |
-| CertificateNFT | `setBaseURI(string)` | Metadata URI | string |
-| CertificateNFT | `setMinter(address)` | Authorized minter | address |
-| CertificateNFT | `pause()` / `unpause()` | Circuit breaker | - |
-| SystemPause | `pauseAll()` | Global stop | - |
-| SystemPause | `unpauseAll()` | Resume | - |
-| SystemPause | `setPauser(address)` | Emergency delegate | address |
-| RandomnessWrapper | `setCoordinator(address)` | VRF coordinator | address |
-| RandomnessWrapper | `setSubId(uint64)` | Subscription id | uint64 |
-| RandomnessWrapper | `withdrawLINK(address,uint256)` | Rescue LINK | address,uint256 |
-| NodeRegistry | `setMinSpecs(bytes32)` | Hash of requirements | bytes32 |
-| NodeRegistry | `setHeartbeatWindow(uint256)` | Seconds | uint256 |
-| NodeRegistry | `setTEERequired(bool)` | Toggle attestation | bool |
-| NodeRegistry | `setMinNodeStake(uint256)` | Stake threshold | uint256 |
-| NodeRegistry | `setOperatorFeeBps(uint16)` | Fee share | uint16 |
+| Module | Control themes | Notes |
+| ------ | -------------- | ----- |
+| JobRegistry | Module wiring, ENS roots & allowlists, treasury/fee splits, lifecycle guard rails, acknowledger ACLs, pause control. | Full setter list lives in the [authority reference](owner-control-authority-reference.md) and matches `JobRegistry`’s `onlyGovernance` surface.【F:contracts/v2/JobRegistry.sol†L1096-L1359】 |
+| ValidationModule | Commit/reveal timing, validator pool composition, slashing, randomness coordinator wiring, local pauser. | Owned by governance Safe; see the authority reference plus `config/validation-module*.json`.【F:contracts/v2/ValidationModule.sol†L254-L806】 |
+| StakeManager | Staking minima, fee distribution, treasury routes, slash percentages, module wiring. | Ensure `config/stake-manager*.json` stays aligned; CI checks access-control coverage on these setters.【F:contracts/v2/StakeManager.sol†L720-L1439】 |
+| FeePool | Reward routing, burn ratios, treasury allowlist, tax policy pointer. | Guarded by `onlyOwner`; governance Safe controls these knobs via OwnerConfigurator.【F:contracts/v2/FeePool.sol†L154-L441】 |
+| RewardEngineMB & Thermostat | Epoch reward splits, μ adjustments, thermodynamic PID tuning, settlement allowlists. | Update alongside `config/reward-engine*.json` & `config/thermostat*.json`; scripts enforce checksum hashes before execution.【F:contracts/v2/RewardEngineMB.sol†L112-L227】【F:contracts/v2/Thermostat.sol†L52-L107】 |
+| IdentityRegistry | ENS roots, Merkle allowlists, attestor / additional identity ACLs. | Maintains non-technical ability to onboard or quarantine participants quickly.【F:contracts/v2/IdentityRegistry.sol†L161-L287】 |
+| Energy & Monitoring | EnergyOracle signer sets, Hamiltonian window/reset, SystemPause wiring, CertificateNFT mint policy. | Each module has dedicated JSON manifests and CLI helpers; see authority reference for exact setter names.【F:contracts/v2/EnergyOracle.sol†L21-L57】【F:contracts/v2/HamiltonianMonitor.sol†L38-L144】【F:contracts/v2/SystemPause.sol†L16-L168】【F:contracts/v2/CertificateNFT.sol†L41-L115】 |
 
 ---
 
@@ -86,8 +38,8 @@ All setter actions emit a canonical `ParameterUpdated(bytes32 indexed name, byte
 
 ## Next Steps
 
-1. Implement `contracts/admin/OwnerConfigurator.sol` with batched delegate calls to each module and per-parameter guard logic.
-2. Ensure every module exposes both setter and getter pairs and adheres to `Ownable2Step`.
-3. Extend Foundry/Hardhat test suites with exhaustive access control and event emission coverage (≥90% lines overall, 100% across access control paths).
-4. Update Owner Console to consume this matrix for form generation and Safe transaction templates.
+1. Use `npm run owner:parameters` to regenerate the authoritative setter matrix whenever Solidity surfaces change and commit the diff alongside contract updates.
+2. Keep every mutable module under `Ownable2Step`/`Governable` ownership so governance can rotate controllers without redeploying logic.
+3. Maintain ≥90 % overall coverage and full access-control coverage (enforced in CI) so regressions in owner-only modifiers are caught before merge.
+4. Sync the Owner Console and Safe template generator with the [authority reference](owner-control-authority-reference.md) to keep non-technical flows aligned with on-chain reality.
 
