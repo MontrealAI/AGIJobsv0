@@ -6,6 +6,15 @@
 
 The AGI Jobs v2 system preserves an owner-first operating model. A single Owner address (EOA or Safe) must retain the ability to configure, pause, upgrade, and recover assets across every module. Ownership is mediated through `Ownable2Step` on all upgradeable implementations and a central `OwnerConfigurator` facade for non-technical operators.
 
+### Automated Verification & CI Guardrail
+
+To make these guarantees actionable we ship an automated verification harness and CI check:
+
+- Run `npm run owner:verify-control` to inspect on-chain ownership for every module described below. The command accepts the optional environment variables `OWNER_VERIFY_JSON=1` for machine-readable output and `OWNER_VERIFY_STRICT=1` to fail the process when any module is misconfigured.
+- The `owner-control-v2` GitHub Actions workflow executes the same command on every pull request that touches v2 contracts, configuration, or this handbook. The JSON log surfaces in the job summary so operators can spot drift early.
+
+Populate `config/owner-control.json` and `docs/deployment-addresses.json` with the deployment addresses used in production so that the strict mode remains green.
+
 ### Operating Principles
 
 1. **Single Source of Truth** – Every mutable parameter appears here with the contract that guards it and the emitted `ParameterUpdated` event identifier.

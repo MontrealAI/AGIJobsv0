@@ -54,6 +54,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint Solidity and TypeScript surfaces
+        run: npm run lint:ci
+
       - name: Compile
         env:
           COVERAGE_MIN: 90

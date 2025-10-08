@@ -4,6 +4,7 @@ To keep `main` deployable at all times, enable the following rules in the GitHub
 
 1. **Require status checks to pass before merging**
    - `contracts`
+   - `owner-control-v2 / verify-owner-control`
    - `security`
    - `fuzz`
    - `e2e`
