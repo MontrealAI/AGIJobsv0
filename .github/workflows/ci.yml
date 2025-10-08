@@ -1,4 +1,4 @@
-name: ci
+name: ci-v2
 
 on:
   pull_request:
@@ -9,46 +9,78 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-v2-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  NPM_CACHE: npm
+  COVERAGE_MIN: '90'
+  ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+  FEE_PCT: '2'
+  BURN_PCT: '6'
+  TREASURY: '0x1111111111111111111111111111111111111111'
+  VALIDATORS_PER_JOB: '3'
+  REQUIRED_APPROVALS: '3'
+  COMMIT_WINDOW: '30m'
+  REVEAL_WINDOW: '30m'
 
 jobs:
   lint:
-    name: Lint & static checks
+    name: Lint & security gates
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: npm
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.NPM_CACHE }}
           cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Prettier formatting check
         run: npm run format:check
+      - name: Solidity lint (v2 focus)
+        run: npx solhint --config .solhint.ci.json --max-warnings 0 'contracts/v2/**/*.sol'
+      - name: CI automation lint
+        run: npx eslint scripts/ci --ext .js,.mjs --max-warnings=0
+      - name: Token constant verification
+        run: npm run verify:agialpha
+      - name: Dependency vulnerability scan
+        run: npm run security:audit
 
-  tests:
-    name: Tests
+  typecheck:
+    name: TypeScript build & smoke tests
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
-      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '2'
-      BURN_PCT: '6'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
+    timeout-minutes: 45
+    needs: lint
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: npm
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.NPM_CACHE }}
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Compile and run pre-test checks
+        run: npm run pretest
+
+  hardhat-tests:
+    name: Hardhat unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.NPM_CACHE }}
           cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
@@ -64,25 +96,18 @@ jobs:
         run: npm run abi:diff
 
   foundry:
-    name: Foundry
-    needs: tests
-    if: ${{ always() }}
+    name: Foundry fuzz tests
     runs-on: ubuntu-24.04
-    env:
-      FEE_PCT: '2'
-      BURN_PCT: '6'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
+    timeout-minutes: 45
+    needs: hardhat-tests
+    if: ${{ always() && needs.hardhat-tests.result != 'cancelled' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: npm
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.NPM_CACHE }}
           cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
@@ -104,26 +129,17 @@ jobs:
 
   coverage:
     name: Coverage thresholds
-    needs: tests
-    if: ${{ always() }}
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
-      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '2'
-      BURN_PCT: '6'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
+    timeout-minutes: 60
+    needs: hardhat-tests
+    if: ${{ always() && needs.hardhat-tests.result != 'cancelled' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: npm
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.NPM_CACHE }}
           cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
@@ -144,3 +160,75 @@ jobs:
           if-no-files-found: error
       - name: Enforce coverage threshold
         run: node scripts/check-coverage.js "$COVERAGE_MIN"
+
+  slither:
+    name: Slither static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.NPM_CACHE }}
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Slither
+        run: |
+          docker run --rm -u root -v "$PWD":/src -w /src ghcr.io/crytic/slither:0.10.4 \
+            slither . --fail-high --exclude-dependencies \
+            --solc-remaps @openzeppelin=node_modules/@openzeppelin/
+
+  echidna:
+    name: Echidna fuzzing (commit/reveal)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    needs: hardhat-tests
+    if: ${{ always() && needs.hardhat-tests.result != 'cancelled' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.NPM_CACHE }}
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Echidna harness
+        run: npm run echidna
+
+  gas-snapshot:
+    name: Gas snapshot regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    needs: hardhat-tests
+    if: ${{ always() && needs.hardhat-tests.result != 'cancelled' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.NPM_CACHE }}
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Regenerate constants for gas snapshot
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Ensure forge-std dependency
+        run: |
+          if [ ! -d lib/forge-std ]; then
+            forge install foundry-rs/forge-std;
+          else
+            echo 'forge-std already present; skipping install.';
+          fi
+      - name: Verify gas snapshot
+        run: npm run gas:check
