@@ -113,9 +113,7 @@ contract PlatformIncentives is Ownable, ReentrancyGuard {
         }
         platformRegistry.registerFor(msg.sender);
         jobRouter.registerFor(msg.sender);
-        // slither-disable-next-line reentrancy-events
-        // Trusted protocol modules are invoked above; no state is mutated after these
-        // external calls, so emitting the activation event is safe and non-reentrant.
+        // slither-disable-next-line reentrancy-events -- external module calls above do not mutate local state, so emitting the activation event is safe
         emit Activated(msg.sender, amount);
     }
 
@@ -144,9 +142,7 @@ contract PlatformIncentives is Ownable, ReentrancyGuard {
         }
         platformRegistry.registerFor(msg.sender);
         jobRouter.registerFor(msg.sender);
-        // slither-disable-next-line reentrancy-events
-        // Emitting after interacting with trusted modules is intentional; no further
-        // state changes occur, preventing any exploitable reentrancy surface.
+        // slither-disable-next-line reentrancy-events -- trusted modules invoked above do not mutate this contract, so the activation event is safe
         emit Activated(msg.sender, amount);
     }
 

@@ -2731,6 +2731,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @dev helper to process validator lists exceeding MAX_VALIDATORS
+    // slither-disable-next-line reentrancy-eth -- callers enforce nonReentrant and share splitting performs state updates before external transfers
     function _slashBatched(address user, Role role, uint256 amount, address recipient, address[] calldata validators)
         internal
     {

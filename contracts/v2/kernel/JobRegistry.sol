@@ -225,9 +225,7 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
         job.submittedAt = uint64(block.timestamp);
         _lockValidators(jobId);
         validationModule.startRound(jobId);
-        // slither-disable-next-line reentrancy-events
-        // The validation module call above is trusted and may emit events; this log
-        // records submission state without altering storage afterwards.
+        // slither-disable-next-line reentrancy-events -- trusted validation module call completes before this submission event records state
         emit JobSubmitted(jobId);
     }
 

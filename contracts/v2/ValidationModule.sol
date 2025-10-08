@@ -343,9 +343,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             uint256 deadline = r.revealDeadline;
             jobRegistry.escalateToDispute(jobId, rationale);
             _cleanup(jobId);
-            // slither-disable-next-line reentrancy-events
-            // Cleanup releases validator stakes before emitting; the event serves purely
-            // as an audit log and introduces no post-interaction state changes.
+            // slither-disable-next-line reentrancy-events -- cleanup releases validator stakes before emitting, so the event only logs the action
             emit ValidationFailover(jobId, action, deadline, rationale);
             return;
         }
@@ -1073,9 +1071,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 }
             }
             validatorPoolRotation = (rotationStart + i) % n;
-            // slither-disable-next-line reentrancy-events
-            // External module verification calls above do not mutate this contract's state;
-            // the rotation update event documents the final state without adding risk.
+            // slither-disable-next-line reentrancy-events -- external verification calls do not mutate this contract, so recording the rotation is safe
             emit ValidatorPoolRotationUpdated(validatorPoolRotation);
         } else {
             uint256 eligible;
@@ -1242,9 +1238,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         delete pendingEntropy[jobId];
         delete selectionBlock[jobId];
 
-        // slither-disable-next-line reentrancy-events
-        // External stake locks are performed before this event; the event itself does
-        // not modify state and simply records the chosen committee.
+        // slither-disable-next-line reentrancy-events -- external stake locks complete before this event, which only records the chosen committee
         emit ValidatorsSelected(jobId, selected);
         return selected;
     }

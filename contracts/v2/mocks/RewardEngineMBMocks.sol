@@ -31,9 +31,7 @@ contract MockFeePool is IFeePool, ReentrancyGuard {
         rewards[to] += amount;
         total += amount;
         require(token.transfer(to, amount), "MockFeePool: transfer failed");
-        // slither-disable-next-line reentrancy-events
-        // Mock contracts support test scenarios; the post-transfer event mirrors
-        // production behavior without altering state after the external token call.
+        // slither-disable-next-line reentrancy-events -- mock mirrors production event emission while leaving state untouched after the transfer
         emit Rewarded(to, amount);
     }
 }

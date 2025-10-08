@@ -470,9 +470,7 @@ contract DisputeModule is Governable, Pausable, ReentrancyGuard {
         if (address(sm) != address(0) && amount > 0) {
             sm.slash(juror, amount, employer);
         }
-        // slither-disable-next-line reentrancy-events
-        // Slashing interacts with the trusted stake manager; emitting afterwards logs
-        // the outcome without mutating module state, avoiding exploitable patterns.
+        // slither-disable-next-line reentrancy-events -- trusted stake manager handles slashing and this event simply records the outcome
         emit JurorSlashed(juror, amount, employer);
     }
 
