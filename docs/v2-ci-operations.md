@@ -3,22 +3,26 @@
 This guide describes the CI v2 pipeline that protects the AGI Jobs v0 codebase. It documents the workflows that run on `main` and every pull request, shows how the jobs depend on each other, and captures the branch protection settings that need to be enforced so the checks are always visible.
 
 ```mermaid
-digraph CIv2 {
-  rankdir=LR;
-  node [shape=rect, style=rounded, fontsize=12];
-  Lint[label="Lint & static checks" ];
-  Tests[label="Hardhat tests" ];
-  Foundry[label="Foundry fuzzing" ];
-  Coverage[label="Coverage thresholds" ];
-  Summary[label="CI summary" shape=parallelogram];
+flowchart LR
+    classDef trigger fill:#f1f5f9,stroke:#1e293b,stroke-width:1px,color:#0f172a;
+    classDef job fill:#ecfeff,stroke:#06b6d4,stroke-width:1px,color:#0e7490;
+    classDef gate fill:#f5f3ff,stroke:#7c3aed,stroke-width:1px,color:#5b21b6;
 
-  Lint -> Summary;
-  Tests -> Foundry;
-  Tests -> Coverage;
-  Tests -> Summary;
-  Foundry -> Summary;
-  Coverage -> Summary;
-}
+    subgraph Events
+        PR[PR to <code>main</code>]:::trigger
+        Main[Push to <code>main</code>]:::trigger
+        Manual[Manual run]:::trigger
+    end
+
+    subgraph "GitHub Actions — ci (v2)"
+        direction LR
+        Lint[Lint & static checks]:::job --> Summary{{CI summary}}:::gate
+        Tests[Tests]:::job --> Foundry[Foundry]:::job --> Summary
+        Tests --> Coverage[Coverage thresholds]:::job --> Summary
+    end
+
+    PR & Main & Manual --> Lint
+    PR & Main & Manual --> Tests
 ```
 
 ## Workflow triggers
@@ -29,7 +33,7 @@ The [`ci.yml`](../.github/workflows/ci.yml) workflow runs when:
 - A push lands on `main`.
 - A maintainer manually triggers a run with **Run workflow**.
 
-These triggers ensure every change to production code surfaces in the pipeline and the final **CI summary** job remains visible in the PR checks list.
+All three entry points converge on the same job graph, keeping the `CI summary` gate visible on every pull request—even when a maintainer forces a manual dry run.
 
 ## Required jobs and branch protection
 
@@ -45,12 +49,24 @@ Enable branch protection on `main` with these required status checks:
 
 > ✅ **Tip:** In GitHub branch protection, mark `Require branches to be up to date` to guarantee pull requests re-run the workflow when `main` advances.
 
+### Quick verification from the command line
+
+After applying or updating branch protection rules, verify them without leaving the terminal:
+
+```bash
+gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'
+gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
+```
+
+The first command should list the five required contexts above in order. The second confirms admins are also blocked when the pipeline is red.
+
 ## Pull request hygiene checklist
 
 1. Confirm that the **Checks** tab shows all five required jobs in the table above.
 2. Inspect the **Artifacts** section for `coverage-lcov` when coverage needs auditing.
 3. Review the `CI summary` job output for a condensed Markdown table of job results.
 4. When re-running failed jobs, choose **Re-run failed jobs** to keep historical logs.
+5. If a dependent job unexpectedly skips, inspect the workflow definition to confirm the `if: ${{ always() }}` guard is still present.
 
 ## Local dry run for contributors
 
@@ -66,6 +82,19 @@ forge test -vvvv --ffi --fuzz-runs 256
 ```
 
 Running the commands in this order matches the GitHub workflow dependencies, letting contributors catch failures before opening a pull request.
+
+### Environment guardrails enforced by CI
+
+The workflow pins several environment variables so simulation runs stay aligned with production expectations. Operators can adjust the source JSON config files and rely on CI to confirm the invariants below.
+
+| Variable | Purpose | Where enforced |
+| --- | --- | --- |
+| `COVERAGE_MIN` | Minimum overall coverage percentage (currently `90`). | `coverage` job → `node scripts/check-coverage.js`. |
+| `ACCESS_CONTROL_PATHS` | Directories that must meet access-control coverage thresholds. | `coverage` job → `npm run check:access-control`. |
+| `FEE_PCT`, `BURN_PCT`, `TREASURY` | Default fee routing constants consumed by Hardhat tests. | `tests` job → `scripts/generate-constants.ts`. |
+| `VALIDATORS_PER_JOB`, `REQUIRED_APPROVALS`, `COMMIT_WINDOW`, `REVEAL_WINDOW` | Validator defaults surfaced in Hardhat + Foundry suites. | `tests` & `foundry` jobs. |
+
+Any change to those values inside `config/` or environment overrides forces the workflow to regenerate constants, rerun tests, and verify access-control coverage so non-technical maintainers get immediate feedback.
 
 ## Operational playbook
 

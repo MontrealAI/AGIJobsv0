@@ -1,13 +1,36 @@
 # AGIJobManager v2 Architecture
 
-AGIJobs v2 replaces the monolithic v1 manager with immutable, single-purpose modules. Each contract is deployed once, owns its state, and interacts through a minimal interface so storage layouts remain isolated. The owner (ideally a multisig) can retune parameters or swap module addresses without redeploying the entire suite, delivering governance composability while keeping on-chain logic simple enough for block-explorer interactions. Every module inherits `Ownable`, ensuring only the contract owner can perform privileged actions. The design emphasises gas efficiency and game-theoretic soundness while remaining approachable for non-technical users.
+AGIJobs v2 replaces the monolithic v1 manager with immutable, single-purpose modules. Each contract is deployed once, owns its state, and interacts through a minimal interface so storage layouts remain isolated. Governance (ideally a multisig or timelock) can retune parameters or swap module addresses without redeploying the entire suite, delivering composability while keeping on-chain logic simple enough for block-explorer interactions. Core production modules inherit [`Governable`](../contracts/v2/Governable.sol), which expects privileged calls to arrive through an OpenZeppelin `TimelockController`, while ancillary components (e.g., `ValidationModule`, `ReputationEngine`, `CertificateNFT`) use lightweight `Ownable` guards so the owner or the [`OwnerConfigurator`](../contracts/v2/admin/OwnerConfigurator.sol) facade can execute setters. The design emphasises gas efficiency and game-theoretic soundness while remaining approachable for non-technical users.
 
 For a quick visual overview of the system, see the [architecture overview](architecture.md).
+
+## Governance and ownership model
+
+```mermaid
+flowchart LR
+    classDef gov fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
+    classDef govMod fill:#f8fafc,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef owner fill:#f5f3ff,stroke:#7c3aed,color:#5b21b6,stroke-width:1px;
+
+    Governance[TimelockController / Safe]:::gov --> JobRegistry[JobRegistry (Governable)]:::govMod
+    Governance --> StakeManager[StakeManager (Governable)]:::govMod
+    Governance --> DisputeModule[DisputeModule (Governable)]:::govMod
+    Governance --> SystemPause[SystemPause (Governable)]:::govMod
+
+    Governance --> OwnerConfigurator[OwnerConfigurator (Ownable2Step)]:::owner
+    OwnerConfigurator --> ValidationModule[ValidationModule (Ownable)]:::govMod
+    OwnerConfigurator --> ReputationEngine[ReputationEngine (Ownable)]:::govMod
+    OwnerConfigurator --> CertificateNFT[CertificateNFT (Ownable)]:::govMod
+```
+
+- **Governable contracts** (e.g., `JobRegistry`, `StakeManager`, `DisputeModule`, `SystemPause`) are deployed with a `TimelockController` owner and gate privileged functions behind the `onlyGovernance` modifier. Updating a parameter requires scheduling and executing a timelock proposal or Safe transaction that targets the module directly.
+- **Ownable contracts** (e.g., `ValidationModule`, `ReputationEngine`, `CertificateNFT`) accept direct `onlyOwner` calls. Production deployments delegate those writes to the [`OwnerConfigurator`](../contracts/v2/admin/OwnerConfigurator.sol) so the operator emits structured `ParameterUpdated` events for every change.
+- Ownership can be transferred at any time via `Governable.setGovernance` or the two-step flow in `OwnerConfigurator`, giving the contract owner complete control over who can initiate updates.
 
 ## Trust assumptions
 
 - **Deterministic randomness** - validator selection uses commit-reveal entropy seeded by the owner and on-chain data. When `block.prevrandao` is unavailable, the module mixes recent block hashes and the caller address, removing any need for off-chain randomness providers.
-- **Owner control** - `Ownable` setters let the owner retune parameters at will. Users must trust this address to act in good faith.
+- **Governance control** - `Governable` and `Ownable` setters let the designated timelock or owner retune parameters at will. Users must trust this address to act in good faith.
 - **No external dependencies** - the architecture avoids Chainlink VRF and subscription services entirely.
 
 ## Validator pool sizing & gas costs
@@ -35,34 +58,28 @@ graph LR
   DisputeModule --> ReputationEngine
 ```
 
-- **JobRegistry** - posts jobs, escrows payouts and tracks lifecycle state.
-- **ValidationModule** - selects validators, orchestrates commit-reveal voting and returns preliminary outcomes.
-- **DisputeModule** - optional appeal layer where moderators or a larger validator jury render final decisions.
-- **StakeManager** - escrows validator and agent collateral, releases rewards and executes slashing.
-- **ReputationEngine** - updates reputation scores and blacklists misbehaving agents or validators.
-- **CertificateNFT** - mints ERC-721 proof of completion to employers.
-  Each component is immutable once deployed yet configurable by the owner through minimal setter functions, enabling governance upgrades without redeploying the entire suite.
+The core modules below cooperate to orchestrate the job lifecycle while exposing focused setter functions so governance can retune parameters without migrations.
+
+| Module | Core responsibility | Example privileged setters |
+| --- | --- | --- |
+| **JobRegistry** (Governable) | Job lifecycle, escrow, ENS roots and acknowledgement policy. | `setModules`, `setJobStake`, `setFeePct`, `setTreasury`, `setValidatorRewardPct`, `setTaxPolicy`, `setAgentRootNode`. |
+| **ValidationModule** (Ownable) | Validator pool management, commit/reveal timing and quorum control. | `setCommitWindow`, `setRevealWindow`, `setValidatorPool`, `setValidatorSlashingPct`, `setApprovalThreshold`, `setSelectionStrategy`, `setRandaoCoordinator`. |
+| **DisputeModule** (Governable) | Appeal flow, moderator quorums and dispute economics. | `setDisputeFee`, `setDisputeWindow`, `setCommittee`, `setTaxPolicy`, `setModerator`, `setStakeManager`. |
+| **StakeManager** (Governable) | Stake custody, slash routing and payout splits. | `setRoleMinimums`, `setSlashingParameters`, `setTreasury`, `setFeePct`, `setUnbondingPeriod`, `setValidationModule`, `setOperatorSlashPct`. |
+| **ReputationEngine** (Ownable) | Reputation accounting, authorised caller registry and blacklist. | `setAuthorizedCaller`, `setScoringWeights`, `setStakeManager`, `setThreshold`, `setBlacklist`, `setPauser`. |
+| **CertificateNFT** (Ownable) | ERC-721 certificates for completed jobs. | `setBaseURI`, `setJobRegistry`, `setStakeManager`. |
 
 ### Token Configuration
 
 `StakeManager` holds the address of the ERC-20 used for all payments, staking and dispute fees. v2 deployments fix this token to $AGIALPHA at `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`, which operates with **18 decimals**. All economic parameters (stakes, rewards, fees) must therefore be provided in base units of this token (e.g., `100_000000000000000000` for 100 AGIALPHA). The `DisputeModule` pulls its `disputeFee` from `StakeManager`, so dispute resolution also uses this ERC-20.
 
-| Module           | Core responsibility                                     | Owner-controllable parameters                                          |
-| ---------------- | ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| JobRegistry      | job postings, escrow, lifecycle management              | job reward, required agent stake                                       |
-| ValidationModule | validator selection, commit-reveal voting, finalization | stake ratios, reward/penalty rates, timing windows, validators per job |
-| DisputeModule    | optional dispute and moderator decisions                | dispute fee, jury size, moderator address                              |
-| StakeManager     | custody of validator/agent collateral and slashing      | minimum stakes, slashing percentages, reward recipients                |
-| ReputationEngine | reputation tracking and blacklist enforcement           | reputation thresholds, authorised caller list                          |
-| CertificateNFT   | ERC-721 proof of completion                             | base URI                                                               |
+`Governable` modules restrict setters to the configured timelock or multisig via `onlyGovernance`, while `Ownable` modules rely on `onlyOwner`. In both cases the contract owner can rotate control addresses (`setGovernance` or `transferOwnership`) to keep ultimate authority over parameter changes.
 
-Every module inherits `Ownable`, so only the contract owner (or future governance authority) may adjust these parameters.
-
-All public methods accept plain `uint256` values (wei and seconds) so they can be invoked directly from a block explorer without custom tooling. Owners configure modules by calling the published setter functions in Etherscan's **Write** tab, while agents and validators use the corresponding read/write interfaces for routine actions.
+All public methods accept plain `uint256` values (wei and seconds) or primitive structs so they can be invoked directly from a block explorer without custom tooling. Owners can either call the setters via Etherscan's **Write** tab or route changes through `OwnerConfigurator.configure{,Batch}` to emit structured change logs.
 
 ### Owner Controls & Explorer Usability
 
-- Every setter is gated by `onlyOwner`, ensuring a single governance address (or multisig) tunes parameters.
+- `onlyGovernance` and `onlyOwner` modifiers map cleanly to timelock or Safe permissions, ensuring a single governance surface tunes parameters.
 - `JobRegistry` can re-point to replacement modules via `setModules`, enabling upgrades without migrating state.
 - Functions use primitive types and include NatSpec comments so Etherscan displays human-readable names and prompts.
 
@@ -114,87 +131,56 @@ sequenceDiagram
 Key Solidity interfaces live in [`contracts/v2/interfaces`](../contracts/v2/interfaces) and capture the responsibilities of each module. Examples:
 
 ```solidity
-interface IJobRegistry {
-    function createJob(uint256 reward, string calldata uri) external returns (uint256 jobId);
-    function applyForJob(uint256 jobId) external;
-    function completeJob(uint256 jobId, bytes calldata result) external;
-    function finalize(uint256 jobId) external;
-    function setModules(
-        address validation,
-        address reputation,
-        address stake,
-        address dispute,
-        address cert
-    ) external;
-    function setJobParameters(uint256 reward, uint256 stake) external;
-}
+// Key setter signatures (abbreviated)
 
-interface IValidationModule {
-    function selectValidators(uint256 jobId) external returns (address[] memory);
-    function commitValidation(uint256 jobId, bytes32 commitHash, string calldata subdomain, bytes32[] calldata proof) external;
-    function revealValidation(uint256 jobId, bool approve, bytes32 salt, string calldata subdomain, bytes32[] calldata proof) external;
-    function finalize(uint256 jobId) external returns (bool success);
-    function setParameters(
-        uint256 validatorStakeRequirement,
-        uint256 validatorStakePercentage,
-        uint256 validatorRewardPercentage,
-        uint256 validatorSlashingPercentage,
-        uint256 commitDuration,
-        uint256 revealDuration,
-        uint256 reviewWindow,
-        uint256 resolveGracePeriod,
-        uint256 validatorsPerJob
-    ) external;
-}
+// contracts/v2/JobRegistry.sol — timelock-gated
+function setJobStake(uint96 stake) external onlyGovernance;
+function setFeePct(uint256 _feePct) external onlyGovernance;
+function setValidatorRewardPct(uint256 pct) external onlyGovernance;
+function setModules(
+    IValidationModule validation,
+    IStakeManager stakeManager,
+    IReputationEngine reputation,
+    IDisputeModule dispute,
+    ICertificateNFT certNFT,
+    IFeePool feePool,
+    address[] calldata acknowledgers
+) external onlyGovernance;
 
-interface IDisputeModule {
-    function raiseDispute(uint256 jobId) external;
-    function resolve(uint256 jobId, bool employerWins) external;
-    function setAppealParameters(uint256 appealFee, uint256 jurySize) external;
-}
+// contracts/v2/ValidationModule.sol — owner-gated
+function setCommitWindow(uint256 commitDur) external onlyOwner;
+function setRevealWindow(uint256 revealDur) external onlyOwner;
+function setValidatorsPerJob(uint256 count) external onlyOwner;
+function setValidatorSlashingPct(uint256 pct) external onlyOwner;
 
-interface IReputationEngine {
-    function add(address user, uint256 amount) external;
-    function subtract(address user, uint256 amount) external;
-    function isBlacklisted(address user) external view returns (bool);
-    function setCaller(address caller, bool allowed) external;
-    function setThreshold(uint256 threshold) external;
-    function setBlacklist(address user, bool status) external;
-}
+// contracts/v2/modules/DisputeModule.sol — timelock-gated
+function setDisputeFee(uint256 fee) external onlyGovernance;
+function setDisputeWindow(uint256 window) external onlyGovernance;
+function setCommittee(address newCommittee) external onlyGovernance;
+function setTaxPolicy(ITaxPolicy policy) external onlyGovernance;
 
-interface IStakeManager {
-    enum Role { Agent, Validator }
-    function depositStake(Role role, uint256 amount) external;
-    function withdrawStake(Role role, uint256 amount) external;
-    function lockStake(address user, Role role, uint256 payout) external;
-    function slash(address user, Role role, uint256 payout, address employer) external; // `employer` must not be zero when employer share > 0
-    function setMinStake(uint256 minStake) external;
-    function setSlashingPercentages(
-        uint256 employerSlashPct,
-        uint256 treasurySlashPct
-    ) external;
-    function setTreasury(address treasury) external; // treasury cannot be zero or owner
-}
+// contracts/v2/ReputationEngine.sol — owner-gated
+function setAuthorizedCaller(address caller, bool allowed) external onlyOwner;
+function setScoringWeights(uint256 stakeWeight, uint256 reputationWeight) external onlyOwner;
+function setThreshold(uint256 threshold) external onlyOwner;
+function setBlacklist(address user, bool status) external onlyOwner;
 
-interface ICertificateNFT {
-    function mint(address to, uint256 jobId, string memory uri) external returns (uint256 tokenId);
-}
+// contracts/v2/StakeManager.sol — timelock-gated
+function setRoleMinimums(uint256 agent, uint256 validator, uint256 platform) external onlyGovernance;
+function setSlashingParameters(uint256 employerSlashPct, uint256 treasurySlashPct) external onlyGovernance;
+function setTreasury(address treasury) external onlyGovernance;
+function setFeePct(uint256 pct) external onlyGovernance;
 ```
 
 ## Governance and Owner Controls
 
-Each module exposes minimal `onlyOwner` setters so governance can tune economics without redeploying code. Because `JobRegistry` can update the addresses of its companion modules, new implementations may be introduced piecemeal while existing state remains untouched, enabling governance composability.
+The setter matrix above matches the earlier module table and underpins the [OwnerConfigurator playbook](owner-control-parameter-playbook.md). Governance can:
 
-| Module           | Key owner functions                                                                                                          | Purpose                                                    |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| JobRegistry      | `setValidationModule`, `setReputationEngine`, `setStakeManager`, `setCertificateNFT`, `setDisputeModule`, `setJobParameters` | Wire module addresses and set per-job rewards/stake        |
-| ValidationModule | `setParameters`                                                                                                              | Adjust stake ratios, rewards, slashing and timing windows  |
-| DisputeModule    | `setAppealParameters`                                                                                                        | Configure dispute fees, jury size and moderator address    |
-| StakeManager     | `setMinStake`, `setSlashingPercentages`, `setTreasury`                                                                       | Tune minimum stake, slashing shares and treasury           |
-| ReputationEngine | `setCaller`, `setThreshold`, `setBlacklist`                                                                                  | Authorise callers, set reputation floors, manage blacklist |
-| CertificateNFT   | `setJobRegistry`                                                                                                             | Configure authorized JobRegistry                           |
+- Schedule timelock transactions that target `onlyGovernance` functions on `JobRegistry`, `StakeManager`, `DisputeModule`, and `SystemPause`.
+- Execute multi-call batches through `OwnerConfigurator.configureBatch` for `onlyOwner` modules such as `ValidationModule` and `ReputationEngine`, emitting `ParameterUpdated` events for every change.
+- Rotate control by calling `setGovernance` or the two-step `transferOwnership` flow when onboarding a new Safe or timelock, ensuring the contract owner maintains full authority over platform parameters.
 
-All setters are accessible through block-explorer interfaces, keeping administration intuitive for non-technical owners while preserving contract immutability. These interfaces favour explicit, single-purpose methods, keeping gas costs predictable and allowing front-end or Etherscan interactions to remain intuitive.
+All setters remain accessible through block-explorer interfaces, keeping administration intuitive for non-technical maintainers while preserving contract immutability.
 
 ### Swapping validation modules
 
