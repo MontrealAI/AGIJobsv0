@@ -63,12 +63,20 @@ flowchart LR
 ## 2. CI enforcement for a fully green v2 pipeline
 
 1. Open **Repository Settings → Branches → Branch protection rules → Edit `main`**.
-2. Require the following status checks:
-   - `ci (v2) / ci (v2)` (summary job defined in `.github/workflows/ci.yml`).
-   - `contracts`, `security`, `fuzz`, `e2e`, `webapp`, `containers`, `release` (fan-out jobs). Keeping the individual jobs required surfaces granular failures even when the summary fails fast.
+2. Require the following status checks (exact strings from the Checks tab):
+   - `ci (v2) / Lint & static checks`
+   - `ci (v2) / Tests`
+   - `ci (v2) / Foundry`
+   - `ci (v2) / Coverage thresholds`
+   - `ci (v2) / CI summary`
+   - `e2e / orchestrator-e2e`
+   - `fuzz / forge-fuzz`
+   - `webapp / webapp-ci`
+   - `containers / build`
+   - *(Optional, when `apps/**` changes)* `apps-images / console` and `apps-images / portal`.
 3. Enable **Require branches to be up to date before merging** so rebases pick up the latest Solidity constants.
 4. Enable **Require approvals** (min 1 CODEOWNER), **Require signed commits**, **Restrict force pushes**, and **Require linear history** for auditability.
-5. Mirror the same rule to long-lived release branches (e.g., `release/v2`) if you cut staging builds.
+5. Mirror the same rule to long-lived release branches (e.g., `release/v2`) if you cut staging builds. Run `gh api repos/:owner/:repo/branches/<branch>/protection --jq '{checks: .required_status_checks.contexts}'` after saving each rule to confirm the contexts above are present.
 
 > 💡 **Optional reviewer UX:** Install the GitHub Checks "Required Status" dashboard in the project board to highlight the `ci (v2)` badge. Non-technical reviewers only need to track the single ✅ indicator while engineers can drill into the fan-out jobs as needed.
 
