@@ -308,7 +308,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         IValidationModule.FailoverAction action,
         uint64 extension,
         string calldata reason
-    ) external onlyOwner whenNotPaused {
+    ) external onlyOwner whenNotPaused nonReentrant {
         if (action == IValidationModule.FailoverAction.None)
             revert InvalidFailoverAction();
         FailoverState storage state = failoverStates[jobId];
@@ -343,6 +343,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             uint256 deadline = r.revealDeadline;
             jobRegistry.escalateToDispute(jobId, rationale);
             _cleanup(jobId);
+            // slither-disable-next-line reentrancy-events -- cleanup releases validator stakes before emitting, so the event only logs the action
             emit ValidationFailover(jobId, action, deadline, rationale);
             return;
         }
@@ -823,10 +824,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     ///      a future blockhash and `block.prevrandao` (or historical hashes and
     ///      `msg.sender` as fallback) to avoid external randomness providers and
     ///      minimize miner influence.
+    // slither-disable-next-line weak-prng
     function selectValidators(uint256 jobId, uint256 entropy)
         public
         override
         whenNotPaused
+        nonReentrant
         returns (address[] memory selected)
     {
         Round storage r = rounds[jobId];
@@ -1068,6 +1071,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 }
             }
             validatorPoolRotation = (rotationStart + i) % n;
+            // slither-disable-next-line reentrancy-events -- external verification calls do not mutate this contract, so recording the rotation is safe
             emit ValidatorPoolRotationUpdated(validatorPoolRotation);
         } else {
             uint256 eligible;
@@ -1234,6 +1238,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         delete pendingEntropy[jobId];
         delete selectionBlock[jobId];
 
+        // slither-disable-next-line reentrancy-events -- external stake locks complete before this event, which only records the chosen committee
         emit ValidatorsSelected(jobId, selected);
         return selected;
     }

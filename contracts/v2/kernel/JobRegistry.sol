@@ -213,7 +213,7 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
         emit JobCreated(jobId, msg.sender, agent, reward, deadline, specHash, validators);
     }
 
-    function submitResult(uint256 jobId) external {
+    function submitResult(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
         if (job.employer == address(0)) revert JobNotFound();
         if (job.finalized) revert AlreadyFinalized();
@@ -225,6 +225,7 @@ contract KernelJobRegistry is Ownable, ReentrancyGuard, IJobRegistryKernel {
         job.submittedAt = uint64(block.timestamp);
         _lockValidators(jobId);
         validationModule.startRound(jobId);
+        // slither-disable-next-line reentrancy-events -- trusted validation module call completes before this submission event records state
         emit JobSubmitted(jobId);
     }
 

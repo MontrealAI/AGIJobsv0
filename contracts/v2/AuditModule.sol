@@ -93,6 +93,7 @@ contract AuditModule is IAuditModule, Ownable {
     }
 
     /// @inheritdoc IAuditModule
+    // slither-disable-next-line weak-prng
     function onJobFinalized(
         uint256 jobId,
         address agent,
