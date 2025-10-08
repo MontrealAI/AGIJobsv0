@@ -16,13 +16,36 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 
 ## Continuous Integration (CI v2)
 
-The `ci (v2)` GitHub Actions workflow enforces quality gates on every pull request and on the `main` branch. The pipeline fan-out mirrors how operators review production releases:
+The `ci (v2)` GitHub Actions workflow enforces quality gates on every pull request and on the `main` branch. The pipeline fan-out mirrors how operators review production releases and exposes every signal as a required check so a red badge on the pull request truly means “stop”.
 
 - **Lint & static checks** – runs Prettier, ESLint and Solhint with production-safe rules to guarantee formatting and Solidity hygiene.
 - **Tests** – compiles contracts, regenerates shared constants, and executes the full Hardhat suite together with ABI drift detection.
 - **Foundry** – reuses the generated constants, installs Foundry with a warm cache, and executes high signal fuzz tests.
 - **Coverage thresholds** – regenerates constants, recomputes coverage, enforces the 90% minimum, and uploads the LCOV artifact.
 - **Summary gate** – publishes a human-readable status table and fails the workflow if any upstream job is unsuccessful, giving non-technical reviewers a single green/red indicator.
+
+### Required check list
+
+To keep the workflow “fully green” on `main`, configure branch protection with the exact check names below and turn on **Require branches to be up to date**. These names map one-to-one with the jobs declared in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+| Check name | GitHub job id | Purpose |
+| --- | --- | --- |
+| `Lint & static checks` | `lint` | Formatting, ESLint, Solhint guardrails. |
+| `Tests` | `tests` | Hardhat compilation, constants regeneration, contract tests. |
+| `Foundry` | `foundry` | Forge fuzzing with deterministic constants. |
+| `Coverage thresholds` | `coverage` | Access-control + line coverage with LCOV artifact. |
+| `CI summary` | `summary` | Aggregated Markdown gate that fails when any dependency job fails. |
+
+Quickly confirm the rule set from the terminal once protection is in place:
+
+```bash
+gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'
+gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
+```
+
+> Need more depth? The [CI v2 operations guide](docs/v2-ci-operations.md) and [branch protection policy](docs/BRANCH_PROTECTION.md) capture screenshots, troubleshooting playbooks, and escalation paths for each check.
+
+### Local dry run
 
 ```mermaid
 flowchart LR
@@ -44,11 +67,22 @@ flowchart LR
 
 Branch protection can now point at the `CI summary` check so that every job listed above must succeed before merges or deployments proceed. A non-technical maintainer can follow the [CI v2 operations guide](docs/v2-ci-operations.md) for a diagrammed overview of the workflow, required status checks, and day-to-day troubleshooting steps.
 
+### Owner governance quick reference
+
+The AGI Jobs v2 contracts wrap every privileged setter behind either the [`Governable`](contracts/v2/Governable.sol) timelock guard or the `Ownable2Step` façade used by module adapters. Governance routes changes through the [`OwnerConfigurator`](contracts/v2/admin/OwnerConfigurator.sol) so a Safe signer can batch parameter updates, emit structured `ParameterUpdated` events, and prove intent. The [Owner Control Index](docs/owner-control-index.md) provides the day-to-day navigation map, while [OWNER_CONTROL.md](docs/OWNER_CONTROL.md) enumerates the precise knobs exposed by each contract and the scripts that verify them.
+
+At any time the owner can:
+
+- Pause or resume every core module in one call using [`SystemPause.pauseAll()` / `unpauseAll()`](contracts/v2/SystemPause.sol).
+- Rotate treasury targets, fee splits, validator windows, and thermodynamic shares via `owner:update-all` helpers.
+- Run `npm run owner:verify-control` to compare the on-chain state against the canonical manifests before signing off on a change window.
+
 ## Table of Contents
 
 - [Identity policy](#identity-policy)
 - [AGIALPHA configuration](#agialpha-configuration)
 - [Fee handling and treasury](#fee-handling-and-treasury)
+- [Owner governance quick reference](#owner-governance-quick-reference)
 - [Thermodynamic Incentives](#thermodynamic-incentives)
 - [Deploy defaults](#deploy-defaults)
 - [One-Click Deployment](#one-click-deployment)
