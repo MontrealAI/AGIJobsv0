@@ -16,7 +16,7 @@
 | **Owner control authority** | Governance keys can mutate every adjustable parameter | `npm run owner:doctor -- --network <network>` | Run `npm run owner:verify-control -- --network <network>` and file the Markdown proof in `reports/` |
 | **Pause & recovery drills** | SystemPause and circuit breakers executable by owners | `npm run pause:test -- --network <network>` (dry-run) | Manual spot check on Etherscan `SystemPause` write tab using hardware wallet |
 | **Economics calibration** | Thermodynamic constants, fee splits, burn percentages match governance policy | `npm run thermodynamics:report -- --network <network>` | Cross-verify with finance-approved baseline in `reports/<network>-economics-baseline.md` |
-| **External observability** | Telemetry exporters, SLO dashboards, alerting integrations online | `npm run observability:smoke` | Confirm dashboard URLs listed in [`docs/institutional-observability.md`](../institutional-observability.md) respond with 200 |
+| **External observability** | Telemetry exporters, SLO dashboards, alerting integrations online | `npm run observability:smoke` (verifies Prometheus scrape jobs, Alertmanager routes, Grafana dashboards) | Confirm dashboard URLs listed in [`docs/institutional-observability.md`](../institutional-observability.md) respond with 200 |
 
 > **Triple verification rule:** Do not mark a row green until the command succeeds **and** a second human has countersigned the independent verification evidence in the ops vault.
 
