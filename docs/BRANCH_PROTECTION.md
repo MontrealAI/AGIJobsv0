@@ -3,6 +3,7 @@
 To keep `main` deployable at all times, enable the following rules in the GitHub repository settings:
 
 1. **Require status checks to pass before merging**
+   - `ci (v2) / ci (v2)` (summary job from `.github/workflows/ci.yml`)
    - `contracts`
    - `security`
    - `fuzz`
@@ -16,4 +17,4 @@ To keep `main` deployable at all times, enable the following rules in the GitHub
 5. **Restrict force pushes** and disable direct pushes to `main` (require pull requests).
 6. **Require linear history** to simplify audit trails.
 
-Update CODEOWNERS so that contract, security, and deployment changes always receive the appropriate review before merge.
+Update CODEOWNERS so that contract, security, and deployment changes always receive the appropriate review before merge. Mirror these requirements onto any release branches you promote (for example, `release/v2`) so that production hotfixes run through the same gates.
