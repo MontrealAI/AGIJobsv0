@@ -1,93 +1,55 @@
-# Owner Control Matrix (Draft)
+# Owner Control Surface (Production)
 
-> **Status:** Draft coordination document for implementing the Owner Configurator surface area across all v2 contracts. This file enumerates the parameters that must remain owner-upgradeable and will be updated as modules are finalized.
-
-## Overview
-
-The AGI Jobs v2 system preserves an owner-first operating model. A single Owner address (EOA or Safe) must retain the ability to configure, pause, upgrade, and recover assets across every module. Ownership is mediated through `Ownable2Step` on all upgradeable implementations and a central `OwnerConfigurator` facade for non-technical operators.
-
-### Operating Principles
-
-1. **Single Source of Truth** – Every mutable parameter appears here with the contract that guards it and the emitted `ParameterUpdated` event identifier.
-2. **Idempotent Batched Updates** – The configurator will expose batch setters that no-op when the requested value already matches on-chain state.
-3. **Auditability** – Each change must emit `ParameterUpdated(name, oldValue, newValue, msg.sender)` and be indexed for the owner console and subgraph.
-4. **Safe Compatibility** – All configuration flows will be Safe Transaction Builder compatible and surfaced in the Owner Console UI.
+> **Audience:** Contract owners, Safe signers, change managers, and auditors.
+>
+> **Goal:** Document every privileged entry point available to the AGI Jobs v2 owner, show how those knobs are exercised through tooling, and provide verification steps that prove the chain matches the approved manifests.
 
 ---
 
-## Owner Configurator Surface
+## Governance architecture
 
-| Module | Setter | Parameter | Units / Notes |
-| ------ | ------ | --------- | ------------- |
-| JobRegistry | `setValidationModule(address)` | Validation module proxy | address |
-| JobRegistry | `setDisputeModule(address)` | Dispute module proxy | address |
-| JobRegistry | `setIdentityRegistry(address)` | Identity registry | address |
-| JobRegistry | `setFeePool(address)` | Fee pool address | address |
-| JobRegistry | `setTaxPolicy(address)` | Tax policy contract | address |
-| JobRegistry | `setCertificateNFT(address)` | Certificate NFT contract | address |
-| JobRegistry | `setRouter(address)` | Jobs router | address |
-| JobRegistry | `setMaxJobDuration(uint256)` | Upper bound in seconds | uint256 |
-| JobRegistry | `setMinJobReward(uint256)` | Minimum payment amount | uint256 |
-| JobRegistry | `setJobCreateWhitelist(bool)` | Toggle allowlist | bool |
-| JobRegistry | `setJobCreateMerkleRoot(bytes32)` | Allowlist root | bytes32 |
-| ValidationModule | `setCommitWindow(uint256)` | Seconds | uint256 |
-| ValidationModule | `setRevealWindow(uint256)` | Seconds | uint256 |
-| ValidationModule | `setValidatorBounds(uint256,uint256)` | min,max committee | uint256 |
-| ValidationModule | `setQuorum(uint16)` | Percentage (basis points) | uint16 |
-| ValidationModule | `setApprovalThreshold(uint16)` | Percentage (basis points) | uint16 |
-| ValidationModule | `setRandProvider(address)` | Randomness provider | address |
-| ValidationModule | `setVRFParams(uint64,bytes32,uint32,uint16)` | subId,keyHash,gasLimit,confirmations | mixed |
-| ValidationModule | `setNoRevealPenalty(uint16)` | Basis points | uint16 |
-| ValidationModule | `setLateRevealPenalty(uint16)` | Basis points | uint16 |
-| StakeManager | `setMinStake(uint8,uint256)` | Role => stake amount | uint256 |
-| StakeManager | `setUnbondingPeriod(uint256)` | Seconds | uint256 |
-| StakeManager | `setSlashPercents(uint16,uint16,uint16,uint16,uint16)` | bps per offense | uint16 |
-| StakeManager | `setTreasury(address)` | Treasury receiver | address |
-| StakeManager | `setTreasuryAllowlist(address,bool)` | Access control | address,bool |
-| StakeManager | `rescueERC20(address,address,uint256)` | Token, to, amount | addresses,uint256 |
-| StakeManager | `rescueETH(address,uint256)` | Recipient, amount | address,uint256 |
-| IdentityRegistry | `setAgentRootNode(bytes32)` | ENS node | bytes32 |
-| IdentityRegistry | `setValidatorRootNode(bytes32)` | ENS node | bytes32 |
-| IdentityRegistry | `setAgentMerkleRoot(bytes32)` | Allowlist root | bytes32 |
-| IdentityRegistry | `setValidatorMerkleRoot(bytes32)` | Allowlist root | bytes32 |
-| IdentityRegistry | `setAttestor(address,bool)` | Attestor allowlist | address,bool |
-| IdentityRegistry | `setENSResolver(address)` | ENS resolver | address |
-| DisputeModule | `setDisputeFee(uint256)` | Fee amount | uint256 |
-| DisputeModule | `setAppealWindow(uint256)` | Seconds | uint256 |
-| DisputeModule | `setMaxRounds(uint8)` | Arbitration rounds | uint8 |
-| DisputeModule | `setArbitratorCommittee(address)` | Committee contract | address |
-| DisputeModule | `setModerator(address,bool)` | Moderator ACL | address,bool |
-| ReputationEngine | `setWeights(uint16,uint16,uint16,uint16)` | success,fail,slash,decay | uint16 |
-| ReputationEngine | `setPremiumThreshold(uint256)` | Score threshold | uint256 |
-| ReputationEngine | `setBlacklist(address,bool)` | Exclusion list | address,bool |
-| FeePool | `setBurnPct(uint16)` | Basis points | uint16 |
-| FeePool | `setTreasury(address)` | Treasury recipient | address |
-| FeePool | `setSplit(uint16,uint16,uint16,uint16,uint16)` | agents,validators,operators,employers,treasury | uint16 |
-| CertificateNFT | `setBaseURI(string)` | Metadata URI | string |
-| CertificateNFT | `setMinter(address)` | Authorized minter | address |
-| CertificateNFT | `pause()` / `unpause()` | Circuit breaker | - |
-| SystemPause | `pauseAll()` | Global stop | - |
-| SystemPause | `unpauseAll()` | Resume | - |
-| SystemPause | `setPauser(address)` | Emergency delegate | address |
-| RandomnessWrapper | `setCoordinator(address)` | VRF coordinator | address |
-| RandomnessWrapper | `setSubId(uint64)` | Subscription id | uint64 |
-| RandomnessWrapper | `withdrawLINK(address,uint256)` | Rescue LINK | address,uint256 |
-| NodeRegistry | `setMinSpecs(bytes32)` | Hash of requirements | bytes32 |
-| NodeRegistry | `setHeartbeatWindow(uint256)` | Seconds | uint256 |
-| NodeRegistry | `setTEERequired(bool)` | Toggle attestation | bool |
-| NodeRegistry | `setMinNodeStake(uint256)` | Stake threshold | uint256 |
-| NodeRegistry | `setOperatorFeeBps(uint16)` | Fee share | uint16 |
+- **Timelock-first control.** Contracts that inherit [`Governable`](../contracts/v2/Governable.sol) only accept privileged calls from the configured `TimelockController`. Ownership transfers go through `setGovernance` / `transferOwnership`, so rotating the Safe or timelock automatically propagates to every downstream module.【F:contracts/v2/Governable.sol†L11-L61】
+- **Two-step owner facades.** Modules that rely on `Ownable2Step` publish `transferOwnership` and `acceptOwnership`, preventing accidental loss of control and aligning with Safe multi-sig flows.
+- **OwnerConfigurator event bus.** Governance batches configuration actions through [`OwnerConfigurator`](../contracts/v2/admin/OwnerConfigurator.sol), which emits `ParameterUpdated(module, parameter, oldValue, newValue, actor)` for every call. The helper accepts single or batched requests so non-technical operators can stage identical changes in production and staging before executing.【F:contracts/v2/admin/OwnerConfigurator.sol†L9-L120】
+- **System-wide circuit breaker.** [`SystemPause`](../contracts/v2/SystemPause.sol) centralises pauser rights, letting the owner stop or resume all core modules (`pauseAll` / `unpauseAll`), refresh module pausers after ownership changes, and forward validation failovers from a single address.【F:contracts/v2/SystemPause.sol†L152-L236】
 
 ---
 
-## Event Naming
+## Control catalogue
 
-All setter actions emit a canonical `ParameterUpdated(bytes32 indexed name, bytes32 indexed field, bytes oldValue, bytes newValue, address indexed actor)` event. The `name` encodes the module (e.g., `JOB_REGISTRY`) and `field` encodes the parameter (e.g., `SET_VALIDATION_MODULE`).
+Each row maps a contract to its privileged setters (grouped by capability) and the automation that applies and verifies the change. Use the exact module keys in `config/owner-control.json` with the `owner:update-all` and `owner:verify-control` scripts.
 
-## Next Steps
+| Domain | Contract | Privileged controls | Apply via | Verify via |
+| --- | --- | --- | --- | --- |
+| **Job lifecycle & identity** | [`JobRegistry`](../contracts/v2/JobRegistry.sol) | Module wiring (`setIdentityRegistry`, `setDisputeModule`, `setValidationModule`, `setAuditModule`, `setStakeManager`, `setReputationEngine`, `setCertificateNFT`); identity roots (`setAgentRootNode`, `setAgentMerkleRoot`, `bumpAgentAuthCacheVersion`, `setValidatorRootNode`, `setValidatorMerkleRoot`, `setAgentAuthCacheDuration`); economic knobs (`setFeePool`, `setTreasury`, `setJobStake`, `setMinAgentStake`, `setFeePct`, `setValidatorRewardPct`, `setMaxJobReward`, `setJobDurationLimit`, `setMaxActiveJobsPerAgent`, `setExpirationGracePeriod`, `setTaxPolicy`, `setJobParameters`); safety (`setPauser`, `pause`, `unpause`, `delistJob`, `setAcknowledger`).【F:contracts/v2/JobRegistry.sol†L464-L1357】 | `npm run owner:update-all -- --only jobRegistry` | `npm run owner:verify-control -- --modules jobRegistry` |
+| | [`IdentityRegistry`](../contracts/v2/IdentityRegistry.sol) | ENS integration (`setENS`, `setNameWrapper`, `setAgentRootNode`, `setClubRootNode`, `setNodeRootNode` plus alias management); allowlists (`setAgentMerkleRoot`, `setValidatorMerkleRoot`, `addAdditionalAgent`, `addAdditionalValidator`, `addAdditionalNodeOperator`); attestation metadata (`setReputationEngine`, `setAttestationRegistry`, `setAgentType`, profile URI setters).【F:contracts/v2/IdentityRegistry.sol†L222-L706】 | `npm run owner:update-all -- --only identityRegistry` | `npm run owner:verify-control -- --modules identityRegistry` |
+| | [`ValidationModule`](../contracts/v2/ValidationModule.sol) | Windows & committee sizing (`setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, `setValidatorsPerJob`, `setMinValidators`, `setMaxValidators`); penalties & thresholds (`setNonRevealPenalty`, `setRevealQuorum`, `setValidatorSlashingPct`, `setApprovalThreshold`, `setRequiredValidatorApprovals`, `setAutoApprovalTarget`); wiring (`setJobRegistry`, `setStakeManager`, `setIdentityRegistry`, `setReputationEngine`); failovers (`triggerFailover`, `resetSelection`); safety (`setPauser`, `pause`, `unpause`).【F:contracts/v2/ValidationModule.sol†L246-L806】【F:contracts/v2/ValidationModule.sol†L1832-L1849】 | `npm run owner:update-all -- --only validationModule` | `npm run owner:verify-control -- --modules validationModule` |
+| | [`DisputeModule`](../contracts/v2/modules/DisputeModule.sol) & [`KlerosDisputeModule`](../contracts/v2/modules/KlerosDisputeModule.sol) | Court wiring (`setArbitratorCommittee`, `setTaxPolicy`, `setArbitrator`), economics (`setDisputeFee`, `setAppealWindow`, `setMaxRounds`), ACL (`setModerator`, `removeModerator`, `setPauser`).【F:contracts/v2/modules/DisputeModule.sol†L161-L338】【F:contracts/v2/modules/KlerosDisputeModule.sol†L59-L109】 | `npm run owner:update-all -- --only disputeModule` | `npm run owner:verify-control -- --modules disputeModule` |
+| **Capital & incentives** | [`StakeManager`](../contracts/v2/StakeManager.sol) | Treasury routing (`setTreasury`, `setTreasuryAllowlist`, `setFeePool`, `setFeePct`, `setBurnPct`, `setValidatorRewardPct`, `setOperatorSlashPct`); staking rules (`setRoleMinimum`, `setRoleMinimums`, `setMinStake`, `setUnbondingPeriod`, `setMaxStakePerAddress`, `setStakeRecommendations`, `setMaxAGITypes`, `setMaxTotalPayoutPct`, `addAGIType`, `removeAGIType`, `autoTuneStakes`); module wiring (`setJobRegistry`, `setDisputeModule`, `setValidationModule`, `setValidatorLockManager`, `setModules`); pausing & funding (`setPauser`, `pause`, `unpause`, `fundOperatorRewardPool`).【F:contracts/v2/StakeManager.sol†L493-L1708】【F:contracts/v2/StakeManager.sol†L2500-L2857】 | `npm run owner:update-all -- --only stakeManager` | `npm run owner:verify-control -- --modules stakeManager` |
+| | [`FeePool`](../contracts/v2/FeePool.sol) | Reward routing (`setRewarder`, `setRewardRole`, `setStakeManager`, `setBurnPct`, `setTreasury`, `setTreasuryAllowlist`, `setTaxPolicy`); governance linkage (`setGovernance`); pausing (`setPauser`, `pause`).【F:contracts/v2/FeePool.sol†L154-L445】【F:contracts/v2/FeePool.sol†L588-L606】 | `npm run owner:update-all -- --only feePool` | `npm run owner:verify-control -- --modules feePool` |
+| | [`RewardEngineMB`](../contracts/v2/RewardEngineMB.sol) | Thermodynamic tuning (`setRoleShare`, `setKappa`, `setMu`, `setBaselineEnergy`, `setTemperature`, `setThermostat`); wiring (`setTreasury`, `setFeePool`, `setReputationEngine`, `setEnergyOracle`, `setSettler`); operational caps (`setMaxProofs`).【F:contracts/v2/RewardEngineMB.sol†L112-L227】 | `npm run owner:update-all -- --only rewardEngine` | `npm run owner:verify-control -- --modules rewardEngine` |
+| | [`Thermostat`](../contracts/v2/Thermostat.sol) & [`HamiltonianMonitor`](../contracts/v2/HamiltonianMonitor.sol) | PID parameters (`setPID`, `setSystemTemperature`, `setTemperatureBounds`, `setIntegralBounds`, `setRoleTemperature`, `unsetRoleTemperature`, `tick`); Hamiltonian window & history management (`setWindow`, `resetHistory`, `record`).【F:contracts/v2/Thermostat.sol†L52-L133】【F:contracts/v2/HamiltonianMonitor.sol†L49-L82】 | `npm run thermostat:update -- --execute`<br>`npm run hamiltonian:update -- --execute` | `npm run owner:verify-control -- --modules thermostat,hamiltonianMonitor` |
+| | [`GovernanceReward`](../contracts/v2/GovernanceReward.sol) | Epoch cadence and treasury links (`setEpochLength`, `setRewardPct`, `setFeePool`, `setStakeManager`, `setRewardRole`, `recordVoters`, `finalizeEpoch`).【F:contracts/v2/GovernanceReward.sol†L91-L142】 | `npm run owner:update-all -- --only governanceReward` | `npm run owner:verify-control -- --modules governanceReward` |
+| **Signals & oracles** | [`EnergyOracle`](../contracts/v2/EnergyOracle.sol) | Signer roster management (`setSigner`), report cadence (`setParameters`).【F:contracts/v2/EnergyOracle.sol†L34-L62】 | `npm run owner:update-all -- --only energyOracle` | `npm run owner:pulse -- --network <network>` |
+| | [`RandaoCoordinator`](../contracts/v2/RandaoCoordinator.sol) | Commit/reveal schedule (`setCommitWindow`, `setRevealWindow`), deposits (`setDeposit`), payout routing (`setTreasury`, `setToken`).【F:contracts/v2/RandaoCoordinator.sol†L127-L173】 | `npm run owner:update-all -- --only randao` | `npm run owner:pulse -- --network <network>` |
+| | [`TaxPolicy`](../contracts/v2/TaxPolicy.sol) | Policy content & economics (`setPolicyURI`, `setAcknowledgement`, `setPolicy`, `setCommitWindow`, `setRevealWindow`, `setDeposit`, `setTreasury`, `setToken`).【F:contracts/v2/TaxPolicy.sol†L85-L173】 | `npm run owner:update-all -- --only taxPolicy` | `npm run owner:verify-control -- --modules taxPolicy` |
+| **Platform operations** | [`PlatformRegistry`](../contracts/v2/PlatformRegistry.sol) | Registry ACL (`setPauser`, `setRegistrar`, `setBlacklist`); staking integration (`setStakeManager`, `setReputationEngine`, `setMinPlatformStake`); emergency pause (`pause`, `unpause`).【F:contracts/v2/PlatformRegistry.sol†L76-L454】 | `npm run owner:update-all -- --only platformRegistry` | `npm run owner:verify-control -- --modules platformRegistry` |
+| | [`PlatformIncentives`](../contracts/v2/PlatformIncentives.sol) | Discount curves (`setMaxDiscountPct`) and registry wiring (`setConfig`).【F:contracts/v2/PlatformIncentives.sol†L77-L95】 | `npm run owner:update-all -- --only platformIncentives` | `npm run owner:verify-control -- --modules platformIncentives` |
+| | [`RoutingModule`](../contracts/v2/modules/RoutingModule.sol) & [`JobRouter`](../contracts/v2/modules/JobRouter.sol) | Operator ACLs (`deregister`, `setRegistrar`, `setBlacklist`), stake requirements (`setMinStake`, `setStakeManager`, `setReputationEngine`, `setReputationEnabled`), registry wiring (`setPlatformRegistry`).【F:contracts/v2/modules/RoutingModule.sol†L65-L189】【F:contracts/v2/modules/JobRouter.sol†L87-L155】 | `npm run owner:update-all -- --only routingModule,jobRouter` | `npm run owner:verify-control -- --modules routingModule,jobRouter` |
+| | [`DiscoveryModule`](../contracts/v2/modules/DiscoveryModule.sol)`/`[`RevenueDistributor`](../contracts/v2/modules/RevenueDistributor.sol)`/`[`JobEscrow`](../contracts/v2/modules/JobEscrow.sol)`/`[`CertificateNFT`](../contracts/v2/modules/CertificateNFT.sol) | Operator rosters and stake hooks (`deregisterPlatform`, `setStakeManager`, `setMinStake`, `setReputationEngine`); escrow parameters (`setResultTimeout`, `setJobRegistry`, `setRoutingModule`); payout routing (`setTreasury`, `setStakeManager`); metadata (`setBaseURI`, `updateBaseURI`, `lockBaseURI`, `pause`, `unpause`).【F:contracts/v2/modules/DiscoveryModule.sol†L64-L144】【F:contracts/v2/modules/RevenueDistributor.sol†L59-L81】【F:contracts/v2/modules/JobEscrow.sol†L95-L107】【F:contracts/v2/modules/CertificateNFT.sol†L48-L148】 | `npm run owner:update-all -- --only discoveryModule,revenueDistributor,jobEscrow,certificateNFT` | `npm run owner:verify-control -- --modules discoveryModule,revenueDistributor,jobEscrow,certificateNFT` |
+| **Safety & pausing** | [`SystemPause`](../contracts/v2/SystemPause.sol) | Module wiring (`setModules`, `refreshPausers`), global pause/ resume (`pauseAll`, `unpauseAll`), validation failover forwarding (`triggerValidationFailover`).【F:contracts/v2/SystemPause.sol†L152-L236】 | `npx hardhat run scripts/v2/updateSystemPause.ts --network <network> --execute` | `npm run owner:verify-control -- --modules systemPause` |
 
-1. Implement `contracts/admin/OwnerConfigurator.sol` with batched delegate calls to each module and per-parameter guard logic.
-2. Ensure every module exposes both setter and getter pairs and adheres to `Ownable2Step`.
-3. Extend Foundry/Hardhat test suites with exhaustive access control and event emission coverage (≥90% lines overall, 100% across access control paths).
-4. Update Owner Console to consume this matrix for form generation and Safe transaction templates.
+> **Heads-up:** Some helper scripts (for example `thermostat:update`) accept `--dry-run` by default. Append `--execute` only after the change ticket is approved.
+
+---
+
+## Change workflow
+
+1. **Surface & doctor.** Run `npm run owner:surface -- --network <network>` to capture the active control surface, then `npm run owner:doctor -- --network <network>` to flag missing wiring or zero-value parameters.
+2. **Plan.** Generate an executable diff with `npm run owner:plan -- --network <network> [--only moduleA,moduleB]`. Attach the Markdown table to the [Owner Control Change Ticket](owner-control-change-ticket.md) for approvals.
+3. **Execute safely.** Use `npm run owner:update-all -- --network <network> --only moduleA,moduleB --execute` once approvals land. For emergency pauses, dispatch `npx hardhat run scripts/v2/updateSystemPause.ts --network <network> --execute --pause-all`.
+4. **Verify.** Immediately confirm the chain matches the manifests with `npm run owner:verify-control -- --network <network> --strict`. Persist the JSON output in `reports/<network>-owner-verify-YYYYMMDD.json`.
+5. **Archive & broadcast.** Capture telemetry with `npm run owner:snapshot -- --network <network>` and notify stakeholders via the owner console or incident channel when controls change.
+
+Follow this workflow for every parameter mutation—routine or emergency—to maintain a tamper-evident record and keep the platform deployable by a non-technical owner.
 
