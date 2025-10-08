@@ -12,6 +12,17 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  COVERAGE_MIN: '90'
+  ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
+  FEE_PCT: '2'
+  BURN_PCT: '6'
+  TREASURY: '0x1111111111111111111111111111111111111111'
+  VALIDATORS_PER_JOB: '3'
+  REQUIRED_APPROVALS: '3'
+  COMMIT_WINDOW: '30m'
+  REVEAL_WINDOW: '30m'
+
 jobs:
   lint:
     name: Lint & static checks
@@ -32,16 +43,6 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
-      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '2'
-      BURN_PCT: '6'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -68,14 +69,6 @@ jobs:
     needs: tests
     if: ${{ always() }}
     runs-on: ubuntu-24.04
-    env:
-      FEE_PCT: '2'
-      BURN_PCT: '6'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -107,16 +100,6 @@ jobs:
     needs: tests
     if: ${{ always() }}
     runs-on: ubuntu-24.04
-    env:
-      COVERAGE_MIN: '90'
-      ACCESS_CONTROL_PATHS: 'contracts/v2/admin,contracts/v2/governance'
-      FEE_PCT: '2'
-      BURN_PCT: '6'
-      TREASURY: '0x1111111111111111111111111111111111111111'
-      VALIDATORS_PER_JOB: '3'
-      REQUIRED_APPROVALS: '3'
-      COMMIT_WINDOW: '30m'
-      REVEAL_WINDOW: '30m'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
