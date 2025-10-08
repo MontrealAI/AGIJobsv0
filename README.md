@@ -24,7 +24,7 @@ The `ci (v2)` GitHub Actions workflow enforces quality gates on every pull reque
 - **Coverage thresholds** – regenerates constants, recomputes coverage, enforces the 90% minimum, and uploads the LCOV artifact.
 - **Summary gate** – publishes a human-readable status table and fails the workflow if any upstream job is unsuccessful, giving non-technical reviewers a single green/red indicator.
 
-Branch protection can now point at the `CI summary` check so that every job listed above must succeed before merges or deployments proceed.
+Branch protection can now point at the `CI summary` check so that every job listed above must succeed before merges or deployments proceed. A non-technical maintainer can follow the [CI v2 operations guide](docs/v2-ci-operations.md) for a diagrammed overview of the workflow, required status checks, and day-to-day troubleshooting steps.
 
 ## Table of Contents
 
@@ -66,6 +66,7 @@ Branch protection can now point at the `CI summary` check so that every job list
 - [Owner mission control](#owner-mission-control)
 - [Owner control visual guide](#owner-control-visual-guide)
 - [Owner parameter matrix](#owner-parameter-matrix)
+- [Owner control parameter playbook](#owner-control-parameter-playbook)
 - [Production launch blueprint](#production-launch-blueprint)
 
 ### Identity policy
@@ -544,6 +545,16 @@ touching Solidity. Explore the full workflow in the
 [Owner Parameter Matrix guide](docs/owner-parameter-matrix.md) and pair it with
 `npm run owner:surface` plus `npm run owner:verify-control` to archive a complete
 change-control artefact set.
+
+### Owner control parameter playbook
+
+Need a concise, action-oriented walkthrough for running updates through the on-chain [`OwnerConfigurator`](contracts/v2/admin/OwnerConfigurator.sol)? The new [Owner Control Parameter Playbook](docs/owner-control-parameter-playbook.md) provides:
+
+- A Mermaid flowchart mapping Safe interactions to emitted `ParameterUpdated` events.
+- Step-by-step Safe execution instructions, including calldata encoding commands.
+- Validation and rollback checklists so non-technical operators can revert quickly.
+
+Link the playbook in change tickets whenever parameter updates are planned to keep the governance surface consistent with CI guardrails and audit expectations.
 
 ### Production launch blueprint
 
