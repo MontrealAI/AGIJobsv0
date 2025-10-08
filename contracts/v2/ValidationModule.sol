@@ -308,7 +308,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         IValidationModule.FailoverAction action,
         uint64 extension,
         string calldata reason
-    ) external onlyOwner whenNotPaused {
+    ) external onlyOwner whenNotPaused nonReentrant {
         if (action == IValidationModule.FailoverAction.None)
             revert InvalidFailoverAction();
         FailoverState storage state = failoverStates[jobId];
@@ -343,6 +343,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             uint256 deadline = r.revealDeadline;
             jobRegistry.escalateToDispute(jobId, rationale);
             _cleanup(jobId);
+            // slither-disable-next-line reentrancy-events
+            // Cleanup releases validator stakes before emitting; the event serves purely
+            // as an audit log and introduces no post-interaction state changes.
             emit ValidationFailover(jobId, action, deadline, rationale);
             return;
         }
@@ -823,10 +826,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     ///      a future blockhash and `block.prevrandao` (or historical hashes and
     ///      `msg.sender` as fallback) to avoid external randomness providers and
     ///      minimize miner influence.
+    // slither-disable-next-line weak-prng
     function selectValidators(uint256 jobId, uint256 entropy)
         public
         override
         whenNotPaused
+        nonReentrant
         returns (address[] memory selected)
     {
         Round storage r = rounds[jobId];
@@ -1068,6 +1073,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 }
             }
             validatorPoolRotation = (rotationStart + i) % n;
+            // slither-disable-next-line reentrancy-events
+            // External module verification calls above do not mutate this contract's state;
+            // the rotation update event documents the final state without adding risk.
             emit ValidatorPoolRotationUpdated(validatorPoolRotation);
         } else {
             uint256 eligible;
@@ -1234,6 +1242,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         delete pendingEntropy[jobId];
         delete selectionBlock[jobId];
 
+        // slither-disable-next-line reentrancy-events
+        // External stake locks are performed before this event; the event itself does
+        // not modify state and simply records the chosen committee.
         emit ValidatorsSelected(jobId, selected);
         return selected;
     }
@@ -1350,6 +1361,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
 
     /// @notice Internal reveal logic shared by overloads.
+    // slither-disable-next-line reentrancy-no-eth -- external entrypoints applying this logic are nonReentrant
     function _revealValidation(
         uint256 jobId,
         bool approve,
@@ -1644,6 +1656,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         return pctCount;
     }
 
+    // slither-disable-next-line reentrancy-no-eth -- called only from nonReentrant public flows while finishing rounds
     function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
         if (r.tallied) revert AlreadyTallied();
@@ -1790,6 +1803,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
     }
 
+    // slither-disable-next-line reentrancy-no-eth -- cleanup executes under the same guarded contexts as _finalize/reset
     function _cleanup(uint256 jobId) internal {
         uint256 nonce = jobNonce[jobId];
         Round storage r = rounds[jobId];
@@ -1801,11 +1815,16 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             delete commitments[jobId][val][nonce];
             delete revealed[jobId][val];
             delete votes[jobId][val];
+
             uint256 lockAmount = validatorStakeLocks[jobId][val];
             if (lockAmount != 0) {
+                // Write-through before interacting with the stake manager so a
+                // malicious implementation cannot observe stale balances during
+                // a reentrant call.
+                validatorStakeLocks[jobId][val] = 0;
                 stakeManager.unlockValidatorStake(jobId, val, lockAmount);
             }
-            delete validatorStakeLocks[jobId][val];
+
             delete validatorStakes[jobId][val];
             delete _validatorLookup[jobId][val];
             unchecked {
@@ -1820,7 +1839,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Reset the validation nonce for a job after finalization or dispute resolution.
     /// @param jobId Identifier of the job
-    function resetJobNonce(uint256 jobId) external override {
+    function resetJobNonce(uint256 jobId) external override nonReentrant {
         if (msg.sender != owner() && msg.sender != address(jobRegistry))
             revert UnauthorizedCaller();
         _cleanup(jobId);

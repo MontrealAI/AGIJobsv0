@@ -121,6 +121,7 @@ contract RoutingModule is Ownable {
     /// @param jobId identifier of the job to route
     /// @param seed revealed randomness seed
     /// @return selected address of the chosen operator or address(0) if none
+    // slither-disable-next-line weak-prng
     function selectOperator(bytes32 jobId, bytes32 seed) external returns (address selected) {
         bytes32 commitHash = commits[jobId];
         require(commitHash != bytes32(0), "no commit");

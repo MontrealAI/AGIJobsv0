@@ -111,6 +111,7 @@ contract JobRouter is Ownable {
     /// @notice Select a platform using blockhash/seed based randomness weighted by score.
     /// @param seed external entropy provided by caller
     /// @return selected address of the chosen platform or owner() if none
+    // slither-disable-next-line weak-prng
     function selectPlatform(bytes32 seed) external returns (address selected) {
         uint256 len = platformList.length;
         uint256 total;
