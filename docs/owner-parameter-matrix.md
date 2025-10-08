@@ -61,9 +61,9 @@ Controls staking minimums, slashing weights, treasury routing, and validator inc
 - **Verify with:**
   - `npm run owner:verify-control -- --network sepolia --modules=stakeManager`
 - **Reference docs:**
-  - [docs/owner-control-handbook.md](docs/owner-control-handbook.md)
-  - [docs/owner-control-command-center.md](docs/owner-control-command-center.md)
-  - [docs/thermodynamics-operations.md](docs/thermodynamics-operations.md)
+  - [docs/owner-control-handbook.md](owner-control-handbook.md)
+  - [docs/owner-control-command-center.md](owner-control-command-center.md)
+  - [docs/thermodynamics-operations.md](thermodynamics-operations.md)
 
 | Parameter | Value |
 | --- | --- |

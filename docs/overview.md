@@ -75,7 +75,7 @@ Each contract exposes `isTaxExempt(addr)` and rejects direct ETH to keep value t
 4. Verify emitted events and new state in **Read Contract** or on a second explorer.
 
 For a step-by-step deployment walkthrough with owner-only setters, see [deployment-v2-agialpha.md](deployment-v2-agialpha.md).
-For a production deployment checklist, consult [deployment-guide-production.md](deployment-guide-production.md).
+For a production deployment checklist, consult [deployment-guide-production.md](deployment-production-guide.md).
 
 ### Governance Timelock
 

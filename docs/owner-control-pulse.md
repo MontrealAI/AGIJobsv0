@@ -174,10 +174,10 @@ flowchart TD
 
 ## 7. Next steps
 
-- Pair the pulse report with the [Owner Control Surface](docs/owner-control-surface.md)
+- Pair the pulse report with the [Owner Control Surface](owner-control-surface.md)
   to archive a full governance snapshot.
-- Use the [Owner Control Change Ticket](docs/owner-control-change-ticket.md)
+- Use the [Owner Control Change Ticket](owner-control-change-ticket.md)
   when proposing modifications—embed the pulse Markdown for instant context.
 - Feed the JSON snapshot into the telemetry pipeline outlined in
-  [owner-control-command-center.md](docs/owner-control-command-center.md) so the
+  [owner-control-command-center.md](owner-control-command-center.md) so the
   health grade becomes part of your operational dashboards.
