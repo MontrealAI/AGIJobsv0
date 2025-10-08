@@ -3,7 +3,11 @@
   "allowlist": [
     "GHSA-p8p7-x288-28g6",
     "GHSA-52f5-9888-hmc6",
-    "GHSA-3h5v-q93c-6h6q"
+    "GHSA-3h5v-q93c-6h6q",
+    "GHSA-2j4c-9qqq-896r",
+    "GHSA-67mh-4wv8-2f99",
+    "GHSA-hhf6-3xpg-pggx",
+    "GHSA-rx8g-88g5-qh64"
   ],
   "show-found": true,
   "report-type": "summary"

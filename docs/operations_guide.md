@@ -141,6 +141,19 @@ sequenceDiagram
 | `npx hardhat test --no-compile` | Targeted contract testing for specific suites. |
 | `npm run owner:doctor` | Validates owner configuration and governance wiring. |
 
+> **CI-v2 pipeline overview:** Every pull request and merge to `main` must pass the `ci-v2` workflow, which executes:
+>
+> - **Lint & security gates** – Prettier, Solhint/ESLint, token constant verification, and `audit-ci`.
+> - **TypeScript build & smoke tests** – `npm run pretest` to compile shared TypeScript utilities and execute service smoke tests.
+> - **Hardhat unit tests** – Contract compilation, Hardhat test suite, and ABI drift detection.
+> - **Foundry fuzz tests** – Deterministic `forge test` run with FFI enabled and seeded fuzzing.
+> - **Coverage thresholds** – `npm run coverage`, access-control coverage guard, and LCOV artifact upload.
+> - **Slither static analysis** – Containerised Slither scan with OpenZeppelin remappings.
+> - **Echidna fuzzing** – Commit/reveal harness executed through the pinned Echidna Docker image.
+> - **Gas snapshot regression** – `npm run gas:check` to enforce the stored Forge gas snapshot.
+>
+> Operators should run the matching commands locally (or via `gh workflow run ci-v2`) before requesting review to avoid CI churn.
+
 > **Triple Verification Tip:** Run `npm test` in watch mode (`npm test -- --watch`) during active development, then rerun the
 > full suite before deployment. Confirm the deployment artefacts with `npm run deploy:checklist` prior to promoting to
 > production.
