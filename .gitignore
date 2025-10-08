@@ -31,6 +31,7 @@ scripts/**/*.js
 !scripts/run-wire-verify.js
 !scripts/subgraph-e2e.js
 !scripts/docs/check-links.js
+!scripts/observability-smoke-check.js
 build/
 lib/*
 !lib/forge-std/

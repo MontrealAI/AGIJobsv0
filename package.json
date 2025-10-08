@@ -31,6 +31,7 @@
     "owner:change-ticket": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerChangeTicket.ts",
     "owner:blueprint": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlBlueprint.ts",
     "owner:snapshot": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlSnapshot.ts",
+    "observability:smoke": "node scripts/observability-smoke-check.js",
     "owner:verify-control": "npx hardhat run --no-compile scripts/v2/verifyOwnerControl.ts",
     "owner:pulse": "npx hardhat run --no-compile scripts/v2/ownerControlPulse.ts",
     "owner:rotate": "npx hardhat run --no-compile scripts/v2/rotateGovernance.ts",

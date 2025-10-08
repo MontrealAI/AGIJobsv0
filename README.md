@@ -88,6 +88,7 @@ Branch protection can now point at the `CI summary` check so that every job list
 - [Owner control parameter playbook](#owner-control-parameter-playbook)
 - [Production launch blueprint](#production-launch-blueprint)
 - [Production readiness index](docs/production/deployment-readiness-index.md)
+- [REDENOMINATION readiness matrix](docs/redenomination-readiness-matrix.md)
 
 ### Identity policy
 
