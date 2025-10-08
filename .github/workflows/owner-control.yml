@@ -1,0 +1,49 @@
+name: owner-control-v2
+
+on:
+  pull_request:
+    paths:
+      - 'contracts/v2/**'
+      - 'scripts/v2/**'
+      - 'config/owner-control*.json*'
+      - 'docs/OWNER_CONTROL*.md'
+      - '.github/workflows/owner-control.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'contracts/v2/**'
+      - 'scripts/v2/**'
+      - 'config/owner-control*.json*'
+      - 'docs/OWNER_CONTROL*.md'
+      - '.github/workflows/owner-control.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: owner-control-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-owner-control:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate constants
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+
+      - name: Verify owner configuration surface
+        env:
+          OWNER_VERIFY_JSON: '1'
+        run: npm run owner:verify-control
