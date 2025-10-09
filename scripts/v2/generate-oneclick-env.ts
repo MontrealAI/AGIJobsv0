@@ -11,6 +11,8 @@ interface AddressBook {
   disputeModule?: string;
   reputationEngine?: string;
   systemPause?: string;
+  feePool?: string;
+  identityRegistry?: string;
 }
 
 type Args = Record<string, string | boolean>;
@@ -23,6 +25,8 @@ const ADDRESS_FIELDS: Record<string, keyof AddressBook> = {
   DISPUTE_MODULE_ADDRESS: 'disputeModule',
   REPUTATION_ENGINE_ADDRESS: 'reputationEngine',
   SYSTEM_PAUSE_ADDRESS: 'systemPause',
+  FEE_POOL_ADDRESS: 'feePool',
+  IDENTITY_REGISTRY_ADDRESS: 'identityRegistry',
 };
 
 function parseArgs(): Args {

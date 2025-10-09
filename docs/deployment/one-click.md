@@ -139,6 +139,8 @@ settings. The key variables consumed by the containers are:
 
 - `JOB_REGISTRY`, `STAKE_MANAGER_ADDRESS`, `VALIDATION_MODULE_ADDRESS`, `DISPUTE_MODULE_ADDRESS`, `REPUTATION_ENGINE_ADDRESS`
 - `SYSTEM_PAUSE_ADDRESS` (used to unpause later)
+- `FEE_POOL_ADDRESS` (lets off-chain services inspect burn/treasury splits)
+- `IDENTITY_REGISTRY_ADDRESS` (enables ENS and manual allowlist management tooling)
 - `AGIALPHA_TOKEN`, `AGIALPHA_DECIMALS`
 - `ONEBOX_API_TOKEN`, `GATEWAY_API_KEY`, `ONEBOX_RELAYER_PRIVATE_KEY`
 
