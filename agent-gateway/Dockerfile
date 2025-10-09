@@ -1,9 +1,11 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS base
+FROM node:20-bookworm-slim AS base
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ \
-    && ln -sf python3 /usr/bin/python
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && ln -sf python3 /usr/bin/python \
+    && rm -rf /var/lib/apt/lists/*
 ENV PYTHON=/usr/bin/python3 \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
