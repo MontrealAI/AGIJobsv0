@@ -1,0 +1,7 @@
+{
+  "__default__": {
+    "maxBudgetWei": null,
+    "maxDurationDays": null,
+    "allowedTools": []
+  }
+}
