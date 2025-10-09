@@ -40,6 +40,7 @@
     "owner:update-all": "npx hardhat run --no-compile scripts/v2/updateAllModules.ts",
     "owner:surface": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlSurface.ts",
     "docs:verify": "node scripts/docs/check-links.js",
+    "ci:verify-branch-protection": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/verify-branch-protection.ts",
     "owner:template": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlTemplate.ts",
     "pause:test": "npx hardhat run --no-compile scripts/v2/pauseTest.ts",
     "test": "hardhat test --no-compile",

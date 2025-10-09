@@ -49,8 +49,9 @@ Branch protection can now point at the `CI summary` check so that every job list
 Keep the enforcement proof close at hand by running a quick audit whenever GitHub updates workflow metadata or a new maintainer joins the project:
 
 1. Visit **Settings → Branches → Branch protection rules → main** and confirm the five required contexts match the workflow job names exactly: `ci (v2) / Lint & static checks`, `ci (v2) / Tests`, `ci (v2) / Foundry`, `ci (v2) / Coverage thresholds`, and `ci (v2) / CI summary`. The names must stay in lockstep with the [`ci.yml` job definitions](.github/workflows/ci.yml).
-2. From the terminal, run `gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'` and verify the output lists the same five contexts in order. Repeat with `gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'` to ensure administrators cannot bypass the checks.
-3. Open the latest **ci (v2)** run under **Actions** and confirm the `CI summary` job reports every upstream result. The summary gate must remain required in branch protection so non-technical reviewers see a single ✅/❌ indicator.
+2. From the terminal, run `npm run ci:verify-branch-protection` (set `GITHUB_TOKEN` with `repo` scope first). The script prints a ✅/❌ table showing whether the contexts, ordering, and admin enforcement match the CI v2 contract. The command auto-detects the repository from `GITHUB_REPOSITORY` or the local git remote, and accepts `--owner`, `--repo`, and `--branch` overrides when auditing forks.
+3. If you prefer GitHub CLI, run `gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'` and verify the output lists the same five contexts in order. Repeat with `gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'` to ensure administrators cannot bypass the checks.
+4. Open the latest **ci (v2)** run under **Actions** and confirm the `CI summary` job reports every upstream result. The summary gate must remain required in branch protection so non-technical reviewers see a single ✅/❌ indicator.
 
 For a printable walkthrough (including remediation steps when a context drifts), use the [CI v2 branch protection checklist](docs/ci-v2-branch-protection-checklist.md).
 

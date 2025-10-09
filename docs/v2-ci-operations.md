@@ -54,6 +54,14 @@ Enable branch protection on `main` with these required status checks (copy the c
 After applying or updating branch protection rules, verify them without leaving the terminal:
 
 ```bash
+npm run ci:verify-branch-protection
+```
+
+Set `GITHUB_TOKEN` (or `GH_TOKEN`) with `repo` scope first. The script auto-detects the repository from `GITHUB_REPOSITORY` or the local git remote and prints a status table covering contexts, ordering, the `strict` flag, and the **Include administrators** toggle. Provide `--owner`, `--repo`, or `--branch` when auditing forks.
+
+Prefer the GitHub CLI? These equivalent commands still work:
+
+```bash
 gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'
 gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
 ```
