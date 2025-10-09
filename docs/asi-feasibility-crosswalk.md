@@ -82,7 +82,8 @@ settings are under direct owner control via the manifests consumed by scripts in
 ## 8. Verification checklist
 
 Run this bundle before approving production deployment or major parameter updates. It cross-references
-existing runbooks and emits artefacts for the audit vault.
+existing runbooks and emits artefacts for the audit vault. Pair it with the [ASI feasibility verification suite](asi-feasibility-verification-suite.md)
+to capture operator evidence alongside code references.
 
 ```bash
 # 1. Sync and reproduce CI locally
