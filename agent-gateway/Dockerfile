@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-bookworm-slim AS base
+# Builder stage with toolchain support for native module compilation.
+FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 make g++ \
@@ -17,20 +18,25 @@ ENV PYTHON=/usr/bin/python3 \
     NPM_CI_RETRY_DELAY=10
 COPY scripts/docker/npm-ci-retry.sh /usr/local/bin/npm-ci-retry.sh
 RUN chmod +x /usr/local/bin/npm-ci-retry.sh
-
-FROM base AS builder
 COPY package.json package-lock.json ./
 RUN npm-ci-retry.sh
 COPY . .
 RUN npm run build:gateway
+RUN npm prune --omit=dev \
+    && npm cache clean --force
 
-FROM base AS runner
+# Minimal runtime image hardened for production use.
+FROM cgr.dev/chainguard/node:20 AS runner
+WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json package-lock.json ./
-RUN npm-ci-retry.sh --omit=dev
+# Copy the pruned production dependencies and compiled sources.
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/agent-gateway/dist ./agent-gateway/dist
 COPY --from=builder /app/scripts/start-telemetry.sh ./scripts/start-telemetry.sh
-RUN chmod +x ./scripts/start-telemetry.sh
-# Directories for persistent state can be mounted at runtime.
-RUN mkdir -p /app/storage /app/logs
+RUN chmod +x ./scripts/start-telemetry.sh \
+    && mkdir -p /app/storage /app/logs \
+    && chown -R nonroot:nonroot /app
+USER nonroot
 CMD ["node", "agent-gateway/dist/agent-gateway/operator.js"]
