@@ -13,19 +13,24 @@ subdomains and set resolver records as outlined in
 
 ## Module Responsibilities & Addresses
 
-| Module            | Responsibility                                                              | Authoritative configuration |
-| ----------------- | --------------------------------------------------------------------------- | --------------------------- |
-| `$AGIALPHA` Token | 18‑decimal ERC‑20 used for payments and staking (external mainnet contract) | [`config/agialpha.json`](../config/agialpha.json) and per-network overrides in `config/agialpha.<network>.json` |
-| StakeManager      | Custodies stakes, escrows rewards, slashes misbehaviour                     | [`config/stake-manager.json`](../config/stake-manager.json) |
-| ReputationEngine  | Tracks reputation scores and blacklist status                               | [`config/reputation-engine.json`](../config/reputation-engine.json) |
-| IdentityRegistry  | Verifies ENS subdomains and Merkle allowlists                               | [`config/identity-registry.json`](../config/identity-registry.json) |
-| ValidationModule  | Runs commit–reveal validation and selects committees                        | [`config/validation-module.json`](../config/validation-module.json) |
-| DisputeModule     | Escrows dispute fees and finalises appeals                                  | [`config/dispute-module.json`](../config/dispute-module.json) |
-| CertificateNFT    | Issues ERC‑721 certificates for completed jobs                              | [`config/certificate-nft.json`](../config/certificate-nft.json) |
-| FeePool           | Burns protocol fees and escrows rewards for stakers                         | [`config/fee-pool.json`](../config/fee-pool.json) |
-| JobRegistry       | Orchestrates job lifecycle and wires all modules                            | [`config/job-registry.json`](../config/job-registry.json) |
+| Module | Responsibility | Authoritative configuration |
+| --- | --- | --- |
+| `$AGIALPHA` Token | 18‑decimal ERC‑20 used for payments and staking (external mainnet contract) | [`config/agialpha.json`](../config/agialpha.json) with per-network overrides in `config/agialpha.<network>.json` |
+| StakeManager | Custodies stakes, escrows rewards, slashes misbehaviour | [`config/stake-manager.json`](../config/stake-manager.json) |
+| FeePool | Burns protocol fees, escrows rewards for stakers, enforces burn percentages | [`config/fee-pool.json`](../config/fee-pool.json) |
+| JobRegistry | Orchestrates job lifecycle and wires all modules | [`config/job-registry.json`](../config/job-registry.json) |
+| DisputeModule | Escrows dispute fees, routes moderator committees, finalises appeals | [`config/dispute-module.json`](../config/dispute-module.json) |
+| PlatformRegistry | Tracks approved job routers and service operators | [`config/platform-registry.json`](../config/platform-registry.json) |
+| PlatformIncentives | Configures operator staking incentives and emission weights | [`config/platform-incentives.json`](../config/platform-incentives.json) |
+| RewardEngineMB | Distributes thermodynamic rewards across participants | [`config/reward-engine.json`](../config/reward-engine.json) together with the thermodynamic profile in [`config/thermodynamics.json`](../config/thermodynamics.json) |
+| Thermostat | PID controller for system temperature and role overrides | [`config/thermodynamics.json`](../config/thermodynamics.json) (thermostat section) |
+| RandaoCoordinator | Supplies randomness for validator selection | [`config/randao-coordinator.json`](../config/randao-coordinator.json) |
+| EnergyOracle | Authorises telemetry signers and measurement cadence | [`config/energy-oracle.json`](../config/energy-oracle.json) |
+| IdentityRegistry | Verifies ENS subdomains, alias roots, and Merkle allowlists | [`config/identity-registry.json`](../config/identity-registry.json) with ENS endpoints in `config/ens*.json` |
+| HamiltonianMonitor | Records free-energy observations for thermodynamic audits | [`config/hamiltonian-monitor.json`](../config/hamiltonian-monitor.json) |
+| TaxPolicy | Stores the active policy URI and metadata acknowledged on-chain | [`config/tax-policy.json`](../config/tax-policy.json) |
 
-After every deployment or reconfiguration, record the live contract addresses in `deployment-config/latest-deployment.<network>.json` (the output destination is configurable via the `output` key in the deployment manifest). The CI pipeline checks that these manifests align with the compiled constants and runtime configuration.
+Modules without standalone JSON manifests—`ValidationModule`, `ReputationEngine`, `CertificateNFT`, `SystemPause`, `ArbitratorCommittee`, and the auxiliary routers—are tracked in [`config/owner-control.json`](../config/owner-control.json). Operate on them through the owner CLI (`npm run owner:update-all`, `npm run owner:command-center`, etc.) or the [`OwnerConfigurator`](../contracts/v2/admin/OwnerConfigurator.sol) wrapper. The [Owner Control Authority Reference](owner-control-authority-reference.md) lists every setter, required role, and CLI helper.
 
 ## Deployment Script Outline
 
@@ -63,61 +68,46 @@ file, and attempts to verify source on Etherscan.
 ## Step-by-Step Deployment
 
 1. **Ensure `$AGIALPHA` token exists** – use the external address above or deploy [`contracts/test/AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) on local networks for testing.
-2. **Deploy `StakeManager`** pointing at the token and configuring `_minStake`, `_employerSlashPct`, `_treasurySlashPct` and `_treasury`. Leave `_jobRegistry` and `_disputeModule` as `0`.
-3. **Deploy `ReputationEngine`** passing the `StakeManager` address.
-4. **Deploy `IdentityRegistry`** with the ENS registry, NameWrapper, `ReputationEngine` address and the namehashes for `agent.agi.eth` and `club.agi.eth`.
-5. **Deploy `ValidationModule`** with `jobRegistry = 0`, the `StakeManager` address and desired timing/validator settings.
-6. **Deploy `DisputeModule`** with `jobRegistry = 0` and any custom fee or window.
-7. **Deploy `CertificateNFT`** supplying a name and symbol.
-8. **Deploy `JobRegistry`** passing the validation, staking, reputation,
-   dispute, certificate, fee pool, optional tax policy, fee percentage,
-   per-job validator stake, acknowledgement modules, and the governance
-   timelock or multisig. The constructor immediately validates module
-   versions and stores the wiring when non-zero addresses are supplied.
-9. **Point modules back to `JobRegistry`** by calling:
-   - `StakeManager.setJobRegistry(jobRegistry)`
-   - `ValidationModule.setJobRegistry(jobRegistry)`
-   - `DisputeModule.setJobRegistry(jobRegistry)`
-   - `CertificateNFT.setJobRegistry(jobRegistry)`
-   - `CertificateNFT.setStakeManager(stakeManager)` – reverts unless the manager
-     reports version 2 and uses the canonical `$AGIALPHA` token
-   - `JobRegistry.setTaxPolicy(taxPolicy)` then `DisputeModule.setTaxPolicy(taxPolicy)`
-   - `ValidationModule.setIdentityRegistry(identityRegistry)`
-10. **Verify source code** – publish each contract on the block explorer using
-    `npx hardhat verify --network <network> <address> <constructor args>` or the
-    explorer UI so others can audit and interact with it.
-11. **Verify wiring** – run `npm run wire:verify -- --network <network>` to confirm module
-    getters match the addresses recorded in `config/agialpha.<network>.json` and
-    `config/ens.<network>.json`.
-12. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`,
-    `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
-13. **Governance setup** – deploy a multisig wallet or timelock controller
-    and pass its address to the `StakeManager` and `JobRegistry` constructors.
-    Transfer ownership of every remaining `Ownable` module
-    (for example `IdentityRegistry`, `CertificateNFT`, `ValidationModule`,
-    `DisputeModule`, `FeePool`, `PlatformRegistry` and related helpers)
-    to this governance contract so no single EOA retains control. To rotate
-    governance later, the current authority calls `setGovernance(newGov)`.
+2. **Deploy `StakeManager`** pointing at the token and configuring `_minStake`, `_employerSlashPct`, `_treasurySlashPct`, `_validatorSlashRewardPct`, and `_treasury`. Leave `_jobRegistry` and `_disputeModule` as `0` so governance can wire them later.
+3. **Deploy `FeePool`** with the `StakeManager` address, burn percentage, treasury, and optional tax policy placeholder.
+4. **Deploy `ReputationEngine`** passing the `StakeManager` address. Transfer ownership to governance after the first configuration so `RewardEngineMB` and `ValidationModule` can read from it safely.
+5. **Deploy `Thermostat`** to establish initial temperature bounds, PID coefficients, and governance owner.
+6. **Deploy `RewardEngineMB`** pointing at the `Thermostat`, `FeePool`, `ReputationEngine`, and `EnergyOracle` (use `address(0)` temporarily if the oracle is not live yet).
+7. **Deploy `ValidationModule`** with `jobRegistry = 0`, the `StakeManager` address, timing windows, validator bounds, and any initial validator pool.
+8. **Deploy `RandaoCoordinator`** (or alternative randomness provider) so the validation module can request randomness. Leave `ValidationModule.setRandaoCoordinator` until after deployment to avoid constructor reverts.
+9. **Deploy `DisputeModule`** with `jobRegistry = 0`, dispute fees/windows, committee address, and governance owner.
+10. **Deploy `CertificateNFT`** supplying a name and symbol; leave the base URI unset until post-launch metadata is final.
+11. **Deploy `IdentityRegistry`** with the ENS registry, NameWrapper, `ReputationEngine` address, and the namehashes for `agent.agi.eth` and `club.agi.eth` (plus any alias roots).
+12. **Deploy `PlatformRegistry`** and `PlatformIncentives` (if operators participate at launch) pointing at the `StakeManager` and `ReputationEngine`.
+13. **Deploy `JobRegistry`** passing the validation, staking, reputation, dispute, certificate, fee pool, optional tax policy, fee percentage, per-job validator stake, acknowledgement modules, and the governance timelock or multisig. The constructor validates module versions and stores the wiring when non-zero addresses are supplied.
+14. **Deploy `SystemPause`** so governance can pause multiple modules atomically during incidents.
+15. **Point modules back to `JobRegistry`** and supporting components by calling:
+    - `StakeManager.setJobRegistry(jobRegistry)`
+    - `StakeManager.setDisputeModule(disputeModule)`
+    - `ValidationModule.setJobRegistry(jobRegistry)`
+    - `ValidationModule.setRandaoCoordinator(randaoCoordinator)`
+    - `ValidationModule.setIdentityRegistry(identityRegistry)`
+    - `DisputeModule.setJobRegistry(jobRegistry)`
+    - `DisputeModule.setStakeManager(stakeManager)`
+    - `DisputeModule.setTaxPolicy(taxPolicy)` once a policy is active
+    - `CertificateNFT.setJobRegistry(jobRegistry)`
+    - `RewardEngineMB.setFeePool(feePool)` and `RewardEngineMB.setReputationEngine(reputationEngine)` if not provided at construction
+    - `JobRegistry.setTaxPolicy(taxPolicy)` and `JobRegistry.setFeePool(feePool)` when final addresses are known
+    - `SystemPause.setModules(...)` with every ownable module once ownership has been transferred
+16. **Verify source code** – publish each contract on the block explorer using `npx hardhat verify --network <network> <address> <constructor args>` or the explorer UI so others can audit and interact with it.
+17. **Verify wiring** – run `npm run wire:verify -- --network <network>` to confirm module getters match the addresses recorded in `config/agialpha.<network>.json` and `config/ens.<network>.json`.
+18. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, and `setValidatorMerkleRoot` on `IdentityRegistry`.
+19. **Governance setup** – deploy a multisig wallet or timelock controller and pass its address to the `StakeManager` and `JobRegistry` constructors. Transfer ownership of every remaining `Ownable` module (for example `IdentityRegistry`, `CertificateNFT`, `ValidationModule`, `DisputeModule`, `FeePool`, `PlatformRegistry`, `PlatformIncentives`, `RewardEngineMB`, `Thermostat`, `SystemPause`, and related helpers) to this governance contract so no single EOA retains control. To rotate governance later, the current authority calls `setGovernance(newGov)`.
 
 ## Governance Configuration Steps
 
 After deployment the governance contract can fine‑tune the system without redeploying:
 
-1. **Configure `$AGIALPHA`** – `StakeManager` and `FeePool` assume this fixed token.
-2. **Set ENS roots** – on `IdentityRegistry` call `setAgentRootNode`,
-   `setClubRootNode` and, if using allowlists, `setAgentMerkleRoot` and
-   `setValidatorMerkleRoot`.
-3. **Update parameters** – adjust economic settings through `setFeePct`,
-   `FeePool.setBurnPct` to tune the portion of fees burned before distribution,
-   `setMinStake`, timing windows and other governance‑only
-   setters. To batch and audit these updates, use the owner helpers:
-   `npm run owner:plan` to review the diff and `npm run owner:update-all`
-   (wrapper around [`scripts/v2/updateAllModules.ts`](../scripts/v2/updateAllModules.ts))
-   to execute changes once approved.
-4. **Publish a tax policy** – call `JobRegistry.setTaxPolicy(taxPolicy)` then
-   `DisputeModule.setTaxPolicy(taxPolicy)` and instruct participants to
-   acknowledge via `JobRegistry.acknowledgeTaxPolicy()` before staking or
-   disputing.
+1. **Configure `$AGIALPHA`** – `StakeManager`, `FeePool`, and `RewardEngineMB` assume this fixed token. Regenerate [`contracts/v2/Constants.sol`](../contracts/v2/Constants.sol) with `npm run compile` after editing `config/agialpha*.json` to keep Solidity and TypeScript consumers aligned.
+2. **Set ENS roots** – on `IdentityRegistry` call `setAgentRootNode`, `setClubRootNode`, and (if using allowlists) `setAgentMerkleRoot` / `setValidatorMerkleRoot`. The helper `npm run identity:update -- --network <network>` previews and optionally submits the required transactions.
+3. **Wire supporting modules** – run `npm run owner:wizard` followed by `npm run owner:update-all -- --network <network>` to batch updates across `StakeManager`, `JobRegistry`, `FeePool`, `DisputeModule`, `PlatformRegistry`, `PlatformIncentives`, `RewardEngineMB`, `Thermostat`, `EnergyOracle`, `RandaoCoordinator`, and `IdentityRegistry`. Modules that sit outside the JSON manifests (`ValidationModule`, `ReputationEngine`, `CertificateNFT`, etc.) can be reconfigured through `npm run owner:command-center` or Safe bundles emitted by `scripts/v2/owner-config-wizard.ts`.
+4. **Publish a tax policy** – call `JobRegistry.setTaxPolicy(taxPolicy)` then `DisputeModule.setTaxPolicy(taxPolicy)` and instruct participants to acknowledge via `JobRegistry.acknowledgeTaxPolicy()` before staking or disputing.
+5. **Install the system pause** – after transferring ownership of every module to the deployed `SystemPause` contract, execute `npx hardhat run scripts/v2/updateSystemPause.ts --network <network> --execute` so emergency pausing covers the entire surface area.
 
 ## Interacting via Etherscan
 
@@ -155,23 +145,21 @@ then be performed through the "Write" tabs on each module.
 1. During commit phase, validators call
    `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`.
 2. During reveal phase, call
-   `revealValidation(jobId, approve, salt, subdomain, proof)`.
+   `revealValidation(jobId, approve, burnTxHash, salt, subdomain, proof)`. Pass `0x0` for `burnTxHash` unless a burn transaction hash is required by policy.
 3. After reveal, anyone may call `ValidationModule.finalize(jobId)` to record the outcome.
 4. The employer then settles the job by calling `JobRegistry.acknowledgeAndFinalize(jobId)` from their own wallet, which releases funds and burns the fee share.
 
 ### Dispute
 
 1. Approve the dispute fee on `$AGIALPHA`.
-2. Call `JobRegistry.raiseDispute(jobId, evidence)`.
+2. Call `JobRegistry.raiseDispute(jobId, evidenceHash)` with a keccak-256 digest, or `raiseDispute(jobId, reason)` to store a plaintext reason on-chain.
 3. Owner or a majority of moderators resolves via `DisputeModule.resolve(jobId, uphold, signatures)`.
 4. Monitor `DisputeRaised` and `DisputeResolved` events.
 
-### NFT Marketplace
+### Certificate NFTs
 
-1. `CertificateNFT` holders list tokens by approving the marketplace and
-   calling `list(tokenId, price)`.
-2. Buyers call `purchase(tokenId)` after approving the token amount.
-3. `TokenPurchased(buyer, tokenId, price)` confirms the sale.
+1. Governance (or an authorised operator) sets the metadata base URI once with `CertificateNFT.setBaseURI("https://…/")` and can update it via `updateBaseURI` before calling `lockBaseURI()`.
+2. Certificates are minted by `JobRegistry` via `CertificateNFT.mint(agent, jobId, uriHash)` after successful job settlement. Holders manage transfers using standard ERC‑721 approvals—there is no built-in marketplace logic.
 
 ### Minimal Write Transactions
 
@@ -181,10 +169,8 @@ then be performed through the "Write" tabs on each module.
 | Stake as agent   | `StakeManager.depositStake(0, amount)`                             | `amount` uses 18‑decimal `$AGIALPHA` units      |
 | Post a job       | `JobRegistry.createJob(reward, uri)`                               | `reward` in base units; token must be approved  |
 | Commit vote      | `ValidationModule.commitValidation(jobId, hash, subdomain, proof)` | `hash = keccak256(approve, salt)`               |
-| Reveal vote      | `ValidationModule.revealValidation(jobId, approve, salt)`          | Call after commit phase closes                  |
-| Raise dispute    | `JobRegistry.raiseDispute(jobId, evidence)`                        | Requires prior fee approval                     |
-| List certificate | `CertificateNFT.list(tokenId, price)`                              | Price in base units                             |
-| Buy certificate  | `CertificateNFT.purchase(tokenId)`                                 | Buyer approves token first                      |
+| Reveal vote      | `ValidationModule.revealValidation(jobId, approve, burnTxHash, salt, subdomain, proof)`          | Provide `0x0` for `burnTxHash` unless a burn proof is required.          |
+| Raise dispute    | `JobRegistry.raiseDispute(jobId, evidenceHash)` or `raiseDispute(jobId, reason)` | Requires prior fee approval; emits `DisputeRaised`.          |
 
 ## Owner Administration
 
