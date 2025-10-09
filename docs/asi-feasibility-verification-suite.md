@@ -21,17 +21,26 @@
    npm test
    npm run coverage
    forge test -vvvv --ffi --fuzz-runs 256
+   npm run learning:refresh
    npm run docs:verify
    ```
-3. Generate ownership, thermodynamics, and pause artefacts for the target network:
+3. For each production agent that completed jobs since the last review, refresh their
+   learning metadata so the orchestrator inherits the latest strategy guidance:
+   ```bash
+   npm run learning:retrain -- --label <agent-label>
+   ```
+   Repeat for every agent label captured in `storage/learning/records.jsonl`. Archive the
+   console output together with the updated identity file diffs.
+
+4. Generate ownership, thermodynamics, and pause artefacts for the target network:
    ```bash
    npm run owner:doctor -- --network <network> --strict --json > reports/<network>-owner-doctor.json
    npm run owner:verify-control -- --network <network> > reports/<network>-owner-proof.md
    npm run pause:test -- --network <network> --json > reports/<network>-pause.json
    THERMO_REPORT_FORMAT=markdown THERMO_REPORT_OUT=reports/<network>-thermodynamics.md npm run thermodynamics:report -- --network <network>
    ```
-4. File every generated artefact in the operations vault and capture a screenshot of the most recent green `ci (v2)` run on `main`.
-5. Have an independent reviewer replay at least one command per pillar and countersign the results (triple-verification rule).
+5. File every generated artefact in the operations vault and capture a screenshot of the most recent green `ci (v2)` run on `main`.
+6. Have an independent reviewer replay at least one command per pillar and countersign the results (triple-verification rule).
 
 ---
 
@@ -40,7 +49,7 @@
 | Feasibility pillar | Primary proof | Supporting documentation | Independent verification |
 | --- | --- | --- | --- |
 | **Collective second-order intelligence** | Exercise the orchestrator endpoints with `apps/orchestrator/onebox-server.ts` and capture the planner → simulator → executor transcript. | [`docs/orchestration.md`](orchestration.md) details the meta-agent workflow; [`docs/continuous-learning.md`](continuous-learning.md) maps the learning artefacts. | Inspect the generated `records.jsonl` and verify agents/validators in the transcript own ENS identities via `IdentityRegistry`. |
-| **Open-ended self-improvement** | Run the continuous learning refresh: `node scripts/continuous-learning/replay.js --network <network>` (or per runbook) and append the diff to the audit log. | [`docs/continuous-learning.md`](continuous-learning.md) outlines the cloning/retraining loop and command surface. | Confirm `cloneEligibleAgents` and retrain scripts updated manifests in `storage/` and that the audit ticket records hashes of new bundles. |
+| **Open-ended self-improvement** | Execute `npm run learning:refresh` to rebuild model weights from the latest `storage/learning/records.jsonl`, then rerun `npm run learning:retrain -- --label <agent>` for every active label to embed fresh metrics into identity files. | [`docs/continuous-learning.md`](continuous-learning.md) outlines the cloning/retraining loop and command surface. | Diff `storage/models/registry.json` and the affected `config/agents/*.json` files, attach the changes to the audit ticket, and have an independent operator replay one agent refresh. |
 | **Decentralised compute & fault tolerance** | Execute the node operator smoke test: `npm run observability:smoke` and `npm run pause:test -- --network <network>`. | [`docs/node-operator-runbook.md`](node-operator-runbook.md) explains registration; [`docs/system-pause.md`](system-pause.md) covers global halts. | On-chain, confirm `SystemPause` owns every module and pauser keys match `owner:doctor` output. |
 | **Economic drive & alignment** | Generate thermodynamics and reward reports using the commands above, and diff against the finance-approved baseline. | [`docs/thermodynamics-operations.md`](thermodynamics-operations.md) and [`docs/reward-settlement-process.md`](reward-settlement-process.md) document the energy oracle, thermostat, and RewardEngineMB configuration. | Verify the resulting report matches `config/thermodynamics.json` and that `RewardEngineMB` setters remain restricted to the owner via `owner:verify-control`. |
 | **Governance & safety guardrails** | Produce `reports/<network>-owner-proof.md` via `npm run owner:verify-control` and ensure it lists multisig/timelock ownership across all modules. | [`docs/system-pause.md`](system-pause.md) and [`docs/owner-control-non-technical-guide.md`](owner-control-non-technical-guide.md) provide emergency and change-management workflows. | Cross-check timelock delay, pauser assignments, and governance Safe signers against the change ticket referenced in `docs/owner-control-change-ticket.md`. |
