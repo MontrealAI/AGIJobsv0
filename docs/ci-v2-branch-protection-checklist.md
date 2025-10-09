@@ -32,7 +32,16 @@ The job display names in GitHub Actions must stay in sync with these contexts. A
 
 ### 2. Confirm enforcement with the GitHub CLI
 
-Run these commands from a workstation authenticated with the `gh` CLI:
+Run the automated audit (set `GITHUB_TOKEN` or `GH_TOKEN` with `repo` scope first):
+
+```bash
+npm run ci:verify-branch-protection
+```
+
+- Save the ✅/❌ table output in your change ticket. It proves the required contexts, ordering, strict mode, and administrator enforcement all align with policy.
+- Pass `--owner`, `--repo`, or `--branch` flags when checking forks or release candidates.
+
+Prefer the GitHub CLI? These commands remain acceptable alternatives:
 
 ```bash
 gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'
