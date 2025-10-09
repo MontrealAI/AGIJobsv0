@@ -100,6 +100,7 @@ For a printable walkthrough (including remediation steps when a context drifts),
 - [Production launch blueprint](#production-launch-blueprint)
 - [Production readiness index](docs/production/deployment-readiness-index.md)
 - [ASI feasibility crosswalk](docs/asi-feasibility-crosswalk.md)
+- [ASI feasibility production checklist](docs/asi-feasibility-production-checklist.md)
 - [ASI feasibility verification suite](docs/asi-feasibility-verification-suite.md)
 - [REDENOMINATION readiness matrix](docs/redenomination-readiness-matrix.md)
 
