@@ -15,7 +15,7 @@
 | **Deployment manifests** | `config/*.json` (and per-network overrides) synced with deployed addresses | `npm run deploy:checklist -- --network <network>` | Compare `deployment/deployment-<network>.json` with [docs/deployment-addresses.md](../deployment-addresses.md) |
 | **Owner control authority** | Governance keys can mutate every adjustable parameter | `npm run owner:doctor -- --network <network>` | Run `npm run owner:verify-control -- --network <network>` and file the Markdown proof in `reports/` |
 | **Pause & recovery drills** | SystemPause wiring proves the owner can halt/unhalt every module | `npm run pause:test -- --network <network> --json` (simulated) | Manual spot check on Etherscan `SystemPause` write tab using hardware wallet |
-| **Economics calibration** | Thermodynamic constants, fee splits, burn percentages match governance policy | `npm run thermodynamics:report -- --network <network>` | Cross-verify with finance-approved baseline in `reports/<network>-economics-baseline.md` |
+| **Economics calibration** | Thermodynamic constants, fee splits, burn percentages match governance policy | `THERMO_REPORT_FORMAT=markdown THERMO_REPORT_OUT=reports/<network>-thermodynamics.md npm run thermodynamics:report -- --network <network>` | Cross-verify with finance-approved baseline in `reports/<network>-economics-baseline.md` |
 | **External observability** | Telemetry exporters, SLO dashboards, alerting integrations online | `npm run observability:smoke` (verifies Prometheus scrape jobs, Alertmanager routes, Grafana dashboards) | Confirm dashboard URLs listed in [`docs/institutional-observability.md`](../institutional-observability.md) respond with 200 |
 
 > **Triple verification rule:** Do not mark a row green until the command succeeds **and** a second human has countersigned the independent verification evidence in the ops vault.
@@ -45,8 +45,10 @@ npm run owner:doctor -- --network mainnet --strict
 npm run owner:plan -- --network mainnet > reports/mainnet-owner-plan.csv
 npm run owner:plan:safe -- --network mainnet
 
+# 3b. Prove thermodynamics calibration
+THERMO_REPORT_FORMAT=markdown THERMO_REPORT_OUT=reports/mainnet-thermodynamics.md npm run thermodynamics:report -- --network mainnet
+
 # 4. Validate emergency controls
-tsx scripts/v2/checkSystemPause.ts --network mainnet
 npm run pause:test -- --network mainnet --json > reports/mainnet-pause-verification.json
 ```
 
@@ -70,7 +72,7 @@ pauser assignments, and simulated pause/unpause probes so auditors can replay th
 6. Post-deployment, immediately run:
    - `npm run owner:verify-control -- --network mainnet`
    - `npm run wire:verify -- --network mainnet`
-   - `npm run thermodynamics:report -- --network mainnet`
+   - `THERMO_REPORT_FORMAT=markdown THERMO_REPORT_OUT=reports/mainnet-thermodynamics.md npm run thermodynamics:report -- --network mainnet`
 7. Upload artefacts (CSV plans, Safe bundle JSON, reports, and CI screenshots) to the governance document vault. Only then announce go-live.
 
 ---

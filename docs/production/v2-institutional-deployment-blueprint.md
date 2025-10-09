@@ -137,7 +137,7 @@ flowchart TD
 1. **Fork rehearsal** – `npm run simulate:v2` to execute the scripted end-to-end job lifecycle on an anvil fork. Export gas reports into `reports/fork-<date>.json`.
 2. **Testnet dress rehearsal** – Use Goerli/Sepolia configuration to mirror the mainnet plan. Capture the resulting addresses and share them with auditors.
 3. **Pause drill** – From the governance account, run `npm run pause:test -- --network mainnet --json > reports/mainnet-pause-verification.json` to record the simulated pause/unpause capability report. Attach both the console log and JSON artefact to the change ticket.
-4. **Economics cross-check** – Compare `config/thermodynamics.json` against on-chain values via `npm run thermodynamics:report -- --network mainnet`. Share the resulting Markdown with finance/compliance.
+4. **Economics cross-check** – Compare `config/thermodynamics.json` against on-chain values via `THERMO_REPORT_FORMAT=markdown THERMO_REPORT_OUT=reports/mainnet-thermodynamics.md npm run thermodynamics:report -- --network mainnet`. Share the resulting Markdown with finance/compliance and archive the JSON/Markdown artefact in the ticket. Repeat with `THERMO_REPORT_FORMAT=json` when auditors request machine-readable evidence.
 5. **Launch sign-off** – Compile a single PDF containing:
    - CI summary screenshot (`ci (v2)` green run).
    - Fork + testnet rehearsal logs.
