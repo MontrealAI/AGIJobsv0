@@ -14,7 +14,7 @@
 | **Smart contract quality gates** | Hardhat unit tests, Foundry fuzz, coverage ≥ 90 % | `npm test` → `coverage` → `forge test` sequence | Inspect the latest run under **Actions → ci (v2)** and download `coverage-lcov` |
 | **Deployment manifests** | `config/*.json` (and per-network overrides) synced with deployed addresses | `npm run deploy:checklist -- --network <network>` | Compare `deployment/deployment-<network>.json` with [docs/deployment-addresses.md](../deployment-addresses.md) |
 | **Owner control authority** | Governance keys can mutate every adjustable parameter | `npm run owner:doctor -- --network <network>` | Run `npm run owner:verify-control -- --network <network>` and file the Markdown proof in `reports/` |
-| **Pause & recovery drills** | SystemPause and circuit breakers executable by owners | `npm run pause:test -- --network <network>` (dry-run) | Manual spot check on Etherscan `SystemPause` write tab using hardware wallet |
+| **Pause & recovery drills** | SystemPause wiring proves the owner can halt/unhalt every module | `npm run pause:test -- --network <network> --json` (simulated) | Manual spot check on Etherscan `SystemPause` write tab using hardware wallet |
 | **Economics calibration** | Thermodynamic constants, fee splits, burn percentages match governance policy | `npm run thermodynamics:report -- --network <network>` | Cross-verify with finance-approved baseline in `reports/<network>-economics-baseline.md` |
 | **External observability** | Telemetry exporters, SLO dashboards, alerting integrations online | `npm run observability:smoke` (verifies Prometheus scrape jobs, Alertmanager routes, Grafana dashboards) | Confirm dashboard URLs listed in [`docs/institutional-observability.md`](../institutional-observability.md) respond with 200 |
 
@@ -47,10 +47,13 @@ npm run owner:plan:safe -- --network mainnet
 
 # 4. Validate emergency controls
 tsx scripts/v2/checkSystemPause.ts --network mainnet
-npm run pause:test -- --network mainnet
+npm run pause:test -- --network mainnet --json > reports/mainnet-pause-verification.json
 ```
 
 Store every generated report under `reports/` with a timestamped suffix. If any command exits non-zero, log the failure in `docs/owner-control-change-ticket.md` and block release until resolved.
+
+Archive both the human-readable console log and the JSON artefact from `pause:test`. The JSON report captures module ownership,
+pauser assignments, and simulated pause/unpause probes so auditors can replay the evidence without rerunning the command.
 
 ---
 
