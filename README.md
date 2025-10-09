@@ -628,6 +628,7 @@ auditors.
   if Docker is unavailable.
 - **Step-by-step runbook:** see [docs/deployment/one-click.md](docs/deployment/one-click.md) for the full workflow, including
   prerequisites, environment preparation, post-launch checklist, and troubleshooting tips.
+- **REDENOMINATION launch playbook:** follow [docs/production/redenomination-oneclick-playbook.md](docs/production/redenomination-oneclick-playbook.md) for a governance-signed, evidence-driven sequence that maps one-click automation to the REDENOMINATION readiness controls.
 - **Configuration reference:** [docs/deployment/automated-network-configuration.md](docs/deployment/automated-network-configuration.md)
   explains how the JSON config maps to on-chain actions, the helper commands that populate ENS namehashes, and how to customise
   treasury, staking, and validator defaults without writing Solidity.
