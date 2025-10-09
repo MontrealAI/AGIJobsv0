@@ -44,6 +44,16 @@ flowchart LR
 
 Branch protection can now point at the `CI summary` check so that every job listed above must succeed before merges or deployments proceed. A non-technical maintainer can follow the [CI v2 operations guide](docs/v2-ci-operations.md) for a diagrammed overview of the workflow, required status checks, and day-to-day troubleshooting steps.
 
+### Branch protection self-test
+
+Keep the enforcement proof close at hand by running a quick audit whenever GitHub updates workflow metadata or a new maintainer joins the project:
+
+1. Visit **Settings → Branches → Branch protection rules → main** and confirm the five required contexts match the workflow job names exactly: `ci (v2) / Lint & static checks`, `ci (v2) / Tests`, `ci (v2) / Foundry`, `ci (v2) / Coverage thresholds`, and `ci (v2) / CI summary`. The names must stay in lockstep with the [`ci.yml` job definitions](.github/workflows/ci.yml).
+2. From the terminal, run `gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'` and verify the output lists the same five contexts in order. Repeat with `gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'` to ensure administrators cannot bypass the checks.
+3. Open the latest **ci (v2)** run under **Actions** and confirm the `CI summary` job reports every upstream result. The summary gate must remain required in branch protection so non-technical reviewers see a single ✅/❌ indicator.
+
+For a printable walkthrough (including remediation steps when a context drifts), use the [CI v2 branch protection checklist](docs/ci-v2-branch-protection-checklist.md).
+
 ## Table of Contents
 
 - [Identity policy](#identity-policy)
