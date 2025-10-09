@@ -1,5 +1,10 @@
 #!/bin/sh
-set -euo pipefail
+set -eu
+
+# Enable pipefail when supported (e.g., bash) to match original behavior.
+if (set -o pipefail) 2>/dev/null; then
+  set -o pipefail
+fi
 
 attempt=1
 max_attempts=${NPM_CI_MAX_ATTEMPTS:-5}
