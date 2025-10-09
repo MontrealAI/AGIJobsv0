@@ -1,11 +1,9 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-bookworm-slim AS base-build
+FROM node:20.18.1-alpine3.20 AS base-build
 WORKDIR /app
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 make g++ \
-    && ln -sf python3 /usr/bin/python \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache python3 make g++ \
+    && ln -sf python3 /usr/bin/python
 ENV PYTHON=/usr/bin/python3 \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
@@ -26,7 +24,7 @@ RUN npm run build:gateway \
     && npm prune --omit=dev \
     && npm cache clean --force
 
-FROM node:20-bookworm-slim AS runner
+FROM node:20.18.1-alpine3.20 AS runner
 ENV NODE_ENV=production \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false
