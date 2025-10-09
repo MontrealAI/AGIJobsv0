@@ -98,6 +98,7 @@ For a printable walkthrough (including remediation steps when a context drifts),
 - [Owner control parameter playbook](#owner-control-parameter-playbook)
 - [Production launch blueprint](#production-launch-blueprint)
 - [Production readiness index](docs/production/deployment-readiness-index.md)
+- [ASI feasibility crosswalk](docs/asi-feasibility-crosswalk.md)
 - [REDENOMINATION readiness matrix](docs/redenomination-readiness-matrix.md)
 
 ### Identity policy
