@@ -123,6 +123,10 @@
     "message": "The plan hash doesn’t match this request.",
     "hint": "Re-run planning and retry with the latest hash."
   },
+  "PLAN_HASH_UNKNOWN": {
+    "message": "The plan hash is not recognised or has expired.",
+    "hint": "Call /onebox/plan again to generate a fresh plan before simulating or executing."
+  },
   "UNSUPPORTED_ACTION": {
     "message": "I didn’t understand that action.",
     "hint": "Rephrase the request or choose a supported workflow."

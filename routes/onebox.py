@@ -19,7 +19,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple
 
 from urllib.parse import quote
 
@@ -912,22 +912,167 @@ def _normalize_plan_hash(plan_hash: Optional[str]) -> Optional[str]:
 def _current_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
 
-_PLAN_METADATA: Dict[str, str] = {}
+_PLAN_METADATA: Dict[str, Dict[str, Any]] = {}
 _PLAN_LOCK = threading.Lock()
 
-def _store_plan_metadata(plan_hash: str, created_at: str) -> None:
+def _store_plan_metadata(
+    plan_hash: str,
+    created_at: str,
+    *,
+    intent_snapshot: Optional[Dict[str, Any]] = None,
+    missing_fields: Optional[Sequence[str]] = None,
+) -> None:
     normalized = _normalize_plan_hash(plan_hash)
     if normalized is None:
         return
+    record: Dict[str, Any] = {}
+    if created_at:
+        record["createdAt"] = created_at
+    if intent_snapshot is not None:
+        record["intent"] = intent_snapshot
+    if missing_fields is not None:
+        record["missingFields"] = list(missing_fields)
+    if not record:
+        return
     with _PLAN_LOCK:
-        _PLAN_METADATA[normalized] = created_at
+        existing = _PLAN_METADATA.get(normalized)
+        if isinstance(existing, dict):
+            merged = dict(existing)
+        elif isinstance(existing, str):
+            merged = {"createdAt": existing}
+        else:
+            merged = {}
+        merged.update(record)
+        _PLAN_METADATA[normalized] = merged
 
-def _lookup_plan_timestamp(plan_hash: str) -> Optional[str]:
+
+def _lookup_plan_metadata(plan_hash: str) -> Optional[Dict[str, Any]]:
     normalized = _normalize_plan_hash(plan_hash)
     if normalized is None:
         return None
     with _PLAN_LOCK:
-        return _PLAN_METADATA.get(normalized)
+        record = _PLAN_METADATA.get(normalized)
+    if record is None:
+        return None
+    if isinstance(record, dict):
+        return record
+    if isinstance(record, str):
+        return {"createdAt": record}
+    return None
+
+
+def _lookup_plan_timestamp(plan_hash: str) -> Optional[str]:
+    record = _lookup_plan_metadata(plan_hash)
+    if not record:
+        return None
+    created_at = record.get("createdAt")
+    if isinstance(created_at, str):
+        return created_at
+    return None
+
+
+_DiffPath = Tuple[str, ...]
+
+
+def _diff_intent_snapshots(
+    original: Any, updated: Any, path: Optional[_DiffPath] = None
+) -> Set[_DiffPath]:
+    current_path: _DiffPath = path or tuple()
+    diffs: Set[_DiffPath] = set()
+    if isinstance(original, dict) and isinstance(updated, dict):
+        keys = set(original.keys()) | set(updated.keys())
+        for key in keys:
+            diffs.update(
+                _diff_intent_snapshots(
+                    original.get(key),
+                    updated.get(key),
+                    current_path + (str(key),),
+                )
+            )
+        return diffs
+    if isinstance(original, list) and isinstance(updated, list):
+        if len(original) != len(updated):
+            diffs.add(current_path)
+            return diffs
+        for index, (orig_item, new_item) in enumerate(zip(original, updated)):
+            diffs.update(
+                _diff_intent_snapshots(
+                    orig_item,
+                    new_item,
+                    current_path + (str(index),),
+                )
+            )
+        return diffs
+    if original != updated:
+        diffs.add(current_path)
+    return diffs
+
+
+def _allowed_paths_from_missing_fields(missing_fields: Sequence[str]) -> Set[_DiffPath]:
+    mapping = {
+        "reward": ("payload", "reward"),
+        "deadlineDays": ("payload", "deadlineDays"),
+        "jobId": ("payload", "jobId"),
+    }
+    allowed: Set[_DiffPath] = set()
+    for field in missing_fields:
+        if field in mapping:
+            allowed.add(mapping[field])
+        else:
+            allowed.add(("payload", str(field)))
+    return allowed
+
+
+def _bind_plan_hash(
+    intent: JobIntent,
+    raw_plan_hash: Optional[str],
+    requested_created_at: Optional[str] = None,
+) -> Tuple[str, str, str, Dict[str, Any], List[str]]:
+    if raw_plan_hash is None or not str(raw_plan_hash).strip():
+        raise _http_error(400, "PLAN_HASH_REQUIRED")
+
+    provided_hash = _normalize_plan_hash(raw_plan_hash)
+    if provided_hash is None:
+        raise _http_error(400, "PLAN_HASH_INVALID")
+
+    canonical_full = _compute_plan_hash(intent)
+    canonical_hash = _normalize_plan_hash(canonical_full)
+    if canonical_hash is None:
+        raise _http_error(400, "PLAN_HASH_INVALID")
+
+    record = _lookup_plan_metadata(provided_hash)
+    if record is None:
+        raise _http_error(400, "PLAN_HASH_UNKNOWN")
+
+    stored_snapshot = record.get("intent")
+    stored_missing_fields = list(record.get("missingFields") or [])
+    updated_snapshot = _maybe_model_dump(intent)
+    if provided_hash != canonical_hash:
+        if not stored_snapshot:
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+        if stored_snapshot.get("action") != updated_snapshot.get("action"):
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+        diff_paths = _diff_intent_snapshots(stored_snapshot, updated_snapshot)
+        if not diff_paths:
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+        allowed_paths = _allowed_paths_from_missing_fields(stored_missing_fields)
+        if not diff_paths.issubset(allowed_paths):
+            raise _http_error(400, "PLAN_HASH_MISMATCH")
+
+    created_at = record.get("createdAt")
+    if not isinstance(created_at, str) or not created_at.strip():
+        requested = (requested_created_at or "").strip()
+        created_at = requested or _current_timestamp()
+
+    current_missing = _detect_missing_fields(intent)
+    _store_plan_metadata(
+        canonical_hash,
+        created_at,
+        intent_snapshot=updated_snapshot,
+        missing_fields=current_missing,
+    )
+
+    return canonical_full, canonical_hash, created_at, updated_snapshot, stored_missing_fields
 
 
 _STATUS_CACHE: Dict[int, "StatusResponse"] = {}
@@ -1642,11 +1787,17 @@ async def plan(request: Request, req: PlanRequest):
             requires_confirmation = False
         plan_hash = _compute_plan_hash(intent)
         created_at = _current_timestamp()
-        _store_plan_metadata(plan_hash, created_at)
+        intent_snapshot = _maybe_model_dump(intent)
+        _store_plan_metadata(
+            plan_hash,
+            created_at,
+            intent_snapshot=intent_snapshot if isinstance(intent_snapshot, dict) else None,
+            missing_fields=missing_fields,
+        )
 
         plan_metadata: Dict[str, Any] = {
             "summary": summary,
-            "intent": _maybe_model_dump(intent),
+            "intent": intent_snapshot if isinstance(intent_snapshot, dict) else _maybe_model_dump(intent),
             "requiresConfirmation": requires_confirmation,
             "warnings": warnings,
             "planHash": plan_hash,
@@ -1695,35 +1846,18 @@ async def simulate(request: Request, req: SimulateRequest):
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
 
-    raw_plan_hash = req.planHash
-    if raw_plan_hash is None or not str(raw_plan_hash).strip():
-        raise _http_error(400, "PLAN_HASH_REQUIRED")
-
-    provided_hash = _normalize_plan_hash(raw_plan_hash)
-    if provided_hash is None:
-        raise _http_error(400, "PLAN_HASH_INVALID")
-
-    canonical_hash = _normalize_plan_hash(_compute_plan_hash(intent))
-    if canonical_hash is None:
-        raise _http_error(400, "PLAN_HASH_INVALID")
-
-    plan_hash = canonical_hash
-    display_plan_hash = f"0x{plan_hash}"
-
-    if provided_hash == canonical_hash:
-        stored_created_at = _lookup_plan_timestamp(plan_hash)
-    else:
-        stored_created_at = _lookup_plan_timestamp(provided_hash)
-        if stored_created_at is None:
-            raise _http_error(400, "PLAN_HASH_MISMATCH")
-
     request_created_at = None
     if req.createdAt is not None:
         candidate = str(req.createdAt).strip()
         if candidate:
             request_created_at = candidate
-    created_at = stored_created_at or request_created_at or _current_timestamp()
-    _store_plan_metadata(plan_hash, created_at)
+
+    canonical_full, plan_hash, created_at, _, _ = _bind_plan_hash(
+        intent,
+        req.planHash,
+        request_created_at,
+    )
+    display_plan_hash = canonical_full
 
     blockers: List[str] = []
     blocker_details: List[Dict[str, str]] = []
@@ -1996,35 +2130,18 @@ async def execute(request: Request, req: ExecuteRequest):
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
 
-    raw_plan_hash = req.planHash
-    if raw_plan_hash is None or not str(raw_plan_hash).strip():
-        raise _http_error(400, "PLAN_HASH_REQUIRED")
-
-    provided_hash = _normalize_plan_hash(raw_plan_hash)
-    if provided_hash is None:
-        raise _http_error(400, "PLAN_HASH_INVALID")
-
-    canonical_hash = _normalize_plan_hash(_compute_plan_hash(intent))
-    if canonical_hash is None:
-        raise _http_error(400, "PLAN_HASH_INVALID")
-
-    plan_hash = canonical_hash
-    display_plan_hash = f"0x{plan_hash}"
-
-    if provided_hash == canonical_hash:
-        stored_created_at = _lookup_plan_timestamp(plan_hash)
-    else:
-        stored_created_at = _lookup_plan_timestamp(provided_hash)
-        if stored_created_at is None:
-            raise _http_error(400, "PLAN_HASH_MISMATCH")
-
     request_created_at = None
     if req.createdAt is not None:
         candidate = str(req.createdAt).strip()
         if candidate:
             request_created_at = candidate
-    created_at = stored_created_at or request_created_at or _current_timestamp()
-    _store_plan_metadata(plan_hash, created_at)
+
+    canonical_full, plan_hash, created_at, _, _ = _bind_plan_hash(
+        intent,
+        req.planHash,
+        request_created_at,
+    )
+    display_plan_hash = canonical_full
     tooling_versions = _collect_tooling_versions()
     requested_tools = _resolve_requested_tools(intent)
     org_identifier = _resolve_org_identifier(intent)
@@ -2329,8 +2446,16 @@ async def status(request: Request, jobId: int):
         logger.warning("unknown job payload shape for job %s", job_id)
 
     assignee = None
-    if agent and int(agent, 16) != 0:
-        assignee = Web3.to_checksum_address(agent)
+    if agent:
+        try:
+            text_agent = str(agent).strip()
+            if text_agent and int(text_agent, 16) != 0:
+                try:
+                    assignee = Web3.to_checksum_address(text_agent)
+                except Exception:
+                    assignee = text_agent
+        except Exception:
+            assignee = None
     reward_str = _format_reward(reward) if reward is not None else None
     state_label = _STATE_MAP.get(state_code, "unknown")
     state_output = "disputed" if state_label == "disputed" else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown"
@@ -2487,8 +2612,16 @@ async def _read_status(job_id: int) -> StatusResponse:
             except (TypeError, ValueError):
                 deadline = None
     assignee = None
-    if agent and int(agent, 16) != 0:
-        assignee = Web3.to_checksum_address(agent)
+    if agent:
+        try:
+            text_agent = str(agent).strip()
+            if text_agent and int(text_agent, 16) != 0:
+                try:
+                    assignee = Web3.to_checksum_address(text_agent)
+                except Exception:
+                    assignee = text_agent
+        except Exception:
+            assignee = None
     reward_str = _format_reward(reward) if reward is not None else None
     state_label = _STATE_MAP.get(state_code, "unknown")
     state_output = "disputed" if state_label == "disputed" else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown"
