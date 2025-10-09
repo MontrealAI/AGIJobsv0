@@ -13,39 +13,52 @@ subdomains and set resolver records as outlined in
 
 ## Module Responsibilities & Addresses
 
-| Module            | Responsibility                                                              | Address                                      |
-| ----------------- | --------------------------------------------------------------------------- | -------------------------------------------- |
-| `$AGIALPHA` Token | 18‑decimal ERC‑20 used for payments and staking (external mainnet contract) | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
-| StakeManager      | Custodies stakes, escrows rewards, slashes misbehaviour                     | `0x0000000000000000000000000000000000000000` |
-| ReputationEngine  | Tracks reputation scores and blacklist status                               | `0x0000000000000000000000000000000000000000` |
-| IdentityRegistry  | Verifies ENS subdomains and Merkle allowlists                               | `0x0000000000000000000000000000000000000000` |
-| ValidationModule  | Runs commit–reveal validation and selects committees                        | `0x0000000000000000000000000000000000000000` |
-| DisputeModule     | Escrows dispute fees and finalises appeals                                  | `0x0000000000000000000000000000000000000000` |
-| CertificateNFT    | Issues ERC‑721 certificates for completed jobs                              | `0x0000000000000000000000000000000000000000` |
-| JobRegistry       | Orchestrates job lifecycle and wires all modules                            | `0x0000000000000000000000000000000000000000` |
+| Module            | Responsibility                                                              | Authoritative configuration |
+| ----------------- | --------------------------------------------------------------------------- | --------------------------- |
+| `$AGIALPHA` Token | 18‑decimal ERC‑20 used for payments and staking (external mainnet contract) | [`config/agialpha.json`](../config/agialpha.json) and per-network overrides in `config/agialpha.<network>.json` |
+| StakeManager      | Custodies stakes, escrows rewards, slashes misbehaviour                     | [`config/stake-manager.json`](../config/stake-manager.json) |
+| ReputationEngine  | Tracks reputation scores and blacklist status                               | [`config/reputation-engine.json`](../config/reputation-engine.json) |
+| IdentityRegistry  | Verifies ENS subdomains and Merkle allowlists                               | [`config/identity-registry.json`](../config/identity-registry.json) |
+| ValidationModule  | Runs commit–reveal validation and selects committees                        | [`config/validation-module.json`](../config/validation-module.json) |
+| DisputeModule     | Escrows dispute fees and finalises appeals                                  | [`config/dispute-module.json`](../config/dispute-module.json) |
+| CertificateNFT    | Issues ERC‑721 certificates for completed jobs                              | [`config/certificate-nft.json`](../config/certificate-nft.json) |
+| FeePool           | Burns protocol fees and escrows rewards for stakers                         | [`config/fee-pool.json`](../config/fee-pool.json) |
+| JobRegistry       | Orchestrates job lifecycle and wires all modules                            | [`config/job-registry.json`](../config/job-registry.json) |
+
+After every deployment or reconfiguration, record the live contract addresses in `deployment-config/latest-deployment.<network>.json` (the output destination is configurable via the `output` key in the deployment manifest). The CI pipeline checks that these manifests align with the compiled constants and runtime configuration.
 
 ## Deployment Script Outline
 
 For a scripted deployment the repository ships with
-[`scripts/v2/deployDefaults.ts`](../scripts/v2/deployDefaults.ts). Run:
+[`scripts/v2/deployDefaults.ts`](../scripts/v2/deployDefaults.ts). The
+helper reads a JSON manifest (for example
+[`deployment-config/mainnet.json`](../deployment-config/mainnet.json)) and
+deploys each module using the requested parameters. Run:
 
 ```bash
-npx hardhat run scripts/v2/deployDefaults.ts --network <network>
+npx hardhat run scripts/v2/deployDefaults.ts \
+  --network <network> \
+  --config deployment-config/<network>.json
 ```
 
 The helper deploys and wires every module using `$AGIALPHA` as the
 staking token. Pass `--no-tax` to omit the optional `TaxPolicy` module.
-To customise the token, protocol fees or ENS roots edit the script to call
-`deployer.deploy(econ, ids)` and provide:
+To customise the token, protocol fees or ENS roots edit the manifest
+referenced by `--config` (or the defaults under `deployment-config/`)
+and rerun the script. The manifest fields align with the
+`config/*.json` files listed above and cover:
 
 - `econ.token` – ERC‑20 used by `StakeManager` and `FeePool`
 - `econ.feePct` / `econ.burnPct` – protocol fee and burn percentages
-- `ids.agentRootNode` / `ids.clubRootNode` – namehashes for
+- `identity.roots.agentRoot` / `identity.roots.clubRoot` – namehashes for
   `agent.agi.eth` and `club.agi.eth`
-- `ids.agentMerkleRoot` / `ids.validatorMerkleRoot` – optional allowlist
-  roots
+- `identity.agentMerkleRoot` / `identity.validatorMerkleRoot` – optional
+  allowlist roots
+- `tax` – metadata for the optional `TaxPolicy`
+- `secureDefaults` – launch-time toggles such as `pauseOnLaunch`
 
-The script prints module addresses and verifies source on Etherscan.
+The script prints module addresses, writes them to the configured output
+file, and attempts to verify source on Etherscan.
 
 ## Step-by-Step Deployment
 
@@ -56,10 +69,11 @@ The script prints module addresses and verifies source on Etherscan.
 5. **Deploy `ValidationModule`** with `jobRegistry = 0`, the `StakeManager` address and desired timing/validator settings.
 6. **Deploy `DisputeModule`** with `jobRegistry = 0` and any custom fee or window.
 7. **Deploy `CertificateNFT`** supplying a name and symbol.
-8. **Deploy `JobRegistry`** passing the governance contract address as the
-   final constructor argument, then wire modules by calling
-   `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, new address[](0))` from the
-   governance account.
+8. **Deploy `JobRegistry`** passing the validation, staking, reputation,
+   dispute, certificate, fee pool, optional tax policy, fee percentage,
+   per-job validator stake, acknowledgement modules, and the governance
+   timelock or multisig. The constructor immediately validates module
+   versions and stores the wiring when non-zero addresses are supplied.
 9. **Point modules back to `JobRegistry`** by calling:
    - `StakeManager.setJobRegistry(jobRegistry)`
    - `ValidationModule.setJobRegistry(jobRegistry)`
@@ -96,7 +110,10 @@ After deployment the governance contract can fine‑tune the system without rede
 3. **Update parameters** – adjust economic settings through `setFeePct`,
    `FeePool.setBurnPct` to tune the portion of fees burned before distribution,
    `setMinStake`, timing windows and other governance‑only
-   setters or the helper script `scripts/updateParams.ts`.
+   setters. To batch and audit these updates, use the owner helpers:
+   `npm run owner:plan` to review the diff and `npm run owner:update-all`
+   (wrapper around [`scripts/v2/updateAllModules.ts`](../scripts/v2/updateAllModules.ts))
+   to execute changes once approved.
 4. **Publish a tax policy** – call `JobRegistry.setTaxPolicy(taxPolicy)` then
    `DisputeModule.setTaxPolicy(taxPolicy)` and instruct participants to
    acknowledge via `JobRegistry.acknowledgeTaxPolicy()` before staking or
