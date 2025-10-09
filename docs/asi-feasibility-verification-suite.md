@@ -2,7 +2,7 @@
 
 > **Audience:** Release management, governance, and contract owners who must certify that AGI Jobs v0 (contracts v2) satisfies every pillar from *Achieving ASI with Meta-Agentic Program Synthesis and α‑AGI Architecture* before approving production rollout.
 >
-> **Goal:** Provide an executable checklist that pairs each feasibility requirement with concrete commands, artefacts, and independent verification paths so non-technical signers can prove the platform is production-ready and owner-controlled.
+> **Goal:** Provide an executable checklist that pairs each feasibility requirement with concrete commands, artefacts, and independent verification paths so non-technical signers can prove the platform is production-ready and owner-controlled. Use it together with the [ASI Feasibility Triple-Assurance Matrix](asi-feasibility-triple-assurance-matrix.md) to capture the required contract, operational, and external evidence bundles for every release.
 
 ---
 
