@@ -26,6 +26,7 @@ ready.
     backend sets `requiresConfirmation` to `false`, signalling the UI to gather more input before proceeding.【F:orchestrator/planner.py†L320-L372】【F:routes/onebox.py†L1648-L1667】
   * `warnings` – non-fatal notes such as `DEFAULT_REWARD_APPLIED` if the planner temporarily filled in defaults.【F:orchestrator/planner.py†L328-L356】
   * `planHash` – SHA-256 hash of the normalised intent, emitted as `0x…` strings for downstream correlation.【F:routes/onebox.py†L1503-L1518】
+  * Every plan hash persists an intent snapshot and the list of unresolved fields.  Subsequent stages only accept updates that fill those specific gaps; any other mutation triggers `PLAN_HASH_MISMATCH`, while unknown hashes now return `PLAN_HASH_UNKNOWN` to force a re-plan.【F:routes/onebox.py†L902-L1001】【F:routes/onebox.py†L1673-L1687】
   * Optional receipt metadata when the planner emits an attestation (used by the UX to preview receipts ahead of execution).
 
 **Error handling**
@@ -69,6 +70,7 @@ ready.
 | ------ | ------- | ------------------- |
 | `200`  | Ready to execute.  Proceed to `/onebox/execute`. | Review any `risks` before continuing. |
 | `400`  | Hash or payload mismatch. | Re-run the planner to regenerate a plan hash. |
+| `400`  | Plan hash unknown/expired. | Call `/onebox/plan` again to refresh the plan hash before simulating. |
 | `422`  | Blocked by policy or missing data. | Present `blockers` to the user and collect the required inputs. |
 
 **Metrics & logging**

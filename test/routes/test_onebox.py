@@ -12,7 +12,14 @@ from unittest import mock
 
 os.environ.setdefault("RPC_URL", "http://localhost:8545")
 
+_force_stub_fastapi = os.getenv("ONEBOX_TEST_FORCE_STUB_FASTAPI") == "1"
+# ONEBOX_TEST_FORCE_STUB_WEB3 allows the suite to replace the real Web3 implementation
+# with a minimal stub so unit tests do not require a live JSON-RPC endpoint.
+_force_stub_web3 = os.getenv("ONEBOX_TEST_FORCE_STUB_WEB3") == "1"
+
 try:
+    if _force_stub_fastapi:
+        raise ModuleNotFoundError
     import fastapi  # type: ignore  # noqa: F401
 except ModuleNotFoundError:
     fastapi = types.ModuleType("fastapi")
@@ -121,7 +128,11 @@ def _make_request(headers=None):  # type: ignore[no-untyped-def]
         state=types.SimpleNamespace(),
     )
 
+
+
 try:
+    if _force_stub_web3:
+        raise ModuleNotFoundError
     import web3  # type: ignore  # noqa: F401
 except ModuleNotFoundError:
     web3 = types.ModuleType("web3")
@@ -363,6 +374,10 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     _parse_default_max_duration,
     _read_status,
     _UINT64_MAX,
+    _current_timestamp,
+    _detect_missing_fields,
+    _maybe_model_dump,
+    _store_plan_metadata,
     StatusResponse,
     execute,
     healthcheck,
@@ -370,6 +385,20 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     plan,
     simulate,
 )
+
+
+def _register_plan(intent: JobIntent) -> str:
+    plan_hash = _compute_plan_hash(intent)
+    snapshot = _maybe_model_dump(intent)
+    snapshot_dict = snapshot if isinstance(snapshot, dict) else None
+    missing = _detect_missing_fields(intent)
+    _store_plan_metadata(
+        plan_hash,
+        _current_timestamp(),
+        intent_snapshot=snapshot_dict,
+        missing_fields=missing,
+    )
+    return plan_hash
 
 
 def _encode_metadata(state: int, deadline: int = 0, assigned_at: int = 0) -> int:
@@ -558,7 +587,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_simulate_post_job_success(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         response = await simulate(
             _make_request(),
             SimulateRequest(intent=intent, planHash=plan_hash),
@@ -604,7 +633,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.status_code, 400)
         self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_INVALID")
 
-    async def test_simulate_rejects_mismatched_plan_hash(self) -> None:
+    async def test_simulate_rejects_unknown_plan_hash(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", reward="5", deadlineDays=7))
         canonical = _compute_plan_hash(intent)
         mismatch = "1" * 64
@@ -616,11 +645,30 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
                 SimulateRequest(intent=intent, planHash=mismatch),
             )
         self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_UNKNOWN")
+
+    async def test_simulate_rejects_unapproved_intent_changes(self) -> None:
+        original_intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Label data", reward="5", deadlineDays=7),
+        )
+        plan_hash = _register_plan(original_intent)
+        mutated_intent = copy.deepcopy(original_intent)
+        mutated_intent.action = "finalize_job"
+        mutated_intent.payload.jobId = 123
+
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await simulate(
+                _make_request(),
+                SimulateRequest(intent=mutated_intent, planHash=plan_hash),
+            )
+
+        self.assertEqual(exc.exception.status_code, 400)
         self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_MISMATCH")
 
     async def test_simulate_post_job_missing_reward_returns_blocker(self) -> None:
         intent = JobIntent(action="post_job", payload=Payload(title="Label data", deadlineDays=7))
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         with self.assertRaises(fastapi.HTTPException) as exc:
             await simulate(
                 _make_request(),
@@ -635,7 +683,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Map terrain", reward="5", deadlineDays=60),
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         response = await simulate(
             _make_request(),
             SimulateRequest(intent=intent, planHash=plan_hash),
@@ -659,7 +707,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
             def enforce(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
                 raise violation
 
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         with mock.patch("routes.onebox._get_org_policy_store", return_value=_PolicyStore()):
             with self.assertRaises(fastapi.HTTPException) as exc:
                 await simulate(
@@ -678,7 +726,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_simulate_rejects_runner_unsupported_actions(self) -> None:
         intent = JobIntent(action="stake", payload=Payload(jobId=123))
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
 
         with self.assertRaises(fastapi.HTTPException) as exc:
             await simulate(
@@ -692,7 +740,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_simulate_finalize_blocks_when_already_finalized(self) -> None:
         intent = JobIntent(action="finalize_job", payload=Payload(jobId=55))
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         status = StatusResponse(jobId=55, state="finalized")
 
         with mock.patch("routes.onebox._get_cached_status", return_value=status):
@@ -708,7 +756,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_simulate_finalize_flags_unknown_status(self) -> None:
         intent = JobIntent(action="finalize_job", payload=Payload(jobId=77))
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         status = StatusResponse(jobId=77, state="unknown")
 
         with mock.patch("routes.onebox._get_cached_status", return_value=status):
@@ -723,7 +771,7 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_simulate_finalize_warns_when_job_not_ready(self) -> None:
         intent = JobIntent(action="finalize_job", payload=Payload(jobId=88))
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         status = StatusResponse(jobId=88, state="open")
 
         with mock.patch("routes.onebox._get_cached_status", return_value=status):
@@ -844,7 +892,7 @@ class ExecutorPlanHashValidationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(exc.exception.status_code, 400)
         self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_INVALID")
 
-    async def test_execute_rejects_mismatched_plan_hash(self) -> None:
+    async def test_execute_rejects_unknown_plan_hash(self) -> None:
         intent = JobIntent(action="check_status", payload=Payload(jobId=123))
         canonical = _compute_plan_hash(intent)
         mismatch = "a" * 64
@@ -856,6 +904,22 @@ class ExecutorPlanHashValidationTests(unittest.IsolatedAsyncioTestCase):
                 ExecuteRequest(intent=intent, planHash=mismatch),
             )
         self.assertEqual(exc.exception.status_code, 400)
+        self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_UNKNOWN")
+
+    async def test_execute_rejects_unapproved_intent_changes(self) -> None:
+        original_intent = JobIntent(action="check_status", payload=Payload(jobId=123))
+        plan_hash = _register_plan(original_intent)
+        mutated_intent = copy.deepcopy(original_intent)
+        mutated_intent.action = "finalize_job"
+        mutated_intent.payload.jobId = 123
+
+        with self.assertRaises(fastapi.HTTPException) as exc:
+            await execute(
+                _make_request(),
+                ExecuteRequest(intent=mutated_intent, planHash=plan_hash),
+            )
+
+        self.assertEqual(exc.exception.status_code, 400)
         self.assertEqual(exc.exception.detail["code"], "PLAN_HASH_MISMATCH")
 
 
@@ -865,7 +929,7 @@ class ExecutorRewardValidationTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Invalid", reward="not-a-number", deadlineDays=1),
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
 
         with self.assertRaises(fastapi.HTTPException) as exc:
@@ -886,7 +950,7 @@ class ExecuteEndpointRegressionTests(unittest.TestCase):
             action="post_job",
             payload=Payload(title="Invalid", reward="not-a-number", deadlineDays=1),
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         app = FastAPI()
         app.include_router(router)
 
@@ -936,7 +1000,7 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Example", reward="1", deadlineDays=3),
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
         request_ctx = _make_request()
         with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
@@ -964,7 +1028,7 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Example", reward="1", deadlineDays=3, agentTypes=["coder"]),
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
         request_ctx = _make_request()
         with mock.patch("routes.onebox._pin_json", side_effect=_fake_pin_json), mock.patch(
@@ -981,7 +1045,7 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Overflow", reward="1", deadlineDays=overflow_days),
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
         request_ctx = _make_request()
         with mock.patch("routes.onebox.time.time", return_value=0):
@@ -1009,7 +1073,7 @@ class ExecutorRelayerFallbackTests(unittest.IsolatedAsyncioTestCase):
             action="post_job",
             payload=Payload(title="Example", reward="1", deadlineDays=1),
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, mode="relayer", planHash=plan_hash)
         request_ctx = _make_request()
 
@@ -1053,7 +1117,7 @@ class ExecutorRelayerFallbackTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_finalize_relayer_without_sender_returns_relay_unavailable(self) -> None:
         intent = JobIntent(action="finalize_job", payload=Payload(jobId=123))
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
         request_ctx = _make_request()
 
@@ -1112,7 +1176,7 @@ class AccountAbstractionIntegrationTests(unittest.IsolatedAsyncioTestCase):
             payload=Payload(title="Example", reward="1", deadlineDays=2),
             userContext={"org": "acme"},
         )
-        plan_hash = _compute_plan_hash(plan_intent)
+        plan_hash = _register_plan(plan_intent)
         execute_request = ExecuteRequest(intent=plan_intent, planHash=plan_hash)
         request_ctx = _make_request()
 
@@ -1169,7 +1233,7 @@ class AccountAbstractionIntegrationTests(unittest.IsolatedAsyncioTestCase):
             payload=Payload(title="Example", reward="1", deadlineDays=1),
             userContext={"org": "acme"},
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
         request_ctx = _make_request()
 
@@ -1215,7 +1279,7 @@ class AccountAbstractionIntegrationTests(unittest.IsolatedAsyncioTestCase):
             payload=Payload(title="Example", reward="1", deadlineDays=1),
             userContext={"org": "acme"},
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
         request_ctx = _make_request()
 
@@ -1257,7 +1321,7 @@ class AccountAbstractionIntegrationTests(unittest.IsolatedAsyncioTestCase):
             payload=Payload(title="Example", reward="1", deadlineDays=1),
             userContext={"org": "acme"},
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
         request_ctx = _make_request()
 
@@ -1332,7 +1396,7 @@ class ReceiptPinningMetadataTests(unittest.IsolatedAsyncioTestCase):
             payload=Payload(title="Metadata", reward="1", deadlineDays=2),
             userContext={"org": "acme"},
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, planHash=plan_hash)
         request_ctx = _make_request()
 
@@ -1461,7 +1525,7 @@ class OrgPolicyEnforcementTests(unittest.IsolatedAsyncioTestCase):
             payload=Payload(title="Policy", reward="1.5", deadlineDays=4),
             userContext={"orgId": "acme"},
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
         request_ctx = _make_request()
 
@@ -1497,7 +1561,7 @@ class OrgPolicyEnforcementTests(unittest.IsolatedAsyncioTestCase):
             payload=Payload(title="Policy", reward="3", deadlineDays=4),
             userContext={"orgId": "acme"},
         )
-        plan_hash = _compute_plan_hash(intent)
+        plan_hash = _register_plan(intent)
         execute_request = ExecuteRequest(intent=intent, mode="wallet", planHash=plan_hash)
         request_ctx = _make_request()
 
@@ -1611,6 +1675,23 @@ class StatusReadTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(status.reward, "3")
         self.assertEqual(status.token, "0xToken")
         self.assertEqual(status.deadline, 1_900_000_000)
+
+    async def test_read_status_gracefully_handles_checksum_failures(self) -> None:
+        agent = "0x0000000000000000000000000000000000000001"
+        job = {
+            "agent": agent,
+            "reward": 10**18,
+            "packedMetadata": _encode_metadata(2, deadline=0),
+        }
+
+        with mock.patch("routes.onebox.registry") as registry_mock, mock.patch(
+            "routes.onebox.AGIALPHA_TOKEN", "0xToken"
+        ), mock.patch("routes.onebox.Web3.to_checksum_address", side_effect=ValueError("boom")):
+            registry_mock.functions.jobs.return_value.call.return_value = job
+            status = await _read_status(55)
+
+        self.assertEqual(status.state, "assigned")
+        self.assertEqual(status.assignee, agent)
 
     async def test_read_status_returns_unknown_on_error(self) -> None:
         with mock.patch("routes.onebox.registry") as registry_mock:
