@@ -32,6 +32,8 @@
     "owner:blueprint": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlBlueprint.ts",
     "owner:snapshot": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlSnapshot.ts",
     "observability:smoke": "node scripts/observability-smoke-check.js",
+    "learning:refresh": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/train/updateModels.ts --once",
+    "learning:retrain": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/retrainAgent.ts",
     "owner:verify-control": "npx hardhat run --no-compile scripts/v2/verifyOwnerControl.ts",
     "owner:pulse": "npx hardhat run --no-compile scripts/v2/ownerControlPulse.ts",
     "owner:rotate": "npx hardhat run --no-compile scripts/v2/rotateGovernance.ts",
