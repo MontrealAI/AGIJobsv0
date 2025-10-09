@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-bookworm-slim AS base
+FROM node:20-bookworm-slim AS base-build
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 make g++ \
@@ -18,19 +18,26 @@ ENV PYTHON=/usr/bin/python3 \
 COPY scripts/docker/npm-ci-retry.sh /usr/local/bin/npm-ci-retry.sh
 RUN chmod +x /usr/local/bin/npm-ci-retry.sh
 
-FROM base AS builder
+FROM base-build AS builder
 COPY package.json package-lock.json ./
 RUN npm-ci-retry.sh
 COPY . .
-RUN npm run build:gateway
+RUN npm run build:gateway \
+    && npm prune --omit=dev \
+    && npm cache clean --force
 
-FROM base AS runner
-ENV NODE_ENV=production
-COPY package.json package-lock.json ./
-RUN npm-ci-retry.sh --omit=dev
+FROM node:20-bookworm-slim AS runner
+ENV NODE_ENV=production \
+    NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_FUND=false
+WORKDIR /app
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/package-lock.json ./
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/agent-gateway/dist ./agent-gateway/dist
 COPY --from=builder /app/scripts/start-telemetry.sh ./scripts/start-telemetry.sh
-RUN chmod +x ./scripts/start-telemetry.sh
-# Directories for persistent state can be mounted at runtime.
-RUN mkdir -p /app/storage /app/logs
+RUN chmod +x ./scripts/start-telemetry.sh \
+    && mkdir -p /app/storage /app/logs \
+    && chown -R node:node /app
+USER node
 CMD ["node", "agent-gateway/dist/agent-gateway/operator.js"]
