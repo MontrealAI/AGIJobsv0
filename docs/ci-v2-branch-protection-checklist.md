@@ -22,6 +22,16 @@ The job display names in GitHub Actions must stay in sync with these contexts. A
 
 ## Verification steps
 
+### 0. Derive canonical contexts from the workflow
+
+```bash
+node scripts/ci/list-required-contexts.js --json
+```
+
+- Produces the authoritative list of status contexts that branch protection must enforce.
+- Exits non-zero if `foundry`, `coverage`, or `summary` ever lose their `if: ${{ always() }}` guard.
+- Verifies the `summary` gate depends on `lint`, `tests`, `foundry`, and `coverage` before you compare GitHub settings.
+
 ### 1. Inspect branch protection in the GitHub UI
 
 1. Navigate to **Settings → Branches**.

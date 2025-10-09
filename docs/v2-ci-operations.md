@@ -54,6 +54,14 @@ Enable branch protection on `main` with these required status checks (copy the c
 After applying or updating branch protection rules, verify them without leaving the terminal:
 
 ```bash
+node scripts/ci/list-required-contexts.js
+```
+
+- Confirms the canonical status check names emitted by the workflow itself.
+- Fails fast if the `foundry`, `coverage`, or `summary` jobs drop their `if: ${{ always() }}` guard.
+- Ensures the `summary` gate continues to depend on `lint`, `tests`, `foundry`, and `coverage`.
+
+```bash
 gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'
 gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
 ```
