@@ -2,7 +2,7 @@
 
 > **Audience:** Executive sponsors, operations leads, compliance reviewers, and contract owners who must certify that AGI Jobs v2 is deployable on short notice without writing Solidity.
 >
-> **Goal:** Provide a single, always-current launch dashboard that maps every readiness artifact (tests, CI, configuration, owner controls, and incident tooling) to the command or document that proves it is green.
+> **Goal:** Provide a single, always-current launch dashboard that maps every readiness artifact (tests, CI, configuration, owner controls, and incident tooling) to the command or document that proves it is green. Pair this index with the [α-AGI meta-agentic readiness audit](../asi-meta-agentic-readiness.md) when certifying meta-agentic and evolutionary capabilities.
 
 ---
 
