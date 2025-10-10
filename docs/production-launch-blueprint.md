@@ -193,6 +193,8 @@ Before opening the system to external participants, confirm the following:
       intended ENS changes.
 - [ ] `npx hardhat run scripts/v2/updateThermodynamics.ts --network <network>` dry run
       matches the desired reward distribution.
+- [ ] Validate release signatures and provenance following
+      `docs/release-signing.md` before distributing artefacts.
 - [ ] Incident response runbook stored in `docs/` references this blueprint and the latest
       Safe bundles.
 
