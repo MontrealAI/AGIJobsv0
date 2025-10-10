@@ -171,20 +171,20 @@ describe('SystemPause', function () {
       pauseAddress
     );
 
-    await expect(
-      pause
-        .connect(owner)
-        .setModules(
-          addresses.jobRegistry,
-          addresses.stake,
-          addresses.validationModule,
-          addresses.disputeModule,
-          addresses.platformRegistry,
-          addresses.feePool,
-          addresses.reputationEngine,
-          addresses.arbitratorCommittee
-        )
-    )
+    const tx = await pause
+      .connect(owner)
+      .setModules(
+        addresses.jobRegistry,
+        addresses.stake,
+        addresses.validationModule,
+        addresses.disputeModule,
+        addresses.platformRegistry,
+        addresses.feePool,
+        addresses.reputationEngine,
+        addresses.arbitratorCommittee
+      );
+
+    await expect(tx)
       .to.emit(pause, 'ModulesUpdated')
       .withArgs(
         addresses.jobRegistry,
@@ -197,7 +197,18 @@ describe('SystemPause', function () {
         addresses.arbitratorCommittee
       );
 
-    await pause.connect(owner).refreshPausers();
+    await expect(tx)
+      .to.emit(pause, 'PausersUpdated')
+      .withArgs(pauseAddress);
+
+    expect(await stake.pauser()).to.equal(pauseAddress);
+    expect(await registry.pauser()).to.equal(pauseAddress);
+    expect(await validation.pauser()).to.equal(pauseAddress);
+    expect(await dispute.pauser()).to.equal(pauseAddress);
+    expect(await platformRegistry.pauser()).to.equal(pauseAddress);
+    expect(await feePool.pauser()).to.equal(pauseAddress);
+    expect(await reputation.pauser()).to.equal(pauseAddress);
+    expect(await committee.pauser()).to.equal(pauseAddress);
 
     await expect(pause.connect(other).pauseAll()).to.be.revertedWithCustomError(
       pause,
@@ -313,5 +324,84 @@ describe('SystemPause', function () {
           addresses.arbitratorCommittee
         )
     ).to.be.revertedWithCustomError(pause, 'ModuleNotOwned');
+  });
+
+  it('allows governance to set and restore a custom pauser', async function () {
+    const [owner, , delegate] = await ethers.getSigners();
+    const {
+      pause,
+      stake,
+      registry,
+      validation,
+      dispute,
+      reputation,
+      platformRegistry,
+      feePool,
+      committee,
+      addresses,
+    } = await deploySystem(owner.address);
+
+    const pauseAddress = await pause.getAddress();
+
+    await transferModulesToPause(
+      owner,
+      {
+        stake,
+        registry,
+        validation,
+        dispute,
+        platformRegistry,
+        feePool,
+        reputation,
+        committee,
+      },
+      pauseAddress
+    );
+
+    await pause
+      .connect(owner)
+      .setModules(
+        addresses.jobRegistry,
+        addresses.stake,
+        addresses.validationModule,
+        addresses.disputeModule,
+        addresses.platformRegistry,
+        addresses.feePool,
+        addresses.reputationEngine,
+        addresses.arbitratorCommittee
+      );
+
+    await expect(
+      pause.connect(owner).setGlobalPauser(delegate.address)
+    )
+      .to.emit(pause, 'PausersUpdated')
+      .withArgs(delegate.address);
+
+    expect(await stake.pauser()).to.equal(delegate.address);
+    expect(await registry.pauser()).to.equal(delegate.address);
+    expect(await validation.pauser()).to.equal(delegate.address);
+    expect(await dispute.pauser()).to.equal(delegate.address);
+    expect(await platformRegistry.pauser()).to.equal(delegate.address);
+    expect(await feePool.pauser()).to.equal(delegate.address);
+    expect(await reputation.pauser()).to.equal(delegate.address);
+    expect(await committee.pauser()).to.equal(delegate.address);
+
+    await expect(pause.connect(delegate).refreshPausers()).to.be.revertedWithCustomError(
+      pause,
+      'NotGovernance'
+    );
+
+    await expect(pause.connect(owner).refreshPausers())
+      .to.emit(pause, 'PausersUpdated')
+      .withArgs(pauseAddress);
+
+    expect(await stake.pauser()).to.equal(pauseAddress);
+    expect(await registry.pauser()).to.equal(pauseAddress);
+    expect(await validation.pauser()).to.equal(pauseAddress);
+    expect(await dispute.pauser()).to.equal(pauseAddress);
+    expect(await platformRegistry.pauser()).to.equal(pauseAddress);
+    expect(await feePool.pauser()).to.equal(pauseAddress);
+    expect(await reputation.pauser()).to.equal(pauseAddress);
+    expect(await committee.pauser()).to.equal(pauseAddress);
   });
 });

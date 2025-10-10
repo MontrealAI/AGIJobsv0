@@ -46,6 +46,8 @@ contract SystemPause is Governable, ReentrancyGuard {
         address arbitratorCommittee
     );
 
+    event PausersUpdated(address indexed pauser);
+
     event ValidationFailoverForwarded(
         uint256 indexed jobId,
         ValidationModule.FailoverAction action,
@@ -165,6 +167,9 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool = _feePool;
         reputationEngine = _reputationEngine;
         arbitratorCommittee = _arbitratorCommittee;
+
+        _setPausers(address(this));
+
         emit ModulesUpdated(
             address(_jobRegistry),
             address(_stakeManager),
@@ -191,7 +196,24 @@ contract SystemPause is Governable, ReentrancyGuard {
             arbitratorCommittee
         );
 
-        _setPausers();
+        _setPausers(address(this));
+    }
+
+    /// @notice Set a custom pauser address across all managed modules.
+    /// @param pauser The address empowered to pause and unpause the modules.
+    function setGlobalPauser(address pauser) external onlyGovernance {
+        _requireModuleOwnership(
+            jobRegistry,
+            stakeManager,
+            validationModule,
+            disputeModule,
+            platformRegistry,
+            feePool,
+            reputationEngine,
+            arbitratorCommittee
+        );
+
+        _setPausers(pauser);
     }
 
     /// @notice Pause all core modules.
@@ -233,15 +255,17 @@ contract SystemPause is Governable, ReentrancyGuard {
         emit ValidationFailoverForwarded(jobId, action, extension, reason);
     }
 
-    function _setPausers() internal {
-        jobRegistry.setPauser(address(this));
-        stakeManager.setPauser(address(this));
-        validationModule.setPauser(address(this));
-        disputeModule.setPauser(address(this));
-        platformRegistry.setPauser(address(this));
-        feePool.setPauser(address(this));
-        reputationEngine.setPauser(address(this));
-        arbitratorCommittee.setPauser(address(this));
+    function _setPausers(address pauser) internal {
+        jobRegistry.setPauser(pauser);
+        stakeManager.setPauser(pauser);
+        validationModule.setPauser(pauser);
+        disputeModule.setPauser(pauser);
+        platformRegistry.setPauser(pauser);
+        feePool.setPauser(pauser);
+        reputationEngine.setPauser(pauser);
+        arbitratorCommittee.setPauser(pauser);
+
+        emit PausersUpdated(pauser);
     }
 
     function _requireModuleOwnership(
