@@ -22,11 +22,15 @@ concurrency:
 
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -35,7 +39,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: npm
 
       - name: Install dependencies
@@ -75,6 +79,15 @@ jobs:
           npx hardhat typechain
           npm run abi:export -- --out reports/abis/head
 
+      - name: Generate SBOM
+        run: npm run sbom
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-sbom
+          path: reports/sbom/agi-jobs-v2.cdx.json
+
       - name: Upload release preparation artefacts
         uses: actions/upload-artifact@v4
         with:
@@ -83,12 +96,17 @@ jobs:
             reports/abis/head
             typechain-types
             deployment-config
+            reports/sbom/agi-jobs-v2.cdx.json
 
   npm-publish:
     needs: prepare
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
       - name: Detect npm token
         id: npm-token
         env:
@@ -112,7 +130,7 @@ jobs:
         if: ${{ steps.npm-token.outputs.publish == 'true' }}
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: npm
           registry-url: 'https://registry.npmjs.org'
 
@@ -140,7 +158,7 @@ jobs:
 
   docker-publish:
     needs: prepare
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -162,6 +180,10 @@ jobs:
             context: apps/console
             dockerfile: apps/console/Dockerfile
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
       - name: Checkout
         uses: actions/checkout@v4
         with:

@@ -46,6 +46,10 @@ jobs:
             file: apps/console/Dockerfile
             tag: owner-console:latest
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
       - name: Checkout
         uses: actions/checkout@v4
         with:

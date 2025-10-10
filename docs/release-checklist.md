@@ -33,7 +33,14 @@ Use this list before tagging a new production release.
    forge doc || npx hardhat docgen
    npm run gas:snapshot || npx hardhat test --report-gas
    ```
-6. **Run fork & testnet drills**
+6. **Produce supply-chain attestations**
+   ```bash
+   npm run sbom
+   gh workflow run release.yml --ref $(git rev-parse HEAD) --field provenance-only=true # optional dry-run for attestation
+   ```
+   - Attach `reports/sbom/agi-jobs-v2.cdx.json` and the provenance attestation to the GitHub release assets.
+   - Verify the SBOM lists only approved licenses and dependency versions.
+7. **Run fork & testnet drills**
    ```bash
    export MAINNET_RPC_URL="https://mainnet.example"
    npm run test:fork
@@ -42,16 +49,16 @@ Use this list before tagging a new production release.
    ```
    - Archive logs under `internal_docs/security/drills/`.
    - Store `gas-snapshots/*.json` produced during the fork.
-7. **Update deployment addresses**
+8. **Update deployment addresses**
    - Fill `scripts/etherscan/addresses.json` with final contract addresses.
-8. **Create Etherscan call plan**
+9. **Create Etherscan call plan**
    ```bash
    node scripts/etherscan/generate_calls.js > scripts/etherscan/calls.json
    ```
-9. **Transfer ownership to governance**
+10. **Transfer ownership to governance**
    - Use the calls file as a guide for final `setGovernance` or `transferOwnership` transactions.
 
-10. **Final production checks**
+11. **Final production checks**
     - Confirm `$AGIALPHA` exposes a public `burn` and that fee burning reduces total supply.
     - Run an employer‑initiated burn through `FeePool.distributeFees` and verify the burn receipt.
     - Ensure all entry points enforcing `TaxPolicy` acknowledgement are covered by tests.
