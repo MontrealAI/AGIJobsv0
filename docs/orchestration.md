@@ -60,7 +60,8 @@ ready.
 **Validation gates**
 
 * Calls `_enforce_org_policy` to check reward and deadline caps using the latest org policy store (tenant-specific or default).【F:routes/onebox.py†L1763-L1774】
-* Looks up cached job status to guard against double-finalisation or dispute conflicts.【F:routes/onebox.py†L1805-L1832】
+* Looks up cached job status and, when necessary, refreshes the latest on-chain state to block premature finalisation or dispute
+  conflicts before they ever reach the runner.【F:routes/onebox.py†L1993-L2009】
 * Falls back to wallet preparation if the account abstraction paymaster rejects a relayed transaction, allowing operators to
   finish the flow manually without losing context.【F:routes/onebox.py†L2109-L2135】
 

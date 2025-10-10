@@ -349,7 +349,7 @@ class ExecuteResponse(BaseModel):
 
 class StatusResponse(BaseModel):
     jobId: int
-    state: Literal["open", "assigned", "completed", "finalized", "unknown", "disputed"] = "unknown"
+    state: Literal["open", "assigned", "review", "completed", "finalized", "unknown", "disputed"] = "unknown"
     reward: Optional[str] = None
     token: Optional[str] = None
     deadline: Optional[int] = None
@@ -1991,16 +1991,22 @@ async def simulate(request: Request, req: SimulateRequest):
                     _add_blocker("JOB_ID_REQUIRED")
                 else:
                     status = _get_cached_status(job_id_int)
+                    if status is None or not getattr(status, "state", None) or status.state == "unknown":
+                        try:
+                            status = await _read_status(job_id_int)
+                        except Exception as exc:
+                            logger.warning(
+                                "Unable to refresh job status during simulation", exc_info=exc
+                            )
                     state = status.state if status and status.state else "unknown"
                     if state == "finalized":
                         _add_blocker("JOB_ALREADY_FINALIZED")
                     elif state == "disputed":
                         _add_blocker("JOB_IN_DISPUTE")
-                    elif state not in {"completed", "unknown"}:
-                        if "JOB_NOT_READY_FOR_FINALIZE" not in risk_codes:
-                            _add_risk("JOB_NOT_READY_FOR_FINALIZE")
-                    if state == "unknown" and "STATUS_UNKNOWN" not in risk_codes:
+                    elif state == "unknown":
                         _add_risk("STATUS_UNKNOWN")
+                    elif state not in _FINALIZABLE_STATES:
+                        _add_blocker("JOB_NOT_READY_FOR_FINALIZE")
             if not blockers and requested_tools:
                 _enforce_policy(0, 0)
 
@@ -2458,7 +2464,13 @@ async def status(request: Request, jobId: int):
             assignee = None
     reward_str = _format_reward(reward) if reward is not None else None
     state_label = _STATE_MAP.get(state_code, "unknown")
-    state_output = "disputed" if state_label == "disputed" else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown"
+    state_output = (
+        "disputed"
+        if state_label == "disputed"
+        else state_label
+        if state_label in {"open", "assigned", "review", "completed", "finalized"}
+        else "unknown"
+    )
 
     response = StatusResponse(
         jobId=int(job_id),
@@ -2505,6 +2517,8 @@ _STATE_MAP = {
     5: "disputed",
     6: "finalized",
 }
+
+_FINALIZABLE_STATES: Set[str] = {"completed", "review"}
 
 def _calculate_fee_amounts(reward: str, fee_pct: Decimal, burn_pct: Decimal) -> Tuple[str, str]:
     try:
@@ -2624,7 +2638,13 @@ async def _read_status(job_id: int) -> StatusResponse:
             assignee = None
     reward_str = _format_reward(reward) if reward is not None else None
     state_label = _STATE_MAP.get(state_code, "unknown")
-    state_output = "disputed" if state_label == "disputed" else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown"
+    state_output = (
+        "disputed"
+        if state_label == "disputed"
+        else state_label
+        if state_label in {"open", "assigned", "review", "completed", "finalized"}
+        else "unknown"
+    )
     response = StatusResponse(
         jobId=job_id,
         state=state_output,

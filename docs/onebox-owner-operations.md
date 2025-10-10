@@ -58,6 +58,8 @@ curl -sS \
 
 The simulator snapshots policy metadata and timestamps so the final receipt can prove which configuration gates were active when you approved the run.
 
+When finalising, the simulator now queries the registry directly whenever cached status is stale.  Jobs still in `open`, `assigned`, or `review` states trigger the `JOB_NOT_READY_FOR_FINALIZE` blocker so you can chase the assignee before any gas is spent.【F:routes/onebox.py†L1993-L2009】【F:routes/onebox.py†L2515】
+
 ### 2.3 Execute
 
 ```bash
