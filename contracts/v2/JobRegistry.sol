@@ -53,6 +53,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error InvalidTreasury();
     error InvalidAckModule();
     error NotGovernanceOrPauser();
+    error NotGovernanceOrPauserManager();
     error NotAcknowledger();
     error ZeroAcknowledgerAddress();
     error StakeOverflow();
@@ -455,6 +456,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     IIdentityRegistry public identityRegistry;
     address public treasury;
     address public pauser;
+    address public pauserManager;
 
 
     /// @notice Addresses allowed to acknowledge the tax policy for others.
@@ -473,8 +475,16 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         emit PauserUpdated(_pauser);
     }
 
-    function setPauser(address _pauser) external onlyGovernance {
+    function setPauser(address _pauser) external {
+        if (msg.sender != address(governance) && msg.sender != pauserManager) {
+            revert NotGovernanceOrPauserManager();
+        }
         _setPauser(_pauser);
+    }
+
+    function setPauserManager(address manager) external onlyGovernance {
+        pauserManager = manager;
+        emit PauserManagerUpdated(manager);
     }
 
     function _setIdentityRegistry(IIdentityRegistry registry) internal {
@@ -761,6 +771,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event IdentityRegistryUpdated(address identityRegistry);
     event ValidatorRewardPctUpdated(uint256 pct);
     event PauserUpdated(address indexed pauser);
+    event PauserManagerUpdated(address indexed pauserManager);
     /// @notice Emitted when the tax policy reference or version changes.
     /// @param policy Address of the TaxPolicy contract.
     /// @param version Incrementing version participants must acknowledge.
@@ -815,6 +826,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event ConfigurationApplied(
         address indexed caller,
         bool pauserUpdated,
+        bool pauserManagerUpdated,
         bool modulesUpdated,
         bool identityRegistryUpdated,
         bool disputeModuleUpdated,
@@ -856,6 +868,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     struct ConfigUpdate {
         bool setPauser;
         address pauser;
+        bool setPauserManager;
+        address pauserManager;
         bool setModuleBundle;
         ModuleBundle modules;
         bool setIdentityRegistry;
@@ -1363,6 +1377,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
         bool pauserUpdated;
         bool modulesUpdated;
+        bool pauserManagerUpdated;
         bool identityRegistryUpdated;
         bool disputeModuleUpdated;
         bool validationModuleUpdated;
@@ -1393,6 +1408,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (config.setPauser) {
             _setPauser(config.pauser);
             pauserUpdated = true;
+        }
+
+        if (config.setPauserManager) {
+            pauserManager = config.pauserManager;
+            emit PauserManagerUpdated(config.pauserManager);
+            pauserManagerUpdated = true;
         }
 
         if (config.setModuleBundle) {
@@ -1563,6 +1584,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         emit ConfigurationApplied(
             msg.sender,
             pauserUpdated,
+            pauserManagerUpdated,
             modulesUpdated,
             identityRegistryUpdated,
             disputeModuleUpdated,

@@ -391,6 +391,8 @@ describe('PlatformRegistry', function () {
           minPlatformStake: newMinStake,
           setPauser: true,
           pauser: pauser.address,
+          setPauserManager: true,
+          pauserManager: owner.address,
         },
         registrarUpdates,
         blacklistUpdates
@@ -413,12 +415,13 @@ describe('PlatformRegistry', function () {
       .and.to.emit(registry, 'ModulesUpdated')
       .withArgs(newStakeManager, newReputationEngine)
       .and.to.emit(registry, 'ConfigurationApplied')
-      .withArgs(owner.address, true, true, true, true, 1, 2);
+      .withArgs(owner.address, true, true, true, true, true, 1, 2);
 
     expect(await registry.stakeManager()).to.equal(newStakeManager);
     expect(await registry.reputationEngine()).to.equal(newReputationEngine);
     expect(await registry.minPlatformStake()).to.equal(newMinStake);
     expect(await registry.pauser()).to.equal(pauser.address);
+    expect(await registry.pauserManager()).to.equal(owner.address);
     expect(await registry.registrars(registrar.address)).to.equal(true);
     expect(await registry.blacklist(platform.address)).to.equal(false);
     expect(await registry.blacklist(sybil.address)).to.equal(true);

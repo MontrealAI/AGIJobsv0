@@ -53,6 +53,7 @@ error BurnEvidenceIncomplete();
 error AlreadyTallied();
 error RevealPending();
 error UnauthorizedCaller();
+error NotOwnerOrPauserManager();
 error ValidatorBanned();
 error InvalidPenalty();
 error InvalidForceFinalizeGrace();
@@ -81,6 +82,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     IIdentityRegistry public identityRegistry;
     IRandaoCoordinator public randaoCoordinator;
     address public pauser;
+    address public pauserManager;
 
     // timing configuration
     uint256 public commitWindow;
@@ -228,6 +230,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorAuthCacheVersionBumped(uint256 version);
     event SelectionReset(uint256 indexed jobId);
     event PauserUpdated(address indexed pauser);
+    event PauserManagerUpdated(address indexed pauserManager);
     event NonRevealPenaltyUpdated(uint256 penaltyBps, uint256 banBlocks);
     event EarlyFinalizeDelayUpdated(uint256 delay);
     event ForceFinalizeGraceUpdated(uint256 grace);
@@ -251,9 +254,17 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         _;
     }
 
-    function setPauser(address _pauser) external onlyOwner {
+    function setPauser(address _pauser) external {
+        if (msg.sender != owner() && msg.sender != pauserManager) {
+            revert NotOwnerOrPauserManager();
+        }
         pauser = _pauser;
         emit PauserUpdated(_pauser);
+    }
+
+    function setPauserManager(address manager) external onlyOwner {
+        pauserManager = manager;
+        emit PauserManagerUpdated(manager);
     }
 
     /// @notice Update non-reveal penalty parameters.

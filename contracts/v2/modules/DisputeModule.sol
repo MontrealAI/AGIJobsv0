@@ -49,6 +49,8 @@ contract DisputeModule is Governable, Pausable {
 
     /// @notice Optional pauser delegate authorised by governance.
     address public pauser;
+    /// @notice Delegate allowed to manage pause rights on behalf of governance.
+    address public pauserManager;
 
     /// @notice Tax policy accepted by employers, agents, and validators.
     ITaxPolicy public taxPolicy;
@@ -94,6 +96,7 @@ contract DisputeModule is Governable, Pausable {
         address indexed employer
     );
     event PauserUpdated(address indexed pauser);
+    event PauserManagerUpdated(address indexed pauserManager);
     event ModeratorUpdated(address indexed moderator, uint256 weight);
     event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
@@ -115,6 +118,7 @@ contract DisputeModule is Governable, Pausable {
     error NoModeratorsConfigured();
     error UnauthorizedResolver(address caller);
     error NotGovernanceOrPauser();
+    error NotGovernanceOrPauserManager();
 
     /// @param _jobRegistry Address of the JobRegistry contract.
     /// @param _disputeFee Initial dispute fee in token units (18 decimals); defaults to TOKEN_SCALE.
@@ -252,9 +256,17 @@ contract DisputeModule is Governable, Pausable {
     }
 
     /// @notice Sets or clears an address permitted to pause dispute processing.
-    function setPauser(address _pauser) external onlyGovernance {
+    function setPauser(address _pauser) external {
+        if (msg.sender != address(governance) && msg.sender != pauserManager) {
+            revert NotGovernanceOrPauserManager();
+        }
         pauser = _pauser;
         emit PauserUpdated(_pauser);
+    }
+
+    function setPauserManager(address manager) external onlyGovernance {
+        pauserManager = manager;
+        emit PauserManagerUpdated(manager);
     }
 
     function _checkGovernanceOrPauser() internal view {
