@@ -10,8 +10,10 @@ pragma solidity ^0.8.25;
 contract ConfigurableModuleMock {
     uint256 private _value;
     address public lastCaller;
+    uint256 public lastPaymentReceived;
 
     error ValueMismatch(uint256 expected, uint256 actual);
+    error PaymentMismatch(uint256 expected, uint256 supplied);
 
     event ValueChanged(uint256 previousValue, uint256 newValue, address caller);
 
@@ -24,6 +26,18 @@ contract ConfigurableModuleMock {
             revert ValueMismatch(expectedCurrent, _value);
         }
 
+        _setValue(newValue);
+    }
+
+    function setValueWithPayment(uint256 newValue, uint256 requiredPayment)
+        external
+        payable
+    {
+        if (msg.value != requiredPayment) {
+            revert PaymentMismatch(requiredPayment, msg.value);
+        }
+
+        lastPaymentReceived = msg.value;
         _setValue(newValue);
     }
 

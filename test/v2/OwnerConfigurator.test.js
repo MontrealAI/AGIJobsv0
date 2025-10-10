@@ -140,6 +140,111 @@ describe('OwnerConfigurator', function () {
     expect(await target.lastCaller()).to.equal(await configurator.getAddress());
   });
 
+  it('forwards payable configuration calls with exact value accounting', async function () {
+    const moduleAddress = await target.getAddress();
+    const newValue = 777n;
+    const fee = 5n;
+    const oldValueBytes = abiCoder.encode(['uint256'], [0n]);
+    const newValueBytes = abiCoder.encode(['uint256'], [newValue]);
+
+    await expect(
+      configurator
+        .connect(owner)
+        .configureWithValue(
+          moduleAddress,
+          target.interface.encodeFunctionData('setValueWithPayment', [newValue, fee]),
+          MODULE_KEY,
+          PARAMETER_KEY,
+          oldValueBytes,
+          newValueBytes,
+        ),
+    )
+      .to.be.revertedWithCustomError(target, 'PaymentMismatch')
+      .withArgs(fee, 0n);
+
+    const tx = configurator.connect(owner).configureWithValue(
+      moduleAddress,
+      target.interface.encodeFunctionData('setValueWithPayment', [newValue, fee]),
+      MODULE_KEY,
+      PARAMETER_KEY,
+      oldValueBytes,
+      newValueBytes,
+      { value: fee },
+    );
+
+    await expect(tx)
+      .to.changeEtherBalances([target, configurator], [fee, 0n]);
+
+    await expect(tx)
+      .to.emit(configurator, 'ParameterUpdated')
+      .withArgs(
+        MODULE_KEY,
+        PARAMETER_KEY,
+        oldValueBytes,
+        newValueBytes,
+        owner.address,
+      );
+
+    expect(await target.currentValue()).to.equal(newValue);
+    expect(await target.lastPaymentReceived()).to.equal(fee);
+  });
+
+  it('processes payable batch operations and validates the aggregate msg.value', async function () {
+    const moduleAddress = await target.getAddress();
+    const firstValue = 41n;
+    const secondValue = 42n;
+    const firstFee = 3n;
+    const secondFee = 7n;
+
+    const firstCall = {
+      target: moduleAddress,
+      callData: target.interface.encodeFunctionData('setValueWithPayment', [firstValue, firstFee]),
+      moduleKey: MODULE_KEY,
+      parameterKey: PARAMETER_KEY,
+      oldValue: abiCoder.encode(['uint256'], [0n]),
+      newValue: abiCoder.encode(['uint256'], [firstValue]),
+      value: firstFee,
+    };
+
+    const secondCall = {
+      target: moduleAddress,
+      callData: target.interface.encodeFunctionData('setValueWithPayment', [secondValue, secondFee]),
+      moduleKey: MODULE_KEY,
+      parameterKey: PARAMETER_KEY,
+      oldValue: abiCoder.encode(['uint256'], [firstValue]),
+      newValue: abiCoder.encode(['uint256'], [secondValue]),
+      value: secondFee,
+    };
+
+    await expect(
+      configurator
+        .connect(owner)
+        .configureBatchWithValue([firstCall, secondCall]),
+    ).to.be.revertedWithCustomError(
+      configurator,
+      'OwnerConfigurator__ValueMismatch',
+    );
+
+    const tx = configurator
+      .connect(owner)
+      .configureBatchWithValue([firstCall, secondCall], {
+        value: firstFee + secondFee,
+      });
+
+    await expect(tx)
+      .to.changeEtherBalances([target, configurator], [firstFee + secondFee, 0n]);
+
+    const batchResult = await configurator
+      .connect(owner)
+      .configureBatchWithValue.staticCall([firstCall, secondCall], {
+        value: firstFee + secondFee,
+      });
+
+    expect(batchResult).to.deep.equal(['0x', '0x']);
+    expect(await target.currentValue()).to.equal(secondValue);
+    expect(await target.lastPaymentReceived()).to.equal(secondFee);
+  });
+
   it('reverts a batch when any call targets the zero address', async function () {
     const callData = target.interface.encodeFunctionData('setValue', [1n]);
 

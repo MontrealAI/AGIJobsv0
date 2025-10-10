@@ -12,14 +12,18 @@ flowchart TD
 
 ## Core tool: `OwnerConfigurator`
 
-The [`OwnerConfigurator`](../contracts/v2/admin/OwnerConfigurator.sol) contract exposes two methods:
+The [`OwnerConfigurator`](../contracts/v2/admin/OwnerConfigurator.sol) contract exposes four execution paths:
 
 | Method | Purpose | When to use |
 | --- | --- | --- |
-| `configure` | Execute a single setter on a target module. | Quick one-off parameter update. |
-| `configureBatch` | Execute multiple setters in sequence. | Release workflows or multi-module rollouts. |
+| `configure` | Execute a single setter on a target module without forwarding ETH. | Quick one-off parameter update. |
+| `configureWithValue` | Execute a single setter while forwarding an exact ETH amount to the target. | Payable setters (e.g., escrow float top-ups, prepaid gas buffers). |
+| `configureBatch` | Execute multiple setters in sequence without forwarding ETH. | Release workflows or multi-module rollouts. |
+| `configureBatchWithValue` | Execute multiple payable setters with per-call ETH accounting. | Coordinated maintenance where several modules require funding in the same change window. |
 
-Both methods require the caller to be the configured owner (Safe or EOA). Ownership can be rotated using the inherited `transferOwnership` flow, giving the platform operator full control.
+All methods require the caller to be the configured owner (Safe or EOA). Ownership can be rotated using the inherited `transferOwnership` flow, giving the platform operator full control.
+
+When using the payable variants, make sure the Safe or EOA supplies the sum of all forwarded amounts as `msg.value`. The configurator enforces exact accounting via the `OwnerConfigurator__ValueMismatch` error, preventing stray ETH from remaining on the facade.
 
 ## Preparing a change
 
