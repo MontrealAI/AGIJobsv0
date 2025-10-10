@@ -21,13 +21,35 @@ jobs:
       TERM: xterm
       CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            artifactcache.actions.githubusercontent.com:443
+            auth.docker.io:443
+            binaries.soliditylang.org:443
+            codeload.github.com:443
+            download.docker.com:443
+            foundry.paradigm.xyz:443
+            ghcr.io:443
+            github.com:443
+            nodejs.org:443
+            objects.githubusercontent.com:443
+            pkg-containers.githubusercontent.com:443
+            production.cloudflare.docker.com:443
+            raw.githubusercontent.com:443
+            registry-1.docker.io:443
+            registry.npmjs.org:443
+            storage.googleapis.com:443
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -39,7 +61,7 @@ jobs:
         run: npx tsc -p apps/orchestrator/tsconfig.json
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
           version: 'v1.4.0'
 
@@ -85,7 +107,7 @@ jobs:
 
       - name: Upload e2e logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: e2e-logs
           path: |
