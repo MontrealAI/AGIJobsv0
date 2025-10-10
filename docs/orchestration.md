@@ -125,5 +125,18 @@ ready.
    `docs/system-pause.md`.  When paused, execute calls will bubble up the revert reason and the simulator will block on policy checks,
    preventing new funds from moving until the owner re-enables the system.【F:routes/onebox.py†L2136-L2215】
 
+## Local validation commands
+
+Run these commands before opening a pull request to mirror the green CI expectations:
+
+```bash
+# Planner and simulator unit suite (disable third-party auto-loaded plugins to avoid eth-typing conflicts)
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest test/orchestrator/test_planner.py
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest test/orchestrator/test_simulator.py
+```
+
+These pytest invocations exercise the full planner→simulator pipeline, covering policy enforcement, plan hash integrity, and
+receipt metadata propagation.【6b0191†L1-L9】【27dd71†L1-L8】
+
 Keeping this pipeline healthy ensures AGI Jobs v0 remains deployable at scale, with the owner retaining complete control over parameters,
 observability, and execution authority.
