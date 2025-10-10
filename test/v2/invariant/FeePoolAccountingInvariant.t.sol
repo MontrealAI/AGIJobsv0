@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import "forge-std/StdInvariant.sol";
 import "forge-std/Test.sol";
 import "forge-std/StdCheats.sol";
+import "forge-std/Base.sol";
 
 import {FeePool} from "../../../contracts/v2/FeePool.sol";
 import {MockStakeManager} from "../../../contracts/legacy/MockV2.sol";
@@ -12,7 +13,7 @@ import {ITaxPolicy} from "../../../contracts/v2/interfaces/ITaxPolicy.sol";
 import {IStakeManager} from "../../../contracts/v2/interfaces/IStakeManager.sol";
 import {AGIALPHA} from "../../../contracts/v2/Constants.sol";
 
-contract FeePoolInvariantHandler is StdCheats {
+contract FeePoolInvariantHandler is StdCheats, TestBase {
     FeePool public immutable feePool;
     MockStakeManager public immutable stakeManager;
     AGIALPHAToken public immutable token;
