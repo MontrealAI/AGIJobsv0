@@ -107,10 +107,14 @@ contract FeePoolInvariantHandler is StdCheats {
         uint256 amount = bound(uint256(rawAmount), 1, available);
         address recipient;
         if (toIndex % (stakers.length + 1) == stakers.length) {
+            if (treasury == address(0)) {
+                return;
+            }
             recipient = treasury;
         } else {
             recipient = stakers[toIndex % stakers.length];
         }
+        if (recipient == address(0)) return;
         feePool.reward(recipient, amount);
         _afterAction();
     }
