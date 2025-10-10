@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import parseDuration from './utils/parseDuration';
 
 let ethersLib: typeof import('ethers') | undefined;
 
@@ -181,15 +182,6 @@ export async function main() {
   const scale = BigInt(10) ** BigInt(decimals);
 
   const feePct = normalisePercentage(process.env.FEE_PCT, 'FEE_PCT', '0.02');
-  const parseDurationModule = await import('parse-duration');
-  const parseDuration: ParseDurationFn =
-    typeof parseDurationModule === 'function'
-      ? parseDurationModule
-      : parseDurationModule.default;
-  if (typeof parseDuration !== 'function') {
-    throw new Error('Failed to load parse-duration');
-  }
-
   const burnPct = normalisePercentage(
     process.env.BURN_PCT,
     'BURN_PCT',

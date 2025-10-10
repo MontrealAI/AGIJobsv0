@@ -5,7 +5,7 @@
     "emitDeclarationOnly": false,
     "declaration": false,
     "declarationMap": false,
-    "module": "es2020",
+    "module": "commonjs",
     "outDir": "./dist-test",
     "rootDir": "."
   },

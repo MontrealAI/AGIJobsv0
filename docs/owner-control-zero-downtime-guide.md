@@ -45,7 +45,7 @@ flowchart LR
 | Status | Step | Command / Artefact | Notes |
 | ------ | ---- | ------------------ | ----- |
 | [ ] | Sync repository | `git pull --rebase` | Ensures local configs match the audited baseline. |
-| [ ] | Select Node version | `nvm use` | Loads the Node 20.x toolchain defined in `.nvmrc`. |
+| [ ] | Select Node version | `nvm use` | Loads the Node 20.18.1 toolchain defined in `.nvmrc`. |
 | [ ] | Install dependencies | `npm ci` | Guarantees deterministic scripts. |
 | [ ] | Export RPC + signer | `source .env && for var in RPC_URL OWNER_PRIVATE_KEY; do [ -n "${!var}" ] || echo "Missing $var"; done` | Confirms secrets are set without dumping values. |
 | [ ] | Capture current surface | `npm run owner:surface -- --network <network> --format markdown --out reports/<network>-pre.md` | Establishes a tamper-evident baseline. |
