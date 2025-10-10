@@ -18,22 +18,22 @@ flowchart TD
 
 ## 2. Preflight Checklist
 
-| Item                | Command / Action                                 | Notes                                                    |
-| ------------------- | ----------------------------------------------- | -------------------------------------------------------- |
-| Node.js 20.x        | `node -v`                                      | CI and scripts expect ≥ 20.12.0                          |
-| NPM clean install   | `npm ci`                                       | Must be run from repo root                               |
-| Automated preflight | `npm run migrate:preflight -- --network mainnet` | Runs 40+ deterministic checks (use `--json` for export)  |
-| Environment secrets | `.env`                                         | See §3.1 for template                                    |
-| RPC connectivity    | `curl $MAINNET_RPC_URL`                        | Ensure 200 OK JSON-RPC response                          |
-| Etherscan API       | `ETHERSCAN_API_KEY`                            | Needed for automatic verification                        |
-| Address book        | `docs/deployment-addresses.json`               | Populate with final module addresses post-deploy         |
-| Governance signer   | multisig / timelock                            | Confirm hardware wallet + Safe access                    |
+| Item                | Command / Action                                   | Notes |
+| ------------------- | -------------------------------------------------- | ----- |
+| Node.js 20.18.1     | `node -v`                                          | Matches the pinned CI/runtime version |
+| NPM clean install   | `npm ci`                                           | Must be run from repo root |
+| Automated preflight | `npm run migrate:preflight -- --network mainnet`   | Runs 40+ deterministic checks (use `--json` for export) |
+| Environment secrets | `.env`                                             | See §3.1 for template |
+| RPC connectivity    | `curl $MAINNET_RPC_URL`                            | Ensure 200 OK JSON-RPC response |
+| Etherscan API       | `ETHERSCAN_API_KEY`                                | Needed for automatic verification |
+| Address book        | `docs/deployment-addresses.json`                   | Populate with final module addresses post-deploy |
+| Governance signer   | multisig / timelock                                | Confirm hardware wallet + Safe access |
 
 ```mermaid
 mindmap
   root((Launch Readiness))
     Tooling
-      Node 20.x
+      Node 20.18.1
       NPM ci
       Hardhat cache cleaned
     Secrets

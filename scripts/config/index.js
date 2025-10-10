@@ -2,25 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { ethers } = require('ethers');
 const namehash = require('eth-ens-namehash');
-const parseDurationImport = require('parse-duration');
-const parseDuration =
-  typeof parseDurationImport === 'function'
-    ? parseDurationImport
-    : parseDurationImport && typeof parseDurationImport.default === 'function'
-    ? parseDurationImport.default
-    : () => {
-        throw new Error(
-          'parse-duration module did not export a callable default'
-        );
-      };
-
-if (
-  parseDurationImport &&
-  typeof parseDurationImport === 'object' &&
-  parseDurationImport !== parseDuration
-) {
-  Object.assign(parseDuration, parseDurationImport);
-}
+const parseDuration = require('../utils/parseDuration.js');
 
 const CONFIG_DIR = path.join(__dirname, '..', '..', 'config');
 const DEPLOYMENT_CONFIG_DIR = path.join(

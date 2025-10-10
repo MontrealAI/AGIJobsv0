@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-import parseDuration from 'parse-duration';
+import parseDuration from '../utils/parseDuration';
 import { ethers } from 'hardhat';
 
 import { AGIALPHA_DECIMALS } from '../constants';
