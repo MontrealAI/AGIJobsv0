@@ -1702,6 +1702,24 @@ class StatusReadTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(status.deadline, 1_800_000_000)
         self.assertEqual(status.assignee, Web3.to_checksum_address(agent))
 
+    async def test_read_status_review_state(self) -> None:
+        job = {
+            "agent": "0x00000000000000000000000000000000000000bb",
+            "reward": 4 * 10**18,
+            "packedMetadata": _encode_metadata(3, deadline=1_850_000_000),
+        }
+
+        with mock.patch("routes.onebox.registry") as registry_mock, mock.patch(
+            "routes.onebox.AGIALPHA_TOKEN", "0xToken"
+        ):
+            registry_mock.functions.jobs.return_value.call.return_value = job
+            status = await _read_status(321)
+
+        self.assertEqual(status.state, "review")
+        self.assertEqual(status.reward, "4")
+        self.assertEqual(status.token, "0xToken")
+        self.assertEqual(status.deadline, 1_850_000_000)
+
     async def test_read_status_finalized_state(self) -> None:
         job = {
             "agent": "0x00000000000000000000000000000000000000ff",

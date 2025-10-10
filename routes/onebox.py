@@ -349,7 +349,7 @@ class ExecuteResponse(BaseModel):
 
 class StatusResponse(BaseModel):
     jobId: int
-    state: Literal["open", "assigned", "completed", "finalized", "unknown", "disputed"] = "unknown"
+    state: Literal["open", "assigned", "review", "completed", "finalized", "unknown", "disputed"] = "unknown"
     reward: Optional[str] = None
     token: Optional[str] = None
     deadline: Optional[int] = None
@@ -2464,7 +2464,13 @@ async def status(request: Request, jobId: int):
             assignee = None
     reward_str = _format_reward(reward) if reward is not None else None
     state_label = _STATE_MAP.get(state_code, "unknown")
-    state_output = "disputed" if state_label == "disputed" else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown"
+    state_output = (
+        "disputed"
+        if state_label == "disputed"
+        else state_label
+        if state_label in {"open", "assigned", "review", "completed", "finalized"}
+        else "unknown"
+    )
 
     response = StatusResponse(
         jobId=int(job_id),
@@ -2632,7 +2638,13 @@ async def _read_status(job_id: int) -> StatusResponse:
             assignee = None
     reward_str = _format_reward(reward) if reward is not None else None
     state_label = _STATE_MAP.get(state_code, "unknown")
-    state_output = "disputed" if state_label == "disputed" else state_label if state_label in {"open", "assigned", "completed", "finalized"} else "unknown"
+    state_output = (
+        "disputed"
+        if state_label == "disputed"
+        else state_label
+        if state_label in {"open", "assigned", "review", "completed", "finalized"}
+        else "unknown"
+    )
     response = StatusResponse(
         jobId=job_id,
         state=state_output,
