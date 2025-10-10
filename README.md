@@ -1010,6 +1010,7 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [Institutional deployment blueprint (non-technical owners)](docs/production/v2-institutional-deployment-blueprint.md)
 - [Production deployment handbook](docs/production-deployment-handbook.md)
 - [Operations guide for contract owners](docs/operations_guide.md)
+- [One-Box owner operations guide](docs/onebox-owner-operations.md)
 - [Documentation maintenance playbook](docs/documentation-maintenance-playbook.md)
 - [API reference and SDK snippets](docs/api-reference.md)
 - [Job registry configuration guide](docs/job-registry-configuration.md)
