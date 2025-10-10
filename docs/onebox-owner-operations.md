@@ -12,6 +12,7 @@ This guide distills the controls a contract owner needs to keep the AGI Jobs one
 ### 1.2 Organisational policy guardrails
 
 - **Budget and deadline caps:** Edit `storage/org-policies.json` (or set `ORG_MAX_BUDGET_WEI` / `ORG_MAX_DEADLINE_DAYS` for global defaults).  The shared `OrgPolicyStore` loads this file and persists updates from `_get_org_policy_store().update(...)`, ensuring every simulate/execute call applies the latest caps before transactions are prepared.
+- **CLI helper:** Run `python tools/org_policy_admin.py` for a guided interface when you need to list, update, or delete tenant entries.  The `set` sub-command accepts human-readable token amounts (for example `--max-budget 250 --budget-unit token`) and writes back the correct wei values together with an ISO timestamp so auditors can trace when policies changed.【F:tools/org_policy_admin.py†L1-L316】【F:test/tools/test_org_policy_admin.py†L1-L111】
 - **Tool allow-lists:** Include an `"allowedTools"` array in the same policy file to restrict which planner or runner tools may execute for a tenant.  Leaving the list empty allows all tools; specifying entries enforces prefix or exact matches across the pipeline.
 
 ### 1.3 Access control & signing
