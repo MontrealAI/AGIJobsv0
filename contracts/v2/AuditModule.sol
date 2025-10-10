@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IAuditModule} from "./interfaces/IAuditModule.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 
@@ -9,7 +10,7 @@ import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 /// @notice Randomly schedules post-completion audits and applies penalties for failed reviews.
 /// @dev The module keeps the owner tax neutral and stores only lightweight metadata
 ///      (agent, hashes, timestamps) needed to reconstruct an audit trail off-chain.
-contract AuditModule is IAuditModule, Ownable {
+contract AuditModule is IAuditModule, Ownable, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
 
@@ -98,7 +99,7 @@ contract AuditModule is IAuditModule, Ownable {
         address agent,
         bool success,
         bytes32 resultHash
-    ) external override {
+    ) external override whenNotPaused {
         if (msg.sender != jobRegistry) revert OnlyJobRegistry();
         if (!success || agent == address(0) || auditProbabilityBps == 0) {
             return;
@@ -133,7 +134,7 @@ contract AuditModule is IAuditModule, Ownable {
         uint256 jobId,
         bool passed,
         string calldata details
-    ) external {
+    ) external whenNotPaused {
         if (!auditors[msg.sender]) revert UnauthorizedAuditor();
         AuditRecord storage record = audits[jobId];
         if (record.agent == address(0)) revert AuditNotScheduled();
@@ -148,5 +149,15 @@ contract AuditModule is IAuditModule, Ownable {
             reputationEngine.subtract(record.agent, auditPenalty);
             emit AuditPenaltyApplied(jobId, record.agent, auditPenalty);
         }
+    }
+
+    /// @notice Halt audit scheduling and processing during incidents.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Resume audit scheduling and processing after incidents are resolved.
+    function unpause() external onlyOwner {
+        _unpause();
     }
 }

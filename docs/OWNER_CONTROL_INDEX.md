@@ -319,6 +319,30 @@ Manifest: `config/job-registry.json`. CLI: `npx hardhat run scripts/v2/updateAll
     5. Press `Write` and sign the transaction; capture the transaction hash for the change record.
     6. Run `npm run owner:plan -- --network <network>` and `npm run owner:verify-control -- --network <network>` to confirm the state update.
 
+* `pause` — ABI `pause()`
+  - **Emits:** Paused
+  - **Purpose:** Temporarily halts audit scheduling and processing during incidents.
+  - **Parameters:** None
+  - **Etherscan steps:**
+    1. Navigate to the contract's page on the target network's Etherscan instance.
+    2. Select the `Write Contract` tab and press `Connect` to use the authorised signer.
+    3. Expand `pause`.
+    4. No parameters to supply; confirm the incident context in the change ticket.
+    5. Press `Write` and sign the transaction; capture the transaction hash for the change record.
+    6. Run `npm run owner:plan -- --network <network>` and `npm run owner:verify-control -- --network <network>` to confirm the state update.
+
+* `unpause` — ABI `unpause()`
+  - **Emits:** Unpaused
+  - **Purpose:** Resumes audit scheduling and processing once the incident is resolved.
+  - **Parameters:** None
+  - **Etherscan steps:**
+    1. Navigate to the contract's page on the target network's Etherscan instance.
+    2. Select the `Write Contract` tab and press `Connect` to use the authorised signer.
+    3. Expand `unpause`.
+    4. No parameters to supply; confirm the recovery context in the change ticket.
+    5. Press `Write` and sign the transaction; capture the transaction hash for the change record.
+    6. Run `npm run owner:plan -- --network <network>` and `npm run owner:verify-control -- --network <network>` to confirm the state update.
+
 
 ### CertificateNFT
 
