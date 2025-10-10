@@ -473,4 +473,218 @@ describe('SystemPause', function () {
     expect(await reputation.pauser()).to.equal(pauseAddress);
     expect(await committee.pauser()).to.equal(pauseAddress);
   });
+
+  it('forwards governance calls to managed modules', async function () {
+    const [owner] = await ethers.getSigners();
+    const {
+      pause,
+      stake,
+      registry,
+      validation,
+      dispute,
+      reputation,
+      platformRegistry,
+      feePool,
+      committee,
+      addresses,
+    } = await deploySystem(owner.address);
+
+    const pauseAddress = await pause.getAddress();
+
+    await transferModulesToPause(
+      owner,
+      {
+        stake,
+        registry,
+        validation,
+        dispute,
+        platformRegistry,
+        feePool,
+        reputation,
+        committee,
+      },
+      pauseAddress
+    );
+
+    await pause
+      .connect(owner)
+      .setModules(
+        addresses.jobRegistry,
+        addresses.stake,
+        addresses.validationModule,
+        addresses.disputeModule,
+        addresses.platformRegistry,
+        addresses.feePool,
+        addresses.reputationEngine,
+        addresses.arbitratorCommittee
+      );
+
+    const newMinStake = ethers.parseUnits('3', 18);
+    const callData = stake.interface.encodeFunctionData('setMinStake', [newMinStake]);
+    const selector = stake.interface.getFunction('setMinStake').selector;
+
+    await expect(
+      pause.connect(owner).executeGovernanceCall(addresses.stake, callData)
+    )
+      .to.emit(pause, 'GovernanceCallExecuted')
+      .withArgs(addresses.stake, selector, '0x');
+
+    expect(await stake.minStake()).to.equal(newMinStake);
+  });
+
+  it('reverts when forwarding to an unknown module', async function () {
+    const [owner] = await ethers.getSigners();
+    const {
+      pause,
+      stake,
+      registry,
+      validation,
+      dispute,
+      reputation,
+      platformRegistry,
+      feePool,
+      committee,
+      addresses,
+    } = await deploySystem(owner.address);
+
+    const pauseAddress = await pause.getAddress();
+
+    await transferModulesToPause(
+      owner,
+      {
+        stake,
+        registry,
+        validation,
+        dispute,
+        platformRegistry,
+        feePool,
+        reputation,
+        committee,
+      },
+      pauseAddress
+    );
+
+    await pause
+      .connect(owner)
+      .setModules(
+        addresses.jobRegistry,
+        addresses.stake,
+        addresses.validationModule,
+        addresses.disputeModule,
+        addresses.platformRegistry,
+        addresses.feePool,
+        addresses.reputationEngine,
+        addresses.arbitratorCommittee
+      );
+
+    const callData = stake.interface.encodeFunctionData('setMinStake', [ethers.parseUnits('2', 18)]);
+
+    await expect(
+      pause.connect(owner).executeGovernanceCall(owner.address, callData)
+    )
+      .to.be.revertedWithCustomError(pause, 'UnknownGovernanceTarget')
+      .withArgs(owner.address);
+  });
+
+  it('bubbles revert reasons from managed modules', async function () {
+    const [owner] = await ethers.getSigners();
+    const {
+      pause,
+      stake,
+      registry,
+      validation,
+      dispute,
+      reputation,
+      platformRegistry,
+      feePool,
+      committee,
+      addresses,
+    } = await deploySystem(owner.address);
+
+    const pauseAddress = await pause.getAddress();
+
+    await transferModulesToPause(
+      owner,
+      {
+        stake,
+        registry,
+        validation,
+        dispute,
+        platformRegistry,
+        feePool,
+        reputation,
+        committee,
+      },
+      pauseAddress
+    );
+
+    await pause
+      .connect(owner)
+      .setModules(
+        addresses.jobRegistry,
+        addresses.stake,
+        addresses.validationModule,
+        addresses.disputeModule,
+        addresses.platformRegistry,
+        addresses.feePool,
+        addresses.reputationEngine,
+        addresses.arbitratorCommittee
+      );
+
+    const invalidCall = stake.interface.encodeFunctionData('setMinStake', [0n]);
+
+    await expect(
+      pause.connect(owner).executeGovernanceCall(addresses.stake, invalidCall)
+    ).to.be.revertedWithCustomError(stake, 'InvalidMinStake');
+  });
+
+  it('rejects governance calls without a function selector', async function () {
+    const [owner] = await ethers.getSigners();
+    const {
+      pause,
+      stake,
+      registry,
+      validation,
+      dispute,
+      reputation,
+      platformRegistry,
+      feePool,
+      committee,
+      addresses,
+    } = await deploySystem(owner.address);
+
+    const pauseAddress = await pause.getAddress();
+
+    await transferModulesToPause(
+      owner,
+      {
+        stake,
+        registry,
+        validation,
+        dispute,
+        platformRegistry,
+        feePool,
+        reputation,
+        committee,
+      },
+      pauseAddress
+    );
+
+    await pause
+      .connect(owner)
+      .setModules(
+        addresses.jobRegistry,
+        addresses.stake,
+        addresses.validationModule,
+        addresses.disputeModule,
+        addresses.platformRegistry,
+        addresses.feePool,
+        addresses.reputationEngine,
+        addresses.arbitratorCommittee
+      );
+
+    await expect(
+      pause.connect(owner).executeGovernanceCall(addresses.stake, '0x')
+    ).to.be.revertedWithCustomError(pause, 'MissingSelector');
+  });
 });

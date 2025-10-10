@@ -16,6 +16,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// @notice Helper contract allowing governance to pause or unpause all core modules.
 /// @dev Uses ReentrancyGuard to prevent reentrant pause/unpause cascades.
 contract SystemPause is Governable, ReentrancyGuard {
+
     JobRegistry public jobRegistry;
     StakeManager public stakeManager;
     ValidationModule public validationModule;
@@ -39,6 +40,9 @@ contract SystemPause is Governable, ReentrancyGuard {
     error ModuleNotOwned(address module, address owner);
     error InvalidPauser(address pauser);
     error PauserManagerNotDelegated(address module);
+    error UnknownGovernanceTarget(address target);
+    error GovernanceCallFailed(address target, bytes data);
+    error MissingSelector();
 
     event ModulesUpdated(
         address jobRegistry,
@@ -58,6 +62,12 @@ contract SystemPause is Governable, ReentrancyGuard {
         ValidationModule.FailoverAction action,
         uint64 extension,
         string reason
+    );
+
+    event GovernanceCallExecuted(
+        address indexed target,
+        bytes4 indexed selector,
+        bytes result
     );
 
     constructor(
@@ -222,6 +232,45 @@ contract SystemPause is Governable, ReentrancyGuard {
         _setPausers(pauser);
     }
 
+    /// @notice Forward a governance-authorised call to a managed module.
+    /// @param target One of the core modules owned by this contract.
+    /// @param data ABI-encoded function call for the module.
+    /// @return result Raw returndata from the call for off-chain inspection.
+    function executeGovernanceCall(address target, bytes calldata data)
+        external
+        onlyGovernance
+        nonReentrant
+        returns (bytes memory result)
+    {
+        if (!_isKnownModule(target)) {
+            revert UnknownGovernanceTarget(target);
+        }
+
+        if (data.length < 4) {
+            revert MissingSelector();
+        }
+
+        (bool success, bytes memory response) = target.call(data);
+        if (!success) {
+            if (response.length > 0) {
+                assembly {
+                    revert(add(response, 0x20), mload(response))
+                }
+            }
+            revert GovernanceCallFailed(target, data);
+        }
+
+        uint32 rawSelector =
+            (uint32(uint8(data[0])) << 24) |
+            (uint32(uint8(data[1])) << 16) |
+            (uint32(uint8(data[2])) << 8) |
+            uint32(uint8(data[3]));
+        bytes4 selector = bytes4(rawSelector);
+
+        emit GovernanceCallExecuted(target, selector, response);
+        return response;
+    }
+
     /// @notice Pause all core modules.
     function pauseAll() external onlyGovernance nonReentrant {
         jobRegistry.pause();
@@ -371,6 +420,18 @@ contract SystemPause is Governable, ReentrancyGuard {
                 _arbitratorCommittee.owner()
             );
         }
+    }
+
+    function _isKnownModule(address target) internal view returns (bool) {
+        return
+            target == address(jobRegistry) ||
+            target == address(stakeManager) ||
+            target == address(validationModule) ||
+            target == address(disputeModule) ||
+            target == address(platformRegistry) ||
+            target == address(feePool) ||
+            target == address(reputationEngine) ||
+            target == address(arbitratorCommittee);
     }
 }
 
