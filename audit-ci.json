@@ -1,5 +1,7 @@
 {
-  "low": true,
+  "high": true,
+  "critical": true,
+  "skip-dev": true,
   "allowlist": [
     "GHSA-p8p7-x288-28g6",
     "GHSA-52f5-9888-hmc6",
