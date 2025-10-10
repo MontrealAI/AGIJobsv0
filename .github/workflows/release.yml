@@ -27,16 +27,32 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com:443
+            codeload.github.com:443
+            github.com:443
+            nodejs.org:443
+            objects.githubusercontent.com:443
+            pipelines.actions.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            registry.npmjs.org:443
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           fetch-depth: 0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -75,12 +91,29 @@ jobs:
           npx hardhat typechain
           npm run abi:export -- --out reports/abis/head
 
+      - name: Prepare SBOM directory
+        run: mkdir -p reports/sbom
+
+      - name: Generate SBOM (SPDX JSON)
+        uses: anchore/sbom-action@fd74a6fb98a204a1ad35bbfae0122c1a302ff88b
+        with:
+          format: spdx-json
+          output-file: reports/sbom/spdx.json
+
+      - name: Generate build provenance
+        uses: actions/attest-build-provenance@92c65d2898f1f53cfdc910b962cecff86e7f8fcc
+        with:
+          subject-path: |
+            reports/abis/head
+            typechain-types
+
       - name: Upload release preparation artefacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: release-prep
           path: |
             reports/abis/head
+            reports/sbom/spdx.json
             typechain-types
             deployment-config
 
@@ -89,6 +122,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com:443
+            codeload.github.com:443
+            github.com:443
+            nodejs.org:443
+            objects.githubusercontent.com:443
+            pipelines.actions.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            registry.npmjs.org:443
       - name: Detect npm token
         id: npm-token
         env:
@@ -104,16 +150,19 @@ jobs:
 
       - name: Checkout
         if: ${{ steps.npm-token.outputs.publish == 'true' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           fetch-depth: 0
 
       - name: Set up Node.js
         if: ${{ steps.npm-token.outputs.publish == 'true' }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -162,19 +211,36 @@ jobs:
             context: apps/console
             dockerfile: apps/console/Dockerfile
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com:443
+            auth.docker.io:443
+            codeload.github.com:443
+            download.docker.com:443
+            ghcr.io:443
+            github.com:443
+            index.docker.io:443
+            objects.githubusercontent.com:443
+            pipelines.actions.githubusercontent.com:443
+            production.cloudflare.docker.com:443
+            raw.githubusercontent.com:443
+            registry-1.docker.io:443
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           fetch-depth: 0
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -182,7 +248,7 @@ jobs:
 
       - name: Build and push ${{ matrix.name }}
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
@@ -195,7 +261,7 @@ jobs:
           sbom: true
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@f713795cb21599bc4e5c4b58cbad1da852d7eeb9
 
       - name: Sign container images
         env:
@@ -218,7 +284,7 @@ jobs:
         run: echo "${{ steps.build.outputs.digest }}" > digest.txt
 
       - name: Publish image digests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ${{ matrix.name }}-release-digest
           path: digest.txt
