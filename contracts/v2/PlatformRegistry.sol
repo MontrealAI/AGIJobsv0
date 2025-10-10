@@ -22,6 +22,7 @@ interface IReputationEngine {
 /// @dev Holds no tokens and rejects ether to remain tax neutral. All values
 ///      use 18 decimals via the `StakeManager`.
 contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
+    error NotOwnerOrPauserManager();
     uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = TOKEN_SCALE;
 
     IStakeManager public stakeManager;
@@ -31,6 +32,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     mapping(address => bool) public blacklist;
     mapping(address => bool) public registrars;
     address public pauser;
+    address public pauserManager;
 
     struct ConfigUpdate {
         bool setStakeManager;
@@ -41,6 +43,8 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         uint256 minPlatformStake;
         bool setPauser;
         address pauser;
+        bool setPauserManager;
+        address pauserManager;
     }
 
     struct RegistrarConfig {
@@ -63,12 +67,15 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     event RegistrarUpdated(address indexed registrar, bool allowed);
     event Activated(address indexed operator, uint256 amount);
     event PauserUpdated(address indexed pauser);
+    event PauserManagerUpdated(address indexed pauserManager);
+
     event ConfigurationApplied(
         address indexed caller,
         bool stakeManagerUpdated,
         bool reputationEngineUpdated,
         bool minStakeUpdated,
         bool pauserUpdated,
+        bool pauserManagerUpdated,
         uint256 registrarUpdates,
         uint256 blacklistUpdates
     );
@@ -81,8 +88,16 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         _;
     }
 
-    function setPauser(address _pauser) external onlyOwner {
+    function setPauser(address _pauser) external {
+        if (msg.sender != owner() && msg.sender != pauserManager) {
+            revert NotOwnerOrPauserManager();
+        }
         _setPauser(_pauser);
+    }
+
+    function setPauserManager(address manager) external onlyOwner {
+        pauserManager = manager;
+        emit PauserManagerUpdated(manager);
     }
 
     function _requireStakeManager() internal view returns (IStakeManager manager) {
@@ -394,6 +409,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         bool reputationEngineChanged;
         bool minStakeChanged;
         bool pauserChanged;
+        bool pauserManagerChanged;
 
         if (config.setStakeManager) {
             _setStakeManager(config.stakeManager);
@@ -413,6 +429,12 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         if (config.setPauser) {
             _setPauser(config.pauser);
             pauserChanged = true;
+        }
+
+        if (config.setPauserManager) {
+            pauserManager = config.pauserManager;
+            emit PauserManagerUpdated(config.pauserManager);
+            pauserManagerChanged = true;
         }
 
         uint256 registrarLen = registrarUpdates.length;
@@ -437,6 +459,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
             reputationEngineChanged,
             minStakeChanged,
             pauserChanged,
+            pauserManagerChanged,
             registrarLen,
             blacklistLen
         );

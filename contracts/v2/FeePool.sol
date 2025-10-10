@@ -34,6 +34,7 @@ error NotGovernance();
 error NotOwnerOrPauser();
 /// @dev Caller not authorized to reward.
 error NotRewarder();
+error NotOwnerOrPauserManager();
 
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
@@ -71,6 +72,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// @notice timelock or governance contract authorized for withdrawals
     TimelockController public governance;
     address public pauser;
+    address public pauserManager;
 
     /// @notice tax policy governing user interactions
     ITaxPolicy public taxPolicy;
@@ -102,6 +104,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         ITaxPolicy taxPolicy;
         bool setPauser;
         address pauser;
+        bool setPauserManager;
+        address pauserManager;
     }
 
     struct AllowlistUpdate {
@@ -128,6 +132,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     event GovernanceWithdrawal(address indexed to, uint256 amount);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
     event PauserUpdated(address indexed pauser);
+    event PauserManagerUpdated(address indexed pauserManager);
     event TaxPolicyUpdated(address indexed policy);
     event RewarderUpdated(address indexed rewarder, bool allowed);
     event TreasuryRewarded(address indexed treasury, uint256 amount);
@@ -140,6 +145,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         bool governanceUpdated,
         bool taxPolicyUpdated,
         bool pauserUpdated,
+        bool pauserManagerUpdated,
         uint256 rewarderUpdates,
         uint256 treasuryAllowlistUpdates
     );
@@ -151,8 +157,16 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         _;
     }
 
-    function setPauser(address _pauser) external onlyOwner {
+    function setPauser(address _pauser) external {
+        if (msg.sender != owner() && msg.sender != pauserManager) {
+            revert NotOwnerOrPauserManager();
+        }
         _setPauser(_pauser);
+    }
+
+    function setPauserManager(address manager) external onlyOwner {
+        pauserManager = manager;
+        emit PauserManagerUpdated(manager);
     }
 
     /// @notice Authorize an address to distribute rewards.
@@ -530,6 +544,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         bool governanceChanged;
         bool taxPolicyChanged;
         bool pauserChanged;
+        bool pauserManagerChanged;
 
         if (config.setStakeManager) {
             _setStakeManager(config.stakeManager);
@@ -566,6 +581,12 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
             pauserChanged = true;
         }
 
+        if (config.setPauserManager) {
+            pauserManager = config.pauserManager;
+            emit PauserManagerUpdated(config.pauserManager);
+            pauserManagerChanged = true;
+        }
+
         emit ConfigurationApplied(
             msg.sender,
             stakeManagerChanged,
@@ -575,6 +596,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
             governanceChanged,
             taxPolicyChanged,
             pauserChanged,
+            pauserManagerChanged,
             rewarderLen,
             allowlistLen
         );

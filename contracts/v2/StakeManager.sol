@@ -60,6 +60,7 @@ error Jailed();
 error PendingPenalty();
 error TokenNotBurnable();
 error Unauthorized();
+error NotGovernanceOrPauserManager();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -118,6 +119,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     address public jobRegistry;
 
     address public pauser;
+    address public pauserManager;
 
     /// @notice ValidationModule providing validator lists
     IValidationModule public validationModule;
@@ -365,12 +367,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event FeePoolUpdated(address indexed feePool);
     event UnbondingPeriodUpdated(uint256 newPeriod);
     event PauserUpdated(address indexed pauser);
+    event PauserManagerUpdated(address indexed pauserManager);
 
     event OperatorSlashShareAllocated(address indexed user, Role indexed role, uint256 amount);
 
     event ConfigurationApplied(
         address indexed caller,
         bool pauserUpdated,
+        bool pauserManagerUpdated,
         bool thermostatUpdated,
         bool hamiltonianUpdated,
         bool autoStakeTuningUpdated,
@@ -416,6 +420,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     struct ConfigUpdate {
         bool setPauser;
         address pauser;
+        bool setPauserManager;
+        address pauserManager;
         bool setThermostat;
         address thermostat;
         bool setHamiltonianFeed;
@@ -490,8 +496,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit PauserUpdated(_pauser);
     }
 
-    function setPauser(address _pauser) external onlyGovernance {
+    function setPauser(address _pauser) external {
+        if (msg.sender != address(governance) && msg.sender != pauserManager) {
+            revert NotGovernanceOrPauserManager();
+        }
         _setPauser(_pauser);
+    }
+
+    function setPauserManager(address manager) external onlyGovernance {
+        pauserManager = manager;
+        emit PauserManagerUpdated(manager);
     }
 
     /// @notice set external contracts providing temperature and Hamiltonian metrics
@@ -1459,6 +1473,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
 
         bool pauserChanged;
+        bool pauserManagerChanged;
         bool thermostatChanged;
         bool hamiltonianChanged;
         bool autoStakeTuningChanged;
@@ -1488,6 +1503,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (config.setPauser) {
             _setPauser(config.pauser);
             pauserChanged = true;
+        }
+
+        if (config.setPauserManager) {
+            pauserManager = config.pauserManager;
+            emit PauserManagerUpdated(config.pauserManager);
+            pauserManagerChanged = true;
         }
 
         if (config.setThermostat) {
@@ -1651,6 +1672,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit ConfigurationApplied(
             msg.sender,
             pauserChanged,
+            pauserManagerChanged,
             thermostatChanged,
             hamiltonianChanged,
             autoStakeTuningChanged,

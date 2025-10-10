@@ -38,6 +38,7 @@ contract SystemPause is Governable, ReentrancyGuard {
     error InvalidArbitratorCommittee(address module);
     error ModuleNotOwned(address module, address owner);
     error InvalidPauser(address pauser);
+    error PauserManagerNotDelegated(address module);
 
     event ModulesUpdated(
         address jobRegistry,
@@ -264,6 +265,55 @@ contract SystemPause is Governable, ReentrancyGuard {
         if (pauser == address(0)) {
             revert InvalidPauser(pauser);
         }
+        if (jobRegistry.pauserManager() != address(this)) {
+            try jobRegistry.setPauserManager(address(this)) {} catch {}
+        }
+        if (jobRegistry.pauserManager() != address(this)) {
+            revert PauserManagerNotDelegated(address(jobRegistry));
+        }
+        if (stakeManager.pauserManager() != address(this)) {
+            try stakeManager.setPauserManager(address(this)) {} catch {}
+        }
+        if (stakeManager.pauserManager() != address(this)) {
+            revert PauserManagerNotDelegated(address(stakeManager));
+        }
+        if (validationModule.pauserManager() != address(this)) {
+            try validationModule.setPauserManager(address(this)) {} catch {}
+        }
+        if (validationModule.pauserManager() != address(this)) {
+            revert PauserManagerNotDelegated(address(validationModule));
+        }
+        if (disputeModule.pauserManager() != address(this)) {
+            try disputeModule.setPauserManager(address(this)) {} catch {}
+        }
+        if (disputeModule.pauserManager() != address(this)) {
+            revert PauserManagerNotDelegated(address(disputeModule));
+        }
+        if (platformRegistry.pauserManager() != address(this)) {
+            try platformRegistry.setPauserManager(address(this)) {} catch {}
+        }
+        if (platformRegistry.pauserManager() != address(this)) {
+            revert PauserManagerNotDelegated(address(platformRegistry));
+        }
+        if (feePool.pauserManager() != address(this)) {
+            try feePool.setPauserManager(address(this)) {} catch {}
+        }
+        if (feePool.pauserManager() != address(this)) {
+            revert PauserManagerNotDelegated(address(feePool));
+        }
+        if (reputationEngine.pauserManager() != address(this)) {
+            try reputationEngine.setPauserManager(address(this)) {} catch {}
+        }
+        if (reputationEngine.pauserManager() != address(this)) {
+            revert PauserManagerNotDelegated(address(reputationEngine));
+        }
+        if (arbitratorCommittee.pauserManager() != address(this)) {
+            try arbitratorCommittee.setPauserManager(address(this)) {} catch {}
+        }
+        if (arbitratorCommittee.pauserManager() != address(this)) {
+            revert PauserManagerNotDelegated(address(arbitratorCommittee));
+        }
+
         jobRegistry.setPauser(pauser);
         stakeManager.setPauser(pauser);
         validationModule.setPauser(pauser);

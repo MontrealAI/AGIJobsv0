@@ -252,6 +252,8 @@ describe('Governance configuration surfaces', function () {
         taxPolicy: await newPolicy.getAddress(),
         setPauser: true,
         pauser: pauser.address,
+        setPauserManager: true,
+        pauserManager: owner.address,
       };
 
       await expect(
@@ -267,6 +269,7 @@ describe('Governance configuration surfaces', function () {
       expect(await pool.governance()).to.equal(await timelock.getAddress());
       expect(await pool.taxPolicy()).to.equal(await newPolicy.getAddress());
       expect(await pool.pauser()).to.equal(pauser.address);
+      expect(await pool.pauserManager()).to.equal(owner.address);
       expect(await pool.treasuryAllowlist(treasury.address)).to.equal(true);
       expect(await pool.treasuryAllowlist(newTreasury.address)).to.equal(true);
       expect(await pool.rewarders(rewarder.address)).to.equal(true);
@@ -297,6 +300,8 @@ describe('Governance configuration surfaces', function () {
       const config = {
         setPauser: true,
         pauser: pauser.address,
+        setPauserManager: true,
+        pauserManager: owner.address,
         setThermostat: true,
         thermostat: ethers.ZeroAddress,
         setHamiltonianFeed: true,
@@ -393,6 +398,7 @@ describe('Governance configuration surfaces', function () {
       expect(await stake.maxAGITypes()).to.equal(25n);
       expect(await stake.maxTotalPayoutPct()).to.equal(150n);
       expect(await stake.paused()).to.equal(true);
+      expect(await stake.pauserManager()).to.equal(owner.address);
     });
   });
 
@@ -487,6 +493,8 @@ describe('Governance configuration surfaces', function () {
       const config = {
         setPauser: true,
         pauser: pauser.address,
+        setPauserManager: true,
+        pauserManager: owner.address,
         setModuleBundle: true,
         modules: {
           validation: await replacementValidation.getAddress(),
@@ -552,6 +560,7 @@ describe('Governance configuration surfaces', function () {
       ).to.emit(registry, 'ConfigurationApplied');
 
       expect(await registry.pauser()).to.equal(pauser.address);
+      expect(await registry.pauserManager()).to.equal(owner.address);
       expect(await registry.identityRegistry()).to.equal(await identity.getAddress());
       expect(await registry.disputeModule()).to.equal(
         await replacementDispute.getAddress()

@@ -13,6 +13,7 @@ import {TOKEN_SCALE} from "./Constants.sol";
 /// @dev Holds no funds and rejects ether so neither the contract nor the
 ///      owner ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
+    error NotOwnerOrPauserManager();
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
@@ -51,6 +52,7 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     uint256 public reputationWeight = TOKEN_SCALE;
     uint256 public validationRewardPercentage = DEFAULT_VALIDATION_REWARD_PERCENTAGE;
     address public pauser;
+    address public pauserManager;
 
     event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
     event EntropyUpdated(address indexed user, uint256 newEntropy);
@@ -62,6 +64,7 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     event ModulesUpdated(address indexed stakeManager);
     event ValidationRewardPercentageUpdated(uint256 percentage);
     event PauserUpdated(address indexed pauser);
+    event PauserManagerUpdated(address indexed pauserManager);
 
     error ArrayLengthMismatch();
 
@@ -73,9 +76,17 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         _;
     }
 
-    function setPauser(address _pauser) external onlyOwner {
+    function setPauser(address _pauser) external {
+        if (msg.sender != owner() && msg.sender != pauserManager) {
+            revert NotOwnerOrPauserManager();
+        }
         pauser = _pauser;
         emit PauserUpdated(_pauser);
+    }
+
+    function setPauserManager(address manager) external onlyOwner {
+        pauserManager = manager;
+        emit PauserManagerUpdated(manager);
     }
     constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
         require(address(_stakeManager) != address(0), "invalid stake manager");

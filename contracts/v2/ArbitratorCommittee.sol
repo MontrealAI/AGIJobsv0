@@ -12,9 +12,11 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 /// @dev Jurors are the validators already selected for the disputed job via the
 ///      ValidationModule's RANDAO-based selection.
 contract ArbitratorCommittee is Ownable, Pausable {
+    error NotOwnerOrPauserManager();
     IJobRegistry public jobRegistry;
     IDisputeModule public disputeModule;
     address public pauser;
+    address public pauserManager;
 
     struct Case {
         address[] jurors;
@@ -37,6 +39,7 @@ contract ArbitratorCommittee is Ownable, Pausable {
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event AbsenteeSlashUpdated(uint256 amount);
     event PauserUpdated(address indexed pauser);
+    event PauserManagerUpdated(address indexed pauserManager);
 
     event CaseOpened(uint256 indexed jobId, address[] jurors);
     event VoteCommitted(uint256 indexed jobId, address indexed juror, bytes32 commit);
@@ -51,9 +54,17 @@ contract ArbitratorCommittee is Ownable, Pausable {
         _;
     }
 
-    function setPauser(address _pauser) external onlyOwner {
+    function setPauser(address _pauser) external {
+        if (msg.sender != owner() && msg.sender != pauserManager) {
+            revert NotOwnerOrPauserManager();
+        }
         pauser = _pauser;
         emit PauserUpdated(_pauser);
+    }
+
+    function setPauserManager(address manager) external onlyOwner {
+        pauserManager = manager;
+        emit PauserManagerUpdated(manager);
     }
 
     constructor(IJobRegistry _jobRegistry, IDisputeModule _disputeModule)

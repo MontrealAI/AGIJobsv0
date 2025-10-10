@@ -4,7 +4,11 @@
 transaction. After deployment you must complete two governance steps:
 
 1. Wire module addresses using `setModules`.
-2. Once ownership of each module is transferred to `SystemPause`, call
+2. Delegate pauser management to `SystemPause` by calling
+   `setPauserManager(systemPauseAddress)` on every module (JobRegistry,
+   StakeManager, ValidationModule, DisputeModule, PlatformRegistry, FeePool,
+   ReputationEngine, ArbitratorCommittee) from governance/owner.
+3. Once ownership of each module is transferred to `SystemPause`, call
    `refreshPausers` so it regains the `setPauser` permissions required for
    `pauseAll` / `unpauseAll`.
 
@@ -32,6 +36,9 @@ the deployed `SystemPause` address together with module pointers for
   ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine,
   ArbitratorCommittee) to the deployed `SystemPause` contract before wiring
   updates. Without ownership the helper cannot reapply pauser roles.
+- After ownership transfer, set each module's `pauserManager` to the
+  `SystemPause` address so on-chain delegation succeeds without manual pauser
+  rotations.
 - Run a dry run to confirm wiring, ownership, and pauser status before sending
   transactions:
 
