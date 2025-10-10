@@ -239,3 +239,78 @@ jobs:
         with:
           name: ${{ matrix.name }}-release-digest
           path: digest.txt
+
+  github-release:
+    needs:
+      - prepare
+      - docker-publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+
+      - name: Download release preparation artefacts
+        uses: actions/download-artifact@71f31b0d0be45612bc1db53de9b1aa6dc10e30f2
+        with:
+          name: release-prep
+          path: release-prep
+
+      - name: Assemble release bundle
+        id: bundle
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.prepare.outputs.version }}"
+          mkdir -p dist
+          tar -czf "dist/agi-jobs-v${VERSION}-artifacts.tar.gz" \
+            -C release-prep \
+            reports/abis/head \
+            reports/sbom \
+            typechain-types \
+            deployment-config
+          sha256sum "dist/agi-jobs-v${VERSION}-artifacts.tar.gz" > "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sha256"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+
+      - name: Sign release bundle
+        env:
+          COSIGN_EXPERIMENTAL: '1'
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.bundle.outputs.version }}"
+          cosign sign-blob --yes --keyless \
+            --output-signature "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sig" \
+            --output-certificate "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.pem" \
+            "dist/agi-jobs-v${VERSION}-artifacts.tar.gz"
+
+      - name: Generate build provenance
+        id: provenance
+        uses: actions/attest-build-provenance@128a63446a19441284efb5146ee5d521349b7ab6
+        with:
+          subject-path: dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz
+
+      - name: Publish signed release assets
+        uses: softprops/action-gh-release@39a9d95fda3fcb043b4d29d79d046a9e12dfc2a7
+        with:
+          tag_name: v${{ steps.bundle.outputs.version }}
+          name: AGI Jobs v${{ steps.bundle.outputs.version }}
+          draft: false
+          prerelease: ${{ contains(steps.bundle.outputs.version, '-') }}
+          files: |
+            dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz
+            dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sha256
+            dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sig
+            dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.pem
+            ${{ steps.provenance.outputs.bundle-path }}
