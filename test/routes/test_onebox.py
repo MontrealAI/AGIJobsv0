@@ -759,7 +759,9 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         plan_hash = _register_plan(intent)
         status = StatusResponse(jobId=77, state="unknown")
 
-        with mock.patch("routes.onebox._get_cached_status", return_value=status):
+        with mock.patch("routes.onebox._get_cached_status", return_value=status), mock.patch(
+            "routes.onebox._read_status", new=mock.AsyncMock(return_value=status)
+        ):
             response = await simulate(
                 _make_request(),
                 SimulateRequest(intent=intent, planHash=plan_hash),
@@ -769,20 +771,39 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("STATUS_UNKNOWN", response.riskCodes)
         self.assertIn(_error_message("STATUS_UNKNOWN"), response.risks)
 
-    async def test_simulate_finalize_warns_when_job_not_ready(self) -> None:
+    async def test_simulate_finalize_blocks_when_job_not_ready(self) -> None:
         intent = JobIntent(action="finalize_job", payload=Payload(jobId=88))
         plan_hash = _register_plan(intent)
         status = StatusResponse(jobId=88, state="open")
 
         with mock.patch("routes.onebox._get_cached_status", return_value=status):
-            response = await simulate(
-                _make_request(),
-                SimulateRequest(intent=intent, planHash=plan_hash),
-            )
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await simulate(
+                    _make_request(),
+                    SimulateRequest(intent=intent, planHash=plan_hash),
+                )
 
-        self.assertEqual(response.blockers, [])
-        self.assertIn("JOB_NOT_READY_FOR_FINALIZE", response.riskCodes)
-        self.assertIn(_error_message("JOB_NOT_READY_FOR_FINALIZE"), response.risks)
+        self.assertEqual(exc.exception.status_code, 422)
+        detail = exc.exception.detail
+        self.assertIn("JOB_NOT_READY_FOR_FINALIZE", detail["blockers"])  # type: ignore[index]
+
+    async def test_simulate_finalize_fetches_status_when_cache_empty(self) -> None:
+        intent = JobIntent(action="finalize_job", payload=Payload(jobId=91))
+        plan_hash = _register_plan(intent)
+        fetched_status = StatusResponse(jobId=91, state="assigned")
+
+        with mock.patch("routes.onebox._get_cached_status", return_value=None), mock.patch(
+            "routes.onebox._read_status", new=mock.AsyncMock(return_value=fetched_status)
+        ):
+            with self.assertRaises(fastapi.HTTPException) as exc:
+                await simulate(
+                    _make_request(),
+                    SimulateRequest(intent=intent, planHash=plan_hash),
+                )
+
+        self.assertEqual(exc.exception.status_code, 422)
+        detail = exc.exception.detail
+        self.assertIn("JOB_NOT_READY_FOR_FINALIZE", detail["blockers"])  # type: ignore[index]
 
     async def test_simulate_success_includes_receipt_metadata(self) -> None:
         intent = JobIntent(
