@@ -19,6 +19,8 @@ The [`OwnerConfigurator`](../contracts/v2/admin/OwnerConfigurator.sol) contract 
 | `configure` | Execute a single setter on a target module. | Quick one-off parameter update. |
 | `configureBatch` | Execute multiple setters in sequence. | Release workflows or multi-module rollouts. |
 
+Both functions are payable: send ETH with `configure` (via `msg.value`) or populate the per-call `value` field when batching. The contract verifies that the forwarded amount exactly matches the declared values and rejects stray transfers, so owners can confidently fund deposits (for example, staking buffers) without leaving dust on the configurator.
+
 Both methods require the caller to be the configured owner (Safe or EOA). Ownership can be rotated using the inherited `transferOwnership` flow, giving the platform operator full control.
 
 ## Preparing a change
@@ -43,6 +45,12 @@ Both methods require the caller to be the configured owner (Safe or EOA). Owners
 5. Submit the transaction for signatures and execute once the threshold is met.
 
 The emitted `ParameterUpdated` event includes all metadata, enabling real-time monitoring in the owner console and subgraph.
+
+## System-wide pause and resume
+
+- `SystemPause` owns the pauser role for every runtime-critical module. Use the configurator to call `SystemPause.pauseAll()` / `SystemPause.unpauseAll()` during incident response so every dependent contract halts together.
+- The owner CLI (`npm run owner:update-all`) keeps the module roster in sync, but you can also submit a manual `configureBatch` with the encoded `setModules` payload when onboarding a new contract. Include descriptive `moduleKey`/`parameterKey` pairs such as `SYSTEM_PAUSE` / `PAUSE_ALL` so dashboards flag the action immediately.
+- Because pause/unpause requires no ETH, set the batch `value` fields to `0`. Deposits for follow-up remediation (for example, topping up escrow) can ride in the same batch with explicit `value` amounts.
 
 ## Validation checklist
 
