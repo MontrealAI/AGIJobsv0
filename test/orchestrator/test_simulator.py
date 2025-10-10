@@ -69,6 +69,14 @@ def test_simulator_detects_missing_budget():
 
     assert "BUDGET_REQUIRED" in result.blockers
     assert "BUDGET_REQUIRED" in result.risks
+    assert any(
+        detail.get("code") == "BUDGET_REQUIRED"
+        and "Stake the minimum AGIALPHA" in detail.get("message", "")
+        for detail in result.risk_details
+    )
+    # Ensure repeated failures only surface a single guidance entry so the
+    # front-end never spams duplicate alerts when aggregating simulator output.
+    assert sum(1 for d in result.risk_details if d.get("code") == "BUDGET_REQUIRED") == 1
 
 
 def test_simulator_detects_over_budget():
