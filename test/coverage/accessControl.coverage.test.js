@@ -62,6 +62,7 @@ describe('OwnerConfigurator (coverage)', function () {
         parameterKey,
         oldValue: abi.encode(['uint256'], [123]),
         newValue: abi.encode(['uint256'], [456]),
+        value: 0,
       },
       {
         target: await target.getAddress(),
@@ -74,6 +75,7 @@ describe('OwnerConfigurator (coverage)', function () {
         parameterKey,
         oldValue: abi.encode(['uint256'], [456]),
         newValue: abi.encode(['uint256'], [789]),
+        value: 0,
       },
     ];
 
@@ -99,6 +101,7 @@ describe('OwnerConfigurator (coverage)', function () {
         parameterKey,
         oldValue: '0x',
         newValue: '0x',
+        value: 0,
       })
     ).to.be.revertedWithCustomError(configurator, 'OwnerConfigurator__ZeroTarget');
   });
