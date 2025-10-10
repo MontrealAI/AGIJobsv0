@@ -11,7 +11,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 
 ## Prerequisites
 
-- Node.js 20.x LTS and npm 10+
+- Node.js 20.18.1 LTS and npm 10+
 - Run `nvm use` to select the version from `.nvmrc`.
 
 ## Continuous Integration (CI v2)

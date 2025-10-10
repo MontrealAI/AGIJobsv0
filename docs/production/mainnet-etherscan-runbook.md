@@ -44,7 +44,7 @@ interaction covered below.
 
 | Item | Why it matters | Command / Link |
 | --- | --- | --- |
-| Node.js 20.x | Matches CI toolchain to avoid compiler drift | `nvm use` |
+| Node.js 20.18.1 | Matches CI toolchain to avoid compiler drift | `nvm use` |
 | Clean git tree | Guarantees deterministic artifacts & ABIs | `git status --short` |
 | Dependencies | Installs locked tool versions | `npm ci --no-audit --progress=false` |
 | Green local CI | Mirrors the GitHub Actions matrix | `npm run lint && npm test` |

@@ -32,6 +32,7 @@ scripts/**/*.js
 !scripts/subgraph-e2e.js
 !scripts/docs/check-links.js
 !scripts/observability-smoke-check.js
+!scripts/utils/parseDuration.js
 build/
 lib/*
 !lib/forge-std/
