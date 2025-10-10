@@ -116,6 +116,9 @@ Conduct quarterly tabletop drills covering:
 3. Chain reorganisation requiring redeployment of oracle attestations.
 
 Record outcomes, improvement actions, and track them in the compliance register.
+For a facilitator script and preparation checklist, follow
+`docs/security/incident-tabletop.md` so the rehearsal produces auditable
+evidence that all controls remain effective.
 
 ---
 
