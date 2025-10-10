@@ -8,6 +8,7 @@ coverage.json
 !contracts/coverage/**
 !test/coverage/
 !test/coverage/**
+reports/sbom/
 
 .next/
 
