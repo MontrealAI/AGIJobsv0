@@ -25,6 +25,9 @@ contract SystemPause is Governable, ReentrancyGuard {
     ReputationEngine public reputationEngine;
     ArbitratorCommittee public arbitratorCommittee;
 
+    /// @notice Tracks the currently delegated pauser address used across all modules.
+    address public activePauser;
+
     error InvalidJobRegistry(address module);
     error InvalidStakeManager(address module);
     error InvalidValidationModule(address module);
@@ -34,6 +37,7 @@ contract SystemPause is Governable, ReentrancyGuard {
     error InvalidReputationEngine(address module);
     error InvalidArbitratorCommittee(address module);
     error ModuleNotOwned(address module, address owner);
+    error InvalidPauser(address pauser);
 
     event ModulesUpdated(
         address jobRegistry,
@@ -201,6 +205,7 @@ contract SystemPause is Governable, ReentrancyGuard {
 
     /// @notice Set a custom pauser address across all managed modules.
     /// @param pauser The address empowered to pause and unpause the modules.
+    /// @dev Reverts with {InvalidPauser} when attempting to set the zero address.
     function setGlobalPauser(address pauser) external onlyGovernance {
         _requireModuleOwnership(
             jobRegistry,
@@ -256,6 +261,9 @@ contract SystemPause is Governable, ReentrancyGuard {
     }
 
     function _setPausers(address pauser) internal {
+        if (pauser == address(0)) {
+            revert InvalidPauser(pauser);
+        }
         jobRegistry.setPauser(pauser);
         stakeManager.setPauser(pauser);
         validationModule.setPauser(pauser);
@@ -264,6 +272,8 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool.setPauser(pauser);
         reputationEngine.setPauser(pauser);
         arbitratorCommittee.setPauser(pauser);
+
+        activePauser = pauser;
 
         emit PausersUpdated(pauser);
     }
