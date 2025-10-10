@@ -784,6 +784,29 @@ class SimulatorTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("JOB_NOT_READY_FOR_FINALIZE", response.riskCodes)
         self.assertIn(_error_message("JOB_NOT_READY_FOR_FINALIZE"), response.risks)
 
+    async def test_simulate_success_includes_receipt_metadata(self) -> None:
+        intent = JobIntent(
+            action="post_job",
+            payload=Payload(title="Collect datasets", reward="10", deadlineDays=5),
+        )
+        plan_hash = _register_plan(intent)
+
+        response = await simulate(
+            _make_request(), SimulateRequest(intent=intent, planHash=plan_hash)
+        )
+
+        self.assertEqual(response.blockers, [])
+        self.assertIsNotNone(response.receipt)
+        assert response.receipt is not None
+        self.assertEqual(response.receipt.get("planHash"), response.planHash)
+        self.assertEqual(response.receipt.get("summary"), response.summary)
+        self.assertEqual(response.receipt.get("risks"), response.risks)
+        digest = response.receipt.get("receiptDigest")
+        self.assertIsInstance(digest, str)
+        self.assertTrue(digest.startswith("0x"))
+        self.assertEqual(digest, response.receiptDigest)
+        self.assertGreater(len(digest), 10)
+
 
 class PlanHashUpgradeTests(unittest.IsolatedAsyncioTestCase):
     async def test_plan_missing_reward_then_supply_before_simulate_and_execute(self) -> None:
