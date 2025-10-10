@@ -56,6 +56,45 @@ the deployed `SystemPause` address together with module pointers for
 - After any change, record the dry-run and execution artefacts under
   `runtime/<network>/` and attach them to the owner control ticket.
 
+### Governance call forwarding
+
+`SystemPause` now provides `executeGovernanceCall(target, data)` so the
+governance timelock can invoke any `onlyGovernance` setter on the managed
+modules without reclaiming ownership. The helper accepts the addresses returned
+by `setModules` (job registry, stake manager, validation module, dispute
+module, platform registry, fee pool, reputation engine, and arbitrator
+committee) and rejects anything else. On success it emits
+`GovernanceCallExecuted(target, selector, result)` so monitoring bots and the
+owner console can log the change. If the downstream call reverts, the original
+error bubbles up to the caller to preserve revert semantics for access-control
+coverage.
+
+- **Hardhat example**
+
+  ```ts
+  const pause = await ethers.getContractAt('SystemPause', systemPauseAddress);
+  const stake = await ethers.getContractAt('StakeManager', stakeManagerAddress);
+  const calldata = stake.interface.encodeFunctionData('setMinStake', [
+    ethers.parseUnits('3', 18),
+  ]);
+  await pause.connect(governanceSigner).executeGovernanceCall(stakeManagerAddress, calldata);
+  ```
+
+- **Etherscan walkthrough**
+  1. Open **Write Contract** for `SystemPause` with the governance wallet.
+  2. Call `executeGovernanceCall` with the managed module address as the first
+     parameter.
+  3. Paste the ABI-encoded call data from the target module’s Write tab (use the
+     “Copy calldata” helper next to the function name).
+  4. Submit the transaction; `GovernanceCallExecuted` will appear in the logs if
+     the call succeeded.
+
+Use this forwarding path for configuration changes such as
+`StakeManager.setMinStake`, `JobRegistry.applyConfiguration`, or
+`FeePool.applyConfiguration` after ownership is delegated to `SystemPause`.
+This keeps the emergency pause authority centralised while giving the contract
+owner complete control over protocol parameters.
+
 ### Emergency operations
 
 1. **Pause** – From the timelock or multisig, call `SystemPause.pauseAll()` to
