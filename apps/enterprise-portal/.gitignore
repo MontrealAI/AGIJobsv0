@@ -1,1 +1,2 @@
-dist-test/
+dist-test/*
+!dist-test/package.json
