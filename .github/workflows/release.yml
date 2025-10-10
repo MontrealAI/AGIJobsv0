@@ -41,6 +41,7 @@ jobs:
             foundry.paradigm.xyz:443
             ghcr.io:443
             github.com:443
+            token.actions.githubusercontent.com:443
             nodejs.org:443
             objects.githubusercontent.com:443
             pkg-containers.githubusercontent.com:443
@@ -48,6 +49,9 @@ jobs:
             raw.githubusercontent.com:443
             registry-1.docker.io:443
             registry.npmjs.org:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
             storage.googleapis.com:443
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
@@ -125,6 +129,7 @@ jobs:
             foundry.paradigm.xyz:443
             ghcr.io:443
             github.com:443
+            token.actions.githubusercontent.com:443
             nodejs.org:443
             objects.githubusercontent.com:443
             pkg-containers.githubusercontent.com:443
@@ -132,6 +137,9 @@ jobs:
             raw.githubusercontent.com:443
             registry-1.docker.io:443
             registry.npmjs.org:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
             storage.googleapis.com:443
       - name: Detect npm token
         id: npm-token
@@ -220,6 +228,7 @@ jobs:
             foundry.paradigm.xyz:443
             ghcr.io:443
             github.com:443
+            token.actions.githubusercontent.com:443
             nodejs.org:443
             objects.githubusercontent.com:443
             pkg-containers.githubusercontent.com:443
@@ -227,6 +236,9 @@ jobs:
             raw.githubusercontent.com:443
             registry-1.docker.io:443
             registry.npmjs.org:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
             storage.googleapis.com:443
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
