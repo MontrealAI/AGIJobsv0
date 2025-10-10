@@ -1,0 +1,159 @@
+name: security-suite
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
+jobs:
+  codeql:
+    name: CodeQL analysis
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com:443
+            codeload.github.com:443
+            github.com:443
+            nodejs.org:443
+            objects.githubusercontent.com:443
+            pipelines.actions.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            registry.npmjs.org:443
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@7dccf72e419e51b915f40df725d7c2e766b51b44
+        with:
+          languages: javascript-typescript
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@7dccf72e419e51b915f40df725d7c2e766b51b44
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@7dccf72e419e51b915f40df725d7c2e766b51b44
+        with:
+          category: '/language:javascript-typescript'
+
+  slither:
+    name: Slither static analysis
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    env:
+      SLITHER_DISABLE_TELEMETRY: '1'
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com:443
+            codeload.github.com:443
+            files.pythonhosted.org:443
+            github.com:443
+            nodejs.org:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            pipelines.actions.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            registry.npmjs.org:443
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Install Node dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - name: Install Slither
+        run: pip install --upgrade "slither-analyzer==0.10.3" "crytic-compile==0.3.5"
+      - name: Compile contracts for Slither
+        run: |
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+          npx hardhat compile
+      - name: Run Slither analysis
+        run: |
+          slither . \
+            --hardhat-ignore-compile \
+            --hardhat-artifacts artifacts \
+            --hardhat-cache cache \
+            --sarif slither.sarif \
+            --solc-remaps '@openzeppelin/=node_modules/@openzeppelin/'
+      - name: Upload Slither SARIF
+        uses: github/codeql-action/upload-sarif@7dccf72e419e51b915f40df725d7c2e766b51b44
+        with:
+          sarif_file: slither.sarif
+
+  scorecard:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      security-events: write
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com:443
+            codeload.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            pipelines.actions.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            storage.googleapis.com:443
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@99c09fe975337306107572b4fdf4db224cf8e2f2
+        with:
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          publish_results: false
+      - name: Upload Scorecard SARIF
+        uses: github/codeql-action/upload-sarif@7dccf72e419e51b915f40df725d7c2e766b51b44
+        with:
+          sarif_file: scorecard-results.sarif

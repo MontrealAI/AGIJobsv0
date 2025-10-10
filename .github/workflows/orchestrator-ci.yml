@@ -22,11 +22,27 @@ jobs:
   tsc:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
-          node-version: '20'
-          cache: 'npm'
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com:443
+            codeload.github.com:443
+            github.com:443
+            nodejs.org:443
+            objects.githubusercontent.com:443
+            pipelines.actions.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            registry.npmjs.org:443
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
       - run: npm ci
       - name: Orchestrator tsc
         run: npx tsc -p apps/orchestrator/tsconfig.json

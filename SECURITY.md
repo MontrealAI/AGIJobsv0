@@ -32,7 +32,14 @@ validator dispute flows that demonstrate slashing behaviour.
 
 ## Static Analysis Commands
 
-- **Slither:** `slither . --solc-remaps @openzeppelin=node_modules/@openzeppelin/`
+Static analysis is automated in CI via the `security-suite` workflow, which emits
+SARIF reports for CodeQL, Slither, and OpenSSF Scorecard. The same commands can
+be reproduced locally as follows:
+
+- **Slither:**
+  1. `npm ci`
+  2. `npx hardhat compile`
+  3. `slither . --hardhat-ignore-compile --hardhat-artifacts artifacts --hardhat-cache cache --solc-remaps @openzeppelin/=node_modules/@openzeppelin/`
 - **Foundry:**
   - `forge build`
   - `forge test`
