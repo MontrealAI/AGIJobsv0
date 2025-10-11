@@ -83,8 +83,8 @@ if (fs.existsSync(allowedSignersPath)) {
     fail(`Signature verification failed for tag ${tagName}: ${error.message}`);
   }
 } else {
-  console.warn(
-    `::warning::Skipping git tag -v verification because ${allowedSignersPath} was not found. ` +
-      'Add maintainer signing keys to enable strict validation.'
+  fail(
+    `Signature verification requires maintainer keys, but ${allowedSignersPath} was not found. ` +
+      'Add maintainer signing keys so release CI can verify tag provenance.'
   );
 }
