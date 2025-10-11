@@ -73,6 +73,15 @@ jobs:
             echo "::error::Version must follow semver."; exit 1; fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Determine network
+        id: network
+        run: |
+          NETWORK="${{ github.event.inputs.network }}"
+          if [[ -z "$NETWORK" ]]; then
+            NETWORK="mainnet"
+          fi
+          echo "network=$NETWORK" >> "$GITHUB_OUTPUT"
+
       - name: Verify changelog contains version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
