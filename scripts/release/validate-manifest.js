@@ -105,10 +105,26 @@ function ensureToolchain(toolchain, errors) {
     hardhat: 'Hardhat version',
     solc: 'solc version',
     forge: 'forge version',
+    npm: 'npm version',
   };
   for (const [key, label] of Object.entries(required)) {
     if (!isNonEmptyString(toolchain[key])) {
       errors.push(`Manifest missing ${label.toLowerCase()}.`);
+    }
+  }
+
+  if (!Array.isArray(toolchain.solidityCompilers) || toolchain.solidityCompilers.length === 0) {
+    errors.push('Manifest missing Hardhat solidity compiler matrix.');
+    return;
+  }
+
+  for (const compiler of toolchain.solidityCompilers) {
+    if (!compiler || typeof compiler !== 'object') {
+      errors.push('Manifest contains invalid solidity compiler metadata entry.');
+      continue;
+    }
+    if (!isNonEmptyString(compiler.version)) {
+      errors.push('Solidity compiler entry missing version.');
     }
   }
 }

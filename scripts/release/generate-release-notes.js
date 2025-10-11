@@ -122,11 +122,49 @@ function buildToolchainSection(toolchain = {}) {
   if (toolchain.hardhatToolbox) {
     entries.push(`- @nomicfoundation/hardhat-toolbox: \`${toolchain.hardhatToolbox}\``);
   }
+  if (toolchain.npm) {
+    entries.push(`- npm: \`${toolchain.npm}\``);
+  }
   if (toolchain.solc) {
     entries.push(`- solc: \`${toolchain.solc}\``);
   }
   if (toolchain.forge) {
     entries.push(`- forge: \`${toolchain.forge}\``);
+  }
+  if (Array.isArray(toolchain.solidityCompilers) && toolchain.solidityCompilers.length > 0) {
+    entries.push('- Solidity compiler matrix:');
+    for (const compiler of toolchain.solidityCompilers) {
+      if (!compiler || typeof compiler !== 'object') {
+        continue;
+      }
+      const descriptor = [];
+      if (compiler.longVersion && compiler.longVersion !== compiler.version) {
+        descriptor.push(`long ${compiler.longVersion}`);
+      }
+      if (compiler.optimizer && typeof compiler.optimizer === 'object') {
+        const enabled = compiler.optimizer.enabled === undefined
+          ? 'unspecified'
+          : compiler.optimizer.enabled
+            ? 'enabled'
+            : 'disabled';
+        if (Number.isFinite(compiler.optimizer.runs)) {
+          descriptor.push(`optimizer ${enabled} (runs ${compiler.optimizer.runs})`);
+        } else {
+          descriptor.push(`optimizer ${enabled}`);
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(compiler, 'viaIR')) {
+        descriptor.push(`viaIR ${compiler.viaIR ? 'enabled' : 'disabled'}`);
+      }
+      if (compiler.evmVersion) {
+        descriptor.push(`evm ${compiler.evmVersion}`);
+      }
+      if (Array.isArray(compiler.sources) && compiler.sources.length > 0) {
+        descriptor.push(`sources: ${compiler.sources.join(', ')}`);
+      }
+      const suffix = descriptor.length > 0 ? ` (${descriptor.join('; ')})` : '';
+      entries.push(`  - ${compiler.version}${suffix}`);
+    }
   }
   return entries.length > 0 ? entries.join('\n') : '_Toolchain metadata unavailable._';
 }
