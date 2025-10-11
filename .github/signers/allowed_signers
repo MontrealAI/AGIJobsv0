@@ -1,0 +1,6 @@
+# Populate this file with maintainer SSH signing keys in the format:
+# maintainer@example.com namespaces="git" ssh-ed25519 AAAAC3...
+#
+# The release workflow uses the keys listed here to run `git tag -v` on
+# release tags. Keep the keys hardware-backed when possible (e.g. YubiKey)
+# and rotate them if compromised.
