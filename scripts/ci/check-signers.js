@@ -41,25 +41,55 @@ if (lines.length === 0) {
   );
 }
 
-const keyPattern =
-  '([^\\s#]+)\\s+namespaces="([^"]+)"\\s+' +
-  '(sk-ssh-ed25519@openssh.com|sk-ecdsa-sha2-nistp256@openssh.com|ssh-ed25519|ecdsa-sha2-nistp256|ssh-rsa)\\s+' +
-  '([A-Za-z0-9+/=]+)(?:\\s+.+)?';
-const keyRegex = new RegExp(`^${keyPattern}$`);
+const allowedKeyTypes = [
+  'sk-ssh-ed25519@openssh.com',
+  'sk-ecdsa-sha2-nistp256@openssh.com',
+  'ssh-ed25519',
+  'ecdsa-sha2-nistp256',
+  'ssh-rsa',
+];
 const fingerprints = new Map();
 
 lines.forEach((line, index) => {
-  const match = line.match(keyRegex);
-  if (!match) {
+  const tokens = line.match(/(?:[^\s"]+|"[^"]*")+/g);
+
+  if (!tokens || tokens.length < 4) {
     fail(
       `Line ${
         index + 1
       } in ${signersPath} is not a valid allowed_signers entry. ` +
-        'Expected: <principal> namespaces="git" <key-type> <base64-key> [comment]'
+        'Expected: <principal> namespaces="git" [options] <key-type> <base64-key> [comment]'
     );
   }
 
-  const [, principal, namespaces, keyType, keyData] = match;
+  const [principal, ...rest] = tokens;
+  const keyTypeIndex = rest.findIndex((token) => allowedKeyTypes.includes(token));
+
+  if (keyTypeIndex === -1 || keyTypeIndex === rest.length - 1) {
+    fail(
+      `Line ${
+        index + 1
+      } (${principal}) is missing a supported key type or base64 key payload. ` +
+        'Expected: <principal> namespaces="git" [options] <key-type> <base64-key> [comment]'
+    );
+  }
+
+  const optionTokens = rest.slice(0, keyTypeIndex);
+  const keyType = rest[keyTypeIndex];
+  const keyData = rest[keyTypeIndex + 1];
+
+  const namespaceToken = optionTokens.find((token) => token.startsWith('namespaces='));
+
+  if (!namespaceToken) {
+    fail(
+      `Line ${
+        index + 1
+      } (${principal}) must define namespaces="git" so git tag -v can verify release tags.`
+    );
+  }
+
+  const namespaceValue = namespaceToken.slice('namespaces='.length);
+  const namespaces = namespaceValue.replace(/^"|"$/g, '');
 
   if (!namespaces.split(/\s+/).includes('git')) {
     fail(
@@ -70,17 +100,23 @@ lines.forEach((line, index) => {
   }
 
   try {
-    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(keyData)) {
+    const normalizedKeyData = keyData.replace(/^"|"$/g, '');
+
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(normalizedKeyData)) {
       throw new Error('contains characters outside the base64 alphabet');
     }
 
-    const buffer = Buffer.from(keyData, 'base64');
+    if (normalizedKeyData.includes('"')) {
+      throw new Error('contains unmatched quote characters');
+    }
+
+    const buffer = Buffer.from(normalizedKeyData, 'base64');
     if (buffer.length === 0) {
       throw new Error('decoded length is zero');
     }
 
     const normalized = buffer.toString('base64');
-    if (normalized.replace(/=+$/, '') !== keyData.replace(/=+$/, '')) {
+    if (normalized.replace(/=+$/, '') !== normalizedKeyData.replace(/=+$/, '')) {
       throw new Error('round-trip encoding mismatch');
     }
 
