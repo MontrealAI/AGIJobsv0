@@ -78,3 +78,35 @@ via “Create Sentinel → Advanced JSON” or point a Forta bot at the same fil
 
 Keeping these sentinels active and rehearsed closes the gap identified in the
 institutional readiness review: real-time monitoring of governance changes.
+
+## Forta Anomaly Detection Overlay
+
+While Defender Sentinels cover deterministic governance hooks, institutions also
+expect behavioural anomaly detection. Deploy (or subscribe to) Forta bots that
+emit alerts for:
+
+- Sudden spikes in `JobRouter` executions or cancellations beyond the historical
+  99th percentile baseline.
+- Transfers from treasury or reward safes to unknown recipients.
+- Large `stake`/`unstake` sequences from a single validator within a 6-block
+  window (possible validator compromise).
+
+Recommended implementation steps:
+
+1. **Select bots** – Use Forta’s curated agent registry for transaction surge
+   detection (e.g. `0x12a4... surge-detector`). Document chosen agent IDs in the
+   change ticket.
+2. **Wire alerts** – Create a Defender Sentinel of type `FORTA_ALERT` pointing to
+   the selected Forta agent IDs. Route the alerts to `pagerduty-high` and
+   `ops-slack` to align with the parameter-change escalation path.
+3. **Calibrate thresholds** – During staging, replay production traces with
+   `npm run simulation:stress -- --network mainnet --forta-export` to ensure the
+   anomaly detector fires only for meaningful deviations. Store calibration
+   notes in `docs/security/forta-calibration.md`.
+4. **Re-validate quarterly** – Include Forta alert exercises in the tabletop
+   drills so auditors have evidence that behavioural monitoring remains
+   effective.
+
+Capturing both deterministic state changes and Forta anomalies satisfies the
+monitoring requirement in the institutional readiness rubric and gives the owner
+team early warning before parameters drift out of policy bounds.

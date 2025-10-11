@@ -50,5 +50,6 @@ templates in `monitoring/onchain/` to watch for:
 - Critical parameter adjustments such as `setFeePct`, `setBurnPct`, and tax policy updates.
 
 The [on-chain monitoring playbook](monitoring-onchain.md) describes how to route these alerts into PagerDuty and the
-owner command centre runbooks. Pairing real-time sentinels with the Prometheus stack closes the loop between on-chain
-incidents and traditional infrastructure alerts.
+owner command centre runbooks, and the [Forta calibration log](security/forta-calibration.md) template captures the
+behavioural tuning required for anomaly detectors. Pairing real-time sentinels with the Prometheus stack closes the
+loop between on-chain incidents and traditional infrastructure alerts.

@@ -195,6 +195,8 @@ Before opening the system to external participants, confirm the following:
       matches the desired reward distribution.
 - [ ] Validate release signatures and provenance following
       `docs/release-signing.md` before distributing artefacts.
+- [ ] Assemble the compliance dossier using
+      `docs/release-artifacts.md` and store it in the release vault.
 - [ ] Incident response runbook stored in `docs/` references this blueprint and the latest
       Safe bundles.
 
