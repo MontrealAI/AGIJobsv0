@@ -63,7 +63,9 @@ lines.forEach((line, index) => {
   }
 
   const [principal, ...rest] = tokens;
-  const keyTypeIndex = rest.findIndex((token) => allowedKeyTypes.includes(token));
+  const keyTypeIndex = rest.findIndex((token) =>
+    allowedKeyTypes.includes(token)
+  );
 
   if (keyTypeIndex === -1 || keyTypeIndex === rest.length - 1) {
     fail(
@@ -78,7 +80,9 @@ lines.forEach((line, index) => {
   const keyType = rest[keyTypeIndex];
   const keyData = rest[keyTypeIndex + 1];
 
-  const namespaceToken = optionTokens.find((token) => token.startsWith('namespaces='));
+  const namespaceToken = optionTokens.find((token) =>
+    token.startsWith('namespaces=')
+  );
 
   if (!namespaceToken) {
     fail(
@@ -116,7 +120,9 @@ lines.forEach((line, index) => {
     }
 
     const normalized = buffer.toString('base64');
-    if (normalized.replace(/=+$/, '') !== normalizedKeyData.replace(/=+$/, '')) {
+    if (
+      normalized.replace(/=+$/, '') !== normalizedKeyData.replace(/=+$/, '')
+    ) {
       throw new Error('round-trip encoding mismatch');
     }
 
