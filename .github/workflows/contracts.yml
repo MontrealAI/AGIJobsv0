@@ -91,3 +91,8 @@ jobs:
 
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
+
+      - name: Foundry invariant tests
+        env:
+          FOUNDRY_INVARIANT_RUNS: 256
+        run: forge test -vvvv --ffi --match-path 'test/v2/invariant/*.t.sol'
