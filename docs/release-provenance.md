@@ -57,6 +57,10 @@ git config --global tag.gpgsign true
   committed maintainer key before any release artefacts are produced.
   Rotate the keys and update the file whenever maintainers change
   tokens.
+- Run `npm run ci:verify-signers` (or
+  `ALLOWED_SIGNERS_PATH=<path> npm run ci:verify-signers`) to lint the
+  key list locally. The helper validates namespaces, key formats, and
+  duplicate entries so release CI never blocks on formatting mistakes.
 
 ## 5. Provenance & Artifact Attestations
 
