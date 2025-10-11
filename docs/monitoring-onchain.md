@@ -8,7 +8,7 @@ protocol knobs.
 ## Sentinel Coverage
 
 The JSON templates under `monitoring/onchain/` cover the following critical
-surfaces:
+surfaces and can now be rendered automatically with production addresses.
 
 | Template | Watches | Recommended Action |
 | --- | --- | --- |
@@ -17,8 +17,23 @@ surfaces:
 | `role-rotation-sentinel.json` | `PauserUpdated`, `PauserManagerUpdated`, `PausersUpdated`, `ValidatorLockManagerUpdated` | Kick off the key rotation checklist and update the owner control atlas. |
 
 Each template specifies the ABI signature, matching topics, throttling window,
-and the notification targets. Import the JSON into Defender via “Create Sentinel
-→ Advanced JSON” or point a Forta bot at the same filters.
+and the notification targets. Render concrete JSON with:
+
+```bash
+# Provide either a release manifest or an address map (copy the sample file).
+cp monitoring/onchain/address-map.sample.json monitoring/onchain/address-map.mainnet.json
+${EDITOR:-nano} monitoring/onchain/address-map.mainnet.json  # fill in contract addresses
+
+npm run monitoring:sentinels -- \
+  --network mainnet \
+  --map-file monitoring/onchain/address-map.mainnet.json \
+  --manifest reports/release/manifest.json
+```
+
+The command writes fully resolved sentinels to
+`monitoring/onchain/rendered/<network>/...` and validates that all placeholders
+are populated with checksum addresses. Import the rendered JSON into Defender
+via “Create Sentinel → Advanced JSON” or point a Forta bot at the same filters.
 
 ## Alert Routing
 
@@ -46,6 +61,8 @@ and the notification targets. Import the JSON into Defender via “Create Sentin
 
 1. Deploy the sentinels to a staging network and trigger each event with a
    burner account. Confirm the alert fires once and routes correctly.
+   Re-run `npm run monitoring:sentinels` whenever deployment addresses change to
+   guarantee monitoring fidelity.
 2. Run the tabletop exercise described in `docs/incident-response.md` using the
    sentinel payloads as injects. Validate that the owner multisig, pause keys,
    and dispute committee members can all reach the required quorums within the
