@@ -44,8 +44,9 @@ This checklist condenses the operational knowledge required to take the AGI Jobs
 
 - Align pipeline jobs (lint, tests, coverage, security, gas, docs) with GitHub branch protection so that merges to `main` mirror the local commands below.
   _Key Scripts:_ `npm run lint:check`, `npm test`, `npm run coverage:check`, `npm run security:audit`, `npm run gas:check`, `npm run docs:verify`. 【F:package.json†L8-L131】
-- Require hardware-backed signed release tags and verify them in CI before publishing artefacts.
-  _Reference:_ `scripts/ci/ensure-tag-signature.js` and the [Release Provenance & Tag Signing](release-provenance.md) playbook. 【F:scripts/ci/ensure-tag-signature.js†L1-L70】【F:docs/release-provenance.md†L1-L98】
+ - Require hardware-backed signed release tags and verify them in CI before publishing artefacts. Run
+   `npm run ci:verify-signers` during release prep to catch format issues before the workflow executes.
+   _Reference:_ `scripts/ci/ensure-tag-signature.js`, `scripts/ci/check-signers.js`, and the [Release Provenance & Tag Signing](release-provenance.md) playbook. 【F:scripts/ci/ensure-tag-signature.js†L1-L70】【F:scripts/ci/check-signers.js†L1-L103】【F:docs/release-provenance.md†L1-L104】
 - Require green runs of planner→simulator→runner integration tests on every PR, plus manual owner checklist sign-off for production rollouts.
 
 ✅ **Action:** Mirror the above commands in CI (GitHub Actions or equivalent) and enforce mandatory status checks plus review requirements on both PR and default branches.
