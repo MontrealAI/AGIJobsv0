@@ -83,6 +83,34 @@ function sanitise(value) {
   return '—';
 }
 
+function buildNetworkSummary(manifestNetwork, fallbackNetwork) {
+  const info = manifestNetwork && typeof manifestNetwork === 'object' ? manifestNetwork : {};
+  const name = typeof info.name === 'string' && info.name.trim().length > 0
+    ? info.name.trim()
+    : typeof fallbackNetwork === 'string' && fallbackNetwork.trim().length > 0
+      ? fallbackNetwork.trim()
+      : 'unspecified';
+
+  const extras = [];
+  if (typeof info.chainId === 'number' && Number.isFinite(info.chainId) && info.chainId > 0) {
+    extras.push(`chainId ${info.chainId}`);
+  }
+  if (typeof info.explorerUrl === 'string' && info.explorerUrl.trim().length > 0) {
+    extras.push(`explorer ${info.explorerUrl.trim()}`);
+  }
+
+  const summaryLine = extras.length > 0
+    ? `- **Network:** \`${name}\` (${extras.join(', ')})`
+    : `- **Network:** \`${name}\``;
+
+  const extraLines = [];
+  if (typeof info.deploymentConfig === 'string' && info.deploymentConfig.trim().length > 0) {
+    extraLines.push(`  - Deployment config: \`${info.deploymentConfig.trim()}\``);
+  }
+
+  return { summaryLine, extraLines };
+}
+
 function buildToolchainSection(toolchain = {}) {
   const entries = [];
   if (toolchain.node) {
@@ -134,7 +162,11 @@ function writeReleaseNotes({ manifestPath, outPath, network, version, changelogP
 
   lines.push(`# AGI Jobs v${resolvedVersion} — Release Notes`);
   lines.push('');
-  lines.push(`- **Network:** \`${network}\``);
+  const networkSummary = buildNetworkSummary(manifest.network, network);
+  lines.push(networkSummary.summaryLine);
+  for (const extraLine of networkSummary.extraLines) {
+    lines.push(extraLine);
+  }
   if (manifest.git && manifest.git.commit) {
     lines.push(`- **Git commit:** \`${manifest.git.commit}\``);
   }

@@ -6,6 +6,21 @@ const path = require('path');
 const crypto = require('crypto');
 const { execSync, spawnSync } = require('child_process');
 
+const KNOWN_NETWORKS = {
+  mainnet: {
+    chainId: 1,
+    explorerUrl: 'https://etherscan.io',
+  },
+  sepolia: {
+    chainId: 11155111,
+    explorerUrl: 'https://sepolia.etherscan.io',
+  },
+  holesky: {
+    chainId: 17000,
+    explorerUrl: 'https://holesky.etherscan.io',
+  },
+};
+
 const CONTRACT_TARGETS = [
   {
     name: 'StakeManager',
@@ -110,6 +125,20 @@ function readJsonIfExists(relativePath) {
     return null;
   }
   return JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+}
+
+function readJsonAbsolute(filePath, { optional = false } = {}) {
+  if (!filePath) {
+    return null;
+  }
+  const absolute = path.resolve(filePath);
+  if (!fs.existsSync(absolute)) {
+    if (optional) {
+      return null;
+    }
+    throw new Error(`File not found: ${path.relative(process.cwd(), absolute)}`);
+  }
+  return JSON.parse(fs.readFileSync(absolute, 'utf8'));
 }
 
 function parseFoundryToolchain() {
@@ -235,12 +264,25 @@ function collectContractMetadata(target, addressesSnapshot, deploymentSummary) {
   return { contractEntry, warnings };
 }
 
-function buildManifest(outputPath) {
+function buildManifest({
+  outputPath,
+  network,
+  chainId,
+  explorerUrl,
+  deploymentConfigPath,
+}) {
   ensureArtifacts();
 
   const packageJson = readJsonIfExists('package.json') || {};
   const addressesSnapshot = readJsonIfExists(path.join('docs', 'deployment-addresses.json')) || {};
   const deploymentSummary = readJsonIfExists(path.join('docs', 'deployment-summary.json')) || {};
+  const deploymentConfigAbsolute = deploymentConfigPath
+    ? path.resolve(process.cwd(), deploymentConfigPath)
+    : null;
+  const deploymentConfig = deploymentConfigAbsolute
+    ? readJsonAbsolute(deploymentConfigAbsolute, { optional: true })
+    : null;
+  const knownNetwork = network ? KNOWN_NETWORKS[network] || null : null;
 
   const manifest = {
     generatedAt: new Date().toISOString(),
@@ -261,6 +303,61 @@ function buildManifest(outputPath) {
     },
     warnings: [],
   };
+
+  if (deploymentConfigAbsolute) {
+    manifest.sources.deploymentConfig = path.relative(process.cwd(), deploymentConfigAbsolute);
+  }
+
+  if (network || deploymentConfig || knownNetwork || chainId || explorerUrl) {
+    const networkInfo = {};
+    if (network) {
+      networkInfo.name = network;
+    } else if (deploymentConfig && typeof deploymentConfig.network === 'string') {
+      networkInfo.name = deploymentConfig.network;
+    }
+
+    const resolvedChainId = (() => {
+      if (typeof chainId === 'number' && Number.isFinite(chainId)) {
+        return chainId;
+      }
+      if (deploymentConfig && typeof deploymentConfig.chainId === 'number') {
+        return deploymentConfig.chainId;
+      }
+      if (knownNetwork && typeof knownNetwork.chainId === 'number') {
+        return knownNetwork.chainId;
+      }
+      return null;
+    })();
+
+    if (typeof resolvedChainId === 'number' && Number.isFinite(resolvedChainId)) {
+      networkInfo.chainId = resolvedChainId;
+    }
+
+    const resolvedExplorer = (() => {
+      if (explorerUrl && typeof explorerUrl === 'string' && explorerUrl.trim().length > 0) {
+        return explorerUrl.trim();
+      }
+      if (deploymentConfig && typeof deploymentConfig.explorerUrl === 'string') {
+        return deploymentConfig.explorerUrl.trim();
+      }
+      if (knownNetwork && typeof knownNetwork.explorerUrl === 'string') {
+        return knownNetwork.explorerUrl;
+      }
+      return null;
+    })();
+
+    if (resolvedExplorer) {
+      networkInfo.explorerUrl = resolvedExplorer;
+    }
+
+    if (deploymentConfigAbsolute) {
+      networkInfo.deploymentConfig = path.relative(process.cwd(), deploymentConfigAbsolute);
+    }
+
+    if (Object.keys(networkInfo).length > 0) {
+      manifest.network = networkInfo;
+    }
+  }
 
   for (const target of CONTRACT_TARGETS) {
     const { contractEntry, warnings } = collectContractMetadata(
@@ -286,8 +383,25 @@ function buildManifest(outputPath) {
   }
 }
 
+function parseChainId(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return Math.trunc(parsed);
+}
+
 function parseArgs(argv) {
-  const args = { out: path.resolve(process.cwd(), 'reports/release/manifest.json') };
+  const args = {
+    out: path.resolve(process.cwd(), 'reports/release/manifest.json'),
+    network: process.env.RELEASE_NETWORK || null,
+    chainId: parseChainId(process.env.RELEASE_CHAIN_ID),
+    explorerUrl: process.env.RELEASE_EXPLORER_URL || null,
+    deploymentConfig: null,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const current = argv[i];
     if (current === '--out' && typeof argv[i + 1] === 'string') {
@@ -296,6 +410,18 @@ function parseArgs(argv) {
     } else if (current === '--dir' && typeof argv[i + 1] === 'string') {
       args.out = path.resolve(process.cwd(), argv[i + 1], 'manifest.json');
       i += 1;
+    } else if ((current === '--network' || current === '-n') && typeof argv[i + 1] === 'string') {
+      args.network = argv[i + 1];
+      i += 1;
+    } else if ((current === '--chain-id' || current === '-c') && typeof argv[i + 1] === 'string') {
+      args.chainId = parseChainId(argv[i + 1]);
+      i += 1;
+    } else if (current === '--explorer-url' && typeof argv[i + 1] === 'string') {
+      args.explorerUrl = argv[i + 1];
+      i += 1;
+    } else if (current === '--deployment-config' && typeof argv[i + 1] === 'string') {
+      args.deploymentConfig = path.resolve(process.cwd(), argv[i + 1]);
+      i += 1;
     }
   }
   return args;
@@ -303,8 +429,14 @@ function parseArgs(argv) {
 
 function main() {
   try {
-    const { out } = parseArgs(process.argv.slice(2));
-    buildManifest(out);
+    const { out, network, chainId, explorerUrl, deploymentConfig } = parseArgs(process.argv.slice(2));
+    buildManifest({
+      outputPath: out,
+      network,
+      chainId,
+      explorerUrl,
+      deploymentConfigPath: deploymentConfig,
+    });
   } catch (error) {
     console.error(error && error.message ? error.message : error);
     process.exit(1);
