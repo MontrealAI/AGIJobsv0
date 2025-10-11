@@ -5,6 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {TokenAcknowledgement} from "../utils/TokenAcknowledgement.sol";
 
 /// @title EscrowVault
 /// @notice Holds job rewards until the registry resolves the job outcome.
@@ -32,6 +33,7 @@ contract EscrowVault is Ownable, ReentrancyGuard {
     constructor(IERC20 token_, address owner_) Ownable(owner_) {
         if (address(token_) == address(0)) revert ZeroAddress();
         token = token_;
+        TokenAcknowledgement.acknowledge(address(token_), address(this));
     }
 
     modifier onlyController() {

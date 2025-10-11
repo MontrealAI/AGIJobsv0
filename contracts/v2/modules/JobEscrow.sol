@@ -8,6 +8,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AGIALPHA, AGIALPHA_DECIMALS} from "../Constants.sol";
 import {IJobRegistryAck} from "../interfaces/IJobRegistryAck.sol";
+import {TokenAcknowledgement} from "../utils/TokenAcknowledgement.sol";
 
 interface IRoutingModule {
     function selectOperator(bytes32 jobId, bytes32 seed) external returns (address);
@@ -83,6 +84,7 @@ contract JobEscrow is Ownable, ReentrancyGuard {
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
+        TokenAcknowledgement.acknowledge(address(token), address(this));
         routingModule = _routing;
         resultTimeout = DEFAULT_TIMEOUT;
         emit ResultTimeoutUpdated(DEFAULT_TIMEOUT);

@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IRandaoCoordinator} from "./interfaces/IRandaoCoordinator.sol";
 import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
+import {TokenAcknowledgement} from "./utils/TokenAcknowledgement.sol";
 
 /// @title RandaoCoordinator
 /// @notice Simple commit-reveal randomness aggregator with penalties for
@@ -95,6 +96,7 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         _deposit = deposit_;
         _treasury = treasury_;
         token = IERC20(AGIALPHA);
+        TokenAcknowledgement.acknowledge(address(token), address(this));
 
         emit CommitWindowUpdated(0, commitWindow_);
         emit RevealWindowUpdated(0, revealWindow_);
@@ -191,6 +193,7 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         }
 
         token = IERC20(newToken);
+        TokenAcknowledgement.acknowledge(newToken, address(this));
         emit TokenUpdated(previous, newToken);
     }
 
