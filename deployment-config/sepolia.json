@@ -1,5 +1,7 @@
 {
   "network": "sepolia",
+  "chainId": 11155111,
+  "explorerUrl": "https://sepolia.etherscan.io",
   "governance": "0x0000000000000000000000000000000000000000",
   "agialpha": "0x0000000000000000000000000000000000000000",
   "tax": {

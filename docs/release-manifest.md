@@ -26,6 +26,18 @@ npm run release:manifest -- --dir dist/release-v2.0.0
 This creates `dist/release-v2.0.0/manifest.json` and ensures the directory
 exists. Use `--out <file>` when you need an explicit path instead of a folder.
 
+Provide network context so the manifest captures the chain ID, explorer, and
+configuration provenance:
+
+```bash
+npm run release:manifest -- \
+  --network mainnet \
+  --deployment-config deployment-config/mainnet.json
+```
+
+Set `--chain-id` or `--explorer-url` when preparing a manifest for a network
+without a pre-baked configuration file.
+
 ## Manifest Contents
 
 The manifest is intentionally human-readable. Each section maps back to a
@@ -38,6 +50,8 @@ specific control in the deployment readiness checklist:
   flow in [release-provenance.md](release-provenance.md).
 - **toolchain** – Captures the versions pinned via `.nvmrc`, `package.json`, and
   `foundry.toml` so another operator can reproduce bytecode deterministically.
+- **network** – Embeds the chain name, chain ID, canonical explorer URL, and the
+  deployment-config file path used for the release.
 - **contracts** – For each production contract the manifest records:
   - the Hardhat artifact location relative to the repo root,
   - a SHA-256 hash of the ABI, and of the deployed bytecode,

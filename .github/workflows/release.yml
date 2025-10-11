@@ -103,7 +103,10 @@ jobs:
           npm run abi:export -- --out reports/abis/head
 
       - name: Generate release manifest
-        run: npm run release:manifest
+        run: |
+          npm run release:manifest -- \
+            --network "${{ steps.network.outputs.network }}" \
+            --deployment-config "deployment-config/${{ steps.network.outputs.network }}.json"
 
       - name: Generate release notes
         run: |
