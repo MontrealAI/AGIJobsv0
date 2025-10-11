@@ -192,12 +192,13 @@ function writeReleaseNotes({ manifestPath, outPath, network, version, changelogP
   lines.push('- `reports/abis/head` — exported ABIs aligned with the manifest addresses.');
   lines.push('- `typechain-types/` — generated TypeChain bindings for integrators.');
   lines.push('- `deployment-config/verification/` — explorer verification inputs.');
+  lines.push('- `reports/release/verification-summary.json` — authoritative explorer verification log.');
   lines.push('');
 
   lines.push('## Explorer verification evidence');
   lines.push(
     'The release workflow executes `scripts/release/run-etherscan-verification.js` using an OIDC-sourced API key. ' +
-      'Inspect `reports/release/verification-summary.json` for the per-contract verification status once the `Verify deployed contracts` job completes.'
+      'Inspect `reports/release/verification-summary.json` (bundled in the artefact tarball and uploaded as a standalone release asset) for the per-contract verification status once the `Verify deployed contracts` job completes.'
   );
   lines.push('');
 

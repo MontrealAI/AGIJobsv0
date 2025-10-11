@@ -438,6 +438,7 @@ jobs:
     needs:
       - prepare
       - docker-publish
+      - verify-contracts
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -459,6 +460,30 @@ jobs:
         with:
           name: release-prep
           path: release-prep
+
+      - name: Download verification artefacts
+        id: download-verification
+        uses: actions/download-artifact@71f31b0d0be45612bc1db53de9b1aa6dc10e30f2
+        with:
+          name: release-verification
+          path: release-verification
+          if-no-files-found: ignore
+
+      - name: Integrate verification summary
+        if: ${{ steps.download-verification.outputs.download-path }}
+        run: |
+          set -euo pipefail
+          SUMMARY_DIR="${{ steps.download-verification.outputs.download-path }}"
+          SUMMARY_FILE="$SUMMARY_DIR/verification-summary.json"
+          if [ -f "$SUMMARY_FILE" ]; then
+            mkdir -p release-prep/reports/release
+            cp "$SUMMARY_FILE" release-prep/reports/release/verification-summary.json
+          elif [ -f "$SUMMARY_DIR/reports/release/verification-summary.json" ]; then
+            mkdir -p release-prep/reports/release
+            cp "$SUMMARY_DIR/reports/release/verification-summary.json" release-prep/reports/release/verification-summary.json
+          else
+            echo "::warning::Verification summary artifact not found in ${SUMMARY_DIR}."
+          fi
 
       - name: Assemble release bundle
         id: bundle
@@ -509,4 +534,5 @@ jobs:
             dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sha256
             dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sig
             dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.pem
+            release-prep/reports/release/verification-summary.json
             ${{ steps.provenance.outputs.bundle-path }}
