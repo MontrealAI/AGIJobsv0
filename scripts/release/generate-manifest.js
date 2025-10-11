@@ -167,6 +167,156 @@ function parseNvmrc() {
   return fs.readFileSync(filePath, 'utf8').trim();
 }
 
+function captureCommandVersion(command, args = []) {
+  try {
+    const result = spawnSync(command, args, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    if (result.error) {
+      return null;
+    }
+    if (typeof result.status === 'number' && result.status !== 0) {
+      return null;
+    }
+    const stdout = (result.stdout || '').trim();
+    if (stdout.length > 0) {
+      const firstLine = stdout.split(/\r?\n/, 1)[0];
+      if (firstLine && firstLine.trim().length > 0) {
+        return firstLine.trim();
+      }
+    }
+    const stderr = (result.stderr || '').trim();
+    if (stderr.length > 0) {
+      const semverMatch = stderr.match(/\b\d+\.\d+\.\d+\b/);
+      if (semverMatch) {
+        return semverMatch[0];
+      }
+      const firstLine = stderr.split(/\r?\n/, 1)[0];
+      if (firstLine && firstLine.trim().length > 0) {
+        return firstLine.trim();
+      }
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function collectHardhatSolidityCompilers() {
+  const warnings = [];
+  const compilers = new Map();
+  const buildInfoDir = path.resolve(process.cwd(), 'artifacts', 'build-info');
+
+  if (!fs.existsSync(buildInfoDir)) {
+    warnings.push('Hardhat build-info directory missing; run hardhat compile before generating manifest.');
+    return { compilers: [], warnings };
+  }
+
+  let files;
+  try {
+    files = fs.readdirSync(buildInfoDir).filter((file) => file.endsWith('.json'));
+  } catch (error) {
+    warnings.push(`Unable to enumerate Hardhat build-info directory: ${error.message}`);
+    return { compilers: [], warnings };
+  }
+
+  if (files.length === 0) {
+    warnings.push('Hardhat build-info directory contains no compiler metadata.');
+    return { compilers: [], warnings };
+  }
+
+  const registerCompiler = ({ version, longVersion, settings }, sourceLabel) => {
+    const normalisedVersion = typeof version === 'string' ? version.trim() : null;
+    if (!normalisedVersion) {
+      warnings.push(`Hardhat build-info entry missing solcVersion (${sourceLabel}).`);
+      return;
+    }
+
+    const optimizerSettings = settings && typeof settings.optimizer === 'object'
+      ? settings.optimizer
+      : null;
+    const optimizerEnabled = optimizerSettings && typeof optimizerSettings.enabled !== 'undefined'
+      ? Boolean(optimizerSettings.enabled)
+      : undefined;
+    const optimizerRuns = optimizerSettings && typeof optimizerSettings.runs !== 'undefined'
+      ? Number(optimizerSettings.runs)
+      : undefined;
+    const viaIR = settings && typeof settings.viaIR === 'boolean' ? settings.viaIR : undefined;
+    const evmVersion = settings && typeof settings.evmVersion === 'string' && settings.evmVersion.trim().length > 0
+      ? settings.evmVersion.trim()
+      : undefined;
+
+    const keyPayload = {
+      version: normalisedVersion,
+      optimizerEnabled: optimizerEnabled === undefined ? null : optimizerEnabled,
+      optimizerRuns: Number.isFinite(optimizerRuns) ? optimizerRuns : null,
+      viaIR: viaIR === undefined ? null : viaIR,
+      evmVersion: evmVersion || null,
+    };
+    const key = JSON.stringify(keyPayload);
+
+    if (!compilers.has(key)) {
+      compilers.set(key, {
+        version: normalisedVersion,
+        ...(typeof longVersion === 'string' && longVersion.trim().length > 0
+          ? { longVersion: longVersion.trim() }
+          : {}),
+        ...(optimizerEnabled !== undefined
+          ? {
+              optimizer: {
+                enabled: optimizerEnabled,
+                ...(Number.isFinite(optimizerRuns) ? { runs: Number(optimizerRuns) } : {}),
+              },
+            }
+          : {}),
+        ...(viaIR !== undefined ? { viaIR } : {}),
+        ...(evmVersion ? { evmVersion } : {}),
+        sources: new Set([sourceLabel]),
+      });
+    } else {
+      compilers.get(key).sources.add(sourceLabel);
+    }
+  };
+
+  for (const fileName of files) {
+    const absolute = path.join(buildInfoDir, fileName);
+    try {
+      const info = JSON.parse(fs.readFileSync(absolute, 'utf8'));
+      registerCompiler(
+        {
+          version: info.solcVersion || (info.solcLongVersion ? info.solcLongVersion.split('+')[0] : null),
+          longVersion: info.solcLongVersion,
+          settings: info.input && typeof info.input.settings === 'object' ? info.input.settings : {},
+        },
+        path.relative(process.cwd(), absolute)
+      );
+    } catch (error) {
+      warnings.push(`Failed to parse Hardhat build-info ${fileName}: ${error.message}`);
+    }
+  }
+
+  const result = Array.from(compilers.values()).map((entry) => ({
+    version: entry.version,
+    ...(entry.longVersion ? { longVersion: entry.longVersion } : {}),
+    ...(entry.optimizer ? { optimizer: entry.optimizer } : {}),
+    ...(Object.prototype.hasOwnProperty.call(entry, 'viaIR') ? { viaIR: entry.viaIR } : {}),
+    ...(entry.evmVersion ? { evmVersion: entry.evmVersion } : {}),
+    sources: Array.from(entry.sources).sort(),
+  }));
+
+  result.sort((a, b) => {
+    if (a.version === b.version) {
+      const aLong = a.longVersion || '';
+      const bLong = b.longVersion || '';
+      return aLong.localeCompare(bLong);
+    }
+    return a.version.localeCompare(b.version);
+  });
+
+  return { compilers: result, warnings };
+}
+
 function getGitInfo() {
   const info = {};
   try {
@@ -283,6 +433,7 @@ function buildManifest({
     ? readJsonAbsolute(deploymentConfigAbsolute, { optional: true })
     : null;
   const knownNetwork = network ? KNOWN_NETWORKS[network] || null : null;
+  const hardhatSolidity = collectHardhatSolidityCompilers();
 
   const manifest = {
     generatedAt: new Date().toISOString(),
@@ -295,6 +446,8 @@ function buildManifest({
         packageJson.devDependencies &&
         packageJson.devDependencies['@nomicfoundation/hardhat-toolbox'],
       ...(parseFoundryToolchain()),
+      npm: captureCommandVersion('npm', ['--version']),
+      solidityCompilers: hardhatSolidity.compilers,
     },
     contracts: {},
     sources: {
@@ -369,6 +522,7 @@ function buildManifest({
     manifest.warnings.push(...warnings);
   }
 
+  manifest.warnings.push(...hardhatSolidity.warnings);
   manifest.warnings = Array.from(new Set(manifest.warnings)).sort();
 
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });

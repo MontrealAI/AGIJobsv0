@@ -28,7 +28,7 @@ containing:
 
 - `reports/abis/head/` – Final ABI exports (used for Etherscan verification).
 - `reports/sbom/` – SPDX SBOM (`.spdx.json`) plus CycloneDX manifest.
-- `reports/release/manifest.json` – Contract names ↔ addresses ↔ bytecode hashes, plus network metadata (chain ID, explorer URL, deployment-config reference).
+- `reports/release/manifest.json` – Contract names ↔ addresses ↔ bytecode hashes, toolchain fingerprint (Node, npm, Hardhat, Foundry, full Solidity compiler matrix), and network metadata (chain ID, explorer URL, deployment-config reference).
 - `reports/release/notes.md` – Human-readable release notes with change log.
 - `typechain-types/` – TypeScript bindings (must match ABIs).
 - `deployment-config/` – Verification configs and deterministic deployment params.
