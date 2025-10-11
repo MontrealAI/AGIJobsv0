@@ -35,6 +35,12 @@ The command writes fully resolved sentinels to
 are populated with checksum addresses. Import the rendered JSON into Defender
 via “Create Sentinel → Advanced JSON” or point a Forta bot at the same filters.
 
+> **Continuous validation** – CI now runs `npm run monitoring:validate` to prove
+> every sentinel template resolves against the latest deployment artefacts.
+> Run the command locally after touching `deployment-config`, `docs/deployment-*`
+> files, or the sentinel JSON to fail fast on missing placeholders or event
+> signatures.
+
 ## Alert Routing
 
 1. Provision a Defender Relayer with access to the operations Slack or PagerDuty
