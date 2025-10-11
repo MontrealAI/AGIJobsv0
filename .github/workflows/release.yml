@@ -105,6 +105,14 @@ jobs:
       - name: Generate release manifest
         run: npm run release:manifest
 
+      - name: Generate release notes
+        run: |
+          npm run release:notes -- \
+            --manifest reports/release/manifest.json \
+            --out reports/release/notes.md \
+            --network "${{ steps.network.outputs.network }}" \
+            --version "${{ steps.version.outputs.version }}"
+
       - name: Generate SBOM
         run: npm run sbom:generate
 
@@ -131,6 +139,13 @@ jobs:
     env:
       RELEASE_NETWORK: ${{ needs.prepare.outputs.network }}
       RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+      ETHERSCAN_API_KEY_MAINNET: ${{ secrets.ETHERSCAN_API_KEY_MAINNET }}
+      ETHERSCAN_API_KEY_SEPOLIA: ${{ secrets.ETHERSCAN_API_KEY_SEPOLIA }}
+      ETHERSCAN_SECRET_NAME: ${{ secrets.AWS_ETHERSCAN_SECRET_NAME }}
+      ETHERSCAN_SECRET_JSON_KEY: ${{ secrets.AWS_ETHERSCAN_SECRET_JSON_KEY }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ETHERSCAN_ROLE_ARN }}
+      AWS_REGION: ${{ secrets.AWS_ETHERSCAN_REGION }}
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
@@ -151,6 +166,86 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
 
+      - name: Configure AWS credentials for explorer secrets
+        if: ${{ env.AWS_ROLE_TO_ASSUME != '' && env.AWS_REGION != '' }}
+        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: release-etherscan-${{ github.run_id }}
+          role-duration-seconds: 900
+
+      - name: Fetch explorer API key via AWS Secrets Manager
+        if: ${{ env.ETHERSCAN_SECRET_NAME != '' }}
+        env:
+          SECRET_NAME: ${{ env.ETHERSCAN_SECRET_NAME }}
+          SECRET_JSON_KEY: ${{ env.ETHERSCAN_SECRET_JSON_KEY }}
+        run: |
+          set -euo pipefail
+          SECRET_VALUE=$(aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --query SecretString --output text)
+          export SECRET_VALUE
+          node <<'NODE'
+          const fs = require('fs');
+          const secret = process.env.SECRET_VALUE || '';
+          const jsonKey = process.env.SECRET_JSON_KEY || '';
+          const envFile = process.env.GITHUB_ENV;
+          const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+          const addMask = (value) => {
+            process.stdout.write(`::add-mask::${value}\n`);
+          };
+          const appendEnv = (key, value) => {
+            if (!value || typeof value !== 'string') {
+              return;
+            }
+            const trimmed = value.trim();
+            if (!trimmed) {
+              return;
+            }
+            fs.appendFileSync(envFile, `${key}=${trimmed}\n`);
+            addMask(trimmed);
+          };
+          const appendSummary = (message) => {
+            if (summaryFile) {
+              fs.appendFileSync(summaryFile, `${message}\n`);
+            } else {
+              console.log(message);
+            }
+          };
+          let parsed;
+          try {
+            parsed = JSON.parse(secret);
+          } catch (error) {
+            parsed = secret;
+          }
+          if (typeof parsed === 'string') {
+            appendEnv('ETHERSCAN_API_KEY', parsed);
+            appendSummary('✅ Loaded default explorer API key from AWS Secrets Manager.');
+          } else if (parsed && typeof parsed === 'object') {
+            if (jsonKey) {
+              if (!Object.prototype.hasOwnProperty.call(parsed, jsonKey)) {
+                throw new Error(`Secret JSON missing key: ${jsonKey}`);
+              }
+              const target = parsed[jsonKey];
+              if (target && typeof target === 'object') {
+                appendEnv('ETHERSCAN_API_KEY', target.default || target.apiKey || target.key || '');
+                appendEnv('ETHERSCAN_API_KEY_MAINNET', target.mainnet || target.mainnetKey || '');
+                appendEnv('ETHERSCAN_API_KEY_SEPOLIA', target.sepolia || target.sepoliaKey || target.testnet || '');
+              } else {
+                appendEnv('ETHERSCAN_API_KEY', String(target));
+              }
+              appendSummary(`✅ Loaded explorer API credentials using selector "${jsonKey}".`);
+            } else {
+              appendEnv('ETHERSCAN_API_KEY', parsed.default || parsed.apiKey || parsed.key || '');
+              appendEnv('ETHERSCAN_API_KEY_MAINNET', parsed.mainnet || parsed.mainnetKey || '');
+              appendEnv('ETHERSCAN_API_KEY_SEPOLIA', parsed.sepolia || parsed.sepoliaKey || parsed.testnet || '');
+              appendSummary('✅ Loaded explorer API credentials from JSON secret.');
+            }
+          } else {
+            throw new Error('Unsupported secret format for explorer credentials.');
+          }
+          NODE
+          unset SECRET_VALUE
+
       - name: Download release bundle
         uses: actions/download-artifact@4cb1d0de87d15f5f9492c2ab5a8c5e2d06cc1f6d
         with:
@@ -167,10 +262,6 @@ jobs:
           cp reports/prep/reports/release/manifest.json reports/release/manifest.json
 
       - name: Run automated contract verification
-        env:
-          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-          ETHERSCAN_API_KEY_MAINNET: ${{ secrets.ETHERSCAN_API_KEY_MAINNET }}
-          ETHERSCAN_API_KEY_SEPOLIA: ${{ secrets.ETHERSCAN_API_KEY_SEPOLIA }}
         run: |
           node scripts/release/run-etherscan-verification.js \
             --network "$RELEASE_NETWORK" \
@@ -369,6 +460,7 @@ jobs:
             -C release-prep \
             reports/abis/head \
             reports/sbom \
+            reports/release \
             typechain-types \
             deployment-config
           sha256sum "dist/agi-jobs-v${VERSION}-artifacts.tar.gz" > "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sha256"
@@ -401,6 +493,7 @@ jobs:
           name: AGI Jobs v${{ steps.bundle.outputs.version }}
           draft: false
           prerelease: ${{ contains(steps.bundle.outputs.version, '-') }}
+          body_path: release-prep/reports/release/notes.md
           files: |
             dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz
             dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sha256

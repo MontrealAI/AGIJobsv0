@@ -37,6 +37,7 @@ scripts/**/*.js
 !scripts/docs/check-links.js
 !scripts/observability-smoke-check.js
 !scripts/release/generate-manifest.js
+!scripts/release/generate-release-notes.js
 !scripts/release/run-etherscan-verification.js
 !scripts/utils/parseDuration.js
 build/

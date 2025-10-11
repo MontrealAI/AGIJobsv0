@@ -12,8 +12,10 @@ the release manifest, and publishes an SBOM.
 2. The new **Verify deployed contracts** job downloads the manifest, resolves
    deployed addresses, and executes
    `scripts/release/run-etherscan-verification.js` for the selected network.
-3. The script determines the correct API key from repository/organization
-   secrets (`ETHERSCAN_API_KEY_<NETWORK>` or `ETHERSCAN_API_KEY`), prepares
+3. The script determines the correct API key, preferring the short-lived
+   credentials fetched from AWS Secrets Manager via GitHub OIDC and falling
+   back to repository/organization secrets (`ETHERSCAN_API_KEY_<NETWORK>` or
+   `ETHERSCAN_API_KEY`). It then prepares
    constructor argument bundles, and calls `npx hardhat verify --no-compile`
    for each module listed in the verification plan.
 4. A JSON summary is uploaded as `release-verification` for auditors. It
@@ -48,17 +50,26 @@ required.
 
 ## Secrets and OIDC policy
 
-Store explorer API keys in the repository, environment, or organization
-secrets. The workflow checks the following environment variables (in order):
+Provision explorer API keys in your secrets manager and expose them to the
+workflow through the following variables:
 
-1. `ETHERSCAN_API_KEY_<NETWORK>` — e.g. `ETHERSCAN_API_KEY_MAINNET`.
-2. `ETHERSCAN_API_KEY` — fallback shared key.
+- `AWS_ETHERSCAN_ROLE_ARN` / `AWS_ETHERSCAN_REGION` – IAM role parameters used
+  to mint temporary credentials via GitHub OIDC.
+- `AWS_ETHERSCAN_SECRET_NAME` – Secrets Manager identifier that stores the API
+  key or a JSON object containing per-network keys.
+- `AWS_ETHERSCAN_SECRET_JSON_KEY` *(optional)* – selector when the secret holds
+  multiple credential sets.
 
-Use GitHub's OIDC integration with your secrets manager to mint short-lived
-API keys on demand. Document the provisioning policy in your operations runbook
-so the incident commander can rotate credentials quickly. The verification job
-fails fast when no API key is available, preventing unsigned releases from
-reaching production unnoticed.
+When these values are present, the release workflow loads the secret at runtime
+and exports `ETHERSCAN_API_KEY`, `ETHERSCAN_API_KEY_MAINNET`, and
+`ETHERSCAN_API_KEY_SEPOLIA` for the verification step. If the AWS configuration
+is omitted, the workflow falls back to repository/environment secrets with the
+same names.
+
+Document the provisioning policy in your operations runbook so the incident
+commander can rotate credentials quickly. The verification job fails fast when
+no API key is available, preventing unsigned releases from reaching production
+unnoticed.
 
 ## Dry-run before tagging
 
