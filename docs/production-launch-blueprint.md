@@ -68,7 +68,9 @@ sequenceDiagram
 ```
 
 1. **Clone at the release tag** you intend to deploy. Rebase your configuration branch on
-   top of the latest hotfix or security patch before executing.
+   top of the latest hotfix or security patch before executing. Ensure the tag follows the
+   [release tag signing playbook](release-tag-signing.md) so provenance checks remain valid
+   throughout the launch.
 2. **Review security notices** in `SECURITY.md` and the latest release notes in
    `CHANGELOG.md` to understand mandatory mitigations.
 3. **Export credentials** from an encrypted secret manager. Populate:

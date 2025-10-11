@@ -29,6 +29,7 @@ scripts/**/*.js
 !scripts/ci/abi-targets.js
 !scripts/ci/remap-coverage-paths.js
 !scripts/ci/check-toolchain-locks.js
+!scripts/ci/ensure-tag-signed.js
 !scripts/verify-wiring.js
 !scripts/run-wire-verify.js
 !scripts/subgraph-e2e.js

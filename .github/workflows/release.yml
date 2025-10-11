@@ -59,6 +59,9 @@ jobs:
             echo "::error::Version must follow semver."; exit 1; fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Require signed release tag
+        run: node scripts/ci/ensure-tag-signed.js
+
       - name: Verify changelog contains version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
