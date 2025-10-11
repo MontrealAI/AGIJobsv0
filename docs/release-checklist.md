@@ -45,14 +45,16 @@ Use this list before tagging a new production release.
 7. **Update deployment addresses**
    - Refresh `docs/deployment-addresses.json` and `docs/deployment-summary.json` with the post-deployment snapshot.
    - Commit the generated files so the release manifest and verification plan have canonical references.
-8. **Generate release manifest & SBOM**
+8. **Generate release manifest, notes & SBOM**
    ```bash
    npm run sbom:generate
    npm run release:manifest
+   npm run release:notes -- --network mainnet --version X.Y.Z
    jq '.warnings' reports/release/manifest.json
    ```
    - Ensure the warnings array is empty before publishing the release.
-   - Attach the manifest and SBOM JSON files to the signed tag artefacts.
+   - Inspect `reports/release/notes.md` for the generated contract inventory and toolchain summary. This file is published as the release body.
+   - Attach the manifest, release notes, and SBOM JSON files to the signed tag artefacts.
 9. **Prime automated explorer verification** ([guide](release-explorer-verification.md))
    ```bash
    # populate constructor arguments under deployment-config/verification/args/<network>/
@@ -60,7 +62,11 @@ Use this list before tagging a new production release.
    node scripts/release/run-etherscan-verification.js --network sepolia --dry-run
    ```
    - Ensure every contract resolves to a non-zero address and the dry run succeeds before tagging.
-   - Store the API key in the repository/environment secrets (`ETHERSCAN_API_KEY_MAINNET`, `ETHERSCAN_API_KEY_SEPOLIA`, or `ETHERSCAN_API_KEY`).
+   - Prefer storing explorer credentials in AWS Secrets Manager and expose them to the workflow via:
+     - `AWS_ETHERSCAN_ROLE_ARN` / `AWS_ETHERSCAN_REGION` – GitHub OIDC role assumption parameters.
+     - `AWS_ETHERSCAN_SECRET_NAME` – Secrets Manager identifier containing the API key payload.
+     - `AWS_ETHERSCAN_SECRET_JSON_KEY` *(optional)* – selector when storing multiple credentials in a single JSON blob.
+   - Fallback environment secrets (`ETHERSCAN_API_KEY_MAINNET`, `ETHERSCAN_API_KEY_SEPOLIA`, or `ETHERSCAN_API_KEY`) remain supported for self-hosted deployments.
 10. **Transfer ownership to governance**
    - Use the calls file as a guide for final `setGovernance` or `transferOwnership` transactions.
 
