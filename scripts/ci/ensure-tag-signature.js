@@ -62,6 +62,19 @@ const defaultAllowedSigners = path.join(
 const allowedSignersPath = allowedSignersFromEnv || defaultAllowedSigners;
 
 if (fs.existsSync(allowedSignersPath)) {
+  const allowedSignersContents = fs
+    .readFileSync(allowedSignersPath, 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'));
+
+  if (allowedSignersContents.length === 0) {
+    fail(
+      `Signature verification file ${allowedSignersPath} does not list any maintainer keys. ` +
+        'Populate it with the SSH or GPG keys that sign release tags so git tag -v can attest provenance.'
+    );
+  }
+
   try {
     run(`git config gpg.ssh.allowedSignersFile "${allowedSignersPath}"`);
     execSync(`git tag -v ${tagName}`, { stdio: 'inherit' });

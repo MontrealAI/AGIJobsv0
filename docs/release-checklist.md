@@ -70,6 +70,7 @@ Use this list before tagging a new production release.
     git push origin vX.Y.Z
     ```
     - Ensure the hardware-backed key used above appears in `.github/signers/allowed_signers`.
-    - Confirm the release workflow reports “git tag -v succeeded” to guarantee provenance. 【F:scripts/ci/ensure-tag-signature.js†L1-L70】
+    - The CI gate fails if that file is empty or contains only comments, so populate it before tagging.
+    - Confirm the release workflow reports “git tag -v succeeded” to guarantee provenance. 【F:scripts/ci/ensure-tag-signature.js†L1-L86】
 
 Tick each item to ensure deployments remain reproducible and auditable.
