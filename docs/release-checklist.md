@@ -86,4 +86,16 @@ Use this list before tagging a new production release.
     - The CI gate fails if that file is empty or contains only comments, so populate it before tagging.
     - Confirm the release workflow reports “git tag -v succeeded” to guarantee provenance. 【F:scripts/ci/ensure-tag-signature.js†L1-L86】
 
+13. **Refresh monitoring sentinels**
+    ```bash
+    cp monitoring/onchain/address-map.sample.json monitoring/onchain/address-map.mainnet.json
+    # Update addresses to the freshly deployed contracts
+    npm run monitoring:sentinels -- \
+      --network mainnet \
+      --map-file monitoring/onchain/address-map.mainnet.json \
+      --manifest reports/release/manifest.json
+    ```
+    - Attach the rendered JSON under `monitoring/onchain/rendered/` to the release archive or Defender workspace.
+    - Confirm Forta/Defender alert routing matches the incident-response runbooks.
+
 Tick each item to ensure deployments remain reproducible and auditable.
