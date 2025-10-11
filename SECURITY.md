@@ -36,6 +36,10 @@ validator dispute flows that demonstrate slashing behaviour.
 - **Foundry:**
   - `forge build`
   - `forge test`
+- **OpenSSF Scorecard:** runs automatically via [security-scorecard](docs/security/scorecard.md)
+  and fails the pipeline if key checks fall below enforced thresholds (Binary-Artifacts,
+  Code-Review, Maintained, Signed-Releases, Token-Permissions, Vulnerabilities,
+  Dependency-Update-Tool, Security-Policy, and the overall score).
 
 ## Dependency Vulnerability Allowlist
 
