@@ -63,4 +63,9 @@ Use this list before tagging a new production release.
     - Confirm mainnet deployment dry-run (`npm run migrate:wizard -- --network mainnet`) succeeded at least once with pinned block numbers.
     - Package audit artefacts (coverage HTML, Slither SARIF, Echidna logs, fork drill outputs) for hand-off.
 
+11. **Sign and verify the release tag**
+    - Follow the [release tag signing playbook](release-tag-signing.md) to create an annotated, signed `vX.Y.Z` tag.
+    - Run `git tag -v vX.Y.Z` (SSH: configure `ssh-keygen -Y import`; GPG: import the ASCII-armored key) and capture the output in the release ticket.
+    - Confirm the release workflow's **Require signed release tag** step succeeded and that GitHub shows the **Verified** badge on the tag page.
+
 Tick each item to ensure deployments remain reproducible and auditable.
