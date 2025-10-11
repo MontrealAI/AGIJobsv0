@@ -44,7 +44,8 @@ This checklist condenses the operational knowledge required to take the AGI Jobs
 
 - Align pipeline jobs (lint, tests, coverage, security, gas, docs) with GitHub branch protection so that merges to `main` mirror the local commands below.
   _Key Scripts:_ `npm run lint:check`, `npm test`, `npm run coverage:check`, `npm run security:audit`, `npm run gas:check`, `npm run docs:verify`. 【F:package.json†L8-L131】
- - Require hardware-backed signed release tags and verify them in CI before publishing artefacts. Run
+- Guard Scorecard health by keeping the security-scorecard workflow green. Any regression in Binary-Artifacts, Code-Review, Maintained, Signed-Releases, Token-Permissions, Vulnerabilities, Dependency-Update-Tool, Security-Policy, or the overall score below the enforced thresholds will block the build. Follow the [Scorecard enforcement guide](security/scorecard.md) to triage and recover.
+- Require hardware-backed signed release tags and verify them in CI before publishing artefacts. Run
    `npm run ci:verify-signers` during release prep to catch format issues before the workflow executes.
    _Reference:_ `scripts/ci/ensure-tag-signature.js`, `scripts/ci/check-signers.js`, and the [Release Provenance & Tag Signing](release-provenance.md) playbook. 【F:scripts/ci/ensure-tag-signature.js†L1-L70】【F:scripts/ci/check-signers.js†L1-L103】【F:docs/release-provenance.md†L1-L104】
 - Require green runs of planner→simulator→runner integration tests on every PR, plus manual owner checklist sign-off for production rollouts.

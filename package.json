@@ -72,6 +72,7 @@
     "webapp:typecheck": "npm run typecheck --prefix apps/console",
     "webapp:e2e": "start-server-and-test \"npm --prefix apps/console run preview -- --host 0.0.0.0 --port 4173\" http://127.0.0.1:4173 \"cypress run --config-file cypress.config.ts\"",
     "security:audit": "audit-ci --config ./audit-ci.json",
+    "security:scorecard:check": "node tools/security/validate-scorecard.mjs reports/security/scorecard.json",
     "gas:check": "FOUNDRY_PROFILE=gas forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot --check",
     "gas:report": "REPORT_GAS=true npx hardhat test --no-compile",
     "gas:snapshot": "FOUNDRY_PROFILE=gas forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot",
