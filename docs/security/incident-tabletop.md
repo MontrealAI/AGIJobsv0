@@ -39,7 +39,9 @@ controls after every tagged release.
 4. **Forensics bundle** – FORENSICS exports the latest Slither SARIF artefact
    (`reports/security/slither.sarif`) and validates that findings are triaged in
    the GitHub Security tab. Any `High` severities must be resolved or waived
-   prior to concluding the drill.
+   prior to concluding the drill. Confirm that `tools/security/slither-allowlist.json`
+   reflects the current approved exceptions; the CI gate refuses merges if a
+   high-severity issue is absent from that reviewed allowlist.
 5. **Comms dry-run** – COMMS drafts the SEV-1 holding statement using the
    template in `docs/incident-response.md` §7 and circulates it for approval.
 6. **Debrief** – Capture timing, gaps, and tool issues. Update `docs/incident-response.md`

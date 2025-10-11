@@ -1,0 +1,112 @@
+[
+  {
+    "ruleId": "arbitrary-from",
+    "relativeUri": "contracts/v2/StakeManager.sol",
+    "messageContains": "lockReward(bytes32,address,uint256)"
+  },
+  {
+    "ruleId": "arbitrary-from",
+    "relativeUri": "contracts/v2/StakeManager.sol",
+    "messageContains": "lock(address,uint256)"
+  },
+  {
+    "ruleId": "arbitrary-from",
+    "relativeUri": "contracts/v2/StakeManager.sol",
+    "messageContains": "lockDisputeFee(address,uint256)"
+  },
+  {
+    "ruleId": "arbitrary-from",
+    "relativeUri": "contracts/v2/kernel/EscrowVault.sol",
+    "messageContains": "EscrowVault.deposit"
+  },
+  {
+    "ruleId": "weak-prng",
+    "relativeUri": "contracts/v2/AuditModule.sol",
+    "messageContains": "AuditModule.onJobFinalized"
+  },
+  {
+    "ruleId": "weak-prng",
+    "relativeUri": "contracts/v2/ValidationModule.sol",
+    "messageContains": "ValidationModule.selectValidators"
+  },
+  {
+    "ruleId": "weak-prng",
+    "relativeUri": "contracts/v2/modules/JobRouter.sol",
+    "messageContains": "JobRouter.selectPlatform"
+  },
+  {
+    "ruleId": "weak-prng",
+    "relativeUri": "contracts/v2/modules/RoutingModule.sol",
+    "messageContains": "RoutingModule.selectOperator"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/RewardEngineMB.sol",
+    "messageContains": "RewardEngineMB._aggregate"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/JobRegistry.sol",
+    "messageContains": "JobRegistry._applyForJob"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/ValidationModule.sol",
+    "messageContains": "ValidationModule._cleanup"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/JobRegistry.sol",
+    "messageContains": "JobRegistry._finalize"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/ValidationModule.sol",
+    "messageContains": "ValidationModule._finalize"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/ValidationModule.sol",
+    "messageContains": "ValidationModule._revealValidation"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/StakeManager.sol",
+    "messageContains": "StakeManager._redistributeEscrowBatched"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/StakeManager.sol",
+    "messageContains": "StakeManager._slashBatched"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/kernel/JobRegistry.sol",
+    "messageContains": "KernelJobRegistry._unlockJob"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/modules/PlatformRegistry.sol",
+    "messageContains": "PlatformRegistry.acknowledgeAndDeregister"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/modules/PlatformRegistry.sol",
+    "messageContains": "PlatformRegistry.acknowledgeStakeAndRegister("
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/modules/PlatformRegistry.sol",
+    "messageContains": "PlatformRegistry.acknowledgeStakeAndRegisterFor"
+  },
+  {
+    "ruleId": "reentrancy-no-eth",
+    "relativeUri": "contracts/v2/JobRegistry.sol",
+    "messageContains": "JobRegistry.applyConfiguration"
+  },
+  {
+    "ruleId": "mapping-deletion",
+    "relativeUri": "contracts/v2/ArbitratorCommittee.sol",
+    "messageContains": "ArbitratorCommittee.finalize"
+  }
+]
