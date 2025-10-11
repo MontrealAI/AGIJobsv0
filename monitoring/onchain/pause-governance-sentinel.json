@@ -1,0 +1,81 @@
+{
+  "$schema": "https://defender.openzeppelin.com/schemas/sentinel.json",
+  "name": "AGI Jobs Pause & Governance Sentinel",
+  "type": "BLOCK_EVENT",
+  "network": "mainnet",
+  "addresses": [
+    "{{SYSTEM_PAUSE}}",
+    "{{STAKE_MANAGER}}",
+    "{{JOB_REGISTRY}}",
+    "{{FEE_POOL}}"
+  ],
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "account", "type": "address" }
+      ],
+      "name": "Paused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "account", "type": "address" }
+      ],
+      "name": "Unpaused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" },
+        { "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "newGovernance", "type": "address" }
+      ],
+      "name": "GovernanceUpdated",
+      "type": "event"
+    }
+  ],
+  "conditions": [
+    {
+      "event": "Paused(address)",
+      "expression": "true",
+      "severity": "CRITICAL",
+      "notificationChannels": ["pagerduty-critical", "ops-slack"],
+      "notes": "System pause invoked. Run docs/system-pause.md and owner-control-emergency-runbook.md."
+    },
+    {
+      "event": "Unpaused(address)",
+      "expression": "true",
+      "severity": "HIGH",
+      "notificationChannels": ["pagerduty-critical", "ops-slack"],
+      "notes": "System resumed. Confirm multisig approval and capture post-incident report."
+    },
+    {
+      "event": "OwnershipTransferred(address,address)",
+      "expression": "true",
+      "severity": "CRITICAL",
+      "notificationChannels": ["pagerduty-critical"],
+      "notes": "Governance ownership transferred. Validate timelock + Safe alignment immediately."
+    },
+    {
+      "event": "GovernanceUpdated(address)",
+      "expression": "true",
+      "severity": "CRITICAL",
+      "notificationChannels": ["pagerduty-critical"],
+      "notes": "Timelock controller updated. Reconcile signers per docs/owner-control-authority-reference.md."
+    }
+  ],
+  "confirmations": 1,
+  "paused": false,
+  "notifyOnAddressActivity": true,
+  "notes": "Replace placeholders with production addresses and Defender channel slugs."
+}

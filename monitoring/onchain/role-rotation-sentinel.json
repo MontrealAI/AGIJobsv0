@@ -1,0 +1,56 @@
+{
+  "$schema": "https://defender.openzeppelin.com/schemas/sentinel.json",
+  "name": "AGI Jobs Pauser & Role Sentinel",
+  "type": "BLOCK_EVENT",
+  "network": "mainnet",
+  "addresses": [
+    "{{STAKE_MANAGER}}",
+    "{{JOB_REGISTRY}}",
+    "{{FEE_POOL}}",
+    "{{PLATFORM_REGISTRY}}",
+    "{{SYSTEM_PAUSE}}",
+    "{{REPUTATION_ENGINE}}",
+    "{{DISPUTE_MODULE}}",
+    "{{VALIDATION_MODULE}}"
+  ],
+  "abi": [
+    { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "pauser", "type": "address" }], "name": "PauserUpdated", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "pauserManager", "type": "address" }], "name": "PauserManagerUpdated", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "pauser", "type": "address" }], "name": "PausersUpdated", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "manager", "type": "address" }, { "indexed": false, "internalType": "bool", "name": "allowed", "type": "bool" }], "name": "ValidatorLockManagerUpdated", "type": "event" }
+  ],
+  "conditions": [
+    {
+      "event": "PauserUpdated(address)",
+      "expression": "true",
+      "severity": "HIGH",
+      "notificationChannels": ["ops-slack", "pagerduty-high"],
+      "notes": "Pauser rotated. Confirm Safe approval and refresh owner-control-snapshot.md."
+    },
+    {
+      "event": "PauserManagerUpdated(address)",
+      "expression": "true",
+      "severity": "HIGH",
+      "notificationChannels": ["ops-slack"],
+      "notes": "Pauser manager rotated. Ensure SystemPause delegated permissions remain valid."
+    },
+    {
+      "event": "PausersUpdated(address)",
+      "expression": "true",
+      "severity": "CRITICAL",
+      "notificationChannels": ["pagerduty-high"],
+      "notes": "Global pauser set via SystemPause. Trigger owner-control-command-center.md validation."
+    },
+    {
+      "event": "ValidatorLockManagerUpdated(address,bool)",
+      "expression": "true",
+      "severity": "MEDIUM",
+      "notificationChannels": ["ops-slack"],
+      "notes": "Validator lock manager permissions changed. Update docs/validation-module-auth-cache.md."
+    }
+  ],
+  "confirmations": 1,
+  "paused": false,
+  "notifyOnAddressActivity": true,
+  "notes": "Populate address placeholders and connect to the correct notification channels before activating."
+}

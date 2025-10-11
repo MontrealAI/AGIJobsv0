@@ -39,3 +39,16 @@ surfaced for on-call responders.
 The alert runbooks referenced in the rules align with the SRE runbooks under `docs/sre-runbooks.md`. Grafana dashboards,
 Prometheus recordings, and Alertmanager notifications all point to the same URL set so operators receive a consistent
 response plan regardless of entry point.
+
+## On-chain Sentinels & Incident Hooks
+
+Production deployments also require on-chain situational awareness. Configure Defender Sentinels or Forta bots using the
+templates in `monitoring/onchain/` to watch for:
+
+- `Paused(address)` / `Unpaused(address)` events across the protocol.
+- Governance updates (`GovernanceUpdated`, `OwnershipTransferred`, `PauserUpdated`, `PauserManagerUpdated`, timelock proposer/executor changes).
+- Critical parameter adjustments such as `setFeePct`, `setBurnPct`, and tax policy updates.
+
+The [on-chain monitoring playbook](monitoring-onchain.md) describes how to route these alerts into PagerDuty and the
+owner command centre runbooks. Pairing real-time sentinels with the Prometheus stack closes the loop between on-chain
+incidents and traditional infrastructure alerts.
