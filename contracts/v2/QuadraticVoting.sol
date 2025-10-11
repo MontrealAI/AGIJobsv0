@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {AGIALPHA} from "./Constants.sol";
+import {TokenAcknowledgement} from "./utils/TokenAcknowledgement.sol";
 
 interface IGovernanceReward {
     function recordVoters(address[] calldata voters) external;
@@ -56,6 +57,7 @@ contract QuadraticVoting is Ownable, ReentrancyGuard {
 
     constructor(address _token, address _executor) Ownable(msg.sender) {
         token = _token == address(0) ? IERC20(AGIALPHA) : IERC20(_token);
+        TokenAcknowledgement.acknowledge(address(token), address(this));
         proposalExecutor = _executor;
         emit ProposalExecutorUpdated(_executor);
     }

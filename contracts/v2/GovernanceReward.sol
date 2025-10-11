@@ -8,6 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {TokenAcknowledgement} from "./utils/TokenAcknowledgement.sol";
 
 /// @title GovernanceReward
 /// @notice Distributes a portion of the FeePool to voters based on staked balance snapshots.
@@ -71,6 +72,7 @@ contract GovernanceReward is Ownable {
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
+        TokenAcknowledgement.acknowledge(address(token), address(this));
         emit FeePoolUpdated(address(_feePool));
         emit StakeManagerUpdated(address(_stakeManager));
         emit RewardRoleUpdated(_role);

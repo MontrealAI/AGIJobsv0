@@ -7,6 +7,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {AGIALPHA} from "../Constants.sol";
+import {TokenAcknowledgement} from "../utils/TokenAcknowledgement.sol";
 
 /// @title RevenueDistributor
 /// @notice Splits incoming job fees among active operators based on stake.
@@ -39,6 +40,7 @@ contract RevenueDistributor is Ownable {
         );
         stakeManager = _stakeManager;
         emit StakeManagerUpdated(address(_stakeManager));
+        TokenAcknowledgement.acknowledge(address(token), address(this));
     }
 
     /// @notice Register the caller as an operator.

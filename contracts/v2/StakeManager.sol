@@ -20,6 +20,7 @@ import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {Thermostat} from "./Thermostat.sol";
 import {IHamiltonian} from "./interfaces/IHamiltonian.sol";
+import {TokenAcknowledgement} from "./utils/TokenAcknowledgement.sol";
 
 error InvalidPercentage();
 error InvalidTreasury();
@@ -675,6 +676,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
+        TokenAcknowledgement.acknowledge(address(token), address(this));
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
         uint16 employerPctBps = _toBps(_employerSlashPct);

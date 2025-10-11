@@ -13,6 +13,7 @@ import {AGIALPHA, AGIALPHA_DECIMALS, BURN_ADDRESS} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
+import {TokenAcknowledgement} from "./utils/TokenAcknowledgement.sol";
 
 error InvalidPercentage();
 error NotStakeManager();
@@ -188,6 +189,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
+        TokenAcknowledgement.acknowledge(address(token), address(this));
         uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
         if (pct > 100) revert InvalidPercentage();
 
