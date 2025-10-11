@@ -49,9 +49,12 @@ Use this list before tagging a new production release.
    ```bash
    npm run sbom:generate
    npm run release:manifest
+   npm run release:manifest:validate -- --fail-on-warnings --require-addresses
    npm run release:notes -- --network mainnet --version X.Y.Z
    jq '.warnings' reports/release/manifest.json
    ```
+   - The validator enforces clean git/toolchain metadata and non-zero contract
+     addresses before release artefacts are published.
    - Ensure the warnings array is empty before publishing the release.
    - Inspect `reports/release/notes.md` for the generated contract inventory and toolchain summary. This file is published as the release body.
    - Attach the manifest, release notes, and SBOM JSON files to the signed tag artefacts.

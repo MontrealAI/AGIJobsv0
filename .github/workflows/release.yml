@@ -108,6 +108,13 @@ jobs:
             --network "${{ steps.network.outputs.network }}" \
             --deployment-config "deployment-config/${{ steps.network.outputs.network }}.json"
 
+      - name: Validate release manifest
+        run: |
+          node scripts/release/validate-manifest.js \
+            --manifest reports/release/manifest.json \
+            --fail-on-warnings \
+            --require-addresses
+
       - name: Generate release notes
         run: |
           npm run release:notes -- \

@@ -28,6 +28,7 @@
     "owner:command-center": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerCommandCenter.ts",
     "sbom:generate": "mkdir -p reports/sbom && npm exec -- @cyclonedx/cyclonedx-npm --output-format json --output-file reports/sbom/cyclonedx.json",
     "release:manifest": "node scripts/release/generate-manifest.js",
+    "release:manifest:validate": "node scripts/release/validate-manifest.js",
     "release:notes": "node scripts/release/generate-release-notes.js",
     "release:verify": "node scripts/release/run-etherscan-verification.js",
     "owner:mission-control": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerMissionControl.ts",

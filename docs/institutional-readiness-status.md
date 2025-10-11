@@ -24,7 +24,7 @@ This status dossier records how the repository satisfies the "Institutional Depl
 - **Owner runbooks for non-technical operators.** The owner handbook suite (for example, `docs/owner-control-handbook.md`, `docs/owner-control-command-center.md`) and `npm run owner:quickstart` cover zero-code operations end-to-end.
 
 ## Deployment transparency
-- **Release manifest & SBOM.** `npm run release:manifest`, `npm run release:notes`, and `npm run sbom:generate` produce the artefacts enumerated in `docs/release-artifacts.md`.
+- **Release manifest & SBOM.** `npm run release:manifest`, `npm run release:manifest:validate -- --fail-on-warnings --require-addresses`, `npm run release:notes`, and `npm run sbom:generate` produce the artefacts enumerated in `docs/release-artifacts.md` with validation that fails if metadata or addresses drift.
 - **Contract address registry.** `docs/DEPLOYED_ADDRESSES.md` and machine-readable JSON snapshots (`docs/deployment-addresses.json`) stay in sync via the deployment guides.
 - **Operator telemetry.** `monitoring/` houses Prometheus/Grafana/Alertmanager configs, with the high-level orientation in `docs/operator-telemetry.md` and `docs/institutional-observability.md`.
 
