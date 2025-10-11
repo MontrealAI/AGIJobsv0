@@ -189,6 +189,12 @@ contract FeePoolInvariantTest is StdInvariant, Test {
 
         feePool = new FeePool(stakeManager, 2, TREASURY, taxPolicy);
 
+        // Mirror the production requirement where contracts that transfer
+        // AGIALPHA acknowledge the token terms after deployment. Without this
+        // step the mock pool cannot send rewards during invariant executions.
+        vm.prank(address(feePool));
+        token.acceptTerms();
+
         address[] memory proposers = new address[](1);
         proposers[0] = address(this);
         address[] memory executors = new address[](1);

@@ -100,9 +100,10 @@ npm run lint:ci
 npm test
 npm run coverage
 forge test -vvvv --ffi --fuzz-runs 256
+forge test --ffi --match-path 'test/v2/invariant/*.t.sol' --match-test '^invariant_'
 ```
 
-Running the commands in this order matches the GitHub workflow dependencies, letting contributors catch failures before opening a pull request.
+Running the commands in this order matches the GitHub workflow dependencies, letting contributors catch failures before opening a pull request. The dedicated invariant command mirrors the `Foundry invariants` steps now enforced in both `contracts-ci` and the nightly `fuzz` workflow, so property regressions cannot sneak past local smoke tests.
 
 ### Environment guardrails enforced by CI
 

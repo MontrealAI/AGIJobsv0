@@ -19,6 +19,7 @@ Use this list before tagging a new production release.
    ```bash
    npm run echidna
    npm run echidna:commit-reveal   # deterministic seed for reproducibility
+   forge test --ffi --match-path 'test/v2/invariant/*.t.sol' --match-test '^invariant_'
    ```
 4. **Static analysis**
    ```bash

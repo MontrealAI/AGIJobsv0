@@ -124,6 +124,13 @@ contract StakeManagerAccountingInvariant is StdInvariant, Test {
         JobRegistryAckRecorder ack = new JobRegistryAckRecorder(taxPolicy);
         stake = new StakeManager(1e18, 5_000, 5_000, address(0), address(ack), address(0), address(timelock));
 
+        // Allow the stake manager to move tokens during withdrawals by
+        // acknowledging the AGIALPHA terms on its behalf. In production the
+        // owner would submit this acknowledgement post-deployment; replicating
+        // it here keeps the invariant harness aligned with live operations.
+        vm.prank(address(stake));
+        token.acceptTerms();
+
         handler = new StakeManagerHandler(stake, token, taxPolicy, address(this));
         taxPolicy.setAcknowledger(address(handler), true);
 

@@ -16,8 +16,14 @@ further invariants will be appended as coverage grows.
   appropriate accounting update.
 
 Each invariant is enforced by the Forge suite in
-`test/v2/invariant/StakeManagerAccountingInvariant.t.sol` and executed in
-CI with the rest of the Foundry tests (`forge test`).
+`test/v2/invariant/StakeManagerAccountingInvariant.t.sol` and now executes in
+two CI entry points:
+
+- The `ci (v2)` workflow's Foundry job runs the full `forge test` matrix with
+  the invariant profile configured for 256 runs and depth 128.
+- The contract-focused workflow (`contracts-ci`) invokes a dedicated
+  `Foundry invariants` step so path-filtered pull requests cannot bypass the
+  property tests.
 
 ## FeePool
 
@@ -36,5 +42,14 @@ CI with the rest of the Foundry tests (`forge test`).
   received.
 
 These properties are enforced in
-`test/v2/invariant/FeePoolInvariant.t.sol`, extending the Foundry
-invariant job that already runs inside the v2 CI pipeline.
+`test/v2/invariant/FeePoolInvariant.t.sol`. They run under the same CI
+conditions described above, and the nightly `fuzz` workflow increases the
+`FOUNDRY_INVARIANT_RUNS` budget to 1,024 to hunt for deeper edge cases.
+
+## CI enforcement summary
+
+| Workflow | Step | Runs | Notes |
+| --- | --- | --- | --- |
+| `.github/workflows/ci.yml` | `Foundry` | 256 | Executes the complete Foundry suite (fuzz + invariants) after Hardhat tests. |
+| `.github/workflows/contracts.yml` | `Foundry invariants` | 256 | Guarantees property tests run on contract-only pull requests. |
+| `.github/workflows/fuzz.yml` | `Foundry invariants (deep)` | 1,024 | Nightly/PR job with 1,024 runs to expose long horizon failures. |
