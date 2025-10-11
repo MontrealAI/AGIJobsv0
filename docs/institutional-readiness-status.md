@@ -15,6 +15,7 @@ This status dossier records how the repository satisfies the "Institutional Depl
 
 ## Runtime safety & monitoring
 - **Owner controls & pausability.** Owner command centre tooling (`scripts/v2/ownerControl*.ts`) and the documentation suite under `docs/owner-control-*` guarantee the deployer can modify, pause, or upgrade all parameters.
+- **Invariant guardrails for control drift.** The Foundry invariant harness in `test/v2/invariant/SystemPauseControlInvariant.t.sol` fuzzes governance operations to prove that pauser delegation, ownership, and mass pause semantics never drift away from the SystemPause owner, even under adversarial call sequences.
 - **On-chain sentinels.** Templates in `monitoring/onchain/*.json` render via `npm run monitoring:sentinels`; validation guardrails run in CI (`npm run monitoring:validate`).
 - **Forta/Defender integration.** Operational playbooks (`docs/monitoring-onchain.md`, `docs/security/forta-calibration.md`) and incident tabletop scripts (`npm run incident:tabletop`) bind Forta alerts to the incident process.
 
