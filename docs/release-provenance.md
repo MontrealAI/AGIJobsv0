@@ -51,9 +51,11 @@ git config --global tag.gpgsign true
 
 - The release workflow executes `scripts/ci/ensure-tag-signature.js`. It
   halts the pipeline if the tag lacks a cryptographic signature.
-- When `.github/signers/allowed_signers` is populated, CI also runs
-  `git tag -v` to verify the signature against the committed maintainer
-  keys. Rotate the keys and update the file whenever maintainers change
+- CI requires `.github/signers/allowed_signers` (or the path referenced by
+  `GIT_ALLOWED_SIGNERS`) to contain at least one non-comment key entry.
+  This guarantees `git tag -v` can verify the signature against a
+  committed maintainer key before any release artefacts are produced.
+  Rotate the keys and update the file whenever maintainers change
   tokens.
 
 ## 5. Provenance & Artifact Attestations

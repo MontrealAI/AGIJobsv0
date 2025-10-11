@@ -3,4 +3,5 @@
 #
 # The release workflow uses the keys listed here to run `git tag -v` on
 # release tags. Keep the keys hardware-backed when possible (e.g. YubiKey)
-# and rotate them if compromised.
+# and rotate them if compromised. Leaving this file empty causes CI to
+# fail release pipelines to prevent unverifiable provenance.
