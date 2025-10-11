@@ -38,3 +38,18 @@ CI with the rest of the Foundry tests (`forge test`).
 These properties are enforced in
 `test/v2/invariant/FeePoolInvariant.t.sol`, extending the Foundry
 invariant job that already runs inside the v2 CI pipeline.
+
+## JobEscrow (routing module)
+
+* **Escrow backing is exact** – the ERC20 balance held by
+  `JobEscrow` must always equal the sum of rewards for jobs that remain
+  `Posted` or `Submitted`. This catches any scenario where rewards
+  might leak (e.g., due to premature transfers or double releases).
+* **Job identifiers are strictly monotonic** – `nextJobId()` must match
+  the number of jobs ever created by the handler. Any divergence would
+  indicate corruption of the identifier counter or unexpected state
+  resets during cancellations and acceptances.
+
+Both invariants are exercised via
+`test/v2/invariant/JobEscrowInvariant.t.sol` and are part of the
+required CI invariant stage.
