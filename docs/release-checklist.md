@@ -43,7 +43,8 @@ Use this list before tagging a new production release.
    - Archive logs under `internal_docs/security/drills/`.
    - Store `gas-snapshots/*.json` produced during the fork.
 7. **Update deployment addresses**
-   - Fill `scripts/etherscan/addresses.json` with final contract addresses.
+   - Refresh `docs/deployment-addresses.json` and `docs/deployment-summary.json` with the post-deployment snapshot.
+   - Commit the generated files so the release manifest and verification plan have canonical references.
 8. **Generate release manifest & SBOM**
    ```bash
    npm run sbom:generate
@@ -52,10 +53,14 @@ Use this list before tagging a new production release.
    ```
    - Ensure the warnings array is empty before publishing the release.
    - Attach the manifest and SBOM JSON files to the signed tag artefacts.
-9. **Create Etherscan call plan**
+9. **Prime automated explorer verification** ([guide](release-explorer-verification.md))
    ```bash
-   node scripts/etherscan/generate_calls.js > scripts/etherscan/calls.json
+   # populate constructor arguments under deployment-config/verification/args/<network>/
+   node scripts/release/run-etherscan-verification.js --network mainnet --dry-run
+   node scripts/release/run-etherscan-verification.js --network sepolia --dry-run
    ```
+   - Ensure every contract resolves to a non-zero address and the dry run succeeds before tagging.
+   - Store the API key in the repository/environment secrets (`ETHERSCAN_API_KEY_MAINNET`, `ETHERSCAN_API_KEY_SEPOLIA`, or `ETHERSCAN_API_KEY`).
 10. **Transfer ownership to governance**
    - Use the calls file as a guide for final `setGovernance` or `transferOwnership` transactions.
 

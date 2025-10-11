@@ -1,0 +1,103 @@
+{
+  "$schema": "./schema.json",
+  "network": "mainnet",
+  "explorer": {
+    "name": "Etherscan",
+    "type": "etherscan",
+    "apiUrl": "https://api.etherscan.io/api",
+    "browserUrl": "https://etherscan.io/address/",
+    "apiKeyEnv": ["ETHERSCAN_API_KEY_MAINNET", "ETHERSCAN_API_KEY"]
+  },
+  "contracts": [
+    {
+      "name": "StakeManager",
+      "manifestKey": "StakeManager",
+      "fullyQualified": "contracts/v2/StakeManager.sol:StakeManager",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/stake-manager.js"
+    },
+    {
+      "name": "ReputationEngine",
+      "manifestKey": "ReputationEngine",
+      "fullyQualified": "contracts/v2/ReputationEngine.sol:ReputationEngine",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/reputation-engine.js"
+    },
+    {
+      "name": "IdentityRegistry",
+      "manifestKey": "IdentityRegistry",
+      "fullyQualified": "contracts/v2/IdentityRegistry.sol:IdentityRegistry",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/identity-registry.js"
+    },
+    {
+      "name": "ValidationModule",
+      "manifestKey": "ValidationModule",
+      "fullyQualified": "contracts/v2/ValidationModule.sol:ValidationModule",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/validation-module.js"
+    },
+    {
+      "name": "DisputeModule",
+      "manifestKey": "DisputeModule",
+      "fullyQualified": "contracts/v2/modules/DisputeModule.sol:DisputeModule",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/dispute-module.js"
+    },
+    {
+      "name": "CertificateNFT",
+      "manifestKey": "CertificateNFT",
+      "fullyQualified": "contracts/v2/CertificateNFT.sol:CertificateNFT",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/certificate-nft.js"
+    },
+    {
+      "name": "JobRegistry",
+      "manifestKey": "JobRegistry",
+      "fullyQualified": "contracts/v2/JobRegistry.sol:JobRegistry",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/job-registry.js"
+    },
+    {
+      "name": "TaxPolicy",
+      "manifestKey": "TaxPolicy",
+      "fullyQualified": "contracts/v2/TaxPolicy.sol:TaxPolicy",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/tax-policy.js"
+    },
+    {
+      "name": "FeePool",
+      "manifestKey": "FeePool",
+      "fullyQualified": "contracts/v2/FeePool.sol:FeePool",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/fee-pool.js"
+    },
+    {
+      "name": "PlatformRegistry",
+      "manifestKey": "PlatformRegistry",
+      "fullyQualified": "contracts/v2/PlatformRegistry.sol:PlatformRegistry",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/platform-registry.js"
+    },
+    {
+      "name": "JobRouter",
+      "manifestKey": "JobRouter",
+      "fullyQualified": "contracts/v2/modules/JobRouter.sol:JobRouter",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/job-router.js"
+    },
+    {
+      "name": "PlatformIncentives",
+      "manifestKey": "PlatformIncentives",
+      "fullyQualified": "contracts/v2/PlatformIncentives.sol:PlatformIncentives",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/platform-incentives.js"
+    },
+    {
+      "name": "SystemPause",
+      "manifestKey": "SystemPause",
+      "fullyQualified": "contracts/v2/SystemPause.sol:SystemPause",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/system-pause.js"
+    },
+    {
+      "name": "RewardEngine",
+      "manifestKey": "RewardEngine",
+      "fullyQualified": "contracts/v2/RewardEngineMB.sol:RewardEngineMB",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/reward-engine.js"
+    },
+    {
+      "name": "Thermostat",
+      "manifestKey": "Thermostat",
+      "fullyQualified": "contracts/v2/Thermostat.sol:Thermostat",
+      "constructorArgsFile": "deployment-config/verification/args/mainnet/thermostat.js"
+    }
+  ]
+}
