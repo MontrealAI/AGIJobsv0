@@ -9,6 +9,7 @@ coverage.json
 !test/coverage/
 !test/coverage/**
 reports/sbom/
+reports/security/slither.sarif
 
 .next/
 
