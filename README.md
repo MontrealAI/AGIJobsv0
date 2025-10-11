@@ -671,6 +671,7 @@ The wizard validates `.env` secrets, highlights ENS configuration drift, prints 
 - [docs/burn-receipts.md](docs/burn-receipts.md) – employer-side token burn process and validator verification.
 - [docs/expired-unclaimed-handling.md](docs/expired-unclaimed-handling.md) – guidance for expired stakes and unclaimed fees.
 - [docs/release-checklist.md](docs/release-checklist.md) – steps to compile, test and prepare an Etherscan call plan.
+- [docs/release-provenance.md](docs/release-provenance.md) – hardware-backed tag signing, CI enforcement, and owner control sign-off for verifiable releases.
 
 ## Migrating from legacy
 

@@ -63,4 +63,13 @@ Use this list before tagging a new production release.
     - Confirm mainnet deployment dry-run (`npm run migrate:wizard -- --network mainnet`) succeeded at least once with pinned block numbers.
     - Package audit artefacts (coverage HTML, Slither SARIF, Echidna logs, fork drill outputs) for hand-off.
 
+11. **Sign and verify the release tag**
+    ```bash
+    git tag -s vX.Y.Z -m "vX.Y.Z"
+    git tag -v vX.Y.Z
+    git push origin vX.Y.Z
+    ```
+    - Ensure the hardware-backed key used above appears in `.github/signers/allowed_signers`.
+    - Confirm the release workflow reports “git tag -v succeeded” to guarantee provenance. 【F:scripts/ci/ensure-tag-signature.js†L1-L70】
+
 Tick each item to ensure deployments remain reproducible and auditable.
