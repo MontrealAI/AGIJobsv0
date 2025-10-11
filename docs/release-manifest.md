@@ -74,7 +74,9 @@ Add the manifest to the artefact bundle referenced in
 
 1. Run the owner control doctors and snapshot scripts.
 2. Regenerate the SBOM and ABI exports.
-3. Run `npm run release:manifest` and review the warnings section.
+3. Run `npm run release:manifest` followed by `npm run release:manifest:validate -- --fail-on-warnings`.
+   The validator fails fast if toolchain metadata, contract hashes, or deployment
+   addresses are missing so you never publish an incomplete manifest.
 4. Attach the resulting JSON to the signed release alongside coverage,
    Slither/Echidna logs, and the owner sign-off packages.
 
