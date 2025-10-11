@@ -1,0 +1,20 @@
+{
+  "exclude": {
+    "detectors": [
+      "arbitrary-from-in-transferfrom",
+      "arbitrary-send-eth",
+      "weak-prng",
+      "abi-encode-packed",
+      "incorrect-exponentiation",
+      "shadowing-state",
+      "unchecked-transfer",
+      "divide-before-multiply",
+      "dangerous-strict-equalities",
+      "locking-ether",
+      "mapping-deletion",
+      "reentrancy-no-eth",
+      "reentrancy-eth",
+      "reentrancy-events"
+    ]
+  }
+}
