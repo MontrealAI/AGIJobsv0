@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Explorer Verification Plan",
+  "type": "object",
+  "required": ["network", "explorer", "contracts"],
+  "properties": {
+    "network": {
+      "type": "string",
+      "description": "Hardhat network identifier used for verification."
+    },
+    "explorer": {
+      "type": "object",
+      "required": ["name", "type", "apiUrl"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "apiUrl": { "type": "string" },
+        "browserUrl": { "type": "string" },
+        "apiKeyEnv": {
+          "description": "Environment variables to check for an API key, in priority order.",
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ]
+        },
+        "requireApiKey": { "type": "boolean" }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "fullyQualified"],
+        "properties": {
+          "name": { "type": "string" },
+          "manifestKey": { "type": "string" },
+          "fullyQualified": { "type": "string" },
+          "address": { "type": "string" },
+          "addressSource": { "type": "string" },
+          "addressCandidates": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "addressFields": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "constructorArgsFile": { "type": "string" },
+          "constructorArgs": {
+            "type": "array"
+          },
+          "libraries": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "skip": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,14 @@ on:
         description: 'Semver (e.g. 1.2.3)'
         required: false
         type: string
+      network:
+        description: 'Hardhat network name to verify against (e.g. mainnet, sepolia)'
+        required: false
+        default: mainnet
+        type: choice
+        options:
+          - mainnet
+          - sepolia
   push:
     tags:
       - 'v*'
@@ -26,6 +34,7 @@ jobs:
     timeout-minutes: 45
     outputs:
       version: ${{ steps.version.outputs.version }}
+      network: ${{ steps.network.outputs.network }}
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
@@ -84,6 +93,9 @@ jobs:
           npx hardhat typechain
           npm run abi:export -- --out reports/abis/head
 
+      - name: Generate release manifest
+        run: npm run release:manifest
+
       - name: Generate SBOM
         run: npm run sbom:generate
 
@@ -94,8 +106,75 @@ jobs:
           path: |
             reports/abis/head
             reports/sbom
+            reports/release
             typechain-types
             deployment-config
+
+  verify-contracts:
+    name: Verify deployed contracts
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ needs.prepare.result == 'success' }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      RELEASE_NETWORK: ${{ needs.prepare.outputs.network }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Download release bundle
+        uses: actions/download-artifact@4cb1d0de87d15f5f9492c2ab5a8c5e2d06cc1f6d
+        with:
+          name: release-prep
+          path: reports/prep
+
+      - name: Restore manifest for verification
+        run: |
+          if [ ! -f reports/prep/reports/release/manifest.json ]; then
+            echo "::error::Release manifest missing from preparation artefacts.";
+            exit 1;
+          fi
+          mkdir -p reports/release
+          cp reports/prep/reports/release/manifest.json reports/release/manifest.json
+
+      - name: Run automated contract verification
+        env:
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          ETHERSCAN_API_KEY_MAINNET: ${{ secrets.ETHERSCAN_API_KEY_MAINNET }}
+          ETHERSCAN_API_KEY_SEPOLIA: ${{ secrets.ETHERSCAN_API_KEY_SEPOLIA }}
+        run: |
+          node scripts/release/run-etherscan-verification.js \
+            --network "$RELEASE_NETWORK" \
+            --manifest reports/release/manifest.json \
+            --config "deployment-config/verification/$RELEASE_NETWORK.json"
+
+      - name: Upload verification summary
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-verification
+          path: reports/release/verification-summary.json
+          if-no-files-found: warn
 
   npm-publish:
     needs: prepare
