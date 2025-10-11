@@ -104,13 +104,14 @@ function collectAddressesFromBook(book: AddressBook | null, source: string): Map
 
 function mergeAddressMaps(target: Map<string, PlaceholderResolution>, source: Map<string, PlaceholderResolution>) {
   for (const [placeholder, record] of source.entries()) {
-    if (!target.has(placeholder)) {
-      target.set(placeholder, record);
-    }
+    target.set(placeholder, record);
   }
 }
 
-function extractAddressesFromManifest(manifest: ReleaseManifest | null): Map<string, PlaceholderResolution> {
+function extractAddressesFromManifest(
+  manifest: ReleaseManifest | null,
+  network: string
+): Map<string, PlaceholderResolution> {
   const mapping = new Map<string, PlaceholderResolution>();
   if (!manifest?.contracts) {
     return mapping;
@@ -119,16 +120,13 @@ function extractAddressesFromManifest(manifest: ReleaseManifest | null): Map<str
   for (const [name, entry] of Object.entries(manifest.contracts)) {
     if (!entry?.addresses) continue;
     const placeholder = toSnakePlaceholder(name);
-    const sources = entry.addresses;
-    for (const value of Object.values(sources)) {
-      if (typeof value === 'string' && ADDRESS_PATTERN.test(value)) {
-        mapping.set(placeholder, {
-          placeholder,
-          address: value,
-          source: 'release manifest',
-        });
-        break;
-      }
+    const value = entry.addresses?.[network];
+    if (typeof value === 'string' && ADDRESS_PATTERN.test(value)) {
+      mapping.set(placeholder, {
+        placeholder,
+        address: value,
+        source: `release manifest (${network})`,
+      });
     }
   }
 
@@ -185,7 +183,7 @@ async function buildAddressIndex(options: Options): Promise<Map<string, Placehol
   for (const manifestPath of manifestCandidates) {
     const manifest = await readJsonFile<ReleaseManifest>(path.resolve(process.cwd(), manifestPath));
     if (manifest) {
-      mergeAddressMaps(index, extractAddressesFromManifest(manifest));
+      mergeAddressMaps(index, extractAddressesFromManifest(manifest, options.network));
     }
   }
 
