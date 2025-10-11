@@ -59,6 +59,33 @@ controls after every tagged release.
 - Post-exercise report stored in the compliance archive alongside the release
   provenance attestation.
 
+## Automated evidence capture (new)
+
+Use the catalogued scenarios in
+`docs/security/incident-response-scenarios.json` to generate a fully
+templated tabletop packet before every rehearsal:
+
+```bash
+# Discover available exercises
+npm run incident:tabletop -- --list
+
+# Generate a markdown plan and evidence checklist for the validator scenario
+npm run incident:tabletop -- --scenario validator-compromise \
+  --out reports/incident-tabletop/$(date +%Y%m%d)-validator.md
+```
+
+The generator validates the scenario schema, resolves the latest catalog
+version, and writes an auditable plan containing:
+
+- Step-by-step action flow with target durations and command references.
+- Evidence artefact checklist aligned with compliance expectations.
+- Post-exercise reflection prompts for the retrospective meeting.
+
+Save the rendered file in the incident exercise archive together with
+screenshots, Safe transaction hashes, and monitoring exports. This produces
+objective proof that the quarterly drills executed against the exact
+institutional requirements captured in the readiness rubric.
+
 ## Follow-up (T+7 days)
 
 - [ ] Close or track remediation tickets spawned during the exercise.

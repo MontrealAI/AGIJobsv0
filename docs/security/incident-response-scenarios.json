@@ -1,0 +1,324 @@
+{
+  "version": "2025.02.18",
+  "lastUpdated": "2025-02-18T00:00:00Z",
+  "scenarios": [
+    {
+      "id": "validator-compromise",
+      "title": "Malicious validator double-signing on StakeManager",
+      "severity": "SEV-1",
+      "description": "Forta signals a validator performing double-signing to steal escrowed rewards while attempting to bypass slash enforcement.",
+      "triggers": [
+        "Forta bot `agi-jobs-validator-slasher` emits CRITICAL alert",
+        "Prometheus alert `stake_manager_double_signing` fires in Alertmanager",
+        "Operator paging channel receives automated SEV-1 notification"
+      ],
+      "objectives": [
+        "Pause StakeManager and JobRouter within 15 minutes",
+        "Slash compromised validator(s) and quarantine pending payouts",
+        "Capture on-chain evidence bundle for external forensic firm"
+      ],
+      "tabletopFocus": [
+        "Exercise pause pipeline with Safe signer quorum",
+        "Validate validator registry snapshot tooling",
+        "Confirm Forta + Defender Sentinel correlation"
+      ],
+      "communicationsPlan": [
+        "Incident Commander posts acknowledgement in #incident-bridge",
+        "Communications drafts SEV-1 holding statement referencing pause",
+        "Treasury notifies custodial partners about payout freeze"
+      ],
+      "dependencies": [
+        "`monitoring/onchain/pause-governance-sentinel.json` deployed",
+        "Safe signer roster current in `docs/owner-control-snapshot.md`",
+        "Forta subscription active with webhook to paging channel"
+      ],
+      "metrics": {
+        "detectionSloMinutes": 5,
+        "responseSloMinutes": 30,
+        "restorationSloMinutes": 180,
+        "notes": [
+          "Record actual detection latency in tabletop summary",
+          "Document Safe confirmation timestamps for compliance"
+        ]
+      },
+      "evidence": [
+        "`reports/incidents/<date>/forta-alert.json`",
+        "`reports/incidents/<date>/owner-emergency.md`",
+        "`reports/incidents/<date>/stake-manager-state.json`"
+      ],
+      "steps": [
+        {
+          "title": "Validate alert authenticity",
+          "owner": "Technical Lead",
+          "actions": [
+            "Open Defender Sentinel event linked in the Forta alert and confirm contract address matches StakeManager.",
+            "Run `npm run owner:pulse` to capture module heartbeat and append results to the incident log."
+          ],
+          "evidence": [
+            "Screenshot of Sentinel event detail",
+            "Console output from `owner:pulse` saved to `reports/incidents/<date>/owner-pulse.txt`"
+          ],
+          "communications": [
+            "Notify Incident Commander with recommended severity"
+          ],
+          "durationMinutes": 10
+        },
+        {
+          "title": "Enter safe mode",
+          "owner": "Technical Lead",
+          "actions": [
+            "Execute `npm run owner:emergency -- --dry-run` to generate Safe transaction bundle.",
+            "Submit production pause transaction via Safe after TL and Treasury approvals.",
+            "Run `npm run owner:snapshot` once pause is confirmed on-chain."
+          ],
+          "evidence": [
+            "Safe transaction hash recorded in incident log",
+            "Paused module list exported to compliance drive"
+          ],
+          "communications": [
+            "Treasury confirms signer quorum availability",
+            "IC informs community that protocol is paused"
+          ],
+          "durationMinutes": 20
+        },
+        {
+          "title": "Quarantine validator and document impact",
+          "owner": "Forensics",
+          "actions": [
+            "Run `npm run owner:doctor -- --validators <address>` to inspect validator health and slash status.",
+            "Collect Forta alert payload, relevant on-chain transactions, and validator stake balances for the forensic bundle.",
+            "Open Jira ticket to track slashing remediation tasks."
+          ],
+          "evidence": [
+            "Validator report saved as `reports/incidents/<date>/validator-<address>.json`",
+            "Jira incident ticket ID recorded"
+          ],
+          "communications": [
+            "FORENSICS syncs with legal counsel on disclosure requirements"
+          ],
+          "durationMinutes": 30
+        },
+        {
+          "title": "Stabilise payouts",
+          "owner": "Treasury",
+          "actions": [
+            "Review pending job settlements and suspend payouts to the compromised validator account.",
+            "If impacted jobs exist, coordinate manual settlement through paymaster fallback scripts (`scripts/v2/manual-settlement.ts`)."
+          ],
+          "evidence": [
+            "Treasury ledger entry referencing incident number",
+            "Paymaster fallback execution log (if used)"
+          ],
+          "communications": [
+            "COMMS updates partners on payout status"
+          ],
+          "durationMinutes": 45
+        }
+      ],
+      "postExerciseQuestions": [
+        "Were detection alerts correlated fast enough to inform severity decision?",
+        "Did Safe signer availability impact response time?",
+        "Were manual settlement tools understood by Treasury?"
+      ]
+    },
+    {
+      "id": "governance-key-rotation",
+      "title": "Emergency multisig rotation after hardware loss",
+      "severity": "SEV-2",
+      "description": "Owner multisig signer reports lost hardware wallet; incident tests ability to rotate keys without disrupting operations.",
+      "triggers": [
+        "Signer reports loss via secure channel",
+        "Safe health monitor detects missing signature for >2 hours",
+        "Branch protection check indicates upcoming release requiring approval"
+      ],
+      "objectives": [
+        "Rotate affected Safe signer within 24 hours",
+        "Re-issue owner command suite credentials to new signer",
+        "Validate monitoring rules recognise new signer set"
+      ],
+      "tabletopFocus": [
+        "Run owner control audit to verify signer diff",
+        "Exercise documentation updates for governance roster",
+        "Confirm EIP-712 signing instructions for new hardware"
+      ],
+      "communicationsPlan": [
+        "IC logs event as SEV-2 in compliance register",
+        "COMMS drafts internal-only advisory for engineering org",
+        "Security lead notifies custodians reliant on multisig auth"
+      ],
+      "dependencies": [
+        "`owner-safe-bundle.json` stored in secure vault",
+        "Replacement signer identity pre-vetted in `docs/owner-control-index.md`",
+        "Access to `npm run owner:rotate` with up-to-date config"
+      ],
+      "metrics": {
+        "detectionSloMinutes": 30,
+        "responseSloMinutes": 120,
+        "notes": [
+          "Measure time between incident logging and Safe rotation completion",
+          "Ensure branch protection remains enforced during rotation"
+        ]
+      },
+      "evidence": [
+        "Updated Safe signer list exported from Gnosis Safe UI",
+        "`reports/incidents/<date>/owner-config-audit.json`",
+        "Screenshot of updated branch protection settings"
+      ],
+      "steps": [
+        {
+          "title": "Capture incident context",
+          "owner": "Incident Commander",
+          "actions": [
+            "Open change ticket using `docs/owner-control-change-ticket.md` template and assign TL + Treasury reviewers.",
+            "Verify lost device revocation procedures executed (disable Passkeys, revoke API tokens)."
+          ],
+          "evidence": [
+            "Completed change ticket stored in compliance drive",
+            "Security checklist for device revocation"
+          ],
+          "communications": [
+            "IC alerts governance chat with summary and next checkpoint time"
+          ],
+          "durationMinutes": 20
+        },
+        {
+          "title": "Generate rotation bundle",
+          "owner": "Technical Lead",
+          "actions": [
+            "Execute `npm run owner:rotate -- --target owner` to prepare Safe transaction JSON for signer replacement.",
+            "Validate output with `npm run owner:audit` to ensure new signer set matches roster."
+          ],
+          "evidence": [
+            "Rotation bundle stored at `reports/owner/rotation/<date>.json`",
+            "Owner audit diff exported to incident folder"
+          ],
+          "communications": [
+            "TL briefs Treasury on signing order and timeline"
+          ],
+          "durationMinutes": 40
+        },
+        {
+          "title": "Execute rotation and verify controls",
+          "owner": "Treasury",
+          "actions": [
+            "Collect signatures from remaining quorum using Safe UI or CLI.",
+            "Run `npm run owner:verify-control` to confirm new signer set active on-chain.",
+            "Trigger `npm run monitoring:sentinels -- --network mainnet` to render updated monitoring config with new addresses."
+          ],
+          "evidence": [
+            "Safe execution transaction hash",
+            "Updated sentinel templates archived"
+          ],
+          "communications": [
+            "COMMS sends internal announcement confirming rotation complete"
+          ],
+          "durationMinutes": 60
+        }
+      ],
+      "postExerciseQuestions": [
+        "Did Safe rotation tooling surface any stale configuration?",
+        "Were new signers able to complete hardware setup quickly?",
+        "Are monitoring templates easy to regenerate after rotations?"
+      ]
+    },
+    {
+      "id": "oracle-outage",
+      "title": "Energy oracle liveness degradation",
+      "severity": "SEV-3",
+      "description": "Thermostat module detects stale energy oracle updates; tabletop checks fallback data path and communication cadence.",
+      "triggers": [
+        "Prometheus alert `thermostat_oracle_stale` fires",
+        "`npm run owner:pulse` indicates oracle heartbeat older than SLA",
+        "Operator receives partner escalation about delayed settlements"
+      ],
+      "objectives": [
+        "Fail over to backup oracle feed within 60 minutes",
+        "Keep job settlements flowing via manual data entry if needed",
+        "Broadcast status update to validators and employers"
+      ],
+      "tabletopFocus": [
+        "Exercise thermostat fallback configuration",
+        "Validate operator documentation for manual energy price entry",
+        "Ensure comms handles SEV-3 status updates"
+      ],
+      "communicationsPlan": [
+        "IC publishes SEV-3 notice in status page",
+        "COMMS notifies validators of manual fallback operations",
+        "Partner manager informs enterprise customers of SLA impact"
+      ],
+      "dependencies": [
+        "Backup oracle credentials stored in vault",
+        "`scripts/v2/updateEnergyOracle.ts` reviewed in last quarter",
+        "Manual settlement SOP in `docs/token-operations.md`"
+      ],
+      "metrics": {
+        "detectionSloMinutes": 15,
+        "responseSloMinutes": 60,
+        "notes": [
+          "Track time to execute fallback update script",
+          "Record validator feedback in retrospective"
+        ]
+      },
+      "evidence": [
+        "Thermostat metrics export pre/post failover",
+        "Fallback script execution log",
+        "Status page update screenshot"
+      ],
+      "steps": [
+        {
+          "title": "Confirm outage and assess scope",
+          "owner": "Technical Lead",
+          "actions": [
+            "Run `npm run owner:surface` to inspect oracle heartbeat timestamps.",
+            "Check Grafana dashboard `Thermostat / Oracle` to quantify drift." 
+          ],
+          "evidence": [
+            "Owner surface report saved to `reports/incidents/<date>/oracle-surface.json`",
+            "Grafana screenshot archived"
+          ],
+          "communications": [
+            "IC receives summary with recommended SEV-3 classification"
+          ],
+          "durationMinutes": 15
+        },
+        {
+          "title": "Activate fallback feed",
+          "owner": "Technical Lead",
+          "actions": [
+            "Execute `npx hardhat run --network mainnet scripts/v2/updateEnergyOracle.ts --fallback` in dry-run mode.",
+            "After validation, perform production execution via Safe with multi-sig approvals."
+          ],
+          "evidence": [
+            "Dry-run log stored in incident folder",
+            "Safe transaction hash and gas receipt"
+          ],
+          "communications": [
+            "COMMS updates validators on fallback activation"
+          ],
+          "durationMinutes": 30
+        },
+        {
+          "title": "Maintain service and record metrics",
+          "owner": "Operations",
+          "actions": [
+            "Coordinate manual settlement cadence every 30 minutes until oracle restored.",
+            "Track validator acknowledgements using `scripts/v2/ownerControlPulse.ts`."
+          ],
+          "evidence": [
+            "Manual settlement log appended to incident doc",
+            "Owner control pulse output archived"
+          ],
+          "communications": [
+            "Status page updated hourly with current state"
+          ],
+          "durationMinutes": 90
+        }
+      ],
+      "postExerciseQuestions": [
+        "Were fallback credentials accessible without delay?",
+        "Did manual settlements meet validator expectations?",
+        "Were stakeholders satisfied with communication frequency?"
+      ]
+    }
+  ]
+}
