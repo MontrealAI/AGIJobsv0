@@ -44,14 +44,22 @@ Use this list before tagging a new production release.
    - Store `gas-snapshots/*.json` produced during the fork.
 7. **Update deployment addresses**
    - Fill `scripts/etherscan/addresses.json` with final contract addresses.
-8. **Create Etherscan call plan**
+8. **Generate release manifest & SBOM**
+   ```bash
+   npm run sbom:generate
+   npm run release:manifest
+   jq '.warnings' reports/release/manifest.json
+   ```
+   - Ensure the warnings array is empty before publishing the release.
+   - Attach the manifest and SBOM JSON files to the signed tag artefacts.
+9. **Create Etherscan call plan**
    ```bash
    node scripts/etherscan/generate_calls.js > scripts/etherscan/calls.json
    ```
-9. **Transfer ownership to governance**
+10. **Transfer ownership to governance**
    - Use the calls file as a guide for final `setGovernance` or `transferOwnership` transactions.
 
-10. **Final production checks**
+11. **Final production checks**
     - Confirm `$AGIALPHA` exposes a public `burn` and that fee burning reduces total supply.
     - Run an employer‑initiated burn through `FeePool.distributeFees` and verify the burn receipt.
     - Ensure all entry points enforcing `TaxPolicy` acknowledgement are covered by tests.
@@ -63,7 +71,7 @@ Use this list before tagging a new production release.
     - Confirm mainnet deployment dry-run (`npm run migrate:wizard -- --network mainnet`) succeeded at least once with pinned block numbers.
     - Package audit artefacts (coverage HTML, Slither SARIF, Echidna logs, fork drill outputs) for hand-off.
 
-11. **Sign and verify the release tag**
+12. **Sign and verify the release tag**
     ```bash
     git tag -s vX.Y.Z -m "vX.Y.Z"
     git tag -v vX.Y.Z

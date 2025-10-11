@@ -1,0 +1,76 @@
+{
+  "$schema": "https://defender.openzeppelin.com/schemas/sentinel.json",
+  "name": "AGI Jobs Parameter Drift Sentinel",
+  "type": "BLOCK_EVENT",
+  "network": "mainnet",
+  "addresses": [
+    "{{STAKE_MANAGER}}",
+    "{{FEE_POOL}}",
+    "{{JOB_REGISTRY}}",
+    "{{TAX_POLICY}}"
+  ],
+  "abi": [
+    { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "pct", "type": "uint256" }], "name": "FeePctUpdated", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "pct", "type": "uint256" }], "name": "BurnPctUpdated", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "pct", "type": "uint256" }], "name": "ValidatorRewardPctUpdated", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "policy", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "version", "type": "uint256" }], "name": "TaxPolicyUpdated", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "policy", "type": "address" }], "name": "TaxPolicyUpdated", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "treasury", "type": "address" }], "name": "TreasuryUpdated", "type": "event" },
+    { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "minStake", "type": "uint256" }], "name": "MinStakeUpdated", "type": "event" }
+  ],
+  "conditions": [
+    {
+      "event": "FeePctUpdated(uint256)",
+      "expression": "true",
+      "severity": "HIGH",
+      "notificationChannels": ["ops-slack", "pagerduty-high"],
+      "notes": "Protocol fee percentage changed. Cross-check owner-control-change-ticket.md."
+    },
+    {
+      "event": "BurnPctUpdated(uint256)",
+      "expression": "true",
+      "severity": "HIGH",
+      "notificationChannels": ["ops-slack", "pagerduty-high"],
+      "notes": "Burn percentage changed. Validate new tax assumptions and update docs/tax-obligations.md."
+    },
+    {
+      "event": "ValidatorRewardPctUpdated(uint256)",
+      "expression": "true",
+      "severity": "MEDIUM",
+      "notificationChannels": ["ops-slack"],
+      "notes": "Validator rewards adjusted. Rebalance incentives in docs/platform-incentives.md."
+    },
+    {
+      "event": "TaxPolicyUpdated(address,uint256)",
+      "expression": "true",
+      "severity": "CRITICAL",
+      "notificationChannels": ["pagerduty-high"],
+      "notes": "New tax policy (versioned emitters) set. Ensure acknowledgements are re-primed via owner-control-atlas.md."
+    },
+    {
+      "event": "TaxPolicyUpdated(address)",
+      "expression": "true",
+      "severity": "CRITICAL",
+      "notificationChannels": ["pagerduty-high"],
+      "notes": "New tax policy (legacy emitters) set. Ensure acknowledgements are re-primed via owner-control-atlas.md."
+    },
+    {
+      "event": "TreasuryUpdated(address)",
+      "expression": "true",
+      "severity": "HIGH",
+      "notificationChannels": ["ops-slack", "pagerduty-high"],
+      "notes": "Treasury destination changed. Confirm allowlist and banking runbooks."
+    },
+    {
+      "event": "MinStakeUpdated(uint256)",
+      "expression": "true",
+      "severity": "MEDIUM",
+      "notificationChannels": ["ops-slack"],
+      "notes": "Minimum stake updated. Communicate change to validators and update docs/stake-guidelines.md."
+    }
+  ],
+  "confirmations": 1,
+  "paused": false,
+  "notifyOnAddressActivity": true,
+  "notes": "Map notification channel slugs to Defender or Forta targets before enabling."
+}
