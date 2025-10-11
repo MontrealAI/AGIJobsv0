@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -123,6 +123,12 @@ jobs:
             --network "${{ steps.network.outputs.network }}" \
             --version "${{ steps.version.outputs.version }}"
 
+      - name: Render manifest summary
+        run: |
+          npm run release:manifest:summary -- \
+            --manifest reports/release/manifest.json \
+            --out reports/release/manifest-summary.md
+
       - name: Generate SBOM
         run: npm run sbom:generate
 
@@ -140,7 +146,7 @@ jobs:
   verify-contracts:
     name: Verify deployed contracts
     needs: prepare
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     if: ${{ needs.prepare.result == 'success' }}
     permissions:
@@ -288,7 +294,7 @@ jobs:
 
   npm-publish:
     needs: prepare
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Detect npm token
@@ -347,7 +353,7 @@ jobs:
 
   docker-publish:
     needs: prepare
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -438,7 +444,7 @@ jobs:
     needs:
       - prepare
       - docker-publish
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: write

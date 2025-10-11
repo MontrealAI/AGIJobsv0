@@ -226,6 +226,7 @@ function writeReleaseNotes({ manifestPath, outPath, network, version, changelogP
 
   lines.push('## Release artefacts');
   lines.push('- `reports/release/manifest.json` — canonical deployment manifest.');
+  lines.push('- `reports/release/manifest-summary.md` — auditor-friendly Markdown view with explorer links.');
   lines.push('- `reports/sbom/cyclonedx.json` — CycloneDX SBOM produced during release.');
   lines.push('- `reports/abis/head` — exported ABIs aligned with the manifest addresses.');
   lines.push('- `typechain-types/` — generated TypeChain bindings for integrators.');
