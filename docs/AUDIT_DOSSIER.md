@@ -85,10 +85,11 @@ The `ci (v2)` workflow (`.github/workflows/ci.yml`) is required on both `main` a
 
 When freezing the code for audit:
 
-1. Run `npm run audit:dossier` and archive the generated `reports/audit` directory together with the coverage HTML and gas snapshots.
-2. Include the latest `reports/release-manifest.json` and `reports/sbom/cyclonedx.json` if supply-chain review is requested.
-3. Attach the `docs/` folder, especially this dossier and the existing deployment & runbook documentation.
-4. Share the `README.md` sections covering architecture, monitoring, and incident response with auditors.
+1. Run `npm run audit:dossier` and inspect the logs in `reports/audit/logs` for failures.
+2. Package the dossier, documentation, and release artefacts with `npm run audit:package` (use `--include-coverage`, `--include-gas`, or `--extra <path>` for supplemental material). The command emits a timestamped archive plus a manifest describing the files that were included or skipped.【F:scripts/audit/package-kit.ts†L1-L259】【F:package.json†L10-L104】
+3. Include the latest `reports/release-manifest.json` and `reports/sbom/cyclonedx.json` if supply-chain review is requested.
+4. Attach the `docs/` folder, especially this dossier, the [final verification playbook](audit/final-verification-playbook.md), and the new [formal verification briefing](audit/formal-verification-brief.md) so auditors have the full operating context.【F:docs/audit/final-verification-playbook.md†L1-L120】【F:docs/audit/formal-verification-brief.md†L1-L154】
+5. Share the `README.md` sections covering architecture, monitoring, and incident response with auditors.
 
 This package, plus the automated logs, satisfies the "External Audit & Final Verification" readiness checklist.
 
