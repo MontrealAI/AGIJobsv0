@@ -1,0 +1,57 @@
+name: demo-aurora
+
+on:
+  pull_request:
+    paths:
+      - "demo/**"
+      - ".github/workflows/demo-aurora.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aurora-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Harden runner
+        uses: step-security/harden-runner@v2.13.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Run AURORA (local)
+        env:
+          PRIVATE_KEY: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+          RPC_URL: "http://127.0.0.1:8545"
+          CHAIN_ID: "31337"
+        run: bash demo/aurora/bin/aurora-local.sh
+
+      - name: Upload demo receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-receipts
+          path: reports/localhost/aurora/**
