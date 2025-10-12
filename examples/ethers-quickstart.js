@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { ethers } = require('ethers');
 
 // Canonical $AGIALPHA token uses 18 decimals
@@ -200,6 +202,12 @@ const registryAbi = [
   'function getSpecHash(uint256 jobId) view returns (bytes32)',
 ];
 const stakeAbi = ['function depositStake(uint8 role, uint256 amount)'];
+const STAKE_ROLES = {
+  agent: 0,
+  worker: 0,
+  validator: 1,
+  platform: 2,
+};
 const erc20Abi = [
   'function approve(address spender, uint256 amount) returns (bool)',
   'function allowance(address owner, address spender) view returns (uint256)',
@@ -247,16 +255,84 @@ const attestation = new ethers.Contract(
 // Post a job with a reward denominated in AGIALPHA.
 // The optional `amount` parameter represents whole tokens and defaults to `1`.
 // Amounts are converted using the fixed 18‑decimal configuration.
-async function postJob(amount = '1') {
-  const reward = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
-  const deadline = Math.floor(Date.now() / 1000) + 3600;
-  const specHash = ethers.id('spec');
-  await registry.createJob(reward, deadline, specHash, 'ipfs://job');
+function readJsonIfExists(candidate) {
+  if (!candidate) return null;
+  const resolved = path.resolve(candidate);
+  if (!fs.existsSync(resolved)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(resolved, 'utf8'));
+  } catch (error) {
+    throw new Error(
+      `Unable to parse JSON at ${resolved}: ${(error && error.message) || 'unknown error'}`,
+    );
+  }
+}
+
+function rewardFromSpec(spec) {
+  if (!spec) return null;
+  const amount = spec?.escrow?.amountPerItem;
+  if (amount === undefined || amount === null) return null;
+  try {
+    const decimals = spec?.escrow?.decimals ?? 6;
+    return ethers.formatUnits(BigInt(amount), decimals);
+  } catch (error) {
+    throw new Error(
+      `Invalid escrow.amountPerItem in spec: ${(error && error.message) || 'unknown error'}`,
+    );
+  }
+}
+
+function deriveSpecHash(spec, fallback = 'spec') {
+  if (!spec) return ethers.id(fallback);
+  try {
+    return ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(spec)));
+  } catch (error) {
+    throw new Error(`Unable to hash spec payload: ${(error && error.message) || 'unknown error'}`);
+  }
+}
+
+async function postJob(input = '1', overrides = {}) {
+  let spec = null;
+  if (isPlainObject(input)) {
+    spec = input;
+  } else if (typeof input === 'string' && !overrides.skipResolveSpec) {
+    spec = readJsonIfExists(input);
+  }
+
+  const rewardTokens =
+    overrides.amount ?? overrides.reward ?? rewardFromSpec(spec) ?? input ?? '1';
+  const reward = ethers.parseUnits(rewardTokens.toString(), TOKEN_DECIMALS);
+  const deadline =
+    typeof overrides.deadline === 'number'
+      ? overrides.deadline
+      : Math.floor(Date.now() / 1000) + 3600;
+  const specHash = overrides.specHash ?? deriveSpecHash(spec);
+  const specUri =
+    overrides.specUri ?? spec?.acceptanceCriteriaURI ?? spec?.resultSchema ?? 'ipfs://job';
+
+  const tx = await registry.createJob(reward, deadline, specHash, specUri);
+  const receipt = await tx.wait();
+  const nextJobId = await registry.nextJobId();
+  const jobId = Number(nextJobId) - 1;
+  const employer = await signer.getAddress();
+
+  return {
+    jobId,
+    employer,
+    reward: rewardTokens.toString(),
+    specHash,
+    specUri,
+    txHash: receipt?.hash ?? null,
+  };
 }
 
 async function acknowledgeTaxPolicy() {
   const tx = await registry.acknowledgeTaxPolicy();
-  await tx.wait();
+  const receipt = await tx.wait();
+  return {
+    txHash: receipt?.hash ?? null,
+    account: await signer.getAddress(),
+  };
 }
 
 async function approveStake(amount) {
@@ -271,20 +347,45 @@ async function approveStake(amount) {
     stakeManagerAddress
   );
   if (allowance >= parsed) {
-    return;
+    return {
+      owner,
+      spender: stakeManagerAddress,
+      allowance: allowance.toString(),
+      txHash: null,
+    };
   }
   const tx = await agialphaToken.approve(stakeManagerAddress, parsed);
-  await tx.wait();
+  const receipt = await tx.wait();
+  return {
+    owner,
+    spender: stakeManagerAddress,
+    amount: amount.toString(),
+    txHash: receipt?.hash ?? null,
+  };
 }
 
 async function prepareStake(amount) {
-  await acknowledgeTaxPolicy();
-  await approveStake(amount);
+  const acknowledgement = await acknowledgeTaxPolicy();
+  const approval = await approveStake(amount);
+  return { acknowledgement, approval };
 }
 
-async function stake(amount) {
+async function stake(amount, options = {}) {
   const parsed = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
-  await stakeManager.depositStake(0, parsed);
+  const roleLabel =
+    typeof options.role === 'string' ? options.role.toLowerCase() : 'agent';
+  const roleIndex = Object.prototype.hasOwnProperty.call(STAKE_ROLES, roleLabel)
+    ? STAKE_ROLES[roleLabel]
+    : STAKE_ROLES.agent;
+  const tx = await stakeManager.depositStake(roleIndex, parsed);
+  const receipt = await tx.wait();
+  return {
+    txHash: receipt?.hash ?? null,
+    role: roleLabel,
+    roleIndex,
+    amount: amount.toString(),
+    account: await signer.getAddress(),
+  };
 }
 
 // Apply for a job using a `subdomain` label such as "alice" for
@@ -295,7 +396,15 @@ async function apply(jobId, subdomain, proof) {
 
 async function submit(jobId, uri) {
   const hash = ethers.id(uri);
-  await registry.submit(jobId, hash, uri);
+  const tx = await registry.submit(jobId, hash, uri);
+  const receipt = await tx.wait();
+  return {
+    jobId: Number(jobId),
+    worker: await signer.getAddress(),
+    uri,
+    hash,
+    txHash: receipt?.hash ?? null,
+  };
 }
 
 // Validators pass their `subdomain` label under `club.agi.eth` when voting.
@@ -319,7 +428,7 @@ async function validate(jobId, commitOrApprove, ...rest) {
       subdomain,
       proof
     );
-    await commitTx.wait();
+    const commitReceipt = await commitTx.wait();
 
     const revealTx = await validation.revealValidation(
       jobId,
@@ -329,15 +438,18 @@ async function validate(jobId, commitOrApprove, ...rest) {
       subdomain,
       proof
     );
-    await revealTx.wait();
+    const revealReceipt = await revealTx.wait();
 
     const finalizeTx = await validation.finalize(jobId);
-    await finalizeTx.wait();
+    const finalizeReceipt = await finalizeTx.wait();
 
     return {
       commitHash: ethers.zeroPadValue(commitOrApprove, 32),
       salt,
       burnTxHash,
+      commitTx: commitReceipt?.hash ?? null,
+      revealTx: revealReceipt?.hash ?? null,
+      finalizeTx: finalizeReceipt?.hash ?? null,
     };
   }
 
@@ -353,7 +465,7 @@ async function validate(jobId, commitOrApprove, ...rest) {
     options.subdomain,
     proof
   );
-  await commitTx.wait();
+  const commitReceipt = await commitTx.wait();
 
   const revealTx = await validation.revealValidation(
     jobId,
@@ -363,14 +475,24 @@ async function validate(jobId, commitOrApprove, ...rest) {
     options.subdomain,
     proof
   );
-  await revealTx.wait();
+  const revealReceipt = await revealTx.wait();
 
+  let finalizeHash = null;
   if (!options.skipFinalize) {
     const finalizeTx = await validation.finalize(jobId);
-    await finalizeTx.wait();
+    const finalizeReceipt = await finalizeTx.wait();
+    finalizeHash = finalizeReceipt?.hash ?? null;
   }
 
-  return plan;
+  return {
+    ...plan,
+    approve,
+    subdomain: options.subdomain,
+    proof,
+    commitTx: commitReceipt?.hash ?? null,
+    revealTx: revealReceipt?.hash ?? null,
+    finalizeTx: finalizeHash,
+  };
 }
 
 async function dispute(jobId, evidence) {
@@ -405,3 +527,135 @@ module.exports = {
     isBytes32Hash,
   },
 };
+
+function parseBoolean(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return false;
+  const lowered = value.toLowerCase();
+  return lowered === 'true' || lowered === '1' || lowered === 'yes';
+}
+
+function parseCliArgs(argv) {
+  const args = {};
+  for (let i = 0; i < argv.length; i += 1) {
+    const token = argv[i];
+    if (!token.startsWith('--')) {
+      continue;
+    }
+    const key = token.slice(2);
+    const next = argv[i + 1];
+    if (next && !next.startsWith('--')) {
+      args[key] = next;
+      i += 1;
+    } else {
+      args[key] = true;
+    }
+  }
+  return args;
+}
+
+async function runCli() {
+  const [, , command, ...rest] = process.argv;
+  if (!command) {
+    throw new Error('Command is required');
+  }
+  const args = parseCliArgs(rest);
+  let result;
+  switch (command) {
+    case 'postJob': {
+      let spec = null;
+      if (args.spec) {
+        spec = readJsonIfExists(args.spec);
+        if (!spec) {
+          throw new Error(`Spec file not found: ${args.spec}`);
+        }
+      }
+      const overrides = {};
+      if (args.amount) overrides.amount = args.amount;
+      if (args.reward) overrides.amount = args.reward;
+      if (args['spec-uri']) overrides.specUri = args['spec-uri'];
+      if (args.deadline) overrides.deadline = Number(args.deadline);
+      result = await postJob(spec ?? args.amount ?? '1', overrides);
+      break;
+    }
+    case 'acknowledgeTaxPolicy':
+      result = await acknowledgeTaxPolicy();
+      break;
+    case 'prepareStake':
+      result = await prepareStake(args.amount ?? '1');
+      break;
+    case 'stake':
+      result = await stake(args.amount ?? '1', { role: args.role });
+      break;
+    case 'submit': {
+      const jobId = args.job ?? args.id;
+      if (jobId === undefined) {
+        throw new Error('submit requires --job <id>');
+      }
+      const uri = args.result ?? args.uri;
+      if (!uri) {
+        throw new Error('submit requires --result <uri>');
+      }
+      result = await submit(jobId, uri);
+      break;
+    }
+    case 'computeValidationCommit': {
+      const jobId = args.job ?? args.id;
+      if (jobId === undefined) {
+        throw new Error('computeValidationCommit requires --job <id>');
+      }
+      const approve = parseBoolean(args.approve ?? 'true');
+      const options = {};
+      if (args.subdomain) options.subdomain = args.subdomain;
+      if (args.proof) options.proof = Array.isArray(args.proof) ? args.proof : [args.proof];
+      result = await computeValidationCommit(jobId, approve, options);
+      break;
+    }
+    case 'validate': {
+      const jobId = args.job ?? args.id;
+      if (jobId === undefined) {
+        throw new Error('validate requires --job <id>');
+      }
+      const approve = parseBoolean(args.approve ?? 'true');
+      if (args.commit) {
+        const plan = readJsonIfExists(args.commit);
+        if (!plan) {
+          throw new Error(`Commit plan not found: ${args.commit}`);
+        }
+        result = await validate(
+          jobId,
+          plan.commitHash,
+          approve,
+          plan.salt,
+          plan.burnTxHash,
+        );
+      } else {
+        const options = {};
+        if (args.subdomain) options.subdomain = args.subdomain;
+        if (args.skipFinalize !== undefined) {
+          options.skipFinalize = parseBoolean(args.skipFinalize);
+        }
+        result = await validate(jobId, approve, options);
+      }
+      break;
+    }
+    case 'acknowledge':
+      result = await acknowledgeTaxPolicy();
+      break;
+    default:
+      throw new Error(`Unknown command: ${command}`);
+  }
+
+  if (result === undefined) {
+    console.log('{}');
+  } else {
+    console.log(JSON.stringify(result, null, 2));
+  }
+}
+
+if (require.main === module) {
+  runCli().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
