@@ -15,6 +15,8 @@
 | `ci (v2) / Foundry` | [`foundry`](../.github/workflows/ci.yml) | Executes fuzz tests after unit tests, even when they fail, to expose property violations.【F:.github/workflows/ci.yml†L118-L165】 |
 | `ci (v2) / Coverage thresholds` | [`coverage`](../.github/workflows/ci.yml) | Enforces ≥90 % coverage and access-control reporting while publishing LCOV artifacts.【F:.github/workflows/ci.yml†L167-L216】 |
 | `ci (v2) / CI summary` | [`summary`](../.github/workflows/ci.yml) | Aggregates upstream job results into a single ✅/❌ indicator required by branch protection.【F:.github/workflows/ci.yml†L218-L233】 |
+| `static-analysis / Slither static analysis` | [`slither`](../.github/workflows/static-analysis.yml) | Fails the merge if Slither reports unapproved high-severity findings and uploads SARIF to the security tab.【F:.github/workflows/static-analysis.yml†L20-L106】 |
+| `static-analysis / CodeQL analysis` | [`codeql`](../.github/workflows/static-analysis.yml) | Ensures CodeQL JavaScript/TypeScript scans succeed with the hardened config and SARIF upload before merges land.【F:.github/workflows/static-analysis.yml†L108-L157】 |
 
 The job display names in GitHub Actions must stay in sync with these contexts. Any rename requires updating branch protection and this checklist.
 
@@ -26,7 +28,7 @@ The job display names in GitHub Actions must stay in sync with these contexts. A
 
 1. Navigate to **Settings → Branches**.
 2. Edit the rule that applies to `main`.
-3. Under **Require status checks to pass before merging**, verify the five contexts above appear in the list, in order.
+3. Under **Require status checks to pass before merging**, verify the seven contexts above appear in the list, in order.
 4. Confirm **Require branches to be up to date before merging** and **Include administrators** are enabled. Both are required for audit compliance.
 5. Capture a screenshot or export the configuration for your change-control records.
 
@@ -48,7 +50,7 @@ gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks
 gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
 ```
 
-- The first command must output the five contexts exactly as listed in the table above.
+- The first command must output the seven contexts exactly as listed in the table above.
 - The second must print `true`, proving administrators cannot bypass the checks.
 - Record the command output (copy/paste or redirect to a dated text file) for auditors.
 

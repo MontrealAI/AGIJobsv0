@@ -1,0 +1,32 @@
+name: agijobsv0-codeql
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+paths:
+  - agent-gateway
+  - apps
+  - monitoring
+  - orchestrator
+  - packages
+  - scripts
+  - services
+  - shared
+  - tools
+
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/dist/**'
+  - '**/.next/**'
+  - '**/coverage/**'
+  - '**/reports/**'
+  - '**/docs/**'
+  - '**/data/**'
+  - '**/deploy/**'
+  - '**/deployment/**'
+  - '**/deployments/**'
+  - '**/subgraph/generated/**'
+  - '**/subgraph/build/**'
+  - '**/subgraph/node_modules/**'
+  - '**/test/**'
