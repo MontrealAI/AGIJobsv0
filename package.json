@@ -120,7 +120,8 @@
     "hamiltonian:report": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/hamiltonian-tracker.ts",
     "audit:freeze": "node scripts/audit/check-freeze.js",
     "audit:final": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/audit/final-readiness.ts",
-    "audit:dossier": "bash scripts/audit/export-dossier.sh"
+    "audit:dossier": "bash scripts/audit/export-dossier.sh",
+    "audit:package": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/audit/package-kit.ts"
   },
   "keywords": [],
   "author": "",
