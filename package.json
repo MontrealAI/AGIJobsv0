@@ -173,7 +173,6 @@
     "ipfs-http-client": "^60.0.0",
     "parse-duration": "^2.1.4",
     "prom-client": "^15.1.3",
-    "web3": "^1.10.0",
     "web3.storage": "^4.5.5",
     "ws": "^8.18.3",
     "yargs": "^17.7.2",
