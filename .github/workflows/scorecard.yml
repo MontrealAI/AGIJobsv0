@@ -36,13 +36,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Prepare report directory
-        run: mkdir -p reports/security
-
       - name: Run Scorecard analysis
         uses: ossf/scorecard-action@e4c423540e964e15ccadc56558705ba15136265c
         with:
-          results_file: reports/security/scorecard.sarif
+          results_file: scorecard.sarif
           results_format: sarif
           publish_results: true
           repo_token: ${{ secrets.SCORECARD_READ_TOKEN || github.token }}
@@ -50,12 +47,12 @@ jobs:
       - name: Upload Scorecard SARIF
         uses: github/codeql-action/upload-sarif@7dccf72e419e51b915f40df725d7c2e766b51b44
         with:
-          sarif_file: reports/security/scorecard.sarif
+          sarif_file: scorecard.sarif
 
       - name: Upload Scorecard artefacts
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ossf-scorecard-report
-          path: reports/security/scorecard.sarif
+          path: scorecard.sarif
           if-no-files-found: warn
