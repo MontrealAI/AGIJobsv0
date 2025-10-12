@@ -1,0 +1,60 @@
+name: security-scorecard
+
+on:
+  schedule:
+    - cron: '30 1 * * 1'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+  id-token: write
+
+concurrency:
+  group: scorecard-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare report directory
+        run: mkdir -p reports/security
+
+      - name: Run Scorecard analysis
+        uses: ossf/scorecard-action@e4c423540e964e15ccadc56558705ba15136265c
+        with:
+          results_file: reports/security/scorecard.sarif
+          results_format: sarif
+          publish_results: true
+          repo_token: ${{ secrets.SCORECARD_READ_TOKEN || github.token }}
+
+      - name: Upload Scorecard SARIF
+        uses: github/codeql-action/upload-sarif@7dccf72e419e51b915f40df725d7c2e766b51b44
+        with:
+          sarif_file: reports/security/scorecard.sarif
+
+      - name: Upload Scorecard artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ossf-scorecard-report
+          path: reports/security/scorecard.sarif
+          if-no-files-found: warn

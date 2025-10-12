@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   slither:
+    name: Slither static analysis
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -52,6 +53,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Prepare security reports directory
+        run: mkdir -p reports/security/codeql
 
       - name: Setup Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
@@ -105,3 +109,51 @@ jobs:
         with:
           name: slither-security-report
           path: reports/security
+
+  codeql:
+    name: CodeQL analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@7dccf72e419e51b915f40df725d7c2e766b51b44
+        with:
+          languages: javascript
+          config-file: .github/codeql/config.yml
+          build-mode: none
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@7dccf72e419e51b915f40df725d7c2e766b51b44
+        with:
+          output: reports/security/codeql
+
+      - name: Upload CodeQL artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: codeql-security-report
+          path: reports/security/codeql
+          if-no-files-found: warn
