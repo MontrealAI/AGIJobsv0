@@ -1,0 +1,6 @@
+{
+  "temperature": 0.86,
+  "roleWeights": { "agent": 0.65, "validator": 0.15, "operator": 0.15, "employer": 0.05 },
+  "apply": false,
+  "notes": "Demo values; run updateThermodynamics.ts in dry-run to view diffs."
+}
