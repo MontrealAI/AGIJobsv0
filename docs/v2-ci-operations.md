@@ -19,6 +19,8 @@ flowchart LR
         Lint[Lint & static checks]:::job --> Summary{{CI summary}}:::gate
         Tests[Tests]:::job --> Foundry[Foundry]:::job --> Summary
         Tests --> Coverage[Coverage thresholds]:::job --> Summary
+        Tests --> Invariants[Invariant tests]:::job --> Summary
+        Tests --> DryRun[Testnet dry-run rehearsal]:::job --> Summary
     end
 
     PR & Main & Manual --> Lint
@@ -45,6 +47,8 @@ Enable branch protection on `main` with these required status checks (copy the c
 | `ci (v2) / Tests` | `tests` job | Runs Hardhat compilation and the main test suite. |
 | `ci (v2) / Foundry` | `foundry` job | Always runs after the `tests` job, even when it fails, to expose fuzz failures. |
 | `ci (v2) / Coverage thresholds` | `coverage` job | Enforces `COVERAGE_MIN` and access-control coverage. |
+| `ci (v2) / Invariant tests` | `invariants` job | Executes long-horizon Foundry invariants for governance-critical properties. |
+| `ci (v2) / Testnet dry-run rehearsal` | `dry-run` job | Exercises the owner rehearsal harness and publishes JSON evidence. |
 | `ci (v2) / CI summary` | `summary` job | Fails when any dependency job fails so the PR badge stays red. |
 
 > ✅ **Tip:** In GitHub branch protection, mark `Require branches to be up to date` to guarantee pull requests re-run the workflow when `main` advances.
@@ -66,7 +70,7 @@ gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks
 gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
 ```
 
-The first command should list the five required contexts above in order. The second confirms admins are also blocked when the pipeline is red.
+The first command should list the seven required contexts above in order. The second confirms admins are also blocked when the pipeline is red.
 
 ### Companion workflow checks
 
@@ -83,7 +87,7 @@ Keep the rest of the release surface visible by marking the following workflows 
 
 ## Pull request hygiene checklist
 
-1. Confirm that the **Checks** tab shows all five required `ci (v2)` contexts above plus the companion workflows you have marked as required.
+1. Confirm that the **Checks** tab shows all seven required `ci (v2)` contexts above plus the companion workflows you have marked as required.
 2. Inspect the **Artifacts** section for `coverage-lcov` when coverage needs auditing.
 3. Review the `CI summary` job output for a condensed Markdown table of job results.
 4. When re-running failed jobs, choose **Re-run failed jobs** to keep historical logs.
