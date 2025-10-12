@@ -28,7 +28,7 @@
 
 1. **Deploy the audited artefacts.** Follow the mainnet deployment runbook on Sepolia/Goerli using the documented scripts (`npm run deploy:oneclick` or `npm run migrate:sepolia`). Capture emitted addresses in the deployment manifest.【F:docs/RUNBOOK.md†L4-L83】【F:docs/deployment-production-guide.md†L118-L158】【F:package.json†L10-L101】
 2. **Exercise owner control.** Walk through the owner command centre (`npm run owner:command-center -- --network <net>`), pause/unpause flows (`npm run pause:test`), and parameter updates to demonstrate complete owner authority with audit trails.【F:docs/owner-control-parameter-playbook.md†L1-L86】【F:package.json†L10-L101】【F:contracts/v2/SystemPause.sol†L1-L250】
-3. **Scenario validation.** Reproduce the dispute, validation, and staking flows using the orchestrator and CLI scripts. Log results in `reports/<network>/` and attach them to the release verification summary.【F:docs/release-explorer-verification.md†L21-L110】【F:docs/production-deployment-handbook.md†L204-L208】
+3. **Scenario validation.** Reproduce the dispute, validation, and staking flows using the orchestrator and CLI scripts. Log results in `reports/<network>/` and attach them to the release verification summary.【F:docs/release-explorer-verification.md†L21-L110】【F:docs/production-deployment-handbook.md†L204-L208】 Populate the [testnet dry-run evidence template](testnet-dry-run-evidence-template.md) with the harness output, pause drill transcript, and owner parameter update to provide auditors with a single artefact bundle demonstrating full owner control.
 
 ## 5. Post-Audit Hardening & Sign-Off
 
