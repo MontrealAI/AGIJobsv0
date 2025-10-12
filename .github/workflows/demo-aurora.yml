@@ -3,8 +3,8 @@ name: demo-aurora
 on:
   pull_request:
     paths:
-      - "demo/**"
-      - ".github/workflows/demo-aurora.yml"
+      - 'demo/**'
+      - '.github/workflows/demo-aurora.yml'
   workflow_dispatch:
 
 permissions:
