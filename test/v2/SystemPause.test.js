@@ -687,4 +687,146 @@ describe('SystemPause', function () {
       pause.connect(owner).executeGovernanceCall(addresses.stake, '0x')
     ).to.be.revertedWithCustomError(pause, 'MissingSelector');
   });
+
+  it('forwards validation failover commands through governance', async function () {
+    const [owner] = await ethers.getSigners();
+    const {
+      pause,
+      stake,
+      registry,
+      validation,
+      dispute,
+      reputation,
+      platformRegistry,
+      feePool,
+      committee,
+      addresses,
+    } = await deploySystem(owner.address);
+
+    const pauseAddress = await pause.getAddress();
+
+    await transferModulesToPause(
+      owner,
+      {
+        stake,
+        registry,
+        validation,
+        dispute,
+        platformRegistry,
+        feePool,
+        reputation,
+        committee,
+      },
+      pauseAddress
+    );
+
+    const FailoverSpy = await ethers.getContractFactory(
+      'contracts/test/SystemPauseFailoverSpy.sol:SystemPauseFailoverSpy'
+    );
+    const spy = await FailoverSpy.deploy(owner.address);
+    const spyAddress = await spy.getAddress();
+
+    await spy.connect(owner).transferOwnership(pauseAddress);
+
+    await pause
+      .connect(owner)
+      .setModules(
+        addresses.jobRegistry,
+        addresses.stake,
+        spyAddress,
+        addresses.disputeModule,
+        addresses.platformRegistry,
+        addresses.feePool,
+        addresses.reputationEngine,
+        addresses.arbitratorCommittee
+      );
+
+    expect(await spy.pauserManager()).to.equal(pauseAddress);
+    expect(await spy.pauser()).to.equal(pauseAddress);
+
+    const jobId = 42n;
+    const extension = 3600n;
+    const reason = 'extend reveal window';
+    const action = 1;
+
+    await expect(
+      pause
+        .connect(owner)
+        .triggerValidationFailover(jobId, action, extension, reason)
+    )
+      .to.emit(pause, 'ValidationFailoverForwarded')
+      .withArgs(jobId, action, extension, reason);
+
+    const [recordedJobId, recordedAction, recordedExtension, recordedReason, callCount] =
+      await spy.lastFailover();
+
+    expect(recordedJobId).to.equal(jobId);
+    expect(recordedAction).to.equal(action);
+    expect(recordedExtension).to.equal(extension);
+    expect(recordedReason).to.equal(reason);
+    expect(callCount).to.equal(1n);
+  });
+
+  it('surfaces governance call failures without revert data', async function () {
+    const [owner] = await ethers.getSigners();
+    const {
+      pause,
+      stake,
+      registry,
+      validation,
+      dispute,
+      reputation,
+      platformRegistry,
+      feePool,
+      committee,
+      addresses,
+    } = await deploySystem(owner.address);
+
+    const pauseAddress = await pause.getAddress();
+
+    await transferModulesToPause(
+      owner,
+      {
+        stake,
+        registry,
+        validation,
+        dispute,
+        platformRegistry,
+        feePool,
+        reputation,
+        committee,
+      },
+      pauseAddress
+    );
+
+    await pause
+      .connect(owner)
+      .setModules(
+        addresses.jobRegistry,
+        addresses.stake,
+        addresses.validationModule,
+        addresses.disputeModule,
+        addresses.platformRegistry,
+        addresses.feePool,
+        addresses.reputationEngine,
+        addresses.arbitratorCommittee
+      );
+
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/RevertsWithoutData.sol:RevertsWithoutData'
+    );
+
+    await network.provider.send('hardhat_setCode', [
+      addresses.stake,
+      artifact.deployedBytecode,
+    ]);
+
+    const bogusCall = '0xdeadbeef';
+
+    await expect(
+      pause.connect(owner).executeGovernanceCall(addresses.stake, bogusCall)
+    )
+      .to.be.revertedWithCustomError(pause, 'GovernanceCallFailed')
+      .withArgs(addresses.stake, bogusCall);
+  });
 });
