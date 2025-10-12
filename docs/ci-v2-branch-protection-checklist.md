@@ -14,7 +14,9 @@
 | `ci (v2) / Tests` | [`tests`](../.github/workflows/ci.yml) | Runs Hardhat compilation, the unit test suite, ABI drift detection, and constants regeneration.【F:.github/workflows/ci.yml†L62-L116】 |
 | `ci (v2) / Foundry` | [`foundry`](../.github/workflows/ci.yml) | Executes fuzz tests after unit tests, even when they fail, to expose property violations.【F:.github/workflows/ci.yml†L118-L165】 |
 | `ci (v2) / Coverage thresholds` | [`coverage`](../.github/workflows/ci.yml) | Enforces ≥90 % coverage and access-control reporting while publishing LCOV artifacts.【F:.github/workflows/ci.yml†L167-L216】 |
-| `ci (v2) / CI summary` | [`summary`](../.github/workflows/ci.yml) | Aggregates upstream job results into a single ✅/❌ indicator required by branch protection.【F:.github/workflows/ci.yml†L218-L233】 |
+| `ci (v2) / Invariant tests` | [`invariants`](../.github/workflows/ci.yml) | Runs governance-focused Foundry invariants after the unit suite to confirm state machine safety.【F:.github/workflows/ci.yml†L218-L260】 |
+| `ci (v2) / Testnet dry-run rehearsal` | [`dry-run`](../.github/workflows/ci.yml) | Exercises the owner rehearsal harness and emits JSON evidence for deployment readiness.【F:.github/workflows/ci.yml†L262-L320】 |
+| `ci (v2) / CI summary` | [`summary`](../.github/workflows/ci.yml) | Aggregates upstream job results into a single ✅/❌ indicator required by branch protection.【F:.github/workflows/ci.yml†L322-L361】 |
 | `static-analysis / Slither static analysis` | [`slither`](../.github/workflows/static-analysis.yml) | Fails the merge if Slither reports unapproved high-severity findings and uploads SARIF to the security tab.【F:.github/workflows/static-analysis.yml†L20-L106】 |
 | `static-analysis / CodeQL analysis` | [`codeql`](../.github/workflows/static-analysis.yml) | Ensures CodeQL JavaScript/TypeScript scans succeed with the hardened config and SARIF upload before merges land.【F:.github/workflows/static-analysis.yml†L108-L157】 |
 
@@ -28,7 +30,7 @@ The job display names in GitHub Actions must stay in sync with these contexts. A
 
 1. Navigate to **Settings → Branches**.
 2. Edit the rule that applies to `main`.
-3. Under **Require status checks to pass before merging**, verify the seven contexts above appear in the list, in order.
+3. Under **Require status checks to pass before merging**, verify the nine contexts above appear in the list, in order.
 4. Confirm **Require branches to be up to date before merging** and **Include administrators** are enabled. Both are required for audit compliance.
 5. Capture a screenshot or export the configuration for your change-control records.
 
@@ -52,14 +54,14 @@ gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks
 gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
 ```
 
-- The first command must output the seven contexts exactly as listed in the table above.
+- The first command must output the nine contexts exactly as listed in the table above.
 - The second must print `true`, proving administrators cannot bypass the checks.
 - Record the command output (copy/paste or redirect to a dated text file) for auditors.
 
 ### 3. Validate the CI summary gate
 
 1. Open **Actions → ci (v2)** and select the latest successful run on `main`.
-2. Verify the `CI summary` job lists every upstream job (Lint, Tests, Foundry, Coverage) with matching outcomes.
+2. Verify the `CI summary` job lists every upstream job (Lint, Tests, Foundry, Coverage, Invariant tests, Testnet dry-run rehearsal) with matching outcomes.
 3. Confirm the job is marked as **Required** in the run header. If it is missing, update branch protection immediately and re-run the workflow to refresh the badge.
 4. When troubleshooting, re-run the workflow with **Re-run failed jobs** so historical logs remain intact for incident reviews.
 
