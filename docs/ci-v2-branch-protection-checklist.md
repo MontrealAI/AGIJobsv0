@@ -29,8 +29,15 @@ The job display names in GitHub Actions must stay in sync with these contexts. A
 1. Navigate to **Settings → Branches**.
 2. Edit the rule that applies to `main`.
 3. Under **Require status checks to pass before merging**, verify the seven contexts above appear in the list, in order.
-4. Confirm **Require branches to be up to date before merging** and **Include administrators** are enabled. Both are required for audit compliance.
-5. Capture a screenshot or export the configuration for your change-control records.
+4. Confirm the following toggles are enabled:
+   - **Require branches to be up to date before merging**
+   - **Require linear history**
+   - **Dismiss stale pull request approvals when new commits are pushed**
+   - **Require approvals** with at least one **Code owner review**
+   - **Require conversation resolution before merging**
+   - **Include administrators**
+5. In the **Rules applied to everyone** section, ensure **Restrict who can push to matching branches** only allows GitHub Actions (via the merge queue) and automated service accounts. Human pushes must remain blocked.
+6. Capture a screenshot or export the configuration for your change-control records.
 
 ### 2. Confirm enforcement with the GitHub CLI
 
@@ -66,6 +73,13 @@ gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled
 ### 4. Double-check companion workflows
 
 If your governance policy also requires `e2e`, `fuzz`, `webapp`, or `containers` workflows, repeat the UI and CLI verification to ensure their contexts are enforced. Document any optional workflows in the change ticket associated with the release.
+
+### 5. Validate secret scanning & push protection
+
+1. Navigate to **Settings → Code security and analysis**.
+2. Confirm both **Secret scanning** and **Secret scanning → Push protection** display the "Enabled" badge (green check icon).
+3. If either control is disabled, open a Sev2 governance ticket and enable the feature immediately. Production releases must block commits that expose credentials.
+4. Record screenshots of the enabled state and attach them to the same change ticket that stores the branch protection audit.
 
 ---
 
