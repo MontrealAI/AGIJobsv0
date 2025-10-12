@@ -1,6 +1,6 @@
 # AGI Jobs v0 Audit Dossier
 
-This guide packages the exact evidence bundle requested for the "Recommended Next Coding Sprint: External Audit & Final Verification" milestone. It is written for third-party security auditors and internal reviewers that need to recreate the full verification state of the protocol without hunting through the repository.
+This guide packages the exact evidence bundle requested for the "Recommended Next Coding Sprint: External Audit & Final Verification" milestone. It is written for third-party security auditors and internal reviewers that need to recreate the full verification state of the protocol without hunting through the repository. Pair this dossier with the [External Audit & Final Verification Playbook](audit/final-verification-playbook.md) and the `npm run audit:freeze` guardrail to ensure the repository is code-frozen before artefacts are minted.【F:scripts/audit/check-freeze.js†L1-L86】【F:package.json†L10-L101】
 
 The repository already enforces a **green v2 CI** pipeline (`.github/workflows/ci.yml`) that executes linting, tests, coverage validation, ABI checks, and Foundry fuzzing. The instructions below mirror that workflow locally while also capturing artefacts (logs, JSON reports) in a single export directory suitable for hand-off.
 
