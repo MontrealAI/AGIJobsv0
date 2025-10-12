@@ -1,0 +1,13 @@
+{
+  "name": "AURORA-Flagship-Job",
+  "version": "v2",
+  "domains": ["math", "logic", "commonsense"],
+  "languages": ["en", "es", "fr"],
+  "acceptanceCriteriaURI": "ipfs://example-criteria-hash",
+  "validation": { "k": 2, "n": 3 },
+  "challengeWindowSec": 86400,
+  "escrow": { "token": "USDC", "amountPerItem": "5000000" },
+  "stake": { "worker": "20000000", "validator": "50000000" },
+  "resultSchema": "ipfs://example-schema-hash",
+  "notes": "Demo spec; replace URIs with real content-addressed assets."
+}

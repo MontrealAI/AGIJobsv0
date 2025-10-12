@@ -1,0 +1,61 @@
+name: demo-aurora
+
+on:
+  pull_request:
+    paths:
+      - 'demo/**'
+      - '.github/workflows/demo-aurora.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aurora-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Harden runner
+        uses: step-security/harden-runner@v2.13.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: '1.4.0'
+
+      - name: Run AURORA demo (local)
+        env:
+          PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+          AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
+          AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
+          AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
+          AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
+          RPC_URL: http://127.0.0.1:8545
+          CHAIN_ID: '31337'
+        run: bash demo/aurora/bin/aurora-local.sh
+
+      - name: Upload demo receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-receipts
+          path: reports/localhost/aurora/**
