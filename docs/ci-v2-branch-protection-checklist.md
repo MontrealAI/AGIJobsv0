@@ -40,6 +40,8 @@ Run the automated audit (set `GITHUB_TOKEN` or `GH_TOKEN` with `repo` scope firs
 npm run ci:verify-branch-protection
 ```
 
+- `npm run audit:final -- --full` runs this verifier automatically when assembling the release dossier, keeping non-technical owners aligned with branch policy.【F:scripts/audit/final-readiness.ts†L1-L214】
+
 - Save the ✅/❌ table output in your change ticket. It proves the required contexts, ordering, strict mode, and administrator enforcement all align with policy.
 - Pass `--owner`, `--repo`, or `--branch` flags when checking forks or release candidates.
 
