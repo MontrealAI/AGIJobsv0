@@ -354,7 +354,7 @@ Preparing for an external security review? Generate the complete verifier packag
 npm run audit:dossier
 ```
 
-The helper wraps linting, unit tests, coverage, dependency audits, ABI diffing, owner-control validation, and optional Foundry/Slither checks into timestamped logs under `reports/audit`. Trigger it as part of the end-to-end readiness sweep with `npm run audit:final --full` when you want the freeze guard, branch-protection verifier, and dossier export chained together for non-technical operators.【F:scripts/audit/final-readiness.ts†L1-L214】【F:docs/AUDIT_DOSSIER.md†L1-L120】 The process is documented in [docs/AUDIT_DOSSIER.md](docs/AUDIT_DOSSIER.md) so auditors receive a deterministic bundle of artefacts alongside reproducible commands.
+The helper wraps linting, unit tests, coverage, dependency audits, ABI diffing, owner-control validation, and optional Foundry/Slither checks into timestamped logs under `reports/audit`. Trigger it as part of the end-to-end readiness sweep with `npm run audit:final -- --full` when you want the freeze guard, branch-protection verifier, and dossier export chained together for non-technical operators.【F:scripts/audit/final-readiness.ts†L1-L214】【F:docs/AUDIT_DOSSIER.md†L1-L120】 The process is documented in [docs/AUDIT_DOSSIER.md](docs/AUDIT_DOSSIER.md) so auditors receive a deterministic bundle of artefacts alongside reproducible commands.
 
 ### Owner control systems map
 
