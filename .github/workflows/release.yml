@@ -28,6 +28,38 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  HARDEN_RUNNER_EGRESS_POLICY: block
+  HARDEN_RUNNER_ALLOWED_ENDPOINTS: |
+    api.github.com:443
+    github.com:443
+    raw.githubusercontent.com:443
+    objects.githubusercontent.com:443
+    codeload.github.com:443
+    pkg-containers.githubusercontent.com:443
+    uploads.github.com:443
+    gist.githubusercontent.com:443
+    ghcr.io:443
+    registry.npmjs.org:443
+    registry.yarnpkg.com:443
+    nodejs.org:443
+    objects-origin.githubusercontent.com:443
+    files.pythonhosted.org:443
+    pypi.org:443
+    pypi.python.org:443
+    pythonhosted.org:443
+    binaries.soliditylang.org:443
+    storage.googleapis.com:443
+    dl.google.com:443
+    registry-1.docker.io:443
+    auth.docker.io:443
+    production.cloudflare.docker.com:443
+    fulcio.sigstore.dev:443
+    rekor.sigstore.dev:443
+    tuf-repo-cdn.sigstore.dev:443
+    oauth2.sigstore.dev:443
+    amazonaws.com:443
+
 jobs:
   prepare:
     runs-on: ubuntu-24.04
@@ -39,7 +71,8 @@ jobs:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
-          egress-policy: audit
+          egress-policy: ${{ env.HARDEN_RUNNER_EGRESS_POLICY }}
+          allowed-endpoints: ${{ env.HARDEN_RUNNER_ALLOWED_ENDPOINTS }}
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
@@ -166,7 +199,8 @@ jobs:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
-          egress-policy: audit
+          egress-policy: ${{ env.HARDEN_RUNNER_EGRESS_POLICY }}
+          allowed-endpoints: ${{ env.HARDEN_RUNNER_ALLOWED_ENDPOINTS }}
 
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
@@ -314,7 +348,8 @@ jobs:
         if: ${{ steps.npm-token.outputs.publish == 'true' }}
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
-          egress-policy: audit
+          egress-policy: ${{ env.HARDEN_RUNNER_EGRESS_POLICY }}
+          allowed-endpoints: ${{ env.HARDEN_RUNNER_ALLOWED_ENDPOINTS }}
       - name: Checkout
         if: ${{ steps.npm-token.outputs.publish == 'true' }}
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
@@ -378,7 +413,8 @@ jobs:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
-          egress-policy: audit
+          egress-policy: ${{ env.HARDEN_RUNNER_EGRESS_POLICY }}
+          allowed-endpoints: ${{ env.HARDEN_RUNNER_ALLOWED_ENDPOINTS }}
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
@@ -453,7 +489,8 @@ jobs:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
-          egress-policy: audit
+          egress-policy: ${{ env.HARDEN_RUNNER_EGRESS_POLICY }}
+          allowed-endpoints: ${{ env.HARDEN_RUNNER_ALLOWED_ENDPOINTS }}
 
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
