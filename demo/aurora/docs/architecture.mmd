@@ -1,0 +1,18 @@
+graph TD
+  G[Governance (Safe/Timelock)]
+  JR[JobRegistry]
+  SM[StakeManager]
+  VM[ValidationModule]
+  DM[DisputeModule]
+  SP[SystemPause]
+  RE[ReputationEngine]
+  TH[Thermostat]
+  EO[EnergyOracle]
+  MB[RewardEngineMB]
+  FP[FeePool]
+
+  G --> JR & SM & DM & SP & TH
+  EO --> MB --> FP
+  JR --> VM --> DM --> JR
+  JR --> RE
+  JR --> SM
