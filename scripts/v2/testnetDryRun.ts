@@ -1,4 +1,40 @@
 #!/usr/bin/env ts-node
+
+interface EarlyCliParseResult {
+  network?: string;
+  rest: string[];
+}
+
+function consumeNetworkFlag(argv: string[]): EarlyCliParseResult {
+  const rest: string[] = [];
+  let networkName: string | undefined;
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--network') {
+      if (i + 1 >= argv.length) {
+        throw new Error('Missing value for --network flag');
+      }
+      networkName = argv[i + 1];
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith('--network=')) {
+      networkName = arg.slice('--network='.length);
+      continue;
+    }
+    rest.push(arg);
+  }
+  return { network: networkName, rest };
+}
+
+const rawCliArgs = process.argv.slice(2);
+const { network: selectedNetwork, rest: sanitizedCliArgs } =
+  consumeNetworkFlag(rawCliArgs);
+if (selectedNetwork && !process.env.HARDHAT_NETWORK) {
+  process.env.HARDHAT_NETWORK = selectedNetwork;
+}
+const CLI_ARGS = sanitizedCliArgs;
+
 import hre from 'hardhat';
 import type { HardhatEthersHelpers } from '@nomicfoundation/hardhat-ethers/types';
 import type { ContractTransactionResponse } from 'ethers';
@@ -78,6 +114,19 @@ interface JobFixture {
 
 const ROLE_AGENT = 0;
 
+const LOCAL_NETWORK_NAMES = new Set(['hardhat', 'localhost']);
+
+function assertLocalHardhatNetwork(): void {
+  if (!LOCAL_NETWORK_NAMES.has(network.name)) {
+    throw new Error(
+      `Job lifecycle rehearsal requires a local Hardhat network. ` +
+        `Current network "${network.name}" does not support the ` +
+        'fixture initialisation flow. Re-run without the --network flag ' +
+        'or target a local Hardhat node (for example, via "npx hardhat node").'
+    );
+  }
+}
+
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = { json: false };
   for (let i = 0; i < argv.length; i += 1) {
@@ -152,23 +201,30 @@ async function runStep(
 }
 
 async function deployJobFixture(): Promise<JobFixture> {
+  assertLocalHardhatNetwork();
   const [owner, employer, agent, validator, buyer, moderator] =
     await ethers.getSigners();
 
   const tokenFqn = 'contracts/test/AGIALPHAToken.sol:AGIALPHAToken';
   await ensureArtifact(tokenFqn);
   const artifact = await artifacts.readArtifact(tokenFqn);
-  await ethers.provider.send('hardhat_setCode', [
-    AGIALPHA,
-    artifact.deployedBytecode,
-  ]);
-  const ownerSlotValue = ethers.zeroPadValue(owner.address, 32);
-  const ownerSlot = ethers.toBeHex(5, 32);
-  await ethers.provider.send('hardhat_setStorageAt', [
-    AGIALPHA,
-    ownerSlot,
-    ownerSlotValue,
-  ]);
+  try {
+    await ethers.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const ownerSlotValue = ethers.zeroPadValue(owner.address, 32);
+    const ownerSlot = ethers.toBeHex(5, 32);
+    await ethers.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      ownerSlot,
+      ownerSlotValue,
+    ]);
+  } catch (error) {
+    throw new Error(
+      `Failed to initialise local AGIALPHA token fixture: ${formatError(error)}`
+    );
+  }
 
   const token = await ethers.getContractAt(
     'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
@@ -315,6 +371,14 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
   );
   if (deployStep.status === 'fail') {
     status = 'fail';
+    if (
+      deployStep.error &&
+      deployStep.error.includes('requires a local Hardhat network')
+    ) {
+      summary.push(
+        'Job lifecycle rehearsal is only available on a local Hardhat network.'
+      );
+    }
     return {
       id: 'job-lifecycle',
       label: 'Job lifecycle rehearsal (local harness)',
@@ -841,7 +905,7 @@ function renderTextReport(report: DryRunReport): void {
 }
 
 async function main() {
-  const options = parseArgs(process.argv.slice(2));
+  const options = parseArgs(CLI_ARGS);
   const report = await generateReport();
   if (options.json) {
     console.log(JSON.stringify(report, null, 2));
