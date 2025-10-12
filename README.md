@@ -80,6 +80,7 @@ For a printable walkthrough (including remediation steps when a context drifts),
 - [Owner control index](#owner-control-index)
 - [Owner control doctor](#owner-control-doctor)
 - [Owner control audit](#owner-control-audit)
+- [Audit dossier export](#audit-dossier-export)
 - [Owner control systems map](#owner-control-systems-map)
 - [Owner control quick reference CLI](#owner-control-quick-reference-cli)
 - [Owner control snapshot kit](#owner-control-snapshot-kit)
@@ -344,6 +345,16 @@ npm run owner:audit -- --network <network> --out reports/<network>-owner-audit.m
 ```
 
 The CLI loads every module loader used by `owner:update-all`, verifies the JSON manifests parse cleanly, records SHA-256 hashes for `config/agialpha*.json` and `config/owner-control*.json`, and prints a table of owner/governance/token targets with ✅/⚠️/❌ statuses. Each row links to the dedicated Hardhat helper and the relevant operations handbook so the contract owner can adjust parameters without touching Solidity. The Markdown output embeds Mermaid diagrams, actionable remediation notes and copy/paste commands, while `--format human` and `--format json` support chat summaries and automation pipelines respectively. Full usage guidance lives in [docs/owner-control-audit.md](docs/owner-control-audit.md).
+
+### Audit dossier export
+
+Preparing for an external security review? Generate the complete verifier package mirrored by the CI v2 workflow with a single command:
+
+```bash
+npm run audit:dossier
+```
+
+The helper wraps linting, unit tests, coverage, dependency audits, ABI diffing, owner-control validation, and optional Foundry/Slither checks into timestamped logs under `reports/audit`. The process is documented in [docs/AUDIT_DOSSIER.md](docs/AUDIT_DOSSIER.md) so auditors receive a deterministic bundle of artefacts alongside reproducible commands.
 
 ### Owner control systems map
 
