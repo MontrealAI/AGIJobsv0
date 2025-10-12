@@ -303,6 +303,12 @@ async function verify(address: string, args: any[] = []) {
 async function main() {
   const [owner] = await ethers.getSigners();
   const cli = parseArgs(process.argv.slice(2));
+  const envOutput = toStringOrUndefined(process.env.DEPLOY_DEFAULTS_OUTPUT);
+  const skipVerifyEnv = (process.env.DEPLOY_DEFAULTS_SKIP_VERIFY || '').toLowerCase();
+  const skipVerify =
+    cli['skip-verify'] === true ||
+    skipVerifyEnv === '1' ||
+    skipVerifyEnv === 'true';
   const configPath =
     cli.config && typeof cli.config === 'string' ? cli.config : undefined;
   const config = configPath
@@ -555,69 +561,73 @@ async function main() {
     }).map(([parameter, value]) => ({ parameter, value }))
   );
 
-  await verify(deployerAddress);
-  await verify(stakeManager, [
-    effectiveMinStake,
-    effectiveEmployerSlash,
-    effectiveTreasurySlash,
-    governance,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    deployerAddress,
-  ]);
-  await verify(jobRegistry, [
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    effectiveFeePct,
-    effectiveJobStake,
-    [stakeManager],
-    deployerAddress,
-  ]);
-  await verify(validationModule, [
-    jobRegistry,
-    stakeManager,
-    effectiveCommitWindow,
-    effectiveRevealWindow,
-    0,
-    0,
-    [],
-  ]);
-  await verify(reputationEngine, [stakeManager]);
-  await verify(disputeModule, [jobRegistry, 0, 0, ethers.ZeroAddress]);
-  await verify(certificateNFT, ['Cert', 'CERT']);
-  await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
-  await verify(jobRouter, [platformRegistry]);
-  await verify(platformIncentives, [stakeManager, platformRegistry, jobRouter]);
-  await verify(feePool, [
-    stakeManager,
-    effectiveBurnPct,
-    ethers.ZeroAddress,
-    withTax ? taxPolicy : ethers.ZeroAddress,
-  ]);
-  await verify(identityRegistry, [
-    identity.ens,
-    identity.nameWrapper,
-    reputationEngine,
-    identity.agentRootNode,
-    identity.clubRootNode,
-  ]);
-  await verify(systemPause, [
-    jobRegistry,
-    stakeManager,
-    validationModule,
-    disputeModule,
-    platformRegistry,
-    feePool,
-    reputationEngine,
-    governance,
-  ]);
-  if (withTax) {
-    await verify(taxPolicy, [DEFAULT_TAX_URI, DEFAULT_TAX_DESCRIPTION]);
+  if (!skipVerify) {
+    await verify(deployerAddress);
+    await verify(stakeManager, [
+      effectiveMinStake,
+      effectiveEmployerSlash,
+      effectiveTreasurySlash,
+      governance,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      deployerAddress,
+    ]);
+    await verify(jobRegistry, [
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      effectiveFeePct,
+      effectiveJobStake,
+      [stakeManager],
+      deployerAddress,
+    ]);
+    await verify(validationModule, [
+      jobRegistry,
+      stakeManager,
+      effectiveCommitWindow,
+      effectiveRevealWindow,
+      0,
+      0,
+      [],
+    ]);
+    await verify(reputationEngine, [stakeManager]);
+    await verify(disputeModule, [jobRegistry, 0, 0, ethers.ZeroAddress]);
+    await verify(certificateNFT, ['Cert', 'CERT']);
+    await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
+    await verify(jobRouter, [platformRegistry]);
+    await verify(platformIncentives, [stakeManager, platformRegistry, jobRouter]);
+    await verify(feePool, [
+      stakeManager,
+      effectiveBurnPct,
+      ethers.ZeroAddress,
+      withTax ? taxPolicy : ethers.ZeroAddress,
+    ]);
+    await verify(identityRegistry, [
+      identity.ens,
+      identity.nameWrapper,
+      reputationEngine,
+      identity.agentRootNode,
+      identity.clubRootNode,
+    ]);
+    await verify(systemPause, [
+      jobRegistry,
+      stakeManager,
+      validationModule,
+      disputeModule,
+      platformRegistry,
+      feePool,
+      reputationEngine,
+      governance,
+    ]);
+    if (withTax) {
+      await verify(taxPolicy, [DEFAULT_TAX_URI, DEFAULT_TAX_DESCRIPTION]);
+    }
+  } else {
+    console.log('\nSkipping contract verification (DEPLOY_DEFAULTS_SKIP_VERIFY enabled).');
   }
 
   let appliedTaxUri = DEFAULT_TAX_URI;
@@ -703,10 +713,13 @@ async function main() {
   console.log('\nDeployment summary');
   console.table(summary);
 
-  if (config.output || cli.output) {
-    const outputPath = path.resolve(
-      toStringOrUndefined(cli.output) ?? toStringOrUndefined(config.output)!
-    );
+  const outputCandidate =
+    toStringOrUndefined(cli.output) ??
+    toStringOrUndefined(config.output) ??
+    envOutput;
+
+  if (outputCandidate) {
+    const outputPath = path.resolve(outputCandidate);
     const payload = {
       timestamp: new Date().toISOString(),
       network: network.name,
