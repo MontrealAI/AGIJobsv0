@@ -38,6 +38,7 @@ Each step writes a structured log file and contributes to `reports/audit/summary
 
 * `reports/audit/logs/*.log` &mdash; raw execution logs for every step, prepended with timestamps and commands for forensic traceability.
 * `reports/audit/summary.json` &mdash; machine-readable overview containing commit hash, branch, generation timestamp, and step status entries.
+* `reports/audit/final-readiness.json` &mdash; snapshot emitted by `npm run audit:final` that records the freeze guard, branch audit, owner control proof, and dossier export status for the commit under review.【F:scripts/audit/final-readiness.ts†L1-L305】
 * `reports/audit/slither.json` (optional) &mdash; emitted when Slither is installed to capture high/medium/low findings using Crytic's JSON schema.
 
 These files, combined with the existing coverage HTML output (`coverage/`), provide auditors with an immutable snapshot of the repository state.
@@ -94,7 +95,7 @@ This package, plus the automated logs, satisfies the "External Audit & Final Ver
 ## 8. Continuous improvement hooks
 
 * Any audit finding should result in a failing unit test or invariant that reproduces the issue. Add it to the repository before shipping the fix.
-* Update `reports/audit/summary.json` whenever re-running the dossier so auditors can diff successive exports.
+* Update `reports/audit/summary.json` whenever re-running the dossier so auditors can diff successive exports. Regenerate `reports/audit/final-readiness.json` after any remediation run so the freeze audit trail mirrors the dossier contents.【F:scripts/audit/final-readiness.ts†L1-L305】
 * Extend the export script with additional steps (e.g., `npm run gas:check`, testnet dry-run scripts) as the deployment team finalises the release rehearsal.
 
 By following this guide, teams can present auditors with a deterministic, reproducible dossier that demonstrates production readiness at institutional scale.

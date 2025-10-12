@@ -1,5 +1,6 @@
 #!/usr/bin/env ts-node
 import { spawnSync, SpawnSyncReturns } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
@@ -11,6 +12,7 @@ type StepResult = {
   status: StepStatus;
   detail?: string;
   docs?: string;
+  command: string;
 };
 
 type Step = {
@@ -142,6 +144,7 @@ function runStep(step: Step, options: Options): StepResult {
       status: "skipped",
       detail: step.skipReason ?? "Skipped",
       docs: step.docs,
+      command: formatCommand(step.command),
     };
   }
 
@@ -153,6 +156,7 @@ function runStep(step: Step, options: Options): StepResult {
       status: "skipped",
       detail: "Dry run: command not executed",
       docs: step.docs,
+      command: formatCommand(step.command),
     };
   }
 
@@ -182,6 +186,7 @@ function runStep(step: Step, options: Options): StepResult {
       status: step.optional ? "warning" : "failed",
       detail,
       docs: step.docs,
+      command: formatCommand(step.command),
     };
   }
 
@@ -192,6 +197,7 @@ function runStep(step: Step, options: Options): StepResult {
       status: "passed",
       detail: undefined,
       docs: step.docs,
+      command: formatCommand(step.command),
     };
   }
 
@@ -204,6 +210,7 @@ function runStep(step: Step, options: Options): StepResult {
       status: "warning",
       detail: "GitHub token missing. Set GITHUB_TOKEN (repo scope) to verify branch protection.",
       docs: step.docs,
+      command: formatCommand(step.command),
     };
   }
 
@@ -214,6 +221,7 @@ function runStep(step: Step, options: Options): StepResult {
       status: "warning",
       detail: "Provide --owner/--repo or set GITHUB_REPOSITORY before running the branch audit.",
       docs: step.docs,
+      command: formatCommand(step.command),
     };
   }
 
@@ -223,6 +231,7 @@ function runStep(step: Step, options: Options): StepResult {
     status: step.optional ? "warning" : "failed",
     detail: `Command exited with code ${result.status ?? 1}`,
     docs: step.docs,
+    command: formatCommand(step.command),
   };
 }
 
@@ -243,6 +252,56 @@ function summarise(results: StepResult[]): void {
     const docs = result.docs ? ` [${result.docs}]` : "";
     console.log(`${icon} ${result.label.padEnd(labelWidth)} ${statusText}${detail}${docs}`);
   }
+}
+
+function runGit(args: string[]): string | undefined {
+  const result = spawnSync("git", args, {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+
+  if (result.error || (result.status ?? 1) !== 0) {
+    return undefined;
+  }
+
+  return (result.stdout ?? "").trim();
+}
+
+function writeSummary(results: StepResult[], options: Options, rootDir: string): void {
+  const outputDir = path.join(rootDir, "reports", "audit");
+  fs.mkdirSync(outputDir, { recursive: true });
+
+  const summaryPath = path.join(outputDir, "final-readiness.json");
+  const commit = runGit(["rev-parse", "HEAD"]);
+  const branch = runGit(["rev-parse", "--abbrev-ref", "HEAD"]);
+
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    commit: commit ?? null,
+    branch: branch ?? null,
+    options: {
+      branch: options.branch,
+      owner: options.owner ?? null,
+      repo: options.repo ?? null,
+      skipBranchProtection: options.skipBranchProtection,
+      includeOwnerCheck: options.includeOwnerCheck,
+      includeDossier: options.includeDossier,
+      dryRun: options.dryRun,
+    },
+    steps: results.map((result) => ({
+      id: result.id,
+      label: result.label,
+      status: result.status,
+      detail: result.detail ?? null,
+      docs: result.docs ?? null,
+      command: result.command,
+    })),
+  };
+
+  fs.writeFileSync(summaryPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  const relativePath = path.relative(rootDir, summaryPath) || summaryPath;
+  console.log(`\n🗂️  Final readiness summary written to ${relativePath}`);
 }
 
 function main(): void {
@@ -317,6 +376,15 @@ function main(): void {
 
   const results = steps.map((step) => runStep(step, options));
   summarise(results);
+
+  try {
+    writeSummary(results, options, rootDir);
+  } catch (error) {
+    console.error(
+      `Failed to write final readiness summary: ${(error as Error).message}`,
+    );
+    process.exit(1);
+  }
 
   const hasFailure = results.some((result) => result.status === "failed");
   if (hasFailure) {
