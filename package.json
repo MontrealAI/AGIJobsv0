@@ -117,7 +117,8 @@
     "alpha-bridge:start": "node services/alpha-bridge/src/server.js",
     "alpha-bridge:test": "node --test services/alpha-bridge/test/alpha-bridge.test.js",
     "validator:cli": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/validator/cli.ts",
-    "hamiltonian:report": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/hamiltonian-tracker.ts"
+    "hamiltonian:report": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/hamiltonian-tracker.ts",
+    "audit:dossier": "bash scripts/audit/export-dossier.sh"
   },
   "keywords": [],
   "author": "",
