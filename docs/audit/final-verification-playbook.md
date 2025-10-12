@@ -4,6 +4,8 @@
 >
 > **Outcome.** Every checklist item from the "Recommended Next Coding Sprint: External Audit & Final Verification" mandate is executable with one command or referenced runbook, producing audit-grade artefacts for non-technical reviewers.
 
+Before starting, generate a launch kit with `npm run audit:kit -- --output reports/audit/launch-kit.md` so coordinators and auditors share the same checklist snapshot. The generator wraps the steps below into ready-to-share Markdown with checkboxes, references, and artefact expectations.
+
 ## 1. Audit Preparation & Code Freeze
 
 1. **Automated readiness sweep.** Launch `npm run audit:final -- --full` to chain the freeze guard, branch-protection verification, owner control proof, and dossier export into a single, auditable run. Use `npm run audit:final -- --with-owner-check` or `npm run audit:final -- --with-dossier` to run individual heavy steps, and `npm run audit:final -- --dry-run` to preview commands without executing them. Each invocation now writes `reports/audit/final-readiness.json` with commit metadata, options, and per-step results so auditors can diff successive runs without scraping console output.【F:scripts/audit/final-readiness.ts†L1-L305】【F:package.json†L10-L101】

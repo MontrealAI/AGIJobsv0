@@ -11,6 +11,8 @@ The repository already enforces a **green v2 CI** pipeline (`.github/workflows/c
 * Optional but recommended: [Foundry](https://book.getfoundry.sh/getting-started/installation) (`forge` on the `PATH`) and [Slither](https://github.com/crytic/slither) for extended static analysis. The export script gracefully skips these steps if the tools are not present, while logging the omission.
 * Docker is **not** required for the base dossier export. Echidna and other heavy fuzzers are already covered via the existing CI workflows and can be run separately if an auditor requests them.
 
+For a frozen snapshot of the overall launch plan, run `npm run audit:kit` (documented in [docs/audit/external-audit-launch-kit.md](audit/external-audit-launch-kit.md)) to generate a Markdown checklist before minting the dossier. The launch kit references every command below and keeps auditors aligned on scope.
+
 ## 2. Running the automated export
 
 Execute the helper script to generate a complete dossier (or invoke the orchestrator with `npm run audit:final -- --with-dossier` to run branch-protection and owner-control checks first):
