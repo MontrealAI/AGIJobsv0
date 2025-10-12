@@ -327,6 +327,45 @@ describe('SystemPause', function () {
     ).to.be.revertedWithCustomError(pause, 'ModuleNotOwned');
   });
 
+  it('rejects zero address module assignments', async function () {
+    const [owner] = await ethers.getSigners();
+    const { pause, addresses } = await deploySystem(owner.address);
+
+    await expect(
+      pause
+        .connect(owner)
+        .setModules(
+          ethers.ZeroAddress,
+          addresses.stake,
+          addresses.validationModule,
+          addresses.disputeModule,
+          addresses.platformRegistry,
+          addresses.feePool,
+          addresses.reputationEngine,
+          addresses.arbitratorCommittee
+        )
+    )
+      .to.be.revertedWithCustomError(pause, 'InvalidJobRegistry')
+      .withArgs(ethers.ZeroAddress);
+
+    await expect(
+      pause
+        .connect(owner)
+        .setModules(
+          addresses.jobRegistry,
+          ethers.ZeroAddress,
+          addresses.validationModule,
+          addresses.disputeModule,
+          addresses.platformRegistry,
+          addresses.feePool,
+          addresses.reputationEngine,
+          addresses.arbitratorCommittee
+        )
+    )
+      .to.be.revertedWithCustomError(pause, 'InvalidStakeManager')
+      .withArgs(ethers.ZeroAddress);
+  });
+
   it('allows governance to set and restore a custom pauser', async function () {
     const [owner, , delegate] = await ethers.getSigners();
     const {
@@ -685,6 +724,10 @@ describe('SystemPause', function () {
 
     await expect(
       pause.connect(owner).executeGovernanceCall(addresses.stake, '0x')
+    ).to.be.revertedWithCustomError(pause, 'MissingSelector');
+
+    await expect(
+      pause.connect(owner).executeGovernanceCall(addresses.stake, '0x123456')
     ).to.be.revertedWithCustomError(pause, 'MissingSelector');
   });
 
