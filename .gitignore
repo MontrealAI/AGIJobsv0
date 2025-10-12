@@ -38,6 +38,7 @@ scripts/**/*.js
 !scripts/observability-smoke-check.js
 !scripts/release/generate-manifest.js
 !scripts/release/generate-release-notes.js
+!scripts/release/render-manifest-summary.js
 !scripts/release/run-etherscan-verification.js
 !scripts/release/validate-manifest.js
 !scripts/utils/parseDuration.js
