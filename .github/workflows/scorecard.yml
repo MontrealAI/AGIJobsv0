@@ -45,7 +45,7 @@ jobs:
           repo_token: ${{ secrets.SCORECARD_READ_TOKEN || github.token }}
 
       - name: Upload Scorecard SARIF
-        uses: github/codeql-action/upload-sarif@7dccf72e419e51b915f40df725d7c2e766b51b44
+        uses: github/codeql-action/upload-sarif@755f44910c12a3d7ca0d8c6e42c048b3362f7cec
         with:
           sarif_file: scorecard.sarif
 
