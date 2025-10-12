@@ -15,28 +15,58 @@ concurrency:
 
 jobs:
   webapp-ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            pkg-containers.githubusercontent.com:443
+            codeload.github.com:443
+            ghcr.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            index.docker.io:443
+            nodejs.org:443
+            registry.npmjs.org:443
+            registry.yarnpkg.com:443
+            storage.googleapis.com:443
+            dl.google.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            binaries.soliditylang.org:443
+            solc-bin.ethereum.org:443
+            api.securityscorecards.dev:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            oauth2.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
           cache: npm
 
       - name: Install repository dependencies
-        run: npm ci
+        run: npm ci --no-audit --prefer-offline --progress=false
 
       - name: Install console dependencies
-        run: npm ci --prefix apps/console
+        run: npm ci --no-audit --prefer-offline --progress=false --prefix apps/console
 
       - name: Install enterprise portal dependencies
-        run: npm ci --prefix apps/enterprise-portal
+        run: npm ci --no-audit --prefer-offline --progress=false --prefix apps/enterprise-portal
 
       - name: Type-check webapp
         run: npm run webapp:typecheck
@@ -58,7 +88,7 @@ jobs:
 
       - name: Upload webapp artefacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: owner-console-dist
           path: apps/console/dist
