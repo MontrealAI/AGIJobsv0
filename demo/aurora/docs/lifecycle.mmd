@@ -1,0 +1,26 @@
+sequenceDiagram
+  participant Employer
+  participant Agent
+  participant Validator
+  participant JobRegistry
+  participant Validation
+  participant Dispute
+  participant StakeManager
+  participant Thermostat
+  participant RewardEngine
+
+  Employer->>JobRegistry: postJob(specURI, payout)
+  Agent->>StakeManager: stake(worker)
+  Validator->>StakeManager: stake(validator)
+  Agent->>JobRegistry: submit(resultURI)
+  JobRegistry->>Validation: select K-of-N
+  Validator->>Validation: commit
+  Validator->>Validation: reveal
+  Validation->>JobRegistry: quorum reached
+  opt Dispute window
+    *->>Dispute: raiseDispute()
+    Dispute->>JobRegistry: resolve
+  end
+  JobRegistry->>StakeManager: settle escrow
+  Thermostat-->>RewardEngine: T / budget signals
+  RewardEngine->>StakeManager: distribute rewards
