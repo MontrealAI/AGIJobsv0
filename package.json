@@ -119,6 +119,7 @@
     "validator:cli": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/validator/cli.ts",
     "hamiltonian:report": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/hamiltonian-tracker.ts",
     "audit:freeze": "node scripts/audit/check-freeze.js",
+    "audit:final": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/audit/final-readiness.ts",
     "audit:dossier": "bash scripts/audit/export-dossier.sh"
   },
   "keywords": [],

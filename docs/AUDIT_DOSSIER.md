@@ -13,7 +13,7 @@ The repository already enforces a **green v2 CI** pipeline (`.github/workflows/c
 
 ## 2. Running the automated export
 
-Execute the helper script to generate a complete dossier:
+Execute the helper script to generate a complete dossier (or invoke the orchestrator with `npm run audit:final --with-dossier` to run branch-protection and owner-control checks first):
 
 ```bash
 npm run audit:dossier

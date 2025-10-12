@@ -6,10 +6,11 @@
 
 ## 1. Audit Preparation & Code Freeze
 
-1. **Lock the freeze branch.** Run `npm run audit:freeze` from a clean checkout of `main` to enforce branch parity, clean working tree, and upstream synchronisation. Configure a different branch with `AUDIT_FREEZE_BRANCH=<branch>` or bypass branch enforcement only when mirroring the audit staging branch (`AUDIT_FREEZE_ALLOW_BRANCH=1`).【F:scripts/audit/check-freeze.js†L1-L86】【F:package.json†L10-L101】
-2. **Capture the dossier.** Execute `npm run audit:dossier` to export the Slither report, coverage snapshots, dependency audits, and structured logs into `reports/audit` for hand-off to auditors.【F:docs/AUDIT_DOSSIER.md†L3-L92】【F:package.json†L10-L101】
-3. **Freeze documentation pointers.** Update the change ticket with the dossier hash and link to the owner audit evidence (`npm run owner:audit -- --network <net>`). Follow the archival flow in the owner audit guide to prevent drift.【F:docs/owner-control-audit.md†L26-L114】
-4. **Pause new feature work.** Announce a code-freeze window referencing this playbook. Only emergency fixes with accompanying audit artefacts may merge until auditors sign off.
+1. **Automated readiness sweep.** Launch `npm run audit:final --full` to chain the freeze guard, branch-protection verification, owner control proof, and dossier export into a single, auditable run. Use `--with-owner-check` or `--with-dossier` to run individual heavy steps, and `--dry-run` to preview commands without executing them.【F:scripts/audit/final-readiness.ts†L1-L214】【F:package.json†L10-L101】
+2. **Lock the freeze branch.** Run `npm run audit:freeze` from a clean checkout of `main` to enforce branch parity, clean working tree, and upstream synchronisation. Configure a different branch with `AUDIT_FREEZE_BRANCH=<branch>` or bypass branch enforcement only when mirroring the audit staging branch (`AUDIT_FREEZE_ALLOW_BRANCH=1`).【F:scripts/audit/check-freeze.js†L1-L86】【F:package.json†L10-L101】
+3. **Capture the dossier.** Execute `npm run audit:dossier` to export the Slither report, coverage snapshots, dependency audits, and structured logs into `reports/audit` for hand-off to auditors.【F:docs/AUDIT_DOSSIER.md†L3-L92】【F:package.json†L10-L101】
+4. **Freeze documentation pointers.** Update the change ticket with the dossier hash and link to the owner audit evidence (`npm run owner:audit -- --network <net>`). Follow the archival flow in the owner audit guide to prevent drift.【F:docs/owner-control-audit.md†L26-L114】
+5. **Pause new feature work.** Announce a code-freeze window referencing this playbook. Only emergency fixes with accompanying audit artefacts may merge until auditors sign off.
 
 ## 2. Support Auditors & Issue Remediation
 
