@@ -443,6 +443,21 @@ npm run owner:change-ticket -- --network mainnet --format json --out reports/mai
 
 The helper loads every owner-facing configuration manifest, hashes them with SHA-256, and emits a sequenced stage plan (baseline → plan → execute → verify → archive) alongside module-specific update/verify commands. Each ticket embeds a Mermaid flow, attachment checklist and links to the relevant illustrated handbooks, making it trivial for the contract owner to coordinate Safe signers, document intent and prove that every adjustable parameter stayed under explicit control. Full guidance lives in [docs/owner-control-change-ticket.md](docs/owner-control-change-ticket.md).
 
+### Owner control testnet dry-run harness
+
+Need evidence that the full marketplace lifecycle and emergency controls work before touching a public testnet? Run the rehearsal harness:
+
+```bash
+npx hardhat compile
+npm run owner:testnet:dry-run -- --network <network>
+
+# Emit JSON for audit artefacts or CI dashboards
+npm run owner:testnet:dry-run -- --network <network> --json \
+  > reports/<network>-owner-testnet-dry-run.json
+```
+
+The script deploys an ephemeral fixture, exercises staking, job creation, delivery, validation and payouts, then provisions a `SystemPause` stack via the canonical on-chain `Deployer`. It records transaction hashes, gas usage, actor addresses and post-condition checks so owners can capture immutable artefacts prior to audit sign-off. Pair the output with `npm run pause:test` to satisfy the External Audit & Final Verification sprint checklist; detailed instructions live in [docs/testnet-dry-run.md](docs/testnet-dry-run.md).
+
 ### Owner update plan kit
 
 Pair the change ticket with the [Owner Update Plan Kit](docs/owner-update-plan-kit.md)
