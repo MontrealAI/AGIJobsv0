@@ -121,9 +121,10 @@ async function main(): Promise<void> {
   const workerStakeRaw = toBigInt(spec.stake?.worker, 20_000_000n);
   const validatorStakeRaw = toBigInt(spec.stake?.validator, 50_000_000n);
 
-  const reward = rewardRaw;
-  const workerStake = workerStakeRaw;
-  const validatorStake = validatorStakeRaw;
+  const sixToEighteenDecimals = 10n ** 12n;
+  const reward = rewardRaw * sixToEighteenDecimals;
+  const workerStake = workerStakeRaw * sixToEighteenDecimals;
+  const validatorStake = validatorStakeRaw * sixToEighteenDecimals;
   const allowanceBuffer = reward * 4n;
 
   const receipts: Record<string, unknown> = {};
