@@ -38,12 +38,14 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
         run: npm ci
 
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: '1.4.0'
+          version: 'stable'
 
       - name: Run AURORA demo (local)
         env:
