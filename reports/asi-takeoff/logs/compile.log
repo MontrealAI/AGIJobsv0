@@ -1,0 +1,15 @@
+# Compile protocol
+
+Exit code: 0
+Duration: 2443ms
+
+## stdout
+
+[dotenv@17.2.2] injecting env (2) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Nothing to compile
+
+
+## stderr
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+

@@ -1,0 +1,83 @@
+# Verify owner control wiring
+
+Exit code: 0
+Duration: 5182ms
+
+## stdout
+
+[dotenv@17.2.2] injecting env (2) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.2.2] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+AGIJobs Owner Control Verification
+-----------------------------------
+Runtime network: hardhat (chainId 31337)
+Hardhat network: hardhat
+Config path: /workspace/AGIJobsv0/config/owner-control.json
+Address book: /workspace/AGIJobsv0/scripts/docs/deployment-addresses.json
+Signer:       0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+
+⚠️ missing-address  Arbitrator Committee
+    Note:      No address found for Arbitrator Committee. Provide one via Set modules.arbitratorCommittee.address or define AGJ_ARBITRATORCOMMITTEE_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Attestation Registry
+    Note:      No address found for Attestation Registry. Provide one via Set modules.attestationRegistry.address or define AGJ_ATTESTATIONREGISTRY_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Certificate NFT
+    Note:      No address found for Certificate NFT. Provide one via Set modules.certificateNFT.address or define AGJ_CERTIFICATENFT_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Dispute Module
+    Note:      No address found for Dispute Module. Provide one via Set modules.disputeModule.address or define AGJ_DISPUTEMODULE_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Fee Pool
+    Note:      No address found for Fee Pool. Provide one via Set modules.feePool.address or define AGJ_FEEPOOL_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Identity Registry
+    Note:      No address found for Identity Registry. Provide one via Set modules.identityRegistry.address or define AGJ_IDENTITYREGISTRY_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Job Registry
+    Note:      No address found for Job Registry. Provide one via Set modules.jobRegistry.address or define AGJ_JOBREGISTRY_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Job Router
+    Note:      No address found for Job Router. Provide one via Set modules.jobRouter.address or define AGJ_JOBROUTER_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Platform Incentives
+    Note:      No address found for Platform Incentives. Provide one via Set modules.platformIncentives.address or define AGJ_PLATFORMINCENTIVES_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Platform Registry
+    Note:      No address found for Platform Registry. Provide one via Set modules.platformRegistry.address or define AGJ_PLATFORMREGISTRY_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Reputation Engine
+    Note:      No address found for Reputation Engine. Provide one via Set modules.reputationEngine.address or define AGJ_REPUTATIONENGINE_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Reward Engine
+    Note:      No address found for Reward Engine. Provide one via Set modules.rewardEngine.address or define AGJ_REWARDENGINE_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Stake Manager
+    Note:      No address found for Stake Manager. Provide one via Set modules.stakeManager.address or define AGJ_STAKEMANAGER_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  System Pause
+    Note:      No address found for System Pause. Provide one via Set modules.systemPause.address or define AGJ_SYSTEMPAUSE_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Tax Policy
+    Note:      No address found for Tax Policy. Provide one via Set modules.taxPolicy.address or define AGJ_TAXPOLICY_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Thermostat
+    Note:      No address found for Thermostat. Provide one via Set modules.thermostat.address or define AGJ_THERMOSTAT_ADDRESS or update docs/deployment-addresses.json.
+
+⚠️ missing-address  Validation Module
+    Note:      No address found for Validation Module. Provide one via Set modules.validationModule.address or define AGJ_VALIDATIONMODULE_ADDRESS or update docs/deployment-addresses.json.
+
+Summary
+-------
+  ✅ ok:                 0
+  ❌ mismatch:          0
+  ⚠️ missing address:   17
+  ⚠️ missing expected:  0
+  ⏭️ skipped:            0
+  ❌ errors:            0
+
+
+
+## stderr
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+

@@ -1,0 +1,111 @@
+{
+  "network": "hardhat",
+  "baseName": "asi-takeoff",
+  "generatedAt": "2025-10-13T18:06:32.785Z",
+  "overallStatus": "warning",
+  "includeMermaid": true,
+  "steps": [
+    {
+      "key": "surface",
+      "title": "Control Surface Snapshot",
+      "status": "skipped",
+      "summary": "Step skipped by CLI configuration",
+      "metrics": {},
+      "command": [],
+      "env": {},
+      "durationMs": 0
+    },
+    {
+      "key": "plan",
+      "title": "Owner Update Plan",
+      "status": "success",
+      "summary": "No actions required across 0 modules",
+      "metrics": {
+        "modules": 0,
+        "actions": 0,
+        "pendingModules": 0
+      },
+      "command": [
+        "/root/.nvm/versions/node/v20.19.4/bin/node",
+        "scripts/v2/run-owner-plan.js",
+        "--json"
+      ],
+      "env": {
+        "HARDHAT_NETWORK": "hardhat"
+      },
+      "durationMs": 5183
+    },
+    {
+      "key": "verify",
+      "title": "Owner Control Verification",
+      "status": "warning",
+      "summary": "Owner control summary — ok 0, mismatch 0, missing address 17, missing expected 0",
+      "metrics": {
+        "ok": 0,
+        "mismatch": 0,
+        "missingAddress": 17,
+        "missingExpected": 0,
+        "error": 0
+      },
+      "command": [
+        "npx",
+        "hardhat",
+        "run",
+        "--no-compile",
+        "scripts/v2/verifyOwnerControl.ts",
+        "--network",
+        "hardhat"
+      ],
+      "env": {
+        "OWNER_VERIFY_JSON": "1",
+        "HARDHAT_NETWORK": "hardhat"
+      },
+      "durationMs": 4709
+    },
+    {
+      "key": "dashboard",
+      "title": "Owner Command Dashboard",
+      "status": "warning",
+      "summary": "13 modules inspected — 13 without addresses, 0 reported errors",
+      "metrics": {
+        "modules": 13,
+        "missing": 13,
+        "errored": 0
+      },
+      "command": [
+        "npx",
+        "hardhat",
+        "run",
+        "--no-compile",
+        "scripts/v2/owner-dashboard.ts",
+        "--network",
+        "hardhat"
+      ],
+      "env": {
+        "OWNER_DASHBOARD_JSON": "1",
+        "HARDHAT_NETWORK": "hardhat"
+      },
+      "durationMs": 4980
+    }
+  ],
+  "files": [
+    {
+      "format": "markdown",
+      "file": "asi-takeoff.md",
+      "sha256": "8148bdf4954879b355fd03b39f4698a4336e222d7441ca96cb4429281b0877b3",
+      "bytes": 5866
+    },
+    {
+      "format": "json",
+      "file": "asi-takeoff.json",
+      "sha256": "f96946adaefe0bb488d42f950bcea0451e53995ab953cffc9858ecea58076a65",
+      "bytes": 5602
+    },
+    {
+      "format": "human",
+      "file": "asi-takeoff.txt",
+      "sha256": "05491884fc6334d23fe2043c405bc9625a8dbef0d0b663d8f4bc57a0e7dbe4ed",
+      "bytes": 4195
+    }
+  ]
+}

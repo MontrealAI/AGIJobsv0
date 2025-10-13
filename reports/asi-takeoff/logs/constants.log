@@ -1,0 +1,16 @@
+# Regenerate protocol constants
+
+Exit code: 0
+Duration: 2961ms
+
+## stdout
+
+Generated /workspace/AGIJobsv0/contracts/v2/Constants.sol
+Generated /workspace/AGIJobsv0/scripts/generated/protocol-defaults.ts
+Generated /workspace/AGIJobsv0/deployment-config/generated/protocol-defaults.json
+
+
+## stderr
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+

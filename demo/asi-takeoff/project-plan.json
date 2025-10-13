@@ -1,0 +1,133 @@
+{
+  "initiative": "National High-Speed Rail Corridor",
+  "objective": "Deploy an end-to-end rail corridor between City A and City B within 12 months using AGI Jobs automation primitives.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "500000"
+  },
+  "governance": {
+    "owner": "0xAI-GOVERNOR",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xTREASURY-AUTONOMOUS",
+    "thermostat": {
+      "initialTemperature": "0.18",
+      "emergencyTemperature": "0.35",
+      "updateScript": "scripts/v2/updateThermodynamics.ts"
+    }
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "engineering.agent.agi.eth",
+        "role": "Lead Systems Designer",
+        "capabilities": ["Parametric design", "Lifecycle BIM", "Route simulation"]
+      },
+      {
+        "handle": "north.contractor.agi.eth",
+        "role": "Northern Construction Cooperative",
+        "capabilities": ["Prefabrication", "Autonomous drones", "Track laying"]
+      },
+      {
+        "handle": "south.contractor.agi.eth",
+        "role": "Southern Robotics Consortium",
+        "capabilities": ["Bridge assembly", "Tunnel boring", "Rapid QA"]
+      },
+      {
+        "handle": "inspection.validator.agi.eth",
+        "role": "National Rail Safety Authority",
+        "capabilities": ["Validator quorum", "Energy metering", "Dispute arbitration"]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "inspection.validator.agi.eth",
+        "stake": "125000",
+        "mandate": "Final acceptance, thermodynamic audits"
+      },
+      {
+        "handle": "civic.validator.agi.eth",
+        "stake": "72000",
+        "mandate": "Community impact oversight"
+      },
+      {
+        "handle": "safety.validator.agi.eth",
+        "stake": "91000",
+        "mandate": "Worker safety and rail testing"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "SURVEY-AB",
+      "title": "Route intelligence and geospatial survey",
+      "reward": "85000",
+      "deadlineDays": 30,
+      "dependencies": [],
+      "energyBudget": "32000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.12",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "DESIGN-CORE",
+      "title": "Rail systems architecture and phasing",
+      "reward": "95000",
+      "deadlineDays": 60,
+      "dependencies": ["SURVEY-AB"],
+      "energyBudget": "41000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.08",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "CONSTRUCT-NORTH",
+      "title": "High-speed corridor construction – northern section",
+      "reward": "130000",
+      "deadlineDays": 180,
+      "dependencies": ["DESIGN-CORE"],
+      "energyBudget": "125000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.21",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "CONSTRUCT-SOUTH",
+      "title": "High-speed corridor construction – southern section",
+      "reward": "130000",
+      "deadlineDays": 180,
+      "dependencies": ["DESIGN-CORE"],
+      "energyBudget": "129000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.23",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "VALIDATE-SYSTEM",
+      "title": "Integrated validation, safety, and energy efficiency audit",
+      "reward": "60000",
+      "deadlineDays": 30,
+      "dependencies": ["CONSTRUCT-NORTH", "CONSTRUCT-SOUTH"],
+      "energyBudget": "22000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.05",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/asi-takeoff/dry-run.json",
+      "thermodynamics": "reports/asi-takeoff/thermodynamics.json",
+      "missionControl": "reports/asi-takeoff/mission-control.md",
+      "summary": "reports/asi-takeoff/summary.md"
+    },
+    "dashboards": [
+      "reports/asi-takeoff/mission-control.md",
+      "reports/asi-takeoff/thermodynamics.json"
+    ]
+  }
+}
