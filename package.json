@@ -132,6 +132,7 @@
   "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
+    "@agijobsv0/npm-hooks": "file:./scripts/ci/npm-hooks",
     "@cyclonedx/cyclonedx-npm": "^4.0.3",
     "@nomicfoundation/hardhat-toolbox": "6.1.0",
     "@openzeppelin/contracts": "^5.4.0",
