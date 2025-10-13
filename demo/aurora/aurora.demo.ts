@@ -32,6 +32,14 @@ function toBigInt(value: string | number | bigint | undefined, fallback: bigint)
   }
 }
 
+function scaleSixDecimalAmount(
+  value: string | number | bigint | undefined,
+  fallback: bigint
+): bigint {
+  const raw = toBigInt(value, fallback);
+  return ethers.parseUnits(raw.toString(), 12);
+}
+
 function writeJson(targetDir: string, name: string, payload: unknown): void {
   fs.mkdirSync(targetDir, { recursive: true });
   fs.writeFileSync(path.join(targetDir, name), JSON.stringify(payload, null, 2));
@@ -117,14 +125,9 @@ async function main(): Promise<void> {
     ATTESTATION_REGISTRY: contracts.IdentityRegistry || ethers.ZeroAddress,
   };
 
-  const rewardRaw = toBigInt(spec.escrow?.amountPerItem, 5_000_000n);
-  const workerStakeRaw = toBigInt(spec.stake?.worker, 20_000_000n);
-  const validatorStakeRaw = toBigInt(spec.stake?.validator, 50_000_000n);
-
-  const sixToEighteenDecimals = 10n ** 12n;
-  const reward = rewardRaw * sixToEighteenDecimals;
-  const workerStake = workerStakeRaw * sixToEighteenDecimals;
-  const validatorStake = validatorStakeRaw * sixToEighteenDecimals;
+  const reward = scaleSixDecimalAmount(spec.escrow?.amountPerItem, 5_000_000n);
+  const workerStake = scaleSixDecimalAmount(spec.stake?.worker, 20_000_000n);
+  const validatorStake = scaleSixDecimalAmount(spec.stake?.validator, 50_000_000n);
   const allowanceBuffer = reward * 4n;
 
   const receipts: Record<string, unknown> = {};
