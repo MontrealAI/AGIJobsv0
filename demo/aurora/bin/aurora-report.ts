@@ -2,6 +2,11 @@
 import fs from 'fs';
 import path from 'path';
 
+type GovernanceLog = {
+  actions?: Array<Record<string, any>>;
+  thermostat?: Array<Record<string, string>>;
+};
+
 const net =
   process.env.NETWORK ||
   (process.env.CHAIN_ID === '31337' ? 'localhost' : 'localhost');
@@ -65,6 +70,7 @@ function renderKeyValues(record: Record<string, string>): string {
       parts.push('- ' + summaryLines.join('\n- '));
     }
   }
+  const governance = load('governance.json') as GovernanceLog | null;
 
   if (deploy && deploy.contracts) {
     parts.push(section('Deployment Summary'));
@@ -94,6 +100,31 @@ function renderKeyValues(record: Record<string, string>): string {
       parts.push('- **Deadline**: ' + fallbackPost.deadline);
     if (fallbackPost.specHash)
       parts.push('- **Spec hash**: `' + fallbackPost.specHash + '`');
+  if (post) {
+    parts.push(section('Job Creation'));
+    parts.push('- **Job ID**: ' + post.jobId);
+    if (post.txHash) parts.push('- **Transaction**: `' + post.txHash + '`');
+    if (post.reward) parts.push('- **Reward**: ' + post.reward);
+    if (post.deadline) parts.push('- **Deadline**: ' + post.deadline);
+    if (post.specHash) parts.push('- **Spec hash**: `' + post.specHash + '`');
+    if (post.specUri) parts.push('- **Spec URI**: ' + post.specUri);
+  }
+
+  if (stake && stake.entries) {
+    parts.push(section('Stake Operations'));
+    for (const entry of stake.entries as Array<Record<string, unknown>>) {
+      parts.push(
+        '- ' +
+          entry.role +
+          ' `' +
+          entry.address +
+          '` staked ' +
+          entry.amount +
+          ' (tx: `' +
+          entry.txHash +
+          '`)' 
+      );
+    }
   }
 
   if (missionJobs.length === 0 && fallbackSubmit) {
@@ -114,6 +145,7 @@ function renderKeyValues(record: Record<string, string>): string {
     for (const validator of fallbackValidate.validators as Array<
       Record<string, unknown>
     >) {
+    for (const validator of validate.validators as Array<Record<string, unknown>>) {
       parts.push(
         '- Validator `' +
           validator.address +
@@ -249,8 +281,19 @@ function renderKeyValues(record: Record<string, string>): string {
     }
   }
   if (governance && Array.isArray(governance.actions)) {
+  if (governance?.thermostat && governance.thermostat.length > 0) {
+    parts.push(section('Thermostat Tuning'));
+    for (const update of governance.thermostat) {
+      const tx = update.txHash ? ` (tx: \`${update.txHash}\`)` : '';
+      parts.push(
+        `- ${update.action}: ${update.before} → ${update.after}${tx}`
+      );
+    }
+  }
+
+  if (governance?.actions && governance.actions.length > 0) {
     parts.push(section('Governance & Controls'));
-    for (const action of governance.actions as Array<Record<string, any>>) {
+    for (const action of governance.actions) {
       const header =
         '- **' +
         action.target +
@@ -272,12 +315,14 @@ function renderKeyValues(record: Record<string, string>): string {
         parts.push(
           '  - Before: ' +
             renderKeyValues(action.before as Record<string, string>)
+          '  - Before: ' + renderKeyValues(action.before as Record<string, string>)
         );
       }
       if (action.after) {
         parts.push(
           '  - After: ' +
             renderKeyValues(action.after as Record<string, string>)
+          '  - After: ' + renderKeyValues(action.after as Record<string, string>)
         );
       }
     }
