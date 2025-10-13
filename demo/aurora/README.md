@@ -24,7 +24,7 @@ npm run demo:aurora:sepolia
 
 * `reports/<network>/aurora/receipts/*.json`
 * `reports/<network>/aurora/aurora-report.md`
-* Governance/owner snapshots can be generated via the existing owner tooling
+* governance/owner snapshots (via existing owner tools)
 
 ---
 
@@ -95,10 +95,10 @@ sequenceDiagram
 
 ## Runbook
 
-See [`RUNBOOK.md`](./RUNBOOK.md) for the step‑by‑step orchestration, including:
+See [`RUNBOOK.md`](./RUNBOOK.md) for exact commands that call:
 
-* Wiring checks and deployment via `scripts/v2/deployDefaults.ts`
-* Automated module configuration and staking handled by `aurora.demo.ts`
-* Receipt collection and the Markdown mission report summarised by `aurora-report.ts`
+* `examples/ethers-quickstart.js` → `postJob`, `acknowledgeTaxPolicy`, `approveStake`, `prepareStake`, `stake`, `submit`, `computeValidationCommit`, `validate`
+* Hardhat scripts in `scripts/v2` for `updateThermodynamics.ts` (dry-run then execute)
+* Owner tooling: `owner:verify-control`, `owner:dashboard`, `owner:pulse`
 
 All receipts land under `reports/<net>/aurora/`. A Markdown summary is generated at `reports/<net>/aurora/aurora-report.md`.

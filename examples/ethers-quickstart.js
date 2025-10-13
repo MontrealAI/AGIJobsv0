@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { ethers } = require('ethers');
 
 // Canonical $AGIALPHA token uses 18 decimals
@@ -126,6 +128,19 @@ function parseValidationOptions(args) {
   return options;
 }
 
+function specAmountToWei(amount, decimals) {
+  if (!amount) return 0n;
+  const str = String(amount).trim();
+  if (!str) return 0n;
+  const base = BigInt(str);
+  const scale = decimals > 6 ? BigInt(10) ** BigInt(decimals - 6) : 1n;
+  return base * scale;
+}
+
+function formatUnits(value) {
+  return ethers.formatUnits(value, TOKEN_DECIMALS);
+}
+
 async function computeValidationCommit(jobIdInput, approve, options = {}) {
   if (typeof approve !== 'boolean') {
     throw new Error('The `approve` flag must be a boolean.');
@@ -192,29 +207,38 @@ async function computeValidationCommit(jobIdInput, approve, options = {}) {
 }
 
 const registryAbi = [
+  'function acknowledgeTaxPolicy()',
+  'function acknowledgeAndCreateJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri) returns (uint256)',
   'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri)',
+  'function nextJobId() view returns (uint256)',
   'function applyForJob(uint256 jobId, string subdomain, bytes32[] proof)',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI)',
-  'function raiseDispute(uint256 jobId, bytes32 evidenceHash)',
-  'function raiseDispute(uint256 jobId, string reason)',
+  'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes32[] proof)',
   'function getSpecHash(uint256 jobId) view returns (bytes32)',
+  'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)'
 ];
-const stakeAbi = ['function depositStake(uint8 role, uint256 amount)'];
+const stakeAbi = [
+  'function depositStake(uint8 role, uint256 amount)',
+  'function acknowledgeAndDeposit(uint8 role, uint256 amount) returns (uint256)'
+];
 const erc20Abi = [
   'function approve(address spender, uint256 amount) returns (bool)',
   'function allowance(address owner, address spender) view returns (uint256)',
+  'function balanceOf(address account) view returns (uint256)',
+  'function acceptTerms()',
+  'function hasAcknowledged(address account) view returns (bool)'
 ];
 const validationAbi = [
   'function commitValidation(uint256 jobId, bytes32 hash, string subdomain, bytes32[] proof)',
   'function revealValidation(uint256 jobId, bool approve, bytes32 burnTxHash, bytes32 salt, string subdomain, bytes32[] proof)',
   'function finalize(uint256 jobId)',
   'function jobNonce(uint256 jobId) view returns (uint256)',
-  'function DOMAIN_SEPARATOR() view returns (bytes32)',
+  'function DOMAIN_SEPARATOR() view returns (bytes32)'
 ];
 
 const attestAbi = [
   'function attest(bytes32 node, uint8 role, address who)',
-  'function revoke(bytes32 node, uint8 role, address who)',
+  'function revoke(bytes32 node, uint8 role, address who)'
 ];
 
 const registry = new ethers.Contract(
@@ -239,24 +263,116 @@ const validation = new ethers.Contract(
 );
 
 const attestation = new ethers.Contract(
-  requireEnv('ATTESTATION_REGISTRY'),
+  process.env.ATTESTATION_REGISTRY || ethers.ZeroAddress,
   attestAbi,
   signer
 );
 
-// Post a job with a reward denominated in AGIALPHA.
-// The optional `amount` parameter represents whole tokens and defaults to `1`.
-// Amounts are converted using the fixed 18‑decimal configuration.
-async function postJob(amount = '1') {
-  const reward = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
+async function acknowledgeTokenTerms(account) {
+  if (!agialphaToken.acceptTerms) return;
+  const acknowledged = await agialphaToken.hasAcknowledged(account);
+  if (!acknowledged) {
+    const tx = await agialphaToken.acceptTerms();
+    await tx.wait();
+  }
+}
+
+async function ensureAllowance(owner, spender, amountWei) {
+  const allowance = await agialphaToken.allowance(owner, spender);
+  if (allowance >= amountWei) return null;
+  const tx = await agialphaToken.approve(spender, amountWei);
+  await tx.wait();
+  return tx.hash;
+}
+
+async function postJob(specOrAmount = '1', options = {}) {
+  const employer = await signer.getAddress();
+  await acknowledgeTokenTerms(employer);
+
+  let rewardWei;
+  let specUri = 'ipfs://job';
+  let specHash = ethers.id('spec');
+  let specData = null;
+
+  if (isPlainObject(specOrAmount)) {
+    specData = specOrAmount;
+  } else if (options && isPlainObject(options.spec)) {
+    specData = options.spec;
+  }
+
+  if (specData) {
+    specUri = specData.acceptanceCriteriaURI || specData.resultSchema || specUri;
+    specHash = ethers.keccak256(
+      ethers.toUtf8Bytes(JSON.stringify(specData, Object.keys(specData).sort()))
+    );
+    rewardWei = specAmountToWei(specData.escrow?.amountPerItem, TOKEN_DECIMALS);
+    if (rewardWei === 0n) {
+      rewardWei = ethers.parseUnits('1', TOKEN_DECIMALS);
+    }
+  } else {
+    const amount = specOrAmount !== undefined ? specOrAmount : '1';
+    rewardWei = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
+  }
+
+  const stakeManagerAddress =
+    typeof stakeManager.target === 'string'
+      ? stakeManager.target
+      : await stakeManager.getAddress();
+
+  await acknowledgeTaxPolicy();
+  await ensureAllowance(employer, stakeManagerAddress, rewardWei);
+
+  const nextId = await registry.nextJobId().catch(() => null);
   const deadline = Math.floor(Date.now() / 1000) + 3600;
-  const specHash = ethers.id('spec');
-  await registry.createJob(reward, deadline, specHash, 'ipfs://job');
+
+  let tx;
+  try {
+    tx = await registry.acknowledgeAndCreateJob(
+      rewardWei,
+      deadline,
+      specHash,
+      specUri
+    );
+  } catch (err) {
+    tx = await registry.createJob(rewardWei, deadline, specHash, specUri);
+  }
+  const receipt = await tx.wait();
+
+  let jobId = nextId ? Number(nextId) : undefined;
+  if (!jobId && receipt && receipt.logs) {
+    for (const log of receipt.logs) {
+      try {
+        const parsed = registry.interface.parseLog(log);
+        if (parsed && parsed.name === 'JobCreated') {
+          jobId = Number(parsed.args.jobId);
+          break;
+        }
+      } catch (parseErr) {
+        continue;
+      }
+    }
+  }
+  if (!jobId) {
+    jobId = 1;
+  }
+
+  return {
+    txHash: receipt?.hash || tx.hash,
+    jobId,
+    reward: formatUnits(rewardWei),
+    deadline,
+    specHash,
+    specURI: specUri,
+  };
 }
 
 async function acknowledgeTaxPolicy() {
+  if (!registry.acknowledgeTaxPolicy) {
+    return { acknowledged: false };
+  }
   const tx = await registry.acknowledgeTaxPolicy();
-  await tx.wait();
+  const receipt = await tx.wait();
+  return { acknowledged: true, txHash: receipt?.hash || tx.hash };
 }
 
 async function approveStake(amount) {
@@ -271,34 +387,71 @@ async function approveStake(amount) {
     stakeManagerAddress
   );
   if (allowance >= parsed) {
-    return;
+    return { allowance: formatUnits(allowance) };
   }
   const tx = await agialphaToken.approve(stakeManagerAddress, parsed);
-  await tx.wait();
+  const receipt = await tx.wait();
+  return { allowance: formatUnits(parsed), txHash: receipt?.hash || tx.hash };
 }
 
 async function prepareStake(amount) {
-  await acknowledgeTaxPolicy();
-  await approveStake(amount);
+  const ack = await acknowledgeTaxPolicy();
+  const approval = await approveStake(amount);
+  return { acknowledged: ack.acknowledged !== false, approval };
 }
 
-async function stake(amount) {
+function roleToId(role) {
+  if (!role) return 0;
+  const lowered = String(role).toLowerCase();
+  if (lowered === 'validator') return 1;
+  if (lowered === 'operator') return 2;
+  return 0;
+}
+
+async function stake(amount, options = {}) {
   const parsed = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
-  await stakeManager.depositStake(0, parsed);
+  const roleId = roleToId(options.role);
+  await acknowledgeTokenTerms(await signer.getAddress());
+  const method = stakeManager.acknowledgeAndDeposit || stakeManager.depositStake;
+  const tx = await method(roleId, parsed);
+  const receipt = await tx.wait();
+  return {
+    txHash: receipt?.hash || tx.hash,
+    amount: formatUnits(parsed),
+    role: options.role || (roleId === 1 ? 'validator' : 'worker'),
+  };
 }
 
-// Apply for a job using a `subdomain` label such as "alice" for
-// `alice.agent.agi.eth`. Supply a Merkle `proof` if allowlists are enabled.
 async function apply(jobId, subdomain, proof) {
-  await registry.applyForJob(jobId, subdomain, proof);
+  const result = await registry.applyForJob(jobId, subdomain, proof || []);
+  const receipt = await result.wait();
+  return { txHash: receipt?.hash || result.hash };
 }
 
-async function submit(jobId, uri) {
+async function submit(jobId, uri, options = {}) {
   const hash = ethers.id(uri);
-  await registry.submit(jobId, hash, uri);
+  const subdomain = options.subdomain || 'aurora-agent';
+  const proof = normaliseProof(options.proof || []);
+  let tx;
+  if (registry['submit(uint256,bytes32,string,string,bytes32[])']) {
+    tx = await registry['submit(uint256,bytes32,string,string,bytes32[])'](
+      jobId,
+      hash,
+      uri,
+      subdomain,
+      proof
+    );
+  } else {
+    tx = await registry['submit(uint256,bytes32,string)'](jobId, hash, uri);
+  }
+  const receipt = await tx.wait();
+  return {
+    txHash: receipt?.hash || tx.hash,
+    worker: await signer.getAddress(),
+    resultURI: uri,
+  };
 }
 
-// Validators pass their `subdomain` label under `club.agi.eth` when voting.
 async function validate(jobId, commitOrApprove, ...rest) {
   const [maybeSubdomain, maybeProof, maybeApprove, maybeSalt, maybeBurn] = rest;
 
@@ -338,6 +491,9 @@ async function validate(jobId, commitOrApprove, ...rest) {
       commitHash: ethers.zeroPadValue(commitOrApprove, 32),
       salt,
       burnTxHash,
+      commits: 1,
+      reveals: 1,
+      finalizeTx: finalizeTx.hash,
     };
   }
 
@@ -365,26 +521,184 @@ async function validate(jobId, commitOrApprove, ...rest) {
   );
   await revealTx.wait();
 
+  let finalizeTxHash = null;
   if (!options.skipFinalize) {
     const finalizeTx = await validation.finalize(jobId);
-    await finalizeTx.wait();
+    const finalizeReceipt = await finalizeTx.wait();
+    finalizeTxHash = finalizeReceipt?.hash || finalizeTx.hash;
   }
 
-  return plan;
+  return {
+    ...plan,
+    commits: 1,
+    reveals: 1,
+    finalizeTx: finalizeTxHash,
+  };
 }
 
 async function dispute(jobId, evidence) {
-  await callRaiseDispute(registry, jobId, evidence);
+  const tx = await callRaiseDispute(registry, jobId, evidence);
+  const receipt = await tx.wait();
+  return { txHash: receipt?.hash || tx.hash };
 }
 
 async function attest(name, role, delegate) {
+  if (!attestation.target || attestation.target === ethers.ZeroAddress) {
+    throw new Error('ATTESTATION_REGISTRY environment variable not configured');
+  }
   const node = ethers.namehash(name);
-  await attestation.attest(node, role, delegate);
+  const tx = await attestation.attest(node, role, delegate);
+  const receipt = await tx.wait();
+  return { txHash: receipt?.hash || tx.hash };
 }
 
 async function revoke(name, role, delegate) {
+  if (!attestation.target || attestation.target === ethers.ZeroAddress) {
+    throw new Error('ATTESTATION_REGISTRY environment variable not configured');
+  }
   const node = ethers.namehash(name);
-  await attestation.revoke(node, role, delegate);
+  const tx = await attestation.revoke(node, role, delegate);
+  const receipt = await tx.wait();
+  return { txHash: receipt?.hash || tx.hash };
+}
+
+function parseCliArgs(tokens) {
+  const positional = [];
+  const options = {};
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (!token.startsWith('--')) {
+      positional.push(token);
+      continue;
+    }
+    const key = token.slice(2);
+    const next = tokens[i + 1];
+    if (next === undefined || next.startsWith('--')) {
+      options[key] = true;
+    } else {
+      options[key] = next;
+      i++;
+    }
+  }
+  return { positional, options };
+}
+
+async function runCli() {
+  const [, , command, ...rest] = process.argv;
+  if (!command) {
+    console.error('Usage: node examples/ethers-quickstart.js <command> [--options]');
+    process.exit(1);
+  }
+  const { positional, options } = parseCliArgs(rest);
+
+  try {
+    let result;
+    switch (command) {
+      case 'postJob': {
+        let spec = null;
+        if (options.spec) {
+          const specPath = path.resolve(options.spec);
+          spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+        }
+        if (spec) {
+          result = await postJob(spec);
+        } else {
+          const amount = positional[0] || options.amount || '1';
+          result = await postJob(amount);
+        }
+        break;
+      }
+      case 'acknowledgeTaxPolicy':
+        result = await acknowledgeTaxPolicy();
+        break;
+      case 'approveStake':
+        result = await approveStake(options.amount || positional[0] || '1');
+        break;
+      case 'prepareStake':
+        result = await prepareStake(options.amount || positional[0] || '1');
+        break;
+      case 'stake':
+        result = await stake(options.amount || positional[0] || '1', {
+          role: options.role || positional[1],
+        });
+        break;
+      case 'apply':
+        result = await apply(
+          Number(options.job || positional[0]),
+          options.subdomain || positional[1] || 'aurora-agent',
+          []
+        );
+        break;
+      case 'submit':
+        result = await submit(
+          Number(options.job || positional[0]),
+          options.result || positional[1],
+          { subdomain: options.subdomain || 'aurora-agent' }
+        );
+        break;
+      case 'computeValidationCommit':
+        result = await computeValidationCommit(
+          Number(options.job || positional[0]),
+          String(options.approve || positional[1]).toLowerCase() === 'true',
+          {}
+        );
+        break;
+      case 'validate': {
+        const jobId = Number(options.job || positional[0]);
+        const approve = String(options.approve || positional[1]).toLowerCase() === 'true';
+        if (options.commit) {
+          const commitPath = path.resolve(options.commit);
+          const plan = JSON.parse(fs.readFileSync(commitPath, 'utf8'));
+          result = await validate(
+            jobId,
+            plan.commitHash,
+            plan.subdomain || '',
+            plan.proof || [],
+            approve,
+            plan.salt,
+            plan.burnTxHash
+          );
+        } else {
+          result = await validate(jobId, approve, {
+            subdomain: options.subdomain || 'aurora-validator',
+            proof: [],
+          });
+        }
+        break;
+      }
+      case 'dispute':
+        result = await dispute(
+          Number(options.job || positional[0]),
+          options.evidence || positional[1]
+        );
+        break;
+      case 'attest':
+        result = await attest(
+          options.name || positional[0],
+          Number(options.role || positional[1]),
+          options.delegate || positional[2]
+        );
+        break;
+      case 'revoke':
+        result = await revoke(
+          options.name || positional[0],
+          Number(options.role || positional[1]),
+          options.delegate || positional[2]
+        );
+        break;
+      default:
+        console.error(`Unknown command: ${command}`);
+        process.exit(1);
+    }
+    console.log(JSON.stringify(result ?? {}, null, 2));
+  } catch (err) {
+    console.error(err.message || err);
+    process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  runCli();
 }
 
 module.exports = {
@@ -405,3 +719,4 @@ module.exports = {
     isBytes32Hash,
   },
 };
+
