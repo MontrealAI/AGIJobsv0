@@ -1,0 +1,13 @@
+{
+  "name": "Global Governance Synchronisation",
+  "version": "v2",
+  "domains": ["governance", "compliance", "economics"],
+  "languages": ["en", "fr", "ar"],
+  "acceptanceCriteriaURI": "ipfs://asi-global/governance/criteria",
+  "validation": { "k": 3, "n": 5 },
+  "challengeWindowSec": 86400,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "9500000" },
+  "stake": { "worker": "28000000", "validator": "65000000" },
+  "resultSchema": "ipfs://asi-global/governance/schema",
+  "notes": "Quadratic voting execution, thermostat tuning authorisations, and dispute coordination reports."
+}

@@ -59,3 +59,5 @@ The high-speed rail plan used by the demo is described in `demo/asi-takeoff/proj
 introduce new national programmes (healthcare deployment, energy microgrids, etc.) while reusing the exact same execution pipeline.
 The script automatically incorporates any new jobs or participants into the final summary so the documentation always matches the
 plan of record.
+
+For a planetary-scale variant that layers multiple regions and global governance artefacts on top of the same primitives, see `docs/asi-global-orchestrator-demo.md` and the accompanying `npm run demo:asi-global` pipeline.

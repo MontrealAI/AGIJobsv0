@@ -1,0 +1,55 @@
+{
+  "version": "v2",
+  "scope": "asi-global",
+  "description": "Planetary coordination of renewable, resilience, and governance programmes under the ASI global demo.",
+  "jobs": [
+    {
+      "name": "Renewable Capacity Surge",
+      "specPath": "demo/asi-global/config/spec-renewable@v2.json",
+      "resultURI": "ipfs://asi-global/renewable/result",
+      "agentSubdomain": "renewable.director",
+      "reward": "14500000",
+      "workerStake": "42000000",
+      "validatorStake": "82000000",
+      "deadlineOffsetSec": 21600,
+      "metadata": {
+        "objective": "Commission 40GW of distributed renewables across five regions",
+        "priority": "critical",
+        "thermostat": "baseline 0.20"
+      },
+      "notes": "Combines Africa, Asia-Pacific, and Europe asset construction with thermodynamic telemetry uploads."
+    },
+    {
+      "name": "Climate Resilience Mesh",
+      "specPath": "demo/asi-global/config/spec-resilience@v2.json",
+      "resultURI": "ipfs://asi-global/resilience/result",
+      "agentSubdomain": "resilience.mesh",
+      "reward": "13200000",
+      "workerStake": "36000000",
+      "validatorStake": "78000000",
+      "deadlineOffsetSec": 18000,
+      "metadata": {
+        "objective": "Install adaptive microgrids and logistics nodes for the Americas and MENA",
+        "priority": "high",
+        "governance": "validator quorum 3 of 5"
+      },
+      "notes": "Disaster response automation, insurance primitives, and validator-backed slashing flows."
+    },
+    {
+      "name": "Governance Synchronisation",
+      "specPath": "demo/asi-global/config/spec-governance@v2.json",
+      "resultURI": "ipfs://asi-global/governance/result",
+      "agentSubdomain": "governance.executive",
+      "reward": "9500000",
+      "workerStake": "28000000",
+      "validatorStake": "65000000",
+      "deadlineOffsetSec": 14400,
+      "metadata": {
+        "objective": "Execute quadratic voting, thermostat updates, and final audits",
+        "priority": "critical",
+        "council": "global multisig"
+      },
+      "notes": "Runs the AGIGovernor and Thermostat update sequences culminating in the GLOBAL-AUDIT deliverable."
+    }
+  ]
+}

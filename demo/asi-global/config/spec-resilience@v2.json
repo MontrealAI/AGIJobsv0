@@ -1,0 +1,13 @@
+{
+  "name": "Global Climate Resilience Mesh",
+  "version": "v2",
+  "domains": ["resilience", "logistics", "ai"],
+  "languages": ["en", "es"],
+  "acceptanceCriteriaURI": "ipfs://asi-global/resilience/criteria",
+  "validation": { "k": 2, "n": 4 },
+  "challengeWindowSec": 172800,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "13200000" },
+  "stake": { "worker": "36000000", "validator": "78000000" },
+  "resultSchema": "ipfs://asi-global/resilience/schema",
+  "notes": "Risk-adjusted logistics and disaster recovery nets with validator oversight and slashing hooks."
+}
