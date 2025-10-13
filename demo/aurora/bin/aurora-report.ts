@@ -15,6 +15,18 @@ function section(title: string): string {
   return '\n## ' + title + '\n';
 }
 
+function formatOperation(op: { step: string; status?: string; detail?: string }) {
+  const statusMap: Record<string, string> = {
+    success: '✅',
+    warning: '⚠️',
+    skipped: '⏭️',
+    error: '❌',
+  };
+  const icon = statusMap[op.status || 'success'] || '•';
+  const detail = op.detail ? ` — ${op.detail}` : '';
+  return `${icon} ${op.step}${detail}`;
+}
+
 (async () => {
   fs.mkdirSync(path.dirname(mdFile), { recursive: true });
   const parts: string[] = [];
@@ -27,6 +39,8 @@ function section(title: string): string {
   const validate = load('validate.json');
   const finalize = load('finalize.json');
   const stake = load('stake.json');
+  const funding = load('funding.json');
+  const governance = load('governance.json');
 
   if (deploy && deploy.contracts) {
     parts.push(section('Deployment Summary'));
@@ -44,6 +58,21 @@ function section(title: string): string {
     if (post.reward) parts.push('- **Reward**: ' + post.reward);
     if (post.deadline) parts.push('- **Deadline**: ' + post.deadline);
     if (post.specHash) parts.push('- **Spec hash**: `' + post.specHash + '`');
+  }
+
+  if (funding) {
+    parts.push(section('Funding & Allowances'));
+    if (Array.isArray(funding.operations)) {
+      for (const op of funding.operations as Array<Record<string, string>>) {
+        parts.push(formatOperation(op as any));
+      }
+    }
+    if (Array.isArray(funding.pendingFunding) && funding.pendingFunding.length > 0) {
+      parts.push('\n**Pending funding requirements:**');
+      for (const entry of funding.pendingFunding as Array<Record<string, string>>) {
+        parts.push(`- ${entry.address}: +${entry.required} AGIALPHA needed`);
+      }
+    }
   }
 
   if (stake && stake.entries) {
@@ -85,6 +114,13 @@ function section(title: string): string {
     }
     if (validate.finalizeTx) {
       parts.push('- Finalize tx: `' + validate.finalizeTx + '`');
+    }
+  }
+
+  if (governance && Array.isArray(governance.operations)) {
+    parts.push(section('Governance Updates'));
+    for (const op of governance.operations as Array<Record<string, string>>) {
+      parts.push(formatOperation(op as any));
     }
   }
 

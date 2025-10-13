@@ -25,6 +25,7 @@ npm run demo:aurora:sepolia
 * `reports/<network>/aurora/receipts/*.json`
 * `reports/<network>/aurora/aurora-report.md`
 * Governance/owner snapshots can be generated via the existing owner tooling
+* Funding and governance status is tracked in `funding.json` and `governance.json` receipts for audit trails
 
 ---
 
@@ -98,7 +99,8 @@ sequenceDiagram
 See [`RUNBOOK.md`](./RUNBOOK.md) for the step‑by‑step orchestration, including:
 
 * Wiring checks and deployment via `scripts/v2/deployDefaults.ts`
-* Automated module configuration and staking handled by `aurora.demo.ts`
+* Automated module configuration, validator governance updates, and staking handled by `aurora.demo.ts`
+* Funding enforcement that either mints local demo balances or surfaces precise top-up requirements for funded networks
 * Receipt collection and the Markdown mission report summarised by `aurora-report.ts`
 
 All receipts land under `reports/<net>/aurora/`. A Markdown summary is generated at `reports/<net>/aurora/aurora-report.md`.
