@@ -1,0 +1,7 @@
+{
+  "name": "@agijobsv0/npm-hooks",
+  "version": "1.0.0",
+  "description": "Helper preload scripts for npm lifecycle hooks",
+  "main": "index.js",
+  "license": "MIT"
+}
