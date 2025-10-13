@@ -1,0 +1,13 @@
+{
+  "name": "Oceania Resilience Hardening",
+  "version": "v2",
+  "domains": ["energy", "resilience", "logistics"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://global-orchestrator/oceania/criteria",
+  "validation": { "k": 2, "n": 3 },
+  "challengeWindowSec": 129600,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "85000000" },
+  "stake": { "worker": "200000000", "validator": "160000000" },
+  "resultSchema": "ipfs://global-orchestrator/oceania/schema",
+  "notes": "Harden island microgrids, stage emergency energy kits, and prove readiness via validator-labeled drills."
+}

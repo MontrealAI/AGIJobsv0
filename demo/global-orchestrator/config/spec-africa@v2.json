@@ -1,0 +1,13 @@
+{
+  "name": "Africa Solar Acceleration",
+  "version": "v2",
+  "domains": ["energy", "infrastructure", "logistics"],
+  "languages": ["en", "fr", "sw"],
+  "acceptanceCriteriaURI": "ipfs://global-orchestrator/africa/criteria",
+  "validation": { "k": 2, "n": 4 },
+  "challengeWindowSec": 172800,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "215000000" },
+  "stake": { "worker": "420000000", "validator": "220000000" },
+  "resultSchema": "ipfs://global-orchestrator/africa/schema",
+  "notes": "Covers EPC rollout, grid balancing microgrids, and validator-inspected commissioning certificates across five regions."
+}

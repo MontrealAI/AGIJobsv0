@@ -1,0 +1,13 @@
+{
+  "name": "Americas Offshore Wind Corridors",
+  "version": "v2",
+  "domains": ["energy", "maritime", "logistics"],
+  "languages": ["en", "es", "pt"],
+  "acceptanceCriteriaURI": "ipfs://global-orchestrator/americas/criteria",
+  "validation": { "k": 2, "n": 4 },
+  "challengeWindowSec": 172800,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "210000000" },
+  "stake": { "worker": "410000000", "validator": "210000000" },
+  "resultSchema": "ipfs://global-orchestrator/americas/schema",
+  "notes": "Delivers floating turbines, HVDC backbones, port automation, and validator-reviewed safety certifications on both coasts."
+}

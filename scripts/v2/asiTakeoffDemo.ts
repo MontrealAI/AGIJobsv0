@@ -35,15 +35,27 @@ interface DryRunReport {
 }
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const REPORT_ROOT = path.join(ROOT, 'reports', 'asi-takeoff');
+
+function resolveFromRoot(relativeOrAbsolutePath: string): string {
+  if (path.isAbsolute(relativeOrAbsolutePath)) {
+    return relativeOrAbsolutePath;
+  }
+  return path.join(ROOT, relativeOrAbsolutePath);
+}
+
+const PLAN_PATH = resolveFromRoot(process.env.ASI_TAKEOFF_PLAN ?? path.join('demo', 'asi-takeoff', 'project-plan.json'));
+const REPORT_ROOT = resolveFromRoot(process.env.ASI_TAKEOFF_REPORT_ROOT ?? path.join('reports', 'asi-takeoff'));
 const LOG_ROOT = path.join(REPORT_ROOT, 'logs');
-const PLAN_PATH = path.join(ROOT, 'demo', 'asi-takeoff', 'project-plan.json');
 const DRY_RUN_PATH = path.join(REPORT_ROOT, 'dry-run.json');
 const THERMODYNAMICS_PATH = path.join(REPORT_ROOT, 'thermodynamics.json');
 const MISSION_CONTROL_PATH = path.join(REPORT_ROOT, 'mission-control.md');
 const SUMMARY_MD_PATH = path.join(REPORT_ROOT, 'summary.md');
 const SUMMARY_JSON_PATH = path.join(REPORT_ROOT, 'summary.json');
 const BUNDLE_ROOT = path.join(REPORT_ROOT, 'mission-bundle');
+const BUNDLE_NAME = process.env.ASI_TAKEOFF_BUNDLE_NAME ?? 'asi-takeoff';
+const SUMMARY_HEADING = process.env.ASI_TAKEOFF_SUMMARY_HEADING ?? 'ASI Take-Off Demonstration Summary';
+const JOBS_HEADING = process.env.ASI_TAKEOFF_JOBS_HEADING ?? 'Planned Mission Jobs';
+const SCENARIO_HEADING = process.env.ASI_TAKEOFF_SCENARIOS_HEADING ?? 'Scenario Breakdown';
 
 function prefixedWrite(prefix: string, data: Buffer): void {
   const text = data.toString();
@@ -122,9 +134,14 @@ async function loadPlan(): Promise<any> {
 async function writeSummary(plan: any, dryRun: DryRunReport): Promise<void> {
   const totalJobs = Array.isArray(plan.jobs) ? plan.jobs.length : 0;
   const completedScenarios = dryRun.scenarios.filter((scenario) => scenario.status === 'pass').length;
+  const heading = plan.summary?.heading ?? SUMMARY_HEADING;
+  const scenarioHeading = plan.summary?.scenarioHeading ?? SCENARIO_HEADING;
+  const jobsHeading = plan.summary?.jobsHeading ?? JOBS_HEADING;
+  const overviewNotes: string[] = Array.isArray(plan.summary?.notes) ? plan.summary.notes : [];
+  const keyMetrics: Record<string, string> = plan.summary?.metrics ?? {};
 
   const mdLines: string[] = [];
-  mdLines.push(`# ASI Take-Off Demonstration Summary`);
+  mdLines.push(`# ${heading}`);
   mdLines.push('');
   mdLines.push(`- **Initiative:** ${plan.initiative}`);
   mdLines.push(`- **Objective:** ${plan.objective}`);
@@ -133,8 +150,17 @@ async function writeSummary(plan: any, dryRun: DryRunReport): Promise<void> {
   mdLines.push(`- **Dry-Run Timestamp:** ${dryRun.timestamp}`);
   mdLines.push(`- **Scenario Successes:** ${completedScenarios}/${dryRun.scenarios.length}`);
   mdLines.push(`- **Defined Jobs:** ${totalJobs}`);
+  Object.entries(keyMetrics).forEach(([label, value]) => {
+    mdLines.push(`- **${label}:** ${value}`);
+  });
   mdLines.push('');
-  mdLines.push('## Scenario Breakdown');
+  overviewNotes.forEach((note) => {
+    mdLines.push(`> ${note}`);
+  });
+  if (overviewNotes.length > 0) {
+    mdLines.push('');
+  }
+  mdLines.push(`## ${scenarioHeading}`);
   mdLines.push('');
   dryRun.scenarios.forEach((scenario) => {
     mdLines.push(`### ${scenario.label} (${scenario.id})`);
@@ -144,15 +170,37 @@ async function writeSummary(plan: any, dryRun: DryRunReport): Promise<void> {
     }
     mdLines.push('');
   });
-  mdLines.push('## Planned High-Speed Rail Jobs');
+  mdLines.push(`## ${jobsHeading}`);
   mdLines.push('');
-  plan.jobs.forEach((job: any) => {
-    mdLines.push(`- **${job.id}** – ${job.title}`);
-    mdLines.push(`  - Reward: ${job.reward} ${plan.budget?.currency ?? ''}`.trim());
-    mdLines.push(`  - Deadline: ${job.deadlineDays} days`);
-    mdLines.push(`  - Dependencies: ${job.dependencies?.length ? job.dependencies.join(', ') : 'None'}`);
-    mdLines.push(`  - Thermodynamic response: ${job.thermodynamicProfile?.adjustmentOnDelay ?? 'n/a'}`);
-  });
+  if (Array.isArray(plan.jobs) && plan.jobs.length > 0) {
+    plan.jobs.forEach((job: any) => {
+      mdLines.push(`- **${job.id}** – ${job.title}`);
+      mdLines.push(`  - Reward: ${job.reward} ${plan.budget?.currency ?? ''}`.trim());
+      if (job.deadlineDays !== undefined) {
+        mdLines.push(`  - Deadline: ${job.deadlineDays} days`);
+      }
+      if (Array.isArray(job.dependencies)) {
+        mdLines.push(`  - Dependencies: ${job.dependencies.length ? job.dependencies.join(', ') : 'None'}`);
+      }
+      if (job.thermodynamicProfile) {
+        const profile = job.thermodynamicProfile;
+        const elements: string[] = [];
+        if (profile.expectedEntropy !== undefined) {
+          elements.push(`expected entropy ${profile.expectedEntropy}`);
+        }
+        if (profile.adjustmentOnDelay) {
+          elements.push(`on delay: ${profile.adjustmentOnDelay}`);
+        }
+        if (elements.length > 0) {
+          mdLines.push(`  - Thermodynamic profile: ${elements.join('; ')}`);
+        }
+      }
+      mdLines.push('');
+    });
+  } else {
+    mdLines.push('_No mission jobs defined in project plan._');
+    mdLines.push('');
+  }
   mdLines.push('');
   mdLines.push('## Artifact Index');
   mdLines.push('');
@@ -252,7 +300,7 @@ async function main(): Promise<void> {
         '--bundle',
         BUNDLE_ROOT,
         '--bundle-name',
-        'asi-takeoff',
+        BUNDLE_NAME,
         '--skip-surface',
       ],
     },
@@ -283,7 +331,7 @@ async function main(): Promise<void> {
   const plan = await loadPlan();
   await writeSummary(plan, dryRunReport);
 
-  process.stdout.write('\nDemo artefacts generated at reports/asi-takeoff.\n');
+  process.stdout.write(`\nDemo artefacts generated at ${path.relative(ROOT, REPORT_ROOT)}.\n`);
 }
 
 main().catch((error) => {

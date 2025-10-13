@@ -1,0 +1,13 @@
+{
+  "systemTemperature": "6",
+  "temperatureBounds": { "min": "-12", "max": "18" },
+  "integralBounds": { "min": "-30", "max": "30" },
+  "pid": { "kp": "5", "ki": "1", "kd": "3" },
+  "kpiWeights": { "emission": "4", "backlog": "3", "sla": "5" },
+  "roleTemperatures": {
+    "agent": "7",
+    "validator": "5",
+    "operator": "5",
+    "employer": "4"
+  }
+}

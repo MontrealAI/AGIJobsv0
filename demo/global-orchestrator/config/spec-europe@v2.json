@@ -1,0 +1,13 @@
+{
+  "name": "European Grid Optimisation",
+  "version": "v2",
+  "domains": ["energy", "grid-operations", "regulation"],
+  "languages": ["en", "de", "fr", "es"],
+  "acceptanceCriteriaURI": "ipfs://global-orchestrator/europe/criteria",
+  "validation": { "k": 2, "n": 4 },
+  "challengeWindowSec": 172800,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "145000000" },
+  "stake": { "worker": "290000000", "validator": "180000000" },
+  "resultSchema": "ipfs://global-orchestrator/europe/schema",
+  "notes": "Delivers AI grid twins, harmonised regulation updates, and validator-reviewed interconnector upgrades across 18 member states."
+}

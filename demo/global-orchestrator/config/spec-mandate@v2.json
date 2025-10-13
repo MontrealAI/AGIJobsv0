@@ -1,0 +1,13 @@
+{
+  "name": "Planetary Mandate Decomposition",
+  "version": "v2",
+  "domains": ["governance", "ai-orchestration", "compliance"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://global-orchestrator/mandate/criteria",
+  "validation": { "k": 2, "n": 3 },
+  "challengeWindowSec": 86400,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "125000000" },
+  "stake": { "worker": "500000000", "validator": "180000000" },
+  "resultSchema": "ipfs://global-orchestrator/mandate/schema",
+  "notes": "Generates mission intents, policy attestations, and simulator receipts for downstream execution."
+}
