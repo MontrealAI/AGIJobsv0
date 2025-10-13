@@ -205,51 +205,6 @@ jobs:
       - name: Enforce coverage threshold
         run: node scripts/check-coverage.js "$COVERAGE_MIN"
 
-  summary:
-    name: CI summary
-    runs-on: ubuntu-24.04
-    if: ${{ always() }}
-    needs:
-      - lint
-      - tests
-      - foundry
-      - coverage
-      - invariants
-    steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - name: Publish pipeline summary
-        env:
-          NEEDS_CONTEXT: ${{ toJson(needs) }}
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-          const needs = JSON.parse(process.env.NEEDS_CONTEXT);
-          const prettyNames = {
-            lint: 'Lint & static checks',
-            tests: 'Tests',
-            foundry: 'Foundry',
-            coverage: 'Coverage thresholds'
-          };
-          const lines = ['# AGI Jobs v0 — CI v2 status', '', '| Job | Result |', '| --- | --- |'];
-          let failed = false;
-          for (const [jobId, info] of Object.entries(needs)) {
-            const status = (info.result || 'unknown').toUpperCase();
-            const label = prettyNames[jobId] || jobId;
-            if (status !== 'SUCCESS') {
-              failed = true;
-            }
-            lines.push(`| ${label} | ${status} |`);
-          }
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
-          if (failed) {
-            console.error('One or more CI jobs failed.');
-            process.exit(1);
-          }
-          NODE
-
   invariants:
     name: Invariant tests
     runs-on: ubuntu-24.04
@@ -299,3 +254,136 @@ jobs:
           fi
       - name: Run invariant suite
         run: forge test -vvvv --ffi --match-path 'test/v2/invariant/**' --fuzz-runs 512
+
+  dry-run:
+    name: Testnet dry-run rehearsal
+    runs-on: ubuntu-24.04
+    needs: tests
+    if: ${{ always() }}
+    timeout-minutes: 45
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Cache Hardhat compilers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cache/hardhat-nodejs
+          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+          restore-keys: |
+            hardhat-${{ runner.os }}-
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Compile contracts for rehearsal
+        run: npm run compile
+      - name: Execute owner dry-run harness
+        run: |
+          set -euo pipefail
+          mkdir -p reports/ci
+          npm run owner:testnet:dry-run -- --json | tee reports/ci/testnet-dry-run.json
+      - name: Publish rehearsal summary
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'reports/ci/testnet-dry-run.json';
+          if (!fs.existsSync(path)) {
+            throw new Error('Dry-run report missing at ' + path);
+          }
+          const raw = fs.readFileSync(path, 'utf8');
+          const start = raw.indexOf('{');
+          const end = raw.lastIndexOf('}');
+          if (start === -1 || end === -1 || end < start) {
+            throw new Error('Unable to locate JSON payload in dry-run report');
+          }
+          const jsonPayload = raw.slice(start, end + 1);
+          let report;
+          try {
+            report = JSON.parse(jsonPayload);
+          } catch (error) {
+            throw new Error('Failed to parse dry-run report JSON: ' + error.message);
+          }
+          const lines = [
+            '# Testnet dry-run rehearsal',
+            '',
+            `* Network: ${report.network}`,
+            `* Overall status: ${report.status.toUpperCase()}`,
+            ''
+          ];
+          for (const scenario of report.scenarios || []) {
+            lines.push(`## ${scenario.label}`);
+            lines.push(`Status: ${scenario.status.toUpperCase()}`);
+            for (const summary of scenario.summary || []) {
+              lines.push(`- ${summary}`);
+            }
+            lines.push('');
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          NODE
+      - name: Upload dry-run artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: testnet-dry-run
+          path: reports/ci/testnet-dry-run.json
+          if-no-files-found: error
+
+  summary:
+    name: CI summary
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    needs:
+      - lint
+      - tests
+      - foundry
+      - coverage
+      - invariants
+      - dry-run
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - name: Publish pipeline summary
+        env:
+          NEEDS_CONTEXT: ${{ toJson(needs) }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const needs = JSON.parse(process.env.NEEDS_CONTEXT);
+          const prettyNames = {
+            lint: 'Lint & static checks',
+            tests: 'Tests',
+            foundry: 'Foundry',
+            coverage: 'Coverage thresholds',
+            invariants: 'Invariant tests',
+            'dry-run': 'Testnet dry-run rehearsal'
+          };
+          const lines = ['# AGI Jobs v0 — CI v2 status', '', '| Job | Result |', '| --- | --- |'];
+          let failed = false;
+          for (const [jobId, info] of Object.entries(needs)) {
+            const status = (info.result || 'unknown').toUpperCase();
+            const label = prettyNames[jobId] || jobId;
+            if (status !== 'SUCCESS') {
+              failed = true;
+            }
+            lines.push(`| ${label} | ${status} |`);
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          if (failed) {
+            console.error('One or more CI jobs failed.');
+            process.exit(1);
+          }
+          NODE
