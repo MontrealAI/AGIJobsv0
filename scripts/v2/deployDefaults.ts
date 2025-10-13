@@ -309,8 +309,10 @@ async function main() {
     cli['skip-verify'] === true ||
     skipVerifyEnv === '1' ||
     skipVerifyEnv === 'true';
+  const envConfig = toStringOrUndefined(process.env.DEPLOY_DEFAULTS_CONFIG);
   const configPath =
-    cli.config && typeof cli.config === 'string' ? cli.config : undefined;
+    (cli.config && typeof cli.config === 'string' ? cli.config : undefined) ||
+    envConfig;
   const config = configPath
     ? readJsonConfig(configPath)
     : ({} as DeployerConfig);
