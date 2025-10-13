@@ -28,6 +28,7 @@ Before targeting an existing deployment, either:
 **Outputs**
 
 * `reports/<network>/aurora/receipts/*.json`
+  * Includes `governance.json` capturing every forwarded + direct control action executed during the run
 * `reports/<network>/aurora/aurora-report.md`
 * Governance/owner snapshots can be generated via the existing owner tooling
 

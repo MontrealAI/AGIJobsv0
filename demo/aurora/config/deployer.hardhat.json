@@ -1,0 +1,36 @@
+{
+  "network": "localhost",
+  "governance": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "tax": {
+    "enabled": true,
+    "uri": "ipfs://QmExamplePolicyHash",
+    "description": "All taxes on participants; contract and owner exempt"
+  },
+  "econ": {
+    "feePct": 5,
+    "burnPct": 1,
+    "employerSlashPct": 10,
+    "treasurySlashPct": 90,
+    "validatorSlashRewardPct": 0,
+    "commitWindow": "1d",
+    "revealWindow": "1d",
+    "minStake": "1000",
+    "jobStake": "500"
+  },
+  "identity": {
+    "ens": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+    "nameWrapper": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+    "clubRootNode": "club.agi.eth",
+    "agentRootNode": "agent.agi.eth",
+    "validatorMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "agentMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "secureDefaults": {
+    "pauseOnLaunch": true,
+    "maxJobRewardAgia": 25,
+    "maxJobDurationSeconds": 86400,
+    "validatorCommitWindowSeconds": 60,
+    "validatorRevealWindowSeconds": 60
+  },
+  "output": "deployment-config/latest-deployment.json"
+}

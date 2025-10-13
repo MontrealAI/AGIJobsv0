@@ -87,8 +87,9 @@ NETWORK="$NET" \
 npx ts-node --transpile-only demo/aurora/bin/aurora-report.ts --network localhost
 dep_env() {
   DEPLOY_DEFAULTS_SKIP_VERIFY=1 \
+  DEPLOY_DEFAULTS_CONFIG="demo/aurora/config/deployer.hardhat.json" \
   DEPLOY_DEFAULTS_OUTPUT="$DEPLOY_OUTPUT" \
-  npx hardhat run scripts/v2/deployDefaults.ts --network localhost
+  npx hardhat run --network localhost scripts/v2/deployDefaults.ts
 }
 
 run_demo() {

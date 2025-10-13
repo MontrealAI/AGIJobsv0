@@ -312,6 +312,8 @@ async function main() {
   const envConfig = toStringOrUndefined(process.env.DEPLOY_DEFAULTS_CONFIG);
   const configPath =
     cli.config && typeof cli.config === 'string' ? cli.config : envConfig;
+    (cli.config && typeof cli.config === 'string' ? cli.config : undefined) ||
+    envConfig;
   const config = configPath
     ? readJsonConfig(configPath)
     : ({} as DeployerConfig);
