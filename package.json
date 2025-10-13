@@ -104,6 +104,8 @@
     "demo:aurora:report": "ts-node --transpile-only demo/aurora/bin/aurora-report.ts",
     "demo:aurora:sepolia": "npx hardhat run demo/aurora/aurora.demo.ts --network sepolia",
     "demo:asi-takeoff": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/asiTakeoffDemo.ts",
+    "demo:asi-takeoff:local": "bash demo/asi-takeoff/bin/asi-takeoff-local.sh",
+    "demo:asi-takeoff:report": "AURORA_REPORT_SCOPE=asi-takeoff AURORA_REPORT_TITLE='ASI Take-Off — Mission Report' ts-node --transpile-only demo/aurora/bin/aurora-report.ts",
     "subgraph:e2e": "node scripts/subgraph-e2e.js",
     "migrate:mainnet": "TRUFFLE_NETWORK=mainnet npm run compile:mainnet && npx truffle migrate --network mainnet --reset && TRUFFLE_NETWORK=mainnet npm run wire:verify",
     "migrate:sepolia": "DEPLOY_LOCAL_ERC20=1 TRUFFLE_NETWORK=sepolia npm run compile:sepolia && npx truffle migrate --network sepolia --reset && TRUFFLE_NETWORK=sepolia npm run wire:verify",

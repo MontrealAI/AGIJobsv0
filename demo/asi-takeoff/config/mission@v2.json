@@ -1,0 +1,55 @@
+{
+  "version": "v2",
+  "scope": "asi-takeoff",
+  "description": "Autonomous nation-scale governance drill orchestrated by the AGI Jobs v2 mission control stack.",
+  "jobs": [
+    {
+      "name": "Agriculture Output Surge Plan",
+      "specPath": "demo/asi-takeoff/config/spec-agriculture@v2.json",
+      "resultURI": "ipfs://asi-takeoff/agriculture/result",
+      "agentSubdomain": "agriculture.supervisor",
+      "reward": "6500000",
+      "workerStake": "25000000",
+      "validatorStake": "60000000",
+      "deadlineOffsetSec": 10800,
+      "metadata": {
+        "objective": "Increase agricultural output by 20% within fiscal year",
+        "budget": "10000000",
+        "priority": "critical"
+      },
+      "notes": "Primary food security expansion with smart irrigation and logistics synchronisation."
+    },
+    {
+      "name": "Infrastructure Hyperloop Deployment",
+      "specPath": "demo/asi-takeoff/config/spec-infrastructure@v2.json",
+      "resultURI": "ipfs://asi-takeoff/infrastructure/result",
+      "agentSubdomain": "infrastructure.director",
+      "reward": "7200000",
+      "workerStake": "28000000",
+      "validatorStake": "60000000",
+      "deadlineOffsetSec": 14400,
+      "metadata": {
+        "objective": "Coordinate grid, transit, and broadband upgrades across 12 regions",
+        "capex": "2500000000",
+        "priority": "high"
+      },
+      "notes": "Sequencing plan aligning heavy industry, supply chains, and validator oversight."
+    },
+    {
+      "name": "Healthcare Resilience Optimization",
+      "specPath": "demo/asi-takeoff/config/spec-healthcare@v2.json",
+      "resultURI": "ipfs://asi-takeoff/healthcare/result",
+      "agentSubdomain": "healthcare.marshall",
+      "reward": "6800000",
+      "workerStake": "26000000",
+      "validatorStake": "60000000",
+      "deadlineOffsetSec": 9000,
+      "metadata": {
+        "objective": "Reduce emergency response latency by 35%",
+        "coverage": "national",
+        "priority": "critical"
+      },
+      "notes": "Predictive care provisioning with adaptive workforce allocation and pharmaceutical procurement guardrails."
+    }
+  ]
+}
