@@ -1,0 +1,13 @@
+{
+  "name": "ASI Healthcare Resilience Initiative",
+  "version": "v2",
+  "domains": ["healthcare", "supply-chain", "policy"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://asi-takeoff/healthcare-criteria",
+  "validation": { "k": 2, "n": 3 },
+  "challengeWindowSec": 172800,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "6800000" },
+  "stake": { "worker": "26000000", "validator": "60000000" },
+  "resultSchema": "ipfs://asi-takeoff/healthcare-schema",
+  "notes": "Autonomous public health optimization covering predictive care, workforce redeployment, and procurement safeguards."
+}
