@@ -32,16 +32,16 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install
         run: npm ci
 
       - name: Setup Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
-          version: stable
+          version: 'v1.4.0'
 
       - name: Run AURORA (local)
         env:
