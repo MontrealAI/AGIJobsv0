@@ -1,0 +1,192 @@
+{
+  "initiative": "Global Autonomous Economic Orchestrator",
+  "objective": "Coordinate a worldwide renewable acceleration mandate that delivers a 20% increase in clean generation within 12 months using only AGI Jobs v2 primitives.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1000000000"
+  },
+  "governance": {
+    "owner": "0xPLANET-GOVERNOR",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xGLOBAL-TREASURY",
+    "thermostat": {
+      "initialTemperature": "0.22",
+      "emergencyTemperature": "0.44",
+      "updateScript": "scripts/v2/updateThermostat.ts"
+    },
+    "council": {
+      "voting": "QuadraticVoting",
+      "timelock": "GnosisSafeTimelock",
+      "quorum": "62%"
+    }
+  },
+  "participants": {
+    "orchestrator": {
+      "handle": "sovereign.orchestrator.agi.eth",
+      "role": "Meta-governor and job decomposition AI",
+      "mandate": "Interpret planetary mandates, simulate jobs, and enforce policy guardrails"
+    },
+    "agents": [
+      {
+        "handle": "africa.energy.agi.eth",
+        "role": "Pan-African Solar Expansion Guild",
+        "capabilities": ["Utility-scale solar EPC", "Grid-balancing microgrids", "Tokenised workforce cooperatives"]
+      },
+      {
+        "handle": "americas.wind.agi.eth",
+        "role": "Americas Offshore Wind Collective",
+        "capabilities": ["Floating wind platforms", "HVDC corridors", "Maritime logistics AI"]
+      },
+      {
+        "handle": "asia.storage.agi.eth",
+        "role": "Asia-Pacific Storage Nexus",
+        "capabilities": ["Long-duration storage", "Smart grid orchestration", "Cross-border balancing"]
+      },
+      {
+        "handle": "europe.grid.agi.eth",
+        "role": "European Grid Optimisation Council",
+        "capabilities": ["Interconnector retrofits", "Grid AI twins", "Regulatory harmonisation"]
+      },
+      {
+        "handle": "oceania.resilience.agi.eth",
+        "role": "Oceania Climate Resilience Alliance",
+        "capabilities": ["Cyclone-resistant infrastructure", "Emergency energy routing", "Validator liaison"]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "global.audit.agi.eth",
+        "stake": "160000000",
+        "mandate": "Planetary performance audit, thermodynamic sanity checks"
+      },
+      {
+        "handle": "equity.validator.agi.eth",
+        "stake": "110000000",
+        "mandate": "Ensure equitable regional allocation, dispute arbitrations"
+      },
+      {
+        "handle": "safety.validator.agi.eth",
+        "stake": "90000000",
+        "mandate": "Critical infrastructure safety and environmental compliance"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "META-GOVERNANCE",
+      "title": "Translate planetary mandate into policy-safe mission graph",
+      "reward": "125000000",
+      "deadlineDays": 14,
+      "dependencies": [],
+      "energyBudget": "42000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.07",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "AFRICA-SOLAR",
+      "title": "Deploy 40GW hybrid solar and microgrid capacity across five regions",
+      "reward": "215000000",
+      "deadlineDays": 120,
+      "dependencies": ["META-GOVERNANCE"],
+      "energyBudget": "215000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.18",
+        "adjustmentOnDelay": "boost-validator-reward"
+      }
+    },
+    {
+      "id": "AMERICAS-WIND",
+      "title": "Stand up offshore wind corridors with HVDC backbones for both coasts",
+      "reward": "210000000",
+      "deadlineDays": 150,
+      "dependencies": ["META-GOVERNANCE"],
+      "energyBudget": "198000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.2",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "ASIA-STORAGE",
+      "title": "Commission long-duration storage and smart dispatch across 12 megacities",
+      "reward": "185000000",
+      "deadlineDays": 135,
+      "dependencies": ["META-GOVERNANCE"],
+      "energyBudget": "172000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.16",
+        "adjustmentOnDelay": "invoke-pause-check"
+      }
+    },
+    {
+      "id": "EUROPE-GRID",
+      "title": "Optimise interconnector capacity and stability across 18 EU states",
+      "reward": "145000000",
+      "deadlineDays": 120,
+      "dependencies": ["META-GOVERNANCE"],
+      "energyBudget": "138000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.14",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "OCEANIA-RESILIENCE",
+      "title": "Harden island microgrids and deploy rapid disaster response energy kits",
+      "reward": "85000000",
+      "deadlineDays": 90,
+      "dependencies": ["META-GOVERNANCE"],
+      "energyBudget": "81000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "increase-operator-share"
+      }
+    },
+    {
+      "id": "GLOBAL-AUDIT",
+      "title": "Validate global KPIs, thermodynamic performance, and treasury reports",
+      "reward": "35000000",
+      "deadlineDays": 21,
+      "dependencies": [
+        "AFRICA-SOLAR",
+        "AMERICAS-WIND",
+        "ASIA-STORAGE",
+        "EUROPE-GRID",
+        "OCEANIA-RESILIENCE"
+      ],
+      "energyBudget": "26000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.05",
+        "adjustmentOnDelay": "trigger-global-pause"
+      }
+    }
+  ],
+  "summary": {
+    "heading": "Global Autonomous Economic Orchestrator Summary",
+    "scenarioHeading": "Planetary Mission Scenario Breakdown",
+    "jobsHeading": "Global Execution Portfolio",
+    "notes": [
+      "Mission spans five continents with validator-backed safety rails.",
+      "Thermodynamic incentives prioritise rapid deployment while protecting treasury reserves."
+    ],
+    "metrics": {
+      "Target Renewable Increase": "20%",
+      "Thermostat Starting Temperature": "0.22",
+      "Validator Coverage": "100% of mission-critical milestones"
+    }
+  },
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/global-orchestrator/dry-run.json",
+      "thermodynamics": "reports/global-orchestrator/thermodynamics.json",
+      "missionControl": "reports/global-orchestrator/mission-control.md",
+      "summary": "reports/global-orchestrator/summary.md"
+    },
+    "dashboards": [
+      "reports/global-orchestrator/mission-control.md",
+      "reports/global-orchestrator/thermodynamics.json"
+    ]
+  }
+}

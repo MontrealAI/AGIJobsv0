@@ -1,0 +1,119 @@
+{
+  "version": "v2",
+  "scope": "global-orchestrator",
+  "description": "Planet-scale renewable acceleration orchestrated through the AGI Jobs v2 mission pipelines.",
+  "jobs": [
+    {
+      "name": "Planetary Mandate Decomposition",
+      "specPath": "demo/global-orchestrator/config/spec-mandate@v2.json",
+      "resultURI": "ipfs://global-orchestrator/mandate/result",
+      "agentSubdomain": "sovereign.orchestrator",
+      "reward": "125000000",
+      "workerStake": "500000000",
+      "validatorStake": "180000000",
+      "deadlineOffsetSec": 5400,
+      "metadata": {
+        "objective": "Translate the global renewable target into executable jobs",
+        "controls": "Planner → simulator → runner with policy guardrails",
+        "priority": "critical"
+      },
+      "notes": "Ensures the orchestrator decomposes mandates into policy-safe intents with audit-ready receipts."
+    },
+    {
+      "name": "Africa Solar Acceleration",
+      "specPath": "demo/global-orchestrator/config/spec-africa@v2.json",
+      "resultURI": "ipfs://global-orchestrator/africa/result",
+      "agentSubdomain": "africa.energy",
+      "reward": "215000000",
+      "workerStake": "420000000",
+      "validatorStake": "220000000",
+      "deadlineOffsetSec": 21600,
+      "metadata": {
+        "objective": "Deploy 40GW hybrid solar and microgrid capacity",
+        "regions": 5,
+        "priority": "critical"
+      },
+      "notes": "Coordinates continental EPC swarms, logistics, and validator checkpoints."
+    },
+    {
+      "name": "Americas Offshore Wind Corridors",
+      "specPath": "demo/global-orchestrator/config/spec-americas@v2.json",
+      "resultURI": "ipfs://global-orchestrator/americas/result",
+      "agentSubdomain": "americas.wind",
+      "reward": "210000000",
+      "workerStake": "410000000",
+      "validatorStake": "210000000",
+      "deadlineOffsetSec": 25200,
+      "metadata": {
+        "objective": "Stand up HVDC-backed offshore wind corridors",
+        "coasts": 2,
+        "priority": "high"
+      },
+      "notes": "Integrates port logistics, HVDC interconnectors, and validator audits for maritime assets."
+    },
+    {
+      "name": "Asia-Pacific Storage Mesh",
+      "specPath": "demo/global-orchestrator/config/spec-asia@v2.json",
+      "resultURI": "ipfs://global-orchestrator/asia/result",
+      "agentSubdomain": "asia.storage",
+      "reward": "185000000",
+      "workerStake": "360000000",
+      "validatorStake": "205000000",
+      "deadlineOffsetSec": 19800,
+      "metadata": {
+        "objective": "Commission long-duration storage and smart dispatch across megacities",
+        "cities": 12,
+        "priority": "critical"
+      },
+      "notes": "Links cross-border balancing, stability metrics, and thermodynamic telemetry adjustments."
+    },
+    {
+      "name": "European Grid Optimisation",
+      "specPath": "demo/global-orchestrator/config/spec-europe@v2.json",
+      "resultURI": "ipfs://global-orchestrator/europe/result",
+      "agentSubdomain": "europe.grid",
+      "reward": "145000000",
+      "workerStake": "290000000",
+      "validatorStake": "180000000",
+      "deadlineOffsetSec": 18000,
+      "metadata": {
+        "objective": "Optimise interconnector capacity across 18 states",
+        "priority": "high",
+        "kpi": "5% uplift in transfer capability"
+      },
+      "notes": "Deploys AI grid twins, regulatory harmonisation, and stakeholder governance updates."
+    },
+    {
+      "name": "Oceania Resilience Hardening",
+      "specPath": "demo/global-orchestrator/config/spec-oceania@v2.json",
+      "resultURI": "ipfs://global-orchestrator/oceania/result",
+      "agentSubdomain": "oceania.resilience",
+      "reward": "85000000",
+      "workerStake": "200000000",
+      "validatorStake": "160000000",
+      "deadlineOffsetSec": 16200,
+      "metadata": {
+        "objective": "Harden island grids and deploy emergency response kits",
+        "priority": "medium",
+        "coverage": "11 island states"
+      },
+      "notes": "Pairs cyclone-hardened infrastructure with rapid validator inspection protocols."
+    },
+    {
+      "name": "Planetary Performance Audit",
+      "specPath": "demo/global-orchestrator/config/spec-audit@v2.json",
+      "resultURI": "ipfs://global-orchestrator/audit/result",
+      "agentSubdomain": "global.audit",
+      "reward": "35000000",
+      "workerStake": "160000000",
+      "validatorStake": "160000000",
+      "deadlineOffsetSec": 7200,
+      "metadata": {
+        "objective": "Verify KPIs, thermodynamics, and treasury allocations",
+        "priority": "critical",
+        "validators": 3
+      },
+      "notes": "Runs commit–reveal validation, dispute drills, and thermostat recalibration proposals."
+    }
+  ]
+}

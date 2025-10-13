@@ -1,0 +1,13 @@
+{
+  "name": "Asia-Pacific Storage Mesh",
+  "version": "v2",
+  "domains": ["energy", "grid-operations", "ai-optimization"],
+  "languages": ["en", "zh", "ja"],
+  "acceptanceCriteriaURI": "ipfs://global-orchestrator/asia/criteria",
+  "validation": { "k": 2, "n": 3 },
+  "challengeWindowSec": 172800,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "185000000" },
+  "stake": { "worker": "360000000", "validator": "205000000" },
+  "resultSchema": "ipfs://global-orchestrator/asia/schema",
+  "notes": "Implements long-duration storage, AI-driven dispatch, and validator-audited telemetry across mega-city grids."
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Planetary Performance Audit",
+  "version": "v2",
+  "domains": ["governance", "economics", "energy"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://global-orchestrator/audit/criteria",
+  "validation": { "k": 3, "n": 3 },
+  "challengeWindowSec": 86400,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "35000000" },
+  "stake": { "worker": "160000000", "validator": "160000000" },
+  "resultSchema": "ipfs://global-orchestrator/audit/schema",
+  "notes": "Aggregates KPIs, thermodynamic telemetry, and treasury reconciliations with validator-backed attestations."
+}
