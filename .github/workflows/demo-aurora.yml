@@ -3,8 +3,8 @@ name: demo-aurora
 on:
   pull_request:
     paths:
-      - "demo/**"
-      - ".github/workflows/demo-aurora.yml"
+      - 'demo/**'
+      - '.github/workflows/demo-aurora.yml'
   workflow_dispatch:
 
 permissions:
@@ -28,6 +28,8 @@ jobs:
             raw.githubusercontent.com
             registry.npmjs.org
             nodejs.org
+            download.cypress.io
+            cdn.cypress.io
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -45,11 +47,11 @@ jobs:
 
       - name: Run AURORA (local)
         env:
-          PRIVATE_KEY: "0x59c6995e998f97a5a004497e5d6a897bcf7a20a0aa2a0b3f1d0ad6bdfb9c0001"
-          WORKER_PRIVATE_KEY: "0x8b3a350cf5c34c9194ca8afc2a0eae2b2aeeafce0c12cf5f8f1b2e7ab6fce201"
-          VALIDATOR_PRIVATE_KEY: "0x0f4b9bf3efb59c0a8b6dfa8172932d03cd4b16ba29cf15f9272972d4d8f90b02"
-          RPC_URL: "http://127.0.0.1:8545"
-          CHAIN_ID: "31337"
+          PRIVATE_KEY: '0x59c6995e998f97a5a004497e5d6a897bcf7a20a0aa2a0b3f1d0ad6bdfb9c0001'
+          WORKER_PRIVATE_KEY: '0x8b3a350cf5c34c9194ca8afc2a0eae2b2aeeafce0c12cf5f8f1b2e7ab6fce201'
+          VALIDATOR_PRIVATE_KEY: '0x0f4b9bf3efb59c0a8b6dfa8172932d03cd4b16ba29cf15f9272972d4d8f90b02'
+          RPC_URL: 'http://127.0.0.1:8545'
+          CHAIN_ID: '31337'
         run: bash demo/aurora/bin/aurora-local.sh
 
       - name: Upload demo receipts
