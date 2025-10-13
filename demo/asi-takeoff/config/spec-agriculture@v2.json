@@ -1,0 +1,13 @@
+{
+  "name": "ASI Agriculture Output Surge",
+  "version": "v2",
+  "domains": ["agriculture", "economics", "sustainability"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://asi-takeoff/agriculture-criteria",
+  "validation": { "k": 2, "n": 3 },
+  "challengeWindowSec": 172800,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "6500000" },
+  "stake": { "worker": "25000000", "validator": "60000000" },
+  "resultSchema": "ipfs://asi-takeoff/agriculture-schema",
+  "notes": "Nation-scale agricultural productivity program covering supply chains, energy inputs, and resilience triggers."
+}
