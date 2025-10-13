@@ -40,6 +40,13 @@ The script performs:
 - `reports/localhost/asi-takeoff/receipts/stake.json` – stake acknowledgements.
 - `reports/localhost/asi-takeoff/receipts/governance.json` – pause drills, stake minimum adjustments, validator pool updates.
 - `reports/localhost/asi-takeoff/asi-takeoff-report.md` – Markdown mission dossier.
+- `reports/asi-takeoff/governance-kit.{json,md}` – deterministic control-plane manifest with SHA-256 hashes.
+
+Rebuild the governance kit for the local receipts if necessary:
+
+```bash
+npm run demo:asi-takeoff:kit -- --report-root reports/localhost/asi-takeoff --plan demo/asi-takeoff/project-plan.json --summary-md reports/localhost/asi-takeoff/asi-takeoff-report.md --bundle reports/localhost/asi-takeoff/receipts
+```
 
 ## 4. Owner Control Validations
 

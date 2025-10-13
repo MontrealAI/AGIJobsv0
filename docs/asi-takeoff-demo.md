@@ -27,6 +27,9 @@ Outputs are persisted to `reports/asi-takeoff` and include:
 - `mission-control.md` – governance report with diagrams and checklists.
 - `summary.md` / `summary.json` – curated view binding technical telemetry to business goals.
 - `logs/*.log` – per-step console output, timestamped for audit replay.
+- `governance-kit.json` / `governance-kit.md` – consolidated owner-control manifest with SHA-256 hashes for each artefact.
+
+The governance kit is generated automatically at the end of the pipeline via `scripts/v2/lib/asiTakeoffKit.ts`.  It cross-links the national initiative plan, dry-run receipts, thermodynamic report, mission-control dossier, and receipt directories, giving non-technical owners a single bundle to verify before approving deployments.
 
 ## How to Run
 
@@ -37,6 +40,12 @@ npm run demo:asi-takeoff
 
 The command may take several minutes on the first run because it compiles the entire contract suite.  The dry-run harness expects
 an ephemeral Hardhat network (the default when the script is executed with no `--network` flag).
+
+To regenerate the kit for alternate report directories (for example, artefacts produced by `npm run demo:asi-takeoff:local`), use:
+
+```bash
+npm run demo:asi-takeoff:kit -- --report-root reports/localhost/asi-takeoff --summary-md reports/localhost/asi-takeoff/asi-takeoff-report.md --bundle reports/localhost/asi-takeoff/receipts
+```
 
 ## CI Integration
 

@@ -4,6 +4,8 @@ import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+import { generateAsiTakeoffKit } from './lib/asiTakeoffKit';
+
 interface CommandStep {
   key: string;
   title: string;
@@ -282,6 +284,18 @@ async function main(): Promise<void> {
   const dryRunReport = JSON.parse(dryRunRaw) as DryRunReport;
   const plan = await loadPlan();
   await writeSummary(plan, dryRunReport);
+
+  await generateAsiTakeoffKit({
+    planPath: PLAN_PATH,
+    reportRoot: REPORT_ROOT,
+    dryRunPath: DRY_RUN_PATH,
+    thermodynamicsPath: THERMODYNAMICS_PATH,
+    missionControlPath: MISSION_CONTROL_PATH,
+    summaryJsonPath: SUMMARY_JSON_PATH,
+    summaryMarkdownPath: SUMMARY_MD_PATH,
+    bundleDir: BUNDLE_ROOT,
+    logDir: LOG_ROOT,
+  });
 
   process.stdout.write('\nDemo artefacts generated at reports/asi-takeoff.\n');
 }
