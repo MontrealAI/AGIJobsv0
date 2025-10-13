@@ -1,0 +1,150 @@
+{
+  "initiative": "Infinity Symphony Planetary Coordination Mandate",
+  "objective": "Synchronise continental economies, infrastructure, and emergency response under a single reproducible AGI Jobs automation cycle.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1800000000"
+  },
+  "governance": {
+    "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0x7777777777777777777777777777777777777777",
+    "thermostat": {
+      "initialTemperature": "0.22",
+      "emergencyTemperature": "0.41",
+      "updateScript": "scripts/v2/updateThermodynamics.ts"
+    }
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "atlas.macro.agi.eth",
+        "role": "Macro Coordination Kernel",
+        "capabilities": [
+          "Continental resource arbitration",
+          "Quadratic budget balancing",
+          "Sovereign-to-sovereign treaty drafting"
+        ]
+      },
+      {
+        "handle": "infrastructure.lattice.agi.eth",
+        "role": "Critical Infrastructure Lattice",
+        "capabilities": [
+          "Energy supergrid rollouts",
+          "Autonomous logistics",
+          "Quantum-safe telecom mesh"
+        ]
+      },
+      {
+        "handle": "response.swarm.agi.eth",
+        "role": "Emergency Swarm Directorate",
+        "capabilities": [
+          "Disaster microtask swarming",
+          "Medical supply autopatching",
+          "Validator-guided triage"
+        ]
+      },
+      {
+        "handle": "trade.harmonics.agi.eth",
+        "role": "Planetary Trade Harmonics",
+        "capabilities": [
+          "Real-time settlement oracles",
+          "Carbon-aware freight scheduling",
+          "Validator dispute diplomacy"
+        ]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "guardian.validator.agi.eth",
+        "stake": "420000000",
+        "mandate": "Macro governance oversight and pause drills"
+      },
+      {
+        "handle": "climate.validator.agi.eth",
+        "stake": "260000000",
+        "mandate": "Energy and climate resilience auditing"
+      },
+      {
+        "handle": "equity.validator.agi.eth",
+        "stake": "310000000",
+        "mandate": "Labour equity, dispute resolution, inclusive growth"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "MACRO-GRID",
+      "title": "Global energy interconnect + climate adaptation grid",
+      "reward": "420000000",
+      "deadlineDays": 45,
+      "dependencies": [],
+      "energyBudget": "188000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.17",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "FOOD-RESURGENCE",
+      "title": "Continental food sovereignty and logistics reinforcement",
+      "reward": "320000000",
+      "deadlineDays": 60,
+      "dependencies": ["MACRO-GRID"],
+      "energyBudget": "156000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.13",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "CIVIL-RESILIENCE",
+      "title": "Emergency swarm mobilisation across three simultaneous disasters",
+      "reward": "280000000",
+      "deadlineDays": 21,
+      "dependencies": ["MACRO-GRID"],
+      "energyBudget": "92000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.28",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "TRADE-EQUILIBRIUM",
+      "title": "Real-time cross-border trade harmonisation and carbon clearing",
+      "reward": "360000000",
+      "deadlineDays": 50,
+      "dependencies": ["FOOD-RESURGENCE", "CIVIL-RESILIENCE"],
+      "energyBudget": "173000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "GOVERNANCE-FINALE",
+      "title": "Planetary governance ratification, ENS anchoring, and treasury sync",
+      "reward": "420000000",
+      "deadlineDays": 18,
+      "dependencies": ["TRADE-EQUILIBRIUM"],
+      "energyBudget": "112000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.09",
+        "adjustmentOnDelay": "deploy-owner-emergency"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/asi-takeoff/dry-run.json",
+      "thermodynamics": "reports/asi-takeoff/thermodynamics.json",
+      "missionControl": "reports/asi-takeoff/mission-control.md",
+      "summary": "reports/localhost/infinity-symphony/infinity-symphony-report.md"
+    },
+    "dashboards": [
+      "reports/localhost/infinity-symphony/governance/command-center.md",
+      "reports/localhost/infinity-symphony/governance/atlas.md",
+      "reports/localhost/infinity-symphony/governance/parameter-matrix.md"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Infinity Emergency Swarm Directorate",
+  "version": "v2",
+  "domains": ["emergency", "health", "logistics"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://infinity-symphony/emergency-swarm/criteria",
+  "validation": { "k": 3, "n": 5 },
+  "challengeWindowSec": 86400,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "135000000" },
+  "stake": { "worker": "220000000", "validator": "460000000" },
+  "resultSchema": "ipfs://infinity-symphony/emergency-swarm/schema",
+  "notes": "Coordinates multi-hazard response packages, validator-signed medical routing, and rapid dispute settlement."
+}

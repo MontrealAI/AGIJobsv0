@@ -1,0 +1,13 @@
+{
+  "name": "Infinity Macro Governance Kernel",
+  "version": "v2",
+  "domains": ["governance", "economics", "systems"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://infinity-symphony/macro-governance/criteria",
+  "validation": { "k": 3, "n": 5 },
+  "challengeWindowSec": 259200,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "210000000" },
+  "stake": { "worker": "360000000", "validator": "720000000" },
+  "resultSchema": "ipfs://infinity-symphony/macro-governance/schema",
+  "notes": "Coordinates treaty updates, fiscal guardrails, and pause rehearsals across five blocs using the prebuilt owner governance stack."
+}

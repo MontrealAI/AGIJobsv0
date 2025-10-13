@@ -1,0 +1,71 @@
+{
+  "version": "v2",
+  "scope": "infinity-symphony",
+  "description": "Planetary-scale coordination drill composed of macro governance, infrastructure, emergency, and trade programs executing under the AGI Jobs v2 one-box orchestrator.",
+  "jobs": [
+    {
+      "name": "Macro Governance Kernel",
+      "specPath": "demo/infinity-symphony/config/spec-macro-governance@v2.json",
+      "resultURI": "ipfs://infinity-symphony/macro-governance/result",
+      "agentSubdomain": "macro.kernel",
+      "reward": "840000000",
+      "workerStake": "360000000",
+      "validatorStake": "720000000",
+      "deadlineOffsetSec": 7200,
+      "metadata": {
+        "objective": "Balance fiscal, energy, and stability mandates across five blocs",
+        "priority": "critical",
+        "budget": "1200000000"
+      },
+      "notes": "Executes treaty harmonisation, stake re-weighting, and pause rehearsals triggered by the Infinity thermostat lattice."
+    },
+    {
+      "name": "Critical Infrastructure Lattice",
+      "specPath": "demo/infinity-symphony/config/spec-critical-infra@v2.json",
+      "resultURI": "ipfs://infinity-symphony/critical-infra/result",
+      "agentSubdomain": "infra.lattice",
+      "reward": "760000000",
+      "workerStake": "310000000",
+      "validatorStake": "650000000",
+      "deadlineOffsetSec": 10800,
+      "metadata": {
+        "objective": "Deploy cross-continental power, transit, and communications upgrades",
+        "priority": "high",
+        "capex": "250000000000"
+      },
+      "notes": "Leverages deterministic mission specs to chain job postings, validations, and treasury flows for the macro grid."
+    },
+    {
+      "name": "Emergency Swarm Directorate",
+      "specPath": "demo/infinity-symphony/config/spec-emergency-response@v2.json",
+      "resultURI": "ipfs://infinity-symphony/emergency-swarm/result",
+      "agentSubdomain": "emergency.swarm",
+      "reward": "540000000",
+      "workerStake": "220000000",
+      "validatorStake": "460000000",
+      "deadlineOffsetSec": 3600,
+      "metadata": {
+        "objective": "Stabilise simultaneous coastal, seismic, and epidemiological events",
+        "priority": "critical",
+        "coverage": "planetary"
+      },
+      "notes": "Bootstraps validator-guided microtask swarms, supply routing, and quality arbitration using existing commit-reveal flows."
+    },
+    {
+      "name": "Planetary Trade Harmonics",
+      "specPath": "demo/infinity-symphony/config/spec-planetary-trade@v2.json",
+      "resultURI": "ipfs://infinity-symphony/trade-harmonics/result",
+      "agentSubdomain": "trade.harmonics",
+      "reward": "680000000",
+      "workerStake": "270000000",
+      "validatorStake": "520000000",
+      "deadlineOffsetSec": 12600,
+      "metadata": {
+        "objective": "Harmonise cross-border settlement, carbon clearing, and validator diplomacy",
+        "priority": "critical",
+        "budget": "480000000000"
+      },
+      "notes": "Publishes ENS-signed trade ledgers, validator dispute logs, and thermostat triggers for carbon-negative routing."
+    }
+  ]
+}
