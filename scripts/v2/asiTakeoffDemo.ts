@@ -39,7 +39,12 @@ interface DryRunReport {
 const ROOT = path.resolve(__dirname, '..', '..');
 const REPORT_ROOT = path.join(ROOT, 'reports', 'asi-takeoff');
 const LOG_ROOT = path.join(REPORT_ROOT, 'logs');
-const PLAN_PATH = path.join(ROOT, 'demo', 'asi-takeoff', 'project-plan.json');
+const PLAN_OVERRIDE = process.env.ASI_TAKEOFF_PLAN_PATH;
+const PLAN_PATH = PLAN_OVERRIDE
+  ? path.isAbsolute(PLAN_OVERRIDE)
+    ? PLAN_OVERRIDE
+    : path.resolve(ROOT, PLAN_OVERRIDE)
+  : path.join(ROOT, 'demo', 'asi-takeoff', 'project-plan.json');
 const DRY_RUN_PATH = path.join(REPORT_ROOT, 'dry-run.json');
 const THERMODYNAMICS_PATH = path.join(REPORT_ROOT, 'thermodynamics.json');
 const MISSION_CONTROL_PATH = path.join(REPORT_ROOT, 'mission-control.md');
