@@ -63,13 +63,48 @@ const AGIALPHA_CONFIG = JSON.parse(
   fs.readFileSync(path.join('config', 'agialpha.json'), 'utf8')
 );
 
-const SPEC_PATH = path.join('demo', 'aurora', 'config', 'aurora.spec@v2.json');
-const THERMOSTAT_CONFIG_PATH = path.join(
+const DEFAULT_SPEC_PATH = path.join(
+  'demo',
+  'aurora',
+  'config',
+  'aurora.spec@v2.json'
+);
+const SPEC_PATH = process.env.AURORA_SPEC_PATH
+  ? path.resolve(process.env.AURORA_SPEC_PATH)
+  : DEFAULT_SPEC_PATH;
+const DEFAULT_THERMOSTAT_CONFIG_PATH = path.join(
   'demo',
   'aurora',
   'config',
   'aurora.thermostat@v2.json'
 );
+const THERMOSTAT_CONFIG_PATH = process.env.AURORA_THERMOSTAT_CONFIG
+  ? path.resolve(process.env.AURORA_THERMOSTAT_CONFIG)
+  : DEFAULT_THERMOSTAT_CONFIG_PATH;
+const MISSION_CONFIG_PATH = process.env.AURORA_MISSION_CONFIG
+  ? path.resolve(process.env.AURORA_MISSION_CONFIG)
+  : '';
+let REPORT_SCOPE = process.env.AURORA_REPORT_SCOPE || 'aurora';
+
+type MissionJob = {
+  name: string;
+  specPath?: string;
+  resultURI?: string;
+  agentSubdomain?: string;
+  reward?: string;
+  workerStake?: string;
+  validatorStake?: string;
+  deadlineOffsetSec?: number;
+  metadata?: Record<string, unknown>;
+  notes?: string;
+};
+
+type MissionConfig = {
+  version?: string;
+  scope?: string;
+  jobs: MissionJob[];
+  description?: string;
+};
 
 const THERMOSTAT_ROLE_ALIAS: Record<string, number> = {
   agent: 0,
@@ -103,17 +138,27 @@ function readJsonFile<T>(filePath: string): T {
   }
 }
 
+function slugify(value: string, fallback: string): string {
+  const base = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+  return base || fallback;
+}
+
 function writeReceipt(net: string, name: string, data: unknown) {
-  const dir = path.join('reports', net, 'aurora', 'receipts');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
+  const baseDir = path.join('reports', net, REPORT_SCOPE, 'receipts');
+  const outputPath = path.join(baseDir, name);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
 }
 
 function resolveDeploySummaryPath(net: string): string {
   if (process.env.AURORA_DEPLOY_OUTPUT) {
     return path.resolve(process.env.AURORA_DEPLOY_OUTPUT);
   }
-  return path.resolve('reports', net, 'aurora', 'receipts', 'deploy.json');
+  return path.resolve('reports', net, REPORT_SCOPE, 'receipts', 'deploy.json');
 }
 
 function specAmountToWei(
@@ -542,15 +587,93 @@ async function main() {
 
   const employer = new ethers.Wallet(employerKey, provider);
   const worker = new ethers.Wallet(workerKey, provider);
+
+  const baseSpec = readJsonFile<Spec>(SPEC_PATH);
+  const missionConfig =
+    MISSION_CONFIG_PATH && fs.existsSync(MISSION_CONFIG_PATH)
+      ? readJsonFile<MissionConfig>(MISSION_CONFIG_PATH)
+      : null;
+  if (missionConfig?.scope && !process.env.AURORA_REPORT_SCOPE) {
+    REPORT_SCOPE = missionConfig.scope;
   const spec = readJsonFile<Spec>(SPEC_PATH);
   if (!spec.validation || !spec.validation.k || !spec.validation.n) {
     throw new Error('Validation quorum (k-of-n) must be defined in the spec.');
   }
-  const thermostatConfig = fs.existsSync(THERMOSTAT_CONFIG_PATH)
-    ? readJsonFile<ThermostatConfig>(THERMOSTAT_CONFIG_PATH)
-    : null;
-  const validatorCount = spec.validation.n;
-  const quorum = spec.validation.k;
+
+  const missionJobs =
+    missionConfig &&
+    Array.isArray(missionConfig.jobs) &&
+    missionConfig.jobs.length > 0
+      ? missionConfig.jobs
+      : [
+          {
+            name: baseSpec.name || 'AURORA-Flagship-Job',
+            specPath: SPEC_PATH,
+            resultURI: 'ipfs://aurora-demo-result',
+            agentSubdomain: 'aurora-agent',
+            reward: baseSpec.escrow?.amountPerItem,
+            workerStake: baseSpec.stake?.worker,
+            validatorStake: baseSpec.stake?.validator,
+            deadlineOffsetSec: 3600,
+          },
+        ];
+
+  const resolvedJobs = missionJobs.map((job, idx) => {
+    const specPath = job.specPath ? path.resolve(job.specPath) : SPEC_PATH;
+    const jobSpec = readJsonFile<Spec>(specPath);
+    if (!jobSpec.validation || !jobSpec.validation.k || !jobSpec.validation.n) {
+      throw new Error(
+        `Validation quorum (k-of-n) must be defined in spec for mission job ${job.name}.`
+      );
+    }
+    const rewardAmount =
+      specAmountToWei(job.reward, decimals) ||
+      specAmountToWei(jobSpec.escrow?.amountPerItem, decimals) ||
+      ethers.parseUnits('5', decimals);
+    const workerStakeAmount =
+      specAmountToWei(job.workerStake, decimals) ||
+      specAmountToWei(jobSpec.stake?.worker, decimals) ||
+      ethers.parseUnits('20', decimals);
+    const validatorStakeAmount =
+      specAmountToWei(job.validatorStake, decimals) ||
+      specAmountToWei(jobSpec.stake?.validator, decimals) ||
+      ethers.parseUnits('50', decimals);
+    const deadlineOffset = job.deadlineOffsetSec || 3600;
+    const slug = slugify(job.name, `job-${idx + 1}`);
+    return {
+      name: job.name,
+      slug,
+      spec: jobSpec,
+      specPath,
+      rewardAmount,
+      workerStakeAmount,
+      validatorStakeAmount,
+      resultUri: job.resultURI || `ipfs://aurora-demo-result-${slug}`,
+      agentSubdomain: job.agentSubdomain || slug.replace(/[^a-z0-9]/g, ''),
+      deadlineOffset,
+      metadata: job.metadata || {},
+      notes: job.notes,
+    };
+  });
+
+  if (resolvedJobs.length === 0) {
+    throw new Error('Mission must include at least one job.');
+  }
+
+  const referenceValidation = resolvedJobs[0].spec.validation;
+  const validatorCount = referenceValidation.n;
+  const quorum = referenceValidation.k;
+  for (const job of resolvedJobs) {
+    if (
+      job.spec.validation.n !== validatorCount ||
+      job.spec.validation.k !== quorum
+    ) {
+      throw new Error(
+        'All mission jobs must share the same validation k-of-n parameters.'
+      );
+    }
+  }
+
   const selectedValidatorKeys = validatorKeys.slice(0, validatorCount);
   if (selectedValidatorKeys.length < validatorCount) {
     throw new Error(
@@ -560,6 +683,10 @@ async function main() {
   const validators = selectedValidatorKeys.map(
     (key) => new ethers.Wallet(key, provider)
   );
+
+  const thermostatConfig = fs.existsSync(THERMOSTAT_CONFIG_PATH)
+    ? readJsonFile<ThermostatConfig>(THERMOSTAT_CONFIG_PATH)
+    : null;
   const agentRole = 0;
   const validatorRole = 1;
   const platformRole = 2;
@@ -686,16 +813,30 @@ async function main() {
 
   const token = await ensureAgialpha(provider, employer);
 
-  const mintAmount = ethers.parseUnits('1000', decimals);
-  const rewardAmount =
-    specAmountToWei(spec.escrow?.amountPerItem, decimals) ||
-    ethers.parseUnits('5', decimals);
-  const workerStakeAmount =
-    specAmountToWei(spec.stake?.worker, decimals) ||
-    ethers.parseUnits('20', decimals);
-  const validatorStakeAmount =
-    specAmountToWei(spec.stake?.validator, decimals) ||
-    ethers.parseUnits('50', decimals);
+  const baselineMint = ethers.parseUnits('1000', decimals);
+  const totalReward = resolvedJobs.reduce(
+    (acc, job) => acc + job.rewardAmount,
+    0n
+  );
+  const maxReward = resolvedJobs.reduce(
+    (acc, job) => (job.rewardAmount > acc ? job.rewardAmount : acc),
+    0n
+  );
+  const maxWorkerStake = resolvedJobs.reduce(
+    (acc, job) => (job.workerStakeAmount > acc ? job.workerStakeAmount : acc),
+    0n
+  );
+  const maxValidatorStake = resolvedJobs.reduce(
+    (acc, job) =>
+      job.validatorStakeAmount > acc ? job.validatorStakeAmount : acc,
+    0n
+  );
+  const computedMint = [
+    baselineMint,
+    totalReward + maxWorkerStake,
+    maxWorkerStake + maxValidatorStake,
+  ].reduce((acc, value) => (value > acc ? value : acc));
+  const mintAmount = computedMint;
 
   const participants = [employer, worker, ...validators];
   for (const wallet of participants) {
@@ -709,6 +850,7 @@ async function main() {
       addresses.StakeManager
     );
     const requiredAllowance =
+      wallet === employer ? mintAmount + totalReward : mintAmount;
       wallet.address.toLowerCase() === employer.address.toLowerCase()
         ? mintAmount + rewardAmount + validatorStakeAmount
         : mintAmount;
@@ -747,6 +889,11 @@ async function main() {
   };
 
   const adjustedAgentMinimum =
+    maxWorkerStake / 2n > 0n ? maxWorkerStake / 2n : 1n;
+  const adjustedValidatorMinimum =
+    maxValidatorStake / 2n > 0n ? maxValidatorStake / 2n : 1n;
+  const adjustedPlatformMinimum =
+    maxValidatorStake / 4n > 0n ? maxValidatorStake / 4n : 1n;
     workerStakeAmount / 2n > 0n ? workerStakeAmount / 2n : 1n;
   const adjustedValidatorMinimum =
     validatorStakeAmount / 2n > 0n ? validatorStakeAmount / 2n : 1n;
@@ -780,7 +927,7 @@ async function main() {
   );
 
   const originalJobStake = await jobRegistry.jobStake();
-  const fallbackJobStake = rewardAmount / 10n > 0n ? rewardAmount / 10n : 1n;
+  const fallbackJobStake = maxReward / 10n > 0n ? maxReward / 10n : 1n;
   const adjustedJobStake =
     originalJobStake === 0n
       ? fallbackJobStake
@@ -816,6 +963,7 @@ async function main() {
   const validationInterface = new ethers.Interface(
     validationModuleArtifact.abi
   );
+  const thermostatInterface = new ethers.Interface(thermostatArtifact.abi);
   const thermostatInterface = thermostatArtifact
     ? new ethers.Interface(thermostatArtifact.abi)
     : null;
@@ -888,55 +1036,90 @@ async function main() {
     amount: string;
     txHash: string;
   }> = [];
+  const agentRole = 0;
+  const validatorRole = 1;
 
   const workerStakeTx = await stakeManager
     .connect(worker)
-    .acknowledgeAndDeposit(agentRole, workerStakeAmount);
+    .acknowledgeAndDeposit(agentRole, maxWorkerStake);
   const workerStakeReceipt = await workerStakeTx.wait();
   stakeEntries.push({
     role: 'agent',
     address: worker.address,
-    amount: formatUnits(workerStakeAmount, decimals),
+    amount: formatUnits(maxWorkerStake, decimals),
     txHash: workerStakeReceipt?.hash || workerStakeTx.hash,
   });
 
   for (const validator of validators) {
     const stakeTx = await stakeManager
       .connect(validator)
-      .acknowledgeAndDeposit(validatorRole, validatorStakeAmount);
+      .acknowledgeAndDeposit(validatorRole, maxValidatorStake);
     const receipt = await stakeTx.wait();
     stakeEntries.push({
       role: 'validator',
       address: validator.address,
-      amount: formatUnits(validatorStakeAmount, decimals),
+      amount: formatUnits(maxValidatorStake, decimals),
       txHash: receipt?.hash || stakeTx.hash,
     });
   }
 
   writeReceipt(networkName, 'stake.json', { entries: stakeEntries });
 
-  const specHash = ethers.keccak256(
-    ethers.toUtf8Bytes(JSON.stringify(spec, Object.keys(spec).sort()))
-  );
-  const specUri = spec.acceptanceCriteriaURI || 'ipfs://aurora-demo-spec';
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
+  const trackAddresses = [
+    employer.address,
+    worker.address,
+    ...validators.map((v) => v.address),
+  ];
 
-  const postTx = await jobRegistry
-    .connect(employer)
-    .acknowledgeAndCreateJob(rewardAmount, Number(deadline), specHash, specUri);
-  const postReceipt = await postTx.wait();
-  let jobId = 0n;
-  if (postReceipt && postReceipt.logs) {
-    for (const log of postReceipt.logs) {
-      try {
-        const parsed = jobRegistry.interface.parseLog(log);
-        if (parsed.name === 'JobCreated') {
-          jobId = parsed.args.jobId as bigint;
-          break;
+  const missionRecords: Array<{
+    name: string;
+    slug: string;
+    jobId: string;
+    reward: string;
+    deadline: string;
+    resultURI: string;
+    txHash: string;
+    receipts: Record<string, string>;
+    metadata?: Record<string, unknown>;
+    notes?: string;
+  }> = [];
+
+  const legacySingleJob = resolvedJobs.length === 1;
+
+  for (const job of resolvedJobs) {
+    const jobDir = path.join('jobs', job.slug);
+    const sortedKeys = Object.keys(job.spec).sort();
+    const specHash = ethers.keccak256(
+      ethers.toUtf8Bytes(JSON.stringify(job.spec, sortedKeys))
+    );
+    const specUri = job.spec.acceptanceCriteriaURI || 'ipfs://aurora-demo-spec';
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + job.deadlineOffset);
+
+    const postTx = await jobRegistry
+      .connect(employer)
+      .acknowledgeAndCreateJob(
+        job.rewardAmount,
+        Number(deadline),
+        specHash,
+        specUri
+      );
+    const postReceipt = await postTx.wait();
+    let jobId = 0n;
+    if (postReceipt && postReceipt.logs) {
+      for (const log of postReceipt.logs) {
+        try {
+          const parsed = jobRegistry.interface.parseLog(log);
+          if (parsed.name === 'JobCreated') {
+            jobId = parsed.args.jobId as bigint;
+            break;
+          }
+        } catch {
+          continue;
         }
-      } catch {
-        continue;
       }
+    }
+    if (jobId === 0n) {
+      jobId = 1n;
     }
   }
   if (jobId === 0n) {
@@ -958,20 +1141,56 @@ async function main() {
     .acknowledgeAndApply(jobId, subdomain, []);
   await applyTx.wait();
 
-  const resultUri = 'ipfs://aurora-demo-result';
-  const resultHash = ethers.keccak256(ethers.toUtf8Bytes(resultUri));
-  const submitTx = await jobRegistry
-    .connect(worker)
-    .submit(jobId, resultHash, resultUri, subdomain, []);
-  const submitReceipt = await submitTx.wait();
+    const postRecord = {
+      jobId: jobId.toString(),
+      txHash: postReceipt?.hash || postTx.hash,
+      reward: formatUnits(job.rewardAmount, decimals),
+      deadline: deadline.toString(),
+      specHash,
+      specPath: job.specPath,
+      metadata: job.metadata,
+    };
+    writeReceipt(networkName, path.join(jobDir, 'post.json'), postRecord);
+    if (legacySingleJob) {
+      writeReceipt(networkName, 'postJob.json', postRecord);
+    }
 
-  writeReceipt(networkName, 'submit.json', {
-    worker: worker.address,
-    txHash: submitReceipt?.hash || submitTx.hash,
-    resultURI: resultUri,
-    resultHash,
-  });
+    const applyTx = await jobRegistry
+      .connect(worker)
+      .acknowledgeAndApply(jobId, job.agentSubdomain, []);
+    await applyTx.wait();
 
+    const resultHash = ethers.keccak256(ethers.toUtf8Bytes(job.resultUri));
+    const submitTx = await jobRegistry
+      .connect(worker)
+      .submit(jobId, resultHash, job.resultUri, job.agentSubdomain, []);
+    const submitReceipt = await submitTx.wait();
+
+    const submitRecord = {
+      worker: worker.address,
+      txHash: submitReceipt?.hash || submitTx.hash,
+      resultURI: job.resultUri,
+      resultHash,
+      metadata: job.metadata,
+    };
+    writeReceipt(networkName, path.join(jobDir, 'submit.json'), submitRecord);
+    if (legacySingleJob) {
+      writeReceipt(networkName, 'submit.json', submitRecord);
+    }
+
+    const nonce = (await validationModule.jobNonce(jobId)).valueOf() as bigint;
+    const specHashOnChain = await jobRegistry.getSpecHash(jobId);
+    const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
+    const commitRecords: Array<{
+      address: string;
+      commitTx: string;
+      revealTx: string;
+      commitHash: string;
+      salt: string;
+    }> = [];
+
+    for (const validator of validators) {
+      const plan = deriveCommitPlan(
   const nonce = (await validationModule.jobNonce(jobId)) as bigint;
   const specHashOnChain = await jobRegistry.getSpecHash(jobId);
   const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
@@ -1025,25 +1244,69 @@ async function main() {
       .revealValidation(
         jobId,
         true,
-        plan.burnTxHash,
-        plan.salt,
-        'aurora-validator',
-        []
+        validator.address,
+        nonce,
+        specHashOnChain,
+        chain.chainId,
+        domainSeparator
       );
+      const commitTx = await validationModule
+        .connect(validator)
+        .commitValidation(jobId, plan.commitHash, 'aurora-validator', []);
+      const commitReceipt = await commitTx.wait();
+      const revealTx = await validationModule
+        .connect(validator)
+        .revealValidation(
+          jobId,
+          true,
+          plan.burnTxHash,
+          plan.salt,
+          'aurora-validator',
+          []
+        );
+      const revealReceipt = await revealTx.wait();
+      commitRecords.push({
+        address: validator.address,
+        commitTx: commitReceipt?.hash || commitTx.hash,
+        revealTx: revealReceipt?.hash || revealTx.hash,
+        commitHash: plan.commitHash,
+        salt: plan.salt,
+      });
+    }
     const revealReceipt = await revealTx.wait();
     commitRecords[i].revealTx = revealReceipt?.hash || revealTx.hash;
   }
 
-  const balancesBefore = new Map<string, bigint>();
-  const trackAddresses = [
-    employer.address,
-    worker.address,
-    ...validators.map((v) => v.address),
-  ];
-  for (const addr of trackAddresses) {
-    balancesBefore.set(addr, await token.balanceOf(addr));
-  }
+    const balancesBefore = new Map<string, bigint>();
+    for (const addr of trackAddresses) {
+      balancesBefore.set(addr, await token.balanceOf(addr));
+    }
 
+    const finalizeTx = await validationModule
+      .connect(validators[0])
+      .finalize(jobId);
+    const finalizeReceipt = await finalizeTx.wait();
+
+    const payouts: Record<
+      string,
+      { before: string; after: string; delta: string }
+    > = {};
+    for (const addr of trackAddresses) {
+      const before = balancesBefore.get(addr) || 0n;
+      const after = await token.balanceOf(addr);
+      payouts[addr] = {
+        before: formatUnits(before, decimals),
+        after: formatUnits(after, decimals),
+        delta: formatUnits(after - before, decimals),
+      };
+    }
+
+    const validateRecord = {
+      jobId: jobId.toString(),
+      validators: commitRecords,
+      finalizeTx: finalizeReceipt?.hash || finalizeTx.hash,
+      commits: commitRecords.length,
+      reveals: commitRecords.length,
   const finalizeTx = await validationModule
     .connect(validators[0])
     .finalize(jobId);
@@ -1058,19 +1321,56 @@ async function main() {
       after: formatUnits(after, decimals),
       delta: formatUnits(after - before, decimals),
     };
+    writeReceipt(
+      networkName,
+      path.join(jobDir, 'validate.json'),
+      validateRecord
+    );
+    if (legacySingleJob) {
+      writeReceipt(networkName, 'validate.json', validateRecord);
+    }
+
+    const finalizeRecord = {
+      txHash: finalizeReceipt?.hash || finalizeTx.hash,
+      payouts,
+    };
+    writeReceipt(
+      networkName,
+      path.join(jobDir, 'finalize.json'),
+      finalizeRecord
+    );
+    if (legacySingleJob) {
+      writeReceipt(networkName, 'finalize.json', finalizeRecord);
+    }
+
+    missionRecords.push({
+      name: job.name,
+      slug: job.slug,
+      jobId: jobId.toString(),
+      reward: formatUnits(job.rewardAmount, decimals),
+      deadline: deadline.toString(),
+      resultURI: job.resultUri,
+      txHash: postReceipt?.hash || postTx.hash,
+      receipts: {
+        post: path.join(jobDir, 'post.json'),
+        submit: path.join(jobDir, 'submit.json'),
+        validate: path.join(jobDir, 'validate.json'),
+        finalize: path.join(jobDir, 'finalize.json'),
+      },
+      metadata: job.metadata,
+      notes: job.notes,
+    });
+
+    console.log(
+      `🛰️  Finalized mission job ${job.slug} (jobId ${jobId.toString()})`
+    );
   }
 
-  writeReceipt(networkName, 'validate.json', {
-    jobId: jobId.toString(),
-    validators: commitRecords,
-    finalizeTx: finalizeReceipt?.hash || finalizeTx.hash,
-    commits: commitRecords.length,
-    reveals: commitRecords.length,
-  });
-
-  writeReceipt(networkName, 'finalize.json', {
-    txHash: finalizeReceipt?.hash || finalizeTx.hash,
-    payouts,
+  writeReceipt(networkName, 'mission.json', {
+    scope: REPORT_SCOPE,
+    version: missionConfig?.version || '1.0',
+    description: missionConfig?.description,
+    jobs: missionRecords,
   });
 
   let thermostatUpdates: ThermostatUpdate[] = [];
@@ -1126,7 +1426,9 @@ async function main() {
     thermostat: thermostatUpdates,
   });
 
-  console.log('✅ AURORA demo completed.');
+  console.log(
+    `✅ AURORA demo completed. Jobs finalized: ${missionRecords.length}.`
+  );
 }
 
 main().catch((err) => {

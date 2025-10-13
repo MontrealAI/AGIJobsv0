@@ -1,0 +1,13 @@
+{
+  "name": "ASI Infrastructure Modernization",
+  "version": "v2",
+  "domains": ["infrastructure", "energy", "logistics"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://asi-takeoff/infrastructure-criteria",
+  "validation": { "k": 2, "n": 3 },
+  "challengeWindowSec": 172800,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "7200000" },
+  "stake": { "worker": "28000000", "validator": "60000000" },
+  "resultSchema": "ipfs://asi-takeoff/infrastructure-schema",
+  "notes": "Smart grid, transit, and broadband modernization schedule synchronized with labor and energy markets."
+}
