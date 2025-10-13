@@ -32,6 +32,33 @@ const AGIALPHA_CONFIG = JSON.parse(
 );
 
 const SPEC_PATH = path.join('demo', 'aurora', 'config', 'aurora.spec@v2.json');
+const THERMOSTAT_CONFIG_PATH = path.join(
+  'demo',
+  'aurora',
+  'config',
+  'aurora.thermostat@v2.json'
+);
+
+type ThermostatConfig = {
+  systemTemperature?: string | number;
+  temperatureBounds?: { min: string | number; max: string | number };
+  integralBounds?: { min: string | number; max: string | number };
+  pid?: { kp: string | number; ki: string | number; kd: string | number };
+  kpiWeights?: {
+    emission: string | number;
+    backlog: string | number;
+    sla: string | number;
+  };
+  roleTemperatures?: Record<string, string | number>;
+  unsetRoleTemperatures?: string[];
+};
+
+const THERMOSTAT_ROLE_ALIAS: Record<string, number> = {
+  agent: 0,
+  validator: 1,
+  operator: 2,
+  employer: 3,
+};
 
 function parseNetworkArg(): string {
   const idx = process.argv.indexOf('--network');
@@ -78,6 +105,23 @@ function formatUnits(value: bigint, decimals: number): string {
   return ethers.formatUnits(value, decimals);
 }
 
+function parseSigned(value: string | number, label: string): bigint {
+  if (typeof value === 'number') {
+    return BigInt(Math.trunc(value));
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    throw new Error(`Missing value for ${label}`);
+  }
+  const negative = trimmed.startsWith('-');
+  const digits = negative ? trimmed.slice(1) : trimmed;
+  if (!/^\d+$/.test(digits)) {
+    throw new Error(`Invalid integer for ${label}: ${value}`);
+  }
+  const parsed = BigInt(digits);
+  return negative ? -parsed : parsed;
+}
+
 async function ensureAgialpha(
   provider: ethers.JsonRpcProvider,
   owner: ethers.Wallet
@@ -92,7 +136,9 @@ async function ensureAgialpha(
     'AGIALPHAToken.json'
   );
   if (!fs.existsSync(artifactPath)) {
-    throw new Error('Missing AGIALPHAToken artifact. Run `npx hardhat compile` first.');
+    throw new Error(
+      'Missing AGIALPHAToken artifact. Run `npx hardhat compile` first.'
+    );
   }
   const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8')) as {
     abi: any;
@@ -100,10 +146,17 @@ async function ensureAgialpha(
   };
 
   if (code === '0x') {
-    await provider.send('hardhat_setCode', [tokenAddress, artifact.deployedBytecode]);
+    await provider.send('hardhat_setCode', [
+      tokenAddress,
+      artifact.deployedBytecode,
+    ]);
     const ownerSlot = ethers.toBeHex(5, 32);
     const ownerValue = ethers.zeroPadValue(await owner.getAddress(), 32);
-    await provider.send('hardhat_setStorageAt', [tokenAddress, ownerSlot, ownerValue]);
+    await provider.send('hardhat_setStorageAt', [
+      tokenAddress,
+      ownerSlot,
+      ownerValue,
+    ]);
   }
 
   return new ethers.Contract(tokenAddress, artifact.abi, owner);
@@ -135,7 +188,10 @@ function deriveCommitPlan(
   const burnTxHash = ethers.ZeroHash;
   const salt = ethers.hexlify(randomBytes(32));
   const outcomeHash = ethers.keccak256(
-    abi.encode(['uint256', 'bytes32', 'bool', 'bytes32'], [nonce, specHash, approve, burnTxHash])
+    abi.encode(
+      ['uint256', 'bytes32', 'bool', 'bytes32'],
+      [nonce, specHash, approve, burnTxHash]
+    )
   );
   const commitHash = ethers.keccak256(
     abi.encode(
@@ -144,6 +200,188 @@ function deriveCommitPlan(
     )
   );
   return { commitHash, salt, burnTxHash };
+}
+
+async function applyThermostatConfig(
+  network: string,
+  pause: ethers.Contract,
+  thermostat: ethers.Contract,
+  thermostatInterface: ethers.Interface,
+  config: ThermostatConfig
+) {
+  const updates: Array<Record<string, string>> = [];
+
+  const record = (
+    action: string,
+    before: bigint | number,
+    after: bigint | number,
+    txHash: string
+  ) => {
+    updates.push({
+      action,
+      before: before.toString(),
+      after: after.toString(),
+      txHash,
+    });
+  };
+
+  if (config.temperatureBounds) {
+    const beforeMin = await thermostat.minTemp();
+    const beforeMax = await thermostat.maxTemp();
+    const min = parseSigned(
+      config.temperatureBounds.min,
+      'temperatureBounds.min'
+    );
+    const max = parseSigned(
+      config.temperatureBounds.max,
+      'temperatureBounds.max'
+    );
+    const txHash = await executeGovernanceCall(
+      pause,
+      await thermostat.getAddress(),
+      thermostatInterface,
+      'setTemperatureBounds',
+      [min, max]
+    );
+    const afterMin = await thermostat.minTemp();
+    const afterMax = await thermostat.maxTemp();
+    record('setTemperatureBounds', beforeMin, afterMin, txHash);
+    record('setTemperatureBounds:max', beforeMax, afterMax, txHash);
+  }
+
+  if (config.integralBounds) {
+    const beforeMin = await thermostat.integralMin();
+    const beforeMax = await thermostat.integralMax();
+    const min = parseSigned(config.integralBounds.min, 'integralBounds.min');
+    const max = parseSigned(config.integralBounds.max, 'integralBounds.max');
+    const txHash = await executeGovernanceCall(
+      pause,
+      await thermostat.getAddress(),
+      thermostatInterface,
+      'setIntegralBounds',
+      [min, max]
+    );
+    const afterMin = await thermostat.integralMin();
+    const afterMax = await thermostat.integralMax();
+    record('setIntegralBounds', beforeMin, afterMin, txHash);
+    record('setIntegralBounds:max', beforeMax, afterMax, txHash);
+  }
+
+  if (config.pid) {
+    const beforeKp = await thermostat.kp();
+    const beforeKi = await thermostat.ki();
+    const beforeKd = await thermostat.kd();
+    const kp = parseSigned(config.pid.kp, 'pid.kp');
+    const ki = parseSigned(config.pid.ki, 'pid.ki');
+    const kd = parseSigned(config.pid.kd, 'pid.kd');
+    const txHash = await executeGovernanceCall(
+      pause,
+      await thermostat.getAddress(),
+      thermostatInterface,
+      'setPID',
+      [kp, ki, kd]
+    );
+    const afterKp = await thermostat.kp();
+    const afterKi = await thermostat.ki();
+    const afterKd = await thermostat.kd();
+    record('setPID:kp', beforeKp, afterKp, txHash);
+    record('setPID:ki', beforeKi, afterKi, txHash);
+    record('setPID:kd', beforeKd, afterKd, txHash);
+  }
+
+  if (config.kpiWeights) {
+    const beforeEmission = await thermostat.wEmission();
+    const beforeBacklog = await thermostat.wBacklog();
+    const beforeSla = await thermostat.wSla();
+    const emission = parseSigned(
+      config.kpiWeights.emission,
+      'kpiWeights.emission'
+    );
+    const backlog = parseSigned(
+      config.kpiWeights.backlog,
+      'kpiWeights.backlog'
+    );
+    const sla = parseSigned(config.kpiWeights.sla, 'kpiWeights.sla');
+    const txHash = await executeGovernanceCall(
+      pause,
+      await thermostat.getAddress(),
+      thermostatInterface,
+      'setKPIWeights',
+      [emission, backlog, sla]
+    );
+    const afterEmission = await thermostat.wEmission();
+    const afterBacklog = await thermostat.wBacklog();
+    const afterSla = await thermostat.wSla();
+    record('setKPIWeights:emission', beforeEmission, afterEmission, txHash);
+    record('setKPIWeights:backlog', beforeBacklog, afterBacklog, txHash);
+    record('setKPIWeights:sla', beforeSla, afterSla, txHash);
+  }
+
+  if (config.systemTemperature !== undefined) {
+    const before = await thermostat.systemTemperature();
+    const value = parseSigned(config.systemTemperature, 'systemTemperature');
+    const txHash = await executeGovernanceCall(
+      pause,
+      await thermostat.getAddress(),
+      thermostatInterface,
+      'setSystemTemperature',
+      [value]
+    );
+    const after = await thermostat.systemTemperature();
+    record('setSystemTemperature', before, after, txHash);
+  }
+
+  if (config.roleTemperatures) {
+    for (const [roleLabel, temp] of Object.entries(config.roleTemperatures)) {
+      const key = roleLabel.trim().toLowerCase();
+      const roleId = THERMOSTAT_ROLE_ALIAS[key];
+      if (roleId === undefined) {
+        throw new Error(
+          `Unknown thermostat role in roleTemperatures: ${roleLabel}`
+        );
+      }
+      const before = await thermostat.getRoleTemperature(roleId);
+      const value = parseSigned(temp, `roleTemperatures.${roleLabel}`);
+      const txHash = await executeGovernanceCall(
+        pause,
+        await thermostat.getAddress(),
+        thermostatInterface,
+        'setRoleTemperature',
+        [roleId, value]
+      );
+      const after = await thermostat.getRoleTemperature(roleId);
+      record(`setRoleTemperature:${roleLabel}`, before, after, txHash);
+    }
+  }
+
+  if (config.unsetRoleTemperatures) {
+    for (const roleLabel of config.unsetRoleTemperatures) {
+      const key = roleLabel.trim().toLowerCase();
+      if (!key) continue;
+      const roleId = THERMOSTAT_ROLE_ALIAS[key];
+      if (roleId === undefined) {
+        throw new Error(
+          `Unknown thermostat role in unsetRoleTemperatures: ${roleLabel}`
+        );
+      }
+      const before = await thermostat.getRoleTemperature(roleId);
+      const txHash = await executeGovernanceCall(
+        pause,
+        await thermostat.getAddress(),
+        thermostatInterface,
+        'unsetRoleTemperature',
+        [roleId]
+      );
+      const after = await thermostat.getRoleTemperature(roleId);
+      record(`unsetRoleTemperature:${roleLabel}`, before, after, txHash);
+    }
+  }
+
+  if (updates.length > 0) {
+    writeReceipt(network, 'governance.json', {
+      thermostat: updates,
+    });
+  }
 }
 
 async function main() {
@@ -168,13 +406,20 @@ async function main() {
   if (!spec.validation || !spec.validation.k || !spec.validation.n) {
     throw new Error('Validation quorum (k-of-n) must be defined in the spec.');
   }
+  const thermostatConfig = fs.existsSync(THERMOSTAT_CONFIG_PATH)
+    ? readJsonFile<ThermostatConfig>(THERMOSTAT_CONFIG_PATH)
+    : null;
   const validatorCount = spec.validation.n;
   const quorum = spec.validation.k;
   const selectedValidatorKeys = validatorKeys.slice(0, validatorCount);
   if (selectedValidatorKeys.length < validatorCount) {
-    throw new Error('Insufficient validator keys configured for the selected quorum.');
+    throw new Error(
+      'Insufficient validator keys configured for the selected quorum.'
+    );
   }
-  const validators = selectedValidatorKeys.map((key) => new ethers.Wallet(key, provider));
+  const validators = selectedValidatorKeys.map(
+    (key) => new ethers.Wallet(key, provider)
+  );
 
   const summaryPath = resolveDeploySummaryPath(networkName);
   const deploySummary = readJsonFile<DeploySummary>(summaryPath);
@@ -183,11 +428,21 @@ async function main() {
   }
 
   const addresses = deploySummary.contracts;
+  const thermostatAddress = addresses.Thermostat;
+  if (thermostatConfig && !thermostatAddress) {
+    throw new Error('Thermostat address missing from deployment summary.');
+  }
 
   const artifact = (name: string) =>
     JSON.parse(
       fs.readFileSync(
-        path.join('artifacts', 'contracts', 'v2', `${name}.sol`, `${name}.json`),
+        path.join(
+          'artifacts',
+          'contracts',
+          'v2',
+          `${name}.sol`,
+          `${name}.json`
+        ),
         'utf8'
       )
     );
@@ -197,6 +452,7 @@ async function main() {
   const validationModuleArtifact = artifact('ValidationModule');
   const identityRegistryArtifact = artifact('IdentityRegistry');
   const systemPauseArtifact = artifact('SystemPause');
+  const thermostatArtifact = artifact('Thermostat');
 
   const jobRegistry = new ethers.Contract(
     addresses.JobRegistry,
@@ -223,15 +479,21 @@ async function main() {
     systemPauseArtifact.abi,
     employer
   );
+  const thermostat = thermostatAddress
+    ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, employer)
+    : null;
 
   const token = await ensureAgialpha(provider, employer);
 
   const mintAmount = ethers.parseUnits('1000', decimals);
-  const rewardAmount = specAmountToWei(spec.escrow?.amountPerItem, decimals) ||
+  const rewardAmount =
+    specAmountToWei(spec.escrow?.amountPerItem, decimals) ||
     ethers.parseUnits('5', decimals);
-  const workerStakeAmount = specAmountToWei(spec.stake?.worker, decimals) ||
+  const workerStakeAmount =
+    specAmountToWei(spec.stake?.worker, decimals) ||
     ethers.parseUnits('20', decimals);
-  const validatorStakeAmount = specAmountToWei(spec.stake?.validator, decimals) ||
+  const validatorStakeAmount =
+    specAmountToWei(spec.stake?.validator, decimals) ||
     ethers.parseUnits('50', decimals);
 
   const participants = [employer, worker, ...validators];
@@ -241,10 +503,16 @@ async function main() {
       const tx = await token.mint(wallet.address, mintAmount - bal);
       await tx.wait();
     }
-    const allowance = await token.allowance(wallet.address, addresses.StakeManager);
-    const requiredAllowance = wallet === employer ? mintAmount + rewardAmount : mintAmount;
+    const allowance = await token.allowance(
+      wallet.address,
+      addresses.StakeManager
+    );
+    const requiredAllowance =
+      wallet === employer ? mintAmount + rewardAmount : mintAmount;
     if (allowance < requiredAllowance) {
-      const approveTx = await token.connect(wallet).approve(addresses.StakeManager, ethers.MaxUint256);
+      const approveTx = await token
+        .connect(wallet)
+        .approve(addresses.StakeManager, ethers.MaxUint256);
       await approveTx.wait();
     }
   }
@@ -254,7 +522,10 @@ async function main() {
     await identityRegistry.addAdditionalValidator(validator.address);
   }
 
-  const validationInterface = new ethers.Interface(validationModuleArtifact.abi);
+  const validationInterface = new ethers.Interface(
+    validationModuleArtifact.abi
+  );
+  const thermostatInterface = new ethers.Interface(thermostatArtifact.abi);
   await executeGovernanceCall(
     systemPause,
     addresses.ValidationModule,
@@ -298,7 +569,12 @@ async function main() {
     [3600]
   );
 
-  const stakeEntries: Array<{ role: string; address: string; amount: string; txHash: string }> = [];
+  const stakeEntries: Array<{
+    role: string;
+    address: string;
+    amount: string;
+    txHash: string;
+  }> = [];
   const agentRole = 0;
   const validatorRole = 1;
 
@@ -387,7 +663,13 @@ async function main() {
   const nonce = (await validationModule.jobNonce(jobId)).valueOf() as bigint;
   const specHashOnChain = await jobRegistry.getSpecHash(jobId);
   const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
-  const commitRecords: Array<{ address: string; commitTx: string; revealTx: string; commitHash: string; salt: string }>= [];
+  const commitRecords: Array<{
+    address: string;
+    commitTx: string;
+    revealTx: string;
+    commitHash: string;
+    salt: string;
+  }> = [];
 
   for (const validator of validators) {
     const plan = deriveCommitPlan(
@@ -424,7 +706,11 @@ async function main() {
   }
 
   const balancesBefore = new Map<string, bigint>();
-  const trackAddresses = [employer.address, worker.address, ...validators.map((v) => v.address)];
+  const trackAddresses = [
+    employer.address,
+    worker.address,
+    ...validators.map((v) => v.address),
+  ];
   for (const addr of trackAddresses) {
     balancesBefore.set(addr, await token.balanceOf(addr));
   }
@@ -434,7 +720,10 @@ async function main() {
     .finalize(jobId);
   const finalizeReceipt = await finalizeTx.wait();
 
-  const payouts: Record<string, { before: string; after: string; delta: string }> = {};
+  const payouts: Record<
+    string,
+    { before: string; after: string; delta: string }
+  > = {};
   for (const addr of trackAddresses) {
     const before = balancesBefore.get(addr) || 0n;
     const after = await token.balanceOf(addr);
@@ -457,6 +746,16 @@ async function main() {
     txHash: finalizeReceipt?.hash || finalizeTx.hash,
     payouts,
   });
+
+  if (thermostatConfig && thermostat) {
+    await applyThermostatConfig(
+      networkName,
+      systemPause,
+      thermostat,
+      thermostatInterface,
+      thermostatConfig
+    );
+  }
 
   console.log('✅ AURORA demo completed.');
 }

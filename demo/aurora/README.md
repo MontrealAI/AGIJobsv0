@@ -25,6 +25,7 @@ npm run demo:aurora:sepolia
 * `reports/<network>/aurora/receipts/*.json`
 * `reports/<network>/aurora/aurora-report.md`
 * Governance/owner snapshots can be generated via the existing owner tooling
+* Thermostat adjustments driven by [`config/aurora.thermostat@v2.json`](./config/aurora.thermostat@v2.json) are recorded in `governance.json`
 
 ---
 
@@ -100,5 +101,6 @@ See [`RUNBOOK.md`](./RUNBOOK.md) for the step‑by‑step orchestration, includi
 * Wiring checks and deployment via `scripts/v2/deployDefaults.ts`
 * Automated module configuration and staking handled by `aurora.demo.ts`
 * Receipt collection and the Markdown mission report summarised by `aurora-report.ts`
+* Optional thermostat tuning (system + per-role temperatures, PID, KPI weights) executed by governance via `SystemPause`
 
 All receipts land under `reports/<net>/aurora/`. A Markdown summary is generated at `reports/<net>/aurora/aurora-report.md`.
