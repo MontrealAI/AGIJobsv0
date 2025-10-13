@@ -58,6 +58,39 @@ function writeReceipt(net: string, name: string, data: unknown) {
   fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
 }
 
+function pushLog(
+  logs: OperationLog[],
+  step: string,
+  status: OperationStatus,
+  detail?: string
+) {
+  logs.push({ step, status, detail });
+}
+
+async function recordOperation<T>(
+  logs: OperationLog[],
+  step: string,
+  action: () => Promise<T>,
+  { rethrow = true }: { rethrow?: boolean } = {}
+): Promise<T | undefined> {
+  try {
+    const result = await action();
+    let detail: string | undefined;
+    if (typeof result === 'string') {
+      detail = result;
+    }
+    pushLog(logs, step, 'success', detail);
+    return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    pushLog(logs, step, 'error', message);
+    if (rethrow) {
+      throw new Error(`${step} failed: ${message}`);
+    }
+    return undefined;
+  }
+}
+
 function resolveDeploySummaryPath(net: string): string {
   if (process.env.AURORA_DEPLOY_OUTPUT) {
     return path.resolve(process.env.AURORA_DEPLOY_OUTPUT);
@@ -80,7 +113,9 @@ function formatUnits(value: bigint, decimals: number): string {
 
 async function ensureAgialpha(
   provider: ethers.JsonRpcProvider,
-  owner: ethers.Wallet
+  owner: ethers.Wallet,
+  allowLocalMutations: boolean,
+  logs: OperationLog[]
 ) {
   const tokenAddress = ethers.getAddress(AGIALPHA_CONFIG.address);
   const code = await provider.getCode(tokenAddress);
@@ -100,10 +135,36 @@ async function ensureAgialpha(
   };
 
   if (code === '0x') {
-    await provider.send('hardhat_setCode', [tokenAddress, artifact.deployedBytecode]);
-    const ownerSlot = ethers.toBeHex(5, 32);
-    const ownerValue = ethers.zeroPadValue(await owner.getAddress(), 32);
-    await provider.send('hardhat_setStorageAt', [tokenAddress, ownerSlot, ownerValue]);
+    if (!allowLocalMutations) {
+      throw new Error(
+        `AGIALPHA token missing on network ${(
+          await provider.getNetwork()
+        ).name}. Deploy or configure the token address before running the demo.`
+      );
+    }
+    try {
+      await provider.send('hardhat_setCode', [tokenAddress, artifact.deployedBytecode]);
+      const ownerSlot = ethers.toBeHex(5, 32);
+      const ownerValue = ethers.zeroPadValue(await owner.getAddress(), 32);
+      await provider.send('hardhat_setStorageAt', [tokenAddress, ownerSlot, ownerValue]);
+      pushLog(
+        logs,
+        `Inject AGIALPHA implementation at ${tokenAddress}`,
+        'success',
+        'Loaded demo ERC20 code into local chain'
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      pushLog(
+        logs,
+        `Inject AGIALPHA implementation at ${tokenAddress}`,
+        'error',
+        message
+      );
+      throw new Error(
+        `Failed to inject AGIALPHA bytecode for local demo: ${message}. Ensure you are running on Anvil/Hardhat.`
+      );
+    }
   }
 
   return new ethers.Contract(tokenAddress, artifact.abi, owner);
@@ -152,6 +213,16 @@ async function main() {
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const chain = await provider.getNetwork();
   const decimals = Number(AGIALPHA_CONFIG.decimals || 18);
+  const allowLocalMutations =
+    chain.chainId === 31337n || chain.chainId === 1337n || networkName === 'localhost';
+  const skipMint =
+    process.env.AURORA_SKIP_MINT === '1' ||
+    process.env.AURORA_SKIP_MINT === 'true' ||
+    process.env.AURORA_SKIP_MINT?.toLowerCase() === 'yes';
+
+  const fundingLog: OperationLog[] = [];
+  const governanceLog: OperationLog[] = [];
+  const fundingGaps: Array<{ address: string; required: string }> = [];
 
   const employerKey = process.env.PRIVATE_KEY || DEFAULT_KEYS[0];
   const workerKey = process.env.AURORA_WORKER_KEY || DEFAULT_KEYS[1];
@@ -170,6 +241,9 @@ async function main() {
   }
   const validatorCount = spec.validation.n;
   const quorum = spec.validation.k;
+  if (validatorCount < 3) {
+    throw new Error('ValidationModule requires at least 3 validators per job. Update the spec to use n >= 3.');
+  }
   const selectedValidatorKeys = validatorKeys.slice(0, validatorCount);
   if (selectedValidatorKeys.length < validatorCount) {
     throw new Error('Insufficient validator keys configured for the selected quorum.');
@@ -213,6 +287,15 @@ async function main() {
     validationModuleArtifact.abi,
     employer
   );
+  const taxPolicyAddress = addresses.TaxPolicy;
+  const taxPolicy =
+    taxPolicyAddress && taxPolicyAddress !== ethers.ZeroAddress
+      ? new ethers.Contract(
+          taxPolicyAddress,
+          artifact('TaxPolicy').abi,
+          employer
+        )
+      : undefined;
   const identityRegistry = new ethers.Contract(
     addresses.IdentityRegistry,
     identityRegistryArtifact.abi,
@@ -224,79 +307,300 @@ async function main() {
     employer
   );
 
-  const token = await ensureAgialpha(provider, employer);
+  const employerGovernance = new ethers.NonceManager(employer);
+  const token = await ensureAgialpha(provider, employer, allowLocalMutations, fundingLog);
+  const tokenGovernance = token.connect(employerGovernance);
 
   const mintAmount = ethers.parseUnits('1000', decimals);
-  const rewardAmount = specAmountToWei(spec.escrow?.amountPerItem, decimals) ||
+  const rewardAmount =
+    specAmountToWei(spec.escrow?.amountPerItem, decimals) ||
     ethers.parseUnits('5', decimals);
-  const workerStakeAmount = specAmountToWei(spec.stake?.worker, decimals) ||
+  const workerStakeAmount =
+    specAmountToWei(spec.stake?.worker, decimals) ||
     ethers.parseUnits('20', decimals);
-  const validatorStakeAmount = specAmountToWei(spec.stake?.validator, decimals) ||
+  const validatorStakeAmount =
+    specAmountToWei(spec.stake?.validator, decimals) ||
     ethers.parseUnits('50', decimals);
 
-  const participants = [employer, worker, ...validators];
-  for (const wallet of participants) {
-    const bal = await token.balanceOf(wallet.address);
-    if (bal < mintAmount) {
-      const tx = await token.mint(wallet.address, mintAmount - bal);
-      await tx.wait();
+  const participantPlans: Array<{
+    wallet: ethers.Wallet;
+    label: string;
+    targetBalance: bigint;
+    allowanceTarget: bigint;
+  }> = [
+    {
+      wallet: employer,
+      label: 'employer',
+      targetBalance: allowLocalMutations ? mintAmount : rewardAmount,
+      allowanceTarget: rewardAmount,
+    },
+    {
+      wallet: worker,
+      label: 'worker',
+      targetBalance: allowLocalMutations ? mintAmount : workerStakeAmount,
+      allowanceTarget: workerStakeAmount,
+    },
+    ...validators.map((validator, index) => ({
+      wallet: validator,
+      label: `validator-${index + 1}`,
+      targetBalance: allowLocalMutations ? mintAmount : validatorStakeAmount,
+      allowanceTarget: validatorStakeAmount,
+    })),
+  ];
+
+  for (const { wallet, label, targetBalance, allowanceTarget } of participantPlans) {
+    const currentBalance = await token.balanceOf(wallet.address);
+    if (currentBalance >= targetBalance) {
+      pushLog(
+        fundingLog,
+        `${label}: balance`,
+        'success',
+        `Balance ${formatUnits(currentBalance, decimals)}`
+      );
+    } else {
+      const deficit = targetBalance - currentBalance;
+      if (skipMint || !allowLocalMutations) {
+        const required = formatUnits(deficit, decimals);
+        fundingGaps.push({ address: wallet.address, required });
+        pushLog(
+          fundingLog,
+          `${label}: balance`,
+          'warning',
+          `Requires +${required} AGIALPHA funding before running the demo`
+        );
+      } else {
+        try {
+          const mintTx = await tokenGovernance.mint(wallet.address, deficit);
+          const receipt = await mintTx.wait();
+          pushLog(
+            fundingLog,
+            `${label}: mint`,
+            'success',
+            `tx=${receipt?.hash || mintTx.hash}, added ${formatUnits(deficit, decimals)} AGIALPHA`
+          );
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const required = formatUnits(deficit, decimals);
+          fundingGaps.push({ address: wallet.address, required });
+          pushLog(
+            fundingLog,
+            `${label}: mint`,
+            'error',
+            message
+          );
+        }
+      }
     }
+
     const allowance = await token.allowance(wallet.address, addresses.StakeManager);
-    const requiredAllowance = wallet === employer ? mintAmount + rewardAmount : mintAmount;
-    if (allowance < requiredAllowance) {
-      const approveTx = await token.connect(wallet).approve(addresses.StakeManager, ethers.MaxUint256);
-      await approveTx.wait();
+    if (allowance >= allowanceTarget) {
+      pushLog(
+        fundingLog,
+        `${label}: allowance`,
+        'success',
+        `Allowance ${formatUnits(allowance, decimals)}`
+      );
+      continue;
+    }
+    try {
+      const signerForApproval =
+        wallet.address === employer.address ? employerGovernance : wallet;
+      const approveTx = await token
+        .connect(signerForApproval)
+        .approve(addresses.StakeManager, ethers.MaxUint256);
+      const receipt = await approveTx.wait();
+      pushLog(
+        fundingLog,
+        `${label}: approve stake manager`,
+        'success',
+        `tx=${receipt?.hash || approveTx.hash}`
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      pushLog(
+        fundingLog,
+        `${label}: approve stake manager`,
+        'error',
+        message
+      );
+      throw new Error(`Failed to approve StakeManager for ${label}: ${message}`);
     }
   }
 
-  await identityRegistry.addAdditionalAgent(worker.address);
+  const identityGovernance = identityRegistry.connect(employerGovernance);
+  const systemPauseGovernance = systemPause.connect(employerGovernance);
+  const jobRegistryGovernance = jobRegistry.connect(employerGovernance);
+  const validationModuleGovernance = validationModule.connect(employerGovernance);
+  const taxPolicyGovernance = taxPolicy?.connect(employerGovernance);
+
+  writeReceipt(networkName, 'funding.json', {
+    operations: fundingLog,
+    pendingFunding: fundingGaps,
+  });
+
+  if (fundingGaps.length > 0) {
+    throw new Error(
+      'One or more participants are underfunded. Top up the accounts listed in funding.json or allow local minting by running on Anvil.'
+    );
+  }
+
+  await recordOperation(governanceLog, 'Ensure IdentityRegistry ownership', async () => {
+    const ownerAddress = await identityGovernance.owner();
+    if (ethers.getAddress(ownerAddress) === employer.address) {
+      return `owner=${ownerAddress}`;
+    }
+
+    let pendingOwner: string | undefined;
+    try {
+      pendingOwner = await identityGovernance.pendingOwner();
+    } catch {
+      pendingOwner = undefined;
+    }
+
+    if (pendingOwner && ethers.getAddress(pendingOwner) === employer.address) {
+      const acceptTx = await identityGovernance.acceptOwnership();
+      const acceptReceipt = await acceptTx.wait();
+      return `accepted via ${acceptReceipt?.hash || acceptTx.hash}`;
+    }
+
+    throw new Error(
+      `IdentityRegistry owner ${ownerAddress} (pending ${pendingOwner ?? 'none'}) does not match the configured governance signer ${employer.address}`
+    );
+  });
+
+  if (taxPolicy && taxPolicyGovernance) {
+    await recordOperation(governanceLog, 'Ensure TaxPolicy ownership', async () => {
+      const ownerAddress = await taxPolicyGovernance.owner();
+      if (ethers.getAddress(ownerAddress) === employer.address) {
+        return `owner=${ownerAddress}`;
+      }
+      let pendingOwner: string | undefined;
+      try {
+        pendingOwner = await taxPolicyGovernance.pendingOwner();
+      } catch {
+        pendingOwner = undefined;
+      }
+      if (pendingOwner && ethers.getAddress(pendingOwner) === employer.address) {
+        const acceptTx = await taxPolicyGovernance.acceptOwnership();
+        const receipt = await acceptTx.wait();
+        return `accepted via ${receipt?.hash || acceptTx.hash}`;
+      }
+      throw new Error(
+        `TaxPolicy owner ${ownerAddress} (pending ${pendingOwner ?? 'none'}) does not match the configured governance signer ${employer.address}`
+      );
+    });
+
+    await recordOperation(governanceLog, 'Authorize tax policy acknowledgers', async () => {
+      const targets = [addresses.JobRegistry, addresses.StakeManager];
+      const flags = targets.map(() => true);
+      const tx = await taxPolicyGovernance.setAcknowledgers(targets, flags);
+      const receipt = await tx.wait();
+      return `tx=${receipt?.hash || tx.hash}`;
+    });
+  }
+
+  await recordOperation(governanceLog, `Authorize worker ${worker.address}`, async () => {
+    const tx = await identityGovernance.addAdditionalAgent(worker.address);
+    const receipt = await tx.wait();
+    return `tx=${receipt?.hash || tx.hash}`;
+  });
   for (const validator of validators) {
-    await identityRegistry.addAdditionalValidator(validator.address);
+    await recordOperation(
+      governanceLog,
+      `Authorize validator ${validator.address}`,
+      async () => {
+        const tx = await identityGovernance.addAdditionalValidator(validator.address);
+        const receipt = await tx.wait();
+        return `tx=${receipt?.hash || tx.hash}`;
+      }
+    );
   }
 
   const validationInterface = new ethers.Interface(validationModuleArtifact.abi);
-  await executeGovernanceCall(
-    systemPause,
-    addresses.ValidationModule,
-    validationInterface,
-    'setValidatorPool',
-    [validators.map((v) => v.address)]
-  );
-  await executeGovernanceCall(
-    systemPause,
-    addresses.ValidationModule,
-    validationInterface,
-    'setValidatorBounds',
-    [quorum, validatorCount]
-  );
-  await executeGovernanceCall(
-    systemPause,
-    addresses.ValidationModule,
-    validationInterface,
-    'setValidatorsPerJob',
-    [validatorCount]
-  );
-  await executeGovernanceCall(
-    systemPause,
-    addresses.ValidationModule,
-    validationInterface,
-    'setRequiredValidatorApprovals',
-    [quorum]
-  );
-  await executeGovernanceCall(
-    systemPause,
-    addresses.ValidationModule,
-    validationInterface,
-    'setCommitWindow',
-    [3600]
-  );
-  await executeGovernanceCall(
-    systemPause,
-    addresses.ValidationModule,
-    validationInterface,
-    'setRevealWindow',
-    [3600]
-  );
+  const stakeManagerInterface = new ethers.Interface(stakeManagerArtifact.abi);
+  const jobRegistryInterface = new ethers.Interface(jobRegistryArtifact.abi);
+  const validatorsPerJobCount = Math.max(3, validatorCount);
+  const minValidatorBound = Math.max(3, Math.min(validatorsPerJobCount, quorum));
+  const maxValidatorBound = Math.max(validatorsPerJobCount, minValidatorBound);
+  const governanceCalls: Array<{
+    description: string;
+    target: string;
+    iface: ethers.Interface;
+    method: string;
+    args: unknown[];
+  }> = [
+    {
+      description: 'Link validation module to stake manager',
+      target: addresses.StakeManager,
+      iface: stakeManagerInterface,
+      method: 'setValidationModule',
+      args: [addresses.ValidationModule],
+    },
+    {
+      description: 'Authorize stake manager acknowledger',
+      target: addresses.JobRegistry,
+      iface: jobRegistryInterface,
+      method: 'setAcknowledger',
+      args: [addresses.StakeManager, true],
+    },
+    {
+      description: 'Configure validator pool',
+      target: addresses.ValidationModule,
+      iface: validationInterface,
+      method: 'setValidatorPool',
+      args: [validators.map((v) => v.address)],
+    },
+    {
+      description: 'Set validator bounds',
+      target: addresses.ValidationModule,
+      iface: validationInterface,
+      method: 'setValidatorBounds',
+      args: [minValidatorBound, maxValidatorBound],
+    },
+    {
+      description: 'Set validators per job',
+      target: addresses.ValidationModule,
+      iface: validationInterface,
+      method: 'setValidatorsPerJob',
+      args: [validatorsPerJobCount],
+    },
+    {
+      description: 'Set required approvals',
+      target: addresses.ValidationModule,
+      iface: validationInterface,
+      method: 'setRequiredValidatorApprovals',
+      args: [quorum],
+    },
+    {
+      description: 'Set commit window',
+      target: addresses.ValidationModule,
+      iface: validationInterface,
+      method: 'setCommitWindow',
+      args: [60],
+    },
+    {
+      description: 'Set reveal window',
+      target: addresses.ValidationModule,
+      iface: validationInterface,
+      method: 'setRevealWindow',
+      args: [3600],
+    },
+  ];
+
+  for (const call of governanceCalls) {
+    await recordOperation(governanceLog, call.description, async () => {
+      const txHash = await executeGovernanceCall(
+        systemPauseGovernance,
+        call.target,
+        call.iface,
+        call.method,
+        call.args
+      );
+      return `tx=${txHash}`;
+    });
+  }
+
+  writeReceipt(networkName, 'governance.json', { operations: governanceLog });
 
   const stakeEntries: Array<{ role: string; address: string; amount: string; txHash: string }> = [];
   const agentRole = 0;
@@ -334,8 +638,7 @@ async function main() {
   const specUri = spec.acceptanceCriteriaURI || 'ipfs://aurora-demo-spec';
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
 
-  const postTx = await jobRegistry
-    .connect(employer)
+  const postTx = await jobRegistryGovernance
     .acknowledgeAndCreateJob(rewardAmount, Number(deadline), specHash, specUri);
   const postReceipt = await postTx.wait();
   let jobId = 0n;
@@ -384,10 +687,30 @@ async function main() {
     resultHash,
   });
 
+  const entropySeed = BigInt(Date.now());
+  await validationModuleGovernance.selectValidators(jobId, entropySeed);
+  if (validators.length > 0) {
+    await validationModule
+      .connect(validators[0])
+      .selectValidators(jobId, entropySeed + 1n);
+  }
+  const roundInfo = await validationModule.rounds(jobId);
+  const commitDeadline = BigInt(roundInfo.commitDeadline ?? 0);
+  if (commitDeadline === 0n) {
+    await provider.send('hardhat_mine', ['0x2']);
+    await validationModuleGovernance.selectValidators(jobId, entropySeed + 2n);
+  }
+
   const nonce = (await validationModule.jobNonce(jobId)).valueOf() as bigint;
   const specHashOnChain = await jobRegistry.getSpecHash(jobId);
   const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
-  const commitRecords: Array<{ address: string; commitTx: string; revealTx: string; commitHash: string; salt: string }>= [];
+  const commitPlans: Array<{
+    validator: ethers.Wallet;
+    commitHash: string;
+    salt: string;
+    burnTxHash: string;
+    commitTxHash: string;
+  }> = [];
 
   for (const validator of validators) {
     const plan = deriveCommitPlan(
@@ -403,8 +726,53 @@ async function main() {
       .connect(validator)
       .commitValidation(jobId, plan.commitHash, 'aurora-validator', []);
     const commitReceipt = await commitTx.wait();
+    commitPlans.push({
+      validator,
+      commitHash: plan.commitHash,
+      salt: plan.salt,
+      burnTxHash: plan.burnTxHash,
+      commitTxHash: commitReceipt?.hash || commitTx.hash,
+    });
+  }
+
+  const updatedRound = await validationModule.rounds(jobId);
+  const commitDeadlineTs = BigInt(updatedRound.commitDeadline ?? 0);
+  if (commitDeadlineTs > 0n) {
+    const latestBlock = await provider.getBlock('latest');
+    const currentTs = BigInt(latestBlock?.timestamp ?? 0);
+    const targetTs = commitDeadlineTs + 1n;
+    if (targetTs > currentTs) {
+      const delta = targetTs - currentTs;
+      try {
+        await provider.send('evm_setNextBlockTimestamp', [Number(targetTs)]);
+        await provider.send('evm_mine', []);
+      } catch (setTsError) {
+        try {
+          await provider.send('evm_increaseTime', [Number(delta)]);
+          await provider.send('evm_mine', []);
+        } catch (increaseError) {
+          const primaryMessage =
+            setTsError instanceof Error ? setTsError.message : String(setTsError);
+          const secondaryMessage =
+            increaseError instanceof Error ? increaseError.message : String(increaseError);
+          throw new Error(
+            `Failed to advance validator reveal window: setNextBlockTimestamp=${primaryMessage}; increaseTime=${secondaryMessage}`
+          );
+        }
+      }
+    } else {
+      await provider.send('evm_mine', []);
+    }
+  } else {
+    await provider.send('evm_increaseTime', [120]);
+    await provider.send('evm_mine', []);
+  }
+
+  const commitRecords: Array<{ address: string; commitTx: string; revealTx: string; commitHash: string; salt: string }>= [];
+
+  for (const plan of commitPlans) {
     const revealTx = await validationModule
-      .connect(validator)
+      .connect(plan.validator)
       .revealValidation(
         jobId,
         true,
@@ -415,8 +783,8 @@ async function main() {
       );
     const revealReceipt = await revealTx.wait();
     commitRecords.push({
-      address: validator.address,
-      commitTx: commitReceipt?.hash || commitTx.hash,
+      address: plan.validator.address,
+      commitTx: plan.commitTxHash,
       revealTx: revealReceipt?.hash || revealTx.hash,
       commitHash: plan.commitHash,
       salt: plan.salt,
