@@ -2,6 +2,11 @@
 import fs from 'fs';
 import path from 'path';
 
+type GovernanceLog = {
+  actions?: Array<Record<string, any>>;
+  thermostat?: Array<Record<string, string>>;
+};
+
 const net =
   process.env.NETWORK ||
   (process.env.CHAIN_ID === '31337' ? 'localhost' : 'localhost');
@@ -35,7 +40,7 @@ function renderKeyValues(record: Record<string, string>): string {
   const validate = load('validate.json');
   const finalize = load('finalize.json');
   const stake = load('stake.json');
-  const governance = load('governance.json');
+  const governance = load('governance.json') as GovernanceLog | null;
 
   if (deploy && deploy.contracts) {
     parts.push(section('Deployment Summary'));
@@ -55,6 +60,7 @@ function renderKeyValues(record: Record<string, string>): string {
     if (post.reward) parts.push('- **Reward**: ' + post.reward);
     if (post.deadline) parts.push('- **Deadline**: ' + post.deadline);
     if (post.specHash) parts.push('- **Spec hash**: `' + post.specHash + '`');
+    if (post.specUri) parts.push('- **Spec URI**: ' + post.specUri);
   }
 
   if (stake && stake.entries) {
@@ -69,7 +75,7 @@ function renderKeyValues(record: Record<string, string>): string {
           entry.amount +
           ' (tx: `' +
           entry.txHash +
-          '`)'
+          '`)' 
       );
     }
   }
@@ -83,9 +89,7 @@ function renderKeyValues(record: Record<string, string>): string {
 
   if (validate && validate.validators) {
     parts.push(section('Validation'));
-    for (const validator of validate.validators as Array<
-      Record<string, unknown>
-    >) {
+    for (const validator of validate.validators as Array<Record<string, unknown>>) {
       parts.push(
         '- Validator `' +
           validator.address +
@@ -120,18 +124,19 @@ function renderKeyValues(record: Record<string, string>): string {
     }
   }
 
-  if (governance && governance.thermostat) {
-    const updates = governance.thermostat as Array<Record<string, string>>;
-    if (updates.length > 0) {
-      parts.push(section('Governance Tuning'));
-      for (const update of updates) {
-        const tx = update.txHash ? ` (tx: \`${update.txHash}\`)` : '';
-        parts.push(
-          `- ${update.action}: ${update.before} → ${update.after}${tx}`
-        );
-  if (governance && Array.isArray(governance.actions)) {
+  if (governance?.thermostat && governance.thermostat.length > 0) {
+    parts.push(section('Thermostat Tuning'));
+    for (const update of governance.thermostat) {
+      const tx = update.txHash ? ` (tx: \`${update.txHash}\`)` : '';
+      parts.push(
+        `- ${update.action}: ${update.before} → ${update.after}${tx}`
+      );
+    }
+  }
+
+  if (governance?.actions && governance.actions.length > 0) {
     parts.push(section('Governance & Controls'));
-    for (const action of governance.actions as Array<Record<string, any>>) {
+    for (const action of governance.actions) {
       const header =
         '- **' +
         action.target +
@@ -150,10 +155,14 @@ function renderKeyValues(record: Record<string, string>): string {
         parts.push('  - Params: ' + JSON.stringify(action.params));
       }
       if (action.before) {
-        parts.push('  - Before: ' + renderKeyValues(action.before as Record<string, string>));
+        parts.push(
+          '  - Before: ' + renderKeyValues(action.before as Record<string, string>)
+        );
       }
       if (action.after) {
-        parts.push('  - After: ' + renderKeyValues(action.after as Record<string, string>));
+        parts.push(
+          '  - After: ' + renderKeyValues(action.after as Record<string, string>)
+        );
       }
     }
   }
