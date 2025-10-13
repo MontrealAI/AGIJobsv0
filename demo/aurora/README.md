@@ -1,6 +1,6 @@
 # Project AURORA — AGI Jobs v0 (v2) ASI Take‑Off Demo
 
-**A planetary‑scale, auditable coordination sprint**: governed job posting, stake‑backed K‑of‑N validation with commit→reveal, dispute hooks, dynamic incentives via Thermostat/Energy Oracle, and operator dashboards — using only v2 capabilities.
+**A planetary‑scale, auditable coordination sprint**: governed job posting, stake‑backed K‑of‑N validation with commit→reveal, dispute hooks, dynamic incentives via Thermostat/Energy Oracle, operator dashboards — using only v2 capabilities.
 
 ---
 
@@ -9,28 +9,26 @@
 Local (Anvil):
 
 ```bash
-cp demo/aurora/env.example .env
+cp demo/aurora/env.example .env  
 npm run demo:aurora:local
 ```
 
 Target network:
 
 ```bash
-# ensure RPC + keys in env
+# ensure RPC + keys in env  
 npm run demo:aurora:sepolia
 ```
 
-**Outputs**
+Outputs:
 
-* `reports/<network>/aurora/receipts/*.json`
-* `reports/<network>/aurora/aurora-report.md`
-* Governance/owner snapshots can be generated via the existing owner tooling
+reports/<network>/aurora/receipts/*.json
 
----
+reports/<network>/aurora/aurora-report.md
 
-## System (high level)
+Governance/owner snapshots (via existing owner-tools)
 
-```mermaid
+System (high level)
 flowchart LR
   subgraph Governance
     G[Safe / Timelock]
@@ -58,11 +56,8 @@ flowchart LR
   JR --> VM --> DM --> JR
   JR --> SM
   JR --> RE
-```
 
-## Lifecycle (AURORA)
-
-```mermaid
+Lifecycle (AURORA)
 sequenceDiagram
     participant Emp as Employer
     participant Ag as Agent
@@ -84,21 +79,20 @@ sequenceDiagram
     VM->>JR: quorum reached
     opt challenge window
       *->>DM: raiseDispute(evidenceURI)
-      DM->>JR: resolve → outcome
+      DM->>JR: resolve→outcome
     end
     JR->>SM: settle escrow
-    TH->>MB: provide T / energy
+    TH->>MB: provide T/energy
     MB->>SM: distribute rewards
-```
 
----
+Runbook
 
-## Runbook
+See RUNBOOK.md for exact commands that call:
 
-See [`RUNBOOK.md`](./RUNBOOK.md) for the step‑by‑step orchestration, including:
+examples/ethers-quickstart.js → postJob, acknowledgeTaxPolicy, approveStake, prepareStake, stake, submit, computeValidationCommit, validate
 
-* Wiring checks and deployment via `scripts/v2/deployDefaults.ts`
-* Automated module configuration and staking handled by `aurora.demo.ts`
-* Receipt collection and the Markdown mission report summarised by `aurora-report.ts`
+Hardhat scripts in scripts/v2 for updateThermodynamics.ts (dry-run then execute)
 
-All receipts land under `reports/<net>/aurora/`. A Markdown summary is generated at `reports/<net>/aurora/aurora-report.md`.
+Owner tooling: owner:verify-control, owner:dashboard, owner:pulse
+
+All receipts land under reports/<net>/aurora/. A Markdown summary is generated at reports/<net>/aurora/aurora-report.md.

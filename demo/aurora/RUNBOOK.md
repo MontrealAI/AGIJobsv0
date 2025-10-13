@@ -10,22 +10,28 @@ npm run demo:aurora:local
 
 This:
 
-1. Boots `anvil`.
-2. Deploys v2 defaults (`scripts/v2/deployDefaults.ts`) with verification disabled for speed and writes a deployment summary.
-3. Mints mock `$AGIALPHA`, configures validator bounds, and runs the full job lifecycle end‑to‑end.
-4. Captures receipts + owner snapshots, and
-5. Writes `aurora-report.md` summarising the mission.
+boots anvil,
 
-## Target network
+deploys v2 defaults (scripts/v2/deployDefaults.ts),
 
-```bash
-# set RPC_URL, CHAIN_ID, signer keys and module addresses
+runs the end-to-end flow with quickstart helpers,
+
+(optional) dry-runs a thermostat update (scripts/v2/updateThermodynamics.ts),
+
+captures receipts + owner snapshots, and
+
+writes aurora-report.md.
+
+Target network
+# set RPC_URL, CHAIN_ID, and signer  
 npm run demo:aurora:sepolia
-```
 
-## What to expect
+What to expect
 
-* `JobCreated`, `ResultSubmitted`, `ValidationCommit`, `ValidationReveal`, `JobCompleted`
-* Stake balances + payouts recorded as JSON receipts
-* `owner:verify-control` diff = clean
-* Report files under `reports/<net>/aurora/`
+JobCreated, JobSubmitted, ValidationCommitted/Reveal, JobFinalized
+
+Stake balances + payouts
+
+owner:verify-control diff = clean
+
+Report files under reports/<net>/aurora/
