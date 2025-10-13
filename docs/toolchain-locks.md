@@ -8,7 +8,7 @@ versions, how they are enforced, and the safe procedure for updating them.
 
 | Tool | Version | Enforcement | Notes |
 | --- | --- | --- | --- |
-| Node.js | 20.18.1 | `.nvmrc`, `package.json` `engines.node`, CI `actions/setup-node` steps, and `npm run ci:verify-toolchain` | Matches Active LTS. Changing the file requires bumping `package-lock.json` via `npm ci` under the new runtime. |
+| Node.js | 20.19.0 | `.nvmrc`, `package.json` `engines.node`, CI `actions/setup-node` steps, `.npmrc` `cypress_skip_binary_install`, and `npm run ci:verify-toolchain` | Matches Active LTS. Changing the file requires bumping `package-lock.json` via `npm ci` under the new runtime. `.npmrc` disables automatic Cypress binary downloads so hardened runners can complete `npm ci`; run `npx cypress install` before launching UI tests. |
 | Foundry toolchain | v1.4.0 | `foundry-rs/foundry-toolchain@v1` steps in every workflow explicitly request `v1.4.0`; `ci:verify-toolchain` asserts the pin | Guarantees that `forge`/`anvil`/`cast` behave consistently across CI, fuzzing, and release pipelines. |
 
 ## Why the lock matters

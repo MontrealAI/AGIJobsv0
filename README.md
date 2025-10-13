@@ -11,8 +11,9 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 
 ## Prerequisites
 
-- Node.js 20.18.1 LTS and npm 10+
+- Node.js 20.19.0 LTS and npm 10+
 - Run `nvm use` to select the version from `.nvmrc`.
+- If you need to execute Cypress E2E suites, run `npx cypress install` once after `npm ci` to download the binary (the default `.npmrc` skips it during CI installs).
 
 ## Continuous Integration (CI v2)
 
