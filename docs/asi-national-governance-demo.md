@@ -209,12 +209,23 @@ entire flow runs inside CI.
    The output enumerates every governance command executed and their
    resulting contract hashes.【F:scripts/v2/ownerMissionControl.ts†L35-L276】
 
-3. **Branch protection evidence.** Attach the latest
+3. **Governance kit manifest.** Combine the plan of record with dry-run,
+   thermodynamic, and mission-control artefacts into a hashed dossier:
+
+   ```bash
+   npm run demo:asi-takeoff:kit -- --report-root reports/localhost/asi-takeoff --summary-md reports/localhost/asi-takeoff/asi-takeoff-report.md --bundle reports/localhost/asi-takeoff/receipts
+   ```
+
+   The generated `governance-kit.{json,md}` files provide a turnkey audit
+   bundle for non-technical owners, showing integrity hashes and control
+   checklist entries produced by `scripts/v2/lib/asiTakeoffKit.ts`.【F:scripts/v2/lib/asiTakeoffKit.ts†L1-L340】
+
+4. **Branch protection evidence.** Attach the latest
    `npm run ci:verify-branch-protection` transcript and test matrix from
    `.github/workflows/` to the release dossier to prove CI gating is
    enforced as part of the demo acceptance.
 
-4. **Continuous observability.** Collect Prometheus metrics from
+5. **Continuous observability.** Collect Prometheus metrics from
    `/onebox/metrics` and structured logs keyed by the `planHash` so the
    audit trail ties API activity to blockchain receipts.【F:routes/onebox.py†L209-L237】【F:routes/onebox.py†L1765-L1905】
 

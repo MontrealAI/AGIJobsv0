@@ -4,6 +4,8 @@ import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+import { generateAsiTakeoffKit } from './lib/asiTakeoffKit';
+
 interface CommandStep {
   key: string;
   title: string;
@@ -46,6 +48,12 @@ function resolveFromRoot(relativeOrAbsolutePath: string): string {
 const PLAN_PATH = resolveFromRoot(process.env.ASI_TAKEOFF_PLAN ?? path.join('demo', 'asi-takeoff', 'project-plan.json'));
 const REPORT_ROOT = resolveFromRoot(process.env.ASI_TAKEOFF_REPORT_ROOT ?? path.join('reports', 'asi-takeoff'));
 const LOG_ROOT = path.join(REPORT_ROOT, 'logs');
+const PLAN_OVERRIDE = process.env.ASI_TAKEOFF_PLAN_PATH;
+const PLAN_PATH = PLAN_OVERRIDE
+  ? path.isAbsolute(PLAN_OVERRIDE)
+    ? PLAN_OVERRIDE
+    : path.resolve(ROOT, PLAN_OVERRIDE)
+  : path.join(ROOT, 'demo', 'asi-takeoff', 'project-plan.json');
 const DRY_RUN_PATH = path.join(REPORT_ROOT, 'dry-run.json');
 const THERMODYNAMICS_PATH = path.join(REPORT_ROOT, 'thermodynamics.json');
 const MISSION_CONTROL_PATH = path.join(REPORT_ROOT, 'mission-control.md');
@@ -332,6 +340,19 @@ async function main(): Promise<void> {
   await writeSummary(plan, dryRunReport);
 
   process.stdout.write(`\nDemo artefacts generated at ${path.relative(ROOT, REPORT_ROOT)}.\n`);
+  await generateAsiTakeoffKit({
+    planPath: PLAN_PATH,
+    reportRoot: REPORT_ROOT,
+    dryRunPath: DRY_RUN_PATH,
+    thermodynamicsPath: THERMODYNAMICS_PATH,
+    missionControlPath: MISSION_CONTROL_PATH,
+    summaryJsonPath: SUMMARY_JSON_PATH,
+    summaryMarkdownPath: SUMMARY_MD_PATH,
+    bundleDir: BUNDLE_ROOT,
+    logDir: LOG_ROOT,
+  });
+
+  process.stdout.write('\nDemo artefacts generated at reports/asi-takeoff.\n');
 }
 
 main().catch((error) => {
