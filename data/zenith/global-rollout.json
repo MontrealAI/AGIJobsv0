@@ -1,0 +1,45 @@
+{
+  "name": "global-rollout",
+  "epochs": 12,
+  "streams": [
+    {
+      "id": "climate-carbon",
+      "policy": "CarbonDrawdownPolicy",
+      "budget": "2500000",
+      "thermostat": {
+        "temperature": "0.82",
+        "entropyGuard": "balanced"
+      },
+      "telemetryFeeds": [
+        "monitoring/onchain/parameter-change-sentinel.json",
+        "agent-gateway/telemetry.ts"
+      ]
+    },
+    {
+      "id": "civic-relief",
+      "policy": "DisasterReliefMeshPolicy",
+      "budget": "1800000",
+      "thermostat": {
+        "temperature": "0.91",
+        "entropyGuard": "resilient"
+      },
+      "telemetryFeeds": [
+        "monitoring/onchain/pause-governance-sentinel.json",
+        "monitoring/grafana/dashboard-agi-ops.json"
+      ]
+    },
+    {
+      "id": "frontier-research",
+      "policy": "OpenResearchMilestonePolicy",
+      "budget": "3200000",
+      "thermostat": {
+        "temperature": "0.76",
+        "entropyGuard": "focused"
+      },
+      "telemetryFeeds": [
+        "attestation/eas/package.json",
+        "docs/asi-feasibility-crosswalk.md"
+      ]
+    }
+  ]
+}
