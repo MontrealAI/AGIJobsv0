@@ -1,0 +1,13 @@
+{
+  "name": "Infinity Critical Infrastructure Lattice",
+  "version": "v2",
+  "domains": ["infrastructure", "energy", "logistics"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://infinity-symphony/critical-infra/criteria",
+  "validation": { "k": 2, "n": 4 },
+  "challengeWindowSec": 172800,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "190000000" },
+  "stake": { "worker": "310000000", "validator": "650000000" },
+  "resultSchema": "ipfs://infinity-symphony/critical-infra/schema",
+  "notes": "Deploys supergrid, transit, and quantum communications upgrades with deterministic supply and validation loops."
+}

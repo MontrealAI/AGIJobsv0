@@ -1,0 +1,13 @@
+{
+  "name": "Infinity Planetary Trade Harmonics",
+  "version": "v2",
+  "domains": ["trade", "finance", "sustainability"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://infinity-symphony/trade-harmonics/criteria",
+  "validation": { "k": 2, "n": 4 },
+  "challengeWindowSec": 216000,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "170000000" },
+  "stake": { "worker": "270000000", "validator": "520000000" },
+  "resultSchema": "ipfs://infinity-symphony/trade-harmonics/schema",
+  "notes": "Balances settlement, carbon clearing, and validator diplomacy using commit-reveal checkpoints and owner-controlled thermostat tuning."
+}

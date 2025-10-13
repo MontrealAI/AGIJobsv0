@@ -1,0 +1,19 @@
+{
+  "systemTemperature": "8",
+  "temperatureBounds": { "min": "-12", "max": "18" },
+  "integralBounds": { "min": "-30", "max": "30" },
+  "pid": { "kp": "5", "ki": "2", "kd": "3" },
+  "kpiWeights": { "emission": "4", "backlog": "3", "sla": "5", "equity": "4" },
+  "roleTemperatures": {
+    "agent": "7",
+    "validator": "6",
+    "operator": "5",
+    "treasury": "4",
+    "employer": "3"
+  },
+  "escalation": {
+    "pauseThreshold": "12",
+    "validatorBonus": "9",
+    "entropyFloor": "-6"
+  }
+}
