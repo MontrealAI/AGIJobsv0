@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$ROOT"
 
 NET="localhost"
@@ -25,7 +25,7 @@ done
 # 2) deploy v2 defaults (governance = first anvil account by default)
 DEPLOY_DEFAULTS_SKIP_VERIFY=1 \
 DEPLOY_DEFAULTS_OUTPUT="$DEPLOY_OUTPUT" \
-npx hardhat run scripts/v2/deployDefaults.ts --network localhost
+npx hardhat run ./scripts/v2/deployDefaults.ts --network localhost
 
 # 3) run the end-to-end orchestrator
 AURORA_DEPLOY_OUTPUT="$DEPLOY_OUTPUT" \

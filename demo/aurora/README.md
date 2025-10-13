@@ -22,7 +22,8 @@ npm run demo:aurora:sepolia
 
 **Outputs**
 
-* `reports/<network>/aurora/receipts/*.json`
+* `reports/<network>/aurora/receipts/*.json` — includes lifecycle (`state.json`),
+  governance control proofs (`governance.json`), thermostat runs, and per-step receipts.
 * `reports/<network>/aurora/aurora-report.md`
 * Governance/owner snapshots can be generated via the existing owner tooling
 
@@ -99,6 +100,7 @@ See [`RUNBOOK.md`](./RUNBOOK.md) for the step‑by‑step orchestration, includi
 
 * Wiring checks and deployment via `scripts/v2/deployDefaults.ts`
 * Automated module configuration and staking handled by `aurora.demo.ts`
+* Lifecycle/state tracking, pause/unpause proofs, and thermostat dry-run receipts written to `reports/<net>/aurora/receipts`
 * Receipt collection and the Markdown mission report summarised by `aurora-report.ts`
 
 All receipts land under `reports/<net>/aurora/`. A Markdown summary is generated at `reports/<net>/aurora/aurora-report.md`.
