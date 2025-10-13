@@ -2,7 +2,9 @@
 import fs from 'fs';
 import path from 'path';
 
-const net = process.env.NETWORK || (process.env.CHAIN_ID === '31337' ? 'localhost' : 'localhost');
+const net =
+  process.env.NETWORK ||
+  (process.env.CHAIN_ID === '31337' ? 'localhost' : 'localhost');
 const outDir = path.join('reports', net, 'aurora', 'receipts');
 const mdFile = path.join('reports', net, 'aurora', 'aurora-report.md');
 
@@ -39,7 +41,9 @@ function renderKeyValues(record: Record<string, string>): string {
     parts.push(section('Deployment Summary'));
     parts.push('| Module | Address |');
     parts.push('| --- | --- |');
-    for (const [name, address] of Object.entries(deploy.contracts as Record<string, string>)) {
+    for (const [name, address] of Object.entries(
+      deploy.contracts as Record<string, string>
+    )) {
       parts.push('| ' + name + ' | `' + address + '` |');
     }
   }
@@ -79,7 +83,9 @@ function renderKeyValues(record: Record<string, string>): string {
 
   if (validate && validate.validators) {
     parts.push(section('Validation'));
-    for (const validator of validate.validators as Array<Record<string, unknown>>) {
+    for (const validator of validate.validators as Array<
+      Record<string, unknown>
+    >) {
       parts.push(
         '- Validator `' +
           validator.address +
@@ -97,7 +103,9 @@ function renderKeyValues(record: Record<string, string>): string {
 
   if (finalize && finalize.payouts) {
     parts.push(section('Payouts'));
-    for (const [address, payout] of Object.entries(finalize.payouts as Record<string, any>)) {
+    for (const [address, payout] of Object.entries(
+      finalize.payouts as Record<string, any>
+    )) {
       parts.push(
         '- ' +
           address +
@@ -112,6 +120,15 @@ function renderKeyValues(record: Record<string, string>): string {
     }
   }
 
+  if (governance && governance.thermostat) {
+    const updates = governance.thermostat as Array<Record<string, string>>;
+    if (updates.length > 0) {
+      parts.push(section('Governance Tuning'));
+      for (const update of updates) {
+        const tx = update.txHash ? ` (tx: \`${update.txHash}\`)` : '';
+        parts.push(
+          `- ${update.action}: ${update.before} → ${update.after}${tx}`
+        );
   if (governance && Array.isArray(governance.actions)) {
     parts.push(section('Governance & Controls'));
     for (const action of governance.actions as Array<Record<string, any>>) {
