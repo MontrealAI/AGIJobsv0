@@ -14,6 +14,14 @@ for i in {1..60}; do
     break
   fi
   sleep 0.5
+  if ! kill -0 "$NODE_PID" >/dev/null 2>&1; then
+    echo "❌ Local node exited unexpectedly. Inspect $LOG_FILE for details." >&2
+    exit 1
+  fi
+  if [[ $attempt -eq 120 ]]; then
+    echo "❌ Timed out waiting for local node. Inspect $LOG_FILE for details." >&2
+    exit 1
+  fi
 done
 
 npx hardhat run scripts/v2/deployDefaults.ts --network localhost
