@@ -38,6 +38,14 @@ cp demo/asi-takeoff/env.example .env
 npm run demo:asi-takeoff:local
 ```
 
+To run the planetary-scale energy coordination drill, point the orchestrator at
+the dedicated plan file before invoking the pipeline:
+
+```bash
+export ASI_TAKEOFF_PLAN_PATH=demo/asi-takeoff/project-plan.planetary.json
+npm run demo:asi-takeoff:local
+```
+
 Generate the Markdown mission report:
 
 ```bash
@@ -49,6 +57,9 @@ Artifacts:
 - `reports/<network>/asi-takeoff/receipts/mission.json`
 - `reports/<network>/asi-takeoff/receipts/jobs/<slug>/*.json`
 - `reports/<network>/asi-takeoff/asi-takeoff-report.md`
+
+Planetary energy stabilization artefacts resolve to `*.planetary.*` files and
+mirror the standard receipt layout for long-term archival.
 
 ---
 

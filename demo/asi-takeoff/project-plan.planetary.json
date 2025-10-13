@@ -1,0 +1,149 @@
+{
+  "initiative": "Planetary Grid Stabilization Mandate",
+  "objective": "Coordinate regional energy swaps, renewable acceleration, and policy ratification across three continents within 30 simulated days using only AGI Jobs v2 primitives.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "780000"
+  },
+  "governance": {
+    "owner": "0xASI-PLANETARY-GOVERNOR",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xASI-EARTH-TREASURY",
+    "thermostat": {
+      "initialTemperature": "0.22",
+      "emergencyTemperature": "0.41",
+      "updateScript": "scripts/v2/updateThermodynamics.ts"
+    }
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "asia.grid.agent.agi.eth",
+        "role": "Pan-Asia Balancing Cooperative",
+        "capabilities": [
+          "Renewable forecasting",
+          "Cross-border HVDC orchestration",
+          "Liquidity routing"
+        ]
+      },
+      {
+        "handle": "europe.grid.agent.agi.eth",
+        "role": "European Resilience Coordinator",
+        "capabilities": [
+          "Demand shedding",
+          "Microgrid reconciliation",
+          "Validator liaison"
+        ]
+      },
+      {
+        "handle": "africa.grid.agent.agi.eth",
+        "role": "Pan-African Renewable Syndicate",
+        "capabilities": [
+          "Solar build-out",
+          "Battery allocation",
+          "On-chain compliance"
+        ]
+      },
+      {
+        "handle": "planetary.planner.agent.agi.eth",
+        "role": "Planetary Systems Architect",
+        "capabilities": [
+          "Thermodynamic optimization",
+          "Tax surface modelling",
+          "Mission bundle synthesis"
+        ]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "un.energy.club.agi.eth",
+        "stake": "140000",
+        "mandate": "UN energy transition oversight"
+      },
+      {
+        "handle": "gridwatch.club.agi.eth",
+        "stake": "105000",
+        "mandate": "Telemetry integrity and anomaly response"
+      },
+      {
+        "handle": "sovereign.audit.club.agi.eth",
+        "stake": "89000",
+        "mandate": "Cross-border treaty enforcement"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "SURPLUS-ASIA",
+      "title": "Quantify renewable surplus across ASEAN smart grids",
+      "reward": "110000",
+      "deadlineDays": 7,
+      "dependencies": [],
+      "energyBudget": "18000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.18",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "DEFICIT-EUROPE",
+      "title": "Model continental deficit curves and emergency reserves",
+      "reward": "96000",
+      "deadlineDays": 7,
+      "dependencies": ["SURPLUS-ASIA"],
+      "energyBudget": "15000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.14",
+        "adjustmentOnDelay": "increase-validator-share"
+      }
+    },
+    {
+      "id": "SURGE-AFRICA",
+      "title": "Deploy rapid-build solar and battery fields",
+      "reward": "125000",
+      "deadlineDays": 10,
+      "dependencies": ["SURPLUS-ASIA"],
+      "energyBudget": "22000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.21",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "PLANETARY-LEDGER",
+      "title": "Synthesize planetary swap ledger and validator incentives",
+      "reward": "180000",
+      "deadlineDays": 12,
+      "dependencies": ["DEFICIT-EUROPE", "SURGE-AFRICA"],
+      "energyBudget": "32000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.11",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "EXECUTE-LIQUIDITY",
+      "title": "Execute tokenized liquidity swaps and treasury settlement",
+      "reward": "169000",
+      "deadlineDays": 12,
+      "dependencies": ["PLANETARY-LEDGER"],
+      "energyBudget": "27000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/asi-takeoff/dry-run.planetary.json",
+      "thermodynamics": "reports/asi-takeoff/thermodynamics.planetary.json",
+      "missionControl": "reports/asi-takeoff/mission-control.planetary.md",
+      "summary": "reports/asi-takeoff/summary.planetary.md"
+    },
+    "dashboards": [
+      "reports/asi-takeoff/mission-control.planetary.md",
+      "reports/asi-takeoff/thermodynamics.planetary.json"
+    ]
+  }
+}
