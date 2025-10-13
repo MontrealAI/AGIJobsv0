@@ -218,8 +218,8 @@ function writeReceipt(net: string, name: string, data: unknown) {
   const dir = path.join(baseDir, 'receipts');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
-  const baseDir = path.join('reports', net, REPORT_SCOPE, 'receipts');
-  const outputPath = path.join(baseDir, name);
+  const legacyDir = path.join('reports', net, REPORT_SCOPE, 'receipts');
+  const outputPath = path.join(legacyDir, name);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
 }
@@ -228,9 +228,8 @@ function resolveDeploySummaryPath(net: string): string {
   if (process.env.AURORA_DEPLOY_OUTPUT) {
     return path.resolve(process.env.AURORA_DEPLOY_OUTPUT);
   }
-  const baseDir = resolveReportBaseDir(net);
-  return path.resolve(baseDir, 'receipts', 'deploy.json');
-  return path.resolve('reports', net, REPORT_SCOPE, 'receipts', 'deploy.json');
+  const namespace = resolveReportNamespace();
+  return path.resolve('reports', net, namespace, 'receipts', 'deploy.json');
 }
 
 function specAmountToWei(
