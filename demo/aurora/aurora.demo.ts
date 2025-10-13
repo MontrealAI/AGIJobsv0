@@ -6,7 +6,7 @@ import { randomBytes } from 'crypto';
 import { ethers } from 'ethers';
 
 type DeploySummary = {
-  contracts: Record<string, string>;
+  contracts?: Record<string, string>;
   network?: string;
   governance?: string;
 };
@@ -78,12 +78,46 @@ function formatUnits(value: bigint, decimals: number): string {
   return ethers.formatUnits(value, decimals);
 }
 
+function normaliseAddress(value: string | undefined | null): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === ethers.ZeroAddress) return undefined;
+  try {
+    return ethers.getAddress(trimmed);
+  } catch (error) {
+    throw new Error(`Invalid address configured for AURORA demo: ${trimmed}`);
+  }
+}
+
+function isMethodUnavailable(error: unknown): boolean {
+  if (!error) return false;
+  const message = (error as Error).message || '';
+  return (
+    /method .* not found/i.test(message) || /(does not exist|is not available)/i.test(message)
+  );
+}
+
+async function tryRpc(
+  provider: ethers.JsonRpcProvider,
+  method: string,
+  params: unknown[]
+): Promise<boolean> {
+  try {
+    await provider.send(method, params);
+    return true;
+  } catch (error) {
+    if (isMethodUnavailable(error)) {
+      return false;
+    }
+    throw error;
+  }
+}
+
 async function ensureAgialpha(
   provider: ethers.JsonRpcProvider,
   owner: ethers.Wallet
 ) {
   const tokenAddress = ethers.getAddress(AGIALPHA_CONFIG.address);
-  const code = await provider.getCode(tokenAddress);
   const artifactPath = path.join(
     'artifacts',
     'contracts',
@@ -99,14 +133,41 @@ async function ensureAgialpha(
     deployedBytecode: string;
   };
 
+  let code = await provider.getCode(tokenAddress);
   if (code === '0x') {
-    await provider.send('hardhat_setCode', [tokenAddress, artifact.deployedBytecode]);
-    const ownerSlot = ethers.toBeHex(5, 32);
-    const ownerValue = ethers.zeroPadValue(await owner.getAddress(), 32);
-    await provider.send('hardhat_setStorageAt', [tokenAddress, ownerSlot, ownerValue]);
+    const setCodeSuccess =
+      (await tryRpc(provider, 'hardhat_setCode', [tokenAddress, artifact.deployedBytecode])) ||
+      (await tryRpc(provider, 'anvil_setCode', [tokenAddress, artifact.deployedBytecode]));
+
+    if (!setCodeSuccess) {
+      throw new Error(
+        `AGIALPHA token not deployed at ${tokenAddress}. Provide a live token or run on a local fork that supports hardhat_setCode/anvil_setCode.`
+      );
+    }
+    code = artifact.deployedBytecode;
   }
 
-  return new ethers.Contract(tokenAddress, artifact.abi, owner);
+  const token = new ethers.Contract(tokenAddress, artifact.abi, owner);
+
+  if (typeof token.owner === 'function') {
+    const currentOwner = (await token.owner().catch(() => undefined)) as string | undefined;
+    const desiredOwner = await owner.getAddress();
+    if (!currentOwner || ethers.getAddress(currentOwner) !== desiredOwner) {
+      const ownerSlot = ethers.toBeHex(5, 32);
+      const ownerValue = ethers.zeroPadValue(desiredOwner, 32);
+      const setOwnerSuccess =
+        (await tryRpc(provider, 'hardhat_setStorageAt', [tokenAddress, ownerSlot, ownerValue])) ||
+        (await tryRpc(provider, 'anvil_setStorageAt', [tokenAddress, ownerSlot, ownerValue]));
+
+      if (!setOwnerSuccess) {
+        throw new Error(
+          'Unable to obtain control of AGIALPHA token. Ensure the configured PRIVATE_KEY owns the token or preconfigure allowances.'
+        );
+      }
+    }
+  }
+
+  return token;
 }
 
 async function executeGovernanceCall(
@@ -177,12 +238,70 @@ async function main() {
   const validators = selectedValidatorKeys.map((key) => new ethers.Wallet(key, provider));
 
   const summaryPath = resolveDeploySummaryPath(networkName);
-  const deploySummary = readJsonFile<DeploySummary>(summaryPath);
-  if (!deploySummary.contracts) {
-    throw new Error(`Deployment summary missing contracts map: ${summaryPath}`);
+  let deploySummary: DeploySummary | null = null;
+  try {
+    deploySummary = readJsonFile<DeploySummary>(summaryPath);
+  } catch (error) {
+    if (
+      !process.env.JOB_REGISTRY &&
+      !process.env.JOB_REGISTRY_ADDRESS &&
+      !process.env.STAKE_MANAGER &&
+      !process.env.STAKE_MANAGER_ADDRESS
+    ) {
+      throw error;
+    }
+    console.warn(
+      `⚠️  Deployment summary not found at ${summaryPath}; falling back to environment variables. (${(error as Error).message})`
+    );
   }
 
-  const addresses = deploySummary.contracts;
+  const summaryContracts = deploySummary?.contracts ?? {};
+  const resolvedAddresses: Record<string, string | undefined> = {
+    JobRegistry:
+      normaliseAddress(summaryContracts.JobRegistry) ||
+      normaliseAddress(process.env.JOB_REGISTRY) ||
+      normaliseAddress(process.env.JOB_REGISTRY_ADDRESS),
+    StakeManager:
+      normaliseAddress(summaryContracts.StakeManager) ||
+      normaliseAddress(process.env.STAKE_MANAGER) ||
+      normaliseAddress(process.env.STAKE_MANAGER_ADDRESS),
+    ValidationModule:
+      normaliseAddress(summaryContracts.ValidationModule) ||
+      normaliseAddress(process.env.VALIDATION_MODULE) ||
+      normaliseAddress(process.env.VALIDATION_MODULE_ADDRESS),
+    IdentityRegistry:
+      normaliseAddress(summaryContracts.IdentityRegistry) ||
+      normaliseAddress(process.env.IDENTITY_REGISTRY) ||
+      normaliseAddress(process.env.IDENTITY_REGISTRY_ADDRESS),
+    SystemPause:
+      normaliseAddress(summaryContracts.SystemPause) ||
+      normaliseAddress(process.env.SYSTEM_PAUSE) ||
+      normaliseAddress(process.env.SYSTEM_PAUSE_ADDRESS),
+  };
+
+  const missingAddresses = Object.entries(resolvedAddresses)
+    .filter(([, value]) => !value)
+    .map(([label]) => label);
+  if (missingAddresses.length > 0) {
+    throw new Error(
+      `Missing contract addresses for: ${missingAddresses.join(', ')}. Provide a deployment summary or set the corresponding environment variables.`
+    );
+  }
+
+  const addresses = resolvedAddresses as Record<string, string>;
+
+  const agialphaAddress = ethers.getAddress(AGIALPHA_CONFIG.address);
+  process.env.AGIALPHA_TOKEN = agialphaAddress;
+  process.env.JOB_REGISTRY = addresses.JobRegistry;
+  process.env.JOB_REGISTRY_ADDRESS = addresses.JobRegistry;
+  process.env.STAKE_MANAGER = addresses.StakeManager;
+  process.env.STAKE_MANAGER_ADDRESS = addresses.StakeManager;
+  process.env.VALIDATION_MODULE = addresses.ValidationModule;
+  process.env.VALIDATION_MODULE_ADDRESS = addresses.ValidationModule;
+  process.env.IDENTITY_REGISTRY = addresses.IdentityRegistry;
+  process.env.IDENTITY_REGISTRY_ADDRESS = addresses.IdentityRegistry;
+  process.env.SYSTEM_PAUSE = addresses.SystemPause;
+  process.env.SYSTEM_PAUSE_ADDRESS = addresses.SystemPause;
 
   const artifact = (name: string) =>
     JSON.parse(
