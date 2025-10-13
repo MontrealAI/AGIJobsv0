@@ -86,7 +86,15 @@ interface StepHandlerDetail {
   actor?: string;
 }
 
+let attemptedArtifactCompile = false;
+
 async function ensureArtifact(name: string): Promise<void> {
+  if (!(await artifacts.artifactExists(name))) {
+    if (!attemptedArtifactCompile) {
+      attemptedArtifactCompile = true;
+      await hre.run('compile');
+    }
+  }
   if (!(await artifacts.artifactExists(name))) {
     throw new Error(
       `Artifact ${name} not found. Run "npx hardhat compile" before executing the dry-run harness.`
@@ -110,6 +118,8 @@ interface JobFixture {
   nft: any;
   registry: any;
   dispute: any;
+  feePool: any;
+  taxPolicy: any;
 }
 
 const ROLE_AGENT = 0;
@@ -232,9 +242,10 @@ async function deployJobFixture(): Promise<JobFixture> {
   );
 
   const stakeAmount = ethers.parseUnits('1000', AGIALPHA_DECIMALS);
-  await token.mint(employer.address, stakeAmount);
-  await token.mint(agent.address, stakeAmount);
-  await token.mint(buyer.address, stakeAmount);
+  const mint = token.connect(owner).getFunction('mint');
+  await mint(employer.address, stakeAmount);
+  await mint(agent.address, stakeAmount);
+  await mint(buyer.address, stakeAmount);
 
   const Stake = await ethers.getContractFactory(
     'contracts/v2/StakeManager.sol:StakeManager'
@@ -247,6 +258,26 @@ async function deployJobFixture(): Promise<JobFixture> {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     owner.address
+  );
+
+  await mint(await stake.getAddress(), 0);
+
+  const TaxPolicy = await ethers.getContractFactory(
+    'contracts/v2/TaxPolicy.sol:TaxPolicy'
+  );
+  const taxPolicy = await TaxPolicy.deploy(
+    'ipfs://policy',
+    'Employers, agents, and validators bear all tax obligations.'
+  );
+
+  const FeePool = await ethers.getContractFactory(
+    'contracts/v2/FeePool.sol:FeePool'
+  );
+  const feePool = await FeePool.deploy(
+    await stake.getAddress(),
+    0,
+    ethers.ZeroAddress,
+    await taxPolicy.getAddress()
   );
 
   const Reputation = await ethers.getContractFactory(
@@ -321,12 +352,17 @@ async function deployJobFixture(): Promise<JobFixture> {
     await reputation.getAddress(),
     await dispute.getAddress(),
     await nft.getAddress(),
-    ethers.ZeroAddress,
+    await feePool.getAddress(),
     []
   );
   await registry.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
-  await reputation.setPremiumThreshold(10);
+  await reputation.setPremiumThreshold(0);
+  await identity.addAdditionalAgent(agent.address);
+  await stake.setFeePool(await feePool.getAddress());
+  await feePool.setTaxPolicy(await taxPolicy.getAddress());
+  await dispute.setTaxPolicy(await taxPolicy.getAddress());
+  await registry.setTaxPolicy(await taxPolicy.getAddress());
 
   return {
     owner,
@@ -344,6 +380,8 @@ async function deployJobFixture(): Promise<JobFixture> {
     nft,
     registry,
     dispute,
+    feePool,
+    taxPolicy,
   };
 }
 
@@ -399,6 +437,30 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
   );
   await envFixture.wrapper.setOwner(BigInt(subnode), envFixture.agent.address);
 
+  await runStep(
+    steps,
+    'job.employer-ack',
+    'Employer acknowledges tax policy',
+    async () => ({
+      tx: await envFixture.taxPolicy
+        .connect(envFixture.employer)
+        .acknowledge(),
+      actor: envFixture.employer.address,
+    })
+  );
+
+  await runStep(
+    steps,
+    'job.agent-ack',
+    'Agent acknowledges tax policy',
+    async () => ({
+      tx: await envFixture.taxPolicy
+        .connect(envFixture.agent)
+        .acknowledge(),
+      actor: envFixture.agent.address,
+    })
+  );
+
   const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
   await runStep(
     steps,
@@ -425,6 +487,9 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
   );
 
   const reward = ethers.parseUnits('100', AGIALPHA_DECIMALS);
+  const feePct = await envFixture.registry.feePct();
+  const feeAmount = (reward * BigInt(feePct)) / 100n;
+  const totalEscrow = reward + feeAmount;
   await runStep(
     steps,
     'job.employer-approve',
@@ -432,8 +497,15 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
     async () => ({
       tx: await envFixture.token
         .connect(envFixture.employer)
-        .approve(await envFixture.stake.getAddress(), reward),
+        .approve(await envFixture.stake.getAddress(), totalEscrow),
       actor: envFixture.employer.address,
+      notes: [
+        `Fee percentage snapshot: ${feePct}%`,
+        `Employer approved ${ethers.formatUnits(
+          totalEscrow,
+          AGIALPHA_DECIMALS
+        )} ${AGIALPHA_SYMBOL} (reward + protocol fee)`,
+      ],
     })
   );
 
