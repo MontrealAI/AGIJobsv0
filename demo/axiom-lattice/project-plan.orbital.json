@@ -1,0 +1,160 @@
+{
+  "initiative": "Orbital Supply Chain Stabilization",
+  "objective": "Extend the Axiom Lattice drill to orbital manufacturing, launch cadence, and re-entry logistics while leveraging the existing orchestration stack.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1750000",
+    "notes": "Includes orbital launch insurance reserves and atmospheric re-entry contingencies."
+  },
+  "governance": {
+    "owner": "0xAXIOM-ORBIT",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xTREASURY-LATTICE",
+    "thermostat": {
+      "initialTemperature": "0.27",
+      "emergencyTemperature": "0.45",
+      "updateScript": "scripts/v2/updateThermodynamics.ts"
+    },
+    "councils": [
+      "Orbital Manufacturing Council",
+      "Launch Services Syndicate",
+      "Re-entry Safety Board"
+    ]
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "orchestrator.nexus.agi.eth",
+        "role": "Macro Mission Synthesis",
+        "capabilities": ["Launch sequencing", "Thermal budget governance", "Validator routing"]
+      },
+      {
+        "handle": "orbital.fabricator.agi.eth",
+        "role": "Orbital Manufacturing Director",
+        "capabilities": ["Microgravity fabrication", "Supply telemetry", "Docking automation"]
+      },
+      {
+        "handle": "launch.operator.agi.eth",
+        "role": "Launch Cadence Manager",
+        "capabilities": ["Launch manifest", "Range scheduling", "Safety interlocks"]
+      },
+      {
+        "handle": "reentry.marshall.agi.eth",
+        "role": "Re-entry Logistics Marshal",
+        "capabilities": ["Recovery fleets", "Heat shield inspection", "Citizen safety"]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "thermal.validator.agi.eth",
+        "stake": "220000",
+        "mandate": "Thermal envelope verification"
+      },
+      {
+        "handle": "orbital.validator.agi.eth",
+        "stake": "190000",
+        "mandate": "Docking, launch, and in-orbit dispute handling"
+      },
+      {
+        "handle": "civic.validator.agi.eth",
+        "stake": "165000",
+        "mandate": "Population safety and benefits audit"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "ORBITAL-FOUNDRY",
+      "title": "Commission orbital microgravity foundries",
+      "reward": "260000",
+      "deadlineDays": 120,
+      "dependencies": [],
+      "energyBudget": "138000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.23",
+        "adjustmentOnDelay": "raise-temperature"
+      },
+      "telemetry": {
+        "region": "LEO",
+        "kpis": ["Foundry uptime", "Material throughput"]
+      }
+    },
+    {
+      "id": "LAUNCH-CADENCE",
+      "title": "Synchronize global launch cadence",
+      "reward": "210000",
+      "deadlineDays": 90,
+      "dependencies": ["ORBITAL-FOUNDRY"],
+      "energyBudget": "96000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "double-validator-bonus"
+      },
+      "telemetry": {
+        "region": "Global",
+        "kpis": ["Launch on-time rate", "Payload success"]
+      }
+    },
+    {
+      "id": "REENTRY-NETWORK",
+      "title": "Deploy re-entry and recovery mesh",
+      "reward": "185000",
+      "deadlineDays": 80,
+      "dependencies": ["LAUNCH-CADENCE"],
+      "energyBudget": "78000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.17",
+        "adjustmentOnDelay": "trigger-pause-check"
+      },
+      "telemetry": {
+        "region": "Atmospheric",
+        "kpis": ["Recovery turnaround", "Safety variance"]
+      }
+    },
+    {
+      "id": "CITIZEN-DIVIDEND",
+      "title": "Issue citizen orbital dividend and credit balancing",
+      "reward": "150000",
+      "deadlineDays": 60,
+      "dependencies": ["REENTRY-NETWORK"],
+      "energyBudget": "52000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.11",
+        "adjustmentOnDelay": "increase-agent-share"
+      },
+      "telemetry": {
+        "region": "Global",
+        "kpis": ["Dividend coverage", "Carbon credit alignment"]
+      }
+    },
+    {
+      "id": "VALIDATOR-STRESS",
+      "title": "Run validator stress drill across orbital lanes",
+      "reward": "125000",
+      "deadlineDays": 45,
+      "dependencies": ["ORBITAL-FOUNDRY", "LAUNCH-CADENCE"],
+      "energyBudget": "47000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.08",
+        "adjustmentOnDelay": "trigger-pause-check"
+      },
+      "telemetry": {
+        "region": "Cross-lattice",
+        "kpis": ["Validator uptime", "Dispute closure"]
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/asi-takeoff/orbital-dry-run.json",
+      "thermodynamics": "reports/asi-takeoff/orbital-thermodynamics.json",
+      "missionControl": "reports/asi-takeoff/orbital-mission-control.md",
+      "summary": "reports/asi-takeoff/orbital-summary.md"
+    },
+    "dashboards": [
+      "reports/asi-takeoff/orbital-mission-control.md",
+      "reports/asi-takeoff/orbital-thermodynamics.json",
+      "reports/asi-takeoff/orbital-summary.md"
+    ]
+  }
+}
