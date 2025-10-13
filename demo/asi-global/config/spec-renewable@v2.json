@@ -1,0 +1,13 @@
+{
+  "name": "Global Renewable Acceleration",
+  "version": "v2",
+  "domains": ["energy", "infrastructure", "finance"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://asi-global/renewable/criteria",
+  "validation": { "k": 3, "n": 5 },
+  "challengeWindowSec": 259200,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "14500000" },
+  "stake": { "worker": "42000000", "validator": "82000000" },
+  "resultSchema": "ipfs://asi-global/renewable/schema",
+  "notes": "Pan-continental renewable deployments with thermodynamic telemetry linking to validator scorecards."
+}

@@ -1,0 +1,354 @@
+{
+  "initiative": "Global Autonomous Economic Orchestrator",
+  "objective": "Coordinate a worldwide renewable resilience programme that deploys continent-scale assets, validates outcomes, and continuously tunes incentives through AGI Jobs primitives.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1000000000",
+    "allocations": {
+      "Africa": "180000000",
+      "Americas": "220000000",
+      "Asia-Pacific": "240000000",
+      "Europe": "180000000",
+      "Middle East": "120000000",
+      "Global Reserve": "60000000"
+    }
+  },
+  "governance": {
+    "owner": "0xGLOBAL-MULTISIG",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xGLOBAL-TREASURY",
+    "quadraticVoting": {
+      "contract": "AGIGovernor",
+      "timelock": "0xGLOBAL-TIMELOCK",
+      "executionDelayDays": 7
+    },
+    "thermostat": {
+      "initialTemperature": "0.20",
+      "emergencyTemperature": "0.40",
+      "updateScript": "scripts/v2/updateThermodynamics.ts",
+      "ownerGuide": "docs/owner-control-parameter-playbook.md"
+    },
+    "controlScripts": {
+      "commandCenter": "npm run owner:command-center -- --network hardhat --format markdown",
+      "parameterMatrix": "npm run owner:parameters -- --network hardhat --format markdown",
+      "mermaid": "npx hardhat run --no-compile scripts/v2/renderOwnerMermaid.ts --format mermaid --out reports/asi-global/governance.mmd"
+    }
+  },
+  "regions": [
+    {
+      "id": "AFRICA",
+      "name": "African Union Energy Corridor",
+      "goal": "Commission modular solar and storage cooperatives across 12 member nations.",
+      "kpis": [
+        "4.5 GW new capacity",
+        ">96% validator approval on safety audits",
+        "<5% variance against thermodynamic budget"
+      ]
+    },
+    {
+      "id": "AMER",
+      "name": "Pan-American Climate Stabilisation Network",
+      "goal": "Retrofit coastal resilience microgrids from Alaska to Patagonia.",
+      "kpis": [
+        "8 continental logistics hubs",
+        "Dual validator quorum per job",
+        "Validator slashing <= 0.5%"
+      ]
+    },
+    {
+      "id": "APAC",
+      "name": "Asia-Pacific Floating Wind Cooperative",
+      "goal": "Deploy floating wind arrays and connect to regional demand response markets.",
+      "kpis": [
+        "16 modular arrays commissioned",
+        "Thermostat balance between validator/agent shares within ±2% of target",
+        "Audit checkpoints across 14 jurisdictions"
+      ]
+    },
+    {
+      "id": "EUROPE",
+      "name": "European Grid Intertie Modernisation",
+      "goal": "Synchronise renewable surpluses using high-voltage DC corridors.",
+      "kpis": [
+        "Digital twin integration for 27 operators",
+        "Quadratic governance turnout above 72%",
+        "SystemPause drills executed quarterly"
+      ]
+    },
+    {
+      "id": "MENA",
+      "name": "Middle East & North Africa Hydrogen Spine",
+      "goal": "Create a desalination-to-hydrogen production loop balancing energy exports.",
+      "kpis": [
+        "Hydrogen yield >= 620 kt/year",
+        "Validator-initiated disputes resolved < 48h",
+        "RewardEngineMB share to validators between 18-22%"
+      ]
+    }
+  ],
+  "participants": {
+    "metaOrchestrator": {
+      "handle": "orchestrator.world.agi.eth",
+      "role": "Sovereign Global Planner",
+      "capabilities": [
+        "Plan→Simulate→Execute loop",
+        "Thermodynamic governance adjustments",
+        "Governance proposal automation"
+      ]
+    },
+    "council": [
+      {
+        "handle": "world.council1.agi.eth",
+        "role": "Quadratic voting delegate",
+        "stake": "9500000"
+      },
+      {
+        "handle": "world.council2.agi.eth",
+        "role": "Sustainability ombuds",
+        "stake": "7100000"
+      },
+      {
+        "handle": "world.council3.agi.eth",
+        "role": "Infrastructure oversight trust",
+        "stake": "8800000"
+      }
+    ],
+    "agents": [
+      {
+        "handle": "africa.microgrid.agent.agi.eth",
+        "role": "Community solar and storage federation",
+        "regions": ["AFRICA"],
+        "capabilities": [
+          "Satellite resource assessment",
+          "Embedded finance disbursement",
+          "Local workforce enablement"
+        ]
+      },
+      {
+        "handle": "amer.resilience.agent.agi.eth",
+        "role": "Americas climate resilience consortium",
+        "regions": ["AMER"],
+        "capabilities": [
+          "Disaster logistics",
+          "Edge AI inspection",
+          "Real-time grid orchestration"
+        ]
+      },
+      {
+        "handle": "apac.wind.agent.agi.eth",
+        "role": "Asia-Pacific floating wind guild",
+        "regions": ["APAC"],
+        "capabilities": [
+          "Hydrodynamic design",
+          "Autonomous maintenance",
+          "Synthetic data simulators"
+        ]
+      },
+      {
+        "handle": "europe.grid.agent.agi.eth",
+        "role": "European grid synchronisation bureau",
+        "regions": ["EUROPE"],
+        "capabilities": [
+          "HVDC orchestration",
+          "Cross-border compliance",
+          "Digital twin validation"
+        ]
+      },
+      {
+        "handle": "mena.hydrogen.agent.agi.eth",
+        "role": "MENA hydrogen acceleration collective",
+        "regions": ["MENA"],
+        "capabilities": [
+          "Desalination automation",
+          "Hydrogen logistics",
+          "Water-energy nexus modelling"
+        ]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "audit.world.validator.agi.eth",
+        "stake": "120000000",
+        "mandate": "Global audit bureau for environmental compliance"
+      },
+      {
+        "handle": "grid.safety.validator.agi.eth",
+        "stake": "95000000",
+        "mandate": "Infrastructure safety and resilience oversight"
+      },
+      {
+        "handle": "finance.stability.validator.agi.eth",
+        "stake": "105000000",
+        "mandate": "Financial settlement and escrow integrity"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "AFRICA-MICROGRID-DEPLOY",
+      "region": "AFRICA",
+      "title": "Deploy pan-African solar microgrid clusters",
+      "reward": "130000000",
+      "deadlineDays": 150,
+      "dependencies": [],
+      "energyBudget": "90000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "raise-temperature",
+        "validatorBonus": "0.04"
+      }
+    },
+    {
+      "id": "AFRICA-AUDIT",
+      "region": "AFRICA",
+      "title": "Continental QA and validator compliance sweep",
+      "reward": "32000000",
+      "deadlineDays": 45,
+      "dependencies": ["AFRICA-MICROGRID-DEPLOY"],
+      "energyBudget": "11000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.07",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "AMER-RESILIENCE",
+      "region": "AMER",
+      "title": "Deploy coastal resilience microgrids and logistics mesh",
+      "reward": "150000000",
+      "deadlineDays": 160,
+      "dependencies": [],
+      "energyBudget": "105000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.22",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "AMER-VALIDATION",
+      "region": "AMER",
+      "title": "Climate resilience validation and insurance integration",
+      "reward": "35000000",
+      "deadlineDays": 40,
+      "dependencies": ["AMER-RESILIENCE"],
+      "energyBudget": "15000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.09",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "APAC-FLOATING-WIND",
+      "region": "APAC",
+      "title": "Construct floating wind arrays with adaptive maintenance",
+      "reward": "170000000",
+      "deadlineDays": 170,
+      "dependencies": [],
+      "energyBudget": "120000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.24",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "APAC-MARKET-LINK",
+      "region": "APAC",
+      "title": "Integrate arrays into demand response markets",
+      "reward": "28000000",
+      "deadlineDays": 35,
+      "dependencies": ["APAC-FLOATING-WIND"],
+      "energyBudget": "9000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.05",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "EUROPE-HVDC",
+      "region": "EUROPE",
+      "title": "Build HVDC intertie expansions",
+      "reward": "145000000",
+      "deadlineDays": 140,
+      "dependencies": [],
+      "energyBudget": "99000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.18",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "EUROPE-DIGITAL-TWIN",
+      "region": "EUROPE",
+      "title": "Deploy cross-border grid digital twin validation",
+      "reward": "26000000",
+      "deadlineDays": 50,
+      "dependencies": ["EUROPE-HVDC"],
+      "energyBudget": "12000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.06",
+        "adjustmentOnDelay": "increase-validator-share"
+      }
+    },
+    {
+      "id": "MENA-HYDROGEN",
+      "region": "MENA",
+      "title": "Construct desalination-to-hydrogen infrastructure",
+      "reward": "125000000",
+      "deadlineDays": 165,
+      "dependencies": [],
+      "energyBudget": "87000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.21",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "MENA-EXPORT-VALIDATION",
+      "region": "MENA",
+      "title": "Hydrogen export validation and compliance",
+      "reward": "24000000",
+      "deadlineDays": 38,
+      "dependencies": ["MENA-HYDROGEN"],
+      "energyBudget": "8000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.05",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "GLOBAL-AUDIT",
+      "region": "GLOBAL",
+      "title": "Global audit, thermostat tuning, and final performance synthesis",
+      "reward": "40000000",
+      "deadlineDays": 30,
+      "dependencies": [
+        "AFRICA-AUDIT",
+        "AMER-VALIDATION",
+        "APAC-MARKET-LINK",
+        "EUROPE-DIGITAL-TWIN",
+        "MENA-EXPORT-VALIDATION"
+      ],
+      "energyBudget": "15000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.04",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/asi-global/dry-run.json",
+      "thermodynamics": "reports/asi-global/thermodynamics.json",
+      "missionControl": "reports/asi-global/mission-control.md",
+      "commandCenter": "reports/asi-global/command-center.md",
+      "parameterMatrix": "reports/asi-global/parameter-matrix.md",
+      "summary": "reports/asi-global/summary.md",
+      "mermaid": "reports/asi-global/governance.mmd"
+    },
+    "dashboards": [
+      "reports/asi-global/mission-control.md",
+      "reports/asi-global/command-center.md",
+      "reports/asi-global/thermodynamics.json"
+    ]
+  }
+}

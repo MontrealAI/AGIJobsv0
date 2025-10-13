@@ -17,6 +17,7 @@ export interface AsiTakeoffKitOptions {
   outputBasename?: string;
   networkHint?: string;
   additionalArtifacts?: Array<ArtifactInput>;
+  referenceDocs?: Array<ReferenceDoc>;
 }
 
 export interface ArtifactInput {
@@ -38,6 +39,11 @@ export interface KitArtifactRecord {
   description: string;
   sha256: string;
   size: number;
+}
+
+export interface ReferenceDoc {
+  path: string;
+  description: string;
 }
 
 export interface AsiTakeoffKitResult {
@@ -224,6 +230,24 @@ export async function generateAsiTakeoffKit(
   const network = options.networkHint ?? 'hardhat';
   const thermostatScript = thermostat.updateScript ?? 'scripts/v2/updateThermodynamics.ts';
 
+  const defaultReferences: ReferenceDoc[] = [
+    {
+      path: 'docs/asi-national-governance-demo.md',
+      description: 'National-scale governance rehearsal reference.',
+    },
+    {
+      path: 'demo/asi-takeoff/RUNBOOK.md',
+      description: 'Operator drill instructions for the national scenario.',
+    },
+    {
+      path: 'docs/thermodynamic-incentives.md',
+      description: 'Thermodynamic incentive design overview.',
+    },
+  ];
+  const referenceDocs = options.referenceDocs && options.referenceDocs.length > 0
+    ? options.referenceDocs
+    : defaultReferences;
+
   const checklist = [
     {
       title: 'Verify owner control wiring',
@@ -281,6 +305,7 @@ export async function generateAsiTakeoffKit(
       (descriptor): descriptor is DirectoryDescriptor => Boolean(descriptor),
     ),
     checklist,
+    references: referenceDocs,
   };
 
   const mdLines: string[] = [];
@@ -339,11 +364,14 @@ export async function generateAsiTakeoffKit(
     }
     mdLines.push('');
   }
-  mdLines.push('## Owner Control References');
-  mdLines.push('');
-  mdLines.push('- `docs/asi-national-governance-demo.md` – end-to-end governance drill.');
-  mdLines.push('- `demo/asi-takeoff/RUNBOOK.md` – operator procedures and verifications.');
-  mdLines.push('- `docs/thermodynamic-incentives.md` – incentive tuning rationale.');
+  if (referenceDocs.length > 0) {
+    mdLines.push('## Owner Control References');
+    mdLines.push('');
+    for (const reference of referenceDocs) {
+      mdLines.push(`- \`${reference.path}\` – ${reference.description}`);
+    }
+    mdLines.push('');
+  }
 
   await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   await fs.writeFile(markdownPath, `${mdLines.join('\n')}\n`);
