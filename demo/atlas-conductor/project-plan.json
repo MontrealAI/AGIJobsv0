@@ -1,0 +1,154 @@
+{
+  "initiative": "Atlas Conductor Global Alignment",
+  "objective": "Synchronise energy, food, health, and macro-economic systems through AGI Jobs v0 deterministic automation primitives.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "69350000",
+    "allocations": {
+      "Energy": "18750000",
+      "Food": "16200000",
+      "Health": "13900000",
+      "Economics": "20500000"
+    }
+  },
+  "governance": {
+    "owner": "0xATLAS-GOVERNOR",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xTREASURY-ATL-CONDUCTOR",
+    "thermostat": {
+      "initialTemperature": "7.5",
+      "emergencyTemperature": "12",
+      "updateScript": "scripts/v2/updateThermostat.ts"
+    },
+    "quadraticVoting": {
+      "council": "Atlas Governance Council",
+      "executionDelayDays": 2,
+      "quorum": 5
+    }
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "engineering.agent.agi.eth",
+        "role": "Energy Systems Architect",
+        "capabilities": ["Grid simulation", "Renewable balancing", "Cross-network orchestration"]
+      },
+      {
+        "handle": "north.contractor.agi.eth",
+        "role": "Northern Cooperative",
+        "capabilities": ["Agri robotics", "Logistics routing", "Validator liaison"]
+      },
+      {
+        "handle": "south.contractor.agi.eth",
+        "role": "Southern Cooperative",
+        "capabilities": ["Food security", "Health deployment", "Disaster response"]
+      },
+      {
+        "handle": "inspection.validator.agi.eth",
+        "role": "Primary Validator Quorum",
+        "capabilities": ["Thermodynamic audit", "Receipt verification", "Dispute arbitration"]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "inspection.validator.agi.eth",
+        "stake": "15500000",
+        "mandate": "Global oversight and thermodynamic sampling"
+      },
+      {
+        "handle": "civic.validator.agi.eth",
+        "stake": "13200000",
+        "mandate": "Civic guarantees and regional compliance"
+      },
+      {
+        "handle": "safety.validator.agi.eth",
+        "stake": "12800000",
+        "mandate": "Safety, epidemiology, and infrastructure QA"
+      }
+    ]
+  },
+  "regions": [
+    {
+      "id": "Americas",
+      "name": "Americas",
+      "goal": "Balance energy and food resilience",
+      "kpis": ["< 2.5% energy variance", "< 2h cold-chain latency"]
+    },
+    {
+      "id": "EMEA",
+      "name": "Europe, Middle East, Africa",
+      "goal": "Stabilise validator governance and health intelligence",
+      "kpis": ["Validator participation > 92%", "Healthcare SLA 95%"]
+    },
+    {
+      "id": "APAC",
+      "name": "Asia-Pacific",
+      "goal": "Execute macro-economic orchestration",
+      "kpis": ["Capital velocity ±5%", "Treasury delta < 1.5%"]
+    }
+  ],
+  "jobs": [
+    {
+      "id": "ENERGY-EQ",
+      "title": "Planetary Energy Equilibrium",
+      "reward": "18750000",
+      "deadlineDays": 3,
+      "dependencies": [],
+      "energyBudget": "6200000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.18",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "FOOD-RESILIENCE",
+      "title": "Sovereign Food Resilience",
+      "reward": "16200000",
+      "deadlineDays": 3,
+      "dependencies": ["ENERGY-EQ"],
+      "energyBudget": "5400000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.21",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "HEALTH-INTEL",
+      "title": "Open Health Intelligence",
+      "reward": "13900000",
+      "deadlineDays": 2,
+      "dependencies": ["FOOD-RESILIENCE"],
+      "energyBudget": "4800000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.16",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "ECON-ORCH",
+      "title": "Macro-Economic Orchestration",
+      "reward": "20500000",
+      "deadlineDays": 4,
+      "dependencies": ["HEALTH-INTEL"],
+      "energyBudget": "7100000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.14",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/atlas-conductor/dry-run.json",
+      "thermodynamics": "reports/atlas-conductor/thermodynamics.json",
+      "hamiltonian": "reports/atlas-conductor/hamiltonian.json",
+      "missionReport": "reports/atlas-conductor/mission-report.md",
+      "atlasBundle": "reports/atlas-conductor/atlas/governance-kit.md"
+    },
+    "dashboards": [
+      "reports/atlas-conductor/mission-report.md",
+      "reports/atlas-conductor/thermodynamics.json",
+      "reports/atlas-conductor/hamiltonian.json"
+    ]
+  }
+}

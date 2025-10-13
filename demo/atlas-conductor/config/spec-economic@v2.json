@@ -1,0 +1,13 @@
+{
+  "name": "Macro-Economic Orchestration",
+  "version": "v2",
+  "domains": ["economics", "governance", "finance"],
+  "languages": ["en", "zh", "es"],
+  "acceptanceCriteriaURI": "ipfs://atlas-conductor/economics/criteria",
+  "validation": { "k": 3, "n": 5 },
+  "challengeWindowSec": 43200,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "20500000" },
+  "stake": { "worker": "61000000", "validator": "99000000" },
+  "resultSchema": "ipfs://atlas-conductor/economics/schema",
+  "notes": "Executes owner atlas, thermostat tuning, Hamiltonian monitoring, and treasury balancing using the existing governance suite."
+}

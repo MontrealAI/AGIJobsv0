@@ -1,0 +1,13 @@
+{
+  "name": "Planetary Energy Equilibrium",
+  "version": "v2",
+  "domains": ["energy", "infrastructure", "climate"],
+  "languages": ["en", "es", "fr"],
+  "acceptanceCriteriaURI": "ipfs://atlas-conductor/energy/criteria",
+  "validation": { "k": 3, "n": 5 },
+  "challengeWindowSec": 43200,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "18750000" },
+  "stake": { "worker": "52000000", "validator": "94000000" },
+  "resultSchema": "ipfs://atlas-conductor/energy/schema",
+  "notes": "Integrates renewable dispatch, storage balancing, and validator reconciliation across all participating regions."
+}

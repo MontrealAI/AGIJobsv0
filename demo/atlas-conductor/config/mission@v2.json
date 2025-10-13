@@ -1,0 +1,71 @@
+{
+  "version": "v2",
+  "scope": "atlas-conductor",
+  "description": "Tri-sector convergence mission that executes energy, food, health, and macro-economic coordination in a single deterministic pass.",
+  "jobs": [
+    {
+      "name": "Planetary Energy Equilibrium",
+      "specPath": "demo/atlas-conductor/config/spec-energy@v2.json",
+      "resultURI": "ipfs://atlas-conductor/energy/result",
+      "agentSubdomain": "energy.maestro",
+      "reward": "18750000",
+      "workerStake": "52000000",
+      "validatorStake": "94000000",
+      "deadlineOffsetSec": 18000,
+      "metadata": {
+        "objective": "Stabilise renewable baseload across five continental pools",
+        "priority": "critical",
+        "kpi": "< 3% demand variance"
+      },
+      "notes": "Runs ASI take-off dry-run harness for multi-region energy dispatch and validator settlement."
+    },
+    {
+      "name": "Sovereign Food Resilience",
+      "specPath": "demo/atlas-conductor/config/spec-food@v2.json",
+      "resultURI": "ipfs://atlas-conductor/food/result",
+      "agentSubdomain": "food.arcology",
+      "reward": "16200000",
+      "workerStake": "41000000",
+      "validatorStake": "88000000",
+      "deadlineOffsetSec": 14400,
+      "metadata": {
+        "objective": "Synchronise regenerative agriculture, logistics, and validator QA",
+        "priority": "high",
+        "kpi": "< 2h delivery latency"
+      },
+      "notes": "Coordinates north/south contractor cooperatives and civic validators across the ASI stack."
+    },
+    {
+      "name": "Open Health Intelligence",
+      "specPath": "demo/atlas-conductor/config/spec-health@v2.json",
+      "resultURI": "ipfs://atlas-conductor/health/result",
+      "agentSubdomain": "health.synapse",
+      "reward": "13900000",
+      "workerStake": "36000000",
+      "validatorStake": "82000000",
+      "deadlineOffsetSec": 10800,
+      "metadata": {
+        "objective": "Deploy telemedicine, epidemiology, and validator-led audits",
+        "priority": "high",
+        "kpi": "95% SLA compliance"
+      },
+      "notes": "Exercises validator quorum for data integrity while thermodynamics adjusts clinical throughput."
+    },
+    {
+      "name": "Macro-Economic Orchestration",
+      "specPath": "demo/atlas-conductor/config/spec-economic@v2.json",
+      "resultURI": "ipfs://atlas-conductor/economics/result",
+      "agentSubdomain": "economy.chamber",
+      "reward": "20500000",
+      "workerStake": "61000000",
+      "validatorStake": "99000000",
+      "deadlineOffsetSec": 21600,
+      "metadata": {
+        "objective": "Execute labour thermostat updates, Hamiltonian monitoring, and treasury balancing",
+        "priority": "critical",
+        "kpi": "capital velocity within ±5%"
+      },
+      "notes": "Calls owner Atlas, Mission Control, and Hamiltonian tracker to align treasury actions with validator energy."
+    }
+  ]
+}
