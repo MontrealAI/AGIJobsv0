@@ -36,6 +36,9 @@ Local (Anvil / Hardhat):
 ```bash
 cp demo/asi-takeoff/env.example .env
 npm run demo:asi-takeoff:local
+
+# Optional: generate a governance kit for the deterministic artefacts
+npm run demo:asi-takeoff:kit -- --report-root reports/localhost/asi-takeoff --summary-md reports/localhost/asi-takeoff/asi-takeoff-report.md --bundle reports/localhost/asi-takeoff/receipts --logs reports/localhost/asi-takeoff/receipts
 ```
 
 Generate the Markdown mission report:
@@ -49,6 +52,10 @@ Artifacts:
 - `reports/<network>/asi-takeoff/receipts/mission.json`
 - `reports/<network>/asi-takeoff/receipts/jobs/<slug>/*.json`
 - `reports/<network>/asi-takeoff/asi-takeoff-report.md`
+- `reports/<network>/asi-takeoff/governance-kit.json`
+- `reports/<network>/asi-takeoff/governance-kit.md`
+
+The governance kit consolidates the plan of record, dry-run harness output, thermodynamic telemetry, mission-control dossier, and integrity hashes for auditors.  The kit is generated automatically by `npm run demo:asi-takeoff` and can be reproduced for any report root with `npm run demo:asi-takeoff:kit`.
 
 ---
 

@@ -43,6 +43,9 @@ jobs:
         with:
           version: '1.4.0'
 
+      - name: Run ASI Take-Off demo (deterministic kit)
+        run: npm run demo:asi-takeoff
+
       - name: Run ASI Take-Off demo (local)
         env:
           PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
@@ -58,4 +61,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: asi-takeoff-receipts
-          path: reports/localhost/asi-takeoff/**
+          path: |
+            reports/asi-takeoff/**
+            reports/localhost/asi-takeoff/**
