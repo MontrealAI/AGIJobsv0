@@ -309,8 +309,9 @@ async function main() {
     cli['skip-verify'] === true ||
     skipVerifyEnv === '1' ||
     skipVerifyEnv === 'true';
+  const envConfig = toStringOrUndefined(process.env.DEPLOY_DEFAULTS_CONFIG);
   const configPath =
-    cli.config && typeof cli.config === 'string' ? cli.config : undefined;
+    cli.config && typeof cli.config === 'string' ? cli.config : envConfig;
   const config = configPath
     ? readJsonConfig(configPath)
     : ({} as DeployerConfig);
@@ -318,6 +319,7 @@ async function main() {
   const configGovernance = toStringOrUndefined(config.governance);
   const governance =
     toStringOrUndefined(cli.governance) ?? configGovernance ?? owner.address;
+  console.log('Deploying defaults with governance', governance);
 
   const taxConfig: TaxConfig = config.tax ?? {};
   const cliWithTax = cli['with-tax'] === true;
@@ -474,6 +476,13 @@ async function main() {
   await deployer.waitForDeployment();
   const deployerAddress = await deployer.getAddress();
   console.log('Deployer deployed at', deployerAddress);
+
+  try {
+    await deployer.deployDefaults.staticCall(identity, governance);
+  } catch (err) {
+    console.error('deployDefaults dry-run failed', err);
+    throw err;
+  }
 
   const tx = withTax
     ? hasEconOverrides
