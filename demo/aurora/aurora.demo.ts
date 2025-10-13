@@ -92,7 +92,9 @@ function normaliseAddress(value: string | undefined | null): string | undefined 
 function isMethodUnavailable(error: unknown): boolean {
   if (!error) return false;
   const message = (error as Error).message || '';
-  return /method .* not found/i.test(message) || /does not exist/is not available/i.test(message);
+  return (
+    /method .* not found/i.test(message) || /(does not exist|is not available)/i.test(message)
+  );
 }
 
 async function tryRpc(
@@ -282,9 +284,7 @@ async function main() {
     .map(([label]) => label);
   if (missingAddresses.length > 0) {
     throw new Error(
-      `Missing contract addresses for: ${missingAddresses.join(
-        ', '
-      )}. Provide a deployment summary or set the corresponding environment variables.`
+      `Missing contract addresses for: ${missingAddresses.join(', ')}. Provide a deployment summary or set the corresponding environment variables.`
     );
   }
 
