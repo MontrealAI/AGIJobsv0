@@ -21,12 +21,15 @@ function section(title: string): string {
   parts.push('# Project AURORA — Mission Report');
   parts.push('');
 
-  const deploy = load('deploy.json');
-  const post = load('postJob.json');
-  const submit = load('submit.json');
-  const validate = load('validate.json');
-  const finalize = load('finalize.json');
-  const stake = load('stake.json');
+const deploy = load('deploy.json');
+const post = load('postJob.json');
+const submit = load('submit.json');
+const validate = load('validate.json');
+const finalize = load('finalize.json');
+const stake = load('stake.json');
+const state = load('state.json');
+const governance = load('governance.json');
+const thermostat = load('thermostat.json');
 
   if (deploy && deploy.contracts) {
     parts.push(section('Deployment Summary'));
@@ -48,17 +51,13 @@ function section(title: string): string {
 
   if (stake && stake.entries) {
     parts.push(section('Stake Operations'));
+    parts.push('| Role | Address | Amount | Balance (before → after) | Tx |');
+    parts.push('| --- | --- | --- | --- | --- |');
     for (const entry of stake.entries as Array<Record<string, unknown>>) {
+      const before = entry.balanceBefore ?? 'n/a';
+      const after = entry.balanceAfter ?? 'n/a';
       parts.push(
-        '- ' +
-          entry.role +
-          ' `' +
-          entry.address +
-          '` staked ' +
-          entry.amount +
-          ' (tx: `' +
-          entry.txHash +
-          '`)'
+        `| ${entry.role} | \`${entry.address}\` | ${entry.amount} | ${before} → ${after} | \`${entry.txHash}\` |`
       );
     }
   }
@@ -102,6 +101,54 @@ function section(title: string): string {
           payout.delta +
           ')'
       );
+    }
+  }
+
+  if (state && state.timeline) {
+    parts.push(section('Lifecycle States'));
+    parts.push('| Step | State | Success | Reward | Stake | Deadline | Assigned |');
+    parts.push('| --- | --- | --- | --- | --- | --- | --- |');
+    for (const entry of state.timeline as Array<Record<string, unknown>>) {
+      parts.push(`| ${entry.step} | ${entry.state} | ${entry.success} | ${entry.reward} | ${entry.stake} | ${entry.deadline} | ${entry.assignedAt} |`);
+    }
+  }
+
+  if (governance && governance.actions) {
+    parts.push(section('Governance Controls'));
+    parts.push('| Target | Method | Tx | Notes |');
+    parts.push('| --- | --- | --- | --- |');
+    for (const action of governance.actions as Array<Record<string, unknown>>) {
+      const args = Array.isArray(action.args) && action.args.length
+        ? ` (${action.args.join(', ')})`
+        : '';
+      const notes = Array.isArray(action.notes)
+        ? action.notes.join('<br/>')
+        : action.notes || '';
+      parts.push(
+        `| ${action.target} | ${action.method}${args} | \`${action.txHash}\` | ${notes} |`
+      );
+    }
+  }
+
+  if (thermostat) {
+    parts.push(section('Thermostat (updateThermodynamics.ts)'));
+    if (thermostat.command) {
+      parts.push(`- Command: \`${thermostat.command}\``);
+    }
+    if (thermostat.exitCode !== undefined) {
+      parts.push(`- Exit code: ${thermostat.exitCode}`);
+    }
+    if (thermostat.success !== undefined) {
+      parts.push(`- Success: ${thermostat.success}`);
+    }
+    if (thermostat.stdout) {
+      parts.push('- Stdout:\n```\n' + thermostat.stdout + '\n```');
+    }
+    if (thermostat.stderr) {
+      parts.push('- Stderr:\n```\n' + thermostat.stderr + '\n```');
+    }
+    if (thermostat.error) {
+      parts.push(`- Error: ${thermostat.error}`);
     }
   }
 
