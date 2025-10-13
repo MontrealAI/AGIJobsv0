@@ -1,0 +1,13 @@
+{
+  "name": "Sovereign Food Resilience",
+  "version": "v2",
+  "domains": ["agriculture", "logistics", "resilience"],
+  "languages": ["en", "fr", "ar"],
+  "acceptanceCriteriaURI": "ipfs://atlas-conductor/food/criteria",
+  "validation": { "k": 3, "n": 5 },
+  "challengeWindowSec": 43200,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "16200000" },
+  "stake": { "worker": "41000000", "validator": "88000000" },
+  "resultSchema": "ipfs://atlas-conductor/food/schema",
+  "notes": "Combines regenerative farming intents, cold-chain routing, and validator-led inventory audits using the existing job lifecycle."
+}

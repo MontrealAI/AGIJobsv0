@@ -1,0 +1,13 @@
+{
+  "name": "Open Health Intelligence",
+  "version": "v2",
+  "domains": ["health", "data", "safety"],
+  "languages": ["en", "hi", "sw"],
+  "acceptanceCriteriaURI": "ipfs://atlas-conductor/health/criteria",
+  "validation": { "k": 3, "n": 5 },
+  "challengeWindowSec": 43200,
+  "escrow": { "token": "AGIALPHA", "amountPerItem": "13900000" },
+  "stake": { "worker": "36000000", "validator": "82000000" },
+  "resultSchema": "ipfs://atlas-conductor/health/schema",
+  "notes": "Deploys telemedicine deliverables, epidemiological forecasts, and validator-led QA against deterministic acceptance criteria."
+}
