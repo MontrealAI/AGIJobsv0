@@ -110,6 +110,7 @@ interface JobFixture {
   nft: any;
   registry: any;
   dispute: any;
+  feePool: any;
 }
 
 const ROLE_AGENT = 0;
@@ -248,6 +249,18 @@ async function deployJobFixture(): Promise<JobFixture> {
     ethers.ZeroAddress,
     owner.address
   );
+  await token.mint(await stake.getAddress(), 0);
+
+  const FeePool = await ethers.getContractFactory(
+    'contracts/v2/FeePool.sol:FeePool'
+  );
+  const feePool = await FeePool.deploy(
+    await stake.getAddress(),
+    0,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress
+  );
+  await stake.setFeePool(await feePool.getAddress());
 
   const Reputation = await ethers.getContractFactory(
     'contracts/v2/ReputationEngine.sol:ReputationEngine'
@@ -269,6 +282,7 @@ async function deployJobFixture(): Promise<JobFixture> {
     ethers.ZeroHash,
     ethers.ZeroHash
   );
+  await identity.addAdditionalAgent(agent.address);
 
   const Validation = await ethers.getContractFactory(
     'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
@@ -289,13 +303,14 @@ async function deployJobFixture(): Promise<JobFixture> {
     await reputation.getAddress(),
     ethers.ZeroAddress,
     await nft.getAddress(),
-    ethers.ZeroAddress,
+    await feePool.getAddress(),
     ethers.ZeroAddress,
     0,
     0,
     [],
     owner.address
   );
+  await token.mint(await registry.getAddress(), 0);
 
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
@@ -321,12 +336,12 @@ async function deployJobFixture(): Promise<JobFixture> {
     await reputation.getAddress(),
     await dispute.getAddress(),
     await nft.getAddress(),
-    ethers.ZeroAddress,
+    await feePool.getAddress(),
     []
   );
   await registry.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
-  await reputation.setPremiumThreshold(10);
+  await reputation.setPremiumThreshold(0);
 
   return {
     owner,
@@ -344,6 +359,7 @@ async function deployJobFixture(): Promise<JobFixture> {
     nft,
     registry,
     dispute,
+    feePool,
   };
 }
 
@@ -425,6 +441,10 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
   );
 
   const reward = ethers.parseUnits('100', AGIALPHA_DECIMALS);
+  const jobStake = await envFixture.registry.jobStake();
+  const feePct = await envFixture.registry.feePct();
+  const feeAmount = (reward * BigInt(feePct)) / 100n;
+  const employerEscrow = reward + jobStake + feeAmount;
   await runStep(
     steps,
     'job.employer-approve',
@@ -432,7 +452,7 @@ async function runJobLifecycleScenario(): Promise<ScenarioReport> {
     async () => ({
       tx: await envFixture.token
         .connect(envFixture.employer)
-        .approve(await envFixture.stake.getAddress(), reward),
+        .approve(await envFixture.stake.getAddress(), employerEscrow),
       actor: envFixture.employer.address,
     })
   );

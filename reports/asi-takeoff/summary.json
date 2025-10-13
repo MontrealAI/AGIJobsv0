@@ -1,0 +1,237 @@
+{
+  "initiative": "National High-Speed Rail Corridor",
+  "objective": "Deploy an end-to-end rail corridor between City A and City B within 12 months using AGI Jobs automation primitives.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "500000"
+  },
+  "dryRun": {
+    "network": "hardhat",
+    "timestamp": "2025-10-13T18:06:12.522Z",
+    "scenarios": [
+      {
+        "id": "job-lifecycle",
+        "label": "Job lifecycle rehearsal (local harness)",
+        "status": "pass",
+        "steps": [
+          {
+            "id": "job.deploy-fixture",
+            "label": "Deploy local job system fixture",
+            "status": "pass",
+            "notes": [
+              "StakeManager: 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+              "JobRegistry: 0x9A676e781A523b5d0C0e43731313A708CB607508",
+              "Validation stub: 0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0"
+            ]
+          },
+          {
+            "id": "job.agent-approve",
+            "label": "Agent approves stake manager",
+            "status": "pass",
+            "notes": [],
+            "actor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "txHash": "0x9abfb14eb4785121144fed07a497446a134b7c1fff6b98017c244b00eaf9a558",
+            "gasUsed": "45976"
+          },
+          {
+            "id": "job.agent-stake",
+            "label": "Agent deposits initial stake",
+            "status": "pass",
+            "notes": [],
+            "actor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "txHash": "0xebacbbd28528c5629123f596f11b12c3789d8361d9fafa61f7d6800cd9af7c66",
+            "gasUsed": "180920"
+          },
+          {
+            "id": "job.employer-approve",
+            "label": "Employer approves StakeManager for reward escrow",
+            "status": "pass",
+            "notes": [],
+            "actor": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "txHash": "0xb416ab48902728e7a2d1f9ec7414950b7a90282d32015054c9e4a2741cf145d4",
+            "gasUsed": "45988"
+          },
+          {
+            "id": "job.create",
+            "label": "Employer creates job",
+            "status": "pass",
+            "notes": [],
+            "actor": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "txHash": "0x1f16d4f7a4c5efeb4d56eef11104b4eeba3870c173d56d064893912ee79c4340",
+            "gasUsed": "267272"
+          },
+          {
+            "id": "job.apply",
+            "label": "Agent applies for job",
+            "status": "pass",
+            "notes": [],
+            "actor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "txHash": "0xcb1538ed193bf522fa14485a23507052614b34930110d7772e60a1c57dd69dfd",
+            "gasUsed": "343306"
+          },
+          {
+            "id": "job.submit",
+            "label": "Agent submits deliverable",
+            "status": "pass",
+            "notes": [],
+            "actor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "txHash": "0x3e90f7f16ee968afed60cb6eb4b2e3edcf00c9a57998cd49a567d1602ffbb5bb",
+            "gasUsed": "150023"
+          },
+          {
+            "id": "job.validation",
+            "label": "Validation module finalizes result",
+            "status": "pass",
+            "notes": [],
+            "actor": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+            "txHash": "0x0243aaf72c21dcd01feb5bbbb2610117b63806860228eca6780d82f317e8e0ec",
+            "gasUsed": "55612"
+          },
+          {
+            "id": "job.finalize",
+            "label": "Employer finalizes job",
+            "status": "pass",
+            "notes": [],
+            "actor": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "txHash": "0xfa6550bb237da716619ab984924c2c0c90aa7d0402c030984d7cd0174b7cb55e",
+            "gasUsed": "364672"
+          },
+          {
+            "id": "job.verify-payout",
+            "label": "Verify agent reward distribution",
+            "status": "pass",
+            "notes": [
+              "Agent balance confirmed at 1099.0 AGIALPHA"
+            ]
+          }
+        ],
+        "summary": [
+          "Agent received 1099.0 AGIALPHA after finalization",
+          "Job lifecycle rehearsal succeeded without errors."
+        ]
+      },
+      {
+        "id": "system-pause",
+        "label": "SystemPause control rehearsal",
+        "status": "pass",
+        "steps": [
+          {
+            "id": "pause.deploy-stack",
+            "label": "Deploy SystemPause stack via Deployer helper",
+            "status": "pass",
+            "notes": [
+              "StakeManager deployed at 0xf0D7de80A1C242fA3C738b083C422d65c6c7ABF1",
+              "JobRegistry deployed at 0x1A7A3e29c3c4b3C858f2DeD8bE6ed51A07589ecF",
+              "ValidationModule deployed at 0xBF908677c54510FE1b47FD0C212355A36417A8c7"
+            ],
+            "txHash": "0xc43ae3ebe56183bb371f11bc9d6ce5efac09cdd8a54090fae2984002b167cf04",
+            "gasUsed": "45897445"
+          },
+          {
+            "id": "pause.verify-ownership",
+            "label": "Verify SystemPause owns and manages all modules",
+            "status": "pass",
+            "notes": [
+              "StakeManager owner confirmed as 0xF0cd6240A2777D2bEB753C95F69F09cdb8421e87",
+              "JobRegistry owner confirmed as 0xF0cd6240A2777D2bEB753C95F69F09cdb8421e87",
+              "ValidationModule owner confirmed as 0xF0cd6240A2777D2bEB753C95F69F09cdb8421e87",
+              "DisputeModule owner confirmed as 0xF0cd6240A2777D2bEB753C95F69F09cdb8421e87",
+              "PlatformRegistry owner confirmed as 0xF0cd6240A2777D2bEB753C95F69F09cdb8421e87",
+              "FeePool owner confirmed as 0xF0cd6240A2777D2bEB753C95F69F09cdb8421e87",
+              "ReputationEngine owner confirmed as 0xF0cd6240A2777D2bEB753C95F69F09cdb8421e87",
+              "ArbitratorCommittee owner confirmed as 0xF0cd6240A2777D2bEB753C95F69F09cdb8421e87"
+            ]
+          },
+          {
+            "id": "pause.refresh",
+            "label": "Refresh pauser assignments through SystemPause",
+            "status": "pass",
+            "notes": [],
+            "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "txHash": "0xb3c3571da5a315ddec8d0457a9bfedd2148823d451d80887495a7bd49b13cfca",
+            "gasUsed": "535273"
+          },
+          {
+            "id": "pause.activate",
+            "label": "Pause all modules via SystemPause",
+            "status": "pass",
+            "notes": [],
+            "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "txHash": "0x93a632a3f2b8b332339666c51d53a353e48b9a8d386684c5cc9741b86fdd04e3",
+            "gasUsed": "165401"
+          },
+          {
+            "id": "pause.verify-paused",
+            "label": "Confirm modules report paused state",
+            "status": "pass",
+            "notes": [
+              "StakeManager paused confirmed",
+              "JobRegistry paused confirmed",
+              "ValidationModule paused confirmed",
+              "DisputeModule paused confirmed",
+              "PlatformRegistry paused confirmed",
+              "FeePool paused confirmed",
+              "ReputationEngine paused confirmed",
+              "ArbitratorCommittee paused confirmed"
+            ]
+          },
+          {
+            "id": "pause.release",
+            "label": "Unpause all modules via SystemPause",
+            "status": "pass",
+            "notes": [],
+            "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "txHash": "0xdde6aca131cf0a14899daf7b1fea7509d07cd26f9b7fc2bc2f654cd8280e1a82",
+            "gasUsed": "117250"
+          },
+          {
+            "id": "pause.verify-unpaused",
+            "label": "Confirm modules resumed operation",
+            "status": "pass",
+            "notes": [
+              "StakeManager unpaused confirmed",
+              "JobRegistry unpaused confirmed",
+              "ValidationModule unpaused confirmed",
+              "DisputeModule unpaused confirmed",
+              "PlatformRegistry unpaused confirmed",
+              "FeePool unpaused confirmed",
+              "ReputationEngine unpaused confirmed",
+              "ArbitratorCommittee unpaused confirmed"
+            ]
+          },
+          {
+            "id": "pause.param-update",
+            "label": "Update StakeManager minimum stake via governance call",
+            "status": "pass",
+            "notes": [
+              "New minimum stake set to 2.0 AGIALPHA"
+            ],
+            "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "txHash": "0x76d41df67502396a138425b1f149b1146663659e56c536baf6ba05b3f3a0efa1",
+            "gasUsed": "47920"
+          },
+          {
+            "id": "pause.verify-param",
+            "label": "Verify StakeManager minimum stake updated",
+            "status": "pass",
+            "notes": [
+              "StakeManager minStake confirmed at 2.0 AGIALPHA"
+            ]
+          }
+        ],
+        "summary": [
+          "SystemPause deployed at 0xF0cd6240A2777D2bEB753C95F69F09cdb8421e87",
+          "StakeManager minStake now 2.0 AGIALPHA",
+          "SystemPause rehearsal completed successfully."
+        ]
+      }
+    ],
+    "status": "pass"
+  },
+  "artifacts": {
+    "dryRun": "reports/asi-takeoff/dry-run.json",
+    "thermodynamics": "reports/asi-takeoff/thermodynamics.json",
+    "missionControl": "reports/asi-takeoff/mission-control.md",
+    "bundle": "reports/asi-takeoff/mission-bundle"
+  }
+}

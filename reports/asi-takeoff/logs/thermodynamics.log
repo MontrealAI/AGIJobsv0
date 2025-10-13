@@ -1,0 +1,267 @@
+# Thermodynamics report
+
+Exit code: 0
+Duration: 2844ms
+
+## stdout
+
+[dotenv@17.2.2] injecting env (2) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.2] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+{
+  "network": "hardhat",
+  "generatedAt": "2025-10-13T18:06:15.431Z",
+  "summary": [
+    {
+      "section": "RewardEngineMB",
+      "counts": {
+        "match": 2,
+        "drift": 0,
+        "config-missing": 3,
+        "contract-missing": 17,
+        "skipped": 0,
+        "error": 0
+      },
+      "total": 22
+    },
+    {
+      "section": "Thermostat",
+      "counts": {
+        "match": 1,
+        "drift": 0,
+        "config-missing": 0,
+        "contract-missing": 11,
+        "skipped": 0,
+        "error": 0
+      },
+      "total": 12
+    }
+  ],
+  "sections": [
+    {
+      "name": "RewardEngineMB",
+      "checks": [
+        {
+          "parameter": "RewardEngine address",
+          "configValue": "0x0000000000000000000000000000000000000000",
+          "onChainValue": "0x0000000000000000000000000000000000000000",
+          "status": "match"
+        },
+        {
+          "parameter": "Thermostat (linked via RewardEngine)",
+          "configValue": "0x0000000000000000000000000000000000000000",
+          "onChainValue": "0x0000000000000000000000000000000000000000",
+          "status": "match",
+          "notes": [
+            "RewardEngine contract unavailable; falling back to address book"
+          ]
+        },
+        {
+          "parameter": "Treasury",
+          "configValue": "0x0000000000000000000000000000000000000000",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Energy oracle",
+          "onChainValue": null,
+          "status": "config-missing"
+        },
+        {
+          "parameter": "Fee pool",
+          "onChainValue": null,
+          "status": "config-missing"
+        },
+        {
+          "parameter": "Reputation engine",
+          "onChainValue": null,
+          "status": "config-missing"
+        },
+        {
+          "parameter": "Kappa (scaling)",
+          "configValue": "1.0 AGIALPHA (1000000000000000000)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Fallback temperature",
+          "configValue": "1.0 (1000000000000000000)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Max proofs per role",
+          "configValue": "100",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Agent role share",
+          "configValue": "65.0% (650000000000000000 wad)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Validator role share",
+          "configValue": "15.0% (150000000000000000 wad)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Operator role share",
+          "configValue": "15.0% (150000000000000000 wad)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Employer role share",
+          "configValue": "5.0% (50000000000000000 wad)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Agent μ",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Validator μ",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Operator μ",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Employer μ",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Agent baseline energy",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Validator baseline energy",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Operator baseline energy",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Employer baseline energy",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Role share sum",
+          "configValue": "100.0% (1000000000000000000 wad)",
+          "onChainValue": null,
+          "status": "contract-missing",
+          "notes": [
+            "Ensure total equals 100% (1.0 wad)"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Thermostat",
+      "checks": [
+        {
+          "parameter": "Thermostat address",
+          "configValue": "0x0000000000000000000000000000000000000000",
+          "onChainValue": "0x0000000000000000000000000000000000000000",
+          "status": "match"
+        },
+        {
+          "parameter": "System temperature",
+          "configValue": "1.0 (1000000000000000000)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Min temperature",
+          "configValue": "0.1 (100000000000000000)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Max temperature",
+          "configValue": "5.0 (5000000000000000000)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "PID kp",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "PID ki",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "PID kd",
+          "configValue": "0.0 (0)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "KPI weight (emission)",
+          "configValue": "0.000000000000000001 (1)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "KPI weight (backlog)",
+          "configValue": "0.000000000000000001 (1)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "KPI weight (SLA)",
+          "configValue": "0.000000000000000001 (1)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Integral min",
+          "configValue": "-1.0 (-1000000000000000000)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        },
+        {
+          "parameter": "Integral max",
+          "configValue": "1.0 (1000000000000000000)",
+          "onChainValue": null,
+          "status": "contract-missing"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Loaded thermodynamics config from config/thermodynamics.json"
+  ]
+}
+
+
+## stderr
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
