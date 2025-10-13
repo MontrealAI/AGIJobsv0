@@ -1,21 +1,201 @@
+const fs = require('fs');
+const path = require('path');
 const { ethers } = require('ethers');
 
-// Canonical $AGIALPHA token uses 18 decimals
-const { decimals: AGIALPHA_DECIMALS } = require('../config/agialpha.json');
+const {
+  decimals: AGIALPHA_DECIMALS,
+  address: AGIALPHA_DEFAULT_ADDRESS,
+} = require('../config/agialpha.json');
+
 const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
+const DEFAULT_KEYS = [
+  '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+  '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
+  '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a',
+  '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6',
+  '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a',
+];
 
-function requireEnv(name) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable ${name}`);
-  }
-  return value;
-}
+const ROLE_MAP = {
+  agent: 0,
+  worker: 0,
+  validator: 1,
+  platform: 2,
+  operator: 2,
+};
 
-const provider = new ethers.JsonRpcProvider(requireEnv('RPC_URL'));
-const signer = new ethers.Wallet(requireEnv('PRIVATE_KEY'), provider);
+const registryAbi = [
+  'event JobCreated(uint256 indexed jobId)',
+  'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri)',
+  'function applyForJob(uint256 jobId, string subdomain, bytes32[] proof)',
+  'function submit(uint256 jobId, bytes32 resultHash, string resultURI)',
+  'function acknowledgeTaxPolicy()',
+  'function getSpecHash(uint256 jobId) view returns (bytes32)',
+];
+const stakeAbi = ['function depositStake(uint8 role, uint256 amount)'];
+const erc20Abi = [
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+];
+const validationAbi = [
+  'function commitValidation(uint256 jobId, bytes32 hash, string subdomain, bytes32[] proof)',
+  'function revealValidation(uint256 jobId, bool approve, bytes32 burnTxHash, bytes32 salt, string subdomain, bytes32[] proof)',
+  'function finalize(uint256 jobId)',
+  'function jobNonce(uint256 jobId) view returns (uint256)',
+  'function DOMAIN_SEPARATOR() view returns (bytes32)',
+];
+const attestAbi = [
+  'function attest(bytes32 node, uint8 role, address who)',
+  'function revoke(bytes32 node, uint8 role, address who)',
+];
+
+let cachedContracts;
+let cachedDeployment;
 
 const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+
+function resolveRpcUrl() {
+  return process.env.RPC_URL || 'http://127.0.0.1:8545';
+}
+
+function resolvePrivateKey() {
+  return process.env.PRIVATE_KEY || DEFAULT_KEYS[0];
+}
+
+function resolveNetworkSlug() {
+  if (process.env.NETWORK && process.env.NETWORK !== '') {
+    return process.env.NETWORK;
+  }
+  if (process.env.CHAIN_ID === '31337') {
+    return 'localhost';
+  }
+  return undefined;
+}
+
+function loadDeploymentSummary() {
+  if (cachedDeployment !== undefined) {
+    return cachedDeployment;
+  }
+
+  const candidates = [];
+  if (process.env.AURORA_DEPLOY_OUTPUT) {
+    candidates.push(process.env.AURORA_DEPLOY_OUTPUT);
+  }
+  const slug = resolveNetworkSlug();
+  if (slug) {
+    candidates.push(path.join('reports', slug, 'aurora', 'receipts', 'deploy.json'));
+  }
+  candidates.push(path.join('reports', 'localhost', 'aurora', 'receipts', 'deploy.json'));
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      if (fs.existsSync(candidate)) {
+        const parsed = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+        cachedDeployment = parsed;
+        return parsed;
+      }
+    } catch (error) {
+      console.warn(`Failed to read deployment summary at ${candidate}:`, error);
+    }
+  }
+
+  cachedDeployment = null;
+  return cachedDeployment;
+}
+
+function resolveAddress(envName, summaryKey, fallback) {
+  const envValue = process.env[envName];
+  if (envValue && envValue !== '') {
+    return envValue;
+  }
+  const deployment = loadDeploymentSummary();
+  if (deployment && deployment.contracts && deployment.contracts[summaryKey]) {
+    const value = deployment.contracts[summaryKey];
+    process.env[envName] = value;
+    return value;
+  }
+  if (fallback) {
+    process.env[envName] = fallback;
+    return fallback;
+  }
+  throw new Error(`Missing required environment variable ${envName}`);
+}
+
+async function getRunnerAddress(runner, provider) {
+  if (runner && typeof runner.getAddress === 'function') {
+    return runner.getAddress();
+  }
+  if (provider && typeof provider.getSigner === 'function') {
+    return provider.getSigner().getAddress();
+  }
+  throw new Error('Unable to resolve signer address');
+}
+
+function normaliseRole(input) {
+  if (input === undefined || input === null) {
+    return 0;
+  }
+  if (typeof input === 'number') {
+    return input;
+  }
+  if (typeof input === 'string') {
+    const lowered = input.toLowerCase();
+    if (ROLE_MAP.hasOwnProperty(lowered)) {
+      return ROLE_MAP[lowered];
+    }
+  }
+  throw new Error(`Unsupported stake role: ${input}`);
+}
+
+async function ensureContracts() {
+  if (cachedContracts) {
+    return cachedContracts;
+  }
+
+  const provider = new ethers.JsonRpcProvider(resolveRpcUrl());
+  const signer = new ethers.Wallet(resolvePrivateKey(), provider);
+
+  const registryAddress = resolveAddress('JOB_REGISTRY', 'JobRegistry');
+  const stakeManagerAddress = resolveAddress('STAKE_MANAGER', 'StakeManager');
+  const validationModuleAddress = resolveAddress('VALIDATION_MODULE', 'ValidationModule');
+  const attestationAddress = (() => {
+    try {
+      return resolveAddress('ATTESTATION_REGISTRY', 'AttestationRegistry');
+    } catch (err) {
+      try {
+        return resolveAddress('IDENTITY_REGISTRY', 'IdentityRegistry');
+      } catch (inner) {
+        return null;
+      }
+    }
+  })();
+  const agialphaAddress = resolveAddress(
+    'AGIALPHA_TOKEN',
+    'AGIALPHAToken',
+    AGIALPHA_DEFAULT_ADDRESS
+  );
+
+  const registry = new ethers.Contract(registryAddress, registryAbi, signer);
+  const stakeManager = new ethers.Contract(stakeManagerAddress, stakeAbi, signer);
+  const agialphaToken = new ethers.Contract(agialphaAddress, erc20Abi, signer);
+  const validation = new ethers.Contract(validationModuleAddress, validationAbi, signer);
+  const attestation = attestationAddress
+    ? new ethers.Contract(attestationAddress, attestAbi, signer)
+    : null;
+
+  cachedContracts = {
+    provider,
+    signer,
+    registry,
+    stakeManager,
+    agialphaToken,
+    validation,
+    attestation,
+  };
+
+  return cachedContracts;
+}
 
 function isBytes32Hash(value) {
   return typeof value === 'string' && ethers.isHexString(value, 32);
@@ -57,10 +237,7 @@ function toBigInt(value, label) {
   }
 }
 
-function toBytes32(
-  value,
-  { label, randomIfMissing = false, allowText = false } = {}
-) {
+function toBytes32(value, { label, randomIfMissing = false, allowText = false } = {}) {
   if (value === undefined || value === null || value === '') {
     if (randomIfMissing) {
       return ethers.hexlify(ethers.randomBytes(32));
@@ -131,11 +308,21 @@ async function computeValidationCommit(jobIdInput, approve, options = {}) {
     throw new Error('The `approve` flag must be a boolean.');
   }
 
+  const { provider, validation, registry } = await ensureContracts();
   const jobId = BigInt(jobIdInput);
+
+  const runner = validation.runner;
+  const defaultValidator = await getRunnerAddress(runner, provider).catch(
+    () => undefined
+  );
 
   const validator = options.validator
     ? ethers.getAddress(options.validator)
-    : await signer.getAddress();
+    : defaultValidator
+    ? ethers.getAddress(defaultValidator)
+    : (() => {
+        throw new Error('Unable to determine validator address for commit calculation');
+      })();
 
   const providedChainId = toBigInt(options.chainId, 'chainId');
   const chainId =
@@ -150,9 +337,7 @@ async function computeValidationCommit(jobIdInput, approve, options = {}) {
 
   const providedNonce = toBigInt(options.nonce, 'nonce');
   const nonce =
-    providedNonce !== undefined
-      ? providedNonce
-      : await validation.jobNonce(jobId);
+    providedNonce !== undefined ? providedNonce : await validation.jobNonce(jobId);
 
   const specHash =
     options.specHash !== undefined
@@ -191,115 +376,160 @@ async function computeValidationCommit(jobIdInput, approve, options = {}) {
   };
 }
 
-const registryAbi = [
-  'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri)',
-  'function applyForJob(uint256 jobId, string subdomain, bytes32[] proof)',
-  'function submit(uint256 jobId, bytes32 resultHash, string resultURI)',
-  'function raiseDispute(uint256 jobId, bytes32 evidenceHash)',
-  'function raiseDispute(uint256 jobId, string reason)',
-  'function getSpecHash(uint256 jobId) view returns (bytes32)',
-];
-const stakeAbi = ['function depositStake(uint8 role, uint256 amount)'];
-const erc20Abi = [
-  'function approve(address spender, uint256 amount) returns (bool)',
-  'function allowance(address owner, address spender) view returns (uint256)',
-];
-const validationAbi = [
-  'function commitValidation(uint256 jobId, bytes32 hash, string subdomain, bytes32[] proof)',
-  'function revealValidation(uint256 jobId, bool approve, bytes32 burnTxHash, bytes32 salt, string subdomain, bytes32[] proof)',
-  'function finalize(uint256 jobId)',
-  'function jobNonce(uint256 jobId) view returns (uint256)',
-  'function DOMAIN_SEPARATOR() view returns (bytes32)',
-];
+function maybeLog(result) {
+  try {
+    if (result !== undefined) {
+      console.log(JSON.stringify(result));
+    }
+  } catch (error) {
+    console.warn('Failed to serialise result', error);
+  }
+  return result;
+}
 
-const attestAbi = [
-  'function attest(bytes32 node, uint8 role, address who)',
-  'function revoke(bytes32 node, uint8 role, address who)',
-];
+function parseSpec(input) {
+  if (!isPlainObject(input)) {
+    return null;
+  }
+  const spec = input;
+  const amount = spec?.escrow?.amountPerItem;
+  const uri = spec?.acceptanceCriteriaURI || spec?.resultSchema || 'ipfs://job';
+  const specHash = ethers.keccak256(
+    ethers.toUtf8Bytes(JSON.stringify(spec, Object.keys(spec).sort()))
+  );
+  return {
+    amount,
+    uri,
+    specHash,
+  };
+}
 
-const registry = new ethers.Contract(
-  requireEnv('JOB_REGISTRY'),
-  registryAbi,
-  signer
-);
-const stakeManager = new ethers.Contract(
-  requireEnv('STAKE_MANAGER'),
-  stakeAbi,
-  signer
-);
-const agialphaToken = new ethers.Contract(
-  requireEnv('AGIALPHA_TOKEN'),
-  erc20Abi,
-  signer
-);
-const validation = new ethers.Contract(
-  requireEnv('VALIDATION_MODULE'),
-  validationAbi,
-  signer
-);
-
-const attestation = new ethers.Contract(
-  requireEnv('ATTESTATION_REGISTRY'),
-  attestAbi,
-  signer
-);
-
-// Post a job with a reward denominated in AGIALPHA.
-// The optional `amount` parameter represents whole tokens and defaults to `1`.
-// Amounts are converted using the fixed 18‑decimal configuration.
-async function postJob(amount = '1') {
+async function postJob(input = '1') {
+  const { registry } = await ensureContracts();
+  const parsedSpec = parseSpec(input);
+  const amount = parsedSpec?.amount ?? input;
   const reward = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
   const deadline = Math.floor(Date.now() / 1000) + 3600;
-  const specHash = ethers.id('spec');
-  await registry.createJob(reward, deadline, specHash, 'ipfs://job');
+  const specHash = parsedSpec?.specHash || ethers.id('spec');
+  const specUri = parsedSpec?.uri || 'ipfs://job';
+  const tx = await registry.createJob(reward, deadline, specHash, specUri);
+  const receipt = await tx.wait();
+
+  let jobId = 0n;
+  if (receipt && Array.isArray(receipt.logs)) {
+    for (const log of receipt.logs) {
+      try {
+        const parsed = registry.interface.parseLog(log);
+        if (parsed.name === 'JobCreated') {
+          jobId = BigInt(parsed.args.jobId);
+          break;
+        }
+      } catch (err) {
+        continue; // skip non-registry logs
+      }
+    }
+  }
+  if (jobId === 0n) {
+    jobId = 1n;
+  }
+
+  return maybeLog({
+    txHash: receipt?.hash || tx.hash,
+    jobId: jobId.toString(),
+    reward: reward.toString(),
+    specHash,
+    specUri,
+    deadline,
+  });
 }
 
-async function acknowledgeTaxPolicy() {
-  const tx = await registry.acknowledgeTaxPolicy();
+async function acknowledgeTaxPolicy(options = {}) {
+  const { registry, provider } = await ensureContracts();
+  const runner = options.privateKey
+    ? new ethers.Wallet(options.privateKey, provider)
+    : registry.runner;
+  const tx = await registry.connect(runner).acknowledgeTaxPolicy();
   await tx.wait();
+  const actor = await getRunnerAddress(runner, provider).catch(() => undefined);
+  return maybeLog({ txHash: tx.hash, actor });
 }
 
-async function approveStake(amount) {
+async function approveStake(amount, options = {}) {
+  const { stakeManager, agialphaToken, provider } = await ensureContracts();
+  const runner = options.privateKey
+    ? new ethers.Wallet(options.privateKey, provider)
+    : agialphaToken.runner;
   const parsed = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
-  const owner = await signer.getAddress();
   const stakeManagerAddress =
     typeof stakeManager.target === 'string'
       ? stakeManager.target
       : await stakeManager.getAddress();
-  const allowance = await agialphaToken.allowance(
-    owner,
-    stakeManagerAddress
-  );
+  const owner = await getRunnerAddress(runner, provider);
+  const allowance = await agialphaToken
+    .connect(runner)
+    .allowance(owner, stakeManagerAddress);
   if (allowance >= parsed) {
-    return;
+    return maybeLog({ allowance: allowance.toString(), approved: true });
   }
-  const tx = await agialphaToken.approve(stakeManagerAddress, parsed);
-  await tx.wait();
+  const tx = await agialphaToken.connect(runner).approve(stakeManagerAddress, parsed);
+  const receipt = await tx.wait();
+  return maybeLog({ txHash: receipt?.hash || tx.hash, amount: parsed.toString() });
 }
 
-async function prepareStake(amount) {
-  await acknowledgeTaxPolicy();
-  await approveStake(amount);
+async function prepareStake(amount, options = {}) {
+  await acknowledgeTaxPolicy(options);
+  await approveStake(amount, options);
 }
 
-async function stake(amount) {
+async function stake(amount, options = {}) {
+  const { stakeManager, provider } = await ensureContracts();
+  const runner = options.privateKey
+    ? new ethers.Wallet(options.privateKey, provider)
+    : stakeManager.runner;
+  const role = normaliseRole(options.role);
   const parsed = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
-  await stakeManager.depositStake(0, parsed);
+  const tx = await stakeManager.connect(runner).depositStake(role, parsed);
+  const receipt = await tx.wait();
+  const staker = await getRunnerAddress(runner, provider).catch(() => undefined);
+  return maybeLog({
+    txHash: receipt?.hash || tx.hash,
+    role,
+    amount: parsed.toString(),
+    staker,
+  });
 }
 
-// Apply for a job using a `subdomain` label such as "alice" for
-// `alice.agent.agi.eth`. Supply a Merkle `proof` if allowlists are enabled.
-async function apply(jobId, subdomain, proof) {
-  await registry.applyForJob(jobId, subdomain, proof);
+async function apply(jobId, subdomain, proof, options = {}) {
+  const { registry, provider } = await ensureContracts();
+  const runner = options.privateKey
+    ? new ethers.Wallet(options.privateKey, provider)
+    : registry.runner;
+  const tx = await registry.connect(runner).applyForJob(jobId, subdomain, proof || []);
+  const receipt = await tx.wait();
+  return maybeLog({ txHash: receipt?.hash || tx.hash, jobId: jobId.toString(), subdomain });
 }
 
-async function submit(jobId, uri) {
+async function submit(jobId, uri, options = {}) {
+  const { registry, provider } = await ensureContracts();
+  const runner = options.privateKey
+    ? new ethers.Wallet(options.privateKey, provider)
+    : registry.runner;
   const hash = ethers.id(uri);
-  await registry.submit(jobId, hash, uri);
+  const tx = await registry.connect(runner).submit(jobId, hash, uri);
+  const receipt = await tx.wait();
+  const worker = await getRunnerAddress(runner, provider).catch(() => undefined);
+  return maybeLog({
+    txHash: receipt?.hash || tx.hash,
+    jobId: jobId.toString(),
+    worker,
+    resultURI: uri,
+    resultHash: hash,
+  });
 }
 
-// Validators pass their `subdomain` label under `club.agi.eth` when voting.
 async function validate(jobId, commitOrApprove, ...rest) {
+  const { validation, provider } = await ensureContracts();
+  const runner = validation.runner;
   const [maybeSubdomain, maybeProof, maybeApprove, maybeSalt, maybeBurn] = rest;
 
   if (
@@ -313,32 +543,27 @@ async function validate(jobId, commitOrApprove, ...rest) {
     const salt = toBytes32(maybeSalt, { label: 'salt' });
     const burnTxHash = toBytes32(maybeBurn, { label: 'burnTxHash' });
 
-    const commitTx = await validation.commitValidation(
-      jobId,
-      ethers.zeroPadValue(commitOrApprove, 32),
-      subdomain,
-      proof
-    );
-    await commitTx.wait();
+    const commitTx = await validation
+      .connect(runner)
+      .commitValidation(jobId, ethers.zeroPadValue(commitOrApprove, 32), subdomain, proof);
+    const commitReceipt = await commitTx.wait();
 
-    const revealTx = await validation.revealValidation(
-      jobId,
-      approve,
-      burnTxHash,
-      salt,
-      subdomain,
-      proof
-    );
-    await revealTx.wait();
+    const revealTx = await validation
+      .connect(runner)
+      .revealValidation(jobId, approve, burnTxHash, salt, subdomain, proof);
+    const revealReceipt = await revealTx.wait();
 
-    const finalizeTx = await validation.finalize(jobId);
-    await finalizeTx.wait();
+    const finalizeTx = await validation.connect(runner).finalize(jobId);
+    const finalizeReceipt = await finalizeTx.wait();
 
-    return {
+    return maybeLog({
       commitHash: ethers.zeroPadValue(commitOrApprove, 32),
       salt,
       burnTxHash,
-    };
+      commitTx: commitReceipt?.hash || commitTx.hash,
+      revealTx: revealReceipt?.hash || revealTx.hash,
+      finalizeTx: finalizeReceipt?.hash || finalizeTx.hash,
+    });
   }
 
   const approve = commitOrApprove;
@@ -347,44 +572,71 @@ async function validate(jobId, commitOrApprove, ...rest) {
 
   const plan = await computeValidationCommit(jobId, approve, options);
 
-  const commitTx = await validation.commitValidation(
-    jobId,
-    plan.commitHash,
-    options.subdomain,
-    proof
-  );
-  await commitTx.wait();
+  const commitTx = await validation
+    .connect(runner)
+    .commitValidation(jobId, plan.commitHash, options.subdomain, proof);
+  const commitReceipt = await commitTx.wait();
 
-  const revealTx = await validation.revealValidation(
-    jobId,
-    approve,
-    plan.burnTxHash,
-    plan.salt,
-    options.subdomain,
-    proof
-  );
-  await revealTx.wait();
+  const revealTx = await validation
+    .connect(runner)
+    .revealValidation(
+      jobId,
+      approve,
+      plan.burnTxHash,
+      plan.salt,
+      options.subdomain,
+      proof
+    );
+  const revealReceipt = await revealTx.wait();
 
   if (!options.skipFinalize) {
-    const finalizeTx = await validation.finalize(jobId);
-    await finalizeTx.wait();
+    const finalizeTx = await validation.connect(runner).finalize(jobId);
+    const finalizeReceipt = await finalizeTx.wait();
+    plan.finalizeTx = finalizeReceipt?.hash || finalizeTx.hash;
   }
 
-  return plan;
+  plan.commitTx = commitReceipt?.hash || commitTx.hash;
+  plan.revealTx = revealReceipt?.hash || revealTx.hash;
+
+  return maybeLog(plan);
 }
 
-async function dispute(jobId, evidence) {
-  await callRaiseDispute(registry, jobId, evidence);
+async function dispute(jobId, evidence, options = {}) {
+  const { registry, provider } = await ensureContracts();
+  const signer = options.privateKey
+    ? new ethers.Wallet(options.privateKey, provider)
+    : registry.signer;
+  const tx = await callRaiseDispute(registry.connect(signer), jobId, evidence);
+  const receipt = await tx.wait();
+  return maybeLog({ txHash: receipt?.hash || tx.hash, jobId: jobId.toString() });
 }
 
-async function attest(name, role, delegate) {
+async function attest(name, role, delegate, options = {}) {
+  const { attestation, provider } = await ensureContracts();
+  if (!attestation) {
+    throw new Error('Attestation registry not configured');
+  }
+  const signer = options.privateKey
+    ? new ethers.Wallet(options.privateKey, provider)
+    : attestation.signer;
   const node = ethers.namehash(name);
-  await attestation.attest(node, role, delegate);
+  const tx = await attestation.connect(signer).attest(node, role, delegate);
+  await tx.wait();
+  return maybeLog({ txHash: tx.hash, name, role, delegate });
 }
 
-async function revoke(name, role, delegate) {
+async function revoke(name, role, delegate, options = {}) {
+  const { attestation, provider } = await ensureContracts();
+  if (!attestation) {
+    throw new Error('Attestation registry not configured');
+  }
+  const signer = options.privateKey
+    ? new ethers.Wallet(options.privateKey, provider)
+    : attestation.signer;
   const node = ethers.namehash(name);
-  await attestation.revoke(node, role, delegate);
+  const tx = await attestation.connect(signer).revoke(node, role, delegate);
+  await tx.wait();
+  return maybeLog({ txHash: tx.hash, name, role, delegate });
 }
 
 module.exports = {
