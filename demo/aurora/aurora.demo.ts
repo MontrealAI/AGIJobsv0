@@ -36,6 +36,7 @@ const DEFAULT_KEYS = [
   '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a',
   '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6',
   '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a',
+  '0x8b3a350cf5c34c9194ca1aa9d026ca16787d90ca431fb1a2bd43d50c18d5c7b1',
 ];
 
 const AGIALPHA_CONFIG = JSON.parse(
@@ -43,6 +44,18 @@ const AGIALPHA_CONFIG = JSON.parse(
 );
 
 const SPEC_PATH = path.join('demo', 'aurora', 'config', 'aurora.spec@v2.json');
+const REQUIRED_CONTRACTS = [
+  'JobRegistry',
+  'StakeManager',
+  'ValidationModule',
+  'IdentityRegistry',
+  'SystemPause',
+] as const;
+type RequiredContract = (typeof REQUIRED_CONTRACTS)[number];
+
+function toEnvOverrideName(name: string): string {
+  return `AURORA_${name.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase()}`;
+}
 
 function parseNetworkArg(): string {
   const idx = process.argv.indexOf('--network');
@@ -69,10 +82,72 @@ function writeReceipt(net: string, name: string, data: unknown) {
   fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
 }
 
-function resolveDeploySummaryPath(net: string): string {
-  if (process.env.AURORA_DEPLOY_OUTPUT) {
-    return path.resolve(process.env.AURORA_DEPLOY_OUTPUT);
+async function ensureOwnershipAccepted(
+  contract: ethers.Contract,
+  label: string,
+  expectedOwner: string
+) {
+  if ('owner' in contract && typeof contract.owner === 'function') {
+    try {
+      const currentOwner = await contract.owner();
+      if (
+        typeof currentOwner === 'string' &&
+        currentOwner.toLowerCase() === expectedOwner.toLowerCase()
+      ) {
+        return;
+      }
+    } catch (err) {
+      console.warn(`Unable to read owner() for ${label}: ${(err as Error).message}`);
+    }
   }
+
+  if (
+    'pendingOwner' in contract &&
+    typeof (contract as ethers.Contract & { pendingOwner(): Promise<string> }).pendingOwner ===
+      'function'
+  ) {
+    try {
+      const pending = await (contract as ethers.Contract & {
+        pendingOwner(): Promise<string>;
+      }).pendingOwner();
+      if (pending && pending.toLowerCase() === expectedOwner.toLowerCase()) {
+        if (
+          'acceptOwnership' in contract &&
+          typeof (contract as ethers.Contract & {
+            acceptOwnership(): Promise<ethers.TransactionResponse>;
+          }).acceptOwnership === 'function'
+        ) {
+          const tx = await (contract as ethers.Contract & {
+            acceptOwnership(): Promise<ethers.TransactionResponse>;
+          }).acceptOwnership();
+          await tx.wait();
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn(
+        `Unable to accept ownership for ${label}: ${(err as Error).message}`
+      );
+      return;
+    }
+  }
+
+  console.warn(
+    `Ownership for ${label} not updated; ensure governance ${expectedOwner} has accepted manually.`
+  );
+}
+
+function deploymentSummaryCandidates(net: string): string[] {
+  const candidates: string[] = [];
+  if (process.env.AURORA_DEPLOY_OUTPUT) {
+    candidates.push(path.resolve(process.env.AURORA_DEPLOY_OUTPUT));
+  }
+  candidates.push(path.resolve('reports', net, 'aurora', 'receipts', 'deploy.json'));
+  candidates.push(path.resolve('deployment-config', `latest-deployment.${net}.json`));
+  return Array.from(new Set(candidates));
+}
+
+function defaultDeployReceiptPath(net: string): string {
   return path.resolve('reports', net, 'aurora', 'receipts', 'deploy.json');
 }
 
@@ -108,7 +183,7 @@ function normaliseArg(value: unknown): unknown {
 
 async function ensureAgialpha(
   provider: ethers.JsonRpcProvider,
-  owner: ethers.Wallet
+  owner: ethers.Signer
 ) {
   const tokenAddress = ethers.getAddress(AGIALPHA_CONFIG.address);
   const code = await provider.getCode(tokenAddress);
@@ -181,18 +256,30 @@ async function main() {
   const chain = await provider.getNetwork();
   const decimals = Number(AGIALPHA_CONFIG.decimals || 18);
 
+  const employerKey =
+    process.env.AURORA_EMPLOYER_KEY ||
+    process.env.PRIVATE_KEY ||
+    DEFAULT_KEYS[1];
+  const workerKey = process.env.AURORA_WORKER_KEY || DEFAULT_KEYS[2];
   const governanceActions: GovernanceAction[] = [];
 
   const employerKey = process.env.PRIVATE_KEY || DEFAULT_KEYS[0];
   const workerKey = process.env.AURORA_WORKER_KEY || DEFAULT_KEYS[1];
   const validatorKeys = [
-    process.env.AURORA_VALIDATOR1_KEY || DEFAULT_KEYS[2],
-    process.env.AURORA_VALIDATOR2_KEY || DEFAULT_KEYS[3],
-    process.env.AURORA_VALIDATOR3_KEY || DEFAULT_KEYS[4],
+    process.env.AURORA_VALIDATOR1_KEY || DEFAULT_KEYS[3],
+    process.env.AURORA_VALIDATOR2_KEY || DEFAULT_KEYS[4],
+    process.env.AURORA_VALIDATOR3_KEY || DEFAULT_KEYS[5],
   ];
 
-  const employer = new ethers.Wallet(employerKey, provider);
-  const worker = new ethers.Wallet(workerKey, provider);
+  const employer = new ethers.NonceManager(new ethers.Wallet(employerKey, provider));
+  const worker = new ethers.NonceManager(new ethers.Wallet(workerKey, provider));
+  const tokenOwnerKey = process.env.AURORA_TOKEN_OWNER_KEY || DEFAULT_KEYS[0];
+  const tokenOwner = new ethers.NonceManager(new ethers.Wallet(tokenOwnerKey, provider));
+  const governanceKey = process.env.AURORA_GOVERNANCE_KEY || tokenOwnerKey;
+  const governance =
+    governanceKey === tokenOwnerKey
+      ? tokenOwner
+      : new ethers.NonceManager(new ethers.Wallet(governanceKey, provider));
 
   const spec = readJsonFile<Spec>(SPEC_PATH);
   if (!spec.validation || !spec.validation.k || !spec.validation.n) {
@@ -204,18 +291,89 @@ async function main() {
   if (selectedValidatorKeys.length < validatorCount) {
     throw new Error('Insufficient validator keys configured for the selected quorum.');
   }
+  const validators = selectedValidatorKeys.map(
+    (key) => new ethers.NonceManager(new ethers.Wallet(key, provider))
+  );
+
+  const employerAddress = await employer.getAddress();
+  const workerAddress = await worker.getAddress();
+  const validatorAddresses = await Promise.all(
+    validators.map((v) => v.getAddress())
+  );
   const validators = selectedValidatorKeys.map((key) => new ethers.Wallet(key, provider));
   const agentRole = 0;
   const validatorRole = 1;
   const platformRole = 2;
 
-  const summaryPath = resolveDeploySummaryPath(networkName);
-  const deploySummary = readJsonFile<DeploySummary>(summaryPath);
-  if (!deploySummary.contracts) {
-    throw new Error(`Deployment summary missing contracts map: ${summaryPath}`);
+  const participants = [
+    { signer: employer, address: employerAddress, role: 'employer' as const },
+    { signer: worker, address: workerAddress, role: 'worker' as const },
+    ...validatorAddresses.map((address, idx) => ({
+      signer: validators[idx],
+      address,
+      role: 'validator' as const,
+    })),
+  ];
+
+  const summaryCandidates = deploymentSummaryCandidates(networkName);
+  const summaryPath = summaryCandidates.find((candidate) => fs.existsSync(candidate));
+  let deploySummary: DeploySummary | undefined;
+  if (summaryPath) {
+    deploySummary = readJsonFile<DeploySummary>(summaryPath);
+    console.log(`Using deployment summary at ${summaryPath}`);
+  } else {
+    console.warn(
+      `No deployment summary found. Checked: ${summaryCandidates
+        .map((candidate) => path.relative(process.cwd(), candidate))
+        .join(', ')}`
+    );
   }
 
-  const addresses = deploySummary.contracts;
+  const resolvedAddresses: Record<string, string> = { ...(deploySummary?.contracts ?? {}) };
+  const overrideEnv: Record<RequiredContract, string | undefined> = {
+    JobRegistry: process.env.AURORA_JOB_REGISTRY,
+    StakeManager: process.env.AURORA_STAKE_MANAGER,
+    ValidationModule: process.env.AURORA_VALIDATION_MODULE,
+    IdentityRegistry: process.env.AURORA_IDENTITY_REGISTRY,
+    SystemPause: process.env.AURORA_SYSTEM_PAUSE,
+  };
+  for (const [name, value] of Object.entries(overrideEnv)) {
+    if (value) {
+      resolvedAddresses[name] = ethers.getAddress(value);
+    }
+  }
+
+  const missing = REQUIRED_CONTRACTS.filter((name) => !resolvedAddresses[name]);
+  if (missing.length > 0) {
+    const guidance = [
+      'Run `npx hardhat run scripts/v2/deployDefaults.ts --network <network>` with `DEPLOY_DEFAULTS_OUTPUT` pointing to a JSON file.',
+      'Alternatively set the following environment variables:',
+      missing.map((name) => toEnvOverrideName(name)).join(', '),
+    ].join(' ');
+    throw new Error(
+      `Missing contract addresses for: ${missing.join(', ')}. ${guidance}`
+    );
+  }
+
+  const addresses = resolvedAddresses as Record<RequiredContract, string>;
+
+  const defaultDeployPath = defaultDeployReceiptPath(networkName);
+  if (!summaryPath || path.resolve(summaryPath) !== defaultDeployPath) {
+    const contractSnapshot = {
+      ...(deploySummary?.contracts ?? {}),
+      ...Object.fromEntries(REQUIRED_CONTRACTS.map((name) => [name, addresses[name]])),
+    };
+    writeReceipt(networkName, 'deploy.json', {
+      ...(deploySummary ?? {}),
+      timestamp:
+        (deploySummary as undefined | { timestamp?: string })?.timestamp ??
+        new Date().toISOString(),
+      network: deploySummary?.network ?? networkName,
+      governance: deploySummary?.governance,
+      source: summaryPath ? path.relative(process.cwd(), summaryPath) : 'env',
+      contracts: contractSnapshot,
+    });
+  }
 
   const artifact = (name: string) =>
     JSON.parse(
@@ -249,13 +407,24 @@ async function main() {
   const identityRegistry = new ethers.Contract(
     addresses.IdentityRegistry,
     identityRegistryArtifact.abi,
-    employer
+    governance
   );
   const systemPause = new ethers.Contract(
     addresses.SystemPause,
     systemPauseArtifact.abi,
-    employer
+    governance
   );
+  const taxPolicyAddress = deploySummary?.contracts?.TaxPolicy;
+  if (!taxPolicyAddress) {
+    throw new Error('TaxPolicy address missing from deployment summary.');
+  }
+  const taxPolicyArtifact = artifact('TaxPolicy');
+  const taxPolicy = new ethers.Contract(
+    taxPolicyAddress,
+    taxPolicyArtifact.abi,
+    governance
+  );
+  const token = await ensureAgialpha(provider, tokenOwner);
 
   const recordForwardGovernanceCall = async (
     targetName: string,
@@ -302,21 +471,96 @@ async function main() {
   const validatorStakeAmount = specAmountToWei(spec.stake?.validator, decimals) ||
     ethers.parseUnits('50', decimals);
 
-  const participants = [employer, worker, ...validators];
-  for (const wallet of participants) {
-    const bal = await token.balanceOf(wallet.address);
-    if (bal < mintAmount) {
-      const tx = await token.mint(wallet.address, mintAmount - bal);
+  const ownerToken = token.connect(tokenOwner);
+
+  const acknowledgementTargets: Array<{ label: string; address?: string }> = [
+    { label: 'StakeManager', address: addresses.StakeManager },
+    { label: 'JobRegistry', address: addresses.JobRegistry },
+    { label: 'FeePool', address: deploySummary?.contracts?.FeePool },
+    { label: 'RewardEngineMB', address: deploySummary?.contracts?.RewardEngineMB },
+    { label: 'PlatformIncentives', address: deploySummary?.contracts?.PlatformIncentives },
+    { label: 'PlatformRegistry', address: deploySummary?.contracts?.PlatformRegistry },
+  ];
+
+  for (const target of acknowledgementTargets) {
+    if (!target.address) continue;
+    const normalized = ethers.getAddress(target.address);
+    if (!(await token.hasAcknowledged(normalized))) {
+      const tx = await ownerToken.mint(normalized, 0);
       await tx.wait();
     }
-    const allowance = await token.allowance(wallet.address, addresses.StakeManager);
-    const requiredAllowance = wallet === employer ? mintAmount + rewardAmount : mintAmount;
-    if (allowance < requiredAllowance) {
-      const approveTx = await token.connect(wallet).approve(addresses.StakeManager, ethers.MaxUint256);
-      await approveTx.wait();
+  }
+  const governanceAddress = await governance.getAddress();
+  await ensureOwnershipAccepted(identityRegistry, 'IdentityRegistry', governanceAddress);
+  await ensureOwnershipAccepted(taxPolicy, 'TaxPolicy', governanceAddress);
+  const jobRegistryInterface = new ethers.Interface(jobRegistryArtifact.abi);
+  const stakeManagerInterface = new ethers.Interface(stakeManagerArtifact.abi);
+  if (!(await jobRegistry.acknowledgers(addresses.StakeManager))) {
+    await executeGovernanceCall(
+      systemPause,
+      addresses.JobRegistry,
+      jobRegistryInterface,
+      'setAcknowledger',
+      [addresses.StakeManager, true]
+    );
+  }
+  const requiredAcknowledgers = [addresses.JobRegistry, addresses.StakeManager];
+  for (const addr of requiredAcknowledgers) {
+    if (!(await taxPolicy.acknowledgerAllowed(addr))) {
+      const tx = await taxPolicy.setAcknowledger(addr, true);
+      await tx.wait();
     }
   }
+  const currentValidationModule = await stakeManager.validationModule();
+  if (currentValidationModule.toLowerCase() !== addresses.ValidationModule.toLowerCase()) {
+    await executeGovernanceCall(
+      systemPause,
+      addresses.StakeManager,
+      stakeManagerInterface,
+      'setValidationModule',
+      [addresses.ValidationModule]
+    );
+  }
+  const currentJobRegistryAddress = await stakeManager.jobRegistry();
+  if (currentJobRegistryAddress.toLowerCase() !== addresses.JobRegistry.toLowerCase()) {
+    await executeGovernanceCall(
+      systemPause,
+      addresses.StakeManager,
+      stakeManagerInterface,
+      'setJobRegistry',
+      [addresses.JobRegistry]
+    );
+  }
+  for (const participant of participants) {
+    try {
+      await provider.send('hardhat_setBalance', [
+        participant.address,
+        ethers.toBeHex(ethers.parseEther('1000')),
+      ]);
+    } catch {
+      // ignore for live networks
+    }
+    const bal = await token.balanceOf(participant.address);
+    if (bal < mintAmount) {
+      const tx = await ownerToken.mint(participant.address, mintAmount - bal);
+      await tx.wait();
+    }
+    const allowance = await token.allowance(participant.address, addresses.StakeManager);
+    const requiredAllowance =
+      participant.role === 'employer' ? mintAmount + rewardAmount : mintAmount;
+    if (allowance < requiredAllowance) {
+      const approveTx = await token
+        .connect(participant.signer)
+        .approve(addresses.StakeManager, ethers.MaxUint256);
+      await approveTx.wait();
+    }
+    const ackTx = await taxPolicy.connect(participant.signer).acknowledge();
+    await ackTx.wait();
+  }
 
+  await identityRegistry.addAdditionalAgent(workerAddress);
+  for (const addr of validatorAddresses) {
+    await identityRegistry.addAdditionalValidator(addr);
   await recordDirectGovernanceCall(
     'SystemPause',
     'pauseAll',
@@ -401,6 +645,7 @@ async function main() {
     addresses.ValidationModule,
     validationInterface,
     'setValidatorPool',
+    [validatorAddresses]
     [validators.map((v) => v.address)],
     { notes: 'Populate validator committee pool for demo mission' }
   );
@@ -409,6 +654,7 @@ async function main() {
     addresses.ValidationModule,
     validationInterface,
     'setValidatorBounds',
+    [validatorCount, validatorCount]
     [quorum, validatorCount],
     { notes: `Require ${quorum} approvals from a pool of ${validatorCount}` }
   );
@@ -459,23 +705,23 @@ async function main() {
 
   const workerStakeTx = await stakeManager
     .connect(worker)
-    .acknowledgeAndDeposit(agentRole, workerStakeAmount);
+    .depositStake(agentRole, workerStakeAmount);
   const workerStakeReceipt = await workerStakeTx.wait();
   stakeEntries.push({
     role: 'agent',
-    address: worker.address,
+    address: workerAddress,
     amount: formatUnits(workerStakeAmount, decimals),
     txHash: workerStakeReceipt?.hash || workerStakeTx.hash,
   });
 
-  for (const validator of validators) {
+  for (const [index, validator] of validators.entries()) {
     const stakeTx = await stakeManager
       .connect(validator)
-      .acknowledgeAndDeposit(validatorRole, validatorStakeAmount);
+      .depositStake(validatorRole, validatorStakeAmount);
     const receipt = await stakeTx.wait();
     stakeEntries.push({
       role: 'validator',
-      address: validator.address,
+      address: validatorAddresses[index],
       amount: formatUnits(validatorStakeAmount, decimals),
       txHash: receipt?.hash || stakeTx.hash,
     });
@@ -533,22 +779,48 @@ async function main() {
   const submitReceipt = await submitTx.wait();
 
   writeReceipt(networkName, 'submit.json', {
-    worker: worker.address,
+    worker: workerAddress,
     txHash: submitReceipt?.hash || submitTx.hash,
     resultURI: resultUri,
     resultHash,
   });
 
+  await validationModule
+    .connect(governance)
+    .selectValidators(jobId, 0, { gasLimit: 10_000_000 });
+  await provider.send('evm_mine', []);
+  const selectTx = await validationModule
+    .connect(governance)
+    .selectValidators(jobId, 0, { gasLimit: 10_000_000 });
+  const selectReceipt = await selectTx.wait();
+  let selectedValidators = validatorAddresses.slice();
+  if (selectReceipt && selectReceipt.logs) {
+    for (const log of selectReceipt.logs) {
+      try {
+        const parsed = validationInterface.parseLog(log);
+        if (parsed.name === 'ValidatorsSelected') {
+          selectedValidators = (parsed.args.validators as string[]) ?? selectedValidators;
+          break;
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+
   const nonce = (await validationModule.jobNonce(jobId)).valueOf() as bigint;
   const specHashOnChain = await jobRegistry.getSpecHash(jobId);
   const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
-  const commitRecords: Array<{ address: string; commitTx: string; revealTx: string; commitHash: string; salt: string }>= [];
-
-  for (const validator of validators) {
+  const commitPlans: Array<{
+    index: number;
+    plan: ReturnType<typeof deriveCommitPlan>;
+    commitTx: string;
+  }> = [];
+  for (const [index, validator] of validators.entries()) {
     const plan = deriveCommitPlan(
       jobId,
       true,
-      validator.address,
+      validatorAddresses[index],
       nonce,
       specHashOnChain,
       chain.chainId,
@@ -558,36 +830,59 @@ async function main() {
       .connect(validator)
       .commitValidation(jobId, plan.commitHash, 'aurora-validator', []);
     const commitReceipt = await commitTx.wait();
+    commitPlans.push({
+      index,
+      plan,
+      commitTx: commitReceipt?.hash || commitTx.hash,
+    });
+  }
+
+  const commitWindowSeconds = Number(await validationModule.commitWindow());
+  await provider.send('evm_increaseTime', [commitWindowSeconds]);
+  await provider.send('evm_mine', []);
+
+  const commitRecords: Array<{ address: string; commitTx: string; revealTx: string; commitHash: string; salt: string }>= [];
+  for (const entry of commitPlans) {
+    const validator = validators[entry.index];
     const revealTx = await validationModule
       .connect(validator)
       .revealValidation(
         jobId,
         true,
-        plan.burnTxHash,
-        plan.salt,
+        entry.plan.burnTxHash,
+        entry.plan.salt,
         'aurora-validator',
         []
       );
     const revealReceipt = await revealTx.wait();
     commitRecords.push({
-      address: validator.address,
-      commitTx: commitReceipt?.hash || commitTx.hash,
+      address: validatorAddresses[entry.index],
+      commitTx: entry.commitTx,
       revealTx: revealReceipt?.hash || revealTx.hash,
-      commitHash: plan.commitHash,
-      salt: plan.salt,
+      commitHash: entry.plan.commitHash,
+      salt: entry.plan.salt,
     });
   }
 
   const balancesBefore = new Map<string, bigint>();
-  const trackAddresses = [employer.address, worker.address, ...validators.map((v) => v.address)];
+  const trackAddresses = [
+    employerAddress,
+    workerAddress,
+    ...validatorAddresses,
+  ];
   for (const addr of trackAddresses) {
     balancesBefore.set(addr, await token.balanceOf(addr));
   }
 
-  const finalizeTx = await validationModule
+  const validationFinalizeTx = await validationModule
     .connect(validators[0])
     .finalize(jobId);
-  const finalizeReceipt = await finalizeTx.wait();
+  const validationFinalizeReceipt = await validationFinalizeTx.wait();
+
+  const registryFinalizeTx = await jobRegistry
+    .connect(employer)
+    .finalize(jobId);
+  const registryFinalizeReceipt = await registryFinalizeTx.wait();
 
   const payouts: Record<string, { before: string; after: string; delta: string }> = {};
   for (const addr of trackAddresses) {
@@ -602,14 +897,17 @@ async function main() {
 
   writeReceipt(networkName, 'validate.json', {
     jobId: jobId.toString(),
+    selectedValidators,
     validators: commitRecords,
-    finalizeTx: finalizeReceipt?.hash || finalizeTx.hash,
+    validationFinalizeTx:
+      validationFinalizeReceipt?.hash || validationFinalizeTx.hash,
+    jobFinalizeTx: registryFinalizeReceipt?.hash || registryFinalizeTx.hash,
     commits: commitRecords.length,
     reveals: commitRecords.length,
   });
 
   writeReceipt(networkName, 'finalize.json', {
-    txHash: finalizeReceipt?.hash || finalizeTx.hash,
+    txHash: registryFinalizeReceipt?.hash || registryFinalizeTx.hash,
     payouts,
   });
 

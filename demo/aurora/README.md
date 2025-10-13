@@ -20,6 +20,11 @@ Target network:
 npm run demo:aurora:sepolia
 ```
 
+Before targeting an existing deployment, either:
+
+1. Run `npx hardhat run scripts/v2/deployDefaults.ts --network <network>` with `DEPLOY_DEFAULTS_OUTPUT` pointing to a JSON summary and export `AURORA_DEPLOY_OUTPUT` to that path, **or**
+2. Provide direct overrides via environment variables (`AURORA_JOB_REGISTRY`, `AURORA_STAKE_MANAGER`, `AURORA_VALIDATION_MODULE`, `AURORA_IDENTITY_REGISTRY`, `AURORA_SYSTEM_PAUSE`).
+
 **Outputs**
 
 * `reports/<network>/aurora/receipts/*.json`
@@ -91,6 +96,19 @@ sequenceDiagram
     TH->>MB: provide T / energy
     MB->>SM: distribute rewards
 ```
+
+---
+
+## Governance & Owner Control
+
+Operators retain full authority over the demo deployment:
+
+* `npm run owner:command-center -- --network <network>` renders the governance topology and owner change controls.
+* `npm run owner:pulse -- --network <network>` snapshots pause guardians, module owners, and validator bounds in real time.
+* `npx hardhat run scripts/v2/pauseTest.ts --network <network>` (dry-run by default) verifies that the configured `SystemPause` guardian can halt and resume modules before going live.
+* Thermodynamic or incentive parameters can be tuned with `npx hardhat run scripts/v2/updateThermodynamics.ts --network <network>`; add `--execute` when the diff looks correct.
+
+These commands ensure the contract owner can update parameters, rotate governance, and pause execution without modifying core code.
 
 ---
 

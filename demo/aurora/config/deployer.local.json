@@ -1,0 +1,11 @@
+{
+  "network": "localhost",
+  "identity": {
+    "ens": "zero",
+    "nameWrapper": "zero",
+    "clubRootNode": "club.agi.eth",
+    "agentRootNode": "agent.agi.eth",
+    "validatorMerkleRoot": "zero",
+    "agentMerkleRoot": "zero"
+  }
+}

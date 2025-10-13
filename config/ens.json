@@ -12,7 +12,10 @@
       "role": "agent",
       "aliases": [
         {
-          "name": "alpha.agent.agi.eth"
+          "name": "alpha.agent.agi.eth",
+          "node": "0xc74b6c5e8a0d97ed1fe28755da7d06a84593b4de92f6582327bc40f41d6c2d5e",
+          "label": "alpha",
+          "labelhash": "0x6dfc21ac0c8c2db036305d8bc6f887630d35e156f37d5a7e2275bc05bc004846"
         }
       ]
     },
@@ -25,7 +28,10 @@
       "role": "validator",
       "aliases": [
         {
-          "name": "alpha.club.agi.eth"
+          "name": "alpha.club.agi.eth",
+          "node": "0x6487f659ec6f3fbd424b18b685728450d2559e4d68768393f9c689b2b6e5405e",
+          "label": "alpha",
+          "labelhash": "0x6dfc21ac0c8c2db036305d8bc6f887630d35e156f37d5a7e2275bc05bc004846"
         }
       ]
     },
