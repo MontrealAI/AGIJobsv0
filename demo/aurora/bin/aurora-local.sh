@@ -4,6 +4,18 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
+if [ -f .env ]; then
+  # shellcheck disable=SC1091
+  set -a
+  source .env
+  set +a
+fi
+
+if ! command -v anvil >/dev/null 2>&1; then
+  echo "anvil executable not found in PATH. Install Foundry (https://book.getfoundry.sh/getting-started/installation) before running the AURORA demo." >&2
+  exit 1
+fi
+
 NET="localhost"
 REPORT_DIR="reports/${NET}/aurora/receipts"
 DEPLOY_OUTPUT="${REPORT_DIR}/deploy.json"
