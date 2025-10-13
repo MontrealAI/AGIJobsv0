@@ -42,13 +42,65 @@ const AGIALPHA_CONFIG = JSON.parse(
   fs.readFileSync(path.join('config', 'agialpha.json'), 'utf8')
 );
 
-const SPEC_PATH = path.join('demo', 'aurora', 'config', 'aurora.spec@v2.json');
-const THERMOSTAT_CONFIG_PATH = path.join(
+const DEFAULT_SPEC_PATH = path.join(
+  'demo',
+  'aurora',
+  'config',
+  'aurora.spec@v2.json'
+);
+const DEFAULT_THERMOSTAT_CONFIG_PATH = path.join(
   'demo',
   'aurora',
   'config',
   'aurora.thermostat@v2.json'
 );
+
+function resolveReportNamespace(): string {
+  const raw = process.env.AURORA_REPORT_NAMESPACE?.trim();
+  if (!raw) return 'aurora';
+  if (!/^[A-Za-z0-9_.-]+$/.test(raw)) {
+    throw new Error(
+      `Invalid AURORA_REPORT_NAMESPACE value: ${raw}. Allowed: alphanumeric, '-', '_', '.'`
+    );
+  }
+  if (raw === '.' || raw === '..') {
+    throw new Error('AURORA_REPORT_NAMESPACE cannot be a relative path token.');
+  }
+  return raw;
+}
+
+function resolveMissionSegments(): string[] {
+  const raw = process.env.AURORA_MISSION_LABEL?.trim();
+  if (!raw) return [];
+  const segments = raw.split(/[\\/]+/).filter((segment) => segment.length > 0);
+  if (segments.length === 0) return [];
+  for (const segment of segments) {
+    if (!/^[A-Za-z0-9_.-]+$/.test(segment)) {
+      throw new Error(
+        `Invalid mission label segment "${segment}". Allowed characters: alphanumeric, '-', '_', '.'`
+      );
+    }
+    if (segment === '.' || segment === '..') {
+      throw new Error('Mission label segments cannot be relative path tokens.');
+    }
+  }
+  return segments;
+}
+
+function resolveSpecPath(): string {
+  if (process.env.AURORA_SPEC_PATH) {
+    return path.resolve(process.env.AURORA_SPEC_PATH);
+  }
+  return path.resolve(DEFAULT_SPEC_PATH);
+}
+
+function resolveThermostatConfigPath(): string | null {
+  if (process.env.AURORA_THERMOSTAT_CONFIG_PATH) {
+    return path.resolve(process.env.AURORA_THERMOSTAT_CONFIG_PATH);
+  }
+  const fallback = path.resolve(DEFAULT_THERMOSTAT_CONFIG_PATH);
+  return fs.existsSync(fallback) ? fallback : null;
+}
 
 type ThermostatConfig = {
   systemTemperature?: string | number;
@@ -90,8 +142,16 @@ function readJsonFile<T>(filePath: string): T {
   return JSON.parse(fs.readFileSync(absolute, 'utf8')) as T;
 }
 
+function resolveReportBaseDir(net: string): string {
+  const namespace = resolveReportNamespace();
+  const missionSegments = resolveMissionSegments();
+  const parts = ['reports', net, namespace, ...missionSegments];
+  return path.join(...parts);
+}
+
 function writeReceipt(net: string, name: string, data: unknown) {
-  const dir = path.join('reports', net, 'aurora', 'receipts');
+  const baseDir = resolveReportBaseDir(net);
+  const dir = path.join(baseDir, 'receipts');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
 }
@@ -100,7 +160,8 @@ function resolveDeploySummaryPath(net: string): string {
   if (process.env.AURORA_DEPLOY_OUTPUT) {
     return path.resolve(process.env.AURORA_DEPLOY_OUTPUT);
   }
-  return path.resolve('reports', net, 'aurora', 'receipts', 'deploy.json');
+  const baseDir = resolveReportBaseDir(net);
+  return path.resolve(baseDir, 'receipts', 'deploy.json');
 }
 
 function specAmountToWei(amount: string | undefined, decimals: number): bigint {
@@ -131,6 +192,8 @@ function parseSigned(value: string | number, label: string): bigint {
   }
   const parsed = BigInt(digits);
   return negative ? -parsed : parsed;
+}
+
 function normaliseArg(value: unknown): unknown {
   if (typeof value === 'bigint') {
     return value.toString();
@@ -148,9 +211,68 @@ function normaliseArg(value: unknown): unknown {
   return value;
 }
 
+type AddressedSigner = ethers.Signer & { address: string };
+
+function createNonceManagedSigner(
+  provider: ethers.JsonRpcProvider,
+  privateKey: string
+): AddressedSigner {
+  const wallet = new ethers.Wallet(privateKey, provider);
+  const manager = new ethers.NonceManager(wallet);
+  return Object.assign(manager, { address: wallet.address }) as AddressedSigner;
+}
+
+async function impersonateSigner(
+  provider: ethers.JsonRpcProvider,
+  address: string
+): Promise<AddressedSigner> {
+  const normalised = ethers.getAddress(address);
+  const methods = ['hardhat_impersonateAccount', 'anvil_impersonateAccount'];
+  let impersonated = false;
+  for (const method of methods) {
+    try {
+      await provider.send(method, [normalised]);
+      impersonated = true;
+      break;
+    } catch (err) {
+      // Continue trying other RPC namespaces.
+    }
+  }
+  if (!impersonated) {
+    throw new Error(
+      `Unable to impersonate required account ${normalised}. Provide a PRIVATE_KEY with control or enable impersonation.`
+    );
+  }
+  let signer;
+  try {
+    signer = provider.getSigner(normalised);
+  } catch (err) {
+    throw new Error(
+      `Provider cannot supply signer for ${normalised}: ${(err as Error).message}`
+    );
+  }
+  const manager = new ethers.NonceManager(signer);
+  return Object.assign(manager, { address: normalised }) as AddressedSigner;
+}
+
+async function stopImpersonating(
+  provider: ethers.JsonRpcProvider,
+  address: string
+) {
+  const normalised = ethers.getAddress(address);
+  const methods = ['hardhat_stopImpersonatingAccount', 'anvil_stopImpersonatingAccount'];
+  for (const method of methods) {
+    try {
+      await provider.send(method, [normalised]);
+    } catch (err) {
+      // Ignore errors so cleanup is best-effort.
+    }
+  }
+}
+
 async function ensureAgialpha(
   provider: ethers.JsonRpcProvider,
-  owner: ethers.Wallet
+  owner: AddressedSigner
 ) {
   const tokenAddress = ethers.getAddress(AGIALPHA_CONFIG.address);
   const code = await provider.getCode(tokenAddress);
@@ -427,16 +549,19 @@ async function main() {
     process.env.AURORA_VALIDATOR3_KEY || DEFAULT_KEYS[4],
   ];
 
-  const employer = new ethers.Wallet(employerKey, provider);
-  const worker = new ethers.Wallet(workerKey, provider);
+  const employer = createNonceManagedSigner(provider, employerKey);
+  const worker = createNonceManagedSigner(provider, workerKey);
 
-  const spec = readJsonFile<Spec>(SPEC_PATH);
+  const specPath = resolveSpecPath();
+  const spec = readJsonFile<Spec>(specPath);
   if (!spec.validation || !spec.validation.k || !spec.validation.n) {
     throw new Error('Validation quorum (k-of-n) must be defined in the spec.');
   }
-  const thermostatConfig = fs.existsSync(THERMOSTAT_CONFIG_PATH)
-    ? readJsonFile<ThermostatConfig>(THERMOSTAT_CONFIG_PATH)
-    : null;
+  const thermostatConfigPath = resolveThermostatConfigPath();
+  const thermostatConfig =
+    thermostatConfigPath !== null
+      ? readJsonFile<ThermostatConfig>(thermostatConfigPath)
+      : null;
   const validatorCount = spec.validation.n;
   const quorum = spec.validation.k;
   const selectedValidatorKeys = validatorKeys.slice(0, validatorCount);
@@ -445,10 +570,9 @@ async function main() {
       'Insufficient validator keys configured for the selected quorum.'
     );
   }
-  const validators = selectedValidatorKeys.map(
-    (key) => new ethers.Wallet(key, provider)
+  const validators = selectedValidatorKeys.map((key) =>
+    createNonceManagedSigner(provider, key)
   );
-  const validators = selectedValidatorKeys.map((key) => new ethers.Wallet(key, provider));
   const agentRole = 0;
   const validatorRole = 1;
   const platformRole = 2;
@@ -462,7 +586,9 @@ async function main() {
   const addresses = deploySummary.contracts;
   const thermostatAddress = addresses.Thermostat;
   if (thermostatConfig && !thermostatAddress) {
-    throw new Error('Thermostat address missing from deployment summary.');
+    console.warn(
+      '⚠️  Thermostat config provided but deployment summary lacks Thermostat address. Skipping thermostat adjustments.'
+    );
   }
 
   const artifact = (name: string) =>
@@ -484,7 +610,10 @@ async function main() {
   const validationModuleArtifact = artifact('ValidationModule');
   const identityRegistryArtifact = artifact('IdentityRegistry');
   const systemPauseArtifact = artifact('SystemPause');
-  const thermostatArtifact = artifact('Thermostat');
+  const thermostatArtifact =
+    thermostatAddress && thermostatAddress !== ethers.ZeroAddress
+      ? artifact('Thermostat')
+      : null;
 
   const jobRegistry = new ethers.Contract(
     addresses.JobRegistry,
@@ -511,9 +640,10 @@ async function main() {
     systemPauseArtifact.abi,
     employer
   );
-  const thermostat = thermostatAddress
-    ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, employer)
-    : null;
+  const thermostat =
+    thermostatArtifact && thermostatAddress
+      ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, employer)
+      : null;
 
   const recordForwardGovernanceCall = async (
     targetName: string,
@@ -656,19 +786,85 @@ async function main() {
       after: { stake: formatUnits(adjustedJobStake, decimals) },
     }
   );
+  await recordForwardGovernanceCall(
+    'JobRegistry',
+    addresses.JobRegistry,
+    jobRegistry.interface,
+    'setAcknowledger',
+    [addresses.StakeManager, true],
+    {
+      notes: 'Allow StakeManager to acknowledge tax policy on behalf of participants',
+    }
+  );
+  const stakeManagerAcknowledger = await jobRegistry.acknowledgers(
+    addresses.StakeManager
+  );
+  if (!stakeManagerAcknowledger) {
+    throw new Error('StakeManager is not registered as a tax acknowledger.');
+  }
 
-  await identityRegistry.addAdditionalAgent(worker.address);
-  for (const validator of validators) {
-    await identityRegistry.addAdditionalValidator(validator.address);
+  let identityCleanup: (() => Promise<void>) | null = null;
+  try {
+    const identityOwnerAddress = await identityRegistry.owner();
+    const normalisedIdentityOwner = identityOwnerAddress
+      ? identityOwnerAddress.toLowerCase()
+      : ethers.ZeroAddress;
+    let identityOwnerSigner: AddressedSigner = employer;
+    if (normalisedIdentityOwner !== employer.address.toLowerCase()) {
+      const ownerCode = await provider.getCode(identityOwnerAddress);
+      if (ownerCode !== '0x') {
+        throw new Error(
+          `Identity owner ${identityOwnerAddress} is a contract. Skipping manual allowlist; configure ENS proofs instead.`
+        );
+      }
+      identityOwnerSigner = await impersonateSigner(provider, identityOwnerAddress);
+      const balance = await provider.getBalance(identityOwnerAddress);
+      const minimumBalance = ethers.parseEther('0.1');
+      if (balance < minimumBalance) {
+        const fundTx = await employer.sendTransaction({
+          to: identityOwnerAddress,
+          value: minimumBalance,
+        });
+        await fundTx.wait();
+      }
+      identityCleanup = () => stopImpersonating(provider, identityOwnerAddress);
+    }
+
+    const identityWithOwner = identityRegistry.connect(identityOwnerSigner);
+    await recordDirectGovernanceCall(
+      'IdentityRegistry',
+      'addAdditionalAgent',
+      () => identityWithOwner.addAdditionalAgent(worker.address),
+      'Allow flagship worker to onboard without ENS proof'
+    );
+    for (const validator of validators) {
+      await recordDirectGovernanceCall(
+        'IdentityRegistry',
+        'addAdditionalValidator',
+        () => identityWithOwner.addAdditionalValidator(validator.address),
+        'Whitelist validator for flagship mission quorum'
+      );
+    }
+  } catch (err) {
+    console.warn(
+      '⚠️  Unable to apply identity overrides automatically:',
+      (err as Error).message
+    );
+  } finally {
+    if (identityCleanup) {
+      await identityCleanup();
+    }
   }
 
   const validationInterface = new ethers.Interface(
     validationModuleArtifact.abi
   );
-  const thermostatInterface = new ethers.Interface(thermostatArtifact.abi);
-  await executeGovernanceCall(
-    systemPause,
-  const validationInterface = new ethers.Interface(validationModuleArtifact.abi);
+  const thermostatInterface = thermostatArtifact
+    ? new ethers.Interface(thermostatArtifact.abi)
+    : null;
+  const validatorsPerJobCount = Math.max(3, validatorCount);
+  const minValidatorsBound = Math.max(3, quorum);
+  const maxValidatorsBound = Math.max(minValidatorsBound, validatorsPerJobCount);
   await recordForwardGovernanceCall(
     'ValidationModule',
     addresses.ValidationModule,
@@ -682,16 +878,23 @@ async function main() {
     addresses.ValidationModule,
     validationInterface,
     'setValidatorBounds',
-    [quorum, validatorCount],
-    { notes: `Require ${quorum} approvals from a pool of ${validatorCount}` }
+    [minValidatorsBound, maxValidatorsBound],
+    {
+      notes: `Require at least ${minValidatorsBound} validators from a pool cap of ${maxValidatorsBound}`,
+      before: { quorum, pool: validatorCount },
+      after: { min: minValidatorsBound.toString(), max: maxValidatorsBound.toString() },
+    }
   );
   await recordForwardGovernanceCall(
     'ValidationModule',
     addresses.ValidationModule,
     validationInterface,
     'setValidatorsPerJob',
-    [validatorCount],
-    { notes: 'All validators in pool review the flagship job' }
+    [validatorsPerJobCount],
+    {
+      notes: `Assign ${validatorsPerJobCount} validators to each flagship job`,
+      before: { requested: validatorCount.toString() },
+    }
   );
   await recordForwardGovernanceCall(
     'ValidationModule',
@@ -734,9 +937,6 @@ async function main() {
     amount: string;
     txHash: string;
   }> = [];
-  const agentRole = 0;
-  const validatorRole = 1;
-  const stakeEntries: Array<{ role: string; address: string; amount: string; txHash: string }> = [];
 
   const workerStakeTx = await stakeManager
     .connect(worker)
@@ -767,7 +967,10 @@ async function main() {
   const specHash = ethers.keccak256(
     ethers.toUtf8Bytes(JSON.stringify(spec, Object.keys(spec).sort()))
   );
-  const specUri = spec.acceptanceCriteriaURI || 'ipfs://aurora-demo-spec';
+  const specUri =
+    process.env.AURORA_SPEC_URI ||
+    spec.acceptanceCriteriaURI ||
+    'ipfs://aurora-demo-spec';
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
 
   const postTx = await jobRegistry
@@ -798,15 +1001,19 @@ async function main() {
     reward: formatUnits(rewardAmount, decimals),
     deadline: deadline.toString(),
     specHash,
+    specPath: specPath,
+    specURI: specUri,
   });
 
-  const subdomain = 'aurora-agent';
+  const subdomain =
+    process.env.AURORA_AGENT_SUBDOMAIN || 'aurora-agent';
   const applyTx = await jobRegistry
     .connect(worker)
     .acknowledgeAndApply(jobId, subdomain, []);
   await applyTx.wait();
 
-  const resultUri = 'ipfs://aurora-demo-result';
+  const resultUri =
+    process.env.AURORA_RESULT_URI || 'ipfs://aurora-demo-result';
   const resultHash = ethers.keccak256(ethers.toUtf8Bytes(resultUri));
   const submitTx = await jobRegistry
     .connect(worker)
@@ -823,6 +1030,8 @@ async function main() {
   const nonce = (await validationModule.jobNonce(jobId)).valueOf() as bigint;
   const specHashOnChain = await jobRegistry.getSpecHash(jobId);
   const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
+  const validatorSubdomain =
+    process.env.AURORA_VALIDATOR_SUBDOMAIN || 'aurora-validator';
   const commitRecords: Array<{
     address: string;
     commitTx: string;
@@ -843,7 +1052,7 @@ async function main() {
     );
     const commitTx = await validationModule
       .connect(validator)
-      .commitValidation(jobId, plan.commitHash, 'aurora-validator', []);
+      .commitValidation(jobId, plan.commitHash, validatorSubdomain, []);
     const commitReceipt = await commitTx.wait();
     const revealTx = await validationModule
       .connect(validator)
@@ -852,7 +1061,7 @@ async function main() {
         true,
         plan.burnTxHash,
         plan.salt,
-        'aurora-validator',
+        validatorSubdomain,
         []
       );
     const revealReceipt = await revealTx.wait();
@@ -907,7 +1116,7 @@ async function main() {
     payouts,
   });
 
-  if (thermostatConfig && thermostat) {
+  if (thermostatConfig && thermostat && thermostatInterface) {
     await applyThermostatConfig(
       networkName,
       systemPause,
