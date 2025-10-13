@@ -19,6 +19,17 @@ type Spec = {
   notes?: string;
 };
 
+type GovernanceAction = {
+  target: string;
+  method: string;
+  txHash: string;
+  type: 'forwarded' | 'direct';
+  params?: unknown;
+  notes?: string;
+  before?: Record<string, string>;
+  after?: Record<string, string>;
+};
+
 const DEFAULT_KEYS = [
   '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
   '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
@@ -120,6 +131,21 @@ function parseSigned(value: string | number, label: string): bigint {
   }
   const parsed = BigInt(digits);
   return negative ? -parsed : parsed;
+function normaliseArg(value: unknown): unknown {
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => normaliseArg(item));
+  }
+  if (typeof value === 'object' && value !== null) {
+    const entries = Object.entries(value as Record<string, unknown>).map(([k, v]) => [
+      k,
+      normaliseArg(v),
+    ]);
+    return Object.fromEntries(entries);
+  }
+  return value;
 }
 
 async function ensureAgialpha(
@@ -171,8 +197,8 @@ async function executeGovernanceCall(
 ) {
   const data = iface.encodeFunctionData(method, args);
   const tx = await pause.executeGovernanceCall(target, data);
-  await tx.wait();
-  return tx.hash;
+  const receipt = await tx.wait();
+  return receipt?.hash || tx.hash;
 }
 
 function deriveCommitPlan(
@@ -391,6 +417,8 @@ async function main() {
   const chain = await provider.getNetwork();
   const decimals = Number(AGIALPHA_CONFIG.decimals || 18);
 
+  const governanceActions: GovernanceAction[] = [];
+
   const employerKey = process.env.PRIVATE_KEY || DEFAULT_KEYS[0];
   const workerKey = process.env.AURORA_WORKER_KEY || DEFAULT_KEYS[1];
   const validatorKeys = [
@@ -420,6 +448,10 @@ async function main() {
   const validators = selectedValidatorKeys.map(
     (key) => new ethers.Wallet(key, provider)
   );
+  const validators = selectedValidatorKeys.map((key) => new ethers.Wallet(key, provider));
+  const agentRole = 0;
+  const validatorRole = 1;
+  const platformRole = 2;
 
   const summaryPath = resolveDeploySummaryPath(networkName);
   const deploySummary = readJsonFile<DeploySummary>(summaryPath);
@@ -483,6 +515,41 @@ async function main() {
     ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, employer)
     : null;
 
+  const recordForwardGovernanceCall = async (
+    targetName: string,
+    targetAddress: string,
+    iface: ethers.Interface,
+    method: string,
+    args: unknown[],
+    options?: { notes?: string; before?: Record<string, string>; after?: Record<string, string> }
+  ) => {
+    const txHash = await executeGovernanceCall(systemPause, targetAddress, iface, method, args);
+    governanceActions.push({
+      target: targetName,
+      method,
+      txHash,
+      type: 'forwarded',
+      params: normaliseArg(args),
+      notes: options?.notes,
+      before: options?.before,
+      after: options?.after,
+    });
+    return txHash;
+  };
+
+  const recordDirectGovernanceCall = async (
+    targetName: string,
+    method: string,
+    action: () => Promise<ethers.ContractTransactionResponse>,
+    notes?: string
+  ) => {
+    const tx = await action();
+    const receipt = await tx.wait();
+    const txHash = receipt?.hash || tx.hash;
+    governanceActions.push({ target: targetName, method, txHash, type: 'direct', notes });
+    return txHash;
+  };
+
   const token = await ensureAgialpha(provider, employer);
 
   const mintAmount = ethers.parseUnits('1000', decimals);
@@ -517,6 +584,79 @@ async function main() {
     }
   }
 
+  await recordDirectGovernanceCall(
+    'SystemPause',
+    'pauseAll',
+    () => systemPause.pauseAll(),
+    'Emergency drill: pause every core module'
+  );
+  await recordDirectGovernanceCall(
+    'SystemPause',
+    'unpauseAll',
+    () => systemPause.unpauseAll(),
+    'Resume operations after pause drill'
+  );
+
+  const originalAgentMinimum = await stakeManager.roleMinimumStake(agentRole);
+  const originalValidatorMinimum = await stakeManager.roleMinimumStake(validatorRole);
+  const originalPlatformMinimum = await stakeManager.roleMinimumStake(platformRole);
+  const stakeMinimumBaseline = {
+    agent: originalAgentMinimum,
+    validator: originalValidatorMinimum,
+    platform: originalPlatformMinimum,
+  };
+
+  const adjustedAgentMinimum = workerStakeAmount / 2n > 0n ? workerStakeAmount / 2n : 1n;
+  const adjustedValidatorMinimum =
+    validatorStakeAmount / 2n > 0n ? validatorStakeAmount / 2n : 1n;
+  const adjustedPlatformMinimum = validatorStakeAmount / 4n > 0n ? validatorStakeAmount / 4n : 1n;
+  const stakeMinimumAdjusted = {
+    agent: adjustedAgentMinimum,
+    validator: adjustedValidatorMinimum,
+    platform: adjustedPlatformMinimum,
+  };
+
+  await recordForwardGovernanceCall(
+    'StakeManager',
+    addresses.StakeManager,
+    stakeManager.interface,
+    'setRoleMinimums',
+    [adjustedAgentMinimum, adjustedValidatorMinimum, adjustedPlatformMinimum],
+    {
+      notes: 'Lower minimum stakes so demo identities can onboard quickly',
+      before: {
+        agent: formatUnits(stakeMinimumBaseline.agent, decimals),
+        validator: formatUnits(stakeMinimumBaseline.validator, decimals),
+        platform: formatUnits(stakeMinimumBaseline.platform, decimals),
+      },
+      after: {
+        agent: formatUnits(stakeMinimumAdjusted.agent, decimals),
+        validator: formatUnits(stakeMinimumAdjusted.validator, decimals),
+        platform: formatUnits(stakeMinimumAdjusted.platform, decimals),
+      },
+    }
+  );
+
+  const originalJobStake = await jobRegistry.jobStake();
+  const fallbackJobStake = rewardAmount / 10n > 0n ? rewardAmount / 10n : 1n;
+  const adjustedJobStake =
+    originalJobStake === 0n
+      ? fallbackJobStake
+      : originalJobStake + (fallbackJobStake > 0n ? fallbackJobStake : 1n);
+
+  await recordForwardGovernanceCall(
+    'JobRegistry',
+    addresses.JobRegistry,
+    jobRegistry.interface,
+    'setJobStake',
+    [adjustedJobStake],
+    {
+      notes: 'Tune employer escrow requirements for the flagship mission',
+      before: { stake: formatUnits(originalJobStake, decimals) },
+      after: { stake: formatUnits(adjustedJobStake, decimals) },
+    }
+  );
+
   await identityRegistry.addAdditionalAgent(worker.address);
   for (const validator of validators) {
     await identityRegistry.addAdditionalValidator(validator.address);
@@ -528,45 +668,64 @@ async function main() {
   const thermostatInterface = new ethers.Interface(thermostatArtifact.abi);
   await executeGovernanceCall(
     systemPause,
+  const validationInterface = new ethers.Interface(validationModuleArtifact.abi);
+  await recordForwardGovernanceCall(
+    'ValidationModule',
     addresses.ValidationModule,
     validationInterface,
     'setValidatorPool',
-    [validators.map((v) => v.address)]
+    [validators.map((v) => v.address)],
+    { notes: 'Populate validator committee pool for demo mission' }
   );
-  await executeGovernanceCall(
-    systemPause,
+  await recordForwardGovernanceCall(
+    'ValidationModule',
     addresses.ValidationModule,
     validationInterface,
     'setValidatorBounds',
-    [quorum, validatorCount]
+    [quorum, validatorCount],
+    { notes: `Require ${quorum} approvals from a pool of ${validatorCount}` }
   );
-  await executeGovernanceCall(
-    systemPause,
+  await recordForwardGovernanceCall(
+    'ValidationModule',
     addresses.ValidationModule,
     validationInterface,
     'setValidatorsPerJob',
-    [validatorCount]
+    [validatorCount],
+    { notes: 'All validators in pool review the flagship job' }
   );
-  await executeGovernanceCall(
-    systemPause,
+  await recordForwardGovernanceCall(
+    'ValidationModule',
     addresses.ValidationModule,
     validationInterface,
     'setRequiredValidatorApprovals',
-    [quorum]
+    [quorum],
+    { notes: 'Set quorum for validation success' }
   );
-  await executeGovernanceCall(
-    systemPause,
+  const previousCommitWindow = await validationModule.commitWindow();
+  await recordForwardGovernanceCall(
+    'ValidationModule',
     addresses.ValidationModule,
     validationInterface,
     'setCommitWindow',
-    [3600]
+    [3600],
+    {
+      notes: 'Tighten commit window to one hour for the drill',
+      before: { commitWindow: previousCommitWindow.toString() },
+      after: { commitWindow: '3600' },
+    }
   );
-  await executeGovernanceCall(
-    systemPause,
+  const previousRevealWindow = await validationModule.revealWindow();
+  await recordForwardGovernanceCall(
+    'ValidationModule',
     addresses.ValidationModule,
     validationInterface,
     'setRevealWindow',
-    [3600]
+    [3600],
+    {
+      notes: 'Match reveal window with the commit horizon',
+      before: { revealWindow: previousRevealWindow.toString() },
+      after: { revealWindow: '3600' },
+    }
   );
 
   const stakeEntries: Array<{
@@ -577,6 +736,7 @@ async function main() {
   }> = [];
   const agentRole = 0;
   const validatorRole = 1;
+  const stakeEntries: Array<{ role: string; address: string; amount: string; txHash: string }> = [];
 
   const workerStakeTx = await stakeManager
     .connect(worker)
@@ -756,6 +916,41 @@ async function main() {
       thermostatConfig
     );
   }
+  await recordForwardGovernanceCall(
+    'StakeManager',
+    addresses.StakeManager,
+    stakeManager.interface,
+    'setRoleMinimums',
+    [stakeMinimumBaseline.agent, stakeMinimumBaseline.validator, stakeMinimumBaseline.platform],
+    {
+      notes: 'Restore production minimum stake thresholds',
+      before: {
+        agent: formatUnits(stakeMinimumAdjusted.agent, decimals),
+        validator: formatUnits(stakeMinimumAdjusted.validator, decimals),
+        platform: formatUnits(stakeMinimumAdjusted.platform, decimals),
+      },
+      after: {
+        agent: formatUnits(stakeMinimumBaseline.agent, decimals),
+        validator: formatUnits(stakeMinimumBaseline.validator, decimals),
+        platform: formatUnits(stakeMinimumBaseline.platform, decimals),
+      },
+    }
+  );
+
+  await recordForwardGovernanceCall(
+    'JobRegistry',
+    addresses.JobRegistry,
+    jobRegistry.interface,
+    'setJobStake',
+    [originalJobStake],
+    {
+      notes: 'Return job stake policy to its baseline value',
+      before: { stake: formatUnits(adjustedJobStake, decimals) },
+      after: { stake: formatUnits(originalJobStake, decimals) },
+    }
+  );
+
+  writeReceipt(networkName, 'governance.json', { actions: governanceActions });
 
   console.log('✅ AURORA demo completed.');
 }

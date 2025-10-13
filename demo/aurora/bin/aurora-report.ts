@@ -17,6 +17,12 @@ function section(title: string): string {
   return '\n## ' + title + '\n';
 }
 
+function renderKeyValues(record: Record<string, string>): string {
+  return Object.entries(record)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(', ');
+}
+
 (async () => {
   fs.mkdirSync(path.dirname(mdFile), { recursive: true });
   const parts: string[] = [];
@@ -123,6 +129,31 @@ function section(title: string): string {
         parts.push(
           `- ${update.action}: ${update.before} → ${update.after}${tx}`
         );
+  if (governance && Array.isArray(governance.actions)) {
+    parts.push(section('Governance & Controls'));
+    for (const action of governance.actions as Array<Record<string, any>>) {
+      const header =
+        '- **' +
+        action.target +
+        '.' +
+        action.method +
+        '** (' +
+        action.type +
+        ') — tx `' +
+        action.txHash +
+        '`';
+      parts.push(header);
+      if (action.notes) {
+        parts.push('  - Notes: ' + action.notes);
+      }
+      if (action.params) {
+        parts.push('  - Params: ' + JSON.stringify(action.params));
+      }
+      if (action.before) {
+        parts.push('  - Before: ' + renderKeyValues(action.before as Record<string, string>));
+      }
+      if (action.after) {
+        parts.push('  - After: ' + renderKeyValues(action.after as Record<string, string>));
       }
     }
   }
