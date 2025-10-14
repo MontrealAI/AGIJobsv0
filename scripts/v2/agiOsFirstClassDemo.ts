@@ -544,12 +544,15 @@ async function main() {
       key: 'demo',
       title: 'AGI OS grand demonstration',
       run: async (ctx) =>
-        runCommand('demo', 'AGI OS grand demonstration', 'npm', [
-          'run',
-          'demo:agi-os',
-        ], {
-          env: { HARDHAT_NETWORK: ctx.hardhatNetwork },
-        }),
+        runCommand(
+          'demo',
+          'AGI OS grand demonstration',
+          'npm',
+          ['run', 'demo:agi-os', '--', '--network', ctx.hardhatNetwork],
+          {
+            env: { HARDHAT_NETWORK: ctx.hardhatNetwork },
+          },
+        ),
     },
     {
       key: 'owner-diagram',

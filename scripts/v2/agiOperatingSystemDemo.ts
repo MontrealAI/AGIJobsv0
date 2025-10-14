@@ -103,14 +103,16 @@ const GRAND_SUMMARY_JSON_PATH = path.join(REPORT_ROOT, 'grand-summary.json');
 const CONTROL_MATRIX_PATH = path.join(REPORT_ROOT, 'owner-control-matrix.json');
 const BUNDLE_ROOT = path.join(REPORT_ROOT, 'mission-bundle');
 
+const HARDHAT_NETWORK = process.env.HARDHAT_NETWORK ?? 'hardhat';
+
 const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
   {
     key: 'stakeManager',
     label: 'Stake Manager',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updateStakeManager.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateStakeManager.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only stakeManager --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only stakeManager --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateStakeManager.ts',
     configPaths: ['config/stake-manager.json'],
     docs: ['docs/owner-control-command-center.md', 'docs/owner-control-blueprint.md'],
@@ -124,9 +126,9 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'jobRegistry',
     label: 'Job Registry',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updateJobRegistry.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateJobRegistry.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only jobRegistry --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only jobRegistry --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateJobRegistry.ts',
     configPaths: ['config/job-registry.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -140,9 +142,9 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'rewardEngine',
     label: 'Reward Engine',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updateRewardEngine.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateRewardEngine.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only rewardEngine --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only rewardEngine --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateRewardEngine.ts',
     configPaths: ['config/reward-engine.json', 'config/thermodynamics.json'],
     docs: ['docs/thermodynamics-operations.md'],
@@ -156,9 +158,9 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'thermostat',
     label: 'Thermostat',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updateThermostat.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateThermostat.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only thermostat --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only thermostat --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateThermostat.ts',
     configPaths: ['config/thermodynamics.json'],
     docs: ['docs/thermostat-operations.md', 'docs/thermodynamics-operations.md'],
@@ -172,9 +174,9 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'systemPause',
     label: 'System Pause',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updateSystemPause.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateSystemPause.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateSystemPause.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateSystemPause.ts --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateSystemPause.ts',
     configPaths: ['config/stake-manager.json'],
     docs: ['docs/owner-emergency-runbook.md'],
@@ -188,9 +190,9 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'feePool',
     label: 'Fee Pool',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updateFeePool.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateFeePool.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only feePool --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only feePool --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateFeePool.ts',
     configPaths: ['config/fee-pool.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -204,9 +206,9 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'platformRegistry',
     label: 'Platform Registry',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updatePlatformRegistry.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updatePlatformRegistry.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only platformRegistry --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only platformRegistry --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updatePlatformRegistry.ts',
     configPaths: ['config/platform-registry.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -219,9 +221,9 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'platformIncentives',
     label: 'Platform Incentives',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updatePlatformIncentives.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updatePlatformIncentives.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only platformIncentives --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only platformIncentives --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updatePlatformIncentives.ts',
     configPaths: ['config/platform-incentives.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -234,7 +236,7 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'jobRouter',
     label: 'Job Router',
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only jobRegistry --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only jobRegistry --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateAllModules.ts',
     configPaths: ['config/job-registry.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -247,7 +249,7 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'validationModule',
     label: 'Validation Module',
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only disputeModule --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only disputeModule --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateAllModules.ts',
     configPaths: ['config/dispute-module.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -260,7 +262,7 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'reputationEngine',
     label: 'Reputation Engine',
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only platformRegistry --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only platformRegistry --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateAllModules.ts',
     configPaths: ['config/platform-registry.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -273,7 +275,7 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'disputeModule',
     label: 'Dispute Module',
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only disputeModule --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only disputeModule --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateAllModules.ts',
     configPaths: ['config/dispute-module.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -286,7 +288,7 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'arbitratorCommittee',
     label: 'Arbitrator Committee',
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only disputeModule --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only disputeModule --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateAllModules.ts',
     configPaths: ['config/dispute-module.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -299,7 +301,7 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'certificateNFT',
     label: 'Certificate NFT',
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only platformRegistry --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only platformRegistry --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateAllModules.ts',
     configPaths: ['config/platform-registry.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -312,9 +314,9 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'taxPolicy',
     label: 'Tax Policy',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updateTaxPolicy.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateTaxPolicy.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only taxPolicy --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only taxPolicy --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateTaxPolicy.ts',
     configPaths: ['config/tax-policy.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -327,9 +329,9 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'identityRegistry',
     label: 'Identity Registry',
     dedicatedCommand:
-      'npx hardhat run --no-compile scripts/v2/updateIdentityRegistry.ts --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateIdentityRegistry.ts --network ${HARDHAT_NETWORK}`,
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only identityRegistry --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only identityRegistry --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateIdentityRegistry.ts',
     configPaths: [
       'config/identity-registry.json',
@@ -346,7 +348,7 @@ const CONTROL_SURFACES: ControlSurfaceDefinition[] = [
     key: 'attestationRegistry',
     label: 'Attestation Registry',
     fallbackCommand:
-      'npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only identityRegistry --network hardhat',
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only identityRegistry --network ${HARDHAT_NETWORK}`,
     scriptPath: 'scripts/v2/updateAllModules.ts',
     configPaths: ['config/attestation.eas.json'],
     docs: ['docs/owner-control-command-center.md'],
@@ -476,7 +478,7 @@ function pickDefinition(key: string): ControlSurfaceDefinition {
     key,
     label: key,
     fallbackCommand:
-      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only ${key} --network hardhat`,
+      `npx hardhat run --no-compile scripts/v2/updateAllModules.ts --only ${key} --network ${HARDHAT_NETWORK}`,
     configPaths: [],
     docs: [],
     capabilities: [],
