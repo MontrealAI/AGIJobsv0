@@ -1,0 +1,145 @@
+{
+  "initiative": "Astral Citadel Global Stewardship Grid",
+  "objective": "Coordinate planetary-scale supply resilience, humanitarian aid, and climate-positive infrastructure using only AGI Jobs v0 (v2) automation.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "920000"
+  },
+  "governance": {
+    "owner": "0xASTRAL-GOVERNOR",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xTREASURY-CITADEL",
+    "thermostat": {
+      "initialTemperature": "0.19",
+      "emergencyTemperature": "0.36",
+      "updateScript": "scripts/v2/updateThermodynamics.ts"
+    }
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "supply.mesh.agent.agi.eth",
+        "role": "Distributed Supply Kernel",
+        "capabilities": ["Zero-knowledge logistics commitments", "Cross-region freight coordination", "Inventory telemetry"]
+      },
+      {
+        "handle": "infrastructure.delta.agent.agi.eth",
+        "role": "Climate Infrastructure Collective",
+        "capabilities": ["Modular microgrid rollout", "Carbon drawdown fabrication", "Resilience audits"]
+      },
+      {
+        "handle": "aid.response.agent.agi.eth",
+        "role": "Humanitarian Response Mesh",
+        "capabilities": ["Rapid shelter deployment", "Medical supply routing", "Validator liaison"]
+      },
+      {
+        "handle": "treasury.operator.agent.agi.eth",
+        "role": "Treasury Stewardship Cell",
+        "capabilities": ["AGIALPHA liquidity balancing", "Thermostat PID tuning", "FeePool treasury orchestration"]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "civic.audit.validator.agi.eth",
+        "stake": "160000",
+        "mandate": "Civic legitimacy and dispute arbitration"
+      },
+      {
+        "handle": "energy.oversight.validator.agi.eth",
+        "stake": "145000",
+        "mandate": "Thermodynamic compliance and Hamiltonian monitoring"
+      },
+      {
+        "handle": "ops.resilience.validator.agi.eth",
+        "stake": "98000",
+        "mandate": "Operational resilience, sentinel routing"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "SUPPLY-NEXUS",
+      "title": "Global supply lattice reconciliation",
+      "reward": "180000",
+      "deadlineDays": 21,
+      "dependencies": [],
+      "energyBudget": "52000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.14",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "AID-VANGUARD",
+      "title": "Humanitarian surge & relief corridor",
+      "reward": "165000",
+      "deadlineDays": 18,
+      "dependencies": ["SUPPLY-NEXUS"],
+      "energyBudget": "47000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.11",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "INFRA-QUANTUM",
+      "title": "Climate-positive microgrid deployment",
+      "reward": "210000",
+      "deadlineDays": 45,
+      "dependencies": ["SUPPLY-NEXUS"],
+      "energyBudget": "86000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "TREASURY-HARMONY",
+      "title": "Treasury & stake harmonisation across jurisdictions",
+      "reward": "145000",
+      "deadlineDays": 15,
+      "dependencies": ["SUPPLY-NEXUS"],
+      "energyBudget": "38000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.09",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "VALIDATION-SYNTH",
+      "title": "Synchronized validator quorum stress-test",
+      "reward": "110000",
+      "deadlineDays": 12,
+      "dependencies": ["AID-VANGUARD", "INFRA-QUANTUM", "TREASURY-HARMONY"],
+      "energyBudget": "29000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.07",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "MISSION-DIGEST",
+      "title": "Unified mission reporting and sentinel calibration",
+      "reward": "110000",
+      "deadlineDays": 10,
+      "dependencies": ["VALIDATION-SYNTH"],
+      "energyBudget": "26000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.06",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/astral-citadel/dry-run.json",
+      "thermodynamics": "reports/astral-citadel/thermodynamics.json",
+      "missionControl": "reports/astral-citadel/mission-control.md",
+      "summary": "reports/astral-citadel/astral-citadel-report.md"
+    },
+    "dashboards": [
+      "reports/astral-citadel/mission-control.md",
+      "reports/astral-citadel/thermodynamics.json"
+    ]
+  }
+}
