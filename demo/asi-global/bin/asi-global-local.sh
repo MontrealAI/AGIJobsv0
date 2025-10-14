@@ -19,14 +19,26 @@ pkill -f "hardhat node" >/dev/null 2>&1 || true
 
 start_node() {
   local log_file=$1
+  local gas_limit=${LOCAL_GAS_LIMIT:-1000000000}
+  local code_size_limit=${LOCAL_CODE_SIZE_LIMIT:-1000000}
   if command -v anvil >/dev/null 2>&1; then
     echo "ℹ️  Starting Anvil node" >&2
-    anvil --silent --block-time 1 >"$log_file" 2>&1 &
+    anvil \
+      --silent \
+      --block-time 1 \
+      --gas-limit "$gas_limit" \
+      --code-size-limit "$code_size_limit" \
+      >"$log_file" 2>&1 &
     NODE_PID=$!
     NODE_KIND="anvil"
   else
     echo "⚠️  Anvil not found; falling back to Hardhat node" >&2
-    npx hardhat node --hostname 127.0.0.1 --port 8545 >"$log_file" 2>&1 &
+    export HARDHAT_GAS_LIMIT="$gas_limit"
+    export HARDHAT_CODE_SIZE_LIMIT="$code_size_limit"
+    npx hardhat node \
+      --hostname 127.0.0.1 \
+      --port 8545 \
+      >"$log_file" 2>&1 &
     NODE_PID=$!
     NODE_KIND="hardhat"
   fi
@@ -57,6 +69,72 @@ for attempt in {1..120}; do
     exit 1
   fi
 done
+
+if [[ "${NODE_KIND:-}" == "hardhat" ]]; then
+  node <<'NODE'
+  (async () => {
+    const endpoint = 'http://127.0.0.1:8545';
+    const gasLimit = BigInt(process.env.HARDHAT_GAS_LIMIT ?? process.env.LOCAL_GAS_LIMIT ?? '1000000000');
+    const codeSizeLimit = Number(process.env.HARDHAT_CODE_SIZE_LIMIT ?? process.env.LOCAL_CODE_SIZE_LIMIT ?? '1000000');
+
+    const fetchImpl = globalThis.fetch;
+    if (typeof fetchImpl !== 'function') {
+      throw new Error('fetch API not available in current Node runtime');
+    }
+
+    async function rpc(method, params) {
+      const response = await fetchImpl(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+      });
+      if (!response.ok) {
+        throw new Error(`${method} HTTP ${response.status}`);
+      }
+      const payload = await response.json();
+      if (payload.error) {
+        throw new Error(`${method} ${JSON.stringify(payload.error)}`);
+      }
+      return payload.result;
+    }
+
+    const isMethodUnsupported = (error) => {
+      if (!error) {
+        return false;
+      }
+      const message = String(error.message ?? error);
+      return (
+        message.includes('not supported') ||
+        message.includes('Method hardhat_setBlockGasLimit is not supported') ||
+        message.includes('Method hardhat_setCodeSizeLimit is not supported')
+      );
+    };
+
+    try {
+      await rpc('hardhat_setBlockGasLimit', [`0x${gasLimit.toString(16)}`]);
+    } catch (err) {
+      if (isMethodUnsupported(err)) {
+        console.info('ℹ️  hardhat_setBlockGasLimit is not supported on this node; skipping');
+      } else {
+        console.warn(`⚠️  hardhat_setBlockGasLimit failed: ${err.message}`);
+      }
+    }
+
+    try {
+      await rpc('hardhat_setCodeSizeLimit', [codeSizeLimit]);
+    } catch (err) {
+      if (isMethodUnsupported(err)) {
+        console.info('ℹ️  hardhat_setCodeSizeLimit is not supported on this node; skipping');
+      } else {
+        console.warn(`⚠️  hardhat_setCodeSizeLimit failed: ${err.message}`);
+      }
+    }
+  })().catch((err) => {
+    console.error(err.message);
+    process.exit(1);
+  });
+NODE
+fi
 
 dep_env() {
   DEPLOY_DEFAULTS_SKIP_VERIFY=1 \
