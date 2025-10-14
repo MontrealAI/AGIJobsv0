@@ -1,0 +1,188 @@
+{
+  "initiative": "Omniphoenix Ascendant Hyperstructure",
+  "objective": "Coordinate resilient planetary supply, climate stabilisation, and knowledge labor through the AGI Jobs v2 autonomy stack without bespoke extensions.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1250000"
+  },
+  "governance": {
+    "owner": "0xOMNIPHOENIX-COUNCIL",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xTREASURY-HYPERSTRUCTURE",
+    "thermostat": {
+      "initialTemperature": "0.22",
+      "emergencyTemperature": "0.38",
+      "updateScript": "scripts/v2/updateThermodynamics.ts"
+    }
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "atlas.agent.agi.eth",
+        "role": "Atlas Coordination Desk",
+        "capabilities": [
+          "Macroeconomic modelling",
+          "Multi-region supply orchestration",
+          "Thermodynamic scenario design"
+        ]
+      },
+      {
+        "handle": "celerity.agent.agi.eth",
+        "role": "Transcontinental Logistics Collective",
+        "capabilities": [
+          "Autonomous freight routing",
+          "Port & rail integration",
+          "Disruption forecasting"
+        ]
+      },
+      {
+        "handle": "aegis.validator.agi.eth",
+        "role": "Global Assurance Cooperative",
+        "capabilities": [
+          "Validator quorum",
+          "Stake-weighted auditing",
+          "Dispute arbitration"
+        ]
+      },
+      {
+        "handle": "harmonia.agent.agi.eth",
+        "role": "Climate Resilience Guild",
+        "capabilities": [
+          "Carbon market execution",
+          "Renewable balancing",
+          "Geo-spatial sensing"
+        ]
+      },
+      {
+        "handle": "codex.agent.agi.eth",
+        "role": "Knowledge Stewardship Assembly",
+        "capabilities": [
+          "Data governance",
+          "Open research verification",
+          "Credential attestation"
+        ]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "aegis.validator.agi.eth",
+        "stake": "180000",
+        "mandate": "Global compliance, integrity attestations"
+      },
+      {
+        "handle": "aurora.validator.agi.eth",
+        "stake": "150000",
+        "mandate": "Energy balancing, thermodynamic audits"
+      },
+      {
+        "handle": "civic.validator.agi.eth",
+        "stake": "120000",
+        "mandate": "Human-impact oversight across polities"
+      },
+      {
+        "handle": "safety.validator.agi.eth",
+        "stake": "110000",
+        "mandate": "Infrastructure resilience and fail-safe drills"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "GLOBAL-INPUT-LEDGER",
+      "title": "Harmonised supply input registry across continental corridors",
+      "reward": "145000",
+      "deadlineDays": 21,
+      "dependencies": [],
+      "energyBudget": "52000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.14",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "CLIMATE-SWARM-DEPLOY",
+      "title": "Deploy adaptive climate stabilisation swarm",
+      "reward": "210000",
+      "deadlineDays": 45,
+      "dependencies": ["GLOBAL-INPUT-LEDGER"],
+      "energyBudget": "87000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "PAN-PAYMENTS-NETTING",
+      "title": "Cross-currency settlement and treasury routing drill",
+      "reward": "175000",
+      "deadlineDays": 18,
+      "dependencies": ["GLOBAL-INPUT-LEDGER"],
+      "energyBudget": "46000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.09",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "KNOWLEDGE-SAFEGUARD",
+      "title": "Open research verification and attestation cycle",
+      "reward": "120000",
+      "deadlineDays": 30,
+      "dependencies": ["GLOBAL-INPUT-LEDGER"],
+      "energyBudget": "33000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.07",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "INFRA-REGEN-DEPLOY",
+      "title": "Autonomous infrastructure regeneration across megacities",
+      "reward": "245000",
+      "deadlineDays": 120,
+      "dependencies": ["CLIMATE-SWARM-DEPLOY", "PAN-PAYMENTS-NETTING"],
+      "energyBudget": "158000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.23",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "GLOBAL-AUDIT-SYNTH",
+      "title": "Planetary assurance synthesis and dispute resolution dry-run",
+      "reward": "98000",
+      "deadlineDays": 20,
+      "dependencies": ["KNOWLEDGE-SAFEGUARD", "PAN-PAYMENTS-NETTING"],
+      "energyBudget": "28000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.05",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "EQUILIBRIUM-REBALANCE",
+      "title": "Thermodynamic equilibrium calibration and treasury rebalance",
+      "reward": "135000",
+      "deadlineDays": 25,
+      "dependencies": ["INFRA-REGEN-DEPLOY", "GLOBAL-AUDIT-SYNTH"],
+      "energyBudget": "41000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.11",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/asi-takeoff/dry-run.json",
+      "thermodynamics": "reports/asi-takeoff/thermodynamics.json",
+      "missionControl": "reports/asi-takeoff/mission-control.md",
+      "summary": "reports/asi-takeoff/summary.md"
+    },
+    "dashboards": [
+      "reports/asi-takeoff/mission-control.md",
+      "reports/asi-takeoff/thermodynamics.json",
+      "reports/asi-takeoff/summary.json"
+    ]
+  }
+}
