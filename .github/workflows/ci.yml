@@ -299,6 +299,8 @@ jobs:
             reports/localhost/zenith-sapience/**
           if-no-files-found: warn
 
+  celestial_archon_demo:
+    name: Celestial Archon Demonstration
   hypernova_demo:
     name: Hypernova Governance Demonstration
     needs: tests
@@ -330,6 +332,9 @@ jobs:
             hardhat-${{ runner.os }}-
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Run Celestial Archon deterministic kit
+        run: npm run demo:zenith-sapience-celestial-archon
+      - name: Run Celestial Archon local rehearsal
       - name: Run Hypernova deterministic kit
         run: npm run demo:zenith-hypernova
       - name: Run Hypernova local rehearsal
@@ -341,6 +346,15 @@ jobs:
           AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
           RPC_URL: http://127.0.0.1:8545
           CHAIN_ID: '31337'
+        run: npm run demo:zenith-sapience-celestial-archon:local
+      - name: Upload Celestial Archon artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: zenith-celestial-archon-reports
+          path: |
+            reports/zenith-celestial-archon/**
+            reports/localhost/zenith-celestial-archon/**
         run: npm run demo:zenith-hypernova:local
       - name: Upload Hypernova artifacts
         if: ${{ always() }}
@@ -363,6 +377,7 @@ jobs:
       - coverage
       - asi_takeoff_demo
       - zenith_demo
+      - celestial_archon_demo
       - hypernova_demo
       - invariants
     steps:
@@ -384,6 +399,7 @@ jobs:
             coverage: 'Coverage thresholds',
             asi_takeoff_demo: 'ASI Take-Off Demo',
             zenith_demo: 'Zenith Sapience Demo',
+            celestial_archon_demo: 'Celestial Archon Demo',
             hypernova_demo: 'Hypernova Governance Demo',
             invariants: 'Invariant tests'
           };
