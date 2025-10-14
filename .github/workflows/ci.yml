@@ -246,6 +246,59 @@ jobs:
           path: reports/asi-takeoff
           if-no-files-found: warn
 
+  zenith_demo:
+    name: Zenith Sapience Demonstration
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Cache Hardhat compilers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cache/hardhat-nodejs
+          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+          restore-keys: |
+            hardhat-${{ runner.os }}-
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Run Zenith Sapience deterministic kit
+        run: npm run demo:zenith-sapience-initiative
+      - name: Run Zenith Sapience local rehearsal
+        env:
+          PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+          AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
+          AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
+          AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
+          AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
+          RPC_URL: http://127.0.0.1:8545
+          CHAIN_ID: '31337'
+        run: npm run demo:zenith-sapience-initiative:local
+      - name: Upload Zenith Sapience artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: zenith-sapience-reports
+          path: |
+            reports/zenith-sapience/**
+            reports/localhost/zenith-sapience/**
+          if-no-files-found: warn
+
   summary:
     name: CI summary
     runs-on: ubuntu-24.04
@@ -256,6 +309,7 @@ jobs:
       - foundry
       - coverage
       - asi_takeoff_demo
+      - zenith_demo
       - invariants
     steps:
       - name: Harden runner
@@ -273,7 +327,10 @@ jobs:
             lint: 'Lint & static checks',
             tests: 'Tests',
             foundry: 'Foundry',
-            coverage: 'Coverage thresholds'
+            coverage: 'Coverage thresholds',
+            asi_takeoff_demo: 'ASI Take-Off Demo',
+            zenith_demo: 'Zenith Sapience Demo',
+            invariants: 'Invariant tests'
           };
           const lines = ['# AGI Jobs v0 — CI v2 status', '', '| Job | Result |', '| --- | --- |'];
           let failed = false;
