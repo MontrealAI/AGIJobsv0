@@ -43,7 +43,7 @@ plan: prep
 
 governance: prep
 	npm run owner:mission-control -- --network $(NETWORK) --format markdown --out $(OWNER_ROOT)/mission-control.md --bundle $(OWNER_ROOT)/mission-control-bundle
-	npm run owner:command-center -- --network $(NETWORK) --format markdown --output $(OWNER_ROOT)/command-center.md --bundle $(OWNER_ROOT)/command-center-bundle
+       npm run owner:command-center -- --network $(NETWORK) --format markdown --output $(OWNER_ROOT)/command-center.md
 	npm run owner:parameters -- --network $(NETWORK) --format markdown --out $(OWNER_ROOT)/parameter-matrix.md
 	npm run owner:emergency -- --network $(NETWORK) --format markdown --out $(OWNER_ROOT)/emergency-runbook.md
 	npx hardhat run --no-compile scripts/v2/thermodynamicsReport.ts --network $(NETWORK) -- --format markdown --out $(OWNER_ROOT)/thermodynamics.md
