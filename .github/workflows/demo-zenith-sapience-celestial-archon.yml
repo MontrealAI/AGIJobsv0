@@ -42,6 +42,8 @@ jobs:
             raw.githubusercontent.com
             registry.npmjs.org
             nodejs.org
+            download.cypress.io
+            cdn.cypress.io
 
       - name: Setup Node
         uses: actions/setup-node@v4
