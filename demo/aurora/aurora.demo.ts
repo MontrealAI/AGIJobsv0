@@ -218,8 +218,9 @@ function resolveReportBaseDir(net: string): string {
 function writeReceipt(net: string, name: string, data: unknown) {
   const baseDir = resolveReportBaseDir(net);
   const dir = path.join(baseDir, 'receipts');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
+  const primaryPath = path.join(dir, name);
+  fs.mkdirSync(path.dirname(primaryPath), { recursive: true });
+  fs.writeFileSync(primaryPath, JSON.stringify(data, null, 2));
   const legacyDir = path.join('reports', net, REPORT_SCOPE, 'receipts');
   const outputPath = path.join(legacyDir, name);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -227,11 +228,42 @@ function writeReceipt(net: string, name: string, data: unknown) {
 }
 
 function resolveDeploySummaryPath(net: string): string {
-  if (process.env.AURORA_DEPLOY_OUTPUT) {
-    return path.resolve(process.env.AURORA_DEPLOY_OUTPUT);
-  }
+  const candidateFromEnv = process.env.AURORA_DEPLOY_OUTPUT
+    ? path.resolve(process.env.AURORA_DEPLOY_OUTPUT)
+    : null;
   const namespace = resolveReportNamespace();
-  return path.resolve('reports', net, namespace, 'receipts', 'deploy.json');
+  const defaultReportPath = path.resolve(
+    'reports',
+    net,
+    namespace,
+    'receipts',
+    'deploy.json'
+  );
+  const fallbackDeploymentPath = path.resolve(
+    'deployment-config',
+    'latest-deployment.json'
+  );
+
+  const preferredPaths = [candidateFromEnv, defaultReportPath].filter(
+    (p): p is string => Boolean(p)
+  );
+
+  for (const candidate of preferredPaths) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  if (fs.existsSync(fallbackDeploymentPath)) {
+    console.warn(
+      `⚠️  Deploy summary not found at preferred locations. Falling back to ${fallbackDeploymentPath}.`
+    );
+    return fallbackDeploymentPath;
+  }
+
+  throw new Error(
+    `Required file not found: ${candidateFromEnv || defaultReportPath}`
+  );
 }
 
 function specAmountToWei(
@@ -725,13 +757,11 @@ async function main() {
   if (!spec.validation || !spec.validation.k || !spec.validation.n) {
     throw new Error('Validation quorum (k-of-n) must be defined in the spec.');
   }
-  const thermostatConfigPath = resolveThermostatConfigPath();
-  const thermostatConfig =
-    thermostatConfigPath !== null
-      ? readJsonFile<ThermostatConfig>(thermostatConfigPath)
-      : null;
-  const validatorCount = spec.validation.n;
-  const quorum = spec.validation.k;
+    const thermostatConfigPath = resolveThermostatConfigPath();
+    const thermostatConfig =
+      thermostatConfigPath !== null
+        ? readJsonFile<ThermostatConfig>(thermostatConfigPath)
+        : null;
   const baseSpec = readJsonFile<Spec>(SPEC_PATH);
   const missionConfig =
     MISSION_CONFIG_PATH && fs.existsSync(MISSION_CONFIG_PATH)
@@ -824,10 +854,6 @@ async function main() {
   const validators = selectedValidatorKeys.map((key) =>
     createNonceManagedSigner(provider, key)
   );
-
-  const thermostatConfig = fs.existsSync(THERMOSTAT_CONFIG_PATH)
-    ? readJsonFile<ThermostatConfig>(THERMOSTAT_CONFIG_PATH)
-    : null;
   const agentRole = 0;
   const validatorRole = 1;
   const platformRole = 2;
@@ -865,6 +891,7 @@ async function main() {
   const validationModuleArtifact = loadArtifact('ValidationModule');
   const identityRegistryArtifact = loadArtifact('IdentityRegistry');
   const systemPauseArtifact = loadArtifact('SystemPause');
+  const taxPolicyArtifact = loadArtifact('TaxPolicy');
   const thermostatArtifact = thermostatAddress
     ? loadArtifact('Thermostat')
     : null;
@@ -892,6 +919,11 @@ async function main() {
   const systemPause = new ethers.Contract(
     addresses.SystemPause,
     systemPauseArtifact.abi,
+    employer
+  );
+  const taxPolicy = new ethers.Contract(
+    addresses.TaxPolicy,
+    taxPolicyArtifact.abi,
     employer
   );
   const thermostat =
@@ -952,6 +984,15 @@ async function main() {
 
   const token = await ensureAgialpha(provider, employer);
 
+  const ensureAcknowledged = async (participant: AddressedSigner) => {
+    const acknowledged = await taxPolicy.hasAcknowledged(participant.address);
+    if (!acknowledged) {
+      const tx = await taxPolicy.connect(participant).acknowledge();
+      await tx.wait();
+    }
+  };
+
+
   const baselineMint = ethers.parseUnits('1000', decimals);
   const totalReward = resolvedJobs.reduce(
     (acc, job) => acc + job.rewardAmount,
@@ -996,6 +1037,12 @@ async function main() {
         .approve(addresses.StakeManager, ethers.MaxUint256);
       await approveTx.wait();
     }
+  }
+
+  await ensureAcknowledged(employer);
+  await ensureAcknowledged(worker);
+  for (const validator of validators) {
+    await ensureAcknowledged(validator as AddressedSigner);
   }
 
   await recordDirectGovernanceCall(
@@ -1103,8 +1150,8 @@ async function main() {
     if (normalisedIdentityOwner !== employer.address.toLowerCase()) {
       const ownerCode = await provider.getCode(identityOwnerAddress);
       if (ownerCode !== '0x') {
-        throw new Error(
-          `Identity owner ${identityOwnerAddress} is a contract. Skipping manual allowlist; configure ENS proofs instead.`
+        console.warn(
+          `⚠️  Identity owner ${identityOwnerAddress} is a contract. Impersonating for manual allowlist updates.`
         );
       }
       identityOwnerSigner = await impersonateSigner(provider, identityOwnerAddress);
@@ -1232,9 +1279,9 @@ async function main() {
     txHash: string;
   }> = [];
 
-  const workerStakeTx = await stakeManager
-    .connect(worker)
-    .acknowledgeAndDeposit(agentRole, maxWorkerStake);
+    const workerStakeTx = await stakeManager
+      .connect(worker)
+      .depositStake(agentRole, maxWorkerStake);
   const workerStakeReceipt = await workerStakeTx.wait();
   stakeEntries.push({
     role: 'agent',
@@ -1244,9 +1291,9 @@ async function main() {
   });
 
   for (const validator of validators) {
-    const stakeTx = await stakeManager
-      .connect(validator)
-      .acknowledgeAndDeposit(validatorRole, maxValidatorStake);
+      const stakeTx = await stakeManager
+        .connect(validator)
+        .depositStake(validatorRole, maxValidatorStake);
     const receipt = await stakeTx.wait();
     stakeEntries.push({
       role: 'validator',
@@ -1294,12 +1341,7 @@ async function main() {
 
     const postTx = await jobRegistry
       .connect(employer)
-      .acknowledgeAndCreateJob(
-        job.rewardAmount,
-        Number(deadline),
-        specHash,
-        specUri
-      );
+      .createJob(job.rewardAmount, Number(deadline), specHash, specUri);
     const postReceipt = await postTx.wait();
     let jobId = 0n;
     if (postReceipt && postReceipt.logs) {
@@ -1335,7 +1377,7 @@ async function main() {
 
     const applyTx = await jobRegistry
       .connect(worker)
-      .acknowledgeAndApply(jobId, job.agentSubdomain, []);
+      .applyForJob(jobId, job.agentSubdomain, []);
     await applyTx.wait();
 
     const resultHash = ethers.keccak256(ethers.toUtf8Bytes(job.resultUri));
@@ -1486,74 +1528,72 @@ async function main() {
     );
   }
 
-  writeReceipt(networkName, 'mission.json', {
-    scope: REPORT_SCOPE,
-    version: missionConfig?.version || '1.0',
-    description: missionConfig?.description,
-    jobs: missionRecords,
-  });
+    writeReceipt(networkName, 'mission.json', {
+      scope: REPORT_SCOPE,
+      version: missionConfig?.version || '1.0',
+      description: missionConfig?.description,
+      jobs: missionRecords,
+    });
 
-  let thermostatUpdates: ThermostatUpdate[] = [];
-  if (thermostatConfig && thermostat && thermostatInterface) {
-    thermostatUpdates = await applyThermostatConfig(
-      thermostat,
-      thermostatInterface,
-      recordForwardGovernanceCall,
-      thermostatConfig
+    let thermostatUpdates: ThermostatUpdate[] = [];
+    if (thermostatConfig && thermostat && thermostatInterface) {
+      thermostatUpdates = await applyThermostatConfig(
+        thermostat,
+        thermostatInterface,
+        recordForwardGovernanceCall,
+        thermostatConfig
+      );
+    }
+
+    await recordForwardGovernanceCall(
+      'StakeManager',
+      addresses.StakeManager,
+      stakeManager.interface,
+      'setRoleMinimums',
+      [
+        stakeMinimumBaseline.agent,
+        stakeMinimumBaseline.validator,
+        stakeMinimumBaseline.platform,
+      ],
+      {
+        notes: 'Restore production minimum stake thresholds',
+        before: {
+          agent: formatUnits(stakeMinimumAdjusted.agent, decimals),
+          validator: formatUnits(stakeMinimumAdjusted.validator, decimals),
+          platform: formatUnits(stakeMinimumAdjusted.platform, decimals),
+        },
+        after: {
+          agent: formatUnits(stakeMinimumBaseline.agent, decimals),
+          validator: formatUnits(stakeMinimumBaseline.validator, decimals),
+          platform: formatUnits(stakeMinimumBaseline.platform, decimals),
+        },
+      }
     );
-}
 
-  await recordForwardGovernanceCall(
-    'StakeManager',
-    addresses.StakeManager,
-    stakeManager.interface,
-    'setRoleMinimums',
-    [
-      stakeMinimumBaseline.agent,
-      stakeMinimumBaseline.validator,
-      stakeMinimumBaseline.platform,
-    ],
-    {
-      notes: 'Restore production minimum stake thresholds',
-      before: {
-        agent: formatUnits(stakeMinimumAdjusted.agent, decimals),
-        validator: formatUnits(stakeMinimumAdjusted.validator, decimals),
-        platform: formatUnits(stakeMinimumAdjusted.platform, decimals),
-      },
-      after: {
-        agent: formatUnits(stakeMinimumBaseline.agent, decimals),
-        validator: formatUnits(stakeMinimumBaseline.validator, decimals),
-        platform: formatUnits(stakeMinimumBaseline.platform, decimals),
-      },
-    }
-  );
+    await recordForwardGovernanceCall(
+      'JobRegistry',
+      addresses.JobRegistry,
+      jobRegistry.interface,
+      'setJobStake',
+      [originalJobStake],
+      {
+        notes: 'Return job stake policy to its baseline value',
+        before: { stake: formatUnits(adjustedJobStake, decimals) },
+        after: { stake: formatUnits(originalJobStake, decimals) },
+      }
+    );
 
-  await recordForwardGovernanceCall(
-    'JobRegistry',
-    addresses.JobRegistry,
-    jobRegistry.interface,
-    'setJobStake',
-    [originalJobStake],
-    {
-      notes: 'Return job stake policy to its baseline value',
-      before: { stake: formatUnits(adjustedJobStake, decimals) },
-      after: { stake: formatUnits(originalJobStake, decimals) },
-    }
-  );
+    writeReceipt(networkName, 'governance.json', {
+      actions: governanceActions,
+      thermostat: thermostatUpdates,
+    });
 
-  writeReceipt(networkName, 'governance.json', {
-    actions: governanceActions,
-    thermostat: thermostatUpdates,
+    console.log(
+      `✅ AURORA demo completed. Jobs finalized: ${missionRecords.length}.`
+    );
+  }
+
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
   });
-
-  console.log(
-    `✅ AURORA demo completed. Jobs finalized: ${missionRecords.length}.`
-  );
-}
-
-}
-
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
