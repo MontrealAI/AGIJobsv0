@@ -966,6 +966,41 @@ async function main() {
     return txHash;
   };
 
+  const recordForwardGovernanceCall = async (
+    targetName: string,
+    targetAddress: string,
+    iface: ethers.Interface,
+    method: string,
+    args: unknown[],
+    options?: { notes?: string; before?: Record<string, string>; after?: Record<string, string> }
+  ) => {
+    const txHash = await executeGovernanceCall(systemPause, targetAddress, iface, method, args);
+    governanceActions.push({
+      target: targetName,
+      method,
+      txHash,
+      type: 'forwarded',
+      params: normaliseArg(args),
+      notes: options?.notes,
+      before: options?.before,
+      after: options?.after,
+    });
+    return txHash;
+  };
+
+  const recordDirectGovernanceCall = async (
+    targetName: string,
+    method: string,
+    action: () => Promise<ethers.ContractTransactionResponse>,
+    notes?: string
+  ) => {
+    const tx = await action();
+    const receipt = await tx.wait();
+    const txHash = receipt?.hash || tx.hash;
+    governanceActions.push({ target: targetName, method, txHash, type: 'direct', notes });
+    return txHash;
+  };
+
   const token = await ensureAgialpha(provider, employer);
 
   const baselineMint = ethers.parseUnits('1000', decimals);
