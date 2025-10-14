@@ -388,9 +388,14 @@ async function runCommand(step: CommandStep): Promise<RunResult> {
     void prefixedLog(`${step.key}:err`, chunk as Buffer);
   });
 
-  const exitCode: number = await new Promise((resolve, reject) => {
+  const { exitCode, signal } = await new Promise<{
+    exitCode: number | null;
+    signal: NodeJS.Signals | null;
+  }>((resolve, reject) => {
     child.on('error', (error) => reject(error));
-    child.on('close', (code) => resolve(code ?? 0));
+    child.on('close', (code, receivedSignal) =>
+      resolve({ exitCode: code, signal: receivedSignal }),
+    );
   });
 
   const durationMs = Date.now() - start;
@@ -400,7 +405,8 @@ async function runCommand(step: CommandStep): Promise<RunResult> {
       `# ${step.title}`,
       '',
       `Command: ${step.command.join(' ')}`,
-      `Exit code: ${exitCode}`,
+      `Exit code: ${exitCode ?? 'null'}`,
+      `Signal: ${signal ?? 'none'}`,
       `Duration: ${durationMs}ms`,
       '',
       '## stdout',
@@ -411,6 +417,14 @@ async function runCommand(step: CommandStep): Promise<RunResult> {
       '',
     ].join('\n'),
   );
+
+  if (signal !== null) {
+    throw new Error(`${step.title} terminated by signal ${signal}`);
+  }
+
+  if (exitCode === null) {
+    throw new Error(`${step.title} ended without exit code or signal`);
+  }
 
   if (exitCode !== 0) {
     throw new Error(`${step.title} failed with exit code ${exitCode}`);
