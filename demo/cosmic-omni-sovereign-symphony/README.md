@@ -45,6 +45,12 @@ experience.
 3. **Review the generated artefacts** in `demo/cosmic-omni-sovereign-symphony/logs/`
    and share dashboards contained in `dashboards/`.
 
+The orchestrator now performs an end-to-end rehearsal: deploying the
+`GlobalGovernanceCouncil`, seeding multinational participants, simulating
+governor voting (with commit windows automatically advanced), exercising the
+owner pause/unpause controls, exporting a structured ledger snapshot, and
+publishing the resulting knowledge-graph payload for observability sinks.
+
 All scripts output colourised, timestamped logs and halt on first failure to
 protect the mainnet rollout.
 
@@ -75,7 +81,9 @@ The repository already ships with Hardhat, Foundry, Echidna, and Cypress
 pipelines. The demo leverages them by exposing:
 
 - `bin/orchestrate.sh` → installs dependencies, runs lint, compiles contracts,
-  executes the targeted Hardhat test suite, and exports coverage artefacts.
+  executes the targeted Hardhat test suite, deploys and seeds the governance
+  contract, drives simulated nation voting plus owner pause drills, and exports
+  ledger + knowledge graph artefacts.
 - `scripts/run-ci-checks.ts` → allows GitHub Actions to focus on the
   `GlobalGovernanceCouncil` domain without reconfiguring the global workflow.
 
