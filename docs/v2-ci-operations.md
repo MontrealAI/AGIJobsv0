@@ -122,6 +122,7 @@ Any change to those values inside `config/` or environment overrides forces the 
 - **Incident response:** When a CI job fails on `main`, triage by inspecting the job logs, then open an incident ticket using the `owner-control-change-ticket.md` template.
 - **Temporarily skipping jobs:** Use GitHub's `workflow_dispatch` trigger to run a targeted branch with fixes instead of editing the workflow file.
 - **Infrastructure updates:** Record any changes to cache keys or environment variables in `docs/release-checklist.md` and attach a PR link for traceability.
+- **Hypernova drill:** If the `hypernova_demo` job regresses, rerun `npm run demo:zenith-hypernova` locally to reproduce, capture the reports in `reports/zenith-hypernova/`, and attach them to the incident ticket for non-technical owners.
 
 ## Audit checkpoints
 

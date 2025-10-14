@@ -138,7 +138,9 @@
     "audit:freeze": "node scripts/audit/check-freeze.js",
     "audit:final": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/audit/final-readiness.ts",
     "audit:dossier": "bash scripts/audit/export-dossier.sh",
-    "audit:package": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/audit/package-kit.ts"
+    "audit:package": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/audit/package-kit.ts",
+    "demo:zenith-hypernova": "bash demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/bin/zenith-hypernova.sh",
+    "demo:zenith-hypernova:local": "bash demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/bin/zenith-hypernova-local.sh"
   },
   "keywords": [],
   "author": "",

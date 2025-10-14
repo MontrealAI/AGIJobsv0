@@ -301,6 +301,8 @@ jobs:
 
   celestial_archon_demo:
     name: Celestial Archon Demonstration
+  hypernova_demo:
+    name: Hypernova Governance Demonstration
     needs: tests
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -333,6 +335,9 @@ jobs:
       - name: Run Celestial Archon deterministic kit
         run: npm run demo:zenith-sapience-celestial-archon
       - name: Run Celestial Archon local rehearsal
+      - name: Run Hypernova deterministic kit
+        run: npm run demo:zenith-hypernova
+      - name: Run Hypernova local rehearsal
         env:
           PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
           AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
@@ -350,6 +355,15 @@ jobs:
           path: |
             reports/zenith-celestial-archon/**
             reports/localhost/zenith-celestial-archon/**
+        run: npm run demo:zenith-hypernova:local
+      - name: Upload Hypernova artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: zenith-hypernova-reports
+          path: |
+            reports/zenith-hypernova/**
+            reports/localhost/zenith-hypernova/**
           if-no-files-found: warn
 
   summary:
@@ -364,6 +378,7 @@ jobs:
       - asi_takeoff_demo
       - zenith_demo
       - celestial_archon_demo
+      - hypernova_demo
       - invariants
     steps:
       - name: Harden runner
@@ -385,6 +400,7 @@ jobs:
             asi_takeoff_demo: 'ASI Take-Off Demo',
             zenith_demo: 'Zenith Sapience Demo',
             celestial_archon_demo: 'Celestial Archon Demo',
+            hypernova_demo: 'Hypernova Governance Demo',
             invariants: 'Invariant tests'
           };
           const lines = ['# AGI Jobs v0 — CI v2 status', '', '| Job | Result |', '| --- | --- |'];
