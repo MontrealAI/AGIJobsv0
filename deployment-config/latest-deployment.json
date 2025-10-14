@@ -1,0 +1,45 @@
+{
+  "timestamp": "2025-10-14T18:06:29.230Z",
+  "network": "localhost",
+  "governance": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "withTax": true,
+  "taxPolicy": {
+    "address": "0x427f7c59ED72bCf26DfFc634FEF3034e00922DD8",
+    "uri": "ipfs://policy",
+    "acknowledgement": "All taxes on participants; contract and owner exempt"
+  },
+  "econ": {
+    "feePct": 5,
+    "burnPct": 100,
+    "employerSlashPct": 10,
+    "treasurySlashPct": 90,
+    "validatorSlashRewardPct": 0,
+    "commitWindow": 86400,
+    "revealWindow": 86400,
+    "minStake": "1000000000000000000000",
+    "jobStake": "500000000000000000000"
+  },
+  "identity": {
+    "ens": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+    "nameWrapper": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+    "clubRootNode": "0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16",
+    "agentRootNode": "0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d",
+    "validatorMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "agentMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "contracts": {
+    "StakeManager": "0xa16E02E87b7454126E5E10d957A927A7F5B5d2be",
+    "JobRegistry": "0xB7A5bd0345EF1Cc5E66bf61BdeC17D2461fBd968",
+    "ValidationModule": "0xeEBe00Ac0756308ac4AaBfD76c05c4F3088B8883",
+    "ReputationEngine": "0x10C6E9530F1C1AF873a391030a1D9E8ed0630D26",
+    "DisputeModule": "0x86337dDaF2661A069D0DcB5D160585acC2d15E9a",
+    "CertificateNFT": "0x9CfA6D15c80Eb753C815079F2b32ddEFd562C3e4",
+    "PlatformRegistry": "0xBfd66D9636253f11aE43f3428e8df73b5aD6950f",
+    "JobRouter": "0x4441cd5CeDDcdC29bA2C737d124Eb989cE3d373f",
+    "PlatformIncentives": "0x7e134579b2f4a90136e3B5D905C753C8fD72D1Cc",
+    "FeePool": "0x275039fc0fd2eeFac30835af6aeFf24e8c52bA6B",
+    "TaxPolicy": "0x427f7c59ED72bCf26DfFc634FEF3034e00922DD8",
+    "IdentityRegistry": "0x07e7876A32feEc2cE734aae93d9aB7623EaEF4a3",
+    "SystemPause": "0x8eAeE502828c6C6f3e83Df32660a68fCe513Ce8a"
+  }
+}

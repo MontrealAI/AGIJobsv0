@@ -1,0 +1,248 @@
+{
+  "actions": [
+    {
+      "target": "SystemPause",
+      "method": "pauseAll",
+      "txHash": "0x6fba5df300b1fe9a56e9d3e750193828ea8b2513f2bbc786e05c2f3be4960a29",
+      "type": "direct",
+      "notes": "Emergency drill: pause every core module"
+    },
+    {
+      "target": "SystemPause",
+      "method": "unpauseAll",
+      "txHash": "0xadc2d9f3b3da7e0eb7bf09e63e28588248d4ba479e5cc857fc02071fc522872e",
+      "type": "direct",
+      "notes": "Resume operations after pause drill"
+    },
+    {
+      "target": "StakeManager",
+      "method": "setRoleMinimums",
+      "txHash": "0x3fa709b202e7be3282f9ff0ac68759cd0e035f6f861b66b7f8ea89a3a34a552d",
+      "type": "forwarded",
+      "params": [
+        "10000000000000000000",
+        "25000000000000000000",
+        "12500000000000000000"
+      ],
+      "notes": "Lower minimum stakes so demo identities can onboard quickly",
+      "before": {
+        "agent": "0.0",
+        "validator": "0.0",
+        "platform": "0.0"
+      },
+      "after": {
+        "agent": "10.0",
+        "validator": "25.0",
+        "platform": "12.5"
+      }
+    },
+    {
+      "target": "JobRegistry",
+      "method": "setJobStake",
+      "txHash": "0xcdbb331ebfe537d5e6bb44d3cf806aad2b3cb3b10c1363c7133f4bcf57b92e4a",
+      "type": "forwarded",
+      "params": [
+        "20000000000000000000"
+      ],
+      "notes": "Align agent job stake requirements with the mission parameters",
+      "before": {
+        "stake": "500.0"
+      },
+      "after": {
+        "stake": "20.0"
+      }
+    },
+    {
+      "target": "JobRegistry",
+      "method": "setMinAgentStake",
+      "txHash": "0x170ffcb4015cd80ffbcee6b7e5b2b9b23d10efc28242ee98a0d5b91dbe70055c",
+      "type": "forwarded",
+      "params": [
+        "20000000000000000000"
+      ],
+      "notes": "Align minimum agent stake with the mission requirements",
+      "before": {
+        "stake": "0.0"
+      },
+      "after": {
+        "stake": "20.0"
+      }
+    },
+    {
+      "target": "JobRegistry",
+      "method": "setAcknowledger",
+      "txHash": "0x302c0f838b9e5c10c14e61e4f7537e73391e93c408c5938955609b6578217614",
+      "type": "forwarded",
+      "params": [
+        "0xa16E02E87b7454126E5E10d957A927A7F5B5d2be",
+        true
+      ],
+      "notes": "Allow StakeManager to acknowledge tax policy on behalf of participants"
+    },
+    {
+      "target": "IdentityRegistry",
+      "method": "addAdditionalAgent",
+      "txHash": "0x0f870ca179ae8ea741f95817057e2dbf0a93051dd953535866b3bfbb4ed13f4b",
+      "type": "direct",
+      "notes": "Allow flagship worker to onboard without ENS proof"
+    },
+    {
+      "target": "IdentityRegistry",
+      "method": "addAdditionalValidator",
+      "txHash": "0x482c0457bbee1a5d0442ad235375b88fcf4e32eeb033ac3153f531eb7126913e",
+      "type": "direct",
+      "notes": "Whitelist validator for flagship mission quorum"
+    },
+    {
+      "target": "IdentityRegistry",
+      "method": "addAdditionalValidator",
+      "txHash": "0x4eee1c270712f3690293e1a28423794f451dba7c95849182a7e8e5244907d200",
+      "type": "direct",
+      "notes": "Whitelist validator for flagship mission quorum"
+    },
+    {
+      "target": "IdentityRegistry",
+      "method": "addAdditionalValidator",
+      "txHash": "0x1a777158e5ba2b3471357eb0852d6e90565cebe4f75c5ba3bb090c808b77ac34",
+      "type": "direct",
+      "notes": "Whitelist validator for flagship mission quorum"
+    },
+    {
+      "target": "StakeManager",
+      "method": "setValidationModule",
+      "txHash": "0x6309a39cf60bc8ead2517d6149b84c039c7ba69c408f1117a93e88896773752f",
+      "type": "forwarded",
+      "params": [
+        "0xeEBe00Ac0756308ac4AaBfD76c05c4F3088B8883"
+      ],
+      "notes": "Wire the validator stake locker to the active validation module"
+    },
+    {
+      "target": "ValidationModule",
+      "method": "setValidatorPool",
+      "txHash": "0x988f72bbcda81709cb54aa38d9040f2fea1d2941aeabe1af5cb40c2e0ca2280f",
+      "type": "forwarded",
+      "params": [
+        [
+          "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+          "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+          "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+        ]
+      ],
+      "notes": "Populate validator committee pool for demo mission"
+    },
+    {
+      "target": "ValidationModule",
+      "method": "setValidatorBounds",
+      "txHash": "0x63d9a1dffa766183d91a474faabc414e478d41a5ba8a4b4cc9cba10f4aea25d8",
+      "type": "forwarded",
+      "params": [
+        3,
+        3
+      ],
+      "notes": "Require at least 3 validators from a pool cap of 3",
+      "before": {
+        "quorum": 2,
+        "pool": 3
+      },
+      "after": {
+        "min": "3",
+        "max": "3"
+      }
+    },
+    {
+      "target": "ValidationModule",
+      "method": "setValidatorsPerJob",
+      "txHash": "0x153ca7edfd2b8884f090401b9b45217c0b309e1a25c6041014332b63dbc90e4e",
+      "type": "forwarded",
+      "params": [
+        3
+      ],
+      "notes": "Assign 3 validators to each flagship job",
+      "before": {
+        "requested": "3"
+      }
+    },
+    {
+      "target": "ValidationModule",
+      "method": "setRequiredValidatorApprovals",
+      "txHash": "0x60f1941c6d913fc527bbfab9fa965470b23f28a1be815fa8c8f69d6c4ba11ff3",
+      "type": "forwarded",
+      "params": [
+        2
+      ],
+      "notes": "Set quorum for validation success"
+    },
+    {
+      "target": "ValidationModule",
+      "method": "setCommitWindow",
+      "txHash": "0xad9f9c4b1cbcf8a767d497c883fdb733d624cfc988c8648fe39f47ff55d231b7",
+      "type": "forwarded",
+      "params": [
+        "30"
+      ],
+      "notes": "Tighten commit window to 30 seconds for rapid demo cadence",
+      "before": {
+        "commitWindow": "86400"
+      },
+      "after": {
+        "commitWindow": "30"
+      }
+    },
+    {
+      "target": "ValidationModule",
+      "method": "setRevealWindow",
+      "txHash": "0x8681a9e537c4cde870a5e56807e12921a62255ab6012171b02e4693aea5d55b0",
+      "type": "forwarded",
+      "params": [
+        "300"
+      ],
+      "notes": "Match reveal horizon to five minutes",
+      "before": {
+        "revealWindow": "86400"
+      },
+      "after": {
+        "revealWindow": "300"
+      }
+    },
+    {
+      "target": "StakeManager",
+      "method": "setRoleMinimums",
+      "txHash": "0xcccc2b52a35a735f27f28d88198a3ddb5cfccb1d7b19211ca8f2126e3517df1d",
+      "type": "forwarded",
+      "params": [
+        "0",
+        "0",
+        "0"
+      ],
+      "notes": "Restore production minimum stake thresholds",
+      "before": {
+        "agent": "10.0",
+        "validator": "25.0",
+        "platform": "12.5"
+      },
+      "after": {
+        "agent": "0.0",
+        "validator": "0.0",
+        "platform": "0.0"
+      }
+    },
+    {
+      "target": "JobRegistry",
+      "method": "setJobStake",
+      "txHash": "0x1c5750d89861f89b4c5c292bb3b898542bfadf0a5cb60e6a1c25ad6ee6757225",
+      "type": "forwarded",
+      "params": [
+        "500000000000000000000"
+      ],
+      "notes": "Return job stake policy to its baseline value",
+      "before": {
+        "stake": "20.0"
+      },
+      "after": {
+        "stake": "500.0"
+      }
+    }
+  ],
+  "thermostat": []
+}

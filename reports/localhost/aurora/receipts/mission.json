@@ -1,0 +1,22 @@
+{
+  "scope": "aurora",
+  "version": "1.0",
+  "jobs": [
+    {
+      "name": "AURORA-Flagship-Job",
+      "slug": "aurora-flagship-job",
+      "jobId": "1",
+      "reward": "5.0",
+      "deadline": "1760468798",
+      "resultURI": "ipfs://aurora-demo-result",
+      "txHash": "0x1e56e2df3ce08884b7b0439afd7ed7b77461cfdba0d8acfdcb35ecfead78669c",
+      "receipts": {
+        "post": "jobs/aurora-flagship-job/post.json",
+        "submit": "jobs/aurora-flagship-job/submit.json",
+        "validate": "jobs/aurora-flagship-job/validate.json",
+        "finalize": "jobs/aurora-flagship-job/finalize.json"
+      },
+      "metadata": {}
+    }
+  ]
+}
