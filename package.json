@@ -112,6 +112,8 @@
     "demo:asi-global:kit": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/asiGlobalKit.ts",
     "demo:zenith-sapience-initiative": "bash demo/zenith-sapience-initiative-global-governance/bin/zenith-sapience.sh",
     "demo:zenith-sapience-initiative:local": "bash demo/zenith-sapience-initiative-global-governance/bin/zenith-sapience-local.sh",
+    "demo:zenith-sapience-planetary-os": "bash demo/zenith-sapience-initiative-planetary-operating-system-governance/bin/zenith-planetary-os.sh",
+    "demo:zenith-sapience-planetary-os:local": "bash demo/zenith-sapience-initiative-planetary-operating-system-governance/bin/zenith-planetary-os-local.sh",
     "demo:zenith-sapience-omnidominion": "bash demo/zenith-sapience-initiative-omnidominion-governance/bin/zenith-omnidominion.sh",
     "demo:zenith-sapience-omnidominion:local": "bash demo/zenith-sapience-initiative-omnidominion-governance/bin/zenith-omnidominion-local.sh",
     "subgraph:e2e": "node scripts/subgraph-e2e.js",
