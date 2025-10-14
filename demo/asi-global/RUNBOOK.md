@@ -5,7 +5,7 @@ operators to inspect intermediate states on a local fork.
 
 ## Prerequisites
 
-- Node.js 20.x, npm, and (optionally) Foundry's `anvil`.
+- Node.js 20.x, npm, and (optionally) Foundry's `anvil`/`cast`.
 - An environment variable `PRIVATE_KEY` seeded with a funded dev account when running
   against real RPC endpoints (not required for Hardhat/Anvil).
 
@@ -16,9 +16,9 @@ operators to inspect intermediate states on a local fork.
    npm install
    npm run demo:asi-global:local
    ```
-   The helper script launches Anvil (or Hardhat) on `127.0.0.1:8545`, deploys the
-   protocol defaults, executes the Aurora/one-box drill, and renders the global report
-   bundle to `reports/localhost/asi-global`.
+   The helper script launches Anvil (or Hardhat) on `127.0.0.1:8545`, raises block gas
+   and code-size limits, deploys the protocol defaults, executes the Aurora/one-box
+   drill, and renders the global report bundle to `reports/localhost/asi-global`.
 
 2. **Review artefacts**
    - `receipts/dry-run.json` – Job lifecycle replay
@@ -43,5 +43,8 @@ operators to inspect intermediate states on a local fork.
 - The runbook never modifies production deployments.  It only touches ephemeral local
   chains.
 - All scripts are idempotent; re-running them overwrites previous artefacts.
+- Tune gas/code ceilings via `LOCAL_GAS_LIMIT` / `LOCAL_CODE_SIZE_LIMIT` if you want to
+  model constrained environments.  When Foundry's `cast` is unavailable the script
+  skips the limit adjustments and logs a warning.
 - Review `demo/asi-global/project-plan.json` to adapt the scenario with new regions or
   governance policies without changing any code.

@@ -1,29 +1,33 @@
-name: demo-asi-global
+name: demo-zenith-sapience-transcendent
 
 on:
   pull_request:
     paths:
-      - 'demo/**'
-      - 'scripts/v2/**'
-      - 'docs/asi-global-orchestrator-demo.md'
-      - '.github/workflows/demo-asi-global.yml'
+      - 'demo/zenith-sapience-initiative-transcendent-governance-overview/**'
+      - 'scripts/v2/asiGlobalDemo.ts'
+      - 'scripts/v2/asiGlobalKit.ts'
+      - 'scripts/v2/lib/asiTakeoffKit.ts'
+      - 'package.json'
+      - '.github/workflows/demo-zenith-sapience-transcendent.yml'
   push:
     branches: [main]
     paths:
-      - 'demo/**'
-      - 'scripts/v2/**'
-      - 'docs/asi-global-orchestrator-demo.md'
-      - '.github/workflows/demo-asi-global.yml'
+      - 'demo/zenith-sapience-initiative-transcendent-governance-overview/**'
+      - 'scripts/v2/asiGlobalDemo.ts'
+      - 'scripts/v2/asiGlobalKit.ts'
+      - 'scripts/v2/lib/asiTakeoffKit.ts'
+      - 'package.json'
+      - '.github/workflows/demo-zenith-sapience-transcendent.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  asi-global:
-    name: ASI Global Take-Off Demonstration
+  zenith-sapience-transcendent:
+    name: Zenith Sapience Transcendent Demo
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -58,10 +62,10 @@ jobs:
         with:
           version: 'stable'
 
-      - name: Run ASI Global demo (deterministic kit)
-        run: npm run demo:asi-global
+      - name: Run Zenith Sapience Transcendent deterministic kit
+        run: npm run demo:zenith-sapience-transcendent
 
-      - name: Run ASI Global demo (local rehearsal)
+      - name: Run Zenith Sapience Transcendent local rehearsal
         env:
           PRIVATE_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
           AURORA_WORKER_KEY: '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'
@@ -70,12 +74,12 @@ jobs:
           AURORA_VALIDATOR3_KEY: '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a'
           RPC_URL: http://127.0.0.1:8545
           CHAIN_ID: '31337'
-        run: npm run demo:asi-global:local
+        run: npm run demo:zenith-sapience-transcendent:local
 
-      - name: Upload global demo artefacts
+      - name: Upload Zenith Sapience Transcendent artefacts
         uses: actions/upload-artifact@v4
         with:
-          name: asi-global-receipts
+          name: zenith-sapience-transcendent-reports
           path: |
-            reports/asi-global/**
-            reports/localhost/asi-global/**
+            reports/zenith-sapience-transcendent/**
+            reports/localhost/zenith-sapience-transcendent/**
