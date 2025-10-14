@@ -1,0 +1,230 @@
+{
+  "initiative": "OmniSovereign Coordination Demonstration",
+  "objective": "Fuse national automation drills with planetary coordination councils using only AGI Jobs v0 (v2) primitives, yielding a reproducible dossier for borderless economic planning.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1800000000",
+    "allocations": {
+      "LocalMissions": "300000000",
+      "RegionalExpansions": "520000000",
+      "PlanetaryReserves": "480000000",
+      "AdaptiveLiquidity": "200000000",
+      "ValidatorSafetyNet": "300000000"
+    }
+  },
+  "governance": {
+    "owner": "0xOMNI-SOVEREIGN-GUARDIAN",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xOMNI-TREASURY",
+    "quadraticVoting": {
+      "contract": "AGIGovernor",
+      "timelock": "0xOMNI-TIMELOCK",
+      "executionDelayDays": 5
+    },
+    "thermostat": {
+      "initialTemperature": "0.22",
+      "emergencyTemperature": "0.41",
+      "updateScript": "scripts/v2/updateThermodynamics.ts"
+    },
+    "controlScripts": {
+      "commandCenter": "npm run owner:command-center -- --network localhost --format markdown",
+      "missionControl": "npm run owner:mission-control -- --network localhost --format markdown",
+      "parameterMatrix": "npm run owner:parameters -- --network localhost --format markdown",
+      "diagram": "npm run owner:diagram -- --network localhost --out reports/localhost/asi-takeoff/owner.mmd",
+      "pauseDrill": "RPC_URL=http://127.0.0.1:8545 CHAIN_ID=31337 npm run pause:test"
+    }
+  },
+  "coordinationLayers": [
+    {
+      "id": "CITY-STATES",
+      "description": "Metropolitan automation clusters driven by demo:asi-takeoff receipts.",
+      "dataSources": [
+        "reports/localhost/asi-takeoff/receipts/jobs",
+        "reports/localhost/asi-takeoff/receipts/stake.json"
+      ]
+    },
+    {
+      "id": "REGIONAL-COUNCILS",
+      "description": "Continental logistics orchestrations supplied by demo:asi-global outputs.",
+      "dataSources": [
+        "reports/asi-global/receipts/regions",
+        "reports/asi-global/thermodynamics.json"
+      ]
+    },
+    {
+      "id": "PLANETARY-RESERVE",
+      "description": "Treasury, reward, and thermostat buffers harmonised across both drills.",
+      "dataSources": [
+        "reports/asi-global/governance-kit.json",
+        "reports/localhost/asi-takeoff/governance-kit.json"
+      ]
+    }
+  ],
+  "participants": {
+    "metaOrchestrator": {
+      "handle": "omni.orchestrator.agi.eth",
+      "role": "Global coordination nexus",
+      "capabilities": [
+        "Aggregate national and planetary receipts",
+        "Drive plan→simulate→execute loops via demo scripts",
+        "Emit owner-grade dashboards"
+      ]
+    },
+    "council": [
+      {
+        "handle": "council.strategist.agi.eth",
+        "role": "Interoperability steward",
+        "stake": "72000000"
+      },
+      {
+        "handle": "council.validator.agi.eth",
+        "role": "Cross-jurisdiction validator marshal",
+        "stake": "68000000"
+      },
+      {
+        "handle": "council.liquidity.agi.eth",
+        "role": "Treasury and liquidity sentinel",
+        "stake": "54000000"
+      }
+    ],
+    "agents": [
+      {
+        "handle": "city.automation.agent.agi.eth",
+        "role": "Metropolitan infrastructure guild",
+        "regions": ["CITY-STATES"],
+        "capabilities": [
+          "Parametric design replay",
+          "Autonomous deployment",
+          "Civic validation"
+        ]
+      },
+      {
+        "handle": "regional.supply.agent.agi.eth",
+        "role": "Continental supply chain lattice",
+        "regions": ["REGIONAL-COUNCILS"],
+        "capabilities": [
+          "Demand balancing",
+          "Energy logistics",
+          "Cross-border compliance"
+        ]
+      },
+      {
+        "handle": "reserve.steward.agent.agi.eth",
+        "role": "Planetary reserve conductor",
+        "regions": ["PLANETARY-RESERVE"],
+        "capabilities": [
+          "Thermostat tuning",
+          "Reward allocation",
+          "Dispute arbitration"
+        ]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "omnivision.validator.agi.eth",
+        "stake": "150000000",
+        "mandate": "Unified mission audit and entropy oversight"
+      },
+      {
+        "handle": "continuum.validator.agi.eth",
+        "stake": "132000000",
+        "mandate": "Temporal consistency and receipt verification"
+      },
+      {
+        "handle": "safetygrid.validator.agi.eth",
+        "stake": "118000000",
+        "mandate": "Infrastructure safety and treasury guardianship"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "SOV-INGEST-NATIONAL",
+      "title": "Ingest and validate national automation receipts",
+      "reward": "120000000",
+      "deadlineDays": 14,
+      "dependencies": [],
+      "energyBudget": "42000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.11",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "SOV-CASCADE-REGIONAL",
+      "title": "Cascade incentives into regional councils",
+      "reward": "210000000",
+      "deadlineDays": 21,
+      "dependencies": ["SOV-INGEST-NATIONAL"],
+      "energyBudget": "86000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.17",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "SOV-HARMONISE-TREASURY",
+      "title": "Synchronise treasury outflows across missions",
+      "reward": "260000000",
+      "deadlineDays": 30,
+      "dependencies": ["SOV-CASCADE-REGIONAL"],
+      "energyBudget": "92000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.13",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "SOV-THERMO-ALIGN",
+      "title": "Align thermostat envelopes for city and planetary layers",
+      "reward": "180000000",
+      "deadlineDays": 18,
+      "dependencies": ["SOV-INGEST-NATIONAL"],
+      "energyBudget": "56000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.09",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "SOV-VALIDATOR-FUSION",
+      "title": "Unify validator quorums and dispute modules",
+      "reward": "230000000",
+      "deadlineDays": 24,
+      "dependencies": ["SOV-CASCADE-REGIONAL", "SOV-THERMO-ALIGN"],
+      "energyBudget": "74000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.15",
+        "adjustmentOnDelay": "increase-validator-share"
+      }
+    },
+    {
+      "id": "SOV-PUBLIC-DOSSIER",
+      "title": "Publish composite mission dossier for governance atlas",
+      "reward": "170000000",
+      "deadlineDays": 12,
+      "dependencies": ["SOV-HARMONISE-TREASURY", "SOV-VALIDATOR-FUSION"],
+      "energyBudget": "48000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.07",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "national": "reports/localhost/asi-takeoff/asi-takeoff-report.md",
+      "planetary": "reports/asi-global/asi-global-report.md",
+      "governanceKits": [
+        "reports/localhost/asi-takeoff/governance-kit.json",
+        "reports/asi-global/governance-kit.json"
+      ],
+      "mermaid": "reports/localhost/asi-takeoff/owner.mmd"
+    },
+    "dashboards": [
+      "reports/localhost/asi-takeoff/asi-takeoff-report.md",
+      "reports/asi-global/asi-global-report.md",
+      "reports/localhost/asi-takeoff/owner.mmd"
+    ]
+  }
+}
