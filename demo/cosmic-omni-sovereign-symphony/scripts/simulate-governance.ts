@@ -95,9 +95,13 @@ async function main() {
     contractAddress = deployment.contract;
   }
 
+  const network = await ethers.provider.getNetwork();
   const ledger: any = {
     contract: contractAddress,
-    network: await ethers.provider.getNetwork(),
+    network: {
+      name: network.name,
+      chainId: network.chainId.toString()
+    },
     generatedAt: new Date().toISOString(),
     votes: [] as any[],
     ownerActions: [] as any[]
