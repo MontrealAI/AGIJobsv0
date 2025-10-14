@@ -21,12 +21,13 @@ start_node() {
   local log_file=$1
   if command -v anvil >/dev/null 2>&1; then
     echo "ℹ️  Starting Anvil node" >&2
-    anvil --silent --block-time 1 >"$log_file" 2>&1 &
+    anvil --silent --block-time 1 --gas-limit 1000000000 >"$log_file" 2>&1 &
     NODE_PID=$!
     NODE_KIND="anvil"
   else
     echo "⚠️  Anvil not found; falling back to Hardhat node" >&2
-    npx hardhat node --hostname 127.0.0.1 --port 8545 >"$log_file" 2>&1 &
+    LOCAL_GAS_LIMIT=1000000000 \
+      npx hardhat node --hostname 127.0.0.1 --port 8545 >"$log_file" 2>&1 &
     NODE_PID=$!
     NODE_KIND="hardhat"
   fi

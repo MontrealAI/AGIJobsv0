@@ -57,6 +57,11 @@ const DEFAULT_KEYS = [
   '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a',
   '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6',
   '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a',
+  '0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba',
+  '0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e',
+  '0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356',
+  '0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97',
+  '0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6',
 ];
 
 const AGIALPHA_CONFIG = JSON.parse(
@@ -218,6 +223,10 @@ function resolveReportBaseDir(net: string): string {
 function writeReceipt(net: string, name: string, data: unknown) {
   const baseDir = resolveReportBaseDir(net);
   const dir = path.join(baseDir, 'receipts');
+  fs.mkdirSync(dir, { recursive: true });
+  const receiptPath = path.join(dir, name);
+  fs.mkdirSync(path.dirname(receiptPath), { recursive: true });
+  fs.writeFileSync(receiptPath, JSON.stringify(data, null, 2));
   const primaryPath = path.join(dir, name);
   fs.mkdirSync(path.dirname(primaryPath), { recursive: true });
   fs.writeFileSync(primaryPath, JSON.stringify(data, null, 2));
@@ -228,6 +237,28 @@ function writeReceipt(net: string, name: string, data: unknown) {
 }
 
 function resolveDeploySummaryPath(net: string): string {
+  const envPath = process.env.AURORA_DEPLOY_OUTPUT
+    ? path.resolve(process.env.AURORA_DEPLOY_OUTPUT)
+    : null;
+  if (envPath && fs.existsSync(envPath)) {
+    return envPath;
+  }
+
+  const namespace = resolveReportNamespace();
+  const reportPath = path.resolve('reports', net, namespace, 'receipts', 'deploy.json');
+  if (fs.existsSync(reportPath)) {
+    return reportPath;
+  }
+
+  const latestDeploymentPath = path.resolve(
+    'deployment-config',
+    'latest-deployment.json'
+  );
+  if (fs.existsSync(latestDeploymentPath)) {
+    return latestDeploymentPath;
+  }
+
+  return envPath ?? reportPath;
   const candidateFromEnv = process.env.AURORA_DEPLOY_OUTPUT
     ? path.resolve(process.env.AURORA_DEPLOY_OUTPUT)
     : null;
@@ -360,9 +391,9 @@ async function impersonateSigner(
       `Unable to impersonate required account ${normalised}. Provide a PRIVATE_KEY with control or enable impersonation.`
     );
   }
-  let signer;
+  let signer: ethers.Signer;
   try {
-    signer = provider.getSigner(normalised);
+    signer = new ethers.JsonRpcSigner(provider, normalised);
   } catch (err) {
     throw new Error(
       `Provider cannot supply signer for ${normalised}: ${(err as Error).message}`
@@ -740,14 +771,24 @@ async function main() {
   const decimals = Number(AGIALPHA_CONFIG.decimals || 18);
 
   const governanceActions: GovernanceAction[] = [];
+  const postMissionCleanups: Array<() => Promise<void>> = [];
 
   const employerKey = process.env.PRIVATE_KEY || DEFAULT_KEYS[0];
   const workerKey = process.env.AURORA_WORKER_KEY || DEFAULT_KEYS[1];
-  const validatorKeys = [
-    process.env.AURORA_VALIDATOR1_KEY || DEFAULT_KEYS[2],
-    process.env.AURORA_VALIDATOR2_KEY || DEFAULT_KEYS[3],
-    process.env.AURORA_VALIDATOR3_KEY || DEFAULT_KEYS[4],
-  ];
+  const configuredValidatorKeys = [
+    process.env.AURORA_VALIDATOR1_KEY,
+    process.env.AURORA_VALIDATOR2_KEY,
+    process.env.AURORA_VALIDATOR3_KEY,
+    process.env.AURORA_VALIDATOR4_KEY,
+    process.env.AURORA_VALIDATOR5_KEY,
+  ].filter((key): key is string => Boolean(key));
+
+  const validatorKeys = Array.from(
+    new Set([
+      ...configuredValidatorKeys,
+      ...DEFAULT_KEYS.slice(2),
+    ])
+  );
 
   const employer = createNonceManagedSigner(provider, employerKey);
   const worker = createNonceManagedSigner(provider, workerKey);
@@ -832,12 +873,12 @@ async function main() {
   }
 
   const referenceValidation = resolvedJobs[0].spec.validation;
-  const validatorCount = referenceValidation.n;
-  const quorum = referenceValidation.k;
+  const missionValidatorCount = referenceValidation.n;
+  const missionQuorum = referenceValidation.k;
   for (const job of resolvedJobs) {
     if (
-      job.spec.validation.n !== validatorCount ||
-      job.spec.validation.k !== quorum
+      job.spec.validation.n !== missionValidatorCount ||
+      job.spec.validation.k !== missionQuorum
     ) {
       throw new Error(
         'All mission jobs must share the same validation k-of-n parameters.'
@@ -845,8 +886,8 @@ async function main() {
     }
   }
 
-  const selectedValidatorKeys = validatorKeys.slice(0, validatorCount);
-  if (selectedValidatorKeys.length < validatorCount) {
+  const selectedValidatorKeys = validatorKeys.slice(0, missionValidatorCount);
+  if (selectedValidatorKeys.length < missionValidatorCount) {
     throw new Error(
       'Insufficient validator keys configured for the selected quorum.'
     );
@@ -891,6 +932,10 @@ async function main() {
   const validationModuleArtifact = loadArtifact('ValidationModule');
   const identityRegistryArtifact = loadArtifact('IdentityRegistry');
   const systemPauseArtifact = loadArtifact('SystemPause');
+    const thermostatArtifact = thermostatAddress
+      ? loadArtifact('Thermostat')
+      : null;
+    const taxPolicyArtifact = loadArtifact('TaxPolicy');
   const taxPolicyArtifact = loadArtifact('TaxPolicy');
   const thermostatArtifact = thermostatAddress
     ? loadArtifact('Thermostat')
@@ -916,6 +961,15 @@ async function main() {
     identityRegistryArtifact.abi,
     employer
   );
+    const systemPause = new ethers.Contract(
+      addresses.SystemPause,
+      systemPauseArtifact.abi,
+      employer
+    );
+    const taxPolicy =
+      addresses.TaxPolicy && addresses.TaxPolicy !== 'disabled'
+        ? new ethers.Contract(addresses.TaxPolicy, taxPolicyArtifact.abi, employer)
+        : null;
   const systemPause = new ethers.Contract(
     addresses.SystemPause,
     systemPauseArtifact.abi,
@@ -931,12 +985,12 @@ async function main() {
       ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, employer)
       : null;
 
-  const recordForwardGovernanceCall = async (
-    targetName: string,
-    targetAddress: string,
-    iface: ethers.Interface,
-    method: string,
-    args: unknown[],
+    const recordForwardGovernanceCall = async (
+      targetName: string,
+      targetAddress: string,
+      iface: ethers.Interface,
+      method: string,
+      args: unknown[],
     options?: {
       notes?: string;
       before?: Record<string, string>;
@@ -960,27 +1014,74 @@ async function main() {
       before: options?.before,
       after: options?.after,
     });
-    return txHash;
-  };
+      return txHash;
+    };
 
-  const recordDirectGovernanceCall = async (
-    targetName: string,
-    method: string,
-    action: () => Promise<ethers.ContractTransactionResponse>,
-    notes?: string
-  ) => {
-    const tx = await action();
-    const receipt = await tx.wait();
-    const txHash = receipt?.hash || tx.hash;
-    governanceActions.push({
-      target: targetName,
-      method,
-      txHash,
-      type: 'direct',
-      notes,
-    });
-    return txHash;
-  };
+    const recordDirectGovernanceCall = async (
+      targetName: string,
+      method: string,
+      action: () => Promise<ethers.ContractTransactionResponse>,
+      notes?: string
+    ) => {
+      const tx = await action();
+      const receipt = await tx.wait();
+      const txHash = receipt?.hash || tx.hash;
+      governanceActions.push({
+        target: targetName,
+        method,
+        txHash,
+        type: 'direct',
+        notes,
+      });
+      return txHash;
+    };
+
+    if (taxPolicy) {
+      const employerAddress = await employer.getAddress();
+      const systemPauseAddress = addresses.SystemPause;
+      const taxPolicyOwner = await taxPolicy.owner();
+
+      if (taxPolicyOwner === employerAddress) {
+        const employerDelegated = await taxPolicy.acknowledgerAllowed(
+          employerAddress
+        );
+        if (!employerDelegated) {
+          await recordDirectGovernanceCall(
+            'TaxPolicy',
+            'setAcknowledger',
+            () => taxPolicy.setAcknowledger(employerAddress, true),
+            'Permit employer key to acknowledge tax policy on behalf of governance executors'
+          );
+        }
+
+        const systemPauseAcknowledged = await taxPolicy.hasAcknowledged(
+          systemPauseAddress
+        );
+        if (!systemPauseAcknowledged) {
+          await recordDirectGovernanceCall(
+            'TaxPolicy',
+            'acknowledgeFor',
+            () => taxPolicy.acknowledgeFor(systemPauseAddress),
+            'Record SystemPause acknowledgement so forwarded governance calls satisfy tax policy requirements'
+          );
+        }
+      } else {
+        console.warn(
+          `⚠️  Tax policy owner ${taxPolicyOwner} differs from employer ${employerAddress}. Skipping acknowledgement delegation.`
+        );
+      }
+    }
+
+    const ensureAcknowledged = async (participant: ethers.Signer) => {
+      if (!taxPolicy) {
+        return;
+      }
+      const addr = await participant.getAddress();
+      const alreadyAcknowledged = await taxPolicy.hasAcknowledged(addr);
+      if (!alreadyAcknowledged) {
+        await taxPolicy.connect(participant).acknowledge();
+      }
+    };
 
   const token = await ensureAgialpha(provider, employer);
 
@@ -1039,6 +1140,33 @@ async function main() {
     }
   }
 
+  const contractAckTargets = [addresses.StakeManager, addresses.JobRegistry];
+  for (const target of contractAckTargets) {
+    if (!target) {
+      continue;
+    }
+    const targetAddress = ethers.getAddress(target);
+    try {
+      const impersonated = await impersonateSigner(provider, targetAddress);
+      const currentBalance = await provider.getBalance(targetAddress);
+      const minimumBalance = ethers.parseEther('0.1');
+      if (currentBalance < minimumBalance) {
+        await provider.send('hardhat_setBalance', [
+          targetAddress,
+          ethers.toBeHex(minimumBalance),
+        ]);
+      }
+      const acceptTx = await token
+        .connect(impersonated)
+        .acceptTerms();
+      await acceptTx.wait();
+      await stopImpersonating(provider, targetAddress);
+    } catch (err) {
+      console.warn(
+        `⚠️  Unable to accept AGIALPHA terms for contract ${targetAddress}:`,
+        (err as Error).message
+      );
+    }
   await ensureAcknowledged(employer);
   await ensureAcknowledged(worker);
   for (const validator of validators) {
@@ -1106,23 +1234,43 @@ async function main() {
 
   const originalJobStake = await jobRegistry.jobStake();
   const fallbackJobStake = maxReward / 10n > 0n ? maxReward / 10n : 1n;
-  const adjustedJobStake =
-    originalJobStake === 0n
-      ? fallbackJobStake
-      : originalJobStake + (fallbackJobStake > 0n ? fallbackJobStake : 1n);
+  const missionJobStake =
+    maxWorkerStake > 0n
+      ? maxWorkerStake
+      : originalJobStake === 0n
+        ? fallbackJobStake
+        : originalJobStake;
 
-  await recordForwardGovernanceCall(
-    'JobRegistry',
-    addresses.JobRegistry,
-    jobRegistry.interface,
-    'setJobStake',
-    [adjustedJobStake],
-    {
-      notes: 'Tune employer escrow requirements for the flagship mission',
-      before: { stake: formatUnits(originalJobStake, decimals) },
-      after: { stake: formatUnits(adjustedJobStake, decimals) },
-    }
-  );
+  if (originalJobStake !== missionJobStake) {
+    await recordForwardGovernanceCall(
+      'JobRegistry',
+      addresses.JobRegistry,
+      jobRegistry.interface,
+      'setJobStake',
+      [missionJobStake],
+      {
+        notes: 'Align agent job stake requirements with the mission parameters',
+        before: { stake: formatUnits(originalJobStake, decimals) },
+        after: { stake: formatUnits(missionJobStake, decimals) },
+      }
+    );
+  }
+
+  const originalMinAgentStake = await jobRegistry.minAgentStake();
+  if (originalMinAgentStake !== maxWorkerStake) {
+    await recordForwardGovernanceCall(
+      'JobRegistry',
+      addresses.JobRegistry,
+      jobRegistry.interface,
+      'setMinAgentStake',
+      [maxWorkerStake],
+      {
+        notes: 'Align minimum agent stake with the mission requirements',
+        before: { stake: formatUnits(originalMinAgentStake, decimals) },
+        after: { stake: formatUnits(maxWorkerStake, decimals) },
+      }
+    );
+  }
   await recordForwardGovernanceCall(
     'JobRegistry',
     addresses.JobRegistry,
@@ -1151,18 +1299,21 @@ async function main() {
       const ownerCode = await provider.getCode(identityOwnerAddress);
       if (ownerCode !== '0x') {
         console.warn(
+          `⚠️  Identity owner ${identityOwnerAddress} is a contract. Impersonating for demo overrides.`
           `⚠️  Identity owner ${identityOwnerAddress} is a contract. Impersonating for manual allowlist updates.`
         );
       }
-      identityOwnerSigner = await impersonateSigner(provider, identityOwnerAddress);
+      identityOwnerSigner = await impersonateSigner(
+        provider,
+        identityOwnerAddress
+      );
       const balance = await provider.getBalance(identityOwnerAddress);
       const minimumBalance = ethers.parseEther('0.1');
       if (balance < minimumBalance) {
-        const fundTx = await employer.sendTransaction({
-          to: identityOwnerAddress,
-          value: minimumBalance,
-        });
-        await fundTx.wait();
+        await provider.send('hardhat_setBalance', [
+          identityOwnerAddress,
+          ethers.toBeHex(minimumBalance),
+        ]);
       }
       identityCleanup = () => stopImpersonating(provider, identityOwnerAddress);
     }
@@ -1187,6 +1338,31 @@ async function main() {
       '⚠️  Unable to apply identity overrides automatically:',
       (err as Error).message
     );
+    if (addresses.IdentityRegistry) {
+      await recordForwardGovernanceCall(
+        'JobRegistry',
+        addresses.JobRegistry,
+        jobRegistry.interface,
+        'setIdentityRegistry',
+        [ethers.ZeroAddress],
+        {
+          notes:
+            'Temporarily disable identity verification when impersonating identity owner is not possible',
+        }
+      );
+      postMissionCleanups.push(async () => {
+        await recordForwardGovernanceCall(
+          'JobRegistry',
+          addresses.JobRegistry,
+          jobRegistry.interface,
+          'setIdentityRegistry',
+          [addresses.IdentityRegistry],
+          {
+            notes: 'Restore identity registry after completing the demo mission',
+          }
+        );
+      });
+    }
   } finally {
     if (identityCleanup) {
       await identityCleanup();
@@ -1199,6 +1375,17 @@ async function main() {
   const thermostatInterface = thermostatArtifact
     ? new ethers.Interface(thermostatArtifact.abi)
     : null;
+  const currentValidationModule = await stakeManager.validationModule();
+  if (currentValidationModule.toLowerCase() !== addresses.ValidationModule.toLowerCase()) {
+    await recordForwardGovernanceCall(
+      'StakeManager',
+      addresses.StakeManager,
+      stakeManager.interface,
+      'setValidationModule',
+      [addresses.ValidationModule],
+      { notes: 'Wire the validator stake locker to the active validation module' }
+    );
+  }
   const validatorsPerJobCount = Math.max(3, validatorCount);
   const minValidatorsBound = Math.max(3, quorum);
   const maxValidatorsBound = Math.max(minValidatorsBound, validatorsPerJobCount);
@@ -1272,6 +1459,8 @@ async function main() {
     }
   );
 
+  await ensureAcknowledged(employer);
+
   const stakeEntries: Array<{
     role: string;
     address: string;
@@ -1279,6 +1468,10 @@ async function main() {
     txHash: string;
   }> = [];
 
+  await ensureAcknowledged(worker);
+  const workerStakeTx = await stakeManager
+    .connect(worker)
+    .depositStake(agentRole, maxWorkerStake);
     const workerStakeTx = await stakeManager
       .connect(worker)
       .depositStake(agentRole, maxWorkerStake);
@@ -1291,6 +1484,10 @@ async function main() {
   });
 
   for (const validator of validators) {
+    await ensureAcknowledged(validator);
+    const stakeTx = await stakeManager
+      .connect(validator)
+      .depositStake(validatorRole, maxValidatorStake);
       const stakeTx = await stakeManager
         .connect(validator)
         .depositStake(validatorRole, maxValidatorStake);
@@ -1339,6 +1536,9 @@ async function main() {
       'ipfs://aurora-demo-spec';
     const deadline = BigInt(Math.floor(Date.now() / 1000) + job.deadlineOffset);
 
+      const postTx = await jobRegistry
+        .connect(employer)
+        .createJob(job.rewardAmount, Number(deadline), specHash, specUri);
     const postTx = await jobRegistry
       .connect(employer)
       .createJob(job.rewardAmount, Number(deadline), specHash, specUri);
@@ -1375,6 +1575,10 @@ async function main() {
       writeReceipt(networkName, 'postJob.json', postRecord);
     }
 
+      await ensureAcknowledged(worker);
+      const applyTx = await jobRegistry
+        .connect(worker)
+        .applyForJob(jobId, job.agentSubdomain, []);
     const applyTx = await jobRegistry
       .connect(worker)
       .applyForJob(jobId, job.agentSubdomain, []);
@@ -1396,6 +1600,48 @@ async function main() {
     writeReceipt(networkName, path.join(jobDir, 'submit.json'), submitRecord);
     if (legacySingleJob) {
       writeReceipt(networkName, 'submit.json', submitRecord);
+    }
+
+    const selectionEntropy = BigInt(ethers.hexlify(randomBytes(32)));
+    const selectionContributors: AddressedSigner[] = [employer, ...validators];
+    const selectionTx = await validationModule
+      .connect(selectionContributors[0])
+      .selectValidators(jobId, selectionEntropy);
+    const selectionReceipt = await selectionTx.wait();
+
+    let roundInfo = await validationModule.rounds(jobId);
+    for (let i = 1; i < selectionContributors.length; i += 1) {
+      if (roundInfo.commitDeadline !== 0n) {
+        break;
+      }
+      const contributor = selectionContributors[i];
+      const entropyContribution = selectionEntropy + BigInt(i);
+      const contributionTx = await validationModule
+        .connect(contributor)
+        .selectValidators(jobId, entropyContribution);
+      await contributionTx.wait();
+      roundInfo = await validationModule.rounds(jobId);
+    }
+
+    let selectionFinalizeHash: string | null = null;
+    if (roundInfo.commitDeadline === 0n) {
+      let targetBlock = await validationModule.selectionBlock(jobId);
+      let currentBlock = BigInt(await provider.getBlockNumber());
+      while (currentBlock <= targetBlock) {
+        await provider.send('evm_mine', []);
+        currentBlock = BigInt(await provider.getBlockNumber());
+      }
+
+      const finalizeSelectionTx = await validationModule
+        .connect(selectionContributors[0])
+        .selectValidators(jobId, selectionEntropy);
+      const finalizeSelectionReceipt = await finalizeSelectionTx.wait();
+      selectionFinalizeHash =
+        finalizeSelectionReceipt?.hash || finalizeSelectionTx.hash;
+      roundInfo = await validationModule.rounds(jobId);
+    }
+    if (roundInfo.commitDeadline === 0n) {
+      throw new Error('Validator selection did not finalize commit window.');
     }
 
     const nonce = (await validationModule.jobNonce(jobId)).valueOf() as bigint;
@@ -1466,6 +1712,24 @@ async function main() {
       .finalize(jobId);
     const finalizeReceipt = await finalizeTx.wait();
 
+    if (taxPolicy) {
+      const employerAddress = await employer.getAddress();
+      const employerAcknowledged = await taxPolicy.hasAcknowledged(
+        employerAddress
+      );
+      if (!employerAcknowledged) {
+        const acknowledgeTx = await taxPolicy
+          .connect(employer)
+          .acknowledge();
+        await acknowledgeTx.wait();
+      }
+    }
+
+    const jobFinalizeTx = await jobRegistry
+      .connect(employer)
+      .finalize(jobId);
+    const jobFinalizeReceipt = await jobFinalizeTx.wait();
+
     const commitRecords = commitPlans.map((plan) => ({
       address: plan.address,
       commitTx: plan.commitTx,
@@ -1476,6 +1740,12 @@ async function main() {
 
     const validateRecord = {
       jobId: jobId.toString(),
+      selection: {
+        initialTx: selectionReceipt?.hash || selectionTx.hash,
+        finalizeTx: selectionFinalizeHash,
+        commitDeadline: roundInfo.commitDeadline.toString(),
+        revealDeadline: roundInfo.revealDeadline.toString(),
+      },
       validators: commitRecords,
       commits: commitRecords.length,
       reveals: commitRecords.filter((record) => record.revealTx).length,
@@ -1497,7 +1767,8 @@ async function main() {
     }
 
     const finalizeRecord = {
-      txHash: finalizeReceipt?.hash || finalizeTx.hash,
+      validationTx: finalizeReceipt?.hash || finalizeTx.hash,
+      jobFinalizeTx: jobFinalizeReceipt?.hash || jobFinalizeTx.hash,
       payouts,
     };
     writeReceipt(networkName, path.join(jobDir, 'finalize.json'), finalizeRecord);
@@ -1528,6 +1799,22 @@ async function main() {
     );
   }
 
+  writeReceipt(networkName, 'mission.json', {
+    scope: REPORT_SCOPE,
+    version: missionConfig?.version || '1.0',
+    description: missionConfig?.description,
+    jobs: missionRecords,
+  });
+
+  let thermostatUpdates: ThermostatUpdate[] = [];
+  if (thermostatConfig && thermostat && thermostatInterface) {
+      thermostatUpdates = await applyThermostatConfig(
+        thermostat,
+        thermostatInterface,
+        recordForwardGovernanceCall,
+        thermostatConfig
+      );
+    }
     writeReceipt(networkName, 'mission.json', {
       scope: REPORT_SCOPE,
       version: missionConfig?.version || '1.0',
@@ -1545,6 +1832,27 @@ async function main() {
       );
     }
 
+  await recordForwardGovernanceCall(
+    'JobRegistry',
+    addresses.JobRegistry,
+    jobRegistry.interface,
+    'setJobStake',
+    [originalJobStake],
+    {
+      notes: 'Return job stake policy to its baseline value',
+      before: { stake: formatUnits(missionJobStake, decimals) },
+      after: { stake: formatUnits(originalJobStake, decimals) },
+    }
+  );
+
+  for (const cleanup of postMissionCleanups) {
+    await cleanup();
+  }
+
+  writeReceipt(networkName, 'governance.json', {
+    actions: governanceActions,
+    thermostat: thermostatUpdates,
+  });
     await recordForwardGovernanceCall(
       'StakeManager',
       addresses.StakeManager,
@@ -1588,6 +1896,10 @@ async function main() {
       thermostat: thermostatUpdates,
     });
 
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
     console.log(
       `✅ AURORA demo completed. Jobs finalized: ${missionRecords.length}.`
     );

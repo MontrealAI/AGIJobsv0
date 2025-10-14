@@ -4,7 +4,7 @@
   "domains": ["resilience", "logistics", "ai"],
   "languages": ["en", "es"],
   "acceptanceCriteriaURI": "ipfs://asi-global/resilience/criteria",
-  "validation": { "k": 2, "n": 4 },
+  "validation": { "k": 3, "n": 3 },
   "challengeWindowSec": 172800,
   "escrow": { "token": "AGIALPHA", "amountPerItem": "13200000" },
   "stake": { "worker": "36000000", "validator": "78000000" },

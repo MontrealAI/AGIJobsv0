@@ -4,7 +4,7 @@
   "domains": ["governance", "compliance", "economics"],
   "languages": ["en", "fr", "ar"],
   "acceptanceCriteriaURI": "ipfs://asi-global/governance/criteria",
-  "validation": { "k": 3, "n": 5 },
+  "validation": { "k": 3, "n": 3 },
   "challengeWindowSec": 86400,
   "escrow": { "token": "AGIALPHA", "amountPerItem": "9500000" },
   "stake": { "worker": "28000000", "validator": "65000000" },
