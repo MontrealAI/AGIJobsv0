@@ -1,0 +1,28 @@
+{
+  "entries": [
+    {
+      "role": "agent",
+      "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "amount": "20.0",
+      "txHash": "0xea8838c8538ba53800837e92660da21bb88300edfe819cbfc44746dadc5c2439"
+    },
+    {
+      "role": "validator",
+      "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "amount": "50.0",
+      "txHash": "0x12c82b32e7dfdfb9029336d50847ef4e738b45c0b42e88d2c9746c366bb53a71"
+    },
+    {
+      "role": "validator",
+      "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "amount": "50.0",
+      "txHash": "0x6870a4ee62d970d0ea7dd75b692037851eece2d52602cc08797b16c1070850ec"
+    },
+    {
+      "role": "validator",
+      "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "amount": "50.0",
+      "txHash": "0xb9a1452f9d0b035096a91e68b7e0b5a328470be740825577a2bc93bee6497471"
+    }
+  ]
+}
