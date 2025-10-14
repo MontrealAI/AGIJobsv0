@@ -1,0 +1,12 @@
+flowchart TD
+    Operator["👩‍💼 Non-Technical Operator"] -->|runs| Orchestrator{{"bin/orchestrate.sh"}}
+    Orchestrator -->|calls| HardhatCLI[["Hardhat CLI"]]
+    Orchestrator -->|runs| Foundry[["Foundry Tests"]]
+    Orchestrator -->|exports| Logs(("Audit Logs"))
+    HardhatCLI -->|deploys| CouncilContract[["GlobalGovernanceCouncil"]]
+    CouncilContract --> EthereumMainnet[("Ethereum Mainnet")]
+    CouncilContract --> DataPipelines[["Telemetry Exporters"]]
+    DataPipelines --> Grafana[("Grafana Dashboards")]
+    DataPipelines --> NationBriefings[("Nation Briefing Kits")]
+    Grafana --> Observers["Global Governance Observers"]
+    NationBriefings --> MultinationalLeaders["Multinational Leadership"]
