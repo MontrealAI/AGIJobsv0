@@ -37,19 +37,75 @@ interface DryRunReport {
 }
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const REPORT_ROOT = path.join(ROOT, 'reports', 'asi-global');
-const LOG_ROOT = path.join(REPORT_ROOT, 'logs');
-const PLAN_PATH = path.join(ROOT, 'demo', 'asi-global', 'project-plan.json');
-const DRY_RUN_PATH = path.join(REPORT_ROOT, 'dry-run.json');
-const THERMODYNAMICS_PATH = path.join(REPORT_ROOT, 'thermodynamics.json');
-const MISSION_CONTROL_PATH = path.join(REPORT_ROOT, 'mission-control.md');
-const SUMMARY_MD_PATH = path.join(REPORT_ROOT, 'summary.md');
-const SUMMARY_JSON_PATH = path.join(REPORT_ROOT, 'summary.json');
-const BUNDLE_ROOT = path.join(REPORT_ROOT, 'mission-bundle');
-const COMMAND_CENTER_PATH = path.join(REPORT_ROOT, 'command-center.md');
-const PARAMETER_MATRIX_PATH = path.join(REPORT_ROOT, 'parameter-matrix.md');
-const MERMAID_PATH = path.join(REPORT_ROOT, 'governance.mmd');
-const MERMAID_MARKDOWN_PATH = path.join(REPORT_ROOT, 'governance.md');
+
+function resolveFromRoot(relativeOrAbsolute: string): string {
+  if (path.isAbsolute(relativeOrAbsolute)) {
+    return relativeOrAbsolute;
+  }
+  return path.join(ROOT, relativeOrAbsolute);
+}
+
+function resolvePathFromEnv(envKey: string, defaultPath: string): string {
+  const override = process.env[envKey];
+  if (!override || override.trim().length === 0) {
+    return defaultPath;
+  }
+  return resolveFromRoot(override.trim());
+}
+
+function resolveWithin(base: string, envKey: string, fallback: string): string {
+  const override = process.env[envKey];
+  if (!override || override.trim().length === 0) {
+    return path.join(base, fallback);
+  }
+  const trimmed = override.trim();
+  if (path.isAbsolute(trimmed)) {
+    return trimmed;
+  }
+  if (trimmed.includes('/') || trimmed.includes('\\')) {
+    return resolveFromRoot(trimmed);
+  }
+  return path.join(base, trimmed);
+}
+
+const REPORT_ROOT = resolvePathFromEnv('ASI_GLOBAL_REPORT_ROOT', path.join(ROOT, 'reports', 'asi-global'));
+const LOG_ROOT = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_LOG_DIR', 'logs');
+const PLAN_PATH = resolvePathFromEnv('ASI_GLOBAL_PLAN_PATH', path.join(ROOT, 'demo', 'asi-global', 'project-plan.json'));
+const DRY_RUN_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_DRY_RUN_PATH', 'dry-run.json');
+const THERMODYNAMICS_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_THERMODYNAMICS_PATH', 'thermodynamics.json');
+const MISSION_CONTROL_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_MISSION_CONTROL_PATH', 'mission-control.md');
+const SUMMARY_MD_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_SUMMARY_MD_PATH', 'summary.md');
+const SUMMARY_JSON_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_SUMMARY_JSON_PATH', 'summary.json');
+const BUNDLE_ROOT = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_BUNDLE_DIR', 'mission-bundle');
+const COMMAND_CENTER_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_COMMAND_CENTER_PATH', 'command-center.md');
+const PARAMETER_MATRIX_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_PARAMETER_MATRIX_PATH', 'parameter-matrix.md');
+const MERMAID_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_MERMAID_PATH', 'governance.mmd');
+const MERMAID_MARKDOWN_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_MERMAID_MARKDOWN_PATH', 'governance.md');
+const MERMAID_TITLE = process.env.ASI_GLOBAL_MERMAID_TITLE?.trim() || 'Global Autonomous Economic Orchestrator';
+const BUNDLE_NAME = process.env.ASI_GLOBAL_BUNDLE_NAME?.trim() || 'asi-takeoff';
+const KIT_BASENAME = process.env.ASI_GLOBAL_OUTPUT_BASENAME?.trim() || 'asi-global-governance-kit';
+
+type ReferenceDoc = { path: string; description: string };
+type AdditionalArtifact = { key: string; path: string; description: string };
+
+function parseJsonList<T>(envKey: string): T[] {
+  const raw = process.env[envKey];
+  if (!raw) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      throw new Error('value is not an array');
+    }
+    return parsed as T[];
+  } catch (error) {
+    throw new Error(`Failed to parse ${envKey}: ${(error as Error).message}`);
+  }
+}
+
+const REFERENCE_DOCS_APPEND = parseJsonList<ReferenceDoc>('ASI_GLOBAL_REFERENCE_DOCS_APPEND');
+const ADDITIONAL_ARTIFACTS_APPEND = parseJsonList<AdditionalArtifact>('ASI_GLOBAL_ADDITIONAL_ARTIFACTS_APPEND');
 
 function prefixedWrite(prefix: string, data: Buffer): void {
   const text = data.toString();
@@ -118,6 +174,15 @@ function extractJson(raw: string): unknown {
 async function ensureWorkspace(): Promise<void> {
   await fs.mkdir(REPORT_ROOT, { recursive: true });
   await fs.mkdir(BUNDLE_ROOT, { recursive: true });
+  await fs.mkdir(path.dirname(DRY_RUN_PATH), { recursive: true });
+  await fs.mkdir(path.dirname(THERMODYNAMICS_PATH), { recursive: true });
+  await fs.mkdir(path.dirname(MISSION_CONTROL_PATH), { recursive: true });
+  await fs.mkdir(path.dirname(SUMMARY_MD_PATH), { recursive: true });
+  await fs.mkdir(path.dirname(SUMMARY_JSON_PATH), { recursive: true });
+  await fs.mkdir(path.dirname(COMMAND_CENTER_PATH), { recursive: true });
+  await fs.mkdir(path.dirname(PARAMETER_MATRIX_PATH), { recursive: true });
+  await fs.mkdir(path.dirname(MERMAID_PATH), { recursive: true });
+  await fs.mkdir(path.dirname(MERMAID_MARKDOWN_PATH), { recursive: true });
 }
 
 async function loadPlan(): Promise<any> {
@@ -330,7 +395,7 @@ async function main(): Promise<void> {
         '--bundle',
         BUNDLE_ROOT,
         '--bundle-name',
-        'asi-takeoff',
+        BUNDLE_NAME,
         '--skip-surface',
       ],
     },
@@ -382,7 +447,7 @@ async function main(): Promise<void> {
         '--out',
         MERMAID_PATH,
         '--title',
-        'Global Autonomous Economic Orchestrator',
+        MERMAID_TITLE,
       ],
     },
     {
@@ -399,7 +464,7 @@ async function main(): Promise<void> {
         '--out',
         MERMAID_MARKDOWN_PATH,
         '--title',
-        'Global Autonomous Economic Orchestrator',
+        MERMAID_TITLE,
       ],
     },
     {
@@ -439,7 +504,7 @@ async function main(): Promise<void> {
     summaryMarkdownPath: SUMMARY_MD_PATH,
     bundleDir: BUNDLE_ROOT,
     logDir: LOG_ROOT,
-    outputBasename: 'asi-global-governance-kit',
+    outputBasename: KIT_BASENAME,
     referenceDocs: [
       {
         path: 'docs/asi-global-orchestrator-demo.md',
@@ -453,6 +518,7 @@ async function main(): Promise<void> {
         path: 'docs/thermodynamic-incentives.md',
         description: 'Thermodynamic incentive governance reference.',
       },
+      ...REFERENCE_DOCS_APPEND,
     ],
     additionalArtifacts: [
       {
@@ -475,10 +541,11 @@ async function main(): Promise<void> {
         path: MERMAID_MARKDOWN_PATH,
         description: 'Markdown rendering of the governance topology.',
       },
+      ...ADDITIONAL_ARTIFACTS_APPEND,
     ],
   });
 
-  process.stdout.write('\nDemo artefacts generated at reports/asi-global.\n');
+  process.stdout.write(`\nDemo artefacts generated at ${path.relative(ROOT, REPORT_ROOT)}.\n`);
 }
 
 main().catch((error) => {
