@@ -99,6 +99,7 @@ describe('OwnerConfigurator', function () {
       parameterKey: PARAMETER_KEY,
       oldValue: abiCoder.encode(['uint256'], [0n]),
       newValue: abiCoder.encode(['uint256'], [firstValue]),
+      value: 0n,
     };
     const secondCall = {
       target: moduleAddress,
@@ -107,6 +108,7 @@ describe('OwnerConfigurator', function () {
       parameterKey: PARAMETER_KEY,
       oldValue: abiCoder.encode(['uint256'], [firstValue]),
       newValue: abiCoder.encode(['uint256'], [secondValue]),
+      value: 0n,
     };
 
     const tx = await configurator
@@ -154,6 +156,7 @@ describe('OwnerConfigurator', function () {
             parameterKey: PARAMETER_KEY,
             oldValue: '0x',
             newValue: '0x',
+            value: 0n,
           },
         ])
     ).to.be.revertedWithCustomError(
@@ -243,5 +246,93 @@ describe('OwnerConfigurator', function () {
       );
 
     expect(await target.currentValue()).to.equal(21n);
+  });
+
+  it('forwards msg.value to payable configurables', async function () {
+    const moduleAddress = await target.getAddress();
+    const newValue = 21n;
+    const minimum = ethers.parseEther('0.1');
+    const callData = target.interface.encodeFunctionData('setValueWithDeposit', [
+      newValue,
+      minimum,
+    ]);
+    const newValueBytes = abiCoder.encode(['uint256'], [newValue]);
+
+    await expect(
+      configurator
+        .connect(owner)
+        .configure(
+          moduleAddress,
+          callData,
+          MODULE_KEY,
+          PARAMETER_KEY,
+          '0x',
+          newValueBytes
+        )
+    ).to.be.revertedWithCustomError(target, 'MissingValue');
+
+    const tx = await configurator
+      .connect(owner)
+      .configure(
+        moduleAddress,
+        callData,
+        MODULE_KEY,
+        PARAMETER_KEY,
+        '0x',
+        newValueBytes,
+        { value: minimum }
+      );
+
+    await expect(tx)
+      .to.emit(target, 'ValueChangedWithDeposit')
+      .withArgs(0n, newValue, minimum, await configurator.getAddress());
+
+    expect(await ethers.provider.getBalance(await configurator.getAddress())).to.equal(0n);
+    expect(await target.currentValue()).to.equal(newValue);
+    expect(await target.totalReceived()).to.equal(minimum);
+  });
+
+  it('requires batch msg.value to equal declared call values', async function () {
+    const moduleAddress = await target.getAddress();
+    const deposit = ethers.parseEther('0.25');
+    const call = {
+      target: moduleAddress,
+      callData: target.interface.encodeFunctionData('setValueWithDeposit', [
+        9n,
+        deposit,
+      ]),
+      moduleKey: MODULE_KEY,
+      parameterKey: PARAMETER_KEY,
+      oldValue: abiCoder.encode(['uint256'], [await target.currentValue()]),
+      newValue: abiCoder.encode(['uint256'], [9n]),
+      value: deposit,
+    };
+
+    await expect(
+      configurator
+        .connect(owner)
+        .configureBatch([call], { value: deposit - 1n })
+    )
+      .to.be.revertedWithCustomError(
+        configurator,
+        'OwnerConfigurator__ValueMismatch'
+      )
+      .withArgs(deposit, deposit - 1n);
+
+    await configurator
+      .connect(owner)
+      .configureBatch([call], { value: deposit });
+
+    expect(await target.totalReceived()).to.equal(deposit);
+    expect(await target.currentValue()).to.equal(9n);
+  });
+
+  it('rejects unexpected ether transfers', async function () {
+    await expect(
+      owner.sendTransaction({ to: await configurator.getAddress(), value: 1n })
+    ).to.be.revertedWithCustomError(
+      configurator,
+      'OwnerConfigurator__DirectEtherRejected'
+    );
   });
 });
