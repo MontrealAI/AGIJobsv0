@@ -25,4 +25,7 @@ npm run demo:asi-global
 ```
 
 A local, interactive version that stands up a fresh Hardhat/Anvil network is available
-via `npm run demo:asi-global:local` (see `RUNBOOK.md`).
+via `npm run demo:asi-global:local` (see `RUNBOOK.md`).  The helper automatically lifts
+block gas and code-size ceilings so the full protocol bundle deploys cleanly; override
+them with `LOCAL_GAS_LIMIT` / `LOCAL_CODE_SIZE_LIMIT` if you want to stress-test other
+limits.

@@ -11,6 +11,9 @@ npm run demo:aurora:local
 This:
 
 1. Boots `anvil`.
+   * The helper raises the local block gas limit to `1,000,000,000` and code size limit to `1,000,000` automatically so the full
+     `Deployer` bundle fits in a single transaction. Override with `LOCAL_GAS_LIMIT`/`LOCAL_CODE_SIZE_LIMIT` if you need
+     different stress scenarios.
 2. Deploys v2 defaults (`scripts/v2/deployDefaults.ts`) with verification disabled for speed and writes a deployment summary.
 3. Mints mock `$AGIALPHA`, configures validator bounds, and runs the full job lifecycle end‑to‑end.
 4. Applies governance‑grade thermostat tuning from `config/aurora.thermostat@v2.json` (if present) to demonstrate owner control.
