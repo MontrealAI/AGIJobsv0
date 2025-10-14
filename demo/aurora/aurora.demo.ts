@@ -739,9 +739,6 @@ async function main() {
       : null;
   if (missionConfig?.scope && !process.env.AURORA_REPORT_SCOPE) {
     REPORT_SCOPE = missionConfig.scope;
-  const spec = readJsonFile<Spec>(SPEC_PATH);
-  if (!spec.validation || !spec.validation.k || !spec.validation.n) {
-    throw new Error('Validation quorum (k-of-n) must be defined in the spec.');
   }
 
   const missionJobs =
