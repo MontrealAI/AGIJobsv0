@@ -1,0 +1,9 @@
+{
+  "jobId": "1",
+  "txHash": "0x1e56e2df3ce08884b7b0439afd7ed7b77461cfdba0d8acfdcb35ecfead78669c",
+  "reward": "5.0",
+  "deadline": "1760468798",
+  "specHash": "0xed63e514f02d1452604435246f7ad73c4015bf8903c8080bc801f7fdecdce43a",
+  "specPath": "/workspace/AGIJobsv0/demo/aurora/config/aurora.spec@v2.json",
+  "metadata": {}
+}

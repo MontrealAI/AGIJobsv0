@@ -1,0 +1,34 @@
+{
+  "jobId": "1",
+  "selection": {
+    "initialTx": "0x36291e746b05cff58fcc1e7989a3a5f67b53c239658d1c35e3d748544080f9e7",
+    "finalizeTx": null,
+    "commitDeadline": "1760465258",
+    "revealDeadline": "1760465558"
+  },
+  "validators": [
+    {
+      "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "commitTx": "0xbb7f8ccafd5b6a3165edb922e7921db6478939b20c6c77cda7475ef017f4fe0f",
+      "revealTx": "0xfed42a8699a35180a0cf468f695ae986ba82a0cc094d19a27c31be71844419dd",
+      "commitHash": "0xff35072a0adb96acfc6bbce666cbb52494ef028fa2d38104ad37dcc8a8dab8a1",
+      "salt": "0xc43d818472e9d28dc9e46a6e50acd4ed843c706141efc5af766879af1a6bffcf"
+    },
+    {
+      "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "commitTx": "0x4db0acfe5cf6cff9be6972282043e311defb01a5972c75060924b8444c49ead3",
+      "revealTx": "0x5ffd001dd42fcb021747ba0ca7047e8979987c4a282754c87de78b081a198483",
+      "commitHash": "0x8c001a9f624fb8f0f4dbc5b6b3c502bcd9a0f40afdb62151a7f538f9d7a68129",
+      "salt": "0xfbdcb58a5f400294d38be5a43433b3833aedec4e422523b4bb52170e6ea9a282"
+    },
+    {
+      "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "commitTx": "0xfb73f0f52e01a91b94f411dc767081f37cad3b71ddfe8cd368a881603b470703",
+      "revealTx": "0x8c9b0919cfa52ea4a2dd78fc49fed5e39425d441cf3b574e388c608f76741fb1",
+      "commitHash": "0x01c4d6dc755d0043a284601e8e183f1fd4f7189b47fc8ba1f7d58fbb7c3810f3",
+      "salt": "0x4c01d4776ecca6240a53983a8c92902398580f50788c0fc356bdde2eeaaaea63"
+    }
+  ],
+  "commits": 3,
+  "reveals": 3
+}
