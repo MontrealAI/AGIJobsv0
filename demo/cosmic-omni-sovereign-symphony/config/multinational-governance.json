@@ -1,0 +1,27 @@
+{
+  "owner": "0x0000000000000000000000000000000000000001",
+  "pauserRole": "0x706175736572726f6c653a636f736d69632d6f6d6e69",
+  "nations": [
+    {
+      "id": "0x474c4f42414c5f4e4f52544845524e5f414c4c49414e4345",
+      "governor": "0x0000000000000000000000000000000000000A11",
+      "weight": 1,
+      "metadataURI": "ipfs://example-global-northern-alliance"
+    },
+    {
+      "id": "0x504143494649435f434f4f4c4954494f4e5f534f5645524549474e",
+      "governor": "0x0000000000000000000000000000000000000B22",
+      "weight": 2,
+      "metadataURI": "ipfs://example-pacific-coalition"
+    }
+  ],
+  "mandates": [
+    {
+      "id": "0x474f5645524e414e43455f4841524d4f4e59",
+      "quorum": 2,
+      "metadataURI": "ipfs://example-governance-harmony",
+      "startDelaySeconds": 30,
+      "durationSeconds": 3600
+    }
+  ]
+}
