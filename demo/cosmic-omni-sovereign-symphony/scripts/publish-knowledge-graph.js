@@ -1,7 +1,7 @@
-import fs from "fs";
-import path from "path";
+const fs = require("fs");
+const path = require("path");
 
-const ledgerPath = process.argv[2] ?? path.join(__dirname, "..", "logs", "ledger-latest.json");
+const ledgerPath = process.argv[2] || path.join(__dirname, "..", "logs", "ledger-latest.json");
 
 if (!fs.existsSync(ledgerPath)) {
   console.error(`[knowledge-graph] ledger file not found at ${ledgerPath}`);

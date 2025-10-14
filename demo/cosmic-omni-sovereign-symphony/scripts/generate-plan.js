@@ -1,19 +1,20 @@
-import fs from "fs";
-import path from "path";
+const fs = require("fs");
+const path = require("path");
 
 const dryRun = process.argv[2] === "true";
-const outputPath = path.join(path.dirname(new URL(import.meta.url).pathname), "..", "logs", "execution-plan.json");
+const outputPath = path.join(__dirname, "..", "logs", "execution-plan.json");
 
 const plan = {
   dryRun,
   generatedAt: new Date().toISOString(),
   steps: [
-    "Install dependencies with pnpm",
+    "Install dependencies with npm ci",
     "Compile and test GlobalGovernanceCouncil",
     "Deploy contract using deploy-governance.ts",
     "Register nations via seed-governance.ts",
-    "Stream events into observability stack",
-    "Export ledger snapshots on schedule"
+    "Simulate multinational voting and pause drills",
+    "Export ledger snapshots on schedule",
+    "Publish knowledge graph payloads"
   ]
 };
 
