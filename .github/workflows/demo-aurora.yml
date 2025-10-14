@@ -29,6 +29,8 @@ jobs:
             raw.githubusercontent.com
             registry.npmjs.org
             nodejs.org
+            binaries.soliditylang.org
+            solc-bin.ethereum.org
             download.cypress.io
             cdn.cypress.io
 
