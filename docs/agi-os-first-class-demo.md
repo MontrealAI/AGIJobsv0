@@ -57,6 +57,16 @@ After a successful run you will find the following:
 
 Every file is timestamped in ISO 8601 format, enabling auditors to prove freshness and reproducibility.
 
+## Integrity Cross-Checks
+
+Before marking the run as successful, the orchestrator rehydrates the freshly generated artefacts and validates them against each other:
+
+- It recomputes the owner-control totals from the module list and confirms they match both `owner-control-matrix.json` and the embedded copy inside `grand-summary.json`.
+- It inspects `first-class-manifest.json` to verify that the Markdown, JSON, HTML, and matrix outputs are all hashed and tracked.
+- Any discrepancy produces an immediate ❌ failure with explicit remediation notes in `first-class-run.json`.
+
+These cross-checks guarantee that the evidence bundle is internally consistent and audit-ready.
+
 ## Owner Control Verification
 
 The orchestrator automatically:

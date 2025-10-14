@@ -14,10 +14,16 @@ const FIRST_CLASS_ROOT = path.join(REPORT_ROOT, 'first-class');
 const LOG_ROOT = path.join(FIRST_CLASS_ROOT, 'logs');
 const GRAND_SUMMARY_MD = path.join(REPORT_ROOT, 'grand-summary.md');
 const GRAND_SUMMARY_JSON = path.join(REPORT_ROOT, 'grand-summary.json');
-const OWNER_CONTROL_MATRIX = path.join(REPORT_ROOT, 'owner-control-matrix.json');
+const OWNER_CONTROL_MATRIX = path.join(
+  REPORT_ROOT,
+  'owner-control-matrix.json'
+);
 const GRAND_SUMMARY_HTML = path.join(REPORT_ROOT, 'grand-summary.html');
 const FIRST_CLASS_RUN = path.join(FIRST_CLASS_ROOT, 'first-class-run.json');
-const FIRST_CLASS_MANIFEST = path.join(FIRST_CLASS_ROOT, 'first-class-manifest.json');
+const FIRST_CLASS_MANIFEST = path.join(
+  FIRST_CLASS_ROOT,
+  'first-class-manifest.json'
+);
 const OWNER_CONTROL_MAP = path.join(FIRST_CLASS_ROOT, 'owner-control-map.mmd');
 
 const NETWORK_PRESETS = {
@@ -89,6 +95,37 @@ type DemoContext = {
   nodeVersion: string;
 };
 
+type ControlSurfaceStatus = 'ready' | 'needs-config' | 'missing-surface';
+
+type ControlMatrixSummary = {
+  total: number;
+  ready: number;
+  needsConfig: number;
+  missingSurface: number;
+};
+
+type ControlMatrixModule = {
+  key: string;
+  label?: string;
+  status: ControlSurfaceStatus;
+  [key: string]: unknown;
+};
+
+type ControlMatrix = {
+  owner?: string | null;
+  governance?: string | null;
+  modules?: ControlMatrixModule[];
+  summary?: ControlMatrixSummary;
+};
+
+type GrandSummary = {
+  control?: ControlMatrix | null;
+};
+
+type ManifestReport = {
+  entries?: ManifestEntry[];
+};
+
 function parseArgs(): CliArgs {
   const argv = process.argv.slice(2);
   const result: CliArgs = {};
@@ -117,24 +154,35 @@ function parseBool(value: string | boolean | undefined): boolean | undefined {
   return undefined;
 }
 
-async function promptYesNo(question: string, defaultValue: boolean, autoYes: boolean): Promise<boolean> {
+async function promptYesNo(
+  question: string,
+  defaultValue: boolean,
+  autoYes: boolean
+): Promise<boolean> {
   if (autoYes) {
     return defaultValue;
   }
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
   const suffix = defaultValue ? ' [Y/n] ' : ' [y/N] ';
-  const answer: string = await new Promise((resolve) => rl.question(`${question}${suffix}`, resolve));
+  const answer: string = await new Promise((resolve) =>
+    rl.question(`${question}${suffix}`, resolve)
+  );
   rl.close();
   const normalised = answer.trim().toLowerCase();
   if (!normalised) return defaultValue;
   return ['y', 'yes'].includes(normalised);
 }
 
-async function promptSelect<T extends { key: string; label: string; description?: string }>(
+async function promptSelect<
+  T extends { key: string; label: string; description?: string }
+>(
   question: string,
   options: T[],
   defaultKey: string,
-  autoYes: boolean,
+  autoYes: boolean
 ): Promise<T> {
   if (autoYes) {
     const fallback = options.find((option) => option.key === defaultKey);
@@ -149,8 +197,13 @@ async function promptSelect<T extends { key: string; label: string; description?
     const description = option.description ? ` — ${option.description}` : '';
     console.log(`  ${prefix} [${index + 1}] ${option.label}${description}`);
   });
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const answer: string = await new Promise((resolve) => rl.question(`Select 1-${options.length} (default ${defaultKey}): `, resolve));
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const answer: string = await new Promise((resolve) =>
+    rl.question(`Select 1-${options.length} (default ${defaultKey}): `, resolve)
+  );
   rl.close();
   const trimmed = answer.trim();
   if (!trimmed) {
@@ -162,7 +215,11 @@ async function promptSelect<T extends { key: string; label: string; description?
   if (Number.isInteger(index) && index >= 1 && index <= options.length) {
     return options[index - 1];
   }
-  const direct = options.find((option) => option.key === trimmed || option.label.toLowerCase() === trimmed.toLowerCase());
+  const direct = options.find(
+    (option) =>
+      option.key === trimmed ||
+      option.label.toLowerCase() === trimmed.toLowerCase()
+  );
   if (direct) return direct;
   throw new Error(`Invalid selection: ${answer}`);
 }
@@ -194,10 +251,13 @@ async function runCommand(
   title: string,
   command: string,
   args: string[],
-  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
+  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {}
 ): Promise<StepResult> {
   const startedAt = new Date();
-  const logPath = path.join(LOG_ROOT, `${startedAt.toISOString().replace(/[:.]/g, '-')}-${key}.log`);
+  const logPath = path.join(
+    LOG_ROOT,
+    `${startedAt.toISOString().replace(/[:.]/g, '-')}-${key}.log`
+  );
   await fs.mkdir(path.dirname(logPath), { recursive: true });
 
   const prefixedStdout = createPrefixedWriter(`[${key}] `);
@@ -230,7 +290,9 @@ async function runCommand(
   prefixedStdout.flush();
   prefixedStderr.flush();
 
-  const combinedLog = `# ${title}\n# Command: ${command} ${args.join(' ')}\n# Started: ${startedAt.toISOString()}\n# Exit code: ${exitCode}\n\n## STDOUT\n${stdoutBuffer}\n\n## STDERR\n${stderrBuffer}\n`;
+  const combinedLog = `# ${title}\n# Command: ${command} ${args.join(
+    ' '
+  )}\n# Started: ${startedAt.toISOString()}\n# Exit code: ${exitCode}\n\n## STDOUT\n${stdoutBuffer}\n\n## STDERR\n${stderrBuffer}\n`;
   await fs.writeFile(logPath, combinedLog, 'utf8');
 
   const endedAt = new Date();
@@ -257,14 +319,21 @@ async function runPreflight(ctx: DemoContext): Promise<StepResult> {
 
   const dockerCheck = await tryCommandCapture('docker', ['--version']);
   if (!dockerCheck.success) {
-    throw new Error('Docker is required but was not found in PATH. Install Docker Desktop or Docker Engine.');
+    throw new Error(
+      'Docker is required but was not found in PATH. Install Docker Desktop or Docker Engine.'
+    );
   }
   ctx.dockerVersion = dockerCheck.stdout.trim();
   details.dockerVersion = ctx.dockerVersion;
 
-  const composeCheck = await tryCommandCapture('docker', ['compose', 'version']);
+  const composeCheck = await tryCommandCapture('docker', [
+    'compose',
+    'version',
+  ]);
   if (!composeCheck.success) {
-    throw new Error('Docker Compose is required. Upgrade Docker Desktop or install the docker-compose plugin.');
+    throw new Error(
+      'Docker Compose is required. Upgrade Docker Desktop or install the docker-compose plugin.'
+    );
   }
   ctx.composeVersion = composeCheck.stdout.trim();
   details.composeVersion = ctx.composeVersion;
@@ -272,9 +341,17 @@ async function runPreflight(ctx: DemoContext): Promise<StepResult> {
   ctx.nodeVersion = process.version;
   details.nodeVersion = ctx.nodeVersion;
 
-  const gitStatus = await tryCommandCapture('git', ['status', '--short'], { cwd: ROOT });
-  const gitCommit = await tryCommandCapture('git', ['rev-parse', 'HEAD'], { cwd: ROOT });
-  const gitBranch = await tryCommandCapture('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: ROOT });
+  const gitStatus = await tryCommandCapture('git', ['status', '--short'], {
+    cwd: ROOT,
+  });
+  const gitCommit = await tryCommandCapture('git', ['rev-parse', 'HEAD'], {
+    cwd: ROOT,
+  });
+  const gitBranch = await tryCommandCapture(
+    'git',
+    ['rev-parse', '--abbrev-ref', 'HEAD'],
+    { cwd: ROOT }
+  );
   if (gitCommit.success) {
     ctx.gitCommit = gitCommit.stdout.trim();
     details.gitCommit = ctx.gitCommit;
@@ -283,16 +360,22 @@ async function runPreflight(ctx: DemoContext): Promise<StepResult> {
     ctx.gitBranch = gitBranch.stdout.trim();
     details.gitBranch = ctx.gitBranch;
   }
-  ctx.gitStatusClean = gitStatus.success ? gitStatus.stdout.trim().length === 0 : undefined;
+  ctx.gitStatusClean = gitStatus.success
+    ? gitStatus.stdout.trim().length === 0
+    : undefined;
   details.gitStatusClean = ctx.gitStatusClean ?? null;
   if (ctx.gitStatusClean === false) {
-    notes.push('Working tree has uncommitted changes. Artefacts may not reflect a clean release.');
+    notes.push(
+      'Working tree has uncommitted changes. Artefacts may not reflect a clean release.'
+    );
   }
 
   const nodeModulesExists = await pathExists(path.join(ROOT, 'node_modules'));
   details.nodeModulesPresent = nodeModulesExists;
   if (!nodeModulesExists) {
-    notes.push('node_modules is missing. Run npm install before re-running the demo for faster execution.');
+    notes.push(
+      'node_modules is missing. Run npm install before re-running the demo for faster execution.'
+    );
   }
 
   const endedAt = new Date();
@@ -317,7 +400,7 @@ type CommandCapture = {
 async function tryCommandCapture(
   command: string,
   args: string[],
-  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
+  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {}
 ): Promise<CommandCapture> {
   return new Promise((resolve) => {
     const child = spawn(command, args, {
@@ -363,6 +446,51 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+async function readJsonFile<T>(filePath: string): Promise<T> {
+  const raw = await fs.readFile(filePath, 'utf8');
+  return JSON.parse(raw) as T;
+}
+
+function deriveSummaryFromModules(
+  modules: ControlMatrixModule[] = []
+): ControlMatrixSummary {
+  return modules.reduce<ControlMatrixSummary>(
+    (acc, module) => {
+      acc.total += 1;
+      if (module.status === 'ready') {
+        acc.ready += 1;
+      } else if (module.status === 'needs-config') {
+        acc.needsConfig += 1;
+      } else {
+        acc.missingSurface += 1;
+      }
+      return acc;
+    },
+    { total: 0, ready: 0, needsConfig: 0, missingSurface: 0 }
+  );
+}
+
+function diffSummaries(
+  context: string,
+  derived: ControlMatrixSummary,
+  observed?: ControlMatrixSummary | null
+): string[] {
+  if (!observed) {
+    return [`${context} summary missing or null`];
+  }
+  const issues: string[] = [];
+  (['total', 'ready', 'needsConfig', 'missingSurface'] as const).forEach(
+    (key) => {
+      if (derived[key] !== observed[key]) {
+        issues.push(
+          `${context} summary mismatch for ${key}: expected ${derived[key]}, found ${observed[key]}`
+        );
+      }
+    }
+  );
+  return issues;
+}
+
 async function generateHtmlSummary(): Promise<void> {
   const markdown = await fs.readFile(GRAND_SUMMARY_MD, 'utf8');
   const escaped = escapeHtml(markdown);
@@ -389,7 +517,10 @@ async function generateHtmlSummary(): Promise<void> {
   await fs.writeFile(GRAND_SUMMARY_HTML, html, 'utf8');
 }
 
-async function buildManifest(ctx: DemoContext, steps: StepResult[]): Promise<ManifestEntry[]> {
+async function buildManifest(
+  ctx: DemoContext,
+  steps: StepResult[]
+): Promise<ManifestEntry[]> {
   const candidates = [
     GRAND_SUMMARY_MD,
     GRAND_SUMMARY_JSON,
@@ -434,9 +565,9 @@ async function buildManifest(ctx: DemoContext, steps: StepResult[]): Promise<Man
         entries,
       },
       null,
-      2,
+      2
     ),
-    'utf8',
+    'utf8'
   );
   return entries;
 }
@@ -450,7 +581,10 @@ async function ensureEnvFile(envPath: string): Promise<void> {
     console.log(`📄 Created ${resolved} from ${template}`);
     return;
   }
-  const directoryTemplate = path.join(path.dirname(resolved), 'oneclick.env.example');
+  const directoryTemplate = path.join(
+    path.dirname(resolved),
+    'oneclick.env.example'
+  );
   if (await pathExists(directoryTemplate)) {
     await fs.copyFile(directoryTemplate, resolved);
     console.log(`📄 Created ${resolved} from ${directoryTemplate}`);
@@ -461,21 +595,27 @@ async function ensureEnvFile(envPath: string): Promise<void> {
 
 async function main() {
   const args = parseArgs();
-  const autoYes = Boolean(parseBool(args.yes) ?? parseBool(args['non-interactive']));
+  const autoYes = Boolean(
+    parseBool(args.yes) ?? parseBool(args['non-interactive'])
+  );
   const networkArg = args.network as string | undefined;
   const skipDeploy = Boolean(parseBool(args['skip-deploy']));
-  const launchComposeOverride = parseBool(args.compose) ?? (parseBool(args['no-compose']) === true ? false : undefined);
+  const launchComposeOverride =
+    parseBool(args.compose) ??
+    (parseBool(args['no-compose']) === true ? false : undefined);
 
-  const networkPreset = networkArg && networkArg in NETWORK_PRESETS
-    ? NETWORK_PRESETS[networkArg as NetworkKey]
-    : undefined;
+  const networkPreset =
+    networkArg && networkArg in NETWORK_PRESETS
+      ? NETWORK_PRESETS[networkArg as NetworkKey]
+      : undefined;
 
-  const networkSelection = networkPreset
-    ?? (await promptSelect(
+  const networkSelection =
+    networkPreset ??
+    (await promptSelect(
       'Select target network for the Astral Omnidominion demo:',
       Object.values(NETWORK_PRESETS),
       'localhost',
-      autoYes,
+      autoYes
     ));
 
   const launchCompose =
@@ -484,7 +624,7 @@ async function main() {
       : await promptYesNo(
           'Launch Docker Compose stack automatically?',
           networkSelection.key === 'localhost',
-          autoYes,
+          autoYes
         );
 
   const context: DemoContext = {
@@ -503,8 +643,14 @@ async function main() {
   console.log(`   • Network:          ${networkSelection.label}`);
   console.log(`   • Config:           ${path.resolve(context.configPath)}`);
   console.log(`   • Env file:         ${path.resolve(context.envPath)}`);
-  console.log(`   • Launch Compose:   ${context.launchCompose ? 'yes' : 'no (manual start)'}`);
-  console.log(`   • Skip deployment:  ${context.skipDeployment ? 'yes' : 'no'}`);
+  console.log(
+    `   • Launch Compose:   ${
+      context.launchCompose ? 'yes' : 'no (manual start)'
+    }`
+  );
+  console.log(
+    `   • Skip deployment:  ${context.skipDeployment ? 'yes' : 'no'}`
+  );
   console.log('');
 
   await fs.mkdir(FIRST_CLASS_ROOT, { recursive: true });
@@ -537,19 +683,27 @@ async function main() {
           '--yes',
         ];
         wizardArgs.push(ctx.launchCompose ? '--compose' : '--no-compose');
-        return runCommand('deployment', 'One-click deployment wizard', 'npm', wizardArgs);
+        return runCommand(
+          'deployment',
+          'One-click deployment wizard',
+          'npm',
+          wizardArgs
+        );
       },
     },
     {
       key: 'demo',
       title: 'AGI OS grand demonstration',
       run: async (ctx) =>
-        runCommand('demo', 'AGI OS grand demonstration', 'npm', [
-          'run',
-          'demo:agi-os',
-        ], {
-          env: { HARDHAT_NETWORK: ctx.hardhatNetwork },
-        }),
+        runCommand(
+          'demo',
+          'AGI OS grand demonstration',
+          'npm',
+          ['run', 'demo:agi-os'],
+          {
+            env: { HARDHAT_NETWORK: ctx.hardhatNetwork },
+          }
+        ),
     },
     {
       key: 'owner-diagram',
@@ -567,16 +721,22 @@ async function main() {
               OWNER_MERMAID_OUTPUT: OWNER_CONTROL_MAP,
               OWNER_MERMAID_TITLE: 'Astral Omnidominion Owner Control Map',
             },
-          },
+          }
         ),
     },
     {
       key: 'owner-verify',
       title: 'Verify owner control surface',
       run: async (ctx) =>
-        runCommand('owner-verify', 'Verify owner control surface', 'npm', ['run', 'owner:verify-control'], {
-          env: { HARDHAT_NETWORK: ctx.hardhatNetwork },
-        }),
+        runCommand(
+          'owner-verify',
+          'Verify owner control surface',
+          'npm',
+          ['run', 'owner:verify-control'],
+          {
+            env: { HARDHAT_NETWORK: ctx.hardhatNetwork },
+          }
+        ),
     },
     {
       key: 'html',
@@ -614,6 +774,90 @@ async function main() {
         };
       },
     },
+    {
+      key: 'integrity-check',
+      title: 'Cross-verify mission artefacts',
+      run: async () => {
+        const startedAt = new Date();
+        const matrix = await readJsonFile<ControlMatrix>(OWNER_CONTROL_MATRIX);
+        const modules = matrix.modules ?? [];
+        const derivedSummary = deriveSummaryFromModules(modules);
+
+        const issues: string[] = [];
+
+        issues.push(
+          ...diffSummaries(
+            'Owner control matrix',
+            derivedSummary,
+            matrix.summary
+          )
+        );
+
+        const grandSummary = await readJsonFile<GrandSummary>(
+          GRAND_SUMMARY_JSON
+        );
+        const summaryControl = grandSummary.control ?? null;
+        if (!summaryControl) {
+          issues.push('Grand summary missing control section');
+        } else {
+          const grandModules = summaryControl.modules ?? [];
+          if (grandModules.length !== modules.length) {
+            issues.push(
+              `Grand summary module count mismatch: expected ${modules.length}, found ${grandModules.length}`
+            );
+          }
+          issues.push(
+            ...diffSummaries(
+              'Grand summary control',
+              derivedSummary,
+              summaryControl.summary
+            )
+          );
+        }
+
+        const manifestReport = await readJsonFile<ManifestReport>(
+          FIRST_CLASS_MANIFEST
+        );
+        const manifestEntries = manifestReport.entries ?? [];
+        const manifestPaths = new Set(
+          manifestEntries.map((entry) => entry.path)
+        );
+        const requiredPaths = [
+          path.relative(ROOT, GRAND_SUMMARY_MD),
+          path.relative(ROOT, GRAND_SUMMARY_JSON),
+          path.relative(ROOT, GRAND_SUMMARY_HTML),
+          path.relative(ROOT, OWNER_CONTROL_MATRIX),
+        ];
+        requiredPaths.forEach((requiredPath) => {
+          if (!manifestPaths.has(requiredPath)) {
+            issues.push(`Manifest missing required artefact ${requiredPath}`);
+          }
+        });
+
+        const endedAt = new Date();
+        const status: StepStatus = issues.length === 0 ? 'success' : 'failed';
+        const notes =
+          status === 'success'
+            ? [
+                `Validated ${modules.length} owner modules and ${requiredPaths.length} critical artefacts across mission reports.`,
+              ]
+            : issues;
+
+        return {
+          key: 'integrity-check',
+          title: 'Cross-verify mission artefacts',
+          status,
+          startedAt: startedAt.toISOString(),
+          endedAt: endedAt.toISOString(),
+          durationMs: endedAt.getTime() - startedAt.getTime(),
+          notes,
+          details: {
+            ownerModules: modules.length,
+            manifestEntries: manifestEntries.length,
+          },
+        };
+      },
+    },
   ];
 
   for (const step of steps) {
@@ -636,7 +880,11 @@ async function main() {
       const result = await step.run(context);
       results.push(result);
       if (result.status === 'failed' && !step.optional) {
-        console.error(`❌ ${step.title} failed. See ${result.logFile ?? 'logs'} for details.`);
+        console.error(
+          `❌ ${step.title} failed. See ${
+            result.logFile ?? 'logs'
+          } for details.`
+        );
         break;
       }
       if (result.status === 'success') {
@@ -656,7 +904,10 @@ async function main() {
         notes: [error instanceof Error ? error.message : String(error)],
       };
       results.push(failure);
-      console.error(`❌ ${step.title} failed:`, error instanceof Error ? error.message : error);
+      console.error(
+        `❌ ${step.title} failed:`,
+        error instanceof Error ? error.message : error
+      );
       break;
     }
   }
@@ -679,15 +930,28 @@ async function main() {
     steps: results,
   };
 
-  await fs.writeFile(FIRST_CLASS_RUN, JSON.stringify(runReport, null, 2), 'utf8');
-  console.log(`🗂️  First-class run report written to ${path.relative(ROOT, FIRST_CLASS_RUN)}`);
+  await fs.writeFile(
+    FIRST_CLASS_RUN,
+    JSON.stringify(runReport, null, 2),
+    'utf8'
+  );
+  console.log(
+    `🗂️  First-class run report written to ${path.relative(
+      ROOT,
+      FIRST_CLASS_RUN
+    )}`
+  );
 
   const lastStep = results[results.length - 1];
   if (lastStep?.status === 'failed') {
     process.exitCode = 1;
-    console.error('Astral Omnidominion demo completed with failures. Review the run report for remediation guidance.');
+    console.error(
+      'Astral Omnidominion demo completed with failures. Review the run report for remediation guidance.'
+    );
   } else {
-    console.log('🌠 Astral Omnidominion demo completed successfully. Share the reports in reports/agi-os/.');
+    console.log(
+      '🌠 Astral Omnidominion demo completed successfully. Share the reports in reports/agi-os/.'
+    );
   }
 }
 
