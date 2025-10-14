@@ -8,7 +8,7 @@ NETWORK_NAME="${NETWORK:-localhost}"
 LOCAL_REPORT_ROOT="reports/${NETWORK_NAME}/zenith-sapience"
 
 export ASI_GLOBAL_PLAN_PATH="demo/zenith-sapience-initiative-global-governance/project-plan.json"
-export ASI_GLOBAL_REPORT_ROOT="reports/zenith-sapience"
+export ASI_GLOBAL_REPORT_ROOT="$LOCAL_REPORT_ROOT"
 export ASI_GLOBAL_OUTPUT_BASENAME="zenith-sapience-initiative-kit"
 export ASI_GLOBAL_BUNDLE_NAME="zenith-sapience"
 export ASI_GLOBAL_MERMAID_TITLE="Zenith Sapience Owner Topology"
@@ -25,5 +25,6 @@ export AURORA_REPORT_SCOPE="zenith-sapience"
 export AURORA_REPORT_TITLE="Zenith Sapience Initiative — Mission Report"
 
 rm -rf "$LOCAL_REPORT_ROOT"
+mkdir -p "$LOCAL_REPORT_ROOT"
 
-npm run demo:asi-global:local -- "$@"
+NETWORK="$NETWORK_NAME" npm run demo:asi-global -- "$@"
