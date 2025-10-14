@@ -12,7 +12,7 @@ This runbook converts the Omega Omni Operating System demo into a copy/paste rit
    ```
 2. **Copy environment template**
    ```bash
-   cp deployment-config/.env.example .env
+   cp deployment-config/oneclick.env.example deployment-config/oneclick.env
    ```
    Populate RPC URLs, private keys, and telemetry webhooks as documented in `docs/owner-control-master-checklist.md`.
 3. **Verify toolchain integrity**
