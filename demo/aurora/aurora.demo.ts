@@ -226,6 +226,9 @@ function writeReceipt(net: string, name: string, data: unknown) {
   const receiptPath = path.join(dir, name);
   fs.mkdirSync(path.dirname(receiptPath), { recursive: true });
   fs.writeFileSync(receiptPath, JSON.stringify(data, null, 2));
+  const primaryPath = path.join(dir, name);
+  fs.mkdirSync(path.dirname(primaryPath), { recursive: true });
+  fs.writeFileSync(primaryPath, JSON.stringify(data, null, 2));
   const legacyDir = path.join('reports', net, REPORT_SCOPE, 'receipts');
   const outputPath = path.join(legacyDir, name);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -255,6 +258,42 @@ function resolveDeploySummaryPath(net: string): string {
   }
 
   return envPath ?? reportPath;
+  const candidateFromEnv = process.env.AURORA_DEPLOY_OUTPUT
+    ? path.resolve(process.env.AURORA_DEPLOY_OUTPUT)
+    : null;
+  const namespace = resolveReportNamespace();
+  const defaultReportPath = path.resolve(
+    'reports',
+    net,
+    namespace,
+    'receipts',
+    'deploy.json'
+  );
+  const fallbackDeploymentPath = path.resolve(
+    'deployment-config',
+    'latest-deployment.json'
+  );
+
+  const preferredPaths = [candidateFromEnv, defaultReportPath].filter(
+    (p): p is string => Boolean(p)
+  );
+
+  for (const candidate of preferredPaths) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  if (fs.existsSync(fallbackDeploymentPath)) {
+    console.warn(
+      `⚠️  Deploy summary not found at preferred locations. Falling back to ${fallbackDeploymentPath}.`
+    );
+    return fallbackDeploymentPath;
+  }
+
+  throw new Error(
+    `Required file not found: ${candidateFromEnv || defaultReportPath}`
+  );
 }
 
 function specAmountToWei(
@@ -757,6 +796,11 @@ async function main() {
       : null;
   const validatorCount = spec.validation?.n ?? 0;
   const quorum = spec.validation?.k ?? 0;
+    const thermostatConfigPath = resolveThermostatConfigPath();
+    const thermostatConfig =
+      thermostatConfigPath !== null
+        ? readJsonFile<ThermostatConfig>(thermostatConfigPath)
+        : null;
   const baseSpec = readJsonFile<Spec>(SPEC_PATH);
   const missionConfig =
     MISSION_CONFIG_PATH && fs.existsSync(MISSION_CONFIG_PATH)
@@ -911,6 +955,7 @@ async function main() {
   const validationModuleArtifact = loadArtifact('ValidationModule');
   const identityRegistryArtifact = loadArtifact('IdentityRegistry');
   const systemPauseArtifact = loadArtifact('SystemPause');
+  const taxPolicyArtifact = loadArtifact('TaxPolicy');
   const thermostatArtifact = thermostatAddress
     ? loadArtifact('Thermostat')
     : null;
@@ -945,6 +990,11 @@ async function main() {
     addresses.TaxPolicy && addresses.TaxPolicy !== 'disabled'
       ? new ethers.Contract(addresses.TaxPolicy, taxPolicyArtifact.abi, employer)
       : null;
+  const taxPolicy = new ethers.Contract(
+    addresses.TaxPolicy,
+    taxPolicyArtifact.abi,
+    employer
+  );
   const thermostat =
     thermostatArtifact && thermostatAddress
       ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, employer)
@@ -1050,6 +1100,15 @@ async function main() {
 
   const token = await ensureAgialpha(provider, employer);
 
+  const ensureAcknowledged = async (participant: AddressedSigner) => {
+    const acknowledged = await taxPolicy.hasAcknowledged(participant.address);
+    if (!acknowledged) {
+      const tx = await taxPolicy.connect(participant).acknowledge();
+      await tx.wait();
+    }
+  };
+
+
   const baselineMint = ethers.parseUnits('1000', decimals);
   const totalReward = resolvedJobs.reduce(
     (acc, job) => acc + job.rewardAmount,
@@ -1103,6 +1162,12 @@ async function main() {
         .approve(addresses.StakeManager, ethers.MaxUint256);
       await approveTx.wait();
     }
+  }
+
+  await ensureAcknowledged(employer);
+  await ensureAcknowledged(worker);
+  for (const validator of validators) {
+    await ensureAcknowledged(validator as AddressedSigner);
   }
 
   await recordDirectGovernanceCall(
@@ -1237,6 +1302,14 @@ async function main() {
           );
         }
         identityOwnerSigner = await impersonateSigner(provider, identityOwnerAddress);
+    if (normalisedIdentityOwner !== employer.address.toLowerCase()) {
+      const ownerCode = await provider.getCode(identityOwnerAddress);
+      if (ownerCode !== '0x') {
+        console.warn(
+          `⚠️  Identity owner ${identityOwnerAddress} is a contract. Impersonating for manual allowlist updates.`
+        );
+      }
+      identityOwnerSigner = await impersonateSigner(provider, identityOwnerAddress);
       const balance = await provider.getBalance(identityOwnerAddress);
       const minimumBalance = ethers.parseEther('0.1');
         if (balance < minimumBalance) {
@@ -1403,6 +1476,22 @@ async function main() {
       .connect(worker)
       .depositStake(agentRole, workerStakeBudget);
     const workerStakeReceipt = await workerStakeTx.wait();
+    const workerStakeTx = await stakeManager
+      .connect(worker)
+      .depositStake(agentRole, maxWorkerStake);
+  const workerStakeReceipt = await workerStakeTx.wait();
+  stakeEntries.push({
+    role: 'agent',
+    address: worker.address,
+    amount: formatUnits(maxWorkerStake, decimals),
+    txHash: workerStakeReceipt?.hash || workerStakeTx.hash,
+  });
+
+  for (const validator of validators) {
+      const stakeTx = await stakeManager
+        .connect(validator)
+        .depositStake(validatorRole, maxValidatorStake);
+    const receipt = await stakeTx.wait();
     stakeEntries.push({
       role: 'agent',
       address: worker.address,
@@ -1525,6 +1614,9 @@ async function main() {
       const applyTx = await jobRegistry
         .connect(worker)
         .applyForJob(jobId, job.agentSubdomain, []);
+    const applyTx = await jobRegistry
+      .connect(worker)
+      .applyForJob(jobId, job.agentSubdomain, []);
     await applyTx.wait();
 
     const resultHash = ethers.keccak256(ethers.toUtf8Bytes(job.resultUri));
@@ -1790,31 +1882,22 @@ async function main() {
         thermostatConfig
       );
     }
+    writeReceipt(networkName, 'mission.json', {
+      scope: REPORT_SCOPE,
+      version: missionConfig?.version || '1.0',
+      description: missionConfig?.description,
+      jobs: missionRecords,
+    });
 
-  await recordForwardGovernanceCall(
-    'StakeManager',
-    addresses.StakeManager,
-    stakeManager.interface,
-    'setRoleMinimums',
-    [
-      stakeMinimumBaseline.agent,
-      stakeMinimumBaseline.validator,
-      stakeMinimumBaseline.platform,
-    ],
-    {
-      notes: 'Restore production minimum stake thresholds',
-      before: {
-        agent: formatUnits(stakeMinimumAdjusted.agent, decimals),
-        validator: formatUnits(stakeMinimumAdjusted.validator, decimals),
-        platform: formatUnits(stakeMinimumAdjusted.platform, decimals),
-      },
-      after: {
-        agent: formatUnits(stakeMinimumBaseline.agent, decimals),
-        validator: formatUnits(stakeMinimumBaseline.validator, decimals),
-        platform: formatUnits(stakeMinimumBaseline.platform, decimals),
-      },
+    let thermostatUpdates: ThermostatUpdate[] = [];
+    if (thermostatConfig && thermostat && thermostatInterface) {
+      thermostatUpdates = await applyThermostatConfig(
+        thermostat,
+        thermostatInterface,
+        recordForwardGovernanceCall,
+        thermostatConfig
+      );
     }
-  );
 
   await recordForwardGovernanceCall(
     'JobRegistry',
@@ -1828,18 +1911,59 @@ async function main() {
       after: { stake: formatUnits(originalJobStake, decimals) },
     }
   );
+    await recordForwardGovernanceCall(
+      'StakeManager',
+      addresses.StakeManager,
+      stakeManager.interface,
+      'setRoleMinimums',
+      [
+        stakeMinimumBaseline.agent,
+        stakeMinimumBaseline.validator,
+        stakeMinimumBaseline.platform,
+      ],
+      {
+        notes: 'Restore production minimum stake thresholds',
+        before: {
+          agent: formatUnits(stakeMinimumAdjusted.agent, decimals),
+          validator: formatUnits(stakeMinimumAdjusted.validator, decimals),
+          platform: formatUnits(stakeMinimumAdjusted.platform, decimals),
+        },
+        after: {
+          agent: formatUnits(stakeMinimumBaseline.agent, decimals),
+          validator: formatUnits(stakeMinimumBaseline.validator, decimals),
+          platform: formatUnits(stakeMinimumBaseline.platform, decimals),
+        },
+      }
+    );
 
-  writeReceipt(networkName, 'governance.json', {
-    actions: governanceActions,
-    thermostat: thermostatUpdates,
-  });
+    await recordForwardGovernanceCall(
+      'JobRegistry',
+      addresses.JobRegistry,
+      jobRegistry.interface,
+      'setJobStake',
+      [originalJobStake],
+      {
+        notes: 'Return job stake policy to its baseline value',
+        before: { stake: formatUnits(adjustedJobStake, decimals) },
+        after: { stake: formatUnits(originalJobStake, decimals) },
+      }
+    );
 
-  console.log(
-    `✅ AURORA demo completed. Jobs finalized: ${missionRecords.length}.`
-  );
-}
+    writeReceipt(networkName, 'governance.json', {
+      actions: governanceActions,
+      thermostat: thermostatUpdates,
+    });
 
 main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+    console.log(
+      `✅ AURORA demo completed. Jobs finalized: ${missionRecords.length}.`
+    );
+  }
+
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
