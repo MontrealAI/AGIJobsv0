@@ -1,0 +1,322 @@
+{
+  "initiative": "Zenith Sapience Initiative – Celestial Archon Governance Demonstration",
+  "objective": "Demonstrate an unstoppable, owner-supervised governance cycle that directs multi-coalition infrastructure using only existing AGI Jobs v0 (v2) modules.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1250000000",
+    "allocations": {
+      "Orbital Relay Consortium": "240000000",
+      "Pan-African Continuum": "200000000",
+      "Americas Horizon Pact": "230000000",
+      "Asia-Pacific Tidal Network": "250000000",
+      "European Resilience Accord": "170000000",
+      "MENA Regenerative Corridor": "140000000",
+      "Celestial Archon Strategic Reserve": "20000000"
+    }
+  },
+  "governance": {
+    "owner": "0xARCHON-MULTISIG",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xARCHON-TREASURY",
+    "quadraticVoting": {
+      "contract": "AGIGovernor",
+      "timelock": "0xARCHON-TIMELOCK",
+      "executionDelayDays": 7,
+      "proposalThreshold": "1800000",
+      "quorumFraction": "0.23"
+    },
+    "thermostat": {
+      "initialTemperature": "0.28",
+      "emergencyTemperature": "0.48",
+      "updateScript": "scripts/v2/updateThermodynamics.ts",
+      "ownerGuide": "demo/zenith-sapience-initiative-celestial-archon-governance/OWNER-CONTROL.md"
+    },
+    "controlScripts": {
+      "commandCenter": "npm run owner:command-center -- --network hardhat --format markdown --out reports/zenith-celestial-archon/command-center.md",
+      "parameterMatrix": "npm run owner:parameters -- --network hardhat --format markdown --out reports/zenith-celestial-archon/parameter-matrix.md",
+      "missionControl": "npm run owner:mission-control -- --network hardhat --format markdown --out reports/zenith-celestial-archon/mission-control.md --bundle reports/zenith-celestial-archon/mission-bundle",
+      "mermaid": "npx hardhat run --no-compile scripts/v2/renderOwnerMermaid.ts -- --format markdown --out reports/zenith-celestial-archon/governance.md --title 'Zenith Sapience Celestial Archon Topology'"
+    }
+  },
+  "regions": [
+    {
+      "id": "ORBITAL",
+      "name": "Orbital Relay Consortium",
+      "goal": "Deploy space-based solar relays beaming energy into terrestrial grids with validator attestation per transmission window.",
+      "kpis": [
+        "Six orbital relays online",
+        "Latency below 80ms for relay control loop",
+        "Validator concurrence >= 98% on transmission attestations"
+      ]
+    },
+    {
+      "id": "AFRICA",
+      "name": "Pan-African Continuum",
+      "goal": "Interlink microgrid corridors across 18 nations with real-time fault detection and community staking incentives.",
+      "kpis": [
+        "5.5 GW incremental capacity",
+        "SystemPause drill executed quarterly",
+        "Thermostat variance within ±1.4%"
+      ]
+    },
+    {
+      "id": "AMERICAS",
+      "name": "Americas Horizon Pact",
+      "goal": "Reinforce coastal resilience hubs and humanitarian logistics exchanges spanning the Americas.",
+      "kpis": [
+        "10 humanitarian corridors live",
+        "Quadratic vote turnout above 78%",
+        "Dispute resolution < 32h"
+      ]
+    },
+    {
+      "id": "APAC",
+      "name": "Asia-Pacific Tidal Network",
+      "goal": "Construct floating tidal megafarms and energy bridges across island nations.",
+      "kpis": [
+        "20 tidal assemblies activated",
+        "Validator reward share balanced within ±2%",
+        "Cross-border compliance events logged within 5 minutes"
+      ]
+    },
+    {
+      "id": "EU",
+      "name": "European Resilience Accord",
+      "goal": "Upgrade HVDC corridors and autonomous arbitration between 30 grid operators.",
+      "kpis": [
+        "HVDC congestion reduced by 47%",
+        "Mission Control refresh <= 3 minutes",
+        "Owner override test logged each epoch"
+      ]
+    },
+    {
+      "id": "MENA",
+      "name": "MENA Regenerative Corridor",
+      "goal": "Close desalination-to-hydrogen supply loops with zero-knowledge carbon auditing.",
+      "kpis": [
+        "Hydrogen yield >= 730 kt/year",
+        "Validator incentive clawbacks under 0.35%",
+        "RewardEngineMB validator share between 19-23%"
+      ]
+    }
+  ],
+  "participants": {
+    "metaOrchestrator": {
+      "handle": "archon.orchestrator.world.agi.eth",
+      "role": "Planetary coordination cortex",
+      "capabilities": [
+        "Plan→Simulate→Execute loops",
+        "Thermostat tuning under timelock supervision",
+        "Automatic mission-control briefings"
+      ]
+    },
+    "council": [
+      {
+        "handle": "archon.council.stewardship.agi.eth",
+        "role": "Sustainability ombudscouncil",
+        "stake": "9000000"
+      },
+      {
+        "handle": "archon.council.infrastructure.agi.eth",
+        "role": "Infrastructure arbitration trust",
+        "stake": "9800000"
+      },
+      {
+        "handle": "archon.council.humanitarian.agi.eth",
+        "role": "Humanitarian resilience board",
+        "stake": "7600000"
+      }
+    ],
+    "agents": [
+      {
+        "handle": "orbital.relay.collective.agent.agi.eth",
+        "role": "Orbital energy relay federation",
+        "regions": ["ORBITAL"],
+        "capabilities": [
+          "On-chain relay scheduling",
+          "Telemetry streaming to Thermostat",
+          "Validator co-signing"
+        ]
+      },
+      {
+        "handle": "africa.continuum.agent.agi.eth",
+        "role": "Sovereign microgrid integrator",
+        "regions": ["AFRICA"],
+        "capabilities": [
+          "Job orchestration",
+          "Community staking analytics",
+          "Pause drill rehearsals"
+        ]
+      },
+      {
+        "handle": "americas.horizon.agent.agi.eth",
+        "role": "Pan-continental humanitarian guild",
+        "regions": ["AMERICAS"],
+        "capabilities": [
+          "Bonding curve treasury management",
+          "Cross-border logistics verification",
+          "Stake slashing recovery"
+        ]
+      },
+      {
+        "handle": "apac.tidal.agent.agi.eth",
+        "role": "Floating tidal superstructure collective",
+        "regions": ["APAC"],
+        "capabilities": [
+          "Mission-phase demand shaping",
+          "Validator rotation automation",
+          "IPFS deliverable attestation"
+        ]
+      },
+      {
+        "handle": "eu.resilience.agent.agi.eth",
+        "role": "Digital twin arbitration consortium",
+        "regions": ["EU"],
+        "capabilities": [
+          "Simulation-first compliance",
+          "Mermaid topology verification",
+          "Owner intervention alerts"
+        ]
+      },
+      {
+        "handle": "mena.regenerative.agent.agi.eth",
+        "role": "Hydrogen compliance lattice",
+        "regions": ["MENA"],
+        "capabilities": [
+          "Zero-knowledge emission attestations",
+          "Validator staking balancer",
+          "Thermostat rescue trigger"
+        ]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "archon.validators.audit.club.agi.eth",
+        "role": "Global audit club",
+        "regions": ["ORBITAL", "AFRICA", "AMERICAS", "APAC", "EU", "MENA"],
+        "capabilities": [
+          "Dual quorum attestation",
+          "Dispute arbitration",
+          "Mission-control delta analysis"
+        ]
+      },
+      {
+        "handle": "archon.validators.ecology.club.agi.eth",
+        "role": "Planetary ecology council",
+        "regions": ["AFRICA", "APAC", "MENA"],
+        "capabilities": [
+          "Climate KPI audit",
+          "Thermostat oversight",
+          "Emergency pause recommendation"
+        ]
+      },
+      {
+        "handle": "archon.validators.finance.club.agi.eth",
+        "role": "Global finance controls syndicate",
+        "regions": ["AMERICAS", "EU", "MENA"],
+        "capabilities": [
+          "Treasury flow verification",
+          "Stake recovery workflows",
+          "Quadratic vote supervision"
+        ]
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "ORBITAL-SOLAR-RELAY",
+      "region": "ORBITAL",
+      "title": "Commission orbital solar relay network",
+      "reward": "210000000",
+      "deadlineDays": 210,
+      "dependencies": [],
+      "energyBudget": "150000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.29",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "AFRICA-MICROGRID-CONTINUUM",
+      "region": "AFRICA",
+      "title": "Deploy Pan-African microgrid continuum",
+      "reward": "185000000",
+      "deadlineDays": 180,
+      "dependencies": [],
+      "energyBudget": "120000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.22",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "AMERICAS-RESILIENCE-HUBS",
+      "region": "AMERICAS",
+      "title": "Activate humanitarian resilience hubs",
+      "reward": "165000000",
+      "deadlineDays": 150,
+      "dependencies": ["AFRICA-MICROGRID-CONTINUUM"],
+      "energyBudget": "110000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.18",
+        "adjustmentOnDelay": "increase-validator-share"
+      }
+    },
+    {
+      "id": "APAC-TIDAL-MEGAFARMS",
+      "region": "APAC",
+      "title": "Construct tidal megafarm network",
+      "reward": "200000000",
+      "deadlineDays": 190,
+      "dependencies": [],
+      "energyBudget": "145000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.27",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "EU-HVDC-AUTONOMY",
+      "region": "EU",
+      "title": "Autonomously arbitrate HVDC corridors",
+      "reward": "152000000",
+      "deadlineDays": 160,
+      "dependencies": ["APAC-TIDAL-MEGAFARMS"],
+      "energyBudget": "108000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "MENA-HYDROGEN-REGENERATION",
+      "region": "MENA",
+      "title": "Complete regenerative hydrogen loop",
+      "reward": "140000000",
+      "deadlineDays": 170,
+      "dependencies": ["EU-HVDC-AUTONOMY"],
+      "energyBudget": "100000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.24",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/zenith-celestial-archon/dry-run.json",
+      "thermodynamics": "reports/zenith-celestial-archon/thermodynamics.json",
+      "missionControl": "reports/zenith-celestial-archon/mission-control.md",
+      "commandCenter": "reports/zenith-celestial-archon/command-center.md",
+      "parameterMatrix": "reports/zenith-celestial-archon/parameter-matrix.md",
+      "summary": "reports/zenith-celestial-archon/summary.md",
+      "mermaid": "reports/zenith-celestial-archon/governance.mmd",
+      "kit": "reports/zenith-celestial-archon/zenith-celestial-archon-kit.json"
+    },
+    "dashboards": [
+      "reports/zenith-celestial-archon/mission-control.md",
+      "reports/zenith-celestial-archon/parameter-matrix.md",
+      "reports/zenith-celestial-archon/thermodynamics.json"
+    ]
+  }
+}
