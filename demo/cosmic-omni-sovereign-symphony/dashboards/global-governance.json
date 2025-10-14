@@ -1,0 +1,37 @@
+{
+  "title": "Cosmic Omni-Sovereign Governance",
+  "uid": "cosmic-omni-sovereign",
+  "schemaVersion": 38,
+  "version": 1,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Mandate Support vs Against",
+      "targets": [
+        { "expr": "sum(global_governance_support_weight)" },
+        { "expr": "sum(global_governance_against_weight)" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Quorum Achieved",
+      "targets": [
+        { "expr": "max(global_governance_support_weight >= global_governance_quorum)" }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Nation Votes",
+      "targets": [
+        { "expr": "global_governance_vote_metadata" }
+      ],
+      "columns": [
+        { "text": "Nation", "type": "string" },
+        { "text": "Support", "type": "boolean" },
+        { "text": "Weight", "type": "number" },
+        { "text": "Timestamp", "type": "time" },
+        { "text": "MetadataURI", "type": "string" }
+      ]
+    }
+  ]
+}
