@@ -104,6 +104,7 @@ For a printable walkthrough (including remediation steps when a context drifts),
 - [ASI feasibility production checklist](docs/asi-feasibility-production-checklist.md)
 - [ASI feasibility verification suite](docs/asi-feasibility-verification-suite.md)
 - [Operating system grand demonstration](docs/agi-os-grand-demo.md)
+- [Astral Omnidominion operating system demo](docs/agi-os-first-class-demo.md)
 - [REDENOMINATION readiness matrix](docs/redenomination-readiness-matrix.md)
 
 ### Identity policy
