@@ -112,6 +112,8 @@
     "demo:asi-global:kit": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/asiGlobalKit.ts",
     "demo:zenith-sapience-initiative": "bash demo/zenith-sapience-initiative-global-governance/bin/zenith-sapience.sh",
     "demo:zenith-sapience-initiative:local": "bash demo/zenith-sapience-initiative-global-governance/bin/zenith-sapience-local.sh",
+    "demo:zenith-sapience-omnidominion": "bash demo/zenith-sapience-initiative-omnidominion-governance/bin/zenith-omnidominion.sh",
+    "demo:zenith-sapience-omnidominion:local": "bash demo/zenith-sapience-initiative-omnidominion-governance/bin/zenith-omnidominion-local.sh",
     "subgraph:e2e": "node scripts/subgraph-e2e.js",
     "migrate:mainnet": "TRUFFLE_NETWORK=mainnet npm run compile:mainnet && npx truffle migrate --network mainnet --reset && TRUFFLE_NETWORK=mainnet npm run wire:verify",
     "migrate:sepolia": "DEPLOY_LOCAL_ERC20=1 TRUFFLE_NETWORK=sepolia npm run compile:sepolia && npx truffle migrate --network sepolia --reset && TRUFFLE_NETWORK=sepolia npm run wire:verify",
