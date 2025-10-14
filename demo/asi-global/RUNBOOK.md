@@ -45,3 +45,7 @@ operators to inspect intermediate states on a local fork.
 - All scripts are idempotent; re-running them overwrites previous artefacts.
 - Review `demo/asi-global/project-plan.json` to adapt the scenario with new regions or
   governance policies without changing any code.
+- For oversized deployments, customise `LOCAL_GAS_LIMIT` and `LOCAL_CODE_SIZE_LIMIT`
+  before invoking `npm run demo:asi-global:local`.  The helper propagates the values to
+  Anvil flags or Hardhat JSON-RPC (`hardhat_setBlockGasLimit` and
+  `hardhat_setCodeSizeLimit`).

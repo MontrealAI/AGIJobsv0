@@ -26,3 +26,16 @@ npm run demo:asi-global
 
 A local, interactive version that stands up a fresh Hardhat/Anvil network is available
 via `npm run demo:asi-global:local` (see `RUNBOOK.md`).
+
+### Local resource tuning
+
+The helper script honours the following overrides when exercising large deployments on
+ephemeral nodes:
+
+- `LOCAL_GAS_LIMIT` – block gas ceiling (defaults to `1000000000`).
+- `LOCAL_CODE_SIZE_LIMIT` – contract code-size allowance in bytes (defaults to
+  `1000000`).
+
+Both knobs apply to Anvil directly and are mirrored onto Hardhat nodes through JSON-RPC
+(`hardhat_setBlockGasLimit` / `hardhat_setCodeSizeLimit`) before the protocol is
+deployed.
