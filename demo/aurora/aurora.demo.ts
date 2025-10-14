@@ -58,6 +58,70 @@ const DEFAULT_KEYS = [
   '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6',
   '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a',
 ];
+const DEFAULT_MNEMONIC =
+  'test test test test test test test test test test test junk';
+
+function normalisePrivateKey(key: string): string {
+  return key.startsWith('0x') ? key.toLowerCase() : `0x${key.toLowerCase()}`;
+}
+
+function deriveHardhatPrivateKey(index: number, mnemonic: string): string {
+  const path = `m/44'/60'/0'/0/${index}`;
+  const wallet = ethers.HDNodeWallet.fromPhrase(mnemonic, undefined, path);
+  return wallet.privateKey;
+}
+
+function ensureValidatorKeys(
+  desiredCount: number,
+  baseKeys: string[],
+  employerKey: string,
+  workerKey: string
+): string[] {
+  const employerNormalised = normalisePrivateKey(employerKey);
+  const workerNormalised = normalisePrivateKey(workerKey);
+  const uniqueKeys: string[] = [];
+  const seen = new Set<string>();
+
+  const pushKey = (candidate: string) => {
+    const normalised = normalisePrivateKey(candidate);
+    if (
+      normalised === employerNormalised ||
+      normalised === workerNormalised ||
+      seen.has(normalised)
+    ) {
+      return;
+    }
+    seen.add(normalised);
+    uniqueKeys.push(candidate);
+  };
+
+  for (const key of baseKeys) {
+    if (key) {
+      pushKey(key);
+    }
+  }
+
+  if (uniqueKeys.length >= desiredCount) {
+    return uniqueKeys;
+  }
+
+  const mnemonic = process.env.HARDHAT_MNEMONIC || DEFAULT_MNEMONIC;
+  let derivationIndex = 0;
+  const maxAttempts = desiredCount * 5 + 10;
+  while (uniqueKeys.length < desiredCount && derivationIndex < maxAttempts) {
+    const derived = deriveHardhatPrivateKey(derivationIndex, mnemonic);
+    derivationIndex += 1;
+    pushKey(derived);
+  }
+
+  if (uniqueKeys.length < desiredCount) {
+    throw new Error(
+      `Unable to derive ${desiredCount} unique validator keys; provide additional AURORA_VALIDATOR*_KEY secrets.`
+    );
+  }
+
+  return uniqueKeys;
+}
 
 const AGIALPHA_CONFIG = JSON.parse(
   fs.readFileSync(path.join('config', 'agialpha.json'), 'utf8')
@@ -218,8 +282,9 @@ function resolveReportBaseDir(net: string): string {
 function writeReceipt(net: string, name: string, data: unknown) {
   const baseDir = resolveReportBaseDir(net);
   const dir = path.join(baseDir, 'receipts');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
+  const receiptPath = path.join(dir, name);
+  fs.mkdirSync(path.dirname(receiptPath), { recursive: true });
+  fs.writeFileSync(receiptPath, JSON.stringify(data, null, 2));
   const legacyDir = path.join('reports', net, REPORT_SCOPE, 'receipts');
   const outputPath = path.join(legacyDir, name);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -328,9 +393,9 @@ async function impersonateSigner(
       `Unable to impersonate required account ${normalised}. Provide a PRIVATE_KEY with control or enable impersonation.`
     );
   }
-  let signer;
+  let signer: ethers.JsonRpcSigner;
   try {
-    signer = provider.getSigner(normalised);
+    signer = new ethers.JsonRpcSigner(provider, normalised);
   } catch (err) {
     throw new Error(
       `Provider cannot supply signer for ${normalised}: ${(err as Error).message}`
@@ -421,10 +486,10 @@ function deriveCommitPlan(
   nonce: bigint,
   specHash: string,
   chainId: bigint,
-  domainSeparator: string
+  domainSeparator: string,
+  burnTxHash: string
 ) {
   const abi = ethers.AbiCoder.defaultAbiCoder();
-  const burnTxHash = ethers.ZeroHash;
   const salt = ethers.hexlify(randomBytes(32));
   const outcomeHash = ethers.keccak256(
     abi.encode(
@@ -711,7 +776,7 @@ async function main() {
 
   const employerKey = process.env.PRIVATE_KEY || DEFAULT_KEYS[0];
   const workerKey = process.env.AURORA_WORKER_KEY || DEFAULT_KEYS[1];
-  const validatorKeys = [
+  const baseValidatorKeys = [
     process.env.AURORA_VALIDATOR1_KEY || DEFAULT_KEYS[2],
     process.env.AURORA_VALIDATOR2_KEY || DEFAULT_KEYS[3],
     process.env.AURORA_VALIDATOR3_KEY || DEFAULT_KEYS[4],
@@ -730,8 +795,6 @@ async function main() {
     thermostatConfigPath !== null
       ? readJsonFile<ThermostatConfig>(thermostatConfigPath)
       : null;
-  const validatorCount = spec.validation.n;
-  const quorum = spec.validation.k;
   const baseSpec = readJsonFile<Spec>(SPEC_PATH);
   const missionConfig =
     MISSION_CONFIG_PATH && fs.existsSync(MISSION_CONFIG_PATH)
@@ -739,9 +802,6 @@ async function main() {
       : null;
   if (missionConfig?.scope && !process.env.AURORA_REPORT_SCOPE) {
     REPORT_SCOPE = missionConfig.scope;
-  const spec = readJsonFile<Spec>(SPEC_PATH);
-  if (!spec.validation || !spec.validation.k || !spec.validation.n) {
-    throw new Error('Validation quorum (k-of-n) must be defined in the spec.');
   }
 
   const missionJobs =
@@ -818,19 +878,17 @@ async function main() {
     }
   }
 
+  const validatorKeys = ensureValidatorKeys(
+    validatorCount,
+    baseValidatorKeys,
+    employerKey,
+    workerKey
+  );
   const selectedValidatorKeys = validatorKeys.slice(0, validatorCount);
-  if (selectedValidatorKeys.length < validatorCount) {
-    throw new Error(
-      'Insufficient validator keys configured for the selected quorum.'
-    );
-  }
   const validators = selectedValidatorKeys.map((key) =>
     createNonceManagedSigner(provider, key)
   );
 
-  const thermostatConfig = fs.existsSync(THERMOSTAT_CONFIG_PATH)
-    ? readJsonFile<ThermostatConfig>(THERMOSTAT_CONFIG_PATH)
-    : null;
   const agentRole = 0;
   const validatorRole = 1;
   const platformRole = 2;
@@ -866,6 +924,7 @@ async function main() {
   const jobRegistryArtifact = loadArtifact('JobRegistry');
   const stakeManagerArtifact = loadArtifact('StakeManager');
   const validationModuleArtifact = loadArtifact('ValidationModule');
+  const taxPolicyArtifact = loadArtifact('TaxPolicy');
   const identityRegistryArtifact = loadArtifact('IdentityRegistry');
   const systemPauseArtifact = loadArtifact('SystemPause');
   const thermostatArtifact = thermostatAddress
@@ -885,6 +944,11 @@ async function main() {
   const validationModule = new ethers.Contract(
     addresses.ValidationModule,
     validationModuleArtifact.abi,
+    employer
+  );
+  const taxPolicy = new ethers.Contract(
+    addresses.TaxPolicy,
+    taxPolicyArtifact.abi,
     employer
   );
   const identityRegistry = new ethers.Contract(
@@ -973,33 +1037,7 @@ async function main() {
       job.validatorStakeAmount > acc ? job.validatorStakeAmount : acc,
     0n
   );
-  const computedMint = [
-    baselineMint,
-    totalReward + maxWorkerStake,
-    maxWorkerStake + maxValidatorStake,
-  ].reduce((acc, value) => (value > acc ? value : acc));
-  const mintAmount = computedMint;
-
-  const participants = [employer, worker, ...validators];
-  for (const wallet of participants) {
-    const bal = await token.balanceOf(wallet.address);
-    if (bal < mintAmount) {
-      const tx = await token.mint(wallet.address, mintAmount - bal);
-      await tx.wait();
-    }
-    const allowance = await token.allowance(
-      wallet.address,
-      addresses.StakeManager
-    );
-    const requiredAllowance =
-      wallet === employer ? mintAmount + totalReward : mintAmount;
-    if (allowance < requiredAllowance) {
-      const approveTx = await token
-        .connect(wallet)
-        .approve(addresses.StakeManager, ethers.MaxUint256);
-      await approveTx.wait();
-    }
-  }
+  await taxPolicy.connect(employer).acknowledge();
 
   await recordDirectGovernanceCall(
     'SystemPause',
@@ -1067,6 +1105,8 @@ async function main() {
       ? fallbackJobStake
       : originalJobStake + (fallbackJobStake > 0n ? fallbackJobStake : 1n);
 
+  const workerStakeDeposit = maxWorkerStake + adjustedJobStake;
+
   await recordForwardGovernanceCall(
     'JobRegistry',
     addresses.JobRegistry,
@@ -1096,6 +1136,74 @@ async function main() {
     throw new Error('StakeManager is not registered as a tax acknowledger.');
   }
 
+  const validationModuleBaselineAddress = await stakeManager.validationModule();
+  const normalisedBaselineValidation = validationModuleBaselineAddress
+    ? validationModuleBaselineAddress.toLowerCase()
+    : ethers.ZeroAddress;
+  if (
+    normalisedBaselineValidation !== addresses.ValidationModule.toLowerCase() &&
+    validationModuleBaselineAddress !== ethers.ZeroAddress
+  ) {
+    await recordForwardGovernanceCall(
+      'StakeManager',
+      addresses.StakeManager,
+      stakeManager.interface,
+      'setValidationModule',
+      [addresses.ValidationModule],
+      {
+        notes: 'Authorize ValidationModule to orchestrate validator locks',
+        before: { validationModule: validationModuleBaselineAddress },
+        after: { validationModule: addresses.ValidationModule },
+      }
+    );
+  }
+
+  const employerStakeBudget = totalReward + adjustedJobStake;
+  const validatorStakeBudget = maxValidatorStake;
+  const computedMint = [
+    baselineMint,
+    employerStakeBudget,
+    workerStakeDeposit,
+    validatorStakeBudget,
+  ].reduce((acc, value) => (value > acc ? value : acc));
+  const mintAmount = computedMint;
+
+  const participants = [employer, worker, ...validators];
+  for (const wallet of participants) {
+    const bal = await token.balanceOf(wallet.address);
+    if (bal < mintAmount) {
+      const tx = await token.mint(wallet.address, mintAmount - bal);
+      await tx.wait();
+    }
+    const allowance = await token.allowance(
+      wallet.address,
+      addresses.StakeManager
+    );
+    const requiredAllowance =
+      wallet === employer
+        ? employerStakeBudget
+        : wallet === worker
+        ? workerStakeDeposit
+        : validatorStakeBudget;
+    if (allowance < requiredAllowance) {
+      const approveTx = await token
+        .connect(wallet)
+        .approve(addresses.StakeManager, ethers.MaxUint256);
+      await approveTx.wait();
+    }
+  }
+
+  const contractAckTargets = [addresses.StakeManager, addresses.JobRegistry];
+  for (const target of contractAckTargets) {
+    if (target && target !== ethers.ZeroAddress) {
+      const acknowledged = await token.hasAcknowledged(target);
+      if (!acknowledged) {
+        const ackTx = await token.mint(target, 0);
+        await ackTx.wait();
+      }
+    }
+  }
+
   let identityCleanup: (() => Promise<void>) | null = null;
   try {
     const identityOwnerAddress = await identityRegistry.owner();
@@ -1106,19 +1214,18 @@ async function main() {
     if (normalisedIdentityOwner !== employer.address.toLowerCase()) {
       const ownerCode = await provider.getCode(identityOwnerAddress);
       if (ownerCode !== '0x') {
-        throw new Error(
-          `Identity owner ${identityOwnerAddress} is a contract. Skipping manual allowlist; configure ENS proofs instead.`
+        console.warn(
+          `⚠️  Identity owner ${identityOwnerAddress} is a contract. Attempting impersonation via JSON-RPC override.`
         );
       }
       identityOwnerSigner = await impersonateSigner(provider, identityOwnerAddress);
       const balance = await provider.getBalance(identityOwnerAddress);
       const minimumBalance = ethers.parseEther('0.1');
       if (balance < minimumBalance) {
-        const fundTx = await employer.sendTransaction({
-          to: identityOwnerAddress,
-          value: minimumBalance,
-        });
-        await fundTx.wait();
+        await provider.send('hardhat_setBalance', [
+          identityOwnerAddress,
+          ethers.toBeHex(minimumBalance),
+        ]);
       }
       identityCleanup = () => stopImpersonating(provider, identityOwnerAddress);
     }
@@ -1143,6 +1250,29 @@ async function main() {
       '⚠️  Unable to apply identity overrides automatically:',
       (err as Error).message
     );
+    if (addresses.IdentityRegistry) {
+      await recordForwardGovernanceCall(
+        'JobRegistry',
+        addresses.JobRegistry,
+        jobRegistry.interface,
+        'setIdentityRegistry',
+        [ethers.ZeroAddress],
+        {
+          notes:
+            'Temporarily disable identity verification when impersonating identity owner is not possible',
+        }
+      );
+      identityCleanup = async () => {
+        await recordForwardGovernanceCall(
+          'JobRegistry',
+          addresses.JobRegistry,
+          jobRegistry.interface,
+          'setIdentityRegistry',
+          [addresses.IdentityRegistry],
+          { notes: 'Restore identity registry after completing the demo mission' }
+        );
+      };
+    }
   } finally {
     if (identityCleanup) {
       await identityCleanup();
@@ -1200,7 +1330,7 @@ async function main() {
   );
 
   const previousCommitWindow = await validationModule.commitWindow();
-  const newCommitWindow = 30n;
+  const newCommitWindow = 300n;
   await recordForwardGovernanceCall(
     'ValidationModule',
     addresses.ValidationModule,
@@ -1208,7 +1338,7 @@ async function main() {
     'setCommitWindow',
     [newCommitWindow],
     {
-      notes: 'Tighten commit window to 30 seconds for rapid demo cadence',
+      notes: 'Keep commit horizon generous enough for scripted missions',
       before: { commitWindow: previousCommitWindow.toString() },
       after: { commitWindow: newCommitWindow.toString() },
     }
@@ -1235,21 +1365,23 @@ async function main() {
     txHash: string;
   }> = [];
 
+  await taxPolicy.connect(worker).acknowledge();
   const workerStakeTx = await stakeManager
     .connect(worker)
-    .acknowledgeAndDeposit(agentRole, maxWorkerStake);
+    .depositStake(agentRole, workerStakeDeposit);
   const workerStakeReceipt = await workerStakeTx.wait();
   stakeEntries.push({
     role: 'agent',
     address: worker.address,
-    amount: formatUnits(maxWorkerStake, decimals),
+    amount: formatUnits(workerStakeDeposit, decimals),
     txHash: workerStakeReceipt?.hash || workerStakeTx.hash,
   });
 
   for (const validator of validators) {
+    await taxPolicy.connect(validator).acknowledge();
     const stakeTx = await stakeManager
       .connect(validator)
-      .acknowledgeAndDeposit(validatorRole, maxValidatorStake);
+      .depositStake(validatorRole, maxValidatorStake);
     const receipt = await stakeTx.wait();
     stakeEntries.push({
       role: 'validator',
@@ -1297,12 +1429,7 @@ async function main() {
 
     const postTx = await jobRegistry
       .connect(employer)
-      .acknowledgeAndCreateJob(
-        job.rewardAmount,
-        Number(deadline),
-        specHash,
-        specUri
-      );
+      .createJob(job.rewardAmount, Number(deadline), specHash, specUri);
     const postReceipt = await postTx.wait();
     let jobId = 0n;
     if (postReceipt && postReceipt.logs) {
@@ -1336,9 +1463,41 @@ async function main() {
       writeReceipt(networkName, 'postJob.json', postRecord);
     }
 
+    const burnTxHash = ethers.keccak256(
+      ethers.toUtf8Bytes(`${job.slug}-burn-${jobId.toString()}`)
+    );
+    const burnAmount =
+      job.rewardAmount > 0n
+        ? job.rewardAmount / 10n > 0n
+          ? job.rewardAmount / 10n
+          : 1n
+        : 1n;
+    const burnBlockNumber = await provider.getBlockNumber();
+    const burnSubmitTx = await jobRegistry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash, burnAmount, burnBlockNumber);
+    const burnSubmitReceipt = await burnSubmitTx.wait();
+    const confirmBurnTx = await jobRegistry
+      .connect(employer)
+      .confirmEmployerBurn(jobId, burnTxHash);
+    const confirmBurnReceipt = await confirmBurnTx.wait();
+
+    const burnRecord = {
+      jobId: jobId.toString(),
+      burnTxHash,
+      amount: formatUnits(burnAmount, decimals),
+      blockNumber: burnBlockNumber,
+      submitTxHash: burnSubmitReceipt?.hash || burnSubmitTx.hash,
+      confirmTxHash: confirmBurnReceipt?.hash || confirmBurnTx.hash,
+    };
+    writeReceipt(networkName, path.join(jobDir, 'burn.json'), burnRecord);
+    if (legacySingleJob) {
+      writeReceipt(networkName, 'burn.json', burnRecord);
+    }
+
     const applyTx = await jobRegistry
       .connect(worker)
-      .acknowledgeAndApply(jobId, job.agentSubdomain, []);
+      .applyForJob(jobId, job.agentSubdomain, []);
     await applyTx.wait();
 
     const resultHash = ethers.keccak256(ethers.toUtf8Bytes(job.resultUri));
@@ -1357,6 +1516,64 @@ async function main() {
     writeReceipt(networkName, path.join(jobDir, 'submit.json'), submitRecord);
     if (legacySingleJob) {
       writeReceipt(networkName, 'submit.json', submitRecord);
+    }
+
+    const currentValidationModule = await stakeManager.validationModule();
+    if (currentValidationModule.toLowerCase() !== addresses.ValidationModule.toLowerCase()) {
+      await recordForwardGovernanceCall(
+        'StakeManager',
+        addresses.StakeManager,
+        stakeManager.interface,
+        'setValidationModule',
+        [addresses.ValidationModule],
+        { notes: 'Reassert validation module link before validator selection' }
+      );
+    }
+
+    const selectionContributionEntropy = ethers.toBigInt(
+      ethers.hexlify(randomBytes(32))
+    );
+    const selectionContributionTx = await validationModule
+      .connect(employer)
+      .selectValidators(jobId, selectionContributionEntropy);
+    const selectionContributionReceipt = await selectionContributionTx.wait();
+    const selectionEntries: Array<{
+      contributor: string;
+      entropy: string;
+      txHash: string;
+    }> = [
+      {
+        contributor: employer.address,
+        entropy: selectionContributionEntropy.toString(),
+        txHash:
+          selectionContributionReceipt?.hash || selectionContributionTx.hash,
+      },
+    ];
+    const committeeAfterContribution = await validationModule.validators(jobId);
+    if (committeeAfterContribution.length === 0) {
+      await provider.send('evm_mine', []);
+      const selectionFinalizeEntropy = ethers.toBigInt(
+        ethers.hexlify(randomBytes(32))
+      );
+      const selectionFinalizeTx = await validationModule
+        .connect(worker)
+        .selectValidators(jobId, selectionFinalizeEntropy);
+      const selectionFinalizeReceipt = await selectionFinalizeTx.wait();
+      selectionEntries.push({
+        contributor: worker.address,
+        entropy: selectionFinalizeEntropy.toString(),
+        txHash:
+          selectionFinalizeReceipt?.hash || selectionFinalizeTx.hash,
+      });
+    }
+
+    const selectionRecord = {
+      jobId: jobId.toString(),
+      contributions: selectionEntries,
+    };
+    writeReceipt(networkName, path.join(jobDir, 'selection.json'), selectionRecord);
+    if (legacySingleJob) {
+      writeReceipt(networkName, 'selection.json', selectionRecord);
     }
 
     const nonce = (await validationModule.jobNonce(jobId)).valueOf() as bigint;
@@ -1382,7 +1599,8 @@ async function main() {
         nonce,
         specHashOnChain,
         chain.chainId,
-        domainSeparator
+        domainSeparator,
+        burnTxHash
       );
       const commitTx = await validationModule
         .connect(validator)
@@ -1426,6 +1644,20 @@ async function main() {
       .connect(validators[0])
       .finalize(jobId);
     const finalizeReceipt = await finalizeTx.wait();
+    let finalizeOutcome = false;
+    if (finalizeReceipt && finalizeReceipt.logs) {
+      for (const log of finalizeReceipt.logs) {
+        try {
+          const parsed = validationModule.interface.parseLog(log);
+          if (parsed.name === 'ValidationResult') {
+            finalizeOutcome = Boolean(parsed.args[1]);
+            break;
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
 
     const commitRecords = commitPlans.map((plan) => ({
       address: plan.address,
@@ -1466,6 +1698,26 @@ async function main() {
       writeReceipt(networkName, 'finalize.json', finalizeRecord);
     }
 
+    let settlementRecord: { success: boolean; txHash: string } = {
+      success: finalizeOutcome,
+      txHash: '',
+    };
+    if (finalizeOutcome) {
+      await taxPolicy.connect(employer).acknowledge();
+      const settleTx = await jobRegistry
+        .connect(employer)
+        .finalize(jobId);
+      const settleReceipt = await settleTx.wait();
+      settlementRecord = {
+        success: finalizeOutcome,
+        txHash: settleReceipt?.hash || settleTx.hash,
+      };
+    }
+    writeReceipt(networkName, path.join(jobDir, 'settle.json'), settlementRecord);
+    if (legacySingleJob) {
+      writeReceipt(networkName, 'settle.json', settlementRecord);
+    }
+
     missionRecords.push({
       name: job.name,
       slug: job.slug,
@@ -1476,9 +1728,12 @@ async function main() {
       txHash: postReceipt?.hash || postTx.hash,
       receipts: {
         post: path.join(jobDir, 'post.json'),
+        burn: path.join(jobDir, 'burn.json'),
         submit: path.join(jobDir, 'submit.json'),
+        selection: path.join(jobDir, 'selection.json'),
         validate: path.join(jobDir, 'validate.json'),
         finalize: path.join(jobDir, 'finalize.json'),
+        settle: path.join(jobDir, 'settle.json'),
       },
       metadata: job.metadata,
       notes: job.notes,
@@ -1554,9 +1809,7 @@ async function main() {
   );
 }
 
-}
-
-main().catch((err) => {
+  main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
