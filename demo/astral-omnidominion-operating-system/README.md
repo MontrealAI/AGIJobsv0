@@ -9,6 +9,7 @@ The **Astral Omnidominion Operating System Demo** packages the entire AGI Jobs v
 - 🚀 **Push-button launch** – runs the one-click containerised stack, executes the ASI take-off simulation, and collects the mission bundle with live progress indicators.
 - 🛰️ **Owner mission control** – renders fresh Mermaid system maps, verifies the governance control surface, and synthesises an Owner Control Authority Matrix.
 - 📦 **Audit-ready evidence** – writes signed logs, SHA-256 manifests, Markdown + HTML dossiers, and pointers to the Owner Console, Enterprise Portal, and Validator Dashboard.
+- 🧭 **Triple-checked integrity** – cross-verifies the mission summary, owner control matrix, and manifest hashes before declaring success, surfacing any mismatch instantly.
 - 🛡️ **Safety first** – pauses the protocol by default, confirms every destructive action, and shows how to resume/adjust parameters with existing owner scripts.
 
 ## Quick Start (Non-Technical Friendly)
@@ -48,6 +49,7 @@ All files include ISO 8601 timestamps so you can prove freshness.
 3. **Mission execution** – invokes `npm run demo:agi-os` which compiles contracts, runs the thermodynamic ASI simulation, and writes the mission dossier.
 4. **Governance validation** – regenerates the owner systems map, runs `npm run owner:verify-control`, and snapshots the Owner Control Authority Matrix.
 5. **Audit packaging** – converts Markdown to HTML, builds the manifest, and consolidates logs for inspection.
+6. **Integrity verification** – re-reads the mission dossier, control matrix, and manifest to ensure counts, hashes, and artefact coverage all align before signing off.
 
 Every stage streams emoji-coded status lines so the operator always knows what is happening. Failures are trapped, logged, and reported alongside immediate remediation tips.
 
