@@ -99,7 +99,7 @@ or audited post-facto.  Only scripts that already exist in this repository are u
    ```
 2. Optionally, update thermostat parameters using the existing script:
    ```bash
-   npm run thermostat:update -- --network localhost --plan demo/asi-takeoff/asi-takeoff.thermostat@v2.json
+   npm run thermostat:update -- --network localhost --config demo/asi-takeoff/config/asi-takeoff.thermostat@v2.json
    ```
 3. Cross-validate reward distribution envelopes:
    ```bash
