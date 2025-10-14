@@ -1,0 +1,428 @@
+{
+  "initiative": "Zenith Sapience Initiative – OmniDominion Governance Exemplar",
+  "objective": "Demonstrate a production-grade, owner-supervised ASI governance cycle coordinating planetary infrastructure without changing existing contracts or tooling.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1750000000",
+    "allocations": {
+      "African Resilience Constellation": "260000000",
+      "Americas Climate Arc": "280000000",
+      "Asia-Pacific Tidal Network": "300000000",
+      "European SupraGrid": "255000000",
+      "MENA Hydrogen Nexus": "210000000",
+      "Arctic-Antarctic Stabilisation": "80000000",
+      "Earth Systems Nerve Centre": "45000000",
+      "Mission Assurance Reserve": "52000000"
+    }
+  },
+  "governance": {
+    "owner": "0xOMNIDOMINION-MULTISIG",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xOMNIDOMINION-TREASURY",
+    "quadraticVoting": {
+      "contract": "AGIGovernor",
+      "timelock": "0xOMNIDOMINION-TIMELOCK",
+      "executionDelayDays": 7,
+      "proposalThreshold": "2000000",
+      "quorumFraction": "0.24"
+    },
+    "thermostat": {
+      "initialTemperature": "0.24",
+      "emergencyTemperature": "0.45",
+      "updateScript": "scripts/v2/updateThermostat.ts",
+      "ownerGuide": "demo/zenith-sapience-initiative-omnidominion-governance/OWNER-CONTROL.md"
+    },
+    "controlScripts": {
+      "commandCenter": "npm run owner:command-center -- --network hardhat --format markdown --out reports/zenith-omnidominion/command-center.md",
+      "parameterMatrix": "npm run owner:parameters -- --network hardhat --format markdown --out reports/zenith-omnidominion/parameter-matrix.md",
+      "missionControl": "npm run owner:mission-control -- --network hardhat --format markdown --out reports/zenith-omnidominion/mission-control.md --bundle reports/zenith-omnidominion/mission-bundle",
+      "mermaid": "npx hardhat run --no-compile scripts/v2/renderOwnerMermaid.ts --format markdown --out reports/zenith-omnidominion/governance.md --title 'OmniDominion Governance Topology'"
+    },
+    "ci": {
+      "workflow": ".github/workflows/demo-zenith-sapience-omnidominion.yml",
+      "requiredChecks": [
+        "Zenith Sapience OmniDominion Demo"
+      ]
+    }
+  },
+  "phases": [
+    {
+      "id": "IGNITION",
+      "description": "Initial harmonisation of regional energy programmes and validator onboarding.",
+      "milestones": [
+        "Identity registry seeded with all national delegates.",
+        "Thermodynamic baseline confirmed at 0.24 temperature.",
+        "Command centre report reviewed by multisig signers."
+      ]
+    },
+    {
+      "id": "ASCENT",
+      "description": "Concurrent execution of continental infrastructure jobs with validator cross-audits.",
+      "milestones": [
+        "All regional jobs reach validator quorum without disputes.",
+        "Reward engine emits expected agent/validator split within ±1%.",
+        "Pause drill executed and cleared within 15 minutes."
+      ]
+    },
+    {
+      "id": "SYNTHESIS",
+      "description": "Earth Systems Nerve Centre aggregates telemetry and finalises settlements.",
+      "milestones": [
+        "Global entropy delta recorded and archived.",
+        "Quadratic governor turnout above 78% for closing review.",
+        "Governance kit hashed and published to internal registry."
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "AFRICA",
+      "name": "African Resilience Constellation",
+      "goal": "Deploy adaptive microgrid corridors across 22 member states with autonomous validation loops.",
+      "kpis": [
+        "6.1 GW incremental capacity commissioned",
+        ">=98% validator concurrence on safety attestations",
+        "Thermostat variance kept within ±1.2%"
+      ]
+    },
+    {
+      "id": "AMERICAS",
+      "name": "Americas Climate Arc",
+      "goal": "Fortify coastal resilience grids and automated carbon offset exchanges spanning 12 sovereigns.",
+      "kpis": [
+        "11 sovereign logistics hubs activated",
+        "Dual-governor quorum for every capital expenditure",
+        "Validator-driven disputes resolved < 30h"
+      ]
+    },
+    {
+      "id": "APAC",
+      "name": "Asia-Pacific Tidal Network",
+      "goal": "Construct floating wind megastructures and transnational demand response bridges.",
+      "kpis": [
+        "24 floating assemblies online",
+        "Dynamic validator share balancing (±1.5% of target)",
+        "Cross-border energy treaty compliance events published"
+      ]
+    },
+    {
+      "id": "EU",
+      "name": "European SupraGrid",
+      "goal": "Upgrade HVDC corridors and digital twin arbitration for 34 operators.",
+      "kpis": [
+        "HVDC congestion reduced by 48%",
+        "Quadratic governance turnout above 78%",
+        "SystemPause exercised in quarterly drill"
+      ]
+    },
+    {
+      "id": "MENA",
+      "name": "MENA Hydrogen Nexus",
+      "goal": "Close the desalination-to-hydrogen supply loop with carbon auditing and validator-enforced compliance.",
+      "kpis": [
+        "Hydrogen yield >= 810 kt/year",
+        "Validator incentive clawbacks under 0.35%",
+        "RewardEngineMB validator share between 20-24%"
+      ]
+    },
+    {
+      "id": "POLAR",
+      "name": "Arctic-Antarctic Stabilisation",
+      "goal": "Deploy autonomous ice monitoring arrays and energy storage nodes supporting polar research stations.",
+      "kpis": [
+        "Telemetry latency under 40 seconds",
+        "Zero unreviewed alerts over 6 hours",
+        "Validator coverage ≥ 3 independent clubs"
+      ]
+    },
+    {
+      "id": "EARTH",
+      "name": "Earth Systems Nerve Centre",
+      "goal": "Synthesize cross-regional telemetry, climate feedbacks, and mission-level incentive adjustments.",
+      "kpis": [
+        "Mission summary auto-published within 4 minutes of closure",
+        "All governance actions hashed into audit kit",
+        "Energy equilibrium variance below 0.5%"
+      ]
+    }
+  ],
+  "participants": {
+    "metaOrchestrator": {
+      "handle": "omnidominion.orchestrator.world.agi.eth",
+      "role": "Planetary coordination cortex",
+      "capabilities": [
+        "Plan→Simulate→Execute loops",
+        "Governance-safe thermostat modulation",
+        "Automatic command-centre briefings"
+      ]
+    },
+    "council": [
+      {
+        "handle": "omnidominion.council.sustainability.agi.eth",
+        "role": "Sustainability ombudscouncil",
+        "stake": "9600000"
+      },
+      {
+        "handle": "omnidominion.council.infrastructure.agi.eth",
+        "role": "Infrastructure assurance trust",
+        "stake": "8800000"
+      },
+      {
+        "handle": "omnidominion.council.finance.agi.eth",
+        "role": "Treasury supervision board",
+        "stake": "8200000"
+      },
+      {
+        "handle": "omnidominion.council.validator.agi.eth",
+        "role": "Validator standards forum",
+        "stake": "7700000"
+      },
+      {
+        "handle": "omnidominion.council.resilience.agi.eth",
+        "role": "Disaster resilience coalition",
+        "stake": "7400000"
+      }
+    ],
+    "validators": [
+      {
+        "handle": "zenith.audit.club.agi.eth",
+        "quota": 3
+      },
+      {
+        "handle": "aurora.audit.club.agi.eth",
+        "quota": 2
+      },
+      {
+        "handle": "gaia.audit.club.agi.eth",
+        "quota": 2
+      }
+    ],
+    "agents": [
+      {
+        "handle": "africa.grid.agent.agi.eth",
+        "specialisation": "Microgrid deployment"
+      },
+      {
+        "handle": "americas.climate.agent.agi.eth",
+        "specialisation": "Resilience grid retrofits"
+      },
+      {
+        "handle": "apac.tidal.agent.agi.eth",
+        "specialisation": "Floating energy megastructures"
+      },
+      {
+        "handle": "eu.supragrid.agent.agi.eth",
+        "specialisation": "HVDC corridor upgrades"
+      },
+      {
+        "handle": "mena.hydrogen.agent.agi.eth",
+        "specialisation": "Hydrogen logistics"
+      },
+      {
+        "handle": "polar.stability.agent.agi.eth",
+        "specialisation": "Polar telemetry systems"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "AFRICA-MICROGRID-CORRIDORS",
+      "region": "AFRICA",
+      "title": "Deploy adaptive microgrid corridors",
+      "reward": "210000000",
+      "deadlineDays": 150,
+      "dependencies": [],
+      "energyBudget": "160000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.31",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "AFRICA-AUDIT-HARMONISATION",
+      "region": "AFRICA",
+      "title": "Harmonise validator safety attestations",
+      "reward": "52000000",
+      "deadlineDays": 48,
+      "dependencies": ["AFRICA-MICROGRID-CORRIDORS"],
+      "energyBudget": "18000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.11",
+        "adjustmentOnDelay": "increase-validator-share"
+      }
+    },
+    {
+      "id": "AMERICAS-COASTAL-RESILIENCE",
+      "region": "AMERICAS",
+      "title": "Reinforce coastal resilience grids",
+      "reward": "240000000",
+      "deadlineDays": 160,
+      "dependencies": [],
+      "energyBudget": "175000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.29",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "AMERICAS-OFFSET-EXCHANGE",
+      "region": "AMERICAS",
+      "title": "Automate carbon offset exchanges",
+      "reward": "40000000",
+      "deadlineDays": 42,
+      "dependencies": ["AMERICAS-COASTAL-RESILIENCE"],
+      "energyBudget": "15000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.1",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "APAC-FLOATING-WIND-ARRAYS",
+      "region": "APAC",
+      "title": "Construct floating wind megastructures",
+      "reward": "230000000",
+      "deadlineDays": 185,
+      "dependencies": [],
+      "energyBudget": "168000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.35",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "APAC-DEMAND-BRIDGES",
+      "region": "APAC",
+      "title": "Bridge demand response markets",
+      "reward": "42000000",
+      "deadlineDays": 52,
+      "dependencies": ["APAC-FLOATING-WIND-ARRAYS"],
+      "energyBudget": "15000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.12",
+        "adjustmentOnDelay": "increase-validator-share"
+      }
+    },
+    {
+      "id": "EU-HVDC-EXPANSION",
+      "region": "EU",
+      "title": "Expand HVDC corridors",
+      "reward": "188000000",
+      "deadlineDays": 170,
+      "dependencies": [],
+      "energyBudget": "132000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.27",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "EU-DIGITAL-TWIN-ARBITRATION",
+      "region": "EU",
+      "title": "Deploy digital twin arbitration",
+      "reward": "47000000",
+      "deadlineDays": 58,
+      "dependencies": ["EU-HVDC-EXPANSION"],
+      "energyBudget": "16000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.09",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "MENA-HYDROGEN-LOOP",
+      "region": "MENA",
+      "title": "Close desalination-to-hydrogen loop",
+      "reward": "170000000",
+      "deadlineDays": 178,
+      "dependencies": [],
+      "energyBudget": "120000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.33",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "MENA-EXPORT-COMPLIANCE",
+      "region": "MENA",
+      "title": "Institute hydrogen export compliance",
+      "reward": "43000000",
+      "deadlineDays": 50,
+      "dependencies": ["MENA-HYDROGEN-LOOP"],
+      "energyBudget": "16000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.12",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "POLAR-ICE-NET",
+      "region": "POLAR",
+      "title": "Deploy polar telemetry mesh",
+      "reward": "42000000",
+      "deadlineDays": 75,
+      "dependencies": [],
+      "energyBudget": "18000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.14",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "POLAR-STORAGE-NODES",
+      "region": "POLAR",
+      "title": "Install polar energy storage nodes",
+      "reward": "38000000",
+      "deadlineDays": 78,
+      "dependencies": ["POLAR-ICE-NET"],
+      "energyBudget": "16000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.13",
+        "adjustmentOnDelay": "increase-validator-share"
+      }
+    },
+    {
+      "id": "EARTH-SYSTEMS-INTEGRATION",
+      "region": "EARTH",
+      "title": "Integrate telemetry & incentive steering",
+      "reward": "52000000",
+      "deadlineDays": 60,
+      "dependencies": [
+        "AFRICA-AUDIT-HARMONISATION",
+        "AMERICAS-OFFSET-EXCHANGE",
+        "APAC-DEMAND-BRIDGES",
+        "EU-DIGITAL-TWIN-ARBITRATION",
+        "MENA-EXPORT-COMPLIANCE",
+        "POLAR-STORAGE-NODES"
+      ],
+      "energyBudget": "20000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.07",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/zenith-omnidominion/dry-run.json",
+      "thermodynamics": "reports/zenith-omnidominion/thermodynamics.json",
+      "missionControl": "reports/zenith-omnidominion/mission-control.md",
+      "commandCenter": "reports/zenith-omnidominion/command-center.md",
+      "parameterMatrix": "reports/zenith-omnidominion/parameter-matrix.md",
+      "summary": "reports/zenith-omnidominion/summary.md",
+      "summaryJson": "reports/zenith-omnidominion/summary.json",
+      "mermaid": "reports/zenith-omnidominion/governance.mmd",
+      "kit": "reports/zenith-omnidominion/zenith-omnidominion-kit.json"
+    },
+    "dashboards": [
+      "reports/zenith-omnidominion/mission-control.md",
+      "reports/zenith-omnidominion/parameter-matrix.md",
+      "reports/zenith-omnidominion/thermodynamics.json"
+    ]
+  },
+  "drills": {
+    "pause": "Ensure SystemPause round-trip completes within 5 minutes.",
+    "thermostat": "Simulate hotfix raising temperature from 0.24 to 0.29 and confirm rollback path.",
+    "dispute": "Walk through StakeManager dispute recovery using docs/disputes.md and ownerEmergencyRunbook output."
+  }
+}
