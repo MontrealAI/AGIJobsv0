@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if ROOT=$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel 2>/dev/null); then
+  ROOT="${ROOT}"
+else
+  ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+fi
 cd "$ROOT"
 
 PLAN_PATH="${1:-demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY/project-plan.json}"
