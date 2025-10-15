@@ -1,0 +1,1533 @@
+{
+  "generatedAt": "2025-10-15T21:01:59.715Z",
+  "network": "hardhat (chainId 31337)",
+  "actors": [
+    {
+      "key": "owner",
+      "name": "AGI Jobs Sovereign Orchestrator",
+      "role": "Owner",
+      "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    },
+    {
+      "key": "nation-a",
+      "name": "Nation A (Employer)",
+      "role": "Nation",
+      "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    },
+    {
+      "key": "nation-b",
+      "name": "Nation B (Employer)",
+      "role": "Nation",
+      "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    {
+      "key": "alice",
+      "name": "Alice (AI Agent)",
+      "role": "Agent",
+      "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+    },
+    {
+      "key": "bob",
+      "name": "Bob (AI Agent)",
+      "role": "Agent",
+      "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+    },
+    {
+      "key": "charlie",
+      "name": "Charlie (Validator)",
+      "role": "Validator",
+      "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+    },
+    {
+      "key": "dora",
+      "name": "Dora (Validator)",
+      "role": "Validator",
+      "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+    },
+    {
+      "key": "evan",
+      "name": "Evan (Validator)",
+      "role": "Validator",
+      "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+    },
+    {
+      "key": "moderator",
+      "name": "Global Moderator Council",
+      "role": "Moderator",
+      "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+    }
+  ],
+  "ownerActions": [
+    {
+      "label": "Linked certificate to job registry",
+      "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+      "method": "setJobRegistry",
+      "parameters": {
+        "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+      },
+      "at": "2025-10-15T21:01:58.605Z"
+    },
+    {
+      "label": "Linked certificate to stake manager",
+      "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+      "method": "setStakeManager",
+      "parameters": {
+        "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+      },
+      "at": "2025-10-15T21:01:58.612Z"
+    },
+    {
+      "label": "Connected stake manager fee pool",
+      "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "method": "setFeePool",
+      "parameters": {
+        "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
+      },
+      "at": "2025-10-15T21:01:58.617Z"
+    },
+    {
+      "label": "Connected stake modules",
+      "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "method": "setModules",
+      "parameters": {
+        "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508"
+      },
+      "at": "2025-10-15T21:01:58.626Z"
+    },
+    {
+      "label": "Linked stake to validation module",
+      "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "method": "setValidationModule",
+      "parameters": {
+        "validation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
+      },
+      "at": "2025-10-15T21:01:58.631Z"
+    },
+    {
+      "label": "Validation module registry link",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setJobRegistry",
+      "parameters": {
+        "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+      },
+      "at": "2025-10-15T21:01:58.636Z"
+    },
+    {
+      "label": "Validation module identity link",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setIdentityRegistry",
+      "parameters": {
+        "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+      },
+      "at": "2025-10-15T21:01:58.641Z"
+    },
+    {
+      "label": "Validation module reputation link",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setReputationEngine",
+      "parameters": {
+        "reputation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+      },
+      "at": "2025-10-15T21:01:58.645Z"
+    },
+    {
+      "label": "Validation module stake link",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setStakeManager",
+      "parameters": {
+        "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+      },
+      "at": "2025-10-15T21:01:58.650Z"
+    },
+    {
+      "label": "Registry module wiring finalised",
+      "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+      "method": "setModules",
+      "parameters": {
+        "validation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "reputation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "certificate": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+        "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
+      },
+      "at": "2025-10-15T21:01:58.667Z"
+    },
+    {
+      "label": "Registry identity registry set",
+      "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+      "method": "setIdentityRegistry",
+      "parameters": {
+        "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+      },
+      "at": "2025-10-15T21:01:58.680Z"
+    },
+    {
+      "label": "Validator reward percentage configured",
+      "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+      "method": "setValidatorRewardPct",
+      "parameters": {
+        "pct": 20
+      },
+      "at": "2025-10-15T21:01:58.684Z"
+    },
+    {
+      "label": "Registry authorised to update reputation",
+      "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "method": "setCaller",
+      "parameters": {
+        "caller": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "allowed": true
+      },
+      "at": "2025-10-15T21:01:58.690Z"
+    },
+    {
+      "label": "Validation authorised to update reputation",
+      "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "method": "setCaller",
+      "parameters": {
+        "caller": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "allowed": true
+      },
+      "at": "2025-10-15T21:01:58.695Z"
+    },
+    {
+      "label": "Dispute module stake link",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setStakeManager",
+      "parameters": {
+        "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+      },
+      "at": "2025-10-15T21:01:58.698Z"
+    },
+    {
+      "label": "Commit/reveal windows tuned",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setCommitRevealWindows",
+      "parameters": {
+        "commitWindow": 60,
+        "revealWindow": 60
+      },
+      "at": "2025-10-15T21:01:58.704Z"
+    },
+    {
+      "label": "Validator quorum set",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setValidatorsPerJob",
+      "parameters": {
+        "count": 3
+      },
+      "at": "2025-10-15T21:01:58.710Z"
+    },
+    {
+      "label": "Validator pool curated",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setValidatorPool",
+      "parameters": {
+        "validators": [
+          "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+          "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+          "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+        ]
+      },
+      "at": "2025-10-15T21:01:58.727Z"
+    },
+    {
+      "label": "Reveal quorum configured",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setRevealQuorum",
+      "parameters": {
+        "minYesVotes": 0,
+        "minRevealers": 2
+      },
+      "at": "2025-10-15T21:01:58.731Z"
+    },
+    {
+      "label": "Non-reveal penalty set",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setNonRevealPenalty",
+      "parameters": {
+        "penaltyBps": 100,
+        "penaltyDivisor": 1
+      },
+      "at": "2025-10-15T21:01:58.735Z"
+    },
+    {
+      "label": "Fee pool burn percentage adjusted",
+      "contract": "FeePool@0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+      "method": "setBurnPct",
+      "parameters": {
+        "burnPct": 5
+      },
+      "at": "2025-10-15T21:01:58.739Z"
+    },
+    {
+      "label": "Certificate base URI set",
+      "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+      "method": "setBaseURI",
+      "parameters": {
+        "baseURI": "ipfs://agi-jobs/demo/certificates/"
+      },
+      "at": "2025-10-15T21:01:58.744Z"
+    },
+    {
+      "label": "Emergency AI agent allowlisted",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalAgent",
+      "parameters": {
+        "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+      },
+      "at": "2025-10-15T21:01:58.750Z"
+    },
+    {
+      "label": "Agent type annotated",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "setAgentType",
+      "parameters": {
+        "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "agentType": 1
+      },
+      "at": "2025-10-15T21:01:58.755Z"
+    },
+    {
+      "label": "Emergency AI agent allowlisted",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalAgent",
+      "parameters": {
+        "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      },
+      "at": "2025-10-15T21:01:58.759Z"
+    },
+    {
+      "label": "Agent type annotated",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "setAgentType",
+      "parameters": {
+        "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+        "agentType": 1
+      },
+      "at": "2025-10-15T21:01:58.764Z"
+    },
+    {
+      "label": "Validator council seat granted",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalValidator",
+      "parameters": {
+        "validator": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+      },
+      "at": "2025-10-15T21:01:58.771Z"
+    },
+    {
+      "label": "Validator council seat granted",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalValidator",
+      "parameters": {
+        "validator": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+      },
+      "at": "2025-10-15T21:01:58.775Z"
+    },
+    {
+      "label": "Validator council seat granted",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalValidator",
+      "parameters": {
+        "validator": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+      },
+      "at": "2025-10-15T21:01:58.780Z"
+    },
+    {
+      "label": "Dispute fee waived for demonstration",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setDisputeFee",
+      "parameters": {
+        "fee": 0
+      },
+      "at": "2025-10-15T21:01:59.475Z"
+    },
+    {
+      "label": "Dispute window accelerated",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setDisputeWindow",
+      "parameters": {
+        "window": 0
+      },
+      "at": "2025-10-15T21:01:59.493Z"
+    },
+    {
+      "label": "Owner enrolled as dispute moderator",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setModerator",
+      "parameters": {
+        "moderator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "enabled": 1
+      },
+      "at": "2025-10-15T21:01:59.499Z"
+    },
+    {
+      "label": "External moderator empowered",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setModerator",
+      "parameters": {
+        "moderator": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+        "enabled": 1
+      },
+      "at": "2025-10-15T21:01:59.504Z"
+    }
+  ],
+  "timeline": [
+    {
+      "kind": "section",
+      "label": "Bootstrapping AGI Jobs v2 grand demo environment",
+      "at": "2025-10-15T21:01:54.170Z"
+    },
+    {
+      "kind": "summary",
+      "label": "Demo actor roster initialised",
+      "at": "2025-10-15T21:01:58.030Z",
+      "meta": {
+        "actors": [
+          {
+            "key": "owner",
+            "name": "AGI Jobs Sovereign Orchestrator",
+            "role": "Owner",
+            "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+          },
+          {
+            "key": "nation-a",
+            "name": "Nation A (Employer)",
+            "role": "Nation",
+            "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+          },
+          {
+            "key": "nation-b",
+            "name": "Nation B (Employer)",
+            "role": "Nation",
+            "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+          },
+          {
+            "key": "alice",
+            "name": "Alice (AI Agent)",
+            "role": "Agent",
+            "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+          },
+          {
+            "key": "bob",
+            "name": "Bob (AI Agent)",
+            "role": "Agent",
+            "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+          },
+          {
+            "key": "charlie",
+            "name": "Charlie (Validator)",
+            "role": "Validator",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+          },
+          {
+            "key": "dora",
+            "name": "Dora (Validator)",
+            "role": "Validator",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+          },
+          {
+            "key": "evan",
+            "name": "Evan (Validator)",
+            "role": "Validator",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+          },
+          {
+            "key": "moderator",
+            "name": "Global Moderator Council",
+            "role": "Moderator",
+            "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "Initial AGIα liquidity minted to actors",
+      "at": "2025-10-15T21:01:58.170Z",
+      "meta": {
+        "amount": "2000.0 AGIα",
+        "recipients": [
+          "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+          "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+          "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+          "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+          "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+          "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+          "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+        ]
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Deploying core contracts",
+      "at": "2025-10-15T21:01:58.171Z"
+    },
+    {
+      "kind": "summary",
+      "label": "StakeManager deployed",
+      "at": "2025-10-15T21:01:58.250Z",
+      "meta": {
+        "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "args": [
+          "0",
+          "0",
+          "0",
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "ReputationEngine deployed",
+      "at": "2025-10-15T21:01:58.279Z",
+      "meta": {
+        "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "args": [
+          "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "IdentityRegistry deployed",
+      "at": "2025-10-15T21:01:58.329Z",
+      "meta": {
+        "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "args": [
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000000000000000000000000000"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "ValidationModule deployed",
+      "at": "2025-10-15T21:01:58.372Z",
+      "meta": {
+        "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "args": [
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0",
+          "0",
+          "0",
+          "0",
+          []
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "CertificateNFT deployed",
+      "at": "2025-10-15T21:01:58.415Z",
+      "meta": {
+        "address": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+        "args": [
+          "AGI Jobs Credential",
+          "AGICERT"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "JobRegistry deployed",
+      "at": "2025-10-15T21:01:58.495Z",
+      "meta": {
+        "address": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "args": [
+          "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+          "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+          "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+          "0x0000000000000000000000000000000000000000",
+          "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0",
+          "0",
+          [],
+          "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "DisputeModule deployed",
+      "at": "2025-10-15T21:01:58.561Z",
+      "meta": {
+        "address": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "args": [
+          "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+          "0",
+          "0",
+          "0x0000000000000000000000000000000000000000",
+          "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "FeePool deployed",
+      "at": "2025-10-15T21:01:58.595Z",
+      "meta": {
+        "address": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+        "args": [
+          "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+          "0",
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000"
+        ]
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Wiring governance relationships and module cross-links",
+      "at": "2025-10-15T21:01:58.601Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Linked certificate to job registry",
+      "at": "2025-10-15T21:01:58.605Z",
+      "meta": {
+        "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+        "method": "setJobRegistry",
+        "parameters": {
+          "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Linked certificate to stake manager",
+      "at": "2025-10-15T21:01:58.612Z",
+      "meta": {
+        "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+        "method": "setStakeManager",
+        "parameters": {
+          "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Connected stake manager fee pool",
+      "at": "2025-10-15T21:01:58.617Z",
+      "meta": {
+        "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "method": "setFeePool",
+        "parameters": {
+          "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Connected stake modules",
+      "at": "2025-10-15T21:01:58.626Z",
+      "meta": {
+        "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "method": "setModules",
+        "parameters": {
+          "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+          "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Linked stake to validation module",
+      "at": "2025-10-15T21:01:58.631Z",
+      "meta": {
+        "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "method": "setValidationModule",
+        "parameters": {
+          "validation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation module registry link",
+      "at": "2025-10-15T21:01:58.636Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setJobRegistry",
+        "parameters": {
+          "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation module identity link",
+      "at": "2025-10-15T21:01:58.641Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setIdentityRegistry",
+        "parameters": {
+          "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation module reputation link",
+      "at": "2025-10-15T21:01:58.645Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setReputationEngine",
+        "parameters": {
+          "reputation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation module stake link",
+      "at": "2025-10-15T21:01:58.650Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setStakeManager",
+        "parameters": {
+          "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Registry module wiring finalised",
+      "at": "2025-10-15T21:01:58.667Z",
+      "meta": {
+        "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "method": "setModules",
+        "parameters": {
+          "validation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+          "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+          "reputation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+          "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+          "certificate": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+          "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Registry identity registry set",
+      "at": "2025-10-15T21:01:58.680Z",
+      "meta": {
+        "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "method": "setIdentityRegistry",
+        "parameters": {
+          "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator reward percentage configured",
+      "at": "2025-10-15T21:01:58.684Z",
+      "meta": {
+        "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "method": "setValidatorRewardPct",
+        "parameters": {
+          "pct": 20
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Registry authorised to update reputation",
+      "at": "2025-10-15T21:01:58.690Z",
+      "meta": {
+        "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "method": "setCaller",
+        "parameters": {
+          "caller": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+          "allowed": true
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation authorised to update reputation",
+      "at": "2025-10-15T21:01:58.695Z",
+      "meta": {
+        "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "method": "setCaller",
+        "parameters": {
+          "caller": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+          "allowed": true
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Dispute module stake link",
+      "at": "2025-10-15T21:01:58.698Z",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setStakeManager",
+        "parameters": {
+          "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+        }
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Configuring policy parameters for rapid local simulation",
+      "at": "2025-10-15T21:01:58.699Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Commit/reveal windows tuned",
+      "at": "2025-10-15T21:01:58.704Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setCommitRevealWindows",
+        "parameters": {
+          "commitWindow": 60,
+          "revealWindow": 60
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator quorum set",
+      "at": "2025-10-15T21:01:58.710Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setValidatorsPerJob",
+        "parameters": {
+          "count": 3
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator pool curated",
+      "at": "2025-10-15T21:01:58.727Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setValidatorPool",
+        "parameters": {
+          "validators": [
+            "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+          ]
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Reveal quorum configured",
+      "at": "2025-10-15T21:01:58.731Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setRevealQuorum",
+        "parameters": {
+          "minYesVotes": 0,
+          "minRevealers": 2
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Non-reveal penalty set",
+      "at": "2025-10-15T21:01:58.735Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setNonRevealPenalty",
+        "parameters": {
+          "penaltyBps": 100,
+          "penaltyDivisor": 1
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Fee pool burn percentage adjusted",
+      "at": "2025-10-15T21:01:58.739Z",
+      "meta": {
+        "contract": "FeePool@0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+        "method": "setBurnPct",
+        "parameters": {
+          "burnPct": 5
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Certificate base URI set",
+      "at": "2025-10-15T21:01:58.744Z",
+      "meta": {
+        "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+        "method": "setBaseURI",
+        "parameters": {
+          "baseURI": "ipfs://agi-jobs/demo/certificates/"
+        }
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Seeding IdentityRegistry with emergency allowlists",
+      "at": "2025-10-15T21:01:58.745Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Emergency AI agent allowlisted",
+      "at": "2025-10-15T21:01:58.750Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalAgent",
+        "parameters": {
+          "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Agent type annotated",
+      "at": "2025-10-15T21:01:58.755Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "setAgentType",
+        "parameters": {
+          "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+          "agentType": 1
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Emergency AI agent allowlisted",
+      "at": "2025-10-15T21:01:58.759Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalAgent",
+        "parameters": {
+          "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Agent type annotated",
+      "at": "2025-10-15T21:01:58.764Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "setAgentType",
+        "parameters": {
+          "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+          "agentType": 1
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator council seat granted",
+      "at": "2025-10-15T21:01:58.771Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalValidator",
+        "parameters": {
+          "validator": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator council seat granted",
+      "at": "2025-10-15T21:01:58.775Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalValidator",
+        "parameters": {
+          "validator": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator council seat granted",
+      "at": "2025-10-15T21:01:58.780Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalValidator",
+        "parameters": {
+          "validator": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+        }
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Initial token approvals and staking for actors",
+      "at": "2025-10-15T21:01:58.782Z"
+    },
+    {
+      "kind": "balance",
+      "label": "Initial treasury state",
+      "at": "2025-10-15T21:01:58.903Z",
+      "meta": {
+        "participants": [
+          {
+            "name": "Nation A",
+            "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "balance": "2000.0 AGIα"
+          },
+          {
+            "name": "Nation B",
+            "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "balance": "2000.0 AGIα"
+          },
+          {
+            "name": "Alice (agent)",
+            "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+            "balance": "1990.0 AGIα"
+          },
+          {
+            "name": "Bob (agent)",
+            "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+            "balance": "1990.0 AGIα"
+          },
+          {
+            "name": "Charlie (validator)",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "balance": "1990.0 AGIα"
+          },
+          {
+            "name": "Dora (validator)",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "balance": "1990.0 AGIα"
+          },
+          {
+            "name": "Evan (validator)",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "balance": "1990.0 AGIα"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "section",
+      "label": "Scenario 1 – Cooperative intergovernmental AI labour success",
+      "at": "2025-10-15T21:01:58.904Z"
+    },
+    {
+      "kind": "step",
+      "label": "Nation A approves escrow and posts a climate-coordination job",
+      "at": "2025-10-15T21:01:58.907Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 1 (after posting)",
+      "at": "2025-10-15T21:01:58.934Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
+      "meta": {
+        "jobId": "1",
+        "context": "after posting",
+        "state": "Created",
+        "success": false,
+        "burnConfirmed": false,
+        "reward": "250.0 AGIα",
+        "employer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "agent": "0x0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Alice stakes identity and applies through the emergency allowlist",
+      "at": "2025-10-15T21:01:58.934Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 1 (after agent assignment)",
+      "at": "2025-10-15T21:01:58.955Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
+      "meta": {
+        "jobId": "1",
+        "context": "after agent assignment",
+        "state": "Applied",
+        "success": false,
+        "burnConfirmed": false,
+        "reward": "250.0 AGIα",
+        "employer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Alice submits validated deliverables with provable IPFS evidence",
+      "at": "2025-10-15T21:01:58.955Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 1 (after submission)",
+      "at": "2025-10-15T21:01:58.974Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
+      "meta": {
+        "jobId": "1",
+        "context": "after submission",
+        "state": "Submitted",
+        "success": false,
+        "burnConfirmed": false,
+        "reward": "250.0 AGIα",
+        "employer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Nation A records burn proof and primes the validation committee selection",
+      "at": "2025-10-15T21:01:58.974Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
+    },
+    {
+      "kind": "step",
+      "label": "Validators commit to their assessments under commit–reveal secrecy",
+      "at": "2025-10-15T21:01:59.064Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
+    },
+    {
+      "kind": "step",
+      "label": "Validators reveal unanimous approval, meeting the quorum instantly",
+      "at": "2025-10-15T21:01:59.151Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 1 (after validator finalize)",
+      "at": "2025-10-15T21:01:59.211Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
+      "meta": {
+        "jobId": "1",
+        "context": "after validator finalize",
+        "state": "Completed",
+        "success": true,
+        "burnConfirmed": true,
+        "reward": "250.0 AGIα",
+        "employer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Nation A finalizes payment, rewarding Alice and the validator cohort",
+      "at": "2025-10-15T21:01:59.212Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 1 (after treasury settlement)",
+      "at": "2025-10-15T21:01:59.231Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
+      "meta": {
+        "jobId": "1",
+        "context": "after treasury settlement",
+        "state": "Finalized",
+        "success": true,
+        "burnConfirmed": true,
+        "reward": "250.0 AGIα",
+        "employer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+      }
+    },
+    {
+      "kind": "balance",
+      "label": "Post-job token balances",
+      "at": "2025-10-15T21:01:59.248Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
+      "meta": {
+        "participants": [
+          {
+            "name": "Nation A",
+            "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "balance": "1737.5 AGIα"
+          },
+          {
+            "name": "Alice (agent)",
+            "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+            "balance": "2190.0 AGIα"
+          },
+          {
+            "name": "Charlie (validator)",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "balance": "2006.666666666666666666 AGIα"
+          },
+          {
+            "name": "Dora (validator)",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "balance": "2006.666666666666666666 AGIα"
+          },
+          {
+            "name": "Evan (validator)",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "balance": "2006.666666666666666668 AGIα"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "section",
+      "label": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "at": "2025-10-15T21:01:59.252Z",
+      "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
+    },
+    {
+      "kind": "step",
+      "label": "Nation B funds a frontier language translation initiative",
+      "at": "2025-10-15T21:01:59.256Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 2 (after posting)",
+      "at": "2025-10-15T21:01:59.274Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "meta": {
+        "jobId": "2",
+        "context": "after posting",
+        "state": "Created",
+        "success": false,
+        "burnConfirmed": false,
+        "reward": "180.0 AGIα",
+        "employer": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "agent": "0x0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Bob applies, contributes work, and submits contested deliverables",
+      "at": "2025-10-15T21:01:59.274Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
+    },
+    {
+      "kind": "step",
+      "label": "Validators disagree; one plans to approve, another to reject, one will abstain",
+      "at": "2025-10-15T21:01:59.375Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
+    },
+    {
+      "kind": "step",
+      "label": "Partial reveals occur – one validator abstains, triggering penalties",
+      "at": "2025-10-15T21:01:59.412Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 2 (after partial quorum)",
+      "at": "2025-10-15T21:01:59.470Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "meta": {
+        "jobId": "2",
+        "context": "after partial quorum",
+        "state": "Disputed",
+        "success": false,
+        "burnConfirmed": true,
+        "reward": "180.0 AGIα",
+        "employer": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Bob leverages dispute rights; governance moderates and sides with the agent",
+      "at": "2025-10-15T21:01:59.470Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Dispute fee waived for demonstration",
+      "at": "2025-10-15T21:01:59.475Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setDisputeFee",
+        "parameters": {
+          "fee": 0
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Dispute window accelerated",
+      "at": "2025-10-15T21:01:59.493Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setDisputeWindow",
+        "parameters": {
+          "window": 0
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Owner enrolled as dispute moderator",
+      "at": "2025-10-15T21:01:59.499Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setModerator",
+        "parameters": {
+          "moderator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          "enabled": 1
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "External moderator empowered",
+      "at": "2025-10-15T21:01:59.504Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setModerator",
+        "parameters": {
+          "moderator": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+          "enabled": 1
+        }
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Nation B finalizes, distributing escrow and validator rewards post-dispute",
+      "at": "2025-10-15T21:01:59.531Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 2 (after dispute resolution)",
+      "at": "2025-10-15T21:01:59.558Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "meta": {
+        "jobId": "2",
+        "context": "after dispute resolution",
+        "state": "Finalized",
+        "success": true,
+        "burnConfirmed": true,
+        "reward": "180.0 AGIα",
+        "employer": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      }
+    },
+    {
+      "kind": "balance",
+      "label": "Post-dispute token balances",
+      "at": "2025-10-15T21:01:59.573Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "meta": {
+        "participants": [
+          {
+            "name": "Nation B",
+            "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "balance": "1811.0 AGIα"
+          },
+          {
+            "name": "Bob (agent)",
+            "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+            "balance": "2170.0 AGIα"
+          },
+          {
+            "name": "Charlie (validator)",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "balance": "2006.666666666666666666 AGIα"
+          },
+          {
+            "name": "Dora (validator)",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "balance": "2006.666666666666666666 AGIα"
+          },
+          {
+            "name": "Evan (validator)",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "balance": "2006.666666666666666668 AGIα"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "section",
+      "label": "Sovereign labour market telemetry dashboard",
+      "at": "2025-10-15T21:01:59.574Z",
+      "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
+    },
+    {
+      "kind": "summary",
+      "label": "Agent portfolios",
+      "at": "2025-10-15T21:01:59.636Z",
+      "meta": {
+        "agents": [
+          {
+            "name": "Alice (agent)",
+            "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+            "liquid": "2190.0 AGIα",
+            "staked": "10.0 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "145",
+            "certificates": [
+              {
+                "jobId": "1",
+                "uri": "ipfs://agi-jobs/demo/certificates/1"
+              }
+            ]
+          },
+          {
+            "name": "Bob (agent)",
+            "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+            "liquid": "2170.0 AGIα",
+            "staked": "10.0 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "145",
+            "certificates": [
+              {
+                "jobId": "2",
+                "uri": "ipfs://agi-jobs/demo/certificates/2"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "Validator council status",
+      "at": "2025-10-15T21:01:59.711Z",
+      "meta": {
+        "validators": [
+          {
+            "name": "Charlie (validator)",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "liquid": "2006.666666666666666666 AGIα",
+            "staked": "5.0 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "9"
+          },
+          {
+            "name": "Dora (validator)",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "liquid": "2006.666666666666666666 AGIα",
+            "staked": "10.0 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "10"
+          },
+          {
+            "name": "Evan (validator)",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "liquid": "2006.666666666666666668 AGIα",
+            "staked": "9.9 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "9"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "Market telemetry dashboard",
+      "at": "2025-10-15T21:01:59.713Z",
+      "meta": {
+        "totalJobs": "2",
+        "totalBurned": "6.175 AGIα",
+        "finalSupply": "13993.825 AGIα",
+        "feePct": 5,
+        "validatorRewardPct": 20,
+        "pendingFees": "20.425 AGIα",
+        "totalAgentStake": "20.0 AGIα",
+        "totalValidatorStake": "24.9 AGIα",
+        "mintedCertificates": [
+          {
+            "jobId": "1",
+            "owner": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+            "uri": "ipfs://agi-jobs/demo/certificates/1"
+          },
+          {
+            "jobId": "2",
+            "owner": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+            "uri": "ipfs://agi-jobs/demo/certificates/2"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "section",
+      "label": "Demo complete – AGI Jobs v2 sovereignty market simulation finished",
+      "at": "2025-10-15T21:01:59.713Z"
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Scenario 1 – Cooperative intergovernmental AI labour success",
+      "jobId": "1",
+      "timelineIndices": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59
+      ]
+    },
+    {
+      "title": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "jobId": "2",
+      "timelineIndices": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74
+      ]
+    }
+  ],
+  "market": {
+    "totalJobs": "2",
+    "totalBurned": "6.175 AGIα",
+    "finalSupply": "13993.825 AGIα",
+    "feePct": 5,
+    "validatorRewardPct": 20,
+    "pendingFees": "20.425 AGIα",
+    "totalAgentStake": "20.0 AGIα",
+    "totalValidatorStake": "24.9 AGIα",
+    "mintedCertificates": [
+      {
+        "jobId": "1",
+        "owner": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "uri": "ipfs://agi-jobs/demo/certificates/1"
+      },
+      {
+        "jobId": "2",
+        "owner": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+        "uri": "ipfs://agi-jobs/demo/certificates/2"
+      }
+    ]
+  }
+}
