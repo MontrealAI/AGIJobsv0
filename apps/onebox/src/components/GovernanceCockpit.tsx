@@ -680,6 +680,10 @@ export function GovernanceCockpit() {
             const status = milestoneState[milestone.id] ?? DEFAULT_STATUS[milestone.id] ?? 'todo';
             const prompt = buildMilestonePrompt(milestone, scenarioContext);
             const copied = copiedMilestoneId === milestone.id;
+            const ownerCalls =
+              typeof milestone.ownerCalls === 'function'
+                ? milestone.ownerCalls(scenarioContext)
+                : milestone.ownerCalls ?? [];
             return (
               <li key={milestone.id} className={styles.milestoneCard}>
                 <div className={styles.milestoneHeader}>
@@ -741,11 +745,11 @@ export function GovernanceCockpit() {
                   >
                     {copied ? 'Copied' : 'Copy prompt'}
                   </button>
-                  {milestone.ownerCalls && milestone.ownerCalls.length > 0 ? (
+                  {ownerCalls.length > 0 ? (
                     <div className={styles.ownerCallouts}>
                       <span className={styles.ownerCalloutsTitle}>Owner command deck</span>
                       <ul className={styles.ownerCalloutsList}>
-                        {milestone.ownerCalls.map((call) => (
+                        {ownerCalls.map((call) => (
                           <li key={call}>
                             <code className={styles.ownerCommand}>{call}</code>
                           </li>

@@ -46,7 +46,7 @@ export interface GovernanceMilestone {
   summary: string;
   successCriteria: string[];
   promptTemplate: (context: GovernanceScenarioContext) => string;
-  ownerCalls?: string[];
+  ownerCalls?: string[] | ((context: GovernanceScenarioContext) => string[]);
 }
 
 export const DEFAULT_ACTORS: GovernanceActor[] = [
@@ -152,6 +152,20 @@ export const formatNetworkName = (network: string): string => {
   return trimmed;
 };
 
+const resolveNetworkSlug = (network: string): string => {
+  const trimmed = network.trim();
+  if (!trimmed) {
+    return 'mainnet';
+  }
+  if (/^(ethereum\s+)?mainnet$/iu.test(trimmed)) {
+    return 'mainnet';
+  }
+  if (/^sepolia(\s+testnet)?$/iu.test(trimmed)) {
+    return 'sepolia';
+  }
+  return trimmed.toLowerCase();
+};
+
 const describeConnected = (context: GovernanceScenarioContext): string => {
   const onlineActors = Array.from(context.connectedActorIds.values())
     .map((id) =>
@@ -188,15 +202,18 @@ const validatorOperations = (
 
 const ownerCommandDeck = (
   context: GovernanceScenarioContext
-): string[] => [
-  'npm run owner:command-center -- --network mainnet --config config/owner.mission.json',
-  'npm run owner:system-pause -- --network mainnet',
-  'npm run owner:update-all -- --network mainnet',
-  'npm run owner:atlas -- --network mainnet',
-  'npm run owner:parameters -- --network mainnet',
-  'npm run owner:mission-control -- --network mainnet',
-  `Owner wallet: ${formatWallet(context.owner)}`,
-];
+): string[] => {
+  const networkSlug = resolveNetworkSlug(context.network);
+  return [
+    `npm run owner:command-center -- --network ${networkSlug} --config config/owner.mission.json`,
+    `npm run owner:system-pause -- --network ${networkSlug}`,
+    `npm run owner:update-all -- --network ${networkSlug}`,
+    `npm run owner:atlas -- --network ${networkSlug}`,
+    `npm run owner:parameters -- --network ${networkSlug}`,
+    `npm run owner:mission-control -- --network ${networkSlug}`,
+    `Owner wallet: ${formatWallet(context.owner)}`,
+  ];
+};
 
 export const DEFAULT_MILESTONES: GovernanceMilestone[] = [
   {
@@ -309,12 +326,15 @@ export const DEFAULT_MILESTONES: GovernanceMilestone[] = [
       ownerCommandDeck(context).join('\n'),
       'Document every owner action with timestamped receipts and share with the multinational stakeholders.',
     ].join('\n'),
-    ownerCalls: [
-      'npm run owner:verify-control -- --network mainnet',
-      'npm run owner:dashboard -- --network mainnet',
-      'npm run owner:system-pause -- --network mainnet',
-      'npm run owner:command-center -- --network mainnet',
-    ],
+    ownerCalls: (context) => {
+      const networkSlug = resolveNetworkSlug(context.network);
+      return [
+        `npm run owner:verify-control -- --network ${networkSlug}`,
+        `npm run owner:dashboard -- --network ${networkSlug}`,
+        `npm run owner:system-pause -- --network ${networkSlug}`,
+        `npm run owner:command-center -- --network ${networkSlug}`,
+      ];
+    },
   },
 ];
 
