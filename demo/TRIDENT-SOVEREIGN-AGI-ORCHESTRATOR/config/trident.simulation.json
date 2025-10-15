@@ -1,0 +1,47 @@
+{
+  "reportLabel": "trident-sovereign",
+  "ipfsGateway": "https://ipfs.io/ipfs/",
+  "ensRoot": "trident-sovereign.eth",
+  "nations": [
+    {
+      "name": "Asteria Federation",
+      "wallet": "asteria",
+      "ensSubdomain": "asteria",
+      "mission": "Launch orbital AI task force for food security",
+      "specCid": "bafybeigdyrzt5nplu67cde6fywvh7w2fzz6od3as2ko6z5b6b5kvmv2gfu",
+      "resultCid": "bafybeihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+      "rewardTokens": "125000",
+      "deadlineHours": 72
+    },
+    {
+      "name": "Baltic Concord",
+      "wallet": "baltic",
+      "ensSubdomain": "baltic",
+      "mission": "Cross-border energy dispatch intelligence",
+      "specCid": "bafybeia6pz2d7h73p3v6svlro5qok7m6hpizpqzphxczr4ixr2l3tktvya",
+      "resultCid": "bafybeibwzifnb3k4vuh5fs7yp6um5xszucfn6ov4ybz6xvwz5xucpyn3de",
+      "rewardTokens": "98000",
+      "deadlineHours": 48
+    }
+  ],
+  "validators": [
+    {
+      "name": "Neptune Validator Corps",
+      "wallet": "neptune",
+      "ensSubdomain": "validators.neptune",
+      "mission": "Audit orbital data integrity across coalitions"
+    },
+    {
+      "name": "Helios Peacekeepers",
+      "wallet": "helios",
+      "ensSubdomain": "validators.helios",
+      "mission": "Monitor SLA compliance for humanitarian deliveries"
+    }
+  ],
+  "treasury": {
+    "name": "Planetary Stewardship DAO",
+    "wallet": "stewardship",
+    "ensSubdomain": "treasury",
+    "mission": "Custody universal surplus and apply treasury policy"
+  }
+}
