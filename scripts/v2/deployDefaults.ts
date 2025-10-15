@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ethers, network, run } from 'hardhat';
-import { AGIALPHA_DECIMALS } from '../constants';
+import { artifacts, ethers, network, run } from 'hardhat';
+import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 import { loadEnsConfig } from '../config';
 
 type CliArgs = Record<string, string | boolean>;
@@ -300,6 +300,59 @@ async function verify(address: string, args: any[] = []) {
   }
 }
 
+async function ensureAgialphaToken() {
+  const code = await ethers.provider.getCode(AGIALPHA);
+  if (code !== '0x') {
+    return;
+  }
+
+  const localNetworks = new Set(['hardhat', 'localhost', 'anvil']);
+  if (!localNetworks.has(network.name)) {
+    console.warn(
+      `⚠️  AGIALPHA token missing on ${network.name}; unable to inject local fixture.`
+    );
+    return;
+  }
+
+  const artifact = await artifacts.readArtifact(
+    'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+  );
+  if (!artifact.deployedBytecode || artifact.deployedBytecode === '0x') {
+    throw new Error('AGIALPHAToken artifact has no deployed bytecode');
+  }
+
+  const codeMethods = ['hardhat_setCode', 'anvil_setCode'] as const;
+  let injected = false;
+  for (const method of codeMethods) {
+    try {
+      await ethers.provider.send(method, [AGIALPHA, artifact.deployedBytecode]);
+      injected = true;
+      break;
+    } catch (error) {
+      // try next RPC method
+    }
+  }
+
+  if (!injected) {
+    throw new Error('Failed to inject AGIALPHA token fixture on local network');
+  }
+
+  const [deployer] = await ethers.getSigners();
+  const ownerSlot = ethers.toBeHex(5, 32);
+  const ownerValue = ethers.zeroPadValue(deployer.address, 32);
+  const storageMethods = ['hardhat_setStorageAt', 'anvil_setStorageAt'] as const;
+  for (const method of storageMethods) {
+    try {
+      await ethers.provider.send(method, [AGIALPHA, ownerSlot, ownerValue]);
+      break;
+    } catch (error) {
+      // try next RPC method
+    }
+  }
+
+  console.log(`ℹ️  Injected local AGIALPHA token fixture at ${AGIALPHA}`);
+}
+
 async function main() {
   const [owner] = await ethers.getSigners();
   const cli = parseArgs(process.argv.slice(2));
@@ -468,6 +521,8 @@ async function main() {
       'Agent and club root nodes are required. Provide them via config or CLI options.'
     );
   }
+
+  await ensureAgialphaToken();
 
   const Deployer = await ethers.getContractFactory(
     'contracts/v2/Deployer.sol:Deployer'
