@@ -62,14 +62,14 @@ Connect your browser wallet to `http://127.0.0.1:8545` and import the default Ha
 Demonstrate full owner authority using built-in scripts:
 
 ```bash
-# Pause everything instantly
-npm run owner:command-center -- --action pause-all
+# Pause everything instantly (use the network from your deployment)
+HARDHAT_NETWORK=localhost npm run owner:system-pause -- --action pause --yes
 
 # Review wiring integrity
 npm run owner:verify-control
 
 # Resume operations
-npm run owner:command-center -- --action unpause-all
+HARDHAT_NETWORK=localhost npm run owner:system-pause -- --action unpause --yes
 ```
 
 In the Owner Console UI the pause toggles update live. The commands confirm that `SystemPause` owns every pausable module and that the deployer wallet can reconfigure/rotate addresses.

@@ -26,6 +26,7 @@
     "owner:parameters": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerParameterMatrix.ts",
     "owner:quickstart": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlQuickstart.ts",
     "owner:command-center": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerCommandCenter.ts",
+    "owner:system-pause": "npx hardhat run --no-compile scripts/v2/systemPauseAction.ts",
     "owner:testnet:dry-run": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/testnetDryRun.ts",
     "sbom:generate": "mkdir -p reports/sbom && npm exec -- @cyclonedx/cyclonedx-npm --output-format json --output-file reports/sbom/cyclonedx.json",
     "release:manifest": "node scripts/release/generate-manifest.js",

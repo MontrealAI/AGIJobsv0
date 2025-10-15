@@ -28,8 +28,8 @@ This document is the canonical reference for the Meta-Agentic α-AGI showcase. I
    - `docker compose up validator-ui enterprise-portal`
    - `npm --prefix apps/console run dev`
 3. Governance drill:
-   - `npm run owner:command-center -- --action pause-all`
-   - `npm run owner:command-center -- --action unpause-all`
+   - `HARDHAT_NETWORK=localhost npm run owner:system-pause -- --action pause`
+   - `HARDHAT_NETWORK=localhost npm run owner:system-pause -- --action unpause`
    - `npm run owner:verify-control`
 4. CI alignment:
    - `npm run lint:check`
