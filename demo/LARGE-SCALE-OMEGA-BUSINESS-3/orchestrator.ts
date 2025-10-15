@@ -100,7 +100,13 @@ export function writeLedger(scenario: OmegaScenario, ledgerPath: string): void {
   fs.writeFileSync(ledgerPath, `${lines.join('\n')}\n`, 'utf8');
 }
 
-function validateUnique(label: string, value: string, registry: Set<string>): void {
+function validateUnique(label: string, value: unknown, registry: Set<string>): void {
+  if (value === null || value === undefined) {
+    throw new Error(`${label} must be provided`);
+  }
+  if (typeof value !== 'string') {
+    throw new Error(`${label} must be a string`);
+  }
   const trimmed = value.trim();
   if (!trimmed) {
     throw new Error(`${label} must be provided`);
