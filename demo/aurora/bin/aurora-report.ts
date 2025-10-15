@@ -7,6 +7,42 @@ type GovernanceLog = {
   thermostat?: Array<Record<string, string>>;
 };
 
+type KeyValues = Record<string, string>;
+
+type MissionJob = {
+  name?: string;
+  slug?: string;
+  notes?: string;
+  receipts?: {
+    post?: string;
+    submit?: string;
+    validate?: string;
+    finalize?: string;
+  };
+};
+
+type StakeLog = {
+  entries?: Array<Record<string, unknown>>;
+};
+
+type GovernanceEntry = {
+  target: string;
+  method: string;
+  type: string;
+  txHash: string;
+  notes?: string;
+  params?: unknown;
+  before?: KeyValues;
+  after?: KeyValues;
+};
+
+type ThermostatUpdate = {
+  action: string;
+  before: string;
+  after: string;
+  txHash?: string;
+};
+
 const net =
   process.env.NETWORK ||
   (process.env.CHAIN_ID === '31337' ? 'localhost' : 'localhost');
@@ -23,16 +59,19 @@ const reportFileName =
   scope === 'aurora' ? 'aurora-report.md' : `${scope}-report.md`;
 const mdFile = path.join('reports', net, scope, reportFileName);
 
-function load(relativePath: string) {
+function load<T = any>(relativePath: string): T | null {
   const p = path.join(outDir, relativePath);
-  return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : null;
+  if (!fs.existsSync(p)) {
+    return null;
+  }
+  return JSON.parse(fs.readFileSync(p, 'utf8')) as T;
 }
 
 function section(title: string): string {
-  return '\n## ' + title + '\n';
+  return `\n## ${title}\n`;
 }
 
-function renderKeyValues(record: Record<string, string>): string {
+function renderKeyValues(record: KeyValues): string {
   return Object.entries(record)
     .map(([key, value]) => `${key}: ${value}`)
     .join(', ');
@@ -45,11 +84,11 @@ function renderKeyValues(record: Record<string, string>): string {
   parts.push('');
 
   const deploy = load('deploy.json');
-  const stake = load('stake.json');
-  const governance = load('governance.json');
+  const stake = load<StakeLog>('stake.json');
+  const governanceLog = load<GovernanceLog>('governance.json');
   const mission = load('mission.json');
-  const missionJobs: Array<Record<string, any>> =
-    mission && Array.isArray(mission.jobs) ? mission.jobs : [];
+  const missionJobs: MissionJob[] =
+    mission && Array.isArray(mission.jobs) ? (mission.jobs as MissionJob[]) : [];
 
   if (mission) {
     parts.push(section('Mission Summary'));
@@ -70,7 +109,6 @@ function renderKeyValues(record: Record<string, string>): string {
       parts.push('- ' + summaryLines.join('\n- '));
     }
   }
-  const governance = load('governance.json') as GovernanceLog | null;
 
   if (deploy && deploy.contracts) {
     parts.push(section('Deployment Summary'));
@@ -79,7 +117,7 @@ function renderKeyValues(record: Record<string, string>): string {
     for (const [name, address] of Object.entries(
       deploy.contracts as Record<string, string>
     )) {
-      parts.push('| ' + name + ' | `' + address + '` |');
+      parts.push(`| ${name} | \`${address}\` |`);
     }
   }
 
@@ -93,67 +131,45 @@ function renderKeyValues(record: Record<string, string>): string {
   if (missionJobs.length === 0 && fallbackPost) {
     parts.push(section('Job Creation'));
     parts.push('- **Job ID**: ' + fallbackPost.jobId);
-    if (fallbackPost.txHash)
+    if (fallbackPost.txHash) {
       parts.push('- **Transaction**: `' + fallbackPost.txHash + '`');
-    if (fallbackPost.reward) parts.push('- **Reward**: ' + fallbackPost.reward);
-    if (fallbackPost.deadline)
+    }
+    if (fallbackPost.reward) {
+      parts.push('- **Reward**: ' + fallbackPost.reward);
+    }
+    if (fallbackPost.deadline) {
       parts.push('- **Deadline**: ' + fallbackPost.deadline);
-    if (fallbackPost.specHash)
+    }
+    if (fallbackPost.specHash) {
       parts.push('- **Spec hash**: `' + fallbackPost.specHash + '`');
-  if (post) {
-    parts.push(section('Job Creation'));
-    parts.push('- **Job ID**: ' + post.jobId);
-    if (post.txHash) parts.push('- **Transaction**: `' + post.txHash + '`');
-    if (post.reward) parts.push('- **Reward**: ' + post.reward);
-    if (post.deadline) parts.push('- **Deadline**: ' + post.deadline);
-    if (post.specHash) parts.push('- **Spec hash**: `' + post.specHash + '`');
-    if (post.specUri) parts.push('- **Spec URI**: ' + post.specUri);
-  }
-
-  if (stake && stake.entries) {
-    parts.push(section('Stake Operations'));
-    for (const entry of stake.entries as Array<Record<string, unknown>>) {
-      parts.push(
-        '- ' +
-          entry.role +
-          ' `' +
-          entry.address +
-          '` staked ' +
-          entry.amount +
-          ' (tx: `' +
-          entry.txHash +
-          '`)' 
-      );
+    }
+    if (fallbackPost.specUri) {
+      parts.push('- **Spec URI**: ' + fallbackPost.specUri);
     }
   }
 
   if (missionJobs.length === 0 && fallbackSubmit) {
     parts.push(section('Submission'));
     parts.push('- **Worker**: `' + fallbackSubmit.worker + '`');
-    if (fallbackSubmit.txHash)
+    if (fallbackSubmit.txHash) {
       parts.push('- **Transaction**: `' + fallbackSubmit.txHash + '`');
-    if (fallbackSubmit.resultURI)
+    }
+    if (fallbackSubmit.resultURI) {
       parts.push('- **Result URI**: ' + fallbackSubmit.resultURI);
+    }
   }
 
   if (
     missionJobs.length === 0 &&
     fallbackValidate &&
-    fallbackValidate.validators
+    Array.isArray(fallbackValidate.validators)
   ) {
     parts.push(section('Validation'));
     for (const validator of fallbackValidate.validators as Array<
       Record<string, unknown>
     >) {
-    for (const validator of validate.validators as Array<Record<string, unknown>>) {
       parts.push(
-        '- Validator `' +
-          validator.address +
-          '` commit: `' +
-          validator.commitTx +
-          '`, reveal: `' +
-          validator.revealTx +
-          '`'
+        `- Validator \`${validator.address}\`: commit \`${validator.commitTx}\`, reveal \`${validator.revealTx}\``
       );
     }
     if (fallbackValidate.finalizeTx) {
@@ -171,15 +187,7 @@ function renderKeyValues(record: Record<string, string>): string {
       fallbackFinalize.payouts as Record<string, any>
     )) {
       parts.push(
-        '- ' +
-          address +
-          ': balance ' +
-          payout.before +
-          ' → ' +
-          payout.after +
-          ' (delta ' +
-          payout.delta +
-          ')'
+        `- ${address}: balance ${payout.before} → ${payout.after} (delta ${payout.delta})`
       );
     }
   }
@@ -195,16 +203,27 @@ function renderKeyValues(record: Record<string, string>): string {
       if (job.notes) {
         parts.push('*' + String(job.notes) + '*');
       }
+
       const post = job.receipts?.post
         ? load(job.receipts.post)
         : load(path.join('jobs', jobSlug, 'post.json'));
       if (post) {
         parts.push('- **Job ID**: ' + post.jobId);
-        if (post.txHash) parts.push('- **Transaction**: `' + post.txHash + '`');
-        if (post.reward) parts.push('- **Reward**: ' + post.reward);
-        if (post.deadline) parts.push('- **Deadline**: ' + post.deadline);
-        if (post.specHash)
+        if (post.txHash) {
+          parts.push('- **Transaction**: `' + post.txHash + '`');
+        }
+        if (post.reward) {
+          parts.push('- **Reward**: ' + post.reward);
+        }
+        if (post.deadline) {
+          parts.push('- **Deadline**: ' + post.deadline);
+        }
+        if (post.specHash) {
           parts.push('- **Spec hash**: `' + post.specHash + '`');
+        }
+        if (post.specUri) {
+          parts.push('- **Spec URI**: ' + post.specUri);
+        }
       }
 
       const submit = job.receipts?.submit
@@ -212,16 +231,18 @@ function renderKeyValues(record: Record<string, string>): string {
         : load(path.join('jobs', jobSlug, 'submit.json'));
       if (submit) {
         parts.push('- **Worker**: `' + submit.worker + '`');
-        if (submit.txHash)
+        if (submit.txHash) {
           parts.push('- **Submission tx**: `' + submit.txHash + '`');
-        if (submit.resultURI)
+        }
+        if (submit.resultURI) {
           parts.push('- **Result URI**: ' + submit.resultURI);
+        }
       }
 
       const validate = job.receipts?.validate
         ? load(job.receipts.validate)
         : load(path.join('jobs', jobSlug, 'validate.json'));
-      if (validate && validate.validators) {
+      if (validate && Array.isArray(validate.validators)) {
         parts.push('- **Validators**:');
         for (const validator of validate.validators as Array<
           Record<string, unknown>
@@ -251,49 +272,26 @@ function renderKeyValues(record: Record<string, string>): string {
     }
   }
 
-  if (stake && stake.entries) {
+  if (stake && Array.isArray(stake.entries)) {
     parts.push(section('Stake Operations'));
-    for (const entry of stake.entries as Array<Record<string, unknown>>) {
+    for (const entry of stake.entries) {
       parts.push(
-        '- ' +
-          entry.role +
-          ' `' +
-          entry.address +
-          '` staked ' +
-          entry.amount +
-          ' (tx: `' +
-          entry.txHash +
-          '`)'
+        `- ${entry.role} \`${entry.address}\` staked ${entry.amount} (tx: \`${entry.txHash}\`)`
       );
     }
   }
 
-  if (governance && governance.thermostat) {
-    const updates = governance.thermostat as Array<Record<string, string>>;
-    if (updates.length > 0) {
-      parts.push(section('Governance Tuning'));
-      for (const update of updates) {
-        const tx = update.txHash ? ` (tx: \`${update.txHash}\`)` : '';
-        parts.push(
-          `- ${update.action}: ${update.before} → ${update.after}${tx}`
-        );
-      }
-    }
-  }
-  if (governance && Array.isArray(governance.actions)) {
-  if (governance?.thermostat && governance.thermostat.length > 0) {
+  if (governanceLog?.thermostat && governanceLog.thermostat.length > 0) {
     parts.push(section('Thermostat Tuning'));
-    for (const update of governance.thermostat) {
+    for (const update of governanceLog.thermostat as ThermostatUpdate[]) {
       const tx = update.txHash ? ` (tx: \`${update.txHash}\`)` : '';
-      parts.push(
-        `- ${update.action}: ${update.before} → ${update.after}${tx}`
-      );
+      parts.push(`- ${update.action}: ${update.before} → ${update.after}${tx}`);
     }
   }
 
-  if (governance?.actions && governance.actions.length > 0) {
+  if (governanceLog?.actions && governanceLog.actions.length > 0) {
     parts.push(section('Governance & Controls'));
-    for (const action of governance.actions) {
+    for (const action of governanceLog.actions as GovernanceEntry[]) {
       const header =
         '- **' +
         action.target +
@@ -312,18 +310,10 @@ function renderKeyValues(record: Record<string, string>): string {
         parts.push('  - Params: ' + JSON.stringify(action.params));
       }
       if (action.before) {
-        parts.push(
-          '  - Before: ' +
-            renderKeyValues(action.before as Record<string, string>)
-          '  - Before: ' + renderKeyValues(action.before as Record<string, string>)
-        );
+        parts.push('  - Before: ' + renderKeyValues(action.before));
       }
       if (action.after) {
-        parts.push(
-          '  - After: ' +
-            renderKeyValues(action.after as Record<string, string>)
-          '  - After: ' + renderKeyValues(action.after as Record<string, string>)
-        );
+        parts.push('  - After: ' + renderKeyValues(action.after));
       }
     }
   }

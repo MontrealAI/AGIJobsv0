@@ -1,0 +1,432 @@
+{
+  "initiative": "Zenith Sapience Initiative \u2013 Transcendent Governance Overview",
+  "objective": "Showcase the AGI Jobs v0 (v2) stack delivering a multisovereign, closed-loop governance cycle with full owner override controls, generated purely from configuration and mission metadata.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "1250000000",
+    "allocations": {
+      "Pan-African Coalition": "210000000",
+      "Americas Alliance": "250000000",
+      "Asia-Pacific Compact": "260000000",
+      "European Union Grid": "210000000",
+      "MENA Hydrogen Bloc": "160000000",
+      "Global Governance Reserve": "62000000",
+      "Earth Systems Observatory": "21000000"
+    }
+  },
+  "governance": {
+    "owner": "0xZENITH-MULTISIG",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xZENITH-TREASURY",
+    "quadraticVoting": {
+      "contract": "AGIGovernor",
+      "timelock": "0xZENITH-TIMELOCK",
+      "executionDelayDays": 7,
+      "proposalThreshold": "1500000",
+      "quorumFraction": "0.21"
+    },
+    "thermostat": {
+      "initialTemperature": "0.22",
+      "emergencyTemperature": "0.42",
+      "updateScript": "scripts/v2/updateThermodynamics.ts",
+      "ownerGuide": "demo/zenith-sapience-initiative-transcendent-governance-overview/OWNER-CONTROL.md"
+    },
+    "controlScripts": {
+      "commandCenter": "npm run owner:command-center -- --network hardhat --format markdown --out reports/zenith-sapience-transcendent/command-center.md",
+      "parameterMatrix": "npm run owner:parameters -- --network hardhat --format markdown --out reports/zenith-sapience-transcendent/parameter-matrix.md",
+      "missionControl": "npm run owner:mission-control -- --network hardhat --format markdown --out reports/zenith-sapience-transcendent/mission-control.md --bundle reports/zenith-sapience-transcendent/mission-bundle",
+      "mermaid": "npx hardhat run --no-compile scripts/v2/renderOwnerMermaid.ts --format markdown --out reports/zenith-sapience-transcendent/governance.md --title 'Zenith Sapience Transcendent Topology'"
+    }
+  },
+  "regions": [
+    {
+      "id": "AFRICA",
+      "name": "Pan-African Coalition",
+      "goal": "Deploy adaptive microgrid corridors linking 18 member nations with autonomous validation loops.",
+      "kpis": [
+        "5.2 GW incremental capacity commissioned",
+        ">=97% validator concurrence on safety attestations",
+        "Thermostat variance kept within \u00b11.5%"
+      ]
+    },
+    {
+      "id": "AMERICAS",
+      "name": "Americas Alliance",
+      "goal": "Reinforce continental coastal resilience grids and automated climate offset exchanges.",
+      "kpis": [
+        "9 sovereign logistics hubs activated",
+        "Dual-governor quorum for every capital expenditure",
+        "Validator-driven disputes resolved < 36h"
+      ]
+    },
+    {
+      "id": "APAC",
+      "name": "Asia-Pacific Compact",
+      "goal": "Construct floating wind megastructures and real-time demand response bridges.",
+      "kpis": [
+        "18 floating assemblies online",
+        "Dynamic validator share balancing (\u00b12% of target)",
+        "Cross-border energy treaty compliance events published"
+      ]
+    },
+    {
+      "id": "EU",
+      "name": "European Union Grid",
+      "goal": "Upgrade high-voltage corridors and digital twin arbitration across 30 operators.",
+      "kpis": [
+        "HVDC congestion reduced by 45%",
+        "Quadratic governance turnout above 75%",
+        "SystemPause exercised in quarterly drill"
+      ]
+    },
+    {
+      "id": "MENA",
+      "name": "MENA Hydrogen Bloc",
+      "goal": "Close the desalination-to-hydrogen supply loop with carbon auditing and validator enforced compliance.",
+      "kpis": [
+        "Hydrogen yield >= 720 kt/year",
+        "Validator incentive clawbacks under 0.4%",
+        "RewardEngineMB validator share between 19-23%"
+      ]
+    },
+    {
+      "id": "EARTH",
+      "name": "Earth Systems Observatory",
+      "goal": "Synthesize cross-regional telemetry, climate feedbacks, and mission-level incentive adjustments.",
+      "kpis": [
+        "Telemetry latency under 45 seconds",
+        "Mission summary auto-published within 5 minutes of closure",
+        "All governance actions hashed into audit kit"
+      ]
+    }
+  ],
+  "participants": {
+    "metaOrchestrator": {
+      "handle": "zenith.orchestrator.world.agi.eth",
+      "role": "Planetary coordination cortex",
+      "capabilities": [
+        "Plan\u2192Simulate\u2192Execute loops",
+        "Governance-safe thermostat modulation",
+        "Automatic command-center briefings"
+      ]
+    },
+    "council": [
+      {
+        "handle": "zenith.council.sustainability.agi.eth",
+        "role": "Sustainability ombudscouncil",
+        "stake": "8800000"
+      },
+      {
+        "handle": "zenith.council.infrastructure.agi.eth",
+        "role": "Infrastructure arbitration trust",
+        "stake": "9600000"
+      },
+      {
+        "handle": "zenith.council.humanitarian.agi.eth",
+        "role": "Humanitarian resilience board",
+        "stake": "7200000"
+      }
+    ],
+    "agents": [
+      {
+        "handle": "africa.microgrid.sovereign.agent.agi.eth",
+        "role": "Sovereign microgrid integrator",
+        "regions": [
+          "AFRICA"
+        ],
+        "capabilities": [
+          "On-chain job orchestration",
+          "Thermostat telemetry streaming",
+          "Validator co-signing"
+        ]
+      },
+      {
+        "handle": "americas.resilience.collective.agent.agi.eth",
+        "role": "Pan-continental coastal reinforcement guild",
+        "regions": [
+          "AMERICAS"
+        ],
+        "capabilities": [
+          "Bonding curve treasury management",
+          "Cross-border logistics verification",
+          "Stake slashing recovery"
+        ]
+      },
+      {
+        "handle": "apac.wind-nexus.agent.agi.eth",
+        "role": "Floating wind superstructure federation",
+        "regions": [
+          "APAC"
+        ],
+        "capabilities": [
+          "Mission-phase demand shaping",
+          "Validator rotation automation",
+          "IPFS deliverable attestation"
+        ]
+      },
+      {
+        "handle": "eu.intertie.digitaltwin.agent.agi.eth",
+        "role": "Digital twin arbitration consortium",
+        "regions": [
+          "EU"
+        ],
+        "capabilities": [
+          "Simulation-first compliance",
+          "Mermaid topology verification",
+          "Pause drill rehearsals"
+        ]
+      },
+      {
+        "handle": "mena.hydrogen.loop.agent.agi.eth",
+        "role": "Hydrogen compliance and export lattice",
+        "regions": [
+          "MENA"
+        ],
+        "capabilities": [
+          "Zero-knowledge emission attestations",
+          "Validator staking balancer",
+          "Thermostat rescue trigger"
+        ]
+      },
+      {
+        "handle": "earth.observatory.agent.agi.eth",
+        "role": "Earth systems observatory",
+        "regions": [
+          "EARTH"
+        ],
+        "capabilities": [
+          "Cross-region telemetry synthesis",
+          "Governance kit publishing",
+          "Owner intervention alerts"
+        ]
+      }
+    ],
+    "validators": [
+      {
+        "handle": "zenith.validators.audit.club.agi.eth",
+        "role": "Global audit club",
+        "regions": [
+          "AFRICA",
+          "AMERICAS",
+          "APAC",
+          "EU",
+          "MENA",
+          "EARTH"
+        ],
+        "capabilities": [
+          "Dual quorum attestation",
+          "Dispute arbitration",
+          "Mission-control delta analysis"
+        ]
+      },
+      {
+        "handle": "zenith.validators.ecology.club.agi.eth",
+        "role": "Planetary ecology council",
+        "regions": [
+          "AFRICA",
+          "APAC",
+          "MENA",
+          "EARTH"
+        ],
+        "capabilities": [
+          "Climate KPI audit",
+          "Thermostat oversight",
+          "Emergency pause recommendation"
+        ]
+      },
+      {
+        "handle": "zenith.validators.finance.club.agi.eth",
+        "role": "Global finance controls syndicate",
+        "regions": [
+          "AMERICAS",
+          "EU",
+          "MENA",
+          "EARTH"
+        ],
+        "capabilities": [
+          "Treasury flow verification",
+          "Stake recovery workflows",
+          "Quadratic vote supervision"
+        ]
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "AFRICA-MICROGRID-CORRIDOR",
+      "region": "AFRICA",
+      "title": "Deploy adaptive microgrid corridors",
+      "reward": "185000000",
+      "deadlineDays": 165,
+      "dependencies": [],
+      "energyBudget": "132000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.23",
+        "adjustmentOnDelay": "increase-validator-share"
+      }
+    },
+    {
+      "id": "AFRICA-AUDIT-HARMONISATION",
+      "region": "AFRICA",
+      "title": "Harmonise microgrid audit frameworks",
+      "reward": "32000000",
+      "deadlineDays": 45,
+      "dependencies": [
+        "AFRICA-MICROGRID-CORRIDOR"
+      ],
+      "energyBudget": "12000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.07",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "AMERICAS-COASTAL-RESILIENCE",
+      "region": "AMERICAS",
+      "title": "Fortify coastal resilience grids",
+      "reward": "205000000",
+      "deadlineDays": 150,
+      "dependencies": [],
+      "energyBudget": "150000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.25",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "AMERICAS-OFFSET-EXCHANGE",
+      "region": "AMERICAS",
+      "title": "Launch automated climate offset exchange",
+      "reward": "35000000",
+      "deadlineDays": 42,
+      "dependencies": [
+        "AMERICAS-COASTAL-RESILIENCE"
+      ],
+      "energyBudget": "14000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.08",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "APAC-FLOATING-WIND-ARRAYS",
+      "region": "APAC",
+      "title": "Construct floating wind megastructures",
+      "reward": "190000000",
+      "deadlineDays": 180,
+      "dependencies": [],
+      "energyBudget": "135000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.27",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "APAC-DEMAND-BRIDGES",
+      "region": "APAC",
+      "title": "Bridge demand response markets",
+      "reward": "36000000",
+      "deadlineDays": 48,
+      "dependencies": [
+        "APAC-FLOATING-WIND-ARRAYS"
+      ],
+      "energyBudget": "12000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.09",
+        "adjustmentOnDelay": "increase-validator-share"
+      }
+    },
+    {
+      "id": "EU-HVDC-EXPANSION",
+      "region": "EU",
+      "title": "Expand HVDC corridors",
+      "reward": "168000000",
+      "deadlineDays": 160,
+      "dependencies": [],
+      "energyBudget": "118000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.19",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "EU-DIGITAL-TWIN-ARBITRATION",
+      "region": "EU",
+      "title": "Deploy digital twin arbitration",
+      "reward": "42000000",
+      "deadlineDays": 55,
+      "dependencies": [
+        "EU-HVDC-EXPANSION"
+      ],
+      "energyBudget": "15000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.08",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "MENA-HYDROGEN-LOOP",
+      "region": "MENA",
+      "title": "Close desalination-to-hydrogen loop",
+      "reward": "150000000",
+      "deadlineDays": 170,
+      "dependencies": [],
+      "energyBudget": "104000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.24",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "MENA-EXPORT-COMPLIANCE",
+      "region": "MENA",
+      "title": "Institute hydrogen export compliance",
+      "reward": "38000000",
+      "deadlineDays": 46,
+      "dependencies": [
+        "MENA-HYDROGEN-LOOP"
+      ],
+      "energyBudget": "15000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.1",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "EARTH-SYSTEMS-INTEGRATION",
+      "region": "EARTH",
+      "title": "Integrate telemetry & incentive steering",
+      "reward": "47000000",
+      "deadlineDays": 58,
+      "dependencies": [
+        "AFRICA-AUDIT-HARMONISATION",
+        "AMERICAS-OFFSET-EXCHANGE",
+        "APAC-DEMAND-BRIDGES",
+        "EU-DIGITAL-TWIN-ARBITRATION",
+        "MENA-EXPORT-COMPLIANCE"
+      ],
+      "energyBudget": "18000000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.06",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/zenith-sapience-transcendent/dry-run.json",
+      "thermodynamics": "reports/zenith-sapience-transcendent/thermodynamics.json",
+      "missionControl": "reports/zenith-sapience-transcendent/mission-control.md",
+      "commandCenter": "reports/zenith-sapience-transcendent/command-center.md",
+      "parameterMatrix": "reports/zenith-sapience-transcendent/parameter-matrix.md",
+      "summary": "reports/zenith-sapience-transcendent/summary.md",
+      "mermaid": "reports/zenith-sapience-transcendent/governance.mmd",
+      "kit": "reports/zenith-sapience-transcendent/zenith-sapience-transcendent-kit.json"
+    },
+    "dashboards": [
+      "reports/zenith-sapience-transcendent/mission-control.md",
+      "reports/zenith-sapience-transcendent/parameter-matrix.md",
+      "reports/zenith-sapience-transcendent/thermodynamics.json"
+    ]
+  }
+}
