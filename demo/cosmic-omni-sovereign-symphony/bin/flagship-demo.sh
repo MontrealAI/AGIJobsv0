@@ -79,7 +79,12 @@ fi
 
 log INFO "Starting AGI Jobs flagship operating system rehearsal (CI_MODE=$CI_MODE, DRY_RUN=$DRY_RUN)"
 
-run_step "Seed toolchain" bash -c "cd \"$REPO_ROOT\" && npm ci"
+if [[ -d "$REPO_ROOT/node_modules" ]]; then
+  log INFO "node_modules detected at $REPO_ROOT/node_modules – skipping npm ci"
+else
+  run_step "Seed toolchain" bash -c "cd \"$REPO_ROOT\" && npm ci"
+fi
+export SKIP_NPM_CI=true
 run_step "Execute governance symphony" ./bin/orchestrate.sh "${ORCHESTRATE_ARGS[@]}"
 run_step "Simulate AGI OS mission" bash -c "cd '$REPO_ROOT' && npm run demo:agi-os"
 run_step "Capture owner control matrix" bash -c "cd '$REPO_ROOT' && npm run owner:parameters"

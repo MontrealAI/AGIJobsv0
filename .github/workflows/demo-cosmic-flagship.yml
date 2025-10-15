@@ -1,0 +1,55 @@
+name: demo-cosmic-flagship
+
+on:
+  pull_request:
+    paths:
+      - 'demo/cosmic-omni-sovereign-symphony/**'
+      - 'scripts/v2/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-cosmic-flagship.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flagship-dry-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Harden runner
+        uses: step-security/harden-runner@v2.13.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+            binaries.soliditylang.org
+            codeload.github.com
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Execute flagship demo (dry run)
+        run: bash demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --ci --dry-run
+
+      - name: Upload flagship artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cosmic-flagship-demo
+          path: |
+            demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/**
+            demo/cosmic-omni-sovereign-symphony/logs/ledger-latest.json
+            demo/cosmic-omni-sovereign-symphony/logs/vote-simulation.json
+            reports/agi-os/**
+        if-no-files-found: ignore
