@@ -153,7 +153,8 @@
     "demo:trident-sovereign:ui": "demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/bin/trident-ui.sh",
     "demo:omega-business-3": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/LARGE-SCALE-OMEGA-BUSINESS-3/orchestrator.ts",
     "demo:omega-business-3:mainnet": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-mainnet.sh",
-    "demo:omega-business-3:ui": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-ui.sh"
+    "demo:omega-business-3:ui": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-ui.sh",
+    "demo:agi-labor-market": "npx hardhat run --no-compile scripts/v2/agiLaborMarketGrandDemo.ts --network hardhat"
   },
   "keywords": [],
   "author": "",
