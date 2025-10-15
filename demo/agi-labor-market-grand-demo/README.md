@@ -60,6 +60,8 @@ sequenceDiagram
 - No external infrastructure is required; Hardhat spins up an ephemeral network
   and injects the canonical `$AGIALPHA` token bytecode at the configured
   address.
+- The demo bundles pre-built v2 module bytecode and ABIs so **no local Solidity
+  compilation is required**.
 
 ## Running the demonstration
 
@@ -82,6 +84,16 @@ The script:
 5. Prints a full telemetry dashboard – validator/agent stakes, fee pool state,
    burn totals, reputation scores, and certificate ownership – so a non-technical
    operator sees the market outcome at a glance.
+2. Demonstrates **owner mission control** — live updates to protocol fees,
+   validator incentives, non-reveal penalties, and emergency pause delegation to
+   a trusted operator — proving that the platform owner can steer every
+   parameter in real time.
+3. Walks through the happy-path job where all validators approve.
+4. Runs a contested job where governance resolves a dispute in favour of the
+   agent.
+5. Prints a full telemetry dashboard – validator/agent stakes, fee pool state,
+   burn totals, reputation scores, and certificate ownership – so a
+   non-technical operator sees the market outcome at a glance.
 
 The output is intentionally narrative, providing contextual breadcrumbs (job
 state transitions, committee selections, dispute escalations) so a non-technical
