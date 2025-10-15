@@ -3,6 +3,8 @@ import { jobRegistryAbi } from './abis/jobRegistry';
 import { taxPolicyAbi } from './abis/taxPolicy';
 import { certificateNftAbi } from './abis/certificateNft';
 import { validationModuleAbi } from './abis/validationModule';
+import { stakeManagerAbi } from './abis/stakeManager';
+import { erc20Abi } from './abis/erc20';
 import { loadPortalConfiguration } from './config';
 
 export const portalConfig = loadPortalConfiguration();
@@ -63,6 +65,40 @@ export const getValidationModuleContract = (
     return providerCache.get(key)!;
   }
   const contract = new Contract(address, validationModuleAbi, conn);
+  if (!signerOrProvider) {
+    providerCache.set(key, contract);
+  }
+  return contract;
+};
+
+export const getStakeManagerContract = (
+  signerOrProvider?: Signer | JsonRpcProvider
+) => {
+  const address = portalConfig.stakeManagerAddress;
+  if (!address) return undefined;
+  const conn = signerOrProvider ?? createReadOnlyProvider();
+  const key = `stakeManager:${conn instanceof JsonRpcProvider ? 'provider' : 'signer'}`;
+  if (!signerOrProvider && providerCache.has(key)) {
+    return providerCache.get(key)!;
+  }
+  const contract = new Contract(address, stakeManagerAbi, conn);
+  if (!signerOrProvider) {
+    providerCache.set(key, contract);
+  }
+  return contract;
+};
+
+export const getStakingTokenContract = (
+  signerOrProvider?: Signer | JsonRpcProvider
+) => {
+  const address = portalConfig.stakingTokenAddress;
+  if (!address) return undefined;
+  const conn = signerOrProvider ?? createReadOnlyProvider();
+  const key = `stakingToken:${conn instanceof JsonRpcProvider ? 'provider' : 'signer'}`;
+  if (!signerOrProvider && providerCache.has(key)) {
+    return providerCache.get(key)!;
+  }
+  const contract = new Contract(address, erc20Abi, conn);
   if (!signerOrProvider) {
     providerCache.set(key, contract);
   }

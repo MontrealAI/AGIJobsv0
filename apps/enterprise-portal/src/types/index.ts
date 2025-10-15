@@ -144,6 +144,8 @@ export interface PortalConfiguration {
   taxPolicyAddress: string;
   certificateNFTAddress: string;
   validationModuleAddress?: string;
+  stakeManagerAddress?: string;
+  stakingTokenAddress?: string;
   stakingTokenSymbol?: string;
   rpcUrl: string;
   subgraphUrl?: string;

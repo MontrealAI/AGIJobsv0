@@ -15,7 +15,12 @@ export const loadPortalConfiguration = (): PortalConfiguration => {
     '0x0000000000000000000000000000000000000000';
   const certificateNFTAddress = process.env.NEXT_PUBLIC_CERTIFICATE_NFT_ADDRESS ??
     '0x0000000000000000000000000000000000000000';
-  const validationModuleAddress = process.env.NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS ?? undefined;
+  const validationModuleAddress =
+    process.env.NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS ?? undefined;
+  const stakeManagerAddress =
+    process.env.NEXT_PUBLIC_STAKE_MANAGER_ADDRESS ?? undefined;
+  const stakingTokenAddress =
+    process.env.NEXT_PUBLIC_STAKING_TOKEN_ADDRESS ?? undefined;
   const subgraphUrl = process.env.NEXT_PUBLIC_SUBGRAPH_URL ?? undefined;
   const stakingTokenSymbol = process.env.NEXT_PUBLIC_STAKING_TOKEN_SYMBOL ?? '$AGIALPHA';
 
@@ -26,6 +31,8 @@ export const loadPortalConfiguration = (): PortalConfiguration => {
     taxPolicyAddress,
     certificateNFTAddress,
     validationModuleAddress,
+    stakeManagerAddress,
+    stakingTokenAddress,
     subgraphUrl,
     stakingTokenSymbol
   };

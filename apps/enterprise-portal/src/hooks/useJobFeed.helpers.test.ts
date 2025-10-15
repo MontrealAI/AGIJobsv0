@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { computeFromBlock } from './useJobFeed.helpers.ts';
+import { computeFromBlock } from './useJobFeed.helpers';
 
 test('computeFromBlock returns undefined when querying a specific job', async () => {
   const provider = { getBlockNumber: async () => 10 };
