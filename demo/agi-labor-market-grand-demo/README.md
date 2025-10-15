@@ -68,9 +68,29 @@ From the repository root run:
 npx hardhat run --no-compile scripts/v2/agiLaborMarketGrandDemo.ts --network hardhat
 ```
 
+Optional flags empower non-technical operators to tailor the simulation without
+editing code:
+
+| Flag | Purpose | Default |
+| ---- | ------- | ------- |
+| `--fee-pct=<number>` | Set the live protocol fee percentage applied to job rewards. | `5` |
+| `--validator-reward-pct=<number>` | Configure how much of each reward is routed to validators (must keep fee + reward ≤ 100). | `70` |
+| `--burn-pct=<number>` | Adjust the percentage of protocol fees burned during settlement. | `5` |
+| `--stake=<tokens>` | Stake requirement minted to each agent and validator during setup. Accepts decimals (e.g. `12.5`). | `10` |
+| `--cooperative-reward=<tokens>` | Reward escrowed for the cooperative climate coordination scenario. | `250` |
+| `--dispute-reward=<tokens>` | Reward escrowed for the disputed translation scenario. | `320` |
+| `--export=<path>` | Emit the narrative transcript to a custom location. | `AGI_JOBS_DEMO_EXPORT` or none |
+
+Token amounts are interpreted in AGIα with full precision; e.g. `--stake=7.25`
+stakes exactly 7.25 AGIα for every actor. Percentages are integers between 0
+and 100.
+
 The script:
 
 1. Boots the entire v2 module suite and displays initial balances.
+2. Exercises an **owner governance drill** – temporarily retunes protocol
+   economics, pauses every core contract, then resumes them to prove emergency
+   control.
 2. Demonstrates **owner mission control** — live updates to protocol fees,
    validator incentives, non-reveal penalties, and emergency pause delegation to
    a trusted operator — proving that the platform owner can steer every
@@ -79,6 +99,8 @@ The script:
 4. Runs a contested job where governance resolves a dispute in favour of the
    agent.
 5. Prints a full telemetry dashboard – validator/agent stakes, fee pool state,
+   burn totals, reputation scores, and certificate ownership – so a non-technical
+   operator sees the market outcome at a glance.
    burn totals, reputation scores, and certificate ownership – so a
    non-technical operator sees the market outcome at a glance.
 

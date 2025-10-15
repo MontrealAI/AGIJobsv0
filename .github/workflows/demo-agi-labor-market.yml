@@ -1,0 +1,60 @@
+name: demo-agi-labor-market
+
+on:
+  pull_request:
+    paths:
+      - 'demo/agi-labor-market-grand-demo/**'
+      - 'scripts/v2/agiLaborMarketGrandDemo.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-agi-labor-market.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  agi-labor-market:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Harden runner
+        uses: step-security/harden-runner@v2.13.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com
+            binaries.soliditylang.org
+            github.com
+            nodejs.org
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Cache Hardhat compilers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/hardhat-nodejs
+          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+          restore-keys: |
+            hardhat-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run AGI labour market grand demo export
+        run: npm run demo:agi-labor-market:export
+
+      - name: Upload sovereign labour market transcript
+        uses: actions/upload-artifact@v4
+        with:
+          name: agi-labor-market-transcript
+          path: demo/agi-labor-market-grand-demo/ui/export/latest.json
