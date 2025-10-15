@@ -79,7 +79,7 @@ fi
 
 log INFO "Starting AGI Jobs flagship operating system rehearsal (CI_MODE=$CI_MODE, DRY_RUN=$DRY_RUN)"
 
-run_step "Seed toolchain" npm ci
+run_step "Seed toolchain" bash -c "cd \"$REPO_ROOT\" && npm ci"
 run_step "Execute governance symphony" ./bin/orchestrate.sh "${ORCHESTRATE_ARGS[@]}"
 run_step "Simulate AGI OS mission" bash -c "cd '$REPO_ROOT' && npm run demo:agi-os"
 run_step "Capture owner control matrix" bash -c "cd '$REPO_ROOT' && npm run owner:parameters"
