@@ -72,7 +72,9 @@ The script:
 2. Walks through the happy-path job where all validators approve.
 3. Runs a contested job where governance resolves a dispute in favour of the
    agent.
-4. Prints the final balances, validator rewards, burn metrics and NFT counts.
+4. Prints a full telemetry dashboard – validator/agent stakes, fee pool state,
+   burn totals, reputation scores, and certificate ownership – so a non-technical
+   operator sees the market outcome at a glance.
 
 The output is intentionally narrative, providing contextual breadcrumbs (job
 state transitions, committee selections, dispute escalations) so a non-technical

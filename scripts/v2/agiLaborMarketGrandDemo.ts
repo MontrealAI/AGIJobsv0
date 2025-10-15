@@ -32,6 +32,7 @@ interface DemoEnvironment {
   identity: ethers.Contract;
   certificate: ethers.Contract;
   feePool: ethers.Contract;
+  initialSupply: bigint;
 }
 
 const JOB_STATE_LABELS: Record<number, string> = {
@@ -56,6 +57,182 @@ function logSection(title: string): void {
 
 function logStep(step: string): void {
   console.log(`\n➡️  ${step}`);
+}
+
+async function manualDeployContract(
+  label: string,
+  factory: ethers.ContractFactory,
+  signer: ethers.Signer,
+  args: readonly unknown[]
+): Promise<ethers.Contract> {
+  const encodedArgs = factory.interface.encodeDeploy(args);
+  const bytecode = factory.bytecode as string;
+  if (!bytecode || bytecode === '0x') {
+    throw new Error(`Missing bytecode for ${label}`);
+  }
+  const tx = await signer.sendTransaction({
+    data: `${bytecode}${encodedArgs.slice(2)}`,
+  });
+  const receipt = await tx.wait();
+  console.log(`   ${label} deployed at ${receipt.contractAddress}`);
+  return factory.attach(receipt.contractAddress);
+}
+
+async function ensureValidatorsSelected(
+  validation: ethers.Contract,
+  caller: ethers.Signer,
+  jobId: bigint
+) {
+  const attempt = async () => {
+    try {
+      await validation.connect(caller).selectValidators(jobId, 0);
+    } catch (error) {
+      if (!`${error}`.includes('ValidatorsAlreadySelected')) {
+        throw error;
+      }
+    }
+    return await validation.rounds(jobId);
+  };
+
+  let round = await attempt();
+  if (!round.validators || round.validators.length === 0) {
+    await time.increase(1);
+    round = await attempt();
+  }
+  return round;
+}
+
+interface MintedCertificate {
+  jobId: bigint;
+  owner: string;
+  uri?: string;
+}
+
+function addressesEqual(a: string, b: string): boolean {
+  return a.toLowerCase() === b.toLowerCase();
+}
+
+async function gatherCertificates(
+  certificate: ethers.Contract,
+  highestJobId: bigint
+): Promise<MintedCertificate[]> {
+  const minted: MintedCertificate[] = [];
+  for (let jobId = 1n; jobId <= highestJobId; jobId++) {
+    try {
+      const owner = await certificate.ownerOf(jobId);
+      let uri: string | undefined;
+      try {
+        uri = await certificate.tokenURI(jobId);
+      } catch (error) {
+        console.warn(`⚠️  tokenURI unavailable for job ${jobId}:`, error);
+      }
+      minted.push({ jobId, owner, uri });
+    } catch (error) {
+      // Job either not created yet or no certificate minted. Ignore silently.
+    }
+  }
+  return minted;
+}
+
+async function logAgentPortfolios(
+  env: DemoEnvironment,
+  minted: MintedCertificate[]
+): Promise<void> {
+  console.log('\n🤖 Agent portfolios');
+  const agents: Array<{ name: string; signer: ethers.Signer }> = [
+    { name: 'Alice (agent)', signer: env.agentAlice },
+    { name: 'Bob (agent)', signer: env.agentBob },
+  ];
+
+  for (const agent of agents) {
+    const address = await agent.signer.getAddress();
+    const liquid = await env.token.balanceOf(address);
+    const staked = await env.stake.stakes(address, Role.Agent);
+    const locked = await env.stake.lockedStakes(address);
+    const reputation = await env.reputation.reputationOf(address);
+    const ownedCertificates = minted.filter((entry) =>
+      addressesEqual(entry.owner, address)
+    );
+
+    console.log(`  ${agent.name} (${address})`);
+    console.log(`    Liquid balance: ${formatTokens(liquid)}`);
+    console.log(`    Active agent stake: ${formatTokens(staked)}`);
+    console.log(`    Locked stake: ${formatTokens(locked)}`);
+    console.log(`    Reputation score: ${reputation.toString()}`);
+
+    if (ownedCertificates.length === 0) {
+      console.log('    Certificates: none yet — future completions will mint AGI credentials.');
+    } else {
+      const descriptors = ownedCertificates.map((entry) => {
+        const uriSuffix = entry.uri ? ` ← ${entry.uri}` : '';
+        return `#${entry.jobId.toString()}${uriSuffix}`;
+      });
+      console.log(`    Certificates: ${descriptors.join(', ')}`);
+    }
+  }
+}
+
+async function logValidatorCouncil(env: DemoEnvironment): Promise<void> {
+  console.log('\n🛡️ Validator council status');
+  const validators: Array<{ name: string; signer: ethers.Signer }> = [
+    { name: 'Charlie (validator)', signer: env.validatorCharlie },
+    { name: 'Dora (validator)', signer: env.validatorDora },
+    { name: 'Evan (validator)', signer: env.validatorEvan },
+  ];
+
+  for (const validator of validators) {
+    const address = await validator.signer.getAddress();
+    const liquid = await env.token.balanceOf(address);
+    const staked = await env.stake.stakes(address, Role.Validator);
+    const locked = await env.stake.lockedStakes(address);
+    const reputation = await env.reputation.reputationOf(address);
+
+    console.log(`  ${validator.name} (${address})`);
+    console.log(`    Liquid balance: ${formatTokens(liquid)}`);
+    console.log(`    Validator stake: ${formatTokens(staked)}`);
+    console.log(`    Locked stake: ${formatTokens(locked)}`);
+    console.log(`    Reputation score: ${reputation.toString()}`);
+  }
+}
+
+async function summarizeMarketState(env: DemoEnvironment): Promise<void> {
+  logSection('Sovereign labour market telemetry dashboard');
+
+  const highestJobId = await env.registry.nextJobId();
+  const minted = await gatherCertificates(env.certificate, highestJobId);
+  const totalJobs = highestJobId;
+  console.log(`\n📈 Jobs orchestrated in this session: ${totalJobs.toString()}`);
+
+  const finalSupply = await env.token.totalSupply();
+  const burned = env.initialSupply > finalSupply ? env.initialSupply - finalSupply : 0n;
+  console.log(`\n🔥 Total AGIα burned: ${formatTokens(burned)}`);
+  console.log(`   Circulating supply now: ${formatTokens(finalSupply)}`);
+
+  const feePct = await env.registry.feePct();
+  const validatorRewardPct = await env.registry.validatorRewardPct();
+  const pendingFees = await env.feePool.pendingFees();
+  console.log(`\n🏛️ Protocol fee setting: ${feePct}%`);
+  console.log(`   Validator reward split: ${validatorRewardPct}%`);
+  console.log(`   FeePool pending distribution: ${formatTokens(pendingFees)}`);
+
+  const totalAgentStake = await env.stake.totalStakes(Role.Agent);
+  const totalValidatorStake = await env.stake.totalStakes(Role.Validator);
+  console.log(`\n🔐 Aggregate capital committed:`);
+  console.log(`   Agents: ${formatTokens(totalAgentStake)}`);
+  console.log(`   Validators: ${formatTokens(totalValidatorStake)}`);
+
+  await logAgentPortfolios(env, minted);
+  await logValidatorCouncil(env);
+
+  if (minted.length === 0) {
+    console.log('\n🎓 Certificates minted: none yet');
+  } else {
+    console.log('\n🎓 Certificates minted:');
+    for (const entry of minted) {
+      const uriSuffix = entry.uri ? ` ← ${entry.uri}` : '';
+      console.log(`  Job #${entry.jobId.toString()} → ${entry.owner}${uriSuffix}`);
+    }
+  }
 }
 
 async function mintInitialBalances(
@@ -128,86 +305,128 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     validatorDora,
     validatorEvan,
   ], mintAmount);
+  const initialSupply = await token.totalSupply();
 
   logStep('Deploying core contracts');
   const Stake = await ethers.getContractFactory(
     'contracts/v2/StakeManager.sol:StakeManager'
   );
-  const stake = await Stake.deploy(
-    0,
-    0,
-    0,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    await owner.getAddress()
+  console.log(
+    `   StakeManager constructor verified (${Stake.interface.deploy.inputs.length} parameters)`
   );
+  const stakeArgs = [
+    0n,
+    0n,
+    0n,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    await owner.getAddress(),
+  ] as const;
+  const stake = await manualDeployContract(
+    'StakeManager',
+    Stake,
+    owner,
+    [...stakeArgs]
+  );
+  await token.connect(owner).mint(await stake.getAddress(), 0n);
 
   const Reputation = await ethers.getContractFactory(
     'contracts/v2/ReputationEngine.sol:ReputationEngine'
   );
-  const reputation = await Reputation.deploy(await stake.getAddress());
+  const reputation = await manualDeployContract(
+    'ReputationEngine',
+    Reputation,
+    owner,
+    [await stake.getAddress()]
+  );
 
   const Identity = await ethers.getContractFactory(
     'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
   );
-  const identity = await Identity.deploy();
+  const identity = await manualDeployContract(
+    'IdentityRegistry',
+    Identity,
+    owner,
+    [
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      await reputation.getAddress(),
+      ethers.ZeroHash,
+      ethers.ZeroHash,
+    ]
+  );
 
   const Validation = await ethers.getContractFactory(
     'contracts/v2/ValidationModule.sol:ValidationModule'
   );
-  const validation = await Validation.deploy(
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    0,
-    0,
-    0,
-    0,
-    []
+  const validation = await manualDeployContract(
+    'ValidationModule',
+    Validation,
+    owner,
+    [
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0n,
+      0n,
+      0n,
+      0n,
+      [],
+    ]
   );
 
   const Certificate = await ethers.getContractFactory(
     'contracts/v2/CertificateNFT.sol:CertificateNFT'
   );
-  const certificate = await Certificate.deploy('AGI Jobs Credential', 'AGICERT');
+  const certificate = await manualDeployContract(
+    'CertificateNFT',
+    Certificate,
+    owner,
+    ['AGI Jobs Credential', 'AGICERT']
+  );
 
   const Registry = await ethers.getContractFactory(
     'contracts/v2/JobRegistry.sol:JobRegistry'
   );
-  const registry = await Registry.deploy(
-    await validation.getAddress(),
-    await stake.getAddress(),
-    await reputation.getAddress(),
-    ethers.ZeroAddress,
-    await certificate.getAddress(),
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    0,
-    0,
-    [],
-    await owner.getAddress()
+  const registry = await manualDeployContract(
+    'JobRegistry',
+    Registry,
+    owner,
+    [
+      await validation.getAddress(),
+      await stake.getAddress(),
+      await reputation.getAddress(),
+      ethers.ZeroAddress,
+      await certificate.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0n,
+      0n,
+      [],
+      await owner.getAddress(),
+    ]
   );
 
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
-  const dispute = await Dispute.deploy(
-    await registry.getAddress(),
-    0,
-    0,
-    ethers.ZeroAddress,
-    await owner.getAddress()
+  const dispute = await manualDeployContract(
+    'DisputeModule',
+    Dispute,
+    owner,
+    [await registry.getAddress(), 0n, 0n, ethers.ZeroAddress, await owner.getAddress()]
   );
 
   const FeePool = await ethers.getContractFactory(
     'contracts/v2/FeePool.sol:FeePool'
   );
-  const feePool = await FeePool.deploy(
-    await stake.getAddress(),
-    0,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress
+  const feePool = await manualDeployContract(
+    'FeePool',
+    FeePool,
+    owner,
+    [await stake.getAddress(), 0n, ethers.ZeroAddress, ethers.ZeroAddress]
   );
+  await token.connect(owner).mint(await feePool.getAddress(), 0n);
 
   logStep('Wiring governance relationships and module cross-links');
   await certificate
@@ -234,6 +453,9 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
   await validation
     .connect(owner)
     .setReputationEngine(await reputation.getAddress());
+  await validation
+    .connect(owner)
+    .setStakeManager(await stake.getAddress());
 
   await registry
     .connect(owner)
@@ -254,6 +476,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     .setValidatorRewardPct(20);
 
   await reputation.connect(owner).setCaller(await registry.getAddress(), true);
+  await reputation.connect(owner).setCaller(await validation.getAddress(), true);
 
   await dispute.connect(owner).setStakeManager(await stake.getAddress());
 
@@ -322,6 +545,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     identity,
     certificate,
     feePool,
+    initialSupply,
   };
 }
 
@@ -404,13 +628,7 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
     .connect(nationA)
     .confirmEmployerBurn(jobId, burnTxHash);
 
-  await validation.connect(nationA).selectValidators(jobId, 0);
-  let round = await validation.rounds(jobId);
-  if (!round.validators || round.validators.length === 0) {
-    await time.increase(1);
-    await validation.connect(nationA).selectValidators(jobId, 0);
-    round = await validation.rounds(jobId);
-  }
+  let round = await ensureValidatorsSelected(validation, nationA, jobId);
 
   const nonce = await validation.jobNonce(jobId);
   const validators = [validatorCharlie, validatorDora, validatorEvan];
@@ -521,13 +739,7 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     .connect(nationB)
     .confirmEmployerBurn(jobId, burnTxHash);
 
-  await validation.connect(nationB).selectValidators(jobId, 0);
-  let round = await validation.rounds(jobId);
-  if (!round.validators || round.validators.length === 0) {
-    await time.increase(1);
-    await validation.connect(nationB).selectValidators(jobId, 0);
-    round = await validation.rounds(jobId);
-  }
+  let round = await ensureValidatorsSelected(validation, nationB, jobId);
   const nonce = await validation.jobNonce(jobId);
 
   logStep(
@@ -629,6 +841,7 @@ async function main(): Promise<void> {
 
   await runHappyPath(env);
   await runDisputeScenario(env);
+  await summarizeMarketState(env);
 
   logSection('Demo complete – AGI Jobs v2 sovereignty market simulation finished');
 }
