@@ -29,11 +29,11 @@ printf '   • Owner Console      → http://localhost:%s\n' "$owner_port"
 printf '   • Enterprise Portal → http://localhost:%s\n' "$portal_port"
 printf '   • Validator Desk    → http://localhost:%s\n\n' "$validator_port"
 
-(PORT="$owner_port" npm --prefix apps/console run dev >/tmp/omega-owner-console.log 2>&1 &)
+PORT="$owner_port" npm --prefix apps/console run dev >/tmp/omega-owner-console.log 2>&1 &
 pids+=("$!")
-(PORT="$portal_port" npm --prefix apps/enterprise-portal run dev >/tmp/omega-enterprise-portal.log 2>&1 &)
+PORT="$portal_port" npm --prefix apps/enterprise-portal run dev >/tmp/omega-enterprise-portal.log 2>&1 &
 pids+=("$!")
-(PORT="$validator_port" npm --prefix apps/validator-ui run dev >/tmp/omega-validator-ui.log 2>&1 &)
+PORT="$validator_port" npm --prefix apps/validator-ui run dev >/tmp/omega-validator-ui.log 2>&1 &
 pids+=("$!")
 
 printf 'Logs: %s\n' "/tmp/omega-owner-console.log"
