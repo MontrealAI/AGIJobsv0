@@ -105,6 +105,7 @@ For a printable walkthrough (including remediation steps when a context drifts),
 - [ASI feasibility verification suite](docs/asi-feasibility-verification-suite.md)
 - [Operating system grand demonstration](docs/agi-os-grand-demo.md)
 - [Astral Omnidominion operating system demo](docs/agi-os-first-class-demo.md)
+- [Meta-Agentic α-AGI platform demonstration](docs/meta-agentic-alpha-agi-demo.md)
 - [REDENOMINATION readiness matrix](docs/redenomination-readiness-matrix.md)
 
 ### Identity policy
