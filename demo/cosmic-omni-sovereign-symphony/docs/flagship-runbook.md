@@ -69,6 +69,11 @@ What happens under the hood:
 - **Owner authority:** `reports/agi-os/owner-control-matrix.json` plus the
   optional Mermaid SVG prove that the owner can pause, update parameters, rotate
   controllers, and execute safe-upgrade plans without redeploying contracts.
+- **Automated verification:** Run
+  `node demo/cosmic-omni-sovereign-symphony/scripts/verify-flagship-report.mjs`
+  to generate `logs/flagship-demo/verification.json`. The script fails fast if
+  any ledger, vote transcript, mission bundle, or summary evidence is missing,
+  providing a machine-readable ✅/❌ indicator for auditors.
 
 ## 4. UI Touchpoints (optional)
 

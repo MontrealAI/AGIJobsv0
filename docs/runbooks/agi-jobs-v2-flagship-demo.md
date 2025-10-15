@@ -56,6 +56,10 @@ market automation, owner control validation, and observability outputs.
      outputs from the operating system simulation.
    - `demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/summary.txt` – Human
      readable recap tying all artefacts together.
+   - Optional verification: run
+     `node demo/cosmic-omni-sovereign-symphony/scripts/verify-flagship-report.mjs`
+     to produce `logs/flagship-demo/verification.json`, which fails the run if
+     any governance, owner control, or mission bundle evidence is missing.
 3. **Share dashboards** by importing the JSON payloads in
    `demo/cosmic-omni-sovereign-symphony/dashboards/` into Grafana/Chronograf. The
    Mermaid architecture diagram (`docs/architecture.mmd`) can be rendered for
