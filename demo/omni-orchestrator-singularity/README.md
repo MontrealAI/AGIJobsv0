@@ -29,7 +29,7 @@ The scenario simulates a multi-national council chartering an autonomous program
 
 The walkthrough follows seven auditable phases:
 
-1. **Genesis** – Deploys the audited v2 contracts via `scripts/v2/oneclick-stack.ts`, wires `SystemPause`, and verifies owner control using `tools/owner/verify-control.ts`.
+1. **Genesis** – Deploys the audited v2 contracts via `scripts/v2/oneclick-stack.ts`, wires `SystemPause`, and verifies owner control using `scripts/v2/verifyOwnerControl.ts`.
 2. **Identity Charter** – Registers sovereign agent and validator ENS handles via `npm run identity:update -- --config demo/omni-orchestrator-singularity/config/identities.example.json`.
 3. **Mandate Vote** – Boots the `GlobalGovernanceCouncil` template (optional) and scripts a unanimous vote authorising Project Meridian using the existing cosmic-symphony helpers.
 4. **One-Box Planning Loop** – Calls the `/onebox/plan`, `/simulate`, `/execute`, and `/status` endpoints via the orchestrator runner, producing deterministic IPFS receipts that the UI renders.

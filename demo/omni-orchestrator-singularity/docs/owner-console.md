@@ -1,6 +1,6 @@
 # Owner Console Quick Actions
 
-These actions assume ownership has been transferred to the designated multisig or council account and that `SystemPause` has been wired via `tools/system-pause/updateSystemPause.ts`.
+These actions assume ownership has been transferred to the designated multisig or council account and that `SystemPause` has been wired via `scripts/v2/updateSystemPause.ts`.
 
 ## Pause / Resume
 

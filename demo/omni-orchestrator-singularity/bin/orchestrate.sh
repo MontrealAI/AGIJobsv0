@@ -65,10 +65,13 @@ fi
 
 log "Verifying owner control wiring"
 if $DRY_RUN; then
-  npx ts-node tools/owner/verify-control.ts --network "$NETWORK" --output "$REPORT_DIR/owner-control.json"
+  npx hardhat run --no-compile scripts/v2/verifyOwnerControl.ts --network "$NETWORK" -- --json \
+    | tee "$REPORT_DIR/owner-control.json"
 else
-  npx ts-node tools/system-pause/updateSystemPause.ts --network "$NETWORK" --auto --confirm yes | tee "$REPORT_DIR/system-pause.log"
-  npx ts-node tools/owner/verify-control.ts --network "$NETWORK" --output "$REPORT_DIR/owner-control.json"
+  npx hardhat run --no-compile scripts/v2/updateSystemPause.ts --network "$NETWORK" -- --execute \
+    | tee "$REPORT_DIR/system-pause.log"
+  npx hardhat run --no-compile scripts/v2/verifyOwnerControl.ts --network "$NETWORK" -- --json \
+    | tee "$REPORT_DIR/owner-control.json"
 fi
 
 log "Seeding identity registry"
