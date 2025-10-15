@@ -54,7 +54,7 @@ The runbook in [`RUNBOOK.md`](./RUNBOOK.md) spells out every step for non-techni
 
 1. Environment checks & install instructions.
 2. Launch script walkthrough and expected prompts.
-3. Owner-controlled pause/unpause drill using `npm run owner:command-center -- --action unpause-all`.
+3. Owner-controlled pause/unpause drill using `HARDHAT_NETWORK=localhost npm run owner:system-pause -- --action pause` followed by `--action unpause` (or the Owner Console UI toggles).
 4. Enterprise Portal job submission on behalf of `aurora.nation.agi.eth` and wallet-governed collectives.
 5. Validator dashboard commit/reveal timeline, including raising a sample dispute via CLI (`npm run demo:agi-os:first-class -- --skip-deploy`).
 6. Artefact verification and manifest hashing procedure for audit teams.
