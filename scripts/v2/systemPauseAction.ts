@@ -150,6 +150,104 @@ async function selectSigner(options: CliOptions) {
   return signers[index];
 }
 
+type ModuleDescriptor = {
+  label: string;
+  getAddress: (pause: any) => Promise<string>;
+};
+
+type ModuleState = {
+  label: string;
+  address: string | null;
+  paused: boolean | null;
+  error?: string;
+};
+
+const MODULE_DESCRIPTORS: ModuleDescriptor[] = [
+  { label: 'JobRegistry', getAddress: (pause) => pause.jobRegistry() },
+  { label: 'StakeManager', getAddress: (pause) => pause.stakeManager() },
+  { label: 'ValidationModule', getAddress: (pause) => pause.validationModule() },
+  { label: 'DisputeModule', getAddress: (pause) => pause.disputeModule() },
+  { label: 'PlatformRegistry', getAddress: (pause) => pause.platformRegistry() },
+  { label: 'FeePool', getAddress: (pause) => pause.feePool() },
+  { label: 'ReputationEngine', getAddress: (pause) => pause.reputationEngine() },
+  {
+    label: 'ArbitratorCommittee',
+    getAddress: (pause) => pause.arbitratorCommittee(),
+  },
+];
+
+async function fetchModuleStates(pause: any): Promise<ModuleState[]> {
+  const modules: ModuleState[] = [];
+
+  for (const descriptor of MODULE_DESCRIPTORS) {
+    let address: string | null = null;
+    try {
+      const resolved = await descriptor.getAddress(pause);
+      address = ethers.getAddress(resolved);
+    } catch (error) {
+      modules.push({
+        label: descriptor.label,
+        address: null,
+        paused: null,
+        error: `failed to fetch module address: ${(error as Error).message}`,
+      });
+      continue;
+    }
+
+    if (address === ethers.ZeroAddress) {
+      modules.push({
+        label: descriptor.label,
+        address,
+        paused: null,
+        error: 'module address not configured',
+      });
+      continue;
+    }
+
+    try {
+      const moduleContract = await ethers.getContractAt(
+        ['function paused() view returns (bool)'],
+        address
+      );
+      const isPaused = await moduleContract.paused();
+      modules.push({ label: descriptor.label, address, paused: Boolean(isPaused) });
+    } catch (error) {
+      modules.push({
+        label: descriptor.label,
+        address,
+        paused: null,
+        error: `failed to query paused(): ${(error as Error).message}`,
+      });
+    }
+  }
+
+  return modules;
+}
+
+function summarisePauseState(modules: ModuleState[]): {
+  summary: 'paused' | 'live' | 'mixed' | 'unknown';
+  allPaused: boolean;
+  allUnpaused: boolean;
+} {
+  const actionable = modules.filter((module) => module.paused !== null);
+  const allPaused = actionable.length > 0 && actionable.every((module) => module.paused === true);
+  const allUnpaused =
+    actionable.length > 0 && actionable.every((module) => module.paused === false);
+  const anyPaused = actionable.some((module) => module.paused === true);
+  const anyUnpaused = actionable.some((module) => module.paused === false);
+
+  if (allPaused) {
+    return { summary: 'paused', allPaused: true, allUnpaused: false };
+  }
+  if (allUnpaused) {
+    return { summary: 'live', allPaused: false, allUnpaused: true };
+  }
+  if (anyPaused || anyUnpaused) {
+    return { summary: 'mixed', allPaused: false, allUnpaused: false };
+  }
+  return { summary: 'unknown', allPaused: false, allUnpaused: false };
+}
+
 async function execute(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
   if (!options.action) {
@@ -167,7 +265,8 @@ async function execute(): Promise<void> {
   const pause = await ethers.getContractAt('SystemPause', pauseAddress);
   const governance = await pause.governance();
   const governanceAddress = ethers.getAddress(governance);
-  const paused = await pause.paused();
+  const modules = await fetchModuleStates(pause);
+  const pauseSummary = summarisePauseState(modules);
 
   const signer = await selectSigner(options);
   const signerAddress = ethers.getAddress(await signer.getAddress());
@@ -182,9 +281,12 @@ async function execute(): Promise<void> {
   }
 
   const targetState = options.action === 'pause';
-  if (targetState === paused && !options.dryRun) {
+  const targetSatisfied = targetState
+    ? pauseSummary.allPaused
+    : pauseSummary.allUnpaused;
+  if (targetSatisfied && !options.dryRun) {
     throw new Error(
-      `SystemPause is already ${paused ? 'paused' : 'unpaused'}. ` +
+      `All SystemPause modules are already ${targetState ? 'paused' : 'unpaused'}. ` +
         'Use --dry-run to verify permissions or choose the opposite action.'
     );
   }
@@ -196,9 +298,34 @@ async function execute(): Promise<void> {
   console.log(`Network          : ${networkName}`);
   console.log(`SystemPause      : ${pauseAddress}`);
   console.log(`Governance signer: ${signerAddress}`);
-  console.log(`Current state    : ${paused ? 'paused' : 'live'}`);
+  const stateLabel =
+    pauseSummary.summary === 'paused'
+      ? 'paused'
+      : pauseSummary.summary === 'live'
+      ? 'live'
+      : pauseSummary.summary === 'mixed'
+      ? 'mixed (see module breakdown below)'
+      : 'unknown (see module breakdown below)';
+  console.log(`Current state    : ${stateLabel}`);
   console.log(`Requested action : ${method}`);
   console.log('');
+
+  if (pauseSummary.summary === 'mixed' || pauseSummary.summary === 'unknown') {
+    console.log('Module states    :');
+    for (const module of modules) {
+      const status =
+        module.paused === true
+          ? 'paused'
+          : module.paused === false
+          ? 'live'
+          : module.error
+          ? `error (${module.error})`
+          : 'unknown';
+      const address = module.address ?? 'n/a';
+      console.log(`  - ${module.label.padEnd(20, ' ')} ${status} [${address}]`);
+    }
+    console.log('');
+  }
 
   if (options.dryRun) {
     await pause.connect(signer)[method].staticCall();
