@@ -81,6 +81,22 @@ All output artefacts are summarised in
 `demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/summary.txt`, making it
 easy to brief stakeholders or attach the run evidence to compliance tickets.
 
+### Verification & evidence capture
+
+Run the verification harness to validate that every flagship artefact is
+present and populated with the expected data model:
+
+```bash
+node demo/cosmic-omni-sovereign-symphony/scripts/verify-flagship-report.mjs
+```
+
+The script checks the governance ledger, vote simulation log (including the
+owner pause/unpause drill), execution plan, flagship summary, and the AGI OS
+mission bundle (`reports/agi-os/`). It writes a machine-readable report to
+`demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/verification.json` and
+fails fast when required evidence is missing. This gives non-technical owners a
+single ✅/❌ indicator for compliance archives without re-running the full demo.
+
 ## Contracts Delivered
 
 - [`contracts/v2/governance/GlobalGovernanceCouncil.sol`](../../contracts/v2/governance/GlobalGovernanceCouncil.sol)

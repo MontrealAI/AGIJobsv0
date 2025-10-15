@@ -108,7 +108,10 @@ AGI Jobs v0 (v2) Flagship Demo Completed
 - Knowledge graph payloads: demo/cosmic-omni-sovereign-symphony/logs/
 - Mission bundle: reports/agi-os/
 - Owner control matrix: reports/agi-os/owner-control-matrix.json (generated via npm run owner:parameters)
+- Verification report: demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/verification.json
 SUMMARY
+
+run_step "Verify flagship artefacts" node ./scripts/verify-flagship-report.mjs
 
 log INFO "Summary available at $SUMMARY_PATH"
 log INFO "Flagship demo finished"
