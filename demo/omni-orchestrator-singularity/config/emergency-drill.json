@@ -1,0 +1,32 @@
+{
+  "title": "Emergency Drill - Pause, Adjust Thermostat, Resume",
+  "steps": [
+    {
+      "type": "pause"
+    },
+    {
+      "type": "governanceCall",
+      "target": "RewardEngineMB",
+      "method": "setRoleShares",
+      "args": [
+        {
+          "role": "agent",
+          "shareBps": 5200
+        },
+        {
+          "role": "validator",
+          "shareBps": 4800
+        }
+      ]
+    },
+    {
+      "type": "governanceCall",
+      "target": "Thermostat",
+      "method": "setTemperature",
+      "args": ["1.10e18"]
+    },
+    {
+      "type": "unpause"
+    }
+  ]
+}
