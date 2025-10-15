@@ -80,3 +80,100 @@ export interface StoredReceiptRecord {
   payload?: Record<string, unknown> | null;
   metadata?: Record<string, unknown> | null;
 }
+
+export interface DemoTokenAmount {
+  raw: string;
+  formatted: string;
+}
+
+export interface DemoBalanceEntry {
+  name: string;
+  address: string;
+  role?: string;
+  balance: DemoTokenAmount;
+}
+
+export interface DemoBalanceSnapshot {
+  id: string;
+  label: string;
+  notes?: string;
+  entries: DemoBalanceEntry[];
+}
+
+export interface DemoStepEvent {
+  label: string;
+  details?: string;
+  metrics?: Record<string, string>;
+}
+
+export interface DemoStepRecord {
+  title: string;
+  events: DemoStepEvent[];
+}
+
+export type DemoSectionKind = 'setup' | 'scenario' | 'telemetry' | 'wrapup';
+
+export interface DemoSectionRecord {
+  id: string;
+  title: string;
+  kind: DemoSectionKind;
+  summary?: string;
+  outcome?: string;
+  steps: DemoStepRecord[];
+  snapshots: DemoBalanceSnapshot[];
+}
+
+export interface DemoActorProfile {
+  id: string;
+  name: string;
+  role: string;
+  address: string;
+}
+
+export interface DemoActorState extends DemoActorProfile {
+  liquid?: DemoTokenAmount;
+  staked?: DemoTokenAmount;
+  locked?: DemoTokenAmount;
+  reputation?: string;
+  certificates?: string[];
+}
+
+export interface MintedCertificateRecord {
+  jobId: string;
+  owner: string;
+  uri?: string;
+}
+
+export interface DemoTelemetry {
+  totalJobs: number;
+  totalBurned: DemoTokenAmount;
+  feePct: string;
+  validatorRewardPct: string;
+  feePoolPending: DemoTokenAmount;
+  totalAgentStake: DemoTokenAmount;
+  totalValidatorStake: DemoTokenAmount;
+  agentPortfolios: DemoActorState[];
+  validatorPortfolios: DemoActorState[];
+  certificates: MintedCertificateRecord[];
+}
+
+export interface GrandDemoReport {
+  metadata: {
+    generatedAt: string;
+    network: {
+      chainId: number;
+      name: string;
+    };
+  };
+  token: {
+    symbol: string;
+    decimals: number;
+    initialSupply: DemoTokenAmount;
+  };
+  owner: {
+    address: string;
+  };
+  actors: DemoActorProfile[];
+  sections: DemoSectionRecord[];
+  telemetry: DemoTelemetry | null;
+}

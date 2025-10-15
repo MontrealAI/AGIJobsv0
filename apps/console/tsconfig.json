@@ -5,6 +5,7 @@
     "module": "ESNext",
     "target": "ES2020",
     "moduleResolution": "Node",
+    "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "strict": true,
