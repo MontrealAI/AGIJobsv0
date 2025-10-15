@@ -31,6 +31,8 @@ jobs:
             raw.githubusercontent.com
             registry.npmjs.org
             nodejs.org
+            binaries.soliditylang.org
+            codeload.github.com
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
