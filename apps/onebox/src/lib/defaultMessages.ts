@@ -5,6 +5,20 @@ export const defaultMessages = [
     kind: 'text' as const,
     content: 'Ask → Confirm → Done + Receipt.',
   },
+  {
+    id: 'solving-alpha-agi-governance',
+    role: 'assistant' as const,
+    kind: 'text' as const,
+    content:
+      'Welcome to the “Solving α‑AGI Governance” cockpit. Use this chat to capture a nation-scale policy proposal, request validator commits, reveal votes, and finalise the on-chain outcome. The owner retains pause + parameter controls via the generated mission bundle.',
+  },
+  {
+    id: 'solving-alpha-agi-governance-actions',
+    role: 'assistant' as const,
+    kind: 'text' as const,
+    content:
+      'Tip: paste the owner quickstart summary or validator CLI receipts here so non-technical stakeholders can follow along. Full runbook: demo/solving-alpha-agi-governance/README.md.',
+  },
 ];
 
 export type DefaultMessage = (typeof defaultMessages)[number];
