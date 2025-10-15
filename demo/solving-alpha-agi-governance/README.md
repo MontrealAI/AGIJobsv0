@@ -76,6 +76,15 @@ The chat window consumes the copied prompts verbatim—no bespoke APIs or forks 
 
 Use the existing `test/v2` helpers to fast-forward a multi-actor scenario on a fork or Hardhat.  The
 UI prompts reference these exact flows, so the rehearsals mirror production:
+
+```bash
+npx hardhat test test/v2/solvingAlphaGovernance.integration.test.ts
+```
+
+The integration fixture deploys the production contracts, onboards multiple nation sponsors, and walks
+through the commit–reveal validation cycle twice—first under the default quorum and then again after the
+owner tightens approvals and pauses/unpauses the registry.  Replaying it against a forked mainnet
+snapshot proves the flow stays green under live conditions.
 4. Connect any browser wallet.  The default chat now advertises the "Solving α‑AGI Governance" flow and
    walks the operator through proposal intake, validator commit, reveal, and finalization, using only
    the v2 protocol endpoints.
