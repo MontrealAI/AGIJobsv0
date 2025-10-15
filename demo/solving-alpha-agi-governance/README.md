@@ -55,6 +55,27 @@ safe; every call uses existing ABI definitions.
    NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_TOKEN=demo
    ```
 3. Start the interface: `npm run dev`.
+4. Connect any browser wallet.
+
+The landing page now renders **two coordinated surfaces**:
+
+* the familiar Onebox chat for orchestrator requests, plan simulation, and execution receipts; and
+* the new **Solving α‑AGI Governance cockpit**.  The cockpit lets non-technical operators:
+  * register nation sponsors, validators, and owner wallets (with readiness indicators and
+    connectivity toggles);
+  * configure all proposal parameters (reward pool, quorum, staking thresholds, commit/reveal windows,
+    dispute window, and specification URI);
+  * copy milestone-specific prompts for proposal creation, validator commit, validator reveal,
+    finalisation, and owner oversight; and
+  * grab the pre-wired owner command deck (pause, update-all, mission control) without leaving the UI.
+
+Every control writes to `localStorage`, so refreshes or browser crashes preserve state for rehearsals.
+The chat window consumes the copied prompts verbatim—no bespoke APIs or forks required.
+
+## 4. Simulate nation-scale proposals
+
+Use the existing `test/v2` helpers to fast-forward a multi-actor scenario on a fork or Hardhat.  The
+UI prompts reference these exact flows, so the rehearsals mirror production:
 4. Connect any browser wallet.  The default chat now advertises the "Solving α‑AGI Governance" flow and
    walks the operator through proposal intake, validator commit, reveal, and finalization, using only
    the v2 protocol endpoints.
@@ -78,6 +99,18 @@ state proves the flow stays green under live conditions.
 
 ## 5. Showcase wallet-controlled validators
 
+Leverage the shipped validator CLI (`scripts/validator/cli.ts`) to perform commits and reveals from
+plain wallets:
+
+```bash
+npm run validator:cli -- commit --job-id 1 --label validator-a --approve --rpc http://127.0.0.1:8545
+```
+
+Generate validator identities ahead of time with
+`npm run validator:cli -- identity generate validator-a --ens validator-a.club.agi.eth`.  The reveal
+stage swaps `commit` for `reveal --approve` and reuses the stored salts that the cockpit reminds each
+validator to preserve.  These commands are fully scriptable, letting you pre-record validator
+participation for demonstrations.
 Leverage the shipped validator CLI to perform commits and reveals from plain wallets:
 
 ```bash
