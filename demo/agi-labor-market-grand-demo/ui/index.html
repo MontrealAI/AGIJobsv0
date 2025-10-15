@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGI Jobs v2 Sovereign Labour Market Control Room</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>AGI Jobs v2 Sovereign Labour Market Control Room</h1>
+      <p class="hero__subtitle">
+        A production-grade walkthrough that turns the Hardhat grand demo into a
+        user-friendly command center for nations, agents, and validator councils.
+      </p>
+      <div class="hero__cta">
+        <span>Load data from</span>
+        <code>../export/latest.json</code>
+      </div>
+    </header>
+
+    <main id="app" aria-live="polite">
+      <section class="card">
+        <h2>Loading sovereign market telemetry…</h2>
+        <p>Run the export script or drop a transcript into the export folder.</p>
+      </section>
+    </main>
+
+    <template id="timeline-entry-template">
+      <article class="timeline-entry">
+        <header>
+          <span class="timeline-entry__kind"></span>
+          <time class="timeline-entry__time"></time>
+        </header>
+        <h4 class="timeline-entry__label"></h4>
+        <pre class="timeline-entry__meta"></pre>
+      </article>
+    </template>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

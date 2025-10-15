@@ -1,5 +1,8 @@
 #!/usr/bin/env ts-node
 
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+
 import { artifacts, ethers, run } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
@@ -7,10 +10,164 @@ import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { decodeJobMetadata } = require('../../test/utils/jobMetadata');
 
+type TimelineKind =
+  | 'section'
+  | 'step'
+  | 'job-summary'
+  | 'balance'
+  | 'owner-action'
+  | 'summary';
+
+interface TimelineEntry {
+  kind: TimelineKind;
+  label: string;
+  at: string;
+  scenario?: string;
+  meta?: Record<string, unknown>;
+}
+
+interface ActorProfile {
+  key: string;
+  name: string;
+  role:
+    | 'Owner'
+    | 'Nation'
+    | 'Agent'
+    | 'Validator'
+    | 'Moderator'
+    | 'Protocol';
+  address: string;
+}
+
+interface OwnerActionRecord {
+  label: string;
+  contract: string;
+  method: string;
+  parameters?: Record<string, unknown>;
+  at: string;
+}
+
+interface ScenarioExport {
+  title: string;
+  jobId: string;
+  timelineIndices: number[];
+}
+
+interface MarketSummary {
+  totalJobs: string;
+  totalBurned: string;
+  finalSupply: string;
+  feePct: number;
+  validatorRewardPct: number;
+  pendingFees: string;
+  totalAgentStake: string;
+  totalValidatorStake: string;
+  mintedCertificates: MintedCertificate[];
+}
+
+interface DemoExportPayload {
+  generatedAt: string;
+  network: string;
+  actors: ActorProfile[];
+  ownerActions: OwnerActionRecord[];
+  timeline: TimelineEntry[];
+  scenarios: ScenarioExport[];
+  market: MarketSummary;
+}
+
 enum Role {
   Agent,
   Validator,
   Platform,
+}
+
+const timeline: TimelineEntry[] = [];
+const ownerActions: OwnerActionRecord[] = [];
+const scenarios: ScenarioExport[] = [];
+let activeScenario: string | undefined;
+
+const cliArgs = process.argv.slice(2);
+let exportPath: string | undefined;
+for (let i = 0; i < cliArgs.length; i++) {
+  const arg = cliArgs[i];
+  if (arg === '--export') {
+    exportPath = cliArgs[i + 1];
+    i++;
+  } else if (arg.startsWith('--export=')) {
+    exportPath = arg.split('=')[1];
+  }
+}
+if (!exportPath && process.env.AGI_JOBS_DEMO_EXPORT) {
+  exportPath = process.env.AGI_JOBS_DEMO_EXPORT;
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function recordTimeline(
+  kind: TimelineKind,
+  label: string,
+  meta?: Record<string, unknown>
+): number {
+  const entry: TimelineEntry = {
+    kind,
+    label,
+    at: nowIso(),
+    scenario: activeScenario,
+    meta,
+  };
+  timeline.push(entry);
+  return timeline.length - 1;
+}
+
+function recordOwnerAction(
+  label: string,
+  contract: string,
+  method: string,
+  parameters?: Record<string, unknown>
+): void {
+  ownerActions.push({
+    label,
+    contract,
+    method,
+    parameters,
+    at: nowIso(),
+  });
+  recordTimeline('owner-action', label, {
+    contract,
+    method,
+    parameters,
+  });
+}
+
+function registerScenario(title: string, jobId: bigint): void {
+  const timelineIndices = timeline
+    .map((entry, index) => ({ entry, index }))
+    .filter((item) => item.entry.scenario === title)
+    .map((item) => item.index);
+  scenarios.push({ title, jobId: jobId.toString(), timelineIndices });
+}
+
+function isValidatorsAlreadySelectedError(error: unknown): boolean {
+  const message = `${error}`;
+  if (message.includes('ValidatorsAlreadySelected')) {
+    return true;
+  }
+  const candidate =
+    (error as { data?: unknown })?.data ??
+    (error as { error?: { data?: unknown } })?.error?.data;
+  const nested =
+    typeof candidate === 'object' && candidate
+      ? (candidate as { data?: unknown }).data
+      : undefined;
+  const payload =
+    typeof nested === 'string'
+      ? nested
+      : typeof candidate === 'string'
+        ? candidate
+        : undefined;
+  return typeof payload === 'string' && payload.startsWith('0x7c5a2649');
 }
 
 interface DemoEnvironment {
@@ -33,6 +190,7 @@ interface DemoEnvironment {
   certificate: ethers.Contract;
   feePool: ethers.Contract;
   initialSupply: bigint;
+  actors: ActorProfile[];
 }
 
 const JOB_STATE_LABELS: Record<number, string> = {
@@ -53,10 +211,17 @@ function formatTokens(value: bigint): string {
 function logSection(title: string): void {
   const line = '-'.repeat(title.length + 4);
   console.log(`\n${line}\n  ${title}\n${line}`);
+  recordTimeline('section', title);
+  if (title.startsWith('Scenario')) {
+    activeScenario = title;
+  } else {
+    activeScenario = undefined;
+  }
 }
 
 function logStep(step: string): void {
   console.log(`\n➡️  ${step}`);
+  recordTimeline('step', step);
 }
 
 async function manualDeployContract(
@@ -75,6 +240,13 @@ async function manualDeployContract(
   });
   const receipt = await tx.wait();
   console.log(`   ${label} deployed at ${receipt.contractAddress}`);
+  const sanitizedArgs = args.map((value) =>
+    typeof value === 'bigint' ? value.toString() : value
+  );
+  recordTimeline('summary', `${label} deployed`, {
+    address: receipt.contractAddress,
+    args: sanitizedArgs,
+  });
   return factory.attach(receipt.contractAddress);
 }
 
@@ -87,7 +259,7 @@ async function ensureValidatorsSelected(
     try {
       await validation.connect(caller).selectValidators(jobId, 0);
     } catch (error) {
-      if (!`${error}`.includes('ValidatorsAlreadySelected')) {
+      if (!isValidatorsAlreadySelectedError(error)) {
         throw error;
       }
     }
@@ -139,6 +311,7 @@ async function logAgentPortfolios(
   minted: MintedCertificate[]
 ): Promise<void> {
   console.log('\n🤖 Agent portfolios');
+  const entries: Array<Record<string, unknown>> = [];
   const agents: Array<{ name: string; signer: ethers.Signer }> = [
     { name: 'Alice (agent)', signer: env.agentAlice },
     { name: 'Bob (agent)', signer: env.agentBob },
@@ -169,11 +342,26 @@ async function logAgentPortfolios(
       });
       console.log(`    Certificates: ${descriptors.join(', ')}`);
     }
+
+    entries.push({
+      name: agent.name,
+      address,
+      liquid: formatTokens(liquid),
+      staked: formatTokens(staked),
+      locked: formatTokens(locked),
+      reputation: reputation.toString(),
+      certificates: ownedCertificates.map((entry) => ({
+        jobId: entry.jobId.toString(),
+        uri: entry.uri,
+      })),
+    });
   }
+  recordTimeline('summary', 'Agent portfolios', { agents: entries });
 }
 
 async function logValidatorCouncil(env: DemoEnvironment): Promise<void> {
   console.log('\n🛡️ Validator council status');
+  const validatorsSummary: Array<Record<string, unknown>> = [];
   const validators: Array<{ name: string; signer: ethers.Signer }> = [
     { name: 'Charlie (validator)', signer: env.validatorCharlie },
     { name: 'Dora (validator)', signer: env.validatorDora },
@@ -192,10 +380,24 @@ async function logValidatorCouncil(env: DemoEnvironment): Promise<void> {
     console.log(`    Validator stake: ${formatTokens(staked)}`);
     console.log(`    Locked stake: ${formatTokens(locked)}`);
     console.log(`    Reputation score: ${reputation.toString()}`);
+
+    validatorsSummary.push({
+      name: validator.name,
+      address,
+      liquid: formatTokens(liquid),
+      staked: formatTokens(staked),
+      locked: formatTokens(locked),
+      reputation: reputation.toString(),
+    });
   }
+  recordTimeline('summary', 'Validator council status', {
+    validators: validatorsSummary,
+  });
 }
 
-async function summarizeMarketState(env: DemoEnvironment): Promise<void> {
+async function summarizeMarketState(
+  env: DemoEnvironment
+): Promise<MarketSummary> {
   logSection('Sovereign labour market telemetry dashboard');
 
   const highestJobId = await env.registry.nextJobId();
@@ -233,6 +435,28 @@ async function summarizeMarketState(env: DemoEnvironment): Promise<void> {
       console.log(`  Job #${entry.jobId.toString()} → ${entry.owner}${uriSuffix}`);
     }
   }
+
+  const summary: MarketSummary = {
+    totalJobs: totalJobs.toString(),
+    totalBurned: formatTokens(burned),
+    finalSupply: formatTokens(finalSupply),
+    feePct: Number(feePct),
+    validatorRewardPct: Number(validatorRewardPct),
+    pendingFees: formatTokens(pendingFees),
+    totalAgentStake: formatTokens(totalAgentStake),
+    totalValidatorStake: formatTokens(totalValidatorStake),
+    mintedCertificates: minted,
+  };
+
+  recordTimeline('summary', 'Market telemetry dashboard', {
+    ...summary,
+    mintedCertificates: summary.mintedCertificates.map((entry) => ({
+      jobId: entry.jobId.toString(),
+      owner: entry.owner,
+      uri: entry.uri,
+    })),
+  });
+  return summary;
 }
 
 async function mintInitialBalances(
@@ -294,6 +518,77 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     moderator,
   ] = await ethers.getSigners();
 
+  const ownerAddress = await owner.getAddress();
+  const nationAAddress = await nationA.getAddress();
+  const nationBAddress = await nationB.getAddress();
+  const aliceAddress = await agentAlice.getAddress();
+  const bobAddress = await agentBob.getAddress();
+  const charlieAddress = await validatorCharlie.getAddress();
+  const doraAddress = await validatorDora.getAddress();
+  const evanAddress = await validatorEvan.getAddress();
+  const moderatorAddress = await moderator.getAddress();
+
+  const actors: ActorProfile[] = [
+    {
+      key: 'owner',
+      name: 'AGI Jobs Sovereign Orchestrator',
+      role: 'Owner',
+      address: ownerAddress,
+    },
+    {
+      key: 'nation-a',
+      name: 'Nation A (Employer)',
+      role: 'Nation',
+      address: nationAAddress,
+    },
+    {
+      key: 'nation-b',
+      name: 'Nation B (Employer)',
+      role: 'Nation',
+      address: nationBAddress,
+    },
+    {
+      key: 'alice',
+      name: 'Alice (AI Agent)',
+      role: 'Agent',
+      address: aliceAddress,
+    },
+    {
+      key: 'bob',
+      name: 'Bob (AI Agent)',
+      role: 'Agent',
+      address: bobAddress,
+    },
+    {
+      key: 'charlie',
+      name: 'Charlie (Validator)',
+      role: 'Validator',
+      address: charlieAddress,
+    },
+    {
+      key: 'dora',
+      name: 'Dora (Validator)',
+      role: 'Validator',
+      address: doraAddress,
+    },
+    {
+      key: 'evan',
+      name: 'Evan (Validator)',
+      role: 'Validator',
+      address: evanAddress,
+    },
+    {
+      key: 'moderator',
+      name: 'Global Moderator Council',
+      role: 'Moderator',
+      address: moderatorAddress,
+    },
+  ];
+
+  recordTimeline('summary', 'Demo actor roster initialised', {
+    actors,
+  });
+
   const token = await configureToken();
   const mintAmount = ethers.parseUnits('2000', AGIALPHA_DECIMALS);
   await mintInitialBalances(token, [
@@ -306,6 +601,18 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     validatorEvan,
   ], mintAmount);
   const initialSupply = await token.totalSupply();
+  recordTimeline('summary', 'Initial AGIα liquidity minted to actors', {
+    amount: formatTokens(mintAmount),
+    recipients: [
+      nationAAddress,
+      nationBAddress,
+      aliceAddress,
+      bobAddress,
+      charlieAddress,
+      doraAddress,
+      evanAddress,
+    ],
+  });
 
   logStep('Deploying core contracts');
   const Stake = await ethers.getContractFactory(
@@ -329,7 +636,8 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     owner,
     [...stakeArgs]
   );
-  await token.connect(owner).mint(await stake.getAddress(), 0n);
+  const stakeAddress = await stake.getAddress();
+  await token.connect(owner).mint(stakeAddress, 0n);
 
   const Reputation = await ethers.getContractFactory(
     'contracts/v2/ReputationEngine.sol:ReputationEngine'
@@ -424,91 +732,164 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     'FeePool',
     FeePool,
     owner,
-    [await stake.getAddress(), 0n, ethers.ZeroAddress, ethers.ZeroAddress]
+    [stakeAddress, 0n, ethers.ZeroAddress, ethers.ZeroAddress]
   );
-  await token.connect(owner).mint(await feePool.getAddress(), 0n);
+  const reputationAddress = await reputation.getAddress();
+  const identityAddress = await identity.getAddress();
+  const validationAddress = await validation.getAddress();
+  const certificateAddress = await certificate.getAddress();
+  const registryAddress = await registry.getAddress();
+  const disputeAddress = await dispute.getAddress();
+  const feePoolAddress = await feePool.getAddress();
+
+  await token.connect(owner).mint(feePoolAddress, 0n);
 
   logStep('Wiring governance relationships and module cross-links');
-  await certificate
-    .connect(owner)
-    .setJobRegistry(await registry.getAddress());
-  await certificate
-    .connect(owner)
-    .setStakeManager(await stake.getAddress());
+  await certificate.connect(owner).setJobRegistry(registryAddress);
+  recordOwnerAction('Linked certificate to job registry', `CertificateNFT@${certificateAddress}`, 'setJobRegistry', {
+    registry: registryAddress,
+  });
+  await certificate.connect(owner).setStakeManager(stakeAddress);
+  recordOwnerAction('Linked certificate to stake manager', `CertificateNFT@${certificateAddress}`, 'setStakeManager', {
+    stake: stakeAddress,
+  });
 
-  await stake.connect(owner).setFeePool(await feePool.getAddress());
-  await stake
-    .connect(owner)
-    .setModules(await registry.getAddress(), await dispute.getAddress());
-  await stake
-    .connect(owner)
-    .setValidationModule(await validation.getAddress());
+  await stake.connect(owner).setFeePool(feePoolAddress);
+  recordOwnerAction('Connected stake manager fee pool', `StakeManager@${stakeAddress}`, 'setFeePool', {
+    feePool: feePoolAddress,
+  });
+  await stake.connect(owner).setModules(registryAddress, disputeAddress);
+  recordOwnerAction('Connected stake modules', `StakeManager@${stakeAddress}`, 'setModules', {
+    registry: registryAddress,
+    dispute: disputeAddress,
+  });
+  await stake.connect(owner).setValidationModule(validationAddress);
+  recordOwnerAction('Linked stake to validation module', `StakeManager@${stakeAddress}`, 'setValidationModule', {
+    validation: validationAddress,
+  });
 
-  await validation
-    .connect(owner)
-    .setJobRegistry(await registry.getAddress());
-  await validation
-    .connect(owner)
-    .setIdentityRegistry(await identity.getAddress());
-  await validation
-    .connect(owner)
-    .setReputationEngine(await reputation.getAddress());
-  await validation
-    .connect(owner)
-    .setStakeManager(await stake.getAddress());
+  await validation.connect(owner).setJobRegistry(registryAddress);
+  recordOwnerAction('Validation module registry link', `ValidationModule@${validationAddress}`, 'setJobRegistry', {
+    registry: registryAddress,
+  });
+  await validation.connect(owner).setIdentityRegistry(identityAddress);
+  recordOwnerAction('Validation module identity link', `ValidationModule@${validationAddress}`, 'setIdentityRegistry', {
+    identity: identityAddress,
+  });
+  await validation.connect(owner).setReputationEngine(reputationAddress);
+  recordOwnerAction('Validation module reputation link', `ValidationModule@${validationAddress}`, 'setReputationEngine', {
+    reputation: reputationAddress,
+  });
+  await validation.connect(owner).setStakeManager(stakeAddress);
+  recordOwnerAction('Validation module stake link', `ValidationModule@${validationAddress}`, 'setStakeManager', {
+    stake: stakeAddress,
+  });
 
   await registry
     .connect(owner)
     .setModules(
-      await validation.getAddress(),
-      await stake.getAddress(),
-      await reputation.getAddress(),
-      await dispute.getAddress(),
-      await certificate.getAddress(),
-      await feePool.getAddress(),
+      validationAddress,
+      stakeAddress,
+      reputationAddress,
+      disputeAddress,
+      certificateAddress,
+      feePoolAddress,
       []
     );
-  await registry
-    .connect(owner)
-    .setIdentityRegistry(await identity.getAddress());
-  await registry
-    .connect(owner)
-    .setValidatorRewardPct(20);
+  recordOwnerAction('Registry module wiring finalised', `JobRegistry@${registryAddress}`, 'setModules', {
+    validation: validationAddress,
+    stake: stakeAddress,
+    reputation: reputationAddress,
+    dispute: disputeAddress,
+    certificate: certificateAddress,
+    feePool: feePoolAddress,
+  });
+  await registry.connect(owner).setIdentityRegistry(identityAddress);
+  recordOwnerAction('Registry identity registry set', `JobRegistry@${registryAddress}`, 'setIdentityRegistry', {
+    identity: identityAddress,
+  });
+  await registry.connect(owner).setValidatorRewardPct(20);
+  recordOwnerAction('Validator reward percentage configured', `JobRegistry@${registryAddress}`, 'setValidatorRewardPct', {
+    pct: 20,
+  });
 
-  await reputation.connect(owner).setCaller(await registry.getAddress(), true);
-  await reputation.connect(owner).setCaller(await validation.getAddress(), true);
+  await reputation.connect(owner).setCaller(registryAddress, true);
+  recordOwnerAction('Registry authorised to update reputation', `ReputationEngine@${reputationAddress}`, 'setCaller', {
+    caller: registryAddress,
+    allowed: true,
+  });
+  await reputation.connect(owner).setCaller(validationAddress, true);
+  recordOwnerAction('Validation authorised to update reputation', `ReputationEngine@${reputationAddress}`, 'setCaller', {
+    caller: validationAddress,
+    allowed: true,
+  });
 
-  await dispute.connect(owner).setStakeManager(await stake.getAddress());
+  await dispute.connect(owner).setStakeManager(stakeAddress);
+  recordOwnerAction('Dispute module stake link', `DisputeModule@${disputeAddress}`, 'setStakeManager', {
+    stake: stakeAddress,
+  });
 
   logStep('Configuring policy parameters for rapid local simulation');
   await validation.connect(owner).setCommitRevealWindows(60, 60);
+  recordOwnerAction('Commit/reveal windows tuned', `ValidationModule@${validationAddress}`, 'setCommitRevealWindows', {
+    commitWindow: 60,
+    revealWindow: 60,
+  });
   await validation.connect(owner).setValidatorsPerJob(3);
+  recordOwnerAction('Validator quorum set', `ValidationModule@${validationAddress}`, 'setValidatorsPerJob', {
+    count: 3,
+  });
   await validation
     .connect(owner)
     .setValidatorPool([
-      await validatorCharlie.getAddress(),
-      await validatorDora.getAddress(),
-      await validatorEvan.getAddress(),
+      charlieAddress,
+      doraAddress,
+      evanAddress,
     ]);
+  recordOwnerAction('Validator pool curated', `ValidationModule@${validationAddress}`, 'setValidatorPool', {
+    validators: [charlieAddress, doraAddress, evanAddress],
+  });
   await validation.connect(owner).setRevealQuorum(0, 2);
+  recordOwnerAction('Reveal quorum configured', `ValidationModule@${validationAddress}`, 'setRevealQuorum', {
+    minYesVotes: 0,
+    minRevealers: 2,
+  });
   await validation.connect(owner).setNonRevealPenalty(100, 1);
+  recordOwnerAction('Non-reveal penalty set', `ValidationModule@${validationAddress}`, 'setNonRevealPenalty', {
+    penaltyBps: 100,
+    penaltyDivisor: 1,
+  });
 
   await feePool.connect(owner).setBurnPct(5);
+  recordOwnerAction('Fee pool burn percentage adjusted', `FeePool@${feePoolAddress}`, 'setBurnPct', {
+    burnPct: 5,
+  });
   await certificate
     .connect(owner)
     .setBaseURI('ipfs://agi-jobs/demo/certificates/');
+  recordOwnerAction('Certificate base URI set', `CertificateNFT@${certificateAddress}`, 'setBaseURI', {
+    baseURI: 'ipfs://agi-jobs/demo/certificates/',
+  });
 
   logStep('Seeding IdentityRegistry with emergency allowlists');
   for (const signer of [agentAlice, agentBob]) {
-    await identity.connect(owner).addAdditionalAgent(await signer.getAddress());
-    await identity
-      .connect(owner)
-      .setAgentType(await signer.getAddress(), 1); // mark as AI agents
+    const address = await signer.getAddress();
+    await identity.connect(owner).addAdditionalAgent(address);
+    recordOwnerAction('Emergency AI agent allowlisted', `IdentityRegistry@${identityAddress}`, 'addAdditionalAgent', {
+      agent: address,
+    });
+    await identity.connect(owner).setAgentType(address, 1); // mark as AI agents
+    recordOwnerAction('Agent type annotated', `IdentityRegistry@${identityAddress}`, 'setAgentType', {
+      agent: address,
+      agentType: 1,
+    });
   }
   for (const signer of [validatorCharlie, validatorDora, validatorEvan]) {
-    await identity
-      .connect(owner)
-      .addAdditionalValidator(await signer.getAddress());
+    const address = await signer.getAddress();
+    await identity.connect(owner).addAdditionalValidator(address);
+    recordOwnerAction('Validator council seat granted', `IdentityRegistry@${identityAddress}`, 'addAdditionalValidator', {
+      validator: address,
+    });
   }
 
   logStep('Initial token approvals and staking for actors');
@@ -546,6 +927,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     certificate,
     feePool,
     initialSupply,
+    actors,
   };
 }
 
@@ -559,6 +941,16 @@ async function logJobSummary(
   console.log(
     `\n📦 Job ${jobId} summary (${context}):\n  State: ${JOB_STATE_LABELS[metadata.state] ?? metadata.state}\n  Success flag: ${metadata.success}\n  Burn confirmed: ${metadata.burnConfirmed}\n  Reward: ${formatTokens(job.reward)}\n  Employer: ${job.employer}\n  Agent: ${job.agent}`
   );
+  recordTimeline('job-summary', `Job ${jobId} (${context})`, {
+    jobId: jobId.toString(),
+    context,
+    state: JOB_STATE_LABELS[metadata.state] ?? metadata.state,
+    success: metadata.success,
+    burnConfirmed: metadata.burnConfirmed,
+    reward: formatTokens(job.reward),
+    employer: job.employer,
+    agent: job.agent,
+  });
 }
 
 async function showBalances(
@@ -567,14 +959,22 @@ async function showBalances(
   participants: Array<{ name: string; address: string }>
 ): Promise<void> {
   console.log(`\n💰 ${label}`);
+  const snapshot: Array<{ name: string; address: string; balance: string }> = [];
   for (const participant of participants) {
     const balance = await token.balanceOf(participant.address);
     console.log(`  ${participant.name}: ${formatTokens(balance)}`);
+    snapshot.push({
+      name: participant.name,
+      address: participant.address,
+      balance: formatTokens(balance),
+    });
   }
+  recordTimeline('balance', label, { participants: snapshot });
 }
 
 async function runHappyPath(env: DemoEnvironment): Promise<void> {
-  logSection('Scenario 1 – Cooperative intergovernmental AI labour success');
+  const scenarioTitle = 'Scenario 1 – Cooperative intergovernmental AI labour success';
+  logSection(scenarioTitle);
 
   const {
     nationA,
@@ -687,10 +1087,12 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
     await agentAlice.getAddress()
   );
   console.log(`\n🏅 Alice now holds ${nftBalance} certificate NFT(s).`);
+  registerScenario(scenarioTitle, jobId);
 }
 
 async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
-  logSection('Scenario 2 – Cross-border dispute resolved by owner governance');
+  const scenarioTitle = 'Scenario 2 – Cross-border dispute resolved by owner governance';
+  logSection(scenarioTitle);
 
   const {
     nationB,
@@ -710,6 +1112,9 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   const reward = ethers.parseUnits('180', AGIALPHA_DECIMALS);
   const feePct = await registry.feePct();
   const fee = (reward * BigInt(feePct)) / 100n;
+  const disputeAddress = await dispute.getAddress();
+  const ownerAddress = await owner.getAddress();
+  const moderatorAddress = await moderator.getAddress();
 
   logStep('Nation B funds a frontier language translation initiative');
   await token
@@ -788,14 +1193,26 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     'Bob leverages dispute rights; governance moderates and sides with the agent'
   );
   await dispute.connect(owner).setDisputeFee(0);
+  recordOwnerAction('Dispute fee waived for demonstration', `DisputeModule@${disputeAddress}`, 'setDisputeFee', {
+    fee: 0,
+  });
   await registry
     .connect(agentBob)
     ['raiseDispute(uint256,bytes32)'](jobId, ethers.id('ipfs://evidence/bob'));
   await dispute.connect(owner).setDisputeWindow(0);
-  await dispute.connect(owner).setModerator(await owner.getAddress(), 1);
-  await dispute
-    .connect(owner)
-    .setModerator(await moderator.getAddress(), 1);
+  recordOwnerAction('Dispute window accelerated', `DisputeModule@${disputeAddress}`, 'setDisputeWindow', {
+    window: 0,
+  });
+  await dispute.connect(owner).setModerator(ownerAddress, 1);
+  recordOwnerAction('Owner enrolled as dispute moderator', `DisputeModule@${disputeAddress}`, 'setModerator', {
+    moderator: ownerAddress,
+    enabled: 1,
+  });
+  await dispute.connect(owner).setModerator(moderatorAddress, 1);
+  recordOwnerAction('External moderator empowered', `DisputeModule@${disputeAddress}`, 'setModerator', {
+    moderator: moderatorAddress,
+    enabled: 1,
+  });
 
   const typeHash = ethers.id(
     'ResolveDispute(uint256 jobId,bool employerWins,address module,uint256 chainId)'
@@ -825,6 +1242,7 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     { name: 'Evan (validator)', address: await validatorEvan.getAddress() },
   ];
   await showBalances('Post-dispute token balances', token, participants);
+  registerScenario(scenarioTitle, jobId);
 }
 
 async function main(): Promise<void> {
@@ -841,9 +1259,33 @@ async function main(): Promise<void> {
 
   await runHappyPath(env);
   await runDisputeScenario(env);
-  await summarizeMarketState(env);
+  const market = await summarizeMarketState(env);
 
   logSection('Demo complete – AGI Jobs v2 sovereignty market simulation finished');
+
+  if (exportPath) {
+    const resolved = resolve(exportPath);
+    mkdirSync(dirname(resolved), { recursive: true });
+    const network = await ethers.provider.getNetwork();
+    const payload: DemoExportPayload = {
+      generatedAt: nowIso(),
+      network: `${network.name ?? 'hardhat'} (chainId ${network.chainId})`,
+      actors: env.actors,
+      ownerActions,
+      timeline,
+      scenarios,
+      market: {
+        ...market,
+        mintedCertificates: market.mintedCertificates.map((entry) => ({
+          jobId: entry.jobId.toString(),
+          owner: entry.owner,
+          uri: entry.uri,
+        })),
+      },
+    };
+    writeFileSync(resolved, JSON.stringify(payload, null, 2));
+    console.log(`\n🗂️  Demo transcript exported to ${resolved}`);
+  }
 }
 
 main().catch((err) => {

@@ -80,6 +80,45 @@ The output is intentionally narrative, providing contextual breadcrumbs (job
 state transitions, committee selections, dispute escalations) so a non-technical
 operator can follow the on-chain flow without reading contract code.
 
+### Exporting a transcript for the grand demo UI
+
+The CLI can emit a structured transcript that powers the accompanying
+`demo/agi-labor-market-grand-demo/ui` experience. Export to the pre-wired
+location with:
+
+```bash
+npm run demo:agi-labor-market:export
+```
+
+This writes `demo/agi-labor-market-grand-demo/export/latest.json`, capturing the
+timeline, actor roster, owner actions, and aggregated telemetry. To export to a
+different location set the `AGI_JOBS_DEMO_EXPORT=/path/to/file.json`
+environment variable before running the script.
+
+### Launching the sovereign labour market control room UI
+
+1. Export a fresh transcript as described above (or copy an existing JSON file
+   into `demo/agi-labor-market-grand-demo/export/latest.json`).
+2. Serve the UI locally – any static server works. Example:
+
+   ```bash
+   npx serve demo/agi-labor-market-grand-demo/ui
+   ```
+
+3. Visit the printed URL (defaults to `http://localhost:3000`). The interface
+   loads `../export/latest.json`, rendering:
+
+   - Nation and validator wallet dashboards with balances, stakes, and
+     reputation.
+   - Owner action logs highlighting every governance lever exercised during the
+     simulation.
+   - Scenario timelines for the cooperative and disputed job lifecycles.
+   - Certificate issuance, burn telemetry, and fee economics derived from the
+     Hardhat run.
+
+Non-technical operators can replay the Hardhat simulation and immediately see a
+production-style control room without wiring additional infrastructure.
+
 ## Extending or replaying
 
 - Re-run the command to replay the scenario with fresh accounts.
