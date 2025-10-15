@@ -100,6 +100,7 @@ export function writeLedger(scenario: OmegaScenario, ledgerPath: string): void {
   fs.writeFileSync(ledgerPath, `${lines.join('\n')}\n`, 'utf8');
 }
 
+function validateUnique(label: string, value: string, registry: Set<string>): void {
 function validateUnique(label: string, value: unknown, registry: Set<string>): void {
   if (value === null || value === undefined) {
     throw new Error(`${label} must be provided`);
@@ -124,6 +125,13 @@ function parsePositiveInteger(label: string, value: number | string): void {
   }
 }
 
+function assertBigIntish(label: string, raw: string): bigint {
+  try {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) {
+      throw new Error(`${label} cannot be empty`);
+    }
+    return BigInt(trimmed);
 function assertBigIntish(label: string, raw: string): void {
   try {
     if (raw.trim().length === 0) {
@@ -176,6 +184,13 @@ export function validateScenario(scenario: OmegaScenario): void {
     }
     if (!nation.resultCid?.trim()) {
       throw new Error(`Nation ${nation.name} resultCid must be provided`);
+    }
+    const rewardTokens = assertBigIntish(
+      `Nation ${nation.name} rewardTokens`,
+      nation.rewardTokens
+    );
+    if (rewardTokens <= 0n) {
+      throw new Error(`Nation ${nation.name} rewardTokens must be greater than zero`);
     }
     assertBigIntish(`Nation ${nation.name} rewardTokens`, nation.rewardTokens);
     parsePositiveInteger(`Nation ${nation.name} deadlineHours`, nation.deadlineHours);
