@@ -1,4 +1,4 @@
-const DATA_URL = '../export/latest.json';
+const TRANSCRIPT_PATHS = ['export/latest.json', '../export/latest.json'];
 const FALLBACK_URL = 'sample.json';
 
 const state = {
@@ -21,7 +21,7 @@ const formatParameters = (value) =>
   value == null ? '' : JSON.stringify(value, null, 2);
 
 async function loadData() {
-  const responses = [DATA_URL, FALLBACK_URL];
+  const responses = [...TRANSCRIPT_PATHS, FALLBACK_URL];
   for (const url of responses) {
     try {
       const res = await fetch(url, { cache: 'no-store' });

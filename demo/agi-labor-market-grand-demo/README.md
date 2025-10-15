@@ -90,7 +90,7 @@ location with:
 npm run demo:agi-labor-market:export
 ```
 
-This writes `demo/agi-labor-market-grand-demo/export/latest.json`, capturing the
+This writes `demo/agi-labor-market-grand-demo/ui/export/latest.json`, capturing the
 timeline, actor roster, owner actions, and aggregated telemetry. To export to a
 different location set the `AGI_JOBS_DEMO_EXPORT=/path/to/file.json`
 environment variable before running the script.
@@ -98,7 +98,7 @@ environment variable before running the script.
 ### Launching the sovereign labour market control room UI
 
 1. Export a fresh transcript as described above (or copy an existing JSON file
-   into `demo/agi-labor-market-grand-demo/export/latest.json`).
+   into `demo/agi-labor-market-grand-demo/ui/export/latest.json`).
 2. Serve the UI locally – any static server works. Example:
 
    ```bash
@@ -106,7 +106,7 @@ environment variable before running the script.
    ```
 
 3. Visit the printed URL (defaults to `http://localhost:3000`). The interface
-   loads `../export/latest.json`, rendering:
+   loads `export/latest.json`, rendering:
 
    - Nation and validator wallet dashboards with balances, stakes, and
      reputation.
