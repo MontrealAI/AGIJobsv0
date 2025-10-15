@@ -1,0 +1,23 @@
+{
+  "members": [
+    {
+      "address": "0x0000000000000000000000000000000000000010",
+      "weight": 1,
+      "label": "Aurora Prime"
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000020",
+      "weight": 1,
+      "label": "Meridian Arcology"
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000030",
+      "weight": 1,
+      "label": "Neutral Oversight"
+    }
+  ],
+  "timelock": {
+    "executionDelaySeconds": 900,
+    "gracePeriodSeconds": 3600
+  }
+}

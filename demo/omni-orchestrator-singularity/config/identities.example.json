@@ -1,0 +1,28 @@
+{
+  "agents": [
+    {
+      "address": "0x0000000000000000000000000000000000000001",
+      "ens": "aurora.agent.agi.eth"
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000002",
+      "ens": "meridian.agent.agi.eth"
+    }
+  ],
+  "validators": [
+    {
+      "address": "0x0000000000000000000000000000000000000003",
+      "ens": "aurora.validator.agi.eth"
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000004",
+      "ens": "meridian.validator.agi.eth"
+    }
+  ],
+  "employers": [
+    {
+      "address": "0x0000000000000000000000000000000000000005",
+      "ens": "council.treasury.agi.eth"
+    }
+  ]
+}
