@@ -2,10 +2,266 @@
 
 import { artifacts, ethers, run } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { decodeJobMetadata } = require('../../test/utils/jobMetadata');
+
+type SectionKind = 'setup' | 'scenario' | 'telemetry' | 'wrapup';
+
+interface TokenAmount {
+  raw: string;
+  formatted: string;
+}
+
+interface BalanceEntry {
+  name: string;
+  address: string;
+  balance: TokenAmount;
+  role?: string;
+}
+
+interface BalanceSnapshot {
+  id: string;
+  label: string;
+  entries: BalanceEntry[];
+  notes?: string;
+}
+
+interface StepEvent {
+  label: string;
+  details?: string;
+  metrics?: Record<string, string>;
+}
+
+interface StepRecord {
+  title: string;
+  events: StepEvent[];
+}
+
+interface SectionRecord {
+  id: string;
+  title: string;
+  kind: SectionKind;
+  summary?: string;
+  outcome?: string;
+  steps: StepRecord[];
+  snapshots: BalanceSnapshot[];
+}
+
+interface ActorProfile {
+  id: string;
+  name: string;
+  role: string;
+  address: string;
+}
+
+interface ActorState extends ActorProfile {
+  liquid?: TokenAmount;
+  staked?: TokenAmount;
+  locked?: TokenAmount;
+  reputation?: string;
+  certificates?: string[];
+}
+
+interface MintedCertificateRecord {
+  jobId: string;
+  owner: string;
+  uri?: string;
+}
+
+interface DemoTelemetry {
+  totalJobs: number;
+  totalBurned: TokenAmount;
+  feePct: string;
+  validatorRewardPct: string;
+  feePoolPending: TokenAmount;
+  totalAgentStake: TokenAmount;
+  totalValidatorStake: TokenAmount;
+  agentPortfolios: ActorState[];
+  validatorPortfolios: ActorState[];
+  certificates: MintedCertificateRecord[];
+}
+
+interface DemoReportData {
+  metadata: {
+    generatedAt: string;
+    network: {
+      chainId: number;
+      name: string;
+    };
+  };
+  token: {
+    symbol: string;
+    decimals: number;
+    initialSupply: TokenAmount;
+  };
+  owner: {
+    address: string;
+  };
+  actors: ActorProfile[];
+  sections: SectionRecord[];
+  telemetry: DemoTelemetry | null;
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '')
+    .slice(0, 120);
+}
+
+function toTokenAmount(value: bigint): TokenAmount {
+  return {
+    raw: value.toString(),
+    formatted: formatTokens(value),
+  };
+}
+
+class GrandDemoReport {
+  private data: DemoReportData;
+  private currentSection: SectionRecord | null = null;
+  private currentStep: StepRecord | null = null;
+
+  constructor() {
+    this.data = {
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        network: { chainId: 0, name: 'unknown' },
+      },
+      token: {
+        symbol: 'AGIα',
+        decimals: AGIALPHA_DECIMALS,
+        initialSupply: toTokenAmount(0n),
+      },
+      owner: { address: ethers.ZeroAddress },
+      actors: [],
+      sections: [],
+      telemetry: null,
+    };
+  }
+
+  public setNetwork(chainId: number, name: string): void {
+    this.data.metadata.network = { chainId, name };
+  }
+
+  public setTokenSupply(initialSupply: bigint): void {
+    this.data.token.initialSupply = toTokenAmount(initialSupply);
+  }
+
+  public setOwner(address: string): void {
+    this.data.owner.address = address;
+  }
+
+  public setActors(actors: ActorProfile[]): void {
+    this.data.actors = actors;
+  }
+
+  private findActorId(address: string): string {
+    const match = this.data.actors.find(
+      (actor) => actor.address.toLowerCase() === address.toLowerCase()
+    );
+    return match?.id ?? slugify(address);
+  }
+
+  public resolveActorId(address: string): string {
+    return this.findActorId(address);
+  }
+
+  private detectKind(title: string): SectionKind {
+    const lower = title.toLowerCase();
+    if (lower.startsWith('scenario')) return 'scenario';
+    if (lower.includes('telemetry')) return 'telemetry';
+    if (lower.includes('demo complete')) return 'wrapup';
+    return 'setup';
+  }
+
+  public beginSection(title: string): void {
+    const section: SectionRecord = {
+      id: slugify(title) || `section-${this.data.sections.length + 1}`,
+      title,
+      kind: this.detectKind(title),
+      steps: [],
+      snapshots: [],
+    };
+    this.data.sections.push(section);
+    this.currentSection = section;
+    this.currentStep = null;
+  }
+
+  public recordStep(title: string): void {
+    if (!this.currentSection) {
+      this.beginSection('Grand demo timeline');
+    }
+    const step: StepRecord = { title, events: [] };
+    this.currentSection.steps.push(step);
+    this.currentStep = step;
+  }
+
+  public addEvent(label: string, details?: string, metrics?: Record<string, string>): void {
+    if (!this.currentStep) {
+      this.recordStep(label);
+    }
+    this.currentStep!.events.push({ label, details, metrics });
+  }
+
+  public attachSnapshot(snapshot: BalanceSnapshot): void {
+    if (!this.currentSection) {
+      this.beginSection(snapshot.label);
+    }
+    this.currentSection.snapshots.push(snapshot);
+  }
+
+  public setSectionOutcome(outcome: string): void {
+    if (this.currentSection) {
+      this.currentSection.outcome = outcome;
+    }
+  }
+
+  public setTelemetry(telemetry: DemoTelemetry): void {
+    this.data.telemetry = telemetry;
+  }
+
+  public toJSON(): DemoReportData {
+    return this.data;
+  }
+
+  public async maybeWriteFromArgs(argv: string[]): Promise<void> {
+    const reportPath = this.parseReportPath(argv);
+    if (!reportPath) {
+      return;
+    }
+    const dir = path.dirname(reportPath);
+    await mkdir(dir, { recursive: true });
+    await writeFile(reportPath, JSON.stringify(this.data, null, 2));
+    console.log(`\n📝 Grand demo report written to ${reportPath}`);
+  }
+
+  private parseReportPath(argv: string[]): string | null {
+    for (const arg of argv) {
+      if (arg.startsWith('--report=')) {
+        const value = arg.slice('--report='.length).trim();
+        return value ? path.resolve(value) : null;
+      }
+    }
+    const flagIndex = argv.indexOf('--report');
+    if (flagIndex >= 0) {
+      const candidate = argv[flagIndex + 1];
+      if (!candidate) {
+        throw new Error('Missing value for --report argument');
+      }
+      return path.resolve(candidate);
+    }
+    const envPath =
+      process.env.AGI_JOBS_DEMO_REPORT || process.env.AGIJOBS_DEMO_REPORT;
+    return envPath ? path.resolve(envPath) : null;
+  }
+}
+
+let activeReport: GrandDemoReport | null = null;
 
 enum Role {
   Agent,
@@ -53,10 +309,20 @@ function formatTokens(value: bigint): string {
 function logSection(title: string): void {
   const line = '-'.repeat(title.length + 4);
   console.log(`\n${line}\n  ${title}\n${line}`);
+  activeReport?.beginSection(title);
 }
 
 function logStep(step: string): void {
   console.log(`\n➡️  ${step}`);
+  activeReport?.recordStep(step);
+}
+
+function recordEvent(
+  label: string,
+  details?: string,
+  metrics?: Record<string, string>
+): void {
+  activeReport?.addEvent(label, details, metrics);
 }
 
 async function manualDeployContract(
@@ -134,32 +400,44 @@ async function gatherCertificates(
   return minted;
 }
 
+interface PortfolioRecord {
+  name: string;
+  address: string;
+  liquid: TokenAmount;
+  staked: TokenAmount;
+  locked: TokenAmount;
+  reputation: string;
+  certificates?: string[];
+}
+
 async function logAgentPortfolios(
   env: DemoEnvironment,
   minted: MintedCertificate[]
-): Promise<void> {
+): Promise<PortfolioRecord[]> {
   console.log('\n🤖 Agent portfolios');
   const agents: Array<{ name: string; signer: ethers.Signer }> = [
     { name: 'Alice (agent)', signer: env.agentAlice },
     { name: 'Bob (agent)', signer: env.agentBob },
   ];
 
+  const result: PortfolioRecord[] = [];
   for (const agent of agents) {
     const address = await agent.signer.getAddress();
-    const liquid = await env.token.balanceOf(address);
-    const staked = await env.stake.stakes(address, Role.Agent);
-    const locked = await env.stake.lockedStakes(address);
+    const liquidRaw = await env.token.balanceOf(address);
+    const stakedRaw = await env.stake.stakes(address, Role.Agent);
+    const lockedRaw = await env.stake.lockedStakes(address);
     const reputation = await env.reputation.reputationOf(address);
     const ownedCertificates = minted.filter((entry) =>
       addressesEqual(entry.owner, address)
     );
 
     console.log(`  ${agent.name} (${address})`);
-    console.log(`    Liquid balance: ${formatTokens(liquid)}`);
-    console.log(`    Active agent stake: ${formatTokens(staked)}`);
-    console.log(`    Locked stake: ${formatTokens(locked)}`);
+    console.log(`    Liquid balance: ${formatTokens(liquidRaw)}`);
+    console.log(`    Active agent stake: ${formatTokens(stakedRaw)}`);
+    console.log(`    Locked stake: ${formatTokens(lockedRaw)}`);
     console.log(`    Reputation score: ${reputation.toString()}`);
 
+    let certificates: string[] | undefined;
     if (ownedCertificates.length === 0) {
       console.log('    Certificates: none yet — future completions will mint AGI credentials.');
     } else {
@@ -167,12 +445,27 @@ async function logAgentPortfolios(
         const uriSuffix = entry.uri ? ` ← ${entry.uri}` : '';
         return `#${entry.jobId.toString()}${uriSuffix}`;
       });
+      certificates = descriptors;
       console.log(`    Certificates: ${descriptors.join(', ')}`);
     }
+
+    result.push({
+      name: agent.name,
+      address,
+      liquid: toTokenAmount(liquidRaw),
+      staked: toTokenAmount(stakedRaw),
+      locked: toTokenAmount(lockedRaw),
+      reputation: reputation.toString(),
+      certificates,
+    });
   }
+
+  return result;
 }
 
-async function logValidatorCouncil(env: DemoEnvironment): Promise<void> {
+async function logValidatorCouncil(
+  env: DemoEnvironment
+): Promise<PortfolioRecord[]> {
   console.log('\n🛡️ Validator council status');
   const validators: Array<{ name: string; signer: ethers.Signer }> = [
     { name: 'Charlie (validator)', signer: env.validatorCharlie },
@@ -180,33 +473,53 @@ async function logValidatorCouncil(env: DemoEnvironment): Promise<void> {
     { name: 'Evan (validator)', signer: env.validatorEvan },
   ];
 
+  const result: PortfolioRecord[] = [];
   for (const validator of validators) {
     const address = await validator.signer.getAddress();
-    const liquid = await env.token.balanceOf(address);
-    const staked = await env.stake.stakes(address, Role.Validator);
-    const locked = await env.stake.lockedStakes(address);
+    const liquidRaw = await env.token.balanceOf(address);
+    const stakedRaw = await env.stake.stakes(address, Role.Validator);
+    const lockedRaw = await env.stake.lockedStakes(address);
     const reputation = await env.reputation.reputationOf(address);
 
     console.log(`  ${validator.name} (${address})`);
-    console.log(`    Liquid balance: ${formatTokens(liquid)}`);
-    console.log(`    Validator stake: ${formatTokens(staked)}`);
-    console.log(`    Locked stake: ${formatTokens(locked)}`);
+    console.log(`    Liquid balance: ${formatTokens(liquidRaw)}`);
+    console.log(`    Validator stake: ${formatTokens(stakedRaw)}`);
+    console.log(`    Locked stake: ${formatTokens(lockedRaw)}`);
     console.log(`    Reputation score: ${reputation.toString()}`);
+
+    result.push({
+      name: validator.name,
+      address,
+      liquid: toTokenAmount(liquidRaw),
+      staked: toTokenAmount(stakedRaw),
+      locked: toTokenAmount(lockedRaw),
+      reputation: reputation.toString(),
+    });
   }
+
+  return result;
 }
 
 async function summarizeMarketState(env: DemoEnvironment): Promise<void> {
   logSection('Sovereign labour market telemetry dashboard');
+  logStep('Aggregating sovereign telemetry for the owner command center');
 
   const highestJobId = await env.registry.nextJobId();
   const minted = await gatherCertificates(env.certificate, highestJobId);
   const totalJobs = highestJobId;
   console.log(`\n📈 Jobs orchestrated in this session: ${totalJobs.toString()}`);
+  recordEvent('Jobs orchestrated', 'Total engagements mediated during the demo session.', {
+    totalJobs: totalJobs.toString(),
+  });
 
   const finalSupply = await env.token.totalSupply();
   const burned = env.initialSupply > finalSupply ? env.initialSupply - finalSupply : 0n;
   console.log(`\n🔥 Total AGIα burned: ${formatTokens(burned)}`);
   console.log(`   Circulating supply now: ${formatTokens(finalSupply)}`);
+  recordEvent('Supply shift', 'Net AGIα burn recorded against circulating supply.', {
+    burned: formatTokens(burned),
+    finalSupply: formatTokens(finalSupply),
+  });
 
   const feePct = await env.registry.feePct();
   const validatorRewardPct = await env.registry.validatorRewardPct();
@@ -214,25 +527,79 @@ async function summarizeMarketState(env: DemoEnvironment): Promise<void> {
   console.log(`\n🏛️ Protocol fee setting: ${feePct}%`);
   console.log(`   Validator reward split: ${validatorRewardPct}%`);
   console.log(`   FeePool pending distribution: ${formatTokens(pendingFees)}`);
+  recordEvent('Protocol economics', 'Fee levers and pending distributions surfaced for governance.', {
+    feePct: `${feePct}%`,
+    validatorRewardPct: `${validatorRewardPct}%`,
+    pendingFees: formatTokens(pendingFees),
+  });
 
   const totalAgentStake = await env.stake.totalStakes(Role.Agent);
   const totalValidatorStake = await env.stake.totalStakes(Role.Validator);
   console.log(`\n🔐 Aggregate capital committed:`);
   console.log(`   Agents: ${formatTokens(totalAgentStake)}`);
   console.log(`   Validators: ${formatTokens(totalValidatorStake)}`);
+  recordEvent('Capital committed', 'Stake and slashing collateral currently protecting the market.', {
+    agents: formatTokens(totalAgentStake),
+    validators: formatTokens(totalValidatorStake),
+  });
 
-  await logAgentPortfolios(env, minted);
-  await logValidatorCouncil(env);
+  const agentPortfolios = await logAgentPortfolios(env, minted);
+  const validatorPortfolios = await logValidatorCouncil(env);
 
   if (minted.length === 0) {
     console.log('\n🎓 Certificates minted: none yet');
+    recordEvent('Credentials minted', 'No AGI Jobs credentials minted in this session yet.');
   } else {
     console.log('\n🎓 Certificates minted:');
     for (const entry of minted) {
       const uriSuffix = entry.uri ? ` ← ${entry.uri}` : '';
       console.log(`  Job #${entry.jobId.toString()} → ${entry.owner}${uriSuffix}`);
     }
+    recordEvent('Credentials minted', 'Credential NFTs issued to trusted agents after sovereign verification.', {
+      certificates: minted
+        .map((entry) => `#${entry.jobId.toString()} → ${entry.owner}`)
+        .join(', '),
+    });
   }
+
+  activeReport?.setTelemetry({
+    totalJobs: Number(totalJobs),
+    totalBurned: toTokenAmount(burned),
+    feePct: feePct.toString(),
+    validatorRewardPct: validatorRewardPct.toString(),
+    feePoolPending: toTokenAmount(pendingFees),
+    totalAgentStake: toTokenAmount(totalAgentStake),
+    totalValidatorStake: toTokenAmount(totalValidatorStake),
+    agentPortfolios: agentPortfolios.map((portfolio) => ({
+      id: activeReport?.resolveActorId(portfolio.address) ?? slugify(portfolio.address),
+      name: portfolio.name,
+      role: 'Agent',
+      address: portfolio.address,
+      liquid: portfolio.liquid,
+      staked: portfolio.staked,
+      locked: portfolio.locked,
+      reputation: portfolio.reputation,
+      certificates: portfolio.certificates,
+    })),
+    validatorPortfolios: validatorPortfolios.map((portfolio) => ({
+      id: activeReport?.resolveActorId(portfolio.address) ?? slugify(portfolio.address),
+      name: portfolio.name,
+      role: 'Validator',
+      address: portfolio.address,
+      liquid: portfolio.liquid,
+      staked: portfolio.staked,
+      locked: portfolio.locked,
+      reputation: portfolio.reputation,
+    })),
+    certificates: minted.map((entry) => ({
+      jobId: entry.jobId.toString(),
+      owner: entry.owner,
+      uri: entry.uri,
+    })),
+  });
+  activeReport?.setSectionOutcome(
+    'Telemetry captured – download the structured JSON report for archival or UI replay.'
+  );
 }
 
 async function mintInitialBalances(
@@ -549,28 +916,64 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
   };
 }
 
+interface JobSummaryRecord {
+  jobId: string;
+  context: string;
+  stateLabel: string;
+  success: boolean;
+  burnConfirmed: boolean;
+  reward: TokenAmount;
+  employer: string;
+  agent: string;
+}
+
 async function logJobSummary(
   registry: ethers.Contract,
   jobId: bigint,
   context: string
-): Promise<void> {
+): Promise<JobSummaryRecord> {
   const job = await registry.jobs(jobId);
   const metadata = decodeJobMetadata(job.packedMetadata);
+  const stateLabel = JOB_STATE_LABELS[metadata.state] ?? `${metadata.state}`;
   console.log(
-    `\n📦 Job ${jobId} summary (${context}):\n  State: ${JOB_STATE_LABELS[metadata.state] ?? metadata.state}\n  Success flag: ${metadata.success}\n  Burn confirmed: ${metadata.burnConfirmed}\n  Reward: ${formatTokens(job.reward)}\n  Employer: ${job.employer}\n  Agent: ${job.agent}`
+    `\n📦 Job ${jobId} summary (${context}):\n  State: ${stateLabel}\n  Success flag: ${metadata.success}\n  Burn confirmed: ${metadata.burnConfirmed}\n  Reward: ${formatTokens(job.reward)}\n  Employer: ${job.employer}\n  Agent: ${job.agent}`
   );
+  return {
+    jobId: jobId.toString(),
+    context,
+    stateLabel,
+    success: Boolean(metadata.success),
+    burnConfirmed: Boolean(metadata.burnConfirmed),
+    reward: toTokenAmount(job.reward),
+    employer: job.employer,
+    agent: job.agent,
+  };
 }
 
 async function showBalances(
   label: string,
   token: ethers.Contract,
-  participants: Array<{ name: string; address: string }>
-): Promise<void> {
+  participants: Array<{ name: string; address: string; role?: string }>
+): Promise<BalanceSnapshot> {
   console.log(`\n💰 ${label}`);
+  const entries: BalanceEntry[] = [];
   for (const participant of participants) {
     const balance = await token.balanceOf(participant.address);
     console.log(`  ${participant.name}: ${formatTokens(balance)}`);
+    entries.push({
+      name: participant.name,
+      address: participant.address,
+      role: participant.role,
+      balance: toTokenAmount(balance),
+    });
   }
+  const snapshot: BalanceSnapshot = {
+    id: slugify(label) || `snapshot-${Date.now()}`,
+    label,
+    entries,
+  };
+  activeReport?.attachSnapshot(snapshot);
+  return snapshot;
 }
 
 async function runHappyPath(env: DemoEnvironment): Promise<void> {
@@ -603,11 +1006,33 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
     .connect(nationA)
     .createJob(reward, deadline, specHash, 'ipfs://jobs/climate');
   const jobId = await registry.nextJobId();
-  await logJobSummary(registry, jobId, 'after posting');
+  const createdSummary = await logJobSummary(
+    registry,
+    jobId,
+    'after posting'
+  );
+  recordEvent(
+    'Escrow funded and job created',
+    'Nation A locks 250 AGIα with a 5% protocol fee and publishes a coordinated climate action brief.',
+    {
+      reward: createdSummary.reward.formatted,
+      protocolFee: formatTokens(fee),
+      jobId: createdSummary.jobId,
+      employer: createdSummary.employer,
+    }
+  );
 
   logStep('Alice stakes identity and applies through the emergency allowlist');
   await registry.connect(agentAlice).applyForJob(jobId, 'alice', []);
-  await logJobSummary(registry, jobId, 'after agent assignment');
+  const assignedSummary = await logJobSummary(
+    registry,
+    jobId,
+    'after agent assignment'
+  );
+  recordEvent('Agent onboarded instantly', 'Alice claims the mission slot via the sovereign emergency queue.', {
+    agent: assignedSummary.agent,
+    jobState: assignedSummary.stateLabel,
+  });
 
   logStep('Alice submits validated deliverables with provable IPFS evidence');
   const resultUri = 'ipfs://results/climate-success';
@@ -615,7 +1040,19 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   await registry
     .connect(agentAlice)
     .submit(jobId, resultHash, resultUri, 'alice', []);
-  await logJobSummary(registry, jobId, 'after submission');
+  const submissionSummary = await logJobSummary(
+    registry,
+    jobId,
+    'after submission'
+  );
+  recordEvent(
+    'Deliverables anchored on-chain',
+    'Alice ships verifiable climate intelligence with pinned IPFS evidence and cryptographic result hashes.',
+    {
+      jobState: submissionSummary.stateLabel,
+      resultUri,
+    }
+  );
 
   logStep(
     'Nation A records burn proof and primes the validation committee selection'
@@ -627,6 +1064,13 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   await registry
     .connect(nationA)
     .confirmEmployerBurn(jobId, burnTxHash);
+  recordEvent(
+    'Treasury burn attested',
+    'Nation A registers their burn receipt, proving escrow deflation before rewards flow.',
+    {
+      burnHash: burnTxHash,
+    }
+  );
 
   let round = await ensureValidatorsSelected(validation, nationA, jobId);
 
@@ -647,6 +1091,14 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
       .connect(validators[i])
       .commitValidation(jobId, commit, 'validator', []);
   }
+  recordEvent(
+    'Validator council commits',
+    'Three sovereign validators seal their votes, guaranteeing Sybil-resistant due process.',
+    {
+      quorum: validators.length.toString(),
+      commitDeadline: new Date(Number(round.commitDeadline) * 1000).toISOString(),
+    }
+  );
 
   const now = BigInt(await time.latest());
   const waitCommit = round.commitDeadline - now + 1n;
@@ -660,6 +1112,13 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
       .connect(validators[i])
       .revealValidation(jobId, approvals[i], burnTxHash, salts[i], 'validator', []);
   }
+  recordEvent(
+    'All validators approve',
+    'Commit–reveal finality completes with unanimous alignment, clearing settlement without delay.',
+    {
+      revealDeadline: new Date(Number(round.revealDeadline) * 1000).toISOString(),
+    }
+  );
 
   const nowAfterReveal = BigInt(await time.latest());
   const waitForFinalize = round.revealDeadline - nowAfterReveal + 1n;
@@ -668,25 +1127,62 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   }
 
   await validation.finalize(jobId);
-  await logJobSummary(registry, jobId, 'after validator finalize');
+  const finalizedSummary = await logJobSummary(
+    registry,
+    jobId,
+    'after validator finalize'
+  );
+  recordEvent('Validation round finalized', 'Consensus recorded on-chain with success flag true.', {
+    success: String(finalizedSummary.success),
+    state: finalizedSummary.stateLabel,
+  });
 
   logStep('Nation A finalizes payment, rewarding Alice and the validator cohort');
   await registry.connect(nationA).finalize(jobId);
-  await logJobSummary(registry, jobId, 'after treasury settlement');
+  const settlementSummary = await logJobSummary(
+    registry,
+    jobId,
+    'after treasury settlement'
+  );
+  recordEvent(
+    'Escrow distributed',
+    'The employer triggers sovereign settlement – Alice receives the treasury reward and validators earn protocol fees.',
+    {
+      success: String(settlementSummary.success),
+    }
+  );
 
   const participants = [
-    { name: 'Nation A', address: employerAddr },
-    { name: 'Alice (agent)', address: await agentAlice.getAddress() },
-    { name: 'Charlie (validator)', address: await validatorCharlie.getAddress() },
-    { name: 'Dora (validator)', address: await validatorDora.getAddress() },
-    { name: 'Evan (validator)', address: await validatorEvan.getAddress() },
+    { name: 'Nation A', address: employerAddr, role: 'Employer nation' },
+    { name: 'Alice (agent)', address: await agentAlice.getAddress(), role: 'Agent' },
+    { name: 'Charlie (validator)', address: await validatorCharlie.getAddress(), role: 'Validator' },
+    { name: 'Dora (validator)', address: await validatorDora.getAddress(), role: 'Validator' },
+    { name: 'Evan (validator)', address: await validatorEvan.getAddress(), role: 'Validator' },
   ];
-  await showBalances('Post-job token balances', token, participants);
+  const settlementSnapshot = await showBalances(
+    'Post-job token balances',
+    token,
+    participants
+  );
+  recordEvent('Treasury telemetry', 'Post-settlement balances illustrate value flow across nations, agents, and validators.', {
+    agentBalance: settlementSnapshot.entries[1]?.balance.formatted ?? '',
+    employerBalance: settlementSnapshot.entries[0]?.balance.formatted ?? '',
+  });
 
   const nftBalance = await env.certificate.balanceOf(
     await agentAlice.getAddress()
   );
   console.log(`\n🏅 Alice now holds ${nftBalance} certificate NFT(s).`);
+  recordEvent(
+    'Credential minted',
+    'Completion mints an AGI Jobs credential NFT for Alice – portable proof of sovereign-grade delivery.',
+    {
+      certificates: nftBalance.toString(),
+    }
+  );
+  activeReport?.setSectionOutcome(
+    'Climate coalition mission finalized with unanimous validator approval and credential issuance.'
+  );
 }
 
 async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
@@ -721,13 +1217,34 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     .connect(nationB)
     .createJob(reward, deadline, specHash, 'ipfs://jobs/translation');
   const jobId = await registry.nextJobId();
-  await logJobSummary(registry, jobId, 'after posting');
+  const createdSummary = await logJobSummary(
+    registry,
+    jobId,
+    'after posting'
+  );
+  recordEvent(
+    'Nation B launches translation bid',
+    'A multilingual diplomacy mission is posted with validator fees primed for oversight.',
+    {
+      reward: createdSummary.reward.formatted,
+      jobId: createdSummary.jobId,
+    }
+  );
 
   logStep('Bob applies, contributes work, and submits contested deliverables');
   await registry.connect(agentBob).applyForJob(jobId, 'bob', []);
   await registry
     .connect(agentBob)
     .submit(jobId, ethers.id('ipfs://results/draft'), 'ipfs://results/draft', 'bob', []);
+  const submissionSummary = await logJobSummary(
+    registry,
+    jobId,
+    'after agent submission'
+  );
+  recordEvent('Agent Bob delivers', 'Bob provides translation drafts yet signals the need for moderator attention.', {
+    jobState: submissionSummary.stateLabel,
+    agent: submissionSummary.agent,
+  });
 
   const burnTxHash = ethers.keccak256(
     ethers.toUtf8Bytes('burn:translation:checkpoint')
@@ -738,6 +1255,13 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   await registry
     .connect(nationB)
     .confirmEmployerBurn(jobId, burnTxHash);
+  recordEvent(
+    'Employer records burn checkpoint',
+    'Nation B attests to partial budget burn before dispute escalates.',
+    {
+      burnHash: burnTxHash,
+    }
+  );
 
   let round = await ensureValidatorsSelected(validation, nationB, jobId);
   const nonce = await validation.jobNonce(jobId);
@@ -759,6 +1283,13 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
       .connect(validatorSet[i])
       .commitValidation(jobId, commit, 'validator', []);
   }
+  recordEvent(
+    'Split validator commits',
+    'Validator council telegraphs contention – one support vote, one dissent, one undecided.',
+    {
+      commitDeadline: new Date(Number(round.commitDeadline) * 1000).toISOString(),
+    }
+  );
 
   const now = BigInt(await time.latest());
   const waitCommit = round.commitDeadline - now + 1n;
@@ -774,6 +1305,13 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     .connect(validatorDora)
     .revealValidation(jobId, false, burnTxHash, salts[1], 'validator', []);
   // validatorEvan intentionally withholds reveal
+  recordEvent(
+    'Reveal quorum missed',
+    'Only two validators reveal – the abstaining validator will be penalised under slashing policy.',
+    {
+      revealed: '2',
+    }
+  );
 
   const nowAfterReveal = BigInt(await time.latest());
   const waitFinalize = round.revealDeadline - nowAfterReveal + 1n;
@@ -782,7 +1320,14 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   }
 
   await validation.finalize(jobId);
-  await logJobSummary(registry, jobId, 'after partial quorum');
+  const contestedSummary = await logJobSummary(
+    registry,
+    jobId,
+    'after partial quorum'
+  );
+  recordEvent('Validation flags dispute', 'The module records a failed quorum, routing governance authority to the owner.', {
+    state: contestedSummary.stateLabel,
+  });
 
   logStep(
     'Bob leverages dispute rights; governance moderates and sides with the agent'
@@ -796,6 +1341,14 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   await dispute
     .connect(owner)
     .setModerator(await moderator.getAddress(), 1);
+  recordEvent(
+    'Owner configures emergency council',
+    'The sovereign owner waives dispute fees, sets zero windows, and fast-tracks moderator appointments.',
+    {
+      owner: await owner.getAddress(),
+      moderator: await moderator.getAddress(),
+    }
+  );
 
   const typeHash = ethers.id(
     'ResolveDispute(uint256 jobId,bool employerWins,address module,uint256 chainId)'
@@ -812,31 +1365,125 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   await dispute
     .connect(moderator)
     .resolveWithSignatures(jobId, false, [sigOwner, sigModerator]);
+  recordEvent(
+    'Dispute resolved for the agent',
+    'Owner + moderator multisig resolves in favour of Bob, restoring escrow with sovereign accountability.',
+    {
+      employerWins: 'false',
+    }
+  );
 
   logStep('Nation B finalizes, distributing escrow and validator rewards post-dispute');
   await registry.connect(nationB).finalize(jobId);
-  await logJobSummary(registry, jobId, 'after dispute resolution');
+  const resolutionSummary = await logJobSummary(
+    registry,
+    jobId,
+    'after dispute resolution'
+  );
+  recordEvent(
+    'Escrow finalised post-dispute',
+    'Nation B honours the dispute verdict; Bob is paid and the abstaining validator forfeits rewards.',
+    {
+      success: String(resolutionSummary.success),
+    }
+  );
 
   const participants = [
-    { name: 'Nation B', address: await nationB.getAddress() },
-    { name: 'Bob (agent)', address: await agentBob.getAddress() },
-    { name: 'Charlie (validator)', address: await validatorCharlie.getAddress() },
-    { name: 'Dora (validator)', address: await validatorDora.getAddress() },
-    { name: 'Evan (validator)', address: await validatorEvan.getAddress() },
+    { name: 'Nation B', address: await nationB.getAddress(), role: 'Employer nation' },
+    { name: 'Bob (agent)', address: await agentBob.getAddress(), role: 'Agent' },
+    { name: 'Charlie (validator)', address: await validatorCharlie.getAddress(), role: 'Validator' },
+    { name: 'Dora (validator)', address: await validatorDora.getAddress(), role: 'Validator' },
+    { name: 'Evan (validator)', address: await validatorEvan.getAddress(), role: 'Validator' },
   ];
-  await showBalances('Post-dispute token balances', token, participants);
+  const disputeSnapshot = await showBalances(
+    'Post-dispute token balances',
+    token,
+    participants
+  );
+  recordEvent(
+    'Post-dispute balances',
+    'Liquidity snapshot exhibits Bob’s win and the abstaining validator’s slashed position.',
+    {
+      agentBalance: disputeSnapshot.entries[1]?.balance.formatted ?? '',
+      slashedValidator: disputeSnapshot.entries[4]?.balance.formatted ?? '',
+    }
+  );
+  activeReport?.setSectionOutcome(
+    'Owner-controlled dispute resolution restored agent rewards while enforcing validator accountability.'
+  );
 }
 
 async function main(): Promise<void> {
+  activeReport = new GrandDemoReport();
   const env = await deployEnvironment();
+  const network = await ethers.provider.getNetwork();
+  activeReport.setNetwork(Number(network.chainId), network.name ?? 'hardhat');
+  activeReport.setTokenSupply(env.initialSupply);
+  const ownerAddress = await env.owner.getAddress();
+  activeReport.setOwner(ownerAddress);
+  const actorDirectory: ActorProfile[] = [
+    { id: 'owner', name: 'Sovereign Operator', role: 'Owner', address: ownerAddress },
+    {
+      id: 'nation-a',
+      name: 'Nation A – Climate Coalition',
+      role: 'Employer Nation',
+      address: await env.nationA.getAddress(),
+    },
+    {
+      id: 'nation-b',
+      name: 'Nation B – Linguistic Alliance',
+      role: 'Employer Nation',
+      address: await env.nationB.getAddress(),
+    },
+    {
+      id: 'alice',
+      name: 'Alice – Climate Response Agent',
+      role: 'Agent',
+      address: await env.agentAlice.getAddress(),
+    },
+    {
+      id: 'bob',
+      name: 'Bob – Translation Agent',
+      role: 'Agent',
+      address: await env.agentBob.getAddress(),
+    },
+    {
+      id: 'charlie',
+      name: 'Charlie – Validator',
+      role: 'Validator',
+      address: await env.validatorCharlie.getAddress(),
+    },
+    {
+      id: 'dora',
+      name: 'Dora – Validator',
+      role: 'Validator',
+      address: await env.validatorDora.getAddress(),
+    },
+    {
+      id: 'evan',
+      name: 'Evan – Validator',
+      role: 'Validator',
+      address: await env.validatorEvan.getAddress(),
+    },
+    {
+      id: 'moderator',
+      name: 'Global Moderator',
+      role: 'Moderator',
+      address: await env.moderator.getAddress(),
+    },
+  ];
+  activeReport.setActors(actorDirectory);
+
   await showBalances('Initial treasury state', env.token, [
-    { name: 'Nation A', address: await env.nationA.getAddress() },
-    { name: 'Nation B', address: await env.nationB.getAddress() },
-    { name: 'Alice (agent)', address: await env.agentAlice.getAddress() },
-    { name: 'Bob (agent)', address: await env.agentBob.getAddress() },
-    { name: 'Charlie (validator)', address: await env.validatorCharlie.getAddress() },
-    { name: 'Dora (validator)', address: await env.validatorDora.getAddress() },
-    { name: 'Evan (validator)', address: await env.validatorEvan.getAddress() },
+    { name: 'Owner treasury', address: ownerAddress, role: 'Owner' },
+    { name: 'Nation A', address: actorDirectory[1].address, role: 'Employer nation' },
+    { name: 'Nation B', address: actorDirectory[2].address, role: 'Employer nation' },
+    { name: 'Alice (agent)', address: actorDirectory[3].address, role: 'Agent' },
+    { name: 'Bob (agent)', address: actorDirectory[4].address, role: 'Agent' },
+    { name: 'Charlie (validator)', address: actorDirectory[5].address, role: 'Validator' },
+    { name: 'Dora (validator)', address: actorDirectory[6].address, role: 'Validator' },
+    { name: 'Evan (validator)', address: actorDirectory[7].address, role: 'Validator' },
+    { name: 'Moderator reserve', address: actorDirectory[8].address, role: 'Moderator' },
   ]);
 
   await runHappyPath(env);
@@ -844,6 +1491,8 @@ async function main(): Promise<void> {
   await summarizeMarketState(env);
 
   logSection('Demo complete – AGI Jobs v2 sovereignty market simulation finished');
+  activeReport?.setSectionOutcome('Demonstration complete – the JSON transcript captures the full market simulation.');
+  await activeReport?.maybeWriteFromArgs(process.argv);
 }
 
 main().catch((err) => {

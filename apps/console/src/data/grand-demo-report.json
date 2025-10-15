@@ -1,0 +1,732 @@
+{
+  "metadata": {
+    "generatedAt": "2025-10-15T20:54:46.952Z",
+    "network": {
+      "chainId": 31337,
+      "name": "hardhat"
+    }
+  },
+  "token": {
+    "symbol": "AGIα",
+    "decimals": 18,
+    "initialSupply": {
+      "raw": "14000000000000000000000",
+      "formatted": "14000.0 AGIα"
+    }
+  },
+  "owner": {
+    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+  },
+  "actors": [
+    {
+      "id": "owner",
+      "name": "Sovereign Operator",
+      "role": "Owner",
+      "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    },
+    {
+      "id": "nation-a",
+      "name": "Nation A – Climate Coalition",
+      "role": "Employer Nation",
+      "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    },
+    {
+      "id": "nation-b",
+      "name": "Nation B – Linguistic Alliance",
+      "role": "Employer Nation",
+      "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    {
+      "id": "alice",
+      "name": "Alice – Climate Response Agent",
+      "role": "Agent",
+      "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+    },
+    {
+      "id": "bob",
+      "name": "Bob – Translation Agent",
+      "role": "Agent",
+      "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+    },
+    {
+      "id": "charlie",
+      "name": "Charlie – Validator",
+      "role": "Validator",
+      "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+    },
+    {
+      "id": "dora",
+      "name": "Dora – Validator",
+      "role": "Validator",
+      "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+    },
+    {
+      "id": "evan",
+      "name": "Evan – Validator",
+      "role": "Validator",
+      "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+    },
+    {
+      "id": "moderator",
+      "name": "Global Moderator",
+      "role": "Moderator",
+      "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+    }
+  ],
+  "sections": [
+    {
+      "id": "bootstrapping-agi-jobs-v2-grand-demo-environment",
+      "title": "Bootstrapping AGI Jobs v2 grand demo environment",
+      "kind": "setup",
+      "steps": [
+        {
+          "title": "Deploying core contracts",
+          "events": []
+        },
+        {
+          "title": "Wiring governance relationships and module cross-links",
+          "events": []
+        },
+        {
+          "title": "Configuring policy parameters for rapid local simulation",
+          "events": []
+        },
+        {
+          "title": "Seeding IdentityRegistry with emergency allowlists",
+          "events": []
+        },
+        {
+          "title": "Initial token approvals and staking for actors",
+          "events": []
+        }
+      ],
+      "snapshots": [
+        {
+          "id": "initial-treasury-state",
+          "label": "Initial treasury state",
+          "entries": [
+            {
+              "name": "Owner treasury",
+              "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              "role": "Owner",
+              "balance": {
+                "raw": "0",
+                "formatted": "0.0 AGIα"
+              }
+            },
+            {
+              "name": "Nation A",
+              "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+              "role": "Employer nation",
+              "balance": {
+                "raw": "2000000000000000000000",
+                "formatted": "2000.0 AGIα"
+              }
+            },
+            {
+              "name": "Nation B",
+              "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+              "role": "Employer nation",
+              "balance": {
+                "raw": "2000000000000000000000",
+                "formatted": "2000.0 AGIα"
+              }
+            },
+            {
+              "name": "Alice (agent)",
+              "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+              "role": "Agent",
+              "balance": {
+                "raw": "1990000000000000000000",
+                "formatted": "1990.0 AGIα"
+              }
+            },
+            {
+              "name": "Bob (agent)",
+              "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+              "role": "Agent",
+              "balance": {
+                "raw": "1990000000000000000000",
+                "formatted": "1990.0 AGIα"
+              }
+            },
+            {
+              "name": "Charlie (validator)",
+              "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+              "role": "Validator",
+              "balance": {
+                "raw": "1990000000000000000000",
+                "formatted": "1990.0 AGIα"
+              }
+            },
+            {
+              "name": "Dora (validator)",
+              "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+              "role": "Validator",
+              "balance": {
+                "raw": "1990000000000000000000",
+                "formatted": "1990.0 AGIα"
+              }
+            },
+            {
+              "name": "Evan (validator)",
+              "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+              "role": "Validator",
+              "balance": {
+                "raw": "1990000000000000000000",
+                "formatted": "1990.0 AGIα"
+              }
+            },
+            {
+              "name": "Moderator reserve",
+              "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+              "role": "Moderator",
+              "balance": {
+                "raw": "0",
+                "formatted": "0.0 AGIα"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scenario-1-cooperative-intergovernmental-ai-labour-success",
+      "title": "Scenario 1 – Cooperative intergovernmental AI labour success",
+      "kind": "scenario",
+      "steps": [
+        {
+          "title": "Nation A approves escrow and posts a climate-coordination job",
+          "events": [
+            {
+              "label": "Escrow funded and job created",
+              "details": "Nation A locks 250 AGIα with a 5% protocol fee and publishes a coordinated climate action brief.",
+              "metrics": {
+                "reward": "250.0 AGIα",
+                "protocolFee": "12.5 AGIα",
+                "jobId": "1",
+                "employer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Alice stakes identity and applies through the emergency allowlist",
+          "events": [
+            {
+              "label": "Agent onboarded instantly",
+              "details": "Alice claims the mission slot via the sovereign emergency queue.",
+              "metrics": {
+                "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+                "jobState": "Applied"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Alice submits validated deliverables with provable IPFS evidence",
+          "events": [
+            {
+              "label": "Deliverables anchored on-chain",
+              "details": "Alice ships verifiable climate intelligence with pinned IPFS evidence and cryptographic result hashes.",
+              "metrics": {
+                "jobState": "Submitted",
+                "resultUri": "ipfs://results/climate-success"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Nation A records burn proof and primes the validation committee selection",
+          "events": [
+            {
+              "label": "Treasury burn attested",
+              "details": "Nation A registers their burn receipt, proving escrow deflation before rewards flow.",
+              "metrics": {
+                "burnHash": "0x1832a411ce28b731b97d02089d55f01fdcf79a962b77ef1341c6058c4767f19c"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Validators commit to their assessments under commit–reveal secrecy",
+          "events": [
+            {
+              "label": "Validator council commits",
+              "details": "Three sovereign validators seal their votes, guaranteeing Sybil-resistant due process.",
+              "metrics": {
+                "quorum": "3",
+                "commitDeadline": "2025-10-15T20:56:49.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Validators reveal unanimous approval, meeting the quorum instantly",
+          "events": [
+            {
+              "label": "All validators approve",
+              "details": "Commit–reveal finality completes with unanimous alignment, clearing settlement without delay.",
+              "metrics": {
+                "revealDeadline": "2025-10-15T20:57:49.000Z"
+              }
+            },
+            {
+              "label": "Validation round finalized",
+              "details": "Consensus recorded on-chain with success flag true.",
+              "metrics": {
+                "success": "true",
+                "state": "Completed"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Nation A finalizes payment, rewarding Alice and the validator cohort",
+          "events": [
+            {
+              "label": "Escrow distributed",
+              "details": "The employer triggers sovereign settlement – Alice receives the treasury reward and validators earn protocol fees.",
+              "metrics": {
+                "success": "true"
+              }
+            },
+            {
+              "label": "Treasury telemetry",
+              "details": "Post-settlement balances illustrate value flow across nations, agents, and validators.",
+              "metrics": {
+                "agentBalance": "2190.0 AGIα",
+                "employerBalance": "1737.5 AGIα"
+              }
+            },
+            {
+              "label": "Credential minted",
+              "details": "Completion mints an AGI Jobs credential NFT for Alice – portable proof of sovereign-grade delivery.",
+              "metrics": {
+                "certificates": "1"
+              }
+            }
+          ]
+        }
+      ],
+      "snapshots": [
+        {
+          "id": "post-job-token-balances",
+          "label": "Post-job token balances",
+          "entries": [
+            {
+              "name": "Nation A",
+              "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+              "role": "Employer nation",
+              "balance": {
+                "raw": "1737500000000000000000",
+                "formatted": "1737.5 AGIα"
+              }
+            },
+            {
+              "name": "Alice (agent)",
+              "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+              "role": "Agent",
+              "balance": {
+                "raw": "2190000000000000000000",
+                "formatted": "2190.0 AGIα"
+              }
+            },
+            {
+              "name": "Charlie (validator)",
+              "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+              "role": "Validator",
+              "balance": {
+                "raw": "2006666666666666666666",
+                "formatted": "2006.666666666666666666 AGIα"
+              }
+            },
+            {
+              "name": "Dora (validator)",
+              "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+              "role": "Validator",
+              "balance": {
+                "raw": "2006666666666666666666",
+                "formatted": "2006.666666666666666666 AGIα"
+              }
+            },
+            {
+              "name": "Evan (validator)",
+              "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+              "role": "Validator",
+              "balance": {
+                "raw": "2006666666666666666668",
+                "formatted": "2006.666666666666666668 AGIα"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": "Climate coalition mission finalized with unanimous validator approval and credential issuance."
+    },
+    {
+      "id": "scenario-2-cross-border-dispute-resolved-by-owner-governance",
+      "title": "Scenario 2 – Cross-border dispute resolved by owner governance",
+      "kind": "scenario",
+      "steps": [
+        {
+          "title": "Nation B funds a frontier language translation initiative",
+          "events": [
+            {
+              "label": "Nation B launches translation bid",
+              "details": "A multilingual diplomacy mission is posted with validator fees primed for oversight.",
+              "metrics": {
+                "reward": "180.0 AGIα",
+                "jobId": "2"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Bob applies, contributes work, and submits contested deliverables",
+          "events": [
+            {
+              "label": "Agent Bob delivers",
+              "details": "Bob provides translation drafts yet signals the need for moderator attention.",
+              "metrics": {
+                "jobState": "Submitted",
+                "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+              }
+            },
+            {
+              "label": "Employer records burn checkpoint",
+              "details": "Nation B attests to partial budget burn before dispute escalates.",
+              "metrics": {
+                "burnHash": "0xc2af6c4f51497826f2c5f1ad43c4a2f3d58ddfdb09e40d9aff69addabc6f1818"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Validators disagree; one plans to approve, another to reject, one will abstain",
+          "events": [
+            {
+              "label": "Split validator commits",
+              "details": "Validator council telegraphs contention – one support vote, one dissent, one undecided.",
+              "metrics": {
+                "commitDeadline": "2025-10-15T20:58:59.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Partial reveals occur – one validator abstains, triggering penalties",
+          "events": [
+            {
+              "label": "Reveal quorum missed",
+              "details": "Only two validators reveal – the abstaining validator will be penalised under slashing policy.",
+              "metrics": {
+                "revealed": "2"
+              }
+            },
+            {
+              "label": "Validation flags dispute",
+              "details": "The module records a failed quorum, routing governance authority to the owner.",
+              "metrics": {
+                "state": "Disputed"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Bob leverages dispute rights; governance moderates and sides with the agent",
+          "events": [
+            {
+              "label": "Owner configures emergency council",
+              "details": "The sovereign owner waives dispute fees, sets zero windows, and fast-tracks moderator appointments.",
+              "metrics": {
+                "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                "moderator": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+              }
+            },
+            {
+              "label": "Dispute resolved for the agent",
+              "details": "Owner + moderator multisig resolves in favour of Bob, restoring escrow with sovereign accountability.",
+              "metrics": {
+                "employerWins": "false"
+              }
+            }
+          ]
+        },
+        {
+          "title": "Nation B finalizes, distributing escrow and validator rewards post-dispute",
+          "events": [
+            {
+              "label": "Escrow finalised post-dispute",
+              "details": "Nation B honours the dispute verdict; Bob is paid and the abstaining validator forfeits rewards.",
+              "metrics": {
+                "success": "true"
+              }
+            },
+            {
+              "label": "Post-dispute balances",
+              "details": "Liquidity snapshot exhibits Bob’s win and the abstaining validator’s slashed position.",
+              "metrics": {
+                "agentBalance": "2170.0 AGIα",
+                "slashedValidator": "2006.666666666666666668 AGIα"
+              }
+            }
+          ]
+        }
+      ],
+      "snapshots": [
+        {
+          "id": "post-dispute-token-balances",
+          "label": "Post-dispute token balances",
+          "entries": [
+            {
+              "name": "Nation B",
+              "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+              "role": "Employer nation",
+              "balance": {
+                "raw": "1811000000000000000000",
+                "formatted": "1811.0 AGIα"
+              }
+            },
+            {
+              "name": "Bob (agent)",
+              "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+              "role": "Agent",
+              "balance": {
+                "raw": "2170000000000000000000",
+                "formatted": "2170.0 AGIα"
+              }
+            },
+            {
+              "name": "Charlie (validator)",
+              "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+              "role": "Validator",
+              "balance": {
+                "raw": "2006666666666666666666",
+                "formatted": "2006.666666666666666666 AGIα"
+              }
+            },
+            {
+              "name": "Dora (validator)",
+              "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+              "role": "Validator",
+              "balance": {
+                "raw": "2006666666666666666666",
+                "formatted": "2006.666666666666666666 AGIα"
+              }
+            },
+            {
+              "name": "Evan (validator)",
+              "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+              "role": "Validator",
+              "balance": {
+                "raw": "2006666666666666666668",
+                "formatted": "2006.666666666666666668 AGIα"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": "Owner-controlled dispute resolution restored agent rewards while enforcing validator accountability."
+    },
+    {
+      "id": "sovereign-labour-market-telemetry-dashboard",
+      "title": "Sovereign labour market telemetry dashboard",
+      "kind": "telemetry",
+      "steps": [
+        {
+          "title": "Aggregating sovereign telemetry for the owner command center",
+          "events": [
+            {
+              "label": "Jobs orchestrated",
+              "details": "Total engagements mediated during the demo session.",
+              "metrics": {
+                "totalJobs": "2"
+              }
+            },
+            {
+              "label": "Supply shift",
+              "details": "Net AGIα burn recorded against circulating supply.",
+              "metrics": {
+                "burned": "6.175 AGIα",
+                "finalSupply": "13993.825 AGIα"
+              }
+            },
+            {
+              "label": "Protocol economics",
+              "details": "Fee levers and pending distributions surfaced for governance.",
+              "metrics": {
+                "feePct": "5%",
+                "validatorRewardPct": "20%",
+                "pendingFees": "20.425 AGIα"
+              }
+            },
+            {
+              "label": "Capital committed",
+              "details": "Stake and slashing collateral currently protecting the market.",
+              "metrics": {
+                "agents": "20.0 AGIα",
+                "validators": "24.9 AGIα"
+              }
+            },
+            {
+              "label": "Credentials minted",
+              "details": "Credential NFTs issued to trusted agents after sovereign verification.",
+              "metrics": {
+                "certificates": "#1 → 0x90F79bf6EB2c4f870365E785982E1f101E93b906, #2 → 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+              }
+            }
+          ]
+        }
+      ],
+      "snapshots": [],
+      "outcome": "Telemetry captured – download the structured JSON report for archival or UI replay."
+    },
+    {
+      "id": "demo-complete-agi-jobs-v2-sovereignty-market-simulation-finished",
+      "title": "Demo complete – AGI Jobs v2 sovereignty market simulation finished",
+      "kind": "wrapup",
+      "steps": [],
+      "snapshots": [],
+      "outcome": "Demonstration complete – the JSON transcript captures the full market simulation."
+    }
+  ],
+  "telemetry": {
+    "totalJobs": 2,
+    "totalBurned": {
+      "raw": "6175000000000000000",
+      "formatted": "6.175 AGIα"
+    },
+    "feePct": "5",
+    "validatorRewardPct": "20",
+    "feePoolPending": {
+      "raw": "20425000000000000000",
+      "formatted": "20.425 AGIα"
+    },
+    "totalAgentStake": {
+      "raw": "20000000000000000000",
+      "formatted": "20.0 AGIα"
+    },
+    "totalValidatorStake": {
+      "raw": "24900000000000000000",
+      "formatted": "24.9 AGIα"
+    },
+    "agentPortfolios": [
+      {
+        "id": "alice",
+        "name": "Alice (agent)",
+        "role": "Agent",
+        "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "liquid": {
+          "raw": "2190000000000000000000",
+          "formatted": "2190.0 AGIα"
+        },
+        "staked": {
+          "raw": "10000000000000000000",
+          "formatted": "10.0 AGIα"
+        },
+        "locked": {
+          "raw": "0",
+          "formatted": "0.0 AGIα"
+        },
+        "reputation": "145",
+        "certificates": [
+          "#1 ← ipfs://agi-jobs/demo/certificates/1"
+        ]
+      },
+      {
+        "id": "bob",
+        "name": "Bob (agent)",
+        "role": "Agent",
+        "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+        "liquid": {
+          "raw": "2170000000000000000000",
+          "formatted": "2170.0 AGIα"
+        },
+        "staked": {
+          "raw": "10000000000000000000",
+          "formatted": "10.0 AGIα"
+        },
+        "locked": {
+          "raw": "0",
+          "formatted": "0.0 AGIα"
+        },
+        "reputation": "145",
+        "certificates": [
+          "#2 ← ipfs://agi-jobs/demo/certificates/2"
+        ]
+      }
+    ],
+    "validatorPortfolios": [
+      {
+        "id": "charlie",
+        "name": "Charlie (validator)",
+        "role": "Validator",
+        "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+        "liquid": {
+          "raw": "2006666666666666666666",
+          "formatted": "2006.666666666666666666 AGIα"
+        },
+        "staked": {
+          "raw": "5000000000000000000",
+          "formatted": "5.0 AGIα"
+        },
+        "locked": {
+          "raw": "0",
+          "formatted": "0.0 AGIα"
+        },
+        "reputation": "9"
+      },
+      {
+        "id": "dora",
+        "name": "Dora (validator)",
+        "role": "Validator",
+        "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+        "liquid": {
+          "raw": "2006666666666666666666",
+          "formatted": "2006.666666666666666666 AGIα"
+        },
+        "staked": {
+          "raw": "10000000000000000000",
+          "formatted": "10.0 AGIα"
+        },
+        "locked": {
+          "raw": "0",
+          "formatted": "0.0 AGIα"
+        },
+        "reputation": "10"
+      },
+      {
+        "id": "evan",
+        "name": "Evan (validator)",
+        "role": "Validator",
+        "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+        "liquid": {
+          "raw": "2006666666666666666668",
+          "formatted": "2006.666666666666666668 AGIα"
+        },
+        "staked": {
+          "raw": "9900000000000000000",
+          "formatted": "9.9 AGIα"
+        },
+        "locked": {
+          "raw": "0",
+          "formatted": "0.0 AGIα"
+        },
+        "reputation": "9"
+      }
+    ],
+    "certificates": [
+      {
+        "jobId": "1",
+        "owner": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "uri": "ipfs://agi-jobs/demo/certificates/1"
+      },
+      {
+        "jobId": "2",
+        "owner": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+        "uri": "ipfs://agi-jobs/demo/certificates/2"
+      }
+    ]
+  }
+}

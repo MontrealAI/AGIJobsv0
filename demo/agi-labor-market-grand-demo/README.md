@@ -66,6 +66,20 @@ From the repository root run:
 npx hardhat run --no-compile scripts/v2/agiLaborMarketGrandDemo.ts --network hardhat
 ```
 
+Once the automation completes you can export a structured JSON transcript and
+drive the interactive owner console demo:
+
+```bash
+npm run demo:agi-labor-market:report
+npm --prefix apps/console run dev
+```
+
+Open the console (default http://localhost:5173) to explore the “AGI Jobs v2 –
+Sovereign Labour Market Grand Demo” panel. Non-technical operators can replay
+the entire story – participating actors, validator steps, dispute escalations,
+balance snapshots, and owner governance actions – without running any CLI
+commands.
+
 The script:
 
 1. Boots the entire v2 module suite and displays initial balances.

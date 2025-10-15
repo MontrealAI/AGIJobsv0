@@ -4,6 +4,7 @@ import PoliciesPanel from './components/PoliciesPanel';
 import GovernanceActionForm from './components/GovernanceActionForm';
 import GasPanel from './components/GasPanel';
 import ReceiptsViewer from './components/ReceiptsViewer';
+import GrandDemoPanel from './components/GrandDemoPanel';
 import { ApiProvider, useApi } from './context/ApiContext';
 import { GovernanceSnapshot } from './types';
 
@@ -46,6 +47,7 @@ function AppShell() {
     <div className="app-shell">
       <h1>AGI Jobs Owner Console</h1>
       <div className="panel-grid">
+        <GrandDemoPanel />
         <ConnectionPanel onConfigSaved={() => setSnapshot(null)} />
         <PoliciesPanel
           snapshot={snapshot}
