@@ -217,7 +217,9 @@ function writeReceipt(net: string, name: string, data: unknown) {
   const baseDir = resolveReportBaseDir(net);
   const dir = path.join(baseDir, 'receipts');
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, name), JSON.stringify(data, null, 2));
+  const receiptPath = path.join(dir, name);
+  fs.mkdirSync(path.dirname(receiptPath), { recursive: true });
+  fs.writeFileSync(receiptPath, JSON.stringify(data, null, 2));
   const legacyDir = path.join('reports', net, REPORT_SCOPE, 'receipts');
   const outputPath = path.join(legacyDir, name);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -907,12 +909,6 @@ async function main() {
   const thermostat =
     thermostatArtifact && thermostatAddress
       ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, employer)
-    thermostatAddress && thermostatArtifact
-      ? new ethers.Contract(
-          thermostatAddress,
-          thermostatArtifact.abi,
-          employer
-        )
       : null;
 
   const recordForwardGovernanceCall = async (
@@ -1266,6 +1262,8 @@ async function main() {
     }
   );
 
+
+
   const stakeEntries: Array<{
     role: string;
     address: string;
@@ -1301,27 +1299,6 @@ async function main() {
 
   writeReceipt(networkName, 'stake.json', { entries: stakeEntries });
 
-  const specHash = ethers.keccak256(
-    ethers.toUtf8Bytes(JSON.stringify(spec, Object.keys(spec).sort()))
-  );
-  const specUri =
-    process.env.AURORA_SPEC_URI ||
-    spec.acceptanceCriteriaURI ||
-    'ipfs://aurora-demo-spec';
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
-
-  const postTx = await jobRegistry
-    .connect(employer)
-    .acknowledgeAndCreateJob(rewardAmount, Number(deadline), specHash, specUri);
-  const postReceipt = await postTx.wait();
-  let jobId = 0n;
-  if (postReceipt && postReceipt.logs) {
-    for (const log of postReceipt.logs) {
-      try {
-        const parsed = jobRegistry.interface.parseLog(log);
-        if (parsed.name === 'JobCreated') {
-          jobId = parsed.args.jobId as bigint;
-          break;
   const trackAddresses = [
     employer.address,
     worker.address,
@@ -1349,8 +1326,13 @@ async function main() {
     const specHash = ethers.keccak256(
       ethers.toUtf8Bytes(JSON.stringify(job.spec, sortedKeys))
     );
-    const specUri = job.spec.acceptanceCriteriaURI || 'ipfs://aurora-demo-spec';
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + job.deadlineOffset);
+    const specUri =
+      job.spec.acceptanceCriteriaURI ||
+      process.env.AURORA_SPEC_URI ||
+      'ipfs://aurora-demo-spec';
+    const deadline = BigInt(
+      Math.floor(Date.now() / 1000) + job.deadlineOffset
+    );
 
     const postTx = await jobRegistry
       .connect(employer)
@@ -1361,8 +1343,9 @@ async function main() {
         specUri
       );
     const postReceipt = await postTx.wait();
+
     let jobId = 0n;
-    if (postReceipt && postReceipt.logs) {
+    if (postReceipt?.logs) {
       for (const log of postReceipt.logs) {
         try {
           const parsed = jobRegistry.interface.parseLog(log);
@@ -1376,45 +1359,9 @@ async function main() {
       }
     }
     if (jobId === 0n) {
-      jobId = 1n;
+      jobId = BigInt(missionRecords.length + 1);
     }
-  }
-  if (jobId === 0n) {
-    jobId = 1n;
-  }
 
-  writeReceipt(networkName, 'postJob.json', {
-    jobId: jobId.toString(),
-    txHash: postReceipt?.hash || postTx.hash,
-    reward: formatUnits(rewardAmount, decimals),
-    deadline: deadline.toString(),
-    specHash,
-    specPath: specPath,
-    specURI: specUri,
-    specUri,
-  });
-
-  const subdomain =
-    process.env.AURORA_AGENT_SUBDOMAIN || 'aurora-agent';
-  const applyTx = await jobRegistry
-    .connect(worker)
-    .acknowledgeAndApply(jobId, subdomain, []);
-  await applyTx.wait();
-
-  const resultUri =
-    process.env.AURORA_RESULT_URI || 'ipfs://aurora-demo-result';
-  const resultHash = ethers.keccak256(ethers.toUtf8Bytes(resultUri));
-  const submitTx = await jobRegistry
-    .connect(worker)
-    .submit(jobId, resultHash, resultUri, subdomain, []);
-  const submitReceipt = await submitTx.wait();
-
-  writeReceipt(networkName, 'submit.json', {
-    worker: worker.address,
-    txHash: submitReceipt?.hash || submitTx.hash,
-    resultURI: resultUri,
-    resultHash,
-  });
     const postRecord = {
       jobId: jobId.toString(),
       txHash: postReceipt?.hash || postTx.hash,
@@ -1422,6 +1369,7 @@ async function main() {
       deadline: deadline.toString(),
       specHash,
       specPath: job.specPath,
+      specURI: specUri,
       metadata: job.metadata,
     };
     writeReceipt(networkName, path.join(jobDir, 'post.json'), postRecord);
@@ -1429,21 +1377,23 @@ async function main() {
       writeReceipt(networkName, 'postJob.json', postRecord);
     }
 
+    const agentSubdomain = job.agentSubdomain || 'aurora-agent';
     const applyTx = await jobRegistry
       .connect(worker)
-      .acknowledgeAndApply(jobId, job.agentSubdomain, []);
+      .acknowledgeAndApply(jobId, agentSubdomain, []);
     await applyTx.wait();
 
-    const resultHash = ethers.keccak256(ethers.toUtf8Bytes(job.resultUri));
+    const resultUri = job.resultUri;
+    const resultHash = ethers.keccak256(ethers.toUtf8Bytes(resultUri));
     const submitTx = await jobRegistry
       .connect(worker)
-      .submit(jobId, resultHash, job.resultUri, job.agentSubdomain, []);
+      .submit(jobId, resultHash, resultUri, agentSubdomain, []);
     const submitReceipt = await submitTx.wait();
 
     const submitRecord = {
       worker: worker.address,
       txHash: submitReceipt?.hash || submitTx.hash,
-      resultURI: job.resultUri,
+      resultURI: resultUri,
       resultHash,
       metadata: job.metadata,
     };
@@ -1455,6 +1405,9 @@ async function main() {
     const nonce = (await validationModule.jobNonce(jobId)).valueOf() as bigint;
     const specHashOnChain = await jobRegistry.getSpecHash(jobId);
     const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
+    const validatorSubdomain =
+      process.env.AURORA_VALIDATOR_SUBDOMAIN || 'aurora-validator';
+
     const commitRecords: Array<{
       address: string;
       commitTx: string;
@@ -1465,70 +1418,6 @@ async function main() {
 
     for (const validator of validators) {
       const plan = deriveCommitPlan(
-  const nonce = (await validationModule.jobNonce(jobId)) as bigint;
-  const specHashOnChain = await jobRegistry.getSpecHash(jobId);
-  const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
-  const validatorSubdomain =
-    process.env.AURORA_VALIDATOR_SUBDOMAIN || 'aurora-validator';
-  const commitRecords: Array<{
-    address: string;
-    commitTx: string;
-    revealTx: string;
-    commitHash: string;
-    salt: string;
-  }> = [];
-
-  for (const validator of validators) {
-    const plan = deriveCommitPlan(
-      jobId,
-      true,
-      validator.address,
-      nonce,
-      specHashOnChain,
-      chain.chainId,
-      domainSeparator
-    );
-    const commitTx = await validationModule
-      .connect(validator)
-      .commitValidation(jobId, plan.commitHash, validatorSubdomain, []);
-    const commitReceipt = await commitTx.wait();
-    const revealTx = await validationModule
-      .connect(validator)
-      .revealValidation(
-        jobId,
-        true,
-        plan.burnTxHash,
-        plan.salt,
-        validatorSubdomain,
-        []
-      );
-    const revealReceipt = await revealTx.wait();
-    commitRecords.push({
-      address: validator.address,
-      commitTx: commitReceipt?.hash || commitTx.hash,
-      revealTx: '',
-      commitHash: plan.commitHash,
-      salt: plan.salt,
-    });
-  }
-
-  const commitWindowSeconds = Number(await validationModule.commitWindow());
-  await advanceTime(provider, commitWindowSeconds + 1);
-
-  for (let i = 0; i < validators.length; i++) {
-    const validator = validators[i];
-    const plan = deriveCommitPlan(
-      jobId,
-      true,
-      validator.address,
-      nonce,
-      specHashOnChain,
-      chain.chainId,
-      domainSeparator
-    );
-    const revealTx = await validationModule
-      .connect(validator)
-      .revealValidation(
         jobId,
         true,
         validator.address,
@@ -1539,7 +1428,7 @@ async function main() {
       );
       const commitTx = await validationModule
         .connect(validator)
-        .commitValidation(jobId, plan.commitHash, 'aurora-validator', []);
+        .commitValidation(jobId, plan.commitHash, validatorSubdomain, []);
       const commitReceipt = await commitTx.wait();
       const revealTx = await validationModule
         .connect(validator)
@@ -1548,7 +1437,7 @@ async function main() {
           true,
           plan.burnTxHash,
           plan.salt,
-          'aurora-validator',
+          validatorSubdomain,
           []
         );
       const revealReceipt = await revealTx.wait();
@@ -1560,9 +1449,6 @@ async function main() {
         salt: plan.salt,
       });
     }
-    const revealReceipt = await revealTx.wait();
-    commitRecords[i].revealTx = revealReceipt?.hash || revealTx.hash;
-  }
 
     const balancesBefore = new Map<string, bigint>();
     for (const addr of trackAddresses) {
@@ -1574,10 +1460,7 @@ async function main() {
       .finalize(jobId);
     const finalizeReceipt = await finalizeTx.wait();
 
-    const payouts: Record<
-      string,
-      { before: string; after: string; delta: string }
-    > = {};
+    const payouts: Record<string, { before: string; after: string; delta: string }> = {};
     for (const addr of trackAddresses) {
       const before = balancesBefore.get(addr) || 0n;
       const after = await token.balanceOf(addr);
@@ -1594,25 +1477,8 @@ async function main() {
       finalizeTx: finalizeReceipt?.hash || finalizeTx.hash,
       commits: commitRecords.length,
       reveals: commitRecords.length,
-  const finalizeTx = await validationModule
-    .connect(validators[0])
-    .finalize(jobId);
-  const finalizeReceipt = await finalizeTx.wait();
-
-  const payouts: Record<string, { before: string; after: string; delta: string }> = {};
-  for (const addr of trackAddresses) {
-    const before = balancesBefore.get(addr) || 0n;
-    const after = await token.balanceOf(addr);
-    payouts[addr] = {
-      before: formatUnits(before, decimals),
-      after: formatUnits(after, decimals),
-      delta: formatUnits(after - before, decimals),
     };
-    writeReceipt(
-      networkName,
-      path.join(jobDir, 'validate.json'),
-      validateRecord
-    );
+    writeReceipt(networkName, path.join(jobDir, 'validate.json'), validateRecord);
     if (legacySingleJob) {
       writeReceipt(networkName, 'validate.json', validateRecord);
     }
@@ -1621,11 +1487,7 @@ async function main() {
       txHash: finalizeReceipt?.hash || finalizeTx.hash,
       payouts,
     };
-    writeReceipt(
-      networkName,
-      path.join(jobDir, 'finalize.json'),
-      finalizeRecord
-    );
+    writeReceipt(networkName, path.join(jobDir, 'finalize.json'), finalizeRecord);
     if (legacySingleJob) {
       writeReceipt(networkName, 'finalize.json', finalizeRecord);
     }
@@ -1636,7 +1498,7 @@ async function main() {
       jobId: jobId.toString(),
       reward: formatUnits(job.rewardAmount, decimals),
       deadline: deadline.toString(),
-      resultURI: job.resultUri,
+      resultURI: resultUri,
       txHash: postReceipt?.hash || postTx.hash,
       receipts: {
         post: path.join(jobDir, 'post.json'),
@@ -1660,10 +1522,6 @@ async function main() {
     jobs: missionRecords,
   });
 
-  if (thermostatConfig && thermostat && thermostatInterface) {
-    await applyThermostatConfig(
-      networkName,
-      systemPause,
   let thermostatUpdates: ThermostatUpdate[] = [];
   if (thermostatConfig && thermostat && thermostatInterface) {
     thermostatUpdates = await applyThermostatConfig(

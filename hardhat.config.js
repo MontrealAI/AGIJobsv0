@@ -54,6 +54,16 @@ const isCoverageRun =
 
 const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
 
+const parsePositiveNumber = (value, fallback) => {
+  const num = Number(value);
+  return Number.isFinite(num) && num > 0 ? num : fallback;
+};
+
+const localGasCeiling = parsePositiveNumber(
+  process.env.LOCAL_GAS_LIMIT,
+  1000000000,
+);
+
 const solidityVersions = isCoverageRun
   ? [SOLIDITY_VERSIONS[0]]
   : SOLIDITY_VERSIONS;
@@ -80,8 +90,8 @@ module.exports = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      gas: 100000000,
-      blockGasLimit: 100000000,
+      gas: localGasCeiling,
+      blockGasLimit: localGasCeiling,
     },
     anvil: {
       url: process.env.ANVIL_RPC_URL || 'http://127.0.0.1:8545',

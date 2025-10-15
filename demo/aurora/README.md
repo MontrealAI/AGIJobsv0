@@ -13,6 +13,9 @@ cp demo/aurora/env.example .env
 npm run demo:aurora:local
 ```
 
+> The launcher lifts the local block gas limit to `1_000_000_000` (and code size limit to `1_000_000`) so the massive governance
+> bundle deploys cleanly. Override via `LOCAL_GAS_LIMIT` / `LOCAL_CODE_SIZE_LIMIT` for custom drills.
+
 Target network:
 
 ```bash
