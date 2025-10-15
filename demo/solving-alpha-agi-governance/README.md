@@ -1,166 +1,126 @@
-# Solving α‑AGI Governance Demonstration
+# Solving α‑AGI Governance Demo
 
-This runbook assembles a fully owner-governed governance rehearsal for AGI Jobs v0 (v2) using only
-components that already ship in this repository.  It intentionally stays within the
-**existing production toolchain** so that the flow can be replayed against a fork, a public testnet, or
-Ethereum mainnet with no code changes.
+This demonstration turns the existing AGI Jobs v0 (v2) contracts, scripts, and UI packages into an
+interactive rehearsal of nation-scale governance. No new Solidity or bespoke tooling is introduced –
+only the functionality already shipped in this repository. The result is a browser-first cockpit that
+lets non-technical operators launch policy proposals, coordinate wallet-controlled validators through
+commit–reveal, and exercise full owner controls (pause, quorum changes, timing windows) in real time.
 
-The demonstration mirrors the "Solving α‑AGI Governance" storyline: multiple nation-scale actors table
-sovereign policy proposals, wallet-controlled validators arbitrate those proposals through the
-commit–reveal pipeline, and the contract owner steers every dial (pausing, quorum thresholds, stake
-levels) in real time.  No Solidity changes are required; everything rides on the audited v2 protocol.
+The experience lives inside the **Enterprise Portal** application and complements the existing
+governance scripts and tests. It is immediately reusable on Hardhat, Sepolia, or Ethereum mainnet by
+pointing the UI at the addresses produced by the deployment toolchain.
 
-> ✅ _Target audience_: non-technical owners and policy staff who only have access to a browser wallet and
-> the standard AGI Jobs owner scripts.
+## 1. Prerequisites
 
-## 1. Prepare the workspace
+1. Install dependencies once from the repository root:
 
-1. Install dependencies once: `npm install`.
-2. Ensure the canonical AGIALPHA token address is funded on the target network.  For local Hardhat
-   rehearsals, the standard deploy scripts inject the mock bytecode automatically.
-3. Export the deployment configuration you wish to reuse.  For example, to regenerate the secure
-   defaults bundle: `npm run deploy:checklist -- --network hardhat`.
-
-All subsequent steps use the contract addresses recorded by the existing deployment automation in
-`deployment-config/generated/` or `deployment-config/latest-deployment.<network>.json`.
-
-## 2. Launch the owner command surface
-
-Run the curated owner quickstart to populate every adjustable governance control in one shot:
-
-```bash
-npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerControlQuickstart.ts \
-  --network hardhat \
-  --config deployment-config/mainnet.json
-```
-
-This produces:
-
-* an **Owner Dashboard** (Markdown + JSON) enumerating the current parameters across JobRegistry,
-  StakeManager, ValidationModule, IdentityRegistry, FeePool, and TaxPolicy;
-* a **Mission Bundle** with transaction payloads for pausing/unpausing, quorum adjustments, validator
-  staking thresholds, dispute fees, and reward/penalty routing; and
-* a ready-to-sign change ticket for governance archives.
-
-Non-technical operators only need to copy/paste the generated JSON into their preferred multisig or
-safe; every call uses existing ABI definitions.
-
-## 3. Spin up the civic UI
-
-1. `cd apps/onebox`
-2. Create a `.env.local` with your orchestrator endpoint (or leave it empty to operate in offline
-   receipt mode):
    ```bash
-   NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL=http://127.0.0.1:8787
-   NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_TOKEN=demo
+   npm install
    ```
-3. Start the interface: `npm run dev`.
-4. Connect any browser wallet.
 
-The landing page now renders **two coordinated surfaces**:
+2. Produce or collect a deployment manifest so the UI knows which contracts to speak to. Any of the
+   existing workflows works:
 
-* the familiar Onebox chat for orchestrator requests, plan simulation, and execution receipts; and
-* the new **Solving α‑AGI Governance cockpit**.  The cockpit lets non-technical operators:
-  * register nation sponsors, validators, and owner wallets (with readiness indicators and
-    connectivity toggles);
-  * configure all proposal parameters (reward pool, quorum, staking thresholds, commit/reveal windows,
-    dispute window, and specification URI);
-  * copy milestone-specific prompts for proposal creation, validator commit, validator reveal,
-    finalisation, and owner oversight; and
-  * grab the pre-wired owner command deck (pause, update-all, mission control) without leaving the UI.
+   ```bash
+   # Example – one-click stack on Hardhat
+   npm run deploy:oneclick:auto -- --network hardhat
+   ```
 
-Every control writes to `localStorage`, so refreshes or browser crashes preserve state for rehearsals.
-The chat window consumes the copied prompts verbatim—no bespoke APIs or forks required.
+   The generated `deployment-config/latest-deployment.<network>.json` file contains all addresses
+   referenced below.
 
-## 4. Simulate nation-scale proposals
+3. Configure the Enterprise Portal with the deployment artefacts by creating
+   `apps/enterprise-portal/.env.local`:
 
-Use the existing `test/v2` helpers to fast-forward a multi-actor scenario on a fork or Hardhat.  The
-UI prompts reference these exact flows, so the rehearsals mirror production:
+   ```dotenv
+   NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545
+   NEXT_PUBLIC_CHAIN_ID=31337
+   NEXT_PUBLIC_JOB_REGISTRY_ADDRESS=0x...
+   NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS=0x...
+   NEXT_PUBLIC_STAKE_MANAGER_ADDRESS=0x...
+   NEXT_PUBLIC_STAKING_TOKEN_ADDRESS=0x...
+   NEXT_PUBLIC_CERTIFICATE_NFT_ADDRESS=0x...
+   NEXT_PUBLIC_TAX_POLICY_ADDRESS=0x...
+   NEXT_PUBLIC_STAKING_TOKEN_SYMBOL=$AGIALPHA
+   ```
 
-```bash
-npx hardhat test test/v2/solvingAlphaGovernance.integration.test.ts
-```
+   All values come directly from the existing deployment scripts. No contract changes are required.
 
-The integration fixture deploys the production contracts, onboards multiple nation sponsors, and walks
-through the commit–reveal validation cycle twice—first under the default quorum and then again after the
-owner tightens approvals and pauses/unpauses the registry.  Replaying it against a forked mainnet
-snapshot proves the flow stays green under live conditions.
-4. Connect any browser wallet.  The default chat now advertises the "Solving α‑AGI Governance" flow and
-   walks the operator through proposal intake, validator commit, reveal, and finalization, using only
-   the v2 protocol endpoints.
+## 2. Launch the civic cockpit
 
-The Onebox UI already exposes run receipts, transaction hashes, and autogenerated plan summaries, so no
-additional React work is necessary—this runbook simply configures the default prompts around the new
-scenario.
-
-## 4. Simulate nation-scale proposals
-
-Use the existing `test/v2` helpers to fast-forward a multi-actor scenario on a fork or Hardhat:
+Start the Enterprise Portal in development mode:
 
 ```bash
-npx hardhat test --no-compile test/v2/governanceReward.integration.test.js \
-  --grep "global governance council"
+cd apps/enterprise-portal
+npm run dev
 ```
 
-That test deploys the production contracts, onboards multiple employers (nations), and exercises the
-commit–reveal validation cycle that adjudicates policy proposals.  Rerunning it against a forked mainnet
-state proves the flow stays green under live conditions.
+Open `http://localhost:3000/solving-governance` in any browser wallet. The route renders the new
+**Solving α‑AGI Governance** experience while reusing the existing language selector, wallet context,
+and styling.
 
-## 5. Showcase wallet-controlled validators
+### What the cockpit delivers (all on top of the audited v2 protocol)
 
-Leverage the shipped validator CLI (`scripts/validator/cli.ts`) to perform commits and reveals from
-plain wallets:
+* **Nation proposal workstation** – preloaded scenarios for multiple nations. Each publishes a job via
+  `JobRegistry.acknowledgeAndCreateJob`, automatically managing $AGIALPHA allowances based on the
+  on-chain fee percentage.
+* **Policy author flow** – stakes via `StakeManager.depositStake`, applies with
+  `JobRegistry.applyForJob`, and submits results using `JobRegistry.submit`. Result hashes are derived
+  client-side and persisted for the validator phase.
+* **Burn receipt tooling** – employers record burn evidence through `JobRegistry.submitBurnReceipt`
+  and confirm via `JobRegistry.confirmEmployerBurn` before final settlement.
+* **Validator console** – wallet addresses commit and reveal using `ValidationModule.commitValidation`
+  and `ValidationModule.revealValidation`. Salts are stored in localStorage per job/validator to
+  simplify reveals for non-technical operators. Validator selection (`selectValidators`) and
+  validation finalisation (`finalize`) are also one-click.
+* **Owner command panel** – when the connected wallet matches the on-chain owner, the UI exposes
+  pause/unpause controls and setters for quorum and commit/reveal windows. These calls reuse the
+  existing `ValidationModule` and `JobRegistry` ABIs and respect ownership checks.
+* **Live registry view** – every job rendered is fetched from `JobRegistry.jobs` and decoded through
+  `JobRegistry.decodeJobMetadata`. Locally-created metadata (nation titles, policy summaries, URIs) is
+  cached for replay but the UI works against arbitrary jobs deployed elsewhere.
+
+The UI is deliberately textual. It is aimed at policy teams that need clear instructions rather than a
+flashy demo. Every action echoes the exact contract call being executed, so it can double as an owner
+training aid.
+
+## 3. Multi-actor rehearsal
+
+Run the existing integration that mirrors the demo flow:
 
 ```bash
-npm run validator:cli -- commit --job-id 1 --label validator-a --approve --rpc http://127.0.0.1:8545
+npx hardhat test --no-compile test/v2/solvingAlphaGovernance.integration.test.ts
 ```
 
-Generate validator identities ahead of time with
-`npm run validator:cli -- identity generate validator-a --ens validator-a.club.agi.eth`.  The reveal
-stage swaps `commit` for `reveal --approve` and reuses the stored salts that the cockpit reminds each
-validator to preserve.  These commands are fully scriptable, letting you pre-record validator
-participation for demonstrations.
-Leverage the shipped validator CLI to perform commits and reveals from plain wallets:
+The test bootstraps two nation sponsors, a shared policy drafter, three validators, and the owner. It
+walks through staking, proposal creation, commit–reveal, owner pause/unpause, quorum tightening, and
+final settlement. Keeping this test green ensures the UI remains grounded in the audited behaviour of
+AGI Jobs v0 (v2).
+
+## 4. Owner controls and reporting
+
+All owner automation shipped in the repository remains valid. The cockpit surfaces only a subset of
+controls so non-technical operators can respond quickly, while power users can continue to rely on the
+scripts in `scripts/v2/` for mission bundles, change tickets, and dashboard generation:
 
 ```bash
-npm run agent:validator -- \
-  --job 1 \
-  --subdomain validator.demo.agi.eth \
-  --commit \
-  --network hardhat
+# Snapshot the full owner configuration
+npm run owner:dashboard -- --network hardhat
+
+# Render a safe-ready change ticket
+npm run owner:plan:safe -- --network hardhat
 ```
 
-The same CLI supports the reveal stage by swapping `--commit` for `--reveal --verdict approve`.  These
-commands are fully scriptable, letting you pre-record validator participation for demonstrations.
+The UI intentionally writes salts, burn references, and proposal metadata to `localStorage` so a crash
+or accidental refresh never loses context mid-run. Clearing the browser storage resets the cockpit to a
+blank slate.
 
-## 6. Keep owner control front and centre
+## 5. Continuous integration
 
-* Pause or resume the entire marketplace via `npm run owner:system-pause -- --pause true`.
-* Re-issue protocol parameters at any time using the generated mission bundle from step 2.
-* Verify that ownership has not drifted by running `npm run owner:verify-control`.
+The standard `ci.yml` workflow already lint checks, type-checks, and executes the Hardhat suites,
+including `solvingAlphaGovernance.integration.test.ts`. No additional CI configuration is required –
+ensure branch protection keeps that workflow mandatory.
 
-Every owner command is read-only until the operator intentionally signs the transaction; this preserves
-clear separation between rehearsals and production execution.
-
-## 7. Export artefacts for stakeholders
-
-* `reports/owner/` — automatically updated dashboards and change tickets.
-* `apps/onebox/.next/cache/` — contains the chat transcript, validation receipts, and execution logs
-  that can be shared with policy teams.
-* `reports/test-results/` — populated when CI (see below) runs the governance integration suite.
-
-These assets illustrate how AGI Jobs v0 (v2) empowers entire administrations without demanding any new
-code deployments.
-
-## 8. CI: keep the pipeline green
-
-The standard `ci.yml` workflow already executes linting, type-checking, contract unit tests, and the
-critical integration suites (including the governance pathways above).  Ensure branch protection
-requires that workflow to pass before merges—no extra YAML is needed.
-
----
-
-By chaining together the existing deployment automation, owner tooling, validator CLI, and Onebox
-interface, this demonstration delivers a nation-scale, owner-controlled governance experience today.
-No new smart contracts, no bespoke APIs—just disciplined orchestration of the platform that already
-ships in this repository.
+By composing existing modules into a guided UX, this demo proves how AGI Jobs v0 (v2) empowers entire
+administrations without any new on-chain logic. Non-technical teams can now stage and rehearse
+superintelligent governance scenarios with the exact tools they will use in production.

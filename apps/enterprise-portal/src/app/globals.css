@@ -765,3 +765,145 @@ button.secondary {
     max-height: none;
   }
 }
+
+.governance-experience {
+  display: grid;
+  gap: 2rem;
+  padding: 2rem 0 4rem;
+}
+
+.panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(7, 10, 18, 0.78);
+  padding: 1.75rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 45px rgba(12, 16, 26, 0.45);
+}
+
+.panel.emphasis {
+  border-color: rgba(118, 58, 255, 0.45);
+  box-shadow: 0 24px 60px rgba(118, 58, 255, 0.22);
+}
+
+.panel header {
+  margin-bottom: 1rem;
+}
+
+.connection {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.metrics {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.metrics div {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.metrics dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a5adc4;
+  margin-bottom: 0.35rem;
+}
+
+.metrics dd {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f2f4f7;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0 1rem;
+}
+
+@media (min-width: 900px) {
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #d1d7e5;
+}
+
+.form-grid textarea {
+  resize: vertical;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.status {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.status.ok {
+  background: rgba(45, 123, 255, 0.14);
+  color: #9ec5ff;
+  border: 1px solid rgba(45, 123, 255, 0.35);
+}
+
+.status.error {
+  background: rgba(255, 99, 132, 0.14);
+  color: #ffccd6;
+  border: 1px solid rgba(255, 99, 132, 0.35);
+}
+
+.jobs {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+}
+
+.jobs th,
+.jobs td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+}
+
+.jobs tbody tr:hover {
+  background: rgba(45, 123, 255, 0.08);
+}
+
+.jobs th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #9aa4c0;
+}
+
+.mono {
+  font-family: 'Roboto Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular,
+    Menlo, Monaco, 'Courier New', monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+}

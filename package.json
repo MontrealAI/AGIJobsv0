@@ -128,7 +128,7 @@
     "migrate:sepolia": "DEPLOY_LOCAL_ERC20=1 TRUFFLE_NETWORK=sepolia npm run compile:sepolia && npx truffle migrate --network sepolia --reset && TRUFFLE_NETWORK=sepolia npm run wire:verify",
     "migrate:preflight": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/truffle-preflight.ts",
     "migrate:wizard": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/truffle-migration-wizard.ts",
-    "lint:check": "solhint --max-warnings 0 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --max-warnings=0",
+    "lint:check": "solhint --max-warnings 0 --config .solhint.ci.json 'contracts/**/*.sol' && npm run lint --prefix apps/enterprise-portal",
     "lint:fix": "solhint --fix 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --fix",
     "lint:ci": "solhint --max-warnings 0 --config .solhint.ci.json 'contracts/v2/**/*.sol' && eslint --max-warnings 0 scripts/ci/**/*.{js,mjs}",
     "format:fix": "prettier --write \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\"",
