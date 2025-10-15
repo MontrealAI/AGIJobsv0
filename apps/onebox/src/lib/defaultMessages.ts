@@ -11,6 +11,7 @@ export const defaultMessages = [
     kind: 'text' as const,
     content:
       'Welcome to the “Solving α‑AGI Governance” cockpit. Use the right-hand mission panel to stage actors, parameters, and prompts, then paste the generated instructions here to capture the policy proposal, validator commits, reveal votes, and finalise the on-chain outcome. Owner pause + parameter controls remain available via the mission bundle.',
+      'Welcome to the “Solving α‑AGI Governance” cockpit. Use this chat to capture a nation-scale policy proposal, request validator commits, reveal votes, and finalise the on-chain outcome. The owner retains pause + parameter controls via the generated mission bundle.',
   },
   {
     id: 'solving-alpha-agi-governance-actions',
