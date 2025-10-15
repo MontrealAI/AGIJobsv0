@@ -54,6 +54,33 @@ publishing the resulting knowledge-graph payload for observability sinks.
 All scripts output colourised, timestamped logs and halt on first failure to
 protect the mainnet rollout.
 
+### Flagship "Operating System for AGI Work" rehearsal
+
+For a complete, one-command walkthrough that combines the governance
+orchestration with the existing AGI Operating System demo and owner control
+audits, run the flagship launcher:
+
+```bash
+demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --dry-run
+```
+
+This wrapper coordinates the following steps end-to-end:
+
+- Installs dependencies (`npm ci`) so the environment matches CI v2.
+- Executes `bin/orchestrate.sh` to deploy, seed, and exercise the
+  `GlobalGovernanceCouncil` scenario with real wallet impersonations.
+- Invokes `npm run demo:agi-os` from the repository root to replay the
+  labour-market simulation, validator commit/reveal flow, and mission bundle
+  assembly for non-technical operators.
+- Captures the owner parameter matrix via `npm run owner:parameters`, proving
+  that every adjustable surface remains under administrator control.
+- Optionally renders the governance architecture diagram to SVG when the
+  Mermaid CLI (`mmdc` or `@mermaid-js/mermaid-cli`) is installed locally.
+
+All output artefacts are summarised in
+`demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/summary.txt`, making it
+easy to brief stakeholders or attach the run evidence to compliance tickets.
+
 ## Contracts Delivered
 
 - [`contracts/v2/governance/GlobalGovernanceCouncil.sol`](../../contracts/v2/governance/GlobalGovernanceCouncil.sol)
