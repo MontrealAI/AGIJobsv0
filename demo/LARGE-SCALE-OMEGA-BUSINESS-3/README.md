@@ -30,9 +30,7 @@ The deliverable is a non-technical command centre: run one script, open three fa
    ```bash
    npm run demo:omega-business-3:ui
    ```
-   - `http://localhost:3001` → Enterprise Portal (chat-driven job launcher with wallet UX).
-   - `http://localhost:3000` → Owner Console (pause toggles, thermostat controls, governance status).
-   - `http://localhost:3002` → Validator Dashboard (validator workloads, dispute timers, receipts).
+   The helper script now fans out every first-class interface at once (owner console, enterprise portal, validator desk) and tails the logs under `/tmp/` for audit evidence. See [`ui/non-technical-walkthrough.md`](./ui/non-technical-walkthrough.md) for a minute-by-minute tour tailored to non-technical operators.
 
 Everything you see is powered by code that already shipped with AGI Jobs v0 (v2). No forks, no experimental branches.
 
