@@ -149,7 +149,10 @@
     "demo:zenith-hypernova:local": "bash demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/bin/zenith-hypernova-local.sh",
     "demo:trident-sovereign": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/orchestrator.ts",
     "demo:trident-sovereign:mainnet": "demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/bin/trident-mainnet.sh",
-    "demo:trident-sovereign:ui": "demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/bin/trident-ui.sh"
+    "demo:trident-sovereign:ui": "demo/TRIDENT-SOVEREIGN-AGI-ORCHESTRATOR/bin/trident-ui.sh",
+    "demo:omega-business-3": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/LARGE-SCALE-OMEGA-BUSINESS-3/orchestrator.ts",
+    "demo:omega-business-3:mainnet": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-mainnet.sh",
+    "demo:omega-business-3:ui": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-ui.sh"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,57 @@
+{
+  "reportLabel": "omega-business-3",
+  "ipfsGateway": "https://ipfs.io/ipfs/",
+  "ensRoot": "omega-business.eth",
+  "nations": [
+    {
+      "name": "Solaris Continuum",
+      "wallet": "solaris",
+      "ensSubdomain": "solaris",
+      "mission": "Transmute heliostat free-energy telemetry into autonomous infrastructure credits",
+      "specCid": "bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "resultCid": "bafybeibbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "rewardTokens": "150000",
+      "deadlineHours": 72
+    },
+    {
+      "name": "Arctic Quantum Accord",
+      "wallet": "arctic",
+      "ensSubdomain": "arctic",
+      "mission": "Balance polar energy reserves with planetary logistics networks",
+      "specCid": "bafybeiccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "resultCid": "bafybeiddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "rewardTokens": "132500",
+      "deadlineHours": 64
+    },
+    {
+      "name": "Celestial Silk Road Coalition",
+      "wallet": "silkroad",
+      "ensSubdomain": "silkroad",
+      "mission": "Tokenize deep space supply chains for inter-nation prosperity",
+      "specCid": "bafybeieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "resultCid": "bafybeiffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "rewardTokens": "188000",
+      "deadlineHours": 96
+    }
+  ],
+  "validators": [
+    {
+      "name": "Horizon Arbitration Collective",
+      "wallet": "horizon",
+      "ensSubdomain": "validators.horizon",
+      "mission": "Curate validator proofs for cosmological asset routing"
+    },
+    {
+      "name": "Atlas Integrity Guild",
+      "wallet": "atlas",
+      "ensSubdomain": "validators.atlas",
+      "mission": "Guarantee cross-domain energy balance sheets"
+    }
+  ],
+  "treasury": {
+    "name": "Omega Stewardship Treasury",
+    "wallet": "omega-treasury",
+    "ensSubdomain": "treasury",
+    "mission": "Recycle burns and fees into sovereign dividend schedules"
+  }
+}
