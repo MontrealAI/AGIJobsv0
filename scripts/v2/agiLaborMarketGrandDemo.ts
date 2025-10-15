@@ -1,11 +1,22 @@
 #!/usr/bin/env ts-node
 
+import type { InterfaceAbi } from 'ethers';
+import { ethers } from 'hardhat';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 import { artifacts, ethers, run } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
+import agialphaToken from './lib/agialphaToken.json';
+import stakeManagerArtifact from './lib/prebuilt/StakeManager.json';
+import reputationEngineArtifact from './lib/prebuilt/ReputationEngine.json';
+import identityRegistryArtifact from './lib/prebuilt/IdentityRegistry.json';
+import validationModuleArtifact from './lib/prebuilt/ValidationModule.json';
+import certificateNftArtifact from './lib/prebuilt/CertificateNFT.json';
+import jobRegistryArtifact from './lib/prebuilt/JobRegistry.json';
+import disputeModuleArtifact from './lib/prebuilt/DisputeModule.json';
+import feePoolArtifact from './lib/prebuilt/FeePool.json';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { decodeJobMetadata } = require('../../test/utils/jobMetadata');
@@ -224,6 +235,21 @@ function logStep(step: string): void {
   recordTimeline('step', step);
 }
 
+function formatSeconds(seconds: bigint): string {
+  return `${seconds.toString()}s`;
+}
+
+function createFactory(
+  artifact: { abi: InterfaceAbi; bytecode: string },
+  signer: ethers.Signer
+): ethers.ContractFactory {
+  return new ethers.ContractFactory(
+    artifact.abi as InterfaceAbi,
+    artifact.bytecode,
+    signer
+  );
+}
+
 async function manualDeployContract(
   label: string,
   factory: ethers.ContractFactory,
@@ -259,6 +285,17 @@ async function ensureValidatorsSelected(
     try {
       await validation.connect(caller).selectValidators(jobId, 0);
     } catch (error) {
+      const message = `${error}`;
+      const rawData =
+        (error as { data?: string })?.data ??
+        (error as { error?: { data?: string } })?.error?.data ??
+        (error as { error?: { error?: { data?: string } } })?.error?.error?.data ??
+        '';
+      const alreadySelectedSignature = '0x7c5a2649';
+      const alreadyHandled =
+        message.includes('ValidatorsAlreadySelected') ||
+        (typeof rawData === 'string' && rawData.startsWith(alreadySelectedSignature));
+      if (!alreadyHandled) {
       if (!isValidatorsAlreadySelectedError(error)) {
         throw error;
       }
@@ -471,22 +508,10 @@ async function mintInitialBalances(
 
 async function configureToken(): Promise<ethers.Contract> {
   const [deployer] = await ethers.getSigners();
-  let artifact;
-  try {
-    artifact = await artifacts.readArtifact(
-      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
-    );
-  } catch (error) {
-    console.log('⏳ compiling contracts for demo readiness…');
-    await run('compile');
-    artifact = await artifacts.readArtifact(
-      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
-    );
-  }
 
   await ethers.provider.send('hardhat_setCode', [
     AGIALPHA,
-    artifact.deployedBytecode,
+    agialphaToken.runtime,
   ]);
 
   const ownerSlotValue = ethers.zeroPadValue(await deployer.getAddress(), 32);
@@ -498,7 +523,7 @@ async function configureToken(): Promise<ethers.Contract> {
   ]);
 
   return await ethers.getContractAt(
-    'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+    agialphaToken.abi as InterfaceAbi,
     AGIALPHA
   );
 }
@@ -615,9 +640,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
   });
 
   logStep('Deploying core contracts');
-  const Stake = await ethers.getContractFactory(
-    'contracts/v2/StakeManager.sol:StakeManager'
-  );
+  const Stake = createFactory(stakeManagerArtifact, owner);
   console.log(
     `   StakeManager constructor verified (${Stake.interface.deploy.inputs.length} parameters)`
   );
@@ -639,9 +662,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
   const stakeAddress = await stake.getAddress();
   await token.connect(owner).mint(stakeAddress, 0n);
 
-  const Reputation = await ethers.getContractFactory(
-    'contracts/v2/ReputationEngine.sol:ReputationEngine'
-  );
+  const Reputation = createFactory(reputationEngineArtifact, owner);
   const reputation = await manualDeployContract(
     'ReputationEngine',
     Reputation,
@@ -649,9 +670,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     [await stake.getAddress()]
   );
 
-  const Identity = await ethers.getContractFactory(
-    'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
-  );
+  const Identity = createFactory(identityRegistryArtifact, owner);
   const identity = await manualDeployContract(
     'IdentityRegistry',
     Identity,
@@ -665,9 +684,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     ]
   );
 
-  const Validation = await ethers.getContractFactory(
-    'contracts/v2/ValidationModule.sol:ValidationModule'
-  );
+  const Validation = createFactory(validationModuleArtifact, owner);
   const validation = await manualDeployContract(
     'ValidationModule',
     Validation,
@@ -683,9 +700,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     ]
   );
 
-  const Certificate = await ethers.getContractFactory(
-    'contracts/v2/CertificateNFT.sol:CertificateNFT'
-  );
+  const Certificate = createFactory(certificateNftArtifact, owner);
   const certificate = await manualDeployContract(
     'CertificateNFT',
     Certificate,
@@ -693,9 +708,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     ['AGI Jobs Credential', 'AGICERT']
   );
 
-  const Registry = await ethers.getContractFactory(
-    'contracts/v2/JobRegistry.sol:JobRegistry'
-  );
+  const Registry = createFactory(jobRegistryArtifact, owner);
   const registry = await manualDeployContract(
     'JobRegistry',
     Registry,
@@ -715,9 +728,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     ]
   );
 
-  const Dispute = await ethers.getContractFactory(
-    'contracts/v2/modules/DisputeModule.sol:DisputeModule'
-  );
+  const Dispute = createFactory(disputeModuleArtifact, owner);
   const dispute = await manualDeployContract(
     'DisputeModule',
     Dispute,
@@ -725,9 +736,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     [await registry.getAddress(), 0n, 0n, ethers.ZeroAddress, await owner.getAddress()]
   );
 
-  const FeePool = await ethers.getContractFactory(
-    'contracts/v2/FeePool.sol:FeePool'
-  );
+  const FeePool = createFactory(feePoolArtifact, owner);
   const feePool = await manualDeployContract(
     'FeePool',
     FeePool,
@@ -754,6 +763,14 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     stake: stakeAddress,
   });
 
+  await stake.connect(owner).setFeePool(await feePool.getAddress());
+  await stake
+    .connect(owner)
+    .setModules(await registry.getAddress(), await dispute.getAddress());
+  await stake.connect(owner).setBurnPct(0);
+  await stake
+    .connect(owner)
+    .setValidationModule(await validation.getAddress());
   await stake.connect(owner).setFeePool(feePoolAddress);
   recordOwnerAction('Connected stake manager fee pool', `StakeManager@${stakeAddress}`, 'setFeePool', {
     feePool: feePoolAddress,
@@ -931,6 +948,110 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
   };
 }
 
+async function ownerCommandCenterDrill(env: DemoEnvironment): Promise<void> {
+  logSection('Owner mission control – unstoppable command authority demonstration');
+
+  const { owner, moderator, registry, stake, validation, feePool } = env;
+
+  logStep('Owner calibrates market economics and validator incentives');
+  const previousFeePct = await registry.feePct();
+  const previousValidatorReward = await registry.validatorRewardPct();
+  const previousBurnPct = await feePool.burnPct();
+
+  await registry.connect(owner).setFeePct(6);
+  await registry.connect(owner).setValidatorRewardPct(25);
+  await feePool.connect(owner).setBurnPct(6);
+
+  console.log(
+    `   Fee percentage adjusted: ${previousFeePct}% → ${(
+      await registry.feePct()
+    ).toString()}%`
+  );
+  console.log(
+    `   Validator reward share: ${previousValidatorReward}% → ${(
+      await registry.validatorRewardPct()
+    ).toString()}%`
+  );
+  console.log(
+    `   Fee burn rate: ${previousBurnPct}% → ${(
+      await feePool.burnPct()
+    ).toString()}%`
+  );
+
+  logStep('Owner updates validation committee cadence and accountability levers');
+  const originalCommitWindow = await validation.commitWindow();
+  const originalRevealWindow = await validation.revealWindow();
+  const upgradedCommitWindow = originalCommitWindow + 30n;
+  const upgradedRevealWindow = originalRevealWindow + 30n;
+  await validation
+    .connect(owner)
+    .setCommitRevealWindows(upgradedCommitWindow, upgradedRevealWindow);
+  await validation.connect(owner).setRevealQuorum(50, 2);
+  await validation.connect(owner).setNonRevealPenalty(150, 12);
+
+  console.log(
+    `   Commit window extended: ${formatSeconds(originalCommitWindow)} → ${formatSeconds(
+      await validation.commitWindow()
+    )}`
+  );
+  console.log(
+    `   Reveal window extended: ${formatSeconds(originalRevealWindow)} → ${formatSeconds(
+      await validation.revealWindow()
+    )}`
+  );
+  console.log(
+    `   Reveal quorum now ${(
+      await validation.revealQuorumPct()
+    ).toString()}% with minimum ${(
+      await validation.minRevealValidators()
+    ).toString()} validators`
+  );
+  console.log(
+    `   Non-reveal penalty now ${(
+      await validation.nonRevealPenaltyBps()
+    ).toString()} bps with ${(
+      await validation.nonRevealBanBlocks()
+    ).toString()} block ban`
+  );
+
+  logStep('Owner delegates emergency pauser powers and performs a live drill');
+  const moderatorAddress = await moderator.getAddress();
+  await registry.connect(owner).setPauser(moderatorAddress);
+  await stake.connect(owner).setPauser(moderatorAddress);
+  await validation.connect(owner).setPauser(moderatorAddress);
+
+  await registry.connect(owner).pause();
+  await stake.connect(owner).pause();
+  await validation.connect(owner).pause();
+  console.log(
+    `   Owner pause drill → registry:${await registry.paused()} stake:${await stake.paused()} validation:${await validation.paused()}`
+  );
+
+  await registry.connect(owner).unpause();
+  await stake.connect(owner).unpause();
+  await validation.connect(owner).unpause();
+
+  await registry.connect(moderator).pause();
+  await stake.connect(moderator).pause();
+  await validation.connect(moderator).pause();
+  console.log(
+    `   Moderator pause drill → registry:${await registry.paused()} stake:${await stake.paused()} validation:${await validation.paused()}`
+  );
+
+  await registry.connect(moderator).unpause();
+  await stake.connect(moderator).unpause();
+  await validation.connect(moderator).unpause();
+
+  console.log('   Emergency controls verified and reset to active state.');
+
+  await validation.connect(owner).setCommitRevealWindows(60, 60);
+  console.log(
+    `   Commit/reveal cadence restored for the upcoming scenarios: ${formatSeconds(
+      await validation.commitWindow()
+    )} / ${formatSeconds(await validation.revealWindow())}`
+  );
+}
+
 async function logJobSummary(
   registry: ethers.Contract,
   jobId: bigint,
@@ -1028,6 +1149,9 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
     .connect(nationA)
     .confirmEmployerBurn(jobId, burnTxHash);
 
+  console.log(
+    `   StakeManager burn requirement: ${(await stake.burnPct()).toString()}%`
+  );
   let round = await ensureValidatorsSelected(validation, nationA, jobId);
 
   const nonce = await validation.jobNonce(jobId);
@@ -1256,6 +1380,8 @@ async function main(): Promise<void> {
     { name: 'Dora (validator)', address: await env.validatorDora.getAddress() },
     { name: 'Evan (validator)', address: await env.validatorEvan.getAddress() },
   ]);
+
+  await ownerCommandCenterDrill(env);
 
   await runHappyPath(env);
   await runDisputeScenario(env);
