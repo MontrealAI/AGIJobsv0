@@ -118,12 +118,13 @@ function parsePositiveInteger(label: string, value: number | string): void {
   }
 }
 
-function assertBigIntish(label: string, raw: string): void {
+function assertBigIntish(label: string, raw: string): bigint {
   try {
-    if (raw.trim().length === 0) {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) {
       throw new Error(`${label} cannot be empty`);
     }
-    BigInt(raw);
+    return BigInt(trimmed);
   } catch (error) {
     throw new Error(`${label} must be an integer string`);
   }
@@ -171,7 +172,13 @@ export function validateScenario(scenario: OmegaScenario): void {
     if (!nation.resultCid?.trim()) {
       throw new Error(`Nation ${nation.name} resultCid must be provided`);
     }
-    assertBigIntish(`Nation ${nation.name} rewardTokens`, nation.rewardTokens);
+    const rewardTokens = assertBigIntish(
+      `Nation ${nation.name} rewardTokens`,
+      nation.rewardTokens
+    );
+    if (rewardTokens <= 0n) {
+      throw new Error(`Nation ${nation.name} rewardTokens must be greater than zero`);
+    }
     parsePositiveInteger(`Nation ${nation.name} deadlineHours`, nation.deadlineHours);
   });
 
