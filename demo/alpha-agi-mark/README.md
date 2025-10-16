@@ -51,6 +51,7 @@ The demo enumerates all tunable controls in the final recap:
 - Validator roster resets and approval clearing
 - Launch, abort, and override controls
 - Full owner control snapshot exported under `ownerControls` in the recap dossier
+- Sovereign vault telemetry capturing launch asset type (native or ERC-20) and acknowledged totals per asset
 
 ## Runbook
 

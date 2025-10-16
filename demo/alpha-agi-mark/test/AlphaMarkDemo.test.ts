@@ -293,6 +293,10 @@ describe("α-AGI MARK bonding curve", function () {
     expect(await vault.totalReceived()).to.equal(reserveBefore);
     expect(await vault.lastAcknowledgedAmount()).to.equal(reserveBefore);
     expect(await vault.lastAcknowledgedMetadata()).to.equal(metadata);
+    expect(await vault.totalAcknowledged()).to.equal(reserveBefore);
+    expect(await vault.totalAcknowledgedByAsset(ethers.ZeroAddress)).to.equal(reserveBefore);
+    expect(await vault.lastAcknowledgedAsset()).to.equal(ethers.ZeroAddress);
+    expect(await vault.lastAcknowledgedAssetIsNative()).to.equal(true);
   });
 
   it("reverts if the sovereign vault refuses acknowledgement", async function () {
@@ -401,16 +405,25 @@ describe("α-AGI MARK ERC20 base asset flows", function () {
 
     await riskOracle.connect(validatorA).approveSeed();
     await riskOracle.connect(validatorB).approveSeed();
-    await mark.setTreasury(owner.address);
+
+    const Vault = await ethers.getContractFactory("AlphaSovereignVault");
+    const vault = await Vault.deploy(owner.address, "ipfs://alpha-mark/erc20-vault");
+    await vault.waitForDeployment();
+    await vault.connect(owner).designateMarkExchange(mark.target);
 
     const reserveBeforeFinalize = await mark.reserveBalance();
     const metadata = ethers.hexlify(ethers.toUtf8Bytes("erc20-launch"));
-    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata))
+    await expect(mark.connect(owner).finalizeLaunch(vault.target, metadata))
       .to.emit(mark, "LaunchFinalized")
-      .withArgs(owner.address, reserveBeforeFinalize, metadata);
+      .withArgs(vault.target, reserveBeforeFinalize, metadata);
 
     expect(await mark.reserveBalance()).to.equal(0n);
-    expect(await stable.balanceOf(owner.address)).to.equal(reserveBeforeFinalize);
+    expect(await stable.balanceOf(vault.target)).to.equal(reserveBeforeFinalize);
+    expect(await vault.totalReceived()).to.equal(reserveBeforeFinalize);
+    expect(await vault.totalAcknowledged()).to.equal(reserveBeforeFinalize);
+    expect(await vault.lastAcknowledgedAsset()).to.equal(stable.target);
+    expect(await vault.lastAcknowledgedAssetIsNative()).to.equal(false);
+    expect(await vault.totalAcknowledgedByAsset(stable.target)).to.equal(reserveBeforeFinalize);
   });
 
   it("allows owner to withdraw residual ERC20 funds after closure", async function () {

@@ -172,6 +172,17 @@ async function main() {
 
   const sovereignMetadata = await sovereignVault.lastAcknowledgedMetadata();
   const sovereignTotalReceived = await sovereignVault.totalReceived();
+  const sovereignTotalAcknowledged = await sovereignVault.totalAcknowledged();
+  const sovereignLastAsset = await sovereignVault.lastAcknowledgedAsset();
+  const sovereignAssetIsNative = await sovereignVault.lastAcknowledgedAssetIsNative();
+
+  const acknowledgedBreakdown: Record<string, string> = {};
+  const nativeAcknowledged = await sovereignVault.totalAcknowledgedByAsset(ethers.ZeroAddress);
+  acknowledgedBreakdown["native"] = nativeAcknowledged.toString();
+  if (!sovereignAssetIsNative) {
+    const assetAcknowledged = await sovereignVault.totalAcknowledgedByAsset(sovereignLastAsset);
+    acknowledgedBreakdown[sovereignLastAsset] = assetAcknowledged.toString();
+  }
   const recap = {
     contracts: {
       novaSeed: novaSeed.target,
@@ -204,10 +215,14 @@ async function main() {
       sovereignVault: {
         manifestUri: await sovereignVault.manifestUri(),
         totalReceivedWei: sovereignTotalReceived.toString(),
+        totalAcknowledgedWei: sovereignTotalAcknowledged.toString(),
         lastAcknowledgedAmountWei: (await sovereignVault.lastAcknowledgedAmount()).toString(),
         lastAcknowledgedMetadataHex: sovereignMetadata,
         decodedMetadata: ethers.toUtf8String(sovereignMetadata),
         vaultBalanceWei: (await sovereignVault.vaultBalance()).toString(),
+        lastAcknowledgedAsset: sovereignLastAsset,
+        lastAcknowledgedIsNative: sovereignAssetIsNative,
+        acknowledgedByAssetWei: acknowledgedBreakdown,
       },
     },
   };

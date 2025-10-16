@@ -18,6 +18,15 @@ interface IAlphaSovereignVault {
     function notifyLaunch(uint256 amount, bytes calldata metadata) external returns (bool);
 }
 
+interface IAlphaSovereignVaultV2 {
+    function notifyLaunchDetailed(
+        uint256 amount,
+        address asset,
+        bool usesNative,
+        bytes calldata metadata
+    ) external returns (bool);
+}
+
 error LaunchAcknowledgementFailed(address recipient);
 error LaunchAcknowledgementRejected(address recipient);
 
@@ -445,6 +454,22 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     function _attemptSovereignAcknowledgement(address recipient, uint256 amount, bytes calldata metadata) internal {
         if (recipient.code.length == 0) {
             return;
+        }
+
+        address assetAddress = _baseAssetAddress();
+        bool usesNative = usesNativeAsset;
+
+        try IAlphaSovereignVaultV2(recipient).notifyLaunchDetailed(amount, assetAddress, usesNative, metadata) returns (
+            bool acknowledgedV2
+        ) {
+            if (!acknowledgedV2) {
+                revert LaunchAcknowledgementRejected(recipient);
+            }
+            return;
+        } catch (bytes memory lowLevelData) {
+            if (lowLevelData.length != 0) {
+                revert LaunchAcknowledgementFailed(recipient);
+            }
         }
 
         try IAlphaSovereignVault(recipient).notifyLaunch(amount, metadata) returns (bool acknowledged) {

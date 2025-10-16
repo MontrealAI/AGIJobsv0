@@ -34,7 +34,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - consolidated `ownerControls` snapshot of every pause/whitelist/override lever
    - validator council roster and votes
    - bonding curve statistics (supply, reserve balance, pricing)
-   - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, and treasury balance
+   - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, treasury balance, and per-asset acknowledgement tallies
 
 3. **(Optional) Run unit tests**
 
