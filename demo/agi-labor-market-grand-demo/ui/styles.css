@@ -166,6 +166,59 @@ main {
   color: var(--muted);
 }
 
+.owner-control-section {
+  margin-top: 1.5rem;
+}
+
+.owner-control-section:first-of-type {
+  margin-top: 1rem;
+}
+
+.owner-control-dl {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: 0.45rem 1rem;
+  margin: 1rem 0 0;
+}
+
+.owner-control-dl dt {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.owner-control-dl dd {
+  margin: 0;
+}
+
+.owner-control-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+}
+
+.owner-control-table th,
+.owner-control-table td {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  padding: 0.55rem 0.65rem;
+  vertical-align: top;
+}
+
+.owner-control-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  background: rgba(30, 41, 59, 0.72);
+}
+
+.owner-control-table td {
+  background: rgba(15, 23, 42, 0.7);
+}
+
 .parameters {
   font-family: 'SFMono-Regular', 'Roboto Mono', ui-monospace, monospace;
   font-size: 0.75rem;

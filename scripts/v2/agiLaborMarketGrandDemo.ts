@@ -75,6 +75,53 @@ interface MarketSummary {
   mintedCertificates: MintedCertificate[];
 }
 
+interface PauseStatus {
+  registry: boolean;
+  stake: boolean;
+  validation: boolean;
+}
+
+interface OwnerControlParameters {
+  feePct: number;
+  validatorRewardPct: number;
+  burnPct: number;
+  commitWindowSeconds: number;
+  revealWindowSeconds: number;
+  commitWindowFormatted: string;
+  revealWindowFormatted: string;
+  revealQuorumPct: number;
+  minRevealers: number;
+  nonRevealPenaltyBps: number;
+  nonRevealBanBlocks: number;
+  registryPauser: string;
+  stakePauser: string;
+  validationPauser: string;
+}
+
+interface ModuleAddresses {
+  registry: string;
+  stake: string;
+  validation: string;
+  feePool: string;
+  dispute: string;
+  certificate: string;
+  reputation: string;
+  identity: string;
+}
+
+interface OwnerControlSnapshot {
+  ownerAddress: string;
+  moderatorAddress: string;
+  modules: ModuleAddresses;
+  baseline: OwnerControlParameters;
+  upgraded: OwnerControlParameters;
+  restored: OwnerControlParameters;
+  pauseDrill: {
+    owner: PauseStatus;
+    moderator: PauseStatus;
+  };
+}
+
 interface DemoExportPayload {
   generatedAt: string;
   network: string;
@@ -83,6 +130,7 @@ interface DemoExportPayload {
   timeline: TimelineEntry[];
   scenarios: ScenarioExport[];
   market: MarketSummary;
+  ownerControl: OwnerControlSnapshot;
 }
 
 enum Role {
@@ -236,6 +284,58 @@ function logStep(step: string): void {
 
 function formatSeconds(seconds: bigint): string {
   return `${seconds.toString()}s`;
+}
+
+async function readOwnerControlParameters(
+  registry: ethers.Contract,
+  validation: ethers.Contract,
+  feePool: ethers.Contract,
+  stake: ethers.Contract
+): Promise<OwnerControlParameters> {
+  const [
+    feePct,
+    validatorRewardPct,
+    burnPct,
+    commitWindow,
+    revealWindow,
+    revealQuorumPct,
+    minRevealValidators,
+    nonRevealPenaltyBps,
+    nonRevealBanBlocks,
+    registryPauser,
+    stakePauser,
+    validationPauser,
+  ] = await Promise.all([
+    registry.feePct(),
+    registry.validatorRewardPct(),
+    feePool.burnPct(),
+    validation.commitWindow(),
+    validation.revealWindow(),
+    validation.revealQuorumPct(),
+    validation.minRevealValidators(),
+    validation.nonRevealPenaltyBps(),
+    validation.nonRevealBanBlocks(),
+    registry.pauser(),
+    stake.pauser(),
+    validation.pauser(),
+  ]);
+
+  return {
+    feePct: Number(feePct),
+    validatorRewardPct: Number(validatorRewardPct),
+    burnPct: Number(burnPct),
+    commitWindowSeconds: Number(commitWindow),
+    revealWindowSeconds: Number(revealWindow),
+    commitWindowFormatted: formatSeconds(commitWindow),
+    revealWindowFormatted: formatSeconds(revealWindow),
+    revealQuorumPct: Number(revealQuorumPct),
+    minRevealers: Number(minRevealValidators),
+    nonRevealPenaltyBps: Number(nonRevealPenaltyBps),
+    nonRevealBanBlocks: Number(nonRevealBanBlocks),
+    registryPauser,
+    stakePauser,
+    validationPauser,
+  };
 }
 
 function createFactory(
@@ -927,15 +1027,32 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
   };
 }
 
-async function ownerCommandCenterDrill(env: DemoEnvironment): Promise<void> {
+async function ownerCommandCenterDrill(
+  env: DemoEnvironment
+): Promise<OwnerControlSnapshot> {
   logSection('Owner mission control – unstoppable command authority demonstration');
 
-  const { owner, moderator, registry, stake, validation, feePool } = env;
+  const {
+    owner,
+    moderator,
+    registry,
+    stake,
+    validation,
+    feePool,
+    dispute,
+    certificate,
+    reputation,
+    identity,
+  } = env;
   const [
     registryAddress,
     stakeAddress,
     validationAddress,
     feePoolAddress,
+    disputeAddress,
+    certificateAddress,
+    reputationAddress,
+    identityAddress,
     ownerAddress,
     moderatorAddress,
   ] = await Promise.all([
@@ -943,20 +1060,30 @@ async function ownerCommandCenterDrill(env: DemoEnvironment): Promise<void> {
     stake.getAddress(),
     validation.getAddress(),
     feePool.getAddress(),
+    dispute.getAddress(),
+    certificate.getAddress(),
+    reputation.getAddress(),
+    identity.getAddress(),
     owner.getAddress(),
     moderator.getAddress(),
   ]);
 
-  const previousFeePct = Number(await registry.feePct());
-  const previousValidatorReward = Number(await registry.validatorRewardPct());
-  const previousBurnPct = Number(await feePool.burnPct());
+  const baseline = await readOwnerControlParameters(
+    registry,
+    validation,
+    feePool,
+    stake
+  );
 
-  const originalCommitWindow = await validation.commitWindow();
-  const originalRevealWindow = await validation.revealWindow();
-  const originalRevealQuorumPct = Number(await validation.revealQuorumPct());
-  const originalMinRevealers = Number(await validation.minRevealValidators());
-  const originalNonRevealPenaltyBps = Number(await validation.nonRevealPenaltyBps());
-  const originalNonRevealBanBlocks = Number(await validation.nonRevealBanBlocks());
+  const previousFeePct = baseline.feePct;
+  const previousValidatorReward = baseline.validatorRewardPct;
+  const previousBurnPct = baseline.burnPct;
+  const originalCommitWindow = BigInt(baseline.commitWindowSeconds);
+  const originalRevealWindow = BigInt(baseline.revealWindowSeconds);
+  const originalRevealQuorumPct = baseline.revealQuorumPct;
+  const originalMinRevealers = baseline.minRevealers;
+  const originalNonRevealPenaltyBps = baseline.nonRevealPenaltyBps;
+  const originalNonRevealBanBlocks = baseline.nonRevealBanBlocks;
 
   const upgradedFeePct = previousFeePct + 4;
   const upgradedValidatorReward = previousValidatorReward + 5;
@@ -1063,13 +1190,20 @@ async function ownerCommandCenterDrill(env: DemoEnvironment): Promise<void> {
   await registry.connect(owner).pause();
   recordOwnerAction('Registry paused for drill', `JobRegistry@${registryAddress}`, 'pause', { by: ownerAddress });
   await stake.connect(owner).pause();
-  recordOwnerAction('Stake manager paused for drill', `StakeManager@${stakeAddress}`, 'pause', { by: ownerAddress });
+  recordOwnerAction('Stake manager paused for drill', `StakeManager@${stakeAddress}`, 'pause', {
+    by: ownerAddress,
+  });
   await validation.connect(owner).pause();
   recordOwnerAction('Validation module paused for drill', `ValidationModule@${validationAddress}`, 'pause', {
     by: ownerAddress,
   });
+  const ownerPauseStatus: PauseStatus = {
+    registry: await registry.paused(),
+    stake: await stake.paused(),
+    validation: await validation.paused(),
+  };
   console.log(
-    `   Owner pause drill → registry:${await registry.paused()} stake:${await stake.paused()} validation:${await validation.paused()}`
+    `   Owner pause drill → registry:${ownerPauseStatus.registry} stake:${ownerPauseStatus.stake} validation:${ownerPauseStatus.validation}`
   );
 
   await registry.connect(owner).unpause();
@@ -1095,8 +1229,13 @@ async function ownerCommandCenterDrill(env: DemoEnvironment): Promise<void> {
   recordOwnerAction('Validation module paused by delegated moderator', `ValidationModule@${validationAddress}`, 'pause', {
     by: moderatorAddress,
   });
+  const moderatorPauseStatus: PauseStatus = {
+    registry: await registry.paused(),
+    stake: await stake.paused(),
+    validation: await validation.paused(),
+  };
   console.log(
-    `   Moderator pause drill → registry:${await registry.paused()} stake:${await stake.paused()} validation:${await validation.paused()}`
+    `   Moderator pause drill → registry:${moderatorPauseStatus.registry} stake:${moderatorPauseStatus.stake} validation:${moderatorPauseStatus.validation}`
   );
 
   await registry.connect(moderator).unpause();
@@ -1113,6 +1252,13 @@ async function ownerCommandCenterDrill(env: DemoEnvironment): Promise<void> {
   });
 
   console.log('   Emergency controls verified and reset to active state.');
+
+  const upgraded = await readOwnerControlParameters(
+    registry,
+    validation,
+    feePool,
+    stake
+  );
 
   logStep('Owner restores baseline configuration to prepare live scenarios');
   await registry.connect(owner).setFeePct(previousFeePct);
@@ -1161,25 +1307,43 @@ async function ownerCommandCenterDrill(env: DemoEnvironment): Promise<void> {
     newPauser: ownerAddress,
   });
 
-  const summary = {
-    feePct: Number(await registry.feePct()),
-    validatorRewardPct: Number(await registry.validatorRewardPct()),
-    burnPct: Number(await feePool.burnPct()),
-    commitWindow: formatSeconds(await validation.commitWindow()),
-    revealWindow: formatSeconds(await validation.revealWindow()),
-    revealQuorumPct: Number(await validation.revealQuorumPct()),
-    minRevealers: Number(await validation.minRevealValidators()),
-    nonRevealPenaltyBps: Number(await validation.nonRevealPenaltyBps()),
-    nonRevealBanBlocks: Number(await validation.nonRevealBanBlocks()),
-    registryPauser: await registry.pauser(),
-    stakePauser: await stake.pauser(),
-    validationPauser: await validation.pauser(),
-  };
-  recordTimeline('summary', 'Owner mission control baseline restored', summary);
+  const restored = await readOwnerControlParameters(
+    registry,
+    validation,
+    feePool,
+    stake
+  );
+  recordTimeline('summary', 'Owner mission control baseline restored', {
+    ...restored,
+    commitWindow: restored.commitWindowFormatted,
+    revealWindow: restored.revealWindowFormatted,
+  });
 
   console.log(
-    `   Commit/reveal cadence restored for the upcoming scenarios: ${summary.commitWindow} / ${summary.revealWindow}`
+    `   Commit/reveal cadence restored for the upcoming scenarios: ${restored.commitWindowFormatted} / ${restored.revealWindowFormatted}`
   );
+
+  return {
+    ownerAddress,
+    moderatorAddress,
+    modules: {
+      registry: registryAddress,
+      stake: stakeAddress,
+      validation: validationAddress,
+      feePool: feePoolAddress,
+      dispute: disputeAddress,
+      certificate: certificateAddress,
+      reputation: reputationAddress,
+      identity: identityAddress,
+    },
+    baseline,
+    upgraded,
+    restored,
+    pauseDrill: {
+      owner: ownerPauseStatus,
+      moderator: moderatorPauseStatus,
+    },
+  };
 }
 
 async function logJobSummary(
@@ -1511,7 +1675,7 @@ async function main(): Promise<void> {
     { name: 'Evan (validator)', address: await env.validatorEvan.getAddress() },
   ]);
 
-  await ownerCommandCenterDrill(env);
+  const ownerControl = await ownerCommandCenterDrill(env);
 
   await runHappyPath(env);
   await runDisputeScenario(env);
@@ -1538,6 +1702,7 @@ async function main(): Promise<void> {
           uri: entry.uri,
         })),
       },
+      ownerControl,
     };
     writeFileSync(resolved, JSON.stringify(payload, null, 2));
     console.log(`\n🗂️  Demo transcript exported to ${resolved}`);

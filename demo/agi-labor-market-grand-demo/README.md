@@ -118,6 +118,10 @@ environment variable before running the script.
      reputation.
    - Owner action logs highlighting every governance lever exercised during the
      simulation.
+   - A **sovereign control snapshot** comparing baseline configuration, live
+     drill adjustments, and restored settings, including pauser delegation and
+     emergency pause outcomes so non-technical owners can verify authority at a
+     glance.
    - Scenario timelines for the cooperative and disputed job lifecycles.
    - Certificate issuance, burn telemetry, and fee economics derived from the
      Hardhat run.
