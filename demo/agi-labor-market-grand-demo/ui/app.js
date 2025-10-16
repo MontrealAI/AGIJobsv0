@@ -6,6 +6,33 @@ const state = {
   data: null,
 };
 
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      console.warn('Clipboard API failed, falling back to execCommand', error);
+    }
+  }
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'absolute';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const result = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return result;
+  } catch (error) {
+    console.warn('Fallback clipboard copy failed', error);
+    return false;
+  }
+}
+
 const formatTime = (iso) =>
   new Date(iso).toLocaleString(undefined, {
     hour12: false,
@@ -85,6 +112,56 @@ function createCard(title, description) {
     card.appendChild(p);
   }
   return card;
+}
+
+function createCopyButton(text) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'copy-button';
+  button.textContent = 'Copy';
+  button.addEventListener('click', async () => {
+    const success = await copyTextToClipboard(text);
+    button.dataset.state = success ? 'success' : 'error';
+    button.textContent = success ? 'Copied!' : 'Copy failed';
+    setTimeout(() => {
+      button.dataset.state = '';
+      button.textContent = 'Copy';
+    }, 2000);
+  });
+  return button;
+}
+
+function appendCommandItem(list, entry) {
+  if (!entry || !entry.command) return;
+  const li = document.createElement('li');
+  li.className = 'command-item';
+
+  const header = document.createElement('div');
+  header.className = 'command-item__header';
+
+  const meta = document.createElement('div');
+  meta.className = 'command-item__meta';
+  const label = document.createElement('strong');
+  label.textContent = entry.label || 'Command';
+  const code = document.createElement('code');
+  code.textContent = entry.command;
+  meta.appendChild(label);
+  meta.appendChild(code);
+  header.appendChild(meta);
+
+  const copy = createCopyButton(entry.command);
+  header.appendChild(copy);
+
+  li.appendChild(header);
+
+  if (entry.description) {
+    const description = document.createElement('p');
+    description.className = 'command-item__description';
+    description.textContent = entry.description;
+    li.appendChild(description);
+  }
+
+  list.appendChild(li);
 }
 
 function renderSummary(container, market, meta = {}) {
@@ -341,22 +418,31 @@ function renderAutomation(container, automation) {
   commandsTitle.textContent = 'One-command launch checklist';
   commands.appendChild(commandsTitle);
   const list = document.createElement('ul');
-  list.className = 'command-list';
+  list.className = 'command-list command-list--palette';
   const commandEntries = [
-    { label: 'Replay sovereign demo', value: automation.commands.replayDemo },
-    { label: 'Export transcript', value: automation.commands.exportTranscript },
-    { label: 'Launch control room', value: automation.commands.launchControlRoom },
-    { label: 'Owner dashboard', value: automation.commands.ownerDashboard },
+    {
+      label: 'Replay sovereign demo',
+      command: automation.commands.replayDemo,
+      description: 'Runs the Hardhat automation, replaying jobs, disputes, and owner drills.',
+    },
+    {
+      label: 'Export transcript',
+      command: automation.commands.exportTranscript,
+      description: 'Refreshes export/latest.json so the control room reflects the latest run.',
+    },
+    {
+      label: 'Launch control room',
+      command: automation.commands.launchControlRoom,
+      description: 'Starts the local UI server with an interactive replay prompt for executives.',
+    },
+    {
+      label: 'Owner dashboard',
+      command: automation.commands.ownerDashboard,
+      description: 'Prints the multi-module ownership, fees, and pause status for a target network.',
+    },
   ];
   for (const entry of commandEntries) {
-    const li = document.createElement('li');
-    const strong = document.createElement('strong');
-    strong.textContent = entry.label;
-    const code = document.createElement('code');
-    code.textContent = entry.value;
-    li.appendChild(strong);
-    li.appendChild(code);
-    list.appendChild(li);
+    appendCommandItem(list, entry);
   }
   commands.appendChild(list);
 
@@ -381,6 +467,7 @@ function renderAutomation(container, automation) {
     const code = document.createElement('code');
     code.textContent = cmd;
     li.appendChild(code);
+    li.appendChild(createCopyButton(cmd));
     commandList.appendChild(li);
   }
   verification.appendChild(commandList);
@@ -757,6 +844,43 @@ function renderOwnerControlSnapshot(container, ownerControl) {
   pauseTable.appendChild(pauseBody);
   pauseSection.appendChild(pauseTable);
   container.appendChild(pauseSection);
+
+  if (Array.isArray(ownerControl.commandChecklist) && ownerControl.commandChecklist.length) {
+    const commandSection = document.createElement('div');
+    commandSection.className = 'owner-control-section';
+    const commandTitle = document.createElement('h3');
+    commandTitle.textContent = 'Mission checklist';
+    commandSection.appendChild(commandTitle);
+    const commandList = document.createElement('ul');
+    commandList.className = 'command-list command-list--palette';
+    for (const item of ownerControl.commandChecklist) {
+      appendCommandItem(commandList, item);
+    }
+    commandSection.appendChild(commandList);
+    container.appendChild(commandSection);
+  }
+
+  if (Array.isArray(ownerControl.guardrails) && ownerControl.guardrails.length) {
+    const guardrailSection = document.createElement('div');
+    guardrailSection.className = 'owner-control-section';
+    const guardrailTitle = document.createElement('h3');
+    guardrailTitle.textContent = 'Operational guardrails';
+    guardrailSection.appendChild(guardrailTitle);
+    const list = document.createElement('ul');
+    list.className = 'guardrail-list';
+    for (const guardrail of ownerControl.guardrails) {
+      const li = document.createElement('li');
+      const strong = document.createElement('strong');
+      strong.textContent = guardrail.title;
+      const detail = document.createElement('p');
+      detail.textContent = guardrail.detail;
+      li.appendChild(strong);
+      li.appendChild(detail);
+      list.appendChild(li);
+    }
+    guardrailSection.appendChild(list);
+    container.appendChild(guardrailSection);
+  }
 }
 
 function renderScenarios(container, scenarios, data) {
