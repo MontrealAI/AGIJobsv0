@@ -153,6 +153,28 @@ describe("α-AGI MARK bonding curve", function () {
     await expect(mark.connect(investor).buyTokens(WHOLE, { value: cost })).to.be.revertedWith("Sale expired");
   });
 
+  it("lets the owner curate validators and reset approvals", async function () {
+    const { owner, validatorA, validatorB, outsider, riskOracle } = await deployFixture();
+
+    const roster = Array.from(await riskOracle.getValidators());
+    expect(roster).to.have.members([validatorA.address, validatorB.address]);
+
+    await riskOracle.connect(validatorA).approveSeed();
+    await riskOracle.connect(validatorB).approveSeed();
+    expect(await riskOracle.approvalCount()).to.equal(2n);
+
+    await expect(riskOracle.connect(owner).resetApprovals()).to.emit(riskOracle, "ApprovalsReset");
+    expect(await riskOracle.approvalCount()).to.equal(0n);
+
+    await riskOracle.connect(owner).removeValidators([validatorB.address]);
+    expect(await riskOracle.validatorCount()).to.equal(1n);
+    await expect(riskOracle.connect(outsider).approveSeed()).to.be.revertedWith("Not validator");
+
+    await expect(riskOracle.connect(validatorA).approveSeed())
+      .to.emit(riskOracle, "ApprovalCast")
+      .withArgs(validatorA.address, true);
+  });
+
   it("allows owner validation override", async function () {
     const { owner, investor, mark, basePrice, slope } = await deployFixture();
     const cost = purchaseCost(basePrice, slope, 0n, 1n);

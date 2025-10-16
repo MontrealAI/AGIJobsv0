@@ -58,5 +58,6 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 - `pause()` halts buys while still allowing redemptions when emergency exit is active.
 - `abort()` activates emergency exit and keeps the bonding curve solvent for participant withdrawals.
 - `overrideValidation()` lets the owner force a green light or red light if the validator council stalls.
+- `resetApprovals()` clears validator votes instantly so a fresh review cycle can begin after any incident.
 
 These controls are showcased live in the demo.
