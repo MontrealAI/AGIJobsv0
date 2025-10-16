@@ -62,3 +62,7 @@ examples/agentic/runtime-agentic.jsonl
 
 apps/console/dist/
 apps/console/node_modules/
+# α-AGI MARK demo build artifacts
+/demo/alpha-agi-mark/artifacts/
+/demo/alpha-agi-mark/cache/
+/demo/alpha-agi-mark/typechain-types/
