@@ -39,8 +39,9 @@ flowchart TD
 
 > [!TIP]
 > For a multi-perspective visual walkthrough (mindmap, journey map, and sovereign launch sequence) see the
-> [`Operator Empowerment Atlas`](docs/operator-empowerment-atlas.md). It is designed for non-technical founders to brief
-> stakeholders with grandiose visuals without touching Solidity.
+> [`Operator Empowerment Atlas`](docs/operator-empowerment-atlas.md). Pair it with the new
+> [`Operator Command Console`](docs/operator-command-console.md) to brief stakeholders using quadrant, timeline, and
+> safety-state diagrams—no Solidity knowledge required.
 
 ## Quickstart
 

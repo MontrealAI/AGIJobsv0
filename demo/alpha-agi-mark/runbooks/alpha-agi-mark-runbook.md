@@ -40,6 +40,8 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - bonding curve statistics (supply, reserve balance, pricing)
    - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, and treasury balance
    - `ownerParameterMatrix` providing a full owner control matrix with descriptions
+   - cross-reference visuals from the [`Operator Empowerment Atlas`](../docs/operator-empowerment-atlas.md) and
+     [`Operator Command Console`](../docs/operator-command-console.md) for stakeholder briefings
    - `verification` snapshot documenting the triple-check consensus across supply, pricing, capital flows, and contribution
      tallies
 
