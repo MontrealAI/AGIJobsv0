@@ -65,10 +65,10 @@ sequenceDiagram
 From the repository root run:
 
 ```bash
-npx hardhat run --no-compile scripts/v2/agiLaborMarketGrandDemo.ts --network hardhat
+npm run demo:agi-labor-market
 ```
 
-The script:
+The script (also invoked by all helper commands):
 
 1. Boots the entire v2 module suite and displays initial balances.
 2. Demonstrates **owner mission control** — live updates to protocol fees,
@@ -101,18 +101,30 @@ timeline, actor roster, owner actions, and aggregated telemetry. To export to a
 different location set the `AGI_JOBS_DEMO_EXPORT=/path/to/file.json`
 environment variable before running the script.
 
+### Verifying a transcript
+
+Non-technical operators can assert that a transcript satisfies the platform's
+credibility invariants (owner control exercised, scenarios recorded, and
+credential NFTs minted) with:
+
+```bash
+npm run demo:agi-labor-market:validate
+```
+
+The validator checks any provided path (`npm run demo:agi-labor-market:validate -- my.json`) and fails fast if
+governance controls, scenario lifecycles, or credential issuance were not
+captured.
+
 ### Launching the sovereign labour market control room UI
 
-1. Export a fresh transcript as described above (or copy an existing JSON file
-   into `demo/agi-labor-market-grand-demo/ui/export/latest.json`).
-2. Serve the UI locally – any static server works. Example:
+Run a single command – it exports a fresh transcript, validates it, and starts a
+hardened static server bound to `http://localhost:4173`:
 
-   ```bash
-   npx serve demo/agi-labor-market-grand-demo/ui
-   ```
+```bash
+npm run demo:agi-labor-market:control-room
+```
 
-3. Visit the printed URL (defaults to `http://localhost:3000`). The interface
-   loads `export/latest.json`, rendering:
+The interface loads the validated transcript, rendering:
 
    - Nation and validator wallet dashboards with balances, stakes, and
      reputation.
@@ -124,6 +136,13 @@ environment variable before running the script.
 
 Non-technical operators can replay the Hardhat simulation and immediately see a
 production-style control room without wiring additional infrastructure.
+
+### Continuous integration guarantee
+
+Every pull request and `main` push executes `npm run demo:agi-labor-market:ci`
+via the strengthened `ci (v2)` workflow. The CI job runs the full grand demo,
+validates the transcript, and publishes the JSON artifact so reviewers can
+inspect the labour market outcome without rerunning Hardhat locally.
 
 ## Extending or replaying
 

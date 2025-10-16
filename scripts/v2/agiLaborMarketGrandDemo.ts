@@ -2,11 +2,18 @@
 
 import type { InterfaceAbi } from 'ethers';
 import { ethers } from 'hardhat';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
+import {
+  ActorProfile,
+  DemoExportPayload,
+  MarketSummary,
+  MintedCertificate,
+  createDemoExportState,
+  persistDemoExport,
+} from './lib/agiLaborMarketExport';
 import agialphaToken from './lib/agialphaToken.json';
 import stakeManagerArtifact from './lib/prebuilt/StakeManager.json';
 import reputationEngineArtifact from './lib/prebuilt/ReputationEngine.json';
@@ -20,81 +27,12 @@ import feePoolArtifact from './lib/prebuilt/FeePool.json';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { decodeJobMetadata } = require('../../test/utils/jobMetadata');
 
-type TimelineKind =
-  | 'section'
-  | 'step'
-  | 'job-summary'
-  | 'balance'
-  | 'owner-action'
-  | 'summary';
-
-interface TimelineEntry {
-  kind: TimelineKind;
-  label: string;
-  at: string;
-  scenario?: string;
-  meta?: Record<string, unknown>;
-}
-
-interface ActorProfile {
-  key: string;
-  name: string;
-  role:
-    | 'Owner'
-    | 'Nation'
-    | 'Agent'
-    | 'Validator'
-    | 'Moderator'
-    | 'Protocol';
-  address: string;
-}
-
-interface OwnerActionRecord {
-  label: string;
-  contract: string;
-  method: string;
-  parameters?: Record<string, unknown>;
-  at: string;
-}
-
-interface ScenarioExport {
-  title: string;
-  jobId: string;
-  timelineIndices: number[];
-}
-
-interface MarketSummary {
-  totalJobs: string;
-  totalBurned: string;
-  finalSupply: string;
-  feePct: number;
-  validatorRewardPct: number;
-  pendingFees: string;
-  totalAgentStake: string;
-  totalValidatorStake: string;
-  mintedCertificates: MintedCertificate[];
-}
-
-interface DemoExportPayload {
-  generatedAt: string;
-  network: string;
-  actors: ActorProfile[];
-  ownerActions: OwnerActionRecord[];
-  timeline: TimelineEntry[];
-  scenarios: ScenarioExport[];
-  market: MarketSummary;
-}
-
 enum Role {
   Agent,
   Validator,
   Platform,
 }
-
-const timeline: TimelineEntry[] = [];
-const ownerActions: OwnerActionRecord[] = [];
-const scenarios: ScenarioExport[] = [];
-let activeScenario: string | undefined;
+const exportState = createDemoExportState();
 
 const cliArgs = process.argv.slice(2);
 let exportPath: string | undefined;
@@ -115,48 +53,17 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function recordTimeline(
-  kind: TimelineKind,
-  label: string,
-  meta?: Record<string, unknown>
-): number {
-  const entry: TimelineEntry = {
-    kind,
-    label,
-    at: nowIso(),
-    scenario: activeScenario,
-    meta,
-  };
-  timeline.push(entry);
-  return timeline.length - 1;
-}
-
 function recordOwnerAction(
   label: string,
   contract: string,
   method: string,
   parameters?: Record<string, unknown>
 ): void {
-  ownerActions.push({
-    label,
-    contract,
-    method,
-    parameters,
-    at: nowIso(),
-  });
-  recordTimeline('owner-action', label, {
-    contract,
-    method,
-    parameters,
-  });
+  exportState.recordOwnerAction(label, contract, method, parameters);
 }
 
 function registerScenario(title: string, jobId: bigint): void {
-  const timelineIndices = timeline
-    .map((entry, index) => ({ entry, index }))
-    .filter((item) => item.entry.scenario === title)
-    .map((item) => item.index);
-  scenarios.push({ title, jobId: jobId.toString(), timelineIndices });
+  exportState.registerScenario(title, jobId);
 }
 
 function isValidatorsAlreadySelectedError(error: unknown): boolean {
@@ -221,17 +128,17 @@ function formatTokens(value: bigint): string {
 function logSection(title: string): void {
   const line = '-'.repeat(title.length + 4);
   console.log(`\n${line}\n  ${title}\n${line}`);
-  recordTimeline('section', title);
   if (title.startsWith('Scenario')) {
-    activeScenario = title;
+    exportState.enterScenario(title);
   } else {
-    activeScenario = undefined;
+    exportState.exitScenario();
+    exportState.recordTimeline('section', title);
   }
 }
 
 function logStep(step: string): void {
   console.log(`\n➡️  ${step}`);
-  recordTimeline('step', step);
+  exportState.recordTimeline('step', step);
 }
 
 function formatSeconds(seconds: bigint): string {
@@ -266,7 +173,7 @@ async function deployPrebuiltContract(
   const sanitizedArgs = args.map((value) =>
     typeof value === 'bigint' ? value.toString() : value
   );
-  recordTimeline('summary', `${label} deployed`, {
+  exportState.recordTimeline('summary', `${label} deployed`, {
     address,
     args: sanitizedArgs,
   });
@@ -298,12 +205,6 @@ async function ensureValidatorsSelected(
   return round;
 }
 
-interface MintedCertificate {
-  jobId: bigint;
-  owner: string;
-  uri?: string;
-}
-
 function addressesEqual(a: string, b: string): boolean {
   return a.toLowerCase() === b.toLowerCase();
 }
@@ -322,7 +223,7 @@ async function gatherCertificates(
       } catch (error) {
         console.warn(`⚠️  tokenURI unavailable for job ${jobId}:`, error);
       }
-      minted.push({ jobId, owner, uri });
+      minted.push({ jobId: jobId.toString(), owner, uri });
     } catch (error) {
       // Job either not created yet or no certificate minted. Ignore silently.
     }
@@ -380,7 +281,7 @@ async function logAgentPortfolios(
       })),
     });
   }
-  recordTimeline('summary', 'Agent portfolios', { agents: entries });
+  exportState.recordTimeline('summary', 'Agent portfolios', { agents: entries });
 }
 
 async function logValidatorCouncil(env: DemoEnvironment): Promise<void> {
@@ -414,7 +315,7 @@ async function logValidatorCouncil(env: DemoEnvironment): Promise<void> {
       reputation: reputation.toString(),
     });
   }
-  recordTimeline('summary', 'Validator council status', {
+  exportState.recordTimeline('summary', 'Validator council status', {
     validators: validatorsSummary,
   });
 }
@@ -472,7 +373,7 @@ async function summarizeMarketState(
     mintedCertificates: minted,
   };
 
-  recordTimeline('summary', 'Market telemetry dashboard', {
+  exportState.recordTimeline('summary', 'Market telemetry dashboard', {
     ...summary,
     mintedCertificates: summary.mintedCertificates.map((entry) => ({
       jobId: entry.jobId.toString(),
@@ -597,7 +498,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     },
   ];
 
-  recordTimeline('summary', 'Demo actor roster initialised', {
+  exportState.recordTimeline('summary', 'Demo actor roster initialised', {
     actors,
   });
 
@@ -613,7 +514,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     validatorEvan,
   ], mintAmount);
   const initialSupply = await token.totalSupply();
-  recordTimeline('summary', 'Initial AGIα liquidity minted to actors', {
+  exportState.recordTimeline('summary', 'Initial AGIα liquidity minted to actors', {
     amount: formatTokens(mintAmount),
     recipients: [
       nationAAddress,
@@ -1175,7 +1076,7 @@ async function ownerCommandCenterDrill(env: DemoEnvironment): Promise<void> {
     stakePauser: await stake.pauser(),
     validationPauser: await validation.pauser(),
   };
-  recordTimeline('summary', 'Owner mission control baseline restored', summary);
+  exportState.recordTimeline('summary', 'Owner mission control baseline restored', summary);
 
   console.log(
     `   Commit/reveal cadence restored for the upcoming scenarios: ${summary.commitWindow} / ${summary.revealWindow}`
@@ -1192,7 +1093,7 @@ async function logJobSummary(
   console.log(
     `\n📦 Job ${jobId} summary (${context}):\n  State: ${JOB_STATE_LABELS[metadata.state] ?? metadata.state}\n  Success flag: ${metadata.success}\n  Burn confirmed: ${metadata.burnConfirmed}\n  Reward: ${formatTokens(job.reward)}\n  Employer: ${job.employer}\n  Agent: ${job.agent}`
   );
-  recordTimeline('job-summary', `Job ${jobId} (${context})`, {
+  exportState.recordTimeline('job-summary', `Job ${jobId} (${context})`, {
     jobId: jobId.toString(),
     context,
     state: JOB_STATE_LABELS[metadata.state] ?? metadata.state,
@@ -1220,7 +1121,7 @@ async function showBalances(
       balance: formatTokens(balance),
     });
   }
-  recordTimeline('balance', label, { participants: snapshot });
+  exportState.recordTimeline('balance', label, { participants: snapshot });
 }
 
 async function runHappyPath(env: DemoEnvironment): Promise<void> {
@@ -1521,25 +1422,21 @@ async function main(): Promise<void> {
 
   if (exportPath) {
     const resolved = resolve(exportPath);
-    mkdirSync(dirname(resolved), { recursive: true });
     const network = await ethers.provider.getNetwork();
-    const payload: DemoExportPayload = {
+    const payload: DemoExportPayload = exportState.buildPayload({
       generatedAt: nowIso(),
       network: `${network.name ?? 'hardhat'} (chainId ${network.chainId})`,
       actors: env.actors,
-      ownerActions,
-      timeline,
-      scenarios,
       market: {
         ...market,
         mintedCertificates: market.mintedCertificates.map((entry) => ({
-          jobId: entry.jobId.toString(),
+          jobId: entry.jobId,
           owner: entry.owner,
           uri: entry.uri,
         })),
       },
-    };
-    writeFileSync(resolved, JSON.stringify(payload, null, 2));
+    });
+    persistDemoExport(resolved, payload);
     console.log(`\n🗂️  Demo transcript exported to ${resolved}`);
   }
 }
