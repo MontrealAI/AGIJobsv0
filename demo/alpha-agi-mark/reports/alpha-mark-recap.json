@@ -153,5 +153,9 @@
       "value": "50000000000000000",
       "description": "Bonding curve slope component"
     }
-  ]
+  ],
+  "artifacts": {
+    "json": "reports/alpha-mark-recap.json",
+    "markdown": "reports/alpha-mark-recap.md"
+  }
 }
