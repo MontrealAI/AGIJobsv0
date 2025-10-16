@@ -47,6 +47,7 @@ The demo enumerates all tunable controls in the final recap:
 - Pause / emergency exit switches
 - Validator council membership and approval thresholds
 - Launch, abort, and override controls
+- Full owner control snapshot exported under `ownerControls` in the recap dossier
 
 ## Runbook
 

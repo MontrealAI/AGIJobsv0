@@ -29,6 +29,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
    - contract addresses
    - owner governance parameters
+   - consolidated `ownerControls` snapshot of every pause/whitelist/override lever
    - validator council roster and votes
    - bonding curve statistics (supply, reserve balance, pricing)
    - launch outcome summary

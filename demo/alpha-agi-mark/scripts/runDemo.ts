@@ -109,6 +109,24 @@ async function main() {
   const [supply, reserve, nextPrice] = await mark.getCurveState();
   const approvalCount = await riskOracle.approvalCount();
   const threshold = await riskOracle.approvalThreshold();
+  const ownerControlsRaw = await mark.getOwnerControls();
+
+  const ownerControls = {
+    paused: ownerControlsRaw[0],
+    whitelistEnabled: ownerControlsRaw[1],
+    emergencyExitEnabled: ownerControlsRaw[2],
+    finalized: ownerControlsRaw[3],
+    aborted: ownerControlsRaw[4],
+    validationOverrideEnabled: ownerControlsRaw[5],
+    validationOverrideStatus: ownerControlsRaw[6],
+    treasury: ownerControlsRaw[7] as Address,
+    riskOracle: ownerControlsRaw[8] as Address,
+    fundingCapWei: (ownerControlsRaw[9] as bigint).toString(),
+    maxSupplyWholeTokens: ownerControlsRaw[10].toString(),
+    saleDeadlineTimestamp: ownerControlsRaw[11].toString(),
+    basePriceWei: (ownerControlsRaw[12] as bigint).toString(),
+    slopeWei: (ownerControlsRaw[13] as bigint).toString(),
+  };
 
   const participants: ParticipantSnapshot[] = [investorA, investorB, investorC].map((signer) => ({
     address: signer.address,
@@ -145,6 +163,7 @@ async function main() {
       basePriceWei: basePrice.toString(),
       slopeWei: slope.toString(),
     },
+    ownerControls,
     participants,
     launch: {
       finalized: await mark.finalized(),
