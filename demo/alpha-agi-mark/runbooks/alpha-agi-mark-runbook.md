@@ -21,7 +21,8 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - deploys the NovaSeedNFT, AlphaMarkRiskOracle, and AlphaMarkEToken contracts
    - performs investor buys and validator approvals
    - pauses and resumes trading to verify safety controls
-   - finalizes the launch and prints a comprehensive recap
+  - demonstrates pre-launch base asset retargeting (ETH -> ERC-20 stablecoin)
+  - finalizes the launch and prints a comprehensive recap
 
 2. **Inspect recap artifacts**
 

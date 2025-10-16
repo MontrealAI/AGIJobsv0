@@ -34,6 +34,8 @@
     "validationOverrideStatus": false,
     "treasury": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "riskOracle": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "baseAsset": "0x0000000000000000000000000000000000000000",
+    "usesNativeAsset": true,
     "fundingCapWei": "1000000000000000000000",
     "maxSupplyWholeTokens": "100",
     "saleDeadlineTimestamp": "0",

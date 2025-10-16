@@ -30,7 +30,16 @@ describe("α-AGI MARK bonding curve", function () {
     const AlphaMark = await ethers.getContractFactory("AlphaMarkEToken");
     const basePrice = toWei("0.1");
     const slope = toWei("0.05");
-    const mark = await AlphaMark.deploy("SeedShares", "SEED", owner.address, riskOracle.target, basePrice, slope, 100);
+    const mark = await AlphaMark.deploy(
+      "SeedShares",
+      "SEED",
+      owner.address,
+      riskOracle.target,
+      basePrice,
+      slope,
+      100,
+      ethers.ZeroAddress
+    );
     await mark.waitForDeployment();
 
     await mark.setTreasury(owner.address);
@@ -120,6 +129,8 @@ describe("α-AGI MARK bonding curve", function () {
     expect(controls.overrideStatus_).to.equal(false);
     expect(controls.treasuryAddr).to.equal(owner.address);
     expect(controls.riskOracleAddr).to.be.properAddress;
+    expect(controls.baseAssetAddr).to.equal(ethers.ZeroAddress);
+    expect(controls.usesNative).to.equal(true);
     expect(controls.fundingCapWei).to.equal(await mark.fundingCap());
     expect(controls.maxSupplyWholeTokens).to.equal(await mark.maxSupply());
     expect(controls.saleDeadlineTimestamp).to.equal(BigInt(futureDeadline));
@@ -183,5 +194,102 @@ describe("α-AGI MARK bonding curve", function () {
     await mark.connect(owner).setValidationOverride(true, true);
 
     await expect(mark.connect(owner).finalizeLaunch(owner.address)).to.emit(mark, "LaunchFinalized");
+  });
+
+  it("permits re-targeting the base asset before launch", async function () {
+    const { owner, investor, mark, basePrice, slope } = await deployFixture();
+    const Stable = await ethers.getContractFactory("TestStablecoin");
+    const stable = await Stable.deploy();
+    await stable.waitForDeployment();
+
+    const depositAmount = toWei("1000");
+    await stable.mint(investor.address, depositAmount);
+
+    await mark.connect(owner).setBaseAsset(stable.target);
+    const controls = await mark.getOwnerControls();
+    expect(controls.baseAssetAddr).to.equal(stable.target);
+    expect(controls.usesNative).to.equal(false);
+
+    await stable.connect(investor).approve(mark.target, depositAmount);
+
+    const nativeCost = purchaseCost(basePrice, slope, 0n, 1n);
+    await expect(mark.connect(investor).buyTokens(WHOLE, { value: nativeCost })).to.be.revertedWith(
+      "Native payment disabled"
+    );
+
+    await expect(mark.connect(investor).buyTokens(WHOLE))
+      .to.emit(mark, "TokensPurchased")
+      .withArgs(investor.address, WHOLE, nativeCost);
+
+    expect(await mark.reserveBalance()).to.equal(nativeCost);
+    expect(await stable.balanceOf(mark.target)).to.equal(nativeCost);
+
+    await expect(mark.connect(owner).setBaseAsset(ethers.ZeroAddress)).to.be.revertedWith("Supply exists");
+  });
+});
+
+describe("α-AGI MARK ERC20 base asset flows", function () {
+  it("processes ERC20 deposits and redemptions", async function () {
+    const [owner, investor, validatorA, validatorB] = await ethers.getSigners();
+
+    const Stable = await ethers.getContractFactory("TestStablecoin");
+    const stable = await Stable.deploy();
+    await stable.waitForDeployment();
+
+    const RiskOracle = await ethers.getContractFactory("AlphaMarkRiskOracle");
+    const riskOracle = await RiskOracle.deploy(owner.address, [validatorA.address, validatorB.address], 2);
+    await riskOracle.waitForDeployment();
+
+    const AlphaMark = await ethers.getContractFactory("AlphaMarkEToken");
+    const basePrice = toWei("1");
+    const slope = toWei("0.5");
+    const mark = await AlphaMark.deploy(
+      "SeedShares",
+      "SEED",
+      owner.address,
+      riskOracle.target,
+      basePrice,
+      slope,
+      100,
+      stable.target
+    );
+    await mark.waitForDeployment();
+
+    await mark.setTreasury(owner.address);
+    await mark.setWhitelistEnabled(true);
+    await mark.setWhitelist([investor.address], true);
+
+    const investorBudget = toWei("20");
+    await stable.mint(investor.address, investorBudget);
+    await stable.connect(investor).approve(mark.target, investorBudget);
+
+    const buyAmount = 2n;
+    const cost = purchaseCost(basePrice, slope, 0n, buyAmount);
+    await expect(mark.connect(investor).buyTokens(buyAmount * WHOLE))
+      .to.emit(mark, "TokensPurchased")
+      .withArgs(investor.address, buyAmount * WHOLE, cost);
+
+    expect(await stable.balanceOf(mark.target)).to.equal(cost);
+    expect(await mark.reserveBalance()).to.equal(cost);
+
+    const sellAmount = 1n;
+    const refund = saleReturn(basePrice, slope, buyAmount, sellAmount);
+    await expect(mark.connect(investor).sellTokens(sellAmount * WHOLE))
+      .to.emit(mark, "TokensSold")
+      .withArgs(investor.address, sellAmount * WHOLE, refund);
+
+    expect(await stable.balanceOf(investor.address)).to.equal(investorBudget - cost + refund);
+
+    await riskOracle.connect(validatorA).approveSeed();
+    await riskOracle.connect(validatorB).approveSeed();
+    await mark.setTreasury(owner.address);
+
+    const reserveBeforeFinalize = await mark.reserveBalance();
+    await expect(mark.connect(owner).finalizeLaunch(owner.address))
+      .to.emit(mark, "LaunchFinalized")
+      .withArgs(owner.address, reserveBeforeFinalize);
+
+    expect(await mark.reserveBalance()).to.equal(0n);
+    expect(await stable.balanceOf(owner.address)).to.equal(reserveBeforeFinalize);
   });
 });
