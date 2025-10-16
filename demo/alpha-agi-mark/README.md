@@ -11,11 +11,12 @@ The α-AGI MARK demo showcases how a non-technical operator can launch a foresig
 
 ## Architecture
 
-The demo deploys three core contracts:
+The demo deploys four core contracts:
 
 1. **NovaSeedNFT** – ERC-721 token representing a foresight seed.
 2. **AlphaMarkRiskOracle** – validator-governed approval oracle with owner override controls.
-3. **AlphaMarkEToken** – ERC-20 bonding-curve market with programmable compliance gates, pause switches, base asset retargeting (ETH or ERC-20 stablecoins), and launch finalization mechanics.
+3. **AlphaMarkEToken** – ERC-20 bonding-curve market with programmable compliance gates, pause switches, base asset retargeting (ETH or ERC-20 stablecoins), launch finalization metadata, and sovereign callbacks.
+4. **AlphaSovereignVault** – launch treasury that acknowledges the ignition metadata, tracks received capital, and gives the owner pause/withdraw controls for the sovereign stage.
 
 ![α-AGI MARK flow diagram](runbooks/alpha-agi-mark-flow.mmd)
 

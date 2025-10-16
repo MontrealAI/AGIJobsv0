@@ -56,6 +56,16 @@ async function main() {
   await mark.waitForDeployment();
   console.log(`🏛️  AlphaMark exchange deployed at ${mark.target}`);
 
+  const SovereignVault = await ethers.getContractFactory("AlphaSovereignVault", owner);
+  const sovereignVault = await SovereignVault.deploy(owner.address, "ipfs://alpha-mark/sovereign/genesis");
+  await sovereignVault.waitForDeployment();
+  await (await sovereignVault.designateMarkExchange(mark.target)).wait();
+  console.log(`👑 Sovereign vault deployed at ${sovereignVault.target}`);
+
+  await (await sovereignVault.pauseVault()).wait();
+  await (await sovereignVault.unpauseVault()).wait();
+  console.log("   • Sovereign vault pause/unpause controls verified");
+
   const Stable = await ethers.getContractFactory("TestStablecoin", owner);
   const stable = await Stable.deploy();
   await stable.waitForDeployment();
@@ -102,7 +112,8 @@ async function main() {
   await (await riskOracle.connect(validatorA).approveSeed()).wait();
   console.log(`   • Validator ${validatorA.address} approved`);
   await safeAttempt("Premature finalize attempt", async () => {
-    await mark.finalizeLaunch(owner.address);
+    const prematureMetadata = ethers.toUtf8Bytes("Attempt before consensus");
+    await mark.finalizeLaunch(sovereignVault.target, prematureMetadata);
   });
   await (await riskOracle.connect(validatorB).approveSeed()).wait();
   console.log(`   • Validator ${validatorB.address} approved`);
@@ -113,8 +124,12 @@ async function main() {
   await (await mark.connect(investorB).sellTokens(sellAmount)).wait();
   console.log(`   ✅ Investor B redeemed 1 SEED for ${ethers.formatEther(sellReturn)} ETH`);
 
-  console.log("\n🟢 Oracle threshold satisfied, owner finalizes launch");
-  await (await mark.finalizeLaunch(owner.address)).wait();
+  console.log("\n🟢 Oracle threshold satisfied, owner finalizes launch to the sovereign vault");
+  const launchMetadata = ethers.toUtf8Bytes("α-AGI Sovereign ignition: Nova-Seed ascends");
+  await (await mark.finalizeLaunch(sovereignVault.target, launchMetadata)).wait();
+  console.log(
+    `   • Sovereign vault acknowledged ignition metadata: "${ethers.toUtf8String(launchMetadata)}"`
+  );
 
   const [supply, reserve, nextPrice] = await mark.getCurveState();
   const approvalCount = await riskOracle.approvalCount();
@@ -155,11 +170,14 @@ async function main() {
 
   const validatorRoster = await riskOracle.getValidators();
 
+  const sovereignMetadata = await sovereignVault.lastAcknowledgedMetadata();
+  const sovereignTotalReceived = await sovereignVault.totalReceived();
   const recap = {
     contracts: {
       novaSeed: novaSeed.target,
       riskOracle: riskOracle.target,
       markExchange: mark.target,
+      sovereignVault: sovereignVault.target,
     },
     seed: {
       tokenId: seedId.toString(),
@@ -183,6 +201,14 @@ async function main() {
       finalized: await mark.finalized(),
       aborted: await mark.aborted(),
       treasury: await mark.treasury(),
+      sovereignVault: {
+        manifestUri: await sovereignVault.manifestUri(),
+        totalReceivedWei: sovereignTotalReceived.toString(),
+        lastAcknowledgedAmountWei: (await sovereignVault.lastAcknowledgedAmount()).toString(),
+        lastAcknowledgedMetadataHex: sovereignMetadata,
+        decodedMetadata: ethers.toUtf8String(sovereignMetadata),
+        vaultBalanceWei: (await sovereignVault.vaultBalance()).toString(),
+      },
     },
   };
 
@@ -191,7 +217,9 @@ async function main() {
 
   console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
   console.log(JSON.stringify(recap, null, 2));
-  console.log("\n✨ α-AGI MARK demo complete. The foresight sovereign has been launched.");
+  console.log(
+    `\n✨ α-AGI MARK demo complete. Sovereign vault now safeguards ${ethers.formatEther(sovereignTotalReceived)} ETH.`
+  );
 }
 
 main().catch((error) => {
