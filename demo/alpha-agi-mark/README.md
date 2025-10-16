@@ -46,6 +46,7 @@ The demo enumerates all tunable controls in the final recap:
 - Compliance whitelist toggles
 - Pause / emergency exit switches
 - Validator council membership and approval thresholds
+- Validator roster resets and approval clearing
 - Launch, abort, and override controls
 - Full owner control snapshot exported under `ownerControls` in the recap dossier
 

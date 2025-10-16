@@ -141,6 +141,8 @@ async function main() {
     participant.contributionWei = contribution.toString();
   }
 
+  const validatorRoster = await riskOracle.getValidators();
+
   const recap = {
     contracts: {
       novaSeed: novaSeed.target,
@@ -154,7 +156,7 @@ async function main() {
     validators: {
       approvalCount: approvalCount.toString(),
       approvalThreshold: threshold.toString(),
-      members: [validatorA.address, validatorB.address, validatorC.address],
+      members: validatorRoster,
     },
     bondingCurve: {
       supplyWholeTokens: supply.toString(),
