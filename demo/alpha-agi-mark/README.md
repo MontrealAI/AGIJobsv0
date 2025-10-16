@@ -121,6 +121,11 @@ trade ledger, and a first-principles bonding-curve simulator. Every run prints a
 all three perspectives agree on supply, pricing, capital flows, and participant contributions. The recap dossier exposes the
 results under a new `verification` section and the dashboard renders the matrix as a dedicated integrity panel.
 
+> [!NOTE]
+> Want the full breakdown of every invariant, replay step, and failure mode? See the
+> [`Triple-Verification Matrix Deep Dive`](docs/triple-verification-matrix.md) for command references,
+> mermaid diagrams, and an executive checklist that keeps the matrix permanently green.
+
 ```mermaid
 flowchart LR
     OnChain[(On-chain Introspection)] --> Verifier{{Triangulation Engine}}
