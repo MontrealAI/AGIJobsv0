@@ -90,6 +90,24 @@ To run the Hardhat unit tests for the demo:
 npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
 ```
 
+### Interactive mission console
+
+After a demo run, launch the operator console to brief stakeholders without touching Solidity:
+
+```bash
+npm run console:alpha-agi-mark
+```
+
+The console renders:
+
+- A colour-coded mission summary with launch status, treasury destinations, and sovereign ignition metadata
+- The full owner command deck (including the parameter matrix) with live state badges for every control lever
+- Participant ledgers, validator council tallies, and the triple-verification matrix confidence index
+- A cinematic timeline excerpt plus a dynamically generated Mermaid blueprint tailored to the latest recap
+
+Non-interactive environments can emit a one-shot briefing via `npm run console:alpha-agi-mark -- --snapshot` for inclusion in
+status reports or CI artefacts.
+
 ### Offline verification
 
 After the demo run completes you can re-validate every figure using an independent triangulation script:

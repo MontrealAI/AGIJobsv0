@@ -48,7 +48,17 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - `verification` snapshot documenting the triple-check consensus across supply, pricing, capital flows, and contribution
      tallies
 
-3. **Render the owner control matrix at any time**
+3. **Brief stakeholders with the interactive operator console**
+
+   ```bash
+   npm run console:alpha-agi-mark
+   ```
+
+   The console presents an interactive menu with mission summary, owner control deck, participant ledger, validator council
+   tallies, the triple-verification matrix, timeline excerpts, and a dynamically generated Mermaid systems diagram. Use
+   `--snapshot` in automation to produce a one-shot textual briefing.
+
+4. **Render the owner control matrix at any time**
 
    ```bash
    npm run owner:alpha-agi-mark
@@ -56,7 +66,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
    The command reads the latest recap dossier and prints a tabular summary of every operator control lever.
 
-4. **Render (or re-render) the sovereign dashboard**
+5. **Render (or re-render) the sovereign dashboard**
 
    ```bash
    npm run dashboard:alpha-agi-mark
@@ -64,7 +74,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
    This regenerates the HTML dossier using the latest recap JSON, useful after manual parameter tweaks.
 
-5. **Run the offline triangulation verifier**
+6. **Run the offline triangulation verifier**
 
    ```bash
    npm run verify:alpha-agi-mark
@@ -73,7 +83,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    The script replays the trade ledger from the recap, recomputes the bonding-curve math independently, and
    prints a confidence index table that must read 100% before green-lighting any external announcement.
 
-6. **Emit the integrity dossier for stakeholder sign-off**
+7. **Emit the integrity dossier for stakeholder sign-off**
 
    ```bash
    npm run integrity:alpha-agi-mark
@@ -83,7 +93,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    the verification table, owner command deck snapshot, and a mermaid contribution pie chart. Circulate
    it alongside the dashboard for executive approval.
 
-7. **Publish the cinematic mission timeline**
+8. **Publish the cinematic mission timeline**
 
    ```bash
    npm run timeline:alpha-agi-mark
@@ -92,13 +102,13 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    Creates `demo/alpha-agi-mark/reports/alpha-mark-timeline.md`, blending a Mermaid timeline with a
    tabular ledger of every orchestrated action. Ideal for board briefings or audit evidence packs.
 
-8. **(Optional) Run unit tests**
+9. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
    ```
 
-9. **(Optional) Dry-run on a fork or external network**
+10. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 
