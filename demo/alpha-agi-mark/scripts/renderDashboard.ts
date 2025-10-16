@@ -62,6 +62,25 @@ type VerificationSnapshot = {
 };
 
 type RecapData = {
+  generatedAt: string;
+  network: {
+    label: string;
+    name: string;
+    chainId: string;
+    blockNumber: string;
+    dryRun: boolean;
+  };
+  orchestrator: {
+    commit?: string;
+    branch?: string;
+    workspaceDirty: boolean;
+    mode: "dry-run" | "broadcast";
+  };
+  actors: {
+    owner: string;
+    investors: string[];
+    validators: string[];
+  };
   contracts: {
     novaSeed: string;
     riskOracle: string;
@@ -130,6 +149,11 @@ type RecapData = {
   };
   ownerParameterMatrix?: Array<{ parameter: string; value: unknown; description: string }>;
   verification?: VerificationSnapshot;
+  checksums?: {
+    algorithm: string;
+    canonicalEncoding: string;
+    recapSha256: string;
+  };
 };
 
 function escapeHtml(value: string): string {
@@ -460,6 +484,54 @@ function buildDashboardHtml(recap: RecapData): string {
   const ownerMatrix = buildOwnerMatrixTable(recap.ownerParameterMatrix ?? []);
   const mermaidDefinition = escapeHtml(buildMermaidFlow(recap));
   const verificationSection = buildVerificationSection(recap.verification);
+  const generatedTimestamp = new Date(recap.generatedAt).toISOString();
+
+  const modeBadge =
+    recap.orchestrator.mode === "dry-run"
+      ? '<span class="badge info">Dry Run</span>'
+      : '<span class="badge success">Broadcast</span>';
+  const dirtyBadge = recap.orchestrator.workspaceDirty
+    ? '<span class="badge warning">Workspace Dirty</span>'
+    : "";
+  const checksumLine = recap.checksums
+    ? `<li><strong>Checksum</strong>: <code>sha256:${escapeHtml(recap.checksums.recapSha256)}</code></li>`
+    : "";
+
+  const telemetrySection = `
+        <section>
+          <h2>Mission Telemetry</h2>
+          <div class="meta-grid">
+            <article class="meta-card">
+              <h3>Recap Envelope</h3>
+              <ul>
+                <li><strong>Generated</strong>: ${generatedTimestamp}</li>
+                <li><strong>Network</strong>: ${escapeHtml(recap.network.label)}</li>
+                <li><strong>Chain</strong>: ${escapeHtml(recap.network.chainId)}</li>
+                <li><strong>Block</strong>: ${escapeHtml(recap.network.blockNumber)}</li>
+                <li><strong>Dry-run mode</strong>: ${recap.network.dryRun ? "Enabled" : "Disabled"}</li>
+                ${checksumLine}
+              </ul>
+            </article>
+            <article class="meta-card">
+              <h3>Orchestrator</h3>
+              <ul>
+                <li><strong>Mode</strong>: ${recap.orchestrator.mode === "dry-run" ? "Dry run" : "Broadcast"}</li>
+                <li><strong>Commit</strong>: ${escapeHtml(recap.orchestrator.commit ?? "(unavailable)")}</li>
+                <li><strong>Branch</strong>: ${escapeHtml(recap.orchestrator.branch ?? "(unavailable)")}</li>
+                <li><strong>Workspace dirty</strong>: ${recap.orchestrator.workspaceDirty ? "Yes" : "No"}</li>
+              </ul>
+            </article>
+            <article class="meta-card">
+              <h3>Actors</h3>
+              <ul>
+                <li><strong>Owner</strong>: ${escapeHtml(shortenAddress(recap.actors.owner))}</li>
+                <li><strong>Investors</strong>: ${escapeHtml(recap.actors.investors.map(shortenAddress).join(", "))}</li>
+                <li><strong>Validators</strong>: ${escapeHtml(recap.actors.validators.map(shortenAddress).join(", "))}</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+  `;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -506,6 +578,23 @@ function buildDashboardHtml(recap: RecapData): string {
         max-width: 720px;
         margin: 1rem auto 0 auto;
         color: rgba(255, 255, 255, 0.78);
+      }
+      header.hero .hero-meta {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: center;
+      }
+      .hero-stamp {
+        padding: 0.45rem 1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.08);
       }
       section {
         margin-bottom: 3rem;
@@ -607,10 +696,20 @@ function buildDashboardHtml(recap: RecapData): string {
         background: rgba(46, 204, 113, 0.16);
         border-color: rgba(46, 204, 113, 0.6);
       }
+      .badge.info {
+        color: #5ac8fa;
+        background: rgba(90, 200, 250, 0.18);
+        border-color: rgba(90, 200, 250, 0.6);
+      }
       .badge.danger {
         color: var(--danger);
         background: rgba(255, 107, 107, 0.18);
         border-color: rgba(255, 107, 107, 0.6);
+      }
+      .badge.warning {
+        color: var(--warning);
+        background: rgba(255, 179, 71, 0.18);
+        border-color: rgba(255, 179, 71, 0.6);
       }
       .badge.buy {
         color: #5ac8fa;
@@ -638,6 +737,29 @@ function buildDashboardHtml(recap: RecapData): string {
       table td {
         padding: 0.8rem 1rem;
         text-align: left;
+      }
+      .meta-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .meta-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(96, 255, 207, 0.16);
+        border-radius: 16px;
+        padding: 1.4rem;
+      }
+      .meta-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.9rem;
+      }
+      .meta-card li + li {
+        margin-top: 0.4rem;
+      }
+      .meta-card strong {
+        color: var(--accent);
       }
       table tbody tr:nth-child(even) {
         background: rgba(255, 255, 255, 0.04);
@@ -670,17 +792,25 @@ function buildDashboardHtml(recap: RecapData): string {
     <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
   </head>
   <body>
-    <main>
-      <header class="hero">
-        <p class="mono">α-AGI Sovereign Command Console</p>
-        <h1>MARK Launch Telemetry</h1>
-        <p>
-          Autonomous foresight launch executed via AGI Jobs v0 (v2). This dossier captures every
-          actuator a non-technical steward needs to command an α-AGI Nova-Seed into sovereign reality.
-        </p>
-      </header>
+      <main>
+        <header class="hero">
+          <p class="mono">α-AGI Sovereign Command Console</p>
+          <h1>MARK Launch Telemetry</h1>
+          <p>
+            Autonomous foresight launch executed via AGI Jobs v0 (v2). This dossier captures every
+            actuator a non-technical steward needs to command an α-AGI Nova-Seed into sovereign reality.
+          </p>
+          <div class="hero-meta">
+            ${modeBadge}
+            ${dirtyBadge}
+            <span class="hero-stamp">${escapeHtml(recap.network.label)}</span>
+            <span class="hero-stamp">Generated ${generatedTimestamp}</span>
+          </div>
+        </header>
 
-      <section>
+        ${telemetrySection}
+
+        <section>
         <h2>Mission Control Metrics</h2>
         <div class="metrics">
           <article class="metric">

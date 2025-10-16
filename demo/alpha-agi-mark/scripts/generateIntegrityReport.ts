@@ -8,25 +8,53 @@ const REPORT_DIR = path.join(__dirname, "..", "reports");
 const RECAP_PATH = path.join(REPORT_DIR, "alpha-mark-recap.json");
 const REPORT_PATH = path.join(REPORT_DIR, "alpha-mark-integrity.md");
 
-const tradeSchema = z.object({
-  kind: z.enum(["BUY", "SELL"]),
-  actor: z.string(),
-  label: z.string(),
-  tokensWhole: z.string(),
-  valueWei: z.string(),
-});
+const tradeSchema = z
+  .object({
+    kind: z.enum(["BUY", "SELL"]),
+    actor: z.string(),
+    label: z.string(),
+    tokensWhole: z.string(),
+    valueWei: z.string(),
+  })
+  .passthrough();
 
-const participantSchema = z.object({
-  address: z.string(),
-  tokens: z.string(),
-  tokensWei: z.string(),
-  contributionWei: z.string(),
-  contributionEth: z.string().optional(),
-});
+const participantSchema = z
+  .object({
+    address: z.string(),
+    tokens: z.string(),
+    tokensWei: z.string(),
+    contributionWei: z.string(),
+    contributionEth: z.string().optional(),
+  })
+  .passthrough();
 
-const recapSchema = z.object({
-  generatedAt: z.string().optional(),
-  bondingCurve: z.object({
+const recapSchema = z
+  .object({
+  generatedAt: z.string(),
+  network: z
+    .object({
+    label: z.string(),
+    name: z.string(),
+    chainId: z.string(),
+    blockNumber: z.string(),
+    dryRun: z.boolean(),
+  })
+    .passthrough(),
+  orchestrator: z
+    .object({
+    commit: z.string().optional(),
+    branch: z.string().optional(),
+    workspaceDirty: z.boolean(),
+    mode: z.enum(["dry-run", "broadcast"]),
+  })
+    .passthrough(),
+  actors: z.object({
+    owner: z.string(),
+    investors: z.array(z.string()).min(3),
+    validators: z.array(z.string()).min(3),
+  }),
+  bondingCurve: z
+    .object({
     supplyWholeTokens: z.string(),
     reserveWei: z.string(),
     nextPriceWei: z.string(),
@@ -34,8 +62,12 @@ const recapSchema = z.object({
     slopeWei: z.string(),
     reserveEth: z.string().optional(),
     nextPriceEth: z.string().optional(),
-  }),
-  ownerControls: z.object({
+    basePriceEth: z.string().optional(),
+    slopeEth: z.string().optional(),
+  })
+    .passthrough(),
+  ownerControls: z
+    .object({
     paused: z.boolean(),
     whitelistEnabled: z.boolean(),
     emergencyExitEnabled: z.boolean(),
@@ -55,21 +87,25 @@ const recapSchema = z.object({
     basePriceEth: z.string().optional(),
     slopeWei: z.string(),
     slopeEth: z.string().optional(),
-  }),
+  })
+    .passthrough(),
   validators: z
     .object({
       approvalCount: z.string(),
       approvalThreshold: z.string(),
       members: z.array(z.string()),
     })
+    .passthrough()
     .optional(),
   participants: z.array(participantSchema),
   trades: z.array(tradeSchema),
-  launch: z.object({
+  launch: z
+    .object({
     finalized: z.boolean(),
     aborted: z.boolean(),
     treasury: z.string(),
-    sovereignVault: z.object({
+    sovereignVault: z
+      .object({
       manifestUri: z.string(),
       totalReceivedWei: z.string(),
       totalReceivedEth: z.string().optional(),
@@ -79,23 +115,30 @@ const recapSchema = z.object({
       decodedMetadata: z.string().optional(),
       vaultBalanceWei: z.string().optional(),
       vaultBalanceEth: z.string().optional(),
-    }),
-  }),
+    })
+      .passthrough(),
+  })
+    .passthrough(),
   verification: z
     .object({
-      supplyConsensus: z.object({
+      supplyConsensus: z
+        .object({
         ledgerWholeTokens: z.string(),
         contractWholeTokens: z.string(),
         simulationWholeTokens: z.string(),
         participantAggregateWholeTokens: z.string(),
         consistent: z.boolean(),
-      }),
-      pricing: z.object({
+      })
+        .passthrough(),
+      pricing: z
+        .object({
         contractNextPriceWei: z.string(),
         simulatedNextPriceWei: z.string(),
         consistent: z.boolean(),
-      }),
-      capitalFlows: z.object({
+      })
+        .passthrough(),
+      capitalFlows: z
+        .object({
         ledgerGrossWei: z.string(),
         ledgerRedemptionsWei: z.string(),
         ledgerNetWei: z.string(),
@@ -104,15 +147,25 @@ const recapSchema = z.object({
         vaultReceivedWei: z.string(),
         combinedReserveWei: z.string(),
         consistent: z.boolean(),
-      }),
-      contributions: z.object({
+      })
+        .passthrough(),
+      contributions: z
+        .object({
         participantAggregateWei: z.string(),
         ledgerGrossWei: z.string(),
         consistent: z.boolean(),
-      }),
+      })
+        .passthrough(),
     })
     .optional(),
-});
+  checksums: z
+    .object({
+      algorithm: z.literal("sha256"),
+      canonicalEncoding: z.literal("json-key-sorted"),
+      recapSha256: z.string(),
+    })
+    .optional(),
+}).passthrough();
 
 type Recap = z.infer<typeof recapSchema>;
 
@@ -303,9 +356,24 @@ async function main() {
   const passCount = checks.filter((check) => check.ok).length;
   const confidence = (passCount / checks.length) * 100;
 
-  const generatedAt = recap.generatedAt
-    ? new Date(recap.generatedAt).toISOString()
-    : new Date().toISOString();
+  const generatedAt = new Date(recap.generatedAt).toISOString();
+
+  const checksumLine = recap.checksums
+    ? `- Checksum (${recap.checksums.algorithm}/${recap.checksums.canonicalEncoding}): ${recap.checksums.recapSha256}\n`
+    : "";
+
+  const orchestratorLines = [
+    `- Mode: ${recap.orchestrator.mode}`,
+    `- Git commit: ${recap.orchestrator.commit ?? "(unavailable)"}`,
+    `- Git branch: ${recap.orchestrator.branch ?? "(unavailable)"}`,
+    `- Workspace dirty: ${recap.orchestrator.workspaceDirty ? "yes" : "no"}`,
+  ].join("\n");
+
+  const actorLines = [
+    `- Owner: ${recap.actors.owner}`,
+    `- Investors: ${recap.actors.investors.join(", ")}`,
+    `- Validators: ${recap.actors.validators.join(", ")}`,
+  ].join("\n");
 
   const contributionPie = renderContributionPie(recap.participants);
   const ownerControls = renderOwnerControls(recap.ownerControls);
@@ -325,6 +393,14 @@ async function main() {
 
   const markdown = `# α-AGI MARK Integrity Report\n\n` +
     `Generated: ${generatedAt}\n\n` +
+    `## Recap Envelope\n\n` +
+    `- Network: ${recap.network.label} (chain ${recap.network.chainId}, block ${recap.network.blockNumber})\n` +
+    `- Dry-run mode: ${recap.network.dryRun ? "enabled" : "disabled"}\n` +
+    `${checksumLine}` +
+    `\n### Orchestrator Telemetry\n\n` +
+    `${orchestratorLines}\n\n` +
+    `### Actor Registry\n\n` +
+    `${actorLines}\n\n` +
     `## Confidence Summary\n\n` +
     `- Confidence index: ${confidence.toFixed(2)}% (${passCount}/${checks.length} checks passed)\n` +
     `- ${validatorSummary}\n` +

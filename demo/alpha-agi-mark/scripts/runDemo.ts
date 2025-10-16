@@ -3,8 +3,11 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { createInterface } from "readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { createHash } from "crypto";
+import { execSync } from "child_process";
 
 import { renderDashboard } from "./renderDashboard";
+import { canonicalStringify } from "./utils/canonical";
 
 type Address = string;
 
@@ -198,6 +201,7 @@ async function main() {
   };
 
   const network = await ethers.provider.getNetwork();
+  const currentBlock = await ethers.provider.getBlockNumber();
   const dryRun = (process.env.AGIJOBS_DEMO_DRY_RUN ?? "true").toLowerCase() !== "false";
   const networkLabel = describeNetworkName(network.name, network.chainId);
 
@@ -668,13 +672,60 @@ async function main() {
     verification,
   };
 
+  const actors = {
+    owner: ownerAddress,
+    investors: investorAddresses,
+    validators: validatorAddresses,
+  };
+
+  const gitInfo = (command: string): string | undefined => {
+    try {
+      return execSync(command, { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    } catch (error) {
+      return undefined;
+    }
+  };
+
+  const orchestrationMetadata = {
+    commit: gitInfo("git rev-parse HEAD"),
+    branch: gitInfo("git rev-parse --abbrev-ref HEAD"),
+    workspaceDirty: Boolean(gitInfo("git status --short")),
+    mode: dryRun ? "dry-run" : "broadcast",
+  };
+
+  const generatedAt = new Date().toISOString();
+  const baseRecap = {
+    generatedAt,
+    network: {
+      label: networkLabel,
+      name: network.name ?? "unknown",
+      chainId: network.chainId.toString(),
+      blockNumber: currentBlock.toString(),
+      dryRun,
+    },
+    orchestrator: orchestrationMetadata,
+    actors,
+    ...enrichedRecap,
+  };
+
+  const digest = createHash("sha256").update(canonicalStringify(baseRecap)).digest("hex");
+  const finalRecap = {
+    ...baseRecap,
+    checksums: {
+      algorithm: "sha256",
+      canonicalEncoding: "json-key-sorted",
+      recapSha256: digest,
+    },
+  };
+
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
-  await writeFile(OUTPUT_PATH, JSON.stringify(enrichedRecap, null, 2));
-  const dashboardPath = await renderDashboard(enrichedRecap);
+  await writeFile(OUTPUT_PATH, JSON.stringify(finalRecap, null, 2));
+  const dashboardPath = await renderDashboard(finalRecap);
 
   console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
   console.log("🖥️  Sovereign dashboard rendered to", dashboardPath);
-  console.log(JSON.stringify(enrichedRecap, null, 2));
+  console.log(JSON.stringify(finalRecap, null, 2));
+  console.log(`🔐 Recap digest (sha256): ${digest}`);
   console.log("\n🧭 Owner parameter matrix snapshot:");
   console.table(ownerParameterMatrix);
   console.log(
