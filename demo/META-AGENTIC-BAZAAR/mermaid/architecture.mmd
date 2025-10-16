@@ -1,0 +1,10 @@
+```mermaid
+graph TD
+  G[Owner (Safe/Timelock)]
+  JR[JobRegistry] --> VM[Validation]
+  JR --> SM[StakeManager]
+  VM --> DM[Dispute]
+  EO[Energy Oracle] --> MB[RewardEngineMB] --> FP[FeePool]
+  JR --> RE[Reputation]
+  G --> JR & SM & VM & DM & FP
+```

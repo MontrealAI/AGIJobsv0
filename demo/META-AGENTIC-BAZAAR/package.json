@@ -1,0 +1,8 @@
+{
+  "name": "meta-agentic-bazaar",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "local": "ts-node --project tsconfig.json scripts/run.local.ts"
+  }
+}
