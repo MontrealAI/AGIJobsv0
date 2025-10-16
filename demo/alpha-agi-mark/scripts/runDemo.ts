@@ -43,10 +43,26 @@ async function ensureBalance(label: string, signer: any): Promise<void> {
   }
 }
 
-async function requireOperatorConsent(networkLabel: string, isDryRun: boolean): Promise<void> {
+const HARDHAT_CHAIN_ID = 31337n;
+
+async function requireOperatorConsent(
+  networkLabel: string,
+  isDryRun: boolean,
+  networkChainId: bigint,
+): Promise<void> {
   const flag = process.env.AGIJOBS_DEMO_DRY_RUN ?? "unset";
   if (isDryRun) {
-    console.log(`🛡️  Dry-run safeguard active (AGIJOBS_DEMO_DRY_RUN=${flag}). Executing against ${networkLabel}.`);
+    if (networkChainId !== HARDHAT_CHAIN_ID) {
+      console.log(
+        "🛑 Dry-run safeguard active – refusing to execute against a live network. " +
+          "Set AGIJOBS_DEMO_DRY_RUN=false to opt in to broadcasts.",
+      );
+      process.exit(0);
+    }
+
+    console.log(
+      `🛡️  Dry-run safeguard active (AGIJOBS_DEMO_DRY_RUN=${flag}). Using Hardhat in-memory network (${networkLabel}).`,
+    );
     return;
   }
 
@@ -123,7 +139,7 @@ async function main() {
   const dryRun = (process.env.AGIJOBS_DEMO_DRY_RUN ?? "true").toLowerCase() !== "false";
   const networkLabel = describeNetworkName(network.name, network.chainId);
 
-  await requireOperatorConsent(networkLabel, dryRun);
+  await requireOperatorConsent(networkLabel, dryRun, network.chainId);
 
   console.log("🚀 Booting α-AGI MARK foresight exchange demo\n");
   console.log(`   • Network: ${networkLabel}`);
