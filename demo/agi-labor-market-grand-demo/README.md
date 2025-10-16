@@ -101,7 +101,31 @@ timeline, actor roster, owner actions, and aggregated telemetry. To export to a
 different location set the `AGI_JOBS_DEMO_EXPORT=/path/to/file.json`
 environment variable before running the script.
 
-### Launching the sovereign labour market control room UI
+### One-command orchestrator for non-technical operators
+
+Skip the manual steps entirely by running the bundled control-room orchestrator.
+It executes the Hardhat simulation, verifies owner supremacy, and serves the UI
+from an embedded static server so a business stakeholder only has to click a
+single link:
+
+```bash
+npm run demo:agi-labor-market:control-room
+```
+
+The script:
+
+- boots the Hardhat demo with full telemetry export,
+- renders an executive summary in the terminal highlighting owner authority,
+  validator/agent capital, and minted credentials, and
+- hosts the control-room dashboard on the first available port starting from
+  `http://localhost:4317` (pass `--port <number>` to override). Use `--open` to
+  launch the browser automatically or `--skip-simulation` to reuse an existing
+  transcript.
+
+The server stays alive until you press <kbd>Ctrl</kbd> + <kbd>C</kbd>, turning
+the demo into a resilient command centre suitable for executive walk-throughs.
+
+### Launching the sovereign labour market control room UI manually
 
 1. Export a fresh transcript as described above (or copy an existing JSON file
    into `demo/agi-labor-market-grand-demo/ui/export/latest.json`).
