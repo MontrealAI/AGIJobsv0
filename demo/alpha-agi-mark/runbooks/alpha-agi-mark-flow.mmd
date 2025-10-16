@@ -1,0 +1,14 @@
+```mermaid
+graph TD
+    A[Owner launches demo] --> B[NovaSeedNFT deployed]
+    B --> C[AlphaMarkRiskOracle deployed]
+    C --> D[AlphaMarkEToken deployed]
+    D --> E[Investors buy SeedShares via bonding curve]
+    E --> F[Owner toggles whitelist & pause controls]
+    F --> G[Validators submit approvals]
+    G --> H{Approval threshold met?}
+    H -- No --> I[Owner may override or abort]
+    H -- Yes --> J[Owner finalizes launch]
+    J --> K[Sovereign funds released]
+    K --> L[Recap generated for operator]
+```
