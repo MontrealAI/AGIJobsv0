@@ -2,6 +2,8 @@
 pragma solidity ^0.8.26;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -15,17 +17,18 @@ interface IAlphaMarkRiskOracle {
 /// @title AlphaMarkEToken
 /// @notice Bonding-curve market-maker for α-AGI Nova-Seed financing.
 contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     uint256 private constant WHOLE_TOKEN = 1e18;
 
     IAlphaMarkRiskOracle public riskOracle;
 
-    uint256 public basePrice; // wei per token
-    uint256 public slope; // wei price increase per token
+    uint256 public basePrice; // base asset units per token
+    uint256 public slope; // base asset units increase per token
     uint256 public maxSupply; // whole tokens (0 == unlimited)
     uint256 public fundingCap; // wei (0 == unlimited)
     uint256 public saleDeadline; // timestamp (0 == none)
 
-    uint256 public reserveBalance; // wei held for redemptions
+    uint256 public reserveBalance; // base asset units held for redemptions
 
     bool public whitelistEnabled;
     mapping(address => bool) public whitelist;
@@ -33,6 +36,11 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     mapping(address => uint256) public participantContribution;
 
     address payable public treasury;
+
+    IERC20 public baseAsset;
+    bool public usesNativeAsset; // true => ETH, false => ERC20
+
+    event BaseAssetUpdated(address indexed asset, bool usesNative);
 
     bool public finalized;
     bool public aborted;
@@ -62,13 +70,15 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         address riskOracle_,
         uint256 basePrice_,
         uint256 slope_,
-        uint256 maxSupply_
+        uint256 maxSupply_,
+        address baseAsset_
     ) ERC20(name_, symbol_) Ownable(owner_) {
         require(owner_ != address(0), "Owner required");
         basePrice = basePrice_;
         slope = slope_;
         maxSupply = maxSupply_;
         riskOracle = IAlphaMarkRiskOracle(riskOracle_);
+        _setBaseAsset(baseAsset_);
     }
 
     // ----------- Core Market Functions -----------
@@ -90,13 +100,18 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             require(reserveBalance + cost <= fundingCap, "Funding cap reached");
         }
 
-        require(msg.value >= cost, "Insufficient payment");
+        if (usesNativeAsset) {
+            require(msg.value >= cost, "Insufficient payment");
+        } else {
+            require(msg.value == 0, "Native payment disabled");
+            baseAsset.safeTransferFrom(msg.sender, address(this), cost);
+        }
 
         _mint(msg.sender, amount);
         reserveBalance += cost;
         participantContribution[msg.sender] += cost;
 
-        if (msg.value > cost) {
+        if (usesNativeAsset && msg.value > cost) {
             (bool success, ) = msg.sender.call{value: msg.value - cost}("");
             require(success, "Refund failed");
         }
@@ -118,8 +133,12 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         _burn(msg.sender, amount);
         reserveBalance -= refund;
 
-        (bool success, ) = msg.sender.call{value: refund}("");
-        require(success, "Refund transfer failed");
+        if (usesNativeAsset) {
+            (bool success, ) = msg.sender.call{value: refund}("");
+            require(success, "Refund transfer failed");
+        } else {
+            baseAsset.safeTransfer(msg.sender, refund);
+        }
 
         emit TokensSold(msg.sender, amount, refund);
     }
@@ -195,6 +214,12 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         riskOracle = IAlphaMarkRiskOracle(newOracle);
     }
 
+    function setBaseAsset(address newAsset) external onlyOwner {
+        require(totalSupply() == 0, "Supply exists");
+        require(reserveBalance == 0, "Reserve not empty");
+        _setBaseAsset(newAsset);
+    }
+
     function setValidationOverride(bool enabled, bool status) external onlyOwner {
         validationOverrideEnabled = enabled;
         validationOverrideStatus = status;
@@ -222,8 +247,12 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         uint256 amount = reserveBalance;
         reserveBalance = 0;
 
-        (bool success, ) = recipient.call{value: amount}("");
-        require(success, "Transfer failed");
+        if (usesNativeAsset) {
+            (bool success, ) = recipient.call{value: amount}("");
+            require(success, "Transfer failed");
+        } else {
+            baseAsset.safeTransfer(recipient, amount);
+        }
 
         emit LaunchFinalized(recipient, amount);
     }
@@ -243,10 +272,15 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     function withdrawResidual(address payable to) external onlyOwner {
         require(finalized || aborted, "Not closed");
         require(to != address(0), "Invalid recipient");
-        uint256 amount = address(this).balance - reserveBalance;
+        uint256 balance = _assetBalance();
+        uint256 amount = balance - reserveBalance;
         require(amount > 0, "No residual");
-        (bool success, ) = to.call{value: amount}("");
-        require(success, "Residual transfer failed");
+        if (usesNativeAsset) {
+            (bool success, ) = to.call{value: amount}("");
+            require(success, "Residual transfer failed");
+        } else {
+            baseAsset.safeTransfer(to, amount);
+        }
     }
 
     // ----------- Views -----------
@@ -273,6 +307,8 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             bool overrideStatus_,
             address treasuryAddr,
             address riskOracleAddr,
+            address baseAssetAddr,
+            bool usesNative,
             uint256 fundingCapWei,
             uint256 maxSupplyWholeTokens,
             uint256 saleDeadlineTimestamp,
@@ -290,6 +326,8 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             validationOverrideStatus,
             treasury,
             address(riskOracle),
+            _baseAssetAddress(),
+            usesNativeAsset,
             fundingCap,
             maxSupply,
             saleDeadline,
@@ -366,6 +404,28 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             }
         }
         return false;
+    }
+
+    function _setBaseAsset(address asset) internal {
+        if (asset == address(0)) {
+            baseAsset = IERC20(address(0));
+            usesNativeAsset = true;
+        } else {
+            baseAsset = IERC20(asset);
+            usesNativeAsset = false;
+        }
+        emit BaseAssetUpdated(asset, usesNativeAsset);
+    }
+
+    function _baseAssetAddress() internal view returns (address) {
+        return usesNativeAsset ? address(0) : address(baseAsset);
+    }
+
+    function _assetBalance() internal view returns (uint256) {
+        if (usesNativeAsset) {
+            return address(this).balance;
+        }
+        return baseAsset.balanceOf(address(this));
     }
 
     receive() external payable {

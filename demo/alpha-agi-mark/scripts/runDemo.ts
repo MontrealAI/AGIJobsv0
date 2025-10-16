@@ -50,10 +50,19 @@ async function main() {
     riskOracle.target,
     basePrice,
     slope,
-    maxSupply
+    maxSupply,
+    ethers.ZeroAddress
   );
   await mark.waitForDeployment();
   console.log(`🏛️  AlphaMark exchange deployed at ${mark.target}`);
+
+  const Stable = await ethers.getContractFactory("TestStablecoin", owner);
+  const stable = await Stable.deploy();
+  await stable.waitForDeployment();
+
+  console.log("   🪙 Owner demonstrates base-asset retargeting to a stablecoin and back");
+  await (await mark.setBaseAsset(stable.target)).wait();
+  await (await mark.setBaseAsset(ethers.ZeroAddress)).wait();
 
   await (await mark.setTreasury(owner.address)).wait();
   await (await mark.setFundingCap(ethers.parseEther("1000"))).wait();
@@ -64,6 +73,7 @@ async function main() {
   console.log(`   • Base price: ${ethers.formatEther(basePrice)} ETH`);
   console.log(`   • Slope: ${ethers.formatEther(slope)} ETH per token`);
   console.log(`   • Max supply: ${maxSupply} SeedShares\n`);
+  console.log("   • Base asset: Native ETH (owner can retarget to a stablecoin pre-launch)\n");
 
   const buy = async (label: string, signer: any, amountTokens: string, overpay = "0") => {
     const amount = ethers.parseEther(amountTokens);
@@ -112,20 +122,22 @@ async function main() {
   const ownerControlsRaw = await mark.getOwnerControls();
 
   const ownerControls = {
-    paused: ownerControlsRaw[0],
-    whitelistEnabled: ownerControlsRaw[1],
-    emergencyExitEnabled: ownerControlsRaw[2],
-    finalized: ownerControlsRaw[3],
-    aborted: ownerControlsRaw[4],
-    validationOverrideEnabled: ownerControlsRaw[5],
-    validationOverrideStatus: ownerControlsRaw[6],
-    treasury: ownerControlsRaw[7] as Address,
-    riskOracle: ownerControlsRaw[8] as Address,
-    fundingCapWei: (ownerControlsRaw[9] as bigint).toString(),
-    maxSupplyWholeTokens: ownerControlsRaw[10].toString(),
-    saleDeadlineTimestamp: ownerControlsRaw[11].toString(),
-    basePriceWei: (ownerControlsRaw[12] as bigint).toString(),
-    slopeWei: (ownerControlsRaw[13] as bigint).toString(),
+    paused: ownerControlsRaw.isPaused,
+    whitelistEnabled: ownerControlsRaw.whitelistMode,
+    emergencyExitEnabled: ownerControlsRaw.emergencyExit,
+    finalized: ownerControlsRaw.isFinalized,
+    aborted: ownerControlsRaw.isAborted,
+    validationOverrideEnabled: ownerControlsRaw.overrideEnabled_,
+    validationOverrideStatus: ownerControlsRaw.overrideStatus_,
+    treasury: ownerControlsRaw.treasuryAddr as Address,
+    riskOracle: ownerControlsRaw.riskOracleAddr as Address,
+    baseAsset: ownerControlsRaw.baseAssetAddr as Address,
+    usesNativeAsset: ownerControlsRaw.usesNative,
+    fundingCapWei: ownerControlsRaw.fundingCapWei.toString(),
+    maxSupplyWholeTokens: ownerControlsRaw.maxSupplyWholeTokens.toString(),
+    saleDeadlineTimestamp: ownerControlsRaw.saleDeadlineTimestamp.toString(),
+    basePriceWei: ownerControlsRaw.basePriceWei.toString(),
+    slopeWei: ownerControlsRaw.slopeWei.toString(),
   };
 
   const participants: ParticipantSnapshot[] = [investorA, investorB, investorC].map((signer) => ({

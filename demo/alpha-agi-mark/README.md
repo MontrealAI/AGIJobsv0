@@ -15,7 +15,7 @@ The demo deploys three core contracts:
 
 1. **NovaSeedNFT** – ERC-721 token representing a foresight seed.
 2. **AlphaMarkRiskOracle** – validator-governed approval oracle with owner override controls.
-3. **AlphaMarkEToken** – ERC-20 bonding-curve market with programmable compliance gates, pause switches, and launch finalization mechanics.
+3. **AlphaMarkEToken** – ERC-20 bonding-curve market with programmable compliance gates, pause switches, base asset retargeting (ETH or ERC-20 stablecoins), and launch finalization mechanics.
 
 ![α-AGI MARK flow diagram](runbooks/alpha-agi-mark-flow.mmd)
 
@@ -43,6 +43,7 @@ npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
 The demo enumerates all tunable controls in the final recap:
 
 - Curve parameters (base price, slope, supply caps)
+- Base asset retargeting between native ETH and ERC-20 stablecoins
 - Compliance whitelist toggles
 - Pause / emergency exit switches
 - Validator council membership and approval thresholds
