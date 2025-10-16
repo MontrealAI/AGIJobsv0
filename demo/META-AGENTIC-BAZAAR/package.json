@@ -1,0 +1,12 @@
+{
+  "name": "meta-agentic-bazaar",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "local": "ts-node scripts/run.local.ts",
+    "test": "hardhat test demo/META-AGENTIC-BAZAAR/test/e2e.meta-agentic.spec.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
+}

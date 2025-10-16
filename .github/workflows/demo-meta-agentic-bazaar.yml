@@ -1,0 +1,54 @@
+name: demo-meta-agentic-bazaar
+
+on:
+  pull_request:
+    paths:
+      - "demo/META-AGENTIC-BAZAAR/**"
+      - ".github/workflows/demo-meta-agentic-bazaar.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Harden
+        uses: step-security/harden-runner@v2.13.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+      - name: Install deps
+        run: npm ci
+      - name: Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Run local E2E demo
+        run: npx ts-node demo/META-AGENTIC-BAZAAR/scripts/run.local.ts
+      - name: Build UI
+        working-directory: demo/META-AGENTIC-BAZAAR/ui
+        run: |
+          npm ci
+          npm run build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mab-reports
+          path: |
+            reports/localhost/meta-agentic-bazaar/**
+            demo/META-AGENTIC-BAZAAR/ui/dist/**
