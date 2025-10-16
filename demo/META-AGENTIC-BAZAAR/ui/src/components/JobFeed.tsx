@@ -1,30 +1,23 @@
 import { useEffect, useState } from 'react'
-import { useChainId } from 'wagmi'
-import { createPublicClient, decodeEventLog, http } from 'viem'
+import { useChainId, usePublicClient } from 'wagmi'
+import { decodeEventLog } from 'viem'
 import { loadAbi } from '../lib/abis'
 import { loadAddresses } from '../lib/addresses'
 
 export default function JobFeed() {
   const chainId = useChainId()
+  const publicClient = usePublicClient({ chainId })
   const [events, setEvents] = useState<any[]>([])
 
   useEffect(() => {
     async function load() {
+      if (!publicClient) return
       const net = chainId === 31337 ? 'localhost' : String(chainId)
       const addresses = await loadAddresses(net)
       if (!addresses.JobRegistry) return
       try {
         const abi = await loadAbi('JobRegistry')
-        const client = createPublicClient({
-          chain: {
-            id: chainId,
-            name: String(chainId),
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: { default: { http: ['http://127.0.0.1:8545'] } }
-          },
-          transport: http()
-        })
-        const logs = await client.getLogs({
+        const logs = await publicClient.getLogs({
           address: addresses.JobRegistry as `0x${string}`,
           fromBlock: 0n
         })
@@ -44,7 +37,7 @@ export default function JobFeed() {
       }
     }
     load()
-  }, [chainId])
+  }, [chainId, publicClient])
 
   return (
     <div style={{ border: '1px dashed #444', borderRadius: 8, padding: 12 }}>
