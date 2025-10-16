@@ -2541,6 +2541,42 @@
         "validation": true
       }
     },
+    "commandChecklist": [
+      {
+        "label": "Replay sovereign drill",
+        "command": "npm run demo:agi-labor-market",
+        "description": "Regenerate the full Hardhat simulation to refresh transcripts, telemetry, and NFTs."
+      },
+      {
+        "label": "Launch live control room",
+        "command": "npm run demo:agi-labor-market:control-room",
+        "description": "Serve the static UI and replay the demo on demand with a single key press."
+      },
+      {
+        "label": "Audit owner dashboard",
+        "command": "npm run owner:dashboard",
+        "description": "Print the multi-module ownership, fee, and pause status for any deployed network."
+      },
+      {
+        "label": "Verify branch protection",
+        "command": "npm run ci:verify-branch-protection -- --branch main",
+        "description": "Confirm CI v2 required contexts stay enforced on the production branch."
+      }
+    ],
+    "guardrails": [
+      {
+        "title": "Emergency pause drill succeeded",
+        "detail": "Owner 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 and moderator 0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f paused registry, staking, and validation in tandem before restoring service."
+      },
+      {
+        "title": "Economic levers snapped back instantly",
+        "detail": "Protocol fee 5% · validator rewards 20% · burn 5% reinstated without drift."
+      },
+      {
+        "title": "Validator accountability locked",
+        "detail": "Non-reveal penalty 100 bps with a 1-block quarantine keeps councils disciplined."
+      }
+    ],
     "drillCompletedAt": "2025-10-16T11:53:17.923Z"
   },
   "insights": [

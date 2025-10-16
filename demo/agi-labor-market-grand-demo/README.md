@@ -158,11 +158,17 @@ environment variable before running the script.
    - A "Mission-critical insights" board summarising owner control drills,
      agent wins, dispute outcomes, and market telemetry so executives grasp the
      narrative instantly.
+   - A **sovereign mission checklist** with copy-to-clipboard commands for
+     replaying the demo, exporting transcripts, launching the control room, and
+     auditing CI guardrails — non-technical operators can act immediately.
    - Live **agent and validator portfolios** summarising liquidity, locked
      capital, reputation, and credential NFTs minted during the simulation so a
      non-technical operator can confirm payouts and performance instantly.
    - Owner action logs highlighting every governance lever exercised during the
      simulation.
+   - An **operational guardrail board** documenting emergency pause drills,
+     economic lever resets, and validator penalty settings proven during the
+     run, providing executive-level assurance that sovereignty is intact.
    - A **sovereign control snapshot** comparing baseline configuration, live
      drill adjustments, and restored settings, including pauser delegation and
      emergency pause outcomes so non-technical owners can verify authority at a

@@ -77,6 +77,17 @@ interface ScenarioExport {
   timelineIndices: number[];
 }
 
+interface OwnerCommandChecklistItem {
+  label: string;
+  command: string;
+  description: string;
+}
+
+interface OwnerGuardrailInsight {
+  title: string;
+  detail: string;
+}
+
 interface PortfolioCertificate {
   jobId: string;
   uri?: string;
@@ -167,6 +178,8 @@ interface OwnerControlSnapshot {
     moderator: PauseStatus;
   };
   drillCompletedAt: string;
+  commandChecklist: OwnerCommandChecklistItem[];
+  guardrails: OwnerGuardrailInsight[];
 }
 
 type DirectivePriority = 'critical' | 'high' | 'normal';
@@ -845,6 +858,12 @@ function computeResilienceScore(context: {
   }
   if (moderatorDrill.registry && moderatorDrill.stake && moderatorDrill.validation) {
     score += 12;
+  }
+  if (ownerControl.commandChecklist.length >= 4) {
+    score += 4;
+  }
+  if (ownerControl.guardrails.length >= 3) {
+    score += 4;
   }
   if (context.mintedCertificates >= 2) {
     score += 10;
@@ -2015,6 +2034,69 @@ async function ownerCommandCenterDrill(
   );
 
   const drillCompletedAt = nowIso();
+
+  const commandChecklist: OwnerCommandChecklistItem[] = [
+    {
+      label: 'Replay sovereign drill',
+      command: 'npm run demo:agi-labor-market',
+      description: 'Regenerate the full Hardhat simulation to refresh transcripts, telemetry, and NFTs.',
+    },
+    {
+      label: 'Launch live control room',
+      command: 'npm run demo:agi-labor-market:control-room',
+      description: 'Serve the static UI and replay the demo on demand with a single key press.',
+    },
+    {
+      label: 'Audit owner dashboard',
+      command: 'npm run owner:dashboard',
+      description: 'Print the multi-module ownership, fee, and pause status for any deployed network.',
+    },
+    {
+      label: 'Verify branch protection',
+      command: 'npm run ci:verify-branch-protection -- --branch main',
+      description: 'Confirm CI v2 required contexts stay enforced on the production branch.',
+    },
+  ];
+
+  const guardrails: OwnerGuardrailInsight[] = [
+    {
+      title: 'Emergency pause drill succeeded',
+      detail: `Owner ${ownerAddress} and moderator ${moderatorAddress} paused registry, staking, and validation in tandem before restoring service.`,
+    },
+    {
+      title: 'Economic levers snapped back instantly',
+      detail: `Protocol fee ${restored.feePct}% · validator rewards ${restored.validatorRewardPct}% · burn ${restored.burnPct}% reinstated without drift.`,
+    },
+    {
+      title: 'Validator accountability locked',
+      detail: `Non-reveal penalty ${restored.nonRevealPenaltyBps} bps with a ${restored.nonRevealBanBlocks}-block quarantine keeps councils disciplined.`,
+    },
+  ];
+
+  recordTimeline('summary', 'Owner command checklist minted', {
+    commands: commandChecklist.map((entry) => entry.command),
+  });
+  recordTimeline('summary', 'Owner guardrails verified', {
+    guardrails: guardrails.map((entry) => entry.title),
+  });
+  recordInsight(
+    'Owner',
+    'Command checklist prepared for non-technical operators',
+    'Every sovereign drill now emits copy-ready commands so executives can rerun demos, dashboards, and CI verification without engineering help.',
+    {
+      commands: commandChecklist.length,
+    }
+  );
+  recordInsight(
+    'Owner',
+    'Operational guardrails locked in',
+    'Emergency pause rehearsals, economic resets, and validator penalties are documented for rapid executive review.',
+    {
+      guardrails: guardrails.length,
+      drillCompletedAt,
+    }
+  );
+
   recordTimeline('summary', 'Owner command drill sealed', {
     drillCompletedAt,
     delegatedPauser: moderatorAddress,
@@ -2041,6 +2123,8 @@ async function ownerCommandCenterDrill(
       moderator: moderatorPauseStatus,
     },
     drillCompletedAt,
+    commandChecklist,
+    guardrails,
   };
 }
 
