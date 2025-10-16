@@ -181,6 +181,183 @@ function renderOwnerActions(container, ownerActions) {
   container.appendChild(wrapper);
 }
 
+function renderOwnerControlSnapshot(container, ownerControl) {
+  if (!ownerControl) {
+    const notice = document.createElement('div');
+    notice.className = 'notice';
+    notice.textContent =
+      'Run the latest grand demo export to populate the owner command snapshot. The Hardhat script records every governance lever exercised.';
+    container.appendChild(notice);
+    return;
+  }
+
+  const addressesSection = document.createElement('div');
+  addressesSection.className = 'owner-control-section';
+  const addressesTitle = document.createElement('h3');
+  addressesTitle.textContent = 'Command identities';
+  addressesSection.appendChild(addressesTitle);
+
+  const addressList = document.createElement('dl');
+  addressList.className = 'owner-control-dl';
+  const addressEntries = [
+    { label: 'Owner', value: ownerControl.ownerAddress },
+    { label: 'Moderator', value: ownerControl.moderatorAddress },
+    { label: 'Registry', value: ownerControl.modules.registry },
+    { label: 'Stake manager', value: ownerControl.modules.stake },
+    { label: 'Validation module', value: ownerControl.modules.validation },
+    { label: 'Fee pool', value: ownerControl.modules.feePool },
+    { label: 'Dispute module', value: ownerControl.modules.dispute },
+    { label: 'Certificate NFT', value: ownerControl.modules.certificate },
+    { label: 'Reputation engine', value: ownerControl.modules.reputation },
+    { label: 'Identity registry', value: ownerControl.modules.identity },
+  ];
+  for (const entry of addressEntries) {
+    const dt = document.createElement('dt');
+    dt.textContent = entry.label;
+    const dd = document.createElement('dd');
+    dd.className = 'parameters';
+    dd.textContent = entry.value;
+    addressList.appendChild(dt);
+    addressList.appendChild(dd);
+  }
+  addressesSection.appendChild(addressList);
+  container.appendChild(addressesSection);
+
+  const tableSection = document.createElement('div');
+  tableSection.className = 'owner-control-section';
+  const tableTitle = document.createElement('h3');
+  tableTitle.textContent = 'Parameter authority – baseline vs live adjustments';
+  tableSection.appendChild(tableTitle);
+
+  const table = document.createElement('table');
+  table.className = 'owner-control-table';
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  ['Setting', 'Baseline', 'During drill', 'Restored'].forEach((label) => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const rows = [
+    {
+      label: 'Protocol fee',
+      render: (state) => `${state.feePct}%`,
+    },
+    {
+      label: 'Validator reward share',
+      render: (state) => `${state.validatorRewardPct}%`,
+    },
+    {
+      label: 'Fee burn',
+      render: (state) => `${state.burnPct}%`,
+    },
+    {
+      label: 'Commit window',
+      render: (state) => state.commitWindowFormatted,
+    },
+    {
+      label: 'Reveal window',
+      render: (state) => state.revealWindowFormatted,
+    },
+    {
+      label: 'Reveal quorum',
+      render: (state) => `${state.revealQuorumPct}%`,
+    },
+    {
+      label: 'Minimum revealers',
+      render: (state) => state.minRevealers.toString(),
+    },
+    {
+      label: 'Non-reveal penalty',
+      render: (state) => `${state.nonRevealPenaltyBps} bps`,
+    },
+    {
+      label: 'Non-reveal ban',
+      render: (state) => `${state.nonRevealBanBlocks} blocks`,
+    },
+    {
+      label: 'Registry pauser',
+      render: (state) => state.registryPauser,
+      className: 'parameters',
+    },
+    {
+      label: 'Stake manager pauser',
+      render: (state) => state.stakePauser,
+      className: 'parameters',
+    },
+    {
+      label: 'Validation pauser',
+      render: (state) => state.validationPauser,
+      className: 'parameters',
+    },
+  ];
+
+  const tbody = document.createElement('tbody');
+  for (const row of rows) {
+    const tr = document.createElement('tr');
+    const labelCell = document.createElement('th');
+    labelCell.textContent = row.label;
+    tr.appendChild(labelCell);
+
+    const states = [ownerControl.baseline, ownerControl.upgraded, ownerControl.restored];
+    for (const state of states) {
+      const td = document.createElement('td');
+      const value = row.render(state);
+      td.textContent = value;
+      if (row.className) {
+        td.className = row.className;
+      }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  tableSection.appendChild(table);
+  container.appendChild(tableSection);
+
+  const pauseSection = document.createElement('div');
+  pauseSection.className = 'owner-control-section';
+  const pauseTitle = document.createElement('h3');
+  pauseTitle.textContent = 'Emergency pause drill outcomes';
+  pauseSection.appendChild(pauseTitle);
+
+  const pauseTable = document.createElement('table');
+  pauseTable.className = 'owner-control-table';
+  const pauseHead = document.createElement('thead');
+  const pauseHeadRow = document.createElement('tr');
+  ['', 'Registry', 'Stake manager', 'Validation'].forEach((label) => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    pauseHeadRow.appendChild(th);
+  });
+  pauseHead.appendChild(pauseHeadRow);
+  pauseTable.appendChild(pauseHead);
+
+  const pauseBody = document.createElement('tbody');
+  const pauseRows = [
+    { label: 'Owner drill', status: ownerControl.pauseDrill.owner },
+    { label: 'Moderator drill', status: ownerControl.pauseDrill.moderator },
+  ];
+  for (const entry of pauseRows) {
+    const tr = document.createElement('tr');
+    const labelCell = document.createElement('th');
+    labelCell.textContent = entry.label;
+    tr.appendChild(labelCell);
+    ['registry', 'stake', 'validation'].forEach((key) => {
+      const td = document.createElement('td');
+      td.textContent = entry.status[key] ? 'Paused + resumed' : 'Not exercised';
+      tr.appendChild(td);
+    });
+    pauseBody.appendChild(tr);
+  }
+  pauseTable.appendChild(pauseBody);
+  pauseSection.appendChild(pauseTable);
+  container.appendChild(pauseSection);
+}
+
 function renderScenarios(container, scenarios, data) {
   const timelineOptions = document.createElement('div');
   timelineOptions.className = 'timeline-controls';
@@ -283,6 +460,13 @@ function renderApp(data) {
   const ownerCard = createCard('Owner command log', 'Every configuration call executed during the run.');
   renderOwnerActions(ownerCard, data.ownerActions);
   app.appendChild(ownerCard);
+
+  const controlCard = createCard(
+    'Owner sovereign control snapshot',
+    'Baseline safeguards, live adjustments, and delegated emergency drills captured from the run.'
+  );
+  renderOwnerControlSnapshot(controlCard, data.ownerControl);
+  app.appendChild(controlCard);
 
   const scenariosCard = createCard('Scenario narratives', 'Select a view to focus the timeline on a specific lifecycle.');
   renderScenarios(scenariosCard, data.scenarios, data);
