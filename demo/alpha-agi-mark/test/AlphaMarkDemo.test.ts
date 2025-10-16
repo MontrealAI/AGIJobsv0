@@ -19,6 +19,22 @@ function saleReturn(base: bigint, slope: bigint, supply: bigint, amount: bigint)
   return baseComponent + slopeComponent;
 }
 
+function discretePurchaseSum(base: bigint, slope: bigint, supply: bigint, amount: bigint): bigint {
+  let total = 0n;
+  for (let i = 0n; i < amount; i++) {
+    total += base + slope * (supply + i);
+  }
+  return total;
+}
+
+function discreteSaleSum(base: bigint, slope: bigint, supply: bigint, amount: bigint): bigint {
+  let total = 0n;
+  for (let i = 0n; i < amount; i++) {
+    total += base + slope * (supply - 1n - i);
+  }
+  return total;
+}
+
 describe("α-AGI MARK bonding curve", function () {
   async function deployFixture() {
     const [owner, investor, validatorA, validatorB, outsider] = await ethers.getSigners();
@@ -75,6 +91,41 @@ describe("α-AGI MARK bonding curve", function () {
       .withArgs(investor.address, sellAmount * WHOLE, refund);
 
     expect(await mark.reserveBalance()).to.equal(cost - refund);
+  });
+
+  it("matches arithmetic-series pricing against discrete summation", async function () {
+    const scenarios = [
+      { existingSupply: 0n, purchaseAmount: 1n, saleAmount: 1n },
+      { existingSupply: 0n, purchaseAmount: 4n, saleAmount: 2n },
+      { existingSupply: 3n, purchaseAmount: 2n, saleAmount: 1n },
+      { existingSupply: 6n, purchaseAmount: 3n, saleAmount: 3n },
+    ];
+
+    for (const scenario of scenarios) {
+      const { investor, mark, basePrice, slope } = await deployFixture();
+
+      if (scenario.existingSupply > 0n) {
+        const seedCost = purchaseCost(basePrice, slope, 0n, scenario.existingSupply);
+        await mark.connect(investor).buyTokens(scenario.existingSupply * WHOLE, { value: seedCost });
+      }
+
+      const previewCost = await mark.previewPurchaseCost(scenario.purchaseAmount * WHOLE);
+      const expectedCost = discretePurchaseSum(
+        basePrice,
+        slope,
+        scenario.existingSupply,
+        scenario.purchaseAmount,
+      );
+      expect(previewCost).to.equal(expectedCost);
+
+      await mark.connect(investor).buyTokens(scenario.purchaseAmount * WHOLE, { value: previewCost });
+
+      const newSupply = scenario.existingSupply + scenario.purchaseAmount;
+      const saleAmount = scenario.saleAmount <= newSupply ? scenario.saleAmount : newSupply;
+      const previewRefund = await mark.previewSaleReturn(saleAmount * WHOLE);
+      const expectedRefund = discreteSaleSum(basePrice, slope, newSupply, saleAmount);
+      expect(previewRefund).to.equal(expectedRefund);
+    }
   });
 
   it("prevents purchases while paused and allows emergency exits", async function () {
@@ -201,6 +252,22 @@ describe("α-AGI MARK bonding curve", function () {
     await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata))
       .to.emit(mark, "LaunchFinalized")
       .withArgs(owner.address, cost, metadata);
+  });
+
+  it("records participant contribution history without decrementing on redemption", async function () {
+    const { investor, mark, basePrice, slope } = await deployFixture();
+    const firstCost = purchaseCost(basePrice, slope, 0n, 1n);
+    await mark.connect(investor).buyTokens(WHOLE, { value: firstCost });
+
+    const secondCost = purchaseCost(basePrice, slope, 1n, 2n);
+    await mark.connect(investor).buyTokens(2n * WHOLE, { value: secondCost });
+
+    expect(await mark.participantContribution(investor.address)).to.equal(firstCost + secondCost);
+
+    const refund = saleReturn(basePrice, slope, 3n, 1n);
+    await mark.connect(investor).sellTokens(WHOLE);
+    expect(await mark.participantContribution(investor.address)).to.equal(firstCost + secondCost);
+    expect(await mark.reserveBalance()).to.equal(firstCost + secondCost - refund);
   });
 
   it("finalizes into the sovereign vault and records metadata", async function () {
@@ -344,5 +411,64 @@ describe("α-AGI MARK ERC20 base asset flows", function () {
 
     expect(await mark.reserveBalance()).to.equal(0n);
     expect(await stable.balanceOf(owner.address)).to.equal(reserveBeforeFinalize);
+  });
+
+  it("allows owner to withdraw residual ERC20 funds after closure", async function () {
+    const [owner, investor, validatorA, validatorB] = await ethers.getSigners();
+
+    const Stable = await ethers.getContractFactory("TestStablecoin");
+    const stable = await Stable.deploy();
+    await stable.waitForDeployment();
+
+    const RiskOracle = await ethers.getContractFactory("AlphaMarkRiskOracle");
+    const riskOracle = await RiskOracle.deploy(owner.address, [validatorA.address, validatorB.address], 2);
+    await riskOracle.waitForDeployment();
+
+    const AlphaMark = await ethers.getContractFactory("AlphaMarkEToken");
+    const basePrice = toWei("0.2");
+    const slope = toWei("0.1");
+    const mark = await AlphaMark.deploy(
+      "SeedShares",
+      "SEED",
+      owner.address,
+      riskOracle.target,
+      basePrice,
+      slope,
+      100,
+      stable.target
+    );
+    await mark.waitForDeployment();
+
+    await mark.setTreasury(owner.address);
+    await mark.setWhitelistEnabled(true);
+    await mark.setWhitelist([investor.address], true);
+
+    const investorBudget = toWei("20");
+    await stable.mint(investor.address, investorBudget);
+    await stable.connect(investor).approve(mark.target, investorBudget);
+
+    const buyAmount = 3n;
+    const cost = purchaseCost(basePrice, slope, 0n, buyAmount);
+    await mark.connect(investor).buyTokens(buyAmount * WHOLE);
+
+    await riskOracle.connect(validatorA).approveSeed();
+    await riskOracle.connect(validatorB).approveSeed();
+
+    const metadata = ethers.hexlify(ethers.toUtf8Bytes("residual"));
+
+    await expect(mark.connect(owner).withdrawResidual(owner.address)).to.be.revertedWith("Not closed");
+
+    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata))
+      .to.emit(mark, "LaunchFinalized")
+      .withArgs(owner.address, cost, metadata);
+
+    const extra = toWei("1");
+    await stable.mint(owner.address, extra);
+    await stable.connect(owner).transfer(mark.target, extra);
+
+    const balanceBefore = await stable.balanceOf(owner.address);
+    await mark.connect(owner).withdrawResidual(owner.address);
+    const balanceAfter = await stable.balanceOf(owner.address);
+    expect(balanceAfter - balanceBefore).to.equal(extra);
   });
 });
