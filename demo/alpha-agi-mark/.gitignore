@@ -3,3 +3,4 @@ cache/
 typechain-types/
 reports/*
 !reports/alpha-mark-recap.json
+!reports/alpha-mark-dashboard.html

@@ -96,6 +96,29 @@ jobs:
           console.log(`Validated α-AGI MARK recap for ${data.participants.length} participants.`);
           NODE
 
+      - name: Validate sovereign dashboard
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'demo/alpha-agi-mark/reports/alpha-mark-dashboard.html';
+          if (!fs.existsSync(path)) {
+            throw new Error('dashboard file missing');
+          }
+          const html = fs.readFileSync(path, 'utf8');
+          const requiredSnippets = [
+            'MARK Launch Telemetry',
+            'Mission Control Metrics',
+            'class="mermaid"',
+            'Owner Control Deck',
+          ];
+          for (const snippet of requiredSnippets) {
+            if (!html.includes(snippet)) {
+              throw new Error(`dashboard missing snippet: ${snippet}`);
+            }
+          }
+          console.log('Dashboard dossier structure validated.');
+          NODE
+
       - name: Upload α-AGI MARK recap
         uses: actions/upload-artifact@v4
         with:

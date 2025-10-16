@@ -4,6 +4,8 @@ import path from "path";
 import { createInterface } from "readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
+import { renderDashboard } from "./renderDashboard";
+
 type Address = string;
 
 interface ParticipantSnapshot {
@@ -275,10 +277,13 @@ async function main() {
     baseAsset: ownerControlsRaw.baseAssetAddr as Address,
     usesNativeAsset: ownerControlsRaw.usesNative,
     fundingCapWei: ownerControlsRaw.fundingCapWei.toString(),
+    fundingCapEth: ethers.formatEther(ownerControlsRaw.fundingCapWei),
     maxSupplyWholeTokens: ownerControlsRaw.maxSupplyWholeTokens.toString(),
     saleDeadlineTimestamp: ownerControlsRaw.saleDeadlineTimestamp.toString(),
     basePriceWei: ownerControlsRaw.basePriceWei.toString(),
+    basePriceEth: ethers.formatEther(ownerControlsRaw.basePriceWei),
     slopeWei: ownerControlsRaw.slopeWei.toString(),
+    slopeEth: ethers.formatEther(ownerControlsRaw.slopeWei),
   };
 
   const participants: ParticipantSnapshot[] = [];
@@ -290,6 +295,7 @@ async function main() {
       address,
       tokens: ethers.formatEther(balance),
       contributionWei: contribution.toString(),
+      contributionEth: ethers.formatEther(contribution),
     });
   }
 
@@ -302,6 +308,8 @@ async function main() {
 
   const sovereignMetadata = await sovereignVault.lastAcknowledgedMetadata();
   const sovereignTotalReceived = await sovereignVault.totalReceived();
+  const lastAcknowledgedAmount = await sovereignVault.lastAcknowledgedAmount();
+  const vaultBalance = await sovereignVault.vaultBalance();
   const recap = {
     contracts: {
       novaSeed: novaSeed.target,
@@ -325,6 +333,10 @@ async function main() {
       nextPriceWei: nextPrice.toString(),
       basePriceWei: basePrice.toString(),
       slopeWei: slope.toString(),
+      reserveEth: ethers.formatEther(reserve),
+      nextPriceEth: ethers.formatEther(nextPrice),
+      basePriceEth: ownerControls.basePriceEth,
+      slopeEth: ownerControls.slopeEth,
     },
     ownerControls,
     participants,
@@ -335,10 +347,13 @@ async function main() {
       sovereignVault: {
         manifestUri: await sovereignVault.manifestUri(),
         totalReceivedWei: sovereignTotalReceived.toString(),
-        lastAcknowledgedAmountWei: (await sovereignVault.lastAcknowledgedAmount()).toString(),
+        totalReceivedEth: ethers.formatEther(sovereignTotalReceived),
+        lastAcknowledgedAmountWei: lastAcknowledgedAmount.toString(),
+        lastAcknowledgedAmountEth: ethers.formatEther(lastAcknowledgedAmount),
         lastAcknowledgedMetadataHex: sovereignMetadata,
         decodedMetadata: ethers.toUtf8String(sovereignMetadata),
-        vaultBalanceWei: (await sovereignVault.vaultBalance()).toString(),
+        vaultBalanceWei: vaultBalance.toString(),
+        vaultBalanceEth: ethers.formatEther(vaultBalance),
       },
     },
   };
@@ -370,6 +385,16 @@ async function main() {
       description: "Forced validation outcome when override is enabled",
     },
     {
+      parameter: "finalized",
+      value: ownerControls.finalized,
+      description: "Indicates whether sovereign funds have been dispatched",
+    },
+    {
+      parameter: "aborted",
+      value: ownerControls.aborted,
+      description: "Emergency abort flag preserving participant capital",
+    },
+    {
       parameter: "treasury",
       value: ownerControls.treasury,
       description: "Address receiving proceeds on finalization",
@@ -385,8 +410,13 @@ async function main() {
       description: "Current financing currency (0x0 indicates native ETH)",
     },
     {
-      parameter: "fundingCapWei",
-      value: ownerControls.fundingCapWei,
+      parameter: "usesNativeAsset",
+      value: ownerControls.usesNativeAsset,
+      description: "True when the market accepts native ETH deposits",
+    },
+    {
+      parameter: "fundingCap",
+      value: { wei: ownerControls.fundingCapWei, eth: ownerControls.fundingCapEth },
       description: "Upper bound on capital accepted before launch",
     },
     {
@@ -400,13 +430,13 @@ async function main() {
       description: "Timestamp after which purchases are rejected",
     },
     {
-      parameter: "basePriceWei",
-      value: ownerControls.basePriceWei,
+      parameter: "basePrice",
+      value: { wei: ownerControls.basePriceWei, eth: ownerControls.basePriceEth },
       description: "Bonding curve base price component",
     },
     {
-      parameter: "slopeWei",
-      value: ownerControls.slopeWei,
+      parameter: "slope",
+      value: { wei: ownerControls.slopeWei, eth: ownerControls.slopeEth },
       description: "Bonding curve slope component",
     },
   ];
@@ -418,8 +448,10 @@ async function main() {
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, JSON.stringify(enrichedRecap, null, 2));
+  const dashboardPath = await renderDashboard(enrichedRecap);
 
   console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
+  console.log("🖥️  Sovereign dashboard rendered to", dashboardPath);
   console.log(JSON.stringify(enrichedRecap, null, 2));
   console.log("\n🧭 Owner parameter matrix snapshot:");
   console.table(ownerParameterMatrix);
