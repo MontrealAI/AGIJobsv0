@@ -1,5 +1,7 @@
 #!/usr/bin/env ts-node
 
+import { strict as assert } from 'node:assert';
+
 import type { InterfaceAbi } from 'ethers';
 import { ethers } from 'hardhat';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -105,6 +107,12 @@ interface PauseStatus {
   registry: boolean;
   stake: boolean;
   validation: boolean;
+}
+
+interface JobMetadataView {
+  state?: number;
+  success?: boolean;
+  burnConfirmed?: boolean;
 }
 
 interface OwnerControlParameters {
@@ -287,6 +295,54 @@ const JOB_STATE_LABELS: Record<number, string> = {
   6: 'Finalized',
   7: 'Cancelled',
 };
+
+function expectJobProgress(
+  jobId: bigint,
+  metadata: JobMetadataView,
+  expectations: {
+    context: string;
+    state?: number;
+    success?: boolean;
+    burnConfirmed?: boolean;
+  }
+): void {
+  if (expectations.state !== undefined) {
+    assert.notStrictEqual(
+      metadata.state,
+      undefined,
+      `Job ${jobId} (${expectations.context}) missing state metadata`
+    );
+    assert.strictEqual(
+      metadata.state,
+      expectations.state,
+      `Job ${jobId} expected state ${JOB_STATE_LABELS[expectations.state] ?? expectations.state} during ${expectations.context}`
+    );
+  }
+  if (expectations.success !== undefined) {
+    assert.notStrictEqual(
+      metadata.success,
+      undefined,
+      `Job ${jobId} (${expectations.context}) missing success metadata`
+    );
+    assert.strictEqual(
+      metadata.success,
+      expectations.success,
+      `Job ${jobId} expected success=${expectations.success} during ${expectations.context}`
+    );
+  }
+  if (expectations.burnConfirmed !== undefined) {
+    assert.notStrictEqual(
+      metadata.burnConfirmed,
+      undefined,
+      `Job ${jobId} (${expectations.context}) missing burn metadata`
+    );
+    assert.strictEqual(
+      metadata.burnConfirmed,
+      expectations.burnConfirmed,
+      `Job ${jobId} expected burnConfirmed=${expectations.burnConfirmed} during ${expectations.context}`
+    );
+  }
+}
 
 function formatTokens(value: bigint): string {
   return `${ethers.formatUnits(value, AGIALPHA_DECIMALS)} AGIα`;
@@ -558,9 +614,39 @@ async function summarizeMarketState(
   const minted = await gatherCertificates(env.certificate, highestJobId);
   const totalJobs = highestJobId;
   console.log(`\n📈 Jobs orchestrated in this session: ${totalJobs.toString()}`);
+  assert.strictEqual(
+    minted.length,
+    Number(totalJobs),
+    'Each orchestrated job should mint a credential NFT in the demo run'
+  );
+  const [aliceAddress, bobAddress] = await Promise.all([
+    env.agentAlice.getAddress(),
+    env.agentBob.getAddress(),
+  ]);
+  assert.ok(
+    minted.some(
+      (entry) => entry.jobId === 1n && addressesEqual(entry.owner, aliceAddress)
+    ),
+    'Alice credential should be present in the minted certificate ledger'
+  );
+  assert.ok(
+    minted.some(
+      (entry) => entry.jobId === 2n && addressesEqual(entry.owner, bobAddress)
+    ),
+    'Bob credential should be present in the minted certificate ledger'
+  );
 
   const finalSupply = await env.token.totalSupply();
   const burned = env.initialSupply > finalSupply ? env.initialSupply - finalSupply : 0n;
+  assert.ok(
+    finalSupply <= env.initialSupply,
+    'Final supply should never exceed the initial minted supply'
+  );
+  assert.strictEqual(
+    env.initialSupply - burned,
+    finalSupply,
+    'Burn accounting should reconcile initial and final supply'
+  );
   console.log(`\n🔥 Total AGIα burned: ${formatTokens(burned)}`);
   console.log(`   Circulating supply now: ${formatTokens(finalSupply)}`);
 
@@ -1131,16 +1217,31 @@ async function ownerCommandCenterDrill(
 
   logStep('Owner calibrates market economics and validator incentives');
   await registry.connect(owner).setFeePct(upgradedFeePct);
+  assert.strictEqual(
+    Number(await registry.feePct()),
+    upgradedFeePct,
+    'Registry fee pct should reflect owner command'
+  );
   recordOwnerAction('Protocol fee temporarily increased', `JobRegistry@${registryAddress}`, 'setFeePct', {
     previous: previousFeePct,
     pct: upgradedFeePct,
   });
   await registry.connect(owner).setValidatorRewardPct(upgradedValidatorReward);
+  assert.strictEqual(
+    Number(await registry.validatorRewardPct()),
+    upgradedValidatorReward,
+    'Validator reward pct should update immediately'
+  );
   recordOwnerAction('Validator rewards boosted', `JobRegistry@${registryAddress}`, 'setValidatorRewardPct', {
     previous: previousValidatorReward,
     pct: upgradedValidatorReward,
   });
   await feePool.connect(owner).setBurnPct(upgradedBurnPct);
+  assert.strictEqual(
+    Number(await feePool.burnPct()),
+    upgradedBurnPct,
+    'Fee pool burn pct should update immediately'
+  );
   recordOwnerAction('Fee pool burn widened', `FeePool@${feePoolAddress}`, 'setBurnPct', {
     previous: previousBurnPct,
     burnPct: upgradedBurnPct,
@@ -1161,6 +1262,16 @@ async function ownerCommandCenterDrill(
   await validation
     .connect(owner)
     .setCommitRevealWindows(upgradedCommitWindow, upgradedRevealWindow);
+  assert.strictEqual(
+    await validation.commitWindow(),
+    upgradedCommitWindow,
+    'Commit window should match owner configuration'
+  );
+  assert.strictEqual(
+    await validation.revealWindow(),
+    upgradedRevealWindow,
+    'Reveal window should match owner configuration'
+  );
   recordOwnerAction('Commit/reveal windows extended', `ValidationModule@${validationAddress}`, 'setCommitRevealWindows', {
     previousCommitWindow: formatSeconds(originalCommitWindow),
     previousRevealWindow: formatSeconds(originalRevealWindow),
@@ -1170,6 +1281,16 @@ async function ownerCommandCenterDrill(
   await validation
     .connect(owner)
     .setRevealQuorum(upgradedRevealQuorumPct, upgradedMinRevealers);
+  assert.strictEqual(
+    Number(await validation.revealQuorumPct()),
+    upgradedRevealQuorumPct,
+    'Reveal quorum pct should reflect owner update'
+  );
+  assert.strictEqual(
+    Number(await validation.minRevealValidators()),
+    upgradedMinRevealers,
+    'Minimum revealers should reflect owner update'
+  );
   recordOwnerAction('Reveal quorum tightened', `ValidationModule@${validationAddress}`, 'setRevealQuorum', {
     previousPct: originalRevealQuorumPct,
     previousMinRevealers: originalMinRevealers,
@@ -1179,6 +1300,16 @@ async function ownerCommandCenterDrill(
   await validation
     .connect(owner)
     .setNonRevealPenalty(upgradedNonRevealPenaltyBps, upgradedNonRevealBanBlocks);
+  assert.strictEqual(
+    Number(await validation.nonRevealPenaltyBps()),
+    upgradedNonRevealPenaltyBps,
+    'Non-reveal penalty basis points should reflect owner update'
+  );
+  assert.strictEqual(
+    Number(await validation.nonRevealBanBlocks()),
+    upgradedNonRevealBanBlocks,
+    'Non-reveal ban duration should reflect owner update'
+  );
   recordOwnerAction('Non-reveal penalty escalated', `ValidationModule@${validationAddress}`, 'setNonRevealPenalty', {
     previousBps: originalNonRevealPenaltyBps,
     previousBanBlocks: originalNonRevealBanBlocks,
@@ -1209,14 +1340,29 @@ async function ownerCommandCenterDrill(
 
   logStep('Owner delegates emergency pauser powers and performs a live drill');
   await registry.connect(owner).setPauser(moderatorAddress);
+  assert.strictEqual(
+    await registry.pauser(),
+    moderatorAddress,
+    'Moderator should gain registry pause authority'
+  );
   recordOwnerAction('Registry pauser delegated', `JobRegistry@${registryAddress}`, 'setPauser', {
     newPauser: moderatorAddress,
   });
   await stake.connect(owner).setPauser(moderatorAddress);
+  assert.strictEqual(
+    await stake.pauser(),
+    moderatorAddress,
+    'Moderator should gain stake pause authority'
+  );
   recordOwnerAction('Stake manager pauser delegated', `StakeManager@${stakeAddress}`, 'setPauser', {
     newPauser: moderatorAddress,
   });
   await validation.connect(owner).setPauser(moderatorAddress);
+  assert.strictEqual(
+    await validation.pauser(),
+    moderatorAddress,
+    'Moderator should gain validation pause authority'
+  );
   recordOwnerAction('Validation module pauser delegated', `ValidationModule@${validationAddress}`, 'setPauser', {
     newPauser: moderatorAddress,
   });
@@ -1236,6 +1382,11 @@ async function ownerCommandCenterDrill(
     stake: await stake.paused(),
     validation: await validation.paused(),
   };
+  assert.deepStrictEqual(
+    ownerPauseStatus,
+    { registry: true, stake: true, validation: true },
+    'Owner should be able to pause all modules'
+  );
   console.log(
     `   Owner pause drill → registry:${ownerPauseStatus.registry} stake:${ownerPauseStatus.stake} validation:${ownerPauseStatus.validation}`
   );
@@ -1250,6 +1401,9 @@ async function ownerCommandCenterDrill(
   recordOwnerAction('Validation module unpaused after drill', `ValidationModule@${validationAddress}`, 'unpause', {
     by: ownerAddress,
   });
+  assert.strictEqual(await registry.paused(), false, 'Registry should resume after owner drill');
+  assert.strictEqual(await stake.paused(), false, 'Stake manager should resume after owner drill');
+  assert.strictEqual(await validation.paused(), false, 'Validation should resume after owner drill');
 
   await registry.connect(moderator).pause();
   recordOwnerAction('Registry paused by delegated moderator', `JobRegistry@${registryAddress}`, 'pause', {
@@ -1268,6 +1422,11 @@ async function ownerCommandCenterDrill(
     stake: await stake.paused(),
     validation: await validation.paused(),
   };
+  assert.deepStrictEqual(
+    moderatorPauseStatus,
+    { registry: true, stake: true, validation: true },
+    'Delegated moderator should be able to pause all modules'
+  );
   console.log(
     `   Moderator pause drill → registry:${moderatorPauseStatus.registry} stake:${moderatorPauseStatus.stake} validation:${moderatorPauseStatus.validation}`
   );
@@ -1284,6 +1443,9 @@ async function ownerCommandCenterDrill(
   recordOwnerAction('Validation module unpaused by delegated moderator', `ValidationModule@${validationAddress}`, 'unpause', {
     by: moderatorAddress,
   });
+  assert.strictEqual(await registry.paused(), false, 'Registry should resume after moderator drill');
+  assert.strictEqual(await stake.paused(), false, 'Stake manager should resume after moderator drill');
+  assert.strictEqual(await validation.paused(), false, 'Validation should resume after moderator drill');
 
   console.log('   Emergency controls verified and reset to active state.');
 
@@ -1292,6 +1454,58 @@ async function ownerCommandCenterDrill(
     validation,
     feePool,
     stake
+  );
+  assert.strictEqual(upgraded.feePct, upgradedFeePct, 'Upgraded fee pct should be recorded');
+  assert.strictEqual(
+    upgraded.validatorRewardPct,
+    upgradedValidatorReward,
+    'Upgraded validator reward should be recorded'
+  );
+  assert.strictEqual(upgraded.burnPct, upgradedBurnPct, 'Upgraded burn pct should be recorded');
+  assert.strictEqual(
+    upgraded.commitWindowSeconds,
+    Number(upgradedCommitWindow),
+    'Upgraded commit window should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.revealWindowSeconds,
+    Number(upgradedRevealWindow),
+    'Upgraded reveal window should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.revealQuorumPct,
+    upgradedRevealQuorumPct,
+    'Upgraded reveal quorum should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.minRevealers,
+    upgradedMinRevealers,
+    'Upgraded minimum revealers should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.nonRevealPenaltyBps,
+    upgradedNonRevealPenaltyBps,
+    'Upgraded non-reveal penalty should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.nonRevealBanBlocks,
+    upgradedNonRevealBanBlocks,
+    'Upgraded non-reveal ban blocks should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.registryPauser,
+    moderatorAddress,
+    'Moderator should remain delegated during upgraded state'
+  );
+  assert.strictEqual(
+    upgraded.stakePauser,
+    moderatorAddress,
+    'Moderator should control stake manager during upgraded state'
+  );
+  assert.strictEqual(
+    upgraded.validationPauser,
+    moderatorAddress,
+    'Moderator should control validation during upgraded state'
   );
 
   logStep('Owner restores baseline configuration to prepare live scenarios');
@@ -1347,6 +1561,46 @@ async function ownerCommandCenterDrill(
     feePool,
     stake
   );
+  assert.strictEqual(restored.feePct, previousFeePct, 'Fee pct should return to baseline');
+  assert.strictEqual(
+    restored.validatorRewardPct,
+    previousValidatorReward,
+    'Validator reward should return to baseline'
+  );
+  assert.strictEqual(restored.burnPct, previousBurnPct, 'Burn pct should return to baseline');
+  assert.strictEqual(
+    restored.commitWindowSeconds,
+    baseline.commitWindowSeconds,
+    'Commit window should return to baseline'
+  );
+  assert.strictEqual(
+    restored.revealWindowSeconds,
+    baseline.revealWindowSeconds,
+    'Reveal window should return to baseline'
+  );
+  assert.strictEqual(
+    restored.revealQuorumPct,
+    baseline.revealQuorumPct,
+    'Reveal quorum should return to baseline'
+  );
+  assert.strictEqual(
+    restored.minRevealers,
+    baseline.minRevealers,
+    'Minimum revealers should return to baseline'
+  );
+  assert.strictEqual(
+    restored.nonRevealPenaltyBps,
+    baseline.nonRevealPenaltyBps,
+    'Non-reveal penalty should return to baseline'
+  );
+  assert.strictEqual(
+    restored.nonRevealBanBlocks,
+    baseline.nonRevealBanBlocks,
+    'Non-reveal ban duration should return to baseline'
+  );
+  assert.strictEqual(restored.registryPauser, ownerAddress, 'Owner should reclaim registry pause power');
+  assert.strictEqual(restored.stakePauser, ownerAddress, 'Owner should reclaim stake pause power');
+  assert.strictEqual(restored.validationPauser, ownerAddress, 'Owner should reclaim validation pause power');
   recordTimeline('summary', 'Owner mission control baseline restored', {
     ...restored,
     commitWindow: restored.commitWindowFormatted,
@@ -1384,9 +1638,9 @@ async function logJobSummary(
   registry: ethers.Contract,
   jobId: bigint,
   context: string
-): Promise<void> {
+): Promise<JobMetadataView> {
   const job = await registry.jobs(jobId);
-  const metadata = decodeJobMetadata(job.packedMetadata);
+  const metadata = decodeJobMetadata(job.packedMetadata) as JobMetadataView;
   console.log(
     `\n📦 Job ${jobId} summary (${context}):\n  State: ${JOB_STATE_LABELS[metadata.state] ?? metadata.state}\n  Success flag: ${metadata.success}\n  Burn confirmed: ${metadata.burnConfirmed}\n  Reward: ${formatTokens(job.reward)}\n  Employer: ${job.employer}\n  Agent: ${job.agent}`
   );
@@ -1400,6 +1654,7 @@ async function logJobSummary(
     employer: job.employer,
     agent: job.agent,
   });
+  return metadata;
 }
 
 async function showBalances(
@@ -1435,6 +1690,7 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
     registry,
     validation,
     stake,
+    certificate,
   } = env;
 
   const reward = ethers.parseUnits('250', AGIALPHA_DECIMALS);
@@ -1452,11 +1708,27 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
     .connect(nationA)
     .createJob(reward, deadline, specHash, 'ipfs://jobs/climate');
   const jobId = await registry.nextJobId();
-  await logJobSummary(registry, jobId, 'after posting');
+  const createdMetadata = await logJobSummary(registry, jobId, 'after posting');
+  expectJobProgress(jobId, createdMetadata, {
+    context: 'after posting',
+    state: 1,
+    success: false,
+    burnConfirmed: false,
+  });
 
   logStep('Alice stakes identity and applies through the emergency allowlist');
   await registry.connect(agentAlice).applyForJob(jobId, 'alice', []);
-  await logJobSummary(registry, jobId, 'after agent assignment');
+  const appliedMetadata = await logJobSummary(
+    registry,
+    jobId,
+    'after agent assignment'
+  );
+  expectJobProgress(jobId, appliedMetadata, {
+    context: 'after agent assignment',
+    state: 2,
+    success: false,
+    burnConfirmed: false,
+  });
 
   logStep('Alice submits validated deliverables with provable IPFS evidence');
   const resultUri = 'ipfs://results/climate-success';
@@ -1464,7 +1736,17 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   await registry
     .connect(agentAlice)
     .submit(jobId, resultHash, resultUri, 'alice', []);
-  await logJobSummary(registry, jobId, 'after submission');
+  const submittedMetadata = await logJobSummary(
+    registry,
+    jobId,
+    'after submission'
+  );
+  expectJobProgress(jobId, submittedMetadata, {
+    context: 'after submission',
+    state: 3,
+    success: false,
+    burnConfirmed: false,
+  });
 
   logStep(
     'Nation A records burn proof and primes the validation committee selection'
@@ -1520,11 +1802,37 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   }
 
   await validation.finalize(jobId);
-  await logJobSummary(registry, jobId, 'after validator finalize');
+  const completedMetadata = await logJobSummary(
+    registry,
+    jobId,
+    'after validator finalize'
+  );
+  expectJobProgress(jobId, completedMetadata, {
+    context: 'after validator finalize',
+    state: 4,
+    success: true,
+    burnConfirmed: true,
+  });
 
   logStep('Nation A finalizes payment, rewarding Alice and the validator cohort');
   await registry.connect(nationA).finalize(jobId);
-  await logJobSummary(registry, jobId, 'after treasury settlement');
+  const finalizedMetadata = await logJobSummary(
+    registry,
+    jobId,
+    'after treasury settlement'
+  );
+  expectJobProgress(jobId, finalizedMetadata, {
+    context: 'after treasury settlement',
+    state: 6,
+    success: true,
+    burnConfirmed: true,
+  });
+  const certificateOwner = await certificate.ownerOf(jobId);
+  const aliceAddress = await agentAlice.getAddress();
+  assert.ok(
+    addressesEqual(certificateOwner, aliceAddress),
+    'Alice should receive the credential NFT for the cooperative scenario'
+  );
 
   const participants = [
     { name: 'Nation A', address: employerAddr },
@@ -1535,8 +1843,11 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   ];
   await showBalances('Post-job token balances', token, participants);
 
-  const nftBalance = await env.certificate.balanceOf(
-    await agentAlice.getAddress()
+  const nftBalance = await certificate.balanceOf(await agentAlice.getAddress());
+  assert.strictEqual(
+    nftBalance,
+    1n,
+    'Alice should hold a single credential NFT after the cooperative scenario'
   );
   console.log(`\n🏅 Alice now holds ${nftBalance} certificate NFT(s).`);
   registerScenario(scenarioTitle, jobId);
@@ -1559,6 +1870,7 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     stake,
     owner,
     moderator,
+    certificate,
   } = env;
 
   const reward = ethers.parseUnits('180', AGIALPHA_DECIMALS);
@@ -1578,7 +1890,13 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     .connect(nationB)
     .createJob(reward, deadline, specHash, 'ipfs://jobs/translation');
   const jobId = await registry.nextJobId();
-  await logJobSummary(registry, jobId, 'after posting');
+  const createdMetadata = await logJobSummary(registry, jobId, 'after posting');
+  expectJobProgress(jobId, createdMetadata, {
+    context: 'after posting',
+    state: 1,
+    success: false,
+    burnConfirmed: false,
+  });
 
   logStep('Bob applies, contributes work, and submits contested deliverables');
   await registry.connect(agentBob).applyForJob(jobId, 'bob', []);
@@ -1639,7 +1957,17 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   }
 
   await validation.finalize(jobId);
-  await logJobSummary(registry, jobId, 'after partial quorum');
+  const disputedMetadata = await logJobSummary(
+    registry,
+    jobId,
+    'after partial quorum'
+  );
+  expectJobProgress(jobId, disputedMetadata, {
+    context: 'after partial quorum',
+    state: 5,
+    success: false,
+    burnConfirmed: true,
+  });
 
   logStep(
     'Bob leverages dispute rights; governance moderates and sides with the agent'
@@ -1684,7 +2012,28 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
 
   logStep('Nation B finalizes, distributing escrow and validator rewards post-dispute');
   await registry.connect(nationB).finalize(jobId);
-  await logJobSummary(registry, jobId, 'after dispute resolution');
+  const finalizedMetadata = await logJobSummary(
+    registry,
+    jobId,
+    'after dispute resolution'
+  );
+  expectJobProgress(jobId, finalizedMetadata, {
+    context: 'after dispute resolution',
+    state: 6,
+    success: true,
+    burnConfirmed: true,
+  });
+  const certificateOwner = await certificate.ownerOf(jobId);
+  const bobAddress = await agentBob.getAddress();
+  assert.ok(
+    addressesEqual(certificateOwner, bobAddress),
+    'Bob should receive the credential NFT after dispute resolution'
+  );
+  assert.strictEqual(
+    await certificate.balanceOf(bobAddress),
+    1n,
+    'Bob should hold a single credential NFT after dispute resolution'
+  );
 
   const participants = [
     { name: 'Nation B', address: await nationB.getAddress() },
