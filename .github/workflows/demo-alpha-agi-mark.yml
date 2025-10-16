@@ -1,0 +1,25 @@
+name: demo-alpha-agi-mark
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  demo-alpha-agi-mark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Compile demo contracts
+        run: npx hardhat --config demo/alpha-agi-mark/hardhat.config.ts compile
+      - name: Run demo tests
+        run: npx hardhat --config demo/alpha-agi-mark/hardhat.config.ts test
+      - name: Execute scripted walkthrough
+        run: npx hardhat --config demo/alpha-agi-mark/hardhat.config.ts run demo/alpha-agi-mark/scripts/runDemo.ts

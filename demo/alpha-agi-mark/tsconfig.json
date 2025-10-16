@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "hardhat"],
+    "target": "ES2020",
+    "module": "commonjs",
+    "strict": true,
+    "outDir": "./dist"
+  },
+  "include": ["./scripts", "./test", "./typechain", "./hardhat.config.ts"],
+  "files": []
+}
