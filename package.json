@@ -156,7 +156,9 @@
     "demo:omega-business-3:ui": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-ui.sh",
     "demo:agi-labor-market": "npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts",
     "demo:agi-labor-market:export": "AGI_JOBS_DEMO_EXPORT=demo/agi-labor-market-grand-demo/ui/export/latest.json npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts",
-    "demo:agi-labor-market:control-room": "ts-node --transpile-only scripts/v2/launchAgiLaborMarketControlRoom.ts"
+    "demo:agi-labor-market:control-room": "ts-node --transpile-only scripts/v2/launchAgiLaborMarketControlRoom.ts",
+    "demo:agimark:local": "AGIMARK_DEPLOY_OUTPUT=reports/localhost/agimark/receipts/deploy.json PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 RPC_URL=http://127.0.0.1:8545 ts-node --transpile-only demo/alpha-agi-mark/cli/mark.demo.ts --network localhost",
+    "demo:agimark:sepolia": "ts-node --transpile-only demo/alpha-agi-mark/cli/mark.demo.ts --network sepolia"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,63 @@
+name: demo-alpha-agi-mark
+
+on:
+  pull_request:
+    paths:
+      - 'demo/alpha-agi-mark/**'
+      - '.github/workflows/demo-alpha-agi-mark.yml'
+  workflow_dispatch:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Compile contracts
+        run: npx hardhat compile
+
+      - name: Start hardhat node
+        run: npx hardhat node --hostname 127.0.0.1 --port 8545 &
+
+      - name: Wait for node
+        run: |
+          for i in {1..20}; do
+            if nc -z 127.0.0.1 8545; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Node did not start" >&2
+          exit 1
+
+      - name: Deploy defaults
+        env:
+          DEPLOY_DEFAULTS_OUTPUT: reports/localhost/agimark/receipts/deploy.json
+        run: npx hardhat run scripts/v2/deployDefaults.ts --network localhost
+
+      - name: Run α-AGI MARK demo
+        env:
+          PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+          RPC_URL: http://127.0.0.1:8545
+        run: npx ts-node --transpile-only demo/alpha-agi-mark/cli/mark.demo.ts --network localhost
+
+      - name: Build webapp
+        working-directory: demo/alpha-agi-mark/webapp
+        run: |
+          npm install
+          npm run build
+
+      - name: Upload receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: agimark-receipts
+          path: reports/localhost/agimark

@@ -1,0 +1,24 @@
+sequenceDiagram
+  participant Nation as Nation / Requester
+  participant Agent as Forecaster / Agent
+  participant Validator
+  participant JR as JobRegistry
+  participant SM as StakeManager
+  participant VM as ValidationModule
+  participant DM as DisputeModule
+  participant NFT as CertificateNFT
+
+  Nation->>JR: postJob(specURI, escrow)
+  Agent->>SM: depositStake()
+  Agent->>JR: submit(jobId, resultURI)
+  JR->>VM: requestValidation(jobId)
+  Validator->>VM: commitValidation(jobId, hash)
+  Validator->>VM: revealValidation(jobId, verdict)
+  VM->>JR: finalize(jobId)
+  opt dispute window
+    *->>DM: raiseDispute(jobId, evidenceURI)
+    DM->>JR: resolve(jobId)
+  end
+  JR->>Agent: release reward
+  JR->>Validator: distribute validator reward
+  JR->>NFT: mint Nova-Seed certificate
