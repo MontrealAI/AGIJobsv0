@@ -149,6 +149,57 @@ main {
   color: var(--muted);
 }
 
+.metrics-dl {
+  display: grid;
+  grid-template-columns: minmax(160px, 200px) 1fr;
+  gap: 0.4rem 0.75rem;
+  margin: 0.5rem 0 0;
+}
+
+.metrics-dl dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.metrics-dl dd {
+  margin: 0;
+}
+
+.certificate-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+}
+
+.pill.muted {
+  background: rgba(148, 163, 184, 0.16);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: var(--muted);
+}
+
+.parameters.highlight {
+  margin: 0.75rem 0 0;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--text);
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

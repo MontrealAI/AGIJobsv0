@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-16T00:40:12.441Z",
+  "generatedAt": "2025-10-16T01:54:22.647Z",
   "network": "hardhat (chainId 31337)",
   "actors": [
     {
@@ -65,7 +65,7 @@
       "parameters": {
         "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
       },
-      "at": "2025-10-16T00:40:11.673Z"
+      "at": "2025-10-16T01:54:21.824Z"
     },
     {
       "label": "Linked certificate to stake manager",
@@ -74,7 +74,7 @@
       "parameters": {
         "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
       },
-      "at": "2025-10-16T00:40:11.677Z"
+      "at": "2025-10-16T01:54:21.827Z"
     },
     {
       "label": "Connected stake manager fee pool",
@@ -83,7 +83,7 @@
       "parameters": {
         "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
       },
-      "at": "2025-10-16T00:40:11.688Z"
+      "at": "2025-10-16T01:54:21.838Z"
     },
     {
       "label": "Connected stake modules",
@@ -93,7 +93,7 @@
         "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508"
       },
-      "at": "2025-10-16T00:40:11.692Z"
+      "at": "2025-10-16T01:54:21.844Z"
     },
     {
       "label": "Linked stake to validation module",
@@ -102,7 +102,7 @@
       "parameters": {
         "validation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
       },
-      "at": "2025-10-16T00:40:11.694Z"
+      "at": "2025-10-16T01:54:21.847Z"
     },
     {
       "label": "Validation module registry link",
@@ -111,7 +111,7 @@
       "parameters": {
         "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
       },
-      "at": "2025-10-16T00:40:11.698Z"
+      "at": "2025-10-16T01:54:21.849Z"
     },
     {
       "label": "Validation module identity link",
@@ -120,7 +120,7 @@
       "parameters": {
         "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
       },
-      "at": "2025-10-16T00:40:11.704Z"
+      "at": "2025-10-16T01:54:21.854Z"
     },
     {
       "label": "Validation module reputation link",
@@ -129,7 +129,7 @@
       "parameters": {
         "reputation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
       },
-      "at": "2025-10-16T00:40:11.706Z"
+      "at": "2025-10-16T01:54:21.856Z"
     },
     {
       "label": "Validation module stake link",
@@ -138,7 +138,7 @@
       "parameters": {
         "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
       },
-      "at": "2025-10-16T00:40:11.708Z"
+      "at": "2025-10-16T01:54:21.858Z"
     },
     {
       "label": "Registry module wiring finalised",
@@ -152,7 +152,7 @@
         "certificate": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
         "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
       },
-      "at": "2025-10-16T00:40:11.713Z"
+      "at": "2025-10-16T01:54:21.865Z"
     },
     {
       "label": "Registry identity registry set",
@@ -161,7 +161,7 @@
       "parameters": {
         "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
       },
-      "at": "2025-10-16T00:40:11.715Z"
+      "at": "2025-10-16T01:54:21.868Z"
     },
     {
       "label": "Validator reward percentage configured",
@@ -170,7 +170,7 @@
       "parameters": {
         "pct": 20
       },
-      "at": "2025-10-16T00:40:11.717Z"
+      "at": "2025-10-16T01:54:21.869Z"
     },
     {
       "label": "Registry authorised to update reputation",
@@ -180,7 +180,7 @@
         "caller": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "allowed": true
       },
-      "at": "2025-10-16T00:40:11.719Z"
+      "at": "2025-10-16T01:54:21.871Z"
     },
     {
       "label": "Validation authorised to update reputation",
@@ -190,7 +190,7 @@
         "caller": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "allowed": true
       },
-      "at": "2025-10-16T00:40:11.721Z"
+      "at": "2025-10-16T01:54:21.874Z"
     },
     {
       "label": "Dispute module stake link",
@@ -199,7 +199,7 @@
       "parameters": {
         "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
       },
-      "at": "2025-10-16T00:40:11.723Z"
+      "at": "2025-10-16T01:54:21.876Z"
     },
     {
       "label": "Commit/reveal windows tuned",
@@ -209,7 +209,7 @@
         "commitWindow": 60,
         "revealWindow": 60
       },
-      "at": "2025-10-16T00:40:11.725Z"
+      "at": "2025-10-16T01:54:21.878Z"
     },
     {
       "label": "Validator quorum set",
@@ -218,7 +218,7 @@
       "parameters": {
         "count": 3
       },
-      "at": "2025-10-16T00:40:11.726Z"
+      "at": "2025-10-16T01:54:21.880Z"
     },
     {
       "label": "Validator pool curated",
@@ -231,7 +231,7 @@
           "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
         ]
       },
-      "at": "2025-10-16T00:40:11.729Z"
+      "at": "2025-10-16T01:54:21.883Z"
     },
     {
       "label": "Reveal quorum configured",
@@ -241,7 +241,7 @@
         "minYesVotes": 0,
         "minRevealers": 2
       },
-      "at": "2025-10-16T00:40:11.730Z"
+      "at": "2025-10-16T01:54:21.885Z"
     },
     {
       "label": "Non-reveal penalty set",
@@ -251,7 +251,7 @@
         "penaltyBps": 100,
         "penaltyDivisor": 1
       },
-      "at": "2025-10-16T00:40:11.732Z"
+      "at": "2025-10-16T01:54:21.887Z"
     },
     {
       "label": "Fee pool burn percentage adjusted",
@@ -260,7 +260,7 @@
       "parameters": {
         "burnPct": 5
       },
-      "at": "2025-10-16T00:40:11.733Z"
+      "at": "2025-10-16T01:54:21.889Z"
     },
     {
       "label": "Certificate base URI set",
@@ -269,7 +269,7 @@
       "parameters": {
         "baseURI": "ipfs://agi-jobs/demo/certificates/"
       },
-      "at": "2025-10-16T00:40:11.735Z"
+      "at": "2025-10-16T01:54:21.891Z"
     },
     {
       "label": "Emergency AI agent allowlisted",
@@ -278,7 +278,7 @@
       "parameters": {
         "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
       },
-      "at": "2025-10-16T00:40:11.737Z"
+      "at": "2025-10-16T01:54:21.893Z"
     },
     {
       "label": "Agent type annotated",
@@ -288,7 +288,7 @@
         "agent": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
         "agentType": 1
       },
-      "at": "2025-10-16T00:40:11.739Z"
+      "at": "2025-10-16T01:54:21.895Z"
     },
     {
       "label": "Emergency AI agent allowlisted",
@@ -297,7 +297,7 @@
       "parameters": {
         "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
       },
-      "at": "2025-10-16T00:40:11.740Z"
+      "at": "2025-10-16T01:54:21.897Z"
     },
     {
       "label": "Agent type annotated",
@@ -307,7 +307,7 @@
         "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
         "agentType": 1
       },
-      "at": "2025-10-16T00:40:11.743Z"
+      "at": "2025-10-16T01:54:21.899Z"
     },
     {
       "label": "Validator council seat granted",
@@ -316,7 +316,7 @@
       "parameters": {
         "validator": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
       },
-      "at": "2025-10-16T00:40:11.744Z"
+      "at": "2025-10-16T01:54:21.901Z"
     },
     {
       "label": "Validator council seat granted",
@@ -325,7 +325,7 @@
       "parameters": {
         "validator": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
       },
-      "at": "2025-10-16T00:40:11.748Z"
+      "at": "2025-10-16T01:54:21.906Z"
     },
     {
       "label": "Validator council seat granted",
@@ -334,7 +334,7 @@
       "parameters": {
         "validator": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
       },
-      "at": "2025-10-16T00:40:11.749Z"
+      "at": "2025-10-16T01:54:21.908Z"
     },
     {
       "label": "Protocol fee temporarily increased",
@@ -344,7 +344,7 @@
         "previous": 5,
         "pct": 9
       },
-      "at": "2025-10-16T00:40:11.814Z"
+      "at": "2025-10-16T01:54:21.982Z"
     },
     {
       "label": "Validator rewards boosted",
@@ -354,7 +354,7 @@
         "previous": 20,
         "pct": 25
       },
-      "at": "2025-10-16T00:40:11.816Z"
+      "at": "2025-10-16T01:54:21.985Z"
     },
     {
       "label": "Fee pool burn widened",
@@ -364,7 +364,7 @@
         "previous": 5,
         "burnPct": 6
       },
-      "at": "2025-10-16T00:40:11.819Z"
+      "at": "2025-10-16T01:54:21.987Z"
     },
     {
       "label": "Commit/reveal windows extended",
@@ -376,7 +376,7 @@
         "commitWindow": "90s",
         "revealWindow": "90s"
       },
-      "at": "2025-10-16T00:40:11.826Z"
+      "at": "2025-10-16T01:54:21.999Z"
     },
     {
       "label": "Reveal quorum tightened",
@@ -388,7 +388,7 @@
         "pct": 50,
         "minRevealers": 2
       },
-      "at": "2025-10-16T00:40:11.829Z"
+      "at": "2025-10-16T01:54:22.003Z"
     },
     {
       "label": "Non-reveal penalty escalated",
@@ -400,7 +400,7 @@
         "bps": 150,
         "banBlocks": 12
       },
-      "at": "2025-10-16T00:40:11.831Z"
+      "at": "2025-10-16T01:54:22.006Z"
     },
     {
       "label": "Registry pauser delegated",
@@ -409,7 +409,7 @@
       "parameters": {
         "newPauser": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
       },
-      "at": "2025-10-16T00:40:11.840Z"
+      "at": "2025-10-16T01:54:22.024Z"
     },
     {
       "label": "Stake manager pauser delegated",
@@ -418,7 +418,7 @@
       "parameters": {
         "newPauser": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
       },
-      "at": "2025-10-16T00:40:11.843Z"
+      "at": "2025-10-16T01:54:22.030Z"
     },
     {
       "label": "Validation module pauser delegated",
@@ -427,7 +427,7 @@
       "parameters": {
         "newPauser": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
       },
-      "at": "2025-10-16T00:40:11.845Z"
+      "at": "2025-10-16T01:54:22.036Z"
     },
     {
       "label": "Registry paused for drill",
@@ -436,7 +436,7 @@
       "parameters": {
         "by": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
       },
-      "at": "2025-10-16T00:40:11.847Z"
+      "at": "2025-10-16T01:54:22.041Z"
     },
     {
       "label": "Stake manager paused for drill",
@@ -445,7 +445,7 @@
       "parameters": {
         "by": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
       },
-      "at": "2025-10-16T00:40:11.850Z"
+      "at": "2025-10-16T01:54:22.049Z"
     },
     {
       "label": "Validation module paused for drill",
@@ -454,7 +454,7 @@
       "parameters": {
         "by": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
       },
-      "at": "2025-10-16T00:40:11.852Z"
+      "at": "2025-10-16T01:54:22.053Z"
     },
     {
       "label": "Registry unpaused after drill",
@@ -463,7 +463,7 @@
       "parameters": {
         "by": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
       },
-      "at": "2025-10-16T00:40:11.859Z"
+      "at": "2025-10-16T01:54:22.060Z"
     },
     {
       "label": "Stake manager unpaused after drill",
@@ -472,7 +472,7 @@
       "parameters": {
         "by": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
       },
-      "at": "2025-10-16T00:40:11.860Z"
+      "at": "2025-10-16T01:54:22.063Z"
     },
     {
       "label": "Validation module unpaused after drill",
@@ -481,7 +481,7 @@
       "parameters": {
         "by": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
       },
-      "at": "2025-10-16T00:40:11.863Z"
+      "at": "2025-10-16T01:54:22.066Z"
     },
     {
       "label": "Registry paused by delegated moderator",
@@ -490,7 +490,7 @@
       "parameters": {
         "by": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
       },
-      "at": "2025-10-16T00:40:11.865Z"
+      "at": "2025-10-16T01:54:22.070Z"
     },
     {
       "label": "Stake manager paused by delegated moderator",
@@ -499,7 +499,7 @@
       "parameters": {
         "by": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
       },
-      "at": "2025-10-16T00:40:11.871Z"
+      "at": "2025-10-16T01:54:22.072Z"
     },
     {
       "label": "Validation module paused by delegated moderator",
@@ -508,7 +508,7 @@
       "parameters": {
         "by": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
       },
-      "at": "2025-10-16T00:40:11.873Z"
+      "at": "2025-10-16T01:54:22.074Z"
     },
     {
       "label": "Registry unpaused by delegated moderator",
@@ -517,7 +517,7 @@
       "parameters": {
         "by": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
       },
-      "at": "2025-10-16T00:40:11.879Z"
+      "at": "2025-10-16T01:54:22.080Z"
     },
     {
       "label": "Stake manager unpaused by delegated moderator",
@@ -526,7 +526,7 @@
       "parameters": {
         "by": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
       },
-      "at": "2025-10-16T00:40:11.882Z"
+      "at": "2025-10-16T01:54:22.083Z"
     },
     {
       "label": "Validation module unpaused by delegated moderator",
@@ -535,7 +535,7 @@
       "parameters": {
         "by": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
       },
-      "at": "2025-10-16T00:40:11.883Z"
+      "at": "2025-10-16T01:54:22.085Z"
     },
     {
       "label": "Protocol fee restored",
@@ -544,7 +544,7 @@
       "parameters": {
         "pct": 5
       },
-      "at": "2025-10-16T00:40:11.896Z"
+      "at": "2025-10-16T01:54:22.096Z"
     },
     {
       "label": "Validator reward restored",
@@ -553,7 +553,7 @@
       "parameters": {
         "pct": 20
       },
-      "at": "2025-10-16T00:40:11.898Z"
+      "at": "2025-10-16T01:54:22.098Z"
     },
     {
       "label": "Fee pool burn restored",
@@ -562,7 +562,7 @@
       "parameters": {
         "burnPct": 5
       },
-      "at": "2025-10-16T00:40:11.900Z"
+      "at": "2025-10-16T01:54:22.100Z"
     },
     {
       "label": "Commit/reveal cadence restored",
@@ -572,7 +572,7 @@
         "commitWindow": "60s",
         "revealWindow": "60s"
       },
-      "at": "2025-10-16T00:40:11.902Z"
+      "at": "2025-10-16T01:54:22.102Z"
     },
     {
       "label": "Reveal quorum restored",
@@ -582,7 +582,7 @@
         "pct": 0,
         "minRevealers": 2
       },
-      "at": "2025-10-16T00:40:11.903Z"
+      "at": "2025-10-16T01:54:22.104Z"
     },
     {
       "label": "Non-reveal penalty restored",
@@ -592,7 +592,7 @@
         "bps": 100,
         "banBlocks": 1
       },
-      "at": "2025-10-16T00:40:11.905Z"
+      "at": "2025-10-16T01:54:22.106Z"
     },
     {
       "label": "Registry pauser returned to owner",
@@ -601,7 +601,7 @@
       "parameters": {
         "newPauser": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
       },
-      "at": "2025-10-16T00:40:11.907Z"
+      "at": "2025-10-16T01:54:22.108Z"
     },
     {
       "label": "Stake manager pauser returned to owner",
@@ -610,7 +610,7 @@
       "parameters": {
         "newPauser": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
       },
-      "at": "2025-10-16T00:40:11.908Z"
+      "at": "2025-10-16T01:54:22.110Z"
     },
     {
       "label": "Validation module pauser returned to owner",
@@ -619,7 +619,7 @@
       "parameters": {
         "newPauser": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
       },
-      "at": "2025-10-16T00:40:11.909Z"
+      "at": "2025-10-16T01:54:22.112Z"
     },
     {
       "label": "Dispute fee waived for demonstration",
@@ -628,7 +628,7 @@
       "parameters": {
         "fee": 0
       },
-      "at": "2025-10-16T00:40:12.322Z"
+      "at": "2025-10-16T01:54:22.540Z"
     },
     {
       "label": "Dispute window accelerated",
@@ -637,7 +637,7 @@
       "parameters": {
         "window": 0
       },
-      "at": "2025-10-16T00:40:12.332Z"
+      "at": "2025-10-16T01:54:22.553Z"
     },
     {
       "label": "Owner enrolled as dispute moderator",
@@ -647,7 +647,7 @@
         "moderator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
         "enabled": 1
       },
-      "at": "2025-10-16T00:40:12.334Z"
+      "at": "2025-10-16T01:54:22.555Z"
     },
     {
       "label": "External moderator empowered",
@@ -657,19 +657,19 @@
         "moderator": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
         "enabled": 1
       },
-      "at": "2025-10-16T00:40:12.336Z"
+      "at": "2025-10-16T01:54:22.557Z"
     }
   ],
   "timeline": [
     {
       "kind": "section",
       "label": "Bootstrapping AGI Jobs v2 grand demo environment",
-      "at": "2025-10-16T00:40:11.001Z"
+      "at": "2025-10-16T01:54:21.168Z"
     },
     {
       "kind": "summary",
       "label": "Demo actor roster initialised",
-      "at": "2025-10-16T00:40:11.462Z",
+      "at": "2025-10-16T01:54:21.613Z",
       "meta": {
         "actors": [
           {
@@ -732,7 +732,7 @@
     {
       "kind": "summary",
       "label": "Initial AGIα liquidity minted to actors",
-      "at": "2025-10-16T00:40:11.510Z",
+      "at": "2025-10-16T01:54:21.663Z",
       "meta": {
         "amount": "2000.0 AGIα",
         "recipients": [
@@ -749,12 +749,12 @@
     {
       "kind": "step",
       "label": "Deploying core contracts",
-      "at": "2025-10-16T00:40:11.510Z"
+      "at": "2025-10-16T01:54:21.663Z"
     },
     {
       "kind": "summary",
       "label": "StakeManager deployed",
-      "at": "2025-10-16T00:40:11.543Z",
+      "at": "2025-10-16T01:54:21.703Z",
       "meta": {
         "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "args": [
@@ -771,7 +771,7 @@
     {
       "kind": "summary",
       "label": "ReputationEngine deployed",
-      "at": "2025-10-16T00:40:11.556Z",
+      "at": "2025-10-16T01:54:21.713Z",
       "meta": {
         "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
         "args": [
@@ -782,7 +782,7 @@
     {
       "kind": "summary",
       "label": "IdentityRegistry deployed",
-      "at": "2025-10-16T00:40:11.578Z",
+      "at": "2025-10-16T01:54:21.729Z",
       "meta": {
         "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
         "args": [
@@ -797,7 +797,7 @@
     {
       "kind": "summary",
       "label": "ValidationModule deployed",
-      "at": "2025-10-16T00:40:11.601Z",
+      "at": "2025-10-16T01:54:21.749Z",
       "meta": {
         "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "args": [
@@ -814,7 +814,7 @@
     {
       "kind": "summary",
       "label": "CertificateNFT deployed",
-      "at": "2025-10-16T00:40:11.615Z",
+      "at": "2025-10-16T01:54:21.762Z",
       "meta": {
         "address": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
         "args": [
@@ -826,7 +826,7 @@
     {
       "kind": "summary",
       "label": "JobRegistry deployed",
-      "at": "2025-10-16T00:40:11.648Z",
+      "at": "2025-10-16T01:54:21.797Z",
       "meta": {
         "address": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "args": [
@@ -847,7 +847,7 @@
     {
       "kind": "summary",
       "label": "DisputeModule deployed",
-      "at": "2025-10-16T00:40:11.659Z",
+      "at": "2025-10-16T01:54:21.809Z",
       "meta": {
         "address": "0x9A676e781A523b5d0C0e43731313A708CB607508",
         "args": [
@@ -862,7 +862,7 @@
     {
       "kind": "summary",
       "label": "FeePool deployed",
-      "at": "2025-10-16T00:40:11.669Z",
+      "at": "2025-10-16T01:54:21.820Z",
       "meta": {
         "address": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
         "args": [
@@ -876,12 +876,12 @@
     {
       "kind": "step",
       "label": "Wiring governance relationships and module cross-links",
-      "at": "2025-10-16T00:40:11.671Z"
+      "at": "2025-10-16T01:54:21.822Z"
     },
     {
       "kind": "owner-action",
       "label": "Linked certificate to job registry",
-      "at": "2025-10-16T00:40:11.673Z",
+      "at": "2025-10-16T01:54:21.824Z",
       "meta": {
         "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
         "method": "setJobRegistry",
@@ -893,7 +893,7 @@
     {
       "kind": "owner-action",
       "label": "Linked certificate to stake manager",
-      "at": "2025-10-16T00:40:11.677Z",
+      "at": "2025-10-16T01:54:21.827Z",
       "meta": {
         "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
         "method": "setStakeManager",
@@ -905,7 +905,7 @@
     {
       "kind": "owner-action",
       "label": "Connected stake manager fee pool",
-      "at": "2025-10-16T00:40:11.688Z",
+      "at": "2025-10-16T01:54:21.838Z",
       "meta": {
         "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "method": "setFeePool",
@@ -917,7 +917,7 @@
     {
       "kind": "owner-action",
       "label": "Connected stake modules",
-      "at": "2025-10-16T00:40:11.692Z",
+      "at": "2025-10-16T01:54:21.844Z",
       "meta": {
         "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "method": "setModules",
@@ -930,7 +930,7 @@
     {
       "kind": "owner-action",
       "label": "Linked stake to validation module",
-      "at": "2025-10-16T00:40:11.694Z",
+      "at": "2025-10-16T01:54:21.847Z",
       "meta": {
         "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "method": "setValidationModule",
@@ -942,7 +942,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module registry link",
-      "at": "2025-10-16T00:40:11.698Z",
+      "at": "2025-10-16T01:54:21.849Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setJobRegistry",
@@ -954,7 +954,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module identity link",
-      "at": "2025-10-16T00:40:11.704Z",
+      "at": "2025-10-16T01:54:21.854Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setIdentityRegistry",
@@ -966,7 +966,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module reputation link",
-      "at": "2025-10-16T00:40:11.706Z",
+      "at": "2025-10-16T01:54:21.856Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setReputationEngine",
@@ -978,7 +978,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module stake link",
-      "at": "2025-10-16T00:40:11.708Z",
+      "at": "2025-10-16T01:54:21.858Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setStakeManager",
@@ -990,7 +990,7 @@
     {
       "kind": "owner-action",
       "label": "Registry module wiring finalised",
-      "at": "2025-10-16T00:40:11.713Z",
+      "at": "2025-10-16T01:54:21.865Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "setModules",
@@ -1007,7 +1007,7 @@
     {
       "kind": "owner-action",
       "label": "Registry identity registry set",
-      "at": "2025-10-16T00:40:11.715Z",
+      "at": "2025-10-16T01:54:21.868Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "setIdentityRegistry",
@@ -1019,7 +1019,7 @@
     {
       "kind": "owner-action",
       "label": "Validator reward percentage configured",
-      "at": "2025-10-16T00:40:11.717Z",
+      "at": "2025-10-16T01:54:21.869Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "setValidatorRewardPct",
@@ -1031,7 +1031,7 @@
     {
       "kind": "owner-action",
       "label": "Registry authorised to update reputation",
-      "at": "2025-10-16T00:40:11.719Z",
+      "at": "2025-10-16T01:54:21.871Z",
       "meta": {
         "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
         "method": "setCaller",
@@ -1044,7 +1044,7 @@
     {
       "kind": "owner-action",
       "label": "Validation authorised to update reputation",
-      "at": "2025-10-16T00:40:11.721Z",
+      "at": "2025-10-16T01:54:21.874Z",
       "meta": {
         "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
         "method": "setCaller",
@@ -1057,7 +1057,7 @@
     {
       "kind": "owner-action",
       "label": "Dispute module stake link",
-      "at": "2025-10-16T00:40:11.723Z",
+      "at": "2025-10-16T01:54:21.876Z",
       "meta": {
         "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
         "method": "setStakeManager",
@@ -1069,12 +1069,12 @@
     {
       "kind": "step",
       "label": "Configuring policy parameters for rapid local simulation",
-      "at": "2025-10-16T00:40:11.723Z"
+      "at": "2025-10-16T01:54:21.876Z"
     },
     {
       "kind": "owner-action",
       "label": "Commit/reveal windows tuned",
-      "at": "2025-10-16T00:40:11.725Z",
+      "at": "2025-10-16T01:54:21.878Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setCommitRevealWindows",
@@ -1087,7 +1087,7 @@
     {
       "kind": "owner-action",
       "label": "Validator quorum set",
-      "at": "2025-10-16T00:40:11.726Z",
+      "at": "2025-10-16T01:54:21.880Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setValidatorsPerJob",
@@ -1099,7 +1099,7 @@
     {
       "kind": "owner-action",
       "label": "Validator pool curated",
-      "at": "2025-10-16T00:40:11.729Z",
+      "at": "2025-10-16T01:54:21.883Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setValidatorPool",
@@ -1115,7 +1115,7 @@
     {
       "kind": "owner-action",
       "label": "Reveal quorum configured",
-      "at": "2025-10-16T00:40:11.730Z",
+      "at": "2025-10-16T01:54:21.885Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setRevealQuorum",
@@ -1128,7 +1128,7 @@
     {
       "kind": "owner-action",
       "label": "Non-reveal penalty set",
-      "at": "2025-10-16T00:40:11.732Z",
+      "at": "2025-10-16T01:54:21.887Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setNonRevealPenalty",
@@ -1141,7 +1141,7 @@
     {
       "kind": "owner-action",
       "label": "Fee pool burn percentage adjusted",
-      "at": "2025-10-16T00:40:11.733Z",
+      "at": "2025-10-16T01:54:21.889Z",
       "meta": {
         "contract": "FeePool@0x0B306BF915C4d645ff596e518fAf3F9669b97016",
         "method": "setBurnPct",
@@ -1153,7 +1153,7 @@
     {
       "kind": "owner-action",
       "label": "Certificate base URI set",
-      "at": "2025-10-16T00:40:11.735Z",
+      "at": "2025-10-16T01:54:21.891Z",
       "meta": {
         "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
         "method": "setBaseURI",
@@ -1165,12 +1165,12 @@
     {
       "kind": "step",
       "label": "Seeding IdentityRegistry with emergency allowlists",
-      "at": "2025-10-16T00:40:11.735Z"
+      "at": "2025-10-16T01:54:21.891Z"
     },
     {
       "kind": "owner-action",
       "label": "Emergency AI agent allowlisted",
-      "at": "2025-10-16T00:40:11.737Z",
+      "at": "2025-10-16T01:54:21.893Z",
       "meta": {
         "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
         "method": "addAdditionalAgent",
@@ -1182,7 +1182,7 @@
     {
       "kind": "owner-action",
       "label": "Agent type annotated",
-      "at": "2025-10-16T00:40:11.739Z",
+      "at": "2025-10-16T01:54:21.895Z",
       "meta": {
         "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
         "method": "setAgentType",
@@ -1195,7 +1195,7 @@
     {
       "kind": "owner-action",
       "label": "Emergency AI agent allowlisted",
-      "at": "2025-10-16T00:40:11.740Z",
+      "at": "2025-10-16T01:54:21.897Z",
       "meta": {
         "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
         "method": "addAdditionalAgent",
@@ -1207,7 +1207,7 @@
     {
       "kind": "owner-action",
       "label": "Agent type annotated",
-      "at": "2025-10-16T00:40:11.743Z",
+      "at": "2025-10-16T01:54:21.899Z",
       "meta": {
         "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
         "method": "setAgentType",
@@ -1220,7 +1220,7 @@
     {
       "kind": "owner-action",
       "label": "Validator council seat granted",
-      "at": "2025-10-16T00:40:11.744Z",
+      "at": "2025-10-16T01:54:21.901Z",
       "meta": {
         "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
         "method": "addAdditionalValidator",
@@ -1232,7 +1232,7 @@
     {
       "kind": "owner-action",
       "label": "Validator council seat granted",
-      "at": "2025-10-16T00:40:11.748Z",
+      "at": "2025-10-16T01:54:21.906Z",
       "meta": {
         "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
         "method": "addAdditionalValidator",
@@ -1244,7 +1244,7 @@
     {
       "kind": "owner-action",
       "label": "Validator council seat granted",
-      "at": "2025-10-16T00:40:11.749Z",
+      "at": "2025-10-16T01:54:21.908Z",
       "meta": {
         "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
         "method": "addAdditionalValidator",
@@ -1256,12 +1256,12 @@
     {
       "kind": "step",
       "label": "Initial token approvals and staking for actors",
-      "at": "2025-10-16T00:40:11.749Z"
+      "at": "2025-10-16T01:54:21.908Z"
     },
     {
       "kind": "balance",
       "label": "Initial treasury state",
-      "at": "2025-10-16T00:40:11.787Z",
+      "at": "2025-10-16T01:54:21.955Z",
       "meta": {
         "participants": [
           {
@@ -1305,17 +1305,17 @@
     {
       "kind": "section",
       "label": "Owner mission control – unstoppable command authority demonstration",
-      "at": "2025-10-16T00:40:11.788Z"
+      "at": "2025-10-16T01:54:21.956Z"
     },
     {
       "kind": "step",
       "label": "Owner calibrates market economics and validator incentives",
-      "at": "2025-10-16T00:40:11.811Z"
+      "at": "2025-10-16T01:54:21.978Z"
     },
     {
       "kind": "owner-action",
       "label": "Protocol fee temporarily increased",
-      "at": "2025-10-16T00:40:11.814Z",
+      "at": "2025-10-16T01:54:21.982Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "setFeePct",
@@ -1328,7 +1328,7 @@
     {
       "kind": "owner-action",
       "label": "Validator rewards boosted",
-      "at": "2025-10-16T00:40:11.816Z",
+      "at": "2025-10-16T01:54:21.985Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "setValidatorRewardPct",
@@ -1341,7 +1341,7 @@
     {
       "kind": "owner-action",
       "label": "Fee pool burn widened",
-      "at": "2025-10-16T00:40:11.819Z",
+      "at": "2025-10-16T01:54:21.987Z",
       "meta": {
         "contract": "FeePool@0x0B306BF915C4d645ff596e518fAf3F9669b97016",
         "method": "setBurnPct",
@@ -1354,12 +1354,12 @@
     {
       "kind": "step",
       "label": "Owner updates validation committee cadence and accountability levers",
-      "at": "2025-10-16T00:40:11.823Z"
+      "at": "2025-10-16T01:54:21.992Z"
     },
     {
       "kind": "owner-action",
       "label": "Commit/reveal windows extended",
-      "at": "2025-10-16T00:40:11.826Z",
+      "at": "2025-10-16T01:54:21.999Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setCommitRevealWindows",
@@ -1374,7 +1374,7 @@
     {
       "kind": "owner-action",
       "label": "Reveal quorum tightened",
-      "at": "2025-10-16T00:40:11.829Z",
+      "at": "2025-10-16T01:54:22.003Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setRevealQuorum",
@@ -1389,7 +1389,7 @@
     {
       "kind": "owner-action",
       "label": "Non-reveal penalty escalated",
-      "at": "2025-10-16T00:40:11.831Z",
+      "at": "2025-10-16T01:54:22.006Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setNonRevealPenalty",
@@ -1404,12 +1404,12 @@
     {
       "kind": "step",
       "label": "Owner delegates emergency pauser powers and performs a live drill",
-      "at": "2025-10-16T00:40:11.838Z"
+      "at": "2025-10-16T01:54:22.018Z"
     },
     {
       "kind": "owner-action",
       "label": "Registry pauser delegated",
-      "at": "2025-10-16T00:40:11.840Z",
+      "at": "2025-10-16T01:54:22.024Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "setPauser",
@@ -1421,7 +1421,7 @@
     {
       "kind": "owner-action",
       "label": "Stake manager pauser delegated",
-      "at": "2025-10-16T00:40:11.843Z",
+      "at": "2025-10-16T01:54:22.030Z",
       "meta": {
         "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "method": "setPauser",
@@ -1433,7 +1433,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module pauser delegated",
-      "at": "2025-10-16T00:40:11.845Z",
+      "at": "2025-10-16T01:54:22.036Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setPauser",
@@ -1445,7 +1445,7 @@
     {
       "kind": "owner-action",
       "label": "Registry paused for drill",
-      "at": "2025-10-16T00:40:11.847Z",
+      "at": "2025-10-16T01:54:22.041Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "pause",
@@ -1457,7 +1457,7 @@
     {
       "kind": "owner-action",
       "label": "Stake manager paused for drill",
-      "at": "2025-10-16T00:40:11.850Z",
+      "at": "2025-10-16T01:54:22.049Z",
       "meta": {
         "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "method": "pause",
@@ -1469,7 +1469,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module paused for drill",
-      "at": "2025-10-16T00:40:11.852Z",
+      "at": "2025-10-16T01:54:22.053Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "pause",
@@ -1481,7 +1481,7 @@
     {
       "kind": "owner-action",
       "label": "Registry unpaused after drill",
-      "at": "2025-10-16T00:40:11.859Z",
+      "at": "2025-10-16T01:54:22.060Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "unpause",
@@ -1493,7 +1493,7 @@
     {
       "kind": "owner-action",
       "label": "Stake manager unpaused after drill",
-      "at": "2025-10-16T00:40:11.860Z",
+      "at": "2025-10-16T01:54:22.063Z",
       "meta": {
         "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "method": "unpause",
@@ -1505,7 +1505,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module unpaused after drill",
-      "at": "2025-10-16T00:40:11.863Z",
+      "at": "2025-10-16T01:54:22.066Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "unpause",
@@ -1517,7 +1517,7 @@
     {
       "kind": "owner-action",
       "label": "Registry paused by delegated moderator",
-      "at": "2025-10-16T00:40:11.865Z",
+      "at": "2025-10-16T01:54:22.070Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "pause",
@@ -1529,7 +1529,7 @@
     {
       "kind": "owner-action",
       "label": "Stake manager paused by delegated moderator",
-      "at": "2025-10-16T00:40:11.871Z",
+      "at": "2025-10-16T01:54:22.072Z",
       "meta": {
         "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "method": "pause",
@@ -1541,7 +1541,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module paused by delegated moderator",
-      "at": "2025-10-16T00:40:11.873Z",
+      "at": "2025-10-16T01:54:22.074Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "pause",
@@ -1553,7 +1553,7 @@
     {
       "kind": "owner-action",
       "label": "Registry unpaused by delegated moderator",
-      "at": "2025-10-16T00:40:11.879Z",
+      "at": "2025-10-16T01:54:22.080Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "unpause",
@@ -1565,7 +1565,7 @@
     {
       "kind": "owner-action",
       "label": "Stake manager unpaused by delegated moderator",
-      "at": "2025-10-16T00:40:11.882Z",
+      "at": "2025-10-16T01:54:22.083Z",
       "meta": {
         "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "method": "unpause",
@@ -1577,7 +1577,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module unpaused by delegated moderator",
-      "at": "2025-10-16T00:40:11.883Z",
+      "at": "2025-10-16T01:54:22.085Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "unpause",
@@ -1589,12 +1589,12 @@
     {
       "kind": "step",
       "label": "Owner restores baseline configuration to prepare live scenarios",
-      "at": "2025-10-16T00:40:11.894Z"
+      "at": "2025-10-16T01:54:22.094Z"
     },
     {
       "kind": "owner-action",
       "label": "Protocol fee restored",
-      "at": "2025-10-16T00:40:11.896Z",
+      "at": "2025-10-16T01:54:22.096Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "setFeePct",
@@ -1606,7 +1606,7 @@
     {
       "kind": "owner-action",
       "label": "Validator reward restored",
-      "at": "2025-10-16T00:40:11.898Z",
+      "at": "2025-10-16T01:54:22.098Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "setValidatorRewardPct",
@@ -1618,7 +1618,7 @@
     {
       "kind": "owner-action",
       "label": "Fee pool burn restored",
-      "at": "2025-10-16T00:40:11.900Z",
+      "at": "2025-10-16T01:54:22.100Z",
       "meta": {
         "contract": "FeePool@0x0B306BF915C4d645ff596e518fAf3F9669b97016",
         "method": "setBurnPct",
@@ -1630,7 +1630,7 @@
     {
       "kind": "owner-action",
       "label": "Commit/reveal cadence restored",
-      "at": "2025-10-16T00:40:11.902Z",
+      "at": "2025-10-16T01:54:22.102Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setCommitRevealWindows",
@@ -1643,7 +1643,7 @@
     {
       "kind": "owner-action",
       "label": "Reveal quorum restored",
-      "at": "2025-10-16T00:40:11.903Z",
+      "at": "2025-10-16T01:54:22.104Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setRevealQuorum",
@@ -1656,7 +1656,7 @@
     {
       "kind": "owner-action",
       "label": "Non-reveal penalty restored",
-      "at": "2025-10-16T00:40:11.905Z",
+      "at": "2025-10-16T01:54:22.106Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setNonRevealPenalty",
@@ -1669,7 +1669,7 @@
     {
       "kind": "owner-action",
       "label": "Registry pauser returned to owner",
-      "at": "2025-10-16T00:40:11.907Z",
+      "at": "2025-10-16T01:54:22.108Z",
       "meta": {
         "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
         "method": "setPauser",
@@ -1681,7 +1681,7 @@
     {
       "kind": "owner-action",
       "label": "Stake manager pauser returned to owner",
-      "at": "2025-10-16T00:40:11.908Z",
+      "at": "2025-10-16T01:54:22.110Z",
       "meta": {
         "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
         "method": "setPauser",
@@ -1693,7 +1693,7 @@
     {
       "kind": "owner-action",
       "label": "Validation module pauser returned to owner",
-      "at": "2025-10-16T00:40:11.909Z",
+      "at": "2025-10-16T01:54:22.112Z",
       "meta": {
         "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
         "method": "setPauser",
@@ -1705,7 +1705,7 @@
     {
       "kind": "summary",
       "label": "Owner mission control baseline restored",
-      "at": "2025-10-16T00:40:11.918Z",
+      "at": "2025-10-16T01:54:22.120Z",
       "meta": {
         "feePct": 5,
         "validatorRewardPct": 20,
@@ -1728,18 +1728,18 @@
     {
       "kind": "section",
       "label": "Scenario 1 – Cooperative intergovernmental AI labour success",
-      "at": "2025-10-16T00:40:11.919Z"
+      "at": "2025-10-16T01:54:22.121Z"
     },
     {
       "kind": "step",
       "label": "Nation A approves escrow and posts a climate-coordination job",
-      "at": "2025-10-16T00:40:11.921Z",
+      "at": "2025-10-16T01:54:22.122Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
     },
     {
       "kind": "job-summary",
       "label": "Job 1 (after posting)",
-      "at": "2025-10-16T00:40:11.937Z",
+      "at": "2025-10-16T01:54:22.138Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
       "meta": {
         "jobId": "1",
@@ -1755,13 +1755,13 @@
     {
       "kind": "step",
       "label": "Alice stakes identity and applies through the emergency allowlist",
-      "at": "2025-10-16T00:40:11.937Z",
+      "at": "2025-10-16T01:54:22.138Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
     },
     {
       "kind": "job-summary",
       "label": "Job 1 (after agent assignment)",
-      "at": "2025-10-16T00:40:11.950Z",
+      "at": "2025-10-16T01:54:22.152Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
       "meta": {
         "jobId": "1",
@@ -1777,13 +1777,13 @@
     {
       "kind": "step",
       "label": "Alice submits validated deliverables with provable IPFS evidence",
-      "at": "2025-10-16T00:40:11.950Z",
+      "at": "2025-10-16T01:54:22.152Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
     },
     {
       "kind": "job-summary",
       "label": "Job 1 (after submission)",
-      "at": "2025-10-16T00:40:11.968Z",
+      "at": "2025-10-16T01:54:22.169Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
       "meta": {
         "jobId": "1",
@@ -1799,25 +1799,25 @@
     {
       "kind": "step",
       "label": "Nation A records burn proof and primes the validation committee selection",
-      "at": "2025-10-16T00:40:11.968Z",
+      "at": "2025-10-16T01:54:22.169Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
     },
     {
       "kind": "step",
       "label": "Validators commit to their assessments under commit–reveal secrecy",
-      "at": "2025-10-16T00:40:12.014Z",
+      "at": "2025-10-16T01:54:22.224Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
     },
     {
       "kind": "step",
       "label": "Validators reveal unanimous approval, meeting the quorum instantly",
-      "at": "2025-10-16T00:40:12.045Z",
+      "at": "2025-10-16T01:54:22.266Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
     },
     {
       "kind": "job-summary",
       "label": "Job 1 (after validator finalize)",
-      "at": "2025-10-16T00:40:12.115Z",
+      "at": "2025-10-16T01:54:22.329Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
       "meta": {
         "jobId": "1",
@@ -1833,13 +1833,13 @@
     {
       "kind": "step",
       "label": "Nation A finalizes payment, rewarding Alice and the validator cohort",
-      "at": "2025-10-16T00:40:12.115Z",
+      "at": "2025-10-16T01:54:22.329Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
     },
     {
       "kind": "job-summary",
       "label": "Job 1 (after treasury settlement)",
-      "at": "2025-10-16T00:40:12.141Z",
+      "at": "2025-10-16T01:54:22.351Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
       "meta": {
         "jobId": "1",
@@ -1855,7 +1855,7 @@
     {
       "kind": "balance",
       "label": "Post-job token balances",
-      "at": "2025-10-16T00:40:12.150Z",
+      "at": "2025-10-16T01:54:22.360Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success",
       "meta": {
         "participants": [
@@ -1890,19 +1890,19 @@
     {
       "kind": "section",
       "label": "Scenario 2 – Cross-border dispute resolved by owner governance",
-      "at": "2025-10-16T00:40:12.151Z",
+      "at": "2025-10-16T01:54:22.362Z",
       "scenario": "Scenario 1 – Cooperative intergovernmental AI labour success"
     },
     {
       "kind": "step",
       "label": "Nation B funds a frontier language translation initiative",
-      "at": "2025-10-16T00:40:12.153Z",
+      "at": "2025-10-16T01:54:22.364Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
     },
     {
       "kind": "job-summary",
       "label": "Job 2 (after posting)",
-      "at": "2025-10-16T00:40:12.167Z",
+      "at": "2025-10-16T01:54:22.376Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
       "meta": {
         "jobId": "2",
@@ -1918,25 +1918,25 @@
     {
       "kind": "step",
       "label": "Bob applies, contributes work, and submits contested deliverables",
-      "at": "2025-10-16T00:40:12.168Z",
+      "at": "2025-10-16T01:54:22.376Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
     },
     {
       "kind": "step",
       "label": "Validators disagree; one plans to approve, another to reject, one will abstain",
-      "at": "2025-10-16T00:40:12.227Z",
+      "at": "2025-10-16T01:54:22.427Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
     },
     {
       "kind": "step",
       "label": "Partial reveals occur – one validator abstains, triggering penalties",
-      "at": "2025-10-16T00:40:12.263Z",
+      "at": "2025-10-16T01:54:22.462Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
     },
     {
       "kind": "job-summary",
       "label": "Job 2 (after partial quorum)",
-      "at": "2025-10-16T00:40:12.320Z",
+      "at": "2025-10-16T01:54:22.538Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
       "meta": {
         "jobId": "2",
@@ -1952,13 +1952,13 @@
     {
       "kind": "step",
       "label": "Bob leverages dispute rights; governance moderates and sides with the agent",
-      "at": "2025-10-16T00:40:12.320Z",
+      "at": "2025-10-16T01:54:22.539Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
     },
     {
       "kind": "owner-action",
       "label": "Dispute fee waived for demonstration",
-      "at": "2025-10-16T00:40:12.322Z",
+      "at": "2025-10-16T01:54:22.540Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
       "meta": {
         "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
@@ -1971,7 +1971,7 @@
     {
       "kind": "owner-action",
       "label": "Dispute window accelerated",
-      "at": "2025-10-16T00:40:12.332Z",
+      "at": "2025-10-16T01:54:22.553Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
       "meta": {
         "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
@@ -1984,7 +1984,7 @@
     {
       "kind": "owner-action",
       "label": "Owner enrolled as dispute moderator",
-      "at": "2025-10-16T00:40:12.334Z",
+      "at": "2025-10-16T01:54:22.555Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
       "meta": {
         "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
@@ -1998,7 +1998,7 @@
     {
       "kind": "owner-action",
       "label": "External moderator empowered",
-      "at": "2025-10-16T00:40:12.336Z",
+      "at": "2025-10-16T01:54:22.557Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
       "meta": {
         "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
@@ -2012,13 +2012,13 @@
     {
       "kind": "step",
       "label": "Nation B finalizes, distributing escrow and validator rewards post-dispute",
-      "at": "2025-10-16T00:40:12.350Z",
+      "at": "2025-10-16T01:54:22.579Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
     },
     {
       "kind": "job-summary",
       "label": "Job 2 (after dispute resolution)",
-      "at": "2025-10-16T00:40:12.374Z",
+      "at": "2025-10-16T01:54:22.596Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
       "meta": {
         "jobId": "2",
@@ -2034,7 +2034,7 @@
     {
       "kind": "balance",
       "label": "Post-dispute token balances",
-      "at": "2025-10-16T00:40:12.381Z",
+      "at": "2025-10-16T01:54:22.603Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance",
       "meta": {
         "participants": [
@@ -2069,13 +2069,13 @@
     {
       "kind": "section",
       "label": "Sovereign labour market telemetry dashboard",
-      "at": "2025-10-16T00:40:12.381Z",
+      "at": "2025-10-16T01:54:22.604Z",
       "scenario": "Scenario 2 – Cross-border dispute resolved by owner governance"
     },
     {
       "kind": "summary",
       "label": "Agent portfolios",
-      "at": "2025-10-16T00:40:12.423Z",
+      "at": "2025-10-16T01:54:22.633Z",
       "meta": {
         "agents": [
           {
@@ -2112,7 +2112,7 @@
     {
       "kind": "summary",
       "label": "Validator council status",
-      "at": "2025-10-16T00:40:12.440Z",
+      "at": "2025-10-16T01:54:22.646Z",
       "meta": {
         "validators": [
           {
@@ -2145,7 +2145,7 @@
     {
       "kind": "summary",
       "label": "Market telemetry dashboard",
-      "at": "2025-10-16T00:40:12.441Z",
+      "at": "2025-10-16T01:54:22.646Z",
       "meta": {
         "totalJobs": "2",
         "totalBurned": "6.175 AGIα",
@@ -2166,13 +2166,69 @@
             "owner": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
             "uri": "ipfs://agi-jobs/demo/certificates/2"
           }
+        ],
+        "agentPortfolios": [
+          {
+            "name": "Alice (agent)",
+            "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+            "liquid": "2190.0 AGIα",
+            "staked": "10.0 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "145",
+            "certificates": [
+              {
+                "jobId": "1",
+                "uri": "ipfs://agi-jobs/demo/certificates/1"
+              }
+            ]
+          },
+          {
+            "name": "Bob (agent)",
+            "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+            "liquid": "2170.0 AGIα",
+            "staked": "10.0 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "145",
+            "certificates": [
+              {
+                "jobId": "2",
+                "uri": "ipfs://agi-jobs/demo/certificates/2"
+              }
+            ]
+          }
+        ],
+        "validatorCouncil": [
+          {
+            "name": "Charlie (validator)",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "liquid": "2006.666666666666666666 AGIα",
+            "staked": "5.0 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "9"
+          },
+          {
+            "name": "Dora (validator)",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "liquid": "2006.666666666666666666 AGIα",
+            "staked": "10.0 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "10"
+          },
+          {
+            "name": "Evan (validator)",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "liquid": "2006.666666666666666668 AGIα",
+            "staked": "9.9 AGIα",
+            "locked": "0.0 AGIα",
+            "reputation": "9"
+          }
         ]
       }
     },
     {
       "kind": "section",
       "label": "Demo complete – AGI Jobs v2 sovereignty market simulation finished",
-      "at": "2025-10-16T00:40:12.441Z"
+      "at": "2025-10-16T01:54:22.646Z"
     }
   ],
   "scenarios": [
@@ -2235,6 +2291,62 @@
         "jobId": "2",
         "owner": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
         "uri": "ipfs://agi-jobs/demo/certificates/2"
+      }
+    ],
+    "agentPortfolios": [
+      {
+        "name": "Alice (agent)",
+        "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "liquid": "2190.0 AGIα",
+        "staked": "10.0 AGIα",
+        "locked": "0.0 AGIα",
+        "reputation": "145",
+        "certificates": [
+          {
+            "jobId": "1",
+            "uri": "ipfs://agi-jobs/demo/certificates/1"
+          }
+        ]
+      },
+      {
+        "name": "Bob (agent)",
+        "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+        "liquid": "2170.0 AGIα",
+        "staked": "10.0 AGIα",
+        "locked": "0.0 AGIα",
+        "reputation": "145",
+        "certificates": [
+          {
+            "jobId": "2",
+            "uri": "ipfs://agi-jobs/demo/certificates/2"
+          }
+        ]
+      }
+    ],
+    "validatorCouncil": [
+      {
+        "name": "Charlie (validator)",
+        "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+        "liquid": "2006.666666666666666666 AGIα",
+        "staked": "5.0 AGIα",
+        "locked": "0.0 AGIα",
+        "reputation": "9"
+      },
+      {
+        "name": "Dora (validator)",
+        "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+        "liquid": "2006.666666666666666666 AGIα",
+        "staked": "10.0 AGIα",
+        "locked": "0.0 AGIα",
+        "reputation": "10"
+      },
+      {
+        "name": "Evan (validator)",
+        "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+        "liquid": "2006.666666666666666668 AGIα",
+        "staked": "9.9 AGIα",
+        "locked": "0.0 AGIα",
+        "reputation": "9"
       }
     ]
   },

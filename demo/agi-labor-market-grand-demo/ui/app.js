@@ -20,6 +20,37 @@ const formatTime = (iso) =>
 const formatParameters = (value) =>
   value == null ? '' : JSON.stringify(value, null, 2);
 
+const normaliseAddress = (value) =>
+  typeof value === 'string' ? value.toLowerCase() : '';
+
+function appendMetric(list, label, value, className) {
+  const dt = document.createElement('dt');
+  dt.textContent = label;
+  const dd = document.createElement('dd');
+  dd.textContent = value;
+  if (className) dd.className = className;
+  list.appendChild(dt);
+  list.appendChild(dd);
+}
+
+function renderCertificates(dd, certificates) {
+  dd.className = 'certificate-tags';
+  if (!certificates || certificates.length === 0) {
+    const empty = document.createElement('span');
+    empty.className = 'pill muted';
+    empty.textContent = 'No credentials minted yet';
+    dd.appendChild(empty);
+    return;
+  }
+
+  for (const cert of certificates) {
+    const badge = document.createElement('span');
+    badge.className = 'pill';
+    badge.textContent = cert.uri ? `#${cert.jobId} · ${cert.uri}` : `Credential #${cert.jobId}`;
+    dd.appendChild(badge);
+  }
+}
+
 async function loadData() {
   const responses = [...TRANSCRIPT_PATHS, FALLBACK_URL];
   for (const url of responses) {
@@ -149,10 +180,22 @@ function renderSummary(container, market, meta = {}) {
   }
 }
 
-function renderActors(container, actors) {
+function renderActors(container, actors, market, ownerControl) {
   const grid = document.createElement('div');
   grid.className = 'actor-grid';
-  const sorted = [...actors].sort((a, b) => a.role.localeCompare(b.role));
+  const sorted = [...actors].sort((a, b) => {
+    const roleCompare = a.role.localeCompare(b.role);
+    if (roleCompare !== 0) return roleCompare;
+    return a.name.localeCompare(b.name);
+  });
+
+  const agentLookup = new Map(
+    (market.agentPortfolios || []).map((entry) => [normaliseAddress(entry.address), entry])
+  );
+  const validatorLookup = new Map(
+    (market.validatorCouncil || []).map((entry) => [normaliseAddress(entry.address), entry])
+  );
+
   for (const actor of sorted) {
     const card = document.createElement('article');
     card.className = 'actor-card';
@@ -168,6 +211,43 @@ function renderActors(container, actors) {
     card.appendChild(role);
     card.appendChild(name);
     card.appendChild(address);
+
+    if (actor.role === 'Agent') {
+      const portfolio = agentLookup.get(normaliseAddress(actor.address));
+      if (portfolio) {
+        const metrics = document.createElement('dl');
+        metrics.className = 'metrics-dl';
+        appendMetric(metrics, 'Liquid balance', portfolio.liquid, 'parameters');
+        appendMetric(metrics, 'Active stake', portfolio.staked, 'parameters');
+        appendMetric(metrics, 'Locked stake', portfolio.locked, 'parameters');
+        appendMetric(metrics, 'Reputation score', portfolio.reputation, 'parameters');
+        const dt = document.createElement('dt');
+        dt.textContent = 'Credentials';
+        const dd = document.createElement('dd');
+        renderCertificates(dd, portfolio.certificates);
+        metrics.appendChild(dt);
+        metrics.appendChild(dd);
+        card.appendChild(metrics);
+      }
+    } else if (actor.role === 'Validator') {
+      const portfolio = validatorLookup.get(normaliseAddress(actor.address));
+      if (portfolio) {
+        const metrics = document.createElement('dl');
+        metrics.className = 'metrics-dl';
+        appendMetric(metrics, 'Liquid balance', portfolio.liquid, 'parameters');
+        appendMetric(metrics, 'Staked capital', portfolio.staked, 'parameters');
+        appendMetric(metrics, 'Locked stake', portfolio.locked, 'parameters');
+        appendMetric(metrics, 'Reputation score', portfolio.reputation, 'parameters');
+        card.appendChild(metrics);
+      }
+    } else if (actor.role === 'Owner' && ownerControl) {
+      const insight = document.createElement('p');
+      insight.className = 'parameters highlight';
+      insight.textContent =
+        'Owns full-spectrum authority across registry, staking, validation, dispute, certificates, and identity modules. Emergency pause powers were delegated, exercised, and restored during the drill.';
+      card.appendChild(insight);
+    }
+
     grid.appendChild(card);
   }
   container.appendChild(grid);
@@ -492,7 +572,7 @@ function renderApp(data) {
   app.appendChild(summaryCard);
 
   const actorsCard = createCard('Participants and wallets');
-  renderActors(actorsCard, data.actors);
+  renderActors(actorsCard, data.actors, data.market, data.ownerControl);
   app.appendChild(actorsCard);
 
   const ownerCard = createCard('Owner command log', 'Every configuration call executed during the run.');

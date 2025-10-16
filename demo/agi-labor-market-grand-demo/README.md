@@ -137,6 +137,9 @@ environment variable before running the script.
 
    - Nation and validator wallet dashboards with balances, stakes, and
      reputation.
+   - Live **agent and validator portfolios** summarising liquidity, locked
+     capital, reputation, and credential NFTs minted during the simulation so a
+     non-technical operator can confirm payouts and performance instantly.
    - Owner action logs highlighting every governance lever exercised during the
      simulation.
    - A **sovereign control snapshot** comparing baseline configuration, live
