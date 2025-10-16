@@ -16,6 +16,14 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
     event LaunchManifestUpdated(string manifestUri);
     event MarkExchangeDesignated(address indexed markExchange);
     event LaunchAcknowledged(address indexed markExchange, uint256 amount, bytes metadata, uint256 timestamp);
+    event LaunchAcknowledgedDetailed(
+        address indexed markExchange,
+        address indexed asset,
+        bool usesNative,
+        uint256 amount,
+        bytes metadata,
+        uint256 timestamp
+    );
     event TreasuryWithdrawal(address indexed to, uint256 amount);
     event TreasuryTokenWithdrawal(address indexed asset, address indexed to, uint256 amount);
 
@@ -25,6 +33,10 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
     uint256 public totalReceived;
     uint256 public lastAcknowledgedAmount;
     bytes public lastAcknowledgedMetadata;
+    uint256 public totalAcknowledged;
+    mapping(address => uint256) public totalAcknowledgedByAsset;
+    address public lastAcknowledgedAsset;
+    bool public lastAcknowledgedAssetIsNative;
 
     constructor(address owner_, string memory manifestUri_) Ownable(owner_) {
         require(owner_ != address(0), "Owner required");
@@ -51,10 +63,37 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
     }
 
     function notifyLaunch(uint256 amount, bytes calldata metadata) external whenNotPaused returns (bool) {
+        return notifyLaunchDetailed(amount, address(0), true, metadata);
+    }
+
+    function notifyLaunchDetailed(
+        uint256 amount,
+        address asset,
+        bool usesNative,
+        bytes calldata metadata
+    ) public whenNotPaused returns (bool) {
         require(msg.sender == markExchange, "Unauthorized sender");
         lastAcknowledgedAmount = amount;
         lastAcknowledgedMetadata = metadata;
+        lastAcknowledgedAsset = usesNative ? address(0) : asset;
+        lastAcknowledgedAssetIsNative = usesNative;
+
+        if (!usesNative) {
+            require(asset != address(0), "Asset required");
+            totalReceived += amount;
+        }
+        totalAcknowledged += amount;
+        totalAcknowledgedByAsset[lastAcknowledgedAsset] += amount;
+
         emit LaunchAcknowledged(msg.sender, amount, metadata, block.timestamp);
+        emit LaunchAcknowledgedDetailed(
+            msg.sender,
+            lastAcknowledgedAsset,
+            usesNative,
+            amount,
+            metadata,
+            block.timestamp
+        );
         return true;
     }
 
