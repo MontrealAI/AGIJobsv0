@@ -86,6 +86,27 @@ The output is intentionally narrative, providing contextual breadcrumbs (job
 state transitions, committee selections, dispute escalations) so a non-technical
 operator can follow the on-chain flow without reading contract code.
 
+### One-command sovereign control room (non-technical friendly)
+
+Launch the full simulation **and** a static control room UI in a single step:
+
+```bash
+npm run demo:agi-labor-market:control-room
+```
+
+The helper script performs the following with friendly prompts:
+
+1. Exports a fresh transcript to `demo/agi-labor-market-grand-demo/ui/export/latest.json`.
+2. Boots an embedded HTTPS-free static server at `http://127.0.0.1:4173` that
+   renders the transcript via the bundled UI.
+3. Opens an interactive prompt where pressing <kbd>Enter</kbd> replays the full
+   Hardhat scenario (refreshing the transcript and UI), while typing `q` cleanly
+   shuts everything down.
+
+This workflow is designed so a non-technical owner can run the end-to-end
+experience without learning Hardhat CLI flags or spinning up a custom web
+server.
+
 ### Exporting a transcript for the grand demo UI
 
 The CLI can emit a structured transcript that powers the accompanying
