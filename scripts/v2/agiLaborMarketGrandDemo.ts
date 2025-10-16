@@ -57,10 +57,61 @@ interface OwnerActionRecord {
   at: string;
 }
 
+type HighlightCategory = 'owner' | 'agent' | 'validator' | 'market';
+
+interface ActorReference {
+  name: string;
+  address: string;
+  role: ActorProfile['role'];
+}
+
+interface ScenarioPayout {
+  participant: ActorReference;
+  delta: string;
+  direction: 'credit' | 'debit';
+}
+
+interface ScenarioMetric {
+  label: string;
+  value: string;
+}
+
 interface ScenarioExport {
   title: string;
   jobId: string;
   timelineIndices: number[];
+  employer: ActorReference;
+  agent: ActorReference;
+  reward: string;
+  feePct: number;
+  disputeRaised: boolean;
+  resolvedBy: string;
+  highlights: string[];
+  payouts: ScenarioPayout[];
+  metrics: ScenarioMetric[];
+}
+
+interface EmpowermentHighlight {
+  title: string;
+  body: string;
+  category: HighlightCategory;
+}
+
+interface ScorecardEntry {
+  label: string;
+  value: string;
+  explanation: string;
+}
+
+interface EmpowermentOverview {
+  scoreboard: ScorecardEntry[];
+  highlights: EmpowermentHighlight[];
+  ownerConfidence: {
+    status: 'owner-in-command' | 'action-needed';
+    summary: string;
+    checks: string[];
+  };
+  quickStart: string[];
 }
 
 interface MarketSummary {
@@ -131,6 +182,7 @@ interface DemoExportPayload {
   scenarios: ScenarioExport[];
   market: MarketSummary;
   ownerControl: OwnerControlSnapshot;
+  empowerment: EmpowermentOverview;
 }
 
 enum Role {
@@ -143,6 +195,25 @@ const timeline: TimelineEntry[] = [];
 const ownerActions: OwnerActionRecord[] = [];
 const scenarios: ScenarioExport[] = [];
 let activeScenario: string | undefined;
+let totalAgentPayouts = 0n;
+let totalValidatorPayouts = 0n;
+let validatorsPenalized = 0;
+let disputesResolved = 0;
+
+interface ParticipantDescriptor {
+  name: string;
+  address: string;
+  role: ActorProfile['role'];
+}
+
+type BalanceSnapshot = Record<string, bigint>;
+
+interface BalanceDeltaRecord {
+  participant: ActorReference;
+  delta: bigint;
+  formatted: string;
+  direction: 'credit' | 'debit';
+}
 
 const cliArgs = process.argv.slice(2);
 let exportPath: string | undefined;
@@ -199,12 +270,21 @@ function recordOwnerAction(
   });
 }
 
-function registerScenario(title: string, jobId: bigint): void {
+function registerScenario(
+  title: string,
+  jobId: bigint,
+  details: Omit<ScenarioExport, 'title' | 'jobId' | 'timelineIndices'>
+): void {
   const timelineIndices = timeline
     .map((entry, index) => ({ entry, index }))
     .filter((item) => item.entry.scenario === title)
     .map((item) => item.index);
-  scenarios.push({ title, jobId: jobId.toString(), timelineIndices });
+  scenarios.push({
+    title,
+    jobId: jobId.toString(),
+    timelineIndices,
+    ...details,
+  });
 }
 
 function isValidatorsAlreadySelectedError(error: unknown): boolean {
@@ -284,6 +364,110 @@ function logStep(step: string): void {
 
 function formatSeconds(seconds: bigint): string {
   return `${seconds.toString()}s`;
+}
+
+function formatSignedTokens(delta: bigint): string {
+  if (delta === 0n) {
+    return '±0 AGIα';
+  }
+  const prefix = delta > 0n ? '+' : '−';
+  const magnitude = delta > 0n ? delta : -delta;
+  return `${prefix}${ethers.formatUnits(magnitude, AGIALPHA_DECIMALS)} AGIα`;
+}
+
+async function captureBalanceSnapshot(
+  token: ethers.Contract,
+  participants: ParticipantDescriptor[]
+): Promise<BalanceSnapshot> {
+  const snapshot: BalanceSnapshot = {};
+  for (const participant of participants) {
+    const balance = await token.balanceOf(participant.address);
+    snapshot[participant.address.toLowerCase()] = balance;
+  }
+  return snapshot;
+}
+
+function computeBalanceDeltas(
+  before: BalanceSnapshot,
+  after: BalanceSnapshot,
+  participants: ParticipantDescriptor[]
+): BalanceDeltaRecord[] {
+  return participants.map((participant) => {
+    const key = participant.address.toLowerCase();
+    const previous = before[key] ?? 0n;
+    const next = after[key] ?? 0n;
+    const delta = next - previous;
+    const direction: 'credit' | 'debit' = delta >= 0n ? 'credit' : 'debit';
+    const formatted = formatSignedTokens(delta);
+    return {
+      participant: {
+        name: participant.name,
+        address: participant.address,
+        role: participant.role,
+      },
+      delta,
+      formatted,
+      direction,
+    };
+  });
+}
+
+function findDeltaByAddress(
+  deltas: BalanceDeltaRecord[],
+  address: string
+): BalanceDeltaRecord | undefined {
+  return deltas.find(
+    (entry) => entry.participant.address.toLowerCase() === address.toLowerCase()
+  );
+}
+
+function sumPositiveByRole(
+  deltas: BalanceDeltaRecord[],
+  role: ActorProfile['role']
+): bigint {
+  return deltas
+    .filter((entry) => entry.participant.role === role && entry.delta > 0n)
+    .reduce((acc, entry) => acc + entry.delta, 0n);
+}
+
+function countNegativeByRole(
+  deltas: BalanceDeltaRecord[],
+  role: ActorProfile['role']
+): number {
+  return deltas.filter(
+    (entry) => entry.participant.role === role && entry.delta < 0n
+  ).length;
+}
+
+function ownerParametersEqual(
+  a: OwnerControlParameters,
+  b: OwnerControlParameters,
+  ownerAddress: string
+): boolean {
+  const ownerLower = ownerAddress.toLowerCase();
+  const pauserMatches = (expected: string, actual: string) => {
+    if (expected.toLowerCase() === actual.toLowerCase()) {
+      return true;
+    }
+    if (expected === ethers.ZeroAddress) {
+      return actual.toLowerCase() === ownerLower;
+    }
+    return false;
+  };
+  return (
+    a.feePct === b.feePct &&
+    a.validatorRewardPct === b.validatorRewardPct &&
+    a.burnPct === b.burnPct &&
+    a.commitWindowSeconds === b.commitWindowSeconds &&
+    a.revealWindowSeconds === b.revealWindowSeconds &&
+    a.revealQuorumPct === b.revealQuorumPct &&
+    a.minRevealers === b.minRevealers &&
+    a.nonRevealPenaltyBps === b.nonRevealPenaltyBps &&
+    a.nonRevealBanBlocks === b.nonRevealBanBlocks &&
+    pauserMatches(a.registryPauser, b.registryPauser) &&
+    pauserMatches(a.stakePauser, b.stakePauser) &&
+    pauserMatches(a.validationPauser, b.validationPauser)
+  );
 }
 
 async function readOwnerControlParameters(
@@ -1371,16 +1555,22 @@ async function logJobSummary(
 async function showBalances(
   label: string,
   token: ethers.Contract,
-  participants: Array<{ name: string; address: string }>
+  participants: Array<{ name: string; address: string; role?: ActorProfile['role'] }>
 ): Promise<void> {
   console.log(`\n💰 ${label}`);
-  const snapshot: Array<{ name: string; address: string; balance: string }> = [];
+  const snapshot: Array<{
+    name: string;
+    address: string;
+    role?: ActorProfile['role'];
+    balance: string;
+  }> = [];
   for (const participant of participants) {
     const balance = await token.balanceOf(participant.address);
     console.log(`  ${participant.name}: ${formatTokens(balance)}`);
     snapshot.push({
       name: participant.name,
       address: participant.address,
+      role: participant.role,
       balance: formatTokens(balance),
     });
   }
@@ -1407,6 +1597,20 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   const feePct = await registry.feePct();
   const fee = (reward * BigInt(feePct)) / 100n;
   const employerAddr = await nationA.getAddress();
+  const agentAddress = await agentAlice.getAddress();
+  const charlieAddress = await validatorCharlie.getAddress();
+  const doraAddress = await validatorDora.getAddress();
+  const evanAddress = await validatorEvan.getAddress();
+
+  const scenarioParticipants: ParticipantDescriptor[] = [
+    { name: 'Nation A (Employer)', address: employerAddr, role: 'Nation' },
+    { name: 'Alice (AI Agent)', address: agentAddress, role: 'Agent' },
+    { name: 'Charlie (Validator)', address: charlieAddress, role: 'Validator' },
+    { name: 'Dora (Validator)', address: doraAddress, role: 'Validator' },
+    { name: 'Evan (Validator)', address: evanAddress, role: 'Validator' },
+  ];
+  const balancesBefore = await captureBalanceSnapshot(token, scenarioParticipants);
+  const supplyBefore = await token.totalSupply();
 
   logStep('Nation A approves escrow and posts a climate-coordination job');
   await token
@@ -1492,20 +1696,71 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   await registry.connect(nationA).finalize(jobId);
   await logJobSummary(registry, jobId, 'after treasury settlement');
 
-  const participants = [
-    { name: 'Nation A', address: employerAddr },
-    { name: 'Alice (agent)', address: await agentAlice.getAddress() },
-    { name: 'Charlie (validator)', address: await validatorCharlie.getAddress() },
-    { name: 'Dora (validator)', address: await validatorDora.getAddress() },
-    { name: 'Evan (validator)', address: await validatorEvan.getAddress() },
-  ];
-  await showBalances('Post-job token balances', token, participants);
+  await showBalances('Post-job token balances', token, scenarioParticipants);
 
-  const nftBalance = await env.certificate.balanceOf(
-    await agentAlice.getAddress()
+  const balancesAfter = await captureBalanceSnapshot(token, scenarioParticipants);
+  const supplyAfter = await token.totalSupply();
+  const burned = supplyBefore > supplyAfter ? supplyBefore - supplyAfter : 0n;
+  const deltas = computeBalanceDeltas(
+    balancesBefore,
+    balancesAfter,
+    scenarioParticipants
   );
+  const agentDelta = findDeltaByAddress(deltas, agentAddress)?.delta ?? 0n;
+  const employerDelta = findDeltaByAddress(deltas, employerAddr)?.delta ?? 0n;
+  const validatorCredits = sumPositiveByRole(deltas, 'Validator');
+  const validatorDebits = countNegativeByRole(deltas, 'Validator');
+  if (agentDelta > 0n) {
+    totalAgentPayouts += agentDelta;
+  }
+  if (validatorCredits > 0n) {
+    totalValidatorPayouts += validatorCredits;
+  }
+  validatorsPenalized += validatorDebits;
+
+  const payouts: ScenarioPayout[] = deltas.map((entry) => ({
+    participant: entry.participant,
+    delta: entry.formatted,
+    direction: entry.direction,
+  }));
+
+  const nftBalance = await env.certificate.balanceOf(agentAddress);
   console.log(`\n🏅 Alice now holds ${nftBalance} certificate NFT(s).`);
-  registerScenario(scenarioTitle, jobId);
+  registerScenario(scenarioTitle, jobId, {
+    employer: {
+      name: 'Nation A (Employer)',
+      address: employerAddr,
+      role: 'Nation',
+    },
+    agent: {
+      name: 'Alice (AI Agent)',
+      address: agentAddress,
+      role: 'Agent',
+    },
+    reward: formatTokens(reward),
+    feePct: Number(feePct),
+    disputeRaised: false,
+    resolvedBy: 'Validator council consensus',
+    highlights: [
+      'Three validators revealed in lockstep, clearing payment without governance escalation.',
+      'Employer-confirmed burn proof executed before settlement, protecting the protocol treasury.',
+      'Agent graduation minted a credential NFT immediately upon finalization.',
+    ],
+    payouts,
+    metrics: [
+      { label: 'Agent payout', value: formatSignedTokens(agentDelta) },
+      {
+        label: 'Employer spend',
+        value: formatSignedTokens(employerDelta),
+      },
+      {
+        label: 'Validator rewards',
+        value: formatSignedTokens(validatorCredits),
+      },
+      { label: 'Protocol fee', value: formatTokens(fee) },
+      { label: 'Tokens burned', value: formatTokens(burned) },
+    ],
+  });
 }
 
 async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
@@ -1533,6 +1788,21 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   const disputeAddress = await dispute.getAddress();
   const ownerAddress = await owner.getAddress();
   const moderatorAddress = await moderator.getAddress();
+  const employerAddress = await nationB.getAddress();
+  const agentAddress = await agentBob.getAddress();
+  const charlieAddress = await validatorCharlie.getAddress();
+  const doraAddress = await validatorDora.getAddress();
+  const evanAddress = await validatorEvan.getAddress();
+
+  const scenarioParticipants: ParticipantDescriptor[] = [
+    { name: 'Nation B (Employer)', address: employerAddress, role: 'Nation' },
+    { name: 'Bob (AI Agent)', address: agentAddress, role: 'Agent' },
+    { name: 'Charlie (Validator)', address: charlieAddress, role: 'Validator' },
+    { name: 'Dora (Validator)', address: doraAddress, role: 'Validator' },
+    { name: 'Evan (Validator)', address: evanAddress, role: 'Validator' },
+  ];
+  const balancesBefore = await captureBalanceSnapshot(token, scenarioParticipants);
+  const supplyBefore = await token.totalSupply();
 
   logStep('Nation B funds a frontier language translation initiative');
   await token
@@ -1652,27 +1922,98 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   await registry.connect(nationB).finalize(jobId);
   await logJobSummary(registry, jobId, 'after dispute resolution');
 
-  const participants = [
-    { name: 'Nation B', address: await nationB.getAddress() },
-    { name: 'Bob (agent)', address: await agentBob.getAddress() },
-    { name: 'Charlie (validator)', address: await validatorCharlie.getAddress() },
-    { name: 'Dora (validator)', address: await validatorDora.getAddress() },
-    { name: 'Evan (validator)', address: await validatorEvan.getAddress() },
-  ];
-  await showBalances('Post-dispute token balances', token, participants);
-  registerScenario(scenarioTitle, jobId);
+  await showBalances('Post-dispute token balances', token, scenarioParticipants);
+
+  const balancesAfter = await captureBalanceSnapshot(token, scenarioParticipants);
+  const supplyAfter = await token.totalSupply();
+  const burned = supplyBefore > supplyAfter ? supplyBefore - supplyAfter : 0n;
+  const deltas = computeBalanceDeltas(
+    balancesBefore,
+    balancesAfter,
+    scenarioParticipants
+  );
+  const agentDelta = findDeltaByAddress(deltas, agentAddress)?.delta ?? 0n;
+  const employerDelta = findDeltaByAddress(deltas, employerAddress)?.delta ?? 0n;
+  const validatorCredits = sumPositiveByRole(deltas, 'Validator');
+  const validatorDebits = countNegativeByRole(deltas, 'Validator');
+  if (agentDelta > 0n) {
+    totalAgentPayouts += agentDelta;
+  }
+  if (validatorCredits > 0n) {
+    totalValidatorPayouts += validatorCredits;
+  }
+  validatorsPenalized += validatorDebits;
+  disputesResolved += 1;
+
+  const payouts: ScenarioPayout[] = deltas.map((entry) => ({
+    participant: entry.participant,
+    delta: entry.formatted,
+    direction: entry.direction,
+  }));
+
+  registerScenario(scenarioTitle, jobId, {
+    employer: {
+      name: 'Nation B (Employer)',
+      address: employerAddress,
+      role: 'Nation',
+    },
+    agent: {
+      name: 'Bob (AI Agent)',
+      address: agentAddress,
+      role: 'Agent',
+    },
+    reward: formatTokens(reward),
+    feePct: Number(feePct),
+    disputeRaised: true,
+    resolvedBy: 'Owner + moderator dispute council',
+    highlights: [
+      'Validators split votes; a non-revealing validator triggered automatic penalty logic.',
+      'Agent exercised dispute rights and prevailed through multi-signature governance.',
+      'Owner and delegated moderator executed signature-based resolution without halting the market.',
+    ],
+    payouts,
+    metrics: [
+      { label: 'Agent payout', value: formatSignedTokens(agentDelta) },
+      {
+        label: 'Employer spend',
+        value: formatSignedTokens(employerDelta),
+      },
+      {
+        label: 'Validator rewards',
+        value: formatSignedTokens(validatorCredits),
+      },
+      {
+        label: 'Validators penalized',
+        value: validatorDebits > 0 ? `${validatorDebits}` : '0',
+      },
+      { label: 'Protocol fee', value: formatTokens(fee) },
+      { label: 'Tokens burned', value: formatTokens(burned) },
+    ],
+  });
 }
 
 async function main(): Promise<void> {
   const env = await deployEnvironment();
   await showBalances('Initial treasury state', env.token, [
-    { name: 'Nation A', address: await env.nationA.getAddress() },
-    { name: 'Nation B', address: await env.nationB.getAddress() },
-    { name: 'Alice (agent)', address: await env.agentAlice.getAddress() },
-    { name: 'Bob (agent)', address: await env.agentBob.getAddress() },
-    { name: 'Charlie (validator)', address: await env.validatorCharlie.getAddress() },
-    { name: 'Dora (validator)', address: await env.validatorDora.getAddress() },
-    { name: 'Evan (validator)', address: await env.validatorEvan.getAddress() },
+    { name: 'Nation A', address: await env.nationA.getAddress(), role: 'Nation' },
+    { name: 'Nation B', address: await env.nationB.getAddress(), role: 'Nation' },
+    { name: 'Alice (agent)', address: await env.agentAlice.getAddress(), role: 'Agent' },
+    { name: 'Bob (agent)', address: await env.agentBob.getAddress(), role: 'Agent' },
+    {
+      name: 'Charlie (validator)',
+      address: await env.validatorCharlie.getAddress(),
+      role: 'Validator',
+    },
+    {
+      name: 'Dora (validator)',
+      address: await env.validatorDora.getAddress(),
+      role: 'Validator',
+    },
+    {
+      name: 'Evan (validator)',
+      address: await env.validatorEvan.getAddress(),
+      role: 'Validator',
+    },
   ]);
 
   const ownerControl = await ownerCommandCenterDrill(env);
@@ -1682,6 +2023,129 @@ async function main(): Promise<void> {
   const market = await summarizeMarketState(env);
 
   logSection('Demo complete – AGI Jobs v2 sovereignty market simulation finished');
+
+  const totalValueSettled = totalAgentPayouts + totalValidatorPayouts;
+  const ownerDrillOk =
+    ownerControl.pauseDrill.owner.registry &&
+    ownerControl.pauseDrill.owner.stake &&
+    ownerControl.pauseDrill.owner.validation;
+  const moderatorDrillOk =
+    ownerControl.pauseDrill.moderator.registry &&
+    ownerControl.pauseDrill.moderator.stake &&
+    ownerControl.pauseDrill.moderator.validation;
+  const baselineRestored = ownerParametersEqual(
+    ownerControl.baseline,
+    ownerControl.restored,
+    ownerControl.ownerAddress
+  );
+  const pauserRestored =
+    ownerControl.restored.registryPauser.toLowerCase() ===
+      ownerControl.ownerAddress.toLowerCase() &&
+    ownerControl.restored.stakePauser.toLowerCase() ===
+      ownerControl.ownerAddress.toLowerCase() &&
+    ownerControl.restored.validationPauser.toLowerCase() ===
+      ownerControl.ownerAddress.toLowerCase();
+
+  const ownerConfidenceChecks: string[] = [
+    ownerDrillOk
+      ? 'Owner drill: every core module paused and resumed under direct control.'
+      : 'Owner drill incomplete: rerun pause checks before production.',
+    moderatorDrillOk
+      ? 'Delegated moderator drill succeeded, proving emergency delegation works.'
+      : 'Delegated moderator drill incomplete: validate moderator credentials.',
+    baselineRestored
+      ? 'Baseline parameters restored to their pre-drill configuration.'
+      : 'Baseline parameters drifted: review mission-control restore sequence.',
+    pauserRestored
+      ? 'Owner reclaimed pauser roles across registry, stake, and validation modules.'
+      : 'Owner pauser roles not restored: rotate keys before mainnet.',
+  ];
+  const ownerConfidenceStatus =
+    ownerDrillOk && moderatorDrillOk && baselineRestored && pauserRestored
+      ? 'owner-in-command'
+      : 'action-needed';
+  const ownerConfidenceSummary =
+    ownerConfidenceStatus === 'owner-in-command'
+      ? 'Owner sovereignty rehearsed end-to-end. Emergency drills, parameter tuning, and restoration all completed successfully.'
+      : 'Investigate the highlighted checks before promoting this configuration. The operator must regain full command authority.';
+
+  const scoreboard: ScorecardEntry[] = [
+    {
+      label: 'Jobs orchestrated',
+      value: market.totalJobs,
+      explanation: 'Production contracts executed full job lifecycles on Hardhat.',
+    },
+    {
+      label: 'Value settled',
+      value: formatTokens(totalValueSettled),
+      explanation: 'Agent and validator rewards transferred through escrow + fee mechanics.',
+    },
+    {
+      label: 'Owner commands executed',
+      value: ownerActions.length.toString(),
+      explanation: 'Configuration, pause, and dispute instructions issued during the drill.',
+    },
+    {
+      label: 'Certificates minted',
+      value: market.mintedCertificates.length.toString(),
+      explanation: 'Credential NFTs minted for agents that completed work.',
+    },
+    {
+      label: 'Disputes resolved',
+      value: disputesResolved.toString(),
+      explanation: 'Jobs escalated to governance and settled via signed resolutions.',
+    },
+    {
+      label: 'Validator accountability events',
+      value: validatorsPenalized.toString(),
+      explanation: 'Validators with penalties or withheld reveals during the simulation.',
+    },
+  ];
+
+  const highlights: EmpowermentHighlight[] = [
+    {
+      title: 'Owner mission control',
+      body: 'Fees, validator incentives, and emergency pausers were tuned live, delegated, and restored without downtime.',
+      category: 'owner',
+    },
+    {
+      title: 'Agent prosperity',
+      body: `${formatTokens(totalAgentPayouts)} delivered to AI agents alongside certificate credentials.`,
+      category: 'agent',
+    },
+    {
+      title: 'Validator discipline',
+      body: validatorsPenalized
+        ? `${validatorsPenalized} validator penalty event(s) enforced automatically under the non-reveal policy.`
+        : 'Validators met quorum without penalties in this run.',
+      category: 'validator',
+    },
+    {
+      title: 'Governance resilience',
+      body: disputesResolved
+        ? `${disputesResolved} dispute scenario(s) resolved via owner + moderator signatures, proving unstoppable arbitration.`
+        : 'No disputes escalated this run — governance panel remains on standby.',
+      category: 'market',
+    },
+  ];
+
+  const quickStart: string[] = [
+    'Install dependencies once with `npm install`.',
+    'Run `npm run demo:agi-labor-market:dashboard` to execute the Hardhat simulation and launch the dashboard.',
+    'Open the printed http://localhost:4173 URL to explore the sovereign control room.',
+    'Use the Owner Command Snapshot to rehearse configuration changes before pushing to mainnet.',
+  ];
+
+  const empowerment: EmpowermentOverview = {
+    scoreboard,
+    highlights,
+    ownerConfidence: {
+      status: ownerConfidenceStatus,
+      summary: ownerConfidenceSummary,
+      checks: ownerConfidenceChecks,
+    },
+    quickStart,
+  };
 
   if (exportPath) {
     const resolved = resolve(exportPath);
@@ -1703,6 +2167,7 @@ async function main(): Promise<void> {
         })),
       },
       ownerControl,
+      empowerment,
     };
     writeFileSync(resolved, JSON.stringify(payload, null, 2));
     console.log(`\n🗂️  Demo transcript exported to ${resolved}`);
