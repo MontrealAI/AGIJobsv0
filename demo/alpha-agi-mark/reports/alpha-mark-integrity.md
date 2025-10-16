@@ -1,10 +1,10 @@
 # α-AGI MARK Integrity Report
 
-Generated: 2025-10-16T20:09:48.930Z
+Generated: 2025-10-16T21:10:18.031Z
 
 ## Confidence Summary
 
-- Confidence index: 100.00% (10/10 checks passed)
+- Confidence index: 100.00% (11/11 checks passed)
 - Validator quorum: 2/2
 - Ledger supply processed: 11 whole tokens
 - Gross capital processed: 4500000000000000000 wei (4.5 ETH)
@@ -22,6 +22,19 @@ Generated: 2025-10-16T20:09:48.930Z
 | Embedded verification: pricing | ✅ | - | - |
 | Embedded verification: capital flows | ✅ | - | - |
 | Embedded verification: contributions | ✅ | - | - |
+| Recorded confidence index matches recomputed value | ✅ | 100.00% (4/4) | 100.00% (4/4) |
+
+## Execution Telemetry
+
+| Signal | Value |
+|---|---|
+| Network | hardhat (chainId 31337) (chain 31337) |
+| Mode | Dry-run sentinel |
+| Operator | 0xf39F…2266 |
+| Toolchain | AGI Jobs v0 (v2) |
+| Command | npm run demo:alpha-agi-mark |
+| Investors | 0x7099…79C8, 0x3C44…93BC, 0x90F7…b906 |
+| Validators | 0x15d3…6A65, 0x9965…A4dc, 0x976E…0aa9 |
 
 ## Participant Contribution Constellation
 

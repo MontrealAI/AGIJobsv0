@@ -59,6 +59,13 @@ const recapSchema = z.object({
       pricing: z.object({ consistent: z.boolean() }),
       capitalFlows: z.object({ consistent: z.boolean() }),
       contributions: z.object({ consistent: z.boolean() }),
+      confidenceIndex: z
+        .object({
+          percentage: z.string(),
+          consistentChecks: z.number(),
+          totalChecks: z.number(),
+        })
+        .optional(),
     })
     .optional(),
 });
@@ -186,6 +193,29 @@ function main() {
           "Embedded verification flag: contributions",
           recap.verification.contributions.consistent,
         );
+        if (recap.verification.confidenceIndex) {
+          const verificationSignals = [
+            recap.verification.supplyConsensus.consistent,
+            recap.verification.pricing.consistent,
+            recap.verification.capitalFlows.consistent,
+            recap.verification.contributions.consistent,
+          ];
+          const expectedPasses = verificationSignals.filter(Boolean).length;
+          const expectedPercentage = ((expectedPasses / verificationSignals.length) * 100).toFixed(2);
+          const recorded = recap.verification.confidenceIndex;
+          const recordedPercentage = Number(recorded.percentage);
+          const percentageAligned = Number.isFinite(recordedPercentage)
+            ? Math.abs(recordedPercentage - Number(expectedPercentage)) < 0.01
+            : false;
+          const countsAligned =
+            recorded.consistentChecks === expectedPasses && recorded.totalChecks === verificationSignals.length;
+          appendCheck(
+            "Embedded confidence index parity",
+            percentageAligned && countsAligned,
+            `${expectedPercentage}% (${expectedPasses}/${verificationSignals.length})`,
+            `${recorded.percentage}% (${recorded.consistentChecks}/${recorded.totalChecks})`,
+          );
+        }
       }
 
       const passCount = checks.filter((check) => check.ok).length;

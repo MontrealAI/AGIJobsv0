@@ -110,6 +110,26 @@ const recapSchema = z.object({
         ledgerGrossWei: z.string(),
         consistent: z.boolean(),
       }),
+      confidenceIndex: z
+        .object({
+          percentage: z.string(),
+          consistentChecks: z.number(),
+          totalChecks: z.number(),
+        })
+        .optional(),
+    })
+    .optional(),
+  execution: z
+    .object({
+      generatedAt: z.string().optional(),
+      network: z.string().optional(),
+      chainId: z.string().optional(),
+      dryRun: z.boolean().optional(),
+      operator: z.string().optional(),
+      investors: z.array(z.string()).optional(),
+      validators: z.array(z.string()).optional(),
+      toolchain: z.string().optional(),
+      job: z.string().optional(),
     })
     .optional(),
 });
@@ -186,37 +206,42 @@ function buildChecks(recap: Recap) {
     return acc + parseBigInt(`participant contribution (${participant.address})`, participant.contributionWei);
   }, 0n);
 
+  const supplyAligned = ledgerSupply === supply;
   checks.push({
     label: "Ledger supply equals recorded supply",
-    ok: ledgerSupply === supply,
+    ok: supplyAligned,
     expected: supply.toString(),
     observed: ledgerSupply.toString(),
   });
 
+  const balancesAligned = participantTokenSum === supply * 10n ** 18n;
   checks.push({
     label: "Participant balances equal supply",
-    ok: participantTokenSum === supply * 10n ** 18n,
+    ok: balancesAligned,
     expected: (supply * 10n ** 18n).toString(),
     observed: participantTokenSum.toString(),
   });
 
+  const pricingAligned = expectedNextPrice === nextPrice;
   checks.push({
     label: "Next price matches base + slope * supply",
-    ok: expectedNextPrice === nextPrice,
+    ok: pricingAligned,
     expected: asEth(expectedNextPrice),
     observed: asEth(nextPrice),
   });
 
+  const capitalAligned = reserve + vaultReceived === ledgerNet;
   checks.push({
     label: "Vault receipts + reserve equal net capital",
-    ok: reserve + vaultReceived === ledgerNet,
+    ok: capitalAligned,
     expected: asEth(ledgerNet),
     observed: asEth(reserve + vaultReceived),
   });
 
+  const contributionsAligned = participantContributionSum === ledgerGross;
   checks.push({
     label: "Participant contributions equal gross capital",
-    ok: participantContributionSum === ledgerGross,
+    ok: contributionsAligned,
     expected: asEth(ledgerGross),
     observed: asEth(participantContributionSum),
   });
@@ -253,6 +278,12 @@ function buildChecks(recap: Recap) {
     ledgerNet,
     ledgerSupply,
     ledgerRedemptions,
+    verificationSignals: {
+      supplyAligned,
+      pricingAligned,
+      capitalAligned,
+      contributionsAligned,
+    },
   };
 }
 
@@ -299,13 +330,56 @@ async function main() {
   const raw = await readFile(RECAP_PATH, "utf8");
   const recap = recapSchema.parse(JSON.parse(raw));
 
-  const { checks, ledgerGross, ledgerNet, ledgerSupply } = buildChecks(recap);
-  const passCount = checks.filter((check) => check.ok).length;
-  const confidence = (passCount / checks.length) * 100;
+  const { checks, ledgerGross, ledgerNet, ledgerSupply, verificationSignals } = buildChecks(recap);
+  let passCount = checks.filter((check) => check.ok).length;
+  let confidence = (passCount / checks.length) * 100;
 
-  const generatedAt = recap.generatedAt
+  const recordedConfidence = recap.verification?.confidenceIndex;
+  if (recordedConfidence) {
+    const signalValues = verificationSignals
+      ? [
+          verificationSignals.supplyAligned,
+          verificationSignals.pricingAligned,
+          verificationSignals.capitalAligned,
+          verificationSignals.contributionsAligned,
+        ]
+      : [];
+    const expectedTotal = signalValues.length;
+    const expectedPasses = signalValues.filter(Boolean).length;
+    const expectedPercentage = expectedTotal ? ((expectedPasses / expectedTotal) * 100).toFixed(2) : "0.00";
+    const recordedPercentage = Number(recordedConfidence.percentage);
+    const percentageAligned = Number.isFinite(recordedPercentage)
+      ? Math.abs(recordedPercentage - Number(expectedPercentage)) < 0.01
+      : false;
+    const countsAligned =
+      recordedConfidence.consistentChecks === expectedPasses && recordedConfidence.totalChecks === expectedTotal;
+    checks.push({
+      label: "Recorded confidence index matches recomputed value",
+      ok: percentageAligned && countsAligned,
+      expected: `${expectedPercentage}% (${expectedPasses}/${expectedTotal})`,
+      observed: `${recordedConfidence.percentage}% (${recordedConfidence.consistentChecks}/${recordedConfidence.totalChecks})`,
+    });
+    passCount = checks.filter((check) => check.ok).length;
+    confidence = (passCount / checks.length) * 100;
+  }
+
+  const generatedAt = recap.execution?.generatedAt
+    ? new Date(recap.execution.generatedAt).toISOString()
+    : recap.generatedAt
     ? new Date(recap.generatedAt).toISOString()
     : new Date().toISOString();
+
+  const executionSection = recap.execution
+    ? `## Execution Telemetry\n\n` +
+      `| Signal | Value |\n|---|---|\n` +
+      `| Network | ${recap.execution.network ?? "Unknown"} (chain ${recap.execution.chainId ?? "-"}) |\n` +
+      `| Mode | ${recap.execution.dryRun ? "Dry-run sentinel" : "Live broadcast"} |\n` +
+      `| Operator | ${recap.execution.operator ? shortAddress(recap.execution.operator) : "Unavailable"} |\n` +
+      `| Toolchain | ${recap.execution.toolchain ?? "AGI Jobs v0 (v2)"} |\n` +
+      `| Command | ${recap.execution.job ?? "npm run demo:alpha-agi-mark"} |\n` +
+      `| Investors | ${recap.execution.investors?.length ? recap.execution.investors.map(shortAddress).join(", ") : "Unavailable"} |\n` +
+      `| Validators | ${recap.execution.validators?.length ? recap.execution.validators.map(shortAddress).join(", ") : "Unavailable"} |\n\n`
+    : "";
 
   const contributionPie = renderContributionPie(recap.participants);
   const ownerControls = renderOwnerControls(recap.ownerControls);
@@ -332,6 +406,7 @@ async function main() {
     `- Gross capital processed: ${asEth(ledgerGross)}\n` +
     `- Net capital secured in sovereign reserve: ${asEth(ledgerNet)}\n\n` +
     `${renderChecksTable(checks)}\n\n` +
+    executionSection +
     `## Participant Contribution Constellation\n\n` +
     `${contributionPie}\n\n` +
     `## Launch Telemetry\n\n` +

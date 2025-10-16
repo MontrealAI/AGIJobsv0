@@ -58,6 +58,57 @@
         letter-spacing: 0.06em;
         text-transform: uppercase;
       }
+      .telemetry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+      }
+      .telemetry-grid article {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 14px;
+        padding: 1.2rem;
+        border: 1px solid rgba(96, 255, 207, 0.16);
+        box-shadow: inset 0 0 25px rgba(96, 255, 207, 0.08);
+      }
+      .telemetry-grid h3 {
+        margin-top: 0;
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.72);
+      }
+      .telemetry-grid ul {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.35rem;
+      }
+      .telemetry-grid li {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 999px;
+        padding: 0.3rem 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        border: 1px solid rgba(96, 255, 207, 0.15);
+      }
+      .timestamp {
+        margin-top: 1.5rem;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .confidence-indicator {
+        background: rgba(96, 255, 207, 0.1);
+        border: 1px solid rgba(96, 255, 207, 0.35);
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        font-weight: 600;
+        max-width: 420px;
+      }
+      .confidence-indicator span {
+        color: var(--accent);
+        font-weight: 700;
+      }
       .metrics {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -217,6 +268,35 @@
         </p>
       </header>
 
+      
+    <section>
+      <h2>Execution Telemetry</h2>
+      <div class="telemetry-grid">
+        <article>
+          <h3>Network</h3>
+          <p class="mono">hardhat (chainId 31337)</p>
+          <p class="mono">Chain ID: 31337</p>
+          <p>Dry-run sentinel active</p>
+        </article>
+        <article>
+          <h3>Operator</h3>
+          <p class="mono">0xf39F…2266</p>
+          <p>AGI Jobs v0 (v2)</p>
+          <p class="mono">npm run demo:alpha-agi-mark</p>
+        </article>
+        <article>
+          <h3>Investors</h3>
+          <ul><li class="mono">0x7099…79C8</li><li class="mono">0x3C44…93BC</li><li class="mono">0x90F7…b906</li></ul>
+        </article>
+        <article>
+          <h3>Validators</h3>
+          <ul><li class="mono">0x15d3…6A65</li><li class="mono">0x9965…A4dc</li><li class="mono">0x976E…0aa9</li></ul>
+        </article>
+      </div>
+      <p class="timestamp">Telemetry generated at <span class="mono">2025-10-16T21:10:18.031Z</span></p>
+    </section>
+  
+
       <section>
         <h2>Mission Control Metrics</h2>
         <div class="metrics">
@@ -260,6 +340,12 @@
         Independent ledgers, on-chain state introspection, and first-principles math cross-check the sovereign launch
         in real time.
       </p>
+      
+      <p class="confidence-indicator">
+        Confidence Index: <span>100.00%</span>
+        (4/4 core checks aligned)
+      </p>
+    
       <div class="verification-grid">
         
         <article class="verification-card">

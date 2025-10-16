@@ -36,6 +36,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - contract addresses
    - owner governance parameters
    - consolidated `ownerControls` snapshot of every pause/whitelist/override lever
+   - `execution` telemetry showing network, operator wallet, broadcast mode, and command used
    - validator council roster and votes
    - bonding curve statistics (supply, reserve balance, pricing)
    - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, and treasury balance
@@ -43,7 +44,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - cross-reference visuals from the [`Operator Empowerment Atlas`](../docs/operator-empowerment-atlas.md) and
      [`Operator Command Console`](../docs/operator-command-console.md) for stakeholder briefings
    - `verification` snapshot documenting the triple-check consensus across supply, pricing, capital flows, and contribution
-     tallies
+     tallies plus the recorded confidence index and raw check counts
 
 3. **Render the owner control matrix at any time**
 
@@ -68,7 +69,9 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    ```
 
    The script replays the trade ledger from the recap, recomputes the bonding-curve math independently, and
-   prints a confidence index table that must read 100% before green-lighting any external announcement.
+   prints a confidence index table that must read 100% before green-lighting any external announcement. The verifier now
+   rejects any recap whose embedded confidence percentage or check counts differ from the recomputed figure, ensuring the
+   telemetry in `alpha-mark-recap.json` stays tamper-evident.
 
 6. **Emit the integrity dossier for stakeholder sign-off**
 
