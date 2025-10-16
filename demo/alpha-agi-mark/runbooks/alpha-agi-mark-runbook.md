@@ -18,11 +18,12 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    The orchestrator automatically:
 
    - boots a Hardhat chain
-   - deploys the NovaSeedNFT, AlphaMarkRiskOracle, and AlphaMarkEToken contracts
-   - performs investor buys and validator approvals
-   - pauses and resumes trading to verify safety controls
+  - deploys the NovaSeedNFT, AlphaMarkRiskOracle, AlphaMarkEToken, and AlphaSovereignVault contracts
+  - performs investor buys and validator approvals
+  - pauses and resumes trading to verify safety controls
   - demonstrates pre-launch base asset retargeting (ETH -> ERC-20 stablecoin)
-  - finalizes the launch and prints a comprehensive recap
+  - proves the sovereign vault pause/unpause circuit breaker
+  - finalizes the launch with ignition metadata and prints a comprehensive recap
 
 2. **Inspect recap artifacts**
 
@@ -33,7 +34,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - consolidated `ownerControls` snapshot of every pause/whitelist/override lever
    - validator council roster and votes
    - bonding curve statistics (supply, reserve balance, pricing)
-   - launch outcome summary
+   - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, and treasury balance
 
 3. **(Optional) Run unit tests**
 

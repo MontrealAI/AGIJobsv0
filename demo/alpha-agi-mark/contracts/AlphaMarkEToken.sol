@@ -14,6 +14,13 @@ interface IAlphaMarkRiskOracle {
     function approvalThreshold() external view returns (uint256);
 }
 
+interface IAlphaSovereignVault {
+    function notifyLaunch(uint256 amount, bytes calldata metadata) external returns (bool);
+}
+
+error LaunchAcknowledgementFailed(address recipient);
+error LaunchAcknowledgementRejected(address recipient);
+
 /// @title AlphaMarkEToken
 /// @notice Bonding-curve market-maker for α-AGI Nova-Seed financing.
 contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
@@ -59,7 +66,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     event TreasuryUpdated(address treasury);
     event SaleDeadlineUpdated(uint256 newDeadline);
     event ValidationOverrideUpdated(bool status);
-    event LaunchFinalized(address indexed recipient, uint256 reserveTransferred);
+    event LaunchFinalized(address indexed recipient, uint256 reserveTransferred, bytes metadata);
     event LaunchAborted();
     event EmergencyExitUpdated(bool enabled);
 
@@ -231,7 +238,12 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         emit EmergencyExitUpdated(enabled);
     }
 
-    function finalizeLaunch(address payable sovereignRecipient) external onlyOwner whenNotPaused {
+    function finalizeLaunch(address payable sovereignRecipient, bytes calldata metadata)
+        external
+        onlyOwner
+        whenNotPaused
+        nonReentrant
+    {
         require(!finalized, "Already finalized");
         require(!aborted, "Aborted");
         require(_isValidated(), "Not validated");
@@ -254,7 +266,9 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             baseAsset.safeTransfer(recipient, amount);
         }
 
-        emit LaunchFinalized(recipient, amount);
+        _attemptSovereignAcknowledgement(recipient, amount, metadata);
+
+        emit LaunchFinalized(recipient, amount, metadata);
     }
 
     function abortLaunch() external onlyOwner {
@@ -426,6 +440,20 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             return address(this).balance;
         }
         return baseAsset.balanceOf(address(this));
+    }
+
+    function _attemptSovereignAcknowledgement(address recipient, uint256 amount, bytes calldata metadata) internal {
+        if (recipient.code.length == 0) {
+            return;
+        }
+
+        try IAlphaSovereignVault(recipient).notifyLaunch(amount, metadata) returns (bool acknowledged) {
+            if (!acknowledged) {
+                revert LaunchAcknowledgementRejected(recipient);
+            }
+        } catch {
+            revert LaunchAcknowledgementFailed(recipient);
+        }
     }
 
     receive() external payable {

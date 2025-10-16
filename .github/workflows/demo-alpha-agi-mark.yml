@@ -75,6 +75,9 @@ jobs:
               throw new Error(`contract address missing for ${key}`);
             }
           }
+          if (!data.contracts.sovereignVault) {
+            throw new Error('contract address missing for sovereignVault');
+          }
           if (!data.validators || data.validators.approvalCount === undefined) {
             throw new Error('validator consensus details missing');
           }
@@ -86,6 +89,9 @@ jobs:
           }
           if (!data.launch || !data.launch.finalized) {
             throw new Error('launch did not finalize');
+          }
+          if (!data.launch.sovereignVault || !data.launch.sovereignVault.decodedMetadata) {
+            throw new Error('sovereign vault details missing');
           }
           console.log(`Validated α-AGI MARK recap for ${data.participants.length} participants.`);
           NODE

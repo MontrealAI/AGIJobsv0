@@ -99,14 +99,18 @@ describe("α-AGI MARK bonding curve", function () {
     const cost = purchaseCost(basePrice, slope, 0n, 2n);
     await mark.connect(investor).buyTokens(2n * WHOLE, { value: cost });
 
-    await expect(mark.connect(owner).finalizeLaunch(owner.address)).to.be.revertedWith("Not validated");
+    const metadata = ethers.hexlify(ethers.toUtf8Bytes("launch"));
+
+    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata)).to.be.revertedWith("Not validated");
 
     await riskOracle.connect(validatorA).approveSeed();
-    await expect(mark.connect(owner).finalizeLaunch(owner.address)).to.be.revertedWith("Not validated");
+    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata)).to.be.revertedWith("Not validated");
 
     await riskOracle.connect(validatorB).approveSeed();
-    await expect(mark.connect(owner).finalizeLaunch(owner.address))
-      .to.emit(mark, "LaunchFinalized");
+    const reserveBeforeFinalize = await mark.reserveBalance();
+    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata))
+      .to.emit(mark, "LaunchFinalized")
+      .withArgs(owner.address, reserveBeforeFinalize, metadata);
 
     expect(await mark.finalized()).to.equal(true);
     expect(await mark.reserveBalance()).to.equal(0n);
@@ -193,7 +197,55 @@ describe("α-AGI MARK bonding curve", function () {
     await mark.connect(owner).setTreasury(owner.address);
     await mark.connect(owner).setValidationOverride(true, true);
 
-    await expect(mark.connect(owner).finalizeLaunch(owner.address)).to.emit(mark, "LaunchFinalized");
+    const metadata = ethers.hexlify(ethers.toUtf8Bytes("override"));
+    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata))
+      .to.emit(mark, "LaunchFinalized")
+      .withArgs(owner.address, cost, metadata);
+  });
+
+  it("finalizes into the sovereign vault and records metadata", async function () {
+    const { owner, investor, validatorA, validatorB, mark, riskOracle, basePrice, slope } = await deployFixture();
+    const cost = purchaseCost(basePrice, slope, 0n, 2n);
+    await mark.connect(investor).buyTokens(2n * WHOLE, { value: cost });
+    await riskOracle.connect(validatorA).approveSeed();
+    await riskOracle.connect(validatorB).approveSeed();
+
+    const Vault = await ethers.getContractFactory("AlphaSovereignVault");
+    const vault = await Vault.deploy(owner.address, "ipfs://alpha-mark/sovereign-test");
+    await vault.waitForDeployment();
+    await vault.connect(owner).designateMarkExchange(mark.target);
+
+    const metadata = ethers.hexlify(ethers.toUtf8Bytes("sovereign-metadata"));
+    const reserveBefore = await mark.reserveBalance();
+
+    await expect(mark.connect(owner).finalizeLaunch(vault.target, metadata))
+      .to.emit(mark, "LaunchFinalized")
+      .withArgs(vault.target, reserveBefore, metadata);
+
+    expect(await mark.finalized()).to.equal(true);
+    expect(await vault.totalReceived()).to.equal(reserveBefore);
+    expect(await vault.lastAcknowledgedAmount()).to.equal(reserveBefore);
+    expect(await vault.lastAcknowledgedMetadata()).to.equal(metadata);
+  });
+
+  it("reverts if the sovereign vault refuses acknowledgement", async function () {
+    const { owner, investor, validatorA, validatorB, mark, riskOracle, basePrice, slope } = await deployFixture();
+    const cost = purchaseCost(basePrice, slope, 0n, 1n);
+    await mark.connect(investor).buyTokens(WHOLE, { value: cost });
+    await riskOracle.connect(validatorA).approveSeed();
+    await riskOracle.connect(validatorB).approveSeed();
+
+    const Vault = await ethers.getContractFactory("AlphaSovereignVault");
+    const vault = await Vault.deploy(owner.address, "ipfs://alpha-mark/sovereign-test");
+    await vault.waitForDeployment();
+    // Deliberately skip designateMarkExchange to trigger failure.
+
+    const metadata = ethers.hexlify(ethers.toUtf8Bytes("sovereign-metadata"));
+
+    await expect(mark.connect(owner).finalizeLaunch(vault.target, metadata))
+      .to.be.revertedWithCustomError(mark, "LaunchAcknowledgementFailed");
+    expect(await mark.finalized()).to.equal(false);
+    expect(await vault.totalReceived()).to.equal(0n);
   });
 
   it("permits re-targeting the base asset before launch", async function () {
@@ -285,9 +337,10 @@ describe("α-AGI MARK ERC20 base asset flows", function () {
     await mark.setTreasury(owner.address);
 
     const reserveBeforeFinalize = await mark.reserveBalance();
-    await expect(mark.connect(owner).finalizeLaunch(owner.address))
+    const metadata = ethers.hexlify(ethers.toUtf8Bytes("erc20-launch"));
+    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata))
       .to.emit(mark, "LaunchFinalized")
-      .withArgs(owner.address, reserveBeforeFinalize);
+      .withArgs(owner.address, reserveBeforeFinalize, metadata);
 
     expect(await mark.reserveBalance()).to.equal(0n);
     expect(await stable.balanceOf(owner.address)).to.equal(reserveBeforeFinalize);
