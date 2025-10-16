@@ -29,6 +29,12 @@ jobs:
       - name: Start anvil
         run: |
           nohup anvil --silent --block-time 1 --gas-limit 1000000000 > anvil.log 2>&1 &
+          nohup anvil \
+            --silent \
+            --block-time 1 \
+            --gas-limit 1000000000 \
+            --code-size-limit 2147483647 \
+            > anvil.log 2>&1 &
           sleep 3
 
       - name: Deploy defaults
