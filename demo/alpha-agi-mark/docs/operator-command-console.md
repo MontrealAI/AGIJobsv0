@@ -67,3 +67,15 @@ stateDiagram-v2
    which branch of control logic is active.
 4. Pair this console with the [`Operator Empowerment Atlas`](operator-empowerment-atlas.md)
    to deliver both strategic and tactical clarity without touching Solidity.
+
+## Command-line console
+
+Run the live console once a recap dossier exists:
+
+```bash
+npm run console:alpha-agi-mark
+```
+
+The prompt exposes dedicated panels for the mission summary, owner command deck, participant ledger, validator council, triple
+verification matrix, mission timeline, and a dynamically generated Mermaid blueprint. Pass `--snapshot` to print the same
+briefing non-interactively for inclusion in status reports or CI artefacts.
