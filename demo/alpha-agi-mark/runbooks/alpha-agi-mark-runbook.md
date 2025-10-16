@@ -69,6 +69,8 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
    The script replays the trade ledger from the recap, recomputes the bonding-curve math independently, and
    prints a confidence index table that must read 100% before green-lighting any external announcement.
+   Pair this with the [`Triple-Verification Matrix Deep Dive`](../docs/triple-verification-matrix.md)
+   for an explainer on every invariant and rollback drill.
 
 6. **Emit the integrity dossier for stakeholder sign-off**
 
