@@ -1,17 +1,17 @@
 # α-AGI MARK Integrity Report
 
-Generated: 2025-10-16T21:18:44.346Z
+Generated: 2025-10-16T22:28:58.620Z
 
 ## Recap Envelope
 
 - Network: hardhat (chainId 31337) (chain 31337, block 0)
 - Dry-run mode: enabled
-- Checksum (sha256/json-key-sorted): 03bed5b0e77f3148972204e0e07a1df196de416021d4114cd69ef9eb2221a6ab
+- Checksum (sha256/json-key-sorted): fd9fa6cf56c3f3e497c5ce72aafebcba39b660c1344eff89646e7ac659fb194b
 
 ### Orchestrator Telemetry
 
 - Mode: dry-run
-- Git commit: a4afab5557e2be3afa4dca6e9532732aa30ca080
+- Git commit: c7f11d9aec96ad3de7103c89aaa8f517bbc9040c
 - Git branch: work
 - Workspace dirty: yes
 

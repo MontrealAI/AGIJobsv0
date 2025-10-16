@@ -134,6 +134,35 @@ npm run dashboard:alpha-agi-mark
 
 ## Triple-Verification Matrix
 
+## Mission Timeline
+
+Every orchestrated action is now captured in a cinematic mission timeline so non-technical stakeholders can replay the entire
+launch sequence at a glance. Generate the Markdown dossier at `demo/alpha-agi-mark/reports/alpha-mark-timeline.md`:
+
+```bash
+npm run timeline:alpha-agi-mark
+```
+
+The report embeds a Mermaid timeline plus a detailed event ledger. Use it to brief councils, auditors, or investors without
+re-running the demo.
+
+```mermaid
+timeline
+    title α-AGI MARK Operator Journey
+    section Orchestration
+      🚀 Boot sequence : Orchestrator primes Hardhat dry-run environment
+      💠 Actors cleared : Wallets funded above 0.05 ETH
+    section Market Activation
+      🟢 Investor A acquires SeedShares : 5 SeedShares committed to the bonding curve
+      ⏸️ Compliance pause : Owner halts trading to showcase safety controls
+    section Governance
+      🗳️ Validator approvals : Council reaches consensus for launch
+    section Launch
+      ✨ Sovereign ignition : Funds dispatched to the α-AGI Sovereign vault
+```
+
+## Triple-Verification Matrix
+
 α-AGI MARK now triangulates its state through three independent vantage points—on-chain contract reads, a deterministic
 trade ledger, and a first-principles bonding-curve simulator. Every run prints a "Triple-Verification Matrix" confirming that
 all three perspectives agree on supply, pricing, capital flows, and participant contributions. The recap dossier exposes the

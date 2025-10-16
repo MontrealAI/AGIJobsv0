@@ -61,6 +61,16 @@ type VerificationSnapshot = {
   };
 };
 
+type TimelineEntry = {
+  order: number;
+  phase: string;
+  title: string;
+  description: string;
+  icon?: string;
+  actor?: string;
+  actorLabel?: string;
+};
+
 type RecapData = {
   generatedAt: string;
   network: {
@@ -154,6 +164,7 @@ type RecapData = {
     canonicalEncoding: string;
     recapSha256: string;
   };
+  timeline?: TimelineEntry[];
 };
 
 function escapeHtml(value: string): string {
@@ -190,6 +201,89 @@ function formatNumber(value: string | undefined, fallback = "-"): string {
     return fallback;
   }
   return value;
+}
+
+function sanitizeTimelineText(value: string): string {
+  return value.replace(/\r?\n/g, " ").replace(/:/g, "\\:");
+}
+
+function timelineActorLabel(entry: TimelineEntry): string {
+  if (entry.actorLabel && entry.actor) {
+    return `${entry.actorLabel} (${shortenAddress(entry.actor)})`;
+  }
+  if (entry.actorLabel) {
+    return entry.actorLabel;
+  }
+  if (entry.actor) {
+    return shortenAddress(entry.actor);
+  }
+  return "—";
+}
+
+function buildTimelineMermaid(entries: TimelineEntry[]): string {
+  const lines = ["timeline", "    title α-AGI MARK Operator Timeline"];
+  let currentPhase: string | undefined;
+
+  entries.forEach((entry) => {
+    const phase = entry.phase || "Mission";
+    if (phase !== currentPhase) {
+      lines.push(`    section ${phase}`);
+      currentPhase = phase;
+    }
+    const iconPart = entry.icon ? `${entry.icon} ` : "";
+    const actorPart = entry.actorLabel || entry.actor ? ` (${timelineActorLabel(entry)})` : "";
+    lines.push(`      ${sanitizeTimelineText(`${iconPart}${entry.title}${actorPart}`)} : ${sanitizeTimelineText(entry.description)}`);
+  });
+
+  return lines.join("\n");
+}
+
+function buildTimelineSection(entries: TimelineEntry[] = []): string {
+  if (!entries.length) {
+    return "";
+  }
+
+  const mermaidDefinition = escapeHtml(buildTimelineMermaid(entries));
+  const rows = entries
+    .map((entry) => {
+      const iconText = entry.icon ? `${entry.icon} ${entry.title}` : entry.title;
+      return `
+        <tr>
+          <td>${entry.order}</td>
+          <td>${escapeHtml(entry.phase)}</td>
+          <td>${escapeHtml(iconText)}</td>
+          <td>${escapeHtml(entry.description)}</td>
+          <td>${escapeHtml(timelineActorLabel(entry))}</td>
+        </tr>
+      `;
+    })
+    .join("\n");
+
+  return `
+    <section>
+      <h2>Mission Timeline</h2>
+      <p>The orchestrator chronicles every decisive action for auditors and operators alike.</p>
+      <pre class="mermaid">
+${mermaidDefinition}
+      </pre>
+      <div class="timeline-table-wrapper">
+        <table class="timeline-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Phase</th>
+              <th>Event</th>
+              <th>Details</th>
+              <th>Actor</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
 }
 
 function buildControlHighlights(recap: RecapData): string {
@@ -482,6 +576,7 @@ function buildDashboardHtml(recap: RecapData): string {
   );
 
   const ownerMatrix = buildOwnerMatrixTable(recap.ownerParameterMatrix ?? []);
+  const timelineSection = buildTimelineSection(recap.timeline ?? []);
   const mermaidDefinition = escapeHtml(buildMermaidFlow(recap));
   const verificationSection = buildVerificationSection(recap.verification);
   const generatedTimestamp = new Date(recap.generatedAt).toISOString();
@@ -738,6 +833,20 @@ function buildDashboardHtml(recap: RecapData): string {
         padding: 0.8rem 1rem;
         text-align: left;
       }
+      .timeline-table-wrapper {
+        margin-top: 1.5rem;
+        overflow-x: auto;
+      }
+      .timeline-table td:first-child {
+        width: 3.5rem;
+      }
+      .timeline-table td:nth-child(5) {
+        white-space: nowrap;
+      }
+      .timeline-table td,
+      .timeline-table th {
+        vertical-align: top;
+      }
       .meta-grid {
         display: grid;
         gap: 1.5rem;
@@ -809,6 +918,8 @@ function buildDashboardHtml(recap: RecapData): string {
         </header>
 
         ${telemetrySection}
+
+        ${timelineSection}
 
         <section>
         <h2>Mission Control Metrics</h2>

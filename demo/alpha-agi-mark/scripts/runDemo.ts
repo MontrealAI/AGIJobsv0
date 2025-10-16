@@ -27,6 +27,15 @@ interface TradeRecord {
   valueWei: bigint;
 }
 
+interface TimelineEntry {
+  phase: string;
+  title: string;
+  description: string;
+  icon?: string;
+  actor?: Address;
+  actorLabel?: string;
+}
+
 const OUTPUT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
 
 const MIN_BALANCE = ethers.parseEther("0.05");
@@ -176,6 +185,7 @@ async function main() {
   const validatorAddresses = await Promise.all(validators.map((signer) => signer.getAddress()));
 
   const tradeLedger: TradeRecord[] = [];
+  const timeline: TimelineEntry[] = [];
   const accountState = new Map<
     Address,
     {
@@ -187,6 +197,10 @@ async function main() {
   let simulatedSupply = 0n;
   let simulatedReserve = 0n;
 
+  const pushTimeline = (entry: TimelineEntry) => {
+    timeline.push(entry);
+  };
+
   const recordTrade = (entry: TradeRecord) => {
     tradeLedger.push(entry);
     const previous = accountState.get(entry.actor) ?? { tokens: 0n, grossContribution: 0n, netContribution: 0n };
@@ -197,6 +211,18 @@ async function main() {
       tokens: previous.tokens + tokensDelta,
       grossContribution: previous.grossContribution + grossDelta,
       netContribution: previous.netContribution + netDelta,
+    });
+
+    const tokensDisplay = entry.tokensWhole.toString();
+    const valueEth = ethers.formatEther(entry.valueWei);
+    const isBuy = entry.kind === "BUY";
+    pushTimeline({
+      phase: isBuy ? "Market Activation" : "Liquidity",
+      title: `${entry.label} ${isBuy ? "acquires" : "redeems"} ${tokensDisplay} SeedShares`,
+      description: `${valueEth} ETH ${isBuy ? "committed to" : "released from"} the reserve`,
+      icon: isBuy ? "🟢" : "🔄",
+      actor: entry.actor,
+      actorLabel: entry.label,
     });
   };
 
@@ -212,11 +238,25 @@ async function main() {
   console.log(`   • Dry run mode: ${dryRun ? "enabled" : "disabled"}`);
   console.log(`   • Actor source: ${usesExternalKeys ? "environment-provided keys" : "Hardhat signers"}\n`);
 
+  pushTimeline({
+    phase: "Orchestration",
+    title: "Mission boot sequence",
+    description: `AGI Jobs orchestrator engaged on ${networkLabel} (${dryRun ? "dry-run" : "broadcast"} mode)`,
+    icon: "🚀",
+  });
+
   await ensureBalance("Owner", owner);
   await Promise.all(investors.map((signer, idx) => ensureBalance(`Investor ${idx + 1}`, signer)));
   await Promise.all(validators.map((signer, idx) => ensureBalance(`Validator ${idx + 1}`, signer)));
 
   console.log("   • All actors funded above operational threshold\n");
+
+  pushTimeline({
+    phase: "Orchestration",
+    title: "Actors cleared for launch",
+    description: `Owner, investors, and validators funded ≥ ${ethers.formatEther(MIN_BALANCE)} ETH`,
+    icon: "💠",
+  });
 
   const NovaSeed = await ethers.getContractFactory("NovaSeedNFT", owner);
   const novaSeed = await NovaSeed.deploy(ownerAddress);
@@ -224,11 +264,27 @@ async function main() {
   const seedId = await novaSeed.mintSeed.staticCall(ownerAddress, "ipfs://alpha-mark/seed/genesis");
   await (await novaSeed.mintSeed(ownerAddress, "ipfs://alpha-mark/seed/genesis")).wait();
   console.log(`🌱 Nova-Seed minted with tokenId=${seedId} at ${novaSeed.target}`);
+  pushTimeline({
+    phase: "Seed Genesis",
+    title: `Nova-Seed minted (#${seedId})`,
+    description: "Operator forges the foresight seed NFT underpinning the launch",
+    icon: "🌱",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
 
   const RiskOracle = await ethers.getContractFactory("AlphaMarkRiskOracle", owner);
   const riskOracle = await RiskOracle.deploy(ownerAddress, validatorAddresses, 2);
   await riskOracle.waitForDeployment();
   console.log(`🛡️  Risk oracle deployed at ${riskOracle.target}`);
+  pushTimeline({
+    phase: "Deployment",
+    title: "Risk oracle council activated",
+    description: "Validator quorum contract online with 2-of-3 threshold",
+    icon: "🛡️",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
 
   const basePrice = ethers.parseEther("0.1");
   const slope = ethers.parseEther("0.05");
@@ -247,16 +303,40 @@ async function main() {
   );
   await mark.waitForDeployment();
   console.log(`🏛️  AlphaMark exchange deployed at ${mark.target}`);
+  pushTimeline({
+    phase: "Deployment",
+    title: "Bonding-curve exchange deployed",
+    description: "AlphaMarkEToken market-maker ready for capital formation",
+    icon: "🏛️",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
 
   const SovereignVault = await ethers.getContractFactory("AlphaSovereignVault", owner);
   const sovereignVault = await SovereignVault.deploy(ownerAddress, "ipfs://alpha-mark/sovereign/genesis");
   await sovereignVault.waitForDeployment();
   await (await sovereignVault.designateMarkExchange(mark.target)).wait();
   console.log(`👑 Sovereign vault deployed at ${sovereignVault.target}`);
+  pushTimeline({
+    phase: "Deployment",
+    title: "Sovereign vault commissioned",
+    description: "Vault bound to the exchange for sovereign ignition",
+    icon: "👑",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
 
   await (await sovereignVault.pauseVault()).wait();
   await (await sovereignVault.unpauseVault()).wait();
   console.log("   • Sovereign vault pause/unpause controls verified");
+  pushTimeline({
+    phase: "Safety & Compliance",
+    title: "Vault circuit breaker tested",
+    description: "Owner pauses and resumes the sovereign vault to verify emergency controls",
+    icon: "🛡️",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
 
   const Stable = await ethers.getContractFactory("TestStablecoin", owner);
   const stable = await Stable.deploy();
@@ -265,11 +345,27 @@ async function main() {
   console.log("   🪙 Owner demonstrates base-asset retargeting to a stablecoin and back");
   await (await mark.setBaseAsset(stable.target)).wait();
   await (await mark.setBaseAsset(ethers.ZeroAddress)).wait();
+  pushTimeline({
+    phase: "Configuration",
+    title: "Base asset retargeted",
+    description: "Funding rail toggled from ETH to stablecoin and back before launch",
+    icon: "🪙",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
 
   await (await mark.setTreasury(ownerAddress)).wait();
   await (await mark.setFundingCap(ethers.parseEther("1000"))).wait();
   await (await mark.setWhitelistEnabled(true)).wait();
   await (await mark.setWhitelist(investorAddresses, true)).wait();
+  pushTimeline({
+    phase: "Configuration",
+    title: "Owner governance levers calibrated",
+    description: "Treasury, funding cap, and whitelist configured for sovereign launch",
+    icon: "🛠️",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
 
   console.log("\n📊 Initial bonding curve configuration:");
   console.log(`   • Base price: ${ethers.formatEther(basePrice)} ETH`);
@@ -303,13 +399,39 @@ async function main() {
 
   console.log("   🔒 Owner pauses market to demonstrate compliance gate");
   await (await mark.pauseMarket()).wait();
-  await safeAttempt("Investor C purchase while paused", async () => {
+  pushTimeline({
+    phase: "Safety & Compliance",
+    title: "Market paused for compliance review",
+    description: "Owner halts trading to showcase real-time control",
+    icon: "⏸️",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
+  const pausedAttempt = await safeAttempt("Investor C purchase while paused", async () => {
     const amount = ethers.parseEther("2");
     const cost = await mark.previewPurchaseCost(amount);
     await mark.connect(investorC).buyTokens(amount, { value: cost });
   });
+  if (pausedAttempt === undefined) {
+    pushTimeline({
+      phase: "Safety & Compliance",
+      title: "Pause enforcement confirmed",
+      description: "Investor C blocked while the market pause is active",
+      icon: "🛑",
+      actor: investorAddresses[2],
+      actorLabel: "Investor C",
+    });
+  }
   console.log("   🔓 Owner unpauses market\n");
   await (await mark.unpauseMarket()).wait();
+  pushTimeline({
+    phase: "Safety & Compliance",
+    title: "Market resumed",
+    description: "Owner reopens trading after compliance check",
+    icon: "▶️",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
 
   await buy("Investor B", investorB, "3");
   await buy("Investor C", investorC, "4");
@@ -317,12 +439,40 @@ async function main() {
   console.log("\n💡 Validator council activity:");
   await (await riskOracle.connect(validatorA).approveSeed()).wait();
   console.log(`   • Validator ${validatorAddresses[0]} approved`);
-  await safeAttempt("Premature finalize attempt", async () => {
+  pushTimeline({
+    phase: "Governance",
+    title: "Validator A casts approval",
+    description: `Consensus progress: 1/${validatorAddresses.length}`,
+    icon: "🗳️",
+    actor: validatorAddresses[0],
+    actorLabel: "Validator A",
+  });
+  const prematureFinalize = await safeAttempt("Premature finalize attempt", async () => {
     const prematureMetadata = ethers.toUtf8Bytes("Attempt before consensus");
     await mark.finalizeLaunch(sovereignVault.target, prematureMetadata);
   });
+  if (prematureFinalize === undefined) {
+    pushTimeline({
+      phase: "Governance",
+      title: "Launch guard rejected premature finalize",
+      description: "Owner cannot finalize before oracle quorum",
+      icon: "⚖️",
+      actor: ownerAddress,
+      actorLabel: "Owner",
+    });
+  }
   await (await riskOracle.connect(validatorB).approveSeed()).wait();
   console.log(`   • Validator ${validatorAddresses[1]} approved`);
+  const approvalsNow = await riskOracle.approvalCount();
+  const thresholdNow = await riskOracle.approvalThreshold();
+  pushTimeline({
+    phase: "Governance",
+    title: "Validator B casts approval",
+    description: `Consensus secured (${approvalsNow.toString()}/${thresholdNow.toString()})`,
+    icon: "🗳️",
+    actor: validatorAddresses[1],
+    actorLabel: "Validator B",
+  });
 
   console.log("\n♻️  Investor B tests liquidity by selling 1 SEED");
   const sellAmount = ethers.parseEther("1");
@@ -349,6 +499,14 @@ async function main() {
   console.log(
     `   • Sovereign vault acknowledged ignition metadata: "${ethers.toUtf8String(launchMetadata)}"`
   );
+  pushTimeline({
+    phase: "Launch",
+    title: "Sovereign ignition finalized",
+    description: "Funds transferred to the vault with ignition metadata recorded",
+    icon: "✨",
+    actor: ownerAddress,
+    actorLabel: "Owner",
+  });
 
   const [supply, reserve, nextPrice] = await mark.getCurveState();
   const approvalCount = await riskOracle.approvalCount();
@@ -658,6 +816,30 @@ async function main() {
     },
   };
 
+  pushTimeline({
+    phase: "Verification",
+    title: "Triple-verification matrix aligned",
+    description: "Ledger, simulation, and on-chain state reconcile 1:1",
+    icon: "✅",
+  });
+
+  pushTimeline({
+    phase: "Mission Control",
+    title: "Recap dossier synthesis",
+    description: "Preparing sovereign dashboard, owner matrix, and recap digest",
+    icon: "🧾",
+  });
+
+  const timelineRecap = timeline.map((entry, index) => ({
+    order: index + 1,
+    phase: entry.phase,
+    title: entry.title,
+    description: entry.description,
+    icon: entry.icon,
+    actor: entry.actor,
+    actorLabel: entry.actorLabel,
+  }));
+
   const enrichedRecap = {
     ...recap,
     trades: tradeLedger.map((entry) => ({
@@ -670,6 +852,7 @@ async function main() {
     })),
     ownerParameterMatrix,
     verification,
+    timeline: timelineRecap,
   };
 
   const actors = {

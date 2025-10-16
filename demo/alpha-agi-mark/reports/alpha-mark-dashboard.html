@@ -203,6 +203,20 @@
         padding: 0.8rem 1rem;
         text-align: left;
       }
+      .timeline-table-wrapper {
+        margin-top: 1.5rem;
+        overflow-x: auto;
+      }
+      .timeline-table td:first-child {
+        width: 3.5rem;
+      }
+      .timeline-table td:nth-child(5) {
+        white-space: nowrap;
+      }
+      .timeline-table td,
+      .timeline-table th {
+        vertical-align: top;
+      }
       .meta-grid {
         display: grid;
         gap: 1.5rem;
@@ -269,7 +283,7 @@
             <span class="badge info">Dry Run</span>
             <span class="badge warning">Workspace Dirty</span>
             <span class="hero-stamp">hardhat (chainId 31337)</span>
-            <span class="hero-stamp">Generated 2025-10-16T21:18:44.346Z</span>
+            <span class="hero-stamp">Generated 2025-10-16T22:28:58.620Z</span>
           </div>
         </header>
 
@@ -280,19 +294,19 @@
             <article class="meta-card">
               <h3>Recap Envelope</h3>
               <ul>
-                <li><strong>Generated</strong>: 2025-10-16T21:18:44.346Z</li>
+                <li><strong>Generated</strong>: 2025-10-16T22:28:58.620Z</li>
                 <li><strong>Network</strong>: hardhat (chainId 31337)</li>
                 <li><strong>Chain</strong>: 31337</li>
                 <li><strong>Block</strong>: 0</li>
                 <li><strong>Dry-run mode</strong>: Enabled</li>
-                <li><strong>Checksum</strong>: <code>sha256:03bed5b0e77f3148972204e0e07a1df196de416021d4114cd69ef9eb2221a6ab</code></li>
+                <li><strong>Checksum</strong>: <code>sha256:fd9fa6cf56c3f3e497c5ce72aafebcba39b660c1344eff89646e7ac659fb194b</code></li>
               </ul>
             </article>
             <article class="meta-card">
               <h3>Orchestrator</h3>
               <ul>
                 <li><strong>Mode</strong>: Dry run</li>
-                <li><strong>Commit</strong>: a4afab5557e2be3afa4dca6e9532732aa30ca080</li>
+                <li><strong>Commit</strong>: c7f11d9aec96ad3de7103c89aaa8f517bbc9040c</li>
                 <li><strong>Branch</strong>: work</li>
                 <li><strong>Workspace dirty</strong>: Yes</li>
               </ul>
@@ -307,6 +321,265 @@
             </article>
           </div>
         </section>
+  
+
+        
+    <section>
+      <h2>Mission Timeline</h2>
+      <p>The orchestrator chronicles every decisive action for auditors and operators alike.</p>
+      <pre class="mermaid">
+timeline
+    title α-AGI MARK Operator Timeline
+    section Orchestration
+      🚀 Mission boot sequence : AGI Jobs orchestrator engaged on hardhat (chainId 31337) (dry-run mode)
+      💠 Actors cleared for launch : Owner, investors, and validators funded ≥ 0.05 ETH
+    section Seed Genesis
+      🌱 Nova-Seed minted (#1) (Owner (0xf39F…2266)) : Operator forges the foresight seed NFT underpinning the launch
+    section Deployment
+      🛡️ Risk oracle council activated (Owner (0xf39F…2266)) : Validator quorum contract online with 2-of-3 threshold
+      🏛️ Bonding-curve exchange deployed (Owner (0xf39F…2266)) : AlphaMarkEToken market-maker ready for capital formation
+      👑 Sovereign vault commissioned (Owner (0xf39F…2266)) : Vault bound to the exchange for sovereign ignition
+    section Safety &amp; Compliance
+      🛡️ Vault circuit breaker tested (Owner (0xf39F…2266)) : Owner pauses and resumes the sovereign vault to verify emergency controls
+    section Configuration
+      🪙 Base asset retargeted (Owner (0xf39F…2266)) : Funding rail toggled from ETH to stablecoin and back before launch
+      🛠️ Owner governance levers calibrated (Owner (0xf39F…2266)) : Treasury, funding cap, and whitelist configured for sovereign launch
+    section Market Activation
+      🟢 Investor A acquires 5 SeedShares (Investor A (0x7099…79C8)) : 1.0 ETH committed to the reserve
+    section Safety &amp; Compliance
+      ⏸️ Market paused for compliance review (Owner (0xf39F…2266)) : Owner halts trading to showcase real-time control
+      🛑 Pause enforcement confirmed (Investor C (0x90F7…b906)) : Investor C blocked while the market pause is active
+      ▶️ Market resumed (Owner (0xf39F…2266)) : Owner reopens trading after compliance check
+    section Market Activation
+      🟢 Investor B acquires 3 SeedShares (Investor B (0x3C44…93BC)) : 1.2 ETH committed to the reserve
+      🟢 Investor C acquires 4 SeedShares (Investor C (0x90F7…b906)) : 2.3 ETH committed to the reserve
+    section Governance
+      🗳️ Validator A casts approval (Validator A (0x15d3…6A65)) : Consensus progress\: 1/3
+      ⚖️ Launch guard rejected premature finalize (Owner (0xf39F…2266)) : Owner cannot finalize before oracle quorum
+      🗳️ Validator B casts approval (Validator B (0x9965…A4dc)) : Consensus secured (2/2)
+    section Liquidity
+      🔄 Investor B redeems 1 SeedShares (Investor B (0x3C44…93BC)) : 0.65 ETH released from the reserve
+    section Launch
+      ✨ Sovereign ignition finalized (Owner (0xf39F…2266)) : Funds transferred to the vault with ignition metadata recorded
+    section Verification
+      ✅ Triple-verification matrix aligned : Ledger, simulation, and on-chain state reconcile 1\:1
+    section Mission Control
+      🧾 Recap dossier synthesis : Preparing sovereign dashboard, owner matrix, and recap digest
+      </pre>
+      <div class="timeline-table-wrapper">
+        <table class="timeline-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Phase</th>
+              <th>Event</th>
+              <th>Details</th>
+              <th>Actor</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+        <tr>
+          <td>1</td>
+          <td>Orchestration</td>
+          <td>🚀 Mission boot sequence</td>
+          <td>AGI Jobs orchestrator engaged on hardhat (chainId 31337) (dry-run mode)</td>
+          <td>—</td>
+        </tr>
+      
+
+        <tr>
+          <td>2</td>
+          <td>Orchestration</td>
+          <td>💠 Actors cleared for launch</td>
+          <td>Owner, investors, and validators funded ≥ 0.05 ETH</td>
+          <td>—</td>
+        </tr>
+      
+
+        <tr>
+          <td>3</td>
+          <td>Seed Genesis</td>
+          <td>🌱 Nova-Seed minted (#1)</td>
+          <td>Operator forges the foresight seed NFT underpinning the launch</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>4</td>
+          <td>Deployment</td>
+          <td>🛡️ Risk oracle council activated</td>
+          <td>Validator quorum contract online with 2-of-3 threshold</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>5</td>
+          <td>Deployment</td>
+          <td>🏛️ Bonding-curve exchange deployed</td>
+          <td>AlphaMarkEToken market-maker ready for capital formation</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>6</td>
+          <td>Deployment</td>
+          <td>👑 Sovereign vault commissioned</td>
+          <td>Vault bound to the exchange for sovereign ignition</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>7</td>
+          <td>Safety &amp; Compliance</td>
+          <td>🛡️ Vault circuit breaker tested</td>
+          <td>Owner pauses and resumes the sovereign vault to verify emergency controls</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>8</td>
+          <td>Configuration</td>
+          <td>🪙 Base asset retargeted</td>
+          <td>Funding rail toggled from ETH to stablecoin and back before launch</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>9</td>
+          <td>Configuration</td>
+          <td>🛠️ Owner governance levers calibrated</td>
+          <td>Treasury, funding cap, and whitelist configured for sovereign launch</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>10</td>
+          <td>Market Activation</td>
+          <td>🟢 Investor A acquires 5 SeedShares</td>
+          <td>1.0 ETH committed to the reserve</td>
+          <td>Investor A (0x7099…79C8)</td>
+        </tr>
+      
+
+        <tr>
+          <td>11</td>
+          <td>Safety &amp; Compliance</td>
+          <td>⏸️ Market paused for compliance review</td>
+          <td>Owner halts trading to showcase real-time control</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>12</td>
+          <td>Safety &amp; Compliance</td>
+          <td>🛑 Pause enforcement confirmed</td>
+          <td>Investor C blocked while the market pause is active</td>
+          <td>Investor C (0x90F7…b906)</td>
+        </tr>
+      
+
+        <tr>
+          <td>13</td>
+          <td>Safety &amp; Compliance</td>
+          <td>▶️ Market resumed</td>
+          <td>Owner reopens trading after compliance check</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>14</td>
+          <td>Market Activation</td>
+          <td>🟢 Investor B acquires 3 SeedShares</td>
+          <td>1.2 ETH committed to the reserve</td>
+          <td>Investor B (0x3C44…93BC)</td>
+        </tr>
+      
+
+        <tr>
+          <td>15</td>
+          <td>Market Activation</td>
+          <td>🟢 Investor C acquires 4 SeedShares</td>
+          <td>2.3 ETH committed to the reserve</td>
+          <td>Investor C (0x90F7…b906)</td>
+        </tr>
+      
+
+        <tr>
+          <td>16</td>
+          <td>Governance</td>
+          <td>🗳️ Validator A casts approval</td>
+          <td>Consensus progress: 1/3</td>
+          <td>Validator A (0x15d3…6A65)</td>
+        </tr>
+      
+
+        <tr>
+          <td>17</td>
+          <td>Governance</td>
+          <td>⚖️ Launch guard rejected premature finalize</td>
+          <td>Owner cannot finalize before oracle quorum</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>18</td>
+          <td>Governance</td>
+          <td>🗳️ Validator B casts approval</td>
+          <td>Consensus secured (2/2)</td>
+          <td>Validator B (0x9965…A4dc)</td>
+        </tr>
+      
+
+        <tr>
+          <td>19</td>
+          <td>Liquidity</td>
+          <td>🔄 Investor B redeems 1 SeedShares</td>
+          <td>0.65 ETH released from the reserve</td>
+          <td>Investor B (0x3C44…93BC)</td>
+        </tr>
+      
+
+        <tr>
+          <td>20</td>
+          <td>Launch</td>
+          <td>✨ Sovereign ignition finalized</td>
+          <td>Funds transferred to the vault with ignition metadata recorded</td>
+          <td>Owner (0xf39F…2266)</td>
+        </tr>
+      
+
+        <tr>
+          <td>21</td>
+          <td>Verification</td>
+          <td>✅ Triple-verification matrix aligned</td>
+          <td>Ledger, simulation, and on-chain state reconcile 1:1</td>
+          <td>—</td>
+        </tr>
+      
+
+        <tr>
+          <td>22</td>
+          <td>Mission Control</td>
+          <td>🧾 Recap dossier synthesis</td>
+          <td>Preparing sovereign dashboard, owner matrix, and recap digest</td>
+          <td>—</td>
+        </tr>
+      
+          </tbody>
+        </table>
+      </div>
+    </section>
   
 
         <section>
