@@ -162,7 +162,8 @@
     "test:alpha-agi-mark": "npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts",
     "owner:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/exportOwnerMatrix.ts",
     "dashboard:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateDashboard.ts",
-    "verify:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/verifyRecap.ts"
+    "verify:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/verifyRecap.ts",
+    "integrity:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateIntegrityReport.ts"
   },
   "keywords": [],
   "author": "",
