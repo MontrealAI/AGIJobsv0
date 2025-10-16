@@ -149,6 +149,38 @@ function renderSummary(container, market, meta = {}) {
   }
 }
 
+function renderOwnerSnapshot(container, snapshot) {
+  if (!snapshot || !snapshot.meta) return;
+  const { meta } = snapshot;
+  const pairs = [
+    { label: 'Protocol fee', value: `${meta.feePct}%` },
+    { label: 'Validator reward', value: `${meta.validatorRewardPct}%` },
+    {
+      label: 'Max active jobs / agent',
+      value: meta.maxActiveJobsPerAgent,
+    },
+    { label: 'Commit window', value: `${meta.commitWindow}s` },
+    { label: 'Reveal window', value: `${meta.revealWindow}s` },
+    { label: 'Burn percentage', value: `${meta.burnPct}%` },
+  ];
+  const grid = document.createElement('div');
+  grid.className = 'stat-grid';
+  for (const pair of pairs) {
+    const node = document.createElement('div');
+    node.className = 'stat';
+    const label = document.createElement('div');
+    label.className = 'stat__label';
+    label.textContent = pair.label;
+    const value = document.createElement('div');
+    value.className = 'stat__value';
+    value.textContent = `${pair.value ?? '—'}`;
+    node.appendChild(label);
+    node.appendChild(value);
+    grid.appendChild(node);
+  }
+  container.appendChild(grid);
+}
+
 function renderActors(container, actors) {
   const grid = document.createElement('div');
   grid.className = 'actor-grid';
@@ -490,6 +522,22 @@ function renderApp(data) {
     timelineEntries: data.timeline.length,
   });
   app.appendChild(summaryCard);
+
+  const ownerSnapshot = Array.isArray(data.timeline)
+    ? data.timeline
+        .filter(
+          (entry) => entry.kind === 'summary' && entry.label === 'Owner control snapshot'
+        )
+        .at(-1)
+    : null;
+  if (ownerSnapshot) {
+    const ownerCard = createCard(
+      'Owner control snapshot',
+      'Live governance parameters captured after the command console drill.'
+    );
+    renderOwnerSnapshot(ownerCard, ownerSnapshot);
+    app.appendChild(ownerCard);
+  }
 
   const actorsCard = createCard('Participants and wallets');
   renderActors(actorsCard, data.actors);

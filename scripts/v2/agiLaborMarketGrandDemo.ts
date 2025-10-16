@@ -1508,6 +1508,138 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   registerScenario(scenarioTitle, jobId);
 }
 
+async function demonstrateOwnerCommandConsole(
+  env: DemoEnvironment
+): Promise<void> {
+  const {
+    owner,
+    registry,
+    validation,
+    stake,
+    dispute,
+    certificate,
+    feePool,
+  } = env;
+
+  logSection('Owner command console – sovereign control drill');
+
+  const registryAddress = await registry.getAddress();
+  const validationAddress = await validation.getAddress();
+  const stakeAddress = await stake.getAddress();
+  const disputeAddress = await dispute.getAddress();
+  const certificateAddress = await certificate.getAddress();
+  const feePoolAddress = await feePool.getAddress();
+
+  logStep('Owner recalibrates market economics before the next sovereign mission');
+  await registry.connect(owner).setFeePct(4);
+  recordOwnerAction(
+    'Protocol fee recalibrated to 4%',
+    `JobRegistry@${registryAddress}`,
+    'setFeePct',
+    { pct: 4 }
+  );
+  await registry.connect(owner).setValidatorRewardPct(25);
+  recordOwnerAction(
+    'Validator reward increased to 25%',
+    `JobRegistry@${registryAddress}`,
+    'setValidatorRewardPct',
+    { pct: 25 }
+  );
+  await feePool.connect(owner).setBurnPct(7);
+  recordOwnerAction(
+    'Fee pool burn percentage tuned to 7%',
+    `FeePool@${feePoolAddress}`,
+    'setBurnPct',
+    { burnPct: 7 }
+  );
+
+  logStep('Owner enforces throughput guardrails and validator cadence');
+  await registry.connect(owner).setMaxActiveJobsPerAgent(1);
+  recordOwnerAction(
+    'Max active jobs per agent limited to 1',
+    `JobRegistry@${registryAddress}`,
+    'setMaxActiveJobsPerAgent',
+    { limit: 1 }
+  );
+  await validation.connect(owner).setCommitRevealWindows(90, 90);
+  recordOwnerAction(
+    'Commit/reveal windows adjusted to 90s',
+    `ValidationModule@${validationAddress}`,
+    'setCommitRevealWindows',
+    { commitWindow: 90, revealWindow: 90 }
+  );
+
+  logStep('Owner drills the incident response toolkit (pause/unpause across modules)');
+  const pauseTargets: Array<{
+    label: string;
+    pause: () => Promise<unknown>;
+    unpause: () => Promise<unknown>;
+    address: string;
+  }> = [
+    {
+      label: 'JobRegistry',
+      pause: () => registry.connect(owner).pause(),
+      unpause: () => registry.connect(owner).unpause(),
+      address: registryAddress,
+    },
+    {
+      label: 'StakeManager',
+      pause: () => stake.connect(owner).pause(),
+      unpause: () => stake.connect(owner).unpause(),
+      address: stakeAddress,
+    },
+    {
+      label: 'ValidationModule',
+      pause: () => validation.connect(owner).pause(),
+      unpause: () => validation.connect(owner).unpause(),
+      address: validationAddress,
+    },
+    {
+      label: 'DisputeModule',
+      pause: () => dispute.connect(owner).pause(),
+      unpause: () => dispute.connect(owner).unpause(),
+      address: disputeAddress,
+    },
+    {
+      label: 'CertificateNFT',
+      pause: () => certificate.connect(owner).pause(),
+      unpause: () => certificate.connect(owner).unpause(),
+      address: certificateAddress,
+    },
+    {
+      label: 'FeePool',
+      pause: () => feePool.connect(owner).pause(),
+      unpause: () => feePool.connect(owner).unpause(),
+      address: feePoolAddress,
+    },
+  ];
+
+  for (const target of pauseTargets) {
+    await target.pause();
+    recordOwnerAction(
+      `${target.label} paused for readiness drill`,
+      `${target.label}@${target.address}`,
+      'pause'
+    );
+    await target.unpause();
+    recordOwnerAction(
+      `${target.label} resumed after drill`,
+      `${target.label}@${target.address}`,
+      'unpause'
+    );
+  }
+
+  const policySnapshot = {
+    feePct: Number(await registry.feePct()),
+    validatorRewardPct: Number(await registry.validatorRewardPct()),
+    maxActiveJobsPerAgent: (await registry.maxActiveJobsPerAgent()).toString(),
+    commitWindow: Number(await validation.commitWindow()),
+    revealWindow: Number(await validation.revealWindow()),
+    burnPct: Number(await feePool.burnPct()),
+  };
+  recordTimeline('summary', 'Owner control snapshot', policySnapshot);
+}
+
 async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   const scenarioTitle = 'Scenario 2 – Cross-border dispute resolved by owner governance';
   logSection(scenarioTitle);
@@ -1678,6 +1810,7 @@ async function main(): Promise<void> {
   const ownerControl = await ownerCommandCenterDrill(env);
 
   await runHappyPath(env);
+  await demonstrateOwnerCommandConsole(env);
   await runDisputeScenario(env);
   const market = await summarizeMarketState(env);
 

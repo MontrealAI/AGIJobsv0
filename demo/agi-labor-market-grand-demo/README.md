@@ -18,6 +18,9 @@ and performs the following:
   2. *Contentious translation dispute* — validators disagree, a moderator panel
      resolves the dispute in favour of the agent, and finalization distributes
      escrow while slashing the non-revealing validator.
+- Showcases the **owner command console**, demonstrating how the platform owner
+  can retune fees, validator incentives, agent guardrails, and pause/unpause
+  every critical contract before green-lighting the second scenario.
 - Emits human-readable summaries for each stage so non-technical users can
   follow funds, NFT minting, reputation enforcement, and dispute outcomes.
 
@@ -71,6 +74,16 @@ npx hardhat run --no-compile scripts/v2/agiLaborMarketGrandDemo.ts --network har
 The script:
 
 1. Boots the entire v2 module suite and displays initial balances.
+2. Walks through the happy-path job where all validators approve.
+3. Opens the **owner command console** so governance can retune protocol fees,
+   validator rewards, commit/reveal windows, maximum active jobs, and exercise
+   pause controls across the JobRegistry, StakeManager, ValidationModule,
+   DisputeModule, CertificateNFT, and FeePool.
+4. Runs a contested job where governance resolves a dispute in favour of the
+   agent using moderator signatures and slashing enforcement.
+5. Prints a full telemetry dashboard – validator/agent stakes, fee pool state,
+   burn totals, reputation scores, and certificate ownership – so a non-technical
+   operator sees the market outcome at a glance.
 2. Demonstrates **owner mission control** — live updates to protocol fees,
    validator incentives, non-reveal penalties, and emergency pause delegation to
    a trusted operator — proving that the platform owner can steer every
@@ -149,6 +162,14 @@ environment variable before running the script.
 
 Non-technical operators can replay the Hardhat simulation and immediately see a
 production-style control room without wiring additional infrastructure.
+
+### Continuous verification
+
+- The [`demo-agi-labor-market`](../../.github/workflows/demo-agi-labor-market.yml)
+  GitHub Action runs on every pull request touching the demo or the workflow.
+  It installs dependencies, compiles the contracts, executes the Hardhat
+  scenario export, and uploads the transcript artifact. The check is required on
+  `main`, guaranteeing the demo stays production-ready.
 
 ## Extending or replaying
 
