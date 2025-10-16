@@ -1,0 +1,17 @@
+graph TD
+  G[Owner Safe / Timelock] -->|governs| JR[JobRegistry]
+  G -->|pause| SP[SystemPause]
+  G -->|thermostat| TH[Thermostat]
+  G --> SM[StakeManager]
+  G --> DM[DisputeModule]
+  G --> MB[RewardEngineMB]
+  G --> NFT[CertificateNFT]
+
+  JR --> VM[ValidationModule]
+  JR --> RE[ReputationEngine]
+  JR --> SM
+  JR --> DM
+  JR --> NFT
+
+  ACC[Acceptance Criteria (IPFS)] -.policy.-> VM
+  ORA[Oracle Brief (IPFS)] -.market making.-> VM

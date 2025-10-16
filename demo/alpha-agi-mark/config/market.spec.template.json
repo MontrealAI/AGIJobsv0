@@ -1,0 +1,27 @@
+{
+  "name": "AGI-Risk: GDP Growth > 3% (Country-X, FY2026)",
+  "version": "v2",
+  "question": "Will Country-X GDP growth exceed 3% for FY2026?",
+  "deadline": "2026-12-31T23:59:59Z",
+  "domains": ["macro", "policy", "foresight"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://Qm...acceptance-criteria",
+  "oracleBriefURI": "ipfs://Qm...oracle-brief",
+  "validation": {
+    "k": 3,
+    "n": 5,
+    "commitWindowSec": 3600,
+    "revealWindowSec": 3600
+  },
+  "challengeWindowSec": 7200,
+  "escrow": {
+    "token": "AGIALPHA",
+    "amountPerItem": "1"
+  },
+  "stake": {
+    "worker": "0.5",
+    "validator": "1"
+  },
+  "resultSchema": "ipfs://Qm...schema",
+  "notes": "Bonding-curve logic is expressed in acceptance criteria; validators enforce price integrity via commit/reveal and stake-backed consensus."
+}
