@@ -1,15 +1,43 @@
 ```mermaid
-graph TD
-    A[Owner launches demo] --> B[NovaSeedNFT deployed]
-    B --> C[AlphaMarkRiskOracle deployed]
-    C --> D[AlphaMarkEToken deployed]
-    D --> E[Investors buy SeedShares via bonding curve]
-    E --> F[Owner toggles whitelist & pause controls]
-    F --> G[Validators submit approvals]
-    G --> H{Approval threshold met?}
-    H -- No --> I[Owner may override or abort]
-    H -- Yes --> J[Owner finalizes launch]
-    J --> K[Sovereign funds released]
-    K --> L[Recap generated for operator]
-    L --> M[Owner parameter matrix exported]
+flowchart LR
+    classDef owner fill:#0f0f3d,stroke:#8a7bff,stroke-width:2px,color:#ffffff,font-weight:bold;
+    classDef contract fill:#111f4d,stroke:#64d7ff,stroke-width:2px,color:#f0f7ff;
+    classDef process fill:#0a2f33,stroke:#3cf2c9,stroke-width:2px,color:#e5fffb;
+    classDef outcome fill:#28154b,stroke:#ff7bff,stroke-width:2px,color:#fff2ff,font-weight:bold;
+    classDef report fill:#1b1b1b,stroke:#f2c94c,stroke-width:2px,color:#fff4d1,font-weight:bold;
+    classDef checkpoint fill:#2c105a,stroke:#f268b1,stroke-width:2px,color:#ffe3f3,font-weight:bold;
+
+    subgraph PREP["Ignition Sphere"]
+        direction TB
+        A[Owner launches demo<br/>`npm run demo:alpha-agi-mark`]:::owner --> B{{Dry-run / Broadcast consent}}:::checkpoint
+        B --> C[Hardhat orchestrator boots deterministic chain]:::process
+    end
+
+    subgraph DEPLOY["Genesis Fabric"]
+        direction LR
+        C --> D[NovaSeedNFT deployed<br/>`🌱` Nova-Seed minted]:::contract
+        D --> E[AlphaMarkRiskOracle instated<br/>Validator quorum configured]:::contract
+        E --> F[AlphaMarkEToken exchange online<br/>Bonding curve primed]:::contract
+        F --> G[AlphaSovereignVault fortified<br/>Sovereign receiver handshake]:::contract
+    end
+
+    subgraph MARKET["Resonance Cascade"]
+        direction TB
+        G --> H[Investors stream ETH / ERC-20 through bonding curve]:::process
+        H --> I[Owner toggles whitelist & pause guardians<br/>Compliance envelope proven]:::process
+        I --> J[Validators vote within oracle council]:::process
+        J --> K{{Approval threshold met?}}:::checkpoint
+        K -- "No" --> L[Owner may override, reset, or abort<br/>Emergency exit can be armed]:::process
+        L --> J
+    end
+
+    K -- "Yes" --> M[Owner finalizes launch<br/>Funds teleported to Sovereign vault]:::outcome
+    M --> N[Vault acknowledges ignition metadata<br/>`notifyLaunch` handshake sealed]:::outcome
+
+    subgraph RECAP["Clairvoyant Dossier"]
+        direction TB
+        N --> O[Automated recap dossier minted<br/>`alpha-mark-recap.json`]:::report
+        O --> P[Owner parameter matrix broadcast<br/>Console + JSON alignment]:::report
+        P --> Q[Non-technical operator reviews one-page command center]:::owner
+    end
 ```

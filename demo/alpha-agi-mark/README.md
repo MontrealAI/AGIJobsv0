@@ -20,6 +20,11 @@ The demo deploys four core contracts:
 
 ![α-AGI MARK flow diagram](runbooks/alpha-agi-mark-flow.mmd)
 
+> [!TIP]
+> For a multi-perspective visual walkthrough (mindmap, journey map, and sovereign launch sequence) see the
+> [`Operator Empowerment Atlas`](docs/operator-empowerment-atlas.md). It is designed for non-technical founders to brief
+> stakeholders with grandiose visuals without touching Solidity.
+
 ## Quickstart
 
 ```bash
