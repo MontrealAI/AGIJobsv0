@@ -21,6 +21,11 @@ jobs:
       - name: Install root deps
         run: npm ci
 
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: '1.4.0'
+
       - name: Start anvil
         run: |
           nohup anvil --silent --block-time 1 > anvil.log 2>&1 &
