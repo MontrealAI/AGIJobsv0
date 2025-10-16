@@ -61,13 +61,22 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
    This regenerates the HTML dossier using the latest recap JSON, useful after manual parameter tweaks.
 
-5. **(Optional) Run unit tests**
+5. **Run the offline triangulation verifier**
+
+   ```bash
+   npm run verify:alpha-agi-mark
+   ```
+
+   The script replays the trade ledger from the recap, recomputes the bonding-curve math independently, and
+   prints a confidence index table that must read 100% before green-lighting any external announcement.
+
+6. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
    ```
 
-6. **(Optional) Dry-run on a fork or external network**
+7. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 
