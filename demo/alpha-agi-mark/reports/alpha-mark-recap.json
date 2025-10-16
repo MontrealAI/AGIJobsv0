@@ -1,4 +1,31 @@
 {
+  "generatedAt": "2025-10-16T21:18:44.346Z",
+  "network": {
+    "label": "hardhat (chainId 31337)",
+    "name": "hardhat",
+    "chainId": "31337",
+    "blockNumber": "0",
+    "dryRun": true
+  },
+  "orchestrator": {
+    "commit": "a4afab5557e2be3afa4dca6e9532732aa30ca080",
+    "branch": "work",
+    "workspaceDirty": true,
+    "mode": "dry-run"
+  },
+  "actors": {
+    "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "investors": [
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+    ],
+    "validators": [
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+    ]
+  },
   "contracts": {
     "novaSeed": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "riskOracle": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
@@ -267,5 +294,10 @@
       "ledgerGrossEth": "4.5",
       "consistent": true
     }
+  },
+  "checksums": {
+    "algorithm": "sha256",
+    "canonicalEncoding": "json-key-sorted",
+    "recapSha256": "03bed5b0e77f3148972204e0e07a1df196de416021d4114cd69ef9eb2221a6ab"
   }
 }

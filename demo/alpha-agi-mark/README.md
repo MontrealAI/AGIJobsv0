@@ -87,6 +87,11 @@ npm run verify:alpha-agi-mark
 The verifier consumes the recap dossier, replays the trade ledger, recomputes bonding-curve pricing from first
 principles, and prints a "confidence index" table that must reach 100% before sign-off.
 
+Every recap is now wrapped in a tamper-evident envelope. The demo encodes network metadata, actor registries,
+the orchestrator commit/branch, and a canonical JSON SHA-256 digest inside the recap file. The verifier recomputes
+the digest with a key-sorted canonicalisation pass and fails if the checksum diverges, guaranteeing that stakeholders
+review precisely the state emitted by the orchestrator.
+
 For a presentation-ready briefing, render the integrity report:
 
 ```bash
@@ -103,6 +108,7 @@ Every demo run now emits a cinematic HTML dossier at `demo/alpha-agi-mark/report
 any browser to explore:
 
 - Mission control metrics capturing validator consensus, reserve power, and sovereign vault status
+- A telemetry envelope showing network, orchestrator git metadata, actor registries, and the live recap checksum badge
 - A control-deck grid showing every owner actuator with live status badges
 - Full participant ledger plus the operator parameter matrix rendered as responsive tables
 - A trade resonance log charting every buy/sell action and its capital impact

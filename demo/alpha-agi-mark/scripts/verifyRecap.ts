@@ -3,6 +3,9 @@ import path from "path";
 
 import { z } from "zod";
 import { formatEther } from "ethers";
+import { createHash } from "crypto";
+
+import { canonicalStringify } from "./utils/canonical";
 
 const RECAP_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
 const WHOLE_TOKEN = 10n ** 18n;
@@ -14,54 +17,112 @@ type CheckResult = {
   actual?: string;
 };
 
-const tradeSchema = z.object({
-  kind: z.enum(["BUY", "SELL"]),
-  actor: z.string(),
-  label: z.string(),
-  tokensWhole: z.string(),
-  valueWei: z.string(),
-  valueEth: z.string().optional(),
-});
+const tradeSchema = z
+  .object({
+    kind: z.enum(["BUY", "SELL"]),
+    actor: z.string(),
+    label: z.string(),
+    tokensWhole: z.string(),
+    valueWei: z.string(),
+    valueEth: z.string().optional(),
+  })
+  .passthrough();
 
-const participantSchema = z.object({
-  address: z.string(),
-  tokens: z.string(),
-  tokensWei: z.string(),
-  contributionWei: z.string(),
-  contributionEth: z.string().optional(),
-});
+const participantSchema = z
+  .object({
+    address: z.string(),
+    tokens: z.string(),
+    tokensWei: z.string(),
+    contributionWei: z.string(),
+    contributionEth: z.string().optional(),
+  })
+  .passthrough();
 
 const recapSchema = z.object({
-  bondingCurve: z.object({
+  generatedAt: z.string(),
+  network: z
+    .object({
+      label: z.string(),
+      name: z.string(),
+      chainId: z.string(),
+      blockNumber: z.string(),
+      dryRun: z.boolean(),
+    })
+    .passthrough(),
+  orchestrator: z
+    .object({
+      commit: z.string().optional(),
+      branch: z.string().optional(),
+      workspaceDirty: z.boolean(),
+      mode: z.enum(["dry-run", "broadcast"]),
+    })
+    .passthrough(),
+  actors: z.object({
+    owner: z.string(),
+    investors: z.array(z.string()).min(3),
+    validators: z.array(z.string()).min(3),
+  }),
+  bondingCurve: z
+    .object({
     supplyWholeTokens: z.string(),
     reserveWei: z.string(),
     nextPriceWei: z.string(),
     basePriceWei: z.string(),
     slopeWei: z.string(),
-  }),
-  ownerControls: z.object({
+    reserveEth: z.string().optional(),
+    nextPriceEth: z.string().optional(),
+    basePriceEth: z.string().optional(),
+    slopeEth: z.string().optional(),
+  })
+    .passthrough(),
+  ownerControls: z
+    .object({
     basePriceWei: z.string(),
     slopeWei: z.string(),
     fundingCapWei: z.string(),
     finalized: z.boolean(),
     aborted: z.boolean(),
-  }),
-  launch: z.object({
-    sovereignVault: z.object({
-      totalReceivedWei: z.string(),
-    }),
-  }),
+    fundingCapEth: z.string().optional(),
+    maxSupplyWholeTokens: z.string().optional(),
+    saleDeadlineTimestamp: z.string().optional(),
+    treasury: z.string().optional(),
+    riskOracle: z.string().optional(),
+    baseAsset: z.string().optional(),
+    usesNativeAsset: z.boolean().optional(),
+  })
+    .passthrough(),
+  launch: z
+    .object({
+      sovereignVault: z
+        .object({
+        totalReceivedWei: z.string(),
+        totalReceivedEth: z.string().optional(),
+        lastAcknowledgedAmountWei: z.string().optional(),
+        lastAcknowledgedAmountEth: z.string().optional(),
+        vaultBalanceWei: z.string().optional(),
+      })
+        .passthrough(),
+    })
+    .passthrough(),
   participants: z.array(participantSchema).nonempty("Participant ledger is empty"),
   trades: z.array(tradeSchema).nonempty("Trade ledger is empty"),
   verification: z
     .object({
-      supplyConsensus: z.object({ consistent: z.boolean() }),
-      pricing: z.object({ consistent: z.boolean() }),
-      capitalFlows: z.object({ consistent: z.boolean() }),
-      contributions: z.object({ consistent: z.boolean() }),
+      supplyConsensus: z.object({ consistent: z.boolean() }).passthrough(),
+      pricing: z.object({ consistent: z.boolean() }).passthrough(),
+      capitalFlows: z.object({ consistent: z.boolean() }).passthrough(),
+      contributions: z.object({ consistent: z.boolean() }).passthrough(),
+    })
+    .passthrough()
+    .optional(),
+  checksums: z
+    .object({
+      algorithm: z.literal("sha256"),
+      canonicalEncoding: z.literal("json-key-sorted"),
+      recapSha256: z.string(),
     })
     .optional(),
-});
+}).passthrough();
 
 function parseBigInt(value: string, label: string): bigint {
   try {
@@ -78,7 +139,7 @@ function formatWei(value: bigint): string {
 function main() {
   return readFile(RECAP_PATH, "utf8")
     .then((raw) => recapSchema.parse(JSON.parse(raw)))
-    .then((recap) => {
+    .then(async (recap) => {
       const checks: CheckResult[] = [];
 
       const supply = parseBigInt(recap.bondingCurve.supplyWholeTokens, "bonding curve supply");
@@ -185,6 +246,19 @@ function main() {
         appendCheck(
           "Embedded verification flag: contributions",
           recap.verification.contributions.consistent,
+        );
+      }
+
+      if (recap.checksums?.recapSha256) {
+        const digestTarget = JSON.parse(JSON.stringify(recap)) as typeof recap;
+        delete (digestTarget as { checksums?: unknown }).checksums;
+        const canonical = canonicalStringify(digestTarget);
+        const recomputed = createHash("sha256").update(canonical).digest("hex");
+        appendCheck(
+          "Recap checksum matches canonical digest",
+          recomputed === recap.checksums.recapSha256,
+          recap.checksums.recapSha256,
+          recomputed,
         );
       }
 

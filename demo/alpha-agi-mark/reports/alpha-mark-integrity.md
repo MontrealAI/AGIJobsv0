@@ -1,6 +1,25 @@
 # α-AGI MARK Integrity Report
 
-Generated: 2025-10-16T20:09:48.930Z
+Generated: 2025-10-16T21:18:44.346Z
+
+## Recap Envelope
+
+- Network: hardhat (chainId 31337) (chain 31337, block 0)
+- Dry-run mode: enabled
+- Checksum (sha256/json-key-sorted): 03bed5b0e77f3148972204e0e07a1df196de416021d4114cd69ef9eb2221a6ab
+
+### Orchestrator Telemetry
+
+- Mode: dry-run
+- Git commit: a4afab5557e2be3afa4dca6e9532732aa30ca080
+- Git branch: work
+- Workspace dirty: yes
+
+### Actor Registry
+
+- Owner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+- Investors: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8, 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC, 0x90F79bf6EB2c4f870365E785982E1f101E93b906
+- Validators: 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65, 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc, 0x976EA74026E726554dB657fA54763abd0C3a0aa9
 
 ## Confidence Summary
 

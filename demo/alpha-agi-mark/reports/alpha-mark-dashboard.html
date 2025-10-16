@@ -44,6 +44,23 @@
         margin: 1rem auto 0 auto;
         color: rgba(255, 255, 255, 0.78);
       }
+      header.hero .hero-meta {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: center;
+      }
+      .hero-stamp {
+        padding: 0.45rem 1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.08);
+      }
       section {
         margin-bottom: 3rem;
         background: var(--card-bg);
@@ -144,10 +161,20 @@
         background: rgba(46, 204, 113, 0.16);
         border-color: rgba(46, 204, 113, 0.6);
       }
+      .badge.info {
+        color: #5ac8fa;
+        background: rgba(90, 200, 250, 0.18);
+        border-color: rgba(90, 200, 250, 0.6);
+      }
       .badge.danger {
         color: var(--danger);
         background: rgba(255, 107, 107, 0.18);
         border-color: rgba(255, 107, 107, 0.6);
+      }
+      .badge.warning {
+        color: var(--warning);
+        background: rgba(255, 179, 71, 0.18);
+        border-color: rgba(255, 179, 71, 0.6);
       }
       .badge.buy {
         color: #5ac8fa;
@@ -175,6 +202,29 @@
       table td {
         padding: 0.8rem 1rem;
         text-align: left;
+      }
+      .meta-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .meta-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(96, 255, 207, 0.16);
+        border-radius: 16px;
+        padding: 1.4rem;
+      }
+      .meta-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.9rem;
+      }
+      .meta-card li + li {
+        margin-top: 0.4rem;
+      }
+      .meta-card strong {
+        color: var(--accent);
       }
       table tbody tr:nth-child(even) {
         background: rgba(255, 255, 255, 0.04);
@@ -207,17 +257,59 @@
     <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
   </head>
   <body>
-    <main>
-      <header class="hero">
-        <p class="mono">α-AGI Sovereign Command Console</p>
-        <h1>MARK Launch Telemetry</h1>
-        <p>
-          Autonomous foresight launch executed via AGI Jobs v0 (v2). This dossier captures every
-          actuator a non-technical steward needs to command an α-AGI Nova-Seed into sovereign reality.
-        </p>
-      </header>
+      <main>
+        <header class="hero">
+          <p class="mono">α-AGI Sovereign Command Console</p>
+          <h1>MARK Launch Telemetry</h1>
+          <p>
+            Autonomous foresight launch executed via AGI Jobs v0 (v2). This dossier captures every
+            actuator a non-technical steward needs to command an α-AGI Nova-Seed into sovereign reality.
+          </p>
+          <div class="hero-meta">
+            <span class="badge info">Dry Run</span>
+            <span class="badge warning">Workspace Dirty</span>
+            <span class="hero-stamp">hardhat (chainId 31337)</span>
+            <span class="hero-stamp">Generated 2025-10-16T21:18:44.346Z</span>
+          </div>
+        </header>
 
-      <section>
+        
+        <section>
+          <h2>Mission Telemetry</h2>
+          <div class="meta-grid">
+            <article class="meta-card">
+              <h3>Recap Envelope</h3>
+              <ul>
+                <li><strong>Generated</strong>: 2025-10-16T21:18:44.346Z</li>
+                <li><strong>Network</strong>: hardhat (chainId 31337)</li>
+                <li><strong>Chain</strong>: 31337</li>
+                <li><strong>Block</strong>: 0</li>
+                <li><strong>Dry-run mode</strong>: Enabled</li>
+                <li><strong>Checksum</strong>: <code>sha256:03bed5b0e77f3148972204e0e07a1df196de416021d4114cd69ef9eb2221a6ab</code></li>
+              </ul>
+            </article>
+            <article class="meta-card">
+              <h3>Orchestrator</h3>
+              <ul>
+                <li><strong>Mode</strong>: Dry run</li>
+                <li><strong>Commit</strong>: a4afab5557e2be3afa4dca6e9532732aa30ca080</li>
+                <li><strong>Branch</strong>: work</li>
+                <li><strong>Workspace dirty</strong>: Yes</li>
+              </ul>
+            </article>
+            <article class="meta-card">
+              <h3>Actors</h3>
+              <ul>
+                <li><strong>Owner</strong>: 0xf39F…2266</li>
+                <li><strong>Investors</strong>: 0x7099…79C8, 0x3C44…93BC, 0x90F7…b906</li>
+                <li><strong>Validators</strong>: 0x15d3…6A65, 0x9965…A4dc, 0x976E…0aa9</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+  
+
+        <section>
         <h2>Mission Control Metrics</h2>
         <div class="metrics">
           <article class="metric">
