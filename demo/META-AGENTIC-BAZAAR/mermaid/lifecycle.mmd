@@ -1,0 +1,17 @@
+sequenceDiagram
+  participant Employer as Employer/Nation
+  participant Registry as JobRegistry
+  participant Stake as StakeManager
+  participant Validation
+  participant Dispute
+  Employer->>Registry: postJob(specURI)
+  Note over Employer: CID built in-browser
+  Stake-->>Employer: stake(worker/validator)
+  Employer->>Registry: submit(resultCID)
+  Registry->>Validation: select committee
+  Validation->>Validation: commit → reveal (K-of-N)
+  alt Dispute
+    *->>Dispute: raise(evidenceCID)
+    Dispute->>Registry: resolve
+  end
+  Registry->>Stake: settle escrow (agent + validators)

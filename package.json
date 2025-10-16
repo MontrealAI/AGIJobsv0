@@ -154,6 +154,8 @@
     "demo:omega-business-3": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/LARGE-SCALE-OMEGA-BUSINESS-3/orchestrator.ts",
     "demo:omega-business-3:mainnet": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-mainnet.sh",
     "demo:omega-business-3:ui": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-ui.sh",
+    "demo:meta:local": "ts-node demo/META-AGENTIC-BAZAAR/scripts/run.local.ts",
+    "demo:meta:ui": "cd demo/META-AGENTIC-BAZAAR/ui && npm run dev",
     "demo:agi-labor-market": "npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts",
     "demo:agi-labor-market:export": "AGI_JOBS_DEMO_EXPORT=demo/agi-labor-market-grand-demo/ui/export/latest.json npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts"
   },
