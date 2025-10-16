@@ -13,6 +13,12 @@ interface ParticipantSnapshot {
 }
 
 const OUTPUT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
+const OUTPUT_MARKDOWN_PATH = path.join(
+  __dirname,
+  "..",
+  "reports",
+  "alpha-mark-recap.md",
+);
 
 const MIN_BALANCE = ethers.parseEther("0.05");
 
@@ -302,6 +308,68 @@ async function main() {
 
   const sovereignMetadata = await sovereignVault.lastAcknowledgedMetadata();
   const sovereignTotalReceived = await sovereignVault.totalReceived();
+  const sovereignBalance = await sovereignVault.vaultBalance();
+
+  const shortAddress = (value: string) => `${value.slice(0, 6)}…${value.slice(-4)}`;
+  const formatEther = (value: bigint | string) => {
+    try {
+      return `${ethers.formatEther(value)} ETH`;
+    } catch {
+      return value.toString();
+    }
+  };
+  const formatMatrixValue = (value: unknown) => {
+    if (typeof value === "boolean") {
+      return value ? "✅ Enabled" : "❌ Disabled";
+    }
+    if (typeof value === "string" && value.startsWith("0x") && value.length === 42) {
+      return `\`${value}\``;
+    }
+    return String(value);
+  };
+  const mermaidSequence = [
+    "```mermaid",
+    "sequenceDiagram",
+    "  autonumber",
+    `  participant Owner as Owner (${shortAddress(ownerAddress)})`,
+    "  participant Nova as Nova-Seed NFT",
+    "  participant Oracle as Risk Oracle",
+    "  participant Market as α-AGI MARK Exchange",
+    "  participant Vault as Sovereign Vault",
+    `  participant InvestorA as Investor A (${shortAddress(investorAddresses[0])})`,
+    `  participant InvestorB as Investor B (${shortAddress(investorAddresses[1])})`,
+    `  participant InvestorC as Investor C (${shortAddress(investorAddresses[2])})`,
+    `  participant Validator1 as Validator α (${shortAddress(validatorAddresses[0])})`,
+    `  participant Validator2 as Validator β (${shortAddress(validatorAddresses[1])})`,
+    `  participant Validator3 as Validator γ (${shortAddress(validatorAddresses[2])})`,
+    `  Owner->>Nova: Mint Nova-Seed #${seedId.toString()}`,
+    `  Owner->>Oracle: Configure council (threshold ${threshold.toString()}/${validatorAddresses.length})`,
+    `  Owner->>Market: Deploy bonding curve (base ${ethers.formatEther(basePrice)} ETH)`,
+    "  InvestorA->>Market: Buy 5 SEED (whitelist enforced)",
+    "  Owner->>Market: Pause / resume compliance gate",
+    "  InvestorB->>Market: Buy 3 SEED",
+    "  InvestorC->>Market: Buy 4 SEED",
+    "  Validator1->>Oracle: Approve seed",
+    "  Owner->>Market: Finalize attempt blocked by oracle",
+    "  Validator2->>Oracle: Approve seed",
+    "  InvestorB->>Market: Sell 1 SEED (liquidity check)",
+    `  Owner->>Market: Finalize launch to vault (${formatEther(sovereignTotalReceived)})`,
+    `  Market->>Vault: Transfer reserve & metadata ("${ethers.toUtf8String(launchMetadata)}")`,
+    "  Vault-->>Owner: Sovereign ignition acknowledged",
+    "```",
+  ].join("\n");
+
+  const mermaidSystemMap = [
+    "```mermaid",
+    "graph TD",
+    `  Owner[Owner\\n${shortAddress(ownerAddress)}] --> Seed[Nova-Seed #${seedId.toString()}\\nHolder ${shortAddress(ownerAddress)}]`,
+    `  Seed --> Market[α-AGI MARK Exchange\\nSupply ${supply.toString()} SEED]`,
+    `  Market --> Oracle[Risk Oracle\\nApprovals ${approvalCount.toString()}/${threshold.toString()}]`,
+    `  Market --> Vault[Sovereign Vault\\nBalance ${formatEther(sovereignTotalReceived)}]`,
+    `  Market --> Participants[Participants\\n${participants.length} investors]`,
+    "```",
+  ].join("\n");
+
   const recap = {
     contracts: {
       novaSeed: novaSeed.target,
@@ -338,7 +406,7 @@ async function main() {
         lastAcknowledgedAmountWei: (await sovereignVault.lastAcknowledgedAmount()).toString(),
         lastAcknowledgedMetadataHex: sovereignMetadata,
         decodedMetadata: ethers.toUtf8String(sovereignMetadata),
-        vaultBalanceWei: (await sovereignVault.vaultBalance()).toString(),
+        vaultBalanceWei: sovereignBalance.toString(),
       },
     },
   };
@@ -414,12 +482,83 @@ async function main() {
   const enrichedRecap = {
     ...recap,
     ownerParameterMatrix,
+    artifacts: {
+      json: "reports/alpha-mark-recap.json",
+      markdown: "reports/alpha-mark-recap.md",
+    },
   };
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, JSON.stringify(enrichedRecap, null, 2));
 
+  const controlTableLines = ["| Parameter | Value | Description |", "| --- | --- | --- |"];
+  for (const entry of ownerParameterMatrix) {
+    controlTableLines.push(
+      `| ${entry.parameter} | ${formatMatrixValue(entry.value)} | ${entry.description} |`,
+    );
+  }
+
+  const participantTableLines = ["| Address | Balance | Contribution |", "| --- | --- | --- |"];
+  for (const participant of participants) {
+    participantTableLines.push(
+      `| ${shortAddress(participant.address)} | ${participant.tokens} SEED | ${formatEther(participant.contributionWei)} |`,
+    );
+  }
+
+  const validatorLines = validatorMatrix.map(
+    (entry) => `- ${shortAddress(entry.address)} — ${entry.approved ? "✅ Approved" : "⌛ Pending"}`,
+  );
+
+  const contractTable = [
+    "| Component | Address |",
+    "| --- | --- |",
+    `| NovaSeedNFT | \`${recap.contracts.novaSeed}\` |`,
+    `| Risk Oracle | \`${recap.contracts.riskOracle}\` |`,
+    `| Bonding Curve Exchange | \`${recap.contracts.markExchange}\` |`,
+    `| Sovereign Vault | \`${recap.contracts.sovereignVault}\` |`,
+  ];
+
+  const markdownReport = [
+    "# α-AGI MARK Demo Recap",
+    "",
+    "This dossier is generated automatically by the AGI Jobs v0 (v2) foresight orchestrator to give the operator a",
+    "mission-grade snapshot of the launch.",
+    "",
+    "## Legendary Foresight Orchestration",
+    mermaidSequence,
+    "",
+    "## Sovereign Launch Snapshot",
+    `- **Nova-Seed**: Token #${recap.seed.tokenId} held by ${shortAddress(recap.seed.holder)}`,
+    `- **Validator approvals**: ${approvalCount.toString()}/${threshold.toString()}`,
+    `- **Supply forged**: ${supply.toString()} SEED (next price ${formatEther(nextPrice)})`,
+    `- **Capital reserve**: ${formatEther(reserve)} committed pre-launch`,
+    `- **Sovereign vault**: ${formatEther(sovereignTotalReceived)} secured`,
+    `- **Ignition metadata**: "${ethers.toUtf8String(sovereignMetadata)}"`,
+    "",
+    "## Owner Control Matrix",
+    ...controlTableLines,
+    "",
+    "## Participant Ledger",
+    ...participantTableLines,
+    "",
+    "## Validator Council",
+    ...validatorLines,
+    "",
+    "## Contract Addresses",
+    ...contractTable,
+    "",
+    "## Dynamic System Map",
+    mermaidSystemMap,
+    "",
+    "## Artifact Index",
+    "- JSON ledger: `reports/alpha-mark-recap.json`",
+    "- Markdown dossier: `reports/alpha-mark-recap.md`",
+  ].join("\n");
+
+  await writeFile(OUTPUT_MARKDOWN_PATH, markdownReport);
+
   console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
+  console.log("📜 Markdown dossier written to", OUTPUT_MARKDOWN_PATH);
   console.log(JSON.stringify(enrichedRecap, null, 2));
   console.log("\n🧭 Owner parameter matrix snapshot:");
   console.table(ownerParameterMatrix);

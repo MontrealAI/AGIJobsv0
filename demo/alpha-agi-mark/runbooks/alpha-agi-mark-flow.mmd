@@ -1,15 +1,15 @@
 ```mermaid
 graph TD
-    A[Owner launches demo] --> B[NovaSeedNFT deployed]
-    B --> C[AlphaMarkRiskOracle deployed]
-    C --> D[AlphaMarkEToken deployed]
+    A[Operator boots demo orchestrator] --> B[NovaSeedNFT deployed]
+    B --> C[AlphaMarkRiskOracle activated]
+    C --> D[AlphaMarkEToken configured]
     D --> E[Investors buy SeedShares via bonding curve]
-    E --> F[Owner toggles whitelist & pause controls]
-    F --> G[Validators submit approvals]
+    E --> F[Owner exercises whitelist / pause levers]
+    F --> G[Validator council casts approvals]
     G --> H{Approval threshold met?}
-    H -- No --> I[Owner may override or abort]
+    H -- No --> I[Owner override / abort controls]
     H -- Yes --> J[Owner finalizes launch]
-    J --> K[Sovereign funds released]
-    K --> L[Recap generated for operator]
-    L --> M[Owner parameter matrix exported]
+    J --> K[Sovereign vault acknowledges ignition]
+    K --> L[Markdown + JSON dossiers generated]
+    L --> M[Owner parameter matrix + tables rendered]
 ```

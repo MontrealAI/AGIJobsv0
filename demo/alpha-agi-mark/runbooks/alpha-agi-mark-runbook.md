@@ -28,15 +28,12 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
 2. **Inspect recap artifacts**
 
-   At the end of the run the script emits a JSON recap under `demo/alpha-agi-mark/reports/alpha-mark-recap.json`. It contains:
+   Two dossiers are written to `demo/alpha-agi-mark/reports/` at the end of the run:
 
-   - contract addresses
-   - owner governance parameters
-   - consolidated `ownerControls` snapshot of every pause/whitelist/override lever
-   - validator council roster and votes
-   - bonding curve statistics (supply, reserve balance, pricing)
-   - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, and treasury balance
-   - `ownerParameterMatrix` providing a full owner control matrix with descriptions
+   - `alpha-mark-recap.json` – machine-readable ledger covering contract addresses, owner governance parameters, the full `ownerControls` snapshot, validator votes, bonding-curve metrics, launch outcome flags, and the `ownerParameterMatrix` descriptions.
+   - `alpha-mark-recap.md` – shareable Markdown briefing with the same data rendered as tables plus live Mermaid diagrams visualising the execution sequence and system topology.
+
+   Both files let a non-technical operator verify every control lever and treasury movement at a glance.
 
 3. **Render the owner control matrix at any time**
 

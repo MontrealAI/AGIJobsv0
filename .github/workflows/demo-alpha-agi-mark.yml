@@ -64,8 +64,12 @@ jobs:
           node - <<'NODE'
           const fs = require('fs');
           const path = 'demo/alpha-agi-mark/reports/alpha-mark-recap.json';
+          const markdownPath = 'demo/alpha-agi-mark/reports/alpha-mark-recap.md';
           if (!fs.existsSync(path)) {
             throw new Error('recap file missing');
+          }
+          if (!fs.existsSync(markdownPath)) {
+            throw new Error('markdown dossier missing');
           }
           const data = JSON.parse(fs.readFileSync(path, 'utf8'));
           const requiredContracts = ['novaSeed', 'riskOracle', 'markExchange'];
@@ -92,6 +96,16 @@ jobs:
           }
           if (!data.launch.sovereignVault || !data.launch.sovereignVault.decodedMetadata) {
             throw new Error('sovereign vault details missing');
+          }
+          if (!data.artifacts || data.artifacts.markdown !== 'reports/alpha-mark-recap.md') {
+            throw new Error('artifact index missing markdown reference');
+          }
+          const markdown = fs.readFileSync(markdownPath, 'utf8');
+          const requiredHeadings = ['## Legendary Foresight Orchestration', '## Owner Control Matrix'];
+          for (const heading of requiredHeadings) {
+            if (!markdown.includes(heading)) {
+              throw new Error(`markdown dossier missing heading: ${heading}`);
+            }
           }
           console.log(`Validated α-AGI MARK recap for ${data.participants.length} participants.`);
           NODE
