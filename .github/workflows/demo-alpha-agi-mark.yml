@@ -96,8 +96,13 @@ jobs:
           console.log(`Validated α-AGI MARK recap for ${data.participants.length} participants.`);
           NODE
 
+      - name: Render executive dossier
+        run: npm run demo:alpha-agi-mark:report
+
       - name: Upload α-AGI MARK recap
         uses: actions/upload-artifact@v4
         with:
           name: alpha-agi-mark-recap
-          path: demo/alpha-agi-mark/reports/alpha-mark-recap.json
+          path: |
+            demo/alpha-agi-mark/reports/alpha-mark-recap.json
+            demo/alpha-agi-mark/reports/alpha-mark-recap.md

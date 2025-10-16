@@ -1,14 +1,34 @@
 ```mermaid
-graph TD
-    A[Owner launches demo] --> B[NovaSeedNFT deployed]
-    B --> C[AlphaMarkRiskOracle deployed]
-    C --> D[AlphaMarkEToken deployed]
-    D --> E[Investors buy SeedShares via bonding curve]
-    E --> F[Owner toggles whitelist & pause controls]
-    F --> G[Validators submit approvals]
-    G --> H{Approval threshold met?}
-    H -- No --> I[Owner may override or abort]
-    H -- Yes --> J[Owner finalizes launch]
-    J --> K[Sovereign funds released]
-    K --> L[Recap generated for operator]
+flowchart LR
+    classDef owner fill:#0f172a,color:#f8fafc,stroke:#38bdf8,stroke-width:2px;
+    classDef contract fill:#1e293b,color:#e0f2fe,stroke:#22d3ee,stroke-width:2px;
+    classDef control fill:#172554,color:#fef3c7,stroke:#fbbf24,stroke-width:2px;
+    classDef data fill:#082f49,color:#bbf7d0,stroke:#34d399,stroke-width:2px;
+
+    subgraph Ignition["Nova-Seed Ignition"]
+        owner((Operator Key)):::owner --> seed[(NovaSeedNFT<br/>Genesis Seed)]:::contract
+        seed --> seedMeta{{Manifest & Metadata}}:::data
+    end
+
+    subgraph Governance["Validator Council"]
+        seed --> oracle{AlphaMarkRiskOracle}:::contract
+        oracle --> tally[[Consensus Threshold]]:::control
+        owner -. override authority .-> oracle
+    end
+
+    subgraph MarketDesk["Bonding-Curve Exchange"]
+        tally --> mark[(AlphaMarkEToken<br/>Bonding Curve Desk)]:::contract
+        investors[[Investors A/B/C]]:::owner --> mark
+        mark --> reserve[[Reserve Pool]]:::data
+        mark -. whitelist / pause / cap .-> controls[Compliance Matrix]:::control
+        controls -. owner command .-> owner
+    end
+
+    subgraph Sovereign["α-AGI Sovereign Launch"]
+        mark -->|Finalize| vault[(AlphaSovereignVault<br/>Sovereign Treasury)]:::contract
+        vault --> launchMeta{{Ignition Metadata}}:::data
+        vault --> owner
+    end
+
+    owner -->|Recap + Dossier| dossier[[Mermaid + Markdown Hyper-Report]]:::data
 ```

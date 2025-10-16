@@ -20,6 +20,16 @@ The demo deploys four core contracts:
 
 ![α-AGI MARK flow diagram](runbooks/alpha-agi-mark-flow.mmd)
 
+### Operator Dossier Rendering
+
+After the demo run, convert the JSON recap into a narrative briefing and rich diagram by executing:
+
+```bash
+npm run demo:alpha-agi-mark:report
+```
+
+The script produces `reports/alpha-mark-recap.md`, weaving in a dynamic Mermaid diagram, owner-control matrix, validator ledger, and participant capitalization tables so non-technical operators can share or archive the launch proof with zero manual formatting.
+
 ## Quickstart
 
 ```bash

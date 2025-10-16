@@ -23,7 +23,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
   - pauses and resumes trading to verify safety controls
   - demonstrates pre-launch base asset retargeting (ETH -> ERC-20 stablecoin)
   - proves the sovereign vault pause/unpause circuit breaker
-  - finalizes the launch with ignition metadata and prints a comprehensive recap
+ - finalizes the launch with ignition metadata and prints a comprehensive recap
 
 2. **Inspect recap artifacts**
 
@@ -36,13 +36,21 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - bonding curve statistics (supply, reserve balance, pricing)
    - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, and treasury balance
 
-3. **(Optional) Run unit tests**
+3. **Render the operator dossier**
+
+   ```bash
+   npm run demo:alpha-agi-mark:report
+   ```
+
+   This command transforms the JSON recap into `reports/alpha-mark-recap.md`, layering rich Mermaid system maps, owner-control matrices, validator rosters, and participant capitalization tables for executive-ready sharing.
+
+4. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
    ```
 
-4. **(Optional) Dry-run on a fork or external network**
+5. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 
