@@ -18,7 +18,69 @@ The demo deploys four core contracts:
 3. **AlphaMarkEToken** – ERC-20 bonding-curve market with programmable compliance gates, pause switches, base asset retargeting (ETH or ERC-20 stablecoins), launch finalization metadata, and sovereign callbacks.
 4. **AlphaSovereignVault** – launch treasury that acknowledges the ignition metadata, tracks received capital, and gives the owner pause/withdraw controls for the sovereign stage.
 
-![α-AGI MARK flow diagram](runbooks/alpha-agi-mark-flow.mmd)
+```mermaid
+flowchart LR
+  subgraph SeedForge["🌱 Nova-Seed Forge"]
+    Mint{{"Mint Nova-Seed"}}
+    ValidatorsConfig["Configure validator roster"]
+  end
+  subgraph MarketPulse["⚖️ AlphaMark Bonding Curve"]
+    Acquire["Investors acquire SeedShares"]
+    Pricing["Dynamic price: base = 0.1 ETH, slope = 0.05 ETH"]
+    Reserve["Reserve deepens with every contribution"]
+  end
+  subgraph RiskChamber["🛡️ Risk Oracle"]
+    Consensus["Approvals tallied toward launch"]
+  end
+  subgraph SovereignAscension["👑 Sovereign Vault"]
+    Vault["Funds secured & manifest anchored"]
+  end
+
+  Mint --> Acquire
+  Acquire --> Pricing --> Reserve
+  Reserve --> Consensus
+  Consensus -->|Green-light| Vault
+```
+
+```mermaid
+sequenceDiagram
+    participant Operator as Operator (non-technical)
+    participant Mark as AlphaMarkEToken
+    participant Oracle as Risk Oracle Council
+    participant Vault as Sovereign Vault
+    Operator->>Mark: Mint Nova-Seed & configure levers
+    Operator->>Mark: Enable whitelist / pause / base asset retarget
+    Mark-->>Operator: Bonding curve pricing + recap telemetry
+    Investor->>Mark: Acquire SeedShares
+    Mark->>Oracle: Emit approval events
+    Oracle-->>Operator: Threshold reached (seedValidated)
+    Operator->>Mark: finalizeLaunch(treasury, metadata)
+    Mark->>Vault: notifyLaunch(reserve, ignition memo)
+    Vault-->>Operator: LaunchAcknowledged
+```
+
+```mermaid
+mindmap
+  root((α-AGI MARK Command Deck))
+    Nova-Seed Genesis
+      Mint control
+      Metadata curation
+    Compliance Arsenal
+      Whitelist toggles
+      Emergency exit switch
+      Market pause lever
+    Foresight Liquidity
+      Bonding curve telemetry
+      Price previews & sell backs
+    Validator Governance
+      Dynamic thresholds
+      Owner override failsafe
+      Resettable approval matrix
+    Sovereign Continuum
+      Treasury manifest URI
+      Launch acknowledgement log
+      Dashboard export & recap dossier
+```
 
 ## Quickstart
 
@@ -32,6 +94,16 @@ This command:
 2. Deploys the demo contracts.
 3. Simulates investor participation, validator approvals, pause/unpause sequences, and the sovereign launch transition.
 4. Prints a full state recap that a non-technical operator can read to verify success.
+
+### Visual command deck
+
+Transform the recap dossier into a cinematic command deck dashboard:
+
+```bash
+npm run dashboard:alpha-agi-mark
+```
+
+The script renders `reports/alpha-mark-dashboard.html` with dynamic Mermaid diagrams (flow, pie, timeline) and richly styled tables so an operator can review governance levers without touching Solidity.
 
 ### Network & safety controls
 

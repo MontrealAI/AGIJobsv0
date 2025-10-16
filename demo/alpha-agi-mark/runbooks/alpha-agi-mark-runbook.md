@@ -38,7 +38,15 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, and treasury balance
    - `ownerParameterMatrix` providing a full owner control matrix with descriptions
 
-3. **Render the owner control matrix at any time**
+3. **Render the command-deck dashboard**
+
+   ```bash
+   npm run dashboard:alpha-agi-mark
+   ```
+
+   Generates `demo/alpha-agi-mark/reports/alpha-mark-dashboard.html`, a rich HTML cockpit featuring flow, pie, and timeline Mermaid visualizations alongside live owner-control tables.
+
+4. **Render the owner control matrix at any time**
 
    ```bash
    npm run owner:alpha-agi-mark
@@ -46,13 +54,13 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
    The command reads the latest recap dossier and prints a tabular summary of every operator control lever.
 
-4. **(Optional) Run unit tests**
+5. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
    ```
 
-5. **(Optional) Dry-run on a fork or external network**
+6. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 
