@@ -1,0 +1,37 @@
+name: demo-alpha-agi-mark
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  demo-alpha-agi-mark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js 20.18.1
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.1
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run α-AGI MARK unit tests
+        run: npm run test:alpha-agi-mark
+      - name: Execute α-AGI MARK orchestration demo
+        env:
+          CI: 'true'
+        run: npm run demo:alpha-agi-mark
+      - name: Upload demo artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-agi-mark-demo
+          path: reports/demo-alpha-agi-mark/
+          if-no-files-found: warn
