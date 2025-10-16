@@ -50,8 +50,18 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
         _unpause();
     }
 
-    function notifyLaunch(uint256 amount, bytes calldata metadata) external whenNotPaused returns (bool) {
+    function notifyLaunch(uint256 amount, bytes calldata metadata)
+        external
+        payable
+        whenNotPaused
+        returns (bool)
+    {
         require(msg.sender == markExchange, "Unauthorized sender");
+        if (msg.value > 0) {
+            require(msg.value == amount, "Native amount mismatch");
+        }
+        uint256 credit = msg.value > 0 ? msg.value : amount;
+        totalReceived += credit;
         lastAcknowledgedAmount = amount;
         lastAcknowledgedMetadata = metadata;
         emit LaunchAcknowledged(msg.sender, amount, metadata, block.timestamp);
