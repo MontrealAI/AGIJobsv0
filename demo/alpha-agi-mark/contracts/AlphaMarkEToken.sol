@@ -15,7 +15,7 @@ interface IAlphaMarkRiskOracle {
 }
 
 interface IAlphaSovereignVault {
-    function notifyLaunch(uint256 amount, bytes calldata metadata) external returns (bool);
+    function notifyLaunch(uint256 amount, bytes calldata metadata) external payable returns (bool);
 }
 
 error LaunchAcknowledgementFailed(address recipient);
@@ -259,14 +259,38 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         uint256 amount = reserveBalance;
         reserveBalance = 0;
 
-        if (usesNativeAsset) {
-            (bool success, ) = recipient.call{value: amount}("");
-            require(success, "Transfer failed");
-        } else {
-            baseAsset.safeTransfer(recipient, amount);
+        if (recipient.code.length == 0) {
+            if (usesNativeAsset) {
+                (bool success, ) = recipient.call{value: amount}("");
+                require(success, "Transfer failed");
+            } else {
+                baseAsset.safeTransfer(recipient, amount);
+            }
+            emit LaunchFinalized(recipient, amount, metadata);
+            return;
         }
 
-        _attemptSovereignAcknowledgement(recipient, amount, metadata);
+        bool acknowledged = false;
+        if (usesNativeAsset) {
+            try IAlphaSovereignVault(recipient).notifyLaunch{value: amount}(amount, metadata) returns (
+                bool result
+            ) {
+                acknowledged = result;
+            } catch {
+                revert LaunchAcknowledgementFailed(recipient);
+            }
+        } else {
+            baseAsset.safeTransfer(recipient, amount);
+            try IAlphaSovereignVault(recipient).notifyLaunch(amount, metadata) returns (bool result) {
+                acknowledged = result;
+            } catch {
+                revert LaunchAcknowledgementFailed(recipient);
+            }
+        }
+
+        if (!acknowledged) {
+            revert LaunchAcknowledgementRejected(recipient);
+        }
 
         emit LaunchFinalized(recipient, amount, metadata);
     }
@@ -440,20 +464,6 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             return address(this).balance;
         }
         return baseAsset.balanceOf(address(this));
-    }
-
-    function _attemptSovereignAcknowledgement(address recipient, uint256 amount, bytes calldata metadata) internal {
-        if (recipient.code.length == 0) {
-            return;
-        }
-
-        try IAlphaSovereignVault(recipient).notifyLaunch(amount, metadata) returns (bool acknowledged) {
-            if (!acknowledged) {
-                revert LaunchAcknowledgementRejected(recipient);
-            }
-        } catch {
-            revert LaunchAcknowledgementFailed(recipient);
-        }
     }
 
     receive() external payable {

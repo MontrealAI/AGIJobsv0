@@ -107,6 +107,7 @@ describe("α-AGI MARK owner governance", function () {
     expect(await mark.finalized()).to.equal(true);
     expect(await mark.reserveBalance()).to.equal(0n);
     expect(await stable.balanceOf(vault.target)).to.equal(cost);
+    expect(await vault.totalReceived()).to.equal(cost);
     expect(await vault.lastAcknowledgedAmount()).to.equal(cost);
     expect(await vault.lastAcknowledgedMetadata()).to.equal(metadata);
   });
@@ -144,9 +145,11 @@ describe("α-AGI MARK owner governance", function () {
       .to.emit(vault, "LaunchAcknowledged")
       .withArgs(owner.address, 123n, metadata, anyValue);
 
+    expect(await vault.totalReceived()).to.equal(123n);
+
     const depositAmount = toWei("1");
     await owner.sendTransaction({ to: vault.target, value: depositAmount });
-    expect(await vault.totalReceived()).to.equal(depositAmount);
+    expect(await vault.totalReceived()).to.equal(depositAmount + 123n);
 
     await expect(vault.connect(other).withdraw(recipient.address, toWei("0.1")))
       .to.be.revertedWithCustomError(vault, "OwnableUnauthorizedAccount");
