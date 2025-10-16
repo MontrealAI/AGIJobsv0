@@ -1,0 +1,57 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+🚀 α-AGI MARK – Autonomous Foresight Launchpad Demo
+
+Seed contract: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+α-AGI MARK address: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+Initial base price: 0.1 ETH | slope: 0.05 ETH per token
+→ Visionary Strategist buying 10.0 Seed Shares for 3.5 ETH
+   total supply now 10.0 | reserve 3.5 ETH
+→ Climate Oracle buying 5.0 Seed Shares for 3.625 ETH
+   total supply now 15.0 | reserve 7.125 ETH
+→ Interstellar Treasury buying 8.0 Seed Shares for 8.4 ETH
+   total supply now 23.0 | reserve 15.525 ETH
+
+🛡️  Owner exercises pause/unpause to demonstrate circuit breaker
+   market paused:  true
+   market resumed:  true
+
+📜 Enabling compliance whitelist and registering current backers
+   whitelist active:  true
+
+💧 Liquidity check – Visionary Strategist sells 2 shares back to the curve
+   redeemed 2.0 shares for 2.4 ETH | supply 21.0
+
+🧠 Validator council casts risk approvals
+   validator A approved (1/3)
+   validator B approved (2/3)
+
+🚫 Attempting to finalise before consensus should fail
+⚠️  Early finalisation failed: VM Exception while processing transaction: reverted with reason string 'Seed not validated'
+
+🔥 Third validator ignites the green flame
+   approvals gathered:  3n
+
+🏛️ Deploying sovereign vault and finalising launch
+   launch finalised – funds transferred to 0x8A791620dd6260079BF849Dc5567aDC3F2FdC318
+   sovereign vault balance:  13.125 ETH
+
+📊 Owner parameter matrix snapshot
+┌────────────────────┬────────────────────────────────────────────────┐
+│ (index)            │ Values                                         │
+├────────────────────┼────────────────────────────────────────────────┤
+│ owner              │ '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'   │
+│ paused             │ true                                           │
+│ whitelistEnabled   │ true                                           │
+│ validatorThreshold │ 3n                                             │
+│ approvals          │ 3n                                             │
+│ seedValidated      │ true                                           │
+│ launchFinalised    │ true                                           │
+│ reserveBalance     │ '0.0 ETH'                                      │
+│ totalSupply        │ '21.0'                                         │
+│ sovereignVault     │ '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318'   │
+│ manifesto          │ 'We channel foresight into sovereign ventures' │
+└────────────────────┴────────────────────────────────────────────────┘
+
+✅ α-AGI MARK demo complete – non-technical operators just launched a sovereign venture.
+
