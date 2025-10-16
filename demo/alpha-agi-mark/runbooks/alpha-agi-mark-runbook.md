@@ -28,7 +28,12 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
 2. **Inspect recap artifacts**
 
-   At the end of the run the script emits a JSON recap under `demo/alpha-agi-mark/reports/alpha-mark-recap.json`. It contains:
+   At the end of the run the script emits two dossiers under `demo/alpha-agi-mark/reports/`:
+
+   - `alpha-mark-recap.json` – the machine-readable record of every contract address, owner control, validator vote, and launch toggle.
+   - `alpha-mark-recap.md` – a human-friendly mission brief with flowcharts, journey timelines, and a pie chart of investor contributions ready to share with stakeholders.
+
+   These assets contain:
 
    - contract addresses
    - owner governance parameters

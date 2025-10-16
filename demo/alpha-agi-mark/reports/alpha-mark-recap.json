@@ -59,16 +59,19 @@
   },
   "participants": [
     {
+      "label": "Investor A",
       "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
       "tokens": "5.0",
       "contributionWei": "1000000000000000000"
     },
     {
+      "label": "Investor B",
       "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
       "tokens": "2.0",
       "contributionWei": "1200000000000000000"
     },
     {
+      "label": "Investor C",
       "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
       "tokens": "4.0",
       "contributionWei": "2300000000000000000"

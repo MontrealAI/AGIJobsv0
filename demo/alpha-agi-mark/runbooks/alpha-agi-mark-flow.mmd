@@ -1,4 +1,39 @@
 ```mermaid
+flowchart TD
+    classDef operator fill:#302B70,stroke:#9A7FF2,color:#fff,stroke-width:2px;
+    classDef contract fill:#0F4C75,stroke:#7FDBFF,color:#FFFFFF,stroke-width:1.5px;
+    classDef safeguard fill:#102D44,stroke:#32E0C4,color:#FFFFFF,stroke-width:1.5px;
+
+    subgraph Operator[Operator mission]
+        Start[Run demo orchestrator]
+    end
+
+    subgraph Genesis[Genesis contracts]
+        Seed[NovaSeedNFT\nMint Nova-Seed]
+        Oracle[AlphaMarkRiskOracle\nConfigure validator quorum]
+        Curve[AlphaMarkEToken\nProgram bonding curve + compliance gates]
+        Vault[AlphaSovereignVault\nDesignate treasury]
+    end
+
+    subgraph Dynamics[Real-time dynamics]
+        Investors[Investors acquire SeedShares]
+        Pause[Pause / whitelist drills]
+        Validators[Validators stream approvals]
+        Override[Owner override & reset levers]
+        Finalize[Finalize sovereign ignition]
+        Recap[Recap dossiers exported]
+    end
+
+    Start --> Seed --> Oracle --> Curve --> Vault
+    Curve --> Investors --> Validators --> Finalize --> Recap
+    Investors --> Pause
+    Oracle --> Override
+    Override --> Finalize
+    Finalize --> Vault
+
+    class Start operator
+    class Seed,Oracle,Curve,Vault contract
+    class Pause,Override safeguard
 graph TD
     A[Owner launches demo] --> B[NovaSeedNFT deployed]
     B --> C[AlphaMarkRiskOracle deployed]

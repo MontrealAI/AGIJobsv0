@@ -7,12 +7,14 @@ import { stdin as input, stdout as output } from "node:process";
 type Address = string;
 
 interface ParticipantSnapshot {
+  label: string;
   address: Address;
   tokens: string;
   contributionWei: string;
 }
 
 const OUTPUT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
+const OUTPUT_MARKDOWN_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.md");
 
 const MIN_BALANCE = ethers.parseEther("0.05");
 
@@ -281,6 +283,24 @@ async function main() {
     slopeWei: ownerControlsRaw.slopeWei.toString(),
   };
 
+  const participantProfiles = [
+    { label: "Investor A", signer: investorA },
+    { label: "Investor B", signer: investorB },
+    { label: "Investor C", signer: investorC },
+  ];
+
+  const participants: ParticipantSnapshot[] = participantProfiles.map(({ label, signer }) => ({
+    label,
+    address: signer.address,
+    tokens: "0",
+    contributionWei: "0",
+  }));
+
+  for (const participant of participants) {
+    const balance = await mark.balanceOf(participant.address);
+    const contribution = await mark.participantContribution(participant.address);
+    participant.tokens = ethers.formatEther(balance);
+    participant.contributionWei = contribution.toString();
   const participants: ParticipantSnapshot[] = [];
   for (let i = 0; i < investors.length; i++) {
     const address = investorAddresses[i];
@@ -419,7 +439,128 @@ async function main() {
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, JSON.stringify(enrichedRecap, null, 2));
 
+  const formatEth = (wei: string) => ethers.formatEther(BigInt(wei));
+  const boolBadge = (value: boolean) => (value ? "✅ Enabled" : "⬜ Disabled");
+
+  const participantRows = participants
+    .map(
+      (participant) =>
+        `| ${participant.label} | ${participant.address} | ${participant.tokens} | ${formatEth(participant.contributionWei)} |`
+    )
+    .join("\n");
+
+  const ownerRows = [
+    ["Market paused", boolBadge(ownerControls.paused)],
+    ["Whitelist", boolBadge(ownerControls.whitelistEnabled)],
+    ["Emergency exit", boolBadge(ownerControls.emergencyExitEnabled)],
+    ["Finalized", ownerControls.finalized ? "🎯 Finalized" : "⏳ Pending"],
+    ["Aborted", ownerControls.aborted ? "🛑 Halted" : "🟢 Active"],
+    ["Validation override", boolBadge(ownerControls.validationOverrideEnabled)],
+  ]
+    .map(([label, value]) => `| ${label} | ${value} |`)
+    .join("\n");
+
+  const pieMermaid = [
+    "```mermaid",
+    "pie showData",
+    "  title SeedShare contributions (ETH)",
+    ...participants
+      .filter((participant) => BigInt(participant.contributionWei) > 0n)
+      .map((participant) => {
+        const value = Number(formatEth(participant.contributionWei)).toFixed(3);
+        return `  \"${participant.label}\" : ${value}`;
+      }),
+    "```",
+  ].join("\n");
+
+  const flowMermaid = [
+    "```mermaid",
+    "flowchart TD",
+    "    classDef operator fill:#302B70,stroke:#9A7FF2,color:#fff,stroke-width:2px;",
+    "    classDef contract fill:#0F4C75,stroke:#7FDBFF,color:#FFFFFF,stroke-width:1.5px;",
+    "    classDef action fill:#1B262C,stroke:#BBE1FA,color:#FFFFFF,stroke-width:1.5px;",
+    "",
+    "    subgraph Operator[Operator -- guided by AGI Jobs v0 (v2)]",
+    "        Start[Run npm run demo:alpha-agi-mark]",
+    "    end",
+    "",
+    "    subgraph Contracts[α-AGI MARK Foresight Stack]",
+    "        Seed[NovaSeedNFT\\nGenesis seed minted]",
+    "        Oracle[AlphaMarkRiskOracle\\nValidator quorum + overrides]",
+    "        Curve[AlphaMarkEToken\\nBonding curve + compliance gates]",
+    "        Vault[AlphaSovereignVault\\nIgnition manifest + treasury]",
+    "    end",
+    "",
+    "    subgraph Dynamics[Market + Governance Dynamics]",
+    "        Investors[Investors acquire SeedShares]",
+    "        Validators[Validators approve seed]",
+    "        Finalize[Owner finalizes sovereign ignition]",
+    "        Recap[Recap dossier written for operator]",
+    "    end",
+    "",
+    "    Start --> Seed --> Oracle --> Curve --> Investors --> Validators --> Finalize --> Vault",
+    "    Oracle -. Owner override .-> Finalize",
+    "    Curve -. Emergency exit .-> Investors",
+    "    Vault --> Recap",
+    "",
+    "    class Start,Recap operator",
+    "    class Seed,Oracle,Curve,Vault contract",
+    "    class Investors,Validators,Finalize action",
+    "```",
+  ].join("\n");
+
+  const journeyMermaid = [
+    "```mermaid",
+    "journey",
+    "    title Operator mission timeline",
+    "    section Seed Genesis",
+    "      Boot Hardhat chain: 5",
+    "      Deploy Nova-Seed NFT: 5",
+    "    section Market Formation",
+    "      Configure bonding curve + whitelist: 4",
+    "      Investors join the SeedShares pool: 4",
+    "      Pause & resume compliance drill: 3",
+    "    section Validation & Ignition",
+    "      Validators reach quorum: 5",
+    "      Owner finalizes launch: 5",
+    "      Sovereign vault acknowledges ignition: 5",
+    "```",
+  ].join("\n");
+
+  const markdown = `# α-AGI MARK Demo Recap\n\n` +
+    `This dossier is generated automatically by the demo run so that a non-technical operator can audit every milestone of the foresight market ignition.\n\n` +
+    `${flowMermaid}\n\n` +
+    `## Contracts\n\n` +
+    `| Component | Address |\n| --- | --- |\n` +
+    `| NovaSeedNFT | ${recap.contracts.novaSeed} |\n` +
+    `| Risk Oracle | ${recap.contracts.riskOracle} |\n` +
+    `| AlphaMark Exchange | ${recap.contracts.markExchange} |\n` +
+    `| Sovereign Vault | ${recap.contracts.sovereignVault} |\n\n` +
+    `## Owner Control Dashboard\n\n` +
+    `| Control | Status |\n| --- | --- |\n${ownerRows}\n\n` +
+    `**Treasury:** ${ownerControls.treasury}\n\n` +
+    `**Base asset:** ${ownerControls.usesNativeAsset ? "Native ETH" : ownerControls.baseAsset}\n\n` +
+    `**Funding cap:** ${formatEth(ownerControls.fundingCapWei)} ETH\n\n` +
+    `## Capital Formation Radar\n\n` +
+    `${pieMermaid}\n\n` +
+    `| Participant | Address | SeedShares | Contribution (ETH) |\n| --- | --- | --- | --- |\n${participantRows}\n\n` +
+    `## Validator Council\n\n` +
+    `Approval threshold: ${recap.validators.approvalThreshold} of ${recap.validators.members.length}\n\n` +
+    recap.validators.members.map((member, index) => `- Validator ${index + 1}: ${member}`).join("\n") +
+    `\n\n## Launch Telemetry\n\n` +
+    `- Launch finalized: ${recap.launch.finalized ? "Yes" : "No"}\n` +
+    `- Aborted: ${recap.launch.aborted ? "Yes" : "No"}\n` +
+    `- Reserve transferred: ${ethers.formatEther(BigInt(recap.launch.sovereignVault.totalReceivedWei))} ETH\n` +
+    `- Sovereign vault manifest: ${recap.launch.sovereignVault.manifestUri}\n` +
+    `- Ignition metadata: ${recap.launch.sovereignVault.decodedMetadata}\n` +
+    `- Vault balance: ${ethers.formatEther(BigInt(recap.launch.sovereignVault.vaultBalanceWei))} ETH\n\n` +
+    `${journeyMermaid}`;
+
+  await writeFile(OUTPUT_MARKDOWN_PATH, markdown);
+
   console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
+  console.log("🖋️  Markdown dossier written to", OUTPUT_MARKDOWN_PATH);
+  console.log(JSON.stringify(recap, null, 2));
   console.log(JSON.stringify(enrichedRecap, null, 2));
   console.log("\n🧭 Owner parameter matrix snapshot:");
   console.table(ownerParameterMatrix);
