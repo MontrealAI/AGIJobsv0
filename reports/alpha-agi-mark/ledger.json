@@ -1,0 +1,110 @@
+{
+  "ledger": [
+    {
+      "step": "initialisation",
+      "detail": "Bootstrapping α-AGI MARK foresight exchange on local Hardhat network"
+    },
+    {
+      "step": "deploy.nova",
+      "detail": "NovaSeedNFT deployed at 0x5FbDB2315678afecb367f032d93F642f64180aa3"
+    },
+    {
+      "step": "seed.mint",
+      "detail": "Nova-Seed 1 minted with encrypted foresight genome",
+      "transaction": "0x39aa6c320c7d8143a0e7dad4ee521a1b6a8b69ccce81dca5db06e87da7cc874e"
+    },
+    {
+      "step": "deploy.mark",
+      "detail": "MARK bonding-curve exchange deployed at 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+    },
+    {
+      "step": "seed.custody",
+      "detail": "Nova-Seed 1 placed under MARK custodianship"
+    },
+    {
+      "step": "market.purchase",
+      "detail": "Visionary A acquired 3 MARK shares for 0.45 ETH",
+      "transaction": "0xc7fe09bd03195360027f519055e7d9c72bedd5ee9ebfd28ceea1bbfca3670fe2"
+    },
+    {
+      "step": "market.purchase",
+      "detail": "Visionary B acquired 2 MARK shares for 0.55 ETH",
+      "transaction": "0x506936af91c235527a43106dc5e356523a0ae86d3aee9b1d858a5c45ce233b37"
+    },
+    {
+      "step": "market.purchase",
+      "detail": "Visionary C acquired 4 MARK shares for 1.7 ETH",
+      "transaction": "0x52b241fde725748630303deed2516a090e6426ea1f35fbf3d995ac432c2d73bb"
+    },
+    {
+      "step": "market.price",
+      "detail": "Dynamic price for next share is 0.55 ETH"
+    },
+    {
+      "step": "compliance.whitelist",
+      "detail": "Whitelist activated for accredited supporters"
+    },
+    {
+      "step": "compliance.blocked",
+      "detail": "Non-whitelisted address prevented from acquiring shares",
+      "transaction": "VM Exception while processing transaction: reverted with custom error 'AccountNotWhitelisted(\"0x14dC79964da2C08b23698B3D3cc7Ca32193d9955\")'"
+    },
+    {
+      "step": "compliance.whitelist",
+      "detail": "Whitelist relaxed to reopen permissionless access"
+    },
+    {
+      "step": "governance.pause",
+      "detail": "Owner executed emergency pause to audit flows"
+    },
+    {
+      "step": "governance.pause.enforced",
+      "detail": "Paused market rejected new trade",
+      "transaction": "VM Exception while processing transaction: reverted with custom error 'EnforcedPause()'"
+    },
+    {
+      "step": "governance.resume",
+      "detail": "Trading corridor reopened by owner"
+    },
+    {
+      "step": "market.purchase",
+      "detail": "Visionary A increased stake by 2 shares for 1.15 ETH",
+      "transaction": "0x728ea483d95415292b307b50145bfbe258ec5108c639d6fe379d03f46c54e0c4"
+    },
+    {
+      "step": "oracle.vote",
+      "detail": "Validator 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65 signalled CONFIDENCE"
+    },
+    {
+      "step": "oracle.vote",
+      "detail": "Validator 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc signalled CONFIDENCE"
+    },
+    {
+      "step": "launch.check",
+      "detail": "Finalisation attempted prior to funding threshold",
+      "transaction": "VM Exception while processing transaction: reverted with custom error 'LaunchNotValidated()'"
+    },
+    {
+      "step": "oracle.vote",
+      "detail": "Validator 0x976EA74026E726554dB657fA54763abd0C3a0aa9 flagged residual risk (REJECT)"
+    },
+    {
+      "step": "oracle.vote",
+      "detail": "Validator 0x976EA74026E726554dB657fA54763abd0C3a0aa9 reaffirmed approval after deliberation"
+    },
+    {
+      "step": "deploy.sovereign",
+      "detail": "Sovereign vault deployed at 0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+    },
+    {
+      "step": "launch.finalise",
+      "detail": "Green-flamed Nova-Seed elevated to Sovereign with 3.85 ETH treasury",
+      "transaction": "0x538b83ba3543e618a407da9ee721a0f598dc09f5a1a02d50b83d98117ac17d2c"
+    },
+    {
+      "step": "launch.locked",
+      "detail": "Post-launch trading correctly sealed",
+      "transaction": "VM Exception while processing transaction: reverted with custom error 'EnforcedPause()'"
+    }
+  ]
+}

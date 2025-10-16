@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'demo/alpha-agi-mark/**'
+      - 'contracts/demo/alpha-agi-mark/**'
+      - 'test/alphaAgiMark.test.ts'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/demo-alpha-agi-mark.yml'
@@ -11,6 +13,8 @@ on:
     branches: [main]
     paths:
       - 'demo/alpha-agi-mark/**'
+      - 'contracts/demo/alpha-agi-mark/**'
+      - 'test/alphaAgiMark.test.ts'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/demo-alpha-agi-mark.yml'
@@ -21,6 +25,14 @@ permissions:
 
 jobs:
   alpha-agi-mark-demo:
+    name: α-AGI MARK foresight exchange
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Harden runner
+        uses: step-security/harden-runner@v2.13.1
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -41,6 +53,27 @@ jobs:
             registry.npmjs.org
             nodejs.org
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run α-AGI MARK tests
+        run: npm run test:alpha-agi-mark
+
+      - name: Run α-AGI MARK demo
+        run: npm run demo:alpha-agi-mark
+
+      - name: Upload α-AGI MARK artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-agi-mark-artifacts
+          path: reports/alpha-agi-mark/**
+          if-no-files-found: ignore
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
