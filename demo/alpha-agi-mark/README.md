@@ -18,7 +18,55 @@ The demo deploys four core contracts:
 3. **AlphaMarkEToken** – ERC-20 bonding-curve market with programmable compliance gates, pause switches, base asset retargeting (ETH or ERC-20 stablecoins), launch finalization metadata, and sovereign callbacks.
 4. **AlphaSovereignVault** – launch treasury that acknowledges the ignition metadata, tracks received capital, and gives the owner pause/withdraw controls for the sovereign stage.
 
-![α-AGI MARK flow diagram](runbooks/alpha-agi-mark-flow.mmd)
+```mermaid
+flowchart TD
+    classDef operator fill:#302B70,stroke:#9A7FF2,color:#fff,stroke-width:2px;
+    classDef contract fill:#0F4C75,stroke:#7FDBFF,color:#FFFFFF,stroke-width:1.5px;
+    classDef action fill:#1B262C,stroke:#BBE1FA,color:#FFFFFF,stroke-width:1.5px;
+
+    subgraph Operator[Operator — guided by AGI Jobs v0 (v2)]
+        Start[Run npm run demo:alpha-agi-mark]
+    end
+
+    subgraph Contracts[α-AGI MARK foresight stack]
+        Seed[NovaSeedNFT\nGenesis seed minted]
+        Oracle[AlphaMarkRiskOracle\nValidator quorum + overrides]
+        Curve[AlphaMarkEToken\nBonding curve + compliance gates]
+        Vault[AlphaSovereignVault\nIgnition manifest + treasury]
+    end
+
+    subgraph Dynamics[Market + governance dynamics]
+        Investors[Investors acquire SeedShares]
+        Validators[Validator approvals stream]
+        Finalize[Owner finalizes sovereign ignition]
+        Recap[AGI Jobs dossier for the operator]
+    end
+
+    Start --> Seed --> Oracle --> Curve --> Investors --> Validators --> Finalize --> Vault
+    Oracle -. Owner override .-> Finalize
+    Curve -. Emergency exit .-> Investors
+    Vault --> Recap
+
+    class Start,Recap operator
+    class Seed,Oracle,Curve,Vault contract
+    class Investors,Validators,Finalize action
+```
+
+```mermaid
+journey
+    title Operator mission timeline
+    section Seed Genesis
+      Boot Hardhat chain: 5
+      Deploy Nova-Seed NFT: 5
+    section Market Formation
+      Configure bonding curve + whitelist: 4
+      Investors join the SeedShares pool: 4
+      Pause & resume compliance drill: 3
+    section Validation & Ignition
+      Validators reach quorum: 5
+      Owner finalizes launch: 5
+      Sovereign vault acknowledges ignition: 5
+```
 
 ## Quickstart
 
@@ -32,6 +80,11 @@ This command:
 2. Deploys the demo contracts.
 3. Simulates investor participation, validator approvals, pause/unpause sequences, and the sovereign launch transition.
 4. Prints a full state recap that a non-technical operator can read to verify success.
+
+After the run completes, two dossiers are generated under [`reports/`](reports/):
+
+- `alpha-mark-recap.json` — machine-readable event log of the launch flow.
+- `alpha-mark-recap.md` — human-friendly mission brief with flowcharts, journey timelines, and contribution visualisations.
 
 To run the Hardhat unit tests for the demo:
 
