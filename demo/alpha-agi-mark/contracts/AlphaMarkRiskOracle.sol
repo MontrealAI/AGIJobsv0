@@ -132,8 +132,10 @@ contract AlphaMarkRiskOracle is Ownable {
 
         if (currentCount == 0) {
             updatedThreshold = 0;
-        } else if (approvalThreshold == 0 || approvalThreshold > currentCount) {
+        } else if (approvalThreshold == 0) {
             updatedThreshold = (currentCount + 1) / 2;
+        } else if (approvalThreshold > currentCount) {
+            updatedThreshold = currentCount;
         }
 
         if (updatedThreshold != approvalThreshold) {
