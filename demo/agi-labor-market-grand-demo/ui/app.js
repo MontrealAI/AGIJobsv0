@@ -56,7 +56,37 @@ function createCard(title, description) {
   return card;
 }
 
-function renderSummary(container, market) {
+function renderSummary(container, market, meta = {}) {
+  const metaBar = document.createElement('div');
+  metaBar.className = 'summary-meta';
+  if (meta.generatedAt) {
+    const generated = document.createElement('div');
+    generated.className = 'summary-meta__item';
+    generated.textContent = `Transcript generated ${formatTime(meta.generatedAt)}`;
+    metaBar.appendChild(generated);
+  }
+  if (meta.network) {
+    const network = document.createElement('div');
+    network.className = 'summary-meta__item';
+    network.textContent = meta.network;
+    metaBar.appendChild(network);
+  }
+  if (typeof meta.ownerActions === 'number') {
+    const ownerActionCount = document.createElement('div');
+    ownerActionCount.className = 'summary-meta__item';
+    ownerActionCount.textContent = `${meta.ownerActions} owner command(s)`;
+    metaBar.appendChild(ownerActionCount);
+  }
+  if (typeof meta.timelineEntries === 'number') {
+    const timelineCount = document.createElement('div');
+    timelineCount.className = 'summary-meta__item';
+    timelineCount.textContent = `${meta.timelineEntries} recorded events`;
+    metaBar.appendChild(timelineCount);
+  }
+  if (metaBar.childElementCount > 0) {
+    container.appendChild(metaBar);
+  }
+
   const statGrid = document.createElement('div');
   statGrid.className = 'stat-grid';
   const stats = [
@@ -449,8 +479,16 @@ function renderApp(data) {
   const app = document.getElementById('app');
   clearNode(app);
 
-  const summaryCard = createCard('Sovereign market pulse', `Network: ${data.network}`);
-  renderSummary(summaryCard, data.market);
+  const summaryCard = createCard(
+    'Sovereign market pulse',
+    'Live protocol economics exported from the sovereign labour market simulator.'
+  );
+  renderSummary(summaryCard, data.market, {
+    generatedAt: data.generatedAt,
+    network: data.network,
+    ownerActions: data.ownerActions.length,
+    timelineEntries: data.timeline.length,
+  });
   app.appendChild(summaryCard);
 
   const actorsCard = createCard('Participants and wallets');
