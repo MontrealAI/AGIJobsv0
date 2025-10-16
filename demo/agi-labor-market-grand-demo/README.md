@@ -62,9 +62,13 @@ sequenceDiagram
 
 ## Running the demonstration
 
-From the repository root run:
+From the repository root run **either** of the following fully scripted entrypoints:
 
 ```bash
+# Ultra-rapid mission control rehearsal (alias configured in package.json)
+npm run demo:agi-labor-market
+
+# Explicit Hardhat invocation if you prefer to see every flag
 npx hardhat run --no-compile scripts/v2/agiLaborMarketGrandDemo.ts --network hardhat
 ```
 
@@ -109,18 +113,23 @@ environment variable before running the script.
 
    ```bash
    npx serve demo/agi-labor-market-grand-demo/ui
-   ```
+  ```
 
-3. Visit the printed URL (defaults to `http://localhost:3000`). The interface
-   loads `export/latest.json`, rendering:
+  3. Visit the printed URL (defaults to `http://localhost:3000`). The interface
+     loads `export/latest.json`, rendering:
 
    - Nation and validator wallet dashboards with balances, stakes, and
      reputation.
    - Owner action logs highlighting every governance lever exercised during the
      simulation.
-   - Scenario timelines for the cooperative and disputed job lifecycles.
-   - Certificate issuance, burn telemetry, and fee economics derived from the
-     Hardhat run.
+  - Scenario timelines for the cooperative and disputed job lifecycles.
+  - Certificate issuance, burn telemetry, and fee economics derived from the
+    Hardhat run.
+
+Continuous integration automatically replays the CLI + export flow on every PR
+touching the demo (see `.github/workflows/demo-agi-labor-market.yml`). Green
+checks guarantee that the transcript and UI artefacts stay fresh for non-technical
+operators.
 
 Non-technical operators can replay the Hardhat simulation and immediately see a
 production-style control room without wiring additional infrastructure.
