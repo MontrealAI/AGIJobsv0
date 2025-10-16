@@ -166,6 +166,52 @@ interface OwnerControlSnapshot {
     owner: PauseStatus;
     moderator: PauseStatus;
   };
+  drillCompletedAt: string;
+}
+
+type DirectivePriority = 'critical' | 'high' | 'normal';
+
+interface AutomationDirective {
+  id: string;
+  title: string;
+  summary: string;
+  priority: DirectivePriority;
+  recommendedAction?: string;
+  metrics?: Record<string, string>;
+}
+
+interface AutomationPlaybook {
+  headline: string;
+  missionSummary: string;
+  resilienceScore: number;
+  unstoppableScore: number;
+  autopilot: {
+    ownerDirectives: AutomationDirective[];
+    agentOpportunities: AutomationDirective[];
+    validatorSignals: AutomationDirective[];
+    treasuryAlerts: AutomationDirective[];
+  };
+  telemetry: {
+    totalJobs: string;
+    mintedCertificates: number;
+    totalBurned: string;
+    finalSupply: string;
+    totalAgentStake: string;
+    totalValidatorStake: string;
+    pendingFees: string;
+  };
+  verification: {
+    requiredChecks: string[];
+    docs: string[];
+    recommendedCommands: string[];
+    lastUpdated: string;
+  };
+  commands: {
+    replayDemo: string;
+    exportTranscript: string;
+    launchControlRoom: string;
+    ownerDashboard: string;
+  };
 }
 
 interface DemoExportPayload {
@@ -178,6 +224,7 @@ interface DemoExportPayload {
   market: MarketSummary;
   ownerControl: OwnerControlSnapshot;
   insights: DemoInsight[];
+  automation: AutomationPlaybook;
 }
 
 enum Role {
@@ -272,6 +319,10 @@ function sanitizeMeta(
     return undefined;
   }
   return sanitizeValue(meta) as Record<string, unknown>;
+}
+
+function toAddressKey(value: string): string {
+  return value.toLowerCase();
 }
 
 function recordInsight(
@@ -776,6 +827,253 @@ async function summarizeMarketState(
     }
   );
   return summary;
+}
+
+function computeResilienceScore(context: {
+  ownerControl: OwnerControlSnapshot;
+  mintedCertificates: number;
+  scenarios: ScenarioExport[];
+  ownerActionCount: number;
+  insights: DemoInsight[];
+}): { resilienceScore: number; unstoppableScore: number } {
+  let score = 40;
+  const { ownerControl } = context;
+  const ownerDrill = ownerControl.pauseDrill.owner;
+  const moderatorDrill = ownerControl.pauseDrill.moderator;
+  if (ownerDrill.registry && ownerDrill.stake && ownerDrill.validation) {
+    score += 18;
+  }
+  if (moderatorDrill.registry && moderatorDrill.stake && moderatorDrill.validation) {
+    score += 12;
+  }
+  if (context.mintedCertificates >= 2) {
+    score += 10;
+  }
+  if (context.scenarios.length >= 2) {
+    score += 6;
+  }
+  if (context.ownerActionCount >= 40) {
+    score += 6;
+  }
+  if (context.insights.some((entry) => entry.category === 'Disputes')) {
+    score += 8;
+  }
+  if (context.insights.some((entry) => entry.category === 'Economy')) {
+    score += 4;
+  }
+  const resilienceScore = Math.min(100, score);
+  const unstoppableScore = Math.min(100, resilienceScore + 4);
+  return { resilienceScore, unstoppableScore };
+}
+
+function buildAutomationPlan(
+  env: DemoEnvironment,
+  market: MarketSummary,
+  ownerControl: OwnerControlSnapshot,
+  context: { scenarios: ScenarioExport[]; ownerActions: OwnerActionRecord[]; insights: DemoInsight[]; timeline: TimelineEntry[] }
+): AutomationPlaybook {
+  const mintedCount = market.mintedCertificates.length;
+  const { resilienceScore, unstoppableScore } = computeResilienceScore({
+    ownerControl,
+    mintedCertificates: mintedCount,
+    scenarios: context.scenarios,
+    ownerActionCount: context.ownerActions.length,
+    insights: context.insights,
+  });
+
+  const actorNameByAddress = new Map(
+    env.actors.map((actor) => [toAddressKey(actor.address), actor.name])
+  );
+
+  const ownerDirectives: AutomationDirective[] = [
+    {
+      id: 'branch-protection',
+      title: 'Lock CI v2 branch protection',
+      summary:
+        'Run the branch protection verifier so every pull request is blocked unless the CI summary gate and its upstream jobs succeed.',
+      priority: 'critical',
+      recommendedAction: 'npm run ci:verify-branch-protection -- --branch main',
+      metrics: {
+        requiredContexts:
+          'Lint & static checks · Tests · Foundry · Coverage thresholds · CI summary',
+      },
+    },
+    {
+      id: 'mission-drill',
+      title: 'Replay sovereign mission control drill',
+      summary:
+        'Re-run the Hardhat automation to reconfirm fee, burn, quorum, and pause powers any time parameters change or new validators onboard.',
+      priority: 'high',
+      recommendedAction: 'npm run demo:agi-labor-market:control-room',
+      metrics: {
+        lastDrill: ownerControl.drillCompletedAt,
+        delegatedPauser: ownerControl.upgraded.registryPauser,
+      },
+    },
+    {
+      id: 'owner-dashboard',
+      title: 'Refresh owner telemetry dashboard',
+      summary:
+        'Publish the owner dashboard so stakeholders see the same unstoppable controls showcased in this run.',
+      priority: 'normal',
+      recommendedAction: 'npm run owner:dashboard',
+      metrics: {
+        burnPct: `${ownerControl.restored.burnPct}%`,
+        validatorReward: `${ownerControl.restored.validatorRewardPct}%`,
+      },
+    },
+  ];
+
+  const agentOpportunities: AutomationDirective[] =
+    market.mintedCertificates.length === 0
+      ? [
+          {
+            id: 'replay-demo',
+            title: 'Replay scenarios to mint credentials',
+            summary:
+              'Run the export to mint cooperative and disputed credentials so agents can showcase verifiable work.',
+            priority: 'high',
+            recommendedAction: 'npm run demo:agi-labor-market:export',
+          },
+        ]
+      : market.mintedCertificates.map((certificate) => {
+          const holder =
+            actorNameByAddress.get(toAddressKey(certificate.owner)) ||
+            certificate.owner;
+          return {
+            id: `certificate-${certificate.jobId.toString()}`,
+            title: `Credential #${certificate.jobId.toString()} in circulation`,
+            summary: `${holder} can reuse this credential to unlock premium sovereign mandates and accelerated onboarding.`,
+            priority: 'normal',
+            metrics: {
+              holder,
+              reference: certificate.uri ?? 'on-chain metadata',
+            },
+          };
+        });
+
+  const validatorSignals: AutomationDirective[] = [
+    {
+      id: 'non-reveal-penalty',
+      title: 'Enforce non-reveal discipline',
+      summary:
+        'Validators that skip reveals are automatically slashed and banned; keep the penalty active before onboarding larger councils.',
+      priority: 'high',
+      recommendedAction: 'npm run owner:pulse',
+      metrics: {
+        penalty: `${ownerControl.restored.nonRevealPenaltyBps} bps`,
+        banDuration: `${ownerControl.restored.nonRevealBanBlocks} blocks`,
+      },
+    },
+    {
+      id: 'validator-reputation',
+      title: 'Review validator reputation and liquidity',
+      summary:
+        'Monitor validator liquidity and locked stake to keep dispute resolution credible and unstoppable.',
+      priority: 'normal',
+      metrics: {
+        councilSize: market.validatorCouncil.length.toString(),
+        totalValidatorStake: market.totalValidatorStake,
+      },
+    },
+  ];
+
+  const treasuryAlerts: AutomationDirective[] = [
+    {
+      id: 'fee-distribution',
+      title: 'Distribute pending protocol fees',
+      summary:
+        'Route pending fees to the treasury and validator pool so burn accounting and validator incentives stay perfectly balanced.',
+      priority: 'high',
+      recommendedAction: 'npm run owner:dashboard',
+      metrics: {
+        pendingFees: market.pendingFees,
+        burnRate: `${ownerControl.restored.burnPct}%`,
+      },
+    },
+    {
+      id: 'stake-depth',
+      title: 'Safeguard stake depth',
+      summary:
+        'Keep agent and validator capital above the baseline so the unstoppable labour market retains immediate settlement capacity.',
+      priority: 'normal',
+      metrics: {
+        agentStake: market.totalAgentStake,
+        validatorStake: market.totalValidatorStake,
+      },
+    },
+  ];
+
+  const automation: AutomationPlaybook = {
+    headline: 'Autonomous labour market mission control is online',
+    missionSummary:
+      'The sovereign AGI labour market proved it can be paused, tuned, disputed, and relaunched instantly — even non-technical owners command it through scripted drills and a live control room.',
+    resilienceScore,
+    unstoppableScore,
+    autopilot: {
+      ownerDirectives,
+      agentOpportunities,
+      validatorSignals,
+      treasuryAlerts,
+    },
+    telemetry: {
+      totalJobs: market.totalJobs,
+      mintedCertificates: mintedCount,
+      totalBurned: market.totalBurned,
+      finalSupply: market.finalSupply,
+      totalAgentStake: market.totalAgentStake,
+      totalValidatorStake: market.totalValidatorStake,
+      pendingFees: market.pendingFees,
+    },
+    verification: {
+      requiredChecks: [
+        'ci (v2) / Lint & static checks',
+        'ci (v2) / Tests',
+        'ci (v2) / Foundry',
+        'ci (v2) / Coverage thresholds',
+        'ci (v2) / CI summary',
+      ],
+      docs: [
+        'docs/v2-ci-operations.md',
+        'docs/ci-v2-branch-protection-checklist.md',
+        'demo/agi-labor-market-grand-demo/README.md',
+      ],
+      recommendedCommands: [
+        'npm run ci:verify-branch-protection -- --branch main',
+        'npm run demo:agi-labor-market:export',
+        'npm run demo:agi-labor-market:control-room',
+      ],
+      lastUpdated: nowIso(),
+    },
+    commands: {
+      replayDemo: 'npm run demo:agi-labor-market',
+      exportTranscript: 'npm run demo:agi-labor-market:export',
+      launchControlRoom: 'npm run demo:agi-labor-market:control-room',
+      ownerDashboard: 'npm run owner:dashboard',
+    },
+  };
+
+  recordTimeline('summary', 'Autonomous mission control plan generated', {
+    resilienceScore,
+    unstoppableScore,
+    directives: {
+      owner: ownerDirectives.length,
+      agents: agentOpportunities.length,
+      validators: validatorSignals.length,
+      treasury: treasuryAlerts.length,
+    },
+  });
+  recordInsight(
+    'Owner',
+    'Autonomous control plan ready for execution',
+    'A machine-readable playbook now prescribes owner commands, validator discipline, treasury distribution, and CI guardrails.',
+    {
+      resilienceScore,
+      unstoppableScore,
+    }
+  );
+
+  return automation;
 }
 
 async function mintInitialBalances(
@@ -1716,6 +2014,12 @@ async function ownerCommandCenterDrill(
     `   Commit/reveal cadence restored for the upcoming scenarios: ${restored.commitWindowFormatted} / ${restored.revealWindowFormatted}`
   );
 
+  const drillCompletedAt = nowIso();
+  recordTimeline('summary', 'Owner command drill sealed', {
+    drillCompletedAt,
+    delegatedPauser: moderatorAddress,
+  });
+
   return {
     ownerAddress,
     moderatorAddress,
@@ -1736,6 +2040,7 @@ async function ownerCommandCenterDrill(
       owner: ownerPauseStatus,
       moderator: moderatorPauseStatus,
     },
+    drillCompletedAt,
   };
 }
 
@@ -2189,6 +2494,12 @@ async function main(): Promise<void> {
   await runHappyPath(env);
   await runDisputeScenario(env);
   const market = await summarizeMarketState(env);
+  const automation = buildAutomationPlan(env, market, ownerControl, {
+    scenarios,
+    ownerActions,
+    insights,
+    timeline,
+  });
 
   logSection('Demo complete – AGI Jobs v2 sovereignty market simulation finished');
 
@@ -2216,6 +2527,7 @@ async function main(): Promise<void> {
         ...entry,
         meta: entry.meta,
       })),
+      automation,
     };
     writeFileSync(resolved, JSON.stringify(payload, null, 2));
     console.log(`\n🗂️  Demo transcript exported to ${resolved}`);

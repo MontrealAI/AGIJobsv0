@@ -167,12 +167,45 @@ environment variable before running the script.
      drill adjustments, and restored settings, including pauser delegation and
      emergency pause outcomes so non-technical owners can verify authority at a
      glance.
+   - An **autonomous mission control** board with resilience and unstoppable
+     scores, recommended owner/agent/validator directives, and a one-command
+     launch checklist so executives know exactly which scripts to run next.
    - Scenario timelines for the cooperative and disputed job lifecycles.
    - Certificate issuance, burn telemetry, and fee economics derived from the
      Hardhat run.
 
 Non-technical operators can replay the Hardhat simulation and immediately see a
 production-style control room without wiring additional infrastructure.
+
+### Autonomous mission control dataset
+
+Every export now includes an `automation` block that summarises the sovereign
+playbook in plain English:
+
+- `resilienceScore` / `unstoppableScore` quantify the owner’s ability to pause,
+  tune, dispute, and relaunch the market instantly.
+- `autopilot.ownerDirectives` enumerates critical owner commands such as
+  rerunning the control-room drill or refreshing branch protection gates.
+- `autopilot.agentOpportunities`, `validatorSignals`, and `treasuryAlerts`
+  translate raw telemetry into actionable steps for agents, validator councils,
+  and treasuries.
+- `verification.requiredChecks` lists the **exact CI v2 job names** that must be
+  enforced on `main`, making it effortless for non-technical owners to verify
+  branch protection.
+- `commands` captures single-line scripts to replay the demo, export a fresh
+  transcript, launch the UI, or print the owner dashboard.
+
+To confirm branch protection mirrors the workflow, run:
+
+```bash
+npm run ci:verify-branch-protection -- --branch main
+```
+
+The CLI compares GitHub’s required contexts against the five jobs documented in
+`docs/v2-ci-operations.md` and blocks if the `CI summary` aggregator or its
+dependencies drift. The automation panel surfaces the same expectation in the
+UI so a non-technical owner can trust the pipeline is fully green before
+approving merges.
 
 ## Extending or replaying
 

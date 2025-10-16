@@ -180,6 +180,220 @@ function renderSummary(container, market, meta = {}) {
   }
 }
 
+const PRIORITY_LABELS = {
+  critical: 'Critical',
+  high: 'High priority',
+  normal: 'Ready to execute',
+};
+
+function renderScoreCard(wrapper, label, value, max, description) {
+  const card = document.createElement('div');
+  card.className = 'score-card';
+  const metricLabel = document.createElement('div');
+  metricLabel.className = 'score-card__label';
+  metricLabel.textContent = label;
+  const metricValue = document.createElement('div');
+  metricValue.className = 'score-card__value';
+  metricValue.textContent = value;
+  card.appendChild(metricLabel);
+  card.appendChild(metricValue);
+  if (typeof max === 'number') {
+    const bar = document.createElement('div');
+    bar.className = 'score-card__bar';
+    const fill = document.createElement('div');
+    fill.className = 'score-card__bar-fill';
+    const clamped = Math.max(0, Math.min(Number(value) || 0, max));
+    fill.style.width = `${(clamped / max) * 100}%`;
+    bar.appendChild(fill);
+    card.appendChild(bar);
+  }
+  if (description) {
+    const desc = document.createElement('p');
+    desc.className = 'score-card__description';
+    desc.textContent = description;
+    card.appendChild(desc);
+  }
+  wrapper.appendChild(card);
+}
+
+function renderDirectiveGroup(container, title, directives, emptyCopy) {
+  const section = document.createElement('section');
+  section.className = 'automation-section';
+  const heading = document.createElement('h3');
+  heading.textContent = title;
+  section.appendChild(heading);
+
+  if (!Array.isArray(directives) || directives.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'notice';
+    empty.textContent = emptyCopy;
+    section.appendChild(empty);
+    container.appendChild(section);
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'directive-grid';
+  for (const directive of directives) {
+    const card = document.createElement('article');
+    card.className = 'directive-card';
+    const priority = document.createElement('span');
+    priority.className = `priority-chip priority-${directive.priority}`;
+    priority.textContent = PRIORITY_LABELS[directive.priority] || directive.priority;
+    card.appendChild(priority);
+
+    const titleEl = document.createElement('h4');
+    titleEl.textContent = directive.title;
+    card.appendChild(titleEl);
+
+    const summary = document.createElement('p');
+    summary.className = 'directive-summary';
+    summary.textContent = directive.summary;
+    card.appendChild(summary);
+
+    if (directive.recommendedAction) {
+      const action = document.createElement('code');
+      action.className = 'directive-action';
+      action.textContent = directive.recommendedAction;
+      card.appendChild(action);
+    }
+
+    if (directive.metrics && Object.keys(directive.metrics).length) {
+      const dl = document.createElement('dl');
+      dl.className = 'directive-metrics';
+      for (const [key, val] of Object.entries(directive.metrics)) {
+        const dt = document.createElement('dt');
+        dt.textContent = key;
+        const dd = document.createElement('dd');
+        dd.textContent = val;
+        dl.appendChild(dt);
+        dl.appendChild(dd);
+      }
+      card.appendChild(dl);
+    }
+
+    grid.appendChild(card);
+  }
+
+  section.appendChild(grid);
+  container.appendChild(section);
+}
+
+function renderAutomation(container, automation) {
+  if (!automation) {
+    const notice = document.createElement('div');
+    notice.className = 'notice';
+    notice.textContent =
+      'Export the latest transcript to populate the autonomous command plan. The Hardhat demo now generates a machine-readable playbook.';
+    container.appendChild(notice);
+    return;
+  }
+
+  const intro = document.createElement('p');
+  intro.className = 'automation-summary';
+  intro.textContent = automation.missionSummary;
+  container.appendChild(intro);
+
+  const scoreboard = document.createElement('div');
+  scoreboard.className = 'scoreboard';
+  renderScoreCard(scoreboard, 'Resilience score', automation.resilienceScore, 100, 'Composite score for governance drills, disputes, and liquidity.');
+  renderScoreCard(scoreboard, 'Unstoppable index', automation.unstoppableScore, 100, 'Confidence that the sovereign labour market can be steered instantly.');
+  renderScoreCard(
+    scoreboard,
+    'Jobs orchestrated',
+    automation.telemetry.totalJobs,
+    undefined,
+    `${automation.telemetry.mintedCertificates} credential NFTs minted`
+  );
+  container.appendChild(scoreboard);
+
+  const directiveLayout = document.createElement('div');
+  directiveLayout.className = 'automation-grid';
+  renderDirectiveGroup(
+    directiveLayout,
+    'Owner directives',
+    automation.autopilot.ownerDirectives,
+    'Run the Hardhat export to regenerate owner directives.'
+  );
+  renderDirectiveGroup(
+    directiveLayout,
+    'Agent opportunities',
+    automation.autopilot.agentOpportunities,
+    'Mint credentials in the demo to unlock agent opportunities.'
+  );
+  renderDirectiveGroup(
+    directiveLayout,
+    'Validator signals',
+    automation.autopilot.validatorSignals,
+    'Validator telemetry populates once the simulation runs.'
+  );
+  renderDirectiveGroup(
+    directiveLayout,
+    'Treasury alerts',
+    automation.autopilot.treasuryAlerts,
+    'Treasury alerts appear after the protocol executes fee flows.'
+  );
+  container.appendChild(directiveLayout);
+
+  const commands = document.createElement('section');
+  commands.className = 'automation-section automation-commands';
+  const commandsTitle = document.createElement('h3');
+  commandsTitle.textContent = 'One-command launch checklist';
+  commands.appendChild(commandsTitle);
+  const list = document.createElement('ul');
+  list.className = 'command-list';
+  const commandEntries = [
+    { label: 'Replay sovereign demo', value: automation.commands.replayDemo },
+    { label: 'Export transcript', value: automation.commands.exportTranscript },
+    { label: 'Launch control room', value: automation.commands.launchControlRoom },
+    { label: 'Owner dashboard', value: automation.commands.ownerDashboard },
+  ];
+  for (const entry of commandEntries) {
+    const li = document.createElement('li');
+    const strong = document.createElement('strong');
+    strong.textContent = entry.label;
+    const code = document.createElement('code');
+    code.textContent = entry.value;
+    li.appendChild(strong);
+    li.appendChild(code);
+    list.appendChild(li);
+  }
+  commands.appendChild(list);
+
+  const verification = document.createElement('div');
+  verification.className = 'verification-block';
+  const verificationTitle = document.createElement('h4');
+  verificationTitle.textContent = 'Verification guardrails';
+  verification.appendChild(verificationTitle);
+  const checks = document.createElement('ul');
+  checks.className = 'verification-list';
+  for (const context of automation.verification.requiredChecks) {
+    const li = document.createElement('li');
+    li.textContent = context;
+    checks.appendChild(li);
+  }
+  verification.appendChild(checks);
+
+  const commandList = document.createElement('ul');
+  commandList.className = 'verification-commands';
+  for (const cmd of automation.verification.recommendedCommands) {
+    const li = document.createElement('li');
+    const code = document.createElement('code');
+    code.textContent = cmd;
+    li.appendChild(code);
+    commandList.appendChild(li);
+  }
+  verification.appendChild(commandList);
+
+  const docs = document.createElement('p');
+  docs.className = 'verification-docs';
+  docs.textContent = `Reference: ${automation.verification.docs.join(' · ')}`;
+  verification.appendChild(docs);
+
+  commands.appendChild(verification);
+  container.appendChild(commands);
+}
+
 function renderInsights(container, insights) {
   if (!Array.isArray(insights) || insights.length === 0) {
     const notice = document.createElement('div');
@@ -396,6 +610,7 @@ function renderOwnerControlSnapshot(container, ownerControl) {
     { label: 'Certificate NFT', value: ownerControl.modules.certificate },
     { label: 'Reputation engine', value: ownerControl.modules.reputation },
     { label: 'Identity registry', value: ownerControl.modules.identity },
+    { label: 'Drill completed', value: formatTime(ownerControl.drillCompletedAt) },
   ];
   for (const entry of addressEntries) {
     const dt = document.createElement('dt');
@@ -646,6 +861,13 @@ function renderApp(data) {
     timelineEntries: data.timeline.length,
   });
   app.appendChild(summaryCard);
+
+  const automationCard = createCard(
+    'Autonomous mission control',
+    data.automation?.headline || 'Replay the grand demo to populate the mission control playbook.'
+  );
+  renderAutomation(automationCard, data.automation);
+  app.appendChild(automationCard);
 
   const insightsCard = createCard(
     'Mission-critical insights',
