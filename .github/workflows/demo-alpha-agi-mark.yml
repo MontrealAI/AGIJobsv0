@@ -78,6 +78,9 @@ jobs:
           if (!data.validators || data.validators.approvalCount === undefined) {
             throw new Error('validator consensus details missing');
           }
+          if (!data.ownerControls || data.ownerControls.treasury === undefined) {
+            throw new Error('owner controls snapshot missing');
+          }
           if (!Array.isArray(data.participants) || data.participants.length === 0) {
             throw new Error('participants missing');
           }

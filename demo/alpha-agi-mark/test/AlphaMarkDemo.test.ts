@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 const toWei = (value: string) => ethers.parseEther(value);
 const WHOLE = toWei("1");
@@ -20,7 +21,7 @@ function saleReturn(base: bigint, slope: bigint, supply: bigint, amount: bigint)
 
 describe("α-AGI MARK bonding curve", function () {
   async function deployFixture() {
-    const [owner, investor, validatorA, validatorB] = await ethers.getSigners();
+    const [owner, investor, validatorA, validatorB, outsider] = await ethers.getSigners();
 
     const RiskOracle = await ethers.getContractFactory("AlphaMarkRiskOracle");
     const riskOracle = await RiskOracle.deploy(owner.address, [validatorA.address, validatorB.address], 2);
@@ -36,7 +37,7 @@ describe("α-AGI MARK bonding curve", function () {
     await mark.setWhitelistEnabled(true);
     await mark.setWhitelist([investor.address], true);
 
-    return { owner, investor, validatorA, validatorB, mark, riskOracle, basePrice, slope };
+    return { owner, investor, validatorA, validatorB, outsider, mark, riskOracle, basePrice, slope };
   }
 
   it("charges the discrete bonding curve price for purchases", async function () {
@@ -100,5 +101,65 @@ describe("α-AGI MARK bonding curve", function () {
 
     expect(await mark.finalized()).to.equal(true);
     expect(await mark.reserveBalance()).to.equal(0n);
+  });
+
+  it("exposes owner control snapshot", async function () {
+    const { owner, mark } = await deployFixture();
+    await mark.connect(owner).setTreasury(owner.address);
+    await mark.connect(owner).setEmergencyExit(true);
+    const futureDeadline = (await time.latest()) + 3600;
+    await mark.connect(owner).setSaleDeadline(futureDeadline);
+
+    const controls = await mark.getOwnerControls();
+    expect(controls.isPaused).to.equal(false);
+    expect(controls.whitelistMode).to.equal(true);
+    expect(controls.emergencyExit).to.equal(true);
+    expect(controls.isFinalized).to.equal(false);
+    expect(controls.isAborted).to.equal(false);
+    expect(controls.overrideEnabled_).to.equal(false);
+    expect(controls.overrideStatus_).to.equal(false);
+    expect(controls.treasuryAddr).to.equal(owner.address);
+    expect(controls.riskOracleAddr).to.be.properAddress;
+    expect(controls.fundingCapWei).to.equal(await mark.fundingCap());
+    expect(controls.maxSupplyWholeTokens).to.equal(await mark.maxSupply());
+    expect(controls.saleDeadlineTimestamp).to.equal(BigInt(futureDeadline));
+    expect(controls.basePriceWei).to.equal(await mark.basePrice());
+    expect(controls.slopeWei).to.equal(await mark.slope());
+  });
+
+  it("enforces whitelist rules", async function () {
+    const { owner, outsider, mark, basePrice, slope } = await deployFixture();
+    const cost = purchaseCost(basePrice, slope, 0n, 1n);
+    await expect(mark.connect(outsider).buyTokens(WHOLE, { value: cost })).to.be.revertedWith("Not whitelisted");
+
+    await mark.connect(owner).setWhitelist([outsider.address], true);
+    await expect(mark.connect(outsider).buyTokens(WHOLE, { value: cost })).to.emit(mark, "TokensPurchased");
+  });
+
+  it("honors funding caps", async function () {
+    const { owner, investor, mark, basePrice, slope } = await deployFixture();
+    const cost = purchaseCost(basePrice, slope, 0n, 1n);
+    await mark.connect(owner).setFundingCap(cost);
+    await mark.connect(investor).buyTokens(WHOLE, { value: cost });
+    await expect(mark.connect(investor).buyTokens(WHOLE, { value: cost })).to.be.revertedWith("Funding cap reached");
+  });
+
+  it("respects sale deadlines", async function () {
+    const { owner, investor, mark, basePrice, slope } = await deployFixture();
+    const cost = purchaseCost(basePrice, slope, 0n, 1n);
+    const deadline = (await time.latest()) + 3600;
+    await mark.connect(owner).setSaleDeadline(deadline);
+    await time.increaseTo(deadline + 1);
+    await expect(mark.connect(investor).buyTokens(WHOLE, { value: cost })).to.be.revertedWith("Sale expired");
+  });
+
+  it("allows owner validation override", async function () {
+    const { owner, investor, mark, basePrice, slope } = await deployFixture();
+    const cost = purchaseCost(basePrice, slope, 0n, 1n);
+    await mark.connect(investor).buyTokens(WHOLE, { value: cost });
+    await mark.connect(owner).setTreasury(owner.address);
+    await mark.connect(owner).setValidationOverride(true, true);
+
+    await expect(mark.connect(owner).finalizeLaunch(owner.address)).to.emit(mark, "LaunchFinalized");
   });
 });

@@ -260,6 +260,44 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         return (currentSupply, reserveBalance, _priceForSupply(currentSupply));
     }
 
+    function getOwnerControls()
+        external
+        view
+        returns (
+            bool isPaused,
+            bool whitelistMode,
+            bool emergencyExit,
+            bool isFinalized,
+            bool isAborted,
+            bool overrideEnabled_,
+            bool overrideStatus_,
+            address treasuryAddr,
+            address riskOracleAddr,
+            uint256 fundingCapWei,
+            uint256 maxSupplyWholeTokens,
+            uint256 saleDeadlineTimestamp,
+            uint256 basePriceWei,
+            uint256 slopeWei
+        )
+    {
+        return (
+            paused(),
+            whitelistEnabled,
+            emergencyExitEnabled,
+            finalized,
+            aborted,
+            validationOverrideEnabled,
+            validationOverrideStatus,
+            treasury,
+            address(riskOracle),
+            fundingCap,
+            maxSupply,
+            saleDeadline,
+            basePrice,
+            slope
+        );
+    }
+
     // ----------- Internal helpers -----------
 
     function _currentSupply() internal view returns (uint256) {
