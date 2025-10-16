@@ -16,6 +16,25 @@ const config: HardhatUserConfig = {
     tests: "test",
     cache: "cache/alpha-agi-mark",
     artifacts: "artifacts/alpha-agi-mark",
+    version: "0.8.26",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 500,
+      },
+    },
+  },
+  paths: {
+    root: ".",
+    sources: "./contracts",
+    tests: "./test",
+    cache: "./cache",
+    artifacts: "./artifacts",
+  },
+  networks: {
+    hardhat: {
+      chainId: 31337,
+    },
   },
 };
 

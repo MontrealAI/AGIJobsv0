@@ -1,0 +1,167 @@
+import { ethers } from "hardhat";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
+
+type Address = string;
+
+interface ParticipantSnapshot {
+  address: Address;
+  tokens: string;
+  contributionWei: string;
+}
+
+const OUTPUT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
+
+async function safeAttempt<T>(label: string, action: () => Promise<T>): Promise<T | undefined> {
+  try {
+    return await action();
+  } catch (error) {
+    console.log(`⚠️  ${label} -> reverted: ${(error as Error).message}`);
+    return undefined;
+  }
+}
+
+async function main() {
+  const [owner, investorA, investorB, investorC, validatorA, validatorB, validatorC] = await ethers.getSigners();
+
+  console.log("🚀 Booting α-AGI MARK foresight exchange demo\n");
+
+  const NovaSeed = await ethers.getContractFactory("NovaSeedNFT", owner);
+  const novaSeed = await NovaSeed.deploy(owner.address);
+  await novaSeed.waitForDeployment();
+  const seedId = await novaSeed.mintSeed.staticCall(owner.address, "ipfs://alpha-mark/seed/genesis");
+  await (await novaSeed.mintSeed(owner.address, "ipfs://alpha-mark/seed/genesis")).wait();
+  console.log(`🌱 Nova-Seed minted with tokenId=${seedId} at ${novaSeed.target}`);
+
+  const RiskOracle = await ethers.getContractFactory("AlphaMarkRiskOracle", owner);
+  const riskOracle = await RiskOracle.deploy(owner.address, [validatorA.address, validatorB.address, validatorC.address], 2);
+  await riskOracle.waitForDeployment();
+  console.log(`🛡️  Risk oracle deployed at ${riskOracle.target}`);
+
+  const basePrice = ethers.parseEther("0.1");
+  const slope = ethers.parseEther("0.05");
+  const maxSupply = 100; // whole tokens
+
+  const AlphaMark = await ethers.getContractFactory("AlphaMarkEToken", owner);
+  const mark = await AlphaMark.deploy(
+    "α-AGI SeedShares",
+    "SEED",
+    owner.address,
+    riskOracle.target,
+    basePrice,
+    slope,
+    maxSupply
+  );
+  await mark.waitForDeployment();
+  console.log(`🏛️  AlphaMark exchange deployed at ${mark.target}`);
+
+  await (await mark.setTreasury(owner.address)).wait();
+  await (await mark.setFundingCap(ethers.parseEther("1000"))).wait();
+  await (await mark.setWhitelistEnabled(true)).wait();
+  await (await mark.setWhitelist([investorA.address, investorB.address, investorC.address], true)).wait();
+
+  console.log("\n📊 Initial bonding curve configuration:");
+  console.log(`   • Base price: ${ethers.formatEther(basePrice)} ETH`);
+  console.log(`   • Slope: ${ethers.formatEther(slope)} ETH per token`);
+  console.log(`   • Max supply: ${maxSupply} SeedShares\n`);
+
+  const buy = async (label: string, signer: any, amountTokens: string, overpay = "0") => {
+    const amount = ethers.parseEther(amountTokens);
+    const cost = await mark.previewPurchaseCost(amount);
+    const totalValue = cost + ethers.parseEther(overpay);
+    await (await mark.connect(signer).buyTokens(amount, { value: totalValue })).wait();
+    console.log(`   ✅ ${label} bought ${amountTokens} SEED for ${ethers.formatEther(cost)} ETH`);
+  };
+
+  await buy("Investor A", investorA, "5", "0.2");
+
+  console.log("   🔒 Owner pauses market to demonstrate compliance gate");
+  await (await mark.pauseMarket()).wait();
+  await safeAttempt("Investor C purchase while paused", async () => {
+    const amount = ethers.parseEther("2");
+    const cost = await mark.previewPurchaseCost(amount);
+    await mark.connect(investorC).buyTokens(amount, { value: cost });
+  });
+  console.log("   🔓 Owner unpauses market\n");
+  await (await mark.unpauseMarket()).wait();
+
+  await buy("Investor B", investorB, "3");
+  await buy("Investor C", investorC, "4");
+
+  console.log("\n💡 Validator council activity:");
+  await (await riskOracle.connect(validatorA).approveSeed()).wait();
+  console.log(`   • Validator ${validatorA.address} approved`);
+  await safeAttempt("Premature finalize attempt", async () => {
+    await mark.finalizeLaunch(owner.address);
+  });
+  await (await riskOracle.connect(validatorB).approveSeed()).wait();
+  console.log(`   • Validator ${validatorB.address} approved`);
+
+  console.log("\n♻️  Investor B tests liquidity by selling 1 SEED");
+  const sellAmount = ethers.parseEther("1");
+  const sellReturn = await mark.previewSaleReturn(sellAmount);
+  await (await mark.connect(investorB).sellTokens(sellAmount)).wait();
+  console.log(`   ✅ Investor B redeemed 1 SEED for ${ethers.formatEther(sellReturn)} ETH`);
+
+  console.log("\n🟢 Oracle threshold satisfied, owner finalizes launch");
+  await (await mark.finalizeLaunch(owner.address)).wait();
+
+  const [supply, reserve, nextPrice] = await mark.getCurveState();
+  const approvalCount = await riskOracle.approvalCount();
+  const threshold = await riskOracle.approvalThreshold();
+
+  const participants: ParticipantSnapshot[] = [investorA, investorB, investorC].map((signer) => ({
+    address: signer.address,
+    tokens: "0",
+    contributionWei: "0",
+  }));
+
+  for (const participant of participants) {
+    const balance = await mark.balanceOf(participant.address);
+    const contribution = await mark.participantContribution(participant.address);
+    participant.tokens = ethers.formatEther(balance);
+    participant.contributionWei = contribution.toString();
+  }
+
+  const recap = {
+    contracts: {
+      novaSeed: novaSeed.target,
+      riskOracle: riskOracle.target,
+      markExchange: mark.target,
+    },
+    seed: {
+      tokenId: seedId.toString(),
+      holder: owner.address,
+    },
+    validators: {
+      approvalCount: approvalCount.toString(),
+      approvalThreshold: threshold.toString(),
+      members: [validatorA.address, validatorB.address, validatorC.address],
+    },
+    bondingCurve: {
+      supplyWholeTokens: supply.toString(),
+      reserveWei: reserve.toString(),
+      nextPriceWei: nextPrice.toString(),
+      basePriceWei: basePrice.toString(),
+      slopeWei: slope.toString(),
+    },
+    participants,
+    launch: {
+      finalized: await mark.finalized(),
+      aborted: await mark.aborted(),
+      treasury: await mark.treasury(),
+    },
+  };
+
+  await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
+  await writeFile(OUTPUT_PATH, JSON.stringify(recap, null, 2));
+
+  console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
+  console.log(JSON.stringify(recap, null, 2));
+  console.log("\n✨ α-AGI MARK demo complete. The foresight sovereign has been launched.");
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
