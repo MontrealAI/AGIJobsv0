@@ -122,8 +122,40 @@ jobs:
       - name: Offline recap triangulation
         run: npm run verify:alpha-agi-mark
 
+      - name: Build integrity dossier
+        run: npm run integrity:alpha-agi-mark
+
+      - name: Validate integrity dossier
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'demo/alpha-agi-mark/reports/alpha-mark-integrity.md';
+          if (!fs.existsSync(path)) {
+            throw new Error('integrity dossier missing');
+          }
+          const content = fs.readFileSync(path, 'utf8');
+          const requiredSections = [
+            '# α-AGI MARK Integrity Report',
+            '## Confidence Summary',
+            '```mermaid',
+            'Owner Command Deck Snapshot',
+          ];
+          for (const section of requiredSections) {
+            if (!content.includes(section)) {
+              throw new Error(`integrity dossier missing section: ${section}`);
+            }
+          }
+          console.log('Integrity dossier validated.');
+          NODE
+
       - name: Upload α-AGI MARK recap
         uses: actions/upload-artifact@v4
         with:
           name: alpha-agi-mark-recap
           path: demo/alpha-agi-mark/reports/alpha-mark-recap.json
+
+      - name: Upload α-AGI MARK integrity dossier
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-agi-mark-integrity
+          path: demo/alpha-agi-mark/reports/alpha-mark-integrity.md

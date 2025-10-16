@@ -87,6 +87,16 @@ npm run verify:alpha-agi-mark
 The verifier consumes the recap dossier, replays the trade ledger, recomputes bonding-curve pricing from first
 principles, and prints a "confidence index" table that must reach 100% before sign-off.
 
+For a presentation-ready briefing, render the integrity report:
+
+```bash
+npm run integrity:alpha-agi-mark
+```
+
+This generates `reports/alpha-mark-integrity.md` – a mermaid-enhanced dossier that summarises the
+confidence matrix, owner controls, validator quorum, and participant contributions so non-technical
+stakeholders can sign off in minutes.
+
 ## Sovereign Dashboard
 
 Every demo run now emits a cinematic HTML dossier at `demo/alpha-agi-mark/reports/alpha-mark-dashboard.html`. Open the file in

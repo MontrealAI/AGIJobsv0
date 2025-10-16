@@ -70,13 +70,23 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    The script replays the trade ledger from the recap, recomputes the bonding-curve math independently, and
    prints a confidence index table that must read 100% before green-lighting any external announcement.
 
-6. **(Optional) Run unit tests**
+6. **Emit the integrity dossier for stakeholder sign-off**
+
+   ```bash
+   npm run integrity:alpha-agi-mark
+   ```
+
+   Produces `demo/alpha-agi-mark/reports/alpha-mark-integrity.md`, a Markdown control-room report with
+   the verification table, owner command deck snapshot, and a mermaid contribution pie chart. Circulate
+   it alongside the dashboard for executive approval.
+
+7. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
    ```
 
-7. **(Optional) Dry-run on a fork or external network**
+8. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 
