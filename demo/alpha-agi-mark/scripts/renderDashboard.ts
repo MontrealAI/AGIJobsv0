@@ -10,6 +10,47 @@ type RecapParticipant = {
   contributionEth?: string;
 };
 
+type VerificationSnapshot = {
+  supplyConsensus: {
+    ledgerWholeTokens: string;
+    contractWholeTokens: string;
+    simulationWholeTokens: string;
+    participantAggregateWholeTokens: string;
+    consistent: boolean;
+  };
+  pricing: {
+    contractNextPriceWei: string;
+    contractNextPriceEth?: string;
+    simulatedNextPriceWei: string;
+    simulatedNextPriceEth?: string;
+    consistent: boolean;
+  };
+  capitalFlows: {
+    ledgerGrossWei: string;
+    ledgerGrossEth?: string;
+    ledgerRedemptionsWei: string;
+    ledgerRedemptionsEth?: string;
+    ledgerNetWei: string;
+    ledgerNetEth?: string;
+    simulatedReserveWei: string;
+    simulatedReserveEth?: string;
+    contractReserveWei: string;
+    contractReserveEth?: string;
+    vaultReceivedWei: string;
+    vaultReceivedEth?: string;
+    combinedReserveWei: string;
+    combinedReserveEth?: string;
+    consistent: boolean;
+  };
+  contributions: {
+    participantAggregateWei: string;
+    participantAggregateEth?: string;
+    ledgerGrossWei: string;
+    ledgerGrossEth?: string;
+    consistent: boolean;
+  };
+};
+
 type RecapData = {
   contracts: {
     novaSeed: string;
@@ -77,6 +118,7 @@ type RecapData = {
     };
   };
   ownerParameterMatrix?: Array<{ parameter: string; value: unknown; description: string }>;
+  verification?: VerificationSnapshot;
 };
 
 function escapeHtml(value: string): string {
@@ -97,6 +139,10 @@ function shortenAddress(address: string): string {
 
 function renderBooleanBadge(value: boolean): string {
   return `<span class="badge ${value ? "on" : "off"}">${value ? "ENABLED" : "DISABLED"}</span>`;
+}
+
+function renderConsistencyBadge(ok: boolean): string {
+  return `<span class="badge ${ok ? "success" : "danger"}">${ok ? "CONSISTENT" : "REVIEW"}</span>`;
 }
 
 function formatNumber(value: string | undefined, fallback = "-"): string {
@@ -220,6 +266,111 @@ function buildOwnerMatrixTable(entries: Array<{ parameter: string; value: unknow
   `;
 }
 
+function buildVerificationSection(verification?: VerificationSnapshot): string {
+  if (!verification) {
+    return "";
+  }
+
+  const supplyCard = {
+    title: "Supply Consensus",
+    consistent: verification.supplyConsensus.consistent,
+    body: `
+      <p class="mono">
+        Ledger ${escapeHtml(verification.supplyConsensus.ledgerWholeTokens)} ·
+        Contract ${escapeHtml(verification.supplyConsensus.contractWholeTokens)} ·
+        Simulation ${escapeHtml(verification.supplyConsensus.simulationWholeTokens)} ·
+        Participants ${escapeHtml(verification.supplyConsensus.participantAggregateWholeTokens)}
+      </p>
+    `,
+  };
+
+  const pricingCard = {
+    title: "Pricing Integrity",
+    consistent: verification.pricing.consistent,
+    body: `
+      <p>
+        On-chain quote: <span class="mono">${escapeHtml(
+          formatNumber(verification.pricing.contractNextPriceEth, `${verification.pricing.contractNextPriceWei} wei`),
+        )}</span><br />
+        Simulated quote: <span class="mono">${escapeHtml(
+          formatNumber(verification.pricing.simulatedNextPriceEth, `${verification.pricing.simulatedNextPriceWei} wei`),
+        )}</span>
+      </p>
+    `,
+  };
+
+  const capitalCard = {
+    title: "Capital Flow Integrity",
+    consistent: verification.capitalFlows.consistent,
+    body: `
+      <p>
+        Gross inflow: <span class="mono">${escapeHtml(
+          formatNumber(verification.capitalFlows.ledgerGrossEth, `${verification.capitalFlows.ledgerGrossWei} wei`),
+        )}</span><br />
+        Redemptions: <span class="mono">${escapeHtml(
+          formatNumber(
+            verification.capitalFlows.ledgerRedemptionsEth,
+            `${verification.capitalFlows.ledgerRedemptionsWei} wei`,
+          ),
+        )}</span><br />
+        Net reserve: <span class="mono">${escapeHtml(
+          formatNumber(verification.capitalFlows.ledgerNetEth, `${verification.capitalFlows.ledgerNetWei} wei`),
+        )}</span><br />
+        Vault received: <span class="mono">${escapeHtml(
+          formatNumber(verification.capitalFlows.vaultReceivedEth, `${verification.capitalFlows.vaultReceivedWei} wei`),
+        )}</span>
+      </p>
+    `,
+  };
+
+  const contributionsCard = {
+    title: "Contribution Accounting",
+    consistent: verification.contributions.consistent,
+    body: `
+      <p>
+        On-chain aggregate: <span class="mono">${escapeHtml(
+          formatNumber(
+            verification.contributions.participantAggregateEth,
+            `${verification.contributions.participantAggregateWei} wei`,
+          ),
+        )}</span><br />
+        Ledger aggregate: <span class="mono">${escapeHtml(
+          formatNumber(verification.contributions.ledgerGrossEth, `${verification.contributions.ledgerGrossWei} wei`),
+        )}</span>
+      </p>
+    `,
+  };
+
+  const cards = [supplyCard, pricingCard, capitalCard, contributionsCard];
+
+  const grid = cards
+    .map(
+      (card) => `
+        <article class="verification-card">
+          <header>
+            <h3>${escapeHtml(card.title)}</h3>
+            ${renderConsistencyBadge(card.consistent)}
+          </header>
+          ${card.body}
+        </article>
+      `,
+    )
+    .join("\n");
+
+  return `
+    <section>
+      <h2>Triple-Verification Matrix</h2>
+      <p>
+        Independent ledgers, on-chain state introspection, and first-principles math cross-check the sovereign launch
+        in real time.
+      </p>
+      <div class="verification-grid">
+        ${grid}
+      </div>
+    </section>
+  `;
+}
+
 function buildMermaidFlow(recap: RecapData): string {
   const metadataSnippet = recap.launch.sovereignVault.decodedMetadata
     ? recap.launch.sovereignVault.decodedMetadata.replace(/\"/g, '\\"')
@@ -255,6 +406,7 @@ function buildDashboardHtml(recap: RecapData): string {
 
   const ownerMatrix = buildOwnerMatrixTable(recap.ownerParameterMatrix ?? []);
   const mermaidDefinition = escapeHtml(buildMermaidFlow(recap));
+  const verificationSection = buildVerificationSection(recap.verification);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -350,6 +502,23 @@ function buildDashboardHtml(recap: RecapData): string {
         padding: 1.2rem 1.3rem;
         border: 1px solid rgba(96, 255, 207, 0.12);
       }
+      .verification-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+      }
+      .verification-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 1.4rem;
+        border: 1px solid rgba(96, 255, 207, 0.16);
+      }
+      .verification-card header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.9rem;
+      }
       .control-card header {
         display: flex;
         align-items: center;
@@ -384,6 +553,11 @@ function buildDashboardHtml(recap: RecapData): string {
         color: var(--success);
         background: rgba(46, 204, 113, 0.16);
         border-color: rgba(46, 204, 113, 0.6);
+      }
+      .badge.danger {
+        color: var(--danger);
+        background: rgba(255, 107, 107, 0.18);
+        border-color: rgba(255, 107, 107, 0.6);
       }
       table {
         width: 100%;
@@ -480,6 +654,8 @@ function buildDashboardHtml(recap: RecapData): string {
           </article>
         </div>
       </section>
+
+      ${verificationSection}
 
       <section>
         <h2>Owner Control Deck</h2>
