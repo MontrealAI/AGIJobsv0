@@ -155,6 +155,9 @@ environment variable before running the script.
 
    - Nation and validator wallet dashboards with balances, stakes, and
      reputation.
+   - A "Mission-critical insights" board summarising owner control drills,
+     agent wins, dispute outcomes, and market telemetry so executives grasp the
+     narrative instantly.
    - Live **agent and validator portfolios** summarising liquidity, locked
      capital, reputation, and credential NFTs minted during the simulation so a
      non-technical operator can confirm payouts and performance instantly.

@@ -28,7 +28,8 @@ type TimelineKind =
   | 'job-summary'
   | 'balance'
   | 'owner-action'
-  | 'summary';
+  | 'summary'
+  | 'insight';
 
 interface TimelineEntry {
   kind: TimelineKind;
@@ -36,6 +37,17 @@ interface TimelineEntry {
   at: string;
   scenario?: string;
   meta?: Record<string, unknown>;
+}
+
+type InsightCategory = 'Owner' | 'Agents' | 'Validators' | 'Economy' | 'Disputes';
+
+interface DemoInsight {
+  category: InsightCategory;
+  title: string;
+  detail: string;
+  at: string;
+  meta?: Record<string, unknown>;
+  timelineIndex?: number;
 }
 
 interface ActorProfile {
@@ -165,6 +177,7 @@ interface DemoExportPayload {
   scenarios: ScenarioExport[];
   market: MarketSummary;
   ownerControl: OwnerControlSnapshot;
+  insights: DemoInsight[];
 }
 
 enum Role {
@@ -177,6 +190,7 @@ const timeline: TimelineEntry[] = [];
 const ownerActions: OwnerActionRecord[] = [];
 const scenarios: ScenarioExport[] = [];
 let activeScenario: string | undefined;
+const insights: DemoInsight[] = [];
 
 const cliArgs = process.argv.slice(2);
 let exportPath: string | undefined;
@@ -231,6 +245,57 @@ function recordOwnerAction(
     method,
     parameters,
   });
+}
+
+function sanitizeValue(value: unknown): unknown {
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item));
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, val]) => [
+        key,
+        sanitizeValue(val),
+      ])
+    );
+  }
+  return value;
+}
+
+function sanitizeMeta(
+  meta?: Record<string, unknown>
+): Record<string, unknown> | undefined {
+  if (!meta) {
+    return undefined;
+  }
+  return sanitizeValue(meta) as Record<string, unknown>;
+}
+
+function recordInsight(
+  category: InsightCategory,
+  title: string,
+  detail: string,
+  meta?: Record<string, unknown>
+): number {
+  const sanitizedMeta = sanitizeMeta(meta);
+  const timelineIndex = recordTimeline('insight', title, {
+    category,
+    detail,
+    meta: sanitizedMeta,
+  });
+  const entry: DemoInsight = {
+    category,
+    title,
+    detail,
+    at: timeline[timelineIndex].at,
+    meta: sanitizedMeta,
+    timelineIndex,
+  };
+  insights.push(entry);
+  return timelineIndex;
 }
 
 function registerScenario(title: string, jobId: bigint): void {
@@ -700,6 +765,16 @@ async function summarizeMarketState(
     agentPortfolios: summary.agentPortfolios,
     validatorCouncil: summary.validatorCouncil,
   });
+  recordInsight(
+    'Economy',
+    'Market telemetry verified end-to-end',
+    'Fee pool balances, burn accounting, and credential issuance matched the sovereign market invariants.',
+    {
+      totalJobs: summary.totalJobs,
+      totalBurned: summary.totalBurned,
+      pendingFees: summary.pendingFees,
+    }
+  );
   return summary;
 }
 
@@ -845,6 +920,25 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
       evanAddress,
     ],
   });
+  recordInsight(
+    'Economy',
+    'Actors funded with sovereign AGIα liquidity',
+    `Seeded ${formatTokens(
+      mintAmount
+    )} to every employer, agent, and validator so the labour market simulation mirrors production runway balances.`,
+    {
+      perActor: formatTokens(mintAmount),
+      participants: [
+        nationAAddress,
+        nationBAddress,
+        aliceAddress,
+        bobAddress,
+        charlieAddress,
+        doraAddress,
+        evanAddress,
+      ],
+    }
+  );
 
   logStep('Deploying core contracts');
   const Stake = createFactory(stakeManagerArtifact, owner);
@@ -1606,6 +1700,17 @@ async function ownerCommandCenterDrill(
     commitWindow: restored.commitWindowFormatted,
     revealWindow: restored.revealWindowFormatted,
   });
+  recordInsight(
+    'Owner',
+    'Owner executed full-spectrum command drill',
+    'Protocol fees, validator incentives, burn cadence, and emergency pause delegates were adjusted, rehearsed, and restored without incident.',
+    {
+      upgradedFeePct,
+      upgradedValidatorReward,
+      upgradedBurnPct,
+      delegatedPauser: moderatorAddress,
+    }
+  );
 
   console.log(
     `   Commit/reveal cadence restored for the upcoming scenarios: ${restored.commitWindowFormatted} / ${restored.revealWindowFormatted}`
@@ -1851,6 +1956,16 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   );
   console.log(`\n🏅 Alice now holds ${nftBalance} certificate NFT(s).`);
   registerScenario(scenarioTitle, jobId);
+  recordInsight(
+    'Agents',
+    'Cooperative climate coalition completed flawlessly',
+    'Nation A, Alice, and the validator council finalized the coordination mandate with unanimous approval and credential issuance.',
+    {
+      jobId: jobId.toString(),
+      reward: formatTokens(reward),
+      validators: validators.length,
+    }
+  );
 }
 
 async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
@@ -2044,6 +2159,17 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   ];
   await showBalances('Post-dispute token balances', token, participants);
   registerScenario(scenarioTitle, jobId);
+  recordInsight(
+    'Disputes',
+    'Dispute resolution rewarded Bob and disciplined validators',
+    'Owner governance waived dispute fees, moderators co-signed the verdict, and the validator who withheld their reveal was slashed while Bob still graduated.',
+    {
+      jobId: jobId.toString(),
+      reward: formatTokens(reward),
+      revealers: approvals.filter(Boolean).length,
+      nonRevealPenaltyBps: await validation.nonRevealPenaltyBps(),
+    }
+  );
 }
 
 async function main(): Promise<void> {
@@ -2086,6 +2212,10 @@ async function main(): Promise<void> {
         })),
       },
       ownerControl,
+      insights: insights.map((entry) => ({
+        ...entry,
+        meta: entry.meta,
+      })),
     };
     writeFileSync(resolved, JSON.stringify(payload, null, 2));
     console.log(`\n🗂️  Demo transcript exported to ${resolved}`);

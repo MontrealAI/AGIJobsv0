@@ -180,6 +180,82 @@ function renderSummary(container, market, meta = {}) {
   }
 }
 
+function renderInsights(container, insights) {
+  if (!Array.isArray(insights) || insights.length === 0) {
+    const notice = document.createElement('div');
+    notice.className = 'notice';
+    notice.textContent =
+      'Replay the grand demo export to populate mission-critical insights summarising owner control, agent success, and dispute outcomes.';
+    container.appendChild(notice);
+    return;
+  }
+
+  const grouped = new Map();
+  for (const insight of insights) {
+    const key = insight.category || 'Insight';
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+    grouped.get(key).push(insight);
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'insights-grid';
+
+  for (const [category, entries] of grouped.entries()) {
+    const card = document.createElement('article');
+    card.className = 'insight-card';
+
+    const heading = document.createElement('h3');
+    heading.textContent = category;
+    card.appendChild(heading);
+
+    const list = document.createElement('ul');
+    list.className = 'insight-list';
+
+    for (const entry of entries) {
+      const item = document.createElement('li');
+
+      const title = document.createElement('div');
+      title.className = 'insight-title';
+      title.textContent = entry.title;
+      item.appendChild(title);
+
+      const detail = document.createElement('p');
+      detail.className = 'insight-detail';
+      detail.textContent = entry.detail;
+      item.appendChild(detail);
+
+      const metaBar = document.createElement('div');
+      metaBar.className = 'insight-meta';
+      const timeEl = document.createElement('time');
+      timeEl.dateTime = entry.at;
+      timeEl.textContent = formatTime(entry.at);
+      metaBar.appendChild(timeEl);
+      if (typeof entry.timelineIndex === 'number') {
+        const span = document.createElement('span');
+        span.textContent = `Timeline #${entry.timelineIndex + 1}`;
+        metaBar.appendChild(span);
+      }
+      item.appendChild(metaBar);
+
+      if (entry.meta && Object.keys(entry.meta).length) {
+        const pre = document.createElement('pre');
+        pre.className = 'parameters';
+        pre.textContent = formatParameters(entry.meta);
+        item.appendChild(pre);
+      }
+
+      list.appendChild(item);
+    }
+
+    card.appendChild(list);
+    grid.appendChild(card);
+  }
+
+  container.appendChild(grid);
+}
+
 function renderActors(container, actors, market, ownerControl) {
   const grid = document.createElement('div');
   grid.className = 'actor-grid';
@@ -570,6 +646,13 @@ function renderApp(data) {
     timelineEntries: data.timeline.length,
   });
   app.appendChild(summaryCard);
+
+  const insightsCard = createCard(
+    'Mission-critical insights',
+    'Executive highlights condensing the entire sovereign control story into actionable takeaways.'
+  );
+  renderInsights(insightsCard, data.insights || []);
+  app.appendChild(insightsCard);
 
   const actorsCard = createCard('Participants and wallets');
   renderActors(actorsCard, data.actors, data.market, data.ownerControl);
