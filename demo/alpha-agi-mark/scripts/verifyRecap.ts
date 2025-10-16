@@ -38,6 +38,18 @@ const participantSchema = z
   })
   .passthrough();
 
+const timelineEntrySchema = z
+  .object({
+    order: z.number().int().nonnegative(),
+    phase: z.string(),
+    title: z.string(),
+    description: z.string(),
+    icon: z.string().optional(),
+    actor: z.string().optional(),
+    actorLabel: z.string().optional(),
+  })
+  .passthrough();
+
 const recapSchema = z.object({
   generatedAt: z.string(),
   network: z
@@ -106,6 +118,7 @@ const recapSchema = z.object({
     .passthrough(),
   participants: z.array(participantSchema).nonempty("Participant ledger is empty"),
   trades: z.array(tradeSchema).nonempty("Trade ledger is empty"),
+  timeline: z.array(timelineEntrySchema).nonempty("Timeline ledger is empty"),
   verification: z
     .object({
       supplyConsensus: z.object({ consistent: z.boolean() }).passthrough(),
@@ -184,6 +197,20 @@ function main() {
 
       const expectedNextPrice = basePrice + slope * supply;
 
+      const timelineOrders = recap.timeline.map((entry) => entry.order);
+      const timelineOrderStrictlyIncreasing = recap.timeline.every((entry, index) => {
+        if (index === 0) return true;
+        return entry.order > recap.timeline[index - 1].order;
+      });
+
+      const timelinePhases = new Set(recap.timeline.map((entry) => entry.phase));
+      const requiredPhases = ["Orchestration", "Market Activation", "Governance", "Launch"];
+      const hasVerificationMilestone = recap.timeline.some((entry) => {
+        if (entry.phase !== "Verification") return false;
+        const title = entry.title.toLowerCase();
+        return title.includes("verification") || title.includes("matrix");
+      });
+
       const appendCheck = (label: string, ok: boolean, expected?: string, actual?: string) => {
         checks.push({ label, ok, expected, actual });
       };
@@ -228,6 +255,37 @@ function main() {
         fundingCap === 0n || ledgerGrossWei <= fundingCap,
         fundingCap === 0n ? "Unlimited" : formatWei(fundingCap),
         formatWei(ledgerGrossWei),
+      );
+
+      appendCheck(
+        "Timeline order strictly increasing",
+        timelineOrderStrictlyIncreasing,
+        "Strictly increasing sequence",
+        timelineOrders.join(" → "),
+      );
+
+      appendCheck(
+        "Timeline anchored at order 1",
+        recap.timeline[0]?.order === 1,
+        "1",
+        recap.timeline[0]?.order?.toString() ?? "missing",
+      );
+
+      appendCheck(
+        "Timeline covers core phases",
+        requiredPhases.every((phase) => timelinePhases.has(phase)),
+        requiredPhases.join(", "),
+        Array.from(timelinePhases).sort().join(", "),
+      );
+
+      appendCheck(
+        "Verification milestone recorded",
+        hasVerificationMilestone,
+        "Verification phase includes reconciliation milestone",
+        recap.timeline
+          .filter((entry) => entry.phase === "Verification")
+          .map((entry) => `${entry.title} — ${entry.description}`)
+          .join(" | ") || "Missing",
       );
 
       if (recap.verification) {

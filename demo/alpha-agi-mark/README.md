@@ -41,7 +41,9 @@ flowchart TD
 > For a multi-perspective visual walkthrough (mindmap, journey map, and sovereign launch sequence) see the
 > [`Operator Empowerment Atlas`](docs/operator-empowerment-atlas.md). Pair it with the new
 > [`Operator Command Console`](docs/operator-command-console.md) to brief stakeholders using quadrant, timeline, and
-> safety-state diagrams—no Solidity knowledge required.
+> safety-state diagrams—no Solidity knowledge required. Seal the evidence loop with the
+> [`Verification Compendium`](docs/operator-verification-compendium.md), which narrates the triple-verification matrix and
+> shows non-technical operators exactly how to obtain board-ready confidence indices in minutes.
 
 ## Quickstart
 
