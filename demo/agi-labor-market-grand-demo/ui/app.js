@@ -680,6 +680,27 @@ function renderOwnerControlSnapshot(container, ownerControl) {
       render: (state) => `${state.nonRevealBanBlocks} blocks`,
     },
     {
+      label: 'Minimum stake',
+      render: (state) => state.minStake,
+    },
+    {
+      label: 'Max stake per address',
+      render: (state) => state.maxStakePerAddress,
+    },
+    {
+      label: 'Unbonding period',
+      render: (state) => state.unbondingPeriodFormatted,
+    },
+    {
+      label: 'Stake treasury',
+      render: (state) => state.stakeTreasury,
+      className: 'parameters',
+    },
+    {
+      label: 'Stake treasury allowlist',
+      render: (state) => (state.stakeTreasuryAllowed ? 'Allowlisted' : 'Revoked'),
+    },
+    {
       label: 'Registry pauser',
       render: (state) => state.registryPauser,
       className: 'parameters',
@@ -693,6 +714,20 @@ function renderOwnerControlSnapshot(container, ownerControl) {
       label: 'Validation pauser',
       render: (state) => state.validationPauser,
       className: 'parameters',
+    },
+    {
+      label: 'Stake pauser manager',
+      render: (state) => state.stakePauserManager,
+      className: 'parameters',
+    },
+    {
+      label: 'Fee pool treasury',
+      render: (state) => state.feePoolTreasury,
+      className: 'parameters',
+    },
+    {
+      label: 'Fee pool treasury allowlist',
+      render: (state) => (state.feePoolTreasuryAllowed ? 'Allowlisted' : 'Revoked'),
     },
   ];
 
@@ -757,6 +792,57 @@ function renderOwnerControlSnapshot(container, ownerControl) {
   pauseTable.appendChild(pauseBody);
   pauseSection.appendChild(pauseTable);
   container.appendChild(pauseSection);
+
+  if (Array.isArray(ownerControl.controlMatrix) && ownerControl.controlMatrix.length > 0) {
+    const matrixSection = document.createElement('div');
+    matrixSection.className = 'owner-control-section';
+    const matrixTitle = document.createElement('h3');
+    matrixTitle.textContent = 'Sovereign control matrix';
+    matrixSection.appendChild(matrixTitle);
+
+    const matrixGrid = document.createElement('div');
+    matrixGrid.className = 'control-matrix';
+
+    for (const entry of ownerControl.controlMatrix) {
+      const card = document.createElement('article');
+      card.className = 'control-card';
+
+      const heading = document.createElement('h4');
+      heading.textContent = entry.module;
+      card.appendChild(heading);
+
+      const address = document.createElement('div');
+      address.className = 'control-card__address';
+      address.textContent = entry.address;
+      card.appendChild(address);
+
+      const delegated = document.createElement('div');
+      delegated.className = 'control-card__delegated';
+      delegated.textContent = `Delegated to: ${entry.delegatedTo}`;
+      card.appendChild(delegated);
+
+      if (Array.isArray(entry.capabilities) && entry.capabilities.length > 0) {
+        const list = document.createElement('ul');
+        list.className = 'control-card__capabilities';
+        for (const capability of entry.capabilities) {
+          const item = document.createElement('li');
+          item.textContent = capability;
+          list.appendChild(item);
+        }
+        card.appendChild(list);
+      }
+
+      const status = document.createElement('p');
+      status.className = 'control-card__status';
+      status.textContent = entry.status;
+      card.appendChild(status);
+
+      matrixGrid.appendChild(card);
+    }
+
+    matrixSection.appendChild(matrixGrid);
+    container.appendChild(matrixSection);
+  }
 }
 
 function renderScenarios(container, scenarios, data) {

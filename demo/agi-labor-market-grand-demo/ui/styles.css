@@ -562,6 +562,49 @@ main {
   background: rgba(15, 23, 42, 0.7);
 }
 
+.control-matrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.1rem;
+  margin-top: 1rem;
+}
+
+.control-card {
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.78);
+  padding: 1.1rem 1.3rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.control-card h4 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.control-card__address,
+.control-card__delegated {
+  font-family: 'SFMono-Regular', 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.82rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.control-card__capabilities {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+}
+
+.control-card__status {
+  margin: 0;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .parameters {
   font-family: 'SFMono-Regular', 'Roboto Mono', ui-monospace, monospace;
   font-size: 0.75rem;

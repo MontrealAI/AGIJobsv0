@@ -142,6 +142,17 @@ interface OwnerControlParameters {
   registryPauser: string;
   stakePauser: string;
   validationPauser: string;
+  minStake: string;
+  minStakeRaw: bigint;
+  maxStakePerAddress: string;
+  maxStakePerAddressRaw: bigint;
+  unbondingPeriodSeconds: number;
+  unbondingPeriodFormatted: string;
+  stakeTreasury: string;
+  stakeTreasuryAllowed: boolean;
+  stakePauserManager: string;
+  feePoolTreasury: string;
+  feePoolTreasuryAllowed: boolean;
 }
 
 interface ModuleAddresses {
@@ -167,6 +178,15 @@ interface OwnerControlSnapshot {
     moderator: PauseStatus;
   };
   drillCompletedAt: string;
+  controlMatrix: OwnerControlMatrixEntry[];
+}
+
+interface OwnerControlMatrixEntry {
+  module: string;
+  address: string;
+  delegatedTo: string;
+  capabilities: string[];
+  status: string;
 }
 
 type DirectivePriority = 'critical' | 'high' | 'normal';
@@ -263,12 +283,13 @@ function recordTimeline(
   label: string,
   meta?: Record<string, unknown>
 ): number {
+  const sanitizedMeta = sanitizeMeta(meta);
   const entry: TimelineEntry = {
     kind,
     label,
     at: nowIso(),
     scenario: activeScenario,
-    meta,
+    meta: sanitizedMeta,
   };
   timeline.push(entry);
   return timeline.length - 1;
@@ -280,17 +301,18 @@ function recordOwnerAction(
   method: string,
   parameters?: Record<string, unknown>
 ): void {
+  const sanitized = sanitizeMeta(parameters);
   ownerActions.push({
     label,
     contract,
     method,
-    parameters,
+    parameters: sanitized,
     at: nowIso(),
   });
   recordTimeline('owner-action', label, {
     contract,
     method,
-    parameters,
+    parameters: sanitized,
   });
 }
 
@@ -503,6 +525,12 @@ async function readOwnerControlParameters(
     registryPauser,
     stakePauser,
     validationPauser,
+    minStake,
+    maxStakePerAddress,
+    unbondingPeriod,
+    stakeTreasury,
+    stakePauserManager,
+    feePoolTreasury,
   ] = await Promise.all([
     registry.feePct(),
     registry.validatorRewardPct(),
@@ -516,7 +544,25 @@ async function readOwnerControlParameters(
     registry.pauser(),
     stake.pauser(),
     validation.pauser(),
+    stake.minStake(),
+    stake.maxStakePerAddress(),
+    stake.unbondingPeriod(),
+    stake.treasury(),
+    stake.pauserManager(),
+    feePool.treasury(),
   ]);
+
+  const stakeTreasuryAllowed =
+    stakeTreasury === ethers.ZeroAddress
+      ? false
+      : await stake.treasuryAllowlist(stakeTreasury);
+  const feePoolTreasuryAllowed =
+    feePoolTreasury === ethers.ZeroAddress
+      ? false
+      : await feePool.treasuryAllowlist(feePoolTreasury);
+
+  const maxStakeLabel =
+    maxStakePerAddress === 0n ? 'Unlimited' : formatTokens(maxStakePerAddress);
 
   return {
     feePct: Number(feePct),
@@ -533,6 +579,17 @@ async function readOwnerControlParameters(
     registryPauser,
     stakePauser,
     validationPauser,
+    minStake: formatTokens(minStake),
+    minStakeRaw: minStake,
+    maxStakePerAddress: maxStakeLabel,
+    maxStakePerAddressRaw: maxStakePerAddress,
+    unbondingPeriodSeconds: Number(unbondingPeriod),
+    unbondingPeriodFormatted: formatSeconds(unbondingPeriod),
+    stakeTreasury,
+    stakeTreasuryAllowed,
+    stakePauserManager,
+    feePoolTreasury,
+    feePoolTreasuryAllowed,
   };
 }
 
@@ -861,6 +918,21 @@ function computeResilienceScore(context: {
   if (context.insights.some((entry) => entry.category === 'Economy')) {
     score += 4;
   }
+  if (
+    ownerControl.upgraded.stakeTreasuryAllowed &&
+    ownerControl.upgraded.feePoolTreasuryAllowed &&
+    ownerControl.upgraded.stakeTreasury !== ownerControl.baseline.stakeTreasury
+  ) {
+    score += 6;
+  }
+  if (ownerControl.upgraded.minStakeRaw > ownerControl.baseline.minStakeRaw) {
+    score += 4;
+  }
+  if (
+    ownerControl.upgraded.unbondingPeriodSeconds > ownerControl.baseline.unbondingPeriodSeconds
+  ) {
+    score += 4;
+  }
   const resilienceScore = Math.min(100, score);
   const unstoppableScore = Math.min(100, resilienceScore + 4);
   return { resilienceScore, unstoppableScore };
@@ -979,6 +1051,19 @@ function buildAutomationPlan(
   ];
 
   const treasuryAlerts: AutomationDirective[] = [
+    {
+      id: 'treasury-control',
+      title: 'Reconfirm sovereign treasury routing',
+      summary:
+        'Audit stake and fee treasuries after every drill so allied recipients remain allowlisted and emergency revocations stay one command away.',
+      priority: 'critical',
+      recommendedAction: 'npm run owner:command-center',
+      metrics: {
+        stakeTreasury: ownerControl.restored.stakeTreasury,
+        feePoolTreasury: ownerControl.restored.feePoolTreasury,
+        unbondingPeriod: `${ownerControl.restored.unbondingPeriodSeconds}s`,
+      },
+    },
     {
       id: 'fee-distribution',
       title: 'Distribute pending protocol fees',
@@ -1596,6 +1681,14 @@ async function ownerCommandCenterDrill(
   const originalMinRevealers = baseline.minRevealers;
   const originalNonRevealPenaltyBps = baseline.nonRevealPenaltyBps;
   const originalNonRevealBanBlocks = baseline.nonRevealBanBlocks;
+  const previousMinStakeRaw = baseline.minStakeRaw;
+  const previousMaxStakePerAddress = baseline.maxStakePerAddressRaw;
+  const previousUnbondingPeriod = BigInt(baseline.unbondingPeriodSeconds);
+  const previousStakeTreasury = baseline.stakeTreasury;
+  const previousStakeTreasuryAllowed = baseline.stakeTreasuryAllowed;
+  const previousStakePauserManager = baseline.stakePauserManager;
+  const previousFeePoolTreasury = baseline.feePoolTreasury;
+  const previousFeePoolTreasuryAllowed = baseline.feePoolTreasuryAllowed;
 
   const upgradedFeePct = previousFeePct + 4;
   const upgradedValidatorReward = previousValidatorReward + 5;
@@ -1606,6 +1699,12 @@ async function ownerCommandCenterDrill(
   const upgradedMinRevealers = Math.max(2, originalMinRevealers);
   const upgradedNonRevealPenaltyBps = Math.max(150, originalNonRevealPenaltyBps);
   const upgradedNonRevealBanBlocks = Math.max(12, originalNonRevealBanBlocks);
+  const upgradedMinStakeRaw = previousMinStakeRaw + ethers.parseUnits('5', AGIALPHA_DECIMALS);
+  const upgradedMaxStakePerAddress =
+    previousMaxStakePerAddress === 0n
+      ? ethers.parseUnits('1000', AGIALPHA_DECIMALS)
+      : previousMaxStakePerAddress + ethers.parseUnits('200', AGIALPHA_DECIMALS);
+  const upgradedUnbondingPeriod = previousUnbondingPeriod + 3600n;
 
   logStep('Owner calibrates market economics and validator incentives');
   await registry.connect(owner).setFeePct(upgradedFeePct);
@@ -1728,6 +1827,112 @@ async function ownerCommandCenterDrill(
     `   Non-reveal penalty now ${Number(await validation.nonRevealPenaltyBps())} bps with ${Number(
       await validation.nonRevealBanBlocks()
     )} block ban`
+  );
+
+  logStep('Owner reroutes treasuries and reinforces stake guardrails');
+  const stakeTreasuryCandidate = await env.nationA.getAddress();
+  const feePoolTreasuryCandidate = await env.nationB.getAddress();
+  await stake.connect(owner).setTreasuryAllowlist(stakeTreasuryCandidate, true);
+  assert.strictEqual(
+    await stake.treasuryAllowlist(stakeTreasuryCandidate),
+    true,
+    'Stake treasury candidate should become allowlisted'
+  );
+  recordOwnerAction('Stake treasury candidate allowlisted', `StakeManager@${stakeAddress}`, 'setTreasuryAllowlist', {
+    treasury: stakeTreasuryCandidate,
+    allowed: true,
+  });
+  await stake.connect(owner).setTreasury(stakeTreasuryCandidate);
+  assert.strictEqual(
+    await stake.treasury(),
+    stakeTreasuryCandidate,
+    'Stake treasury should reroute to the delegated nation'
+  );
+  recordOwnerAction('Stake treasury rerouted', `StakeManager@${stakeAddress}`, 'setTreasury', {
+    treasury: stakeTreasuryCandidate,
+  });
+  await stake.connect(owner).setMinStake(upgradedMinStakeRaw);
+  assert.strictEqual(
+    await stake.minStake(),
+    upgradedMinStakeRaw,
+    'Minimum stake should increase during drill'
+  );
+  recordOwnerAction('Minimum stake raised', `StakeManager@${stakeAddress}`, 'setMinStake', {
+    previous: formatTokens(previousMinStakeRaw),
+    minStake: formatTokens(upgradedMinStakeRaw),
+  });
+  await stake.connect(owner).setMaxStakePerAddress(upgradedMaxStakePerAddress);
+  assert.strictEqual(
+    await stake.maxStakePerAddress(),
+    upgradedMaxStakePerAddress,
+    'Maximum stake per address should reflect owner command'
+  );
+  recordOwnerAction('Maximum stake per address tuned', `StakeManager@${stakeAddress}`, 'setMaxStakePerAddress', {
+    previous:
+      previousMaxStakePerAddress === 0n ? 'Unlimited' : formatTokens(previousMaxStakePerAddress),
+    maxStake: upgradedMaxStakePerAddress === 0n ? 'Unlimited' : formatTokens(upgradedMaxStakePerAddress),
+  });
+  await stake.connect(owner).setUnbondingPeriod(upgradedUnbondingPeriod);
+  assert.strictEqual(
+    await stake.unbondingPeriod(),
+    upgradedUnbondingPeriod,
+    'Unbonding period should reflect owner configuration'
+  );
+  recordOwnerAction('Unbonding period extended', `StakeManager@${stakeAddress}`, 'setUnbondingPeriod', {
+    previous: formatSeconds(previousUnbondingPeriod),
+    unbondingPeriod: formatSeconds(upgradedUnbondingPeriod),
+  });
+  await stake.connect(owner).setPauserManager(moderatorAddress);
+  assert.strictEqual(
+    await stake.pauserManager(),
+    moderatorAddress,
+    'Moderator should become stake pauser manager'
+  );
+  recordOwnerAction('Stake pauser manager delegated', `StakeManager@${stakeAddress}`, 'setPauserManager', {
+    manager: moderatorAddress,
+  });
+
+  await feePool.connect(owner).setTreasuryAllowlist(feePoolTreasuryCandidate, true);
+  assert.strictEqual(
+    await feePool.treasuryAllowlist(feePoolTreasuryCandidate),
+    true,
+    'Fee pool treasury candidate should become allowlisted'
+  );
+  recordOwnerAction('Fee pool treasury allowlisted', `FeePool@${feePoolAddress}`, 'setTreasuryAllowlist', {
+    treasury: feePoolTreasuryCandidate,
+    allowed: true,
+  });
+  await feePool.connect(owner).setTreasury(feePoolTreasuryCandidate);
+  assert.strictEqual(
+    await feePool.treasury(),
+    feePoolTreasuryCandidate,
+    'Fee pool treasury should reroute during the drill'
+  );
+  recordOwnerAction('Fee pool treasury rerouted', `FeePool@${feePoolAddress}`, 'setTreasury', {
+    treasury: feePoolTreasuryCandidate,
+  });
+  console.log(
+    `   Stake guardrails reinforced: minStake ${formatTokens(previousMinStakeRaw)} → ${formatTokens(
+      upgradedMinStakeRaw
+    )}, unbonding ${formatSeconds(previousUnbondingPeriod)} → ${formatSeconds(upgradedUnbondingPeriod)}`
+  );
+  console.log(
+    `   Treasuries delegated → stake:${stakeTreasuryCandidate} feePool:${feePoolTreasuryCandidate}`
+  );
+  recordInsight(
+    'Owner',
+    'Owner rerouted treasuries and fortified staking safety rails',
+    'Treasury flows now route through allied nations while minimum stake, withdrawal delays, and pauser management prove the platform owner can harden capital instantly.',
+    {
+      stakeTreasury: stakeTreasuryCandidate,
+      feePoolTreasury: feePoolTreasuryCandidate,
+      minStake: formatTokens(upgradedMinStakeRaw),
+      maxStakePerAddress:
+        upgradedMaxStakePerAddress === 0n
+          ? 'Unlimited'
+          : formatTokens(upgradedMaxStakePerAddress),
+      unbondingPeriod: formatSeconds(upgradedUnbondingPeriod),
+    }
   );
 
   logStep('Owner delegates emergency pauser powers and performs a live drill');
@@ -1899,6 +2104,46 @@ async function ownerCommandCenterDrill(
     moderatorAddress,
     'Moderator should control validation during upgraded state'
   );
+  assert.strictEqual(
+    upgraded.minStakeRaw,
+    upgradedMinStakeRaw,
+    'Upgraded minimum stake should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.maxStakePerAddressRaw,
+    upgradedMaxStakePerAddress,
+    'Upgraded maximum stake per address should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.unbondingPeriodSeconds,
+    Number(upgradedUnbondingPeriod),
+    'Upgraded unbonding period should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.stakeTreasury,
+    stakeTreasuryCandidate,
+    'Upgraded stake treasury should be recorded'
+  );
+  assert.strictEqual(
+    upgraded.stakeTreasuryAllowed,
+    true,
+    'Stake treasury allowlist should reflect owner drill'
+  );
+  assert.strictEqual(
+    upgraded.stakePauserManager,
+    moderatorAddress,
+    'Stake pauser manager should be delegated to moderator during drill'
+  );
+  assert.strictEqual(
+    upgraded.feePoolTreasury,
+    feePoolTreasuryCandidate,
+    'Fee pool treasury should be rerouted during drill'
+  );
+  assert.strictEqual(
+    upgraded.feePoolTreasuryAllowed,
+    true,
+    'Fee pool treasury allowlist should be enabled during drill'
+  );
 
   logStep('Owner restores baseline configuration to prepare live scenarios');
   await registry.connect(owner).setFeePct(previousFeePct);
@@ -1934,6 +2179,45 @@ async function ownerCommandCenterDrill(
     bps: originalNonRevealPenaltyBps,
     banBlocks: originalNonRevealBanBlocks,
   });
+  await stake.connect(owner).setMinStake(previousMinStakeRaw);
+  recordOwnerAction('Minimum stake restored', `StakeManager@${stakeAddress}`, 'setMinStake', {
+    minStake: formatTokens(previousMinStakeRaw),
+  });
+  await stake.connect(owner).setMaxStakePerAddress(previousMaxStakePerAddress);
+  recordOwnerAction('Maximum stake per address restored', `StakeManager@${stakeAddress}`, 'setMaxStakePerAddress', {
+    maxStake:
+      previousMaxStakePerAddress === 0n ? 'Unlimited' : formatTokens(previousMaxStakePerAddress),
+  });
+  await stake.connect(owner).setUnbondingPeriod(previousUnbondingPeriod);
+  recordOwnerAction('Unbonding period restored', `StakeManager@${stakeAddress}`, 'setUnbondingPeriod', {
+    unbondingPeriod: formatSeconds(previousUnbondingPeriod),
+  });
+  await stake.connect(owner).setTreasury(previousStakeTreasury);
+  recordOwnerAction('Stake treasury restored', `StakeManager@${stakeAddress}`, 'setTreasury', {
+    treasury: previousStakeTreasury,
+  });
+  if (!previousStakeTreasuryAllowed) {
+    await stake.connect(owner).setTreasuryAllowlist(stakeTreasuryCandidate, false);
+    recordOwnerAction('Stake treasury candidate revoked', `StakeManager@${stakeAddress}`, 'setTreasuryAllowlist', {
+      treasury: stakeTreasuryCandidate,
+      allowed: false,
+    });
+  }
+  await stake.connect(owner).setPauserManager(previousStakePauserManager);
+  recordOwnerAction('Stake pauser manager restored', `StakeManager@${stakeAddress}`, 'setPauserManager', {
+    manager: previousStakePauserManager,
+  });
+  await feePool.connect(owner).setTreasury(previousFeePoolTreasury);
+  recordOwnerAction('Fee pool treasury restored', `FeePool@${feePoolAddress}`, 'setTreasury', {
+    treasury: previousFeePoolTreasury,
+  });
+  if (!previousFeePoolTreasuryAllowed) {
+    await feePool.connect(owner).setTreasuryAllowlist(feePoolTreasuryCandidate, false);
+    recordOwnerAction('Fee pool treasury candidate revoked', `FeePool@${feePoolAddress}`, 'setTreasuryAllowlist', {
+      treasury: feePoolTreasuryCandidate,
+      allowed: false,
+    });
+  }
   await registry.connect(owner).setPauser(ownerAddress);
   recordOwnerAction('Registry pauser returned to owner', `JobRegistry@${registryAddress}`, 'setPauser', {
     newPauser: ownerAddress,
@@ -1993,6 +2277,48 @@ async function ownerCommandCenterDrill(
   assert.strictEqual(restored.registryPauser, ownerAddress, 'Owner should reclaim registry pause power');
   assert.strictEqual(restored.stakePauser, ownerAddress, 'Owner should reclaim stake pause power');
   assert.strictEqual(restored.validationPauser, ownerAddress, 'Owner should reclaim validation pause power');
+  assert.strictEqual(restored.minStakeRaw, previousMinStakeRaw, 'Minimum stake should return to baseline');
+  assert.strictEqual(
+    restored.maxStakePerAddressRaw,
+    previousMaxStakePerAddress,
+    'Maximum stake per address should return to baseline'
+  );
+  assert.strictEqual(
+    restored.unbondingPeriodSeconds,
+    Number(previousUnbondingPeriod),
+    'Unbonding period should return to baseline'
+  );
+  assert.strictEqual(restored.stakeTreasury, previousStakeTreasury, 'Stake treasury should return to baseline');
+  assert.strictEqual(
+    restored.stakeTreasuryAllowed,
+    previousStakeTreasuryAllowed,
+    'Stake treasury allowlist status should match baseline'
+  );
+  assert.strictEqual(
+    restored.stakePauserManager,
+    previousStakePauserManager,
+    'Stake pauser manager should match baseline'
+  );
+  assert.strictEqual(restored.feePoolTreasury, previousFeePoolTreasury, 'Fee pool treasury should return to baseline');
+  assert.strictEqual(
+    restored.feePoolTreasuryAllowed,
+    previousFeePoolTreasuryAllowed,
+    'Fee pool treasury allowlist status should match baseline'
+  );
+  if (!previousStakeTreasuryAllowed) {
+    assert.strictEqual(
+      await stake.treasuryAllowlist(stakeTreasuryCandidate),
+      false,
+      'Stake treasury candidate should be revoked after restoration'
+    );
+  }
+  if (!previousFeePoolTreasuryAllowed) {
+    assert.strictEqual(
+      await feePool.treasuryAllowlist(feePoolTreasuryCandidate),
+      false,
+      'Fee pool treasury candidate should be revoked after restoration'
+    );
+  }
   recordTimeline('summary', 'Owner mission control baseline restored', {
     ...restored,
     commitWindow: restored.commitWindowFormatted,
@@ -2020,6 +2346,95 @@ async function ownerCommandCenterDrill(
     delegatedPauser: moderatorAddress,
   });
 
+  const controlMatrix: OwnerControlMatrixEntry[] = [
+    {
+      module: 'JobRegistry',
+      address: registryAddress,
+      delegatedTo: ownerAddress,
+      capabilities: [
+        'Tune protocol fee and validator reward split on demand',
+        `Delegate or reclaim registry pauser authority (current delegate: ${moderatorAddress})`,
+        'Finalize jobs, burn receipts, and steer dispute escalations',
+      ],
+      status: 'Owner holds sovereign registry control after drill',
+    },
+    {
+      module: 'StakeManager',
+      address: stakeAddress,
+      delegatedTo: ownerAddress,
+      capabilities: [
+        `Set minimum stake, withdrawal delays, and max stake per participant`,
+        'Route treasury flows and revoke allowlisted recipients instantly',
+        `Assign stake pauser and pauser manager (baseline manager: ${previousStakePauserManager})`,
+      ],
+      status: `Treasury routed through ${previousStakeTreasury} with owner overrides`,
+    },
+    {
+      module: 'ValidationModule',
+      address: validationAddress,
+      delegatedTo: ownerAddress,
+      capabilities: [
+        'Set commit/reveal cadence and quorum thresholds',
+        'Escalate non-reveal penalties and ban windows',
+        `Delegate validation pauser authority (current delegate: ${ownerAddress})`,
+      ],
+      status: 'Validation cadence restored after governance rehearsal',
+    },
+    {
+      module: 'FeePool',
+      address: feePoolAddress,
+      delegatedTo: ownerAddress,
+      capabilities: [
+        'Adjust burn percentage for protocol fees',
+        'Allowlist community treasuries and reroute dust rewards',
+        'Coordinate with StakeManager for validator compensation',
+      ],
+      status: `Treasury baseline ${previousFeePoolTreasury} with allowlist=${previousFeePoolTreasuryAllowed}`,
+    },
+    {
+      module: 'DisputeModule',
+      address: disputeAddress,
+      delegatedTo: ownerAddress,
+      capabilities: [
+        'Appoint or remove dispute moderators and councils',
+        'Set dispute fees and response windows',
+        'Execute resolution signatures for contentious jobs',
+      ],
+      status: `Owner + moderator (${moderatorAddress}) co-sign dispute verdicts`,
+    },
+    {
+      module: 'CertificateNFT',
+      address: certificateAddress,
+      delegatedTo: ownerAddress,
+      capabilities: [
+        'Configure credential metadata URIs',
+        'Mint proof-of-work credentials during job finalization',
+      ],
+      status: 'Credential issuance verified for both scenarios',
+    },
+    {
+      module: 'IdentityRegistry',
+      address: identityAddress,
+      delegatedTo: ownerAddress,
+      capabilities: [
+        'Allowlist agents and validators for emergency onboarding',
+        'Annotate agent types and sync ENS identities',
+        'Revoke or restore actors outside ENS flows',
+      ],
+      status: 'Emergency council identities seeded for the drill',
+    },
+    {
+      module: 'ReputationEngine',
+      address: reputationAddress,
+      delegatedTo: ownerAddress,
+      capabilities: [
+        'Reset or checkpoint reputation scores during crisis response',
+        'Verify validator performance after disputes',
+      ],
+      status: 'Reputation states captured in telemetry dashboard',
+    },
+  ];
+
   return {
     ownerAddress,
     moderatorAddress,
@@ -2041,6 +2456,7 @@ async function ownerCommandCenterDrill(
       moderator: moderatorPauseStatus,
     },
     drillCompletedAt,
+    controlMatrix,
   };
 }
 
@@ -2507,6 +2923,7 @@ async function main(): Promise<void> {
     const resolved = resolve(exportPath);
     mkdirSync(dirname(resolved), { recursive: true });
     const network = await ethers.provider.getNetwork();
+    const ownerControlExport = sanitizeValue(ownerControl) as OwnerControlSnapshot;
     const payload: DemoExportPayload = {
       generatedAt: nowIso(),
       network: `${network.name ?? 'hardhat'} (chainId ${network.chainId})`,
@@ -2522,7 +2939,7 @@ async function main(): Promise<void> {
           uri: entry.uri,
         })),
       },
-      ownerControl,
+      ownerControl: ownerControlExport,
       insights: insights.map((entry) => ({
         ...entry,
         meta: entry.meta,

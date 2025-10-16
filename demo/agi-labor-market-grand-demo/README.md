@@ -72,10 +72,11 @@ The script:
 
 1. Boots the entire v2 module suite and displays initial balances.
 2. Demonstrates **owner mission control** — live updates to protocol fees,
-   validator incentives, non-reveal penalties, and emergency pause delegation to
-   a trusted operator — proving that the platform owner can steer every
-   parameter in real time. Every configuration change is immediately asserted,
-   so the script halts if any module fails to reflect the owner’s command.
+   validator incentives, staking guardrails, treasury allowlists, non-reveal
+   penalties, and emergency pause delegation to a trusted operator — proving
+   that the platform owner can steer every parameter and capital flow in real
+   time. Every configuration change is immediately asserted, so the script halts
+   if any module fails to reflect the owner’s command.
 3. Walks through the happy-path job where all validators approve.
 4. Runs a contested job where governance resolves a dispute in favour of the
    agent.
@@ -167,6 +168,10 @@ environment variable before running the script.
      drill adjustments, and restored settings, including pauser delegation and
      emergency pause outcomes so non-technical owners can verify authority at a
      glance.
+   - A **sovereign control matrix** summarising which module is delegated to
+     which operator, the live capability set (treasury routing, pauser control,
+     staking guardrails), and the status proven by the latest drill so owners can
+     audit capital and safety levers instantly.
    - An **autonomous mission control** board with resilience and unstoppable
      scores, recommended owner/agent/validator directives, and a one-command
      launch checklist so executives know exactly which scripts to run next.
