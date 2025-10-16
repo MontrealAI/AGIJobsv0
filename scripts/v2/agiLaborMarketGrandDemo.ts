@@ -63,6 +63,30 @@ interface ScenarioExport {
   timelineIndices: number[];
 }
 
+interface PortfolioCertificate {
+  jobId: string;
+  uri?: string;
+}
+
+interface AgentPortfolioEntry {
+  name: string;
+  address: string;
+  liquid: string;
+  staked: string;
+  locked: string;
+  reputation: string;
+  certificates: PortfolioCertificate[];
+}
+
+interface ValidatorPortfolioEntry {
+  name: string;
+  address: string;
+  liquid: string;
+  staked: string;
+  locked: string;
+  reputation: string;
+}
+
 interface MarketSummary {
   totalJobs: string;
   totalBurned: string;
@@ -73,6 +97,8 @@ interface MarketSummary {
   totalAgentStake: string;
   totalValidatorStake: string;
   mintedCertificates: MintedCertificate[];
+  agentPortfolios: AgentPortfolioEntry[];
+  validatorCouncil: ValidatorPortfolioEntry[];
 }
 
 interface PauseStatus {
@@ -433,9 +459,9 @@ async function gatherCertificates(
 async function logAgentPortfolios(
   env: DemoEnvironment,
   minted: MintedCertificate[]
-): Promise<void> {
+): Promise<AgentPortfolioEntry[]> {
   console.log('\n🤖 Agent portfolios');
-  const entries: Array<Record<string, unknown>> = [];
+  const entries: AgentPortfolioEntry[] = [];
   const agents: Array<{ name: string; signer: ethers.Signer }> = [
     { name: 'Alice (agent)', signer: env.agentAlice },
     { name: 'Bob (agent)', signer: env.agentBob },
@@ -481,11 +507,14 @@ async function logAgentPortfolios(
     });
   }
   recordTimeline('summary', 'Agent portfolios', { agents: entries });
+  return entries;
 }
 
-async function logValidatorCouncil(env: DemoEnvironment): Promise<void> {
+async function logValidatorCouncil(
+  env: DemoEnvironment
+): Promise<ValidatorPortfolioEntry[]> {
   console.log('\n🛡️ Validator council status');
-  const validatorsSummary: Array<Record<string, unknown>> = [];
+  const validatorsSummary: ValidatorPortfolioEntry[] = [];
   const validators: Array<{ name: string; signer: ethers.Signer }> = [
     { name: 'Charlie (validator)', signer: env.validatorCharlie },
     { name: 'Dora (validator)', signer: env.validatorDora },
@@ -517,6 +546,7 @@ async function logValidatorCouncil(env: DemoEnvironment): Promise<void> {
   recordTimeline('summary', 'Validator council status', {
     validators: validatorsSummary,
   });
+  return validatorsSummary;
 }
 
 async function summarizeMarketState(
@@ -547,8 +577,8 @@ async function summarizeMarketState(
   console.log(`   Agents: ${formatTokens(totalAgentStake)}`);
   console.log(`   Validators: ${formatTokens(totalValidatorStake)}`);
 
-  await logAgentPortfolios(env, minted);
-  await logValidatorCouncil(env);
+  const agentPortfolios = await logAgentPortfolios(env, minted);
+  const validatorCouncil = await logValidatorCouncil(env);
 
   if (minted.length === 0) {
     console.log('\n🎓 Certificates minted: none yet');
@@ -570,6 +600,8 @@ async function summarizeMarketState(
     totalAgentStake: formatTokens(totalAgentStake),
     totalValidatorStake: formatTokens(totalValidatorStake),
     mintedCertificates: minted,
+    agentPortfolios,
+    validatorCouncil,
   };
 
   recordTimeline('summary', 'Market telemetry dashboard', {
@@ -579,6 +611,8 @@ async function summarizeMarketState(
       owner: entry.owner,
       uri: entry.uri,
     })),
+    agentPortfolios: summary.agentPortfolios,
+    validatorCouncil: summary.validatorCouncil,
   });
   return summary;
 }
