@@ -87,6 +87,9 @@ jobs:
           if (!Array.isArray(data.participants) || data.participants.length === 0) {
             throw new Error('participants missing');
           }
+          if (!Array.isArray(data.timeline) || data.timeline.length === 0) {
+            throw new Error('timeline missing');
+          }
           if (!data.launch || !data.launch.finalized) {
             throw new Error('launch did not finalize');
           }
@@ -108,6 +111,7 @@ jobs:
           const requiredSnippets = [
             'MARK Launch Telemetry',
             'Mission Control Metrics',
+            'Mission Timeline',
             'class="mermaid"',
             'Owner Control Deck',
           ];
@@ -148,6 +152,27 @@ jobs:
           console.log('Integrity dossier validated.');
           NODE
 
+      - name: Render mission timeline
+        run: npm run timeline:alpha-agi-mark
+
+      - name: Validate mission timeline
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'demo/alpha-agi-mark/reports/alpha-mark-timeline.md';
+          if (!fs.existsSync(path)) {
+            throw new Error('mission timeline dossier missing');
+          }
+          const content = fs.readFileSync(path, 'utf8');
+          const required = ['# α-AGI MARK Mission Timeline', '```mermaid', '| # | Phase | Event | Details | Actor |'];
+          for (const needle of required) {
+            if (!content.includes(needle)) {
+              throw new Error(`timeline dossier missing section: ${needle}`);
+            }
+          }
+          console.log('Mission timeline dossier validated.');
+          NODE
+
       - name: Upload α-AGI MARK recap
         uses: actions/upload-artifact@v4
         with:
@@ -159,3 +184,9 @@ jobs:
         with:
           name: alpha-agi-mark-integrity
           path: demo/alpha-agi-mark/reports/alpha-mark-integrity.md
+
+      - name: Upload α-AGI MARK mission timeline
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-agi-mark-timeline
+          path: demo/alpha-agi-mark/reports/alpha-mark-timeline.md

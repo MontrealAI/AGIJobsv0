@@ -83,13 +83,22 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    the verification table, owner command deck snapshot, and a mermaid contribution pie chart. Circulate
    it alongside the dashboard for executive approval.
 
-7. **(Optional) Run unit tests**
+7. **Publish the cinematic mission timeline**
+
+   ```bash
+   npm run timeline:alpha-agi-mark
+   ```
+
+   Creates `demo/alpha-agi-mark/reports/alpha-mark-timeline.md`, blending a Mermaid timeline with a
+   tabular ledger of every orchestrated action. Ideal for board briefings or audit evidence packs.
+
+8. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
    ```
 
-8. **(Optional) Dry-run on a fork or external network**
+9. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 
