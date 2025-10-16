@@ -92,6 +92,22 @@ Regenerate the dashboard at any time from the latest recap JSON:
 npm run dashboard:alpha-agi-mark
 ```
 
+## Triple-Verification Matrix
+
+α-AGI MARK now triangulates its state through three independent vantage points—on-chain contract reads, a deterministic
+trade ledger, and a first-principles bonding-curve simulator. Every run prints a "Triple-Verification Matrix" confirming that
+all three perspectives agree on supply, pricing, capital flows, and participant contributions. The recap dossier exposes the
+results under a new `verification` section and the dashboard renders the matrix as a dedicated integrity panel.
+
+```mermaid
+flowchart LR
+    OnChain[(On-chain Introspection)] --> Verifier{{Triangulation Engine}}
+    Ledger[(Deterministic Trade Ledger)] --> Verifier
+    Simulation[(Bonding Curve Simulation)] --> Verifier
+    Verifier --> Dashboard[[Sovereign Dashboard]]
+    Verifier --> Recap[(alpha-mark-recap.json)]
+```
+
 ## Owner Controls
 
 The demo enumerates all tunable controls in the final recap:

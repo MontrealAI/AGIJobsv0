@@ -92,6 +92,23 @@
         padding: 1.2rem 1.3rem;
         border: 1px solid rgba(96, 255, 207, 0.12);
       }
+      .verification-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+      }
+      .verification-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 1.4rem;
+        border: 1px solid rgba(96, 255, 207, 0.16);
+      }
+      .verification-card header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.9rem;
+      }
       .control-card header {
         display: flex;
         align-items: center;
@@ -126,6 +143,11 @@
         color: var(--success);
         background: rgba(46, 204, 113, 0.16);
         border-color: rgba(46, 204, 113, 0.6);
+      }
+      .badge.danger {
+        color: var(--danger);
+        background: rgba(255, 107, 107, 0.18);
+        border-color: rgba(255, 107, 107, 0.6);
       }
       table {
         width: 100%;
@@ -220,6 +242,78 @@
           </article>
         </div>
       </section>
+
+      
+    <section>
+      <h2>Triple-Verification Matrix</h2>
+      <p>
+        Independent ledgers, on-chain state introspection, and first-principles math cross-check the sovereign launch
+        in real time.
+      </p>
+      <div class="verification-grid">
+        
+        <article class="verification-card">
+          <header>
+            <h3>Supply Consensus</h3>
+            <span class="badge success">CONSISTENT</span>
+          </header>
+          
+      <p class="mono">
+        Ledger 11 ·
+        Contract 11 ·
+        Simulation 11 ·
+        Participants 11
+      </p>
+    
+        </article>
+      
+
+        <article class="verification-card">
+          <header>
+            <h3>Pricing Integrity</h3>
+            <span class="badge success">CONSISTENT</span>
+          </header>
+          
+      <p>
+        On-chain quote: <span class="mono">0.65</span><br />
+        Simulated quote: <span class="mono">0.65</span>
+      </p>
+    
+        </article>
+      
+
+        <article class="verification-card">
+          <header>
+            <h3>Capital Flow Integrity</h3>
+            <span class="badge success">CONSISTENT</span>
+          </header>
+          
+      <p>
+        Gross inflow: <span class="mono">4.5</span><br />
+        Redemptions: <span class="mono">0.65</span><br />
+        Net reserve: <span class="mono">3.85</span><br />
+        Vault received: <span class="mono">3.85</span>
+      </p>
+    
+        </article>
+      
+
+        <article class="verification-card">
+          <header>
+            <h3>Contribution Accounting</h3>
+            <span class="badge success">CONSISTENT</span>
+          </header>
+          
+      <p>
+        On-chain aggregate: <span class="mono">4.5</span><br />
+        Ledger aggregate: <span class="mono">4.5</span>
+      </p>
+    
+        </article>
+      
+      </div>
+    </section>
+  
 
       <section>
         <h2>Owner Control Deck</h2>

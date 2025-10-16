@@ -190,5 +190,45 @@
       },
       "description": "Bonding curve slope component"
     }
-  ]
+  ],
+  "verification": {
+    "supplyConsensus": {
+      "ledgerWholeTokens": "11",
+      "contractWholeTokens": "11",
+      "simulationWholeTokens": "11",
+      "participantAggregateWholeTokens": "11",
+      "consistent": true
+    },
+    "pricing": {
+      "contractNextPriceWei": "650000000000000000",
+      "contractNextPriceEth": "0.65",
+      "simulatedNextPriceWei": "650000000000000000",
+      "simulatedNextPriceEth": "0.65",
+      "consistent": true
+    },
+    "capitalFlows": {
+      "ledgerGrossWei": "4500000000000000000",
+      "ledgerGrossEth": "4.5",
+      "ledgerRedemptionsWei": "650000000000000000",
+      "ledgerRedemptionsEth": "0.65",
+      "ledgerNetWei": "3850000000000000000",
+      "ledgerNetEth": "3.85",
+      "simulatedReserveWei": "3850000000000000000",
+      "simulatedReserveEth": "3.85",
+      "contractReserveWei": "0",
+      "contractReserveEth": "0.0",
+      "vaultReceivedWei": "3850000000000000000",
+      "vaultReceivedEth": "3.85",
+      "combinedReserveWei": "3850000000000000000",
+      "combinedReserveEth": "3.85",
+      "consistent": true
+    },
+    "contributions": {
+      "participantAggregateWei": "4500000000000000000",
+      "participantAggregateEth": "4.5",
+      "ledgerGrossWei": "4500000000000000000",
+      "ledgerGrossEth": "4.5",
+      "consistent": true
+    }
+  }
 }

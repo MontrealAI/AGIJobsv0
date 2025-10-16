@@ -25,6 +25,8 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - proves the sovereign vault pause/unpause circuit breaker
    - finalizes the launch with ignition metadata and prints a comprehensive recap
    - emits an owner parameter matrix table in the console and inside the recap dossier
+   - runs the triple-verification matrix to confirm supply, pricing, capital flows, and participant ledgers agree across all
+     independent checks
 
 2. **Inspect recap artifacts**
 
@@ -40,6 +42,8 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - `ownerParameterMatrix` providing a full owner control matrix with descriptions
    - cross-reference visuals from the [`Operator Empowerment Atlas`](../docs/operator-empowerment-atlas.md) and
      [`Operator Command Console`](../docs/operator-command-console.md) for stakeholder briefings
+   - `verification` snapshot documenting the triple-check consensus across supply, pricing, capital flows, and contribution
+     tallies
 
 3. **Render the owner control matrix at any time**
 
