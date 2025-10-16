@@ -4,8 +4,16 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 PROJECT_DIR="$ROOT_DIR/demo/alpha-agi-mark"
 
-export HARDHAT_NETWORK="hardhat"
+NETWORK_NAME="${ALPHA_MARK_NETWORK:-hardhat}"
+
+export HARDHAT_NETWORK="$NETWORK_NAME"
+
+CMD=(npx hardhat run --config "$PROJECT_DIR/hardhat.config.ts")
+if [[ "$NETWORK_NAME" != "hardhat" ]]; then
+  CMD+=(--network "$NETWORK_NAME")
+fi
+CMD+=("$PROJECT_DIR/scripts/runDemo.ts")
 
 pushd "$ROOT_DIR" >/dev/null
-npx hardhat run --config "$PROJECT_DIR/hardhat.config.ts" "$PROJECT_DIR/scripts/runDemo.ts"
+"${CMD[@]}"
 popd >/dev/null
