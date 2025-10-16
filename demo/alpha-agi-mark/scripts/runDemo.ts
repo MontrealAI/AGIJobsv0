@@ -11,6 +11,7 @@ type Address = string;
 interface ParticipantSnapshot {
   address: Address;
   tokens: string;
+  tokensWei: string;
   contributionWei: string;
   contributionEth?: string;
 }
@@ -402,6 +403,7 @@ async function main() {
     participants.push({
       address,
       tokens: ethers.formatEther(balance),
+      tokensWei: balance.toString(),
       contributionWei: contribution.toString(),
       contributionEth: ethers.formatEther(contribution),
     });
@@ -654,6 +656,14 @@ async function main() {
 
   const enrichedRecap = {
     ...recap,
+    trades: tradeLedger.map((entry) => ({
+      kind: entry.kind,
+      actor: entry.actor,
+      label: entry.label,
+      tokensWhole: entry.tokensWhole.toString(),
+      valueWei: entry.valueWei.toString(),
+      valueEth: ethers.formatEther(entry.valueWei),
+    })),
     ownerParameterMatrix,
     verification,
   };

@@ -76,6 +76,17 @@ To run the Hardhat unit tests for the demo:
 npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
 ```
 
+### Offline verification
+
+After the demo run completes you can re-validate every figure using an independent triangulation script:
+
+```bash
+npm run verify:alpha-agi-mark
+```
+
+The verifier consumes the recap dossier, replays the trade ledger, recomputes bonding-curve pricing from first
+principles, and prints a "confidence index" table that must reach 100% before sign-off.
+
 ## Sovereign Dashboard
 
 Every demo run now emits a cinematic HTML dossier at `demo/alpha-agi-mark/reports/alpha-mark-dashboard.html`. Open the file in
@@ -84,6 +95,7 @@ any browser to explore:
 - Mission control metrics capturing validator consensus, reserve power, and sovereign vault status
 - A control-deck grid showing every owner actuator with live status badges
 - Full participant ledger plus the operator parameter matrix rendered as responsive tables
+- A trade resonance log charting every buy/sell action and its capital impact
 - An auto-generated Mermaid diagram visualising the launch topology and emergency fail-safes
 
 Regenerate the dashboard at any time from the latest recap JSON:

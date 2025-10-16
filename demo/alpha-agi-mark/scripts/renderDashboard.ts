@@ -6,8 +6,18 @@ const DASHBOARD_PATH = path.join(__dirname, "..", "reports", "alpha-mark-dashboa
 type RecapParticipant = {
   address: string;
   tokens: string;
+  tokensWei: string;
   contributionWei: string;
   contributionEth?: string;
+};
+
+type RecapTrade = {
+  kind: "BUY" | "SELL";
+  actor: string;
+  label: string;
+  tokensWhole: string;
+  valueWei: string;
+  valueEth?: string;
 };
 
 type VerificationSnapshot = {
@@ -101,6 +111,7 @@ type RecapData = {
     slopeEth?: string;
   };
   participants: RecapParticipant[];
+  trades?: RecapTrade[];
   launch: {
     finalized: boolean;
     aborted: boolean;
@@ -143,6 +154,11 @@ function renderBooleanBadge(value: boolean): string {
 
 function renderConsistencyBadge(ok: boolean): string {
   return `<span class="badge ${ok ? "success" : "danger"}">${ok ? "CONSISTENT" : "REVIEW"}</span>`;
+}
+
+function renderTradeBadge(kind: "BUY" | "SELL"): string {
+  const cssClass = kind === "BUY" ? "buy" : "sell";
+  return `<span class="badge ${cssClass}">${kind}</span>`;
 }
 
 function formatNumber(value: string | undefined, fallback = "-"): string {
@@ -220,6 +236,43 @@ function buildParticipantsTable(participants: RecapParticipant[]): string {
           <th>Participant</th>
           <th>SeedShares</th>
           <th>Contribution</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+  `;
+}
+
+function buildTradesTable(trades: RecapTrade[]): string {
+  if (!trades.length) {
+    return "<p>No trades recorded.</p>";
+  }
+
+  const rows = trades
+    .map(
+      (trade, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${renderTradeBadge(trade.kind)}</td>
+          <td>${escapeHtml(trade.label)}<br /><span class="mono">${escapeHtml(shortenAddress(trade.actor))}</span></td>
+          <td>${escapeHtml(trade.tokensWhole)}</td>
+          <td>${escapeHtml(trade.valueEth ?? trade.valueWei)}</td>
+        </tr>
+      `,
+    )
+    .join("\n");
+
+  return `
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Kind</th>
+          <th>Actor</th>
+          <th>Tokens</th>
+          <th>Value (ETH)</th>
         </tr>
       </thead>
       <tbody>
@@ -559,6 +612,16 @@ function buildDashboardHtml(recap: RecapData): string {
         background: rgba(255, 107, 107, 0.18);
         border-color: rgba(255, 107, 107, 0.6);
       }
+      .badge.buy {
+        color: #5ac8fa;
+        background: rgba(90, 200, 250, 0.18);
+        border-color: rgba(90, 200, 250, 0.6);
+      }
+      .badge.sell {
+        color: #ffaf5f;
+        background: rgba(255, 175, 95, 0.18);
+        border-color: rgba(255, 175, 95, 0.6);
+      }
       table {
         width: 100%;
         border-collapse: collapse;
@@ -663,6 +726,16 @@ function buildDashboardHtml(recap: RecapData): string {
           ${buildControlHighlights(recap)}
         </div>
       </section>
+
+      ${recap.trades && recap.trades.length
+        ? `
+      <section>
+        <h2>Trade Resonance Log</h2>
+        <p>Every bonding curve action captured chronologically to prove deterministic capital flows.</p>
+        ${buildTradesTable(recap.trades)}
+      </section>
+      `
+        : ""}
 
       <section>
         <h2>Participant Ledger</h2>

@@ -149,6 +149,16 @@
         background: rgba(255, 107, 107, 0.18);
         border-color: rgba(255, 107, 107, 0.6);
       }
+      .badge.buy {
+        color: #5ac8fa;
+        background: rgba(90, 200, 250, 0.18);
+        border-color: rgba(90, 200, 250, 0.6);
+      }
+      .badge.sell {
+        color: #ffaf5f;
+        background: rgba(255, 175, 95, 0.18);
+        border-color: rgba(255, 175, 95, 0.6);
+      }
       table {
         width: 100%;
         border-collapse: collapse;
@@ -356,6 +366,64 @@
       
         </div>
       </section>
+
+      
+      <section>
+        <h2>Trade Resonance Log</h2>
+        <p>Every bonding curve action captured chronologically to prove deterministic capital flows.</p>
+        
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Kind</th>
+          <th>Actor</th>
+          <th>Tokens</th>
+          <th>Value (ETH)</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>1</td>
+          <td><span class="badge buy">BUY</span></td>
+          <td>Investor A<br /><span class="mono">0x7099…79C8</span></td>
+          <td>5</td>
+          <td>1.0</td>
+        </tr>
+      
+
+        <tr>
+          <td>2</td>
+          <td><span class="badge buy">BUY</span></td>
+          <td>Investor B<br /><span class="mono">0x3C44…93BC</span></td>
+          <td>3</td>
+          <td>1.2</td>
+        </tr>
+      
+
+        <tr>
+          <td>3</td>
+          <td><span class="badge buy">BUY</span></td>
+          <td>Investor C<br /><span class="mono">0x90F7…b906</span></td>
+          <td>4</td>
+          <td>2.3</td>
+        </tr>
+      
+
+        <tr>
+          <td>4</td>
+          <td><span class="badge sell">SELL</span></td>
+          <td>Investor B<br /><span class="mono">0x3C44…93BC</span></td>
+          <td>1</td>
+          <td>0.65</td>
+        </tr>
+      
+      </tbody>
+    </table>
+  
+      </section>
+      
 
       <section>
         <h2>Participant Ledger</h2>

@@ -68,18 +68,21 @@
     {
       "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
       "tokens": "5.0",
+      "tokensWei": "5000000000000000000",
       "contributionWei": "1000000000000000000",
       "contributionEth": "1.0"
     },
     {
       "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
       "tokens": "2.0",
+      "tokensWei": "2000000000000000000",
       "contributionWei": "1200000000000000000",
       "contributionEth": "1.2"
     },
     {
       "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
       "tokens": "4.0",
+      "tokensWei": "4000000000000000000",
       "contributionWei": "2300000000000000000",
       "contributionEth": "2.3"
     }
@@ -100,6 +103,40 @@
       "vaultBalanceEth": "3.85"
     }
   },
+  "trades": [
+    {
+      "kind": "BUY",
+      "actor": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "label": "Investor A",
+      "tokensWhole": "5",
+      "valueWei": "1000000000000000000",
+      "valueEth": "1.0"
+    },
+    {
+      "kind": "BUY",
+      "actor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "label": "Investor B",
+      "tokensWhole": "3",
+      "valueWei": "1200000000000000000",
+      "valueEth": "1.2"
+    },
+    {
+      "kind": "BUY",
+      "actor": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "label": "Investor C",
+      "tokensWhole": "4",
+      "valueWei": "2300000000000000000",
+      "valueEth": "2.3"
+    },
+    {
+      "kind": "SELL",
+      "actor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "label": "Investor B",
+      "tokensWhole": "1",
+      "valueWei": "650000000000000000",
+      "valueEth": "0.65"
+    }
+  ],
   "ownerParameterMatrix": [
     {
       "parameter": "pauseMarket",
