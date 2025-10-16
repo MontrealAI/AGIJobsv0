@@ -5,6 +5,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 
 const UI_ROOT = resolve(__dirname, '../../demo/agi-labor-market-grand-demo/ui');
 const EXPORT_DEFAULT = resolve(UI_ROOT, 'export/latest.json');
@@ -21,9 +22,15 @@ const MIME_TYPES: Record<string, string> = {
 
 let isRunningSimulation = false;
 let server: Server | undefined;
+let hardhatProcess: ChildProcess | undefined;
+let hardhatExitPromise: Promise<void> | undefined;
 
 function spawnHardhat(): Promise<void> {
-  return new Promise((resolvePromise, rejectPromise) => {
+  if (hardhatProcess) {
+    throw new Error('A Hardhat demo process is already running.');
+  }
+
+  const exitPromise = new Promise<void>((resolvePromise, rejectPromise) => {
     const args = [
       'hardhat',
       'run',
@@ -42,7 +49,11 @@ function spawnHardhat(): Promise<void> {
       },
     });
 
+    hardhatProcess = child;
+
     child.on('close', (code, signal) => {
+      hardhatProcess = undefined;
+      hardhatExitPromise = undefined;
       if (signal) {
         rejectPromise(new Error(`Hardhat demo terminated via signal ${signal}`));
         return;
@@ -55,9 +66,14 @@ function spawnHardhat(): Promise<void> {
     });
 
     child.on('error', (error) => {
+      hardhatProcess = undefined;
+      hardhatExitPromise = undefined;
       rejectPromise(error);
     });
   });
+
+  hardhatExitPromise = exitPromise;
+  return exitPromise;
 }
 
 async function ensureExportExists(): Promise<void> {
@@ -169,11 +185,31 @@ function attachCommandInterface(): void {
 }
 
 async function shutdown(): Promise<void> {
+  await stopHardhat();
+
   if (!server) return;
   await new Promise<void>((resolvePromise) => {
     server?.close(() => resolvePromise());
   });
   server = undefined;
+}
+
+async function stopHardhat(): Promise<void> {
+  const child = hardhatProcess;
+  if (child && !child.killed) {
+    child.kill('SIGINT');
+  }
+
+  const exitPromise = hardhatExitPromise;
+  if (!exitPromise) {
+    return;
+  }
+
+  try {
+    await exitPromise;
+  } catch (error) {
+    console.warn('Hardhat demo exited with an error during shutdown:', error);
+  }
 }
 
 process.on('SIGINT', async () => {
