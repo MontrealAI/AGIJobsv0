@@ -74,17 +74,35 @@ The script:
 2. Demonstrates **owner mission control** — live updates to protocol fees,
    validator incentives, non-reveal penalties, and emergency pause delegation to
    a trusted operator — proving that the platform owner can steer every
-   parameter in real time.
+   parameter in real time. Every configuration change is immediately asserted,
+   so the script halts if any module fails to reflect the owner’s command.
 3. Walks through the happy-path job where all validators approve.
 4. Runs a contested job where governance resolves a dispute in favour of the
    agent.
-5. Prints a full telemetry dashboard – validator/agent stakes, fee pool state,
+5. Verifies that each agent receives exactly one credential NFT, that burn
+   accounting reconciles against total supply, and that the dispute flow mints
+   credentials even when moderation is required.
+6. Prints a full telemetry dashboard – validator/agent stakes, fee pool state,
    burn totals, reputation scores, and certificate ownership – so a
    non-technical operator sees the market outcome at a glance.
 
 The output is intentionally narrative, providing contextual breadcrumbs (job
 state transitions, committee selections, dispute escalations) so a non-technical
 operator can follow the on-chain flow without reading contract code.
+
+### Continuous verification for non-technical operators
+
+The repository ships a dedicated GitHub Actions workflow,
+[`demo-agi-labor-market.yml`](../../.github/workflows/demo-agi-labor-market.yml),
+that replays the export on every pull request touching this demo. The job
+produces an artefact containing `export/latest.json` and fails if:
+
+- the Hardhat script does not emit a transcript,
+- owner actions, scenarios, or timeline events are missing, or
+- the sovereign control snapshot omits baseline parameters.
+
+This guarantees that the showcased workflow remains fully functional and
+accessible without requiring local manual testing.
 
 ### One-command sovereign control room (non-technical friendly)
 
