@@ -194,6 +194,37 @@ function renderMarketSummaryCard(market) {
     'Market telemetry',
     'Production-grade metrics captured from the Hardhat simulation run.'
   );
+function renderSummary(container, market, meta = {}) {
+  const metaBar = document.createElement('div');
+  metaBar.className = 'summary-meta';
+  if (meta.generatedAt) {
+    const generated = document.createElement('div');
+    generated.className = 'summary-meta__item';
+    generated.textContent = `Transcript generated ${formatTime(meta.generatedAt)}`;
+    metaBar.appendChild(generated);
+  }
+  if (meta.network) {
+    const network = document.createElement('div');
+    network.className = 'summary-meta__item';
+    network.textContent = meta.network;
+    metaBar.appendChild(network);
+  }
+  if (typeof meta.ownerActions === 'number') {
+    const ownerActionCount = document.createElement('div');
+    ownerActionCount.className = 'summary-meta__item';
+    ownerActionCount.textContent = `${meta.ownerActions} owner command(s)`;
+    metaBar.appendChild(ownerActionCount);
+  }
+  if (typeof meta.timelineEntries === 'number') {
+    const timelineCount = document.createElement('div');
+    timelineCount.className = 'summary-meta__item';
+    timelineCount.textContent = `${meta.timelineEntries} recorded events`;
+    metaBar.appendChild(timelineCount);
+  }
+  if (metaBar.childElementCount > 0) {
+    container.appendChild(metaBar);
+  }
+
   const statGrid = document.createElement('div');
   statGrid.className = 'stat-grid';
   const stats = [
@@ -744,6 +775,41 @@ function renderApp(data) {
   app.appendChild(renderOwnerControlCard(data.ownerControl));
   app.appendChild(renderScenarioDeckCard(data.scenarios));
   const timelineCard = renderTimelineSection(data);
+  const summaryCard = createCard(
+    'Sovereign market pulse',
+    'Live protocol economics exported from the sovereign labour market simulator.'
+  );
+  renderSummary(summaryCard, data.market, {
+    generatedAt: data.generatedAt,
+    network: data.network,
+    ownerActions: data.ownerActions.length,
+    timelineEntries: data.timeline.length,
+  });
+  app.appendChild(summaryCard);
+
+  const actorsCard = createCard('Participants and wallets');
+  renderActors(actorsCard, data.actors);
+  app.appendChild(actorsCard);
+
+  const ownerCard = createCard('Owner command log', 'Every configuration call executed during the run.');
+  renderOwnerActions(ownerCard, data.ownerActions);
+  app.appendChild(ownerCard);
+
+  const controlCard = createCard(
+    'Owner sovereign control snapshot',
+    'Baseline safeguards, live adjustments, and delegated emergency drills captured from the run.'
+  );
+  renderOwnerControlSnapshot(controlCard, data.ownerControl);
+  app.appendChild(controlCard);
+
+  const scenariosCard = createCard('Scenario narratives', 'Select a view to focus the timeline on a specific lifecycle.');
+  renderScenarios(scenariosCard, data.scenarios, data);
+  app.appendChild(scenariosCard);
+
+  const timelineCard = createCard('Event timeline');
+  const timelineContainer = document.createElement('div');
+  timelineContainer.id = 'timeline';
+  timelineCard.appendChild(timelineContainer);
   app.appendChild(timelineCard);
   renderTimeline(document.getElementById('timeline'), data.timeline);
 }

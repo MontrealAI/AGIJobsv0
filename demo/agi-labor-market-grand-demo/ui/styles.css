@@ -123,6 +123,21 @@ main {
   padding-left: 1.25rem;
   color: var(--muted);
   line-height: 1.6;
+.summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.summary-meta__item {
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(148, 163, 184, 0.12);
+  font-family: 'SFMono-Regular', 'Roboto Mono', ui-monospace, monospace;
 }
 
 .stat-grid {
