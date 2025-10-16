@@ -1,0 +1,13 @@
+{
+  "temperature": 0.84,
+  "roleWeights": {
+    "agent": 0.65,
+    "validator": 0.15,
+    "operator": 0.15,
+    "employer": 0.05
+  },
+  "caps": {
+    "epochBudget": "200000000000000000000"
+  },
+  "apply": false
+}

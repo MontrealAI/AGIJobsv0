@@ -1,0 +1,27 @@
+{
+  "name": "AGI Risk Market — GDP > 3%",
+  "version": "v2",
+  "question": "Will Country X report real GDP growth above 3% for FY2026?",
+  "deadline": "2026-12-31T23:59:59Z",
+  "domains": ["macro", "policy", "foresight"],
+  "languages": ["en"],
+  "acceptanceCriteriaURI": "ipfs://placeholder-acceptance-criteria",
+  "oracleBriefURI": "ipfs://placeholder-risk-brief",
+  "validation": {
+    "k": 3,
+    "n": 5,
+    "commitWindowSec": 3600,
+    "revealWindowSec": 3600
+  },
+  "challengeWindowSec": 7200,
+  "escrow": {
+    "token": "AGIALPHA",
+    "amountPerItem": "100"
+  },
+  "stake": {
+    "worker": "50",
+    "validator": "100"
+  },
+  "resultSchema": "ipfs://placeholder-result-schema",
+  "notes": "Bonding curve quotes and risk-pricing heuristics live in the acceptance criteria. Validators enforce adherence during commit→reveal."
+}

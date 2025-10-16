@@ -123,6 +123,8 @@
     "demo:zenith-sapience-omnidominion:local": "bash demo/zenith-sapience-initiative-omnidominion-governance/bin/zenith-omnidominion-local.sh",
     "demo:zenith-sapience-celestial-archon": "bash demo/zenith-sapience-initiative-celestial-archon-governance/bin/zenith-celestial-archon.sh",
     "demo:zenith-sapience-celestial-archon:local": "bash demo/zenith-sapience-initiative-celestial-archon-governance/bin/zenith-celestial-archon-local.sh",
+    "demo:agimark:local": "pkill -f anvil || true; anvil --silent --block-time 1 >/tmp/agimark-anvil.log 2>&1 & sleep 3 && DEPLOY_DEFAULTS_OUTPUT=reports/localhost/agimark/deploy.json npx hardhat run scripts/v2/deployDefaults.ts --network localhost && ts-node --transpile-only demo/alpha-agi-mark/cli/mark.demo.ts --network localhost",
+    "demo:agimark:sepolia": "ts-node --transpile-only demo/alpha-agi-mark/cli/mark.demo.ts --network sepolia",
     "subgraph:e2e": "node scripts/subgraph-e2e.js",
     "migrate:mainnet": "TRUFFLE_NETWORK=mainnet npm run compile:mainnet && npx truffle migrate --network mainnet --reset && TRUFFLE_NETWORK=mainnet npm run wire:verify",
     "migrate:sepolia": "DEPLOY_LOCAL_ERC20=1 TRUFFLE_NETWORK=sepolia npm run compile:sepolia && npx truffle migrate --network sepolia --reset && TRUFFLE_NETWORK=sepolia npm run wire:verify",
