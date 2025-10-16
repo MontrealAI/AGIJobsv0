@@ -94,6 +94,225 @@ main {
   margin-top: 1rem;
 }
 
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.score-card {
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(30, 41, 59, 0.8);
+  padding: 1rem 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.score-card__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.score-card__value {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.score-card__bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.score-card__bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.85), rgba(14, 165, 233, 0.85));
+}
+
+.score-card__description {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.automation-summary {
+  margin: 0.75rem 0 0;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.automation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.automation-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.automation-section h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.directive-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.directive-card {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.72);
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.priority-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.priority-critical {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.priority-high {
+  background: rgba(249, 168, 37, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(249, 168, 37, 0.4);
+}
+
+.priority-normal {
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--accent);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+}
+
+.directive-summary {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.directive-action {
+  display: inline-flex;
+  padding: 0.35rem 0.55rem;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid var(--border);
+  font-family: 'SFMono-Regular', 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
+.directive-metrics {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) 1fr;
+  gap: 0.35rem 0.65rem;
+  margin: 0;
+}
+
+.directive-metrics dt {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.directive-metrics dd {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.automation-commands {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.command-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.command-list li {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.command-list code {
+  font-family: 'SFMono-Regular', 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.verification-block {
+  margin-top: 1.5rem;
+  padding: 1.1rem;
+  border-radius: 14px;
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid var(--border);
+  display: grid;
+  gap: 0.7rem;
+}
+
+.verification-block h4 {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.verification-list,
+.verification-commands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.verification-commands code {
+  font-family: 'SFMono-Regular', 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.verification-docs {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 .stat {
   padding: 1.25rem;
   border-radius: 16px;
