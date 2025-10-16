@@ -1,0 +1,37 @@
+```mermaid
+graph TD
+  subgraph Governance
+    GOV[Owner Safe]
+    SP[SystemPause]
+    TH[Thermostat]
+  end
+
+  subgraph Core Kernel
+    JR[JobRegistry]
+    SM[StakeManager]
+    VM[ValidationModule]
+    DM[DisputeModule]
+    RE[ReputationEngine]
+    NFT[CertificateNFT]
+    MB[RewardEngineMB]
+  end
+
+  subgraph Off-chain Intelligence
+    SPEC[Market Spec (IPFS)]
+    ORACLE[Risk Oracle Brief (IPFS)]
+  end
+
+  GOV --> SP
+  GOV --> TH
+  GOV --> JR
+  GOV --> SM
+  GOV --> DM
+  JR --> VM
+  JR --> SM
+  JR --> RE
+  JR --> NFT
+  TH --> MB
+
+  SPEC -. informs .-> VM
+  ORACLE -. informs .-> VM
+```

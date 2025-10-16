@@ -1,0 +1,49 @@
+name: demo-alpha-agi-mark
+
+on:
+  pull_request:
+    paths:
+      - 'demo/alpha-agi-mark/**'
+      - '.github/workflows/demo-alpha-agi-mark.yml'
+  workflow_dispatch:
+
+jobs:
+  mission:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Start anvil
+        run: |
+          nohup anvil --silent --block-time 1 > anvil.log 2>&1 &
+          sleep 3
+
+      - name: Deploy defaults
+        env:
+          DEPLOY_DEFAULTS_OUTPUT: reports/localhost/agimark/deploy.json
+        run: npx hardhat run scripts/v2/deployDefaults.ts --network localhost
+
+      - name: Run α-AGI MARK mission
+        env:
+          NETWORK: localhost
+        run: ts-node --transpile-only demo/alpha-agi-mark/cli/mark.demo.ts --network localhost
+
+      - name: Build webapp
+        working-directory: demo/alpha-agi-mark/webapp
+        run: |
+          npm install
+          npm run build
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: agimark-reports
+          path: reports/localhost/agimark

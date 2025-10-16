@@ -1,0 +1,27 @@
+```mermaid
+sequenceDiagram
+  participant R as Requester / Nation
+  participant A as Agent Forecaster
+  participant V as Validator
+  participant JR as JobRegistry
+  participant VM as ValidationModule
+  participant SM as StakeManager
+  participant DM as DisputeModule
+  participant NFT as CertificateNFT
+
+  R->>JR: createJob(reward, deadline, specURI)
+  JR->>SM: lockReward(reward + fee)
+  A->>SM: depositStake(Role.Agent, min)
+  V->>SM: depositStake(Role.Validator, min)
+  A->>JR: submit(resultHash, resultURI)
+  JR->>VM: open validation round
+  V->>VM: commitValidation(jobId, hash)
+  V->>VM: revealValidation(jobId, approve?)
+  VM->>JR: finalize outcome
+  opt dispute window
+    *->>DM: raiseDispute(jobId, evidence)
+    DM->>JR: resolve
+  end
+  JR->>SM: releaseReward / slash
+  JR->>NFT: mint Nova-Seed credential
+```

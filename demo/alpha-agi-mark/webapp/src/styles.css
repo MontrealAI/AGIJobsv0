@@ -1,0 +1,78 @@
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: #0b0d17;
+  color: #f8f9ff;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+section {
+  margin-bottom: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.chat textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 1rem;
+  border-radius: 12px;
+  border: none;
+  resize: vertical;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.chat button,
+.validate button,
+.owner button {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(90deg, #26f5b4, #69d2ff);
+  color: #0b0d17;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat button:disabled,
+.validate button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.owner .danger {
+  background: linear-gradient(90deg, #ff6a6a, #ffb347);
+}
+
+.markets {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markets th,
+.markets td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status {
+  margin-top: 0.75rem;
+  color: #9de7ff;
+  font-size: 0.95rem;
+}
