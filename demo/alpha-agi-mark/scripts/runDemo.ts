@@ -200,6 +200,7 @@ async function main() {
   const network = await ethers.provider.getNetwork();
   const dryRun = (process.env.AGIJOBS_DEMO_DRY_RUN ?? "true").toLowerCase() !== "false";
   const networkLabel = describeNetworkName(network.name, network.chainId);
+  const generatedAt = new Date().toISOString();
 
   await requireOperatorConsent(networkLabel, dryRun, network.chainId);
 
@@ -480,6 +481,7 @@ async function main() {
     ledgerGrossWei,
   );
   const recap = {
+    generatedAt,
     contracts: {
       novaSeed: novaSeed.target,
       riskOracle: riskOracle.target,
@@ -654,6 +656,27 @@ async function main() {
     },
   };
 
+  const verificationSignals = [
+    verification.supplyConsensus.consistent,
+    verification.pricing.consistent,
+    verification.capitalFlows.consistent,
+    verification.contributions.consistent,
+  ];
+  const verificationPasses = verificationSignals.filter(Boolean).length;
+  const verificationConfidence = Number(((verificationPasses / verificationSignals.length) * 100).toFixed(2));
+
+  const execution = {
+    generatedAt,
+    network: networkLabel,
+    chainId: network.chainId.toString(),
+    dryRun,
+    operator: ownerAddress,
+    investors: investorAddresses,
+    validators: validatorAddresses,
+    toolchain: "AGI Jobs v0 (v2)",
+    job: "npm run demo:alpha-agi-mark",
+  };
+
   const enrichedRecap = {
     ...recap,
     trades: tradeLedger.map((entry) => ({
@@ -665,7 +688,15 @@ async function main() {
       valueEth: ethers.formatEther(entry.valueWei),
     })),
     ownerParameterMatrix,
-    verification,
+    verification: {
+      ...verification,
+      confidenceIndex: {
+        percentage: verificationConfidence.toFixed(2),
+        consistentChecks: verificationPasses,
+        totalChecks: verificationSignals.length,
+      },
+    },
+    execution,
   };
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
@@ -678,7 +709,9 @@ async function main() {
   console.log("\n🧭 Owner parameter matrix snapshot:");
   console.table(ownerParameterMatrix);
   console.log(
-    `\n✨ α-AGI MARK demo complete. Sovereign vault now safeguards ${ethers.formatEther(sovereignTotalReceived)} ETH.`
+    `\n✨ α-AGI MARK demo complete. Sovereign vault now safeguards ${ethers.formatEther(
+      sovereignTotalReceived,
+    )} ETH. Confidence index: ${verificationConfidence.toFixed(2)}%.`
   );
 }
 

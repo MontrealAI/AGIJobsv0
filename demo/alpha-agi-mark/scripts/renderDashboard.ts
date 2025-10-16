@@ -59,6 +59,23 @@ type VerificationSnapshot = {
     ledgerGrossEth?: string;
     consistent: boolean;
   };
+  confidenceIndex?: {
+    percentage: string;
+    consistentChecks: number;
+    totalChecks: number;
+  };
+};
+
+type RecapExecution = {
+  generatedAt?: string;
+  network?: string;
+  chainId?: string;
+  dryRun?: boolean;
+  operator?: string;
+  investors?: string[];
+  validators?: string[];
+  toolchain?: string;
+  job?: string;
 };
 
 type RecapData = {
@@ -130,6 +147,7 @@ type RecapData = {
   };
   ownerParameterMatrix?: Array<{ parameter: string; value: unknown; description: string }>;
   verification?: VerificationSnapshot;
+  execution?: RecapExecution;
 };
 
 function escapeHtml(value: string): string {
@@ -396,6 +414,15 @@ function buildVerificationSection(verification?: VerificationSnapshot): string {
 
   const cards = [supplyCard, pricingCard, capitalCard, contributionsCard];
 
+  const confidenceSummary = verification.confidenceIndex
+    ? `
+      <p class="confidence-indicator">
+        Confidence Index: <span>${escapeHtml(verification.confidenceIndex.percentage)}%</span>
+        (${verification.confidenceIndex.consistentChecks}/${verification.confidenceIndex.totalChecks} core checks aligned)
+      </p>
+    `
+    : "";
+
   const grid = cards
     .map(
       (card) => `
@@ -417,9 +444,58 @@ function buildVerificationSection(verification?: VerificationSnapshot): string {
         Independent ledgers, on-chain state introspection, and first-principles math cross-check the sovereign launch
         in real time.
       </p>
+      ${confidenceSummary}
       <div class="verification-grid">
         ${grid}
       </div>
+    </section>
+  `;
+}
+
+function buildExecutionSection(execution?: RecapExecution): string {
+  if (!execution) {
+    return "";
+  }
+
+  const operatorDisplay = execution.operator ? shortenAddress(execution.operator) : "Unavailable";
+  const toolchainDisplay = execution.toolchain ?? "AGI Jobs v0 (v2)";
+  const jobDisplay = execution.job ?? "npm run demo:alpha-agi-mark";
+
+  const investorList = execution.investors?.length
+    ? execution.investors.map((address) => `<li class="mono">${escapeHtml(shortenAddress(address))}</li>`).join("")
+    : "<li>Unavailable</li>";
+  const validatorList = execution.validators?.length
+    ? execution.validators.map((address) => `<li class="mono">${escapeHtml(shortenAddress(address))}</li>`).join("")
+    : "<li>Unavailable</li>";
+
+  return `
+    <section>
+      <h2>Execution Telemetry</h2>
+      <div class="telemetry-grid">
+        <article>
+          <h3>Network</h3>
+          <p class="mono">${escapeHtml(execution.network ?? "Unknown network")}</p>
+          <p class="mono">Chain ID: ${escapeHtml(execution.chainId ?? "-")}</p>
+          <p>${execution.dryRun ? "Dry-run sentinel active" : "Live broadcast authorised"}</p>
+        </article>
+        <article>
+          <h3>Operator</h3>
+          <p class="mono">${escapeHtml(operatorDisplay)}</p>
+          <p>${escapeHtml(toolchainDisplay)}</p>
+          <p class="mono">${escapeHtml(jobDisplay)}</p>
+        </article>
+        <article>
+          <h3>Investors</h3>
+          <ul>${investorList}</ul>
+        </article>
+        <article>
+          <h3>Validators</h3>
+          <ul>${validatorList}</ul>
+        </article>
+      </div>
+      <p class="timestamp">Telemetry generated at <span class="mono">${escapeHtml(
+        execution.generatedAt ?? "Not recorded",
+      )}</span></p>
     </section>
   `;
 }
@@ -460,6 +536,7 @@ function buildDashboardHtml(recap: RecapData): string {
   const ownerMatrix = buildOwnerMatrixTable(recap.ownerParameterMatrix ?? []);
   const mermaidDefinition = escapeHtml(buildMermaidFlow(recap));
   const verificationSection = buildVerificationSection(recap.verification);
+  const executionSection = buildExecutionSection(recap.execution);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -520,6 +597,57 @@ function buildDashboardHtml(recap: RecapData): string {
         font-size: 1.6rem;
         letter-spacing: 0.06em;
         text-transform: uppercase;
+      }
+      .telemetry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+      }
+      .telemetry-grid article {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 14px;
+        padding: 1.2rem;
+        border: 1px solid rgba(96, 255, 207, 0.16);
+        box-shadow: inset 0 0 25px rgba(96, 255, 207, 0.08);
+      }
+      .telemetry-grid h3 {
+        margin-top: 0;
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.72);
+      }
+      .telemetry-grid ul {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.35rem;
+      }
+      .telemetry-grid li {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 999px;
+        padding: 0.3rem 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        border: 1px solid rgba(96, 255, 207, 0.15);
+      }
+      .timestamp {
+        margin-top: 1.5rem;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .confidence-indicator {
+        background: rgba(96, 255, 207, 0.1);
+        border: 1px solid rgba(96, 255, 207, 0.35);
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        font-weight: 600;
+        max-width: 420px;
+      }
+      .confidence-indicator span {
+        color: var(--accent);
+        font-weight: 700;
       }
       .metrics {
         display: grid;
@@ -679,6 +807,8 @@ function buildDashboardHtml(recap: RecapData): string {
           actuator a non-technical steward needs to command an α-AGI Nova-Seed into sovereign reality.
         </p>
       </header>
+
+      ${executionSection}
 
       <section>
         <h2>Mission Control Metrics</h2>

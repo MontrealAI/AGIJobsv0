@@ -130,6 +130,17 @@ flowchart LR
     Verifier --> Recap[(alpha-mark-recap.json)]
 ```
 
+## Execution Telemetry & Confidence Index
+
+Each demo export now carries an `execution` telemetry block with the operator address, target network, broadcast mode
+(dry-run sentinel vs. live), and the exact AGI Jobs command that orchestrated the launch. The recap, dashboard, and integrity
+dossier surface this context so non-technical reviewers can trace every decision back to a timestamped operator session.
+
+The triple-verification output also publishes a numerical confidence index derived from the supply, pricing, capital flow, and
+contribution checks. Both the recap verifier (`npm run verify:alpha-agi-mark`) and the integrity dossier generation tool
+recompute the index independently and refuse to pass if the recorded percentage or check counts drift from the raw ledger.
+This closes the loop between automation, documentation, and owner oversight.
+
 ## Owner Controls
 
 The demo enumerates all tunable controls in the final recap:
