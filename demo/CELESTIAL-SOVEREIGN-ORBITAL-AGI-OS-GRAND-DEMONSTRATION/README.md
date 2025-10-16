@@ -54,19 +54,19 @@ The same stack can be launched unattended for CI mirrors:
 npm run deploy:oneclick:auto -- --yes --network localhost
 ```
 
-### Step 2 – First-class OS demonstration
+### Step 2 – Celestial sovereign orchestration
 ```bash
-npm run demo:agi-os:first-class
+npm run demo:celestial-sovereign
 ```
 The orchestrated steps include:
 1. **Preflight** – Docker/Compose/Node/version/clean-git verification.
-2. **Container bootstrap (optional)** – ensures the stack from Step 1 is up (skip with `--launch-compose=false`).
-3. **ASI Take-Off** – runs `npm run demo:asi-takeoff:local`, generating deterministic on-chain labour simulations.
-4. **Owner Control Intelligence** – executes `npm run owner:command-center`, `owner:doctor`, `owner:diagram`, collating matrices and mermaid diagrams.
-5. **Mission Dossier** – renders `reports/agi-os/grand-summary.md` & `.json`, plus HTML transformation.
-6. **Bundle Manifest** – SHA-256 digest of every artefact under `reports/agi-os/first-class`.
+2. **First-class OS run** – dispatches `demo:agi-os:first-class`, preserving the battle-tested orchestrator for full mission rehearsal.
+3. **Sovereign labour market drill** – replays the Hardhat grand demo, exporting the transcript to `reports/celestial-sovereign/labor-market-transcript.json`.
+4. **Owner control synthesis** – emits `owner:surface` JSON and owner automation plans so governance can retune every module instantly.
+5. **Branch-protection audit** – runs `ci:verify-branch-protection` (when a GitHub token is present) to confirm CI v2 guardrails are enforced.
+6. **Mission dossier** – renders new markdown/HTML briefings, compiles a SHA-256 manifest, and snapshots run metadata under `reports/celestial-sovereign/`.
 
-Watch the terminal: each phase emits ✅ / ⚠️ / ❌ status lines, logs are written to `reports/agi-os/first-class/logs/` for audit replay.
+Watch the terminal: each phase emits ✅ / ⚠️ / ❌ status lines, logs are written to `reports/agi-os/first-class/logs/` and `reports/celestial-sovereign/steps.json` for audit replay.
 
 ### Step 3 – Open the user interfaces
 All web apps are already defined in `compose.yaml`; when the stack is running:
@@ -221,8 +221,13 @@ Zip the `reports/agi-os/` folder. The manifest file includes hashes, so recipien
 | `reports/agi-os/grand-summary.json` | Machine-readable report. |
 | `reports/agi-os/grand-summary.html` | Stakeholder deck. |
 | `reports/agi-os/owner-control-matrix.json` | Updater manifest with statuses. |
-| `reports/asi-takeoff/` | Simulation telemetry, scenario logs, thermodynamics. |
 | `reports/agi-os/first-class/logs/` | Detailed logbook for every command. |
+| `reports/celestial-sovereign/run-report.json` | Aggregated status of OS rehearsal, labour market drill, owner surface, automation bundle, and branch-protection audit. |
+| `reports/celestial-sovereign/mission-briefing.{md,html}` | Non-technical narrative harmonising every subsystem into one shareable briefing. |
+| `reports/celestial-sovereign/manifest.json` | SHA-256 manifest covering all generated artefacts for compliance workflows. |
+| `reports/celestial-sovereign/labor-market-transcript.json` | Full transcript emitted by the Hardhat grand demo for replay/UIs. |
+| `reports/celestial-sovereign/branch-protection.txt` | Evidence of the CI v2 branch-protection audit (when token supplied). |
+| `reports/asi-takeoff/` | Simulation telemetry, scenario logs, thermodynamics. |
 
 ---
 

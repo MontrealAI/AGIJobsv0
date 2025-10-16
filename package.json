@@ -156,7 +156,8 @@
     "demo:omega-business-3:ui": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-ui.sh",
     "demo:agi-labor-market": "npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts",
     "demo:agi-labor-market:export": "AGI_JOBS_DEMO_EXPORT=demo/agi-labor-market-grand-demo/ui/export/latest.json npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts",
-    "demo:agi-labor-market:control-room": "ts-node --transpile-only scripts/v2/launchAgiLaborMarketControlRoom.ts"
+    "demo:agi-labor-market:control-room": "ts-node --transpile-only scripts/v2/launchAgiLaborMarketControlRoom.ts",
+    "demo:celestial-sovereign": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/celestialSovereignDemo.ts"
   },
   "keywords": [],
   "author": "",
