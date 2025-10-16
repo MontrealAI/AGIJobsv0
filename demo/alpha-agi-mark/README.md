@@ -56,6 +56,18 @@ This command:
 3. Simulates investor participation, validator approvals, pause/unpause sequences, and the sovereign launch transition.
 4. Prints a full state recap that a non-technical operator can read to verify success.
 
+### End-to-end operator suite
+
+```bash
+npm run demo:alpha-agi-mark:full
+```
+
+Runs the orchestrator above and immediately:
+
+1. Prints the owner control matrix so governance levers are visible without extra commands.
+2. Replays the trade ledger through the independent verifier, ensuring the recap dossier is internally consistent.
+3. Generates the integrity dossier that fuses verification output, owner controls, and mission telemetry for stakeholder sign-off.
+
 ### Network & safety controls
 
 - `AGIJOBS_DEMO_DRY_RUN` (default `true`) keeps the run in simulation mode. When set to `false` the script prompts for an explicit
