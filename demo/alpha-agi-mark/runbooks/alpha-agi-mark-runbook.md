@@ -25,8 +25,11 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - proves the sovereign vault pause/unpause circuit breaker
    - finalizes the launch with ignition metadata and prints a comprehensive recap
    - emits an owner parameter matrix table in the console and inside the recap dossier
-   - runs the triple-verification matrix to confirm supply, pricing, capital flows, and participant ledgers agree across all
-     independent checks
+     - runs the triple-verification matrix to confirm supply, pricing, capital flows, and participant ledgers agree across all
+       independent checks
+
+   > **Need everything in one keystroke?** Run `npm run demo:alpha-agi-mark:full` to execute the demo, replay the verification,
+   > emit the owner matrix, and synthesise the integrity dossier without running additional commands.
 
 2. **Inspect recap artifacts**
 
