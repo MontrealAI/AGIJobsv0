@@ -18,12 +18,13 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    The orchestrator automatically:
 
    - boots a Hardhat chain
-  - deploys the NovaSeedNFT, AlphaMarkRiskOracle, AlphaMarkEToken, and AlphaSovereignVault contracts
-  - performs investor buys and validator approvals
-  - pauses and resumes trading to verify safety controls
-  - demonstrates pre-launch base asset retargeting (ETH -> ERC-20 stablecoin)
-  - proves the sovereign vault pause/unpause circuit breaker
-  - finalizes the launch with ignition metadata and prints a comprehensive recap
+   - deploys the NovaSeedNFT, AlphaMarkRiskOracle, AlphaMarkEToken, and AlphaSovereignVault contracts
+   - performs investor buys and validator approvals
+   - pauses and resumes trading to verify safety controls
+   - demonstrates pre-launch base asset retargeting (ETH -> ERC-20 stablecoin)
+   - proves the sovereign vault pause/unpause circuit breaker
+   - finalizes the launch with ignition metadata and prints a comprehensive recap
+   - emits an owner parameter matrix table in the console and inside the recap dossier
 
 2. **Inspect recap artifacts**
 
@@ -40,25 +41,38 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - validator council roster and votes
    - bonding curve statistics (supply, reserve balance, pricing)
    - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, and treasury balance
+   - `ownerParameterMatrix` providing a full owner control matrix with descriptions
 
-3. **(Optional) Run unit tests**
+3. **Render the owner control matrix at any time**
+
+   ```bash
+   npm run owner:alpha-agi-mark
+   ```
+
+   The command reads the latest recap dossier and prints a tabular summary of every operator control lever.
+
+4. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
    ```
 
-4. **(Optional) Dry-run on a fork or external network**
+5. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 
    ```bash
    export AGIJOBS_DEMO_DRY_RUN=false
    export ALPHA_MARK_NETWORK=sepolia
+   export ALPHA_MARK_RPC_URL=https://...
    export ALPHA_MARK_OWNER_KEY=0x...
+   export ALPHA_MARK_INVESTOR_KEYS=0x...,0x...,0x...
+   export ALPHA_MARK_VALIDATOR_KEYS=0x...,0x...,0x...
    npm run demo:alpha-agi-mark
    ```
 
-   The script will prompt for confirmation before broadcasting transactions when `AGIJOBS_DEMO_DRY_RUN=false`.
+   Provide keys for at least three investors and three validators; the script confirms each wallet holds ≥0.05 ETH and prompts for
+   a `launch` acknowledgement before any mainnet/testnet transactions proceed.
 
 ## Emergency Controls
 

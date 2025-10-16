@@ -16,6 +16,20 @@
       "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
       "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
       "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+    ],
+    "matrix": [
+      {
+        "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+        "approved": true
+      },
+      {
+        "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+        "approved": true
+      },
+      {
+        "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+        "approved": false
+      }
     ]
   },
   "bondingCurve": {
@@ -75,5 +89,72 @@
       "decodedMetadata": "α-AGI Sovereign ignition: Nova-Seed ascends",
       "vaultBalanceWei": "3850000000000000000"
     }
-  }
+  },
+  "ownerParameterMatrix": [
+    {
+      "parameter": "pauseMarket",
+      "value": true,
+      "description": "Master halt switch for all bonding-curve trades"
+    },
+    {
+      "parameter": "whitelistEnabled",
+      "value": true,
+      "description": "Compliance gate restricting participation to approved wallets"
+    },
+    {
+      "parameter": "emergencyExitEnabled",
+      "value": false,
+      "description": "Allow redemptions while paused for orderly unwinding"
+    },
+    {
+      "parameter": "validationOverrideEnabled",
+      "value": false,
+      "description": "Owner override switch for the risk oracle consensus"
+    },
+    {
+      "parameter": "validationOverrideStatus",
+      "value": false,
+      "description": "Forced validation outcome when override is enabled"
+    },
+    {
+      "parameter": "treasury",
+      "value": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "description": "Address receiving proceeds on finalization"
+    },
+    {
+      "parameter": "riskOracle",
+      "value": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "description": "Validator council contract controlling launch approvals"
+    },
+    {
+      "parameter": "baseAsset",
+      "value": "0x0000000000000000000000000000000000000000",
+      "description": "Current financing currency (0x0 indicates native ETH)"
+    },
+    {
+      "parameter": "fundingCapWei",
+      "value": "1000000000000000000000",
+      "description": "Upper bound on capital accepted before launch"
+    },
+    {
+      "parameter": "maxSupplyWholeTokens",
+      "value": "100",
+      "description": "Maximum SeedShares that can ever be minted"
+    },
+    {
+      "parameter": "saleDeadlineTimestamp",
+      "value": "0",
+      "description": "Timestamp after which purchases are rejected"
+    },
+    {
+      "parameter": "basePriceWei",
+      "value": "100000000000000000",
+      "description": "Bonding curve base price component"
+    },
+    {
+      "parameter": "slopeWei",
+      "value": "50000000000000000",
+      "description": "Bonding curve slope component"
+    }
+  ]
 }

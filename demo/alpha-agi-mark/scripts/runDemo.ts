@@ -1,6 +1,8 @@
 import { ethers } from "hardhat";
-import { writeFile, mkdir } from "fs/promises";
+import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import { createInterface } from "readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 
 type Address = string;
 
@@ -14,6 +16,8 @@ interface ParticipantSnapshot {
 const OUTPUT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
 const OUTPUT_MARKDOWN_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.md");
 
+const MIN_BALANCE = ethers.parseEther("0.05");
+
 async function safeAttempt<T>(label: string, action: () => Promise<T>): Promise<T | undefined> {
   try {
     return await action();
@@ -23,20 +27,142 @@ async function safeAttempt<T>(label: string, action: () => Promise<T>): Promise<
   }
 }
 
+function parsePrivateKeys(raw?: string): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
+async function ensureBalance(label: string, signer: any): Promise<void> {
+  const address = await signer.getAddress();
+  const balance = await signer.provider!.getBalance(address);
+  if (balance < MIN_BALANCE) {
+    throw new Error(
+      `${label} (${address}) requires at least ${ethers.formatEther(MIN_BALANCE)} ETH but only has ${ethers.formatEther(balance)} ETH`,
+    );
+  }
+}
+
+const HARDHAT_CHAIN_ID = 31337n;
+
+async function requireOperatorConsent(
+  networkLabel: string,
+  isDryRun: boolean,
+  networkChainId: bigint,
+): Promise<void> {
+  const flag = process.env.AGIJOBS_DEMO_DRY_RUN ?? "unset";
+  if (isDryRun) {
+    if (networkChainId !== HARDHAT_CHAIN_ID) {
+      console.log(
+        "🛑 Dry-run safeguard active – refusing to execute against a live network. " +
+          "Set AGIJOBS_DEMO_DRY_RUN=false to opt in to broadcasts.",
+      );
+      process.exit(0);
+    }
+
+    console.log(
+      `🛡️  Dry-run safeguard active (AGIJOBS_DEMO_DRY_RUN=${flag}). Using Hardhat in-memory network (${networkLabel}).`,
+    );
+    return;
+  }
+
+  const rl = createInterface({ input, output });
+  const answer = await rl.question(
+    `⚠️  Real network broadcast detected on ${networkLabel}. Type "launch" to confirm execution: `,
+  );
+  rl.close();
+
+  if (answer.trim().toLowerCase() !== "launch") {
+    console.log("🛑 Operator declined broadcast – exiting demo without executing transactions.");
+    process.exit(0);
+  }
+}
+
+async function loadActors() {
+  const provider = ethers.provider;
+  const network = await provider.getNetwork();
+  const isHardhat = network.chainId === 31337n;
+
+  const ownerKey = process.env.ALPHA_MARK_OWNER_KEY;
+  const investorKeys = parsePrivateKeys(process.env.ALPHA_MARK_INVESTOR_KEYS);
+  const validatorKeys = parsePrivateKeys(process.env.ALPHA_MARK_VALIDATOR_KEYS);
+
+  if (isHardhat && !ownerKey && investorKeys.length === 0 && validatorKeys.length === 0) {
+    const signers = await ethers.getSigners();
+    return {
+      owner: signers[0],
+      investors: [signers[1], signers[2], signers[3]],
+      validators: [signers[4], signers[5], signers[6]],
+      usesExternalKeys: false,
+    };
+  }
+
+  if (!ownerKey) {
+    throw new Error(
+      "ALPHA_MARK_OWNER_KEY must be provided when running outside the Hardhat in-memory network.",
+    );
+  }
+  if (investorKeys.length < 3) {
+    throw new Error("ALPHA_MARK_INVESTOR_KEYS must supply at least three comma-separated private keys.");
+  }
+  if (validatorKeys.length < 3) {
+    throw new Error("ALPHA_MARK_VALIDATOR_KEYS must supply at least three comma-separated private keys.");
+  }
+
+  const makeWallet = (key: string) => new ethers.Wallet(key, provider);
+
+  return {
+    owner: makeWallet(ownerKey),
+    investors: investorKeys.slice(0, 3).map(makeWallet),
+    validators: validatorKeys.slice(0, 3).map(makeWallet),
+    usesExternalKeys: true,
+  };
+}
+
+function describeNetworkName(name: string, chainId: bigint): string {
+  if (!name || name === "unknown") {
+    return `chain-${chainId.toString()}`;
+  }
+  return `${name} (chainId ${chainId})`;
+}
+
 async function main() {
-  const [owner, investorA, investorB, investorC, validatorA, validatorB, validatorC] = await ethers.getSigners();
+  const { owner, investors, validators, usesExternalKeys } = await loadActors();
+  const [investorA, investorB, investorC] = investors;
+  const [validatorA, validatorB, validatorC] = validators;
+
+  const ownerAddress = await owner.getAddress();
+  const investorAddresses = await Promise.all(investors.map((signer) => signer.getAddress()));
+  const validatorAddresses = await Promise.all(validators.map((signer) => signer.getAddress()));
+
+  const network = await ethers.provider.getNetwork();
+  const dryRun = (process.env.AGIJOBS_DEMO_DRY_RUN ?? "true").toLowerCase() !== "false";
+  const networkLabel = describeNetworkName(network.name, network.chainId);
+
+  await requireOperatorConsent(networkLabel, dryRun, network.chainId);
 
   console.log("🚀 Booting α-AGI MARK foresight exchange demo\n");
+  console.log(`   • Network: ${networkLabel}`);
+  console.log(`   • Dry run mode: ${dryRun ? "enabled" : "disabled"}`);
+  console.log(`   • Actor source: ${usesExternalKeys ? "environment-provided keys" : "Hardhat signers"}\n`);
+
+  await ensureBalance("Owner", owner);
+  await Promise.all(investors.map((signer, idx) => ensureBalance(`Investor ${idx + 1}`, signer)));
+  await Promise.all(validators.map((signer, idx) => ensureBalance(`Validator ${idx + 1}`, signer)));
+
+  console.log("   • All actors funded above operational threshold\n");
 
   const NovaSeed = await ethers.getContractFactory("NovaSeedNFT", owner);
-  const novaSeed = await NovaSeed.deploy(owner.address);
+  const novaSeed = await NovaSeed.deploy(ownerAddress);
   await novaSeed.waitForDeployment();
-  const seedId = await novaSeed.mintSeed.staticCall(owner.address, "ipfs://alpha-mark/seed/genesis");
-  await (await novaSeed.mintSeed(owner.address, "ipfs://alpha-mark/seed/genesis")).wait();
+  const seedId = await novaSeed.mintSeed.staticCall(ownerAddress, "ipfs://alpha-mark/seed/genesis");
+  await (await novaSeed.mintSeed(ownerAddress, "ipfs://alpha-mark/seed/genesis")).wait();
   console.log(`🌱 Nova-Seed minted with tokenId=${seedId} at ${novaSeed.target}`);
 
   const RiskOracle = await ethers.getContractFactory("AlphaMarkRiskOracle", owner);
-  const riskOracle = await RiskOracle.deploy(owner.address, [validatorA.address, validatorB.address, validatorC.address], 2);
+  const riskOracle = await RiskOracle.deploy(ownerAddress, validatorAddresses, 2);
   await riskOracle.waitForDeployment();
   console.log(`🛡️  Risk oracle deployed at ${riskOracle.target}`);
 
@@ -48,7 +174,7 @@ async function main() {
   const mark = await AlphaMark.deploy(
     "α-AGI SeedShares",
     "SEED",
-    owner.address,
+    ownerAddress,
     riskOracle.target,
     basePrice,
     slope,
@@ -59,7 +185,7 @@ async function main() {
   console.log(`🏛️  AlphaMark exchange deployed at ${mark.target}`);
 
   const SovereignVault = await ethers.getContractFactory("AlphaSovereignVault", owner);
-  const sovereignVault = await SovereignVault.deploy(owner.address, "ipfs://alpha-mark/sovereign/genesis");
+  const sovereignVault = await SovereignVault.deploy(ownerAddress, "ipfs://alpha-mark/sovereign/genesis");
   await sovereignVault.waitForDeployment();
   await (await sovereignVault.designateMarkExchange(mark.target)).wait();
   console.log(`👑 Sovereign vault deployed at ${sovereignVault.target}`);
@@ -76,10 +202,10 @@ async function main() {
   await (await mark.setBaseAsset(stable.target)).wait();
   await (await mark.setBaseAsset(ethers.ZeroAddress)).wait();
 
-  await (await mark.setTreasury(owner.address)).wait();
+  await (await mark.setTreasury(ownerAddress)).wait();
   await (await mark.setFundingCap(ethers.parseEther("1000"))).wait();
   await (await mark.setWhitelistEnabled(true)).wait();
-  await (await mark.setWhitelist([investorA.address, investorB.address, investorC.address], true)).wait();
+  await (await mark.setWhitelist(investorAddresses, true)).wait();
 
   console.log("\n📊 Initial bonding curve configuration:");
   console.log(`   • Base price: ${ethers.formatEther(basePrice)} ETH`);
@@ -112,13 +238,13 @@ async function main() {
 
   console.log("\n💡 Validator council activity:");
   await (await riskOracle.connect(validatorA).approveSeed()).wait();
-  console.log(`   • Validator ${validatorA.address} approved`);
+  console.log(`   • Validator ${validatorAddresses[0]} approved`);
   await safeAttempt("Premature finalize attempt", async () => {
     const prematureMetadata = ethers.toUtf8Bytes("Attempt before consensus");
     await mark.finalizeLaunch(sovereignVault.target, prematureMetadata);
   });
   await (await riskOracle.connect(validatorB).approveSeed()).wait();
-  console.log(`   • Validator ${validatorB.address} approved`);
+  console.log(`   • Validator ${validatorAddresses[1]} approved`);
 
   console.log("\n♻️  Investor B tests liquidity by selling 1 SEED");
   const sellAmount = ethers.parseEther("1");
@@ -175,9 +301,24 @@ async function main() {
     const contribution = await mark.participantContribution(participant.address);
     participant.tokens = ethers.formatEther(balance);
     participant.contributionWei = contribution.toString();
+  const participants: ParticipantSnapshot[] = [];
+  for (let i = 0; i < investors.length; i++) {
+    const address = investorAddresses[i];
+    const balance = await mark.balanceOf(address);
+    const contribution = await mark.participantContribution(address);
+    participants.push({
+      address,
+      tokens: ethers.formatEther(balance),
+      contributionWei: contribution.toString(),
+    });
   }
 
   const validatorRoster = await riskOracle.getValidators();
+  const validatorMatrix = [] as Array<{ address: Address; approved: boolean }>;
+  for (const validator of validatorRoster) {
+    const approved = await riskOracle.hasApproved(validator);
+    validatorMatrix.push({ address: validator, approved });
+  }
 
   const sovereignMetadata = await sovereignVault.lastAcknowledgedMetadata();
   const sovereignTotalReceived = await sovereignVault.totalReceived();
@@ -190,12 +331,13 @@ async function main() {
     },
     seed: {
       tokenId: seedId.toString(),
-      holder: owner.address,
+      holder: ownerAddress,
     },
     validators: {
       approvalCount: approvalCount.toString(),
       approvalThreshold: threshold.toString(),
       members: validatorRoster,
+      matrix: validatorMatrix,
     },
     bondingCurve: {
       supplyWholeTokens: supply.toString(),
@@ -221,8 +363,81 @@ async function main() {
     },
   };
 
+  const ownerParameterMatrix = [
+    {
+      parameter: "pauseMarket",
+      value: ownerControls.paused,
+      description: "Master halt switch for all bonding-curve trades",
+    },
+    {
+      parameter: "whitelistEnabled",
+      value: ownerControls.whitelistEnabled,
+      description: "Compliance gate restricting participation to approved wallets",
+    },
+    {
+      parameter: "emergencyExitEnabled",
+      value: ownerControls.emergencyExitEnabled,
+      description: "Allow redemptions while paused for orderly unwinding",
+    },
+    {
+      parameter: "validationOverrideEnabled",
+      value: ownerControls.validationOverrideEnabled,
+      description: "Owner override switch for the risk oracle consensus",
+    },
+    {
+      parameter: "validationOverrideStatus",
+      value: ownerControls.validationOverrideStatus,
+      description: "Forced validation outcome when override is enabled",
+    },
+    {
+      parameter: "treasury",
+      value: ownerControls.treasury,
+      description: "Address receiving proceeds on finalization",
+    },
+    {
+      parameter: "riskOracle",
+      value: ownerControls.riskOracle,
+      description: "Validator council contract controlling launch approvals",
+    },
+    {
+      parameter: "baseAsset",
+      value: ownerControls.baseAsset,
+      description: "Current financing currency (0x0 indicates native ETH)",
+    },
+    {
+      parameter: "fundingCapWei",
+      value: ownerControls.fundingCapWei,
+      description: "Upper bound on capital accepted before launch",
+    },
+    {
+      parameter: "maxSupplyWholeTokens",
+      value: ownerControls.maxSupplyWholeTokens,
+      description: "Maximum SeedShares that can ever be minted",
+    },
+    {
+      parameter: "saleDeadlineTimestamp",
+      value: ownerControls.saleDeadlineTimestamp,
+      description: "Timestamp after which purchases are rejected",
+    },
+    {
+      parameter: "basePriceWei",
+      value: ownerControls.basePriceWei,
+      description: "Bonding curve base price component",
+    },
+    {
+      parameter: "slopeWei",
+      value: ownerControls.slopeWei,
+      description: "Bonding curve slope component",
+    },
+  ];
+
+  const enrichedRecap = {
+    ...recap,
+    ownerParameterMatrix,
+  };
+
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
-  await writeFile(OUTPUT_PATH, JSON.stringify(recap, null, 2));
+  await writeFile(OUTPUT_PATH, JSON.stringify(enrichedRecap, null, 2));
 
   const formatEth = (wei: string) => ethers.formatEther(BigInt(wei));
   const boolBadge = (value: boolean) => (value ? "✅ Enabled" : "⬜ Disabled");
@@ -346,6 +561,9 @@ async function main() {
   console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
   console.log("🖋️  Markdown dossier written to", OUTPUT_MARKDOWN_PATH);
   console.log(JSON.stringify(recap, null, 2));
+  console.log(JSON.stringify(enrichedRecap, null, 2));
+  console.log("\n🧭 Owner parameter matrix snapshot:");
+  console.table(ownerParameterMatrix);
   console.log(
     `\n✨ α-AGI MARK demo complete. Sovereign vault now safeguards ${ethers.formatEther(sovereignTotalReceived)} ETH.`
   );

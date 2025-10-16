@@ -85,6 +85,19 @@ After the run completes, two dossiers are generated under [`reports/`](reports/)
 
 - `alpha-mark-recap.json` — machine-readable event log of the launch flow.
 - `alpha-mark-recap.md` — human-friendly mission brief with flowcharts, journey timelines, and contribution visualisations.
+### Network & safety controls
+
+- `AGIJOBS_DEMO_DRY_RUN` (default `true`) keeps the run in simulation mode. When set to `false` the script prompts for an explicit
+  `launch` confirmation before broadcasting.
+- To target a live network supply:
+  - `ALPHA_MARK_NETWORK` – Hardhat network name (e.g. `sepolia`).
+  - `ALPHA_MARK_RPC_URL` – RPC endpoint.
+  - `ALPHA_MARK_CHAIN_ID` – (optional) explicit chain id for the RPC.
+  - `ALPHA_MARK_OWNER_KEY` – hex private key for the operator account.
+  - `ALPHA_MARK_INVESTOR_KEYS` – comma-separated investor keys (at least three) with gas funds.
+  - `ALPHA_MARK_VALIDATOR_KEYS` – comma-separated validator keys (at least three) with gas funds.
+
+The script verifies every supplied account holds at least 0.05 ETH before continuing.
 
 To run the Hardhat unit tests for the demo:
 
@@ -104,6 +117,7 @@ The demo enumerates all tunable controls in the final recap:
 - Validator roster resets and approval clearing
 - Launch, abort, and override controls
 - Full owner control snapshot exported under `ownerControls` in the recap dossier
+- Tabular owner parameter matrix available via `npm run owner:alpha-agi-mark`
 
 ## Runbook
 
