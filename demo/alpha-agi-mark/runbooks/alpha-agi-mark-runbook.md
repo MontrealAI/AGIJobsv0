@@ -28,7 +28,8 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
 2. **Inspect recap artifacts**
 
-   At the end of the run the script emits a JSON recap under `demo/alpha-agi-mark/reports/alpha-mark-recap.json`. It contains:
+   At the end of the run the script emits a JSON recap under `demo/alpha-agi-mark/reports/alpha-mark-recap.json` **and** a
+   cinematic HTML dashboard at `demo/alpha-agi-mark/reports/alpha-mark-dashboard.html`. The recap dossier contains:
 
    - contract addresses
    - owner governance parameters
@@ -46,13 +47,21 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
    The command reads the latest recap dossier and prints a tabular summary of every operator control lever.
 
-4. **(Optional) Run unit tests**
+4. **Render (or re-render) the sovereign dashboard**
+
+   ```bash
+   npm run dashboard:alpha-agi-mark
+   ```
+
+   This regenerates the HTML dossier using the latest recap JSON, useful after manual parameter tweaks.
+
+5. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
    ```
 
-5. **(Optional) Dry-run on a fork or external network**
+6. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 

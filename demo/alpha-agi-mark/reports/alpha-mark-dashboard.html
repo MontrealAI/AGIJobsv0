@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>α-AGI MARK Sovereign Launch Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-gradient: radial-gradient(circle at 20% 20%, #1a1f4d 0%, #05010c 65%, #000000 100%);
+        --accent: #60ffcf;
+        --accent-soft: rgba(96, 255, 207, 0.2);
+        --warning: #ffb347;
+        --danger: #ff6b6b;
+        --success: #2ecc71;
+        --card-bg: rgba(255, 255, 255, 0.04);
+        --table-header: rgba(255, 255, 255, 0.08);
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg-gradient);
+        color: #f6faff;
+        padding: 3rem 1rem 4rem;
+        line-height: 1.6;
+      }
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+      header.hero {
+        text-align: center;
+        margin-bottom: 3rem;
+      }
+      header.hero h1 {
+        font-size: clamp(2.5rem, 5vw, 3.8rem);
+        margin: 0;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      header.hero p {
+        max-width: 720px;
+        margin: 1rem auto 0 auto;
+        color: rgba(255, 255, 255, 0.78);
+      }
+      section {
+        margin-bottom: 3rem;
+        background: var(--card-bg);
+        border-radius: 18px;
+        padding: 2rem;
+        box-shadow: 0 18px 50px rgba(8, 11, 40, 0.45);
+        backdrop-filter: blur(12px);
+      }
+      section h2 {
+        margin-top: 0;
+        font-size: 1.6rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+      }
+      .metric {
+        border: 1px solid rgba(96, 255, 207, 0.25);
+        border-radius: 14px;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      .metric h3 {
+        margin: 0 0 0.5rem 0;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 0.1em;
+      }
+      .metric strong {
+        font-size: 1.6rem;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .control-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+      }
+      .control-card {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 14px;
+        padding: 1.2rem 1.3rem;
+        border: 1px solid rgba(96, 255, 207, 0.12);
+      }
+      .control-card header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+      }
+      .control-card h3 {
+        margin: 0;
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border: 1px solid currentColor;
+      }
+      .badge.on {
+        color: var(--accent);
+        background: rgba(96, 255, 207, 0.1);
+      }
+      .badge.off {
+        color: rgba(255, 255, 255, 0.56);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+      .badge.success {
+        color: var(--success);
+        background: rgba(46, 204, 113, 0.16);
+        border-color: rgba(46, 204, 113, 0.6);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        font-size: 0.95rem;
+      }
+      table thead {
+        background: var(--table-header);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 0.8rem;
+      }
+      table th,
+      table td {
+        padding: 0.8rem 1rem;
+        text-align: left;
+      }
+      table tbody tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .mono {
+        font-family: "JetBrains Mono", "Fira Code", "SFMono-Regular", ui-monospace, monospace;
+      }
+      pre.mermaid {
+        background: rgba(0, 0, 0, 0.45);
+        border-radius: 12px;
+        padding: 1.5rem;
+        overflow-x: auto;
+        border: 1px solid rgba(96, 255, 207, 0.2);
+      }
+      footer {
+        text-align: center;
+        margin-top: 4rem;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.85rem;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" integrity="sha256-YBtS2OVCkXbkqVKgf/mBlC9ZwTe74MkRUyvMh35vjps=" crossorigin="anonymous"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <p class="mono">α-AGI Sovereign Command Console</p>
+        <h1>MARK Launch Telemetry</h1>
+        <p>
+          Autonomous foresight launch executed via AGI Jobs v0 (v2). This dossier captures every
+          actuator a non-technical steward needs to command an α-AGI Nova-Seed into sovereign reality.
+        </p>
+      </header>
+
+      <section>
+        <h2>Mission Control Metrics</h2>
+        <div class="metrics">
+          <article class="metric">
+            <h3>Validator Consensus</h3>
+            <strong>2/2</strong>
+            <p>3 guardians in council</p>
+          </article>
+          <article class="metric">
+            <h3>Live SeedShares Supply</h3>
+            <strong>11</strong>
+            <p>Dynamic bonding curve issuance</p>
+          </article>
+          <article class="metric">
+            <h3>Reserve Power</h3>
+            <strong>0.0</strong>
+            <p>Capital safeguarding the sovereign ignition</p>
+          </article>
+          <article class="metric">
+            <h3>Next Token Price</h3>
+            <strong>0.65</strong>
+            <p>Real-time quote for incremental participation</p>
+          </article>
+          <article class="metric">
+            <h3>Sovereign Vault</h3>
+            <strong>3.85</strong>
+            <p>Manifest URI: ipfs://alpha-mark/sovereign/genesis<br />Last ignition: 3.85</p>
+          </article>
+          <article class="metric">
+            <h3>Participants</h3>
+            <strong>3</strong>
+            <p>Every participant recorded with on-chain contributions</p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Owner Control Deck</h2>
+        <div class="control-grid">
+          
+        <article class="control-card">
+          <header>
+            <h3>Market State</h3>
+            <span class="badge off">DISABLED</span>
+          </header>
+          <p>Paused for operator oversight</p>
+        </article>
+      
+
+        <article class="control-card">
+          <header>
+            <h3>Whitelist</h3>
+            <span class="badge on">ENABLED</span>
+          </header>
+          <p>Only approved sovereign contributors may participate</p>
+        </article>
+      
+
+        <article class="control-card">
+          <header>
+            <h3>Emergency Exit</h3>
+            <span class="badge off">DISABLED</span>
+          </header>
+          <p>Exit lever on standby</p>
+        </article>
+      
+
+        <article class="control-card">
+          <header>
+            <h3>Validation Override</h3>
+            <span class="badge off">DISABLED</span>
+          </header>
+          <p>Validator council governs launch</p>
+        </article>
+      
+        </div>
+      </section>
+
+      <section>
+        <h2>Participant Ledger</h2>
+        <p>The bonding curve ledger ensures contributions and SeedShares stay solvent in both ascent and emergency exit scenarios.</p>
+        
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Participant</th>
+          <th>SeedShares</th>
+          <th>Contribution</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>1</td>
+          <td class="mono">0x7099…79C8</td>
+          <td>5.0</td>
+          <td>1.0</td>
+        </tr>
+      
+
+        <tr>
+          <td>2</td>
+          <td class="mono">0x3C44…93BC</td>
+          <td>2.0</td>
+          <td>1.2</td>
+        </tr>
+      
+
+        <tr>
+          <td>3</td>
+          <td class="mono">0x90F7…b906</td>
+          <td>4.0</td>
+          <td>2.3</td>
+        </tr>
+      
+      </tbody>
+    </table>
+  
+      </section>
+
+      <section>
+        <h2>Operator Parameter Matrix</h2>
+        <p>Every actuator exposed to the owner is catalogued here to guarantee absolute command authority.</p>
+        
+    <table>
+      <thead>
+        <tr>
+          <th>Control Lever</th>
+          <th>Value</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td class="mono">pauseMarket</td>
+          <td>true</td>
+          <td>Master halt switch for all bonding-curve trades</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">whitelistEnabled</td>
+          <td>true</td>
+          <td>Compliance gate restricting participation to approved wallets</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">emergencyExitEnabled</td>
+          <td>false</td>
+          <td>Allow redemptions while paused for orderly unwinding</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">validationOverrideEnabled</td>
+          <td>false</td>
+          <td>Owner override switch for the risk oracle consensus</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">validationOverrideStatus</td>
+          <td>false</td>
+          <td>Forced validation outcome when override is enabled</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">finalized</td>
+          <td>true</td>
+          <td>Indicates whether sovereign funds have been dispatched</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">aborted</td>
+          <td>false</td>
+          <td>Emergency abort flag preserving participant capital</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">treasury</td>
+          <td>0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</td>
+          <td>Address receiving proceeds on finalization</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">riskOracle</td>
+          <td>0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0</td>
+          <td>Validator council contract controlling launch approvals</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">baseAsset</td>
+          <td>0x0000000000000000000000000000000000000000</td>
+          <td>Current financing currency (0x0 indicates native ETH)</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">usesNativeAsset</td>
+          <td>true</td>
+          <td>True when the market accepts native ETH deposits</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">fundingCap</td>
+          <td>{&quot;wei&quot;:&quot;1000000000000000000000&quot;,&quot;eth&quot;:&quot;1000.0&quot;}</td>
+          <td>Upper bound on capital accepted before launch</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">maxSupplyWholeTokens</td>
+          <td>100</td>
+          <td>Maximum SeedShares that can ever be minted</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">saleDeadlineTimestamp</td>
+          <td>0</td>
+          <td>Timestamp after which purchases are rejected</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">basePrice</td>
+          <td>{&quot;wei&quot;:&quot;100000000000000000&quot;,&quot;eth&quot;:&quot;0.1&quot;}</td>
+          <td>Bonding curve base price component</td>
+        </tr>
+      
+
+        <tr>
+          <td class="mono">slope</td>
+          <td>{&quot;wei&quot;:&quot;50000000000000000&quot;,&quot;eth&quot;:&quot;0.05&quot;}</td>
+          <td>Bonding curve slope component</td>
+        </tr>
+      
+      </tbody>
+    </table>
+  
+      </section>
+
+      <section>
+        <h2>Launch Dynamics</h2>
+        <pre class="mermaid">
+flowchart LR
+    Operator((Operator 0xf39F…2266)) --&gt; Seed[Nova-Seed #1]
+    Seed --&gt;|Tokenizes vision| Exchange[α-AGI SeedShares Exchange]
+    Exchange --&gt;|Bonding curve capital| Reserve((Sovereign Reserve))
+    Exchange --&gt;|Validator consensus (2/2)| Oracle[Risk Oracle Council]
+    Oracle --&gt; Launch{Launch Condition}
+    Launch --&gt;|Finalized| Vault[[α-AGI Sovereign Vault]]
+    Vault --&gt;|Acknowledge| Manifest&gt;&quot;α-AGI Sovereign ignition: Nova-Seed ascends&quot;]
+    Launch -.-&gt;|Abort| Emergency((Emergency Exit))
+        </pre>
+        <p class="mono">Contracts: NovaSeed 0x5FbD…0aa3 · Oracle 0x9fE4…a6e0 · Exchange 0xCf7E…0Fc9 · Vault 0xDc64…F6C9</p>
+      </section>
+
+      <footer>
+        Crafted autonomously by AGI Jobs v0 (v2). Re-run <code>npm run demo:alpha-agi-mark</code> to regenerate this living dossier.
+      </footer>
+    </main>
+  </body>
+</html>

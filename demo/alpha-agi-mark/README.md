@@ -18,7 +18,24 @@ The demo deploys four core contracts:
 3. **AlphaMarkEToken** – ERC-20 bonding-curve market with programmable compliance gates, pause switches, base asset retargeting (ETH or ERC-20 stablecoins), launch finalization metadata, and sovereign callbacks.
 4. **AlphaSovereignVault** – launch treasury that acknowledges the ignition metadata, tracks received capital, and gives the owner pause/withdraw controls for the sovereign stage.
 
-![α-AGI MARK flow diagram](runbooks/alpha-agi-mark-flow.mmd)
+```mermaid
+flowchart TD
+    classDef contract fill:#1a1f4d,stroke:#60ffcf,color:#f6faff,stroke-width:2px;
+    classDef actor fill:#113322,stroke:#60ffcf,color:#e8fff6,stroke-dasharray: 5 3;
+    classDef control fill:#2f2445,stroke:#9d7bff,color:#f6f0ff;
+
+    Operator((Operator Console)):::actor -->|Mint & Configure| Seed[NovaSeedNFT — α-AGI Nova-Seed]:::contract
+    Seed -->|Launch Request| Oracle[AlphaMarkRiskOracle — Validator Council]:::contract
+    Seed -->|Enables Pricing| Exchange[AlphaMarkEToken — Bonding Curve Exchange]:::contract
+    Exchange -->|Capital Flow| Reserve((Sovereign Reserve)):::control
+    Exchange -->|Compliance, Pause, Overrides| ControlDeck{{Owner Control Deck}}:::control
+    ControlDeck -->|Gates Participation| Exchange
+    Investors((SeedShare Contributors)):::actor -->|Bonding Curve Buys/Sells| Exchange
+    Oracle -->|Consensus Signal| Launch{Launch Condition}
+    Launch -->|Finalized| Vault[AlphaSovereignVault — Treasury]:::contract
+    Launch -->|Abort Path| Emergency((Emergency Exit Corridor)):::control
+    Vault -->|Ignition Metadata| Sovereign[[α-AGI Sovereign Manifest]]:::contract
+```
 
 ## Quickstart
 
@@ -51,6 +68,22 @@ To run the Hardhat unit tests for the demo:
 
 ```bash
 npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
+```
+
+## Sovereign Dashboard
+
+Every demo run now emits a cinematic HTML dossier at `demo/alpha-agi-mark/reports/alpha-mark-dashboard.html`. Open the file in
+any browser to explore:
+
+- Mission control metrics capturing validator consensus, reserve power, and sovereign vault status
+- A control-deck grid showing every owner actuator with live status badges
+- Full participant ledger plus the operator parameter matrix rendered as responsive tables
+- An auto-generated Mermaid diagram visualising the launch topology and emergency fail-safes
+
+Regenerate the dashboard at any time from the latest recap JSON:
+
+```bash
+npm run dashboard:alpha-agi-mark
 ```
 
 ## Owner Controls
