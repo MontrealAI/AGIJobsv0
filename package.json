@@ -111,7 +111,7 @@
     "demo:agi-os:first-class": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/agiOsFirstClassDemo.ts",
     "demo:flagship": "demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh",
     "demo:omni-sovereign": "bash demo/omni-sovereign-ascension-operating-system/bin/launch.sh",
-    "demo:asi-takeoff:report": "AURORA_REPORT_SCOPE=asi-takeoff AURORA_REPORT_TITLE='ASI Take-Off \u2014 Mission Report' ts-node --transpile-only demo/aurora/bin/aurora-report.ts",
+    "demo:asi-takeoff:report": "AURORA_REPORT_SCOPE=asi-takeoff AURORA_REPORT_TITLE='ASI Take-Off — Mission Report' ts-node --transpile-only demo/aurora/bin/aurora-report.ts",
     "demo:asi-global": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/asiGlobalDemo.ts",
     "demo:asi-global:local": "bash demo/asi-global/bin/asi-global-local.sh",
     "demo:asi-global:kit": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/asiGlobalKit.ts",
