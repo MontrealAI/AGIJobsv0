@@ -8,6 +8,7 @@ The α-AGI MARK demo showcases how a non-technical operator can launch a foresig
 - [Quickstart](#quickstart)
 - [Owner Controls](#owner-controls)
 - [Runbook](#runbook)
+- [Triple-Assurance Validation](#triple-assurance-validation)
 
 ## Architecture
 
@@ -19,6 +20,47 @@ The demo deploys four core contracts:
 4. **AlphaSovereignVault** – launch treasury that acknowledges the ignition metadata, tracks received capital, and gives the owner pause/withdraw controls for the sovereign stage.
 
 ![α-AGI MARK flow diagram](runbooks/alpha-agi-mark-flow.mmd)
+
+### Grand Orchestration Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Operator as Operator
+    participant NovaSeed as NovaSeedNFT
+    participant Oracle as AlphaMarkRiskOracle
+    participant Exchange as AlphaMarkEToken
+    participant Vault as AlphaSovereignVault
+    participant Validators as Validator Council
+    participant Investors as SeedShare Contributors
+
+    Operator->>NovaSeed: mintSeed(manifestURI)
+    NovaSeed-->>Operator: tokenId + ownership receipt
+    Operator->>Oracle: configureCouncil(validators, threshold)
+    Operator->>Exchange: deploy(basePrice, slope, oracle)
+    Exchange->>Vault: registerLaunchTarget()
+    Exchange-->>Operator: owner control matrix snapshot
+
+    Operator->>Exchange: enableWhitelist()
+    Operator->>Exchange: setBaseAsset(ETH or ERC20)
+    loop Capital Formation
+        Operator->>Investors: publish invitation dossier
+        Investors->>Exchange: buyTokens(amount)
+        Exchange-->>Investors: SeedShares + compliance events
+    end
+    Operator->>Exchange: pauseMarket() / unpauseMarket()
+    Exchange-->>Operator: emits Paused / Unpaused telemetry
+
+    Validators->>Oracle: approveSeed()
+    Oracle-->>Exchange: seedValidated() = true when threshold met
+    Operator->>Exchange: finalizeLaunch(vault, metadata)
+    Exchange->>Vault: notifyLaunch(reserveBalance, metadata)
+    Vault-->>Exchange: acknowledgement
+    Exchange-->>Investors: freeze market (finalized = true)
+    Exchange-->>Operator: LaunchFinalized event
+    Vault-->>Operator: LaunchAcknowledged event + treasury balance update
+    Operator->>Investors: release sovereign execution brief
+```
 
 ## Quickstart
 
@@ -70,3 +112,13 @@ The demo enumerates all tunable controls in the final recap:
 ## Runbook
 
 The detailed walkthrough is stored at [`runbooks/alpha-agi-mark-runbook.md`](runbooks/alpha-agi-mark-runbook.md).
+
+## Triple-Assurance Validation
+
+| Layer | Command | Purpose |
+| --- | --- | --- |
+| Deterministic simulation | `npm run demo:alpha-agi-mark` | Runs the orchestrated Hardhat scenario and emits the recap dossier. |
+| Contract-level verification | `npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts` | Executes the dedicated α-AGI MARK unit suite, including override, emergency-exit, ERC-20 base-asset, and sovereign vault pathways. |
+| Governance matrix audit | `npm run owner:alpha-agi-mark` | Renders the owner parameter matrix from the latest recap, allowing non-technical operators to verify every control lever before and after launch. |
+
+Each layer is intentionally redundant so the operator can cross-check the launch state from multiple perspectives without reading Solidity code.
