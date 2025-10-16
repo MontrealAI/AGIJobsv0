@@ -12,11 +12,45 @@ interface ParticipantSnapshot {
   address: Address;
   tokens: string;
   contributionWei: string;
+  contributionEth?: string;
+}
+
+interface TradeRecord {
+  kind: "BUY" | "SELL";
+  actor: Address;
+  label: string;
+  tokensWhole: bigint;
+  valueWei: bigint;
 }
 
 const OUTPUT_PATH = path.join(__dirname, "..", "reports", "alpha-mark-recap.json");
 
 const MIN_BALANCE = ethers.parseEther("0.05");
+const ONE_TOKEN = ethers.parseEther("1");
+
+function calculatePurchaseCost(basePriceWei: bigint, slopeWei: bigint, supplyWhole: bigint, amountWhole: bigint): bigint {
+  const baseComponent = basePriceWei * amountWhole;
+  const slopeComponent = slopeWei * ((amountWhole * ((2n * supplyWhole) + amountWhole - 1n)) / 2n);
+  return baseComponent + slopeComponent;
+}
+
+function calculateSaleReturn(basePriceWei: bigint, slopeWei: bigint, supplyWhole: bigint, amountWhole: bigint): bigint {
+  const baseComponent = basePriceWei * amountWhole;
+  if (amountWhole === 0n || supplyWhole === 0n) {
+    return baseComponent;
+  }
+
+  const numerator = amountWhole * ((2n * (supplyWhole - 1n)) - (amountWhole - 1n));
+  const slopeComponent = slopeWei * (numerator / 2n);
+  return baseComponent + slopeComponent;
+}
+
+function expectEqual(label: string, actual: bigint, expected: bigint) {
+  if (actual !== expected) {
+    throw new Error(`${label} mismatch: expected ${expected}, received ${actual}`);
+  }
+  console.log(`   ✅ ${label}`);
+}
 
 async function safeAttempt<T>(label: string, action: () => Promise<T>): Promise<T | undefined> {
   try {
@@ -137,6 +171,31 @@ async function main() {
   const investorAddresses = await Promise.all(investors.map((signer) => signer.getAddress()));
   const validatorAddresses = await Promise.all(validators.map((signer) => signer.getAddress()));
 
+  const tradeLedger: TradeRecord[] = [];
+  const accountState = new Map<
+    Address,
+    {
+      tokens: bigint;
+      grossContribution: bigint;
+      netContribution: bigint;
+    }
+  >();
+  let simulatedSupply = 0n;
+  let simulatedReserve = 0n;
+
+  const recordTrade = (entry: TradeRecord) => {
+    tradeLedger.push(entry);
+    const previous = accountState.get(entry.actor) ?? { tokens: 0n, grossContribution: 0n, netContribution: 0n };
+    const tokensDelta = entry.kind === "BUY" ? entry.tokensWhole : -entry.tokensWhole;
+    const grossDelta = entry.kind === "BUY" ? entry.valueWei : 0n;
+    const netDelta = entry.kind === "BUY" ? entry.valueWei : -entry.valueWei;
+    accountState.set(entry.actor, {
+      tokens: previous.tokens + tokensDelta,
+      grossContribution: previous.grossContribution + grossDelta,
+      netContribution: previous.netContribution + netDelta,
+    });
+  };
+
   const network = await ethers.provider.getNetwork();
   const dryRun = (process.env.AGIJOBS_DEMO_DRY_RUN ?? "true").toLowerCase() !== "false";
   const networkLabel = describeNetworkName(network.name, network.chainId);
@@ -215,9 +274,23 @@ async function main() {
 
   const buy = async (label: string, signer: any, amountTokens: string, overpay = "0") => {
     const amount = ethers.parseEther(amountTokens);
+    const tokensWhole = amount / ONE_TOKEN;
     const cost = await mark.previewPurchaseCost(amount);
+    const manualCost = calculatePurchaseCost(basePrice, slope, simulatedSupply, tokensWhole);
+    expectEqual(
+      `Bonding curve cost parity for ${label} (${ethers.formatEther(cost)} ETH)`,
+      cost,
+      manualCost,
+    );
+
     const totalValue = cost + ethers.parseEther(overpay);
     await (await mark.connect(signer).buyTokens(amount, { value: totalValue })).wait();
+
+    simulatedSupply += tokensWhole;
+    simulatedReserve += cost;
+    const buyerAddress = await signer.getAddress();
+    recordTrade({ kind: "BUY", actor: buyerAddress, label, tokensWhole, valueWei: cost });
+
     console.log(`   ✅ ${label} bought ${amountTokens} SEED for ${ethers.formatEther(cost)} ETH`);
   };
 
@@ -248,8 +321,21 @@ async function main() {
 
   console.log("\n♻️  Investor B tests liquidity by selling 1 SEED");
   const sellAmount = ethers.parseEther("1");
+  const sellAmountWhole = sellAmount / ONE_TOKEN;
   const sellReturn = await mark.previewSaleReturn(sellAmount);
+  const manualReturn = calculateSaleReturn(basePrice, slope, simulatedSupply, sellAmountWhole);
+  expectEqual(
+    `Bonding curve redemption parity for Investor B (${ethers.formatEther(sellReturn)} ETH)`,
+    sellReturn,
+    manualReturn,
+  );
   await (await mark.connect(investorB).sellTokens(sellAmount)).wait();
+
+  simulatedSupply -= sellAmountWhole;
+  simulatedReserve -= sellReturn;
+  const sellerAddress = await investorB.getAddress();
+  recordTrade({ kind: "SELL", actor: sellerAddress, label: "Investor B", tokensWhole: sellAmountWhole, valueWei: sellReturn });
+
   console.log(`   ✅ Investor B redeemed 1 SEED for ${ethers.formatEther(sellReturn)} ETH`);
 
   console.log("\n🟢 Oracle threshold satisfied, owner finalizes launch to the sovereign vault");
@@ -287,10 +373,32 @@ async function main() {
   };
 
   const participants: ParticipantSnapshot[] = [];
+  let participantContributionAggregate = 0n;
+  let participantTokenAggregate = 0n;
   for (let i = 0; i < investors.length; i++) {
     const address = investorAddresses[i];
     const balance = await mark.balanceOf(address);
+    const balanceWhole = balance / ONE_TOKEN;
     const contribution = await mark.participantContribution(address);
+    const ledgerEntry = accountState.get(address);
+    if (!ledgerEntry) {
+      throw new Error(`Missing ledger entry for participant ${address}`);
+    }
+
+    participantContributionAggregate += contribution;
+    participantTokenAggregate += balanceWhole;
+
+    expectEqual(
+      `Participant ${i + 1} token ledger alignment (${balanceWhole.toString()} SeedShares)`,
+      ledgerEntry.tokens,
+      balanceWhole,
+    );
+    expectEqual(
+      `Participant ${i + 1} gross contribution alignment (${ethers.formatEther(contribution)} ETH)`,
+      ledgerEntry.grossContribution,
+      contribution,
+    );
+
     participants.push({
       address,
       tokens: ethers.formatEther(balance),
@@ -298,6 +406,22 @@ async function main() {
       contributionEth: ethers.formatEther(contribution),
     });
   }
+
+  let ledgerSupplyWhole = 0n;
+  let ledgerGrossWei = 0n;
+  let ledgerSellWei = 0n;
+  for (const entry of tradeLedger) {
+    if (entry.kind === "BUY") {
+      ledgerSupplyWhole += entry.tokensWhole;
+      ledgerGrossWei += entry.valueWei;
+    } else {
+      ledgerSupplyWhole -= entry.tokensWhole;
+      ledgerSellWei += entry.valueWei;
+    }
+  }
+
+  const ledgerNetWei = ledgerGrossWei - ledgerSellWei;
+  const simulatedNextPrice = basePrice + slope * simulatedSupply;
 
   const validatorRoster = await riskOracle.getValidators();
   const validatorMatrix = [] as Array<{ address: Address; approved: boolean }>;
@@ -310,6 +434,49 @@ async function main() {
   const sovereignTotalReceived = await sovereignVault.totalReceived();
   const lastAcknowledgedAmount = await sovereignVault.lastAcknowledgedAmount();
   const vaultBalance = await sovereignVault.vaultBalance();
+  const combinedReserve = reserve + sovereignTotalReceived;
+
+  console.log("\n🔍 Triple-verification matrix:");
+  expectEqual(
+    `Ledger supply matches on-chain total (${ledgerSupplyWhole.toString()} SeedShares)`,
+    ledgerSupplyWhole,
+    supply,
+  );
+  expectEqual(
+    `Simulation supply matches on-chain total (${simulatedSupply.toString()} SeedShares)`,
+    simulatedSupply,
+    supply,
+  );
+  expectEqual(
+    `Participant balances sum to supply (${participantTokenAggregate.toString()} SeedShares)`,
+    participantTokenAggregate,
+    supply,
+  );
+  expectEqual(
+    `Next token price matches first-principles math (${ethers.formatEther(nextPrice)} ETH)`,
+    nextPrice,
+    simulatedNextPrice,
+  );
+  expectEqual(
+    `Vault receipts equal ledger net capital (${ethers.formatEther(sovereignTotalReceived)} ETH)`,
+    sovereignTotalReceived,
+    ledgerNetWei,
+  );
+  expectEqual(
+    `Simulated reserve equals ledger net capital (${ethers.formatEther(simulatedReserve)} ETH)`,
+    simulatedReserve,
+    ledgerNetWei,
+  );
+  expectEqual(
+    `Reserve + vault equals ledger net capital (${ethers.formatEther(combinedReserve)} ETH)`,
+    combinedReserve,
+    ledgerNetWei,
+  );
+  expectEqual(
+    `Participant contributions equal ledger gross capital (${ethers.formatEther(participantContributionAggregate)} ETH)`,
+    participantContributionAggregate,
+    ledgerGrossWei,
+  );
   const recap = {
     contracts: {
       novaSeed: novaSeed.target,
@@ -441,9 +608,54 @@ async function main() {
     },
   ];
 
+  const verification = {
+    supplyConsensus: {
+      ledgerWholeTokens: ledgerSupplyWhole.toString(),
+      contractWholeTokens: supply.toString(),
+      simulationWholeTokens: simulatedSupply.toString(),
+      participantAggregateWholeTokens: participantTokenAggregate.toString(),
+      consistent:
+        ledgerSupplyWhole === supply &&
+        simulatedSupply === supply &&
+        participantTokenAggregate === supply,
+    },
+    pricing: {
+      contractNextPriceWei: nextPrice.toString(),
+      contractNextPriceEth: ethers.formatEther(nextPrice),
+      simulatedNextPriceWei: simulatedNextPrice.toString(),
+      simulatedNextPriceEth: ethers.formatEther(simulatedNextPrice),
+      consistent: nextPrice === simulatedNextPrice,
+    },
+    capitalFlows: {
+      ledgerGrossWei: ledgerGrossWei.toString(),
+      ledgerGrossEth: ethers.formatEther(ledgerGrossWei),
+      ledgerRedemptionsWei: ledgerSellWei.toString(),
+      ledgerRedemptionsEth: ethers.formatEther(ledgerSellWei),
+      ledgerNetWei: ledgerNetWei.toString(),
+      ledgerNetEth: ethers.formatEther(ledgerNetWei),
+      simulatedReserveWei: simulatedReserve.toString(),
+      simulatedReserveEth: ethers.formatEther(simulatedReserve),
+      contractReserveWei: reserve.toString(),
+      contractReserveEth: ethers.formatEther(reserve),
+      vaultReceivedWei: sovereignTotalReceived.toString(),
+      vaultReceivedEth: ethers.formatEther(sovereignTotalReceived),
+      combinedReserveWei: combinedReserve.toString(),
+      combinedReserveEth: ethers.formatEther(combinedReserve),
+      consistent: ledgerNetWei === combinedReserve,
+    },
+    contributions: {
+      participantAggregateWei: participantContributionAggregate.toString(),
+      participantAggregateEth: ethers.formatEther(participantContributionAggregate),
+      ledgerGrossWei: ledgerGrossWei.toString(),
+      ledgerGrossEth: ethers.formatEther(ledgerGrossWei),
+      consistent: participantContributionAggregate === ledgerGrossWei,
+    },
+  };
+
   const enrichedRecap = {
     ...recap,
     ownerParameterMatrix,
+    verification,
   };
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
