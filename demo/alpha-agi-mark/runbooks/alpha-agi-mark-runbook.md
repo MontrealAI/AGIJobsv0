@@ -96,7 +96,18 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    the verification table, owner command deck snapshot, and a mermaid contribution pie chart. Circulate
    it alongside the dashboard for executive approval.
 
-8. **Synthesize the risk lattice dossier**
+8. **Forge the empowerment pulse dossier**
+
+   ```bash
+   npm run pulse:alpha-agi-mark
+   ```
+
+   Generates `demo/alpha-agi-mark/reports/alpha-mark-empowerment.md`, merging a quadrant chart,
+   capital pie, and timeline into a single empowerment brief. It reuses the recap dossier to prove
+   the automation multiplier, validator quorum, and owner command deck are aligned for sovereign
+   launch authority.
+
+9. **Synthesize the risk lattice dossier**
 
    ```bash
    npm run lattice:alpha-agi-mark
@@ -106,7 +117,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    control deck, verification verdict, reserve telemetry, and (when available) the empowerment multiplier. Hand this to
    executives who need a single-page risk and assurance blueprint.
 
-9. **Publish the cinematic mission timeline**
+10. **Publish the cinematic mission timeline**
 
    ```bash
    npm run timeline:alpha-agi-mark
@@ -115,7 +126,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    Creates `demo/alpha-agi-mark/reports/alpha-mark-timeline.md`, blending a Mermaid timeline with a
    tabular ledger of every orchestrated action. Ideal for board briefings or audit evidence packs.
 
-10. **(Optional) Run unit tests**
+11. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
@@ -125,7 +136,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    pause/emergency exit, abort, and residual withdrawal) so board operators can demonstrate contractual control with a
    single automated report.
 
-11. **(Optional) Dry-run on a fork or external network**
+12. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 

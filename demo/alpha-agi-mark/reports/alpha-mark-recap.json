@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-17T00:07:19.581Z",
+  "generatedAt": "2025-10-17T06:38:11.603Z",
   "network": {
     "label": "hardhat (chainId 31337)",
     "name": "hardhat",
@@ -8,7 +8,7 @@
     "dryRun": true
   },
   "orchestrator": {
-    "commit": "b6c4131c3baef4ed756322c418f9ce60ca187422",
+    "commit": "75372aa7896adefa34e8979283019fa2546fd110",
     "branch": "work",
     "workspaceDirty": true,
     "mode": "dry-run"
@@ -298,6 +298,36 @@
       "ledgerGrossWei": "4500000000000000000",
       "ledgerGrossEth": "4.5",
       "consistent": true
+    },
+    "summary": {
+      "totalChecks": 4,
+      "passedChecks": 4,
+      "failedChecks": 0,
+      "confidenceIndexBps": 10000,
+      "confidenceIndexPercent": "100.00",
+      "verdict": "PASS",
+      "checks": [
+        {
+          "key": "supplyConsensus",
+          "label": "Supply consensus alignment",
+          "consistent": true
+        },
+        {
+          "key": "pricing",
+          "label": "Pricing integrity",
+          "consistent": true
+        },
+        {
+          "key": "capitalFlows",
+          "label": "Capital flow reconciliation",
+          "consistent": true
+        },
+        {
+          "key": "contributions",
+          "label": "Contribution accounting",
+          "consistent": true
+        }
+      ]
     }
   },
   "timeline": [
@@ -481,7 +511,7 @@
       "order": 21,
       "phase": "Verification",
       "title": "Triple-verification matrix aligned",
-      "description": "Ledger, simulation, and on-chain state reconcile 1:1",
+      "description": "Ledger, simulation, and on-chain state reconcile 4/4 checks (100.00% confidence)",
       "icon": "✅"
     },
     {
@@ -492,9 +522,40 @@
       "icon": "🧾"
     }
   ],
+  "empowerment": {
+    "tagline": "AGI Jobs orchestrated 22 mission events from 1 command, sustaining 100.00% confidence across 4/4 invariants.",
+    "automation": {
+      "manualCommands": 1,
+      "orchestratedActions": 22,
+      "automationMultiplier": "22.00"
+    },
+    "assurance": {
+      "verificationConfidencePercent": "100.00",
+      "checksPassed": 4,
+      "totalChecks": 4,
+      "validatorApprovals": 2,
+      "validatorThreshold": 2
+    },
+    "capitalFormation": {
+      "participants": 3,
+      "grossContributionsWei": "4500000000000000000",
+      "grossContributionsEth": "4.5",
+      "reserveWei": "0",
+      "reserveEth": "0.0"
+    },
+    "operatorControls": {
+      "totalControls": 16,
+      "highlights": [
+        "pauseMarket",
+        "whitelistEnabled",
+        "emergencyExitEnabled",
+        "validationOverrideEnabled"
+      ]
+    }
+  },
   "checksums": {
     "algorithm": "sha256",
     "canonicalEncoding": "json-key-sorted",
-    "recapSha256": "dbb1a7269bd3522a62b15c38be2660f1930ac5bef5c3c90bee1e9f63542cc57d"
+    "recapSha256": "c79f8a1af52d09b5785a4103ab3d33f4b677cdb7d65535952bd87ff05b530a71"
   }
 }

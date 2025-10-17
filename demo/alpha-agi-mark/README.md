@@ -135,6 +135,17 @@ This generates `reports/alpha-mark-integrity.md` – a mermaid-enhanced dossier 
 confidence matrix, owner controls, validator quorum, and participant contributions so non-technical
 stakeholders can sign off in minutes.
 
+### Empowerment pulse dossier
+
+```bash
+npm run pulse:alpha-agi-mark
+```
+
+Synthesises `reports/alpha-mark-empowerment.md`, a sovereign-grade empowerment brief that blends a
+quadrant chart, participant capital pie chart, and timeline into one artefact. It translates the
+automation multiplier, validator quorum, and owner control matrix into a single executive-ready
+snapshot proving how AGI Jobs v0 (v2) behaves like a boardroom-calibre intelligence layer.
+
 ### Sovereign risk lattice
 
 ```bash

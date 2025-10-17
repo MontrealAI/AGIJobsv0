@@ -152,6 +152,32 @@ jobs:
           console.log('Integrity dossier validated.');
           NODE
 
+      - name: Forge empowerment pulse dossier
+        run: npm run pulse:alpha-agi-mark
+
+      - name: Validate empowerment pulse dossier
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'demo/alpha-agi-mark/reports/alpha-mark-empowerment.md';
+          if (!fs.existsSync(path)) {
+            throw new Error('empowerment dossier missing');
+          }
+          const content = fs.readFileSync(path, 'utf8');
+          const requiredSections = [
+            '# α-AGI MARK Empowerment Pulse',
+            '## Mission Snapshot',
+            '```mermaid',
+            '## Operator Command Deck',
+          ];
+          for (const section of requiredSections) {
+            if (!content.includes(section)) {
+              throw new Error(`empowerment dossier missing section: ${section}`);
+            }
+          }
+          console.log('Empowerment pulse dossier validated.');
+          NODE
+
       - name: Render mission timeline
         run: npm run timeline:alpha-agi-mark
 
@@ -184,6 +210,12 @@ jobs:
         with:
           name: alpha-agi-mark-integrity
           path: demo/alpha-agi-mark/reports/alpha-mark-integrity.md
+
+      - name: Upload α-AGI MARK empowerment pulse
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-agi-mark-empowerment
+          path: demo/alpha-agi-mark/reports/alpha-mark-empowerment.md
 
       - name: Upload α-AGI MARK mission timeline
         uses: actions/upload-artifact@v4
