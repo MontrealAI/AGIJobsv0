@@ -2,15 +2,15 @@ import { ethers } from "ethers";
 
 declare global {
   interface Window {
-    ethereum?: unknown;
+    ethereum?: any;
   }
 }
 
 export const getProvider = () => {
   if (!window.ethereum) {
-    throw new Error("No injected provider found. Please install MetaMask or similar.");
+    throw new Error("No injected Ethereum provider found");
   }
-  return new ethers.BrowserProvider(window.ethereum as ethers.Eip1193Provider);
+  return new ethers.BrowserProvider(window.ethereum);
 };
 
 export const getSigner = async () => {
