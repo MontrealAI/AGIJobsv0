@@ -60,6 +60,11 @@ type PlaybookDisplayStep = {
   uri: string;
 };
 
+type TxResult = {
+  hash: string;
+  hub?: string;
+};
+
 const DEFAULT_MESH_API_BASE = "http://localhost:8084";
 
 const getMeshApiBase = () => {
@@ -90,12 +95,34 @@ const fetchJson = async (path: string, init?: RequestInit) => {
   const url = /^(https?:)?\/\//i.test(path)
     ? path
     : new URL(path, meshApiBase).toString();
-  const response = await fetch(url, {
-    headers: { "content-type": "application/json" },
-    ...init
-  });
+
+  const baseHeaders: Record<string, string> = { "content-type": "application/json" };
+  if (init?.headers) {
+    if (init.headers instanceof Headers) {
+      init.headers.forEach((value, key) => {
+        baseHeaders[key] = value;
+      });
+    } else if (Array.isArray(init.headers)) {
+      for (const [key, value] of init.headers) {
+        baseHeaders[key] = value;
+      }
+    } else {
+      Object.assign(baseHeaders, init.headers as Record<string, string>);
+    }
+  }
+
+  const response = await fetch(url, { ...init, headers: baseHeaders });
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status})`);
+    let message = `Request failed (${response.status})`;
+    try {
+      const payload = await response.json();
+      if (payload && typeof payload === "object" && "error" in payload) {
+        message += `: ${(payload as { error?: string }).error ?? ""}`;
+      }
+    } catch {
+      // ignore JSON parse failures for error payloads
+    }
+    throw new Error(message);
   }
   return response.json();
 };
@@ -191,6 +218,13 @@ const ensureStyles = () => {
     .mesh-actor-flag { font-size: 30px; }
     .mesh-actor-name { font-weight: 600; margin-top: 8px; }
     .mesh-actor-tagline { font-size: 13px; color: rgba(148,163,184,0.88); margin-top: 6px; line-height: 1.5; }
+    .mesh-owner-info { color: rgba(148,163,184,0.86); margin-bottom: 12px; line-height: 1.6; }
+    .mesh-owner-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .mesh-owner-section { background: rgba(8,15,30,0.55); border: 1px solid rgba(94,234,212,0.18); border-radius: 16px; padding: 16px; margin-top: 18px; }
+    .mesh-owner-section h4 { margin: 0 0 12px; font-size: 16px; }
+    .mesh-owner-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .mesh-owner-label { display: flex; flex-direction: column; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(148,163,184,0.78); }
+    .mesh-owner-label input { margin-top: 6px; }
     details { margin-top: 16px; }
     details summary { cursor: pointer; }
   `;
@@ -208,6 +242,16 @@ const App: React.FC = () => {
   const [jobId, setJobId] = useState("1");
   const [approve, setApprove] = useState(true);
   const [selectedPlaybook, setSelectedPlaybook] = useState("");
+  const [ownerValidators, setOwnerValidators] = useState("3");
+  const [ownerCommitWindow, setOwnerCommitWindow] = useState("1800");
+  const [ownerRevealWindow, setOwnerRevealWindow] = useState("1800");
+  const [ownerApprovalPct, setOwnerApprovalPct] = useState("75");
+  const [ownerMinStake, setOwnerMinStake] = useState("1000000000000000000");
+  const [ownerMaxStake, setOwnerMaxStake] = useState("0");
+  const [ownerUnbondingPeriod, setOwnerUnbondingPeriod] = useState("604800");
+  const [ownerFeePct, setOwnerFeePct] = useState("2");
+  const [ownerBurnPct, setOwnerBurnPct] = useState("6");
+  const [ownerValidatorRewardPct, setOwnerValidatorRewardPct] = useState("12");
 
   const actorMap = useMemo(() => {
     const map: Record<string, Actor> = {};
@@ -273,17 +317,58 @@ const App: React.FC = () => {
 
   const orchestratorBase = cfg?.orchestratorBase || meshApiBase;
 
-  const callTx = async (path: string, body: Record<string, unknown>) => {
+  const sendTxPlan = async (
+    path: string,
+    body: Record<string, unknown> = {}
+  ): Promise<TxResult[]> => {
     const signer = await getSigner();
-    const target = `${orchestratorBase}${path}`;
+    const target = new URL(path, orchestratorBase).toString();
     const response = await fetchJson(target, {
       method: "POST",
       body: JSON.stringify(body)
     });
-    const tx = "tx" in response ? response.tx : response;
-    const sent = await signer.sendTransaction(tx);
-    await sent.wait();
-    return sent.hash;
+
+    const plan: any[] = [];
+    if (response && typeof response === "object") {
+      if (Array.isArray((response as { txs?: unknown }).txs)) {
+        plan.push(...((response as { txs: any[] }).txs ?? []));
+      }
+      if ((response as { tx?: unknown }).tx) {
+        plan.push((response as { tx: any }).tx);
+      }
+    }
+
+    if (!plan.length) {
+      throw new Error("No transactions returned by orchestrator");
+    }
+
+    const results: TxResult[] = [];
+    for (const entry of plan) {
+      const txEntry = entry as { to?: string; data?: string; value?: unknown; hub?: string };
+      if (!txEntry.to || !txEntry.data) {
+        throw new Error("Invalid transaction payload from orchestrator");
+      }
+      const request = {
+        to: txEntry.to,
+        data: txEntry.data,
+        value: txEntry.value ?? 0
+      };
+      const sent = await signer.sendTransaction(request);
+      await sent.wait();
+      results.push({ hash: sent.hash, hub: txEntry.hub });
+    }
+
+    return results;
+  };
+
+  const describeHashes = (txs: TxResult[]) =>
+    txs
+      .map((entry) => (entry.hub ? `${entry.hash} — ${entry.hub}` : entry.hash))
+      .join("\n");
+
+  const pickValue = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed === "" ? undefined : trimmed;
   };
 
   const connect = async () => {
@@ -293,88 +378,139 @@ const App: React.FC = () => {
 
   const createJob = async () => {
     if (!selectedHub) return alert("Choose a hub first.");
-    const hash = await callTx(`/mesh/${selectedHub}/tx/create`, {
+    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/create`, {
       rewardWei: reward,
       uri
     });
-    alert(`✅ Job created on ${selectedHub}\n${hash}`);
+    alert(`✅ Job created on ${selectedHub}\n${result.hash}`);
   };
 
   const stake = async (role: number, amountWei: string) => {
     if (!selectedHub) return alert("Choose a hub first.");
-    const hash = await callTx(`/mesh/${selectedHub}/tx/stake`, {
+    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/stake`, {
       role,
       amountWei
     });
-    alert(`✅ Stake submitted on ${selectedHub}\n${hash}`);
+    alert(`✅ Stake submitted on ${selectedHub}\n${result.hash}`);
   };
 
   const commit = async () => {
     if (!selectedHub || !address) return alert("Connect wallet and choose hub.");
     const { commitHash, salt } = computeCommit(approve);
     localStorage.setItem(`salt_${selectedHub}_${jobId}_${address}`, salt);
-    const hash = await callTx(`/mesh/${selectedHub}/tx/commit`, {
+    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/commit`, {
       jobId: Number(jobId),
       commitHash,
       subdomain: "validator",
       proof: []
     });
-    alert(`🌀 Commit broadcasted\n${hash}`);
+    alert(`🌀 Commit broadcasted\n${result.hash}`);
   };
 
   const reveal = async () => {
     if (!selectedHub || !address) return alert("Connect wallet and choose hub.");
     const salt = localStorage.getItem(`salt_${selectedHub}_${jobId}_${address}`);
     if (!salt) return alert("Commit salt not found. Please commit first.");
-    const hash = await callTx(`/mesh/${selectedHub}/tx/reveal`, {
+    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/reveal`, {
       jobId: Number(jobId),
       approve,
       salt
     });
-    alert(`🌈 Reveal confirmed\n${hash}`);
+    alert(`🌈 Reveal confirmed\n${result.hash}`);
   };
 
   const finalize = async () => {
     if (!selectedHub) return alert("Choose a hub first.");
-    const hash = await callTx(`/mesh/${selectedHub}/tx/finalize`, {
+    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/finalize`, {
       jobId: Number(jobId)
     });
-    alert(`🏁 Finalization submitted\n${hash}`);
+    alert(`🏁 Finalization submitted\n${result.hash}`);
   };
 
   const dispute = async () => {
     if (!selectedHub) return alert("Choose a hub first.");
     const evidence = prompt("Attach evidence (URL or summary)", "");
-    const hash = await callTx(`/mesh/${selectedHub}/tx/dispute`, {
+    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/dispute`, {
       jobId: Number(jobId),
       evidence
     });
-    alert(`⚖️ Dispute raised\n${hash}`);
+    alert(`⚖️ Dispute raised\n${result.hash}`);
   };
 
   const instantiate = async () => {
     if (!selectedPlaybook) return alert("Choose a mission playbook.");
-    const signer = await getSigner();
-    const target = `${orchestratorBase}/mesh/plan/instantiate`;
-    const response = await fetchJson(target, {
-      method: "POST",
-      body: JSON.stringify({ playbookId: selectedPlaybook })
+    const results = await sendTxPlan("/mesh/plan/instantiate", {
+      playbookId: selectedPlaybook
     });
-    for (const txData of response.txs) {
-      const sent = await signer.sendTransaction(txData);
-      await sent.wait();
-    }
-    alert(`🚀 Mission instantiated across ${response.txs.length} jobs`);
+    alert(
+      `🚀 Mission instantiated across ${results.length} jobs\n${describeHashes(results)}`
+    );
   };
 
   const allowlistDev = async (role: number) => {
     if (!selectedHub) return alert("Choose a hub first.");
     if (!address) return alert("Connect wallet first.");
-    const hash = await callTx(`/mesh/${selectedHub}/tx/allowlist`, {
+    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/allowlist`, {
       role,
       addr: address
     });
-    alert(`🛡️ Allowlist tx sent\n${hash}`);
+    alert(`🛡️ Allowlist tx sent\n${result.hash}`);
+  };
+
+  const pauseHub = async () => {
+    if (!selectedHub) return alert("Choose a hub first.");
+    const results = await sendTxPlan(`/mesh/${selectedHub}/owner/pause`);
+    alert(`⏸️ Hub paused\n${describeHashes(results)}`);
+  };
+
+  const resumeHub = async () => {
+    if (!selectedHub) return alert("Choose a hub first.");
+    const results = await sendTxPlan(`/mesh/${selectedHub}/owner/unpause`);
+    alert(`▶️ Hub resumed\n${describeHashes(results)}`);
+  };
+
+  const updateValidation = async () => {
+    if (!selectedHub) return alert("Choose a hub first.");
+    try {
+      const results = await sendTxPlan(`/mesh/${selectedHub}/owner/validation`, {
+        validatorsPerJob: pickValue(ownerValidators),
+        commitWindow: pickValue(ownerCommitWindow),
+        revealWindow: pickValue(ownerRevealWindow),
+        approvalPct: pickValue(ownerApprovalPct)
+      });
+      alert(
+        `📡 Validation parameters updated (${results.length} tx)\n${describeHashes(results)}`
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(`⚠️ ${error.message}`);
+      } else {
+        alert("⚠️ Unable to update validation settings");
+      }
+    }
+  };
+
+  const updateStake = async () => {
+    if (!selectedHub) return alert("Choose a hub first.");
+    try {
+      const results = await sendTxPlan(`/mesh/${selectedHub}/owner/stake`, {
+        minStakeWei: pickValue(ownerMinStake),
+        maxStakeWei: pickValue(ownerMaxStake),
+        unbondingPeriod: pickValue(ownerUnbondingPeriod),
+        feePct: pickValue(ownerFeePct),
+        burnPct: pickValue(ownerBurnPct),
+        validatorRewardPct: pickValue(ownerValidatorRewardPct)
+      });
+      alert(
+        `🏛️ Stake parameters updated (${results.length} tx)\n${describeHashes(results)}`
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(`⚠️ ${error.message}`);
+      } else {
+        alert("⚠️ Unable to update stake parameters");
+      }
+    }
   };
 
   return (
@@ -441,6 +577,115 @@ const App: React.FC = () => {
           <button onClick={reveal}>Reveal</button>
           <button onClick={finalize}>Finalize</button>
           <button onClick={dispute}>Raise Dispute</button>
+        </div>
+      </div>
+
+      <div className="mesh-card">
+        <h3>Owner Control Center</h3>
+        <p className="mesh-owner-info">
+          Connect with the governance wallet to pause hubs, retune validation cadence, and
+          adjust staking economics. Transactions execute directly from your wallet — no
+          backend custody.
+        </p>
+        <div className="mesh-owner-actions">
+          <button onClick={pauseHub}>Pause Hub</button>
+          <button onClick={resumeHub}>Resume Hub</button>
+        </div>
+        <div className="mesh-owner-section">
+          <h4>Validation cadence</h4>
+          <div className="mesh-owner-fields">
+            <label className="mesh-owner-label">
+              Validators / Job
+              <input
+                value={ownerValidators}
+                onChange={(e) => setOwnerValidators(e.target.value)}
+                placeholder="e.g. 3"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Commit Window (s)
+              <input
+                value={ownerCommitWindow}
+                onChange={(e) => setOwnerCommitWindow(e.target.value)}
+                placeholder="Seconds"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Reveal Window (s)
+              <input
+                value={ownerRevealWindow}
+                onChange={(e) => setOwnerRevealWindow(e.target.value)}
+                placeholder="Seconds"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Approval Threshold (%)
+              <input
+                value={ownerApprovalPct}
+                onChange={(e) => setOwnerApprovalPct(e.target.value)}
+                placeholder="0-100"
+              />
+            </label>
+          </div>
+          <button style={{ marginTop: 12 }} onClick={updateValidation}>
+            Apply Validation Settings
+          </button>
+        </div>
+        <div className="mesh-owner-section">
+          <h4>Stake economics</h4>
+          <div className="mesh-owner-fields">
+            <label className="mesh-owner-label">
+              Min Stake (wei)
+              <input
+                value={ownerMinStake}
+                onChange={(e) => setOwnerMinStake(e.target.value)}
+                placeholder="Minimum stake"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Max Stake (wei)
+              <input
+                value={ownerMaxStake}
+                onChange={(e) => setOwnerMaxStake(e.target.value)}
+                placeholder="0 = unlimited"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Unbonding Period (s)
+              <input
+                value={ownerUnbondingPeriod}
+                onChange={(e) => setOwnerUnbondingPeriod(e.target.value)}
+                placeholder="Seconds"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Fee %
+              <input
+                value={ownerFeePct}
+                onChange={(e) => setOwnerFeePct(e.target.value)}
+                placeholder="0-100"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Burn %
+              <input
+                value={ownerBurnPct}
+                onChange={(e) => setOwnerBurnPct(e.target.value)}
+                placeholder="0-100"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Validator Reward %
+              <input
+                value={ownerValidatorRewardPct}
+                onChange={(e) => setOwnerValidatorRewardPct(e.target.value)}
+                placeholder="0-100"
+              />
+            </label>
+          </div>
+          <button style={{ marginTop: 12 }} onClick={updateStake}>
+            Apply Stake Settings
+          </button>
         </div>
       </div>
 
