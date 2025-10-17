@@ -86,7 +86,18 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    carries a `verification.summary` payload (confidence index, passed/total counts, verdict, labelled checks) so the
    console, dashboard, and integrity dossier all present the exact same confidence score.
 
-7. **Emit the integrity dossier for stakeholder sign-off**
+7. **Layer in stochastic assurance**
+
+   ```bash
+   npm run verify:alpha-agi-mark:stochastic
+   ```
+
+   Generates `alpha-mark-stochastic-proof.json` plus a mermaid-enhanced Markdown brief that logs
+   ledger replay parity and 250 Monte Carlo stress runs. The dossier highlights reserve
+   solvency, supply bounds, and pricing monotonicity so a non-technical steward can cite
+   two independent verification stacks in executive briefings.
+
+8. **Emit the integrity dossier for stakeholder sign-off**
 
    ```bash
    npm run integrity:alpha-agi-mark
@@ -96,7 +107,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    the verification table, owner command deck snapshot, and a mermaid contribution pie chart. Circulate
    it alongside the dashboard for executive approval.
 
-8. **Forge the empowerment pulse dossier**
+9. **Forge the empowerment pulse dossier**
 
    ```bash
    npm run pulse:alpha-agi-mark
@@ -107,7 +118,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    the automation multiplier, validator quorum, and owner command deck are aligned for sovereign
    launch authority.
 
-9. **Synthesize the risk lattice dossier**
+10. **Synthesize the risk lattice dossier**
 
    ```bash
    npm run lattice:alpha-agi-mark
@@ -117,7 +128,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    control deck, verification verdict, reserve telemetry, and (when available) the empowerment multiplier. Hand this to
    executives who need a single-page risk and assurance blueprint.
 
-10. **Publish the cinematic mission timeline**
+11. **Publish the cinematic mission timeline**
 
    ```bash
    npm run timeline:alpha-agi-mark
@@ -126,7 +137,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    Creates `demo/alpha-agi-mark/reports/alpha-mark-timeline.md`, blending a Mermaid timeline with a
    tabular ledger of every orchestrated action. Ideal for board briefings or audit evidence packs.
 
-11. **(Optional) Run unit tests**
+12. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
@@ -136,7 +147,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    pause/emergency exit, abort, and residual withdrawal) so board operators can demonstrate contractual control with a
    single automated report.
 
-12. **(Optional) Dry-run on a fork or external network**
+13. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 

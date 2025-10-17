@@ -63,6 +63,7 @@ function main() {
     { label: "α-AGI MARK orchestrator", command: "npx", args: hardhatArgs },
     { label: "Owner parameter matrix", command: "npx", args: tsNodeArgs("exportOwnerMatrix.ts") },
     { label: "Triple-verification replay", command: "npx", args: tsNodeArgs("verifyRecap.ts") },
+    { label: "Stochastic assurance probe", command: "npx", args: tsNodeArgs("monteCarloVerifier.ts") },
     { label: "Integrity dossier synthesis", command: "npx", args: tsNodeArgs("generateIntegrityReport.ts") },
     { label: "Risk lattice synthesis", command: "npx", args: tsNodeArgs("generateRiskLattice.ts") },
     { label: "Empowerment pulse dossier", command: "npx", args: tsNodeArgs("generateEmpowermentPulse.ts") },
@@ -79,6 +80,8 @@ function main() {
   const latticePath = path.join(demoDir, "reports", "alpha-mark-risk-lattice.md");
   const empowermentPath = path.join(demoDir, "reports", "alpha-mark-empowerment.md");
   const superintelligencePath = path.join(demoDir, "reports", "alpha-mark-superintelligence.md");
+  const stochasticJsonPath = path.join(demoDir, "reports", "alpha-mark-stochastic-proof.json");
+  const stochasticMarkdownPath = path.join(demoDir, "reports", "alpha-mark-stochastic-proof.md");
 
   const elapsed = ((Date.now() - suiteStart) / 1000).toFixed(2);
   console.log(`\n🌌 α-AGI MARK operator suite complete in ${elapsed}s.`);
@@ -88,6 +91,8 @@ function main() {
   console.log(`   • Risk lattice dossier: ${path.relative(repoRoot, latticePath)}`);
   console.log(`   • Empowerment pulse: ${path.relative(repoRoot, empowermentPath)}`);
   console.log(`   • Superintelligence brief: ${path.relative(repoRoot, superintelligencePath)}`);
+  console.log(`   • Stochastic proof (JSON): ${path.relative(repoRoot, stochasticJsonPath)}`);
+  console.log(`   • Stochastic proof (Markdown): ${path.relative(repoRoot, stochasticMarkdownPath)}`);
   console.log(`   • ${ownerMatrixNote}`);
 }
 
