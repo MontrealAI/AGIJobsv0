@@ -95,7 +95,7 @@ describe("α-AGI MARK owner governance", function () {
     expect(await mark.reserveBalance()).to.equal(cost);
 
     await expect(mark.connect(owner).finalizeLaunch(vault.target as string, "0x"))
-      .to.be.revertedWith("Not validated");
+      .to.be.revertedWithCustomError(mark, "ValidationRequired");
 
     await mark.connect(owner).setValidationOverride(true, true);
 
@@ -137,7 +137,8 @@ describe("α-AGI MARK owner governance", function () {
     await vault.connect(owner).unpauseVault();
 
     await expect(vault.connect(other).notifyLaunch(1, false, "0x"))
-      .to.be.revertedWith("Unauthorized sender");
+      .to.be.revertedWithCustomError(vault, "UnauthorizedSender")
+      .withArgs(other.address);
 
     const metadata = ethers.hexlify(ethers.toUtf8Bytes("ignition"));
     await expect(vault.connect(owner).notifyLaunch(0n, false, metadata))
@@ -154,7 +155,7 @@ describe("α-AGI MARK owner governance", function () {
     await expect(vault.connect(other).withdraw(recipient.address, toWei("0.1")))
       .to.be.revertedWithCustomError(vault, "OwnableUnauthorizedAccount");
     await expect(vault.connect(owner).withdraw(ethers.ZeroAddress, toWei("0.1")))
-      .to.be.revertedWith("Recipient required");
+      .to.be.revertedWithCustomError(vault, "InvalidRecipient");
 
     const withdrawal = toWei("0.25");
     const balanceBefore = await ethers.provider.getBalance(recipient.address);

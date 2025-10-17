@@ -90,9 +90,11 @@ describe("α-AGI MARK owner command deck", function () {
     expect(await mark.totalSupply()).to.equal(purchaseAmount);
     expect(await mark.reserveBalance()).to.equal(purchaseCost);
 
-    await expect(mark.connect(owner).setFundingCap(toWei("0.1"))).to.be.revertedWith("Below reserve");
-    await expect(mark.connect(owner).setMaxSupply(1)).to.be.revertedWith("Below supply");
-    await expect(mark.connect(owner).setBaseAsset(ethers.ZeroAddress)).to.be.revertedWith("Supply exists");
+    await expect(mark.connect(owner).setFundingCap(toWei("0.1")))
+      .to.be.revertedWithCustomError(mark, "CapBelowReserve");
+    await expect(mark.connect(owner).setMaxSupply(1)).to.be.revertedWithCustomError(mark, "MaxSupplyExceeded");
+    await expect(mark.connect(owner).setBaseAsset(ethers.ZeroAddress))
+      .to.be.revertedWithCustomError(mark, "SaleAlreadyStarted");
 
     await mark.connect(owner).setEmergencyExit(true);
     expect(await mark.emergencyExitEnabled()).to.equal(true);

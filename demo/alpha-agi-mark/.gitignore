@@ -8,3 +8,5 @@ reports/*
 !reports/alpha-mark-empowerment.md
 !reports/alpha-mark-risk-lattice.md
 !reports/alpha-mark-timeline.md
+!reports/abi/
+!reports/abi/*.json
