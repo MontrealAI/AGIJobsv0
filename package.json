@@ -168,7 +168,8 @@
     "timeline:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateMissionTimeline.ts",
     "console:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/operatorConsole.ts",
     "lattice:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateRiskLattice.ts",
-    "pulse:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateEmpowermentPulse.ts"
+    "pulse:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateEmpowermentPulse.ts",
+    "superintelligence:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateSuperintelligenceBrief.ts"
   },
   "keywords": [],
   "author": "",
