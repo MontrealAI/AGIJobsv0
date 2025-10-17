@@ -73,6 +73,38 @@ function shortenAddress(address: string, prefix = 6, suffix = 4): string {
   return `${address.slice(0, prefix)}…${address.slice(-suffix)}`;
 }
 
+function escapeMermaidLabel(label: string): string {
+  return label.replace(/"/g, '\"');
+}
+
+function toMermaidId(label: string, prefix: string): string {
+  const sanitized = label.replace(/[^A-Za-z0-9]/g, "_");
+  if (!sanitized.length) {
+    return `${prefix}_${Math.random().toString(16).slice(2, 6)}`;
+  }
+  return `${prefix}_${sanitized}`;
+}
+
+function parseForecastValueTrillions(value: string): number {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^([0-9]+(?:\.[0-9]+)?)\s*([TtMmBb]?)$/);
+  if (!match) {
+    return 0;
+  }
+  const amount = Number(match[1]);
+  const unit = match[2]?.toUpperCase() ?? "";
+  switch (unit) {
+    case "T":
+      return amount;
+    case "B":
+      return amount / 1000;
+    case "M":
+      return amount / 1_000_000;
+    default:
+      return amount;
+  }
+}
+
 function csvEscape(value: string | number | boolean | null | undefined): string {
   if (value === null || value === undefined) {
     return "";
@@ -207,6 +239,14 @@ async function main() {
 
   log("Guardian Auditor", `SystemPause sentinel anchored to ${strategist.address} for cross-contract halts.`);
   log("Meta-Sentinel", "Initialising α-AGI Insight MARK deployment lattice.");
+  log(
+    "MATS Engine",
+    "Meta-Agentic Tree Search (NSGA-II) swarm bootstrapped – generating Pareto-efficient foresight strategies."
+  );
+  log(
+    "Thermodynamic Trigger",
+    "Monitoring AGI capability index T_AGI across disruption domains for imminent phase transitions."
+  );
 
   const scenarioAllocations = [
     { minter: operator, receiver: operator },
@@ -220,7 +260,14 @@ async function main() {
     const scenario = config.scenarios[i];
     const { minter, receiver } = scenarioAllocations[i] ?? scenarioAllocations[0];
 
-    log("Thermodynamic Oracle", `Evaluating ${scenario.sector} rupture – confidence ${(scenario.confidence * 100).toFixed(1)}%.`);
+    log(
+      "Thermodynamic Oracle",
+      `Evaluating ${scenario.sector} rupture – confidence ${(scenario.confidence * 100).toFixed(1)}%.`
+    );
+    log(
+      "MATS Engine",
+      `Pareto frontier surfaced ${scenario.sector} vector at ${(scenario.confidence * 100).toFixed(1)}% certainty.`
+    );
 
     const tx = await novaSeed
       .connect(minter)
@@ -375,6 +422,7 @@ async function main() {
   const matrixPath = path.join(reportsDir, "insight-control-matrix.json");
   const mermaidPath = path.join(reportsDir, "insight-control-map.mmd");
   const governancePath = path.join(reportsDir, "insight-governance.mmd");
+  const superintelligencePath = path.join(reportsDir, "insight-superintelligence.mmd");
   const telemetryPath = path.join(reportsDir, "insight-telemetry.log");
   const htmlPath = path.join(reportsDir, "insight-report.html");
   const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
@@ -408,6 +456,24 @@ async function main() {
     telemetry,
   };
 
+  const mintedTotalConfidence = minted.reduce((acc, entry) => acc + entry.scenario.confidence, 0);
+  const averageConfidence = minted.length ? mintedTotalConfidence / minted.length : 0;
+
+  const totalForecastTrillions = minted.reduce(
+    (acc, entry) => acc + parseForecastValueTrillions(entry.scenario.forecastValue ?? "0"),
+    0
+  );
+  const peakConfidence = minted.reduce((acc, entry) => Math.max(acc, entry.scenario.confidence), 0);
+  const floorConfidence = minted.reduce(
+    (acc, entry) => Math.min(acc, entry.scenario.confidence),
+    minted.length ? minted[0].scenario.confidence : 0
+  );
+  const agiCapabilityIndex = minted.length ? averageConfidence * 0.6 + peakConfidence * 0.4 : 0;
+  const capabilityPercent = Math.round(agiCapabilityIndex * 100);
+  const peakPercent = Math.round(peakConfidence * 100);
+  const floorPercent = Math.round(floorConfidence * 100);
+  const totalForecastDisplay = `${totalForecastTrillions.toFixed(2)}T`;
+
   const tableRows = minted
     .map((entry) => {
       const saleDetails = entry.sale
@@ -435,6 +501,13 @@ async function main() {
     `**System Pause Sentinel:** ${strategist.address}\\\n` +
     `**Fee:** ${(Number(await exchange.feeBps()) / 100).toFixed(2)}%\\\n` +
     `**Treasury:** ${await exchange.treasury()}\\\n\n` +
+    `## Superintelligent Engine Summary\n` +
+    `- Meta-Agentic Tree Search agents engaged: ${config.agents.join(", ")}.\\\n` +
+    `- Composite AGI capability index (weighted): ${(agiCapabilityIndex * 100).toFixed(1)}%.\\\n` +
+    `- Confidence band: min ${(floorConfidence * 100).toFixed(1)}% → max ${(peakConfidence * 100).toFixed(1)}%.\\\n` +
+    `- Portfolio forecast value: ${totalForecastTrillions.toFixed(2)}T equivalent.\\\n` +
+    `- Scenario dataset fingerprint: ${scenarioHash}.\\\n\n` +
+    `## Foresight Portfolio Ledger\n` +
     `| Token | Sector | Rupture Year | Thesis | Fusion Plan | Status | Market State | Custodian | Owner Controls |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
     `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n- Sentinel (${strategist.address}) authorised through \`setSystemPause\` to trigger emergency halts across modules.\n- Listings can be repriced live with \`updateListingPrice\` (owner override supported).\n- Owner may invoke \`forceDelist\` to evacuate foresight assets to a safe wallet instantly.\n\n` +
     `## Scenario Dataset\n- Config file: ${scenarioRelativePath}\\\n- SHA-256: ${scenarioHash}\n\n` +
@@ -595,6 +668,79 @@ async function main() {
         font-weight: 600;
         color: #021321;
       }
+      .engine {
+        margin: 2rem 0;
+        padding: 1.75rem;
+        border-radius: 22px;
+        background: linear-gradient(135deg, rgba(34, 95, 183, 0.45), rgba(116, 70, 208, 0.28));
+        border: 1px solid rgba(129, 205, 255, 0.3);
+        box-shadow: 0 24px 64px rgba(12, 25, 68, 0.55);
+      }
+      .engine__intro {
+        margin-bottom: 1.25rem;
+        max-width: 960px;
+      }
+      .engine__gauges {
+        display: grid;
+        gap: 1.25rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+      .gauge {
+        position: relative;
+        padding: 1.15rem 1.35rem 1.5rem;
+        border-radius: 18px;
+        background: rgba(10, 27, 64, 0.55);
+        border: 1px solid rgba(146, 214, 255, 0.35);
+        overflow: hidden;
+      }
+      .gauge__label {
+        font-size: 0.8rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(198, 229, 255, 0.7);
+        margin-bottom: 0.75rem;
+      }
+      .gauge__bar {
+        position: relative;
+        height: 14px;
+        border-radius: 12px;
+        background: rgba(22, 40, 86, 0.7);
+        overflow: hidden;
+      }
+      .gauge__fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: linear-gradient(90deg, #48e8ff, #9d7bff);
+        box-shadow: 0 0 16px rgba(132, 246, 255, 0.55);
+      }
+      .gauge__value {
+        margin-top: 0.75rem;
+        font-size: 1.35rem;
+        font-weight: 600;
+      }
+      .gauge__meta {
+        font-size: 0.85rem;
+        color: rgba(198, 229, 255, 0.75);
+      }
+      .gauge--forecast {
+        background: rgba(27, 12, 64, 0.55);
+        border: 1px solid rgba(193, 172, 255, 0.35);
+      }
+      .engine__agents {
+        margin-top: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .engine__agent {
+        padding: 0.45rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(30, 71, 155, 0.55);
+        border: 1px solid rgba(135, 217, 255, 0.35);
+        font-size: 0.85rem;
+      }
       .timeline {
         position: relative;
         margin: 2rem 0 3rem;
@@ -688,6 +834,41 @@ async function main() {
       <div class="meta-grid__item">
         <span class="meta-grid__label">Fee</span>
         <span class="meta-grid__value">${(Number(await exchange.feeBps()) / 100).toFixed(2)}%</span>
+      </div>
+    </section>
+    <section class="engine">
+      <h2>Superintelligent Engine Pulse</h2>
+      <p class="engine__intro">
+        The Meta-Agentic Tree Search lattice and thermodynamic trigger collaborate to forecast rupture points beyond human foresight.
+        Capability gauges below surface the live AGI index, certainty band, and total forecast value commanding the marketplace.
+      </p>
+      <div class="engine__gauges">
+        <div class="gauge">
+          <div class="gauge__label">Composite Capability Index</div>
+          <div class="gauge__bar">
+            <div class="gauge__fill" style="width:${capabilityPercent}%"></div>
+          </div>
+          <div class="gauge__value">${capabilityPercent}% certainty</div>
+          <div class="gauge__meta">Weighted blend of swarm average and peak disruption confidence.</div>
+        </div>
+        <div class="gauge">
+          <div class="gauge__label">Confidence Band</div>
+          <div class="gauge__bar">
+            <div class="gauge__fill" style="width:${peakPercent}%"></div>
+          </div>
+          <div class="gauge__value">${floorPercent}% → ${peakPercent}%</div>
+          <div class="gauge__meta">Floor and ceiling disruption certainty across analysed sectors.</div>
+        </div>
+        <div class="gauge gauge--forecast">
+          <div class="gauge__label">Tokenised Opportunity Mass</div>
+          <div class="gauge__value">${totalForecastDisplay}</div>
+          <div class="gauge__meta">Cumulative forecast value distilled into Nova-Seed inventory (trillion-equivalent).</div>
+        </div>
+      </div>
+      <div class="engine__agents">
+        ${config.agents
+          .map((agent) => `<span class="engine__agent">${escapeHtml(agent)}</span>`)
+          .join("\n        ")}
       </div>
     </section>
     <section class="timeline">
@@ -818,8 +999,47 @@ ${htmlRows}
     `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n` +
     `    classDef agent fill:#14233b,stroke:#60d2ff,color:#e8f6ff;\n`;
 
-  const mintedTotalConfidence = minted.reduce((acc, entry) => acc + entry.scenario.confidence, 0);
-  const averageConfidence = minted.length ? mintedTotalConfidence / minted.length : 0;
+  const agentMermaidNodes = config.agents.map((agent, index) => ({
+    id: toMermaidId(agent, `agent${index}`),
+    label: agent,
+  }));
+  const agentMermaidDefinitions = agentMermaidNodes
+    .map(({ id, label }) => `    ${id}["${escapeMermaidLabel(label)}"]:::agent`)
+    .join("\n");
+  const agentMermaidFlow = agentMermaidNodes
+    .map(({ id }, index) => {
+      const next = agentMermaidNodes[index + 1];
+      if (next) {
+        return `    ${id} --> ${next.id}`;
+      }
+      return `    ${id} --> guardianSentinel`;
+    })
+    .join("\n");
+
+  const superintelligenceMermaid = `flowchart LR\n` +
+    `    mats[[Meta-Agentic Tree Search (NSGA-II)]]:::engine\n` +
+    `    thermo[[Thermodynamic Rupture Trigger]]:::engine\n` +
+    `    capability[[AGI Capability Index]]:::signal\n` +
+    `    novaSeed[α-AGI Nova-Seed Forge]:::contract\n` +
+    `    market[α-AGI MARK Exchange]:::contract\n` +
+    `    treasuryNode((Treasury Governance)):::control\n` +
+    `    guardianSentinel((System Sentinel)):::control\n` +
+    (agentMermaidDefinitions ? `${agentMermaidDefinitions}\n` : "") +
+    `    mats --> thermo\n` +
+    `    thermo --> capability\n` +
+    `    capability --> novaSeed\n` +
+    `    novaSeed --> market\n` +
+    `    market --> treasuryNode\n` +
+    `    guardianSentinel --> mats\n` +
+    `    guardianSentinel --> market\n` +
+    (agentMermaidNodes.length ? `    mats --> ${agentMermaidNodes[0].id}\n` : "") +
+    (agentMermaidFlow ? `${agentMermaidFlow}\n` : "") +
+    `    classDef engine fill:#162d59,stroke:#8ff6ff,color:#e8f6ff;\n` +
+    `    classDef signal fill:#1e3d76,stroke:#ffe174,color:#fff9d4;\n` +
+    `    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n` +
+    `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n` +
+    `    classDef agent fill:#14233b,stroke:#60d2ff,color:#e8f6ff;\n`;
+
   const mintedByOwnerCount = minted.filter((entry) => entry.mintedBy.toLowerCase() === operator.address.toLowerCase()).length;
   const delegatedMintCount = minted.length - mintedByOwnerCount;
   const soldCount = minted.filter((entry) => entry.status === "SOLD").length;
@@ -889,7 +1109,9 @@ ${htmlRows}
     `- Minted Nova-Seeds: ${minted.length} (owner minted ${mintedByOwnerCount}, delegated minted ${delegatedMintCount}).\\\n` +
     `- Live market activity: ${soldCount} sold, ${listedCount} listed, ${forceDelistedCount} under sentinel custody.\\\n` +
     `- Fusion dossier state: ${revealedCount} revealed, ${sealedCount} sealed.\\\n` +
-    `- Average confidence: ${formatPercent(averageConfidence)}.\\\n\n` +
+    `- Average confidence: ${formatPercent(averageConfidence)}.\\\n` +
+    `- Composite AGI capability index: ${capabilityPercent}%.\\\n` +
+    `- Portfolio forecast magnitude: ${totalForecastDisplay}.\\\n\n` +
     `## Rapid Command Checklist\n` +
     `- [ ] Trigger \`pause()\` on Insight Exchange (${await exchange.getAddress()}) for market freeze.\n` +
     `- [ ] Invoke \`pause()\` on α-AGI Nova-Seed (${await novaSeed.getAddress()}) to freeze custody flows.\n` +
@@ -982,6 +1204,7 @@ ${htmlRows}
   await writeFile(matrixPath, JSON.stringify(controlMatrix, null, 2));
   await writeFile(mermaidPath, mermaid);
   await writeFile(governancePath, governanceMermaid);
+  await writeFile(superintelligencePath, superintelligenceMermaid);
   await writeFile(telemetryPath, telemetryLog);
   await writeFile(htmlPath, html);
   await writeFile(ownerBriefPath, ownerBrief);
@@ -996,6 +1219,7 @@ ${htmlRows}
     matrixPath,
     mermaidPath,
     governancePath,
+    superintelligencePath,
     telemetryPath,
     ownerBriefPath,
     csvPath,

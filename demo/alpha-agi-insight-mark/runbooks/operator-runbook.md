@@ -18,7 +18,7 @@ The orchestrator:
 
 - Deploys the Insight Access Token, Nova-Seed NFT, and Foresight Exchange.
 - Spins up the synthetic meta-agent swarm (Meta-Sentinel, Thermodynamic Oracle, FusionSmith, Venture Cartographer, Guardian Auditor).
-- Mints three disruption insights, reveals and revises the first FusionPlan, lists two tokens, reprices live, executes a sale, and force-delists a listing to sentinel custody.
+- Mints three disruption insights, reveals and revises the first FusionPlan, lists two tokens, reprices live, executes a sale, force-delists a listing to sentinel custody, and renders capability gauges for the superintelligent foresight engine.
 - Resolves the traded prediction, drills the delegated SystemPause sentinel, and exports integrity artefacts.
 
 Watch the console for emoji-tagged telemetry such as:
@@ -37,6 +37,7 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 - `insight-control-matrix.json` – machine-readable owner control inventory.
 - `insight-control-map.mmd` – mermaid diagram (render via https://mermaid.live/).
 - `insight-governance.mmd` – insight swarm + sentinel orchestration schematic.
+- `insight-superintelligence.mmd` – Meta-Agentic Tree Search + thermodynamic trigger constellation (render via https://mermaid.live/).
 - `insight-owner-brief.md` – executive command sheet summarising pause hooks and custody.
 - `insight-market-matrix.csv` – spreadsheet-ready dataset for analysts and treasury.
 - `insight-constellation.mmd` – constellation mermaid capturing live custody and sentinel edges.

@@ -4,4 +4,6 @@ typechain-types/
 reports/insight-*.json
 reports/insight-*.md
 reports/insight-*.mmd
+reports/insight-*.html
+reports/insight-*.csv
 reports/insight-telemetry.log

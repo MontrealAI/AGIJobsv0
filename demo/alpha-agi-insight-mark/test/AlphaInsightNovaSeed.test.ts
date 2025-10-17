@@ -70,6 +70,23 @@ describe("AlphaInsightNovaSeed", () => {
     expect(await contract.tokenURI(1n)).to.equal("ipfs://fusion?rev=2");
   });
 
+  it("keeps fusion URI in sync with sealed updates prior to reveal", async () => {
+    await contract.mintInsight(alice.address, sampleInput());
+    await contract.updateSealedURI(1n, "ipfs://sealed-updated");
+
+    let metadata = await contract.getInsight(1n);
+    expect(metadata.sealedURI).to.equal("ipfs://sealed-updated");
+    expect(metadata.fusionURI).to.equal("ipfs://sealed-updated");
+    expect(metadata.fusionRevealed).to.equal(false);
+
+    await contract.revealFusionPlan(1n, "ipfs://fusion");
+    await contract.updateSealedURI(1n, "ipfs://sealed-post-reveal");
+
+    metadata = await contract.getInsight(1n);
+    expect(metadata.sealedURI).to.equal("ipfs://sealed-post-reveal");
+    expect(metadata.fusionURI).to.equal("ipfs://fusion");
+  });
+
   it("allows delegated sentinel to pause", async () => {
     await contract.setSystemPause(alice.address);
     expect(await contract.systemPause()).to.equal(alice.address);
