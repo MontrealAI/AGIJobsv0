@@ -47,8 +47,9 @@ from the recap, ensuring auditors and founders quote identical numbers in every 
 
 1. `npm run demo:alpha-agi-mark` – generate the recap dossier and sovereign dashboard.
 2. `npm run verify:alpha-agi-mark` – replay the trade ledger and recompute curve maths from first principles.
-3. `npm run integrity:alpha-agi-mark` – assemble the confidence dossier ready for board review.
-4. `npm run dashboard:alpha-agi-mark` *(optional)* – re-render the cinematic HTML dashboard from any recap snapshot.
+3. `npm run verify:alpha-agi-mark:stochastic` – execute 250 Monte Carlo stress runs and emit the stochastic proof dossier.
+4. `npm run integrity:alpha-agi-mark` – assemble the confidence dossier ready for board review.
+5. `npm run dashboard:alpha-agi-mark` *(optional)* – re-render the cinematic HTML dashboard from any recap snapshot.
 
 These commands all run inside the demo directory and require no Solidity or DevOps knowledge. Every command prints a
 confidence index and explains any mismatch, allowing a non-technical operator to intervene rapidly if a discrepancy ever
@@ -86,6 +87,32 @@ graph TD
 The new **Phase Coverage Scanner** enforces that the mission timeline spans orchestration through launch and that a
 verification milestone is documented. This protects against incomplete operator narratives sneaking through the review
 process.
+
+## Stochastic assurance lattice
+
+```mermaid
+flowchart TD
+  subgraph Deterministic[Deterministic Verification]
+    Ledger[Ledger Replay]
+    Curve[Bonding Curve Maths]
+    Checksums[Checksum Auditor]
+  end
+  subgraph Stochastic[Stochastic Probe]
+    Monte[Monte Carlo Engine]
+    Invariants[Invariant Sentinels]
+    Markdown[Mermaid Dossier]
+  end
+  Ledger --> Curve --> Checksums
+  Monte --> Invariants --> Markdown
+  Checksums --> Fusion{Confidence Fusion}
+  Markdown --> Fusion
+  Fusion -->|Unified verdict| Operator
+  Operator -->|Brief stakeholders| Boardroom
+```
+
+The Monte Carlo harness produces `alpha-mark-stochastic-proof.json` and a matching Markdown brief so operators
+can show deterministic and stochastic layers converging on the same verdict. The dossier includes reserve and supply
+windows, pie-chart coverage, and invariant tables that mirror the deterministic checks.
 
 ## Timeline integrity lenses
 

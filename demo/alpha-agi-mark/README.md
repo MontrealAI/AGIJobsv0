@@ -120,6 +120,17 @@ npm run verify:alpha-agi-mark
 The verifier consumes the recap dossier, replays the trade ledger, recomputes bonding-curve pricing from first
 principles, and prints a "confidence index" table that must reach 100% before sign-off.
 
+For a stochastic stress harness that probes the bonding curve under hundreds of random trade sequences:
+
+```bash
+npm run verify:alpha-agi-mark:stochastic
+```
+
+This emits `reports/alpha-mark-stochastic-proof.json` and
+`reports/alpha-mark-stochastic-proof.md`, documenting the ledger replay parity plus Monte Carlo
+coverage in both JSON and mermaid-rich Markdown form so non-technical operators can cite a
+second, statistically driven assurance layer.
+
 Every recap is now wrapped in a tamper-evident envelope. The demo encodes network metadata, actor registries,
 the orchestrator commit/branch, and a canonical JSON SHA-256 digest inside the recap file. The verifier recomputes
 the digest with a key-sorted canonicalisation pass and fails if the checksum diverges, guaranteeing that stakeholders
