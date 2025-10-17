@@ -1,0 +1,56 @@
+[
+  {
+    "id": "decarbonize-port-city",
+    "name": "Mission: Decarbonize Port City",
+    "description": "Planetary ports alliance launches a 4-stage acceleration program to drive emissions to zero while protecting trade resilience.",
+    "steps": [
+      {
+        "hub": "foresight@civic-governance",
+        "rewardWei": "1500000000000000000",
+        "uri": "ipfs://playbook/foresight/port-emissions"
+      },
+      {
+        "hub": "research@public-research",
+        "rewardWei": "3000000000000000000",
+        "uri": "ipfs://playbook/research/abatement-options"
+      },
+      {
+        "hub": "optimization@industrial-ops",
+        "rewardWei": "2500000000000000000",
+        "uri": "ipfs://playbook/optimization/logistics-plan"
+      },
+      {
+        "hub": "knowledge@public-research",
+        "rewardWei": "1000000000000000000",
+        "uri": "ipfs://playbook/knowledge/policy-brief"
+      }
+    ]
+  },
+  {
+    "id": "pandemic-watch",
+    "name": "Mission: Pandemic Watch",
+    "description": "Real-time pathogen surveillance, response logistics, and civic communications fused into one unstoppable rapid reaction force.",
+    "steps": [
+      {
+        "hub": "foresight@civic-governance",
+        "rewardWei": "1200000000000000000",
+        "uri": "ipfs://playbook/foresight/epi-signal-detection"
+      },
+      {
+        "hub": "research@public-research",
+        "rewardWei": "2200000000000000000",
+        "uri": "ipfs://playbook/research/variant-analysis"
+      },
+      {
+        "hub": "optimization@industrial-ops",
+        "rewardWei": "1800000000000000000",
+        "uri": "ipfs://playbook/optimization/supply-allocation"
+      },
+      {
+        "hub": "knowledge@public-research",
+        "rewardWei": "900000000000000000",
+        "uri": "ipfs://playbook/knowledge/public-advisory"
+      }
+    ]
+  }
+]

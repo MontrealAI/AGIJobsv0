@@ -1,0 +1,47 @@
+{
+  "public-research": {
+    "label": "Public Research Hub",
+    "rpcUrl": "https://mainnet.infura.io/v3/YOUR_KEY",
+    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2-research",
+    "addresses": {
+      "AGIALPHA": "0x00000000000000000000000000000000000000A1",
+      "JobRegistry": "0x00000000000000000000000000000000000000B1",
+      "StakeManager": "0x00000000000000000000000000000000000000C1",
+      "ValidationModule": "0x00000000000000000000000000000000000000D1",
+      "DisputeModule": "0x00000000000000000000000000000000000000E1",
+      "IdentityRegistry": "0x00000000000000000000000000000000000000F1",
+      "CertificateNFT": "0x00000000000000000000000000000000000000A2",
+      "FeePool": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "industrial-ops": {
+    "label": "Industrial Ops Hub",
+    "rpcUrl": "https://mainnet.infura.io/v3/YOUR_KEY",
+    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2-ops",
+    "addresses": {
+      "AGIALPHA": "0x00000000000000000000000000000000000000A1",
+      "JobRegistry": "0x00000000000000000000000000000000000000B2",
+      "StakeManager": "0x00000000000000000000000000000000000000C2",
+      "ValidationModule": "0x00000000000000000000000000000000000000D2",
+      "DisputeModule": "0x00000000000000000000000000000000000000E2",
+      "IdentityRegistry": "0x00000000000000000000000000000000000000F2",
+      "CertificateNFT": "0x00000000000000000000000000000000000000A3",
+      "FeePool": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "civic-governance": {
+    "label": "Civic Governance Hub",
+    "rpcUrl": "https://mainnet.infura.io/v3/YOUR_KEY",
+    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2-gov",
+    "addresses": {
+      "AGIALPHA": "0x00000000000000000000000000000000000000A1",
+      "JobRegistry": "0x00000000000000000000000000000000000000B3",
+      "StakeManager": "0x00000000000000000000000000000000000000C3",
+      "ValidationModule": "0x00000000000000000000000000000000000000D3",
+      "DisputeModule": "0x00000000000000000000000000000000000000E3",
+      "IdentityRegistry": "0x00000000000000000000000000000000000000F3",
+      "CertificateNFT": "0x00000000000000000000000000000000000000A4",
+      "FeePool": "0x0000000000000000000000000000000000000000"
+    }
+  }
+}

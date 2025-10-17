@@ -1,0 +1,7 @@
+[
+  { "id": "usa", "flag": "🇺🇸", "name": "United States" },
+  { "id": "jpn", "flag": "🇯🇵", "name": "Japan" },
+  { "id": "deu", "flag": "🇩🇪", "name": "Germany" },
+  { "id": "ngo", "flag": "🌍", "name": "Global NGO" },
+  { "id": "city", "flag": "🏙️", "name": "Smart City DAO" }
+]
