@@ -212,6 +212,9 @@ The demo enumerates all tunable controls in the final recap:
 - Launch, abort, and override controls
 - Full owner control snapshot exported under `ownerControls` in the recap dossier
 - Tabular owner parameter matrix available via `npm run owner:alpha-agi-mark`
+- Automated regression coverage in `test/AlphaMarkOwnerControls.test.ts` that exercises every actuator, including
+  funding caps, supply guards, whitelist toggles, override switches, emergency exit, abort, and post-close residual
+  withdrawals, proving the operator retains decisive authority in every phase.
 
 ## Runbook
 
