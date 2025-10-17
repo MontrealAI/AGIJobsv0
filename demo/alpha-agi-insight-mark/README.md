@@ -63,6 +63,9 @@ Running the demo produces:
 - `insight-control-map.mmd` – mermaid diagram for governance briefings.
 - `insight-governance.mmd` – meta-agent swarm and sentinel orchestration schematic.
 - `insight-telemetry.log` – time-stamped agent dialogue.
+- `insight-owner-brief.md` – rapid-response owner command checklist with custody overview.
+- `insight-market-matrix.csv` – CSV dataset for financial modelling and downstream analytics.
+- `insight-constellation.mmd` – mermaid constellation showing live custody, market, and sentinel linkages.
 - `insight-manifest.json` – SHA-256 hashes of every generated artefact and the scenario dataset that produced them.
 
 All outputs are designed for direct inclusion in boardroom briefings and investor packets.

@@ -73,6 +73,21 @@ function shortenAddress(address: string, prefix = 6, suffix = 4): string {
   return `${address.slice(0, prefix)}…${address.slice(-suffix)}`;
 }
 
+function csvEscape(value: string | number | boolean | null | undefined): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  const stringValue = String(value);
+  if (/[",\n]/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+  return stringValue;
+}
+
+function formatPercent(value: number, decimals = 1): string {
+  return `${(value * 100).toFixed(decimals)}%`;
+}
+
 async function loadScenarioConfig(scenarioPath: string): Promise<ScenarioConfig> {
   try {
     await stat(scenarioPath);
@@ -362,6 +377,9 @@ async function main() {
   const governancePath = path.join(reportsDir, "insight-governance.mmd");
   const telemetryPath = path.join(reportsDir, "insight-telemetry.log");
   const htmlPath = path.join(reportsDir, "insight-report.html");
+  const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
+  const csvPath = path.join(reportsDir, "insight-market-matrix.csv");
+  const constellationPath = path.join(reportsDir, "insight-constellation.mmd");
   const manifestPath = path.join(reportsDir, "insight-manifest.json");
 
   const scenarioRelativePath = path
@@ -800,6 +818,163 @@ ${htmlRows}
     `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n` +
     `    classDef agent fill:#14233b,stroke:#60d2ff,color:#e8f6ff;\n`;
 
+  const mintedTotalConfidence = minted.reduce((acc, entry) => acc + entry.scenario.confidence, 0);
+  const averageConfidence = minted.length ? mintedTotalConfidence / minted.length : 0;
+  const mintedByOwnerCount = minted.filter((entry) => entry.mintedBy.toLowerCase() === operator.address.toLowerCase()).length;
+  const delegatedMintCount = minted.length - mintedByOwnerCount;
+  const soldCount = minted.filter((entry) => entry.status === "SOLD").length;
+  const listedCount = minted.filter((entry) => entry.status === "LISTED").length;
+  const forceDelistedCount = minted.filter((entry) => entry.status === "FORCE_DELISTED").length;
+  const sealedCount = minted.filter((entry) => !entry.fusionRevealed).length;
+  const revealedCount = minted.length - sealedCount;
+
+  const csvHeader = [
+    "tokenId",
+    "sector",
+    "ruptureYear",
+    "confidence",
+    "status",
+    "marketState",
+    "custodian",
+    "mintedTo",
+    "mintedBy",
+    "fusionURI",
+    "sealedURI",
+    "disruptionTimestamp",
+    "forecastValue",
+    "ownerActions",
+  ].join(",");
+
+  const csvRows = minted.map((entry) => {
+    const marketState = entry.sale
+      ? `${entry.sale.price} AIC → ${entry.sale.netPayout} AIC`
+      : entry.status === "LISTED"
+        ? entry.listingPrice
+          ? `Listed @ ${entry.listingPrice} AIC`
+          : "Listed"
+        : entry.status === "FORCE_DELISTED"
+          ? `Force delisted → ${shortenAddress(entry.finalCustodian)}`
+          : "Held";
+
+    return [
+      csvEscape(entry.tokenId),
+      csvEscape(entry.scenario.sector),
+      csvEscape(entry.scenario.ruptureYear),
+      csvEscape(formatPercent(entry.scenario.confidence)),
+      csvEscape(entry.status),
+      csvEscape(marketState),
+      csvEscape(shortenAddress(entry.finalCustodian)),
+      csvEscape(shortenAddress(entry.mintedTo)),
+      csvEscape(shortenAddress(entry.mintedBy)),
+      csvEscape(entry.fusionURI),
+      csvEscape(entry.scenario.sealedURI),
+      csvEscape(entry.disruptionTimestamp),
+      csvEscape(entry.scenario.forecastValue),
+      csvEscape(entry.ownerActions.join("; ")),
+    ].join(",");
+  });
+
+  const csvContent = [csvHeader, ...csvRows].join("\n");
+
+  const ownerBriefTableRows = minted
+    .map((entry) => {
+      const custodian = shortenAddress(entry.finalCustodian);
+      const ownerNotes = entry.ownerActions.length ? entry.ownerActions.join("; ") : "—";
+      return `| #${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${formatPercent(entry.scenario.confidence)} | ${entry.status} | ${custodian} | ${ownerNotes} |`;
+    })
+    .join("\n");
+
+  const ownerBrief = `# α-AGI Insight MARK – Owner Command Brief\n\n` +
+    `Generated ${new Date().toISOString()} on ${network.name} (chainId ${network.chainId}).\\\n` +
+    `- Minted Nova-Seeds: ${minted.length} (owner minted ${mintedByOwnerCount}, delegated minted ${delegatedMintCount}).\\\n` +
+    `- Live market activity: ${soldCount} sold, ${listedCount} listed, ${forceDelistedCount} under sentinel custody.\\\n` +
+    `- Fusion dossier state: ${revealedCount} revealed, ${sealedCount} sealed.\\\n` +
+    `- Average confidence: ${formatPercent(averageConfidence)}.\\\n\n` +
+    `## Rapid Command Checklist\n` +
+    `- [ ] Trigger \`pause()\` on Insight Exchange (${await exchange.getAddress()}) for market freeze.\n` +
+    `- [ ] Invoke \`pause()\` on α-AGI Nova-Seed (${await novaSeed.getAddress()}) to freeze custody flows.\n` +
+    `- [ ] Confirm sentinel ${shortenAddress(strategist.address)} retains \`setSystemPause\` authority across modules.\n` +
+    `- [ ] Rotate oracle via \`setOracle(${shortenAddress(oracle.address)})\` if adjudication policy must change.\n` +
+    `- [ ] Validate treasury destination ${shortenAddress(await exchange.treasury())} with finance desk.\n\n` +
+    `## Sector Timeline\n` +
+    `| Token | Sector | Rupture Year | Confidence | Status | Custodian | Owner Actions |\n` +
+    `| --- | --- | --- | --- | --- | --- | --- |\n` +
+    `${ownerBriefTableRows}\n\n` +
+    `## Intelligence Signals\n` +
+    minted
+      .map((entry) => `- ${entry.scenario.sector}: ${entry.scenario.thesis} (forecast value ${entry.scenario.forecastValue}).`)
+      .join("\n") +
+    "\n";
+
+  const mintedNodeLines = minted
+    .map((entry) => {
+      const saleDescriptor = entry.sale
+        ? `Sold @ ${entry.sale.price} AIC`
+        : entry.status === "LISTED" && entry.listingPrice
+          ? `Listed @ ${entry.listingPrice} AIC`
+          : entry.status === "FORCE_DELISTED"
+            ? `Custody ${shortenAddress(entry.finalCustodian)}`
+            : `Held ${shortenAddress(entry.finalCustodian)}`;
+      return `      token${entry.tokenId}("#${entry.tokenId} ${entry.scenario.sector}\\n${entry.scenario.ruptureYear} • ${saleDescriptor}")`;
+    })
+    .join("\n");
+
+  const mintedConnections = minted
+    .map((entry) => {
+      const mintedByLabel = entry.mintedBy.toLowerCase() === operator.address.toLowerCase() ? "Owner" : "Delegate";
+      const listingEdge = entry.status === "SOLD" || entry.status === "LISTED" || entry.status === "FORCE_DELISTED"
+        ? `\n    token${entry.tokenId} --> exchangeNode`
+        : "";
+      const custodyEdge = entry.status === "FORCE_DELISTED"
+        ? `\n    token${entry.tokenId} -.custody.-> sentinel`
+        : entry.status === "SOLD"
+          ? `\n    token${entry.tokenId} --> buyers`
+          : "";
+      return `    operator -.${mintedByLabel}.-> token${entry.tokenId}${listingEdge}${custodyEdge}`;
+    })
+    .join("\n");
+
+  const mintedClassLines = minted
+    .map((entry) => {
+      const className =
+        entry.status === "SOLD"
+          ? "sold"
+          : entry.status === "LISTED"
+            ? "listed"
+            : entry.status === "FORCE_DELISTED"
+              ? "custody"
+              : entry.fusionRevealed
+                ? "revealed"
+                : "sealed";
+      return `    class token${entry.tokenId} ${className};`;
+    })
+    .join("\n");
+
+  const constellationMermaid = `flowchart TB\n` +
+    `    operator((Owner ${shortenAddress(operator.address)})):::actor\n` +
+    `    sentinel((System Pause ${shortenAddress(strategist.address)})):::control\n` +
+    `    oracleNode((Oracle ${shortenAddress(oracle.address)})):::control\n` +
+    `    exchangeNode{{Insight Exchange}}:::contract\n` +
+    `    treasuryNode((Treasury ${shortenAddress(await exchange.treasury())})):::control\n` +
+    `    buyers((Market Operators)):::actor\n` +
+    `    subgraph NovaSeeds["α-AGI Nova-Seeds"]\n${mintedNodeLines}\n    end\n` +
+    `    operator --> exchangeNode\n` +
+    `    oracleNode --> exchangeNode\n` +
+    `    exchangeNode --> treasuryNode\n` +
+    `    sentinel -.pause sweep.-> exchangeNode\n` +
+    `    sentinel -.pause sweep.-> NovaSeeds\n` +
+    `    buyers --> exchangeNode\n` +
+    `${mintedConnections ? `${mintedConnections}\n` : ""}` +
+    `${mintedClassLines ? `${mintedClassLines}\n` : ""}` +
+    `    classDef actor fill:#102a43,stroke:#8ff7ff,color:#e5f9ff;\n` +
+    `    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n` +
+    `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n` +
+    `    classDef sold fill:#0f5132,stroke:#1bff82,color:#eafff5;\n` +
+    `    classDef listed fill:#1f3d7a,stroke:#90c2ff,color:#eaf3ff;\n` +
+    `    classDef custody fill:#553c9a,stroke:#c1a8ff,color:#f3edff;\n` +
+    `    classDef sealed fill:#343a55,stroke:#7a8bbd,color:#f1f5ff;\n` +
+    `    classDef revealed fill:#214d6d,stroke:#7fe6ff,color:#ecfbff;\n`;
+
   const telemetryLog = telemetry.map((entry) => `${entry.timestamp} [${entry.agent}] ${entry.message}`).join("\n");
 
   await writeFile(recapPath, JSON.stringify(recap, null, 2));
@@ -809,12 +984,26 @@ ${htmlRows}
   await writeFile(governancePath, governanceMermaid);
   await writeFile(telemetryPath, telemetryLog);
   await writeFile(htmlPath, html);
+  await writeFile(ownerBriefPath, ownerBrief);
+  await writeFile(csvPath, csvContent);
+  await writeFile(constellationPath, constellationMermaid);
 
   const manifestEntries: { path: string; sha256: string }[] = [];
-  for (const file of [recapPath, reportPath, htmlPath, matrixPath, mermaidPath, governancePath, telemetryPath]) {
+  for (const file of [
+    recapPath,
+    reportPath,
+    htmlPath,
+    matrixPath,
+    mermaidPath,
+    governancePath,
+    telemetryPath,
+    ownerBriefPath,
+    csvPath,
+    constellationPath,
+  ]) {
     const content = await readFile(file);
     const relativePath = path.relative(path.join(__dirname, ".."), file);
-    manifestEntries.push({ path: relativePath.replace(/\\\\/g, "/"), sha256: sha256(content) });
+    manifestEntries.push({ path: relativePath.replace(/\\/g, "/"), sha256: sha256(content) });
   }
 
   manifestEntries.push({ path: scenarioRelativePath, sha256: scenarioHash });

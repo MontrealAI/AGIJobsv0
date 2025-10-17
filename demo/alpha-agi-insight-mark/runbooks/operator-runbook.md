@@ -37,6 +37,9 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 - `insight-control-matrix.json` – machine-readable owner control inventory.
 - `insight-control-map.mmd` – mermaid diagram (render via https://mermaid.live/).
 - `insight-governance.mmd` – insight swarm + sentinel orchestration schematic.
+- `insight-owner-brief.md` – executive command sheet summarising pause hooks and custody.
+- `insight-market-matrix.csv` – spreadsheet-ready dataset for analysts and treasury.
+- `insight-constellation.mmd` – constellation mermaid capturing live custody and sentinel edges.
 - `insight-manifest.json` – SHA-256 hashes; re-run the demo and confirm hashes change only when artefacts change. The manifest now fingerprints the scenario dataset too, so provenance can be attested.
 - `insight-telemetry.log` – chronological agent conversation for audit trails.
 
