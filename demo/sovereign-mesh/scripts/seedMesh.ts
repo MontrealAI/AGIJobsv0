@@ -1,37 +1,38 @@
 import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
-import { AGIALPHA } from "../../../scripts/constants";
-import { ensureAgialphaStub } from "../shared/ensureAgialpha";
+
+const erc20Iface = new ethers.Interface([
+  "function approve(address spender, uint256 amount) returns (bool)"
+]);
+
+const jobIface = new ethers.Interface([
+  "function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri) returns (uint256)"
+]);
 
 async function main() {
-  await ensureAgialphaStub();
-  const hubs = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "../config/hubs.mainnet.json"), "utf8")
-  ) as Record<string, any>;
+  const hubsPath = path.join(__dirname, "../config/hubs.mainnet.json");
+  const hubs = JSON.parse(fs.readFileSync(hubsPath, "utf8"));
   const [employer] = await ethers.getSigners();
-  const token = await ethers.getContractAt(
-    "contracts/test/MockERC20.sol:MockERC20",
-    AGIALPHA
-  );
 
-  const reward = ethers.parseEther("1");
-  await token.mint(employer.address, reward * BigInt(Object.keys(hubs).length));
-
-  for (const [hubKey, hub] of Object.entries(hubs)) {
-    const jobRegistry = await ethers.getContractAt("JobRegistry", hub.addresses.JobRegistry);
-    const stakeManager = hub.addresses.StakeManager;
+  for (const key of Object.keys(hubs)) {
+    const hub = hubs[key];
+    const reward = ethers.parseEther("1");
+    const uri = `ipfs://mesh/seed/${key}`;
     const deadline = Math.floor(Date.now() / 1000) + 30 * 24 * 3600;
-    const specHash = ethers.id(`seed-${hubKey}`);
-    const uri = `ipfs://mesh/seed/${hubKey}`;
+    const specHash = ethers.id(`seed-${key}`);
 
-    await token.connect(employer).approve(stakeManager, reward);
-    const tx = await jobRegistry
-      .connect(employer)
-      .createJob(reward, deadline, specHash, uri);
-    const receipt = await tx.wait();
-    const jobId = receipt!.logs.find((log) => log.fragment?.name === "JobCreated")!.args!.jobId;
-    console.log(`Seeded job ${jobId} on ${hubKey}`);
+    await (await employer.sendTransaction({
+      to: hub.addresses.AGIALPHA,
+      data: erc20Iface.encodeFunctionData("approve", [hub.addresses.JobRegistry, reward])
+    })).wait();
+
+    const tx = await employer.sendTransaction({
+      to: hub.addresses.JobRegistry,
+      data: jobIface.encodeFunctionData("createJob", [reward, deadline, specHash, uri])
+    });
+    await tx.wait();
+    console.log(`Seeded job on ${key}: ${tx.hash}`);
   }
 }
 

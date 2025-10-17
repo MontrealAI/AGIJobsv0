@@ -6,8 +6,5 @@ export default defineConfig({
   server: {
     port: 5178
   },
-  preview: {
-    port: 5178
-  },
   base: "./"
 });
