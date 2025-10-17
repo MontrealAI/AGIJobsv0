@@ -1,0 +1,7 @@
+artifacts/
+cache/
+typechain-types/
+reports/insight-*.json
+reports/insight-*.md
+reports/insight-*.mmd
+reports/insight-telemetry.log

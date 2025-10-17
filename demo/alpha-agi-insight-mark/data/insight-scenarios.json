@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "source": "alpha-agi-insight-simulator"
+  },
+  "agents": [
+    "Meta-Sentinel",
+    "Thermodynamic Oracle",
+    "FusionSmith",
+    "Venture Cartographer",
+    "Guardian Auditor"
+  ],
+  "scenarios": [
+    {
+      "sector": "Finance",
+      "thesis": "Self-directing AGI treasuries autonomously arbitrage every global market in milliseconds.",
+      "ruptureYear": 2027,
+      "sealedURI": "ipfs://alpha-agi-insight/finance/seed.json",
+      "fusionURI": "ipfs://alpha-agi-insight/finance/fusion.json",
+      "confidence": 0.91,
+      "forecastValue": "42T"
+    },
+    {
+      "sector": "Healthcare",
+      "thesis": "Cognitive wetlabs co-designed with AGI compress drug discovery cycles from years to hours.",
+      "ruptureYear": 2028,
+      "sealedURI": "ipfs://alpha-agi-insight/healthcare/seed.json",
+      "fusionURI": "ipfs://alpha-agi-insight/healthcare/fusion.json",
+      "confidence": 0.88,
+      "forecastValue": "17T"
+    },
+    {
+      "sector": "Energy",
+      "thesis": "Planetary energy grids self-orchestrate via AGI thermodynamic twins unlocking abundance.",
+      "ruptureYear": 2029,
+      "sealedURI": "ipfs://alpha-agi-insight/energy/seed.json",
+      "fusionURI": "ipfs://alpha-agi-insight/energy/fusion.json",
+      "confidence": 0.86,
+      "forecastValue": "11T"
+    }
+  ]
+}
