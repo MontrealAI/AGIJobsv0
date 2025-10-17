@@ -6,3 +6,5 @@ reports/*
 !reports/alpha-mark-dashboard.html
 !reports/alpha-mark-integrity.md
 !reports/alpha-mark-timeline.md
+!reports/abi/
+!reports/abi/*.json

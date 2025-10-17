@@ -10,44 +10,64 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 interface IAlphaMarkRiskOracle {
     function seedValidated() external view returns (bool);
-    function approvalCount() external view returns (uint256);
-    function approvalThreshold() external view returns (uint256);
 }
 
 interface IAlphaSovereignVault {
     function notifyLaunch(uint256 amount, bool usedNativeAsset, bytes calldata metadata) external returns (bool);
 }
 
-error LaunchAcknowledgementFailed(address recipient);
-error LaunchAcknowledgementRejected(address recipient);
-
 /// @title AlphaMarkEToken
-/// @notice Bonding-curve market-maker for α-AGI Nova-Seed financing.
+/// @notice Bonding-curve ERC-20 that finances Nova-Seed launches with owner-governed controls.
+/// @dev The token price follows an arithmetic bonding curve P(n) = basePrice + slope * n where n is
+///      the current whole-token supply. Purchases and sales must be exact whole tokens (18 decimals).
 contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    // ---------------------------------------------------------------------
+    // Errors
+    // ---------------------------------------------------------------------
+
+    error AmountZero();
+    error WholeTokensOnly();
+    error SaleClosed();
+    error SaleAlreadyStarted();
+    error FundingCapReached();
+    error NativePaymentDisabled();
+    error InsufficientPayment();
+    error InsufficientBalance();
+    error RefundFailed();
+    error ReserveInsufficient();
+    error SaleExpired();
+    error NotWhitelisted(address account);
+    error ValidationRequired();
+    error InvalidRecipient();
+    error LaunchAcknowledgementFailed(address recipient);
+    error LaunchAcknowledgementRejected(address recipient);
+    error NotClosed();
+    error MaxSupplyExceeded();
+    error ReserveNotEmpty();
+    error AmountExceedsSupply();
+    error CapBelowReserve();
+
     uint256 private constant WHOLE_TOKEN = 1e18;
 
     IAlphaMarkRiskOracle public riskOracle;
 
-    uint256 public basePrice; // base asset units per token
-    uint256 public slope; // base asset units increase per token
-    uint256 public maxSupply; // whole tokens (0 == unlimited)
-    uint256 public fundingCap; // wei (0 == unlimited)
-    uint256 public saleDeadline; // timestamp (0 == none)
+    uint256 public basePrice; // base asset units per whole token
+    uint256 public slope; // incremental price increase per whole token
+    uint256 public maxSupply; // whole tokens (0 => unlimited)
+    uint256 public fundingCap; // base asset units (0 => unlimited)
+    uint256 public saleDeadline; // timestamp (0 => no deadline)
 
-    uint256 public reserveBalance; // base asset units held for redemptions
+    uint256 public reserveBalance; // total assets held for redemptions
 
     bool public whitelistEnabled;
     mapping(address => bool) public whitelist;
-
     mapping(address => uint256) public participantContribution;
 
     address payable public treasury;
-
     IERC20 public baseAsset;
-    bool public usesNativeAsset; // true => ETH, false => ERC20
-
-    event BaseAssetUpdated(address indexed asset, bool usesNative);
+    bool public usesNativeAsset; // true when ETH is the base asset
 
     bool public finalized;
     bool public aborted;
@@ -56,6 +76,11 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     bool public validationOverrideEnabled;
     bool public validationOverrideStatus;
 
+    // ---------------------------------------------------------------------
+    // Events
+    // ---------------------------------------------------------------------
+
+    event BaseAssetUpdated(address indexed asset, bool usesNativeAsset);
     event TokensPurchased(address indexed buyer, uint256 amount, uint256 cost);
     event TokensSold(address indexed seller, uint256 amount, uint256 refund);
     event WhitelistModeUpdated(bool enabled);
@@ -63,13 +88,23 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     event CurveParametersUpdated(uint256 basePrice, uint256 slope);
     event MaxSupplyUpdated(uint256 newMaxSupply);
     event FundingCapUpdated(uint256 newCap);
-    event TreasuryUpdated(address treasury);
+    event TreasuryUpdated(address indexed treasury);
     event SaleDeadlineUpdated(uint256 newDeadline);
-    event ValidationOverrideUpdated(bool status);
+    event RiskOracleUpdated(address indexed oracle);
+    event ValidationOverrideUpdated(bool enabled, bool status);
+    event EmergencyExitUpdated(bool enabled);
     event LaunchFinalized(address indexed recipient, uint256 reserveTransferred, bytes metadata);
     event LaunchAborted();
-    event EmergencyExitUpdated(bool enabled);
+    event ResidualWithdrawn(address indexed to, uint256 amount);
 
+    /// @param name_ Token name.
+    /// @param symbol_ Token symbol.
+    /// @param owner_ Contract owner with governance authority.
+    /// @param riskOracle_ Risk oracle that must approve launches.
+    /// @param basePrice_ Initial base price per whole token.
+    /// @param slope_ Initial slope for the bonding curve.
+    /// @param maxSupply_ Maximum whole token supply (0 => unlimited).
+    /// @param baseAsset_ Address of ERC-20 base asset (zero for native ETH).
     constructor(
         string memory name_,
         string memory symbol_,
@@ -80,7 +115,9 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         uint256 maxSupply_,
         address baseAsset_
     ) ERC20(name_, symbol_) Ownable(owner_) {
-        require(owner_ != address(0), "Owner required");
+        if (owner_ == address(0)) {
+            revert InvalidRecipient();
+        }
         basePrice = basePrice_;
         slope = slope_;
         maxSupply = maxSupply_;
@@ -88,29 +125,44 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         _setBaseAsset(baseAsset_);
     }
 
-    // ----------- Core Market Functions -----------
+    // ---------------------------------------------------------------------
+    // Core market functionality
+    // ---------------------------------------------------------------------
 
-    function buyTokens(uint256 amount) external payable whenNotPaused nonReentrant {
-        require(!finalized && !aborted, "Sale closed");
-        require(amount > 0, "Amount zero");
+    /// @notice Purchase whole tokens according to the bonding curve.
+    /// @param amount Amount in 18-decimal token units (must be a whole multiple of 1e18).
+    function buyTokens(uint256 amount) external payable nonReentrant {
+        if (paused()) {
+            revert EnforcedPause();
+        }
+        if (finalized || aborted) {
+            revert SaleClosed();
+        }
+        if (amount == 0) {
+            revert AmountZero();
+        }
         uint256 wholeAmount = _requireWhole(amount);
         _enforceSaleWindow();
         _enforceWhitelist(msg.sender);
 
         uint256 newSupply = _currentSupply() + wholeAmount;
-        if (maxSupply != 0) {
-            require(newSupply <= maxSupply, "Exceeds supply");
+        if (maxSupply != 0 && newSupply > maxSupply) {
+            revert MaxSupplyExceeded();
         }
 
         uint256 cost = _purchaseCost(wholeAmount);
-        if (fundingCap != 0) {
-            require(reserveBalance + cost <= fundingCap, "Funding cap reached");
+        if (fundingCap != 0 && reserveBalance + cost > fundingCap) {
+            revert FundingCapReached();
         }
 
         if (usesNativeAsset) {
-            require(msg.value >= cost, "Insufficient payment");
+            if (msg.value < cost) {
+                revert InsufficientPayment();
+            }
         } else {
-            require(msg.value == 0, "Native payment disabled");
+            if (msg.value != 0) {
+                revert NativePaymentDisabled();
+            }
             baseAsset.safeTransferFrom(msg.sender, address(this), cost);
         }
 
@@ -120,29 +172,41 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
 
         if (usesNativeAsset && msg.value > cost) {
             (bool success, ) = msg.sender.call{value: msg.value - cost}("");
-            require(success, "Refund failed");
+            if (!success) {
+                revert RefundFailed();
+            }
         }
 
         emit TokensPurchased(msg.sender, amount, cost);
     }
 
+    /// @notice Sell whole tokens back into the bonding curve.
+    /// @param amount Amount in 18-decimal token units (must be a whole multiple of 1e18).
     function sellTokens(uint256 amount) external nonReentrant {
-        require(amount > 0, "Amount zero");
+        if (amount == 0) {
+            revert AmountZero();
+        }
         uint256 wholeAmount = _requireWhole(amount);
-        require(balanceOf(msg.sender) >= amount, "Insufficient balance");
-        if (paused()) {
-            require(emergencyExitEnabled, "Paused");
+        if (balanceOf(msg.sender) < amount) {
+            revert InsufficientBalance();
+        }
+        if (paused() && !emergencyExitEnabled) {
+            revert EnforcedPause();
         }
 
         uint256 refund = _saleReturn(wholeAmount);
-        require(refund <= reserveBalance, "Insufficient reserve");
+        if (refund > reserveBalance) {
+            revert ReserveInsufficient();
+        }
 
         _burn(msg.sender, amount);
         reserveBalance -= refund;
 
         if (usesNativeAsset) {
             (bool success, ) = msg.sender.call{value: refund}("");
-            require(success, "Refund transfer failed");
+            if (!success) {
+                revert RefundFailed();
+            }
         } else {
             baseAsset.safeTransfer(msg.sender, refund);
         }
@@ -150,31 +214,39 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         emit TokensSold(msg.sender, amount, refund);
     }
 
+    /// @notice Preview the cost to purchase a specific token amount.
     function previewPurchaseCost(uint256 amount) external view returns (uint256) {
         uint256 wholeAmount = _requireWholeView(amount);
         return _purchaseCost(wholeAmount);
     }
 
+    /// @notice Preview the refund from selling a specific token amount.
     function previewSaleReturn(uint256 amount) external view returns (uint256) {
         uint256 wholeAmount = _requireWholeView(amount);
         return _saleReturn(wholeAmount);
     }
 
-    // ----------- Owner Controls -----------
+    // ---------------------------------------------------------------------
+    // Owner governance controls
+    // ---------------------------------------------------------------------
 
+    /// @notice Pause buying activity (selling requires emergency exit toggle).
     function pauseMarket() external onlyOwner {
         _pause();
     }
 
+    /// @notice Resume buying activity.
     function unpauseMarket() external onlyOwner {
         _unpause();
     }
 
+    /// @notice Enable or disable participant whitelisting.
     function setWhitelistEnabled(bool enabled) external onlyOwner {
         whitelistEnabled = enabled;
         emit WhitelistModeUpdated(enabled);
     }
 
+    /// @notice Update whitelist entries.
     function setWhitelist(address[] calldata accounts, bool allowed) external onlyOwner {
         for (uint256 i = 0; i < accounts.length; i++) {
             whitelist[accounts[i]] = allowed;
@@ -182,76 +254,109 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
+    /// @notice Update bonding curve parameters before tokens are sold.
     function setCurveParameters(uint256 basePrice_, uint256 slope_) external onlyOwner {
-        require(totalSupply() == 0, "Supply already minted");
+        if (totalSupply() != 0) {
+            revert SaleAlreadyStarted();
+        }
         basePrice = basePrice_;
         slope = slope_;
         emit CurveParametersUpdated(basePrice_, slope_);
     }
 
+    /// @notice Configure maximum whole token supply.
     function setMaxSupply(uint256 newMaxSupply) external onlyOwner {
-        if (newMaxSupply != 0) {
-            require(newMaxSupply >= _currentSupply(), "Below supply");
+        uint256 currentSupply = _currentSupply();
+        if (newMaxSupply != 0 && newMaxSupply < currentSupply) {
+            revert MaxSupplyExceeded();
         }
         maxSupply = newMaxSupply;
         emit MaxSupplyUpdated(newMaxSupply);
     }
 
+    /// @notice Configure maximum funding intake in base asset units.
     function setFundingCap(uint256 newCap) external onlyOwner {
-        require(newCap == 0 || newCap >= reserveBalance, "Below reserve");
+        if (newCap != 0 && newCap < reserveBalance) {
+            revert CapBelowReserve();
+        }
         fundingCap = newCap;
         emit FundingCapUpdated(newCap);
     }
 
+    /// @notice Assign the treasury that receives proceeds when finalizing.
     function setTreasury(address payable newTreasury) external onlyOwner {
-        require(newTreasury != address(0), "Treasury required");
+        if (newTreasury == address(0)) {
+            revert InvalidRecipient();
+        }
         treasury = newTreasury;
         emit TreasuryUpdated(newTreasury);
     }
 
+    /// @notice Configure optional sale deadline.
     function setSaleDeadline(uint256 deadline) external onlyOwner {
-        if (deadline != 0) {
-            require(deadline > block.timestamp, "Deadline in past");
+        if (deadline != 0 && deadline <= block.timestamp) {
+            revert SaleExpired();
         }
         saleDeadline = deadline;
         emit SaleDeadlineUpdated(deadline);
     }
 
+    /// @notice Update the risk oracle reference.
     function setRiskOracle(address newOracle) external onlyOwner {
         riskOracle = IAlphaMarkRiskOracle(newOracle);
+        emit RiskOracleUpdated(newOracle);
     }
 
+    /// @notice Swap the base asset prior to any fundraising.
     function setBaseAsset(address newAsset) external onlyOwner {
-        require(totalSupply() == 0, "Supply exists");
-        require(reserveBalance == 0, "Reserve not empty");
+        if (totalSupply() != 0) {
+            revert SaleAlreadyStarted();
+        }
+        if (reserveBalance != 0) {
+            revert ReserveNotEmpty();
+        }
         _setBaseAsset(newAsset);
     }
 
+    /// @notice Override the validation status reported by the oracle.
     function setValidationOverride(bool enabled, bool status) external onlyOwner {
         validationOverrideEnabled = enabled;
         validationOverrideStatus = status;
-        emit ValidationOverrideUpdated(enabled ? status : false);
+        emit ValidationOverrideUpdated(enabled, status);
     }
 
+    /// @notice Allow redemptions while paused.
     function setEmergencyExit(bool enabled) external onlyOwner {
         emergencyExitEnabled = enabled;
         emit EmergencyExitUpdated(enabled);
     }
 
+    /// @notice Finalize the launch, transferring reserves to the sovereign recipient.
+    /// @param sovereignRecipient Destination that receives the reserve (treasury fallback if zero).
+    /// @param metadata Arbitrary bytes forwarded to the sovereign vault acknowledgement call.
     function finalizeLaunch(address payable sovereignRecipient, bytes calldata metadata)
         external
         onlyOwner
         whenNotPaused
         nonReentrant
     {
-        require(!finalized, "Already finalized");
-        require(!aborted, "Aborted");
-        require(_isValidated(), "Not validated");
+        if (finalized) {
+            revert SaleClosed();
+        }
+        if (aborted) {
+            revert SaleClosed();
+        }
+        if (!_isValidated()) {
+            revert ValidationRequired();
+        }
+
         address payable recipient = sovereignRecipient;
         if (recipient == address(0)) {
             recipient = treasury;
         }
-        require(recipient != address(0), "Recipient required");
+        if (recipient == address(0)) {
+            revert InvalidRecipient();
+        }
 
         finalized = true;
         _pause();
@@ -261,7 +366,9 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
 
         if (usesNativeAsset) {
             (bool success, ) = recipient.call{value: amount}("");
-            require(success, "Transfer failed");
+            if (!success) {
+                revert RefundFailed();
+            }
         } else {
             baseAsset.safeTransfer(recipient, amount);
         }
@@ -271,9 +378,14 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         emit LaunchFinalized(recipient, amount, metadata);
     }
 
+    /// @notice Abort the launch entirely.
     function abortLaunch() external onlyOwner {
-        require(!finalized, "Already finalized");
-        require(!aborted, "Already aborted");
+        if (finalized) {
+            revert SaleClosed();
+        }
+        if (aborted) {
+            revert SaleClosed();
+        }
         aborted = true;
         emergencyExitEnabled = true;
         if (!paused()) {
@@ -283,31 +395,40 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         emit EmergencyExitUpdated(true);
     }
 
+    /// @notice Withdraw residual funds once the launch is closed.
     function withdrawResidual(address payable to) external onlyOwner {
-        require(finalized || aborted, "Not closed");
-        require(to != address(0), "Invalid recipient");
+        if (!finalized && !aborted) {
+            revert NotClosed();
+        }
+        if (to == address(0)) {
+            revert InvalidRecipient();
+        }
         uint256 balance = _assetBalance();
         uint256 amount = balance - reserveBalance;
-        require(amount > 0, "No residual");
+        if (amount == 0) {
+            return;
+        }
         if (usesNativeAsset) {
             (bool success, ) = to.call{value: amount}("");
-            require(success, "Residual transfer failed");
+            if (!success) {
+                revert RefundFailed();
+            }
         } else {
             baseAsset.safeTransfer(to, amount);
         }
+        emit ResidualWithdrawn(to, amount);
     }
 
-    // ----------- Views -----------
+    // ---------------------------------------------------------------------
+    // Views
+    // ---------------------------------------------------------------------
 
+    /// @notice Report whether the launch is validated.
     function isValidated() external view returns (bool) {
         return _isValidated();
     }
 
-    function getCurveState() external view returns (uint256 supply, uint256 reserve, uint256 nextPrice) {
-        uint256 currentSupply = _currentSupply();
-        return (currentSupply, reserveBalance, _priceForSupply(currentSupply));
-    }
-
+    /// @notice Snapshot of key owner governance state.
     function getOwnerControls()
         external
         view
@@ -350,20 +471,24 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         );
     }
 
-    // ----------- Internal helpers -----------
+    // ---------------------------------------------------------------------
+    // Internal helpers
+    // ---------------------------------------------------------------------
 
     function _currentSupply() internal view returns (uint256) {
         return totalSupply() / WHOLE_TOKEN;
     }
 
     function _requireWhole(uint256 amount) internal pure returns (uint256) {
-        require(amount % WHOLE_TOKEN == 0, "Whole tokens only");
+        if (amount % WHOLE_TOKEN != 0) {
+            revert WholeTokensOnly();
+        }
         return amount / WHOLE_TOKEN;
     }
 
     function _requireWholeView(uint256 amount) internal pure returns (uint256) {
         if (amount % WHOLE_TOKEN != 0) {
-            revert("Whole tokens only");
+            revert WholeTokensOnly();
         }
         return amount / WHOLE_TOKEN;
     }
@@ -377,7 +502,9 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
 
     function _saleReturn(uint256 amount) internal view returns (uint256) {
         uint256 supply = _currentSupply();
-        require(amount <= supply, "Amount exceeds supply");
+        if (amount > supply) {
+            revert AmountExceedsSupply();
+        }
         uint256 baseComponent = basePrice * amount;
         if (amount == 0) {
             return baseComponent;
@@ -390,19 +517,15 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         return baseComponent + slopeComponent;
     }
 
-    function _priceForSupply(uint256 supply) internal view returns (uint256) {
-        return basePrice + (slope * supply);
-    }
-
     function _enforceSaleWindow() internal view {
-        if (saleDeadline != 0) {
-            require(block.timestamp <= saleDeadline, "Sale expired");
+        if (saleDeadline != 0 && block.timestamp > saleDeadline) {
+            revert SaleExpired();
         }
     }
 
     function _enforceWhitelist(address account) internal view {
-        if (whitelistEnabled) {
-            require(whitelist[account], "Not whitelisted");
+        if (whitelistEnabled && !whitelist[account]) {
+            revert NotWhitelisted(account);
         }
     }
 
@@ -410,14 +533,14 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
         if (validationOverrideEnabled) {
             return validationOverrideStatus;
         }
-        if (address(riskOracle) != address(0)) {
-            try riskOracle.seedValidated() returns (bool result) {
-                return result;
-            } catch {
-                return false;
-            }
+        if (address(riskOracle) == address(0)) {
+            return false;
         }
-        return false;
+        try riskOracle.seedValidated() returns (bool result) {
+            return result;
+        } catch {
+            return false;
+        }
     }
 
     function _setBaseAsset(address asset) internal {
@@ -457,6 +580,6 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
     }
 
     receive() external payable {
-        revert("Direct payments disabled");
+        revert NativePaymentDisabled();
     }
 }

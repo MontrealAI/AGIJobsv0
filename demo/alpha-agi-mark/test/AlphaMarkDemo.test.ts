@@ -152,10 +152,16 @@ describe("α-AGI MARK bonding curve", function () {
 
     const metadata = ethers.hexlify(ethers.toUtf8Bytes("launch"));
 
-    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata)).to.be.revertedWith("Not validated");
+    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata)).to.be.revertedWithCustomError(
+      mark,
+      "ValidationRequired",
+    );
 
     await riskOracle.connect(validatorA).approveSeed();
-    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata)).to.be.revertedWith("Not validated");
+    await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata)).to.be.revertedWithCustomError(
+      mark,
+      "ValidationRequired",
+    );
 
     await riskOracle.connect(validatorB).approveSeed();
     const reserveBeforeFinalize = await mark.reserveBalance();
@@ -196,7 +202,9 @@ describe("α-AGI MARK bonding curve", function () {
   it("enforces whitelist rules", async function () {
     const { owner, outsider, mark, basePrice, slope } = await deployFixture();
     const cost = purchaseCost(basePrice, slope, 0n, 1n);
-    await expect(mark.connect(outsider).buyTokens(WHOLE, { value: cost })).to.be.revertedWith("Not whitelisted");
+    await expect(mark.connect(outsider).buyTokens(WHOLE, { value: cost }))
+      .to.be.revertedWithCustomError(mark, "NotWhitelisted")
+      .withArgs(outsider.address);
 
     await mark.connect(owner).setWhitelist([outsider.address], true);
     await expect(mark.connect(outsider).buyTokens(WHOLE, { value: cost })).to.emit(mark, "TokensPurchased");
@@ -207,7 +215,8 @@ describe("α-AGI MARK bonding curve", function () {
     const cost = purchaseCost(basePrice, slope, 0n, 1n);
     await mark.connect(owner).setFundingCap(cost);
     await mark.connect(investor).buyTokens(WHOLE, { value: cost });
-    await expect(mark.connect(investor).buyTokens(WHOLE, { value: cost })).to.be.revertedWith("Funding cap reached");
+    await expect(mark.connect(investor).buyTokens(WHOLE, { value: cost }))
+      .to.be.revertedWithCustomError(mark, "FundingCapReached");
   });
 
   it("respects sale deadlines", async function () {
@@ -216,7 +225,8 @@ describe("α-AGI MARK bonding curve", function () {
     const deadline = (await time.latest()) + 3600;
     await mark.connect(owner).setSaleDeadline(deadline);
     await time.increaseTo(deadline + 1);
-    await expect(mark.connect(investor).buyTokens(WHOLE, { value: cost })).to.be.revertedWith("Sale expired");
+    await expect(mark.connect(investor).buyTokens(WHOLE, { value: cost }))
+      .to.be.revertedWithCustomError(mark, "SaleExpired");
   });
 
   it("lets the owner curate validators and reset approvals", async function () {
@@ -234,11 +244,13 @@ describe("α-AGI MARK bonding curve", function () {
 
     await riskOracle.connect(owner).removeValidators([validatorB.address]);
     expect(await riskOracle.validatorCount()).to.equal(1n);
-    await expect(riskOracle.connect(outsider).approveSeed()).to.be.revertedWith("Not validator");
+    await expect(riskOracle.connect(outsider).approveSeed())
+      .to.be.revertedWithCustomError(riskOracle, "NotValidator")
+      .withArgs(outsider.address);
 
     await expect(riskOracle.connect(validatorA).approveSeed())
       .to.emit(riskOracle, "ApprovalCast")
-      .withArgs(validatorA.address, true);
+      .withArgs(validatorA.address);
   });
 
   it("allows owner validation override", async function () {
@@ -335,9 +347,8 @@ describe("α-AGI MARK bonding curve", function () {
     await stable.connect(investor).approve(mark.target, depositAmount);
 
     const nativeCost = purchaseCost(basePrice, slope, 0n, 1n);
-    await expect(mark.connect(investor).buyTokens(WHOLE, { value: nativeCost })).to.be.revertedWith(
-      "Native payment disabled"
-    );
+    await expect(mark.connect(investor).buyTokens(WHOLE, { value: nativeCost }))
+      .to.be.revertedWithCustomError(mark, "NativePaymentDisabled");
 
     await expect(mark.connect(investor).buyTokens(WHOLE))
       .to.emit(mark, "TokensPurchased")
@@ -346,7 +357,10 @@ describe("α-AGI MARK bonding curve", function () {
     expect(await mark.reserveBalance()).to.equal(nativeCost);
     expect(await stable.balanceOf(mark.target)).to.equal(nativeCost);
 
-    await expect(mark.connect(owner).setBaseAsset(ethers.ZeroAddress)).to.be.revertedWith("Supply exists");
+    await expect(mark.connect(owner).setBaseAsset(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+      mark,
+      "SaleAlreadyStarted",
+    );
   });
 });
 
@@ -517,7 +531,10 @@ describe("α-AGI MARK ERC20 base asset flows", function () {
 
     const metadata = ethers.hexlify(ethers.toUtf8Bytes("residual"));
 
-    await expect(mark.connect(owner).withdrawResidual(owner.address)).to.be.revertedWith("Not closed");
+    await expect(mark.connect(owner).withdrawResidual(owner.address)).to.be.revertedWithCustomError(
+      mark,
+      "NotClosed",
+    );
 
     await expect(mark.connect(owner).finalizeLaunch(owner.address, metadata))
       .to.emit(mark, "LaunchFinalized")
