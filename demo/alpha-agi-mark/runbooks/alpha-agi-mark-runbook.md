@@ -29,7 +29,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
        independent checks
 
    > **Need everything in one keystroke?** Run `npm run demo:alpha-agi-mark:full` to execute the demo, replay the verification,
-   > emit the owner matrix, and synthesise the integrity dossier without running additional commands.
+   > emit the owner matrix, synthesise the integrity dossier, and forge the risk lattice without running additional commands.
 
 2. **Inspect recap artifacts**
 
@@ -96,7 +96,17 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    the verification table, owner command deck snapshot, and a mermaid contribution pie chart. Circulate
    it alongside the dashboard for executive approval.
 
-8. **Publish the cinematic mission timeline**
+8. **Synthesize the risk lattice dossier**
+
+   ```bash
+   npm run lattice:alpha-agi-mark
+   ```
+
+   Generates `demo/alpha-agi-mark/reports/alpha-mark-risk-lattice.md`, which layers a mermaid mindmap and flowchart over the
+   control deck, verification verdict, reserve telemetry, and (when available) the empowerment multiplier. Hand this to
+   executives who need a single-page risk and assurance blueprint.
+
+9. **Publish the cinematic mission timeline**
 
    ```bash
    npm run timeline:alpha-agi-mark
@@ -105,7 +115,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    Creates `demo/alpha-agi-mark/reports/alpha-mark-timeline.md`, blending a Mermaid timeline with a
    tabular ledger of every orchestrated action. Ideal for board briefings or audit evidence packs.
 
-9. **(Optional) Run unit tests**
+10. **(Optional) Run unit tests**
 
    ```bash
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
@@ -115,7 +125,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    pause/emergency exit, abort, and residual withdrawal) so board operators can demonstrate contractual control with a
    single automated report.
 
-10. **(Optional) Dry-run on a fork or external network**
+11. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
 

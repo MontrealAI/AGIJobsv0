@@ -5,4 +5,5 @@ reports/*
 !reports/alpha-mark-recap.json
 !reports/alpha-mark-dashboard.html
 !reports/alpha-mark-integrity.md
+!reports/alpha-mark-risk-lattice.md
 !reports/alpha-mark-timeline.md
