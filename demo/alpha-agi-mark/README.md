@@ -159,6 +159,20 @@ Creates `reports/alpha-mark-risk-lattice.md`, a mission-assurance brief that:
 - Highlights verification confidence, reserve solvency, and sovereign vault receipts
 - Echoes the empowerment pulse so executives see the automation multiplier alongside risk posture
 
+### Superintelligence brief
+
+```bash
+npm run superintelligence:alpha-agi-mark
+```
+
+Synthesises `reports/alpha-mark-superintelligence.md`, a cinematic dossier that fuses mission telemetry, owner
+controls, validator quorum, and capital resonance into a single artefact. It includes:
+
+- A verification-gated status banner proving confidence indices before rendering any visuals
+- A command-deck table with live actuator states so non-technical owners can greenlight adjustments instantly
+- Freshly generated Mermaid timeline, mindmap, flowchart, and pie charts to brief stakeholders visually
+- Canonical checksum footer so auditors can verify the brief against the recap dossier in seconds
+
 ## Sovereign Dashboard
 
 Every demo run now emits a cinematic HTML dossier at `demo/alpha-agi-mark/reports/alpha-mark-dashboard.html`. Open the file in
