@@ -50,6 +50,43 @@ const timelineEntrySchema = z
   })
   .passthrough();
 
+const empowermentSchema = z
+  .object({
+    tagline: z.string(),
+    automation: z
+      .object({
+        manualCommands: z.number(),
+        orchestratedActions: z.number(),
+        automationMultiplier: z.string(),
+      })
+      .passthrough(),
+    assurance: z
+      .object({
+        verificationConfidencePercent: z.string(),
+        checksPassed: z.number(),
+        totalChecks: z.number(),
+        validatorApprovals: z.number(),
+        validatorThreshold: z.number(),
+      })
+      .passthrough(),
+    capitalFormation: z
+      .object({
+        participants: z.number(),
+        grossContributionsWei: z.string(),
+        grossContributionsEth: z.string().optional(),
+        reserveWei: z.string(),
+        reserveEth: z.string().optional(),
+      })
+      .passthrough(),
+    operatorControls: z
+      .object({
+        totalControls: z.number(),
+        highlights: z.array(z.string()).optional(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+
 const recapSchema = z.object({
   generatedAt: z.string(),
   network: z
@@ -158,6 +195,7 @@ const recapSchema = z.object({
       recapSha256: z.string(),
     })
     .optional(),
+  empowerment: empowermentSchema.optional(),
 }).passthrough();
 
 function parseBigInt(value: string, label: string): bigint {

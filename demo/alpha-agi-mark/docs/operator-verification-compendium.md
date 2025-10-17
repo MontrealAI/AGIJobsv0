@@ -39,6 +39,10 @@ without detection. Every recap now emits a `verification.summary` bundle contain
 machine-readable list of each check. Because the summary is embedded in the recap, console, dashboard, integrity report,
 and verifier all display identical confidence numbers without manual reconciliation.
 
+The empowerment stanza rides on top of the verification bundle, turning the maths into an executive-ready multiplier. The
+dashboard, console, and integrity dossier all read the same automation, assurance, capital, and command-deck metrics directly
+from the recap, ensuring auditors and founders quote identical numbers in every forum.
+
 ## Operator flow – five minute audit
 
 1. `npm run demo:alpha-agi-mark` – generate the recap dossier and sovereign dashboard.

@@ -76,6 +76,6 @@ Run the live console once a recap dossier exists:
 npm run console:alpha-agi-mark
 ```
 
-The prompt exposes dedicated panels for the mission summary, owner command deck, participant ledger, validator council, triple
-verification matrix, mission timeline, and a dynamically generated Mermaid blueprint. Pass `--snapshot` to print the same
-briefing non-interactively for inclusion in status reports or CI artefacts.
+The prompt exposes dedicated panels for the mission summary, operator empowerment index, owner command deck, participant
+ledger, validator council, triple-verification matrix, mission timeline, and a dynamically generated Mermaid blueprint. Pass
+`--snapshot` to print the same briefing non-interactively for inclusion in status reports or CI artefacts.

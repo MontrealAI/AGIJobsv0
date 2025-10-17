@@ -154,6 +154,36 @@ Regenerate the dashboard at any time from the latest recap JSON:
 npm run dashboard:alpha-agi-mark
 ```
 
+## Operator Empowerment Index
+
+The recap dossier now ships with a machine-readable **empowerment** stanza so non-technical operators can quote a single
+multiplier that proves how hard AGI Jobs v0 (v2) is working on their behalf. The orchestrator records:
+
+- Automation multiplier – how many mission-grade actions AGI Jobs executed from a single operator command (e.g. 30+ timeline
+  events from one invocation in the default run).
+- Assurance depth – verification confidence percentage, invariant coverage, and live validator quorum ratios.
+- Capital resonance – participant count, gross capital stewarded, and the reserve balance dispatched to the sovereign vault.
+- Command deck inventory – total owner actuators catalogued plus a rotating highlight list for quick boardroom briefings.
+
+The empowerment metrics surface everywhere (recap JSON, dashboard, console, integrity dossier) so stakeholders receive a
+consistent narrative no matter which artefact they open. Launch the console to walk through the dedicated empowerment panel:
+
+```bash
+npm run console:alpha-agi-mark -- --snapshot
+```
+
+```mermaid
+pie showData
+    title α-AGI MARK Empowerment Composition (sample dry-run)
+    "Automation Multiplier" : 32
+    "Verification Confidence" : 26
+    "Capital Formation" : 21
+    "Command Deck Coverage" : 21
+```
+
+Pair the command console with the Sovereign Dashboard to present both a cinematic overview and the quantitative empowerment
+index without touching Solidity.
+
 ## Triple-Verification Matrix
 
 ## Mission Timeline

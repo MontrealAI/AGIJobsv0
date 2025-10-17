@@ -74,3 +74,24 @@ sequenceDiagram
 ```
 
 These visual systems can be printed, embedded in investor decks, or referenced in due diligence reports so the operator can demonstrate total command over α-AGI MARK without touching raw contract code.
+
+## Empowerment Multiplier Glyph
+
+```mermaid
+quadrantChart
+    title Empowerment signal map
+    x-axis Manual Touchpoints --> Automated Execution
+    y-axis Low Assurance --> High Assurance
+    quadrant-1 Sovereign Autopilot
+    quadrant-2 Guided Intelligence
+    quadrant-3 Manual Baseline
+    quadrant-4 Audit Workbench
+    "Manual launch (legacy)" : [0.15, 0.20]
+    "AGI Jobs Empowerment Index" : [0.92, 0.94]
+    "Validator Telemetry" : [0.70, 0.90]
+    "Command Deck Snapshot" : [0.80, 0.85]
+```
+
+The empowerment glyph translates the recap’s empowerment stanza into a single chart that any executive can interpret. The
+default dry-run places the AGI Jobs empowerment index firmly inside the “Sovereign Autopilot” quadrant, signalling that a
+single command delivered dozens of mission actions with board-ready assurance metrics.
