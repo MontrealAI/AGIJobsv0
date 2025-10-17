@@ -8,13 +8,46 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const root = path.join(__dirname, "..");
 
+type PlaybookStep = {
+  hub: string;
+  rewardWei: string;
+  uri?: string;
+};
+
+type Playbook = {
+  id: string;
+  name: string;
+  steps: PlaybookStep[];
+};
+
+type MissionSummary = {
+  id: string;
+  name: string;
+  stepCount: number;
+  hubCount: number;
+  stageCount: number;
+  totalRewardWei: string;
+  totalRewardEther: string;
+  hubs: string[];
+  stages: string[];
+};
+
+type HubConfig = {
+  label: string;
+  rpcUrl: string;
+  subgraphUrl?: string;
+  addresses: Record<string, string>;
+};
+
+type HubMap = Record<string, HubConfig>;
+
 const meshCfg = JSON.parse(
   readFileSync(path.join(root, "config/mesh.ui.config.json"), "utf8")
 );
-const hubs = JSON.parse(
+const hubs: HubMap = JSON.parse(
   readFileSync(path.join(root, "config/hubs.mainnet.json"), "utf8")
 );
-const playbooks = JSON.parse(
+const playbooks: Playbook[] = JSON.parse(
   readFileSync(path.join(root, "config/playbooks.json"), "utf8")
 );
 const actors = JSON.parse(
@@ -39,6 +72,25 @@ const idAbi = [
 const iface = (abi: string[]) => new ethers.Interface(abi);
 const enc = (abi: string[], fn: string, args: unknown[]) =>
   iface(abi).encodeFunctionData(fn, args);
+const toBigInt = (value: unknown): bigint => {
+  try {
+    if (typeof value === "bigint") return value;
+    if (typeof value === "number") return BigInt(Math.trunc(value));
+    if (typeof value === "string" && value) return BigInt(value);
+  } catch (err) {
+    console.warn("[Sovereign Mesh] Unable to coerce bigint", value, err);
+  }
+  return 0n;
+};
+const parseHubStage = (value: string) => {
+  const parts = String(value || "").split("@");
+  if (parts.length === 1) {
+    return { stage: parts[0] || "mission", hubId: parts[0] || "" };
+  }
+  const [stage, hubId] = parts as [string, string];
+  return { stage: stage || "mission", hubId: hubId || stage };
+};
+const unique = <T,>(values: T[]) => Array.from(new Set(values));
 const getHub = (id: string) => {
   const hub = hubs[id];
   if (!hub) {
@@ -54,6 +106,58 @@ app.get("/mesh/hubs", (_req, res) => res.json({ hubs }));
 app.get("/mesh/actors", (_req, res) => res.json(actors));
 app.get("/mesh/playbooks", (_req, res) => res.json(playbooks));
 app.get("/mesh/config", (_req, res) => res.json(meshCfg));
+app.get("/mesh/summary", (_req, res) => {
+  const missions: MissionSummary[] = playbooks.map((playbook) => {
+    const steps = playbook.steps || [];
+    const stepSummaries = steps.map((step) => {
+      const { stage, hubId } = parseHubStage(step.hub);
+      return {
+        stage,
+        hubId,
+        reward: toBigInt(step.rewardWei),
+        uri: step.uri || ""
+      };
+    });
+    const totalReward = stepSummaries.reduce(
+      (acc, step) => acc + step.reward,
+      0n
+    );
+    const hubsInMission = unique(stepSummaries.map((s) => s.hubId).filter(Boolean));
+    const stagesInMission = unique(stepSummaries.map((s) => s.stage).filter(Boolean));
+
+    return {
+      id: playbook.id,
+      name: playbook.name,
+      stepCount: steps.length,
+      hubCount: hubsInMission.length,
+      stageCount: stagesInMission.length,
+      totalRewardWei: totalReward.toString(),
+      totalRewardEther: ethers.formatEther(totalReward || 0n),
+      hubs: hubsInMission,
+      stages: stagesInMission
+    };
+  });
+
+  const totalRewardWei = missions.reduce(
+    (acc, mission) => acc + toBigInt(mission.totalRewardWei),
+    0n
+  );
+
+  res.json({
+    network: meshCfg.network,
+    hubCount: Object.keys(hubs).length,
+    missionCount: playbooks.length,
+    totalRewardWei: totalRewardWei.toString(),
+    totalRewardEther: ethers.formatEther(totalRewardWei || 0n),
+    missions,
+    hubs: Object.entries(hubs).map(([id, hub]) => ({
+      id,
+      label: hub.label,
+      moduleCount: Object.keys(hub.addresses || {}).length
+    })),
+    updatedAt: new Date().toISOString()
+  });
+});
 
 app.post("/mesh/:hub/tx/create", (req, res) => {
   const hub = getHub(req.params.hub);
