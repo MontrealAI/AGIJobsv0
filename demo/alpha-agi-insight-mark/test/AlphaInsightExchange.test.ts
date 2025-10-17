@@ -72,6 +72,18 @@ describe("AlphaInsightExchange", () => {
     expect(await nova.ownerOf(1n)).to.equal(seller.address);
   });
 
+  it("permits delegated sentinel pausing", async () => {
+    await exchange.setSystemPause(seller.address);
+    await nova.connect(seller).approve(await exchange.getAddress(), 1n);
+    await exchange.connect(seller).listInsight(1n, ethers.parseUnits("200", 18));
+
+    await exchange.connect(seller).pause();
+    await expect(exchange.connect(buyer).buyInsight(1n)).to.be.revertedWithCustomError(exchange, "EnforcedPause");
+
+    await exchange.unpause();
+    await exchange.connect(seller).cancelListing(1n);
+  });
+
   it("records oracle resolution", async () => {
     await exchange.setOracle(oracle.address);
     await exchange.connect(oracle).resolvePrediction(1n, true, "Finance rupture confirmed");

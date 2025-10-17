@@ -29,6 +29,7 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
     uint256 private _nextTokenId = 1;
     mapping(uint256 => InsightMetadata) private _insights;
     mapping(address => bool) private _authorizedMinters;
+    address private _systemPause;
 
     event InsightMinted(
         uint256 indexed tokenId,
@@ -47,13 +48,22 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
     );
 
     event FusionPlanRevealed(uint256 indexed tokenId, string fusionURI);
+    event FusionPlanUpdated(uint256 indexed tokenId, string fusionURI);
 
     event MinterUpdated(address indexed account, bool authorized);
+    event SystemPauseUpdated(address indexed account);
 
     constructor(address owner_) ERC721(unicode"α-AGI Nova-Seed", "AINSIGHT") Ownable(owner_) {}
 
     modifier onlyAuthorized() {
         if (msg.sender != owner() && !_authorizedMinters[msg.sender]) {
+            revert("NOT_AUTHORIZED");
+        }
+        _;
+    }
+
+    modifier onlyOwnerOrSystemPause() {
+        if (msg.sender != owner() && msg.sender != _systemPause) {
             revert("NOT_AUTHORIZED");
         }
         _;
@@ -73,6 +83,15 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
     function setMinter(address account, bool authorized) external onlyOwner {
         _authorizedMinters[account] = authorized;
         emit MinterUpdated(account, authorized);
+    }
+
+    function systemPause() external view returns (address) {
+        return _systemPause;
+    }
+
+    function setSystemPause(address newSystemPause) external onlyOwner {
+        _systemPause = newSystemPause;
+        emit SystemPauseUpdated(newSystemPause);
     }
 
     function mintInsight(address to, InsightInput calldata input)
@@ -142,12 +161,21 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
         emit FusionPlanRevealed(tokenId, fusionURI);
     }
 
+    function updateFusionPlan(uint256 tokenId, string calldata fusionURI) external onlyOwner {
+        _requireOwned(tokenId);
+        require(bytes(fusionURI).length > 0, "URI_REQUIRED");
+        InsightMetadata storage info = _insights[tokenId];
+        info.fusionURI = fusionURI;
+        info.fusionRevealed = true;
+        emit FusionPlanUpdated(tokenId, fusionURI);
+    }
+
     function getInsight(uint256 tokenId) external view returns (InsightMetadata memory) {
         _requireOwned(tokenId);
         return _insights[tokenId];
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrSystemPause {
         _pause();
     }
 

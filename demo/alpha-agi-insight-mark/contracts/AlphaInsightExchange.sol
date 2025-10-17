@@ -35,6 +35,7 @@ contract AlphaInsightExchange is Ownable, Pausable, ReentrancyGuard {
     address public treasury;
     uint96 public feeBps;
     address public oracle;
+    address private _systemPause;
 
     mapping(uint256 => Listing) private _listings;
     mapping(uint256 => ResolutionRecord) private _resolutions;
@@ -47,6 +48,7 @@ contract AlphaInsightExchange is Ownable, Pausable, ReentrancyGuard {
     event FeeUpdated(uint96 newFeeBps);
     event PaymentTokenUpdated(address indexed newToken);
     event OracleUpdated(address indexed newOracle);
+    event SystemPauseUpdated(address indexed systemPause);
 
     constructor(
         address owner_,
@@ -73,6 +75,13 @@ contract AlphaInsightExchange is Ownable, Pausable, ReentrancyGuard {
         _;
     }
 
+    modifier onlyOwnerOrSystemPause() {
+        if (msg.sender != owner() && msg.sender != _systemPause) {
+            revert("NOT_AUTHORIZED");
+        }
+        _;
+    }
+
     function setPaymentToken(IERC20 newToken) external onlyOwner {
         require(address(newToken) != address(0), "TOKEN_REQUIRED");
         paymentToken = newToken;
@@ -94,6 +103,15 @@ contract AlphaInsightExchange is Ownable, Pausable, ReentrancyGuard {
     function setOracle(address newOracle) external onlyOwner {
         oracle = newOracle;
         emit OracleUpdated(newOracle);
+    }
+
+    function systemPause() external view returns (address) {
+        return _systemPause;
+    }
+
+    function setSystemPause(address newSystemPause) external onlyOwner {
+        _systemPause = newSystemPause;
+        emit SystemPauseUpdated(newSystemPause);
     }
 
     function listInsight(uint256 tokenId, uint256 price) external whenNotPaused {
@@ -165,7 +183,7 @@ contract AlphaInsightExchange is Ownable, Pausable, ReentrancyGuard {
         return _resolutions[tokenId];
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrSystemPause {
         _pause();
     }
 

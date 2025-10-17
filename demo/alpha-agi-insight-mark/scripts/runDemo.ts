@@ -57,6 +57,15 @@ function escapeHtml(input: string): string {
     .replace(/'/g, "&#39;");
 }
 
+function shortenUri(uri: string, maxLength = 42): string {
+  if (uri.length <= maxLength) {
+    return uri;
+  }
+  const prefixLength = Math.floor((maxLength - 1) / 2);
+  const suffixLength = maxLength - 1 - prefixLength;
+  return `${uri.slice(0, prefixLength)}…${uri.slice(-suffixLength)}`;
+}
+
 async function loadScenarioConfig(scenarioPath: string): Promise<ScenarioConfig> {
   try {
     await stat(scenarioPath);
@@ -93,6 +102,7 @@ interface MintedInsightRecord {
     transactionHash: string;
   };
   fusionRevealed: boolean;
+  fusionURI: string;
   disruptionTimestamp: string;
   onchainVerified: boolean;
 }
@@ -158,6 +168,9 @@ async function main() {
   await exchange.setOracle(oracle.address);
   await novaSeed.setMinter(operator.address, true);
   await novaSeed.setMinter(oracle.address, true);
+  await accessToken.setSystemPause(strategist.address);
+  await novaSeed.setSystemPause(strategist.address);
+  await exchange.setSystemPause(strategist.address);
 
   const telemetry: AgentLogEntry[] = [];
   const minted: MintedInsightRecord[] = [];
@@ -168,6 +181,7 @@ async function main() {
     console.log(`🤖 [${agent}] ${message}`);
   }
 
+  log("Guardian Auditor", `SystemPause sentinel anchored to ${strategist.address} for cross-contract halts.`);
   log("Meta-Sentinel", "Initialising α-AGI Insight MARK deployment lattice.");
 
   const scenarioAllocations = [
@@ -201,10 +215,17 @@ async function main() {
     log("FusionSmith", `Seed ${mintedId.toString()} forged for ${scenario.sector}.`);
 
     let fusionRevealed = false;
+    let activeFusionURI = scenario.sealedURI;
     if (i === 0) {
       await novaSeed.revealFusionPlan(mintedId, scenario.fusionURI);
       fusionRevealed = true;
+      activeFusionURI = scenario.fusionURI;
       log("Guardian Auditor", `Fusion plan for token ${mintedId.toString()} revealed under owner control.`);
+
+      const revisionedFusionURI = `${scenario.fusionURI}?revision=2`;
+      await novaSeed.updateFusionPlan(mintedId, revisionedFusionURI);
+      activeFusionURI = revisionedFusionURI;
+      log("Guardian Auditor", `Fusion dossier for token ${mintedId.toString()} retargeted to ${revisionedFusionURI}.`);
     }
 
     const price = priceSchedule[i] ?? priceSchedule[0];
@@ -246,6 +267,12 @@ async function main() {
     if (onchain.disruptionTimestamp !== toTimestamp(scenario.ruptureYear)) {
       throw new Error(`Disruption timestamp mismatch for token ${mintedId.toString()}.`);
     }
+    if (onchain.fusionURI !== activeFusionURI) {
+      throw new Error(`Fusion URI mismatch for token ${mintedId.toString()}.`);
+    }
+    if (onchain.fusionRevealed !== fusionRevealed) {
+      throw new Error(`Fusion reveal state mismatch for token ${mintedId.toString()}.`);
+    }
 
     minted.push({
       tokenId: mintedId.toString(),
@@ -257,6 +284,7 @@ async function main() {
       listingPrice,
       sale,
       fusionRevealed,
+      fusionURI: activeFusionURI,
       disruptionTimestamp: toTimestamp(scenario.ruptureYear).toString(),
       onchainVerified: true,
     });
@@ -266,10 +294,22 @@ async function main() {
   await accessToken.connect(buyerB).approve(await exchange.getAddress(), ethers.parseUnits("800", 18));
   log("Guardian Auditor", "Liquidity buffers provisioned for additional foresight acquisitions.");
 
+  log("System Sentinel", "Triggering cross-contract pause sweep via delegated sentinel.");
+  await exchange.connect(strategist).pause();
+  await novaSeed.connect(strategist).pause();
+  await accessToken.connect(strategist).pause();
+  log("System Sentinel", "Emergency pause executed. Awaiting owner clearance.");
+
+  await exchange.unpause();
+  await novaSeed.unpause();
+  await accessToken.unpause();
+  log("Meta-Sentinel", "Owner restored foresight lattice following sentinel drill.");
+
   const recapPath = path.join(reportsDir, "insight-recap.json");
   const reportPath = path.join(reportsDir, "insight-report.md");
   const matrixPath = path.join(reportsDir, "insight-control-matrix.json");
   const mermaidPath = path.join(reportsDir, "insight-control-map.mmd");
+  const governancePath = path.join(reportsDir, "insight-governance.mmd");
   const telemetryPath = path.join(reportsDir, "insight-telemetry.log");
   const htmlPath = path.join(reportsDir, "insight-report.html");
   const manifestPath = path.join(reportsDir, "insight-manifest.json");
@@ -293,6 +333,7 @@ async function main() {
     },
     operator: operator.address,
     oracle: oracle.address,
+    systemPause: strategist.address,
     treasury: await exchange.treasury(),
     feeBps: Number(await exchange.feeBps()),
     minted,
@@ -308,7 +349,10 @@ async function main() {
             ? `Listed @ ${entry.listingPrice} AIC`
             : "Listed"
           : "Held by operator";
-      return `| ${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${entry.scenario.thesis} | ${entry.status} | ${saleDetails} |`;
+      const fusionStatus = entry.fusionRevealed
+        ? `Revealed ↦ ${shortenUri(entry.fusionURI)}`
+        : `Sealed ↦ ${shortenUri(entry.fusionURI)}`;
+      return `| ${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${entry.scenario.thesis} | ${fusionStatus} | ${entry.status} | ${saleDetails} |`;
     })
     .join("\n");
 
@@ -316,10 +360,11 @@ async function main() {
     `**Network:** ${network.name} (chainId ${network.chainId})\\\n` +
     `**Operator:** ${operator.address}\\\n` +
     `**Oracle:** ${oracle.address}\\\n` +
+    `**System Pause Sentinel:** ${strategist.address}\\\n` +
     `**Fee:** ${(Number(await exchange.feeBps()) / 100).toFixed(2)}%\\\n` +
     `**Treasury:** ${await exchange.treasury()}\\\n\n` +
-    `| Token | Sector | Rupture Year | Thesis | Status | Market State |\n| --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
-    `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n\n` +
+    `| Token | Sector | Rupture Year | Thesis | Fusion Plan | Status | Market State |\n| --- | --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
+    `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n- Sentinel (${strategist.address}) authorised through \`setSystemPause\` to trigger emergency halts across modules.\n\n` +
     `## Scenario Dataset\n- Config file: ${scenarioRelativePath}\\\n- SHA-256: ${scenarioHash}\n\n` +
     `## Telemetry Snapshot\n` +
     telemetry
@@ -343,6 +388,9 @@ async function main() {
               ? `Listed @ ${escapeHtml(entry.listingPrice)} AIC`
               : "Listed"
             : "Held by operator";
+      const fusionStatus = entry.fusionRevealed
+        ? `Revealed ↦ ${escapeHtml(shortenUri(entry.fusionURI))}`
+        : `Sealed ↦ ${escapeHtml(shortenUri(entry.fusionURI))}`;
       return `            <tr>
               <td>${escapeHtml(entry.tokenId)}</td>
               <td>${escapeHtml(entry.scenario.sector)}</td>
@@ -354,6 +402,7 @@ async function main() {
                   <span>${confidencePercent}%</span>
                 </div>
               </td>
+              <td>${fusionStatus}</td>
               <td>${escapeHtml(entry.status)}</td>
               <td>${escapeHtml(saleDetails)}</td>
             </tr>`;
@@ -545,6 +594,10 @@ async function main() {
         <span class="meta-grid__value">${escapeHtml(oracle.address)}</span>
       </div>
       <div class="meta-grid__item">
+        <span class="meta-grid__label">System Pause Sentinel</span>
+        <span class="meta-grid__value">${escapeHtml(strategist.address)}</span>
+      </div>
+      <div class="meta-grid__item">
         <span class="meta-grid__label">Scenario Dataset</span>
         <span class="meta-grid__value">${escapeHtml(scenarioRelativePath)}<br /><small>sha256 ${escapeHtml(scenarioHashShort)}</small></span>
       </div>
@@ -571,6 +624,7 @@ ${timelineMarks}
             <th>Rupture Year</th>
             <th>Disruption Thesis</th>
             <th>Confidence</th>
+            <th>Fusion Plan</th>
             <th>Status</th>
             <th>Market State</th>
           </tr>
@@ -586,6 +640,7 @@ ${htmlRows}
         <li>Invoke <code>pause()</code> on the exchange, Nova-Seed, or settlement token to halt activity instantly.</li>
         <li>Reassign the oracle via <code>setOracle(address)</code> for immediate foresight adjudication.</li>
         <li>Redirect protocol yield by calling <code>setTreasury(address)</code>.</li>
+        <li>Authorise or rotate the cross-contract sentinel with <code>setSystemPause(address)</code>.</li>
         <li>Reveal a FusionPlan at will using <code>revealFusionPlan(tokenId, uri)</code>.</li>
       </ul>
     </section>
@@ -599,37 +654,77 @@ ${htmlRows}
     generatedAt: new Date().toISOString(),
     owner: operator.address,
     oracle: oracle.address,
+    systemPause: strategist.address,
     contracts: [
       {
         name: "InsightAccessToken",
         address: await accessToken.getAddress(),
         owner: operator.address,
-        pausible: true,
-        configurable: ["mint", "pause", "unpause"],
+        pausable: true,
+        systemPause: await accessToken.systemPause(),
+        configurable: ["mint", "pause", "unpause", "setSystemPause"],
       },
       {
         name: "AlphaInsightNovaSeed",
         address: await novaSeed.getAddress(),
         owner: operator.address,
-        pausible: true,
-        configurable: ["setMinter", "updateInsightDetails", "revealFusionPlan"],
+        pausable: true,
+        systemPause: await novaSeed.systemPause(),
+        configurable: ["setMinter", "updateInsightDetails", "revealFusionPlan", "updateFusionPlan", "setSystemPause"],
       },
       {
         name: "AlphaInsightExchange",
         address: await exchange.getAddress(),
         owner: operator.address,
-        pausible: true,
-        configurable: ["setOracle", "setTreasury", "setFeeBps", "setPaymentToken"],
+        pausable: true,
+        systemPause: await exchange.systemPause(),
+        configurable: ["setOracle", "setTreasury", "setFeeBps", "setPaymentToken", "setSystemPause"],
       },
     ],
   };
 
-  const mermaid = `flowchart TD\n    operator((Operator)):::actor -->|Mints| nova[α-AGI Nova-Seed]:::contract\n` +
-    `    nova -->|Lists insight| exchange[Insight Exchange]:::contract\n` +
+  const mermaid = `flowchart TD\n` +
+    `    operator((Operator)):::actor -->|Mints insights| nova[α-AGI Nova-Seed]:::contract\n` +
+    `    operator -->|Configures| exchange[Insight Exchange]:::contract\n` +
+    `    operator -->|Mints credits| credit[Insight Access Token]:::contract\n` +
+    `    nova -->|Lists foresight| exchange\n` +
     `    buyers((Market Participants)):::actor -->|Acquire foresight| exchange\n` +
-    `    exchange -->|Fee| treasury((Treasury)):::control\n` +
-    `    operator -->|Pause / Update| exchange\n` +
-    `    operator -->|Reveal fusion plans| nova\n    classDef actor fill:#102a43,stroke:#8ff7ff,color:#e5f9ff;\n    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n`;
+    `    exchange -->|Fee flow| treasury((Treasury)):::control\n` +
+    `    exchange -->|Settlement| credit\n` +
+    `    operator -->|Reveal / Update fusion plans| nova\n` +
+    `    sentinel((System Pause Sentinel)):::control -->|Pause command| nova\n` +
+    `    sentinel -->|Pause command| exchange\n` +
+    `    sentinel -->|Pause command| credit\n` +
+    `    operator -->|Resume operations| exchange\n` +
+    `    operator -->|Resume operations| nova\n` +
+    `    operator -->|Resume operations| credit\n` +
+    `    classDef actor fill:#102a43,stroke:#8ff7ff,color:#e5f9ff;\n` +
+    `    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n` +
+    `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n`;
+
+  const governanceMermaid = `flowchart LR\n` +
+    `    subgraph Intelligence_Swarm["Meta-Agentic Insight Swarm"]\n` +
+    `      metasentinel[[Meta-Sentinel]]:::agent\n` +
+    `      planner[[Strategic Planner]]:::agent\n` +
+    `      oracleAgent[[Thermodynamic Oracle]]:::agent\n` +
+    `      cartographer[[Venture Cartographer]]:::agent\n` +
+    `      guardian[[Guardian Auditor]]:::agent\n` +
+    `    end\n` +
+    `    metasentinel --> planner --> oracleAgent --> cartographer --> guardian --> metasentinel\n` +
+    `    metasentinel -->|Mint directives| nova[α-AGI Nova-Seed]:::contract\n` +
+    `    guardian -->|Seal / Reveal| nova\n` +
+    `    metasentinel -->|Configure| exchange[Insight Exchange]:::contract\n` +
+    `    guardian -->|Assign sentinel| pauseSentinel((System Pause Sentinel)):::control\n` +
+    `    pauseSentinel -->|Pause| nova\n` +
+    `    pauseSentinel -->|Pause| exchange\n` +
+    `    pauseSentinel -->|Pause| credit[Insight Access Token]:::contract\n` +
+    `    exchange --> buyers((Market Operators)):::actor\n` +
+    `    buyers --> exchange\n` +
+    `    exchange --> treasury((Treasury)):::control\n` +
+    `    classDef actor fill:#102a43,stroke:#8ff7ff,color:#e5f9ff;\n` +
+    `    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n` +
+    `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n` +
+    `    classDef agent fill:#14233b,stroke:#60d2ff,color:#e8f6ff;\n`;
 
   const telemetryLog = telemetry.map((entry) => `${entry.timestamp} [${entry.agent}] ${entry.message}`).join("\n");
 
@@ -637,11 +732,12 @@ ${htmlRows}
   await writeFile(reportPath, markdown);
   await writeFile(matrixPath, JSON.stringify(controlMatrix, null, 2));
   await writeFile(mermaidPath, mermaid);
+  await writeFile(governancePath, governanceMermaid);
   await writeFile(telemetryPath, telemetryLog);
   await writeFile(htmlPath, html);
 
   const manifestEntries: { path: string; sha256: string }[] = [];
-  for (const file of [recapPath, reportPath, htmlPath, matrixPath, mermaidPath, telemetryPath]) {
+  for (const file of [recapPath, reportPath, htmlPath, matrixPath, mermaidPath, governancePath, telemetryPath]) {
     const content = await readFile(file);
     const relativePath = path.relative(path.join(__dirname, ".."), file);
     manifestEntries.push({ path: relativePath.replace(/\\\\/g, "/"), sha256: sha256(content) });
