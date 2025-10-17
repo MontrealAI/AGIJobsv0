@@ -59,6 +59,15 @@ type VerificationSnapshot = {
     ledgerGrossEth?: string;
     consistent: boolean;
   };
+  summary?: {
+    totalChecks: number;
+    passedChecks: number;
+    failedChecks?: number;
+    confidenceIndexBps?: number;
+    confidenceIndexPercent?: string;
+    verdict?: string;
+    checks?: Array<{ key: string; label: string; consistent: boolean }>;
+  };
 };
 
 type TimelineEntry = {
@@ -447,6 +456,22 @@ function buildVerificationSection(verification?: VerificationSnapshot): string {
     return "";
   }
 
+  const summary = verification.summary;
+  const confidencePercent = summary
+    ? summary.confidenceIndexPercent ??
+      (summary.confidenceIndexBps !== undefined
+        ? (summary.confidenceIndexBps / 100).toFixed(2)
+        : undefined)
+    : undefined;
+  const passedChecks = summary?.passedChecks ??
+    (summary?.checks ? summary.checks.filter((check) => check.consistent).length : undefined);
+  const totalChecks = summary?.totalChecks ?? summary?.checks?.length;
+  const verdict = summary?.verdict ?? (passedChecks !== undefined && totalChecks !== undefined && passedChecks === totalChecks
+    ? "PASS"
+    : passedChecks !== undefined && totalChecks !== undefined
+    ? "REVIEW"
+    : undefined);
+
   const supplyCard = {
     title: "Supply Consensus",
     consistent: verification.supplyConsensus.consistent,
@@ -519,6 +544,22 @@ function buildVerificationSection(verification?: VerificationSnapshot): string {
 
   const cards = [supplyCard, pricingCard, capitalCard, contributionsCard];
 
+  const summaryBlock = summary
+    ? `
+      <div class="verification-summary">
+        <div class="summary-metric">
+          <span class="confidence-value">${escapeHtml(confidencePercent ?? "100.00")}%</span>
+          confidence${
+            passedChecks !== undefined && totalChecks !== undefined
+              ? ` (${passedChecks}/${totalChecks} checks)`
+              : ""
+          }
+        </div>
+        ${verdict ? `<div class="summary-verdict ${verdict === "PASS" ? "success" : "warning"}">${escapeHtml(verdict)}</div>` : ""}
+      </div>
+    `
+    : "";
+
   const grid = cards
     .map(
       (card) => `
@@ -540,6 +581,7 @@ function buildVerificationSection(verification?: VerificationSnapshot): string {
         Independent ledgers, on-chain state introspection, and first-principles math cross-check the sovereign launch
         in real time.
       </p>
+      ${summaryBlock}
       <div class="verification-grid">
         ${grid}
       </div>
@@ -759,6 +801,49 @@ function buildDashboardHtml(recap: RecapData): string {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 1.5rem;
+      }
+      .verification-summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem 1.25rem;
+        border-radius: 14px;
+        border: 1px solid rgba(96, 255, 207, 0.22);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .verification-summary .summary-metric {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .verification-summary .confidence-value {
+        font-size: 1.9rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+      }
+      .verification-summary .summary-verdict {
+        margin-left: auto;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .verification-summary .summary-verdict.success {
+        color: var(--success);
+        border-color: rgba(46, 204, 113, 0.6);
+        background: rgba(46, 204, 113, 0.18);
+      }
+      .verification-summary .summary-verdict.warning {
+        color: var(--warning);
+        border-color: rgba(255, 179, 71, 0.6);
+        background: rgba(255, 179, 71, 0.18);
       }
       .verification-card {
         background: rgba(255, 255, 255, 0.05);

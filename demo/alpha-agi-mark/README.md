@@ -188,7 +188,16 @@ timeline
 α-AGI MARK now triangulates its state through three independent vantage points—on-chain contract reads, a deterministic
 trade ledger, and a first-principles bonding-curve simulator. Every run prints a "Triple-Verification Matrix" confirming that
 all three perspectives agree on supply, pricing, capital flows, and participant contributions. The recap dossier exposes the
-results under a new `verification` section and the dashboard renders the matrix as a dedicated integrity panel.
+results under a new `verification` section and the dashboard renders the matrix as a dedicated integrity panel. The orchestrator
+also records a `summary` object with:
+
+- `confidenceIndexPercent` / `confidenceIndexBps` – mathematically derived confidence index from the core checks (basis points and human-readable %)
+- `passedChecks` / `totalChecks` – the authoritative ledger of how many invariants aligned
+- `verdict` – `PASS` when every invariant reconciles, `REVIEW` if any discrepancy surfaces
+- `checks[]` – canonical labels and booleans for each pillar so downstream tools can display consistent messaging
+
+All downstream surfaces (console, dashboard, integrity dossier, verifier) consume the same summary so a non-technical operator
+sees identical confidence numbers everywhere.
 
 ```mermaid
 flowchart LR

@@ -64,6 +64,26 @@ const verificationSchema = z
         participantAggregateWei: z.string(),
       })
       .passthrough(),
+    summary: z
+      .object({
+        totalChecks: z.number(),
+        passedChecks: z.number(),
+        failedChecks: z.number().optional(),
+        confidenceIndexBps: z.number().optional(),
+        confidenceIndexPercent: z.string().optional(),
+        verdict: z.enum(["PASS", "REVIEW"]).optional(),
+        checks: z
+          .array(
+            z.object({
+              key: z.string(),
+              label: z.string(),
+              consistent: z.boolean(),
+            }),
+          )
+          .optional(),
+      })
+      .partial()
+      .optional(),
   })
   .partial();
 
@@ -481,20 +501,37 @@ function renderVerification(recap: Recap): void {
     return;
   }
 
-  const checks = [
-    { label: "Supply consensus", consistent: verification.supplyConsensus?.consistent ?? false },
-    { label: "Pricing parity", consistent: verification.pricing?.consistent ?? false },
-    { label: "Capital flows", consistent: verification.capitalFlows?.consistent ?? false },
-    { label: "Contribution totals", consistent: verification.contributions?.consistent ?? false },
-  ];
+  const summaryChecks = verification.summary?.checks;
+  const checks = summaryChecks
+    ? summaryChecks.map((entry) => ({ label: entry.label, consistent: entry.consistent }))
+    : [
+        { label: "Supply consensus", consistent: verification.supplyConsensus?.consistent ?? false },
+        { label: "Pricing parity", consistent: verification.pricing?.consistent ?? false },
+        { label: "Capital flows", consistent: verification.capitalFlows?.consistent ?? false },
+        { label: "Contribution totals", consistent: verification.contributions?.consistent ?? false },
+      ];
 
-  const total = checks.length;
-  const passing = checks.filter((check) => check.consistent).length;
-  const confidence = Math.round((passing / total) * 100);
+  const total = verification.summary?.totalChecks ?? checks.length;
+  const passing = verification.summary?.passedChecks ?? checks.filter((check) => check.consistent).length;
+  const confidencePercent = verification.summary?.confidenceIndexPercent
+    ?? (verification.summary?.confidenceIndexBps !== undefined
+      ? (verification.summary.confidenceIndexBps / 100).toFixed(2)
+      : (total === 0 ? 0 : Math.round((passing / total) * 100)).toString());
 
-  console.log(`  Confidence index: ${
-    passing === total ? styles.success(`${confidence}%`) : styles.warning(`${confidence}%`)
-  }`);
+  const verdictBadge = verification.summary?.verdict === "PASS"
+    ? styles.success("PASS")
+    : verification.summary?.verdict
+    ? styles.warning(verification.summary.verdict)
+    : undefined;
+
+  console.log(
+    `  Confidence index: ${
+      passing === total ? styles.success(`${confidencePercent}%`) : styles.warning(`${confidencePercent}%`)
+    } (${passing}/${total} checks)`,
+  );
+  if (verdictBadge) {
+    console.log(`  Verdict: ${verdictBadge}`);
+  }
 
   console.log();
   checks.forEach((check) => {

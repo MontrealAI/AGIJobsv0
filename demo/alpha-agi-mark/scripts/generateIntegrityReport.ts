@@ -128,40 +128,61 @@ const recapSchema = z
     .object({
       supplyConsensus: z
         .object({
-        ledgerWholeTokens: z.string(),
-        contractWholeTokens: z.string(),
-        simulationWholeTokens: z.string(),
-        participantAggregateWholeTokens: z.string(),
-        consistent: z.boolean(),
-      })
+          ledgerWholeTokens: z.string(),
+          contractWholeTokens: z.string(),
+          simulationWholeTokens: z.string(),
+          participantAggregateWholeTokens: z.string(),
+          consistent: z.boolean(),
+        })
         .passthrough(),
       pricing: z
         .object({
-        contractNextPriceWei: z.string(),
-        simulatedNextPriceWei: z.string(),
-        consistent: z.boolean(),
-      })
+          contractNextPriceWei: z.string(),
+          simulatedNextPriceWei: z.string(),
+          consistent: z.boolean(),
+        })
         .passthrough(),
       capitalFlows: z
         .object({
-        ledgerGrossWei: z.string(),
-        ledgerRedemptionsWei: z.string(),
-        ledgerNetWei: z.string(),
-        simulatedReserveWei: z.string(),
-        contractReserveWei: z.string(),
-        vaultReceivedWei: z.string(),
-        combinedReserveWei: z.string(),
-        consistent: z.boolean(),
-      })
+          ledgerGrossWei: z.string(),
+          ledgerRedemptionsWei: z.string(),
+          ledgerNetWei: z.string(),
+          simulatedReserveWei: z.string(),
+          contractReserveWei: z.string(),
+          vaultReceivedWei: z.string(),
+          combinedReserveWei: z.string(),
+          consistent: z.boolean(),
+        })
         .passthrough(),
       contributions: z
         .object({
-        participantAggregateWei: z.string(),
-        ledgerGrossWei: z.string(),
-        consistent: z.boolean(),
-      })
+          participantAggregateWei: z.string(),
+          ledgerGrossWei: z.string(),
+          consistent: z.boolean(),
+        })
         .passthrough(),
+      summary: z
+        .object({
+          totalChecks: z.number(),
+          passedChecks: z.number(),
+          failedChecks: z.number().optional(),
+          confidenceIndexBps: z.number(),
+          confidenceIndexPercent: z.string(),
+          verdict: z.enum(["PASS", "REVIEW"]),
+          checks: z
+            .array(
+              z.object({
+                key: z.string(),
+                label: z.string(),
+                consistent: z.boolean(),
+              }),
+            )
+            .optional(),
+        })
+        .partial()
+        .optional(),
     })
+    .passthrough()
     .optional(),
   checksums: z
     .object({
@@ -320,12 +341,57 @@ function buildChecks(recap: Recap) {
     });
   }
 
+  const coreCheckCount = checks.length;
+  const corePassCount = checks.filter((check) => check.ok).length;
+  const coreConfidenceBps = coreCheckCount === 0 ? 0 : Math.round((corePassCount * 10000) / coreCheckCount);
+
+  if (recap.verification?.summary) {
+    const summary = recap.verification.summary;
+    const summaryTotal = summary.totalChecks;
+    const summaryPassed = summary.passedChecks;
+    const summaryBps = summary.confidenceIndexBps;
+    const expectedVerdict = corePassCount === coreCheckCount ? "PASS" : "REVIEW";
+
+    checks.push({
+      label: "Verification summary total checks",
+      ok: summaryTotal === coreCheckCount,
+      expected: coreCheckCount.toString(),
+      observed: summaryTotal?.toString() ?? "(missing)",
+    });
+    checks.push({
+      label: "Verification summary passed checks",
+      ok: summaryPassed === corePassCount,
+      expected: corePassCount.toString(),
+      observed: summaryPassed?.toString() ?? "(missing)",
+    });
+    checks.push({
+      label: "Verification summary confidence index",
+      ok: summaryBps === coreConfidenceBps,
+      expected: `${(coreConfidenceBps / 100).toFixed(2)}%`,
+      observed:
+        summaryBps !== undefined
+          ? `${(summaryBps / 100).toFixed(2)}%`
+          : summary.confidenceIndexPercent ?? "(missing)",
+    });
+    if (summary.verdict) {
+      checks.push({
+        label: "Verification summary verdict",
+        ok: summary.verdict === expectedVerdict,
+        expected: expectedVerdict,
+        observed: summary.verdict,
+      });
+    }
+  }
+
   return {
     checks,
     ledgerGross,
     ledgerNet,
     ledgerSupply,
     ledgerRedemptions,
+    coreCheckCount,
+    corePassCount,
+    coreConfidenceBps,
   };
 }
 
@@ -372,9 +438,22 @@ async function main() {
   const raw = await readFile(RECAP_PATH, "utf8");
   const recap = recapSchema.parse(JSON.parse(raw));
 
-  const { checks, ledgerGross, ledgerNet, ledgerSupply } = buildChecks(recap);
+  const { checks, ledgerGross, ledgerNet, ledgerSupply, coreCheckCount, corePassCount, coreConfidenceBps } =
+    buildChecks(recap);
   const passCount = checks.filter((check) => check.ok).length;
-  const confidence = (passCount / checks.length) * 100;
+  const computedConfidence = (passCount / checks.length) * 100;
+
+  const summary = recap.verification?.summary;
+  const summaryConfidencePercent = summary
+    ? summary.confidenceIndexPercent ?? (summary.confidenceIndexBps / 100).toFixed(2)
+    : undefined;
+  const summaryChecksLabel = summary
+    ? `${summary.passedChecks}/${summary.totalChecks} checks recorded`
+    : `${passCount}/${checks.length} checks passed`;
+  const confidenceLineValue = summaryConfidencePercent ?? computedConfidence.toFixed(2);
+  const confidenceLine = `- Confidence index: ${confidenceLineValue}% (${summaryChecksLabel})`;
+  const coreConfidencePercent = coreCheckCount === 0 ? "0.00" : (coreConfidenceBps / 100).toFixed(2);
+  const coreLine = `- Core invariant coverage: ${coreConfidencePercent}% (${corePassCount}/${coreCheckCount} checks)`;
 
   const generatedAt = new Date(recap.generatedAt).toISOString();
 
@@ -433,7 +512,8 @@ async function main() {
     `### Actor Registry\n\n` +
     `${actorLines}\n\n` +
     `## Confidence Summary\n\n` +
-    `- Confidence index: ${confidence.toFixed(2)}% (${passCount}/${checks.length} checks passed)\n` +
+    `${confidenceLine}\n` +
+    `${coreLine}\n` +
     `- ${validatorSummary}\n` +
     `- Ledger supply processed: ${ledgerSupply.toString()} whole tokens\n` +
     `- Gross capital processed: ${asEth(ledgerGross)}\n` +
@@ -473,7 +553,7 @@ async function main() {
 
   await writeFile(REPORT_PATH, markdown, "utf8");
   console.log(`📝 α-AGI MARK integrity report generated at ${REPORT_PATH}`);
-  console.log(`Confidence index ${confidence.toFixed(2)}% (${passCount}/${checks.length}).`);
+  console.log(`Confidence index ${confidenceLineValue}% (${summaryChecksLabel}).`);
 }
 
 main().catch((error) => {

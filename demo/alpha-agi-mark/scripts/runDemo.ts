@@ -780,7 +780,7 @@ async function main() {
     },
   ];
 
-  const verification = {
+  const verificationBase = {
     supplyConsensus: {
       ledgerWholeTokens: ledgerSupplyWhole.toString(),
       contractWholeTokens: supply.toString(),
@@ -824,10 +824,51 @@ async function main() {
     },
   };
 
+  const verificationChecks = [
+    {
+      key: "supplyConsensus",
+      label: "Supply consensus alignment",
+      consistent: verificationBase.supplyConsensus.consistent,
+    },
+    {
+      key: "pricing",
+      label: "Pricing integrity",
+      consistent: verificationBase.pricing.consistent,
+    },
+    {
+      key: "capitalFlows",
+      label: "Capital flow reconciliation",
+      consistent: verificationBase.capitalFlows.consistent,
+    },
+    {
+      key: "contributions",
+      label: "Contribution accounting",
+      consistent: verificationBase.contributions.consistent,
+    },
+  ];
+
+  const passedChecks = verificationChecks.filter((check) => check.consistent).length;
+  const totalChecks = verificationChecks.length;
+  const confidenceIndexBps = totalChecks === 0 ? 0 : Math.round((passedChecks * 10000) / totalChecks);
+  const confidenceIndexPercent = (confidenceIndexBps / 100).toFixed(2);
+
+  const verification = {
+    ...verificationBase,
+    summary: {
+      totalChecks,
+      passedChecks,
+      failedChecks: totalChecks - passedChecks,
+      confidenceIndexBps,
+      confidenceIndexPercent,
+      verdict: passedChecks === totalChecks ? "PASS" : "REVIEW",
+      checks: verificationChecks,
+    },
+  };
+
   pushTimeline({
     phase: "Verification",
     title: "Triple-verification matrix aligned",
-    description: "Ledger, simulation, and on-chain state reconcile 1:1",
+    description: `Ledger, simulation, and on-chain state reconcile ${passedChecks}/${totalChecks} checks (${confidenceIndexPercent}% confidence)`,
     icon: "✅",
   });
 
@@ -913,6 +954,9 @@ async function main() {
   await writeFile(OUTPUT_PATH, JSON.stringify(finalRecap, null, 2));
   const dashboardPath = await renderDashboard(finalRecap);
 
+  console.log(
+    `\n🔍 Verification confidence index: ${confidenceIndexPercent}% (${passedChecks}/${totalChecks} checks aligned)`,
+  );
   console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
   console.log("🖥️  Sovereign dashboard rendered to", dashboardPath);
   console.log(JSON.stringify(finalRecap, null, 2));
