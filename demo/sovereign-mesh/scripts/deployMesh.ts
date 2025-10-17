@@ -1,93 +1,130 @@
-import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
-import { AGIALPHA } from "../../../scripts/constants";
-import { ensureAgialphaStub } from "../shared/ensureAgialpha";
-import { extractDeployedAddresses } from "../shared/deployUtils";
+import { artifacts, ethers } from "hardhat";
 
-const ZERO_IDENTITY = {
-  ens: ethers.ZeroAddress,
-  nameWrapper: ethers.ZeroAddress,
-  clubRootNode: ethers.ZeroHash,
-  agentRootNode: ethers.ZeroHash,
-  validatorMerkleRoot: ethers.ZeroHash,
-  agentMerkleRoot: ethers.ZeroHash
+const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
+const HUBS_FILE = path.join(__dirname, "../config/hubs.mainnet.json");
+const TOKEN_ARTIFACT = "contracts/test/AGIALPHAToken.sol:AGIALPHAToken";
+
+type HubAddresses = {
+  StakeManager: string;
+  JobRegistry: string;
+  ValidationModule: string;
+  ReputationEngine: string;
+  DisputeModule: string;
+  CertificateNFT: string;
+  PlatformRegistry: string;
+  JobRouter: string;
+  PlatformIncentives: string;
+  FeePool: string;
+  TaxPolicy: string;
+  IdentityRegistry: string;
+  SystemPause: string;
 };
 
-const ECON_CONFIG = {
-  feePct: 0,
-  burnPct: 0,
-  employerSlashPct: 0,
-  treasurySlashPct: 0,
-  validatorSlashRewardPct: 0,
-  commitWindow: 60,
-  revealWindow: 60,
-  minStake: 0,
-  jobStake: 0
-};
+const hubLabels: Array<[string, string]> = [
+  ["public-research", "Public Research Hub"],
+  ["industrial-ops", "Industrial Ops Hub"],
+  ["civic-governance", "Civic Governance Hub"],
+];
 
-type HubSnapshot = {
-  label: string;
-  rpcUrl: string;
-  subgraphUrl: string;
-  addresses: Record<string, string>;
-};
+async function ensureAgialpha(owner: string) {
+  const artifact = await artifacts.readArtifact(TOKEN_ARTIFACT);
+  await ethers.provider.send("hardhat_setCode", [AGIALPHA, artifact.deployedBytecode]);
+  const ownerSlot = ethers.toBeHex(5, 32);
+  const ownerValue = ethers.zeroPadValue(owner, 32);
+  await ethers.provider.send("hardhat_setStorageAt", [AGIALPHA, ownerSlot, ownerValue]);
+  return ethers.getContractAt(artifact.abi, AGIALPHA, await ethers.getSigner(owner));
+}
 
-async function deployHub(label: string, governance: string): Promise<HubSnapshot> {
-  await ensureAgialphaStub();
+async function deployHub(governance: string): Promise<HubAddresses> {
   const Deployer = await ethers.getContractFactory("contracts/v2/Deployer.sol:Deployer");
   const deployer = await Deployer.deploy();
   await deployer.waitForDeployment();
-  const tx = await deployer["deployWithoutTaxPolicy"](
-    ECON_CONFIG,
-    ZERO_IDENTITY,
-    governance
-  );
-  const receipt = await tx.wait();
-  const deployed = extractDeployedAddresses(deployer.interface, receipt.logs);
-
-  return {
-    label,
-    rpcUrl: "http://localhost:8545",
-    subgraphUrl: "http://localhost:8000/subgraphs/name/agi/jobs-v2",
-    addresses: {
-      AGIALPHA,
-      JobRegistry: deployed.job,
-      StakeManager: deployed.stake,
-      ValidationModule: deployed.validation,
-      DisputeModule: deployed.dispute,
-      IdentityRegistry: deployed.identityRegistry,
-      CertificateNFT: deployed.certificate,
-      FeePool: deployed.feePool,
-      ReputationEngine: deployed.reputation,
-      PlatformRegistry: deployed.platformRegistry,
-      JobRouter: deployed.jobRouter,
-      PlatformIncentives: deployed.platformIncentives,
-      TaxPolicy: deployed.taxPolicy,
-      SystemPause: deployed.systemPause
-    }
+  const identityParams = {
+    ens: ethers.ZeroAddress,
+    nameWrapper: ethers.ZeroAddress,
+    clubRootNode: ethers.ZeroHash,
+    agentRootNode: ethers.ZeroHash,
+    validatorMerkleRoot: ethers.ZeroHash,
+    agentMerkleRoot: ethers.ZeroHash,
   };
+  const tx = await deployer.deployDefaults(identityParams, governance);
+  const receipt = await tx.wait();
+  const deployerAddress = await deployer.getAddress();
+  const deploymentLog = receipt?.logs?.find((log) => log.address === deployerAddress);
+  if (!deploymentLog) {
+    throw new Error("Deployment event not found");
+  }
+  const decoded = deployer.interface.decodeEventLog(
+    "Deployed",
+    deploymentLog.data,
+    deploymentLog.topics,
+  );
+  return {
+    StakeManager: decoded[0],
+    JobRegistry: decoded[1],
+    ValidationModule: decoded[2],
+    ReputationEngine: decoded[3],
+    DisputeModule: decoded[4],
+    CertificateNFT: decoded[5],
+    PlatformRegistry: decoded[6],
+    JobRouter: decoded[7],
+    PlatformIncentives: decoded[8],
+    FeePool: decoded[9],
+    TaxPolicy: decoded[10],
+    IdentityRegistry: decoded[11],
+    SystemPause: decoded[12],
+  } as HubAddresses;
 }
 
 async function main() {
-  const hubsPath = path.join(__dirname, "../config/hubs.mainnet.json");
-  const [deployer] = await ethers.getSigners();
-  const governance = await deployer.getAddress();
+  const [governance, agent, validatorA, validatorB] = await ethers.getSigners();
+  const token = await ensureAgialpha(governance.address);
+  const participants = [governance.address, agent.address, validatorA.address, validatorB.address];
+  for (const addr of participants) {
+    const minted = ethers.parseEther("1000");
+    const tx = await token.mint(addr, minted);
+    await tx.wait();
+  }
 
-  const publicResearch = await deployHub("Public Research Hub", governance);
-  const industrialOps = await deployHub("Industrial Ops Hub", governance);
+  let config: Record<string, any> = {};
+  if (fs.existsSync(HUBS_FILE)) {
+    config = JSON.parse(fs.readFileSync(HUBS_FILE, "utf8"));
+  }
 
-  const hubs = {
-    "public-research": publicResearch,
-    "industrial-ops": industrialOps,
-    "civic-governance": await deployHub("Civic Governance Hub", governance)
-  } satisfies Record<string, HubSnapshot>;
+  for (const [id, label] of hubLabels) {
+    const addresses = await deployHub(governance.address);
+    config[id] = {
+      label,
+      rpcUrl: "http://localhost:8545",
+      subgraphUrl:
+        config[id]?.subgraphUrl ?? "http://localhost:8000/subgraphs/name/agi/jobs-v2",
+      addresses: {
+        AGIALPHA,
+        JobRegistry: addresses.JobRegistry,
+        StakeManager: addresses.StakeManager,
+        ValidationModule: addresses.ValidationModule,
+        DisputeModule: addresses.DisputeModule,
+        IdentityRegistry: addresses.IdentityRegistry,
+        CertificateNFT: addresses.CertificateNFT,
+        ReputationEngine: addresses.ReputationEngine,
+        PlatformRegistry: addresses.PlatformRegistry,
+        JobRouter: addresses.JobRouter,
+        PlatformIncentives: addresses.PlatformIncentives,
+        FeePool: addresses.FeePool,
+        TaxPolicy: addresses.TaxPolicy,
+        SystemPause: addresses.SystemPause,
+      },
+    };
+    console.log(`Deployed hub ${label}`);
+  }
 
-  fs.writeFileSync(hubsPath, JSON.stringify(hubs, null, 2));
-  console.log(`Mesh hubs deployed and saved to ${hubsPath}`);
+  fs.writeFileSync(HUBS_FILE, JSON.stringify(config, null, 2));
+  console.log(`Configuration updated at ${HUBS_FILE}`);
 }
 
 main().catch((error) => {
   console.error(error);
-  process.exitCode = 1;
+  process.exit(1);
 });

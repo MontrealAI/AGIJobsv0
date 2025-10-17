@@ -2,7 +2,6 @@
   {
     "id": "decarbonize-port-city",
     "name": "Mission: Decarbonize Port City",
-    "description": "Planetary ports alliance launches a 4-stage acceleration program to drive emissions to zero while protecting trade resilience.",
     "steps": [
       {
         "hub": "foresight@civic-governance",
@@ -29,7 +28,6 @@
   {
     "id": "pandemic-watch",
     "name": "Mission: Pandemic Watch",
-    "description": "Real-time pathogen surveillance, response logistics, and civic communications fused into one unstoppable rapid reaction force.",
     "steps": [
       {
         "hub": "foresight@civic-governance",

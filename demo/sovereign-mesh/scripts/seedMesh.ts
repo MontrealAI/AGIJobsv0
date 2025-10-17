@@ -1,41 +1,49 @@
-import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
-import { AGIALPHA } from "../../../scripts/constants";
-import { ensureAgialphaStub } from "../shared/ensureAgialpha";
+import { artifacts, ethers } from "hardhat";
+
+const HUBS_FILE = path.join(__dirname, "../config/hubs.mainnet.json");
+const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
+const TOKEN_ARTIFACT = "contracts/test/AGIALPHAToken.sol:AGIALPHAToken";
+
+async function ensureAgialpha(owner: string) {
+  const artifact = await artifacts.readArtifact(TOKEN_ARTIFACT);
+  await ethers.provider.send("hardhat_setCode", [AGIALPHA, artifact.deployedBytecode]);
+  const ownerSlot = ethers.toBeHex(5, 32);
+  const ownerValue = ethers.zeroPadValue(owner, 32);
+  await ethers.provider.send("hardhat_setStorageAt", [AGIALPHA, ownerSlot, ownerValue]);
+  return ethers.getContractAt(artifact.abi, AGIALPHA, await ethers.getSigner(owner));
+}
 
 async function main() {
-  await ensureAgialphaStub();
-  const hubs = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "../config/hubs.mainnet.json"), "utf8")
-  ) as Record<string, any>;
+  const hubs = JSON.parse(fs.readFileSync(HUBS_FILE, "utf8"));
   const [employer] = await ethers.getSigners();
-  const token = await ethers.getContractAt(
-    "contracts/test/MockERC20.sol:MockERC20",
-    AGIALPHA
-  );
+  const token = await ensureAgialpha(employer.address);
+  await (await token.mint(employer.address, ethers.parseEther("1000"))).wait();
 
-  const reward = ethers.parseEther("1");
-  await token.mint(employer.address, reward * BigInt(Object.keys(hubs).length));
-
-  for (const [hubKey, hub] of Object.entries(hubs)) {
-    const jobRegistry = await ethers.getContractAt("JobRegistry", hub.addresses.JobRegistry);
-    const stakeManager = hub.addresses.StakeManager;
-    const deadline = Math.floor(Date.now() / 1000) + 30 * 24 * 3600;
-    const specHash = ethers.id(`seed-${hubKey}`);
-    const uri = `ipfs://mesh/seed/${hubKey}`;
-
-    await token.connect(employer).approve(stakeManager, reward);
-    const tx = await jobRegistry
-      .connect(employer)
-      .createJob(reward, deadline, specHash, uri);
-    const receipt = await tx.wait();
-    const jobId = receipt!.logs.find((log) => log.fragment?.name === "JobCreated")!.args!.jobId;
-    console.log(`Seeded job ${jobId} on ${hubKey}`);
+  for (const hubId of Object.keys(hubs)) {
+    const hub = hubs[hubId];
+    const reward = ethers.parseEther("1");
+    const registryAddress = hub.addresses?.JobRegistry;
+    if (!registryAddress || registryAddress === ethers.ZeroAddress) continue;
+    const jobRegistry = await ethers.getContractAt(
+      "contracts/v2/JobRegistry.sol:JobRegistry",
+      registryAddress,
+      employer,
+    );
+    await (
+      await token.connect(employer).approve(registryAddress, reward)
+    ).wait();
+    const deadline = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+    const specHash = ethers.id(`seed-${hubId}`);
+    const uri = `ipfs://mesh/seed/${hubId}`;
+    const tx = await jobRegistry.createJob(reward, deadline, specHash, uri);
+    await tx.wait();
+    console.log(`Seeded job on ${hub.label || hubId}`);
   }
 }
 
 main().catch((error) => {
   console.error(error);
-  process.exitCode = 1;
+  process.exit(1);
 });

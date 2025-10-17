@@ -1,4 +1,4 @@
-export const short = (value: string) => {
-  if (!value) return "";
-  return `${value.slice(0, 6)}…${value.slice(-4)}`;
+export const shortAddress = (address?: string) => {
+  if (!address) return "";
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
 };
