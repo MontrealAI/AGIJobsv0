@@ -1,90 +1,92 @@
 import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
-import { AGIALPHA } from "../../../scripts/constants";
-import { ensureAgialphaStub } from "../shared/ensureAgialpha";
-import { extractDeployedAddresses } from "../shared/deployUtils";
 
-const ZERO_IDENTITY = {
-  ens: ethers.ZeroAddress,
-  nameWrapper: ethers.ZeroAddress,
-  clubRootNode: ethers.ZeroHash,
-  agentRootNode: ethers.ZeroHash,
-  validatorMerkleRoot: ethers.ZeroHash,
-  agentMerkleRoot: ethers.ZeroHash
-};
-
-const ECON_CONFIG = {
-  feePct: 0,
-  burnPct: 0,
-  employerSlashPct: 0,
-  treasurySlashPct: 0,
-  validatorSlashRewardPct: 0,
-  commitWindow: 60,
-  revealWindow: 60,
-  minStake: 0,
-  jobStake: 0
-};
-
-type HubSnapshot = {
+type HubDescriptor = {
   label: string;
   rpcUrl: string;
   subgraphUrl: string;
   addresses: Record<string, string>;
 };
 
-async function deployHub(label: string, governance: string): Promise<HubSnapshot> {
-  await ensureAgialphaStub();
-  const Deployer = await ethers.getContractFactory("contracts/v2/Deployer.sol:Deployer");
-  const deployer = await Deployer.deploy();
-  await deployer.waitForDeployment();
-  const tx = await deployer["deployWithoutTaxPolicy"](
-    ECON_CONFIG,
-    ZERO_IDENTITY,
-    governance
-  );
-  const receipt = await tx.wait();
-  const deployed = extractDeployedAddresses(deployer.interface, receipt.logs);
+const writeConfig = (hubs: Record<string, HubDescriptor>) => {
+  const file = path.join(__dirname, "../config/hubs.mainnet.json");
+  fs.writeFileSync(file, JSON.stringify(hubs, null, 2));
+  console.log(`Mesh hubs deployed and written to config: ${file}`);
+};
+
+const deployHub = async (label: string, agi: string): Promise<HubDescriptor> => {
+  const StakeManager = await ethers.getContractFactory("StakeManager");
+  const stake = await StakeManager.deploy(agi);
+  await stake.waitForDeployment();
+  const ReputationEngine = await ethers.getContractFactory("ReputationEngine");
+  const rep = await ReputationEngine.deploy();
+  await rep.waitForDeployment();
+  const IdentityRegistry = await ethers.getContractFactory("IdentityRegistry");
+  const id = await IdentityRegistry.deploy();
+  await id.waitForDeployment();
+  const ValidationModule = await ethers.getContractFactory("ValidationModule");
+  const val = await ValidationModule.deploy();
+  await val.waitForDeployment();
+  const DisputeModule = await ethers.getContractFactory("DisputeModule");
+  const disp = await DisputeModule.deploy();
+  await disp.waitForDeployment();
+  const CertificateNFT = await ethers.getContractFactory("CertificateNFT");
+  const cert = await CertificateNFT.deploy();
+  await cert.waitForDeployment();
+  const JobRegistry = await ethers.getContractFactory("JobRegistry");
+  const job = await JobRegistry.deploy(agi);
+  await job.waitForDeployment();
+
+  await (await job.setModules(
+    await val.getAddress(),
+    await stake.getAddress(),
+    await rep.getAddress(),
+    await disp.getAddress(),
+    await cert.getAddress(),
+    ethers.ZeroAddress,
+    []
+  )).wait();
+  await (await stake.setJobRegistry(await job.getAddress())).wait();
+  await (await val.setJobRegistry(await job.getAddress())).wait();
+  await (await disp.setJobRegistry(await job.getAddress())).wait();
+  await (await cert.setJobRegistry(await job.getAddress())).wait();
+  await (await stake.setDisputeModule(await disp.getAddress())).wait();
+  await (await cert.setStakeManager(await stake.getAddress())).wait();
 
   return {
     label,
     rpcUrl: "http://localhost:8545",
     subgraphUrl: "http://localhost:8000/subgraphs/name/agi/jobs-v2",
     addresses: {
-      AGIALPHA,
-      JobRegistry: deployed.job,
-      StakeManager: deployed.stake,
-      ValidationModule: deployed.validation,
-      DisputeModule: deployed.dispute,
-      IdentityRegistry: deployed.identityRegistry,
-      CertificateNFT: deployed.certificate,
-      FeePool: deployed.feePool,
-      ReputationEngine: deployed.reputation,
-      PlatformRegistry: deployed.platformRegistry,
-      JobRouter: deployed.jobRouter,
-      PlatformIncentives: deployed.platformIncentives,
-      TaxPolicy: deployed.taxPolicy,
-      SystemPause: deployed.systemPause
+      AGIALPHA: agi,
+      JobRegistry: await job.getAddress(),
+      StakeManager: await stake.getAddress(),
+      ValidationModule: await val.getAddress(),
+      DisputeModule: await disp.getAddress(),
+      IdentityRegistry: await id.getAddress(),
+      CertificateNFT: await cert.getAddress(),
+      FeePool: ethers.ZeroAddress
     }
   };
-}
+};
 
 async function main() {
-  const hubsPath = path.join(__dirname, "../config/hubs.mainnet.json");
-  const [deployer] = await ethers.getSigners();
-  const governance = await deployer.getAddress();
+  const AGI = await ethers.getContractFactory("AGIALPHAToken");
+  const agi = await AGI.deploy("AGIALPHA", "AGIA", 18);
+  await agi.waitForDeployment();
+  const agiAddress = await agi.getAddress();
 
-  const publicResearch = await deployHub("Public Research Hub", governance);
-  const industrialOps = await deployHub("Industrial Ops Hub", governance);
+  const publicResearch = await deployHub("Public Research Hub", agiAddress);
+  const industrialOps = await deployHub("Industrial Ops Hub", agiAddress);
 
   const hubs = {
     "public-research": publicResearch,
     "industrial-ops": industrialOps,
-    "civic-governance": await deployHub("Civic Governance Hub", governance)
-  } satisfies Record<string, HubSnapshot>;
+    "civic-governance": publicResearch
+  } satisfies Record<string, HubDescriptor>;
 
-  fs.writeFileSync(hubsPath, JSON.stringify(hubs, null, 2));
-  console.log(`Mesh hubs deployed and saved to ${hubsPath}`);
+  writeConfig(hubs);
 }
 
 main().catch((error) => {

@@ -1,12 +1,8 @@
 describe("Sovereign Mesh UI", () => {
-  it("loads configuration and renders hubs", () => {
+  it("renders hub selector and mission menu", () => {
     cy.visit("http://localhost:5178");
     cy.contains("Sovereign Mesh");
-    cy.get("select")
-      .first()
-      .find("option")
-      .its("length")
-      .should("be.greaterThan", 0);
-    cy.get("select").first().select("public-research", { force: true });
+    cy.get("select").first().select("Public Research Hub");
+    cy.contains("Mission Playbooks");
   });
 });
