@@ -109,6 +109,10 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts
    ```
 
+   The `AlphaMarkOwnerControls.test.ts` suite walks every governance actuator (curve tuning, whitelist, oracle override,
+   pause/emergency exit, abort, and residual withdrawal) so board operators can demonstrate contractual control with a
+   single automated report.
+
 10. **(Optional) Dry-run on a fork or external network**
 
    Set environment variables before invoking the script:
