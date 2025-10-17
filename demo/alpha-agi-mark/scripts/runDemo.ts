@@ -596,6 +596,9 @@ async function main() {
 
   const sovereignMetadata = await sovereignVault.lastAcknowledgedMetadata();
   const sovereignTotalReceived = await sovereignVault.totalReceived();
+  const sovereignNativeReceived = await sovereignVault.totalReceivedNative();
+  const sovereignTokenReceived = await sovereignVault.totalReceivedExternal();
+  const lastAcknowledgedUsedNative = await sovereignVault.lastAcknowledgedUsedNative();
   const lastAcknowledgedAmount = await sovereignVault.lastAcknowledgedAmount();
   const vaultBalance = await sovereignVault.vaultBalance();
   const combinedReserve = reserve + sovereignTotalReceived;
@@ -679,12 +682,17 @@ async function main() {
         manifestUri: await sovereignVault.manifestUri(),
         totalReceivedWei: sovereignTotalReceived.toString(),
         totalReceivedEth: ethers.formatEther(sovereignTotalReceived),
+        totalReceivedNativeWei: sovereignNativeReceived.toString(),
+        totalReceivedNativeEth: ethers.formatEther(sovereignNativeReceived),
+        totalReceivedExternalWei: sovereignTokenReceived.toString(),
+        totalReceivedExternalEth: ethers.formatEther(sovereignTokenReceived),
         lastAcknowledgedAmountWei: lastAcknowledgedAmount.toString(),
         lastAcknowledgedAmountEth: ethers.formatEther(lastAcknowledgedAmount),
         lastAcknowledgedMetadataHex: sovereignMetadata,
         decodedMetadata: ethers.toUtf8String(sovereignMetadata),
         vaultBalanceWei: vaultBalance.toString(),
         vaultBalanceEth: ethers.formatEther(vaultBalance),
+        lastAcknowledgedUsedNative,
       },
     },
   };

@@ -291,8 +291,11 @@ describe("α-AGI MARK bonding curve", function () {
 
     expect(await mark.finalized()).to.equal(true);
     expect(await vault.totalReceived()).to.equal(reserveBefore);
+    expect(await vault.totalReceivedNative()).to.equal(reserveBefore);
+    expect(await vault.totalReceivedExternal()).to.equal(0n);
     expect(await vault.lastAcknowledgedAmount()).to.equal(reserveBefore);
     expect(await vault.lastAcknowledgedMetadata()).to.equal(metadata);
+    expect(await vault.lastAcknowledgedUsedNative()).to.equal(true);
   });
 
   it("reverts if the sovereign vault refuses acknowledgement", async function () {
@@ -411,6 +414,64 @@ describe("α-AGI MARK ERC20 base asset flows", function () {
 
     expect(await mark.reserveBalance()).to.equal(0n);
     expect(await stable.balanceOf(owner.address)).to.equal(reserveBeforeFinalize);
+  });
+
+  it("records ERC20 vault receipts through acknowledgement", async function () {
+    const [owner, investor, validatorA, validatorB] = await ethers.getSigners();
+
+    const Stable = await ethers.getContractFactory("TestStablecoin");
+    const stable = await Stable.deploy();
+    await stable.waitForDeployment();
+
+    const RiskOracle = await ethers.getContractFactory("AlphaMarkRiskOracle");
+    const riskOracle = await RiskOracle.deploy(owner.address, [validatorA.address, validatorB.address], 2);
+    await riskOracle.waitForDeployment();
+
+    const AlphaMark = await ethers.getContractFactory("AlphaMarkEToken");
+    const basePrice = toWei("0.5");
+    const slope = toWei("0.25");
+    const mark = await AlphaMark.deploy(
+      "SeedShares",
+      "SEED",
+      owner.address,
+      riskOracle.target,
+      basePrice,
+      slope,
+      100,
+      stable.target,
+    );
+    await mark.waitForDeployment();
+
+    await mark.setWhitelistEnabled(true);
+    await mark.setWhitelist([investor.address], true);
+
+    const Vault = await ethers.getContractFactory("AlphaSovereignVault");
+    const vault = await Vault.deploy(owner.address, "ipfs://alpha-mark/erc20-launch");
+    await vault.waitForDeployment();
+    await vault.connect(owner).designateMarkExchange(mark.target);
+
+    const investorBudget = toWei("100");
+    await stable.mint(investor.address, investorBudget);
+    await stable.connect(investor).approve(mark.target, investorBudget);
+
+    const buyAmount = 4n;
+    const cost = purchaseCost(basePrice, slope, 0n, buyAmount);
+    await mark.connect(investor).buyTokens(buyAmount * WHOLE);
+
+    await riskOracle.connect(validatorA).approveSeed();
+    await riskOracle.connect(validatorB).approveSeed();
+
+    const metadata = ethers.hexlify(ethers.toUtf8Bytes("erc20-vault"));
+    await expect(mark.connect(owner).finalizeLaunch(vault.target, metadata))
+      .to.emit(mark, "LaunchFinalized")
+      .withArgs(vault.target, cost, metadata);
+
+    expect(await vault.totalReceived()).to.equal(cost);
+    expect(await vault.totalReceivedNative()).to.equal(0n);
+    expect(await vault.totalReceivedExternal()).to.equal(cost);
+    expect(await vault.lastAcknowledgedUsedNative()).to.equal(false);
+    expect(await vault.lastAcknowledgedAmount()).to.equal(cost);
+    expect(await vault.lastAcknowledgedMetadata()).to.equal(metadata);
   });
 
   it("allows owner to withdraw residual ERC20 funds after closure", async function () {

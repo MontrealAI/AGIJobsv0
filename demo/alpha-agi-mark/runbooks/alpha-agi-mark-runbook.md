@@ -42,6 +42,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
    - validator council roster and votes
    - bonding curve statistics (supply, reserve balance, pricing)
    - launch outcome summary, including sovereign vault manifest, acknowledgement metadata, and treasury balance
+   - breakdown of native vs. external sovereign intake plus the ignition-mode badge captured in the recap
    - `ownerParameterMatrix` providing a full owner control matrix with descriptions
    - cross-reference visuals from the [`Operator Empowerment Atlas`](../docs/operator-empowerment-atlas.md) and
      [`Operator Command Console`](../docs/operator-command-console.md) for stakeholder briefings

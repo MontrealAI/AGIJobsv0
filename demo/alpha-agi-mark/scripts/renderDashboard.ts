@@ -148,13 +148,18 @@ type RecapData = {
     sovereignVault: {
       manifestUri: string;
       totalReceivedWei: string;
+      totalReceivedNativeWei: string;
+      totalReceivedExternalWei: string;
       lastAcknowledgedAmountWei: string;
       lastAcknowledgedMetadataHex: string;
       decodedMetadata: string;
       vaultBalanceWei: string;
       totalReceivedEth?: string;
+      totalReceivedNativeEth?: string;
+      totalReceivedExternalEth?: string;
       lastAcknowledgedAmountEth?: string;
       vaultBalanceEth?: string;
+      lastAcknowledgedUsedNative?: boolean;
     };
   };
   ownerParameterMatrix?: Array<{ parameter: string; value: unknown; description: string }>;
@@ -570,10 +575,21 @@ function buildDashboardHtml(recap: RecapData): string {
     recap.launch.sovereignVault.totalReceivedEth,
     `${recap.launch.sovereignVault.totalReceivedWei} wei`,
   );
+  const sovereignNative = formatNumber(
+    recap.launch.sovereignVault.totalReceivedNativeEth,
+    `${recap.launch.sovereignVault.totalReceivedNativeWei} wei`,
+  );
+  const sovereignToken = formatNumber(
+    recap.launch.sovereignVault.totalReceivedExternalEth,
+    `${recap.launch.sovereignVault.totalReceivedExternalWei} wei`,
+  );
   const lastIgnition = formatNumber(
     recap.launch.sovereignVault.lastAcknowledgedAmountEth,
     `${recap.launch.sovereignVault.lastAcknowledgedAmountWei} wei`,
   );
+  const lastIgnitionMode = recap.launch.sovereignVault.lastAcknowledgedUsedNative
+    ? "Native asset"
+    : "External asset";
 
   const ownerMatrix = buildOwnerMatrixTable(recap.ownerParameterMatrix ?? []);
   const timelineSection = buildTimelineSection(recap.timeline ?? []);
@@ -947,9 +963,12 @@ function buildDashboardHtml(recap: RecapData): string {
           <article class="metric">
             <h3>Sovereign Vault</h3>
             <strong>${escapeHtml(sovereignBalance)}</strong>
-            <p>Manifest URI: ${escapeHtml(recap.launch.sovereignVault.manifestUri)}<br />Last ignition: ${escapeHtml(
-              lastIgnition,
-            )}</p>
+            <p>
+              Manifest URI: ${escapeHtml(recap.launch.sovereignVault.manifestUri)}<br />
+              Native intake: ${escapeHtml(sovereignNative)}<br />
+              External intake: ${escapeHtml(sovereignToken)}<br />
+              Last ignition: ${escapeHtml(lastIgnition)} · ${escapeHtml(lastIgnitionMode)}
+            </p>
           </article>
           <article class="metric">
             <h3>Participants</h3>

@@ -107,12 +107,15 @@ const recapSchema = z.object({
     .object({
       sovereignVault: z
         .object({
-        totalReceivedWei: z.string(),
-        totalReceivedEth: z.string().optional(),
-        lastAcknowledgedAmountWei: z.string().optional(),
-        lastAcknowledgedAmountEth: z.string().optional(),
-        vaultBalanceWei: z.string().optional(),
-      })
+          totalReceivedWei: z.string(),
+          totalReceivedNativeWei: z.string().optional(),
+          totalReceivedExternalWei: z.string().optional(),
+          totalReceivedEth: z.string().optional(),
+          lastAcknowledgedAmountWei: z.string().optional(),
+          lastAcknowledgedAmountEth: z.string().optional(),
+          vaultBalanceWei: z.string().optional(),
+          lastAcknowledgedUsedNative: z.boolean().optional(),
+        })
         .passthrough(),
     })
     .passthrough(),
@@ -164,6 +167,14 @@ function main() {
       const vaultReceived = parseBigInt(
         recap.launch.sovereignVault.totalReceivedWei,
         "sovereign vault receipts",
+      );
+      const vaultNative = parseBigInt(
+        recap.launch.sovereignVault.totalReceivedNativeWei ?? "0",
+        "sovereign vault native intake",
+      );
+      const vaultExternal = parseBigInt(
+        recap.launch.sovereignVault.totalReceivedExternalWei ?? "0",
+        "sovereign vault external intake",
       );
 
       let ledgerSupply = 0n;
@@ -241,6 +252,13 @@ function main() {
         reserveWei + vaultReceived === ledgerNetWei,
         formatWei(ledgerNetWei),
         formatWei(reserveWei + vaultReceived),
+      );
+
+      appendCheck(
+        "Vault intake splits match aggregate",
+        vaultNative + vaultExternal === vaultReceived,
+        formatWei(vaultReceived),
+        formatWei(vaultNative + vaultExternal),
       );
 
       appendCheck(
