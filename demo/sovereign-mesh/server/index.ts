@@ -28,12 +28,23 @@ const stakeAbi = ["function depositStake(uint8 role, uint256 amount)"];
 const valAbi = [
   "function commitValidation(uint256 jobId, bytes32 hash, string subdomain, bytes32[] proof)",
   "function revealValidation(uint256 jobId, bool approve, bytes32 salt)",
-  "function finalize(uint256 jobId)"
+  "function finalize(uint256 jobId)",
+  "function setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow)",
+  "function setValidatorsPerJob(uint256 count)",
+  "function setApprovalThreshold(uint256 pct)"
 ];
 const dispAbi = ["function raiseDispute(uint256 jobId, string evidence)"];
 const idAbi = [
   "function addAdditionalAgent(address)",
   "function addAdditionalValidator(address)"
+];
+const jobOwnerAbi = ["function pause()", "function unpause()"];
+const stakeOwnerAbi = [
+  "function setStakeRecommendations(uint256 newMin, uint256 newMax)",
+  "function setUnbondingPeriod(uint256 newPeriod)",
+  "function setFeePct(uint256 pct)",
+  "function setBurnPct(uint256 pct)",
+  "function setValidatorRewardPct(uint256 pct)"
 ];
 
 const iface = (abi: string[]) => new ethers.Interface(abi);
@@ -45,6 +56,33 @@ const getHub = (id: string) => {
     throw new Error(`Unknown hub: ${id}`);
   }
   return hub;
+};
+
+const parseUint = (value: unknown, label: string): bigint | undefined => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  try {
+    let normalized: string | number | bigint;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return undefined;
+      }
+      normalized = trimmed;
+    } else if (typeof value === "number" || typeof value === "bigint") {
+      normalized = value;
+    } else {
+      throw new Error();
+    }
+    const parsed = BigInt(normalized);
+    if (parsed < 0) {
+      throw new Error(`${label} must be non-negative`);
+    }
+    return parsed;
+  } catch (err) {
+    throw new Error(`Invalid ${label}`);
+  }
 };
 
 const app = express();
@@ -120,6 +158,164 @@ app.post("/mesh/:hub/tx/allowlist", (req, res) => {
   const fnName = role === 0 ? "addAdditionalAgent" : "addAdditionalValidator";
   const data = enc(idAbi, fnName, [addr]);
   res.json({ tx: { to: hub.addresses.IdentityRegistry, data, value: 0 } });
+});
+
+app.post("/mesh/:hub/owner/pause", (req, res) => {
+  const hub = getHub(req.params.hub);
+  const data = enc(jobOwnerAbi, "pause", []);
+  res.json({ tx: { to: hub.addresses.JobRegistry, data, value: 0 } });
+});
+
+app.post("/mesh/:hub/owner/unpause", (req, res) => {
+  const hub = getHub(req.params.hub);
+  const data = enc(jobOwnerAbi, "unpause", []);
+  res.json({ tx: { to: hub.addresses.JobRegistry, data, value: 0 } });
+});
+
+app.post("/mesh/:hub/owner/validation", (req, res) => {
+  try {
+    const hub = getHub(req.params.hub);
+    const {
+      validatorsPerJob,
+      commitWindow,
+      revealWindow,
+      approvalPct
+    } = req.body as {
+      validatorsPerJob?: unknown;
+      commitWindow?: unknown;
+      revealWindow?: unknown;
+      approvalPct?: unknown;
+    };
+
+    const validators = parseUint(validatorsPerJob, "validatorsPerJob");
+    const commit = parseUint(commitWindow, "commitWindow");
+    const reveal = parseUint(revealWindow, "revealWindow");
+    const approval = parseUint(approvalPct, "approvalPct");
+
+    const txs: { to: string; data: string; value: number }[] = [];
+    if (validators !== undefined) {
+      if (validators === 0n) {
+        throw new Error("validatorsPerJob must be greater than 0");
+      }
+      txs.push({
+        to: hub.addresses.ValidationModule,
+        data: enc(valAbi, "setValidatorsPerJob", [validators]),
+        value: 0
+      });
+    }
+    if (commit !== undefined || reveal !== undefined) {
+      if (commit === undefined || reveal === undefined) {
+        throw new Error("Provide both commitWindow and revealWindow");
+      }
+      if (commit === 0n || reveal === 0n) {
+        throw new Error("Commit and reveal windows must be greater than 0");
+      }
+      txs.push({
+        to: hub.addresses.ValidationModule,
+        data: enc(valAbi, "setCommitRevealWindows", [commit, reveal]),
+        value: 0
+      });
+    }
+    if (approval !== undefined) {
+      if (approval > 100n) {
+        throw new Error("approvalPct must be 0-100");
+      }
+      txs.push({
+        to: hub.addresses.ValidationModule,
+        data: enc(valAbi, "setApprovalThreshold", [approval]),
+        value: 0
+      });
+    }
+
+    if (!txs.length) {
+      return res.status(400).json({ error: "No validation parameters provided" });
+    }
+
+    res.json({ txs });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Invalid input";
+    res.status(400).json({ error: message });
+  }
+});
+
+app.post("/mesh/:hub/owner/stake", (req, res) => {
+  try {
+    const hub = getHub(req.params.hub);
+    const {
+      minStakeWei,
+      maxStakeWei,
+      unbondingPeriod,
+      feePct,
+      burnPct,
+      validatorRewardPct
+    } = req.body as {
+      minStakeWei?: unknown;
+      maxStakeWei?: unknown;
+      unbondingPeriod?: unknown;
+      feePct?: unknown;
+      burnPct?: unknown;
+      validatorRewardPct?: unknown;
+    };
+
+    const minStake = parseUint(minStakeWei, "minStakeWei");
+    const maxStake = parseUint(maxStakeWei, "maxStakeWei");
+    const unbonding = parseUint(unbondingPeriod, "unbondingPeriod");
+    const fee = parseUint(feePct, "feePct");
+    const burn = parseUint(burnPct, "burnPct");
+    const validatorPct = parseUint(validatorRewardPct, "validatorRewardPct");
+
+    const txs: { to: string; data: string; value: number }[] = [];
+
+    if (minStake !== undefined || maxStake !== undefined) {
+      if (minStake === undefined) {
+        throw new Error("minStakeWei is required when updating stake recommendations");
+      }
+      const maxValue = maxStake ?? 0n;
+      txs.push({
+        to: hub.addresses.StakeManager,
+        data: enc(stakeOwnerAbi, "setStakeRecommendations", [minStake, maxValue]),
+        value: 0
+      });
+    }
+
+    if (unbonding !== undefined) {
+      if (unbonding === 0n) {
+        throw new Error("unbondingPeriod must be greater than 0");
+      }
+      txs.push({
+        to: hub.addresses.StakeManager,
+        data: enc(stakeOwnerAbi, "setUnbondingPeriod", [unbonding]),
+        value: 0
+      });
+    }
+
+    const pctEntries: Array<[bigint | undefined, string]> = [
+      [fee, "setFeePct"],
+      [burn, "setBurnPct"],
+      [validatorPct, "setValidatorRewardPct"]
+    ];
+    for (const [value, fn] of pctEntries) {
+      if (value !== undefined) {
+        if (value > 100n) {
+          throw new Error(`${fn} expects 0-100`);
+        }
+        txs.push({
+          to: hub.addresses.StakeManager,
+          data: enc(stakeOwnerAbi, fn, [value]),
+          value: 0
+        });
+      }
+    }
+
+    if (!txs.length) {
+      return res.status(400).json({ error: "No stake parameters provided" });
+    }
+
+    res.json({ txs });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Invalid input";
+    res.status(400).json({ error: message });
+  }
 });
 
 app.post("/mesh/plan/instantiate", (req, res) => {
