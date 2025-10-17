@@ -29,9 +29,37 @@ type Job = {
   validators?: { account: string }[];
 };
 
+const DEFAULT_MESH_API_BASE = "http://localhost:8084";
+
+const getMeshApiBase = () => {
+  if (typeof window !== "undefined") {
+    const globalBase = (window as unknown as {
+      __SOVEREIGN_MESH_API__?: string;
+    }).__SOVEREIGN_MESH_API__;
+    if (globalBase) return globalBase;
+
+    if (typeof document !== "undefined") {
+      const meta = document
+        .querySelector("meta[name='mesh-api-base']")
+        ?.getAttribute("content");
+      if (meta) return meta;
+    }
+  }
+
+  const envBase = (import.meta as unknown as {
+    env?: Record<string, string | undefined>;
+  }).env?.VITE_SOVEREIGN_MESH_API;
+
+  return envBase || DEFAULT_MESH_API_BASE;
+};
+
+const meshApiBase = getMeshApiBase();
+
 const fetchJson = async (path: string, init?: RequestInit) => {
-  const base = new URL(path, window.location.origin);
-  const response = await fetch(base.toString(), {
+  const url = /^(https?:)?\/\//i.test(path)
+    ? path
+    : new URL(path, meshApiBase).toString();
+  const response = await fetch(url, {
     headers: { "content-type": "application/json" },
     ...init
   });
@@ -139,7 +167,7 @@ const App: React.FC = () => {
       .catch((err) => console.error("Subgraph error", err));
   }, [cfg, hubs, selectedHub]);
 
-  const orchestratorBase = cfg?.orchestratorBase || "";
+  const orchestratorBase = cfg?.orchestratorBase || meshApiBase;
 
   const callTx = async (path: string, body: Record<string, unknown>) => {
     const signer = await getSigner();
