@@ -1,61 +1,64 @@
-import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
+import { ethers } from "hardhat";
 
 const GOVERNANCE_SAFE = process.env.GOVERNANCE_SAFE;
 
 if (!GOVERNANCE_SAFE) {
-  throw new Error("Set GOVERNANCE_SAFE to the multisig or timelock address.");
+  throw new Error("Set GOVERNANCE_SAFE to the target owner address");
 }
+
+const hubsPath = path.join(__dirname, "../config/hubs.mainnet.json");
 
 const iface = new ethers.Interface([
   "function setGovernance(address)",
   "function transferOwnership(address)"
 ]);
 
-const targets = [
-  "StakeManager",
-  "JobRegistry",
-  "ValidationModule",
-  "ReputationEngine",
-  "IdentityRegistry",
-  "CertificateNFT",
-  "DisputeModule",
-  "FeePool"
-];
+async function rotate(contractAddress: string) {
+  const [signer] = await ethers.getSigners();
+  const contract = new ethers.Contract(contractAddress, iface, signer);
+  try {
+    const tx = await contract.setGovernance(GOVERNANCE_SAFE);
+    await tx.wait();
+    return true;
+  } catch {
+    try {
+      const tx = await contract.transferOwnership(GOVERNANCE_SAFE);
+      await tx.wait();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
 
 async function main() {
-  const hubsPath = path.join(__dirname, "../config/hubs.mainnet.json");
-  const hubs = JSON.parse(fs.readFileSync(hubsPath, "utf8"));
-  const [signer] = await ethers.getSigners();
+  const hubs = JSON.parse(fs.readFileSync(hubsPath, "utf8")) as Record<string, any>;
+  const modules = [
+    "JobRegistry",
+    "StakeManager",
+    "ValidationModule",
+    "DisputeModule",
+    "IdentityRegistry",
+    "CertificateNFT",
+    "ReputationEngine",
+    "FeePool"
+  ];
 
-  for (const key of Object.keys(hubs)) {
-    for (const contractName of targets) {
-      const address = hubs[key].addresses[contractName];
+  for (const [hubKey, hub] of Object.entries(hubs)) {
+    for (const mod of modules) {
+      const address = hub.addresses?.[mod];
       if (!address || address === ethers.ZeroAddress) continue;
-      const contract = new ethers.Contract(address, iface, signer);
-      try {
-        await (await contract.setGovernance(GOVERNANCE_SAFE)).wait();
-        console.log(`setGovernance(${GOVERNANCE_SAFE}) on ${contractName} @ ${address}`);
-        continue;
-      } catch (err) {
-        if (!(err instanceof Error)) {
-          console.warn(`Unknown error calling setGovernance on ${contractName}`);
-        }
-      }
-      try {
-        await (await contract.transferOwnership(GOVERNANCE_SAFE)).wait();
-        console.log(`transferOwnership(${GOVERNANCE_SAFE}) on ${contractName} @ ${address}`);
-      } catch (err) {
-        console.warn(`Skipping ownership update on ${contractName} (${address})`, err);
-      }
+      const rotated = await rotate(address);
+      console.log(`Hub ${hubKey} :: ${mod} -> ${rotated ? "rotated" : "skipped"}`);
     }
   }
 
-  console.log(`✅ Rotated governance of all hubs to ${GOVERNANCE_SAFE}`);
+  console.log(`Governance rotated to ${GOVERNANCE_SAFE}`);
 }
 
-main().catch((error) => {
-  console.error(error);
+main().catch((err) => {
+  console.error(err);
   process.exitCode = 1;
 });
