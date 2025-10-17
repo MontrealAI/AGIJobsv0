@@ -120,7 +120,8 @@ graph TD
 | **Connect & Select Hub** | Wallet-first connect button + hub selector that hydrates live jobs via The Graph. |
 | **Create Job** | Reward + URI form that composes a `createJob` transaction with sensible deadlines and spec hash. |
 | **Participate** | Validators stake, commit, reveal, and finalize in a human-friendly workflow (salts handled automatically). |
-| **Mission Playbooks** | One-click instantiation of multi-hub missions (jobs across hubs queued sequentially for signature). |
+| **Mission Playbooks** | Dynamic preview of sponsors, total rewards, and cross-hub deliverables with one-click instantiation. |
+| **Mesh Sponsors & Actors** | Configurable roster of planetary sponsors with mission-ready taglines to humanize the mesh. |
 | **Owner Panels** | Direct links to every hub contract write interface on Etherscan for immediate governance actions. |
 
 ## Production-grade guarantees
@@ -132,7 +133,9 @@ graph TD
 
 ## Mission blueprint editing
 
-Playbooks live in [`config/playbooks.json`](config/playbooks.json). Add new missions or adjust rewards by editing JSON — no code changes required. Each step uses the format `"stage@hub"` to map actions to hubs.
+Playbooks live in [`config/playbooks.json`](config/playbooks.json). Add new missions or adjust rewards by editing JSON — no code changes required. Each step uses the format `"stage@hub"` to map actions to hubs, supports rich `description` fields, and can declare a `sponsor` referencing an entry in [`config/actors.json`](config/actors.json).
+
+`actors.json` accepts `flag`, `name`, and optional `tagline` strings so the interface can introduce sponsors and mission owners in a narrative, human-readable way.
 
 ## Identity and governance
 

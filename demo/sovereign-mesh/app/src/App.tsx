@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { getSigner } from "./lib/ethers";
 import { makeClient, qJobs } from "./lib/subgraph";
 import { computeCommit } from "./lib/commit";
-import { short } from "./lib/format";
+import { formatAgi, short } from "./lib/format";
 
 type MeshConfig = {
   network: string;
@@ -27,6 +27,37 @@ type Job = {
   uri: string;
   status: string;
   validators?: { account: string }[];
+};
+
+type Actor = {
+  id: string;
+  flag: string;
+  name: string;
+  tagline?: string;
+};
+
+type PlaybookStep = {
+  hub: string;
+  rewardWei: string;
+  uri: string;
+  description?: string;
+};
+
+type Playbook = {
+  id: string;
+  name: string;
+  summary?: string;
+  sponsor?: string;
+  steps: PlaybookStep[];
+};
+
+type PlaybookDisplayStep = {
+  key: string;
+  stageLabel: string;
+  hubLabel: string;
+  rewardLabel: string;
+  description: string;
+  uri: string;
 };
 
 const DEFAULT_MESH_API_BASE = "http://localhost:8084";
@@ -72,16 +103,20 @@ const fetchJson = async (path: string, init?: RequestInit) => {
 const useMeshConfig = () => {
   const [cfg, setCfg] = useState<MeshConfig>();
   const [hubs, setHubs] = useState<Record<string, HubConfig>>({});
-  const [actors, setActors] = useState<any[]>([]);
-  const [playbooks, setPlaybooks] = useState<any[]>([]);
+  const [actors, setActors] = useState<Actor[]>([]);
+  const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
 
   useEffect(() => {
     fetchJson("/mesh/config").then(setCfg).catch(console.error);
     fetchJson("/mesh/hubs")
-      .then((data) => setHubs(data.hubs ?? {}))
+      .then((data: { hubs?: Record<string, HubConfig> }) => setHubs(data.hubs ?? {}))
       .catch(console.error);
-    fetchJson("/mesh/actors").then(setActors).catch(console.error);
-    fetchJson("/mesh/playbooks").then(setPlaybooks).catch(console.error);
+    fetchJson("/mesh/actors")
+      .then((data: Actor[]) => setActors(Array.isArray(data) ? data : []))
+      .catch(console.error);
+    fetchJson("/mesh/playbooks")
+      .then((data: Playbook[]) => setPlaybooks(Array.isArray(data) ? data : []))
+      .catch(console.error);
   }, []);
 
   return { cfg, hubs, actors, playbooks };
@@ -93,7 +128,7 @@ const Table: React.FC<{ jobs: Job[] }> = ({ jobs }) => (
       <tr>
         <th>ID</th>
         <th>Proposer</th>
-        <th>Reward (wei)</th>
+        <th>Reward</th>
         <th>URI</th>
         <th>Status</th>
         <th>#Validators</th>
@@ -104,7 +139,7 @@ const Table: React.FC<{ jobs: Job[] }> = ({ jobs }) => (
         <tr key={job.id}>
           <td>{job.id}</td>
           <td>{short(job.employer)}</td>
-          <td>{job.reward}</td>
+          <td title={job.reward}>{formatAgi(job.reward)}</td>
           <td>
             <a href={job.uri} target="_blank" rel="noreferrer">
               {job.uri}
@@ -124,16 +159,38 @@ const ensureStyles = () => {
   style.id = "sovereign-mesh-styles";
   style.textContent = `
     body { background: radial-gradient(circle at 20% 20%, #10192d, #05070c); color: #f8fafc; min-height: 100vh; margin: 0; }
-    h1, h3 { font-family: 'Inter', system-ui, sans-serif; }
+    h1, h3, h4 { font-family: 'Inter', system-ui, sans-serif; }
     .mesh-shell { max-width: 1200px; margin: 0 auto; padding: 32px 24px 120px; }
     .mesh-card { background: rgba(15,23,42,0.72); border: 1px solid rgba(94,234,212,0.25); border-radius: 20px; padding: 20px; margin-top: 24px; box-shadow: 0 24px 60px rgba(15,23,42,0.4); }
-    button { background: linear-gradient(135deg,#38bdf8,#22d3ee); color: #020617; border: none; border-radius: 999px; padding: 10px 20px; font-weight: 600; cursor: pointer; }
-    button:hover { opacity: 0.9; }
+    button { background: linear-gradient(135deg,#38bdf8,#22d3ee); color: #020617; border: none; border-radius: 999px; padding: 10px 20px; font-weight: 600; cursor: pointer; transition: transform 0.2s ease; }
+    button:hover { opacity: 0.9; transform: translateY(-1px); }
+    button:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+    button:disabled:hover { opacity: 0.35; transform: none; }
     select, input { background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.4); color: #e2e8f0; padding: 8px 12px; border-radius: 12px; }
     .mesh-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
     .mesh-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
     .mesh-table th, .mesh-table td { border-bottom: 1px solid rgba(148,163,184,0.25); padding: 8px 12px; text-align: left; }
     .mesh-table a { color: #38bdf8; }
+    .mesh-preview { margin-top: 20px; border-radius: 16px; background: rgba(8,15,30,0.72); border: 1px solid rgba(94,234,212,0.25); padding: 18px; }
+    .mesh-preview-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+    .mesh-preview-summary { margin-top: 8px; color: rgba(226,232,240,0.88); max-width: 760px; line-height: 1.5; }
+    .mesh-preview-sponsor { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .mesh-preview-sponsor-header { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+    .mesh-preview-sponsor-header span { font-size: 20px; }
+    .mesh-preview-sponsor-header strong { font-weight: 600; }
+    .mesh-preview-sponsor small { font-size: 12px; color: rgba(148,163,184,0.85); }
+    .mesh-preview-total { text-align: right; min-width: 180px; }
+    .mesh-preview-total span { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(94,234,212,0.8); }
+    .mesh-preview-total strong { font-size: 20px; display: block; margin-top: 4px; }
+    .mesh-step-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+    .mesh-step-table th, .mesh-step-table td { border-bottom: 1px solid rgba(148,163,184,0.16); padding: 10px 12px; text-align: left; vertical-align: top; }
+    .mesh-step-table td a { color: #22d3ee; font-weight: 500; }
+    .mesh-step-description { color: rgba(203,213,225,0.85); margin-top: 6px; line-height: 1.45; }
+    .mesh-actors { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; }
+    .mesh-actor { background: rgba(15,23,42,0.6); border: 1px solid rgba(56,189,248,0.2); border-radius: 18px; padding: 16px; box-shadow: inset 0 0 0 1px rgba(2,6,23,0.4); }
+    .mesh-actor-flag { font-size: 30px; }
+    .mesh-actor-name { font-weight: 600; margin-top: 8px; }
+    .mesh-actor-tagline { font-size: 13px; color: rgba(148,163,184,0.88); margin-top: 6px; line-height: 1.5; }
     details { margin-top: 16px; }
     details summary { cursor: pointer; }
   `;
@@ -141,7 +198,7 @@ const ensureStyles = () => {
 };
 
 const App: React.FC = () => {
-  const { cfg, hubs, playbooks } = useMeshConfig();
+  const { cfg, hubs, playbooks, actors } = useMeshConfig();
   const hubKeys = useMemo(() => Object.keys(hubs), [hubs]);
   const [address, setAddress] = useState<string>();
   const [selectedHub, setSelectedHub] = useState<string>("");
@@ -151,6 +208,53 @@ const App: React.FC = () => {
   const [jobId, setJobId] = useState("1");
   const [approve, setApprove] = useState(true);
   const [selectedPlaybook, setSelectedPlaybook] = useState("");
+
+  const actorMap = useMemo(() => {
+    const map: Record<string, Actor> = {};
+    for (const actor of actors) {
+      map[actor.id] = actor;
+    }
+    return map;
+  }, [actors]);
+
+  const selectedPlaybookConfig = useMemo(
+    () => playbooks.find((pb) => pb.id === selectedPlaybook),
+    [playbooks, selectedPlaybook]
+  );
+
+  const selectedSponsor = selectedPlaybookConfig?.sponsor
+    ? actorMap[selectedPlaybookConfig.sponsor]
+    : undefined;
+
+  const playbookSteps = useMemo<PlaybookDisplayStep[]>(() => {
+    if (!selectedPlaybookConfig) return [];
+    return selectedPlaybookConfig.steps.map((step) => {
+      const [stageLabel, hubId] = String(step.hub).split("@");
+      const hub = hubs[hubId];
+      const key = `${step.hub}-${step.uri}`;
+      return {
+        key,
+        stageLabel: stageLabel || step.hub,
+        hubLabel: hub?.label ?? hubId ?? step.hub,
+        rewardLabel: formatAgi(step.rewardWei),
+        description: step.description ?? "",
+        uri: step.uri
+      };
+    });
+  }, [hubs, selectedPlaybookConfig]);
+
+  const totalRewardWei = useMemo(() => {
+    if (!selectedPlaybookConfig) return 0n;
+    return selectedPlaybookConfig.steps.reduce<bigint>((acc, step) => {
+      try {
+        return acc + BigInt(step.rewardWei ?? 0);
+      } catch {
+        return acc;
+      }
+    }, 0n);
+  }, [selectedPlaybookConfig]);
+
+  const totalRewardLabel = formatAgi(totalRewardWei);
 
   useEffect(() => {
     ensureStyles();
@@ -351,9 +455,84 @@ const App: React.FC = () => {
               </option>
             ))}
           </select>
-          <button onClick={instantiate}>Instantiate Mission</button>
+          <button onClick={instantiate} disabled={!selectedPlaybook}>
+            Instantiate Mission
+          </button>
         </div>
+        {selectedPlaybookConfig ? (
+          <div className="mesh-preview">
+            <div className="mesh-preview-header">
+              <div>
+                <h4>{selectedPlaybookConfig.name}</h4>
+                {selectedSponsor ? (
+                  <div className="mesh-preview-sponsor">
+                    <div className="mesh-preview-sponsor-header">
+                      <span>{selectedSponsor.flag}</span>
+                      <strong>{selectedSponsor.name}</strong>
+                    </div>
+                    {selectedSponsor.tagline ? (
+                      <small>{selectedSponsor.tagline}</small>
+                    ) : null}
+                  </div>
+                ) : null}
+                {selectedPlaybookConfig.summary ? (
+                  <p className="mesh-preview-summary">{selectedPlaybookConfig.summary}</p>
+                ) : null}
+              </div>
+              <div className="mesh-preview-total">
+                <span>Total Reward</span>
+                <strong>{totalRewardLabel}</strong>
+              </div>
+            </div>
+            <table className="mesh-step-table">
+              <thead>
+                <tr>
+                  <th>Stage</th>
+                  <th>Hub</th>
+                  <th>Reward</th>
+                  <th>Deliverable</th>
+                </tr>
+              </thead>
+              <tbody>
+                {playbookSteps.map((step) => (
+                  <tr key={step.key}>
+                    <td>{step.stageLabel}</td>
+                    <td>{step.hubLabel}</td>
+                    <td>{step.rewardLabel}</td>
+                    <td>
+                      {step.description ? (
+                        <div className="mesh-step-description">{step.description}</div>
+                      ) : null}
+                      <a href={step.uri} target="_blank" rel="noreferrer">
+                        {step.uri}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mesh-preview-summary" style={{ marginTop: 16 }}>
+            Choose a mission to preview the cross-hub launch plan and signature sequence.
+          </p>
+        )}
       </div>
+
+      {actors.length > 0 ? (
+        <div className="mesh-card">
+          <h3>Mesh Sponsors & Actors</h3>
+          <div className="mesh-actors">
+            {actors.map((actor) => (
+              <div key={actor.id} className="mesh-actor">
+                <div className="mesh-actor-flag">{actor.flag}</div>
+                <div className="mesh-actor-name">{actor.name}</div>
+                {actor.tagline ? <div className="mesh-actor-tagline">{actor.tagline}</div> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mesh-card">
         <details>

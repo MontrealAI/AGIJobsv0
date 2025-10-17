@@ -3,6 +3,7 @@
     "id": "decarbonize-port-city",
     "name": "Mission: Decarbonize Port City",
     "summary": "Mobilize foresight, research, optimization, and knowledge hubs to drive a whole-of-city clean transition.",
+    "sponsor": "city",
     "steps": [
       {
         "hub": "foresight@civic-governance",
@@ -34,6 +35,7 @@
     "id": "pandemic-watch",
     "name": "Mission: Pandemic Watch",
     "summary": "Global sentinel network aligning public foresight, research, and operational readiness.",
+    "sponsor": "ngo",
     "steps": [
       {
         "hub": "foresight@civic-governance",
