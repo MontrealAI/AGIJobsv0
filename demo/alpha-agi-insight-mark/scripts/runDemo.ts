@@ -1,6 +1,8 @@
-import { mkdir, writeFile, readFile } from "fs/promises";
+import { mkdir, writeFile, readFile, stat } from "fs/promises";
 import path from "path";
 import { createHash } from "crypto";
+import { createInterface } from "readline/promises";
+import { stdin as input, stdout as output } from "process";
 
 import { ethers } from "hardhat";
 
@@ -23,7 +25,18 @@ type ScenarioConfig = {
 };
 
 const reportsDir = path.join(__dirname, "..", "reports");
-const dataFile = path.join(__dirname, "..", "data", "insight-scenarios.json");
+const defaultScenarioFile = path.join(__dirname, "..", "data", "insight-scenarios.json");
+
+function resolveScenarioFile(): string {
+  const override = process.env.INSIGHT_MARK_SCENARIO_FILE;
+  if (!override) {
+    return defaultScenarioFile;
+  }
+  if (path.isAbsolute(override)) {
+    return override;
+  }
+  return path.join(process.cwd(), override);
+}
 
 function toTimestamp(year: number): bigint {
   return BigInt(Math.floor(Date.UTC(year, 0, 1) / 1000));
@@ -44,8 +57,13 @@ function escapeHtml(input: string): string {
     .replace(/'/g, "&#39;");
 }
 
-async function loadScenarioConfig(): Promise<ScenarioConfig> {
-  const raw = await readFile(dataFile, "utf8");
+async function loadScenarioConfig(scenarioPath: string): Promise<ScenarioConfig> {
+  try {
+    await stat(scenarioPath);
+  } catch (error) {
+    throw new Error(`Scenario file not found at ${scenarioPath}. Set INSIGHT_MARK_SCENARIO_FILE to a valid JSON file.`);
+  }
+  const raw = await readFile(scenarioPath, "utf8");
   return JSON.parse(raw) as ScenarioConfig;
 }
 
@@ -76,14 +94,54 @@ interface MintedInsightRecord {
   };
   fusionRevealed: boolean;
   disruptionTimestamp: string;
+  onchainVerified: boolean;
 }
 
 async function main() {
   await ensureReportsDir();
-  const config = await loadScenarioConfig();
+  const scenarioPath = resolveScenarioFile();
+  const config = await loadScenarioConfig(scenarioPath);
+
+  const dryRunFlag = (process.env.AGIJOBS_DEMO_DRY_RUN ?? "true").toLowerCase();
+  const requireLaunchConfirmation = dryRunFlag === "false";
+
+  if (requireLaunchConfirmation) {
+    const rl = createInterface({ input, output });
+    try {
+      const confirmation = await rl.question(
+        "Launch confirmation required (AGIJOBS_DEMO_DRY_RUN=false). Type LAUNCH to continue: "
+      );
+      if (confirmation.trim().toUpperCase() !== "LAUNCH") {
+        throw new Error("Launch aborted by operator.");
+      }
+    } finally {
+      rl.close();
+    }
+  }
 
   const [operator, oracle, strategist, buyerA, buyerB] = await ethers.getSigners();
   const network = await ethers.provider.getNetwork();
+
+  const expectedNetworkName = process.env.INSIGHT_MARK_NETWORK;
+  if (expectedNetworkName && expectedNetworkName !== network.name) {
+    throw new Error(
+      `Network mismatch: expected ${expectedNetworkName} (INSIGHT_MARK_NETWORK) but connected to ${network.name}.`
+    );
+  }
+
+  const expectedChainId = process.env.INSIGHT_MARK_CHAIN_ID;
+  if (expectedChainId && expectedChainId !== network.chainId.toString()) {
+    throw new Error(
+      `Chain ID mismatch: expected ${expectedChainId} (INSIGHT_MARK_CHAIN_ID) but connected to ${network.chainId}.`
+    );
+  }
+
+  const expectedOperator = process.env.INSIGHT_MARK_EXPECTED_OWNER?.toLowerCase();
+  if (expectedOperator && expectedOperator !== operator.address.toLowerCase()) {
+    throw new Error(
+      `Owner mismatch: expected deployer ${process.env.INSIGHT_MARK_EXPECTED_OWNER} but signer[0] is ${operator.address}.`
+    );
+  }
 
   const AccessToken = await ethers.getContractFactory("InsightAccessToken");
   const accessToken = (await AccessToken.deploy(operator.address)) as unknown as InsightAccessToken;
@@ -181,6 +239,14 @@ async function main() {
       }
     }
 
+    const onchain = await novaSeed.getInsight(mintedId);
+    if (onchain.sector !== scenario.sector || onchain.thesis !== scenario.thesis) {
+      throw new Error(`On-chain insight metadata mismatch for token ${mintedId.toString()}.`);
+    }
+    if (onchain.disruptionTimestamp !== toTimestamp(scenario.ruptureYear)) {
+      throw new Error(`Disruption timestamp mismatch for token ${mintedId.toString()}.`);
+    }
+
     minted.push({
       tokenId: mintedId.toString(),
       scenario,
@@ -192,6 +258,7 @@ async function main() {
       sale,
       fusionRevealed,
       disruptionTimestamp: toTimestamp(scenario.ruptureYear).toString(),
+      onchainVerified: true,
     });
   }
 
@@ -207,6 +274,11 @@ async function main() {
   const htmlPath = path.join(reportsDir, "insight-report.html");
   const manifestPath = path.join(reportsDir, "insight-manifest.json");
 
+  const scenarioRelativePath = path
+    .relative(path.join(__dirname, ".."), scenarioPath)
+    .replace(/\\/g, "/");
+  const scenarioHash = sha256(await readFile(scenarioPath));
+
   const recap = {
     generatedAt: new Date().toISOString(),
     network: { chainId: network.chainId.toString(), name: network.name },
@@ -214,6 +286,10 @@ async function main() {
       novaSeed: await novaSeed.getAddress(),
       foresightExchange: await exchange.getAddress(),
       settlementToken: await accessToken.getAddress(),
+    },
+    scenarioSource: {
+      path: scenarioRelativePath,
+      sha256: scenarioHash,
     },
     operator: operator.address,
     oracle: oracle.address,
@@ -244,6 +320,7 @@ async function main() {
     `**Treasury:** ${await exchange.treasury()}\\\n\n` +
     `| Token | Sector | Rupture Year | Thesis | Status | Market State |\n| --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
     `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n\n` +
+    `## Scenario Dataset\n- Config file: ${scenarioRelativePath}\\\n- SHA-256: ${scenarioHash}\n\n` +
     `## Telemetry Snapshot\n` +
     telemetry
       .map((entry) => `- ${entry.timestamp} — **${entry.agent}**: ${entry.message}`)
@@ -294,6 +371,8 @@ async function main() {
           </div>`;
     })
     .join("\n");
+
+  const scenarioHashShort = `${scenarioHash.substring(0, 16)}…`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -466,6 +545,10 @@ async function main() {
         <span class="meta-grid__value">${escapeHtml(oracle.address)}</span>
       </div>
       <div class="meta-grid__item">
+        <span class="meta-grid__label">Scenario Dataset</span>
+        <span class="meta-grid__value">${escapeHtml(scenarioRelativePath)}<br /><small>sha256 ${escapeHtml(scenarioHashShort)}</small></span>
+      </div>
+      <div class="meta-grid__item">
         <span class="meta-grid__label">Treasury</span>
         <span class="meta-grid__value">${escapeHtml(await exchange.treasury())}</span>
       </div>
@@ -563,6 +646,8 @@ ${htmlRows}
     const relativePath = path.relative(path.join(__dirname, ".."), file);
     manifestEntries.push({ path: relativePath.replace(/\\\\/g, "/"), sha256: sha256(content) });
   }
+
+  manifestEntries.push({ path: scenarioRelativePath, sha256: scenarioHash });
 
   const manifest = {
     generatedAt: new Date().toISOString(),
