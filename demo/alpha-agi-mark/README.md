@@ -69,6 +69,7 @@ Runs the orchestrator above and immediately:
 1. Prints the owner control matrix so governance levers are visible without extra commands.
 2. Replays the trade ledger through the independent verifier, ensuring the recap dossier is internally consistent.
 3. Generates the integrity dossier that fuses verification output, owner controls, and mission telemetry for stakeholder sign-off.
+4. Synthesises the **Risk Lattice Dossier** so stakeholders can inspect a mermaid-enhanced control/verification blueprint in one glance.
 
 ### Network & safety controls
 
@@ -133,6 +134,19 @@ npm run integrity:alpha-agi-mark
 This generates `reports/alpha-mark-integrity.md` – a mermaid-enhanced dossier that summarises the
 confidence matrix, owner controls, validator quorum, and participant contributions so non-technical
 stakeholders can sign off in minutes.
+
+### Sovereign risk lattice
+
+```bash
+npm run lattice:alpha-agi-mark
+```
+
+Creates `reports/alpha-mark-risk-lattice.md`, a mission-assurance brief that:
+
+- Draws a mermaid **risk mindmap** and **command-deck flowchart** from the latest recap
+- Tabulates every owner actuator with narrative guidance for rapid human decision-making
+- Highlights verification confidence, reserve solvency, and sovereign vault receipts
+- Echoes the empowerment pulse so executives see the automation multiplier alongside risk posture
 
 ## Sovereign Dashboard
 
