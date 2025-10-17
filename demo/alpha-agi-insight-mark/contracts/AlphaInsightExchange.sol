@@ -42,6 +42,8 @@ contract AlphaInsightExchange is Ownable, Pausable, ReentrancyGuard {
 
     event ListingCreated(uint256 indexed tokenId, address indexed seller, uint256 price);
     event ListingCancelled(uint256 indexed tokenId, address indexed seller);
+    event ListingPriceUpdated(uint256 indexed tokenId, uint256 oldPrice, uint256 newPrice);
+    event ListingForceDelisted(uint256 indexed tokenId, address indexed operator, address indexed recipient);
     event InsightPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price, uint256 fee);
     event ResolutionLogged(uint256 indexed tokenId, bool fulfilled, string notes);
     event TreasuryUpdated(address indexed newTreasury);
@@ -141,6 +143,21 @@ contract AlphaInsightExchange is Ownable, Pausable, ReentrancyGuard {
         emit ListingCancelled(tokenId, entry.seller);
     }
 
+    function updateListingPrice(uint256 tokenId, uint256 newPrice) external whenNotPaused {
+        require(newPrice > 0, "PRICE_REQUIRED");
+        Listing storage entry = _listings[tokenId];
+        require(entry.active, "NOT_LISTED");
+        if (msg.sender != entry.seller && msg.sender != owner()) {
+            revert("NOT_AUTHORIZED");
+        }
+
+        uint256 previousPrice = entry.price;
+        entry.price = newPrice;
+        entry.listedAt = block.timestamp;
+
+        emit ListingPriceUpdated(tokenId, previousPrice, newPrice);
+    }
+
     function buyInsight(uint256 tokenId) external nonReentrant whenNotPaused {
         Listing storage entry = _listings[tokenId];
         require(entry.active, "NOT_LISTED");
@@ -160,6 +177,20 @@ contract AlphaInsightExchange is Ownable, Pausable, ReentrancyGuard {
 
         novaSeed.safeTransferFrom(address(this), msg.sender, tokenId);
         emit InsightPurchased(tokenId, msg.sender, price, fee);
+    }
+
+    function forceDelist(uint256 tokenId, address recipient) external onlyOwner nonReentrant {
+        require(recipient != address(0), "BAD_RECIPIENT");
+        Listing storage entry = _listings[tokenId];
+        require(entry.active, "NOT_LISTED");
+
+        entry.active = false;
+        entry.buyer = address(0);
+        entry.price = 0;
+        entry.listedAt = block.timestamp;
+
+        novaSeed.safeTransferFrom(address(this), recipient, tokenId);
+        emit ListingForceDelisted(tokenId, msg.sender, recipient);
     }
 
     function resolvePrediction(uint256 tokenId, bool fulfilled, string calldata notes) external onlyOracle {

@@ -66,6 +66,13 @@ function shortenUri(uri: string, maxLength = 42): string {
   return `${uri.slice(0, prefixLength)}…${uri.slice(-suffixLength)}`;
 }
 
+function shortenAddress(address: string, prefix = 6, suffix = 4): string {
+  if (address.length <= prefix + suffix + 1) {
+    return address;
+  }
+  return `${address.slice(0, prefix)}…${address.slice(-suffix)}`;
+}
+
 async function loadScenarioConfig(scenarioPath: string): Promise<ScenarioConfig> {
   try {
     await stat(scenarioPath);
@@ -92,7 +99,7 @@ interface MintedInsightRecord {
   mintedTo: string;
   mintedBy: string;
   listed: boolean;
-  status: "HELD" | "LISTED" | "SOLD";
+  status: "HELD" | "LISTED" | "SOLD" | "FORCE_DELISTED";
   listingPrice?: string;
   sale?: {
     buyer: string;
@@ -105,6 +112,8 @@ interface MintedInsightRecord {
   fusionURI: string;
   disruptionTimestamp: string;
   onchainVerified: boolean;
+  ownerActions: string[];
+  finalCustodian: string;
 }
 
 async function main() {
@@ -216,6 +225,8 @@ async function main() {
 
     let fusionRevealed = false;
     let activeFusionURI = scenario.sealedURI;
+    const ownerActions: string[] = [];
+    let finalCustodian = receiver.address;
     if (i === 0) {
       await novaSeed.revealFusionPlan(mintedId, scenario.fusionURI);
       fusionRevealed = true;
@@ -241,22 +252,59 @@ async function main() {
       log("Venture Cartographer", `Token ${mintedId.toString()} listed on α-AGI MARK at ${listingPrice} AIC.`);
 
       if (i === 0) {
+        const repriced = price - ethers.parseUnits("10", 18);
+        await exchange.connect(receiver).updateListingPrice(mintedId, repriced);
+        const listingState = await exchange.listing(mintedId);
+        listingPrice = ethers.formatUnits(listingState.price, 18);
+        ownerActions.push(`Seller repriced to ${listingPrice} AIC`);
+        log(
+          "Venture Cartographer",
+          `Token ${mintedId.toString()} repriced by seller to ${listingPrice} AIC for strategic acceleration.`
+        );
+      }
+
+      if (i === 1) {
+        const adjustedPrice = price + ethers.parseUnits("15", 18);
+        await exchange.updateListingPrice(mintedId, adjustedPrice);
+        const listingState = await exchange.listing(mintedId);
+        listingPrice = ethers.formatUnits(listingState.price, 18);
+        ownerActions.push(`Owner repriced to ${listingPrice} AIC`);
+        log("Guardian Auditor", `Owner repriced token ${mintedId.toString()} to ${listingPrice} AIC for governance alignment.`);
+      }
+
+      if (i === 0) {
         await accessToken.mint(buyerA.address, ethers.parseUnits("1000", 18));
         await accessToken.connect(buyerA).approve(await exchange.getAddress(), ethers.parseUnits("1000", 18));
+        const listingState = await exchange.listing(mintedId);
         const buyTx = await exchange.connect(buyerA).buyInsight(mintedId);
         const buyReceipt = await buyTx.wait();
-        const fee = price * BigInt(await exchange.feeBps()) / 10_000n;
-        const net = price - fee;
+        const clearedPrice = listingState.price;
+        const fee = clearedPrice * BigInt(await exchange.feeBps()) / 10_000n;
+        const net = clearedPrice - fee;
         sale = {
           buyer: buyerA.address,
-          price: ethers.formatUnits(price, 18),
+          price: ethers.formatUnits(clearedPrice, 18),
           fee: ethers.formatUnits(fee, 18),
           netPayout: ethers.formatUnits(net, 18),
           transactionHash: buyReceipt?.hash ?? "",
         };
         status = "SOLD";
-        log("Meta-Sentinel", `Token ${mintedId.toString()} acquired by ${buyerA.address}. Net payout ${ethers.formatUnits(net, 18)} AIC.`);
+        finalCustodian = buyerA.address;
+        log(
+          "Meta-Sentinel",
+          `Token ${mintedId.toString()} acquired by ${buyerA.address}. Net payout ${ethers.formatUnits(net, 18)} AIC.`
+        );
         await exchange.resolvePrediction(mintedId, true, `${scenario.sector} rupture confirmed by insight engine.`);
+      } else if (i === 1) {
+        await exchange.forceDelist(mintedId, strategist.address);
+        ownerActions.push(`Owner force-delisted to ${strategist.address}`);
+        finalCustodian = strategist.address;
+        status = "FORCE_DELISTED";
+        listingPrice = undefined;
+        log(
+          "System Sentinel",
+          `Owner executed force delist for token ${mintedId.toString()} sending custody to sentinel ${strategist.address}.`
+        );
       }
     }
 
@@ -287,6 +335,8 @@ async function main() {
       fusionURI: activeFusionURI,
       disruptionTimestamp: toTimestamp(scenario.ruptureYear).toString(),
       onchainVerified: true,
+      ownerActions,
+      finalCustodian,
     });
   }
 
@@ -348,11 +398,15 @@ async function main() {
           ? entry.listingPrice
             ? `Listed @ ${entry.listingPrice} AIC`
             : "Listed"
-          : "Held by operator";
+          : entry.status === "FORCE_DELISTED"
+            ? `Force delisted to ${shortenAddress(entry.finalCustodian)}`
+            : "Held by operator";
       const fusionStatus = entry.fusionRevealed
         ? `Revealed ↦ ${shortenUri(entry.fusionURI)}`
         : `Sealed ↦ ${shortenUri(entry.fusionURI)}`;
-      return `| ${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${entry.scenario.thesis} | ${fusionStatus} | ${entry.status} | ${saleDetails} |`;
+      const ownerNotes = entry.ownerActions.length ? entry.ownerActions.join("; ") : "—";
+      const custodian = shortenAddress(entry.finalCustodian ?? entry.mintedTo);
+      return `| ${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${entry.scenario.thesis} | ${fusionStatus} | ${entry.status} | ${saleDetails} | ${custodian} | ${ownerNotes} |`;
     })
     .join("\n");
 
@@ -363,8 +417,8 @@ async function main() {
     `**System Pause Sentinel:** ${strategist.address}\\\n` +
     `**Fee:** ${(Number(await exchange.feeBps()) / 100).toFixed(2)}%\\\n` +
     `**Treasury:** ${await exchange.treasury()}\\\n\n` +
-    `| Token | Sector | Rupture Year | Thesis | Fusion Plan | Status | Market State |\n| --- | --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
-    `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n- Sentinel (${strategist.address}) authorised through \`setSystemPause\` to trigger emergency halts across modules.\n\n` +
+    `| Token | Sector | Rupture Year | Thesis | Fusion Plan | Status | Market State | Custodian | Owner Controls |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
+    `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n- Sentinel (${strategist.address}) authorised through \`setSystemPause\` to trigger emergency halts across modules.\n- Listings can be repriced live with \`updateListingPrice\` (owner override supported).\n- Owner may invoke \`forceDelist\` to evacuate foresight assets to a safe wallet instantly.\n\n` +
     `## Scenario Dataset\n- Config file: ${scenarioRelativePath}\\\n- SHA-256: ${scenarioHash}\n\n` +
     `## Telemetry Snapshot\n` +
     telemetry
@@ -387,10 +441,16 @@ async function main() {
             ? entry.listingPrice
               ? `Listed @ ${escapeHtml(entry.listingPrice)} AIC`
               : "Listed"
-            : "Held by operator";
+            : entry.status === "FORCE_DELISTED"
+              ? `Force delisted to ${escapeHtml(shortenAddress(entry.finalCustodian))}`
+              : "Held by operator";
       const fusionStatus = entry.fusionRevealed
         ? `Revealed ↦ ${escapeHtml(shortenUri(entry.fusionURI))}`
         : `Sealed ↦ ${escapeHtml(shortenUri(entry.fusionURI))}`;
+      const ownerNotes = entry.ownerActions.length
+        ? entry.ownerActions.map((note) => escapeHtml(note)).join("<br />")
+        : "&mdash;";
+      const custodianDisplay = escapeHtml(shortenAddress(entry.finalCustodian ?? entry.mintedTo));
       return `            <tr>
               <td>${escapeHtml(entry.tokenId)}</td>
               <td>${escapeHtml(entry.scenario.sector)}</td>
@@ -404,7 +464,9 @@ async function main() {
               </td>
               <td>${fusionStatus}</td>
               <td>${escapeHtml(entry.status)}</td>
-              <td>${escapeHtml(saleDetails)}</td>
+              <td>${saleDetails}</td>
+              <td>${custodianDisplay}</td>
+              <td>${ownerNotes}</td>
             </tr>`;
     })
     .join("\n");
@@ -627,6 +689,8 @@ ${timelineMarks}
             <th>Fusion Plan</th>
             <th>Status</th>
             <th>Market State</th>
+            <th>Custodian</th>
+            <th>Owner Controls</th>
           </tr>
         </thead>
         <tbody>
@@ -642,6 +706,8 @@ ${htmlRows}
         <li>Redirect protocol yield by calling <code>setTreasury(address)</code>.</li>
         <li>Authorise or rotate the cross-contract sentinel with <code>setSystemPause(address)</code>.</li>
         <li>Reveal a FusionPlan at will using <code>revealFusionPlan(tokenId, uri)</code>.</li>
+        <li>Reprice any listing in-place using <code>updateListingPrice(tokenId, newPrice)</code>.</li>
+        <li>Evacuate a listing to cold storage instantly with <code>forceDelist(tokenId, recipient)</code>.</li>
       </ul>
     </section>
     <footer>
@@ -678,7 +744,15 @@ ${htmlRows}
         owner: operator.address,
         pausable: true,
         systemPause: await exchange.systemPause(),
-        configurable: ["setOracle", "setTreasury", "setFeeBps", "setPaymentToken", "setSystemPause"],
+        configurable: [
+          "setOracle",
+          "setTreasury",
+          "setFeeBps",
+          "setPaymentToken",
+          "setSystemPause",
+          "updateListingPrice",
+          "forceDelist",
+        ],
       },
     ],
   };

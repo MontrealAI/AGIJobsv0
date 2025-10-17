@@ -9,6 +9,7 @@
 - **Sentinel-grade emergency controls** – Owners can delegate a cross-contract SystemPause sentinel that can freeze the Nova-Seed, exchange, and settlement token instantly while the owner retains sole authority to resume operations.
 - **Tokenised disruption** – Each α-AGI Nova-Seed is minted from the meta-agent scenarios, sealed until the owner reveals it, and can be listed or traded through α-AGI MARK with automated manifest hashing for integrity proofs.
 - **Production rigor** – The Hardhat project includes unit tests covering minting, pausing, delegated minters, fixed-price trading, fee distribution, and oracle resolution. The GitHub workflow executes the tests, runs the demo end-to-end, and verifies the generated dossiers.
+- **Regulatory superpowers** – Live repricing (`updateListingPrice`) and instant custody evacuation (`forceDelist`) ensure the owner can reshape liquidity or quarantine an asset mid-flight without downtime.
 
 ## Quickstart
 
@@ -21,7 +22,7 @@ The script:
 1. Boots a Hardhat in-memory chain (unless custom RPC details are provided).
 2. Deploys the Insight Access Token (settlement token), Alpha Insight Nova-Seed, and Alpha Insight Exchange.
 3. Simulates the meta-agent pipeline, forging three Nova-Seeds with disruption forecasts.
-4. Lists the first two seeds on α-AGI MARK, processes a trade, resolves a prediction, drills the delegated sentinel pause/unpause flow, and logs telemetry.
+4. Lists the first two seeds on α-AGI MARK, reprices them live, processes a trade, force-delists the second to sentinel custody, resolves a prediction, drills the delegated sentinel pause/unpause flow, and logs telemetry.
 5. Generates Markdown/JSON dossiers under `demo/alpha-agi-insight-mark/reports/` with SHA-256 manifests for audit trails.
 
 Set `AGIJOBS_DEMO_DRY_RUN=false` to enable the explicit launch confirmation prompt before broadcasting to a live network. Custom networks can be targeted via:
