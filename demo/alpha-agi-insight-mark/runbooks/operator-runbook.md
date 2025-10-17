@@ -18,8 +18,8 @@ The orchestrator:
 
 - Deploys the Insight Access Token, Nova-Seed NFT, and Foresight Exchange.
 - Spins up the synthetic meta-agent swarm (Meta-Sentinel, Thermodynamic Oracle, FusionSmith, Venture Cartographer, Guardian Auditor).
-- Mints three disruption insights, reveals the first FusionPlan, lists two tokens, and executes a sale.
-- Resolves the traded prediction and exports integrity artefacts.
+- Mints three disruption insights, reveals and revises the first FusionPlan, lists two tokens, and executes a sale.
+- Resolves the traded prediction, drills the delegated SystemPause sentinel, and exports integrity artefacts.
 
 Watch the console for emoji-tagged telemetry such as:
 
@@ -36,15 +36,17 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 - `insight-report.html` – polished executive dashboard with timeline and confidence bars for board briefings.
 - `insight-control-matrix.json` – machine-readable owner control inventory.
 - `insight-control-map.mmd` – mermaid diagram (render via https://mermaid.live/).
+- `insight-governance.mmd` – insight swarm + sentinel orchestration schematic.
 - `insight-manifest.json` – SHA-256 hashes; re-run the demo and confirm hashes change only when artefacts change. The manifest now fingerprints the scenario dataset too, so provenance can be attested.
 - `insight-telemetry.log` – chronological agent conversation for audit trails.
 
 ## 4. Owner Control Drills
 
-1. **Pause/Resume** – From the Hardhat console or Owner Console UI, call `pause()` on each contract to halt trading, then `unpause()`.
-2. **Rotate Oracle** – Use `setOracle(<new address>)` on the exchange. The new oracle can immediately call `resolvePrediction`.
-3. **Retarget Treasury** – Call `setTreasury(<new address>)`. Validate the change via `insight-recap.json` and on-chain logs.
-4. **Reveal FusionPlan** – Trigger `revealFusionPlan(tokenId, uri)` to expose the cryptosealed FusionPlan at your chosen time.
+1. **Delegate Sentinel** – Call `setSystemPause(<sentinel address>)` on all three contracts, then have the sentinel trigger `pause()`. Only the owner can `unpause()`.
+2. **Pause/Resume** – From the Hardhat console or Owner Console UI, call `pause()` on each contract to halt trading, then `unpause()`.
+3. **Rotate Oracle** – Use `setOracle(<new address>)` on the exchange. The new oracle can immediately call `resolvePrediction`.
+4. **Retarget Treasury** – Call `setTreasury(<new address>)`. Validate the change via `insight-recap.json` and on-chain logs.
+5. **Reveal & Revise FusionPlan** – Trigger `revealFusionPlan(tokenId, uri)` to expose the cryptosealed FusionPlan, then `updateFusionPlan(tokenId, uri)` if revisions are needed.
 
 ## 5. Verification Loop
 
@@ -61,7 +63,7 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 4. (Recommended) Set `INSIGHT_MARK_CHAIN_ID` and `INSIGHT_MARK_EXPECTED_OWNER` to enforce that the connected network and signer match your deployment plan.
 5. After deployment, import contract addresses from `insight-recap.json` into the Owner Console to manage pause/upgrade levers.
 
-> **Emergency** – Invoke `pause()` on the exchange first (halts trading), then `pause()` on the Nova-Seed and settlement token. Use the owner change ticket from `docs/owner-control-briefing.md` for the incident log.
+> **Emergency** – Have the delegated sentinel issue `pause()` on all contracts, then coordinate owner-led `unpause()` once investigations complete. Record the action using the owner change ticket from `docs/owner-control-briefing.md`.
 
 ## 7. Clean-up
 

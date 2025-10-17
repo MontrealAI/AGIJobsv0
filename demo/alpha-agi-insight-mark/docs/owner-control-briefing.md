@@ -4,16 +4,17 @@
 
 | Contract | Address | Governance Handles |
 | --- | --- | --- |
-| Insight Access Token (`InsightAccessToken`) | Populate from `insight-recap.json` | `mint`, `pause`, `unpause` |
-| Nova-Seed (`AlphaInsightNovaSeed`) | Populate from `insight-recap.json` | `setMinter`, `updateInsightDetails`, `updateSealedURI`, `revealFusionPlan`, `pause`, `unpause` |
-| Foresight Exchange (`AlphaInsightExchange`) | Populate from `insight-recap.json` | `setOracle`, `setTreasury`, `setPaymentToken`, `setFeeBps`, `pause`, `unpause`, `resolvePrediction` |
+| Insight Access Token (`InsightAccessToken`) | Populate from `insight-recap.json` | `mint`, `pause`, `unpause`, `setSystemPause` |
+| Nova-Seed (`AlphaInsightNovaSeed`) | Populate from `insight-recap.json` | `setMinter`, `updateInsightDetails`, `updateSealedURI`, `revealFusionPlan`, `updateFusionPlan`, `pause`, `unpause`, `setSystemPause` |
+| Foresight Exchange (`AlphaInsightExchange`) | Populate from `insight-recap.json` | `setOracle`, `setTreasury`, `setPaymentToken`, `setFeeBps`, `pause`, `unpause`, `resolvePrediction`, `setSystemPause` |
 
 ## 2. Emergency Procedures
 
-1. **Market Halt** – Call `pause()` on the exchange. This blocks new listings and purchases immediately.
-2. **Asset Freeze** – Call `pause()` on the Nova-Seed to prevent transfers/minting. Use `setMinter(address, false)` to revoke agent minters.
-3. **Liquidity Freeze** – Call `pause()` on the settlement token to suspend token transfers if treasury risk is detected.
-4. **Oracle Override** – Use `setOracle(owner)` to take direct control of prediction resolution during an incident.
+1. **Delegate Sentinel** – Rotate or confirm the SystemPause sentinel via `setSystemPause(address)` on each contract. The sentinel can execute `pause()` during emergencies even if the owner is offline.
+2. **Market Halt** – Call `pause()` on the exchange (or instruct the sentinel). This blocks new listings and purchases immediately.
+3. **Asset Freeze** – Call `pause()` on the Nova-Seed to prevent transfers/minting. Use `setMinter(address, false)` to revoke agent minters.
+4. **Liquidity Freeze** – Call `pause()` on the settlement token to suspend token transfers if treasury risk is detected.
+5. **Oracle Override** – Use `setOracle(owner)` to take direct control of prediction resolution during an incident.
 
 ## 3. Change Management Template
 

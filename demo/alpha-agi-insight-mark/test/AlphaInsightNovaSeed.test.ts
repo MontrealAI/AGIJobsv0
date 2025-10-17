@@ -60,12 +60,25 @@ describe("AlphaInsightNovaSeed", () => {
     await contract.mintInsight(alice.address, sampleInput());
     await contract.updateInsightDetails(1n, "Healthcare", "AGI cures rare diseases", BigInt(Math.floor(Date.UTC(2028, 0, 1) / 1000)));
     await contract.revealFusionPlan(1n, "ipfs://fusion");
+    await contract.updateFusionPlan(1n, "ipfs://fusion?rev=2");
 
     const updated = await contract.getInsight(1n);
     expect(updated.sector).to.equal("Healthcare");
     expect(updated.thesis).to.equal("AGI cures rare diseases");
     expect(updated.fusionRevealed).to.equal(true);
-    expect(await contract.tokenURI(1n)).to.equal("ipfs://fusion");
+    expect(updated.fusionURI).to.equal("ipfs://fusion?rev=2");
+    expect(await contract.tokenURI(1n)).to.equal("ipfs://fusion?rev=2");
+  });
+
+  it("allows delegated sentinel to pause", async () => {
+    await contract.setSystemPause(alice.address);
+    expect(await contract.systemPause()).to.equal(alice.address);
+
+    await contract.connect(alice).pause();
+    await expect(contract.mintInsight(alice.address, sampleInput())).to.be.revertedWithCustomError(contract, "EnforcedPause");
+
+    await contract.unpause();
+    await contract.mintInsight(alice.address, sampleInput());
   });
 
   it("prevents blank metadata", async () => {
