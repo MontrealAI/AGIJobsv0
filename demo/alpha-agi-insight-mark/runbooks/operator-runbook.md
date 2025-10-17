@@ -36,7 +36,7 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 - `insight-report.html` – polished executive dashboard with timeline and confidence bars for board briefings.
 - `insight-control-matrix.json` – machine-readable owner control inventory.
 - `insight-control-map.mmd` – mermaid diagram (render via https://mermaid.live/).
-- `insight-manifest.json` – SHA-256 hashes; re-run the demo and confirm hashes change only when artefacts change.
+- `insight-manifest.json` – SHA-256 hashes; re-run the demo and confirm hashes change only when artefacts change. The manifest now fingerprints the scenario dataset too, so provenance can be attested.
 - `insight-telemetry.log` – chronological agent conversation for audit trails.
 
 ## 4. Owner Control Drills
@@ -56,8 +56,10 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 ## 6. Live Network Launch (Advanced)
 
 1. Export the required environment variables (RPC URL, private keys).
-2. Set `AGIJOBS_DEMO_DRY_RUN=false` so the script prompts for `launch` confirmation.
-3. After deployment, import contract addresses from `insight-recap.json` into the Owner Console to manage pause/upgrade levers.
+2. Optionally set `INSIGHT_MARK_SCENARIO_FILE` to your curated foresight dataset – the script will refuse to run if the file is missing and will embed the SHA-256 fingerprint in every recap.
+3. Set `AGIJOBS_DEMO_DRY_RUN=false` so the script prompts for `launch` confirmation. Confirm the prompt by typing `LAUNCH`.
+4. (Recommended) Set `INSIGHT_MARK_CHAIN_ID` and `INSIGHT_MARK_EXPECTED_OWNER` to enforce that the connected network and signer match your deployment plan.
+5. After deployment, import contract addresses from `insight-recap.json` into the Owner Console to manage pause/upgrade levers.
 
 > **Emergency** – Invoke `pause()` on the exchange first (halts trading), then `pause()` on the Nova-Seed and settlement token. Use the owner change ticket from `docs/owner-control-briefing.md` for the incident log.
 

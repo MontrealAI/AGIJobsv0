@@ -31,6 +31,10 @@ Set `AGIJOBS_DEMO_DRY_RUN=false` to enable the explicit launch confirmation prom
 - `INSIGHT_MARK_OWNER_KEY`
 - `INSIGHT_MARK_PARTICIPANT_KEYS`
 - `INSIGHT_MARK_ORACLE_KEYS`
+- `INSIGHT_MARK_SCENARIO_FILE`
+- `INSIGHT_MARK_EXPECTED_OWNER`
+
+When a custom scenario file is supplied via `INSIGHT_MARK_SCENARIO_FILE`, the demo validates the JSON exists, records its SHA-256 fingerprint, and embeds both the path and hash in the recap/manifest so operators can prove the data provenance. `INSIGHT_MARK_EXPECTED_OWNER` and `INSIGHT_MARK_CHAIN_ID` are enforced against the live Hardhat signer and connected network to prevent misconfigured mainnet deployments.
 
 ## Tests
 
@@ -55,7 +59,7 @@ Running the demo produces:
 - `insight-control-matrix.json` – machine-readable owner control registry.
 - `insight-control-map.mmd` – mermaid diagram for governance briefings.
 - `insight-telemetry.log` – time-stamped agent dialogue.
-- `insight-manifest.json` – SHA-256 hashes of every generated artefact.
+- `insight-manifest.json` – SHA-256 hashes of every generated artefact and the scenario dataset that produced them.
 
 All outputs are designed for direct inclusion in boardroom briefings and investor packets.
 
