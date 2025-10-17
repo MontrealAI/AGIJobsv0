@@ -1,7 +1,7 @@
 [
-  { "id": "usa", "flag": "🇺🇸", "name": "United States" },
-  { "id": "jpn", "flag": "🇯🇵", "name": "Japan" },
-  { "id": "deu", "flag": "🇩🇪", "name": "Germany" },
-  { "id": "ngo", "flag": "🌍", "name": "Global NGO" },
-  { "id": "city", "flag": "🏙️", "name": "Smart City DAO" }
+  { "id": "usa", "flag": "\uD83C\uDDFA\uD83C\uDDF8", "name": "United States" },
+  { "id": "jpn", "flag": "\uD83C\uDDEF\uD83C\uDDF5", "name": "Japan" },
+  { "id": "deu", "flag": "\uD83C\uDDE9\uD83C\uDDEA", "name": "Germany" },
+  { "id": "ngo", "flag": "\uD83C\uDF0D", "name": "Global NGO" },
+  { "id": "city", "flag": "\uD83C\uDFD9\uFE0F", "name": "Smart City DAO" }
 ]

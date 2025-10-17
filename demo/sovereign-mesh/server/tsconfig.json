@@ -1,14 +1,11 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "commonjs",
+    "target": "es2020",
     "outDir": "dist",
     "rootDir": "./",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "strict": true
+    "noEmitOnError": true
   },
   "include": ["index.ts"],
   "exclude": ["dist", "node_modules"]
