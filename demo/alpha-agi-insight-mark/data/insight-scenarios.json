@@ -18,7 +18,18 @@
       "sealedURI": "ipfs://alpha-agi-insight/finance/seed.json",
       "fusionURI": "ipfs://alpha-agi-insight/finance/fusion.json",
       "confidence": 0.91,
-      "forecastValue": "42T"
+      "forecastValue": "42T",
+      "capabilityIndex": 0.84,
+      "phaseShift": "T_AGI crosses 0.82 – liquidity equilibria collapse into singular market mesh.",
+      "objectives": {
+        "impact": 0.94,
+        "resilience": 0.88,
+        "velocity": 0.91
+      },
+      "signals": [
+        "Quantum Liquidity Mesh online in Singapore",
+        "Regulated AGI treasuries approved across EU bloc"
+      ]
     },
     {
       "sector": "Healthcare",
@@ -27,7 +38,18 @@
       "sealedURI": "ipfs://alpha-agi-insight/healthcare/seed.json",
       "fusionURI": "ipfs://alpha-agi-insight/healthcare/fusion.json",
       "confidence": 0.88,
-      "forecastValue": "17T"
+      "forecastValue": "17T",
+      "capabilityIndex": 0.8,
+      "phaseShift": "Bio-AGI synergy surpasses FDA adaptive governance threshold at T_AGI 0.79.",
+      "objectives": {
+        "impact": 0.89,
+        "resilience": 0.93,
+        "velocity": 0.87
+      },
+      "signals": [
+        "Self-validating clinical trial networks activated",
+        "AGI wetlab co-pilot reduces synthesis cycles to minutes"
+      ]
     },
     {
       "sector": "Energy",
@@ -36,7 +58,18 @@
       "sealedURI": "ipfs://alpha-agi-insight/energy/seed.json",
       "fusionURI": "ipfs://alpha-agi-insight/energy/fusion.json",
       "confidence": 0.86,
-      "forecastValue": "11T"
+      "forecastValue": "11T",
+      "capabilityIndex": 0.77,
+      "phaseShift": "Thermodynamic twins stabilize fusion microgrids once T_AGI exceeds 0.75.",
+      "objectives": {
+        "impact": 0.92,
+        "resilience": 0.9,
+        "velocity": 0.83
+      },
+      "signals": [
+        "Autonomous fusion pilot hits persistent positive Q",
+        "Continental grid telemetry shows AGI corrective reflexes"
+      ]
     }
   ]
 }

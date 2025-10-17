@@ -46,6 +46,7 @@ Evidence Links: insight-manifest.json, transaction hashes
 - [ ] `insight-control-matrix.json` imported into owner dashboard.
 - [ ] `insight-report.html` rendered and archived with the board briefing packet.
 - [ ] `insight-owner-brief.md` countersigned for rapid-response command authority.
+- [ ] `insight-evolution.mmd` and `insight-thermodynamics.mmd` rendered to confirm Pareto vectors and phase shifts align with governance policy.
 - [ ] Oracle address verified via `owner:verify-control` tooling.
 
 ## 5. Future Extensions
@@ -53,5 +54,6 @@ Evidence Links: insight-manifest.json, transaction hashes
 - Swap the settlement token by calling `setPaymentToken(newToken)` once the new ERC-20 is deployed.
 - Route fees to a multisig or treasury module using `setTreasury(multisigAddress)`.
 - Chainlink or in-house AI oracle integrations can be layered by configuring `setOracle(oracleContract)`.
+- Plug advanced thermodynamic models into the demo by regenerating `insight-thermodynamics.mmd` with real capability telemetry for audit committees.
 
 Maintaining this briefing ensures every production launch or change adheres to auditable, repeatable owner governance procedures.

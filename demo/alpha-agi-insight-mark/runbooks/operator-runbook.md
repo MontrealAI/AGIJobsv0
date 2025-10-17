@@ -37,6 +37,8 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 - `insight-control-matrix.json` – machine-readable owner control inventory.
 - `insight-control-map.mmd` – mermaid diagram (render via https://mermaid.live/).
 - `insight-governance.mmd` – insight swarm + sentinel orchestration schematic.
+- `insight-evolution.mmd` – NSGA-II Meta-Agentic Tree Search pipeline showing how the Pareto frontier feeds Nova-Seed forging.
+- `insight-thermodynamics.mmd` – Thermodynamic capability ladder mapping each sector’s phase shift against the T_AGI index.
 - `insight-owner-brief.md` – executive command sheet summarising pause hooks and custody.
 - `insight-market-matrix.csv` – spreadsheet-ready dataset for analysts and treasury.
 - `insight-constellation.mmd` – constellation mermaid capturing live custody and sentinel edges.
@@ -49,9 +51,9 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 2. **Pause/Resume** – From the Hardhat console or Owner Console UI, call `pause()` on each contract to halt trading, then `unpause()`.
 3. **Rotate Oracle** – Use `setOracle(<new address>)` on the exchange. The new oracle can immediately call `resolvePrediction`.
 4. **Retarget Treasury** – Call `setTreasury(<new address>)`. Validate the change via `insight-recap.json` and on-chain logs.
-5. **Dynamic Pricing** – Reprice an active listing via `updateListingPrice(tokenId, price)`; confirm the markdown reflects the new amount.
+5. **Dynamic Pricing** – Reprice an active listing via `updateListingPrice(tokenId, price)`; confirm the markdown and HTML dashboards update the live pricing and capability gauges.
 6. **Custody Override** – Call `forceDelist(tokenId, <custodian>)` to evacuate a seed into a safe wallet, then re-list when cleared.
-7. **Reveal & Revise FusionPlan** – Trigger `revealFusionPlan(tokenId, uri)` to expose the cryptosealed FusionPlan, then `updateFusionPlan(tokenId, uri)` if revisions are needed.
+7. **Reveal & Revise FusionPlan** – Trigger `revealFusionPlan(tokenId, uri)` to expose the cryptosealed FusionPlan, then `updateFusionPlan(tokenId, uri)` if revisions are needed. Check `insight-evolution.mmd` and `insight-thermodynamics.mmd` to ensure the governance diagrams reflect the updated frontier and phase shift.
 
 ## 5. Verification Loop
 

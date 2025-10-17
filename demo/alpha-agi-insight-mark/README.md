@@ -10,6 +10,7 @@
 - **Tokenised disruption** – Each α-AGI Nova-Seed is minted from the meta-agent scenarios, sealed until the owner reveals it, and can be listed or traded through α-AGI MARK with automated manifest hashing for integrity proofs.
 - **Production rigor** – The Hardhat project includes unit tests covering minting, pausing, delegated minters, fixed-price trading, fee distribution, and oracle resolution. The GitHub workflow executes the tests, runs the demo end-to-end, and verifies the generated dossiers.
 - **Regulatory superpowers** – Live repricing (`updateListingPrice`) and instant custody evacuation (`forceDelist`) ensure the owner can reshape liquidity or quarantine an asset mid-flight without downtime.
+- **Meta-agentic analytics** – The demo now exports a MATS Pareto frontier, thermodynamic signal inventory, and dual mermaid schematics (`insight-evolution.mmd`, `insight-thermodynamics.mmd`) that visualise NSGA-II objective vectors and T<sub>AGI</sub> phase transitions for every minted seed.
 
 ## Quickstart
 
@@ -62,6 +63,8 @@ Running the demo produces:
 - `insight-control-matrix.json` – machine-readable owner control registry.
 - `insight-control-map.mmd` – mermaid diagram for governance briefings.
 - `insight-governance.mmd` – meta-agent swarm and sentinel orchestration schematic.
+- `insight-evolution.mmd` – Meta-Agentic Tree Search (NSGA-II) pipeline feeding the Nova-Seed forge and α-AGI MARK.
+- `insight-thermodynamics.mmd` – Thermodynamic capability ladder showing when each rupture activates as T<sub>AGI</sub> heats up.
 - `insight-telemetry.log` – time-stamped agent dialogue.
 - `insight-owner-brief.md` – rapid-response owner command checklist with custody overview.
 - `insight-market-matrix.csv` – CSV dataset for financial modelling and downstream analytics.
