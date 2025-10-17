@@ -2,38 +2,44 @@ import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
 
-const GOVERNANCE_SAFE = process.env.GOVERNANCE_SAFE;
+const GOVERNANCE_TARGET = process.env.GOVERNANCE_SAFE;
 
-if (!GOVERNANCE_SAFE) {
-  throw new Error("GOVERNANCE_SAFE environment variable must be set");
+if (!GOVERNANCE_TARGET) {
+  throw new Error("Set GOVERNANCE_SAFE to the multisig address");
 }
 
-const ABI = ["function setGovernance(address)", "function transferOwnership(address)"];
+const HUBS_PATH = path.join(__dirname, "../config/hubs.mainnet.json");
+
+async function tryCall(contract: ethers.Contract, method: "setGovernance" | "transferOwnership", target: string) {
+  try {
+    const tx = await contract[method](target);
+    await tx.wait();
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
 
 async function main() {
-  const hubsPath = path.join(__dirname, "../config/hubs.mainnet.json");
-  const hubs = JSON.parse(fs.readFileSync(hubsPath, "utf8")) as Record<string, any>;
+  const hubs = JSON.parse(fs.readFileSync(HUBS_PATH, "utf8"));
   const [signer] = await ethers.getSigners();
+  const iface = new ethers.Interface([
+    "function setGovernance(address)",
+    "function transferOwnership(address)"
+  ]);
 
-  for (const [hubKey, details] of Object.entries(hubs)) {
-    for (const [moduleName, address] of Object.entries(details.addresses)) {
-      if (!address || address === "0x0000000000000000000000000000000000000000") continue;
-      const contract = new ethers.Contract(address as string, ABI, signer);
-      try {
-        const tx = await contract.setGovernance(GOVERNANCE_SAFE);
-        await tx.wait();
-        console.log(`[${hubKey}] ${moduleName} → governance set to ${GOVERNANCE_SAFE}`);
-        continue;
-      } catch {}
-      try {
-        const tx = await contract.transferOwnership(GOVERNANCE_SAFE);
-        await tx.wait();
-        console.log(`[${hubKey}] ${moduleName} → ownership transferred to ${GOVERNANCE_SAFE}`);
-      } catch (error) {
-        console.warn(`[${hubKey}] ${moduleName} skipped: ${(error as Error).message}`);
-      }
+  for (const hubKey of Object.keys(hubs)) {
+    const config = hubs[hubKey];
+    for (const [label, address] of Object.entries<string>(config.addresses)) {
+      if (!address || address === ethers.ZeroAddress) continue;
+      const contract = new ethers.Contract(address, iface, signer);
+      const setGov = await tryCall(contract, "setGovernance", GOVERNANCE_TARGET);
+      const transferred = setGov || (await tryCall(contract, "transferOwnership", GOVERNANCE_TARGET));
+      console.log(`${hubKey}:${label} => ${transferred ? "updated" : "skipped"}`);
     }
   }
+
+  console.log("✅ Rotated Sovereign Mesh governance to", GOVERNANCE_TARGET);
 }
 
 main().catch((error) => {

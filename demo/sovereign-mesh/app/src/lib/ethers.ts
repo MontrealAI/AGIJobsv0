@@ -1,11 +1,11 @@
 import { ethers } from "ethers";
 
 export const getProvider = () => {
-  const { ethereum } = window as typeof window & { ethereum?: unknown };
-  if (!ethereum) {
-    throw new Error("No injected Ethereum provider detected");
+  const injected = (window as any).ethereum;
+  if (!injected) {
+    throw new Error("No injected Ethereum provider found");
   }
-  return new ethers.BrowserProvider(ethereum);
+  return new ethers.BrowserProvider(injected);
 };
 
 export const getSigner = async () => {
