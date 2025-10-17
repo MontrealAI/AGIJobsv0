@@ -51,6 +51,7 @@ Running the demo produces:
 
 - `insight-recap.json` – network, contract addresses, minted seed states, and telemetry.
 - `insight-report.md` – executive summary with tables and owner command hooks.
+- `insight-report.html` – shareable executive dashboard with disruption timeline visualisation.
 - `insight-control-matrix.json` – machine-readable owner control registry.
 - `insight-control-map.mmd` – mermaid diagram for governance briefings.
 - `insight-telemetry.log` – time-stamped agent dialogue.

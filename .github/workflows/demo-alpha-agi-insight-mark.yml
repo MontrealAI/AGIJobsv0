@@ -98,6 +98,27 @@ jobs:
           console.log('Markdown dossier validated.');
           NODE
 
+      - name: Validate executive HTML dashboard
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'demo/alpha-agi-insight-mark/reports/insight-report.html';
+          if (!fs.existsSync(path)) {
+            throw new Error('executive report HTML missing');
+          }
+          const content = fs.readFileSync(path, 'utf8');
+          if (!content.includes('α-AGI Insight MARK Executive Report')) {
+            throw new Error('executive report title missing');
+          }
+          const requiredSnippets = ['Disruption Timeline', 'Nova-Seed Market Matrix', 'Owner Command Hooks'];
+          for (const snippet of requiredSnippets) {
+            if (!content.includes(snippet)) {
+              throw new Error(`expected section not found in HTML report: ${snippet}`);
+            }
+          }
+          console.log('Executive HTML dossier validated.');
+          NODE
+
       - name: Validate control matrix
         run: |
           node - <<'NODE'
@@ -152,6 +173,7 @@ jobs:
           path: |
             demo/alpha-agi-insight-mark/reports/insight-recap.json
             demo/alpha-agi-insight-mark/reports/insight-report.md
+            demo/alpha-agi-insight-mark/reports/insight-report.html
             demo/alpha-agi-insight-mark/reports/insight-control-matrix.json
             demo/alpha-agi-insight-mark/reports/insight-control-map.mmd
             demo/alpha-agi-insight-mark/reports/insight-manifest.json

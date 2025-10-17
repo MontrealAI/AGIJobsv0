@@ -35,6 +35,15 @@ function sha256(content: string | Buffer): string {
   return hash.digest("hex");
 }
 
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 async function loadScenarioConfig(): Promise<ScenarioConfig> {
   const raw = await readFile(dataFile, "utf8");
   return JSON.parse(raw) as ScenarioConfig;
@@ -57,6 +66,7 @@ interface MintedInsightRecord {
   mintedBy: string;
   listed: boolean;
   status: "HELD" | "LISTED" | "SOLD";
+  listingPrice?: string;
   sale?: {
     buyer: string;
     price: string;
@@ -142,12 +152,14 @@ async function main() {
     const price = priceSchedule[i] ?? priceSchedule[0];
     let status: MintedInsightRecord["status"] = "HELD";
     let sale: MintedInsightRecord["sale"] | undefined;
+    let listingPrice: string | undefined;
 
     if (i < 2) {
       await novaSeed.connect(receiver).approve(await exchange.getAddress(), mintedId);
       await exchange.connect(receiver).listInsight(mintedId, price);
       status = "LISTED";
-      log("Venture Cartographer", `Token ${mintedId.toString()} listed on α-AGI MARK at ${ethers.formatUnits(price, 18)} AIC.`);
+      listingPrice = ethers.formatUnits(price, 18);
+      log("Venture Cartographer", `Token ${mintedId.toString()} listed on α-AGI MARK at ${listingPrice} AIC.`);
 
       if (i === 0) {
         await accessToken.mint(buyerA.address, ethers.parseUnits("1000", 18));
@@ -176,6 +188,7 @@ async function main() {
       mintedBy: minter.address,
       listed: status !== "HELD",
       status,
+      listingPrice,
       sale,
       fusionRevealed,
       disruptionTimestamp: toTimestamp(scenario.ruptureYear).toString(),
@@ -191,6 +204,7 @@ async function main() {
   const matrixPath = path.join(reportsDir, "insight-control-matrix.json");
   const mermaidPath = path.join(reportsDir, "insight-control-map.mmd");
   const telemetryPath = path.join(reportsDir, "insight-telemetry.log");
+  const htmlPath = path.join(reportsDir, "insight-report.html");
   const manifestPath = path.join(reportsDir, "insight-manifest.json");
 
   const recap = {
@@ -210,11 +224,13 @@ async function main() {
   };
 
   const tableRows = minted
-    .map((entry, index) => {
+    .map((entry) => {
       const saleDetails = entry.sale
         ? `${entry.sale.price} AIC → net ${entry.sale.netPayout} AIC`
         : entry.status === "LISTED"
-          ? `Listed @ ${ethers.formatUnits(priceSchedule[index] ?? priceSchedule[0], 18)} AIC`
+          ? entry.listingPrice
+            ? `Listed @ ${entry.listingPrice} AIC`
+            : "Listed"
           : "Held by operator";
       return `| ${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${entry.scenario.thesis} | ${entry.status} | ${saleDetails} |`;
     })
@@ -233,6 +249,268 @@ async function main() {
       .map((entry) => `- ${entry.timestamp} — **${entry.agent}**: ${entry.message}`)
       .join("\n") +
     "\n";
+
+  const sortedByRupture = [...minted].sort((a, b) => a.scenario.ruptureYear - b.scenario.ruptureYear);
+  const timelineStart = sortedByRupture[0]?.scenario.ruptureYear ?? 0;
+  const timelineEnd = sortedByRupture.at(-1)?.scenario.ruptureYear ?? timelineStart;
+  const timelineSpan = Math.max(1, timelineEnd - timelineStart);
+
+  const htmlRows = sortedByRupture
+    .map((entry) => {
+      const confidencePercent = Math.round(entry.scenario.confidence * 100);
+      const saleDetails =
+        entry.sale
+          ? `${escapeHtml(entry.sale.price)} AIC → net ${escapeHtml(entry.sale.netPayout)} AIC`
+          : entry.status === "LISTED"
+            ? entry.listingPrice
+              ? `Listed @ ${escapeHtml(entry.listingPrice)} AIC`
+              : "Listed"
+            : "Held by operator";
+      return `            <tr>
+              <td>${escapeHtml(entry.tokenId)}</td>
+              <td>${escapeHtml(entry.scenario.sector)}</td>
+              <td>${entry.scenario.ruptureYear}</td>
+              <td>${escapeHtml(entry.scenario.thesis)}</td>
+              <td>
+                <div class="confidence-bar">
+                  <div class="confidence-fill" style="width:${confidencePercent}%"></div>
+                  <span>${confidencePercent}%</span>
+                </div>
+              </td>
+              <td>${escapeHtml(entry.status)}</td>
+              <td>${escapeHtml(saleDetails)}</td>
+            </tr>`;
+    })
+    .join("\n");
+
+  const timelineMarks = sortedByRupture
+    .map((entry) => {
+      const offset = timelineSpan === 0 ? 0 : ((entry.scenario.ruptureYear - timelineStart) / timelineSpan) * 100;
+      const confidencePercent = Math.round(entry.scenario.confidence * 100);
+      return `          <div class="timeline-node" style="left:${offset}%">
+            <div class="timeline-node__label">${escapeHtml(entry.scenario.sector)}</div>
+            <div class="timeline-node__year">${entry.scenario.ruptureYear}</div>
+            <div class="timeline-node__confidence">${confidencePercent}% confidence</div>
+          </div>`;
+    })
+    .join("\n");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>α-AGI Insight MARK Executive Report</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: #030712;
+        color: #e8f1ff;
+      }
+      body {
+        margin: 0;
+        padding: 32px 24px 48px;
+      }
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.25rem;
+      }
+      h2 {
+        margin-top: 2.5rem;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+      }
+      p, li {
+        line-height: 1.6;
+      }
+      .meta-grid {
+        display: grid;
+        gap: 0.5rem 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        margin: 1.5rem 0;
+        padding: 1.5rem;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(51, 141, 255, 0.2), rgba(166, 86, 255, 0.08));
+        border: 1px solid rgba(146, 214, 255, 0.2);
+      }
+      .meta-grid__item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .meta-grid__label {
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(206, 234, 255, 0.7);
+      }
+      .meta-grid__value {
+        font-size: 1.05rem;
+        word-break: break-all;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1.5rem;
+        font-size: 0.95rem;
+      }
+      thead {
+        background: rgba(31, 64, 128, 0.4);
+      }
+      th, td {
+        padding: 0.75rem 0.85rem;
+        border-bottom: 1px solid rgba(71, 116, 194, 0.35);
+        vertical-align: top;
+        text-align: left;
+      }
+      tbody tr:hover {
+        background: rgba(41, 71, 145, 0.25);
+      }
+      .confidence-bar {
+        position: relative;
+        width: 100%;
+        height: 18px;
+        border-radius: 12px;
+        background: rgba(22, 40, 86, 0.65);
+        overflow: hidden;
+      }
+      .confidence-fill {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, #3ddff5, #9178ff);
+      }
+      .confidence-bar span {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-weight: 600;
+        color: #021321;
+      }
+      .timeline {
+        position: relative;
+        margin: 2rem 0 3rem;
+        padding: 60px 12px 28px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(23, 52, 132, 0.45), rgba(18, 34, 88, 0.3));
+        border: 1px solid rgba(141, 188, 255, 0.25);
+      }
+      .timeline::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 24px;
+        right: 24px;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(110, 185, 255, 0.5), rgba(133, 99, 255, 0.7));
+      }
+      .timeline-node {
+        position: absolute;
+        transform: translateX(-50%);
+        text-align: center;
+        min-width: 160px;
+      }
+      .timeline-node__label {
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .timeline-node__year {
+        font-size: 1.35rem;
+        margin-bottom: 6px;
+        color: #7cf9ff;
+      }
+      .timeline-node__confidence {
+        font-size: 0.85rem;
+        color: rgba(202, 230, 255, 0.85);
+      }
+      .timeline-node::after {
+        content: '';
+        position: absolute;
+        top: 52px;
+        left: 50%;
+        transform: translate(-50%, 0);
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 50% 50%, #b2f5ff, #5d73ff);
+        box-shadow: 0 0 18px rgba(118, 255, 255, 0.6);
+      }
+      footer {
+        margin-top: 3rem;
+        font-size: 0.85rem;
+        color: rgba(173, 217, 255, 0.75);
+      }
+      code {
+        font-family: 'JetBrains Mono', 'Source Code Pro', monospace;
+        font-size: 0.85rem;
+        color: #8ae5ff;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>α-AGI Insight MARK Executive Report</h1>
+      <p>The foresight lattice autonomously mapped AGI rupture points and tokenised them as Nova-Seeds. The operator retains complete command via pause levers, oracle rotation, and treasury retargeting without redeployments.</p>
+    </header>
+    <section class="meta-grid">
+      <div class="meta-grid__item">
+        <span class="meta-grid__label">Network</span>
+        <span class="meta-grid__value">${escapeHtml(network.name)} (chainId ${escapeHtml(network.chainId.toString())})</span>
+      </div>
+      <div class="meta-grid__item">
+        <span class="meta-grid__label">Operator</span>
+        <span class="meta-grid__value">${escapeHtml(operator.address)}</span>
+      </div>
+      <div class="meta-grid__item">
+        <span class="meta-grid__label">Oracle</span>
+        <span class="meta-grid__value">${escapeHtml(oracle.address)}</span>
+      </div>
+      <div class="meta-grid__item">
+        <span class="meta-grid__label">Treasury</span>
+        <span class="meta-grid__value">${escapeHtml(await exchange.treasury())}</span>
+      </div>
+      <div class="meta-grid__item">
+        <span class="meta-grid__label">Fee</span>
+        <span class="meta-grid__value">${(Number(await exchange.feeBps()) / 100).toFixed(2)}%</span>
+      </div>
+    </section>
+    <section class="timeline">
+      <h2>Disruption Timeline</h2>
+${timelineMarks}
+    </section>
+    <section>
+      <h2>Nova-Seed Market Matrix</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Sector</th>
+            <th>Rupture Year</th>
+            <th>Disruption Thesis</th>
+            <th>Confidence</th>
+            <th>Status</th>
+            <th>Market State</th>
+          </tr>
+        </thead>
+        <tbody>
+${htmlRows}
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Owner Command Hooks</h2>
+      <ul>
+        <li>Invoke <code>pause()</code> on the exchange, Nova-Seed, or settlement token to halt activity instantly.</li>
+        <li>Reassign the oracle via <code>setOracle(address)</code> for immediate foresight adjudication.</li>
+        <li>Redirect protocol yield by calling <code>setTreasury(address)</code>.</li>
+        <li>Reveal a FusionPlan at will using <code>revealFusionPlan(tokenId, uri)</code>.</li>
+      </ul>
+    </section>
+    <footer>
+      Generated ${escapeHtml(new Date().toISOString())}. Manifest fingerprints in <code>insight-manifest.json</code> attest to dossier integrity.
+    </footer>
+  </body>
+</html>`;
 
   const controlMatrix = {
     generatedAt: new Date().toISOString(),
@@ -277,9 +555,10 @@ async function main() {
   await writeFile(matrixPath, JSON.stringify(controlMatrix, null, 2));
   await writeFile(mermaidPath, mermaid);
   await writeFile(telemetryPath, telemetryLog);
+  await writeFile(htmlPath, html);
 
   const manifestEntries: { path: string; sha256: string }[] = [];
-  for (const file of [recapPath, reportPath, matrixPath, mermaidPath, telemetryPath]) {
+  for (const file of [recapPath, reportPath, htmlPath, matrixPath, mermaidPath, telemetryPath]) {
     const content = await readFile(file);
     const relativePath = path.relative(path.join(__dirname, ".."), file);
     manifestEntries.push({ path: relativePath.replace(/\\\\/g, "/"), sha256: sha256(content) });
