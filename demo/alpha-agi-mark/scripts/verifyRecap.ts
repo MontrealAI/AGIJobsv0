@@ -128,6 +128,26 @@ const recapSchema = z.object({
       pricing: z.object({ consistent: z.boolean() }).passthrough(),
       capitalFlows: z.object({ consistent: z.boolean() }).passthrough(),
       contributions: z.object({ consistent: z.boolean() }).passthrough(),
+      summary: z
+        .object({
+          totalChecks: z.number(),
+          passedChecks: z.number(),
+          failedChecks: z.number().optional(),
+          confidenceIndexBps: z.number(),
+          confidenceIndexPercent: z.string(),
+          verdict: z.enum(["PASS", "REVIEW"]),
+          checks: z
+            .array(
+              z.object({
+                key: z.string(),
+                label: z.string(),
+                consistent: z.boolean(),
+              }),
+            )
+            .optional(),
+        })
+        .partial()
+        .optional(),
     })
     .passthrough()
     .optional(),
@@ -319,11 +339,71 @@ function main() {
           "Embedded verification flag: capital flows",
           recap.verification.capitalFlows.consistent,
         );
+      appendCheck(
+        "Embedded verification flag: contributions",
+        recap.verification.contributions.consistent,
+      );
+
+      if (recap.verification.summary) {
+        const summary = recap.verification.summary;
+        const summaryCheckCount = summary.checks?.length;
+        const summaryPassedCount = summary.checks
+          ? summary.checks.filter((entry) => entry.consistent).length
+          : summary.passedChecks;
+        const expectedBps =
+          summary.totalChecks && summary.totalChecks > 0
+            ? Math.round((summaryPassedCount * 10000) / summary.totalChecks)
+            : 0;
+        const observedConfidence = summary.confidenceIndexPercent
+          ?? (summary.confidenceIndexBps !== undefined
+            ? `${(summary.confidenceIndexBps / 100).toFixed(2)}%`
+            : "(missing)");
         appendCheck(
-          "Embedded verification flag: contributions",
-          recap.verification.contributions.consistent,
+          "Verification summary total checks",
+          summary.totalChecks === (summaryCheckCount ?? summary.totalChecks),
+          (summaryCheckCount ?? summary.totalChecks).toString(),
+          summary.totalChecks?.toString(),
         );
+        appendCheck(
+          "Verification summary passed checks",
+          summary.passedChecks === summaryPassedCount,
+          summaryPassedCount.toString(),
+          summary.passedChecks?.toString(),
+        );
+        appendCheck(
+          "Verification summary confidence index",
+          summary.confidenceIndexBps === expectedBps,
+          `${(expectedBps / 100).toFixed(2)}%`,
+          observedConfidence,
+        );
+        if (summary.verdict) {
+          const expectedVerdict = summaryPassedCount === summary.totalChecks ? "PASS" : "REVIEW";
+          appendCheck(
+            "Verification summary verdict",
+            summary.verdict === expectedVerdict,
+            expectedVerdict,
+            summary.verdict,
+          );
+        }
+
+        const summaryCheckMap = new Map(summary.checks?.map((entry) => [entry.key, entry.consistent]));
+        const summaryAlignments: Array<[string, boolean | undefined, boolean | undefined]> = [
+          ["supplyConsensus", summaryCheckMap.get("supplyConsensus"), recap.verification.supplyConsensus.consistent],
+          ["pricing", summaryCheckMap.get("pricing"), recap.verification.pricing.consistent],
+          ["capitalFlows", summaryCheckMap.get("capitalFlows"), recap.verification.capitalFlows.consistent],
+          ["contributions", summaryCheckMap.get("contributions"), recap.verification.contributions.consistent],
+        ];
+        summaryAlignments.forEach(([key, recorded, actual]) => {
+          if (recorded === undefined || actual === undefined) return;
+          appendCheck(
+            `Verification summary alignment: ${key}`,
+            recorded === actual,
+            actual ? "true" : "false",
+            recorded ? "true" : "false",
+          );
+        });
       }
+    }
 
       if (recap.checksums?.recapSha256) {
         const digestTarget = JSON.parse(JSON.stringify(recap)) as typeof recap;

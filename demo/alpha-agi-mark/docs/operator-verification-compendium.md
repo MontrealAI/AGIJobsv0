@@ -34,7 +34,10 @@ mindmap
 
 The orchestrator captures every signal into artefacts that a non-technical user can open in their browser. The
 triangulation engine cross-references three independent perspectives so that no single ledger can be tampered with
-without detection.
+without detection. Every recap now emits a `verification.summary` bundle containing the canonical confidence index
+(basis points + human readable percentage), the exact number of invariants that passed, the launch verdict, and a
+machine-readable list of each check. Because the summary is embedded in the recap, console, dashboard, integrity report,
+and verifier all display identical confidence numbers without manual reconciliation.
 
 ## Operator flow – five minute audit
 
