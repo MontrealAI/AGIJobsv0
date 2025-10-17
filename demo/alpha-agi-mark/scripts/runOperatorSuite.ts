@@ -64,6 +64,8 @@ function main() {
     { label: "Owner parameter matrix", command: "npx", args: tsNodeArgs("exportOwnerMatrix.ts") },
     { label: "Triple-verification replay", command: "npx", args: tsNodeArgs("verifyRecap.ts") },
     { label: "Integrity dossier synthesis", command: "npx", args: tsNodeArgs("generateIntegrityReport.ts") },
+    { label: "Mission timeline rendering", command: "npx", args: tsNodeArgs("generateMissionTimeline.ts") },
+    { label: "Sovereign blueprint emission", command: "npx", args: tsNodeArgs("generateSovereignBlueprint.ts") },
   ];
 
   const suiteStart = Date.now();
@@ -72,6 +74,8 @@ function main() {
   const recapPath = path.join(demoDir, "reports", "alpha-mark-recap.json");
   const dashboardPath = path.join(demoDir, "reports", "alpha-mark-dashboard.html");
   const integrityPath = path.join(demoDir, "reports", "alpha-mark-integrity.md");
+  const timelinePath = path.join(demoDir, "reports", "alpha-mark-timeline.md");
+  const blueprintPath = path.join(demoDir, "reports", "alpha-mark-blueprint.md");
   const ownerMatrixNote = "Run `npm run owner:alpha-agi-mark` to re-print the owner matrix at any time.";
 
   const elapsed = ((Date.now() - suiteStart) / 1000).toFixed(2);
@@ -79,6 +83,8 @@ function main() {
   console.log(`   • Recap dossier: ${path.relative(repoRoot, recapPath)}`);
   console.log(`   • Sovereign dashboard: ${path.relative(repoRoot, dashboardPath)}`);
   console.log(`   • Integrity report: ${path.relative(repoRoot, integrityPath)}`);
+  console.log(`   • Mission timeline: ${path.relative(repoRoot, timelinePath)}`);
+  console.log(`   • Sovereign blueprint: ${path.relative(repoRoot, blueprintPath)}`);
   console.log(`   • ${ownerMatrixNote}`);
 }
 

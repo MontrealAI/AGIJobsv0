@@ -69,6 +69,8 @@ Runs the orchestrator above and immediately:
 1. Prints the owner control matrix so governance levers are visible without extra commands.
 2. Replays the trade ledger through the independent verifier, ensuring the recap dossier is internally consistent.
 3. Generates the integrity dossier that fuses verification output, owner controls, and mission telemetry for stakeholder sign-off.
+4. Renders the mission timeline into Mermaid + markdown so every phase has an auditable checkpoint.
+5. Emits the sovereign blueprint, a cinematic markdown brief combining flowcharts, sequence diagrams, and deterministic cross-checks.
 
 ### Network & safety controls
 
@@ -133,6 +135,19 @@ npm run integrity:alpha-agi-mark
 This generates `reports/alpha-mark-integrity.md` – a mermaid-enhanced dossier that summarises the
 confidence matrix, owner controls, validator quorum, and participant contributions so non-technical
 stakeholders can sign off in minutes.
+
+### Timeline & blueprint exports
+
+Generate artefacts individually whenever you need refreshed visuals for investors or auditors:
+
+```bash
+npm run timeline:alpha-agi-mark
+npm run blueprint:alpha-agi-mark
+```
+
+The timeline export provides both a Mermaid cinematic timeline and a tabular event ledger. The sovereign
+blueprint replays cross-checks, lists owner levers, and embeds dual Mermaid diagrams (flowchart + sequence)
+so a non-technical operator can prove the system's trajectory at a glance.
 
 ## Sovereign Dashboard
 

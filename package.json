@@ -166,7 +166,8 @@
     "verify:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/verifyRecap.ts",
     "integrity:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateIntegrityReport.ts",
     "timeline:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateMissionTimeline.ts",
-    "console:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/operatorConsole.ts"
+    "console:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/operatorConsole.ts",
+    "blueprint:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateSovereignBlueprint.ts"
   },
   "keywords": [],
   "author": "",

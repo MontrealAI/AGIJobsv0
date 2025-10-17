@@ -115,10 +115,12 @@ flowchart LR
     Console{{Operator Command Console}}
     Compendium[[Verification Compendium]]
     Dashboard[[Sovereign Dashboard]]
+    Blueprint[[Sovereign Blueprint]]
     Integrity[[Integrity Dossier]]
   end
   Console --> Compendium
   Console --> Dashboard
+  Console --> Blueprint
   Console --> Integrity
   Compendium --> Execs
   Compendium --> Aud
