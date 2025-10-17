@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Insight Access Token (`InsightAccessToken`) | Populate from `insight-recap.json` | `mint`, `pause`, `unpause`, `setSystemPause` |
 | Nova-Seed (`AlphaInsightNovaSeed`) | Populate from `insight-recap.json` | `setMinter`, `updateInsightDetails`, `updateSealedURI`, `revealFusionPlan`, `updateFusionPlan`, `pause`, `unpause`, `setSystemPause` |
-| Foresight Exchange (`AlphaInsightExchange`) | Populate from `insight-recap.json` | `setOracle`, `setTreasury`, `setPaymentToken`, `setFeeBps`, `pause`, `unpause`, `resolvePrediction`, `setSystemPause` |
+| Foresight Exchange (`AlphaInsightExchange`) | Populate from `insight-recap.json` | `setOracle`, `setTreasury`, `setPaymentToken`, `setFeeBps`, `updateListingPrice`, `forceDelist`, `pause`, `unpause`, `resolvePrediction`, `setSystemPause` |
 
 ## 2. Emergency Procedures
 
@@ -15,6 +15,7 @@
 3. **Asset Freeze** – Call `pause()` on the Nova-Seed to prevent transfers/minting. Use `setMinter(address, false)` to revoke agent minters.
 4. **Liquidity Freeze** – Call `pause()` on the settlement token to suspend token transfers if treasury risk is detected.
 5. **Oracle Override** – Use `setOracle(owner)` to take direct control of prediction resolution during an incident.
+6. **Force Custody Transfer** – If a listing must be evacuated (e.g., legal hold), invoke `forceDelist(tokenId, custody)` to move it to a secure wallet while keeping ledger integrity.
 
 ## 3. Change Management Template
 

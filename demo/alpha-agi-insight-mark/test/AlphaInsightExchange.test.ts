@@ -72,6 +72,38 @@ describe("AlphaInsightExchange", () => {
     expect(await nova.ownerOf(1n)).to.equal(seller.address);
   });
 
+  it("permits sellers or owner to update listing pricing", async () => {
+    await nova.connect(seller).approve(await exchange.getAddress(), 1n);
+    await exchange.connect(seller).listInsight(1n, ethers.parseUnits("180", 18));
+
+    await exchange.connect(seller).updateListingPrice(1n, ethers.parseUnits("200", 18));
+    const listingAfterSellerUpdate = await exchange.listing(1n);
+    expect(listingAfterSellerUpdate.price).to.equal(ethers.parseUnits("200", 18));
+
+    await exchange.connect(owner).updateListingPrice(1n, ethers.parseUnits("150", 18));
+    const listingAfterOwnerUpdate = await exchange.listing(1n);
+    expect(listingAfterOwnerUpdate.price).to.equal(ethers.parseUnits("150", 18));
+
+    await expect(exchange.connect(buyer).updateListingPrice(1n, ethers.parseUnits("120", 18))).to.be.revertedWith(
+      "NOT_AUTHORIZED"
+    );
+  });
+
+  it("allows owner to force delist active listings", async () => {
+    await nova.connect(seller).approve(await exchange.getAddress(), 1n);
+    await exchange.connect(seller).listInsight(1n, ethers.parseUnits("210", 18));
+
+    await expect(exchange.connect(seller).forceDelist(1n, owner.address)).to.be.revertedWithCustomError(
+      exchange,
+      "OwnableUnauthorizedAccount"
+    );
+
+    await exchange.forceDelist(1n, owner.address);
+    const listing = await exchange.listing(1n);
+    expect(listing.active).to.equal(false);
+    expect(await nova.ownerOf(1n)).to.equal(owner.address);
+  });
+
   it("permits delegated sentinel pausing", async () => {
     await exchange.setSystemPause(seller.address);
     await nova.connect(seller).approve(await exchange.getAddress(), 1n);
