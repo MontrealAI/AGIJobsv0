@@ -132,21 +132,24 @@ describe("α-AGI MARK owner governance", function () {
       "OwnableUnauthorizedAccount",
     );
     await vault.connect(owner).pauseVault();
-    await expect(vault.connect(owner).notifyLaunch(1, "0x"))
+    await expect(vault.connect(owner).notifyLaunch(1, false, "0x"))
       .to.be.revertedWithCustomError(vault, "EnforcedPause");
     await vault.connect(owner).unpauseVault();
 
-    await expect(vault.connect(other).notifyLaunch(1, "0x"))
+    await expect(vault.connect(other).notifyLaunch(1, false, "0x"))
       .to.be.revertedWith("Unauthorized sender");
 
     const metadata = ethers.hexlify(ethers.toUtf8Bytes("ignition"));
-    await expect(vault.connect(owner).notifyLaunch(123n, metadata))
+    await expect(vault.connect(owner).notifyLaunch(0n, false, metadata))
       .to.emit(vault, "LaunchAcknowledged")
-      .withArgs(owner.address, 123n, metadata, anyValue);
+      .withArgs(owner.address, 0n, false, metadata, anyValue);
+    expect(await vault.lastAcknowledgedUsedNative()).to.equal(false);
 
     const depositAmount = toWei("1");
     await owner.sendTransaction({ to: vault.target, value: depositAmount });
     expect(await vault.totalReceived()).to.equal(depositAmount);
+    expect(await vault.totalReceivedNative()).to.equal(depositAmount);
+    expect(await vault.totalReceivedExternal()).to.equal(0n);
 
     await expect(vault.connect(other).withdraw(recipient.address, toWei("0.1")))
       .to.be.revertedWithCustomError(vault, "OwnableUnauthorizedAccount");

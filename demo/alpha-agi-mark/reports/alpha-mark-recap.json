@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-16T22:28:58.620Z",
+  "generatedAt": "2025-10-17T00:07:19.581Z",
   "network": {
     "label": "hardhat (chainId 31337)",
     "name": "hardhat",
@@ -8,7 +8,7 @@
     "dryRun": true
   },
   "orchestrator": {
-    "commit": "c7f11d9aec96ad3de7103c89aaa8f517bbc9040c",
+    "commit": "b6c4131c3baef4ed756322c418f9ce60ca187422",
     "branch": "work",
     "workspaceDirty": true,
     "mode": "dry-run"
@@ -122,12 +122,17 @@
       "manifestUri": "ipfs://alpha-mark/sovereign/genesis",
       "totalReceivedWei": "3850000000000000000",
       "totalReceivedEth": "3.85",
+      "totalReceivedNativeWei": "3850000000000000000",
+      "totalReceivedNativeEth": "3.85",
+      "totalReceivedExternalWei": "0",
+      "totalReceivedExternalEth": "0.0",
       "lastAcknowledgedAmountWei": "3850000000000000000",
       "lastAcknowledgedAmountEth": "3.85",
       "lastAcknowledgedMetadataHex": "0xceb12d41474920536f7665726569676e2069676e6974696f6e3a204e6f76612d5365656420617363656e6473",
       "decodedMetadata": "α-AGI Sovereign ignition: Nova-Seed ascends",
       "vaultBalanceWei": "3850000000000000000",
-      "vaultBalanceEth": "3.85"
+      "vaultBalanceEth": "3.85",
+      "lastAcknowledgedUsedNative": true
     }
   },
   "trades": [
@@ -490,6 +495,6 @@
   "checksums": {
     "algorithm": "sha256",
     "canonicalEncoding": "json-key-sorted",
-    "recapSha256": "fd9fa6cf56c3f3e497c5ce72aafebcba39b660c1344eff89646e7ac659fb194b"
+    "recapSha256": "dbb1a7269bd3522a62b15c38be2660f1930ac5bef5c3c90bee1e9f63542cc57d"
   }
 }

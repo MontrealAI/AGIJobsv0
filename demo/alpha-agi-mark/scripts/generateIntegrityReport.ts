@@ -101,23 +101,28 @@ const recapSchema = z
   trades: z.array(tradeSchema),
   launch: z
     .object({
-    finalized: z.boolean(),
-    aborted: z.boolean(),
-    treasury: z.string(),
-    sovereignVault: z
-      .object({
-      manifestUri: z.string(),
-      totalReceivedWei: z.string(),
-      totalReceivedEth: z.string().optional(),
-      lastAcknowledgedAmountWei: z.string(),
-      lastAcknowledgedAmountEth: z.string().optional(),
-      lastAcknowledgedMetadataHex: z.string().optional(),
-      decodedMetadata: z.string().optional(),
-      vaultBalanceWei: z.string().optional(),
-      vaultBalanceEth: z.string().optional(),
+      finalized: z.boolean(),
+      aborted: z.boolean(),
+      treasury: z.string(),
+      sovereignVault: z
+        .object({
+          manifestUri: z.string(),
+          totalReceivedWei: z.string(),
+          totalReceivedNativeWei: z.string().optional(),
+          totalReceivedExternalWei: z.string().optional(),
+          totalReceivedEth: z.string().optional(),
+          lastAcknowledgedAmountWei: z.string(),
+          lastAcknowledgedAmountEth: z.string().optional(),
+          lastAcknowledgedMetadataHex: z.string().optional(),
+          decodedMetadata: z.string().optional(),
+          vaultBalanceWei: z.string().optional(),
+          vaultBalanceEth: z.string().optional(),
+          totalReceivedNativeEth: z.string().optional(),
+          totalReceivedExternalEth: z.string().optional(),
+          lastAcknowledgedUsedNative: z.boolean().optional(),
+        })
+        .passthrough(),
     })
-      .passthrough(),
-  })
     .passthrough(),
   verification: z
     .object({
@@ -210,6 +215,14 @@ function buildChecks(recap: Recap) {
     "sovereign vault receipts",
     recap.launch.sovereignVault.totalReceivedWei,
   );
+  const vaultNative = parseBigInt(
+    "sovereign vault native intake",
+    recap.launch.sovereignVault.totalReceivedNativeWei ?? "0",
+  );
+  const vaultExternal = parseBigInt(
+    "sovereign vault external intake",
+    recap.launch.sovereignVault.totalReceivedExternalWei ?? "0",
+  );
 
   let ledgerSupply = 0n;
   let ledgerGross = 0n;
@@ -265,6 +278,13 @@ function buildChecks(recap: Recap) {
     ok: reserve + vaultReceived === ledgerNet,
     expected: asEth(ledgerNet),
     observed: asEth(reserve + vaultReceived),
+  });
+
+  checks.push({
+    label: "Vault intake split matches aggregate",
+    ok: vaultNative + vaultExternal === vaultReceived,
+    expected: asEth(vaultReceived),
+    observed: asEth(vaultNative + vaultExternal),
   });
 
   checks.push({
@@ -390,6 +410,17 @@ async function main() {
   const lastAcknowledgedAmountDisplay = asEth(
     parseBigInt("last acknowledged amount", recap.launch.sovereignVault.lastAcknowledgedAmountWei),
   );
+  const nativeIntakeDisplay = asEth(
+    parseBigInt("native intake", recap.launch.sovereignVault.totalReceivedNativeWei ?? "0"),
+  );
+  const externalIntakeDisplay = asEth(
+    parseBigInt("external intake", recap.launch.sovereignVault.totalReceivedExternalWei ?? "0"),
+  );
+  const ignitionModeDisplay = recap.launch.sovereignVault.lastAcknowledgedUsedNative === undefined
+    ? "Unknown"
+    : recap.launch.sovereignVault.lastAcknowledgedUsedNative
+      ? "Native asset"
+      : "External asset";
 
   const markdown = `# α-AGI MARK Integrity Report\n\n` +
     `Generated: ${generatedAt}\n\n` +
@@ -418,6 +449,9 @@ async function main() {
     `| Slope | ${asEth(parseBigInt("slope", recap.bondingCurve.slopeWei))} |\n` +
     `| Reserve balance | ${asEth(parseBigInt("reserve", recap.bondingCurve.reserveWei))} |\n` +
     `| Sovereign vault receipts | ${asEth(parseBigInt("vault", recap.launch.sovereignVault.totalReceivedWei))} |\n` +
+    `| Sovereign native intake | ${nativeIntakeDisplay} |\n` +
+    `| Sovereign external intake | ${externalIntakeDisplay} |\n` +
+    `| Last ignition mode | ${ignitionModeDisplay} |\n` +
     `| Last acknowledged amount | ${lastAcknowledgedAmountDisplay} |\n` +
     `| Vault balance | ${vaultBalanceDisplay} |\n` +
     `| Treasury address | ${recap.launch.treasury} |\n` +

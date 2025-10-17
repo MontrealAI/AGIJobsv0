@@ -15,16 +15,27 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
 
     event LaunchManifestUpdated(string manifestUri);
     event MarkExchangeDesignated(address indexed markExchange);
-    event LaunchAcknowledged(address indexed markExchange, uint256 amount, bytes metadata, uint256 timestamp);
+    event LaunchAcknowledged(
+        address indexed markExchange,
+        uint256 amount,
+        bool usedNativeAsset,
+        bytes metadata,
+        uint256 timestamp
+    );
     event TreasuryWithdrawal(address indexed to, uint256 amount);
     event TreasuryTokenWithdrawal(address indexed asset, address indexed to, uint256 amount);
+    event TreasuryIntakeRecorded(uint256 nativeIntakeWei, uint256 tokenIntakeWei, uint256 totalWei);
 
     string public manifestUri;
     address public markExchange;
 
-    uint256 public totalReceived;
+    uint256 private _nativeIntake;
+    uint256 private _pendingNativeAcknowledgement;
+    uint256 private _tokenIntake;
+
     uint256 public lastAcknowledgedAmount;
     bytes public lastAcknowledgedMetadata;
+    bool public lastAcknowledgedUsedNative;
 
     constructor(address owner_, string memory manifestUri_) Ownable(owner_) {
         require(owner_ != address(0), "Owner required");
@@ -50,11 +61,23 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
         _unpause();
     }
 
-    function notifyLaunch(uint256 amount, bytes calldata metadata) external whenNotPaused returns (bool) {
+    function notifyLaunch(uint256 amount, bool usedNativeAsset, bytes calldata metadata)
+        external
+        whenNotPaused
+        returns (bool)
+    {
         require(msg.sender == markExchange, "Unauthorized sender");
+        if (usedNativeAsset) {
+            require(_pendingNativeAcknowledgement >= amount, "Native receipt mismatch");
+            _pendingNativeAcknowledgement -= amount;
+        } else if (amount > 0) {
+            _tokenIntake += amount;
+        }
         lastAcknowledgedAmount = amount;
         lastAcknowledgedMetadata = metadata;
-        emit LaunchAcknowledged(msg.sender, amount, metadata, block.timestamp);
+        lastAcknowledgedUsedNative = usedNativeAsset;
+        emit LaunchAcknowledged(msg.sender, amount, usedNativeAsset, metadata, block.timestamp);
+        emit TreasuryIntakeRecorded(_nativeIntake, _tokenIntake, totalReceived());
         return true;
     }
 
@@ -76,7 +99,24 @@ contract AlphaSovereignVault is Ownable, Pausable, ReentrancyGuard {
         return address(this).balance;
     }
 
+    function totalReceived() public view returns (uint256) {
+        return _nativeIntake + _tokenIntake;
+    }
+
+    function totalReceivedNative() external view returns (uint256) {
+        return _nativeIntake;
+    }
+
+    function totalReceivedExternal() external view returns (uint256) {
+        return _tokenIntake;
+    }
+
     receive() external payable {
-        totalReceived += msg.value;
+        if (msg.value == 0) {
+            return;
+        }
+        _nativeIntake += msg.value;
+        _pendingNativeAcknowledgement += msg.value;
+        emit TreasuryIntakeRecorded(_nativeIntake, _tokenIntake, totalReceived());
     }
 }
