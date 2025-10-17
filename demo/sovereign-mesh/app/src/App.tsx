@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { getSigner } from "./lib/ethers";
 import { makeClient, qJobs } from "./lib/subgraph";
 import { prepareCommitSalt } from "./lib/commit";
