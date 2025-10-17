@@ -166,8 +166,14 @@ const recapSchema = z
           .object({
             manifestUri: z.string().optional(),
             totalReceivedWei: z.string().optional(),
+            totalReceivedNativeWei: z.string().optional(),
+            totalReceivedExternalWei: z.string().optional(),
             lastAcknowledgedAmountWei: z.string().optional(),
             decodedMetadata: z.string().optional(),
+            totalReceivedEth: z.string().optional(),
+            totalReceivedNativeEth: z.string().optional(),
+            totalReceivedExternalEth: z.string().optional(),
+            lastAcknowledgedUsedNative: z.boolean().optional(),
           })
           .passthrough()
           .optional(),
@@ -227,6 +233,7 @@ const styles = {
   accent: (text: string) => colour(text, "38;2;224;245;255"),
   muted: (text: string) => colour(text, "2;38;2;180;200;215"),
   success: (text: string) => colour(text, "1;38;2;110;255;180"),
+  info: (text: string) => colour(text, "1;38;2;130;200;255"),
   warning: (text: string) => colour(text, "1;38;2;255;210;110"),
   danger: (text: string) => colour(text, "1;38;2;255;120;120"),
 };
@@ -350,10 +357,20 @@ function renderSummary(recap: Recap): void {
     ["Launch status", launchStatus],
     ["Treasury", formatAddress(treasury)],
     [
-      "Vault received",
+      "Vault intake",
       sovereign?.totalReceivedWei
-        ? `${weiToEth(sovereign.totalReceivedWei)} ETH`
+        ? `${weiToEth(sovereign.totalReceivedWei)} units (native ${weiToEth(
+            sovereign.totalReceivedNativeWei,
+          )} | external ${weiToEth(sovereign.totalReceivedExternalWei)})`
         : "—",
+    ],
+    [
+      "Ignition mode",
+      sovereign?.lastAcknowledgedUsedNative === undefined
+        ? "—"
+        : sovereign.lastAcknowledgedUsedNative
+          ? styles.success("Native asset")
+          : styles.info("External asset"),
     ],
     ["Seed holder", formatAddress(recap.seed?.holder ?? recap.actors.owner)],
     ["Supply", recap.bondingCurve?.supplyWholeTokens ?? "n/a"],

@@ -140,6 +140,8 @@ Every demo run now emits a cinematic HTML dossier at `demo/alpha-agi-mark/report
 any browser to explore:
 
 - Mission control metrics capturing validator consensus, reserve power, and sovereign vault status
+- Dedicated gauges for native vs. external sovereign intake with ignition-mode badges so compliance teams instantly know which
+  asset underwrote the launch
 - A telemetry envelope showing network, orchestrator git metadata, actor registries, and the live recap checksum badge
 - A control-deck grid showing every owner actuator with live status badges
 - Full participant ledger plus the operator parameter matrix rendered as responsive tables

@@ -15,7 +15,7 @@ interface IAlphaMarkRiskOracle {
 }
 
 interface IAlphaSovereignVault {
-    function notifyLaunch(uint256 amount, bytes calldata metadata) external returns (bool);
+    function notifyLaunch(uint256 amount, bool usedNativeAsset, bytes calldata metadata) external returns (bool);
 }
 
 error LaunchAcknowledgementFailed(address recipient);
@@ -447,7 +447,7 @@ contract AlphaMarkEToken is ERC20, Ownable, Pausable, ReentrancyGuard {
             return;
         }
 
-        try IAlphaSovereignVault(recipient).notifyLaunch(amount, metadata) returns (bool acknowledged) {
+        try IAlphaSovereignVault(recipient).notifyLaunch(amount, usesNativeAsset, metadata) returns (bool acknowledged) {
             if (!acknowledged) {
                 revert LaunchAcknowledgementRejected(recipient);
             }
