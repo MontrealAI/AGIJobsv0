@@ -47,6 +47,7 @@ Evidence Links: insight-manifest.json, transaction hashes
 - [ ] `insight-report.html` rendered and archived with the board briefing packet.
 - [ ] `insight-owner-brief.md` countersigned for rapid-response command authority.
 - [ ] Oracle address verified via `owner:verify-control` tooling.
+- [ ] `insight-superintelligence.mmd` reviewed to confirm Meta-Agentic Tree Search + thermodynamic trigger topology matches governance expectations.
 
 ## 5. Future Extensions
 

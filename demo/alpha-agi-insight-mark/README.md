@@ -10,6 +10,7 @@
 - **Tokenised disruption** – Each α-AGI Nova-Seed is minted from the meta-agent scenarios, sealed until the owner reveals it, and can be listed or traded through α-AGI MARK with automated manifest hashing for integrity proofs.
 - **Production rigor** – The Hardhat project includes unit tests covering minting, pausing, delegated minters, fixed-price trading, fee distribution, and oracle resolution. The GitHub workflow executes the tests, runs the demo end-to-end, and verifies the generated dossiers.
 - **Regulatory superpowers** – Live repricing (`updateListingPrice`) and instant custody evacuation (`forceDelist`) ensure the owner can reshape liquidity or quarantine an asset mid-flight without downtime.
+- **Superintelligent foresight instrumentation** – The demo now surfaces composite AGI capability gauges, thermodynamic confidence bands, and a dedicated Meta-Agentic Tree Search mermaid constellation so operators can prove the machine is operating at post-human clarity.
 
 ## Quickstart
 
@@ -62,6 +63,7 @@ Running the demo produces:
 - `insight-control-matrix.json` – machine-readable owner control registry.
 - `insight-control-map.mmd` – mermaid diagram for governance briefings.
 - `insight-governance.mmd` – meta-agent swarm and sentinel orchestration schematic.
+- `insight-superintelligence.mmd` – Meta-Agentic Tree Search + thermodynamic trigger mermaid capturing the superintelligent foresight engine.
 - `insight-telemetry.log` – time-stamped agent dialogue.
 - `insight-owner-brief.md` – rapid-response owner command checklist with custody overview.
 - `insight-market-matrix.csv` – CSV dataset for financial modelling and downstream analytics.
@@ -78,3 +80,5 @@ All outputs are designed for direct inclusion in boardroom briefings and investo
 ## Integration with AGI Jobs v0 (v2)
 
 The demo is additive and does not modify existing protocol modules. It relies exclusively on the toolchain shipped with AGI Jobs v0 (v2) and is covered by a dedicated GitHub Actions workflow that enforces unit tests, the demo run, and dossier verification on pull requests targeting this directory.
+
+The orchestration demonstrates a superintelligent economic oracle under full owner command: capability gauges quantify disruption certainty, thermodynamic triggers broadcast rupture timing, and every parameter can still be paused, re-keyed, or repriced instantly from the owner console.
