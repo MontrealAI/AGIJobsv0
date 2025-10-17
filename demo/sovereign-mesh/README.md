@@ -8,6 +8,7 @@
 - **Owner governed** — the hub owner retains full control (pause, rotate governance, tune parameters) through documented, linked controls.
 - **Wallet-first empowerment** — non-technical users launch, fund, validate, and settle missions entirely from their Ethereum wallet.
 - **Production discipline** — TypeScript/React orchestrator, fully typed Node backend, Hardhat scenarios, Cypress smoke test, and CI integration keep the demo enterprise grade.
+- **Mesh intelligence** — an always-on dashboard exposes hub coverage, mission counts, and cumulative rewards so decision-makers see the scale of their orchestration at a glance.
 
 ## Directory layout
 
@@ -78,6 +79,23 @@ graph TD
   E3 -.-> C
 ```
 
+```mermaid
+sequenceDiagram
+  participant User as Mission Owner
+  participant Console as Sovereign Mesh Console
+  participant Orchestrator as Orchestrator API
+  participant Hub as Target Hub(s)
+  participant Validators as Validator Mesh
+
+  User->>Console: Choose playbook & review mission preview
+  Console->>Orchestrator: Request mission plan & intelligence summary
+  Orchestrator-->>Console: Return tx bundle + mesh metrics
+  Console->>User: Display step timeline, hub routing, rewards
+  User->>Hub: Sign createJob transactions (per mission step)
+  Validators->>Hub: Stake → Commit → Reveal → Finalize
+  Hub-->>User: Emit completion events & reward distribution
+```
+
 ## Quickstart (non-technical operator)
 
 1. **Clone + install**
@@ -118,6 +136,7 @@ graph TD
 | Section | What it delivers |
 | --- | --- |
 | **Connect & Select Hub** | Wallet-first connect button + hub selector that hydrates live jobs via The Graph. |
+| **Mission Intelligence Feed** | Planetary mesh overview (hub count, mission inventory, incentive totals) streamed from `/mesh/summary`. |
 | **Create Job** | Reward + URI form that composes a `createJob` transaction with sensible deadlines and spec hash. |
 | **Participate** | Validators stake, commit, reveal, and finalize in a human-friendly workflow (salts handled automatically). |
 | **Mission Playbooks** | One-click instantiation of multi-hub missions (jobs across hubs queued sequentially for signature). |
@@ -125,6 +144,7 @@ graph TD
 
 ## Production-grade guarantees
 
+- **Mission intelligence API** — the orchestrator now exposes `GET /mesh/summary`, aggregating hub metadata, mission totals, and reward sums (both in wei and formatted) for dashboards and monitoring pipelines.
 - **No private keys on the server** — the Express orchestrator only returns unsigned transactions; the wallet signs everything.
 - **Config-driven** — missions, hubs, actors, RPC endpoints, and presentation can be updated by editing JSON files.
 - **Typed + tested** — Hardhat scenario covers dual-hub lifecycle, Cypress assures the UI boots, TypeScript builds enforced in CI.
@@ -163,3 +183,4 @@ npx cypress run --spec demo/sovereign-mesh/cypress/e2e/sovereign-mesh.cy.ts
 - Extend playbooks with branching logic and automated dispute escalation triggers.
 
 Sovereign Mesh shows how AGI Jobs v0 (v2) becomes the command deck for planetary coordination — a non-technical user orchestrates superintelligent capabilities with clarity, safety, and unstoppable scale.
+- Fetch real-time mesh telemetry from [`GET /mesh/summary`](server/index.ts) to power analytics overlays, dashboards, and mission readiness reports.
