@@ -65,6 +65,7 @@ function main() {
     { label: "Triple-verification replay", command: "npx", args: tsNodeArgs("verifyRecap.ts") },
     { label: "Integrity dossier synthesis", command: "npx", args: tsNodeArgs("generateIntegrityReport.ts") },
     { label: "Risk lattice synthesis", command: "npx", args: tsNodeArgs("generateRiskLattice.ts") },
+    { label: "Empowerment pulse dossier", command: "npx", args: tsNodeArgs("generateEmpowermentPulse.ts") },
   ];
 
   const suiteStart = Date.now();
@@ -75,6 +76,7 @@ function main() {
   const integrityPath = path.join(demoDir, "reports", "alpha-mark-integrity.md");
   const ownerMatrixNote = "Run `npm run owner:alpha-agi-mark` to re-print the owner matrix at any time.";
   const latticePath = path.join(demoDir, "reports", "alpha-mark-risk-lattice.md");
+  const empowermentPath = path.join(demoDir, "reports", "alpha-mark-empowerment.md");
 
   const elapsed = ((Date.now() - suiteStart) / 1000).toFixed(2);
   console.log(`\n🌌 α-AGI MARK operator suite complete in ${elapsed}s.`);
@@ -82,6 +84,7 @@ function main() {
   console.log(`   • Sovereign dashboard: ${path.relative(repoRoot, dashboardPath)}`);
   console.log(`   • Integrity report: ${path.relative(repoRoot, integrityPath)}`);
   console.log(`   • Risk lattice dossier: ${path.relative(repoRoot, latticePath)}`);
+  console.log(`   • Empowerment pulse: ${path.relative(repoRoot, empowermentPath)}`);
   console.log(`   • ${ownerMatrixNote}`);
 }
 

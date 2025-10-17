@@ -98,6 +98,45 @@
         color: var(--accent);
         font-weight: 600;
       }
+      .empowerment-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+      }
+      .empowerment-card {
+        border: 1px solid rgba(96, 255, 207, 0.18);
+        border-radius: 14px;
+        padding: 1.6rem;
+        background: rgba(12, 18, 45, 0.55);
+        box-shadow: inset 0 0 0 1px rgba(96, 255, 207, 0.08);
+      }
+      .empowerment-card h3 {
+        margin-top: 0;
+        font-size: 0.95rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .metric-value {
+        font-size: 1.9rem;
+        font-weight: 600;
+        color: var(--accent);
+        margin: 0.25rem 0;
+      }
+      .metric-caption {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 0.9rem;
+      }
+      .empowerment-list {
+        list-style: none;
+        padding: 0;
+        margin: 0.9rem 0 0 0;
+        font-size: 0.85rem;
+        color: rgba(224, 245, 255, 0.85);
+      }
+      .empowerment-list li + li {
+        margin-top: 0.35rem;
+      }
       .control-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -113,6 +152,49 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 1.5rem;
+      }
+      .verification-summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem 1.25rem;
+        border-radius: 14px;
+        border: 1px solid rgba(96, 255, 207, 0.22);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .verification-summary .summary-metric {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .verification-summary .confidence-value {
+        font-size: 1.9rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+      }
+      .verification-summary .summary-verdict {
+        margin-left: auto;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .verification-summary .summary-verdict.success {
+        color: var(--success);
+        border-color: rgba(46, 204, 113, 0.6);
+        background: rgba(46, 204, 113, 0.18);
+      }
+      .verification-summary .summary-verdict.warning {
+        color: var(--warning);
+        border-color: rgba(255, 179, 71, 0.6);
+        background: rgba(255, 179, 71, 0.18);
       }
       .verification-card {
         background: rgba(255, 255, 255, 0.05);
@@ -283,7 +365,7 @@
             <span class="badge info">Dry Run</span>
             <span class="badge warning">Workspace Dirty</span>
             <span class="hero-stamp">hardhat (chainId 31337)</span>
-            <span class="hero-stamp">Generated 2025-10-17T00:07:19.581Z</span>
+            <span class="hero-stamp">Generated 2025-10-17T06:38:11.603Z</span>
           </div>
         </header>
 
@@ -294,19 +376,19 @@
             <article class="meta-card">
               <h3>Recap Envelope</h3>
               <ul>
-                <li><strong>Generated</strong>: 2025-10-17T00:07:19.581Z</li>
+                <li><strong>Generated</strong>: 2025-10-17T06:38:11.603Z</li>
                 <li><strong>Network</strong>: hardhat (chainId 31337)</li>
                 <li><strong>Chain</strong>: 31337</li>
                 <li><strong>Block</strong>: 0</li>
                 <li><strong>Dry-run mode</strong>: Enabled</li>
-                <li><strong>Checksum</strong>: <code>sha256:dbb1a7269bd3522a62b15c38be2660f1930ac5bef5c3c90bee1e9f63542cc57d</code></li>
+                <li><strong>Checksum</strong>: <code>sha256:c79f8a1af52d09b5785a4103ab3d33f4b677cdb7d65535952bd87ff05b530a71</code></li>
               </ul>
             </article>
             <article class="meta-card">
               <h3>Orchestrator</h3>
               <ul>
                 <li><strong>Mode</strong>: Dry run</li>
-                <li><strong>Commit</strong>: b6c4131c3baef4ed756322c418f9ce60ca187422</li>
+                <li><strong>Commit</strong>: 75372aa7896adefa34e8979283019fa2546fd110</li>
                 <li><strong>Branch</strong>: work</li>
                 <li><strong>Workspace dirty</strong>: Yes</li>
               </ul>
@@ -321,6 +403,51 @@
             </article>
           </div>
         </section>
+  
+
+        
+    <section>
+      <h2>Operator Empowerment Constellation</h2>
+      <p>AGI Jobs orchestrated 22 mission events from 1 command, sustaining 100.00% confidence across 4/4 invariants.</p>
+      <div class="empowerment-grid">
+        <article class="empowerment-card">
+          <h3>Automation</h3>
+          <p class="metric-value">22.00×</p>
+          <p class="metric-caption">22 orchestrated actions from 1 command</p>
+        </article>
+        <article class="empowerment-card">
+          <h3>Assurance</h3>
+          <p class="metric-value">100.00%</p>
+          <p class="metric-caption">4/4 checks · Validators 2/2</p>
+        </article>
+        <article class="empowerment-card">
+          <h3>Capital Formation</h3>
+          <p class="metric-value">4.5</p>
+          <p class="metric-caption">3 participants · Reserve 0.0</p>
+        </article>
+        <article class="empowerment-card">
+          <h3>Command Deck</h3>
+          <p class="metric-value">16</p>
+          <p class="metric-caption">Owner actuators catalogued in the parameter matrix.</p>
+          
+        <ul class="empowerment-list">
+          
+        <li><code>pauseMarket</code></li>
+      
+
+        <li><code>whitelistEnabled</code></li>
+      
+
+        <li><code>emergencyExitEnabled</code></li>
+      
+
+        <li><code>validationOverrideEnabled</code></li>
+      
+        </ul>
+      
+        </article>
+      </div>
+    </section>
   
 
         
@@ -362,7 +489,7 @@ timeline
     section Launch
       ✨ Sovereign ignition finalized (Owner (0xf39F…2266)) : Funds transferred to the vault with ignition metadata recorded
     section Verification
-      ✅ Triple-verification matrix aligned : Ledger, simulation, and on-chain state reconcile 1\:1
+      ✅ Triple-verification matrix aligned : Ledger, simulation, and on-chain state reconcile 4/4 checks (100.00% confidence)
     section Mission Control
       🧾 Recap dossier synthesis : Preparing sovereign dashboard, owner matrix, and recap digest
       </pre>
@@ -563,7 +690,7 @@ timeline
           <td>21</td>
           <td>Verification</td>
           <td>✅ Triple-verification matrix aligned</td>
-          <td>Ledger, simulation, and on-chain state reconcile 1:1</td>
+          <td>Ledger, simulation, and on-chain state reconcile 4/4 checks (100.00% confidence)</td>
           <td>—</td>
         </tr>
       
@@ -630,6 +757,15 @@ timeline
         Independent ledgers, on-chain state introspection, and first-principles math cross-check the sovereign launch
         in real time.
       </p>
+      
+      <div class="verification-summary">
+        <div class="summary-metric">
+          <span class="confidence-value">100.00%</span>
+          confidence (4/4 checks)
+        </div>
+        <div class="summary-verdict success">PASS</div>
+      </div>
+    
       <div class="verification-grid">
         
         <article class="verification-card">
