@@ -26,6 +26,17 @@ The script:
 4. Lists the first two seeds on α-AGI MARK, reprices them live, processes a trade, force-delists the second to sentinel custody, resolves a prediction, drills the delegated sentinel pause/unpause flow, and logs telemetry.
 5. Generates Markdown/JSON dossiers under `demo/alpha-agi-insight-mark/reports/` with SHA-256 manifests for audit trails.
 
+### Integrity Verification
+
+```bash
+npm run verify:alpha-agi-insight-mark
+```
+
+The verifier replays every CI dossier check locally: it validates the manifest fingerprints, ensures recap/telemetry payloads
+exist, confirms the executive HTML dashboard and Markdown brief include all superintelligence sections, and asserts that the
+owner control matrix and mermaid schematics enumerate the sentinel, oracle and exchange surfaces. Non-technical operators get a
+single ✅/❌ gate before sharing artefacts with stakeholders.
+
 Set `AGIJOBS_DEMO_DRY_RUN=false` to enable the explicit launch confirmation prompt before broadcasting to a live network. Custom networks can be targeted via:
 
 - `INSIGHT_MARK_NETWORK`
