@@ -33,6 +33,7 @@ Watch the console for emoji-tagged telemetry such as:
 Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 
 - `insight-report.md` – executive summary (ready to paste into investor decks).
+- `insight-report.html` – polished executive dashboard with timeline and confidence bars for board briefings.
 - `insight-control-matrix.json` – machine-readable owner control inventory.
 - `insight-control-map.mmd` – mermaid diagram (render via https://mermaid.live/).
 - `insight-manifest.json` – SHA-256 hashes; re-run the demo and confirm hashes change only when artefacts change.

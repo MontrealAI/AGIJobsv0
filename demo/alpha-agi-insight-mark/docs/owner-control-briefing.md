@@ -42,6 +42,7 @@ Evidence Links: insight-manifest.json, transaction hashes
 - [ ] `insight-manifest.json` hashes verified and stored in evidence vault.
 - [ ] Telemetry log reviewed for anomalies.
 - [ ] `insight-control-matrix.json` imported into owner dashboard.
+- [ ] `insight-report.html` rendered and archived with the board briefing packet.
 - [ ] Oracle address verified via `owner:verify-control` tooling.
 
 ## 5. Future Extensions
