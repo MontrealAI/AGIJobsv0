@@ -2,38 +2,45 @@ import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
 
-const GOVERNANCE_SAFE = process.env.GOVERNANCE_SAFE;
-
-if (!GOVERNANCE_SAFE) {
-  throw new Error("GOVERNANCE_SAFE environment variable must be set");
-}
-
-const ABI = ["function setGovernance(address)", "function transferOwnership(address)"];
+const hubsPath = path.join(__dirname, "..", "config", "hubs.mainnet.json");
 
 async function main() {
-  const hubsPath = path.join(__dirname, "../config/hubs.mainnet.json");
-  const hubs = JSON.parse(fs.readFileSync(hubsPath, "utf8")) as Record<string, any>;
+  const newOwner = process.env.GOVERNANCE_SAFE;
+  if (!newOwner) {
+    throw new Error("Set GOVERNANCE_SAFE to the Safe / governance address.");
+  }
+  if (!fs.existsSync(hubsPath)) {
+    throw new Error("hubs.mainnet.json not found. Deploy hubs first.");
+  }
+  const hubs = JSON.parse(fs.readFileSync(hubsPath, "utf8"));
+  const iface = new ethers.Interface([
+    "function setGovernance(address)",
+    "function transferOwnership(address)"
+  ]);
   const [signer] = await ethers.getSigners();
-
-  for (const [hubKey, details] of Object.entries(hubs)) {
-    for (const [moduleName, address] of Object.entries(details.addresses)) {
-      if (!address || address === "0x0000000000000000000000000000000000000000") continue;
-      const contract = new ethers.Contract(address as string, ABI, signer);
+  for (const hubKey of Object.keys(hubs)) {
+    const addresses = hubs[hubKey].addresses as Record<string, string>;
+    for (const [label, addr] of Object.entries(addresses)) {
+      if (!addr || addr === ethers.ZeroAddress) continue;
+      const contract = new ethers.Contract(addr, iface, signer);
       try {
-        const tx = await contract.setGovernance(GOVERNANCE_SAFE);
+        const tx = await contract.setGovernance(newOwner);
         await tx.wait();
-        console.log(`[${hubKey}] ${moduleName} → governance set to ${GOVERNANCE_SAFE}`);
+        console.log(`setGovernance(${hubKey}.${label}) -> ${newOwner}`);
         continue;
-      } catch {}
-      try {
-        const tx = await contract.transferOwnership(GOVERNANCE_SAFE);
-        await tx.wait();
-        console.log(`[${hubKey}] ${moduleName} → ownership transferred to ${GOVERNANCE_SAFE}`);
       } catch (error) {
-        console.warn(`[${hubKey}] ${moduleName} skipped: ${(error as Error).message}`);
+        // ignore, try transferOwnership
+      }
+      try {
+        const tx = await contract.transferOwnership(newOwner);
+        await tx.wait();
+        console.log(`transferOwnership(${hubKey}.${label}) -> ${newOwner}`);
+      } catch (error) {
+        console.log(`Skipped ${hubKey}.${label} — no governance method.`);
       }
     }
   }
+  console.log("Governance rotation complete.");
 }
 
 main().catch((error) => {
