@@ -1,42 +1,70 @@
-import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
+import { ethers } from "hardhat";
 
-const GOVERNANCE_SAFE = process.env.GOVERNANCE_SAFE;
+const HUBS_FILE = path.join(__dirname, "../config/hubs.mainnet.json");
+const TARGETS = [
+  "StakeManager",
+  "JobRegistry",
+  "ValidationModule",
+  "ReputationEngine",
+  "DisputeModule",
+  "CertificateNFT",
+  "PlatformRegistry",
+  "JobRouter",
+  "PlatformIncentives",
+  "FeePool",
+  "TaxPolicy",
+  "IdentityRegistry",
+  "SystemPause",
+];
 
-if (!GOVERNANCE_SAFE) {
-  throw new Error("GOVERNANCE_SAFE environment variable must be set");
+const NEW_OWNER = process.env.GOVERNANCE_SAFE;
+
+if (!NEW_OWNER) {
+  throw new Error("Set GOVERNANCE_SAFE to the target owner address");
 }
 
-const ABI = ["function setGovernance(address)", "function transferOwnership(address)"];
-
 async function main() {
-  const hubsPath = path.join(__dirname, "../config/hubs.mainnet.json");
-  const hubs = JSON.parse(fs.readFileSync(hubsPath, "utf8")) as Record<string, any>;
-  const [signer] = await ethers.getSigners();
+  const hubs = JSON.parse(fs.readFileSync(HUBS_FILE, "utf8"));
+  const [operator] = await ethers.getSigners();
+  const iface = new ethers.Interface([
+    "function setGovernance(address)",
+    "function transferOwnership(address)",
+  ]);
 
-  for (const [hubKey, details] of Object.entries(hubs)) {
-    for (const [moduleName, address] of Object.entries(details.addresses)) {
-      if (!address || address === "0x0000000000000000000000000000000000000000") continue;
-      const contract = new ethers.Contract(address as string, ABI, signer);
+  for (const hubId of Object.keys(hubs)) {
+    const hub = hubs[hubId];
+    console.log(`\nRotating governance for hub: ${hub.label || hubId}`);
+    for (const key of TARGETS) {
+      const address = hub.addresses?.[key];
+      if (!address || address === ethers.ZeroAddress) continue;
+      const contract = new ethers.Contract(address, iface, operator);
+      let updated = false;
       try {
-        const tx = await contract.setGovernance(GOVERNANCE_SAFE);
+        const tx = await contract.setGovernance(NEW_OWNER);
         await tx.wait();
-        console.log(`[${hubKey}] ${moduleName} → governance set to ${GOVERNANCE_SAFE}`);
-        continue;
-      } catch {}
-      try {
-        const tx = await contract.transferOwnership(GOVERNANCE_SAFE);
-        await tx.wait();
-        console.log(`[${hubKey}] ${moduleName} → ownership transferred to ${GOVERNANCE_SAFE}`);
-      } catch (error) {
-        console.warn(`[${hubKey}] ${moduleName} skipped: ${(error as Error).message}`);
+        console.log(`  setGovernance(${key}) -> ${NEW_OWNER}`);
+        updated = true;
+      } catch (err) {
+        try {
+          const tx = await contract.transferOwnership(NEW_OWNER);
+          await tx.wait();
+          console.log(`  transferOwnership(${key}) -> ${NEW_OWNER}`);
+          updated = true;
+        } catch (inner) {
+          console.warn(`  Skipped ${key}: ${(inner as Error).message}`);
+        }
+      }
+      if (!updated) {
+        // Already logged warning
       }
     }
   }
+  console.log("Governance rotation complete");
 }
 
 main().catch((error) => {
   console.error(error);
-  process.exitCode = 1;
+  process.exit(1);
 });

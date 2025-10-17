@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ethers } from "ethers";
 import { getSigner } from "./lib/ethers";
-import { makeClient, qJobs } from "./lib/subgraph";
-import { prepareCommitSalt } from "./lib/commit";
-import { short } from "./lib/format";
+import { createClient, JOBS_QUERY } from "./lib/subgraph";
+import { computeCommit } from "./lib/commit";
+import { shortAddress } from "./lib/format";
 
 type MeshConfig = {
   network: string;
@@ -12,7 +13,7 @@ type MeshConfig = {
   hubs: string[];
 };
 
-type HubDetails = {
+type HubConfig = {
   label: string;
   rpcUrl: string;
   subgraphUrl?: string;
@@ -20,501 +21,561 @@ type HubDetails = {
 };
 
 type JobsResponse = {
-  jobs: JobFragment[];
+  jobs: Array<{
+    id: string;
+    employer: string;
+    reward: string;
+    uri: string;
+    status: string;
+    validators?: Array<{ account: string }>;
+  }>;
 };
 
-type JobFragment = {
-  id: string;
-  employer: string;
-  reward: string;
-  uri: string;
-  status: string;
-  validators?: { account: string }[];
-};
-
-type Playbook = {
-  id: string;
-  name: string;
-  description?: string;
-  steps: { hub: string; rewardWei: string; uri: string }[];
-};
-
-type Actor = {
-  id: string;
-  flag: string;
-  name: string;
-};
-
-const fetchJson = async <T,>(url: string, options?: RequestInit): Promise<T> => {
+const jsonFetch = async <T,>(url: string, init?: RequestInit) => {
   const res = await fetch(url, {
     headers: { "content-type": "application/json" },
-    ...options
+    ...init,
   });
   if (!res.ok) {
-    throw new Error(`Request failed: ${res.status}`);
+    const body = await res.text();
+    throw new Error(body || res.statusText);
   }
   return (await res.json()) as T;
 };
 
-const DEFAULT_ORCHESTRATOR =
-  (import.meta.env.VITE_ORCHESTRATOR_BASE as string | undefined) || "http://localhost:8084";
+const numberFormat = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 2,
+});
 
-const gradientCard: React.CSSProperties = {
-  background: "linear-gradient(135deg, rgba(59,130,246,0.22), rgba(236,72,153,0.18))",
-  border: "1px solid rgba(148,163,184,0.2)",
-  borderRadius: 24,
-  padding: 24,
-  display: "flex",
-  flexDirection: "column",
-  gap: 12
+const rewardFormat = (value: string) => {
+  try {
+    const formatted = Number(value) / 1e18;
+    return `${numberFormat.format(formatted)} AGIA`;
+  } catch (err) {
+    return value;
+  }
 };
 
-export default function App(): JSX.Element {
-  const [cfg, setCfg] = useState<MeshConfig>();
-  const [orchestratorBase, setOrchestratorBase] = useState<string>(DEFAULT_ORCHESTRATOR);
-  const [hubMap, setHubMap] = useState<Record<string, HubDetails>>({});
-  const [hubOrder, setHubOrder] = useState<string[]>([]);
-  const [actors, setActors] = useState<Actor[]>([]);
-  const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => (
+  <section style={{ marginTop: 24 }}>
+    <h2 style={{ marginBottom: 12 }}>{title}</h2>
+    {children}
+  </section>
+);
+
+const labelStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 4,
+};
+
+const controlStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  flexWrap: "wrap",
+};
+
+const inputStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  borderRadius: 6,
+  border: "1px solid #cbd5f5",
+  fontFamily: "inherit",
+  fontSize: 14,
+};
+
+const buttonStyle: React.CSSProperties = {
+  background: "#111827",
+  color: "#f9fafb",
+  borderRadius: 8,
+  padding: "10px 16px",
+  border: "none",
+  cursor: "pointer",
+  fontWeight: 600,
+};
+
+const selectStyle: React.CSSProperties = {
+  ...inputStyle,
+  minWidth: 220,
+};
+
+const tableStyle: React.CSSProperties = {
+  width: "100%",
+  borderCollapse: "collapse",
+  marginTop: 12,
+};
+
+const thStyle: React.CSSProperties = {
+  textAlign: "left",
+  fontSize: 13,
+  color: "#6b7280",
+  borderBottom: "1px solid #e5e7eb",
+  padding: "8px 4px",
+};
+
+const tdStyle: React.CSSProperties = {
+  padding: "10px 4px",
+  fontSize: 14,
+  borderBottom: "1px solid #f1f5f9",
+};
+
+const paragraphStyle: React.CSSProperties = {
+  lineHeight: 1.6,
+  color: "#1f2937",
+  maxWidth: 900,
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "linear-gradient(135deg, #eef2ff, #f0fdfa)",
+  padding: 20,
+  borderRadius: 16,
+  border: "1px solid rgba(79,70,229,0.12)",
+  marginBottom: 24,
+  boxShadow: "0 20px 45px -35px rgba(79,70,229,0.6)",
+};
+
+const App: React.FC = () => {
+  const [config, setConfig] = useState<MeshConfig>();
+  const [hubMap, setHubMap] = useState<Record<string, HubConfig>>({});
+  const [hubList, setHubList] = useState<string[]>([]);
+  const [account, setAccount] = useState<string>();
+  const [actors, setActors] = useState<Array<{ id: string; name: string; flag: string }>>([]);
+  const [playbooks, setPlaybooks] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedHub, setSelectedHub] = useState<string>("");
-  const [jobs, setJobs] = useState<JobFragment[]>([]);
-  const [connected, setConnected] = useState<string>();
-  const [reward, setReward] = useState<string>("1000000000000000000");
-  const [uri, setUri] = useState<string>("ipfs://mesh/spec");
+  const [jobs, setJobs] = useState<JobsResponse["jobs"]>([]);
+  const [rewardWei, setRewardWei] = useState<string>("1000000000000000000");
+  const [jobUri, setJobUri] = useState<string>("ipfs://mesh/spec");
   const [jobId, setJobId] = useState<string>("");
   const [approve, setApprove] = useState<boolean>(true);
   const [selectedPlaybook, setSelectedPlaybook] = useState<string>("");
-  const [statusMessage, setStatusMessage] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [status, setStatus] = useState<string>("");
 
   useEffect(() => {
-    const bootstrap = async () => {
-      try {
-        const cfgResp = await fetchJson<MeshConfig>(`${DEFAULT_ORCHESTRATOR}/mesh/config`);
-        const resolvedBase = cfgResp.orchestratorBase || DEFAULT_ORCHESTRATOR;
-        const [hubsResp, actorsResp, playbooksResp] = await Promise.all([
-          fetchJson<{ hubs: Record<string, HubDetails> }>(`${resolvedBase}/mesh/hubs`),
-          fetchJson<Actor[]>(`${resolvedBase}/mesh/actors`),
-          fetchJson<Playbook[]>(`${resolvedBase}/mesh/playbooks`)
-        ]);
-        setCfg({ ...cfgResp, orchestratorBase: resolvedBase });
-        setOrchestratorBase(resolvedBase);
-        setHubMap(hubsResp.hubs);
-        setHubOrder(Object.keys(hubsResp.hubs));
-        setActors(actorsResp);
-        setPlaybooks(playbooksResp);
-        if (Object.keys(hubsResp.hubs).length > 0) {
-          setSelectedHub(Object.keys(hubsResp.hubs)[0]);
-        }
-      } catch (error) {
-        setStatusMessage(`Failed to load configuration: ${(error as Error).message}`);
-      }
-    };
-    bootstrap().catch((err) => setStatusMessage(String(err)));
+    (async () => {
+      const cfg = await jsonFetch<MeshConfig>("/mesh/config");
+      setConfig(cfg);
+      const hubResponse = await jsonFetch<{ hubs: Record<string, HubConfig> }>("/mesh/hubs");
+      setHubMap(hubResponse.hubs);
+      setHubList(cfg.hubs.filter((id) => hubResponse.hubs[id]));
+      const actorResponse = await jsonFetch<Array<{ id: string; name: string; flag: string }>>(
+        "/mesh/actors",
+      );
+      setActors(actorResponse);
+      const pbResponse = await jsonFetch<Array<{ id: string; name: string }>>(
+        "/mesh/playbooks",
+      );
+      setPlaybooks(pbResponse);
+    })().catch((err) => {
+      console.error(err);
+      setStatus(`Failed to load mesh configuration: ${err.message}`);
+    });
   }, []);
 
+  const activeHub = useMemo(() => (selectedHub ? hubMap[selectedHub] : undefined), [
+    selectedHub,
+    hubMap,
+  ]);
+
   useEffect(() => {
-    const refresh = async () => {
-      if (!cfg || !selectedHub) return;
-      const hub = hubMap[selectedHub];
-      if (!hub) return;
+    if (!config || !selectedHub) return;
+    const hub = hubMap[selectedHub];
+    if (!hub) return;
+    const subgraphUrl = hub.subgraphUrl ?? config.defaultSubgraphUrl;
+    (async () => {
       try {
-        const client = makeClient(hub.subgraphUrl || cfg.defaultSubgraphUrl);
-        const data = await client.request<JobsResponse>(qJobs);
+        const client = createClient(subgraphUrl);
+        const data = await client.request<JobsResponse>(JOBS_QUERY);
         setJobs(data.jobs ?? []);
-      } catch (error) {
-        setStatusMessage(`Unable to load jobs: ${(error as Error).message}`);
+      } catch (err) {
+        console.error(err);
         setJobs([]);
       }
-    };
-    refresh().catch((err) => setStatusMessage(String(err)));
-  }, [cfg, hubMap, selectedHub]);
-
-  const currentHub = selectedHub ? hubMap[selectedHub] : undefined;
-  const etherscanBase = cfg?.etherscanBase ?? "https://etherscan.io";
+    })();
+  }, [config, selectedHub, hubMap]);
 
   const connectWallet = async () => {
     try {
       const signer = await getSigner();
-      const addr = await signer.getAddress();
-      setConnected(addr);
-      setStatusMessage(`Connected wallet ${short(addr)}`);
-    } catch (error) {
-      setStatusMessage(`Wallet connection failed: ${(error as Error).message}`);
+      const address = await signer.getAddress();
+      setAccount(address);
+      setStatus(`Connected ${address}`);
+    } catch (err) {
+      setStatus((err as Error).message);
     }
   };
 
-  const invokeTx = async <T,>(endpoint: string, payload: T) => {
-    if (!selectedHub && !endpoint.startsWith("/mesh/plan")) {
+  const submitTx = async (endpoint: string, payload: Record<string, unknown>) => {
+    if (!selectedHub) {
       throw new Error("Select a hub first");
     }
-    const base = orchestratorBase || DEFAULT_ORCHESTRATOR;
-    const url = endpoint.startsWith("http") ? endpoint : `${base}${endpoint}`;
-    return fetchJson<{ tx: { to: string; data: string; value: number } } | { txs: any[] }>(
-      url,
-      {
-        method: "POST",
-        body: JSON.stringify(payload)
-      }
-    );
+    const base = config?.orchestratorBase ?? "";
+    const url = `${base}/mesh/${selectedHub}${endpoint}`;
+    return jsonFetch<{ tx: { to: string; data: string; value: string | number } }>(url, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   };
 
-  const executeTx = async (tx: { to: string; data: string; value: number }) => {
-    const signer = await getSigner();
-    const response = await signer.sendTransaction(tx);
-    await response.wait();
-    return response.hash;
-  };
-
-  const createJob = async () => {
+  const handleCreateJob = async () => {
     try {
-      if (!selectedHub) throw new Error("Select a hub first");
-      const payload = await invokeTx(`/mesh/${selectedHub}/tx/create`, {
-        rewardWei: reward,
-        uri
+      setLoading(true);
+      const response = await submitTx("/tx/create", {
+        rewardWei,
+        uri: jobUri,
       });
-      if (!("tx" in payload)) throw new Error("Malformed response");
-      const hash = await executeTx(payload.tx);
-      setStatusMessage(`Job created on ${selectedHub} — ${hash}`);
-    } catch (error) {
-      setStatusMessage(`Create job failed: ${(error as Error).message}`);
-    }
-  };
-
-  const stake = async (role: number, amountWei: string) => {
-    try {
-      if (!selectedHub) throw new Error("Select a hub first");
-      const payload = await invokeTx(`/mesh/${selectedHub}/tx/stake`, {
-        role,
-        amountWei
-      });
-      if (!("tx" in payload)) throw new Error("Malformed response");
-      const hash = await executeTx(payload.tx);
-      setStatusMessage(`Stake confirmed on ${selectedHub} — ${hash}`);
-    } catch (error) {
-      setStatusMessage(`Stake failed: ${(error as Error).message}`);
-    }
-  };
-
-  const commit = async () => {
-    try {
-      if (!selectedHub) throw new Error("Select a hub first");
-      if (!jobId) throw new Error("Provide a job ID");
-      if (!connected) throw new Error("Connect a wallet first");
-      const { salt } = prepareCommitSalt();
-      localStorage.setItem(`sovereign-mesh::${selectedHub}::${jobId}::${connected}`, salt);
-      const payload = await invokeTx(`/mesh/${selectedHub}/tx/commit`, {
-        jobId: Number(jobId),
-        approve,
-        salt,
-        validator: connected,
-        subdomain: "validator",
-        proof: []
-      });
-      if (!("tx" in payload)) throw new Error("Malformed response");
-      const hash = await executeTx(payload.tx);
-      setStatusMessage(`Commit submitted for job ${jobId} — ${hash}`);
-    } catch (error) {
-      setStatusMessage(`Commit failed: ${(error as Error).message}`);
-    }
-  };
-
-  const reveal = async () => {
-    try {
-      if (!selectedHub) throw new Error("Select a hub first");
-      if (!jobId) throw new Error("Provide a job ID");
-      const key = `sovereign-mesh::${selectedHub}::${jobId}::${connected}`;
-      const salt = localStorage.getItem(key);
-      if (!salt) throw new Error("Commit salt not found locally. Commit before reveal.");
-      const payload = await invokeTx(`/mesh/${selectedHub}/tx/reveal`, {
-        jobId: Number(jobId),
-        approve,
-        salt,
-        subdomain: "validator",
-        proof: []
-      });
-      if (!("tx" in payload)) throw new Error("Malformed response");
-      const hash = await executeTx(payload.tx);
-      setStatusMessage(`Reveal submitted for job ${jobId} — ${hash}`);
-    } catch (error) {
-      setStatusMessage(`Reveal failed: ${(error as Error).message}`);
-    }
-  };
-
-  const finalize = async () => {
-    try {
-      if (!selectedHub) throw new Error("Select a hub first");
-      if (!jobId) throw new Error("Provide a job ID");
-      const payload = await invokeTx(`/mesh/${selectedHub}/tx/finalize`, {
-        jobId: Number(jobId)
-      });
-      if (!("tx" in payload)) throw new Error("Malformed response");
-      const hash = await executeTx(payload.tx);
-      setStatusMessage(`Finalize executed for job ${jobId} — ${hash}`);
-    } catch (error) {
-      setStatusMessage(`Finalize failed: ${(error as Error).message}`);
-    }
-  };
-
-  const allowlist = async (role: number) => {
-    try {
-      if (!selectedHub) throw new Error("Select a hub first");
-      if (!connected) throw new Error("Connect wallet first");
-      const payload = await invokeTx(`/mesh/${selectedHub}/tx/allowlist`, {
-        role,
-        addr: connected
-      });
-      if (!("tx" in payload)) throw new Error("Malformed response");
-      const hash = await executeTx(payload.tx);
-      setStatusMessage(`Dev allowlist transaction confirmed — ${hash}`);
-    } catch (error) {
-      setStatusMessage(`Allowlist failed: ${(error as Error).message}`);
-    }
-  };
-
-  const instantiateMission = async () => {
-    try {
-      if (!selectedPlaybook) throw new Error("Choose a mission playbook");
-      const payload = await invokeTx(`/mesh/plan/instantiate`, {
-        playbookId: selectedPlaybook
-      });
-      if (!("txs" in payload)) throw new Error("Malformed response");
       const signer = await getSigner();
-      for (const tx of payload.txs) {
-        const resp = await signer.sendTransaction(tx);
-        await resp.wait();
-      }
-      setStatusMessage(`Mission ${selectedPlaybook} launched across ${payload.txs.length} hubs.`);
-    } catch (error) {
-      setStatusMessage(`Mission launch failed: ${(error as Error).message}`);
+      const tx = await signer.sendTransaction(response.tx);
+      await tx.wait();
+      setStatus(`Job created on ${selectedHub}: ${tx.hash}`);
+    } catch (err) {
+      setStatus((err as Error).message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const activePlaybook = useMemo(
-    () => playbooks.find((pb) => pb.id === selectedPlaybook),
-    [playbooks, selectedPlaybook]
-  );
+  const handleStake = async () => {
+    try {
+      setLoading(true);
+      const response = await submitTx("/tx/stake", {
+        role: 1,
+        amountWei: "1000000000000000000",
+      });
+      const signer = await getSigner();
+      const tx = await signer.sendTransaction(response.tx);
+      await tx.wait();
+      setStatus(`Staked as validator on ${selectedHub}`);
+    } catch (err) {
+      setStatus((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCommit = async () => {
+    try {
+      if (!jobId) throw new Error("Enter a job id");
+      if (!account) throw new Error("Connect wallet first");
+      setLoading(true);
+      const { commitHash, salt } = computeCommit(approve);
+      localStorage.setItem(`mesh_salt_${selectedHub}_${jobId}_${account}`, salt);
+      const response = await submitTx("/tx/commit", {
+        jobId: Number(jobId),
+        commitHash,
+        subdomain: "validator",
+        proof: [],
+      });
+      const signer = await getSigner();
+      const tx = await signer.sendTransaction(response.tx);
+      await tx.wait();
+      setStatus(`Commit accepted on ${selectedHub}`);
+    } catch (err) {
+      setStatus((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReveal = async () => {
+    try {
+      if (!jobId) throw new Error("Enter a job id");
+      if (!account) throw new Error("Connect wallet first");
+      setLoading(true);
+      const salt = localStorage.getItem(`mesh_salt_${selectedHub}_${jobId}_${account}`);
+      if (!salt) throw new Error("Commit not found for this job");
+      const response = await submitTx("/tx/reveal", {
+        jobId: Number(jobId),
+        approve,
+        salt,
+      });
+      const signer = await getSigner();
+      const tx = await signer.sendTransaction(response.tx);
+      await tx.wait();
+      setStatus(`Reveal recorded on ${selectedHub}`);
+    } catch (err) {
+      setStatus((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinalize = async () => {
+    try {
+      if (!jobId) throw new Error("Enter a job id");
+      setLoading(true);
+      const response = await submitTx("/tx/finalize", {
+        jobId: Number(jobId),
+      });
+      const signer = await getSigner();
+      const tx = await signer.sendTransaction(response.tx);
+      await tx.wait();
+      setStatus(`Finalized job ${jobId}`);
+    } catch (err) {
+      setStatus((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMission = async () => {
+    if (!selectedPlaybook) {
+      setStatus("Select a mission first");
+      return;
+    }
+    try {
+      setLoading(true);
+      const base = config?.orchestratorBase ?? "";
+      const response = await jsonFetch<{ txs: Array<{ to: string; data: string; value: string | number }> }>(
+        `${base}/mesh/plan/instantiate`,
+        {
+          method: "POST",
+          body: JSON.stringify({ playbookId: selectedPlaybook }),
+        },
+      );
+      const signer = await getSigner();
+      for (const txData of response.txs) {
+        const tx = await signer.sendTransaction(txData);
+        await tx.wait();
+      }
+      setStatus(`Mission ${selectedPlaybook} instantiated across ${response.txs.length} jobs`);
+    } catch (err) {
+      setStatus((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAllowlist = async () => {
+    try {
+      setLoading(true);
+      const response = await submitTx("/tx/allowlist", {
+        role: 1,
+        addr: account,
+      });
+      const signer = await getSigner();
+      const tx = await signer.sendTransaction(response.tx);
+      await tx.wait();
+      setStatus("Validator allowlisted (dev helper)");
+    } catch (err) {
+      setStatus((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ownerLinks = useMemo(() => {
+    if (!config) return [];
+    return hubList.map((id) => {
+      const hub = hubMap[id];
+      if (!hub) return null;
+      const base = `${config.etherscanBase}/address`;
+      const addresses = hub.addresses;
+      const links: Array<{ label: string; url: string }> = [
+        { label: "ValidationModule", url: `${base}/${addresses.ValidationModule}#writeContract` },
+        { label: "JobRegistry", url: `${base}/${addresses.JobRegistry}#writeContract` },
+        { label: "StakeManager", url: `${base}/${addresses.StakeManager}#writeContract` },
+        { label: "IdentityRegistry", url: `${base}/${addresses.IdentityRegistry}#writeContract` },
+      ];
+      if (addresses.FeePool && addresses.FeePool !== ethers.ZeroAddress) {
+        links.push({ label: "FeePool", url: `${base}/${addresses.FeePool}#writeContract` });
+      }
+      if (addresses.SystemPause && addresses.SystemPause !== ethers.ZeroAddress) {
+        links.push({ label: "SystemPause", url: `${base}/${addresses.SystemPause}#writeContract` });
+      }
+      return { id, label: hub.label, links };
+    }).filter(Boolean) as Array<{ id: string; label: string; links: Array<{ label: string; url: string }> }>;
+  }, [config, hubList, hubMap]);
 
   return (
     <div
       style={{
-        padding: "48px 32px 96px",
+        fontFamily: "'Inter', 'Segoe UI', sans-serif",
+        padding: 32,
         maxWidth: 1280,
-        margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: 32
+        margin: "0 auto 120px",
       }}
     >
-      <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h1 style={{ fontSize: 44, margin: 0 }}>
-            🕸️ Sovereign Mesh
-            <span style={{ display: "block", fontSize: 18, color: "#94a3b8", fontWeight: 400 }}>
-              Planetary network-of-networks mission console
-            </span>
-          </h1>
-          <button onClick={connectWallet}>
-            {connected ? `Connected · ${short(connected)}` : "Connect Wallet"}
-          </button>
-        </div>
-        <p style={{ lineHeight: 1.6, maxWidth: 820, color: "#cbd5f5" }}>
-          Launch foresight, research, optimization, and knowledge jobs across AGI Jobs v2 hubs in seconds. Every
-          transaction is signed by your wallet; every module remains owner-governed.
+      <header style={cardStyle}>
+        <h1 style={{ fontSize: 36, marginBottom: 12 }}>
+          🕸️ Sovereign Mesh – Beyond Civic Exocortex
+        </h1>
+        <p style={paragraphStyle}>
+          Launch foresight, research, optimization, and knowledge missions across sovereign hubs with a
+          single intent. Wallets stay in control, owners retain full parameter authority, and validators
+          receive handrails for staking, commit/reveal, and dispute escalation.
         </p>
-        {statusMessage && (
-          <div
-            style={{
-              background: "rgba(15,23,42,0.75)",
-              border: "1px solid rgba(56,189,248,0.35)",
-              padding: "12px 16px",
-              borderRadius: 16,
-              color: "#e2f3ff"
-            }}
-          >
-            {statusMessage}
-          </div>
-        )}
-      </section>
-
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
-        <div style={gradientCard}>
-          <span style={{ fontSize: 12, letterSpacing: "0.08em", color: "#cbd5f5" }}>Hub selection</span>
+        <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <button style={buttonStyle} onClick={connectWallet} disabled={loading}>
+            {account ? `Connected ${shortAddress(account)}` : "Connect Wallet"}
+          </button>
           <select
+            style={selectStyle}
             value={selectedHub}
-            onChange={(event) => setSelectedHub(event.target.value)}
-            style={{ fontSize: 16 }}
+            onChange={(e) => setSelectedHub(e.target.value)}
           >
-            {hubOrder.map((hub) => (
+            <option value="">— Choose Hub —</option>
+            {hubList.map((hub) => (
               <option key={hub} value={hub}>
                 {hubMap[hub]?.label ?? hub}
               </option>
             ))}
           </select>
-          <div style={{ fontSize: 13, color: "#e2e8f0" }}>
-            Network: <strong>{cfg?.network ?? ""}</strong>
-          </div>
-          <div style={{ fontSize: 13, color: "#e2e8f0" }}>
-            Validators stake, commit, reveal, and finalize within each sovereign hub.
-          </div>
+          <label style={labelStyle}>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Reward (wei)</span>
+            <input
+              style={{ ...inputStyle, minWidth: 220 }}
+              value={rewardWei}
+              onChange={(e) => setRewardWei(e.target.value)}
+            />
+          </label>
+          <label style={labelStyle}>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Spec URI</span>
+            <input
+              style={{ ...inputStyle, minWidth: 320 }}
+              value={jobUri}
+              onChange={(e) => setJobUri(e.target.value)}
+            />
+          </label>
+          <button style={buttonStyle} onClick={handleCreateJob} disabled={loading || !selectedHub}>
+            Create Job
+          </button>
+          <button
+            style={{ ...buttonStyle, background: "#3730a3" }}
+            onClick={handleAllowlist}
+            disabled={loading || !selectedHub || !account}
+          >
+            Dev: Allowlist Validator
+          </button>
         </div>
-        <div style={gradientCard}>
-          <span style={{ fontSize: 12, letterSpacing: "0.08em", color: "#cbd5f5" }}>Create job</span>
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span>Reward (wei)</span>
-            <input value={reward} onChange={(event) => setReward(event.target.value)} />
+        {status && (
+          <p style={{ marginTop: 12, fontSize: 13, color: "#334155" }}>{status}</p>
+        )}
+      </header>
+
+      <Section title={`Live jobs on ${activeHub?.label ?? "—"}`}>
+        <table style={tableStyle}>
+          <thead>
+            <tr>
+              <th style={thStyle}>ID</th>
+              <th style={thStyle}>Proposer</th>
+              <th style={thStyle}>Reward</th>
+              <th style={thStyle}>URI</th>
+              <th style={thStyle}>Status</th>
+              <th style={thStyle}>Validators</th>
+            </tr>
+          </thead>
+          <tbody>
+            {jobs.map((job) => (
+              <tr key={`${selectedHub}-${job.id}`}>
+                <td style={tdStyle}>{job.id}</td>
+                <td style={tdStyle}>{shortAddress(job.employer)}</td>
+                <td style={tdStyle}>{rewardFormat(job.reward)}</td>
+                <td style={tdStyle}>
+                  <a href={job.uri} target="_blank" rel="noreferrer">
+                    {job.uri}
+                  </a>
+                </td>
+                <td style={tdStyle}>{job.status}</td>
+                <td style={tdStyle}>{job.validators?.length ?? 0}</td>
+              </tr>
+            ))}
+            {!jobs.length && (
+              <tr>
+                <td colSpan={6} style={{ ...tdStyle, textAlign: "center", color: "#6b7280" }}>
+                  No jobs indexed yet. Create one or instantiate a mission to get started.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </Section>
+
+      <Section title="Validator participation">
+        <div style={controlStyle}>
+          <label style={labelStyle}>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Job ID</span>
+            <input
+              style={{ ...inputStyle, width: 160 }}
+              value={jobId}
+              onChange={(e) => setJobId(e.target.value)}
+              placeholder="123"
+            />
           </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span>Spec URI (IPFS, HTTPS, or data)</span>
-            <input value={uri} onChange={(event) => setUri(event.target.value)} />
-          </label>
-          <button onClick={createJob}>Create Job</button>
-        </div>
-        <div style={gradientCard}>
-          <span style={{ fontSize: 12, letterSpacing: "0.08em", color: "#cbd5f5" }}>Validator quick actions</span>
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span>Job ID</span>
-            <input value={jobId} onChange={(event) => setJobId(event.target.value)} placeholder="123" />
-          </label>
-          <button onClick={() => stake(1, "1000000000000000000")}>Stake 1 token</button>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+          <button style={buttonStyle} onClick={handleStake} disabled={loading || !selectedHub}>
+            Stake 1 AGIA
+          </button>
+          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <input
               type="checkbox"
               checked={approve}
-              onChange={(event) => setApprove(event.target.checked)}
+              onChange={(e) => setApprove(e.target.checked)}
             />
-            Approve deliverable
+            approve
           </label>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button onClick={commit}>Commit</button>
-            <button onClick={reveal}>Reveal</button>
-            <button onClick={finalize}>Finalize</button>
-          </div>
-          <button onClick={() => allowlist(1)} style={{ background: "rgba(148,163,184,0.25)", color: "#f8fafc" }}>
-            Dev · Allowlist Validator
+          <button style={buttonStyle} onClick={handleCommit} disabled={loading || !selectedHub}>
+            Commit
+          </button>
+          <button style={buttonStyle} onClick={handleReveal} disabled={loading || !selectedHub}>
+            Reveal
+          </button>
+          <button style={buttonStyle} onClick={handleFinalize} disabled={loading || !selectedHub}>
+            Finalize
           </button>
         </div>
-      </section>
+      </Section>
 
-      <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <h2 style={{ margin: 0 }}>Live jobs · {currentHub?.label ?? selectedHub}</h2>
-          <span style={{ color: "#94a3b8", fontSize: 14 }}>powered by The Graph</span>
-        </header>
-        <div style={{ overflowX: "auto" }}>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Employer</th>
-                <th>Reward</th>
-                <th>URI</th>
-                <th>Status</th>
-                <th>Validators</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map((job) => (
-                <tr key={`${selectedHub}-${job.id}`} style={{ borderBottom: "1px solid rgba(148,163,184,0.12)" }}>
-                  <td>{job.id}</td>
-                  <td>{short(job.employer)}</td>
-                  <td>{job.reward}</td>
-                  <td>
-                    <a href={job.uri} target="_blank" rel="noreferrer">
-                      {job.uri}
-                    </a>
-                  </td>
-                  <td>{job.status}</td>
-                  <td>{job.validators?.length ?? 0}</td>
-                </tr>
-              ))}
-              {!jobs.length && (
-                <tr>
-                  <td colSpan={6} style={{ padding: 24, textAlign: "center", color: "#94a3b8" }}>
-                    No jobs indexed yet. Create one or seed data using the scripts.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
-        <div style={{ ...gradientCard, gap: 18 }}>
-          <span style={{ fontSize: 12, letterSpacing: "0.08em", color: "#cbd5f5" }}>Mission playbooks</span>
-          <select value={selectedPlaybook} onChange={(event) => setSelectedPlaybook(event.target.value)}>
+      <Section title="Mission playbooks">
+        <div style={controlStyle}>
+          <select
+            style={selectStyle}
+            value={selectedPlaybook}
+            onChange={(e) => setSelectedPlaybook(e.target.value)}
+          >
             <option value="">— Choose Mission —</option>
-            {playbooks.map((pb) => (
-              <option key={pb.id} value={pb.id}>
-                {pb.name}
+            {playbooks.map((playbook) => (
+              <option key={playbook.id} value={playbook.id}>
+                {playbook.name}
               </option>
             ))}
           </select>
-          {activePlaybook && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, color: "#e2e8f0" }}>
-              <p style={{ margin: 0 }}>{activePlaybook.description}</p>
-              <ol style={{ margin: 0, paddingLeft: 20, color: "#cbd5f5" }}>
-                {activePlaybook.steps.map((step) => (
-                  <li key={step.uri}>
-                    <strong>{step.hub}</strong> · reward {step.rewardWei}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-          <button onClick={instantiateMission}>Instantiate Mission</button>
+          <button style={buttonStyle} onClick={handleMission} disabled={loading || !selectedPlaybook}>
+            Instantiate Mission
+          </button>
         </div>
-        <div style={{ ...gradientCard, gap: 18 }}>
-          <span style={{ fontSize: 12, letterSpacing: "0.08em", color: "#cbd5f5" }}>Actor roster</span>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {actors.map((actor) => (
-              <div key={actor.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 24 }}>{actor.flag}</span>
-                <span style={{ fontSize: 15 }}>{actor.name}</span>
+        {actors.length > 0 && (
+          <p style={{ marginTop: 12, fontSize: 13, color: "#64748b" }}>
+            Featured mission sponsors: {actors.map((actor) => `${actor.flag} ${actor.name}`).join(" · ")}
+          </p>
+        )}
+      </Section>
+
+      <Section title="Owner panels">
+        <details style={{ background: "#f8fafc", padding: 16, borderRadius: 12 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 600 }}>Open governance surfaces</summary>
+          <div style={{ marginTop: 12, display: "grid", gap: 16 }}>
+            {ownerLinks.map((hub) => (
+              <div key={hub.id} style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 16 }}>
+                <strong>{hub.label}</strong>
+                <ul style={{ listStyle: "disc", marginLeft: 20, marginTop: 8 }}>
+                  {hub.links.map((link) => (
+                    <li key={link.label}>
+                      <a href={link.url} target="_blank" rel="noreferrer">
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
-        </div>
-        <div style={{ ...gradientCard, gap: 18 }}>
-          <span style={{ fontSize: 12, letterSpacing: "0.08em", color: "#cbd5f5" }}>Owner panels</span>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {hubOrder.map((hub) => {
-              const details = hubMap[hub];
-              if (!details) return null;
-              const base = `${etherscanBase}/address`;
-              return (
-                <div key={hub} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <strong>{details.label}</strong>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                    <a target="_blank" rel="noreferrer" href={`${base}/${details.addresses.ValidationModule}#writeContract`}>
-                      ValidationModule
-                    </a>
-                    <a target="_blank" rel="noreferrer" href={`${base}/${details.addresses.JobRegistry}#writeContract`}>
-                      JobRegistry
-                    </a>
-                    <a target="_blank" rel="noreferrer" href={`${base}/${details.addresses.StakeManager}#writeContract`}>
-                      StakeManager
-                    </a>
-                    <a target="_blank" rel="noreferrer" href={`${base}/${details.addresses.IdentityRegistry}#writeContract`}>
-                      IdentityRegistry
-                    </a>
-                    {details.addresses.FeePool &&
-                      details.addresses.FeePool !== "0x0000000000000000000000000000000000000000" && (
-                        <a
-                          target="_blank"
-                          rel="noreferrer"
-                          href={`${base}/${details.addresses.FeePool}#writeContract`}
-                        >
-                          FeePool
-                        </a>
-                      )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+        </details>
+      </Section>
     </div>
   );
-}
+};
+
+export default App;
