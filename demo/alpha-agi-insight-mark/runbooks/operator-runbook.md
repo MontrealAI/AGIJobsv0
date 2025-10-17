@@ -58,8 +58,9 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 
 1. Run `npm run test:alpha-agi-insight-mark` to execute unit tests.
 2. Run `npm run demo:alpha-agi-insight-mark:ci` to recreate the artefacts in dry-run mode.
-3. Compare the new `insight-manifest.json` to the previous run to ensure reproducibility.
-4. Store artefacts in your evidence vault alongside transaction hashes for board reviews.
+3. Execute `npm run verify:alpha-agi-insight-mark` – the verifier performs the same manifest, telemetry, and mermaid integrity checks enforced in CI so non-technical operators can certify the dossier bundle locally.
+4. Compare the new `insight-manifest.json` to the previous run to ensure reproducibility.
+5. Store artefacts in your evidence vault alongside transaction hashes for board reviews.
 
 ## 6. Live Network Launch (Advanced)
 

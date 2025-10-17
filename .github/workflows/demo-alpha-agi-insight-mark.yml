@@ -184,6 +184,9 @@ jobs:
           console.log('Superintelligence mermaid validated.');
           NODE
 
+      - name: Run α-AGI Insight MARK dossier verifier
+        run: npm run verify:alpha-agi-insight-mark
+
       - name: Upload α-AGI Insight MARK dossiers
         uses: actions/upload-artifact@v4
         with:
