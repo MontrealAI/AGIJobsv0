@@ -89,7 +89,13 @@ jobs:
             throw new Error('insight report missing');
           }
           const content = fs.readFileSync(reportPath, 'utf8');
-          const required = ['# α-AGI Insight MARK Recap', '## Owner Command Hooks', '## Telemetry Snapshot'];
+          const required = [
+            '# α-AGI Insight MARK Recap',
+            '## Owner Command Hooks',
+            '## Meta-Agentic Pareto Frontier',
+            '## Thermodynamic Signal Inventory',
+            '## Telemetry Snapshot',
+          ];
           for (const token of required) {
             if (!content.includes(token)) {
               throw new Error(`missing section: ${token}`);
@@ -110,13 +116,42 @@ jobs:
           if (!content.includes('α-AGI Insight MARK Executive Report')) {
             throw new Error('executive report title missing');
           }
-          const requiredSnippets = ['Disruption Timeline', 'Nova-Seed Market Matrix', 'Owner Command Hooks'];
+          const requiredSnippets = [
+            'Disruption Timeline',
+            'Nova-Seed Market Matrix',
+            'Meta-Agentic Pareto Frontier',
+            'Thermodynamic Signal Inventory',
+            'Owner Command Hooks',
+          ];
           for (const snippet of requiredSnippets) {
             if (!content.includes(snippet)) {
               throw new Error(`expected section not found in HTML report: ${snippet}`);
             }
           }
           console.log('Executive HTML dossier validated.');
+          NODE
+
+      - name: Validate meta-agentic schematics
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const evolutionPath = 'demo/alpha-agi-insight-mark/reports/insight-evolution.mmd';
+          const thermoPath = 'demo/alpha-agi-insight-mark/reports/insight-thermodynamics.mmd';
+          if (!fs.existsSync(evolutionPath)) {
+            throw new Error('insight-evolution.mmd missing');
+          }
+          if (!fs.existsSync(thermoPath)) {
+            throw new Error('insight-thermodynamics.mmd missing');
+          }
+          const evolution = fs.readFileSync(evolutionPath, 'utf8');
+          const thermo = fs.readFileSync(thermoPath, 'utf8');
+          if (!evolution.includes('Pareto Frontier')) {
+            throw new Error('evolution mermaid missing Pareto Frontier node');
+          }
+          if (!thermo.includes('Phase Transition Gate')) {
+            throw new Error('thermodynamics mermaid missing phase transition gate');
+          }
+          console.log('Meta-agentic schematics validated.');
           NODE
 
       - name: Validate control matrix

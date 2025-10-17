@@ -16,6 +16,14 @@ type InsightScenario = {
   fusionURI: string;
   confidence: number;
   forecastValue: string;
+  capabilityIndex: number;
+  phaseShift: string;
+  objectives: {
+    impact: number;
+    resilience: number;
+    velocity: number;
+  };
+  signals: string[];
 };
 
 type ScenarioConfig = {
@@ -129,6 +137,10 @@ interface MintedInsightRecord {
   onchainVerified: boolean;
   ownerActions: string[];
   finalCustodian: string;
+  capabilityIndex: number;
+  phaseShift: string;
+  objectives: InsightScenario["objectives"];
+  signals: string[];
 }
 
 async function main() {
@@ -220,7 +232,25 @@ async function main() {
     const scenario = config.scenarios[i];
     const { minter, receiver } = scenarioAllocations[i] ?? scenarioAllocations[0];
 
+    if (typeof scenario.capabilityIndex !== "number" || Number.isNaN(scenario.capabilityIndex)) {
+      throw new Error(`Scenario ${scenario.sector} missing capabilityIndex metric.`);
+    }
+    if (!scenario.objectives || typeof scenario.objectives.impact !== "number" || typeof scenario.objectives.resilience !== "number" || typeof scenario.objectives.velocity !== "number") {
+      throw new Error(`Scenario ${scenario.sector} missing objective vector.`);
+    }
+    if (!Array.isArray(scenario.signals)) {
+      throw new Error(`Scenario ${scenario.sector} missing thermodynamic signals array.`);
+    }
+
     log("Thermodynamic Oracle", `Evaluating ${scenario.sector} rupture – confidence ${(scenario.confidence * 100).toFixed(1)}%.`);
+    log(
+      "MATS Engine",
+      `Pareto vector [impact ${formatPercent(scenario.objectives.impact)}, resilience ${formatPercent(scenario.objectives.resilience)}, velocity ${formatPercent(scenario.objectives.velocity)}] with capability index ${(scenario.capabilityIndex * 100).toFixed(1)}%.`
+    );
+    log("Thermo Sentinel", scenario.phaseShift);
+    for (const signal of scenario.signals) {
+      log("Signal Observatory", `${scenario.sector} signal → ${signal}`);
+    }
 
     const tx = await novaSeed
       .connect(minter)
@@ -352,6 +382,10 @@ async function main() {
       onchainVerified: true,
       ownerActions,
       finalCustodian,
+      capabilityIndex: scenario.capabilityIndex,
+      phaseShift: scenario.phaseShift,
+      objectives: scenario.objectives,
+      signals: scenario.signals,
     });
   }
 
@@ -380,6 +414,8 @@ async function main() {
   const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
   const csvPath = path.join(reportsDir, "insight-market-matrix.csv");
   const constellationPath = path.join(reportsDir, "insight-constellation.mmd");
+  const evolutionPath = path.join(reportsDir, "insight-evolution.mmd");
+  const thermoPath = path.join(reportsDir, "insight-thermodynamics.mmd");
   const manifestPath = path.join(reportsDir, "insight-manifest.json");
 
   const scenarioRelativePath = path
@@ -424,7 +460,23 @@ async function main() {
         : `Sealed ↦ ${shortenUri(entry.fusionURI)}`;
       const ownerNotes = entry.ownerActions.length ? entry.ownerActions.join("; ") : "—";
       const custodian = shortenAddress(entry.finalCustodian ?? entry.mintedTo);
-      return `| ${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${entry.scenario.thesis} | ${fusionStatus} | ${entry.status} | ${saleDetails} | ${custodian} | ${ownerNotes} |`;
+      return `| ${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${formatPercent(entry.scenario.confidence)} | ${formatPercent(entry.capabilityIndex)} | ${entry.phaseShift} | ${entry.scenario.thesis} | ${fusionStatus} | ${entry.status} | ${saleDetails} | ${custodian} | ${ownerNotes} |`;
+    })
+    .join("\n");
+
+  const paretoRows = minted
+    .map((entry) => {
+      const signals = entry.signals.length ? entry.signals.join("; ") : "—";
+      return `| ${entry.tokenId} | ${entry.scenario.sector} | ${formatPercent(entry.objectives.impact)} | ${formatPercent(entry.objectives.resilience)} | ${formatPercent(entry.objectives.velocity)} | ${signals} |`;
+    })
+    .join("\n");
+
+  const thermoInventory = minted
+    .map((entry) => {
+      const signalsList = entry.signals.length
+        ? entry.signals.map((signal) => `    - ${signal}`).join("\n")
+        : "    - None";
+      return `- **${entry.scenario.sector}** — phase shift: ${entry.phaseShift}\n  - Capability index: ${formatPercent(entry.capabilityIndex)}\n  - Confidence: ${formatPercent(entry.scenario.confidence)}\n  - Signals:\n${signalsList}`;
     })
     .join("\n");
 
@@ -435,8 +487,10 @@ async function main() {
     `**System Pause Sentinel:** ${strategist.address}\\\n` +
     `**Fee:** ${(Number(await exchange.feeBps()) / 100).toFixed(2)}%\\\n` +
     `**Treasury:** ${await exchange.treasury()}\\\n\n` +
-    `| Token | Sector | Rupture Year | Thesis | Fusion Plan | Status | Market State | Custodian | Owner Controls |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
+    `| Token | Sector | Rupture Year | Confidence | Capability Index | Phase Shift | Thesis | Fusion Plan | Status | Market State | Custodian | Owner Controls |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
     `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n- Sentinel (${strategist.address}) authorised through \`setSystemPause\` to trigger emergency halts across modules.\n- Listings can be repriced live with \`updateListingPrice\` (owner override supported).\n- Owner may invoke \`forceDelist\` to evacuate foresight assets to a safe wallet instantly.\n\n` +
+    `## Meta-Agentic Pareto Frontier\n| Token | Sector | Impact | Resilience | Velocity | Leading Signals |\n| --- | --- | --- | --- | --- | --- |\n${paretoRows}\n\n` +
+    `## Thermodynamic Signal Inventory\n${thermoInventory}\n\n` +
     `## Scenario Dataset\n- Config file: ${scenarioRelativePath}\\\n- SHA-256: ${scenarioHash}\n\n` +
     `## Telemetry Snapshot\n` +
     telemetry
@@ -449,9 +503,22 @@ async function main() {
   const timelineEnd = sortedByRupture.at(-1)?.scenario.ruptureYear ?? timelineStart;
   const timelineSpan = Math.max(1, timelineEnd - timelineStart);
 
+  const mintedTotalConfidence = minted.reduce((acc, entry) => acc + entry.scenario.confidence, 0);
+  const averageConfidence = minted.length ? mintedTotalConfidence / minted.length : 0;
+  const mintedTotalCapability = minted.reduce((acc, entry) => acc + entry.capabilityIndex, 0);
+  const averageCapability = minted.length ? mintedTotalCapability / minted.length : 0;
+  const mintedTotalImpact = minted.reduce((acc, entry) => acc + entry.objectives.impact, 0);
+  const mintedTotalResilience = minted.reduce((acc, entry) => acc + entry.objectives.resilience, 0);
+  const mintedTotalVelocity = minted.reduce((acc, entry) => acc + entry.objectives.velocity, 0);
+  const averageImpact = minted.length ? mintedTotalImpact / minted.length : 0;
+  const averageResilience = minted.length ? mintedTotalResilience / minted.length : 0;
+  const averageVelocity = minted.length ? mintedTotalVelocity / minted.length : 0;
+  const totalSignals = minted.reduce((acc, entry) => acc + entry.signals.length, 0);
+
   const htmlRows = sortedByRupture
     .map((entry) => {
       const confidencePercent = Math.round(entry.scenario.confidence * 100);
+      const capabilityPercent = Math.round(entry.capabilityIndex * 100);
       const saleDetails =
         entry.sale
           ? `${escapeHtml(entry.sale.price)} AIC → net ${escapeHtml(entry.sale.netPayout)} AIC`
@@ -473,13 +540,20 @@ async function main() {
               <td>${escapeHtml(entry.tokenId)}</td>
               <td>${escapeHtml(entry.scenario.sector)}</td>
               <td>${entry.scenario.ruptureYear}</td>
-              <td>${escapeHtml(entry.scenario.thesis)}</td>
               <td>
-                <div class="confidence-bar">
-                  <div class="confidence-fill" style="width:${confidencePercent}%"></div>
+                <div class="metric-bar metric-bar--confidence">
+                  <div class="metric-bar__fill" style="width:${confidencePercent}%"></div>
                   <span>${confidencePercent}%</span>
                 </div>
               </td>
+              <td>
+                <div class="metric-bar metric-bar--capability">
+                  <div class="metric-bar__fill" style="width:${capabilityPercent}%"></div>
+                  <span>${capabilityPercent}%</span>
+                </div>
+              </td>
+              <td>${escapeHtml(entry.phaseShift)}</td>
+              <td>${escapeHtml(entry.scenario.thesis)}</td>
               <td>${fusionStatus}</td>
               <td>${escapeHtml(entry.status)}</td>
               <td>${saleDetails}</td>
@@ -489,14 +563,43 @@ async function main() {
     })
     .join("\n");
 
+  const htmlParetoRows = minted
+    .map((entry) => {
+      const signals = entry.signals.length ? entry.signals.join("; ") : "—";
+      return `            <tr>
+              <td>${escapeHtml(entry.tokenId)}</td>
+              <td>${escapeHtml(entry.scenario.sector)}</td>
+              <td>${formatPercent(entry.objectives.impact)}</td>
+              <td>${formatPercent(entry.objectives.resilience)}</td>
+              <td>${formatPercent(entry.objectives.velocity)}</td>
+              <td>${escapeHtml(signals)}</td>
+            </tr>`;
+    })
+    .join("\n");
+
+  const htmlSignalList = minted
+    .map((entry) => {
+      const signalItems = entry.signals
+        .map((signal) => `              <li>${escapeHtml(signal)}</li>`)
+        .join("\n");
+      return `          <li>
+            <strong>${escapeHtml(entry.scenario.sector)}</strong> — ${escapeHtml(entry.phaseShift)}
+            <ul>
+${signalItems || "              <li>No additional signals</li>"}
+            </ul>
+          </li>`;
+    })
+    .join("\n");
+
   const timelineMarks = sortedByRupture
     .map((entry) => {
       const offset = timelineSpan === 0 ? 0 : ((entry.scenario.ruptureYear - timelineStart) / timelineSpan) * 100;
       const confidencePercent = Math.round(entry.scenario.confidence * 100);
+      const capabilityPercent = Math.round(entry.capabilityIndex * 100);
       return `          <div class="timeline-node" style="left:${offset}%">
             <div class="timeline-node__label">${escapeHtml(entry.scenario.sector)}</div>
             <div class="timeline-node__year">${entry.scenario.ruptureYear}</div>
-            <div class="timeline-node__confidence">${confidencePercent}% confidence</div>
+            <div class="timeline-node__confidence">${confidencePercent}% confidence · ${capabilityPercent}% capability</div>
           </div>`;
     })
     .join("\n");
@@ -574,7 +677,7 @@ async function main() {
       tbody tr:hover {
         background: rgba(41, 71, 145, 0.25);
       }
-      .confidence-bar {
+      .metric-bar {
         position: relative;
         width: 100%;
         height: 18px;
@@ -582,12 +685,17 @@ async function main() {
         background: rgba(22, 40, 86, 0.65);
         overflow: hidden;
       }
-      .confidence-fill {
+      .metric-bar__fill {
         position: absolute;
         inset: 0;
+      }
+      .metric-bar--confidence .metric-bar__fill {
         background: linear-gradient(90deg, #3ddff5, #9178ff);
       }
-      .confidence-bar span {
+      .metric-bar--capability .metric-bar__fill {
+        background: linear-gradient(90deg, #ffbb89, #ff6fb5);
+      }
+      .metric-bar span {
         position: absolute;
         inset: 0;
         display: grid;
@@ -643,6 +751,22 @@ async function main() {
         background: radial-gradient(circle at 50% 50%, #b2f5ff, #5d73ff);
         box-shadow: 0 0 18px rgba(118, 255, 255, 0.6);
       }
+      .signal-list {
+        list-style: disc;
+        margin: 1.5rem 0;
+        padding-left: 1.5rem;
+      }
+      .signal-list > li {
+        margin-bottom: 1.25rem;
+      }
+      .signal-list ul {
+        list-style: circle;
+        margin-top: 0.5rem;
+        padding-left: 1.25rem;
+      }
+      .signal-list ul li {
+        margin-bottom: 0.35rem;
+      }
       footer {
         margin-top: 3rem;
         font-size: 0.85rem;
@@ -689,6 +813,18 @@ async function main() {
         <span class="meta-grid__label">Fee</span>
         <span class="meta-grid__value">${(Number(await exchange.feeBps()) / 100).toFixed(2)}%</span>
       </div>
+      <div class="meta-grid__item">
+        <span class="meta-grid__label">Avg Capability Index</span>
+        <span class="meta-grid__value">${(averageCapability * 100).toFixed(1)}%</span>
+      </div>
+      <div class="meta-grid__item">
+        <span class="meta-grid__label">Avg Pareto Vector</span>
+        <span class="meta-grid__value">Impact ${(averageImpact * 100).toFixed(1)}% · Resilience ${(averageResilience * 100).toFixed(1)}% · Velocity ${(averageVelocity * 100).toFixed(1)}%</span>
+      </div>
+      <div class="meta-grid__item">
+        <span class="meta-grid__label">Signals Processed</span>
+        <span class="meta-grid__value">${totalSignals}</span>
+      </div>
     </section>
     <section class="timeline">
       <h2>Disruption Timeline</h2>
@@ -702,8 +838,10 @@ ${timelineMarks}
             <th>Token</th>
             <th>Sector</th>
             <th>Rupture Year</th>
-            <th>Disruption Thesis</th>
             <th>Confidence</th>
+            <th>Capability Index</th>
+            <th>Phase Shift</th>
+            <th>Disruption Thesis</th>
             <th>Fusion Plan</th>
             <th>Status</th>
             <th>Market State</th>
@@ -715,6 +853,30 @@ ${timelineMarks}
 ${htmlRows}
         </tbody>
       </table>
+    </section>
+    <section>
+      <h2>Meta-Agentic Pareto Frontier</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Sector</th>
+            <th>Impact</th>
+            <th>Resilience</th>
+            <th>Velocity</th>
+            <th>Signals</th>
+          </tr>
+        </thead>
+        <tbody>
+${htmlParetoRows}
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Thermodynamic Signal Inventory</h2>
+      <ul class="signal-list">
+${htmlSignalList}
+      </ul>
     </section>
     <section>
       <h2>Owner Command Hooks</h2>
@@ -818,8 +980,46 @@ ${htmlRows}
     `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n` +
     `    classDef agent fill:#14233b,stroke:#60d2ff,color:#e8f6ff;\n`;
 
-  const mintedTotalConfidence = minted.reduce((acc, entry) => acc + entry.scenario.confidence, 0);
-  const averageConfidence = minted.length ? mintedTotalConfidence / minted.length : 0;
+  const paretoEdgeLines = minted
+    .map((entry) => {
+      return (
+        `    frontier --> token${entry.tokenId}(["${entry.scenario.sector}\\nImpact ${formatPercent(entry.objectives.impact)}\\nResilience ${formatPercent(entry.objectives.resilience)}\\nVelocity ${formatPercent(entry.objectives.velocity)}"]):::sector` +
+        `\n    token${entry.tokenId} --> novaHub`
+      );
+    })
+    .join("\n");
+
+  const evolutionMermaid = `flowchart TB\n` +
+    `    metasentinel((Meta-Sentinel)):::agent --> orchestrator{{Meta-Agent Orchestrator}}:::process\n` +
+    `    orchestrator --> mats{{MATS Engine\\n(NSGA-II)}}:::process\n` +
+    `    mats --> objectiveBank[(Objective Archive)]:::process\n` +
+    `    mats --> thermalGauge{{Thermodynamic Trigger}}:::metric\n` +
+    `    objectiveBank --> frontier{{Pareto Frontier}}:::process\n` +
+    `    thermalGauge --> frontier\n` +
+    `${paretoEdgeLines ? `${paretoEdgeLines}\n` : ""}` +
+    `    novaHub[α-AGI Nova-Seed Forge]:::contract --> market{{α-AGI MARK Exchange}}:::process\n` +
+    `    classDef agent fill:#14233b,stroke:#60d2ff,color:#e8f6ff;\n` +
+    `    classDef process fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n` +
+    `    classDef metric fill:#362145,stroke:#ff8bca,color:#fff0fa;\n` +
+    `    classDef sector fill:#102a43,stroke:#8ff7ff,color:#e5f9ff;\n` +
+    `    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n`;
+
+  const thermoLines = minted
+    .map((entry) => {
+      const capabilityLabel = (entry.capabilityIndex * 100).toFixed(1);
+      return `    phase --> cap${entry.tokenId}(["${entry.scenario.sector} ${capabilityLabel}%\\n${entry.phaseShift}"]):::sector`;
+    })
+    .join("\n");
+
+  const thermoMermaid = `flowchart LR\n` +
+    `    base((T_AGI 0.70)):::metric --> ramp{{Capability Gradient}}:::process\n` +
+    `    ramp --> phase{{Phase Transition Gate}}:::metric\n` +
+    `${thermoLines ? `${thermoLines}\n` : ""}` +
+    `    phase --> marketNode{{α-AGI MARK Liquidity}}:::process\n` +
+    `    classDef process fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n` +
+    `    classDef metric fill:#362145,stroke:#ff8bca,color:#fff0fa;\n` +
+    `    classDef sector fill:#102a43,stroke:#8ff7ff,color:#e5f9ff;\n`;
+
   const mintedByOwnerCount = minted.filter((entry) => entry.mintedBy.toLowerCase() === operator.address.toLowerCase()).length;
   const delegatedMintCount = minted.length - mintedByOwnerCount;
   const soldCount = minted.filter((entry) => entry.status === "SOLD").length;
@@ -833,6 +1033,12 @@ ${htmlRows}
     "sector",
     "ruptureYear",
     "confidence",
+    "capabilityIndex",
+    "phaseShift",
+    "impact",
+    "resilience",
+    "velocity",
+    "signals",
     "status",
     "marketState",
     "custodian",
@@ -855,12 +1061,19 @@ ${htmlRows}
         : entry.status === "FORCE_DELISTED"
           ? `Force delisted → ${shortenAddress(entry.finalCustodian)}`
           : "Held";
+    const signals = entry.signals.length ? entry.signals.join(" | ") : "";
 
     return [
       csvEscape(entry.tokenId),
       csvEscape(entry.scenario.sector),
       csvEscape(entry.scenario.ruptureYear),
       csvEscape(formatPercent(entry.scenario.confidence)),
+      csvEscape(formatPercent(entry.capabilityIndex)),
+      csvEscape(entry.phaseShift),
+      csvEscape(formatPercent(entry.objectives.impact)),
+      csvEscape(formatPercent(entry.objectives.resilience)),
+      csvEscape(formatPercent(entry.objectives.velocity)),
+      csvEscape(signals),
       csvEscape(entry.status),
       csvEscape(marketState),
       csvEscape(shortenAddress(entry.finalCustodian)),
@@ -880,7 +1093,7 @@ ${htmlRows}
     .map((entry) => {
       const custodian = shortenAddress(entry.finalCustodian);
       const ownerNotes = entry.ownerActions.length ? entry.ownerActions.join("; ") : "—";
-      return `| #${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${formatPercent(entry.scenario.confidence)} | ${entry.status} | ${custodian} | ${ownerNotes} |`;
+      return `| #${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${formatPercent(entry.scenario.confidence)} | ${formatPercent(entry.capabilityIndex)} | ${entry.status} | ${custodian} | ${ownerNotes} |`;
     })
     .join("\n");
 
@@ -889,7 +1102,10 @@ ${htmlRows}
     `- Minted Nova-Seeds: ${minted.length} (owner minted ${mintedByOwnerCount}, delegated minted ${delegatedMintCount}).\\\n` +
     `- Live market activity: ${soldCount} sold, ${listedCount} listed, ${forceDelistedCount} under sentinel custody.\\\n` +
     `- Fusion dossier state: ${revealedCount} revealed, ${sealedCount} sealed.\\\n` +
-    `- Average confidence: ${formatPercent(averageConfidence)}.\\\n\n` +
+    `- Average confidence: ${formatPercent(averageConfidence)}.\\\n` +
+    `- Average capability index: ${formatPercent(averageCapability)}.\\\n` +
+    `- Pareto centroid: impact ${formatPercent(averageImpact)}, resilience ${formatPercent(averageResilience)}, velocity ${formatPercent(averageVelocity)}.\\\n` +
+    `- Signals processed this run: ${totalSignals}.\\\n\n` +
     `## Rapid Command Checklist\n` +
     `- [ ] Trigger \`pause()\` on Insight Exchange (${await exchange.getAddress()}) for market freeze.\n` +
     `- [ ] Invoke \`pause()\` on α-AGI Nova-Seed (${await novaSeed.getAddress()}) to freeze custody flows.\n` +
@@ -897,12 +1113,15 @@ ${htmlRows}
     `- [ ] Rotate oracle via \`setOracle(${shortenAddress(oracle.address)})\` if adjudication policy must change.\n` +
     `- [ ] Validate treasury destination ${shortenAddress(await exchange.treasury())} with finance desk.\n\n` +
     `## Sector Timeline\n` +
-    `| Token | Sector | Rupture Year | Confidence | Status | Custodian | Owner Actions |\n` +
-    `| --- | --- | --- | --- | --- | --- | --- |\n` +
+    `| Token | Sector | Rupture Year | Confidence | Capability | Status | Custodian | Owner Actions |\n` +
+    `| --- | --- | --- | --- | --- | --- | --- | --- |\n` +
     `${ownerBriefTableRows}\n\n` +
     `## Intelligence Signals\n` +
     minted
-      .map((entry) => `- ${entry.scenario.sector}: ${entry.scenario.thesis} (forecast value ${entry.scenario.forecastValue}).`)
+      .map((entry) => {
+        const signalSummary = entry.signals.length ? entry.signals.join("; ") : "None";
+        return `- ${entry.scenario.sector}: ${entry.scenario.thesis} (forecast value ${entry.scenario.forecastValue}, capability ${formatPercent(entry.capabilityIndex)}, phase shift: ${entry.phaseShift}). Signals: ${signalSummary}.`;
+      })
       .join("\n") +
     "\n";
 
@@ -982,6 +1201,8 @@ ${htmlRows}
   await writeFile(matrixPath, JSON.stringify(controlMatrix, null, 2));
   await writeFile(mermaidPath, mermaid);
   await writeFile(governancePath, governanceMermaid);
+  await writeFile(evolutionPath, evolutionMermaid);
+  await writeFile(thermoPath, thermoMermaid);
   await writeFile(telemetryPath, telemetryLog);
   await writeFile(htmlPath, html);
   await writeFile(ownerBriefPath, ownerBrief);
@@ -996,6 +1217,8 @@ ${htmlRows}
     matrixPath,
     mermaidPath,
     governancePath,
+    evolutionPath,
+    thermoPath,
     telemetryPath,
     ownerBriefPath,
     csvPath,
