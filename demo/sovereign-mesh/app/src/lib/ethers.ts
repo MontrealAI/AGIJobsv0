@@ -1,15 +1,16 @@
 import { ethers } from "ethers";
 
-export const getProvider = () => {
-  const { ethereum } = window as typeof window & { ethereum?: unknown };
-  if (!ethereum) {
-    throw new Error("No injected Ethereum provider detected");
+declare global {
+  interface Window {
+    ethereum?: unknown;
   }
-  return new ethers.BrowserProvider(ethereum);
+}
+
+export const getProvider = () => {
+  if (!window.ethereum) {
+    throw new Error("No wallet detected. Please install MetaMask or another EIP-1193 provider.");
+  }
+  return new ethers.BrowserProvider(window.ethereum as ethers.Eip1193Provider);
 };
 
-export const getSigner = async () => {
-  const provider = getProvider();
-  await provider.send("eth_requestAccounts", []);
-  return provider.getSigner();
-};
+export const getSigner = async () => (await getProvider()).getSigner();

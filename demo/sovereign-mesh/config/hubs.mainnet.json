@@ -2,45 +2,45 @@
   "public-research": {
     "label": "Public Research Hub",
     "rpcUrl": "https://mainnet.infura.io/v3/YOUR_KEY",
-    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2-research",
+    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi-jobs/public-research",
     "addresses": {
-      "AGIALPHA": "0x00000000000000000000000000000000000000A1",
-      "JobRegistry": "0x00000000000000000000000000000000000000B1",
-      "StakeManager": "0x00000000000000000000000000000000000000C1",
-      "ValidationModule": "0x00000000000000000000000000000000000000D1",
-      "DisputeModule": "0x00000000000000000000000000000000000000E1",
-      "IdentityRegistry": "0x00000000000000000000000000000000000000F1",
-      "CertificateNFT": "0x00000000000000000000000000000000000000A2",
+      "AGIALPHA": "0x0000000000000000000000000000000000A61A1A",
+      "JobRegistry": "0x1111111111111111111111111111111111111111",
+      "StakeManager": "0x2222222222222222222222222222222222222222",
+      "ValidationModule": "0x3333333333333333333333333333333333333333",
+      "DisputeModule": "0x4444444444444444444444444444444444444444",
+      "IdentityRegistry": "0x5555555555555555555555555555555555555555",
+      "CertificateNFT": "0x6666666666666666666666666666666666666666",
       "FeePool": "0x0000000000000000000000000000000000000000"
     }
   },
   "industrial-ops": {
     "label": "Industrial Ops Hub",
     "rpcUrl": "https://mainnet.infura.io/v3/YOUR_KEY",
-    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2-ops",
+    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi-jobs/industrial-ops",
     "addresses": {
-      "AGIALPHA": "0x00000000000000000000000000000000000000A1",
-      "JobRegistry": "0x00000000000000000000000000000000000000B2",
-      "StakeManager": "0x00000000000000000000000000000000000000C2",
-      "ValidationModule": "0x00000000000000000000000000000000000000D2",
-      "DisputeModule": "0x00000000000000000000000000000000000000E2",
-      "IdentityRegistry": "0x00000000000000000000000000000000000000F2",
-      "CertificateNFT": "0x00000000000000000000000000000000000000A3",
+      "AGIALPHA": "0x0000000000000000000000000000000000A61A1A",
+      "JobRegistry": "0x7777777777777777777777777777777777777777",
+      "StakeManager": "0x8888888888888888888888888888888888888888",
+      "ValidationModule": "0x9999999999999999999999999999999999999999",
+      "DisputeModule": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "IdentityRegistry": "0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "CertificateNFT": "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
       "FeePool": "0x0000000000000000000000000000000000000000"
     }
   },
   "civic-governance": {
     "label": "Civic Governance Hub",
     "rpcUrl": "https://mainnet.infura.io/v3/YOUR_KEY",
-    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2-gov",
+    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi-jobs/civic-governance",
     "addresses": {
-      "AGIALPHA": "0x00000000000000000000000000000000000000A1",
-      "JobRegistry": "0x00000000000000000000000000000000000000B3",
-      "StakeManager": "0x00000000000000000000000000000000000000C3",
-      "ValidationModule": "0x00000000000000000000000000000000000000D3",
-      "DisputeModule": "0x00000000000000000000000000000000000000E3",
-      "IdentityRegistry": "0x00000000000000000000000000000000000000F3",
-      "CertificateNFT": "0x00000000000000000000000000000000000000A4",
+      "AGIALPHA": "0x0000000000000000000000000000000000A61A1A",
+      "JobRegistry": "0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+      "StakeManager": "0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+      "ValidationModule": "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "DisputeModule": "0x0123456789ABCDEF0123456789ABCDEF01234567",
+      "IdentityRegistry": "0x89ABCDEF0123456789ABCDEF0123456789ABCDEF",
+      "CertificateNFT": "0xFEDCBA9876543210FEDCBA9876543210FEDCBA98",
       "FeePool": "0x0000000000000000000000000000000000000000"
     }
   }

@@ -1,7 +1,7 @@
 {
   "network": "mainnet",
   "etherscanBase": "https://etherscan.io",
-  "defaultSubgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2",
+  "defaultSubgraphUrl": "https://api.thegraph.com/subgraphs/name/agi-jobs/mesh",
   "orchestratorBase": "http://localhost:8084",
   "hubs": [
     "public-research",

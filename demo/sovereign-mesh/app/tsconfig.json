@@ -2,15 +2,16 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Bundler",
     "strict": true,
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "types": ["vite/client"],
+    "baseUrl": "./src",
+    "noEmit": true
   },
   "include": ["src"],
-  "references": []
+  "exclude": ["dist", "node_modules"]
 }
