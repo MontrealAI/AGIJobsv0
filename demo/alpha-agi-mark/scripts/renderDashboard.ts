@@ -70,6 +70,33 @@ type VerificationSnapshot = {
   };
 };
 
+type EmpowermentSnapshot = {
+  tagline: string;
+  automation: {
+    manualCommands: number;
+    orchestratedActions: number;
+    automationMultiplier: string;
+  };
+  assurance: {
+    verificationConfidencePercent: string;
+    checksPassed: number;
+    totalChecks: number;
+    validatorApprovals: number;
+    validatorThreshold: number;
+  };
+  capitalFormation: {
+    participants: number;
+    grossContributionsWei: string;
+    grossContributionsEth?: string;
+    reserveWei: string;
+    reserveEth?: string;
+  };
+  operatorControls: {
+    totalControls: number;
+    highlights?: string[];
+  };
+};
+
 type TimelineEntry = {
   order: number;
   phase: string;
@@ -179,6 +206,7 @@ type RecapData = {
     recapSha256: string;
   };
   timeline?: TimelineEntry[];
+  empowerment?: EmpowermentSnapshot;
 };
 
 function escapeHtml(value: string): string {
@@ -295,6 +323,68 @@ ${mermaidDefinition}
             ${rows}
           </tbody>
         </table>
+      </div>
+    </section>
+  `;
+}
+
+function buildEmpowermentSection(empowerment?: EmpowermentSnapshot): string {
+  if (!empowerment) {
+    return "";
+  }
+
+  const automationMultiplier = `${escapeHtml(empowerment.automation.automationMultiplier)}×`;
+  const highlights = (empowerment.operatorControls.highlights ?? []).map((highlight) => `
+        <li><code>${escapeHtml(highlight)}</code></li>
+      `);
+
+  const highlightList =
+    highlights.length > 0
+      ? `
+        <ul class="empowerment-list">
+          ${highlights.join("\n")}
+        </ul>
+      `
+      : '<p class="metric-caption">Matrix capture ready for operator-defined priorities.</p>';
+
+  return `
+    <section>
+      <h2>Operator Empowerment Constellation</h2>
+      <p>${escapeHtml(empowerment.tagline)}</p>
+      <div class="empowerment-grid">
+        <article class="empowerment-card">
+          <h3>Automation</h3>
+          <p class="metric-value">${automationMultiplier}</p>
+          <p class="metric-caption">${escapeHtml(
+            `${empowerment.automation.orchestratedActions} orchestrated actions from ${empowerment.automation.manualCommands} command${
+              empowerment.automation.manualCommands === 1 ? "" : "s"
+            }`,
+          )}</p>
+        </article>
+        <article class="empowerment-card">
+          <h3>Assurance</h3>
+          <p class="metric-value">${escapeHtml(empowerment.assurance.verificationConfidencePercent)}%</p>
+          <p class="metric-caption">${escapeHtml(
+            `${empowerment.assurance.checksPassed}/${empowerment.assurance.totalChecks} checks · Validators ${empowerment.assurance.validatorApprovals}/${empowerment.assurance.validatorThreshold}`,
+          )}</p>
+        </article>
+        <article class="empowerment-card">
+          <h3>Capital Formation</h3>
+          <p class="metric-value">${escapeHtml(
+            empowerment.capitalFormation.grossContributionsEth ?? empowerment.capitalFormation.grossContributionsWei,
+          )}</p>
+          <p class="metric-caption">${escapeHtml(
+            `${empowerment.capitalFormation.participants} participants · Reserve ${
+              empowerment.capitalFormation.reserveEth ?? empowerment.capitalFormation.reserveWei
+            }`,
+          )}</p>
+        </article>
+        <article class="empowerment-card">
+          <h3>Command Deck</h3>
+          <p class="metric-value">${escapeHtml(empowerment.operatorControls.totalControls.toString())}</p>
+          <p class="metric-caption">Owner actuators catalogued in the parameter matrix.</p>
+          ${highlightList}
+        </article>
       </div>
     </section>
   `;
@@ -637,6 +727,7 @@ function buildDashboardHtml(recap: RecapData): string {
   const timelineSection = buildTimelineSection(recap.timeline ?? []);
   const mermaidDefinition = escapeHtml(buildMermaidFlow(recap));
   const verificationSection = buildVerificationSection(recap.verification);
+  const empowermentSection = buildEmpowermentSection(recap.empowerment);
   const generatedTimestamp = new Date(recap.generatedAt).toISOString();
 
   const modeBadge =
@@ -785,6 +876,45 @@ function buildDashboardHtml(recap: RecapData): string {
         font-size: 1.6rem;
         color: var(--accent);
         font-weight: 600;
+      }
+      .empowerment-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+      }
+      .empowerment-card {
+        border: 1px solid rgba(96, 255, 207, 0.18);
+        border-radius: 14px;
+        padding: 1.6rem;
+        background: rgba(12, 18, 45, 0.55);
+        box-shadow: inset 0 0 0 1px rgba(96, 255, 207, 0.08);
+      }
+      .empowerment-card h3 {
+        margin-top: 0;
+        font-size: 0.95rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .metric-value {
+        font-size: 1.9rem;
+        font-weight: 600;
+        color: var(--accent);
+        margin: 0.25rem 0;
+      }
+      .metric-caption {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 0.9rem;
+      }
+      .empowerment-list {
+        list-style: none;
+        padding: 0;
+        margin: 0.9rem 0 0 0;
+        font-size: 0.85rem;
+        color: rgba(224, 245, 255, 0.85);
+      }
+      .empowerment-list li + li {
+        margin-top: 0.35rem;
       }
       .control-grid {
         display: grid;
@@ -1019,6 +1149,8 @@ function buildDashboardHtml(recap: RecapData): string {
         </header>
 
         ${telemetrySection}
+
+        ${empowermentSection}
 
         ${timelineSection}
 

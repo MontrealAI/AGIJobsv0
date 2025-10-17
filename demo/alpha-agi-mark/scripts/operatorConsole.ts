@@ -87,6 +87,43 @@ const verificationSchema = z
   })
   .partial();
 
+const empowermentSchema = z
+  .object({
+    tagline: z.string(),
+    automation: z
+      .object({
+        manualCommands: z.number(),
+        orchestratedActions: z.number(),
+        automationMultiplier: z.string(),
+      })
+      .passthrough(),
+    assurance: z
+      .object({
+        verificationConfidencePercent: z.string(),
+        checksPassed: z.number(),
+        totalChecks: z.number(),
+        validatorApprovals: z.number(),
+        validatorThreshold: z.number(),
+      })
+      .passthrough(),
+    capitalFormation: z
+      .object({
+        participants: z.number(),
+        grossContributionsWei: z.string(),
+        grossContributionsEth: z.string().optional(),
+        reserveWei: z.string(),
+        reserveEth: z.string().optional(),
+      })
+      .passthrough(),
+    operatorControls: z
+      .object({
+        totalControls: z.number(),
+        highlights: z.array(z.string()).optional(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+
 const recapSchema = z
   .object({
     generatedAt: z.string(),
@@ -202,6 +239,7 @@ const recapSchema = z
     verification: verificationSchema.optional(),
     timeline: z.array(timelineEntrySchema).optional(),
     trades: z.array(z.any()).optional(),
+    empowerment: empowermentSchema.optional(),
   })
   .passthrough();
 
@@ -396,9 +434,74 @@ function renderSummary(recap: Recap): void {
     ["Supply", recap.bondingCurve?.supplyWholeTokens ?? "n/a"],
   ]);
 
+  if (recap.empowerment) {
+    console.log(`\n  ${styles.subheading("Empowerment index")}`);
+    console.log(
+      `    ${styles.success(`${recap.empowerment.automation.automationMultiplier}x automation`)} from ${
+        recap.empowerment.automation.manualCommands
+      } command${recap.empowerment.automation.manualCommands === 1 ? "" : "s"}`,
+    );
+    console.log(
+      `    ${styles.info(
+        `${recap.empowerment.assurance.verificationConfidencePercent}% confidence · Validators ${recap.empowerment.assurance.validatorApprovals}/${recap.empowerment.assurance.validatorThreshold}`,
+      )}`,
+    );
+  }
+
   if (sovereign?.decodedMetadata) {
     console.log(`\n  ${styles.subheading("Sovereign ignition")}`);
     console.log(`    ${sovereign.decodedMetadata}`);
+  }
+}
+
+function renderEmpowerment(recap: Recap): void {
+  console.log(`\n${styles.heading("OPERATOR EMPOWERMENT INDEX")}`);
+  divider();
+
+  const empowerment = recap.empowerment;
+  if (!empowerment) {
+    console.log(styles.warning("  Empowerment metrics unavailable. Run npm run demo:alpha-agi-mark to generate them."));
+    return;
+  }
+
+  console.log(`  ${styles.subheading("Narrative")}`);
+  console.log(`    ${empowerment.tagline}`);
+
+  console.log(`\n  ${styles.subheading("Automation")}`);
+  renderKeyValues([
+    ["Automation multiplier", `${empowerment.automation.automationMultiplier}x`],
+    ["Manual commands", empowerment.automation.manualCommands.toString()],
+    ["Orchestrated actions", empowerment.automation.orchestratedActions.toString()],
+  ]);
+
+  console.log(`\n  ${styles.subheading("Assurance")}`);
+  renderKeyValues([
+    ["Confidence", `${empowerment.assurance.verificationConfidencePercent}%`],
+    ["Checks", `${empowerment.assurance.checksPassed}/${empowerment.assurance.totalChecks}`],
+    ["Validator quorum", `${empowerment.assurance.validatorApprovals}/${empowerment.assurance.validatorThreshold}`],
+  ]);
+
+  console.log(`\n  ${styles.subheading("Capital formation")}`);
+  const grossCapital =
+    empowerment.capitalFormation.grossContributionsEth ??
+    `${weiToEth(empowerment.capitalFormation.grossContributionsWei)} ETH`;
+  const reserveBalance =
+    empowerment.capitalFormation.reserveEth ?? `${weiToEth(empowerment.capitalFormation.reserveWei)} ETH`;
+  renderKeyValues([
+    ["Participants", empowerment.capitalFormation.participants.toString()],
+    ["Gross capital", grossCapital],
+    ["Sovereign reserve", reserveBalance],
+  ]);
+
+  console.log(`\n  ${styles.subheading("Command deck levers")}`);
+  renderKeyValues([["Controls tracked", empowerment.operatorControls.totalControls.toString()]]);
+  const highlights = empowerment.operatorControls.highlights ?? [];
+  if (highlights.length > 0) {
+    highlights.forEach((highlight, index) => {
+      console.log(`    ${styles.accent(`${index + 1}.`)} ${highlight}`);
+    });
+  } else {
+    console.log(styles.muted("    Highlight list available once the operator annotates priorities."));
   }
 }
 
@@ -640,12 +743,13 @@ async function interactiveLoop(recap: Recap): Promise<void> {
 
   const actions: Array<{ key: string; description: string; run: () => void }> = [
     { key: "1", description: "Mission summary", run: () => renderSummary(recap) },
-    { key: "2", description: "Owner command deck", run: () => renderOwnerDeck(recap) },
-    { key: "3", description: "Participant ledger", run: () => renderParticipants(recap) },
-    { key: "4", description: "Validator council", run: () => renderValidators(recap) },
-    { key: "5", description: "Triple-verification matrix", run: () => renderVerification(recap) },
-    { key: "6", description: "Mission timeline", run: () => renderTimeline(recap) },
-    { key: "7", description: "Mermaid blueprint", run: () => renderMermaid(recap) },
+    { key: "2", description: "Operator empowerment index", run: () => renderEmpowerment(recap) },
+    { key: "3", description: "Owner command deck", run: () => renderOwnerDeck(recap) },
+    { key: "4", description: "Participant ledger", run: () => renderParticipants(recap) },
+    { key: "5", description: "Validator council", run: () => renderValidators(recap) },
+    { key: "6", description: "Triple-verification matrix", run: () => renderVerification(recap) },
+    { key: "7", description: "Mission timeline", run: () => renderTimeline(recap) },
+    { key: "8", description: "Mermaid blueprint", run: () => renderMermaid(recap) },
   ];
 
   let active = true;
@@ -678,6 +782,7 @@ async function interactiveLoop(recap: Recap): Promise<void> {
 function snapshotReport(recap: Recap): void {
   console.log(styles.heading("α-AGI MARK Snapshot"));
   renderSummary(recap);
+  renderEmpowerment(recap);
   renderOwnerDeck(recap);
   renderParticipants(recap);
   renderVerification(recap);

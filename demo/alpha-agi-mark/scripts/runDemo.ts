@@ -889,6 +889,42 @@ async function main() {
     actorLabel: entry.actorLabel,
   }));
 
+  const manualCommandsRequired = dryRun ? 1 : 2;
+  const orchestratedActions = timelineRecap.length;
+  const automationMultiplier =
+    manualCommandsRequired === 0
+      ? "0.00"
+      : (orchestratedActions / manualCommandsRequired).toFixed(2);
+
+  const empowerment = {
+    tagline: `AGI Jobs orchestrated ${orchestratedActions} mission events from ${manualCommandsRequired} command${
+      manualCommandsRequired === 1 ? "" : "s"
+    }, sustaining ${confidenceIndexPercent}% confidence across ${passedChecks}/${totalChecks} invariants.`,
+    automation: {
+      manualCommands: manualCommandsRequired,
+      orchestratedActions,
+      automationMultiplier,
+    },
+    assurance: {
+      verificationConfidencePercent: confidenceIndexPercent,
+      checksPassed: passedChecks,
+      totalChecks,
+      validatorApprovals: Number(approvalsNow),
+      validatorThreshold: Number(thresholdNow),
+    },
+    capitalFormation: {
+      participants: accountState.size,
+      grossContributionsWei: ledgerGrossWei.toString(),
+      grossContributionsEth: ethers.formatEther(ledgerGrossWei),
+      reserveWei: reserve.toString(),
+      reserveEth: ethers.formatEther(reserve),
+    },
+    operatorControls: {
+      totalControls: ownerParameterMatrix.length,
+      highlights: ownerParameterMatrix.slice(0, 4).map((entry) => entry.parameter),
+    },
+  };
+
   const enrichedRecap = {
     ...recap,
     trades: tradeLedger.map((entry) => ({
@@ -902,6 +938,7 @@ async function main() {
     ownerParameterMatrix,
     verification,
     timeline: timelineRecap,
+    empowerment,
   };
 
   const actors = {
@@ -959,6 +996,11 @@ async function main() {
   );
   console.log("\n🧾 Demo recap written to", OUTPUT_PATH);
   console.log("🖥️  Sovereign dashboard rendered to", dashboardPath);
+  console.log(
+    `🌌 Empowerment multiplier: ${automationMultiplier}x automation from ${manualCommandsRequired} manual command${
+      manualCommandsRequired === 1 ? "" : "s"
+    }`,
+  );
   console.log(JSON.stringify(finalRecap, null, 2));
   console.log(`🔐 Recap digest (sha256): ${digest}`);
   console.log("\n🧭 Owner parameter matrix snapshot:");

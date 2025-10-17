@@ -191,6 +191,43 @@ const recapSchema = z
       recapSha256: z.string(),
     })
     .optional(),
+  empowerment: z
+    .object({
+      tagline: z.string(),
+      automation: z
+        .object({
+          manualCommands: z.number(),
+          orchestratedActions: z.number(),
+          automationMultiplier: z.string(),
+        })
+        .passthrough(),
+      assurance: z
+        .object({
+          verificationConfidencePercent: z.string(),
+          checksPassed: z.number(),
+          totalChecks: z.number(),
+          validatorApprovals: z.number(),
+          validatorThreshold: z.number(),
+        })
+        .passthrough(),
+      capitalFormation: z
+        .object({
+          participants: z.number(),
+          grossContributionsWei: z.string(),
+          grossContributionsEth: z.string().optional(),
+          reserveWei: z.string(),
+          reserveEth: z.string().optional(),
+        })
+        .passthrough(),
+      operatorControls: z
+        .object({
+          totalControls: z.number(),
+          highlights: z.array(z.string()).optional(),
+        })
+        .passthrough(),
+    })
+    .passthrough()
+    .optional(),
 }).passthrough();
 
 type Recap = z.infer<typeof recapSchema>;
@@ -501,6 +538,34 @@ async function main() {
       ? "Native asset"
       : "External asset";
 
+  const empowermentSection = (() => {
+    if (!recap.empowerment) {
+      return "";
+    }
+
+    const empowermentGross = recap.empowerment.capitalFormation.grossContributionsEth
+      ?? asEth(parseBigInt("empowerment gross capital", recap.empowerment.capitalFormation.grossContributionsWei));
+    const empowermentReserve = recap.empowerment.capitalFormation.reserveEth
+      ?? asEth(parseBigInt("empowerment reserve", recap.empowerment.capitalFormation.reserveWei));
+    const highlights = recap.empowerment.operatorControls.highlights ?? [];
+    const highlightsLine =
+      highlights.length > 0
+        ? `- Control highlights: ${highlights.map((entry) => `\`${entry}\``).join(", ")}`
+        : "- Control highlights: Operator may annotate priorities in the command deck.";
+
+    return (
+      "## Operator Empowerment Index\n\n" +
+      `- Narrative: ${recap.empowerment.tagline}\n` +
+      `- Automation multiplier: ${recap.empowerment.automation.automationMultiplier}x (${recap.empowerment.automation.orchestratedActions} orchestrated actions from ${recap.empowerment.automation.manualCommands} command${
+        recap.empowerment.automation.manualCommands === 1 ? "" : "s"
+      })\n` +
+      `- Verification confidence: ${recap.empowerment.assurance.verificationConfidencePercent}% (${recap.empowerment.assurance.checksPassed}/${recap.empowerment.assurance.totalChecks} checks, validators ${recap.empowerment.assurance.validatorApprovals}/${recap.empowerment.assurance.validatorThreshold})\n` +
+      `- Capital formation: ${recap.empowerment.capitalFormation.participants} participants · Gross ${empowermentGross} · Reserve ${empowermentReserve}\n` +
+      `- Command deck depth: ${recap.empowerment.operatorControls.totalControls} actuators recorded\n` +
+      `${highlightsLine}\n`
+    );
+  })();
+
   const markdown = `# α-AGI MARK Integrity Report\n\n` +
     `Generated: ${generatedAt}\n\n` +
     `## Recap Envelope\n\n` +
@@ -518,6 +583,7 @@ async function main() {
     `- Ledger supply processed: ${ledgerSupply.toString()} whole tokens\n` +
     `- Gross capital processed: ${asEth(ledgerGross)}\n` +
     `- Net capital secured in sovereign reserve: ${asEth(ledgerNet)}\n\n` +
+    (empowermentSection ? `${empowermentSection}\n` : "") +
     `${renderChecksTable(checks)}\n\n` +
     `## Participant Contribution Constellation\n\n` +
     `${contributionPie}\n\n` +
