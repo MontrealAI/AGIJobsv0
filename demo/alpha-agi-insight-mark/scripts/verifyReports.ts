@@ -42,6 +42,7 @@ const markdownPath = path.join(reportsDir, "insight-report.md");
 const htmlPath = path.join(reportsDir, "insight-report.html");
 const matrixPath = path.join(reportsDir, "insight-control-matrix.json");
 const mermaidSuperintelligencePath = path.join(reportsDir, "insight-superintelligence.mmd");
+const mermaidControlMapPath = path.join(reportsDir, "insight-control-map.mmd");
 const mermaidGovernancePath = path.join(reportsDir, "insight-governance.mmd");
 const mermaidConstellationPath = path.join(reportsDir, "insight-constellation.mmd");
 const telemetryPath = path.join(reportsDir, "insight-telemetry.log");
@@ -79,6 +80,7 @@ async function verifyManifest(manifest: Manifest) {
     path.relative(baseDir, htmlPath).replace(/\\/g, "/"),
     path.relative(baseDir, matrixPath).replace(/\\/g, "/"),
     path.relative(baseDir, mermaidSuperintelligencePath).replace(/\\/g, "/"),
+    path.relative(baseDir, mermaidControlMapPath).replace(/\\/g, "/"),
     path.relative(baseDir, telemetryPath).replace(/\\/g, "/"),
     path.relative(baseDir, ownerBriefPath).replace(/\\/g, "/"),
     path.relative(baseDir, csvPath).replace(/\\/g, "/"),
