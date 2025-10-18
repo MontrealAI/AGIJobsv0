@@ -428,6 +428,7 @@ async function main() {
   const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
   const csvPath = path.join(reportsDir, "insight-market-matrix.csv");
   const constellationPath = path.join(reportsDir, "insight-constellation.mmd");
+  const agencyOrbitPath = path.join(reportsDir, "insight-agency-orbit.mmd");
   const lifecyclePath = path.join(reportsDir, "insight-lifecycle.mmd");
   const manifestPath = path.join(reportsDir, "insight-manifest.json");
 
@@ -1293,6 +1294,92 @@ ${htmlRows}
     `    classDef sealed fill:#343a55,stroke:#7a8bbd,color:#f1f5ff;\n` +
     `    classDef revealed fill:#214d6d,stroke:#7fe6ff,color:#ecfbff;\n`;
 
+  const agencySeedNodes = minted
+    .map((entry) =>
+      `        seed${entry.tokenId}("#${entry.tokenId} ${escapeMermaidLabel(entry.scenario.sector)}\\n${formatPercent(entry.scenario.confidence)} certainty")`
+    )
+    .join("\n");
+
+  const agencySeedEdges = minted
+    .map((entry) => {
+      const custodyTarget =
+        entry.status === "SOLD"
+          ? "Market"
+          : entry.status === "FORCE_DELISTED"
+            ? "SentinelCustody"
+            : "OwnerVault";
+      const mintedByEdge =
+        entry.mintedBy.toLowerCase() === operator.address.toLowerCase()
+          ? `    MetaSentinel -.owner mint.-> seed${entry.tokenId}`
+          : `    ThermodynamicOracle -.delegate mint.-> seed${entry.tokenId}`;
+      const listingEdge =
+        entry.status === "SOLD" || entry.status === "LISTED"
+          ? `\n    seed${entry.tokenId} --> VentureCartographer`
+          : "";
+      return [
+        `    FusionSmith --> seed${entry.tokenId}`,
+        `    GuardianAuditor --> seed${entry.tokenId}`,
+        `    ThermodynamicOracle --> seed${entry.tokenId}`,
+        mintedByEdge,
+        `${listingEdge}`,
+        `    seed${entry.tokenId} --> ${custodyTarget}`,
+      ]
+        .filter((segment) => segment.length > 0)
+        .join("\n");
+    })
+    .join("\n");
+
+  const agencyClassLines = minted
+    .map((entry) => {
+      const className =
+        entry.status === "SOLD"
+          ? "seedSold"
+          : entry.status === "LISTED"
+            ? "seedListed"
+            : entry.status === "FORCE_DELISTED"
+              ? "seedCustody"
+              : entry.fusionRevealed
+                ? "seedRevealed"
+                : "seedSealed";
+      return `    class seed${entry.tokenId} ${className};`;
+    })
+    .join("\n");
+
+  const agencyOrbitMermaid = `flowchart LR\n` +
+    `    classDef agent fill:#1a2c4f,stroke:#9cc9ff,color:#f4fbff;\n` +
+    `    classDef custody fill:#2c1f4f,stroke:#d0b0ff,color:#fdf9ff;\n` +
+    `    classDef seedSold fill:#0f5132,stroke:#1bff82,color:#eafff5;\n` +
+    `    classDef seedListed fill:#1f3d7a,stroke:#90c2ff,color:#eaf3ff;\n` +
+    `    classDef seedCustody fill:#553c9a,stroke:#c1a8ff,color:#f3edff;\n` +
+    `    classDef seedSealed fill:#343a55,stroke:#7a8bbd,color:#f1f5ff;\n` +
+    `    classDef seedRevealed fill:#214d6d,stroke:#7fe6ff,color:#ecfbff;\n` +
+    `    subgraph AgentSwarm["Meta-Agent Constellation"]\n` +
+    `        MetaSentinel((Meta-Sentinel)):::agent\n` +
+    `        MATSEngine((MATS Engine)):::agent\n` +
+    `        ThermodynamicOracle((Thermodynamic Oracle)):::agent\n` +
+    `        FusionSmith((FusionSmith)):::agent\n` +
+    `        GuardianAuditor((Guardian Auditor)):::agent\n` +
+    `        VentureCartographer((Venture Cartographer)):::agent\n` +
+    `        SystemSentinel((System Sentinel)):::agent\n` +
+    `    end\n` +
+    `    subgraph NovaSeedFoundry["α-AGI Nova-Seed Forge"]\n${agencySeedNodes}\n    end\n` +
+    `    subgraph MarketGrid["α-AGI MARK Market Grid"]\n` +
+    `        OwnerVault((Owner Vault)):::custody\n` +
+    `        SentinelCustody((Sentinel Custody)):::custody\n` +
+    `        Market((Market Operators)):::custody\n` +
+    `    end\n` +
+    `    MetaSentinel --> MATSEngine\n` +
+    `    MATSEngine --> ThermodynamicOracle\n` +
+    `    ThermodynamicOracle --> FusionSmith\n` +
+    `    FusionSmith --> GuardianAuditor\n` +
+    `    GuardianAuditor --> VentureCartographer\n` +
+    `    SystemSentinel -.pause sweep.-> NovaSeedFoundry\n` +
+    `    SystemSentinel -.pause sweep.-> VentureCartographer\n` +
+    `    VentureCartographer --> Market\n` +
+    `    GuardianAuditor --> OwnerVault\n` +
+    `${agencySeedEdges ? `${agencySeedEdges}\n` : ""}` +
+    `${agencyClassLines ? `${agencyClassLines}\n` : ""}`;
+
   const lifecycleMermaid =
     `sequenceDiagram\n` +
     `    autonumber\n` +
@@ -1330,6 +1417,7 @@ ${htmlRows}
   await writeFile(ownerBriefPath, ownerBrief);
   await writeFile(csvPath, csvContent);
   await writeFile(constellationPath, constellationMermaid);
+  await writeFile(agencyOrbitPath, agencyOrbitMermaid);
   await writeFile(lifecyclePath, lifecycleMermaid);
 
   const manifestEntries: { path: string; sha256: string }[] = [];
@@ -1345,6 +1433,7 @@ ${htmlRows}
     ownerBriefPath,
     csvPath,
     constellationPath,
+    agencyOrbitPath,
     lifecyclePath,
   ]) {
     const content = await readFile(file);
