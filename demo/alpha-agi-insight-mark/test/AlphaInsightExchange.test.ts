@@ -33,6 +33,8 @@ describe("AlphaInsightExchange", () => {
       thesis: "Synthetic AI investors fracture market equilibrium",
       disruptionTimestamp: BigInt(Math.floor(Date.UTC(2027, 0, 1) / 1000)),
       sealedURI: "ipfs://seed/finance",
+      confidenceBps: 9000,
+      forecastValue: "40T",
     });
 
     await token.mint(buyer.address, ethers.parseUnits("1000", 18));

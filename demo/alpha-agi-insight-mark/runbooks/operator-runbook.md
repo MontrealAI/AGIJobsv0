@@ -40,7 +40,7 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 - `insight-superintelligence.mmd` – Meta-Agentic Tree Search + thermodynamic trigger constellation (render via https://mermaid.live/).
 - `insight-owner-brief.md` – executive command sheet summarising pause hooks and custody.
 - `insight-safety-checklist.md` – safety and control checklist showing contract owners, sentinels, override levers, and integrity assertions.
-- `insight-market-matrix.csv` – spreadsheet-ready dataset for analysts and treasury.
+- `insight-market-matrix.csv` – spreadsheet-ready dataset showing confidence basis points, forecast magnitude, custody and market state for each Nova-Seed.
 - `insight-constellation.mmd` – constellation mermaid capturing live custody and sentinel edges.
 - `insight-agency-orbit.mmd` – orbit schematic linking each meta-agent to its minted seeds and custody paths.
 - `insight-lifecycle.mmd` – sequence diagram evidencing owner command authority across the full deployment-to-market cycle.
@@ -57,6 +57,7 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 5. **Dynamic Pricing** – Reprice an active listing via `updateListingPrice(tokenId, price)`; confirm the markdown reflects the new amount.
 6. **Custody Override** – Call `forceDelist(tokenId, <custodian>)` to evacuate a seed into a safe wallet, then re-list when cleared.
 7. **Reveal & Revise FusionPlan** – Trigger `revealFusionPlan(tokenId, uri)` to expose the cryptosealed FusionPlan, then `updateFusionPlan(tokenId, uri)` if revisions are needed.
+8. **Retune Forecast Parameters** – Use `updateInsightDetails(tokenId, sector, thesis, timestamp, confidenceBps, forecastValue)` to refresh disruption metadata and economic magnitude under owner command.
 
 ## 5. Verification Loop
 

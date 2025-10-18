@@ -50,6 +50,10 @@ interface RecapMintedEntry {
   sale?: RecapSaleRecord;
   fusionURI: string;
   disruptionTimestamp: string;
+  confidenceBps?: number;
+  confidenceDecimal?: number;
+  confidencePercent?: number;
+  forecastValue?: string;
 }
 
 interface RecapStats {
@@ -164,6 +168,18 @@ function expectedMarketState(entry: RecapMintedEntry): string {
     return `Force delisted → ${shortenAddress(entry.finalCustodian)}`;
   }
   return "Held";
+}
+
+function entryConfidenceBps(entry: RecapMintedEntry): number {
+  if (typeof entry.confidenceBps === "number") {
+    return entry.confidenceBps;
+  }
+  const scenarioConfidence = entry.scenario?.confidence ?? 0;
+  return Math.round(scenarioConfidence * 10_000);
+}
+
+function entryConfidenceDecimal(entry: RecapMintedEntry): number {
+  return entryConfidenceBps(entry) / 10_000;
 }
 
 function splitCsvLine(line: string): string[] {
@@ -312,15 +328,15 @@ function validateRecapStats(recap: RecapFile) {
     throw new Error("Recap stats sealed/revealed counts do not total minted count.");
   }
 
-  const totalConfidence = minted.reduce((acc, entry) => acc + (entry.scenario?.confidence ?? 0), 0);
-  const averageConfidence = minted.length ? totalConfidence / minted.length : 0;
+  const totalConfidenceDecimal = minted.reduce((acc, entry) => acc + entryConfidenceDecimal(entry), 0);
+  const averageConfidence = minted.length ? totalConfidenceDecimal / minted.length : 0;
   const peakConfidence = minted.reduce(
-    (acc, entry) => Math.max(acc, entry.scenario?.confidence ?? 0),
-    minted.length ? minted[0].scenario?.confidence ?? 0 : 0,
+    (acc, entry) => Math.max(acc, entryConfidenceDecimal(entry)),
+    minted.length ? entryConfidenceDecimal(minted[0]) : 0,
   );
   const floorConfidence = minted.reduce(
-    (acc, entry) => Math.min(acc, entry.scenario?.confidence ?? 0),
-    minted.length ? minted[0].scenario?.confidence ?? 0 : 0,
+    (acc, entry) => Math.min(acc, entryConfidenceDecimal(entry)),
+    minted.length ? entryConfidenceDecimal(minted[0]) : 0,
   );
   const capabilityIndex = averageConfidence * 0.6 + peakConfidence * 0.4;
 
@@ -329,8 +345,23 @@ function validateRecapStats(recap: RecapFile) {
   assertWithinTolerance(stats.confidencePeakPercent, Number((peakConfidence * 100).toFixed(2)), 0.15, "Peak confidence percent");
   assertWithinTolerance(stats.confidenceFloorPercent, Number((floorConfidence * 100).toFixed(2)), 0.2, "Floor confidence percent");
 
+  for (const entry of minted) {
+    const scenarioConfidenceBps = Math.round((entry.scenario?.confidence ?? 0) * 10_000);
+    if (entryConfidenceBps(entry) !== scenarioConfidenceBps) {
+      throw new Error(`Confidence basis points mismatch for recap token ${entry.tokenId}.`);
+    }
+    const scenarioForecast = entry.scenario?.forecastValue ?? "";
+    if (!entry.forecastValue) {
+      throw new Error(`Forecast value missing for recap token ${entry.tokenId}.`);
+    }
+    if (scenarioForecast && entry.forecastValue !== scenarioForecast) {
+      throw new Error(`Forecast value divergence for recap token ${entry.tokenId}.`);
+    }
+  }
+
   const forecastTotal = minted.reduce(
-    (acc, entry) => acc + parseForecastValueTrillions(entry.scenario?.forecastValue ?? "0"),
+    (acc, entry) =>
+      acc + parseForecastValueTrillions(entry.forecastValue ?? entry.scenario?.forecastValue ?? "0"),
     0,
   );
   assertWithinTolerance(stats.forecastValueTrillions, Number(forecastTotal.toFixed(2)), 0.2, "Forecast value trillions");
@@ -513,6 +544,7 @@ async function verifyCsv(minted: RecapMintedEntry[]) {
     "sector",
     "ruptureYear",
     "confidence",
+    "confidenceBps",
     "status",
     "marketState",
     "custodian",
@@ -562,12 +594,16 @@ async function verifyCsv(minted: RecapMintedEntry[]) {
     if (record.disruptionTimestamp !== entry.disruptionTimestamp) {
       throw new Error(`CSV disruptionTimestamp mismatch for token ${entry.tokenId}.`);
     }
-    if (record.forecastValue !== entry.scenario.forecastValue) {
+    if (record.forecastValue !== (entry.forecastValue ?? entry.scenario.forecastValue)) {
       throw new Error(`CSV forecastValue mismatch for token ${entry.tokenId}.`);
     }
-    const expectedConfidence = formatPercent(entry.scenario.confidence);
+    const expectedConfidence = formatPercent(entryConfidenceDecimal(entry));
     if (record.confidence !== expectedConfidence) {
       throw new Error(`CSV confidence mismatch for token ${entry.tokenId}: expected ${expectedConfidence}, got ${record.confidence}.`);
+    }
+    const expectedConfidenceBps = entryConfidenceBps(entry).toString();
+    if (record.confidenceBps !== expectedConfidenceBps) {
+      throw new Error(`CSV confidenceBps mismatch for token ${entry.tokenId}.`);
     }
     const expectedCustodian = shortenAddress(entry.finalCustodian);
     if (record.custodian !== expectedCustodian) {
