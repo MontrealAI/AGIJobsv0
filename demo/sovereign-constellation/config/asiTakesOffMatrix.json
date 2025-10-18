@@ -1,0 +1,79 @@
+{
+  "mission": {
+    "id": "asi-takes-off",
+    "title": "ASI Takes Off",
+    "tagline": "Precision meets destiny as Sovereign Constellation deploys a civilization-scale workforce for a single director."
+  },
+  "constellation": {
+    "label": "Sovereign Constellation",
+    "summary": "Three autonomous AGI hubs span research, industrial execution, and civic governance while staying under the owner's wallet control.",
+    "operatorPromise": "Launch a planetary AGI workforce without writing code; every signature and override lives in your wallet."
+  },
+  "pillars": [
+    {
+      "id": "meta-agentic-alpha-agi-orchestration",
+      "title": "Meta-Agentic α-AGI Orchestration",
+      "headline": "One click ignites Helios, Triton, and Athena under a single mission intent.",
+      "operatorAction": "Load the flagship playbook and sign each prepared transaction from the orchestrator console.",
+      "ownerLever": "Pause or resume any hub instantly via the SystemPause atlas entry.",
+      "proof": "playbooks.json › asi-takes-off"
+    },
+    {
+      "id": "alpha-agi-governance",
+      "title": "α-AGI Governance",
+      "headline": "All mutable parameters route through owner-only controls surfaced in the atlas UI.",
+      "operatorAction": "Use the Owner Console to adjust commit/reveal windows and minimum stake live.",
+      "ownerLever": "Rotate governance to a Safe or pause contracts directly from owner atlas links.",
+      "proof": "generateOwnerAtlas.mjs"
+    },
+    {
+      "id": "making-the-chain-disappear",
+      "title": "Making the Chain Disappear",
+      "headline": "Wallet prompts arrive with the correct chain metadata so no manual RPC juggling is required.",
+      "operatorAction": "Accept orchestrator-prepared prompts; the console alerts if a network switch is needed.",
+      "ownerLever": "Grant temporary validator access by adding addresses through the IdentityRegistry write link.",
+      "proof": "server/index.ts › serializeTx"
+    },
+    {
+      "id": "recursive-self-improvement",
+      "title": "Recursive Self-Improvement",
+      "headline": "Telemetry feeds an autotune plan that rebalances incentives and timing for future missions.",
+      "operatorAction": "Review the Thermostat plan and apply the recommended parameters with one click.",
+      "ownerLever": "Adopt the suggested dispute module rotation to iterate governance safely.",
+      "proof": "autotune.mjs"
+    },
+    {
+      "id": "winning-the-ai-race",
+      "title": "Winning the AI Race",
+      "headline": "CI, mission automation, and owner supremacy collapse time-to-deploy to minutes.",
+      "operatorAction": "Run the ASI Takes Off CLI or launch sequence to reproduce the constellation end-to-end.",
+      "ownerLever": "Audit the Owner Control Matrix export to verify every control remains under your key.",
+      "proof": "scripts/generateOwnerAtlas.mjs"
+    }
+  ],
+  "automation": {
+    "launchCommands": [
+      {
+        "label": "Spin up the full constellation",
+        "run": "npm run demo:sovereign-constellation:local"
+      },
+      {
+        "label": "Compute owner atlas and thermostat plan",
+        "run": "npm run demo:sovereign-constellation:plan"
+      },
+      {
+        "label": "Execute CI-quality smoke",
+        "run": "npm run demo:sovereign-constellation:ci"
+      }
+    ],
+    "ci": {
+      "description": "Root CI enforces tests, builds, and autotune computation on every commit via demo:sovereign-constellation:ci.",
+      "ownerVisibility": "Branch protections require all constellation checks green before merge." 
+    }
+  },
+  "ownerAssurances": {
+    "pausing": "SystemPause addresses broadcast owner-triggered halts to every hub simultaneously.",
+    "upgrades": "Each module exposes transferOwnership and upgrade hooks guarded by owner-only modifiers.",
+    "emergencyResponse": "Owner atlas callouts reference the exact explorer URLs for critical overrides."
+  }
+}
