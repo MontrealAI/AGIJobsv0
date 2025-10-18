@@ -37,6 +37,15 @@ npm run demo:sovereign-constellation:asi-takes-off:flight-plan
 This prints each phase, non-technical step, owner lever, automation command, and verification signal in order so
 directors can walk through the launch before any signatures are collected.
 
+For a governance-first briefing that focuses on owner levers and unstoppable guarantees, generate the empowerment deck:
+
+```bash
+npm run demo:sovereign-constellation:asi-takes-off:empowerment
+```
+
+This surfaces owner powers cross-referenced with explorer links and automation commands so executives can validate that
+the contract owner can pause, upgrade, and redirect every module in seconds.
+
 ## Files
 
 - `launch.mjs` – orchestrates configuration loading, telemetry analysis, owner atlas synthesis, and manifest
