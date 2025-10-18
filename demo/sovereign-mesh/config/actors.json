@@ -1,32 +1,7 @@
 [
-  {
-    "id": "usa",
-    "flag": "🇺🇸",
-    "name": "United States",
-    "tagline": "Federal climate coalition funding planetary decarbonization."
-  },
-  {
-    "id": "jpn",
-    "flag": "🇯🇵",
-    "name": "Japan",
-    "tagline": "Moonshot foresight ministry advancing resilience missions."
-  },
-  {
-    "id": "deu",
-    "flag": "🇩🇪",
-    "name": "Germany",
-    "tagline": "Industry 5.0 consortium stewarding sovereign supply meshes."
-  },
-  {
-    "id": "ngo",
-    "flag": "🌍",
-    "name": "Global NGO",
-    "tagline": "Planetary commons alliance orchestrating civic knowledge hubs."
-  },
-  {
-    "id": "city",
-    "flag": "🏙️",
-    "name": "Smart City DAO",
-    "tagline": "Metropolitan DAO pioneering climate-positive urbanism."
-  }
+  { "id": "usa", "flag": "\ud83c\uddfa\ud83c\uddf8", "name": "United States" },
+  { "id": "jpn", "flag": "\ud83c\uddef\ud83c\uddf5", "name": "Japan" },
+  { "id": "deu", "flag": "\ud83c\udde9\ud83c\uddea", "name": "Germany" },
+  { "id": "ngo", "flag": "\ud83c\udf0d", "name": "Global NGO" },
+  { "id": "city", "flag": "\ud83c\udf06", "name": "Smart City DAO" }
 ]
