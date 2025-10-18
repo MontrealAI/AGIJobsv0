@@ -140,14 +140,20 @@ demo/sovereign-constellation/
    ```bash
    npm run demo:sovereign-constellation:local
    ```
-   The helper script deploys three hubs to a local Hardhat node, seeds showcase jobs, starts the orchestrator on
+   The helper script deploys three hubs to a local Hardhat node, seeds showcase jobs, regenerates the owner atlas, starts the orchestrator on
    `http://localhost:8090`, and serves the console on `http://localhost:5179`.
 3. **Open the Sovereign Constellation console** and connect a wallet (e.g., MetaMask configured for `localhost:8545`).
    Select a mission playbook, review all cross-network steps, and sign the prepared transactions as they appear.
 
 ## Owner control matrix
 
-The generated `reports/sovereign-constellation/owner-atlas.md` documents every control surface. Highlights:
+Regenerate the owner matrix any time configuration changes:
+
+```bash
+npm run demo:sovereign-constellation:atlas
+```
+
+The resulting `reports/sovereign-constellation/owner-atlas.md` documents every control surface. Highlights:
 
 - `SystemPause` + `JobRegistry.pause()` across all hubs for immediate halts.
 - `ValidationModule.setCommitRevealWindows()` to retune validation cadence in flight.

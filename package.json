@@ -177,6 +177,7 @@
     "superintelligence:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateSuperintelligenceBrief.ts",
     "demo:sovereign-constellation:deploy": "npx hardhat run --no-compile demo/sovereign-constellation/scripts/deployConstellation.ts",
     "demo:sovereign-constellation:seed": "npx hardhat run --no-compile demo/sovereign-constellation/scripts/seedConstellation.ts",
+    "demo:sovereign-constellation:atlas": "node demo/sovereign-constellation/scripts/generateOwnerAtlas.mjs",
     "demo:sovereign-constellation:local": "node demo/sovereign-constellation/bin/sovereign-constellation-local.mjs"
   },
   "keywords": [],

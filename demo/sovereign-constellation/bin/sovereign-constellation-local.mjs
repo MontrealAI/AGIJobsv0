@@ -30,6 +30,7 @@ async function main() {
   console.log("🚀 Preparing Sovereign Constellation local constellation...");
   await run("npx", ["hardhat", "run", "--no-compile", "demo/sovereign-constellation/scripts/deployConstellation.ts"]);
   await run("npx", ["hardhat", "run", "--no-compile", "demo/sovereign-constellation/scripts/seedConstellation.ts"]);
+  await run("node", ["demo/sovereign-constellation/scripts/generateOwnerAtlas.mjs"]);
 
   console.log("✅ Contracts ready. Launching orchestrator and console...");
   const server = spawnPersist("npm", ["run", "dev", "--", "--host", "0.0.0.0", "--port", "8090"], {
