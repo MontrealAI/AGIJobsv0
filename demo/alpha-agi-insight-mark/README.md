@@ -6,6 +6,7 @@
 
 - **Push-button foresight** – `npm run demo:alpha-agi-insight-mark` deploys the Nova-Seed NFT, Insight Access Token, and Insight Exchange, executes the simulated meta-agent swarm, and exports recap dossiers, telemetry logs, mermaid diagrams, and owner control matrices.
 - **Absolute owner command** – The contract owner can pause every module, rotate the oracle, retarget the treasury, retune trading fees, and update or reveal FusionPlans at any time.
+- **Instant custody recovery** – A dedicated `reclaimInsight` control lets the owner retake any Nova-Seed from the field and reroute it to a secure wallet in a single transaction.
 - **Sentinel-grade emergency controls** – Owners can delegate a cross-contract SystemPause sentinel that can freeze the Nova-Seed, exchange, and settlement token instantly while the owner retains sole authority to resume operations.
 - **Tokenised disruption** – Each α-AGI Nova-Seed is minted from the meta-agent scenarios, sealed until the owner reveals it, and can be listed or traded through α-AGI MARK with automated manifest hashing for integrity proofs.
 - **Production rigor** – The Hardhat project includes unit tests covering minting, pausing, delegated minters, fixed-price trading, fee distribution, and oracle resolution. The GitHub workflow executes the tests, runs the demo end-to-end, and verifies the generated dossiers.

@@ -18,7 +18,7 @@ The orchestrator:
 
 - Deploys the Insight Access Token, Nova-Seed NFT, and Foresight Exchange.
 - Spins up the synthetic meta-agent swarm (Meta-Sentinel, Thermodynamic Oracle, FusionSmith, Venture Cartographer, Guardian Auditor).
-- Mints three disruption insights, reveals and revises the first FusionPlan, lists two tokens, reprices live, executes a sale, force-delists a listing to sentinel custody, and renders capability gauges for the superintelligent foresight engine.
+- Mints three disruption insights, reveals and revises the first FusionPlan, lists two tokens, reprices live, executes a sale, force-delists a listing to sentinel custody, **executes an owner-driven reclamation into the sovereign vault**, and renders capability gauges for the superintelligent foresight engine.
 - Resolves the traded prediction, drills the delegated SystemPause sentinel, and exports integrity artefacts.
 
 Watch the console for emoji-tagged telemetry such as:
@@ -56,7 +56,8 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 4. **Retarget Treasury** – Call `setTreasury(<new address>)`. Validate the change via `insight-recap.json` and on-chain logs.
 5. **Dynamic Pricing** – Reprice an active listing via `updateListingPrice(tokenId, price)`; confirm the markdown reflects the new amount.
 6. **Custody Override** – Call `forceDelist(tokenId, <custodian>)` to evacuate a seed into a safe wallet, then re-list when cleared.
-7. **Reveal & Revise FusionPlan** – Trigger `revealFusionPlan(tokenId, uri)` to expose the cryptosealed FusionPlan, then `updateFusionPlan(tokenId, uri)` if revisions are needed.
+7. **Owner Reclaim** – Call `reclaimInsight(tokenId, <vault address>)` to seize a Nova-Seed back into a hardened vault without waiting for voluntary compliance.
+8. **Reveal & Revise FusionPlan** – Trigger `revealFusionPlan(tokenId, uri)` to expose the cryptosealed FusionPlan, then `updateFusionPlan(tokenId, uri)` if revisions are needed.
 
 ## 5. Verification Loop
 

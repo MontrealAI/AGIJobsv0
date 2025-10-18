@@ -166,6 +166,42 @@ function expectedMarketState(entry: RecapMintedEntry): string {
   return "Held";
 }
 
+function normaliseAddress(value: string | undefined): string {
+  return value?.toLowerCase?.() ?? "";
+}
+
+function validateCustody(entry: RecapMintedEntry) {
+  const finalCustodian = normaliseAddress(entry.finalCustodian);
+  if (!finalCustodian) {
+    throw new Error(`Minted entry ${entry.tokenId} missing final custodian.`);
+  }
+
+  const hasSale = Boolean(entry.sale);
+  if (entry.status === "SOLD") {
+    if (!hasSale) {
+      throw new Error(`Minted entry ${entry.tokenId} missing sale details despite SOLD status.`);
+    }
+    if (normaliseAddress(entry.sale?.buyer) !== finalCustodian) {
+      throw new Error(`Minted entry ${entry.tokenId} final custodian does not match sale buyer.`);
+    }
+  } else {
+    if (hasSale) {
+      throw new Error(`Minted entry ${entry.tokenId} includes sale data but status ${entry.status}.`);
+    }
+  }
+
+  if (entry.status === "LISTED" && !entry.listingPrice) {
+    throw new Error(`Minted entry ${entry.tokenId} expected listing price when status is LISTED.`);
+  }
+
+  if (entry.status === "FORCE_DELISTED") {
+    const forceAction = entry.ownerActions.some((note) => note.toLowerCase().includes("force-delisted"));
+    if (!forceAction) {
+      throw new Error(`Minted entry ${entry.tokenId} missing owner action documenting force delist.`);
+    }
+  }
+}
+
 function splitCsvLine(line: string): string[] {
   const result: string[] = [];
   let current = "";
@@ -592,6 +628,19 @@ async function verifyCsv(minted: RecapMintedEntry[]) {
   }
 }
 
+function validateMintedEntries(minted: RecapMintedEntry[]) {
+  let reclaimedFound = false;
+  for (const entry of minted) {
+    validateCustody(entry);
+    if (entry.ownerActions.some((note) => note.toLowerCase().includes("reclaimed"))) {
+      reclaimedFound = true;
+    }
+  }
+  if (!reclaimedFound) {
+    throw new Error("Minted ledger missing owner reclamation action.");
+  }
+}
+
 async function verifyTelemetry(expected: TelemetryEntry[]) {
   await ensureExists(telemetryPath, "Telemetry log");
   const content = await readFile(telemetryPath, "utf8");
@@ -758,6 +807,9 @@ async function main() {
 
   validateRecapStats(recap);
   console.log("✅ Recap stats block cross-checked against minted ledger.");
+
+  validateMintedEntries(recap.minted);
+  console.log("✅ Custody, sale, and reclamation records validated.");
 
   await verifyMarkdown();
   console.log("✅ Markdown executive summary verified.");
