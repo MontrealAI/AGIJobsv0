@@ -8,7 +8,7 @@ declare global {
 
 export const getProvider = () => {
   if (!window.ethereum) {
-    throw new Error("No injected provider found. Please install MetaMask or similar.");
+    throw new Error("No injected provider found. Open with a wallet-enabled browser.");
   }
   return new ethers.BrowserProvider(window.ethereum as ethers.Eip1193Provider);
 };

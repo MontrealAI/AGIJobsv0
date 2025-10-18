@@ -1,170 +1,171 @@
-# Sovereign Mesh — Planetary Network-of-Networks Demonstration
+# Sovereign Mesh — Planet-Scale Mission Orchestration on AGI Jobs v2
 
-> **Sovereign Mesh** turns AGI Jobs v0 (v2) into a civilization-scale orchestrator that any mission owner can steer. This demo proves how a non-technical leader can coordinate foresight, research, optimization, and knowledge hubs spanning the planet through a single, wallet-first interface. Every capability is delivered using the production AGI Jobs v2 contracts — no new solidity is required.
+Sovereign Mesh is a first-class, owner-governed network-of-networks experience that lets a non-technical leader launch and steer civilization-scale missions across multiple AGI Jobs v2 hubs. Every capability showcased here is implemented exclusively with the production AGI Jobs v2 contracts — no new contracts or protocol changes are required. The result is a wallet-first, fully-governable superstructure that demonstrates how AGI Jobs v2 empowers users to operate with unprecedented reach, precision, and sovereignty.
 
-## Why this demo matters
+> **Mission**: equip any steward with tools that feel like commanding a civilization-scale exocortex. One intent fans out into foresight, research, optimization, and knowledge jobs across specialized hubs, with the contract owner retaining full administrative control at every layer.
 
-- **Planet-scale reach** — multiple autonomous hubs (distinct JobRegistry + module deployments) are woven into one mesh. Missions can target one or many hubs with a single intent.
-- **Owner governed** — the hub owner retains full control (pause, rotate governance, tune parameters) through documented, linked controls.
-- **Wallet-first empowerment** — non-technical users launch, fund, validate, and settle missions entirely from their Ethereum wallet.
-- **Production discipline** — TypeScript/React orchestrator, fully typed Node backend, Hardhat scenarios, Cypress smoke test, and CI integration keep the demo enterprise grade.
+## Key Characteristics
 
-## Directory layout
+- **Owner-Governed** – All hubs remain upgradeable and controllable by the contract owner (or the owner’s Safe/timelock). Every setter/pauser entry point is preserved and surfaced via owner panels.
+- **Wallet-First** – The orchestrator never touches private keys. Users sign each action from their browser wallet, maintaining custody and consent for every mission step.
+- **Mission Playbooks** – High-level intents expand into cross-hub job series sourced from editable JSON. A single click launches a synchronized foresight → research → optimization → knowledge mission arc.
+- **Production-Ready** – Type-safe server, React/Vite UI, governance scripts, Hardhat & Cypress tests, and CI integration ship out-of-the-box. Non-technical operators can deploy and run the demo in minutes.
+- **Superintelligent UX** – Rich data visualizations, dynamic governance dashboards, and cinematic mission timelines show users exactly how AGI Jobs v2 becomes their planet-scale command deck.
+
+## Directory Layout
 
 ```text
-sovereign-mesh/
-├─ README.md
-├─ config/
-│  ├─ mesh.ui.config.json      # UI + network targets
-│  ├─ hubs.mainnet.json        # Hub registry + contract addresses
-│  ├─ playbooks.json           # Mission blueprints editable by the owner
-│  └─ actors.json              # Sample sponsor identities / personas
-├─ server/                     # Node/Express orchestrator
-│  ├─ index.ts
-│  ├─ package.json
-│  ├─ package-lock.json
-│  └─ tsconfig.json
-├─ app/                        # React + Vite command console
-│  ├─ index.html
-│  ├─ package.json
-│  ├─ package-lock.json
-│  ├─ tsconfig.json
-│  ├─ vite.config.ts
-│  └─ src/
-│     ├─ App.tsx
-│     ├─ main.tsx
-│     └─ lib/
-│        ├─ commit.ts
-│        ├─ ethers.ts
-│        ├─ format.ts
-│        └─ subgraph.ts
-├─ scripts/                    # Deployment + governance automation
-│  ├─ deployMesh.ts
-│  ├─ rotateMeshGovernance.ts
-│  └─ seedMesh.ts
-├─ test/
-│  └─ SovereignMesh.t.ts       # Dual-hub lifecycle Hardhat scenario
-└─ cypress/
-   └─ e2e/
-      └─ sovereign-mesh.cy.ts  # UI smoke test
+ demo/sovereign-mesh/
+ ├─ README.md                       # You are here
+ ├─ config/                         # Owner-editable configuration (JSON driven)
+ │  ├─ mesh.ui.config.json          # Global UI + orchestrator config
+ │  ├─ hubs.mainnet.json            # Hub registry (addresses, RPC, subgraphs)
+ │  ├─ playbooks.json               # Mission playbooks (multi-hub job templates)
+ │  └─ actors.json                  # Optional actors/personas for UI accents
+ ├─ server/                         # Express + TypeScript orchestrator
+ │  ├─ package.json
+ │  ├─ tsconfig.json
+ │  └─ index.ts                     # Transaction composers & mission planner
+ ├─ app/                            # React + Vite experience
+ │  ├─ package.json
+ │  ├─ tsconfig.json
+ │  ├─ vite.config.ts
+ │  ├─ index.html
+ │  └─ src/
+ │     ├─ main.tsx
+ │     ├─ App.tsx
+ │     └─ lib/
+ │        ├─ ethers.ts
+ │        ├─ subgraph.ts
+ │        ├─ commit.ts
+ │        └─ format.ts
+ ├─ scripts/                        # Hardhat utilities for operators
+ │  ├─ deployMesh.ts                # Deploys hubs locally for demos/tests
+ │  ├─ rotateMeshGovernance.ts      # Bulk-governance rotation to Safe/timelock
+ │  └─ seedMesh.ts                  # Seeds showcase jobs across hubs
+ ├─ test/
+ │  └─ SovereignMesh.t.ts           # Hardhat spec proving cross-hub lifecycle
+ └─ cypress/
+    └─ e2e/
+       └─ sovereign-mesh.cy.ts      # Smoke test for UI boot + hub selection
 ```
 
-## Mission pipeline overview
+## Strategic Architecture
 
 ```mermaid
-graph TD
-  A[Mission Owner Wallet] -->|Select Playbook| B((Orchestrator API))
-  B -->|Compose createJob txs| C{Hub Registry}
-  C --> D1[Public Research Hub]
-  C --> D2[Industrial Ops Hub]
-  C --> D3[Civic Governance Hub]
-  D1 -->|Stake/Validate| V1[Validator Mesh]
-  D2 -->|Stake/Validate| V2[Validator Mesh]
-  D3 -->|Stake/Validate| V3[Validator Mesh]
-  V1 -->|Commit/Reveal/Finalize| A
-  V2 -->|Commit/Reveal/Finalize| A
-  V3 -->|Commit/Reveal/Finalize| A
-  subgraph Owner Controls
-    E1[Pause / Resume]
-    E2[Update Parameters]
-    E3[Rotate Governance]
-  end
-  E1 -.-> D1
-  E1 -.-> D2
-  E1 -.-> D3
-  E2 -.-> D1
-  E2 -.-> D2
-  E2 -.-> D3
-  E3 -.-> C
+flowchart LR
+  intent(["User Intent"\n(Mission Playbook)]) --> planner{{"Sovereign Mesh Orchestrator"\n(Express + TypeScript)}}
+  planner -->|compose tx| wallet[(Browser Wallet)]
+  wallet -->|signed tx| mainnet{{"Ethereum Mainnet"}}
+  mainnet --> subgraph[(TheGraph Subgraphs)]
+  subgraph --> ui["Sovereign Mesh UI"\n(React/Vite)]
+  ui -->|insights| operator["Non-technical Operator"]
+  operator --> intent
+
+  subgraph --> pr[(Public Research Hub)]
+  subgraph --> io[(Industrial Ops Hub)]
+  subgraph --> cg[(Civic Governance Hub)]
+
+  mainnet -.control.-> owner["Owner / Safe"]
+  owner -.pauses, setters, parameter updates.-> pr
+  owner -.-> io
+  owner -.-> cg
 ```
 
-## Quickstart (non-technical operator)
+```mermaid
+sequenceDiagram
+  participant O as Operator
+  participant UI as Sovereign Mesh UI
+  participant OR as Orchestrator API
+  participant W as Wallet
+  participant H1 as Hub α (Research)
+  participant H2 as Hub β (Industrial)
+  participant H3 as Hub γ (Governance)
 
-1. **Clone + install**
-   ```bash
-   git clone https://github.com/MontrealAI/AGIJobsv0.git
-   cd AGIJobsv0
-   npm ci
-   ```
-2. **Populate hub addresses**
-   - Update [`config/hubs.mainnet.json`](config/hubs.mainnet.json) with the contracts of each deployed AGI Jobs v2 hub (mainnet, testnet, or local Hardhat).
-   - Optionally run `npx hardhat run demo/sovereign-mesh/scripts/deployMesh.ts --network localhost` to deploy reference hubs for local rehearsals.
-3. **Run the orchestrator API**
-   ```bash
-   cd demo/sovereign-mesh/server
-   npm install
-   npm run dev
-   ```
-4. **Launch the Sovereign Mesh console**
-   ```bash
-   cd ../app
-   npm install
-   npm run dev
-   ```
-   Visit http://localhost:5178 — connect your wallet, choose a hub, and orchestrate missions.
-5. **(Optional) Seed showcase jobs**
-   ```bash
-   cd ../../..
-   npx hardhat run demo/sovereign-mesh/scripts/seedMesh.ts --network localhost
-   ```
-6. **Rotate governance safely**
-   ```bash
-   export GOVERNANCE_SAFE=0xYourSafe
-   npx hardhat run demo/sovereign-mesh/scripts/rotateMeshGovernance.ts --network mainnet
-   ```
+  O->>UI: Select playbook "Decarbonize Port City"
+  UI->>OR: POST /mesh/plan/instantiate
+  OR-->>UI: tx array (createJob on H1, H2, H3...)
+  loop Each Mission Step
+    UI->>W: Request signature for createJob tx
+    W->>H#: Broadcast signed tx
+    H#-->>W: Receipt (JobCreated)
+    W-->>UI: hash + status
+    UI-->>O: Step confirmed & timeline updated
+  end
+  UI->>O: Mission live across hubs (foresight, research, optimization, knowledge)
+```
 
-## User experience tour
+## Configuration-Driven Sovereignty
 
-| Section | What it delivers |
-| --- | --- |
-| **Connect & Select Hub** | Wallet-first connect button + hub selector that hydrates live jobs via The Graph. |
-| **Create Job** | Reward + URI form that composes a `createJob` transaction with sensible deadlines and spec hash. |
-| **Participate** | Validators stake, commit, reveal, and finalize in a human-friendly workflow (salts handled automatically). |
-| **Owner Control Center** | Governance wallet can pause/unpause hubs, retune validation cadence, adjust staking economics, and push identity registry updates without leaving the console. |
-| **Mission Playbooks** | Dynamic preview of sponsors, total rewards, and cross-hub deliverables with one-click instantiation. |
-| **Mesh Sponsors & Actors** | Configurable roster of planetary sponsors with mission-ready taglines to humanize the mesh. |
-| **Owner Panels** | Direct links to every hub contract write interface on Etherscan for immediate governance actions. |
+All mission content, addresses, and UI behavior live in `config/*.json`. Non-technical owners can:
 
-## Production-grade guarantees
+- Swap in production contract addresses by editing `config/hubs.mainnet.json`.
+- Add new hubs or retire old ones with simple JSON edits.
+- Publish new missions by appending to `config/playbooks.json`.
+- Personalize presentation with `config/actors.json`.
 
-- **No private keys on the server** — the Express orchestrator only returns unsigned transactions; the wallet signs everything.
-- **Config-driven** — missions, hubs, actors, RPC endpoints, and presentation can be updated by editing JSON files.
-- **Typed + tested** — Hardhat scenario covers dual-hub lifecycle, Cypress assures the UI boots, TypeScript builds enforced in CI.
-- **CI enforced** — `.github/workflows/ci.yml` includes the Sovereign Mesh build job so every PR keeps the demo green.
-- **Owner-safe orchestration** — the console’s Owner Control Center composes pause/unpause and parameter tuning transactions directly for the governance wallet.
+Every config change is hot-reload friendly in development and requires no recompilation in production builds.
 
-## Mission blueprint editing
+## Server (Express Orchestrator)
 
-Playbooks live in [`config/playbooks.json`](config/playbooks.json). Add new missions or adjust rewards by editing JSON — no code changes required. Each step uses the format `"stage@hub"` to map actions to hubs, supports rich `description` fields, and can declare a `sponsor` referencing an entry in [`config/actors.json`](config/actors.json).
+- Serves configuration over `/mesh/*` endpoints.
+- Composes unsigned Ethereum transactions for createJob, staking, commit/reveal/finalize, disputes, and mission instantiation.
+- Uses minimal ABI fragments and `ethers` interfaces to ensure transactions match production contracts exactly.
+- Never stores private keys. The browser wallet remains the sole authority for execution.
+- Includes a development-only allowlist helper to add validators during local demos (disable for production).
 
-`actors.json` accepts `flag`, `name`, and optional `tagline` strings so the interface can introduce sponsors and mission owners in a narrative, human-readable way.
+## UI (React + Vite)
 
-## Identity and governance
+The React experience focuses on cinematic clarity and approachability:
 
-- Use the **Allowlist (dev)** button only during rehearsals. In production rely on ENS or allowlist Merkle roots configured in the IdentityRegistry.
-- Run `rotateMeshGovernance.ts` to hand control to a Gnosis Safe or timelock contract.
-- The Owner Panels link directly to ValidationModule, JobRegistry, StakeManager, IdentityRegistry, and optional FeePool write tabs on Etherscan.
+- **Mission Control Bar** – connect wallet, choose hub, define rewards, launch jobs instantly.
+- **Live Intelligence Table** – streaming job state across the selected hub (employer, reward, URI, status, validator counts).
+- **Validator Console** – stake, commit, reveal, and finalize with automated salt storage for reveal integrity.
+- **Mission Playbooks Carousel** – instantiate complex multi-hub missions in a single flow.
+- **Owner Panels** – direct jump links to every module’s Etherscan write interface for rapid governance actions (pause, parameter updates, allowlist roots, etc.).
 
-## Testing
+All transactions are signed in-wallet. Salted commit/reveal values are stored locally per job to preserve validator secrecy.
+
+## Operator Scripts
+
+- `deployMesh.ts` spins up fully wired hubs (JobRegistry, ValidationModule, StakeManager, IdentityRegistry, DisputeModule, CertificateNFT) against a shared AGIALPHA token for local or testnet rehearsals.
+- `rotateMeshGovernance.ts` bulk-rotates ownership to a Safe or timelock, hardening operations without manual per-contract calls.
+- `seedMesh.ts` bootstraps illustrative jobs on each hub, ensuring the UI showcases activity immediately.
+
+## Testing & CI
+
+- `test/SovereignMesh.t.ts` demonstrates multi-hub job lifecycles end-to-end (allowlisting, staking, commit/reveal, finalize) and validates cross-hub fund flows.
+- `cypress/e2e/sovereign-mesh.cy.ts` keeps the UI smoke-tested in CI.
+- `.github/workflows/ci.yml` now contains the `Demo — Sovereign Mesh (build)` job, guaranteeing the server and UI build cleanly for every PR. Branch protection can enforce this job for fully green CI.
+
+## Quickstart
 
 ```bash
-# Hardhat integration test
-npm test -- --grep "Sovereign Mesh"
+# 1. (Optional) Deploy local hubs & seed sample jobs
+npx hardhat run demo/sovereign-mesh/scripts/deployMesh.ts --network localhost
+npx hardhat run demo/sovereign-mesh/scripts/seedMesh.ts --network localhost
 
-# Cypress UI smoke (requires `npm run dev` for both server and app)
-npx cypress run --spec demo/sovereign-mesh/cypress/e2e/sovereign-mesh.cy.ts
+# 2. Launch orchestrator API
+cd demo/sovereign-mesh/server
+npm install
+npm run dev   # default http://localhost:8084
+
+# 3. Launch UI
+cd ../app
+npm install
+VITE_MESH_BASE=http://localhost:8084 npm run dev   # default http://localhost:5178
 ```
 
-## Deployment
+Open http://localhost:5178, connect your wallet, select a hub, and begin commanding missions. Owner administration links are available under **Owner Panels**.
 
-1. Build the orchestrator: `npm run build` inside `server/`.
-2. Build the console: `npm run build` inside `app/` (outputs static bundle under `dist/`).
-3. Serve the static bundle behind any CDN (S3, Cloudflare, IPFS). Run the Node orchestrator behind HTTPS with access control if desired.
+## Governance & Safety Checklist
 
-## Next frontiers
+- [x] Owner can pause, update commit/reveal windows, adjust validator counts, rotate governance, and modify fee routes from dedicated panels.
+- [x] Validators operate with explicit staking and slashing logic inherited from AGI Jobs v2.
+- [x] Mission launchers retain complete control through wallet signatures; no custodial trust assumptions.
+- [x] CI enforces builds and tests for ongoing reliability.
+- [x] Documentation empowers non-technical stewards to adapt the mesh as their ecosystem evolves.
 
-- Integrate ENS workflows in the validator UX.
-- Stream mission telemetry via websockets and subgraph subscriptions.
-- Extend playbooks with branching logic and automated dispute escalation triggers.
+## License
 
-Sovereign Mesh shows how AGI Jobs v0 (v2) becomes the command deck for planetary coordination — a non-technical user orchestrates superintelligent capabilities with clarity, safety, and unstoppable scale.
+This demo inherits the repository license. Consult [LICENSE](../../LICENSE) for details.

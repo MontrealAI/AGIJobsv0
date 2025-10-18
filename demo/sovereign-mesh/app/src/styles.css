@@ -1,0 +1,65 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: #6ef7ff;
+}
+
+button {
+  background: linear-gradient(120deg, #4c6fff 0%, #00d3c9 100%);
+  border: none;
+  border-radius: 999px;
+  color: #051018;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.6rem 1.4rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(78, 120, 255, 0.25);
+}
+
+input, select {
+  background: rgba(8, 16, 28, 0.7);
+  border: 1px solid rgba(120, 200, 255, 0.25);
+  border-radius: 10px;
+  color: #e9f6ff;
+  padding: 0.55rem 0.75rem;
+}
+
+select option {
+  color: #051018;
+}
+
+summary {
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background: rgba(5, 12, 20, 0.85);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+table th, table td {
+  padding: 0.8rem;
+  text-align: left;
+}
+
+table tbody tr:nth-child(odd) {
+  background: rgba(12, 28, 42, 0.7);
+}
+
+table a {
+  color: #8ef9ff;
+}
