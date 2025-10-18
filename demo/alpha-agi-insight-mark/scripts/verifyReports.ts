@@ -1110,13 +1110,29 @@ async function verifyOwnerSupremacy(
   if (dossier.crossChecks.onchainOwnership.length !== recap.minted.length) {
     throw new Error("Owner supremacy on-chain ownership length mismatch.");
   }
-  const ledgerIds = new Set(ledger.minted.map((entry) => entry.tokenId));
+  const ledgerByToken = new Map(ledger.minted.map((entry) => [entry.tokenId, entry]));
+  const recapByToken = new Map(recap.minted.map((entry) => [entry.tokenId, entry]));
   for (const record of dossier.crossChecks.onchainOwnership) {
-    if (!ledgerIds.has(record.tokenId)) {
+    const ledgerEntry = ledgerByToken.get(record.tokenId);
+    if (!ledgerEntry) {
       throw new Error(`Owner supremacy references unknown token ${record.tokenId}.`);
     }
     if (!record.owner || record.owner.length < 10) {
       throw new Error(`Owner supremacy ownership entry missing owner for token ${record.tokenId}.`);
+    }
+    const recapEntry = recapByToken.get(record.tokenId);
+    if (!recapEntry) {
+      throw new Error(`Owner supremacy token ${record.tokenId} missing from recap dossier.`);
+    }
+    if (!addressesEqual(record.owner, ledgerEntry.finalCustodian)) {
+      throw new Error(
+        `Owner supremacy on-chain owner ${record.owner} does not match ledger custodian ${ledgerEntry.finalCustodian} for token ${record.tokenId}.`,
+      );
+    }
+    if (!addressesEqual(record.owner, recapEntry.finalCustodian)) {
+      throw new Error(
+        `Owner supremacy on-chain owner ${record.owner} does not match recap custodian ${recapEntry.finalCustodian} for token ${record.tokenId}.`,
+      );
     }
   }
   if (!dossier.crossChecks.treasuryBalance || Number.isNaN(Number(dossier.crossChecks.treasuryBalance))) {
