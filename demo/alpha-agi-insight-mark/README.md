@@ -81,6 +81,7 @@ Running the demo produces:
 - `insight-owner-brief.md` – rapid-response owner command checklist with custody overview.
 - `insight-market-matrix.csv` – CSV dataset for financial modelling and downstream analytics.
 - `insight-constellation.mmd` – mermaid constellation showing live custody, market, and sentinel linkages.
+- `insight-lifecycle.mmd` – end-to-end sequence diagram proving owner-dominated lifecycle control from swarm genesis to market settlement.
 - `insight-manifest.json` – SHA-256 hashes of every generated artefact and the scenario dataset that produced them.
 
 All outputs are designed for direct inclusion in boardroom briefings and investor packets.

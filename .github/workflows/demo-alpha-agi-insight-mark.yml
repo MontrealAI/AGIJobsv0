@@ -198,5 +198,6 @@ jobs:
             demo/alpha-agi-insight-mark/reports/insight-control-matrix.json
             demo/alpha-agi-insight-mark/reports/insight-control-map.mmd
             demo/alpha-agi-insight-mark/reports/insight-superintelligence.mmd
+            demo/alpha-agi-insight-mark/reports/insight-lifecycle.mmd
             demo/alpha-agi-insight-mark/reports/insight-manifest.json
             demo/alpha-agi-insight-mark/reports/insight-telemetry.log
