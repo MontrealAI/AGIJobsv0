@@ -1,0 +1,91 @@
+{
+  "id": "asi-takes-off-victory",
+  "title": "ASI Takes Off Victory Assurance Plan",
+  "summary": "Hardens the Sovereign Constellation launch so a single operator can command audited hubs, enforce owner supremacy, and validate telemetry without writing code.",
+  "operatorPromise": "Victory is defined as completing the ASI Takes Off playbook with all control checks, telemetry confirmations, and CI guardrails reporting green.",
+  "objectives": [
+    {
+      "id": "ignite-mission",
+      "title": "Ignite the Meta-Agentic Mission",
+      "outcome": "Helios, Triton, and Athena accept the asi-takes-off playbook transactions and emit JobCreated events per hub.",
+      "verification": "Run npm run demo:sovereign-constellation to launch the orchestrator console and sign each prepared transaction."
+    },
+    {
+      "id": "assert-governance",
+      "title": "Assert Owner Governance",
+      "outcome": "Owner atlas exports list SystemPause, ValidationModule, StakeManager, and JobRegistry controls for every hub under the operator's wallet.",
+      "verification": "Execute npm run demo:sovereign-constellation:atlas and inspect reports/sovereign-constellation/owner-atlas.json."
+    },
+    {
+      "id": "seal-telemetry",
+      "title": "Seal Telemetry Feedback",
+      "outcome": "Thermostat autotune plan recommends commit/reveal, stake, and dispute parameters that reflect latest telemetry inputs.",
+      "verification": "Run npm run demo:sovereign-constellation:plan and confirm console output lists recommended parameters." 
+    }
+  ],
+  "ownerControls": [
+    {
+      "module": "SystemPause",
+      "action": "pause",
+      "command": "curl -XPOST localhost:8090/constellation/helios/tx/pause -d '{\"action\":\"pause\"}'",
+      "verification": "Explorer shows JobRegistry pause transaction signed by owner; CLI prints \"Helios paused\" message."
+    },
+    {
+      "module": "ValidationModule",
+      "action": "setCommitRevealWindows",
+      "command": "curl -XPOST localhost:8090/constellation/triton/tx/validation/commit-window -d '{\"commitWindowSeconds\":3600,\"revealWindowSeconds\":1800}'",
+      "verification": "Hardhat console or Etherscan events show ValidationWindowUpdated with requested values."
+    },
+    {
+      "module": "StakeManager",
+      "action": "setMinStake",
+      "command": "curl -XPOST localhost:8090/constellation/athena/tx/stake/min -d '{\"minStakeWei\":\"2000000000000000000\"}'",
+      "verification": "Autotune plan summary reflects the new minimum stake after execution."
+    }
+  ],
+  "ciGates": [
+    {
+      "name": "Demo CI",
+      "command": "npm run demo:sovereign-constellation:ci",
+      "description": "Runs contract tests, server schema validation, React build, and thermostat planning on every branch."
+    },
+    {
+      "name": "Owner Parameter Matrix",
+      "command": "npm run owner:parameters",
+      "description": "Confirms every adjustable parameter remains mapped to owner-only functions before promotion."
+    },
+    {
+      "name": "Branch Protection",
+      "command": "npm run ci:verify-branch-protection",
+      "description": "Verifies GitHub branch rules enforce constellation CI and owner governance checks."
+    }
+  ],
+  "telemetry": {
+    "overview": "Telemetry merges validator participation, commit/reveal cadence, and staking distribution from autotune.telemetry.json.",
+    "metrics": [
+      {
+        "metric": "averageParticipation",
+        "target": ">= 0.80",
+        "source": "autotune.telemetry.json › summary.averageParticipation",
+        "verification": "npm run demo:sovereign-constellation:plan outputs participation percentage."
+      },
+      {
+        "metric": "commitWindowSeconds",
+        "target": "adaptive",
+        "source": "autotune.telemetry.json › summary.commitWindowSeconds",
+        "verification": "Server GET /constellation/thermostat/plan returns recommended window."
+      },
+      {
+        "metric": "minStakeWei",
+        "target": ">= 1 ether",
+        "source": "autotune.telemetry.json › summary.minStakeWei",
+        "verification": "Autotune CLI displays Ether formatted minimum stake."
+      }
+    ]
+  },
+  "assurance": {
+    "unstoppable": "Victory plan keeps the constellation ready to relaunch instantly even after pauses by documenting restart scripts and telemetry baselines.",
+    "ownerSovereignty": "Every control step emphasises owner signatures; no automation holds private keys or bypasses wallet consent.",
+    "readiness": "CI gates and telemetry metrics provide objective readiness checks prior to mission escalation."
+  }
+}

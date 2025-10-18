@@ -107,6 +107,10 @@ sequenceDiagram
 - **ASI systems matrix** – `config/asiTakesOffSystems.json` documents the five flagship pillars with operator workflows,
   owner levers, automation commands, and verification artefacts. The server exposes `/constellation/asi-takes-off/systems`
   and the console renders the dataset so every mission assurance remains transparent.
+- **Victory assurance plan** – `config/asiTakesOffVictoryPlan.json` captures the readiness gates, owner controls, and telemetry
+  metrics required for a "green across the board" launch. The server returns it from
+  `/constellation/asi-takes-off/victory-plan`, and the `npm run demo:sovereign-constellation:victory` CLI renders the playbook
+  for non-technical directors.
 
 ## Flagship mission — ASI Takes Off
 
@@ -124,6 +128,8 @@ sequenceDiagram
   the pillars, automation spine, thermostat recommendations, and owner atlas synopsis for rapid stakeholder alignment.
 - The `/constellation/asi-takes-off` endpoint returns the same dataset (deck, owner atlas, autotune plan) so the React console
   can render a control deck for non-technical operators.
+- `npm run demo:sovereign-constellation:victory` prints the readiness gates, telemetry metrics, and unstoppable assurances from
+  `asiTakesOffVictoryPlan.json`, ensuring the operator can prove the system remains battle-ready without coding.
 
 ## Directory layout
 

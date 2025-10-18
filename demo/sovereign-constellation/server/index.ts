@@ -139,6 +139,52 @@ type AsiSystem = {
   assurance: string;
 };
 
+type AsiVictoryObjective = {
+  id: string;
+  title: string;
+  outcome: string;
+  verification: string;
+};
+
+type AsiVictoryOwnerControl = {
+  module: string;
+  action: string;
+  command: string;
+  verification: string;
+};
+
+type AsiVictoryGate = {
+  name: string;
+  command: string;
+  description: string;
+};
+
+type AsiVictoryMetric = {
+  metric: string;
+  target: string;
+  source: string;
+  verification: string;
+};
+
+type AsiVictoryPlan = {
+  id: string;
+  title: string;
+  summary: string;
+  operatorPromise: string;
+  objectives: AsiVictoryObjective[];
+  ownerControls: AsiVictoryOwnerControl[];
+  ciGates: AsiVictoryGate[];
+  telemetry: {
+    overview: string;
+    metrics: AsiVictoryMetric[];
+  };
+  assurance: {
+    unstoppable: string;
+    ownerSovereignty: string;
+    readiness: string;
+  };
+};
+
 const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 const computeAutotunePlan = untypedComputeAutotunePlan as AutotuneLib["computeAutotunePlan"];
 type AutotuneTelemetry = Parameters<AutotuneLib["computeAutotunePlan"]>[0];
@@ -160,6 +206,7 @@ const actors = loadJson<any[]>("config/actors.json");
 const missionProfiles = loadJson<MissionProfile[]>("config/missionProfiles.json");
 const asiDeck = loadJson<AsiDeck>("config/asiTakesOffMatrix.json");
 const asiSystems = loadJson<AsiSystem[]>("config/asiTakesOffSystems.json");
+const asiVictoryPlan = loadJson<AsiVictoryPlan>("config/asiTakesOffVictoryPlan.json");
 
 type ConstellationContext = {
   uiConfig: UiConfig;
@@ -169,6 +216,7 @@ type ConstellationContext = {
   missionProfiles: MissionProfile[];
   asiDeck: AsiDeck;
   asiSystems: AsiSystem[];
+  asiVictoryPlan: AsiVictoryPlan;
 };
 
 const defaultContext: ConstellationContext = {
@@ -178,7 +226,8 @@ const defaultContext: ConstellationContext = {
   actors,
   missionProfiles,
   asiDeck,
-  asiSystems
+  asiSystems,
+  asiVictoryPlan
 };
 
 const jobAbi = [
@@ -253,9 +302,13 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
       deck: ctx.asiDeck,
       ownerAtlas: atlas,
       autotunePlan: plan,
-      systems: ctx.asiSystems
+      systems: ctx.asiSystems,
+      victoryPlan: ctx.asiVictoryPlan
     });
   });
+  app.get("/constellation/asi-takes-off/victory-plan", (_req, res) =>
+    res.json({ plan: ctx.asiVictoryPlan })
+  );
   app.get("/constellation/asi-takes-off/systems", (_req, res) =>
     res.json({ systems: ctx.asiSystems })
   );
