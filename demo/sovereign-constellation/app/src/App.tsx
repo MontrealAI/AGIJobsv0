@@ -230,10 +230,11 @@ export default function App() {
     refreshJobs();
   }, [refreshJobs]);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (): Promise<string> => {
     const signer = await getSigner();
     const addr = await signer.getAddress();
     setAddress(addr);
+    return addr;
   }, []);
 
   const requireHub = () => {
@@ -306,13 +307,14 @@ export default function App() {
 
   const commit = async () => {
     try {
-      if (!address) {
-        await connect();
+      let signerAddress = address;
+      if (!signerAddress) {
+        signerAddress = await connect();
       }
       const hub = requireHub();
       const jobNumeric = requireJobId();
       const { commitHash, salt } = computeCommit(approve);
-      const key = `salt_${hub}_${jobNumeric}_${address}`;
+      const key = `salt_${hub}_${jobNumeric}_${signerAddress}`;
       localStorage.setItem(key, salt);
       const hash = await sendTx(`/constellation/${hub}/tx/commit`, {
         jobId: jobNumeric,
