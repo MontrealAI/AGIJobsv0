@@ -97,6 +97,8 @@ Running the demo produces:
 - `insight-telemetry.log` – time-stamped agent dialogue.
 - `insight-owner-brief.md` – rapid-response owner command checklist with custody overview.
 - `insight-safety-checklist.md` – contract command matrix, sentinel drill recap, parameter overrides, and integrity assertions confirming owner supremacy.
+- `insight-owner-supremacy.json` – machine-audited cross-check proving owner, sentinel, oracle, and treasury control alignment with on-chain custody and ledger attestations.
+- `insight-owner-lattice.mmd` – mermaid governance lattice visualising owner, sentinel, oracle, treasury and Nova-Seed custody flows.
 - `insight-market-matrix.csv` – CSV dataset for financial modelling and downstream analytics.
 - `insight-constellation.mmd` – mermaid constellation showing live custody, market, and sentinel linkages.
 - `insight-agency-orbit.mmd` – mermaid orbit of the meta-agent swarm mapping mint, custody, and market routing authority.
