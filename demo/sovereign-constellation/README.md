@@ -92,6 +92,9 @@ sequenceDiagram
 - **Full automation envelope** – scripts deploy constellations locally, seed demo data, and rotate governance to a Safe.
 - **Production readiness** – TypeScript builds, Hardhat integration tests, Cypress smoke checks, and CI wiring ensure the
   constellation stays green on every commit.
+- **Thermostat autotune** – telemetry-driven recommendations automatically compute new commit/reveal windows, minimum
+  stake, dispute modules, and emergency pauses. The console pre-fills these values so an owner can apply them with one
+  click.
 
 ## Directory layout
 
@@ -120,8 +123,10 @@ demo/sovereign-constellation/
 ├── scripts/
 │   ├── deployConstellation.ts
 │   ├── seedConstellation.ts
+│   ├── autotuneThermostat.mjs
 │   └── rotateConstellationGovernance.ts
 ├── test/
+│   ├── AutotunePlan.t.ts
 │   └── SovereignConstellation.t.ts
 └── cypress/
     └── e2e/
@@ -144,6 +149,12 @@ demo/sovereign-constellation/
    `http://localhost:8090`, and serves the console on `http://localhost:5179`.
 3. **Open the Sovereign Constellation console** and connect a wallet (e.g., MetaMask configured for `localhost:8545`).
    Select a mission playbook, review all cross-network steps, and sign the prepared transactions as they appear.
+4. **Run telemetry autotune (optional)**
+   ```bash
+   npm run demo:sovereign-constellation:plan
+   ```
+   This generates `reports/sovereign-constellation/autotune-plan.json` and the console automatically ingests the
+   recommendations for commit windows, stakes, dispute modules, and pause triggers.
 
 ## Owner control matrix
 
@@ -158,6 +169,7 @@ The resulting `reports/sovereign-constellation/owner-atlas.md` documents every c
 - `SystemPause` + `JobRegistry.pause()` across all hubs for immediate halts.
 - `ValidationModule.setCommitRevealWindows()` to retune validation cadence in flight.
 - `StakeManager.setMinimumStake()` and `setDisputeModule()` to adjust validator economics.
+- `SystemPause.pause()` plus direct ownership rotation controls to reassign governance in seconds.
 - `IdentityRegistry.addAdditionalAgent/Validator()` to update allowlists live.
 
 All links route directly to the relevant explorer `writeContract` tab or the Hardhat script that performs the change.

@@ -1,4 +1,5 @@
 /// <reference path="./ownerAtlas.d.ts" />
+/// <reference path="../shared/autotune.d.ts" />
 
 import express from "express";
 import { readFileSync } from "fs";
@@ -8,6 +9,8 @@ import { ethers } from "ethers";
 
 // @ts-ignore — shared module is published as runtime ESM without TypeScript declarations
 import { buildOwnerAtlas as untypedBuildOwnerAtlas } from "../shared/ownerAtlas.mjs";
+// @ts-ignore — shared module is published as runtime ESM without TypeScript declarations
+import { computeAutotunePlan as untypedComputeAutotunePlan } from "../shared/autotune.mjs";
 
 type HubAddresses = Record<string, string>;
 
@@ -35,7 +38,14 @@ type OwnerAtlasLib = {
   buildOwnerAtlas: (hubs: Record<string, HubConfig>, ui: UiConfig) => { atlas: any[] };
 };
 
+type AutotuneLib = {
+  computeAutotunePlan: (telemetry: any, options?: Record<string, unknown>) => any;
+};
+
 const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
+const computeAutotunePlan = untypedComputeAutotunePlan as AutotuneLib["computeAutotunePlan"];
+type AutotuneTelemetry = Parameters<AutotuneLib["computeAutotunePlan"]>[0];
+type AutotuneOptions = Parameters<AutotuneLib["computeAutotunePlan"]>[1];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,6 +76,10 @@ const identityAbi = [
   "function addAdditionalValidator(address)"
 ];
 const pauseAbi = ["function pause()", "function unpause()"];
+const validationConfigAbi = ["function setCommitRevealWindows(uint256,uint256)"];
+const stakeConfigAbi = ["function setMinStake(uint256)"];
+const jobConfigAbi = ["function setDisputeModule(address)"];
+const ownableAbi = ["function transferOwnership(address)"];
 
 const iface = (abi: string[]) => new ethers.Interface(abi);
 const encode = (abi: string[], fn: string, args: any[]) => iface(abi).encodeFunctionData(fn, args);
@@ -76,6 +90,18 @@ function getHub(id: string): HubConfig {
     throw new Error(`Unknown hub: ${id}`);
   }
   return hub;
+}
+
+function getModuleAddress(hub: HubConfig, module: string): string {
+  const addr = hub.addresses?.[module];
+  if (!addr) {
+    throw new Error(`Module ${module} not configured for hub ${hub.label}`);
+  }
+  return addr;
+}
+
+function loadTelemetry(): AutotuneTelemetry {
+  return loadJson("config/autotune.telemetry.json");
 }
 
 function serializeTx(hub: HubConfig, payload: { to: string; data: string; value?: string | number }) {
@@ -220,6 +246,66 @@ app.post("/constellation/:hub/tx/pause", (req, res) => {
   return res.json({ tx });
 });
 
+app.post("/constellation/:hub/tx/validation/commit-window", (req, res) => {
+  const hub = getHub(req.params.hub);
+  const { commitWindowSeconds, revealWindowSeconds } = req.body ?? {};
+  if (!commitWindowSeconds || !revealWindowSeconds) {
+    return res.status(400).json({ error: "commitWindowSeconds and revealWindowSeconds are required" });
+  }
+  const tx = serializeTx(hub, {
+    to: hub.addresses.ValidationModule,
+    data: encode(validationConfigAbi, "setCommitRevealWindows", [commitWindowSeconds, revealWindowSeconds]),
+    value: 0
+  });
+  return res.json({ tx });
+});
+
+app.post("/constellation/:hub/tx/stake/min", (req, res) => {
+  const hub = getHub(req.params.hub);
+  const { minStakeWei } = req.body ?? {};
+  if (!minStakeWei) {
+    return res.status(400).json({ error: "minStakeWei is required" });
+  }
+  const tx = serializeTx(hub, {
+    to: hub.addresses.StakeManager,
+    data: encode(stakeConfigAbi, "setMinStake", [minStakeWei]),
+    value: 0
+  });
+  return res.json({ tx });
+});
+
+app.post("/constellation/:hub/tx/job/dispute-module", (req, res) => {
+  const hub = getHub(req.params.hub);
+  const { module } = req.body ?? {};
+  if (!module) {
+    return res.status(400).json({ error: "module is required" });
+  }
+  const tx = serializeTx(hub, {
+    to: hub.addresses.JobRegistry,
+    data: encode(jobConfigAbi, "setDisputeModule", [module]),
+    value: 0
+  });
+  return res.json({ tx });
+});
+
+app.post("/constellation/:hub/tx/transfer-ownership", (req, res) => {
+  const hub = getHub(req.params.hub);
+  const { module, newOwner } = req.body ?? {};
+  if (!module || !newOwner) {
+    return res.status(400).json({ error: "module and newOwner are required" });
+  }
+  if (!ethers.isAddress(newOwner)) {
+    return res.status(400).json({ error: "newOwner must be a valid address" });
+  }
+  const target = getModuleAddress(hub, module);
+  const tx = serializeTx(hub, {
+    to: target,
+    data: encode(ownableAbi, "transferOwnership", [newOwner]),
+    value: 0
+  });
+  return res.json({ tx });
+});
+
 app.post("/constellation/plan/instantiate", (req, res) => {
   const { playbookId } = req.body ?? {};
   if (!playbookId) {
@@ -259,6 +345,16 @@ app.post("/constellation/plan/instantiate", (req, res) => {
     playbook: { id: pb.id, name: pb.name, description: pb.description, stepCount: pb.steps.length },
     txs
   });
+});
+
+app.get("/constellation/thermostat/plan", (_req, res) => {
+  const telemetry = loadTelemetry();
+  const plan = computeAutotunePlan(telemetry, {
+    defaultCommitWindowSeconds: telemetry?.baseline?.commitWindowSeconds ?? 3600,
+    defaultRevealWindowSeconds: telemetry?.baseline?.revealWindowSeconds ?? 1800,
+    defaultMinStakeWei: telemetry?.baseline?.minStakeWei ?? "1000000000000000000"
+  });
+  return res.json(plan);
 });
 
 const PORT = process.env.SOVEREIGN_CONSTELLATION_PORT ? Number(process.env.SOVEREIGN_CONSTELLATION_PORT) : 8090;

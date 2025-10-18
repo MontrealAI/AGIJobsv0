@@ -13,6 +13,11 @@ const OWNER_CONTROLS = {
       {
         method: "unpause()",
         description: "Resume job intake when the owner considers conditions safe"
+      },
+      {
+        method: "transferOwnership(address)",
+        description: "Hand governance to a new Safe or timelock when scaling operations",
+        args: ["newOwner"]
       }
     ]
   },
@@ -31,6 +36,11 @@ const OWNER_CONTROLS = {
       {
         method: "unpause()",
         description: "Resume validation once conditions stabilise"
+      },
+      {
+        method: "transferOwnership(address)",
+        description: "Rotate validation governance authority",
+        args: ["newOwner"]
       }
     ]
   },
@@ -46,6 +56,11 @@ const OWNER_CONTROLS = {
         method: "setDisputeModule(address)",
         description: "Swap in a different dispute module to upgrade adjudication",
         args: ["disputeModule"]
+      },
+      {
+        method: "transferOwnership(address)",
+        description: "Move staking authority to a new Safe",
+        args: ["newOwner"]
       }
     ]
   },
@@ -61,6 +76,11 @@ const OWNER_CONTROLS = {
         method: "addAdditionalValidator(address)",
         description: "Allowlist a new validator cohort member",
         args: ["validatorAddress"]
+      },
+      {
+        method: "transferOwnership(address)",
+        description: "Rotate identity registry governance",
+        args: ["newOwner"]
       }
     ]
   },
@@ -74,6 +94,11 @@ const OWNER_CONTROLS = {
       {
         method: "unpause()",
         description: "Resume normal hub activity"
+      },
+      {
+        method: "transferOwnership(address)",
+        description: "Assign pause authority to a new operator",
+        args: ["newOwner"]
       }
     ]
   }

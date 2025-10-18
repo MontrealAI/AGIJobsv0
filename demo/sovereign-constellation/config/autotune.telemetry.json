@@ -1,0 +1,49 @@
+{
+  "baseline": {
+    "commitWindowSeconds": 3600,
+    "revealWindowSeconds": 1800,
+    "minStakeWei": "2000000000000000000"
+  },
+  "missions": [
+    {
+      "id": "global-resilience",
+      "hub": "helios-research",
+      "validators": {
+        "participation": 0.68,
+        "avgRevealLatencySeconds": 1420,
+        "avgCommitLatencySeconds": 880
+      }
+    },
+    {
+      "id": "industrial-surge",
+      "hub": "triton-industrial",
+      "validators": {
+        "participation": 0.73,
+        "avgRevealLatencySeconds": 1280,
+        "avgCommitLatencySeconds": 760
+      }
+    },
+    {
+      "id": "governance-safeguard",
+      "hub": "athena-governance",
+      "validators": {
+        "participation": 0.71,
+        "avgRevealLatencySeconds": 1510,
+        "avgCommitLatencySeconds": 940
+      }
+    }
+  ],
+  "economics": {
+    "slashingEvents": 2
+  },
+  "alerts": [
+    {
+      "hub": "athena-governance",
+      "type": "pause",
+      "severity": "critical"
+    }
+  ],
+  "recommendations": {
+    "disputeModule": "0x0000000000000000000000000000000000000005"
+  }
+}
