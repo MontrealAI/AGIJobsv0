@@ -101,6 +101,7 @@ const mermaidSuperintelligencePath = path.join(reportsDir, "insight-superintelli
 const mermaidControlMapPath = path.join(reportsDir, "insight-control-map.mmd");
 const mermaidGovernancePath = path.join(reportsDir, "insight-governance.mmd");
 const mermaidConstellationPath = path.join(reportsDir, "insight-constellation.mmd");
+const mermaidAgencyOrbitPath = path.join(reportsDir, "insight-agency-orbit.mmd");
 const mermaidLifecyclePath = path.join(reportsDir, "insight-lifecycle.mmd");
 const telemetryPath = path.join(reportsDir, "insight-telemetry.log");
 const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
@@ -217,6 +218,7 @@ async function verifyManifest(manifest: Manifest) {
     path.relative(baseDir, matrixPath).replace(/\\/g, "/"),
     path.relative(baseDir, mermaidSuperintelligencePath).replace(/\\/g, "/"),
     path.relative(baseDir, mermaidControlMapPath).replace(/\\/g, "/"),
+    path.relative(baseDir, mermaidAgencyOrbitPath).replace(/\\/g, "/"),
     path.relative(baseDir, mermaidLifecyclePath).replace(/\\/g, "/"),
     path.relative(baseDir, telemetryPath).replace(/\\/g, "/"),
     path.relative(baseDir, ownerBriefPath).replace(/\\/g, "/"),
@@ -554,12 +556,14 @@ async function verifyMermaidFiles(minted: RecapMintedEntry[]) {
   await ensureExists(mermaidGovernancePath, "Governance mermaid");
   await ensureExists(mermaidConstellationPath, "Constellation mermaid");
   await ensureExists(mermaidControlMapPath, "Control map mermaid");
+  await ensureExists(mermaidAgencyOrbitPath, "Agency orbit mermaid");
   await ensureExists(mermaidLifecyclePath, "Lifecycle mermaid");
 
   const superintelligence = await readFile(mermaidSuperintelligencePath, "utf8");
   const governance = await readFile(mermaidGovernancePath, "utf8");
   const constellation = await readFile(mermaidConstellationPath, "utf8");
   const controlMap = await readFile(mermaidControlMapPath, "utf8");
+  const agencyOrbit = await readFile(mermaidAgencyOrbitPath, "utf8");
   const lifecycle = await readFile(mermaidLifecyclePath, "utf8");
 
   const superTokens = ["Meta-Agentic Tree Search", "Thermodynamic Rupture Trigger", "AGI Capability Index"];
@@ -587,6 +591,22 @@ async function verifyMermaidFiles(minted: RecapMintedEntry[]) {
   if (!constellation.includes("pause sweep")) {
     throw new Error("Constellation mermaid missing pause sweep annotations.");
   }
+  const agentOrbitLabels = [
+    "Meta-Agent Constellation",
+    "Meta-Sentinel",
+    "MATS Engine",
+    "Thermodynamic Oracle",
+    "FusionSmith",
+    "Guardian Auditor",
+    "Venture Cartographer",
+    "System Sentinel",
+    "α-AGI MARK Market Grid",
+  ];
+  for (const label of agentOrbitLabels) {
+    if (!agencyOrbit.includes(label)) {
+      throw new Error(`Agency orbit mermaid missing ${label} annotation.`);
+    }
+  }
   const lifecycleTokens = [
     "Meta-Agentic Swarm",
     "α-AGI Nova-Seed Forge",
@@ -597,6 +617,15 @@ async function verifyMermaidFiles(minted: RecapMintedEntry[]) {
   for (const token of lifecycleTokens) {
     if (!lifecycle.includes(token)) {
       throw new Error(`Lifecycle mermaid missing ${token} participant.`);
+    }
+  }
+  for (const entry of minted) {
+    const nodeId = `seed${entry.tokenId}`;
+    if (!agencyOrbit.includes(nodeId)) {
+      throw new Error(`Agency orbit mermaid missing node ${nodeId}.`);
+    }
+    if (!agencyOrbit.includes(entry.scenario.sector)) {
+      throw new Error(`Agency orbit mermaid missing sector label ${entry.scenario.sector}.`);
     }
   }
   for (const entry of minted) {
