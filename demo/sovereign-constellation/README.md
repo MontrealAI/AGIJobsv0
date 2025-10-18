@@ -85,6 +85,9 @@ sequenceDiagram
   transactions tagged with the network metadata so a browser wallet can route each action to the correct chain.
 - **Playbook-driven missions** – curated JSON playbooks expand a single mission intent into cross-hub job flows that
   cover research, manufacturing, governance, and crisis management.
+- **ASI Takes Off mission profiles** – five flagship mission archetypes live in `config/missionProfiles.json`, powering a
+  `/constellation/mission-profiles` API and the console's mission selector so a non-technical operator can load the
+  superintelligent launch plan in one click.
 - **Owner governance atlas** – every module across every hub is surfaced with direct `writeContract` links so the owner
   can pause, reconfigure, or rotate governance instantly.
 - **Wallet-first UX** – no private keys ever touch the server. The console simply prepares payloads, the operator signs
@@ -96,6 +99,16 @@ sequenceDiagram
   stake, dispute modules, and emergency pauses. The console pre-fills these values so an owner can apply them with one
   click.
 
+## Flagship mission — ASI Takes Off
+
+- `config/missionProfiles.json` captures five "ASI Takes Off" archetypes: meta-agentic orchestration, α-AGI governance,
+  making the chain disappear, recursive self-improvement, and winning the AI race. Each entry references the
+  `asi-takes-off` playbook and highlights the hub a director should focus on for the next command.
+- `GET /constellation/mission-profiles` returns the dataset for automation, and the React console renders the mission
+  cards so the flagship plan can be loaded with a single click by any non-technical operator.
+- The Node test suite (`npm run demo:sovereign-constellation:test:server`) asserts the endpoint stays wired, while the
+  Cypress smoke test verifies the UI autoloads the flagship mission.
+
 ## Directory layout
 
 ```
@@ -105,6 +118,8 @@ demo/sovereign-constellation/
 │   ├── constellation.ui.config.json
 │   ├── constellation.hubs.json
 │   ├── playbooks.json
+│   ├── missionProfiles.json
+│   ├── autotune.telemetry.json
 │   └── actors.json
 ├── server/
 │   ├── package.json
@@ -127,7 +142,9 @@ demo/sovereign-constellation/
 │   └── rotateConstellationGovernance.ts
 ├── test/
 │   ├── AutotunePlan.t.ts
-│   └── SovereignConstellation.t.ts
+│   ├── SovereignConstellation.t.ts
+│   └── server/
+│       └── missionProfiles.spec.js
 └── cypress/
     └── e2e/
         └── sovereign-constellation.cy.ts
@@ -178,8 +195,10 @@ All links route directly to the relevant explorer `writeContract` tab or the Har
 
 - `demo/sovereign-constellation/test/SovereignConstellation.t.ts` – spins up three hubs, runs a full playbook, commits
   & reveals validations, and proves finalisation across networks.
-- `demo/sovereign-constellation/cypress/e2e/sovereign-constellation.cy.ts` – smoke test ensuring the UI loads hero metrics,
-  multi-network hub data, and playbook previews.
+- `demo/sovereign-constellation/test/server/missionProfiles.spec.js` – verifies the flagship mission dataset in
+  `missionProfiles.json` stays wired to the ASI Takes Off playbook for downstream automation.
+- `demo/sovereign-constellation/cypress/e2e/sovereign-constellation.cy.ts` – smoke test ensuring the UI loads hero
+  metrics, mission profiles, multi-network hub data, and playbook previews.
 
 ## Continuous integration
 

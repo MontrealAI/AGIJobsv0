@@ -1,0 +1,62 @@
+[
+  {
+    "id": "meta-agentic-alpha-agi-orchestration",
+    "title": "Meta-Agentic α-AGI Orchestration",
+    "summary": "Spin up the Sovereign Constellation mission where Helios, Triton, and Athena act as one self-directing swarm.",
+    "playbookId": "asi-takes-off",
+    "defaultHub": "helios-research",
+    "highlights": [
+      "One intent explodes into sequenced jobs across three networks without the operator touching RPC plumbing.",
+      "Cross-network payloads are pre-signed so the wallet simply routes them to mainnet, Arbitrum, or Optimism as required.",
+      "Mission telemetry is streamed back into the console so the director can monitor AGI taskflow state in real time."
+    ]
+  },
+  {
+    "id": "alpha-agi-governance",
+    "title": "α-AGI Governance & Absolute Owner Control",
+    "summary": "Surface every governance lever in one atlas and exercise safe-pause, retuning, and authority rotation instantly.",
+    "playbookId": "asi-takes-off",
+    "defaultHub": "athena-governance",
+    "highlights": [
+      "Owner console links land directly on explorer write panels for JobRegistry, ValidationModule, StakeManager, and SystemPause.",
+      "Thermostat recommendations auto-fill commit/reveal windows, stake floors, and dispute modules for one-click application.",
+      "Gnosis Safe or EOA owners can reassign governance at any moment with pre-encoded transactions from the console."
+    ]
+  },
+  {
+    "id": "making-the-chain-disappear",
+    "title": "Making the Chain Disappear",
+    "summary": "A non-technical operator signs missions like email – the constellation handles chain IDs, proofs, and settlements.",
+    "playbookId": "asi-takes-off",
+    "defaultHub": "triton-industrial",
+    "highlights": [
+      "Wallet prompts arrive in correct order per hub; no manual network switching or ABI handling is required.",
+      "All sensitive keys stay in the wallet – the orchestrator only prepares payloads and never touches custody.",
+      "Mission plans preview exact rewards, URIs, and chains before the first signature so nothing is opaque."
+    ]
+  },
+  {
+    "id": "recursive-self-improvement",
+    "title": "Recursive Self-Improvement",
+    "summary": "Close the feedback loop: telemetry, autotune, and owner directives iterate the system to higher resilience automatically.",
+    "playbookId": "asi-takes-off",
+    "defaultHub": "helios-research",
+    "highlights": [
+      "Thermostat analytics adjust validator economics whenever entropy or participation drifts.",
+      "Mission data can spawn follow-up jobs immediately so learnings re-enter the labour market without human glue.",
+      "Owners can chain autotune actions directly from the UI, applying them to any hub in seconds."
+    ]
+  },
+  {
+    "id": "winning-the-ai-race",
+    "title": "Winning the AI Race",
+    "summary": "Demonstrate the superintelligent economic engine: orchestrate planetary labour faster than any competitor could react.",
+    "playbookId": "asi-takes-off",
+    "defaultHub": "helios-research",
+    "highlights": [
+      "Global scale in one command – research, fabrication, and governance surge together under a single wallet.",
+      "Stake-backed validation plus dispute escalation ensure uncompromising trust while scaling to civilization workloads.",
+      "Owners retain a universal kill-switch and upgrade path so strategic supremacy never sacrifices control."
+    ]
+  }
+]

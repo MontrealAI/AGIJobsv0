@@ -121,6 +121,15 @@ type AutotunePlan = {
   };
 };
 
+type MissionProfile = {
+  id: string;
+  title: string;
+  summary: string;
+  playbookId?: string;
+  defaultHub?: string;
+  highlights?: string[];
+};
+
 const envOrchestratorBase = (
   (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}
 ).VITE_ORCHESTRATOR_BASE;
@@ -169,6 +178,7 @@ export default function App() {
   const [hubKeys, setHubKeys] = useState<string[]>([]);
   const [actors, setActors] = useState<Actor[]>([]);
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
+  const [missionProfiles, setMissionProfiles] = useState<MissionProfile[]>([]);
   const [selectedHub, setSelectedHub] = useState<string>("");
   const [jobs, setJobs] = useState<any[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
@@ -240,6 +250,17 @@ export default function App() {
         }
       })
       .catch((err) => console.error(err));
+    fetchJson("/constellation/mission-profiles", undefined, orchestratorBase)
+      .then((payload) => {
+        if (payload && typeof payload === "object" && Array.isArray((payload as any).profiles)) {
+          setMissionProfiles((payload as any).profiles as MissionProfile[]);
+          return;
+        }
+        if (Array.isArray(payload)) {
+          setMissionProfiles(payload as MissionProfile[]);
+        }
+      })
+      .catch((err) => console.error(err));
     fetchJson("/constellation/owner/atlas", undefined, orchestratorBase)
       .then((data) => {
         if (data?.atlas && Array.isArray(data.atlas)) {
@@ -257,6 +278,32 @@ export default function App() {
   }, [orchestratorBase]);
 
   const selectedHubInfo = selectedHub ? hubMap[selectedHub] : undefined;
+
+  useEffect(() => {
+    if (selectedPlaybook) {
+      return;
+    }
+    if (!playbooks || playbooks.length === 0) {
+      return;
+    }
+    const availableIds = new Set(playbooks.map((pb) => pb.id));
+    let candidate: string | undefined;
+    if (cfg?.featuredPlaybookId && availableIds.has(cfg.featuredPlaybookId)) {
+      candidate = cfg.featuredPlaybookId;
+    } else {
+      const profileMatch = missionProfiles.find(
+        (profile) => profile.playbookId && availableIds.has(profile.playbookId)
+      );
+      candidate = profileMatch?.playbookId ?? playbooks[0]?.id;
+    }
+    if (candidate) {
+      setSelectedPlaybook(candidate);
+      const profile = missionProfiles.find((item) => item.playbookId === candidate);
+      if (profile?.defaultHub && !selectedHub) {
+        setSelectedHub(profile.defaultHub);
+      }
+    }
+  }, [cfg, missionProfiles, playbooks, selectedHub, selectedPlaybook]);
 
   const refreshJobs = useCallback(async () => {
     if (!selectedHub) {
@@ -673,6 +720,68 @@ export default function App() {
           <small>Curated multi-hub campaigns ready for lift-off.</small>
         </div>
       </section>
+
+      {missionProfiles.length > 0 ? (
+        <section data-testid="mission-profiles" style={{ marginBottom: 32 }}>
+          <h2 style={{ marginTop: 0 }}>ASI Takes Off Mission Profiles</h2>
+          <p style={{ maxWidth: 820 }}>
+            Five mission archetypes translate the grand "ASI Takes Off" objective into concrete wallet-first actions. Choose a
+            profile to auto-load the flagship playbook, align hubs, and unleash the Sovereign Constellation without touching raw
+            contracts.
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 18
+            }}
+          >
+            {missionProfiles.map((profile) => (
+              <div key={profile.id} style={{ ...cardStyle, display: "flex", flexDirection: "column" }}>
+                <h3 style={{ marginTop: 0 }}>{profile.title}</h3>
+                <p style={{ flexGrow: 0 }}>{profile.summary}</p>
+                {profile.highlights && profile.highlights.length > 0 ? (
+                  <ul style={{ paddingLeft: 20, marginTop: 8, marginBottom: 12 }}>
+                    {profile.highlights.map((item, idx) => (
+                      <li key={`${profile.id}-highlight-${idx}`}>{item}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {profile.defaultHub ? (
+                  <p style={{ fontSize: 12, color: "#475569" }}>
+                    Suggested hub focus: {hubMap[profile.defaultHub]?.label ?? profile.defaultHub}
+                  </p>
+                ) : null}
+                <button
+                  style={{
+                    marginTop: "auto",
+                    alignSelf: "flex-start",
+                    borderRadius: 12,
+                    border: "none",
+                    padding: "8px 14px",
+                    background: selectedPlaybook === profile.playbookId ? "#1e293b" : "#4338ca",
+                    color: "white",
+                    cursor: profile.playbookId ? "pointer" : "not-allowed",
+                    opacity: profile.playbookId ? 1 : 0.5
+                  }}
+                  disabled={!profile.playbookId}
+                  onClick={() => {
+                    if (!profile.playbookId) {
+                      return;
+                    }
+                    setSelectedPlaybook(profile.playbookId);
+                    if (profile.defaultHub) {
+                      setSelectedHub(profile.defaultHub);
+                    }
+                  }}
+                >
+                  {selectedPlaybook === profile.playbookId ? "Mission loaded" : "Load mission plan"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24, marginBottom: 32 }}>
         <div style={cardStyle}>

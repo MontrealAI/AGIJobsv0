@@ -3,6 +3,7 @@
   "etherscanBase": "https://etherscan.io",
   "defaultSubgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2",
   "orchestratorBase": "http://localhost:8090",
+  "featuredPlaybookId": "asi-takes-off",
   "hubs": [
     "helios-research",
     "triton-industrial",
