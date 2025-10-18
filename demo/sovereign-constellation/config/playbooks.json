@@ -1,0 +1,68 @@
+[
+  {
+    "id": "constellation-global-resilience",
+    "name": "Mission: Global Resilience Uplift",
+    "description": "Launch climate analytics, manufacturing pivots, and civic coordination across the constellation.",
+    "steps": [
+      {
+        "hub": "analysis@helios-research",
+        "rewardWei": "3500000000000000000",
+        "uri": "ipfs://sovereign-constellation/resilience/climate-model"
+      },
+      {
+        "hub": "fabrication@triton-industrial",
+        "rewardWei": "4200000000000000000",
+        "uri": "ipfs://sovereign-constellation/resilience/manufacturing-sprint"
+      },
+      {
+        "hub": "policy@athena-governance",
+        "rewardWei": "2800000000000000000",
+        "uri": "ipfs://sovereign-constellation/resilience/policy-alignment"
+      }
+    ]
+  },
+  {
+    "id": "orion-industrial-surge",
+    "name": "Mission: Orion Industrial Surge",
+    "description": "Massive inter-hub build cycle linking mainnet research, Arbitrum fabrication, and Optimism compliance.",
+    "steps": [
+      {
+        "hub": "discovery@helios-research",
+        "rewardWei": "2500000000000000000",
+        "uri": "ipfs://sovereign-constellation/orion/requirements-capture"
+      },
+      {
+        "hub": "assembly@triton-industrial",
+        "rewardWei": "5000000000000000000",
+        "uri": "ipfs://sovereign-constellation/orion/factory-spinup"
+      },
+      {
+        "hub": "audit@athena-governance",
+        "rewardWei": "1900000000000000000",
+        "uri": "ipfs://sovereign-constellation/orion/compliance-review"
+      }
+    ]
+  },
+  {
+    "id": "aegis-governance-safeguard",
+    "name": "Mission: Aegis Governance Safeguard",
+    "description": "Activate rapid response research, validator drills, and civic escalation protocols.",
+    "steps": [
+      {
+        "hub": "sentinel@athena-governance",
+        "rewardWei": "1600000000000000000",
+        "uri": "ipfs://sovereign-constellation/aegis/alert-harmonics"
+      },
+      {
+        "hub": "triage@helios-research",
+        "rewardWei": "2700000000000000000",
+        "uri": "ipfs://sovereign-constellation/aegis/response-playbook"
+      },
+      {
+        "hub": "mobilisation@triton-industrial",
+        "rewardWei": "3200000000000000000",
+        "uri": "ipfs://sovereign-constellation/aegis/logistics-rollout"
+      }
+    ]
+  }
+]

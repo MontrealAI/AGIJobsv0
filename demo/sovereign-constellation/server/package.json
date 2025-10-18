@@ -1,0 +1,21 @@
+{
+  "name": "sovereign-constellation-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node-esm index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "ethers": "^6.11.1",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
