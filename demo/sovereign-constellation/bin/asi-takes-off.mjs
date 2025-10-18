@@ -90,7 +90,7 @@ async function main() {
   console.log("");
 
   console.log("To open the full console:");
-  console.log(" • npm run demo:sovereign-constellation:local");
+  console.log(" • npm run demo:sovereign-constellation");
   console.log("");
   console.log("All instructions above are sourced from repository config. Non-technical directors can hand this briefing to a wallet operator and launch immediately.\n");
 }

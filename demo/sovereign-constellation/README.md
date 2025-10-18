@@ -173,7 +173,7 @@ demo/sovereign-constellation/
    ```
 2. **Launch a local constellation**
    ```bash
-   npm run demo:sovereign-constellation:local
+   npm run demo:sovereign-constellation
    ```
    The helper script deploys three hubs to a local Hardhat node, seeds showcase jobs, regenerates the owner atlas, starts the orchestrator on
    `http://localhost:8090`, and serves the console on `http://localhost:5179`.
@@ -192,7 +192,7 @@ demo/sovereign-constellation/
   dependency install, constellation deployment, mission load, and governance verification flows.
 - The React console reads the launch sequence and renders it ahead of the hero metrics so directors can see exactly which
   commands to run, what success looks like, and which owner controls to exercise next.
-- Cypress smoke tests assert that the launch sequence is always visible and that it includes the `demo:sovereign-constellation:local`
+- Cypress smoke tests assert that the launch sequence is always visible and that it includes the `demo:sovereign-constellation`
   command so CI protects the non-technical onboarding story.
 
 ## Owner control matrix

@@ -18,8 +18,8 @@ payload.pillars.forEach((pillar) => {
 assert.ok(payload.automation?.launchCommands?.length >= 3, "Automation spine should include all launch commands");
 const commandRuns = payload.automation.launchCommands.map((item) => item.run);
 assert.ok(
-  commandRuns.includes("npm run demo:sovereign-constellation:local"),
-  "Launch commands should reference the local constellation bootstrap"
+  commandRuns.includes("npm run demo:sovereign-constellation"),
+  "Launch commands should reference the single-command constellation bootstrap"
 );
 assert.ok(
   commandRuns.includes("npm run demo:sovereign-constellation:ci"),
