@@ -136,6 +136,7 @@ sequenceDiagram
 
 | Section | What it delivers |
 | --- | --- |
+| **Mesh Intelligence Dashboard** | Planetary-scale KPIs (hubs, missions, reward budgets) sourced from `/mesh/summary`. |
 | **Connect & Select Hub** | Wallet-first connect button + hub selector that hydrates live jobs via The Graph. |
 | **Create Job** | Reward + URI form that composes a `createJob` transaction with sensible deadlines and spec hash. |
 | **Participate** | Validators stake, commit, reveal, and finalize in a human-friendly workflow (salts handled automatically). |
@@ -153,6 +154,7 @@ sequenceDiagram
 - **CI enforced** — `.github/workflows/ci.yml` includes the Sovereign Mesh build job so every PR keeps the demo green.
 - **Owner-safe orchestration** — the console’s Owner Control Center composes pause/unpause and parameter tuning transactions directly for the governance wallet.
 - **Operability hooks** — `GET /mesh/health` provides a ready probe for load balancers and observability stacks.
+- **Planetary telemetry** — `GET /mesh/summary` aggregates mission rewards, hub coverage, and sponsor counts for dashboards.
 
 ## Mission blueprint editing
 

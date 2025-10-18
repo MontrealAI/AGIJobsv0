@@ -51,6 +51,17 @@ type Playbook = {
   steps: PlaybookStep[];
 };
 
+type MeshSummary = {
+  network: string;
+  hubCount: number;
+  missionCount: number;
+  actorCount: number;
+  totalSteps: number;
+  totalRewardWei: string;
+  perHub: Array<{ hub: string; label: string; steps: number; rewardWei: string }>;
+  largestMission: null | { id: string; name: string; steps: number; rewardWei: string };
+};
+
 type PlaybookDisplayStep = {
   key: string;
   stageLabel: string;
@@ -132,6 +143,7 @@ const useMeshConfig = () => {
   const [hubs, setHubs] = useState<Record<string, HubConfig>>({});
   const [actors, setActors] = useState<Actor[]>([]);
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
+  const [summary, setSummary] = useState<MeshSummary>();
 
   useEffect(() => {
     fetchJson("/mesh/config").then(setCfg).catch(console.error);
@@ -144,9 +156,12 @@ const useMeshConfig = () => {
     fetchJson("/mesh/playbooks")
       .then((data: Playbook[]) => setPlaybooks(Array.isArray(data) ? data : []))
       .catch(console.error);
+    fetchJson("/mesh/summary")
+      .then((data: MeshSummary) => setSummary(data))
+      .catch(console.error);
   }, []);
 
-  return { cfg, hubs, actors, playbooks };
+  return { cfg, hubs, actors, playbooks, summary };
 };
 
 const Table: React.FC<{ jobs: Job[] }> = ({ jobs }) => (
@@ -212,6 +227,13 @@ const ensureStyles = () => {
     .mesh-step-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
     .mesh-step-table th, .mesh-step-table td { border-bottom: 1px solid rgba(148,163,184,0.16); padding: 10px 12px; text-align: left; vertical-align: top; }
     .mesh-step-table td a { color: #22d3ee; font-weight: 500; }
+    .mesh-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 16px; }
+    .mesh-insight { background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.22); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+    .mesh-insight span { text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; color: rgba(148,163,184,0.85); }
+    .mesh-insight strong { font-size: 22px; color: #f8fafc; }
+    .mesh-insight small { color: rgba(94,234,212,0.88); font-size: 12px; }
+    .mesh-perhub-table { margin-top: 18px; }
+    .mesh-perhub-table td.share { color: rgba(94,234,212,0.88); font-weight: 600; }
     .mesh-step-description { color: rgba(203,213,225,0.85); margin-top: 6px; line-height: 1.45; }
     .mesh-actors { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; }
     .mesh-actor { background: rgba(15,23,42,0.6); border: 1px solid rgba(56,189,248,0.2); border-radius: 18px; padding: 16px; box-shadow: inset 0 0 0 1px rgba(2,6,23,0.4); }
@@ -232,7 +254,7 @@ const ensureStyles = () => {
 };
 
 const App: React.FC = () => {
-  const { cfg, hubs, playbooks, actors } = useMeshConfig();
+  const { cfg, hubs, playbooks, actors, summary } = useMeshConfig();
   const hubKeys = useMemo(() => Object.keys(hubs), [hubs]);
   const [address, setAddress] = useState<string>();
   const [selectedHub, setSelectedHub] = useState<string>("");
@@ -279,6 +301,46 @@ const App: React.FC = () => {
     ? actorMap[selectedPlaybookConfig.sponsor]
     : undefined;
 
+  const summaryHubRows = useMemo(
+    () => {
+      if (!summary) return [];
+      let totalReward = 0n;
+      try {
+        totalReward = BigInt(summary.totalRewardWei);
+      } catch {
+        totalReward = 0n;
+      }
+      return summary.perHub.map((entry) => {
+        let reward = 0n;
+        try {
+          reward = BigInt(entry.rewardWei);
+        } catch {
+          reward = 0n;
+        }
+        const sharePct = totalReward > 0n ? Number((reward * 10000n) / totalReward) / 100 : 0;
+        return {
+          hub: entry.hub,
+          label: entry.label,
+          steps: entry.steps,
+          rewardLabel: formatAgi(reward),
+          shareLabel: totalReward > 0n ? `${sharePct.toFixed(2)}%` : "—"
+        };
+      });
+    },
+    [summary]
+  );
+
+  const overallRewardLabel = summary ? formatAgi(summary.totalRewardWei) : undefined;
+
+  const largestMissionSummary = useMemo(() => {
+    if (!summary?.largestMission) return undefined;
+    return {
+      name: summary.largestMission.name,
+      steps: summary.largestMission.steps,
+      rewardLabel: formatAgi(summary.largestMission.rewardWei)
+    };
+  }, [summary]);
+
   const playbookSteps = useMemo<PlaybookDisplayStep[]>(() => {
     if (!selectedPlaybookConfig) return [];
     return selectedPlaybookConfig.steps.map((step) => {
@@ -296,7 +358,7 @@ const App: React.FC = () => {
     });
   }, [hubs, selectedPlaybookConfig]);
 
-  const totalRewardWei = useMemo(() => {
+  const playbookRewardWei = useMemo(() => {
     if (!selectedPlaybookConfig) return 0n;
     return selectedPlaybookConfig.steps.reduce<bigint>((acc, step) => {
       try {
@@ -307,7 +369,7 @@ const App: React.FC = () => {
     }, 0n);
   }, [selectedPlaybookConfig]);
 
-  const totalRewardLabel = formatAgi(totalRewardWei);
+  const playbookRewardLabel = formatAgi(playbookRewardWei);
 
   useEffect(() => {
     ensureStyles();
@@ -555,6 +617,67 @@ const App: React.FC = () => {
         Multi-hub orchestration for civilization-scale missions. Initiate foresight, research, optimization, and knowledge
         workflows from a single intent. Validators and owners remain fully sovereign through wallet-based control.
       </p>
+
+      <div className="mesh-card">
+        <h3>Mesh Intelligence Dashboard</h3>
+        {summary ? (
+          <>
+            <div className="mesh-insights">
+              <div className="mesh-insight">
+                <span>Planetary Hubs</span>
+                <strong>{summary.hubCount}</strong>
+                <small>Owner-governed deployments</small>
+              </div>
+              <div className="mesh-insight">
+                <span>Mission Playbooks</span>
+                <strong>{summary.missionCount}</strong>
+                <small>{summary.totalSteps} total mission steps</small>
+              </div>
+              <div className="mesh-insight">
+                <span>Active Sponsors</span>
+                <strong>{summary.actorCount}</strong>
+                <small>Ready to underwrite missions</small>
+              </div>
+              <div className="mesh-insight">
+                <span>Reward Budget</span>
+                <strong>{overallRewardLabel ?? "—"}</strong>
+                <small>{summary.network} network</small>
+              </div>
+            </div>
+            {largestMissionSummary ? (
+              <p className="mesh-preview-summary" style={{ marginTop: 18 }}>
+                <strong>{largestMissionSummary.name}</strong> currently carries the largest blueprint — {largestMissionSummary.steps}
+                {" "}
+                steps orchestrated across the mesh with a reward pool of {largestMissionSummary.rewardLabel}.
+              </p>
+            ) : null}
+            <table className="mesh-step-table mesh-perhub-table">
+              <thead>
+                <tr>
+                  <th>Hub</th>
+                  <th>Steps</th>
+                  <th>Reward Budget</th>
+                  <th>Mesh Share</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summaryHubRows.map((row) => (
+                  <tr key={row.hub}>
+                    <td>{row.label}</td>
+                    <td>{row.steps}</td>
+                    <td>{row.rewardLabel}</td>
+                    <td className="share">{row.shareLabel}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        ) : (
+          <p className="mesh-preview-summary" style={{ marginTop: 16 }}>
+            Loading network intelligence…
+          </p>
+        )}
+      </div>
 
       <div className="mesh-card mesh-row">
         <button onClick={connect}>
@@ -845,7 +968,7 @@ const App: React.FC = () => {
               </div>
               <div className="mesh-preview-total">
                 <span>Total Reward</span>
-                <strong>{totalRewardLabel}</strong>
+                <strong>{playbookRewardLabel}</strong>
               </div>
             </div>
             <table className="mesh-step-table">
