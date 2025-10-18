@@ -19,6 +19,7 @@ async function main() {
   const hubs = loadJson("config/constellation.hubs.json");
   const uiConfig = loadJson("config/constellation.ui.config.json");
   const telemetry = loadJson("config/autotune.telemetry.json");
+  const systems = loadJson("config/asiTakesOffSystems.json");
 
   const [{ buildOwnerAtlas }, { computeAutotunePlan }] = await Promise.all([
     import("../shared/ownerAtlas.mjs"),
@@ -43,6 +44,35 @@ async function main() {
     console.log(`   Owner supremacy: ${pillar.ownerLever}`);
   }
   console.log("");
+
+  if (Array.isArray(systems) && systems.length > 0) {
+    console.log("Systems matrix:");
+    for (const system of systems) {
+      console.log(` • ${system.title}`);
+      console.log(`   ${system.summary}`);
+      if (Array.isArray(system.operatorWorkflow) && system.operatorWorkflow.length > 0) {
+        console.log("   Operator workflow:");
+        for (const step of system.operatorWorkflow) {
+          console.log(`     - ${step}`);
+        }
+      }
+      if (Array.isArray(system.ownerControls) && system.ownerControls.length > 0) {
+        console.log("   Owner levers:");
+        for (const control of system.ownerControls) {
+          console.log(`     - ${control.module} :: ${control.action} — ${control.description}`);
+        }
+      }
+      if (Array.isArray(system.automation) && system.automation.length > 0) {
+        console.log("   Automation spine:");
+        for (const entry of system.automation) {
+          console.log(`     - ${entry.label}: ${entry.command}`);
+          console.log(`       ${entry.impact}`);
+        }
+      }
+      console.log(`   Assurance: ${system.assurance}`);
+    }
+    console.log("");
+  }
 
   console.log("Owner assurances:");
   console.log(` • Pausing: ${deck.ownerAssurances.pausing}`);

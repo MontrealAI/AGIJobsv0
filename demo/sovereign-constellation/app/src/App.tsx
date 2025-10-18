@@ -172,6 +172,34 @@ type AsiDeck = {
   };
 };
 
+type AsiSystemControl = {
+  module: string;
+  action: string;
+  description: string;
+};
+
+type AsiSystemAutomation = {
+  label: string;
+  command: string;
+  impact: string;
+};
+
+type AsiSystemVerification = {
+  artifact: string;
+  description: string;
+};
+
+type AsiSystem = {
+  id: string;
+  title: string;
+  summary: string;
+  operatorWorkflow: string[];
+  ownerControls: AsiSystemControl[];
+  automation: AsiSystemAutomation[];
+  verification: AsiSystemVerification[];
+  assurance: string;
+};
+
 type LaunchCommand = {
   label: string;
   run: string;
@@ -246,6 +274,7 @@ export default function App() {
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [missionProfiles, setMissionProfiles] = useState<MissionProfile[]>([]);
   const [asiDeck, setAsiDeck] = useState<AsiDeck>();
+  const [asiSystems, setAsiSystems] = useState<AsiSystem[]>([]);
   const [launchSequence, setLaunchSequence] = useState<LaunchStep[]>([]);
   const [selectedHub, setSelectedHub] = useState<string>("");
   const [jobs, setJobs] = useState<any[]>([]);
@@ -367,6 +396,16 @@ export default function App() {
           if ((payload as any).autotunePlan) {
             setAutotunePlan((payload as any).autotunePlan as AutotunePlan);
           }
+          if (Array.isArray((payload as any).systems)) {
+            setAsiSystems((payload as any).systems as AsiSystem[]);
+          }
+        }
+      })
+      .catch((err) => console.error(err));
+    fetchJson("/constellation/asi-takes-off/systems", undefined, orchestratorBase)
+      .then((payload) => {
+        if (payload && typeof payload === "object" && Array.isArray((payload as any).systems)) {
+          setAsiSystems((payload as any).systems as AsiSystem[]);
         }
       })
       .catch((err) => console.error(err));
@@ -971,6 +1010,96 @@ export default function App() {
               </p>
               <code style={{ ...codeStyle, marginTop: 8 }}>npm run demo:sovereign-constellation:asi-takes-off</code>
             </div>
+          </div>
+        </section>
+      ) : null}
+
+      {asiSystems.length > 0 ? (
+        <section data-testid="asi-takes-off-systems" style={{ marginBottom: 32 }}>
+          <h2 style={{ marginTop: 0 }}>ASI Takes Off Systems Matrix</h2>
+          <p style={{ maxWidth: 860 }}>
+            Each pillar of the flagship objective is grounded in live code, deterministic automation, and owner-only
+            controls. Review the matrix to understand exactly how non-technical directors and governance owners co-pilot
+            the superintelligent launch.
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: 18
+            }}
+          >
+            {asiSystems.map((system) => (
+              <div key={system.id} style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div>
+                  <h3 style={{ marginTop: 0, marginBottom: 4 }}>{system.title}</h3>
+                  <p style={{ marginTop: 0 }}>{system.summary}</p>
+                </div>
+                {Array.isArray(system.operatorWorkflow) && system.operatorWorkflow.length > 0 ? (
+                  <div>
+                    <strong style={{ fontSize: 13 }}>Operator workflow</strong>
+                    <ul style={{ paddingLeft: 18, marginTop: 6 }}>
+                      {system.operatorWorkflow.map((item, idx) => (
+                        <li key={`${system.id}-operator-${idx}`} style={{ fontSize: 13, marginBottom: 4 }}>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {Array.isArray(system.ownerControls) && system.ownerControls.length > 0 ? (
+                  <div>
+                    <strong style={{ fontSize: 13 }}>Owner levers</strong>
+                    <ul style={{ paddingLeft: 18, marginTop: 6 }}>
+                      {system.ownerControls.map((control, idx) => (
+                        <li key={`${system.id}-owner-${idx}`} style={{ fontSize: 13, marginBottom: 4 }}>
+                          <span style={{ fontWeight: 600 }}>{control.module}</span> · {control.action}
+                          <div style={{ fontSize: 12, color: "#334155" }}>{control.description}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {Array.isArray(system.automation) && system.automation.length > 0 ? (
+                  <div>
+                    <strong style={{ fontSize: 13 }}>Automation spine</strong>
+                    <ul style={{ paddingLeft: 18, marginTop: 6 }}>
+                      {system.automation.map((entry, idx) => (
+                        <li key={`${system.id}-automation-${idx}`} style={{ fontSize: 13, marginBottom: 6 }}>
+                          <div style={{ fontWeight: 600 }}>{entry.label}</div>
+                          <code style={codeStyle}>{entry.command}</code>
+                          <div style={{ fontSize: 12, color: "#334155" }}>{entry.impact}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {Array.isArray(system.verification) && system.verification.length > 0 ? (
+                  <div>
+                    <strong style={{ fontSize: 13 }}>Proof points</strong>
+                    <ul style={{ paddingLeft: 18, marginTop: 6 }}>
+                      {system.verification.map((item, idx) => (
+                        <li key={`${system.id}-verification-${idx}`} style={{ fontSize: 13, marginBottom: 4 }}>
+                          <span style={{ fontWeight: 600 }}>{item.artifact}</span>
+                          <div style={{ fontSize: 12, color: "#334155" }}>{item.description}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <div
+                  style={{
+                    fontSize: 13,
+                    background: "rgba(22, 163, 74, 0.12)",
+                    padding: 12,
+                    borderRadius: 12,
+                    marginTop: "auto"
+                  }}
+                >
+                  <strong>Assurance:</strong> {system.assurance}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       ) : null}

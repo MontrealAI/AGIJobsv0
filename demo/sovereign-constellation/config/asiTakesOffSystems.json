@@ -1,0 +1,230 @@
+[
+  {
+    "id": "meta-agentic-alpha-agi-orchestration",
+    "title": "Meta-Agentic α-AGI Orchestration",
+    "summary": "The Constellation Orchestrator decomposes a single intent into coordinated research, industrial, and governance jobs across Helios, Triton, and Athena.",
+    "operatorWorkflow": [
+      "Select the Flagship Mission: ASI Takes Off in the console mission selector to autoload the cross-hub plan.",
+      "Use the mission preview to inspect every unsigned transaction, then sign each prompt from the wallet to dispatch jobs to their target networks.",
+      "Monitor the jobs table; each hub streams confirmations once the orchestrator finalizes createJob calls."],
+    "ownerControls": [
+      {
+        "module": "SystemPause",
+        "action": "pause() / unpause()",
+        "description": "Freeze or resume every orchestrated hub at once using the shared SystemPause helper wired in deployConstellation.ts."
+      },
+      {
+        "module": "JobRegistry",
+        "action": "setDisputeModule(address)",
+        "description": "Swap dispute logic for any hub to escalate arbitration when orchestrated missions surface anomalies."
+      }
+    ],
+    "automation": [
+      {
+        "label": "Bootstrap orchestrator and console",
+        "command": "npm run demo:sovereign-constellation",
+        "impact": "Spawns the orchestrator server, wallet-first console, and local RPC so a non-technical operator can coordinate hubs in minutes."
+      },
+      {
+        "label": "Seed cross-network jobs",
+        "command": "npm run demo:sovereign-constellation:seed",
+        "impact": "Primes each hub with sample telemetry so the orchestrator showcases deterministic cross-chain job finalisation."
+      }
+    ],
+    "verification": [
+      {
+        "artifact": "config/playbooks.json#asi-takes-off",
+        "description": "Defines the exact createJob payloads for all hubs proving orchestration is scripted rather than aspirational."
+      },
+      {
+        "artifact": "test/SovereignConstellation.t.ts",
+        "description": "Integration test executes the flagship playbook end-to-end to guarantee orchestration never regresses."
+      }
+    ],
+    "assurance": "A single wallet operator can span networks with one plan while the owner retains a global kill-switch."
+  },
+  {
+    "id": "alpha-agi-governance",
+    "title": "α-AGI Governance",
+    "summary": "Every module across the constellation is owner-configurable, surfacing direct writeContract links and Safe payloads so governance never leaves human control.",
+    "operatorWorkflow": [
+      "Open the Owner Governance Atlas from the console to inspect each module's actionable controls.",
+      "Use the \"Apply thermostat plan\" button after reviewing recommendations to push validated parameter updates.",
+      "If escalation is needed, trigger the SystemPause card and resume once validators complete dispute review."],
+    "ownerControls": [
+      {
+        "module": "ValidationModule",
+        "action": "setCommitRevealWindows(uint256,uint256)",
+        "description": "Rebalance cadence instantly whenever validator participation drifts." 
+      },
+      {
+        "module": "StakeManager",
+        "action": "setMinStake(uint256)",
+        "description": "Adjust risk exposure and validator skin-in-the-game without redeploying contracts."
+      },
+      {
+        "module": "IdentityRegistry",
+        "action": "addAdditionalValidator(address)",
+        "description": "Onboard or rotate trusted validators as the mission footprint expands."
+      }
+    ],
+    "automation": [
+      {
+        "label": "Generate owner atlas",
+        "command": "npm run demo:sovereign-constellation:atlas",
+        "impact": "Outputs a JSON control matrix enumerating every owner-only method so governance coverage is auditable."
+      },
+      {
+        "label": "Rotate governance",
+        "command": "npm run demo:sovereign-constellation:ci",
+        "impact": "Runs the complete CI, builds app/server artefacts, and ensures governance rotation scripts remain functional."
+      }
+    ],
+    "verification": [
+      {
+        "artifact": "scripts/rotateConstellationGovernance.ts",
+        "description": "Transfers ownership to a Safe and validates that only the owner address can mutate configuration."
+      },
+      {
+        "artifact": "config/asiTakesOffMatrix.json",
+        "description": "Documents pausing, upgrades, and emergency levers guaranteeing ownership assurances remain explicit."
+      }
+    ],
+    "assurance": "Owner-first controls are provably wired across every hub, letting leadership pause, upgrade, or expand participation on demand."
+  },
+  {
+    "id": "making-the-chain-disappear",
+    "title": "Making the Chain Disappear",
+    "summary": "Wallet-first UX abstracts all RPC plumbing so directors simply sign prompts while the orchestrator tags chain metadata automatically.",
+    "operatorWorkflow": [
+      "Launch the console and connect a wallet; the interface auto-detects hubs and networks from constellation.hubs.json.",
+      "Preview the flagship playbook to review chain IDs and required signatures with human-readable annotations.",
+      "Approve the orchestrator-prepared transactions in sequence; MetaMask routes each signature to the correct network."
+    ],
+    "ownerControls": [
+      {
+        "module": "Console",
+        "action": "orchestratorBase override",
+        "description": "Operators can point the UI at staging or production orchestrators without touching code, guaranteeing safe rollouts."
+      },
+      {
+        "module": "Orchestrator",
+        "action": "POST /constellation/:hub/tx/*",
+        "description": "Endpoints emit unsigned payloads so the owner never delegates key custody to infrastructure."
+      }
+    ],
+    "automation": [
+      {
+        "label": "Console build",
+        "command": "npm run demo:sovereign-constellation:app:build",
+        "impact": "Produces a static production bundle for immediate hosting with prewired API targets."
+      },
+      {
+        "label": "Server build",
+        "command": "npm run demo:sovereign-constellation:server:build",
+        "impact": "Generates the orchestrator server artefact exposing the wallet-first API catalogue."
+      }
+    ],
+    "verification": [
+      {
+        "artifact": "cypress/e2e/sovereign-constellation.cy.ts",
+        "description": "UI smoke test asserts that non-technical flows render the launch sequence and control deck without manual setup."
+      },
+      {
+        "artifact": "server/index.ts",
+        "description": "Express routes serialize transactions with chainId and rpcUrl fields proving the wallet can route prompts automatically."
+      }
+    ],
+    "assurance": "All blockchain interaction remains invisible to the operator—security and simplicity move in lockstep."
+  },
+  {
+    "id": "recursive-self-improvement",
+    "title": "Recursive Self-Improvement",
+    "summary": "Telemetry-driven thermostat logic continuously recommends staking, cadence, and pausing adjustments so the constellation self-optimises under owner supervision.",
+    "operatorWorkflow": [
+      "Run npm run demo:sovereign-constellation:plan to compute recommendations from autotune.telemetry.json.",
+      "Review suggested actions inside the console, then dispatch supported updates directly from the owner control panel.",
+      "Re-run the plan after missions settle to confirm entropy and participation have rebounded."
+    ],
+    "ownerControls": [
+      {
+        "module": "Autotune",
+        "action": "computeAutotunePlan(telemetry)",
+        "description": "Shared library cross-checks mission telemetry and surfaces actions in both CLI and API surfaces."
+      },
+      {
+        "module": "StakeManager",
+        "action": "setMinStake(uint256)",
+        "description": "Owner applies thermostat recommendations to harden validator incentives immediately."
+      }
+    ],
+    "automation": [
+      {
+        "label": "Thermostat planning",
+        "command": "npm run demo:sovereign-constellation:plan",
+        "impact": "Deterministically recomputes the self-improvement plan and stores receipts under reports/ for auditability."
+      },
+      {
+        "label": "Server plan endpoint",
+        "command": "GET /constellation/thermostat/plan",
+        "impact": "Exposes the same plan to the UI ensuring humans and agents share one feedback loop."
+      }
+    ],
+    "verification": [
+      {
+        "artifact": "shared/autotune.mjs",
+        "description": "Implements PID-inspired tuning logic used by both CLI scripts and server routes."
+      },
+      {
+        "artifact": "test/AutotunePlan.t.ts",
+        "description": "Hardhat test asserts thermostat recommendations are stable across releases."
+      }
+    ],
+    "assurance": "Feedback loops remain explainable—owners choose when to apply them, yet the system keeps learning."
+  },
+  {
+    "id": "winning-the-ai-race",
+    "title": "Winning the AI Race",
+    "summary": "Sovereign Constellation composes audited AGI Jobs v2 modules, deterministic CI, and wallet-first UX so a single organisation wields civilisation-scale leverage immediately.",
+    "operatorWorkflow": [
+      "Execute the ASI launch sequence from the console to deploy hubs, preview missions, and apply owner assurances end-to-end.",
+      "Keep the CI workflow demo-asi-takeoff.yml green to guarantee every push retains production readiness.",
+      "Broadcast the CLI briefing (npm run demo:sovereign-constellation:asi-takes-off) to align stakeholders on the operating doctrine."
+    ],
+    "ownerControls": [
+      {
+        "module": "CI",
+        "action": "demo-asi-takeoff.yml",
+        "description": "Workflow enforces full-stack validation so ownership can demand evidence that the superintelligent platform remains trustworthy."
+      },
+      {
+        "module": "Deploy scripts",
+        "action": "deployConstellation.ts",
+        "description": "Mainnet-ready script deploys hubs, wires pause circuits, and hands control to the owner-defined Safe."
+      }
+    ],
+    "automation": [
+      {
+        "label": "Full CI",
+        "command": "npm run demo:sovereign-constellation:ci",
+        "impact": "Runs contract tests, server/app builds, and thermostat planning so releases stay production-ready."
+      },
+      {
+        "label": "ASI Take-Off workflow",
+        "command": ".github/workflows/demo-asi-takeoff.yml",
+        "impact": "Public GitHub check publishes artefacts proving the demo passed across deterministic and local environments."
+      }
+    ],
+    "verification": [
+      {
+        "artifact": ".github/workflows/demo-asi-takeoff.yml",
+        "description": "Workflow log shows both deterministic kit and local launch succeed before merges."
+      },
+      {
+        "artifact": "reports/asi-takeoff",
+        "description": "Receipts archived on each run capture job IDs, telemetry, and governance state for executive review."
+      }
+    ],
+    "assurance": "Production-critical checks stay enforced on PRs and main, proving AGI Jobs v0 (v2) is the decisive advantage."
+  }
+]
