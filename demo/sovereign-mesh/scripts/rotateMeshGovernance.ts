@@ -1,27 +1,16 @@
-import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
+import { ethers } from "hardhat";
 
-const GOVERNANCE_SAFE = process.env.GOVERNANCE_SAFE;
+const NEW_OWNER = process.env.GOVERNANCE_SAFE;
 
-if (!GOVERNANCE_SAFE) {
-  throw new Error("Set GOVERNANCE_SAFE to the multisig or timelock address.");
+if (!NEW_OWNER) {
+  throw new Error("Set GOVERNANCE_SAFE to the multisig or timelock address");
 }
 
-const iface = new ethers.Interface([
+const ABI = [
   "function setGovernance(address)",
   "function transferOwnership(address)"
-]);
-
-const targets = [
-  "StakeManager",
-  "JobRegistry",
-  "ValidationModule",
-  "ReputationEngine",
-  "IdentityRegistry",
-  "CertificateNFT",
-  "DisputeModule",
-  "FeePool"
 ];
 
 async function main() {
@@ -30,29 +19,46 @@ async function main() {
   const [signer] = await ethers.getSigners();
 
   for (const key of Object.keys(hubs)) {
-    for (const contractName of targets) {
-      const address = hubs[key].addresses[contractName];
-      if (!address || address === ethers.ZeroAddress) continue;
-      const contract = new ethers.Contract(address, iface, signer);
+    const info = hubs[key];
+    if (!info?.addresses) continue;
+    const governanceTargets = [
+      "StakeManager",
+      "JobRegistry",
+      "ValidationModule",
+      "ReputationEngine",
+      "IdentityRegistry",
+      "CertificateNFT",
+      "DisputeModule",
+      "FeePool",
+      "PlatformRegistry",
+      "PlatformIncentives",
+      "JobRouter",
+      "SystemPause",
+      "TaxPolicy"
+    ];
+    for (const name of governanceTargets) {
+      const addr = info.addresses[name];
+      if (!addr || addr === ethers.ZeroAddress) continue;
+      const contract = new ethers.Contract(addr, ABI, signer);
+      let updated = false;
       try {
-        await (await contract.setGovernance(GOVERNANCE_SAFE)).wait();
-        console.log(`setGovernance(${GOVERNANCE_SAFE}) on ${contractName} @ ${address}`);
-        continue;
+        const tx = await contract.setGovernance(NEW_OWNER);
+        await tx.wait();
+        updated = true;
+        console.log(`✔ setGovernance ${key}.${name} -> ${NEW_OWNER}`);
       } catch (err) {
-        if (!(err instanceof Error)) {
-          console.warn(`Unknown error calling setGovernance on ${contractName}`);
-        }
+        // ignore, try transferOwnership next
       }
+      if (updated) continue;
       try {
-        await (await contract.transferOwnership(GOVERNANCE_SAFE)).wait();
-        console.log(`transferOwnership(${GOVERNANCE_SAFE}) on ${contractName} @ ${address}`);
+        const tx = await contract.transferOwnership(NEW_OWNER);
+        await tx.wait();
+        console.log(`✔ transferOwnership ${key}.${name} -> ${NEW_OWNER}`);
       } catch (err) {
-        console.warn(`Skipping ownership update on ${contractName} (${address})`, err);
+        console.warn(`ℹ skipping ${key}.${name} (${addr}) — no governance setter available`);
       }
     }
   }
-
-  console.log(`✅ Rotated governance of all hubs to ${GOVERNANCE_SAFE}`);
 }
 
 main().catch((error) => {

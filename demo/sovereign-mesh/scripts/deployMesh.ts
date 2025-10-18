@@ -1,92 +1,91 @@
-import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
+import { artifacts, ethers, network } from "hardhat";
+import agialpha from "../../../config/agialpha.json";
 
-type HubDescriptor = {
+type HubConfig = {
   label: string;
   rpcUrl: string;
   subgraphUrl: string;
   addresses: Record<string, string>;
 };
 
-const writeConfig = (hubs: Record<string, HubDescriptor>) => {
-  const file = path.join(__dirname, "../config/hubs.mainnet.json");
-  fs.writeFileSync(file, JSON.stringify(hubs, null, 2));
-  console.log(`Mesh hubs deployed and written to config: ${file}`);
-};
+async function ensureMockAgialpha() {
+  const artifact = await artifacts.readArtifact("contracts/test/MockERC20.sol:MockERC20");
+  await network.provider.send("hardhat_setCode", [agialpha.address, artifact.deployedBytecode]);
+}
 
-const deployHub = async (label: string, agi: string): Promise<HubDescriptor> => {
-  const StakeManager = await ethers.getContractFactory("StakeManager");
-  const stake = await StakeManager.deploy(agi);
-  await stake.waitForDeployment();
-  const ReputationEngine = await ethers.getContractFactory("ReputationEngine");
-  const rep = await ReputationEngine.deploy();
-  await rep.waitForDeployment();
-  const IdentityRegistry = await ethers.getContractFactory("IdentityRegistry");
-  const id = await IdentityRegistry.deploy();
-  await id.waitForDeployment();
-  const ValidationModule = await ethers.getContractFactory("ValidationModule");
-  const val = await ValidationModule.deploy();
-  await val.waitForDeployment();
-  const DisputeModule = await ethers.getContractFactory("DisputeModule");
-  const disp = await DisputeModule.deploy();
-  await disp.waitForDeployment();
-  const CertificateNFT = await ethers.getContractFactory("CertificateNFT");
-  const cert = await CertificateNFT.deploy();
-  await cert.waitForDeployment();
-  const JobRegistry = await ethers.getContractFactory("JobRegistry");
-  const job = await JobRegistry.deploy(agi);
-  await job.waitForDeployment();
+async function deployHub(label: string, governance: string): Promise<HubConfig> {
+  const Deployer = await ethers.getContractFactory("contracts/v2/Deployer.sol:Deployer");
+  const deployer = await Deployer.deploy();
+  await deployer.waitForDeployment();
 
-  await (await job.setModules(
-    await val.getAddress(),
-    await stake.getAddress(),
-    await rep.getAddress(),
-    await disp.getAddress(),
-    await cert.getAddress(),
-    ethers.ZeroAddress,
-    []
-  )).wait();
-  await (await stake.setJobRegistry(await job.getAddress())).wait();
-  await (await val.setJobRegistry(await job.getAddress())).wait();
-  await (await disp.setJobRegistry(await job.getAddress())).wait();
-  await (await cert.setJobRegistry(await job.getAddress())).wait();
-  await (await stake.setDisputeModule(await disp.getAddress())).wait();
-  await (await cert.setStakeManager(await stake.getAddress())).wait();
+  const identity = {
+    ens: ethers.ZeroAddress,
+    nameWrapper: ethers.ZeroAddress,
+    clubRootNode: ethers.ZeroHash,
+    agentRootNode: ethers.ZeroHash,
+    validatorMerkleRoot: ethers.ZeroHash,
+    agentMerkleRoot: ethers.ZeroHash
+  };
+
+  const result = await deployer.deployDefaultsWithoutTaxPolicy(identity, governance);
+  const [
+    stakeManager,
+    jobRegistry,
+    validationModule,
+    reputationEngine,
+    disputeModule,
+    certificateNFT,
+    platformRegistry,
+    jobRouter,
+    platformIncentives,
+    feePool,
+    taxPolicy,
+    identityRegistry,
+    systemPause
+  ] = result;
 
   return {
     label,
-    rpcUrl: "http://localhost:8545",
-    subgraphUrl: "http://localhost:8000/subgraphs/name/agi/jobs-v2",
+    rpcUrl: "http://127.0.0.1:8545",
+    subgraphUrl: "http://127.0.0.1:8000/subgraphs/name/agi/jobs-v2",
     addresses: {
-      AGIALPHA: agi,
-      JobRegistry: await job.getAddress(),
-      StakeManager: await stake.getAddress(),
-      ValidationModule: await val.getAddress(),
-      DisputeModule: await disp.getAddress(),
-      IdentityRegistry: await id.getAddress(),
-      CertificateNFT: await cert.getAddress(),
-      FeePool: ethers.ZeroAddress
+      AGIALPHA: agialpha.address,
+      JobRegistry: jobRegistry,
+      StakeManager: stakeManager,
+      ValidationModule: validationModule,
+      DisputeModule: disputeModule,
+      IdentityRegistry: identityRegistry,
+      CertificateNFT: certificateNFT,
+      FeePool: feePool,
+      ReputationEngine: reputationEngine,
+      PlatformRegistry: platformRegistry,
+      JobRouter: jobRouter,
+      PlatformIncentives: platformIncentives,
+      SystemPause: systemPause,
+      TaxPolicy: taxPolicy
     }
   };
-};
+}
 
 async function main() {
-  const AGI = await ethers.getContractFactory("AGIALPHAToken");
-  const agi = await AGI.deploy("AGIALPHA", "AGIA", 18);
-  await agi.waitForDeployment();
-  const agiAddress = await agi.getAddress();
+  const configPath = path.join(__dirname, "../config/hubs.mainnet.json");
+  const [deployer] = await ethers.getSigners();
+  await ensureMockAgialpha();
 
-  const publicResearch = await deployHub("Public Research Hub", agiAddress);
-  const industrialOps = await deployHub("Industrial Ops Hub", agiAddress);
+  const publicResearch = await deployHub("Public Research Hub", deployer.address);
+  const industrialOps = await deployHub("Industrial Ops Hub", deployer.address);
+  const civicGovernance = await deployHub("Civic Governance Hub", deployer.address);
 
-  const hubs = {
+  const hubs: Record<string, HubConfig> = {
     "public-research": publicResearch,
     "industrial-ops": industrialOps,
-    "civic-governance": publicResearch
-  } satisfies Record<string, HubDescriptor>;
+    "civic-governance": civicGovernance
+  };
 
-  writeConfig(hubs);
+  fs.writeFileSync(configPath, JSON.stringify(hubs, null, 2));
+  console.log(`Mesh hubs deployed and written to ${configPath}`);
 }
 
 main().catch((error) => {

@@ -1,1096 +1,340 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { ethers } from "ethers";
+import React, { useEffect, useState } from "react";
 import { getSigner } from "./lib/ethers";
 import { makeClient, qJobs } from "./lib/subgraph";
 import { computeCommit } from "./lib/commit";
-import { formatAgi, short } from "./lib/format";
+import { short } from "./lib/format";
 
-type MeshConfig = {
+interface Config {
   network: string;
   etherscanBase: string;
   defaultSubgraphUrl: string;
   orchestratorBase: string;
   hubs: string[];
-};
+}
 
-type HubConfig = {
+type HubAddresses = Record<string, string>;
+
+interface HubInfo {
   label: string;
   rpcUrl: string;
   subgraphUrl?: string;
-  addresses: Record<string, string>;
-};
+  addresses: HubAddresses;
+}
 
-type Job = {
-  id: string;
-  employer: string;
-  reward: string;
-  uri: string;
-  status: string;
-  validators?: { account: string }[];
-};
+const envOrchestratorBase = (
+  import.meta as unknown as { env?: Record<string, string | undefined> }
+).env?.VITE_ORCHESTRATOR_BASE;
 
-type Actor = {
-  id: string;
-  flag: string;
-  name: string;
-  tagline?: string;
-};
+const defaultOrchestratorBase =
+  (typeof window !== "undefined" &&
+    (window as any).__SOVEREIGN_MESH_ORCHESTRATOR_BASE__) ||
+  envOrchestratorBase ||
+  "http://localhost:8084";
 
-type PlaybookStep = {
-  hub: string;
-  rewardWei: string;
-  uri: string;
-  description?: string;
-};
-
-type Playbook = {
-  id: string;
-  name: string;
-  summary?: string;
-  sponsor?: string;
-  steps: PlaybookStep[];
-};
-
-type MeshSummary = {
-  network: string;
-  hubCount: number;
-  missionCount: number;
-  actorCount: number;
-  totalSteps: number;
-  totalRewardWei: string;
-  perHub: Array<{ hub: string; label: string; steps: number; rewardWei: string }>;
-  largestMission: null | { id: string; name: string; steps: number; rewardWei: string };
-};
-
-type PlaybookDisplayStep = {
-  key: string;
-  stageLabel: string;
-  hubLabel: string;
-  rewardLabel: string;
-  description: string;
-  uri: string;
-};
-
-type TxResult = {
-  hash: string;
-  hub?: string;
-};
-
-const DEFAULT_MESH_API_BASE = "http://localhost:8084";
-
-const getMeshApiBase = () => {
-  if (typeof window !== "undefined") {
-    const globalBase = (window as unknown as {
-      __SOVEREIGN_MESH_API__?: string;
-    }).__SOVEREIGN_MESH_API__;
-    if (globalBase) return globalBase;
-
-    if (typeof document !== "undefined") {
-      const meta = document
-        .querySelector("meta[name='mesh-api-base']")
-        ?.getAttribute("content");
-      if (meta) return meta;
-    }
+const resolveUrl = (path: string) => {
+  if (/^https?:\/\//.test(path)) {
+    return path;
   }
-
-  const envBase = (import.meta as unknown as {
-    env?: Record<string, string | undefined>;
-  }).env?.VITE_SOVEREIGN_MESH_API;
-
-  return envBase || DEFAULT_MESH_API_BASE;
+  if (path.startsWith("/mesh/")) {
+    const base = defaultOrchestratorBase.replace(/\/$/, "");
+    return `${base}${path}`;
+  }
+  return path;
 };
-
-const meshApiBase = getMeshApiBase();
 
 const fetchJson = async (path: string, init?: RequestInit) => {
-  const url = /^(https?:)?\/\//i.test(path)
-    ? path
-    : new URL(path, meshApiBase).toString();
-
-  const baseHeaders: Record<string, string> = { "content-type": "application/json" };
-  if (init?.headers) {
-    if (init.headers instanceof Headers) {
-      init.headers.forEach((value, key) => {
-        baseHeaders[key] = value;
-      });
-    } else if (Array.isArray(init.headers)) {
-      for (const [key, value] of init.headers) {
-        baseHeaders[key] = value;
-      }
-    } else {
-      Object.assign(baseHeaders, init.headers as Record<string, string>);
-    }
+  const url = resolveUrl(path);
+  const res = await fetch(url, {
+    headers: { "content-type": "application/json" },
+    ...init
+  });
+  if (!res.ok) {
+    throw new Error(`Request failed: ${res.status}`);
   }
-
-  const response = await fetch(url, { ...init, headers: baseHeaders });
-  if (!response.ok) {
-    let message = `Request failed (${response.status})`;
-    try {
-      const payload = await response.json();
-      if (payload && typeof payload === "object" && "error" in payload) {
-        message += `: ${(payload as { error?: string }).error ?? ""}`;
-      }
-    } catch {
-      // ignore JSON parse failures for error payloads
-    }
-    throw new Error(message);
-  }
-  return response.json();
+  return res.json();
 };
 
-const useMeshConfig = () => {
-  const [cfg, setCfg] = useState<MeshConfig>();
-  const [hubs, setHubs] = useState<Record<string, HubConfig>>({});
-  const [actors, setActors] = useState<Actor[]>([]);
-  const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
-  const [summary, setSummary] = useState<MeshSummary>();
-
-  useEffect(() => {
-    fetchJson("/mesh/config").then(setCfg).catch(console.error);
-    fetchJson("/mesh/hubs")
-      .then((data: { hubs?: Record<string, HubConfig> }) => setHubs(data.hubs ?? {}))
-      .catch(console.error);
-    fetchJson("/mesh/actors")
-      .then((data: Actor[]) => setActors(Array.isArray(data) ? data : []))
-      .catch(console.error);
-    fetchJson("/mesh/playbooks")
-      .then((data: Playbook[]) => setPlaybooks(Array.isArray(data) ? data : []))
-      .catch(console.error);
-    fetchJson("/mesh/summary")
-      .then((data: MeshSummary) => setSummary(data))
-      .catch(console.error);
-  }, []);
-
-  return { cfg, hubs, actors, playbooks, summary };
-};
-
-const Table: React.FC<{ jobs: Job[] }> = ({ jobs }) => (
-  <table className="mesh-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Proposer</th>
-        <th>Reward</th>
-        <th>URI</th>
-        <th>Status</th>
-        <th>#Validators</th>
-      </tr>
-    </thead>
-    <tbody>
-      {jobs.map((job) => (
-        <tr key={job.id}>
-          <td>{job.id}</td>
-          <td>{short(job.employer)}</td>
-          <td title={job.reward}>{formatAgi(job.reward)}</td>
-          <td>
-            <a href={job.uri} target="_blank" rel="noreferrer">
-              {job.uri}
-            </a>
-          </td>
-          <td>{job.status}</td>
-          <td>{job.validators?.length ?? 0}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-);
-
-const ensureStyles = () => {
-  if (document.getElementById("sovereign-mesh-styles")) return;
-  const style = document.createElement("style");
-  style.id = "sovereign-mesh-styles";
-  style.textContent = `
-    body { background: radial-gradient(circle at 20% 20%, #10192d, #05070c); color: #f8fafc; min-height: 100vh; margin: 0; }
-    h1, h3, h4 { font-family: 'Inter', system-ui, sans-serif; }
-    .mesh-shell { max-width: 1200px; margin: 0 auto; padding: 32px 24px 120px; }
-    .mesh-card { background: rgba(15,23,42,0.72); border: 1px solid rgba(94,234,212,0.25); border-radius: 20px; padding: 20px; margin-top: 24px; box-shadow: 0 24px 60px rgba(15,23,42,0.4); }
-    button { background: linear-gradient(135deg,#38bdf8,#22d3ee); color: #020617; border: none; border-radius: 999px; padding: 10px 20px; font-weight: 600; cursor: pointer; transition: transform 0.2s ease; }
-    button:hover { opacity: 0.9; transform: translateY(-1px); }
-    button:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
-    button:disabled:hover { opacity: 0.35; transform: none; }
-    select, input { background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.4); color: #e2e8f0; padding: 8px 12px; border-radius: 12px; }
-    .mesh-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-    .mesh-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
-    .mesh-table th, .mesh-table td { border-bottom: 1px solid rgba(148,163,184,0.25); padding: 8px 12px; text-align: left; }
-    .mesh-table a { color: #38bdf8; }
-    .mesh-preview { margin-top: 20px; border-radius: 16px; background: rgba(8,15,30,0.72); border: 1px solid rgba(94,234,212,0.25); padding: 18px; }
-    .mesh-preview-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
-    .mesh-preview-summary { margin-top: 8px; color: rgba(226,232,240,0.88); max-width: 760px; line-height: 1.5; }
-    .mesh-preview-sponsor { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
-    .mesh-preview-sponsor-header { display: flex; align-items: center; gap: 8px; font-size: 15px; }
-    .mesh-preview-sponsor-header span { font-size: 20px; }
-    .mesh-preview-sponsor-header strong { font-weight: 600; }
-    .mesh-preview-sponsor small { font-size: 12px; color: rgba(148,163,184,0.85); }
-    .mesh-preview-total { text-align: right; min-width: 180px; }
-    .mesh-preview-total span { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(94,234,212,0.8); }
-    .mesh-preview-total strong { font-size: 20px; display: block; margin-top: 4px; }
-    .mesh-step-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
-    .mesh-step-table th, .mesh-step-table td { border-bottom: 1px solid rgba(148,163,184,0.16); padding: 10px 12px; text-align: left; vertical-align: top; }
-    .mesh-step-table td a { color: #22d3ee; font-weight: 500; }
-    .mesh-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 16px; }
-    .mesh-insight { background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.22); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
-    .mesh-insight span { text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; color: rgba(148,163,184,0.85); }
-    .mesh-insight strong { font-size: 22px; color: #f8fafc; }
-    .mesh-insight small { color: rgba(94,234,212,0.88); font-size: 12px; }
-    .mesh-perhub-table { margin-top: 18px; }
-    .mesh-perhub-table td.share { color: rgba(94,234,212,0.88); font-weight: 600; }
-    .mesh-step-description { color: rgba(203,213,225,0.85); margin-top: 6px; line-height: 1.45; }
-    .mesh-actors { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; }
-    .mesh-actor { background: rgba(15,23,42,0.6); border: 1px solid rgba(56,189,248,0.2); border-radius: 18px; padding: 16px; box-shadow: inset 0 0 0 1px rgba(2,6,23,0.4); }
-    .mesh-actor-flag { font-size: 30px; }
-    .mesh-actor-name { font-weight: 600; margin-top: 8px; }
-    .mesh-actor-tagline { font-size: 13px; color: rgba(148,163,184,0.88); margin-top: 6px; line-height: 1.5; }
-    .mesh-owner-info { color: rgba(148,163,184,0.86); margin-bottom: 12px; line-height: 1.6; }
-    .mesh-owner-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
-    .mesh-owner-section { background: rgba(8,15,30,0.55); border: 1px solid rgba(94,234,212,0.18); border-radius: 16px; padding: 16px; margin-top: 18px; }
-    .mesh-owner-section h4 { margin: 0 0 12px; font-size: 16px; }
-    .mesh-owner-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
-    .mesh-owner-label { display: flex; flex-direction: column; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(148,163,184,0.78); }
-    .mesh-owner-label input { margin-top: 6px; }
-    details { margin-top: 16px; }
-    details summary { cursor: pointer; }
-  `;
-  document.head.appendChild(style);
-};
-
-const App: React.FC = () => {
-  const { cfg, hubs, playbooks, actors, summary } = useMeshConfig();
-  const hubKeys = useMemo(() => Object.keys(hubs), [hubs]);
+export default function App() {
+  const [cfg, setCfg] = useState<Config>();
+  const [apiBase, setApiBase] = useState<string>(defaultOrchestratorBase);
+  const [hubMap, setHubMap] = useState<Record<string, HubInfo>>({});
+  const [hubKeys, setHubKeys] = useState<string[]>([]);
   const [address, setAddress] = useState<string>();
+  const [actors, setActors] = useState<any[]>([]);
+  const [playbooks, setPlaybooks] = useState<any[]>([]);
   const [selectedHub, setSelectedHub] = useState<string>("");
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [reward, setReward] = useState("1000000000000000000");
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [rewardWei, setRewardWei] = useState("1000000000000000000");
   const [uri, setUri] = useState("ipfs://mesh/spec");
-  const [jobId, setJobId] = useState("1");
+  const [jobId, setJobId] = useState("0");
   const [approve, setApprove] = useState(true);
-  const [selectedPlaybook, setSelectedPlaybook] = useState("");
-  const [ownerValidators, setOwnerValidators] = useState("3");
-  const [ownerCommitWindow, setOwnerCommitWindow] = useState("1800");
-  const [ownerRevealWindow, setOwnerRevealWindow] = useState("1800");
-  const [ownerApprovalPct, setOwnerApprovalPct] = useState("75");
-  const [ownerMinStake, setOwnerMinStake] = useState("1000000000000000000");
-  const [ownerMaxStake, setOwnerMaxStake] = useState("0");
-  const [ownerUnbondingPeriod, setOwnerUnbondingPeriod] = useState("604800");
-  const [ownerFeePct, setOwnerFeePct] = useState("2");
-  const [ownerBurnPct, setOwnerBurnPct] = useState("6");
-  const [ownerValidatorRewardPct, setOwnerValidatorRewardPct] = useState("12");
-  const [ownerEns, setOwnerEns] = useState("");
-  const [ownerNameWrapper, setOwnerNameWrapper] = useState("");
-  const [ownerReputation, setOwnerReputation] = useState("");
-  const [ownerAttestation, setOwnerAttestation] = useState("");
-  const [ownerAgentRoot, setOwnerAgentRoot] = useState("");
-  const [ownerClubRoot, setOwnerClubRoot] = useState("");
-  const [ownerNodeRoot, setOwnerNodeRoot] = useState("");
-  const [ownerAgentMerkle, setOwnerAgentMerkle] = useState("");
-  const [ownerValidatorMerkle, setOwnerValidatorMerkle] = useState("");
-
-  const actorMap = useMemo(() => {
-    const map: Record<string, Actor> = {};
-    for (const actor of actors) {
-      map[actor.id] = actor;
-    }
-    return map;
-  }, [actors]);
-
-  const selectedPlaybookConfig = useMemo(
-    () => playbooks.find((pb) => pb.id === selectedPlaybook),
-    [playbooks, selectedPlaybook]
-  );
-
-  const selectedSponsor = selectedPlaybookConfig?.sponsor
-    ? actorMap[selectedPlaybookConfig.sponsor]
-    : undefined;
-
-  const summaryHubRows = useMemo(
-    () => {
-      if (!summary) return [];
-      let totalReward = 0n;
-      try {
-        totalReward = BigInt(summary.totalRewardWei);
-      } catch {
-        totalReward = 0n;
-      }
-      return summary.perHub.map((entry) => {
-        let reward = 0n;
-        try {
-          reward = BigInt(entry.rewardWei);
-        } catch {
-          reward = 0n;
-        }
-        const sharePct = totalReward > 0n ? Number((reward * 10000n) / totalReward) / 100 : 0;
-        return {
-          hub: entry.hub,
-          label: entry.label,
-          steps: entry.steps,
-          rewardLabel: formatAgi(reward),
-          shareLabel: totalReward > 0n ? `${sharePct.toFixed(2)}%` : "—"
-        };
-      });
-    },
-    [summary]
-  );
-
-  const overallRewardLabel = summary ? formatAgi(summary.totalRewardWei) : undefined;
-
-  const largestMissionSummary = useMemo(() => {
-    if (!summary?.largestMission) return undefined;
-    return {
-      name: summary.largestMission.name,
-      steps: summary.largestMission.steps,
-      rewardLabel: formatAgi(summary.largestMission.rewardWei)
-    };
-  }, [summary]);
-
-  const playbookSteps = useMemo<PlaybookDisplayStep[]>(() => {
-    if (!selectedPlaybookConfig) return [];
-    return selectedPlaybookConfig.steps.map((step) => {
-      const [stageLabel, hubId] = String(step.hub).split("@");
-      const hub = hubs[hubId];
-      const key = `${step.hub}-${step.uri}`;
-      return {
-        key,
-        stageLabel: stageLabel || step.hub,
-        hubLabel: hub?.label ?? hubId ?? step.hub,
-        rewardLabel: formatAgi(step.rewardWei),
-        description: step.description ?? "",
-        uri: step.uri
-      };
-    });
-  }, [hubs, selectedPlaybookConfig]);
-
-  const playbookRewardWei = useMemo(() => {
-    if (!selectedPlaybookConfig) return 0n;
-    return selectedPlaybookConfig.steps.reduce<bigint>((acc, step) => {
-      try {
-        return acc + BigInt(step.rewardWei ?? 0);
-      } catch {
-        return acc;
-      }
-    }, 0n);
-  }, [selectedPlaybookConfig]);
-
-  const playbookRewardLabel = formatAgi(playbookRewardWei);
+  const [selectedPlaybook, setSelectedPlaybook] = useState<string>("");
 
   useEffect(() => {
-    ensureStyles();
+    fetchJson("/mesh/config")
+      .then((config) => {
+        setCfg(config);
+        setApiBase(config.orchestratorBase ?? defaultOrchestratorBase);
+      })
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
-    if (!cfg || !selectedHub) return;
-    const hub = hubs[selectedHub];
-    if (!hub) return;
-    const subgraphUrl = hub.subgraphUrl || cfg.defaultSubgraphUrl;
-    makeClient(subgraphUrl)
-      .request<{ jobs: Job[] }>(qJobs)
-      .then((data) => setJobs(data.jobs ?? []))
-      .catch((err) => console.error("Subgraph error", err));
-  }, [cfg, hubs, selectedHub]);
-
-  const orchestratorBase = cfg?.orchestratorBase || meshApiBase;
-
-  const sendTxPlan = async (
-    path: string,
-    body: Record<string, unknown> = {}
-  ): Promise<TxResult[]> => {
-    const signer = await getSigner();
-    const target = new URL(path, orchestratorBase).toString();
-    const response = await fetchJson(target, {
-      method: "POST",
-      body: JSON.stringify(body)
+    if (!cfg) return;
+    const base = cfg.orchestratorBase ?? defaultOrchestratorBase;
+    fetchJson(`${base}/mesh/hubs`).then((data) => {
+      setHubMap(data.hubs ?? {});
+      setHubKeys(Object.keys(data.hubs ?? {}));
     });
+    fetchJson(`${base}/mesh/actors`).then(setActors).catch(console.error);
+    fetchJson(`${base}/mesh/playbooks`).then(setPlaybooks).catch(console.error);
+  }, [cfg]);
 
-    const plan: any[] = [];
-    if (response && typeof response === "object") {
-      if (Array.isArray((response as { txs?: unknown }).txs)) {
-        plan.push(...((response as { txs: any[] }).txs ?? []));
-      }
-      if ((response as { tx?: unknown }).tx) {
-        plan.push((response as { tx: any }).tx);
-      }
+  useEffect(() => {
+    if (!cfg || !selectedHub) {
+      setJobs([]);
+      return;
     }
-
-    if (!plan.length) {
-      throw new Error("No transactions returned by orchestrator");
+    const hub = hubMap[selectedHub];
+    if (!hub) {
+      setJobs([]);
+      return;
     }
-
-    const results: TxResult[] = [];
-    for (const entry of plan) {
-      const txEntry = entry as { to?: string; data?: string; value?: unknown; hub?: string };
-      if (!txEntry.to || !txEntry.data) {
-        throw new Error("Invalid transaction payload from orchestrator");
-      }
-      const request = {
-        to: txEntry.to,
-        data: txEntry.data,
-        value: txEntry.value ?? 0
-      };
-      const sent = await signer.sendTransaction(request);
-      await sent.wait();
-      results.push({ hash: sent.hash, hub: txEntry.hub });
-    }
-
-    return results;
-  };
-
-  const describeHashes = (txs: TxResult[]) =>
-    txs
-      .map((entry) => (entry.hub ? `${entry.hash} — ${entry.hub}` : entry.hash))
-      .join("\n");
-
-  const pickValue = (value: string) => {
-    const trimmed = value.trim();
-    return trimmed === "" ? undefined : trimmed;
-  };
+    const subgraph = hub.subgraphUrl || cfg.defaultSubgraphUrl;
+    makeClient(subgraph)
+      .request(qJobs)
+      .then((data) => setJobs(data.jobs ?? []))
+      .catch((err) => {
+        console.error(err);
+        setJobs([]);
+      });
+  }, [cfg, hubMap, selectedHub]);
 
   const connect = async () => {
     const signer = await getSigner();
-    setAddress(await signer.getAddress());
+    const addr = await signer.getAddress();
+    setAddress(addr);
+  };
+
+  const requireHub = () => {
+    if (!selectedHub) {
+      alert("Choose a hub first");
+      throw new Error("Hub not selected");
+    }
+    return selectedHub;
+  };
+
+  const sendTx = async (url: string, body: Record<string, unknown>) => {
+    const hub = requireHub();
+    const payload = await fetchJson(`${apiBase}${url.replace(":hub", hub)}`, {
+      method: "POST",
+      body: JSON.stringify(body)
+    });
+    const signer = await getSigner();
+    const tx = await signer.sendTransaction(payload.tx ?? payload);
+    await tx.wait();
+    return tx.hash;
   };
 
   const createJob = async () => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/create`, {
-      rewardWei: reward,
+    const hash = await sendTx(`/mesh/${selectedHub}/tx/create`, {
+      rewardWei,
       uri
     });
-    alert(`✅ Job created on ${selectedHub}\n${result.hash}`);
+    alert(`✅ Submitted on ${selectedHub}: ${hash}`);
   };
 
   const stake = async (role: number, amountWei: string) => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/stake`, {
+    const hash = await sendTx(`/mesh/${selectedHub}/tx/stake`, {
       role,
       amountWei
     });
-    alert(`✅ Stake submitted on ${selectedHub}\n${result.hash}`);
+    alert(`✅ Staked on ${selectedHub}: ${hash}`);
   };
 
   const commit = async () => {
-    if (!selectedHub || !address) return alert("Connect wallet and choose hub.");
+    if (!address) {
+      await connect();
+    }
     const { commitHash, salt } = computeCommit(approve);
-    localStorage.setItem(`salt_${selectedHub}_${jobId}_${address}`, salt);
-    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/commit`, {
+    const hub = requireHub();
+    localStorage.setItem(`salt_${hub}_${jobId}_${address}`, salt);
+    const hash = await sendTx(`/mesh/${selectedHub}/tx/commit`, {
       jobId: Number(jobId),
       commitHash,
       subdomain: "validator",
       proof: []
     });
-    alert(`🌀 Commit broadcasted\n${result.hash}`);
+    alert(`✅ Committed on ${selectedHub}: ${hash}`);
   };
 
   const reveal = async () => {
-    if (!selectedHub || !address) return alert("Connect wallet and choose hub.");
-    const salt = localStorage.getItem(`salt_${selectedHub}_${jobId}_${address}`);
-    if (!salt) return alert("Commit salt not found. Please commit first.");
-    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/reveal`, {
+    const hub = requireHub();
+    const salt = localStorage.getItem(`salt_${hub}_${jobId}_${address}`);
+    if (!salt) {
+      alert("No commit found for this job. Commit first.");
+      return;
+    }
+    const hash = await sendTx(`/mesh/${selectedHub}/tx/reveal`, {
       jobId: Number(jobId),
       approve,
       salt
     });
-    alert(`🌈 Reveal confirmed\n${result.hash}`);
+    alert(`✅ Revealed on ${selectedHub}: ${hash}`);
   };
 
   const finalize = async () => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/finalize`, {
+    const hash = await sendTx(`/mesh/${selectedHub}/tx/finalize`, {
       jobId: Number(jobId)
     });
-    alert(`🏁 Finalization submitted\n${result.hash}`);
+    alert(`✅ Finalized on ${selectedHub}: ${hash}`);
   };
 
-  const dispute = async () => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    const evidence = prompt("Attach evidence (URL or summary)", "");
-    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/dispute`, {
-      jobId: Number(jobId),
-      evidence
+  const instantiatePlaybook = async () => {
+    if (!selectedPlaybook) {
+      alert("Choose a mission playbook");
+      return;
+    }
+    const payload = await fetchJson(`${apiBase}/mesh/plan/instantiate`, {
+      method: "POST",
+      body: JSON.stringify({ playbookId: selectedPlaybook })
     });
-    alert(`⚖️ Dispute raised\n${result.hash}`);
+    const signer = await getSigner();
+    for (const tx of payload.txs ?? []) {
+      const resp = await signer.sendTransaction(tx);
+      await resp.wait();
+    }
+    alert(`🚀 Mission instantiated across ${(payload.txs ?? []).length} jobs!`);
   };
 
-  const instantiate = async () => {
-    if (!selectedPlaybook) return alert("Choose a mission playbook.");
-    const results = await sendTxPlan("/mesh/plan/instantiate", {
-      playbookId: selectedPlaybook
-    });
-    alert(
-      `🚀 Mission instantiated across ${results.length} jobs\n${describeHashes(results)}`
-    );
-  };
-
-  const allowlistDev = async (role: number) => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    if (!address) return alert("Connect wallet first.");
-    const [result] = await sendTxPlan(`/mesh/${selectedHub}/tx/allowlist`, {
+  const allowlist = async (role: number) => {
+    const hash = await sendTx(`/mesh/${selectedHub}/tx/allowlist`, {
       role,
       addr: address
     });
-    alert(`🛡️ Allowlist tx sent\n${result.hash}`);
+    alert(`✅ Allowlisted on ${selectedHub}: ${hash}`);
   };
 
-  const pauseHub = async () => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    const results = await sendTxPlan(`/mesh/${selectedHub}/owner/pause`);
-    alert(`⏸️ Hub paused\n${describeHashes(results)}`);
-  };
-
-  const resumeHub = async () => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    const results = await sendTxPlan(`/mesh/${selectedHub}/owner/unpause`);
-    alert(`▶️ Hub resumed\n${describeHashes(results)}`);
-  };
-
-  const updateValidation = async () => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    try {
-      const results = await sendTxPlan(`/mesh/${selectedHub}/owner/validation`, {
-        validatorsPerJob: pickValue(ownerValidators),
-        commitWindow: pickValue(ownerCommitWindow),
-        revealWindow: pickValue(ownerRevealWindow),
-        approvalPct: pickValue(ownerApprovalPct)
-      });
-      alert(
-        `📡 Validation parameters updated (${results.length} tx)\n${describeHashes(results)}`
-      );
-    } catch (error) {
-      if (error instanceof Error) {
-        alert(`⚠️ ${error.message}`);
-      } else {
-        alert("⚠️ Unable to update validation settings");
-      }
-    }
-  };
-
-  const updateStake = async () => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    try {
-      const results = await sendTxPlan(`/mesh/${selectedHub}/owner/stake`, {
-        minStakeWei: pickValue(ownerMinStake),
-        maxStakeWei: pickValue(ownerMaxStake),
-        unbondingPeriod: pickValue(ownerUnbondingPeriod),
-        feePct: pickValue(ownerFeePct),
-        burnPct: pickValue(ownerBurnPct),
-        validatorRewardPct: pickValue(ownerValidatorRewardPct)
-      });
-      alert(
-        `🏛️ Stake parameters updated (${results.length} tx)\n${describeHashes(results)}`
-      );
-    } catch (error) {
-      if (error instanceof Error) {
-        alert(`⚠️ ${error.message}`);
-      } else {
-        alert("⚠️ Unable to update stake parameters");
-      }
-    }
-  };
-
-  const updateIdentity = async () => {
-    if (!selectedHub) return alert("Choose a hub first.");
-    try {
-      const results = await sendTxPlan(`/mesh/${selectedHub}/owner/identity`, {
-        ens: pickValue(ownerEns),
-        nameWrapper: pickValue(ownerNameWrapper),
-        reputationEngine: pickValue(ownerReputation),
-        attestationRegistry: pickValue(ownerAttestation),
-        agentRootNode: pickValue(ownerAgentRoot),
-        clubRootNode: pickValue(ownerClubRoot),
-        nodeRootNode: pickValue(ownerNodeRoot),
-        agentMerkleRoot: pickValue(ownerAgentMerkle),
-        validatorMerkleRoot: pickValue(ownerValidatorMerkle)
-      });
-      alert(
-        `🧬 Identity registry updated (${results.length} tx)\n${describeHashes(results)}`
-      );
-    } catch (error) {
-      if (error instanceof Error) {
-        alert(`⚠️ ${error.message}`);
-      } else {
-        alert("⚠️ Unable to update identity configuration");
-      }
-    }
+  const renderOwnerPanel = (hubKey: string) => {
+    const hub = hubMap[hubKey];
+    if (!hub) return null;
+    const base = `${cfg?.etherscanBase ?? "https://etherscan.io"}/address`;
+    const contracts = [
+      "ValidationModule",
+      "JobRegistry",
+      "StakeManager",
+      "IdentityRegistry",
+      "FeePool"
+    ];
+    return (
+      <li key={hubKey}>
+        <strong>{hub.label}</strong>
+        <ul>
+          {contracts.map((c) => {
+            const addr = hub.addresses[c];
+            if (!addr || addr === "0x0000000000000000000000000000000000000000") {
+              return null;
+            }
+            return (
+              <li key={c}>
+                <a href={`${base}/${addr}#writeContract`} target="_blank" rel="noreferrer">
+                  {c}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </li>
+    );
   };
 
   return (
-    <div className="mesh-shell">
+    <div style={{ fontFamily: "Inter, system-ui", padding: 24, maxWidth: 1200, margin: "0 auto" }}>
       <h1>🕸️ Sovereign Mesh — Beyond Civic Exocortex</h1>
       <p>
-        Multi-hub orchestration for civilization-scale missions. Initiate foresight, research, optimization, and knowledge
-        workflows from a single intent. Validators and owners remain fully sovereign through wallet-based control.
+        Multi-hub orchestration for civilization-scale missions. Choose a hub, post jobs, or instantiate
+        a mission playbook spanning foresight, research, optimisation, and knowledge hubs.
       </p>
 
-      <div className="mesh-card">
-        <h3>Mesh Intelligence Dashboard</h3>
-        {summary ? (
-          <>
-            <div className="mesh-insights">
-              <div className="mesh-insight">
-                <span>Planetary Hubs</span>
-                <strong>{summary.hubCount}</strong>
-                <small>Owner-governed deployments</small>
-              </div>
-              <div className="mesh-insight">
-                <span>Mission Playbooks</span>
-                <strong>{summary.missionCount}</strong>
-                <small>{summary.totalSteps} total mission steps</small>
-              </div>
-              <div className="mesh-insight">
-                <span>Active Sponsors</span>
-                <strong>{summary.actorCount}</strong>
-                <small>Ready to underwrite missions</small>
-              </div>
-              <div className="mesh-insight">
-                <span>Reward Budget</span>
-                <strong>{overallRewardLabel ?? "—"}</strong>
-                <small>{summary.network} network</small>
-              </div>
-            </div>
-            {largestMissionSummary ? (
-              <p className="mesh-preview-summary" style={{ marginTop: 18 }}>
-                <strong>{largestMissionSummary.name}</strong> currently carries the largest blueprint — {largestMissionSummary.steps}
-                {" "}
-                steps orchestrated across the mesh with a reward pool of {largestMissionSummary.rewardLabel}.
-              </p>
-            ) : null}
-            <table className="mesh-step-table mesh-perhub-table">
-              <thead>
-                <tr>
-                  <th>Hub</th>
-                  <th>Steps</th>
-                  <th>Reward Budget</th>
-                  <th>Mesh Share</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summaryHubRows.map((row) => (
-                  <tr key={row.hub}>
-                    <td>{row.label}</td>
-                    <td>{row.steps}</td>
-                    <td>{row.rewardLabel}</td>
-                    <td className="share">{row.shareLabel}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        ) : (
-          <p className="mesh-preview-summary" style={{ marginTop: 16 }}>
-            Loading network intelligence…
-          </p>
-        )}
-      </div>
-
-      <div className="mesh-card mesh-row">
-        <button onClick={connect}>
-          {address ? `Connected: ${short(address)}` : "Connect Wallet"}
-        </button>
-        <select value={selectedHub} onChange={(e) => setSelectedHub(e.target.value)}>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <button onClick={connect}>{address ? `Connected: ${short(address)}` : "Connect Wallet"}</button>
+        <select onChange={(e) => setSelectedHub(e.target.value)} defaultValue="">
           <option value="">— Choose Hub —</option>
           {hubKeys.map((key) => (
             <option key={key} value={key}>
-              {hubs[key]?.label ?? key}
+              {hubMap[key]?.label ?? key}
             </option>
           ))}
         </select>
-        <input
-          value={reward}
-          onChange={(e) => setReward(e.target.value)}
-          placeholder="Reward in wei"
-          style={{ minWidth: 220 }}
-        />
-        <input
-          value={uri}
-          onChange={(e) => setUri(e.target.value)}
-          placeholder="IPFS URI"
-          style={{ minWidth: 320 }}
-        />
+        <input value={rewardWei} onChange={(e) => setRewardWei(e.target.value)} style={{ width: 260 }} />
+        <input value={uri} onChange={(e) => setUri(e.target.value)} style={{ width: 360 }} />
         <button onClick={createJob}>Create Job</button>
-        <button onClick={() => allowlistDev(1)}>Dev: Allowlist Validator</button>
+        <button onClick={() => allowlist(1)}>Dev: Allowlist Validator</button>
       </div>
 
-      <div className="mesh-card">
-        <h3>Live Jobs — {selectedHub || "Select a hub"}</h3>
-        <Table jobs={jobs} />
+      <h3 style={{ marginTop: 20 }}>Live Jobs on Hub: {selectedHub || "—"}</h3>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th align="left">ID</th>
+            <th align="left">Proposer</th>
+            <th align="left">Reward</th>
+            <th align="left">URI</th>
+            <th align="left">Status</th>
+            <th align="left">#Val</th>
+          </tr>
+        </thead>
+        <tbody>
+          {jobs.map((j: any) => (
+            <tr key={j.id}>
+              <td>{j.id}</td>
+              <td>{short(j.employer)}</td>
+              <td>{j.reward}</td>
+              <td>
+                <a href={j.uri} target="_blank" rel="noreferrer">
+                  {j.uri}
+                </a>
+              </td>
+              <td>{j.status}</td>
+              <td>{j.validators?.length ?? 0}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h3 style={{ marginTop: 20 }}>Participate on {selectedHub || "—"}</h3>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <input value={jobId} onChange={(e) => setJobId(e.target.value)} placeholder="jobId" />
+        <button onClick={() => stake(1, "1000000000000000000")}>Stake as Validator (1)</button>
+        <label>
+          <input type="checkbox" checked={approve} onChange={(e) => setApprove(e.target.checked)} /> approve
+        </label>
+        <button onClick={commit}>Commit</button>
+        <button onClick={reveal}>Reveal</button>
+        <button onClick={finalize}>Finalize</button>
       </div>
 
-      <div className="mesh-card">
-        <h3>Participate</h3>
-        <div className="mesh-row">
-          <input
-            value={jobId}
-            onChange={(e) => setJobId(e.target.value)}
-            placeholder="Job ID"
-            style={{ width: 120 }}
-          />
-          <button onClick={() => stake(1, "1000000000000000000")}>Stake 1 AGIA as Validator</button>
-          <label>
-            <input
-              type="checkbox"
-              checked={approve}
-              onChange={(e) => setApprove(e.target.checked)}
-              style={{ marginRight: 6 }}
-            />
-            Approve
-          </label>
-          <button onClick={commit}>Commit</button>
-          <button onClick={reveal}>Reveal</button>
-          <button onClick={finalize}>Finalize</button>
-          <button onClick={dispute}>Raise Dispute</button>
-        </div>
+      <h3 style={{ marginTop: 20 }}>Mission Playbooks (cross-hub)</h3>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <select onChange={(e) => setSelectedPlaybook(e.target.value)} defaultValue="">
+          <option value="">— Choose Mission —</option>
+          {playbooks.map((p: any) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <button onClick={instantiatePlaybook}>Instantiate Mission</button>
       </div>
 
-      <div className="mesh-card">
-        <h3>Owner Control Center</h3>
-        <p className="mesh-owner-info">
-          Connect with the governance wallet to pause hubs, retune validation cadence, and
-          adjust staking economics. Transactions execute directly from your wallet — no
-          backend custody.
-        </p>
-        <div className="mesh-owner-actions">
-          <button onClick={pauseHub}>Pause Hub</button>
-          <button onClick={resumeHub}>Resume Hub</button>
-        </div>
-        <div className="mesh-owner-section">
-          <h4>Validation cadence</h4>
-          <div className="mesh-owner-fields">
-            <label className="mesh-owner-label">
-              Validators / Job
-              <input
-                value={ownerValidators}
-                onChange={(e) => setOwnerValidators(e.target.value)}
-                placeholder="e.g. 3"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Commit Window (s)
-              <input
-                value={ownerCommitWindow}
-                onChange={(e) => setOwnerCommitWindow(e.target.value)}
-                placeholder="Seconds"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Reveal Window (s)
-              <input
-                value={ownerRevealWindow}
-                onChange={(e) => setOwnerRevealWindow(e.target.value)}
-                placeholder="Seconds"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Approval Threshold (%)
-              <input
-                value={ownerApprovalPct}
-                onChange={(e) => setOwnerApprovalPct(e.target.value)}
-                placeholder="0-100"
-              />
-            </label>
-          </div>
-          <button style={{ marginTop: 12 }} onClick={updateValidation}>
-            Apply Validation Settings
-          </button>
-        </div>
-        <div className="mesh-owner-section">
-          <h4>Stake economics</h4>
-          <div className="mesh-owner-fields">
-            <label className="mesh-owner-label">
-              Min Stake (wei)
-              <input
-                value={ownerMinStake}
-                onChange={(e) => setOwnerMinStake(e.target.value)}
-                placeholder="Minimum stake"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Max Stake (wei)
-              <input
-                value={ownerMaxStake}
-                onChange={(e) => setOwnerMaxStake(e.target.value)}
-                placeholder="0 = unlimited"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Unbonding Period (s)
-              <input
-                value={ownerUnbondingPeriod}
-                onChange={(e) => setOwnerUnbondingPeriod(e.target.value)}
-                placeholder="Seconds"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Fee %
-              <input
-                value={ownerFeePct}
-                onChange={(e) => setOwnerFeePct(e.target.value)}
-                placeholder="0-100"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Burn %
-              <input
-                value={ownerBurnPct}
-                onChange={(e) => setOwnerBurnPct(e.target.value)}
-                placeholder="0-100"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Validator Reward %
-              <input
-                value={ownerValidatorRewardPct}
-                onChange={(e) => setOwnerValidatorRewardPct(e.target.value)}
-                placeholder="0-100"
-              />
-            </label>
-          </div>
-          <button style={{ marginTop: 12 }} onClick={updateStake}>
-            Apply Stake Settings
-          </button>
-        </div>
-        <div className="mesh-owner-section">
-          <h4>Identity registry</h4>
-          <p className="mesh-owner-info" style={{ marginTop: 0 }}>
-            Refresh ENS anchors, Merkle roots, and attestation registries to steer who can
-            participate across the mesh hubs. Provide only the fields you want to change.
-          </p>
-          <div className="mesh-owner-fields">
-            <label className="mesh-owner-label">
-              ENS Registry Address
-              <input
-                value={ownerEns}
-                onChange={(e) => setOwnerEns(e.target.value)}
-                placeholder="0x..."
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Name Wrapper Address
-              <input
-                value={ownerNameWrapper}
-                onChange={(e) => setOwnerNameWrapper(e.target.value)}
-                placeholder="0x..."
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Reputation Engine Address
-              <input
-                value={ownerReputation}
-                onChange={(e) => setOwnerReputation(e.target.value)}
-                placeholder="0x..."
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Attestation Registry Address
-              <input
-                value={ownerAttestation}
-                onChange={(e) => setOwnerAttestation(e.target.value)}
-                placeholder="0x..."
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Agent Root Node (bytes32)
-              <input
-                value={ownerAgentRoot}
-                onChange={(e) => setOwnerAgentRoot(e.target.value)}
-                placeholder="0x…"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Club Root Node (bytes32)
-              <input
-                value={ownerClubRoot}
-                onChange={(e) => setOwnerClubRoot(e.target.value)}
-                placeholder="0x…"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Node Root Node (bytes32)
-              <input
-                value={ownerNodeRoot}
-                onChange={(e) => setOwnerNodeRoot(e.target.value)}
-                placeholder="0x…"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Agent Merkle Root (bytes32)
-              <input
-                value={ownerAgentMerkle}
-                onChange={(e) => setOwnerAgentMerkle(e.target.value)}
-                placeholder="0x…"
-              />
-            </label>
-            <label className="mesh-owner-label">
-              Validator Merkle Root (bytes32)
-              <input
-                value={ownerValidatorMerkle}
-                onChange={(e) => setOwnerValidatorMerkle(e.target.value)}
-                placeholder="0x…"
-              />
-            </label>
-          </div>
-          <button style={{ marginTop: 12 }} onClick={updateIdentity}>
-            Apply Identity Settings
-          </button>
-        </div>
-      </div>
-
-      <div className="mesh-card">
-        <h3>Mission Playbooks</h3>
-        <div className="mesh-row">
-          <select value={selectedPlaybook} onChange={(e) => setSelectedPlaybook(e.target.value)}>
-            <option value="">— Choose Mission —</option>
-            {playbooks.map((pb) => (
-              <option key={pb.id} value={pb.id}>
-                {pb.name}
-              </option>
-            ))}
-          </select>
-          <button onClick={instantiate} disabled={!selectedPlaybook}>
-            Instantiate Mission
-          </button>
-        </div>
-        {selectedPlaybookConfig ? (
-          <div className="mesh-preview">
-            <div className="mesh-preview-header">
-              <div>
-                <h4>{selectedPlaybookConfig.name}</h4>
-                {selectedSponsor ? (
-                  <div className="mesh-preview-sponsor">
-                    <div className="mesh-preview-sponsor-header">
-                      <span>{selectedSponsor.flag}</span>
-                      <strong>{selectedSponsor.name}</strong>
-                    </div>
-                    {selectedSponsor.tagline ? (
-                      <small>{selectedSponsor.tagline}</small>
-                    ) : null}
-                  </div>
-                ) : null}
-                {selectedPlaybookConfig.summary ? (
-                  <p className="mesh-preview-summary">{selectedPlaybookConfig.summary}</p>
-                ) : null}
-              </div>
-              <div className="mesh-preview-total">
-                <span>Total Reward</span>
-                <strong>{playbookRewardLabel}</strong>
-              </div>
-            </div>
-            <table className="mesh-step-table">
-              <thead>
-                <tr>
-                  <th>Stage</th>
-                  <th>Hub</th>
-                  <th>Reward</th>
-                  <th>Deliverable</th>
-                </tr>
-              </thead>
-              <tbody>
-                {playbookSteps.map((step) => (
-                  <tr key={step.key}>
-                    <td>{step.stageLabel}</td>
-                    <td>{step.hubLabel}</td>
-                    <td>{step.rewardLabel}</td>
-                    <td>
-                      {step.description ? (
-                        <div className="mesh-step-description">{step.description}</div>
-                      ) : null}
-                      <a href={step.uri} target="_blank" rel="noreferrer">
-                        {step.uri}
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="mesh-preview-summary" style={{ marginTop: 16 }}>
-            Choose a mission to preview the cross-hub launch plan and signature sequence.
-          </p>
-        )}
-      </div>
-
-      {actors.length > 0 ? (
-        <div className="mesh-card">
-          <h3>Mesh Sponsors & Actors</h3>
-          <div className="mesh-actors">
-            {actors.map((actor) => (
-              <div key={actor.id} className="mesh-actor">
-                <div className="mesh-actor-flag">{actor.flag}</div>
-                <div className="mesh-actor-name">{actor.name}</div>
-                {actor.tagline ? <div className="mesh-actor-tagline">{actor.tagline}</div> : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="mesh-card">
-        <details>
-          <summary>
-            <strong>Owner Panels</strong> — direct Etherscan write links
-          </summary>
-          <ul>
-            {hubKeys.map((key) => {
-              const hub = hubs[key];
-              if (!hub) return null;
-              const base = `${cfg?.etherscanBase || "https://etherscan.io"}/address`;
-              return (
-                <li key={key} style={{ marginTop: 8 }}>
-                  <strong>{hub.label}</strong>
-                  <ul>
-                    <li>
-                      <a
-                        target="_blank"
-                        rel="noreferrer"
-                        href={`${base}/${hub.addresses.ValidationModule}#writeContract`}
-                      >
-                        ValidationModule
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        target="_blank"
-                        rel="noreferrer"
-                        href={`${base}/${hub.addresses.JobRegistry}#writeContract`}
-                      >
-                        JobRegistry
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        target="_blank"
-                        rel="noreferrer"
-                        href={`${base}/${hub.addresses.StakeManager}#writeContract`}
-                      >
-                        StakeManager
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        target="_blank"
-                        rel="noreferrer"
-                        href={`${base}/${hub.addresses.IdentityRegistry}#writeContract`}
-                      >
-                        IdentityRegistry
-                      </a>
-                    </li>
-                    {hub.addresses.FeePool && hub.addresses.FeePool !== ethers.ZeroAddress ? (
-                      <li>
-                        <a
-                          target="_blank"
-                          rel="noreferrer"
-                          href={`${base}/${hub.addresses.FeePool}#writeContract`}
-                        >
-                          FeePool
-                        </a>
-                      </li>
-                    ) : null}
-                  </ul>
-                </li>
-              );
-            })}
-          </ul>
-        </details>
-      </div>
+      <details style={{ marginTop: 24 }}>
+        <summary>
+          <strong>Owner Panels</strong> (links to Etherscan write interfaces)
+        </summary>
+        <ul>
+          {hubKeys.map((key) => renderOwnerPanel(key))}
+        </ul>
+      </details>
     </div>
   );
-};
-
-export default App;
+}
