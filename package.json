@@ -185,10 +185,11 @@
     "demo:sovereign-constellation:app:install": "npm ci --prefix demo/sovereign-constellation/app",
     "demo:sovereign-constellation:app:build": "npm run build --prefix demo/sovereign-constellation/app",
     "demo:sovereign-constellation:test:contracts": "npx hardhat test demo/sovereign-constellation/test/*.t.ts",
-    "demo:sovereign-constellation:test:server": "node demo/sovereign-constellation/test/server/missionProfiles.spec.js && node demo/sovereign-constellation/test/server/asiTakesOffDeck.spec.js && node demo/sovereign-constellation/test/server/asiVictoryPlan.spec.js",
+    "demo:sovereign-constellation:test:server": "node demo/sovereign-constellation/test/server/missionProfiles.spec.js && node demo/sovereign-constellation/test/server/asiTakesOffDeck.spec.js && node demo/sovereign-constellation/test/server/asiVictoryPlan.spec.js && node demo/sovereign-constellation/test/server/asiOwnerMatrix.spec.js",
     "demo:sovereign-constellation:test": "npm run demo:sovereign-constellation:test:contracts && npm run demo:sovereign-constellation:test:server",
     "demo:sovereign-constellation:ci": "npm run demo:sovereign-constellation:test && npm run demo:sovereign-constellation:server:install && npm run demo:sovereign-constellation:server:build && npm run demo:sovereign-constellation:app:install && npm run demo:sovereign-constellation:app:build && npm run demo:sovereign-constellation:plan",
     "demo:sovereign-constellation:local": "node demo/sovereign-constellation/bin/sovereign-constellation-local.mjs",
+    "demo:sovereign-constellation:owner": "node demo/sovereign-constellation/bin/asi-owner-matrix.mjs",
     "demo:sovereign-constellation:asi-takes-off": "node demo/sovereign-constellation/bin/asi-takes-off.mjs",
     "demo:sovereign-constellation:victory": "node demo/sovereign-constellation/bin/asi-victory-plan.mjs"
   },

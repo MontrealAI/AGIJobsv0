@@ -58,6 +58,10 @@
         "run": "npm run demo:sovereign-constellation"
       },
       {
+        "label": "Brief the owner command center",
+        "run": "npm run demo:sovereign-constellation:owner"
+      },
+      {
         "label": "Compute owner atlas and thermostat plan",
         "run": "npm run demo:sovereign-constellation:plan"
       },
