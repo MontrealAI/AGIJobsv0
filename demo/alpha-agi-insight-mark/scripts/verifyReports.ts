@@ -105,6 +105,7 @@ const mermaidAgencyOrbitPath = path.join(reportsDir, "insight-agency-orbit.mmd")
 const mermaidLifecyclePath = path.join(reportsDir, "insight-lifecycle.mmd");
 const telemetryPath = path.join(reportsDir, "insight-telemetry.log");
 const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
+const safetyChecklistPath = path.join(reportsDir, "insight-safety-checklist.md");
 const csvPath = path.join(reportsDir, "insight-market-matrix.csv");
 
 function hashBuffer(buffer: Buffer): string {
@@ -222,6 +223,7 @@ async function verifyManifest(manifest: Manifest) {
     path.relative(baseDir, mermaidLifecyclePath).replace(/\\/g, "/"),
     path.relative(baseDir, telemetryPath).replace(/\\/g, "/"),
     path.relative(baseDir, ownerBriefPath).replace(/\\/g, "/"),
+    path.relative(baseDir, safetyChecklistPath).replace(/\\/g, "/"),
     path.relative(baseDir, csvPath).replace(/\\/g, "/"),
   ];
 
@@ -387,6 +389,111 @@ async function verifyOwnerBrief(minted: RecapMintedEntry[], stats: RecapStats) {
     if (!row.includes(entry.scenario.sector)) {
       throw new Error(`Owner brief row for token ${entry.tokenId} missing sector ${entry.scenario.sector}.`);
     }
+  }
+}
+
+async function verifySafetyChecklist(recap: RecapFile) {
+  await ensureExists(safetyChecklistPath, "Safety checklist");
+  const content = await readFile(safetyChecklistPath, "utf8");
+  const requiredSections = [
+    "# α-AGI Insight MARK – Safety & Control Checklist",
+    "## Contract Command Matrix",
+    "## Sentinel Drills",
+    "## Parameter Overrides",
+    "## Integrity Assertions",
+  ];
+  for (const section of requiredSections) {
+    if (!content.includes(section)) {
+      throw new Error(`Safety checklist missing section: ${section}`);
+    }
+  }
+
+  const lines = content.split(/\r?\n/);
+  const tableRows = lines.filter(
+    (line) => line.startsWith("| ") && !line.startsWith("| Contract ") && !line.startsWith("| ---")
+  );
+  const expectedContracts = [
+    { name: "InsightAccessToken", address: recap.contracts.settlementToken },
+    { name: "AlphaInsightNovaSeed", address: recap.contracts.novaSeed },
+    { name: "AlphaInsightExchange", address: recap.contracts.foresightExchange },
+  ];
+  if (tableRows.length !== expectedContracts.length) {
+    throw new Error(
+      `Safety checklist expected ${expectedContracts.length} contract rows, found ${tableRows.length}.`
+    );
+  }
+  for (const contract of expectedContracts) {
+    const row = tableRows.find((line) => line.includes(`| ${contract.name} |`));
+    if (!row) {
+      throw new Error(`Safety checklist table missing contract ${contract.name}.`);
+    }
+    if (!row.includes(contract.address)) {
+      throw new Error(`Safety checklist row for ${contract.name} missing address ${contract.address}.`);
+    }
+  }
+
+  const addressTokens = [
+    recap.operator,
+    recap.oracle,
+    recap.systemPause,
+    recap.treasury,
+    recap.contracts.novaSeed,
+    recap.contracts.foresightExchange,
+    recap.contracts.settlementToken,
+  ];
+  for (const token of addressTokens) {
+    if (!content.includes(token)) {
+      throw new Error(`Safety checklist missing critical address ${token}.`);
+    }
+  }
+
+  if (!recap.stats) {
+    throw new Error("Safety checklist validation requires stats block.");
+  }
+  const stats = recap.stats;
+  const mintedLine = `Nova-Seeds minted: ${stats.minted} (owner ${stats.mintedByOwner}, delegates ${stats.mintedByDelegates}).`;
+  const marketLine = `Market custody positions: ${stats.sold} sold • ${stats.listed} listed • ${stats.forceDelisted} sentinel custody.`;
+  const fusionLine = `Fusion dossiers: ${stats.revealed} revealed • ${stats.sealed} sealed.`;
+  const floorSummary = stats.confidenceFloorPercent.toFixed(1);
+  const peakSummary = stats.confidencePeakPercent.toFixed(1);
+  const capabilitySummary = stats.capabilityIndexPercent.toFixed(1);
+  const capabilityLine = `Confidence envelope: floor ${floorSummary}% → peak ${peakSummary}% (capability ${capabilitySummary}%).`;
+  const opportunityLine = `Opportunity magnitude: ${stats.forecastValueTrillions.toFixed(2)}T.`;
+  const scenarioLine = `Scenario dataset sha256 ${recap.scenarioSource.sha256}.`;
+  const checklistLines = [mintedLine, marketLine, fusionLine, capabilityLine, opportunityLine, scenarioLine];
+  for (const line of checklistLines) {
+    if (!content.includes(line)) {
+      throw new Error(`Safety checklist missing integrity assertion: ${line}`);
+    }
+  }
+
+  const treasuryLine = `Exchange treasury routed to \`${recap.treasury}\`; retarget via \`setTreasury(address)\`.`;
+  if (!content.includes(treasuryLine)) {
+    throw new Error("Safety checklist missing treasury override line.");
+  }
+  const oracleLine = `Exchange oracle anchored to \`${recap.oracle}\`; rotate via \`setOracle(address)\`.`;
+  if (!content.includes(oracleLine)) {
+    throw new Error("Safety checklist missing oracle override line.");
+  }
+  const feePercentDisplay = (recap.feeBps / 100).toFixed(2);
+  const feeLine = `- Trading fee configured at ${feePercentDisplay}% (\`${recap.feeBps} bps\`); adjust with \`setFeeBps(uint96)\`.`;
+  if (!content.includes(feeLine)) {
+    throw new Error("Safety checklist missing fee override line.");
+  }
+  const tokenLine = `- Settlement token \`${recap.contracts.settlementToken}\` remains owner-mintable and can be rotated with \`setPaymentToken(address)\`.`;
+  if (!content.includes(tokenLine)) {
+    throw new Error("Safety checklist missing settlement token override line.");
+  }
+  const sentinelLine = `- System sentinel handshake enforced across modules via \`setSystemPause(address)\` (current \`${recap.systemPause}\`).`;
+  if (!content.includes(sentinelLine)) {
+    throw new Error("Safety checklist missing sentinel override line.");
+  }
+  const drillLine = `- Delegated sentinel \`${recap.systemPause}\` executed pause() across Insight Access Token, α-AGI Nova-Seed, and Insight Exchange before owner \`${recap.operator}\` restored operations.`;
+  if (!content.includes(drillLine)) {
+    throw new Error("Safety checklist missing sentinel drill summary.");
+  }
+  if (!content.includes("Liquidity reserve minted via `mint(address,uint256)`")) {
+    throw new Error("Safety checklist missing liquidity reserve drill line.");
   }
 }
 
@@ -670,6 +777,9 @@ async function main() {
 
   await verifyOwnerBrief(recap.minted, recap.stats);
   console.log("✅ Owner command brief aligned with minted inventory.");
+
+  await verifySafetyChecklist(recap);
+  console.log("✅ Safety and control checklist validated.");
 
   await verifyCsv(recap.minted);
   console.log("✅ Market matrix CSV synchronised with minted ledger.");
