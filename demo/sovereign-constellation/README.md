@@ -104,6 +104,9 @@ sequenceDiagram
 - **ASI control deck** – `config/asiTakesOffMatrix.json` powers the `/constellation/asi-takes-off` API, the console's new
   control deck, and the `npm run demo:sovereign-constellation:asi-takes-off` CLI briefing so stakeholders can rehearse the
   entire deployment with zero manual coding.
+- **ASI flight plan** – `config/asiTakesOffFlightPlan.json` provides a five-phase, non-technical execution script surfaced via
+  `/constellation/asi-takes-off/flight-plan`, the React console, and the
+  `npm run demo:sovereign-constellation:asi-takes-off:flight-plan` CLI so every operator and owner lever is rehearsed in order.
 - **ASI launch manifest generator** – `demo/sovereign-constellation/asi-takes-off-demo/launch.mjs` composes a
   non-technical, production-ready launch manifesto (`npm run demo:sovereign-constellation:asi-takes-off:launch`) that fuses
   mission profiles, thermostat telemetry, and owner command matrices into a single artefact ready for executive sign-off.

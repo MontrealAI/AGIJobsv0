@@ -1,0 +1,162 @@
+{
+  "id": "asi-takes-off-flight-plan",
+  "summary": "An executable ascent plan that lets a single operator drive the Sovereign Constellation from ignition to world-scale rollout without writing code.",
+  "operatorPromise": "Follow each phase, run the listed commands, and sign wallet prompts — the constellation handles every blockchain and AGI task automatically.",
+  "phases": [
+    {
+      "id": "meta-agentic-prelaunch",
+      "title": "Meta-Agentic α-AGI Ignition",
+      "objective": "Load the ASI Takes Off playbook and confirm every cross-network job payload before authorising signatures.",
+      "nonTechnicalSteps": [
+        "Run npm run demo:sovereign-constellation to open the orchestrator console and connect a wallet.",
+        "Select the ASI Takes Off playbook if it is not already loaded and review the preview cards.",
+        "Inspect each job payload to see the chain, reward, URI, and validation cadence prior to signing."],
+      "ownerLevers": [
+        {
+          "module": "Owner Atlas",
+          "action": "Review governance endpoints",
+          "description": "Use npm run demo:sovereign-constellation:owner to print direct explorer links for every hub before approving transactions."
+        }
+      ],
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation:asi-takes-off",
+          "outcome": "Produces the zero-code mission briefing, ensuring the operator understands the orchestrated job graph."
+        }
+      ],
+      "verification": [
+        {
+          "signal": "Deck pillars displayed",
+          "method": "Confirm the console renders all five pillars under the ASI Takes Off Control Deck section.",
+          "source": "UI section data-testid=\"asi-takes-off-deck\""
+        }
+      ]
+    },
+    {
+      "id": "alpha-governance-command",
+      "title": "α-AGI Governance Command",
+      "objective": "Assert owner supremacy by regenerating the atlas and validating pause, stake, and dispute controls.",
+      "nonTechnicalSteps": [
+        "Run npm run demo:sovereign-constellation:atlas to regenerate reports/sovereign-constellation/owner-atlas.md.",
+        "Open the generated markdown and confirm each hub lists SystemPause, ValidationModule, StakeManager, and JobRegistry controls.",
+        "From the console, open Owner Controls → Validation Module to preview commit/reveal adjustments."],
+      "ownerLevers": [
+        {
+          "module": "SystemPause",
+          "action": "pause()/unpause()",
+          "description": "Ready the kill switch before launch; execute from the explorer link if an anomaly appears."
+        },
+        {
+          "module": "StakeManager",
+          "action": "setMinStake(uint256)",
+          "description": "Adjust validator stakes in response to thermostat recommendations without redeploying."
+        }
+      ],
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation:owner",
+          "outcome": "Prints the owner command matrix with status flags for every governance lever."
+        }
+      ],
+      "verification": [
+        {
+          "signal": "Owner matrix ready",
+          "method": "Console the CLI output to ensure each entry is marked ready or pending with explorer URLs.",
+          "source": "reports/sovereign-constellation/owner-command-matrix.json"
+        }
+      ]
+    },
+    {
+      "id": "chainless-execution",
+      "title": "Making the Chain Disappear",
+      "objective": "Execute the mission without switching networks manually while maintaining complete observability.",
+      "nonTechnicalSteps": [
+        "From the console, click Launch constellation to begin signing prepared transactions.",
+        "Approve each wallet prompt; the orchestrator has already tagged the correct chain ID and RPC for every step.",
+        "Observe the Mission Log panel to watch events stream back across hubs in real time."],
+      "ownerLevers": [
+        {
+          "module": "Wallet-first console",
+          "action": "Sign prepared payloads",
+          "description": "No backend stores keys; owner signatures alone move value, maintaining total sovereignty."
+        }
+      ],
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation:seed",
+          "outcome": "Seeds validation actors and sample rewards so wallet approvals are the only required human action."
+        }
+      ],
+      "verification": [
+        {
+          "signal": "Mission log streaming",
+          "method": "Check that JobCreated, CommitReceived, and Finalized events populate the console log without RPC errors.",
+          "source": "Console telemetry stream"
+        }
+      ]
+    },
+    {
+      "id": "recursive-optimization",
+      "title": "Recursive Self-Improvement Loop",
+      "objective": "Run thermostat analytics and apply recommended configuration deltas for the next iteration.",
+      "nonTechnicalSteps": [
+        "Execute npm run demo:sovereign-constellation:plan after the mission completes.",
+        "Review reports/sovereign-constellation/autotune-plan.json for stake and cadence adjustments.",
+        "Apply recommended updates through the Owner Controls UI or explorer writeContract panels."],
+      "ownerLevers": [
+        {
+          "module": "ValidationModule",
+          "action": "setCommitRevealWindows(uint256,uint256)",
+          "description": "Retune mission tempo according to telemetry without waiting for developers."
+        }
+      ],
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation:victory",
+          "outcome": "Produces the ASI victory rehearsal so stakeholders can sign off on readiness metrics."
+        }
+      ],
+      "verification": [
+        {
+          "signal": "Autotune recommendations applied",
+          "method": "Confirm the console shows updated commit/reveal windows and stake floors in the Owner Controls panel.",
+          "source": "UI Owner Controls + autotune plan"
+        }
+      ]
+    },
+    {
+      "id": "victory-assurance",
+      "title": "Winning the AI Race",
+      "objective": "Lock in continuous CI coverage and generate the launch manifesto for executive review.",
+      "nonTechnicalSteps": [
+        "Trigger npm run demo:sovereign-constellation:ci to execute the full contract, server, and UI build pipeline.",
+        "Run npm run demo:sovereign-constellation:asi-takes-off:launch to regenerate the executive launch manifesto.",
+        "Distribute the manifesto and CI status page to stakeholders for sign-off."],
+      "ownerLevers": [
+        {
+          "module": "CI Guardrail",
+          "action": "Enforce green workflows",
+          "description": "Require the ci (v2) → demo-sovereign-constellation job to pass before any merge or production rollout."
+        }
+      ],
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation:superintelligence",
+          "outcome": "Confirms the constellation remains an owner-controlled superintelligence with unstoppable safeguards."
+        }
+      ],
+      "verification": [
+        {
+          "signal": "Launch manifesto emitted",
+          "method": "Ensure demo/sovereign-constellation/asi-takes-off-demo/output/asi-takes-off-launch.md is regenerated with the latest telemetry and owner levers.",
+          "source": "CLI output file"
+        },
+        {
+          "signal": "CI dashboard green",
+          "method": "Check the GitHub Actions ci (v2) workflow for the demo-sovereign-constellation job status.",
+          "source": "GitHub Actions"
+        }
+      ]
+    }
+  ]
+}

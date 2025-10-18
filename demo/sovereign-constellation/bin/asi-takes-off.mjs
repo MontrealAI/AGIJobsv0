@@ -20,6 +20,7 @@ async function main() {
   const uiConfig = loadJson("config/constellation.ui.config.json");
   const telemetry = loadJson("config/autotune.telemetry.json");
   const systems = loadJson("config/asiTakesOffSystems.json");
+  const flightPlan = loadJson("config/asiTakesOffFlightPlan.json");
 
   const [{ buildOwnerAtlas }, { computeAutotunePlan }] = await Promise.all([
     import("../shared/ownerAtlas.mjs"),
@@ -79,6 +80,14 @@ async function main() {
   console.log(` • Upgrades: ${deck.ownerAssurances.upgrades}`);
   console.log(` • Emergency response: ${deck.ownerAssurances.emergencyResponse}`);
   console.log("");
+
+  if (Array.isArray(flightPlan?.phases) && flightPlan.phases.length > 0) {
+    console.log("Flight plan phases:");
+    for (const phase of flightPlan.phases) {
+      console.log(` • ${phase.title} — ${phase.objective}`);
+    }
+    console.log("   Run npm run demo:sovereign-constellation:asi-takes-off:flight-plan for full step-by-step guidance.\n");
+  }
 
   console.log("Automation spine (run in order):");
   for (const command of deck.automation.launchCommands ?? []) {
