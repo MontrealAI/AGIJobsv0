@@ -25,6 +25,20 @@ type HubConfig = {
   addresses: HubAddresses;
 };
 
+type LaunchCommand = {
+  label: string;
+  run: string;
+};
+
+type LaunchStep = {
+  id: string;
+  title: string;
+  objective: string;
+  commands: LaunchCommand[];
+  successSignal: string;
+  ownerLever: string;
+};
+
 type UiConfig = {
   network: string;
   etherscanBase: string;
@@ -33,6 +47,7 @@ type UiConfig = {
   featuredPlaybookId?: string;
   hubs: string[];
   explorers?: Record<string, string>;
+  launchSequence?: LaunchStep[];
 };
 
 type OwnerAtlasLib = {

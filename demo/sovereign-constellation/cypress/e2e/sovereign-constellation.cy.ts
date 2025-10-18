@@ -2,6 +2,11 @@ describe("Sovereign Constellation UI", () => {
   it("loads configuration, hero metrics, and mission previews", () => {
     cy.visit("http://localhost:5179");
     cy.contains("Sovereign Constellation");
+    cy.get('[data-testid="launch-sequence"]').within(() => {
+      cy.contains("ASI Takes Off Launch Sequence");
+      cy.contains("Prime the Sovereign Launchpad");
+      cy.contains("Launch constellation");
+    });
     cy.get('[data-testid="constellation-hero"]').should("exist");
     cy.get('[data-testid="mission-profiles"]').within(() => {
       cy.contains("ASI Takes Off Mission Profiles");

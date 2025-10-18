@@ -98,6 +98,9 @@ sequenceDiagram
 - **Thermostat autotune** – telemetry-driven recommendations automatically compute new commit/reveal windows, minimum
   stake, dispute modules, and emergency pauses. The console pre-fills these values so an owner can apply them with one
   click.
+- **ASI launch sequence** – `config/constellation.ui.config.json` enumerates a four-step "ASI Takes Off" ritual that the
+  console renders into step cards. Non-technical directors simply follow the instructions, run the provided commands, and
+  confirm the success signals and owner levers highlighted in the UI.
 
 ## Flagship mission — ASI Takes Off
 
@@ -172,6 +175,15 @@ demo/sovereign-constellation/
    ```
    This generates `reports/sovereign-constellation/autotune-plan.json` and the console automatically ingests the
    recommendations for commit windows, stakes, dispute modules, and pause triggers.
+
+## One-command runbook surfaced in the console
+
+- `config/constellation.ui.config.json` now defines `launchSequence`, a structured, owner-first walkthrough that merges the
+  dependency install, constellation deployment, mission load, and governance verification flows.
+- The React console reads the launch sequence and renders it ahead of the hero metrics so directors can see exactly which
+  commands to run, what success looks like, and which owner controls to exercise next.
+- Cypress smoke tests assert that the launch sequence is always visible and that it includes the `demo:sovereign-constellation:local`
+  command so CI protects the non-technical onboarding story.
 
 ## Owner control matrix
 

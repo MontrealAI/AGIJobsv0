@@ -13,5 +13,75 @@
     "1": "https://etherscan.io",
     "10": "https://optimistic.etherscan.io",
     "42161": "https://arbiscan.io"
-  }
+  },
+  "launchSequence": [
+    {
+      "id": "prime-launchpad",
+      "title": "Prime the Sovereign Launchpad",
+      "objective": "Install every dependency without touching source code so a non-technical director can run the constellation in minutes.",
+      "commands": [
+        {
+          "label": "Install root toolchain",
+          "run": "npm ci --no-audit --prefer-offline --progress=false"
+        },
+        {
+          "label": "Install orchestrator service",
+          "run": "npm ci --prefix demo/sovereign-constellation/server --no-audit --prefer-offline --progress=false"
+        },
+        {
+          "label": "Install constellation console",
+          "run": "npm ci --prefix demo/sovereign-constellation/app --no-audit --prefer-offline --progress=false"
+        }
+      ],
+      "successSignal": "All install commands finish with zero errors and node_modules directories are created for the repo, server, and app.",
+      "ownerLever": "Ownership defaults to the operator wallet that executes deployments; no contracts are touched yet."
+    },
+    {
+      "id": "ignite-constellation",
+      "title": "Ignite the Sovereign Constellation",
+      "objective": "Deploy three AGI hubs locally, seed showcase jobs, and start the services with one command.",
+      "commands": [
+        {
+          "label": "Launch constellation",
+          "run": "npm run demo:sovereign-constellation:local"
+        }
+      ],
+      "successSignal": "Console output shows Hardhat deployments for Helios, Triton, and Athena followed by server listening on 8090 and the console on 5179.",
+      "ownerLever": "Deployment transfers every module to your connected wallet; the generated config/constellation.hubs.json lists the addresses you now control."
+    },
+    {
+      "id": "load-asi-takes-off",
+      "title": "Load the ASI Takes Off Mission",
+      "objective": "Open the constellation console and stage the flagship playbook so the wallet can sign the cross-network launch.",
+      "commands": [
+        {
+          "label": "Open console",
+          "run": "Visit http://localhost:5179 and connect your wallet"
+        },
+        {
+          "label": "Stage mission",
+          "run": "Choose \"ASI Takes Off\" from Mission Profiles and click \"Load mission plan\""
+        }
+      ],
+      "successSignal": "Mission preview lists all Helios, Triton, and Athena steps with pre-computed rewards and URIs ready for signatures.",
+      "ownerLever": "Before signing, review the Owner Governance Atlas inside the console to confirm pause, stake, and dispute controls."
+    },
+    {
+      "id": "seal-governance",
+      "title": "Seal Governance Supremacy",
+      "objective": "Regenerate owner control reports and compute thermostat recommendations so the director can retune parameters instantly.",
+      "commands": [
+        {
+          "label": "Regenerate owner atlas",
+          "run": "npm run demo:sovereign-constellation:atlas"
+        },
+        {
+          "label": "Compute thermostat plan",
+          "run": "npm run demo:sovereign-constellation:plan"
+        }
+      ],
+      "successSignal": "reports/sovereign-constellation contains owner-atlas.md and autotune-plan.json summarising every control lever and recommended updates.",
+      "ownerLever": "Use the console's Owner Controls panel to apply pause, stake, commit window, and dispute updates in seconds based on the generated plan."
+    }
+  ]
 }
