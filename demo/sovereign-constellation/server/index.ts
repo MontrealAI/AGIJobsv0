@@ -262,6 +262,23 @@ type AsiSuperintelligence = {
   readinessSignals: SuperintelligenceSignal[];
 };
 
+type AsiFlightPlanPhase = {
+  id: string;
+  title: string;
+  objective: string;
+  nonTechnicalSteps: string[];
+  ownerLevers: { module: string; action: string; description: string }[];
+  automation: { command: string; outcome: string }[];
+  verification: { signal: string; method: string; source: string }[];
+};
+
+type AsiFlightPlan = {
+  id: string;
+  summary: string;
+  operatorPromise: string;
+  phases: AsiFlightPlanPhase[];
+};
+
 const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 const computeAutotunePlan = untypedComputeAutotunePlan as AutotuneLib["computeAutotunePlan"];
 const buildOwnerCommandMatrix = untypedBuildOwnerCommandMatrix as OwnerMatrixLib["buildOwnerCommandMatrix"];
@@ -287,6 +304,7 @@ const asiSystems = loadJson<AsiSystem[]>("config/asiTakesOffSystems.json");
 const asiVictoryPlan = loadJson<AsiVictoryPlan>("config/asiTakesOffVictoryPlan.json");
 const asiOwnerMatrix = loadJson<OwnerMatrixEntry[]>("config/asiTakesOffOwnerMatrix.json");
 const asiSuperintelligence = loadJson<AsiSuperintelligence>("config/asiTakesOffSuperintelligence.json");
+const asiFlightPlan = loadJson<AsiFlightPlan>("config/asiTakesOffFlightPlan.json");
 
 type ConstellationContext = {
   uiConfig: UiConfig;
@@ -299,6 +317,7 @@ type ConstellationContext = {
   asiVictoryPlan: AsiVictoryPlan;
   asiOwnerMatrix: OwnerMatrixEntry[];
   asiSuperintelligence: AsiSuperintelligence;
+  asiFlightPlan: AsiFlightPlan;
 };
 
 const defaultContext: ConstellationContext = {
@@ -311,7 +330,8 @@ const defaultContext: ConstellationContext = {
   asiSystems,
   asiVictoryPlan,
   asiOwnerMatrix,
-  asiSuperintelligence
+  asiSuperintelligence,
+  asiFlightPlan
 };
 
 const jobAbi = [
@@ -387,7 +407,8 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
       ownerAtlas: atlas,
       autotunePlan: plan,
       systems: ctx.asiSystems,
-      victoryPlan: ctx.asiVictoryPlan
+      victoryPlan: ctx.asiVictoryPlan,
+      flightPlan: ctx.asiFlightPlan
     });
   });
   app.get("/constellation/asi-takes-off/owner-matrix", (_req, res) => {
@@ -400,6 +421,9 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
   );
   app.get("/constellation/asi-takes-off/systems", (_req, res) =>
     res.json({ systems: ctx.asiSystems })
+  );
+  app.get("/constellation/asi-takes-off/flight-plan", (_req, res) =>
+    res.json({ plan: ctx.asiFlightPlan })
   );
   app.get("/constellation/asi-takes-off/superintelligence", (_req, res) => {
     const atlas = buildOwnerAtlas(ctx.hubs, ctx.uiConfig);

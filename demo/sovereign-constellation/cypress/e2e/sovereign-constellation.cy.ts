@@ -18,6 +18,11 @@ describe("Sovereign Constellation UI", () => {
       cy.contains("Owner levers");
       cy.contains("Automation spine");
     });
+    cy.get('[data-testid="asi-takes-off-flight-plan"]').within(() => {
+      cy.contains("ASI Takes Off Flight Plan");
+      cy.contains("Meta-Agentic");
+      cy.contains("CI dashboard");
+    });
     cy.get('[data-testid="mission-profiles"]').within(() => {
       cy.contains("ASI Takes Off Mission Profiles");
       cy.contains("Load mission plan").first().click();

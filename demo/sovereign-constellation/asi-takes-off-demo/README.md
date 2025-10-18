@@ -28,6 +28,15 @@ The command prints a mission synopsis to STDOUT and emits a Markdown launch brie
 stakeholders. The launcher is idempotent; re-running it refreshes the output with the latest telemetry and governance
 state without requiring any manual edits.
 
+Pair it with the step-by-step flight plan CLI for live rehearsals:
+
+```bash
+npm run demo:sovereign-constellation:asi-takes-off:flight-plan
+```
+
+This prints each phase, non-technical step, owner lever, automation command, and verification signal in order so
+directors can walk through the launch before any signatures are collected.
+
 ## Files
 
 - `launch.mjs` – orchestrates configuration loading, telemetry analysis, owner atlas synthesis, and manifest

@@ -200,6 +200,29 @@ type AsiSystem = {
   assurance: string;
 };
 
+type AsiFlightPlanVerification = {
+  signal: string;
+  method: string;
+  source: string;
+};
+
+type AsiFlightPlanPhase = {
+  id: string;
+  title: string;
+  objective: string;
+  nonTechnicalSteps: string[];
+  ownerLevers: { module: string; action: string; description: string }[];
+  automation: { command: string; outcome: string }[];
+  verification: AsiFlightPlanVerification[];
+};
+
+type AsiFlightPlan = {
+  id: string;
+  summary: string;
+  operatorPromise: string;
+  phases: AsiFlightPlanPhase[];
+};
+
 type SuperintelligenceCapability = {
   id: string;
   title: string;
@@ -342,6 +365,7 @@ export default function App() {
   const [asiDeck, setAsiDeck] = useState<AsiDeck>();
   const [asiSystems, setAsiSystems] = useState<AsiSystem[]>([]);
   const [asiSuperintelligence, setAsiSuperintelligence] = useState<AsiSuperintelligence>();
+  const [asiFlightPlan, setAsiFlightPlan] = useState<AsiFlightPlan>();
   const [launchSequence, setLaunchSequence] = useState<LaunchStep[]>([]);
   const [selectedHub, setSelectedHub] = useState<string>("");
   const [jobs, setJobs] = useState<any[]>([]);
@@ -369,10 +393,9 @@ export default function App() {
     [cfg]
   );
 
-  const deckPillars = Array.isArray(asiDeck?.pillars) ? asiDeck!.pillars : [];
-  const deckCommands = Array.isArray(asiDeck?.automation?.launchCommands)
-    ? asiDeck!.automation.launchCommands
-    : [];
+  const deckPillars = useMemo(() => (asiDeck?.pillars ?? []).slice(0, 5), [asiDeck]);
+  const deckCommands = useMemo(() => asiDeck?.automation?.launchCommands ?? [], [asiDeck]);
+  const flightPhases = useMemo(() => asiFlightPlan?.phases ?? [], [asiFlightPlan]);
 
   const ownerModuleDetails = useMemo(
     () => {
@@ -483,6 +506,9 @@ export default function App() {
           if (Array.isArray((payload as any).systems)) {
             setAsiSystems((payload as any).systems as AsiSystem[]);
           }
+          if ((payload as any).flightPlan) {
+            setAsiFlightPlan((payload as any).flightPlan as AsiFlightPlan);
+          }
         }
       })
       .catch((err) => console.error(err));
@@ -490,6 +516,19 @@ export default function App() {
       .then((payload) => {
         if (payload && typeof payload === "object" && Array.isArray((payload as any).systems)) {
           setAsiSystems((payload as any).systems as AsiSystem[]);
+        }
+      })
+      .catch((err) => console.error(err));
+    fetchJson("/constellation/asi-takes-off/flight-plan", undefined, orchestratorBase)
+      .then((payload) => {
+        if (payload && typeof payload === "object") {
+          if ((payload as any).plan) {
+            setAsiFlightPlan((payload as any).plan as AsiFlightPlan);
+            return;
+          }
+          if (Array.isArray((payload as any).phases)) {
+            setAsiFlightPlan(payload as AsiFlightPlan);
+          }
         }
       })
       .catch((err) => console.error(err));
@@ -1112,6 +1151,90 @@ export default function App() {
               </p>
               <code style={{ ...codeStyle, marginTop: 8 }}>npm run demo:sovereign-constellation:asi-takes-off</code>
             </div>
+          </div>
+        </section>
+      ) : null}
+
+      {asiFlightPlan ? (
+        <section data-testid="asi-takes-off-flight-plan" style={{ marginBottom: 32 }}>
+          <h2 style={{ marginTop: 0 }}>ASI Takes Off Flight Plan</h2>
+          <p style={{ maxWidth: 860 }}>{asiFlightPlan.summary}</p>
+          <p style={{ fontSize: 13, maxWidth: 840, opacity: 0.85 }}>{asiFlightPlan.operatorPromise}</p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 18
+            }}
+          >
+            {flightPhases.map((phase) => (
+              <div key={phase.id} style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 12 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    color: "#0f172a"
+                  }}
+                >
+                  {phase.title}
+                </span>
+                <strong>{phase.objective}</strong>
+                {phase.nonTechnicalSteps && phase.nonTechnicalSteps.length > 0 ? (
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Non-technical steps</div>
+                    <ol style={{ paddingLeft: 20, fontSize: 12, lineHeight: 1.5 }}>
+                      {phase.nonTechnicalSteps.map((step, idx) => (
+                        <li key={`${phase.id}-step-${idx}`} style={{ marginBottom: 4 }}>
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : null}
+                {phase.ownerLevers && phase.ownerLevers.length > 0 ? (
+                  <div style={{ fontSize: 12, background: "rgba(59, 130, 246, 0.12)", padding: 10, borderRadius: 10 }}>
+                    <strong>Owner levers:</strong>
+                    <ul style={{ paddingLeft: 18, marginTop: 8 }}>
+                      {phase.ownerLevers.map((lever, idx) => (
+                        <li key={`${phase.id}-lever-${idx}`} style={{ marginBottom: 6 }}>
+                          <strong>{lever.module}</strong> :: {lever.action}
+                          <br />
+                          <span style={{ opacity: 0.85 }}>{lever.description}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {phase.automation && phase.automation.length > 0 ? (
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Automation spine</div>
+                    <ul style={{ paddingLeft: 18, fontSize: 12 }}>
+                      {phase.automation.map((entry, idx) => (
+                        <li key={`${phase.id}-automation-${idx}`} style={{ marginBottom: 6 }}>
+                          <code style={codeStyle}>{entry.command}</code>
+                          <div style={{ opacity: 0.8 }}>{entry.outcome}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {phase.verification && phase.verification.length > 0 ? (
+                  <div style={{ fontSize: 12, background: "rgba(34, 197, 94, 0.12)", padding: 10, borderRadius: 10 }}>
+                    <strong>Verification</strong>
+                    <ul style={{ paddingLeft: 18, marginTop: 8 }}>
+                      {phase.verification.map((entry, idx) => (
+                        <li key={`${phase.id}-verification-${idx}`} style={{ marginBottom: 6 }}>
+                          <strong>{entry.signal}</strong>
+                          <div>{entry.method}</div>
+                          <span style={{ fontSize: 11, opacity: 0.7 }}>{entry.source}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            ))}
           </div>
         </section>
       ) : null}
