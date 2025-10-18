@@ -38,6 +38,17 @@ const idAbi = [
   "function addAdditionalAgent(address)",
   "function addAdditionalValidator(address)"
 ];
+const idOwnerAbi = [
+  "function setENS(address)",
+  "function setNameWrapper(address)",
+  "function setReputationEngine(address)",
+  "function setAttestationRegistry(address)",
+  "function setAgentRootNode(bytes32)",
+  "function setClubRootNode(bytes32)",
+  "function setNodeRootNode(bytes32)",
+  "function setAgentMerkleRoot(bytes32)",
+  "function setValidatorMerkleRoot(bytes32)"
+];
 const jobOwnerAbi = ["function pause()", "function unpause()"];
 const stakeOwnerAbi = [
   "function setStakeRecommendations(uint256 newMin, uint256 newMax)",
@@ -82,6 +93,46 @@ const parseUint = (value: unknown, label: string): bigint | undefined => {
     return parsed;
   } catch (err) {
     throw new Error(`Invalid ${label}`);
+  }
+};
+
+const parseAddress = (value: unknown, label: string): string | undefined => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    throw new Error(`${label} must be a string address`);
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  try {
+    return ethers.getAddress(trimmed);
+  } catch (err) {
+    throw new Error(`${label} must be a valid address`);
+  }
+};
+
+const parseBytes32 = (value: unknown, label: string): string | undefined => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    throw new Error(`${label} must be a hex string`);
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  try {
+    const bytes = ethers.getBytes(trimmed);
+    if (bytes.length !== 32) {
+      throw new Error();
+    }
+    return ethers.hexlify(bytes);
+  } catch (err) {
+    throw new Error(`${label} must be a 32-byte hex value`);
   }
 };
 
@@ -338,6 +389,115 @@ app.post("/mesh/plan/instantiate", (req, res) => {
     };
   });
   res.json({ txs });
+});
+
+app.post("/mesh/:hub/owner/identity", (req, res) => {
+  try {
+    const hub = getHub(req.params.hub);
+    const {
+      ens,
+      nameWrapper,
+      reputationEngine,
+      attestationRegistry,
+      agentRootNode,
+      clubRootNode,
+      nodeRootNode,
+      agentMerkleRoot,
+      validatorMerkleRoot
+    } = req.body as Record<string, unknown>;
+
+    const txs: { to: string; data: string; value: number }[] = [];
+
+    const parsedEns = parseAddress(ens, "ens");
+    if (parsedEns) {
+      txs.push({
+        to: hub.addresses.IdentityRegistry,
+        data: enc(idOwnerAbi, "setENS", [parsedEns]),
+        value: 0
+      });
+    }
+
+    const parsedWrapper = parseAddress(nameWrapper, "nameWrapper");
+    if (parsedWrapper) {
+      txs.push({
+        to: hub.addresses.IdentityRegistry,
+        data: enc(idOwnerAbi, "setNameWrapper", [parsedWrapper]),
+        value: 0
+      });
+    }
+
+    const parsedReputation = parseAddress(reputationEngine, "reputationEngine");
+    if (parsedReputation) {
+      txs.push({
+        to: hub.addresses.IdentityRegistry,
+        data: enc(idOwnerAbi, "setReputationEngine", [parsedReputation]),
+        value: 0
+      });
+    }
+
+    const parsedAttestation = parseAddress(attestationRegistry, "attestationRegistry");
+    if (parsedAttestation) {
+      txs.push({
+        to: hub.addresses.IdentityRegistry,
+        data: enc(idOwnerAbi, "setAttestationRegistry", [parsedAttestation]),
+        value: 0
+      });
+    }
+
+    const parsedAgentRoot = parseBytes32(agentRootNode, "agentRootNode");
+    if (parsedAgentRoot) {
+      txs.push({
+        to: hub.addresses.IdentityRegistry,
+        data: enc(idOwnerAbi, "setAgentRootNode", [parsedAgentRoot]),
+        value: 0
+      });
+    }
+
+    const parsedClubRoot = parseBytes32(clubRootNode, "clubRootNode");
+    if (parsedClubRoot) {
+      txs.push({
+        to: hub.addresses.IdentityRegistry,
+        data: enc(idOwnerAbi, "setClubRootNode", [parsedClubRoot]),
+        value: 0
+      });
+    }
+
+    const parsedNodeRoot = parseBytes32(nodeRootNode, "nodeRootNode");
+    if (parsedNodeRoot) {
+      txs.push({
+        to: hub.addresses.IdentityRegistry,
+        data: enc(idOwnerAbi, "setNodeRootNode", [parsedNodeRoot]),
+        value: 0
+      });
+    }
+
+    const parsedAgentMerkle = parseBytes32(agentMerkleRoot, "agentMerkleRoot");
+    if (parsedAgentMerkle) {
+      txs.push({
+        to: hub.addresses.IdentityRegistry,
+        data: enc(idOwnerAbi, "setAgentMerkleRoot", [parsedAgentMerkle]),
+        value: 0
+      });
+    }
+
+    const parsedValidatorMerkle = parseBytes32(validatorMerkleRoot, "validatorMerkleRoot");
+    if (parsedValidatorMerkle) {
+      txs.push({
+        to: hub.addresses.IdentityRegistry,
+        data: enc(idOwnerAbi, "setValidatorMerkleRoot", [parsedValidatorMerkle]),
+        value: 0
+      });
+    }
+
+    if (!txs.length) {
+      return res.status(400).json({ error: "No identity parameters provided" });
+    }
+
+    res.json({ txs });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Invalid input";
+    res.status(400).json({ error: message });
+  }
 });
 
 const PORT = Number(process.env.SOVEREIGN_MESH_PORT || 8084);
