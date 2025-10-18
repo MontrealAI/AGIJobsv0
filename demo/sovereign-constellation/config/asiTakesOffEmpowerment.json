@@ -1,0 +1,220 @@
+{
+  "summary": {
+    "headline": "ASI Takes Off Empowerment Deck",
+    "unstoppable": "The Sovereign Constellation demonstrates unstoppable execution by wiring audited AGI Jobs v0 (v2) hubs into a single wallet-first control surface.",
+    "ownerSovereignty": "Every action is pre-wired with owner overrides, pause levers, and governance rotation paths so the contract owner retains absolute supremacy.",
+    "userPromise": "A single non-technical director can launch, supervise, and adapt the mission using only guided wallet prompts and the provided automation commands.",
+    "immediateActions": [
+      "Open the Sovereign Constellation console and review the empowerment deck for the five flagship pillars.",
+      "Run npm run demo:sovereign-constellation:asi-takes-off:empowerment to brief executives on how the system keeps them in command.",
+      "Link the empowerment data to the Owner Atlas so governance teams can confirm every override before mainnet execution."
+    ]
+  },
+  "sections": [
+    {
+      "id": "meta-agentic-alpha-agi-orchestration",
+      "title": "Meta-Agentic \u03b1-AGI Orchestration",
+      "promise": "Coordinate Helios, Triton, and Athena hubs as one unstoppable intelligence fabric in response to a single mission intent.",
+      "empowerment": "The orchestrator decomposes intents into audited on-chain jobs, while the owner can freeze and re-sequence any hub mid-flight without touching raw contracts.",
+      "operatorJourney": [
+        "Load the Global Resilience Uplift playbook from the console and preview the auto-generated transactions.",
+        "Approve the prepared createJob transactions through the guided wallet sequence.",
+        "Monitor validator participation live; telemetry continuously updates the mission dashboard."
+      ],
+      "ownerPowers": [
+        {
+          "matrixId": "helios-system-pause-global",
+          "description": "Freeze Helios instantly if orchestration needs to be resequenced or safety drills are triggered.",
+          "expectation": "SystemPause.pause() halts every Helios contract; resume once validator cadence stabilises."
+        }
+      ],
+      "automation": [
+        {
+          "label": "Mission instantiation",
+          "command": "npm run demo:sovereign-constellation",
+          "impact": "Launches the orchestrator console and exposes unsigned transactions per hub."
+        },
+        {
+          "label": "Atlas refresh",
+          "command": "npm run demo:sovereign-constellation:atlas",
+          "impact": "Exports the Owner Atlas verifying each module\u2019s owner and governance address."
+        }
+      ],
+      "verification": [
+        {
+          "artifact": "/constellation/mission-profiles",
+          "check": "Profiles include the ASI Takes Off mission with all cross-network steps enumerated."
+        },
+        {
+          "artifact": "Thermostat telemetry",
+          "check": "Autotune plan reports \u226595% validator participation across the orchestration steps."
+        }
+      ],
+      "unstoppableSignal": "Unstoppable proof: Playbook transactions remain signable even after a temporary pause thanks to preserved job state."
+    },
+    {
+      "id": "alpha-agi-governance",
+      "title": "\u03b1-AGI Governance",
+      "promise": "The contract owner recalibrates staking economics, validator cadence, and dispute tooling live while operations continue.",
+      "empowerment": "Governance changes route through deterministic commands surfaced in the Owner Matrix so non-technical executives can approve them in their wallet UI.",
+      "operatorJourney": [
+        "Run the Thermostat Autotune command to compute updated commit/reveal windows.",
+        "Review proposed adjustments in the empowerment CLI summary.",
+        "Sign the recommended parameter updates from a Safe or direct wallet."
+      ],
+      "ownerPowers": [
+        {
+          "matrixId": "triton-commit-reveal-tuning",
+          "description": "Resculpt validator cadence with audited setter functions on Triton.",
+          "expectation": "Apply commit/reveal updates after reviewing telemetry deltas provided by the autoplan."
+        }
+      ],
+      "automation": [
+        {
+          "label": "Autotune thermostat",
+          "command": "npm run demo:sovereign-constellation:plan",
+          "impact": "Calculates control-theoretic recommendations and exports JSON guidance for governance sessions."
+        },
+        {
+          "label": "Owner parameter matrix",
+          "command": "npm run demo:sovereign-constellation:owner",
+          "impact": "Lists every module method and explorer link needed for signature collection."
+        }
+      ],
+      "verification": [
+        {
+          "artifact": "/constellation/thermostat/plan",
+          "check": "Response includes target commit/reveal windows and minimum stake denominated in AGIA."
+        },
+        {
+          "artifact": "Owner control matrix",
+          "check": "triton-commit-reveal-tuning entry marked available with explorerWriteUrl."
+        }
+      ],
+      "unstoppableSignal": "Unstoppable proof: Governance tuning happens without redeployments, keeping the system live while policy shifts propagate."
+    },
+    {
+      "id": "making-the-chain-disappear",
+      "title": "Making the Chain Disappear",
+      "promise": "Non-technical mission directors orchestrate thousands of validators without touching raw RPC calls.",
+      "empowerment": "All blockchain metadata is encapsulated in wallet-ready payloads, so the user only sees human-language prompts and confirmations.",
+      "operatorJourney": [
+        "Preview mission steps; each wallet signature is described in everyday language before submission.",
+        "Use the empowerment CLI to brief stakeholders on what each signer will see.",
+        "Share explorer deep-links from the Owner Matrix for post-signature verification."
+      ],
+      "ownerPowers": [
+        {
+          "matrixId": "athena-identity-extensions",
+          "description": "Extend the Athena allowlist to onboard new validators with one transaction.",
+          "expectation": "Console auto-fills the new address and proof so the owner reviews and signs without scripting."
+        }
+      ],
+      "automation": [
+        {
+          "label": "Generate empowerment brief",
+          "command": "npm run demo:sovereign-constellation:asi-takes-off:empowerment",
+          "impact": "Outputs a Markdown-ready empowerment report with owner and operator cues."
+        },
+        {
+          "label": "Flight plan rehearsal",
+          "command": "npm run demo:sovereign-constellation:asi-takes-off:flight-plan",
+          "impact": "Walks directors through every signature in chronological order with verification checkpoints."
+        }
+      ],
+      "verification": [
+        {
+          "artifact": "Empowerment CLI output",
+          "check": "Report explicitly states that wallet prompts enumerate networks without manual RPC configuration."
+        },
+        {
+          "artifact": "Constellation console",
+          "check": "Mission preview card references correct chain IDs and RPC hosts per hub."
+        }
+      ],
+      "unstoppableSignal": "Unstoppable proof: Every wallet prompt carries chain metadata so signatures route to the right network automatically."
+    },
+    {
+      "id": "recursive-self-improvement",
+      "title": "Recursive Self-Improvement",
+      "promise": "Telemetry-fed policies continuously elevate validator quality and dispute resilience.",
+      "empowerment": "Feedback loops surface as human-readable actions, letting owners apply adaptive upgrades during retrospectives.",
+      "operatorJourney": [
+        "Download the latest thermodynamics report from the automation command output.",
+        "Review autoplan recommendations grouped by hub.",
+        "Execute dispute module rotations or validator bonuses using owner-provided controls."
+      ],
+      "ownerPowers": [
+        {
+          "matrixId": "helios-dispute-rotation",
+          "description": "Swap Helios dispute modules to trial improved resolution protocols.",
+          "expectation": "Owner executes setDisputeModule() after verifying the new module address through the Atlas."
+        }
+      ],
+      "automation": [
+        {
+          "label": "Thermodynamics report",
+          "command": "npm run demo:sovereign-constellation:plan",
+          "impact": "Produces participation, entropy, and energy deltas feeding the self-improvement loop."
+        },
+        {
+          "label": "Launch manifest",
+          "command": "npm run demo:sovereign-constellation:asi-takes-off:launch",
+          "impact": "Combines telemetry, owner powers, and mission sequencing into a shareable artefact."
+        }
+      ],
+      "verification": [
+        {
+          "artifact": "Autotune JSON",
+          "check": "Contains at least one action targeting dispute module upgrades for Helios."
+        },
+        {
+          "artifact": "Owner matrix",
+          "check": "helios-dispute-rotation entry resolved with explorerWriteUrl pointing at JobRegistry.setDisputeModule."
+        }
+      ],
+      "unstoppableSignal": "Unstoppable proof: Improvement cycles are executed under owner supervision yet require no downtime or code edits."
+    },
+    {
+      "id": "winning-the-ai-race",
+      "title": "Winning the AI Race",
+      "promise": "The Sovereign Constellation proves a single organisation can command a planetary-scale AGI workforce responsibly.",
+      "empowerment": "Executives receive a living dossier of readiness signals, CI guardrails, and owner levers showing how the system protects their strategic edge.",
+      "operatorJourney": [
+        "Confirm CI status via the empowerment CLI and GitHub badge references.",
+        "Execute the Victory Plan CLI to rehearse end-to-end launch readiness gates.",
+        "Rotate governance keys or pause/resume hubs on demand to demonstrate control to stakeholders."
+      ],
+      "ownerPowers": [
+        {
+          "matrixId": "triton-governance-handoff",
+          "description": "Escalate Triton governance to a Safe or multisig instantly.",
+          "expectation": "transferOwnership() surfaces prefilled payloads ensuring no address transcription errors."
+        }
+      ],
+      "automation": [
+        {
+          "label": "Victory rehearsal",
+          "command": "npm run demo:sovereign-constellation:victory",
+          "impact": "Prints the readiness gates, telemetry metrics, and owner sign-off sequence."
+        },
+        {
+          "label": "Superintelligence overview",
+          "command": "npm run demo:sovereign-constellation:superintelligence",
+          "impact": "Summarises capabilities, automation guardrails, and readiness signals for executive briefings."
+        }
+      ],
+      "verification": [
+        {
+          "artifact": "GitHub Actions badge",
+          "check": "demo-sovereign-constellation workflow reports passing status on main and PR branches."
+        },
+        {
+          "artifact": "Owner atlas",
+          "check": "triton-governance-handoff entry resolves with status available=true demonstrating upgrade authority."
+        }
+      ],
+      "unstoppableSignal": "Unstoppable proof: Operational sovereignty plus CI-backed trust proves the platform can outpace competitors indefinitely."
+    }
+  ]
+}

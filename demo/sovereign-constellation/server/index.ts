@@ -173,6 +173,53 @@ type AsiSystem = {
   assurance: string;
 };
 
+type AsiEmpowermentSummary = {
+  headline: string;
+  unstoppable: string;
+  ownerSovereignty: string;
+  userPromise: string;
+  immediateActions: string[];
+};
+
+type AsiEmpowermentOwnerPower = {
+  matrixId: string;
+  description: string;
+  expectation: string;
+};
+
+type AsiEmpowermentOwnerPowerResolved = AsiEmpowermentOwnerPower & {
+  matrix: OwnerMatrixResolved | null;
+  available: boolean;
+};
+
+type AsiEmpowermentAutomation = {
+  label: string;
+  command: string;
+  impact: string;
+};
+
+type AsiEmpowermentVerification = {
+  artifact: string;
+  check: string;
+};
+
+type AsiEmpowermentSection = {
+  id: string;
+  title: string;
+  promise: string;
+  empowerment: string;
+  operatorJourney: string[];
+  ownerPowers: AsiEmpowermentOwnerPower[];
+  automation: AsiEmpowermentAutomation[];
+  verification: AsiEmpowermentVerification[];
+  unstoppableSignal: string;
+};
+
+type AsiEmpowerment = {
+  summary: AsiEmpowermentSummary;
+  sections: AsiEmpowermentSection[];
+};
+
 type AsiVictoryObjective = {
   id: string;
   title: string;
@@ -305,6 +352,7 @@ const asiVictoryPlan = loadJson<AsiVictoryPlan>("config/asiTakesOffVictoryPlan.j
 const asiOwnerMatrix = loadJson<OwnerMatrixEntry[]>("config/asiTakesOffOwnerMatrix.json");
 const asiSuperintelligence = loadJson<AsiSuperintelligence>("config/asiTakesOffSuperintelligence.json");
 const asiFlightPlan = loadJson<AsiFlightPlan>("config/asiTakesOffFlightPlan.json");
+const asiEmpowerment = loadJson<AsiEmpowerment>("config/asiTakesOffEmpowerment.json");
 
 type ConstellationContext = {
   uiConfig: UiConfig;
@@ -318,6 +366,7 @@ type ConstellationContext = {
   asiOwnerMatrix: OwnerMatrixEntry[];
   asiSuperintelligence: AsiSuperintelligence;
   asiFlightPlan: AsiFlightPlan;
+  asiEmpowerment: AsiEmpowerment;
 };
 
 const defaultContext: ConstellationContext = {
@@ -331,7 +380,8 @@ const defaultContext: ConstellationContext = {
   asiVictoryPlan,
   asiOwnerMatrix,
   asiSuperintelligence,
-  asiFlightPlan
+  asiFlightPlan,
+  asiEmpowerment
 };
 
 const jobAbi = [
@@ -415,6 +465,27 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
     const atlas = buildOwnerAtlas(ctx.hubs, ctx.uiConfig);
     const matrix = buildOwnerCommandMatrix(ctx.asiOwnerMatrix, atlas);
     return res.json({ entries: matrix, atlas });
+  });
+  app.get("/constellation/asi-takes-off/empowerment", (_req, res) => {
+    const atlas = buildOwnerAtlas(ctx.hubs, ctx.uiConfig);
+    const matrix = buildOwnerCommandMatrix(ctx.asiOwnerMatrix, atlas);
+    const matrixById = new Map(matrix.map((entry) => [entry.id, entry]));
+    const sections = ctx.asiEmpowerment.sections.map<(AsiEmpowermentSection & {
+      ownerPowers: AsiEmpowermentOwnerPowerResolved[];
+    })>((section) => ({
+      ...section,
+      ownerPowers: section.ownerPowers.map((power) => ({
+        ...power,
+        matrix: matrixById.get(power.matrixId) ?? null,
+        available: matrixById.has(power.matrixId)
+      }))
+    }));
+    return res.json({
+      summary: ctx.asiEmpowerment.summary,
+      sections,
+      ownerAtlas: atlas,
+      ownerMatrix: matrix
+    });
   });
   app.get("/constellation/asi-takes-off/victory-plan", (_req, res) =>
     res.json({ plan: ctx.asiVictoryPlan })
