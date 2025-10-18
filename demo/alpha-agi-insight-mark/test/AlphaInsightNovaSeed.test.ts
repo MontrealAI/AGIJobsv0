@@ -103,4 +103,22 @@ describe("AlphaInsightNovaSeed", () => {
     await expect(contract.mintInsight(alice.address, sampleInput({ thesis: "" }))).to.be.revertedWith("THESIS_REQUIRED");
     await expect(contract.mintInsight(alice.address, sampleInput({ sealedURI: "" }))).to.be.revertedWith("URI_REQUIRED");
   });
+
+  it("allows owner to reclaim custody to a secure wallet", async () => {
+    await contract.mintInsight(alice.address, sampleInput());
+    await contract.connect(alice).transferFrom(alice.address, bob.address, 1n);
+
+    await expect(contract.reclaimInsight(1n, ethers.ZeroAddress)).to.be.revertedWith("RECIPIENT_REQUIRED");
+    await expect(contract.reclaimInsight(1n, bob.address)).to.be.revertedWith("RECIPIENT_IS_OWNER");
+
+    await expect(contract.connect(alice).reclaimInsight(1n, owner.address))
+      .to.be.revertedWithCustomError(contract, "OwnableUnauthorizedAccount")
+      .withArgs(alice.address);
+
+    await expect(contract.reclaimInsight(1n, owner.address))
+      .to.emit(contract, "InsightReclaimed")
+      .withArgs(1n, bob.address, owner.address);
+
+    expect(await contract.ownerOf(1n)).to.equal(owner.address);
+  });
 });

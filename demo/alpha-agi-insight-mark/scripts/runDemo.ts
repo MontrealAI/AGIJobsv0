@@ -370,6 +370,16 @@ async function main() {
       }
     }
 
+    if (i === 2) {
+      await novaSeed.reclaimInsight(mintedId, operator.address);
+      ownerActions.push(`Owner reclaimed to ${operator.address}`);
+      finalCustodian = operator.address;
+      log(
+        "Guardian Auditor",
+        `Owner reclaimed token ${mintedId.toString()} to operator custody ${operator.address} for sovereign safekeeping.`
+      );
+    }
+
     const onchain = await novaSeed.getInsight(mintedId);
     if (onchain.sector !== scenario.sector || onchain.thesis !== scenario.thesis) {
       throw new Error(`On-chain insight metadata mismatch for token ${mintedId.toString()}.`);

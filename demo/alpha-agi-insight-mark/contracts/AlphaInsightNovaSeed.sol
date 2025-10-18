@@ -52,6 +52,7 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
 
     event MinterUpdated(address indexed account, bool authorized);
     event SystemPauseUpdated(address indexed account);
+    event InsightReclaimed(uint256 indexed tokenId, address indexed previousOwner, address indexed newCustodian);
 
     constructor(address owner_) ERC721(unicode"α-AGI Nova-Seed", "AINSIGHT") Ownable(owner_) {}
 
@@ -168,6 +169,19 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
         info.fusionURI = fusionURI;
         info.fusionRevealed = true;
         emit FusionPlanUpdated(tokenId, fusionURI);
+    }
+
+    function reclaimInsight(uint256 tokenId, address recipient) external onlyOwner {
+        _requireOwned(tokenId);
+        require(recipient != address(0), "RECIPIENT_REQUIRED");
+
+        address currentOwner = ownerOf(tokenId);
+        if (currentOwner == recipient) {
+            revert("RECIPIENT_IS_OWNER");
+        }
+
+        _transfer(currentOwner, recipient, tokenId);
+        emit InsightReclaimed(tokenId, currentOwner, recipient);
     }
 
     function getInsight(uint256 tokenId) external view returns (InsightMetadata memory) {

@@ -5,7 +5,7 @@
 | Contract | Address | Governance Handles |
 | --- | --- | --- |
 | Insight Access Token (`InsightAccessToken`) | Populate from `insight-recap.json` | `mint`, `pause`, `unpause`, `setSystemPause` |
-| Nova-Seed (`AlphaInsightNovaSeed`) | Populate from `insight-recap.json` | `setMinter`, `updateInsightDetails`, `updateSealedURI`, `revealFusionPlan`, `updateFusionPlan`, `pause`, `unpause`, `setSystemPause` |
+| Nova-Seed (`AlphaInsightNovaSeed`) | Populate from `insight-recap.json` | `setMinter`, `updateInsightDetails`, `updateSealedURI`, `revealFusionPlan`, `updateFusionPlan`, `reclaimInsight`, `pause`, `unpause`, `setSystemPause` |
 | Foresight Exchange (`AlphaInsightExchange`) | Populate from `insight-recap.json` | `setOracle`, `setTreasury`, `setPaymentToken`, `setFeeBps`, `updateListingPrice`, `forceDelist`, `pause`, `unpause`, `resolvePrediction`, `setSystemPause` |
 
 ## 2. Emergency Procedures
@@ -16,6 +16,7 @@
 4. **Liquidity Freeze** – Call `pause()` on the settlement token to suspend token transfers if treasury risk is detected.
 5. **Oracle Override** – Use `setOracle(owner)` to take direct control of prediction resolution during an incident.
 6. **Force Custody Transfer** – If a listing must be evacuated (e.g., legal hold), invoke `forceDelist(tokenId, custody)` to move it to a secure wallet while keeping ledger integrity.
+7. **Owner Reclaim** – If a seed holder refuses to comply, call `reclaimInsight(tokenId, custody)` to seize the asset back under owner control before resuming normal operations.
 
 ## 3. Change Management Template
 
