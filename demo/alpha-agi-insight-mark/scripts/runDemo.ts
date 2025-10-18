@@ -133,7 +133,7 @@ function formatControlHook(name: string): string {
     case "setMinter":
       return "`setMinter(address,bool)`";
     case "updateInsightDetails":
-      return "`updateInsightDetails(tokenId,sector,thesis,timestamp)`";
+      return "`updateInsightDetails(tokenId,sector,thesis,timestamp,confidenceBps,forecastValue)`";
     case "revealFusionPlan":
       return "`revealFusionPlan(tokenId,uri)`";
     case "updateFusionPlan":
@@ -196,6 +196,10 @@ interface MintedInsightRecord {
   onchainVerified: boolean;
   ownerActions: string[];
   finalCustodian: string;
+  confidenceBps: number;
+  confidenceDecimal: number;
+  confidencePercent: number;
+  forecastValue: string;
 }
 
 async function main() {
@@ -315,6 +319,9 @@ async function main() {
       `Pareto frontier surfaced ${scenario.sector} vector at ${(scenario.confidence * 100).toFixed(1)}% certainty.`
     );
 
+    const boundedConfidence = Math.min(Math.max(scenario.confidence, 0), 1);
+    const confidenceBps = Math.round(boundedConfidence * 10_000);
+
     const tx = await novaSeed
       .connect(minter)
       .mintInsight(receiver.address, {
@@ -322,6 +329,8 @@ async function main() {
         thesis: scenario.thesis,
         disruptionTimestamp: toTimestamp(scenario.ruptureYear),
         sealedURI: scenario.sealedURI,
+        confidenceBps,
+        forecastValue: scenario.forecastValue,
       });
     const receipt = await tx.wait();
     if (receipt?.status !== 1n && receipt?.status !== 1) {
@@ -430,6 +439,16 @@ async function main() {
       throw new Error(`Fusion reveal state mismatch for token ${mintedId.toString()}.`);
     }
 
+    const onchainConfidenceBps = Number(onchain.confidenceBps);
+    if (onchainConfidenceBps !== confidenceBps) {
+      throw new Error(`Confidence basis points mismatch for token ${mintedId.toString()}.`);
+    }
+    if (onchain.forecastValue !== scenario.forecastValue) {
+      throw new Error(`Forecast value mismatch for token ${mintedId.toString()}.`);
+    }
+    const confidenceDecimal = onchainConfidenceBps / 10_000;
+    const confidencePercent = Number((confidenceDecimal * 100).toFixed(2));
+
     minted.push({
       tokenId: mintedId.toString(),
       scenario,
@@ -445,6 +464,10 @@ async function main() {
       onchainVerified: true,
       ownerActions,
       finalCustodian,
+      confidenceBps: onchainConfidenceBps,
+      confidenceDecimal,
+      confidencePercent,
+      forecastValue: onchain.forecastValue,
     });
   }
 
@@ -492,28 +515,30 @@ async function main() {
   const sealedCount = minted.filter((entry) => !entry.fusionRevealed).length;
   const revealedCount = minted.length - sealedCount;
 
-  const mintedTotalConfidence = minted.reduce((acc, entry) => acc + entry.scenario.confidence, 0);
-  const averageConfidence = minted.length ? mintedTotalConfidence / minted.length : 0;
+  const mintedTotalConfidenceDecimal = minted.reduce((acc, entry) => acc + entry.confidenceDecimal, 0);
+  const averageConfidenceDecimal = minted.length ? mintedTotalConfidenceDecimal / minted.length : 0;
 
   const totalForecastTrillions = minted.reduce(
-    (acc, entry) => acc + parseForecastValueTrillions(entry.scenario.forecastValue ?? "0"),
+    (acc, entry) => acc + parseForecastValueTrillions(entry.forecastValue ?? "0"),
     0
   );
-  const peakConfidence = minted.reduce((acc, entry) => Math.max(acc, entry.scenario.confidence), 0);
-  const floorConfidence = minted.reduce(
-    (acc, entry) => Math.min(acc, entry.scenario.confidence),
-    minted.length ? minted[0].scenario.confidence : 0
+  const peakConfidenceDecimal = minted.reduce((acc, entry) => Math.max(acc, entry.confidenceDecimal), 0);
+  const floorConfidenceDecimal = minted.reduce(
+    (acc, entry) => Math.min(acc, entry.confidenceDecimal),
+    minted.length ? minted[0].confidenceDecimal : 0
   );
-  const agiCapabilityIndex = minted.length ? averageConfidence * 0.6 + peakConfidence * 0.4 : 0;
-  const capabilityPercent = Math.round(agiCapabilityIndex * 100);
-  const peakPercent = Math.round(peakConfidence * 100);
-  const floorPercent = Math.round(floorConfidence * 100);
+  const agiCapabilityIndexDecimal = minted.length
+    ? averageConfidenceDecimal * 0.6 + peakConfidenceDecimal * 0.4
+    : 0;
+  const capabilityPercent = Math.round(agiCapabilityIndexDecimal * 100);
+  const peakPercent = Math.round(peakConfidenceDecimal * 100);
+  const floorPercent = Math.round(floorConfidenceDecimal * 100);
   const totalForecastDisplay = `${totalForecastTrillions.toFixed(2)}T`;
   const forecastValuePrecise = Number(totalForecastTrillions.toFixed(2));
-  const averageConfidencePercent = Number((averageConfidence * 100).toFixed(2));
-  const capabilityPercentPrecise = Number((agiCapabilityIndex * 100).toFixed(2));
-  const peakPercentPrecise = Number((peakConfidence * 100).toFixed(2));
-  const floorPercentPrecise = Number((floorConfidence * 100).toFixed(2));
+  const averageConfidencePercent = Number((averageConfidenceDecimal * 100).toFixed(2));
+  const capabilityPercentPrecise = Number((agiCapabilityIndexDecimal * 100).toFixed(2));
+  const peakPercentPrecise = Number((peakConfidenceDecimal * 100).toFixed(2));
+  const floorPercentPrecise = Number((floorConfidenceDecimal * 100).toFixed(2));
 
   const mintedStats = {
     minted: minted.length,
@@ -577,7 +602,8 @@ async function main() {
         : `Sealed ↦ ${shortenUri(entry.fusionURI)}`;
       const ownerNotes = entry.ownerActions.length ? entry.ownerActions.join("; ") : "—";
       const custodian = shortenAddress(entry.finalCustodian ?? entry.mintedTo);
-      return `| ${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${entry.scenario.thesis} | ${fusionStatus} | ${entry.status} | ${saleDetails} | ${custodian} | ${ownerNotes} |`;
+      const confidenceDisplay = `${entry.confidencePercent.toFixed(1)}%`;
+      return `| ${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${confidenceDisplay} | ${entry.forecastValue} | ${entry.scenario.thesis} | ${fusionStatus} | ${entry.status} | ${saleDetails} | ${custodian} | ${ownerNotes} |`;
     })
     .join("\n");
 
@@ -590,8 +616,8 @@ async function main() {
     `**Treasury:** ${exchangeTreasury}\\\n\n` +
     `## Superintelligent Engine Summary\n` +
     `- Meta-Agentic Tree Search agents engaged: ${config.agents.join(", ")}.\\\n` +
-    `- Composite AGI capability index (weighted): ${(agiCapabilityIndex * 100).toFixed(1)}%.\\\n` +
-    `- Confidence band: min ${(floorConfidence * 100).toFixed(1)}% → max ${(peakConfidence * 100).toFixed(1)}%.\\\n` +
+    `- Composite AGI capability index (weighted): ${(agiCapabilityIndexDecimal * 100).toFixed(1)}%.\\\n` +
+    `- Confidence band: min ${(floorConfidenceDecimal * 100).toFixed(1)}% → max ${(peakConfidenceDecimal * 100).toFixed(1)}%.\\\n` +
     `- Portfolio forecast value: ${totalForecastTrillions.toFixed(2)}T equivalent.\\\n` +
     `- Scenario dataset fingerprint: ${scenarioHash}.\\\n\n` +
     `## Operational Command Metrics\n` +
@@ -601,8 +627,8 @@ async function main() {
     `- Confidence band: ${confidenceFloorSummary}% → ${confidencePeakSummary}% (avg ${averageConfidenceSummary}%).\\\n` +
     `- Forecast value tokenised: ${forecastValuePrecise.toFixed(2)}T.\\\n\n` +
     `## Foresight Portfolio Ledger\n` +
-    `| Token | Sector | Rupture Year | Thesis | Fusion Plan | Status | Market State | Custodian | Owner Controls |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
-    `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n- Sentinel (${strategist.address}) authorised through \`setSystemPause\` to trigger emergency halts across modules.\n- Listings can be repriced live with \`updateListingPrice\` (owner override supported).\n- Owner may invoke \`forceDelist\` to evacuate foresight assets to a safe wallet instantly.\n\n` +
+    `| Token | Sector | Rupture Year | Confidence | Forecast Value | Thesis | Fusion Plan | Status | Market State | Custodian | Owner Controls |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
+    `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n- Sentinel (${strategist.address}) authorised through \`setSystemPause\` to trigger emergency halts across modules.\n- Retune disruption metadata and forecasts via \`updateInsightDetails(tokenId, sector, thesis, timestamp, confidenceBps, forecastValue)\`.\n- Listings can be repriced live with \`updateListingPrice\` (owner override supported).\n- Owner may invoke \`forceDelist\` to evacuate foresight assets to a safe wallet instantly.\n\n` +
     `## Scenario Dataset\n- Config file: ${scenarioRelativePath}\\\n- SHA-256: ${scenarioHash}\n\n` +
     `## Telemetry Snapshot\n` +
     telemetry
@@ -617,7 +643,8 @@ async function main() {
 
   const htmlRows = sortedByRupture
     .map((entry) => {
-      const confidencePercent = Math.round(entry.scenario.confidence * 100);
+      const confidencePercent = Math.round(entry.confidencePercent);
+      const confidenceLabel = `${entry.confidencePercent.toFixed(1)}%`;
       const saleDetails =
         entry.sale
           ? `${escapeHtml(entry.sale.price)} AIC → net ${escapeHtml(entry.sale.netPayout)} AIC`
@@ -643,9 +670,10 @@ async function main() {
               <td>
                 <div class="confidence-bar">
                   <div class="confidence-fill" style="width:${confidencePercent}%"></div>
-                  <span>${confidencePercent}%</span>
+                  <span>${confidenceLabel}</span>
                 </div>
               </td>
+              <td>${escapeHtml(entry.forecastValue)}</td>
               <td>${fusionStatus}</td>
               <td>${escapeHtml(entry.status)}</td>
               <td>${saleDetails}</td>
@@ -658,7 +686,7 @@ async function main() {
   const timelineMarks = sortedByRupture
     .map((entry) => {
       const offset = timelineSpan === 0 ? 0 : ((entry.scenario.ruptureYear - timelineStart) / timelineSpan) * 100;
-      const confidencePercent = Math.round(entry.scenario.confidence * 100);
+      const confidencePercent = Math.round(entry.confidencePercent);
       return `          <div class="timeline-node" style="left:${offset}%">
             <div class="timeline-node__label">${escapeHtml(entry.scenario.sector)}</div>
             <div class="timeline-node__year">${entry.scenario.ruptureYear}</div>
@@ -1037,6 +1065,7 @@ ${timelineMarks}
             <th>Rupture Year</th>
             <th>Disruption Thesis</th>
             <th>Confidence</th>
+            <th>Forecast Value</th>
             <th>Fusion Plan</th>
             <th>Status</th>
             <th>Market State</th>
@@ -1056,6 +1085,7 @@ ${htmlRows}
         <li>Reassign the oracle via <code>setOracle(address)</code> for immediate foresight adjudication.</li>
         <li>Redirect protocol yield by calling <code>setTreasury(address)</code>.</li>
         <li>Authorise or rotate the cross-contract sentinel with <code>setSystemPause(address)</code>.</li>
+        <li>Recalibrate disruption metadata and forecasts via <code>updateInsightDetails(tokenId, sector, thesis, timestamp, confidenceBps, forecastValue)</code>.</li>
         <li>Reveal a FusionPlan at will using <code>revealFusionPlan(tokenId, uri)</code>.</li>
         <li>Reprice any listing in-place using <code>updateListingPrice(tokenId, newPrice)</code>.</li>
         <li>Evacuate a listing to cold storage instantly with <code>forceDelist(tokenId, recipient)</code>.</li>
@@ -1241,6 +1271,7 @@ ${htmlRows}
     "sector",
     "ruptureYear",
     "confidence",
+    "confidenceBps",
     "status",
     "marketState",
     "custodian",
@@ -1268,7 +1299,8 @@ ${htmlRows}
       csvEscape(entry.tokenId),
       csvEscape(entry.scenario.sector),
       csvEscape(entry.scenario.ruptureYear),
-      csvEscape(formatPercent(entry.scenario.confidence)),
+      csvEscape(formatPercent(entry.confidenceDecimal)),
+      csvEscape(entry.confidenceBps),
       csvEscape(entry.status),
       csvEscape(marketState),
       csvEscape(shortenAddress(entry.finalCustodian)),
@@ -1277,7 +1309,7 @@ ${htmlRows}
       csvEscape(entry.fusionURI),
       csvEscape(entry.scenario.sealedURI),
       csvEscape(entry.disruptionTimestamp),
-      csvEscape(entry.scenario.forecastValue),
+      csvEscape(entry.forecastValue),
       csvEscape(entry.ownerActions.join("; ")),
     ].join(",");
   });
@@ -1288,7 +1320,7 @@ ${htmlRows}
     .map((entry) => {
       const custodian = shortenAddress(entry.finalCustodian);
       const ownerNotes = entry.ownerActions.length ? entry.ownerActions.join("; ") : "—";
-      return `| #${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${formatPercent(entry.scenario.confidence)} | ${entry.status} | ${custodian} | ${ownerNotes} |`;
+      return `| #${entry.tokenId} | ${entry.scenario.sector} | ${entry.scenario.ruptureYear} | ${formatPercent(entry.confidenceDecimal)} | ${entry.forecastValue} | ${entry.status} | ${custodian} | ${ownerNotes} |`;
     })
     .join("\n");
 
@@ -1297,7 +1329,7 @@ ${htmlRows}
     `- Minted Nova-Seeds: ${minted.length} (owner minted ${mintedByOwnerCount}, delegated minted ${delegatedMintCount}).\\\n` +
     `- Live market activity: ${soldCount} sold, ${listedCount} listed, ${forceDelistedCount} under sentinel custody.\\\n` +
     `- Fusion dossier state: ${revealedCount} revealed, ${sealedCount} sealed.\\\n` +
-    `- Average confidence: ${formatPercent(averageConfidence)}.\\\n` +
+    `- Average confidence: ${formatPercent(averageConfidenceDecimal)}.\\\n` +
     `- Composite AGI capability index: ${capabilityPercent}%.\\\n` +
     `- Portfolio forecast magnitude: ${totalForecastDisplay}.\\\n\n` +
     `## Rapid Command Checklist\n` +
@@ -1307,12 +1339,12 @@ ${htmlRows}
     `- [ ] Rotate oracle via \`setOracle(${shortenAddress(oracle.address)})\` if adjudication policy must change.\n` +
     `- [ ] Validate treasury destination ${shortenAddress(exchangeTreasury)} with finance desk.\n\n` +
     `## Sector Timeline\n` +
-    `| Token | Sector | Rupture Year | Confidence | Status | Custodian | Owner Actions |\n` +
-    `| --- | --- | --- | --- | --- | --- | --- |\n` +
+    `| Token | Sector | Rupture Year | Confidence | Forecast Value | Status | Custodian | Owner Actions |\n` +
+    `| --- | --- | --- | --- | --- | --- | --- | --- |\n` +
     `${ownerBriefTableRows}\n\n` +
     `## Intelligence Signals\n` +
     minted
-      .map((entry) => `- ${entry.scenario.sector}: ${entry.scenario.thesis} (forecast value ${entry.scenario.forecastValue}).`)
+      .map((entry) => `- ${entry.scenario.sector}: ${entry.scenario.thesis} (forecast value ${entry.forecastValue}).`)
       .join("\n") +
     "\n";
 
@@ -1387,7 +1419,7 @@ ${htmlRows}
 
   const agencySeedNodes = minted
     .map((entry) =>
-      `        seed${entry.tokenId}("#${entry.tokenId} ${escapeMermaidLabel(entry.scenario.sector)}\\n${formatPercent(entry.scenario.confidence)} certainty")`
+      `        seed${entry.tokenId}("#${entry.tokenId} ${escapeMermaidLabel(entry.scenario.sector)}\\n${formatPercent(entry.confidenceDecimal)} certainty")`
     )
     .join("\n");
 

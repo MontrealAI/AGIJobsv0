@@ -5,7 +5,7 @@
 | Contract | Address | Governance Handles |
 | --- | --- | --- |
 | Insight Access Token (`InsightAccessToken`) | Populate from `insight-recap.json` | `mint`, `pause`, `unpause`, `setSystemPause` |
-| Nova-Seed (`AlphaInsightNovaSeed`) | Populate from `insight-recap.json` | `setMinter`, `updateInsightDetails`, `updateSealedURI`, `revealFusionPlan`, `updateFusionPlan`, `pause`, `unpause`, `setSystemPause` |
+| Nova-Seed (`AlphaInsightNovaSeed`) | Populate from `insight-recap.json` | `setMinter`, `updateInsightDetails` (sector/thesis/timestamp/confidence/forecast), `updateSealedURI`, `revealFusionPlan`, `updateFusionPlan`, `pause`, `unpause`, `setSystemPause` |
 | Foresight Exchange (`AlphaInsightExchange`) | Populate from `insight-recap.json` | `setOracle`, `setTreasury`, `setPaymentToken`, `setFeeBps`, `updateListingPrice`, `forceDelist`, `pause`, `unpause`, `resolvePrediction`, `setSystemPause` |
 
 ## 2. Emergency Procedures

@@ -13,6 +13,8 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
         string thesis;
         uint64 disruptionTimestamp;
         string sealedURI;
+        uint32 confidenceBps;
+        string forecastValue;
     }
 
     struct InsightMetadata {
@@ -24,6 +26,8 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
         bool fusionRevealed;
         address originalMinter;
         uint256 mintedAt;
+        uint32 confidenceBps;
+        string forecastValue;
     }
 
     uint256 private _nextTokenId = 1;
@@ -37,14 +41,18 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
         string sector,
         string thesis,
         uint64 disruptionTimestamp,
-        string sealedURI
+        string sealedURI,
+        uint32 confidenceBps,
+        string forecastValue
     );
 
     event InsightUpdated(
         uint256 indexed tokenId,
         string sector,
         string thesis,
-        uint64 disruptionTimestamp
+        uint64 disruptionTimestamp,
+        uint32 confidenceBps,
+        string forecastValue
     );
 
     event FusionPlanRevealed(uint256 indexed tokenId, string fusionURI);
@@ -103,6 +111,8 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
         require(bytes(input.sector).length > 0, "SECTOR_REQUIRED");
         require(bytes(input.thesis).length > 0, "THESIS_REQUIRED");
         require(bytes(input.sealedURI).length > 0, "URI_REQUIRED");
+        require(bytes(input.forecastValue).length > 0, "FORECAST_REQUIRED");
+        require(input.confidenceBps <= 10_000, "CONFIDENCE_INVALID");
 
         tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
@@ -114,7 +124,9 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
             fusionURI: input.sealedURI,
             fusionRevealed: false,
             originalMinter: msg.sender,
-            mintedAt: block.timestamp
+            mintedAt: block.timestamp,
+            confidenceBps: input.confidenceBps,
+            forecastValue: input.forecastValue
         });
 
         emit InsightMinted(
@@ -123,7 +135,9 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
             input.sector,
             input.thesis,
             input.disruptionTimestamp,
-            input.sealedURI
+            input.sealedURI,
+            input.confidenceBps,
+            input.forecastValue
         );
     }
 
@@ -131,14 +145,22 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
         uint256 tokenId,
         string calldata sector,
         string calldata thesis,
-        uint64 disruptionTimestamp
+        uint64 disruptionTimestamp,
+        uint32 confidenceBps,
+        string calldata forecastValue
     ) external onlyOwner {
         _requireOwned(tokenId);
+        require(bytes(sector).length > 0, "SECTOR_REQUIRED");
+        require(bytes(thesis).length > 0, "THESIS_REQUIRED");
+        require(bytes(forecastValue).length > 0, "FORECAST_REQUIRED");
+        require(confidenceBps <= 10_000, "CONFIDENCE_INVALID");
         InsightMetadata storage info = _insights[tokenId];
         info.sector = sector;
         info.thesis = thesis;
         info.disruptionTimestamp = disruptionTimestamp;
-        emit InsightUpdated(tokenId, sector, thesis, disruptionTimestamp);
+        info.confidenceBps = confidenceBps;
+        info.forecastValue = forecastValue;
+        emit InsightUpdated(tokenId, sector, thesis, disruptionTimestamp, confidenceBps, forecastValue);
     }
 
     function updateSealedURI(uint256 tokenId, string calldata newURI) external onlyOwner {
@@ -149,7 +171,14 @@ contract AlphaInsightNovaSeed is ERC721, ERC721Pausable, Ownable {
         if (!info.fusionRevealed) {
             info.fusionURI = newURI;
         }
-        emit InsightUpdated(tokenId, info.sector, info.thesis, info.disruptionTimestamp);
+        emit InsightUpdated(
+            tokenId,
+            info.sector,
+            info.thesis,
+            info.disruptionTimestamp,
+            info.confidenceBps,
+            info.forecastValue
+        );
     }
 
     function revealFusionPlan(uint256 tokenId, string calldata fusionURI) external onlyOwner {
