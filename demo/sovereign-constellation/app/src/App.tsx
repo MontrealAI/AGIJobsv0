@@ -11,6 +11,7 @@ type Config = {
   orchestratorBase?: string;
   hubs: string[];
   explorers?: Record<string, string>;
+  featuredPlaybookId?: string;
 };
 
 type HubAddresses = Record<string, string>;
