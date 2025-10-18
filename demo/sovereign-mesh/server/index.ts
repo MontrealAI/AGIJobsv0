@@ -21,6 +21,8 @@ const actors = JSON.parse(
   readFileSync(path.join(root, "config/actors.json"), "utf8")
 );
 
+const startedAt = Date.now();
+
 const jobAbi = [
   "function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri) returns (uint256)"
 ];
@@ -143,6 +145,14 @@ app.get("/mesh/hubs", (_req, res) => res.json({ hubs }));
 app.get("/mesh/actors", (_req, res) => res.json(actors));
 app.get("/mesh/playbooks", (_req, res) => res.json(playbooks));
 app.get("/mesh/config", (_req, res) => res.json(meshCfg));
+app.get("/mesh/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    network: meshCfg.network,
+    hubs: Object.keys(hubs).length,
+    uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000)
+  });
+});
 
 app.post("/mesh/:hub/tx/create", (req, res) => {
   const hub = getHub(req.params.hub);

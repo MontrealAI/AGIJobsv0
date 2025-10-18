@@ -78,6 +78,25 @@ graph TD
   E3 -.-> C
 ```
 
+### Validation & governance nerve center
+
+```mermaid
+sequenceDiagram
+  participant Owner as Hub Owner Wallet
+  participant Console as Sovereign Mesh Console
+  participant API as Orchestrator API
+  participant Modules as Validation/Stake Modules
+
+  Owner->>Console: Tune validation & staking inputs
+  Console->>API: /mesh/{hub}/owner/* requests
+  API->>Modules: Encoded governance transactions
+  Modules-->>Owner: Emit events confirming parameter shifts
+  Owner->>Console: Pause/Resume hub if needed
+  Console->>API: /mesh/{hub}/owner/pause or /unpause
+  API->>Modules: Dispatch pause/unpause calls
+  Modules-->>Owner: Confirm hub state change
+```
+
 ## Quickstart (non-technical operator)
 
 1. **Clone + install**
@@ -124,6 +143,7 @@ graph TD
 | **Mission Playbooks** | Dynamic preview of sponsors, total rewards, and cross-hub deliverables with one-click instantiation. |
 | **Mesh Sponsors & Actors** | Configurable roster of planetary sponsors with mission-ready taglines to humanize the mesh. |
 | **Owner Panels** | Direct links to every hub contract write interface on Etherscan for immediate governance actions. |
+| **Health API** | `GET /mesh/health` exposes a machine-readable heartbeat (network, hub count, uptime) for monitoring. |
 
 ## Production-grade guarantees
 
@@ -132,6 +152,7 @@ graph TD
 - **Typed + tested** — Hardhat scenario covers dual-hub lifecycle, Cypress assures the UI boots, TypeScript builds enforced in CI.
 - **CI enforced** — `.github/workflows/ci.yml` includes the Sovereign Mesh build job so every PR keeps the demo green.
 - **Owner-safe orchestration** — the console’s Owner Control Center composes pause/unpause and parameter tuning transactions directly for the governance wallet.
+- **Operability hooks** — `GET /mesh/health` provides a ready probe for load balancers and observability stacks.
 
 ## Mission blueprint editing
 
