@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 import { ethers } from "ethers";
 
 // @ts-ignore — shared module is published as runtime ESM without TypeScript declarations
-import ownerAtlasModule from "../shared/ownerAtlas.mjs";
+import { buildOwnerAtlas as untypedBuildOwnerAtlas } from "../shared/ownerAtlas.mjs";
 
 type HubAddresses = Record<string, string>;
 
@@ -35,7 +35,7 @@ type OwnerAtlasLib = {
   buildOwnerAtlas: (hubs: Record<string, HubConfig>, ui: UiConfig) => { atlas: any[] };
 };
 
-const { buildOwnerAtlas } = ownerAtlasModule as OwnerAtlasLib;
+const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
