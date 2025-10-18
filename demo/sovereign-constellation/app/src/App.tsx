@@ -200,6 +200,72 @@ type AsiSystem = {
   assurance: string;
 };
 
+type SuperintelligenceCapability = {
+  id: string;
+  title: string;
+  description: string;
+  operatorFocus: string;
+  ownerAuthority: string;
+  autonomyLoop: string;
+  proof: string[];
+};
+
+type SuperintelligenceOwnerControl = {
+  module: string;
+  method: string;
+  impact: string;
+  command: string;
+  verification: string;
+};
+
+type SuperintelligenceAutomation = {
+  label: string;
+  command: string;
+  effect: string;
+};
+
+type SuperintelligenceSignal = {
+  signal: string;
+  description: string;
+  source: string;
+};
+
+type AsiSuperintelligence = {
+  summary: {
+    headline: string;
+    valueProposition: string;
+    outcome: string;
+    nonTechnicalPromise: string;
+  };
+  capabilities: SuperintelligenceCapability[];
+  ownerControls: SuperintelligenceOwnerControl[];
+  automation: SuperintelligenceAutomation[];
+  readinessSignals: SuperintelligenceSignal[];
+};
+
+type OwnerMatrixResolved = {
+  id: string;
+  pillarId: string;
+  title: string;
+  hub: string;
+  module: string;
+  method: string;
+  ownerAction: string;
+  operatorSignal: string;
+  proof: string;
+  automation?: string[];
+  notes?: string[];
+  hubLabel?: string;
+  networkName?: string;
+  contractAddress?: string;
+  explorerWriteUrl?: string;
+  available: boolean;
+  status: string;
+  resolvedAt: string;
+  atlasModules?: string[];
+  atlasActions?: string[];
+};
+
 type LaunchCommand = {
   label: string;
   run: string;
@@ -275,6 +341,7 @@ export default function App() {
   const [missionProfiles, setMissionProfiles] = useState<MissionProfile[]>([]);
   const [asiDeck, setAsiDeck] = useState<AsiDeck>();
   const [asiSystems, setAsiSystems] = useState<AsiSystem[]>([]);
+  const [asiSuperintelligence, setAsiSuperintelligence] = useState<AsiSuperintelligence>();
   const [launchSequence, setLaunchSequence] = useState<LaunchStep[]>([]);
   const [selectedHub, setSelectedHub] = useState<string>("");
   const [jobs, setJobs] = useState<any[]>([]);
@@ -289,6 +356,7 @@ export default function App() {
   const [planPreview, setPlanPreview] = useState<{ playbook?: Playbook; txs: PlanTx[] }>({ txs: [] });
   const [ownerAtlas, setOwnerAtlas] = useState<OwnerHub[]>([]);
   const [autotunePlan, setAutotunePlan] = useState<AutotunePlan>();
+  const [ownerMatrixEntries, setOwnerMatrixEntries] = useState<OwnerMatrixResolved[]>([]);
   const [commitWindowSeconds, setCommitWindowSeconds] = useState("3600");
   const [revealWindowSeconds, setRevealWindowSeconds] = useState("1800");
   const [minStakeWeiInput, setMinStakeWeiInput] = useState("2000000000000000000");
@@ -318,6 +386,22 @@ export default function App() {
       return hub.modules.map((module) => ({ module: module.module, address: module.address }));
     },
     [ownerAtlas, selectedHub]
+  );
+
+  const ownerMatrixSummary = useMemo(
+    () => {
+      if (!ownerMatrixEntries || ownerMatrixEntries.length === 0) {
+        return { ready: 0, pending: 0 };
+      }
+      const ready = ownerMatrixEntries.filter((entry) => entry.available).length;
+      return { ready, pending: ownerMatrixEntries.length - ready };
+    },
+    [ownerMatrixEntries]
+  );
+
+  const ownerMatrixSample = useMemo(
+    () => ownerMatrixEntries.slice(0, 3),
+    [ownerMatrixEntries]
   );
 
   useEffect(() => {
@@ -406,6 +490,24 @@ export default function App() {
       .then((payload) => {
         if (payload && typeof payload === "object" && Array.isArray((payload as any).systems)) {
           setAsiSystems((payload as any).systems as AsiSystem[]);
+        }
+      })
+      .catch((err) => console.error(err));
+    fetchJson("/constellation/asi-takes-off/superintelligence", undefined, orchestratorBase)
+      .then((payload) => {
+        if (payload && typeof payload === "object") {
+          if ((payload as any).summary) {
+            setAsiSuperintelligence((payload as any) as AsiSuperintelligence);
+          }
+          if ((payload as any).ownerAtlas?.atlas && Array.isArray((payload as any).ownerAtlas.atlas)) {
+            setOwnerAtlas((payload as any).ownerAtlas.atlas as OwnerHub[]);
+          }
+          if ((payload as any).autotunePlan) {
+            setAutotunePlan((payload as any).autotunePlan as AutotunePlan);
+          }
+          if (Array.isArray((payload as any).ownerMatrix)) {
+            setOwnerMatrixEntries((payload as any).ownerMatrix as OwnerMatrixResolved[]);
+          }
         }
       })
       .catch((err) => console.error(err));
@@ -1009,6 +1111,146 @@ export default function App() {
                 Use the new CLI to print a zero-code launch briefing for stakeholders before signing anything.
               </p>
               <code style={{ ...codeStyle, marginTop: 8 }}>npm run demo:sovereign-constellation:asi-takes-off</code>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {asiSuperintelligence ? (
+        <section data-testid="asi-superintelligence" style={{ marginBottom: 32 }}>
+          <h2 style={{ marginTop: 0 }}>ASI Superintelligence Assurance</h2>
+          <p style={{ maxWidth: 880 }}>
+            {asiSuperintelligence.summary.headline} {asiSuperintelligence.summary.valueProposition} This control deck proves
+            the constellation is an unstoppable, sovereign superintelligence that a non-technical owner can steer by
+            following the repository's launch sequence.
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 18,
+              marginBottom: 24
+            }}
+          >
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Mission Outcome</h3>
+              <p style={{ fontSize: 14 }}>{asiSuperintelligence.summary.outcome}</p>
+              <p style={{ fontSize: 13, opacity: 0.8 }}>{asiSuperintelligence.summary.nonTechnicalPromise}</p>
+              <code style={{ ...codeStyle, marginTop: 12 }}>npm run demo:sovereign-constellation:superintelligence</code>
+            </div>
+            <div style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 8 }}>
+              <h3 style={{ marginTop: 0 }}>Owner Matrix Readiness</h3>
+              <p style={{ margin: 0 }}>Ready levers: {ownerMatrixSummary.ready}</p>
+              <p style={{ margin: 0 }}>Pending levers: {ownerMatrixSummary.pending}</p>
+              {ownerMatrixSample.length > 0 ? (
+                <ul style={{ paddingLeft: 18, fontSize: 13, marginTop: 8 }}>
+                  {ownerMatrixSample.map((entry) => (
+                    <li key={entry.id}>
+                      <strong>{entry.title}</strong> — {entry.status.replace(/-/g, " ")}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ fontSize: 13 }}>Run the constellation once to populate live readiness logs.</p>
+              )}
+              <small style={{ opacity: 0.7 }}>
+                Regenerate with <code style={codeStyle}>npm run demo:sovereign-constellation:atlas</code> for fresh explorer
+                links.
+              </small>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 18,
+              marginBottom: 24
+            }}
+          >
+            {asiSuperintelligence.capabilities.map((capability) => (
+              <div key={capability.id} style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 10 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    color: "#1e40af"
+                  }}
+                >
+                  {capability.title}
+                </span>
+                <p style={{ fontSize: 13 }}>{capability.description}</p>
+                <div style={{ fontSize: 12, background: "rgba(14, 116, 144, 0.1)", padding: 10, borderRadius: 10 }}>
+                  <strong>Operator focus:</strong> {capability.operatorFocus}
+                </div>
+                <div style={{ fontSize: 12, background: "rgba(30, 64, 175, 0.1)", padding: 10, borderRadius: 10 }}>
+                  <strong>Owner authority:</strong> {capability.ownerAuthority}
+                </div>
+                <div style={{ fontSize: 12, background: "rgba(22, 163, 74, 0.1)", padding: 10, borderRadius: 10 }}>
+                  <strong>Autonomy loop:</strong> {capability.autonomyLoop}
+                </div>
+                <details style={{ fontSize: 12 }}>
+                  <summary style={{ cursor: "pointer" }}>Proof artefacts</summary>
+                  <ul style={{ paddingLeft: 18, marginTop: 6 }}>
+                    {capability.proof.map((item, idx) => (
+                      <li key={`${capability.id}-proof-${idx}`} style={{ marginBottom: 4 }}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 18
+            }}
+          >
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Owner Sovereignty Controls</h3>
+              <ul style={{ paddingLeft: 18, fontSize: 13 }}>
+                {asiSuperintelligence.ownerControls.map((control) => (
+                  <li key={`${control.module}-${control.method}`} style={{ marginBottom: 10 }}>
+                    <strong>{control.module}</strong> :: {control.method}
+                    <br />
+                    {control.impact}
+                    <br />
+                    <code style={{ ...codeStyle, marginTop: 6 }}>{control.command}</code>
+                    <br />
+                    <span style={{ fontSize: 12, opacity: 0.75 }}>{control.verification}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Automation Spine</h3>
+              <ul style={{ paddingLeft: 18, fontSize: 13 }}>
+                {asiSuperintelligence.automation.map((entry) => (
+                  <li key={entry.command} style={{ marginBottom: 8 }}>
+                    <div style={{ fontWeight: 600 }}>{entry.label}</div>
+                    <code style={codeStyle}>{entry.command}</code>
+                    <div style={{ fontSize: 12 }}>{entry.effect}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Readiness Signals</h3>
+              <ul style={{ paddingLeft: 18, fontSize: 13 }}>
+                {asiSuperintelligence.readinessSignals.map((signal) => (
+                  <li key={signal.signal} style={{ marginBottom: 8 }}>
+                    <strong>{signal.signal}</strong>
+                    <div>{signal.description}</div>
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>{signal.source}</div>
+                  </li>
+                ))}
+              </ul>
+              <p style={{ fontSize: 12, marginTop: 12 }}>
+                Keep the "ci (v2) → Sovereign Constellation" workflow green to prove unstoppable deployment readiness.
+              </p>
             </div>
           </div>
         </section>

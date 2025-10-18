@@ -114,6 +114,10 @@ sequenceDiagram
   metrics required for a "green across the board" launch. The server returns it from
   `/constellation/asi-takes-off/victory-plan`, and the `npm run demo:sovereign-constellation:victory` CLI renders the playbook
   for non-technical directors.
+- **Superintelligence assurance stack** – `config/asiTakesOffSuperintelligence.json` powers the `/constellation/asi-takes-off/superintelligence`
+  endpoint, a new React control deck, and the `npm run demo:sovereign-constellation:superintelligence` CLI briefing. It fuses
+  capability proofs, owner matrix readiness, automation guardrails, and readiness signals so a non-technical operator can
+  verify the constellation behaves as an unstoppable, owner-controlled superintelligence.
 
 ## Flagship mission — ASI Takes Off
 
@@ -135,6 +139,21 @@ sequenceDiagram
   `asiTakesOffVictoryPlan.json`, ensuring the operator can prove the system remains battle-ready without coding.
 - `npm run demo:sovereign-constellation:owner` renders the **Owner Command Center** matrix, cross-referencing explorer links
   for every ASI Takes Off governance lever so a director can exercise control without touching code.
+- `npm run demo:sovereign-constellation:superintelligence` delivers the sovereign assurance briefing with thermostat telemetry,
+  owner lever readiness counts, and unstoppable mission proofs sourced from repository config.
+
+### ASI superintelligence assurance layer
+
+- `config/asiTakesOffSuperintelligence.json` codifies the five flagship pillars into capability cards with operator focus,
+  owner authority levers, autonomy loops, and proof artefacts. Tests enforce the schema and guarantee unstoppable readiness
+  narratives stay in place.
+- `/constellation/asi-takes-off/superintelligence` combines the dataset with live owner atlas, thermostat recommendations, and
+  resolved owner matrix entries so the UI can display readiness counts and the latest governance levers without manual wiring.
+- The React console renders a dedicated **ASI Superintelligence Assurance** section showing capability cards, automation guardrails,
+  readiness signals, and owner matrix samples. Everything remains wallet-first and non-technical.
+- `bin/asi-superintelligence.mjs` prints the same assurance log to the terminal so executives can review proofs without opening
+  the UI. Server and CLI tests guarantee the artefact always mentions superintelligence, unstoppable readiness, and thermostat
+  guidance sourced from real telemetry.
 
 ## Directory layout
 

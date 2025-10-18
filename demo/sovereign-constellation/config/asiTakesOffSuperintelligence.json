@@ -1,0 +1,139 @@
+{
+  "summary": {
+    "headline": "Sovereign Constellation synthesises every AGI Jobs v0 (v2) hub into a single superintelligent command lattice.",
+    "valueProposition": "A non-technical owner directs meta-agentic labour, multi-chain governance, and adaptive economics with wallet clicks only.",
+    "outcome": "Every mission brief, transaction payload, and owner override is precomputed so civilisation-scale execution becomes immediate.",
+    "nonTechnicalPromise": "If you can follow four console prompts and sign from a wallet, you can run the constellation as the world's definitive AGI platform."
+  },
+  "capabilities": [
+    {
+      "id": "meta-agentic-alpha-agi-orchestration",
+      "title": "Meta-Agentic α-AGI Orchestration",
+      "description": "One mission intent explodes into orchestrated Helios, Triton, and Athena jobs with deterministic sequencing and guardrailed rewards.",
+      "operatorFocus": "Load the ASI Takes Off playbook and review the mission preview before approving wallet prompts.",
+      "ownerAuthority": "Owner atlas entries expose direct links to pause, restake, or rotate control on each hub before, during, or after execution.",
+      "autonomyLoop": "Telemetry and plan previews are recomputed on each load so the orchestrator constantly revalidates payloads without manual coding.",
+      "proof": [
+        "GET /constellation/plan/preview renders cross-network transactions with chain metadata attached.",
+        "npm run demo:sovereign-constellation loads all orchestrator services and UI in a single step.",
+        "Mission preview cards list every reward, URI, and chain, proving end-to-end determinism." 
+      ]
+    },
+    {
+      "id": "alpha-agi-governance",
+      "title": "α-AGI Governance",
+      "description": "Every mutable parameter is surfaced through the Owner Governance Atlas with explorer write links and CLI companions.",
+      "operatorFocus": "Regenerate the atlas and thermostat plan, then apply recommended stake, commit, and dispute changes via the console.",
+      "ownerAuthority": "SystemPause, ValidationModule.setCommitRevealWindows, StakeManager.setMinStake, and JobRegistry.setDisputeModule remain owner-only levers.",
+      "autonomyLoop": "Autotune plans rehydrate after each mission, giving the owner immediate policy recommendations from latest telemetry.",
+      "proof": [
+        "npm run demo:sovereign-constellation:atlas regenerates the owner atlas markdown and JSON dataset.",
+        "GET /constellation/owner/atlas returns resolved addresses for every governance module across hubs.",
+        "Thermostat plan actions reference owner-only functions confirmed by validation tests." 
+      ]
+    },
+    {
+      "id": "making-the-chain-disappear",
+      "title": "Making the Chain Disappear",
+      "description": "Wallet prompts are pre-sorted per hub, chain IDs are embedded in payloads, and the console never handles private keys.",
+      "operatorFocus": "Connect a wallet, select a playbook, and sign prompts; the orchestrator handles RPC routing behind the scenes.",
+      "ownerAuthority": "Owners can pause modules or retune stakes mid-flight without redeploying, ensuring sovereign control over invisible infrastructure.",
+      "autonomyLoop": "Every orchestration run recomputes tx payloads with current chain metadata so there is zero manual chain management.",
+      "proof": [
+        "createServer serialises transactions with networkName and rpcUrl for wallet-native routing.",
+        "Console highlight cards show \"Transactions prompt chain-specific signatures automatically\" and stay in sync via tests.",
+        "Mission profiles describe hub focus without requiring RPC editing from the operator." 
+      ]
+    },
+    {
+      "id": "recursive-self-improvement",
+      "title": "Recursive Self-Improvement",
+      "description": "Thermostat analytics, victory plan checkpoints, and owner matrices feed back into updated parameters without redeploys.",
+      "operatorFocus": "Run the autotune plan after each mission and review recommended parameter deltas in the console's owner section.",
+      "ownerAuthority": "Owner matrix entries enumerate exact explorer write endpoints, guaranteeing the owner can apply every recommendation instantly.",
+      "autonomyLoop": "Autotune telemetry drives recommended commit windows, stake floors, and dispute modules that can be re-applied in a loop.",
+      "proof": [
+        "autotuneThermostat.mjs emits reports/sovereign-constellation/autotune-plan.json with recommended actions.",
+        "npm run demo:sovereign-constellation:owner prints the command center matrix confirming every lever.",
+        "Victory plan metrics highlight entropy, participation, and governance response times for iterative improvement." 
+      ]
+    },
+    {
+      "id": "winning-the-ai-race",
+      "title": "Winning the AI Race",
+      "description": "Civilisation-scale orchestration, escrow-backed trust, and instant owner overrides converge into an unbeatable launch advantage.",
+      "operatorFocus": "Execute the launch sequence and CI enforcement command to keep every safeguard green before scaling production volume.",
+      "ownerAuthority": "Pause, upgrade, or rotate governance at any point using atlas-linked explorer panels and CLI scripts guarded by onlyOwner.",
+      "autonomyLoop": "CI workflows enforce demo:sovereign-constellation:ci so regression, coverage, and telemetry guardrails never drift.",
+      "proof": [
+        "ci.yml defines a dedicated Sovereign Constellation CI job required on PRs.",
+        "npm run demo:sovereign-constellation:ci executes tests, builds, and telemetry recomputation in one command.",
+        "Owner matrix entries log verification artefacts proving unstoppable readiness." 
+      ]
+    }
+  ],
+  "ownerControls": [
+    {
+      "module": "SystemPause",
+      "method": "pause() / unpause()",
+      "impact": "Freezes or resumes every JobRegistry, ValidationModule, and StakeManager across hubs in a single transaction.",
+      "command": "npm run demo:sovereign-constellation:atlas",
+      "verification": "reports/sovereign-constellation/owner-atlas.md lists pause readiness per hub."
+    },
+    {
+      "module": "ValidationModule",
+      "method": "setCommitRevealWindows(uint256,uint256)",
+      "impact": "Retunes validation cadence to increase or decrease mission tempo on demand.",
+      "command": "Use console Owner Controls → Validation Module",
+      "verification": "Console highlights post-update window values and emits success toast."
+    },
+    {
+      "module": "StakeManager",
+      "method": "setMinStake(uint256)",
+      "impact": "Adjusts validator economic guarantees to absorb new mission risk profiles instantly.",
+      "command": "npm run demo:sovereign-constellation:owner",
+      "verification": "Owner command center output lists before/after stake floors per hub."
+    },
+    {
+      "module": "JobRegistry",
+      "method": "setDisputeModule(address)",
+      "impact": "Swaps dispute logic mid-mission so escalation flows evolve without downtime.",
+      "command": "Console Owner Controls → Job Registry",
+      "verification": "Explorer writeContract tab confirms new dispute module address and emits event logs."
+    }
+  ],
+  "automation": [
+    {
+      "label": "Constellation Integrity",
+      "command": "npm run demo:sovereign-constellation:ci",
+      "effect": "Runs contract + server + UI builds alongside telemetry planning, keeping the constellation permanently deployable."
+    },
+    {
+      "label": "Owner Atlas Regeneration",
+      "command": "npm run demo:sovereign-constellation:atlas",
+      "effect": "Refreshes owner control proofs and explorer links for immediate governance changes."
+    },
+    {
+      "label": "Thermostat Autotune",
+      "command": "npm run demo:sovereign-constellation:plan",
+      "effect": "Calculates recommended commit/reveal windows, stake floors, and pause triggers from live telemetry."
+    }
+  ],
+  "readinessSignals": [
+    {
+      "signal": "Owner Atlas Timestamp",
+      "description": "Newest owner-atlas.md timestamp proves governance levers were refreshed post-mission.",
+      "source": "reports/sovereign-constellation/owner-atlas.md"
+    },
+    {
+      "signal": "Telemetry Plan Hash",
+      "description": "Autotune plan JSON hash is logged in CI to ensure recommendations reflect current performance.",
+      "source": "reports/sovereign-constellation/autotune-plan.json"
+    },
+    {
+      "signal": "CI Run",
+      "description": "GitHub Actions workflow ci (v2) → Sovereign Constellation job green-light indicates unstoppable production readiness.",
+      "source": ".github/workflows/ci.yml"
+    }
+  ]
+}
