@@ -120,6 +120,41 @@ function formatPercent(value: number, decimals = 1): string {
   return `${(value * 100).toFixed(decimals)}%`;
 }
 
+function formatControlHook(name: string): string {
+  switch (name) {
+    case "mint":
+      return "`mint(address,uint256)`";
+    case "pause":
+      return "`pause()`";
+    case "unpause":
+      return "`unpause()`";
+    case "setSystemPause":
+      return "`setSystemPause(address)`";
+    case "setMinter":
+      return "`setMinter(address,bool)`";
+    case "updateInsightDetails":
+      return "`updateInsightDetails(tokenId,sector,thesis,timestamp)`";
+    case "revealFusionPlan":
+      return "`revealFusionPlan(tokenId,uri)`";
+    case "updateFusionPlan":
+      return "`updateFusionPlan(tokenId,uri)`";
+    case "setOracle":
+      return "`setOracle(address)`";
+    case "setTreasury":
+      return "`setTreasury(address)`";
+    case "setFeeBps":
+      return "`setFeeBps(uint96)`";
+    case "setPaymentToken":
+      return "`setPaymentToken(address)`";
+    case "updateListingPrice":
+      return "`updateListingPrice(tokenId,newPrice)`";
+    case "forceDelist":
+      return "`forceDelist(tokenId,recipient)`";
+    default:
+      return `\`${name}(…)\``;
+  }
+}
+
 async function loadScenarioConfig(scenarioPath: string): Promise<ScenarioConfig> {
   try {
     await stat(scenarioPath);
@@ -228,6 +263,17 @@ async function main() {
   await novaSeed.setSystemPause(strategist.address);
   await exchange.setSystemPause(strategist.address);
 
+  const settlementTokenAddress = await accessToken.getAddress();
+  const novaSeedAddress = await novaSeed.getAddress();
+  const exchangeAddress = await exchange.getAddress();
+  const accessTokenSystemPause = await accessToken.systemPause();
+  const novaSeedSystemPause = await novaSeed.systemPause();
+  const exchangeSystemPause = await exchange.systemPause();
+  const exchangeTreasury = await exchange.treasury();
+  const exchangeFeeBps = await exchange.feeBps();
+  const exchangeFeeBpsNumber = Number(exchangeFeeBps);
+  const exchangeFeePercentDisplay = (exchangeFeeBpsNumber / 100).toFixed(2);
+
   const telemetry: AgentLogEntry[] = [];
   const minted: MintedInsightRecord[] = [];
 
@@ -307,7 +353,7 @@ async function main() {
     let listingPrice: string | undefined;
 
     if (i < 2) {
-      await novaSeed.connect(receiver).approve(await exchange.getAddress(), mintedId);
+      await novaSeed.connect(receiver).approve(exchangeAddress, mintedId);
       await exchange.connect(receiver).listInsight(mintedId, price);
       status = "LISTED";
       listingPrice = ethers.formatUnits(price, 18);
@@ -336,12 +382,12 @@ async function main() {
 
       if (i === 0) {
         await accessToken.mint(buyerA.address, ethers.parseUnits("1000", 18));
-        await accessToken.connect(buyerA).approve(await exchange.getAddress(), ethers.parseUnits("1000", 18));
+        await accessToken.connect(buyerA).approve(exchangeAddress, ethers.parseUnits("1000", 18));
         const listingState = await exchange.listing(mintedId);
         const buyTx = await exchange.connect(buyerA).buyInsight(mintedId);
         const buyReceipt = await buyTx.wait();
         const clearedPrice = listingState.price;
-        const fee = clearedPrice * BigInt(await exchange.feeBps()) / 10_000n;
+        const fee = (clearedPrice * exchangeFeeBps) / 10_000n;
         const net = clearedPrice - fee;
         sale = {
           buyer: buyerA.address,
@@ -403,7 +449,7 @@ async function main() {
   }
 
   await accessToken.mint(buyerB.address, ethers.parseUnits("800", 18));
-  await accessToken.connect(buyerB).approve(await exchange.getAddress(), ethers.parseUnits("800", 18));
+  await accessToken.connect(buyerB).approve(exchangeAddress, ethers.parseUnits("800", 18));
   log("Guardian Auditor", "Liquidity buffers provisioned for additional foresight acquisitions.");
 
   log("System Sentinel", "Triggering cross-contract pause sweep via delegated sentinel.");
@@ -426,6 +472,7 @@ async function main() {
   const telemetryPath = path.join(reportsDir, "insight-telemetry.log");
   const htmlPath = path.join(reportsDir, "insight-report.html");
   const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
+  const safetyChecklistPath = path.join(reportsDir, "insight-safety-checklist.md");
   const csvPath = path.join(reportsDir, "insight-market-matrix.csv");
   const constellationPath = path.join(reportsDir, "insight-constellation.mmd");
   const agencyOrbitPath = path.join(reportsDir, "insight-agency-orbit.mmd");
@@ -496,9 +543,9 @@ async function main() {
     generatedAt: new Date().toISOString(),
     network: { chainId: network.chainId.toString(), name: network.name },
     contracts: {
-      novaSeed: await novaSeed.getAddress(),
-      foresightExchange: await exchange.getAddress(),
-      settlementToken: await accessToken.getAddress(),
+      novaSeed: novaSeedAddress,
+      foresightExchange: exchangeAddress,
+      settlementToken: settlementTokenAddress,
     },
     scenarioSource: {
       path: scenarioRelativePath,
@@ -507,8 +554,8 @@ async function main() {
     operator: operator.address,
     oracle: oracle.address,
     systemPause: strategist.address,
-    treasury: await exchange.treasury(),
-    feeBps: Number(await exchange.feeBps()),
+    treasury: exchangeTreasury,
+    feeBps: exchangeFeeBpsNumber,
     stats: mintedStats,
     minted,
     telemetry,
@@ -539,8 +586,8 @@ async function main() {
     `**Operator:** ${operator.address}\\\n` +
     `**Oracle:** ${oracle.address}\\\n` +
     `**System Pause Sentinel:** ${strategist.address}\\\n` +
-    `**Fee:** ${(Number(await exchange.feeBps()) / 100).toFixed(2)}%\\\n` +
-    `**Treasury:** ${await exchange.treasury()}\\\n\n` +
+    `**Fee:** ${exchangeFeePercentDisplay}%\\\n` +
+    `**Treasury:** ${exchangeTreasury}\\\n\n` +
     `## Superintelligent Engine Summary\n` +
     `- Meta-Agentic Tree Search agents engaged: ${config.agents.join(", ")}.\\\n` +
     `- Composite AGI capability index (weighted): ${(agiCapabilityIndex * 100).toFixed(1)}%.\\\n` +
@@ -909,11 +956,11 @@ async function main() {
       </div>
       <div class="meta-grid__item">
         <span class="meta-grid__label">Treasury</span>
-        <span class="meta-grid__value">${escapeHtml(await exchange.treasury())}</span>
+        <span class="meta-grid__value">${escapeHtml(exchangeTreasury)}</span>
       </div>
       <div class="meta-grid__item">
         <span class="meta-grid__label">Fee</span>
-        <span class="meta-grid__value">${(Number(await exchange.feeBps()) / 100).toFixed(2)}%</span>
+        <span class="meta-grid__value">${exchangeFeePercentDisplay}%</span>
       </div>
     </section>
     <section class="engine">
@@ -1028,26 +1075,26 @@ ${htmlRows}
     contracts: [
       {
         name: "InsightAccessToken",
-        address: await accessToken.getAddress(),
+        address: settlementTokenAddress,
         owner: operator.address,
         pausable: true,
-        systemPause: await accessToken.systemPause(),
+        systemPause: accessTokenSystemPause,
         configurable: ["mint", "pause", "unpause", "setSystemPause"],
       },
       {
         name: "AlphaInsightNovaSeed",
-        address: await novaSeed.getAddress(),
+        address: novaSeedAddress,
         owner: operator.address,
         pausable: true,
-        systemPause: await novaSeed.systemPause(),
+        systemPause: novaSeedSystemPause,
         configurable: ["setMinter", "updateInsightDetails", "revealFusionPlan", "updateFusionPlan", "setSystemPause"],
       },
       {
         name: "AlphaInsightExchange",
-        address: await exchange.getAddress(),
+        address: exchangeAddress,
         owner: operator.address,
         pausable: true,
-        systemPause: await exchange.systemPause(),
+        systemPause: exchangeSystemPause,
         configurable: [
           "setOracle",
           "setTreasury",
@@ -1060,6 +1107,50 @@ ${htmlRows}
       },
     ],
   };
+
+  const controlTableRows = controlMatrix.contracts
+    .map((entry) => {
+      const sentinelAddress = entry.systemPause && entry.systemPause !== ethers.ZeroAddress ? entry.systemPause : "—";
+      const hookList = entry.configurable.map((hook) => formatControlHook(hook)).join("<br />");
+      const sentinelCell = sentinelAddress === "—" ? "—" : `\`${sentinelAddress}\``;
+      return `| ${entry.name} | \`${entry.address}\` | \`${entry.owner}\` | ${sentinelCell} | ${hookList} |`;
+    })
+    .join("\n");
+
+  const sentinelDrillLines = [
+    `- Delegated sentinel \`${strategist.address}\` executed pause() across Insight Access Token, α-AGI Nova-Seed, and Insight Exchange before owner \`${operator.address}\` restored operations.`,
+    `- Liquidity reserve minted via \`mint(address,uint256)\` on the settlement token to rehydrate markets immediately after the drill.`,
+  ].join("\n");
+
+  const parameterOverrideLines = [
+    `- Exchange treasury routed to \`${exchangeTreasury}\`; retarget via \`setTreasury(address)\`.`,
+    `- Exchange oracle anchored to \`${oracle.address}\`; rotate via \`setOracle(address)\`.`,
+    `- Trading fee configured at ${exchangeFeePercentDisplay}% (\`${exchangeFeeBpsNumber} bps\`); adjust with \`setFeeBps(uint96)\`.`,
+    `- Settlement token \`${settlementTokenAddress}\` remains owner-mintable and can be rotated with \`setPaymentToken(address)\`.`,
+    `- System sentinel handshake enforced across modules via \`setSystemPause(address)\` (current \`${strategist.address}\`).`,
+  ].join("\n");
+
+  const integrityAssertionLines = [
+    `- Nova-Seeds minted: ${mintedStats.minted} (owner ${mintedByOwnerCount}, delegates ${delegatedMintCount}).`,
+    `- Market custody positions: ${soldCount} sold • ${listedCount} listed • ${forceDelistedCount} sentinel custody.`,
+    `- Fusion dossiers: ${revealedCount} revealed • ${sealedCount} sealed.`,
+    `- Confidence envelope: floor ${confidenceFloorSummary}% → peak ${confidencePeakSummary}% (capability ${capabilityPercentSummary}%).`,
+    `- Opportunity magnitude: ${totalForecastDisplay}.`,
+    `- Scenario dataset sha256 ${scenarioHash}.`,
+  ].join("\n");
+
+  const safetyChecklist = `# α-AGI Insight MARK – Safety & Control Checklist\n\n` +
+    `Generated ${new Date().toISOString()} on ${network.name} (chainId ${network.chainId}).\n\n` +
+    `## Contract Command Matrix\n` +
+    `| Contract | Address | Owner | Sentinel | Owner Hooks |\n` +
+    `| --- | --- | --- | --- | --- |\n` +
+    `${controlTableRows}\n\n` +
+    `## Sentinel Drills\n` +
+    `${sentinelDrillLines}\n\n` +
+    `## Parameter Overrides\n` +
+    `${parameterOverrideLines}\n\n` +
+    `## Integrity Assertions\n` +
+    `${integrityAssertionLines}\n`;
 
   const mermaid = `flowchart TD\n` +
     `    operator((Operator)):::actor -->|Mints insights| nova[α-AGI Nova-Seed]:::contract\n` +
@@ -1210,11 +1301,11 @@ ${htmlRows}
     `- Composite AGI capability index: ${capabilityPercent}%.\\\n` +
     `- Portfolio forecast magnitude: ${totalForecastDisplay}.\\\n\n` +
     `## Rapid Command Checklist\n` +
-    `- [ ] Trigger \`pause()\` on Insight Exchange (${await exchange.getAddress()}) for market freeze.\n` +
-    `- [ ] Invoke \`pause()\` on α-AGI Nova-Seed (${await novaSeed.getAddress()}) to freeze custody flows.\n` +
+    `- [ ] Trigger \`pause()\` on Insight Exchange (${exchangeAddress}) for market freeze.\n` +
+    `- [ ] Invoke \`pause()\` on α-AGI Nova-Seed (${novaSeedAddress}) to freeze custody flows.\n` +
     `- [ ] Confirm sentinel ${shortenAddress(strategist.address)} retains \`setSystemPause\` authority across modules.\n` +
     `- [ ] Rotate oracle via \`setOracle(${shortenAddress(oracle.address)})\` if adjudication policy must change.\n` +
-    `- [ ] Validate treasury destination ${shortenAddress(await exchange.treasury())} with finance desk.\n\n` +
+    `- [ ] Validate treasury destination ${shortenAddress(exchangeTreasury)} with finance desk.\n\n` +
     `## Sector Timeline\n` +
     `| Token | Sector | Rupture Year | Confidence | Status | Custodian | Owner Actions |\n` +
     `| --- | --- | --- | --- | --- | --- | --- |\n` +
@@ -1274,7 +1365,7 @@ ${htmlRows}
     `    sentinel((System Pause ${shortenAddress(strategist.address)})):::control\n` +
     `    oracleNode((Oracle ${shortenAddress(oracle.address)})):::control\n` +
     `    exchangeNode{{Insight Exchange}}:::contract\n` +
-    `    treasuryNode((Treasury ${shortenAddress(await exchange.treasury())})):::control\n` +
+    `    treasuryNode((Treasury ${shortenAddress(exchangeTreasury)})):::control\n` +
     `    buyers((Market Operators)):::actor\n` +
     `    subgraph NovaSeeds["α-AGI Nova-Seeds"]\n${mintedNodeLines}\n    end\n` +
     `    operator --> exchangeNode\n` +
@@ -1394,7 +1485,7 @@ ${htmlRows}
     `    MetaSwarm->>Forge: Submit cryptosealed Nova-Seed blueprint\n` +
     `    Forge-->>Operator: Mint #seedId + notarise provenance hash\n` +
     `    Operator->>Exchange: Configure listing, fees, oracle policy\n` +
-    `    Exchange-->>Treasury: Route settlement fees (${(Number(await exchange.feeBps()) / 100).toFixed(2)}%)\n` +
+    `    Exchange-->>Treasury: Route settlement fees (${exchangeFeePercentDisplay}%)\n` +
     `    Exchange-)Operator: Emit trade + custody attestations\n` +
     `    Sentinel-->>Forge: Pause / resume custody lattice\n` +
     `    Sentinel-->>Exchange: Trigger market circuit-break\n` +
@@ -1415,6 +1506,7 @@ ${htmlRows}
   await writeFile(telemetryPath, telemetryLog);
   await writeFile(htmlPath, html);
   await writeFile(ownerBriefPath, ownerBrief);
+  await writeFile(safetyChecklistPath, safetyChecklist);
   await writeFile(csvPath, csvContent);
   await writeFile(constellationPath, constellationMermaid);
   await writeFile(agencyOrbitPath, agencyOrbitMermaid);
@@ -1431,6 +1523,7 @@ ${htmlRows}
     superintelligencePath,
     telemetryPath,
     ownerBriefPath,
+    safetyChecklistPath,
     csvPath,
     constellationPath,
     agencyOrbitPath,

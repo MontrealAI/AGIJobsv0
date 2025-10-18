@@ -39,6 +39,7 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 - `insight-governance.mmd` – insight swarm + sentinel orchestration schematic.
 - `insight-superintelligence.mmd` – Meta-Agentic Tree Search + thermodynamic trigger constellation (render via https://mermaid.live/).
 - `insight-owner-brief.md` – executive command sheet summarising pause hooks and custody.
+- `insight-safety-checklist.md` – safety and control checklist showing contract owners, sentinels, override levers, and integrity assertions.
 - `insight-market-matrix.csv` – spreadsheet-ready dataset for analysts and treasury.
 - `insight-constellation.mmd` – constellation mermaid capturing live custody and sentinel edges.
 - `insight-agency-orbit.mmd` – orbit schematic linking each meta-agent to its minted seeds and custody paths.
