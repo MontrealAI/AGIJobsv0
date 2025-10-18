@@ -120,7 +120,7 @@ graph TD
 | **Connect & Select Hub** | Wallet-first connect button + hub selector that hydrates live jobs via The Graph. |
 | **Create Job** | Reward + URI form that composes a `createJob` transaction with sensible deadlines and spec hash. |
 | **Participate** | Validators stake, commit, reveal, and finalize in a human-friendly workflow (salts handled automatically). |
-| **Owner Control Center** | Governance wallet can pause/unpause hubs, retune validation cadence, and update staking economics from the console. |
+| **Owner Control Center** | Governance wallet can pause/unpause hubs, retune validation cadence, adjust staking economics, and push identity registry updates without leaving the console. |
 | **Mission Playbooks** | Dynamic preview of sponsors, total rewards, and cross-hub deliverables with one-click instantiation. |
 | **Mesh Sponsors & Actors** | Configurable roster of planetary sponsors with mission-ready taglines to humanize the mesh. |
 | **Owner Panels** | Direct links to every hub contract write interface on Etherscan for immediate governance actions. |

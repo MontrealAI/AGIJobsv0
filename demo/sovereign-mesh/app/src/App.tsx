@@ -252,6 +252,15 @@ const App: React.FC = () => {
   const [ownerFeePct, setOwnerFeePct] = useState("2");
   const [ownerBurnPct, setOwnerBurnPct] = useState("6");
   const [ownerValidatorRewardPct, setOwnerValidatorRewardPct] = useState("12");
+  const [ownerEns, setOwnerEns] = useState("");
+  const [ownerNameWrapper, setOwnerNameWrapper] = useState("");
+  const [ownerReputation, setOwnerReputation] = useState("");
+  const [ownerAttestation, setOwnerAttestation] = useState("");
+  const [ownerAgentRoot, setOwnerAgentRoot] = useState("");
+  const [ownerClubRoot, setOwnerClubRoot] = useState("");
+  const [ownerNodeRoot, setOwnerNodeRoot] = useState("");
+  const [ownerAgentMerkle, setOwnerAgentMerkle] = useState("");
+  const [ownerValidatorMerkle, setOwnerValidatorMerkle] = useState("");
 
   const actorMap = useMemo(() => {
     const map: Record<string, Actor> = {};
@@ -513,6 +522,32 @@ const App: React.FC = () => {
     }
   };
 
+  const updateIdentity = async () => {
+    if (!selectedHub) return alert("Choose a hub first.");
+    try {
+      const results = await sendTxPlan(`/mesh/${selectedHub}/owner/identity`, {
+        ens: pickValue(ownerEns),
+        nameWrapper: pickValue(ownerNameWrapper),
+        reputationEngine: pickValue(ownerReputation),
+        attestationRegistry: pickValue(ownerAttestation),
+        agentRootNode: pickValue(ownerAgentRoot),
+        clubRootNode: pickValue(ownerClubRoot),
+        nodeRootNode: pickValue(ownerNodeRoot),
+        agentMerkleRoot: pickValue(ownerAgentMerkle),
+        validatorMerkleRoot: pickValue(ownerValidatorMerkle)
+      });
+      alert(
+        `🧬 Identity registry updated (${results.length} tx)\n${describeHashes(results)}`
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(`⚠️ ${error.message}`);
+      } else {
+        alert("⚠️ Unable to update identity configuration");
+      }
+    }
+  };
+
   return (
     <div className="mesh-shell">
       <h1>🕸️ Sovereign Mesh — Beyond Civic Exocortex</h1>
@@ -685,6 +720,90 @@ const App: React.FC = () => {
           </div>
           <button style={{ marginTop: 12 }} onClick={updateStake}>
             Apply Stake Settings
+          </button>
+        </div>
+        <div className="mesh-owner-section">
+          <h4>Identity registry</h4>
+          <p className="mesh-owner-info" style={{ marginTop: 0 }}>
+            Refresh ENS anchors, Merkle roots, and attestation registries to steer who can
+            participate across the mesh hubs. Provide only the fields you want to change.
+          </p>
+          <div className="mesh-owner-fields">
+            <label className="mesh-owner-label">
+              ENS Registry Address
+              <input
+                value={ownerEns}
+                onChange={(e) => setOwnerEns(e.target.value)}
+                placeholder="0x..."
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Name Wrapper Address
+              <input
+                value={ownerNameWrapper}
+                onChange={(e) => setOwnerNameWrapper(e.target.value)}
+                placeholder="0x..."
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Reputation Engine Address
+              <input
+                value={ownerReputation}
+                onChange={(e) => setOwnerReputation(e.target.value)}
+                placeholder="0x..."
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Attestation Registry Address
+              <input
+                value={ownerAttestation}
+                onChange={(e) => setOwnerAttestation(e.target.value)}
+                placeholder="0x..."
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Agent Root Node (bytes32)
+              <input
+                value={ownerAgentRoot}
+                onChange={(e) => setOwnerAgentRoot(e.target.value)}
+                placeholder="0x…"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Club Root Node (bytes32)
+              <input
+                value={ownerClubRoot}
+                onChange={(e) => setOwnerClubRoot(e.target.value)}
+                placeholder="0x…"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Node Root Node (bytes32)
+              <input
+                value={ownerNodeRoot}
+                onChange={(e) => setOwnerNodeRoot(e.target.value)}
+                placeholder="0x…"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Agent Merkle Root (bytes32)
+              <input
+                value={ownerAgentMerkle}
+                onChange={(e) => setOwnerAgentMerkle(e.target.value)}
+                placeholder="0x…"
+              />
+            </label>
+            <label className="mesh-owner-label">
+              Validator Merkle Root (bytes32)
+              <input
+                value={ownerValidatorMerkle}
+                onChange={(e) => setOwnerValidatorMerkle(e.target.value)}
+                placeholder="0x…"
+              />
+            </label>
+          </div>
+          <button style={{ marginTop: 12 }} onClick={updateIdentity}>
+            Apply Identity Settings
           </button>
         </div>
       </div>
