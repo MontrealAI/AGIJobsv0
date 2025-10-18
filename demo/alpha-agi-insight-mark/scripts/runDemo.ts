@@ -428,6 +428,7 @@ async function main() {
   const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
   const csvPath = path.join(reportsDir, "insight-market-matrix.csv");
   const constellationPath = path.join(reportsDir, "insight-constellation.mmd");
+  const lifecyclePath = path.join(reportsDir, "insight-lifecycle.mmd");
   const manifestPath = path.join(reportsDir, "insight-manifest.json");
 
   const scenarioRelativePath = path
@@ -1292,6 +1293,30 @@ ${htmlRows}
     `    classDef sealed fill:#343a55,stroke:#7a8bbd,color:#f1f5ff;\n` +
     `    classDef revealed fill:#214d6d,stroke:#7fe6ff,color:#ecfbff;\n`;
 
+  const lifecycleMermaid =
+    `sequenceDiagram\n` +
+    `    autonumber\n` +
+    `    participant Operator as Owner / Operator\n` +
+    `    participant MetaSwarm as Meta-Agentic Swarm\n` +
+    `    participant Forge as α-AGI Nova-Seed Forge\n` +
+    `    participant Exchange as α-AGI MARK Exchange\n` +
+    `    participant Sentinel as System Pause Sentinel\n` +
+    `    participant Treasury as Treasury Governance\n` +
+    `    Operator->>MetaSwarm: Define disruption mandate + guardrails\n` +
+    `    MetaSwarm-->>MetaSwarm: Thermodynamic rupture exploration\n` +
+    `    MetaSwarm->>Forge: Submit cryptosealed Nova-Seed blueprint\n` +
+    `    Forge-->>Operator: Mint #seedId + notarise provenance hash\n` +
+    `    Operator->>Exchange: Configure listing, fees, oracle policy\n` +
+    `    Exchange-->>Treasury: Route settlement fees (${(Number(await exchange.feeBps()) / 100).toFixed(2)}%)\n` +
+    `    Exchange-)Operator: Emit trade + custody attestations\n` +
+    `    Sentinel-->>Forge: Pause / resume custody lattice\n` +
+    `    Sentinel-->>Exchange: Trigger market circuit-break\n` +
+    `    Operator->>Forge: Reveal FusionPlan when strategic window opens\n` +
+    `    Operator->>Exchange: Resolve prediction via oracle rotation\n` +
+    `    Exchange-->>MetaSwarm: Feed confirmed rupture telemetry\n` +
+    `    MetaSwarm-->>Operator: Update capability index + executive dossier\n` +
+    `    note over Operator,Exchange: Owner retains unilateral pause, repricing, oracle and treasury authority.\n`;
+
   const telemetryLog = telemetry.map((entry) => `${entry.timestamp} [${entry.agent}] ${entry.message}`).join("\n");
 
   await writeFile(recapPath, JSON.stringify(recap, null, 2));
@@ -1305,6 +1330,7 @@ ${htmlRows}
   await writeFile(ownerBriefPath, ownerBrief);
   await writeFile(csvPath, csvContent);
   await writeFile(constellationPath, constellationMermaid);
+  await writeFile(lifecyclePath, lifecycleMermaid);
 
   const manifestEntries: { path: string; sha256: string }[] = [];
   for (const file of [
@@ -1319,6 +1345,7 @@ ${htmlRows}
     ownerBriefPath,
     csvPath,
     constellationPath,
+    lifecyclePath,
   ]) {
     const content = await readFile(file);
     const relativePath = path.relative(path.join(__dirname, ".."), file);
