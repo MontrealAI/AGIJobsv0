@@ -1,17 +1,13 @@
+/// <reference path="./ownerAtlas.d.ts" />
+
 import express from "express";
 import { readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ethers } from "ethers";
 
-type UiConfig = {
-  network: string;
-  etherscanBase: string;
-  defaultSubgraphUrl?: string;
-  orchestratorBase?: string;
-  hubs: string[];
-  explorers?: Record<string, string>;
-};
+// @ts-ignore — shared module is published as runtime ESM without TypeScript declarations
+import { buildOwnerAtlas as untypedBuildOwnerAtlas } from "../shared/ownerAtlas.mjs";
 
 type HubAddresses = Record<string, string>;
 
@@ -26,28 +22,20 @@ type HubConfig = {
   addresses: HubAddresses;
 };
 
-type OwnerControl = {
-  method: string;
-  description: string;
-  args?: string[];
+type UiConfig = {
+  network: string;
+  etherscanBase: string;
+  defaultSubgraphUrl?: string;
+  orchestratorBase?: string;
+  hubs: string[];
+  explorers?: Record<string, string>;
 };
 
-type ModuleControl = {
-  module: string;
-  actions: OwnerControl[];
+type OwnerAtlasLib = {
+  buildOwnerAtlas: (hubs: Record<string, HubConfig>, ui: UiConfig) => { atlas: any[] };
 };
 
-type OwnerAtlasModule = {
-  module: string;
-  address: string;
-  actions: Array<{
-    method: string;
-    description: string;
-    args: string[];
-    explorerWriteUrl: string;
-    contractAddress: string;
-  }>;
-};
+const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -101,127 +89,6 @@ function serializeTx(hub: HubConfig, payload: { to: string; data: string; value?
   };
 }
 
-const OWNER_CONTROLS: Record<string, ModuleControl> = {
-  JobRegistry: {
-    module: "JobRegistry",
-    actions: [
-      {
-        method: "pause()",
-        description: "Pause new job intake instantly across the hub"
-      },
-      {
-        method: "unpause()",
-        description: "Resume job intake when the owner considers conditions safe"
-      }
-    ]
-  },
-  ValidationModule: {
-    module: "ValidationModule",
-    actions: [
-      {
-        method: "setCommitRevealWindows(uint64,uint64)",
-        description: "Retune commit/reveal duration to match validator throughput",
-        args: ["commitWindow", "revealWindow"]
-      },
-      {
-        method: "pause()",
-        description: "Freeze ongoing validations while investigating anomalies"
-      },
-      {
-        method: "unpause()",
-        description: "Resume validation once conditions stabilise"
-      }
-    ]
-  },
-  StakeManager: {
-    module: "StakeManager",
-    actions: [
-      {
-        method: "setMinimumStake(uint256)",
-        description: "Adjust collateral requirements for validator cohorts",
-        args: ["amountWei"]
-      },
-      {
-        method: "setDisputeModule(address)",
-        description: "Swap in a different dispute module to upgrade adjudication",
-        args: ["disputeModule"]
-      }
-    ]
-  },
-  IdentityRegistry: {
-    module: "IdentityRegistry",
-    actions: [
-      {
-        method: "addAdditionalAgent(address)",
-        description: "Allowlist a new mission operator",
-        args: ["agentAddress"]
-      },
-      {
-        method: "addAdditionalValidator(address)",
-        description: "Allowlist a new validator cohort member",
-        args: ["validatorAddress"]
-      }
-    ]
-  },
-  SystemPause: {
-    module: "SystemPause",
-    actions: [
-      {
-        method: "pause()",
-        description: "Emergency stop for the entire hub stack"
-      },
-      {
-        method: "unpause()",
-        description: "Resume normal hub activity"
-      }
-    ]
-  }
-};
-
-function explorerForChain(chainId: number) {
-  const fromConfig = uiConfig.explorers?.[String(chainId)];
-  return fromConfig ?? uiConfig.etherscanBase;
-}
-
-function buildOwnerAtlas() {
-  const atlas = Object.entries(hubs).map(([hubId, hub]) => {
-    const explorer = explorerForChain(hub.chainId).replace(/\/$/, "");
-    const modules = Object.entries(hub.addresses)
-      .filter(([, address]) => address && address !== ethers.ZeroAddress)
-      .map(([moduleKey, address]) => {
-        const controls = OWNER_CONTROLS[moduleKey];
-        if (!controls) {
-          return undefined;
-        }
-        const actions = controls.actions.map((action) => ({
-          method: action.method,
-          description: action.description,
-          args: action.args ?? [],
-          explorerWriteUrl: `${explorer}/address/${address}#writeContract`,
-          contractAddress: address
-        }));
-        return {
-          module: controls.module,
-          address,
-          actions
-        };
-      })
-      .filter((module): module is OwnerAtlasModule => Boolean(module));
-
-    return {
-      hubId,
-      label: hub.label,
-      chainId: hub.chainId,
-      networkName: hub.networkName,
-      owner: hub.owner,
-      governance: hub.governance,
-      explorer,
-      modules
-    };
-  });
-  return { atlas };
-}
-
 const app = express();
 app.use(express.json());
 
@@ -229,7 +96,7 @@ app.get("/constellation/config", (_req, res) => res.json(uiConfig));
 app.get("/constellation/hubs", (_req, res) => res.json({ hubs }));
 app.get("/constellation/playbooks", (_req, res) => res.json(playbooks));
 app.get("/constellation/actors", (_req, res) => res.json(actors));
-app.get("/constellation/owner/atlas", (_req, res) => res.json(buildOwnerAtlas()));
+app.get("/constellation/owner/atlas", (_req, res) => res.json(buildOwnerAtlas(hubs, uiConfig)));
 
 app.post("/constellation/:hub/tx/create", (req, res) => {
   const hub = getHub(req.params.hub);
