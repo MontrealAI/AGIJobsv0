@@ -12,6 +12,7 @@ type Config = {
   hubs: string[];
   explorers?: Record<string, string>;
   featuredPlaybookId?: string;
+  launchSequence?: LaunchStep[];
 };
 
 type HubAddresses = Record<string, string>;
@@ -131,6 +132,20 @@ type MissionProfile = {
   highlights?: string[];
 };
 
+type LaunchCommand = {
+  label: string;
+  run: string;
+};
+
+type LaunchStep = {
+  id: string;
+  title: string;
+  objective: string;
+  commands: LaunchCommand[];
+  successSignal: string;
+  ownerLever: string;
+};
+
 const envOrchestratorBase = (
   (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}
 ).VITE_ORCHESTRATOR_BASE;
@@ -172,6 +187,16 @@ const cardStyle: React.CSSProperties = {
   minHeight: 90
 };
 
+const codeStyle: React.CSSProperties = {
+  display: "block",
+  background: "#0f172a",
+  color: "#e2e8f0",
+  padding: "8px 12px",
+  borderRadius: 12,
+  fontSize: 12,
+  whiteSpace: "pre-wrap"
+};
+
 export default function App() {
   const [cfg, setCfg] = useState<Config>();
   const [cfgError, setCfgError] = useState<string>();
@@ -180,6 +205,7 @@ export default function App() {
   const [actors, setActors] = useState<Actor[]>([]);
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [missionProfiles, setMissionProfiles] = useState<MissionProfile[]>([]);
+  const [launchSequence, setLaunchSequence] = useState<LaunchStep[]>([]);
   const [selectedHub, setSelectedHub] = useState<string>("");
   const [jobs, setJobs] = useState<any[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
@@ -221,7 +247,14 @@ export default function App() {
 
   useEffect(() => {
     fetchJson("/constellation/config")
-      .then((config) => setCfg(config))
+      .then((config: Config) => {
+        setCfg(config);
+        if (Array.isArray(config.launchSequence)) {
+          setLaunchSequence(config.launchSequence as LaunchStep[]);
+        } else {
+          setLaunchSequence([]);
+        }
+      })
       .catch((error) => {
         console.error(error);
         setCfgError("Unable to load Sovereign Constellation config. Check orchestrator availability.");
@@ -688,6 +721,84 @@ export default function App() {
           {address ? `Connected: ${short(address)}` : "Connect wallet"}
         </button>
       </header>
+
+      {launchSequence.length > 0 ? (
+        <section data-testid="launch-sequence" style={{ marginBottom: 32 }}>
+          <h2 style={{ marginTop: 0 }}>ASI Takes Off Launch Sequence</h2>
+          <p style={{ maxWidth: 860 }}>
+            Follow these preflight steps to command the Sovereign Constellation without writing any code. Each action was
+            curated so a single director can deploy hubs, load the flagship mission, and assert owner supremacy in minutes.
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 18
+            }}
+          >
+            {launchSequence.map((step, index) => (
+              <div
+                key={step.id}
+                style={{
+                  ...cardStyle,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                  minHeight: 0
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    color: "#1e3a8a"
+                  }}
+                >
+                  Step {index + 1}
+                </span>
+                <h3 style={{ margin: 0 }}>{step.title}</h3>
+                <p style={{ marginTop: 0 }}>{step.objective}</p>
+                {Array.isArray(step.commands) && step.commands.length > 0 ? (
+                  <div>
+                    <strong style={{ fontSize: 13 }}>Execute</strong>
+                    <ul style={{ listStyle: "none", paddingLeft: 0, marginTop: 8, marginBottom: 12 }}>
+                      {step.commands.map((command, cmdIdx) => (
+                        <li key={`${step.id}-command-${cmdIdx}`} style={{ marginBottom: 8 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                            {command.label}
+                          </div>
+                          <code style={codeStyle}>{command.run}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <div
+                  style={{
+                    fontSize: 13,
+                    background: "rgba(59, 130, 246, 0.12)",
+                    padding: 12,
+                    borderRadius: 12
+                  }}
+                >
+                  <strong>Success signal:</strong> {step.successSignal}
+                </div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    background: "rgba(22, 163, 74, 0.12)",
+                    padding: 12,
+                    borderRadius: 12
+                  }}
+                >
+                  <strong>Owner control:</strong> {step.ownerLever}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section
         style={{
