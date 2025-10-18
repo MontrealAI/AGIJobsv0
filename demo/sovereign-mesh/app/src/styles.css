@@ -1,0 +1,73 @@
+:root {
+  color-scheme: dark;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background-color: #05050a;
+  color: #f5f6fa;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button {
+  background: linear-gradient(135deg, #ff6d00, #ff9100);
+  border: none;
+  border-radius: 999px;
+  color: #05050a;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 125, 0, 0.35);
+}
+
+select,
+input {
+  background: rgba(18, 20, 27, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: inherit;
+  padding: 0.45rem 0.75rem;
+}
+
+a {
+  color: #8ab4ff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background: rgba(15, 17, 25, 0.85);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+th,
+td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+th {
+  text-align: left;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.64);
+}
+
+td {
+  font-size: 0.9rem;
+}
+
+details {
+  background: rgba(15, 18, 28, 0.9);
+  border-radius: 12px;
+  padding: 1rem;
+}
