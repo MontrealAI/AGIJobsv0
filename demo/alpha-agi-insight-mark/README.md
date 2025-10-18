@@ -9,6 +9,7 @@
 - **Sentinel-grade emergency controls** – Owners can delegate a cross-contract SystemPause sentinel that can freeze the Nova-Seed, exchange, and settlement token instantly while the owner retains sole authority to resume operations.
 - **Tokenised disruption** – Each α-AGI Nova-Seed is minted from the meta-agent scenarios, sealed until the owner reveals it, and can be listed or traded through α-AGI MARK with automated manifest hashing for integrity proofs.
 - **Production rigor** – The Hardhat project includes unit tests covering minting, pausing, delegated minters, fixed-price trading, fee distribution, and oracle resolution. The GitHub workflow executes the tests, runs the demo end-to-end, and verifies the generated dossiers.
+- **Ledger-synchronised dossiers** – The recap `stats` block, operational metrics, CSV ledger, and owner brief are cross-checked by the verifier so any mismatch between reports and on-chain state is caught automatically.
 - **Regulatory superpowers** – Live repricing (`updateListingPrice`) and instant custody evacuation (`forceDelist`) ensure the owner can reshape liquidity or quarantine an asset mid-flight without downtime.
 - **Superintelligent foresight instrumentation** – The demo now surfaces composite AGI capability gauges, thermodynamic confidence bands, and a dedicated Meta-Agentic Tree Search mermaid constellation so operators can prove the machine is operating at post-human clarity.
 
@@ -68,9 +69,10 @@ The suite covers:
 
 Running the demo produces:
 
-- `insight-recap.json` – network, contract addresses, minted seed states, and telemetry.
-- `insight-report.md` – executive summary with tables and owner command hooks.
-- `insight-report.html` – shareable executive dashboard with disruption timeline visualisation.
+- `insight-recap.json` – network, contract addresses, minted seed states, telemetry, and a `stats` block validating counts,
+  confidence bands, capability index, and forecast mass against the ledger.
+- `insight-report.md` – executive summary with tables, an operational metrics section, and owner command hooks.
+- `insight-report.html` – shareable executive dashboard with disruption timeline visualisation and live operational metrics cards.
 - `insight-control-matrix.json` – machine-readable owner control registry.
 - `insight-control-map.mmd` – mermaid diagram for governance briefings.
 - `insight-governance.mmd` – meta-agent swarm and sentinel orchestration schematic.

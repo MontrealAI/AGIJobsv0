@@ -32,8 +32,8 @@ Watch the console for emoji-tagged telemetry such as:
 
 Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 
-- `insight-report.md` – executive summary (ready to paste into investor decks).
-- `insight-report.html` – polished executive dashboard with timeline and confidence bars for board briefings.
+- `insight-report.md` – executive summary (ready to paste into investor decks) with operational command metrics covering minted, market, and confidence posture.
+- `insight-report.html` – polished executive dashboard with timeline, confidence bars, and live operational metrics cards for board briefings.
 - `insight-control-matrix.json` – machine-readable owner control inventory.
 - `insight-control-map.mmd` – mermaid diagram (render via https://mermaid.live/).
 - `insight-governance.mmd` – insight swarm + sentinel orchestration schematic.
@@ -42,6 +42,7 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 - `insight-market-matrix.csv` – spreadsheet-ready dataset for analysts and treasury.
 - `insight-constellation.mmd` – constellation mermaid capturing live custody and sentinel edges.
 - `insight-manifest.json` – SHA-256 hashes; re-run the demo and confirm hashes change only when artefacts change. The manifest now fingerprints the scenario dataset too, so provenance can be attested.
+- `insight-recap.json` – network metadata, contract addresses, minted ledger, telemetry, and a stats block validating owner/delegate mints, market state, confidence bands, capability index, and forecast value against generated artefacts.
 - `insight-telemetry.log` – chronological agent conversation for audit trails.
 
 ## 4. Owner Control Drills
