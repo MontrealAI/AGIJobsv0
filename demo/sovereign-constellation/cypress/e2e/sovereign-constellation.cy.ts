@@ -13,6 +13,11 @@ describe("Sovereign Constellation UI", () => {
       cy.contains("Automation Spine");
       cy.contains("npm run demo:sovereign-constellation:asi-takes-off");
     });
+    cy.get('[data-testid="asi-takes-off-systems"]').within(() => {
+      cy.contains("Systems Matrix");
+      cy.contains("Owner levers");
+      cy.contains("Automation spine");
+    });
     cy.get('[data-testid="mission-profiles"]').within(() => {
       cy.contains("ASI Takes Off Mission Profiles");
       cy.contains("Load mission plan").first().click();

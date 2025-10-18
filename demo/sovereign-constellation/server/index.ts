@@ -111,6 +111,34 @@ type AsiDeck = {
   ownerAssurances: AsiOwnerAssurances;
 };
 
+type AsiSystemControl = {
+  module: string;
+  action: string;
+  description: string;
+};
+
+type AsiSystemAutomation = {
+  label: string;
+  command: string;
+  impact: string;
+};
+
+type AsiSystemVerification = {
+  artifact: string;
+  description: string;
+};
+
+type AsiSystem = {
+  id: string;
+  title: string;
+  summary: string;
+  operatorWorkflow: string[];
+  ownerControls: AsiSystemControl[];
+  automation: AsiSystemAutomation[];
+  verification: AsiSystemVerification[];
+  assurance: string;
+};
+
 const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 const computeAutotunePlan = untypedComputeAutotunePlan as AutotuneLib["computeAutotunePlan"];
 type AutotuneTelemetry = Parameters<AutotuneLib["computeAutotunePlan"]>[0];
@@ -131,6 +159,7 @@ const playbooks = loadJson<any[]>("config/playbooks.json");
 const actors = loadJson<any[]>("config/actors.json");
 const missionProfiles = loadJson<MissionProfile[]>("config/missionProfiles.json");
 const asiDeck = loadJson<AsiDeck>("config/asiTakesOffMatrix.json");
+const asiSystems = loadJson<AsiSystem[]>("config/asiTakesOffSystems.json");
 
 type ConstellationContext = {
   uiConfig: UiConfig;
@@ -139,6 +168,7 @@ type ConstellationContext = {
   actors: any[];
   missionProfiles: MissionProfile[];
   asiDeck: AsiDeck;
+  asiSystems: AsiSystem[];
 };
 
 const defaultContext: ConstellationContext = {
@@ -147,7 +177,8 @@ const defaultContext: ConstellationContext = {
   playbooks,
   actors,
   missionProfiles,
-  asiDeck
+  asiDeck,
+  asiSystems
 };
 
 const jobAbi = [
@@ -221,9 +252,13 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
     return res.json({
       deck: ctx.asiDeck,
       ownerAtlas: atlas,
-      autotunePlan: plan
+      autotunePlan: plan,
+      systems: ctx.asiSystems
     });
   });
+  app.get("/constellation/asi-takes-off/systems", (_req, res) =>
+    res.json({ systems: ctx.asiSystems })
+  );
 
   app.post("/constellation/:hub/tx/create", (req, res) => {
     const hub = getHub(ctx, req.params.hub);

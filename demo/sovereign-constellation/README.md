@@ -104,6 +104,9 @@ sequenceDiagram
 - **ASI control deck** – `config/asiTakesOffMatrix.json` powers the `/constellation/asi-takes-off` API, the console's new
   control deck, and the `npm run demo:sovereign-constellation:asi-takes-off` CLI briefing so stakeholders can rehearse the
   entire deployment with zero manual coding.
+- **ASI systems matrix** – `config/asiTakesOffSystems.json` documents the five flagship pillars with operator workflows,
+  owner levers, automation commands, and verification artefacts. The server exposes `/constellation/asi-takes-off/systems`
+  and the console renders the dataset so every mission assurance remains transparent.
 
 ## Flagship mission — ASI Takes Off
 
@@ -133,6 +136,7 @@ demo/sovereign-constellation/
 │   ├── playbooks.json
 │   ├── missionProfiles.json
 │   ├── autotune.telemetry.json
+│   ├── asiTakesOffSystems.json
 │   └── actors.json
 ├── server/
 │   ├── package.json
