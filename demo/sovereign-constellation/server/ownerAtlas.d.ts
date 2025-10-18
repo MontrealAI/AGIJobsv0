@@ -29,6 +29,7 @@ declare module "../shared/ownerAtlas.mjs" {
     etherscanBase: string;
     defaultSubgraphUrl?: string;
     orchestratorBase?: string;
+    featuredPlaybookId?: string;
     hubs: string[];
     explorers?: Record<string, string>;
   };

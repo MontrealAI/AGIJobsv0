@@ -28,5 +28,11 @@
     "flag": "🌐",
     "name": "Observer Holonet",
     "description": "Network intelligence layer providing telemetry for every hub."
+  },
+  {
+    "id": "asi-vanguard",
+    "flag": "🚀",
+    "name": "ASI Vanguard Council",
+    "description": "Strategic board stewarding the ASI Takes Off mission and steering recursive improvements."
   }
 ]

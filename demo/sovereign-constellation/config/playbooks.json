@@ -1,5 +1,37 @@
 [
   {
+    "id": "asi-takes-off",
+    "name": "Flagship Mission: ASI Takes Off",
+    "description": "Unify Helios, Triton, and Athena into one synchronized launch covering research, industrial build, and governance alignment.",
+    "steps": [
+      {
+        "hub": "intent@helios-research",
+        "rewardWei": "3600000000000000000",
+        "uri": "ipfs://sovereign-constellation/asi-takes-off/meta-agentic-blueprint"
+      },
+      {
+        "hub": "fabrication@triton-industrial",
+        "rewardWei": "5200000000000000000",
+        "uri": "ipfs://sovereign-constellation/asi-takes-off/industrial-surge"
+      },
+      {
+        "hub": "oversight@athena-governance",
+        "rewardWei": "3100000000000000000",
+        "uri": "ipfs://sovereign-constellation/asi-takes-off/governance-alignment"
+      },
+      {
+        "hub": "augmentation@helios-research",
+        "rewardWei": "2700000000000000000",
+        "uri": "ipfs://sovereign-constellation/asi-takes-off/recursive-augmentation"
+      },
+      {
+        "hub": "expansion@triton-industrial",
+        "rewardWei": "4400000000000000000",
+        "uri": "ipfs://sovereign-constellation/asi-takes-off/global-scale-rollout"
+      }
+    ]
+  },
+  {
     "id": "constellation-global-resilience",
     "name": "Mission: Global Resilience Uplift",
     "description": "Launch climate analytics, manufacturing pivots, and civic coordination across the constellation.",

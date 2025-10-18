@@ -3,6 +3,11 @@ describe("Sovereign Constellation UI", () => {
     cy.visit("http://localhost:5179");
     cy.contains("Sovereign Constellation");
     cy.get('[data-testid="constellation-hero"]').should("exist");
+    cy.get('[data-testid="mission-profiles"]').within(() => {
+      cy.contains("ASI Takes Off Mission Profiles");
+      cy.contains("Load mission plan").first().click();
+    });
+    cy.get('[data-testid="playbook-select"]').should("have.value", "asi-takes-off");
     cy.get('[data-testid="hub-select"]').select(1);
     cy.get('[data-testid="playbook-select"]').select(1);
     cy.get('[data-testid="playbook-preview"]').should("exist");

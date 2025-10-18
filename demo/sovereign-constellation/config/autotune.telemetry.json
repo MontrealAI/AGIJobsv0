@@ -6,6 +6,33 @@
   },
   "missions": [
     {
+      "id": "asi-takes-off",
+      "hub": "helios-research",
+      "validators": {
+        "participation": 0.69,
+        "avgRevealLatencySeconds": 1380,
+        "avgCommitLatencySeconds": 820
+      }
+    },
+    {
+      "id": "asi-takes-off-industrial",
+      "hub": "triton-industrial",
+      "validators": {
+        "participation": 0.7,
+        "avgRevealLatencySeconds": 1290,
+        "avgCommitLatencySeconds": 780
+      }
+    },
+    {
+      "id": "asi-takes-off-governance",
+      "hub": "athena-governance",
+      "validators": {
+        "participation": 0.72,
+        "avgRevealLatencySeconds": 1505,
+        "avgCommitLatencySeconds": 930
+      }
+    },
+    {
       "id": "global-resilience",
       "hub": "helios-research",
       "validators": {
