@@ -1,6 +1,6 @@
 import { GraphQLClient, gql } from "graphql-request";
 
-export const makeClient = (url: string) => new GraphQLClient(url);
+export const makeClient = (url: string) => new GraphQLClient(url, { headers: {} });
 
 export const qJobs = gql`
   {

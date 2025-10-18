@@ -2,64 +2,52 @@
   {
     "id": "decarbonize-port-city",
     "name": "Mission: Decarbonize Port City",
-    "summary": "Mobilize foresight, research, optimization, and knowledge hubs to drive a whole-of-city clean transition.",
-    "sponsor": "city",
     "steps": [
       {
         "hub": "foresight@civic-governance",
         "rewardWei": "1500000000000000000",
-        "uri": "ipfs://playbook/foresight/port-emissions",
-        "description": "Systemic foresight scanning of maritime emissions and policy levers."
+        "uri": "ipfs://playbook/foresight/port-emissions"
       },
       {
         "hub": "research@public-research",
         "rewardWei": "3000000000000000000",
-        "uri": "ipfs://playbook/research/abatement-options",
-        "description": "Open research sprint to identify technology portfolios and financing models."
+        "uri": "ipfs://playbook/research/abatement-options"
       },
       {
         "hub": "optimization@industrial-ops",
         "rewardWei": "2500000000000000000",
-        "uri": "ipfs://playbook/optimization/logistics-plan",
-        "description": "Optimization blueprint for retrofitting vessels and grid integrations."
+        "uri": "ipfs://playbook/optimization/logistics-plan"
       },
       {
         "hub": "knowledge@public-research",
         "rewardWei": "1000000000000000000",
-        "uri": "ipfs://playbook/knowledge/policy-brief",
-        "description": "Policy knowledge graph and diplomacy playbook for adoption."
+        "uri": "ipfs://playbook/knowledge/policy-brief"
       }
     ]
   },
   {
     "id": "pandemic-watch",
     "name": "Mission: Pandemic Watch",
-    "summary": "Global sentinel network aligning public foresight, research, and operational readiness.",
-    "sponsor": "ngo",
     "steps": [
       {
         "hub": "foresight@civic-governance",
         "rewardWei": "1200000000000000000",
-        "uri": "ipfs://playbook/foresight/epi-signal-detection",
-        "description": "Foresight sweep for anomalous epidemiological signals across data feeds."
+        "uri": "ipfs://playbook/foresight/epi-signal-detection"
       },
       {
         "hub": "research@public-research",
         "rewardWei": "2200000000000000000",
-        "uri": "ipfs://playbook/research/variant-analysis",
-        "description": "Collective intelligence research on emerging variants and countermeasures."
+        "uri": "ipfs://playbook/research/variant-analysis"
       },
       {
         "hub": "optimization@industrial-ops",
         "rewardWei": "1800000000000000000",
-        "uri": "ipfs://playbook/optimization/supply-allocation",
-        "description": "Logistics optimization for PPE, vaccines, and field hospitals."
+        "uri": "ipfs://playbook/optimization/supply-allocation"
       },
       {
         "hub": "knowledge@public-research",
         "rewardWei": "900000000000000000",
-        "uri": "ipfs://playbook/knowledge/public-advisory",
-        "description": "Knowledge synthesis and public advisory modules for civic leaders."
+        "uri": "ipfs://playbook/knowledge/public-advisory"
       }
     ]
   }
