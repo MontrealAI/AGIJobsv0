@@ -138,6 +138,21 @@ const parseBytes32 = (value: unknown, label: string): string | undefined => {
   }
 };
 
+const toBigInt = (value: unknown): bigint => {
+  try {
+    if (typeof value === "bigint") return value;
+    if (typeof value === "number") return BigInt(value);
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) return 0n;
+      return BigInt(trimmed);
+    }
+  } catch {
+    // fall through
+  }
+  return 0n;
+};
+
 const app = express();
 app.use(express.json());
 
@@ -151,6 +166,95 @@ app.get("/mesh/health", (_req, res) => {
     network: meshCfg.network,
     hubs: Object.keys(hubs).length,
     uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000)
+  });
+});
+
+app.get("/mesh/summary", (_req, res) => {
+  const perHub: Record<
+    string,
+    { label: string; steps: number; reward: bigint }
+  > = {};
+  let totalReward = 0n;
+  let totalSteps = 0;
+  let largestMission: {
+    id: string;
+    name: string;
+    steps: number;
+    reward: bigint;
+  } | null = null;
+
+  for (const playbook of playbooks as Array<{
+    id?: string;
+    name?: string;
+    steps?: Array<{ hub?: string; rewardWei?: unknown }>;
+  }>) {
+    const pbId = playbook.id ?? "";
+    const pbName = playbook.name ?? pbId;
+    let missionReward = 0n;
+    let missionSteps = 0;
+
+    for (const step of playbook.steps ?? []) {
+      totalSteps += 1;
+      missionSteps += 1;
+      const reward = toBigInt(step.rewardWei);
+      missionReward += reward;
+      totalReward += reward;
+
+      const [_, hubIdRaw] = String(step.hub ?? "").split("@");
+      const hubId = hubIdRaw || String(step.hub ?? "");
+      const hubCfg = hubs[hubId];
+      if (!perHub[hubId]) {
+        perHub[hubId] = {
+          label: hubCfg?.label || hubId,
+          steps: 0,
+          reward: 0n
+        };
+      }
+      perHub[hubId].steps += 1;
+      perHub[hubId].reward += reward;
+    }
+
+    if (!largestMission || missionReward > largestMission.reward) {
+      largestMission = {
+        id: pbId,
+        name: pbName,
+        steps: missionSteps,
+        reward: missionReward
+      };
+    }
+  }
+
+  const perHubArray = Object.entries(perHub)
+    .map(([hub, entry]) => ({
+      hub,
+      label: entry.label,
+      steps: entry.steps,
+      rewardWei: entry.reward.toString()
+    }))
+    .sort((a, b) => {
+      const diff = BigInt(b.rewardWei) - BigInt(a.rewardWei);
+      if (diff === 0n) {
+        return a.hub.localeCompare(b.hub);
+      }
+      return diff > 0n ? 1 : -1;
+    });
+
+  res.json({
+    network: meshCfg.network,
+    hubCount: Object.keys(hubs).length,
+    missionCount: playbooks.length,
+    actorCount: Array.isArray(actors) ? actors.length : 0,
+    totalSteps,
+    totalRewardWei: totalReward.toString(),
+    perHub: perHubArray,
+    largestMission: largestMission
+      ? {
+          id: largestMission.id,
+          name: largestMission.name,
+          steps: largestMission.steps,
+          rewardWei: largestMission.reward.toString()
+        }
+      : null
   });
 });
 
