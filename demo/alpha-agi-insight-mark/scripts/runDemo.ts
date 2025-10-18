@@ -120,6 +120,15 @@ function formatPercent(value: number, decimals = 1): string {
   return `${(value * 100).toFixed(decimals)}%`;
 }
 
+function formatTitleCase(value: string): string {
+  return value
+    .toLowerCase()
+    .split(/[_\s]+/)
+    .filter((segment) => segment.length > 0)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+}
+
 function formatControlHook(name: string): string {
   switch (name) {
     case "mint":
@@ -280,6 +289,33 @@ async function main() {
 
   const telemetry: AgentLogEntry[] = [];
   const minted: MintedInsightRecord[] = [];
+
+  function addressEquals(a: string, b: string): boolean {
+    return a.toLowerCase() === b.toLowerCase();
+  }
+
+  function governanceCustodianTitle(address: string): string {
+    if (addressEquals(address, operator.address)) {
+      return "Operator Treasury";
+    }
+    if (addressEquals(address, strategist.address)) {
+      return "System Pause Sentinel";
+    }
+    if (addressEquals(address, oracle.address)) {
+      return "Insight Oracle";
+    }
+    if (addressEquals(address, buyerA.address)) {
+      return "Alpha Capital Desk";
+    }
+    if (addressEquals(address, buyerB.address)) {
+      return "Liquidity Reserve";
+    }
+    return "Custodian";
+  }
+
+  function governanceCustodianLabel(address: string): string {
+    return `${governanceCustodianTitle(address)}\\n${shortenAddress(address)}`;
+  }
 
   function log(agent: string, message: string) {
     const entry: AgentLogEntry = { agent, message, timestamp: new Date().toISOString() };
@@ -1201,29 +1237,64 @@ ${htmlRows}
     `    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n` +
     `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n`;
 
-  const governanceMermaid = `flowchart LR\n` +
-    `    subgraph Intelligence_Swarm["Meta-Agentic Insight Swarm"]\n` +
-    `      metasentinel[[Meta-Sentinel]]:::agent\n` +
-    `      planner[[Strategic Planner]]:::agent\n` +
-    `      oracleAgent[[Thermodynamic Oracle]]:::agent\n` +
-    `      cartographer[[Venture Cartographer]]:::agent\n` +
-    `      guardian[[Guardian Auditor]]:::agent\n` +
-    `    end\n` +
-    `    metasentinel --> planner --> oracleAgent --> cartographer --> guardian --> metasentinel\n` +
-    `    metasentinel -->|Mint directives| nova[α-AGI Nova-Seed]:::contract\n` +
-    `    guardian -->|Seal / Reveal| nova\n` +
-    `    metasentinel -->|Configure| exchange[Insight Exchange]:::contract\n` +
-    `    guardian -->|Assign sentinel| pauseSentinel((System Pause Sentinel)):::control\n` +
-    `    pauseSentinel -->|Pause| nova\n` +
-    `    pauseSentinel -->|Pause| exchange\n` +
-    `    pauseSentinel -->|Pause| credit[Insight Access Token]:::contract\n` +
-    `    exchange --> buyers((Market Operators)):::actor\n` +
-    `    buyers --> exchange\n` +
-    `    exchange --> treasury((Treasury)):::control\n` +
-    `    classDef actor fill:#102a43,stroke:#8ff7ff,color:#e5f9ff;\n` +
-    `    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n` +
-    `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n` +
-    `    classDef agent fill:#14233b,stroke:#60d2ff,color:#e8f6ff;\n`;
+  const governanceLines: string[] = [
+    "flowchart LR",
+    '    subgraph Intelligence_Swarm["Meta-Agentic Insight Swarm"]',
+    '      metasentinel[[Meta-Sentinel]]:::agent',
+    '      planner[[Strategic Planner]]:::agent',
+    '      oracleAgent[[Thermodynamic Oracle]]:::agent',
+    '      cartographer[[Venture Cartographer]]:::agent',
+    '      guardian[[Guardian Auditor]]:::agent',
+    '    end',
+    '    metasentinel --> planner --> oracleAgent --> cartographer --> guardian --> metasentinel',
+    '    metasentinel -->|Mint directives| nova[α-AGI Nova-Seed]:::contract',
+    '    guardian -->|Seal / Reveal| nova',
+    '    metasentinel -->|Configure| exchange[Insight Exchange]:::contract',
+    '    guardian -->|Assign sentinel| pauseSentinel((System Pause Sentinel)):::control',
+    '    pauseSentinel -->|Pause| nova',
+    '    pauseSentinel -->|Pause| exchange',
+    '    pauseSentinel -->|Pause| credit[Insight Access Token]:::contract',
+    '    exchange --> buyers((Market Operators)):::actor',
+    '    buyers --> exchange',
+    '    exchange --> treasury((Treasury)):::control',
+    '    classDef actor fill:#102a43,stroke:#8ff7ff,color:#e5f9ff;',
+    '    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;',
+    '    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;',
+    '    classDef agent fill:#14233b,stroke:#60d2ff,color:#e8f6ff;',
+    '    classDef asset fill:#1e3a5f,stroke:#ffd166,color:#fff9e6;',
+    '    classDef custody fill:#2b1d42,stroke:#f38eb0,color:#fff0fa;',
+  ];
+
+  const governanceCustodianNodes = new Map<string, string>();
+  function ensureGovernanceCustodianNode(address: string): string {
+    const key = address.toLowerCase();
+    const existing = governanceCustodianNodes.get(key);
+    if (existing) {
+      return existing;
+    }
+    const nodeId = toMermaidId(address, "custodian");
+    governanceLines.push(`    ${nodeId}["${escapeMermaidLabel(governanceCustodianLabel(address))}"]:::custody`);
+    governanceCustodianNodes.set(key, nodeId);
+    return nodeId;
+  }
+
+  for (const entry of minted) {
+    const tokenNode = toMermaidId(`Token_${entry.tokenId}`, `token${entry.tokenId}`);
+    const tokenLabel = `Token #${entry.tokenId}\\n${escapeMermaidLabel(entry.scenario.sector)}`;
+    governanceLines.push(`    ${tokenNode}["${tokenLabel}"]:::asset`);
+    governanceLines.push(`    nova -->|Forge| ${tokenNode}`);
+    const mintedToNode = ensureGovernanceCustodianNode(entry.mintedTo);
+    governanceLines.push(`    ${tokenNode} -->|Minted to| ${mintedToNode}`);
+    const finalNode = ensureGovernanceCustodianNode(entry.finalCustodian);
+    const statusParts = [formatTitleCase(entry.status)];
+    if (entry.sale) {
+      statusParts.push(`${entry.sale.price} AIC`);
+    }
+    const statusLabel = statusParts.join(" · ");
+    governanceLines.push(`    ${tokenNode} -.->|${escapeMermaidLabel(statusLabel)}| ${finalNode}`);
+  }
+
+  const governanceMermaid = governanceLines.join("\n");
 
   const agentMermaidNodes = config.agents.map((agent, index) => ({
     id: toMermaidId(agent, `agent${index}`),
