@@ -150,6 +150,15 @@ function formatPercent(value: number, decimals = 1): string {
   return `${(value * 100).toFixed(decimals)}%`;
 }
 
+function formatTitleCase(value: string): string {
+  return value
+    .toLowerCase()
+    .split(/[_\s]+/)
+    .filter((segment) => segment.length > 0)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+}
+
 function shortenAddress(address: string, prefix = 6, suffix = 4): string {
   if (!address || address.length <= prefix + suffix + 1) {
     return address;
@@ -769,6 +778,31 @@ async function verifyMermaidFiles(minted: RecapMintedEntry[]) {
     }
     if (!agencyOrbit.includes(entry.scenario.sector)) {
       throw new Error(`Agency orbit mermaid missing sector label ${entry.scenario.sector}.`);
+    }
+  }
+  for (const entry of minted) {
+    const tokenSnippet = `Token #${entry.tokenId}`;
+    if (!governance.includes(tokenSnippet)) {
+      throw new Error(`Governance mermaid missing token snippet for #${entry.tokenId}.`);
+    }
+    const mintedShort = shortenAddress(entry.mintedTo);
+    if (!governance.includes(mintedShort)) {
+      throw new Error(`Governance mermaid missing minted custodian ${mintedShort} for token ${entry.tokenId}.`);
+    }
+    const finalShort = shortenAddress(entry.finalCustodian);
+    if (!governance.includes(finalShort)) {
+      throw new Error(`Governance mermaid missing final custodian ${finalShort} for token ${entry.tokenId}.`);
+    }
+    const statusParts = [formatTitleCase(entry.status)];
+    if (entry.sale) {
+      statusParts.push(`${entry.sale.price} AIC`);
+    }
+    for (const snippet of statusParts) {
+      if (!governance.includes(snippet)) {
+        throw new Error(
+          `Governance mermaid missing status snippet "${snippet}" for token ${entry.tokenId}.`,
+        );
+      }
     }
   }
   for (const entry of minted) {
