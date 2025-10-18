@@ -54,6 +54,11 @@ interface RecapMintedEntry {
   confidenceDecimal?: number;
   confidencePercent?: number;
   forecastValue?: string;
+  mintTxHash?: string;
+  listingTxHash?: string | null;
+  repricingTxHashes?: string[];
+  forceDelistTxHash?: string | null;
+  resolutionTxHash?: string | null;
 }
 
 interface RecapStats {
@@ -77,6 +82,46 @@ interface TelemetryEntry {
   agent: string;
   message: string;
   timestamp: string;
+}
+
+interface LedgerMintEntry {
+  tokenId: string;
+  sector: string;
+  status: string;
+  mintedBy: string;
+  mintedTo: string;
+  finalCustodian: string;
+  mintTxHash: string;
+  listingTxHash?: string | null;
+  repricingTxHashes?: string[];
+  saleTxHash?: string | null;
+  forceDelistTxHash?: string | null;
+  resolutionTxHash?: string | null;
+  listingPrice?: string | null;
+  sale?: RecapSaleRecord | null;
+  ownerActions?: string[];
+  fusion?: {
+    revealed: boolean;
+    uri: string;
+    sealedURI?: string;
+  };
+  disruptionTimestamp: string;
+  confidenceBps: number;
+  confidencePercent: number;
+  forecastValue: string;
+}
+
+interface LedgerFile {
+  generatedAt: string;
+  network: { chainId: string; name: string };
+  contracts: RecapContractAddresses;
+  scenario: { path: string; sha256: string };
+  stats?: RecapStats;
+  feeBps?: number;
+  treasury?: string;
+  minted: LedgerMintEntry[];
+  sentinelPause: Array<{ contract: string; address: string; hash: string }>;
+  ownerResume: Array<{ contract: string; address: string; hash: string }>;
 }
 
 interface RecapFile {
@@ -111,6 +156,7 @@ const telemetryPath = path.join(reportsDir, "insight-telemetry.log");
 const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
 const safetyChecklistPath = path.join(reportsDir, "insight-safety-checklist.md");
 const csvPath = path.join(reportsDir, "insight-market-matrix.csv");
+const ledgerPath = path.join(reportsDir, "insight-ledger.json");
 
 function hashBuffer(buffer: Buffer): string {
   const hash = createHash("sha256");
@@ -250,6 +296,7 @@ async function verifyManifest(manifest: Manifest) {
     path.relative(baseDir, ownerBriefPath).replace(/\\/g, "/"),
     path.relative(baseDir, safetyChecklistPath).replace(/\\/g, "/"),
     path.relative(baseDir, csvPath).replace(/\\/g, "/"),
+    path.relative(baseDir, ledgerPath).replace(/\\/g, "/"),
   ];
 
   const missingRequired = requiredFiles.filter(
@@ -380,6 +427,141 @@ function validateRecapStats(recap: RecapFile) {
       `Recap stats telemetryEntries mismatch: expected ${recap.telemetry.length}, found ${stats.telemetryEntries}.`,
     );
   }
+}
+
+function addressesEqual(a?: string, b?: string): boolean {
+  return (a ?? "").toLowerCase() === (b ?? "").toLowerCase();
+}
+
+async function verifyLedger(recap: RecapFile): Promise<LedgerFile> {
+  await ensureExists(ledgerPath, "Ledger dataset");
+  const raw = await readFile(ledgerPath, "utf8");
+  const ledger = JSON.parse(raw) as LedgerFile;
+
+  if (!ledger || !Array.isArray(ledger.minted)) {
+    throw new Error("Ledger structure invalid – expected minted array.");
+  }
+  if (ledger.minted.length !== recap.minted.length) {
+    throw new Error(
+      `Ledger minted count mismatch: expected ${recap.minted.length}, found ${ledger.minted.length}.`,
+    );
+  }
+
+  if (!Array.isArray(ledger.sentinelPause) || !Array.isArray(ledger.ownerResume)) {
+    throw new Error("Ledger missing sentinelPause/ownerResume arrays.");
+  }
+
+  if (!ledger.scenario || ledger.scenario.path !== recap.scenarioSource.path) {
+    throw new Error("Ledger scenario path mismatch compared to recap.");
+  }
+  if (!ledger.scenario || ledger.scenario.sha256 !== recap.scenarioSource.sha256) {
+    throw new Error("Ledger scenario hash mismatch compared to recap.");
+  }
+
+  if (typeof ledger.feeBps === "number" && ledger.feeBps !== recap.feeBps) {
+    throw new Error(`Ledger feeBps (${ledger.feeBps}) does not match recap feeBps (${recap.feeBps}).`);
+  }
+  if (ledger.treasury && !addressesEqual(ledger.treasury, recap.treasury)) {
+    throw new Error("Ledger treasury address does not match recap treasury.");
+  }
+
+  const recapByToken = new Map(recap.minted.map((entry) => [entry.tokenId, entry]));
+  for (const entry of ledger.minted) {
+    const recapEntry = recapByToken.get(entry.tokenId);
+    if (!recapEntry) {
+      throw new Error(`Ledger references unknown token ${entry.tokenId}.`);
+    }
+    if (!entry.mintTxHash || entry.mintTxHash.length < 10) {
+      throw new Error(`Ledger mintTxHash missing or invalid for token ${entry.tokenId}.`);
+    }
+    if (!addressesEqual(entry.mintedBy, recapEntry.mintedBy)) {
+      throw new Error(`Ledger mintedBy mismatch for token ${entry.tokenId}.`);
+    }
+    if (!addressesEqual(entry.mintedTo, recapEntry.mintedTo)) {
+      throw new Error(`Ledger mintedTo mismatch for token ${entry.tokenId}.`);
+    }
+    if (!addressesEqual(entry.finalCustodian, recapEntry.finalCustodian)) {
+      throw new Error(`Ledger finalCustodian mismatch for token ${entry.tokenId}.`);
+    }
+    if (entry.status !== recapEntry.status) {
+      throw new Error(`Ledger status mismatch for token ${entry.tokenId}.`);
+    }
+    if (entry.confidenceBps !== entryConfidenceBps(recapEntry)) {
+      throw new Error(`Ledger confidenceBps mismatch for token ${entry.tokenId}.`);
+    }
+    if (entry.confidencePercent !== Math.round(entryConfidenceDecimal(recapEntry) * 10000) / 100) {
+      throw new Error(`Ledger confidencePercent mismatch for token ${entry.tokenId}.`);
+    }
+    if (entry.forecastValue !== (recapEntry.forecastValue ?? recapEntry.scenario?.forecastValue ?? "")) {
+      throw new Error(`Ledger forecastValue mismatch for token ${entry.tokenId}.`);
+    }
+    if (recapEntry.status !== "HELD" && (!entry.listingTxHash || entry.listingTxHash.length < 10)) {
+      throw new Error(`Ledger missing listingTxHash for active market token ${entry.tokenId}.`);
+    }
+    const repricingNotes = (recapEntry.ownerActions ?? []).filter((action) =>
+      action.toLowerCase().includes("repriced"),
+    ).length;
+    const repricingHashes = entry.repricingTxHashes ?? [];
+    if (repricingHashes.length < repricingNotes) {
+      throw new Error(
+        `Ledger repricingTxHashes count ${repricingHashes.length} lower than repricing actions ${repricingNotes} for token ${entry.tokenId}.`,
+      );
+    }
+    const ledgerSaleHash = entry.sale?.transactionHash ?? entry.saleTxHash ?? null;
+    const recapSaleHash = recapEntry.sale?.transactionHash ?? null;
+    if (ledgerSaleHash || recapSaleHash) {
+      if (!ledgerSaleHash || !recapSaleHash || ledgerSaleHash !== recapSaleHash) {
+        throw new Error(`Ledger sale hash mismatch for token ${entry.tokenId}.`);
+      }
+    }
+    if (recapEntry.sale && entry.sale) {
+      if (entry.sale.price !== recapEntry.sale.price || entry.sale.netPayout !== recapEntry.sale.netPayout) {
+        throw new Error(`Ledger sale details mismatch for token ${entry.tokenId}.`);
+      }
+    } else if (!!recapEntry.sale !== !!entry.sale) {
+      throw new Error(`Ledger sale presence mismatch for token ${entry.tokenId}.`);
+    }
+    if (recapEntry.status === "FORCE_DELISTED" && (!entry.forceDelistTxHash || entry.forceDelistTxHash.length < 10)) {
+      throw new Error(`Ledger missing forceDelistTxHash for token ${entry.tokenId}.`);
+    }
+    if (recapEntry.status === "SOLD" && (!entry.resolutionTxHash || entry.resolutionTxHash.length < 10)) {
+      throw new Error(`Ledger missing resolutionTxHash for sold token ${entry.tokenId}.`);
+    }
+    if (entry.fusion) {
+      if (entry.fusion.revealed !== recapEntry.fusionRevealed) {
+        throw new Error(`Ledger fusion.revealed mismatch for token ${entry.tokenId}.`);
+      }
+      if (entry.fusion.uri !== recapEntry.fusionURI) {
+        throw new Error(`Ledger fusion.uri mismatch for token ${entry.tokenId}.`);
+      }
+    }
+  }
+
+  const requiredPauseContracts = [
+    { name: "AlphaInsightExchange", address: recap.contracts.foresightExchange },
+    { name: "AlphaInsightNovaSeed", address: recap.contracts.novaSeed },
+    { name: "InsightAccessToken", address: recap.contracts.settlementToken },
+  ];
+
+  if (ledger.sentinelPause.length < requiredPauseContracts.length) {
+    throw new Error("Ledger sentinelPause section missing entries for pause drill.");
+  }
+  for (const contract of requiredPauseContracts) {
+    const pauseRecord = ledger.sentinelPause.find(
+      (entry) => entry.contract === contract.name && addressesEqual(entry.address, contract.address),
+    );
+    if (!pauseRecord || !pauseRecord.hash || pauseRecord.hash.length < 10) {
+      throw new Error(`Ledger missing sentinel pause transaction for ${contract.name}.`);
+    }
+    const resumeRecord = ledger.ownerResume.find(
+      (entry) => entry.contract === contract.name && addressesEqual(entry.address, contract.address),
+    );
+    if (!resumeRecord || !resumeRecord.hash || resumeRecord.hash.length < 10) {
+      throw new Error(`Ledger missing owner resume transaction for ${contract.name}.`);
+    }
+  }
+
+  return ledger;
 }
 
 async function verifyOwnerBrief(minted: RecapMintedEntry[], stats: RecapStats) {
@@ -828,6 +1010,9 @@ async function main() {
 
   validateRecapStats(recap);
   console.log("✅ Recap stats block cross-checked against minted ledger.");
+
+  await verifyLedger(recap);
+  console.log("✅ Foresight ledger validated against recap and transaction hashes.");
 
   await verifyMarkdown();
   console.log("✅ Markdown executive summary verified.");

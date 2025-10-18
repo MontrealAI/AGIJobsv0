@@ -42,6 +42,7 @@ Evidence Links: insight-manifest.json, transaction hashes
 ## 4. Verification Checklist
 
 - [ ] `insight-manifest.json` hashes verified and stored in evidence vault.
+- [ ] `insight-ledger.json` reviewed – mint/list/reprice/settlement hashes reconciled with pause drill receipts.
 - [ ] `npm run verify:alpha-agi-insight-mark` executed and archived (mirrors CI dossier validation locally).
 - [ ] Telemetry log reviewed for anomalies.
 - [ ] `insight-control-matrix.json` imported into owner dashboard.
