@@ -49,6 +49,7 @@ Evidence Links: insight-manifest.json, transaction hashes
 - [ ] `insight-owner-brief.md` countersigned for rapid-response command authority.
 - [ ] Oracle address verified via `owner:verify-control` tooling.
 - [ ] `insight-superintelligence.mmd` reviewed to confirm Meta-Agentic Tree Search + thermodynamic trigger topology matches governance expectations.
+- [ ] Branch protection attested via `npm run ci:verify-branch-protection -- --branch main` after seeding `GITHUB_TOKEN` with `read -s GITHUB_TOKEN && export GITHUB_TOKEN` and clearing it via `unset GITHUB_TOKEN` when finished.
 
 ## 5. Future Extensions
 
