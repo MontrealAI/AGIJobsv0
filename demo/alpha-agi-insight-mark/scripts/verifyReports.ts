@@ -139,6 +139,53 @@ interface RecapFile {
   telemetry: TelemetryEntry[];
 }
 
+interface ControlMatrixEntry {
+  name: string;
+  address: string;
+  owner: string;
+  systemPause?: string | null;
+  configurable?: string[];
+}
+
+interface ControlMatrixFile {
+  generatedAt?: string;
+  owner?: string;
+  oracle?: string;
+  systemPause?: string;
+  contracts: ControlMatrixEntry[];
+}
+
+interface OwnerSupremacyControl {
+  name: string;
+  address: string;
+  owner: string;
+  sentinel?: string | null;
+  hooks: string[];
+}
+
+interface OwnerSupremacyCrossChecks {
+  mintedRecap: number;
+  mintedLedger: number;
+  mintedMatch: boolean;
+  onchainOwnership: Array<{ tokenId: string; owner: string }>;
+  treasuryBalance: string;
+  sentinelPauses: number;
+  ownerResumes: number;
+}
+
+interface OwnerSupremacyFile {
+  generatedAt: string;
+  network: { chainId: string; name: string };
+  owner: string;
+  sentinel: string;
+  oracle: string;
+  treasury: string;
+  feeBps: number;
+  controls: OwnerSupremacyControl[];
+  crossChecks: OwnerSupremacyCrossChecks;
+  assertions: string[];
+}
+
 const baseDir = path.join(__dirname, "..");
 const reportsDir = path.join(baseDir, "reports");
 const manifestPath = path.join(reportsDir, "insight-manifest.json");
@@ -157,6 +204,8 @@ const ownerBriefPath = path.join(reportsDir, "insight-owner-brief.md");
 const safetyChecklistPath = path.join(reportsDir, "insight-safety-checklist.md");
 const csvPath = path.join(reportsDir, "insight-market-matrix.csv");
 const ledgerPath = path.join(reportsDir, "insight-ledger.json");
+const ownerSupremacyPath = path.join(reportsDir, "insight-owner-supremacy.json");
+const ownerLatticePath = path.join(reportsDir, "insight-owner-lattice.mmd");
 
 function hashBuffer(buffer: Buffer): string {
   const hash = createHash("sha256");
@@ -297,6 +346,8 @@ async function verifyManifest(manifest: Manifest) {
     path.relative(baseDir, safetyChecklistPath).replace(/\\/g, "/"),
     path.relative(baseDir, csvPath).replace(/\\/g, "/"),
     path.relative(baseDir, ledgerPath).replace(/\\/g, "/"),
+    path.relative(baseDir, ownerSupremacyPath).replace(/\\/g, "/"),
+    path.relative(baseDir, ownerLatticePath).replace(/\\/g, "/"),
   ];
 
   const missingRequired = requiredFiles.filter(
@@ -872,10 +923,10 @@ async function verifyHtml() {
   }
 }
 
-async function verifyControlMatrix() {
+async function verifyControlMatrix(): Promise<ControlMatrixFile> {
   await ensureExists(matrixPath, "Control matrix");
   const content = await readFile(matrixPath, "utf8");
-  const parsed = JSON.parse(content) as { contracts?: Array<{ name: string }> };
+  const parsed = JSON.parse(content) as ControlMatrixFile;
   const expectedNames = ["InsightAccessToken", "AlphaInsightNovaSeed", "AlphaInsightExchange"];
   const contracts = parsed.contracts ?? [];
   for (const name of expectedNames) {
@@ -883,6 +934,15 @@ async function verifyControlMatrix() {
       throw new Error(`Control matrix missing contract entry: ${name}`);
     }
   }
+  for (const entry of contracts) {
+    if (!entry.address || !entry.owner) {
+      throw new Error(`Control matrix entry ${entry.name} missing address or owner.`);
+    }
+    if (!Array.isArray(entry.configurable) || entry.configurable.length === 0) {
+      throw new Error(`Control matrix entry ${entry.name} missing configurable hooks.`);
+    }
+  }
+  return parsed;
 }
 
 async function verifyMermaidFiles(minted: RecapMintedEntry[]) {
@@ -892,6 +952,8 @@ async function verifyMermaidFiles(minted: RecapMintedEntry[]) {
   await ensureExists(mermaidControlMapPath, "Control map mermaid");
   await ensureExists(mermaidAgencyOrbitPath, "Agency orbit mermaid");
   await ensureExists(mermaidLifecyclePath, "Lifecycle mermaid");
+  await ensureExists(ownerSupremacyPath, "Owner supremacy dossier");
+  await ensureExists(ownerLatticePath, "Owner lattice mermaid");
 
   const superintelligence = await readFile(mermaidSuperintelligencePath, "utf8");
   const governance = await readFile(mermaidGovernancePath, "utf8");
@@ -899,6 +961,7 @@ async function verifyMermaidFiles(minted: RecapMintedEntry[]) {
   const controlMap = await readFile(mermaidControlMapPath, "utf8");
   const agencyOrbit = await readFile(mermaidAgencyOrbitPath, "utf8");
   const lifecycle = await readFile(mermaidLifecyclePath, "utf8");
+  const ownerLattice = await readFile(ownerLatticePath, "utf8");
 
   const superTokens = ["Meta-Agentic Tree Search", "Thermodynamic Rupture Trigger", "AGI Capability Index"];
   for (const token of superTokens) {
@@ -953,6 +1016,15 @@ async function verifyMermaidFiles(minted: RecapMintedEntry[]) {
       throw new Error(`Lifecycle mermaid missing ${token} participant.`);
     }
   }
+  if (!ownerLattice.includes("owner((Owner")) {
+    throw new Error("Owner lattice mermaid missing owner node.");
+  }
+  if (!ownerLattice.includes("sentinel((Sentinel")) {
+    throw new Error("Owner lattice mermaid missing sentinel node.");
+  }
+  if (!ownerLattice.includes("fee flow")) {
+    throw new Error("Owner lattice mermaid missing fee flow edge.");
+  }
   for (const entry of minted) {
     const nodeId = `seed${entry.tokenId}`;
     if (!agencyOrbit.includes(nodeId)) {
@@ -992,6 +1064,100 @@ async function verifyMermaidFiles(minted: RecapMintedEntry[]) {
     if (!constellation.includes(tokenNode)) {
       throw new Error(`Constellation mermaid missing node for token ${entry.tokenId}.`);
     }
+    if (!ownerLattice.includes(`#${entry.tokenId}`)) {
+      throw new Error(`Owner lattice mermaid missing Nova-Seed #${entry.tokenId} node.`);
+    }
+  }
+}
+
+async function verifyOwnerSupremacy(
+  recap: RecapFile,
+  ledger: LedgerFile,
+  controlMatrix: ControlMatrixFile,
+) {
+  await ensureExists(ownerSupremacyPath, "Owner supremacy dossier");
+  const content = await readFile(ownerSupremacyPath, "utf8");
+  const dossier = JSON.parse(content) as OwnerSupremacyFile;
+
+  if (!addressesEqual(dossier.owner, recap.operator)) {
+    throw new Error("Owner supremacy owner address mismatch with recap operator.");
+  }
+  if (!addressesEqual(dossier.sentinel, recap.systemPause)) {
+    throw new Error("Owner supremacy sentinel mismatch with recap system pause.");
+  }
+  if (!addressesEqual(dossier.oracle, recap.oracle)) {
+    throw new Error("Owner supremacy oracle mismatch with recap oracle.");
+  }
+  if (!addressesEqual(dossier.treasury, recap.treasury)) {
+    throw new Error("Owner supremacy treasury mismatch with recap treasury.");
+  }
+  if (dossier.feeBps !== recap.feeBps) {
+    throw new Error("Owner supremacy feeBps mismatch with recap fee configuration.");
+  }
+
+  if (dossier.crossChecks.mintedRecap !== recap.minted.length) {
+    throw new Error("Owner supremacy mintedRecap count mismatch.");
+  }
+  if (dossier.crossChecks.mintedLedger !== ledger.minted.length) {
+    throw new Error("Owner supremacy mintedLedger count mismatch.");
+  }
+  if (!dossier.crossChecks.mintedMatch) {
+    throw new Error("Owner supremacy mintedMatch assertion failed.");
+  }
+  if (!Array.isArray(dossier.crossChecks.onchainOwnership)) {
+    throw new Error("Owner supremacy onchainOwnership missing.");
+  }
+  if (dossier.crossChecks.onchainOwnership.length !== recap.minted.length) {
+    throw new Error("Owner supremacy on-chain ownership length mismatch.");
+  }
+  const ledgerIds = new Set(ledger.minted.map((entry) => entry.tokenId));
+  for (const record of dossier.crossChecks.onchainOwnership) {
+    if (!ledgerIds.has(record.tokenId)) {
+      throw new Error(`Owner supremacy references unknown token ${record.tokenId}.`);
+    }
+    if (!record.owner || record.owner.length < 10) {
+      throw new Error(`Owner supremacy ownership entry missing owner for token ${record.tokenId}.`);
+    }
+  }
+  if (!dossier.crossChecks.treasuryBalance || Number.isNaN(Number(dossier.crossChecks.treasuryBalance))) {
+    throw new Error("Owner supremacy treasuryBalance missing or invalid.");
+  }
+  if (dossier.crossChecks.sentinelPauses !== ledger.sentinelPause.length) {
+    throw new Error("Owner supremacy sentinelPauses count mismatch.");
+  }
+  if (dossier.crossChecks.ownerResumes !== ledger.ownerResume.length) {
+    throw new Error("Owner supremacy ownerResumes count mismatch.");
+  }
+
+  const controlEntries = controlMatrix.contracts ?? [];
+  const controlByName = new Map(controlEntries.map((entry) => [entry.name, entry]));
+  if (!Array.isArray(dossier.controls) || dossier.controls.length !== controlByName.size) {
+    throw new Error("Owner supremacy controls set mismatch.");
+  }
+  for (const control of dossier.controls) {
+    const matrixEntry = controlByName.get(control.name);
+    if (!matrixEntry) {
+      throw new Error(`Owner supremacy control ${control.name} not present in control matrix.`);
+    }
+    if (!addressesEqual(control.address, matrixEntry.address)) {
+      throw new Error(`Owner supremacy control address mismatch for ${control.name}.`);
+    }
+    if (!addressesEqual(control.owner, matrixEntry.owner)) {
+      throw new Error(`Owner supremacy control owner mismatch for ${control.name}.`);
+    }
+    const matrixHooks = new Set((matrixEntry.configurable ?? []).map((hook) => hook.toLowerCase()));
+    for (const hook of control.hooks) {
+      if (!matrixHooks.has(hook.toLowerCase())) {
+        throw new Error(`Owner supremacy control hook ${hook} missing from control matrix for ${control.name}.`);
+      }
+    }
+    if (matrixEntry.systemPause && !addressesEqual(control.sentinel ?? undefined, matrixEntry.systemPause)) {
+      throw new Error(`Owner supremacy sentinel mismatch for ${control.name}.`);
+    }
+  }
+
+  if (!Array.isArray(dossier.assertions) || dossier.assertions.length === 0) {
+    throw new Error("Owner supremacy dossier missing assertions content.");
   }
 }
 
@@ -1011,7 +1177,7 @@ async function main() {
   validateRecapStats(recap);
   console.log("✅ Recap stats block cross-checked against minted ledger.");
 
-  await verifyLedger(recap);
+  const ledger = await verifyLedger(recap);
   console.log("✅ Foresight ledger validated against recap and transaction hashes.");
 
   await verifyMarkdown();
@@ -1020,8 +1186,11 @@ async function main() {
   await verifyHtml();
   console.log("✅ Executive HTML dashboard verified.");
 
-  await verifyControlMatrix();
+  const controlMatrix = await verifyControlMatrix();
   console.log("✅ Owner control matrix verified.");
+
+  await verifyOwnerSupremacy(recap, ledger, controlMatrix);
+  console.log("✅ Owner supremacy dossier aligned with ledger and governance controls.");
 
   await verifyMermaidFiles(recap.minted);
   console.log("✅ Mermaid schematics verified.");

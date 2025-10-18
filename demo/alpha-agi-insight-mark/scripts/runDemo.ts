@@ -25,6 +25,37 @@ type ScenarioConfig = {
   scenarios: InsightScenario[];
 };
 
+type OwnerSupremacyControl = {
+  name: string;
+  address: string;
+  owner: string;
+  sentinel: string | null;
+  hooks: string[];
+};
+
+type OwnerSupremacyCrossCheck = {
+  mintedRecap: number;
+  mintedLedger: number;
+  mintedMatch: boolean;
+  onchainOwnership: Array<{ tokenId: string; owner: string }>;
+  treasuryBalance: string;
+  sentinelPauses: number;
+  ownerResumes: number;
+};
+
+type OwnerSupremacyDossier = {
+  generatedAt: string;
+  network: { chainId: string; name: string };
+  owner: string;
+  sentinel: string;
+  oracle: string;
+  treasury: string;
+  feeBps: number;
+  controls: OwnerSupremacyControl[];
+  crossChecks: OwnerSupremacyCrossCheck;
+  assertions: string[];
+};
+
 const reportsDir = path.join(__dirname, "..", "reports");
 const defaultScenarioFile = path.join(__dirname, "..", "data", "insight-scenarios.json");
 const ledgerFileName = "insight-ledger.json";
@@ -613,12 +644,29 @@ async function main() {
   const agencyOrbitPath = path.join(reportsDir, "insight-agency-orbit.mmd");
   const lifecyclePath = path.join(reportsDir, "insight-lifecycle.mmd");
   const ledgerPath = path.join(reportsDir, ledgerFileName);
+  const ownerSupremacyPath = path.join(reportsDir, "insight-owner-supremacy.json");
+  const ownerLatticePath = path.join(reportsDir, "insight-owner-lattice.mmd");
   const manifestPath = path.join(reportsDir, "insight-manifest.json");
 
   const scenarioRelativePath = path
     .relative(path.join(__dirname, ".."), scenarioPath)
     .replace(/\\/g, "/");
   const scenarioHash = sha256(await readFile(scenarioPath));
+
+  const onchainOwnership = await Promise.all(
+    minted.map(async (entry) => {
+      const ownerAddress = await novaSeed.ownerOf(BigInt(entry.tokenId));
+      if (!addressEquals(ownerAddress, entry.finalCustodian)) {
+        throw new Error(
+          `Custody mismatch for token ${entry.tokenId}: recorded ${entry.finalCustodian}, on-chain ${ownerAddress}.`
+        );
+      }
+      return { tokenId: entry.tokenId, owner: ownerAddress };
+    }),
+  );
+
+  const treasuryBalanceRaw = await accessToken.balanceOf(exchangeTreasury);
+  const treasuryBalance = ethers.formatUnits(treasuryBalanceRaw, 18);
 
   const mintedByOwnerCount = minted.filter((entry) => entry.mintedBy.toLowerCase() === operator.address.toLowerCase()).length;
   const delegatedMintCount = minted.length - mintedByOwnerCount;
@@ -1722,6 +1770,111 @@ ${htmlRows}
     ownerResume: ownerResumeTransactions,
   };
 
+  const ledgerTokenIds = new Set(ledger.minted.map((entry) => entry.tokenId));
+  const mintedTokenIds = minted.map((entry) => entry.tokenId);
+  const mintedMatchesLedger =
+    mintedTokenIds.length === ledgerTokenIds.size && mintedTokenIds.every((tokenId) => ledgerTokenIds.has(tokenId));
+  if (!mintedMatchesLedger) {
+    throw new Error("Minted insight set does not align with ledger entries.");
+  }
+  if (onchainOwnership.length !== minted.length) {
+    throw new Error("On-chain ownership cross-check incomplete.");
+  }
+
+  const ownerSupremacy: OwnerSupremacyDossier = {
+    generatedAt: new Date().toISOString(),
+    network: { chainId: network.chainId.toString(), name: network.name },
+    owner: operator.address,
+    sentinel: strategist.address,
+    oracle: oracle.address,
+    treasury: exchangeTreasury,
+    feeBps: exchangeFeeBpsNumber,
+    controls: controlMatrix.contracts.map((entry) => ({
+      name: entry.name,
+      address: entry.address,
+      owner: entry.owner,
+      sentinel: entry.systemPause ?? null,
+      hooks: entry.configurable,
+    })),
+    crossChecks: {
+      mintedRecap: minted.length,
+      mintedLedger: ledger.minted.length,
+      mintedMatch: mintedMatchesLedger,
+      onchainOwnership,
+      treasuryBalance,
+      sentinelPauses: sentinelPauseTransactions.length,
+      ownerResumes: ownerResumeTransactions.length,
+    },
+    assertions: [
+      `Owner ${operator.address} can rotate oracle ${oracle.address}, treasury ${exchangeTreasury}, and sentinel ${strategist.address} through dedicated setters.`,
+      `Fee regime enforced at ${exchangeFeeBpsNumber} bps with immediate recalibration via setFeeBps(uint96).`,
+      `On-chain custody verification confirms ${minted.length} / ${minted.length} Nova-Seeds tracked by the ledger.`,
+    ],
+  };
+
+  const supremacyLines: string[] = [
+    "flowchart TD",
+    `    owner((Owner\\n${shortenAddress(operator.address)})):::owner`,
+    `    sentinel((Sentinel\\n${shortenAddress(strategist.address)})):::sentinel`,
+    `    oracleNode((Oracle\\n${shortenAddress(oracle.address)})):::oracle`,
+    `    treasuryNode((Treasury\\n${shortenAddress(exchangeTreasury)})):::treasury`,
+    `    novaNode[\"α-AGI Nova-Seed\\n${shortenAddress(novaSeedAddress)}\"]:::contract`,
+    `    exchangeNode[\"α-AGI MARK Exchange\\n${shortenAddress(exchangeAddress)}\"]:::contract`,
+    `    settlementNode[\"Insight Access Token\\n${shortenAddress(settlementTokenAddress)}\"]:::contract`,
+    `    owner -->|Controls| novaNode`,
+    `    owner -->|Controls| exchangeNode`,
+    `    owner -->|Controls| settlementNode`,
+    `    owner -.setOracle().-> oracleNode`,
+    `    owner -.setTreasury().-> treasuryNode`,
+    `    owner -.setSystemPause().-> sentinel`,
+    `    sentinel -->|pause()| novaNode`,
+    `    sentinel -->|pause()| exchangeNode`,
+    `    sentinel -->|pause()| settlementNode`,
+    `    owner -.unpause().-> sentinel`,
+    `    oracleNode -.resolvePrediction().-> exchangeNode`,
+    `    exchangeNode -->|fee flow| treasuryNode`,
+  ];
+
+  const supremacyCustodians = new Map<string, string>();
+  function ensureSupremacyCustodian(address: string): string {
+    const key = address.toLowerCase();
+    const cached = supremacyCustodians.get(key);
+    if (cached) {
+      return cached;
+    }
+    const nodeId = toMermaidId(address, "cust");
+    supremacyLines.push(`    ${nodeId}((Custodian\\n${shortenAddress(address)})):::custody`);
+    supremacyCustodians.set(key, nodeId);
+    return nodeId;
+  }
+
+  for (const entry of minted) {
+    const seedNode = toMermaidId(`Seed_${entry.tokenId}`, `seed${entry.tokenId}`);
+    const statusLabel = `${formatTitleCase(entry.status)} → ${shortenAddress(entry.finalCustodian)}`;
+    supremacyLines.push(`    ${seedNode}[\"Nova-Seed #${entry.tokenId}\\n${escapeMermaidLabel(entry.scenario.sector)}\"]:::asset`);
+    supremacyLines.push(`    novaNode -->|Forge| ${seedNode}`);
+    const custodyNode = ensureSupremacyCustodian(entry.finalCustodian);
+    supremacyLines.push(`    ${seedNode} -->|${escapeMermaidLabel(statusLabel)}| ${custodyNode}`);
+    if (entry.status === "LISTED" || entry.status === "SOLD") {
+      supremacyLines.push(`    ${seedNode} -.Market-.-> exchangeNode`);
+    }
+    if (entry.status === "FORCE_DELISTED") {
+      supremacyLines.push(`    owner -.forceDelist().-> ${seedNode}`);
+    }
+  }
+
+  supremacyLines.push(
+    "    classDef owner fill:#051937,stroke:#8de4ff,color:#e9f7ff;",
+    "    classDef sentinel fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;",
+    "    classDef oracle fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;",
+    "    classDef treasury fill:#0f2a3f,stroke:#6ae6ff,color:#ebfbff;",
+    "    classDef contract fill:#162a4d,stroke:#7bdfff,color:#f3fbff;",
+    "    classDef asset fill:#1e3a5f,stroke:#ffd166,color:#fff9e6;",
+    "    classDef custody fill:#2b1d42,stroke:#f38eb0,color:#fff0fa;",
+  );
+
+  const ownerSupremacyMermaid = supremacyLines.join("\n");
+
   await writeFile(recapPath, JSON.stringify(recap, null, 2));
   await writeFile(reportPath, markdown);
   await writeFile(matrixPath, JSON.stringify(controlMatrix, null, 2));
@@ -1737,6 +1890,8 @@ ${htmlRows}
   await writeFile(agencyOrbitPath, agencyOrbitMermaid);
   await writeFile(lifecyclePath, lifecycleMermaid);
   await writeFile(ledgerPath, JSON.stringify(ledger, null, 2));
+  await writeFile(ownerSupremacyPath, JSON.stringify(ownerSupremacy, null, 2));
+  await writeFile(ownerLatticePath, ownerSupremacyMermaid);
 
   const manifestEntries: { path: string; sha256: string }[] = [];
   for (const file of [
@@ -1755,6 +1910,8 @@ ${htmlRows}
     agencyOrbitPath,
     lifecyclePath,
     ledgerPath,
+    ownerSupremacyPath,
+    ownerLatticePath,
   ]) {
     const content = await readFile(file);
     const relativePath = path.relative(path.join(__dirname, ".."), file);
