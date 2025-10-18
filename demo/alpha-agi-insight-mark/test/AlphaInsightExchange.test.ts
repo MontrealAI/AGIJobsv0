@@ -127,4 +127,30 @@ describe("AlphaInsightExchange", () => {
     expect(record.notes).to.equal("Finance rupture confirmed");
     expect(record.resolver).to.equal(oracle.address);
   });
+
+  it("enforces pause guardianship and configuration constraints", async () => {
+    await exchange.setSystemPause(seller.address);
+
+    await expect(exchange.connect(buyer).pause()).to.be.revertedWith("NOT_AUTHORIZED");
+
+    await exchange.connect(seller).pause();
+    await expect(exchange.connect(seller).unpause())
+      .to.be.revertedWithCustomError(exchange, "OwnableUnauthorizedAccount")
+      .withArgs(seller.address);
+    await exchange.unpause();
+
+    await expect(exchange.forceDelist(1n, owner.address)).to.be.revertedWith("NOT_LISTED");
+
+    await expect(exchange.setFeeBps(2500)).to.be.revertedWith("FEE_TOO_HIGH");
+    await expect(exchange.setPaymentToken(ethers.ZeroAddress)).to.be.revertedWith("TOKEN_REQUIRED");
+  });
+
+  it("prevents duplicate oracle resolution", async () => {
+    await exchange.setOracle(oracle.address);
+    await exchange.connect(oracle).resolvePrediction(1n, true, "Finance rupture confirmed");
+
+    await expect(exchange.connect(oracle).resolvePrediction(1n, false, "Duplicate attempt")).to.be.revertedWith(
+      "ALREADY_RESOLVED"
+    );
+  });
 });

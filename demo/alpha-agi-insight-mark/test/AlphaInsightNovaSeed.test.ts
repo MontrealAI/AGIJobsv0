@@ -128,6 +128,19 @@ describe("AlphaInsightNovaSeed", () => {
     await contract.mintInsight(alice.address, sampleInput());
   });
 
+  it("blocks unauthorized pause and sentinel unpause attempts", async () => {
+    await contract.setSystemPause(alice.address);
+
+    await expect(contract.connect(bob).pause()).to.be.revertedWith("NOT_AUTHORIZED");
+
+    await contract.connect(alice).pause();
+    await expect(contract.connect(alice).unpause())
+      .to.be.revertedWithCustomError(contract, "OwnableUnauthorizedAccount")
+      .withArgs(alice.address);
+
+    await contract.unpause();
+  });
+
   it("prevents blank metadata", async () => {
     await expect(contract.mintInsight(alice.address, sampleInput({ sector: "" }))).to.be.revertedWith("SECTOR_REQUIRED");
     await expect(contract.mintInsight(alice.address, sampleInput({ thesis: "" }))).to.be.revertedWith("THESIS_REQUIRED");

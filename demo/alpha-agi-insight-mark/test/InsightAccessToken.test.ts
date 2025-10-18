@@ -30,4 +30,17 @@ describe("InsightAccessToken", () => {
     await token.transfer(recipient.address, ethers.parseUnits("10", 18));
     expect(await token.balanceOf(recipient.address)).to.equal(ethers.parseUnits("10", 18));
   });
+
+  it("prevents unauthorized pause and sentinel unpause attempts", async () => {
+    await token.setSystemPause(sentinel.address);
+
+    await expect(token.connect(recipient).pause()).to.be.revertedWith("NOT_AUTHORIZED");
+
+    await token.connect(sentinel).pause();
+    await expect(token.connect(sentinel).unpause())
+      .to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount")
+      .withArgs(sentinel.address);
+
+    await token.unpause();
+  });
 });
