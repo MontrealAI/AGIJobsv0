@@ -53,6 +53,38 @@ graph LR
 
 The diagram highlights how a single mission intent fans out across specialised hubs, while wallet-connected users and contract owners retain end-to-end authority.
 
+### Commit–reveal validation cadence (Mermaid)
+
+```mermaid
+sequenceDiagram
+    participant Employer
+    participant JobRegistry
+    participant Validators
+    participant StakeManager
+    participant ValidationModule
+    participant Owner
+
+    Employer->>JobRegistry: createJob(reward, deadline, specHash, uri)
+    Note over Employer,JobRegistry: Wallet signs & funds reward escrow
+    JobRegistry-->>Validators: emit JobCreated(id)
+    Validators->>StakeManager: depositStake(role=validator)
+    StakeManager-->>Validators: stake receipt / eligibility
+    loop Commit window
+        Validators->>ValidationModule: commitValidation(jobId, hash, subdomain, proof)
+        Note over Validators,ValidationModule: Salted approvals sealed on-chain
+    end
+    loop Reveal window
+        Validators->>ValidationModule: revealValidation(jobId, approve, salt)
+    end
+    ValidationModule->>ValidationModule: finalize(jobId)
+    ValidationModule-->>Employer: emit JobFinalized
+    Owner->>ValidationModule: pause()/setCommitRevealWindows() [if needed]
+    Owner->>StakeManager: adjustMinStake()/setDisputeModule()
+    Note over Owner,ValidationModule: Governance can intervene instantly via wallet or multisig
+```
+
+This timeline gives non-technical operators and owners a visceral map of how validators stake, commit, reveal, and how governance can pause or retune parameters at any point.
+
 ## Features
 
 - **Mission playbooks** that instantiate multi-step campaigns (e.g., decarbonisation, pandemic response) spanning distinct hubs with a single wallet flow.
