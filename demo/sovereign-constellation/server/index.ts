@@ -219,6 +219,49 @@ type AsiVictoryPlan = {
   };
 };
 
+type SuperintelligenceCapability = {
+  id: string;
+  title: string;
+  description: string;
+  operatorFocus: string;
+  ownerAuthority: string;
+  autonomyLoop: string;
+  proof: string[];
+};
+
+type SuperintelligenceOwnerControl = {
+  module: string;
+  method: string;
+  impact: string;
+  command: string;
+  verification: string;
+};
+
+type SuperintelligenceAutomation = {
+  label: string;
+  command: string;
+  effect: string;
+};
+
+type SuperintelligenceSignal = {
+  signal: string;
+  description: string;
+  source: string;
+};
+
+type AsiSuperintelligence = {
+  summary: {
+    headline: string;
+    valueProposition: string;
+    outcome: string;
+    nonTechnicalPromise: string;
+  };
+  capabilities: SuperintelligenceCapability[];
+  ownerControls: SuperintelligenceOwnerControl[];
+  automation: SuperintelligenceAutomation[];
+  readinessSignals: SuperintelligenceSignal[];
+};
+
 const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 const computeAutotunePlan = untypedComputeAutotunePlan as AutotuneLib["computeAutotunePlan"];
 const buildOwnerCommandMatrix = untypedBuildOwnerCommandMatrix as OwnerMatrixLib["buildOwnerCommandMatrix"];
@@ -243,6 +286,7 @@ const asiDeck = loadJson<AsiDeck>("config/asiTakesOffMatrix.json");
 const asiSystems = loadJson<AsiSystem[]>("config/asiTakesOffSystems.json");
 const asiVictoryPlan = loadJson<AsiVictoryPlan>("config/asiTakesOffVictoryPlan.json");
 const asiOwnerMatrix = loadJson<OwnerMatrixEntry[]>("config/asiTakesOffOwnerMatrix.json");
+const asiSuperintelligence = loadJson<AsiSuperintelligence>("config/asiTakesOffSuperintelligence.json");
 
 type ConstellationContext = {
   uiConfig: UiConfig;
@@ -254,6 +298,7 @@ type ConstellationContext = {
   asiSystems: AsiSystem[];
   asiVictoryPlan: AsiVictoryPlan;
   asiOwnerMatrix: OwnerMatrixEntry[];
+  asiSuperintelligence: AsiSuperintelligence;
 };
 
 const defaultContext: ConstellationContext = {
@@ -265,7 +310,8 @@ const defaultContext: ConstellationContext = {
   asiDeck,
   asiSystems,
   asiVictoryPlan,
-  asiOwnerMatrix
+  asiOwnerMatrix,
+  asiSuperintelligence
 };
 
 const jobAbi = [
@@ -355,6 +401,22 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
   app.get("/constellation/asi-takes-off/systems", (_req, res) =>
     res.json({ systems: ctx.asiSystems })
   );
+  app.get("/constellation/asi-takes-off/superintelligence", (_req, res) => {
+    const atlas = buildOwnerAtlas(ctx.hubs, ctx.uiConfig);
+    const matrix = buildOwnerCommandMatrix(ctx.asiOwnerMatrix, atlas);
+    const telemetry = loadTelemetry();
+    const plan = computeAutotunePlan(telemetry, { mission: ctx.asiDeck.mission?.id ?? "asi-takes-off" });
+    return res.json({
+      summary: ctx.asiSuperintelligence.summary,
+      capabilities: ctx.asiSuperintelligence.capabilities,
+      ownerControls: ctx.asiSuperintelligence.ownerControls,
+      automation: ctx.asiSuperintelligence.automation,
+      readinessSignals: ctx.asiSuperintelligence.readinessSignals,
+      ownerAtlas: atlas,
+      ownerMatrix: matrix,
+      autotunePlan: plan
+    });
+  });
 
   app.post("/constellation/:hub/tx/create", (req, res) => {
     const hub = getHub(ctx, req.params.hub);

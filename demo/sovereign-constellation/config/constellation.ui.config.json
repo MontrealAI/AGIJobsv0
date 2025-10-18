@@ -78,6 +78,10 @@
         {
           "label": "Compute thermostat plan",
           "run": "npm run demo:sovereign-constellation:plan"
+        },
+        {
+          "label": "Review superintelligence assurance",
+          "run": "npm run demo:sovereign-constellation:superintelligence"
         }
       ],
       "successSignal": "reports/sovereign-constellation contains owner-atlas.md and autotune-plan.json summarising every control lever and recommended updates.",
