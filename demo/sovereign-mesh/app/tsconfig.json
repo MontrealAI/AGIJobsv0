@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "useDefineForClassFields": true,
     "module": "ESNext",
     "moduleResolution": "NodeNext",
-    "strict": true,
     "jsx": "react-jsx",
+    "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["vite/client"]
   },
   "include": ["src"],
-  "references": []
+  "exclude": ["node_modules", "dist"]
 }

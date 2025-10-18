@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
+    "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
     "strict": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["index.ts"],
-  "ts-node": {
-    "esm": true
-  }
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
 }

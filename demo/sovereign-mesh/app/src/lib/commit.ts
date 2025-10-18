@@ -1,9 +1,9 @@
 import { ethers } from "ethers";
 
 export const computeCommit = (approve: boolean, salt?: string) => {
-  const s = salt && salt.startsWith("0x") ? salt : ethers.hexlify(ethers.randomBytes(32));
+  const resolvedSalt = salt && salt.startsWith("0x") ? salt : ethers.hexlify(ethers.randomBytes(32));
   const commitHash = ethers.keccak256(
-    ethers.solidityPacked(["bool", "bytes32"], [!!approve, s])
+    ethers.solidityPacked(["bool", "bytes32"], [approve, resolvedSalt])
   );
-  return { commitHash, salt: s };
+  return { commitHash, salt: resolvedSalt };
 };

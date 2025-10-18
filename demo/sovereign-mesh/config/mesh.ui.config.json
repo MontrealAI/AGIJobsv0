@@ -3,9 +3,5 @@
   "etherscanBase": "https://etherscan.io",
   "defaultSubgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2",
   "orchestratorBase": "http://localhost:8084",
-  "hubs": [
-    "public-research",
-    "industrial-ops",
-    "civic-governance"
-  ]
+  "hubs": ["public-research", "industrial-ops", "civic-governance"]
 }

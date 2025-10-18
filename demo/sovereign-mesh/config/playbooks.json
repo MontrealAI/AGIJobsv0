@@ -2,53 +2,23 @@
   {
     "id": "decarbonize-port-city",
     "name": "Mission: Decarbonize Port City",
+    "description": "Coordinate foresight, research, optimization, and policy knowledge to decarbonize a major logistics hub.",
     "steps": [
-      {
-        "hub": "foresight@civic-governance",
-        "rewardWei": "1500000000000000000",
-        "uri": "ipfs://playbook/foresight/port-emissions"
-      },
-      {
-        "hub": "research@public-research",
-        "rewardWei": "3000000000000000000",
-        "uri": "ipfs://playbook/research/abatement-options"
-      },
-      {
-        "hub": "optimization@industrial-ops",
-        "rewardWei": "2500000000000000000",
-        "uri": "ipfs://playbook/optimization/logistics-plan"
-      },
-      {
-        "hub": "knowledge@public-research",
-        "rewardWei": "1000000000000000000",
-        "uri": "ipfs://playbook/knowledge/policy-brief"
-      }
+      { "hub": "foresight@civic-governance", "rewardWei": "1500000000000000000", "uri": "ipfs://playbook/foresight/port-emissions" },
+      { "hub": "research@public-research",  "rewardWei": "3000000000000000000", "uri": "ipfs://playbook/research/abatement-options" },
+      { "hub": "optimization@industrial-ops","rewardWei": "2500000000000000000", "uri": "ipfs://playbook/optimization/logistics-plan" },
+      { "hub": "knowledge@public-research", "rewardWei": "1000000000000000000", "uri": "ipfs://playbook/knowledge/policy-brief" }
     ]
   },
   {
     "id": "pandemic-watch",
     "name": "Mission: Pandemic Watch",
+    "description": "Coordinate global sentinel, research, and supply chain responses for emerging biological risks.",
     "steps": [
-      {
-        "hub": "foresight@civic-governance",
-        "rewardWei": "1200000000000000000",
-        "uri": "ipfs://playbook/foresight/epi-signal-detection"
-      },
-      {
-        "hub": "research@public-research",
-        "rewardWei": "2200000000000000000",
-        "uri": "ipfs://playbook/research/variant-analysis"
-      },
-      {
-        "hub": "optimization@industrial-ops",
-        "rewardWei": "1800000000000000000",
-        "uri": "ipfs://playbook/optimization/supply-allocation"
-      },
-      {
-        "hub": "knowledge@public-research",
-        "rewardWei": "900000000000000000",
-        "uri": "ipfs://playbook/knowledge/public-advisory"
-      }
+      { "hub": "foresight@civic-governance", "rewardWei": "1200000000000000000", "uri": "ipfs://playbook/foresight/epi-signal-detection" },
+      { "hub": "research@public-research",  "rewardWei": "2200000000000000000", "uri": "ipfs://playbook/research/variant-analysis" },
+      { "hub": "optimization@industrial-ops","rewardWei": "1800000000000000000", "uri": "ipfs://playbook/optimization/supply-allocation" },
+      { "hub": "knowledge@public-research", "rewardWei": "900000000000000000",  "uri": "ipfs://playbook/knowledge/public-advisory" }
     ]
   }
 ]

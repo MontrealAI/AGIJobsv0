@@ -1,21 +1,23 @@
 {
-  "name": "sovereign-mesh-server",
-  "version": "1.0.0",
+  "name": "sovereign-mesh-orchestrator",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "dev": "ts-node-esm index.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "ethers": "^6.11.1",
-    "express": "^4.19.2"
+    "cors": "^2.8.5",
+    "ethers": "^6.15.0",
+    "express": "^4.21.2"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
-    "@types/node": "^20.11.30",
-    "ts-node": "^10.9.2",
+    "@types/node": "^20.17.6",
+    "tsx": "^4.19.1",
     "typescript": "^5.6.3"
   }
 }
