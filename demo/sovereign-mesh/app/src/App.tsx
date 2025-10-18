@@ -21,8 +21,30 @@ interface HubInfo {
   addresses: HubAddresses;
 }
 
+const envOrchestratorBase = (
+  import.meta as unknown as { env?: Record<string, string | undefined> }
+).env?.VITE_ORCHESTRATOR_BASE;
+
+const defaultOrchestratorBase =
+  (typeof window !== "undefined" &&
+    (window as any).__SOVEREIGN_MESH_ORCHESTRATOR_BASE__) ||
+  envOrchestratorBase ||
+  "http://localhost:8084";
+
+const resolveUrl = (path: string) => {
+  if (/^https?:\/\//.test(path)) {
+    return path;
+  }
+  if (path.startsWith("/mesh/")) {
+    const base = defaultOrchestratorBase.replace(/\/$/, "");
+    return `${base}${path}`;
+  }
+  return path;
+};
+
 const fetchJson = async (path: string, init?: RequestInit) => {
-  const res = await fetch(path, {
+  const url = resolveUrl(path);
+  const res = await fetch(url, {
     headers: { "content-type": "application/json" },
     ...init
   });
@@ -34,7 +56,7 @@ const fetchJson = async (path: string, init?: RequestInit) => {
 
 export default function App() {
   const [cfg, setCfg] = useState<Config>();
-  const [apiBase, setApiBase] = useState<string>("");
+  const [apiBase, setApiBase] = useState<string>(defaultOrchestratorBase);
   const [hubMap, setHubMap] = useState<Record<string, HubInfo>>({});
   const [hubKeys, setHubKeys] = useState<string[]>([]);
   const [address, setAddress] = useState<string>();
@@ -52,14 +74,14 @@ export default function App() {
     fetchJson("/mesh/config")
       .then((config) => {
         setCfg(config);
-        setApiBase(config.orchestratorBase ?? "");
+        setApiBase(config.orchestratorBase ?? defaultOrchestratorBase);
       })
       .catch(console.error);
   }, []);
 
   useEffect(() => {
     if (!cfg) return;
-    const base = cfg.orchestratorBase ?? "";
+    const base = cfg.orchestratorBase ?? defaultOrchestratorBase;
     fetchJson(`${base}/mesh/hubs`).then((data) => {
       setHubMap(data.hubs ?? {});
       setHubKeys(Object.keys(data.hubs ?? {}));
