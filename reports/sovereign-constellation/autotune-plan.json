@@ -1,0 +1,50 @@
+{
+  "summary": {
+    "averageParticipation": 0.7067,
+    "commitWindowSeconds": 5040,
+    "revealWindowSeconds": 2250,
+    "minStakeWei": "2400000000000000000",
+    "actionsRecommended": 4,
+    "avgRevealLatencySeconds": 1403.33,
+    "avgCommitLatencySeconds": 860,
+    "notes": [
+      "Extended commit/reveal windows to absorb validator throughput variance.",
+      "Raised minimum stake to increase validator collateral coverage.",
+      "Prepared dispute module rotation using telemetry recommendation.",
+      "Telemetry flagged hubs requiring immediate pause commands."
+    ]
+  },
+  "actions": [
+    {
+      "action": "validation.setCommitRevealWindows",
+      "hubs": "*",
+      "commitWindowSeconds": 5040,
+      "revealWindowSeconds": 2250,
+      "reason": "Average validator participation 0.71 below 0.75"
+    },
+    {
+      "action": "stakeManager.setMinStake",
+      "hubs": "*",
+      "minStakeWei": "2400000000000000000",
+      "reason": "Detected 2 slashing events exceeding threshold 1"
+    },
+    {
+      "action": "jobRegistry.setDisputeModule",
+      "hubs": "*",
+      "module": "0x0000000000000000000000000000000000000005",
+      "reason": "Telemetry recommends escalation-grade dispute module"
+    },
+    {
+      "action": "systemPause.pause",
+      "hub": "athena-governance",
+      "reason": "Critical telemetry alert"
+    }
+  ],
+  "analytics": {
+    "totalMissions": 3,
+    "totalSlashingEvents": 2,
+    "criticalAlerts": 1,
+    "participationLower": 0.75,
+    "participationUpper": 0.95
+  }
+}

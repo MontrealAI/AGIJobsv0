@@ -89,6 +89,38 @@ type PlanTx = {
   };
 };
 
+type AutotuneAction = {
+  action: string;
+  hub?: string;
+  hubs?: string | string[];
+  commitWindowSeconds?: number;
+  revealWindowSeconds?: number;
+  minStakeWei?: string;
+  module?: string;
+  reason: string;
+};
+
+type AutotunePlan = {
+  summary: {
+    averageParticipation: number;
+    commitWindowSeconds: number;
+    revealWindowSeconds: number;
+    minStakeWei: string;
+    actionsRecommended: number;
+    avgRevealLatencySeconds: number;
+    avgCommitLatencySeconds: number;
+    notes: string[];
+  };
+  actions: AutotuneAction[];
+  analytics: {
+    totalMissions: number;
+    totalSlashingEvents: number;
+    criticalAlerts: number;
+    participationLower: number;
+    participationUpper: number;
+  };
+};
+
 const envOrchestratorBase = (
   (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}
 ).VITE_ORCHESTRATOR_BASE;
@@ -149,10 +181,31 @@ export default function App() {
   const [address, setAddress] = useState<string>();
   const [planPreview, setPlanPreview] = useState<{ playbook?: Playbook; txs: PlanTx[] }>({ txs: [] });
   const [ownerAtlas, setOwnerAtlas] = useState<OwnerHub[]>([]);
+  const [autotunePlan, setAutotunePlan] = useState<AutotunePlan>();
+  const [commitWindowSeconds, setCommitWindowSeconds] = useState("3600");
+  const [revealWindowSeconds, setRevealWindowSeconds] = useState("1800");
+  const [minStakeWeiInput, setMinStakeWeiInput] = useState("2000000000000000000");
+  const [disputeModuleAddress, setDisputeModuleAddress] = useState("");
+  const [ownershipModule, setOwnershipModule] = useState<string>("");
+  const [newOwnerAddress, setNewOwnerAddress] = useState("");
 
   const orchestratorBase = useMemo(
     () => (cfg?.orchestratorBase || defaultOrchestratorBase).replace(/\/$/, ""),
     [cfg]
+  );
+
+  const ownerModuleDetails = useMemo(
+    () => {
+      if (!selectedHub) {
+        return [] as { module: string; address: string }[];
+      }
+      const hub = ownerAtlas.find((item) => item.hubId === selectedHub);
+      if (!hub || !Array.isArray(hub.modules)) {
+        return [] as { module: string; address: string }[];
+      }
+      return hub.modules.map((module) => ({ module: module.module, address: module.address }));
+    },
+    [ownerAtlas, selectedHub]
   );
 
   useEffect(() => {
@@ -194,6 +247,13 @@ export default function App() {
         }
       })
       .catch((err) => console.error(err));
+    fetchJson("/constellation/thermostat/plan", undefined, orchestratorBase)
+      .then((plan) => {
+        if (plan && typeof plan === "object") {
+          setAutotunePlan(plan as AutotunePlan);
+        }
+      })
+      .catch((err) => console.error(err));
   }, [orchestratorBase]);
 
   const selectedHubInfo = selectedHub ? hubMap[selectedHub] : undefined;
@@ -229,6 +289,31 @@ export default function App() {
   useEffect(() => {
     refreshJobs();
   }, [refreshJobs]);
+
+  useEffect(() => {
+    if (!autotunePlan) {
+      return;
+    }
+    if (autotunePlan.summary?.commitWindowSeconds) {
+      setCommitWindowSeconds(String(autotunePlan.summary.commitWindowSeconds));
+    }
+    if (autotunePlan.summary?.revealWindowSeconds) {
+      setRevealWindowSeconds(String(autotunePlan.summary.revealWindowSeconds));
+    }
+    if (autotunePlan.summary?.minStakeWei) {
+      setMinStakeWeiInput(String(autotunePlan.summary.minStakeWei));
+    }
+    const dispute = autotunePlan.actions?.find((action) => action.action === "jobRegistry.setDisputeModule");
+    if (dispute?.module) {
+      setDisputeModuleAddress(dispute.module);
+    }
+  }, [autotunePlan]);
+
+  useEffect(() => {
+    if (!ownershipModule && ownerModuleDetails.length > 0) {
+      setOwnershipModule(ownerModuleDetails[0].module);
+    }
+  }, [ownerModuleDetails, ownershipModule]);
 
   const connect = useCallback(async (): Promise<string> => {
     const signer = await getSigner();
@@ -361,6 +446,117 @@ export default function App() {
     } catch (error: any) {
       console.error(error);
       alert(`❌ Failed to finalize: ${error?.message ?? "Unknown error"}`);
+    }
+  };
+
+  const updateCommitWindows = async () => {
+    try {
+      const hub = requireHub();
+      const commitSeconds = Number(commitWindowSeconds);
+      const revealSeconds = Number(revealWindowSeconds);
+      if (!Number.isFinite(commitSeconds) || commitSeconds <= 0 || !Number.isFinite(revealSeconds) || revealSeconds <= 0) {
+        alert("Enter positive commit and reveal window durations");
+        return;
+      }
+      const hash = await sendTx(`/constellation/${hub}/tx/validation/commit-window`, {
+        commitWindowSeconds: commitSeconds,
+        revealWindowSeconds: revealSeconds
+      });
+      alert(`✅ Updated commit/reveal windows on ${hub}: ${hash}`);
+    } catch (error: any) {
+      console.error(error);
+      alert(`❌ Failed to update commit/reveal windows: ${error?.message ?? "Unknown error"}`);
+    }
+  };
+
+  const updateMinStake = async () => {
+    try {
+      const hub = requireHub();
+      if (!minStakeWeiInput || BigInt(minStakeWeiInput) <= 0n) {
+        alert("Enter a positive min stake in wei");
+        return;
+      }
+      const hash = await sendTx(`/constellation/${hub}/tx/stake/min`, { minStakeWei: minStakeWeiInput });
+      alert(`✅ Updated minimum stake on ${hub}: ${hash}`);
+    } catch (error: any) {
+      console.error(error);
+      alert(`❌ Failed to update minimum stake: ${error?.message ?? "Unknown error"}`);
+    }
+  };
+
+  const updateDisputeModule = async () => {
+    try {
+      const hub = requireHub();
+      if (!disputeModuleAddress) {
+        alert("Enter a dispute module address");
+        return;
+      }
+      const hash = await sendTx(`/constellation/${hub}/tx/job/dispute-module`, { module: disputeModuleAddress });
+      alert(`✅ Routed dispute module update on ${hub}: ${hash}`);
+    } catch (error: any) {
+      console.error(error);
+      alert(`❌ Failed to update dispute module: ${error?.message ?? "Unknown error"}`);
+    }
+  };
+
+  const transferOwnership = async () => {
+    try {
+      const hub = requireHub();
+      if (!ownershipModule) {
+        alert("Select a module to transfer");
+        return;
+      }
+      if (!newOwnerAddress) {
+        alert("Enter the new owner address");
+        return;
+      }
+      const hash = await sendTx(`/constellation/${hub}/tx/transfer-ownership`, {
+        module: ownershipModule,
+        newOwner: newOwnerAddress
+      });
+      alert(`✅ Ownership transfer initiated on ${hub}: ${hash}`);
+    } catch (error: any) {
+      console.error(error);
+      alert(`❌ Failed to transfer ownership: ${error?.message ?? "Unknown error"}`);
+    }
+  };
+
+  const applyPlanAction = async (action: AutotuneAction) => {
+    try {
+      if (action.action === "validation.setCommitRevealWindows") {
+        if (action.commitWindowSeconds) {
+          setCommitWindowSeconds(String(action.commitWindowSeconds));
+        }
+        if (action.revealWindowSeconds) {
+          setRevealWindowSeconds(String(action.revealWindowSeconds));
+        }
+        await updateCommitWindows();
+        return;
+      }
+      if (action.action === "stakeManager.setMinStake" && action.minStakeWei) {
+        setMinStakeWeiInput(action.minStakeWei);
+        await updateMinStake();
+        return;
+      }
+      if (action.action === "jobRegistry.setDisputeModule" && action.module) {
+        setDisputeModuleAddress(action.module);
+        await updateDisputeModule();
+        return;
+      }
+      if (action.action === "systemPause.pause") {
+        if (action.hub && action.hub !== selectedHub) {
+          alert(`Select hub ${action.hub} to dispatch the pause command.`);
+          return;
+        }
+        const hub = action.hub ?? requireHub();
+        const hash = await sendTx(`/constellation/${hub}/tx/pause`, { action: "pause" });
+        alert(`✅ Pause signal dispatched to ${hub}: ${hash}`);
+        return;
+      }
+      alert("Action type not directly executable. Use owner console to execute manually.");
+    } catch (error: any) {
+      console.error(error);
+      alert(`❌ Failed to apply plan action: ${error?.message ?? "Unknown error"}`);
     }
   };
 
@@ -600,6 +796,58 @@ export default function App() {
         </div>
 
         <div style={cardStyle}>
+          <h2 style={{ marginTop: 0 }}>Thermostat autopilot</h2>
+          <p>
+            Autotune digests telemetry across the constellation and proposes governance actions so the owner can adjust
+            parameters in seconds. Select the relevant hub and apply the recommended actions below.
+          </p>
+          {autotunePlan ? (
+            <div>
+              <div style={{ fontSize: 14, marginBottom: 12 }}>
+                <strong>Average validator participation:</strong> {(autotunePlan.summary.averageParticipation * 100).toFixed(2)}%
+                <br />
+                <strong>Recommended commit/reveal windows:</strong> {autotunePlan.summary.commitWindowSeconds}s / {autotunePlan.summary.revealWindowSeconds}s
+                <br />
+                <strong>Recommended min stake:</strong> {formatAgia(autotunePlan.summary.minStakeWei)}
+              </div>
+              {autotunePlan.summary.notes.length > 0 ? (
+                <ul style={{ fontSize: 13 }}>
+                  {autotunePlan.summary.notes.map((note, idx) => (
+                    <li key={idx}>{note}</li>
+                  ))}
+                </ul>
+              ) : null}
+              <h3 style={{ marginTop: 16 }}>Actions</h3>
+              <ol style={{ fontSize: 14, paddingLeft: 20 }}>
+                {autotunePlan.actions.map((action, idx) => (
+                  <li key={`${action.action}-${idx}`} style={{ marginBottom: 8 }}>
+                    <div>
+                      {(() => {
+                        const scope = action.hub
+                          ? `→ ${action.hub}`
+                          : action.hubs
+                          ? `→ ${Array.isArray(action.hubs) ? action.hubs.join(", ") : action.hubs}`
+                          : "";
+                        return (
+                          <>
+                            <strong>{action.action}</strong> {scope} – {action.reason}
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <button onClick={() => applyPlanAction(action)} style={{ marginTop: 4 }}>
+                      Apply to selected hub
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : (
+            <p>Loading telemetry-driven recommendations…</p>
+          )}
+        </div>
+
+        <div style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>Owner command atlas</h2>
           <p>
             Every module stays under owner control. These links open the explorer write panels so you can pause, retune, or
@@ -632,6 +880,74 @@ export default function App() {
               </details>
             ))}
             {ownerAtlas.length === 0 ? <p>No modules detected yet.</p> : null}
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <h3 style={{ marginTop: 0 }}>Owner controls</h3>
+            <p style={{ fontSize: 13 }}>
+              Choose a hub above, then execute direct governance calls without leaving this console. Inputs are prefilled from
+              the autopilot plan when available.
+            </p>
+            <div style={{ display: "grid", gap: 8 }}>
+              <label>
+                Commit window (seconds)
+                <input
+                  value={commitWindowSeconds}
+                  onChange={(evt) => setCommitWindowSeconds(evt.target.value)}
+                  style={{ marginLeft: 8, width: 140 }}
+                />
+              </label>
+              <label>
+                Reveal window (seconds)
+                <input
+                  value={revealWindowSeconds}
+                  onChange={(evt) => setRevealWindowSeconds(evt.target.value)}
+                  style={{ marginLeft: 8, width: 140 }}
+                />
+              </label>
+              <button onClick={updateCommitWindows}>Update commit/reveal windows</button>
+              <label>
+                Minimum stake (wei)
+                <input
+                  value={minStakeWeiInput}
+                  onChange={(evt) => setMinStakeWeiInput(evt.target.value)}
+                  style={{ marginLeft: 8, width: 220 }}
+                />
+              </label>
+              <button onClick={updateMinStake}>Update minimum stake</button>
+              <label>
+                Dispute module address
+                <input
+                  value={disputeModuleAddress}
+                  onChange={(evt) => setDisputeModuleAddress(evt.target.value)}
+                  style={{ marginLeft: 8, width: "100%" }}
+                />
+              </label>
+              <button onClick={updateDisputeModule}>Rotate dispute module</button>
+              <label>
+                Ownership target
+                <select
+                  value={ownershipModule}
+                  onChange={(evt) => setOwnershipModule(evt.target.value)}
+                  style={{ marginLeft: 8 }}
+                >
+                  <option value="">Select module</option>
+                  {ownerModuleDetails.map((module) => (
+                    <option key={module.module} value={module.module}>
+                      {module.module}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                New owner address
+                <input
+                  value={newOwnerAddress}
+                  onChange={(evt) => setNewOwnerAddress(evt.target.value)}
+                  style={{ marginLeft: 8, width: "100%" }}
+                />
+              </label>
+              <button onClick={transferOwnership}>Transfer ownership</button>
+            </div>
           </div>
         </div>
       </section>
