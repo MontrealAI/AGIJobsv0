@@ -435,26 +435,13 @@ async function main() {
     .replace(/\\/g, "/");
   const scenarioHash = sha256(await readFile(scenarioPath));
 
-  const recap = {
-    generatedAt: new Date().toISOString(),
-    network: { chainId: network.chainId.toString(), name: network.name },
-    contracts: {
-      novaSeed: await novaSeed.getAddress(),
-      foresightExchange: await exchange.getAddress(),
-      settlementToken: await accessToken.getAddress(),
-    },
-    scenarioSource: {
-      path: scenarioRelativePath,
-      sha256: scenarioHash,
-    },
-    operator: operator.address,
-    oracle: oracle.address,
-    systemPause: strategist.address,
-    treasury: await exchange.treasury(),
-    feeBps: Number(await exchange.feeBps()),
-    minted,
-    telemetry,
-  };
+  const mintedByOwnerCount = minted.filter((entry) => entry.mintedBy.toLowerCase() === operator.address.toLowerCase()).length;
+  const delegatedMintCount = minted.length - mintedByOwnerCount;
+  const soldCount = minted.filter((entry) => entry.status === "SOLD").length;
+  const listedCount = minted.filter((entry) => entry.status === "LISTED").length;
+  const forceDelistedCount = minted.filter((entry) => entry.status === "FORCE_DELISTED").length;
+  const sealedCount = minted.filter((entry) => !entry.fusionRevealed).length;
+  const revealedCount = minted.length - sealedCount;
 
   const mintedTotalConfidence = minted.reduce((acc, entry) => acc + entry.scenario.confidence, 0);
   const averageConfidence = minted.length ? mintedTotalConfidence / minted.length : 0;
@@ -473,6 +460,57 @@ async function main() {
   const peakPercent = Math.round(peakConfidence * 100);
   const floorPercent = Math.round(floorConfidence * 100);
   const totalForecastDisplay = `${totalForecastTrillions.toFixed(2)}T`;
+  const forecastValuePrecise = Number(totalForecastTrillions.toFixed(2));
+  const averageConfidencePercent = Number((averageConfidence * 100).toFixed(2));
+  const capabilityPercentPrecise = Number((agiCapabilityIndex * 100).toFixed(2));
+  const peakPercentPrecise = Number((peakConfidence * 100).toFixed(2));
+  const floorPercentPrecise = Number((floorConfidence * 100).toFixed(2));
+
+  const mintedStats = {
+    minted: minted.length,
+    mintedByOwner: mintedByOwnerCount,
+    mintedByDelegates: delegatedMintCount,
+    sold: soldCount,
+    listed: listedCount,
+    forceDelisted: forceDelistedCount,
+    sealed: sealedCount,
+    revealed: revealedCount,
+    averageConfidencePercent,
+    capabilityIndexPercent: capabilityPercentPrecise,
+    confidenceFloorPercent: floorPercentPrecise,
+    confidencePeakPercent: peakPercentPrecise,
+    forecastValueTrillions: forecastValuePrecise,
+    telemetryEntries: telemetry.length,
+  };
+
+  const averageConfidenceSummary = averageConfidencePercent.toFixed(1);
+  const capabilityPercentSummary = capabilityPercentPrecise.toFixed(1);
+  const confidenceFloorSummary = floorPercentPrecise.toFixed(1);
+  const confidencePeakSummary = peakPercentPrecise.toFixed(1);
+  const marketStatusSummary = `${soldCount} sold, ${listedCount} listed, ${forceDelistedCount} sentinel custody`;
+  const fusionPlanSummary = `${revealedCount} revealed, ${sealedCount} sealed`;
+
+  const recap = {
+    generatedAt: new Date().toISOString(),
+    network: { chainId: network.chainId.toString(), name: network.name },
+    contracts: {
+      novaSeed: await novaSeed.getAddress(),
+      foresightExchange: await exchange.getAddress(),
+      settlementToken: await accessToken.getAddress(),
+    },
+    scenarioSource: {
+      path: scenarioRelativePath,
+      sha256: scenarioHash,
+    },
+    operator: operator.address,
+    oracle: oracle.address,
+    systemPause: strategist.address,
+    treasury: await exchange.treasury(),
+    feeBps: Number(await exchange.feeBps()),
+    stats: mintedStats,
+    minted,
+    telemetry,
+  };
 
   const tableRows = minted
     .map((entry) => {
@@ -507,6 +545,12 @@ async function main() {
     `- Confidence band: min ${(floorConfidence * 100).toFixed(1)}% → max ${(peakConfidence * 100).toFixed(1)}%.\\\n` +
     `- Portfolio forecast value: ${totalForecastTrillions.toFixed(2)}T equivalent.\\\n` +
     `- Scenario dataset fingerprint: ${scenarioHash}.\\\n\n` +
+    `## Operational Command Metrics\n` +
+    `- Minted insights: ${minted.length} (owner minted ${mintedByOwnerCount}, delegated minted ${delegatedMintCount}).\\\n` +
+    `- Market state: ${marketStatusSummary}.\\\n` +
+    `- Fusion dossiers: ${fusionPlanSummary}.\\\n` +
+    `- Confidence band: ${confidenceFloorSummary}% → ${confidencePeakSummary}% (avg ${averageConfidenceSummary}%).\\\n` +
+    `- Forecast value tokenised: ${forecastValuePrecise.toFixed(2)}T.\\\n\n` +
     `## Foresight Portfolio Ledger\n` +
     `| Token | Sector | Rupture Year | Thesis | Fusion Plan | Status | Market State | Custodian | Owner Controls |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${tableRows}\n\n` +
     `## Owner Command Hooks\n- Owner may pause tokens, exchange, and settlement token immediately.\n- Oracle address (${oracle.address}) can resolve predictions without redeploying contracts.\n- Treasury destination configurable via \`setTreasury\`.\n- Sentinel (${strategist.address}) authorised through \`setSystemPause\` to trigger emergency halts across modules.\n- Listings can be repriced live with \`updateListingPrice\` (owner override supported).\n- Owner may invoke \`forceDelist\` to evacuate foresight assets to a safe wallet instantly.\n\n` +
@@ -741,6 +785,40 @@ async function main() {
         border: 1px solid rgba(135, 217, 255, 0.35);
         font-size: 0.85rem;
       }
+      .metrics {
+        margin: 2rem 0;
+      }
+      .metrics-grid {
+        display: grid;
+        gap: 1.35rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .metric-card {
+        padding: 1.25rem 1.5rem;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(24, 58, 131, 0.55), rgba(91, 43, 168, 0.35));
+        border: 1px solid rgba(141, 206, 255, 0.35);
+        box-shadow: 0 18px 44px rgba(8, 18, 54, 0.55);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-height: 160px;
+      }
+      .metric-label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgba(204, 232, 255, 0.72);
+      }
+      .metric-value {
+        font-size: 2.1rem;
+        font-weight: 700;
+        color: #ffffff;
+      }
+      .metric-meta {
+        font-size: 0.95rem;
+        color: rgba(198, 229, 255, 0.78);
+      }
       .timeline {
         position: relative;
         margin: 2rem 0 3rem;
@@ -869,6 +947,31 @@ async function main() {
         ${config.agents
           .map((agent) => `<span class="engine__agent">${escapeHtml(agent)}</span>`)
           .join("\n        ")}
+      </div>
+    </section>
+    <section class="metrics">
+      <h2>Operational Command Metrics</h2>
+      <div class="metrics-grid">
+        <article class="metric-card">
+          <span class="metric-label">Minted Nova-Seeds</span>
+          <span class="metric-value">${mintedStats.minted}</span>
+          <span class="metric-meta">${mintedStats.mintedByOwner} owner • ${mintedStats.mintedByDelegates} delegated</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Market State</span>
+          <span class="metric-value">${soldCount + listedCount + forceDelistedCount}</span>
+          <span class="metric-meta">${marketStatusSummary}</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Fusion Dossiers</span>
+          <span class="metric-value">${revealedCount}</span>
+          <span class="metric-meta">${fusionPlanSummary}</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Confidence & Capability</span>
+          <span class="metric-value">${averageConfidenceSummary}%</span>
+          <span class="metric-meta">Band ${confidenceFloorSummary}% → ${confidencePeakSummary}% • Capability ${capabilityPercentSummary}%</span>
+        </article>
       </div>
     </section>
     <section class="timeline">
@@ -1039,14 +1142,6 @@ ${htmlRows}
     `    classDef contract fill:#1b2845,stroke:#9ef6ff,color:#f0f8ff;\n` +
     `    classDef control fill:#2c1f3d,stroke:#d2b0ff,color:#f8f5ff;\n` +
     `    classDef agent fill:#14233b,stroke:#60d2ff,color:#e8f6ff;\n`;
-
-  const mintedByOwnerCount = minted.filter((entry) => entry.mintedBy.toLowerCase() === operator.address.toLowerCase()).length;
-  const delegatedMintCount = minted.length - mintedByOwnerCount;
-  const soldCount = minted.filter((entry) => entry.status === "SOLD").length;
-  const listedCount = minted.filter((entry) => entry.status === "LISTED").length;
-  const forceDelistedCount = minted.filter((entry) => entry.status === "FORCE_DELISTED").length;
-  const sealedCount = minted.filter((entry) => !entry.fusionRevealed).length;
-  const revealedCount = minted.length - sealedCount;
 
   const csvHeader = [
     "tokenId",
