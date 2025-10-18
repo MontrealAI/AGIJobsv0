@@ -130,6 +130,8 @@ sequenceDiagram
   can render a control deck for non-technical operators.
 - `npm run demo:sovereign-constellation:victory` prints the readiness gates, telemetry metrics, and unstoppable assurances from
   `asiTakesOffVictoryPlan.json`, ensuring the operator can prove the system remains battle-ready without coding.
+- `npm run demo:sovereign-constellation:owner` renders the **Owner Command Center** matrix, cross-referencing explorer links
+  for every ASI Takes Off governance lever so a director can exercise control without touching code.
 
 ## Directory layout
 
@@ -143,6 +145,7 @@ demo/sovereign-constellation/
 │   ├── missionProfiles.json
 │   ├── autotune.telemetry.json
 │   ├── asiTakesOffSystems.json
+│   ├── asiTakesOffOwnerMatrix.json
 │   └── actors.json
 ├── server/
 │   ├── package.json
@@ -163,6 +166,11 @@ demo/sovereign-constellation/
 │   ├── seedConstellation.ts
 │   ├── autotuneThermostat.mjs
 │   └── rotateConstellationGovernance.ts
+├── bin/
+│   ├── asi-owner-matrix.mjs
+│   ├── asi-takes-off.mjs
+│   ├── asi-victory-plan.mjs
+│   └── sovereign-constellation-local.mjs
 ├── test/
 │   ├── AutotunePlan.t.ts
 │   ├── SovereignConstellation.t.ts
@@ -205,7 +213,7 @@ demo/sovereign-constellation/
 - Cypress smoke tests assert that the launch sequence is always visible and that it includes the `demo:sovereign-constellation`
   command so CI protects the non-technical onboarding story.
 
-## Owner control matrix
+## Owner control matrix & command center
 
 Regenerate the owner matrix any time configuration changes:
 
@@ -223,12 +231,26 @@ The resulting `reports/sovereign-constellation/owner-atlas.md` documents every c
 
 All links route directly to the relevant explorer `writeContract` tab or the Hardhat script that performs the change.
 
+For a non-technical launch director, run the dedicated command center briefing:
+
+```bash
+npm run demo:sovereign-constellation:owner
+```
+
+This reads `config/asiTakesOffOwnerMatrix.json`, cross-checks every entry against the owner atlas, and prints a
+timestamped action log showing which levers are ready, which require address population, the exact explorer write
+panels, automation commands, and mission assurances. The Express server exposes the same dataset via
+`GET /constellation/asi-takes-off/owner-matrix`, empowering the React console (and automated governance bots) to
+surface every owner control with zero manual wiring.
+
 ## Tests
 
 - `demo/sovereign-constellation/test/SovereignConstellation.t.ts` – spins up three hubs, runs a full playbook, commits
   & reveals validations, and proves finalisation across networks.
 - `demo/sovereign-constellation/test/server/missionProfiles.spec.js` – verifies the flagship mission dataset in
   `missionProfiles.json` stays wired to the ASI Takes Off playbook for downstream automation.
+- `demo/sovereign-constellation/test/server/asiOwnerMatrix.spec.js` – validates the owner matrix schema, ensures CLI output
+  renders without error, and confirms every listed lever maps to a real module/action pair.
 - `demo/sovereign-constellation/cypress/e2e/sovereign-constellation.cy.ts` – smoke test ensuring the UI loads hero
   metrics, mission profiles, multi-network hub data, and playbook previews.
 

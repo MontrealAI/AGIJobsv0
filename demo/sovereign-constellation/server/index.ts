@@ -1,4 +1,5 @@
 /// <reference path="./ownerAtlas.d.ts" />
+/// <reference path="./ownerMatrix.d.ts" />
 /// <reference path="../shared/autotune.d.ts" />
 
 import express from "express";
@@ -11,6 +12,8 @@ import { ethers } from "ethers";
 import { buildOwnerAtlas as untypedBuildOwnerAtlas } from "../shared/ownerAtlas.mjs";
 // @ts-ignore — shared module is published as runtime ESM without TypeScript declarations
 import { computeAutotunePlan as untypedComputeAutotunePlan } from "../shared/autotune.mjs";
+// @ts-ignore — shared module is published as runtime ESM without TypeScript declarations
+import { buildOwnerCommandMatrix as untypedBuildOwnerCommandMatrix } from "../shared/ownerMatrix.mjs";
 
 type HubAddresses = Record<string, string>;
 
@@ -58,6 +61,13 @@ type AutotuneLib = {
   computeAutotunePlan: (telemetry: any, options?: Record<string, unknown>) => any;
 };
 
+type OwnerMatrixLib = {
+  buildOwnerCommandMatrix: (
+    entries: OwnerMatrixEntry[],
+    atlas: { atlas: any[] }
+  ) => OwnerMatrixResolved[];
+};
+
 type MissionProfile = {
   id: string;
   title: string;
@@ -65,6 +75,30 @@ type MissionProfile = {
   playbookId?: string;
   defaultHub?: string;
   highlights?: string[];
+};
+
+type OwnerMatrixEntry = {
+  id: string;
+  pillarId: string;
+  title: string;
+  hub: string;
+  module: string;
+  method: string;
+  ownerAction: string;
+  operatorSignal: string;
+  proof: string;
+  automation?: string[];
+  notes?: string[];
+};
+
+type OwnerMatrixResolved = OwnerMatrixEntry & {
+  hubLabel?: string;
+  networkName?: string;
+  contractAddress?: string;
+  explorerWriteUrl?: string;
+  available: boolean;
+  status: string;
+  resolvedAt: string;
 };
 
 type AsiPillar = {
@@ -187,6 +221,7 @@ type AsiVictoryPlan = {
 
 const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 const computeAutotunePlan = untypedComputeAutotunePlan as AutotuneLib["computeAutotunePlan"];
+const buildOwnerCommandMatrix = untypedBuildOwnerCommandMatrix as OwnerMatrixLib["buildOwnerCommandMatrix"];
 type AutotuneTelemetry = Parameters<AutotuneLib["computeAutotunePlan"]>[0];
 type AutotuneOptions = Parameters<AutotuneLib["computeAutotunePlan"]>[1];
 
@@ -207,6 +242,7 @@ const missionProfiles = loadJson<MissionProfile[]>("config/missionProfiles.json"
 const asiDeck = loadJson<AsiDeck>("config/asiTakesOffMatrix.json");
 const asiSystems = loadJson<AsiSystem[]>("config/asiTakesOffSystems.json");
 const asiVictoryPlan = loadJson<AsiVictoryPlan>("config/asiTakesOffVictoryPlan.json");
+const asiOwnerMatrix = loadJson<OwnerMatrixEntry[]>("config/asiTakesOffOwnerMatrix.json");
 
 type ConstellationContext = {
   uiConfig: UiConfig;
@@ -217,6 +253,7 @@ type ConstellationContext = {
   asiDeck: AsiDeck;
   asiSystems: AsiSystem[];
   asiVictoryPlan: AsiVictoryPlan;
+  asiOwnerMatrix: OwnerMatrixEntry[];
 };
 
 const defaultContext: ConstellationContext = {
@@ -227,7 +264,8 @@ const defaultContext: ConstellationContext = {
   missionProfiles,
   asiDeck,
   asiSystems,
-  asiVictoryPlan
+  asiVictoryPlan,
+  asiOwnerMatrix
 };
 
 const jobAbi = [
@@ -305,6 +343,11 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
       systems: ctx.asiSystems,
       victoryPlan: ctx.asiVictoryPlan
     });
+  });
+  app.get("/constellation/asi-takes-off/owner-matrix", (_req, res) => {
+    const atlas = buildOwnerAtlas(ctx.hubs, ctx.uiConfig);
+    const matrix = buildOwnerCommandMatrix(ctx.asiOwnerMatrix, atlas);
+    return res.json({ entries: matrix, atlas });
   });
   app.get("/constellation/asi-takes-off/victory-plan", (_req, res) =>
     res.json({ plan: ctx.asiVictoryPlan })

@@ -1,0 +1,94 @@
+[
+  {
+    "id": "helios-system-pause-global",
+    "pillarId": "meta-agentic-alpha-agi-orchestration",
+    "title": "Global pause authority — Helios Research Hub",
+    "hub": "helios-research",
+    "module": "SystemPause",
+    "method": "pause()",
+    "ownerAction": "Trigger SystemPause.pause() to freeze every Helios contract in a single transaction before cross-network orchestration resumes.",
+    "operatorSignal": "Console status banners flip to PAUSED and the orchestrator halts outbound job preparation for Helios.",
+    "proof": "Explorer writeContract tab for SystemPause.pause()",
+    "automation": [
+      "npm run demo:sovereign-constellation:atlas",
+      "npm run demo:sovereign-constellation:plan"
+    ],
+    "notes": [
+      "Confirms the owner can halt the research hub within seconds without redeploying anything.",
+      "Validates the ASI launch control requirement for immediate overrides."
+    ]
+  },
+  {
+    "id": "triton-commit-reveal-tuning",
+    "pillarId": "alpha-agi-governance",
+    "title": "Commit/reveal thermostat — Triton Industrial Hub",
+    "hub": "triton-industrial",
+    "module": "ValidationModule",
+    "method": "setCommitRevealWindows(uint64,uint64)",
+    "ownerAction": "Dial validation cadence with setCommitRevealWindows to rebalance validator throughput after every mission.",
+    "operatorSignal": "Thermostat panel displays the newly applied commit/reveal duration and validators receive notification events.",
+    "proof": "Autotune recommendations & ValidationModule event logs",
+    "automation": [
+      "npm run demo:sovereign-constellation:plan"
+    ],
+    "notes": [
+      "Demonstrates continuous α-AGI governance with owner-first guardrails.",
+      "Highlights that validator economics remain under explicit human control." 
+    ]
+  },
+  {
+    "id": "athena-identity-extensions",
+    "pillarId": "making-the-chain-disappear",
+    "title": "Identity expansion — Athena Governance Hub",
+    "hub": "athena-governance",
+    "module": "IdentityRegistry",
+    "method": "addAdditionalAgent(address)",
+    "ownerAction": "AddAdditionalAgent to onboard a new civic governance delegate without touching backend keys.",
+    "operatorSignal": "Console allowlist tables refresh automatically and wallet prompts route to the Optimism network.",
+    "proof": "IdentityRegistry allowlist events & console participant roster",
+    "automation": [
+      "npm run demo:sovereign-constellation"
+    ],
+    "notes": [
+      "Illustrates the chain abstraction principle—non-technical owners approve wallet prompts while the orchestrator handles RPC metadata.",
+      "Guarantees only the owner can expand or contract validator/agent participation."
+    ]
+  },
+  {
+    "id": "helios-dispute-rotation",
+    "pillarId": "recursive-self-improvement",
+    "title": "Adaptive dispute module rotation — Helios Research Hub",
+    "hub": "helios-research",
+    "module": "StakeManager",
+    "method": "setDisputeModule(address)",
+    "ownerAction": "Point StakeManager.setDisputeModule to a new adjudication contract when telemetry indicates a better dispute policy.",
+    "operatorSignal": "Thermostat panel records the upgrade and subsequent missions inherit the improved dispute logic.",
+    "proof": "StakeManager events & Thermostat audit trail",
+    "automation": [
+      "npm run demo:sovereign-constellation:plan"
+    ],
+    "notes": [
+      "Encodes recursive self-improvement by letting the owner iterate on dispute intelligence without downtime.",
+      "Ensures business continuity with owner-only upgrade levers." 
+    ]
+  },
+  {
+    "id": "triton-governance-handoff",
+    "pillarId": "winning-the-ai-race",
+    "title": "Governance escalation — Triton Industrial Hub",
+    "hub": "triton-industrial",
+    "module": "JobRegistry",
+    "method": "transferOwnership(address)",
+    "ownerAction": "Transfer JobRegistry governance to a multisig Safe to scale industrial operations with institutional-grade controls.",
+    "operatorSignal": "Owner atlas regenerates with the new Safe address and CI records the governance rotation receipt.",
+    "proof": "Owner atlas markdown export & Safe transaction receipts",
+    "automation": [
+      "npm run demo:sovereign-constellation:atlas",
+      "npm run demo:sovereign-constellation:ci"
+    ],
+    "notes": [
+      "Locks in the production-ready governance story demanded by high-stakes operators.",
+      "Confirms the platform wins the AI race by combining velocity with uncompromising owner sovereignty." 
+    ]
+  }
+]
