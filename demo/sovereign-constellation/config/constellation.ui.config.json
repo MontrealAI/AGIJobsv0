@@ -1,0 +1,16 @@
+{
+  "network": "multi-network",
+  "etherscanBase": "https://etherscan.io",
+  "defaultSubgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2",
+  "orchestratorBase": "http://localhost:8090",
+  "hubs": [
+    "helios-research",
+    "triton-industrial",
+    "athena-governance"
+  ],
+  "explorers": {
+    "1": "https://etherscan.io",
+    "10": "https://optimistic.etherscan.io",
+    "42161": "https://arbiscan.io"
+  }
+}

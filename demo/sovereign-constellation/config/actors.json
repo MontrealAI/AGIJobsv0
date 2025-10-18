@@ -1,0 +1,32 @@
+[
+  {
+    "id": "mission-director",
+    "flag": "🛰️",
+    "name": "Mission Director",
+    "description": "Coordinates strategic intents and approves cross-network missions."
+  },
+  {
+    "id": "civic-alliance",
+    "flag": "🤝",
+    "name": "Civic Alliance",
+    "description": "Coalition of public institutions funding governance and resilience programmes."
+  },
+  {
+    "id": "industrial-guild",
+    "flag": "🏭",
+    "name": "Industrial Guild",
+    "description": "Operator collective that executes manufacturing and logistics jobs."
+  },
+  {
+    "id": "validator-lattice",
+    "flag": "🛡️",
+    "name": "Validator Lattice",
+    "description": "Federated validators safeguarding mission delivery with stake and reputation."
+  },
+  {
+    "id": "observer-holonet",
+    "flag": "🌐",
+    "name": "Observer Holonet",
+    "description": "Network intelligence layer providing telemetry for every hub."
+  }
+]

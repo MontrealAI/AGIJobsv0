@@ -1,0 +1,59 @@
+{
+  "helios-research": {
+    "label": "Helios Research Hub",
+    "chainId": 1,
+    "networkName": "Ethereum Mainnet",
+    "rpcUrl": "https://mainnet.infura.io/v3/YOUR_KEY",
+    "owner": "0x1111111111111111111111111111111111111111",
+    "governance": "0x2222222222222222222222222222222222222222",
+    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2-research",
+    "addresses": {
+      "AGIALPHA": "0x0000000000000000000000000000000000000000",
+      "JobRegistry": "0x0000000000000000000000000000000000000000",
+      "StakeManager": "0x0000000000000000000000000000000000000000",
+      "ValidationModule": "0x0000000000000000000000000000000000000000",
+      "DisputeModule": "0x0000000000000000000000000000000000000000",
+      "IdentityRegistry": "0x0000000000000000000000000000000000000000",
+      "SystemPause": "0x0000000000000000000000000000000000000000",
+      "FeePool": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "triton-industrial": {
+    "label": "Triton Industrial Hub",
+    "chainId": 42161,
+    "networkName": "Arbitrum One",
+    "rpcUrl": "https://arb1.arbitrum.io/rpc",
+    "owner": "0x3333333333333333333333333333333333333333",
+    "governance": "0x4444444444444444444444444444444444444444",
+    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2-industrial",
+    "addresses": {
+      "AGIALPHA": "0x0000000000000000000000000000000000000000",
+      "JobRegistry": "0x0000000000000000000000000000000000000000",
+      "StakeManager": "0x0000000000000000000000000000000000000000",
+      "ValidationModule": "0x0000000000000000000000000000000000000000",
+      "DisputeModule": "0x0000000000000000000000000000000000000000",
+      "IdentityRegistry": "0x0000000000000000000000000000000000000000",
+      "SystemPause": "0x0000000000000000000000000000000000000000",
+      "FeePool": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "athena-governance": {
+    "label": "Athena Governance Hub",
+    "chainId": 10,
+    "networkName": "Optimism",
+    "rpcUrl": "https://mainnet.optimism.io",
+    "owner": "0x5555555555555555555555555555555555555555",
+    "governance": "0x6666666666666666666666666666666666666666",
+    "subgraphUrl": "https://api.thegraph.com/subgraphs/name/agi/jobs-v2-governance",
+    "addresses": {
+      "AGIALPHA": "0x0000000000000000000000000000000000000000",
+      "JobRegistry": "0x0000000000000000000000000000000000000000",
+      "StakeManager": "0x0000000000000000000000000000000000000000",
+      "ValidationModule": "0x0000000000000000000000000000000000000000",
+      "DisputeModule": "0x0000000000000000000000000000000000000000",
+      "IdentityRegistry": "0x0000000000000000000000000000000000000000",
+      "SystemPause": "0x0000000000000000000000000000000000000000",
+      "FeePool": "0x0000000000000000000000000000000000000000"
+    }
+  }
+}

@@ -376,6 +376,42 @@ jobs:
         working-directory: demo/sovereign-mesh/app
         run: npm run build
 
+  sovereign_constellation_demo:
+    name: Sovereign Constellation Demo — build
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            demo/sovereign-constellation/server/package-lock.json
+            demo/sovereign-constellation/app/package-lock.json
+      - name: Install server dependencies
+        working-directory: demo/sovereign-constellation/server
+        run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Build orchestrator server
+        working-directory: demo/sovereign-constellation/server
+        run: npm run build
+      - name: Install app dependencies
+        working-directory: demo/sovereign-constellation/app
+        run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Build React console
+        working-directory: demo/sovereign-constellation/app
+        run: npm run build
+
   celestial_archon_demo:
     name: Celestial Archon Demonstration
     needs: tests
