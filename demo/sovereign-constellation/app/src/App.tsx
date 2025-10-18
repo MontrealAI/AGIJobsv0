@@ -266,6 +266,61 @@ type AsiSuperintelligence = {
   readinessSignals: SuperintelligenceSignal[];
 };
 
+type AsiDominanceVector = {
+  id: string;
+  title: string;
+  description: string;
+  operatorFocus: string;
+  ownerLever: string;
+  automation: { command: string; impact: string }[];
+  proofs: string[];
+};
+
+type AsiDominanceIndicator = {
+  metric: string;
+  signal: string;
+  target: string;
+  source: string;
+  verification: string;
+};
+
+type AsiDominanceDirective = {
+  action: string;
+  command: string;
+  proof: string;
+  impact: string;
+};
+
+type AsiDominanceAutomationCommand = {
+  label: string;
+  command: string;
+  purpose: string;
+};
+
+type AsiDominanceAutomation = {
+  commands: AsiDominanceAutomationCommand[];
+  ci: {
+    workflow: string;
+    job: string;
+    description: string;
+    ownerVisibility: string;
+  };
+};
+
+type AsiDominance = {
+  mission: {
+    title: string;
+    tagline: string;
+    operatorPromise: string;
+    ownerSupremacy: string;
+    ciGuardrail: string;
+  };
+  vectors: AsiDominanceVector[];
+  indicators: AsiDominanceIndicator[];
+  ownerDirectives: AsiDominanceDirective[];
+  automation: AsiDominanceAutomation;
+};
+
 type OwnerMatrixResolved = {
   id: string;
   pillarId: string;
@@ -365,6 +420,7 @@ export default function App() {
   const [asiDeck, setAsiDeck] = useState<AsiDeck>();
   const [asiSystems, setAsiSystems] = useState<AsiSystem[]>([]);
   const [asiSuperintelligence, setAsiSuperintelligence] = useState<AsiSuperintelligence>();
+  const [asiDominance, setAsiDominance] = useState<AsiDominance>();
   const [asiFlightPlan, setAsiFlightPlan] = useState<AsiFlightPlan>();
   const [launchSequence, setLaunchSequence] = useState<LaunchStep[]>([]);
   const [selectedHub, setSelectedHub] = useState<string>("");
@@ -396,6 +452,14 @@ export default function App() {
   const deckPillars = useMemo(() => (asiDeck?.pillars ?? []).slice(0, 5), [asiDeck]);
   const deckCommands = useMemo(() => asiDeck?.automation?.launchCommands ?? [], [asiDeck]);
   const flightPhases = useMemo(() => asiFlightPlan?.phases ?? [], [asiFlightPlan]);
+  const dominanceVectors = useMemo(() => asiDominance?.vectors ?? [], [asiDominance]);
+  const dominanceIndicators = useMemo(() => asiDominance?.indicators ?? [], [asiDominance]);
+  const dominanceDirectives = useMemo(() => asiDominance?.ownerDirectives ?? [], [asiDominance]);
+  const dominanceAutomationCommands = useMemo(
+    () => asiDominance?.automation?.commands ?? [],
+    [asiDominance]
+  );
+  const dominanceCi = useMemo(() => asiDominance?.automation?.ci, [asiDominance]);
 
   const ownerModuleDetails = useMemo(
     () => {
@@ -546,6 +610,24 @@ export default function App() {
           }
           if (Array.isArray((payload as any).ownerMatrix)) {
             setOwnerMatrixEntries((payload as any).ownerMatrix as OwnerMatrixResolved[]);
+          }
+        }
+      })
+      .catch((err) => console.error(err));
+    fetchJson("/constellation/asi-takes-off/dominance", undefined, orchestratorBase)
+      .then((payload) => {
+        if (payload && typeof payload === "object") {
+          if ((payload as any).dominance) {
+            setAsiDominance((payload as any).dominance as AsiDominance);
+          }
+          if ((payload as any).ownerAtlas?.atlas && Array.isArray((payload as any).ownerAtlas.atlas)) {
+            setOwnerAtlas((payload as any).ownerAtlas.atlas as OwnerHub[]);
+          }
+          if (Array.isArray((payload as any).ownerMatrix)) {
+            setOwnerMatrixEntries((payload as any).ownerMatrix as OwnerMatrixResolved[]);
+          }
+          if ((payload as any).autotunePlan) {
+            setAutotunePlan((payload as any).autotunePlan as AutotunePlan);
           }
         }
       })
@@ -1465,6 +1547,154 @@ export default function App() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+      ) : null}
+
+      {asiDominance ? (
+        <section data-testid="asi-takes-off-dominance" style={{ marginBottom: 32 }}>
+          <h2 style={{ marginTop: 0 }}>ASI Dominance Protocol</h2>
+          <p style={{ maxWidth: 880 }}>{asiDominance.mission.tagline}</p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 18,
+              marginBottom: 24
+            }}
+          >
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>{asiDominance.mission.title}</h3>
+              <p style={{ fontSize: 13 }}>{asiDominance.mission.operatorPromise}</p>
+              <div style={{ fontSize: 13, background: "rgba(37, 99, 235, 0.12)", padding: 12, borderRadius: 12 }}>
+                <strong>Owner supremacy:</strong> {asiDominance.mission.ownerSupremacy}
+              </div>
+              <p style={{ fontSize: 12, marginTop: 12 }}>{asiDominance.mission.ciGuardrail}</p>
+            </div>
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Automation & CI Guardrails</h3>
+              <ul style={{ paddingLeft: 18, fontSize: 13 }}>
+                {dominanceAutomationCommands.map((command) => (
+                  <li key={command.command} style={{ marginBottom: 8 }}>
+                    <div style={{ fontWeight: 600 }}>{command.label}</div>
+                    <code style={codeStyle}>{command.command}</code>
+                    <div style={{ fontSize: 12 }}>{command.purpose}</div>
+                  </li>
+                ))}
+              </ul>
+              {dominanceCi ? (
+                <div style={{ fontSize: 12, background: "rgba(59, 130, 246, 0.12)", padding: 10, borderRadius: 10 }}>
+                  <strong>Required workflow:</strong> {dominanceCi.workflow} → {dominanceCi.job}
+                  <br />
+                  {dominanceCi.description}
+                  <br />
+                  {dominanceCi.ownerVisibility}
+                </div>
+              ) : null}
+            </div>
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Owner Readiness Metrics</h3>
+              <p style={{ margin: 0 }}>Ready levers: {ownerMatrixSummary.ready}</p>
+              <p style={{ margin: 0 }}>Pending levers: {ownerMatrixSummary.pending}</p>
+              {autotunePlan?.summary ? (
+                <p style={{ fontSize: 12, marginTop: 12 }}>
+                  Thermostat: {(autotunePlan.summary.averageParticipation * 100).toFixed(2)}% participation ·
+                  commit {autotunePlan.summary.commitWindowSeconds}s · reveal {autotunePlan.summary.revealWindowSeconds}s
+                </p>
+              ) : null}
+              <div style={{ fontSize: 12, marginTop: 12 }}>
+                <div>Keep these metrics refreshed via:</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                  <code style={codeStyle}>npm run demo:sovereign-constellation:owner</code>
+                  <code style={codeStyle}>npm run demo:sovereign-constellation:plan</code>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 18,
+              marginBottom: 24
+            }}
+          >
+            {dominanceVectors.map((vector) => (
+              <div key={vector.id} style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 12 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    color: "#1e3a8a"
+                  }}
+                >
+                  {vector.title}
+                </span>
+                <strong>{vector.description}</strong>
+                <p style={{ fontSize: 13 }}>{vector.operatorFocus}</p>
+                <div style={{ fontSize: 12, background: "rgba(22, 163, 74, 0.15)", padding: 10, borderRadius: 10 }}>
+                  <strong>Owner lever:</strong> {vector.ownerLever}
+                </div>
+                {Array.isArray(vector.automation) && vector.automation.length > 0 ? (
+                  <div>
+                    <strong style={{ fontSize: 13 }}>Automation</strong>
+                    <ul style={{ paddingLeft: 18, fontSize: 12, marginTop: 6 }}>
+                      {vector.automation.map((entry, idx) => (
+                        <li key={`${vector.id}-automation-${idx}`} style={{ marginBottom: 4 }}>
+                          <code style={codeStyle}>{entry.command}</code>
+                          <div style={{ fontSize: 12 }}>{entry.impact}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <details style={{ fontSize: 12 }}>
+                  <summary style={{ cursor: "pointer" }}>Proof artefacts</summary>
+                  <ul style={{ paddingLeft: 18, marginTop: 6 }}>
+                    {vector.proofs.map((proof, idx) => (
+                      <li key={`${vector.id}-proof-${idx}`} style={{ marginBottom: 4 }}>
+                        {proof}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 18
+            }}
+          >
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Dominance Indicators</h3>
+              <ul style={{ paddingLeft: 18, fontSize: 13 }}>
+                {dominanceIndicators.map((indicator, idx) => (
+                  <li key={`${indicator.metric}-${idx}`} style={{ marginBottom: 8 }}>
+                    <strong>{indicator.metric}</strong> — {indicator.signal}
+                    <div style={{ fontSize: 12, color: "#334155" }}>Target: {indicator.target}</div>
+                    <div style={{ fontSize: 12, color: "#334155" }}>Source: {indicator.source}</div>
+                    <div style={{ fontSize: 12, color: "#334155" }}>Verification: {indicator.verification}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Owner Directives</h3>
+              <ul style={{ paddingLeft: 18, fontSize: 13 }}>
+                {dominanceDirectives.map((directive, idx) => (
+                  <li key={`${directive.action}-${idx}`} style={{ marginBottom: 10 }}>
+                    <div style={{ fontWeight: 600 }}>{directive.action}</div>
+                    <code style={codeStyle}>{directive.command}</code>
+                    <div style={{ fontSize: 12 }}>{directive.proof}</div>
+                    <div style={{ fontSize: 12, color: "#0f172a" }}>{directive.impact}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </section>
       ) : null}

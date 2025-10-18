@@ -121,6 +121,10 @@ sequenceDiagram
   endpoint, a new React control deck, and the `npm run demo:sovereign-constellation:superintelligence` CLI briefing. It fuses
   capability proofs, owner matrix readiness, automation guardrails, and readiness signals so a non-technical operator can
   verify the constellation behaves as an unstoppable, owner-controlled superintelligence.
+- **Dominance protocol** – `config/asiTakesOffDominance.json` feeds the `/constellation/asi-takes-off/dominance` endpoint, the
+  new React dominance control deck, and the `npm run demo:sovereign-constellation:dominance` CLI. It documents dominance
+  vectors, automation guardrails, CI enforcement, owner directives, and telemetry indicators so the operator wins the AI race
+  while retaining total owner control.
 
 ## Flagship mission — ASI Takes Off
 
@@ -144,6 +148,9 @@ sequenceDiagram
   for every ASI Takes Off governance lever so a director can exercise control without touching code.
 - `npm run demo:sovereign-constellation:superintelligence` delivers the sovereign assurance briefing with thermostat telemetry,
   owner lever readiness counts, and unstoppable mission proofs sourced from repository config.
+- `npm run demo:sovereign-constellation:dominance` issues the dominance dossier combining mission vectors, CI guardrails,
+  owner directives, and thermostat metrics so executives see the superintelligent platform is production-ready and
+  completely owner-governed.
 
 ### ASI superintelligence assurance layer
 
@@ -171,6 +178,7 @@ demo/sovereign-constellation/
 │   ├── autotune.telemetry.json
 │   ├── asiTakesOffSystems.json
 │   ├── asiTakesOffOwnerMatrix.json
+│   ├── asiTakesOffDominance.json
 │   └── actors.json
 ├── server/
 │   ├── package.json
