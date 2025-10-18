@@ -132,6 +132,46 @@ type MissionProfile = {
   highlights?: string[];
 };
 
+type AsiPillar = {
+  id: string;
+  title: string;
+  headline: string;
+  operatorAction: string;
+  ownerLever: string;
+  proof: string;
+};
+
+type AsiLaunchCommand = {
+  label: string;
+  run: string;
+};
+
+type AsiDeck = {
+  mission: {
+    id: string;
+    title: string;
+    tagline: string;
+  };
+  constellation: {
+    label: string;
+    summary: string;
+    operatorPromise: string;
+  };
+  pillars: AsiPillar[];
+  automation: {
+    launchCommands: AsiLaunchCommand[];
+    ci: {
+      description: string;
+      ownerVisibility: string;
+    };
+  };
+  ownerAssurances: {
+    pausing: string;
+    upgrades: string;
+    emergencyResponse: string;
+  };
+};
+
 type LaunchCommand = {
   label: string;
   run: string;
@@ -205,6 +245,7 @@ export default function App() {
   const [actors, setActors] = useState<Actor[]>([]);
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [missionProfiles, setMissionProfiles] = useState<MissionProfile[]>([]);
+  const [asiDeck, setAsiDeck] = useState<AsiDeck>();
   const [launchSequence, setLaunchSequence] = useState<LaunchStep[]>([]);
   const [selectedHub, setSelectedHub] = useState<string>("");
   const [jobs, setJobs] = useState<any[]>([]);
@@ -230,6 +271,11 @@ export default function App() {
     () => (cfg?.orchestratorBase || defaultOrchestratorBase).replace(/\/$/, ""),
     [cfg]
   );
+
+  const deckPillars = Array.isArray(asiDeck?.pillars) ? asiDeck!.pillars : [];
+  const deckCommands = Array.isArray(asiDeck?.automation?.launchCommands)
+    ? asiDeck!.automation.launchCommands
+    : [];
 
   const ownerModuleDetails = useMemo(
     () => {
@@ -306,6 +352,21 @@ export default function App() {
       .then((plan) => {
         if (plan && typeof plan === "object") {
           setAutotunePlan(plan as AutotunePlan);
+        }
+      })
+      .catch((err) => console.error(err));
+    fetchJson("/constellation/asi-takes-off", undefined, orchestratorBase)
+      .then((payload) => {
+        if (payload && typeof payload === "object") {
+          if ((payload as any).deck) {
+            setAsiDeck((payload as any).deck as AsiDeck);
+          }
+          if ((payload as any).ownerAtlas?.atlas && Array.isArray((payload as any).ownerAtlas.atlas)) {
+            setOwnerAtlas((payload as any).ownerAtlas.atlas as OwnerHub[]);
+          }
+          if ((payload as any).autotunePlan) {
+            setAutotunePlan((payload as any).autotunePlan as AutotunePlan);
+          }
         }
       })
       .catch((err) => console.error(err));
@@ -832,6 +893,87 @@ export default function App() {
           <small>Curated multi-hub campaigns ready for lift-off.</small>
         </div>
       </section>
+
+      {asiDeck ? (
+        <section data-testid="asi-takes-off-deck" style={{ marginBottom: 32 }}>
+          <h2 style={{ marginTop: 0 }}>ASI Takes Off Control Deck</h2>
+          <p style={{ maxWidth: 860 }}>
+            {asiDeck.mission.tagline} {asiDeck.constellation.operatorPromise}
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 18,
+              marginBottom: 24
+            }}
+          >
+            {deckPillars.map((pillar) => (
+              <div key={pillar.id} style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 12 }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    color: "#1e40af"
+                  }}
+                >
+                  {pillar.title}
+                </span>
+                <strong>{pillar.headline}</strong>
+                <p style={{ fontSize: 13, flexGrow: 1 }}>{pillar.operatorAction}</p>
+                <div style={{ fontSize: 12, background: "rgba(56, 189, 248, 0.16)", padding: 10, borderRadius: 10 }}>
+                  <strong>Owner supremacy:</strong> {pillar.ownerLever}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.75 }}>Proof: {pillar.proof}</div>
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: 18
+            }}
+          >
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Automation Spine</h3>
+              <p>{asiDeck.constellation.summary}</p>
+              <ul style={{ paddingLeft: 18 }}>
+                {deckCommands.map((command) => (
+                  <li key={command.run} style={{ marginBottom: 8 }}>
+                    <div style={{ fontWeight: 600 }}>{command.label}</div>
+                    <code style={codeStyle}>{command.run}</code>
+                  </li>
+                ))}
+              </ul>
+              <div style={{ fontSize: 13, background: "rgba(59, 130, 246, 0.12)", padding: 12, borderRadius: 12 }}>
+                <strong>CI guardrail:</strong> {asiDeck.automation?.ci.description ?? "Automation plan generated from repo config."}
+                <br />
+                {asiDeck.automation?.ci.ownerVisibility ?? "Review AGI Jobs CI dashboards for live status."}
+              </div>
+            </div>
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Owner assurances</h3>
+              <ul style={{ paddingLeft: 20, fontSize: 14 }}>
+                <li>
+                  <strong>Pausing:</strong> {asiDeck.ownerAssurances?.pausing ?? "Owner can trigger SystemPause across hubs."}
+                </li>
+                <li>
+                  <strong>Upgrades:</strong> {asiDeck.ownerAssurances?.upgrades ?? "Upgradeable proxies remain under owner control."}
+                </li>
+                <li>
+                  <strong>Emergency response:</strong> {asiDeck.ownerAssurances?.emergencyResponse ?? "Owner atlas links each override entry point."}
+                </li>
+              </ul>
+              <p style={{ fontSize: 13 }}>
+                Use the new CLI to print a zero-code launch briefing for stakeholders before signing anything.
+              </p>
+              <code style={{ ...codeStyle, marginTop: 8 }}>npm run demo:sovereign-constellation:asi-takes-off</code>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {missionProfiles.length > 0 ? (
         <section data-testid="mission-profiles" style={{ marginBottom: 32 }}>

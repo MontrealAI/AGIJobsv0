@@ -101,6 +101,9 @@ sequenceDiagram
 - **ASI launch sequence** – `config/constellation.ui.config.json` enumerates a four-step "ASI Takes Off" ritual that the
   console renders into step cards. Non-technical directors simply follow the instructions, run the provided commands, and
   confirm the success signals and owner levers highlighted in the UI.
+- **ASI control deck** – `config/asiTakesOffMatrix.json` powers the `/constellation/asi-takes-off` API, the console's new
+  control deck, and the `npm run demo:sovereign-constellation:asi-takes-off` CLI briefing so stakeholders can rehearse the
+  entire deployment with zero manual coding.
 
 ## Flagship mission — ASI Takes Off
 
@@ -111,6 +114,13 @@ sequenceDiagram
   cards so the flagship plan can be loaded with a single click by any non-technical operator.
 - The Node test suite (`npm run demo:sovereign-constellation:test:server`) asserts the endpoint stays wired, while the
   Cypress smoke test verifies the UI autoloads the flagship mission.
+
+### Zero-code ASI Takes Off briefing
+
+- `npm run demo:sovereign-constellation:asi-takes-off` prints a mission briefing sourced from repository config, summarising
+  the pillars, automation spine, thermostat recommendations, and owner atlas synopsis for rapid stakeholder alignment.
+- The `/constellation/asi-takes-off` endpoint returns the same dataset (deck, owner atlas, autotune plan) so the React console
+  can render a control deck for non-technical operators.
 
 ## Directory layout
 

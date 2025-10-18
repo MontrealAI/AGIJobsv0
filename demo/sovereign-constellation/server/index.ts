@@ -67,6 +67,50 @@ type MissionProfile = {
   highlights?: string[];
 };
 
+type AsiPillar = {
+  id: string;
+  title: string;
+  headline: string;
+  operatorAction: string;
+  ownerLever: string;
+  proof: string;
+};
+
+type AsiLaunchCommand = {
+  label: string;
+  run: string;
+};
+
+type AsiAutomation = {
+  launchCommands: AsiLaunchCommand[];
+  ci: {
+    description: string;
+    ownerVisibility: string;
+  };
+};
+
+type AsiOwnerAssurances = {
+  pausing: string;
+  upgrades: string;
+  emergencyResponse: string;
+};
+
+type AsiDeck = {
+  mission: {
+    id: string;
+    title: string;
+    tagline: string;
+  };
+  constellation: {
+    label: string;
+    summary: string;
+    operatorPromise: string;
+  };
+  pillars: AsiPillar[];
+  automation: AsiAutomation;
+  ownerAssurances: AsiOwnerAssurances;
+};
+
 const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 const computeAutotunePlan = untypedComputeAutotunePlan as AutotuneLib["computeAutotunePlan"];
 type AutotuneTelemetry = Parameters<AutotuneLib["computeAutotunePlan"]>[0];
@@ -86,6 +130,7 @@ const hubs = loadJson<Record<string, HubConfig>>("config/constellation.hubs.json
 const playbooks = loadJson<any[]>("config/playbooks.json");
 const actors = loadJson<any[]>("config/actors.json");
 const missionProfiles = loadJson<MissionProfile[]>("config/missionProfiles.json");
+const asiDeck = loadJson<AsiDeck>("config/asiTakesOffMatrix.json");
 
 type ConstellationContext = {
   uiConfig: UiConfig;
@@ -93,6 +138,7 @@ type ConstellationContext = {
   playbooks: any[];
   actors: any[];
   missionProfiles: MissionProfile[];
+  asiDeck: AsiDeck;
 };
 
 const defaultContext: ConstellationContext = {
@@ -100,7 +146,8 @@ const defaultContext: ConstellationContext = {
   hubs,
   playbooks,
   actors,
-  missionProfiles
+  missionProfiles,
+  asiDeck
 };
 
 const jobAbi = [
@@ -167,6 +214,16 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
   app.get("/constellation/actors", (_req, res) => res.json(ctx.actors));
   app.get("/constellation/mission-profiles", (_req, res) => res.json({ profiles: ctx.missionProfiles }));
   app.get("/constellation/owner/atlas", (_req, res) => res.json(buildOwnerAtlas(ctx.hubs, ctx.uiConfig)));
+  app.get("/constellation/asi-takes-off", (_req, res) => {
+    const atlas = buildOwnerAtlas(ctx.hubs, ctx.uiConfig);
+    const telemetry = loadTelemetry();
+    const plan = computeAutotunePlan(telemetry, { mission: ctx.asiDeck.mission?.id ?? "asi-takes-off" });
+    return res.json({
+      deck: ctx.asiDeck,
+      ownerAtlas: atlas,
+      autotunePlan: plan
+    });
+  });
 
   app.post("/constellation/:hub/tx/create", (req, res) => {
     const hub = getHub(ctx, req.params.hub);
