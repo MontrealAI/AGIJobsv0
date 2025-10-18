@@ -102,6 +102,7 @@ Running the demo produces:
 - `insight-agency-orbit.mmd` – mermaid orbit of the meta-agent swarm mapping mint, custody, and market routing authority.
 - `insight-lifecycle.mmd` – end-to-end sequence diagram proving owner-dominated lifecycle control from swarm genesis to market settlement.
 - `insight-manifest.json` – SHA-256 hashes of every generated artefact and the scenario dataset that produced them.
+- `insight-ledger.json` – transaction-certified ledger binding each Nova-Seed to mint/list/reprice/settlement tx hashes plus sentinel pause drills.
 
 All outputs are designed for direct inclusion in boardroom briefings and investor packets.
 

@@ -5,6 +5,7 @@ import { createInterface } from "readline/promises";
 import { stdin as input, stdout as output } from "process";
 
 import { ethers } from "hardhat";
+import type { ContractTransactionReceipt, ContractTransactionResponse } from "ethers";
 
 import type { AlphaInsightExchange, AlphaInsightNovaSeed, InsightAccessToken } from "../typechain-types";
 
@@ -26,6 +27,7 @@ type ScenarioConfig = {
 
 const reportsDir = path.join(__dirname, "..", "reports");
 const defaultScenarioFile = path.join(__dirname, "..", "data", "insight-scenarios.json");
+const ledgerFileName = "insight-ledger.json";
 
 function resolveScenarioFile(): string {
   const override = process.env.INSIGHT_MARK_SCENARIO_FILE;
@@ -103,6 +105,13 @@ function parseForecastValueTrillions(value: string): number {
     default:
       return amount;
   }
+}
+
+function transactionHash(
+  tx: ContractTransactionResponse,
+  receipt?: ContractTransactionReceipt | null,
+): string {
+  return receipt?.hash ?? tx.hash;
 }
 
 function csvEscape(value: string | number | boolean | null | undefined): string {
@@ -209,6 +218,11 @@ interface MintedInsightRecord {
   confidenceDecimal: number;
   confidencePercent: number;
   forecastValue: string;
+  mintTxHash: string;
+  listingTxHash?: string;
+  repricingTxHashes: string[];
+  forceDelistTxHash?: string;
+  resolutionTxHash?: string;
 }
 
 async function main() {
@@ -289,6 +303,8 @@ async function main() {
 
   const telemetry: AgentLogEntry[] = [];
   const minted: MintedInsightRecord[] = [];
+  const sentinelPauseTransactions: { contract: string; address: string; hash: string }[] = [];
+  const ownerResumeTransactions: { contract: string; address: string; hash: string }[] = [];
 
   function addressEquals(a: string, b: string): boolean {
     return a.toLowerCase() === b.toLowerCase();
@@ -372,6 +388,7 @@ async function main() {
     if (receipt?.status !== 1n && receipt?.status !== 1) {
       throw new Error(`Mint transaction for ${scenario.sector} failed`);
     }
+    const mintTxHash = transactionHash(tx, receipt);
 
     const mintedId = (await novaSeed.nextTokenId()) - 1n;
     log("FusionSmith", `Seed ${mintedId.toString()} forged for ${scenario.sector}.`);
@@ -380,6 +397,10 @@ async function main() {
     let activeFusionURI = scenario.sealedURI;
     const ownerActions: string[] = [];
     let finalCustodian = receiver.address;
+    let listingTxHash: string | undefined;
+    const repricingTxHashes: string[] = [];
+    let forceDelistTxHash: string | undefined;
+    let resolutionTxHash: string | undefined;
     if (i === 0) {
       await novaSeed.revealFusionPlan(mintedId, scenario.fusionURI);
       fusionRevealed = true;
@@ -399,14 +420,18 @@ async function main() {
 
     if (i < 2) {
       await novaSeed.connect(receiver).approve(exchangeAddress, mintedId);
-      await exchange.connect(receiver).listInsight(mintedId, price);
+      const listTx = await exchange.connect(receiver).listInsight(mintedId, price);
+      const listReceipt = await listTx.wait();
+      listingTxHash = transactionHash(listTx, listReceipt);
       status = "LISTED";
       listingPrice = ethers.formatUnits(price, 18);
       log("Venture Cartographer", `Token ${mintedId.toString()} listed on α-AGI MARK at ${listingPrice} AIC.`);
 
       if (i === 0) {
         const repriced = price - ethers.parseUnits("10", 18);
-        await exchange.connect(receiver).updateListingPrice(mintedId, repriced);
+        const repriceTx = await exchange.connect(receiver).updateListingPrice(mintedId, repriced);
+        const repriceReceipt = await repriceTx.wait();
+        repricingTxHashes.push(transactionHash(repriceTx, repriceReceipt));
         const listingState = await exchange.listing(mintedId);
         listingPrice = ethers.formatUnits(listingState.price, 18);
         ownerActions.push(`Seller repriced to ${listingPrice} AIC`);
@@ -418,7 +443,9 @@ async function main() {
 
       if (i === 1) {
         const adjustedPrice = price + ethers.parseUnits("15", 18);
-        await exchange.updateListingPrice(mintedId, adjustedPrice);
+        const ownerRepriceTx = await exchange.updateListingPrice(mintedId, adjustedPrice);
+        const ownerRepriceReceipt = await ownerRepriceTx.wait();
+        repricingTxHashes.push(transactionHash(ownerRepriceTx, ownerRepriceReceipt));
         const listingState = await exchange.listing(mintedId);
         listingPrice = ethers.formatUnits(listingState.price, 18);
         ownerActions.push(`Owner repriced to ${listingPrice} AIC`);
@@ -439,7 +466,7 @@ async function main() {
           price: ethers.formatUnits(clearedPrice, 18),
           fee: ethers.formatUnits(fee, 18),
           netPayout: ethers.formatUnits(net, 18),
-          transactionHash: buyReceipt?.hash ?? "",
+          transactionHash: transactionHash(buyTx, buyReceipt),
         };
         status = "SOLD";
         finalCustodian = buyerA.address;
@@ -447,9 +474,17 @@ async function main() {
           "Meta-Sentinel",
           `Token ${mintedId.toString()} acquired by ${buyerA.address}. Net payout ${ethers.formatUnits(net, 18)} AIC.`
         );
-        await exchange.resolvePrediction(mintedId, true, `${scenario.sector} rupture confirmed by insight engine.`);
+        const resolveTx = await exchange.resolvePrediction(
+          mintedId,
+          true,
+          `${scenario.sector} rupture confirmed by insight engine.`,
+        );
+        const resolveReceipt = await resolveTx.wait();
+        resolutionTxHash = transactionHash(resolveTx, resolveReceipt);
       } else if (i === 1) {
-        await exchange.forceDelist(mintedId, strategist.address);
+        const forceTx = await exchange.forceDelist(mintedId, strategist.address);
+        const forceReceipt = await forceTx.wait();
+        forceDelistTxHash = transactionHash(forceTx, forceReceipt);
         ownerActions.push(`Owner force-delisted to ${strategist.address}`);
         finalCustodian = strategist.address;
         status = "FORCE_DELISTED";
@@ -504,6 +539,11 @@ async function main() {
       confidenceDecimal,
       confidencePercent,
       forecastValue: onchain.forecastValue,
+      mintTxHash,
+      listingTxHash,
+      repricingTxHashes,
+      forceDelistTxHash,
+      resolutionTxHash,
     });
   }
 
@@ -512,14 +552,50 @@ async function main() {
   log("Guardian Auditor", "Liquidity buffers provisioned for additional foresight acquisitions.");
 
   log("System Sentinel", "Triggering cross-contract pause sweep via delegated sentinel.");
-  await exchange.connect(strategist).pause();
-  await novaSeed.connect(strategist).pause();
-  await accessToken.connect(strategist).pause();
+  const exchangePauseTx = await exchange.connect(strategist).pause();
+  const exchangePauseReceipt = await exchangePauseTx.wait();
+  sentinelPauseTransactions.push({
+    contract: "AlphaInsightExchange",
+    address: exchangeAddress,
+    hash: transactionHash(exchangePauseTx, exchangePauseReceipt),
+  });
+  const novaPauseTx = await novaSeed.connect(strategist).pause();
+  const novaPauseReceipt = await novaPauseTx.wait();
+  sentinelPauseTransactions.push({
+    contract: "AlphaInsightNovaSeed",
+    address: novaSeedAddress,
+    hash: transactionHash(novaPauseTx, novaPauseReceipt),
+  });
+  const tokenPauseTx = await accessToken.connect(strategist).pause();
+  const tokenPauseReceipt = await tokenPauseTx.wait();
+  sentinelPauseTransactions.push({
+    contract: "InsightAccessToken",
+    address: settlementTokenAddress,
+    hash: transactionHash(tokenPauseTx, tokenPauseReceipt),
+  });
   log("System Sentinel", "Emergency pause executed. Awaiting owner clearance.");
 
-  await exchange.unpause();
-  await novaSeed.unpause();
-  await accessToken.unpause();
+  const exchangeUnpauseTx = await exchange.unpause();
+  const exchangeUnpauseReceipt = await exchangeUnpauseTx.wait();
+  ownerResumeTransactions.push({
+    contract: "AlphaInsightExchange",
+    address: exchangeAddress,
+    hash: transactionHash(exchangeUnpauseTx, exchangeUnpauseReceipt),
+  });
+  const novaUnpauseTx = await novaSeed.unpause();
+  const novaUnpauseReceipt = await novaUnpauseTx.wait();
+  ownerResumeTransactions.push({
+    contract: "AlphaInsightNovaSeed",
+    address: novaSeedAddress,
+    hash: transactionHash(novaUnpauseTx, novaUnpauseReceipt),
+  });
+  const tokenUnpauseTx = await accessToken.unpause();
+  const tokenUnpauseReceipt = await tokenUnpauseTx.wait();
+  ownerResumeTransactions.push({
+    contract: "InsightAccessToken",
+    address: settlementTokenAddress,
+    hash: transactionHash(tokenUnpauseTx, tokenUnpauseReceipt),
+  });
   log("Meta-Sentinel", "Owner restored foresight lattice following sentinel drill.");
 
   const recapPath = path.join(reportsDir, "insight-recap.json");
@@ -536,6 +612,7 @@ async function main() {
   const constellationPath = path.join(reportsDir, "insight-constellation.mmd");
   const agencyOrbitPath = path.join(reportsDir, "insight-agency-orbit.mmd");
   const lifecyclePath = path.join(reportsDir, "insight-lifecycle.mmd");
+  const ledgerPath = path.join(reportsDir, ledgerFileName);
   const manifestPath = path.join(reportsDir, "insight-manifest.json");
 
   const scenarioRelativePath = path
@@ -1600,6 +1677,51 @@ ${htmlRows}
 
   const telemetryLog = telemetry.map((entry) => `${entry.timestamp} [${entry.agent}] ${entry.message}`).join("\n");
 
+  const ledger = {
+    generatedAt: new Date().toISOString(),
+    network: { chainId: network.chainId.toString(), name: network.name },
+    contracts: {
+      novaSeed: novaSeedAddress,
+      foresightExchange: exchangeAddress,
+      settlementToken: settlementTokenAddress,
+    },
+    scenario: {
+      path: scenarioRelativePath,
+      sha256: scenarioHash,
+    },
+    stats: mintedStats,
+    feeBps: exchangeFeeBpsNumber,
+    treasury: exchangeTreasury,
+    minted: minted.map((entry) => ({
+      tokenId: entry.tokenId,
+      sector: entry.scenario.sector,
+      status: entry.status,
+      mintedBy: entry.mintedBy,
+      mintedTo: entry.mintedTo,
+      finalCustodian: entry.finalCustodian,
+      mintTxHash: entry.mintTxHash,
+      listingTxHash: entry.listingTxHash ?? null,
+      repricingTxHashes: entry.repricingTxHashes,
+      saleTxHash: entry.sale?.transactionHash ?? null,
+      forceDelistTxHash: entry.forceDelistTxHash ?? null,
+      resolutionTxHash: entry.resolutionTxHash ?? null,
+      listingPrice: entry.listingPrice ?? null,
+      sale: entry.sale ?? null,
+      ownerActions: entry.ownerActions,
+      fusion: {
+        revealed: entry.fusionRevealed,
+        uri: entry.fusionURI,
+        sealedURI: entry.scenario.sealedURI,
+      },
+      disruptionTimestamp: entry.disruptionTimestamp,
+      confidenceBps: entry.confidenceBps,
+      confidencePercent: entry.confidencePercent,
+      forecastValue: entry.forecastValue,
+    })),
+    sentinelPause: sentinelPauseTransactions,
+    ownerResume: ownerResumeTransactions,
+  };
+
   await writeFile(recapPath, JSON.stringify(recap, null, 2));
   await writeFile(reportPath, markdown);
   await writeFile(matrixPath, JSON.stringify(controlMatrix, null, 2));
@@ -1614,6 +1736,7 @@ ${htmlRows}
   await writeFile(constellationPath, constellationMermaid);
   await writeFile(agencyOrbitPath, agencyOrbitMermaid);
   await writeFile(lifecyclePath, lifecycleMermaid);
+  await writeFile(ledgerPath, JSON.stringify(ledger, null, 2));
 
   const manifestEntries: { path: string; sha256: string }[] = [];
   for (const file of [
@@ -1631,6 +1754,7 @@ ${htmlRows}
     constellationPath,
     agencyOrbitPath,
     lifecyclePath,
+    ledgerPath,
   ]) {
     const content = await readFile(file);
     const relativePath = path.relative(path.join(__dirname, ".."), file);

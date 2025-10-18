@@ -45,6 +45,7 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 - `insight-agency-orbit.mmd` – orbit schematic linking each meta-agent to its minted seeds and custody paths.
 - `insight-lifecycle.mmd` – sequence diagram evidencing owner command authority across the full deployment-to-market cycle.
 - `insight-manifest.json` – SHA-256 hashes; re-run the demo and confirm hashes change only when artefacts change. The manifest now fingerprints the scenario dataset too, so provenance can be attested.
+- `insight-ledger.json` – structured ledger of every mint/list/reprice/sale hash plus sentinel pause + owner resume drill receipts.
 - `insight-recap.json` – network metadata, contract addresses, minted ledger, telemetry, and a stats block validating owner/delegate mints, market state, confidence bands, capability index, and forecast value against generated artefacts.
 - `insight-telemetry.log` – chronological agent conversation for audit trails.
 
