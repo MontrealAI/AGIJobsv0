@@ -2,6 +2,57 @@
 
 Sovereign Mesh is a planet-scale, owner-governed network-of-networks demonstration for AGI Jobs v0/v2. It shows how a non-technical operator can orchestrate multi-domain missions across multiple hubs (independent AGI Jobs v2 deployments) using nothing but configuration, a lightweight orchestrator service, and a wallet-first web console. No new smart contracts are required — every action is composed against the existing v2 contracts.
 
+> **Why it matters:** Sovereign Mesh packages the full AGI Jobs v2 stack into a civilization-scale mission console. Mission designers chain foresight, research, optimisation, and knowledge hubs with one intent; validators coordinate through wallet-first commit/reveal flows; owners retain absolute control through documented, linkified setters. The demo is engineered so a non-technical leader can feel the full power of the platform in minutes.
+
+## Sovereign topology (Mermaid)
+
+```mermaid
+graph LR
+    Intent[High-level Intent]
+    Playbooks[Mission Playbooks]
+    Orchestrator[[Sovereign Mesh Orchestrator]]
+    UI[Wallet-first Console]
+    subgraph Hub1[Public Research Hub]
+        JR1[JobRegistry]
+        VM1[ValidationModule]
+        SM1[StakeManager]
+        ID1[IdentityRegistry]
+    end
+    subgraph Hub2[Industrial Ops Hub]
+        JR2[JobRegistry]
+        VM2[ValidationModule]
+        SM2[StakeManager]
+        ID2[IdentityRegistry]
+    end
+    subgraph Hub3[Civic Governance Hub]
+        JR3[JobRegistry]
+        VM3[ValidationModule]
+        SM3[StakeManager]
+        ID3[IdentityRegistry]
+    end
+    Agents[Agents & Validators]
+    Owners[Hub Owners / Multisigs]
+
+    Intent --> Playbooks
+    Playbooks --> Orchestrator
+    Orchestrator --> JR1
+    Orchestrator --> JR2
+    Orchestrator --> JR3
+    UI --> Orchestrator
+    Agents --> UI
+    Agents --> SM1
+    Agents --> SM2
+    Agents --> SM3
+    VM1 --> Owners
+    VM2 --> Owners
+    VM3 --> Owners
+    Owners --> JR1
+    Owners --> JR2
+    Owners --> JR3
+```
+
+The diagram highlights how a single mission intent fans out across specialised hubs, while wallet-connected users and contract owners retain end-to-end authority.
+
 ## Features
 
 - **Mission playbooks** that instantiate multi-step campaigns (e.g., decarbonisation, pandemic response) spanning distinct hubs with a single wallet flow.
@@ -9,6 +60,7 @@ Sovereign Mesh is a planet-scale, owner-governed network-of-networks demonstrati
 - **Owner control surface** with direct access to Etherscan write panels for every deployed module, keeping contract owners in full command (pause, upgrade parameters, rotate governance, etc.).
 - **Config-driven** architecture that lets operators customise hubs, playbooks, actors, and endpoints without touching code.
 - **Production readiness**: TypeScript builds for server and app, Hardhat scripting for rapid deployments and governance rotation, Cypress smoke tests, and CI integration that keeps the repo green.
+- **Mission intelligence UI**: live hero metrics, curated actor rosters, mission step previews, and instant refresh controls help non-technical operators see the entire mesh at a glance.
 
 ## Directory layout
 
@@ -82,6 +134,25 @@ demo/sovereign-mesh/
    GOVERNANCE_SAFE=0xYourSafeAddress \
    npx hardhat run demo/sovereign-mesh/scripts/rotateMeshGovernance.ts --network mainnet
    ```
+
+## Operator cockpit highlights
+
+- **Mission preview composer:** selecting a playbook shows every step, hub, on-chain reward, and content URI before anything is signed.
+- **Hub control surface:** module addresses are surfaced inline with direct write links and network metadata, making it trivial for owners to tune parameters or pause modules.
+- **Actor intelligence panel:** curated nation/DAO personas (editable JSON) personalise who is sponsoring each planetary-scale mission.
+- **One-click refresh:** a single button re-syncs hub job tables from TheGraph, giving live status without page reloads.
+
+## Owner command matrix
+
+| Module | Default owner after deployment | Key documented setters | Purpose |
+| --- | --- | --- | --- |
+| `ValidationModule` | SystemPause controller / governance multisig | `setValidatorPool`, `setCommitRevealWindows`, `setApprovalThreshold`, `pause`/`unpause` | Configure committees, timing, and validation safety rails. |
+| `JobRegistry` | SystemPause controller / governance multisig | `setModules`, `setIdentityRegistry`, `pause`/`unpause`, `raiseDispute` | Register jobs, wire modules, and escalate disputes. |
+| `StakeManager` | SystemPause controller / governance multisig | `setModules`, `setFeePool`, `setTreasury`, `setMinStake`, `pause`/`unpause` | Tune staking economics, fee routing, and treasury policy. |
+| `IdentityRegistry` | Governance multisig | `setAllowlistMerkleRoot`, `addAdditionalAgent`, `addAdditionalValidator` | Control who can act as agents/validators (incl. emergency allowlists). |
+| `FeePool` (optional) | SystemPause controller / governance multisig | `setDistributors`, `configureSplit`, `pause`/`unpause` | Route protocol fees to treasuries or reward programs. |
+
+Every control surface is linked from the console's **Owner Panels** drawer, so the rightful owner can execute these setters directly via Etherscan without touching scripts.
 
 ## Testing
 
