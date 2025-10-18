@@ -55,7 +55,7 @@
     "launchCommands": [
       {
         "label": "Spin up the full constellation",
-        "run": "npm run demo:sovereign-constellation:local"
+        "run": "npm run demo:sovereign-constellation"
       },
       {
         "label": "Compute owner atlas and thermostat plan",

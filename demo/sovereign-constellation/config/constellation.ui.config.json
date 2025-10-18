@@ -43,7 +43,7 @@
       "commands": [
         {
           "label": "Launch constellation",
-          "run": "npm run demo:sovereign-constellation:local"
+          "run": "npm run demo:sovereign-constellation"
         }
       ],
       "successSignal": "Console output shows Hardhat deployments for Helios, Triton, and Athena followed by server listening on 8090 and the console on 5179.",

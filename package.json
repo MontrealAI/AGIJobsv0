@@ -175,6 +175,7 @@
     "lattice:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateRiskLattice.ts",
     "pulse:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateEmpowermentPulse.ts",
     "superintelligence:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateSuperintelligenceBrief.ts",
+    "demo:sovereign-constellation": "node demo/sovereign-constellation/bin/sovereign-constellation-local.mjs",
     "demo:sovereign-constellation:deploy": "npx hardhat run --no-compile demo/sovereign-constellation/scripts/deployConstellation.ts",
     "demo:sovereign-constellation:seed": "npx hardhat run --no-compile demo/sovereign-constellation/scripts/seedConstellation.ts",
     "demo:sovereign-constellation:atlas": "node demo/sovereign-constellation/scripts/generateOwnerAtlas.mjs",

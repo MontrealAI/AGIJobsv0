@@ -30,8 +30,8 @@ uiConfig.launchSequence.forEach((step) => {
 const igniteStep = uiConfig.launchSequence.find((step) => step.id === "ignite-constellation");
 assert.ok(igniteStep, "ignite-constellation step should be defined");
 assert.ok(
-  igniteStep.commands.some((command) => /demo:sovereign-constellation:local/.test(command.run)),
-  "ignite-constellation must instruct the operator to run the local constellation command"
+  igniteStep.commands.some((command) => command.run.includes("npm run demo:sovereign-constellation")),
+  "ignite-constellation must instruct the operator to run the single-command constellation launcher"
 );
 console.log("✅ missionProfiles.json contains the ASI Takes Off flagship entry");
 console.log("✅ constellation.ui.config.json documents the non-technical ASI Takes Off launch sequence");
