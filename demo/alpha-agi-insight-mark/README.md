@@ -65,6 +65,19 @@ The suite covers:
 - Oracle resolution governance on the exchange plus sentinel-driven pause drills.
 - Settlement token sentinel controls.
 
+## CI & Branch Protection
+
+Green CI is contractually enforced for this demo. After running the tests and demo, confirm that GitHub still requires every V2
+workflow before merges:
+
+```bash
+GITHUB_TOKEN=<repo_scope_token> npm run ci:verify-branch-protection -- --branch main
+```
+
+The command prints a ✅/❌ table verifying that linting, tests, Foundry fuzzing, coverage, and the dedicated α-AGI Insight MARK
+workflow are all marked as required contexts on `main` and on pull requests. Non-technical operators can paste the transcript
+into their evidence vault to prove that α-AGI Insight MARK remains gated by the full CI v2 policy.
+
 ## Reports & Dossiers
 
 Running the demo produces:

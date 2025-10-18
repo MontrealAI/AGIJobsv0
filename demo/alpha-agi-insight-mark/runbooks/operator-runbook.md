@@ -66,6 +66,7 @@ Navigate to `demo/alpha-agi-insight-mark/reports/` and review:
 3. Execute `npm run verify:alpha-agi-insight-mark` – the verifier performs the same manifest, telemetry, and mermaid integrity checks enforced in CI so non-technical operators can certify the dossier bundle locally.
 4. Compare the new `insight-manifest.json` to the previous run to ensure reproducibility.
 5. Store artefacts in your evidence vault alongside transaction hashes for board reviews.
+6. Audit GitHub branch protections with `GITHUB_TOKEN=<repo_scope_token> npm run ci:verify-branch-protection -- --branch main` and archive the ✅/❌ transcript.
 
 ## 6. Live Network Launch (Advanced)
 
