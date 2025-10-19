@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2025-10-19T20:33:55.799Z",
+  "totalDurationMs": 38749.618458000004,
+  "steps": [
+    {
+      "id": "generate",
+      "label": "Generate dossier",
+      "status": "success",
+      "durationMs": 6519.951861999999,
+      "details": "Free-energy margin 69800.00 kJ · Max method deviation 0.136515"
+    },
+    {
+      "id": "validate",
+      "label": "Validate physics",
+      "status": "success",
+      "durationMs": 5973.1606329999995,
+      "details": "All 38 checks passed"
+    },
+    {
+      "id": "ci",
+      "label": "Audit CI shield",
+      "status": "success",
+      "durationMs": 31.426750999999058,
+      "details": "All enforcement guards locked."
+    },
+    {
+      "id": "owner",
+      "label": "Owner diagnostics",
+      "status": "warning",
+      "durationMs": 26223.997733,
+      "details": "Warnings: [owner:audit-hamiltonian] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. | Cross-check mismatch: mission alignment. | [reward-engine:report] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. | [owner:upgrade-status] SKIPPED @ $.onChain — No timelock address available. | [owner:compliance-report] SKIPPED @ $.onChain — No tax policy address configured."
+    }
+  ],
+  "metrics": {
+    "gibbsFreeEnergyKJ": 69800,
+    "freeEnergyMarginKJ": 69800,
+    "antifragilitySecondDerivative": 15.94384398182035,
+    "equilibriumMaxDeviation": 0.1365150455272573,
+    "riskPortfolioResidual": 0.214455,
+    "jacobianStable": false,
+    "ownerFullCoverage": true,
+    "ownerAllCommandsPresent": true,
+    "ciShieldOk": true,
+    "ownerReadiness": "attention",
+    "alphaFieldConfidence": 1,
+    "alphaFieldWithinBound": true,
+    "alphaFieldEnergyMargin": true
+  },
+  "ciIssues": [],
+  "ownerWarnings": 4,
+  "ownerErrors": 0,
+  "artifacts": {
+    "report": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-report.md",
+    "summary": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-summary.json",
+    "dashboard": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-dashboard.html",
+    "validationJson": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-validation.json",
+    "validationMarkdown": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-validation.md",
+    "ciReport": "/workspace/AGIJobsv0/demo/agi-governance/reports/ci-verification.json",
+    "ownerJson": "/workspace/AGIJobsv0/demo/agi-governance/reports/owner-diagnostics.json",
+    "ownerMarkdown": "/workspace/AGIJobsv0/demo/agi-governance/reports/owner-diagnostics.md"
+  }
+}

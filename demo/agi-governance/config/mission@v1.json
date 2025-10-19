@@ -116,7 +116,11 @@
     "sigmaSamples": [0, 0.1, 0.2, 0.3],
     "iterations": 4000,
     "replicatorSteps": 320,
-    "seedOffset": 9000
+    "seedOffset": 9000,
+    "penaltyScaling": 0.001,
+    "sigmaRewardMultiplier": 32,
+    "divergencePenalty": 1.2,
+    "curvatureBoost": 8
   },
   "risk": {
     "coverageWeights": {
@@ -182,6 +186,28 @@
         }
       }
     ]
+  },
+  "alphaField": {
+    "stackelberg": {
+      "leaderBaseline": 7.4,
+      "followerBaseline": 6.8,
+      "valueCeiling": 10,
+      "advantageFloor": 0.5
+    },
+    "macroAttractor": {
+      "gibbsTargetKJ": 69800,
+      "gibbsToleranceKJ": 200,
+      "divergenceLimit": 0.001,
+      "entropyFloor": 4.0
+    },
+    "antifragility": {
+      "minSecondDerivative": 0.01,
+      "sigmaGainMinimum": 0.5
+    },
+    "verification": {
+      "energyMarginFloorKJ": 1000,
+      "ownerCoverageMinimum": 1
+    }
   },
   "ownerControls": {
     "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",

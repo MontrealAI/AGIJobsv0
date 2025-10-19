@@ -58,6 +58,9 @@ type FullRunSummary = {
     ownerAllCommandsPresent: boolean;
     ciShieldOk: boolean;
     ownerReadiness: AggregatedReport["readiness"];
+    alphaFieldConfidence: number;
+    alphaFieldWithinBound: boolean;
+    alphaFieldEnergyMargin: boolean;
   };
   ciIssues: string[];
   ownerWarnings: number;
@@ -244,6 +247,9 @@ async function runFullDemo(): Promise<FullRunSummary> {
       ownerAllCommandsPresent: bundle.owner.allCommandsPresent,
       ciShieldOk: ciAssessment.ok,
       ownerReadiness: diagnostics.readiness,
+      alphaFieldConfidence: bundle.alphaField.confidenceScore,
+      alphaFieldWithinBound: bundle.alphaField.stackelbergWithinBound,
+      alphaFieldEnergyMargin: bundle.alphaField.energyMarginSatisfied,
     },
     ciIssues: ciAssessment.issues,
     ownerWarnings: diagnostics.totals.warning,
@@ -277,6 +283,9 @@ async function runFullDemo(): Promise<FullRunSummary> {
     `- Antifragility curvature (2a): ${summary.metrics.antifragilitySecondDerivative.toExponential(2)}`,
     `- Equilibrium max deviation: ${formatNumber(summary.metrics.equilibriumMaxDeviation, 6)}`,
     `- Risk portfolio residual: ${formatNumber(summary.metrics.riskPortfolioResidual, 3)}`,
+    `- Alpha-field confidence: ${(summary.metrics.alphaFieldConfidence * 100).toFixed(1)}%`,
+    `- Stackelberg bound respected: ${summary.metrics.alphaFieldWithinBound ? "✅" : "⚠️"}`,
+    `- Energy margin floor met: ${summary.metrics.alphaFieldEnergyMargin ? "✅" : "⚠️"}`,
     `- Jacobian stable: ${summary.metrics.jacobianStable ? "✅" : "❌"}`,
     `- Owner capability coverage: ${summary.metrics.ownerFullCoverage ? "✅" : "⚠️"}`,
     `- All owner commands present: ${summary.metrics.ownerAllCommandsPresent ? "✅" : "⚠️"}`,

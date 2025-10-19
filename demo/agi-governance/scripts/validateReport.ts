@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir } from "fs/promises";
 import path from "path";
 import {
   type AntifragilityReport,
+  type AlphaFieldReport,
   type BlockchainReport,
   type EquilibriumResult,
   type HamiltonianReport,
@@ -13,6 +14,7 @@ import {
   type StatisticalPhysicsReport,
   type ThermodynamicReport,
   computeAntifragility,
+  computeAlphaField,
   computeBlockchainReport,
   computeEquilibrium,
   computeHamiltonian,
@@ -39,6 +41,7 @@ interface ReportSummary {
   hamiltonian: HamiltonianReport;
   equilibrium: EquilibriumResult;
   antifragility: AntifragilityReport;
+  alphaField: AlphaFieldReport;
   risk: RiskReport;
   incentives: IncentiveReport;
   owner: OwnerControlReport;
@@ -184,6 +187,7 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
   const risk = computeRiskReport(mission);
   const incentives = computeIncentiveReport(mission);
   const owner = computeOwnerReport(mission, packageScripts);
+  const alphaField = computeAlphaField(mission, thermodynamics, statisticalPhysics, equilibrium, antifragility, owner);
   const jacobian = computeJacobian(mission.gameTheory.payoffMatrix, equilibrium.closedForm);
   const blockchain = computeBlockchainReport(mission);
 
@@ -268,6 +272,114 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
       antifragility.quadraticSecondDerivative,
       summary.antifragility.quadraticSecondDerivative,
       1e-6,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "alpha-field:stackelberg-advantage",
+      "Stackelberg advantage",
+      alphaField.stackelbergAdvantage,
+      summary.alphaField.stackelbergAdvantage,
+      1e-6,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "alpha-field:gibbs-delta",
+      "Gibbs delta",
+      alphaField.gibbsDeltaKJ,
+      summary.alphaField.gibbsDeltaKJ,
+      1e-6,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "alpha-field:sigma-gain",
+      "Sigma welfare gain",
+      alphaField.sigmaGain,
+      summary.alphaField.sigmaGain,
+      1e-6,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "alpha-field:confidence",
+      "Alpha-field confidence score",
+      alphaField.confidenceScore,
+      summary.alphaField.confidenceScore,
+      1e-6,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:stackelberg-bound",
+      "Stackelberg advantage within bound",
+      alphaField.stackelbergWithinBound,
+      summary.alphaField.stackelbergWithinBound,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:stackelberg-floor",
+      "Stackelberg advantage floor satisfied",
+      alphaField.stackelbergAdvantageSatisfiesFloor,
+      summary.alphaField.stackelbergAdvantageSatisfiesFloor,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:gibbs-within",
+      "Gibbs delta within tolerance",
+      alphaField.gibbsWithinTolerance,
+      summary.alphaField.gibbsWithinTolerance,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:divergence",
+      "Equilibrium divergence within limit",
+      alphaField.divergenceWithinLimit,
+      summary.alphaField.divergenceWithinLimit,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:entropy",
+      "Entropy above floor",
+      alphaField.entropyAboveFloor,
+      summary.alphaField.entropyAboveFloor,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:antifragility",
+      "Antifragility curvature meets minimum",
+      alphaField.antifragilityMeetsMinimum,
+      summary.alphaField.antifragilityMeetsMinimum,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:sigma",
+      "Sigma gain satisfied",
+      alphaField.sigmaGainSatisfied,
+      summary.alphaField.sigmaGainSatisfied,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:owner-coverage",
+      "Owner coverage minimum met",
+      alphaField.ownerCoverageSatisfied,
+      summary.alphaField.ownerCoverageSatisfied,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:energy-margin",
+      "Energy margin floor met",
+      alphaField.energyMarginSatisfied,
+      summary.alphaField.energyMarginSatisfied,
     ),
   );
   results.push(

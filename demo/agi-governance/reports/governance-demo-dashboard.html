@@ -152,7 +152,7 @@
     <header>
       <div class="badge">AGI Jobs v0 (v2) Superintelligence Console</div>
       <h1>Solving α-AGI Governance</h1>
-      <p class="meta">Generated 2025-10-19T18:25:12.965Z • Version 1.1.0</p>
+      <p class="meta">Generated 2025-10-19T20:33:23.555Z • Version 1.1.0</p>
       <p class="meta">Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.</p>
     </header>
     <main>
@@ -211,6 +211,13 @@
   subgraph Risk[Risk Engine]
     Residual[Residual 0.214]
   end
+  subgraph AlphaField[Alpha-Field Assurance]
+    Stackelberg[Stackelberg Δ=0.60]
+    Confidence[Confidence 100%]
+    EnergyFloor[Energy Margin 69.80k kJ]
+    Stackelberg --> Confidence
+    EnergyFloor --> Confidence
+  end
   subgraph Control[Owner Command Surface]
     Owner((Owner 0xA1A1…A1A1))
     Pauser([Pauser 0xB2B2…B2B2])
@@ -226,7 +233,8 @@
   Thermo --> Mint
   BurnCurve --> StratA
   Payoff --> Residual
-  Residual --> Owner
+  Residual --> Stackelberg
+  Confidence --> Owner
   Owner --> Governor</pre>
       </section>
 
@@ -263,12 +271,12 @@
         <pre class="mermaid">mindmap
   root((Antifragility Tensor))
     "Quadratic curvature":::core
-      "2a=6.98e-10":::core
+      "2a=1.59e+1":::core
     "Sigma Scan":::core
-        "σ=0.00":::sigma --> "Welfare -4.64k":::welfare
-        "σ=0.10":::sigma --> "Welfare -4.64k":::welfare
-        "σ=0.20":::sigma --> "Welfare -4.64k":::welfare
-        "σ=0.30":::sigma --> "Welfare -4.64k":::welfare
+        "σ=0.00":::sigma --> "Welfare -3.73":::welfare
+        "σ=0.10":::sigma --> "Welfare -0.45":::welfare
+        "σ=0.20":::sigma --> "Welfare 2.99":::welfare
+        "σ=0.30":::sigma --> "Welfare 6.59":::welfare
     "Owner Actions":::core
       "Mint Mirror 65.00%"
       "Residual Risk 0.214"
@@ -278,10 +286,30 @@
         <div id="antifragility-chart">Rendering antifragility curve…</div>
         <table>
           <thead><tr><th>σ</th><th>Welfare</th><th>Average payoff</th><th>Divergence</th></tr></thead>
-          <tbody><tr><td>0.00</td><td>-4.64k</td><td>1.00</td><td>7.68e-2</td></tr>
-<tr><td>0.10</td><td>-4.64k</td><td>1.00</td><td>7.62e-2</td></tr>
-<tr><td>0.20</td><td>-4.64k</td><td>1.00</td><td>7.69e-2</td></tr>
-<tr><td>0.30</td><td>-4.64k</td><td>1.00</td><td>7.73e-2</td></tr></tbody>
+          <tbody><tr><td>0.00</td><td>-3.73</td><td>1.00</td><td>7.68e-2</td></tr>
+<tr><td>0.10</td><td>-0.45</td><td>1.00</td><td>7.62e-2</td></tr>
+<tr><td>0.20</td><td>2.99</td><td>1.00</td><td>7.69e-2</td></tr>
+<tr><td>0.30</td><td>6.59</td><td>1.00</td><td>7.73e-2</td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Alpha-Field Sovereign Assurance</h2>
+        <p>
+          Confidence score: <strong>100.0%</strong> • Energy margin
+          69.80k kJ
+        </p>
+        <table>
+          <thead><tr><th>Signal</th><th>Value</th><th>Status</th></tr></thead>
+          <tbody><tr><td>Stackelberg Δ</td><td>0.60 (cap 7.50)</td><td>✅</td></tr>
+<tr><td>Stackelberg floor</td><td>0.50 (achieved 0.60)</td><td>✅</td></tr>
+<tr><td>Gibbs delta</td><td>0.00 kJ (tol ±200.00 kJ)</td><td>✅</td></tr>
+<tr><td>Divergence</td><td>2.220e-16 ≤ 1.000e-3</td><td>✅</td></tr>
+<tr><td>Entropy floor</td><td>4.33 ≥ 4.00 kJ/K</td><td>✅</td></tr>
+<tr><td>Antifragility curvature</td><td>1.594e+1 ≥ 1.000e-2</td><td>✅</td></tr>
+<tr><td>Sigma welfare gain</td><td>10.32 ≥ 0.50</td><td>✅</td></tr>
+<tr><td>Owner coverage</td><td>100.00% ≥ 100.00%</td><td>✅</td></tr>
+<tr><td>Energy margin</td><td>69.80k ≥ 1.00k kJ</td><td>✅</td></tr></tbody>
         </table>
       </section>
 
@@ -382,7 +410,7 @@
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
       mermaid.initialize({ startOnLoad: true, theme: 'forest' });
 
-      const antifragilityData = [{"sigma":0,"welfare":-4639.957446808511},{"sigma":0.1,"welfare":-4639.957446808511},{"sigma":0.2,"welfare":-4639.957446808511},{"sigma":0.3,"welfare":-4639.957446808511}];
+      const antifragilityData = [{"sigma":0,"welfare":-3.7330953424071236},{"sigma":0.1,"welfare":-0.45245266493167074},{"sigma":0.2,"welfare":2.9867608566050983},{"sigma":0.3,"welfare":6.586280413716959}];
       const chart = document.querySelector('#antifragility-chart');
       if (chart && Array.isArray(antifragilityData) && antifragilityData.length > 0) {
         const width = 760;
