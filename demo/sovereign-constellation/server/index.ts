@@ -8,12 +8,17 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { ethers } from "ethers";
 
-// @ts-ignore — shared module is published as runtime ESM without TypeScript declarations
+// @ts-ignore
 import { buildOwnerAtlas as untypedBuildOwnerAtlas } from "../shared/ownerAtlas.mjs";
-// @ts-ignore — shared module is published as runtime ESM without TypeScript declarations
+// @ts-ignore
 import { computeAutotunePlan as untypedComputeAutotunePlan } from "../shared/autotune.mjs";
-// @ts-ignore — shared module is published as runtime ESM without TypeScript declarations
-import { buildOwnerCommandMatrix as untypedBuildOwnerCommandMatrix } from "../shared/ownerMatrix.mjs";
+// @ts-ignore
+import {
+  buildOwnerCommandMatrix as untypedBuildOwnerCommandMatrix,
+  formatOwnerCommandMatrixForCli as untypedFormatOwnerCommandMatrixForCli
+} from "../shared/ownerMatrix.js";
+// @ts-ignore
+import { buildAsiLaunchManifest as untypedBuildAsiLaunchManifest } from "../shared/launchManifest.mjs";
 
 type HubAddresses = Record<string, string>;
 
@@ -66,6 +71,10 @@ type OwnerMatrixLib = {
     entries: OwnerMatrixEntry[],
     atlas: { atlas: any[] }
   ) => OwnerMatrixResolved[];
+  formatOwnerCommandMatrixForCli: (
+    entries: OwnerMatrixResolved[],
+    options?: Record<string, unknown>
+  ) => string;
 };
 
 type MissionProfile = {
@@ -334,11 +343,68 @@ type AsiDominance = {
   automation: AsiDominanceAutomation;
 };
 
+type LaunchManifestContext = {
+  deck?: AsiDeck;
+  missionProfiles?: MissionProfile[];
+  systems?: AsiSystem[];
+  victoryPlan?: AsiVictoryPlan;
+  telemetry?: AutotuneTelemetry;
+  ownerMatrixEntries?: OwnerMatrixEntry[];
+  hubs?: Record<string, HubConfig>;
+  uiConfig?: UiConfig;
+};
+
+type LaunchManifestResult = {
+  generatedAt: string;
+  mission: {
+    title: string;
+    tagline: string;
+    promise: string;
+    scope: string;
+    unstoppable: string;
+  };
+  automation: {
+    commands: LaunchCommand[];
+    ci: { description: string; ownerVisibility: string } | null;
+  };
+  thermostat: {
+    summary: {
+      averageParticipation: number | null;
+      commitWindowSeconds: number | null;
+      revealWindowSeconds: number | null;
+      minStakeWei: string | null;
+      notes: string[];
+    };
+    actions: AutotunePlanResult extends { actions: infer A } ? A : any[];
+  };
+  ownerSummary: { ready: number; pending: number; pendingReasons: Record<string, number> };
+  ownerMatrix: OwnerMatrixResolved[];
+  ownerMatrixCli: string;
+  markdown: string;
+  preview: string[];
+};
+
+type LaunchManifestLib = {
+  buildAsiLaunchManifest: (
+    context: LaunchManifestContext,
+    libs: {
+      buildOwnerAtlas: OwnerAtlasLib["buildOwnerAtlas"];
+      buildOwnerCommandMatrix: OwnerMatrixLib["buildOwnerCommandMatrix"];
+      formatOwnerCommandMatrixForCli: OwnerMatrixLib["formatOwnerCommandMatrixForCli"];
+      computeAutotunePlan: AutotuneLib["computeAutotunePlan"];
+    }
+  ) => LaunchManifestResult;
+};
+
 const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 const computeAutotunePlan = untypedComputeAutotunePlan as AutotuneLib["computeAutotunePlan"];
 const buildOwnerCommandMatrix = untypedBuildOwnerCommandMatrix as OwnerMatrixLib["buildOwnerCommandMatrix"];
+const formatOwnerCommandMatrixForCli =
+  untypedFormatOwnerCommandMatrixForCli as OwnerMatrixLib["formatOwnerCommandMatrixForCli"];
+const buildAsiLaunchManifest = untypedBuildAsiLaunchManifest as LaunchManifestLib["buildAsiLaunchManifest"];
 type AutotuneTelemetry = Parameters<AutotuneLib["computeAutotunePlan"]>[0];
 type AutotuneOptions = Parameters<AutotuneLib["computeAutotunePlan"]>[1];
+type AutotunePlanResult = ReturnType<AutotuneLib["computeAutotunePlan"]>;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -468,6 +534,28 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
       victoryPlan: ctx.asiVictoryPlan,
       flightPlan: ctx.asiFlightPlan
     });
+  });
+  app.get("/constellation/asi-takes-off/manifest", (_req, res) => {
+    const telemetry = loadTelemetry();
+    const manifest = buildAsiLaunchManifest(
+      {
+        deck: ctx.asiDeck,
+        missionProfiles: ctx.missionProfiles,
+        systems: ctx.asiSystems,
+        victoryPlan: ctx.asiVictoryPlan,
+        telemetry,
+        ownerMatrixEntries: ctx.asiOwnerMatrix,
+        hubs: ctx.hubs,
+        uiConfig: ctx.uiConfig
+      },
+      {
+        buildOwnerAtlas,
+        buildOwnerCommandMatrix,
+        formatOwnerCommandMatrixForCli,
+        computeAutotunePlan
+      }
+    );
+    return res.json(manifest);
   });
   app.get("/constellation/asi-takes-off/owner-matrix", (_req, res) => {
     const atlas = buildOwnerAtlas(ctx.hubs, ctx.uiConfig);

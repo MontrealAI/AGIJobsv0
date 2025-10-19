@@ -173,7 +173,7 @@ Assurance: Production-critical checks stay enforced on PRs and main, proving AGI
 ```
 🎚️  Owner Command Center — ASI Takes Off
 Sovereign Constellation :: mission director control deck
-Generated 18/10/2025, 20:45 UTC.
+Generated 19/10/2025, 03:26 UTC.
 
 Matrix status: 0 ready levers, 5 pending (5×module-missing).
 All actions stay inside the owner's wallet — review, sign, confirm.
@@ -298,3 +298,5 @@ Assurance pillars:
 3. Apply thermostat recommendations via the owner console and confirm telemetry metrics.
 4. Execute owner control drills and CI guardrails to prove readiness.
 5. Archive this manifest with mission artefacts to document the launch.
+
+• Victory plan emphasises unstoppable readiness and owner sovereignty.

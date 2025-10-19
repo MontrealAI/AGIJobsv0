@@ -110,6 +110,9 @@ sequenceDiagram
 - **ASI launch manifest generator** – `demo/sovereign-constellation/asi-takes-off-demo/launch.mjs` composes a
   non-technical, production-ready launch manifesto (`npm run demo:sovereign-constellation:asi-takes-off:launch`) that fuses
   mission profiles, thermostat telemetry, and owner command matrices into a single artefact ready for executive sign-off.
+- **ASI launch manifest API** – `GET /constellation/asi-takes-off/manifest` returns the same unstoppable dataset (Markdown,
+  owner readiness, thermostat guidance, and automation checklist) so the console renders a copy-to-clipboard manifest for
+  non-technical directors.
 - **ASI systems matrix** – `config/asiTakesOffSystems.json` documents the five flagship pillars with operator workflows,
   owner levers, automation commands, and verification artefacts. The server exposes `/constellation/asi-takes-off/systems`
   and the console renders the dataset so every mission assurance remains transparent.
@@ -151,6 +154,8 @@ sequenceDiagram
 - `npm run demo:sovereign-constellation:dominance` issues the dominance dossier combining mission vectors, CI guardrails,
   owner directives, and thermostat metrics so executives see the superintelligent platform is production-ready and
   completely owner-governed.
+- The React console consumes `/constellation/asi-takes-off/manifest` and surfaces the same launch manifest with a
+  copy-to-clipboard control so directors can broadcast the Markdown briefing without opening a terminal.
 
 ### ASI superintelligence assurance layer
 

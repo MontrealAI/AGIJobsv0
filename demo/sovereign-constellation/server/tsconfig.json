@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "allowArbitraryExtensions": true
   },
-  "include": ["index.ts", "./ownerAtlas.d.ts", "./global.d.ts", "../shared/**/*.d.ts"],
+  "include": ["index.ts", "./ownerAtlas.d.ts", "./ownerMatrix.d.ts", "./global.d.ts", "../shared/**/*.d.ts"],
   "ts-node": {
     "esm": true
   }
