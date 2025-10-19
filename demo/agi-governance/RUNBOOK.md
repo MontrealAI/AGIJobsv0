@@ -59,7 +59,17 @@ Attach the generated `reports/ci-verification.json` to your governance logs.
 
 ---
 
-## 3. Execute on-chain owner controls (optional live drill)
+## 3. Aggregate owner diagnostics (one-click audit pack)
+
+```bash
+npm run demo:agi-governance:owner-diagnostics
+```
+
+This orchestrates `owner:audit-hamiltonian`, `reward-engine:report`, `owner:upgrade-status`, and `owner:compliance-report` with `--json`, tolerating environments where Hardhat artifacts or on-chain addresses are absent. The resulting `reports/owner-diagnostics.json` and `owner-diagnostics.md` summarise success, warnings (e.g., skipped due to missing deployments), and actionable notes. Share the Markdown with executives and store the JSON for automated evidence pipelines.
+
+---
+
+## 4. Execute on-chain owner controls (optional live drill)
 
 Each command below can be run via the CLI, Safe transaction builder, or Etherscan write interface. Replace placeholder addresses with your deployment addresses.
 
@@ -102,7 +112,7 @@ Document transaction hashes in `reports/governance-demo-report.md` under the “
 
 ---
 
-## 4. Formal verification hooks
+## 5. Formal verification hooks
 
 1. **Coverage remapping audit:**
    ```bash
@@ -124,7 +134,7 @@ Archive the resulting artefacts inside `reports/` alongside the governance dossi
 
 ---
 
-## 5. Evidence of execution
+## 6. Evidence of execution
 
 After each run:
 1. Commit the generated artefacts to a dedicated evidence branch or upload them to immutable storage (e.g., IPFS, Arweave).
