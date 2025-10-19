@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSigner } from "./lib/ethers";
 import { makeClient, qJobs } from "./lib/subgraph";
 import { computeCommit } from "./lib/commit";
@@ -321,6 +321,36 @@ type AsiDominance = {
   automation: AsiDominanceAutomation;
 };
 
+type AsiManifest = {
+  generatedAt: string;
+  mission: {
+    title: string;
+    tagline: string;
+    promise: string;
+    scope: string;
+    unstoppable: string;
+  };
+  automation: {
+    commands: AsiLaunchCommand[];
+    ci: { description: string; ownerVisibility: string } | null;
+  };
+  thermostat: {
+    summary: {
+      averageParticipation: number | null;
+      commitWindowSeconds: number | null;
+      revealWindowSeconds: number | null;
+      minStakeWei: string | null;
+      notes: string[];
+    };
+    actions: AutotuneAction[];
+  };
+  ownerSummary: { ready: number; pending: number; pendingReasons: Record<string, number> };
+  ownerMatrix: OwnerMatrixResolved[];
+  ownerMatrixCli: string;
+  markdown: string;
+  preview: string[];
+};
+
 type OwnerMatrixResolved = {
   id: string;
   pillarId: string;
@@ -419,6 +449,7 @@ export default function App() {
   const [missionProfiles, setMissionProfiles] = useState<MissionProfile[]>([]);
   const [asiDeck, setAsiDeck] = useState<AsiDeck>();
   const [asiSystems, setAsiSystems] = useState<AsiSystem[]>([]);
+  const [asiManifest, setAsiManifest] = useState<AsiManifest | null>(null);
   const [asiSuperintelligence, setAsiSuperintelligence] = useState<AsiSuperintelligence>();
   const [asiDominance, setAsiDominance] = useState<AsiDominance>();
   const [asiFlightPlan, setAsiFlightPlan] = useState<AsiFlightPlan>();
@@ -437,6 +468,7 @@ export default function App() {
   const [ownerAtlas, setOwnerAtlas] = useState<OwnerHub[]>([]);
   const [autotunePlan, setAutotunePlan] = useState<AutotunePlan>();
   const [ownerMatrixEntries, setOwnerMatrixEntries] = useState<OwnerMatrixResolved[]>([]);
+  const [manifestCopyStatus, setManifestCopyStatus] = useState<string | null>(null);
   const [commitWindowSeconds, setCommitWindowSeconds] = useState("3600");
   const [revealWindowSeconds, setRevealWindowSeconds] = useState("1800");
   const [minStakeWeiInput, setMinStakeWeiInput] = useState("2000000000000000000");
@@ -461,6 +493,56 @@ export default function App() {
   );
   const dominanceCi = useMemo(() => asiDominance?.automation?.ci, [asiDominance]);
 
+  const formatDuration = useCallback((seconds?: number | null) => {
+    if (!Number.isFinite(seconds ?? Number.NaN)) {
+      return "—";
+    }
+    const value = Number(seconds);
+    const hours = Math.floor(value / 3600);
+    const minutes = Math.floor((value % 3600) / 60);
+    const secs = Math.floor(value % 60);
+    const parts: string[] = [];
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+    return parts.join(" ");
+  }, []);
+
+  const formatParticipation = useCallback((value?: number | null) => {
+    if (!Number.isFinite(value ?? Number.NaN)) {
+      return "—";
+    }
+    return `${((value ?? 0) * 100).toFixed(2)}%`;
+  }, []);
+
+  const copyTimeoutRef = useRef<number>();
+
+  const handleCopyManifest = useCallback(async () => {
+    if (!asiManifest?.markdown) {
+      setManifestCopyStatus("Manifest unavailable");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(asiManifest.markdown);
+      setManifestCopyStatus("Copied manifest to clipboard");
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+      copyTimeoutRef.current = window.setTimeout(() => setManifestCopyStatus(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy manifest", error);
+      setManifestCopyStatus("Copy failed — see console");
+    }
+  }, [asiManifest]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const ownerModuleDetails = useMemo(
     () => {
       if (!selectedHub) {
@@ -475,21 +557,31 @@ export default function App() {
     [ownerAtlas, selectedHub]
   );
 
-  const ownerMatrixSummary = useMemo(
-    () => {
-      if (!ownerMatrixEntries || ownerMatrixEntries.length === 0) {
-        return { ready: 0, pending: 0 };
-      }
-      const ready = ownerMatrixEntries.filter((entry) => entry.available).length;
-      return { ready, pending: ownerMatrixEntries.length - ready };
-    },
-    [ownerMatrixEntries]
-  );
+  const ownerMatrixSummary = useMemo(() => {
+    if (asiManifest?.ownerSummary) {
+      return {
+        ready: asiManifest.ownerSummary.ready,
+        pending: asiManifest.ownerSummary.pending,
+        pendingReasons: asiManifest.ownerSummary.pendingReasons
+      };
+    }
+    if (!ownerMatrixEntries || ownerMatrixEntries.length === 0) {
+      return { ready: 0, pending: 0, pendingReasons: {} as Record<string, number> };
+    }
+    const ready = ownerMatrixEntries.filter((entry) => entry.available).length;
+    return {
+      ready,
+      pending: ownerMatrixEntries.length - ready,
+      pendingReasons: {}
+    };
+  }, [asiManifest, ownerMatrixEntries]);
 
-  const ownerMatrixSample = useMemo(
-    () => ownerMatrixEntries.slice(0, 3),
-    [ownerMatrixEntries]
-  );
+  const ownerMatrixSample = useMemo(() => {
+    if (asiManifest?.ownerMatrix?.length) {
+      return asiManifest.ownerMatrix.slice(0, 3);
+    }
+    return ownerMatrixEntries.slice(0, 3);
+  }, [asiManifest, ownerMatrixEntries]);
 
   useEffect(() => {
     fetchJson("/constellation/config")
@@ -572,6 +664,17 @@ export default function App() {
           }
           if ((payload as any).flightPlan) {
             setAsiFlightPlan((payload as any).flightPlan as AsiFlightPlan);
+          }
+        }
+      })
+      .catch((err) => console.error(err));
+    fetchJson("/constellation/asi-takes-off/manifest", undefined, orchestratorBase)
+      .then((payload) => {
+        if (payload && typeof payload === "object") {
+          setAsiManifest(payload as AsiManifest);
+          setManifestCopyStatus(null);
+          if (Array.isArray((payload as any).ownerMatrix)) {
+            setOwnerMatrixEntries((payload as any).ownerMatrix as OwnerMatrixResolved[]);
           }
         }
       })
@@ -1233,6 +1336,147 @@ export default function App() {
               </p>
               <code style={{ ...codeStyle, marginTop: 8 }}>npm run demo:sovereign-constellation:asi-takes-off</code>
             </div>
+          </div>
+        </section>
+      ) : null}
+
+      {asiManifest ? (
+        <section data-testid="asi-takes-off-manifest" style={{ marginBottom: 32 }}>
+          <h2 style={{ marginTop: 0 }}>ASI Takes Off Launch Manifest</h2>
+          <p style={{ maxWidth: 880 }}>
+            {asiManifest.mission.tagline} {asiManifest.mission.unstoppable}
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 18,
+              marginBottom: 24
+            }}
+          >
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Mission Control Promise</h3>
+              <p style={{ fontSize: 14 }}>{asiManifest.mission.promise}</p>
+              <p style={{ fontSize: 13, opacity: 0.8 }}>{asiManifest.mission.scope}</p>
+              <p style={{ fontSize: 12, opacity: 0.7 }}>Generated {new Date(asiManifest.generatedAt).toLocaleString()}</p>
+            </div>
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Owner Readiness Snapshot</h3>
+              <p style={{ margin: 0 }}>Ready levers: {asiManifest.ownerSummary.ready}</p>
+              <p style={{ margin: 0 }}>Pending levers: {asiManifest.ownerSummary.pending}</p>
+              {Object.keys(asiManifest.ownerSummary.pendingReasons ?? {}).length > 0 ? (
+                <ul style={{ paddingLeft: 18, marginTop: 12, fontSize: 13 }}>
+                  {Object.entries(asiManifest.ownerSummary.pendingReasons).map(([reason, count]) => (
+                    <li key={`pending-${reason}`}>
+                      {count} × {reason.replace(/-/g, " ")}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ fontSize: 13, opacity: 0.75, marginTop: 12 }}>All documented levers are ready for execution.</p>
+              )}
+              <small style={{ opacity: 0.65 }}>
+                Refresh with <code style={codeStyle}>npm run demo:sovereign-constellation:atlas</code> after new deployments.
+              </small>
+            </div>
+            <div style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 12 }}>
+              <h3 style={{ marginTop: 0 }}>Manifest Controls</h3>
+              <p style={{ margin: 0, fontSize: 14 }}>
+                Use the CLI or copy the rendered Markdown to brief stakeholders without touching code.
+              </p>
+              <button
+                type="button"
+                onClick={handleCopyManifest}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 12,
+                  border: "none",
+                  cursor: "pointer",
+                  background: "#2563eb",
+                  color: "white",
+                  fontWeight: 600
+                }}
+              >
+                Copy manifest to clipboard
+              </button>
+              {manifestCopyStatus ? (
+                <span style={{ fontSize: 12, color: "#0f172a" }}>{manifestCopyStatus}</span>
+              ) : null}
+              <code style={codeStyle}>npm run demo:sovereign-constellation:asi-takes-off:launch</code>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 18,
+              marginBottom: 24
+            }}
+          >
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Thermostat Guidance</h3>
+              <ul style={{ paddingLeft: 18, fontSize: 13 }}>
+                <li>Average participation: {formatParticipation(asiManifest.thermostat.summary.averageParticipation)}</li>
+                <li>Commit window: {formatDuration(asiManifest.thermostat.summary.commitWindowSeconds)}</li>
+                <li>Reveal window: {formatDuration(asiManifest.thermostat.summary.revealWindowSeconds)}</li>
+                <li>
+                  Minimum stake: {asiManifest.thermostat.summary.minStakeWei
+                    ? formatAgia(asiManifest.thermostat.summary.minStakeWei)
+                    : "—"}
+                </li>
+              </ul>
+              {asiManifest.thermostat.summary.notes.length > 0 ? (
+                <div style={{ fontSize: 12, background: "rgba(37, 99, 235, 0.1)", padding: 10, borderRadius: 10 }}>
+                  <strong>Telemetry notes</strong>
+                  <ul style={{ paddingLeft: 18, marginTop: 6 }}>
+                    {asiManifest.thermostat.summary.notes.map((note, idx) => (
+                      <li key={`note-${idx}`}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+            <div style={cardStyle}>
+              <h3 style={{ marginTop: 0 }}>Recommended Actions</h3>
+              {asiManifest.thermostat.actions.length > 0 ? (
+                <ul style={{ paddingLeft: 18, fontSize: 13 }}>
+                  {asiManifest.thermostat.actions.slice(0, 4).map((action, idx) => (
+                    <li key={`action-${idx}`} style={{ marginBottom: 6 }}>
+                      <strong>{action.action}</strong>
+                      <div style={{ opacity: 0.8 }}>{action.reason ?? "Telemetry recommendation"}</div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ fontSize: 13 }}>No immediate thermostat actions are pending.</p>
+              )}
+              {asiManifest.thermostat.actions.length > 4 ? (
+                <small style={{ opacity: 0.65 }}>
+                  Additional actions are recorded in the launch manifest Markdown.
+                </small>
+              ) : null}
+            </div>
+          </div>
+          <div style={{ ...cardStyle, padding: 20 }}>
+            <h3 style={{ marginTop: 0 }}>Launch Manifest Preview</h3>
+            <p style={{ fontSize: 13, opacity: 0.8 }}>
+              Preview of the generated Markdown; run the CLI for the complete document with automation guardrails and
+              explorer links.
+            </p>
+            <pre
+              style={{
+                background: "#0f172a",
+                color: "#f8fafc",
+                padding: 16,
+                borderRadius: 12,
+                maxHeight: 260,
+                overflow: "auto",
+                fontSize: 12,
+                lineHeight: 1.6
+              }}
+            >
+              {asiManifest.preview.join("\n")}
+            </pre>
           </div>
         </section>
       ) : null}

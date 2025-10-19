@@ -1,4 +1,4 @@
-declare module "../shared/ownerMatrix.mjs" {
+declare module "./ownerMatrix.mjs" {
   export type OwnerMatrixEntry = {
     id: string;
     pillarId: string;
@@ -21,11 +21,13 @@ declare module "../shared/ownerMatrix.mjs" {
     available: boolean;
     status: string;
     resolvedAt: string;
+    atlasModules?: string[];
+    atlasActions?: string[];
   };
 
   export function buildOwnerCommandMatrix(
     entries: OwnerMatrixEntry[],
-    atlas: { atlas?: any[] } | any[]
+    atlas: { atlas: any[] }
   ): OwnerMatrixResolved[];
 
   export function summarizeAvailability(matrix: OwnerMatrixResolved[]): {
@@ -36,6 +38,6 @@ declare module "../shared/ownerMatrix.mjs" {
 
   export function formatOwnerCommandMatrixForCli(
     matrix: OwnerMatrixResolved[],
-    options?: Record<string, unknown>
+    options?: Record<string, any>
   ): string;
 }
