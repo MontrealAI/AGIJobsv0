@@ -57,6 +57,9 @@ jobs:
       - name: Verify CI enforcement
         run: npm run demo:agi-governance:ci
 
+      - name: Aggregate owner diagnostics
+        run: npm run demo:agi-governance:owner-diagnostics
+
       - name: Upload governance artefacts
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

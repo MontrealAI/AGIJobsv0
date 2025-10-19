@@ -186,3 +186,12 @@ export function formatBytes32List(values: Iterable<string>): string {
     .map((value) => value.toLowerCase())
     .join(', ');
 }
+
+export function stringifyWithBigint(value: unknown, space = 2): string {
+  return JSON.stringify(
+    value,
+    (_key, innerValue) =>
+      typeof innerValue === 'bigint' ? innerValue.toString() : innerValue,
+    space,
+  );
+}

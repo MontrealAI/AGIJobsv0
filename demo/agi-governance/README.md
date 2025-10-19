@@ -45,6 +45,14 @@ npm run demo:agi-governance:ci
 
 This command checks that the repository’s v2 CI workflow still enforces the mandatory green path (`lint`, `tests`, `foundry`, `coverage`, `CI summary` contexts), concurrency guards, and environment seals. Any drift fails loudly.
 
+Finish by aggregating the owner diagnostics bundle:
+
+```bash
+npm run demo:agi-governance:owner-diagnostics
+```
+
+The aggregator executes the owner audit CLIs (`owner:audit-hamiltonian`, `reward-engine:report`, `owner:upgrade-status`, `owner:compliance-report`) with JSON output, normalises warnings (e.g., missing Hardhat artifacts or placeholder addresses), and writes both machine-readable and Markdown summaries to `reports/`. Non-technical operators can now forward a single dossier proving that every governance lever remains under the owner’s control.
+
 ## Empowering non-technical operators
 
 - **No manual math.** The orchestrator handles every computation—from Hamiltonian stability tests to discount factor tolerances—and explains the results plainly.
