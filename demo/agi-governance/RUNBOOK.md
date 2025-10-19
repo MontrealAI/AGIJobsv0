@@ -32,6 +32,7 @@ Outputs `reports/governance-demo-report.md` with:
 - Triple-verified game-theory equilibrium (replicator simulation, closed-form solver, Monte-Carlo stress test).
 - Owner command surface (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel verifications).
 - CI enforcement proof (required contexts, concurrency, access-control coverage).
+- Assurance diagnostics (Landauer adequacy ratios, payoff eigenvalue condition number, automated owner authority assertions).
 
 Review the report. It references exact commands to execute each owner action on Ethereum or via AGI Jobs automation scripts.
 

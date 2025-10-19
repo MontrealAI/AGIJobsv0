@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T12:57:39.892Z
+*Generated at:* 2025-10-19T13:50:47.593Z
 *Version:* 1.0.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -11,17 +11,16 @@
 - **Free-energy safety margin:** 69.80k kJ
 - **Energy dissipated per block (burn):** 4.36k kJ
 - **Cross-check delta:** 0.000e+0 kJ (≤ 1e-6 required)
-
+- **Gibbs-to-Landauer ratio:** 1.307e+19
+- **Burn/Landauer ratio:** 8.169e+17
+- **Stake Boltzmann energy:** 2.967e-21 J (2.967e-24 kJ)
 ## 2. Hamiltonian Control Plane
-
 - **Kinetic term:** 34149.74M units
 - **Potential term (scaled by λ):** 302.02k units
 - **Hamiltonian energy:** 34149.44M units
 - **Alternate computation check:** 34149.44M units
 - **Difference:** 0.000e+0 (≤ 1e-3 target)
-
 ## 3. Game-Theoretic Macro-Equilibrium
-
 - **Discount factor:** 0.92 (must exceed 0.80 for uniqueness)
 - **Replicator iterations to convergence:** 50000
 - **Replicator vs closed-form deviation:** 1.101e-1
@@ -34,9 +33,9 @@
 | Pareto-Coop | 32.36% | 33.33% | 33.91% |
 | Thermo-Titan | 41.56% | 33.33% | 33.11% |
 | Sentinel-Tactician | 26.09% | 33.33% | 32.98% |
-
+- **Average divergence (Monte-Carlo):** 6.820e-2
+- **Average payoff (Monte-Carlo):** 1.00 tokens
 ## 4. Owner Supremacy & Command Surface
-
 - **Owner:** 0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1
 - **Pauser:** 0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2
 - **Treasury:** 0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3
@@ -51,9 +50,7 @@
   └─ <code>$ npm run owner:rotate -- --network mainnet --role Sentinel --count 3</code>
 - **Update tax policy disclosure.** Publishes the latest regulatory acknowledgement without touching business logic.
   └─ <code>$ npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."</code>
-
 ## 5. CI Enforcement Ledger
-
 - **Workflow name:** ci (v2)
 - **Concurrency guard:** <code>ci-${{ github.workflow }}-${{ github.ref }}</code>
 - **Minimum coverage:** 90%
@@ -67,9 +64,30 @@
 | summary | CI summary |
 
 Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.
+## 6. Diagnostics & Assurance
+- **Landauer adequacy:** Gibbs free energy exceeds Landauer minimum by 1.307e+19x
+- **Replicator vs Monte-Carlo deviation:** 1.101e-1
+- **Replicator vs closed-form deviation:** 1.101e-1
+- **Monte-Carlo average divergence:** 6.820e-2
 
-## 6. Owner Execution Log (fill during live ops)
+### Owner assertions
+- ✅ **Owner address format:** 0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1 is a valid EOA/multisig format
+- ✅ **Pauser address format:** 0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2 is a valid controller format
+- ✅ **Treasury address format:** 0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3 is a valid treasury format
+- ✅ **Timelock horizon:** Timelock is 691200 seconds (8.00 days)
+- ✅ **Upgrade action: Recalibrate Hamiltonian monitor:** npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08
+- ✅ **Upgrade action: Adjust reward engine burn curve:** npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200
+- ✅ **Upgrade action: Rotate governance sentinels:** npm run owner:rotate -- --network mainnet --role Sentinel --count 3
+- ✅ **Upgrade action: Update tax policy disclosure:** npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."
 
+### Symmetrised payoff eigenvalues
+| Eigenvalue | Magnitude |
+| --- | --- |
+| λ1 | 3.0000 |
+| λ2 | 0.0000 |
+| λ3 | -0.0000 |
+- **Condition number:** 1.000e+0 (lower is more stable)
+## 7. Owner Execution Log (fill during live ops)
 | Timestamp | Action | Tx hash | Operator | Notes |
 | --- | --- | --- | --- | --- |
 | _pending_ |  |  |  |  |

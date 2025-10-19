@@ -71,9 +71,30 @@ type ThermodynamicReport = {
   gibbsFreeEnergyKJ: number;
   gibbsFreeEnergyJ: number;
   landauerKJ: number;
+  landauerJ: number;
   freeEnergyMarginKJ: number;
   burnEnergyPerBlockKJ: number;
   gibbsAgreementDelta: number;
+  gibbsToLandauerRatio: number | null;
+  burnToLandauerRatio: number | null;
+  stakeBoltzmannEnergyJ: number;
+  stakeBoltzmannEnergyKJ: number;
+};
+
+type OwnerAssertion = {
+  check: string;
+  passed: boolean;
+  detail: string;
+};
+
+type DiagnosticsReport = {
+  landauerAdequacy: string;
+  ownerAssertions: OwnerAssertion[];
+  eigenvalues: number[];
+  eigenvalueCondition: number | null;
+  replicatorVsMonteCarlo: number;
+  replicatorVsClosedForm: number;
+  monteCarloAverageDivergence: number;
 };
 
 type HamiltonianReport = {
@@ -95,6 +116,8 @@ type EquilibriumResult = {
   divergenceAtEquilibrium: number;
   discountFactor: number;
   replicatorDeviation: number;
+  monteCarloAverageDivergence: number;
+  monteCarloAveragePayoff: number;
 };
 
 type ReportBundle = {
@@ -106,6 +129,7 @@ type ReportBundle = {
   ownerControls: MissionConfig["ownerControls"];
   ci: MissionConfig["ci"];
   divergenceTolerance: number;
+  diagnostics: DiagnosticsReport;
 };
 
 function assertValidConfig(config: MissionConfig): void {
@@ -146,13 +170,24 @@ function computeThermodynamics(config: MissionConfig): ThermodynamicReport {
   const referenceGibbs = enthalpyKJ - (operatingTemperatureK - referenceTemperatureK) * entropyKJPerK - referenceTemperatureK * entropyKJPerK;
   const gibbsAgreementDelta = Math.abs(referenceGibbs - gibbsFreeEnergyKJ);
 
+  const landauerSafeDivisor = landauerEnergyJ <= 0 ? null : landauerEnergyJ;
+  const gibbsToLandauerRatio = landauerSafeDivisor ? gibbsFreeEnergyJ / landauerSafeDivisor : null;
+  const burnToLandauerRatio = landauerSafeDivisor ? (burnEnergyPerBlockKJ * 1_000) / landauerSafeDivisor : null;
+  const stakeBoltzmannEnergyJ = config.thermodynamics.stakeBoltzmann * operatingTemperatureK * LN2;
+  const stakeBoltzmannEnergyKJ = stakeBoltzmannEnergyJ / 1_000;
+
   return {
     gibbsFreeEnergyKJ,
     gibbsFreeEnergyJ,
     landauerKJ,
+    landauerJ: landauerEnergyJ,
     freeEnergyMarginKJ,
     burnEnergyPerBlockKJ,
     gibbsAgreementDelta,
+    gibbsToLandauerRatio,
+    burnToLandauerRatio,
+    stakeBoltzmannEnergyJ,
+    stakeBoltzmannEnergyKJ,
   };
 }
 
@@ -388,6 +423,8 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     divergenceAtEquilibrium,
     discountFactor: config.hamiltonian.discountFactor,
     replicatorDeviation,
+    monteCarloAverageDivergence: monteCarlo.averageDivergence,
+    monteCarloAveragePayoff: monteCarlo.averagePayoff,
   };
 }
 
@@ -408,8 +445,25 @@ function formatNumber(value: number, digits = 2): string {
   return value.toFixed(digits);
 }
 
+function formatScientific(value: number | null, digits = 3): string {
+  if (value === null || !Number.isFinite(value)) {
+    return "n/a";
+  }
+  return value.toExponential(digits);
+}
+
 function buildMarkdown(bundle: ReportBundle): string {
-  const { meta, generatedAt, thermodynamics, hamiltonian, equilibrium, ownerControls, ci, divergenceTolerance } = bundle;
+  const {
+    meta,
+    generatedAt,
+    thermodynamics,
+    hamiltonian,
+    equilibrium,
+    ownerControls,
+    ci,
+    divergenceTolerance,
+    diagnostics,
+  } = bundle;
 
   const strategyTable = equilibrium.labels
     .map((label, index) =>
@@ -425,6 +479,14 @@ function buildMarkdown(bundle: ReportBundle): string {
 
   const ciTable = ci.requiredJobs.map((job) => `| ${job.id} | ${job.name} |`).join("\n");
 
+  const ownerAssertionList = diagnostics.ownerAssertions
+    .map((assertion) => `- ${assertion.passed ? "✅" : "⚠️"} **${assertion.check}:** ${assertion.detail}`)
+    .join("\n");
+
+  const eigenvalueTable = diagnostics.eigenvalues
+    .map((value, index) => `| λ${index + 1} | ${formatNumber(value, 4)} |`)
+    .join("\n");
+
   return [
     `# ${meta.title} — Governance Demonstration Report`,
     `*Generated at:* ${generatedAt}`,
@@ -439,17 +501,20 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Free-energy safety margin:** ${formatNumber(thermodynamics.freeEnergyMarginKJ)} kJ`,
     `- **Energy dissipated per block (burn):** ${formatNumber(thermodynamics.burnEnergyPerBlockKJ)} kJ`,
     `- **Cross-check delta:** ${thermodynamics.gibbsAgreementDelta.toExponential(3)} kJ (≤ 1e-6 required)`,
-    "",
+    `- **Gibbs-to-Landauer ratio:** ${formatScientific(thermodynamics.gibbsToLandauerRatio)}`,
+    `- **Burn/Landauer ratio:** ${formatScientific(thermodynamics.burnToLandauerRatio)}`,
+    `- **Stake Boltzmann energy:** ${formatScientific(thermodynamics.stakeBoltzmannEnergyJ)} J (${formatScientific(thermodynamics.stakeBoltzmannEnergyKJ)} kJ)`,
+
     "## 2. Hamiltonian Control Plane",
-    "",
+
     `- **Kinetic term:** ${formatNumber(hamiltonian.kineticTerm)} units`,
     `- **Potential term (scaled by λ):** ${formatNumber(hamiltonian.potentialTerm)} units`,
     `- **Hamiltonian energy:** ${formatNumber(hamiltonian.hamiltonianValue)} units`,
     `- **Alternate computation check:** ${formatNumber(hamiltonian.alternativeHamiltonian)} units`,
     `- **Difference:** ${hamiltonian.difference.toExponential(3)} (≤ 1e-3 target)`,
-    "",
+
     "## 3. Game-Theoretic Macro-Equilibrium",
-    "",
+
     `- **Discount factor:** ${equilibrium.discountFactor.toFixed(2)} (must exceed 0.80 for uniqueness)`,
     `- **Replicator iterations to convergence:** ${equilibrium.replicatorIterations}`,
     `- **Replicator vs closed-form deviation:** ${equilibrium.replicatorDeviation.toExponential(3)}`,
@@ -460,9 +525,11 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| Strategy | Replicator | Closed-form | Monte-Carlo |",
     "| --- | --- | --- | --- |",
     strategyTable,
-    "",
+    `- **Average divergence (Monte-Carlo):** ${equilibrium.monteCarloAverageDivergence.toExponential(3)}`,
+    `- **Average payoff (Monte-Carlo):** ${formatNumber(equilibrium.monteCarloAveragePayoff)} tokens`,
+
     "## 4. Owner Supremacy & Command Surface",
-    "",
+
     `- **Owner:** ${ownerControls.owner}`,
     `- **Pauser:** ${ownerControls.pauser}`,
     `- **Treasury:** ${ownerControls.treasury}`,
@@ -470,9 +537,9 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     "### Action Library",
     upgradeList,
-    "",
+
     "## 5. CI Enforcement Ledger",
-    "",
+
     `- **Workflow name:** ${ci.workflow}`,
     `- **Concurrency guard:** <code>${ci.concurrency}</code>`,
     `- **Minimum coverage:** ${ci.minCoverage}%`,
@@ -482,15 +549,32 @@ function buildMarkdown(bundle: ReportBundle): string {
     ciTable,
     "",
     "Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.",
+
+    "## 6. Diagnostics & Assurance",
+
+    `- **Landauer adequacy:** ${diagnostics.landauerAdequacy}`,
+    `- **Replicator vs Monte-Carlo deviation:** ${diagnostics.replicatorVsMonteCarlo.toExponential(3)}`,
+    `- **Replicator vs closed-form deviation:** ${diagnostics.replicatorVsClosedForm.toExponential(3)}`,
+    `- **Monte-Carlo average divergence:** ${diagnostics.monteCarloAverageDivergence.toExponential(3)}`,
     "",
-    "## 6. Owner Execution Log (fill during live ops)",
+    "### Owner assertions",
+    ownerAssertionList,
     "",
+    "### Symmetrised payoff eigenvalues",
+    "| Eigenvalue | Magnitude |",
+    "| --- | --- |",
+    eigenvalueTable,
+    diagnostics.eigenvalueCondition
+      ? `- **Condition number:** ${diagnostics.eigenvalueCondition.toExponential(3)} (lower is more stable)`
+      : `- **Condition number:** n/a`,
+
+    "## 7. Owner Execution Log (fill during live ops)",
+
     "| Timestamp | Action | Tx hash | Operator | Notes |",
     "| --- | --- | --- | --- | --- |",
     "| _pending_ |  |  |  |  |",
   ].join("\n");
 }
-
 function buildSummary(bundle: ReportBundle): Record<string, unknown> {
   return {
     generatedAt: bundle.generatedAt,
@@ -500,14 +584,156 @@ function buildSummary(bundle: ReportBundle): Record<string, unknown> {
     equilibrium: bundle.equilibrium,
     owner: bundle.ownerControls,
     ci: bundle.ci,
+    diagnostics: bundle.diagnostics,
   };
 }
+
+function computeSymmetricMatrix(matrix: number[][]): number[][] {
+  return matrix.map((row, i) => row.map((_, j) => (matrix[i][j] + matrix[j][i]) / 2));
+}
+
+function determinant3x3(matrix: number[][]): number {
+  const [a, b, c] = matrix;
+  return (
+    a[0] * (b[1] * c[2] - b[2] * c[1]) -
+    a[1] * (b[0] * c[2] - b[2] * c[0]) +
+    a[2] * (b[0] * c[1] - b[1] * c[0])
+  );
+}
+
+function scalarMultiply(matrix: number[][], scalar: number): number[][] {
+  return matrix.map((row) => row.map((value) => value * scalar));
+}
+
+function addMatrices(a: number[][], b: number[][]): number[][] {
+  return a.map((row, i) => row.map((value, j) => value + b[i][j]));
+}
+
+function computeSymmetricEigenvalues(matrix: number[][]): number[] {
+  const symmetric = computeSymmetricMatrix(matrix);
+  const m11 = symmetric[0][0];
+  const m12 = symmetric[0][1];
+  const m13 = symmetric[0][2];
+  const m22 = symmetric[1][1];
+  const m23 = symmetric[1][2];
+  const m33 = symmetric[2][2];
+
+  const p1 = m12 * m12 + m13 * m13 + m23 * m23;
+  if (p1 === 0) {
+    return [m11, m22, m33].sort((a, b) => b - a);
+  }
+
+  const q = (m11 + m22 + m33) / 3;
+  const p2 = (m11 - q) ** 2 + (m22 - q) ** 2 + (m33 - q) ** 2 + 2 * p1;
+  const p = Math.sqrt(p2 / 6);
+
+  const identityScaled = scalarMultiply(
+    [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ],
+    q,
+  );
+  const B = scalarMultiply(addMatrices(symmetric, scalarMultiply(identityScaled, -1)), 1 / p);
+  const detB = determinant3x3(B) / 2;
+  const clampedDetB = Math.max(-1, Math.min(1, detB));
+  const phi = Math.acos(clampedDetB) / 3;
+
+  const eig1 = q + 2 * p * Math.cos(phi);
+  const eig2 = q + 2 * p * Math.cos(phi + (2 * Math.PI) / 3);
+  const eig3 = q + 2 * p * Math.cos(phi + (4 * Math.PI) / 3);
+
+  return [eig1, eig2, eig3].sort((a, b) => b - a);
+}
+
+function buildOwnerAssertions(ownerControls: MissionConfig["ownerControls"]): OwnerAssertion[] {
+  const assertions: OwnerAssertion[] = [];
+  const addressPattern = /^0x[a-fA-F0-9]{40}$/;
+
+  const ownerValid = addressPattern.test(ownerControls.owner);
+  assertions.push({
+    check: "Owner address format",
+    passed: ownerValid,
+    detail: `${ownerControls.owner} ${ownerValid ? "is" : "is not"} a valid EOA/multisig format`,
+  });
+
+  const pauserValid = addressPattern.test(ownerControls.pauser);
+  assertions.push({
+    check: "Pauser address format",
+    passed: pauserValid,
+    detail: `${ownerControls.pauser} ${pauserValid ? "is" : "is not"} a valid controller format`,
+  });
+
+  const treasuryValid = addressPattern.test(ownerControls.treasury);
+  assertions.push({
+    check: "Treasury address format",
+    passed: treasuryValid,
+    detail: `${ownerControls.treasury} ${treasuryValid ? "is" : "is not"} a valid treasury format`,
+  });
+
+  assertions.push({
+    check: "Timelock horizon",
+    passed: ownerControls.timelockSeconds >= 86_400,
+    detail: `Timelock is ${ownerControls.timelockSeconds} seconds (${(ownerControls.timelockSeconds / 86_400).toFixed(2)} days)`,
+  });
+
+  const upgradeAssertions = ownerControls.upgradeActions.map((action) => ({
+    check: `Upgrade action: ${action.label}`,
+    passed: action.command.trim().length > 0 && action.command.includes("npm run"),
+    detail: action.command,
+  }));
+
+  return assertions.concat(upgradeAssertions);
+}
+
+function computeDiagnostics(
+  thermodynamics: ThermodynamicReport,
+  equilibrium: EquilibriumResult,
+  ownerControls: MissionConfig["ownerControls"],
+  payoffMatrix: number[][],
+): DiagnosticsReport {
+  let landauerAdequacy = "No Landauer reference defined";
+  if (thermodynamics.gibbsToLandauerRatio && thermodynamics.gibbsToLandauerRatio > 1) {
+    landauerAdequacy = `Gibbs free energy exceeds Landauer minimum by ${thermodynamics.gibbsToLandauerRatio.toExponential(3)}x`;
+  } else if (thermodynamics.gibbsToLandauerRatio) {
+    landauerAdequacy = `Warning: Gibbs/Landauer ratio ${thermodynamics.gibbsToLandauerRatio.toExponential(3)} ≤ 1`;
+  }
+
+  const ownerAssertions = buildOwnerAssertions(ownerControls);
+  const eigenvalues = computeSymmetricEigenvalues(payoffMatrix);
+  const filteredEigenvalues = eigenvalues.filter((value) => Math.abs(value) > 1e-9);
+  const eigenvalueCondition =
+    filteredEigenvalues.length === 0
+      ? null
+      : Math.max(...filteredEigenvalues.map((value) => Math.abs(value))) /
+        Math.min(...filteredEigenvalues.map((value) => Math.abs(value)));
+
+  const replicatorVsMonteCarlo = Math.sqrt(
+    equilibrium.replicator.reduce((sum, value, index) => sum + (value - equilibrium.monteCarlo[index]) ** 2, 0),
+  );
+  const replicatorVsClosedForm = Math.sqrt(
+    equilibrium.replicator.reduce((sum, value, index) => sum + (value - equilibrium.closedForm[index]) ** 2, 0),
+  );
+
+  return {
+    landauerAdequacy,
+    ownerAssertions,
+    eigenvalues,
+    eigenvalueCondition,
+    replicatorVsMonteCarlo,
+    replicatorVsClosedForm,
+    monteCarloAverageDivergence: equilibrium.monteCarloAverageDivergence,
+  };
+}
+
 
 async function main(): Promise<void> {
   const mission = await loadMission();
   const thermodynamics = computeThermodynamics(mission);
   const hamiltonian = computeHamiltonian(mission);
   const equilibrium = computeEquilibrium(mission);
+  const diagnostics = computeDiagnostics(thermodynamics, equilibrium, mission.ownerControls, mission.gameTheory.payoffMatrix);
 
   const bundle: ReportBundle = {
     generatedAt: new Date().toISOString(),
@@ -518,6 +744,7 @@ async function main(): Promise<void> {
     ownerControls: mission.ownerControls,
     ci: mission.ci,
     divergenceTolerance: mission.hamiltonian.divergenceTolerance,
+    diagnostics,
   };
 
   await mkdir(REPORT_DIR, { recursive: true });
