@@ -30,7 +30,10 @@ npm run demo:agi-governance
 Outputs `reports/governance-demo-report.md` with:
 - Thermodynamic energy margins (Gibbs free energy, Hamiltonian convergence envelope, Landauer limit calibration).
 - Triple-verified game-theory equilibrium (replicator simulation, closed-form solver, Monte-Carlo stress test).
-- Owner command surface (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel verifications).
+- Replicator Jacobian stability, antifragility curvature, and welfare growth curve for adversarial shocks.
+- Risk audit portfolio with weighted mitigation coverage and board threshold comparison.
+- Owner command surface (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel verifications) plus capability coverage matrix.
+- Blockchain deployment ledger (contracts, pausable selectors, Safe module stack).
 - CI enforcement proof (required contexts, concurrency, access-control coverage).
 
 Review the report. It references exact commands to execute each owner action on Ethereum or via AGI Jobs automation scripts.
@@ -78,7 +81,13 @@ Each command below can be run via the CLI, Safe transaction builder, or Ethersca
    npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."
    ```
 
-5. **Resume the platform:**
+5. **Queue an upgrade bundle for deterministic rollout:**
+   ```bash
+   npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json
+   npm run owner:upgrade-status -- --network mainnet
+   ```
+
+6. **Resume the platform:**
    ```bash
    npm run owner:system-pause -- --network mainnet --pause false
    npm run owner:verify-control -- --network mainnet
@@ -115,7 +124,7 @@ Archive the resulting artefacts inside `reports/` alongside the governance dossi
 After each run:
 1. Commit the generated artefacts to a dedicated evidence branch or upload them to immutable storage (e.g., IPFS, Arweave).
 2. Cross-reference the timestamp with Safe/Etherscan transaction receipts.
-3. Update the `Owner Execution Log` section in the dossier with:
+3. Update the `Owner Execution Log` section in the dossier and tick the capability coverage table once each action has a confirmed transaction hash.
    - Transaction hash
    - Module touched
    - Parameter delta

@@ -15,8 +15,8 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 
 | Path | Purpose |
 | --- | --- |
-| [`config/mission@v1.json`](config/mission@v1.json) | Canonical governance, physics, and treasury manifest for the demo. |
-| [`scripts/executeDemo.ts`](scripts/executeDemo.ts) | Main orchestrator: loads the manifest, performs physics/game-theory calculations, verifies owner supremacy, and emits the governance dossier. |
+| [`config/mission@v1.json`](config/mission@v1.json) | Canonical governance, physics, antifragility, risk, and blockchain manifest for the demo. |
+| [`scripts/executeDemo.ts`](scripts/executeDemo.ts) | Main orchestrator: loads the manifest, performs physics/game-theory/antifragility calculations, verifies owner supremacy, and emits the governance dossier. |
 | [`scripts/verifyCiStatus.ts`](scripts/verifyCiStatus.ts) | Audits `.github/workflows/ci.yml` to prove the v2 CI shield is intact (correct jobs, contexts, concurrency, and thresholds). |
 | [`reports/`](reports) | Generated artefacts (`governance-demo-report.md`, `ci-verification.json`, etc.) are written here so they can be archived from CI. |
 | [`RUNBOOK.md`](RUNBOOK.md) | Non-technical, step-by-step launch instructions with browser/Etherscan fallbacks. |
@@ -31,8 +31,10 @@ The command generates `reports/governance-demo-report.md` with:
 
 1. Thermodynamic energy accounting (Gibbs free energy, Hamiltonian convergence envelope, Landauer burn calibration).
 2. Triple-verified game-theory equilibrium analysis (replicator dynamics simulation + closed-form solver + Monte-Carlo stress sampling).
-3. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations).
-4. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure.
+3. Replicator Jacobian stability and antifragility curvature proving positive welfare response to adversarial shocks.
+4. Risk portfolio matrix with weighted mitigation coverage versus the board-mandated threshold.
+5. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix.
+6. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
 
 Then run the CI verification layer:
 
@@ -46,7 +48,7 @@ This command checks that the repository’s v2 CI workflow still enforces the ma
 
 - **No manual math.** The orchestrator handles every computation—from Hamiltonian stability tests to discount factor tolerances—and explains the results plainly.
 - **Copy‑paste governance.** Ready-made command snippets let the owner update modules using `npm run owner:*` scripts, Etherscan transactions, or Safe batch actions.
-- **Evidence by default.** Every run produces timestamped artefacts that prove compliance with thermodynamic limits, governance divergence caps, and CI enforcement. Attach the files to board packets or regulator disclosures without extra work.
+- **Evidence by default.** Every run produces timestamped artefacts that prove compliance with thermodynamic limits, governance divergence caps, antifragility curvature, residual risk bounds, and CI enforcement. Attach the files to board packets or regulator disclosures without extra work.
 
 ## Extending the mission
 

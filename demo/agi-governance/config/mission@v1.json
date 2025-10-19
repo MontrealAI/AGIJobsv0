@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "title": "Solving α-AGI Governance",
     "description": "Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control."
   },
@@ -9,7 +9,7 @@
     "entropyKJPerK": 3920,
     "operatingTemperatureK": 310,
     "referenceTemperatureK": 300,
-    "bitsProcessed": 1.8e9,
+    "bitsProcessed": 1800000000,
     "burnRatePerBlock": 0.0625,
     "stakeBoltzmann": 1.380649e-23
   },
@@ -50,6 +50,77 @@
       "seed": 424242
     }
   },
+  "antifragility": {
+    "sigmaSamples": [0, 0.1, 0.2, 0.3],
+    "iterations": 4000,
+    "replicatorSteps": 320,
+    "seedOffset": 9000
+  },
+  "risk": {
+    "coverageWeights": {
+      "staking": 0.4,
+      "formal": 0.4,
+      "fuzz": 0.2
+    },
+    "portfolioThreshold": 0.3,
+    "classes": [
+      {
+        "id": "R0",
+        "label": "Specification drift",
+        "probability": 0.22,
+        "impact": 0.8,
+        "mitigations": {
+          "staking": 0.45,
+          "formal": 0.7,
+          "fuzz": 0.65
+        }
+      },
+      {
+        "id": "R1",
+        "label": "Economic exploit",
+        "probability": 0.18,
+        "impact": 0.75,
+        "mitigations": {
+          "staking": 0.8,
+          "formal": 0.82,
+          "fuzz": 0.75
+        }
+      },
+      {
+        "id": "R2",
+        "label": "Protocol attack",
+        "probability": 0.1,
+        "impact": 0.9,
+        "mitigations": {
+          "staking": 0.85,
+          "formal": 0.9,
+          "fuzz": 0.8
+        }
+      },
+      {
+        "id": "R3",
+        "label": "Model misbehaviour",
+        "probability": 0.25,
+        "impact": 0.65,
+        "mitigations": {
+          "staking": 0.6,
+          "formal": 0.75,
+          "fuzz": 0.65
+        }
+      },
+      {
+        "id": "R4",
+        "label": "Societal externality",
+        "probability": 0.08,
+        "impact": 1.0,
+        "mitigations": {
+          "staking": 0.45,
+          "formal": 0.35,
+          "fuzz": 0.35
+        }
+      }
+    ]
+  },
   "ownerControls": {
     "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
     "pauser": "0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
@@ -59,23 +130,134 @@
       {
         "label": "Recalibrate Hamiltonian monitor",
         "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
-        "impact": "Locks the energy coupling coefficient and inertial metric to the antifragile optimum computed in the dossier."
+        "impact": "Locks the energy coupling coefficient and inertial metric to the antifragile optimum computed in the dossier.",
+        "category": "parameter"
       },
       {
         "label": "Adjust reward engine burn curve",
         "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
-        "impact": "Aligns emission schedule with the Landauer-calibrated burn policy."
+        "impact": "Aligns emission schedule with the Landauer-calibrated burn policy.",
+        "category": "treasury"
       },
       {
         "label": "Rotate governance sentinels",
         "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
-        "impact": "Refreshes slashing guardians while keeping owner override authority."
+        "impact": "Refreshes slashing guardians while keeping owner override authority.",
+        "category": "sentinel"
       },
       {
         "label": "Update tax policy disclosure",
         "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
-        "impact": "Publishes the latest regulatory acknowledgement without touching business logic."
+        "impact": "Publishes the latest regulatory acknowledgement without touching business logic.",
+        "category": "compliance"
       }
+    ],
+    "criticalCapabilities": [
+      {
+        "category": "pause",
+        "label": "Global pause switch",
+        "description": "Immediate halt for the entire AGI Jobs execution surface via the owner guardian.",
+        "command": "npm run owner:system-pause -- --network mainnet --pause true",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "resume",
+        "label": "Resume operations",
+        "description": "Restores production flows after remediation and confirms health checks.",
+        "command": "npm run owner:system-pause -- --network mainnet --pause false",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "parameter",
+        "label": "Tune Hamiltonian parameters",
+        "description": "Applies Hamiltonian monitor adjustments to lock λ and inertial metrics at the computed optimum.",
+        "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
+        "verification": "npm run owner:audit-hamiltonian"
+      },
+      {
+        "category": "treasury",
+        "label": "Reward engine burn curve",
+        "description": "Aligns mint/burn ratios with thermodynamic constraints and treasury splits.",
+        "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
+        "verification": "npm run reward-engine:report"
+      },
+      {
+        "category": "sentinel",
+        "label": "Sentinel rotation",
+        "description": "Refreshes enforcement guardians to maintain antifragile coverage.",
+        "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
+        "verification": "npm run monitoring:sentinels"
+      },
+      {
+        "category": "upgrade",
+        "label": "Timelocked upgrade queue",
+        "description": "Queues upgrade bundle into the timelock for deterministic rollout.",
+        "command": "npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json",
+        "verification": "npm run owner:upgrade-status"
+      },
+      {
+        "category": "compliance",
+        "label": "Regulatory disclosure",
+        "description": "Publishes mandatory statements to participants and regulators.",
+        "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
+        "verification": "npm run owner:compliance-report"
+      }
+    ],
+    "requiredCategories": ["pause", "resume", "parameter", "treasury", "sentinel", "upgrade", "compliance"],
+    "monitoringSentinels": [
+      "Grafana circuit-breakers watching governance divergence",
+      "On-chain staking slash monitors",
+      "Adaptive fuzz oracle with spectral drift alerts"
+    ]
+  },
+  "blockchain": {
+    "network": "Ethereum Mainnet-grade",
+    "chainId": 1,
+    "rpcProvider": "https://mainnet.infura.io/v3/YOUR_KEY",
+    "gasTargetGwei": 24,
+    "confirmations": 3,
+    "upgradeDelaySeconds": 604800,
+    "contracts": [
+      {
+        "name": "AGIJobsGovernor",
+        "address": "0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4",
+        "role": "Primary governance module"
+      },
+      {
+        "name": "AGIJobsTreasury",
+        "address": "0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5",
+        "role": "Treasury vault / emission controller"
+      },
+      {
+        "name": "HamiltonianMonitor",
+        "address": "0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6",
+        "role": "Energy coupling supervisor"
+      }
+    ],
+    "pausableFunctions": [
+      {
+        "contract": "AGIJobsGovernor",
+        "function": "pause",
+        "selector": "0x8456cb59",
+        "description": "Global stop for task orchestration"
+      },
+      {
+        "contract": "AGIJobsGovernor",
+        "function": "unpause",
+        "selector": "0x3f4ba83a",
+        "description": "Resume operations"
+      },
+      {
+        "contract": "AGIJobsTreasury",
+        "function": "updateEmissionCurve",
+        "selector": "0xa10204e9",
+        "description": "Adjusts reward burn / mint ratios"
+      }
+    ],
+    "safeModules": [
+      "SafeModule:PauseGuardian",
+      "SafeModule:UpgradeOrchestrator",
+      "SafeModule:TreasuryFlows"
     ]
   },
   "ci": {
