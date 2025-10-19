@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-19T18:25:12.965Z",
+  "generatedAt": "2025-10-19T19:53:37.821Z",
   "version": "1.1.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
@@ -308,8 +308,11 @@
         "command": "npm run owner:system-pause -- --network mainnet --pause true",
         "verification": "npm run owner:verify-control",
         "present": true,
-        "scriptName": "owner:system-pause",
-        "scriptExists": true
+        "commandScriptName": "owner:system-pause",
+        "commandScriptExists": true,
+        "verificationScriptName": "owner:verify-control",
+        "verificationScriptExists": true,
+        "hasVerification": true
       },
       {
         "category": "resume",
@@ -318,8 +321,11 @@
         "command": "npm run owner:system-pause -- --network mainnet --pause false",
         "verification": "npm run owner:verify-control",
         "present": true,
-        "scriptName": "owner:system-pause",
-        "scriptExists": true
+        "commandScriptName": "owner:system-pause",
+        "commandScriptExists": true,
+        "verificationScriptName": "owner:verify-control",
+        "verificationScriptExists": true,
+        "hasVerification": true
       },
       {
         "category": "parameter",
@@ -328,8 +334,11 @@
         "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
         "verification": "npm run owner:audit-hamiltonian",
         "present": true,
-        "scriptName": "owner:command-center",
-        "scriptExists": true
+        "commandScriptName": "owner:command-center",
+        "commandScriptExists": true,
+        "verificationScriptName": "owner:audit-hamiltonian",
+        "verificationScriptExists": true,
+        "hasVerification": true
       },
       {
         "category": "treasury",
@@ -338,8 +347,11 @@
         "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
         "verification": "npm run reward-engine:report",
         "present": true,
-        "scriptName": "reward-engine:update",
-        "scriptExists": true
+        "commandScriptName": "reward-engine:update",
+        "commandScriptExists": true,
+        "verificationScriptName": "reward-engine:report",
+        "verificationScriptExists": true,
+        "hasVerification": true
       },
       {
         "category": "sentinel",
@@ -348,8 +360,11 @@
         "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
         "verification": "npm run monitoring:sentinels",
         "present": true,
-        "scriptName": "owner:rotate",
-        "scriptExists": true
+        "commandScriptName": "owner:rotate",
+        "commandScriptExists": true,
+        "verificationScriptName": "monitoring:sentinels",
+        "verificationScriptExists": true,
+        "hasVerification": true
       },
       {
         "category": "upgrade",
@@ -358,8 +373,11 @@
         "command": "npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json",
         "verification": "npm run owner:upgrade-status",
         "present": true,
-        "scriptName": "owner:upgrade",
-        "scriptExists": true
+        "commandScriptName": "owner:upgrade",
+        "commandScriptExists": true,
+        "verificationScriptName": "owner:upgrade-status",
+        "verificationScriptExists": true,
+        "hasVerification": true
       },
       {
         "category": "compliance",
@@ -368,8 +386,11 @@
         "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
         "verification": "npm run owner:compliance-report",
         "present": true,
-        "scriptName": "owner:update-all",
-        "scriptExists": true
+        "commandScriptName": "owner:update-all",
+        "commandScriptExists": true,
+        "verificationScriptName": "owner:compliance-report",
+        "verificationScriptExists": true,
+        "hasVerification": true
       }
     ],
     "requiredCoverage": [
@@ -408,7 +429,8 @@
       "Adaptive fuzz oracle with spectral drift alerts"
     ],
     "fullCoverage": true,
-    "allCommandsPresent": true
+    "allCommandsPresent": true,
+    "allVerificationScriptsPresent": true
   },
   "jacobian": {
     "analytic": [

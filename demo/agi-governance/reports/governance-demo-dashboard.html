@@ -152,7 +152,7 @@
     <header>
       <div class="badge">AGI Jobs v0 (v2) Superintelligence Console</div>
       <h1>Solving α-AGI Governance</h1>
-      <p class="meta">Generated 2025-10-19T18:25:12.965Z • Version 1.1.0</p>
+      <p class="meta">Generated 2025-10-19T19:53:37.821Z • Version 1.1.0</p>
       <p class="meta">Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.</p>
     </header>
     <main>
@@ -184,6 +184,8 @@
             <li>Pauser: <strong>0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2</strong></li>
             <li>Treasury: <strong>0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3</strong></li>
             <li>Timelock: <strong>691200 seconds</strong></li>
+            <li>Command scripts: <strong>✅ ready</strong></li>
+            <li>Verification scripts: <strong>✅ ready</strong></li>
           </ul>
         </div>
       </section>
@@ -324,14 +326,14 @@
 <li>Adaptive fuzz oracle with spectral drift alerts</li></ul>
           <h3>Capabilities</h3>
           <table>
-            <thead><tr><th>Capability</th><th>Category</th><th>Script</th><th>Status</th></tr></thead>
-            <tbody><tr><td>Global pause switch</td><td>pause</td><td>owner:system-pause</td><td>✅</td></tr>
-<tr><td>Resume operations</td><td>resume</td><td>owner:system-pause</td><td>✅</td></tr>
-<tr><td>Tune Hamiltonian parameters</td><td>parameter</td><td>owner:command-center</td><td>✅</td></tr>
-<tr><td>Reward engine burn curve</td><td>treasury</td><td>reward-engine:update</td><td>✅</td></tr>
-<tr><td>Sentinel rotation</td><td>sentinel</td><td>owner:rotate</td><td>✅</td></tr>
-<tr><td>Timelocked upgrade queue</td><td>upgrade</td><td>owner:upgrade</td><td>✅</td></tr>
-<tr><td>Regulatory disclosure</td><td>compliance</td><td>owner:update-all</td><td>✅</td></tr></tbody>
+            <thead><tr><th>Capability</th><th>Category</th><th>Command script</th><th>Command status</th><th>Verification script</th><th>Verification status</th></tr></thead>
+            <tbody><tr><td>Global pause switch</td><td>pause</td><td>owner:system-pause</td><td>✅</td><td>owner:verify-control</td><td>✅</td></tr>
+<tr><td>Resume operations</td><td>resume</td><td>owner:system-pause</td><td>✅</td><td>owner:verify-control</td><td>✅</td></tr>
+<tr><td>Tune Hamiltonian parameters</td><td>parameter</td><td>owner:command-center</td><td>✅</td><td>owner:audit-hamiltonian</td><td>✅</td></tr>
+<tr><td>Reward engine burn curve</td><td>treasury</td><td>reward-engine:update</td><td>✅</td><td>reward-engine:report</td><td>✅</td></tr>
+<tr><td>Sentinel rotation</td><td>sentinel</td><td>owner:rotate</td><td>✅</td><td>monitoring:sentinels</td><td>✅</td></tr>
+<tr><td>Timelocked upgrade queue</td><td>upgrade</td><td>owner:upgrade</td><td>✅</td><td>owner:upgrade-status</td><td>✅</td></tr>
+<tr><td>Regulatory disclosure</td><td>compliance</td><td>owner:update-all</td><td>✅</td><td>owner:compliance-report</td><td>✅</td></tr></tbody>
           </table>
         </div>
       </section>
