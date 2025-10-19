@@ -1025,6 +1025,9 @@ function computeJacobian(matrix: number[][], equilibrium: number[]): JacobianRep
   }
 
   const spectralRadius = estimateSpectralRadius(analytic);
+  // `estimateSpectralRadius` returns the magnitude of the dominant eigenvalue, so compare
+  // against a unit threshold (with a small tolerance) instead of zero to determine stability.
+  const spectralRadiusThreshold = 1 - 1e-9;
 
   return {
     analytic,
@@ -1032,7 +1035,7 @@ function computeJacobian(matrix: number[][], equilibrium: number[]): JacobianRep
     maxDifference,
     gershgorinUpperBound,
     spectralRadius,
-    stable: gershgorinUpperBound < 0 && spectralRadius < 0,
+    stable: gershgorinUpperBound < 0 && spectralRadius < spectralRadiusThreshold,
   };
 }
 
