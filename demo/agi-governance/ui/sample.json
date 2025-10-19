@@ -1,0 +1,170 @@
+{
+  "generatedAt": "2025-01-01T00:00:00.000Z",
+  "network": "hardhat",
+  "actors": [
+    { "key": "owner", "name": "Alpha Governance Owner", "role": "Owner", "address": "0xowner" }
+  ],
+  "ownerActions": [
+    {
+      "label": "Validator reward boosted",
+      "contract": "ValidationModule@0xmodule",
+      "method": "setValidatorRewardPct",
+      "parameters": { "pct": 48 },
+      "at": "2025-01-01T00:00:01.000Z"
+    }
+  ],
+  "timeline": [
+    {
+      "kind": "section",
+      "label": "Scenario 1 – Planetary constitution harmonisation",
+      "at": "2025-01-01T00:00:10.000Z",
+      "scenario": "Scenario 1 – Planetary constitution harmonisation"
+    }
+  ],
+  "scenarios": [
+    { "title": "Scenario 1 – Planetary constitution harmonisation", "jobId": "1", "timelineIndices": [0] }
+  ],
+  "market": {
+    "totalJobs": "2",
+    "pendingFees": "12.000000000000000000",
+    "finalSupply": "6400.000000000000000000",
+    "totalAgentStake": "720.000000000000000000",
+    "totalValidatorStake": "900.000000000000000000",
+    "mintedCertificates": [
+      { "jobId": "1", "owner": "0xagent", "uri": "ipfs://credential/1" }
+    ],
+    "agentPortfolios": [
+      {
+        "name": "Lyra (Strategist)",
+        "address": "0xagent",
+        "liquid": "1500.000000000000000000",
+        "staked": "360.000000000000000000",
+        "locked": "0",
+        "reputation": "5",
+        "certificates": [
+          { "jobId": "1", "uri": "ipfs://credential/1" }
+        ]
+      }
+    ],
+    "validatorCouncil": [
+      {
+        "name": "Helios (Validator)",
+        "address": "0xvalidator",
+        "liquid": "800.000000000000000000",
+        "staked": "300.000000000000000000",
+        "locked": "0",
+        "reputation": "4"
+      }
+    ],
+    "hamiltonianTelemetry": [
+      {
+        "label": "Constitution harmonisation",
+        "energy": 0.82,
+        "entropy": 0.33,
+        "temperature": 0.58,
+        "freeEnergy": 0.6286,
+        "hamiltonian": -0.3552,
+        "divergence": 0.0007,
+        "stackelbergLead": 0.9,
+        "antifragility": 0.2114,
+        "cooperationProbability": 0.93
+      }
+    ]
+  },
+  "ownerControl": {
+    "ownerAddress": "0xowner",
+    "guardianAddress": "0xguardian",
+    "baseline": {
+      "feePct": 4,
+      "validatorRewardPct": 42,
+      "commitWindowSeconds": 3600,
+      "revealWindowSeconds": 2400,
+      "minStake": "300.000000000000000000",
+      "maxStakePerAddress": "4200.000000000000000000",
+      "nonRevealPenaltyBps": 225,
+      "registryPauser": "0xowner",
+      "stakePauser": "0xowner",
+      "validationPauser": "0xowner",
+      "commitWindowFormatted": "1.00h",
+      "revealWindowFormatted": "0.67h"
+    },
+    "upgraded": {
+      "feePct": 4,
+      "validatorRewardPct": 47,
+      "commitWindowSeconds": 5400,
+      "revealWindowSeconds": 3600,
+      "minStake": "360.000000000000000000",
+      "maxStakePerAddress": "4200.000000000000000000",
+      "nonRevealPenaltyBps": 375,
+      "registryPauser": "0xguardian",
+      "stakePauser": "0xguardian",
+      "validationPauser": "0xguardian",
+      "commitWindowFormatted": "1.50h",
+      "revealWindowFormatted": "1.00h"
+    },
+    "restored": {
+      "feePct": 4,
+      "validatorRewardPct": 42,
+      "commitWindowSeconds": 3600,
+      "revealWindowSeconds": 2400,
+      "minStake": "300.000000000000000000",
+      "maxStakePerAddress": "4200.000000000000000000",
+      "nonRevealPenaltyBps": 225,
+      "registryPauser": "0xowner",
+      "stakePauser": "0xowner",
+      "validationPauser": "0xowner",
+      "commitWindowFormatted": "1.00h",
+      "revealWindowFormatted": "0.67h"
+    },
+    "drillCompletedAt": "2025-01-01T00:02:00.000Z"
+  },
+  "insights": [
+    {
+      "category": "Thermodynamics",
+      "title": "Constitution harmonisation equilibrium",
+      "detail": "Free energy 0.6286 with Hamiltonian -0.3552 → divergence 0.0007.",
+      "at": "2025-01-01T00:00:30.000Z"
+    }
+  ],
+  "automation": {
+    "headline": "Alpha governance cockpit",
+    "missionSummary": "Two sovereign-scale governance missions executed with thermodynamic telemetry and owner supremacy.",
+    "resilienceScore": 0.98,
+    "unstoppableScore": 0.99,
+    "autopilot": {
+      "ownerDirectives": [
+        {
+          "id": "owner-hamiltonian-audit",
+          "title": "Hamiltonian audit",
+          "summary": "Review divergence metrics < 0.002 across both scenarios to verify Pareto alignment.",
+          "priority": "critical"
+        }
+      ],
+      "agentOpportunities": [],
+      "validatorSignals": [],
+      "treasuryAlerts": []
+    },
+    "telemetry": {
+      "totalJobs": "2",
+      "mintedCertificates": 1,
+      "totalBurned": "0",
+      "finalSupply": "6400.000000000000000000"
+    },
+    "verification": {
+      "requiredChecks": [
+        "CI v2 summary gate"
+      ],
+      "docs": ["docs/thermodynamics-operations.md"],
+      "recommendedCommands": [
+        "npm run owner:dashboard -- --network hardhat"
+      ],
+      "lastUpdated": "2025-01-01T00:02:00.000Z"
+    },
+    "commands": {
+      "replayDemo": "npx hardhat run --no-compile scripts/v2/agiGovernanceGrandDemo.ts --network hardhat",
+      "exportTranscript": "npm run demo:agi-governance:export",
+      "launchControlRoom": "npm run demo:agi-governance:control-room",
+      "ownerDashboard": "npm run owner:dashboard -- --network hardhat"
+    }
+  }
+}

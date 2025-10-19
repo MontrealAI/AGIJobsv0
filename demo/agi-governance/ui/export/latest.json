@@ -1,0 +1,1743 @@
+{
+  "generatedAt": "2025-10-19T13:18:46.836Z",
+  "network": "hardhat",
+  "actors": [
+    {
+      "key": "owner",
+      "name": "Alpha Governance Owner",
+      "role": "Owner",
+      "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    },
+    {
+      "key": "guardian",
+      "name": "Guardian Council",
+      "role": "Moderator",
+      "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    },
+    {
+      "key": "coalition",
+      "name": "Planetary Coalition",
+      "role": "Nation",
+      "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    {
+      "key": "alliance",
+      "name": "Orbital Alliance",
+      "role": "Nation",
+      "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+    },
+    {
+      "key": "lyra",
+      "name": "Lyra (Strategist Agent)",
+      "role": "Agent",
+      "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+    },
+    {
+      "key": "orion",
+      "name": "Orion (Constitution Architect)",
+      "role": "Agent",
+      "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+    },
+    {
+      "key": "helios",
+      "name": "Helios (Validator)",
+      "role": "Validator",
+      "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+    },
+    {
+      "key": "kara",
+      "name": "Kara (Validator)",
+      "role": "Validator",
+      "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+    },
+    {
+      "key": "nova",
+      "name": "Nova (Validator)",
+      "role": "Validator",
+      "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+    }
+  ],
+  "ownerActions": [
+    {
+      "label": "Credential registry linked",
+      "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+      "method": "setJobRegistry",
+      "parameters": {
+        "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+      },
+      "at": "2025-10-19T13:18:46.203Z"
+    },
+    {
+      "label": "Credential stake linkage enabled",
+      "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+      "method": "setStakeManager",
+      "parameters": {
+        "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+      },
+      "at": "2025-10-19T13:18:46.205Z"
+    },
+    {
+      "label": "Stake fee pool configured",
+      "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "method": "setFeePool",
+      "parameters": {
+        "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
+      },
+      "at": "2025-10-19T13:18:46.207Z"
+    },
+    {
+      "label": "Stake modules assigned",
+      "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "method": "setModules",
+      "parameters": {
+        "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508"
+      },
+      "at": "2025-10-19T13:18:46.210Z"
+    },
+    {
+      "label": "Stake validation module linked",
+      "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "method": "setValidationModule",
+      "parameters": {
+        "validation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
+      },
+      "at": "2025-10-19T13:18:46.212Z"
+    },
+    {
+      "label": "Validation registry linked",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setJobRegistry",
+      "parameters": {
+        "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+      },
+      "at": "2025-10-19T13:18:46.214Z"
+    },
+    {
+      "label": "Validation identity bridge wired",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setIdentityRegistry",
+      "parameters": {
+        "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+      },
+      "at": "2025-10-19T13:18:46.217Z"
+    },
+    {
+      "label": "Validation reputation wired",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setReputationEngine",
+      "parameters": {
+        "reputation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+      },
+      "at": "2025-10-19T13:18:46.218Z"
+    },
+    {
+      "label": "Validation stake wired",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setStakeManager",
+      "parameters": {
+        "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+      },
+      "at": "2025-10-19T13:18:46.221Z"
+    },
+    {
+      "label": "Registry authorised to update reputation",
+      "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "method": "setCaller",
+      "parameters": {
+        "caller": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "allowed": true
+      },
+      "at": "2025-10-19T13:18:46.223Z"
+    },
+    {
+      "label": "Validation authorised to update reputation",
+      "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "method": "setCaller",
+      "parameters": {
+        "caller": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "allowed": true
+      },
+      "at": "2025-10-19T13:18:46.224Z"
+    },
+    {
+      "label": "Registry modules wired",
+      "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+      "method": "setModules",
+      "parameters": {
+        "validation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "reputation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "certificate": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+        "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
+      },
+      "at": "2025-10-19T13:18:46.231Z"
+    },
+    {
+      "label": "Registry identity wired",
+      "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+      "method": "setIdentityRegistry",
+      "parameters": {
+        "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+      },
+      "at": "2025-10-19T13:18:46.236Z"
+    },
+    {
+      "label": "Registry dispute wired",
+      "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+      "method": "setDisputeModule",
+      "parameters": {
+        "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508"
+      },
+      "at": "2025-10-19T13:18:46.238Z"
+    },
+    {
+      "label": "Platform fee set",
+      "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+      "method": "setFeePct",
+      "parameters": {
+        "feePct": 4
+      },
+      "at": "2025-10-19T13:18:46.240Z"
+    },
+    {
+      "label": "Dispute stake wired",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setStakeManager",
+      "parameters": {
+        "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+      },
+      "at": "2025-10-19T13:18:46.242Z"
+    },
+    {
+      "label": "Dispute registry wired",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setJobRegistry",
+      "parameters": {
+        "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+      },
+      "at": "2025-10-19T13:18:46.243Z"
+    },
+    {
+      "label": "Guardian council set as moderators",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setModerator",
+      "parameters": {
+        "moderator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "weight": 1
+      },
+      "at": "2025-10-19T13:18:46.245Z"
+    },
+    {
+      "label": "Strategist agent authorised",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalAgent",
+      "parameters": {
+        "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      },
+      "at": "2025-10-19T13:18:46.248Z"
+    },
+    {
+      "label": "Architect agent authorised",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalAgent",
+      "parameters": {
+        "agent": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+      },
+      "at": "2025-10-19T13:18:46.250Z"
+    },
+    {
+      "label": "Validator Helios authorised",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalValidator",
+      "parameters": {
+        "validator": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+      },
+      "at": "2025-10-19T13:18:46.252Z"
+    },
+    {
+      "label": "Validator Kara authorised",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalValidator",
+      "parameters": {
+        "validator": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+      },
+      "at": "2025-10-19T13:18:46.253Z"
+    },
+    {
+      "label": "Validator Nova authorised",
+      "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "method": "addAdditionalValidator",
+      "parameters": {
+        "validator": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+      },
+      "at": "2025-10-19T13:18:46.255Z"
+    },
+    {
+      "label": "Validator pool seeded",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setValidatorPool",
+      "parameters": {
+        "validators": [
+          "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+          "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+          "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+        ]
+      },
+      "at": "2025-10-19T13:18:46.257Z"
+    },
+    {
+      "label": "Validator reward boosted",
+      "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "method": "setValidatorRewardPct",
+      "parameters": {
+        "pct": 5
+      },
+      "at": "2025-10-19T13:18:46.331Z"
+    },
+    {
+      "label": "Minimum stake raised",
+      "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "method": "setMinStake",
+      "parameters": {
+        "min": "360"
+      },
+      "at": "2025-10-19T13:18:46.334Z"
+    },
+    {
+      "label": "Commit window extended",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setCommitWindow",
+      "parameters": {
+        "windowSeconds": 3600
+      },
+      "at": "2025-10-19T13:18:46.337Z"
+    },
+    {
+      "label": "Reveal window extended",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setRevealWindow",
+      "parameters": {
+        "windowSeconds": 3000
+      },
+      "at": "2025-10-19T13:18:46.339Z"
+    },
+    {
+      "label": "Non-reveal penalty intensified",
+      "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "method": "setNonRevealPenalty",
+      "parameters": {
+        "penaltyBps": 200,
+        "banBlocks": 7200
+      },
+      "at": "2025-10-19T13:18:46.342Z"
+    },
+    {
+      "label": "Pauser control delegated to guardian",
+      "contract": "GuardianCouncil",
+      "method": "setPauser",
+      "parameters": {
+        "registry": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      },
+      "at": "2025-10-19T13:18:46.350Z"
+    },
+    {
+      "label": "Guardian council executed global pause",
+      "contract": "GuardianCouncil",
+      "method": "pause",
+      "at": "2025-10-19T13:18:46.357Z"
+    },
+    {
+      "label": "Guardian council restored modules",
+      "contract": "GuardianCouncil",
+      "method": "unpause",
+      "at": "2025-10-19T13:18:46.364Z"
+    },
+    {
+      "label": "Owner reclaimed pauser control",
+      "contract": "Owner",
+      "method": "setPauser",
+      "parameters": {
+        "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+      },
+      "at": "2025-10-19T13:18:46.384Z"
+    },
+    {
+      "label": "Owner restored baseline configuration",
+      "contract": "Owner",
+      "method": "restore",
+      "parameters": {
+        "feePct": 4,
+        "validatorRewardPct": 0,
+        "commitWindowSeconds": 1800,
+        "revealWindowSeconds": 1800,
+        "minStake": "1",
+        "maxStakePerAddress": "0",
+        "minStakeRaw": "1000000000000000000",
+        "maxStakePerAddressRaw": "0",
+        "nonRevealPenaltyBps": 50,
+        "nonRevealBanBlocks": 7200,
+        "registryPauser": "0x0000000000000000000000000000000000000000",
+        "stakePauser": "0x0000000000000000000000000000000000000000",
+        "validationPauser": "0x0000000000000000000000000000000000000000",
+        "commitWindowFormatted": "30.0m",
+        "revealWindowFormatted": "30.0m"
+      },
+      "at": "2025-10-19T13:18:46.394Z"
+    },
+    {
+      "label": "Dispute fee waived for emergency doctrine",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setDisputeFee",
+      "parameters": {
+        "fee": 0
+      },
+      "at": "2025-10-19T13:18:46.768Z"
+    },
+    {
+      "label": "Dispute window accelerated",
+      "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "method": "setDisputeWindow",
+      "parameters": {
+        "window": 0
+      },
+      "at": "2025-10-19T13:18:46.774Z"
+    }
+  ],
+  "timeline": [
+    {
+      "kind": "section",
+      "label": "Bootstrapping Solving α-AGI Governance laboratory",
+      "at": "2025-10-19T13:18:45.572Z"
+    },
+    {
+      "kind": "summary",
+      "label": "Actor roster initialised",
+      "at": "2025-10-19T13:18:46.018Z",
+      "meta": {
+        "actors": [
+          {
+            "key": "owner",
+            "name": "Alpha Governance Owner",
+            "role": "Owner",
+            "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+          },
+          {
+            "key": "guardian",
+            "name": "Guardian Council",
+            "role": "Moderator",
+            "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+          },
+          {
+            "key": "coalition",
+            "name": "Planetary Coalition",
+            "role": "Nation",
+            "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+          },
+          {
+            "key": "alliance",
+            "name": "Orbital Alliance",
+            "role": "Nation",
+            "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+          },
+          {
+            "key": "lyra",
+            "name": "Lyra (Strategist Agent)",
+            "role": "Agent",
+            "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+          },
+          {
+            "key": "orion",
+            "name": "Orion (Constitution Architect)",
+            "role": "Agent",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+          },
+          {
+            "key": "helios",
+            "name": "Helios (Validator)",
+            "role": "Validator",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+          },
+          {
+            "key": "kara",
+            "name": "Kara (Validator)",
+            "role": "Validator",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+          },
+          {
+            "key": "nova",
+            "name": "Nova (Validator)",
+            "role": "Validator",
+            "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Deploying governance primitives",
+      "at": "2025-10-19T13:18:46.063Z"
+    },
+    {
+      "kind": "summary",
+      "label": "StakeManager deployed",
+      "at": "2025-10-19T13:18:46.096Z",
+      "meta": {
+        "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "args": [
+          "0",
+          "0",
+          "0",
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "ReputationEngine deployed",
+      "at": "2025-10-19T13:18:46.106Z",
+      "meta": {
+        "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "args": [
+          "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "IdentityRegistry deployed",
+      "at": "2025-10-19T13:18:46.120Z",
+      "meta": {
+        "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "args": [
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000000000000000000000000000"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "ValidationModule deployed",
+      "at": "2025-10-19T13:18:46.141Z",
+      "meta": {
+        "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "args": [
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0",
+          "0",
+          "0",
+          "0",
+          []
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "CertificateNFT deployed",
+      "at": "2025-10-19T13:18:46.149Z",
+      "meta": {
+        "address": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+        "args": [
+          "AGI Governance Credential",
+          "AGIGOV"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "JobRegistry deployed",
+      "at": "2025-10-19T13:18:46.180Z",
+      "meta": {
+        "address": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "args": [
+          "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+          "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+          "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+          "0x0000000000000000000000000000000000000000",
+          "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000",
+          "0",
+          "0",
+          [],
+          "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "DisputeModule deployed",
+      "at": "2025-10-19T13:18:46.190Z",
+      "meta": {
+        "address": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "args": [
+          "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+          "0",
+          "0",
+          "0x0000000000000000000000000000000000000000",
+          "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "FeePool deployed",
+      "at": "2025-10-19T13:18:46.200Z",
+      "meta": {
+        "address": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+        "args": [
+          "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+          "0",
+          "0x0000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000"
+        ]
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Wiring module lattice for owner supremacy",
+      "at": "2025-10-19T13:18:46.200Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Credential registry linked",
+      "at": "2025-10-19T13:18:46.203Z",
+      "meta": {
+        "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+        "method": "setJobRegistry",
+        "parameters": {
+          "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Credential stake linkage enabled",
+      "at": "2025-10-19T13:18:46.205Z",
+      "meta": {
+        "contract": "CertificateNFT@0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+        "method": "setStakeManager",
+        "parameters": {
+          "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Stake fee pool configured",
+      "at": "2025-10-19T13:18:46.207Z",
+      "meta": {
+        "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "method": "setFeePool",
+        "parameters": {
+          "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Stake modules assigned",
+      "at": "2025-10-19T13:18:46.210Z",
+      "meta": {
+        "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "method": "setModules",
+        "parameters": {
+          "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+          "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Stake validation module linked",
+      "at": "2025-10-19T13:18:46.212Z",
+      "meta": {
+        "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "method": "setValidationModule",
+        "parameters": {
+          "validation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation registry linked",
+      "at": "2025-10-19T13:18:46.214Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setJobRegistry",
+        "parameters": {
+          "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation identity bridge wired",
+      "at": "2025-10-19T13:18:46.217Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setIdentityRegistry",
+        "parameters": {
+          "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation reputation wired",
+      "at": "2025-10-19T13:18:46.218Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setReputationEngine",
+        "parameters": {
+          "reputation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation stake wired",
+      "at": "2025-10-19T13:18:46.221Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setStakeManager",
+        "parameters": {
+          "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Registry authorised to update reputation",
+      "at": "2025-10-19T13:18:46.223Z",
+      "meta": {
+        "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "method": "setCaller",
+        "parameters": {
+          "caller": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+          "allowed": true
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validation authorised to update reputation",
+      "at": "2025-10-19T13:18:46.224Z",
+      "meta": {
+        "contract": "ReputationEngine@0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "method": "setCaller",
+        "parameters": {
+          "caller": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+          "allowed": true
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Registry modules wired",
+      "at": "2025-10-19T13:18:46.231Z",
+      "meta": {
+        "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "method": "setModules",
+        "parameters": {
+          "validation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+          "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+          "reputation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+          "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+          "certificate": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+          "feePool": "0x0B306BF915C4d645ff596e518fAf3F9669b97016"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Registry identity wired",
+      "at": "2025-10-19T13:18:46.236Z",
+      "meta": {
+        "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "method": "setIdentityRegistry",
+        "parameters": {
+          "identity": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Registry dispute wired",
+      "at": "2025-10-19T13:18:46.238Z",
+      "meta": {
+        "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "method": "setDisputeModule",
+        "parameters": {
+          "dispute": "0x9A676e781A523b5d0C0e43731313A708CB607508"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Platform fee set",
+      "at": "2025-10-19T13:18:46.240Z",
+      "meta": {
+        "contract": "JobRegistry@0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+        "method": "setFeePct",
+        "parameters": {
+          "feePct": 4
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Dispute stake wired",
+      "at": "2025-10-19T13:18:46.242Z",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setStakeManager",
+        "parameters": {
+          "stake": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Dispute registry wired",
+      "at": "2025-10-19T13:18:46.243Z",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setJobRegistry",
+        "parameters": {
+          "registry": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Guardian council set as moderators",
+      "at": "2025-10-19T13:18:46.245Z",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setModerator",
+        "parameters": {
+          "moderator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+          "weight": 1
+        }
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Authorising strategic agents and validator council identities",
+      "at": "2025-10-19T13:18:46.245Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Strategist agent authorised",
+      "at": "2025-10-19T13:18:46.248Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalAgent",
+        "parameters": {
+          "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Architect agent authorised",
+      "at": "2025-10-19T13:18:46.250Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalAgent",
+        "parameters": {
+          "agent": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator Helios authorised",
+      "at": "2025-10-19T13:18:46.252Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalValidator",
+        "parameters": {
+          "validator": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator Kara authorised",
+      "at": "2025-10-19T13:18:46.253Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalValidator",
+        "parameters": {
+          "validator": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator Nova authorised",
+      "at": "2025-10-19T13:18:46.255Z",
+      "meta": {
+        "contract": "IdentityRegistry@0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "method": "addAdditionalValidator",
+        "parameters": {
+          "validator": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator pool seeded",
+      "at": "2025-10-19T13:18:46.257Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setValidatorPool",
+        "parameters": {
+          "validators": [
+            "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+          ]
+        }
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Provisioning initial stake commitments for agents and validators",
+      "at": "2025-10-19T13:18:46.257Z"
+    },
+    {
+      "kind": "summary",
+      "label": "Initial staking commitments executed",
+      "at": "2025-10-19T13:18:46.290Z",
+      "meta": {
+        "participants": [
+          {
+            "name": "Lyra (Strategist Agent)",
+            "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+            "role": "Agent",
+            "amount": "420"
+          },
+          {
+            "name": "Orion (Constitution Architect)",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "role": "Agent",
+            "amount": "420"
+          },
+          {
+            "name": "Helios (Validator)",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "role": "Validator",
+            "amount": "360"
+          },
+          {
+            "name": "Kara (Validator)",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "role": "Validator",
+            "amount": "360"
+          },
+          {
+            "name": "Nova (Validator)",
+            "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+            "role": "Validator",
+            "amount": "360"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "balance",
+      "label": "Initial treasury snapshot",
+      "at": "2025-10-19T13:18:46.306Z",
+      "meta": {
+        "participants": [
+          {
+            "name": "Alpha Governance Owner",
+            "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "balance": "0"
+          },
+          {
+            "name": "Guardian Council",
+            "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "balance": "0"
+          },
+          {
+            "name": "Planetary Coalition",
+            "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "balance": "3200"
+          },
+          {
+            "name": "Orbital Alliance",
+            "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+            "balance": "3200"
+          },
+          {
+            "name": "Lyra (Strategist Agent)",
+            "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+            "balance": "2780"
+          },
+          {
+            "name": "Orion (Constitution Architect)",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "balance": "2780"
+          },
+          {
+            "name": "Helios (Validator)",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "balance": "2840"
+          },
+          {
+            "name": "Kara (Validator)",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "balance": "2840"
+          },
+          {
+            "name": "Nova (Validator)",
+            "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+            "balance": "2840"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "section",
+      "label": "Owner command lattice rehearsal",
+      "at": "2025-10-19T13:18:46.306Z"
+    },
+    {
+      "kind": "step",
+      "label": "Owner increases validator reward share and stake thresholds",
+      "at": "2025-10-19T13:18:46.327Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Validator reward boosted",
+      "at": "2025-10-19T13:18:46.331Z",
+      "meta": {
+        "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "method": "setValidatorRewardPct",
+        "parameters": {
+          "pct": 5
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Minimum stake raised",
+      "at": "2025-10-19T13:18:46.334Z",
+      "meta": {
+        "contract": "StakeManager@0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "method": "setMinStake",
+        "parameters": {
+          "min": "360"
+        }
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Owner extends commit/reveal windows and increases non-reveal penalties",
+      "at": "2025-10-19T13:18:46.334Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Commit window extended",
+      "at": "2025-10-19T13:18:46.337Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setCommitWindow",
+        "parameters": {
+          "windowSeconds": 3600
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Reveal window extended",
+      "at": "2025-10-19T13:18:46.339Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setRevealWindow",
+        "parameters": {
+          "windowSeconds": 3000
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Non-reveal penalty intensified",
+      "at": "2025-10-19T13:18:46.342Z",
+      "meta": {
+        "contract": "ValidationModule@0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        "method": "setNonRevealPenalty",
+        "parameters": {
+          "penaltyBps": 200,
+          "banBlocks": 7200
+        }
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Owner delegates pause authority to guardian council for rehearsal",
+      "at": "2025-10-19T13:18:46.342Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Pauser control delegated to guardian",
+      "at": "2025-10-19T13:18:46.350Z",
+      "meta": {
+        "contract": "GuardianCouncil",
+        "method": "setPauser",
+        "parameters": {
+          "registry": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        }
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Guardian council executes coordinated pause across all modules",
+      "at": "2025-10-19T13:18:46.350Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Guardian council executed global pause",
+      "at": "2025-10-19T13:18:46.357Z",
+      "meta": {
+        "contract": "GuardianCouncil",
+        "method": "pause"
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Guardian council restored modules",
+      "at": "2025-10-19T13:18:46.364Z",
+      "meta": {
+        "contract": "GuardianCouncil",
+        "method": "unpause"
+      }
+    },
+    {
+      "kind": "step",
+      "label": "Owner resumes direct control after the drill",
+      "at": "2025-10-19T13:18:46.378Z"
+    },
+    {
+      "kind": "owner-action",
+      "label": "Owner reclaimed pauser control",
+      "at": "2025-10-19T13:18:46.384Z",
+      "meta": {
+        "contract": "Owner",
+        "method": "setPauser",
+        "parameters": {
+          "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Owner restored baseline configuration",
+      "at": "2025-10-19T13:18:46.394Z",
+      "meta": {
+        "contract": "Owner",
+        "method": "restore",
+        "parameters": {
+          "feePct": 4,
+          "validatorRewardPct": 0,
+          "commitWindowSeconds": 1800,
+          "revealWindowSeconds": 1800,
+          "minStake": "1",
+          "maxStakePerAddress": "0",
+          "minStakeRaw": "1000000000000000000",
+          "maxStakePerAddressRaw": "0",
+          "nonRevealPenaltyBps": 50,
+          "nonRevealBanBlocks": 7200,
+          "registryPauser": "0x0000000000000000000000000000000000000000",
+          "stakePauser": "0x0000000000000000000000000000000000000000",
+          "validationPauser": "0x0000000000000000000000000000000000000000",
+          "commitWindowFormatted": "30.0m",
+          "revealWindowFormatted": "30.0m"
+        }
+      }
+    },
+    {
+      "kind": "section",
+      "label": "Scenario 1 – Planetary constitution harmonisation",
+      "at": "2025-10-19T13:18:46.403Z",
+      "scenario": "Scenario 1 – Planetary constitution harmonisation"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 1 (after creation)",
+      "at": "2025-10-19T13:18:46.418Z",
+      "scenario": "Scenario 1 – Planetary constitution harmonisation",
+      "meta": {
+        "jobId": "1",
+        "context": "after creation",
+        "state": "Created",
+        "success": false,
+        "burnConfirmed": false,
+        "reward": "280",
+        "employer": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "agent": "0x0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 1 (after validation)",
+      "at": "2025-10-19T13:18:46.582Z",
+      "scenario": "Scenario 1 – Planetary constitution harmonisation",
+      "meta": {
+        "jobId": "1",
+        "context": "after validation",
+        "state": "Completed",
+        "success": true,
+        "burnConfirmed": true,
+        "reward": "280",
+        "employer": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      }
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 1 (after settlement)",
+      "at": "2025-10-19T13:18:46.600Z",
+      "scenario": "Scenario 1 – Planetary constitution harmonisation",
+      "meta": {
+        "jobId": "1",
+        "context": "after settlement",
+        "state": "Finalized",
+        "success": true,
+        "burnConfirmed": true,
+        "reward": "280",
+        "employer": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      }
+    },
+    {
+      "kind": "metric",
+      "label": "Constitution harmonisation Hamiltonian telemetry",
+      "at": "2025-10-19T13:18:46.600Z",
+      "scenario": "Scenario 1 – Planetary constitution harmonisation",
+      "meta": {
+        "energy": 0.82,
+        "entropy": 0.33,
+        "temperature": 0.58,
+        "freeEnergy": 0.6285999999999999,
+        "hamiltonian": -0.44920000000000004,
+        "divergence": 0.0007000000000000001,
+        "stackelbergLead": 0.8999999999999999,
+        "antifragility": 0.2114000000000001,
+        "cooperationProbability": 0.999
+      }
+    },
+    {
+      "kind": "insight",
+      "label": "Constitution harmonisation equilibrium",
+      "at": "2025-10-19T13:18:46.600Z",
+      "scenario": "Scenario 1 – Planetary constitution harmonisation",
+      "meta": {
+        "category": "Thermodynamics",
+        "detail": "Free energy 0.629 with Hamiltonian -0.449 → divergence 0.0007.",
+        "meta": {
+          "energy": 0.82,
+          "entropy": 0.33,
+          "temperature": 0.58,
+          "velocity": 0.72,
+          "inertia": 0.64,
+          "utility": 0.91
+        }
+      }
+    },
+    {
+      "kind": "section",
+      "label": "Scenario 2 – Orbital emergency doctrine dispute",
+      "at": "2025-10-19T13:18:46.601Z",
+      "scenario": "Scenario 2 – Orbital emergency doctrine dispute"
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 2 (after creation)",
+      "at": "2025-10-19T13:18:46.609Z",
+      "scenario": "Scenario 2 – Orbital emergency doctrine dispute",
+      "meta": {
+        "jobId": "2",
+        "context": "after creation",
+        "state": "Created",
+        "success": false,
+        "burnConfirmed": false,
+        "reward": "190",
+        "employer": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "agent": "0x0000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 2 (after validation deadlock)",
+      "at": "2025-10-19T13:18:46.767Z",
+      "scenario": "Scenario 2 – Orbital emergency doctrine dispute",
+      "meta": {
+        "jobId": "2",
+        "context": "after validation deadlock",
+        "state": "Disputed",
+        "success": false,
+        "burnConfirmed": true,
+        "reward": "190",
+        "employer": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "agent": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Dispute fee waived for emergency doctrine",
+      "at": "2025-10-19T13:18:46.768Z",
+      "scenario": "Scenario 2 – Orbital emergency doctrine dispute",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setDisputeFee",
+        "parameters": {
+          "fee": 0
+        }
+      }
+    },
+    {
+      "kind": "owner-action",
+      "label": "Dispute window accelerated",
+      "at": "2025-10-19T13:18:46.774Z",
+      "scenario": "Scenario 2 – Orbital emergency doctrine dispute",
+      "meta": {
+        "contract": "DisputeModule@0x9A676e781A523b5d0C0e43731313A708CB607508",
+        "method": "setDisputeWindow",
+        "parameters": {
+          "window": 0
+        }
+      }
+    },
+    {
+      "kind": "insight",
+      "label": "Guardian council arbitration",
+      "at": "2025-10-19T13:18:46.780Z",
+      "scenario": "Scenario 2 – Orbital emergency doctrine dispute",
+      "meta": {
+        "category": "Disputes",
+        "detail": "Guardian council – doctrine approved after resilience audit",
+        "meta": {
+          "jobId": "2",
+          "ruling": "Employer upheld",
+          "resolver": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        }
+      }
+    },
+    {
+      "kind": "job-summary",
+      "label": "Job 2 (after guardian resolution)",
+      "at": "2025-10-19T13:18:46.798Z",
+      "scenario": "Scenario 2 – Orbital emergency doctrine dispute",
+      "meta": {
+        "jobId": "2",
+        "context": "after guardian resolution",
+        "state": "Finalized",
+        "success": false,
+        "burnConfirmed": true,
+        "reward": "190",
+        "employer": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "agent": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+      }
+    },
+    {
+      "kind": "metric",
+      "label": "Orbital doctrine dispute Hamiltonian telemetry",
+      "at": "2025-10-19T13:18:46.799Z",
+      "scenario": "Scenario 2 – Orbital emergency doctrine dispute",
+      "meta": {
+        "energy": 0.77,
+        "entropy": 0.41,
+        "temperature": 0.62,
+        "freeEnergy": 0.5158,
+        "hamiltonian": -0.30720000000000003,
+        "divergence": 0.0027999999999999995,
+        "stackelbergLead": 1.0499999999999998,
+        "antifragility": 0.1642,
+        "cooperationProbability": 0.999
+      }
+    },
+    {
+      "kind": "insight",
+      "label": "Orbital doctrine dispute equilibrium",
+      "at": "2025-10-19T13:18:46.799Z",
+      "scenario": "Scenario 2 – Orbital emergency doctrine dispute",
+      "meta": {
+        "category": "Thermodynamics",
+        "detail": "Free energy 0.516 with Hamiltonian -0.307 → divergence 0.0028.",
+        "meta": {
+          "energy": 0.77,
+          "entropy": 0.41,
+          "temperature": 0.62,
+          "velocity": 0.68,
+          "inertia": 0.71,
+          "utility": 0.79
+        }
+      }
+    },
+    {
+      "kind": "section",
+      "label": "Mission telemetry and Hamiltonian summary",
+      "at": "2025-10-19T13:18:46.799Z"
+    },
+    {
+      "kind": "summary",
+      "label": "Agent portfolios captured",
+      "at": "2025-10-19T13:18:46.814Z",
+      "meta": {
+        "agents": [
+          {
+            "name": "Lyra (Strategist)",
+            "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+            "liquid": "3037.6",
+            "staked": "420",
+            "locked": "0",
+            "reputation": "146",
+            "certificates": [
+              {
+                "jobId": "1"
+              }
+            ]
+          },
+          {
+            "name": "Orion (Architect)",
+            "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "liquid": "2780",
+            "staked": "419",
+            "locked": "0",
+            "reputation": "0",
+            "certificates": []
+          }
+        ]
+      }
+    },
+    {
+      "kind": "summary",
+      "label": "Validator council telemetry",
+      "at": "2025-10-19T13:18:46.832Z",
+      "meta": {
+        "validators": [
+          {
+            "name": "Helios (Validator)",
+            "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "liquid": "2847.466666666666666666",
+            "staked": "180",
+            "locked": "0",
+            "reputation": "9"
+          },
+          {
+            "name": "Kara (Validator)",
+            "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "liquid": "2847.466666666666666668",
+            "staked": "360",
+            "locked": "0",
+            "reputation": "10"
+          },
+          {
+            "name": "Nova (Validator)",
+            "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+            "liquid": "2847.466666666666666666",
+            "staked": "358.2",
+            "locked": "0",
+            "reputation": "9"
+          }
+        ]
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "Scenario 1 – Planetary constitution harmonisation",
+      "jobId": "1",
+      "timelineIndices": [
+        56,
+        57,
+        58,
+        59
+      ]
+    },
+    {
+      "title": "Scenario 2 – Orbital emergency doctrine dispute",
+      "jobId": "2",
+      "timelineIndices": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68
+      ]
+    }
+  ],
+  "market": {
+    "totalJobs": "1",
+    "pendingFees": "11.088",
+    "finalSupply": "22019.488",
+    "totalAgentStake": "839",
+    "totalValidatorStake": "898.2",
+    "mintedCertificates": [
+      {
+        "jobId": "1",
+        "owner": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      }
+    ],
+    "agentPortfolios": [
+      {
+        "name": "Lyra (Strategist)",
+        "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+        "liquid": "3037.6",
+        "staked": "420",
+        "locked": "0",
+        "reputation": "146",
+        "certificates": [
+          {
+            "jobId": "1"
+          }
+        ]
+      },
+      {
+        "name": "Orion (Architect)",
+        "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+        "liquid": "2780",
+        "staked": "419",
+        "locked": "0",
+        "reputation": "0",
+        "certificates": []
+      }
+    ],
+    "validatorCouncil": [
+      {
+        "name": "Helios (Validator)",
+        "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+        "liquid": "2847.466666666666666666",
+        "staked": "180",
+        "locked": "0",
+        "reputation": "9"
+      },
+      {
+        "name": "Kara (Validator)",
+        "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+        "liquid": "2847.466666666666666668",
+        "staked": "360",
+        "locked": "0",
+        "reputation": "10"
+      },
+      {
+        "name": "Nova (Validator)",
+        "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+        "liquid": "2847.466666666666666666",
+        "staked": "358.2",
+        "locked": "0",
+        "reputation": "9"
+      }
+    ],
+    "hamiltonianTelemetry": [
+      {
+        "label": "Constitution harmonisation",
+        "energy": 0.82,
+        "entropy": 0.33,
+        "temperature": 0.58,
+        "freeEnergy": 0.6285999999999999,
+        "hamiltonian": -0.44920000000000004,
+        "divergence": 0.0007000000000000001,
+        "stackelbergLead": 0.8999999999999999,
+        "antifragility": 0.2114000000000001,
+        "cooperationProbability": 0.999
+      },
+      {
+        "label": "Orbital doctrine dispute",
+        "energy": 0.77,
+        "entropy": 0.41,
+        "temperature": 0.62,
+        "freeEnergy": 0.5158,
+        "hamiltonian": -0.30720000000000003,
+        "divergence": 0.0027999999999999995,
+        "stackelbergLead": 1.0499999999999998,
+        "antifragility": 0.1642,
+        "cooperationProbability": 0.999
+      }
+    ]
+  },
+  "ownerControl": {
+    "ownerAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "guardianAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "baseline": {
+      "feePct": 4,
+      "validatorRewardPct": 0,
+      "commitWindowSeconds": 1800,
+      "revealWindowSeconds": 1800,
+      "minStake": "1",
+      "maxStakePerAddress": "0",
+      "minStakeRaw": "1000000000000000000",
+      "maxStakePerAddressRaw": "0",
+      "nonRevealPenaltyBps": 50,
+      "nonRevealBanBlocks": 7200,
+      "registryPauser": "0x0000000000000000000000000000000000000000",
+      "stakePauser": "0x0000000000000000000000000000000000000000",
+      "validationPauser": "0x0000000000000000000000000000000000000000",
+      "commitWindowFormatted": "30.0m",
+      "revealWindowFormatted": "30.0m"
+    },
+    "upgraded": {
+      "feePct": 4,
+      "validatorRewardPct": 5,
+      "commitWindowSeconds": 3600,
+      "revealWindowSeconds": 3000,
+      "minStake": "360",
+      "maxStakePerAddress": "0",
+      "minStakeRaw": "360000000000000000000",
+      "maxStakePerAddressRaw": "0",
+      "nonRevealPenaltyBps": 200,
+      "nonRevealBanBlocks": 7200,
+      "registryPauser": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "stakePauser": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "validationPauser": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "commitWindowFormatted": "1.00h",
+      "revealWindowFormatted": "50.0m"
+    },
+    "restored": {
+      "feePct": 4,
+      "validatorRewardPct": 0,
+      "commitWindowSeconds": 1800,
+      "revealWindowSeconds": 1800,
+      "minStake": "1",
+      "maxStakePerAddress": "0",
+      "minStakeRaw": "1000000000000000000",
+      "maxStakePerAddressRaw": "0",
+      "nonRevealPenaltyBps": 50,
+      "nonRevealBanBlocks": 7200,
+      "registryPauser": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "stakePauser": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "validationPauser": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "commitWindowFormatted": "30.0m",
+      "revealWindowFormatted": "30.0m"
+    },
+    "drillCompletedAt": "2025-10-19T13:18:46.403Z"
+  },
+  "insights": [
+    {
+      "category": "Thermodynamics",
+      "title": "Constitution harmonisation equilibrium",
+      "detail": "Free energy 0.629 with Hamiltonian -0.449 → divergence 0.0007.",
+      "at": "2025-10-19T13:18:46.600Z",
+      "meta": {
+        "energy": 0.82,
+        "entropy": 0.33,
+        "temperature": 0.58,
+        "velocity": 0.72,
+        "inertia": 0.64,
+        "utility": 0.91
+      },
+      "timelineIndex": 61
+    },
+    {
+      "category": "Disputes",
+      "title": "Guardian council arbitration",
+      "detail": "Guardian council – doctrine approved after resilience audit",
+      "at": "2025-10-19T13:18:46.780Z",
+      "meta": {
+        "jobId": "2",
+        "ruling": "Employer upheld",
+        "resolver": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      },
+      "timelineIndex": 67
+    },
+    {
+      "category": "Thermodynamics",
+      "title": "Orbital doctrine dispute equilibrium",
+      "detail": "Free energy 0.516 with Hamiltonian -0.307 → divergence 0.0028.",
+      "at": "2025-10-19T13:18:46.799Z",
+      "meta": {
+        "energy": 0.77,
+        "entropy": 0.41,
+        "temperature": 0.62,
+        "velocity": 0.68,
+        "inertia": 0.71,
+        "utility": 0.79
+      },
+      "timelineIndex": 70
+    }
+  ],
+  "automation": {
+    "headline": "Alpha governance cockpit",
+    "missionSummary": "Two sovereign-scale governance missions executed with thermodynamic telemetry and owner supremacy.",
+    "resilienceScore": 0.98,
+    "unstoppableScore": 0.99,
+    "autopilot": {
+      "ownerDirectives": [
+        {
+          "id": "owner-hamiltonian-audit",
+          "title": "Hamiltonian audit",
+          "summary": "Review divergence metrics < 0.002 across both scenarios to verify Pareto alignment.",
+          "priority": "critical"
+        }
+      ],
+      "agentOpportunities": [
+        {
+          "id": "agent-coop-expansion",
+          "title": "Deploy cooperative alpha-field",
+          "summary": "Leverage high cooperation probability to spawn regional policy missions with identical script.",
+          "priority": "high"
+        }
+      ],
+      "validatorSignals": [
+        {
+          "id": "validator-pause-drill",
+          "title": "Schedule next pause drill",
+          "summary": "Guardian council validated delegated pause; repeat monthly to keep muscle memory fresh.",
+          "priority": "normal"
+        }
+      ],
+      "treasuryAlerts": [
+        {
+          "id": "treasury-fee-routing",
+          "title": "Treasury routing check",
+          "summary": "Owner restored fee configuration; verify pending fee balance matches mission telemetry.",
+          "priority": "high"
+        }
+      ]
+    },
+    "telemetry": {
+      "totalJobs": "1",
+      "mintedCertificates": 1,
+      "totalBurned": "0",
+      "finalSupply": "22019.488"
+    },
+    "verification": {
+      "requiredChecks": [
+        "CI v2 summary gate",
+        "Hardhat integration: solvingAlphaGovernance",
+        "Hamiltonian tracker report"
+      ],
+      "docs": [
+        "docs/thermodynamics-operations.md",
+        "docs/owner-control-atlas.md"
+      ],
+      "recommendedCommands": [
+        "npm run owner:dashboard -- --network hardhat",
+        "npm run hamiltonian:report -- --engine <RewardEngineMB>"
+      ],
+      "lastUpdated": "2025-10-19T13:18:46.836Z"
+    },
+    "commands": {
+      "replayDemo": "npx hardhat run --no-compile scripts/v2/agiGovernanceGrandDemo.ts --network hardhat",
+      "exportTranscript": "AGI_JOBS_DEMO_EXPORT=demo/agi-governance/ui/export/latest.json npm run demo:agi-governance:export",
+      "launchControlRoom": "npm run demo:agi-governance:control-room",
+      "ownerDashboard": "npm run owner:dashboard -- --network hardhat"
+    }
+  }
+}
