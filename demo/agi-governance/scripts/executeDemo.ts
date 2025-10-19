@@ -10,6 +10,7 @@ const PACKAGE_JSON = path.join(__dirname, "..", "..", "..", "package.json");
 
 const BOLTZMANN = 1.380649e-23; // Boltzmann constant (J/K)
 const LN2 = Math.log(2);
+const EV_TO_J = 1.602176634e-19;
 
 export interface MissionConfig {
   meta: {
@@ -160,12 +161,14 @@ export interface MissionConfig {
       energyMarginFloorKJ: number;
       ownerCoverageMinimum: number;
       superintelligenceMinimum: number;
+      quantumConfidenceMinimum: number;
     };
     signatureWeights: {
       thermodynamic: number;
       governance: number;
       antifragility: number;
       owner: number;
+      quantum: number;
     };
   };
   blockchain: {
@@ -196,6 +199,20 @@ export interface MissionConfig {
     }>;
     minCoverage: number;
     concurrency: string;
+  };
+  quantum: {
+    planckConstant: number;
+    superpositionWeights: number[];
+    energyLevelsEv: number[];
+    entanglementFidelity: number;
+    decoherenceTimeNs: number;
+    coherenceHalfLifeNs: number;
+    coherenceFrequencyThz: number;
+    fisherInformation: number;
+    measurementVariance: number;
+    noetherCharge: number;
+    targetCharge: number;
+    allowableChargeDrift: number;
   };
 }
 
@@ -341,6 +358,37 @@ export type JacobianReport = {
   stable: boolean;
 };
 
+export type QuantumReport = {
+  planckConstant: number;
+  superpositionWeights: number[];
+  normalizedWeights: number[];
+  energyLevelsEv: number[];
+  weightSumDelta: number;
+  stateEntropyBits: number;
+  effectiveDimension: number;
+  expectedEnergyEv: number;
+  expectedEnergyKJ: number;
+  coherenceEnergyKJ: number;
+  quantumFreeEnergyKJ: number;
+  energyVarianceEv: number;
+  spectralGapEv: number;
+  measurementVariance: number;
+  measurementStdDev: number;
+  fisherInformation: number;
+  coherenceScore: number;
+  quantumConfidence: number;
+  decoherenceTimeNs: number;
+  coherenceHalfLifeNs: number;
+  coherenceFrequencyThz: number;
+  entanglementFidelity: number;
+  noetherCharge: number;
+  targetCharge: number;
+  allowableChargeDrift: number;
+  chargeDelta: number;
+  chargeWithinTolerance: boolean;
+  thermoMarginDeltaKJ: number;
+};
+
 export type AlphaFieldReport = {
   stackelbergAdvantage: number;
   stackelbergBound: number;
@@ -374,6 +422,9 @@ export type AlphaFieldReport = {
   governanceAssurance: number;
   antifragilityAssurance: number;
   ownerAssurance: number;
+  quantumAssurance: number;
+  quantumConfidenceMinimum: number;
+  quantumConfidenceSatisfied: boolean;
   superintelligenceIndex: number;
   superintelligenceMinimum: number;
   superintelligenceSatisfied: boolean;
@@ -451,6 +502,7 @@ export type ReportBundle = {
   risk: RiskReport;
   owner: OwnerControlReport;
   jacobian: JacobianReport;
+  quantum: QuantumReport;
   alphaField: AlphaFieldReport;
   blockchain: BlockchainReport;
   ci: MissionConfig["ci"];
@@ -545,12 +597,14 @@ function assertValidConfig(config: MissionConfig): void {
   ) {
     throw new Error("alphaField.verification.superintelligenceMinimum must be within [0,1]");
   }
+  if (
+    config.alphaField.verification.quantumConfidenceMinimum < 0 ||
+    config.alphaField.verification.quantumConfidenceMinimum > 1
+  ) {
+    throw new Error("alphaField.verification.quantumConfidenceMinimum must be within [0,1]");
+  }
   const signatureWeights = config.alphaField.signatureWeights;
-  const signatureWeightSum =
-    signatureWeights.antifragility +
-    signatureWeights.governance +
-    signatureWeights.owner +
-    signatureWeights.thermodynamic;
+  const signatureWeightSum = Object.values(signatureWeights).reduce((sum, weight) => sum + weight, 0);
   if (Math.abs(signatureWeightSum - 1) > 1e-6) {
     throw new Error("alphaField.signatureWeights must sum to 1");
   }
@@ -603,6 +657,43 @@ function assertValidConfig(config: MissionConfig): void {
     ) {
       throw new Error(`severity ${severity.label} has invalid treasury/employer shares`);
     }
+  }
+  if (config.quantum.superpositionWeights.length !== config.quantum.energyLevelsEv.length) {
+    throw new Error("quantum superpositionWeights length must match energyLevelsEv length");
+  }
+  if (config.quantum.superpositionWeights.length === 0) {
+    throw new Error("quantum.superpositionWeights must contain at least one state");
+  }
+  for (const weight of config.quantum.superpositionWeights) {
+    if (!(weight > 0)) {
+      throw new Error("quantum.superpositionWeights must be strictly positive");
+    }
+  }
+  for (const energy of config.quantum.energyLevelsEv) {
+    if (!(energy > 0)) {
+      throw new Error("quantum.energyLevelsEv must be strictly positive");
+    }
+  }
+  if (!(config.quantum.planckConstant > 0)) {
+    throw new Error("quantum.planckConstant must be positive");
+  }
+  if (!(config.quantum.decoherenceTimeNs > 0) || !(config.quantum.coherenceHalfLifeNs > 0)) {
+    throw new Error("quantum decoherence and half-life must be positive");
+  }
+  if (!(config.quantum.coherenceFrequencyThz > 0)) {
+    throw new Error("quantum.coherenceFrequencyThz must be positive");
+  }
+  if (config.quantum.entanglementFidelity <= 0 || config.quantum.entanglementFidelity > 1) {
+    throw new Error("quantum.entanglementFidelity must be within (0,1]");
+  }
+  if (config.quantum.fisherInformation <= 0 || config.quantum.fisherInformation > 1) {
+    throw new Error("quantum.fisherInformation must be within (0,1]");
+  }
+  if (config.quantum.measurementVariance < 0) {
+    throw new Error("quantum.measurementVariance must be non-negative");
+  }
+  if (config.quantum.allowableChargeDrift < 0) {
+    throw new Error("quantum.allowableChargeDrift must be non-negative");
   }
 }
 
@@ -1543,6 +1634,81 @@ function computeJacobian(matrix: number[][], equilibrium: number[]): JacobianRep
   };
 }
 
+function computeQuantumReport(
+  config: MissionConfig,
+  thermodynamics: ThermodynamicReport,
+): QuantumReport {
+  const quantum = config.quantum;
+  const weightSum = quantum.superpositionWeights.reduce((sum, value) => sum + value, 0);
+  const normalizedWeights = quantum.superpositionWeights.map((value) => value / weightSum);
+  const weightSumDelta = Math.abs(weightSum - 1);
+
+  const stateEntropyBits = normalizedWeights.reduce(
+    (total, value) => (value > 0 ? total - value * Math.log2(value) : total),
+    0,
+  );
+  const effectiveDimension = stateEntropyBits === 0 ? 1 : Math.pow(2, stateEntropyBits);
+
+  const expectedEnergyEv = normalizedWeights.reduce(
+    (total, weight, index) => total + weight * quantum.energyLevelsEv[index],
+    0,
+  );
+  const expectedEnergyKJ = (expectedEnergyEv * EV_TO_J) / 1_000;
+
+  const energyVarianceEv = normalizedWeights.reduce((total, weight, index) => {
+    const delta = quantum.energyLevelsEv[index] - expectedEnergyEv;
+    return total + weight * delta * delta;
+  }, 0);
+  const spectralGapEv = Math.max(...quantum.energyLevelsEv) - Math.min(...quantum.energyLevelsEv);
+
+  const coherenceEnergyKJ = (quantum.planckConstant * quantum.coherenceFrequencyThz * 1e12) / 1_000;
+  const quantumFreeEnergyKJ = expectedEnergyKJ - coherenceEnergyKJ;
+
+  const coherenceDecay = Math.exp(-quantum.decoherenceTimeNs / quantum.coherenceHalfLifeNs);
+  const coherenceScore = clamp(quantum.entanglementFidelity * coherenceDecay, 0, 1);
+  const fisherInformation = clamp(quantum.fisherInformation, 0, 1);
+  const quantumConfidence = clamp((coherenceScore + fisherInformation) / 2, 0, 1);
+
+  const measurementVariance = Math.max(quantum.measurementVariance, 0);
+  const measurementStdDev = Math.sqrt(measurementVariance);
+
+  const chargeDelta = Math.abs(quantum.noetherCharge - quantum.targetCharge);
+  const chargeWithinTolerance = chargeDelta <= quantum.allowableChargeDrift + 1e-12;
+
+  const thermoMarginDeltaKJ = Math.abs(quantumFreeEnergyKJ - thermodynamics.freeEnergyMarginKJ);
+
+  return {
+    planckConstant: quantum.planckConstant,
+    superpositionWeights: [...quantum.superpositionWeights],
+    normalizedWeights,
+    energyLevelsEv: [...quantum.energyLevelsEv],
+    weightSumDelta,
+    stateEntropyBits,
+    effectiveDimension,
+    expectedEnergyEv,
+    expectedEnergyKJ,
+    coherenceEnergyKJ,
+    quantumFreeEnergyKJ,
+    energyVarianceEv,
+    spectralGapEv,
+    measurementVariance,
+    measurementStdDev,
+    fisherInformation,
+    coherenceScore,
+    quantumConfidence,
+    decoherenceTimeNs: quantum.decoherenceTimeNs,
+    coherenceHalfLifeNs: quantum.coherenceHalfLifeNs,
+    coherenceFrequencyThz: quantum.coherenceFrequencyThz,
+    entanglementFidelity: quantum.entanglementFidelity,
+    noetherCharge: quantum.noetherCharge,
+    targetCharge: quantum.targetCharge,
+    allowableChargeDrift: quantum.allowableChargeDrift,
+    chargeDelta,
+    chargeWithinTolerance,
+    thermoMarginDeltaKJ,
+  };
+}
+
 function computeAlphaField(
   config: MissionConfig,
   thermodynamics: ThermodynamicReport,
@@ -1551,6 +1717,7 @@ function computeAlphaField(
   antifragility: AntifragilityReport,
   risk: RiskReport,
   owner: OwnerControlReport,
+  quantum: QuantumReport,
 ): AlphaFieldReport {
   const advantage = config.alphaField.stackelberg.leaderBaseline - config.alphaField.stackelberg.followerBaseline;
   const bound = 0.75 * config.alphaField.stackelberg.valueCeiling;
@@ -1606,18 +1773,22 @@ function computeAlphaField(
     1,
   );
   const ownerAssurance = clamp(ownerCoverageRatio, 0, 1);
+  const quantumAssurance = clamp(quantum.quantumConfidence, 0, 1);
 
   const weights = config.alphaField.signatureWeights;
   const weightTotal =
-    weights.antifragility + weights.governance + weights.owner + weights.thermodynamic;
+    weights.antifragility + weights.governance + weights.owner + weights.thermodynamic + weights.quantum;
   const weightedScore =
     weights.thermodynamic * thermodynamicAssurance +
     weights.governance * governanceAssurance +
     weights.antifragility * antifragilityAssurance +
-    weights.owner * ownerAssurance;
+    weights.owner * ownerAssurance +
+    weights.quantum * quantumAssurance;
   const superintelligenceIndex = clamp(weightTotal > 0 ? weightedScore / weightTotal : 0, 0, 1);
   const superintelligenceSatisfied =
     superintelligenceIndex >= config.alphaField.verification.superintelligenceMinimum - 1e-9;
+  const quantumConfidenceMinimum = config.alphaField.verification.quantumConfidenceMinimum;
+  const quantumConfidenceSatisfied = quantum.quantumConfidence >= quantumConfidenceMinimum - 1e-9;
 
   const totalSignals = [
     stackelbergWithinBound,
@@ -1630,9 +1801,10 @@ function computeAlphaField(
     ownerCoverageSatisfied,
     energyMarginSatisfied,
     superintelligenceSatisfied,
+    quantumConfidenceSatisfied,
   ];
   const binaryScore = totalSignals.filter(Boolean).length / totalSignals.length;
-  const confidenceScore = clamp((binaryScore + superintelligenceIndex) / 2, 0, 1);
+  const confidenceScore = clamp((binaryScore + superintelligenceIndex + quantumAssurance) / 3, 0, 1);
 
   return {
     stackelbergAdvantage: advantage,
@@ -1667,6 +1839,9 @@ function computeAlphaField(
     governanceAssurance,
     antifragilityAssurance,
     ownerAssurance,
+    quantumAssurance,
+    quantumConfidenceMinimum,
+    quantumConfidenceSatisfied,
     superintelligenceIndex,
     superintelligenceMinimum: config.alphaField.verification.superintelligenceMinimum,
     superintelligenceSatisfied,
@@ -1734,7 +1909,7 @@ function formatMatrix(matrix: number[][]): string {
 }
 
 function buildMermaidFlowchart(bundle: ReportBundle): string {
-  const { thermodynamics, incentives, equilibrium, risk, owner, blockchain, alphaField } = bundle;
+  const { thermodynamics, incentives, equilibrium, risk, owner, blockchain, alphaField, quantum } = bundle;
   const ownerLabel = `${owner.owner.slice(0, 6)}…${owner.owner.slice(-4)}`;
   const pauserLabel = `${owner.pauser.slice(0, 6)}…${owner.pauser.slice(-4)}`;
   const treasuryLabel = `${owner.treasury.slice(0, 6)}…${owner.treasury.slice(-4)}`;
@@ -1750,13 +1925,18 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
   const governanceAssurance = `${Math.round(alphaField.governanceAssurance * 100)}%`;
   const antifragilityAssurance = `${Math.round(alphaField.antifragilityAssurance * 100)}%`;
   const ownerAssurance = `${Math.round(alphaField.ownerAssurance * 100)}%`;
+  const quantumAssurance = `${Math.round(alphaField.quantumAssurance * 100)}%`;
+  const quantumCoherence = `${Math.round(quantum.quantumConfidence * 100)}%`;
+  const quantumFreeEnergy = `${quantum.quantumFreeEnergyKJ.toExponential(2)} kJ`;
   return [
     "```mermaid",
     "flowchart LR",
     "  subgraph Energy[Energy Intelligence Stack]",
     `    Thermo[Gibbs Free Energy ${formatNumber(thermodynamics.gibbsFreeEnergyKJ)} kJ]`,
     `    Burn[Burn Envelope ${formatNumber(thermodynamics.burnEnergyPerBlockKJ)} kJ/block]`,
+    `    QuantumFlux[Quantum Free Energy ${quantumFreeEnergy}]`,
     "    Thermo --> Burn",
+    "    Thermo --> QuantumFlux",
     "  end",
     "  subgraph Incentives[Mint/Burn Governance]",
     `    Mint[Mint η=${incentives.mint.eta.toFixed(2)}]`,
@@ -1782,6 +1962,8 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     `    GovernanceSignal[Governance Assurance ${governanceAssurance}]`,
     `    AntifragileSignal[Antifragility Assurance ${antifragilityAssurance}]`,
     `    OwnerSignal[Owner Command ${ownerAssurance}]`,
+    `    QuantumSignal[Quantum Assurance ${quantumAssurance}]`,
+    `    CoherenceSignal[Coherence ${quantumCoherence}]`,
     `    EnergyFloor[Energy Margin ${formatNumber(alphaField.energyMarginKJ)} kJ]`,
     "    Stackelberg --> Confidence",
     "    EnergyFloor --> ThermoSignal",
@@ -1789,6 +1971,8 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     "    GovernanceSignal --> Confidence",
     "    AntifragileSignal --> Confidence",
     "    OwnerSignal --> Confidence",
+    "    QuantumSignal --> Confidence",
+    "    CoherenceSignal --> QuantumSignal",
     "  end",
     "  subgraph Control[Owner Command Surface]",
     `    Owner((Owner ${ownerLabel}))`,
@@ -1806,6 +1990,7 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     "  BurnCurve --> StratA",
     "  Payoff --> Residual",
     "  Residual --> Stackelberg",
+    "  QuantumFlux --> CoherenceSignal",
     "  Confidence --> Owner",
     "  Owner --> Governor",
     "```",
@@ -1856,6 +2041,9 @@ function buildAntifragilityMindmap(bundle: ReportBundle): string {
     `      \"2a=${bundle.antifragility.quadraticSecondDerivative.toExponential(2)}\":::core`,
     "    \"Sigma Scan\":::core",
     lines,
+    "    \"Quantum Lattice\":::core",
+    `      \"Coherence ${Math.round(bundle.quantum.quantumConfidence * 100)}%\":::sigma`,
+    `      \"Charge Δ ${bundle.quantum.chargeDelta.toExponential(2)} (tol ${bundle.quantum.allowableChargeDrift.toExponential(2)})\":::welfare`,
     "    \"Owner Actions\":::core",
     `      \"Mint Mirror ${formatPercent(bundle.incentives.mint.treasuryMirrorShare)}\"`,
     `      \"Residual Risk ${bundle.risk.portfolioResidual.toFixed(3)}\"`,
@@ -1883,6 +2071,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     blockchain,
     ci,
     divergenceTolerance,
+    quantum,
   } = bundle;
 
   const flowchart = buildMermaidFlowchart(bundle);
@@ -1940,6 +2129,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     ["Owner coverage", alphaField.ownerCoverageSatisfied],
     ["Energy margin", alphaField.energyMarginSatisfied],
     ["Superintelligence threshold", alphaField.superintelligenceSatisfied],
+    ["Quantum confidence floor", alphaField.quantumConfidenceSatisfied],
   ]
     .map(([label, ok]) => `| ${label} | ${ok ? "✅" : "⚠️"} |`)
     .join("\n");
@@ -1978,6 +2168,13 @@ function buildMarkdown(bundle: ReportBundle): string {
     `| Validator | ${formatNumber(incentives.slashing.minStake.validator)} |`,
     `| Operator | ${formatNumber(incentives.slashing.minStake.operator)} |`,
   ].join("\n");
+
+  const quantumSuperpositionTable = quantum.normalizedWeights
+    .map(
+      (weight, index) =>
+        `| ψ${index + 1} | ${formatPercent(weight)} | ${formatNumber(quantum.energyLevelsEv[index], 3)} eV |`,
+    )
+    .join("\n");
 
   const slashingTable = incentives.slashing.severities
     .map(
@@ -2177,11 +2374,24 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Superintelligence index:** ${(alphaField.superintelligenceIndex * 100).toFixed(1)}% (minimum ${(
       alphaField.superintelligenceMinimum * 100
     ).toFixed(1)}% — ${alphaField.superintelligenceSatisfied ? "✅" : "⚠️"})`,
+    `- **Quantum coherence confidence:** ${(quantum.quantumConfidence * 100).toFixed(1)}% (minimum ${(
+      alphaField.quantumConfidenceMinimum * 100
+    ).toFixed(1)}% — ${alphaField.quantumConfidenceSatisfied ? "✅" : "⚠️"})`,
+    `- **Quantum free-energy delta vs thermodynamic margin:** ${quantum.thermoMarginDeltaKJ.toExponential(3)} kJ`,
+    `- **Noether charge alignment:** Δ${quantum.chargeDelta.toExponential(3)} (tolerance ${quantum.allowableChargeDrift.toExponential(
+      3,
+    )} — ${quantum.chargeWithinTolerance ? "✅" : "⚠️"})`,
+    `- **State entropy:** ${quantum.stateEntropyBits.toFixed(3)} bits (effective dimension ${quantum.effectiveDimension.toFixed(2)})`,
+    `- **Measurement variance:** ${quantum.measurementVariance.toExponential(3)} (σ ${quantum.measurementStdDev.toFixed(3)})`,
     `- **Composite confidence:** ${(alphaField.confidenceScore * 100).toFixed(1)}% (thermo ${(alphaField.thermodynamicAssurance *
       100
     ).toFixed(1)}% · governance ${(alphaField.governanceAssurance * 100).toFixed(1)}% · antifragility ${(alphaField.antifragilityAssurance *
       100
     ).toFixed(1)}% · owner ${(alphaField.ownerAssurance * 100).toFixed(1)}%)`,
+    "",
+    "| State | Normalised weight | Energy |",
+    "| --- | --- | --- |",
+    quantumSuperpositionTable,
     "",
     "| Signal | Status |",
     "| --- | --- |",
@@ -2299,6 +2509,7 @@ function buildDashboardHtml(bundle: ReportBundle): string {
     alphaField,
     blockchain,
     ci,
+    quantum,
   } = bundle;
 
   const flowDiagram = stripMermaid(buildMermaidFlowchart(bundle));
@@ -2362,6 +2573,12 @@ function buildDashboardHtml(bundle: ReportBundle): string {
         )}</td><td>${sample.divergence.toExponential(2)}</td></tr>`,
     )
     .join("\n");
+  const quantumRows = quantum.normalizedWeights
+    .map(
+      (weight, index) =>
+        `<tr><td>ψ${index + 1}</td><td>${formatPercent(weight)}</td><td>${formatNumber(quantum.energyLevelsEv[index], 3)} eV</td></tr>`,
+    )
+    .join("\n");
   const alphaFieldRows = [
     {
       label: "Stackelberg Δ",
@@ -2416,6 +2633,21 @@ function buildDashboardHtml(bundle: ReportBundle): string {
         1,
       )}%`,
       status: alphaField.superintelligenceSatisfied ? "✅" : "⚠️",
+    },
+    {
+      label: "Quantum coherence",
+      value: `${(quantum.quantumConfidence * 100).toFixed(1)}% ≥ ${(alphaField.quantumConfidenceMinimum * 100).toFixed(1)}%`,
+      status: alphaField.quantumConfidenceSatisfied ? "✅" : "⚠️",
+    },
+    {
+      label: "Quantum free-energy δ",
+      value: `${quantum.thermoMarginDeltaKJ.toExponential(3)} kJ`,
+      status: quantum.thermoMarginDeltaKJ <= alphaField.energyMarginFloorKJ ? "✅" : "⚠️",
+    },
+    {
+      label: "Noether charge",
+      value: `Δ${quantum.chargeDelta.toExponential(3)} ≤ ${quantum.allowableChargeDrift.toExponential(3)}`,
+      status: quantum.chargeWithinTolerance ? "✅" : "⚠️",
     },
     {
       label: "Thermodynamic assurance",
@@ -2712,6 +2944,24 @@ function buildDashboardHtml(bundle: ReportBundle): string {
       </section>
 
       <section class="card">
+        <h2>Quantum Governance Lattice</h2>
+        <p>
+          Coherence <strong>${(quantum.quantumConfidence * 100).toFixed(1)}%</strong> • Target floor
+          ${(alphaField.quantumConfidenceMinimum * 100).toFixed(1)}% • State entropy
+          ${quantum.stateEntropyBits.toFixed(3)} bits (dimension ${quantum.effectiveDimension.toFixed(2)})
+        </p>
+        <p>
+          Quantum free-energy Δ <strong>${quantum.thermoMarginDeltaKJ.toExponential(3)} kJ</strong> • Noether charge Δ
+          <strong>${quantum.chargeDelta.toExponential(3)}</strong> (tolerance ${quantum.allowableChargeDrift.toExponential(3)} •
+          ${quantum.chargeWithinTolerance ? "aligned" : "investigate"})
+        </p>
+        <table>
+          <thead><tr><th>State</th><th>Weight</th><th>Energy</th></tr></thead>
+          <tbody>${quantumRows}</tbody>
+        </table>
+      </section>
+
+      <section class="card">
         <h2>Alpha-Field Sovereign Assurance</h2>
         <p>
           Confidence score: <strong>${(alphaField.confidenceScore * 100).toFixed(1)}%</strong> • Superintelligence index
@@ -2900,6 +3150,7 @@ function buildSummary(bundle: ReportBundle): Record<string, unknown> {
     hamiltonian: bundle.hamiltonian,
     equilibrium: bundle.equilibrium,
     antifragility: bundle.antifragility,
+    quantum: bundle.quantum,
     alphaField: bundle.alphaField,
     risk: bundle.risk,
     incentives: bundle.incentives,
@@ -2925,6 +3176,7 @@ export {
   computeOwnerReport,
   computeJacobian,
   computeBlockchainReport,
+  computeQuantumReport,
 };
 
 export async function generateGovernanceDemo(): Promise<ReportBundle> {
@@ -2936,6 +3188,7 @@ export async function generateGovernanceDemo(): Promise<ReportBundle> {
   const antifragility = computeAntifragility(mission, mission.gameTheory.payoffMatrix, equilibrium, thermodynamics);
   const risk = computeRiskReport(mission);
   const incentives = computeIncentiveReport(mission);
+  const quantumReport = computeQuantumReport(mission, thermodynamics);
   const packageScripts = await loadPackageScripts();
   const owner = computeOwnerReport(mission, packageScripts);
   const jacobian = computeJacobian(mission.gameTheory.payoffMatrix, equilibrium.closedForm);
@@ -2948,6 +3201,7 @@ export async function generateGovernanceDemo(): Promise<ReportBundle> {
     antifragility,
     risk,
     owner,
+    quantumReport,
   );
 
   const bundle: ReportBundle = {
@@ -2962,6 +3216,7 @@ export async function generateGovernanceDemo(): Promise<ReportBundle> {
     incentives,
     owner,
     jacobian,
+    quantum: quantumReport,
     alphaField,
     blockchain,
     ci: mission.ci,

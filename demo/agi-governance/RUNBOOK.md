@@ -34,6 +34,8 @@ Outputs `reports/governance-demo-report.md` with:
 - Five-method equilibrium confirmation (discrete replicator, RK4 continuous flow, Perron eigenvector, closed-form, Monte-Carlo) with maximum deviation score.
 - Analytic vs numeric Jacobian matrices (Gershgorin, spectral radius, max delta) and antifragility curvature plus welfare growth curve for adversarial shocks.
 - Alpha-field sovereign assurance scoreboard validating Stackelberg bounds, Gibbs tolerances, antifragility minimums, sigma welfare gains, owner coverage, superintelligence index, and energy margin with assurance breakdowns.
+- Alpha-field sovereign assurance scoreboard validating Stackelberg bounds, Gibbs tolerances, antifragility minimums, sigma welfare gains, owner coverage, quantum confidence, superintelligence index, and energy margin with assurance breakdowns.
+- Quantum governance lattice (coherence confidence vs floor, quantum free-energy delta, Noether charge alignment, state entropy, superposition weights).
 - Risk audit portfolio with weighted mitigation coverage, dual residual calculations, and board threshold comparison.
 - Owner command surface (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel verifications) plus capability coverage matrix and npm-script audit table.
 - Blockchain deployment ledger (contracts, pausable selectors, Safe module stack).
@@ -95,6 +97,7 @@ xdg-open demo/agi-governance/reports/governance-demo-dashboard.html  # Linux
 The dashboard renders the same mission data with:
 
 - Flowing mermaid diagrams (energy → incentives → alpha field → owner loop, residual-risk pie, owner sequence, antifragility mindmap).
+- Dedicated quantum lattice card with coherence confidence, Landauer delta, and Noether charge tolerance visualised alongside the superposition weight table.
 - A live SVG antifragility curve driven by the recomputed welfare samples.
 - Responsive tables for strategies, risk vectors, pausable selectors, and CI shields.
 

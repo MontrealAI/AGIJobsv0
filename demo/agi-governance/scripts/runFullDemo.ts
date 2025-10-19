@@ -67,6 +67,10 @@ type FullRunSummary = {
     alphaFieldGovernanceAssurance: number;
     alphaFieldAntifragilityAssurance: number;
     alphaFieldOwnerAssurance: number;
+    quantumConfidence: number;
+    quantumChargeWithinTolerance: boolean;
+    quantumThermoDeltaKJ: number;
+    quantumEntropyBits: number;
   };
   ciIssues: string[];
   ownerWarnings: number;
@@ -262,6 +266,10 @@ async function runFullDemo(): Promise<FullRunSummary> {
       alphaFieldGovernanceAssurance: bundle.alphaField.governanceAssurance,
       alphaFieldAntifragilityAssurance: bundle.alphaField.antifragilityAssurance,
       alphaFieldOwnerAssurance: bundle.alphaField.ownerAssurance,
+      quantumConfidence: bundle.quantum.quantumConfidence,
+      quantumChargeWithinTolerance: bundle.quantum.chargeWithinTolerance,
+      quantumThermoDeltaKJ: bundle.quantum.thermoMarginDeltaKJ,
+      quantumEntropyBits: bundle.quantum.stateEntropyBits,
     },
     ciIssues: ciAssessment.issues,
     ownerWarnings: diagnostics.totals.warning,
@@ -302,6 +310,9 @@ async function runFullDemo(): Promise<FullRunSummary> {
     `- Governance assurance: ${(summary.metrics.alphaFieldGovernanceAssurance * 100).toFixed(1)}%`,
     `- Antifragility assurance: ${(summary.metrics.alphaFieldAntifragilityAssurance * 100).toFixed(1)}%`,
     `- Owner assurance: ${(summary.metrics.alphaFieldOwnerAssurance * 100).toFixed(1)}%`,
+    `- Quantum coherence: ${(summary.metrics.quantumConfidence * 100).toFixed(1)}% (${summary.metrics.quantumChargeWithinTolerance ? "aligned charge" : "⚠️ charge drift"})`,
+    `- Quantum free-energy delta: ${summary.metrics.quantumThermoDeltaKJ.toExponential(3)} kJ`,
+    `- Quantum state entropy: ${summary.metrics.quantumEntropyBits.toFixed(3)} bits`,
     `- Energy margin floor met: ${summary.metrics.alphaFieldEnergyMargin ? "✅" : "⚠️"}`,
     `- Jacobian stable: ${summary.metrics.jacobianStable ? "✅" : "❌"}`,
     `- Owner capability coverage: ${summary.metrics.ownerFullCoverage ? "✅" : "⚠️"}`,

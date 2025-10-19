@@ -14,6 +14,7 @@ import {
   type StatisticalPhysicsReport,
   type ThermodynamicReport,
   computeAntifragility,
+  computeQuantumReport,
   computeAlphaField,
   computeBlockchainReport,
   computeEquilibrium,
@@ -26,6 +27,7 @@ import {
   computeOwnerReport,
   loadMission,
   loadPackageScripts,
+  type QuantumReport,
 } from "./executeDemo";
 
 const REPORT_DIR = path.join(__dirname, "..", "reports");
@@ -41,6 +43,7 @@ interface ReportSummary {
   hamiltonian: HamiltonianReport;
   equilibrium: EquilibriumResult;
   antifragility: AntifragilityReport;
+  quantum: QuantumReport;
   alphaField: AlphaFieldReport;
   risk: RiskReport;
   incentives: IncentiveReport;
@@ -184,6 +187,7 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
   const hamiltonian = computeHamiltonian(mission);
   const equilibrium = computeEquilibrium(mission);
   const antifragility = computeAntifragility(mission, mission.gameTheory.payoffMatrix, equilibrium, thermodynamics);
+  const quantum = computeQuantumReport(mission, thermodynamics);
   const risk = computeRiskReport(mission);
   const incentives = computeIncentiveReport(mission);
   const owner = computeOwnerReport(mission, packageScripts);
@@ -195,6 +199,7 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
     antifragility,
     risk,
     owner,
+    quantum,
   );
   const jacobian = computeJacobian(mission.gameTheory.payoffMatrix, equilibrium.closedForm);
   const blockchain = computeBlockchainReport(mission);
@@ -432,6 +437,67 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
       "Energy margin floor met",
       alphaField.energyMarginSatisfied,
       summary.alphaField.energyMarginSatisfied,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:quantum-confidence-floor",
+      "Quantum confidence floor satisfied",
+      alphaField.quantumConfidenceSatisfied,
+      summary.alphaField.quantumConfidenceSatisfied,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "quantum:coherence",
+      "Quantum coherence confidence",
+      quantum.quantumConfidence,
+      summary.quantum.quantumConfidence,
+      1e-9,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "quantum:thermo-delta",
+      "Quantum free-energy delta",
+      quantum.thermoMarginDeltaKJ,
+      summary.quantum.thermoMarginDeltaKJ,
+      1e-9,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "quantum:charge-delta",
+      "Noether charge delta",
+      quantum.chargeDelta,
+      summary.quantum.chargeDelta,
+      1e-9,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "quantum:state-entropy",
+      "Quantum state entropy",
+      quantum.stateEntropyBits,
+      summary.quantum.stateEntropyBits,
+      1e-6,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "quantum:weight-sum",
+      "Quantum weight sum delta",
+      quantum.weightSumDelta,
+      summary.quantum.weightSumDelta,
+      1e-9,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "quantum:charge-within",
+      "Noether charge within tolerance",
+      quantum.chargeWithinTolerance,
+      summary.quantum.chargeWithinTolerance,
     ),
   );
   results.push(
