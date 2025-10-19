@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T22:56:36.733Z
+*Generated at:* 2025-10-19T23:30:06.176Z
 *Version:* 1.3.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -33,7 +33,23 @@
 | 720.00 | 1 | 0.00% |
 | 780.00 | 1 | 0.00% |
 
-## 3. Hamiltonian Control Plane
+## 3. Jarzynski Equality Verification
+
+- **ΔF (Gibbs − Landauer):** 69.80k kJ
+- **Scaled ΔF:** 570.17 (Landauer 0.00 → Gibbs 570.17)
+- **⟨e^{-βW}⟩:** 5.366e-19
+- **e^{-βΔF}:** 1.115e-18
+- **Log-space delta:** 7.313e-1 (tolerance 8.268e-1 — ✅ aligned)
+- **β input:** 0.0725 (matching statistical physics)
+
+```mermaid
+flowchart TD
+  Landauer[Landauer 5.340e-15 kJ] -->|ΔF 69.80k kJ| Gibbs[Gibbs 69.80k kJ]
+  Landauer -->|Sampled work| Jarzynski[⟨e^{-βW}⟩ log -42.069]
+  Gibbs -->|Theory| Theoretical[e^{-βΔF} log -41.338]
+```
+
+## 4. Hamiltonian Control Plane
 
 - **Kinetic term:** 34149.74M units
 - **Potential term (scaled by λ):** 302.02k units
@@ -41,7 +57,7 @@
 - **Alternate computation check:** 34149.44M units
 - **Difference:** 0.000e+0 (≤ 1e-3 target)
 
-## 4. Incentive Free-Energy Flow
+## 5. Incentive Free-Energy Flow
 
 - **Mint rule η:** 0.94 (ΔV 125.00k tokens)
 - **Total minted per event:** 117.50k tokens
@@ -139,7 +155,7 @@ flowchart LR
   Owner --> Governor
 ```
 
-## 5. Game-Theoretic Macro-Equilibrium
+## 6. Game-Theoretic Macro-Equilibrium
 
 - **Discount factor:** 0.92 (must exceed 0.80 for uniqueness)
 - **Replicator iterations to convergence:** 0
@@ -185,7 +201,7 @@ flowchart LR
 | 3.33e-2 | 1.85e-11 | -3.33e-2 |
 | -3.33e-2 | 3.33e-2 | 0.00e+0 |
 
-## 6. Antifragility Tensor
+## 7. Antifragility Tensor
 
 - **Quadratic curvature (2a):** 1.594e+1 (> 0 indicates antifragility)
 - **Monotonic welfare increase:** ✅
@@ -218,7 +234,7 @@ mindmap
   classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;
 ```
 
-## 7. Alpha-Field Sovereign Assurance
+## 8. Alpha-Field Sovereign Assurance
 
 - **Stackelberg advantage:** Δ0.60 vs cap 7.50 (✅ within)
 - **Stackelberg floor satisfied:** ✅ (floor 0.50; achieved Δ 0.60)
@@ -257,7 +273,7 @@ mindmap
 | Superintelligence threshold | ✅ |
 | Quantum confidence floor | ✅ |
 
-## 8. Risk & Safety Audit
+## 9. Risk & Safety Audit
 
 - **Coverage weights:** staking 40.00%, formal 40.00%, fuzz 20.00%
 - **Portfolio residual risk:** 0.214 (threshold 0.300 — within bounds)
@@ -281,7 +297,7 @@ pie showData
   "R4 Societal externality" : 48.8000
 ```
 
-## 9. Owner Supremacy & Command Surface
+## 10. Owner Supremacy & Command Surface
 
 - **Owner:** 0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1
 - **Pauser:** 0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2
@@ -348,7 +364,7 @@ sequenceDiagram
 | upgrade | owner:upgrade | ✅ | owner:upgrade-status | ✅ |
 | compliance | owner:update-all | ✅ | owner:compliance-report | ✅ |
 
-## 10. Blockchain Deployment Envelope
+## 11. Blockchain Deployment Envelope
 
 - **Network:** Ethereum Mainnet-grade (chainId 1)
 - **RPC:** https://mainnet.infura.io/v3/YOUR_KEY
@@ -369,7 +385,7 @@ sequenceDiagram
 | AGIJobsGovernor | unpause | 0x3f4ba83a | Resume operations |
 | AGIJobsTreasury | updateEmissionCurve | 0xa10204e9 | Adjusts reward burn / mint ratios |
 
-## 11. CI Enforcement Ledger
+## 12. CI Enforcement Ledger
 
 - **Workflow name:** ci (v2)
 - **Concurrency guard:** <code>ci-${{ github.workflow }}-${{ github.ref }}</code>
@@ -385,7 +401,7 @@ sequenceDiagram
 
 Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.
 
-## 12. Owner Execution Log (fill during live ops)
+## 13. Owner Execution Log (fill during live ops)
 
 | Timestamp | Action | Tx hash | Operator | Notes |
 | --- | --- | --- | --- | --- |

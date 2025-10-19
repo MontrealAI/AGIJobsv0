@@ -10,6 +10,7 @@ import {
   type JacobianReport,
   type MissionConfig,
   type OwnerControlReport,
+  type JarzynskiReport,
   type RiskReport,
   type StatisticalPhysicsReport,
   type ThermodynamicReport,
@@ -21,6 +22,7 @@ import {
   computeHamiltonian,
   computeIncentiveReport,
   computeJacobian,
+  computeJarzynski,
   computeRiskReport,
   computeStatisticalPhysics,
   computeThermodynamics,
@@ -40,6 +42,7 @@ interface ReportSummary {
   version: string;
   thermodynamics: ThermodynamicReport;
   statisticalPhysics: StatisticalPhysicsReport;
+  jarzynski: JarzynskiReport;
   hamiltonian: HamiltonianReport;
   equilibrium: EquilibriumResult;
   antifragility: AntifragilityReport;
@@ -195,6 +198,7 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
 
   const thermodynamics = computeThermodynamics(mission);
   const statisticalPhysics = computeStatisticalPhysics(mission, thermodynamics);
+  const jarzynski = computeJarzynski(mission, thermodynamics, statisticalPhysics);
   const hamiltonian = computeHamiltonian(mission);
   const equilibrium = computeEquilibrium(mission);
   const antifragility = computeAntifragility(mission, mission.gameTheory.payoffMatrix, equilibrium, thermodynamics);
@@ -251,6 +255,33 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
       statisticalPhysics.freeEnergyKJ,
       summary.statisticalPhysics.freeEnergyKJ,
       1e-6,
+    ),
+  );
+  const jarzynskiTolerance = Math.max(1e-9, summary.jarzynski.tolerance);
+  results.push(
+    buildNumericCheck(
+      "jarzynski:log-expectation",
+      "Jarzynski log expectation",
+      jarzynski.logExpectation,
+      summary.jarzynski.logExpectation,
+      jarzynskiTolerance,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "jarzynski:log-theoretical",
+      "Jarzynski log theoretical bound",
+      jarzynski.logTheoretical,
+      summary.jarzynski.logTheoretical,
+      jarzynskiTolerance,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "jarzynski:satisfied",
+      "Jarzynski tolerance satisfied",
+      jarzynski.satisfied,
+      summary.jarzynski.satisfied,
     ),
   );
   results.push(

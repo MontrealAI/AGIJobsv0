@@ -30,6 +30,7 @@ npm run demo:agi-governance
 Outputs `reports/governance-demo-report.md` with:
 - Thermodynamic energy margins (Gibbs free energy, Hamiltonian convergence envelope, Landauer limit calibration).
 - Statistical-physics partition validation (partition function, scaled free energy, entropy, Gibbs delta tolerance, heat capacity).
+- Jarzynski equality reconciliation (log ⟨e<sup>−βW</sup>⟩ vs e<sup>−βΔF</sup> confirming the Landauer-aligned free-energy gap).
 - Incentive free-energy ledger (mint/burn/slash parity, treasury mirroring, owner-tunable slashing curves).
 - Five-method equilibrium confirmation (discrete replicator, RK4 continuous flow, Perron eigenvector, closed-form, Monte-Carlo) with maximum deviation score.
 - Analytic vs numeric Jacobian matrices (Gershgorin, spectral radius, max delta) and antifragility curvature plus welfare growth curve for adversarial shocks.

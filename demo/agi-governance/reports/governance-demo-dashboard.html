@@ -152,7 +152,7 @@
     <header>
       <div class="badge">AGI Jobs v0 (v2) Superintelligence Console</div>
       <h1>Solving α-AGI Governance</h1>
-      <p class="meta">Generated 2025-10-19T22:56:36.733Z • Version 1.3.0</p>
+      <p class="meta">Generated 2025-10-19T23:30:06.176Z • Version 1.3.0</p>
       <p class="meta">Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.</p>
     </header>
     <main>
@@ -260,6 +260,29 @@
   QuantumFlux --> CoherenceSignal
   Confidence --> Owner
   Owner --> Governor</pre>
+      </section>
+
+      <section class="card grid grid-columns-2">
+        <div>
+          <h2>Jarzynski Equality</h2>
+          <ul class="metric-list">
+            <li>ΔF (Gibbs − Landauer): <strong>69.80k kJ</strong></li>
+            <li>Scaled ΔF: <strong>570.17</strong> (Landauer 0.00 → Gibbs 570.17)</li>
+            <li>⟨e<sup>−βW</sup>⟩: <strong>5.366e-19</strong></li>
+            <li>e<sup>−βΔF</sup>: <strong>1.115e-18</strong></li>
+            <li>Log delta: <strong>7.313e-1</strong> (tol 8.268e-1 — aligned)</li>
+            <li>β: <strong>0.0725</strong></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Landauer Alignment</h2>
+          <pre class="mermaid">flowchart LR
+  Landauer((Landauer 5.340e-15 kJ))
+  Gibbs((Gibbs 69.80k kJ))
+  Landauer -->|ΔF 69.80k kJ| Gibbs
+  Landauer -->|⟨e^{-βW}⟩ log -42.069| Sampled[Jarzynski sample]
+  Gibbs -->|e^{-βΔF} log -41.338| Theory[Theoretical bound]</pre>
+        </div>
       </section>
 
       <section class="card grid grid-columns-2">
