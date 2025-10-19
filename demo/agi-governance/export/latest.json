@@ -1,0 +1,724 @@
+{
+  "version": "2025-alpha-governance",
+  "generatedAt": "2025-10-19T13:24:36.660Z",
+  "network": "hardhat",
+  "scenario": {
+    "version": "2025-alpha-governance",
+    "temperatureKelvin": 312.5,
+    "discountFactor": 0.92,
+    "lambda": 0.94,
+    "landauerMultiplier": 1.08,
+    "validators": [
+      {
+        "id": "validator-a",
+        "label": "Validator A — Thermodynamic Auditor",
+        "entropyWeight": 0.31
+      },
+      {
+        "id": "validator-b",
+        "label": "Validator B — Economic Guardian",
+        "entropyWeight": 0.27
+      },
+      {
+        "id": "validator-c",
+        "label": "Validator C — Civic Oversight",
+        "entropyWeight": 0.29
+      }
+    ],
+    "nations": [
+      {
+        "id": "nation-a",
+        "label": "Aurora Coalition (Climate Accord)",
+        "summary": "Accelerated decarbonisation with AI-governed carbon markets and validator-managed compliance",
+        "uri": "ipfs://solving-alpha/nation-a/climate",
+        "reward": 5000,
+        "deadlineHours": 1,
+        "entropy": 0.18,
+        "dissipation": 0.11
+      },
+      {
+        "id": "nation-b",
+        "label": "Horizon League (Trade Charter)",
+        "summary": "Autonomous trade dispute mediation and treasury rebalancing across allied economies",
+        "uri": "ipfs://solving-alpha/nation-b/trade",
+        "reward": 8000,
+        "deadlineHours": 1.5,
+        "entropy": 0.22,
+        "dissipation": 0.14
+      },
+      {
+        "id": "nation-c",
+        "label": "Oceanic Union (Biodiversity Pact)",
+        "summary": "Marine restoration bonds with validator-audited impact attestations and automatic clawbacks",
+        "uri": "ipfs://solving-alpha/nation-c/biodiversity",
+        "reward": 6200,
+        "deadlineHours": 2,
+        "entropy": 0.2,
+        "dissipation": 0.12
+      }
+    ],
+    "owner": {
+      "initialApprovals": 2,
+      "upgradedApprovals": 3,
+      "initialCommitWindowSeconds": 60,
+      "initialRevealWindowSeconds": 60,
+      "postUpgradeCommitWindowSeconds": 90,
+      "postUpgradeRevealWindowSeconds": 120,
+      "hamiltonianThreshold": 4.2,
+      "hamiltonianWeight": 2.8,
+      "minStake": 250
+    }
+  },
+  "platform": {
+    "token": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
+    "stakingTokenSymbol": "$AGIALPHA",
+    "stakeManager": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+    "jobRegistry": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+    "validationModule": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "reputationEngine": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "disputeModule": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
+    "certificate": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "feePool": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+    "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "treasury": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "feePct": "2%",
+    "requiredApprovals": "3",
+    "validatorsPerJob": "3",
+    "commitWindow": "90",
+    "revealWindow": "120",
+    "minStake": "250",
+    "hamiltonianThreshold": "4.2",
+    "hamiltonianWeight": "2.8"
+  },
+  "energy": {
+    "temperatureKelvin": 312.5,
+    "discountFactor": 0.92,
+    "lambda": 0.94,
+    "energyBudget": 19584,
+    "gibbsFreeEnergy": 19582.728792761827,
+    "hamiltonian": 17313.290392761828,
+    "landauerBound": 3.229851245713564,
+    "dissipation": 2415.36,
+    "validatorEntropy": 1.097025615312467,
+    "validatorCooperation": 1,
+    "antifragilityScore": 0.9322736156730433
+  },
+  "jobs": [
+    {
+      "id": 1,
+      "nationId": "nation-a",
+      "nationLabel": "Aurora Coalition (Climate Accord)",
+      "employer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "reward": "5000.0",
+      "feePct": "2%",
+      "deadline": "2025-10-19T14:25:30.000Z",
+      "specHash": "0xb6f9429eb50e8d83db45ac67c897f03c92ccbeeca0a2d5d61ef5ff725c1656c7",
+      "resultHash": "0x8bb3a869c8eb862dfc0e63de957f37a9768d4ea6dfebe74bca81047a0900b00b",
+      "burnHash": "0xe76fb822d0be84b03e50fb316ec180cfb9a1f99aa448adf4896b4f66e7193e96",
+      "approvals": 3,
+      "validators": 3,
+      "status": "FinalizedSuccess",
+      "entropy": 0.18,
+      "dissipation": 0.11
+    },
+    {
+      "id": 2,
+      "nationId": "nation-b",
+      "nationLabel": "Horizon League (Trade Charter)",
+      "employer": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "reward": "8000.0",
+      "feePct": "2%",
+      "deadline": "2025-10-19T14:57:47.000Z",
+      "specHash": "0x25c0b47c261ff6b8e137694a34274cc4b13ecb70600c684d157676d15318d6d3",
+      "resultHash": "0x5b2299e7e2496052c516745b4a79f3212d02da76f992d3cf946e8a31be1fb342",
+      "burnHash": "0x9fd21d0bdcedf15a2d29250649e371fd617b66f013ef44f1d0aed98a9ead7d0d",
+      "approvals": 3,
+      "validators": 3,
+      "status": "FinalizedSuccess",
+      "entropy": 0.22,
+      "dissipation": 0.14
+    },
+    {
+      "id": 3,
+      "nationId": "nation-c",
+      "nationLabel": "Oceanic Union (Biodiversity Pact)",
+      "employer": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "agent": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "reward": "6200.0",
+      "feePct": "2%",
+      "deadline": "2025-10-19T15:31:28.000Z",
+      "specHash": "0xbc2417d25ec8eb9f383b6f6ebbdcaef47499c47bf7933d1772d841251dc33f7d",
+      "resultHash": "0x8617cb88d1b1e5a6df4d02b9446e7a8399c63f43fec2084335b7aedf08819fc4",
+      "burnHash": "0x98d4ce35c4d1e0074a971045fdf949d1db668b5b8aa2d3a9489d224e163ed43c",
+      "approvals": 3,
+      "validators": 3,
+      "status": "FinalizedSuccess",
+      "entropy": 0.2,
+      "dissipation": 0.12
+    }
+  ],
+  "validators": [
+    {
+      "id": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "stake": "250.0",
+      "approvals": 3,
+      "rejections": 0,
+      "commits": 3,
+      "reveals": 3,
+      "antifragility": 0.9661
+    },
+    {
+      "id": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "stake": "250.0",
+      "approvals": 3,
+      "rejections": 0,
+      "commits": 3,
+      "reveals": 3,
+      "antifragility": 0.9661
+    },
+    {
+      "id": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "stake": "250.0",
+      "approvals": 3,
+      "rejections": 0,
+      "commits": 3,
+      "reveals": 3,
+      "antifragility": 0.9661
+    }
+  ],
+  "ownerActions": [
+    {
+      "id": "ea8bcff2-d526-4f8e-b30d-68468addeeca",
+      "at": "2025-10-19T13:24:36.359Z",
+      "label": "Pause job registry",
+      "txHash": "0x6dcc93c1ff04c62e2e7c91800119fa23a6ae09f8302b89cc0f2ec3cd7c330076",
+      "before": {
+        "paused": "false"
+      },
+      "after": {
+        "paused": "true"
+      }
+    },
+    {
+      "id": "f638ed3a-aabd-4f80-9ad6-6e05a2e7a350",
+      "at": "2025-10-19T13:24:36.363Z",
+      "label": "Resume job registry",
+      "txHash": "0xfb697a649c070b28a209700695dc1befe11cde405c8a197b4d3ad9b0b7298afd",
+      "before": {
+        "paused": "true"
+      },
+      "after": {
+        "paused": "false"
+      }
+    },
+    {
+      "id": "c6ac20f4-c46d-446b-9a1c-38cd8e441cf3",
+      "at": "2025-10-19T13:24:36.368Z",
+      "label": "Tighten validator quorum",
+      "txHash": "0x84e9bc534468891b835fd8753d2ae9fcb867fb372c93405c7554cea6841a00c1",
+      "before": {
+        "approvals": "2"
+      },
+      "after": {
+        "approvals": "3"
+      }
+    },
+    {
+      "id": "7b9299dd-d81f-40de-a9a6-510823f7d63f",
+      "at": "2025-10-19T13:24:36.373Z",
+      "label": "Extend commit window",
+      "txHash": "0xaf80f72b31e9eeb90afbd44cc2397dccccb718acae278d0da6cd56670224f99a",
+      "before": {
+        "seconds": "60"
+      },
+      "after": {
+        "seconds": "90"
+      }
+    },
+    {
+      "id": "8815322d-01f3-4939-8abb-c3373ca4ccf5",
+      "at": "2025-10-19T13:24:36.380Z",
+      "label": "Extend reveal window",
+      "txHash": "0x71e054e0095c85f5924765115b609f12cf32a268f82e2548399d2bb31662a150",
+      "before": {
+        "seconds": "60"
+      },
+      "after": {
+        "seconds": "120"
+      }
+    },
+    {
+      "id": "72f6ef86-8948-44ef-b895-b03a43f43a12",
+      "at": "2025-10-19T13:24:36.385Z",
+      "label": "Reaffirm minimum stake",
+      "txHash": "0x62b868108f3b4e43cd4a91a5101109ca05569c0308cac6c431d30d39fd4e2f0d",
+      "before": {
+        "minStake": "0.000000000000000001"
+      },
+      "after": {
+        "minStake": "250"
+      }
+    },
+    {
+      "id": "8975bfae-97ba-4ab4-a3c4-0fbd16336fbb",
+      "at": "2025-10-19T13:24:36.659Z",
+      "label": "Update Hamiltonian monitor",
+      "txHash": "0x2531c44876dfdde3a226404cccd6fd71658a2a87c0ab0ce3612cd158d5a29731",
+      "before": {
+        "hamiltonian": "0"
+      },
+      "after": {
+        "hamiltonian": "-17168640000"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "id": "c3c4c384-2177-467b-bb84-b41a273ff419",
+      "at": "2025-10-19T13:24:36.131Z",
+      "actor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "label": "Stake 250.0 $AGIALPHA",
+      "category": "stake",
+      "notes": "role=agent"
+    },
+    {
+      "id": "37a712a8-fcc4-4be2-b2fd-38c2f99cb47f",
+      "at": "2025-10-19T13:24:36.143Z",
+      "actor": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "label": "Stake 250.0 $AGIALPHA",
+      "category": "stake",
+      "notes": "role=validator"
+    },
+    {
+      "id": "b2030530-32df-4625-947b-28d7801a8639",
+      "at": "2025-10-19T13:24:36.153Z",
+      "actor": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "label": "Stake 250.0 $AGIALPHA",
+      "category": "stake",
+      "notes": "role=validator"
+    },
+    {
+      "id": "f2faf9a5-9a51-4700-b761-bb192d41d8e6",
+      "at": "2025-10-19T13:24:36.165Z",
+      "actor": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "label": "Stake 250.0 $AGIALPHA",
+      "category": "stake",
+      "notes": "role=validator"
+    },
+    {
+      "id": "8aaa12c7-e8c5-4f45-8f6a-2f52c1979efe",
+      "at": "2025-10-19T13:24:36.182Z",
+      "actor": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "label": "Create policy mission Aurora Coalition (Climate Accord)",
+      "category": "policy",
+      "jobId": 1,
+      "txHash": "0x813700770434b0eb0cc967e2d40f3bbfabc1fc9f0078ac0485b9076d1b4049f4"
+    },
+    {
+      "id": "5a6b1a63-61d9-4cb6-96fa-490f6086a0e0",
+      "at": "2025-10-19T13:24:36.192Z",
+      "actor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "label": "Apply as drafter for job 1",
+      "category": "policy",
+      "jobId": 1,
+      "txHash": "0xf272df62e893fbd2bc0690503e877eded161c3da9d32b4485ac89fbb3fd66bcc"
+    },
+    {
+      "id": "464ef08c-0bde-4e5f-92e6-10405e337450",
+      "at": "2025-10-19T13:24:36.208Z",
+      "actor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "label": "Submit policy deliverable for job 1",
+      "category": "policy",
+      "jobId": 1,
+      "txHash": "0xfa739a093dbc30fdba677d9286d9eec79b3942d253e51e2b22d3fda3a18bc645"
+    },
+    {
+      "id": "1567cc20-2ed2-4212-b45a-6206e941a783",
+      "at": "2025-10-19T13:24:36.212Z",
+      "actor": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "label": "Register burn receipt for job 1",
+      "category": "policy",
+      "jobId": 1,
+      "txHash": "0xb5158b895b337a34ed5fcc1ac56d7b4037c6b0ca9959342918981ab4c8b5618f"
+    },
+    {
+      "id": "a996d550-5742-408c-97de-9dd2fc41681b",
+      "at": "2025-10-19T13:24:36.247Z",
+      "actor": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "label": "Select validators for job 1",
+      "category": "validation",
+      "jobId": 1,
+      "txHash": "0x17ae0fad1526eaded229a3a5d58964041be701ff5eb2778adb4c150c10c9d101"
+    },
+    {
+      "id": "925feb23-0124-4039-9259-1684945ddc14",
+      "at": "2025-10-19T13:24:36.268Z",
+      "actor": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "label": "Commit validation (approve)",
+      "category": "validation",
+      "jobId": 1,
+      "txHash": "0xda4f946bff7bec43cb5863eaa7d91edf57598ad9540dea72de570b0f73e4964c"
+    },
+    {
+      "id": "a27ec24e-d1c6-4911-a9ac-293f00c2cb9f",
+      "at": "2025-10-19T13:24:36.277Z",
+      "actor": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "label": "Commit validation (approve)",
+      "category": "validation",
+      "jobId": 1,
+      "txHash": "0x1918780f1841ed9f203637a3f0598b4de3b3c6aa49012afece1b8471a638f35c"
+    },
+    {
+      "id": "861ad9c6-bbac-4f4f-a80d-92a119816059",
+      "at": "2025-10-19T13:24:36.285Z",
+      "actor": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "label": "Commit validation (approve)",
+      "category": "validation",
+      "jobId": 1,
+      "txHash": "0x65de816a28a79689683573492e01a68d27415ad2405f7e856100d241c47710b1"
+    },
+    {
+      "id": "c7a6fab7-27c9-47af-859c-64387c2a4b18",
+      "at": "2025-10-19T13:24:36.306Z",
+      "actor": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "label": "Reveal validation (approve)",
+      "category": "validation",
+      "jobId": 1,
+      "txHash": "0x9ae1c45778caba2d219ee89f2196a49911695f8a2dda1df417371ae972f6f2d1"
+    },
+    {
+      "id": "8761f1dc-d2d6-416c-82c9-8d0064b2d2de",
+      "at": "2025-10-19T13:24:36.317Z",
+      "actor": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "label": "Reveal validation (approve)",
+      "category": "validation",
+      "jobId": 1,
+      "txHash": "0x96f5fc07653b3d7a67ffc31367107b23d61bf7f977e0b0c592bce1e5826e00ce"
+    },
+    {
+      "id": "8fd93a55-b7be-473e-ab71-f27e0792974d",
+      "at": "2025-10-19T13:24:36.328Z",
+      "actor": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "label": "Reveal validation (approve)",
+      "category": "validation",
+      "jobId": 1,
+      "txHash": "0xf426268e27dfb5856272cc0fda89779542d3083cc5844823d804ce97102b218b"
+    },
+    {
+      "id": "9a3ac875-9770-4f57-9d98-ca5f42eaf30a",
+      "at": "2025-10-19T13:24:36.342Z",
+      "actor": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "label": "Finalize validation for job 1",
+      "category": "validation",
+      "jobId": 1,
+      "txHash": "0x6cf317d4e5caa786ae3339289e8470f998936a450c0ff503c2b7ae3cbe7a62f9"
+    },
+    {
+      "id": "a95c0991-68ac-4ceb-a79e-ac0262824e81",
+      "at": "2025-10-19T13:24:36.351Z",
+      "actor": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "label": "Settle policy mission 1",
+      "category": "policy",
+      "jobId": 1,
+      "txHash": "0x22df823555b68634958a3ee34c9d7f0cb503c48b3e62c7079def3b1d70806cc7"
+    },
+    {
+      "id": "be4b0f71-6ea4-4557-964b-2474ba6377f8",
+      "at": "2025-10-19T13:24:36.359Z",
+      "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "label": "Owner pauses platform",
+      "category": "owner",
+      "notes": "Global pause engaged to audit validator performance."
+    },
+    {
+      "id": "8b59c520-5592-4226-8b0d-045a4628fb69",
+      "at": "2025-10-19T13:24:36.363Z",
+      "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "label": "Owner resumes operations",
+      "category": "owner",
+      "notes": "Pause lifted after cross-checking validator quorum."
+    },
+    {
+      "id": "e27b08b9-398d-4c31-bd30-69f623147396",
+      "at": "2025-10-19T13:24:36.368Z",
+      "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "label": "Owner increases required validator approvals",
+      "category": "owner",
+      "notes": "Quorum raised from 2 to 3."
+    },
+    {
+      "id": "579de216-7377-4c43-95d7-dcb0dc8abc78",
+      "at": "2025-10-19T13:24:36.373Z",
+      "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "label": "Owner extends commit window",
+      "category": "owner",
+      "notes": "Allows validators more time to absorb macro telemetry."
+    },
+    {
+      "id": "c4debb52-8ce5-4732-ba9c-9ea51b9a103a",
+      "at": "2025-10-19T13:24:36.380Z",
+      "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "label": "Owner extends reveal window",
+      "category": "owner",
+      "notes": "Matches validators to the new Hamiltonian cadence."
+    },
+    {
+      "id": "a200f747-a80c-43d1-9428-2e3e00e92bbe",
+      "at": "2025-10-19T13:24:36.396Z",
+      "actor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "label": "Create policy mission Horizon League (Trade Charter)",
+      "category": "policy",
+      "jobId": 2,
+      "txHash": "0x60c2f50ca30455dfa3cb62e5b9a4807172bef2d287cfe0c52051ef36a204a490"
+    },
+    {
+      "id": "01981a81-2983-4d8f-8855-6ca1e175a87b",
+      "at": "2025-10-19T13:24:36.404Z",
+      "actor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "label": "Apply as drafter for job 2",
+      "category": "policy",
+      "jobId": 2,
+      "txHash": "0xb9a3eca118ce101bc65abfc6bd560d25065fb0ba576ed1834e8476623a4c1f97"
+    },
+    {
+      "id": "e4686ecf-5f6a-4e57-9fa4-531408d7b819",
+      "at": "2025-10-19T13:24:36.411Z",
+      "actor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "label": "Submit policy deliverable for job 2",
+      "category": "policy",
+      "jobId": 2,
+      "txHash": "0xc7363969462d583e1c249478855ce46dc5530ef9c70bc455523a3c48b83f2524"
+    },
+    {
+      "id": "91bcced2-5a5f-4a7d-9e57-b36a61845ba8",
+      "at": "2025-10-19T13:24:36.415Z",
+      "actor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "label": "Register burn receipt for job 2",
+      "category": "policy",
+      "jobId": 2,
+      "txHash": "0x2f679477c05de6cdba46e03a1e12dd960ef6284463840412612feca872385b9f"
+    },
+    {
+      "id": "fef95b4a-b5a4-437d-83cc-c2fc7ea6c7d1",
+      "at": "2025-10-19T13:24:36.424Z",
+      "actor": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "label": "Select validators for job 2",
+      "category": "validation",
+      "jobId": 2,
+      "txHash": "0xb7f503e1511c50928b3709cfd20e8cd66c4306008c4a61d13a5d6e934e3ec0a1"
+    },
+    {
+      "id": "371d8fb0-aa6a-4290-a914-227c4e43db47",
+      "at": "2025-10-19T13:24:36.435Z",
+      "actor": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "label": "Commit validation (approve)",
+      "category": "validation",
+      "jobId": 2,
+      "txHash": "0x9ba87aed619170b10c9d3e6b38a468de4c25d635ee969ca87cf64c990d9ea439"
+    },
+    {
+      "id": "59276c1c-3a30-4c7b-9a50-3f728fecf319",
+      "at": "2025-10-19T13:24:36.443Z",
+      "actor": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "label": "Commit validation (approve)",
+      "category": "validation",
+      "jobId": 2,
+      "txHash": "0xabb37879985e1c194bc3dd175b689be54f0f15eec705ae467799dd5a1e46f8fd"
+    },
+    {
+      "id": "2ef8a1c9-201e-4133-bdfb-3e69d7a4d76e",
+      "at": "2025-10-19T13:24:36.448Z",
+      "actor": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "label": "Commit validation (approve)",
+      "category": "validation",
+      "jobId": 2,
+      "txHash": "0xafb7ddc606916da5a538dad2dc78c13762563cc5ee5b9a54bc0429c3c125f3c5"
+    },
+    {
+      "id": "66a82693-bba8-4438-b857-47520dfc8dd0",
+      "at": "2025-10-19T13:24:36.456Z",
+      "actor": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "label": "Reveal validation (approve)",
+      "category": "validation",
+      "jobId": 2,
+      "txHash": "0x81a3c73947636bf23a1f09c7517077c97cb021da353e77317615915cb503eda9"
+    },
+    {
+      "id": "451468a8-6d3d-4927-8350-b7a752b7f8c2",
+      "at": "2025-10-19T13:24:36.461Z",
+      "actor": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "label": "Reveal validation (approve)",
+      "category": "validation",
+      "jobId": 2,
+      "txHash": "0x219966eeda3a9ec2a8cf0d81611ed1d891662f617f62c8a6966c7f7242f857cb"
+    },
+    {
+      "id": "62f83fa6-72d6-40df-8958-d2ba2ebf2a8b",
+      "at": "2025-10-19T13:24:36.467Z",
+      "actor": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "label": "Reveal validation (approve)",
+      "category": "validation",
+      "jobId": 2,
+      "txHash": "0xcee1b70e046c8f2e42c06dfe6234b3269ee85324b9a57a851f591d3bbc98c73f"
+    },
+    {
+      "id": "23e5ce6b-142e-4095-83f0-23c1d1e01c22",
+      "at": "2025-10-19T13:24:36.479Z",
+      "actor": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "label": "Finalize validation for job 2",
+      "category": "validation",
+      "jobId": 2,
+      "txHash": "0xac856df6067ac2b408c1261a7351d8da6119b7cd31deae7ec18850633d1f280d"
+    },
+    {
+      "id": "3b3c446e-5c66-4354-b7a6-723e6478735e",
+      "at": "2025-10-19T13:24:36.508Z",
+      "actor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "label": "Settle policy mission 2",
+      "category": "policy",
+      "jobId": 2,
+      "txHash": "0xe49f5c972dbd10c25e033b04a6231130f693507711a3b9f95d4c349a009f0af7"
+    },
+    {
+      "id": "cd7aa1dc-b819-410b-b9f4-ee1f645ba53d",
+      "at": "2025-10-19T13:24:36.527Z",
+      "actor": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "label": "Create policy mission Oceanic Union (Biodiversity Pact)",
+      "category": "policy",
+      "jobId": 3,
+      "txHash": "0x9c715ca92c48852537f6d8fc3458b38abfdab8b4fc18e102bf935c688c25daec"
+    },
+    {
+      "id": "57c30111-b3b5-41a4-afdb-ff545c5d7638",
+      "at": "2025-10-19T13:24:36.532Z",
+      "actor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "label": "Apply as drafter for job 3",
+      "category": "policy",
+      "jobId": 3,
+      "txHash": "0x56968ade692ff651c52da863c2e29ef24f4b0355e74d302345584c0a02271e76"
+    },
+    {
+      "id": "91d5b85a-57ec-4770-a2c2-f0c680b48d04",
+      "at": "2025-10-19T13:24:36.541Z",
+      "actor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "label": "Submit policy deliverable for job 3",
+      "category": "policy",
+      "jobId": 3,
+      "txHash": "0x89985c6411b6491da7efb2d4233cd5f5dd82e4a6d461c767cffb7a9493f9998c"
+    },
+    {
+      "id": "61e255d3-ed52-4a35-8e7a-5f7083a0c045",
+      "at": "2025-10-19T13:24:36.544Z",
+      "actor": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "label": "Register burn receipt for job 3",
+      "category": "policy",
+      "jobId": 3,
+      "txHash": "0x3e5e0e37d7d1aae1edfeccd0c35b1ff336ec2c120995e5f752d629a891a15635"
+    },
+    {
+      "id": "576bb695-7f81-45fc-a406-bf6d9ab4962a",
+      "at": "2025-10-19T13:24:36.558Z",
+      "actor": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "label": "Select validators for job 3",
+      "category": "validation",
+      "jobId": 3,
+      "txHash": "0x2435da4b5d41f52280b39e9c8657bae14c730bef0e6e473b42c4613179657022"
+    },
+    {
+      "id": "ce913668-f9f4-49cd-9c60-b8e61d27e1ab",
+      "at": "2025-10-19T13:24:36.565Z",
+      "actor": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "label": "Commit validation (approve)",
+      "category": "validation",
+      "jobId": 3,
+      "txHash": "0x68e371b0869b7d130dc17f1cd603e4ac15ea0b2c23f27211b609a6dc07735c91"
+    },
+    {
+      "id": "c343f536-516d-4378-9ed5-ee7699190199",
+      "at": "2025-10-19T13:24:36.572Z",
+      "actor": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "label": "Commit validation (approve)",
+      "category": "validation",
+      "jobId": 3,
+      "txHash": "0x3414937269faec2c588fe1a65f405269097caef3a96ad6eee32a5d8c22647b33"
+    },
+    {
+      "id": "b3c8e83e-ae44-4d81-b6e2-4efa2074a2ad",
+      "at": "2025-10-19T13:24:36.578Z",
+      "actor": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "label": "Commit validation (approve)",
+      "category": "validation",
+      "jobId": 3,
+      "txHash": "0x7b6284408ab5481d0aa166dc436d8dd090ccbb8bc20adc20e0e786a100547c27"
+    },
+    {
+      "id": "90b114e8-bb2f-4961-a686-f7899d387cc9",
+      "at": "2025-10-19T13:24:36.591Z",
+      "actor": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "label": "Reveal validation (approve)",
+      "category": "validation",
+      "jobId": 3,
+      "txHash": "0xe3a149eedbc41d434f31a8696889dc461dd146a812fd06ea8fae50c48f984bc2"
+    },
+    {
+      "id": "9b576afb-a55e-4e35-8b38-fc1b7545f7c3",
+      "at": "2025-10-19T13:24:36.600Z",
+      "actor": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "label": "Reveal validation (approve)",
+      "category": "validation",
+      "jobId": 3,
+      "txHash": "0x244e13ac468c715a2657960b417c0edb4594848ba61022cfa08c27cdbc313a27"
+    },
+    {
+      "id": "2078b9c9-6faf-4966-b110-0164c88cfe8c",
+      "at": "2025-10-19T13:24:36.610Z",
+      "actor": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "label": "Reveal validation (approve)",
+      "category": "validation",
+      "jobId": 3,
+      "txHash": "0x8ba7dca1deb3cabd0c3d5808f3eb3298efe563a577a8a75140c6d00cdc6eb747"
+    },
+    {
+      "id": "d2517266-bcdf-4921-a0c7-248ba2c9513e",
+      "at": "2025-10-19T13:24:36.642Z",
+      "actor": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+      "label": "Finalize validation for job 3",
+      "category": "validation",
+      "jobId": 3,
+      "txHash": "0x6e39665b67d9d8ccc94659f6ccf5487c5880102afac2997e95895794af4bc12d"
+    },
+    {
+      "id": "8a0b4c63-70b8-4d27-ad07-9814b623c87a",
+      "at": "2025-10-19T13:24:36.651Z",
+      "actor": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "label": "Settle policy mission 3",
+      "category": "policy",
+      "jobId": 3,
+      "txHash": "0xecc8854adbc94acdbc52de8f5bdaece7b45496501a1dbb2f9a494ab65df673f1"
+    },
+    {
+      "id": "3004b83e-110c-4794-9d5a-919078d41a8e",
+      "at": "2025-10-19T13:24:36.660Z",
+      "actor": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "label": "Owner records Hamiltonian telemetry",
+      "category": "analytics",
+      "txHash": "0x2531c44876dfdde3a226404cccd6fd71658a2a87c0ab0ce3612cd158d5a29731",
+      "notes": "ΔH=-17168640000"
+    }
+  ],
+  "metrics": {
+    "cooperationIndex": 1,
+    "treasuryInflows": 384,
+    "stakeLocked": 1000,
+    "rewardDisbursed": 19200
+  },
+  "script": {
+    "runId": "c65a3a43-6b1b-4444-be93-fdb2fede2ec0",
+    "durationMs": 3416
+  }
+}

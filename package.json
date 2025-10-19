@@ -101,6 +101,7 @@
     "deploy:oneclick:auto": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/oneclick-stack.ts",
     "deploy:env": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/generate-oneclick-env.ts",
     "deploy:checklist": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/deployment-checklist.ts",
+    "demo:agi-governance:run": "npx hardhat run demo/agi-governance/scripts/runAlphaGovernanceOrchestrator.ts",
     "demo:aurora:local": "bash demo/aurora/bin/aurora-local.sh",
     "demo:aurora:report": "ts-node --transpile-only demo/aurora/bin/aurora-report.ts",
     "demo:aurora:sepolia": "npx hardhat run demo/aurora/aurora.demo.ts --network sepolia",

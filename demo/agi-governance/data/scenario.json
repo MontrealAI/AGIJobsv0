@@ -1,0 +1,67 @@
+{
+  "version": "2025-alpha-governance",
+  "temperatureKelvin": 312.5,
+  "discountFactor": 0.92,
+  "lambda": 0.94,
+  "landauerMultiplier": 1.08,
+  "validators": [
+    {
+      "id": "validator-a",
+      "label": "Validator A — Thermodynamic Auditor",
+      "entropyWeight": 0.31
+    },
+    {
+      "id": "validator-b",
+      "label": "Validator B — Economic Guardian",
+      "entropyWeight": 0.27
+    },
+    {
+      "id": "validator-c",
+      "label": "Validator C — Civic Oversight",
+      "entropyWeight": 0.29
+    }
+  ],
+  "nations": [
+    {
+      "id": "nation-a",
+      "label": "Aurora Coalition (Climate Accord)",
+      "summary": "Accelerated decarbonisation with AI-governed carbon markets and validator-managed compliance",
+      "uri": "ipfs://solving-alpha/nation-a/climate",
+      "reward": 5000,
+      "deadlineHours": 1,
+      "entropy": 0.18,
+      "dissipation": 0.11
+    },
+    {
+      "id": "nation-b",
+      "label": "Horizon League (Trade Charter)",
+      "summary": "Autonomous trade dispute mediation and treasury rebalancing across allied economies",
+      "uri": "ipfs://solving-alpha/nation-b/trade",
+      "reward": 8000,
+      "deadlineHours": 1.5,
+      "entropy": 0.22,
+      "dissipation": 0.14
+    },
+    {
+      "id": "nation-c",
+      "label": "Oceanic Union (Biodiversity Pact)",
+      "summary": "Marine restoration bonds with validator-audited impact attestations and automatic clawbacks",
+      "uri": "ipfs://solving-alpha/nation-c/biodiversity",
+      "reward": 6200,
+      "deadlineHours": 2,
+      "entropy": 0.2,
+      "dissipation": 0.12
+    }
+  ],
+  "owner": {
+    "initialApprovals": 2,
+    "upgradedApprovals": 3,
+    "initialCommitWindowSeconds": 60,
+    "initialRevealWindowSeconds": 60,
+    "postUpgradeCommitWindowSeconds": 90,
+    "postUpgradeRevealWindowSeconds": 120,
+    "hamiltonianThreshold": 4.2,
+    "hamiltonianWeight": 2.8,
+    "minStake": 250
+  }
+}
