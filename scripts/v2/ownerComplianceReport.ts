@@ -6,6 +6,7 @@ import {
   loadOwnerControlConfig,
   loadDeploymentPlan,
 } from '../config';
+import { stringifyWithBigint } from './lib/utils';
 
 type OutputFormat = 'human' | 'json';
 
@@ -291,7 +292,7 @@ async function main(): Promise<void> {
   };
 
   if (cli.format === 'json') {
-    console.log(JSON.stringify(report, null, 2));
+    console.log(stringifyWithBigint(report));
   } else {
     renderHuman(report);
   }
