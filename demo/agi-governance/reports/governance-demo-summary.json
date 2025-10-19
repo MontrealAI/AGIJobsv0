@@ -1,13 +1,14 @@
 {
-  "generatedAt": "2025-10-19T12:57:39.892Z",
-  "version": "1.0.0",
+  "generatedAt": "2025-10-19T13:49:08.181Z",
+  "version": "1.1.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
     "gibbsFreeEnergyJ": 69800000,
     "landauerKJ": 5.3400207262464265e-15,
     "freeEnergyMarginKJ": 69800,
     "burnEnergyPerBlockKJ": 4362.5,
-    "gibbsAgreementDelta": 0
+    "gibbsAgreementDelta": 0,
+    "stakeBoltzmannEnvelope": 5.340020726246426e-12
   },
   "hamiltonian": {
     "kineticTerm": 34149742376.26085,
@@ -23,9 +24,9 @@
       "Sentinel-Tactician"
     ],
     "replicator": [
-      0.32357470785564413,
-      0.41557129318696867,
-      0.26085399895738726
+      0.3492885027345193,
+      0.3328210216962085,
+      0.3178904755692723
     ],
     "closedForm": [
       0.3333333333333333,
@@ -33,44 +34,296 @@
       0.33333333333333337
     ],
     "monteCarlo": [
-      0.33908044880770477,
-      0.3311308083051073,
-      0.3297887428871871
+      0.3387870787365523,
+      0.32888719506091907,
+      0.3323257262025289
     ],
     "replicatorIterations": 50000,
-    "monteCarloRmsError": 0.32895704648236107,
+    "monteCarloRmsError": 0.3110914692796155,
     "payoffAtEquilibrium": 1,
     "divergenceAtEquilibrium": 0,
     "discountFactor": 0.92,
-    "replicatorDeviation": 0.11005256345802282
+    "replicatorDeviation": 0.022210622453121293
+  },
+  "antifragility": {
+    "samples": [
+      {
+        "sigma": 0,
+        "welfare": -4639.957446808511,
+        "averagePayoff": 1,
+        "divergence": 0.06532289472906766
+      },
+      {
+        "sigma": 0.1,
+        "welfare": -4639.957446808511,
+        "averagePayoff": 1,
+        "divergence": 0.06487006997460947
+      },
+      {
+        "sigma": 0.2,
+        "welfare": -4639.957446808511,
+        "averagePayoff": 1,
+        "divergence": 0.06557264797947514
+      },
+      {
+        "sigma": 0.3,
+        "welfare": -4639.957446808511,
+        "averagePayoff": 1,
+        "divergence": 0.06557318271377978
+      }
+    ],
+    "quadraticSecondDerivative": 6.984919309616089e-10,
+    "monotonicIncrease": true
+  },
+  "risk": {
+    "weights": {
+      "staking": 0.4,
+      "formal": 0.4,
+      "fuzz": 0.2
+    },
+    "classes": [
+      {
+        "id": "R0",
+        "label": "Specification drift",
+        "probability": 0.22,
+        "impact": 0.8,
+        "coverage": 0.59,
+        "residual": 0.07216000000000002,
+        "mitigations": {
+          "staking": 0.45,
+          "formal": 0.7,
+          "fuzz": 0.65
+        }
+      },
+      {
+        "id": "R1",
+        "label": "Economic exploit",
+        "probability": 0.18,
+        "impact": 0.75,
+        "coverage": 0.7980000000000002,
+        "residual": 0.027269999999999982,
+        "mitigations": {
+          "staking": 0.8,
+          "formal": 0.82,
+          "fuzz": 0.75
+        }
+      },
+      {
+        "id": "R2",
+        "label": "Protocol attack",
+        "probability": 0.1,
+        "impact": 0.9,
+        "coverage": 0.8600000000000001,
+        "residual": 0.012599999999999993,
+        "mitigations": {
+          "staking": 0.85,
+          "formal": 0.9,
+          "fuzz": 0.8
+        }
+      },
+      {
+        "id": "R3",
+        "label": "Model misbehaviour",
+        "probability": 0.25,
+        "impact": 0.65,
+        "coverage": 0.67,
+        "residual": 0.05362499999999999,
+        "mitigations": {
+          "staking": 0.6,
+          "formal": 0.75,
+          "fuzz": 0.65
+        }
+      },
+      {
+        "id": "R4",
+        "label": "Societal externality",
+        "probability": 0.08,
+        "impact": 1,
+        "coverage": 0.39,
+        "residual": 0.0488,
+        "mitigations": {
+          "staking": 0.45,
+          "formal": 0.35,
+          "fuzz": 0.35
+        }
+      }
+    ],
+    "portfolioResidual": 0.214455,
+    "threshold": 0.3,
+    "withinBounds": true
   },
   "owner": {
     "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
     "pauser": "0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
     "treasury": "0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
     "timelockSeconds": 691200,
-    "upgradeActions": [
+    "capabilities": [
       {
-        "label": "Recalibrate Hamiltonian monitor",
+        "category": "pause",
+        "label": "Global pause switch",
+        "description": "Immediate halt for the entire AGI Jobs execution surface via the owner guardian.",
+        "command": "npm run owner:system-pause -- --network mainnet --pause true",
+        "verification": "npm run owner:verify-control",
+        "present": true
+      },
+      {
+        "category": "resume",
+        "label": "Resume operations",
+        "description": "Restores production flows after remediation and confirms health checks.",
+        "command": "npm run owner:system-pause -- --network mainnet --pause false",
+        "verification": "npm run owner:verify-control",
+        "present": true
+      },
+      {
+        "category": "parameter",
+        "label": "Tune Hamiltonian parameters",
+        "description": "Applies Hamiltonian monitor adjustments to lock λ and inertial metrics at the computed optimum.",
         "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
-        "impact": "Locks the energy coupling coefficient and inertial metric to the antifragile optimum computed in the dossier."
+        "verification": "npm run owner:audit-hamiltonian",
+        "present": true
       },
       {
-        "label": "Adjust reward engine burn curve",
+        "category": "treasury",
+        "label": "Reward engine burn curve",
+        "description": "Aligns mint/burn ratios with thermodynamic constraints and treasury splits.",
         "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
-        "impact": "Aligns emission schedule with the Landauer-calibrated burn policy."
+        "verification": "npm run reward-engine:report",
+        "present": true
       },
       {
-        "label": "Rotate governance sentinels",
+        "category": "sentinel",
+        "label": "Sentinel rotation",
+        "description": "Refreshes enforcement guardians to maintain antifragile coverage.",
         "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
-        "impact": "Refreshes slashing guardians while keeping owner override authority."
+        "verification": "npm run monitoring:sentinels",
+        "present": true
       },
       {
-        "label": "Update tax policy disclosure",
+        "category": "upgrade",
+        "label": "Timelocked upgrade queue",
+        "description": "Queues upgrade bundle into the timelock for deterministic rollout.",
+        "command": "npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json",
+        "verification": "npm run owner:upgrade-status",
+        "present": true
+      },
+      {
+        "category": "compliance",
+        "label": "Regulatory disclosure",
+        "description": "Publishes mandatory statements to participants and regulators.",
         "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
-        "impact": "Publishes the latest regulatory acknowledgement without touching business logic."
+        "verification": "npm run owner:compliance-report",
+        "present": true
       }
-    ]
+    ],
+    "requiredCoverage": [
+      {
+        "category": "pause",
+        "satisfied": true
+      },
+      {
+        "category": "resume",
+        "satisfied": true
+      },
+      {
+        "category": "parameter",
+        "satisfied": true
+      },
+      {
+        "category": "treasury",
+        "satisfied": true
+      },
+      {
+        "category": "sentinel",
+        "satisfied": true
+      },
+      {
+        "category": "upgrade",
+        "satisfied": true
+      },
+      {
+        "category": "compliance",
+        "satisfied": true
+      }
+    ],
+    "monitoringSentinels": [
+      "Grafana circuit-breakers watching governance divergence",
+      "On-chain staking slash monitors",
+      "Adaptive fuzz oracle with spectral drift alerts"
+    ],
+    "fullCoverage": true
+  },
+  "jacobian": {
+    "jacobian": [
+      [
+        -0.3333333333333333,
+        -0.3666666666666667,
+        -0.29999999999999993
+      ],
+      [
+        -0.3,
+        -0.33333333333333337,
+        -0.36666666666666675
+      ],
+      [
+        -0.36666666666666675,
+        -0.3,
+        -0.33333333333333337
+      ]
+    ],
+    "gershgorinUpperBound": 0.33333333333333337,
+    "stable": false
+  },
+  "blockchain": {
+    "network": "Ethereum Mainnet-grade",
+    "chainId": 1,
+    "rpcProvider": "https://mainnet.infura.io/v3/YOUR_KEY",
+    "gasTargetGwei": 24,
+    "confirmations": 3,
+    "upgradeDelaySeconds": 604800,
+    "contracts": [
+      {
+        "name": "AGIJobsGovernor",
+        "address": "0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4",
+        "role": "Primary governance module"
+      },
+      {
+        "name": "AGIJobsTreasury",
+        "address": "0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5",
+        "role": "Treasury vault / emission controller"
+      },
+      {
+        "name": "HamiltonianMonitor",
+        "address": "0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6",
+        "role": "Energy coupling supervisor"
+      }
+    ],
+    "pausableFunctions": [
+      {
+        "contract": "AGIJobsGovernor",
+        "function": "pause",
+        "selector": "0x8456cb59",
+        "description": "Global stop for task orchestration"
+      },
+      {
+        "contract": "AGIJobsGovernor",
+        "function": "unpause",
+        "selector": "0x3f4ba83a",
+        "description": "Resume operations"
+      },
+      {
+        "contract": "AGIJobsTreasury",
+        "function": "updateEmissionCurve",
+        "selector": "0xa10204e9",
+        "description": "Adjusts reward burn / mint ratios"
+      }
+    ],
+    "safeModules": [
+      "SafeModule:PauseGuardian",
+      "SafeModule:UpgradeOrchestrator",
+      "SafeModule:TreasuryFlows"
+    ],
+    "safeForMainnet": true,
+    "upgradeDelayHours": 168
   },
   "ci": {
     "workflow": "ci (v2)",
