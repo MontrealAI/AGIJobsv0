@@ -155,10 +155,21 @@ function buildBooleanCheck(id: string, description: string, expected: boolean, a
   };
 }
 
-function capabilityMap(report: OwnerControlReport): Map<string, { present: boolean; scriptExists: boolean }> {
-  const map = new Map<string, { present: boolean; scriptExists: boolean }>();
+function capabilityMap(
+  report: OwnerControlReport,
+): Map<string, { present: boolean; scriptExists: boolean; verificationScriptExists: boolean; verification: string }>
+{
+  const map = new Map<
+    string,
+    { present: boolean; scriptExists: boolean; verificationScriptExists: boolean; verification: string }
+  >();
   for (const capability of report.capabilities) {
-    map.set(capability.category, { present: capability.present, scriptExists: capability.scriptExists });
+    map.set(capability.category, {
+      present: capability.present,
+      scriptExists: capability.scriptExists,
+      verificationScriptExists: capability.verificationScriptExists,
+      verification: capability.verification,
+    });
   }
   return map;
 }
@@ -562,13 +573,27 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
   );
   results.push(commandsComparison);
 
+  const verificationComparison = buildBooleanCheck(
+    "owner:verification-scripts",
+    "Owner verification scripts present",
+    owner.allVerificationsPresent,
+    summary.owner.allVerificationsPresent,
+  );
+  results.push(verificationComparison);
+
   const capabilityDelta = (() => {
     const expected = capabilityMap(owner);
     const actual = capabilityMap(summary.owner);
     let mismatch = false;
     for (const [category, info] of expected.entries()) {
       const target = actual.get(category);
-      if (!target || target.present !== info.present || target.scriptExists !== info.scriptExists) {
+      if (
+        !target ||
+        target.present !== info.present ||
+        target.scriptExists !== info.scriptExists ||
+        target.verificationScriptExists !== info.verificationScriptExists ||
+        Boolean(target.verification.trim()) !== Boolean(info.verification.trim())
+      ) {
         mismatch = true;
         break;
       }
