@@ -61,6 +61,12 @@ type FullRunSummary = {
     alphaFieldConfidence: number;
     alphaFieldWithinBound: boolean;
     alphaFieldEnergyMargin: boolean;
+    alphaFieldSuperintelligence: number;
+    alphaFieldSuperintelligenceSatisfied: boolean;
+    alphaFieldThermoAssurance: number;
+    alphaFieldGovernanceAssurance: number;
+    alphaFieldAntifragilityAssurance: number;
+    alphaFieldOwnerAssurance: number;
   };
   ciIssues: string[];
   ownerWarnings: number;
@@ -250,6 +256,12 @@ async function runFullDemo(): Promise<FullRunSummary> {
       alphaFieldConfidence: bundle.alphaField.confidenceScore,
       alphaFieldWithinBound: bundle.alphaField.stackelbergWithinBound,
       alphaFieldEnergyMargin: bundle.alphaField.energyMarginSatisfied,
+      alphaFieldSuperintelligence: bundle.alphaField.superintelligenceIndex,
+      alphaFieldSuperintelligenceSatisfied: bundle.alphaField.superintelligenceSatisfied,
+      alphaFieldThermoAssurance: bundle.alphaField.thermodynamicAssurance,
+      alphaFieldGovernanceAssurance: bundle.alphaField.governanceAssurance,
+      alphaFieldAntifragilityAssurance: bundle.alphaField.antifragilityAssurance,
+      alphaFieldOwnerAssurance: bundle.alphaField.ownerAssurance,
     },
     ciIssues: ciAssessment.issues,
     ownerWarnings: diagnostics.totals.warning,
@@ -284,7 +296,12 @@ async function runFullDemo(): Promise<FullRunSummary> {
     `- Equilibrium max deviation: ${formatNumber(summary.metrics.equilibriumMaxDeviation, 6)}`,
     `- Risk portfolio residual: ${formatNumber(summary.metrics.riskPortfolioResidual, 3)}`,
     `- Alpha-field confidence: ${(summary.metrics.alphaFieldConfidence * 100).toFixed(1)}%`,
+    `- Superintelligence index: ${(summary.metrics.alphaFieldSuperintelligence * 100).toFixed(1)}% (${summary.metrics.alphaFieldSuperintelligenceSatisfied ? "✅" : "⚠️"})`,
     `- Stackelberg bound respected: ${summary.metrics.alphaFieldWithinBound ? "✅" : "⚠️"}`,
+    `- Thermodynamic assurance: ${(summary.metrics.alphaFieldThermoAssurance * 100).toFixed(1)}%`,
+    `- Governance assurance: ${(summary.metrics.alphaFieldGovernanceAssurance * 100).toFixed(1)}%`,
+    `- Antifragility assurance: ${(summary.metrics.alphaFieldAntifragilityAssurance * 100).toFixed(1)}%`,
+    `- Owner assurance: ${(summary.metrics.alphaFieldOwnerAssurance * 100).toFixed(1)}%`,
     `- Energy margin floor met: ${summary.metrics.alphaFieldEnergyMargin ? "✅" : "⚠️"}`,
     `- Jacobian stable: ${summary.metrics.jacobianStable ? "✅" : "❌"}`,
     `- Owner capability coverage: ${summary.metrics.ownerFullCoverage ? "✅" : "⚠️"}`,

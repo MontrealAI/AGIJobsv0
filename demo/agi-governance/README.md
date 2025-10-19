@@ -11,7 +11,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 - **Owner-first absolutism.** Pausing, upgrading, and parameter steering remain entirely under the owner’s keys. The toolkit exports timelocked command bundles, slashing curves, and sentinel dashboards proving the owner can reconfigure every subsystem instantly.
 - **CI-proven production fidelity.** A dedicated workflow (`demo-agi-governance.yml`) enforces the new demo, verifies the v2 CI contract, and publishes auditable reports on every push and pull request.
 - **Triangulated verification.** Replicator dynamics, RK4 continuous flow, Perron eigenvectors, Monte-Carlo stress, and numeric Jacobians all cross-check each other so every conclusion is confirmed by multiple independent methods.
-- **Alpha-field sovereignty.** Stackelberg payoffs, Gibbs tolerances, antifragility curvature, and energy reserves are fused into a confidence tensor that certifies the mission truly operates as a civilisation-scale intelligence field under owner command.
+- **Alpha-field sovereignty.** Stackelberg payoffs, Gibbs tolerances, antifragility curvature, energy reserves, and owner coverage fuse into a quantified superintelligence index—with weighted thermo/governance/antifragility/owner assurances—that certifies the mission truly operates as a civilisation-scale intelligence field under owner command.
 
 ## Contents
 
@@ -38,7 +38,7 @@ The command generates `reports/governance-demo-report.md` with:
 3. Incentive free-energy flow (mint/burn/slash computation proving agent ↔ treasury parity and owner-tunable slashing curves).
 4. Five-way verified game-theory equilibrium (discrete replicator, RK4 continuous flow, closed-form solver, Perron eigenvector, Monte-Carlo stress sampling) with method-consistency scores.
 5. Analytic and numeric Jacobian comparison with Gershgorin, spectral radius, and max-delta checks plus antifragility curvature proving positive welfare response to adversarial shocks.
-6. Alpha-field sovereign assurance scoreboard confirming Stackelberg bounds, Gibbs envelopes, sigma gains, owner coverage, and composite confidence.
+6. Alpha-field sovereign assurance scoreboard confirming Stackelberg bounds, Gibbs envelopes, sigma gains, owner coverage, superintelligence index, and composite confidence with per-signal assurances.
 7. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
 8. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
 9. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
