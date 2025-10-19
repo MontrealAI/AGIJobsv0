@@ -28,10 +28,12 @@ npm run demo:agi-governance
 ```
 
 Outputs `reports/governance-demo-report.md` with:
-- Thermodynamic energy margins (Gibbs free energy, Hamiltonian convergence envelope, Landauer limit calibration).
-- Triple-verified game-theory equilibrium (replicator simulation, closed-form solver, Monte-Carlo stress test).
+- Thermodynamic energy margins (Gibbs free energy, Hamiltonian convergence envelope, Landauer limit calibration, bit-level variance checks).
+- Triple-verified game-theory equilibrium (replicator simulation, closed-form solver, Monte-Carlo stress test, eigenvector validation).
+- Multi-angle stress verdicts quantifying the largest deviation under payoff perturbations.
 - Owner command surface (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel verifications).
 - CI enforcement proof (required contexts, concurrency, access-control coverage).
+- `owner-command-bundle.md` / `.json` with copy-pasteable commands for Safe, CLI, or Etherscan.
 
 Review the report. It references exact commands to execute each owner action on Ethereum or via AGI Jobs automation scripts.
 
@@ -50,6 +52,8 @@ This audits `.github/workflows/ci.yml` to ensure:
 - Coverage thresholds are enforced (≥ 90%).
 
 Attach the generated `reports/ci-verification.json` to your governance logs.
+
+`npm run demo:agi-governance` also emits `reports/owner-command-bundle.*`; distribute that file to operations staff so they can execute owner overrides without combing the codebase.
 
 ---
 

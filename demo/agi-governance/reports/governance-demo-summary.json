@@ -1,13 +1,17 @@
 {
-  "generatedAt": "2025-10-19T12:57:39.892Z",
+  "generatedAt": "2025-10-19T13:47:21.685Z",
   "version": "1.0.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
     "gibbsFreeEnergyJ": 69800000,
-    "landauerKJ": 5.3400207262464265e-15,
-    "freeEnergyMarginKJ": 69800,
+    "landauerKJ": 69800.00424840329,
+    "freeEnergyMarginKJ": -0.004248403289238922,
     "burnEnergyPerBlockKJ": 4362.5,
-    "gibbsAgreementDelta": 0
+    "gibbsAgreementDelta": 0,
+    "energyPerBitJ": 2.966678000680041e-21,
+    "impliedBitsFromEnergy": 2.3527998567959504e+28,
+    "bitsDiscrepancyRatio": 6.086537301003129e-8,
+    "boltzmannVariance": 0
   },
   "hamiltonian": {
     "kineticTerm": 34149742376.26085,
@@ -42,7 +46,14 @@
     "payoffAtEquilibrium": 1,
     "divergenceAtEquilibrium": 0,
     "discountFactor": 0.92,
-    "replicatorDeviation": 0.11005256345802282
+    "replicatorDeviation": 0.11005256345802282,
+    "eigenvector": [
+      0.33333332176461294,
+      0.3333333219113951,
+      0.3333333563239919
+    ],
+    "eigenvalue": 2.9999999999999925,
+    "eigenDeviation": 2.8157882474471827e-8
   },
   "owner": {
     "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
@@ -98,5 +109,28 @@
     ],
     "minCoverage": 90,
     "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  },
+  "stressTest": {
+    "trials": 96,
+    "perturbation": 0.02,
+    "maxAllowedDeviation": 0.05,
+    "maxObservedDeviation": 4.440892098500626e-16,
+    "failures": 0,
+    "worstCaseState": [
+      0.31261590312122756,
+      0.5338400764527776,
+      0.15354402042599494
+    ],
+    "recoverySteps": 360
+  },
+  "assurance": {
+    "eigenTolerance": 0.015,
+    "stressTest": {
+      "trials": 96,
+      "perturbation": 0.02,
+      "maxAllowedDeviation": 0.05,
+      "replicatorSteps": 80,
+      "recoverySteps": 360
+    }
   }
 }

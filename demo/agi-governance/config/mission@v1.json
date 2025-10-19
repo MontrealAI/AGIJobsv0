@@ -9,7 +9,7 @@
     "entropyKJPerK": 3920,
     "operatingTemperatureK": 310,
     "referenceTemperatureK": 300,
-    "bitsProcessed": 1.8e9,
+    "bitsProcessed": 2.3528e28,
     "burnRatePerBlock": 0.0625,
     "stakeBoltzmann": 1.380649e-23
   },
@@ -89,5 +89,15 @@
     ],
     "minCoverage": 90,
     "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  },
+  "assurance": {
+    "eigenTolerance": 0.015,
+    "stressTest": {
+      "trials": 96,
+      "perturbation": 0.02,
+      "maxAllowedDeviation": 0.05,
+      "replicatorSteps": 80,
+      "recoverySteps": 360
+    }
   }
 }

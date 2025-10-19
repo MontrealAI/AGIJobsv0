@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T12:57:39.892Z
+*Generated at:* 2025-10-19T13:47:21.685Z
 *Version:* 1.0.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -7,10 +7,14 @@
 ## 1. Thermodynamic Intelligence Ledger
 
 - **Gibbs free energy:** 69.80k kJ (69.80M J)
-- **Landauer limit envelope:** 0.00 kJ
-- **Free-energy safety margin:** 69.80k kJ
+- **Landauer limit envelope:** 69.80k kJ
+- **Free-energy safety margin:** -0.00 kJ
 - **Energy dissipated per block (burn):** 4.36k kJ
 - **Cross-check delta:** 0.000e+0 kJ (≤ 1e-6 required)
+- **Energy per bit:** 2.967e-21 J
+- **Implied bits from energy:** 2.3527998567959503e+22M
+- **Bit discrepancy ratio:** 6.087e-6 %
+- **Boltzmann variance:** 0.000e+0 %
 
 ## 2. Hamiltonian Control Plane
 
@@ -28,6 +32,8 @@
 - **Monte-Carlo RMS error:** 3.290e-1
 - **Payoff at equilibrium:** 1.00 tokens
 - **Governance divergence:** 0.000e+0 (target ≤ 0.001)
+- **Principal eigenvalue:** 3.00
+- **Eigenvector deviation:** 2.816e-8 (≤ 0.015)
 
 | Strategy | Replicator | Closed-form | Monte-Carlo |
 | --- | --- | --- | --- |
@@ -35,7 +41,17 @@
 | Thermo-Titan | 41.56% | 33.33% | 33.11% |
 | Sentinel-Tactician | 26.09% | 33.33% | 32.98% |
 
-## 4. Owner Supremacy & Command Surface
+## 4. Multi-Angle Stress Verification
+
+- **Stress trials:** 96
+- **Payoff perturbation amplitude:** 2.00%
+- **Max allowed deviation (payoff Δ):** 5.000e-2
+- **Max observed deviation (payoff Δ):** 4.441e-16
+- **Trial failures:** 0
+- **Recovery steps:** 360
+- **Worst-case state:** [31.26%, 53.38%, 15.35%]
+
+## 5. Owner Supremacy & Command Surface
 
 - **Owner:** 0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1
 - **Pauser:** 0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2
@@ -52,7 +68,7 @@
 - **Update tax policy disclosure.** Publishes the latest regulatory acknowledgement without touching business logic.
   └─ <code>$ npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."</code>
 
-## 5. CI Enforcement Ledger
+## 6. CI Enforcement Ledger
 
 - **Workflow name:** ci (v2)
 - **Concurrency guard:** <code>ci-${{ github.workflow }}-${{ github.ref }}</code>
@@ -68,7 +84,7 @@
 
 Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.
 
-## 6. Owner Execution Log (fill during live ops)
+## 7. Owner Execution Log (fill during live ops)
 
 | Timestamp | Action | Tx hash | Operator | Notes |
 | --- | --- | --- | --- | --- |

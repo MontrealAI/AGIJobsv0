@@ -1,0 +1,28 @@
+{
+  "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
+  "pauser": "0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
+  "treasury": "0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
+  "timelockSeconds": 691200,
+  "commands": [
+    {
+      "label": "Recalibrate Hamiltonian monitor",
+      "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
+      "impact": "Locks the energy coupling coefficient and inertial metric to the antifragile optimum computed in the dossier."
+    },
+    {
+      "label": "Adjust reward engine burn curve",
+      "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
+      "impact": "Aligns emission schedule with the Landauer-calibrated burn policy."
+    },
+    {
+      "label": "Rotate governance sentinels",
+      "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
+      "impact": "Refreshes slashing guardians while keeping owner override authority."
+    },
+    {
+      "label": "Update tax policy disclosure",
+      "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
+      "impact": "Publishes the latest regulatory acknowledgement without touching business logic."
+    }
+  ]
+}
