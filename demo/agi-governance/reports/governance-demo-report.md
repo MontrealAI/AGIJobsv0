@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T20:33:23.555Z
+*Generated at:* 2025-10-19T20:55:29.164Z
 *Version:* 1.1.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -86,10 +86,12 @@ flowchart LR
     Mint --> BurnCurve
   end
   subgraph Equilibrium[Macro Equilibrium]
-    StratA[Replicator Δ=1.34e-1]
+    StratA[Replicator Δ=0.00e+0]
+    KKT[KKT Residual 2.22e-16 ✅]
     Divergence[Divergence 2.22e-16]
     Payoff[Payoff 1.00 tokens]
-    StratA --> Divergence
+    StratA --> KKT
+    KKT --> Divergence
     Divergence --> Payoff
   end
   subgraph Risk[Risk Engine]
@@ -125,20 +127,30 @@ flowchart LR
 ## 5. Game-Theoretic Macro-Equilibrium
 
 - **Discount factor:** 0.92 (must exceed 0.80 for uniqueness)
-- **Replicator iterations to convergence:** 25000
+- **Replicator iterations to convergence:** 0
 - **Continuous-flow iterations (RK4):** 25000
 - **Perron eigenvector iterations:** 1
-- **Replicator vs closed-form deviation:** 1.336e-1
+- **Replicator vs closed-form deviation:** 0.000e+0
 - **Monte-Carlo RMS error:** 3.575e-1
-- **Max deviation across methods:** 1.365e-1 (consistent)
+- **Max deviation across methods:** 1.365e-1 (⚠️ review)
 - **Payoff at equilibrium:** 1.00 tokens
+- **Closed-form KKT payoff (λ):** 1.00 tokens
+- **KKT residual max:** 2.220e-16 (satisfied)
+- **Simplex residual:** 0.000e+0
 - **Governance divergence:** 2.220e-16 (target ≤ 0.001)
 
 | Strategy | Replicator | Closed-form | Monte-Carlo | Continuous RK4 | Perron eigenvector |
 | --- | --- | --- | --- | --- | --- |
-| Pareto-Coop | 40.75% | 33.33% | 33.44% | 40.75% | 33.33% |
-| Thermo-Titan | 36.56% | 33.33% | 32.91% | 36.56% | 33.33% |
-| Sentinel-Tactician | 22.70% | 33.33% | 33.64% | 22.70% | 33.33% |
+| Pareto-Coop | 33.33% | 33.33% | 33.44% | 40.75% | 33.33% |
+| Thermo-Titan | 33.33% | 33.33% | 32.91% | 36.56% | 33.33% |
+| Sentinel-Tactician | 33.33% | 33.33% | 33.64% | 22.70% | 33.33% |
+
+| Condition | Residual |
+| --- | --- |
+| Pareto-Coop payoff Δ | 2.220e-16 |
+| Thermo-Titan payoff Δ | 0.000e+0 |
+| Sentinel-Tactician payoff Δ | 0.000e+0 |
+| Probability simplex Δ | 0.000e+0 |
 
 ### Replicator Jacobian Stability
 

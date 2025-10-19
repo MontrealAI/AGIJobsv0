@@ -152,7 +152,7 @@
     <header>
       <div class="badge">AGI Jobs v0 (v2) Superintelligence Console</div>
       <h1>Solving α-AGI Governance</h1>
-      <p class="meta">Generated 2025-10-19T20:33:23.555Z • Version 1.1.0</p>
+      <p class="meta">Generated 2025-10-19T20:55:29.164Z • Version 1.1.0</p>
       <p class="meta">Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.</p>
     </header>
     <main>
@@ -202,10 +202,12 @@
     Mint --> BurnCurve
   end
   subgraph Equilibrium[Macro Equilibrium]
-    StratA[Replicator Δ=1.34e-1]
+    StratA[Replicator Δ=0.00e+0]
+    KKT[KKT Residual 2.22e-16 ✅]
     Divergence[Divergence 2.22e-16]
     Payoff[Payoff 1.00 tokens]
-    StratA --> Divergence
+    StratA --> KKT
+    KKT --> Divergence
     Divergence --> Payoff
   end
   subgraph Risk[Risk Engine]
@@ -258,11 +260,24 @@
                 <th>Strategy</th><th>Replicator</th><th>Closed</th><th>Monte-Carlo</th><th>Continuous</th><th>Eigenvector</th>
               </tr>
             </thead>
-            <tbody><tr><td>Pareto-Coop</td><td>40.75%</td><td>33.33%</td><td>33.44%</td><td>40.75%</td><td>33.33%</td></tr>
-<tr><td>Thermo-Titan</td><td>36.56%</td><td>33.33%</td><td>32.91%</td><td>36.56%</td><td>33.33%</td></tr>
-<tr><td>Sentinel-Tactician</td><td>22.70%</td><td>33.33%</td><td>33.64%</td><td>22.70%</td><td>33.33%</td></tr></tbody>
+            <tbody><tr><td>Pareto-Coop</td><td>33.33%</td><td>33.33%</td><td>33.44%</td><td>40.75%</td><td>33.33%</td></tr>
+<tr><td>Thermo-Titan</td><td>33.33%</td><td>33.33%</td><td>32.91%</td><td>36.56%</td><td>33.33%</td></tr>
+<tr><td>Sentinel-Tactician</td><td>33.33%</td><td>33.33%</td><td>33.64%</td><td>22.70%</td><td>33.33%</td></tr></tbody>
           </table>
           <p>Deviation Δmax: <strong>1.365e-1</strong> • Divergence 2.220e-16</p>
+          <p>
+            KKT payoff λ: <strong>1.00 tokens</strong> • Residual Δmax
+            <strong>2.220e-16</strong>
+            (certified) • Simplex Δ
+            <strong>0.000e+0</strong>
+          </p>
+          <table>
+            <thead><tr><th>Condition</th><th>Residual</th></tr></thead>
+            <tbody><tr><td>Pareto-Coop payoff Δ</td><td>2.220e-16</td></tr>
+<tr><td>Thermo-Titan payoff Δ</td><td>0.000e+0</td></tr>
+<tr><td>Sentinel-Tactician payoff Δ</td><td>0.000e+0</td></tr>
+<tr><td>Probability simplex Δ</td><td>0.000e+0</td></tr></tbody>
+          </table>
         </div>
       </section>
 
