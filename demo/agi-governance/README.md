@@ -19,6 +19,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 | [`config/mission@v1.json`](config/mission@v1.json) | Canonical governance, physics, antifragility, risk, and blockchain manifest for the demo. |
 | [`scripts/executeDemo.ts`](scripts/executeDemo.ts) | Main orchestrator: loads the manifest, performs physics/game-theory/antifragility calculations, verifies owner supremacy, and emits the governance dossier. |
 | [`scripts/verifyCiStatus.ts`](scripts/verifyCiStatus.ts) | Audits `.github/workflows/ci.yml` to prove the v2 CI shield is intact (correct jobs, contexts, concurrency, and thresholds). |
+| [`scripts/validateReport.ts`](scripts/validateReport.ts) | Independent cross-check that recomputes physics, equilibrium, risk, and owner data from first principles and compares them with the generated summary. |
 | [`reports/`](reports) | Generated artefacts (`governance-demo-report.md`, `ci-verification.json`, etc.) are written here so they can be archived from CI. |
 | [`RUNBOOK.md`](RUNBOOK.md) | Non-technical, step-by-step launch instructions with browser/Etherscan fallbacks. |
 
@@ -38,6 +39,14 @@ The command generates `reports/governance-demo-report.md` with:
 6. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
 7. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
 8. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
+
+Then confirm the dossier by replaying all analytics from scratch:
+
+```bash
+npm run demo:agi-governance:validate
+```
+
+This verification script reloads the mission manifest, recomputes thermodynamics, statistical physics, Hamiltonian flows, equilibrium vectors, antifragility curvature, risk portfolio weights, incentive ledgers, and owner control coverage, and compares the results against `reports/governance-demo-summary.json`. The output (`reports/governance-demo-validation.json` and `.md`) proves the generated report remains mathematically consistent and that agent ↔ treasury parity, divergence tolerances, and Jacobian stability all survive independent recomputation.
 
 Then run the CI verification layer:
 

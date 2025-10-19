@@ -42,7 +42,19 @@ Review the report. It references exact commands to execute each owner action on 
 
 ---
 
-## 2. Validate CI enforcement (green V2 shield)
+## 2. Recompute the dossier (independent verification)
+
+```bash
+npm run demo:agi-governance:validate
+```
+
+This command recomputes every analytic in the mission manifest—thermodynamics, statistical physics, replicator equilibria, antifragility curvature, risk aggregation, incentive ledgers, and owner control coverage—and compares them against the generated summary JSON. It emits `reports/governance-demo-validation.json` and `.md`, each listing the tolerance achieved per check plus confirmation that agent ↔ treasury parity, divergence tolerances, and Jacobian stability survived the replay.
+
+Archive these files with the original dossier for an independently verified evidence chain.
+
+---
+
+## 3. Validate CI enforcement (green V2 shield)
 
 ```bash
 npm run demo:agi-governance:ci
@@ -61,7 +73,7 @@ Attach the generated `reports/ci-verification.json` to your governance logs.
 
 ---
 
-## 3. Aggregate owner diagnostics (one-click audit pack)
+## 4. Aggregate owner diagnostics (one-click audit pack)
 
 ```bash
 npm run demo:agi-governance:owner-diagnostics
@@ -71,7 +83,7 @@ This orchestrates `owner:audit-hamiltonian`, `reward-engine:report`, `owner:upgr
 
 ---
 
-## 4. Execute on-chain owner controls (optional live drill)
+## 5. Execute on-chain owner controls (optional live drill)
 
 Each command below can be run via the CLI, Safe transaction builder, or Etherscan write interface. Replace placeholder addresses with your deployment addresses.
 
@@ -114,7 +126,7 @@ Document transaction hashes in `reports/governance-demo-report.md` under the “
 
 ---
 
-## 5. Formal verification hooks
+## 6. Formal verification hooks
 
 1. **Coverage remapping audit:**
    ```bash
@@ -136,7 +148,7 @@ Archive the resulting artefacts inside `reports/` alongside the governance dossi
 
 ---
 
-## 6. Evidence of execution
+## 7. Evidence of execution
 
 After each run:
 1. Commit the generated artefacts to a dedicated evidence branch or upload them to immutable storage (e.g., IPFS, Arweave).
