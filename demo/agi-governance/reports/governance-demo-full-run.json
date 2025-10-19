@@ -1,33 +1,33 @@
 {
-  "generatedAt": "2025-10-19T20:33:55.799Z",
-  "totalDurationMs": 38749.618458000004,
+  "generatedAt": "2025-10-19T21:19:25.597Z",
+  "totalDurationMs": 25348.929993,
   "steps": [
     {
       "id": "generate",
       "label": "Generate dossier",
       "status": "success",
-      "durationMs": 6519.951861999999,
+      "durationMs": 3630.0157139999997,
       "details": "Free-energy margin 69800.00 kJ · Max method deviation 0.136515"
     },
     {
       "id": "validate",
       "label": "Validate physics",
       "status": "success",
-      "durationMs": 5973.1606329999995,
-      "details": "All 38 checks passed"
+      "durationMs": 3569.394301999999,
+      "details": "All 43 checks passed"
     },
     {
       "id": "ci",
       "label": "Audit CI shield",
       "status": "success",
-      "durationMs": 31.426750999999058,
+      "durationMs": 19.319932000000335,
       "details": "All enforcement guards locked."
     },
     {
       "id": "owner",
       "label": "Owner diagnostics",
       "status": "warning",
-      "durationMs": 26223.997733,
+      "durationMs": 18129.599523999997,
       "details": "Warnings: [owner:audit-hamiltonian] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. | Cross-check mismatch: mission alignment. | [reward-engine:report] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. | [owner:upgrade-status] SKIPPED @ $.onChain — No timelock address available. | [owner:compliance-report] SKIPPED @ $.onChain — No tax policy address configured."
     }
   ],
@@ -42,9 +42,15 @@
     "ownerAllCommandsPresent": true,
     "ciShieldOk": true,
     "ownerReadiness": "attention",
-    "alphaFieldConfidence": 1,
+    "alphaFieldConfidence": 0.8642179999999999,
     "alphaFieldWithinBound": true,
-    "alphaFieldEnergyMargin": true
+    "alphaFieldEnergyMargin": true,
+    "alphaFieldSuperintelligence": 0.828436,
+    "alphaFieldSuperintelligenceSatisfied": true,
+    "alphaFieldThermoAssurance": 1,
+    "alphaFieldGovernanceAssurance": 0.2851499999999999,
+    "alphaFieldAntifragilityAssurance": 1,
+    "alphaFieldOwnerAssurance": 1
   },
   "ciIssues": [],
   "ownerWarnings": 4,

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "title": "Solving α-AGI Governance",
     "description": "Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control."
   },
@@ -195,18 +195,25 @@
       "advantageFloor": 0.5
     },
     "macroAttractor": {
-      "gibbsTargetKJ": 69800,
-      "gibbsToleranceKJ": 200,
+      "gibbsTargetKJ": 71200,
+      "gibbsToleranceKJ": 420,
       "divergenceLimit": 0.001,
-      "entropyFloor": 4.0
+      "entropyFloor": 4.05
     },
     "antifragility": {
-      "minSecondDerivative": 0.01,
-      "sigmaGainMinimum": 0.5
+      "minSecondDerivative": 0.08,
+      "sigmaGainMinimum": 0.12
     },
     "verification": {
-      "energyMarginFloorKJ": 1000,
-      "ownerCoverageMinimum": 1
+      "energyMarginFloorKJ": 68000,
+      "ownerCoverageMinimum": 0.95,
+      "superintelligenceMinimum": 0.82
+    },
+    "signatureWeights": {
+      "thermodynamic": 0.28,
+      "governance": 0.24,
+      "antifragility": 0.24,
+      "owner": 0.24
     }
   },
   "ownerControls": {

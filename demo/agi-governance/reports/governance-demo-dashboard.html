@@ -152,7 +152,7 @@
     <header>
       <div class="badge">AGI Jobs v0 (v2) Superintelligence Console</div>
       <h1>Solving α-AGI Governance</h1>
-      <p class="meta">Generated 2025-10-19T20:55:29.164Z • Version 1.1.0</p>
+      <p class="meta">Generated 2025-10-19T21:19:03.871Z • Version 1.2.0</p>
       <p class="meta">Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.</p>
     </header>
     <main>
@@ -178,8 +178,15 @@
           </ul>
         </div>
         <div>
-          <h2>Owner Control</h2>
+          <h2>Superintelligence & Owner</h2>
           <ul class="metric-list">
+            <li>Superintelligence index: <strong>82.8%</strong></li>
+            <li>Composite confidence: <strong>86.4%</strong></li>
+            <li>Thermo / governance / antifragility / owner assurances:
+              <strong>100.0%</strong> ·
+              <strong>28.5%</strong> ·
+              <strong>100.0%</strong> ·
+              <strong>100.0%</strong></li>
             <li>Owner: <strong>0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1</strong></li>
             <li>Pauser: <strong>0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2</strong></li>
             <li>Treasury: <strong>0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3</strong></li>
@@ -215,10 +222,18 @@
   end
   subgraph AlphaField[Alpha-Field Assurance]
     Stackelberg[Stackelberg Δ=0.60]
-    Confidence[Confidence 100%]
+    Confidence[Superintelligence 83%]
+    ThermoSignal[Thermo Assurance 100%]
+    GovernanceSignal[Governance Assurance 29%]
+    AntifragileSignal[Antifragility Assurance 100%]
+    OwnerSignal[Owner Command 100%]
     EnergyFloor[Energy Margin 69.80k kJ]
     Stackelberg --> Confidence
-    EnergyFloor --> Confidence
+    EnergyFloor --> ThermoSignal
+    ThermoSignal --> Confidence
+    GovernanceSignal --> Confidence
+    AntifragileSignal --> Confidence
+    OwnerSignal --> Confidence
   end
   subgraph Control[Owner Command Surface]
     Owner((Owner 0xA1A1…A1A1))
@@ -311,20 +326,26 @@
       <section class="card">
         <h2>Alpha-Field Sovereign Assurance</h2>
         <p>
-          Confidence score: <strong>100.0%</strong> • Energy margin
+          Confidence score: <strong>86.4%</strong> • Superintelligence index
+          <strong>82.8%</strong> • Energy margin
           69.80k kJ
         </p>
         <table>
           <thead><tr><th>Signal</th><th>Value</th><th>Status</th></tr></thead>
           <tbody><tr><td>Stackelberg Δ</td><td>0.60 (cap 7.50)</td><td>✅</td></tr>
 <tr><td>Stackelberg floor</td><td>0.50 (achieved 0.60)</td><td>✅</td></tr>
-<tr><td>Gibbs delta</td><td>0.00 kJ (tol ±200.00 kJ)</td><td>✅</td></tr>
+<tr><td>Gibbs delta</td><td>1.40k kJ (tol ±420.00 kJ)</td><td>⚠️</td></tr>
 <tr><td>Divergence</td><td>2.220e-16 ≤ 1.000e-3</td><td>✅</td></tr>
-<tr><td>Entropy floor</td><td>4.33 ≥ 4.00 kJ/K</td><td>✅</td></tr>
-<tr><td>Antifragility curvature</td><td>1.594e+1 ≥ 1.000e-2</td><td>✅</td></tr>
-<tr><td>Sigma welfare gain</td><td>10.32 ≥ 0.50</td><td>✅</td></tr>
-<tr><td>Owner coverage</td><td>100.00% ≥ 100.00%</td><td>✅</td></tr>
-<tr><td>Energy margin</td><td>69.80k ≥ 1.00k kJ</td><td>✅</td></tr></tbody>
+<tr><td>Entropy floor</td><td>4.33 ≥ 4.05 kJ/K</td><td>✅</td></tr>
+<tr><td>Antifragility curvature</td><td>1.594e+1 ≥ 8.000e-2</td><td>✅</td></tr>
+<tr><td>Sigma welfare gain</td><td>10.32 ≥ 0.12</td><td>✅</td></tr>
+<tr><td>Owner coverage</td><td>100.00% ≥ 95.00%</td><td>✅</td></tr>
+<tr><td>Energy margin</td><td>69.80k ≥ 68.00k kJ</td><td>✅</td></tr>
+<tr><td>Superintelligence index</td><td>82.8% ≥ 82.0%</td><td>✅</td></tr>
+<tr><td>Thermodynamic assurance</td><td>100.0%</td><td>🌌</td></tr>
+<tr><td>Governance assurance</td><td>28.5%</td><td>⚠️</td></tr>
+<tr><td>Antifragility assurance</td><td>100.0%</td><td>🌌</td></tr>
+<tr><td>Owner assurance</td><td>100.0%</td><td>✅</td></tr></tbody>
         </table>
       </section>
 

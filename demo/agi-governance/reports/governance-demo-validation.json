@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2025-10-19T20:55:38.842Z",
-  "summaryTimestamp": "2025-10-19T20:55:29.164Z",
-  "missionVersion": "1.1.0",
+  "generatedAt": "2025-10-19T21:19:07.446Z",
+  "summaryTimestamp": "2025-10-19T21:19:03.871Z",
+  "missionVersion": "1.2.0",
   "results": [
     {
       "id": "thermo:gibbs",
@@ -125,7 +125,7 @@
       "id": "alpha-field:gibbs-delta",
       "description": "Gibbs delta",
       "passed": true,
-      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000001)",
+      "details": "expected 1400.000000 vs actual 1400.000000 (Δ=0.000000, tol=0.000001)",
       "delta": 0,
       "tolerance": 0.000001
     },
@@ -141,7 +141,7 @@
       "id": "alpha-field:confidence",
       "description": "Alpha-field confidence score",
       "passed": true,
-      "details": "expected 1.000000 vs actual 1.000000 (Δ=0.000000, tol=0.000001)",
+      "details": "expected 0.864218 vs actual 0.864218 (Δ=0.000000, tol=0.000001)",
       "delta": 0,
       "tolerance": 0.000001
     },
@@ -161,7 +161,7 @@
       "id": "alpha-field:gibbs-within",
       "description": "Gibbs delta within tolerance",
       "passed": true,
-      "details": "expected true, actual true"
+      "details": "expected false, actual false"
     },
     {
       "id": "alpha-field:divergence",

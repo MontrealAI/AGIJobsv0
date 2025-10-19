@@ -159,6 +159,13 @@ export interface MissionConfig {
     verification: {
       energyMarginFloorKJ: number;
       ownerCoverageMinimum: number;
+      superintelligenceMinimum: number;
+    };
+    signatureWeights: {
+      thermodynamic: number;
+      governance: number;
+      antifragility: number;
+      owner: number;
     };
   };
   blockchain: {
@@ -363,6 +370,14 @@ export type AlphaFieldReport = {
   energyMarginFloorKJ: number;
   energyMarginSatisfied: boolean;
   confidenceScore: number;
+  thermodynamicAssurance: number;
+  governanceAssurance: number;
+  antifragilityAssurance: number;
+  ownerAssurance: number;
+  superintelligenceIndex: number;
+  superintelligenceMinimum: number;
+  superintelligenceSatisfied: boolean;
+  riskResidual: number;
 };
 
 export type BlockchainReport = MissionConfig["blockchain"] & {
@@ -523,6 +538,26 @@ function assertValidConfig(config: MissionConfig): void {
     config.alphaField.verification.ownerCoverageMinimum > 1
   ) {
     throw new Error("alphaField.verification.ownerCoverageMinimum must be within [0,1]");
+  }
+  if (
+    config.alphaField.verification.superintelligenceMinimum < 0 ||
+    config.alphaField.verification.superintelligenceMinimum > 1
+  ) {
+    throw new Error("alphaField.verification.superintelligenceMinimum must be within [0,1]");
+  }
+  const signatureWeights = config.alphaField.signatureWeights;
+  const signatureWeightSum =
+    signatureWeights.antifragility +
+    signatureWeights.governance +
+    signatureWeights.owner +
+    signatureWeights.thermodynamic;
+  if (Math.abs(signatureWeightSum - 1) > 1e-6) {
+    throw new Error("alphaField.signatureWeights must sum to 1");
+  }
+  for (const [label, weight] of Object.entries(signatureWeights)) {
+    if (!(weight > 0)) {
+      throw new Error(`alphaField.signatureWeights.${label} must be strictly positive`);
+    }
   }
   if (
     config.incentives.mintRule.treasuryMirrorShare < 0 ||
@@ -1514,6 +1549,7 @@ function computeAlphaField(
   statisticalPhysics: StatisticalPhysicsReport,
   equilibrium: EquilibriumResult,
   antifragility: AntifragilityReport,
+  risk: RiskReport,
   owner: OwnerControlReport,
 ): AlphaFieldReport {
   const advantage = config.alphaField.stackelberg.leaderBaseline - config.alphaField.stackelberg.followerBaseline;
@@ -1548,6 +1584,41 @@ function computeAlphaField(
   const energyMarginSatisfied =
     thermodynamics.freeEnergyMarginKJ >= config.alphaField.verification.energyMarginFloorKJ - 1e-9;
 
+  const thermodynamicAssurance = clamp(
+    config.alphaField.verification.energyMarginFloorKJ <= 0
+      ? 1
+      : thermodynamics.freeEnergyMarginKJ / config.alphaField.verification.energyMarginFloorKJ,
+    0,
+    1,
+  );
+  const governanceAssurance = clamp(
+    config.risk.portfolioThreshold <= 0
+      ? 1
+      : 1 - risk.portfolioResidual / config.risk.portfolioThreshold,
+    0,
+    1,
+  );
+  const antifragilityAssurance = clamp(
+    config.alphaField.antifragility.minSecondDerivative <= 0
+      ? 1
+      : antifragility.quadraticSecondDerivative / config.alphaField.antifragility.minSecondDerivative,
+    0,
+    1,
+  );
+  const ownerAssurance = clamp(ownerCoverageRatio, 0, 1);
+
+  const weights = config.alphaField.signatureWeights;
+  const weightTotal =
+    weights.antifragility + weights.governance + weights.owner + weights.thermodynamic;
+  const weightedScore =
+    weights.thermodynamic * thermodynamicAssurance +
+    weights.governance * governanceAssurance +
+    weights.antifragility * antifragilityAssurance +
+    weights.owner * ownerAssurance;
+  const superintelligenceIndex = clamp(weightTotal > 0 ? weightedScore / weightTotal : 0, 0, 1);
+  const superintelligenceSatisfied =
+    superintelligenceIndex >= config.alphaField.verification.superintelligenceMinimum - 1e-9;
+
   const totalSignals = [
     stackelbergWithinBound,
     stackelbergAdvantageSatisfiesFloor,
@@ -1558,8 +1629,10 @@ function computeAlphaField(
     sigmaGainSatisfied,
     ownerCoverageSatisfied,
     energyMarginSatisfied,
+    superintelligenceSatisfied,
   ];
-  const confidenceScore = totalSignals.filter(Boolean).length / totalSignals.length;
+  const binaryScore = totalSignals.filter(Boolean).length / totalSignals.length;
+  const confidenceScore = clamp((binaryScore + superintelligenceIndex) / 2, 0, 1);
 
   return {
     stackelbergAdvantage: advantage,
@@ -1590,6 +1663,14 @@ function computeAlphaField(
     energyMarginFloorKJ: config.alphaField.verification.energyMarginFloorKJ,
     energyMarginSatisfied,
     confidenceScore,
+    thermodynamicAssurance,
+    governanceAssurance,
+    antifragilityAssurance,
+    ownerAssurance,
+    superintelligenceIndex,
+    superintelligenceMinimum: config.alphaField.verification.superintelligenceMinimum,
+    superintelligenceSatisfied,
+    riskResidual: risk.portfolioResidual,
   };
 }
 
@@ -1629,6 +1710,13 @@ function formatScientific(value: number, digits = 3): string {
   return value.toExponential(digits);
 }
 
+function clamp(value: number, min: number, max: number): number {
+  if (Number.isNaN(value)) {
+    return min;
+  }
+  return Math.min(Math.max(value, min), max);
+}
+
 function formatMatrix(matrix: number[][]): string {
   return matrix
     .map((row) =>
@@ -1657,7 +1745,11 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
   const governorName = blockchain.contracts[0]?.name ?? "AGIJobsGovernor";
   const monitorName = blockchain.contracts[2]?.name ?? "HamiltonianMonitor";
   const stackelberg = alphaField.stackelbergAdvantage.toFixed(2);
-  const confidence = `${Math.round(alphaField.confidenceScore * 100)}%`;
+  const superintelligence = `${Math.round(alphaField.superintelligenceIndex * 100)}%`;
+  const thermoAssurance = `${Math.round(alphaField.thermodynamicAssurance * 100)}%`;
+  const governanceAssurance = `${Math.round(alphaField.governanceAssurance * 100)}%`;
+  const antifragilityAssurance = `${Math.round(alphaField.antifragilityAssurance * 100)}%`;
+  const ownerAssurance = `${Math.round(alphaField.ownerAssurance * 100)}%`;
   return [
     "```mermaid",
     "flowchart LR",
@@ -1685,10 +1777,18 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     "  end",
     "  subgraph AlphaField[Alpha-Field Assurance]",
     `    Stackelberg[Stackelberg Δ=${stackelberg}]`,
-    `    Confidence[Confidence ${confidence}]`,
+    `    Confidence[Superintelligence ${superintelligence}]`,
+    `    ThermoSignal[Thermo Assurance ${thermoAssurance}]`,
+    `    GovernanceSignal[Governance Assurance ${governanceAssurance}]`,
+    `    AntifragileSignal[Antifragility Assurance ${antifragilityAssurance}]`,
+    `    OwnerSignal[Owner Command ${ownerAssurance}]`,
     `    EnergyFloor[Energy Margin ${formatNumber(alphaField.energyMarginKJ)} kJ]`,
     "    Stackelberg --> Confidence",
-    "    EnergyFloor --> Confidence",
+    "    EnergyFloor --> ThermoSignal",
+    "    ThermoSignal --> Confidence",
+    "    GovernanceSignal --> Confidence",
+    "    AntifragileSignal --> Confidence",
+    "    OwnerSignal --> Confidence",
     "  end",
     "  subgraph Control[Owner Command Surface]",
     `    Owner((Owner ${ownerLabel}))`,
@@ -1839,6 +1939,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     ["Sigma welfare gain", alphaField.sigmaGainSatisfied],
     ["Owner coverage", alphaField.ownerCoverageSatisfied],
     ["Energy margin", alphaField.energyMarginSatisfied],
+    ["Superintelligence threshold", alphaField.superintelligenceSatisfied],
   ]
     .map(([label, ok]) => `| ${label} | ${ok ? "✅" : "⚠️"} |`)
     .join("\n");
@@ -2073,7 +2174,14 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Energy margin:** ${formatNumber(alphaField.energyMarginKJ)} kJ (floor ${formatNumber(
       alphaField.energyMarginFloorKJ,
     )} kJ — ${alphaField.energyMarginSatisfied ? "✅" : "⚠️"})`,
-    `- **Composite confidence:** ${(alphaField.confidenceScore * 100).toFixed(1)}%`,
+    `- **Superintelligence index:** ${(alphaField.superintelligenceIndex * 100).toFixed(1)}% (minimum ${(
+      alphaField.superintelligenceMinimum * 100
+    ).toFixed(1)}% — ${alphaField.superintelligenceSatisfied ? "✅" : "⚠️"})`,
+    `- **Composite confidence:** ${(alphaField.confidenceScore * 100).toFixed(1)}% (thermo ${(alphaField.thermodynamicAssurance *
+      100
+    ).toFixed(1)}% · governance ${(alphaField.governanceAssurance * 100).toFixed(1)}% · antifragility ${(alphaField.antifragilityAssurance *
+      100
+    ).toFixed(1)}% · owner ${(alphaField.ownerAssurance * 100).toFixed(1)}%)`,
     "",
     "| Signal | Status |",
     "| --- | --- |",
@@ -2302,6 +2410,33 @@ function buildDashboardHtml(bundle: ReportBundle): string {
       value: `${formatNumber(alphaField.energyMarginKJ)} ≥ ${formatNumber(alphaField.energyMarginFloorKJ)} kJ`,
       status: alphaField.energyMarginSatisfied ? "✅" : "⚠️",
     },
+    {
+      label: "Superintelligence index",
+      value: `${(alphaField.superintelligenceIndex * 100).toFixed(1)}% ≥ ${(alphaField.superintelligenceMinimum * 100).toFixed(
+        1,
+      )}%`,
+      status: alphaField.superintelligenceSatisfied ? "✅" : "⚠️",
+    },
+    {
+      label: "Thermodynamic assurance",
+      value: `${(alphaField.thermodynamicAssurance * 100).toFixed(1)}%`,
+      status: alphaField.thermodynamicAssurance >= 1 ? "🌌" : "✅",
+    },
+    {
+      label: "Governance assurance",
+      value: `${(alphaField.governanceAssurance * 100).toFixed(1)}%`,
+      status: alphaField.governanceAssurance >= 0.9 ? "✅" : "⚠️",
+    },
+    {
+      label: "Antifragility assurance",
+      value: `${(alphaField.antifragilityAssurance * 100).toFixed(1)}%`,
+      status: alphaField.antifragilityAssurance >= 1 ? "🌌" : alphaField.antifragilityAssurance >= 0.9 ? "✅" : "⚠️",
+    },
+    {
+      label: "Owner assurance",
+      value: `${(alphaField.ownerAssurance * 100).toFixed(1)}%`,
+      status: alphaField.ownerAssurance >= 0.95 ? "✅" : "⚠️",
+    },
   ]
     .map((row) => `<tr><td>${row.label}</td><td>${row.value}</td><td>${row.status}</td></tr>`)
     .join("\n");
@@ -2507,8 +2642,15 @@ function buildDashboardHtml(bundle: ReportBundle): string {
           </ul>
         </div>
         <div>
-          <h2>Owner Control</h2>
+          <h2>Superintelligence & Owner</h2>
           <ul class="metric-list">
+            <li>Superintelligence index: <strong>${(alphaField.superintelligenceIndex * 100).toFixed(1)}%</strong></li>
+            <li>Composite confidence: <strong>${(alphaField.confidenceScore * 100).toFixed(1)}%</strong></li>
+            <li>Thermo / governance / antifragility / owner assurances:
+              <strong>${(alphaField.thermodynamicAssurance * 100).toFixed(1)}%</strong> ·
+              <strong>${(alphaField.governanceAssurance * 100).toFixed(1)}%</strong> ·
+              <strong>${(alphaField.antifragilityAssurance * 100).toFixed(1)}%</strong> ·
+              <strong>${(alphaField.ownerAssurance * 100).toFixed(1)}%</strong></li>
             <li>Owner: <strong>${escapeHtml(owner.owner)}</strong></li>
             <li>Pauser: <strong>${escapeHtml(owner.pauser)}</strong></li>
             <li>Treasury: <strong>${escapeHtml(owner.treasury)}</strong></li>
@@ -2572,7 +2714,8 @@ function buildDashboardHtml(bundle: ReportBundle): string {
       <section class="card">
         <h2>Alpha-Field Sovereign Assurance</h2>
         <p>
-          Confidence score: <strong>${(alphaField.confidenceScore * 100).toFixed(1)}%</strong> • Energy margin
+          Confidence score: <strong>${(alphaField.confidenceScore * 100).toFixed(1)}%</strong> • Superintelligence index
+          <strong>${(alphaField.superintelligenceIndex * 100).toFixed(1)}%</strong> • Energy margin
           ${formatNumber(alphaField.energyMarginKJ)} kJ
         </p>
         <table>
@@ -2803,6 +2946,7 @@ export async function generateGovernanceDemo(): Promise<ReportBundle> {
     statisticalPhysics,
     equilibrium,
     antifragility,
+    risk,
     owner,
   );
 

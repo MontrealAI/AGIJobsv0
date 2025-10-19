@@ -1,6 +1,6 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T20:55:29.164Z
-*Version:* 1.1.0
+*Generated at:* 2025-10-19T21:19:03.871Z
+*Version:* 1.2.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
 
@@ -99,10 +99,18 @@ flowchart LR
   end
   subgraph AlphaField[Alpha-Field Assurance]
     Stackelberg[Stackelberg Δ=0.60]
-    Confidence[Confidence 100%]
+    Confidence[Superintelligence 83%]
+    ThermoSignal[Thermo Assurance 100%]
+    GovernanceSignal[Governance Assurance 29%]
+    AntifragileSignal[Antifragility Assurance 100%]
+    OwnerSignal[Owner Command 100%]
     EnergyFloor[Energy Margin 69.80k kJ]
     Stackelberg --> Confidence
-    EnergyFloor --> Confidence
+    EnergyFloor --> ThermoSignal
+    ThermoSignal --> Confidence
+    GovernanceSignal --> Confidence
+    AntifragileSignal --> Confidence
+    OwnerSignal --> Confidence
   end
   subgraph Control[Owner Command Surface]
     Owner((Owner 0xA1A1…A1A1))
@@ -204,26 +212,28 @@ mindmap
 
 - **Stackelberg advantage:** Δ0.60 vs cap 7.50 (✅ within)
 - **Stackelberg floor satisfied:** ✅ (floor 0.50; achieved Δ 0.60)
-- **Gibbs delta:** 0.00 kJ (target 69.80k ± 200.00 kJ)
+- **Gibbs delta:** 1.40k kJ (target 71.20k ± 420.00 kJ)
 - **Equilibrium divergence:** 2.220e-16 (limit 1.000e-3)
-- **Entropy floor:** 4.33 kJ/K (floor 4.00 kJ/K)
-- **Antifragility curvature:** 1.594e+1 (minimum 1.000e-2)
-- **Sigma welfare gain:** 10.32 (minimum 0.50)
-- **Owner coverage ratio:** 100.00% (threshold 100.00%)
-- **Energy margin:** 69.80k kJ (floor 1.00k kJ — ✅)
-- **Composite confidence:** 100.0%
+- **Entropy floor:** 4.33 kJ/K (floor 4.05 kJ/K)
+- **Antifragility curvature:** 1.594e+1 (minimum 8.000e-2)
+- **Sigma welfare gain:** 10.32 (minimum 0.12)
+- **Owner coverage ratio:** 100.00% (threshold 95.00%)
+- **Energy margin:** 69.80k kJ (floor 68.00k kJ — ✅)
+- **Superintelligence index:** 82.8% (minimum 82.0% — ✅)
+- **Composite confidence:** 86.4% (thermo 100.0% · governance 28.5% · antifragility 100.0% · owner 100.0%)
 
 | Signal | Status |
 | --- | --- |
 | Stackelberg within cap | ✅ |
 | Stackelberg floor met | ✅ |
-| Gibbs delta within tolerance | ✅ |
+| Gibbs delta within tolerance | ⚠️ |
 | Divergence within limit | ✅ |
 | Entropy above floor | ✅ |
 | Antifragility curvature | ✅ |
 | Sigma welfare gain | ✅ |
 | Owner coverage | ✅ |
 | Energy margin | ✅ |
+| Superintelligence threshold | ✅ |
 
 ## 8. Risk & Safety Audit
 

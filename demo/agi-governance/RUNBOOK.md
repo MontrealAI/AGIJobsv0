@@ -33,7 +33,7 @@ Outputs `reports/governance-demo-report.md` with:
 - Incentive free-energy ledger (mint/burn/slash parity, treasury mirroring, owner-tunable slashing curves).
 - Five-method equilibrium confirmation (discrete replicator, RK4 continuous flow, Perron eigenvector, closed-form, Monte-Carlo) with maximum deviation score.
 - Analytic vs numeric Jacobian matrices (Gershgorin, spectral radius, max delta) and antifragility curvature plus welfare growth curve for adversarial shocks.
-- Alpha-field sovereign assurance scoreboard validating Stackelberg bounds, Gibbs tolerances, antifragility minimums, sigma welfare gains, owner coverage, and energy margin.
+- Alpha-field sovereign assurance scoreboard validating Stackelberg bounds, Gibbs tolerances, antifragility minimums, sigma welfare gains, owner coverage, superintelligence index, and energy margin with assurance breakdowns.
 - Risk audit portfolio with weighted mitigation coverage, dual residual calculations, and board threshold comparison.
 - Owner command surface (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel verifications) plus capability coverage matrix and npm-script audit table.
 - Blockchain deployment ledger (contracts, pausable selectors, Safe module stack).

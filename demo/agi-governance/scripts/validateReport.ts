@@ -187,7 +187,15 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
   const risk = computeRiskReport(mission);
   const incentives = computeIncentiveReport(mission);
   const owner = computeOwnerReport(mission, packageScripts);
-  const alphaField = computeAlphaField(mission, thermodynamics, statisticalPhysics, equilibrium, antifragility, owner);
+  const alphaField = computeAlphaField(
+    mission,
+    thermodynamics,
+    statisticalPhysics,
+    equilibrium,
+    antifragility,
+    risk,
+    owner,
+  );
   const jacobian = computeJacobian(mission.gameTheory.payoffMatrix, equilibrium.closedForm);
   const blockchain = computeBlockchainReport(mission);
 
