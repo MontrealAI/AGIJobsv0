@@ -279,6 +279,61 @@ type AsiFlightPlan = {
   phases: AsiFlightPlanPhase[];
 };
 
+type AsiDominanceVector = {
+  id: string;
+  title: string;
+  description: string;
+  operatorFocus: string;
+  ownerLever: string;
+  automation: { command: string; impact: string }[];
+  proofs: string[];
+};
+
+type AsiDominanceIndicator = {
+  metric: string;
+  signal: string;
+  target: string;
+  source: string;
+  verification: string;
+};
+
+type AsiDominanceDirective = {
+  action: string;
+  command: string;
+  proof: string;
+  impact: string;
+};
+
+type AsiDominanceAutomationCommand = {
+  label: string;
+  command: string;
+  purpose: string;
+};
+
+type AsiDominanceAutomation = {
+  commands: AsiDominanceAutomationCommand[];
+  ci: {
+    workflow: string;
+    job: string;
+    description: string;
+    ownerVisibility: string;
+  };
+};
+
+type AsiDominance = {
+  mission: {
+    title: string;
+    tagline: string;
+    operatorPromise: string;
+    ownerSupremacy: string;
+    ciGuardrail: string;
+  };
+  vectors: AsiDominanceVector[];
+  indicators: AsiDominanceIndicator[];
+  ownerDirectives: AsiDominanceDirective[];
+  automation: AsiDominanceAutomation;
+};
+
 const buildOwnerAtlas = untypedBuildOwnerAtlas as OwnerAtlasLib["buildOwnerAtlas"];
 const computeAutotunePlan = untypedComputeAutotunePlan as AutotuneLib["computeAutotunePlan"];
 const buildOwnerCommandMatrix = untypedBuildOwnerCommandMatrix as OwnerMatrixLib["buildOwnerCommandMatrix"];
@@ -305,6 +360,7 @@ const asiVictoryPlan = loadJson<AsiVictoryPlan>("config/asiTakesOffVictoryPlan.j
 const asiOwnerMatrix = loadJson<OwnerMatrixEntry[]>("config/asiTakesOffOwnerMatrix.json");
 const asiSuperintelligence = loadJson<AsiSuperintelligence>("config/asiTakesOffSuperintelligence.json");
 const asiFlightPlan = loadJson<AsiFlightPlan>("config/asiTakesOffFlightPlan.json");
+const asiDominance = loadJson<AsiDominance>("config/asiTakesOffDominance.json");
 
 type ConstellationContext = {
   uiConfig: UiConfig;
@@ -318,6 +374,7 @@ type ConstellationContext = {
   asiOwnerMatrix: OwnerMatrixEntry[];
   asiSuperintelligence: AsiSuperintelligence;
   asiFlightPlan: AsiFlightPlan;
+  asiDominance: AsiDominance;
 };
 
 const defaultContext: ConstellationContext = {
@@ -331,7 +388,8 @@ const defaultContext: ConstellationContext = {
   asiVictoryPlan,
   asiOwnerMatrix,
   asiSuperintelligence,
-  asiFlightPlan
+  asiFlightPlan,
+  asiDominance
 };
 
 const jobAbi = [
@@ -436,6 +494,18 @@ export function createServer(ctx: ConstellationContext = defaultContext) {
       ownerControls: ctx.asiSuperintelligence.ownerControls,
       automation: ctx.asiSuperintelligence.automation,
       readinessSignals: ctx.asiSuperintelligence.readinessSignals,
+      ownerAtlas: atlas,
+      ownerMatrix: matrix,
+      autotunePlan: plan
+    });
+  });
+  app.get("/constellation/asi-takes-off/dominance", (_req, res) => {
+    const atlas = buildOwnerAtlas(ctx.hubs, ctx.uiConfig);
+    const matrix = buildOwnerCommandMatrix(ctx.asiOwnerMatrix, atlas);
+    const telemetry = loadTelemetry();
+    const plan = computeAutotunePlan(telemetry, { mission: ctx.asiDeck.mission?.id ?? "asi-takes-off" });
+    return res.json({
+      dominance: ctx.asiDominance,
       ownerAtlas: atlas,
       ownerMatrix: matrix,
       autotunePlan: plan

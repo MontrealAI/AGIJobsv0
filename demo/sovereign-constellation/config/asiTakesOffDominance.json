@@ -1,0 +1,172 @@
+{
+  "mission": {
+    "title": "ASI Takes Off — Sovereign Dominance Protocol",
+    "tagline": "Winning the AI race with a wallet-first, unstoppable command lattice that any director can launch in minutes.",
+    "operatorPromise": "Follow the launch sequence, approve the prepared payloads, and the constellation executes civilisation-scale labour autonomously.",
+    "ownerSupremacy": "Every dominance vector is tethered to an owner-only lever; governance rotation, pausing, and economic retuning stay under human command.",
+    "ciGuardrail": "ci.yml → Sovereign Constellation job must be green before production promotion — branch protection enforces it." 
+  },
+  "vectors": [
+    {
+      "id": "meta-agentic-dominance",
+      "title": "Meta-Agentic Lattice Supremacy",
+      "description": "Mission intents fan out into Helios, Triton, and Athena jobs without touching RPC plumbing, proving orchestration dominance.",
+      "operatorFocus": "Load the ASI Takes Off playbook and approve each wallet prompt; the orchestrator routes every transaction to the correct chain.",
+      "ownerLever": "Owner atlas links to SystemPause and JobRegistry governance, so the director can halt or adjust trajectories mid-flight.",
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation",
+          "impact": "Bootstraps local hubs, orchestrator, UI, and seeded playbooks in a single run for non-technical operators."
+        },
+        {
+          "command": "npm run demo:sovereign-constellation:atlas",
+          "impact": "Regenerates explorer write links for every orchestrated module so dominance stays owner-controlled."
+        }
+      ],
+      "proofs": [
+        "GET /constellation/plan/instantiate returns chain-tagged transactions ready for wallet dispatch.",
+        "Mission profiles emphasise wallet-first orchestration with deterministic rewards across hubs.",
+        "Autotune telemetry references actual validator participation after each mission run."
+      ]
+    },
+    {
+      "id": "alpha-governance-dominance",
+      "title": "α-AGI Governance Stronghold",
+      "description": "Owner command center enumerates every mutable parameter so governance rotation and dispute routing remain instantaneous.",
+      "operatorFocus": "Use the console owner controls to apply thermostat recommendations — no scripts or ABI editing required.",
+      "ownerLever": "StakeManager.setMinStake, ValidationModule.setCommitRevealWindows, and JobRegistry.setDisputeModule remain owner-only hooks surfaced in the atlas.",
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation:owner",
+          "impact": "Prints the owner command center matrix with status indicators for every dominance lever."
+        }
+      ],
+      "proofs": [
+        "Owner matrix entries include explorer writeContract URLs for each governance action.",
+        "SystemPause contract exposes pause()/unpause() guarded by onlyOwner and mapped in the atlas.",
+        "Thermostat plan recommends governance changes sourced from live telemetry."
+      ]
+    },
+    {
+      "id": "chainless-dominance",
+      "title": "Invisible Chain Advantage",
+      "description": "Wallet prompts arrive in correct order, chain IDs are embedded in payloads, and no private keys leave the operator's custody.",
+      "operatorFocus": "Connect a browser wallet, review mission previews, and sign; MetaMask handles chain switching transparently.",
+      "ownerLever": "Owner can pause or reroute missions instantly using SystemPause and JobRegistry controls while the chain stays invisible to operators.",
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation:asi-takes-off",
+          "impact": "Delivers a zero-code mission briefing reinforcing the wallet-first experience before launch."
+        }
+      ],
+      "proofs": [
+        "createServer serialises payloads with chainId, networkName, and rpcUrl metadata for wallet-native routing.",
+        "React console renders rewards, URIs, and networks before any signature occurs.",
+        "Cypress smoke tests assert that the ASI Takes Off deck loads without manual RPC steps."
+      ]
+    },
+    {
+      "id": "recursive-dominance",
+      "title": "Recursive Self-Improvement Engine",
+      "description": "Thermostat feedback loops and victory metrics self-tune validation cadence, stake floors, and pause triggers after every mission.",
+      "operatorFocus": "Run the autotune plan and apply recommended parameters; follow-up missions inherit optimised economics.",
+      "ownerLever": "Owner matrix entries provide direct explorer actions to enact thermostat deltas without redeploying contracts.",
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation:plan",
+          "impact": "Recomputes commit/reveal windows, stake floors, and pause directives from telemetry."
+        }
+      ],
+      "proofs": [
+        "reports/sovereign-constellation/autotune-plan.json tracks entropy and participation based adjustments.",
+        "Victory plan checkpoints demand evidence of successful thermostat application.",
+        "Owner CLI uses autotune outputs to pre-fill governance commands."
+      ]
+    },
+    {
+      "id": "race-dominance",
+      "title": "Winning the AI Race",
+      "description": "Continuous CI enforcement, telemetry guardrails, and sovereign owner control combine into a production-ready superintelligent engine.",
+      "operatorFocus": "Keep ci.yml → Sovereign Constellation green, execute the dominance commands, and broadcast mission readiness to stakeholders.",
+      "ownerLever": "Pause, upgrade, or rotate governance mid-mission via atlas-linked Safe transactions — supremacy never relinquishes control.",
+      "automation": [
+        {
+          "command": "npm run demo:sovereign-constellation:ci",
+          "impact": "Executes tests, builds, and telemetry recomputation to keep deployment instantly promotable."
+        },
+        {
+          "command": "npm run demo:sovereign-constellation:superintelligence",
+          "impact": "Generates unstoppable assurance briefings with owner readiness counts."
+        }
+      ],
+      "proofs": [
+        "GitHub branch protection requires the Sovereign Constellation CI job to pass.",
+        "Owner atlas markdown lists every hub module with explorer write links.",
+        "Launch manifest merges mission profile, thermostat plan, and owner levers into a single go-live dossier."
+      ]
+    }
+  ],
+  "indicators": [
+    {
+      "metric": "Owner levers ready",
+      "signal": "Number of owner matrix entries with available=true",
+      "target": "All levers ready before scale",
+      "source": "npm run demo:sovereign-constellation:owner",
+      "verification": "Owner command center output shows ready vs pending counts."
+    },
+    {
+      "metric": "Thermostat freshness",
+      "signal": "Hash of reports/sovereign-constellation/autotune-plan.json",
+      "target": "Updated after each mission run",
+      "source": "npm run demo:sovereign-constellation:plan",
+      "verification": "CI uploads plan hash to build logs for audit."
+    },
+    {
+      "metric": "CI supremacy",
+      "signal": "ci.yml → Sovereign Constellation job status",
+      "target": "Required green before merge",
+      "source": "GitHub Actions",
+      "verification": "Branch protection blocks merge if the dominance job fails."
+    }
+  ],
+  "ownerDirectives": [
+    {
+      "action": "Freeze constellation instantly",
+      "command": "Use owner atlas SystemPause → pause()",
+      "proof": "Explorer transaction log shows pause events emitted across all hubs.",
+      "impact": "Halts all job processing while keeping stakes escrowed."
+    },
+    {
+      "action": "Retune validation tempo",
+      "command": "console owner controls → Validation Module → setCommitRevealWindows",
+      "proof": "Console success toast and event logs confirm new windows.",
+      "impact": "Aligns validator cadence with current mission risk."
+    },
+    {
+      "action": "Escalate dispute logic",
+      "command": "console owner controls → Job Registry → setDisputeModule",
+      "proof": "Explorer writeContract update and emitted DisputeModuleChanged event.",
+      "impact": "Swaps escalation pathways without downtime."
+    }
+  ],
+  "automation": {
+    "commands": [
+      {
+        "label": "Dominance Briefing",
+        "command": "npm run demo:sovereign-constellation:dominance",
+        "purpose": "Publishes a zero-code dominance dossier blending telemetry, owner proofs, and CI guardrails."
+      },
+      {
+        "label": "Launch Manifest",
+        "command": "npm run demo:sovereign-constellation:asi-takes-off:launch",
+        "purpose": "Generates the go-live document combining profiles, thermostat data, and governance levers."
+      }
+    ],
+    "ci": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "Sovereign Constellation",
+      "description": "Required job verifying tests, builds, and telemetry for the dominance protocol.",
+      "ownerVisibility": "Visible in GitHub Checks with required status enforced on PRs and main."
+    }
+  }
+}
