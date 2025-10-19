@@ -83,7 +83,25 @@ This orchestrates `owner:audit-hamiltonian`, `reward-engine:report`, `owner:upgr
 
 ---
 
-## 5. Execute on-chain owner controls (optional live drill)
+## 5. Launch the grandiose governance console
+
+```bash
+open demo/agi-governance/reports/governance-demo-dashboard.html  # macOS
+# or
+xdg-open demo/agi-governance/reports/governance-demo-dashboard.html  # Linux
+```
+
+The dashboard renders the same mission data with:
+
+- Flowing mermaid diagrams (energy → incentives → owner loop, residual-risk pie, owner sequence, antifragility mindmap).
+- A live SVG antifragility curve driven by the recomputed welfare samples.
+- Responsive tables for strategies, risk vectors, pausable selectors, and CI shields.
+
+This gives non-technical owners a cinematic control room that mirrors the Markdown dossier without requiring terminal access.
+
+---
+
+## 6. Execute on-chain owner controls (optional live drill)
 
 Each command below can be run via the CLI, Safe transaction builder, or Etherscan write interface. Replace placeholder addresses with your deployment addresses.
 
@@ -126,7 +144,7 @@ Document transaction hashes in `reports/governance-demo-report.md` under the “
 
 ---
 
-## 6. Formal verification hooks
+## 7. Formal verification hooks
 
 1. **Coverage remapping audit:**
    ```bash
@@ -148,7 +166,7 @@ Archive the resulting artefacts inside `reports/` alongside the governance dossi
 
 ---
 
-## 7. Evidence of execution
+## 8. Evidence of execution
 
 After each run:
 1. Commit the generated artefacts to a dedicated evidence branch or upload them to immutable storage (e.g., IPFS, Arweave).
