@@ -221,6 +221,41 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
   );
   results.push(
     buildNumericCheck(
+      "thermo:jarzynski-estimator",
+      "Jarzynski estimator",
+      thermodynamics.jarzynskiEstimator,
+      summary.thermodynamics.jarzynskiEstimator,
+      1e-9,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "thermo:jarzynski-target",
+      "Jarzynski target",
+      thermodynamics.jarzynskiTarget,
+      summary.thermodynamics.jarzynskiTarget,
+      1e-9,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "thermo:jarzynski-delta",
+      "Jarzynski delta within tolerance",
+      thermodynamics.jarzynskiDelta,
+      summary.thermodynamics.jarzynskiDelta,
+      summary.thermodynamics.jarzynskiTolerance,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "thermo:jarzynski-consistent",
+      "Jarzynski consistency flag",
+      thermodynamics.jarzynskiConsistent,
+      summary.thermodynamics.jarzynskiConsistent,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
       "stat:partition",
       "Partition function cross-check",
       statisticalPhysics.partitionFunction,
@@ -432,6 +467,23 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
       "Energy margin floor met",
       alphaField.energyMarginSatisfied,
       summary.alphaField.energyMarginSatisfied,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "alpha-field:jarzynski-factor",
+      "Alpha-field Jarzynski factor",
+      alphaField.jarzynskiFactor,
+      summary.alphaField.jarzynskiFactor,
+      1e-9,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:jarzynski-consistency",
+      "Jarzynski alignment satisfied",
+      alphaField.jarzynskiConsistent,
+      summary.alphaField.jarzynskiConsistent,
     ),
   );
   results.push(

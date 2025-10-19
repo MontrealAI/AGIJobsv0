@@ -1,33 +1,33 @@
 {
-  "generatedAt": "2025-10-19T21:19:25.597Z",
-  "totalDurationMs": 25348.929993,
+  "generatedAt": "2025-10-19T21:45:52.736Z",
+  "totalDurationMs": 24436.806671000002,
   "steps": [
     {
       "id": "generate",
       "label": "Generate dossier",
       "status": "success",
-      "durationMs": 3630.0157139999997,
+      "durationMs": 3625.2479700000004,
       "details": "Free-energy margin 69800.00 kJ · Max method deviation 0.136515"
     },
     {
       "id": "validate",
       "label": "Validate physics",
       "status": "success",
-      "durationMs": 3569.394301999999,
-      "details": "All 43 checks passed"
+      "durationMs": 3604.167216,
+      "details": "All 49 checks passed"
     },
     {
       "id": "ci",
       "label": "Audit CI shield",
       "status": "success",
-      "durationMs": 19.319932000000335,
+      "durationMs": 27.084726999999475,
       "details": "All enforcement guards locked."
     },
     {
       "id": "owner",
       "label": "Owner diagnostics",
       "status": "warning",
-      "durationMs": 18129.599523999997,
+      "durationMs": 17179.872982,
       "details": "Warnings: [owner:audit-hamiltonian] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. | Cross-check mismatch: mission alignment. | [reward-engine:report] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. | [owner:upgrade-status] SKIPPED @ $.onChain — No timelock address available. | [owner:compliance-report] SKIPPED @ $.onChain — No tax policy address configured."
     }
   ],
@@ -42,12 +42,12 @@
     "ownerAllCommandsPresent": true,
     "ciShieldOk": true,
     "ownerReadiness": "attention",
-    "alphaFieldConfidence": 0.8642179999999999,
+    "alphaFieldConfidence": 0.8642179999999998,
     "alphaFieldWithinBound": true,
     "alphaFieldEnergyMargin": true,
-    "alphaFieldSuperintelligence": 0.828436,
+    "alphaFieldSuperintelligence": 0.8284359999999996,
     "alphaFieldSuperintelligenceSatisfied": true,
-    "alphaFieldThermoAssurance": 1,
+    "alphaFieldThermoAssurance": 0.9999999999999989,
     "alphaFieldGovernanceAssurance": 0.2851499999999999,
     "alphaFieldAntifragilityAssurance": 1,
     "alphaFieldOwnerAssurance": 1

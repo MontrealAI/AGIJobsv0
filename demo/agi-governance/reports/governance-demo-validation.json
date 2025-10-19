@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-10-19T21:19:07.446Z",
-  "summaryTimestamp": "2025-10-19T21:19:03.871Z",
+  "generatedAt": "2025-10-19T21:45:35.526Z",
+  "summaryTimestamp": "2025-10-19T21:45:31.916Z",
   "missionVersion": "1.2.0",
   "results": [
     {
@@ -18,6 +18,36 @@
       "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000001)",
       "delta": 0,
       "tolerance": 0.000001
+    },
+    {
+      "id": "thermo:jarzynski-estimator",
+      "description": "Jarzynski estimator",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "thermo:jarzynski-target",
+      "description": "Jarzynski target",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "thermo:jarzynski-delta",
+      "description": "Jarzynski delta within tolerance",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000500)",
+      "delta": 0,
+      "tolerance": 0.0005
+    },
+    {
+      "id": "thermo:jarzynski-consistent",
+      "description": "Jarzynski consistency flag",
+      "passed": true,
+      "details": "expected true, actual true"
     },
     {
       "id": "stat:partition",
@@ -200,6 +230,20 @@
       "details": "expected true, actual true"
     },
     {
+      "id": "alpha-field:jarzynski-factor",
+      "description": "Alpha-field Jarzynski factor",
+      "passed": true,
+      "details": "expected 1.000000 vs actual 1.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "alpha-field:jarzynski-consistency",
+      "description": "Jarzynski alignment satisfied",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
       "id": "risk:portfolio",
       "description": "Portfolio residual risk",
       "passed": true,
@@ -309,7 +353,7 @@
     }
   ],
   "totals": {
-    "passed": 43,
+    "passed": 49,
     "failed": 0
   },
   "notes": [
