@@ -1,0 +1,88 @@
+name: demo-agi-governance
+
+on:
+  pull_request:
+    paths:
+      - 'demo/agi-governance/**'
+      - 'apps/enterprise-portal/src/app/agi-governance/**'
+      - 'apps/enterprise-portal/src/components/AlphaGovernanceShowcase.tsx'
+      - '.github/workflows/demo-agi-governance.yml'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  agi-governance-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Compile contracts
+        run: npm run compile
+
+      - name: Execute α-governance rehearsal
+        run: npm run demo:agi-governance:run
+
+      - name: Validate transcript
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const outputPath = path.join('demo', 'agi-governance', 'export', 'latest.json');
+          if (!fs.existsSync(outputPath)) {
+            throw new Error('Transcript not found at demo/agi-governance/export/latest.json');
+          }
+          const data = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+          const requiredKeys = ['version', 'generatedAt', 'energy', 'jobs', 'validators', 'timeline', 'ownerActions'];
+          for (const key of requiredKeys) {
+            if (!(key in data)) {
+              throw new Error(`Missing ${key} in transcript`);
+            }
+          }
+          if (!Array.isArray(data.jobs) || data.jobs.length === 0) {
+            throw new Error('Transcript jobs array is empty');
+          }
+          if (!Array.isArray(data.ownerActions) || data.ownerActions.length === 0) {
+            throw new Error('Transcript ownerActions array is empty');
+          }
+          if (!data.energy || typeof data.energy.gibbsFreeEnergy !== 'number') {
+            throw new Error('Energy metrics missing or malformed');
+          }
+          console.log(`Validated governance transcript with ${data.jobs.length} jobs and ${data.validators.length} validators.`);
+          NODE
+
+      - name: Upload transcript artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agi-governance-transcript
+          path: demo/agi-governance/export/latest.json

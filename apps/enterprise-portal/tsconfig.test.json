@@ -12,6 +12,7 @@
   "include": [
     "src/lib/crypto.ts",
     "test/verifyDeliverableSignature.test.ts",
+    "test/alphaGovernanceAnalytics.test.ts",
     "test/global.d.ts"
   ]
 }
