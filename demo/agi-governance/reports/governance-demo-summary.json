@@ -1,13 +1,18 @@
 {
-  "generatedAt": "2025-10-19T12:57:39.892Z",
+  "generatedAt": "2025-10-19T13:50:47.593Z",
   "version": "1.0.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
     "gibbsFreeEnergyJ": 69800000,
     "landauerKJ": 5.3400207262464265e-15,
+    "landauerJ": 5.340020726246426e-12,
     "freeEnergyMarginKJ": 69800,
     "burnEnergyPerBlockKJ": 4362.5,
-    "gibbsAgreementDelta": 0
+    "gibbsAgreementDelta": 0,
+    "gibbsToLandauerRatio": 13071110315533058000,
+    "burnToLandauerRatio": 816944394720816100,
+    "stakeBoltzmannEnergyJ": 2.9666781812480147e-21,
+    "stakeBoltzmannEnergyKJ": 2.966678181248015e-24
   },
   "hamiltonian": {
     "kineticTerm": 34149742376.26085,
@@ -42,7 +47,9 @@
     "payoffAtEquilibrium": 1,
     "divergenceAtEquilibrium": 0,
     "discountFactor": 0.92,
-    "replicatorDeviation": 0.11005256345802282
+    "replicatorDeviation": 0.11005256345802282,
+    "monteCarloAverageDivergence": 0.06820361080231813,
+    "monteCarloAveragePayoff": 1
   },
   "owner": {
     "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
@@ -98,5 +105,59 @@
     ],
     "minCoverage": 90,
     "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  },
+  "diagnostics": {
+    "landauerAdequacy": "Gibbs free energy exceeds Landauer minimum by 1.307e+19x",
+    "ownerAssertions": [
+      {
+        "check": "Owner address format",
+        "passed": true,
+        "detail": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1 is a valid EOA/multisig format"
+      },
+      {
+        "check": "Pauser address format",
+        "passed": true,
+        "detail": "0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2 is a valid controller format"
+      },
+      {
+        "check": "Treasury address format",
+        "passed": true,
+        "detail": "0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3 is a valid treasury format"
+      },
+      {
+        "check": "Timelock horizon",
+        "passed": true,
+        "detail": "Timelock is 691200 seconds (8.00 days)"
+      },
+      {
+        "check": "Upgrade action: Recalibrate Hamiltonian monitor",
+        "passed": true,
+        "detail": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08"
+      },
+      {
+        "check": "Upgrade action: Adjust reward engine burn curve",
+        "passed": true,
+        "detail": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200"
+      },
+      {
+        "check": "Upgrade action: Rotate governance sentinels",
+        "passed": true,
+        "detail": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3"
+      },
+      {
+        "check": "Upgrade action: Update tax policy disclosure",
+        "passed": true,
+        "detail": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\""
+      }
+    ],
+    "eigenvalues": [
+      3,
+      4.440892098500626e-16,
+      -8.881784197001252e-16
+    ],
+    "eigenvalueCondition": 1,
+    "replicatorVsMonteCarlo": 0.11010278111938565,
+    "replicatorVsClosedForm": 0.11005256345802282,
+    "monteCarloAverageDivergence": 0.06820361080231813
   }
 }

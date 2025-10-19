@@ -33,6 +33,7 @@ The command generates `reports/governance-demo-report.md` with:
 2. Triple-verified game-theory equilibrium analysis (replicator dynamics simulation + closed-form solver + Monte-Carlo stress sampling).
 3. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations).
 4. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure.
+5. Assurance diagnostics (Landauer adequacy ratios, symmetrised payoff eigenvalues, and automated owner authority assertions).
 
 Then run the CI verification layer:
 
@@ -47,6 +48,7 @@ This command checks that the repository’s v2 CI workflow still enforces the ma
 - **No manual math.** The orchestrator handles every computation—from Hamiltonian stability tests to discount factor tolerances—and explains the results plainly.
 - **Copy‑paste governance.** Ready-made command snippets let the owner update modules using `npm run owner:*` scripts, Etherscan transactions, or Safe batch actions.
 - **Evidence by default.** Every run produces timestamped artefacts that prove compliance with thermodynamic limits, governance divergence caps, and CI enforcement. Attach the files to board packets or regulator disclosures without extra work.
+- **Automatic diagnostics.** The dossier now embeds Landauer adequacy ratios, eigenvalue condition numbers, and owner assertion checks so non-technical operators can certify control without bespoke analysis.
 
 ## Extending the mission
 
