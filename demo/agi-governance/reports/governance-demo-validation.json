@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-10-19T17:46:07.725Z",
-  "summaryTimestamp": "2025-10-19T17:44:55.574Z",
+  "generatedAt": "2025-10-19T18:30:07.558Z",
+  "summaryTimestamp": "2025-10-19T18:29:55.146Z",
   "missionVersion": "1.1.0",
   "results": [
     {
@@ -128,6 +128,18 @@
       "details": "expected true, actual true"
     },
     {
+      "id": "owner:verification-scripts",
+      "description": "Owner verification scripts present",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "owner:automation",
+      "description": "Owner automation complete (commands + verification)",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
       "id": "owner:capability-map",
       "description": "Owner capability presence parity",
       "passed": true,
@@ -185,7 +197,7 @@
     }
   ],
   "totals": {
-    "passed": 25,
+    "passed": 27,
     "failed": 0
   },
   "notes": [

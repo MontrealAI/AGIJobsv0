@@ -276,6 +276,8 @@ type OwnerControlCapability = {
   present: boolean;
   scriptName: string | null;
   scriptExists: boolean;
+  verificationScriptName: string | null;
+  verificationScriptExists: boolean;
 };
 
 export type OwnerControlReport = {
@@ -291,6 +293,8 @@ export type OwnerControlReport = {
   monitoringSentinels: string[];
   fullCoverage: boolean;
   allCommandsPresent: boolean;
+  allVerificationsPresent: boolean;
+  automationComplete: boolean;
 };
 
 export type JacobianReport = {
@@ -1243,6 +1247,8 @@ function extractScriptName(command: string): string | null {
 function computeOwnerReport(config: MissionConfig, packageScripts: Record<string, string>): OwnerControlReport {
   const capabilityMap = new Map<string, OwnerControlCapability>();
   for (const capability of config.ownerControls.criticalCapabilities) {
+    const scriptName = extractScriptName(capability.command);
+    const verificationScriptName = extractScriptName(capability.verification);
     capabilityMap.set(capability.category, {
       category: capability.category,
       label: capability.label,
@@ -1250,8 +1256,10 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
       command: capability.command,
       verification: capability.verification,
       present: true,
-      scriptName: extractScriptName(capability.command),
+      scriptName,
       scriptExists: false,
+      verificationScriptName,
+      verificationScriptExists: false,
     });
   }
 
@@ -1266,6 +1274,8 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
         present: false,
         scriptName: null,
         scriptExists: false,
+        verificationScriptName: null,
+        verificationScriptExists: false,
       });
     }
   }
@@ -1275,6 +1285,12 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
     const enriched = capabilityMap.get(capability.category)!;
     if (enriched.scriptName) {
       enriched.scriptExists = Object.prototype.hasOwnProperty.call(packageScripts, enriched.scriptName);
+    }
+    if (enriched.verificationScriptName) {
+      enriched.verificationScriptExists = Object.prototype.hasOwnProperty.call(
+        packageScripts,
+        enriched.verificationScriptName,
+      );
     }
     capabilities.push(enriched);
   }
@@ -1304,6 +1320,18 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
     return capability.scriptExists;
   });
 
+  const allVerificationsPresent = capabilities.every((capability) => {
+    if (!capability.present) {
+      return false;
+    }
+    if (!capability.verificationScriptName) {
+      return capability.verification.trim().length === 0 ? true : false;
+    }
+    return capability.verificationScriptExists;
+  });
+
+  const automationComplete = allCommandsPresent && allVerificationsPresent;
+
   return {
     owner: config.ownerControls.owner,
     pauser: config.ownerControls.pauser,
@@ -1314,6 +1342,8 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
     monitoringSentinels: config.ownerControls.monitoringSentinels,
     fullCoverage,
     allCommandsPresent,
+    allVerificationsPresent,
+    automationComplete,
   };
 }
 
@@ -1433,6 +1463,69 @@ function formatMatrix(matrix: number[][]): string {
     .join("\n");
 }
 
+function shortAddress(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "—";
+  }
+  if (trimmed.startsWith("0x") && trimmed.length > 12) {
+    return `${trimmed.slice(0, 6)}…${trimmed.slice(-4)}`;
+  }
+  if (trimmed.length > 18) {
+    return `${trimmed.slice(0, 9)}…${trimmed.slice(-6)}`;
+  }
+  return trimmed;
+}
+
+function escapeMermaidLabel(value: string): string {
+  return value.replace(/[`{}<>|]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function buildMermaidGovernance(bundle: ReportBundle): string {
+  const governorContract = bundle.blockchain.contracts.find((contract) => contract.name.includes("Governor"));
+  const treasuryContract = bundle.blockchain.contracts.find((contract) => contract.name.includes("Treasury"));
+  const governorLabel = governorContract ? escapeMermaidLabel(governorContract.name) : "AGIJobsGovernor";
+  const treasuryLabel = treasuryContract ? escapeMermaidLabel(treasuryContract.name) : "AGIJobsTreasury";
+  const mirrorShare = formatPercent(bundle.incentives.mint.treasuryMirrorShare);
+  const slashMajor = bundle.incentives.slashing.severities[1]?.fraction ?? bundle.incentives.slashing.severities[0]?.fraction ?? 0;
+  const slashLabel = formatPercent(slashMajor);
+
+  return [
+    "```mermaid",
+    "graph TD",
+    `  Owner["Owner Control (${escapeMermaidLabel(shortAddress(bundle.owner.owner))})"] -->|Pause / Upgrade / Parameter| Governor["${governorLabel}"]`,
+    `  Pauser["Pause Guardian (${escapeMermaidLabel(shortAddress(bundle.owner.pauser))})"] -->|Emergency stop| Governor`,
+    `  Governor -->|Emission directives| TreasuryContract["${treasuryLabel} (${escapeMermaidLabel(shortAddress(bundle.owner.treasury))})"]`,
+    `  TreasuryContract -->|Mirror ${mirrorShare}| TreasuryVault[Treasury Vault]`,
+    `  TreasuryVault -->|$AGIALPHA rewards| Economy[α-AGI Economy]`,
+    `  Governor -->|Slash ${slashLabel}| Sentinel[Sentinel Tacticians]`,
+    "  Sentinel -->|Risk telemetry| Owner",
+    "  Owner -->|Diagnostics & CI scripts| CIShield[CI (v2) Shield]",
+    "  CIShield -->|Green checks| Owner",
+    "```",
+  ].join("\n");
+}
+
+function buildMermaidEnergy(bundle: ReportBundle): string {
+  const { thermodynamics, statisticalPhysics, incentives } = bundle;
+  const etaPercent = (incentives.mint.eta * 100).toFixed(1);
+  const burnBps = formatBps(incentives.burn.burnBps);
+  return [
+    "```mermaid",
+    "flowchart LR",
+    `  Gibbs["Gibbs Free Energy ${formatNumber(thermodynamics.gibbsFreeEnergyKJ)} kJ"] --> Margin["Safety Margin ${formatNumber(thermodynamics.freeEnergyMarginKJ)} kJ"]`,
+    `  Margin --> Landauer["Landauer Limit ${thermodynamics.landauerKJ.toExponential(2)} kJ"]`,
+    `  Burn["Burn per block ${formatNumber(thermodynamics.burnEnergyPerBlockKJ)} kJ"] --> Margin`,
+    `  Entropy["Entropy ${formatNumber(statisticalPhysics.entropyKJPerK)} kJ/K"] --> Gibbs`,
+    `  Mint["Mint η=${etaPercent}%"] --> TreasuryFlow[Treasury Mirror ${formatPercent(incentives.mint.treasuryMirrorShare)}]`,
+    "  TreasuryFlow --> Agents[Agents, Validators, Operators]",
+    `  Slash["Slashing ${formatPercent(incentives.slashing.severities[0]?.fraction ?? 0)}-${formatPercent(incentives.slashing.severities.at(-1)?.fraction ?? 0)}"] --> Landauer`,
+    `  Burn --> BurnPolicy["Burn Policy ${burnBps} (treasury ${formatBps(incentives.burn.treasuryBps)}, employer ${formatBps(incentives.burn.employerBps)})"]`,
+    "```",
+  ].join("\n");
+}
+
+
 function buildMarkdown(bundle: ReportBundle): string {
   const {
     meta,
@@ -1450,6 +1543,9 @@ function buildMarkdown(bundle: ReportBundle): string {
     ci,
     divergenceTolerance,
   } = bundle;
+
+  const governanceMermaid = buildMermaidGovernance(bundle);
+  const energyMermaid = buildMermaidEnergy(bundle);
 
   const strategyTable = equilibrium.labels
     .map((label, index) =>
@@ -1537,7 +1633,21 @@ function buildMarkdown(bundle: ReportBundle): string {
   const commandAuditTable = owner.capabilities
     .map((capability) =>
       `| ${capability.category} | ${capability.scriptName ?? "manual"} | ${
-        capability.scriptName ? (capability.scriptExists ? "✅" : "⚠️") : "ℹ️"
+        capability.scriptName
+          ? capability.scriptExists
+            ? "✅"
+            : "⚠️"
+          : capability.command.trim().length > 0
+          ? "ℹ️"
+          : "—"
+      } | ${capability.verificationScriptName ?? "manual"} | ${
+        capability.verificationScriptName
+          ? capability.verificationScriptExists
+            ? "✅"
+            : "⚠️"
+          : capability.verification.trim().length > 0
+          ? "ℹ️"
+          : "—"
       } |`,
     )
     .join("\n");
@@ -1591,6 +1701,12 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| Energy (dimensionless) | Degeneracy | Probability |",
     "| --- | --- | --- |",
     partitionTable,
+    "",
+    "### Mission Flow Atlases",
+    "",
+    governanceMermaid,
+    "",
+    energyMermaid,
     "",
     "## 3. Hamiltonian Control Plane",
     "",
@@ -1698,7 +1814,11 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Treasury:** ${owner.treasury}`,
     `- **Timelock:** ${owner.timelockSeconds} seconds`,
     `- **Coverage achieved:** ${owner.fullCoverage ? "all critical capabilities accounted for" : "⚠️ gaps detected"}`,
-    `- **Command surfaces wired:** ${owner.allCommandsPresent ? "✅ all npm scripts present" : "⚠️ missing scripts"}`,
+    `- **Command automation coverage:** ${owner.allCommandsPresent ? "✅ all execution scripts present" : "⚠️ command gaps"}`,
+    `- **Verification automation coverage:** ${
+      owner.allVerificationsPresent ? "✅ all verification scripts present" : "⚠️ verification gaps"
+    }`,
+    `- **End-to-end automation ready:** ${owner.automationComplete ? "✅ commands + verification ready" : "⚠️ manual follow-up"}`,
     "",
     "### Critical Capabilities",
     upgradeList,
@@ -1710,9 +1830,9 @@ function buildMarkdown(bundle: ReportBundle): string {
     "### Monitoring Sentinels",
     owner.monitoringSentinels.map((sentinel) => `- ${sentinel}`).join("\n"),
     "",
-    "### Command Audit",
-    "| Category | npm script | Status |",
-    "| --- | --- | --- |",
+    "### Command & Verification Audit",
+    "| Category | Command script | Command status | Verification script | Verification status |",
+    "| --- | --- | --- | --- | --- |",
     commandAuditTable,
     "",
     "## 9. Blockchain Deployment Envelope",

@@ -149,10 +149,16 @@ function buildBooleanCheck(id: string, description: string, expected: boolean, a
   };
 }
 
-function capabilityMap(report: OwnerControlReport): Map<string, { present: boolean; scriptExists: boolean }> {
-  const map = new Map<string, { present: boolean; scriptExists: boolean }>();
+function capabilityMap(
+  report: OwnerControlReport,
+): Map<string, { present: boolean; scriptExists: boolean; verificationExists: boolean }> {
+  const map = new Map<string, { present: boolean; scriptExists: boolean; verificationExists: boolean }>();
   for (const capability of report.capabilities) {
-    map.set(capability.category, { present: capability.present, scriptExists: capability.scriptExists });
+    map.set(capability.category, {
+      present: capability.present,
+      scriptExists: capability.scriptExists,
+      verificationExists: capability.verificationScriptExists,
+    });
   }
   return map;
 }
@@ -332,13 +338,34 @@ async function main(): Promise<void> {
   );
   results.push(commandsComparison);
 
+  const verificationComparison = buildBooleanCheck(
+    "owner:verification-scripts",
+    "Owner verification scripts present",
+    owner.allVerificationsPresent,
+    summary.owner.allVerificationsPresent,
+  );
+  results.push(verificationComparison);
+
+  const automationComparison = buildBooleanCheck(
+    "owner:automation",
+    "Owner automation complete (commands + verification)",
+    owner.automationComplete,
+    summary.owner.automationComplete,
+  );
+  results.push(automationComparison);
+
   const capabilityDelta = (() => {
     const expected = capabilityMap(owner);
     const actual = capabilityMap(summary.owner);
     let mismatch = false;
     for (const [category, info] of expected.entries()) {
       const target = actual.get(category);
-      if (!target || target.present !== info.present || target.scriptExists !== info.scriptExists) {
+      if (
+        !target ||
+        target.present !== info.present ||
+        target.scriptExists !== info.scriptExists ||
+        target.verificationExists !== info.verificationExists
+      ) {
         mismatch = true;
         break;
       }

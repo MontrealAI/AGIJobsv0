@@ -159,6 +159,167 @@ button.secondary {
   margin-top: 1.5rem;
 }
 
+.showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  border: 1px solid rgba(122, 59, 255, 0.25);
+  background: linear-gradient(135deg, rgba(45, 123, 255, 0.15), rgba(122, 59, 255, 0.18));
+}
+
+.hero h1 {
+  font-size: 2.6rem;
+  letter-spacing: 0.02em;
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.6rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cta.primary {
+  background: linear-gradient(135deg, #2d7bff, #7a3bff);
+  box-shadow: 0 10px 26px rgba(68, 118, 255, 0.35);
+}
+
+.cta.secondary {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cta:hover {
+  transform: translateY(-1px);
+}
+
+.tagline-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.metric-card {
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: rgba(10, 14, 24, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 140px;
+}
+
+.metric-card p {
+  color: #d2d8e6;
+  margin-bottom: 0;
+}
+
+.mermaid-card {
+  margin-bottom: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1rem;
+  background: rgba(10, 14, 24, 0.8);
+}
+
+.mermaid-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  padding: 0.5rem;
+}
+
+.mermaid-wrapper svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-caption {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(197, 202, 214, 0.85);
+  margin-bottom: 0.5rem;
+}
+
+.mermaid-error {
+  background: rgba(255, 99, 132, 0.14);
+  color: #ffc7d1;
+  padding: 0.75rem;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.status-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: rgba(12, 16, 26, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.scroll-table {
+  margin-top: 1rem;
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.scroll-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.scroll-table th,
+.scroll-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: left;
+}
+
+.scroll-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+.cta-grid code {
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: rgba(10, 14, 24, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #9ef5f0;
+  font-size: 0.88rem;
+}
+
 .data-grid div {
   padding: 0.75rem;
   border-radius: 12px;

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-19T17:44:55.574Z",
+  "generatedAt": "2025-10-19T18:29:55.146Z",
   "version": "1.1.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
@@ -309,7 +309,9 @@
         "verification": "npm run owner:verify-control",
         "present": true,
         "scriptName": "owner:system-pause",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:verify-control",
+        "verificationScriptExists": true
       },
       {
         "category": "resume",
@@ -319,7 +321,9 @@
         "verification": "npm run owner:verify-control",
         "present": true,
         "scriptName": "owner:system-pause",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:verify-control",
+        "verificationScriptExists": true
       },
       {
         "category": "parameter",
@@ -329,7 +333,9 @@
         "verification": "npm run owner:audit-hamiltonian",
         "present": true,
         "scriptName": "owner:command-center",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:audit-hamiltonian",
+        "verificationScriptExists": true
       },
       {
         "category": "treasury",
@@ -339,7 +345,9 @@
         "verification": "npm run reward-engine:report",
         "present": true,
         "scriptName": "reward-engine:update",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "reward-engine:report",
+        "verificationScriptExists": true
       },
       {
         "category": "sentinel",
@@ -349,7 +357,9 @@
         "verification": "npm run monitoring:sentinels",
         "present": true,
         "scriptName": "owner:rotate",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "monitoring:sentinels",
+        "verificationScriptExists": true
       },
       {
         "category": "upgrade",
@@ -359,7 +369,9 @@
         "verification": "npm run owner:upgrade-status",
         "present": true,
         "scriptName": "owner:upgrade",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:upgrade-status",
+        "verificationScriptExists": true
       },
       {
         "category": "compliance",
@@ -369,7 +381,9 @@
         "verification": "npm run owner:compliance-report",
         "present": true,
         "scriptName": "owner:update-all",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:compliance-report",
+        "verificationScriptExists": true
       }
     ],
     "requiredCoverage": [
@@ -408,7 +422,9 @@
       "Adaptive fuzz oracle with spectral drift alerts"
     ],
     "fullCoverage": true,
-    "allCommandsPresent": true
+    "allCommandsPresent": true,
+    "allVerificationsPresent": true,
+    "automationComplete": true
   },
   "jacobian": {
     "analytic": [
