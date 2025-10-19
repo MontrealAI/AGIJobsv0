@@ -467,7 +467,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
-  console.error("❌ Failed to collect owner diagnostics:", error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error("❌ Failed to collect owner diagnostics:", error);
+    process.exitCode = 1;
+  });
+}
