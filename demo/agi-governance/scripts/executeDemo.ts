@@ -10,7 +10,7 @@ const PACKAGE_JSON = path.join(__dirname, "..", "..", "..", "package.json");
 const BOLTZMANN = 1.380649e-23; // Boltzmann constant (J/K)
 const LN2 = Math.log(2);
 
-interface MissionConfig {
+export interface MissionConfig {
   meta: {
     version: string;
     title: string;
@@ -156,7 +156,7 @@ interface MissionConfig {
   };
 }
 
-type ThermodynamicReport = {
+export type ThermodynamicReport = {
   gibbsFreeEnergyKJ: number;
   gibbsFreeEnergyJ: number;
   landauerKJ: number;
@@ -169,7 +169,7 @@ type ThermodynamicReport = {
   landauerWithinMargin: boolean;
 };
 
-type HamiltonianReport = {
+export type HamiltonianReport = {
   kineticTerm: number;
   potentialTerm: number;
   hamiltonianValue: number;
@@ -177,7 +177,7 @@ type HamiltonianReport = {
   difference: number;
 };
 
-type EquilibriumResult = {
+export type EquilibriumResult = {
   labels: string[];
   replicator: number[];
   closedForm: number[];
@@ -203,7 +203,7 @@ type AntifragilitySample = {
   divergence: number;
 };
 
-type AntifragilityReport = {
+export type AntifragilityReport = {
   samples: AntifragilitySample[];
   quadraticSecondDerivative: number;
   monotonicIncrease: boolean;
@@ -223,7 +223,7 @@ type RiskClassReport = {
   };
 };
 
-type RiskReport = {
+export type RiskReport = {
   weights: MissionConfig["risk"]["coverageWeights"];
   classes: RiskClassReport[];
   portfolioResidual: number;
@@ -243,7 +243,7 @@ type OwnerControlCapability = {
   scriptExists: boolean;
 };
 
-type OwnerControlReport = {
+export type OwnerControlReport = {
   owner: string;
   pauser: string;
   treasury: string;
@@ -258,7 +258,7 @@ type OwnerControlReport = {
   allCommandsPresent: boolean;
 };
 
-type JacobianReport = {
+export type JacobianReport = {
   analytic: number[][];
   numeric: number[][];
   maxDifference: number;
@@ -267,18 +267,18 @@ type JacobianReport = {
   stable: boolean;
 };
 
-type BlockchainReport = MissionConfig["blockchain"] & {
+export type BlockchainReport = MissionConfig["blockchain"] & {
   safeForMainnet: boolean;
   upgradeDelayHours: number;
 };
 
-type MintRoleShareReport = {
+export type MintRoleShareReport = {
   role: string;
   share: number;
   minted: number;
 };
 
-type MintRuleReport = {
+export type MintRuleReport = {
   eta: number;
   deltaValue: number;
   totalMinted: number;
@@ -294,7 +294,7 @@ type MintRuleReport = {
   roles: MintRoleShareReport[];
 };
 
-type BurnRuleReport = {
+export type BurnRuleReport = {
   jobEscrow: number;
   burnBps: number;
   treasuryBps: number;
@@ -305,7 +305,7 @@ type BurnRuleReport = {
   retained: number;
 };
 
-type SlashingSeverityReport = {
+export type SlashingSeverityReport = {
   label: string;
   description: string;
   fraction: number;
@@ -315,19 +315,19 @@ type SlashingSeverityReport = {
   burnAmount: number;
 };
 
-type SlashingReport = {
+export type SlashingReport = {
   stakeExample: number;
   minStake: MissionConfig["incentives"]["slashing"]["minStake"];
   severities: SlashingSeverityReport[];
 };
 
-type IncentiveReport = {
+export type IncentiveReport = {
   mint: MintRuleReport;
   burn: BurnRuleReport;
   slashing: SlashingReport;
 };
 
-type ReportBundle = {
+export type ReportBundle = {
   generatedAt: string;
   meta: MissionConfig["meta"];
   thermodynamics: ThermodynamicReport;
@@ -1597,6 +1597,21 @@ function buildSummary(bundle: ReportBundle): Record<string, unknown> {
     ci: bundle.ci,
   };
 }
+
+export {
+  assertValidConfig,
+  loadMission,
+  loadPackageScripts,
+  computeThermodynamics,
+  computeHamiltonian,
+  computeEquilibrium,
+  computeAntifragility,
+  computeRiskReport,
+  computeIncentiveReport,
+  computeOwnerReport,
+  computeJacobian,
+  computeBlockchainReport,
+};
 
 async function main(): Promise<void> {
   const mission = await loadMission();
