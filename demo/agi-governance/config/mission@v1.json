@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "title": "Solving α-AGI Governance",
+    "description": "Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control."
+  },
+  "thermodynamics": {
+    "enthalpyKJ": 1285000,
+    "entropyKJPerK": 3920,
+    "operatingTemperatureK": 310,
+    "referenceTemperatureK": 300,
+    "bitsProcessed": 1.8e9,
+    "burnRatePerBlock": 0.0625,
+    "stakeBoltzmann": 1.380649e-23
+  },
+  "hamiltonian": {
+    "lambda": 0.94,
+    "discountFactor": 0.92,
+    "inertialMetric": [1.12, 0.98, 0.87],
+    "kineticCoefficients": [132000, 148500, 162200],
+    "potentialCoefficients": [98500, 104200, 118600],
+    "divergenceTolerance": 0.001
+  },
+  "gameTheory": {
+    "strategies": [
+      {
+        "name": "Pareto-Coop",
+        "description": "Stake-weighted cooperation that minimises governance divergence while sharing alpha rewards.",
+        "initialShare": 0.42
+      },
+      {
+        "name": "Thermo-Titan",
+        "description": "Aggressive Hamiltonian arbitrage focused on extracting free-energy residuals.",
+        "initialShare": 0.35
+      },
+      {
+        "name": "Sentinel-Tactician",
+        "description": "Guardian cohort enforcing certificates, pausing misbehaviour, and arbitraging slashing curves.",
+        "initialShare": 0.23
+      }
+    ],
+    "payoffMatrix": [
+      [1.0, 0.9, 1.1],
+      [1.1, 1.0, 0.9],
+      [0.9, 1.1, 1.0]
+    ],
+    "monteCarlo": {
+      "iterations": 5000,
+      "noise": 0.08,
+      "seed": 424242
+    }
+  },
+  "ownerControls": {
+    "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
+    "pauser": "0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
+    "treasury": "0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
+    "timelockSeconds": 691200,
+    "upgradeActions": [
+      {
+        "label": "Recalibrate Hamiltonian monitor",
+        "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
+        "impact": "Locks the energy coupling coefficient and inertial metric to the antifragile optimum computed in the dossier."
+      },
+      {
+        "label": "Adjust reward engine burn curve",
+        "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
+        "impact": "Aligns emission schedule with the Landauer-calibrated burn policy."
+      },
+      {
+        "label": "Rotate governance sentinels",
+        "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
+        "impact": "Refreshes slashing guardians while keeping owner override authority."
+      },
+      {
+        "label": "Update tax policy disclosure",
+        "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
+        "impact": "Publishes the latest regulatory acknowledgement without touching business logic."
+      }
+    ]
+  },
+  "ci": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      { "id": "lint", "name": "Lint & static checks" },
+      { "id": "tests", "name": "Tests" },
+      { "id": "foundry", "name": "Foundry" },
+      { "id": "coverage", "name": "Coverage thresholds" },
+      { "id": "summary", "name": "CI summary" }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  }
+}

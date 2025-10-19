@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2025-10-19T12:57:39.892Z",
+  "version": "1.0.0",
+  "thermodynamics": {
+    "gibbsFreeEnergyKJ": 69800,
+    "gibbsFreeEnergyJ": 69800000,
+    "landauerKJ": 5.3400207262464265e-15,
+    "freeEnergyMarginKJ": 69800,
+    "burnEnergyPerBlockKJ": 4362.5,
+    "gibbsAgreementDelta": 0
+  },
+  "hamiltonian": {
+    "kineticTerm": 34149742376.26085,
+    "potentialTerm": 302022,
+    "hamiltonianValue": 34149440354.26085,
+    "alternativeHamiltonian": 34149440354.26085,
+    "difference": 0
+  },
+  "equilibrium": {
+    "labels": [
+      "Pareto-Coop",
+      "Thermo-Titan",
+      "Sentinel-Tactician"
+    ],
+    "replicator": [
+      0.32357470785564413,
+      0.41557129318696867,
+      0.26085399895738726
+    ],
+    "closedForm": [
+      0.3333333333333333,
+      0.33333333333333337,
+      0.33333333333333337
+    ],
+    "monteCarlo": [
+      0.33908044880770477,
+      0.3311308083051073,
+      0.3297887428871871
+    ],
+    "replicatorIterations": 50000,
+    "monteCarloRmsError": 0.32895704648236107,
+    "payoffAtEquilibrium": 1,
+    "divergenceAtEquilibrium": 0,
+    "discountFactor": 0.92,
+    "replicatorDeviation": 0.11005256345802282
+  },
+  "owner": {
+    "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
+    "pauser": "0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
+    "treasury": "0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
+    "timelockSeconds": 691200,
+    "upgradeActions": [
+      {
+        "label": "Recalibrate Hamiltonian monitor",
+        "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
+        "impact": "Locks the energy coupling coefficient and inertial metric to the antifragile optimum computed in the dossier."
+      },
+      {
+        "label": "Adjust reward engine burn curve",
+        "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
+        "impact": "Aligns emission schedule with the Landauer-calibrated burn policy."
+      },
+      {
+        "label": "Rotate governance sentinels",
+        "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
+        "impact": "Refreshes slashing guardians while keeping owner override authority."
+      },
+      {
+        "label": "Update tax policy disclosure",
+        "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
+        "impact": "Publishes the latest regulatory acknowledgement without touching business logic."
+      }
+    ]
+  },
+  "ci": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      {
+        "id": "lint",
+        "name": "Lint & static checks"
+      },
+      {
+        "id": "tests",
+        "name": "Tests"
+      },
+      {
+        "id": "foundry",
+        "name": "Foundry"
+      },
+      {
+        "id": "coverage",
+        "name": "Coverage thresholds"
+      },
+      {
+        "id": "summary",
+        "name": "CI summary"
+      }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  }
+}

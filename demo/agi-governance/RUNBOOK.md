@@ -1,0 +1,128 @@
+# RUNBOOK — 🎖️ Solving α-AGI Governance 👁️✨
+
+This runbook lets a non-technical owner execute the entire AGI Governance Demonstration from a laptop. Every action is copy‑pasteable; no bespoke coding is required. The workflow assumes access to an Ethereum mainnet RPC (or fork) and a hardware wallet, Safe, or custodial signer with owner privileges.
+
+---
+
+## 0. Prerequisites
+
+1. **Clone** the AGI Jobs v0 (v2) repository and install dependencies:
+   ```bash
+   git clone https://github.com/MontrealAI/AGIJobsv0.git
+   cd AGIJobsv0
+   npm ci
+   ```
+2. **Toolchain locks:**
+   ```bash
+   npm run ci:verify-toolchain
+   ```
+   Confirms Node 20.18.1, Hardhat, Foundry, and auxiliary utilities match the pinned versions.
+3. **Owner signer ready:** ensure you control the owner key or multisig referenced in [`config/mission@v1.json`](config/mission@v1.json).
+
+---
+
+## 1. Generate the governance dossier
+
+```bash
+npm run demo:agi-governance
+```
+
+Outputs `reports/governance-demo-report.md` with:
+- Thermodynamic energy margins (Gibbs free energy, Hamiltonian convergence envelope, Landauer limit calibration).
+- Triple-verified game-theory equilibrium (replicator simulation, closed-form solver, Monte-Carlo stress test).
+- Owner command surface (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel verifications).
+- CI enforcement proof (required contexts, concurrency, access-control coverage).
+
+Review the report. It references exact commands to execute each owner action on Ethereum or via AGI Jobs automation scripts.
+
+---
+
+## 2. Validate CI enforcement (green V2 shield)
+
+```bash
+npm run demo:agi-governance:ci
+```
+
+This audits `.github/workflows/ci.yml` to ensure:
+- Jobs `lint`, `tests`, `foundry`, `coverage`, and `summary` exist with the expected display names.
+- Push and pull request triggers are enabled for the workflow.
+- Concurrency guards are active (`ci-${workflow}-${ref}`).
+- Coverage thresholds are enforced (≥ 90%).
+
+Attach the generated `reports/ci-verification.json` to your governance logs.
+
+---
+
+## 3. Execute on-chain owner controls (optional live drill)
+
+Each command below can be run via the CLI, Safe transaction builder, or Etherscan write interface. Replace placeholder addresses with your deployment addresses.
+
+1. **Pause the platform instantly (emergency brake):**
+   ```bash
+   npm run owner:system-pause -- --network mainnet --pause true
+   ```
+   Validate pause state using `npm run owner:verify-control`.
+
+2. **Tune governance Hamiltonian parameters:**
+   ```bash
+   npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08
+   ```
+
+3. **Adjust reward engine (Gibbs free energy alignment):**
+   ```bash
+   npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200
+   ```
+
+4. **Update tax policy acknowledgement (public disclosure):**
+   ```bash
+   npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."
+   ```
+
+5. **Resume the platform:**
+   ```bash
+   npm run owner:system-pause -- --network mainnet --pause false
+   npm run owner:verify-control -- --network mainnet
+   ```
+
+Document transaction hashes in `reports/governance-demo-report.md` under the “Owner Execution Log” section.
+
+---
+
+## 4. Formal verification hooks
+
+1. **Coverage remapping audit:**
+   ```bash
+   npm run coverage
+   node scripts/ci/remap-coverage-paths.js
+   npm run check:access-control
+   ```
+2. **Foundry stochastic fuzzing:**
+   ```bash
+   forge test -vvvv --ffi --fuzz-runs 256
+   ```
+3. **Red-team sentinel validation:**
+   ```bash
+   npm run monitoring:sentinels
+   npm run monitoring:validate
+   ```
+
+Archive the resulting artefacts inside `reports/` alongside the governance dossier.
+
+---
+
+## 5. Evidence of execution
+
+After each run:
+1. Commit the generated artefacts to a dedicated evidence branch or upload them to immutable storage (e.g., IPFS, Arweave).
+2. Cross-reference the timestamp with Safe/Etherscan transaction receipts.
+3. Update the `Owner Execution Log` section in the dossier with:
+   - Transaction hash
+   - Module touched
+   - Parameter delta
+   - Operator signature
+
+The compiled dossier proves the owner maintains total control while the platform autonomously drives toward the thermodynamic and game-theoretic optimum.
+
+---
+
+**Mission complete.** AGI Jobs v0 (v2) now demonstrably empowers you—without bespoke engineering—to operate the civilisation-scale α-AGI governance engine.
