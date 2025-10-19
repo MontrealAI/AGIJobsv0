@@ -18,7 +18,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 | [`config/mission@v1.json`](config/mission@v1.json) | Canonical governance, physics, and treasury manifest for the demo. |
 | [`scripts/executeDemo.ts`](scripts/executeDemo.ts) | Main orchestrator: loads the manifest, performs physics/game-theory calculations, verifies owner supremacy, and emits the governance dossier. |
 | [`scripts/verifyCiStatus.ts`](scripts/verifyCiStatus.ts) | Audits `.github/workflows/ci.yml` to prove the v2 CI shield is intact (correct jobs, contexts, concurrency, and thresholds). |
-| [`reports/`](reports) | Generated artefacts (`governance-demo-report.md`, `ci-verification.json`, etc.) are written here so they can be archived from CI. |
+| [`reports/`](reports) | Generated artefacts (`governance-demo-report.md`, `owner-command-bundle.*`, `ci-verification.json`, etc.) are written here so they can be archived from CI. |
 | [`RUNBOOK.md`](RUNBOOK.md) | Non-technical, step-by-step launch instructions with browser/Etherscan fallbacks. |
 
 ## Quick start
@@ -29,10 +29,13 @@ npm run demo:agi-governance
 
 The command generates `reports/governance-demo-report.md` with:
 
-1. Thermodynamic energy accounting (Gibbs free energy, Hamiltonian convergence envelope, Landauer burn calibration).
-2. Triple-verified game-theory equilibrium analysis (replicator dynamics simulation + closed-form solver + Monte-Carlo stress sampling).
-3. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations).
-4. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure.
+1. Thermodynamic energy accounting (Gibbs free energy, Hamiltonian convergence envelope, Landauer burn calibration, bit-level variance checks).
+2. Triple-verified game-theory equilibrium analysis (replicator dynamics simulation + closed-form solver + Monte-Carlo stress sampling + eigenvector confirmation).
+3. Multi-angle falsification stress suite that perturbs the payoff tensor and records worst-case deviation before the antifragile governor recovers.
+4. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with a ready-made command bundle.
+5. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure.
+
+You also receive `reports/owner-command-bundle.md`/`.json` so the owner (or trusted operators) can execute every override without navigating the codebase.
 
 Then run the CI verification layer:
 
@@ -40,19 +43,20 @@ Then run the CI verification layer:
 npm run demo:agi-governance:ci
 ```
 
-This command checks that the repository’s v2 CI workflow still enforces the mandatory green path (`lint`, `tests`, `foundry`, `coverage`, `CI summary` contexts), concurrency guards, and environment seals. Any drift fails loudly.
+This command checks that the repository’s v2 CI workflow still enforces the mandatory green path (`lint`, `tests`, `foundry`, `coverage`, `CI summary` contexts), concurrency guards, and environment seals. Any drift fails loudly, with a JSON artefact ready for auditors.
 
 ## Empowering non-technical operators
 
 - **No manual math.** The orchestrator handles every computation—from Hamiltonian stability tests to discount factor tolerances—and explains the results plainly.
 - **Copy‑paste governance.** Ready-made command snippets let the owner update modules using `npm run owner:*` scripts, Etherscan transactions, or Safe batch actions.
-- **Evidence by default.** Every run produces timestamped artefacts that prove compliance with thermodynamic limits, governance divergence caps, and CI enforcement. Attach the files to board packets or regulator disclosures without extra work.
+- **Evidence by default.** Every run produces timestamped artefacts that prove compliance with thermodynamic limits, governance divergence caps, eigenvector tolerances, stress survival rates, and CI enforcement. Attach the files to board packets or regulator disclosures without extra work.
 
 ## Extending the mission
 
 1. Edit `config/mission@v1.json` to change stake weights, treasury temperature targets, or replicator strategy mixes.
 2. Re-run `npm run demo:agi-governance` to produce a new report. The script automatically recalibrates the energy tensor, Hamiltonian flows, and antifragility metrics.
 3. For on-chain execution, follow the `RUNBOOK.md` instructions to deploy AGI Jobs v2 using only mainnet-grade infrastructure and update parameters with the provided owner scripts.
+4. Tune the `assurance` block to raise stress-test intensity or tighten eigenvector tolerances—run again to document resilience upgrades.
 
 ## Deterministic provenance
 
