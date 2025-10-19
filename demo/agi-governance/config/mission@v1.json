@@ -5,13 +5,24 @@
     "description": "Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control."
   },
   "thermodynamics": {
-    "enthalpyKJ": 1285000,
-    "entropyKJPerK": 3920,
+    "enthalpyKJ": 71142.64676186016,
+    "entropyKJPerK": 4.331118586645678,
     "operatingTemperatureK": 310,
     "referenceTemperatureK": 300,
     "bitsProcessed": 1800000000,
     "burnRatePerBlock": 0.0625,
     "stakeBoltzmann": 1.380649e-23
+  },
+  "statisticalPhysics": {
+    "beta": 0.0725,
+    "energyScaling": 122.41864244335348,
+    "toleranceKJ": 500,
+    "energyLevels": [
+      { "energy": 580, "degeneracy": 2 },
+      { "energy": 640, "degeneracy": 3 },
+      { "energy": 720, "degeneracy": 1 },
+      { "energy": 780, "degeneracy": 1 }
+    ]
   },
   "incentives": {
     "mintRule": {
