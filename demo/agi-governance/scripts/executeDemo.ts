@@ -1664,7 +1664,9 @@ function computeQuantumReport(
   const coherenceEnergyKJ = (quantum.planckConstant * quantum.coherenceFrequencyThz * 1e12) / 1_000;
   const quantumFreeEnergyKJ = expectedEnergyKJ - coherenceEnergyKJ;
 
-  const coherenceDecay = Math.exp(-quantum.decoherenceTimeNs / quantum.coherenceHalfLifeNs);
+  const coherenceDecay = Math.exp(
+    -Math.log(2) * (quantum.decoherenceTimeNs / quantum.coherenceHalfLifeNs),
+  );
   const coherenceScore = clamp(quantum.entanglementFidelity * coherenceDecay, 0, 1);
   const fisherInformation = clamp(quantum.fisherInformation, 0, 1);
   const quantumConfidence = clamp((coherenceScore + fisherInformation) / 2, 0, 1);
