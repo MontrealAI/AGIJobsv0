@@ -202,6 +202,7 @@
     "demo:sovereign-constellation:asi-takes-off:launch": "node demo/sovereign-constellation/asi-takes-off-demo/launch.mjs",
     "demo:sovereign-constellation:victory": "node demo/sovereign-constellation/bin/asi-victory-plan.mjs",
     "demo:agi-governance": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/executeDemo.ts",
+    "demo:agi-governance:validate": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/validateReport.ts",
     "demo:agi-governance:ci": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/verifyCiStatus.ts",
     "demo:agi-governance:owner-diagnostics": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/collectOwnerDiagnostics.ts"
   },

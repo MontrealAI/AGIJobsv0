@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-19T17:23:42.686Z",
+  "generatedAt": "2025-10-19T17:45:25.272Z",
   "results": [
     {
       "id": "hamiltonian",
@@ -7,11 +7,11 @@
       "script": "owner:audit-hamiltonian",
       "command": "npm run owner:audit-hamiltonian -- --json",
       "exitCode": 0,
-      "stdout": "\n> agijobsv0@1.0.0 owner:audit-hamiltonian\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerHamiltonianAudit.ts --json\n\n[dotenv@17.2.2] injecting env (2) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`\n{\n  \"generatedAt\": \"2025-10-19T17:23:33.808Z\",\n  \"monitorAddress\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/hamiltonian-monitor.json\",\n    \"window\": \"5\",\n    \"resetHistory\": false,\n    \"records\": 0\n  },\n  \"mission\": {\n    \"contracts\": [\n      {\n        \"name\": \"AGIJobsGovernor\",\n        \"address\": \"0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4\"\n      },\n      {\n        \"name\": \"AGIJobsTreasury\",\n        \"address\": \"0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5\"\n      },\n      {\n        \"name\": \"HamiltonianMonitor\",\n        \"address\": \"0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6\"\n      }\n    ],\n    \"hamiltonian\": {\n      \"lambda\": 0.94,\n      \"discountFactor\": 0.92,\n      \"divergenceTolerance\": 0.001\n    }\n  },\n  \"onChain\": {\n    \"status\": \"error\",\n    \"reason\": \"HH700: Artifact for contract \\\"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\\\" not found. \"\n  },\n  \"crossChecks\": {\n    \"configMatchesMission\": false,\n    \"configMatchesOnChain\": null\n  }\n}\n",
+      "stdout": "\n> agijobsv0@1.0.0 owner:audit-hamiltonian\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerHamiltonianAudit.ts --json\n\n[dotenv@17.2.2] injecting env (2) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }\n{\n  \"generatedAt\": \"2025-10-19T17:45:16.619Z\",\n  \"monitorAddress\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/hamiltonian-monitor.json\",\n    \"window\": \"5\",\n    \"resetHistory\": false,\n    \"records\": 0\n  },\n  \"mission\": {\n    \"contracts\": [\n      {\n        \"name\": \"AGIJobsGovernor\",\n        \"address\": \"0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4\"\n      },\n      {\n        \"name\": \"AGIJobsTreasury\",\n        \"address\": \"0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5\"\n      },\n      {\n        \"name\": \"HamiltonianMonitor\",\n        \"address\": \"0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6\"\n      }\n    ],\n    \"hamiltonian\": {\n      \"lambda\": 0.94,\n      \"discountFactor\": 0.92,\n      \"divergenceTolerance\": 0.001\n    }\n  },\n  \"onChain\": {\n    \"status\": \"error\",\n    \"reason\": \"HH700: Artifact for contract \\\"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\\\" not found. \"\n  },\n  \"crossChecks\": {\n    \"configMatchesMission\": false,\n    \"configMatchesOnChain\": null\n  }\n}\n",
       "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
-      "durationMs": 3393.3576409999996,
+      "durationMs": 3062.9760420000002,
       "parsed": {
-        "generatedAt": "2025-10-19T17:23:33.808Z",
+        "generatedAt": "2025-10-19T17:45:16.619Z",
         "monitorAddress": "0x0000000000000000000000000000000000000000",
         "config": {
           "path": "/workspace/AGIJobsv0/config/hamiltonian-monitor.json",
@@ -69,11 +69,11 @@
       "script": "reward-engine:report",
       "command": "npm run reward-engine:report -- --json",
       "exitCode": 0,
-      "stdout": "\n> agijobsv0@1.0.0 reward-engine:report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/rewardEngineReport.ts --json\n\n[dotenv@17.2.2] injecting env (2) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar\n{\n  \"generatedAt\": \"2025-10-19T17:23:37.094Z\",\n  \"address\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/reward-engine.json\",\n    \"source\": \"reward-engine\",\n    \"address\": \"0x0000000000000000000000000000000000000000\",\n    \"treasury\": \"0x0000000000000000000000000000000000000000\",\n    \"thermostat\": \"0x0000000000000000000000000000000000000000\",\n    \"roleShares\": {\n      \"agent\": 65,\n      \"validator\": 15,\n      \"operator\": 15,\n      \"employer\": 5\n    },\n    \"mu\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"baselineEnergy\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"kappa\": \"1000000000000000000\",\n    \"maxProofs\": 100,\n    \"temperature\": \"1000000000000000000\",\n    \"settlers\": []\n  },\n  \"mission\": {\n    \"thermodynamics\": {\n      \"enthalpyKJ\": 71142.64676186016,\n      \"entropyKJPerK\": 4.331118586645678,\n      \"operatingTemperatureK\": 310,\n      \"referenceTemperatureK\": 300,\n      \"bitsProcessed\": 1800000000,\n      \"burnRatePerBlock\": 0.0625,\n      \"stakeBoltzmann\": 1.380649e-23\n    }\n  },\n  \"onChain\": {\n    \"status\": \"error\",\n    \"reason\": \"HH700: Artifact for contract \\\"contracts/v2/RewardEngineMB.sol:RewardEngineMB\\\" not found. \"\n  },\n  \"diagnostics\": {\n    \"roleShareTotal\": 100,\n    \"roleShareMatchesChain\": null\n  }\n}\n",
+      "stdout": "\n> agijobsv0@1.0.0 reward-engine:report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/rewardEngineReport.ts --json\n\n[dotenv@17.2.2] injecting env (2) from .env -- tip: ⚙️  override existing env vars with { override: true }\n{\n  \"generatedAt\": \"2025-10-19T17:45:19.835Z\",\n  \"address\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/reward-engine.json\",\n    \"source\": \"reward-engine\",\n    \"address\": \"0x0000000000000000000000000000000000000000\",\n    \"treasury\": \"0x0000000000000000000000000000000000000000\",\n    \"thermostat\": \"0x0000000000000000000000000000000000000000\",\n    \"roleShares\": {\n      \"agent\": 65,\n      \"validator\": 15,\n      \"operator\": 15,\n      \"employer\": 5\n    },\n    \"mu\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"baselineEnergy\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"kappa\": \"1000000000000000000\",\n    \"maxProofs\": 100,\n    \"temperature\": \"1000000000000000000\",\n    \"settlers\": []\n  },\n  \"mission\": {\n    \"thermodynamics\": {\n      \"enthalpyKJ\": 71142.64676186016,\n      \"entropyKJPerK\": 4.331118586645678,\n      \"operatingTemperatureK\": 310,\n      \"referenceTemperatureK\": 300,\n      \"bitsProcessed\": 1800000000,\n      \"burnRatePerBlock\": 0.0625,\n      \"stakeBoltzmann\": 1.380649e-23\n    }\n  },\n  \"onChain\": {\n    \"status\": \"error\",\n    \"reason\": \"HH700: Artifact for contract \\\"contracts/v2/RewardEngineMB.sol:RewardEngineMB\\\" not found. \"\n  },\n  \"diagnostics\": {\n    \"roleShareTotal\": 100,\n    \"roleShareMatchesChain\": null\n  }\n}\n",
       "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
-      "durationMs": 3275.009118,
+      "durationMs": 3214.222054,
       "parsed": {
-        "generatedAt": "2025-10-19T17:23:37.094Z",
+        "generatedAt": "2025-10-19T17:45:19.835Z",
         "address": "0x0000000000000000000000000000000000000000",
         "config": {
           "path": "/workspace/AGIJobsv0/config/reward-engine.json",
@@ -143,11 +143,11 @@
       "script": "owner:upgrade-status",
       "command": "npm run owner:upgrade-status -- --json",
       "exitCode": 0,
-      "stdout": "\n> agijobsv0@1.0.0 owner:upgrade-status\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerUpgradeStatus.ts --json\n\n{\n  \"generatedAt\": \"2025-10-19T17:23:39.847Z\",\n  \"configSource\": \"not found\",\n  \"onChain\": {\n    \"status\": \"skipped\",\n    \"reason\": \"No timelock address available.\"\n  }\n}\n",
+      "stdout": "\n> agijobsv0@1.0.0 owner:upgrade-status\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerUpgradeStatus.ts --json\n\n{\n  \"generatedAt\": \"2025-10-19T17:45:22.505Z\",\n  \"configSource\": \"not found\",\n  \"onChain\": {\n    \"status\": \"skipped\",\n    \"reason\": \"No timelock address available.\"\n  }\n}\n",
       "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
-      "durationMs": 2765.7674769999994,
+      "durationMs": 2664.306837,
       "parsed": {
-        "generatedAt": "2025-10-19T17:23:39.847Z",
+        "generatedAt": "2025-10-19T17:45:22.505Z",
         "configSource": "not found",
         "onChain": {
           "status": "skipped",
@@ -173,11 +173,11 @@
       "script": "owner:compliance-report",
       "command": "npm run owner:compliance-report -- --json",
       "exitCode": 0,
-      "stdout": "\n> agijobsv0@1.0.0 owner:compliance-report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerComplianceReport.ts --json\n\n{\n  \"generatedAt\": \"2025-10-19T17:23:42.584Z\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/tax-policy.json\",\n    \"policyURI\": \"ipfs://example-tax-policy\",\n    \"acknowledgement\": \"Employers, agents, and validators accept full responsibility for all applicable taxes.\",\n    \"acknowledgers\": [],\n    \"revokeList\": []\n  },\n  \"onChain\": {\n    \"status\": \"skipped\",\n    \"reason\": \"No tax policy address configured.\"\n  },\n  \"configSource\": \"not found\"\n}\n",
+      "stdout": "\n> agijobsv0@1.0.0 owner:compliance-report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerComplianceReport.ts --json\n\n{\n  \"generatedAt\": \"2025-10-19T17:45:25.178Z\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/tax-policy.json\",\n    \"policyURI\": \"ipfs://example-tax-policy\",\n    \"acknowledgement\": \"Employers, agents, and validators accept full responsibility for all applicable taxes.\",\n    \"acknowledgers\": [],\n    \"revokeList\": []\n  },\n  \"onChain\": {\n    \"status\": \"skipped\",\n    \"reason\": \"No tax policy address configured.\"\n  },\n  \"configSource\": \"not found\"\n}\n",
       "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
-      "durationMs": 2733.4094480000003,
+      "durationMs": 2675.4583220000004,
       "parsed": {
-        "generatedAt": "2025-10-19T17:23:42.584Z",
+        "generatedAt": "2025-10-19T17:45:25.178Z",
         "config": {
           "path": "/workspace/AGIJobsv0/config/tax-policy.json",
           "policyURI": "ipfs://example-tax-policy",

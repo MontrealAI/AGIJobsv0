@@ -1825,8 +1825,10 @@ async function main(): Promise<void> {
   console.log(`   Summary JSON: ${SUMMARY_FILE}`);
 }
 
-main().catch((error) => {
-  console.error("❌ Failed to execute governance demo:", error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error("❌ Failed to execute governance demo:", error);
+    process.exitCode = 1;
+  });
+}
 
