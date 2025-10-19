@@ -28,8 +28,8 @@ import {
 
 const REPORT_DIR = path.join(__dirname, "..", "reports");
 const SUMMARY_FILE = path.join(REPORT_DIR, "governance-demo-summary.json");
-const VALIDATION_JSON = path.join(REPORT_DIR, "governance-demo-validation.json");
-const VALIDATION_MARKDOWN = path.join(REPORT_DIR, "governance-demo-validation.md");
+export const VALIDATION_JSON = path.join(REPORT_DIR, "governance-demo-validation.json");
+export const VALIDATION_MARKDOWN = path.join(REPORT_DIR, "governance-demo-validation.md");
 
 interface ReportSummary {
   generatedAt: string;
@@ -56,7 +56,7 @@ type CheckResult = {
   tolerance?: number;
 };
 
-type ValidationReport = {
+export type ValidationReport = {
   generatedAt: string;
   summaryTimestamp: string;
   missionVersion: string;
@@ -162,7 +162,7 @@ async function loadSummary(): Promise<ReportSummary> {
   return JSON.parse(raw) as ReportSummary;
 }
 
-async function main(): Promise<void> {
+export async function validateGovernanceDemo(): Promise<ValidationReport> {
   const notes: string[] = [];
   let summary: ReportSummary;
   try {
@@ -461,7 +461,13 @@ async function main(): Promise<void> {
   ];
   await writeFile(VALIDATION_MARKDOWN, markdownLines.join("\n"), "utf8");
 
-  if (totals.failed === 0) {
+  return validationReport;
+}
+
+async function main(): Promise<void> {
+  const validationReport = await validateGovernanceDemo();
+
+  if (validationReport.totals.failed === 0) {
     console.log(`✅ Governance dossier validation passed: ${VALIDATION_JSON}`);
     console.log(`   Markdown summary: ${VALIDATION_MARKDOWN}`);
   } else {

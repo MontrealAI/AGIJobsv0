@@ -99,6 +99,16 @@ The dashboard renders the same mission data with:
 
 This gives non-technical owners a cinematic control room that mirrors the Markdown dossier without requiring terminal access.
 
+### Full automation run (optional)
+
+To execute every governance drill—dossier generation, validation, CI verification, and owner diagnostics—in one command, run:
+
+```bash
+npm run demo:agi-governance:full
+```
+
+This produces `reports/governance-demo-full-run.json` and `.md`, capturing step durations, antifragility curvature, residual risk, CI shield verdicts, and owner readiness. Use the Markdown artifact when you need a single, board-ready proof that the entire α-AGI governance system executed without manual intervention.
+
 ---
 
 ## 6. Execute on-chain owner controls (optional live drill)
