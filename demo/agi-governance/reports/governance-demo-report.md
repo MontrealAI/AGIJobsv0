@@ -1,6 +1,6 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T21:19:03.871Z
-*Version:* 1.2.0
+*Generated at:* 2025-10-19T22:08:08.089Z
+*Version:* 1.3.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
 
@@ -78,7 +78,9 @@ flowchart LR
   subgraph Energy[Energy Intelligence Stack]
     Thermo[Gibbs Free Energy 69.80k kJ]
     Burn[Burn Envelope 4.36k kJ/block]
+    QuantumFlux[Quantum Free Energy -3.11e-22 kJ]
     Thermo --> Burn
+    Thermo --> QuantumFlux
   end
   subgraph Incentives[Mint/Burn Governance]
     Mint[Mint η=0.94]
@@ -99,11 +101,13 @@ flowchart LR
   end
   subgraph AlphaField[Alpha-Field Assurance]
     Stackelberg[Stackelberg Δ=0.60]
-    Confidence[Superintelligence 83%]
+    Confidence[Superintelligence 82%]
     ThermoSignal[Thermo Assurance 100%]
     GovernanceSignal[Governance Assurance 29%]
     AntifragileSignal[Antifragility Assurance 100%]
     OwnerSignal[Owner Command 100%]
+    QuantumSignal[Quantum Assurance 77%]
+    CoherenceSignal[Coherence 77%]
     EnergyFloor[Energy Margin 69.80k kJ]
     Stackelberg --> Confidence
     EnergyFloor --> ThermoSignal
@@ -111,6 +115,8 @@ flowchart LR
     GovernanceSignal --> Confidence
     AntifragileSignal --> Confidence
     OwnerSignal --> Confidence
+    QuantumSignal --> Confidence
+    CoherenceSignal --> QuantumSignal
   end
   subgraph Control[Owner Command Surface]
     Owner((Owner 0xA1A1…A1A1))
@@ -128,6 +134,7 @@ flowchart LR
   BurnCurve --> StratA
   Payoff --> Residual
   Residual --> Stackelberg
+  QuantumFlux --> CoherenceSignal
   Confidence --> Owner
   Owner --> Governor
 ```
@@ -200,6 +207,9 @@ mindmap
         "σ=0.10":::sigma --> "Welfare -0.45":::welfare
         "σ=0.20":::sigma --> "Welfare 2.99":::welfare
         "σ=0.30":::sigma --> "Welfare 6.59":::welfare
+    "Quantum Lattice":::core
+      "Coherence 77%":::sigma
+      "Charge Δ 7.00e-5 (tol 1.20e-4)":::welfare
     "Owner Actions":::core
       "Mint Mirror 65.00%"
       "Residual Risk 0.214"
@@ -219,8 +229,19 @@ mindmap
 - **Sigma welfare gain:** 10.32 (minimum 0.12)
 - **Owner coverage ratio:** 100.00% (threshold 95.00%)
 - **Energy margin:** 69.80k kJ (floor 68.00k kJ — ✅)
-- **Superintelligence index:** 82.8% (minimum 82.0% — ✅)
-- **Composite confidence:** 86.4% (thermo 100.0% · governance 28.5% · antifragility 100.0% · owner 100.0%)
+- **Superintelligence index:** 81.5% (minimum 82.0% — ⚠️)
+- **Quantum coherence confidence:** 77.2% (minimum 72.0% — ✅)
+- **Quantum free-energy delta vs thermodynamic margin:** 6.980e+4 kJ
+- **Noether charge alignment:** Δ7.000e-5 (tolerance 1.200e-4 — ✅)
+- **State entropy:** 1.288 bits (effective dimension 2.44)
+- **Measurement variance:** 2.400e-3 (σ 0.049)
+- **Composite confidence:** 80.2% (thermo 100.0% · governance 28.5% · antifragility 100.0% · owner 100.0%)
+
+| State | Normalised weight | Energy |
+| --- | --- | --- |
+| ψ1 | 62.00% | 0.210 eV |
+| ψ2 | 27.00% | 0.370 eV |
+| ψ3 | 11.00% | 0.580 eV |
 
 | Signal | Status |
 | --- | --- |
@@ -233,7 +254,8 @@ mindmap
 | Sigma welfare gain | ✅ |
 | Owner coverage | ✅ |
 | Energy margin | ✅ |
-| Superintelligence threshold | ✅ |
+| Superintelligence threshold | ⚠️ |
+| Quantum confidence floor | ✅ |
 
 ## 8. Risk & Safety Audit
 

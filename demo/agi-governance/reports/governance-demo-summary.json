@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-10-19T21:19:03.871Z",
-  "version": "1.2.0",
+  "generatedAt": "2025-10-19T22:08:08.089Z",
+  "version": "1.3.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
     "gibbsFreeEnergyJ": 69800000,
@@ -141,6 +141,48 @@
     "quadraticSecondDerivative": 15.94384398182035,
     "monotonicIncrease": true
   },
+  "quantum": {
+    "planckConstant": 6.62607015e-34,
+    "superpositionWeights": [
+      0.62,
+      0.27,
+      0.11
+    ],
+    "normalizedWeights": [
+      0.62,
+      0.27,
+      0.11
+    ],
+    "energyLevelsEv": [
+      0.21,
+      0.37,
+      0.58
+    ],
+    "weightSumDelta": 0,
+    "stateEntropyBits": 1.287897373700623,
+    "effectiveDimension": 2.4417193271384026,
+    "expectedEnergyEv": 0.29389999999999994,
+    "expectedEnergyKJ": 4.7087971273259985e-23,
+    "coherenceEnergyKJ": 3.578077881e-22,
+    "quantumFreeEnergyKJ": -3.1071981682674e-22,
+    "energyVarianceEv": 0.01493179,
+    "spectralGapEv": 0.37,
+    "measurementVariance": 0.0024,
+    "measurementStdDev": 0.04898979485566356,
+    "fisherInformation": 0.94,
+    "coherenceScore": 0.6039619543049088,
+    "quantumConfidence": 0.7719809771524544,
+    "decoherenceTimeNs": 4500,
+    "coherenceHalfLifeNs": 9200,
+    "coherenceFrequencyThz": 540,
+    "entanglementFidelity": 0.985,
+    "noetherCharge": 0.00172,
+    "targetCharge": 0.00165,
+    "allowableChargeDrift": 0.00012,
+    "chargeDelta": 0.00006999999999999997,
+    "chargeWithinTolerance": true,
+    "thermoMarginDeltaKJ": 69800
+  },
   "alphaField": {
     "stackelbergAdvantage": 0.6000000000000005,
     "stackelbergBound": 7.5,
@@ -169,14 +211,17 @@
     "energyMarginKJ": 69800,
     "energyMarginFloorKJ": 68000,
     "energyMarginSatisfied": true,
-    "confidenceScore": 0.8642179999999999,
+    "confidenceScore": 0.8018445041975224,
     "thermodynamicAssurance": 1,
     "governanceAssurance": 0.2851499999999999,
     "antifragilityAssurance": 1,
     "ownerAssurance": 1,
-    "superintelligenceIndex": 0.828436,
+    "quantumAssurance": 0.7719809771524544,
+    "quantumConfidenceMinimum": 0.72,
+    "quantumConfidenceSatisfied": true,
+    "superintelligenceIndex": 0.8153707172582946,
     "superintelligenceMinimum": 0.82,
-    "superintelligenceSatisfied": true,
+    "superintelligenceSatisfied": false,
     "riskResidual": 0.214455
   },
   "risk": {

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "1.2.0",
+    "version": "1.3.0",
     "title": "Solving α-AGI Governance",
     "description": "Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control."
   },
@@ -207,13 +207,15 @@
     "verification": {
       "energyMarginFloorKJ": 68000,
       "ownerCoverageMinimum": 0.95,
-      "superintelligenceMinimum": 0.82
+      "superintelligenceMinimum": 0.82,
+      "quantumConfidenceMinimum": 0.72
     },
     "signatureWeights": {
-      "thermodynamic": 0.28,
-      "governance": 0.24,
-      "antifragility": 0.24,
-      "owner": 0.24
+      "thermodynamic": 0.26,
+      "governance": 0.22,
+      "antifragility": 0.2,
+      "owner": 0.2,
+      "quantum": 0.12
     }
   },
   "ownerControls": {
@@ -304,6 +306,20 @@
       "On-chain staking slash monitors",
       "Adaptive fuzz oracle with spectral drift alerts"
     ]
+  },
+  "quantum": {
+    "planckConstant": 6.62607015e-34,
+    "superpositionWeights": [0.62, 0.27, 0.11],
+    "energyLevelsEv": [0.21, 0.37, 0.58],
+    "entanglementFidelity": 0.985,
+    "decoherenceTimeNs": 4500,
+    "coherenceHalfLifeNs": 9200,
+    "coherenceFrequencyThz": 540,
+    "fisherInformation": 0.94,
+    "measurementVariance": 0.0024,
+    "noetherCharge": 0.00172,
+    "targetCharge": 0.00165,
+    "allowableChargeDrift": 0.00012
   },
   "blockchain": {
     "network": "Ethereum Mainnet-grade",

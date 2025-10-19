@@ -8,6 +8,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 
 - **Superintelligent leverage, human interface.** Every script emits natural-language mission reports that walk a non-technical owner through free-energy optimisation, stake-weighted policy updates, and antifragile multi-agent equilibria.
 - **Thermodynamics + governance in code.** Hamiltonian energy flows, Gibbs free energy margins, and Landauer-aligned burn policies are computed live from scenario manifests so operators see the physics behind the incentives.
+- **Quantum coherence instrumentation.** Quantum free-energy margins, Noether charge drift, and coherence decay are evaluated alongside the classical thermodynamics so operators watch the Landauer envelope stay intact even under superpositioned incentive flows.
 - **Owner-first absolutism.** Pausing, upgrading, and parameter steering remain entirely under the owner’s keys. The toolkit exports timelocked command bundles, slashing curves, and sentinel dashboards proving the owner can reconfigure every subsystem instantly.
 - **CI-proven production fidelity.** A dedicated workflow (`demo-agi-governance.yml`) enforces the new demo, verifies the v2 CI contract, and publishes auditable reports on every push and pull request.
 - **Triangulated verification.** Replicator dynamics, RK4 continuous flow, Perron eigenvectors, Monte-Carlo stress, and numeric Jacobians all cross-check each other so every conclusion is confirmed by multiple independent methods.
@@ -17,7 +18,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 
 | Path | Purpose |
 | --- | --- |
-| [`config/mission@v1.json`](config/mission@v1.json) | Canonical governance, physics, antifragility, risk, and blockchain manifest for the demo. |
+| [`config/mission@v1.json`](config/mission@v1.json) | Canonical governance, physics, antifragility, quantum, risk, and blockchain manifest for the demo. |
 | [`scripts/executeDemo.ts`](scripts/executeDemo.ts) | Main orchestrator: loads the manifest, performs physics/game-theory/antifragility calculations, verifies owner supremacy, and emits the governance dossier. |
 | [`scripts/verifyCiStatus.ts`](scripts/verifyCiStatus.ts) | Audits `.github/workflows/ci.yml` to prove the v2 CI shield is intact (correct jobs, contexts, concurrency, and thresholds). |
 | [`scripts/validateReport.ts`](scripts/validateReport.ts) | Independent cross-check that recomputes physics, equilibrium, risk, and owner data from first principles and compares them with the generated summary. |
@@ -38,11 +39,12 @@ The command generates `reports/governance-demo-report.md` with:
 3. Incentive free-energy flow (mint/burn/slash computation proving agent ↔ treasury parity and owner-tunable slashing curves).
 4. Five-way verified game-theory equilibrium (discrete replicator, RK4 continuous flow, closed-form solver, Perron eigenvector, Monte-Carlo stress sampling) with method-consistency scores.
 5. Analytic and numeric Jacobian comparison with Gershgorin, spectral radius, and max-delta checks plus antifragility curvature proving positive welfare response to adversarial shocks.
-6. Alpha-field sovereign assurance scoreboard confirming Stackelberg bounds, Gibbs envelopes, sigma gains, owner coverage, superintelligence index, and composite confidence with per-signal assurances.
-7. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
-8. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
-9. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
-10. **Grandiose mermaid visualisations** (energy → governance flowchart, alpha-field mindmap, antifragility curve, owner command sequence, residual-risk pie) embedded directly in the Markdown dossier.
+6. Alpha-field sovereign assurance scoreboard confirming Stackelberg bounds, Gibbs envelopes, sigma gains, owner coverage, quantum confidence, superintelligence index, and composite confidence with per-signal assurances.
+7. Quantum governance lattice readout (coherence confidence, Landauer delta, Noether charge alignment, state entropy) with superposition tables you can hand to physics and security teams alike.
+8. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
+9. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
+10. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
+11. **Grandiose mermaid visualisations** (energy → governance flowchart, quantum lattice, alpha-field mindmap, antifragility curve, owner command sequence, residual-risk pie) embedded directly in the Markdown dossier.
 
 Then confirm the dossier by replaying all analytics from scratch:
 

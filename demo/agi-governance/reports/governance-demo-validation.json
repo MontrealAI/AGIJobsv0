@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2025-10-19T21:19:07.446Z",
-  "summaryTimestamp": "2025-10-19T21:19:03.871Z",
-  "missionVersion": "1.2.0",
+  "generatedAt": "2025-10-19T22:08:11.858Z",
+  "summaryTimestamp": "2025-10-19T22:08:08.089Z",
+  "missionVersion": "1.3.0",
   "results": [
     {
       "id": "thermo:gibbs",
@@ -141,7 +141,7 @@
       "id": "alpha-field:confidence",
       "description": "Alpha-field confidence score",
       "passed": true,
-      "details": "expected 0.864218 vs actual 0.864218 (Δ=0.000000, tol=0.000001)",
+      "details": "expected 0.801845 vs actual 0.801845 (Δ=0.000000, tol=0.000001)",
       "delta": 0,
       "tolerance": 0.000001
     },
@@ -196,6 +196,58 @@
     {
       "id": "alpha-field:energy-margin",
       "description": "Energy margin floor met",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:quantum-confidence-floor",
+      "description": "Quantum confidence floor satisfied",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "quantum:coherence",
+      "description": "Quantum coherence confidence",
+      "passed": true,
+      "details": "expected 0.771981 vs actual 0.771981 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "quantum:thermo-delta",
+      "description": "Quantum free-energy delta",
+      "passed": true,
+      "details": "expected 69800.000000 vs actual 69800.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "quantum:charge-delta",
+      "description": "Noether charge delta",
+      "passed": true,
+      "details": "expected 0.000070 vs actual 0.000070 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "quantum:state-entropy",
+      "description": "Quantum state entropy",
+      "passed": true,
+      "details": "expected 1.287897 vs actual 1.287897 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "quantum:weight-sum",
+      "description": "Quantum weight sum delta",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "quantum:charge-within",
+      "description": "Noether charge within tolerance",
       "passed": true,
       "details": "expected true, actual true"
     },
@@ -309,7 +361,7 @@
     }
   ],
   "totals": {
-    "passed": 43,
+    "passed": 50,
     "failed": 0
   },
   "notes": [
