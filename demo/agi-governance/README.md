@@ -34,15 +34,16 @@ npm run demo:agi-governance
 The command generates `reports/governance-demo-report.md` with:
 
 1. Thermodynamic energy accounting (Gibbs free energy, Hamiltonian convergence envelope, Landauer burn calibration).
-2. Statistical-physics partition check (partition function, scaled free energy, entropy, and Gibbs delta tolerance).
-3. Incentive free-energy flow (mint/burn/slash computation proving agent ↔ treasury parity and owner-tunable slashing curves).
-4. Five-way verified game-theory equilibrium (discrete replicator, RK4 continuous flow, closed-form solver, Perron eigenvector, Monte-Carlo stress sampling) with method-consistency scores.
-5. Analytic and numeric Jacobian comparison with Gershgorin, spectral radius, and max-delta checks plus antifragility curvature proving positive welfare response to adversarial shocks.
-6. Alpha-field sovereign assurance scoreboard confirming Stackelberg bounds, Gibbs envelopes, sigma gains, owner coverage, superintelligence index, and composite confidence with per-signal assurances.
-7. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
-8. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
-9. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
-10. **Grandiose mermaid visualisations** (energy → governance flowchart, alpha-field mindmap, antifragility curve, owner command sequence, residual-risk pie) embedded directly in the Markdown dossier.
+2. Jarzynski equality audit (⟨e^{-βW}⟩ vs exp(-βΔF) with energy-level work table and β-per-kJ instrumentation).
+3. Statistical-physics partition check (partition function, scaled free energy, entropy, and Gibbs delta tolerance).
+4. Incentive free-energy flow (mint/burn/slash computation proving agent ↔ treasury parity and owner-tunable slashing curves).
+5. Five-way verified game-theory equilibrium (discrete replicator, RK4 continuous flow, closed-form solver, Perron eigenvector, Monte-Carlo stress sampling) with method-consistency scores.
+6. Analytic and numeric Jacobian comparison with Gershgorin, spectral radius, and max-delta checks plus antifragility curvature proving positive welfare response to adversarial shocks.
+7. Alpha-field sovereign assurance scoreboard confirming Stackelberg bounds, Gibbs envelopes, sigma gains, owner coverage, superintelligence index, and composite confidence with per-signal assurances.
+8. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
+9. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
+10. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
+11. **Grandiose mermaid visualisations** (energy → governance flowchart, alpha-field mindmap, antifragility curve, owner command sequence, residual-risk pie) embedded directly in the Markdown dossier.
 
 Then confirm the dossier by replaying all analytics from scratch:
 

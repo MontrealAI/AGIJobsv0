@@ -25,6 +25,7 @@ export interface MissionConfig {
     bitsProcessed: number;
     burnRatePerBlock: number;
     stakeBoltzmann: number;
+    jarzynskiTolerance: number;
   };
   statisticalPhysics: {
     beta: number;
@@ -199,6 +200,13 @@ export interface MissionConfig {
   };
 }
 
+type JarzynskiSampleReport = {
+  label: string;
+  probability: number;
+  workKJ: number;
+  exponent: number;
+};
+
 export type ThermodynamicReport = {
   gibbsFreeEnergyKJ: number;
   gibbsFreeEnergyJ: number;
@@ -210,6 +218,13 @@ export type ThermodynamicReport = {
   gibbsCrossCheckKJ: number;
   freeEnergyMarginPercent: number;
   landauerWithinMargin: boolean;
+  jarzynskiEstimator: number;
+  jarzynskiTarget: number;
+  jarzynskiDelta: number;
+  jarzynskiConsistent: boolean;
+  jarzynskiTolerance: number;
+  jarzynskiSamples: JarzynskiSampleReport[];
+  betaPerKJ: number;
 };
 
 export type StatisticalPhysicsProbability = {
@@ -378,6 +393,8 @@ export type AlphaFieldReport = {
   superintelligenceMinimum: number;
   superintelligenceSatisfied: boolean;
   riskResidual: number;
+  jarzynskiFactor: number;
+  jarzynskiConsistent: boolean;
 };
 
 export type BlockchainReport = MissionConfig["blockchain"] & {
@@ -494,6 +511,9 @@ function assertValidConfig(config: MissionConfig): void {
   }
   if (config.statisticalPhysics.beta <= 0 || config.statisticalPhysics.energyScaling <= 0) {
     throw new Error("statisticalPhysics.beta and energyScaling must be positive");
+  }
+  if (config.thermodynamics.jarzynskiTolerance <= 0) {
+    throw new Error("thermodynamics.jarzynskiTolerance must be positive");
   }
   if (config.statisticalPhysics.toleranceKJ < 0) {
     throw new Error("statisticalPhysics.toleranceKJ must be non-negative");
@@ -620,8 +640,15 @@ async function loadPackageScripts(): Promise<Record<string, string>> {
 }
 
 function computeThermodynamics(config: MissionConfig): ThermodynamicReport {
-  const { enthalpyKJ, entropyKJPerK, operatingTemperatureK, referenceTemperatureK, bitsProcessed, burnRatePerBlock } =
-    config.thermodynamics;
+  const {
+    enthalpyKJ,
+    entropyKJPerK,
+    operatingTemperatureK,
+    referenceTemperatureK,
+    bitsProcessed,
+    burnRatePerBlock,
+    jarzynskiTolerance,
+  } = config.thermodynamics;
 
   const gibbsFreeEnergyKJ = enthalpyKJ - operatingTemperatureK * entropyKJPerK;
   const gibbsFreeEnergyJ = gibbsFreeEnergyKJ * 1_000;
@@ -639,6 +666,28 @@ function computeThermodynamics(config: MissionConfig): ThermodynamicReport {
   const stakeBoltzmannEnvelope =
     config.thermodynamics.stakeBoltzmann * operatingTemperatureK * LN2 * bitsProcessed;
 
+  const { energyScaling, beta, energyLevels } = config.statisticalPhysics;
+  const logWeights = energyLevels.map((level) => Math.log(level.degeneracy) - beta * level.energy);
+  const logPartition = logSumExp(logWeights);
+  const probabilities = logWeights.map((logWeight) => Math.exp(logWeight - logPartition));
+  const betaPerKJ = energyScaling === 0 ? 0 : beta / energyScaling;
+  const jarzynskiSamples = energyLevels.map((level, index) => {
+    const probability = probabilities[index] ?? 0;
+    const workKJ = level.energy * energyScaling - landauerKJ;
+    const exponent = Math.exp(-betaPerKJ * workKJ);
+    return {
+      label: `E${index + 1}`,
+      probability,
+      workKJ,
+      exponent,
+    } satisfies JarzynskiSampleReport;
+  });
+  const jarzynskiEstimator = jarzynskiSamples.reduce((sum, sample) => sum + sample.probability * sample.exponent, 0);
+  const deltaFKJ = gibbsFreeEnergyKJ - landauerKJ;
+  const jarzynskiTarget = Math.exp(-betaPerKJ * deltaFKJ);
+  const jarzynskiDelta = Math.abs(jarzynskiEstimator - jarzynskiTarget);
+  const jarzynskiConsistent = jarzynskiDelta <= jarzynskiTolerance + 1e-12;
+
   return {
     gibbsFreeEnergyKJ,
     gibbsFreeEnergyJ,
@@ -650,6 +699,13 @@ function computeThermodynamics(config: MissionConfig): ThermodynamicReport {
     gibbsCrossCheckKJ: referenceGibbs,
     freeEnergyMarginPercent: gibbsFreeEnergyKJ === 0 ? 0 : freeEnergyMarginKJ / gibbsFreeEnergyKJ,
     landauerWithinMargin: landauerKJ <= gibbsFreeEnergyKJ + 1e-6,
+    jarzynskiEstimator,
+    jarzynskiTarget,
+    jarzynskiDelta,
+    jarzynskiConsistent,
+    jarzynskiTolerance,
+    jarzynskiSamples,
+    betaPerKJ,
   };
 }
 
@@ -1584,13 +1640,18 @@ function computeAlphaField(
   const energyMarginSatisfied =
     thermodynamics.freeEnergyMarginKJ >= config.alphaField.verification.energyMarginFloorKJ - 1e-9;
 
-  const thermodynamicAssurance = clamp(
+  const jarzynskiFactor =
+    thermodynamics.jarzynskiTolerance <= 0
+      ? 1
+      : clamp(1 - Math.min(thermodynamics.jarzynskiDelta / thermodynamics.jarzynskiTolerance, 1), 0, 1);
+  const baseThermodynamicAssurance = clamp(
     config.alphaField.verification.energyMarginFloorKJ <= 0
       ? 1
       : thermodynamics.freeEnergyMarginKJ / config.alphaField.verification.energyMarginFloorKJ,
     0,
     1,
   );
+  const thermodynamicAssurance = clamp(baseThermodynamicAssurance * jarzynskiFactor, 0, 1);
   const governanceAssurance = clamp(
     config.risk.portfolioThreshold <= 0
       ? 1
@@ -1671,6 +1732,8 @@ function computeAlphaField(
     superintelligenceMinimum: config.alphaField.verification.superintelligenceMinimum,
     superintelligenceSatisfied,
     riskResidual: risk.portfolioResidual,
+    jarzynskiFactor,
+    jarzynskiConsistent: thermodynamics.jarzynskiConsistent,
   };
 }
 
@@ -1779,12 +1842,14 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     `    Stackelberg[Stackelberg Δ=${stackelberg}]`,
     `    Confidence[Superintelligence ${superintelligence}]`,
     `    ThermoSignal[Thermo Assurance ${thermoAssurance}]`,
+    `    JarzynskiSignal[Jarzynski Factor ${(alphaField.jarzynskiFactor * 100).toFixed(1)}%]`,
     `    GovernanceSignal[Governance Assurance ${governanceAssurance}]`,
     `    AntifragileSignal[Antifragility Assurance ${antifragilityAssurance}]`,
     `    OwnerSignal[Owner Command ${ownerAssurance}]`,
     `    EnergyFloor[Energy Margin ${formatNumber(alphaField.energyMarginKJ)} kJ]`,
     "    Stackelberg --> Confidence",
     "    EnergyFloor --> ThermoSignal",
+    "    JarzynskiSignal --> ThermoSignal",
     "    ThermoSignal --> Confidence",
     "    GovernanceSignal --> Confidence",
     "    AntifragileSignal --> Confidence",
@@ -1939,6 +2004,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     ["Sigma welfare gain", alphaField.sigmaGainSatisfied],
     ["Owner coverage", alphaField.ownerCoverageSatisfied],
     ["Energy margin", alphaField.energyMarginSatisfied],
+    ["Jarzynski equality", alphaField.jarzynskiConsistent],
     ["Superintelligence threshold", alphaField.superintelligenceSatisfied],
   ]
     .map(([label, ok]) => `| ${label} | ${ok ? "✅" : "⚠️"} |`)
@@ -1971,6 +2037,13 @@ function buildMarkdown(bundle: ReportBundle): string {
 
   const mintTable = incentives.mint.roles
     .map((role) => `| ${role.role} | ${formatPercent(role.share)} | ${formatNumber(role.minted)} tokens |`)
+    .join("\n");
+
+  const jarzynskiTable = thermodynamics.jarzynskiSamples
+    .map(
+      (sample) =>
+        `| ${sample.label} | ${formatNumber(sample.probability, 4)} | ${formatNumber(sample.workKJ)} kJ | ${formatScientific(sample.exponent, 3)} |`,
+    )
     .join("\n");
 
   const minStakeTable = [
@@ -2020,6 +2093,17 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Cross-check Gibbs (reference):** ${formatNumber(thermodynamics.gibbsCrossCheckKJ)} kJ`,
     `- **Landauer within safety margin:** ${thermodynamics.landauerWithinMargin ? "✅" : "⚠️"}`,
     `- **Stake Boltzmann envelope:** ${thermodynamics.stakeBoltzmannEnvelope.toExponential(3)} (dimensionless proof of energy-aligned stake)`,
+    `- **Jarzynski estimator vs exp(-βΔF):** ⟨e^{-βW}⟩=${formatNumber(thermodynamics.jarzynskiEstimator, 6)} vs ${formatNumber(
+      thermodynamics.jarzynskiTarget,
+      6,
+    )} (${thermodynamics.jarzynskiConsistent ? "✅" : "⚠️"} Δ=${thermodynamics.jarzynskiDelta.toExponential(3)} ≤ tol ${
+      thermodynamics.jarzynskiTolerance
+    })`,
+    `- **β per kilojoule:** ${formatNumber(thermodynamics.betaPerKJ, 6)}`,
+    "",
+    "| Energy level | Probability | Work vs Landauer (kJ) | e^{-βW} |",
+    "| --- | --- | --- | --- |",
+    jarzynskiTable,
     "",
     "## 2. Statistical Physics Partition Function Cross-Check",
     "",
@@ -2174,6 +2258,9 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Energy margin:** ${formatNumber(alphaField.energyMarginKJ)} kJ (floor ${formatNumber(
       alphaField.energyMarginFloorKJ,
     )} kJ — ${alphaField.energyMarginSatisfied ? "✅" : "⚠️"})`,
+    `- **Jarzynski modulation:** ${(alphaField.jarzynskiFactor * 100).toFixed(2)}% (${alphaField.jarzynskiConsistent
+      ? "aligned"
+      : "⚠️ recalibrate"})`,
     `- **Superintelligence index:** ${(alphaField.superintelligenceIndex * 100).toFixed(1)}% (minimum ${(
       alphaField.superintelligenceMinimum * 100
     ).toFixed(1)}% — ${alphaField.superintelligenceSatisfied ? "✅" : "⚠️"})`,
@@ -2628,6 +2715,14 @@ function buildDashboardHtml(bundle: ReportBundle): string {
             <li>Landauer limit: <strong>${formatNumber(thermodynamics.landauerKJ)} kJ</strong></li>
             <li>Free-energy margin: <strong>${formatNumber(thermodynamics.freeEnergyMarginKJ)} kJ</strong></li>
             <li>Burn energy per block: <strong>${formatNumber(thermodynamics.burnEnergyPerBlockKJ)} kJ</strong></li>
+            <li>Jarzynski ⟨e^{-βW}⟩: <strong>${formatNumber(thermodynamics.jarzynskiEstimator, 6)} vs ${formatNumber(
+              thermodynamics.jarzynskiTarget,
+              6,
+            )}</strong> ${thermodynamics.jarzynskiConsistent ? "✅" : "⚠️"}</li>
+            <li>Jarzynski Δ / tol: <strong>${thermodynamics.jarzynskiDelta.toExponential(3)} / ${
+              thermodynamics.jarzynskiTolerance
+            }</strong></li>
+            <li>β per kJ: <strong>${formatNumber(thermodynamics.betaPerKJ, 6)}</strong></li>
             <li>β inverse temperature: <strong>${formatNumber(statisticalPhysics.beta, 4)}</strong></li>
             <li>Partition function Z: <strong>${formatScientific(statisticalPhysics.partitionFunction)}</strong></li>
           </ul>
@@ -2651,6 +2746,9 @@ function buildDashboardHtml(bundle: ReportBundle): string {
               <strong>${(alphaField.governanceAssurance * 100).toFixed(1)}%</strong> ·
               <strong>${(alphaField.antifragilityAssurance * 100).toFixed(1)}%</strong> ·
               <strong>${(alphaField.ownerAssurance * 100).toFixed(1)}%</strong></li>
+            <li>Jarzynski modulation: <strong>${(alphaField.jarzynskiFactor * 100).toFixed(1)}%</strong> (${alphaField.jarzynskiConsistent
+              ? "aligned"
+              : "needs attention"})</li>
             <li>Owner: <strong>${escapeHtml(owner.owner)}</strong></li>
             <li>Pauser: <strong>${escapeHtml(owner.pauser)}</strong></li>
             <li>Treasury: <strong>${escapeHtml(owner.treasury)}</strong></li>

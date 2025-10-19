@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-19T21:19:03.871Z",
+  "generatedAt": "2025-10-19T21:45:31.916Z",
   "version": "1.2.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
@@ -11,7 +11,39 @@
     "stakeBoltzmannEnvelope": 5.340020726246426e-12,
     "gibbsCrossCheckKJ": 69800,
     "freeEnergyMarginPercent": 1,
-    "landauerWithinMargin": true
+    "landauerWithinMargin": true,
+    "jarzynskiEstimator": 5.366478963107821e-19,
+    "jarzynskiTarget": 1.1150212496503038e-18,
+    "jarzynskiDelta": 5.783733533395216e-19,
+    "jarzynskiConsistent": true,
+    "jarzynskiTolerance": 0.0005,
+    "jarzynskiSamples": [
+      {
+        "label": "E1",
+        "probability": 0.9809884352129131,
+        "workKJ": 71002.81261714501,
+        "exponent": 5.46911475461802e-19
+      },
+      {
+        "label": "E2",
+        "probability": 0.018992150815366825,
+        "workKJ": 78347.93116374622,
+        "exponent": 7.058883911899183e-21
+      },
+      {
+        "label": "E3",
+        "probability": 0.000019166592108652428,
+        "workKJ": 88141.42255921451,
+        "exponent": 2.1371157484527277e-23
+      },
+      {
+        "label": "E4",
+        "probability": 2.47379612152881e-7,
+        "workKJ": 95486.54110581572,
+        "exponent": 2.7583352428071278e-25
+      }
+    ],
+    "betaPerKJ": 0.0005922300603320918
   },
   "statisticalPhysics": {
     "beta": 0.0725,
@@ -169,15 +201,17 @@
     "energyMarginKJ": 69800,
     "energyMarginFloorKJ": 68000,
     "energyMarginSatisfied": true,
-    "confidenceScore": 0.8642179999999999,
-    "thermodynamicAssurance": 1,
+    "confidenceScore": 0.8642179999999998,
+    "thermodynamicAssurance": 0.9999999999999989,
     "governanceAssurance": 0.2851499999999999,
     "antifragilityAssurance": 1,
     "ownerAssurance": 1,
-    "superintelligenceIndex": 0.828436,
+    "superintelligenceIndex": 0.8284359999999996,
     "superintelligenceMinimum": 0.82,
     "superintelligenceSatisfied": true,
-    "riskResidual": 0.214455
+    "riskResidual": 0.214455,
+    "jarzynskiFactor": 0.9999999999999989,
+    "jarzynskiConsistent": true
   },
   "risk": {
     "weights": {

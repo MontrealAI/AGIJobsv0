@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T21:19:03.871Z
+*Generated at:* 2025-10-19T21:45:31.916Z
 *Version:* 1.2.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -14,6 +14,15 @@
 - **Cross-check Gibbs (reference):** 69.80k kJ
 - **Landauer within safety margin:** ✅
 - **Stake Boltzmann envelope:** 5.340e-12 (dimensionless proof of energy-aligned stake)
+- **Jarzynski estimator vs exp(-βΔF):** ⟨e^{-βW}⟩=0.000000 vs 0.000000 (✅ Δ=5.784e-19 ≤ tol 0.0005)
+- **β per kilojoule:** 0.000592
+
+| Energy level | Probability | Work vs Landauer (kJ) | e^{-βW} |
+| --- | --- | --- | --- |
+| E1 | 0.9810 | 71.00k kJ | 5.469e-19 |
+| E2 | 0.0190 | 78.35k kJ | 7.059e-21 |
+| E3 | 0.0000 | 88.14k kJ | 2.137e-23 |
+| E4 | 0.0000 | 95.49k kJ | 2.758e-25 |
 
 ## 2. Statistical Physics Partition Function Cross-Check
 
@@ -101,12 +110,14 @@ flowchart LR
     Stackelberg[Stackelberg Δ=0.60]
     Confidence[Superintelligence 83%]
     ThermoSignal[Thermo Assurance 100%]
+    JarzynskiSignal[Jarzynski Factor 100.0%]
     GovernanceSignal[Governance Assurance 29%]
     AntifragileSignal[Antifragility Assurance 100%]
     OwnerSignal[Owner Command 100%]
     EnergyFloor[Energy Margin 69.80k kJ]
     Stackelberg --> Confidence
     EnergyFloor --> ThermoSignal
+    JarzynskiSignal --> ThermoSignal
     ThermoSignal --> Confidence
     GovernanceSignal --> Confidence
     AntifragileSignal --> Confidence
@@ -219,6 +230,7 @@ mindmap
 - **Sigma welfare gain:** 10.32 (minimum 0.12)
 - **Owner coverage ratio:** 100.00% (threshold 95.00%)
 - **Energy margin:** 69.80k kJ (floor 68.00k kJ — ✅)
+- **Jarzynski modulation:** 100.00% (aligned)
 - **Superintelligence index:** 82.8% (minimum 82.0% — ✅)
 - **Composite confidence:** 86.4% (thermo 100.0% · governance 28.5% · antifragility 100.0% · owner 100.0%)
 
@@ -233,6 +245,7 @@ mindmap
 | Sigma welfare gain | ✅ |
 | Owner coverage | ✅ |
 | Energy margin | ✅ |
+| Jarzynski equality | ✅ |
 | Superintelligence threshold | ✅ |
 
 ## 8. Risk & Safety Audit

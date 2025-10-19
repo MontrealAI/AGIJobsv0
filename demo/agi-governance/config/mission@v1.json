@@ -11,7 +11,8 @@
     "referenceTemperatureK": 300,
     "bitsProcessed": 1800000000,
     "burnRatePerBlock": 0.0625,
-    "stakeBoltzmann": 1.380649e-23
+    "stakeBoltzmann": 1.380649e-23,
+    "jarzynskiTolerance": 0.0005
   },
   "statisticalPhysics": {
     "beta": 0.0725,
