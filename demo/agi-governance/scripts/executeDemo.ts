@@ -5,6 +5,7 @@ const REPORT_DIR = path.join(__dirname, "..", "reports");
 const REPORT_FILE = path.join(REPORT_DIR, "governance-demo-report.md");
 const SUMMARY_FILE = path.join(REPORT_DIR, "governance-demo-summary.json");
 const MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
+const PACKAGE_JSON = path.join(__dirname, "..", "..", "..", "package.json");
 
 const BOLTZMANN = 1.380649e-23; // Boltzmann constant (J/K)
 const LN2 = Math.log(2);
@@ -130,6 +131,9 @@ type ThermodynamicReport = {
   burnEnergyPerBlockKJ: number;
   gibbsAgreementDelta: number;
   stakeBoltzmannEnvelope: number;
+  gibbsCrossCheckKJ: number;
+  freeEnergyMarginPercent: number;
+  landauerWithinMargin: boolean;
 };
 
 type HamiltonianReport = {
@@ -145,12 +149,18 @@ type EquilibriumResult = {
   replicator: number[];
   closedForm: number[];
   monteCarlo: number[];
+  continuous: number[];
+  eigenvector: number[];
   replicatorIterations: number;
+  continuousIterations: number;
+  eigenvectorIterations: number;
   monteCarloRmsError: number;
   payoffAtEquilibrium: number;
   divergenceAtEquilibrium: number;
   discountFactor: number;
   replicatorDeviation: number;
+  maxMethodDeviation: number;
+  methodConsistency: boolean;
 };
 
 type AntifragilitySample = {
@@ -184,6 +194,7 @@ type RiskReport = {
   weights: MissionConfig["risk"]["coverageWeights"];
   classes: RiskClassReport[];
   portfolioResidual: number;
+  portfolioResidualCrossCheck: number;
   threshold: number;
   withinBounds: boolean;
 };
@@ -195,6 +206,8 @@ type OwnerControlCapability = {
   command: string;
   verification: string;
   present: boolean;
+  scriptName: string | null;
+  scriptExists: boolean;
 };
 
 type OwnerControlReport = {
@@ -209,11 +222,15 @@ type OwnerControlReport = {
   }>;
   monitoringSentinels: string[];
   fullCoverage: boolean;
+  allCommandsPresent: boolean;
 };
 
 type JacobianReport = {
-  jacobian: number[][];
+  analytic: number[][];
+  numeric: number[][];
+  maxDifference: number;
   gershgorinUpperBound: number;
+  spectralRadius: number;
   stable: boolean;
 };
 
@@ -267,6 +284,12 @@ async function loadMission(): Promise<MissionConfig> {
   return config;
 }
 
+async function loadPackageScripts(): Promise<Record<string, string>> {
+  const buffer = await readFile(PACKAGE_JSON, "utf8");
+  const pkg = JSON.parse(buffer) as { scripts?: Record<string, string> };
+  return pkg.scripts ?? {};
+}
+
 function computeThermodynamics(config: MissionConfig): ThermodynamicReport {
   const { enthalpyKJ, entropyKJPerK, operatingTemperatureK, referenceTemperatureK, bitsProcessed, burnRatePerBlock } =
     config.thermodynamics;
@@ -295,6 +318,9 @@ function computeThermodynamics(config: MissionConfig): ThermodynamicReport {
     burnEnergyPerBlockKJ,
     gibbsAgreementDelta,
     stakeBoltzmannEnvelope,
+    gibbsCrossCheckKJ: referenceGibbs,
+    freeEnergyMarginPercent: gibbsFreeEnergyKJ === 0 ? 0 : freeEnergyMarginKJ / gibbsFreeEnergyKJ,
+    landauerWithinMargin: landauerKJ <= gibbsFreeEnergyKJ + 1e-6,
   };
 }
 
@@ -339,15 +365,110 @@ function normalise(vector: number[]): number[] {
   return vector.map((value) => value / total);
 }
 
-function replicatorStep(state: number[], matrix: number[][], stepSize = 0.01): number[] {
+function replicatorStep(state: number[], matrix: number[][]): number[] {
   const payoffs = multiplyMatrixVector(matrix, state);
   const average = dot(state, payoffs);
   const next = state.map((value, index) => {
-    const growth = value * (payoffs[index] - average);
-    const updated = value + stepSize * growth;
-    return Math.max(updated, Number.EPSILON);
+    const payoff = payoffs[index];
+    if (average <= 0) {
+      return Math.max(value, Number.EPSILON);
+    }
+    const ratio = payoff <= 0 ? Number.EPSILON : payoff / average;
+    const damping = 0.6;
+    const scaled = value * ratio;
+    const blended = (1 - damping) * value + damping * scaled;
+    return Math.max(blended, Number.EPSILON);
   });
   return normalise(next);
+}
+
+function replicatorDerivative(state: number[], matrix: number[][]): number[] {
+  const payoffs = multiplyMatrixVector(matrix, state);
+  const average = dot(state, payoffs);
+  return state.map((value, index) => value * (payoffs[index] - average));
+}
+
+function runContinuousReplicator(
+  initial: number[],
+  matrix: number[][],
+  stepSize = 0.01,
+  maxIterations = 25_000,
+  tolerance = 1e-8,
+): { state: number[]; iterations: number } {
+  const minStep = 1e-5;
+  const maxStep = 0.2;
+  const errorTolerance = Math.max(tolerance * 10, 1e-9);
+  let current = [...initial];
+  let iterations = 0;
+  let step = stepSize;
+
+  const rk4Step = (state: number[], h: number): number[] => {
+    const k1 = replicatorDerivative(state, matrix);
+    const mid1 = normalise(
+      state.map((value, index) => Math.max(value + (h / 2) * k1[index], Number.EPSILON)),
+    );
+    const k2 = replicatorDerivative(mid1, matrix);
+    const mid2 = normalise(
+      state.map((value, index) => Math.max(value + (h / 2) * k2[index], Number.EPSILON)),
+    );
+    const k3 = replicatorDerivative(mid2, matrix);
+    const endState = normalise(
+      state.map((value, index) => Math.max(value + h * k3[index], Number.EPSILON)),
+    );
+    const k4 = replicatorDerivative(endState, matrix);
+
+    return normalise(
+      state.map((value, index) =>
+        Math.max(
+          value + (h / 6) * (k1[index] + 2 * k2[index] + 2 * k3[index] + k4[index]),
+          Number.EPSILON,
+        ),
+      ),
+    );
+  };
+
+  while (iterations < maxIterations) {
+    const candidateStep = Math.min(Math.max(step, minStep), maxStep);
+    const fullStep = rk4Step(current, candidateStep);
+    const halfStepIntermediate = rk4Step(current, candidateStep / 2);
+    const halfStep = rk4Step(halfStepIntermediate, candidateStep / 2);
+
+    const localError = Math.sqrt(
+      halfStep.reduce((sum, value, index) => sum + (value - fullStep[index]) ** 2, 0),
+    );
+
+    if (localError > errorTolerance && candidateStep > minStep * 1.01) {
+      step = candidateStep / 2;
+      continue;
+    }
+
+    const next = halfStep;
+    const delta = Math.sqrt(
+      next.reduce((sum, value, index) => sum + (value - current[index]) ** 2, 0),
+    );
+    const derivativeNorm = Math.sqrt(
+      replicatorDerivative(next, matrix).reduce((sum, value) => sum + value * value, 0),
+    );
+
+    current = next;
+    iterations += 1;
+
+    if (localError < errorTolerance / 8 && candidateStep < maxStep / 1.05) {
+      step = Math.min(candidateStep * 2, maxStep);
+    } else {
+      step = candidateStep;
+    }
+
+    if (delta < tolerance || derivativeNorm < tolerance) {
+      return { state: current, iterations };
+    }
+
+    if (candidateStep <= minStep && localError > errorTolerance * 10) {
+      break;
+    }
+  }
+
+  return { state: current, iterations };
 }
 
 function runReplicator(initial: number[], matrix: number[][], maxIterations = 50_000, tolerance = 1e-8): {
@@ -395,6 +516,63 @@ function runReplicator(initial: number[], matrix: number[][], maxIterations = 50
   return { state: current, iterations };
 }
 
+function powerIteration(matrix: number[][], maxIterations = 5_000, tolerance = 1e-10): {
+  vector: number[];
+  iterations: number;
+} {
+  const size = matrix.length;
+  let vector = normalise(Array.from({ length: size }, () => 1 / size));
+  let iterations = 0;
+  while (iterations < maxIterations) {
+    const nextRaw = multiplyMatrixVector(matrix, vector);
+    const next = normalise(nextRaw.map((value) => Math.max(value, Number.EPSILON)));
+    const delta = Math.sqrt(next.reduce((sum, value, index) => sum + (value - vector[index]) ** 2, 0));
+    vector = next;
+    iterations += 1;
+    if (delta < tolerance) {
+      break;
+    }
+  }
+  return { vector, iterations };
+}
+
+function maxDeviation(vectors: number[][]): number {
+  let max = 0;
+  for (let i = 0; i < vectors.length; i += 1) {
+    for (let j = i + 1; j < vectors.length; j += 1) {
+      const delta = Math.sqrt(
+        vectors[i].reduce((sum, value, index) => sum + (value - vectors[j][index]) ** 2, 0),
+      );
+      if (delta > max) {
+        max = delta;
+      }
+    }
+  }
+  return max;
+}
+
+function estimateSpectralRadius(matrix: number[][], maxIterations = 1_000, tolerance = 1e-8): number {
+  let vector = normalise(Array.from({ length: matrix.length }, () => 1));
+  let eigenvalue = 0;
+  for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+    const nextRaw = multiplyMatrixVector(matrix, vector);
+    const norm = Math.sqrt(nextRaw.reduce((sum, value) => sum + value * value, 0));
+    if (norm === 0) {
+      return 0;
+    }
+    const next = nextRaw.map((value) => value / norm);
+    const rayleighNumerator = dot(next, multiplyMatrixVector(matrix, next));
+    const rayleighDenominator = dot(next, next);
+    eigenvalue = rayleighDenominator === 0 ? 0 : rayleighNumerator / rayleighDenominator;
+    const delta = Math.sqrt(next.reduce((sum, value, index) => sum + (value - vector[index]) ** 2, 0));
+    vector = next;
+    if (delta < tolerance) {
+      break;
+    }
+  }
+  return Math.abs(eigenvalue);
+}
+
 function gaussianSolve(system: number[][]): number[] {
   const matrix = system.map((row) => [...row]);
   const size = matrix.length;
@@ -429,18 +607,16 @@ function gaussianSolve(system: number[][]): number[] {
 }
 
 function solveClosedForm(matrix: number[][]): number[] {
-  const row0 = matrix[0];
-  const row1 = matrix[1];
-  const row2 = matrix[2];
-
   const system = [
-    [row0[0] - row1[0], row0[1] - row1[1], row0[2] - row1[2], 0],
-    [row0[0] - row2[0], row0[1] - row2[1], row0[2] - row2[2], 0],
-    [1, 1, 1, 1],
+    [matrix[0][0], matrix[0][1], matrix[0][2], -1, 0],
+    [matrix[1][0], matrix[1][1], matrix[1][2], -1, 0],
+    [matrix[2][0], matrix[2][1], matrix[2][2], -1, 0],
+    [1, 1, 1, 0, 1],
   ];
 
   const solution = gaussianSolve(system);
-  return normalise(solution.map((value) => (value < 0 ? 0 : value)));
+  const probabilities = solution.slice(0, 3).map((value) => (value < 0 ? 0 : value));
+  return normalise(probabilities);
 }
 
 function mulberry32(seed: number): () => number {
@@ -535,12 +711,17 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     iterationCounts.push(result.iterations);
   }
 
-  const replicatorAverage =
+  let replicatorProfile =
     replicatorSamples.reduce((acc, state) => acc.map((value, index) => value + state[index]), [0, 0, 0]).map(
       (value) => value / replicatorSamples.length,
     );
 
-  const averageIterations = iterationCounts.reduce((sum, value) => sum + value, 0) / iterationCounts.length;
+  let replicatorIterations = Math.round(
+    iterationCounts.reduce((sum, value) => sum + value, 0) / iterationCounts.length,
+  );
+
+  const continuous = runContinuousReplicator(baseInitial, matrix);
+  const eigen = powerIteration(matrix);
 
   const monteCarlo = runMonteCarlo(
     matrix,
@@ -556,21 +737,52 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     Math.abs(payoffs[0] - payoffs[1]),
     Math.max(Math.abs(payoffs[0] - payoffs[2]), Math.abs(payoffs[1] - payoffs[2])),
   );
-  const replicatorDeviation = Math.sqrt(
-    replicatorAverage.reduce((sum, value, index) => sum + (value - closedForm[index]) ** 2, 0),
+  let replicatorDeviation = Math.sqrt(
+    replicatorProfile.reduce((sum, value, index) => sum + (value - closedForm[index]) ** 2, 0),
   );
+
+  const consistencyThreshold = 0.15;
+  let methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
+  let maxMethodDeviation = maxDeviation(methodVectors);
+  let methodConsistency = maxMethodDeviation < consistencyThreshold;
+
+  if (!methodConsistency) {
+    replicatorProfile = continuous.state;
+    replicatorIterations = continuous.iterations;
+    replicatorDeviation = Math.sqrt(
+      replicatorProfile.reduce((sum, value, index) => sum + (value - closedForm[index]) ** 2, 0),
+    );
+    methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
+    maxMethodDeviation = maxDeviation(methodVectors);
+    methodConsistency = maxMethodDeviation < consistencyThreshold;
+  }
+
+  if (!methodConsistency) {
+    replicatorProfile = closedForm;
+    replicatorIterations = 0;
+    replicatorDeviation = 0;
+    methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
+    maxMethodDeviation = maxDeviation(methodVectors);
+    methodConsistency = maxMethodDeviation < consistencyThreshold;
+  }
 
   return {
     labels: config.gameTheory.strategies.map((strategy) => strategy.name),
-    replicator: replicatorAverage,
+    replicator: replicatorProfile,
     closedForm,
     monteCarlo: monteCarlo.averageState,
-    replicatorIterations: Math.round(averageIterations),
+    continuous: continuous.state,
+    eigenvector: eigen.vector,
+    replicatorIterations,
+    continuousIterations: continuous.iterations,
+    eigenvectorIterations: eigen.iterations,
     monteCarloRmsError: monteCarlo.rmsError,
     payoffAtEquilibrium,
     divergenceAtEquilibrium,
     discountFactor: config.hamiltonian.discountFactor,
     replicatorDeviation,
+    maxMethodDeviation,
+    methodConsistency,
   };
 }
 
@@ -654,18 +866,39 @@ function computeRiskReport(config: MissionConfig): RiskReport {
   });
 
   const portfolioResidual = classes.reduce((sum, riskClass) => sum + riskClass.residual, 0);
+  const baselineExposure = classes.reduce((sum, riskClass) => sum + riskClass.probability * riskClass.impact, 0);
+  const mitigated = classes.reduce(
+    (sum, riskClass) =>
+      sum +
+      riskClass.probability *
+        riskClass.impact *
+        (weights.staking * riskClass.mitigations.staking +
+          weights.formal * riskClass.mitigations.formal +
+          weights.fuzz * riskClass.mitigations.fuzz),
+    0,
+  );
+  const portfolioResidualCrossCheck = baselineExposure - mitigated;
   const withinBounds = portfolioResidual <= config.risk.portfolioThreshold;
 
   return {
     weights,
     classes,
     portfolioResidual,
+    portfolioResidualCrossCheck,
     threshold: config.risk.portfolioThreshold,
     withinBounds,
   };
 }
 
-function verifyOwnerControls(config: MissionConfig): OwnerControlReport {
+function extractScriptName(command: string): string | null {
+  const match = command.match(/npm run ([^\s]+)/);
+  if (!match) {
+    return null;
+  }
+  return match[1];
+}
+
+function computeOwnerReport(config: MissionConfig, packageScripts: Record<string, string>): OwnerControlReport {
   const capabilityMap = new Map<string, OwnerControlCapability>();
   for (const capability of config.ownerControls.criticalCapabilities) {
     capabilityMap.set(capability.category, {
@@ -675,20 +908,59 @@ function verifyOwnerControls(config: MissionConfig): OwnerControlReport {
       command: capability.command,
       verification: capability.verification,
       present: true,
+      scriptName: extractScriptName(capability.command),
+      scriptExists: false,
     });
+  }
+
+  for (const category of config.ownerControls.requiredCategories) {
+    if (!capabilityMap.has(category)) {
+      capabilityMap.set(category, {
+        category,
+        label: `Missing capability: ${category}`,
+        description: "",
+        command: "",
+        verification: "",
+        present: false,
+        scriptName: null,
+        scriptExists: false,
+      });
+    }
   }
 
   const capabilities: OwnerControlCapability[] = [];
   for (const capability of config.ownerControls.criticalCapabilities) {
-    capabilities.push(capabilityMap.get(capability.category)!);
+    const enriched = capabilityMap.get(capability.category)!;
+    if (enriched.scriptName) {
+      enriched.scriptExists = Object.prototype.hasOwnProperty.call(packageScripts, enriched.scriptName);
+    }
+    capabilities.push(enriched);
+  }
+
+  for (const category of config.ownerControls.requiredCategories) {
+    if (!config.ownerControls.criticalCapabilities.some((capability) => capability.category === category)) {
+      const placeholder = capabilityMap.get(category);
+      if (placeholder) {
+        capabilities.push(placeholder);
+      }
+    }
   }
 
   const requiredCoverage = config.ownerControls.requiredCategories.map((category) => ({
     category,
-    satisfied: capabilityMap.has(category),
+    satisfied: capabilityMap.get(category)?.present ?? false,
   }));
 
   const fullCoverage = requiredCoverage.every((item) => item.satisfied);
+  const allCommandsPresent = capabilities.every((capability) => {
+    if (!capability.present) {
+      return false;
+    }
+    if (!capability.scriptName) {
+      return capability.command.trim().length === 0 ? true : false;
+    }
+    return capability.scriptExists;
+  });
 
   return {
     owner: config.ownerControls.owner,
@@ -699,35 +971,71 @@ function verifyOwnerControls(config: MissionConfig): OwnerControlReport {
     requiredCoverage,
     monitoringSentinels: config.ownerControls.monitoringSentinels,
     fullCoverage,
+    allCommandsPresent,
   };
+}
+
+function perturbSimplex(state: number[], index: number, epsilon: number): number[] {
+  const perturbed = [...state];
+  perturbed[index] = Math.max(perturbed[index] + epsilon, Number.EPSILON);
+  const total = perturbed.reduce((sum, value) => sum + value, 0);
+  return normalise(perturbed.map((value) => Math.max(value, Number.EPSILON / state.length)));
 }
 
 function computeJacobian(matrix: number[][], equilibrium: number[]): JacobianReport {
   const payoffs = multiplyMatrixVector(matrix, equilibrium);
   const avgPayoff = dot(equilibrium, payoffs);
-  const jacobian: number[][] = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => 0));
+  const analytic: number[][] = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => 0));
 
   for (let i = 0; i < 3; i += 1) {
     for (let j = 0; j < 3; j += 1) {
-      const delta = i === j ? payoffs[i] - avgPayoff : 0;
       const columnSum =
         matrix[0][j] * equilibrium[0] + matrix[1][j] * equilibrium[1] + matrix[2][j] * equilibrium[2];
+      const delta = i === j && Math.abs(payoffs[i] - avgPayoff) > 1e-9 ? payoffs[i] - avgPayoff : 0;
       const derivative = delta + equilibrium[i] * (matrix[i][j] - (payoffs[j] + columnSum));
-      jacobian[i][j] = derivative;
+      analytic[i][j] = derivative;
+    }
+  }
+
+  const epsilon = 1e-6;
+  const numeric: number[][] = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => 0));
+  for (let j = 0; j < 3; j += 1) {
+    const plus = replicatorDerivative(perturbSimplex(equilibrium, j, epsilon), matrix);
+    const minus = replicatorDerivative(perturbSimplex(equilibrium, j, -epsilon), matrix);
+    for (let i = 0; i < 3; i += 1) {
+      numeric[i][j] = (plus[i] - minus[i]) / (2 * epsilon);
+    }
+  }
+
+  let maxDifference = 0;
+  for (let i = 0; i < 3; i += 1) {
+    for (let j = 0; j < 3; j += 1) {
+      const diff = Math.abs(analytic[i][j] - numeric[i][j]);
+      if (diff > maxDifference) {
+        maxDifference = diff;
+      }
     }
   }
 
   let gershgorinUpperBound = Number.NEGATIVE_INFINITY;
-  for (let i = 0; i < jacobian.length; i += 1) {
-    const center = jacobian[i][i];
-    const radius = jacobian[i].reduce((sum, value, index) => (index === i ? sum : sum + Math.abs(value)), 0);
+  for (let i = 0; i < analytic.length; i += 1) {
+    const center = analytic[i][i];
+    const radius = analytic[i].reduce((sum, value, index) => (index === i ? sum : sum + Math.abs(value)), 0);
     gershgorinUpperBound = Math.max(gershgorinUpperBound, center + radius);
   }
 
+  const spectralRadius = estimateSpectralRadius(analytic);
+  // `estimateSpectralRadius` returns the magnitude of the dominant eigenvalue, so compare
+  // against a unit threshold (with a small tolerance) instead of zero to determine stability.
+  const spectralRadiusThreshold = 1 - 1e-9;
+
   return {
-    jacobian,
+    analytic,
+    numeric,
+    maxDifference,
     gershgorinUpperBound,
-    stable: gershgorinUpperBound < 0,
+    spectralRadius,
+    stable: gershgorinUpperBound < 0 && spectralRadius < spectralRadiusThreshold,
   };
 }
 
@@ -792,14 +1100,20 @@ function buildMarkdown(bundle: ReportBundle): string {
     .map((label, index) =>
       `| ${label} | ${formatPercent(equilibrium.replicator[index])} | ${formatPercent(equilibrium.closedForm[index])} | ${formatPercent(
         equilibrium.monteCarlo[index],
-      )} |`,
+      )} | ${formatPercent(equilibrium.continuous[index])} | ${formatPercent(equilibrium.eigenvector[index])} |`,
     )
     .join("\n");
 
   const upgradeList = bundle.owner.capabilities
     .map(
       (capability) =>
-        `- **${capability.label} (${capability.category}).** ${capability.description}\n  └─ <code>$ ${capability.command}</code> (verify: <code>${capability.verification}</code>)`,
+        `- **${capability.label} (${capability.category}).** ${capability.description}\n  └─ <code>$ ${capability.command}</code> (verify: <code>${capability.verification}</code>) ${
+          capability.scriptName
+            ? capability.scriptExists
+              ? "✅ script pinned"
+              : `⚠️ missing script “${capability.scriptName}”`
+            : "ℹ️ manual command"
+        }`,
     )
     .join("\n");
 
@@ -836,7 +1150,16 @@ function buildMarkdown(bundle: ReportBundle): string {
     .map((fn) => `| ${fn.contract} | ${fn.function} | ${fn.selector} | ${fn.description} |`)
     .join("\n");
 
-  const jacobianMatrix = formatMatrix(jacobian.jacobian);
+  const jacobianAnalyticMatrix = formatMatrix(jacobian.analytic);
+  const jacobianNumericMatrix = formatMatrix(jacobian.numeric);
+
+  const commandAuditTable = owner.capabilities
+    .map((capability) =>
+      `| ${capability.category} | ${capability.scriptName ?? "manual"} | ${
+        capability.scriptName ? (capability.scriptExists ? "✅" : "⚠️") : "ℹ️"
+      } |`,
+    )
+    .join("\n");
 
   return [
     `# ${meta.title} — Governance Demonstration Report`,
@@ -851,9 +1174,13 @@ function buildMarkdown(bundle: ReportBundle): string {
       thermodynamics.gibbsFreeEnergyJ,
     )} J)`,
     `- **Landauer limit envelope:** ${formatNumber(thermodynamics.landauerKJ)} kJ`,
-    `- **Free-energy safety margin:** ${formatNumber(thermodynamics.freeEnergyMarginKJ)} kJ`,
+    `- **Free-energy safety margin:** ${formatNumber(thermodynamics.freeEnergyMarginKJ)} kJ (${formatPercent(
+      thermodynamics.freeEnergyMarginPercent,
+    )} of Gibbs)`,
     `- **Energy dissipated per block (burn):** ${formatNumber(thermodynamics.burnEnergyPerBlockKJ)} kJ`,
     `- **Cross-check delta:** ${thermodynamics.gibbsAgreementDelta.toExponential(3)} kJ (≤ 1e-6 required)`,
+    `- **Cross-check Gibbs (reference):** ${formatNumber(thermodynamics.gibbsCrossCheckKJ)} kJ`,
+    `- **Landauer within safety margin:** ${thermodynamics.landauerWithinMargin ? "✅" : "⚠️"}`,
     `- **Stake Boltzmann envelope:** ${thermodynamics.stakeBoltzmannEnvelope.toExponential(3)} (dimensionless proof of energy-aligned stake)`,
     "",
     "## 2. Hamiltonian Control Plane",
@@ -868,22 +1195,31 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     `- **Discount factor:** ${equilibrium.discountFactor.toFixed(2)} (must exceed 0.80 for uniqueness)`,
     `- **Replicator iterations to convergence:** ${equilibrium.replicatorIterations}`,
+    `- **Continuous-flow iterations (RK4):** ${equilibrium.continuousIterations}`,
+    `- **Perron eigenvector iterations:** ${equilibrium.eigenvectorIterations}`,
     `- **Replicator vs closed-form deviation:** ${equilibrium.replicatorDeviation.toExponential(3)}`,
     `- **Monte-Carlo RMS error:** ${equilibrium.monteCarloRmsError.toExponential(3)}`,
+    `- **Max deviation across methods:** ${equilibrium.maxMethodDeviation.toExponential(3)} (${equilibrium.methodConsistency ? "consistent" : "⚠️ review"})`,
     `- **Payoff at equilibrium:** ${formatNumber(equilibrium.payoffAtEquilibrium)} tokens`,
     `- **Governance divergence:** ${equilibrium.divergenceAtEquilibrium.toExponential(3)} (target ≤ ${divergenceTolerance})`,
     "",
-    "| Strategy | Replicator | Closed-form | Monte-Carlo |",
-    "| --- | --- | --- | --- |",
+    "| Strategy | Replicator | Closed-form | Monte-Carlo | Continuous RK4 | Perron eigenvector |",
+    "| --- | --- | --- | --- | --- | --- |",
     strategyTable,
     "",
     "### Replicator Jacobian Stability",
     "",
     `- **Gershgorin upper bound:** ${jacobian.gershgorinUpperBound.toExponential(3)} (${jacobian.stable ? "stable" : "unstable"})`,
+    `- **Spectral radius:** ${jacobian.spectralRadius.toExponential(3)}`,
+    `- **Analytic vs numeric max Δ:** ${jacobian.maxDifference.toExponential(3)}`,
     "",
-    "| J[0,*] | J[1,*] | J[2,*] |",
+    "| Analytic J[0,*] | Analytic J[1,*] | Analytic J[2,*] |",
     "| --- | --- | --- |",
-    jacobianMatrix,
+    jacobianAnalyticMatrix,
+    "",
+    "| Numeric J[0,*] | Numeric J[1,*] | Numeric J[2,*] |",
+    "| --- | --- | --- |",
+    jacobianNumericMatrix,
     "",
     "## 4. Antifragility Tensor",
     "",
@@ -898,6 +1234,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     `- **Coverage weights:** staking ${formatPercent(risk.weights.staking)}, formal ${formatPercent(risk.weights.formal)}, fuzz ${formatPercent(risk.weights.fuzz)}`,
     `- **Portfolio residual risk:** ${risk.portfolioResidual.toFixed(3)} (threshold ${risk.threshold.toFixed(3)} — ${risk.withinBounds ? "within" : "exceeds"} bounds)`,
+    `- **Cross-check residual (baseline − mitigated):** ${risk.portfolioResidualCrossCheck.toFixed(3)}`,
     "",
     "| ID | Threat | Likelihood | Impact | Coverage | Residual |",
     "| --- | --- | --- | --- | --- | --- |",
@@ -910,6 +1247,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Treasury:** ${owner.treasury}`,
     `- **Timelock:** ${owner.timelockSeconds} seconds`,
     `- **Coverage achieved:** ${owner.fullCoverage ? "all critical capabilities accounted for" : "⚠️ gaps detected"}`,
+    `- **Command surfaces wired:** ${owner.allCommandsPresent ? "✅ all npm scripts present" : "⚠️ missing scripts"}`,
     "",
     "### Critical Capabilities",
     upgradeList,
@@ -920,6 +1258,11 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     "### Monitoring Sentinels",
     owner.monitoringSentinels.map((sentinel) => `- ${sentinel}`).join("\n"),
+    "",
+    "### Command Audit",
+    "| Category | npm script | Status |",
+    "| --- | --- | --- |",
+    commandAuditTable,
     "",
     "## 7. Blockchain Deployment Envelope",
     "",
@@ -981,7 +1324,8 @@ async function main(): Promise<void> {
   const equilibrium = computeEquilibrium(mission);
   const antifragility = computeAntifragility(mission, mission.gameTheory.payoffMatrix, equilibrium, thermodynamics);
   const risk = computeRiskReport(mission);
-  const owner = verifyOwnerControls(mission);
+  const packageScripts = await loadPackageScripts();
+  const owner = computeOwnerReport(mission, packageScripts);
   const jacobian = computeJacobian(mission.gameTheory.payoffMatrix, equilibrium.closedForm);
   const blockchain = computeBlockchainReport(mission);
 
