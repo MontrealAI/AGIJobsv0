@@ -25,6 +25,39 @@ interface MissionConfig {
     burnRatePerBlock: number;
     stakeBoltzmann: number;
   };
+  incentives: {
+    mintRule: {
+      eta: number;
+      deltaValue: number;
+      treasuryMirrorShare: number;
+      tolerance: number;
+      rewardEngineShares: Array<{
+        role: string;
+        share: number;
+      }>;
+    };
+    burnRule: {
+      jobEscrow: number;
+      burnBps: number;
+      treasuryBps: number;
+      employerBps: number;
+    };
+    slashing: {
+      stakeExample: number;
+      minStake: {
+        agent: number;
+        validator: number;
+        operator: number;
+      };
+      severities: Array<{
+        label: string;
+        description: string;
+        fraction: number;
+        treasuryShare: number;
+        employerShare: number;
+      }>;
+    };
+  };
   hamiltonian: {
     lambda: number;
     discountFactor: number;
@@ -239,6 +272,61 @@ type BlockchainReport = MissionConfig["blockchain"] & {
   upgradeDelayHours: number;
 };
 
+type MintRoleShareReport = {
+  role: string;
+  share: number;
+  minted: number;
+};
+
+type MintRuleReport = {
+  eta: number;
+  deltaValue: number;
+  totalMinted: number;
+  treasuryMirrorShare: number;
+  agentShare: number | null;
+  mintedAgent: number;
+  mintedTreasury: number;
+  equalityDelta: number;
+  equalityRatio: number;
+  equalityOk: boolean;
+  tolerance: number;
+  dust: number;
+  roles: MintRoleShareReport[];
+};
+
+type BurnRuleReport = {
+  jobEscrow: number;
+  burnBps: number;
+  treasuryBps: number;
+  employerBps: number;
+  burned: number;
+  treasury: number;
+  employer: number;
+  retained: number;
+};
+
+type SlashingSeverityReport = {
+  label: string;
+  description: string;
+  fraction: number;
+  slashAmount: number;
+  treasuryAmount: number;
+  employerAmount: number;
+  burnAmount: number;
+};
+
+type SlashingReport = {
+  stakeExample: number;
+  minStake: MissionConfig["incentives"]["slashing"]["minStake"];
+  severities: SlashingSeverityReport[];
+};
+
+type IncentiveReport = {
+  mint: MintRuleReport;
+  burn: BurnRuleReport;
+  slashing: SlashingReport;
+};
+
 type ReportBundle = {
   generatedAt: string;
   meta: MissionConfig["meta"];
@@ -252,6 +340,7 @@ type ReportBundle = {
   blockchain: BlockchainReport;
   ci: MissionConfig["ci"];
   divergenceTolerance: number;
+  incentives: IncentiveReport;
 };
 
 function assertValidConfig(config: MissionConfig): void {
@@ -274,6 +363,61 @@ function assertValidConfig(config: MissionConfig): void {
   }
   if (config.ownerControls.requiredCategories.length === 0) {
     throw new Error("ownerControls.requiredCategories must list at least one category");
+  }
+  const mintShareSum = config.incentives.mintRule.rewardEngineShares.reduce((sum, share) => sum + share.share, 0);
+  if (Math.abs(mintShareSum - 1) > 1e-6) {
+    throw new Error("rewardEngineShares must sum to 1");
+  }
+  if (config.incentives.mintRule.rewardEngineShares.some((share) => share.share <= 0)) {
+    throw new Error("rewardEngineShares must be strictly positive");
+  }
+  if (!config.incentives.mintRule.rewardEngineShares.some((share) => share.role.toLowerCase() === "agent")) {
+    throw new Error("rewardEngineShares must include an Agent role");
+  }
+  if (
+    config.incentives.mintRule.treasuryMirrorShare < 0 ||
+    config.incentives.mintRule.treasuryMirrorShare > 1 ||
+    config.incentives.mintRule.tolerance <= 0
+  ) {
+    throw new Error("treasuryMirrorShare must be within [0,1] and tolerance positive");
+  }
+  if (
+    config.incentives.burnRule.burnBps < 0 ||
+    config.incentives.burnRule.treasuryBps < 0 ||
+    config.incentives.burnRule.employerBps < 0
+  ) {
+    throw new Error("burn rule basis points must be non-negative");
+  }
+  const totalBps =
+    config.incentives.burnRule.burnBps +
+    config.incentives.burnRule.treasuryBps +
+    config.incentives.burnRule.employerBps;
+  if (totalBps > 10_000) {
+    throw new Error("burn rule percentages cannot exceed 100% of escrow");
+  }
+  if (
+    config.incentives.slashing.minStake.agent <= 0 ||
+    config.incentives.slashing.minStake.validator <= 0 ||
+    config.incentives.slashing.minStake.operator <= 0
+  ) {
+    throw new Error("minimum stakes must be positive");
+  }
+  if (config.incentives.slashing.stakeExample <= 0) {
+    throw new Error("stakeExample must be positive");
+  }
+  for (const severity of config.incentives.slashing.severities) {
+    if (severity.fraction <= 0 || severity.fraction > 1) {
+      throw new Error(`severity ${severity.label} must have a fraction within (0,1]`);
+    }
+    if (
+      severity.treasuryShare < 0 ||
+      severity.treasuryShare > 1 ||
+      severity.employerShare < 0 ||
+      severity.employerShare > 1 ||
+      severity.treasuryShare + severity.employerShare > 1 + 1e-6
+    ) {
+      throw new Error(`severity ${severity.label} has invalid treasury/employer shares`);
+    }
   }
 }
 
@@ -890,6 +1034,76 @@ function computeRiskReport(config: MissionConfig): RiskReport {
   };
 }
 
+function computeIncentiveReport(config: MissionConfig): IncentiveReport {
+  const { mintRule, burnRule, slashing } = config.incentives;
+  const totalMinted = mintRule.deltaValue * mintRule.eta;
+  const roles: MintRoleShareReport[] = mintRule.rewardEngineShares.map((entry) => ({
+    role: entry.role,
+    share: entry.share,
+    minted: totalMinted * entry.share,
+  }));
+  const agentRole = roles.find((role) => role.role.toLowerCase() === "agent");
+  const mintedAgent = agentRole ? agentRole.minted : 0;
+  const mintedTreasury = totalMinted * mintRule.treasuryMirrorShare;
+  const equalityDelta = Math.abs(mintedAgent - mintedTreasury);
+  const equalityRatio = totalMinted === 0 ? 0 : equalityDelta / totalMinted;
+  const dust = totalMinted - roles.reduce((sum, role) => sum + role.minted, 0);
+
+  const burned = (burnRule.jobEscrow * burnRule.burnBps) / 10_000;
+  const treasury = (burnRule.jobEscrow * burnRule.treasuryBps) / 10_000;
+  const employer = (burnRule.jobEscrow * burnRule.employerBps) / 10_000;
+  const retained = burnRule.jobEscrow - burned - treasury - employer;
+
+  const severities: SlashingSeverityReport[] = slashing.severities.map((severity) => {
+    const slashAmount = slashing.stakeExample * severity.fraction;
+    const treasuryAmount = slashAmount * severity.treasuryShare;
+    const employerAmount = slashAmount * severity.employerShare;
+    const burnAmount = slashAmount - treasuryAmount - employerAmount;
+    return {
+      label: severity.label,
+      description: severity.description,
+      fraction: severity.fraction,
+      slashAmount,
+      treasuryAmount,
+      employerAmount,
+      burnAmount,
+    };
+  });
+
+  return {
+    mint: {
+      eta: mintRule.eta,
+      deltaValue: mintRule.deltaValue,
+      totalMinted,
+      treasuryMirrorShare: mintRule.treasuryMirrorShare,
+      agentShare: agentRole ? agentRole.share : null,
+      mintedAgent,
+      mintedTreasury,
+      equalityDelta,
+      equalityRatio,
+      equalityOk: equalityRatio <= mintRule.tolerance,
+      tolerance: mintRule.tolerance,
+      dust,
+      roles,
+    },
+    burn: {
+      jobEscrow: burnRule.jobEscrow,
+      burnBps: burnRule.burnBps,
+      treasuryBps: burnRule.treasuryBps,
+      employerBps: burnRule.employerBps,
+      burned,
+      treasury,
+      employer,
+      retained,
+    },
+    slashing: {
+      stakeExample: slashing.stakeExample,
+      minStake: slashing.minStake,
+      severities,
+    },
+  };
+}
+
 function extractScriptName(command: string): string | null {
   const match = command.match(/npm run ([^\s]+)/);
   if (!match) {
@@ -1051,6 +1265,10 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
 }
 
+function formatBps(value: number): string {
+  return `${(value / 100).toFixed(2)}%`;
+}
+
 function formatNumber(value: number, digits = 2): string {
   if (!Number.isFinite(value)) {
     return "n/a";
@@ -1089,6 +1307,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     equilibrium,
     antifragility,
     risk,
+    incentives,
     owner,
     jacobian,
     blockchain,
@@ -1150,6 +1369,25 @@ function buildMarkdown(bundle: ReportBundle): string {
     .map((fn) => `| ${fn.contract} | ${fn.function} | ${fn.selector} | ${fn.description} |`)
     .join("\n");
 
+  const mintTable = incentives.mint.roles
+    .map((role) => `| ${role.role} | ${formatPercent(role.share)} | ${formatNumber(role.minted)} tokens |`)
+    .join("\n");
+
+  const minStakeTable = [
+    `| Agent | ${formatNumber(incentives.slashing.minStake.agent)} |`,
+    `| Validator | ${formatNumber(incentives.slashing.minStake.validator)} |`,
+    `| Operator | ${formatNumber(incentives.slashing.minStake.operator)} |`,
+  ].join("\n");
+
+  const slashingTable = incentives.slashing.severities
+    .map(
+      (severity) =>
+        `| ${severity.label} | ${formatPercent(severity.fraction)} | ${formatNumber(severity.slashAmount)} tokens | ${formatNumber(
+          severity.treasuryAmount,
+        )} tokens | ${formatNumber(severity.employerAmount)} tokens | ${formatNumber(severity.burnAmount)} tokens |`,
+    )
+    .join("\n");
+
   const jacobianAnalyticMatrix = formatMatrix(jacobian.analytic);
   const jacobianNumericMatrix = formatMatrix(jacobian.numeric);
 
@@ -1191,7 +1429,49 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Alternate computation check:** ${formatNumber(hamiltonian.alternativeHamiltonian)} units`,
     `- **Difference:** ${hamiltonian.difference.toExponential(3)} (≤ 1e-3 target)`,
     "",
-    "## 3. Game-Theoretic Macro-Equilibrium",
+    "## 3. Incentive Free-Energy Flow",
+    "",
+    `- **Mint rule η:** ${incentives.mint.eta.toFixed(2)} (ΔV ${formatNumber(incentives.mint.deltaValue)} tokens)`,
+    `- **Total minted per event:** ${formatNumber(incentives.mint.totalMinted)} tokens`,
+    `- **Agent ↔ treasury parity:** ${incentives.mint.equalityOk ? "✅" : "⚠️"} Δ ${formatNumber(
+      incentives.mint.equalityDelta,
+    )} tokens (${(incentives.mint.equalityRatio * 100).toFixed(4)}% of mint, tolerance ${(incentives.mint.tolerance * 100).toFixed(
+      2,
+    )}%)`,
+    `- **Treasury mirror share:** ${formatPercent(incentives.mint.treasuryMirrorShare)} (${incentives.mint.agentShare !== null
+      ? `agent share ${formatPercent(incentives.mint.agentShare)}`
+      : "agent share unresolved"
+    })`,
+    `- **Dust routed to treasury:** ${formatNumber(Math.abs(incentives.mint.dust), 4)} tokens`,
+    "",
+    "| Role | Share | Minted tokens |",
+    "| --- | --- | --- |",
+    mintTable,
+    "",
+    `- **Burn curve:** burn ${formatBps(incentives.burn.burnBps)}, treasury ${formatBps(
+      incentives.burn.treasuryBps,
+    )}, employer ${formatBps(incentives.burn.employerBps)}`,
+    `- **Per-job distribution:** burn ${formatNumber(incentives.burn.burned)} tokens, treasury ${formatNumber(
+      incentives.burn.treasury,
+    )} tokens, employer ${formatNumber(incentives.burn.employer)} tokens, worker payouts ${formatNumber(
+      incentives.burn.retained,
+    )} tokens`,
+    "",
+    `- **Stake baseline:** agent ${formatNumber(incentives.slashing.minStake.agent)} tokens, validator ${formatNumber(
+      incentives.slashing.minStake.validator,
+    )} tokens, operator ${formatNumber(incentives.slashing.minStake.operator)} tokens (example stake ${formatNumber(
+      incentives.slashing.stakeExample,
+    )} tokens)`,
+    "",
+    "| Role | Minimum stake (tokens) |",
+    "| --- | --- |",
+    minStakeTable,
+    "",
+    "| Severity | Slash % stake | Amount slashed | Treasury share | Employer share | Burned |",
+    "| --- | --- | --- | --- | --- | --- |",
+    slashingTable,
+    "",
+    "## 4. Game-Theoretic Macro-Equilibrium",
     "",
     `- **Discount factor:** ${equilibrium.discountFactor.toFixed(2)} (must exceed 0.80 for uniqueness)`,
     `- **Replicator iterations to convergence:** ${equilibrium.replicatorIterations}`,
@@ -1221,7 +1501,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- |",
     jacobianNumericMatrix,
     "",
-    "## 4. Antifragility Tensor",
+    "## 5. Antifragility Tensor",
     "",
     `- **Quadratic curvature (2a):** ${antifragility.quadraticSecondDerivative.toExponential(3)} (> 0 indicates antifragility)`,
     `- **Monotonic welfare increase:** ${antifragility.monotonicIncrease ? "✅" : "⚠️"}`,
@@ -1230,7 +1510,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- |",
     antifragilityTable,
     "",
-    "## 5. Risk & Safety Audit",
+    "## 6. Risk & Safety Audit",
     "",
     `- **Coverage weights:** staking ${formatPercent(risk.weights.staking)}, formal ${formatPercent(risk.weights.formal)}, fuzz ${formatPercent(risk.weights.fuzz)}`,
     `- **Portfolio residual risk:** ${risk.portfolioResidual.toFixed(3)} (threshold ${risk.threshold.toFixed(3)} — ${risk.withinBounds ? "within" : "exceeds"} bounds)`,
@@ -1240,7 +1520,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- | --- | --- |",
     riskTable,
     "",
-    "## 6. Owner Supremacy & Command Surface",
+    "## 7. Owner Supremacy & Command Surface",
     "",
     `- **Owner:** ${owner.owner}`,
     `- **Pauser:** ${owner.pauser}`,
@@ -1264,7 +1544,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- |",
     commandAuditTable,
     "",
-    "## 7. Blockchain Deployment Envelope",
+    "## 8. Blockchain Deployment Envelope",
     "",
     `- **Network:** ${blockchain.network} (chainId ${blockchain.chainId})`,
     `- **RPC:** ${blockchain.rpcProvider}`,
@@ -1281,7 +1561,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- |",
     pausableTable,
     "",
-    "## 8. CI Enforcement Ledger",
+    "## 9. CI Enforcement Ledger",
     "",
     `- **Workflow name:** ${ci.workflow}`,
     `- **Concurrency guard:** <code>${ci.concurrency}</code>`,
@@ -1293,7 +1573,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     "Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.",
     "",
-    "## 9. Owner Execution Log (fill during live ops)",
+    "## 10. Owner Execution Log (fill during live ops)",
     "",
     "| Timestamp | Action | Tx hash | Operator | Notes |",
     "| --- | --- | --- | --- | --- |",
@@ -1310,6 +1590,7 @@ function buildSummary(bundle: ReportBundle): Record<string, unknown> {
     equilibrium: bundle.equilibrium,
     antifragility: bundle.antifragility,
     risk: bundle.risk,
+    incentives: bundle.incentives,
     owner: bundle.owner,
     jacobian: bundle.jacobian,
     blockchain: bundle.blockchain,
@@ -1324,6 +1605,7 @@ async function main(): Promise<void> {
   const equilibrium = computeEquilibrium(mission);
   const antifragility = computeAntifragility(mission, mission.gameTheory.payoffMatrix, equilibrium, thermodynamics);
   const risk = computeRiskReport(mission);
+  const incentives = computeIncentiveReport(mission);
   const packageScripts = await loadPackageScripts();
   const owner = computeOwnerReport(mission, packageScripts);
   const jacobian = computeJacobian(mission.gameTheory.payoffMatrix, equilibrium.closedForm);
@@ -1337,6 +1619,7 @@ async function main(): Promise<void> {
     equilibrium,
     antifragility,
     risk,
+    incentives,
     owner,
     jacobian,
     blockchain,
