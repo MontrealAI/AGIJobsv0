@@ -275,8 +275,11 @@ type OwnerControlCapability = {
   command: string;
   verification: string;
   present: boolean;
-  scriptName: string | null;
-  scriptExists: boolean;
+  commandScriptName: string | null;
+  commandScriptExists: boolean;
+  verificationScriptName: string | null;
+  verificationScriptExists: boolean;
+  hasVerification: boolean;
 };
 
 export type OwnerControlReport = {
@@ -292,6 +295,7 @@ export type OwnerControlReport = {
   monitoringSentinels: string[];
   fullCoverage: boolean;
   allCommandsPresent: boolean;
+  allVerificationScriptsPresent: boolean;
 };
 
 export type JacobianReport = {
@@ -1251,8 +1255,11 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
       command: capability.command,
       verification: capability.verification,
       present: true,
-      scriptName: extractScriptName(capability.command),
-      scriptExists: false,
+      commandScriptName: extractScriptName(capability.command),
+      commandScriptExists: false,
+      verificationScriptName: extractScriptName(capability.verification),
+      verificationScriptExists: false,
+      hasVerification: capability.verification.trim().length > 0,
     });
   }
 
@@ -1265,8 +1272,11 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
         command: "",
         verification: "",
         present: false,
-        scriptName: null,
-        scriptExists: false,
+        commandScriptName: null,
+        commandScriptExists: false,
+        verificationScriptName: null,
+        verificationScriptExists: false,
+        hasVerification: false,
       });
     }
   }
@@ -1274,8 +1284,17 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
   const capabilities: OwnerControlCapability[] = [];
   for (const capability of config.ownerControls.criticalCapabilities) {
     const enriched = capabilityMap.get(capability.category)!;
-    if (enriched.scriptName) {
-      enriched.scriptExists = Object.prototype.hasOwnProperty.call(packageScripts, enriched.scriptName);
+    if (enriched.commandScriptName) {
+      enriched.commandScriptExists = Object.prototype.hasOwnProperty.call(
+        packageScripts,
+        enriched.commandScriptName,
+      );
+    }
+    if (enriched.verificationScriptName) {
+      enriched.verificationScriptExists = Object.prototype.hasOwnProperty.call(
+        packageScripts,
+        enriched.verificationScriptName,
+      );
     }
     capabilities.push(enriched);
   }
@@ -1299,10 +1318,23 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
     if (!capability.present) {
       return false;
     }
-    if (!capability.scriptName) {
+    if (!capability.commandScriptName) {
       return capability.command.trim().length === 0 ? true : false;
     }
-    return capability.scriptExists;
+    return capability.commandScriptExists;
+  });
+
+  const allVerificationScriptsPresent = capabilities.every((capability) => {
+    if (!capability.present) {
+      return false;
+    }
+    if (!capability.hasVerification) {
+      return false;
+    }
+    if (!capability.verificationScriptName) {
+      return false;
+    }
+    return capability.verificationScriptExists;
   });
 
   return {
@@ -1315,6 +1347,7 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
     monitoringSentinels: config.ownerControls.monitoringSentinels,
     fullCoverage,
     allCommandsPresent,
+    allVerificationScriptsPresent,
   };
 }
 
@@ -1573,16 +1606,23 @@ function buildMarkdown(bundle: ReportBundle): string {
     .join("\n");
 
   const upgradeList = bundle.owner.capabilities
-    .map(
-      (capability) =>
-        `- **${capability.label} (${capability.category}).** ${capability.description}\n  └─ <code>$ ${capability.command}</code> (verify: <code>${capability.verification}</code>) ${
-          capability.scriptName
-            ? capability.scriptExists
-              ? "✅ script pinned"
-              : `⚠️ missing script “${capability.scriptName}”`
-            : "ℹ️ manual command"
-        }`,
-    )
+    .map((capability) => {
+      const commandAutomation = capability.commandScriptName
+        ? capability.commandScriptExists
+          ? `✅ script pinned (<code>${capability.commandScriptName}</code>)`
+          : `⚠️ missing script “${capability.commandScriptName}”`
+        : capability.command.trim().length === 0
+          ? "⚠️ command missing"
+          : "ℹ️ manual command";
+      const verificationAutomation = capability.hasVerification
+        ? capability.verificationScriptName
+          ? capability.verificationScriptExists
+            ? `✅ verifier ready (<code>${capability.verificationScriptName}</code>)`
+            : `⚠️ missing verifier script “${capability.verificationScriptName}”`
+          : "⚠️ manual verification"
+        : "❌ no verification configured";
+      return `- **${capability.label} (${capability.category}).** ${capability.description}\n  └─ Command: <code>$ ${capability.command}</code> • ${commandAutomation}\n  └─ Verification: <code>${capability.verification || "n/a"}</code> • ${verificationAutomation}`;
+    })
     .join("\n");
 
   const requiredCoverageTable = owner.requiredCoverage
@@ -1648,11 +1688,25 @@ function buildMarkdown(bundle: ReportBundle): string {
   const jacobianNumericMatrix = formatMatrix(jacobian.numeric);
 
   const commandAuditTable = owner.capabilities
-    .map((capability) =>
-      `| ${capability.category} | ${capability.scriptName ?? "manual"} | ${
-        capability.scriptName ? (capability.scriptExists ? "✅" : "⚠️") : "ℹ️"
-      } |`,
-    )
+    .map((capability) => {
+      const commandStatus = capability.commandScriptName
+        ? capability.commandScriptExists
+          ? "✅"
+          : "⚠️"
+        : capability.command.trim().length === 0
+          ? "⚠️"
+          : "ℹ️";
+      const verificationStatus = capability.hasVerification
+        ? capability.verificationScriptName
+          ? capability.verificationScriptExists
+            ? "✅"
+            : "⚠️"
+          : "ℹ️"
+        : "❌";
+      return `| ${capability.category} | ${capability.commandScriptName ?? "manual"} | ${commandStatus} | ${
+        capability.hasVerification ? capability.verificationScriptName ?? "manual" : "n/a"
+      } | ${verificationStatus} |`;
+    })
     .join("\n");
 
   return [
@@ -1817,7 +1871,10 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Treasury:** ${owner.treasury}`,
     `- **Timelock:** ${owner.timelockSeconds} seconds`,
     `- **Coverage achieved:** ${owner.fullCoverage ? "all critical capabilities accounted for" : "⚠️ gaps detected"}`,
-    `- **Command surfaces wired:** ${owner.allCommandsPresent ? "✅ all npm scripts present" : "⚠️ missing scripts"}`,
+    `- **Command surfaces wired:** ${owner.allCommandsPresent ? "✅ all automation scripts present" : "⚠️ missing automation"}`,
+    `- **Verification surfaces wired:** ${
+      owner.allVerificationScriptsPresent ? "✅ all verification scripts present" : "⚠️ missing verification"
+    }`,
     "",
     "### Critical Capabilities",
     upgradeList,
@@ -1832,8 +1889,8 @@ function buildMarkdown(bundle: ReportBundle): string {
     ownerSequence,
     "",
     "### Command Audit",
-    "| Category | npm script | Status |",
-    "| --- | --- | --- |",
+    "| Category | Command script | Command status | Verification script | Verification status |",
+    "| --- | --- | --- | --- | --- |",
     commandAuditTable,
     "",
     "## 9. Blockchain Deployment Envelope",
@@ -1937,10 +1994,27 @@ function buildDashboardHtml(bundle: ReportBundle): string {
 
   const capabilityRows = owner.capabilities
     .map((capability) => {
-      const status = capability.present ? (capability.scriptName && !capability.scriptExists ? "⚠️" : "✅") : "⚠️";
-      return `<tr><td>${escapeHtml(capability.label)}</td><td>${escapeHtml(capability.category)}</td><td>${
-        capability.scriptName ? escapeHtml(capability.scriptName) : "manual"
-      }</td><td>${status}</td></tr>`;
+      const commandScript = capability.commandScriptName ? escapeHtml(capability.commandScriptName) : "manual";
+      const commandStatus = capability.commandScriptName
+        ? capability.commandScriptExists
+          ? "✅"
+          : "⚠️"
+        : capability.command.trim().length === 0
+          ? "⚠️"
+          : "ℹ️";
+      const verificationScript = capability.hasVerification
+        ? capability.verificationScriptName
+          ? escapeHtml(capability.verificationScriptName)
+          : "manual"
+        : "n/a";
+      const verificationStatus = capability.hasVerification
+        ? capability.verificationScriptName
+          ? capability.verificationScriptExists
+            ? "✅"
+            : "⚠️"
+          : "ℹ️"
+        : "❌";
+      return `<tr><td>${escapeHtml(capability.label)}</td><td>${escapeHtml(capability.category)}</td><td>${commandScript}</td><td>${commandStatus}</td><td>${verificationScript}</td><td>${verificationStatus}</td></tr>`;
     })
     .join("\n");
 
@@ -2173,6 +2247,10 @@ function buildDashboardHtml(bundle: ReportBundle): string {
             <li>Pauser: <strong>${escapeHtml(owner.pauser)}</strong></li>
             <li>Treasury: <strong>${escapeHtml(owner.treasury)}</strong></li>
             <li>Timelock: <strong>${owner.timelockSeconds} seconds</strong></li>
+            <li>Command scripts: <strong>${owner.allCommandsPresent ? "✅ ready" : "⚠️ review"}</strong></li>
+            <li>Verification scripts: <strong>${
+              owner.allVerificationScriptsPresent ? "✅ ready" : "⚠️ review"
+            }</strong></li>
           </ul>
         </div>
       </section>
@@ -2236,7 +2314,7 @@ function buildDashboardHtml(bundle: ReportBundle): string {
           <ul>${sentinelList}</ul>
           <h3>Capabilities</h3>
           <table>
-            <thead><tr><th>Capability</th><th>Category</th><th>Script</th><th>Status</th></tr></thead>
+            <thead><tr><th>Capability</th><th>Category</th><th>Command script</th><th>Command status</th><th>Verification script</th><th>Verification status</th></tr></thead>
             <tbody>${capabilityRows}</tbody>
           </table>
         </div>

@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T18:25:12.965Z
+*Generated at:* 2025-10-19T19:53:37.821Z
 *Version:* 1.1.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -211,23 +211,31 @@ pie showData
 - **Treasury:** 0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3
 - **Timelock:** 691200 seconds
 - **Coverage achieved:** all critical capabilities accounted for
-- **Command surfaces wired:** ✅ all npm scripts present
+- **Command surfaces wired:** ✅ all automation scripts present
+- **Verification surfaces wired:** ✅ all verification scripts present
 
 ### Critical Capabilities
 - **Global pause switch (pause).** Immediate halt for the entire AGI Jobs execution surface via the owner guardian.
-  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause true</code> (verify: <code>npm run owner:verify-control</code>) ✅ script pinned
+  └─ Command: <code>$ npm run owner:system-pause -- --network mainnet --pause true</code> • ✅ script pinned (<code>owner:system-pause</code>)
+  └─ Verification: <code>npm run owner:verify-control</code> • ✅ verifier ready (<code>owner:verify-control</code>)
 - **Resume operations (resume).** Restores production flows after remediation and confirms health checks.
-  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause false</code> (verify: <code>npm run owner:verify-control</code>) ✅ script pinned
+  └─ Command: <code>$ npm run owner:system-pause -- --network mainnet --pause false</code> • ✅ script pinned (<code>owner:system-pause</code>)
+  └─ Verification: <code>npm run owner:verify-control</code> • ✅ verifier ready (<code>owner:verify-control</code>)
 - **Tune Hamiltonian parameters (parameter).** Applies Hamiltonian monitor adjustments to lock λ and inertial metrics at the computed optimum.
-  └─ <code>$ npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08</code> (verify: <code>npm run owner:audit-hamiltonian</code>) ✅ script pinned
+  └─ Command: <code>$ npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08</code> • ✅ script pinned (<code>owner:command-center</code>)
+  └─ Verification: <code>npm run owner:audit-hamiltonian</code> • ✅ verifier ready (<code>owner:audit-hamiltonian</code>)
 - **Reward engine burn curve (treasury).** Aligns mint/burn ratios with thermodynamic constraints and treasury splits.
-  └─ <code>$ npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200</code> (verify: <code>npm run reward-engine:report</code>) ✅ script pinned
+  └─ Command: <code>$ npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200</code> • ✅ script pinned (<code>reward-engine:update</code>)
+  └─ Verification: <code>npm run reward-engine:report</code> • ✅ verifier ready (<code>reward-engine:report</code>)
 - **Sentinel rotation (sentinel).** Refreshes enforcement guardians to maintain antifragile coverage.
-  └─ <code>$ npm run owner:rotate -- --network mainnet --role Sentinel --count 3</code> (verify: <code>npm run monitoring:sentinels</code>) ✅ script pinned
+  └─ Command: <code>$ npm run owner:rotate -- --network mainnet --role Sentinel --count 3</code> • ✅ script pinned (<code>owner:rotate</code>)
+  └─ Verification: <code>npm run monitoring:sentinels</code> • ✅ verifier ready (<code>monitoring:sentinels</code>)
 - **Timelocked upgrade queue (upgrade).** Queues upgrade bundle into the timelock for deterministic rollout.
-  └─ <code>$ npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json</code> (verify: <code>npm run owner:upgrade-status</code>) ✅ script pinned
+  └─ Command: <code>$ npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json</code> • ✅ script pinned (<code>owner:upgrade</code>)
+  └─ Verification: <code>npm run owner:upgrade-status</code> • ✅ verifier ready (<code>owner:upgrade-status</code>)
 - **Regulatory disclosure (compliance).** Publishes mandatory statements to participants and regulators.
-  └─ <code>$ npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."</code> (verify: <code>npm run owner:compliance-report</code>) ✅ script pinned
+  └─ Command: <code>$ npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."</code> • ✅ script pinned (<code>owner:update-all</code>)
+  └─ Verification: <code>npm run owner:compliance-report</code> • ✅ verifier ready (<code>owner:compliance-report</code>)
 
 | Capability | Present |
 | --- | --- |
@@ -259,15 +267,15 @@ sequenceDiagram
 ```
 
 ### Command Audit
-| Category | npm script | Status |
-| --- | --- | --- |
-| pause | owner:system-pause | ✅ |
-| resume | owner:system-pause | ✅ |
-| parameter | owner:command-center | ✅ |
-| treasury | reward-engine:update | ✅ |
-| sentinel | owner:rotate | ✅ |
-| upgrade | owner:upgrade | ✅ |
-| compliance | owner:update-all | ✅ |
+| Category | Command script | Command status | Verification script | Verification status |
+| --- | --- | --- | --- | --- |
+| pause | owner:system-pause | ✅ | owner:verify-control | ✅ |
+| resume | owner:system-pause | ✅ | owner:verify-control | ✅ |
+| parameter | owner:command-center | ✅ | owner:audit-hamiltonian | ✅ |
+| treasury | reward-engine:update | ✅ | reward-engine:report | ✅ |
+| sentinel | owner:rotate | ✅ | monitoring:sentinels | ✅ |
+| upgrade | owner:upgrade | ✅ | owner:upgrade-status | ✅ |
+| compliance | owner:update-all | ✅ | owner:compliance-report | ✅ |
 
 ## 9. Blockchain Deployment Envelope
 

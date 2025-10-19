@@ -1,15 +1,15 @@
 # Owner Diagnostics Summary
 
-Generated: 2025-10-19T17:45:25.272Z
+Generated: 2025-10-19T19:53:59.770Z
 
 🟡 Attention — review warnings before production rollout.
 
 | Command | Status | Insight | Duration |
 | --- | --- | --- | --- |
-| Hamiltonian monitor ↔ mission manifest alignment | ⚠️ WARNING | ERROR @ $.onChain — HH700: Artifact for contract "contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor" not found. \| Cross-check mismatch: mission alignment. | 3.06 s |
-| Reward engine treasury / thermodynamic calibration | ⚠️ WARNING | ERROR @ $.onChain — HH700: Artifact for contract "contracts/v2/RewardEngineMB.sol:RewardEngineMB" not found. | 3.21 s |
-| Timelock governance queue readiness | ⚠️ WARNING | SKIPPED @ $.onChain — No timelock address available. | 2.66 s |
-| Tax policy disclosure + acknowledgement status | ⚠️ WARNING | SKIPPED @ $.onChain — No tax policy address configured. | 2.68 s |
+| Hamiltonian monitor ↔ mission manifest alignment | ⚠️ WARNING | ERROR @ $.onChain — HH700: Artifact for contract "contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor" not found. \| Cross-check mismatch: mission alignment. | 5.21 s |
+| Reward engine treasury / thermodynamic calibration | ⚠️ WARNING | ERROR @ $.onChain — HH700: Artifact for contract "contracts/v2/RewardEngineMB.sol:RewardEngineMB" not found. | 4.59 s |
+| Timelock governance queue readiness | ⚠️ WARNING | SKIPPED @ $.onChain — No timelock address available. | 4.03 s |
+| Tax policy disclosure + acknowledgement status | ⚠️ WARNING | SKIPPED @ $.onChain — No tax policy address configured. | 3.94 s |
 
 ## Breakdown
 
