@@ -1565,7 +1565,7 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
       return false;
     }
     if (!capability.scriptName) {
-      return capability.command.trim().length > 0;
+      return capability.command.trim().length === 0;
     }
     return capability.scriptExists;
   });
