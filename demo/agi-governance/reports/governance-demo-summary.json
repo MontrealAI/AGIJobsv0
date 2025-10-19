@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-19T22:08:08.089Z",
+  "generatedAt": "2025-10-19T22:56:36.733Z",
   "version": "1.3.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
@@ -170,8 +170,8 @@
     "measurementVariance": 0.0024,
     "measurementStdDev": 0.04898979485566356,
     "fisherInformation": 0.94,
-    "coherenceScore": 0.6039619543049088,
-    "quantumConfidence": 0.7719809771524544,
+    "coherenceScore": 0.7017675749414392,
+    "quantumConfidence": 0.8208837874707196,
     "decoherenceTimeNs": 4500,
     "coherenceHalfLifeNs": 9200,
     "coherenceFrequencyThz": 540,
@@ -211,17 +211,17 @@
     "energyMarginKJ": 69800,
     "energyMarginFloorKJ": 68000,
     "energyMarginSatisfied": true,
-    "confidenceScore": 0.8018445041975224,
+    "confidenceScore": 0.8504045836860383,
     "thermodynamicAssurance": 1,
     "governanceAssurance": 0.2851499999999999,
     "antifragilityAssurance": 1,
     "ownerAssurance": 1,
-    "quantumAssurance": 0.7719809771524544,
+    "quantumAssurance": 0.8208837874707196,
     "quantumConfidenceMinimum": 0.72,
     "quantumConfidenceSatisfied": true,
-    "superintelligenceIndex": 0.8153707172582946,
+    "superintelligenceIndex": 0.8212390544964864,
     "superintelligenceMinimum": 0.82,
-    "superintelligenceSatisfied": false,
+    "superintelligenceSatisfied": true,
     "riskResidual": 0.214455
   },
   "risk": {
@@ -401,7 +401,9 @@
         "verification": "npm run owner:verify-control",
         "present": true,
         "scriptName": "owner:system-pause",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:verify-control",
+        "verificationScriptExists": true
       },
       {
         "category": "resume",
@@ -411,7 +413,9 @@
         "verification": "npm run owner:verify-control",
         "present": true,
         "scriptName": "owner:system-pause",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:verify-control",
+        "verificationScriptExists": true
       },
       {
         "category": "parameter",
@@ -421,7 +425,9 @@
         "verification": "npm run owner:audit-hamiltonian",
         "present": true,
         "scriptName": "owner:command-center",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:audit-hamiltonian",
+        "verificationScriptExists": true
       },
       {
         "category": "treasury",
@@ -431,7 +437,9 @@
         "verification": "npm run reward-engine:report",
         "present": true,
         "scriptName": "reward-engine:update",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "reward-engine:report",
+        "verificationScriptExists": true
       },
       {
         "category": "sentinel",
@@ -441,7 +449,9 @@
         "verification": "npm run monitoring:sentinels",
         "present": true,
         "scriptName": "owner:rotate",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "monitoring:sentinels",
+        "verificationScriptExists": true
       },
       {
         "category": "upgrade",
@@ -451,7 +461,9 @@
         "verification": "npm run owner:upgrade-status",
         "present": true,
         "scriptName": "owner:upgrade",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:upgrade-status",
+        "verificationScriptExists": true
       },
       {
         "category": "compliance",
@@ -461,7 +473,9 @@
         "verification": "npm run owner:compliance-report",
         "present": true,
         "scriptName": "owner:update-all",
-        "scriptExists": true
+        "scriptExists": true,
+        "verificationScriptName": "owner:compliance-report",
+        "verificationScriptExists": true
       }
     ],
     "requiredCoverage": [
@@ -500,7 +514,8 @@
       "Adaptive fuzz oracle with spectral drift alerts"
     ],
     "fullCoverage": true,
-    "allCommandsPresent": true
+    "allCommandsPresent": true,
+    "allVerificationsPresent": true
   },
   "jacobian": {
     "analytic": [

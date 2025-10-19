@@ -332,6 +332,8 @@ type OwnerControlCapability = {
   present: boolean;
   scriptName: string | null;
   scriptExists: boolean;
+  verificationScriptName: string | null;
+  verificationScriptExists: boolean;
 };
 
 export type OwnerControlReport = {
@@ -347,6 +349,7 @@ export type OwnerControlReport = {
   monitoringSentinels: string[];
   fullCoverage: boolean;
   allCommandsPresent: boolean;
+  allVerificationsPresent: boolean;
 };
 
 export type JacobianReport = {
@@ -1505,6 +1508,8 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
       present: true,
       scriptName: extractScriptName(capability.command),
       scriptExists: false,
+      verificationScriptName: extractScriptName(capability.verification),
+      verificationScriptExists: false,
     });
   }
 
@@ -1519,6 +1524,8 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
         present: false,
         scriptName: null,
         scriptExists: false,
+        verificationScriptName: null,
+        verificationScriptExists: false,
       });
     }
   }
@@ -1528,6 +1535,12 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
     const enriched = capabilityMap.get(capability.category)!;
     if (enriched.scriptName) {
       enriched.scriptExists = Object.prototype.hasOwnProperty.call(packageScripts, enriched.scriptName);
+    }
+    if (enriched.verificationScriptName) {
+      enriched.verificationScriptExists = Object.prototype.hasOwnProperty.call(
+        packageScripts,
+        enriched.verificationScriptName,
+      );
     }
     capabilities.push(enriched);
   }
@@ -1552,9 +1565,21 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
       return false;
     }
     if (!capability.scriptName) {
-      return capability.command.trim().length === 0 ? true : false;
+      return capability.command.trim().length > 0;
     }
     return capability.scriptExists;
+  });
+  const allVerificationsPresent = capabilities.every((capability) => {
+    if (!capability.present) {
+      return false;
+    }
+    if (!capability.verification || capability.verification.trim().length === 0) {
+      return false;
+    }
+    if (!capability.verificationScriptName) {
+      return true;
+    }
+    return capability.verificationScriptExists;
   });
 
   return {
@@ -1567,6 +1592,7 @@ function computeOwnerReport(config: MissionConfig, packageScripts: Record<string
     monitoringSentinels: config.ownerControls.monitoringSentinels,
     fullCoverage,
     allCommandsPresent,
+    allVerificationsPresent,
   };
 }
 
@@ -2023,6 +2049,7 @@ function buildOwnerSequence(bundle: ReportBundle): string {
     "  G->>M: Reconfigure Hamiltonian λ",
     "  M-->>G: Updated Divergence Metrics",
     "  G-->>O: Deterministic State Report",
+    `  G-->>O: Verification scripts ${owner.allVerificationsPresent ? "armed" : "require reinforcement"}`,
     `  T-->>O: Treasury Mirror Share ${formatPercent(bundle.incentives.mint.treasuryMirrorShare)}`,
     "```",
   ].join("\n");
@@ -2099,9 +2126,15 @@ function buildMarkdown(bundle: ReportBundle): string {
         `- **${capability.label} (${capability.category}).** ${capability.description}\n  └─ <code>$ ${capability.command}</code> (verify: <code>${capability.verification}</code>) ${
           capability.scriptName
             ? capability.scriptExists
-              ? "✅ script pinned"
-              : `⚠️ missing script “${capability.scriptName}”`
+              ? "✅ command script pinned"
+              : `⚠️ missing command script “${capability.scriptName}”`
             : "ℹ️ manual command"
+        } • ${
+          capability.verificationScriptName
+            ? capability.verificationScriptExists
+              ? "✅ verifier script pinned"
+              : `⚠️ missing verifier script “${capability.verificationScriptName}”`
+            : "ℹ️ manual verification"
         }`,
     )
     .join("\n");
@@ -2191,11 +2224,22 @@ function buildMarkdown(bundle: ReportBundle): string {
   const jacobianNumericMatrix = formatMatrix(jacobian.numeric);
 
   const commandAuditTable = owner.capabilities
-    .map((capability) =>
-      `| ${capability.category} | ${capability.scriptName ?? "manual"} | ${
-        capability.scriptName ? (capability.scriptExists ? "✅" : "⚠️") : "ℹ️"
-      } |`,
-    )
+    .map((capability) => {
+      const commandStatus = capability.scriptName
+        ? capability.scriptExists
+          ? "✅"
+          : "⚠️"
+        : "ℹ️";
+      const verificationStatus = capability.verificationScriptName
+        ? capability.verificationScriptExists
+          ? "✅"
+          : "⚠️"
+        : capability.verification.trim().length > 0
+          ? "ℹ️"
+          : "⚠️";
+      const verificationLabel = capability.verificationScriptName ?? (capability.verification.trim().length > 0 ? "manual" : "n/a");
+      return `| ${capability.category} | ${capability.scriptName ?? "manual"} | ${commandStatus} | ${verificationLabel} | ${verificationStatus} |`;
+    })
     .join("\n");
 
   return [
@@ -2419,6 +2463,9 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Timelock:** ${owner.timelockSeconds} seconds`,
     `- **Coverage achieved:** ${owner.fullCoverage ? "all critical capabilities accounted for" : "⚠️ gaps detected"}`,
     `- **Command surfaces wired:** ${owner.allCommandsPresent ? "✅ all npm scripts present" : "⚠️ missing scripts"}`,
+    `- **Verification surfaces wired:** ${
+      owner.allVerificationsPresent ? "✅ all verifier scripts present" : "⚠️ verifier gaps detected"
+    }`,
     "",
     "### Critical Capabilities",
     upgradeList,
@@ -2433,8 +2480,8 @@ function buildMarkdown(bundle: ReportBundle): string {
     ownerSequence,
     "",
     "### Command Audit",
-    "| Category | npm script | Status |",
-    "| --- | --- | --- |",
+    "| Category | Command Script | Status | Verification | Status |",
+    "| --- | --- | --- | --- | --- |",
     commandAuditTable,
     "",
     "## 10. Blockchain Deployment Envelope",
@@ -2540,10 +2587,30 @@ function buildDashboardHtml(bundle: ReportBundle): string {
 
   const capabilityRows = owner.capabilities
     .map((capability) => {
-      const status = capability.present ? (capability.scriptName && !capability.scriptExists ? "⚠️" : "✅") : "⚠️";
+      const commandStatus = capability.present
+        ? capability.scriptName
+          ? capability.scriptExists
+            ? "✅"
+            : "⚠️"
+          : "ℹ️"
+        : "⚠️";
+      const verificationStatus = capability.present
+        ? capability.verificationScriptName
+          ? capability.verificationScriptExists
+            ? "✅"
+            : "⚠️"
+          : capability.verification.trim().length > 0
+            ? "ℹ️"
+            : "⚠️"
+        : "⚠️";
+      const verificationLabel = capability.verificationScriptName
+        ? capability.verificationScriptName
+        : capability.verification.trim().length > 0
+          ? "manual"
+          : "n/a";
       return `<tr><td>${escapeHtml(capability.label)}</td><td>${escapeHtml(capability.category)}</td><td>${
         capability.scriptName ? escapeHtml(capability.scriptName) : "manual"
-      }</td><td>${status}</td></tr>`;
+      }</td><td>${commandStatus}</td><td>${escapeHtml(verificationLabel)}</td><td>${verificationStatus}</td></tr>`;
     })
     .join("\n");
 
@@ -2993,7 +3060,7 @@ function buildDashboardHtml(bundle: ReportBundle): string {
           <ul>${sentinelList}</ul>
           <h3>Capabilities</h3>
           <table>
-            <thead><tr><th>Capability</th><th>Category</th><th>Script</th><th>Status</th></tr></thead>
+            <thead><tr><th>Capability</th><th>Category</th><th>Script</th><th>Status</th><th>Verification</th><th>Status</th></tr></thead>
             <tbody>${capabilityRows}</tbody>
           </table>
         </div>

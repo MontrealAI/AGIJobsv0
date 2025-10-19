@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T22:08:08.089Z
+*Generated at:* 2025-10-19T22:56:36.733Z
 *Version:* 1.3.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -106,8 +106,8 @@ flowchart LR
     GovernanceSignal[Governance Assurance 29%]
     AntifragileSignal[Antifragility Assurance 100%]
     OwnerSignal[Owner Command 100%]
-    QuantumSignal[Quantum Assurance 77%]
-    CoherenceSignal[Coherence 77%]
+    QuantumSignal[Quantum Assurance 82%]
+    CoherenceSignal[Coherence 82%]
     EnergyFloor[Energy Margin 69.80k kJ]
     Stackelberg --> Confidence
     EnergyFloor --> ThermoSignal
@@ -208,7 +208,7 @@ mindmap
         "σ=0.20":::sigma --> "Welfare 2.99":::welfare
         "σ=0.30":::sigma --> "Welfare 6.59":::welfare
     "Quantum Lattice":::core
-      "Coherence 77%":::sigma
+      "Coherence 82%":::sigma
       "Charge Δ 7.00e-5 (tol 1.20e-4)":::welfare
     "Owner Actions":::core
       "Mint Mirror 65.00%"
@@ -229,13 +229,13 @@ mindmap
 - **Sigma welfare gain:** 10.32 (minimum 0.12)
 - **Owner coverage ratio:** 100.00% (threshold 95.00%)
 - **Energy margin:** 69.80k kJ (floor 68.00k kJ — ✅)
-- **Superintelligence index:** 81.5% (minimum 82.0% — ⚠️)
-- **Quantum coherence confidence:** 77.2% (minimum 72.0% — ✅)
+- **Superintelligence index:** 82.1% (minimum 82.0% — ✅)
+- **Quantum coherence confidence:** 82.1% (minimum 72.0% — ✅)
 - **Quantum free-energy delta vs thermodynamic margin:** 6.980e+4 kJ
 - **Noether charge alignment:** Δ7.000e-5 (tolerance 1.200e-4 — ✅)
 - **State entropy:** 1.288 bits (effective dimension 2.44)
 - **Measurement variance:** 2.400e-3 (σ 0.049)
-- **Composite confidence:** 80.2% (thermo 100.0% · governance 28.5% · antifragility 100.0% · owner 100.0%)
+- **Composite confidence:** 85.0% (thermo 100.0% · governance 28.5% · antifragility 100.0% · owner 100.0%)
 
 | State | Normalised weight | Energy |
 | --- | --- | --- |
@@ -254,7 +254,7 @@ mindmap
 | Sigma welfare gain | ✅ |
 | Owner coverage | ✅ |
 | Energy margin | ✅ |
-| Superintelligence threshold | ⚠️ |
+| Superintelligence threshold | ✅ |
 | Quantum confidence floor | ✅ |
 
 ## 8. Risk & Safety Audit
@@ -289,22 +289,23 @@ pie showData
 - **Timelock:** 691200 seconds
 - **Coverage achieved:** all critical capabilities accounted for
 - **Command surfaces wired:** ✅ all npm scripts present
+- **Verification surfaces wired:** ✅ all verifier scripts present
 
 ### Critical Capabilities
 - **Global pause switch (pause).** Immediate halt for the entire AGI Jobs execution surface via the owner guardian.
-  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause true</code> (verify: <code>npm run owner:verify-control</code>) ✅ script pinned
+  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause true</code> (verify: <code>npm run owner:verify-control</code>) ✅ command script pinned • ✅ verifier script pinned
 - **Resume operations (resume).** Restores production flows after remediation and confirms health checks.
-  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause false</code> (verify: <code>npm run owner:verify-control</code>) ✅ script pinned
+  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause false</code> (verify: <code>npm run owner:verify-control</code>) ✅ command script pinned • ✅ verifier script pinned
 - **Tune Hamiltonian parameters (parameter).** Applies Hamiltonian monitor adjustments to lock λ and inertial metrics at the computed optimum.
-  └─ <code>$ npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08</code> (verify: <code>npm run owner:audit-hamiltonian</code>) ✅ script pinned
+  └─ <code>$ npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08</code> (verify: <code>npm run owner:audit-hamiltonian</code>) ✅ command script pinned • ✅ verifier script pinned
 - **Reward engine burn curve (treasury).** Aligns mint/burn ratios with thermodynamic constraints and treasury splits.
-  └─ <code>$ npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200</code> (verify: <code>npm run reward-engine:report</code>) ✅ script pinned
+  └─ <code>$ npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200</code> (verify: <code>npm run reward-engine:report</code>) ✅ command script pinned • ✅ verifier script pinned
 - **Sentinel rotation (sentinel).** Refreshes enforcement guardians to maintain antifragile coverage.
-  └─ <code>$ npm run owner:rotate -- --network mainnet --role Sentinel --count 3</code> (verify: <code>npm run monitoring:sentinels</code>) ✅ script pinned
+  └─ <code>$ npm run owner:rotate -- --network mainnet --role Sentinel --count 3</code> (verify: <code>npm run monitoring:sentinels</code>) ✅ command script pinned • ✅ verifier script pinned
 - **Timelocked upgrade queue (upgrade).** Queues upgrade bundle into the timelock for deterministic rollout.
-  └─ <code>$ npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json</code> (verify: <code>npm run owner:upgrade-status</code>) ✅ script pinned
+  └─ <code>$ npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json</code> (verify: <code>npm run owner:upgrade-status</code>) ✅ command script pinned • ✅ verifier script pinned
 - **Regulatory disclosure (compliance).** Publishes mandatory statements to participants and regulators.
-  └─ <code>$ npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."</code> (verify: <code>npm run owner:compliance-report</code>) ✅ script pinned
+  └─ <code>$ npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."</code> (verify: <code>npm run owner:compliance-report</code>) ✅ command script pinned • ✅ verifier script pinned
 
 | Capability | Present |
 | --- | --- |
@@ -332,19 +333,20 @@ sequenceDiagram
   G->>M: Reconfigure Hamiltonian λ
   M-->>G: Updated Divergence Metrics
   G-->>O: Deterministic State Report
+  G-->>O: Verification scripts armed
   T-->>O: Treasury Mirror Share 65.00%
 ```
 
 ### Command Audit
-| Category | npm script | Status |
-| --- | --- | --- |
-| pause | owner:system-pause | ✅ |
-| resume | owner:system-pause | ✅ |
-| parameter | owner:command-center | ✅ |
-| treasury | reward-engine:update | ✅ |
-| sentinel | owner:rotate | ✅ |
-| upgrade | owner:upgrade | ✅ |
-| compliance | owner:update-all | ✅ |
+| Category | Command Script | Status | Verification | Status |
+| --- | --- | --- | --- | --- |
+| pause | owner:system-pause | ✅ | owner:verify-control | ✅ |
+| resume | owner:system-pause | ✅ | owner:verify-control | ✅ |
+| parameter | owner:command-center | ✅ | owner:audit-hamiltonian | ✅ |
+| treasury | reward-engine:update | ✅ | reward-engine:report | ✅ |
+| sentinel | owner:rotate | ✅ | monitoring:sentinels | ✅ |
+| upgrade | owner:upgrade | ✅ | owner:upgrade-status | ✅ |
+| compliance | owner:update-all | ✅ | owner:compliance-report | ✅ |
 
 ## 10. Blockchain Deployment Envelope
 

@@ -56,6 +56,7 @@ type FullRunSummary = {
     jacobianStable: boolean;
     ownerFullCoverage: boolean;
     ownerAllCommandsPresent: boolean;
+    ownerAllVerificationsPresent: boolean;
     ciShieldOk: boolean;
     ownerReadiness: AggregatedReport["readiness"];
     alphaFieldConfidence: number;
@@ -253,8 +254,9 @@ async function runFullDemo(): Promise<FullRunSummary> {
       equilibriumMaxDeviation: bundle.equilibrium.maxMethodDeviation,
       riskPortfolioResidual: bundle.risk.portfolioResidual,
       jacobianStable: bundle.jacobian.stable,
-      ownerFullCoverage: bundle.owner.fullCoverage,
-      ownerAllCommandsPresent: bundle.owner.allCommandsPresent,
+    ownerFullCoverage: bundle.owner.fullCoverage,
+    ownerAllCommandsPresent: bundle.owner.allCommandsPresent,
+    ownerAllVerificationsPresent: bundle.owner.allVerificationsPresent,
       ciShieldOk: ciAssessment.ok,
       ownerReadiness: diagnostics.readiness,
       alphaFieldConfidence: bundle.alphaField.confidenceScore,
@@ -317,6 +319,7 @@ async function runFullDemo(): Promise<FullRunSummary> {
     `- Jacobian stable: ${summary.metrics.jacobianStable ? "✅" : "❌"}`,
     `- Owner capability coverage: ${summary.metrics.ownerFullCoverage ? "✅" : "⚠️"}`,
     `- All owner commands present: ${summary.metrics.ownerAllCommandsPresent ? "✅" : "⚠️"}`,
+    `- All owner verification scripts present: ${summary.metrics.ownerAllVerificationsPresent ? "✅" : "⚠️"}`,
     `- CI shield: ${summary.metrics.ciShieldOk ? "✅ enforced" : "❌ drift detected"}`,
     `- Owner readiness: ${summary.metrics.ownerReadiness}`,
   ].join("\n");
