@@ -1,0 +1,220 @@
+[
+  {
+    "id": 1,
+    "title": "Deployed MockVotesToken",
+    "actor": "Owner",
+    "timestamp": 1760878785,
+    "details": {
+      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+    }
+  },
+  {
+    "id": 2,
+    "title": "Deployed AGI Governor and Timelock",
+    "actor": "Owner",
+    "timestamp": 1760878792,
+    "details": {
+      "governor": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "timelock": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "votingDelayBlocks": 1,
+      "votingPeriodBlocks": 12,
+      "proposalThreshold": "100.0",
+      "quorumFraction": 8
+    }
+  },
+  {
+    "id": 3,
+    "title": "Deployed Quadratic Voting Exchange",
+    "actor": "Owner",
+    "timestamp": 1760878794,
+    "details": {
+      "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+      "treasury": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    }
+  },
+  {
+    "id": 4,
+    "title": "Deployed Global Governance Council",
+    "actor": "Owner",
+    "timestamp": 1760878795,
+    "details": {
+      "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "pauserRole": "0x6dcb5463bfa055273780ceb39c78d29754fe7aa20ee029e34643838de59592d5"
+    }
+  },
+  {
+    "id": 5,
+    "title": "Minted and Delegated Governance Power",
+    "actor": "Owner",
+    "timestamp": 1760878807,
+    "details": {
+      "totalSupply": "3750000.0",
+      "allocations": [
+        {
+          "actor": "Owner",
+          "amount": "1500000.0"
+        },
+        {
+          "actor": "Aurora Accord",
+          "amount": "600000.0"
+        },
+        {
+          "actor": "Pacific Mesh",
+          "amount": "550000.0"
+        },
+        {
+          "actor": "Atlas Coalition",
+          "amount": "500000.0"
+        },
+        {
+          "actor": "Treasury",
+          "amount": "250000.0"
+        },
+        {
+          "actor": "Validator",
+          "amount": "350000.0"
+        }
+      ]
+    }
+  },
+  {
+    "id": 6,
+    "title": "Registered Sovereign AGI Nations",
+    "actor": "Owner",
+    "timestamp": 1760878810,
+    "details": [
+      {
+        "id": "NATION_AURORA",
+        "governor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "weight": 3200,
+        "metadata": "ipfs://aurora-governance"
+      },
+      {
+        "id": "NATION_PACIFIC",
+        "governor": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "weight": 3000,
+        "metadata": "ipfs://pacific-governance"
+      },
+      {
+        "id": "NATION_ATLAS",
+        "governor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+        "weight": 2800,
+        "metadata": "ipfs://atlas-governance"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Transferred Council Ownership to Timelock",
+    "actor": "Owner",
+    "timestamp": 1760878811,
+    "details": {
+      "newOwner": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    }
+  },
+  {
+    "id": 8,
+    "title": "Quadratic Voting Session Executed",
+    "actor": "QuadraticVoting",
+    "timestamp": 1760878820,
+    "details": {
+      "proposalId": "1",
+      "voters": [
+        {
+          "actor": "Aurora Accord",
+          "votes": "80"
+        },
+        {
+          "actor": "Pacific Mesh",
+          "votes": "72"
+        },
+        {
+          "actor": "Atlas Coalition",
+          "votes": "65"
+        },
+        {
+          "actor": "Validator",
+          "votes": "40"
+        }
+      ],
+      "totalCost": "0.000000000000017409"
+    }
+  },
+  {
+    "id": 9,
+    "title": "Executed Proposal 1: Rotated Pauser and Paused Council",
+    "actor": "Governor",
+    "timestamp": 1761051645,
+    "details": {
+      "proposalId": "77737806022528169253995463494489538247803343552825016304675323786673903782084",
+      "paused": true,
+      "pauserRole": "0xb980995f306416142a47e9a05eefbe7dd50f87556dc2ce0ceffcf99bfc5e65e2"
+    }
+  },
+  {
+    "id": 10,
+    "title": "Executed Proposal 2: Council Reactivated and Nation Weight Elevated",
+    "actor": "Governor",
+    "timestamp": 1761224470,
+    "details": {
+      "proposalId": "102236027557560357670766004197036435724142098012165498335742848034448024831420",
+      "paused": false,
+      "updatedNationWeight": 3650
+    }
+  },
+  {
+    "id": 11,
+    "title": "Computed Thermodynamic Diagnostics",
+    "actor": "Analysis Engine",
+    "timestamp": 1761224470,
+    "details": {
+      "hamiltonianEnergy": 17409,
+      "freeEnergyDelta": 17070.28620533123,
+      "entropyIndex": 1.0920967102007695,
+      "landauerRatio": 5.865341402490716e+24,
+      "monteCarloEntropyMean": 1.0919964102040625,
+      "monteCarloEntropyStd": 0.0007772648738002258
+    }
+  },
+  {
+    "id": 12,
+    "title": "Captured Final State Snapshot",
+    "actor": "Observer",
+    "timestamp": 1761224470,
+    "details": {
+      "network": "hardhat",
+      "governor": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "timelock": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "quadraticVoting": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+      "governanceCouncil": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "pauserRole": "0xb980995f306416142a47e9a05eefbe7dd50f87556dc2ce0ceffcf99bfc5e65e2",
+      "paused": false,
+      "treasury": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "treasuryBalance": "250000.0",
+      "proposalCount": 2,
+      "nations": [
+        {
+          "id": "NATION_AURORA",
+          "governor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+          "votingWeight": 3650,
+          "active": true,
+          "metadataURI": "ipfs://aurora-governance"
+        },
+        {
+          "id": "NATION_PACIFIC",
+          "governor": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+          "votingWeight": 3000,
+          "active": true,
+          "metadataURI": "ipfs://pacific-governance"
+        },
+        {
+          "id": "NATION_ATLAS",
+          "governor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+          "votingWeight": 2800,
+          "active": true,
+          "metadataURI": "ipfs://atlas-governance"
+        }
+      ]
+    }
+  }
+]

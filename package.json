@@ -195,7 +195,8 @@
     "demo:sovereign-constellation:asi-takes-off": "node demo/sovereign-constellation/bin/asi-takes-off.mjs",
     "demo:sovereign-constellation:asi-takes-off:flight-plan": "node demo/sovereign-constellation/bin/asi-flight-plan.mjs",
     "demo:sovereign-constellation:asi-takes-off:launch": "node demo/sovereign-constellation/asi-takes-off-demo/launch.mjs",
-    "demo:sovereign-constellation:victory": "node demo/sovereign-constellation/bin/asi-victory-plan.mjs"
+    "demo:sovereign-constellation:victory": "node demo/sovereign-constellation/bin/asi-victory-plan.mjs",
+    "demo:agi-governance": "npx hardhat run scripts/v2/agiGovernanceDemo.ts"
   },
   "keywords": [],
   "author": "",
