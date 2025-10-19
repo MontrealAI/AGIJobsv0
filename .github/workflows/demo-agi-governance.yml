@@ -1,0 +1,66 @@
+name: demo-agi-governance
+
+on:
+  pull_request:
+    paths:
+      - 'demo/agi-governance/**'
+      - '.github/workflows/demo-agi-governance.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/agi-governance/**'
+      - '.github/workflows/demo-agi-governance.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-agi-governance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  governance-demo:
+    name: Solving α-AGI Governance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Generate governance dossier
+        run: npm run demo:agi-governance
+
+      - name: Verify CI enforcement
+        run: npm run demo:agi-governance:ci
+
+      - name: Upload governance artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: agi-governance-reports
+          path: demo/agi-governance/reports/**
+          if-no-files-found: error
