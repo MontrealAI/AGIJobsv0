@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Solving α-AGI Governance Control Room</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Solving α-AGI Governance 👁️✨</h1>
+      <p>
+        Transcript-driven control room for the AGI Jobs v0 (v2) governance
+        demonstration. Load <code>export/latest.json</code> to review owner
+        actions, Hamiltonian telemetry, validator behaviour, and automation
+        directives in a single non-technical cockpit.
+      </p>
+      <div class="loader" id="loader">Loading transcript…</div>
+      <div class="loader hidden" id="error"></div>
+    </header>
+
+    <main class="grid">
+      <section id="summary" class="card">
+        <h2>Mission Summary</h2>
+        <div class="summary-grid" id="summary-grid"></div>
+      </section>
+
+      <section id="owner" class="card">
+        <h2>Owner Command Lattice</h2>
+        <pre id="owner-json"></pre>
+      </section>
+
+      <section id="timeline" class="card">
+        <h2>Timeline</h2>
+        <ol id="timeline-list"></ol>
+      </section>
+
+      <section id="metrics" class="card">
+        <h2>Hamiltonian Telemetry</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Free Energy</th>
+              <th>Hamiltonian</th>
+              <th>Divergence</th>
+              <th>Stackelberg Lead</th>
+              <th>Cooperation</th>
+            </tr>
+          </thead>
+          <tbody id="metrics-body"></tbody>
+        </table>
+      </section>
+
+      <section id="automation" class="card">
+        <h2>Automation Directives</h2>
+        <div id="automation-columns" class="columns"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Data source:
+        <code>export/latest.json</code>. Refresh the file and reload the page
+        to update the control room. Commands and documentation links are
+        listed below for non-technical operators.
+      </p>
+      <ul id="command-links"></ul>
+    </footer>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
