@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T17:44:55.574Z
+*Generated at:* 2025-10-19T18:29:55.146Z
 *Version:* 1.1.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -32,6 +32,33 @@
 | 640.00 | 3 | 1.90% |
 | 720.00 | 1 | 0.00% |
 | 780.00 | 1 | 0.00% |
+
+### Mission Flow Atlases
+
+```mermaid
+graph TD
+  Owner["Owner Control (0xA1A1…A1A1)"] -->|Pause / Upgrade / Parameter| Governor["AGIJobsGovernor"]
+  Pauser["Pause Guardian (0xB2B2…B2B2)"] -->|Emergency stop| Governor
+  Governor -->|Emission directives| TreasuryContract["AGIJobsTreasury (0xC3C3…C3C3)"]
+  TreasuryContract -->|Mirror 65.00%| TreasuryVault[Treasury Vault]
+  TreasuryVault -->|$AGIALPHA rewards| Economy[α-AGI Economy]
+  Governor -->|Slash 25.00%| Sentinel[Sentinel Tacticians]
+  Sentinel -->|Risk telemetry| Owner
+  Owner -->|Diagnostics & CI scripts| CIShield[CI (v2) Shield]
+  CIShield -->|Green checks| Owner
+```
+
+```mermaid
+flowchart LR
+  Gibbs["Gibbs Free Energy 69.80k kJ"] --> Margin["Safety Margin 69.80k kJ"]
+  Margin --> Landauer["Landauer Limit 5.34e-15 kJ"]
+  Burn["Burn per block 4.36k kJ"] --> Margin
+  Entropy["Entropy 4.33 kJ/K"] --> Gibbs
+  Mint["Mint η=94.0%"] --> TreasuryFlow[Treasury Mirror 65.00%]
+  TreasuryFlow --> Agents[Agents, Validators, Operators]
+  Slash["Slashing 5.00%-100.00%"] --> Landauer
+  Burn --> BurnPolicy["Burn Policy 6.00% (treasury 2.00%, employer 2.00%)"]
+```
 
 ## 3. Hamiltonian Control Plane
 
@@ -142,7 +169,9 @@
 - **Treasury:** 0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3
 - **Timelock:** 691200 seconds
 - **Coverage achieved:** all critical capabilities accounted for
-- **Command surfaces wired:** ✅ all npm scripts present
+- **Command automation coverage:** ✅ all execution scripts present
+- **Verification automation coverage:** ✅ all verification scripts present
+- **End-to-end automation ready:** ✅ commands + verification ready
 
 ### Critical Capabilities
 - **Global pause switch (pause).** Immediate halt for the entire AGI Jobs execution surface via the owner guardian.
@@ -175,16 +204,16 @@
 - On-chain staking slash monitors
 - Adaptive fuzz oracle with spectral drift alerts
 
-### Command Audit
-| Category | npm script | Status |
-| --- | --- | --- |
-| pause | owner:system-pause | ✅ |
-| resume | owner:system-pause | ✅ |
-| parameter | owner:command-center | ✅ |
-| treasury | reward-engine:update | ✅ |
-| sentinel | owner:rotate | ✅ |
-| upgrade | owner:upgrade | ✅ |
-| compliance | owner:update-all | ✅ |
+### Command & Verification Audit
+| Category | Command script | Command status | Verification script | Verification status |
+| --- | --- | --- | --- | --- |
+| pause | owner:system-pause | ✅ | owner:verify-control | ✅ |
+| resume | owner:system-pause | ✅ | owner:verify-control | ✅ |
+| parameter | owner:command-center | ✅ | owner:audit-hamiltonian | ✅ |
+| treasury | reward-engine:update | ✅ | reward-engine:report | ✅ |
+| sentinel | owner:rotate | ✅ | monitoring:sentinels | ✅ |
+| upgrade | owner:upgrade | ✅ | owner:upgrade-status | ✅ |
+| compliance | owner:update-all | ✅ | owner:compliance-report | ✅ |
 
 ## 9. Blockchain Deployment Envelope
 

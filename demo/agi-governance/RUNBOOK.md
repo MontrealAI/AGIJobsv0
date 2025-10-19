@@ -38,6 +38,15 @@ Outputs `reports/governance-demo-report.md` with:
 - Blockchain deployment ledger (contracts, pausable selectors, Safe module stack).
 - CI enforcement proof (required contexts, concurrency, access-control coverage).
 
+**Visual cockpit:** Start the Enterprise Portal to explore the same data with live Mermaid atlases.
+
+```bash
+cd apps/enterprise-portal
+npm run dev
+```
+
+Visit [http://localhost:3000/agi-governance](http://localhost:3000/agi-governance) to review the thermodynamic metrics, risk residuals, and owner automation status in an executive-friendly dashboard.
+
 Review the report. It references exact commands to execute each owner action on Ethereum or via AGI Jobs automation scripts.
 
 ---
