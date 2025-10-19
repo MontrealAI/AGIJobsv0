@@ -1,10 +1,10 @@
 import { readFile, writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-const REPORT_DIR = path.join(__dirname, "..", "reports");
-const REPORT_FILE = path.join(REPORT_DIR, "governance-demo-report.md");
-const SUMMARY_FILE = path.join(REPORT_DIR, "governance-demo-summary.json");
-const DASHBOARD_FILE = path.join(REPORT_DIR, "governance-demo-dashboard.html");
+export const REPORT_DIR = path.join(__dirname, "..", "reports");
+export const REPORT_FILE = path.join(REPORT_DIR, "governance-demo-report.md");
+export const SUMMARY_FILE = path.join(REPORT_DIR, "governance-demo-summary.json");
+export const DASHBOARD_FILE = path.join(REPORT_DIR, "governance-demo-dashboard.html");
 const MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
 const PACKAGE_JSON = path.join(__dirname, "..", "..", "..", "package.json");
 
@@ -2420,7 +2420,7 @@ export {
   computeBlockchainReport,
 };
 
-async function main(): Promise<void> {
+export async function generateGovernanceDemo(): Promise<ReportBundle> {
   const mission = await loadMission();
   const thermodynamics = computeThermodynamics(mission);
   const statisticalPhysics = computeStatisticalPhysics(mission, thermodynamics);
@@ -2455,6 +2455,12 @@ async function main(): Promise<void> {
   await writeFile(REPORT_FILE, buildMarkdown(bundle), "utf8");
   await writeFile(SUMMARY_FILE, JSON.stringify(buildSummary(bundle), null, 2), "utf8");
   await writeFile(DASHBOARD_FILE, buildDashboardHtml(bundle), "utf8");
+
+  return bundle;
+}
+
+async function main(): Promise<void> {
+  await generateGovernanceDemo();
 
   console.log(`✅ Governance dossier generated: ${REPORT_FILE}`);
   console.log(`   Summary JSON: ${SUMMARY_FILE}`);

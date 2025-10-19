@@ -204,7 +204,8 @@
     "demo:agi-governance": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/executeDemo.ts",
     "demo:agi-governance:validate": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/validateReport.ts",
     "demo:agi-governance:ci": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/verifyCiStatus.ts",
-    "demo:agi-governance:owner-diagnostics": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/collectOwnerDiagnostics.ts"
+    "demo:agi-governance:owner-diagnostics": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/collectOwnerDiagnostics.ts",
+    "demo:agi-governance:full": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/runFullDemo.ts"
   },
   "keywords": [],
   "author": "",

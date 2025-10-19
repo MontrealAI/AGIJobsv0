@@ -5,8 +5,8 @@ import { performance } from "perf_hooks";
 
 const ROOT_DIR = path.resolve(__dirname, "..", "..", "..");
 const REPORT_DIR = path.join(__dirname, "..", "reports");
-const JSON_REPORT = path.join(REPORT_DIR, "owner-diagnostics.json");
-const MARKDOWN_REPORT = path.join(REPORT_DIR, "owner-diagnostics.md");
+export const JSON_REPORT = path.join(REPORT_DIR, "owner-diagnostics.json");
+export const MARKDOWN_REPORT = path.join(REPORT_DIR, "owner-diagnostics.md");
 
 const COMMANDS = [
   {
@@ -62,7 +62,7 @@ type CommandResult = {
   summary: string;
 };
 
-type AggregatedReport = {
+export type AggregatedReport = {
   generatedAt: string;
   results: CommandResult[];
   totals: Record<Severity, number> & { overall: number };
@@ -411,15 +411,21 @@ async function runCommand(spec: CommandSpec): Promise<CommandResult> {
   });
 }
 
-async function main(): Promise<void> {
+export async function collectOwnerDiagnostics(
+  options: { silent?: boolean } = {},
+): Promise<AggregatedReport> {
+  const { silent = false } = options;
+
   await mkdir(REPORT_DIR, { recursive: true });
 
   const results: CommandResult[] = [];
   for (const command of COMMANDS) {
     const result = await runCommand(command);
     results.push(result);
-    const label = `${emojiForSeverity(result.severity)} [${command.script}] ${result.summary}`;
-    console.log(label);
+    if (!silent) {
+      const label = `${emojiForSeverity(result.severity)} [${command.script}] ${result.summary}`;
+      console.log(label);
+    }
   }
 
   const totals: AggregatedReport["totals"] = {
@@ -446,9 +452,17 @@ async function main(): Promise<void> {
   await writeFile(JSON_REPORT, JSON.stringify(report, null, 2), "utf8");
   await writeFile(MARKDOWN_REPORT, renderMarkdown(report), "utf8");
 
-  console.log(`JSON report: ${JSON_REPORT}`);
-  console.log(`Markdown report: ${MARKDOWN_REPORT}`);
-  if (readiness === "blocked") {
+  if (!silent) {
+    console.log(`JSON report: ${JSON_REPORT}`);
+    console.log(`Markdown report: ${MARKDOWN_REPORT}`);
+  }
+
+  return report;
+}
+
+async function main(): Promise<void> {
+  const report = await collectOwnerDiagnostics();
+  if (report.readiness === "blocked") {
     process.exitCode = 1;
   }
 }

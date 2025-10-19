@@ -74,6 +74,16 @@ open reports/governance-demo-dashboard.html # or xdg-open on Linux
 
 This UI renders all mermaid diagrams, antifragility charts, strategy tables, and CI shields in a cinematic control room the owner can navigate without touching source code.
 
+### One-command orchestration
+
+When you need the entire drill to run unattended—from dossier generation through validation, CI verification, and owner diagnostics—invoke the consolidated pipeline:
+
+```bash
+npm run demo:agi-governance:full
+```
+
+The command writes `reports/governance-demo-full-run.json` and `.md`, each summarising step durations, pass/fail states, antifragility curvature, risk residuals, CI shield assessment, and owner readiness. Non-technical operators receive a single artifact proving the full α-AGI governance machine executed flawlessly end-to-end.
+
 ## Empowering non-technical operators
 
 - **No manual math.** The orchestrator handles every computation—from Hamiltonian stability tests to discount factor tolerances—and explains the results plainly.

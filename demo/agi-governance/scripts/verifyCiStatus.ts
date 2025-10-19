@@ -3,18 +3,18 @@ import path from "path";
 import yaml from "js-yaml";
 
 const REPORT_DIR = path.join(__dirname, "..", "reports");
-const OUTPUT_FILE = path.join(REPORT_DIR, "ci-verification.json");
+export const OUTPUT_FILE = path.join(REPORT_DIR, "ci-verification.json");
 const WORKFLOW_FILE = path.join(__dirname, "..", "..", "..", ".github", "workflows", "ci.yml");
 const MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
 
-type MissionCi = {
+export type MissionCi = {
   workflow: string;
   requiredJobs: Array<{ id: string; name: string }>;
   minCoverage: number;
   concurrency: string;
 };
 
-type VerificationResult = {
+export type VerificationResult = {
   workflowNameMatches: boolean;
   concurrencyMatches: boolean;
   triggersIncludePush: boolean;
@@ -111,60 +111,72 @@ async function verifyWorkflow(ciConfig: MissionCi): Promise<VerificationResult> 
   };
 }
 
-async function main(): Promise<void> {
+export function assessCiShield(
+  ciConfig: MissionCi,
+  verification: VerificationResult,
+): { ok: boolean; issues: string[] } {
+  const issues: string[] = [];
+  const missingJobs = verification.requiredJobsPresent.filter((job) => !job.present || !job.nameMatches);
+
+  if (!verification.workflowNameMatches) {
+    issues.push(`Workflow name mismatch. Expected "${ciConfig.workflow}".`);
+  }
+  if (!verification.concurrencyMatches) {
+    issues.push(`Concurrency guard mismatch. Expected "${ciConfig.concurrency}".`);
+  }
+  if (!verification.triggersIncludePush || !verification.triggersIncludePullRequest) {
+    issues.push("Workflow triggers missing push or pull_request.");
+  }
+  if (!verification.triggersIncludeWorkflowDispatch) {
+    issues.push("Workflow dispatch trigger missing (required for manual enforcement).");
+  }
+  if (missingJobs.length > 0) {
+    issues.push(
+      `Missing CI jobs: ${missingJobs
+        .map((job) => `${job.id}${job.present ? " (name mismatch)" : ""}`)
+        .join(", ")}`,
+    );
+  }
+  if (!verification.cancelInProgress) {
+    issues.push("Concurrency guard missing cancel-in-progress: true.");
+  }
+  if (verification.coverageThreshold === null || verification.coverageThreshold < ciConfig.minCoverage) {
+    issues.push(
+      `Coverage threshold below requirement. Expected ≥ ${ciConfig.minCoverage}, found ${verification.coverageThreshold ?? "unknown"}.`,
+    );
+  }
+  if (!verification.envCoverageMatches) {
+    issues.push("COVERAGE_MIN environment guard is below the required threshold.");
+  }
+
+  const ok =
+    issues.length === 0 &&
+    verification.triggersIncludePush &&
+    verification.triggersIncludePullRequest &&
+    verification.triggersIncludeWorkflowDispatch;
+
+  return { ok, issues };
+}
+
+export async function verifyCiShield(): Promise<{ ciConfig: MissionCi; verification: VerificationResult }> {
   const ciConfig = await loadMissionCi();
   const verification = await verifyWorkflow(ciConfig);
 
   await mkdir(REPORT_DIR, { recursive: true });
   await writeFile(OUTPUT_FILE, JSON.stringify({ ciConfig, verification }, null, 2), "utf8");
 
-  const missingJobs = verification.requiredJobsPresent.filter((job) => !job.present || !job.nameMatches);
-  if (!verification.workflowNameMatches) {
-    console.error(`❌ Workflow name mismatch. Expected "${ciConfig.workflow}".`);
-  }
-  if (!verification.concurrencyMatches) {
-    console.error(`❌ Concurrency guard mismatch. Expected "${ciConfig.concurrency}".`);
-  }
-  if (!verification.triggersIncludePush || !verification.triggersIncludePullRequest) {
-    console.error("❌ Workflow triggers missing push or pull_request.");
-  }
-  if (!verification.triggersIncludeWorkflowDispatch) {
-    console.error("❌ Workflow dispatch trigger missing (required for manual enforcement).");
-  }
-  if (missingJobs.length > 0) {
-    console.error(
-      `❌ Missing CI jobs: ${missingJobs
-        .map((job) => `${job.id}${job.present ? " (name mismatch)" : ""}`)
-        .join(", ")}`,
-    );
-  }
-  if (!verification.cancelInProgress) {
-    console.error("❌ Concurrency guard missing cancel-in-progress: true.");
-  }
-  if (verification.coverageThreshold === null || verification.coverageThreshold < ciConfig.minCoverage) {
-    console.error(
-      `❌ Coverage threshold below requirement. Expected ≥ ${ciConfig.minCoverage}, found ${verification.coverageThreshold ?? "unknown"}.`,
-    );
-  }
-  if (!verification.envCoverageMatches) {
-    console.error("❌ COVERAGE_MIN environment guard is below the required threshold.");
-  }
+  return { ciConfig, verification };
+}
 
-  if (
-    verification.workflowNameMatches &&
-    verification.concurrencyMatches &&
-    verification.triggersIncludePush &&
-    verification.triggersIncludePullRequest &&
-    verification.triggersIncludeWorkflowDispatch &&
-    missingJobs.length === 0 &&
-    verification.coverageThreshold !== null &&
-    verification.coverageThreshold >= ciConfig.minCoverage &&
-    verification.cancelInProgress &&
-    verification.envCoverageMatches
-  ) {
+async function main(): Promise<void> {
+  const { ciConfig, verification } = await verifyCiShield();
+  const assessment = assessCiShield(ciConfig, verification);
+
+  if (assessment.ok) {
     console.log("✅ CI workflow matches the enforced v2 shield.");
     console.log(`   Report: ${OUTPUT_FILE}`);
   } else {
+    assessment.issues.forEach((issue) => console.error(`❌ ${issue}`));
     process.exitCode = 1;
   }
 }
