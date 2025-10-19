@@ -4,6 +4,7 @@ import path from "path";
 const REPORT_DIR = path.join(__dirname, "..", "reports");
 const REPORT_FILE = path.join(REPORT_DIR, "governance-demo-report.md");
 const SUMMARY_FILE = path.join(REPORT_DIR, "governance-demo-summary.json");
+const DASHBOARD_FILE = path.join(REPORT_DIR, "governance-demo-dashboard.html");
 const MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
 const PACKAGE_JSON = path.join(__dirname, "..", "..", "..", "package.json");
 
@@ -1433,6 +1434,113 @@ function formatMatrix(matrix: number[][]): string {
     .join("\n");
 }
 
+function buildMermaidFlowchart(bundle: ReportBundle): string {
+  const { thermodynamics, incentives, equilibrium, risk, owner, blockchain } = bundle;
+  const ownerLabel = `${owner.owner.slice(0, 6)}…${owner.owner.slice(-4)}`;
+  const pauserLabel = `${owner.pauser.slice(0, 6)}…${owner.pauser.slice(-4)}`;
+  const treasuryLabel = `${owner.treasury.slice(0, 6)}…${owner.treasury.slice(-4)}`;
+  const divergence = equilibrium.divergenceAtEquilibrium.toExponential(2);
+  const riskResidual = risk.portfolioResidual.toFixed(3);
+  const governorName = blockchain.contracts[0]?.name ?? "AGIJobsGovernor";
+  const monitorName = blockchain.contracts[2]?.name ?? "HamiltonianMonitor";
+  return [
+    "```mermaid",
+    "flowchart LR",
+    "  subgraph Energy[Energy Intelligence Stack]",
+    `    Thermo[Gibbs Free Energy ${formatNumber(thermodynamics.gibbsFreeEnergyKJ)} kJ]`,
+    `    Burn[Burn Envelope ${formatNumber(thermodynamics.burnEnergyPerBlockKJ)} kJ/block]`,
+    "    Thermo --> Burn",
+    "  end",
+    "  subgraph Incentives[Mint/Burn Governance]",
+    `    Mint[Mint η=${incentives.mint.eta.toFixed(2)}]`,
+    "    BurnCurve[Burn Curve Δ Escrow]",
+    "    Mint --> BurnCurve",
+    "  end",
+    "  subgraph Equilibrium[Macro Equilibrium]",
+    `    StratA[Replicator Δ=${equilibrium.replicatorDeviation.toExponential(2)}]`,
+    `    Divergence[Divergence ${divergence}]`,
+    `    Payoff[Payoff ${formatNumber(equilibrium.payoffAtEquilibrium)} tokens]`,
+    "    StratA --> Divergence",
+    "    Divergence --> Payoff",
+    "  end",
+    "  subgraph Risk[Risk Engine]",
+    `    Residual[Residual ${riskResidual}]`,
+    "  end",
+    "  subgraph Control[Owner Command Surface]",
+    `    Owner((Owner ${ownerLabel}))`,
+    `    Pauser([Pauser ${pauserLabel}])`,
+    `    Treasury([Treasury ${treasuryLabel}])`,
+    "    Owner --> Pauser",
+    "    Owner --> Treasury",
+    "  end",
+    "  subgraph Chain[Mainnet Envelope]",
+    `    Governor[${governorName}]`,
+    `    Monitor[${monitorName}]`,
+    "    Governor --> Monitor",
+    "  end",
+    "  Thermo --> Mint",
+    "  BurnCurve --> StratA",
+    "  Payoff --> Residual",
+    "  Residual --> Owner",
+    "  Owner --> Governor",
+    "```",
+  ].join("\n");
+}
+
+function buildRiskPie(bundle: ReportBundle): string {
+  const slices = bundle.risk.classes
+    .map((riskClass) => `  \"${riskClass.id} ${riskClass.label}\" : ${(riskClass.residual * 1000).toFixed(4)}`)
+    .join("\n");
+  return ["```mermaid", "pie showData", "  title Residual Risk Distribution ×10⁻³", slices, "```"].join("\n");
+}
+
+function buildOwnerSequence(bundle: ReportBundle): string {
+  const { owner, incentives, blockchain } = bundle;
+  const treasury = `${owner.treasury.slice(0, 6)}…${owner.treasury.slice(-4)}`;
+  const governor = blockchain.contracts[0]?.name ?? "AGIJobsGovernor";
+  const mintTokens = formatNumber(incentives.mint.totalMinted);
+  return [
+    "```mermaid",
+    "sequenceDiagram",
+    "  participant O as Owner",
+    `  participant G as ${governor}`,
+    "  participant T as Treasury",
+    "  participant M as Mission AI Field",
+    "  O->>G: Pause / Resume Commands",
+    `  O->>T: Mirror Mint ${mintTokens} tokens`,
+    "  G->>M: Reconfigure Hamiltonian λ",
+    "  M-->>G: Updated Divergence Metrics",
+    "  G-->>O: Deterministic State Report",
+    `  T-->>O: Treasury Mirror Share ${formatPercent(bundle.incentives.mint.treasuryMirrorShare)}`,
+    "```",
+  ].join("\n");
+}
+
+function buildAntifragilityMindmap(bundle: ReportBundle): string {
+  const lines = bundle.antifragility.samples
+    .map(
+      (sample) =>
+        `        \"σ=${sample.sigma.toFixed(2)}\":::sigma --> \"Welfare ${formatNumber(sample.welfare)}\":::welfare`,
+    )
+    .join("\n");
+  return [
+    "```mermaid",
+    "mindmap",
+    "  root((Antifragility Tensor))",
+    "    \"Quadratic curvature\":::core",
+    `      \"2a=${bundle.antifragility.quadraticSecondDerivative.toExponential(2)}\":::core`,
+    "    \"Sigma Scan\":::core",
+    lines,
+    "    \"Owner Actions\":::core",
+    `      \"Mint Mirror ${formatPercent(bundle.incentives.mint.treasuryMirrorShare)}\"`,
+    `      \"Residual Risk ${bundle.risk.portfolioResidual.toFixed(3)}\"`,
+    "  classDef core fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#f9fafb,font-weight:600;",
+    "  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7;font-weight:600;",
+    "  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;",
+    "```",
+  ].join("\n");
+}
+
 function buildMarkdown(bundle: ReportBundle): string {
   const {
     meta,
@@ -1450,6 +1558,11 @@ function buildMarkdown(bundle: ReportBundle): string {
     ci,
     divergenceTolerance,
   } = bundle;
+
+  const flowchart = buildMermaidFlowchart(bundle);
+  const riskPie = buildRiskPie(bundle);
+  const ownerSequence = buildOwnerSequence(bundle);
+  const antifragilityMindmap = buildAntifragilityMindmap(bundle);
 
   const strategyTable = equilibrium.labels
     .map((label, index) =>
@@ -1642,6 +1755,8 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- | --- | --- |",
     slashingTable,
     "",
+    flowchart,
+    "",
     "## 5. Game-Theoretic Macro-Equilibrium",
     "",
     `- **Discount factor:** ${equilibrium.discountFactor.toFixed(2)} (must exceed 0.80 for uniqueness)`,
@@ -1681,6 +1796,8 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- |",
     antifragilityTable,
     "",
+    antifragilityMindmap,
+    "",
     "## 7. Risk & Safety Audit",
     "",
     `- **Coverage weights:** staking ${formatPercent(risk.weights.staking)}, formal ${formatPercent(risk.weights.formal)}, fuzz ${formatPercent(risk.weights.fuzz)}`,
@@ -1690,6 +1807,8 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| ID | Threat | Likelihood | Impact | Coverage | Residual |",
     "| --- | --- | --- | --- | --- | --- |",
     riskTable,
+    "",
+    riskPie,
     "",
     "## 8. Owner Supremacy & Command Surface",
     "",
@@ -1709,6 +1828,8 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     "### Monitoring Sentinels",
     owner.monitoringSentinels.map((sentinel) => `- ${sentinel}`).join("\n"),
+    "",
+    ownerSequence,
     "",
     "### Command Audit",
     "| Category | npm script | Status |",
@@ -1750,6 +1871,519 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- | --- |",
     "| _pending_ |  |  |  |  |",
   ].join("\n");
+}
+
+function stripMermaid(diagram: string): string {
+  return diagram
+    .split("\n")
+    .filter((line) => line.trim() !== "```" && line.trim() !== "```mermaid")
+    .join("\n")
+    .trim();
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function serializeForScript(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, "\\u003C");
+}
+
+function buildDashboardHtml(bundle: ReportBundle): string {
+  const {
+    meta,
+    generatedAt,
+    thermodynamics,
+    statisticalPhysics,
+    hamiltonian,
+    equilibrium,
+    antifragility,
+    risk,
+    incentives,
+    owner,
+    jacobian,
+    blockchain,
+    ci,
+  } = bundle;
+
+  const flowDiagram = stripMermaid(buildMermaidFlowchart(bundle));
+  const riskDiagram = stripMermaid(buildRiskPie(bundle));
+  const ownerDiagram = stripMermaid(buildOwnerSequence(bundle));
+  const antifragilityDiagram = stripMermaid(buildAntifragilityMindmap(bundle));
+
+  const mintRows = incentives.mint.roles
+    .map(
+      (role) =>
+        `<tr><td>${escapeHtml(role.role)}</td><td>${formatPercent(role.share)}</td><td>${formatNumber(role.minted)} tokens</td></tr>`,
+    )
+    .join("\n");
+
+  const riskRows = risk.classes
+    .map(
+      (riskClass) =>
+        `<tr><td>${escapeHtml(riskClass.id)}</td><td>${escapeHtml(riskClass.label)}</td><td>${formatNumber(
+          riskClass.probability,
+          2,
+        )}</td><td>${formatNumber(riskClass.impact, 2)}</td><td>${formatPercent(riskClass.coverage)}</td><td>${riskClass.residual.toFixed(
+          3,
+        )}</td></tr>`,
+    )
+    .join("\n");
+
+  const capabilityRows = owner.capabilities
+    .map((capability) => {
+      const status = capability.present ? (capability.scriptName && !capability.scriptExists ? "⚠️" : "✅") : "⚠️";
+      return `<tr><td>${escapeHtml(capability.label)}</td><td>${escapeHtml(capability.category)}</td><td>${
+        capability.scriptName ? escapeHtml(capability.scriptName) : "manual"
+      }</td><td>${status}</td></tr>`;
+    })
+    .join("\n");
+
+  const sentinelList = owner.monitoringSentinels.map((sentinel) => `<li>${escapeHtml(sentinel)}</li>`).join("\n");
+
+  const strategyRows = equilibrium.labels
+    .map(
+      (label, index) =>
+        `<tr><td>${escapeHtml(label)}</td><td>${formatPercent(equilibrium.replicator[index])}</td><td>${formatPercent(
+          equilibrium.closedForm[index],
+        )}</td><td>${formatPercent(equilibrium.monteCarlo[index])}</td><td>${formatPercent(
+          equilibrium.continuous[index],
+        )}</td><td>${formatPercent(equilibrium.eigenvector[index])}</td></tr>`,
+    )
+    .join("\n");
+
+  const antifragilityRows = antifragility.samples
+    .map(
+      (sample) =>
+        `<tr><td>${sample.sigma.toFixed(2)}</td><td>${formatNumber(sample.welfare)}</td><td>${formatNumber(
+          sample.averagePayoff,
+        )}</td><td>${sample.divergence.toExponential(2)}</td></tr>`,
+    )
+    .join("\n");
+
+  const contractRows = blockchain.contracts
+    .map((contract) => `<tr><td>${escapeHtml(contract.name)}</td><td>${escapeHtml(contract.address)}</td><td>${escapeHtml(contract.role)}</td></tr>`)
+    .join("\n");
+
+  const pausableRows = blockchain.pausableFunctions
+    .map(
+      (fn) =>
+        `<tr><td>${escapeHtml(fn.contract)}</td><td>${escapeHtml(fn.function)}</td><td>${escapeHtml(
+          fn.selector,
+        )}</td><td>${escapeHtml(fn.description)}</td></tr>`,
+    )
+    .join("\n");
+
+  const ciRows = ci.requiredJobs
+    .map((job) => `<tr><td>${escapeHtml(job.id)}</td><td>${escapeHtml(job.name)}</td></tr>`)
+    .join("\n");
+
+  const antifragilityData = serializeForScript(
+    antifragility.samples.map((sample) => ({ sigma: sample.sigma, welfare: sample.welfare })),
+  );
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(meta.title)} — Governance Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #020617;
+        --card: rgba(15, 23, 42, 0.72);
+        --accent: #38bdf8;
+        --accent-strong: #f97316;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: rgba(148, 163, 184, 0.3);
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 38%),
+          radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.18), transparent 42%),
+          var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+      header {
+        padding: 3.5rem 4vw 2rem;
+        text-align: center;
+      }
+      header h1 {
+        margin: 0;
+        font-size: clamp(2.5rem, 4vw, 3.5rem);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      header p.meta {
+        margin: 0.4rem 0 0;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      main {
+        padding: 0 4vw 4rem;
+        display: grid;
+        gap: 2.75rem;
+      }
+      section.card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 2.2rem;
+        box-shadow: 0 32px 64px rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(18px);
+      }
+      section.card h2 {
+        margin-top: 0;
+        font-size: 1.6rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      section.card h3 {
+        margin-top: 2rem;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        gap: 1.8rem;
+      }
+      @media (min-width: 1080px) {
+        .grid-columns-3 {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .grid-columns-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      ul.metric-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+      ul.metric-list li {
+        font-size: 1rem;
+        background: rgba(15, 23, 42, 0.65);
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        border: 1px solid rgba(56, 189, 248, 0.12);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        border: 1px solid var(--border);
+        font-size: 0.95rem;
+      }
+      table th,
+      table td {
+        padding: 0.7rem 0.9rem;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+      table th {
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.78rem;
+      }
+      pre.mermaid {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 16px;
+        padding: 1.4rem;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        overflow-x: auto;
+      }
+      #antifragility-chart {
+        width: 100%;
+        height: 280px;
+        margin-top: 1.2rem;
+        border-radius: 16px;
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        background: rgba(15, 23, 42, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      footer {
+        padding: 3rem 4vw;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(56, 189, 248, 0.18);
+        color: var(--accent);
+        border-radius: 999px;
+        padding: 0.4rem 0.9rem;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="badge">AGI Jobs v0 (v2) Superintelligence Console</div>
+      <h1>${escapeHtml(meta.title)}</h1>
+      <p class="meta">Generated ${escapeHtml(generatedAt)} • Version ${escapeHtml(meta.version)}</p>
+      <p class="meta">${escapeHtml(meta.description)}</p>
+    </header>
+    <main>
+      <section class="card grid grid-columns-3">
+        <div>
+          <h2>Thermodynamics</h2>
+          <ul class="metric-list">
+            <li>Gibbs free energy: <strong>${formatNumber(thermodynamics.gibbsFreeEnergyKJ)} kJ</strong></li>
+            <li>Landauer limit: <strong>${formatNumber(thermodynamics.landauerKJ)} kJ</strong></li>
+            <li>Free-energy margin: <strong>${formatNumber(thermodynamics.freeEnergyMarginKJ)} kJ</strong></li>
+            <li>Burn energy per block: <strong>${formatNumber(thermodynamics.burnEnergyPerBlockKJ)} kJ</strong></li>
+            <li>β inverse temperature: <strong>${formatNumber(statisticalPhysics.beta, 4)}</strong></li>
+            <li>Partition function Z: <strong>${formatScientific(statisticalPhysics.partitionFunction)}</strong></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Hamiltonian</h2>
+          <ul class="metric-list">
+            <li>Kinetic term: <strong>${formatNumber(hamiltonian.kineticTerm)}</strong></li>
+            <li>Potential term: <strong>${formatNumber(hamiltonian.potentialTerm)}</strong></li>
+            <li>Energy: <strong>${formatNumber(hamiltonian.hamiltonianValue)}</strong></li>
+            <li>Δ check: <strong>${hamiltonian.difference.toExponential(3)}</strong></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Owner Control</h2>
+          <ul class="metric-list">
+            <li>Owner: <strong>${escapeHtml(owner.owner)}</strong></li>
+            <li>Pauser: <strong>${escapeHtml(owner.pauser)}</strong></li>
+            <li>Treasury: <strong>${escapeHtml(owner.treasury)}</strong></li>
+            <li>Timelock: <strong>${owner.timelockSeconds} seconds</strong></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Energy → Governance Flow</h2>
+        <pre class="mermaid">${flowDiagram}</pre>
+      </section>
+
+      <section class="card grid grid-columns-2">
+        <div>
+          <h2>Mint Ledger</h2>
+          <p>Total minted per event: <strong>${formatNumber(incentives.mint.totalMinted)} tokens</strong> • Treasury mirror share ${formatPercent(
+            incentives.mint.treasuryMirrorShare,
+          )}</p>
+          <table>
+            <thead><tr><th>Role</th><th>Share</th><th>Minted</th></tr></thead>
+            <tbody>${mintRows}</tbody>
+          </table>
+        </div>
+        <div>
+          <h2>Game-Theoretic Equilibrium</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Strategy</th><th>Replicator</th><th>Closed</th><th>Monte-Carlo</th><th>Continuous</th><th>Eigenvector</th>
+              </tr>
+            </thead>
+            <tbody>${strategyRows}</tbody>
+          </table>
+          <p>Deviation Δmax: <strong>${equilibrium.maxMethodDeviation.toExponential(3)}</strong> • Divergence ${equilibrium.divergenceAtEquilibrium.toExponential(
+            3,
+          )}</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Antifragility Tensor</h2>
+        <pre class="mermaid">${antifragilityDiagram}</pre>
+        <div id="antifragility-chart">Rendering antifragility curve…</div>
+        <table>
+          <thead><tr><th>σ</th><th>Welfare</th><th>Average payoff</th><th>Divergence</th></tr></thead>
+          <tbody>${antifragilityRows}</tbody>
+        </table>
+      </section>
+
+      <section class="card grid grid-columns-2">
+        <div>
+          <h2>Risk Portfolio</h2>
+          <p>Residual risk: <strong>${risk.portfolioResidual.toFixed(3)}</strong> • Threshold ${risk.threshold.toFixed(3)}</p>
+          <pre class="mermaid">${riskDiagram}</pre>
+          <table>
+            <thead><tr><th>ID</th><th>Threat</th><th>Likelihood</th><th>Impact</th><th>Coverage</th><th>Residual</th></tr></thead>
+            <tbody>${riskRows}</tbody>
+          </table>
+        </div>
+        <div>
+          <h2>Owner Command Surface</h2>
+          <pre class="mermaid">${ownerDiagram}</pre>
+          <h3>Monitoring Sentinels</h3>
+          <ul>${sentinelList}</ul>
+          <h3>Capabilities</h3>
+          <table>
+            <thead><tr><th>Capability</th><th>Category</th><th>Script</th><th>Status</th></tr></thead>
+            <tbody>${capabilityRows}</tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card grid grid-columns-2">
+        <div>
+          <h2>On-Chain Contracts</h2>
+          <p>Network: <strong>${escapeHtml(blockchain.network)}</strong> • Gas target ${blockchain.gasTargetGwei} gwei • Confirmations ${
+            blockchain.confirmations
+          }</p>
+          <table>
+            <thead><tr><th>Contract</th><th>Address</th><th>Role</th></tr></thead>
+            <tbody>${contractRows}</tbody>
+          </table>
+          <h3>Pausable Functions</h3>
+          <table>
+            <thead><tr><th>Contract</th><th>Function</th><th>Selector</th><th>Description</th></tr></thead>
+            <tbody>${pausableRows}</tbody>
+          </table>
+        </div>
+        <div>
+          <h2>CI Enforcement</h2>
+          <p>Workflow <strong>${escapeHtml(ci.workflow)}</strong> • Concurrency <code>${escapeHtml(ci.concurrency)}</code> • Coverage ≥ ${
+            ci.minCoverage
+          }%</p>
+          <table>
+            <thead><tr><th>Job ID</th><th>Name</th></tr></thead>
+            <tbody>${ciRows}</tbody>
+          </table>
+          <h3>Jacobian Diagnostics</h3>
+          <ul class="metric-list">
+            <li>Gershgorin bound: <strong>${jacobian.gershgorinUpperBound.toExponential(3)}</strong></li>
+            <li>Spectral radius: <strong>${jacobian.spectralRadius.toExponential(3)}</strong></li>
+            <li>Analytic vs numeric Δ: <strong>${jacobian.maxDifference.toExponential(3)}</strong></li>
+          </ul>
+        </div>
+      </section>
+    </main>
+    <footer>
+      Solving α-AGI Governance — evidence that AGI Jobs v0 (v2) gives non-technical owners full-spectrum control over a
+      civilisation-scale intelligence engine.
+    </footer>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'forest' });
+
+      const antifragilityData = ${antifragilityData};
+      const chart = document.querySelector('#antifragility-chart');
+      if (chart && Array.isArray(antifragilityData) && antifragilityData.length > 0) {
+        const width = 760;
+        const height = 260;
+        const padding = 42;
+        const min = Math.min(...antifragilityData.map((d) => d.welfare));
+        const max = Math.max(...antifragilityData.map((d) => d.welfare));
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
+        svg.style.overflow = 'visible';
+
+        const axis = document.createElementNS(svgNS, 'line');
+        axis.setAttribute('x1', String(padding));
+        axis.setAttribute('y1', String(height - padding));
+        axis.setAttribute('x2', String(width - padding));
+        axis.setAttribute('y2', String(height - padding));
+        axis.setAttribute('stroke', 'rgba(148, 163, 184, 0.6)');
+        axis.setAttribute('stroke-width', '1.5');
+        svg.appendChild(axis);
+
+        const yAxis = document.createElementNS(svgNS, 'line');
+        yAxis.setAttribute('x1', String(padding));
+        yAxis.setAttribute('y1', String(padding));
+        yAxis.setAttribute('x2', String(padding));
+        yAxis.setAttribute('y2', String(height - padding));
+        yAxis.setAttribute('stroke', 'rgba(148, 163, 184, 0.6)');
+        yAxis.setAttribute('stroke-width', '1.5');
+        svg.appendChild(yAxis);
+
+        const points = antifragilityData
+          .map((point, index) => {
+            const x = padding + (index / Math.max(antifragilityData.length - 1, 1)) * (width - padding * 2);
+            const normalised = max === min ? 0.5 : (point.welfare - min) / (max - min);
+            const y = height - padding - normalised * (height - padding * 2);
+            return x + ',' + y;
+          })
+          .join(' ');
+
+        const polyline = document.createElementNS(svgNS, 'polyline');
+        polyline.setAttribute('points', points);
+        polyline.setAttribute('fill', 'none');
+        polyline.setAttribute('stroke', 'url(#gradient)');
+        polyline.setAttribute('stroke-width', '3');
+        polyline.setAttribute('stroke-linejoin', 'round');
+        polyline.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(polyline);
+
+        const gradient = document.createElementNS(svgNS, 'linearGradient');
+        gradient.setAttribute('id', 'gradient');
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('x2', '100%');
+        gradient.setAttribute('y2', '0%');
+        const stop1 = document.createElementNS(svgNS, 'stop');
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('stop-color', '#38bdf8');
+        const stop2 = document.createElementNS(svgNS, 'stop');
+        stop2.setAttribute('offset', '100%');
+        stop2.setAttribute('stop-color', '#f97316');
+        gradient.appendChild(stop1);
+        gradient.appendChild(stop2);
+        const defs = document.createElementNS(svgNS, 'defs');
+        defs.appendChild(gradient);
+        svg.insertBefore(defs, svg.firstChild);
+
+        antifragilityData.forEach((point, index) => {
+          const x = padding + (index / Math.max(antifragilityData.length - 1, 1)) * (width - padding * 2);
+          const normalised = max === min ? 0.5 : (point.welfare - min) / (max - min);
+          const y = height - padding - normalised * (height - padding * 2);
+          const circle = document.createElementNS(svgNS, 'circle');
+          circle.setAttribute('cx', String(x));
+          circle.setAttribute('cy', String(y));
+          circle.setAttribute('r', '6');
+          circle.setAttribute('fill', '#0ea5e9');
+          circle.setAttribute('stroke', '#082f49');
+          circle.setAttribute('stroke-width', '2');
+          svg.appendChild(circle);
+
+          const label = document.createElementNS(svgNS, 'text');
+          label.setAttribute('x', String(x));
+          label.setAttribute('y', String(y - 12));
+          label.setAttribute('fill', '#bae6fd');
+          label.setAttribute('font-size', '12');
+          label.setAttribute('text-anchor', 'middle');
+          label.textContent = point.welfare.toFixed(3);
+          svg.appendChild(label);
+        });
+
+        chart.innerHTML = '';
+        chart.appendChild(svg);
+      }
+    </script>
+  </body>
+</html>`;
+
+  return html;
 }
 
 function buildSummary(bundle: ReportBundle): Record<string, unknown> {
@@ -1820,9 +2454,11 @@ async function main(): Promise<void> {
   await mkdir(REPORT_DIR, { recursive: true });
   await writeFile(REPORT_FILE, buildMarkdown(bundle), "utf8");
   await writeFile(SUMMARY_FILE, JSON.stringify(buildSummary(bundle), null, 2), "utf8");
+  await writeFile(DASHBOARD_FILE, buildDashboardHtml(bundle), "utf8");
 
   console.log(`✅ Governance dossier generated: ${REPORT_FILE}`);
   console.log(`   Summary JSON: ${SUMMARY_FILE}`);
+  console.log(`   Interactive dashboard: ${DASHBOARD_FILE}`);
 }
 
 if (require.main === module) {

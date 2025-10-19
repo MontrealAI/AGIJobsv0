@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T17:44:55.574Z
+*Generated at:* 2025-10-19T18:25:12.965Z
 *Version:* 1.1.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -73,6 +73,47 @@
 | Major fault | 25.00% | 5.00k tokens | 3.75k tokens | 1.25k tokens | 0.00 tokens |
 | Critical attack | 100.00% | 20.00k tokens | 20.00k tokens | 0.00 tokens | 0.00 tokens |
 
+```mermaid
+flowchart LR
+  subgraph Energy[Energy Intelligence Stack]
+    Thermo[Gibbs Free Energy 69.80k kJ]
+    Burn[Burn Envelope 4.36k kJ/block]
+    Thermo --> Burn
+  end
+  subgraph Incentives[Mint/Burn Governance]
+    Mint[Mint η=0.94]
+    BurnCurve[Burn Curve Δ Escrow]
+    Mint --> BurnCurve
+  end
+  subgraph Equilibrium[Macro Equilibrium]
+    StratA[Replicator Δ=1.34e-1]
+    Divergence[Divergence 2.22e-16]
+    Payoff[Payoff 1.00 tokens]
+    StratA --> Divergence
+    Divergence --> Payoff
+  end
+  subgraph Risk[Risk Engine]
+    Residual[Residual 0.214]
+  end
+  subgraph Control[Owner Command Surface]
+    Owner((Owner 0xA1A1…A1A1))
+    Pauser([Pauser 0xB2B2…B2B2])
+    Treasury([Treasury 0xC3C3…C3C3])
+    Owner --> Pauser
+    Owner --> Treasury
+  end
+  subgraph Chain[Mainnet Envelope]
+    Governor[AGIJobsGovernor]
+    Monitor[HamiltonianMonitor]
+    Governor --> Monitor
+  end
+  Thermo --> Mint
+  BurnCurve --> StratA
+  Payoff --> Residual
+  Residual --> Owner
+  Owner --> Governor
+```
+
 ## 5. Game-Theoretic Macro-Equilibrium
 
 - **Discount factor:** 0.92 (must exceed 0.80 for uniqueness)
@@ -121,6 +162,24 @@
 | 0.20 | -4.64k | 1.00 | 7.69e-2 |
 | 0.30 | -4.64k | 1.00 | 7.73e-2 |
 
+```mermaid
+mindmap
+  root((Antifragility Tensor))
+    "Quadratic curvature":::core
+      "2a=6.98e-10":::core
+    "Sigma Scan":::core
+        "σ=0.00":::sigma --> "Welfare -4.64k":::welfare
+        "σ=0.10":::sigma --> "Welfare -4.64k":::welfare
+        "σ=0.20":::sigma --> "Welfare -4.64k":::welfare
+        "σ=0.30":::sigma --> "Welfare -4.64k":::welfare
+    "Owner Actions":::core
+      "Mint Mirror 65.00%"
+      "Residual Risk 0.214"
+  classDef core fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#f9fafb,font-weight:600;
+  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7;font-weight:600;
+  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;
+```
+
 ## 7. Risk & Safety Audit
 
 - **Coverage weights:** staking 40.00%, formal 40.00%, fuzz 20.00%
@@ -134,6 +193,16 @@
 | R2 | Protocol attack | 0.10 | 0.90 | 86.00% | 0.013 |
 | R3 | Model misbehaviour | 0.25 | 0.65 | 67.00% | 0.054 |
 | R4 | Societal externality | 0.08 | 1.00 | 39.00% | 0.049 |
+
+```mermaid
+pie showData
+  title Residual Risk Distribution ×10⁻³
+  "R0 Specification drift" : 72.1600
+  "R1 Economic exploit" : 27.2700
+  "R2 Protocol attack" : 12.6000
+  "R3 Model misbehaviour" : 53.6250
+  "R4 Societal externality" : 48.8000
+```
 
 ## 8. Owner Supremacy & Command Surface
 
@@ -174,6 +243,20 @@
 - Grafana circuit-breakers watching governance divergence
 - On-chain staking slash monitors
 - Adaptive fuzz oracle with spectral drift alerts
+
+```mermaid
+sequenceDiagram
+  participant O as Owner
+  participant G as AGIJobsGovernor
+  participant T as Treasury
+  participant M as Mission AI Field
+  O->>G: Pause / Resume Commands
+  O->>T: Mirror Mint 117.50k tokens
+  G->>M: Reconfigure Hamiltonian λ
+  M-->>G: Updated Divergence Metrics
+  G-->>O: Deterministic State Report
+  T-->>O: Treasury Mirror Share 65.00%
+```
 
 ### Command Audit
 | Category | npm script | Status |

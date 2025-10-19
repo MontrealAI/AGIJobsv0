@@ -21,6 +21,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 | [`scripts/verifyCiStatus.ts`](scripts/verifyCiStatus.ts) | Audits `.github/workflows/ci.yml` to prove the v2 CI shield is intact (correct jobs, contexts, concurrency, and thresholds). |
 | [`scripts/validateReport.ts`](scripts/validateReport.ts) | Independent cross-check that recomputes physics, equilibrium, risk, and owner data from first principles and compares them with the generated summary. |
 | [`reports/`](reports) | Generated artefacts (`governance-demo-report.md`, `ci-verification.json`, etc.) are written here so they can be archived from CI. |
+| [`reports/governance-demo-dashboard.html`](reports/governance-demo-dashboard.html) | Immersive, mermaid-rich web console that renders the mission as an interactive UI for non-technical owners. |
 | [`RUNBOOK.md`](RUNBOOK.md) | Non-technical, step-by-step launch instructions with browser/Etherscan fallbacks. |
 
 ## Quick start
@@ -39,6 +40,7 @@ The command generates `reports/governance-demo-report.md` with:
 6. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
 7. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
 8. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
+9. **Grandiose mermaid visualisations** (energy → governance flowchart, antifragility mindmap, owner command sequence, residual-risk pie) embedded directly in the Markdown dossier.
 
 Then confirm the dossier by replaying all analytics from scratch:
 
@@ -64,11 +66,20 @@ npm run demo:agi-governance:owner-diagnostics
 
 The aggregator executes the owner audit CLIs (`owner:audit-hamiltonian`, `reward-engine:report`, `owner:upgrade-status`, `owner:compliance-report`) with JSON output, normalises warnings (e.g., missing Hardhat artifacts or placeholder addresses), and writes both machine-readable and Markdown summaries to `reports/`. Non-technical operators can now forward a single dossier proving that every governance lever remains under the owner’s control.
 
+Finally, open the immersive HTML dashboard:
+
+```bash
+open reports/governance-demo-dashboard.html # or xdg-open on Linux
+```
+
+This UI renders all mermaid diagrams, antifragility charts, strategy tables, and CI shields in a cinematic control room the owner can navigate without touching source code.
+
 ## Empowering non-technical operators
 
 - **No manual math.** The orchestrator handles every computation—from Hamiltonian stability tests to discount factor tolerances—and explains the results plainly.
 - **Copy‑paste governance.** Ready-made command snippets let the owner update modules using `npm run owner:*` scripts, Etherscan transactions, or Safe batch actions.
 - **Evidence by default.** Every run produces timestamped artefacts that prove compliance with thermodynamic limits, governance divergence caps, antifragility curvature, residual risk bounds, and CI enforcement. Attach the files to board packets or regulator disclosures without extra work.
+- **Hyper-visual console.** Mermaid flowcharts, mindmaps, and pie charts—along with a responsive SVG antifragility curve—render straight into Markdown and the standalone dashboard so executives see the entire governance machine at a glance.
 
 ## Extending the mission
 
