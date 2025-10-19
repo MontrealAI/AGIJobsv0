@@ -1,0 +1,35 @@
+{
+  "network": "hardhat",
+  "governor": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+  "timelock": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+  "quadraticVoting": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+  "governanceCouncil": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+  "pauserRole": "0xb980995f306416142a47e9a05eefbe7dd50f87556dc2ce0ceffcf99bfc5e65e2",
+  "paused": false,
+  "treasury": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+  "treasuryBalance": "250000.0",
+  "proposalCount": 2,
+  "nations": [
+    {
+      "id": "NATION_AURORA",
+      "governor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "votingWeight": 3650,
+      "active": true,
+      "metadataURI": "ipfs://aurora-governance"
+    },
+    {
+      "id": "NATION_PACIFIC",
+      "governor": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "votingWeight": 3000,
+      "active": true,
+      "metadataURI": "ipfs://pacific-governance"
+    },
+    {
+      "id": "NATION_ATLAS",
+      "governor": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "votingWeight": 2800,
+      "active": true,
+      "metadataURI": "ipfs://atlas-governance"
+    }
+  ]
+}
