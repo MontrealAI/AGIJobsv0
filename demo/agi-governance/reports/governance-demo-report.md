@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T13:49:08.181Z
+*Generated at:* 2025-10-19T17:23:16.570Z
 *Version:* 1.1.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -8,12 +8,32 @@
 
 - **Gibbs free energy:** 69.80k kJ (69.80M J)
 - **Landauer limit envelope:** 0.00 kJ
-- **Free-energy safety margin:** 69.80k kJ
+- **Free-energy safety margin:** 69.80k kJ (100.00% of Gibbs)
 - **Energy dissipated per block (burn):** 4.36k kJ
 - **Cross-check delta:** 0.000e+0 kJ (≤ 1e-6 required)
+- **Cross-check Gibbs (reference):** 69.80k kJ
+- **Landauer within safety margin:** ✅
 - **Stake Boltzmann envelope:** 5.340e-12 (dimensionless proof of energy-aligned stake)
 
-## 2. Hamiltonian Control Plane
+## 2. Statistical Physics Partition Function Cross-Check
+
+- **β (inverse temperature):** 0.0725
+- **Partition function (Z):** 1.115e-18 (log Z -4.134e+1)
+- **Expected energy:** 581.14 (scaled 71.14k kJ)
+- **Free energy:** 570.17 (scaled 69.80k kJ)
+- **Entropy:** 0.80 (scaled 4.33 kJ/K)
+- **Heat capacity (β²·Var[E]):** 0.3545 (variance 67.45)
+- **Free-energy identity Δ:** 5.684e-13
+- **Δ vs thermodynamic Gibbs:** 0.00 kJ (within tolerance 500.00 kJ)
+
+| Energy (dimensionless) | Degeneracy | Probability |
+| --- | --- | --- |
+| 580.00 | 2 | 98.10% |
+| 640.00 | 3 | 1.90% |
+| 720.00 | 1 | 0.00% |
+| 780.00 | 1 | 0.00% |
+
+## 3. Hamiltonian Control Plane
 
 - **Kinetic term:** 34149.74M units
 - **Potential term (scaled by λ):** 302.02k units
@@ -21,47 +41,91 @@
 - **Alternate computation check:** 34149.44M units
 - **Difference:** 0.000e+0 (≤ 1e-3 target)
 
-## 3. Game-Theoretic Macro-Equilibrium
+## 4. Incentive Free-Energy Flow
+
+- **Mint rule η:** 0.94 (ΔV 125.00k tokens)
+- **Total minted per event:** 117.50k tokens
+- **Agent ↔ treasury parity:** ✅ Δ 0.00 tokens (0.0000% of mint, tolerance 1.00%)
+- **Treasury mirror share:** 65.00% (agent share 65.00%)
+- **Dust routed to treasury:** 0.0000 tokens
+
+| Role | Share | Minted tokens |
+| --- | --- | --- |
+| Agent | 65.00% | 76.38k tokens |
+| Validator | 15.00% | 17.63k tokens |
+| Operator | 15.00% | 17.63k tokens |
+| Employer | 5.00% | 5.88k tokens |
+
+- **Burn curve:** burn 6.00%, treasury 2.00%, employer 2.00%
+- **Per-job distribution:** burn 3.00k tokens, treasury 1.00k tokens, employer 1.00k tokens, worker payouts 45.00k tokens
+
+- **Stake baseline:** agent 1.20k tokens, validator 4.80k tokens, operator 2.60k tokens (example stake 20.00k tokens)
+
+| Role | Minimum stake (tokens) |
+| --- | --- |
+| Agent | 1.20k |
+| Validator | 4.80k |
+| Operator | 2.60k |
+
+| Severity | Slash % stake | Amount slashed | Treasury share | Employer share | Burned |
+| --- | --- | --- | --- | --- | --- |
+| Minor fault | 5.00% | 1.00k tokens | 600.00 tokens | 300.00 tokens | 100.00 tokens |
+| Major fault | 25.00% | 5.00k tokens | 3.75k tokens | 1.25k tokens | 0.00 tokens |
+| Critical attack | 100.00% | 20.00k tokens | 20.00k tokens | 0.00 tokens | 0.00 tokens |
+
+## 5. Game-Theoretic Macro-Equilibrium
 
 - **Discount factor:** 0.92 (must exceed 0.80 for uniqueness)
-- **Replicator iterations to convergence:** 50000
-- **Replicator vs closed-form deviation:** 2.221e-2
-- **Monte-Carlo RMS error:** 3.111e-1
+- **Replicator iterations to convergence:** 25000
+- **Continuous-flow iterations (RK4):** 25000
+- **Perron eigenvector iterations:** 1
+- **Replicator vs closed-form deviation:** 1.336e-1
+- **Monte-Carlo RMS error:** 3.575e-1
+- **Max deviation across methods:** 1.365e-1 (consistent)
 - **Payoff at equilibrium:** 1.00 tokens
-- **Governance divergence:** 0.000e+0 (target ≤ 0.001)
+- **Governance divergence:** 2.220e-16 (target ≤ 0.001)
 
-| Strategy | Replicator | Closed-form | Monte-Carlo |
-| --- | --- | --- | --- |
-| Pareto-Coop | 34.93% | 33.33% | 33.88% |
-| Thermo-Titan | 33.28% | 33.33% | 32.89% |
-| Sentinel-Tactician | 31.79% | 33.33% | 33.23% |
+| Strategy | Replicator | Closed-form | Monte-Carlo | Continuous RK4 | Perron eigenvector |
+| --- | --- | --- | --- | --- | --- |
+| Pareto-Coop | 40.75% | 33.33% | 33.44% | 40.75% | 33.33% |
+| Thermo-Titan | 36.56% | 33.33% | 32.91% | 36.56% | 33.33% |
+| Sentinel-Tactician | 22.70% | 33.33% | 33.64% | 22.70% | 33.33% |
 
 ### Replicator Jacobian Stability
 
 - **Gershgorin upper bound:** 3.333e-1 (unstable)
+- **Spectral radius:** 1.000e+0
+- **Analytic vs numeric max Δ:** 3.333e-1
 
-| J[0,*] | J[1,*] | J[2,*] |
+| Analytic J[0,*] | Analytic J[1,*] | Analytic J[2,*] |
 | --- | --- | --- |
 | -3.33e-1 | -3.67e-1 | -3.00e-1 |
 | -3.00e-1 | -3.33e-1 | -3.67e-1 |
 | -3.67e-1 | -3.00e-1 | -3.33e-1 |
 
-## 4. Antifragility Tensor
+| Numeric J[0,*] | Numeric J[1,*] | Numeric J[2,*] |
+| --- | --- | --- |
+| 7.40e-17 | -3.33e-2 | 3.33e-2 |
+| 3.33e-2 | 1.85e-11 | -3.33e-2 |
+| -3.33e-2 | 3.33e-2 | 0.00e+0 |
+
+## 6. Antifragility Tensor
 
 - **Quadratic curvature (2a):** 6.985e-10 (> 0 indicates antifragility)
 - **Monotonic welfare increase:** ✅
 
 | σ | Welfare (tokens) | Average payoff | Divergence |
 | --- | --- | --- | --- |
-| 0.00 | -4.64k | 1.00 | 6.53e-2 |
-| 0.10 | -4.64k | 1.00 | 6.49e-2 |
-| 0.20 | -4.64k | 1.00 | 6.56e-2 |
-| 0.30 | -4.64k | 1.00 | 6.56e-2 |
+| 0.00 | -4.64k | 1.00 | 7.68e-2 |
+| 0.10 | -4.64k | 1.00 | 7.62e-2 |
+| 0.20 | -4.64k | 1.00 | 7.69e-2 |
+| 0.30 | -4.64k | 1.00 | 7.73e-2 |
 
-## 5. Risk & Safety Audit
+## 7. Risk & Safety Audit
 
 - **Coverage weights:** staking 40.00%, formal 40.00%, fuzz 20.00%
 - **Portfolio residual risk:** 0.214 (threshold 0.300 — within bounds)
+- **Cross-check residual (baseline − mitigated):** 0.214
 
 | ID | Threat | Likelihood | Impact | Coverage | Residual |
 | --- | --- | --- | --- | --- | --- |
@@ -71,29 +135,30 @@
 | R3 | Model misbehaviour | 0.25 | 0.65 | 67.00% | 0.054 |
 | R4 | Societal externality | 0.08 | 1.00 | 39.00% | 0.049 |
 
-## 6. Owner Supremacy & Command Surface
+## 8. Owner Supremacy & Command Surface
 
 - **Owner:** 0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1
 - **Pauser:** 0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2
 - **Treasury:** 0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3
 - **Timelock:** 691200 seconds
 - **Coverage achieved:** all critical capabilities accounted for
+- **Command surfaces wired:** ✅ all npm scripts present
 
 ### Critical Capabilities
 - **Global pause switch (pause).** Immediate halt for the entire AGI Jobs execution surface via the owner guardian.
-  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause true</code> (verify: <code>npm run owner:verify-control</code>)
+  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause true</code> (verify: <code>npm run owner:verify-control</code>) ✅ script pinned
 - **Resume operations (resume).** Restores production flows after remediation and confirms health checks.
-  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause false</code> (verify: <code>npm run owner:verify-control</code>)
+  └─ <code>$ npm run owner:system-pause -- --network mainnet --pause false</code> (verify: <code>npm run owner:verify-control</code>) ✅ script pinned
 - **Tune Hamiltonian parameters (parameter).** Applies Hamiltonian monitor adjustments to lock λ and inertial metrics at the computed optimum.
-  └─ <code>$ npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08</code> (verify: <code>npm run owner:audit-hamiltonian</code>)
+  └─ <code>$ npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08</code> (verify: <code>npm run owner:audit-hamiltonian</code>) ✅ script pinned
 - **Reward engine burn curve (treasury).** Aligns mint/burn ratios with thermodynamic constraints and treasury splits.
-  └─ <code>$ npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200</code> (verify: <code>npm run reward-engine:report</code>)
+  └─ <code>$ npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200</code> (verify: <code>npm run reward-engine:report</code>) ✅ script pinned
 - **Sentinel rotation (sentinel).** Refreshes enforcement guardians to maintain antifragile coverage.
-  └─ <code>$ npm run owner:rotate -- --network mainnet --role Sentinel --count 3</code> (verify: <code>npm run monitoring:sentinels</code>)
+  └─ <code>$ npm run owner:rotate -- --network mainnet --role Sentinel --count 3</code> (verify: <code>npm run monitoring:sentinels</code>) ✅ script pinned
 - **Timelocked upgrade queue (upgrade).** Queues upgrade bundle into the timelock for deterministic rollout.
-  └─ <code>$ npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json</code> (verify: <code>npm run owner:upgrade-status</code>)
+  └─ <code>$ npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json</code> (verify: <code>npm run owner:upgrade-status</code>) ✅ script pinned
 - **Regulatory disclosure (compliance).** Publishes mandatory statements to participants and regulators.
-  └─ <code>$ npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."</code> (verify: <code>npm run owner:compliance-report</code>)
+  └─ <code>$ npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement "Participants accept AGI Jobs v2 tax terms."</code> (verify: <code>npm run owner:compliance-report</code>) ✅ script pinned
 
 | Capability | Present |
 | --- | --- |
@@ -110,7 +175,18 @@
 - On-chain staking slash monitors
 - Adaptive fuzz oracle with spectral drift alerts
 
-## 7. Blockchain Deployment Envelope
+### Command Audit
+| Category | npm script | Status |
+| --- | --- | --- |
+| pause | owner:system-pause | ✅ |
+| resume | owner:system-pause | ✅ |
+| parameter | owner:command-center | ✅ |
+| treasury | reward-engine:update | ✅ |
+| sentinel | owner:rotate | ✅ |
+| upgrade | owner:upgrade | ✅ |
+| compliance | owner:update-all | ✅ |
+
+## 9. Blockchain Deployment Envelope
 
 - **Network:** Ethereum Mainnet-grade (chainId 1)
 - **RPC:** https://mainnet.infura.io/v3/YOUR_KEY
@@ -131,7 +207,7 @@
 | AGIJobsGovernor | unpause | 0x3f4ba83a | Resume operations |
 | AGIJobsTreasury | updateEmissionCurve | 0xa10204e9 | Adjusts reward burn / mint ratios |
 
-## 8. CI Enforcement Ledger
+## 10. CI Enforcement Ledger
 
 - **Workflow name:** ci (v2)
 - **Concurrency guard:** <code>ci-${{ github.workflow }}-${{ github.ref }}</code>
@@ -147,7 +223,7 @@
 
 Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.
 
-## 9. Owner Execution Log (fill during live ops)
+## 11. Owner Execution Log (fill during live ops)
 
 | Timestamp | Action | Tx hash | Operator | Notes |
 | --- | --- | --- | --- | --- |

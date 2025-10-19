@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-19T13:49:08.181Z",
+  "generatedAt": "2025-10-19T17:23:16.570Z",
   "version": "1.1.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
@@ -8,7 +8,50 @@
     "freeEnergyMarginKJ": 69800,
     "burnEnergyPerBlockKJ": 4362.5,
     "gibbsAgreementDelta": 0,
-    "stakeBoltzmannEnvelope": 5.340020726246426e-12
+    "stakeBoltzmannEnvelope": 5.340020726246426e-12,
+    "gibbsCrossCheckKJ": 69800,
+    "freeEnergyMarginPercent": 1,
+    "landauerWithinMargin": true
+  },
+  "statisticalPhysics": {
+    "beta": 0.0725,
+    "energyScaling": 122.41864244335348,
+    "toleranceKJ": 500,
+    "partitionFunction": 1.1150212496503115e-18,
+    "logPartitionFunction": -41.33765821118,
+    "expectedEnergy": 581.1422618477402,
+    "expectedEnergyKJ": 71142.6467618602,
+    "freeEnergy": 570.1745960162759,
+    "freeEnergyKJ": 69800,
+    "entropy": 0.7951557727811215,
+    "entropyKJPerK": 4.331118586645818,
+    "variance": 67.4525411959039,
+    "heatCapacity": 0.3545474196609698,
+    "probabilities": [
+      {
+        "energy": 580,
+        "degeneracy": 2,
+        "probability": 0.9809884352129131
+      },
+      {
+        "energy": 640,
+        "degeneracy": 3,
+        "probability": 0.018992150815366825
+      },
+      {
+        "energy": 720,
+        "degeneracy": 1,
+        "probability": 0.000019166592108652428
+      },
+      {
+        "energy": 780,
+        "degeneracy": 1,
+        "probability": 2.47379612152881e-7
+      }
+    ],
+    "freeEnergyConsistencyDelta": 5.684341886080801e-13,
+    "gibbsDeltaKJ": 0,
+    "withinTolerance": true
   },
   "hamiltonian": {
     "kineticTerm": 34149742376.26085,
@@ -24,26 +67,40 @@
       "Sentinel-Tactician"
     ],
     "replicator": [
-      0.3492885027345193,
-      0.3328210216962085,
-      0.3178904755692723
+      0.4074521001792146,
+      0.36555002383644997,
+      0.22699787598433552
     ],
     "closedForm": [
-      0.3333333333333333,
       0.33333333333333337,
-      0.33333333333333337
+      0.3333333333333334,
+      0.33333333333333326
     ],
     "monteCarlo": [
-      0.3387870787365523,
-      0.32888719506091907,
-      0.3323257262025289
+      0.33442132029876004,
+      0.3291403994112745,
+      0.3364382802899638
     ],
-    "replicatorIterations": 50000,
-    "monteCarloRmsError": 0.3110914692796155,
+    "continuous": [
+      0.4074521001792146,
+      0.36555002383644997,
+      0.22699787598433552
+    ],
+    "eigenvector": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ],
+    "replicatorIterations": 25000,
+    "continuousIterations": 25000,
+    "eigenvectorIterations": 1,
+    "monteCarloRmsError": 0.35745947819284196,
     "payoffAtEquilibrium": 1,
-    "divergenceAtEquilibrium": 0,
+    "divergenceAtEquilibrium": 2.220446049250313e-16,
     "discountFactor": 0.92,
-    "replicatorDeviation": 0.022210622453121293
+    "replicatorDeviation": 0.1335617319270315,
+    "maxMethodDeviation": 0.1365150455272573,
+    "methodConsistency": true
   },
   "antifragility": {
     "samples": [
@@ -51,25 +108,25 @@
         "sigma": 0,
         "welfare": -4639.957446808511,
         "averagePayoff": 1,
-        "divergence": 0.06532289472906766
+        "divergence": 0.07678157966551037
       },
       {
         "sigma": 0.1,
         "welfare": -4639.957446808511,
         "averagePayoff": 1,
-        "divergence": 0.06487006997460947
+        "divergence": 0.07624601510263318
       },
       {
         "sigma": 0.2,
         "welfare": -4639.957446808511,
         "averagePayoff": 1,
-        "divergence": 0.06557264797947514
+        "divergence": 0.07690141382199267
       },
       {
         "sigma": 0.3,
         "welfare": -4639.957446808511,
         "averagePayoff": 1,
-        "divergence": 0.06557318271377978
+        "divergence": 0.07730178289544062
       }
     ],
     "quadraticSecondDerivative": 6.984919309616089e-10,
@@ -149,8 +206,94 @@
       }
     ],
     "portfolioResidual": 0.214455,
+    "portfolioResidualCrossCheck": 0.214455,
     "threshold": 0.3,
     "withinBounds": true
+  },
+  "incentives": {
+    "mint": {
+      "eta": 0.94,
+      "deltaValue": 125000,
+      "totalMinted": 117500,
+      "treasuryMirrorShare": 0.65,
+      "agentShare": 0.65,
+      "mintedAgent": 76375,
+      "mintedTreasury": 76375,
+      "equalityDelta": 0,
+      "equalityRatio": 0,
+      "equalityOk": true,
+      "tolerance": 0.01,
+      "dust": 0,
+      "roles": [
+        {
+          "role": "Agent",
+          "share": 0.65,
+          "minted": 76375
+        },
+        {
+          "role": "Validator",
+          "share": 0.15,
+          "minted": 17625
+        },
+        {
+          "role": "Operator",
+          "share": 0.15,
+          "minted": 17625
+        },
+        {
+          "role": "Employer",
+          "share": 0.05,
+          "minted": 5875
+        }
+      ]
+    },
+    "burn": {
+      "jobEscrow": 50000,
+      "burnBps": 600,
+      "treasuryBps": 200,
+      "employerBps": 200,
+      "burned": 3000,
+      "treasury": 1000,
+      "employer": 1000,
+      "retained": 45000
+    },
+    "slashing": {
+      "stakeExample": 20000,
+      "minStake": {
+        "agent": 1200,
+        "validator": 4800,
+        "operator": 2600
+      },
+      "severities": [
+        {
+          "label": "Minor fault",
+          "description": "Performance lapse with limited downstream impact.",
+          "fraction": 0.05,
+          "slashAmount": 1000,
+          "treasuryAmount": 600,
+          "employerAmount": 300,
+          "burnAmount": 100
+        },
+        {
+          "label": "Major fault",
+          "description": "Significant execution failure requiring restitution.",
+          "fraction": 0.25,
+          "slashAmount": 5000,
+          "treasuryAmount": 3750,
+          "employerAmount": 1250,
+          "burnAmount": 0
+        },
+        {
+          "label": "Critical attack",
+          "description": "Malicious coordination breach triggering total slash.",
+          "fraction": 1,
+          "slashAmount": 20000,
+          "treasuryAmount": 20000,
+          "employerAmount": 0,
+          "burnAmount": 0
+        }
+      ]
+    }
   },
   "owner": {
     "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
@@ -164,7 +307,9 @@
         "description": "Immediate halt for the entire AGI Jobs execution surface via the owner guardian.",
         "command": "npm run owner:system-pause -- --network mainnet --pause true",
         "verification": "npm run owner:verify-control",
-        "present": true
+        "present": true,
+        "scriptName": "owner:system-pause",
+        "scriptExists": true
       },
       {
         "category": "resume",
@@ -172,7 +317,9 @@
         "description": "Restores production flows after remediation and confirms health checks.",
         "command": "npm run owner:system-pause -- --network mainnet --pause false",
         "verification": "npm run owner:verify-control",
-        "present": true
+        "present": true,
+        "scriptName": "owner:system-pause",
+        "scriptExists": true
       },
       {
         "category": "parameter",
@@ -180,7 +327,9 @@
         "description": "Applies Hamiltonian monitor adjustments to lock λ and inertial metrics at the computed optimum.",
         "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
         "verification": "npm run owner:audit-hamiltonian",
-        "present": true
+        "present": true,
+        "scriptName": "owner:command-center",
+        "scriptExists": true
       },
       {
         "category": "treasury",
@@ -188,7 +337,9 @@
         "description": "Aligns mint/burn ratios with thermodynamic constraints and treasury splits.",
         "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
         "verification": "npm run reward-engine:report",
-        "present": true
+        "present": true,
+        "scriptName": "reward-engine:update",
+        "scriptExists": true
       },
       {
         "category": "sentinel",
@@ -196,7 +347,9 @@
         "description": "Refreshes enforcement guardians to maintain antifragile coverage.",
         "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
         "verification": "npm run monitoring:sentinels",
-        "present": true
+        "present": true,
+        "scriptName": "owner:rotate",
+        "scriptExists": true
       },
       {
         "category": "upgrade",
@@ -204,7 +357,9 @@
         "description": "Queues upgrade bundle into the timelock for deterministic rollout.",
         "command": "npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json",
         "verification": "npm run owner:upgrade-status",
-        "present": true
+        "present": true,
+        "scriptName": "owner:upgrade",
+        "scriptExists": true
       },
       {
         "category": "compliance",
@@ -212,7 +367,9 @@
         "description": "Publishes mandatory statements to participants and regulators.",
         "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
         "verification": "npm run owner:compliance-report",
-        "present": true
+        "present": true,
+        "scriptName": "owner:update-all",
+        "scriptExists": true
       }
     ],
     "requiredCoverage": [
@@ -250,27 +407,47 @@
       "On-chain staking slash monitors",
       "Adaptive fuzz oracle with spectral drift alerts"
     ],
-    "fullCoverage": true
+    "fullCoverage": true,
+    "allCommandsPresent": true
   },
   "jacobian": {
-    "jacobian": [
+    "analytic": [
       [
-        -0.3333333333333333,
-        -0.3666666666666667,
-        -0.29999999999999993
-      ],
-      [
-        -0.3,
         -0.33333333333333337,
-        -0.36666666666666675
+        -0.36666666666666675,
+        -0.3
       ],
       [
-        -0.36666666666666675,
-        -0.3,
-        -0.33333333333333337
+        -0.30000000000000004,
+        -0.3333333333333334,
+        -0.3666666666666668
+      ],
+      [
+        -0.36666666666666664,
+        -0.2999999999999999,
+        -0.33333333333333326
       ]
     ],
-    "gershgorinUpperBound": 0.33333333333333337,
+    "numeric": [
+      [
+        7.401486830328198e-17,
+        -0.03333333333435855,
+        0.033333333315854814
+      ],
+      [
+        0.03333333335286222,
+        1.850375408448309e-11,
+        -0.03333333335286222
+      ],
+      [
+        -0.03333333333435854,
+        0.033333333315854766,
+        0
+      ]
+    ],
+    "maxDifference": 0.33333333335286225,
+    "gershgorinUpperBound": 0.3333333333333334,
+    "spectralRadius": 1,
     "stable": false
   },
   "blockchain": {

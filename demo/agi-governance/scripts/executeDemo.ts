@@ -25,6 +25,15 @@ export interface MissionConfig {
     burnRatePerBlock: number;
     stakeBoltzmann: number;
   };
+  statisticalPhysics: {
+    beta: number;
+    energyScaling: number;
+    toleranceKJ: number;
+    energyLevels: Array<{
+      energy: number;
+      degeneracy: number;
+    }>;
+  };
   incentives: {
     mintRule: {
       eta: number;
@@ -167,6 +176,32 @@ export type ThermodynamicReport = {
   gibbsCrossCheckKJ: number;
   freeEnergyMarginPercent: number;
   landauerWithinMargin: boolean;
+};
+
+export type StatisticalPhysicsProbability = {
+  energy: number;
+  degeneracy: number;
+  probability: number;
+};
+
+export type StatisticalPhysicsReport = {
+  beta: number;
+  energyScaling: number;
+  toleranceKJ: number;
+  partitionFunction: number;
+  logPartitionFunction: number;
+  expectedEnergy: number;
+  expectedEnergyKJ: number;
+  freeEnergy: number;
+  freeEnergyKJ: number;
+  entropy: number;
+  entropyKJPerK: number;
+  variance: number;
+  heatCapacity: number;
+  probabilities: StatisticalPhysicsProbability[];
+  freeEnergyConsistencyDelta: number;
+  gibbsDeltaKJ: number;
+  withinTolerance: boolean;
 };
 
 export type HamiltonianReport = {
@@ -331,6 +366,7 @@ export type ReportBundle = {
   generatedAt: string;
   meta: MissionConfig["meta"];
   thermodynamics: ThermodynamicReport;
+  statisticalPhysics: StatisticalPhysicsReport;
   hamiltonian: HamiltonianReport;
   equilibrium: EquilibriumResult;
   antifragility: AntifragilityReport;
@@ -373,6 +409,23 @@ function assertValidConfig(config: MissionConfig): void {
   }
   if (!config.incentives.mintRule.rewardEngineShares.some((share) => share.role.toLowerCase() === "agent")) {
     throw new Error("rewardEngineShares must include an Agent role");
+  }
+  if (config.statisticalPhysics.energyLevels.length === 0) {
+    throw new Error("statisticalPhysics.energyLevels must not be empty");
+  }
+  if (config.statisticalPhysics.beta <= 0 || config.statisticalPhysics.energyScaling <= 0) {
+    throw new Error("statisticalPhysics.beta and energyScaling must be positive");
+  }
+  if (config.statisticalPhysics.toleranceKJ < 0) {
+    throw new Error("statisticalPhysics.toleranceKJ must be non-negative");
+  }
+  for (const level of config.statisticalPhysics.energyLevels) {
+    if (!Number.isFinite(level.energy) || !Number.isFinite(level.degeneracy)) {
+      throw new Error("statisticalPhysics energy levels must be finite values");
+    }
+    if (level.degeneracy <= 0) {
+      throw new Error("statisticalPhysics degeneracy must be positive");
+    }
   }
   if (
     config.incentives.mintRule.treasuryMirrorShare < 0 ||
@@ -465,6 +518,81 @@ function computeThermodynamics(config: MissionConfig): ThermodynamicReport {
     gibbsCrossCheckKJ: referenceGibbs,
     freeEnergyMarginPercent: gibbsFreeEnergyKJ === 0 ? 0 : freeEnergyMarginKJ / gibbsFreeEnergyKJ,
     landauerWithinMargin: landauerKJ <= gibbsFreeEnergyKJ + 1e-6,
+  };
+}
+
+function logSumExp(values: number[]): number {
+  const max = Math.max(...values);
+  if (!Number.isFinite(max)) {
+    return Number.NEGATIVE_INFINITY;
+  }
+  const sum = values.reduce((total, value) => total + Math.exp(value - max), 0);
+  return max + Math.log(sum);
+}
+
+function computeStatisticalPhysics(
+  config: MissionConfig,
+  thermodynamics: ThermodynamicReport,
+): StatisticalPhysicsReport {
+  const { beta, energyScaling, toleranceKJ, energyLevels } = config.statisticalPhysics;
+
+  const logWeights = energyLevels.map((level) => Math.log(level.degeneracy) - beta * level.energy);
+  const logPartitionFunction = logSumExp(logWeights);
+  const partitionFunction = Math.exp(logPartitionFunction);
+
+  const probabilities: StatisticalPhysicsProbability[] = energyLevels.map((level, index) => ({
+    energy: level.energy,
+    degeneracy: level.degeneracy,
+    probability: Math.exp(logWeights[index] - logPartitionFunction),
+  }));
+
+  const expectedEnergy = probabilities.reduce((sum, entry) => sum + entry.probability * entry.energy, 0);
+  const expectedEnergyKJ = expectedEnergy * energyScaling;
+
+  const freeEnergy = -(1 / beta) * logPartitionFunction;
+  const freeEnergyKJ = freeEnergy * energyScaling;
+
+  const entropy = probabilities.reduce((sum, entry) => {
+    if (entry.probability <= 0) {
+      return sum;
+    }
+    const base = -entry.probability * Math.log(entry.probability);
+    const degeneracyContribution = entry.probability * Math.log(entry.degeneracy);
+    return sum + base + degeneracyContribution;
+  }, 0);
+
+  const entropyKJPerK =
+    config.thermodynamics.operatingTemperatureK === 0
+      ? 0
+      : (expectedEnergyKJ - freeEnergyKJ) / config.thermodynamics.operatingTemperatureK;
+
+  const variance =
+    probabilities.reduce((sum, entry) => sum + entry.probability * entry.energy * entry.energy, 0) - expectedEnergy ** 2;
+  const heatCapacity = variance * beta * beta;
+
+  const freeEnergyViaIdentity = expectedEnergy - (1 / beta) * entropy;
+  const freeEnergyConsistencyDelta = Math.abs(freeEnergy - freeEnergyViaIdentity);
+
+  const gibbsDeltaKJ = Math.abs(freeEnergyKJ - thermodynamics.gibbsFreeEnergyKJ);
+
+  return {
+    beta,
+    energyScaling,
+    toleranceKJ,
+    partitionFunction,
+    logPartitionFunction,
+    expectedEnergy,
+    expectedEnergyKJ,
+    freeEnergy,
+    freeEnergyKJ,
+    entropy,
+    entropyKJPerK,
+    variance,
+    heatCapacity,
+    probabilities,
+    freeEnergyConsistencyDelta,
+    gibbsDeltaKJ,
+    withinTolerance: gibbsDeltaKJ <= toleranceKJ,
   };
 }
 
@@ -1282,6 +1410,13 @@ function formatNumber(value: number, digits = 2): string {
   return value.toFixed(digits);
 }
 
+function formatScientific(value: number, digits = 3): string {
+  if (!Number.isFinite(value) || value === 0) {
+    return value === 0 ? "0" : "n/a";
+  }
+  return value.toExponential(digits);
+}
+
 function formatMatrix(matrix: number[][]): string {
   return matrix
     .map((row) =>
@@ -1303,6 +1438,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     meta,
     generatedAt,
     thermodynamics,
+    statisticalPhysics,
     hamiltonian,
     equilibrium,
     antifragility,
@@ -1369,6 +1505,13 @@ function buildMarkdown(bundle: ReportBundle): string {
     .map((fn) => `| ${fn.contract} | ${fn.function} | ${fn.selector} | ${fn.description} |`)
     .join("\n");
 
+  const partitionTable = statisticalPhysics.probabilities
+    .map(
+      (entry) =>
+        `| ${formatNumber(entry.energy)} | ${formatNumber(entry.degeneracy, 0)} | ${formatPercent(entry.probability)} |`,
+    )
+    .join("\n");
+
   const mintTable = incentives.mint.roles
     .map((role) => `| ${role.role} | ${formatPercent(role.share)} | ${formatNumber(role.minted)} tokens |`)
     .join("\n");
@@ -1421,7 +1564,35 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Landauer within safety margin:** ${thermodynamics.landauerWithinMargin ? "✅" : "⚠️"}`,
     `- **Stake Boltzmann envelope:** ${thermodynamics.stakeBoltzmannEnvelope.toExponential(3)} (dimensionless proof of energy-aligned stake)`,
     "",
-    "## 2. Hamiltonian Control Plane",
+    "## 2. Statistical Physics Partition Function Cross-Check",
+    "",
+    `- **β (inverse temperature):** ${formatNumber(statisticalPhysics.beta, 4)}`,
+    `- **Partition function (Z):** ${formatScientific(statisticalPhysics.partitionFunction)} (log Z ${formatScientific(
+      statisticalPhysics.logPartitionFunction,
+    )})`,
+    `- **Expected energy:** ${formatNumber(statisticalPhysics.expectedEnergy)} (scaled ${formatNumber(
+      statisticalPhysics.expectedEnergyKJ,
+    )} kJ)`,
+    `- **Free energy:** ${formatNumber(statisticalPhysics.freeEnergy)} (scaled ${formatNumber(
+      statisticalPhysics.freeEnergyKJ,
+    )} kJ)`,
+    `- **Entropy:** ${formatNumber(statisticalPhysics.entropy)} (scaled ${formatNumber(
+      statisticalPhysics.entropyKJPerK,
+    )} kJ/K)`,
+    `- **Heat capacity (β²·Var[E]):** ${formatNumber(statisticalPhysics.heatCapacity, 4)} (variance ${formatNumber(
+      statisticalPhysics.variance,
+    )})`,
+    `- **Free-energy identity Δ:** ${formatScientific(statisticalPhysics.freeEnergyConsistencyDelta)}`,
+    `- **Δ vs thermodynamic Gibbs:** ${formatNumber(statisticalPhysics.gibbsDeltaKJ)} kJ (${statisticalPhysics.withinTolerance
+      ? "within"
+      : "⚠️ outside"
+    } tolerance ${formatNumber(statisticalPhysics.toleranceKJ)} kJ)`,
+    "",
+    "| Energy (dimensionless) | Degeneracy | Probability |",
+    "| --- | --- | --- |",
+    partitionTable,
+    "",
+    "## 3. Hamiltonian Control Plane",
     "",
     `- **Kinetic term:** ${formatNumber(hamiltonian.kineticTerm)} units`,
     `- **Potential term (scaled by λ):** ${formatNumber(hamiltonian.potentialTerm)} units`,
@@ -1429,7 +1600,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Alternate computation check:** ${formatNumber(hamiltonian.alternativeHamiltonian)} units`,
     `- **Difference:** ${hamiltonian.difference.toExponential(3)} (≤ 1e-3 target)`,
     "",
-    "## 3. Incentive Free-Energy Flow",
+    "## 4. Incentive Free-Energy Flow",
     "",
     `- **Mint rule η:** ${incentives.mint.eta.toFixed(2)} (ΔV ${formatNumber(incentives.mint.deltaValue)} tokens)`,
     `- **Total minted per event:** ${formatNumber(incentives.mint.totalMinted)} tokens`,
@@ -1471,7 +1642,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- | --- | --- |",
     slashingTable,
     "",
-    "## 4. Game-Theoretic Macro-Equilibrium",
+    "## 5. Game-Theoretic Macro-Equilibrium",
     "",
     `- **Discount factor:** ${equilibrium.discountFactor.toFixed(2)} (must exceed 0.80 for uniqueness)`,
     `- **Replicator iterations to convergence:** ${equilibrium.replicatorIterations}`,
@@ -1501,7 +1672,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- |",
     jacobianNumericMatrix,
     "",
-    "## 5. Antifragility Tensor",
+    "## 6. Antifragility Tensor",
     "",
     `- **Quadratic curvature (2a):** ${antifragility.quadraticSecondDerivative.toExponential(3)} (> 0 indicates antifragility)`,
     `- **Monotonic welfare increase:** ${antifragility.monotonicIncrease ? "✅" : "⚠️"}`,
@@ -1510,7 +1681,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- |",
     antifragilityTable,
     "",
-    "## 6. Risk & Safety Audit",
+    "## 7. Risk & Safety Audit",
     "",
     `- **Coverage weights:** staking ${formatPercent(risk.weights.staking)}, formal ${formatPercent(risk.weights.formal)}, fuzz ${formatPercent(risk.weights.fuzz)}`,
     `- **Portfolio residual risk:** ${risk.portfolioResidual.toFixed(3)} (threshold ${risk.threshold.toFixed(3)} — ${risk.withinBounds ? "within" : "exceeds"} bounds)`,
@@ -1520,7 +1691,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- | --- | --- |",
     riskTable,
     "",
-    "## 7. Owner Supremacy & Command Surface",
+    "## 8. Owner Supremacy & Command Surface",
     "",
     `- **Owner:** ${owner.owner}`,
     `- **Pauser:** ${owner.pauser}`,
@@ -1544,7 +1715,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- |",
     commandAuditTable,
     "",
-    "## 8. Blockchain Deployment Envelope",
+    "## 9. Blockchain Deployment Envelope",
     "",
     `- **Network:** ${blockchain.network} (chainId ${blockchain.chainId})`,
     `- **RPC:** ${blockchain.rpcProvider}`,
@@ -1561,7 +1732,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- |",
     pausableTable,
     "",
-    "## 9. CI Enforcement Ledger",
+    "## 10. CI Enforcement Ledger",
     "",
     `- **Workflow name:** ${ci.workflow}`,
     `- **Concurrency guard:** <code>${ci.concurrency}</code>`,
@@ -1573,7 +1744,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     "Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.",
     "",
-    "## 10. Owner Execution Log (fill during live ops)",
+    "## 11. Owner Execution Log (fill during live ops)",
     "",
     "| Timestamp | Action | Tx hash | Operator | Notes |",
     "| --- | --- | --- | --- | --- |",
@@ -1586,6 +1757,7 @@ function buildSummary(bundle: ReportBundle): Record<string, unknown> {
     generatedAt: bundle.generatedAt,
     version: bundle.meta.version,
     thermodynamics: bundle.thermodynamics,
+    statisticalPhysics: bundle.statisticalPhysics,
     hamiltonian: bundle.hamiltonian,
     equilibrium: bundle.equilibrium,
     antifragility: bundle.antifragility,
@@ -1603,6 +1775,7 @@ export {
   loadMission,
   loadPackageScripts,
   computeThermodynamics,
+  computeStatisticalPhysics,
   computeHamiltonian,
   computeEquilibrium,
   computeAntifragility,
@@ -1616,6 +1789,7 @@ export {
 async function main(): Promise<void> {
   const mission = await loadMission();
   const thermodynamics = computeThermodynamics(mission);
+  const statisticalPhysics = computeStatisticalPhysics(mission, thermodynamics);
   const hamiltonian = computeHamiltonian(mission);
   const equilibrium = computeEquilibrium(mission);
   const antifragility = computeAntifragility(mission, mission.gameTheory.payoffMatrix, equilibrium, thermodynamics);
@@ -1630,6 +1804,7 @@ async function main(): Promise<void> {
     generatedAt: new Date().toISOString(),
     meta: mission.meta,
     thermodynamics,
+    statisticalPhysics,
     hamiltonian,
     equilibrium,
     antifragility,
