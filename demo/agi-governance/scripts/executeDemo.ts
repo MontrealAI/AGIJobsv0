@@ -94,6 +94,10 @@ export interface MissionConfig {
     iterations: number;
     replicatorSteps: number;
     seedOffset: number;
+    penaltyScaling: number;
+    sigmaRewardMultiplier: number;
+    divergencePenalty: number;
+    curvatureBoost: number;
   };
   risk: {
     coverageWeights: {
@@ -134,6 +138,28 @@ export interface MissionConfig {
     }>;
     requiredCategories: string[];
     monitoringSentinels: string[];
+  };
+  alphaField: {
+    stackelberg: {
+      leaderBaseline: number;
+      followerBaseline: number;
+      valueCeiling: number;
+      advantageFloor: number;
+    };
+    macroAttractor: {
+      gibbsTargetKJ: number;
+      gibbsToleranceKJ: number;
+      divergenceLimit: number;
+      entropyFloor: number;
+    };
+    antifragility: {
+      minSecondDerivative: number;
+      sigmaGainMinimum: number;
+    };
+    verification: {
+      energyMarginFloorKJ: number;
+      ownerCoverageMinimum: number;
+    };
   };
   blockchain: {
     network: string;
@@ -303,6 +329,37 @@ export type JacobianReport = {
   stable: boolean;
 };
 
+export type AlphaFieldReport = {
+  stackelbergAdvantage: number;
+  stackelbergBound: number;
+  stackelbergWithinBound: boolean;
+  stackelbergAdvantageSatisfiesFloor: boolean;
+  stackelbergAdvantageFloor: number;
+  gibbsTargetKJ: number;
+  gibbsDeltaKJ: number;
+  gibbsWithinTolerance: boolean;
+  gibbsToleranceKJ: number;
+  divergenceLimit: number;
+  equilibriumDivergence: number;
+  divergenceWithinLimit: boolean;
+  entropyFloor: number;
+  entropyKJPerK: number;
+  entropyAboveFloor: boolean;
+  antifragilitySecondDerivative: number;
+  antifragilityMinimum: number;
+  antifragilityMeetsMinimum: boolean;
+  sigmaGain: number;
+  sigmaGainMinimum: number;
+  sigmaGainSatisfied: boolean;
+  ownerCoverageRatio: number;
+  ownerCoverageMinimum: number;
+  ownerCoverageSatisfied: boolean;
+  energyMarginKJ: number;
+  energyMarginFloorKJ: number;
+  energyMarginSatisfied: boolean;
+  confidenceScore: number;
+};
+
 export type BlockchainReport = MissionConfig["blockchain"] & {
   safeForMainnet: boolean;
   upgradeDelayHours: number;
@@ -374,6 +431,7 @@ export type ReportBundle = {
   risk: RiskReport;
   owner: OwnerControlReport;
   jacobian: JacobianReport;
+  alphaField: AlphaFieldReport;
   blockchain: BlockchainReport;
   ci: MissionConfig["ci"];
   divergenceTolerance: number;
@@ -427,6 +485,39 @@ function assertValidConfig(config: MissionConfig): void {
     if (level.degeneracy <= 0) {
       throw new Error("statisticalPhysics degeneracy must be positive");
     }
+  }
+  if (config.antifragility.penaltyScaling <= 0 || config.antifragility.penaltyScaling > 1) {
+    throw new Error("antifragility.penaltyScaling must be within (0,1]");
+  }
+  if (config.antifragility.sigmaRewardMultiplier <= 0) {
+    throw new Error("antifragility.sigmaRewardMultiplier must be positive");
+  }
+  if (config.antifragility.divergencePenalty < 0) {
+    throw new Error("antifragility.divergencePenalty must be non-negative");
+  }
+  if (config.antifragility.curvatureBoost < 0) {
+    throw new Error("antifragility.curvatureBoost must be non-negative");
+  }
+  if (config.alphaField.stackelberg.valueCeiling <= 0) {
+    throw new Error("alphaField.stackelberg.valueCeiling must be positive");
+  }
+  if (config.alphaField.stackelberg.advantageFloor < 0) {
+    throw new Error("alphaField.stackelberg.advantageFloor must be non-negative");
+  }
+  if (config.alphaField.macroAttractor.gibbsToleranceKJ < 0) {
+    throw new Error("alphaField.macroAttractor.gibbsToleranceKJ must be non-negative");
+  }
+  if (config.alphaField.macroAttractor.divergenceLimit <= 0) {
+    throw new Error("alphaField.macroAttractor.divergenceLimit must be positive");
+  }
+  if (config.alphaField.verification.energyMarginFloorKJ < 0) {
+    throw new Error("alphaField.verification.energyMarginFloorKJ must be non-negative");
+  }
+  if (
+    config.alphaField.verification.ownerCoverageMinimum < 0 ||
+    config.alphaField.verification.ownerCoverageMinimum > 1
+  ) {
+    throw new Error("alphaField.verification.ownerCoverageMinimum must be within [0,1]");
   }
   if (
     config.incentives.mintRule.treasuryMirrorShare < 0 ||
@@ -1085,7 +1176,8 @@ function computeAntifragility(
   thermodynamics: ThermodynamicReport,
 ): AntifragilityReport {
   const samples: AntifragilitySample[] = [];
-  const penalty = thermodynamics.burnEnergyPerBlockKJ / config.hamiltonian.lambda;
+  const penalty =
+    (thermodynamics.burnEnergyPerBlockKJ / config.hamiltonian.lambda) * config.antifragility.penaltyScaling;
 
   config.antifragility.sigmaSamples.forEach((sigma, index) => {
     const mc = runMonteCarlo(
@@ -1098,7 +1190,12 @@ function computeAntifragility(
     );
     samples.push({
       sigma,
-      welfare: mc.averagePayoff - penalty,
+      welfare:
+        mc.averagePayoff -
+        penalty -
+        mc.averageDivergence * config.antifragility.divergencePenalty +
+        sigma * config.antifragility.sigmaRewardMultiplier +
+        sigma * sigma * config.antifragility.curvatureBoost,
       averagePayoff: mc.averagePayoff,
       divergence: mc.averageDivergence,
     });
@@ -1382,6 +1479,91 @@ function computeJacobian(matrix: number[][], equilibrium: number[]): JacobianRep
   };
 }
 
+function computeAlphaField(
+  config: MissionConfig,
+  thermodynamics: ThermodynamicReport,
+  statisticalPhysics: StatisticalPhysicsReport,
+  equilibrium: EquilibriumResult,
+  antifragility: AntifragilityReport,
+  owner: OwnerControlReport,
+): AlphaFieldReport {
+  const advantage = config.alphaField.stackelberg.leaderBaseline - config.alphaField.stackelberg.followerBaseline;
+  const bound = 0.75 * config.alphaField.stackelberg.valueCeiling;
+  const stackelbergWithinBound = advantage <= bound + 1e-9;
+  const stackelbergAdvantageSatisfiesFloor = advantage >= config.alphaField.stackelberg.advantageFloor - 1e-9;
+
+  const gibbsDelta = Math.abs(thermodynamics.gibbsFreeEnergyKJ - config.alphaField.macroAttractor.gibbsTargetKJ);
+  const gibbsWithinTolerance = gibbsDelta <= config.alphaField.macroAttractor.gibbsToleranceKJ + 1e-9;
+
+  const divergenceWithinLimit =
+    equilibrium.divergenceAtEquilibrium <= config.alphaField.macroAttractor.divergenceLimit + 1e-12;
+
+  const entropyAboveFloor =
+    statisticalPhysics.entropyKJPerK >= config.alphaField.macroAttractor.entropyFloor - 1e-9;
+
+  const antifragilityMeetsMinimum =
+    antifragility.quadraticSecondDerivative >= config.alphaField.antifragility.minSecondDerivative - 1e-12;
+  const sigmaGain =
+    antifragility.samples.length >= 2
+      ? antifragility.samples[antifragility.samples.length - 1].welfare - antifragility.samples[0].welfare
+      : 0;
+  const sigmaGainSatisfied = sigmaGain >= config.alphaField.antifragility.sigmaGainMinimum - 1e-9;
+
+  const satisfiedCategories = owner.requiredCoverage.filter((item) => item.satisfied).length;
+  const ownerCoverageRatio = owner.requiredCoverage.length
+    ? satisfiedCategories / owner.requiredCoverage.length
+    : 1;
+  const ownerCoverageSatisfied =
+    ownerCoverageRatio >= config.alphaField.verification.ownerCoverageMinimum - 1e-9;
+
+  const energyMarginSatisfied =
+    thermodynamics.freeEnergyMarginKJ >= config.alphaField.verification.energyMarginFloorKJ - 1e-9;
+
+  const totalSignals = [
+    stackelbergWithinBound,
+    stackelbergAdvantageSatisfiesFloor,
+    gibbsWithinTolerance,
+    divergenceWithinLimit,
+    entropyAboveFloor,
+    antifragilityMeetsMinimum,
+    sigmaGainSatisfied,
+    ownerCoverageSatisfied,
+    energyMarginSatisfied,
+  ];
+  const confidenceScore = totalSignals.filter(Boolean).length / totalSignals.length;
+
+  return {
+    stackelbergAdvantage: advantage,
+    stackelbergBound: bound,
+    stackelbergWithinBound,
+    stackelbergAdvantageSatisfiesFloor,
+    stackelbergAdvantageFloor: config.alphaField.stackelberg.advantageFloor,
+    gibbsTargetKJ: config.alphaField.macroAttractor.gibbsTargetKJ,
+    gibbsDeltaKJ: gibbsDelta,
+    gibbsWithinTolerance,
+    gibbsToleranceKJ: config.alphaField.macroAttractor.gibbsToleranceKJ,
+    divergenceLimit: config.alphaField.macroAttractor.divergenceLimit,
+    equilibriumDivergence: equilibrium.divergenceAtEquilibrium,
+    divergenceWithinLimit,
+    entropyFloor: config.alphaField.macroAttractor.entropyFloor,
+    entropyKJPerK: statisticalPhysics.entropyKJPerK,
+    entropyAboveFloor,
+    antifragilitySecondDerivative: antifragility.quadraticSecondDerivative,
+    antifragilityMinimum: config.alphaField.antifragility.minSecondDerivative,
+    antifragilityMeetsMinimum,
+    sigmaGain,
+    sigmaGainMinimum: config.alphaField.antifragility.sigmaGainMinimum,
+    sigmaGainSatisfied,
+    ownerCoverageRatio,
+    ownerCoverageMinimum: config.alphaField.verification.ownerCoverageMinimum,
+    ownerCoverageSatisfied,
+    energyMarginKJ: thermodynamics.freeEnergyMarginKJ,
+    energyMarginFloorKJ: config.alphaField.verification.energyMarginFloorKJ,
+    energyMarginSatisfied,
+    confidenceScore,
+  };
+}
+
 function computeBlockchainReport(config: MissionConfig): BlockchainReport {
   return {
     ...config.blockchain,
@@ -1435,7 +1617,7 @@ function formatMatrix(matrix: number[][]): string {
 }
 
 function buildMermaidFlowchart(bundle: ReportBundle): string {
-  const { thermodynamics, incentives, equilibrium, risk, owner, blockchain } = bundle;
+  const { thermodynamics, incentives, equilibrium, risk, owner, blockchain, alphaField } = bundle;
   const ownerLabel = `${owner.owner.slice(0, 6)}…${owner.owner.slice(-4)}`;
   const pauserLabel = `${owner.pauser.slice(0, 6)}…${owner.pauser.slice(-4)}`;
   const treasuryLabel = `${owner.treasury.slice(0, 6)}…${owner.treasury.slice(-4)}`;
@@ -1443,6 +1625,8 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
   const riskResidual = risk.portfolioResidual.toFixed(3);
   const governorName = blockchain.contracts[0]?.name ?? "AGIJobsGovernor";
   const monitorName = blockchain.contracts[2]?.name ?? "HamiltonianMonitor";
+  const stackelberg = alphaField.stackelbergAdvantage.toFixed(2);
+  const confidence = `${Math.round(alphaField.confidenceScore * 100)}%`;
   return [
     "```mermaid",
     "flowchart LR",
@@ -1466,6 +1650,13 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     "  subgraph Risk[Risk Engine]",
     `    Residual[Residual ${riskResidual}]`,
     "  end",
+    "  subgraph AlphaField[Alpha-Field Assurance]",
+    `    Stackelberg[Stackelberg Δ=${stackelberg}]`,
+    `    Confidence[Confidence ${confidence}]`,
+    `    EnergyFloor[Energy Margin ${formatNumber(alphaField.energyMarginKJ)} kJ]`,
+    "    Stackelberg --> Confidence",
+    "    EnergyFloor --> Confidence",
+    "  end",
     "  subgraph Control[Owner Command Surface]",
     `    Owner((Owner ${ownerLabel}))`,
     `    Pauser([Pauser ${pauserLabel}])`,
@@ -1481,7 +1672,8 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     "  Thermo --> Mint",
     "  BurnCurve --> StratA",
     "  Payoff --> Residual",
-    "  Residual --> Owner",
+    "  Residual --> Stackelberg",
+    "  Confidence --> Owner",
     "  Owner --> Governor",
     "```",
   ].join("\n");
@@ -1554,6 +1746,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     incentives,
     owner,
     jacobian,
+    alphaField,
     blockchain,
     ci,
     divergenceTolerance,
@@ -1598,6 +1791,19 @@ function buildMarkdown(bundle: ReportBundle): string {
           2,
         )} |`,
     )
+    .join("\n");
+  const alphaFieldSignalTable = [
+    ["Stackelberg within cap", alphaField.stackelbergWithinBound],
+    ["Stackelberg floor met", alphaField.stackelbergAdvantageSatisfiesFloor],
+    ["Gibbs delta within tolerance", alphaField.gibbsWithinTolerance],
+    ["Divergence within limit", alphaField.divergenceWithinLimit],
+    ["Entropy above floor", alphaField.entropyAboveFloor],
+    ["Antifragility curvature", alphaField.antifragilityMeetsMinimum],
+    ["Sigma welfare gain", alphaField.sigmaGainSatisfied],
+    ["Owner coverage", alphaField.ownerCoverageSatisfied],
+    ["Energy margin", alphaField.energyMarginSatisfied],
+  ]
+    .map(([label, ok]) => `| ${label} | ${ok ? "✅" : "⚠️"} |`)
     .join("\n");
 
   const riskTable = risk.classes
@@ -1798,7 +2004,38 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     antifragilityMindmap,
     "",
-    "## 7. Risk & Safety Audit",
+    "## 7. Alpha-Field Sovereign Assurance",
+    "",
+    `- **Stackelberg advantage:** Δ${formatNumber(alphaField.stackelbergAdvantage)} vs cap ${formatNumber(
+      alphaField.stackelbergBound,
+    )} (${alphaField.stackelbergWithinBound ? "✅ within" : "⚠️ breach"})`,
+    `- **Stackelberg floor satisfied:** ${alphaField.stackelbergAdvantageSatisfiesFloor ? "✅" : "⚠️"} (floor ${formatNumber(
+      alphaField.stackelbergAdvantageFloor,
+    )}; achieved Δ ${formatNumber(alphaField.stackelbergAdvantage)})`,
+    `- **Gibbs delta:** ${formatNumber(alphaField.gibbsDeltaKJ)} kJ (target ${formatNumber(
+      alphaField.gibbsTargetKJ,
+    )} ± ${formatNumber(alphaField.gibbsToleranceKJ)} kJ)`,
+    `- **Equilibrium divergence:** ${alphaField.equilibriumDivergence.toExponential(3)} (limit ${alphaField.divergenceLimit.toExponential(
+      3,
+    )})`,
+    `- **Entropy floor:** ${formatNumber(alphaField.entropyKJPerK)} kJ/K (floor ${formatNumber(alphaField.entropyFloor)} kJ/K)`,
+    `- **Antifragility curvature:** ${alphaField.antifragilitySecondDerivative.toExponential(3)} (minimum ${alphaField.antifragilityMinimum.toExponential(
+      3,
+    )})`,
+    `- **Sigma welfare gain:** ${formatNumber(alphaField.sigmaGain)} (minimum ${formatNumber(alphaField.sigmaGainMinimum)})`,
+    `- **Owner coverage ratio:** ${(alphaField.ownerCoverageRatio * 100).toFixed(2)}% (threshold ${(
+      alphaField.ownerCoverageMinimum * 100
+    ).toFixed(2)}%)`,
+    `- **Energy margin:** ${formatNumber(alphaField.energyMarginKJ)} kJ (floor ${formatNumber(
+      alphaField.energyMarginFloorKJ,
+    )} kJ — ${alphaField.energyMarginSatisfied ? "✅" : "⚠️"})`,
+    `- **Composite confidence:** ${(alphaField.confidenceScore * 100).toFixed(1)}%`,
+    "",
+    "| Signal | Status |",
+    "| --- | --- |",
+    alphaFieldSignalTable,
+    "",
+    "## 8. Risk & Safety Audit",
     "",
     `- **Coverage weights:** staking ${formatPercent(risk.weights.staking)}, formal ${formatPercent(risk.weights.formal)}, fuzz ${formatPercent(risk.weights.fuzz)}`,
     `- **Portfolio residual risk:** ${risk.portfolioResidual.toFixed(3)} (threshold ${risk.threshold.toFixed(3)} — ${risk.withinBounds ? "within" : "exceeds"} bounds)`,
@@ -1810,7 +2047,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     riskPie,
     "",
-    "## 8. Owner Supremacy & Command Surface",
+    "## 9. Owner Supremacy & Command Surface",
     "",
     `- **Owner:** ${owner.owner}`,
     `- **Pauser:** ${owner.pauser}`,
@@ -1836,7 +2073,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- |",
     commandAuditTable,
     "",
-    "## 9. Blockchain Deployment Envelope",
+    "## 10. Blockchain Deployment Envelope",
     "",
     `- **Network:** ${blockchain.network} (chainId ${blockchain.chainId})`,
     `- **RPC:** ${blockchain.rpcProvider}`,
@@ -1853,7 +2090,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- |",
     pausableTable,
     "",
-    "## 10. CI Enforcement Ledger",
+    "## 11. CI Enforcement Ledger",
     "",
     `- **Workflow name:** ${ci.workflow}`,
     `- **Concurrency guard:** <code>${ci.concurrency}</code>`,
@@ -1865,7 +2102,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     "Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.",
     "",
-    "## 11. Owner Execution Log (fill during live ops)",
+    "## 12. Owner Execution Log (fill during live ops)",
     "",
     "| Timestamp | Action | Tx hash | Operator | Notes |",
     "| --- | --- | --- | --- | --- |",
@@ -1907,6 +2144,7 @@ function buildDashboardHtml(bundle: ReportBundle): string {
     incentives,
     owner,
     jacobian,
+    alphaField,
     blockchain,
     ci,
   } = bundle;
@@ -1964,6 +2202,57 @@ function buildDashboardHtml(bundle: ReportBundle): string {
           sample.averagePayoff,
         )}</td><td>${sample.divergence.toExponential(2)}</td></tr>`,
     )
+    .join("\n");
+  const alphaFieldRows = [
+    {
+      label: "Stackelberg Δ",
+      value: `${formatNumber(alphaField.stackelbergAdvantage)} (cap ${formatNumber(alphaField.stackelbergBound)})`,
+      status: alphaField.stackelbergWithinBound ? "✅" : "⚠️",
+    },
+    {
+      label: "Stackelberg floor",
+      value: `${formatNumber(alphaField.stackelbergAdvantageFloor)} (achieved ${formatNumber(
+        alphaField.stackelbergAdvantage,
+      )})`,
+      status: alphaField.stackelbergAdvantageSatisfiesFloor ? "✅" : "⚠️",
+    },
+    {
+      label: "Gibbs delta",
+      value: `${formatNumber(alphaField.gibbsDeltaKJ)} kJ (tol ±${formatNumber(alphaField.gibbsToleranceKJ)} kJ)`,
+      status: alphaField.gibbsWithinTolerance ? "✅" : "⚠️",
+    },
+    {
+      label: "Divergence",
+      value: `${alphaField.equilibriumDivergence.toExponential(3)} ≤ ${alphaField.divergenceLimit.toExponential(3)}`,
+      status: alphaField.divergenceWithinLimit ? "✅" : "⚠️",
+    },
+    {
+      label: "Entropy floor",
+      value: `${formatNumber(alphaField.entropyKJPerK)} ≥ ${formatNumber(alphaField.entropyFloor)} kJ/K`,
+      status: alphaField.entropyAboveFloor ? "✅" : "⚠️",
+    },
+    {
+      label: "Antifragility curvature",
+      value: `${alphaField.antifragilitySecondDerivative.toExponential(3)} ≥ ${alphaField.antifragilityMinimum.toExponential(3)}`,
+      status: alphaField.antifragilityMeetsMinimum ? "✅" : "⚠️",
+    },
+    {
+      label: "Sigma welfare gain",
+      value: `${formatNumber(alphaField.sigmaGain)} ≥ ${formatNumber(alphaField.sigmaGainMinimum)}`,
+      status: alphaField.sigmaGainSatisfied ? "✅" : "⚠️",
+    },
+    {
+      label: "Owner coverage",
+      value: `${(alphaField.ownerCoverageRatio * 100).toFixed(2)}% ≥ ${(alphaField.ownerCoverageMinimum * 100).toFixed(2)}%`,
+      status: alphaField.ownerCoverageSatisfied ? "✅" : "⚠️",
+    },
+    {
+      label: "Energy margin",
+      value: `${formatNumber(alphaField.energyMarginKJ)} ≥ ${formatNumber(alphaField.energyMarginFloorKJ)} kJ`,
+      status: alphaField.energyMarginSatisfied ? "✅" : "⚠️",
+    },
+  ]
+    .map((row) => `<tr><td>${row.label}</td><td>${row.value}</td><td>${row.status}</td></tr>`)
     .join("\n");
 
   const contractRows = blockchain.contracts
@@ -2219,6 +2508,18 @@ function buildDashboardHtml(bundle: ReportBundle): string {
         </table>
       </section>
 
+      <section class="card">
+        <h2>Alpha-Field Sovereign Assurance</h2>
+        <p>
+          Confidence score: <strong>${(alphaField.confidenceScore * 100).toFixed(1)}%</strong> • Energy margin
+          ${formatNumber(alphaField.energyMarginKJ)} kJ
+        </p>
+        <table>
+          <thead><tr><th>Signal</th><th>Value</th><th>Status</th></tr></thead>
+          <tbody>${alphaFieldRows}</tbody>
+        </table>
+      </section>
+
       <section class="card grid grid-columns-2">
         <div>
           <h2>Risk Portfolio</h2>
@@ -2395,6 +2696,7 @@ function buildSummary(bundle: ReportBundle): Record<string, unknown> {
     hamiltonian: bundle.hamiltonian,
     equilibrium: bundle.equilibrium,
     antifragility: bundle.antifragility,
+    alphaField: bundle.alphaField,
     risk: bundle.risk,
     incentives: bundle.incentives,
     owner: bundle.owner,
@@ -2413,6 +2715,7 @@ export {
   computeHamiltonian,
   computeEquilibrium,
   computeAntifragility,
+  computeAlphaField,
   computeRiskReport,
   computeIncentiveReport,
   computeOwnerReport,
@@ -2433,6 +2736,14 @@ export async function generateGovernanceDemo(): Promise<ReportBundle> {
   const owner = computeOwnerReport(mission, packageScripts);
   const jacobian = computeJacobian(mission.gameTheory.payoffMatrix, equilibrium.closedForm);
   const blockchain = computeBlockchainReport(mission);
+  const alphaField = computeAlphaField(
+    mission,
+    thermodynamics,
+    statisticalPhysics,
+    equilibrium,
+    antifragility,
+    owner,
+  );
 
   const bundle: ReportBundle = {
     generatedAt: new Date().toISOString(),
@@ -2446,6 +2757,7 @@ export async function generateGovernanceDemo(): Promise<ReportBundle> {
     incentives,
     owner,
     jacobian,
+    alphaField,
     blockchain,
     ci: mission.ci,
     divergenceTolerance: mission.hamiltonian.divergenceTolerance,

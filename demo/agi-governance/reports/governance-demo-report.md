@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T18:25:12.965Z
+*Generated at:* 2025-10-19T20:33:23.555Z
 *Version:* 1.1.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -95,6 +95,13 @@ flowchart LR
   subgraph Risk[Risk Engine]
     Residual[Residual 0.214]
   end
+  subgraph AlphaField[Alpha-Field Assurance]
+    Stackelberg[Stackelberg Δ=0.60]
+    Confidence[Confidence 100%]
+    EnergyFloor[Energy Margin 69.80k kJ]
+    Stackelberg --> Confidence
+    EnergyFloor --> Confidence
+  end
   subgraph Control[Owner Command Surface]
     Owner((Owner 0xA1A1…A1A1))
     Pauser([Pauser 0xB2B2…B2B2])
@@ -110,7 +117,8 @@ flowchart LR
   Thermo --> Mint
   BurnCurve --> StratA
   Payoff --> Residual
-  Residual --> Owner
+  Residual --> Stackelberg
+  Confidence --> Owner
   Owner --> Governor
 ```
 
@@ -152,26 +160,26 @@ flowchart LR
 
 ## 6. Antifragility Tensor
 
-- **Quadratic curvature (2a):** 6.985e-10 (> 0 indicates antifragility)
+- **Quadratic curvature (2a):** 1.594e+1 (> 0 indicates antifragility)
 - **Monotonic welfare increase:** ✅
 
 | σ | Welfare (tokens) | Average payoff | Divergence |
 | --- | --- | --- | --- |
-| 0.00 | -4.64k | 1.00 | 7.68e-2 |
-| 0.10 | -4.64k | 1.00 | 7.62e-2 |
-| 0.20 | -4.64k | 1.00 | 7.69e-2 |
-| 0.30 | -4.64k | 1.00 | 7.73e-2 |
+| 0.00 | -3.73 | 1.00 | 7.68e-2 |
+| 0.10 | -0.45 | 1.00 | 7.62e-2 |
+| 0.20 | 2.99 | 1.00 | 7.69e-2 |
+| 0.30 | 6.59 | 1.00 | 7.73e-2 |
 
 ```mermaid
 mindmap
   root((Antifragility Tensor))
     "Quadratic curvature":::core
-      "2a=6.98e-10":::core
+      "2a=1.59e+1":::core
     "Sigma Scan":::core
-        "σ=0.00":::sigma --> "Welfare -4.64k":::welfare
-        "σ=0.10":::sigma --> "Welfare -4.64k":::welfare
-        "σ=0.20":::sigma --> "Welfare -4.64k":::welfare
-        "σ=0.30":::sigma --> "Welfare -4.64k":::welfare
+        "σ=0.00":::sigma --> "Welfare -3.73":::welfare
+        "σ=0.10":::sigma --> "Welfare -0.45":::welfare
+        "σ=0.20":::sigma --> "Welfare 2.99":::welfare
+        "σ=0.30":::sigma --> "Welfare 6.59":::welfare
     "Owner Actions":::core
       "Mint Mirror 65.00%"
       "Residual Risk 0.214"
@@ -180,7 +188,32 @@ mindmap
   classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;
 ```
 
-## 7. Risk & Safety Audit
+## 7. Alpha-Field Sovereign Assurance
+
+- **Stackelberg advantage:** Δ0.60 vs cap 7.50 (✅ within)
+- **Stackelberg floor satisfied:** ✅ (floor 0.50; achieved Δ 0.60)
+- **Gibbs delta:** 0.00 kJ (target 69.80k ± 200.00 kJ)
+- **Equilibrium divergence:** 2.220e-16 (limit 1.000e-3)
+- **Entropy floor:** 4.33 kJ/K (floor 4.00 kJ/K)
+- **Antifragility curvature:** 1.594e+1 (minimum 1.000e-2)
+- **Sigma welfare gain:** 10.32 (minimum 0.50)
+- **Owner coverage ratio:** 100.00% (threshold 100.00%)
+- **Energy margin:** 69.80k kJ (floor 1.00k kJ — ✅)
+- **Composite confidence:** 100.0%
+
+| Signal | Status |
+| --- | --- |
+| Stackelberg within cap | ✅ |
+| Stackelberg floor met | ✅ |
+| Gibbs delta within tolerance | ✅ |
+| Divergence within limit | ✅ |
+| Entropy above floor | ✅ |
+| Antifragility curvature | ✅ |
+| Sigma welfare gain | ✅ |
+| Owner coverage | ✅ |
+| Energy margin | ✅ |
+
+## 8. Risk & Safety Audit
 
 - **Coverage weights:** staking 40.00%, formal 40.00%, fuzz 20.00%
 - **Portfolio residual risk:** 0.214 (threshold 0.300 — within bounds)
@@ -204,7 +237,7 @@ pie showData
   "R4 Societal externality" : 48.8000
 ```
 
-## 8. Owner Supremacy & Command Surface
+## 9. Owner Supremacy & Command Surface
 
 - **Owner:** 0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1
 - **Pauser:** 0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2
@@ -269,7 +302,7 @@ sequenceDiagram
 | upgrade | owner:upgrade | ✅ |
 | compliance | owner:update-all | ✅ |
 
-## 9. Blockchain Deployment Envelope
+## 10. Blockchain Deployment Envelope
 
 - **Network:** Ethereum Mainnet-grade (chainId 1)
 - **RPC:** https://mainnet.infura.io/v3/YOUR_KEY
@@ -290,7 +323,7 @@ sequenceDiagram
 | AGIJobsGovernor | unpause | 0x3f4ba83a | Resume operations |
 | AGIJobsTreasury | updateEmissionCurve | 0xa10204e9 | Adjusts reward burn / mint ratios |
 
-## 10. CI Enforcement Ledger
+## 11. CI Enforcement Ledger
 
 - **Workflow name:** ci (v2)
 - **Concurrency guard:** <code>ci-${{ github.workflow }}-${{ github.ref }}</code>
@@ -306,7 +339,7 @@ sequenceDiagram
 
 Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.
 
-## 11. Owner Execution Log (fill during live ops)
+## 12. Owner Execution Log (fill during live ops)
 
 | Timestamp | Action | Tx hash | Operator | Notes |
 | --- | --- | --- | --- | --- |

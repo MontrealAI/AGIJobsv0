@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-10-19T18:25:23.490Z",
-  "summaryTimestamp": "2025-10-19T18:25:12.965Z",
+  "generatedAt": "2025-10-19T20:33:29.540Z",
+  "summaryTimestamp": "2025-10-19T20:33:23.555Z",
   "missionVersion": "1.1.0",
   "results": [
     {
@@ -71,9 +71,95 @@
       "id": "antifragility:curvature",
       "description": "Antifragility quadratic curvature",
       "passed": true,
+      "details": "expected 15.943844 vs actual 15.943844 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:stackelberg-advantage",
+      "description": "Stackelberg advantage",
+      "passed": true,
+      "details": "expected 0.600000 vs actual 0.600000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:gibbs-delta",
+      "description": "Gibbs delta",
+      "passed": true,
       "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000001)",
       "delta": 0,
       "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:sigma-gain",
+      "description": "Sigma welfare gain",
+      "passed": true,
+      "details": "expected 10.319376 vs actual 10.319376 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:confidence",
+      "description": "Alpha-field confidence score",
+      "passed": true,
+      "details": "expected 1.000000 vs actual 1.000000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:stackelberg-bound",
+      "description": "Stackelberg advantage within bound",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:stackelberg-floor",
+      "description": "Stackelberg advantage floor satisfied",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:gibbs-within",
+      "description": "Gibbs delta within tolerance",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:divergence",
+      "description": "Equilibrium divergence within limit",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:entropy",
+      "description": "Entropy above floor",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:antifragility",
+      "description": "Antifragility curvature meets minimum",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:sigma",
+      "description": "Sigma gain satisfied",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:owner-coverage",
+      "description": "Owner coverage minimum met",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:energy-margin",
+      "description": "Energy margin floor met",
+      "passed": true,
+      "details": "expected true, actual true"
     },
     {
       "id": "risk:portfolio",
@@ -185,7 +271,7 @@
     }
   ],
   "totals": {
-    "passed": 25,
+    "passed": 38,
     "failed": 0
   },
   "notes": [

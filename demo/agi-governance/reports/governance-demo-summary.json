@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-19T18:25:12.965Z",
+  "generatedAt": "2025-10-19T20:33:23.555Z",
   "version": "1.1.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
@@ -106,31 +106,61 @@
     "samples": [
       {
         "sigma": 0,
-        "welfare": -4639.957446808511,
+        "welfare": -3.7330953424071236,
         "averagePayoff": 1,
         "divergence": 0.07678157966551037
       },
       {
         "sigma": 0.1,
-        "welfare": -4639.957446808511,
+        "welfare": -0.45245266493167074,
         "averagePayoff": 1,
         "divergence": 0.07624601510263318
       },
       {
         "sigma": 0.2,
-        "welfare": -4639.957446808511,
+        "welfare": 2.9867608566050983,
         "averagePayoff": 1,
         "divergence": 0.07690141382199267
       },
       {
         "sigma": 0.3,
-        "welfare": -4639.957446808511,
+        "welfare": 6.586280413716959,
         "averagePayoff": 1,
         "divergence": 0.07730178289544062
       }
     ],
-    "quadraticSecondDerivative": 6.984919309616089e-10,
+    "quadraticSecondDerivative": 15.94384398182035,
     "monotonicIncrease": true
+  },
+  "alphaField": {
+    "stackelbergAdvantage": 0.6000000000000005,
+    "stackelbergBound": 7.5,
+    "stackelbergWithinBound": true,
+    "stackelbergAdvantageSatisfiesFloor": true,
+    "stackelbergAdvantageFloor": 0.5,
+    "gibbsTargetKJ": 69800,
+    "gibbsDeltaKJ": 0,
+    "gibbsWithinTolerance": true,
+    "gibbsToleranceKJ": 200,
+    "divergenceLimit": 0.001,
+    "equilibriumDivergence": 2.220446049250313e-16,
+    "divergenceWithinLimit": true,
+    "entropyFloor": 4,
+    "entropyKJPerK": 4.331118586645818,
+    "entropyAboveFloor": true,
+    "antifragilitySecondDerivative": 15.94384398182035,
+    "antifragilityMinimum": 0.01,
+    "antifragilityMeetsMinimum": true,
+    "sigmaGain": 10.319375756124082,
+    "sigmaGainMinimum": 0.5,
+    "sigmaGainSatisfied": true,
+    "ownerCoverageRatio": 1,
+    "ownerCoverageMinimum": 1,
+    "ownerCoverageSatisfied": true,
+    "energyMarginKJ": 69800,
+    "energyMarginFloorKJ": 1000,
+    "energyMarginSatisfied": true,
+    "confidenceScore": 1
   },
   "risk": {
     "weights": {
