@@ -36,15 +36,16 @@ The command generates `reports/governance-demo-report.md` with:
 
 1. Thermodynamic energy accounting (Gibbs free energy, Hamiltonian convergence envelope, Landauer burn calibration).
 2. Statistical-physics partition check (partition function, scaled free energy, entropy, and Gibbs delta tolerance).
-3. Incentive free-energy flow (mint/burn/slash computation proving agent ↔ treasury parity and owner-tunable slashing curves).
-4. Five-way verified game-theory equilibrium (discrete replicator, RK4 continuous flow, closed-form solver, Perron eigenvector, Monte-Carlo stress sampling) with method-consistency scores.
-5. Analytic and numeric Jacobian comparison with Gershgorin, spectral radius, and max-delta checks plus antifragility curvature proving positive welfare response to adversarial shocks.
-6. Alpha-field sovereign assurance scoreboard confirming Stackelberg bounds, Gibbs envelopes, sigma gains, owner coverage, quantum confidence, superintelligence index, and composite confidence with per-signal assurances.
-7. Quantum governance lattice readout (coherence confidence, Landauer delta, Noether charge alignment, state entropy) with superposition tables you can hand to physics and security teams alike.
-8. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
-9. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
-10. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
-11. **Grandiose mermaid visualisations** (energy → governance flowchart, quantum lattice, alpha-field mindmap, antifragility curve, owner command sequence, residual-risk pie) embedded directly in the Markdown dossier.
+3. Jarzynski equality verification (log-space ⟨e<sup>−βW</sup>⟩ vs e<sup>−βΔF</sup> with Landauer baseline and tolerance proof).
+4. Incentive free-energy flow (mint/burn/slash computation proving agent ↔ treasury parity and owner-tunable slashing curves).
+5. Five-way verified game-theory equilibrium (discrete replicator, RK4 continuous flow, closed-form solver, Perron eigenvector, Monte-Carlo stress sampling) with method-consistency scores.
+6. Analytic and numeric Jacobian comparison with Gershgorin, spectral radius, and max-delta checks plus antifragility curvature proving positive welfare response to adversarial shocks.
+7. Alpha-field sovereign assurance scoreboard confirming Stackelberg bounds, Gibbs envelopes, sigma gains, owner coverage, quantum confidence, superintelligence index, and composite confidence with per-signal assurances.
+8. Quantum governance lattice readout (coherence confidence, Landauer delta, Noether charge alignment, state entropy) with superposition tables you can hand to physics and security teams alike.
+9. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
+10. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
+11. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
+12. **Grandiose mermaid visualisations** (energy → governance flowchart, quantum lattice, alpha-field mindmap, antifragility curve, owner command sequence, residual-risk pie) embedded directly in the Markdown dossier.
 
 Then confirm the dossier by replaying all analytics from scratch:
 
@@ -92,7 +93,7 @@ The command writes `reports/governance-demo-full-run.json` and `.md`, each summa
 
 - **No manual math.** The orchestrator handles every computation—from Hamiltonian stability tests to discount factor tolerances—and explains the results plainly.
 - **Copy‑paste governance.** Ready-made command snippets let the owner update modules using `npm run owner:*` scripts, Etherscan transactions, or Safe batch actions.
-- **Evidence by default.** Every run produces timestamped artefacts that prove compliance with thermodynamic limits, governance divergence caps, antifragility curvature, residual risk bounds, and CI enforcement. Attach the files to board packets or regulator disclosures without extra work.
+- **Evidence by default.** Every run produces timestamped artefacts that prove compliance with thermodynamic limits, Jarzynski equality tolerances, governance divergence caps, antifragility curvature, residual risk bounds, and CI enforcement. Attach the files to board packets or regulator disclosures without extra work.
 - **Hyper-visual console.** Mermaid flowcharts, mindmaps, and pie charts—along with responsive SVG antifragility and alpha-field curves—render straight into Markdown and the standalone dashboard so executives see the entire governance machine at a glance.
 
 ## Extending the mission

@@ -255,6 +255,23 @@ export type StatisticalPhysicsReport = {
   withinTolerance: boolean;
 };
 
+export type JarzynskiReport = {
+  beta: number;
+  landauerKJ: number;
+  gibbsFreeEnergyKJ: number;
+  deltaFreeEnergyKJ: number;
+  landauerScaled: number;
+  gibbsFreeEnergyScaled: number;
+  deltaFreeEnergyScaled: number;
+  logExpectation: number;
+  logTheoretical: number;
+  expectation: number;
+  theoretical: number;
+  difference: number;
+  tolerance: number;
+  satisfied: boolean;
+};
+
 export type HamiltonianReport = {
   kineticTerm: number;
   potentialTerm: number;
@@ -499,6 +516,7 @@ export type ReportBundle = {
   meta: MissionConfig["meta"];
   thermodynamics: ThermodynamicReport;
   statisticalPhysics: StatisticalPhysicsReport;
+  jarzynski: JarzynskiReport;
   hamiltonian: HamiltonianReport;
   equilibrium: EquilibriumResult;
   antifragility: AntifragilityReport;
@@ -819,6 +837,58 @@ function computeStatisticalPhysics(
     freeEnergyConsistencyDelta,
     gibbsDeltaKJ,
     withinTolerance: gibbsDeltaKJ <= toleranceKJ,
+  };
+}
+
+function computeJarzynski(
+  config: MissionConfig,
+  thermodynamics: ThermodynamicReport,
+  statisticalPhysics: StatisticalPhysicsReport,
+): JarzynskiReport {
+  const beta = config.statisticalPhysics.beta;
+  const landauerKJ = thermodynamics.landauerKJ;
+  const gibbsFreeEnergyKJ = thermodynamics.gibbsFreeEnergyKJ;
+  const deltaFreeEnergyKJ = gibbsFreeEnergyKJ - landauerKJ;
+  const energyScaling = statisticalPhysics.energyScaling;
+  const landauerScaled = energyScaling === 0 ? 0 : landauerKJ / energyScaling;
+  const gibbsScaled = energyScaling === 0 ? 0 : gibbsFreeEnergyKJ / energyScaling;
+  const deltaFreeEnergyScaled = gibbsScaled - landauerScaled;
+
+  const logTerms = statisticalPhysics.probabilities.map((state) => {
+    if (!Number.isFinite(state.probability) || state.probability <= 0) {
+      return Number.NEGATIVE_INFINITY;
+    }
+    const work = state.energy - landauerScaled;
+    return Math.log(state.probability) - beta * work;
+  });
+
+  const logExpectation = logSumExp(logTerms);
+  const logTheoretical = -beta * deltaFreeEnergyScaled;
+  const difference = Math.abs(logExpectation - logTheoretical);
+  const tolerance = Math.max(
+    1e-9,
+    Math.abs(logTheoretical) * 0.02,
+    config.statisticalPhysics.toleranceKJ / Math.max(deltaFreeEnergyKJ, 1),
+  );
+
+  const expectation = logExpectation < -700 ? 0 : Math.exp(logExpectation);
+  const theoretical = logTheoretical < -700 ? 0 : Math.exp(logTheoretical);
+
+  return {
+    beta,
+    landauerKJ,
+    gibbsFreeEnergyKJ,
+    deltaFreeEnergyKJ,
+    landauerScaled,
+    gibbsFreeEnergyScaled: gibbsScaled,
+    deltaFreeEnergyScaled,
+    logExpectation,
+    logTheoretical,
+    expectation,
+    theoretical,
+    difference,
+    tolerance,
+    satisfied: difference <= tolerance,
   };
 }
 
@@ -2089,6 +2159,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     generatedAt,
     thermodynamics,
     statisticalPhysics,
+    jarzynski,
     hamiltonian,
     equilibrium,
     antifragility,
@@ -2242,6 +2313,15 @@ function buildMarkdown(bundle: ReportBundle): string {
     })
     .join("\n");
 
+  const jarzynskiExpectationDisplay =
+    jarzynski.expectation === 0
+      ? `≈0 (log ${jarzynski.logExpectation.toFixed(3)})`
+      : formatScientific(jarzynski.expectation);
+  const jarzynskiTheoreticalDisplay =
+    jarzynski.theoretical === 0
+      ? `≈0 (log ${jarzynski.logTheoretical.toFixed(3)})`
+      : formatScientific(jarzynski.theoretical);
+
   return [
     `# ${meta.title} — Governance Demonstration Report`,
     `*Generated at:* ${generatedAt}`,
@@ -2292,7 +2372,27 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- |",
     partitionTable,
     "",
-    "## 3. Hamiltonian Control Plane",
+    "## 3. Jarzynski Equality Verification",
+    "",
+    `- **ΔF (Gibbs − Landauer):** ${formatNumber(jarzynski.deltaFreeEnergyKJ)} kJ`,
+    `- **Scaled ΔF:** ${formatNumber(jarzynski.deltaFreeEnergyScaled)} (Landauer ${formatNumber(
+      jarzynski.landauerScaled,
+    )} → Gibbs ${formatNumber(jarzynski.gibbsFreeEnergyScaled)})`,
+    `- **⟨e^{-βW}⟩:** ${jarzynskiExpectationDisplay}`,
+    `- **e^{-βΔF}:** ${jarzynskiTheoreticalDisplay}`,
+    `- **Log-space delta:** ${jarzynski.difference.toExponential(3)} (tolerance ${jarzynski.tolerance.toExponential(3)} — ${
+      jarzynski.satisfied ? "✅ aligned" : "⚠️ investigate"
+    })`,
+    `- **β input:** ${formatNumber(jarzynski.beta, 4)} (matching statistical physics)`,
+    "",
+    "```mermaid",
+    "flowchart TD",
+    `  Landauer[Landauer ${formatScientific(jarzynski.landauerKJ)} kJ] -->|ΔF ${formatNumber(jarzynski.deltaFreeEnergyKJ)} kJ| Gibbs[Gibbs ${formatNumber(jarzynski.gibbsFreeEnergyKJ)} kJ]`,
+    `  Landauer -->|Sampled work| Jarzynski[⟨e^{-βW}⟩ log ${jarzynski.logExpectation.toFixed(3)}]`,
+    `  Gibbs -->|Theory| Theoretical[e^{-βΔF} log ${jarzynski.logTheoretical.toFixed(3)}]`,
+    "```",
+    "",
+    "## 4. Hamiltonian Control Plane",
     "",
     `- **Kinetic term:** ${formatNumber(hamiltonian.kineticTerm)} units`,
     `- **Potential term (scaled by λ):** ${formatNumber(hamiltonian.potentialTerm)} units`,
@@ -2300,7 +2400,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Alternate computation check:** ${formatNumber(hamiltonian.alternativeHamiltonian)} units`,
     `- **Difference:** ${hamiltonian.difference.toExponential(3)} (≤ 1e-3 target)`,
     "",
-    "## 4. Incentive Free-Energy Flow",
+    "## 5. Incentive Free-Energy Flow",
     "",
     `- **Mint rule η:** ${incentives.mint.eta.toFixed(2)} (ΔV ${formatNumber(incentives.mint.deltaValue)} tokens)`,
     `- **Total minted per event:** ${formatNumber(incentives.mint.totalMinted)} tokens`,
@@ -2344,7 +2444,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     flowchart,
     "",
-    "## 5. Game-Theoretic Macro-Equilibrium",
+    "## 6. Game-Theoretic Macro-Equilibrium",
     "",
     `- **Discount factor:** ${equilibrium.discountFactor.toFixed(2)} (must exceed 0.80 for uniqueness)`,
     `- **Replicator iterations to convergence:** ${equilibrium.replicatorIterations}`,
@@ -2381,7 +2481,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- |",
     jacobianNumericMatrix,
     "",
-    "## 6. Antifragility Tensor",
+    "## 7. Antifragility Tensor",
     "",
     `- **Quadratic curvature (2a):** ${antifragility.quadraticSecondDerivative.toExponential(3)} (> 0 indicates antifragility)`,
     `- **Monotonic welfare increase:** ${antifragility.monotonicIncrease ? "✅" : "⚠️"}`,
@@ -2392,7 +2492,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     antifragilityMindmap,
     "",
-    "## 7. Alpha-Field Sovereign Assurance",
+    "## 8. Alpha-Field Sovereign Assurance",
     "",
     `- **Stackelberg advantage:** Δ${formatNumber(alphaField.stackelbergAdvantage)} vs cap ${formatNumber(
       alphaField.stackelbergBound,
@@ -2443,7 +2543,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- |",
     alphaFieldSignalTable,
     "",
-    "## 8. Risk & Safety Audit",
+    "## 9. Risk & Safety Audit",
     "",
     `- **Coverage weights:** staking ${formatPercent(risk.weights.staking)}, formal ${formatPercent(risk.weights.formal)}, fuzz ${formatPercent(risk.weights.fuzz)}`,
     `- **Portfolio residual risk:** ${risk.portfolioResidual.toFixed(3)} (threshold ${risk.threshold.toFixed(3)} — ${risk.withinBounds ? "within" : "exceeds"} bounds)`,
@@ -2455,7 +2555,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     riskPie,
     "",
-    "## 9. Owner Supremacy & Command Surface",
+    "## 10. Owner Supremacy & Command Surface",
     "",
     `- **Owner:** ${owner.owner}`,
     `- **Pauser:** ${owner.pauser}`,
@@ -2484,7 +2584,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- | --- |",
     commandAuditTable,
     "",
-    "## 10. Blockchain Deployment Envelope",
+    "## 11. Blockchain Deployment Envelope",
     "",
     `- **Network:** ${blockchain.network} (chainId ${blockchain.chainId})`,
     `- **RPC:** ${blockchain.rpcProvider}`,
@@ -2501,7 +2601,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "| --- | --- | --- | --- |",
     pausableTable,
     "",
-    "## 11. CI Enforcement Ledger",
+    "## 12. CI Enforcement Ledger",
     "",
     `- **Workflow name:** ${ci.workflow}`,
     `- **Concurrency guard:** <code>${ci.concurrency}</code>`,
@@ -2513,7 +2613,7 @@ function buildMarkdown(bundle: ReportBundle): string {
     "",
     "Run <code>npm run demo:agi-governance:ci</code> to assert the workflow still exports these shields.",
     "",
-    "## 12. Owner Execution Log (fill during live ops)",
+    "## 13. Owner Execution Log (fill during live ops)",
     "",
     "| Timestamp | Action | Tx hash | Operator | Notes |",
     "| --- | --- | --- | --- | --- |",
@@ -2548,6 +2648,7 @@ function buildDashboardHtml(bundle: ReportBundle): string {
     generatedAt,
     thermodynamics,
     statisticalPhysics,
+    jarzynski,
     hamiltonian,
     equilibrium,
     antifragility,
@@ -2565,6 +2666,25 @@ function buildDashboardHtml(bundle: ReportBundle): string {
   const riskDiagram = stripMermaid(buildRiskPie(bundle));
   const ownerDiagram = stripMermaid(buildOwnerSequence(bundle));
   const antifragilityDiagram = stripMermaid(buildAntifragilityMindmap(bundle));
+  const jarzynskiDiagram = stripMermaid(
+    [
+      "flowchart LR",
+      `  Landauer((Landauer ${formatScientific(jarzynski.landauerKJ)} kJ))`,
+      `  Gibbs((Gibbs ${formatNumber(jarzynski.gibbsFreeEnergyKJ)} kJ))`,
+      `  Landauer -->|ΔF ${formatNumber(jarzynski.deltaFreeEnergyKJ)} kJ| Gibbs`,
+      `  Landauer -->|⟨e^{-βW}⟩ log ${jarzynski.logExpectation.toFixed(3)}| Sampled[Jarzynski sample]`,
+      `  Gibbs -->|e^{-βΔF} log ${jarzynski.logTheoretical.toFixed(3)}| Theory[Theoretical bound]`,
+    ].join("\n"),
+  );
+
+  const jarzynskiExpectationHtml =
+    jarzynski.expectation === 0
+      ? `≈0 (log ${jarzynski.logExpectation.toFixed(3)})`
+      : formatScientific(jarzynski.expectation);
+  const jarzynskiTheoreticalHtml =
+    jarzynski.theoretical === 0
+      ? `≈0 (log ${jarzynski.logTheoretical.toFixed(3)})`
+      : formatScientific(jarzynski.theoretical);
 
   const mintRows = incentives.mint.roles
     .map(
@@ -2967,6 +3087,28 @@ function buildDashboardHtml(bundle: ReportBundle): string {
 
       <section class="card grid grid-columns-2">
         <div>
+          <h2>Jarzynski Equality</h2>
+          <ul class="metric-list">
+            <li>ΔF (Gibbs − Landauer): <strong>${formatNumber(jarzynski.deltaFreeEnergyKJ)} kJ</strong></li>
+            <li>Scaled ΔF: <strong>${formatNumber(jarzynski.deltaFreeEnergyScaled)}</strong> (Landauer ${formatNumber(
+              jarzynski.landauerScaled,
+            )} → Gibbs ${formatNumber(jarzynski.gibbsFreeEnergyScaled)})</li>
+            <li>⟨e<sup>−βW</sup>⟩: <strong>${jarzynskiExpectationHtml}</strong></li>
+            <li>e<sup>−βΔF</sup>: <strong>${jarzynskiTheoreticalHtml}</strong></li>
+            <li>Log delta: <strong>${jarzynski.difference.toExponential(3)}</strong> (tol ${
+              jarzynski.tolerance.toExponential(3)
+            } — ${jarzynski.satisfied ? "aligned" : "investigate"})</li>
+            <li>β: <strong>${formatNumber(jarzynski.beta, 4)}</strong></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Landauer Alignment</h2>
+          <pre class="mermaid">${jarzynskiDiagram}</pre>
+        </div>
+      </section>
+
+      <section class="card grid grid-columns-2">
+        <div>
           <h2>Mint Ledger</h2>
           <p>Total minted per event: <strong>${formatNumber(incentives.mint.totalMinted)} tokens</strong> • Treasury mirror share ${formatPercent(
             incentives.mint.treasuryMirrorShare,
@@ -3216,6 +3358,7 @@ function buildSummary(bundle: ReportBundle): Record<string, unknown> {
     version: bundle.meta.version,
     thermodynamics: bundle.thermodynamics,
     statisticalPhysics: bundle.statisticalPhysics,
+    jarzynski: bundle.jarzynski,
     hamiltonian: bundle.hamiltonian,
     equilibrium: bundle.equilibrium,
     antifragility: bundle.antifragility,
@@ -3236,6 +3379,7 @@ export {
   loadPackageScripts,
   computeThermodynamics,
   computeStatisticalPhysics,
+  computeJarzynski,
   computeHamiltonian,
   computeEquilibrium,
   computeAntifragility,
@@ -3252,6 +3396,7 @@ export async function generateGovernanceDemo(): Promise<ReportBundle> {
   const mission = await loadMission();
   const thermodynamics = computeThermodynamics(mission);
   const statisticalPhysics = computeStatisticalPhysics(mission, thermodynamics);
+  const jarzynski = computeJarzynski(mission, thermodynamics, statisticalPhysics);
   const hamiltonian = computeHamiltonian(mission);
   const equilibrium = computeEquilibrium(mission);
   const antifragility = computeAntifragility(mission, mission.gameTheory.payoffMatrix, equilibrium, thermodynamics);
@@ -3278,6 +3423,7 @@ export async function generateGovernanceDemo(): Promise<ReportBundle> {
     meta: mission.meta,
     thermodynamics,
     statisticalPhysics,
+    jarzynski,
     hamiltonian,
     equilibrium,
     antifragility,
