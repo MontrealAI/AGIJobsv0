@@ -19,8 +19,11 @@ type VerificationResult = {
   concurrencyMatches: boolean;
   triggersIncludePush: boolean;
   triggersIncludePullRequest: boolean;
+  triggersIncludeWorkflowDispatch: boolean;
   requiredJobsPresent: Array<{ id: string; name: string; present: boolean; nameMatches: boolean }>;
   coverageThreshold: number | null;
+  cancelInProgress: boolean;
+  envCoverageMatches: boolean;
 };
 
 async function loadMissionCi(): Promise<MissionCi> {
@@ -51,11 +54,14 @@ async function verifyWorkflow(ciConfig: MissionCi): Promise<VerificationResult> 
   const workflow = yaml.load(workflowRaw) as Record<string, unknown>;
 
   const workflowName = typeof workflow.name === "string" ? workflow.name : "";
-  const concurrency = (workflow.concurrency as { group?: string } | undefined)?.group ?? "";
+  const concurrencyConfig = workflow.concurrency as { group?: string; ["cancel-in-progress"]?: boolean } | undefined;
+  const concurrency = concurrencyConfig?.group ?? "";
+  const cancelInProgress = Boolean(concurrencyConfig?.["cancel-in-progress"]);
 
   const triggers = (workflow as Record<string, unknown>)["on"] as Record<string, unknown> | undefined;
   const triggersIncludePush = Boolean(triggers && Object.prototype.hasOwnProperty.call(triggers, "push"));
   const triggersIncludePullRequest = Boolean(triggers && Object.prototype.hasOwnProperty.call(triggers, "pull_request"));
+  const triggersIncludeWorkflowDispatch = Boolean(triggers && Object.prototype.hasOwnProperty.call(triggers, "workflow_dispatch"));
 
   const jobs = (workflow.jobs as Record<string, Record<string, unknown>>) ?? {};
 
@@ -70,8 +76,9 @@ async function verifyWorkflow(ciConfig: MissionCi): Promise<VerificationResult> 
 
   const coverageJob = jobs.coverage;
   let coverageThreshold = coverageJob ? extractCoverageThreshold(coverageJob) : null;
+  const env = workflow.env as Record<string, unknown> | undefined;
+  let envCoverageMatches = false;
   if (coverageThreshold === null) {
-    const env = workflow.env as Record<string, unknown> | undefined;
     const envThreshold = env?.COVERAGE_MIN;
     if (typeof envThreshold === "string" && envThreshold.trim().length > 0) {
       const parsed = Number.parseFloat(envThreshold);
@@ -81,13 +88,26 @@ async function verifyWorkflow(ciConfig: MissionCi): Promise<VerificationResult> 
     }
   }
 
+  if (env) {
+    const envThreshold = env.COVERAGE_MIN;
+    if (typeof envThreshold === "string" || typeof envThreshold === "number") {
+      const parsed = Number.parseFloat(envThreshold.toString());
+      if (!Number.isNaN(parsed)) {
+        envCoverageMatches = parsed >= ciConfig.minCoverage;
+      }
+    }
+  }
+
   return {
     workflowNameMatches: workflowName === ciConfig.workflow,
     concurrencyMatches: concurrency === ciConfig.concurrency,
     triggersIncludePush,
     triggersIncludePullRequest,
+    triggersIncludeWorkflowDispatch,
     requiredJobsPresent,
     coverageThreshold,
+    cancelInProgress,
+    envCoverageMatches,
   };
 }
 
@@ -108,6 +128,9 @@ async function main(): Promise<void> {
   if (!verification.triggersIncludePush || !verification.triggersIncludePullRequest) {
     console.error("❌ Workflow triggers missing push or pull_request.");
   }
+  if (!verification.triggersIncludeWorkflowDispatch) {
+    console.error("❌ Workflow dispatch trigger missing (required for manual enforcement).");
+  }
   if (missingJobs.length > 0) {
     console.error(
       `❌ Missing CI jobs: ${missingJobs
@@ -115,10 +138,16 @@ async function main(): Promise<void> {
         .join(", ")}`,
     );
   }
+  if (!verification.cancelInProgress) {
+    console.error("❌ Concurrency guard missing cancel-in-progress: true.");
+  }
   if (verification.coverageThreshold === null || verification.coverageThreshold < ciConfig.minCoverage) {
     console.error(
       `❌ Coverage threshold below requirement. Expected ≥ ${ciConfig.minCoverage}, found ${verification.coverageThreshold ?? "unknown"}.`,
     );
+  }
+  if (!verification.envCoverageMatches) {
+    console.error("❌ COVERAGE_MIN environment guard is below the required threshold.");
   }
 
   if (
@@ -126,9 +155,12 @@ async function main(): Promise<void> {
     verification.concurrencyMatches &&
     verification.triggersIncludePush &&
     verification.triggersIncludePullRequest &&
+    verification.triggersIncludeWorkflowDispatch &&
     missingJobs.length === 0 &&
     verification.coverageThreshold !== null &&
-    verification.coverageThreshold >= ciConfig.minCoverage
+    verification.coverageThreshold >= ciConfig.minCoverage &&
+    verification.cancelInProgress &&
+    verification.envCoverageMatches
   ) {
     console.log("✅ CI workflow matches the enforced v2 shield.");
     console.log(`   Report: ${OUTPUT_FILE}`);

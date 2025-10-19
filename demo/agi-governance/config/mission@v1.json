@@ -45,8 +45,8 @@
       [0.9, 1.1, 1.0]
     ],
     "monteCarlo": {
-      "iterations": 5000,
-      "noise": 0.08,
+      "iterations": 10000,
+      "noise": 0.02,
       "seed": 424242
     }
   },

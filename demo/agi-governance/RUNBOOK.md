@@ -29,10 +29,10 @@ npm run demo:agi-governance
 
 Outputs `reports/governance-demo-report.md` with:
 - Thermodynamic energy margins (Gibbs free energy, Hamiltonian convergence envelope, Landauer limit calibration).
-- Triple-verified game-theory equilibrium (replicator simulation, closed-form solver, Monte-Carlo stress test).
-- Replicator Jacobian stability, antifragility curvature, and welfare growth curve for adversarial shocks.
-- Risk audit portfolio with weighted mitigation coverage and board threshold comparison.
-- Owner command surface (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel verifications) plus capability coverage matrix.
+- Five-method equilibrium confirmation (discrete replicator, RK4 continuous flow, Perron eigenvector, closed-form, Monte-Carlo) with maximum deviation score.
+- Analytic vs numeric Jacobian matrices (Gershgorin, spectral radius, max delta) and antifragility curvature plus welfare growth curve for adversarial shocks.
+- Risk audit portfolio with weighted mitigation coverage, dual residual calculations, and board threshold comparison.
+- Owner command surface (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel verifications) plus capability coverage matrix and npm-script audit table.
 - Blockchain deployment ledger (contracts, pausable selectors, Safe module stack).
 - CI enforcement proof (required contexts, concurrency, access-control coverage).
 
@@ -49,8 +49,11 @@ npm run demo:agi-governance:ci
 This audits `.github/workflows/ci.yml` to ensure:
 - Jobs `lint`, `tests`, `foundry`, `coverage`, and `summary` exist with the expected display names.
 - Push and pull request triggers are enabled for the workflow.
+- Manual `workflow_dispatch` trigger is available for emergency reruns.
 - Concurrency guards are active (`ci-${workflow}-${ref}`).
+- `cancel-in-progress` is set to `true` so new pushes replace stale runs.
 - Coverage thresholds are enforced (≥ 90%).
+- `COVERAGE_MIN` environment variable is ≥ 90%.
 
 Attach the generated `reports/ci-verification.json` to your governance logs.
 
@@ -94,6 +97,8 @@ Each command below can be run via the CLI, Safe transaction builder, or Ethersca
    ```
 
 Document transaction hashes in `reports/governance-demo-report.md` under the “Owner Execution Log” section.
+
+**Tip:** Confirm the “Command Audit” table flips to all ✅ entries before executing upgrades. If a capability shows ⚠️, run `npm run owner:surface` to inspect available automation scripts or regenerate the AGI Jobs CLI package.
 
 ---
 

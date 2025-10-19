@@ -10,6 +10,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 - **Thermodynamics + governance in code.** Hamiltonian energy flows, Gibbs free energy margins, and Landauer-aligned burn policies are computed live from scenario manifests so operators see the physics behind the incentives.
 - **Owner-first absolutism.** Pausing, upgrading, and parameter steering remain entirely under the owner’s keys. The toolkit exports timelocked command bundles, slashing curves, and sentinel dashboards proving the owner can reconfigure every subsystem instantly.
 - **CI-proven production fidelity.** A dedicated workflow (`demo-agi-governance.yml`) enforces the new demo, verifies the v2 CI contract, and publishes auditable reports on every push and pull request.
+- **Triangulated verification.** Replicator dynamics, RK4 continuous flow, Perron eigenvectors, Monte-Carlo stress, and numeric Jacobians all cross-check each other so every conclusion is confirmed by multiple independent methods.
 
 ## Contents
 
@@ -30,10 +31,10 @@ npm run demo:agi-governance
 The command generates `reports/governance-demo-report.md` with:
 
 1. Thermodynamic energy accounting (Gibbs free energy, Hamiltonian convergence envelope, Landauer burn calibration).
-2. Triple-verified game-theory equilibrium analysis (replicator dynamics simulation + closed-form solver + Monte-Carlo stress sampling).
-3. Replicator Jacobian stability and antifragility curvature proving positive welfare response to adversarial shocks.
-4. Risk portfolio matrix with weighted mitigation coverage versus the board-mandated threshold.
-5. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix.
+2. Five-way verified game-theory equilibrium (discrete replicator, RK4 continuous flow, closed-form solver, Perron eigenvector, Monte-Carlo stress sampling) with method-consistency scores.
+3. Analytic and numeric Jacobian comparison with Gershgorin, spectral radius, and max-delta checks plus antifragility curvature proving positive welfare response to adversarial shocks.
+4. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
+5. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
 6. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
 
 Then run the CI verification layer:
@@ -53,7 +54,7 @@ This command checks that the repository’s v2 CI workflow still enforces the ma
 ## Extending the mission
 
 1. Edit `config/mission@v1.json` to change stake weights, treasury temperature targets, or replicator strategy mixes.
-2. Re-run `npm run demo:agi-governance` to produce a new report. The script automatically recalibrates the energy tensor, Hamiltonian flows, and antifragility metrics.
+2. Re-run `npm run demo:agi-governance` to produce a new report. The script automatically recalibrates the energy tensor, Hamiltonian flows, antifragility metrics, and multi-method equilibrium checks.
 3. For on-chain execution, follow the `RUNBOOK.md` instructions to deploy AGI Jobs v2 using only mainnet-grade infrastructure and update parameters with the provided owner scripts.
 
 ## Deterministic provenance
