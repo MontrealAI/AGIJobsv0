@@ -243,6 +243,11 @@ export type EquilibriumResult = {
   labels: string[];
   replicator: number[];
   closedForm: number[];
+  closedFormPayoff: number;
+  kktResiduals: number[];
+  kktMaxResidual: number;
+  kktCertified: boolean;
+  simplexResidual: number;
   monteCarlo: number[];
   continuous: number[];
   eigenvector: number[];
@@ -937,6 +942,13 @@ function estimateSpectralRadius(matrix: number[][], maxIterations = 1_000, toler
   return Math.abs(eigenvalue);
 }
 
+type ClosedFormSolution = {
+  probabilities: number[];
+  payoff: number;
+  residuals: number[];
+  simplexResidual: number;
+};
+
 function gaussianSolve(system: number[][]): number[] {
   const matrix = system.map((row) => [...row]);
   const size = matrix.length;
@@ -970,7 +982,7 @@ function gaussianSolve(system: number[][]): number[] {
   return matrix.map((row) => row[size]);
 }
 
-function solveClosedForm(matrix: number[][]): number[] {
+function solveClosedForm(matrix: number[][]): ClosedFormSolution {
   const system = [
     [matrix[0][0], matrix[0][1], matrix[0][2], -1, 0],
     [matrix[1][0], matrix[1][1], matrix[1][2], -1, 0],
@@ -979,8 +991,14 @@ function solveClosedForm(matrix: number[][]): number[] {
   ];
 
   const solution = gaussianSolve(system);
-  const probabilities = solution.slice(0, 3).map((value) => (value < 0 ? 0 : value));
-  return normalise(probabilities);
+  const rawProbabilities = solution.slice(0, 3).map((value) => (value < 0 ? 0 : value));
+  const probabilities = normalise(rawProbabilities);
+  const payoffs = multiplyMatrixVector(matrix, probabilities);
+  const payoff = payoffs.reduce((sum, value) => sum + value, 0) / payoffs.length;
+  const residuals = payoffs.map((value) => value - payoff);
+  const simplexResidual = probabilities.reduce((sum, value) => sum + value, 0) - 1;
+
+  return { probabilities, payoff, residuals, simplexResidual };
 }
 
 function mulberry32(seed: number): () => number {
@@ -1052,7 +1070,13 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
   const matrix = config.gameTheory.payoffMatrix;
   const baseInitial = normalise(config.gameTheory.strategies.map((strategy) => strategy.initialShare));
 
-  const closedForm = solveClosedForm(matrix);
+  const closedFormSolution = solveClosedForm(matrix);
+  const closedForm = closedFormSolution.probabilities;
+  const closedFormPayoff = closedFormSolution.payoff;
+  const kktResiduals = closedFormSolution.residuals;
+  const simplexResidual = closedFormSolution.simplexResidual;
+  const kktMaxResidual = Math.max(...kktResiduals.map((value) => Math.abs(value)));
+  const kktCertified = kktMaxResidual <= 1e-6 && Math.abs(simplexResidual) <= 1e-6;
 
   const replicatorSamples: number[][] = [];
   const iterationCounts: number[] = [];
@@ -1105,7 +1129,7 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     replicatorProfile.reduce((sum, value, index) => sum + (value - closedForm[index]) ** 2, 0),
   );
 
-  const consistencyThreshold = 0.15;
+  const consistencyThreshold = 0.08;
   let methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
   let maxMethodDeviation = maxDeviation(methodVectors);
   let methodConsistency = maxMethodDeviation < consistencyThreshold;
@@ -1134,6 +1158,11 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     labels: config.gameTheory.strategies.map((strategy) => strategy.name),
     replicator: replicatorProfile,
     closedForm,
+    closedFormPayoff,
+    kktResiduals,
+    kktMaxResidual,
+    kktCertified,
+    simplexResidual,
     monteCarlo: monteCarlo.averageState,
     continuous: continuous.state,
     eigenvector: eigen.vector,
@@ -1622,6 +1651,8 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
   const pauserLabel = `${owner.pauser.slice(0, 6)}…${owner.pauser.slice(-4)}`;
   const treasuryLabel = `${owner.treasury.slice(0, 6)}…${owner.treasury.slice(-4)}`;
   const divergence = equilibrium.divergenceAtEquilibrium.toExponential(2);
+  const kktResidual = equilibrium.kktMaxResidual.toExponential(2);
+  const kktBadge = equilibrium.kktCertified ? "✅" : "⚠️";
   const riskResidual = risk.portfolioResidual.toFixed(3);
   const governorName = blockchain.contracts[0]?.name ?? "AGIJobsGovernor";
   const monitorName = blockchain.contracts[2]?.name ?? "HamiltonianMonitor";
@@ -1642,9 +1673,11 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     "  end",
     "  subgraph Equilibrium[Macro Equilibrium]",
     `    StratA[Replicator Δ=${equilibrium.replicatorDeviation.toExponential(2)}]`,
+    `    KKT[KKT Residual ${kktResidual} ${kktBadge}]`,
     `    Divergence[Divergence ${divergence}]`,
     `    Payoff[Payoff ${formatNumber(equilibrium.payoffAtEquilibrium)} tokens]`,
-    "    StratA --> Divergence",
+    "    StratA --> KKT",
+    "    KKT --> Divergence",
     "    Divergence --> Payoff",
     "  end",
     "  subgraph Risk[Risk Engine]",
@@ -1764,6 +1797,10 @@ function buildMarkdown(bundle: ReportBundle): string {
       )} | ${formatPercent(equilibrium.continuous[index])} | ${formatPercent(equilibrium.eigenvector[index])} |`,
     )
     .join("\n");
+  const kktResidualRows = equilibrium.kktResiduals
+    .map((residual, index) => `| ${equilibrium.labels[index]} payoff Δ | ${residual.toExponential(3)} |`);
+  kktResidualRows.push(`| Probability simplex Δ | ${equilibrium.simplexResidual.toExponential(3)} |`);
+  const kktResidualTable = kktResidualRows.join("\n");
 
   const upgradeList = bundle.owner.capabilities
     .map(
@@ -1973,11 +2010,18 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Monte-Carlo RMS error:** ${equilibrium.monteCarloRmsError.toExponential(3)}`,
     `- **Max deviation across methods:** ${equilibrium.maxMethodDeviation.toExponential(3)} (${equilibrium.methodConsistency ? "consistent" : "⚠️ review"})`,
     `- **Payoff at equilibrium:** ${formatNumber(equilibrium.payoffAtEquilibrium)} tokens`,
+    `- **Closed-form KKT payoff (λ):** ${formatNumber(equilibrium.closedFormPayoff)} tokens`,
+    `- **KKT residual max:** ${equilibrium.kktMaxResidual.toExponential(3)} (${equilibrium.kktCertified ? "satisfied" : "⚠️ re-evaluate"})`,
+    `- **Simplex residual:** ${equilibrium.simplexResidual.toExponential(3)}`,
     `- **Governance divergence:** ${equilibrium.divergenceAtEquilibrium.toExponential(3)} (target ≤ ${divergenceTolerance})`,
     "",
     "| Strategy | Replicator | Closed-form | Monte-Carlo | Continuous RK4 | Perron eigenvector |",
     "| --- | --- | --- | --- | --- | --- |",
     strategyTable,
+    "",
+    "| Condition | Residual |",
+    "| --- | --- |",
+    kktResidualTable,
     "",
     "### Replicator Jacobian Stability",
     "",
@@ -2194,6 +2238,13 @@ function buildDashboardHtml(bundle: ReportBundle): string {
         )}</td><td>${formatPercent(equilibrium.eigenvector[index])}</td></tr>`,
     )
     .join("\n");
+  const kktRowsHtml = [
+    ...equilibrium.kktResiduals.map(
+      (residual, index) =>
+        `<tr><td>${escapeHtml(equilibrium.labels[index])} payoff Δ</td><td>${residual.toExponential(3)}</td></tr>`,
+    ),
+    `<tr><td>Probability simplex Δ</td><td>${equilibrium.simplexResidual.toExponential(3)}</td></tr>`,
+  ].join("\n");
 
   const antifragilityRows = antifragility.samples
     .map(
@@ -2495,6 +2546,16 @@ function buildDashboardHtml(bundle: ReportBundle): string {
           <p>Deviation Δmax: <strong>${equilibrium.maxMethodDeviation.toExponential(3)}</strong> • Divergence ${equilibrium.divergenceAtEquilibrium.toExponential(
             3,
           )}</p>
+          <p>
+            KKT payoff λ: <strong>${formatNumber(equilibrium.closedFormPayoff)} tokens</strong> • Residual Δmax
+            <strong>${equilibrium.kktMaxResidual.toExponential(3)}</strong>
+            (${equilibrium.kktCertified ? "certified" : "attention"}) • Simplex Δ
+            <strong>${equilibrium.simplexResidual.toExponential(3)}</strong>
+          </p>
+          <table>
+            <thead><tr><th>Condition</th><th>Residual</th></tr></thead>
+            <tbody>${kktRowsHtml}</tbody>
+          </table>
         </div>
       </section>
 

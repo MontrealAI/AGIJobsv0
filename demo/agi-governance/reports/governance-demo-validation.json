@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-10-19T20:33:29.540Z",
-  "summaryTimestamp": "2025-10-19T20:33:23.555Z",
+  "generatedAt": "2025-10-19T20:55:38.842Z",
+  "summaryTimestamp": "2025-10-19T20:55:29.164Z",
   "missionVersion": "1.1.0",
   "results": [
     {
@@ -47,7 +47,7 @@
       "id": "equilibrium:replicator",
       "description": "Replicator equilibrium vector",
       "passed": true,
-      "details": "max Δ=0.000000 (tol=0.000001) | expected=0.4075, 0.3656, 0.2270 actual=0.4075, 0.3656, 0.2270",
+      "details": "max Δ=0.000000 (tol=0.000001) | expected=0.3333, 0.3333, 0.3333 actual=0.3333, 0.3333, 0.3333",
       "delta": 0,
       "tolerance": 0.000001
     },
@@ -66,6 +66,44 @@
       "details": "expected 0.136515 vs actual 0.136515 (Δ=0.000000, tol=0.000001)",
       "delta": 0,
       "tolerance": 0.000001
+    },
+    {
+      "id": "equilibrium:closed-form-payoff",
+      "description": "Closed-form equilibrium payoff",
+      "passed": true,
+      "details": "expected 1.000000 vs actual 1.000000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "equilibrium:kkt-residuals",
+      "description": "KKT payoff residuals",
+      "passed": true,
+      "details": "max Δ=0.000000 (tol=0.000001) | expected=0.0000, 0.0000, 0.0000 actual=0.0000, 0.0000, 0.0000",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "equilibrium:kkt-max",
+      "description": "Maximum KKT residual",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "equilibrium:simplex",
+      "description": "Probability simplex residual",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "equilibrium:kkt-certified",
+      "description": "KKT conditions certified",
+      "passed": true,
+      "details": "expected true, actual true"
     },
     {
       "id": "antifragility:curvature",
@@ -271,7 +309,7 @@
     }
   ],
   "totals": {
-    "passed": 38,
+    "passed": 43,
     "failed": 0
   },
   "notes": [

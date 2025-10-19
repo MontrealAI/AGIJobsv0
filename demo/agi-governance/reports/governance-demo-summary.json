@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-19T20:33:23.555Z",
+  "generatedAt": "2025-10-19T20:55:29.164Z",
   "version": "1.1.0",
   "thermodynamics": {
     "gibbsFreeEnergyKJ": 69800,
@@ -67,15 +67,24 @@
       "Sentinel-Tactician"
     ],
     "replicator": [
-      0.4074521001792146,
-      0.36555002383644997,
-      0.22699787598433552
+      0.33333333333333337,
+      0.3333333333333334,
+      0.33333333333333326
     ],
     "closedForm": [
       0.33333333333333337,
       0.3333333333333334,
       0.33333333333333326
     ],
+    "closedFormPayoff": 1,
+    "kktResiduals": [
+      2.220446049250313e-16,
+      0,
+      0
+    ],
+    "kktMaxResidual": 2.220446049250313e-16,
+    "kktCertified": true,
+    "simplexResidual": 0,
     "monteCarlo": [
       0.33442132029876004,
       0.3291403994112745,
@@ -91,16 +100,16 @@
       0.3333333333333333,
       0.3333333333333333
     ],
-    "replicatorIterations": 25000,
+    "replicatorIterations": 0,
     "continuousIterations": 25000,
     "eigenvectorIterations": 1,
     "monteCarloRmsError": 0.35745947819284196,
     "payoffAtEquilibrium": 1,
     "divergenceAtEquilibrium": 2.220446049250313e-16,
     "discountFactor": 0.92,
-    "replicatorDeviation": 0.1335617319270315,
+    "replicatorDeviation": 0,
     "maxMethodDeviation": 0.1365150455272573,
-    "methodConsistency": true
+    "methodConsistency": false
   },
   "antifragility": {
     "samples": [

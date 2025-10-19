@@ -267,6 +267,50 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
   );
   results.push(
     buildNumericCheck(
+      "equilibrium:closed-form-payoff",
+      "Closed-form equilibrium payoff",
+      equilibrium.closedFormPayoff,
+      summary.equilibrium.closedFormPayoff,
+      1e-6,
+    ),
+  );
+  results.push(
+    buildVectorCheck(
+      "equilibrium:kkt-residuals",
+      "KKT payoff residuals",
+      equilibrium.kktResiduals,
+      summary.equilibrium.kktResiduals,
+      1e-6,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "equilibrium:kkt-max",
+      "Maximum KKT residual",
+      equilibrium.kktMaxResidual,
+      summary.equilibrium.kktMaxResidual,
+      1e-9,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "equilibrium:simplex",
+      "Probability simplex residual",
+      equilibrium.simplexResidual,
+      summary.equilibrium.simplexResidual,
+      1e-9,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "equilibrium:kkt-certified",
+      "KKT conditions certified",
+      equilibrium.kktCertified,
+      summary.equilibrium.kktCertified,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
       "antifragility:curvature",
       "Antifragility quadratic curvature",
       antifragility.quadraticSecondDerivative,
