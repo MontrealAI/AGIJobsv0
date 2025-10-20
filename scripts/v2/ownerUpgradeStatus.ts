@@ -1,4 +1,6 @@
 #!/usr/bin/env ts-node
+import { promises as fs } from 'fs';
+import path from 'path';
 import { ethers } from 'ethers';
 import type { HardhatRuntimeEnvironment } from 'hardhat/types';
 import {
@@ -14,6 +16,8 @@ type CliOptions = {
   timelock?: string;
   format: OutputFormat;
   operations: string[];
+  missionPath?: string;
+  offline?: boolean;
 };
 
 type RoleDescriptor = {
@@ -46,6 +50,52 @@ type Report = {
   configSource: string;
   onChain: TimelockSnapshot;
 };
+
+const DEFAULT_MISSION_PATH = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  'demo',
+  'agi-governance',
+  'config',
+  'mission@v1.json',
+);
+
+type MissionSnapshot = {
+  timelockSeconds?: number;
+  upgradeActions: string[];
+};
+
+async function loadMissionSnapshot(missionPath?: string): Promise<MissionSnapshot | null> {
+  const candidate = missionPath ? path.resolve(missionPath) : DEFAULT_MISSION_PATH;
+  try {
+    const raw = await fs.readFile(candidate, 'utf8');
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const ownerControls = parsed.ownerControls as Record<string, unknown> | undefined;
+    const timelockSeconds =
+      ownerControls && typeof ownerControls.timelockSeconds === 'number'
+        ? ownerControls.timelockSeconds
+        : undefined;
+    const upgradeActionsRaw = Array.isArray(ownerControls?.upgradeActions)
+      ? (ownerControls?.upgradeActions as Array<Record<string, unknown>>)
+      : [];
+    const upgradeActions = upgradeActionsRaw
+      .map((entry) => {
+        const label = typeof entry.label === 'string' ? entry.label : undefined;
+        const command = typeof entry.command === 'string' ? entry.command : undefined;
+        const id = typeof entry.id === 'string' ? entry.id : undefined;
+        return command || label || id || undefined;
+      })
+      .filter((value): value is string => Boolean(value));
+
+    return {
+      timelockSeconds,
+      upgradeActions,
+    };
+  } catch (error) {
+    return null;
+  }
+}
 
 const ROLE_LABELS: Array<{ name: string; hash: string }> = [
   { name: 'TIMELOCK_ADMIN_ROLE', hash: ethers.id('TIMELOCK_ADMIN_ROLE') },
@@ -88,17 +138,37 @@ function parseArgs(argv: string[]): CliOptions {
         i += 1;
         break;
       }
+      case '--mission': {
+        const value = argv[i + 1];
+        if (!value) {
+          throw new Error('--mission requires a file path');
+        }
+        options.missionPath = value;
+        i += 1;
+        break;
+      }
       case '--json':
         options.format = 'json';
         break;
       case '--human':
         options.format = 'human';
         break;
+      case '--offline':
+        options.offline = true;
+        break;
       default:
         throw new Error(`Unknown argument: ${arg}`);
     }
   }
   return options;
+}
+
+function isTruthyFlag(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+  const normalised = value.trim().toLowerCase();
+  return ["1", "true", "yes", "on", "offline"].includes(normalised);
 }
 
 function determineTimelockAddress(cli: CliOptions): { address?: string; source: string } {
@@ -152,9 +222,31 @@ function formatDuration(seconds?: bigint): string {
 
 async function fetchTimelockSnapshot(
   address: string | undefined,
-  network?: string,
+  network: string | undefined,
   operations: string[] = [],
+  context: { offline: boolean; mission: MissionSnapshot | null },
 ): Promise<TimelockSnapshot> {
+  if (context.offline) {
+    const derivedOperations = operations.length > 0 ? operations : context.mission?.upgradeActions ?? [];
+    const operationStatuses: OperationStatus[] = derivedOperations.map((id) => ({
+      id,
+      pending: false,
+      ready: true,
+      executed: false,
+    }));
+    const minDelay =
+      context.mission?.timelockSeconds !== undefined
+        ? BigInt(Math.max(Math.floor(context.mission.timelockSeconds), 0))
+        : undefined;
+    return {
+      status: 'ok',
+      network: network ?? 'offline-simulated',
+      minDelay,
+      roles: [],
+      operations: operationStatuses,
+    };
+  }
+
   if (!address) {
     return { status: 'skipped', reason: 'No timelock address available.' };
   }
@@ -292,8 +384,16 @@ function renderHuman(report: Report): void {
 
 async function main(): Promise<void> {
   const cli = parseArgs(process.argv.slice(2));
+  const mission = await loadMissionSnapshot(cli.missionPath);
   const resolved = determineTimelockAddress(cli);
-  const snapshot = await fetchTimelockSnapshot(resolved.address, cli.network, cli.operations);
+  const offlineEnv =
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_OFFLINE) ||
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_MODE);
+  const offline = Boolean(cli.offline ?? offlineEnv);
+  const snapshot = await fetchTimelockSnapshot(resolved.address, cli.network, cli.operations, {
+    offline,
+    mission,
+  });
 
   let normalised: string | undefined;
   if (resolved.address) {
@@ -307,13 +407,17 @@ async function main(): Promise<void> {
     onChain: snapshot,
   };
 
+  if (offline) {
+    (report as Record<string, unknown>).mode = 'offline';
+  }
+
   if (cli.format === 'json') {
     console.log(stringifyWithBigint(report));
   } else {
     renderHuman(report);
   }
 
-  if (snapshot.status === 'error') {
+  if (!offline && snapshot.status === 'error') {
     process.exitCode = 1;
   }
 }

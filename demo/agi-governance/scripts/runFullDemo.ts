@@ -272,6 +272,7 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
     silent: options.owner?.silent ?? true,
     jsonFile: ownerJsonPath,
     markdownFile: ownerMarkdownPath,
+    missionFile: options.owner?.missionFile ?? demoOptions.missionFile,
   };
 
   const fullRunJsonPath = resolveWithDir(FULL_RUN_JSON, options.outputJson, demoOptions.reportDir);

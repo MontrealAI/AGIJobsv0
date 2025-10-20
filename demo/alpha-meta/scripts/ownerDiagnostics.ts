@@ -8,6 +8,7 @@ const BASE_DIR = path.resolve(__dirname, "..");
 const REPORT_DIR = path.join(BASE_DIR, "reports");
 const OUTPUT_JSON = path.join(REPORT_DIR, "alpha-meta-owner-diagnostics.json");
 const OUTPUT_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-owner-diagnostics.md");
+const MISSION_FILE = path.join(BASE_DIR, "config", "mission@alpha-meta.json");
 
 async function main(): Promise<void> {
   const options: OwnerDiagnosticsOptions = {
@@ -15,6 +16,8 @@ async function main(): Promise<void> {
     reportDir: REPORT_DIR,
     jsonFile: OUTPUT_JSON,
     markdownFile: OUTPUT_MARKDOWN,
+    missionFile: MISSION_FILE,
+    offline: true,
   };
 
   const report = await collectOwnerDiagnostics(options);

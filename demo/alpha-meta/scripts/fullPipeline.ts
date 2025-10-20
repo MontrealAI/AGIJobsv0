@@ -39,6 +39,8 @@ async function main(): Promise<void> {
       jsonFile: OWNER_JSON,
       markdownFile: OWNER_MARKDOWN,
       silent: true,
+      missionFile: MISSION_FILE,
+      offline: true,
     },
     outputJson: FULL_JSON,
     outputMarkdown: FULL_MARKDOWN,
