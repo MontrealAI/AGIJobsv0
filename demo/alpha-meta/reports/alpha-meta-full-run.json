@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2025-10-20T13:37:42.986Z",
+  "totalDurationMs": 136861.548942,
+  "steps": [
+    {
+      "id": "generate",
+      "label": "Generate dossier",
+      "status": "success",
+      "durationMs": 53137.438169,
+      "details": "Free-energy margin 222153.73 kJ · Max method deviation 0.849374"
+    },
+    {
+      "id": "validate",
+      "label": "Validate physics",
+      "status": "success",
+      "durationMs": 52973.043206,
+      "details": "All 58 checks passed"
+    },
+    {
+      "id": "ci",
+      "label": "Audit CI shield",
+      "status": "success",
+      "durationMs": 55.79574699999648,
+      "details": "All enforcement guards locked."
+    },
+    {
+      "id": "owner",
+      "label": "Owner diagnostics",
+      "status": "warning",
+      "durationMs": 30694.85248599999,
+      "details": "Warnings: [owner:audit-hamiltonian] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. | Cross-check mismatch: mission alignment. | [reward-engine:report] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. | [owner:upgrade-status] SKIPPED @ $.onChain — No timelock address available. | [owner:compliance-report] SKIPPED @ $.onChain — No tax policy address configured."
+    }
+  ],
+  "metrics": {
+    "gibbsFreeEnergyKJ": 222153.726,
+    "freeEnergyMarginKJ": 222153.726,
+    "antifragilitySecondDerivative": 0.9202218914909679,
+    "equilibriumMaxDeviation": 0.8493742429734307,
+    "riskPortfolioResidual": 0.013376342,
+    "jacobianStable": false,
+    "ownerFullCoverage": true,
+    "ownerAllCommandsPresent": true,
+    "ownerAllVerificationsPresent": true,
+    "ownerSupremacyIndex": 1,
+    "ownerSupremacySatisfied": true,
+    "ciShieldOk": true,
+    "ownerReadiness": "attention",
+    "alphaFieldConfidence": 0.8288057178042307,
+    "alphaFieldWithinBound": true,
+    "alphaFieldEnergyMargin": true,
+    "alphaFieldSuperintelligence": 0.9580759234104778,
+    "alphaFieldSuperintelligenceSatisfied": true,
+    "alphaFieldThermoAssurance": 1,
+    "alphaFieldGovernanceAssurance": 0.9256869888888889,
+    "alphaFieldAntifragilityAssurance": 1,
+    "alphaFieldOwnerAssurance": 1,
+    "quantumConfidence": 0.7591104607714451,
+    "quantumChargeWithinTolerance": true,
+    "quantumThermoDeltaKJ": 222153.726,
+    "quantumThermoAligned": false,
+    "quantumThermoDriftMaximumKJ": 0.18,
+    "quantumEntropyBits": 2.2373329166528313
+  },
+  "ciIssues": [],
+  "ownerWarnings": 4,
+  "ownerErrors": 0,
+  "artifacts": {
+    "report": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-report.md",
+    "summary": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-summary.json",
+    "dashboard": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-dashboard.html",
+    "validationJson": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-validation.json",
+    "validationMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-validation.md",
+    "ciReport": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-ci-verification.json",
+    "ownerJson": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-diagnostics.json",
+    "ownerMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-diagnostics.md"
+  }
+}

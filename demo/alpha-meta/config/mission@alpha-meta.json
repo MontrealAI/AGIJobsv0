@@ -1,0 +1,589 @@
+{
+  "meta": {
+    "version": "2.0.0",
+    "title": "Meta-Agentic \u03b1-AGI \u2014 Alpha-Meta Sovereign Hypergraph",
+    "description": "Alpha-Meta proves that AGI Jobs v0 (v2) empowers a non-technical owner to choreograph a civilisation-scale meta-agent that governs subordinate swarms, physics guarantees, and unstoppable blockchain levers in one deterministic command."
+  },
+  "thermodynamics": {
+    "enthalpyKJ": 224860.75,
+    "entropyKJPerK": 7.604,
+    "operatingTemperatureK": 356,
+    "referenceTemperatureK": 298,
+    "bitsProcessed": 11200000000,
+    "burnRatePerBlock": 0.068,
+    "stakeBoltzmann": 1.380649e-23
+  },
+  "statisticalPhysics": {
+    "beta": 0.0485,
+    "energyScaling": 284.2,
+    "toleranceKJ": 312.4,
+    "energyLevels": [
+      {
+        "energy": 792,
+        "degeneracy": 3
+      },
+      {
+        "energy": 908,
+        "degeneracy": 2
+      },
+      {
+        "energy": 1048,
+        "degeneracy": 3
+      },
+      {
+        "energy": 1176,
+        "degeneracy": 1
+      }
+    ]
+  },
+  "incentives": {
+    "mintRule": {
+      "eta": 0.981,
+      "deltaValue": 612000,
+      "treasuryMirrorShare": 0.55,
+      "tolerance": 0.004,
+      "rewardEngineShares": [
+        {
+          "role": "Agent",
+          "share": 0.55
+        },
+        {
+          "role": "Validator",
+          "share": 0.18
+        },
+        {
+          "role": "Operator",
+          "share": 0.1
+        },
+        {
+          "role": "Sentinel",
+          "share": 0.09
+        },
+        {
+          "role": "Owner Atlas Guild",
+          "share": 0.08
+        }
+      ]
+    },
+    "burnRule": {
+      "jobEscrow": 352000,
+      "burnBps": 680,
+      "treasuryBps": 260,
+      "employerBps": 60
+    },
+    "slashing": {
+      "stakeExample": 158000,
+      "minStake": {
+        "agent": 6200,
+        "validator": 12600,
+        "operator": 10400
+      },
+      "severities": [
+        {
+          "label": "Entropy jitter",
+          "description": "Minor delivery drift resolved before antifragility decay.",
+          "fraction": 0.16,
+          "treasuryShare": 0.58,
+          "employerShare": 0.25
+        },
+        {
+          "label": "Thermostat bypass attempt",
+          "description": "Coordinated deviation requiring sentinel override and owner review.",
+          "fraction": 0.48,
+          "treasuryShare": 0.82,
+          "employerShare": 0.11
+        },
+        {
+          "label": "Hypergraph breach",
+          "description": "Catastrophic violation of timelocked constraints \u2014 total seizure.",
+          "fraction": 1.0,
+          "treasuryShare": 0.92,
+          "employerShare": 0.0
+        }
+      ]
+    }
+  },
+  "hamiltonian": {
+    "lambda": 1.037,
+    "discountFactor": 0.968,
+    "inertialMetric": [
+      1.66,
+      1.29,
+      1.11
+    ],
+    "kineticCoefficients": [
+      284600,
+      308200,
+      336400
+    ],
+    "potentialCoefficients": [
+      201800,
+      229600,
+      256800
+    ],
+    "divergenceTolerance": 0.00088
+  },
+  "gameTheory": {
+    "strategies": [
+      {
+        "name": "Hypergraph Vanguard",
+        "description": "Agents and owner guild locking thermodynamic burns to the Gibbs attractor while mirroring surplus to the owner vault.",
+        "initialShare": 0.36
+      },
+      {
+        "name": "Quantum Concord Syndicate",
+        "description": "Validator arrays balancing antifragility curvature, quantum coherence, and stake depth for unstoppable control.",
+        "initialShare": 0.34
+      },
+      {
+        "name": "Sentinel Surge Mesh",
+        "description": "Sentinel fleets choreographing pause levers, treasury routing, and divergence damping under owner supervision.",
+        "initialShare": 0.3
+      }
+    ],
+    "payoffMatrix": [
+      [
+        1.042,
+        1.008,
+        1.007
+      ],
+      [
+        1.007,
+        1.037,
+        1.01
+      ],
+      [
+        1.008,
+        1.009,
+        1.035
+      ]
+    ],
+    "monteCarlo": {
+      "iterations": 7200,
+      "noise": 0.00057,
+      "seed": 902173,
+      "steps": 2600
+    },
+    "consistencyThreshold": 0.935
+  },
+  "antifragility": {
+    "sigmaSamples": [
+      0,
+      0.17,
+      0.33,
+      0.49,
+      0.65
+    ],
+    "iterations": 12400,
+    "replicatorSteps": 1260,
+    "seedOffset": 990440,
+    "penaltyScaling": 0.00034,
+    "sigmaRewardMultiplier": 79,
+    "divergencePenalty": 1.74,
+    "curvatureBoost": 0.46
+  },
+  "risk": {
+    "coverageWeights": {
+      "staking": 0.31,
+      "formal": 0.45,
+      "fuzz": 0.24
+    },
+    "portfolioThreshold": 0.18,
+    "classes": [
+      {
+        "id": "spec",
+        "label": "Specification Drift",
+        "probability": 0.017,
+        "impact": 0.76,
+        "mitigations": {
+          "staking": 0.93,
+          "formal": 0.98,
+          "fuzz": 0.82
+        }
+      },
+      {
+        "id": "economic",
+        "label": "Economic Exploit",
+        "probability": 0.013,
+        "impact": 0.69,
+        "mitigations": {
+          "staking": 0.9,
+          "formal": 0.68,
+          "fuzz": 0.75
+        }
+      },
+      {
+        "id": "protocol",
+        "label": "Protocol Breach",
+        "probability": 0.012,
+        "impact": 0.86,
+        "mitigations": {
+          "staking": 0.95,
+          "formal": 0.97,
+          "fuzz": 0.89
+        }
+      },
+      {
+        "id": "model",
+        "label": "Model Misalignment",
+        "probability": 0.025,
+        "impact": 0.64,
+        "mitigations": {
+          "staking": 0.83,
+          "formal": 0.86,
+          "fuzz": 0.91
+        }
+      },
+      {
+        "id": "externality",
+        "label": "Societal Externality",
+        "probability": 0.014,
+        "impact": 0.77,
+        "mitigations": {
+          "staking": 0.76,
+          "formal": 0.63,
+          "fuzz": 0.72
+        }
+      },
+      {
+        "id": "expansion",
+        "label": "Expansion Sweep Failure",
+        "probability": 0.017,
+        "impact": 0.6,
+        "mitigations": {
+          "staking": 0.81,
+          "formal": 0.66,
+          "fuzz": 0.76
+        }
+      },
+      {
+        "id": "temporal",
+        "label": "Temporal Desynchronisation",
+        "probability": 0.011,
+        "impact": 0.61,
+        "mitigations": {
+          "staking": 0.86,
+          "formal": 0.72,
+          "fuzz": 0.79
+        }
+      }
+    ]
+  },
+  "ownerControls": {
+    "owner": "0xAAAABBBBCCCCDDDDEEEEFFFF0000111122223333",
+    "pauser": "0xBBBBCCCCDDDDEEEEFFFF00001111222233334444",
+    "treasury": "0xCCCCDDDDEEEEFFFF000011112222333344445555",
+    "timelockSeconds": 604800,
+    "upgradeActions": [
+      {
+        "label": "Immediate hypergraph pause",
+        "command": "npm run owner:system-pause -- --network mainnet --action pause --yes",
+        "impact": "Halts every pausable module while conserving the Gibbs attractor.",
+        "category": "pause"
+      },
+      {
+        "label": "Resume hypergraph",
+        "command": "npm run owner:system-pause -- --network mainnet --action unpause --yes",
+        "impact": "Restarts execution once antifragility curvature recovers.",
+        "category": "resume"
+      },
+      {
+        "label": "Thermostat retune",
+        "command": "npm run thermostat:update -- --network mainnet --target-temperature 0.33",
+        "impact": "Updates the energy thermostat to maintain free-energy margin above target.",
+        "category": "parameter"
+      },
+      {
+        "label": "Hamiltonian modulation",
+        "command": "npm run owner:command-center -- --network mainnet --set-lambda 1.037 --set-inertia 1.29",
+        "impact": "Locks the Hamiltonian to the Alpha-Meta attractor plane.",
+        "category": "governance"
+      },
+      {
+        "label": "Treasury mirror rotation",
+        "command": "npm run owner:dashboard -- --network mainnet --focus treasury",
+        "impact": "Routes all treasury mirrors to the owner vault and compliance beacon.",
+        "category": "treasury"
+      },
+      {
+        "label": "Sentinel regeneration",
+        "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 16",
+        "impact": "Refreshes guardian squads before antifragility decay.",
+        "category": "sentinel"
+      },
+      {
+        "label": "Upgrade queue broadcast",
+        "command": "npm run owner:upgrade -- --network mainnet --proposal alpha-meta-governance.json",
+        "impact": "Queues unstoppable upgrade pack with owner timelock supremacy.",
+        "category": "upgrade"
+      },
+      {
+        "label": "Compliance attestation",
+        "command": "npm run owner:compliance-report -- --network mainnet --mode attestation",
+        "impact": "Publishes legal and social disclosures for auditors and regulators.",
+        "category": "compliance"
+      },
+      {
+        "label": "Quantum lattice audit",
+        "command": "npm run owner:audit-hamiltonian -- --network mainnet --quantum",
+        "impact": "Captures quantum coherence proofs for the evidence vault.",
+        "category": "quantum"
+      },
+      {
+        "label": "Expansion surge",
+        "command": "npm run owner:mission-control -- --network mainnet --mode expansion",
+        "impact": "Deploys new labour cohorts bound to owner-set Hamiltonian directives.",
+        "category": "expansion"
+      },
+      {
+        "label": "Resilience drill",
+        "command": "npm run owner:emergency -- --network mainnet --scenario alpha-meta-resilience",
+        "impact": "Executes antifragility drill verifying positive curvature under stress.",
+        "category": "resilience"
+      },
+      {
+        "label": "Owner plan broadcast",
+        "command": "npm run owner:plan -- --network mainnet --scenario alpha-meta",
+        "impact": "Publishes strategic labour directives for subordinate agents.",
+        "category": "plan"
+      }
+    ],
+    "criticalCapabilities": [
+      {
+        "category": "pause",
+        "label": "Pause orchestrator",
+        "description": "Instantly halt AGI Jobs orchestration if divergence spikes.",
+        "command": "npm run owner:system-pause",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "resume",
+        "label": "Resume orchestrator",
+        "description": "Restart execution after antifragility recovery.",
+        "command": "npm run owner:system-pause -- --action unpause",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "parameter",
+        "label": "Thermostat update",
+        "description": "Adjust the macro temperature to stabilise energy flux.",
+        "command": "npm run thermostat:update",
+        "verification": "npm run reward-engine:report"
+      },
+      {
+        "category": "governance",
+        "label": "Hamiltonian rewrite",
+        "description": "Push updated \u03bb/inertia parameters from physics computation.",
+        "command": "npm run owner:command-center",
+        "verification": "npm run owner:audit-hamiltonian"
+      },
+      {
+        "category": "treasury",
+        "label": "Treasury surge router",
+        "description": "Route treasury flows via owner-specified channels.",
+        "command": "npm run owner:dashboard -- --focus treasury",
+        "verification": "npm run owner:compliance-report"
+      },
+      {
+        "category": "sentinel",
+        "label": "Sentinel refresh",
+        "description": "Rotate enforcement guardians before antifragility decay.",
+        "command": "npm run owner:rotate -- --role Sentinel --count 16",
+        "verification": "npm run monitoring:sentinels"
+      },
+      {
+        "category": "upgrade",
+        "label": "Upgrade queue",
+        "description": "Submit unstoppable upgrade bundles to the timelock queue.",
+        "command": "npm run owner:upgrade",
+        "verification": "npm run owner:upgrade-status"
+      },
+      {
+        "category": "compliance",
+        "label": "Compliance broadcast",
+        "description": "Publish policy acknowledgements with evidence.",
+        "command": "npm run owner:compliance-report",
+        "verification": "npm run owner:doctor"
+      },
+      {
+        "category": "plan",
+        "label": "Mission plan",
+        "description": "Deploy new labour missions via owner plan tooling.",
+        "command": "npm run owner:plan",
+        "verification": "npm run owner:plan:safe"
+      },
+      {
+        "category": "monitoring",
+        "label": "Sentinel validation",
+        "description": "Validate monitoring sentinels and hooks.",
+        "command": "npm run monitoring:validate",
+        "verification": "npm run monitoring:sentinels"
+      }
+    ],
+    "requiredCategories": [
+      "pause",
+      "resume",
+      "parameter",
+      "governance",
+      "treasury",
+      "sentinel",
+      "upgrade",
+      "compliance",
+      "plan",
+      "monitoring"
+    ],
+    "monitoringSentinels": [
+      "sentinel://alpha-meta/thermostat",
+      "sentinel://alpha-meta/treasury",
+      "sentinel://alpha-meta/quantum",
+      "sentinel://alpha-meta/owner",
+      "sentinel://alpha-meta/antifragility"
+    ]
+  },
+  "alphaField": {
+    "stackelberg": {
+      "leaderBaseline": 0.88,
+      "followerBaseline": 0.74,
+      "valueCeiling": 1.18,
+      "advantageFloor": 0.11
+    },
+    "macroAttractor": {
+      "gibbsTargetKJ": 182600,
+      "gibbsToleranceKJ": 340,
+      "divergenceLimit": 0.0068,
+      "entropyFloor": 6.8
+    },
+    "antifragility": {
+      "minSecondDerivative": 0.00042,
+      "sigmaGainMinimum": 0.064
+    },
+    "verification": {
+      "energyMarginFloorKJ": 4200,
+      "ownerCoverageMinimum": 0.96,
+      "superintelligenceMinimum": 0.91,
+      "quantumConfidenceMinimum": 0.9,
+      "ownerSupremacyMinimum": 0.95,
+      "thermoQuantumDriftMaximumKJ": 0.18
+    },
+    "signatureWeights": {
+      "thermodynamic": 0.28,
+      "governance": 0.24,
+      "antifragility": 0.18,
+      "owner": 0.2,
+      "quantum": 0.1
+    }
+  },
+  "blockchain": {
+    "network": "mainnet-grade",
+    "chainId": 1,
+    "rpcProvider": "https://alpha-meta.rpc",
+    "gasTargetGwei": 32,
+    "confirmations": 2,
+    "upgradeDelaySeconds": 604800,
+    "contracts": [
+      {
+        "name": "SystemPause",
+        "address": "0x111122223333444455556666777788889999AAAa",
+        "role": "Pauser"
+      },
+      {
+        "name": "Thermostat",
+        "address": "0x22223333444455556666777788889999AAAABBBB",
+        "role": "Parameter"
+      },
+      {
+        "name": "RewardEngine",
+        "address": "0x3333444455556666777788889999AAAABBBBCCCC",
+        "role": "Treasury"
+      },
+      {
+        "name": "OwnerVault",
+        "address": "0x444455556666777788889999AAAABBBBCCCCDDDD",
+        "role": "Owner"
+      },
+      {
+        "name": "UpgradeGovernor",
+        "address": "0x55556666777788889999AAAABBBBCCCCDDDDEEEE",
+        "role": "Upgrade"
+      }
+    ],
+    "pausableFunctions": [
+      {
+        "contract": "JobController",
+        "function": "pauseJobs",
+        "selector": "0x7c1d7a8f",
+        "description": "Stops job lifecycle transitions instantly."
+      },
+      {
+        "contract": "RewardEngine",
+        "function": "pauseRewards",
+        "selector": "0x2a3b9f1c",
+        "description": "Locks token flows while the owner inspects anomalies."
+      },
+      {
+        "contract": "Thermostat",
+        "function": "pauseAdjustments",
+        "selector": "0x3d0e4f6a",
+        "description": "Freezes thermostat drift when energy variance spikes."
+      }
+    ],
+    "safeModules": [
+      "GnosisSafe://alpha-meta/owner",
+      "GnosisSafe://alpha-meta/treasury",
+      "GnosisSafe://alpha-meta/sentinels"
+    ]
+  },
+  "ci": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      {
+        "id": "lint",
+        "name": "Lint & static checks"
+      },
+      {
+        "id": "tests",
+        "name": "Tests"
+      },
+      {
+        "id": "foundry",
+        "name": "Foundry"
+      },
+      {
+        "id": "coverage",
+        "name": "Coverage thresholds"
+      },
+      {
+        "id": "summary",
+        "name": "CI summary"
+      }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  },
+  "quantum": {
+    "planckConstant": 6.62607015e-34,
+    "superpositionWeights": [
+      0.31,
+      0.24,
+      0.19,
+      0.14,
+      0.12
+    ],
+    "energyLevelsEv": [
+      0.41,
+      0.52,
+      0.63,
+      0.75,
+      0.88
+    ],
+    "entanglementFidelity": 0.972,
+    "decoherenceTimeNs": 420,
+    "coherenceHalfLifeNs": 880,
+    "coherenceFrequencyThz": 1.24,
+    "fisherInformation": 0.82,
+    "measurementVariance": 0.008,
+    "noetherCharge": 1.38,
+    "targetCharge": 1.35,
+    "allowableChargeDrift": 0.07
+  }
+}
