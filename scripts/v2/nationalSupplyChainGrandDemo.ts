@@ -2533,7 +2533,7 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
   await registry
     .connect(arcticDirectorate)
     .createJob(reward, deadline, specHash, 'ipfs://jobs/arctic-resilience');
-  const jobId = await registry.nextJobId();
+  const jobId = (await registry.nextJobId()) - 1n;
   const createdMetadata = await logJobSummary(registry, jobId, 'after posting');
   expectJobProgress(jobId, createdMetadata, {
     context: 'after posting',
@@ -2725,7 +2725,7 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   await registry
     .connect(pacificAuthority)
     .createJob(reward, deadline, specHash, 'ipfs://jobs/pacific-relief');
-  const jobId = await registry.nextJobId();
+  const jobId = (await registry.nextJobId()) - 1n;
   const createdMetadata = await logJobSummary(registry, jobId, 'after posting');
   expectJobProgress(jobId, createdMetadata, {
     context: 'after posting',
