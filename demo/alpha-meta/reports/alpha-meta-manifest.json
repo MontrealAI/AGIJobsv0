@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2025-10-20T17:36:42.010Z",
+  "generatedAt": "2025-10-20T18:39:35.984Z",
   "root": "/workspace/AGIJobsv0",
-  "files": 15,
+  "files": 17,
   "entries": [
     {
       "path": "demo/alpha-meta/config/mission@alpha-meta.json",
@@ -12,6 +12,16 @@
       "path": "demo/alpha-meta/reports/alpha-meta-ci-verification.json",
       "sha256": "96d62ca8c956d1bca25a42f8983072f0ce512e3d17fae4dac9f067f18442849f",
       "bytes": 1493
+    },
+    {
+      "path": "demo/alpha-meta/reports/alpha-meta-consistency.json",
+      "sha256": "ac86cb67b01f381fd5621da49e4deee598474d31920386747268f27a91d35ad9",
+      "bytes": 5100
+    },
+    {
+      "path": "demo/alpha-meta/reports/alpha-meta-consistency.md",
+      "sha256": "453114d6dea048568c682954b26ecc3c092e3ab6849a7bbc0eb2c209977be1e6",
+      "bytes": 1140
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-full-run.json",

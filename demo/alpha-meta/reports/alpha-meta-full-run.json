@@ -1,41 +1,48 @@
 {
-  "generatedAt": "2025-10-20T17:36:27.566Z",
-  "totalDurationMs": 205518.719063,
+  "generatedAt": "2025-10-20T18:37:38.457Z",
+  "totalDurationMs": 128409.689579,
   "steps": [
     {
       "id": "generate",
       "label": "Generate dossier",
       "status": "success",
-      "durationMs": 79943.433078,
+      "durationMs": 49772.425908,
       "details": "Free-energy margin 222153.73 kJ · Max method deviation 0.849374"
     },
     {
       "id": "validate",
       "label": "Validate physics",
       "status": "success",
-      "durationMs": 81602.23258800001,
+      "durationMs": 51142.637986999995,
       "details": "All 58 checks passed"
     },
     {
       "id": "ci",
       "label": "Audit CI shield",
       "status": "success",
-      "durationMs": 60.83084899999085,
+      "durationMs": 85.25785100000212,
       "details": "All enforcement guards locked."
     },
     {
       "id": "owner",
       "label": "Owner diagnostics",
       "status": "success",
-      "durationMs": 43911.428518,
+      "durationMs": 27408.835974999995,
       "details": "All owner automation commands executed successfully."
     },
     {
       "id": "triangulation",
       "label": "Triangulation cross-check",
       "status": "success",
-      "durationMs": 14363.258185999992,
+      "durationMs": 11264.906446000008,
       "details": "All checks satisfied (max Δ=0.693328)"
+    },
+    {
+      "id": "consistency",
+      "label": "Deterministic consistency audit",
+      "status": "success",
+      "durationMs": 28700.754701000027,
+      "details": "All invariants within tolerance (max Δ Gibbs=0.000e+0)"
     }
   ],
   "metrics": {
@@ -86,6 +93,8 @@
     "fullRunMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-full-run.md",
     "manifest": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-manifest.json",
     "triangulationJson": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-triangulation.json",
-    "triangulationMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-triangulation.md"
+    "triangulationMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-triangulation.md",
+    "consistencyJson": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-consistency.json",
+    "consistencyMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-consistency.md"
   }
 }

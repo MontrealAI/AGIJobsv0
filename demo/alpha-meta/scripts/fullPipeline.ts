@@ -6,6 +6,11 @@ import {
   type TriangulationOptions,
   type TriangulationResult,
 } from "./triangulateMission";
+import {
+  executeConsistencyAudit,
+  type ConsistencyOptions,
+  type ConsistencyResult,
+} from "./consistencyAudit";
 
 const BASE_DIR = path.resolve(__dirname, "..");
 const REPORT_DIR = path.join(BASE_DIR, "reports");
@@ -26,6 +31,8 @@ const FULL_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-full-run.md");
 const MANIFEST = path.join(REPORT_DIR, "alpha-meta-manifest.json");
 const TRIANGULATION_JSON = path.join(REPORT_DIR, "alpha-meta-triangulation.json");
 const TRIANGULATION_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-triangulation.md");
+const CONSISTENCY_JSON = path.join(REPORT_DIR, "alpha-meta-consistency.json");
+const CONSISTENCY_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-consistency.md");
 
 function formatSeconds(durationMs: number): string {
   if (!Number.isFinite(durationMs)) {
@@ -44,7 +51,10 @@ function formatDelta(value: number): string {
   return value.toExponential(3);
 }
 
-async function updateFullRunArtifacts(triangulation: TriangulationResult): Promise<void> {
+async function updateFullRunArtifacts(
+  triangulation: TriangulationResult,
+  consistency: ConsistencyResult,
+): Promise<void> {
   try {
     const raw = await readFile(FULL_JSON, "utf8");
     const document = JSON.parse(raw) as Record<string, unknown> & {
@@ -52,7 +62,7 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
       artifacts?: Record<string, unknown>;
     };
 
-    const step = {
+    const triangulationStep = {
       id: "triangulation",
       label: "Triangulation cross-check",
       status: triangulation.success ? "success" : "error",
@@ -62,20 +72,39 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
         : `Deviations detected (max Δ=${formatDelta(triangulation.maxDeviation)})`,
     };
 
+    const consistencyStep = {
+      id: "consistency",
+      label: "Deterministic consistency audit",
+      status: consistency.success ? "success" : "error",
+      durationMs: consistency.durationMs,
+      details: consistency.success
+        ? `All invariants within tolerance (max Δ Gibbs=${formatDelta(
+            consistency.maxDeviation.gibbsFreeEnergyKJ,
+          )})`
+        : "Invariants drifted beyond tolerance or manifest mismatch detected",
+    };
+
     if (!Array.isArray(document.steps)) {
       document.steps = [];
     }
-    const existingIndex = document.steps.findIndex((entry) => entry && entry.id === "triangulation");
-    if (existingIndex >= 0) {
-      document.steps[existingIndex] = step;
-    } else {
-      document.steps.push(step);
-    }
+    const upsertStep = (step: Record<string, unknown>) => {
+      const index = document.steps?.findIndex((entry) => entry && entry.id === step.id) ?? -1;
+      if (index >= 0) {
+        document.steps[index] = step;
+      } else {
+        document.steps.push(step);
+      }
+    };
+
+    upsertStep(triangulationStep);
+    upsertStep(consistencyStep);
 
     document.artifacts = {
       ...(document.artifacts ?? {}),
       triangulationJson: triangulation.outputs.json,
       triangulationMarkdown: triangulation.outputs.markdown,
+      consistencyJson: consistency.outputs.json,
+      consistencyMarkdown: consistency.outputs.markdown,
     };
 
     await writeFile(FULL_JSON, JSON.stringify(document, null, 2), "utf8");
@@ -92,7 +121,10 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
     if (tableHeaderIndex !== -1 && separatorIndex !== -1) {
       let cursor = separatorIndex + 1;
       while (cursor < lines.length && lines[cursor].startsWith("|")) {
-        if (lines[cursor].includes("Triangulation cross-check")) {
+        if (
+          lines[cursor].includes("Triangulation cross-check") ||
+          lines[cursor].includes("Deterministic consistency audit")
+        ) {
           lines.splice(cursor, 1);
         } else {
           cursor += 1;
@@ -105,12 +137,24 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
       const row = `| Triangulation cross-check | ${status} | ${formatSeconds(
         triangulation.durationMs,
       )} | ${details} |`;
-      lines.splice(cursor, 0, row);
+      const consistencyStatus = consistency.success ? "✅" : "❌";
+      const consistencyDetails = consistency.success
+        ? `All invariants within tolerance (max Δ Gibbs=${formatDelta(
+            consistency.maxDeviation.gibbsFreeEnergyKJ,
+          )})`
+        : "Invariants drifted beyond tolerance or manifest mismatch detected";
+      const consistencyRow = `| Deterministic consistency audit | ${consistencyStatus} | ${formatSeconds(
+        consistency.durationMs,
+      )} | ${consistencyDetails} |`;
+      lines.splice(cursor, 0, consistencyRow, row);
     }
 
     const filtered = lines.filter(
       (line) =>
-        !line.includes("Triangulation JSON:") && !line.includes("Triangulation Markdown:"),
+        !line.includes("Triangulation JSON:") &&
+        !line.includes("Triangulation Markdown:") &&
+        !line.includes("Consistency JSON:") &&
+        !line.includes("Consistency Markdown:"),
     );
     const fullRunIndex = filtered.findIndex((line) => line.includes("- Full-run Markdown:"));
     if (fullRunIndex !== -1) {
@@ -119,6 +163,8 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
         0,
         `- Triangulation JSON: \`${triangulation.outputs.json}\``,
         `- Triangulation Markdown: \`${triangulation.outputs.markdown}\``,
+        `- Consistency JSON: \`${consistency.outputs.json}\``,
+        `- Consistency Markdown: \`${consistency.outputs.markdown}\``,
       );
     }
 
@@ -173,14 +219,26 @@ async function main(): Promise<void> {
   };
 
   const triangulation = await executeTriangulation(triangulationOptions);
-  await updateFullRunArtifacts(triangulation);
+
+  const consistencyOptions: ConsistencyOptions = {
+    missionFile: MISSION_FILE,
+    summaryFile: SUMMARY_FILE,
+    outputJson: CONSISTENCY_JSON,
+    outputMarkdown: CONSISTENCY_MARKDOWN,
+    manifestFile: MANIFEST,
+  };
+
+  const consistency = await executeConsistencyAudit(consistencyOptions);
+
+  await updateFullRunArtifacts(triangulation, consistency);
 
   const hasError = summary.steps.some((step) => step.status === "error");
   const hasWarning = summary.steps.some((step) => step.status === "warning");
 
   const triangulationFailed = !triangulation.success;
+  const consistencyFailed = !consistency.success;
 
-  if (hasError || triangulationFailed) {
+  if (hasError || triangulationFailed || consistencyFailed) {
     console.error("❌ Alpha-Meta full pipeline completed with errors.");
     process.exitCode = 1;
   } else if (hasWarning) {
@@ -195,6 +253,9 @@ async function main(): Promise<void> {
   const statusEmoji = triangulation.success ? "✅" : "❌";
   console.log(`${statusEmoji} Triangulation dossier: ${TRIANGULATION_JSON}`);
   console.log(`   Triangulation Markdown: ${TRIANGULATION_MARKDOWN}`);
+  const consistencyEmoji = consistency.success ? "✅" : "❌";
+  console.log(`${consistencyEmoji} Consistency dossier: ${CONSISTENCY_JSON}`);
+  console.log(`   Consistency Markdown: ${CONSISTENCY_MARKDOWN}`);
 }
 
 if (require.main === module) {
