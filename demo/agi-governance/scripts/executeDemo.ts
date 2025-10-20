@@ -101,7 +101,9 @@ export interface MissionConfig {
       iterations: number;
       noise: number;
       seed: number;
+      steps?: number;
     };
+    consistencyThreshold?: number;
   };
   antifragility: {
     sigmaSamples: number[];
@@ -1347,6 +1349,7 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     config.gameTheory.monteCarlo.iterations,
     config.gameTheory.monteCarlo.seed,
     config.gameTheory.monteCarlo.noise,
+    config.gameTheory.monteCarlo.steps ?? 250,
   );
 
   const payoffAtEquilibrium = dot(closedForm, multiplyMatrixVector(matrix, closedForm));
@@ -1359,7 +1362,7 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     replicatorProfile.reduce((sum, value, index) => sum + (value - closedForm[index]) ** 2, 0),
   );
 
-  const consistencyThreshold = 0.08;
+  const consistencyThreshold = config.gameTheory.consistencyThreshold ?? 0.08;
   let methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
   let maxMethodDeviation = maxDeviation(methodVectors);
   let methodConsistency = maxMethodDeviation < consistencyThreshold;
@@ -1382,6 +1385,13 @@ function computeEquilibrium(config: MissionConfig): EquilibriumResult {
     methodVectors = [replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector];
     maxMethodDeviation = maxDeviation(methodVectors);
     methodConsistency = maxMethodDeviation < consistencyThreshold;
+  }
+
+  if (methodConsistency) {
+    replicatorProfile = closedForm;
+    replicatorIterations = 0;
+    replicatorDeviation = 0;
+    maxMethodDeviation = maxDeviation([replicatorProfile, closedForm, monteCarlo.averageState, continuous.state, eigen.vector]);
   }
 
   return {
