@@ -20,6 +20,6 @@ npm run demo:alpha-meta:validate "$@"
 npm run demo:alpha-meta:owner-diagnostics "$@"
 npm run demo:alpha-meta:ci "$@"
 npm run demo:alpha-meta:full "$@"
-npm run demo:asi-takeoff:local "$@"
+npm run demo:asi-takeoff "$@"
 
 printf '\n✅  Alpha Meta sovereign lattice complete. Evidence emitted under %s and reports/asi-takeoff/.\n\n' "${REPORT_DIR}"
