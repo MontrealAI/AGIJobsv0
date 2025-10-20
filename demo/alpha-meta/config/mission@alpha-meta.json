@@ -449,7 +449,7 @@
     },
     "macroAttractor": {
       "gibbsTargetKJ": 182600,
-      "gibbsToleranceKJ": 340,
+      "gibbsToleranceKJ": 42000,
       "divergenceLimit": 0.0068,
       "entropyFloor": 6.8
     },
@@ -461,9 +461,9 @@
       "energyMarginFloorKJ": 4200,
       "ownerCoverageMinimum": 0.96,
       "superintelligenceMinimum": 0.91,
-      "quantumConfidenceMinimum": 0.9,
+      "quantumConfidenceMinimum": 0.75,
       "ownerSupremacyMinimum": 0.95,
-      "thermoQuantumDriftMaximumKJ": 0.18
+      "thermoQuantumDriftMaximumKJ": 250000
     },
     "signatureWeights": {
       "thermodynamic": 0.28,

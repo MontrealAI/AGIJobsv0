@@ -1,0 +1,167 @@
+name: demo-alpha-meta
+
+on:
+  pull_request:
+    paths:
+      - 'demo/alpha-meta/**'
+      - '.github/workflows/demo-alpha-meta.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/alpha-meta/**'
+      - '.github/workflows/demo-alpha-meta.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-alpha-meta-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  alpha-meta-demo:
+    name: Meta-Agentic α-AGI Sovereign Demo
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Execute Alpha-Meta full pipeline
+        run: npm run demo:alpha-meta:full
+
+      - name: Deterministic dossier validation
+        run: npm run demo:alpha-meta:validate
+
+      - name: CI shield audit
+        run: npm run demo:alpha-meta:ci
+
+      - name: Owner automation diagnostics
+        run: npm run demo:alpha-meta:owner
+
+      - name: Independent triangulation replay
+        run: npm run demo:alpha-meta:triangulate
+
+      - name: Verify Alpha-Meta artefacts
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const base = 'demo/alpha-meta/reports';
+          const requireJson = (filename) => {
+            const fullPath = path.join(base, filename);
+            if (!fs.existsSync(fullPath)) {
+              throw new Error(`missing artefact: ${filename}`);
+            }
+            return JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+          };
+
+          const summary = requireJson('alpha-meta-governance-summary.json');
+          const triangulation = requireJson('alpha-meta-triangulation.json');
+          const owner = requireJson('alpha-meta-owner-diagnostics.json');
+          const ci = requireJson('alpha-meta-ci-verification.json');
+          const manifest = requireJson('alpha-meta-manifest.json');
+
+          const dashboardPath = path.join(base, 'alpha-meta-governance-dashboard.html');
+          if (!fs.existsSync(dashboardPath)) {
+            throw new Error('dashboard dossier missing');
+          }
+          const dashboard = fs.readFileSync(dashboardPath, 'utf8');
+          const mermaidSnippets = ['```mermaid', 'class="mermaid"'];
+          for (const snippet of mermaidSnippets) {
+            if (!dashboard.includes(snippet)) {
+              throw new Error(`dashboard missing mermaid snippet: ${snippet}`);
+            }
+          }
+
+          const alpha = summary.alphaField;
+          const requiredAlphaFlags = [
+            ['gibbsWithinTolerance', alpha?.gibbsWithinTolerance],
+            ['thermoQuantumAligned', alpha?.thermoQuantumAligned],
+            ['quantumConfidenceSatisfied', alpha?.quantumConfidenceSatisfied],
+            ['superintelligenceSatisfied', alpha?.superintelligenceSatisfied],
+            ['ownerSupremacySatisfied', alpha?.ownerSupremacySatisfied],
+          ];
+          for (const [label, value] of requiredAlphaFlags) {
+            if (!value) {
+              throw new Error(`alpha-field flag not satisfied: ${label}`);
+            }
+          }
+
+          if (!Array.isArray(summary.owner?.requiredCoverage) || summary.owner.requiredCoverage.some((entry) => entry.satisfied !== true)) {
+            throw new Error('owner coverage requirements not fully satisfied');
+          }
+
+          if (owner.totals?.error !== 0) {
+            throw new Error(`owner diagnostics recorded errors (${owner.totals?.error})`);
+          }
+          if (owner.totals?.warning !== 0) {
+            throw new Error('owner diagnostics reported warnings');
+          }
+
+          if (triangulation.success !== true) {
+            throw new Error('triangulation suite did not succeed');
+          }
+          if (!Array.isArray(triangulation.checks) || triangulation.checks.some((check) => check.passed !== true)) {
+            throw new Error('triangulation checks contain failures');
+          }
+
+          if (!ci.verification?.workflowNameMatches || !ci.verification?.triggersIncludePush || !ci.verification?.triggersIncludePullRequest) {
+            throw new Error('CI verification failed to confirm required workflow triggers');
+          }
+          if (!Array.isArray(ci.verification?.requiredJobsPresent) || ci.verification.requiredJobsPresent.some((job) => job.present !== true || job.nameMatches !== true)) {
+            throw new Error('CI verification missing required job contexts');
+          }
+
+          if (!manifest || !Array.isArray(manifest.entries) || manifest.entries.length < 12) {
+            throw new Error('manifest missing expected artefacts');
+          }
+          for (const entry of manifest.entries) {
+            if (!entry.path || !entry.sha256) {
+              throw new Error(`manifest entry incomplete: ${JSON.stringify(entry)}`);
+            }
+          }
+
+          console.log(`Validated Alpha-Meta dossier (${manifest.entries.length} artefacts, triangulation success ${triangulation.success}).`);
+          NODE
+
+      - name: Upload Alpha-Meta reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: alpha-meta-reports
+          path: demo/alpha-meta/reports/**
+          if-no-files-found: error
