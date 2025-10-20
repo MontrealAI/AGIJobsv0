@@ -8,6 +8,13 @@ const REPORT_DIR = path.join(__dirname, "..", "reports");
 export const JSON_REPORT = path.join(REPORT_DIR, "owner-diagnostics.json");
 export const MARKDOWN_REPORT = path.join(REPORT_DIR, "owner-diagnostics.md");
 
+export interface OwnerDiagnosticsOptions {
+  silent?: boolean;
+  reportDir?: string;
+  jsonFile?: string;
+  markdownFile?: string;
+}
+
 const COMMANDS = [
   {
     id: "hamiltonian",
@@ -411,12 +418,17 @@ async function runCommand(spec: CommandSpec): Promise<CommandResult> {
   });
 }
 
-export async function collectOwnerDiagnostics(
-  options: { silent?: boolean } = {},
-): Promise<AggregatedReport> {
+export async function collectOwnerDiagnostics(options: OwnerDiagnosticsOptions = {}): Promise<AggregatedReport> {
   const { silent = false } = options;
 
-  await mkdir(REPORT_DIR, { recursive: true });
+  const resolvedReportDir = path.resolve(options.reportDir ?? path.dirname(options.jsonFile ?? JSON_REPORT));
+  const jsonPath = path.resolve(options.jsonFile ?? path.join(resolvedReportDir, path.basename(JSON_REPORT)));
+  const markdownPath = path.resolve(
+    options.markdownFile ?? path.join(resolvedReportDir, path.basename(MARKDOWN_REPORT)),
+  );
+
+  await mkdir(path.dirname(jsonPath), { recursive: true });
+  await mkdir(path.dirname(markdownPath), { recursive: true });
 
   const results: CommandResult[] = [];
   for (const command of COMMANDS) {
@@ -449,12 +461,12 @@ export async function collectOwnerDiagnostics(
     readiness,
   };
 
-  await writeFile(JSON_REPORT, JSON.stringify(report, null, 2), "utf8");
-  await writeFile(MARKDOWN_REPORT, renderMarkdown(report), "utf8");
+  await writeFile(jsonPath, JSON.stringify(report, null, 2), "utf8");
+  await writeFile(markdownPath, renderMarkdown(report), "utf8");
 
   if (!silent) {
-    console.log(`JSON report: ${JSON_REPORT}`);
-    console.log(`Markdown report: ${MARKDOWN_REPORT}`);
+    console.log(`JSON report: ${jsonPath}`);
+    console.log(`Markdown report: ${markdownPath}`);
   }
 
   return report;

@@ -60,10 +60,37 @@ jobs:
       - name: Aggregate owner diagnostics
         run: npm run demo:agi-governance:owner-diagnostics
 
+      - name: Generate α-field v14 HyperSovereign dossier
+        run: npm run demo:agi-governance:alpha-v14
+
+      - name: Validate α-field v14 HyperSovereign dossier
+        run: npm run demo:agi-governance:alpha-v14:validate
+
+      - name: Verify α-field v14 CI enforcement
+        run: npm run demo:agi-governance:alpha-v14:ci
+
+      - name: Aggregate α-field v14 owner diagnostics
+        run: npm run demo:agi-governance:alpha-v14:owner-diagnostics
+
+      - name: Generate α-field v13 governance dossier
+        run: npm run demo:agi-governance:alpha-v13
+
+      - name: Validate α-field v13 dossier
+        run: npm run demo:agi-governance:alpha-v13:validate
+
+      - name: Verify α-field v13 CI enforcement
+        run: npm run demo:agi-governance:alpha-v13:ci
+
+      - name: Aggregate α-field v13 owner diagnostics
+        run: npm run demo:agi-governance:alpha-v13:owner-diagnostics
+
       - name: Upload governance artefacts
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: agi-governance-reports
-          path: demo/agi-governance/reports/**
+          path: |
+            demo/agi-governance/reports/**
+            demo/agi-governance/alpha-v14/reports/**
+            demo/agi-governance/alpha-v13/reports/**
           if-no-files-found: error

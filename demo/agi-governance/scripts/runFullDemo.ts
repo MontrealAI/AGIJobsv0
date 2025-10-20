@@ -8,12 +8,14 @@ import {
   REPORT_FILE as GOVERNANCE_REPORT_FILE,
   SUMMARY_FILE as GOVERNANCE_SUMMARY_FILE,
   DASHBOARD_FILE as GOVERNANCE_DASHBOARD_FILE,
+  type GovernanceDemoOptions,
   type ReportBundle,
 } from "./executeDemo";
 import {
   validateGovernanceDemo,
   VALIDATION_JSON as VALIDATION_JSON_FILE,
   VALIDATION_MARKDOWN as VALIDATION_MARKDOWN_FILE,
+  type ValidationOptions,
   type ValidationReport,
 } from "./validateReport";
 import {
@@ -22,16 +24,27 @@ import {
   OUTPUT_FILE as CI_OUTPUT_FILE,
   type MissionCi,
   type VerificationResult,
+  type VerifyCiOptions,
 } from "./verifyCiStatus";
 import {
   collectOwnerDiagnostics,
   JSON_REPORT as OWNER_JSON_FILE,
   MARKDOWN_REPORT as OWNER_MARKDOWN_FILE,
   type AggregatedReport,
+  type OwnerDiagnosticsOptions,
 } from "./collectOwnerDiagnostics";
 
 const FULL_RUN_JSON = path.join(DEMO_REPORT_DIR, "governance-demo-full-run.json");
 const FULL_RUN_MARKDOWN = path.join(DEMO_REPORT_DIR, "governance-demo-full-run.md");
+
+export interface FullDemoOptions {
+  demo?: GovernanceDemoOptions;
+  validation?: ValidationOptions;
+  ci?: VerifyCiOptions;
+  owner?: OwnerDiagnosticsOptions;
+  outputJson?: string;
+  outputMarkdown?: string;
+}
 
 type StepStatus = "success" | "warning" | "error";
 
@@ -100,6 +113,16 @@ function formatMs(value: number): string {
     return "n/a";
   }
   return `${formatNumber(value / 1000, 2)} s`;
+}
+
+function resolveWithDir(baseFile: string, overrideFile?: string, overrideDir?: string): string {
+  if (overrideFile) {
+    return path.resolve(overrideFile);
+  }
+  if (overrideDir) {
+    return path.resolve(overrideDir, path.basename(baseFile));
+  }
+  return path.resolve(baseFile);
 }
 
 function statusIcon(status: StepStatus): string {
@@ -185,14 +208,79 @@ function summariseDiagnostics(report: AggregatedReport): string {
   return parts.join(" | ") || "Diagnostics completed.";
 }
 
-async function runFullDemo(): Promise<FullRunSummary> {
-  await mkdir(DEMO_REPORT_DIR, { recursive: true });
+export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRunSummary> {
+  const demoOptions: GovernanceDemoOptions = options.demo ?? {};
+  const reportFile = resolveWithDir(GOVERNANCE_REPORT_FILE, demoOptions.reportFile, demoOptions.reportDir);
+  const summaryFile = resolveWithDir(GOVERNANCE_SUMMARY_FILE, demoOptions.summaryFile, demoOptions.reportDir);
+  const dashboardFile = resolveWithDir(GOVERNANCE_DASHBOARD_FILE, demoOptions.dashboardFile, demoOptions.reportDir);
+
+  const generationOptions: GovernanceDemoOptions = {
+    ...demoOptions,
+    reportDir: path.dirname(reportFile),
+    reportFile,
+    summaryFile,
+    dashboardFile,
+  };
+
+  const validationSummaryPath = resolveWithDir(
+    GOVERNANCE_SUMMARY_FILE,
+    options.validation?.summaryFile,
+    path.dirname(summaryFile),
+  );
+  const validationJsonPath = resolveWithDir(
+    VALIDATION_JSON_FILE,
+    options.validation?.outputJson,
+    path.dirname(validationSummaryPath),
+  );
+  const validationMarkdownPath = resolveWithDir(
+    VALIDATION_MARKDOWN_FILE,
+    options.validation?.outputMarkdown,
+    path.dirname(validationSummaryPath),
+  );
+
+  const validationOptions: ValidationOptions = {
+    ...options.validation,
+    missionFile: options.validation?.missionFile ?? demoOptions.missionFile,
+    summaryFile: validationSummaryPath,
+    outputJson: validationJsonPath,
+    outputMarkdown: validationMarkdownPath,
+  };
+
+  const ciOutputPath = resolveWithDir(CI_OUTPUT_FILE, options.ci?.outputFile, demoOptions.reportDir);
+  const ciOptions: VerifyCiOptions = {
+    ...options.ci,
+    missionFile: options.ci?.missionFile ?? demoOptions.missionFile,
+    outputFile: ciOutputPath,
+  };
+
+  const ownerJsonPath = resolveWithDir(
+    OWNER_JSON_FILE,
+    options.owner?.jsonFile,
+    options.owner?.reportDir ?? demoOptions.reportDir,
+  );
+  const ownerMarkdownPath = resolveWithDir(
+    OWNER_MARKDOWN_FILE,
+    options.owner?.markdownFile,
+    options.owner?.reportDir ?? demoOptions.reportDir,
+  );
+  const ownerOptions: OwnerDiagnosticsOptions = {
+    ...options.owner,
+    silent: options.owner?.silent ?? true,
+    jsonFile: ownerJsonPath,
+    markdownFile: ownerMarkdownPath,
+  };
+
+  const fullRunJsonPath = resolveWithDir(FULL_RUN_JSON, options.outputJson, demoOptions.reportDir);
+  const fullRunMarkdownPath = resolveWithDir(FULL_RUN_MARKDOWN, options.outputMarkdown, demoOptions.reportDir);
+
+  await mkdir(path.dirname(fullRunJsonPath), { recursive: true });
+  await mkdir(path.dirname(fullRunMarkdownPath), { recursive: true });
 
   const steps: StepSummary[] = [];
   const start = performance.now();
 
   const generateStart = performance.now();
-  const bundle = await generateGovernanceDemo();
+  const bundle = await generateGovernanceDemo(generationOptions);
   steps.push({
     id: "generate",
     label: "Generate dossier",
@@ -205,7 +293,7 @@ async function runFullDemo(): Promise<FullRunSummary> {
   });
 
   const validationStart = performance.now();
-  const validation = await validateGovernanceDemo();
+  const validation = await validateGovernanceDemo(validationOptions);
   const validationStatus: StepStatus = validation.totals.failed === 0 ? "success" : "error";
   steps.push({
     id: "validate",
@@ -216,7 +304,7 @@ async function runFullDemo(): Promise<FullRunSummary> {
   });
 
   const ciStart = performance.now();
-  const { ciConfig, verification } = await verifyCiShield();
+  const { ciConfig, verification } = await verifyCiShield(ciOptions);
   const ciAssessment = assessCiShield(ciConfig, verification);
   const ciStatus: StepStatus = ciAssessment.ok ? "success" : "error";
   steps.push({
@@ -228,7 +316,7 @@ async function runFullDemo(): Promise<FullRunSummary> {
   });
 
   const diagnosticsStart = performance.now();
-  const diagnostics = await collectOwnerDiagnostics({ silent: true });
+  const diagnostics = await collectOwnerDiagnostics(ownerOptions);
   const diagnosticsStatus: StepStatus =
     diagnostics.readiness === "ready"
       ? "success"
@@ -277,18 +365,18 @@ async function runFullDemo(): Promise<FullRunSummary> {
     ownerWarnings: diagnostics.totals.warning,
     ownerErrors: diagnostics.totals.error,
     artifacts: {
-      report: GOVERNANCE_REPORT_FILE,
-      summary: GOVERNANCE_SUMMARY_FILE,
-      dashboard: GOVERNANCE_DASHBOARD_FILE,
-      validationJson: VALIDATION_JSON_FILE,
-      validationMarkdown: VALIDATION_MARKDOWN_FILE,
-      ciReport: CI_OUTPUT_FILE,
-      ownerJson: OWNER_JSON_FILE,
-      ownerMarkdown: OWNER_MARKDOWN_FILE,
+      report: reportFile,
+      summary: summaryFile,
+      dashboard: dashboardFile,
+      validationJson: validationJsonPath,
+      validationMarkdown: validationMarkdownPath,
+      ciReport: ciOutputPath,
+      ownerJson: ownerJsonPath,
+      ownerMarkdown: ownerMarkdownPath,
     },
   };
 
-  await writeFile(FULL_RUN_JSON, JSON.stringify(summary, null, 2), "utf8");
+  await writeFile(fullRunJsonPath, JSON.stringify(summary, null, 2), "utf8");
 
   const stepTable = [
     "| Step | Status | Duration | Details |",
@@ -356,7 +444,7 @@ async function runFullDemo(): Promise<FullRunSummary> {
       : "> ✅ Owner automation ready without warnings.",
   ].join("\n");
 
-  await writeFile(FULL_RUN_MARKDOWN, markdown, "utf8");
+  await writeFile(fullRunMarkdownPath, markdown, "utf8");
 
   return summary;
 }

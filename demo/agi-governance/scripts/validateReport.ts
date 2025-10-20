@@ -37,6 +37,13 @@ const SUMMARY_FILE = path.join(REPORT_DIR, "governance-demo-summary.json");
 export const VALIDATION_JSON = path.join(REPORT_DIR, "governance-demo-validation.json");
 export const VALIDATION_MARKDOWN = path.join(REPORT_DIR, "governance-demo-validation.md");
 
+export interface ValidationOptions {
+  missionFile?: string;
+  summaryFile?: string;
+  outputJson?: string;
+  outputMarkdown?: string;
+}
+
 interface ReportSummary {
   generatedAt: string;
   version: string;
@@ -177,23 +184,24 @@ function capabilityMap(
   return map;
 }
 
-async function loadSummary(): Promise<ReportSummary> {
-  const raw = await readFile(SUMMARY_FILE, "utf8");
+async function loadSummary(summaryPath: string): Promise<ReportSummary> {
+  const raw = await readFile(summaryPath, "utf8");
   return JSON.parse(raw) as ReportSummary;
 }
 
-export async function validateGovernanceDemo(): Promise<ValidationReport> {
+export async function validateGovernanceDemo(options: ValidationOptions = {}): Promise<ValidationReport> {
   const notes: string[] = [];
+  const summaryPath = path.resolve(options.summaryFile ?? SUMMARY_FILE);
   let summary: ReportSummary;
   try {
-    summary = await loadSummary();
+    summary = await loadSummary(summaryPath);
   } catch (error) {
     throw new Error(
-      `Unable to load summary report at ${SUMMARY_FILE}. Run \"npm run demo:agi-governance\" before validating.`,
+      `Unable to load summary report at ${summaryPath}. Run \"npm run demo:agi-governance\" before validating.`,
     );
   }
 
-  const mission = await loadMission();
+  const mission = await loadMission(options.missionFile);
   const packageScripts = await loadPackageScripts();
 
   const thermodynamics = computeThermodynamics(mission);
@@ -730,8 +738,12 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
     notes,
   };
 
-  await mkdir(REPORT_DIR, { recursive: true });
-  await writeFile(VALIDATION_JSON, JSON.stringify(validationReport, null, 2), "utf8");
+  const jsonPath = path.resolve(options.outputJson ?? VALIDATION_JSON);
+  const markdownPath = path.resolve(options.outputMarkdown ?? VALIDATION_MARKDOWN);
+
+  await mkdir(path.dirname(jsonPath), { recursive: true });
+  await mkdir(path.dirname(markdownPath), { recursive: true });
+  await writeFile(jsonPath, JSON.stringify(validationReport, null, 2), "utf8");
 
   const markdownLines = [
     "# Governance Demo Validation",
@@ -745,7 +757,12 @@ export async function validateGovernanceDemo(): Promise<ValidationReport> {
     "",
     ...notes.map((note) => `- ${note}`),
   ];
-  await writeFile(VALIDATION_MARKDOWN, markdownLines.join("\n"), "utf8");
+  await writeFile(markdownPath, markdownLines.join("\n"), "utf8");
+
+  if (!process.env.CI) {
+    console.log(`↳ Validation JSON written to ${jsonPath}`);
+    console.log(`↳ Validation Markdown written to ${markdownPath}`);
+  }
 
   return validationReport;
 }
