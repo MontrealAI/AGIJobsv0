@@ -25,6 +25,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 | [`scripts/validateReport.ts`](scripts/validateReport.ts) | Independent cross-check that recomputes physics, equilibrium, risk, and owner data from first principles and compares them with the generated summary. |
 | [`reports/`](reports) | Generated artefacts (`governance-demo-report.md`, `ci-verification.json`, etc.) are written here so they can be archived from CI. |
 | [`reports/governance-demo-dashboard.html`](reports/governance-demo-dashboard.html) | Immersive, mermaid-rich web console that renders the mission as an interactive UI for non-technical owners. |
+| [`alpha-v17/`](alpha-v17) | Singularity Dominion α-field v17 mission pack with hyperbolic energy leverage, variance-fed antifragility, and owner-absolute supremacy across twelve command categories. |
 | [`alpha-v16/`](alpha-v16) | ChronoSovereign α-field v16 mission pack with thermodynamic clocking, quantum alignment, and CI(v2) enforcement tuned for owner-dominant control. |
 | [`alpha-v15/`](alpha-v15) | OmegaSovereign α-field v15 mission pack with expansion governance, resilience drills, and the most aggressive physics/game-theory instrumentation yet. |
 | [`alpha-v14/`](alpha-v14) | HyperSovereign α-field v14 mission pack with unstoppable owner supremacy, quantum lattice instrumentation, and CI hardening. |
@@ -106,6 +107,10 @@ The command writes `reports/governance-demo-full-run.json` and `.md`, each summa
 1. Edit `config/mission@v1.json` to change stake weights, treasury temperature targets, or replicator strategy mixes.
 2. Re-run `npm run demo:agi-governance` to produce a new report. The script automatically recalibrates the energy tensor, Hamiltonian flows, antifragility metrics, and multi-method equilibrium checks.
 3. For on-chain execution, follow the `RUNBOOK.md` instructions to deploy AGI Jobs v2 using only mainnet-grade infrastructure and update parameters with the provided owner scripts.
+
+### α-field v17 Singularity Dominion mission pack
+
+Need the flagship Singularity Dominion configuration that proves a non-technical owner can steer civilisation-scale intelligence with hyperbolic energy leverage, variance-fed antifragility, and owner-absolute supremacy? Launch [`alpha-v17/`](alpha-v17). It packages the v17 manifest, glassmorphism dashboard, and full suite of orchestrators (`runMission`, `validateMission`, `verifyCi`, `ownerDiagnostics`, `fullPipeline`) behind `npm run demo:agi-governance:alpha-v17*` commands so the owner can recompute Gibbs free energy, Hamiltonian equilibria, statistical-physics partitions, antifragility curvature, CI(v2) enforcement, and twelve governance categories without editing code.
 
 ### α-field v16 ChronoSovereign mission pack
 

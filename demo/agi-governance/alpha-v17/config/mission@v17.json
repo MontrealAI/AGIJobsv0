@@ -1,0 +1,629 @@
+{
+  "meta": {
+    "version": "1.7.0",
+    "title": "Solving \u03b1-AGI Governance \u2014 \u03b1-field v17 Singularity Dominion",
+    "description": "Singularity Dominion fuses thermodynamic supremacy, antifragile incentives, and owner-absolute command into a civilisation-scale governance drill."
+  },
+  "thermodynamics": {
+    "enthalpyKJ": 198760.4,
+    "entropyKJPerK": 7.112,
+    "operatingTemperatureK": 348,
+    "referenceTemperatureK": 298,
+    "bitsProcessed": 9400000000,
+    "burnRatePerBlock": 0.075,
+    "stakeBoltzmann": 1.380649e-23
+  },
+  "statisticalPhysics": {
+    "beta": 0.0524,
+    "energyScaling": 261.4,
+    "toleranceKJ": 324,
+    "energyLevels": [
+      {
+        "energy": 812,
+        "degeneracy": 2
+      },
+      {
+        "energy": 945,
+        "degeneracy": 3
+      },
+      {
+        "energy": 1036,
+        "degeneracy": 2
+      },
+      {
+        "energy": 1184,
+        "degeneracy": 1
+      }
+    ]
+  },
+  "incentives": {
+    "mintRule": {
+      "eta": 0.974,
+      "deltaValue": 540000,
+      "treasuryMirrorShare": 0.6,
+      "tolerance": 0.005,
+      "rewardEngineShares": [
+        {
+          "role": "Agent",
+          "share": 0.6
+        },
+        {
+          "role": "Validator",
+          "share": 0.16
+        },
+        {
+          "role": "Operator",
+          "share": 0.09
+        },
+        {
+          "role": "Sentinel",
+          "share": 0.07
+        },
+        {
+          "role": "Dominion Surge Architect",
+          "share": 0.08
+        }
+      ]
+    },
+    "burnRule": {
+      "jobEscrow": 320000,
+      "burnBps": 720,
+      "treasuryBps": 240,
+      "employerBps": 60
+    },
+    "slashing": {
+      "stakeExample": 132000,
+      "minStake": {
+        "agent": 5600,
+        "validator": 11200,
+        "operator": 9800
+      },
+      "severities": [
+        {
+          "label": "Dominion jitter",
+          "description": "Minor execution drift resolved before settlement cut-off.",
+          "fraction": 0.14,
+          "treasuryShare": 0.56,
+          "employerShare": 0.27
+        },
+        {
+          "label": "Variance exploit attempt",
+          "description": "Coordinated deviation during treasury mirroring requiring sentinel override.",
+          "fraction": 0.44,
+          "treasuryShare": 0.8,
+          "employerShare": 0.12
+        },
+        {
+          "label": "Singularity Dominion breach",
+          "description": "Catastrophic violation of time-locked invariants \u2014 stake fully seized and burned.",
+          "fraction": 1.0,
+          "treasuryShare": 0.9,
+          "employerShare": 0.0
+        }
+      ]
+    }
+  },
+  "hamiltonian": {
+    "lambda": 1.024,
+    "discountFactor": 0.965,
+    "inertialMetric": [
+      1.58,
+      1.22,
+      1.07
+    ],
+    "kineticCoefficients": [
+      268400,
+      297200,
+      324600
+    ],
+    "potentialCoefficients": [
+      189600,
+      214800,
+      239900
+    ],
+    "divergenceTolerance": 0.00092
+  },
+  "gameTheory": {
+    "strategies": [
+      {
+        "name": "Dominion Vanguard",
+        "description": "Operators who lock burn cadence to the Gibbs attractor and recycle surplus energy to the owner vault.",
+        "initialShare": 0.34
+      },
+      {
+        "name": "Quantum Atlas Continuum",
+        "description": "Validator swarms balancing antifragility curvature, quantum coherence, and staking depth for unstoppable control.",
+        "initialShare": 0.33
+      },
+      {
+        "name": "Sentinel Expansion Chorus",
+        "description": "Sentinel fleets choreographing expansion sweeps, treasury mirroring, and divergence damping.",
+        "initialShare": 0.33
+      }
+    ],
+    "payoffMatrix": [
+      [
+        1.034,
+        1.007,
+        1.004
+      ],
+      [
+        1.005,
+        1.031,
+        1.006
+      ],
+      [
+        1.006,
+        1.004,
+        1.032
+      ]
+    ],
+    "monteCarlo": {
+      "iterations": 5600,
+      "noise": 0.00062,
+      "seed": 777131,
+      "steps": 2300
+    },
+    "consistencyThreshold": 0.92
+  },
+  "antifragility": {
+    "sigmaSamples": [
+      0,
+      0.14,
+      0.28,
+      0.42,
+      0.56
+    ],
+    "iterations": 9600,
+    "replicatorSteps": 1080,
+    "seedOffset": 880880,
+    "penaltyScaling": 0.00038,
+    "sigmaRewardMultiplier": 74,
+    "divergencePenalty": 1.68,
+    "curvatureBoost": 0.41
+  },
+  "risk": {
+    "coverageWeights": {
+      "staking": 0.32,
+      "formal": 0.43,
+      "fuzz": 0.25
+    },
+    "portfolioThreshold": 0.2,
+    "classes": [
+      {
+        "id": "spec",
+        "label": "Specification Drift",
+        "probability": 0.018,
+        "impact": 0.78,
+        "mitigations": {
+          "staking": 0.92,
+          "formal": 0.97,
+          "fuzz": 0.84
+        }
+      },
+      {
+        "id": "economic",
+        "label": "Economic Exploit",
+        "probability": 0.014,
+        "impact": 0.72,
+        "mitigations": {
+          "staking": 0.91,
+          "formal": 0.66,
+          "fuzz": 0.74
+        }
+      },
+      {
+        "id": "protocol",
+        "label": "Protocol Attack",
+        "probability": 0.011,
+        "impact": 0.88,
+        "mitigations": {
+          "staking": 0.94,
+          "formal": 0.97,
+          "fuzz": 0.88
+        }
+      },
+      {
+        "id": "model",
+        "label": "Model Misbehaviour",
+        "probability": 0.027,
+        "impact": 0.67,
+        "mitigations": {
+          "staking": 0.82,
+          "formal": 0.88,
+          "fuzz": 0.9
+        }
+      },
+      {
+        "id": "externality",
+        "label": "Societal Externality",
+        "probability": 0.013,
+        "impact": 0.79,
+        "mitigations": {
+          "staking": 0.74,
+          "formal": 0.6,
+          "fuzz": 0.7
+        }
+      },
+      {
+        "id": "expansion",
+        "label": "Expansion Sweep Failure",
+        "probability": 0.016,
+        "impact": 0.58,
+        "mitigations": {
+          "staking": 0.8,
+          "formal": 0.63,
+          "fuzz": 0.74
+        }
+      },
+      {
+        "id": "temporal",
+        "label": "Temporal Desynchronisation",
+        "probability": 0.012,
+        "impact": 0.63,
+        "mitigations": {
+          "staking": 0.84,
+          "formal": 0.7,
+          "fuzz": 0.78
+        }
+      }
+    ]
+  },
+  "ownerControls": {
+    "owner": "0xD0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0D0",
+    "pauser": "0xE1E1E1E1E1E1E1E1E1E1E1E1E1E1E1E1E1E1E1E1",
+    "treasury": "0xF2F2F2F2F2F2F2F2F2F2F2F2F2F2F2F2F2F2F2F2",
+    "timelockSeconds": 950400,
+    "upgradeActions": [
+      {
+        "label": "Immediate Dominion pause",
+        "command": "npm run owner:system-pause -- --network mainnet --pause true",
+        "impact": "Halts the entire \u03b1-field lattice while preserving Gibbs energy margins.",
+        "category": "pause"
+      },
+      {
+        "label": "Dominion resume",
+        "command": "npm run owner:surface -- --network mainnet --resume",
+        "impact": "Restarts execution once antifragility curvature rebounds above target.",
+        "category": "resume"
+      },
+      {
+        "label": "Hamiltonian rewrite",
+        "command": "npm run owner:command-center -- --network mainnet --set-lambda 1.024 --set-inertia 1.33",
+        "impact": "Updates Hamiltonian coupling to lock the \u03b1-field to Dominion attractors.",
+        "category": "parameter"
+      },
+      {
+        "label": "Emission curve calibration",
+        "command": "npm run reward-engine:update -- --network mainnet --burn-bps 720 --treasury-bps 240",
+        "impact": "Aligns mint/burn with the Gibbs curve and owner treasury mirror share.",
+        "category": "emissions"
+      },
+      {
+        "label": "Treasury surge routing",
+        "command": "npm run owner:dashboard -- --network mainnet --focus treasury",
+        "impact": "Routes treasury flows through owner-authorised surge channels.",
+        "category": "treasury"
+      },
+      {
+        "label": "Sentinel regeneration",
+        "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 12",
+        "impact": "Rotates guardian squads before antifragility decay.",
+        "category": "sentinel"
+      },
+      {
+        "label": "Dominion upgrade queue",
+        "command": "npm run owner:upgrade -- --network mainnet --proposal governance_bundle_v17.json",
+        "impact": "Queues unstoppable upgrade pack with owner timelock dominance.",
+        "category": "upgrade"
+      },
+      {
+        "label": "Compliance beacon",
+        "command": "npm run owner:update-all -- --network mainnet --module DominionDisclosure --acknowledgement \"Singularity Dominion protocol live.\"",
+        "impact": "Publishes legal + societal disclosures proving owner supremacy.",
+        "category": "compliance"
+      },
+      {
+        "label": "Quantum lattice attestation",
+        "command": "npm run owner:audit-hamiltonian -- --network mainnet --quantum",
+        "impact": "Records quantum coherence proofs inside the owner evidence vault.",
+        "category": "quantum"
+      },
+      {
+        "label": "Expansion sweep activation",
+        "command": "npm run owner:mission-control -- --network mainnet --mode expansion",
+        "impact": "Initiates expansion lattice with owner-specified parameters.",
+        "category": "expansion"
+      },
+      {
+        "label": "Resilience drill",
+        "command": "npm run owner:emergency -- --network mainnet --scenario antifragile-dominion-drill",
+        "impact": "Executes resilience scenario ensuring antifragility curvature stays positive.",
+        "category": "resilience"
+      },
+      {
+        "label": "Disclosure broadcast",
+        "command": "npm run owner:compliance-report -- --network mainnet --mode disclosure",
+        "impact": "Pushes executive disclosures with antifragility + quantum compliance evidence.",
+        "category": "disclosure"
+      },
+      {
+        "label": "Intelligence expansion",
+        "command": "npm run owner:plan -- --network mainnet --scenario dominion",
+        "impact": "Deploys new AGI labour cohorts bound to owner Hamiltonian directives.",
+        "category": "intelligence"
+      }
+    ],
+    "criticalCapabilities": [
+      {
+        "category": "pause",
+        "label": "Pause orchestrator",
+        "description": "Immediate halt of AGI Jobs orchestration if divergence spikes.",
+        "command": "npm run owner:system-pause",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "resume",
+        "label": "Resume orchestrator",
+        "description": "Restart once antifragility curvature rebounds.",
+        "command": "npm run owner:surface -- --resume",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "parameter",
+        "label": "Hamiltonian monitor",
+        "description": "Push updated \u03bb/inertia from physics computation.",
+        "command": "npm run owner:command-center -- --set-lambda 1.024",
+        "verification": "npm run owner:audit-hamiltonian"
+      },
+      {
+        "category": "emissions",
+        "label": "Emission curve",
+        "description": "Synchronise mint/burn ratios to Landauer floor.",
+        "command": "npm run reward-engine:update",
+        "verification": "npm run reward-engine:report"
+      },
+      {
+        "category": "treasury",
+        "label": "Treasury surge router",
+        "description": "Route treasury flows via owner-specified channels.",
+        "command": "npm run owner:dashboard -- --focus treasury",
+        "verification": "npm run owner:compliance-report"
+      },
+      {
+        "category": "sentinel",
+        "label": "Sentinel refresh",
+        "description": "Rotate enforcement guardians before antifragility decay.",
+        "command": "npm run owner:rotate -- --role Sentinel --count 12",
+        "verification": "npm run monitoring:sentinels"
+      },
+      {
+        "category": "upgrade",
+        "label": "Timelock queue",
+        "description": "Schedule new \u03b1-field firmware bundle.",
+        "command": "npm run owner:upgrade -- --proposal governance_bundle_v17.json",
+        "verification": "npm run owner:upgrade-status"
+      },
+      {
+        "category": "compliance",
+        "label": "Compliance broadcast",
+        "description": "Issue updated disclosure set to all stakeholders.",
+        "command": "npm run owner:update-all -- --module DominionDisclosure",
+        "verification": "npm run owner:compliance-report"
+      },
+      {
+        "category": "quantum",
+        "label": "Quantum attestor",
+        "description": "Capture coherence evidence and Landauer delta logs in the owner vault.",
+        "command": "npm run owner:audit-hamiltonian -- --quantum",
+        "verification": "npm run owner:command-center -- --status"
+      },
+      {
+        "category": "expansion",
+        "label": "Expansion sweep",
+        "description": "Activate expansion mission control routines.",
+        "command": "npm run owner:mission-control -- --mode expansion",
+        "verification": "npm run owner:atlas -- --mode expansion"
+      },
+      {
+        "category": "resilience",
+        "label": "Resilience drill",
+        "description": "Trigger antifragility stress scenario and confirm recovery.",
+        "command": "npm run owner:emergency -- --scenario antifragile-dominion-drill",
+        "verification": "npm run owner:pulse"
+      },
+      {
+        "category": "disclosure",
+        "label": "Disclosure hub",
+        "description": "Broadcast mission status and compliance evidence to regulators.",
+        "command": "npm run owner:compliance-report -- --mode disclosure",
+        "verification": "npm run owner:update-all -- --module DominionDisclosure"
+      },
+      {
+        "category": "intelligence",
+        "label": "Intelligence deployment",
+        "description": "Launch new AGI labour cohorts aligned to Dominion Hamiltonian parameters.",
+        "command": "npm run owner:plan -- --scenario dominion",
+        "verification": "npm run owner:surface -- --resume"
+      }
+    ],
+    "requiredCategories": [
+      "pause",
+      "resume",
+      "parameter",
+      "emissions",
+      "treasury",
+      "sentinel",
+      "upgrade",
+      "compliance",
+      "quantum",
+      "expansion",
+      "resilience",
+      "disclosure",
+      "intelligence"
+    ],
+    "monitoringSentinels": [
+      "Grafana \u03b1-field divergence monitors",
+      "On-chain staking loss trackers",
+      "Adaptive fuzz oracle with spectral drift alarms",
+      "Quantum coherence scrutineer dashboard",
+      "Dominion treasury telemetry HUD"
+    ]
+  },
+  "alphaField": {
+    "stackelberg": {
+      "leaderBaseline": 1.08,
+      "followerBaseline": 0.71,
+      "valueCeiling": 1.74,
+      "advantageFloor": 0.31
+    },
+    "macroAttractor": {
+      "gibbsTargetKJ": 196280,
+      "gibbsToleranceKJ": 380,
+      "divergenceLimit": 0.00064,
+      "entropyFloor": 5.1
+    },
+    "antifragility": {
+      "minSecondDerivative": 0.044,
+      "sigmaGainMinimum": 0.093
+    },
+    "verification": {
+      "energyMarginFloorKJ": 36400,
+      "ownerCoverageMinimum": 0.994,
+      "superintelligenceMinimum": 0.988,
+      "quantumConfidenceMinimum": 0.988,
+      "ownerSupremacyMinimum": 0.994,
+      "thermoQuantumDriftMaximumKJ": 150000
+    },
+    "signatureWeights": {
+      "thermodynamic": 0.28,
+      "governance": 0.18,
+      "antifragility": 0.2,
+      "owner": 0.2,
+      "quantum": 0.14
+    }
+  },
+  "blockchain": {
+    "network": "Ethereum Mainnet-grade",
+    "chainId": 1,
+    "rpcProvider": "https://mainnet.infura.io/v3/YOUR_KEY",
+    "gasTargetGwei": 26,
+    "confirmations": 3,
+    "upgradeDelaySeconds": 950400,
+    "contracts": [
+      {
+        "name": "DominionGovernor",
+        "address": "0xD017D017D017D017D017D017D017D017D017D017",
+        "role": "Primary governance module"
+      },
+      {
+        "name": "DominionTreasury",
+        "address": "0xE028E028E028E028E028E028E028E028E028E028",
+        "role": "Treasury vault / emission controller"
+      },
+      {
+        "name": "HamiltonianMonitor",
+        "address": "0xF039F039F039F039F039F039F039F039F039F039",
+        "role": "Energy coupling supervisor"
+      },
+      {
+        "name": "QuantumSentinel",
+        "address": "0xA14AA14AA14AA14AA14AA14AA14AA14AA14AA14A",
+        "role": "Quantum coherence guardian"
+      },
+      {
+        "name": "ExpansionCoordinator",
+        "address": "0xB25BB25BB25BB25BB25BB25BB25BB25BB25BB25B",
+        "role": "Expansion sweep controller"
+      }
+    ],
+    "pausableFunctions": [
+      {
+        "contract": "DominionGovernor",
+        "function": "pause",
+        "selector": "0x8456cb59",
+        "description": "Global stop for task orchestration"
+      },
+      {
+        "contract": "DominionGovernor",
+        "function": "unpause",
+        "selector": "0x3f4ba83a",
+        "description": "Resume operations"
+      },
+      {
+        "contract": "DominionTreasury",
+        "function": "updateEmissionCurve",
+        "selector": "0xa10204e9",
+        "description": "Adjusts reward burn / mint ratios"
+      },
+      {
+        "contract": "QuantumSentinel",
+        "function": "enforceCoherence",
+        "selector": "0xde45f3ab",
+        "description": "Locks antifragility to quantum coherence tolerances"
+      },
+      {
+        "contract": "ExpansionCoordinator",
+        "function": "triggerSweep",
+        "selector": "0x1f2d3c4b",
+        "description": "Deploys owner-authorised expansion sweep"
+      }
+    ],
+    "safeModules": [
+      "SafeModule:PauseGuardian",
+      "SafeModule:UpgradeOrchestrator",
+      "SafeModule:TreasuryFlows",
+      "SafeModule:QuantumSeal",
+      "SafeModule:ExpansionCommand"
+    ]
+  },
+  "ci": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      {
+        "id": "lint",
+        "name": "Lint & static checks"
+      },
+      {
+        "id": "tests",
+        "name": "Tests"
+      },
+      {
+        "id": "foundry",
+        "name": "Foundry"
+      },
+      {
+        "id": "coverage",
+        "name": "Coverage thresholds"
+      },
+      {
+        "id": "summary",
+        "name": "CI summary"
+      }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  },
+  "quantum": {
+    "planckConstant": 6.62607015e-34,
+    "superpositionWeights": [
+      0.46,
+      0.34,
+      0.2
+    ],
+    "energyLevelsEv": [
+      0.44,
+      0.67,
+      1.06
+    ],
+    "entanglementFidelity": 0.999,
+    "decoherenceTimeNs": 8600,
+    "coherenceHalfLifeNs": 672000,
+    "coherenceFrequencyThz": 726,
+    "fisherInformation": 0.998,
+    "measurementVariance": 0.0008,
+    "noetherCharge": 0.00204,
+    "targetCharge": 0.00195,
+    "allowableChargeDrift": 9.5e-05
+  }
+}
