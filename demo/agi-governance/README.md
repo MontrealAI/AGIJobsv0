@@ -25,6 +25,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 | [`scripts/validateReport.ts`](scripts/validateReport.ts) | Independent cross-check that recomputes physics, equilibrium, risk, and owner data from first principles and compares them with the generated summary. |
 | [`reports/`](reports) | Generated artefacts (`governance-demo-report.md`, `ci-verification.json`, etc.) are written here so they can be archived from CI. |
 | [`reports/governance-demo-dashboard.html`](reports/governance-demo-dashboard.html) | Immersive, mermaid-rich web console that renders the mission as an interactive UI for non-technical owners. |
+| [`reports/governance-demo-superintelligence.md`](reports/governance-demo-superintelligence.md) | Superintelligence sentinel dossier with dominance metrics, unstoppable confidence, and mermaid control lattice. |
 | [`alpha-v15/`](alpha-v15) | OmegaSovereign α-field v15 mission pack with expansion governance, resilience drills, and the most aggressive physics/game-theory instrumentation yet. |
 | [`alpha-v14/`](alpha-v14) | HyperSovereign α-field v14 mission pack with unstoppable owner supremacy, quantum lattice instrumentation, and CI hardening. |
 | [`alpha-v13/`](alpha-v13) | Self-contained α-field v13 mission pack derived from the governance paper; includes its own manifest, scripts, and runbook for non-technical execution. |
@@ -50,6 +51,14 @@ The command generates `reports/governance-demo-report.md` with:
 10. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
 11. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
 12. **Grandiose mermaid visualisations** (energy → governance flowchart, quantum lattice, alpha-field mindmap, antifragility curve, owner command sequence, residual-risk pie) embedded directly in the Markdown dossier.
+
+Then elevate the dossier with the **Superintelligence Sentinel**:
+
+```bash
+npm run demo:agi-governance:superintelligence
+```
+
+This step performs a triple-method cross-check of the superintelligence index, recomputes owner pause/upgrade/treasury authority coverage, reconstructs the thermodynamic ↔ quantum harmony, and writes `reports/governance-demo-superintelligence.{json,md}`. The sentinel proves that the Landauer-aligned Hamiltonian, antifragility lift, and owner supremacy lattice combine into an unstoppable dominance field with quantified “capital realignment” potential.
 
 Then confirm the dossier by replaying all analytics from scratch:
 
@@ -91,7 +100,7 @@ When you need the entire drill to run unattended—from dossier generation throu
 npm run demo:agi-governance:full
 ```
 
-The command writes `reports/governance-demo-full-run.json` and `.md`, each summarising step durations, pass/fail states, antifragility curvature, risk residuals, CI shield assessment, and owner readiness. Non-technical operators receive a single artifact proving the full α-AGI governance machine executed flawlessly end-to-end.
+The command writes `reports/governance-demo-full-run.json` and `.md`, each summarising step durations, pass/fail states, antifragility curvature, risk residuals, CI shield assessment, **superintelligence dominance**, unstoppable confidence, and owner readiness. Non-technical operators receive a single artifact proving the full α-AGI governance machine executed flawlessly end-to-end with the superintelligence sentinel embedded.
 
 ## Empowering non-technical operators
 

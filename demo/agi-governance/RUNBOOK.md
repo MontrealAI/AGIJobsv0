@@ -86,7 +86,24 @@ This orchestrates `owner:audit-hamiltonian`, `reward-engine:report`, `owner:upgr
 
 ---
 
-## 5. Launch the grandiose governance console
+## 5. Run the superintelligence sentinel (unstoppable proof)
+
+```bash
+npm run demo:agi-governance:superintelligence
+```
+
+Outputs `reports/governance-demo-superintelligence.json` and `.md` featuring:
+
+- Triple-method verification of the superintelligence index (direct summary, recomputed manifest, hybrid physics/game-theory synthesis) with drift alerts if deviation exceeds 1.5%.
+- Owner pause/upgrade/treasury authority coverage with automation + verification scoring and CI shield confidence reconstruction.
+- Thermodynamic ↔ quantum harmony analysis, antifragility lift, dominance potential, capital realignment potential, and unstoppable confidence.
+- A grand mermaid flowchart showing free-energy → dominance → owner command loops and feedback alignment.
+
+This sentinel is the moment you prove the platform is the civilisation-scale intelligence engine the mission promised.
+
+---
+
+## 6. Launch the grandiose governance console
 
 ```bash
 open demo/agi-governance/reports/governance-demo-dashboard.html  # macOS
@@ -111,11 +128,11 @@ To execute every governance drill—dossier generation, validation, CI verificat
 npm run demo:agi-governance:full
 ```
 
-This produces `reports/governance-demo-full-run.json` and `.md`, capturing step durations, antifragility curvature, residual risk, CI shield verdicts, and owner readiness. Use the Markdown artifact when you need a single, board-ready proof that the entire α-AGI governance system executed without manual intervention.
+This produces `reports/governance-demo-full-run.json` and `.md`, capturing step durations, antifragility curvature, residual risk, CI shield verdicts, superintelligence dominance, unstoppable confidence, and owner readiness. Use the Markdown artifact when you need a single, board-ready proof that the entire α-AGI governance system executed without manual intervention.
 
 ---
 
-## 6. Execute on-chain owner controls (optional live drill)
+## 7. Execute on-chain owner controls (optional live drill)
 
 Each command below can be run via the CLI, Safe transaction builder, or Etherscan write interface. Replace placeholder addresses with your deployment addresses.
 
@@ -158,7 +175,7 @@ Document transaction hashes in `reports/governance-demo-report.md` under the “
 
 ---
 
-## 7. Formal verification hooks
+## 8. Formal verification hooks
 
 1. **Coverage remapping audit:**
    ```bash
@@ -180,7 +197,7 @@ Archive the resulting artefacts inside `reports/` alongside the governance dossi
 
 ---
 
-## 8. Evidence of execution
+## 9. Evidence of execution
 
 After each run:
 1. Commit the generated artefacts to a dedicated evidence branch or upload them to immutable storage (e.g., IPFS, Arweave).
