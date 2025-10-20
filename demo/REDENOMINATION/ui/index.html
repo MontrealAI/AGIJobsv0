@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGI Jobs v2 – Redenomination Superintelligence Control Room</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__badge">AGI Jobs v2 // Redenomination</div>
+      <h1>Superintelligence Redenomination Control Room</h1>
+      <p class="hero__subtitle">
+        Execute a global unit-of-account rebasing with governed autonomy. Load
+        <code>export/latest.json</code> to follow every command, checkpoint, and
+        invariant.
+      </p>
+      <div class="hero__cta">
+        <button id="refresh-button" type="button">🔁 Refresh playbook</button>
+        <span class="hero__note"
+          >Press the button or hit <kbd>R</kbd> to regenerate the plan.</span
+        >
+      </div>
+    </header>
+
+    <main id="app" aria-live="polite">
+      <section class="card">
+        <h2>Awaiting playbook…</h2>
+        <p>Run <code>npm run demo:redenomination:export</code> to generate data.</p>
+      </section>
+    </main>
+
+    <template id="governance-template">
+      <article class="card governance-card">
+        <h3 class="card__title"></h3>
+        <p class="governance-card__role"></p>
+        <code class="governance-card__address"></code>
+      </article>
+    </template>
+
+    <template id="timeline-template">
+      <article class="timeline-card">
+        <header>
+          <span class="timeline-card__id"></span>
+          <h3 class="timeline-card__title"></h3>
+        </header>
+        <p class="timeline-card__description"></p>
+        <ul class="timeline-card__checkpoints"></ul>
+        <div class="timeline-card__commands"></div>
+      </article>
+    </template>
+
+    <template id="module-template">
+      <article class="card module-card">
+        <header class="module-card__header">
+          <h3 class="module-card__title"></h3>
+          <p class="module-card__summary"></p>
+        </header>
+        <div class="module-card__body">
+          <section>
+            <h4>Before</h4>
+            <dl class="module-card__list module-card__list--before"></dl>
+          </section>
+          <section>
+            <h4>After</h4>
+            <dl class="module-card__list module-card__list--after"></dl>
+          </section>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

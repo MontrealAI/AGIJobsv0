@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "generatedAt": "2025-10-20T23:19:55.747Z",
+    "generator": "scripts/v2/redenominationPlaybook.ts",
+    "scenario": "Global AGI Jobs v2 redenomination and control drill",
+    "version": "1.0.0"
+  },
+  "token": {
+    "currentSymbol": "AGIALPHA",
+    "targetSymbol": "AGIΩ",
+    "currentDecimals": 18,
+    "targetDecimals": 18,
+    "redenominationFactor": "1000",
+    "supplyBefore": {
+      "raw": "42000000000000000000000000",
+      "tokens": "42000000.0",
+      "formatted": "42000000.0 AGIALPHA"
+    },
+    "supplyAfter": {
+      "raw": "42000000000000000000000",
+      "tokens": "42000.0",
+      "formatted": "42000.0 AGIΩ"
+    },
+    "rationale": [
+      "Stabilise headline token balances so that enterprise treasuries can reason about orders of magnitude without spreadsheets.",
+      "Keep validator and agent economic incentives untouched by automatically scaling every threshold, escrow, and reserve.",
+      "Demonstrate that AGI Jobs v2 governance can execute macro-level monetary operations in a single scripted run."
+    ]
+  },
+  "governance": [
+    {
+      "label": "Protocol owner",
+      "address": "Assign via config/owner-control.json",
+      "role": "Executes redenomination transactions and parameter updates"
+    },
+    {
+      "label": "Governance multisig",
+      "address": "Assign via governance safe",
+      "role": "Approves upgrades, pause actions, and emergency overrides"
+    },
+    {
+      "label": "stakeManager owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "jobRegistry owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "rewardEngine owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "thermostat owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "systemPause owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "feePool owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "platformRegistry owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "platformIncentives owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "jobRouter owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "validationModule owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "reputationEngine owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "disputeModule owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "arbitratorCommittee owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "certificateNFT owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "taxPolicy owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "identityRegistry owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    },
+    {
+      "label": "attestationRegistry owner",
+      "address": "Delegate before mainnet activation",
+      "role": "Direct module executor (post-governance approval)"
+    }
+  ],
+  "modules": {
+    "stakeManager": {
+      "summary": "Owner re-baselines staking guardrails so that existing economic thresholds remain invariant after redenominating the unit of account.",
+      "before": {
+        "minStake": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "agentRoleMinimum": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "validatorRoleMinimum": {
+          "raw": "1000000000000000000000",
+          "tokens": "1000.0",
+          "formatted": "1000.0 AGIALPHA"
+        },
+        "platformRoleMinimum": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "recommendationMin": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "recommendationMax": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "unbondingPeriodSeconds": "604800",
+        "feePct": "5",
+        "burnPct": "1",
+        "validatorRewardPct": "10"
+      },
+      "after": {
+        "minStake": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIALPHA"
+        },
+        "agentRoleMinimum": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIALPHA"
+        },
+        "validatorRoleMinimum": {
+          "raw": "1000000000000000000",
+          "tokens": "1.0",
+          "formatted": "1.0 AGIALPHA"
+        },
+        "platformRoleMinimum": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "recommendationMin": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIALPHA"
+        },
+        "recommendationMax": {
+          "raw": "0",
+          "tokens": "0.0",
+          "formatted": "0.0 AGIALPHA"
+        },
+        "unbondingPeriodSeconds": "604800",
+        "feePct": "5",
+        "burnPct": "1",
+        "validatorRewardPct": "10"
+      }
+    },
+    "jobRegistry": {
+      "summary": "Every job escrow, validator incentive, and employer commitment now references the redenominated token so treasury budgets stay constant in fiat terms.",
+      "before": {
+        "jobStake": {
+          "raw": "1000000000000000000",
+          "tokens": "1.0",
+          "formatted": "1.0 AGIALPHA"
+        },
+        "minAgentStake": {
+          "raw": "100000000000000000000",
+          "tokens": "100.0",
+          "formatted": "100.0 AGIALPHA"
+        },
+        "maxJobReward": {
+          "raw": "1000000000000000000000",
+          "tokens": "1000.0",
+          "formatted": "1000.0 AGIALPHA"
+        },
+        "jobDurationLimitSeconds": 604800,
+        "maxActiveJobsPerAgent": 3,
+        "feePct": "5",
+        "validatorRewardPct": "10"
+      },
+      "after": {
+        "jobStake": {
+          "raw": "1000000000000000",
+          "tokens": "0.001",
+          "formatted": "0.001 AGIALPHA"
+        },
+        "minAgentStake": {
+          "raw": "100000000000000000",
+          "tokens": "0.1",
+          "formatted": "0.1 AGIALPHA"
+        },
+        "maxJobReward": {
+          "raw": "1000000000000000000",
+          "tokens": "1.0",
+          "formatted": "1.0 AGIALPHA"
+        },
+        "jobDurationLimitSeconds": 604800,
+        "maxActiveJobsPerAgent": 3,
+        "feePct": "5",
+        "validatorRewardPct": "10"
+      }
+    },
+    "feePool": {
+      "summary": "Fee pool parameters remain constant – only balances migrate to the redenominated token and burn accounting scales by the conversion factor.",
+      "before": {
+        "burnPct": "1",
+        "treasuryPct": "4",
+        "validatorRewardPct": "10",
+        "note": "All fee pool balances migrate by dividing raw balances by 1000 to preserve purchasing power in AGIALPHA."
+      },
+      "after": {
+        "burnPct": "1",
+        "treasuryPct": "4",
+        "validatorRewardPct": "10",
+        "note": "Post-migration balances exist entirely in AGIALPHA at the new unit size."
+      }
+    }
+  },
+  "timeline": [
+    {
+      "id": "snapshot",
+      "title": "Capture current ledger and staking telemetry",
+      "description": "Run the sovereign owner snapshot to export all balances and validator stakes before the redenomination begins.",
+      "commands": [
+        "npm run owner:control:snapshot -- --format json --out reports/redenomination/pre.json"
+      ],
+      "checkpoints": [
+        "Confirm stake totals, validator quorum, and treasury balances at T-0.",
+        "Archive the export so auditors can reconcile supply rebasing."
+      ]
+    },
+    {
+      "id": "pause",
+      "title": "Enter supervised pause window",
+      "description": "The governance multisig invokes the emergency pause so no new jobs, stakes, or payouts execute during unit conversion.",
+      "commands": [
+        "npx hardhat run --no-compile scripts/v2/updateSystemPause.ts --network hardhat -- --mode pause"
+      ],
+      "checkpoints": [
+        "Registry, stake manager, and validation module emit Paused events.",
+        "Operations channel announces maintenance window to employers and agents."
+      ]
+    },
+    {
+      "id": "migrate-ledgers",
+      "title": "Re-denominate treasuries and vaults",
+      "description": "Treasury controllers divide each escrow, validator pool, and pending payout by the redenomination factor inside the migration script.",
+      "commands": [
+        "npx ts-node scripts/v2/redenominationPlaybook.ts --out demo/REDENOMINATION/ui/export/latest.json",
+        "node scripts/v2/ledger-migrate.js --factor 1000 --dry-run reports/redenomination/pre.json"
+      ],
+      "checkpoints": [
+        "Post-migration ledgers report identical fiat value when multiplied by the factor.",
+        "Burn vaults emit audit log entries describing every adjustment."
+      ]
+    },
+    {
+      "id": "update-parameters",
+      "title": "Apply redenominated guardrails",
+      "description": "Owners push new stake manager and job registry configs generated by this playbook, keeping every threshold coherent with the new unit.",
+      "commands": [
+        "npx hardhat run --no-compile scripts/v2/updateStakeManager.ts --network hardhat -- --config demo/REDENOMINATION/config/stake-manager-redenominated.json",
+        "npx hardhat run --no-compile scripts/v2/updateJobRegistry.ts --network hardhat -- --config demo/REDENOMINATION/config/job-registry-redenominated.json"
+      ],
+      "checkpoints": [
+        "Validator dashboards show the same required economic commitment as before.",
+        "Employer UI displays the redenominated token symbol and updated upper bounds."
+      ]
+    },
+    {
+      "id": "resume",
+      "title": "Resume production and broadcast certificate proof",
+      "description": "Governance lifts the pause, validators mint a ceremonial completion certificate NFT, and agents receive translated balances in their control room.",
+      "commands": [
+        "npx hardhat run --no-compile scripts/v2/updateSystemPause.ts --network hardhat -- --mode resume",
+        "npm run observability:redenomination -- --export reports/redenomination/post.json"
+      ],
+      "checkpoints": [
+        "No disputes pending from the pause window.",
+        "Monitoring dashboards show supplyBefore * factor ≈ supplyAfter."
+      ]
+    }
+  ],
+  "invariants": [
+    "Total on-chain supply multiplied by the redenomination factor equals the pre-migration supply within one wei tolerance.",
+    "Validator reputation weights remain unchanged; only nominal stake units shift.",
+    "All paused modules resume and emit Unpaused events signed by the governance multisig.",
+    "Certificate NFT metadata references the redenomination event hash for future audits."
+  ],
+  "verification": [
+    "npm run demo:redenomination:export",
+    "npm run demo:redenomination:control-room",
+    "npx hardhat test test/v2/redenomination.e2e.ts --network hardhat (optional owner E2E)"
+  ],
+  "references": [
+    "docs/AGI_Jobs_v0_Whitepaper_v2.md",
+    "docs/legacy/ProductionScaleAGIJobsPlatformSprintPlanv0.md",
+    "scripts/v2/updateStakeManager.ts",
+    "scripts/v2/updateJobRegistry.ts"
+  ]
+}

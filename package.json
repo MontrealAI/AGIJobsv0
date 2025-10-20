@@ -162,6 +162,8 @@
     "demo:agi-labor-market": "npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts",
     "demo:agi-labor-market:export": "AGI_JOBS_DEMO_EXPORT=demo/agi-labor-market-grand-demo/ui/export/latest.json npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts",
     "demo:agi-labor-market:control-room": "ts-node --transpile-only scripts/v2/launchAgiLaborMarketControlRoom.ts",
+    "demo:redenomination:export": "ts-node --transpile-only scripts/v2/redenominationPlaybook.ts",
+    "demo:redenomination:control-room": "ts-node --transpile-only scripts/v2/launchRedenominationControlRoom.ts",
     "demo:alpha-agi-insight-mark": "npx hardhat run --config demo/alpha-agi-insight-mark/hardhat.config.ts demo/alpha-agi-insight-mark/scripts/runDemo.ts",
     "demo:alpha-agi-insight-mark:ci": "AGIJOBS_DEMO_DRY_RUN=true npm run demo:alpha-agi-insight-mark",
     "test:alpha-agi-insight-mark": "npx hardhat test --config demo/alpha-agi-insight-mark/hardhat.config.ts",
