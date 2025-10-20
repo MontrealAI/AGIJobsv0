@@ -409,6 +409,11 @@ type OwnerMatrixCapability = {
   verificationStatus: OwnerMatrixCapabilityStatus;
 };
 
+type OwnerCapabilityStatusEntry = {
+  capability: OwnerControlCapability;
+  status: ReturnType<typeof ownerCapabilityStatus>;
+};
+
 type OwnerMatrixJson = {
   generatedAt: string;
   owner: string;
@@ -2073,6 +2078,79 @@ function escapeMarkdownCell(value: string): string {
   return value.replace(/\|/g, "\\|");
 }
 
+const OWNER_STATUS_PRIORITY: Record<OwnerMatrixCapabilityStatus, number> = {
+  available: 0,
+  manual: 1,
+  "missing-script": 2,
+  "not-configured": 3,
+  "missing-capability": 4,
+};
+
+function mergeOwnerStatus(
+  current: OwnerMatrixCapabilityStatus,
+  next: OwnerMatrixCapabilityStatus,
+): OwnerMatrixCapabilityStatus {
+  return OWNER_STATUS_PRIORITY[next] > OWNER_STATUS_PRIORITY[current] ? next : current;
+}
+
+function ownerMermaidClass(status: OwnerMatrixCapabilityStatus): string {
+  switch (status) {
+    case "available":
+      return "available";
+    case "manual":
+      return "manual";
+    case "missing-script":
+    case "not-configured":
+      return "gap";
+    case "missing-capability":
+    default:
+      return "critical";
+  }
+}
+
+function escapeMermaidLabelText(value: string): string {
+  return value
+    .replace(/["`]/g, "'")
+    .replace(/\[/g, "(")
+    .replace(/\]/g, ")")
+    .replace(/\{/g, "(")
+    .replace(/\}/g, ")");
+}
+
+function buildOwnerSupremacyGraph(
+  owner: OwnerControlReport,
+  categoryStatuses: Map<string, OwnerMatrixCapabilityStatus>,
+): string | null {
+  if (categoryStatuses.size === 0) {
+    return null;
+  }
+
+  const lines = [
+    "```mermaid",
+    "graph TD",
+    `  OWNER[Owner Supremacy\\n${escapeMermaidLabelText(owner.owner)}]:::owner`,
+  ];
+
+  let index = 0;
+  for (const [category, status] of categoryStatuses.entries()) {
+    const nodeId = `C${index}`;
+    const label = `${escapeMermaidLabelText(category)}\\n${ownerStatusIcon(status)} ${ownerStatusLabel(status)}`;
+    lines.push(`  OWNER --> ${nodeId}[${label}]:::${ownerMermaidClass(status)}`);
+    index += 1;
+  }
+
+  lines.push(
+    "  classDef owner fill:#0f172a,stroke:#a855f7,stroke-width:3px,color:#f8fafc;",
+    "  classDef available fill:#14532d,stroke:#22c55e,stroke-width:2px,color:#f0fdf4;",
+    "  classDef manual fill:#1e293b,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;",
+    "  classDef gap fill:#3b0764,stroke:#f97316,stroke-width:2px,color:#fde68a;",
+    "  classDef critical fill:#450a0a,stroke:#ef4444,stroke-width:2px,color:#fee2e2;",
+    "```",
+  );
+
+  return lines.join("\n");
+}
+
 function ownerCapabilityStatus(capability: OwnerControlCapability): {
   commandStatus: OwnerMatrixCapabilityStatus;
   verificationStatus: OwnerMatrixCapabilityStatus;
@@ -2188,12 +2266,15 @@ function ownerStatusLabel(status: OwnerMatrixCapabilityStatus): string {
 
 function buildOwnerMatrixMarkdown(bundle: ReportBundle): string {
   const { owner } = bundle;
+  const capabilityEntries: OwnerCapabilityStatusEntry[] = owner.capabilities.map((capability) => ({
+    capability,
+    status: ownerCapabilityStatus(capability),
+  }));
   const satisfied = owner.requiredCoverage.filter((item) => item.satisfied);
   const missing = owner.requiredCoverage.filter((item) => !item.satisfied);
 
-  const rows = owner.capabilities
-    .map((capability) => {
-      const status = ownerCapabilityStatus(capability);
+  const rows = capabilityEntries
+    .map(({ capability, status }) => {
       const commandCell = capability.scriptName ?? (capability.command.trim().length > 0 ? "manual" : "n/a");
       return `| ${escapeMarkdownCell(capability.category)} | ${escapeMarkdownCell(capability.label)} | ${escapeMarkdownCell(commandCell)} | ${
         ownerStatusIcon(status.commandStatus)
@@ -2206,6 +2287,24 @@ function buildOwnerMatrixMarkdown(bundle: ReportBundle): string {
   const sentinelList = owner.monitoringSentinels.length
     ? owner.monitoringSentinels.map((sentinel) => `- ${sentinel}`).join("\n")
     : "- (none configured)";
+
+  const categoryStatuses = new Map<string, OwnerMatrixCapabilityStatus>();
+  for (const entry of capabilityEntries) {
+    const combined = mergeOwnerStatus(entry.status.commandStatus, entry.status.verificationStatus);
+    const existing = categoryStatuses.get(entry.capability.category) ?? "available";
+    categoryStatuses.set(entry.capability.category, mergeOwnerStatus(existing, combined));
+  }
+
+  for (const coverage of owner.requiredCoverage) {
+    const existing = categoryStatuses.get(coverage.category);
+    if (existing === undefined) {
+      categoryStatuses.set(coverage.category, coverage.satisfied ? "manual" : "missing-capability");
+    } else if (!coverage.satisfied) {
+      categoryStatuses.set(coverage.category, mergeOwnerStatus(existing, "missing-script"));
+    }
+  }
+
+  const ownerGraph = buildOwnerSupremacyGraph(owner, categoryStatuses);
 
   const coverageLines = [
     `- Full coverage: ${owner.fullCoverage ? "✅" : "⚠️"}`,
@@ -2227,6 +2326,9 @@ function buildOwnerMatrixMarkdown(bundle: ReportBundle): string {
     `*Pauser:* ${owner.pauser}`,
     `*Treasury:* ${owner.treasury}`,
     `*Timelock:* ${owner.timelockSeconds} seconds (${secondsToHours(owner.timelockSeconds).toFixed(2)} hours)`,
+    "",
+    "## Owner Supremacy Graph",
+    ownerGraph ?? "_No owner governance capabilities declared._",
     "",
     "## Coverage",
     ...coverageLines,

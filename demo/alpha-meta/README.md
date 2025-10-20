@@ -84,7 +84,7 @@ Every branch is delivered through the generated dossier, dashboard, JSON summari
 | `alpha-meta-governance-validation.{json,md}` | Deterministic recomputation of every metric with Jarzynski, Hamiltonian, Jacobian, and owner coverage checks. |
 | `alpha-meta-ci-verification.json` | CI parity proof showing lint, tests, foundry, coverage, and summary guards enforced on `main`. |
 | `alpha-meta-owner-diagnostics.{json,md}` | Results from automated owner command scripts (Hamiltonian audit, reward engine report, upgrade queue status, compliance disclosure). |
-| `alpha-meta-owner-matrix.{json,md}` | Authoritative owner control matrix detailing every governance capability, script availability, and verification hook. |
+| `alpha-meta-owner-matrix.{json,md}` | Authoritative owner control matrix detailing every governance capability, script availability, verification hook, and a Mermaid "owner supremacy" graph highlighting category health. |
 | `alpha-meta-triangulation.{json,md}` | Independent cross-check (replicator, eigenvector, thermodynamics, Jarzynski) verifying the mission dossier with redundant solvers. |
 | `alpha-meta-full-run.{json,md}` | Timeline of the full pipeline with Mermaid timeline, metrics, triangulation status, and aggregated health verdict. |
 | `alpha-meta-manifest.json` | SHA-256 manifest covering the mission config and every dossier artefact produced by the run. |

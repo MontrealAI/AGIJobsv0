@@ -84,6 +84,8 @@ npm run demo:alpha-meta:owner
 
 The generated diagnostics Markdown lists each automation command, exit code, and JSON payload. Any warning or error is highlighted.
 
+The owner matrix Markdown now embeds an "Owner Supremacy" Mermaid graph that visualises which control categories are fully automated, manual, or require remediation. Treat any orange or red nodes as action items before approving production changes.
+
 ## 4. Submit a civilisation-scale mission
 
 From the Enterprise Portal:
