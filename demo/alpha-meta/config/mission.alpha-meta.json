@@ -1,0 +1,377 @@
+{
+  "meta": {
+    "version": "2.0.0-alpha",
+    "title": "Meta-Agentic α-Field Omnidominion",
+    "description": "Flagship alpha-meta rehearsal proving AGI Jobs v0 (v2) lets a non-technical owner marshal civilisation-scale AGI labour under total command."
+  },
+  "thermodynamics": {
+    "enthalpyKJ": 95510.842,
+    "entropyKJPerK": 5.214,
+    "operatingTemperatureK": 318,
+    "referenceTemperatureK": 300,
+    "bitsProcessed": 2400000000,
+    "burnRatePerBlock": 0.081,
+    "stakeBoltzmann": 1.380649e-23
+  },
+  "statisticalPhysics": {
+    "beta": 0.066,
+    "energyScaling": 148.2,
+    "toleranceKJ": 640,
+    "energyLevels": [
+      { "energy": 640, "degeneracy": 2 },
+      { "energy": 720, "degeneracy": 3 },
+      { "energy": 810, "degeneracy": 2 },
+      { "energy": 880, "degeneracy": 1 }
+    ]
+  },
+  "incentives": {
+    "mintRule": {
+      "eta": 0.97,
+      "deltaValue": 180000,
+      "treasuryMirrorShare": 0.68,
+      "tolerance": 0.008,
+      "rewardEngineShares": [
+        { "role": "Agent", "share": 0.6 },
+        { "role": "Validator", "share": 0.18 },
+        { "role": "Operator", "share": 0.17 },
+        { "role": "Employer", "share": 0.05 }
+      ]
+    },
+    "burnRule": {
+      "jobEscrow": 72000,
+      "burnBps": 520,
+      "treasuryBps": 260,
+      "employerBps": 220
+    },
+    "slashing": {
+      "stakeExample": 32000,
+      "minStake": {
+        "agent": 1800,
+        "validator": 5200,
+        "operator": 3600
+      },
+      "severities": [
+        {
+          "label": "Entropy ripple",
+          "description": "Correctable deviation with zero systemic impact.",
+          "fraction": 0.04,
+          "treasuryShare": 0.55,
+          "employerShare": 0.35
+        },
+        {
+          "label": "Hamiltonian fracture",
+          "description": "Material breach of energy covenant requiring restitution.",
+          "fraction": 0.22,
+          "treasuryShare": 0.78,
+          "employerShare": 0.22
+        },
+        {
+          "label": "Superposition attack",
+          "description": "Coordinated malicious strike triggering total slash.",
+          "fraction": 1.0,
+          "treasuryShare": 1.0,
+          "employerShare": 0.0
+        }
+      ]
+    }
+  },
+  "hamiltonian": {
+    "lambda": 0.965,
+    "discountFactor": 0.915,
+    "inertialMetric": [1.21, 1.02, 0.91],
+    "kineticCoefficients": [168500, 174100, 189400],
+    "potentialCoefficients": [112800, 118600, 129200],
+    "divergenceTolerance": 0.0008
+  },
+  "gameTheory": {
+    "strategies": [
+      {
+        "name": "Aurora-Orchestrator",
+        "description": "Nation-scale coalition executing planetary resilience work orders.",
+        "initialShare": 0.36
+      },
+      {
+        "name": "Quantum-Guild",
+        "description": "Wallet-governed think-tank arbitraging Hamiltonian free-energy.",
+        "initialShare": 0.33
+      },
+      {
+        "name": "Sentinel-Vanguard",
+        "description": "Guardian validators enforcing antifragile pause + slash doctrine.",
+        "initialShare": 0.31
+      }
+    ],
+    "payoffMatrix": [
+      [1.0, 1.08, 0.96],
+      [0.92, 1.0, 1.04],
+      [1.12, 0.94, 1.0]
+    ],
+    "monteCarlo": {
+      "iterations": 16000,
+      "noise": 0.018,
+      "seed": 987654,
+      "steps": 24
+    },
+    "consistencyThreshold": 0.015
+  },
+  "antifragility": {
+    "sigmaSamples": [0, 0.08, 0.16, 0.32, 0.48],
+    "iterations": 5200,
+    "replicatorSteps": 420,
+    "seedOffset": 12000,
+    "penaltyScaling": 0.0009,
+    "sigmaRewardMultiplier": 35,
+    "divergencePenalty": 1.35,
+    "curvatureBoost": 11
+  },
+  "risk": {
+    "coverageWeights": {
+      "staking": 0.38,
+      "formal": 0.42,
+      "fuzz": 0.2
+    },
+    "portfolioThreshold": 0.28,
+    "classes": [
+      {
+        "id": "R0",
+        "label": "Spec drift",
+        "probability": 0.24,
+        "impact": 0.82,
+        "mitigations": { "staking": 0.48, "formal": 0.72, "fuzz": 0.64 }
+      },
+      {
+        "id": "R1",
+        "label": "Treasury exploit",
+        "probability": 0.16,
+        "impact": 0.78,
+        "mitigations": { "staking": 0.84, "formal": 0.86, "fuzz": 0.72 }
+      },
+      {
+        "id": "R2",
+        "label": "Validator collusion",
+        "probability": 0.14,
+        "impact": 0.74,
+        "mitigations": { "staking": 0.66, "formal": 0.7, "fuzz": 0.68 }
+      },
+      {
+        "id": "R3",
+        "label": "Societal cascade",
+        "probability": 0.07,
+        "impact": 1.0,
+        "mitigations": { "staking": 0.44, "formal": 0.36, "fuzz": 0.34 }
+      }
+    ]
+  },
+  "alphaField": {
+    "stackelberg": {
+      "leaderBaseline": 7.9,
+      "followerBaseline": 7.1,
+      "valueCeiling": 10.4,
+      "advantageFloor": 0.62
+    },
+    "macroAttractor": {
+      "gibbsTargetKJ": 95600,
+      "gibbsToleranceKJ": 560,
+      "divergenceLimit": 0.0008,
+      "entropyFloor": 4.62
+    },
+    "antifragility": {
+      "minSecondDerivative": 0.11,
+      "sigmaGainMinimum": 0.16
+    },
+    "verification": {
+      "energyMarginFloorKJ": 90000,
+      "ownerCoverageMinimum": 0.98,
+      "superintelligenceMinimum": 0.88,
+      "quantumConfidenceMinimum": 0.79,
+      "ownerSupremacyMinimum": 0.985,
+      "thermoQuantumDriftMaximumKJ": 380
+    },
+    "signatureWeights": {
+      "thermodynamic": 0.25,
+      "governance": 0.24,
+      "antifragility": 0.2,
+      "owner": 0.19,
+      "quantum": 0.12
+    }
+  },
+  "ownerControls": {
+    "owner": "0x9999999999999999999999999999999999999999",
+    "pauser": "0x7777777777777777777777777777777777777777",
+    "treasury": "0x5555555555555555555555555555555555555555",
+    "timelockSeconds": 604800,
+    "upgradeActions": [
+      {
+        "label": "Prime the Astral Omnidominion OS",
+        "command": "npm run demo:agi-os:first-class -- --network mainnet --auto-yes",
+        "impact": "Deploys/refreshes the entire AGI Jobs constellation with owner keys pre-wired to pause, upgrade, and retune parameters.",
+        "category": "deployment"
+      },
+      {
+        "label": "Thermostat hyper-tuning",
+        "command": "npm run thermostat:update -- --network mainnet --target 318",
+        "impact": "Locks inflation temperature to the alpha-meta optimum computed in the dossier.",
+        "category": "parameter"
+      },
+      {
+        "label": "Reward engine flux alignment",
+        "command": "npm run reward-engine:update -- --network mainnet --burn-bps 520 --treasury-bps 260",
+        "impact": "Synchronises emissions with the Landauer-calibrated burn envelope.",
+        "category": "treasury"
+      },
+      {
+        "label": "Hamiltonian lattice rotation",
+        "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.965 --set-inertia 1.21",
+        "impact": "Re-aligns kinetic / potential coefficients to the antifragile saddle point.",
+        "category": "governance"
+      }
+    ],
+    "criticalCapabilities": [
+      {
+        "category": "pause",
+        "label": "Global master pause",
+        "description": "Immediate freeze of every AGI Jobs execution surface via owner guardian.",
+        "command": "npm run owner:system-pause -- --network mainnet --pause true",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "resume",
+        "label": "Reignite operations",
+        "description": "Restarts civilisation-scale labour flows post remediation.",
+        "command": "npm run owner:system-pause -- --network mainnet --pause false",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "parameter",
+        "label": "Thermostat delta",
+        "description": "Applies precision thermostat retune mirroring dossier envelope.",
+        "command": "npm run thermostat:update -- --network mainnet --target 318",
+        "verification": "npm run owner:parameters"
+      },
+      {
+        "category": "upgrade",
+        "label": "Timelocked upgrade bundle",
+        "description": "Queues protocol upgrade via timelock with deterministic execution window.",
+        "command": "npm run owner:upgrade -- --network mainnet --proposal alpha-meta-governance.json",
+        "verification": "npm run owner:upgrade-status"
+      },
+      {
+        "category": "treasury",
+        "label": "Reward curve alignment",
+        "description": "Executes reward engine reconfiguration to maintain free-energy balance.",
+        "command": "npm run reward-engine:update -- --network mainnet --burn-bps 520 --treasury-bps 260",
+        "verification": "npm run reward-engine:report"
+      },
+      {
+        "category": "sentinel",
+        "label": "Sentinel cohort rotation",
+        "description": "Refreshes antifragile guardian roster under owner mandate.",
+        "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 5",
+        "verification": "npm run monitoring:sentinels"
+      },
+      {
+        "category": "compliance",
+        "label": "Regulatory proclamation",
+        "description": "Publishes updated covenant + regulatory acknowledgement to all agents.",
+        "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept alpha-meta covenant.\"",
+        "verification": "npm run owner:compliance-report"
+      }
+    ],
+    "requiredCategories": [
+      "pause",
+      "resume",
+      "parameter",
+      "upgrade",
+      "treasury",
+      "sentinel",
+      "compliance",
+      "deployment"
+    ],
+    "monitoringSentinels": [
+      "Grafana alpha-meta dashboards with Gibbs margin alerts",
+      "Forta guardian scanning pause + upgrade authorisations",
+      "Spectral fuzz sentry watching thermostat + reward engine diffs"
+    ]
+  },
+  "quantum": {
+    "planckConstant": 6.62607015e-34,
+    "superpositionWeights": [0.58, 0.29, 0.13],
+    "energyLevelsEv": [0.24, 0.41, 0.63],
+    "entanglementFidelity": 0.988,
+    "decoherenceTimeNs": 5200,
+    "coherenceHalfLifeNs": 10100,
+    "coherenceFrequencyThz": 568,
+    "fisherInformation": 0.97,
+    "measurementVariance": 0.0019,
+    "noetherCharge": 0.00195,
+    "targetCharge": 0.00188,
+    "allowableChargeDrift": 0.0001
+  },
+  "blockchain": {
+    "network": "Ethereum mainnet-grade",
+    "chainId": 1,
+    "rpcProvider": "https://mainnet.infura.io/v3/YOUR_KEY",
+    "gasTargetGwei": 27,
+    "confirmations": 3,
+    "upgradeDelaySeconds": 604800,
+    "contracts": [
+      {
+        "name": "AGIJobsGovernor",
+        "address": "0x1111111111111111111111111111111111111111",
+        "role": "Primary governance module"
+      },
+      {
+        "name": "AGIJobsTreasury",
+        "address": "0x2222222222222222222222222222222222222222",
+        "role": "Treasury vault / emission controller"
+      },
+      {
+        "name": "HamiltonianMonitor",
+        "address": "0x3333333333333333333333333333333333333333",
+        "role": "Energy coupling supervisor"
+      },
+      {
+        "name": "SystemPause",
+        "address": "0x4444444444444444444444444444444444444444",
+        "role": "Emergency pause guardian"
+      }
+    ],
+    "pausableFunctions": [
+      {
+        "contract": "SystemPause",
+        "function": "pause",
+        "selector": "0x8456cb59",
+        "description": "Global stop for task orchestration"
+      },
+      {
+        "contract": "SystemPause",
+        "function": "unpause",
+        "selector": "0x3f4ba83a",
+        "description": "Resume operations"
+      },
+      {
+        "contract": "AGIJobsTreasury",
+        "function": "updateEmissionCurve",
+        "selector": "0xa10204e9",
+        "description": "Adjust reward burn / mint ratios"
+      }
+    ],
+    "safeModules": [
+      "SafeModule:PauseGuardian",
+      "SafeModule:UpgradeOrchestrator",
+      "SafeModule:TreasuryFlows"
+    ]
+  },
+  "ci": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      { "id": "lint", "name": "Lint & static checks" },
+      { "id": "tests", "name": "Tests" },
+      { "id": "foundry", "name": "Foundry" },
+      { "id": "coverage", "name": "Coverage thresholds" },
+      { "id": "summary", "name": "CI summary" }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  }
+}
