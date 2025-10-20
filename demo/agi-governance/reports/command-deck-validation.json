@@ -1,0 +1,398 @@
+{
+  "generatedAt": "2025-10-20T00:44:56.645Z",
+  "summaryTimestamp": "2025-10-20T00:44:48.746Z",
+  "missionVersion": "2.0.0",
+  "results": [
+    {
+      "id": "thermo:gibbs",
+      "description": "Gibbs free energy consistency",
+      "passed": true,
+      "details": "expected 83016.107956 vs actual 83016.107956 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "thermo:landauer",
+      "description": "Landauer limit reproduction",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "stat:partition",
+      "description": "Partition function cross-check",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "stat:free-energy",
+      "description": "Statistical free energy",
+      "passed": true,
+      "details": "expected 74103.801194 vs actual 74103.801194 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "jarzynski:log-expectation",
+      "description": "Jarzynski log expectation",
+      "passed": true,
+      "details": "expected -38.122076 vs actual -38.122076 (Δ=0.000000, tol=0.827605)",
+      "delta": 0,
+      "tolerance": 0.8276052398487026
+    },
+    {
+      "id": "jarzynski:log-theoretical",
+      "description": "Jarzynski log theoretical bound",
+      "passed": true,
+      "details": "expected -41.380262 vs actual -41.380262 (Δ=0.000000, tol=0.827605)",
+      "delta": 0,
+      "tolerance": 0.8276052398487026
+    },
+    {
+      "id": "jarzynski:satisfied",
+      "description": "Jarzynski tolerance satisfied",
+      "passed": true,
+      "details": "expected false, actual false"
+    },
+    {
+      "id": "hamiltonian:value",
+      "description": "Hamiltonian energy",
+      "passed": true,
+      "details": "expected 34149286130.260849 vs actual 34149286130.260849 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "equilibrium:replicator",
+      "description": "Replicator equilibrium vector",
+      "passed": true,
+      "details": "max Δ=0.000000 (tol=0.000001) | expected=0.3333, 0.3333, 0.3333 actual=0.3333, 0.3333, 0.3333",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "equilibrium:closed-form",
+      "description": "Closed-form equilibrium vector",
+      "passed": true,
+      "details": "max Δ=0.000000 (tol=0.000001) | expected=0.3333, 0.3333, 0.3333 actual=0.3333, 0.3333, 0.3333",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "equilibrium:max-deviation",
+      "description": "Maximum deviation across methods",
+      "passed": true,
+      "details": "expected 0.134122 vs actual 0.134122 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "equilibrium:closed-form-payoff",
+      "description": "Closed-form equilibrium payoff",
+      "passed": true,
+      "details": "expected 1.000000 vs actual 1.000000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "equilibrium:kkt-residuals",
+      "description": "KKT payoff residuals",
+      "passed": true,
+      "details": "max Δ=0.000000 (tol=0.000001) | expected=0.0000, 0.0000, 0.0000 actual=0.0000, 0.0000, 0.0000",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "equilibrium:kkt-max",
+      "description": "Maximum KKT residual",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "equilibrium:simplex",
+      "description": "Probability simplex residual",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "equilibrium:kkt-certified",
+      "description": "KKT conditions certified",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "antifragility:curvature",
+      "description": "Antifragility quadratic curvature",
+      "passed": true,
+      "details": "expected 2.359403 vs actual 2.359403 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:stackelberg-advantage",
+      "description": "Stackelberg advantage",
+      "passed": true,
+      "details": "expected 0.600000 vs actual 0.600000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:gibbs-delta",
+      "description": "Gibbs delta",
+      "passed": true,
+      "details": "expected 11816.107956 vs actual 11816.107956 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:sigma-gain",
+      "description": "Sigma welfare gain",
+      "passed": true,
+      "details": "expected 0.517626 vs actual 0.517626 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:confidence",
+      "description": "Alpha-field confidence score",
+      "passed": true,
+      "details": "expected 0.764295 vs actual 0.764295 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:stackelberg-bound",
+      "description": "Stackelberg advantage within bound",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:stackelberg-floor",
+      "description": "Stackelberg advantage floor satisfied",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:gibbs-within",
+      "description": "Gibbs delta within tolerance",
+      "passed": true,
+      "details": "expected false, actual false"
+    },
+    {
+      "id": "alpha-field:divergence",
+      "description": "Equilibrium divergence within limit",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:entropy",
+      "description": "Entropy above floor",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:antifragility",
+      "description": "Antifragility curvature meets minimum",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:sigma",
+      "description": "Sigma gain satisfied",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:owner-coverage",
+      "description": "Owner coverage minimum met",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:energy-margin",
+      "description": "Energy margin floor met",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:quantum-confidence-floor",
+      "description": "Quantum confidence floor satisfied",
+      "passed": true,
+      "details": "expected false, actual false"
+    },
+    {
+      "id": "quantum:coherence",
+      "description": "Quantum coherence confidence",
+      "passed": true,
+      "details": "expected 0.820884 vs actual 0.820884 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "quantum:thermo-delta",
+      "description": "Quantum free-energy delta",
+      "passed": true,
+      "details": "expected 83016.107956 vs actual 83016.107956 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "quantum:charge-delta",
+      "description": "Noether charge delta",
+      "passed": true,
+      "details": "expected 0.000070 vs actual 0.000070 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "quantum:state-entropy",
+      "description": "Quantum state entropy",
+      "passed": true,
+      "details": "expected 1.287897 vs actual 1.287897 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "quantum:weight-sum",
+      "description": "Quantum weight sum delta",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000000)",
+      "delta": 0,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "quantum:charge-within",
+      "description": "Noether charge within tolerance",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "risk:portfolio",
+      "description": "Portfolio residual risk",
+      "passed": true,
+      "details": "expected 0.214295 vs actual 0.214295 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "incentives:mint",
+      "description": "Total minted tokens",
+      "passed": true,
+      "details": "expected 164500.000000 vs actual 164500.000000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "incentives:equality",
+      "description": "Agent ↔ treasury mint parity",
+      "passed": true,
+      "details": "expected 24675.000000 vs actual 24675.000000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "jacobian:analytic",
+      "description": "Jacobian analytic entries",
+      "passed": true,
+      "details": "max Δ=0.000000 (tol=0.000001) | expected=-0.3333, -0.3667, -0.3000, -0.3000, -0.3333, -0.3667, -0.3667, -0.3000, -0.3333 actual=-0.3333, -0.3667, -0.3000, -0.3000, -0.3333, -0.3667, -0.3667, -0.3000, -0.3333",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "jacobian:numeric",
+      "description": "Jacobian numeric entries",
+      "passed": true,
+      "details": "max Δ=0.000000 (tol=0.000001) | expected=0.0000, -0.0333, 0.0333, 0.0333, 0.0000, -0.0333, -0.0333, 0.0333, 0.0000 actual=0.0000, -0.0333, 0.0333, 0.0333, 0.0000, -0.0333, -0.0333, 0.0333, 0.0000",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "owner:full-coverage",
+      "description": "Owner capability coverage",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "owner:command-scripts",
+      "description": "Owner command scripts present",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "owner:verification-scripts",
+      "description": "Owner verification scripts present",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "owner:capability-map",
+      "description": "Owner capability presence parity",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "equilibrium:divergence",
+      "description": "Equilibrium divergence within mission tolerance",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "antifragility:positive-curvature",
+      "description": "Antifragility curvature positive",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "incentives:mirror-share",
+      "description": "Treasury mirror share matches agent share",
+      "passed": false,
+      "details": "expected true, actual false"
+    },
+    {
+      "id": "risk:within-bounds",
+      "description": "Risk portfolio within threshold",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "blockchain:safe-mainnet",
+      "description": "Blockchain configuration marked mainnet-safe",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "owner:address",
+      "description": "Owner address matches mission manifest",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "ci:workflow",
+      "description": "CI workflow label matches mission manifest",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
+      "id": "equilibrium:derivative-norm",
+      "description": "Replicator derivative norm",
+      "passed": true,
+      "details": "expected 0.000000 vs actual 0.000000 (Δ=0.000000, tol=0.000001)",
+      "delta": 7.401486830834378e-17,
+      "tolerance": 0.000001
+    }
+  ],
+  "totals": {
+    "passed": 53,
+    "failed": 1
+  },
+  "notes": [
+    "One or more validation checks exceeded tolerance. Inspect the report for details."
+  ]
+}

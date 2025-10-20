@@ -54,6 +54,15 @@ jobs:
       - name: Generate governance dossier
         run: npm run demo:agi-governance
 
+      - name: Generate command deck dossier
+        run: npm run demo:agi-governance:iconic
+
+      - name: Verify command deck CI shield
+        run: npm run demo:agi-governance:iconic:ci
+
+      - name: Aggregate command deck owner diagnostics
+        run: npm run demo:agi-governance:iconic:owner
+
       - name: Verify CI enforcement
         run: npm run demo:agi-governance:ci
 

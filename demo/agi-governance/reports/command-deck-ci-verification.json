@@ -1,0 +1,81 @@
+{
+  "ciConfig": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      {
+        "id": "lint",
+        "name": "Lint & static checks"
+      },
+      {
+        "id": "tests",
+        "name": "Tests"
+      },
+      {
+        "id": "foundry",
+        "name": "Foundry"
+      },
+      {
+        "id": "coverage",
+        "name": "Coverage thresholds"
+      },
+      {
+        "id": "summary",
+        "name": "CI summary"
+      },
+      {
+        "id": "invariants",
+        "name": "Invariant tests"
+      }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  },
+  "verification": {
+    "workflowNameMatches": true,
+    "concurrencyMatches": true,
+    "triggersIncludePush": true,
+    "triggersIncludePullRequest": true,
+    "triggersIncludeWorkflowDispatch": true,
+    "requiredJobsPresent": [
+      {
+        "id": "lint",
+        "name": "Lint & static checks",
+        "present": true,
+        "nameMatches": true
+      },
+      {
+        "id": "tests",
+        "name": "Tests",
+        "present": true,
+        "nameMatches": true
+      },
+      {
+        "id": "foundry",
+        "name": "Foundry",
+        "present": true,
+        "nameMatches": true
+      },
+      {
+        "id": "coverage",
+        "name": "Coverage thresholds",
+        "present": true,
+        "nameMatches": true
+      },
+      {
+        "id": "summary",
+        "name": "CI summary",
+        "present": true,
+        "nameMatches": true
+      },
+      {
+        "id": "invariants",
+        "name": "Invariant tests",
+        "present": true,
+        "nameMatches": true
+      }
+    ],
+    "coverageThreshold": 90,
+    "cancelInProgress": true,
+    "envCoverageMatches": true
+  }
+}

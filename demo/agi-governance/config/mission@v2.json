@@ -1,0 +1,488 @@
+{
+  "meta": {
+    "version": "2.0.0",
+    "title": "Solving \u03b1-AGI Governance Command Deck",
+    "description": "Command deck mission charter coupling Hamiltonian thermodynamics, Stackelberg guardrails, and antifragile validator orchestration for AGI Jobs v0 (v2)."
+  },
+  "thermodynamics": {
+    "enthalpyKJ": 84572.118412,
+    "entropyKJPerK": 4.987213,
+    "operatingTemperatureK": 312,
+    "referenceTemperatureK": 300,
+    "bitsProcessed": 2400000000,
+    "burnRatePerBlock": 0.0625,
+    "stakeBoltzmann": 1.380649e-23
+  },
+  "statisticalPhysics": {
+    "beta": 0.068,
+    "energyScaling": 136.42,
+    "toleranceKJ": 420,
+    "energyLevels": [
+      {
+        "energy": 560,
+        "degeneracy": 3
+      },
+      {
+        "energy": 610,
+        "degeneracy": 4
+      },
+      {
+        "energy": 710,
+        "degeneracy": 2
+      },
+      {
+        "energy": 880,
+        "degeneracy": 1
+      }
+    ]
+  },
+  "incentives": {
+    "mintRule": {
+      "eta": 0.94,
+      "deltaValue": 175000,
+      "treasuryMirrorShare": 0.7,
+      "tolerance": 0.01,
+      "rewardEngineShares": [
+        {
+          "role": "Agent",
+          "share": 0.55
+        },
+        {
+          "role": "Validator",
+          "share": 0.2
+        },
+        {
+          "role": "Operator",
+          "share": 0.2
+        },
+        {
+          "role": "Employer",
+          "share": 0.05
+        }
+      ]
+    },
+    "burnRule": {
+      "jobEscrow": 160000,
+      "burnBps": 600,
+      "treasuryBps": 200,
+      "employerBps": 200
+    },
+    "slashing": {
+      "stakeExample": 20000,
+      "minStake": {
+        "agent": 75000,
+        "validator": 22000,
+        "operator": 2600
+      },
+      "severities": [
+        {
+          "label": "Minor fault",
+          "description": "Performance lapse with limited downstream impact.",
+          "fraction": 0.05,
+          "treasuryShare": 0.6,
+          "employerShare": 0.3
+        },
+        {
+          "label": "Major fault",
+          "description": "Significant execution failure requiring restitution.",
+          "fraction": 0.25,
+          "treasuryShare": 0.75,
+          "employerShare": 0.25
+        },
+        {
+          "label": "Critical attack",
+          "description": "Malicious coordination breach triggering total slash.",
+          "fraction": 1.0,
+          "treasuryShare": 1.0,
+          "employerShare": 0.0
+        }
+      ]
+    }
+  },
+  "hamiltonian": {
+    "lambda": 1.42,
+    "discountFactor": 0.93,
+    "inertialMetric": [
+      1.12,
+      0.98,
+      0.87
+    ],
+    "kineticCoefficients": [
+      132000,
+      148500,
+      162200
+    ],
+    "potentialCoefficients": [
+      98500,
+      104200,
+      118600
+    ],
+    "divergenceTolerance": 0.0008
+  },
+  "gameTheory": {
+    "strategies": [
+      {
+        "name": "Pareto-Coop",
+        "description": "Stake-weighted cooperation that minimises governance divergence while sharing alpha rewards.",
+        "initialShare": 0.42
+      },
+      {
+        "name": "Thermo-Titan",
+        "description": "Aggressive Hamiltonian arbitrage focused on extracting free-energy residuals.",
+        "initialShare": 0.35
+      },
+      {
+        "name": "Sentinel-Tactician",
+        "description": "Guardian cohort enforcing certificates, pausing misbehaviour, and arbitraging slashing curves.",
+        "initialShare": 0.23
+      }
+    ],
+    "payoffMatrix": [
+      [
+        1.0,
+        0.9,
+        1.1
+      ],
+      [
+        1.1,
+        1.0,
+        0.9
+      ],
+      [
+        0.9,
+        1.1,
+        1.0
+      ]
+    ],
+    "monteCarlo": {
+      "iterations": 60000,
+      "noise": 0.02,
+      "seed": 424242
+    }
+  },
+  "antifragility": {
+    "sigmaSamples": [
+      0.0,
+      0.1,
+      0.18,
+      0.26,
+      0.32
+    ],
+    "iterations": 1800,
+    "replicatorSteps": 320,
+    "seedOffset": 9000,
+    "penaltyScaling": 0.001,
+    "sigmaRewardMultiplier": 1.24,
+    "divergencePenalty": 0.004,
+    "curvatureBoost": 1.18
+  },
+  "risk": {
+    "coverageWeights": {
+      "staking": 0.4,
+      "formal": 0.4,
+      "fuzz": 0.2
+    },
+    "portfolioThreshold": 0.22,
+    "classes": [
+      {
+        "id": "R0",
+        "label": "Specification drift",
+        "probability": 0.18,
+        "impact": 0.8,
+        "mitigations": {
+          "staking": 0.45,
+          "formal": 0.55,
+          "fuzz": 0.65
+        }
+      },
+      {
+        "id": "R1",
+        "label": "Economic exploit",
+        "probability": 0.18,
+        "impact": 0.75,
+        "mitigations": {
+          "staking": 0.8,
+          "formal": 0.82,
+          "fuzz": 0.75
+        }
+      },
+      {
+        "id": "R2",
+        "label": "Protocol attack",
+        "probability": 0.1,
+        "impact": 0.9,
+        "mitigations": {
+          "staking": 0.85,
+          "formal": 0.78,
+          "fuzz": 0.8
+        }
+      },
+      {
+        "id": "R3",
+        "label": "Model misbehaviour",
+        "probability": 0.25,
+        "impact": 0.65,
+        "mitigations": {
+          "staking": 0.6,
+          "formal": 0.75,
+          "fuzz": 0.65
+        }
+      },
+      {
+        "id": "R4",
+        "label": "Societal externality",
+        "probability": 0.08,
+        "impact": 1.0,
+        "mitigations": {
+          "staking": 0.45,
+          "formal": 0.35,
+          "fuzz": 0.35
+        }
+      }
+    ]
+  },
+  "alphaField": {
+    "stackelberg": {
+      "leaderBaseline": 7.4,
+      "followerBaseline": 6.8,
+      "valueCeiling": 10,
+      "advantageFloor": 0.5
+    },
+    "macroAttractor": {
+      "gibbsTargetKJ": 71200,
+      "gibbsToleranceKJ": 420,
+      "divergenceLimit": 0.001,
+      "entropyFloor": 4.05
+    },
+    "antifragility": {
+      "minSecondDerivative": 0.08,
+      "sigmaGainMinimum": 0.12
+    },
+    "verification": {
+      "energyMarginFloorKJ": 420,
+      "ownerCoverageMinimum": 1,
+      "superintelligenceMinimum": 0.97,
+      "quantumConfidenceMinimum": 0.92
+    },
+    "signatureWeights": {
+      "thermodynamic": 0.26,
+      "governance": 0.24,
+      "antifragility": 0.2,
+      "owner": 0.18,
+      "quantum": 0.12
+    }
+  },
+  "ownerControls": {
+    "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
+    "pauser": "0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
+    "treasury": "0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
+    "timelockSeconds": 604800,
+    "upgradeActions": [
+      {
+        "label": "Recalibrate Hamiltonian monitor",
+        "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
+        "impact": "Locks the energy coupling coefficient and inertial metric to the antifragile optimum computed in the dossier.",
+        "category": "parameter"
+      },
+      {
+        "label": "Adjust reward engine burn curve",
+        "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
+        "impact": "Aligns emission schedule with the Landauer-calibrated burn policy.",
+        "category": "treasury"
+      },
+      {
+        "label": "Rotate governance sentinels",
+        "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
+        "impact": "Refreshes slashing guardians while keeping owner override authority.",
+        "category": "sentinel"
+      },
+      {
+        "label": "Update tax policy disclosure",
+        "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
+        "impact": "Publishes the latest regulatory acknowledgement without touching business logic.",
+        "category": "compliance"
+      },
+      {
+        "label": "Deploy adaptive antifragility oracle",
+        "command": "npm run owner:mission-control -- --module antifragility --network mainnet",
+        "impact": "Upgrades stochastic perturbation controller with adaptive sigma targeting",
+        "category": "Antifragility"
+      }
+    ],
+    "criticalCapabilities": [
+      {
+        "category": "pause",
+        "label": "Global pause switch",
+        "description": "Immediate halt for the entire AGI Jobs execution surface via the owner guardian.",
+        "command": "npm run owner:system-pause -- --network mainnet --pause true",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "resume",
+        "label": "Resume operations",
+        "description": "Restores production flows after remediation and confirms health checks.",
+        "command": "npm run owner:system-pause -- --network mainnet --pause false",
+        "verification": "npm run owner:verify-control"
+      },
+      {
+        "category": "parameter",
+        "label": "Tune Hamiltonian parameters",
+        "description": "Applies Hamiltonian monitor adjustments to lock \u03bb and inertial metrics at the computed optimum.",
+        "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
+        "verification": "npm run owner:audit-hamiltonian"
+      },
+      {
+        "category": "treasury",
+        "label": "Reward engine burn curve",
+        "description": "Aligns mint/burn ratios with thermodynamic constraints and treasury splits.",
+        "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
+        "verification": "npm run reward-engine:report"
+      },
+      {
+        "category": "sentinel",
+        "label": "Sentinel rotation",
+        "description": "Refreshes enforcement guardians to maintain antifragile coverage.",
+        "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
+        "verification": "npm run monitoring:sentinels"
+      },
+      {
+        "category": "upgrade",
+        "label": "Timelocked upgrade queue",
+        "description": "Queues upgrade bundle into the timelock for deterministic rollout.",
+        "command": "npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json",
+        "verification": "npm run owner:upgrade-status"
+      },
+      {
+        "category": "compliance",
+        "label": "Regulatory disclosure",
+        "description": "Publishes mandatory statements to participants and regulators.",
+        "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
+        "verification": "npm run owner:compliance-report"
+      },
+      {
+        "category": "Quantum assurance",
+        "label": "Regenerate thermodynamic quantum margin",
+        "description": "Runs quantum thermodynamic auditor with Hamiltonian diff trace.",
+        "command": "npm run thermodynamics:report -- --network mainnet",
+        "verification": "Checks quantumChargeWithinTolerance \u2265 mission.alphaField.verification.quantumConfidenceMinimum"
+      }
+    ],
+    "requiredCategories": [
+      "pause",
+      "resume",
+      "parameter",
+      "treasury",
+      "sentinel",
+      "upgrade",
+      "compliance"
+    ],
+    "monitoringSentinels": [
+      "Grafana circuit-breakers watching governance divergence",
+      "On-chain staking slash monitors",
+      "Adaptive fuzz oracle with spectral drift alerts"
+    ]
+  },
+  "quantum": {
+    "planckConstant": 6.62607015e-34,
+    "superpositionWeights": [
+      0.62,
+      0.27,
+      0.11
+    ],
+    "energyLevelsEv": [
+      0.21,
+      0.37,
+      0.58
+    ],
+    "entanglementFidelity": 0.985,
+    "decoherenceTimeNs": 4500,
+    "coherenceHalfLifeNs": 9200,
+    "coherenceFrequencyThz": 540,
+    "fisherInformation": 0.94,
+    "measurementVariance": 0.0024,
+    "noetherCharge": 0.00172,
+    "targetCharge": 0.00165,
+    "allowableChargeDrift": 0.00012
+  },
+  "blockchain": {
+    "network": "mainnet",
+    "chainId": 1,
+    "rpcProvider": "https://mainnet.infura.io/v3/YOUR_KEY",
+    "gasTargetGwei": 24,
+    "confirmations": 3,
+    "upgradeDelaySeconds": 604800,
+    "contracts": [
+      {
+        "name": "AGIJobsGovernor",
+        "address": "0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4",
+        "role": "Primary governance module"
+      },
+      {
+        "name": "AGIJobsTreasury",
+        "address": "0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5",
+        "role": "Treasury vault / emission controller"
+      },
+      {
+        "name": "HamiltonianMonitor",
+        "address": "0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6",
+        "role": "Energy coupling supervisor"
+      }
+    ],
+    "pausableFunctions": [
+      {
+        "contract": "AGIJobsGovernor",
+        "function": "pause",
+        "selector": "0x8456cb59",
+        "description": "Global stop for task orchestration"
+      },
+      {
+        "contract": "AGIJobsGovernor",
+        "function": "unpause",
+        "selector": "0x3f4ba83a",
+        "description": "Resume operations"
+      },
+      {
+        "contract": "AGIJobsTreasury",
+        "function": "updateEmissionCurve",
+        "selector": "0xa10204e9",
+        "description": "Adjusts reward burn / mint ratios"
+      }
+    ],
+    "safeModules": [
+      "SafeModule:PauseGuardian",
+      "SafeModule:UpgradeOrchestrator",
+      "SafeModule:TreasuryFlows"
+    ]
+  },
+  "ci": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      {
+        "id": "lint",
+        "name": "Lint & static checks"
+      },
+      {
+        "id": "tests",
+        "name": "Tests"
+      },
+      {
+        "id": "foundry",
+        "name": "Foundry"
+      },
+      {
+        "id": "coverage",
+        "name": "Coverage thresholds"
+      },
+      {
+        "id": "summary",
+        "name": "CI summary"
+      },
+      {
+        "id": "invariants",
+        "name": "Invariant tests"
+      }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  }
+}
