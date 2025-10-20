@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-10-19T23:30:17.194Z",
-  "summaryTimestamp": "2025-10-19T23:30:06.176Z",
+  "generatedAt": "2025-10-20T16:25:29.788Z",
+  "summaryTimestamp": "2025-10-20T16:25:26.917Z",
   "missionVersion": "1.3.0",
   "results": [
     {
@@ -163,7 +163,23 @@
       "id": "alpha-field:confidence",
       "description": "Alpha-field confidence score",
       "passed": true,
-      "details": "expected 0.850405 vs actual 0.850405 (Δ=0.000000, tol=0.000001)",
+      "details": "expected 0.829426 vs actual 0.829426 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:owner-supremacy",
+      "description": "Owner supremacy index",
+      "passed": true,
+      "details": "expected 1.000000 vs actual 1.000000 (Δ=0.000000, tol=0.000001)",
+      "delta": 0,
+      "tolerance": 0.000001
+    },
+    {
+      "id": "alpha-field:thermo-quantum-delta",
+      "description": "Thermo ↔ quantum delta",
+      "passed": true,
+      "details": "expected 69800.000000 vs actual 69800.000000 (Δ=0.000000, tol=0.000001)",
       "delta": 0,
       "tolerance": 0.000001
     },
@@ -216,6 +232,12 @@
       "details": "expected true, actual true"
     },
     {
+      "id": "alpha-field:owner-supremacy-minimum",
+      "description": "Owner supremacy minimum met",
+      "passed": true,
+      "details": "expected true, actual true"
+    },
+    {
       "id": "alpha-field:energy-margin",
       "description": "Energy margin floor met",
       "passed": true,
@@ -226,6 +248,12 @@
       "description": "Quantum confidence floor satisfied",
       "passed": true,
       "details": "expected true, actual true"
+    },
+    {
+      "id": "alpha-field:thermo-quantum-alignment",
+      "description": "Thermo ↔ quantum alignment satisfied",
+      "passed": true,
+      "details": "expected false, actual false"
     },
     {
       "id": "quantum:coherence",
@@ -389,7 +417,7 @@
     }
   ],
   "totals": {
-    "passed": 54,
+    "passed": 58,
     "failed": 0
   },
   "notes": [

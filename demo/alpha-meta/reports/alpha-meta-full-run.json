@@ -1,34 +1,34 @@
 {
-  "generatedAt": "2025-10-20T13:37:42.986Z",
-  "totalDurationMs": 136861.548942,
+  "generatedAt": "2025-10-20T16:26:22.774Z",
+  "totalDurationMs": 90904.811383,
   "steps": [
     {
       "id": "generate",
       "label": "Generate dossier",
       "status": "success",
-      "durationMs": 53137.438169,
+      "durationMs": 35063.398479999996,
       "details": "Free-energy margin 222153.73 kJ · Max method deviation 0.849374"
     },
     {
       "id": "validate",
       "label": "Validate physics",
       "status": "success",
-      "durationMs": 52973.043206,
+      "durationMs": 36627.888058,
       "details": "All 58 checks passed"
     },
     {
       "id": "ci",
       "label": "Audit CI shield",
       "status": "success",
-      "durationMs": 55.79574699999648,
+      "durationMs": 15.47746900000493,
       "details": "All enforcement guards locked."
     },
     {
       "id": "owner",
       "label": "Owner diagnostics",
-      "status": "warning",
-      "durationMs": 30694.85248599999,
-      "details": "Warnings: [owner:audit-hamiltonian] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. | Cross-check mismatch: mission alignment. | [reward-engine:report] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. | [owner:upgrade-status] SKIPPED @ $.onChain — No timelock address available. | [owner:compliance-report] SKIPPED @ $.onChain — No tax policy address configured."
+      "status": "success",
+      "durationMs": 19197.678577,
+      "details": "All owner automation commands executed successfully."
     }
   ],
   "metrics": {
@@ -44,7 +44,7 @@
     "ownerSupremacyIndex": 1,
     "ownerSupremacySatisfied": true,
     "ciShieldOk": true,
-    "ownerReadiness": "attention",
+    "ownerReadiness": "ready",
     "alphaFieldConfidence": 0.8288057178042307,
     "alphaFieldWithinBound": true,
     "alphaFieldEnergyMargin": true,
@@ -62,12 +62,14 @@
     "quantumEntropyBits": 2.2373329166528313
   },
   "ciIssues": [],
-  "ownerWarnings": 4,
+  "ownerWarnings": 0,
   "ownerErrors": 0,
   "artifacts": {
     "report": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-report.md",
     "summary": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-summary.json",
     "dashboard": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-dashboard.html",
+    "ownerMatrixJson": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-matrix.json",
+    "ownerMatrixMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-matrix.md",
     "validationJson": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-validation.json",
     "validationMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-validation.md",
     "ciReport": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-ci-verification.json",

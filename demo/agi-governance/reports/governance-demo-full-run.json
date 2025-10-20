@@ -1,33 +1,33 @@
 {
-  "generatedAt": "2025-10-19T22:08:30.345Z",
-  "totalDurationMs": 26303.567342000002,
+  "generatedAt": "2025-10-20T16:26:23.623Z",
+  "totalDurationMs": 91754.619576,
   "steps": [
     {
       "id": "generate",
       "label": "Generate dossier",
       "status": "success",
-      "durationMs": 4056.0979370000005,
+      "durationMs": 35062.493044999996,
       "details": "Free-energy margin 69800.00 kJ · Max method deviation 0.136515"
     },
     {
       "id": "validate",
       "label": "Validate physics",
       "status": "success",
-      "durationMs": 3763.260741,
-      "details": "All 50 checks passed"
+      "durationMs": 36629.007452000005,
+      "details": "All 58 checks passed"
     },
     {
       "id": "ci",
       "label": "Audit CI shield",
       "status": "success",
-      "durationMs": 19.07982600000105,
+      "durationMs": 16.2796340000059,
       "details": "All enforcement guards locked."
     },
     {
       "id": "owner",
       "label": "Owner diagnostics",
       "status": "warning",
-      "durationMs": 18464.621283,
+      "durationMs": 20046.585584,
       "details": "Warnings: [owner:audit-hamiltonian] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. | Cross-check mismatch: mission alignment. | [reward-engine:report] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. | [owner:upgrade-status] SKIPPED @ $.onChain — No timelock address available. | [owner:compliance-report] SKIPPED @ $.onChain — No tax policy address configured."
     }
   ],
@@ -40,20 +40,25 @@
     "jacobianStable": false,
     "ownerFullCoverage": true,
     "ownerAllCommandsPresent": true,
+    "ownerAllVerificationsPresent": true,
+    "ownerSupremacyIndex": 1,
+    "ownerSupremacySatisfied": true,
     "ciShieldOk": true,
     "ownerReadiness": "attention",
-    "alphaFieldConfidence": 0.8018445041975224,
+    "alphaFieldConfidence": 0.8294255627070174,
     "alphaFieldWithinBound": true,
     "alphaFieldEnergyMargin": true,
-    "alphaFieldSuperintelligence": 0.8153707172582946,
-    "alphaFieldSuperintelligenceSatisfied": false,
+    "alphaFieldSuperintelligence": 0.8212390544964864,
+    "alphaFieldSuperintelligenceSatisfied": true,
     "alphaFieldThermoAssurance": 1,
     "alphaFieldGovernanceAssurance": 0.2851499999999999,
     "alphaFieldAntifragilityAssurance": 1,
     "alphaFieldOwnerAssurance": 1,
-    "quantumConfidence": 0.7719809771524544,
+    "quantumConfidence": 0.8208837874707196,
     "quantumChargeWithinTolerance": true,
     "quantumThermoDeltaKJ": 69800,
+    "quantumThermoAligned": false,
+    "quantumThermoDriftMaximumKJ": 450,
     "quantumEntropyBits": 1.287897373700623
   },
   "ciIssues": [],
@@ -63,6 +68,8 @@
     "report": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-report.md",
     "summary": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-summary.json",
     "dashboard": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-dashboard.html",
+    "ownerMatrixJson": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-owner-matrix.json",
+    "ownerMatrixMarkdown": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-owner-matrix.md",
     "validationJson": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-validation.json",
     "validationMarkdown": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-validation.md",
     "ciReport": "/workspace/AGIJobsv0/demo/agi-governance/reports/ci-verification.json",

@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-19T23:30:06.176Z
+*Generated at:* 2025-10-20T16:25:26.917Z
 *Version:* 1.3.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.
@@ -121,9 +121,10 @@ flowchart LR
     ThermoSignal[Thermo Assurance 100%]
     GovernanceSignal[Governance Assurance 29%]
     AntifragileSignal[Antifragility Assurance 100%]
-    OwnerSignal[Owner Command 100%]
+    OwnerSignal[Owner Supremacy 100%]
     QuantumSignal[Quantum Assurance 82%]
     CoherenceSignal[Coherence 82%]
+    QuantumAlign[Quantum Alignment 69.80k kJ Δ (≤ 450.00 kJ)]
     EnergyFloor[Energy Margin 69.80k kJ]
     Stackelberg --> Confidence
     EnergyFloor --> ThermoSignal
@@ -132,7 +133,8 @@ flowchart LR
     AntifragileSignal --> Confidence
     OwnerSignal --> Confidence
     QuantumSignal --> Confidence
-    CoherenceSignal --> QuantumSignal
+    QuantumAlign --> QuantumSignal
+    CoherenceSignal --> QuantumAlign
   end
   subgraph Control[Owner Command Surface]
     Owner((Owner 0xA1A1…A1A1))
@@ -226,9 +228,11 @@ mindmap
     "Quantum Lattice":::core
       "Coherence 82%":::sigma
       "Charge Δ 7.00e-5 (tol 1.20e-4)":::welfare
+      "Alignment Δ 69.80k kJ":::sigma
     "Owner Actions":::core
       "Mint Mirror 65.00%"
       "Residual Risk 0.214"
+      "Supremacy 100.0%":::core
   classDef core fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#f9fafb,font-weight:600;
   classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7;font-weight:600;
   classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;
@@ -244,14 +248,15 @@ mindmap
 - **Antifragility curvature:** 1.594e+1 (minimum 8.000e-2)
 - **Sigma welfare gain:** 10.32 (minimum 0.12)
 - **Owner coverage ratio:** 100.00% (threshold 95.00%)
+- **Owner supremacy index:** 100.00% (minimum 97.00% — ✅)
 - **Energy margin:** 69.80k kJ (floor 68.00k kJ — ✅)
 - **Superintelligence index:** 82.1% (minimum 82.0% — ✅)
 - **Quantum coherence confidence:** 82.1% (minimum 72.0% — ✅)
-- **Quantum free-energy delta vs thermodynamic margin:** 6.980e+4 kJ
+- **Thermo ↔ quantum free-energy delta:** 6.980e+4 kJ (limit 4.500e+2 — ⚠️)
 - **Noether charge alignment:** Δ7.000e-5 (tolerance 1.200e-4 — ✅)
 - **State entropy:** 1.288 bits (effective dimension 2.44)
 - **Measurement variance:** 2.400e-3 (σ 0.049)
-- **Composite confidence:** 85.0% (thermo 100.0% · governance 28.5% · antifragility 100.0% · owner 100.0%)
+- **Composite confidence:** 82.9% (thermo 100.0% · governance 28.5% · antifragility 100.0% · owner 100.0%)
 
 | State | Normalised weight | Energy |
 | --- | --- | --- |
@@ -269,9 +274,11 @@ mindmap
 | Antifragility curvature | ✅ |
 | Sigma welfare gain | ✅ |
 | Owner coverage | ✅ |
+| Owner supremacy | ✅ |
 | Energy margin | ✅ |
 | Superintelligence threshold | ✅ |
 | Quantum confidence floor | ✅ |
+| Thermo ↔ quantum alignment | ⚠️ |
 
 ## 9. Risk & Safety Audit
 
@@ -304,6 +311,7 @@ pie showData
 - **Treasury:** 0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3
 - **Timelock:** 691200 seconds
 - **Coverage achieved:** all critical capabilities accounted for
+- **Owner supremacy index:** 100.00% (minimum 97.00% — ✅)
 - **Command surfaces wired:** ✅ all npm scripts present
 - **Verification surfaces wired:** ✅ all verifier scripts present
 
