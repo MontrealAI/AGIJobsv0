@@ -46,7 +46,20 @@ npm run demo:national-supply-chain:export
 ```
 This writes `demo/National-Supply-Chain-v0/ui/export/latest.json`.
 
-## 4. Review the mission control dashboard
+## 4. Render the executive report
+
+Convert the transcript into a Markdown dossier with Mermaid diagrams and
+tabulated capital analytics:
+```bash
+npm run demo:national-supply-chain:report -- \
+  --input demo/National-Supply-Chain-v0/ui/export/latest.json \
+  --output demo/National-Supply-Chain-v0/ui/export/latest-report.md
+```
+The command validates the JSON structure before writing
+`latest-report.md`. A pre-rendered example lives at
+`demo/National-Supply-Chain-v0/ui/export/sample-report.md`.
+
+## 5. Review the mission control dashboard
 
 Serve the UI with any static web server:
 ```bash
@@ -60,7 +73,7 @@ Open the printed URL. You will see:
 - Copy buttons next to every command so you can paste into the terminal without
   typing.
 
-## 5. Autoreplay + UI loop (optional)
+## 6. Autoreplay + UI loop (optional)
 
 Launch the integrated control room which automatically refreshes the transcript
 and hosts the UI:
@@ -70,7 +83,7 @@ npm run demo:national-supply-chain:control-room
 - Press **Enter** to rerun the full simulation.
 - Type `q` then Enter to terminate the server and Hardhat instance.
 
-## 6. Continuous verification (CI)
+## 7. Continuous verification (CI)
 
 The repository runs `.github/workflows/demo-national-supply-chain.yml` on every
 relevant pull request. The workflow executes the export command, validates that
@@ -78,7 +91,7 @@ relevant pull request. The workflow executes the export command, validates that
 `ownerControl.baseline` are populated, and uploads the transcript artefact. A
 failed workflow blocks merges, ensuring the demo always remains executable.
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 | Symptom | Resolution |
 | --- | --- |

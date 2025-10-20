@@ -10,6 +10,9 @@ coverage.json
 !test/coverage/**
 reports/sbom/
 
+# National supply chain demo exports
+demo/National-Supply-Chain-v0/ui/export/latest-report.md
+
 .next/
 
 # TypeScript incremental builds
