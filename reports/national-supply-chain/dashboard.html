@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>National Supply Chain Intelligence Kit</title>
+    <style>
+      :root { color-scheme: dark; font-family: 'Inter', system-ui, sans-serif; background:#020617; color:#e2e8f0; }
+      body { margin:0; background:radial-gradient(circle at top left,#0f172a,#020617 55%); padding:2.5rem; }
+      header { max-width:960px; margin:0 auto 2rem; }
+      h1 { font-size:2.8rem; margin:0; }
+      p.lede { color:#94a3b8; font-size:1.1rem; max-width:70ch; }
+      .grid { display:grid; gap:1.5rem; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); max-width:1200px; margin:0 auto; }
+      .card { background:rgba(15,23,42,0.72); border:1px solid rgba(148,163,184,0.3); border-radius:1.25rem; padding:1.5rem; box-shadow:0 20px 40px rgba(2,6,23,0.45); backdrop-filter:blur(18px); }
+      .card h2 { margin:0 0 1rem; font-size:1.4rem; }
+      .stats { display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
+      .stat { background:rgba(15,23,42,0.6); border:1px solid rgba(148,163,184,0.2); border-radius:1rem; padding:1rem; }
+      .stat span { display:block; }
+      .stat .label { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:#94a3b8; }
+      .stat .value { font-size:1.25rem; margin-top:0.5rem; font-weight:600; }
+      table { width:100%; border-collapse:collapse; font-size:0.92rem; }
+      thead { background:rgba(30,41,59,0.75); }
+      thead th { text-transform:uppercase; letter-spacing:0.08em; font-size:0.72rem; padding:0.75rem; color:#94a3b8; }
+      tbody td { padding:0.85rem 0.75rem; border-bottom:1px solid rgba(148,163,184,0.15); vertical-align:top; }
+      tbody tr.critical { background:rgba(236,72,153,0.12); }
+      code { background:rgba(15,23,42,0.65); padding:0.25rem 0.45rem; border-radius:0.5rem; border:1px solid rgba(148,163,184,0.25); }
+      ul { margin:0; padding-left:1.2rem; display:grid; gap:0.5rem; }
+      .corridor-grid, .validator-grid { display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+      .corridor, .validator { background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.25); border-radius:1rem; padding:1rem; }
+      .hint { color:#94a3b8; font-size:0.78rem; margin-top:0.35rem; }
+      .mermaid { background:rgba(15,23,42,0.65); border-radius:1rem; border:1px solid rgba(148,163,184,0.25); padding:1rem; overflow-x:auto; }
+      footer { max-width:960px; margin:2rem auto 0; text-align:center; color:#94a3b8; font-size:0.85rem; }
+      @media (max-width:720px) { body { padding:1.5rem; } }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+  </head>
+  <body>
+    <header>
+      <span class="hint">NATIONAL-SUPPLY-CHAIN-V0</span>
+      <h1>National Supply Chain Foresight Command</h1>
+      <p class="lede">Demonstrate how AGI Jobs v0 (v2) autonomously orchestrates national logistics, humanitarian relief, energy flows, and strategic stockpiles while preserving sovereign owner control and quadratic governance levers.</p>
+    </header>
+    <section class="card" style="max-width:1200px;margin:0 auto 1.5rem;">
+      <h2>Mission Metrics</h2>
+      <div class="stats">
+        <div class="stat"><span class="label">Jobs orchestrated</span><span class="value">6</span></div>
+        <div class="stat"><span class="label">Phases</span><span class="value">4</span></div>
+        <div class="stat"><span class="label">Agents</span><span class="value">5</span></div>
+        <div class="stat"><span class="label">Validators</span><span class="value">3</span></div>
+        <div class="stat"><span class="label">Total reward</span><span class="value">1,035,000 AGIALPHA</span></div>
+        <div class="stat"><span class="label">Operator reserve</span><span class="value">275,000 AGIALPHA</span></div>
+        <div class="stat"><span class="label">Validator pool</span><span class="value">210,000 AGIALPHA</span></div>
+        <div class="stat"><span class="label">Critical path (days)</span><span class="value">123</span></div>
+        <div class="stat"><span class="label">Max concurrency</span><span class="value">2</span></div>
+        <div class="stat"><span class="label">Corridor capacity</span><span class="value">8,550 t/day</span></div>
+        <div class="stat"><span class="label">Validator stake</span><span class="value">437,000 AGIALPHA</span></div>
+      </div>
+    </section>
+    <section class="card" style="max-width:1200px;margin:0 auto 1.5rem;">
+      <h2>Jobs & Critical Path</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Title</th><th>Phase</th><th>Window</th><th>Reward</th><th>Slack</th><th>Corridors</th><th>Agents</th><th>Validators</th></tr></thead>
+        <tbody><tr class="critical"><td>ARCTIC-FOOD-RELAY</td><td>Stabilise Arctic food and medicine relay</td><td>Stabilise critical lifelines</td><td>2025-04-01 → 2025-04-22</td><td>180,000 AGIALPHA</td><td>14 day(s)</td><td>PORT-SPOKE-NORTH, ARCTIC-AIRBRIDGE</td><td>aurora.supply.nation.agi.eth<div class="hint">Deploy icebreaker convoys and VTOL grid</div>healthshield.wallet.agi.eth<div class="hint">Coordinate field triage nodes</div></td><td>polaris.validator.agi.eth, helmsman.validator.agi.eth</td></tr>
+<tr class="critical"><td>PACIFIC-HUB-EXPANSION</td><td>Deploy Pacific floating logistics mega-hub</td><td>Expand inter-regional capacity</td><td>2025-04-22 → 2025-06-01</td><td>220,000 AGIALPHA</td><td>29 day(s)</td><td>PACIFIC-RAIL, PACIFIC-ORBITAL</td><td>pacific.logistics.nation.agi.eth<div class="hint">Assemble modular piers</div>continental.mesh.nation.agi.eth<div class="hint">Synchronise inland maglev</div></td><td>trident.validator.agi.eth</td></tr>
+<tr class="critical"><td>CENTRAL-RESERVE-AUTOMATION</td><td>Automate strategic reserve balancing</td><td>Optimise incentives &amp; market balance</td><td>2025-06-01 → 2025-07-01</td><td>195,000 AGIALPHA</td><td>19 day(s)</td><td>PACIFIC-RAIL, CENTRAL-METRO</td><td>continental.mesh.nation.agi.eth<div class="hint">Optimise maglev + electric fleet</div>railmesh.wallet.agi.eth<div class="hint">Treasury automation and predictive maintenance</div></td><td>helmsman.validator.agi.eth</td></tr>
+<tr class=""><td>CITIZEN-RESPONSE-ACTIVATION</td><td>Activate citizen humanitarian mesh</td><td>Optimise incentives &amp; market balance</td><td>2025-04-22 → 2025-05-17</td><td>165,000 AGIALPHA</td><td>59 day(s)</td><td>METRO-RELIEF</td><td>healthshield.wallet.agi.eth<div class="hint">Citizen DID onboarding</div>railmesh.wallet.agi.eth<div class="hint">Treasury payout automation</div></td><td>polaris.validator.agi.eth, trident.validator.agi.eth</td></tr>
+<tr class="critical"><td>VALIDATION-GRAND-AUDIT</td><td>Validator coalition grand audit</td><td>Harden resilience &amp; audit loops</td><td>2025-07-01 → 2025-07-21</td><td>155,000 AGIALPHA</td><td>19 day(s)</td><td>COMMAND</td><td>polaris.validator.agi.eth<div class="hint">Arctic logistic evidence</div>trident.validator.agi.eth<div class="hint">Port security attestations</div>helmsman.validator.agi.eth<div class="hint">Energy + medical telemetry assurance</div></td><td>polaris.validator.agi.eth, trident.validator.agi.eth, helmsman.validator.agi.eth</td></tr>
+<tr class="critical"><td>TREASURY-REBALANCING-DRILL</td><td>Owner treasury rebalancing + pause drill</td><td>Harden resilience &amp; audit loops</td><td>2025-07-21 → 2025-08-02</td><td>120,000 AGIALPHA</td><td>17 day(s)</td><td>COMMAND, CENTRAL-METRO</td><td>aurora.supply.nation.agi.eth<div class="hint">Execute owner commands via CLI</div>owner<div class="hint">Approve thermostat + treasury adjustments</div></td><td>helmsman.validator.agi.eth</td></tr></tbody>
+      </table>
+    </section>
+    <section class="card" style="max-width:1200px;margin:0 auto 1.5rem;">
+      <h2>Corridor Intelligence</h2>
+      <div class="corridor-grid"><article class="corridor"><h3>ARCTIC-AIRBRIDGE</h3><p>VTOL heavy lift</p><p>900 t/day · Latency 6 h</p><p>Redundant thermal shielding &amp; validator telemetry</p><p class="hint">Owner controls: jobs/supply-routing, thermostat, inventory/oracle, energy-oracle</p></article>
+<article class="corridor"><h3>PORT-SPOKE-NORTH</h3><p>Icebreaker convoy</p><p>2,800 t/day · Latency 12 h</p><p>Quadratic validator quorum w/ automated replan</p><p class="hint">Owner controls: owner:command-center, owner:parameters, owner:system-pause, jobs/supply-routing, thermostat</p></article>
+<article class="corridor"><h3>PACIFIC-RAIL</h3><p>Maglev &amp; drone mesh</p><p>2,400 t/day · Latency 9 h</p><p>Dual stake guardrails + pause triggers</p><p class="hint">Owner controls: port/mesh, quadratic-voting, treasury/rebalance, owner:mission-control</p></article>
+<article class="corridor"><h3>CENTRAL-METRO</h3><p>Autonomous electric fleet</p><p>1,800 t/day · Latency 4 h</p><p>Thermostat-driven incentives</p><p class="hint">Owner controls: treasury/rebalance, owner:mission-control, demand-response, owner:parameters</p></article>
+<article class="corridor"><h3>METRO-RELIEF</h3><p>Drone &amp; amphibious</p><p>600 t/day · Latency 2 h</p><p>Citizen validator quorum &amp; DID gating</p><p class="hint">Owner controls: demand-response, owner:parameters, community-wallet, supplychain/agent</p></article>
+<article class="corridor"><h3>PACIFIC-ORBITAL</h3><p>Space elevator cargo</p><p>50 t/day · Latency 3 h</p><p>Zero-trust telemetry encryption</p><p class="hint">Owner controls: port/mesh, quadratic-voting, telemetry, owner:surface</p></article></div>
+    </section>
+    <section class="card" style="max-width:1200px;margin:0 auto 1.5rem;">
+      <h2>Owner Playbooks</h2>
+      <ul><li><code>npm run owner:command-center</code></li>
+<li><code>npm run owner:parameters</code></li>
+<li><code>npm run owner:system-pause -- --action pause</code></li>
+<li><code>npm run owner:system-pause -- --action unpause</code></li>
+<li><code>npm run owner:upgrade-status</code></li>
+<li><code>npm run owner:verify-control</code></li>
+<li><code>npm run owner:mission-control</code></li></ul>
+    </section>
+    <section class="card" style="max-width:1200px;margin:0 auto 1.5rem;">
+      <h2>Validator Coalition</h2>
+      <div class="validator-grid"><article class="validator"><h3>polaris.validator.agi.eth</h3><p>Arctic supply assurance</p><p class="hint">Stake 160,000 AGIALPHA</p></article>
+<article class="validator"><h3>trident.validator.agi.eth</h3><p>Port security &amp; customs compliance</p><p class="hint">Stake 145,000 AGIALPHA</p></article>
+<article class="validator"><h3>helmsman.validator.agi.eth</h3><p>Energy &amp; medical supply telemetry</p><p class="hint">Stake 132,000 AGIALPHA</p></article></div>
+    </section>
+    <section class="card" style="max-width:1200px;margin:0 auto 1.5rem;">
+      <h2>Mermaid Atlas</h2>
+      <div class="mermaid">flowchart LR
+  COMMAND[&quot;Sovereign Command Centre\nCapital&quot;]:::command
+  NORTH_PORT[&quot;Arctic Quantum Port\nAurora Coast&quot;]:::port
+  ARCTIC_HUB[&quot;Permafrost Resilience Hub\nPolar Interior&quot;]:::hub
+  PACIFIC_PORT[&quot;Pacific Floating Megaport\nPacific Ocean&quot;]:::port
+  CENTRAL_STORAGE[&quot;National Strategic Reserve\nCentral Corridor&quot;]:::storage
+  METRO_GRID[&quot;Metropolitan Microgrid\nCapital&quot;]:::distribution
+  AID_CELLS[&quot;Humanitarian Field Cells\nNational&quot;]:::relief
+  ORBITAL_SENSOR[&quot;Orbital Supply Sentinel\nLEO&quot;]:::sensor
+  NORTH_PORT --&gt;|VTOL heavy lift| ARCTIC_HUB
+  COMMAND --&gt;|Icebreaker convoy| NORTH_PORT
+  PACIFIC_PORT --&gt;|Maglev &amp; drone mesh| CENTRAL_STORAGE
+  CENTRAL_STORAGE --&gt;|Autonomous electric fleet| METRO_GRID
+  METRO_GRID --&gt;|Drone &amp; amphibious| AID_CELLS
+  PACIFIC_PORT --&gt;|Space elevator cargo| ORBITAL_SENSOR
+  classDef command fill:#0f172a,stroke:#38bdf8,stroke-width:2,color:#e2e8f0;
+  classDef port fill:#1e3a8a,stroke:#38bdf8,color:#f8fafc;
+  classDef hub fill:#312e81,stroke:#c084fc,color:#f5f3ff;
+  classDef storage fill:#064e3b,stroke:#34d399,color:#ecfdf5;
+  classDef distribution fill:#7c2d12,stroke:#fb923c,color:#ffedd5;
+  classDef relief fill:#7f1d1d,stroke:#fca5a5,color:#fee2e2;
+  classDef sensor fill:#3f3f46,stroke:#facc15,color:#fef9c3;</div>
+      <div class="mermaid" style="margin-top:1rem;">gantt
+  title National Supply Chain Critical Path
+  dateFormat  YYYY-MM-DD
+  axisFormat  %b %d
+  section Stabilise critical lifelines
+  Stabilise Arctic food and medicine relay: crit, arctic_food_relay, 2025-04-01, 2025-04-22
+  section Expand inter-regional capacity
+  Deploy Pacific floating logistics mega-hub: crit, pacific_hub_expansion, 2025-04-22, 2025-06-01
+  section Optimise incentives &amp; market balance
+  Automate strategic reserve balancing: crit, central_reserve_automation, 2025-06-01, 2025-07-01
+  section Optimise incentives &amp; market balance
+  Activate citizen humanitarian mesh:  citizen_response_activation, 2025-04-22, 2025-05-17
+  section Harden resilience &amp; audit loops
+  Validator coalition grand audit: crit, validation_grand_audit, 2025-07-01, 2025-07-21
+  section Harden resilience &amp; audit loops
+  Owner treasury rebalancing + pause drill: crit, treasury_rebalancing_drill, 2025-07-21, 2025-08-02</div>
+    </section>
+    <footer>
+      Generated 2025-01-15T00:00:00.000Z · Plan version v0.9.0 · Owner national.supply.owner.agi.eth
+    </footer>
+  </body>
+</html>

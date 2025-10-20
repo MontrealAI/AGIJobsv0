@@ -1,0 +1,524 @@
+{
+  "initiative": "National Supply Chain Foresight Command",
+  "objective": "Demonstrate how AGI Jobs v0 (v2) autonomously orchestrates national logistics, humanitarian relief, energy flows, and strategic stockpiles while preserving sovereign owner control and quadratic governance levers.",
+  "missionTag": "NATIONAL-SUPPLY-CHAIN-V0",
+  "generatedAt": "2025-01-15T00:00:00.000Z",
+  "launchDate": "2025-04-01",
+  "network": "Hardhat localhost (31337)",
+  "ownerEns": "national.supply.owner.agi.eth",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": 1250000,
+    "operatorReserve": 275000,
+    "validatorPool": 210000
+  },
+  "metrics": {
+    "jobCount": 6,
+    "phaseCount": 4,
+    "agentCount": 5,
+    "validatorCount": 3,
+    "totalReward": 1035000,
+    "operatorReserve": 275000,
+    "validatorPool": 210000,
+    "criticalPathDays": 123,
+    "maxConcurrency": 2,
+    "corridorCapacity": 8550,
+    "validatorStake": 437000
+  },
+  "phases": [
+    {
+      "id": "STABILISE",
+      "title": "Stabilise critical lifelines",
+      "windowDays": 21,
+      "focus": [
+        "Food",
+        "Medical",
+        "Energy"
+      ],
+      "ownerControls": [
+        "owner:system-pause",
+        "owner:command-center",
+        "owner:parameters"
+      ],
+      "deliverables": [
+        "Deploy thermodynamic guardrails",
+        "Spin up rapid relief corridors",
+        "Publish sovereign command map"
+      ]
+    },
+    {
+      "id": "EXPAND",
+      "title": "Expand inter-regional capacity",
+      "windowDays": 45,
+      "focus": [
+        "Infrastructure",
+        "Energy storage",
+        "Data fusion"
+      ],
+      "ownerControls": [
+        "owner:mission-control",
+        "owner:parameters",
+        "thermostat:update"
+      ],
+      "deliverables": [
+        "Activate floating megaports",
+        "Commission orbital sentinel",
+        "Publish corridor capacity oracles"
+      ]
+    },
+    {
+      "id": "OPTIMISE",
+      "title": "Optimise incentives & market balance",
+      "windowDays": 60,
+      "focus": [
+        "Dynamic pricing",
+        "Validator incentives",
+        "Quadratic votes"
+      ],
+      "ownerControls": [
+        "owner:command-center",
+        "reward-engine:update",
+        "platform:registry:update"
+      ],
+      "deliverables": [
+        "Incentive thermostat tuned",
+        "Validator mesh calibrations",
+        "Citizen quadratic vote results"
+      ]
+    },
+    {
+      "id": "HARDEN",
+      "title": "Harden resilience & audit loops",
+      "windowDays": 30,
+      "focus": [
+        "Pause drills",
+        "Audit trails",
+        "Sovereign reporting"
+      ],
+      "ownerControls": [
+        "owner:verify-control",
+        "owner:mission-control",
+        "owner:upgrade-status"
+      ],
+      "deliverables": [
+        "System pause rehearsal",
+        "Grand manifest notarised",
+        "Stakeholder evidence bundle"
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "id": "ARCTIC-FOOD-RELAY",
+      "title": "Stabilise Arctic food and medicine relay",
+      "phase": "STABILISE",
+      "phaseTitle": "Stabilise critical lifelines",
+      "reward": 180000,
+      "startOffset": 0,
+      "endOffset": 21,
+      "startDate": "2025-04-01T00:00:00.000Z",
+      "endDate": "2025-04-22T00:00:00.000Z",
+      "deadlineDate": "2025-05-06T00:00:00.000Z",
+      "slackDays": 14,
+      "corridors": [
+        "PORT-SPOKE-NORTH",
+        "ARCTIC-AIRBRIDGE"
+      ],
+      "assigned": [
+        {
+          "agent": "aurora.supply.nation.agi.eth",
+          "responsibility": "Deploy icebreaker convoys and VTOL grid"
+        },
+        {
+          "agent": "healthshield.wallet.agi.eth",
+          "responsibility": "Coordinate field triage nodes"
+        }
+      ],
+      "validators": [
+        "polaris.validator.agi.eth",
+        "helmsman.validator.agi.eth"
+      ],
+      "brief": [
+        "AI convoys deliver 5,000 tonnes of food and medical supplies per week",
+        "Validator network signs real-time inventory snapshots",
+        "Owner thermostat calibrates incentives for sub-zero operations"
+      ],
+      "critical": true
+    },
+    {
+      "id": "PACIFIC-HUB-EXPANSION",
+      "title": "Deploy Pacific floating logistics mega-hub",
+      "phase": "EXPAND",
+      "phaseTitle": "Expand inter-regional capacity",
+      "reward": 220000,
+      "startOffset": 21,
+      "endOffset": 61,
+      "startDate": "2025-04-22T00:00:00.000Z",
+      "endDate": "2025-06-01T00:00:00.000Z",
+      "deadlineDate": "2025-06-30T00:00:00.000Z",
+      "slackDays": 29,
+      "corridors": [
+        "PACIFIC-RAIL",
+        "PACIFIC-ORBITAL"
+      ],
+      "assigned": [
+        {
+          "agent": "pacific.logistics.nation.agi.eth",
+          "responsibility": "Assemble modular piers"
+        },
+        {
+          "agent": "continental.mesh.nation.agi.eth",
+          "responsibility": "Synchronise inland maglev"
+        }
+      ],
+      "validators": [
+        "trident.validator.agi.eth"
+      ],
+      "brief": [
+        "Activate floating megaport with 200 autonomous cranes",
+        "Spin up orbital sentinel handshake for customs",
+        "Owner command centre verifies berth prioritisation via quadratic vote"
+      ],
+      "critical": true
+    },
+    {
+      "id": "CENTRAL-RESERVE-AUTOMATION",
+      "title": "Automate strategic reserve balancing",
+      "phase": "OPTIMISE",
+      "phaseTitle": "Optimise incentives & market balance",
+      "reward": 195000,
+      "startOffset": 61,
+      "endOffset": 91,
+      "startDate": "2025-06-01T00:00:00.000Z",
+      "endDate": "2025-07-01T00:00:00.000Z",
+      "deadlineDate": "2025-07-20T00:00:00.000Z",
+      "slackDays": 19,
+      "corridors": [
+        "PACIFIC-RAIL",
+        "CENTRAL-METRO"
+      ],
+      "assigned": [
+        {
+          "agent": "continental.mesh.nation.agi.eth",
+          "responsibility": "Optimise maglev + electric fleet"
+        },
+        {
+          "agent": "railmesh.wallet.agi.eth",
+          "responsibility": "Treasury automation and predictive maintenance"
+        }
+      ],
+      "validators": [
+        "helmsman.validator.agi.eth"
+      ],
+      "brief": [
+        "Deploy reinforcement learning agents on stockpile hedging",
+        "Publish energy + nutrition coverage dashboards",
+        "Owner triggers reward engine update for fair share distribution"
+      ],
+      "critical": true
+    },
+    {
+      "id": "CITIZEN-RESPONSE-ACTIVATION",
+      "title": "Activate citizen humanitarian mesh",
+      "phase": "OPTIMISE",
+      "phaseTitle": "Optimise incentives & market balance",
+      "reward": 165000,
+      "startOffset": 21,
+      "endOffset": 46,
+      "startDate": "2025-04-22T00:00:00.000Z",
+      "endDate": "2025-05-17T00:00:00.000Z",
+      "deadlineDate": "2025-07-15T00:00:00.000Z",
+      "slackDays": 59,
+      "corridors": [
+        "METRO-RELIEF"
+      ],
+      "assigned": [
+        {
+          "agent": "healthshield.wallet.agi.eth",
+          "responsibility": "Citizen DID onboarding"
+        },
+        {
+          "agent": "railmesh.wallet.agi.eth",
+          "responsibility": "Treasury payout automation"
+        }
+      ],
+      "validators": [
+        "polaris.validator.agi.eth",
+        "trident.validator.agi.eth"
+      ],
+      "brief": [
+        "Launch DID-gated citizen relief missions",
+        "Validators approve quadratic reward allocations",
+        "Owner monitors supply plan autop-run via CLI"
+      ],
+      "critical": false
+    },
+    {
+      "id": "VALIDATION-GRAND-AUDIT",
+      "title": "Validator coalition grand audit",
+      "phase": "HARDEN",
+      "phaseTitle": "Harden resilience & audit loops",
+      "reward": 155000,
+      "startOffset": 91,
+      "endOffset": 111,
+      "startDate": "2025-07-01T00:00:00.000Z",
+      "endDate": "2025-07-21T00:00:00.000Z",
+      "deadlineDate": "2025-08-09T00:00:00.000Z",
+      "slackDays": 19,
+      "corridors": [
+        "COMMAND"
+      ],
+      "assigned": [
+        {
+          "agent": "polaris.validator.agi.eth",
+          "responsibility": "Arctic logistic evidence"
+        },
+        {
+          "agent": "trident.validator.agi.eth",
+          "responsibility": "Port security attestations"
+        },
+        {
+          "agent": "helmsman.validator.agi.eth",
+          "responsibility": "Energy + medical telemetry assurance"
+        }
+      ],
+      "validators": [
+        "polaris.validator.agi.eth",
+        "trident.validator.agi.eth",
+        "helmsman.validator.agi.eth"
+      ],
+      "brief": [
+        "Compile audit bundle for national senate",
+        "Verify owner pause + resume logs",
+        "Publish thermodynamic telemetry for all corridors"
+      ],
+      "critical": true
+    },
+    {
+      "id": "TREASURY-REBALANCING-DRILL",
+      "title": "Owner treasury rebalancing + pause drill",
+      "phase": "HARDEN",
+      "phaseTitle": "Harden resilience & audit loops",
+      "reward": 120000,
+      "startOffset": 111,
+      "endOffset": 123,
+      "startDate": "2025-07-21T00:00:00.000Z",
+      "endDate": "2025-08-02T00:00:00.000Z",
+      "deadlineDate": "2025-08-19T00:00:00.000Z",
+      "slackDays": 17,
+      "corridors": [
+        "COMMAND",
+        "CENTRAL-METRO"
+      ],
+      "assigned": [
+        {
+          "agent": "aurora.supply.nation.agi.eth",
+          "responsibility": "Execute owner commands via CLI"
+        },
+        {
+          "agent": "owner",
+          "responsibility": "Approve thermostat + treasury adjustments"
+        }
+      ],
+      "validators": [
+        "helmsman.validator.agi.eth"
+      ],
+      "brief": [
+        "Run pause + resume using owner command centre",
+        "Rebalance treasury between validator and agent pools",
+        "Produce notarised manifest + hashed summary"
+      ],
+      "critical": true
+    }
+  ],
+  "corridors": [
+    {
+      "id": "ARCTIC-AIRBRIDGE",
+      "from": "NORTH_PORT",
+      "to": "ARCTIC_HUB",
+      "mode": "VTOL heavy lift",
+      "capacityTonnesPerDay": 900,
+      "latencyHours": 6,
+      "resilience": "Redundant thermal shielding & validator telemetry",
+      "ownerControls": [
+        "jobs/supply-routing",
+        "thermostat",
+        "inventory/oracle",
+        "energy-oracle"
+      ]
+    },
+    {
+      "id": "PORT-SPOKE-NORTH",
+      "from": "COMMAND",
+      "to": "NORTH_PORT",
+      "mode": "Icebreaker convoy",
+      "capacityTonnesPerDay": 2800,
+      "latencyHours": 12,
+      "resilience": "Quadratic validator quorum w/ automated replan",
+      "ownerControls": [
+        "owner:command-center",
+        "owner:parameters",
+        "owner:system-pause",
+        "jobs/supply-routing",
+        "thermostat"
+      ]
+    },
+    {
+      "id": "PACIFIC-RAIL",
+      "from": "PACIFIC_PORT",
+      "to": "CENTRAL_STORAGE",
+      "mode": "Maglev & drone mesh",
+      "capacityTonnesPerDay": 2400,
+      "latencyHours": 9,
+      "resilience": "Dual stake guardrails + pause triggers",
+      "ownerControls": [
+        "port/mesh",
+        "quadratic-voting",
+        "treasury/rebalance",
+        "owner:mission-control"
+      ]
+    },
+    {
+      "id": "CENTRAL-METRO",
+      "from": "CENTRAL_STORAGE",
+      "to": "METRO_GRID",
+      "mode": "Autonomous electric fleet",
+      "capacityTonnesPerDay": 1800,
+      "latencyHours": 4,
+      "resilience": "Thermostat-driven incentives",
+      "ownerControls": [
+        "treasury/rebalance",
+        "owner:mission-control",
+        "demand-response",
+        "owner:parameters"
+      ]
+    },
+    {
+      "id": "METRO-RELIEF",
+      "from": "METRO_GRID",
+      "to": "AID_CELLS",
+      "mode": "Drone & amphibious",
+      "capacityTonnesPerDay": 600,
+      "latencyHours": 2,
+      "resilience": "Citizen validator quorum & DID gating",
+      "ownerControls": [
+        "demand-response",
+        "owner:parameters",
+        "community-wallet",
+        "supplychain/agent"
+      ]
+    },
+    {
+      "id": "PACIFIC-ORBITAL",
+      "from": "PACIFIC_PORT",
+      "to": "ORBITAL_SENSOR",
+      "mode": "Space elevator cargo",
+      "capacityTonnesPerDay": 50,
+      "latencyHours": 3,
+      "resilience": "Zero-trust telemetry encryption",
+      "ownerControls": [
+        "port/mesh",
+        "quadratic-voting",
+        "telemetry",
+        "owner:surface"
+      ]
+    }
+  ],
+  "validators": [
+    {
+      "handle": "polaris.validator.agi.eth",
+      "stake": 160000,
+      "mandate": "Arctic supply assurance",
+      "wallet": "0xVAL1d0000000000000000000000000000000A1"
+    },
+    {
+      "handle": "trident.validator.agi.eth",
+      "stake": 145000,
+      "mandate": "Port security & customs compliance",
+      "wallet": "0xVAL1d0000000000000000000000000000000A2"
+    },
+    {
+      "handle": "helmsman.validator.agi.eth",
+      "stake": 132000,
+      "mandate": "Energy & medical supply telemetry",
+      "wallet": "0xVAL1d0000000000000000000000000000000A3"
+    }
+  ],
+  "agents": [
+    {
+      "handle": "aurora.supply.nation.agi.eth",
+      "role": "Northern Resilience Authority",
+      "capabilities": [
+        "Cryosphere logistics optimisation",
+        "Autonomous convoy routing",
+        "Quantum-secured telemetry"
+      ],
+      "wallet": "0xfA11eD000000000000000000000000000000A01",
+      "sovereign": "Aurora Coalition"
+    },
+    {
+      "handle": "pacific.logistics.nation.agi.eth",
+      "role": "Pacific Infrastructure Continuity Agency",
+      "capabilities": [
+        "Floating port assembly",
+        "Typhoon-adaptive routing",
+        "Dual-use port cyber defences"
+      ],
+      "wallet": "0xfA11eD000000000000000000000000000000A02",
+      "sovereign": "Pacific Alliance"
+    },
+    {
+      "handle": "continental.mesh.nation.agi.eth",
+      "role": "Continental Multi-Modal Mesh",
+      "capabilities": [
+        "AI rail corridor harmonisation",
+        "Supply-demand clearing market",
+        "National carbon-aware routing"
+      ],
+      "wallet": "0xfA11eD000000000000000000000000000000A03",
+      "sovereign": "Continental Union"
+    },
+    {
+      "handle": "healthshield.wallet.agi.eth",
+      "role": "HealthShield Humanitarian Collective",
+      "capabilities": [
+        "Rapid medical triage",
+        "Drone-based emergency delivery",
+        "On-chain citizen feedback"
+      ],
+      "wallet": "0xF9eD00000000000000000000000000000000B10",
+      "sovereign": "Community Treasury"
+    },
+    {
+      "handle": "railmesh.wallet.agi.eth",
+      "role": "RailMesh Cooperative Treasury",
+      "capabilities": [
+        "Rail hub automation",
+        "Predictive maintenance",
+        "Surge capacity hedging"
+      ],
+      "wallet": "0xF9eD00000000000000000000000000000000B11",
+      "sovereign": "Worker Consortium"
+    }
+  ],
+  "ownerPlaybooks": [
+    "npm run owner:command-center",
+    "npm run owner:parameters",
+    "npm run owner:system-pause -- --action pause",
+    "npm run owner:system-pause -- --action unpause",
+    "npm run owner:upgrade-status",
+    "npm run owner:verify-control",
+    "npm run owner:mission-control"
+  ],
+  "mermaid": {
+    "network": "flowchart LR\n  COMMAND[\"Sovereign Command Centre\\nCapital\"]:::command\n  NORTH_PORT[\"Arctic Quantum Port\\nAurora Coast\"]:::port\n  ARCTIC_HUB[\"Permafrost Resilience Hub\\nPolar Interior\"]:::hub\n  PACIFIC_PORT[\"Pacific Floating Megaport\\nPacific Ocean\"]:::port\n  CENTRAL_STORAGE[\"National Strategic Reserve\\nCentral Corridor\"]:::storage\n  METRO_GRID[\"Metropolitan Microgrid\\nCapital\"]:::distribution\n  AID_CELLS[\"Humanitarian Field Cells\\nNational\"]:::relief\n  ORBITAL_SENSOR[\"Orbital Supply Sentinel\\nLEO\"]:::sensor\n  NORTH_PORT -->|VTOL heavy lift| ARCTIC_HUB\n  COMMAND -->|Icebreaker convoy| NORTH_PORT\n  PACIFIC_PORT -->|Maglev & drone mesh| CENTRAL_STORAGE\n  CENTRAL_STORAGE -->|Autonomous electric fleet| METRO_GRID\n  METRO_GRID -->|Drone & amphibious| AID_CELLS\n  PACIFIC_PORT -->|Space elevator cargo| ORBITAL_SENSOR\n  classDef command fill:#0f172a,stroke:#38bdf8,stroke-width:2,color:#e2e8f0;\n  classDef port fill:#1e3a8a,stroke:#38bdf8,color:#f8fafc;\n  classDef hub fill:#312e81,stroke:#c084fc,color:#f5f3ff;\n  classDef storage fill:#064e3b,stroke:#34d399,color:#ecfdf5;\n  classDef distribution fill:#7c2d12,stroke:#fb923c,color:#ffedd5;\n  classDef relief fill:#7f1d1d,stroke:#fca5a5,color:#fee2e2;\n  classDef sensor fill:#3f3f46,stroke:#facc15,color:#fef9c3;",
+    "gantt": "gantt\n  title National Supply Chain Critical Path\n  dateFormat  YYYY-MM-DD\n  axisFormat  %b %d\n  section Stabilise critical lifelines\n  Stabilise Arctic food and medicine relay: crit, arctic_food_relay, 2025-04-01, 2025-04-22\n  section Expand inter-regional capacity\n  Deploy Pacific floating logistics mega-hub: crit, pacific_hub_expansion, 2025-04-22, 2025-06-01\n  section Optimise incentives & market balance\n  Automate strategic reserve balancing: crit, central_reserve_automation, 2025-06-01, 2025-07-01\n  section Optimise incentives & market balance\n  Activate citizen humanitarian mesh:  citizen_response_activation, 2025-04-22, 2025-05-17\n  section Harden resilience & audit loops\n  Validator coalition grand audit: crit, validation_grand_audit, 2025-07-01, 2025-07-21\n  section Harden resilience & audit loops\n  Owner treasury rebalancing + pause drill: crit, treasury_rebalancing_drill, 2025-07-21, 2025-08-02"
+  },
+  "criticalJobs": [
+    "TREASURY-REBALANCING-DRILL",
+    "VALIDATION-GRAND-AUDIT",
+    "CENTRAL-RESERVE-AUTOMATION",
+    "PACIFIC-HUB-EXPANSION",
+    "ARCTIC-FOOD-RELAY"
+  ]
+}
