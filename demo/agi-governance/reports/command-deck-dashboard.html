@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solving α-AGI Governance Command Deck — Governance Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #020617;
+        --card: rgba(15, 23, 42, 0.72);
+        --accent: #38bdf8;
+        --accent-strong: #f97316;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: rgba(148, 163, 184, 0.3);
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 38%),
+          radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.18), transparent 42%),
+          var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+      header {
+        padding: 3.5rem 4vw 2rem;
+        text-align: center;
+      }
+      header h1 {
+        margin: 0;
+        font-size: clamp(2.5rem, 4vw, 3.5rem);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      header p.meta {
+        margin: 0.4rem 0 0;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      main {
+        padding: 0 4vw 4rem;
+        display: grid;
+        gap: 2.75rem;
+      }
+      section.card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 2.2rem;
+        box-shadow: 0 32px 64px rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(18px);
+      }
+      section.card h2 {
+        margin-top: 0;
+        font-size: 1.6rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      section.card h3 {
+        margin-top: 2rem;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        gap: 1.8rem;
+      }
+      @media (min-width: 1080px) {
+        .grid-columns-3 {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .grid-columns-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      ul.metric-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+      ul.metric-list li {
+        font-size: 1rem;
+        background: rgba(15, 23, 42, 0.65);
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        border: 1px solid rgba(56, 189, 248, 0.12);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        border: 1px solid var(--border);
+        font-size: 0.95rem;
+      }
+      table th,
+      table td {
+        padding: 0.7rem 0.9rem;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+      table th {
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.78rem;
+      }
+      pre.mermaid {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 16px;
+        padding: 1.4rem;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        overflow-x: auto;
+      }
+      #antifragility-chart {
+        width: 100%;
+        height: 280px;
+        margin-top: 1.2rem;
+        border-radius: 16px;
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        background: rgba(15, 23, 42, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      footer {
+        padding: 3rem 4vw;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(56, 189, 248, 0.18);
+        color: var(--accent);
+        border-radius: 999px;
+        padding: 0.4rem 0.9rem;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="badge">AGI Jobs v0 (v2) Superintelligence Console</div>
+      <h1>Solving α-AGI Governance Command Deck</h1>
+      <p class="meta">Generated 2025-10-20T00:44:48.746Z • Version 2.0.0</p>
+      <p class="meta">Command deck mission charter coupling Hamiltonian thermodynamics, Stackelberg guardrails, and antifragile validator orchestration for AGI Jobs v0 (v2).</p>
+    </header>
+    <main>
+      <section class="card grid grid-columns-3">
+        <div>
+          <h2>Thermodynamics</h2>
+          <ul class="metric-list">
+            <li>Gibbs free energy: <strong>83.02k kJ</strong></li>
+            <li>Landauer limit: <strong>0.00 kJ</strong></li>
+            <li>Free-energy margin: <strong>83.02k kJ</strong></li>
+            <li>Burn energy per block: <strong>5.19k kJ</strong></li>
+            <li>β inverse temperature: <strong>0.0680</strong></li>
+            <li>Partition function Z: <strong>9.080e-17</strong></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Hamiltonian</h2>
+          <ul class="metric-list">
+            <li>Kinetic term: <strong>34149.74M</strong></li>
+            <li>Potential term: <strong>456.25k</strong></li>
+            <li>Energy: <strong>34149.29M</strong></li>
+            <li>Δ check: <strong>0.000e+0</strong></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Superintelligence & Owner</h2>
+          <ul class="metric-list">
+            <li>Superintelligence index: <strong>74.5%</strong></li>
+            <li>Composite confidence: <strong>76.4%</strong></li>
+            <li>Thermo / governance / antifragility / owner assurances:
+              <strong>100.0%</strong> ·
+              <strong>2.6%</strong> ·
+              <strong>100.0%</strong> ·
+              <strong>100.0%</strong></li>
+            <li>Owner: <strong>0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1</strong></li>
+            <li>Pauser: <strong>0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2</strong></li>
+            <li>Treasury: <strong>0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3</strong></li>
+            <li>Timelock: <strong>604800 seconds</strong></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Energy → Governance Flow</h2>
+        <pre class="mermaid">flowchart LR
+  subgraph Energy[Energy Intelligence Stack]
+    Thermo[Gibbs Free Energy 83.02k kJ]
+    Burn[Burn Envelope 5.19k kJ/block]
+    QuantumFlux[Quantum Free Energy -3.11e-22 kJ]
+    Thermo --> Burn
+    Thermo --> QuantumFlux
+  end
+  subgraph Incentives[Mint/Burn Governance]
+    Mint[Mint η=0.94]
+    BurnCurve[Burn Curve Δ Escrow]
+    Mint --> BurnCurve
+  end
+  subgraph Equilibrium[Macro Equilibrium]
+    StratA[Replicator Δ=0.00e+0]
+    KKT[KKT Residual 2.22e-16 ✅]
+    Divergence[Divergence 2.22e-16]
+    Payoff[Payoff 1.00 tokens]
+    StratA --> KKT
+    KKT --> Divergence
+    Divergence --> Payoff
+  end
+  subgraph Risk[Risk Engine]
+    Residual[Residual 0.214]
+  end
+  subgraph AlphaField[Alpha-Field Assurance]
+    Stackelberg[Stackelberg Δ=0.60]
+    Confidence[Superintelligence 74%]
+    ThermoSignal[Thermo Assurance 100%]
+    GovernanceSignal[Governance Assurance 3%]
+    AntifragileSignal[Antifragility Assurance 100%]
+    OwnerSignal[Owner Command 100%]
+    QuantumSignal[Quantum Assurance 82%]
+    CoherenceSignal[Coherence 82%]
+    EnergyFloor[Energy Margin 83.02k kJ]
+    Stackelberg --> Confidence
+    EnergyFloor --> ThermoSignal
+    ThermoSignal --> Confidence
+    GovernanceSignal --> Confidence
+    AntifragileSignal --> Confidence
+    OwnerSignal --> Confidence
+    QuantumSignal --> Confidence
+    CoherenceSignal --> QuantumSignal
+  end
+  subgraph Control[Owner Command Surface]
+    Owner((Owner 0xA1A1…A1A1))
+    Pauser([Pauser 0xB2B2…B2B2])
+    Treasury([Treasury 0xC3C3…C3C3])
+    Owner --> Pauser
+    Owner --> Treasury
+  end
+  subgraph Chain[Mainnet Envelope]
+    Governor[AGIJobsGovernor]
+    Monitor[HamiltonianMonitor]
+    Governor --> Monitor
+  end
+  Thermo --> Mint
+  BurnCurve --> StratA
+  Payoff --> Residual
+  Residual --> Stackelberg
+  QuantumFlux --> CoherenceSignal
+  Confidence --> Owner
+  Owner --> Governor</pre>
+      </section>
+
+      <section class="card grid grid-columns-2">
+        <div>
+          <h2>Jarzynski Equality</h2>
+          <ul class="metric-list">
+            <li>ΔF (Gibbs − Landauer): <strong>83.02k kJ</strong></li>
+            <li>Scaled ΔF: <strong>608.53</strong> (Landauer 0.00 → Gibbs 608.53)</li>
+            <li>⟨e<sup>−βW</sup>⟩: <strong>2.778e-17</strong></li>
+            <li>e<sup>−βΔF</sup>: <strong>1.069e-18</strong></li>
+            <li>Log delta: <strong>3.258e+0</strong> (tol 8.276e-1 — investigate)</li>
+            <li>β: <strong>0.0680</strong></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Landauer Alignment</h2>
+          <pre class="mermaid">flowchart LR
+  Landauer((Landauer 7.166e-15 kJ))
+  Gibbs((Gibbs 83.02k kJ))
+  Landauer -->|ΔF 83.02k kJ| Gibbs
+  Landauer -->|⟨e^{-βW}⟩ log -38.122| Sampled[Jarzynski sample]
+  Gibbs -->|e^{-βΔF} log -41.380| Theory[Theoretical bound]</pre>
+        </div>
+      </section>
+
+      <section class="card grid grid-columns-2">
+        <div>
+          <h2>Mint Ledger</h2>
+          <p>Total minted per event: <strong>164.50k tokens</strong> • Treasury mirror share 70.00%</p>
+          <table>
+            <thead><tr><th>Role</th><th>Share</th><th>Minted</th></tr></thead>
+            <tbody><tr><td>Agent</td><td>55.00%</td><td>90.48k tokens</td></tr>
+<tr><td>Validator</td><td>20.00%</td><td>32.90k tokens</td></tr>
+<tr><td>Operator</td><td>20.00%</td><td>32.90k tokens</td></tr>
+<tr><td>Employer</td><td>5.00%</td><td>8.22k tokens</td></tr></tbody>
+          </table>
+        </div>
+        <div>
+          <h2>Game-Theoretic Equilibrium</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Strategy</th><th>Replicator</th><th>Closed</th><th>Monte-Carlo</th><th>Continuous</th><th>Eigenvector</th>
+              </tr>
+            </thead>
+            <tbody><tr><td>Pareto-Coop</td><td>33.33%</td><td>33.33%</td><td>33.39%</td><td>40.75%</td><td>33.33%</td></tr>
+<tr><td>Thermo-Titan</td><td>33.33%</td><td>33.33%</td><td>33.21%</td><td>36.56%</td><td>33.33%</td></tr>
+<tr><td>Sentinel-Tactician</td><td>33.33%</td><td>33.33%</td><td>33.40%</td><td>22.70%</td><td>33.33%</td></tr></tbody>
+          </table>
+          <p>Deviation Δmax: <strong>1.341e-1</strong> • Divergence 2.220e-16</p>
+          <p>
+            KKT payoff λ: <strong>1.00 tokens</strong> • Residual Δmax
+            <strong>2.220e-16</strong>
+            (certified) • Simplex Δ
+            <strong>0.000e+0</strong>
+          </p>
+          <table>
+            <thead><tr><th>Condition</th><th>Residual</th></tr></thead>
+            <tbody><tr><td>Pareto-Coop payoff Δ</td><td>2.220e-16</td></tr>
+<tr><td>Thermo-Titan payoff Δ</td><td>0.000e+0</td></tr>
+<tr><td>Sentinel-Tactician payoff Δ</td><td>0.000e+0</td></tr>
+<tr><td>Probability simplex Δ</td><td>0.000e+0</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Antifragility Tensor</h2>
+        <pre class="mermaid">mindmap
+  root((Antifragility Tensor))
+    "Quadratic curvature":::core
+      "2a=2.36e+0":::core
+    "Sigma Scan":::core
+        "σ=0.00":::sigma --> "Welfare -2.65":::welfare
+        "σ=0.10":::sigma --> "Welfare -2.52":::welfare
+        "σ=0.18":::sigma --> "Welfare -2.39":::welfare
+        "σ=0.26":::sigma --> "Welfare -2.25":::welfare
+        "σ=0.32":::sigma --> "Welfare -2.14":::welfare
+    "Quantum Lattice":::core
+      "Coherence 82%":::sigma
+      "Charge Δ 7.00e-5 (tol 1.20e-4)":::welfare
+    "Owner Actions":::core
+      "Mint Mirror 70.00%"
+      "Residual Risk 0.214"
+  classDef core fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#f9fafb,font-weight:600;
+  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7;font-weight:600;
+  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;</pre>
+        <div id="antifragility-chart">Rendering antifragility curve…</div>
+        <table>
+          <thead><tr><th>σ</th><th>Welfare</th><th>Average payoff</th><th>Divergence</th></tr></thead>
+          <tbody><tr><td>0.00</td><td>-2.65</td><td>1.00</td><td>7.65e-2</td></tr>
+<tr><td>0.10</td><td>-2.52</td><td>1.00</td><td>7.51e-2</td></tr>
+<tr><td>0.18</td><td>-2.39</td><td>1.00</td><td>7.58e-2</td></tr>
+<tr><td>0.26</td><td>-2.25</td><td>1.00</td><td>7.60e-2</td></tr>
+<tr><td>0.32</td><td>-2.14</td><td>1.00</td><td>7.81e-2</td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Quantum Governance Lattice</h2>
+        <p>
+          Coherence <strong>82.1%</strong> • Target floor
+          92.0% • State entropy
+          1.288 bits (dimension 2.44)
+        </p>
+        <p>
+          Quantum free-energy Δ <strong>8.302e+4 kJ</strong> • Noether charge Δ
+          <strong>7.000e-5</strong> (tolerance 1.200e-4 •
+          aligned)
+        </p>
+        <table>
+          <thead><tr><th>State</th><th>Weight</th><th>Energy</th></tr></thead>
+          <tbody><tr><td>ψ1</td><td>62.00%</td><td>0.210 eV</td></tr>
+<tr><td>ψ2</td><td>27.00%</td><td>0.370 eV</td></tr>
+<tr><td>ψ3</td><td>11.00%</td><td>0.580 eV</td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Alpha-Field Sovereign Assurance</h2>
+        <p>
+          Confidence score: <strong>76.4%</strong> • Superintelligence index
+          <strong>74.5%</strong> • Energy margin
+          83.02k kJ
+        </p>
+        <table>
+          <thead><tr><th>Signal</th><th>Value</th><th>Status</th></tr></thead>
+          <tbody><tr><td>Stackelberg Δ</td><td>0.60 (cap 7.50)</td><td>✅</td></tr>
+<tr><td>Stackelberg floor</td><td>0.50 (achieved 0.60)</td><td>✅</td></tr>
+<tr><td>Gibbs delta</td><td>11.82k kJ (tol ±420.00 kJ)</td><td>⚠️</td></tr>
+<tr><td>Divergence</td><td>2.220e-16 ≤ 1.000e-3</td><td>✅</td></tr>
+<tr><td>Entropy floor</td><td>8.28 ≥ 4.05 kJ/K</td><td>✅</td></tr>
+<tr><td>Antifragility curvature</td><td>2.359e+0 ≥ 8.000e-2</td><td>✅</td></tr>
+<tr><td>Sigma welfare gain</td><td>0.52 ≥ 0.12</td><td>✅</td></tr>
+<tr><td>Owner coverage</td><td>100.00% ≥ 100.00%</td><td>✅</td></tr>
+<tr><td>Energy margin</td><td>83.02k ≥ 420.00 kJ</td><td>✅</td></tr>
+<tr><td>Superintelligence index</td><td>74.5% ≥ 97.0%</td><td>⚠️</td></tr>
+<tr><td>Quantum coherence</td><td>82.1% ≥ 92.0%</td><td>⚠️</td></tr>
+<tr><td>Quantum free-energy δ</td><td>8.302e+4 kJ</td><td>⚠️</td></tr>
+<tr><td>Noether charge</td><td>Δ7.000e-5 ≤ 1.200e-4</td><td>✅</td></tr>
+<tr><td>Thermodynamic assurance</td><td>100.0%</td><td>🌌</td></tr>
+<tr><td>Governance assurance</td><td>2.6%</td><td>⚠️</td></tr>
+<tr><td>Antifragility assurance</td><td>100.0%</td><td>🌌</td></tr>
+<tr><td>Owner assurance</td><td>100.0%</td><td>✅</td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="card grid grid-columns-2">
+        <div>
+          <h2>Risk Portfolio</h2>
+          <p>Residual risk: <strong>0.214</strong> • Threshold 0.220</p>
+          <pre class="mermaid">pie showData
+  title Residual Risk Distribution ×10⁻³
+  "R0 Specification drift" : 67.6800
+  "R1 Economic exploit" : 27.2700
+  "R2 Protocol attack" : 16.9200
+  "R3 Model misbehaviour" : 53.6250
+  "R4 Societal externality" : 48.8000</pre>
+          <table>
+            <thead><tr><th>ID</th><th>Threat</th><th>Likelihood</th><th>Impact</th><th>Coverage</th><th>Residual</th></tr></thead>
+            <tbody><tr><td>R0</td><td>Specification drift</td><td>0.18</td><td>0.80</td><td>53.00%</td><td>0.068</td></tr>
+<tr><td>R1</td><td>Economic exploit</td><td>0.18</td><td>0.75</td><td>79.80%</td><td>0.027</td></tr>
+<tr><td>R2</td><td>Protocol attack</td><td>0.10</td><td>0.90</td><td>81.20%</td><td>0.017</td></tr>
+<tr><td>R3</td><td>Model misbehaviour</td><td>0.25</td><td>0.65</td><td>67.00%</td><td>0.054</td></tr>
+<tr><td>R4</td><td>Societal externality</td><td>0.08</td><td>1.00</td><td>39.00%</td><td>0.049</td></tr></tbody>
+          </table>
+        </div>
+        <div>
+          <h2>Owner Command Surface</h2>
+          <pre class="mermaid">sequenceDiagram
+  participant O as Owner
+  participant G as AGIJobsGovernor
+  participant T as Treasury
+  participant M as Mission AI Field
+  O->>G: Pause / Resume Commands
+  O->>T: Mirror Mint 164.50k tokens
+  G->>M: Reconfigure Hamiltonian λ
+  M-->>G: Updated Divergence Metrics
+  G-->>O: Deterministic State Report
+  G-->>O: Verification scripts armed
+  T-->>O: Treasury Mirror Share 70.00%</pre>
+          <h3>Monitoring Sentinels</h3>
+          <ul><li>Grafana circuit-breakers watching governance divergence</li>
+<li>On-chain staking slash monitors</li>
+<li>Adaptive fuzz oracle with spectral drift alerts</li></ul>
+          <h3>Capabilities</h3>
+          <table>
+            <thead><tr><th>Capability</th><th>Category</th><th>Script</th><th>Status</th><th>Verification</th><th>Status</th></tr></thead>
+            <tbody><tr><td>Global pause switch</td><td>pause</td><td>owner:system-pause</td><td>✅</td><td>owner:verify-control</td><td>✅</td></tr>
+<tr><td>Resume operations</td><td>resume</td><td>owner:system-pause</td><td>✅</td><td>owner:verify-control</td><td>✅</td></tr>
+<tr><td>Tune Hamiltonian parameters</td><td>parameter</td><td>owner:command-center</td><td>✅</td><td>owner:audit-hamiltonian</td><td>✅</td></tr>
+<tr><td>Reward engine burn curve</td><td>treasury</td><td>reward-engine:update</td><td>✅</td><td>reward-engine:report</td><td>✅</td></tr>
+<tr><td>Sentinel rotation</td><td>sentinel</td><td>owner:rotate</td><td>✅</td><td>monitoring:sentinels</td><td>✅</td></tr>
+<tr><td>Timelocked upgrade queue</td><td>upgrade</td><td>owner:upgrade</td><td>✅</td><td>owner:upgrade-status</td><td>✅</td></tr>
+<tr><td>Regulatory disclosure</td><td>compliance</td><td>owner:update-all</td><td>✅</td><td>owner:compliance-report</td><td>✅</td></tr>
+<tr><td>Regenerate thermodynamic quantum margin</td><td>Quantum assurance</td><td>thermodynamics:report</td><td>✅</td><td>manual</td><td>ℹ️</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card grid grid-columns-2">
+        <div>
+          <h2>On-Chain Contracts</h2>
+          <p>Network: <strong>mainnet</strong> • Gas target 24 gwei • Confirmations 3</p>
+          <table>
+            <thead><tr><th>Contract</th><th>Address</th><th>Role</th></tr></thead>
+            <tbody><tr><td>AGIJobsGovernor</td><td>0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4</td><td>Primary governance module</td></tr>
+<tr><td>AGIJobsTreasury</td><td>0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5</td><td>Treasury vault / emission controller</td></tr>
+<tr><td>HamiltonianMonitor</td><td>0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6</td><td>Energy coupling supervisor</td></tr></tbody>
+          </table>
+          <h3>Pausable Functions</h3>
+          <table>
+            <thead><tr><th>Contract</th><th>Function</th><th>Selector</th><th>Description</th></tr></thead>
+            <tbody><tr><td>AGIJobsGovernor</td><td>pause</td><td>0x8456cb59</td><td>Global stop for task orchestration</td></tr>
+<tr><td>AGIJobsGovernor</td><td>unpause</td><td>0x3f4ba83a</td><td>Resume operations</td></tr>
+<tr><td>AGIJobsTreasury</td><td>updateEmissionCurve</td><td>0xa10204e9</td><td>Adjusts reward burn / mint ratios</td></tr></tbody>
+          </table>
+        </div>
+        <div>
+          <h2>CI Enforcement</h2>
+          <p>Workflow <strong>ci</strong> • Concurrency <code>ci-${{ github.ref }}</code> • Coverage ≥ 90%</p>
+          <table>
+            <thead><tr><th>Job ID</th><th>Name</th></tr></thead>
+            <tbody><tr><td>lint</td><td>Lint &amp; static checks</td></tr>
+<tr><td>tests</td><td>Tests</td></tr>
+<tr><td>coverage</td><td>Coverage thresholds</td></tr>
+<tr><td>demo-agi-governance</td><td>Solving α-AGI Governance</td></tr>
+<tr><td>scorecard</td><td>Scorecard</td></tr></tbody>
+          </table>
+          <h3>Jacobian Diagnostics</h3>
+          <ul class="metric-list">
+            <li>Gershgorin bound: <strong>3.333e-1</strong></li>
+            <li>Spectral radius: <strong>1.000e+0</strong></li>
+            <li>Analytic vs numeric Δ: <strong>3.333e-1</strong></li>
+          </ul>
+        </div>
+      </section>
+    </main>
+    <footer>
+      Solving α-AGI Governance — evidence that AGI Jobs v0 (v2) gives non-technical owners full-spectrum control over a
+      civilisation-scale intelligence engine.
+    </footer>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'forest' });
+
+      const antifragilityData = [{"sigma":0,"welfare":-2.6541839969664434},{"sigma":0.1,"welfare":-2.518378523973349},{"sigma":0.18,"welfare":-2.3927493620001594},{"sigma":0.26,"welfare":-2.252013935808231},{"sigma":0.32,"welfare":-2.1365583720139725}];
+      const chart = document.querySelector('#antifragility-chart');
+      if (chart && Array.isArray(antifragilityData) && antifragilityData.length > 0) {
+        const width = 760;
+        const height = 260;
+        const padding = 42;
+        const min = Math.min(...antifragilityData.map((d) => d.welfare));
+        const max = Math.max(...antifragilityData.map((d) => d.welfare));
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
+        svg.style.overflow = 'visible';
+
+        const axis = document.createElementNS(svgNS, 'line');
+        axis.setAttribute('x1', String(padding));
+        axis.setAttribute('y1', String(height - padding));
+        axis.setAttribute('x2', String(width - padding));
+        axis.setAttribute('y2', String(height - padding));
+        axis.setAttribute('stroke', 'rgba(148, 163, 184, 0.6)');
+        axis.setAttribute('stroke-width', '1.5');
+        svg.appendChild(axis);
+
+        const yAxis = document.createElementNS(svgNS, 'line');
+        yAxis.setAttribute('x1', String(padding));
+        yAxis.setAttribute('y1', String(padding));
+        yAxis.setAttribute('x2', String(padding));
+        yAxis.setAttribute('y2', String(height - padding));
+        yAxis.setAttribute('stroke', 'rgba(148, 163, 184, 0.6)');
+        yAxis.setAttribute('stroke-width', '1.5');
+        svg.appendChild(yAxis);
+
+        const points = antifragilityData
+          .map((point, index) => {
+            const x = padding + (index / Math.max(antifragilityData.length - 1, 1)) * (width - padding * 2);
+            const normalised = max === min ? 0.5 : (point.welfare - min) / (max - min);
+            const y = height - padding - normalised * (height - padding * 2);
+            return x + ',' + y;
+          })
+          .join(' ');
+
+        const polyline = document.createElementNS(svgNS, 'polyline');
+        polyline.setAttribute('points', points);
+        polyline.setAttribute('fill', 'none');
+        polyline.setAttribute('stroke', 'url(#gradient)');
+        polyline.setAttribute('stroke-width', '3');
+        polyline.setAttribute('stroke-linejoin', 'round');
+        polyline.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(polyline);
+
+        const gradient = document.createElementNS(svgNS, 'linearGradient');
+        gradient.setAttribute('id', 'gradient');
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('x2', '100%');
+        gradient.setAttribute('y2', '0%');
+        const stop1 = document.createElementNS(svgNS, 'stop');
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('stop-color', '#38bdf8');
+        const stop2 = document.createElementNS(svgNS, 'stop');
+        stop2.setAttribute('offset', '100%');
+        stop2.setAttribute('stop-color', '#f97316');
+        gradient.appendChild(stop1);
+        gradient.appendChild(stop2);
+        const defs = document.createElementNS(svgNS, 'defs');
+        defs.appendChild(gradient);
+        svg.insertBefore(defs, svg.firstChild);
+
+        antifragilityData.forEach((point, index) => {
+          const x = padding + (index / Math.max(antifragilityData.length - 1, 1)) * (width - padding * 2);
+          const normalised = max === min ? 0.5 : (point.welfare - min) / (max - min);
+          const y = height - padding - normalised * (height - padding * 2);
+          const circle = document.createElementNS(svgNS, 'circle');
+          circle.setAttribute('cx', String(x));
+          circle.setAttribute('cy', String(y));
+          circle.setAttribute('r', '6');
+          circle.setAttribute('fill', '#0ea5e9');
+          circle.setAttribute('stroke', '#082f49');
+          circle.setAttribute('stroke-width', '2');
+          svg.appendChild(circle);
+
+          const label = document.createElementNS(svgNS, 'text');
+          label.setAttribute('x', String(x));
+          label.setAttribute('y', String(y - 12));
+          label.setAttribute('fill', '#bae6fd');
+          label.setAttribute('font-size', '12');
+          label.setAttribute('text-anchor', 'middle');
+          label.textContent = point.welfare.toFixed(3);
+          svg.appendChild(label);
+        });
+
+        chart.innerHTML = '';
+        chart.appendChild(svg);
+      }
+    </script>
+  </body>
+</html>

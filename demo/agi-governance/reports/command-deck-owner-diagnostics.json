@@ -1,0 +1,215 @@
+{
+  "generatedAt": "2025-10-20T00:46:13.985Z",
+  "results": [
+    {
+      "id": "hamiltonian",
+      "description": "Hamiltonian monitor ↔ mission manifest alignment",
+      "script": "owner:audit-hamiltonian",
+      "command": "npm run owner:audit-hamiltonian -- --json",
+      "exitCode": 0,
+      "stdout": "\n> agijobsv0@1.0.0 owner:audit-hamiltonian\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerHamiltonianAudit.ts --json\n\n[dotenv@17.2.2] injecting env (2) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar\n{\n  \"generatedAt\": \"2025-10-20T00:46:01.395Z\",\n  \"monitorAddress\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/hamiltonian-monitor.json\",\n    \"window\": \"5\",\n    \"resetHistory\": false,\n    \"records\": 0\n  },\n  \"mission\": {\n    \"contracts\": [\n      {\n        \"name\": \"AGIJobsGovernor\",\n        \"address\": \"0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4\"\n      },\n      {\n        \"name\": \"AGIJobsTreasury\",\n        \"address\": \"0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5\"\n      },\n      {\n        \"name\": \"HamiltonianMonitor\",\n        \"address\": \"0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6\"\n      }\n    ],\n    \"hamiltonian\": {\n      \"lambda\": 0.94,\n      \"discountFactor\": 0.92,\n      \"divergenceTolerance\": 0.001\n    }\n  },\n  \"onChain\": {\n    \"status\": \"error\",\n    \"reason\": \"HH700: Artifact for contract \\\"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\\\" not found. \"\n  },\n  \"crossChecks\": {\n    \"configMatchesMission\": false,\n    \"configMatchesOnChain\": null\n  }\n}\n",
+      "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
+      "durationMs": 4690.127328999999,
+      "parsed": {
+        "generatedAt": "2025-10-20T00:46:01.395Z",
+        "monitorAddress": "0x0000000000000000000000000000000000000000",
+        "config": {
+          "path": "/workspace/AGIJobsv0/config/hamiltonian-monitor.json",
+          "window": "5",
+          "resetHistory": false,
+          "records": 0
+        },
+        "mission": {
+          "contracts": [
+            {
+              "name": "AGIJobsGovernor",
+              "address": "0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4"
+            },
+            {
+              "name": "AGIJobsTreasury",
+              "address": "0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5"
+            },
+            {
+              "name": "HamiltonianMonitor",
+              "address": "0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6"
+            }
+          ],
+          "hamiltonian": {
+            "lambda": 0.94,
+            "discountFactor": 0.92,
+            "divergenceTolerance": 0.001
+          }
+        },
+        "onChain": {
+          "status": "error",
+          "reason": "HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. "
+        },
+        "crossChecks": {
+          "configMatchesMission": false,
+          "configMatchesOnChain": null
+        }
+      },
+      "statuses": [
+        {
+          "path": "$.onChain",
+          "status": "error",
+          "reason": "HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. "
+        }
+      ],
+      "notes": [
+        "$.onChain: HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found.",
+        "Cross-check mismatch: mission alignment."
+      ],
+      "severity": "warning",
+      "summary": "ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. | Cross-check mismatch: mission alignment."
+    },
+    {
+      "id": "rewardEngine",
+      "description": "Reward engine treasury / thermodynamic calibration",
+      "script": "reward-engine:report",
+      "command": "npm run reward-engine:report -- --json",
+      "exitCode": 0,
+      "stdout": "\n> agijobsv0@1.0.0 reward-engine:report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/rewardEngineReport.ts --json\n\n[dotenv@17.2.2] injecting env (2) from .env -- tip: ⚙️  override existing env vars with { override: true }\n{\n  \"generatedAt\": \"2025-10-20T00:46:05.991Z\",\n  \"address\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/reward-engine.json\",\n    \"source\": \"reward-engine\",\n    \"address\": \"0x0000000000000000000000000000000000000000\",\n    \"treasury\": \"0x0000000000000000000000000000000000000000\",\n    \"thermostat\": \"0x0000000000000000000000000000000000000000\",\n    \"roleShares\": {\n      \"agent\": 65,\n      \"validator\": 15,\n      \"operator\": 15,\n      \"employer\": 5\n    },\n    \"mu\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"baselineEnergy\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"kappa\": \"1000000000000000000\",\n    \"maxProofs\": 100,\n    \"temperature\": \"1000000000000000000\",\n    \"settlers\": []\n  },\n  \"mission\": {\n    \"thermodynamics\": {\n      \"enthalpyKJ\": 71142.64676186016,\n      \"entropyKJPerK\": 4.331118586645678,\n      \"operatingTemperatureK\": 310,\n      \"referenceTemperatureK\": 300,\n      \"bitsProcessed\": 1800000000,\n      \"burnRatePerBlock\": 0.0625,\n      \"stakeBoltzmann\": 1.380649e-23\n    }\n  },\n  \"onChain\": {\n    \"status\": \"error\",\n    \"reason\": \"HH700: Artifact for contract \\\"contracts/v2/RewardEngineMB.sol:RewardEngineMB\\\" not found. \"\n  },\n  \"diagnostics\": {\n    \"roleShareTotal\": 100,\n    \"roleShareMatchesChain\": null\n  }\n}\n",
+      "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
+      "durationMs": 4587.716053,
+      "parsed": {
+        "generatedAt": "2025-10-20T00:46:05.991Z",
+        "address": "0x0000000000000000000000000000000000000000",
+        "config": {
+          "path": "/workspace/AGIJobsv0/config/reward-engine.json",
+          "source": "reward-engine",
+          "address": "0x0000000000000000000000000000000000000000",
+          "treasury": "0x0000000000000000000000000000000000000000",
+          "thermostat": "0x0000000000000000000000000000000000000000",
+          "roleShares": {
+            "agent": 65,
+            "validator": 15,
+            "operator": 15,
+            "employer": 5
+          },
+          "mu": {
+            "agent": "0",
+            "validator": "0",
+            "operator": "0",
+            "employer": "0"
+          },
+          "baselineEnergy": {
+            "agent": "0",
+            "validator": "0",
+            "operator": "0",
+            "employer": "0"
+          },
+          "kappa": "1000000000000000000",
+          "maxProofs": 100,
+          "temperature": "1000000000000000000",
+          "settlers": []
+        },
+        "mission": {
+          "thermodynamics": {
+            "enthalpyKJ": 71142.64676186016,
+            "entropyKJPerK": 4.331118586645678,
+            "operatingTemperatureK": 310,
+            "referenceTemperatureK": 300,
+            "bitsProcessed": 1800000000,
+            "burnRatePerBlock": 0.0625,
+            "stakeBoltzmann": 1.380649e-23
+          }
+        },
+        "onChain": {
+          "status": "error",
+          "reason": "HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. "
+        },
+        "diagnostics": {
+          "roleShareTotal": 100,
+          "roleShareMatchesChain": null
+        }
+      },
+      "statuses": [
+        {
+          "path": "$.onChain",
+          "status": "error",
+          "reason": "HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. "
+        }
+      ],
+      "notes": [
+        "$.onChain: HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found."
+      ],
+      "severity": "warning",
+      "summary": "ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found."
+    },
+    {
+      "id": "upgradeStatus",
+      "description": "Timelock governance queue readiness",
+      "script": "owner:upgrade-status",
+      "command": "npm run owner:upgrade-status -- --json",
+      "exitCode": 0,
+      "stdout": "\n> agijobsv0@1.0.0 owner:upgrade-status\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerUpgradeStatus.ts --json\n\n{\n  \"generatedAt\": \"2025-10-20T00:46:09.932Z\",\n  \"configSource\": \"not found\",\n  \"onChain\": {\n    \"status\": \"skipped\",\n    \"reason\": \"No timelock address available.\"\n  }\n}\n",
+      "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
+      "durationMs": 3933.729965999999,
+      "parsed": {
+        "generatedAt": "2025-10-20T00:46:09.932Z",
+        "configSource": "not found",
+        "onChain": {
+          "status": "skipped",
+          "reason": "No timelock address available."
+        }
+      },
+      "statuses": [
+        {
+          "path": "$.onChain",
+          "status": "skipped",
+          "reason": "No timelock address available."
+        }
+      ],
+      "notes": [
+        "$.onChain: skipped — No timelock address available."
+      ],
+      "severity": "warning",
+      "summary": "SKIPPED @ $.onChain — No timelock address available."
+    },
+    {
+      "id": "compliance",
+      "description": "Tax policy disclosure + acknowledgement status",
+      "script": "owner:compliance-report",
+      "command": "npm run owner:compliance-report -- --json",
+      "exitCode": 0,
+      "stdout": "\n> agijobsv0@1.0.0 owner:compliance-report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerComplianceReport.ts --json\n\n{\n  \"generatedAt\": \"2025-10-20T00:46:13.840Z\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/tax-policy.json\",\n    \"policyURI\": \"ipfs://example-tax-policy\",\n    \"acknowledgement\": \"Employers, agents, and validators accept full responsibility for all applicable taxes.\",\n    \"acknowledgers\": [],\n    \"revokeList\": []\n  },\n  \"onChain\": {\n    \"status\": \"skipped\",\n    \"reason\": \"No tax policy address configured.\"\n  },\n  \"configSource\": \"not found\"\n}\n",
+      "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
+      "durationMs": 3922.0685030000004,
+      "parsed": {
+        "generatedAt": "2025-10-20T00:46:13.840Z",
+        "config": {
+          "path": "/workspace/AGIJobsv0/config/tax-policy.json",
+          "policyURI": "ipfs://example-tax-policy",
+          "acknowledgement": "Employers, agents, and validators accept full responsibility for all applicable taxes.",
+          "acknowledgers": [],
+          "revokeList": []
+        },
+        "onChain": {
+          "status": "skipped",
+          "reason": "No tax policy address configured."
+        },
+        "configSource": "not found"
+      },
+      "statuses": [
+        {
+          "path": "$.onChain",
+          "status": "skipped",
+          "reason": "No tax policy address configured."
+        }
+      ],
+      "notes": [
+        "$.onChain: skipped — No tax policy address configured."
+      ],
+      "severity": "warning",
+      "summary": "SKIPPED @ $.onChain — No tax policy address configured."
+    }
+  ],
+  "totals": {
+    "success": 0,
+    "warning": 4,
+    "error": 0,
+    "overall": 4
+  },
+  "readiness": "attention"
+}
