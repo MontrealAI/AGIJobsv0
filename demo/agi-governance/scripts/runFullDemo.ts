@@ -33,6 +33,13 @@ import {
   type AggregatedReport,
   type OwnerDiagnosticsOptions,
 } from "./collectOwnerDiagnostics";
+import {
+  runSuperintelligenceSentinel,
+  SUPERINTELLIGENCE_JSON as SUPER_JSON_FILE,
+  SUPERINTELLIGENCE_MARKDOWN as SUPER_MARKDOWN_FILE,
+  type SuperintelligenceOptions,
+  type SuperintelligenceReport,
+} from "./superintelligenceSentinel";
 
 const FULL_RUN_JSON = path.join(DEMO_REPORT_DIR, "governance-demo-full-run.json");
 const FULL_RUN_MARKDOWN = path.join(DEMO_REPORT_DIR, "governance-demo-full-run.md");
@@ -42,6 +49,7 @@ export interface FullDemoOptions {
   validation?: ValidationOptions;
   ci?: VerifyCiOptions;
   owner?: OwnerDiagnosticsOptions;
+  superintelligence?: SuperintelligenceOptions;
   outputJson?: string;
   outputMarkdown?: string;
 }
@@ -89,6 +97,17 @@ type FullRunSummary = {
     quantumThermoAligned: boolean;
     quantumThermoDriftMaximumKJ: number;
     quantumEntropyBits: number;
+    superintelligenceDirect: number;
+    superintelligenceRecomputed: number;
+    superintelligenceHybrid: number;
+    superintelligenceConsistent: boolean;
+    dominancePotential: number;
+    capitalRealignmentPotential: number;
+    unstoppableConfidence: number;
+    ownerPauseAuthority: number;
+    ownerUpgradeAuthority: number;
+    ownerTreasuryAuthority: number;
+    ciShieldConfidence: number;
   };
   ciIssues: string[];
   ownerWarnings: number;
@@ -102,6 +121,8 @@ type FullRunSummary = {
     ciReport: string;
     ownerJson: string;
     ownerMarkdown: string;
+    superintelligenceJson: string;
+    superintelligenceMarkdown: string;
   };
 };
 
@@ -117,6 +138,13 @@ function formatMs(value: number): string {
     return "n/a";
   }
   return `${formatNumber(value / 1000, 2)} s`;
+}
+
+function formatPercent(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "n/a";
+  }
+  return `${(value * 100).toFixed(2)}%`;
 }
 
 function resolveWithDir(baseFile: string, overrideFile?: string, overrideDir?: string): string {
@@ -274,6 +302,26 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
     markdownFile: ownerMarkdownPath,
   };
 
+  const superJsonPath = resolveWithDir(
+    SUPER_JSON_FILE,
+    options.superintelligence?.jsonFile,
+    options.superintelligence?.reportDir ?? demoOptions.reportDir,
+  );
+  const superMarkdownPath = resolveWithDir(
+    SUPER_MARKDOWN_FILE,
+    options.superintelligence?.markdownFile,
+    options.superintelligence?.reportDir ?? demoOptions.reportDir,
+  );
+  const superOptions: SuperintelligenceOptions = {
+    ...options.superintelligence,
+    missionFile: options.superintelligence?.missionFile ?? demoOptions.missionFile,
+    summaryFile,
+    jsonFile: superJsonPath,
+    markdownFile: superMarkdownPath,
+    reportDir: path.dirname(superJsonPath),
+    silent: options.superintelligence?.silent ?? true,
+  };
+
   const fullRunJsonPath = resolveWithDir(FULL_RUN_JSON, options.outputJson, demoOptions.reportDir);
   const fullRunMarkdownPath = resolveWithDir(FULL_RUN_MARKDOWN, options.outputMarkdown, demoOptions.reportDir);
 
@@ -335,6 +383,17 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
     details: summariseDiagnostics(diagnostics),
   });
 
+  const superStart = performance.now();
+  const superReport = await runSuperintelligenceSentinel(superOptions);
+  const superStatus: StepStatus = superReport.unstoppableConfidence >= 0.7 ? "success" : "warning";
+  steps.push({
+    id: "superintelligence",
+    label: "Superintelligence sentinel",
+    status: superStatus,
+    durationMs: performance.now() - superStart,
+    details: `Dominance ${formatPercent(superReport.dominancePotential)} · Unstoppable ${formatPercent(superReport.unstoppableConfidence)}`,
+  });
+
   const summary: FullRunSummary = {
     generatedAt: new Date().toISOString(),
     totalDurationMs: performance.now() - start,
@@ -368,6 +427,17 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
       quantumThermoAligned: bundle.alphaField.thermoQuantumAligned,
       quantumThermoDriftMaximumKJ: bundle.alphaField.thermoQuantumDriftMaximumKJ,
       quantumEntropyBits: bundle.quantum.stateEntropyBits,
+      superintelligenceDirect: superReport.indices.direct,
+      superintelligenceRecomputed: superReport.indices.recomputed,
+      superintelligenceHybrid: superReport.indices.hybrid,
+      superintelligenceConsistent: superReport.indices.consistent,
+      dominancePotential: superReport.dominancePotential,
+      capitalRealignmentPotential: superReport.capitalRealignmentPotential,
+      unstoppableConfidence: superReport.unstoppableConfidence,
+      ownerPauseAuthority: superReport.owner.pauseAuthorityConfidence,
+      ownerUpgradeAuthority: superReport.owner.upgradeAuthorityConfidence,
+      ownerTreasuryAuthority: superReport.owner.treasuryAuthorityConfidence,
+      ciShieldConfidence: superReport.owner.ciShieldConfidence,
     },
     ciIssues: ciAssessment.issues,
     ownerWarnings: diagnostics.totals.warning,
@@ -381,6 +451,8 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
       ciReport: ciOutputPath,
       ownerJson: ownerJsonPath,
       ownerMarkdown: ownerMarkdownPath,
+      superintelligenceJson: superJsonPath,
+      superintelligenceMarkdown: superMarkdownPath,
     },
   };
 
@@ -420,6 +492,9 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
     `- Owner supremacy index: ${(summary.metrics.ownerSupremacyIndex * 100).toFixed(1)}% (${summary.metrics.ownerSupremacySatisfied ? "✅" : "⚠️"})`,
     `- CI shield: ${summary.metrics.ciShieldOk ? "✅ enforced" : "❌ drift detected"}`,
     `- Owner readiness: ${summary.metrics.ownerReadiness}`,
+    `- Superintelligence (direct / hybrid): ${formatPercent(summary.metrics.superintelligenceDirect)} · ${formatPercent(summary.metrics.superintelligenceHybrid)} (${summary.metrics.superintelligenceConsistent ? "aligned" : "drift"})`,
+    `- Dominance potential: ${formatPercent(summary.metrics.dominancePotential)} · Capital realignment: ${formatPercent(summary.metrics.capitalRealignmentPotential)}`,
+    `- Unstoppable confidence: ${formatPercent(summary.metrics.unstoppableConfidence)} (pause ${formatPercent(summary.metrics.ownerPauseAuthority)}, upgrade ${formatPercent(summary.metrics.ownerUpgradeAuthority)}, treasury ${formatPercent(summary.metrics.ownerTreasuryAuthority)}, CI shield ${formatPercent(summary.metrics.ciShieldConfidence)})`,
   ].join("\n");
 
   const mermaid = buildMermaidTimeline(steps);
@@ -445,6 +520,8 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
     `- CI verification: \`${summary.artifacts.ciReport}\``,
     `- Owner diagnostics JSON: \`${summary.artifacts.ownerJson}\``,
     `- Owner diagnostics Markdown: \`${summary.artifacts.ownerMarkdown}\``,
+    `- Superintelligence JSON: \`${summary.artifacts.superintelligenceJson}\``,
+    `- Superintelligence Markdown: \`${summary.artifacts.superintelligenceMarkdown}\``,
     "",
     summary.ciIssues.length > 0
       ? `> ⚠️ CI shield issues detected: ${summary.ciIssues.join(" | ")}`
