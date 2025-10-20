@@ -6,7 +6,7 @@ minutes. A single command deploys the production **JobRegistry**,
 **StakeManager**, **ValidationModule**, **DisputeModule**, **ReputationEngine**,
 **IdentityRegistry**, **FeePool**, and **CertificateNFT** modules on an
 ephemeral Hardhat network, injects identities for sovereign task forces, and
-replays two fully autonomous supply missions:
+replays three fully autonomous supply missions:
 
 1. **Arctic resilience corridor** – an AGI logistics swarm hardens Arctic
    infrastructure while validator sentinels certify telemetry, resulting in
@@ -14,6 +14,10 @@ replays two fully autonomous supply missions:
 2. **Pacific relief escalation** – a humanitarian airlift faces validator
    disagreement, governance arbitrates on-chain, slashes negligent validators,
    and still graduates the relief collective with zero manual bookkeeping.
+3. **Quadratic treasury reallocation** – a delegated moderator executes a
+   quadratic vote that reallocates sovereign reserves, refunds voters
+   proportional to their commitments, and proves the owner can reclaim
+   execution authority instantly.
 
 Every step is narrated for executives: escrow movements, validator
 commit/reveal rounds, dispute escalation, certificate minting, burn accounting,
@@ -123,10 +127,14 @@ and performs the following sequence end to end:
 4. **Pacific relief dispute** – validator abstention triggers on-chain dispute,
    owner+moderator signatures resolve the case, validators are slashed, and the
    relief swarm still graduates with an immutable credential.
-5. **Owner mission control drill** – live parameter adjustments (fees, burn,
+5. **Quadratic governance referendum** – treasury is rerouted to a relief
+   authority, stakeholders cast identity-gated quadratic ballots, a delegated
+   moderator executes the proposal, and the owner sweeps remaining escrow while
+   restoring executor control.
+6. **Owner mission control drill** – live parameter adjustments (fees, burn,
    stake guardrails, dispute windows) with confirmations that every module obeys
    the owner’s command.
-6. **Telemetry + automation digest** – generates a machine-consumable plan that
+7. **Telemetry + automation digest** – generates a machine-consumable plan that
    lists outstanding owner directives, validator signals, treasury alerts, and
    the checks that must stay green for production parity.
 

@@ -22,8 +22,9 @@ npm run demo:national-supply-chain
 The script performs the following:
 - Deploys all AGI Jobs v2 production modules.
 - Configures sovereign identities, stakes, and treasury balances.
-- Executes the Arctic corridor mission (happy path) and Pacific relief dispute
-  (with arbitration).
+- Executes the Arctic corridor mission (happy path), the Pacific relief dispute
+  (with arbitration), and the quadratic treasury referendum with delegated
+  execution and reward sweeps.
 - Prints real-time balances, validator states, minted credentials, and owner
   override confirmations.
 
