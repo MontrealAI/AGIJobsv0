@@ -18,6 +18,6 @@ cd "${ROOT_DIR}"
 npm run demo:agi-os:first-class -- --auto-yes "$@"
 
 # 2. Replay the ASI take-off harness against the meta-agentic plan to populate multi-actor receipts.
-npm run demo:asi-takeoff:local
+npm run demo:asi-takeoff "$@"
 
 printf '\n✅  Meta-Agentic α-AGI orchestration complete. Artifacts under reports/agi-os/ and reports/asi-takeoff/.\n\n'

@@ -19,7 +19,7 @@ demo/meta-agentic-alpha-agi/bin/launch.sh
 The wrapper sets `ASI_TAKEOFF_PLAN_PATH` to the meta-agentic mission plan and executes:
 
 - `npm run demo:agi-os:first-class -- --auto-yes` – deploys/updates the stack, runs the Astral Omnidominion OS demo, emits grand summary + owner control bundle, and verifies manifests.
-- `npm run demo:asi-takeoff:local` – replays the deterministic ASI take-off harness with the meta-agentic plan, producing receipts and thermodynamic telemetry for the nation + wallet coalition.
+- `npm run demo:asi-takeoff` – replays the deterministic ASI take-off harness with the meta-agentic plan, producing receipts and thermodynamic telemetry for the nation + wallet coalition.
 
 Artefacts land under:
 
