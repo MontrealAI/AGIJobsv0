@@ -60,6 +60,18 @@ jobs:
       - name: Aggregate owner diagnostics
         run: npm run demo:agi-governance:owner-diagnostics
 
+      - name: Generate α-field v15 OmegaSovereign dossier
+        run: npm run demo:agi-governance:alpha-v15
+
+      - name: Validate α-field v15 OmegaSovereign dossier
+        run: npm run demo:agi-governance:alpha-v15:validate
+
+      - name: Verify α-field v15 CI enforcement
+        run: npm run demo:agi-governance:alpha-v15:ci
+
+      - name: Aggregate α-field v15 owner diagnostics
+        run: npm run demo:agi-governance:alpha-v15:owner-diagnostics
+
       - name: Generate α-field v14 HyperSovereign dossier
         run: npm run demo:agi-governance:alpha-v14
 
@@ -91,6 +103,7 @@ jobs:
           name: agi-governance-reports
           path: |
             demo/agi-governance/reports/**
+            demo/agi-governance/alpha-v15/reports/**
             demo/agi-governance/alpha-v14/reports/**
             demo/agi-governance/alpha-v13/reports/**
           if-no-files-found: error
