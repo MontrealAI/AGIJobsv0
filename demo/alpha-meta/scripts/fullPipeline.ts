@@ -8,6 +8,8 @@ const MISSION_FILE = path.join(BASE_DIR, "config", "mission@alpha-meta.json");
 const REPORT_FILE = path.join(REPORT_DIR, "alpha-meta-governance-report.md");
 const SUMMARY_FILE = path.join(REPORT_DIR, "alpha-meta-governance-summary.json");
 const DASHBOARD_FILE = path.join(REPORT_DIR, "alpha-meta-governance-dashboard.html");
+const OWNER_MATRIX_JSON = path.join(REPORT_DIR, "alpha-meta-owner-matrix.json");
+const OWNER_MATRIX_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-owner-matrix.md");
 const VALIDATION_JSON = path.join(REPORT_DIR, "alpha-meta-governance-validation.json");
 const VALIDATION_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-governance-validation.md");
 const CI_REPORT = path.join(REPORT_DIR, "alpha-meta-ci-verification.json");
@@ -24,6 +26,8 @@ async function main(): Promise<void> {
       reportFile: REPORT_FILE,
       summaryFile: SUMMARY_FILE,
       dashboardFile: DASHBOARD_FILE,
+      ownerMatrixJsonFile: OWNER_MATRIX_JSON,
+      ownerMatrixMarkdownFile: OWNER_MATRIX_MARKDOWN,
     },
     validation: {
       missionFile: MISSION_FILE,

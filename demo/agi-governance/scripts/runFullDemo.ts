@@ -8,6 +8,8 @@ import {
   REPORT_FILE as GOVERNANCE_REPORT_FILE,
   SUMMARY_FILE as GOVERNANCE_SUMMARY_FILE,
   DASHBOARD_FILE as GOVERNANCE_DASHBOARD_FILE,
+  OWNER_MATRIX_JSON_FILE,
+  OWNER_MATRIX_MARKDOWN_FILE,
   type GovernanceDemoOptions,
   type ReportBundle,
 } from "./executeDemo";
@@ -97,6 +99,8 @@ type FullRunSummary = {
     report: string;
     summary: string;
     dashboard: string;
+    ownerMatrixJson: string;
+    ownerMatrixMarkdown: string;
     validationJson: string;
     validationMarkdown: string;
     ciReport: string;
@@ -217,6 +221,16 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
   const reportFile = resolveWithDir(GOVERNANCE_REPORT_FILE, demoOptions.reportFile, demoOptions.reportDir);
   const summaryFile = resolveWithDir(GOVERNANCE_SUMMARY_FILE, demoOptions.summaryFile, demoOptions.reportDir);
   const dashboardFile = resolveWithDir(GOVERNANCE_DASHBOARD_FILE, demoOptions.dashboardFile, demoOptions.reportDir);
+  const ownerMatrixJsonPath = resolveWithDir(
+    OWNER_MATRIX_JSON_FILE,
+    demoOptions.ownerMatrixJsonFile,
+    demoOptions.reportDir,
+  );
+  const ownerMatrixMarkdownPath = resolveWithDir(
+    OWNER_MATRIX_MARKDOWN_FILE,
+    demoOptions.ownerMatrixMarkdownFile,
+    demoOptions.reportDir,
+  );
 
   const generationOptions: GovernanceDemoOptions = {
     ...demoOptions,
@@ -224,6 +238,8 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
     reportFile,
     summaryFile,
     dashboardFile,
+    ownerMatrixJsonFile: ownerMatrixJsonPath,
+    ownerMatrixMarkdownFile: ownerMatrixMarkdownPath,
   };
 
   const validationSummaryPath = resolveWithDir(
@@ -377,6 +393,8 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
       report: reportFile,
       summary: summaryFile,
       dashboard: dashboardFile,
+      ownerMatrixJson: ownerMatrixJsonPath,
+      ownerMatrixMarkdown: ownerMatrixMarkdownPath,
       validationJson: validationJsonPath,
       validationMarkdown: validationMarkdownPath,
       ciReport: ciOutputPath,
@@ -441,6 +459,8 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
     `- Governance dossier: \`${summary.artifacts.report}\``,
     `- Physics summary: \`${summary.artifacts.summary}\``,
     `- Interactive dashboard: \`${summary.artifacts.dashboard}\``,
+    `- Owner matrix JSON: \`${summary.artifacts.ownerMatrixJson}\``,
+    `- Owner matrix Markdown: \`${summary.artifacts.ownerMatrixMarkdown}\``,
     `- Validation JSON: \`${summary.artifacts.validationJson}\``,
     `- Validation Markdown: \`${summary.artifacts.validationMarkdown}\``,
     `- CI verification: \`${summary.artifacts.ciReport}\``,

@@ -1,5 +1,5 @@
 # Meta-Agentic α-AGI — Alpha-Meta Sovereign Hypergraph — Governance Demonstration Report
-*Generated at:* 2025-10-20T13:36:19.247Z
+*Generated at:* 2025-10-20T15:57:10.273Z
 *Version:* 2.0.0
 
 > Alpha-Meta proves that AGI Jobs v0 (v2) empowers a non-technical owner to choreograph a civilisation-scale meta-agent that governs subordinate swarms, physics guarantees, and unstoppable blockchain levers in one deterministic command.
