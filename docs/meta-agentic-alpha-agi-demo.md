@@ -23,7 +23,7 @@ This document is the canonical reference for the Meta-Agentic α-AGI showcase. I
 
 1. `demo/meta-agentic-alpha-agi/bin/launch.sh`
    - Runs `demo:agi-os:first-class` with `--auto-yes` to deploy contracts, run simulations, verify owner controls, and assemble manifests.
-   - Runs `demo:asi-takeoff:local` with `ASI_TAKEOFF_PLAN_PATH` pointing at the meta-agentic plan to populate mission receipts.
+   - Runs `demo:asi-takeoff` with `ASI_TAKEOFF_PLAN_PATH` pointing at the meta-agentic plan to populate mission receipts.
 2. Optional dashboards:
    - `docker compose up validator-ui enterprise-portal`
    - `npm --prefix apps/console run dev`

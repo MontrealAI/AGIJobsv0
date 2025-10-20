@@ -31,6 +31,8 @@ The launcher performs the complete sovereign orchestration:
 5. **ASI take-off replay** – the launcher binds `ASI_TAKEOFF_PLAN_PATH=demo/alpha-meta/project-plan.alpha-meta.json` and runs the
    plan-aware `npm run demo:asi-takeoff` harness so the mission receipts, thermodynamic telemetry, and pause drills are replayed
    with the alpha-meta actors.
+   stock `npm run demo:asi-takeoff` harness so the mission receipts, thermodynamic telemetry, and pause drills are replayed with
+   the alpha-meta actors.
 6. **Audit bundle** – `npm run demo:alpha-meta:full` glues every step into `reports/alpha-meta/meta-governance-full-run.json`
    / `.md`, giving auditors a single hashable digest.
 
