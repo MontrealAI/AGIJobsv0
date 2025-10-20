@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>National Supply Chain v0 Intelligence Cockpit</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      window.mermaidConfig = { startOnLoad: false, theme: 'dark' };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+    <script type="module" src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="tag" data-mission-tag>Mission Tag</p>
+        <h1 data-mission-title>National Supply Chain v0</h1>
+        <p class="objective" data-mission-objective>
+          Loading national intelligence kit…
+        </p>
+      </div>
+      <div class="meta-panel">
+        <dl>
+          <div>
+            <dt>Generated</dt>
+            <dd data-generated-at>—</dd>
+          </div>
+          <div>
+            <dt>Network</dt>
+            <dd data-network>—</dd>
+          </div>
+          <div>
+            <dt>Owner ENS</dt>
+            <dd data-owner-ens>—</dd>
+          </div>
+        </dl>
+        <div class="hero-actions">
+          <a class="btn" href="../RUNBOOK.md" target="_blank" rel="noopener">Open Runbook</a>
+          <a class="btn" href="../README.md" target="_blank" rel="noopener">View README</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="card" id="metrics">
+        <h2>Mission Metrics</h2>
+        <div class="stat-grid" data-metrics></div>
+      </section>
+
+      <section class="card" id="phase-filters">
+        <h2>Phases &amp; Controls</h2>
+        <div class="phase-grid" data-phase-filters></div>
+      </section>
+
+      <section class="card" id="jobs">
+        <div class="card-header">
+          <h2>Jobs &amp; Critical Path</h2>
+          <div class="pill legend-critical">Critical path</div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Phase</th>
+                <th>Window</th>
+                <th>Reward</th>
+                <th>Slack</th>
+                <th>Corridors</th>
+                <th>Agents</th>
+                <th>Validators</th>
+              </tr>
+            </thead>
+            <tbody data-job-rows>
+              <tr><td colspan="9" class="loading">Loading jobs…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="corridors">
+        <h2>Corridor Intelligence</h2>
+        <div class="corridor-grid" data-corridors></div>
+      </section>
+
+      <section class="card" id="owner-controls">
+        <h2>Owner Playbooks</h2>
+        <ul class="command-list" data-owner-controls></ul>
+      </section>
+
+      <section class="card" id="validators">
+        <h2>Validator Coalition</h2>
+        <div class="validator-grid" data-validators></div>
+      </section>
+
+      <section class="card" id="mermaid">
+        <div class="card-header">
+          <h2>Network Atlas (Mermaid)</h2>
+          <button class="btn" data-refresh-mermaid>Render diagrams</button>
+        </div>
+        <div class="mermaid" data-mermaid-network></div>
+        <div class="mermaid" data-mermaid-gantt></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Generated entirely from repository-native tooling. Refresh the export by running
+        <code>npm run demo:national-supply-chain:v0</code>.
+      </p>
+    </footer>
+  </body>
+</html>

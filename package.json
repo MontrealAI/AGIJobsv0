@@ -235,7 +235,9 @@
     "demo:alpha-meta:validate": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/validateMission.ts",
     "demo:alpha-meta:ci": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/verifyCi.ts",
     "demo:alpha-meta:owner": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/ownerDiagnostics.ts",
-    "demo:alpha-meta:full": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/fullPipeline.ts"
+    "demo:alpha-meta:full": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/fullPipeline.ts",
+    "demo:national-supply-chain:v0": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/nationalSupplyChainDemo.ts",
+    "demo:national-supply-chain:ci": "npm run demo:national-supply-chain:v0 && npm run owner:verify-control && npm run ci:verify-branch-protection"
   },
   "keywords": [],
   "author": "",

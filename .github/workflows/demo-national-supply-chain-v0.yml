@@ -1,0 +1,91 @@
+name: demo-national-supply-chain-v0
+
+on:
+  pull_request:
+    paths:
+      - 'demo/National-Supply-Chain-v0/**'
+      - 'scripts/v2/nationalSupplyChainDemo.ts'
+      - '.github/workflows/demo-national-supply-chain-v0.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  national-supply-chain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Render national supply chain intelligence kit
+        run: npm run demo:national-supply-chain:ci
+
+      - name: Validate manifest and export
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const manifestPath = 'reports/national-supply-chain/manifest.json';
+          const exportPath = 'demo/National-Supply-Chain-v0/ui/export/latest.json';
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          const exportData = JSON.parse(fs.readFileSync(exportPath, 'utf8'));
+          if (!Array.isArray(manifest.files) || manifest.files.length < 5) {
+            throw new Error('Manifest missing required entries');
+          }
+          const required = [
+            'reports/national-supply-chain/dashboard.html',
+            'reports/national-supply-chain/summary.md',
+            'reports/national-supply-chain/mermaid.mmd',
+            'reports/national-supply-chain/mission-ledger.json',
+            'reports/national-supply-chain/owner-command-center.md'
+          ];
+          for (const file of required) {
+            if (!manifest.files.some((entry) => entry.path === file)) {
+              throw new Error(`Missing ${file} in manifest`);
+            }
+          }
+          if (!exportData || exportData.missionTag !== 'NATIONAL-SUPPLY-CHAIN-V0') {
+            throw new Error('Export missing missionTag NATIONAL-SUPPLY-CHAIN-V0');
+          }
+          if (!Array.isArray(exportData.jobs) || exportData.jobs.length === 0) {
+            throw new Error('Export jobs array empty');
+          }
+          console.log(`Validated manifest with ${manifest.files.length} files and export containing ${exportData.jobs.length} jobs.`);
+          NODE
+
+      - name: Upload intelligence kit
+        uses: actions/upload-artifact@v4
+        with:
+          name: national-supply-chain-kit
+          path: |
+            reports/national-supply-chain/
+            demo/National-Supply-Chain-v0/ui/export/latest.json

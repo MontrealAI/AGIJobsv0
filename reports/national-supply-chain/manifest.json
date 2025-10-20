@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2025-01-15T00:00:00.000Z",
+  "planVersion": "v0.9.0",
+  "files": [
+    {
+      "path": "reports/national-supply-chain/dashboard.html",
+      "sha256": "09e94929b7a2e2dd682358c48162c430984c2908b61d5f287533c6e8b48011b4",
+      "bytes": 13516
+    },
+    {
+      "path": "reports/national-supply-chain/summary.md",
+      "sha256": "c00f0858606420a8f9a4e96066c34396d1400330742f94c5cd94d37dd730dae0",
+      "bytes": 4555
+    },
+    {
+      "path": "reports/national-supply-chain/mermaid.mmd",
+      "sha256": "3c445f67adc20c13d111c124c4458205500c8ecbb7444ee594922b3722a22603",
+      "bytes": 2187
+    },
+    {
+      "path": "reports/national-supply-chain/mission-ledger.json",
+      "sha256": "c560b328ab90c91dc8024f77091789a88f98f9aefde3f9921688e988739d70d8",
+      "bytes": 17371
+    },
+    {
+      "path": "reports/national-supply-chain/owner-command-center.md",
+      "sha256": "9c2072d1bceba65df4f86b8664cabac2f8f895ffd76ab836e9c16392051e04db",
+      "bytes": 856
+    },
+    {
+      "path": "demo/National-Supply-Chain-v0/ui/export/latest.json",
+      "sha256": "c560b328ab90c91dc8024f77091789a88f98f9aefde3f9921688e988739d70d8",
+      "bytes": 17371
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+flowchart LR
+  COMMAND["Sovereign Command Centre\nCapital"]:::command
+  NORTH_PORT["Arctic Quantum Port\nAurora Coast"]:::port
+  ARCTIC_HUB["Permafrost Resilience Hub\nPolar Interior"]:::hub
+  PACIFIC_PORT["Pacific Floating Megaport\nPacific Ocean"]:::port
+  CENTRAL_STORAGE["National Strategic Reserve\nCentral Corridor"]:::storage
+  METRO_GRID["Metropolitan Microgrid\nCapital"]:::distribution
+  AID_CELLS["Humanitarian Field Cells\nNational"]:::relief
+  ORBITAL_SENSOR["Orbital Supply Sentinel\nLEO"]:::sensor
+  NORTH_PORT -->|VTOL heavy lift| ARCTIC_HUB
+  COMMAND -->|Icebreaker convoy| NORTH_PORT
+  PACIFIC_PORT -->|Maglev & drone mesh| CENTRAL_STORAGE
+  CENTRAL_STORAGE -->|Autonomous electric fleet| METRO_GRID
+  METRO_GRID -->|Drone & amphibious| AID_CELLS
+  PACIFIC_PORT -->|Space elevator cargo| ORBITAL_SENSOR
+  classDef command fill:#0f172a,stroke:#38bdf8,stroke-width:2,color:#e2e8f0;
+  classDef port fill:#1e3a8a,stroke:#38bdf8,color:#f8fafc;
+  classDef hub fill:#312e81,stroke:#c084fc,color:#f5f3ff;
+  classDef storage fill:#064e3b,stroke:#34d399,color:#ecfdf5;
+  classDef distribution fill:#7c2d12,stroke:#fb923c,color:#ffedd5;
+  classDef relief fill:#7f1d1d,stroke:#fca5a5,color:#fee2e2;
+  classDef sensor fill:#3f3f46,stroke:#facc15,color:#fef9c3;
+
+gantt
+  title National Supply Chain Critical Path
+  dateFormat  YYYY-MM-DD
+  axisFormat  %b %d
+  section Stabilise critical lifelines
+  Stabilise Arctic food and medicine relay: crit, arctic_food_relay, 2025-04-01, 2025-04-22
+  section Expand inter-regional capacity
+  Deploy Pacific floating logistics mega-hub: crit, pacific_hub_expansion, 2025-04-22, 2025-06-01
+  section Optimise incentives & market balance
+  Automate strategic reserve balancing: crit, central_reserve_automation, 2025-06-01, 2025-07-01
+  section Optimise incentives & market balance
+  Activate citizen humanitarian mesh:  citizen_response_activation, 2025-04-22, 2025-05-17
+  section Harden resilience & audit loops
+  Validator coalition grand audit: crit, validation_grand_audit, 2025-07-01, 2025-07-21
+  section Harden resilience & audit loops
+  Owner treasury rebalancing + pause drill: crit, treasury_rebalancing_drill, 2025-07-21, 2025-08-02
