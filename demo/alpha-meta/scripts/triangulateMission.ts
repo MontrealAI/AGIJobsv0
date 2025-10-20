@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
-import { createHash } from "crypto";
 import { performance } from "perf_hooks";
 
 import {
@@ -10,6 +9,7 @@ import {
   computeStatisticalPhysics,
   computeJarzynski,
 } from "../../agi-governance/scripts/executeDemo";
+import { updateManifest } from "./utils/manifest";
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
 const BASE_DIR = path.resolve(__dirname, "..");
@@ -50,17 +50,6 @@ type TriangulationCheck = {
   delta?: number;
   tolerance?: number;
   details: string;
-};
-
-type ManifestDocument = {
-  generatedAt: string;
-  root: string;
-  files: number;
-  entries: Array<{
-    path: string;
-    sha256: string;
-    bytes: number;
-  }>;
 };
 
 export interface TriangulationOptions {
@@ -259,55 +248,6 @@ async function loadSummary(summaryPath: string): Promise<GovernanceSummary | und
     }
     throw error;
   }
-}
-
-async function updateManifest(manifestPath: string, files: string[]): Promise<void> {
-  if (files.length === 0) {
-    return;
-  }
-
-  const absoluteManifestPath = path.resolve(manifestPath);
-  let manifest: ManifestDocument | undefined;
-
-  try {
-    const raw = await readFile(absoluteManifestPath, "utf8");
-    manifest = JSON.parse(raw) as ManifestDocument;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-      throw error;
-    }
-  }
-
-  const root = manifest?.root ?? REPO_ROOT;
-  const entryMap = new Map<string, ManifestDocument["entries"][number]>();
-  if (manifest) {
-    for (const entry of manifest.entries) {
-      entryMap.set(entry.path, entry);
-    }
-  }
-
-  for (const file of files) {
-    const absolute = path.resolve(file);
-    const buffer = await readFile(absolute);
-    const sha256 = createHash("sha256").update(buffer).digest("hex");
-    const relative = path.relative(root, absolute) || path.relative(REPO_ROOT, absolute);
-    entryMap.set(relative, {
-      path: relative,
-      sha256,
-      bytes: buffer.byteLength,
-    });
-  }
-
-  const entries = Array.from(entryMap.values()).sort((a, b) => a.path.localeCompare(b.path));
-  const nextManifest: ManifestDocument = {
-    generatedAt: new Date().toISOString(),
-    root,
-    files: entries.length,
-    entries,
-  };
-
-  await mkdir(path.dirname(absoluteManifestPath), { recursive: true });
-  await writeFile(absoluteManifestPath, JSON.stringify(nextManifest, null, 2), "utf8");
 }
 
 function describeChecks(checks: TriangulationCheck[]): string {
@@ -584,7 +524,9 @@ export async function executeTriangulation(options: TriangulationOptions = {}): 
 
   await writeFile(outputMarkdown, markdownLines.join("\n"), "utf8");
 
-  await updateManifest(options.manifestFile ?? DEFAULT_MANIFEST, [outputJson, outputMarkdown]);
+  await updateManifest(options.manifestFile ?? DEFAULT_MANIFEST, [outputJson, outputMarkdown], {
+    defaultRoot: REPO_ROOT,
+  });
 
   return result;
 }

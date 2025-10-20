@@ -143,6 +143,9 @@ When all metrics satisfy their thresholds, the owner holds provable command over
 ## 8. Audit trail and manifest hashing
 
 ```bash
+# Run deterministic manifest audit (hash + coverage)
+npm run demo:alpha-meta:manifest
+
 # Inspect Alpha-Meta manifest
 jq '.entries[] | {path, sha256}' demo/alpha-meta/reports/alpha-meta-manifest.json
 

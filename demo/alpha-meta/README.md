@@ -113,6 +113,9 @@ npm run demo:alpha-meta:ci
 
 # Execute owner automation suite (Hamiltonian audit, reward report, upgrade status, compliance beacon)
 npm run demo:alpha-meta:owner
+
+# Re-verify manifest hashes and coverage
+npm run demo:alpha-meta:manifest
 ```
 
 All commands are copy-paste friendly and safe for non-technical stewards. Use `HARDHAT_NETWORK=localhost` (or Sepolia/Mainnet) to target live deployments; every script respects the repository’s environment flags and timelock requirements.
