@@ -40,6 +40,7 @@ Verify the bundle:
 - `demo/alpha-meta/reports/alpha-meta-owner-diagnostics.json`
 - `demo/alpha-meta/reports/alpha-meta-owner-matrix.md`
 - `demo/alpha-meta/reports/alpha-meta-owner-matrix.json`
+- `demo/alpha-meta/reports/alpha-meta-manifest.json`
 - `reports/agi-os/grand-summary.html`
 - `reports/asi-takeoff/mission-bundle/mission.json`
 
@@ -127,7 +128,10 @@ Focus on:
 ## 7. Audit trail and manifest hashing
 
 ```bash
-# Print manifest entries
+# Inspect Alpha-Meta manifest
+jq '.entries[] | {path, sha256}' demo/alpha-meta/reports/alpha-meta-manifest.json
+
+# Cross-check First-Class OS manifest
 jq '.entries[] | {path, sha256}' reports/agi-os/first-class/first-class-manifest.json
 
 # Verify a specific artefact digest

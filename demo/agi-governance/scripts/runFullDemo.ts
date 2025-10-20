@@ -1,6 +1,7 @@
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { performance } from "perf_hooks";
+import { createHash } from "crypto";
 
 import {
   generateGovernanceDemo,
@@ -38,6 +39,9 @@ import {
 
 const FULL_RUN_JSON = path.join(DEMO_REPORT_DIR, "governance-demo-full-run.json");
 const FULL_RUN_MARKDOWN = path.join(DEMO_REPORT_DIR, "governance-demo-full-run.md");
+const MANIFEST_JSON = path.join(DEMO_REPORT_DIR, "governance-demo-manifest.json");
+const DEFAULT_MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
+const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
 
 export interface FullDemoOptions {
   demo?: GovernanceDemoOptions;
@@ -46,6 +50,7 @@ export interface FullDemoOptions {
   owner?: OwnerDiagnosticsOptions;
   outputJson?: string;
   outputMarkdown?: string;
+  manifestFile?: string;
 }
 
 type StepStatus = "success" | "warning" | "error";
@@ -93,21 +98,86 @@ type FullRunSummary = {
     quantumEntropyBits: number;
   };
   ciIssues: string[];
-  ownerWarnings: number;
-  ownerErrors: number;
-  artifacts: {
-    report: string;
-    summary: string;
-    dashboard: string;
-    ownerMatrixJson: string;
-    ownerMatrixMarkdown: string;
-    validationJson: string;
-    validationMarkdown: string;
-    ciReport: string;
-    ownerJson: string;
-    ownerMarkdown: string;
-  };
+    ownerWarnings: number;
+    ownerErrors: number;
+    artifacts: {
+      report: string;
+      summary: string;
+      dashboard: string;
+      ownerMatrixJson: string;
+      ownerMatrixMarkdown: string;
+      validationJson: string;
+      validationMarkdown: string;
+      ciReport: string;
+      ownerJson: string;
+      ownerMarkdown: string;
+      fullRunJson: string;
+      fullRunMarkdown: string;
+      manifest: string;
+    };
 };
+
+type ManifestEntry = {
+  path: string;
+  sha256: string;
+  bytes: number;
+};
+
+type ManifestDocument = {
+  generatedAt: string;
+  root: string;
+  files: number;
+  entries: ManifestEntry[];
+};
+
+async function hashFile(filePath: string): Promise<{ sha256: string; bytes: number }> {
+  let buffer: Buffer;
+  try {
+    buffer = await readFile(filePath);
+  } catch (error) {
+    throw new Error(`Failed to read artifact for manifest: ${filePath} (${(error as Error).message})`);
+  }
+
+  return {
+    sha256: createHash("sha256").update(buffer).digest("hex"),
+    bytes: buffer.byteLength,
+  };
+}
+
+async function writeManifest(manifestPath: string, files: string[]): Promise<ManifestDocument> {
+  const absoluteManifestPath = path.resolve(manifestPath);
+  const uniqueFiles = Array.from(
+    new Set(
+      files
+        .map((filePath) => path.resolve(filePath))
+        .filter((filePath) => filePath !== absoluteManifestPath),
+    ),
+  );
+
+  const entries: ManifestEntry[] = [];
+  for (const absolutePath of uniqueFiles) {
+    const { sha256, bytes } = await hashFile(absolutePath);
+    entries.push({
+      path: path.relative(REPO_ROOT, absolutePath) || path.basename(absolutePath),
+      sha256,
+      bytes,
+    });
+  }
+
+  entries.sort((a, b) => a.path.localeCompare(b.path));
+
+  const manifest: ManifestDocument = {
+    generatedAt: new Date().toISOString(),
+    root: REPO_ROOT,
+    files: entries.length,
+    entries,
+  };
+
+  await mkdir(path.dirname(absoluteManifestPath), { recursive: true });
+  await writeFile(absoluteManifestPath, JSON.stringify(manifest, null, 2), "utf8");
+
+  return manifest;
+}
 
 function formatNumber(value: number, digits = 3): string {
   if (!Number.isFinite(value)) {
@@ -293,9 +363,11 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
 
   const fullRunJsonPath = resolveWithDir(FULL_RUN_JSON, options.outputJson, demoOptions.reportDir);
   const fullRunMarkdownPath = resolveWithDir(FULL_RUN_MARKDOWN, options.outputMarkdown, demoOptions.reportDir);
+  const manifestPath = resolveWithDir(MANIFEST_JSON, options.manifestFile, demoOptions.reportDir);
 
   await mkdir(path.dirname(fullRunJsonPath), { recursive: true });
   await mkdir(path.dirname(fullRunMarkdownPath), { recursive: true });
+  await mkdir(path.dirname(manifestPath), { recursive: true });
 
   const steps: StepSummary[] = [];
   const start = performance.now();
@@ -400,6 +472,9 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
       ciReport: ciOutputPath,
       ownerJson: ownerJsonPath,
       ownerMarkdown: ownerMarkdownPath,
+      fullRunJson: fullRunJsonPath,
+      fullRunMarkdown: fullRunMarkdownPath,
+      manifest: manifestPath,
     },
   };
 
@@ -466,6 +541,9 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
     `- CI verification: \`${summary.artifacts.ciReport}\``,
     `- Owner diagnostics JSON: \`${summary.artifacts.ownerJson}\``,
     `- Owner diagnostics Markdown: \`${summary.artifacts.ownerMarkdown}\``,
+    `- Full-run JSON: \`${summary.artifacts.fullRunJson}\``,
+    `- Full-run Markdown: \`${summary.artifacts.fullRunMarkdown}\``,
+    `- Manifest: \`${summary.artifacts.manifest}\``,
     "",
     summary.ciIssues.length > 0
       ? `> ⚠️ CI shield issues detected: ${summary.ciIssues.join(" | ")}`
@@ -476,6 +554,25 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
   ].join("\n");
 
   await writeFile(fullRunMarkdownPath, markdown, "utf8");
+
+  const resolvedMissionFile =
+    generationOptions.missionFile ?? process.env.AGI_GOVERNANCE_MISSION_FILE ?? DEFAULT_MISSION_FILE;
+  const manifestSources = [
+    reportFile,
+    summaryFile,
+    dashboardFile,
+    ownerMatrixJsonPath,
+    ownerMatrixMarkdownPath,
+    validationJsonPath,
+    validationMarkdownPath,
+    ciOutputPath,
+    ownerJsonPath,
+    ownerMarkdownPath,
+    fullRunJsonPath,
+    fullRunMarkdownPath,
+    resolvedMissionFile,
+  ];
+  await writeManifest(manifestPath, manifestSources);
 
   return summary;
 }

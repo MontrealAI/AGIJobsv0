@@ -17,6 +17,7 @@ const OWNER_JSON = path.join(REPORT_DIR, "alpha-meta-owner-diagnostics.json");
 const OWNER_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-owner-diagnostics.md");
 const FULL_JSON = path.join(REPORT_DIR, "alpha-meta-full-run.json");
 const FULL_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-full-run.md");
+const MANIFEST = path.join(REPORT_DIR, "alpha-meta-manifest.json");
 
 async function main(): Promise<void> {
   const options: FullDemoOptions = {
@@ -48,6 +49,7 @@ async function main(): Promise<void> {
     },
     outputJson: FULL_JSON,
     outputMarkdown: FULL_MARKDOWN,
+    manifestFile: MANIFEST,
   };
 
   const summary = await runFullDemo(options);
@@ -66,6 +68,7 @@ async function main(): Promise<void> {
 
   console.log(`   Aggregated JSON: ${FULL_JSON}`);
   console.log(`   Aggregated Markdown: ${FULL_MARKDOWN}`);
+  console.log(`   Manifest: ${MANIFEST}`);
 }
 
 if (require.main === module) {

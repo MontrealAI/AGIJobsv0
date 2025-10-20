@@ -1,5 +1,5 @@
 # Solving α-AGI Governance — Governance Demonstration Report
-*Generated at:* 2025-10-20T16:25:26.917Z
+*Generated at:* 2025-10-20T16:58:54.540Z
 *Version:* 1.3.0
 
 > Hamiltonian-guided governance drill proving AGI Jobs v0 (v2) delivers superintelligent coordination under absolute owner control.

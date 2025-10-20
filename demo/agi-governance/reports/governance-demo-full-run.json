@@ -1,33 +1,33 @@
 {
-  "generatedAt": "2025-10-20T16:26:23.623Z",
-  "totalDurationMs": 91754.619576,
+  "generatedAt": "2025-10-20T16:59:46.651Z",
+  "totalDurationMs": 83932.20013499999,
   "steps": [
     {
       "id": "generate",
       "label": "Generate dossier",
       "status": "success",
-      "durationMs": 35062.493044999996,
+      "durationMs": 31833.341076999997,
       "details": "Free-energy margin 69800.00 kJ · Max method deviation 0.136515"
     },
     {
       "id": "validate",
       "label": "Validate physics",
       "status": "success",
-      "durationMs": 36629.007452000005,
+      "durationMs": 33095.509984000004,
       "details": "All 58 checks passed"
     },
     {
       "id": "ci",
       "label": "Audit CI shield",
       "status": "success",
-      "durationMs": 16.2796340000059,
+      "durationMs": 15.965416000006371,
       "details": "All enforcement guards locked."
     },
     {
       "id": "owner",
       "label": "Owner diagnostics",
       "status": "warning",
-      "durationMs": 20046.585584,
+      "durationMs": 18987.216898,
       "details": "Warnings: [owner:audit-hamiltonian] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. | Cross-check mismatch: mission alignment. | [reward-engine:report] ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. | [owner:upgrade-status] SKIPPED @ $.onChain — No timelock address available. | [owner:compliance-report] SKIPPED @ $.onChain — No tax policy address configured."
     }
   ],
@@ -74,6 +74,9 @@
     "validationMarkdown": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-validation.md",
     "ciReport": "/workspace/AGIJobsv0/demo/agi-governance/reports/ci-verification.json",
     "ownerJson": "/workspace/AGIJobsv0/demo/agi-governance/reports/owner-diagnostics.json",
-    "ownerMarkdown": "/workspace/AGIJobsv0/demo/agi-governance/reports/owner-diagnostics.md"
+    "ownerMarkdown": "/workspace/AGIJobsv0/demo/agi-governance/reports/owner-diagnostics.md",
+    "fullRunJson": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-full-run.json",
+    "fullRunMarkdown": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-full-run.md",
+    "manifest": "/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-manifest.json"
   }
 }

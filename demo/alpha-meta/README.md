@@ -20,7 +20,7 @@ The launcher performs:
 2. `npm run demo:alpha-meta:full` – computes thermodynamics, equilibria, antifragility curvature, risk residuals, quantum metrics, CI enforcement, and owner automation readiness for the Alpha-Meta mission.
 3. `npm run demo:asi-takeoff:local` – replays the ASI take-off harness using `demo/alpha-meta/config/project-plan.alpha-meta.json`, logging multi-agent receipts for nations, wallets, and the owner guild.
 
-All artefacts are collected under `demo/alpha-meta/reports/` with hashes recorded in the generated manifest.
+All artefacts are collected under `demo/alpha-meta/reports/` with hashes recorded in `alpha-meta-manifest.json`.
 
 ## Cinematic orchestration map
 
@@ -52,6 +52,7 @@ flowchart LR
 | `alpha-meta-owner-diagnostics.{json,md}` | Results from automated owner command scripts (Hamiltonian audit, reward engine report, upgrade queue status, compliance disclosure). |
 | `alpha-meta-owner-matrix.{json,md}` | Authoritative owner control matrix detailing every governance capability, script availability, and verification hook. |
 | `alpha-meta-full-run.{json,md}` | Timeline of the full pipeline with Mermaid timeline, metrics, and aggregated health verdict. |
+| `alpha-meta-manifest.json` | SHA-256 manifest covering the mission config and every dossier artefact produced by the run. |
 
 ## Mission manifest and plan
 

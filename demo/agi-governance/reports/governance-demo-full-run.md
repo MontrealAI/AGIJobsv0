@@ -1,6 +1,6 @@
 # Full Governance Demonstration Run
-*Generated at:* 2025-10-20T16:26:23.623Z
-*Total runtime:* 91.75 s
+*Generated at:* 2025-10-20T16:59:46.651Z
+*Total runtime:* 83.93 s
 
 ```mermaid
 graph LR
@@ -19,10 +19,10 @@ graph LR
 
 | Step | Status | Duration | Details |
 | --- | --- | --- | --- |
-| Generate dossier | ✅ | 35.06 s | \|F\|r\|e\|e\|-\|e\|n\|e\|r\|g\|y\| \|m\|a\|r\|g\|i\|n\| \|6\|9\|8\|0\|0\|.\|0\|0\| \|k\|J\| \|·\| \|M\|a\|x\| \|m\|e\|t\|h\|o\|d\| \|d\|e\|v\|i\|a\|t\|i\|o\|n\| \|0\|.\|1\|3\|6\|5\|1\|5\| |
-| Validate physics | ✅ | 36.63 s | \|A\|l\|l\| \|5\|8\| \|c\|h\|e\|c\|k\|s\| \|p\|a\|s\|s\|e\|d\| |
+| Generate dossier | ✅ | 31.83 s | \|F\|r\|e\|e\|-\|e\|n\|e\|r\|g\|y\| \|m\|a\|r\|g\|i\|n\| \|6\|9\|8\|0\|0\|.\|0\|0\| \|k\|J\| \|·\| \|M\|a\|x\| \|m\|e\|t\|h\|o\|d\| \|d\|e\|v\|i\|a\|t\|i\|o\|n\| \|0\|.\|1\|3\|6\|5\|1\|5\| |
+| Validate physics | ✅ | 33.10 s | \|A\|l\|l\| \|5\|8\| \|c\|h\|e\|c\|k\|s\| \|p\|a\|s\|s\|e\|d\| |
 | Audit CI shield | ✅ | 0.02 s | \|A\|l\|l\| \|e\|n\|f\|o\|r\|c\|e\|m\|e\|n\|t\| \|g\|u\|a\|r\|d\|s\| \|l\|o\|c\|k\|e\|d\|.\| |
-| Owner diagnostics | ⚠️ | 20.05 s | \|W\|a\|r\|n\|i\|n\|g\|s\|:\| \|[\|o\|w\|n\|e\|r\|:\|a\|u\|d\|i\|t\|-\|h\|a\|m\|i\|l\|t\|o\|n\|i\|a\|n\|]\| \|E\|R\|R\|O\|R\| \|@\| \|$\|.\|o\|n\|C\|h\|a\|i\|n\| \|—\| \|H\|H\|7\|0\|0\|:\| \|A\|r\|t\|i\|f\|a\|c\|t\| \|f\|o\|r\| \|c\|o\|n\|t\|r\|a\|c\|t\| \|"\|c\|o\|n\|t\|r\|a\|c\|t\|s\|/\|v\|2\|/\|H\|a\|m\|i\|l\|t\|o\|n\|i\|a\|n\|M\|o\|n\|i\|t\|o\|r\|.\|s\|o\|l\|:\|H\|a\|m\|i\|l\|t\|o\|n\|i\|a\|n\|M\|o\|n\|i\|t\|o\|r\|"\| \|n\|o\|t\| \|f\|o\|u\|n\|d\|.\| \||\| \|C\|r\|o\|s\|s\|-\|c\|h\|e\|c\|k\| \|m\|i\|s\|m\|a\|t\|c\|h\|:\| \|m\|i\|s\|s\|i\|o\|n\| \|a\|l\|i\|g\|n\|m\|e\|n\|t\|.\| \||\| \|[\|r\|e\|w\|a\|r\|d\|-\|e\|n\|g\|i\|n\|e\|:\|r\|e\|p\|o\|r\|t\|]\| \|E\|R\|R\|O\|R\| \|@\| \|$\|.\|o\|n\|C\|h\|a\|i\|n\| \|—\| \|H\|H\|7\|0\|0\|:\| \|A\|r\|t\|i\|f\|a\|c\|t\| \|f\|o\|r\| \|c\|o\|n\|t\|r\|a\|c\|t\| \|"\|c\|o\|n\|t\|r\|a\|c\|t\|s\|/\|v\|2\|/\|R\|e\|w\|a\|r\|d\|E\|n\|g\|i\|n\|e\|M\|B\|.\|s\|o\|l\|:\|R\|e\|w\|a\|r\|d\|E\|n\|g\|i\|n\|e\|M\|B\|"\| \|n\|o\|t\| \|f\|o\|u\|n\|d\|.\| \||\| \|[\|o\|w\|n\|e\|r\|:\|u\|p\|g\|r\|a\|d\|e\|-\|s\|t\|a\|t\|u\|s\|]\| \|S\|K\|I\|P\|P\|E\|D\| \|@\| \|$\|.\|o\|n\|C\|h\|a\|i\|n\| \|—\| \|N\|o\| \|t\|i\|m\|e\|l\|o\|c\|k\| \|a\|d\|d\|r\|e\|s\|s\| \|a\|v\|a\|i\|l\|a\|b\|l\|e\|.\| \||\| \|[\|o\|w\|n\|e\|r\|:\|c\|o\|m\|p\|l\|i\|a\|n\|c\|e\|-\|r\|e\|p\|o\|r\|t\|]\| \|S\|K\|I\|P\|P\|E\|D\| \|@\| \|$\|.\|o\|n\|C\|h\|a\|i\|n\| \|—\| \|N\|o\| \|t\|a\|x\| \|p\|o\|l\|i\|c\|y\| \|a\|d\|d\|r\|e\|s\|s\| \|c\|o\|n\|f\|i\|g\|u\|r\|e\|d\|.\| |
+| Owner diagnostics | ⚠️ | 18.99 s | \|W\|a\|r\|n\|i\|n\|g\|s\|:\| \|[\|o\|w\|n\|e\|r\|:\|a\|u\|d\|i\|t\|-\|h\|a\|m\|i\|l\|t\|o\|n\|i\|a\|n\|]\| \|E\|R\|R\|O\|R\| \|@\| \|$\|.\|o\|n\|C\|h\|a\|i\|n\| \|—\| \|H\|H\|7\|0\|0\|:\| \|A\|r\|t\|i\|f\|a\|c\|t\| \|f\|o\|r\| \|c\|o\|n\|t\|r\|a\|c\|t\| \|"\|c\|o\|n\|t\|r\|a\|c\|t\|s\|/\|v\|2\|/\|H\|a\|m\|i\|l\|t\|o\|n\|i\|a\|n\|M\|o\|n\|i\|t\|o\|r\|.\|s\|o\|l\|:\|H\|a\|m\|i\|l\|t\|o\|n\|i\|a\|n\|M\|o\|n\|i\|t\|o\|r\|"\| \|n\|o\|t\| \|f\|o\|u\|n\|d\|.\| \||\| \|C\|r\|o\|s\|s\|-\|c\|h\|e\|c\|k\| \|m\|i\|s\|m\|a\|t\|c\|h\|:\| \|m\|i\|s\|s\|i\|o\|n\| \|a\|l\|i\|g\|n\|m\|e\|n\|t\|.\| \||\| \|[\|r\|e\|w\|a\|r\|d\|-\|e\|n\|g\|i\|n\|e\|:\|r\|e\|p\|o\|r\|t\|]\| \|E\|R\|R\|O\|R\| \|@\| \|$\|.\|o\|n\|C\|h\|a\|i\|n\| \|—\| \|H\|H\|7\|0\|0\|:\| \|A\|r\|t\|i\|f\|a\|c\|t\| \|f\|o\|r\| \|c\|o\|n\|t\|r\|a\|c\|t\| \|"\|c\|o\|n\|t\|r\|a\|c\|t\|s\|/\|v\|2\|/\|R\|e\|w\|a\|r\|d\|E\|n\|g\|i\|n\|e\|M\|B\|.\|s\|o\|l\|:\|R\|e\|w\|a\|r\|d\|E\|n\|g\|i\|n\|e\|M\|B\|"\| \|n\|o\|t\| \|f\|o\|u\|n\|d\|.\| \||\| \|[\|o\|w\|n\|e\|r\|:\|u\|p\|g\|r\|a\|d\|e\|-\|s\|t\|a\|t\|u\|s\|]\| \|S\|K\|I\|P\|P\|E\|D\| \|@\| \|$\|.\|o\|n\|C\|h\|a\|i\|n\| \|—\| \|N\|o\| \|t\|i\|m\|e\|l\|o\|c\|k\| \|a\|d\|d\|r\|e\|s\|s\| \|a\|v\|a\|i\|l\|a\|b\|l\|e\|.\| \||\| \|[\|o\|w\|n\|e\|r\|:\|c\|o\|m\|p\|l\|i\|a\|n\|c\|e\|-\|r\|e\|p\|o\|r\|t\|]\| \|S\|K\|I\|P\|P\|E\|D\| \|@\| \|$\|.\|o\|n\|C\|h\|a\|i\|n\| \|—\| \|N\|o\| \|t\|a\|x\| \|p\|o\|l\|i\|c\|y\| \|a\|d\|d\|r\|e\|s\|s\| \|c\|o\|n\|f\|i\|g\|u\|r\|e\|d\|.\| |
 
 ## Key Metrics
 - Gibbs free energy: 69800.00 kJ
@@ -61,6 +61,9 @@ graph LR
 - CI verification: `/workspace/AGIJobsv0/demo/agi-governance/reports/ci-verification.json`
 - Owner diagnostics JSON: `/workspace/AGIJobsv0/demo/agi-governance/reports/owner-diagnostics.json`
 - Owner diagnostics Markdown: `/workspace/AGIJobsv0/demo/agi-governance/reports/owner-diagnostics.md`
+- Full-run JSON: `/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-full-run.json`
+- Full-run Markdown: `/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-full-run.md`
+- Manifest: `/workspace/AGIJobsv0/demo/agi-governance/reports/governance-demo-manifest.json`
 
 > ✅ CI shield verified with all guards active.
 > ⚠️ Owner automation warnings: 4, errors: 0

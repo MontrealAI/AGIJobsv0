@@ -1,15 +1,15 @@
 # Owner Diagnostics Summary
 
-Generated: 2025-10-20T16:26:22.764Z
+Generated: 2025-10-20T16:59:45.523Z
 
 🟢 Ready — all audit surfaces reporting success.
 
 | Command | Status | Insight | Duration |
 | --- | --- | --- | --- |
-| Hamiltonian monitor ↔ mission manifest alignment | ✅ SUCCESS | OK @ $.onChain | 4.75 s |
-| Reward engine treasury / thermodynamic calibration | ✅ SUCCESS | OK @ $.onChain | 4.88 s |
-| Timelock governance queue readiness | ✅ SUCCESS | OK @ $.onChain | 4.77 s |
-| Tax policy disclosure + acknowledgement status | ✅ SUCCESS | OK @ $.onChain | 4.78 s |
+| Hamiltonian monitor ↔ mission manifest alignment | ✅ SUCCESS | OK @ $.onChain | 4.32 s |
+| Reward engine treasury / thermodynamic calibration | ✅ SUCCESS | OK @ $.onChain | 4.59 s |
+| Timelock governance queue readiness | ✅ SUCCESS | OK @ $.onChain | 4.27 s |
+| Tax policy disclosure + acknowledgement status | ✅ SUCCESS | OK @ $.onChain | 4.67 s |
 
 ## Breakdown
 
