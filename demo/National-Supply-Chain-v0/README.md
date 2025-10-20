@@ -104,7 +104,10 @@ npm run demo:national-supply-chain
 # 2. Export a transcript for the mission control UI
 npm run demo:national-supply-chain:export
 
-# 3. Launch the static UI and autoreplay loop
+# 3. Validate the transcript against unstoppable governance invariants
+npm run demo:national-supply-chain:validate
+
+# 4. Launch the static UI and autoreplay loop
 npm run demo:national-supply-chain:control-room
 ```
 
@@ -141,6 +144,12 @@ and performs the following sequence end to end:
 The transcript (`demo/National-Supply-Chain-v0/ui/export/latest.json`) contains
 rich context for non-technical reviewers – every timeline event, owner action,
 scenario summary, minted credential, and treasury snapshot.
+
+[`scripts/v2/validateNationalSupplyChainTranscript.ts`](../../scripts/v2/validateNationalSupplyChainTranscript.ts)
+enforces the unstoppable transcript contract. It asserts timeline depth,
+sovereign owner drills, validator council quorum, certificate issuance, and the
+demo’s `unstoppableScore` so the CI pipeline blocks any regression before
+release.
 
 ## Mission control UI
 

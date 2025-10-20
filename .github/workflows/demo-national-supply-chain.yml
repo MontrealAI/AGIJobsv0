@@ -51,26 +51,7 @@ jobs:
         run: npm run demo:national-supply-chain:export
 
       - name: Validate supply chain transcript
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const path = 'demo/National-Supply-Chain-v0/ui/export/latest.json';
-          const data = JSON.parse(fs.readFileSync(path, 'utf8'));
-          const checks = {
-            timeline: Array.isArray(data.timeline) && data.timeline.length > 0,
-            ownerActions: Array.isArray(data.ownerActions) && data.ownerActions.length > 0,
-            scenarios: Array.isArray(data.scenarios) && data.scenarios.length > 0,
-            agentPortfolios:
-              data.market && Array.isArray(data.market.agentPortfolios) && data.market.agentPortfolios.length > 0,
-            ownerControl: data.ownerControl && data.ownerControl.baseline,
-          };
-          for (const [label, ok] of Object.entries(checks)) {
-            if (!ok) {
-              throw new Error(`Transcript check failed: ${label}`);
-            }
-          }
-          console.log(`Validated transcript with ${data.timeline.length} timeline entries, ${data.ownerActions.length} owner actions, and ${data.market.agentPortfolios.length} agent portfolios.`);
-          NODE
+        run: npm run demo:national-supply-chain:validate
 
       - name: Upload transcript artifact
         uses: actions/upload-artifact@v4

@@ -37,7 +37,7 @@ During the run the script intentionally:
 - Logs every owner override to `ownerActions` in the transcript so auditors can
   replay the commands.
 
-## 3. Export a fresh transcript
+## 3. Export and validate a fresh transcript
 
 The CLI can emit a structured JSON export consumed by the UI and runbook
 validation tools.
@@ -45,6 +45,13 @@ validation tools.
 npm run demo:national-supply-chain:export
 ```
 This writes `demo/National-Supply-Chain-v0/ui/export/latest.json`.
+
+Immediately validate the invariants that prove unstoppable governance:
+```bash
+npm run demo:national-supply-chain:validate
+```
+The validator enforces timeline depth, owner authority drills, treasury
+graduations, validator quorum composition, and the unstoppable mission score.
 
 ## 4. Review the mission control dashboard
 
