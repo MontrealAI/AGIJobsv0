@@ -100,7 +100,12 @@ npm run demo:national-supply-chain
 # 2. Export a transcript for the mission control UI
 npm run demo:national-supply-chain:export
 
-# 3. Launch the static UI and autoreplay loop
+# 3. Generate an executive-grade Markdown report
+npm run demo:national-supply-chain:report -- \
+  --input demo/National-Supply-Chain-v0/ui/export/latest.json \
+  --output demo/National-Supply-Chain-v0/ui/export/latest-report.md
+
+# 4. Launch the static UI and autoreplay loop
 npm run demo:national-supply-chain:control-room
 ```
 
@@ -133,6 +138,12 @@ and performs the following sequence end to end:
 The transcript (`demo/National-Supply-Chain-v0/ui/export/latest.json`) contains
 rich context for non-technical reviewers – every timeline event, owner action,
 scenario summary, minted credential, and treasury snapshot.
+
+`tools/nationalSupplyChainReport.ts` renders the same data into a
+production-ready Markdown dossier with tables, automation directives, and a
+Mermaid orchestration map. CI materialises
+`demo/National-Supply-Chain-v0/ui/export/latest-report.md` for every run, and a
+static sample (`sample-report.md`) is bundled for offline review.
 
 ## Mission control UI
 

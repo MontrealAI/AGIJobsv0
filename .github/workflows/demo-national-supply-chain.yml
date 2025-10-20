@@ -50,6 +50,12 @@ jobs:
       - name: Run national supply chain export
         run: npm run demo:national-supply-chain:export
 
+      - name: Render executive report
+        run: |
+          npm run demo:national-supply-chain:report -- \
+            --input demo/National-Supply-Chain-v0/ui/export/latest.json \
+            --output demo/National-Supply-Chain-v0/ui/export/latest-report.md
+
       - name: Validate supply chain transcript
         run: |
           node - <<'NODE'
@@ -72,8 +78,16 @@ jobs:
           console.log(`Validated transcript with ${data.timeline.length} timeline entries, ${data.ownerActions.length} owner actions, and ${data.market.agentPortfolios.length} agent portfolios.`);
           NODE
 
+      - name: Validate executive report
+        run: |
+          REPORT=demo/National-Supply-Chain-v0/ui/export/latest-report.md
+          test -s "$REPORT"
+          head -n 5 "$REPORT"
+
       - name: Upload transcript artifact
         uses: actions/upload-artifact@v4
         with:
           name: national-supply-chain-transcript
-          path: demo/National-Supply-Chain-v0/ui/export/latest.json
+          path: |
+            demo/National-Supply-Chain-v0/ui/export/latest.json
+            demo/National-Supply-Chain-v0/ui/export/latest-report.md
