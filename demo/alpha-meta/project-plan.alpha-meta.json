@@ -1,0 +1,174 @@
+{
+  "initiative": "Alpha Meta Sovereign Lattice Mission",
+  "objective": "Empower a non-technical steward to command civilisation-scale AGI cohorts, orchestrate planetary and orbital projects, and prove unstoppable owner supremacy using first-class AGI Jobs v0 (v2) tooling.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "980000"
+  },
+  "governance": {
+    "owner": "0xAAAABBBBCCCCDDDDEEEEFFFF1111222233334444",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xCCCCDDDDEEEEFFFF111122223333444455556666",
+    "thermostat": {
+      "initialTemperature": "0.19",
+      "emergencyTemperature": "0.43",
+      "updateScript": "scripts/v2/updateThermostat.ts"
+    }
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "aurora.nation.agi.eth",
+        "role": "Aurora Federation Climate Directorate",
+        "capabilities": [
+          "Geo-spatial risk modelling",
+          "Carbon removal optimisation",
+          "Cross-border permit orchestration"
+        ],
+        "wallet": "0xfA11ed0000000000000000000000000000001A01"
+      },
+      {
+        "handle": "pacific.nation.agi.eth",
+        "role": "Pacific Renewal Infrastructure Authority",
+        "capabilities": [
+          "Floating port logistics",
+          "Seismic-resilient transport",
+          "Energy corridor deployment"
+        ],
+        "wallet": "0xfA11ed0000000000000000000000000000001B02"
+      },
+      {
+        "handle": "orbital.wallet.agi.eth",
+        "role": "Orbital Research Collective (multisig wallet)",
+        "capabilities": [
+          "Low-earth orbit sensor fusion",
+          "AI lab commissioning",
+          "Treasury automation"
+        ],
+        "wallet": "0xF9eD000000000000000000000000000000001C03"
+      },
+      {
+        "handle": "solidarity.wallet.agi.eth",
+        "role": "Humanitarian Relief Mesh (community wallet)",
+        "capabilities": [
+          "Rapid drone response",
+          "On-chain procurement",
+          "Local validator engagement"
+        ],
+        "wallet": "0xF9eD000000000000000000000000000000001D04"
+      }
+    ],
+    "validators": [
+      {
+        "handle": "gaia.validator.agi.eth",
+        "stake": "180000",
+        "mandate": "Planetary thermodynamic audits",
+        "wallet": "0xVAL1d0000000000000000000000000000000AA"
+      },
+      {
+        "handle": "celestia.validator.agi.eth",
+        "stake": "142000",
+        "mandate": "Cross-nation compliance and ethics",
+        "wallet": "0xVAL1d0000000000000000000000000000000BB"
+      },
+      {
+        "handle": "horizon.validator.agi.eth",
+        "stake": "112000",
+        "mandate": "Emergency pause sentinel & dispute triage",
+        "wallet": "0xVAL1d0000000000000000000000000000000CC"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "CLIMATE-NORTH",
+      "title": "Deploy autonomous reforestation swarms across Aurora Federation tundra",
+      "reward": "135000",
+      "deadlineDays": 45,
+      "dependencies": [],
+      "energyBudget": "62000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.21",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "PACIFIC-PORT",
+      "title": "Construct modular floating logistics hubs for Pacific alliance",
+      "reward": "185000",
+      "deadlineDays": 120,
+      "dependencies": ["CLIMATE-NORTH"],
+      "energyBudget": "148000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.29",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "ORBITAL-LAB",
+      "title": "Commission orbital AI research station via multisig treasury",
+      "reward": "130000",
+      "deadlineDays": 90,
+      "dependencies": ["CLIMATE-NORTH"],
+      "energyBudget": "86000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.16",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "HUMANITARIAN-MESH",
+      "title": "Activate solidarity wallet for adaptive disaster response drills",
+      "reward": "118000",
+      "deadlineDays": 60,
+      "dependencies": ["PACIFIC-PORT"],
+      "energyBudget": "76000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.24",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "VALIDATE-GLOBAL",
+      "title": "Validator coalition audit of all mission deliverables",
+      "reward": "99000",
+      "deadlineDays": 30,
+      "dependencies": [
+        "PACIFIC-PORT",
+        "ORBITAL-LAB",
+        "HUMANITARIAN-MESH"
+      ],
+      "energyBudget": "52000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.11",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "TREASURY-REBALANCE",
+      "title": "Owner-governed treasury rebalancing and pause drill",
+      "reward": "74000",
+      "deadlineDays": 20,
+      "dependencies": ["VALIDATE-GLOBAL"],
+      "energyBudget": "26000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.06",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    }
+  ],
+  "reporting": {
+    "artifacts": {
+      "dryRun": "reports/asi-takeoff/dry-run.json",
+      "thermodynamics": "reports/asi-takeoff/thermodynamics.json",
+      "missionControl": "reports/asi-takeoff/mission-control.md",
+      "summary": "reports/asi-takeoff/summary.md"
+    },
+    "dashboards": [
+      "reports/asi-takeoff/mission-control.md",
+      "reports/asi-takeoff/thermodynamics.json",
+      "reports/alpha-meta/meta-governance-dashboard.html",
+      "reports/agi-os/grand-summary.html"
+    ]
+  }
+}

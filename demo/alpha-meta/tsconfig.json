@@ -1,0 +1,12 @@
+{
+  "extends": "../agi-governance/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./",
+    "outDir": "./dist",
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "composite": false
+  },
+  "include": ["scripts/**/*.ts", "config/**/*.json"],
+  "exclude": ["node_modules", "dist"]
+}
