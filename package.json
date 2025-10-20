@@ -236,6 +236,7 @@
     "demo:alpha-meta:ci": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/verifyCi.ts",
     "demo:alpha-meta:owner": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/ownerDiagnostics.ts",
     "demo:alpha-meta:triangulate": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/triangulateMission.ts",
+    "demo:alpha-meta:manifest": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/auditManifest.ts",
     "demo:alpha-meta:full": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/fullPipeline.ts",
     "demo:national-supply-chain": "npx hardhat run --no-compile --network hardhat scripts/v2/nationalSupplyChainGrandDemo.ts",
     "demo:national-supply-chain:export": "AGI_JOBS_DEMO_EXPORT=demo/National-Supply-Chain-v0/ui/export/latest.json npx hardhat run --no-compile --network hardhat scripts/v2/nationalSupplyChainGrandDemo.ts",
