@@ -220,7 +220,12 @@
     "demo:agi-governance:alpha-v15:validate": "ts-node --project demo/agi-governance/alpha-v15/tsconfig.json demo/agi-governance/alpha-v15/scripts/validateMission.ts",
     "demo:agi-governance:alpha-v15:ci": "ts-node --project demo/agi-governance/alpha-v15/tsconfig.json demo/agi-governance/alpha-v15/scripts/verifyCi.ts",
     "demo:agi-governance:alpha-v15:owner-diagnostics": "ts-node --project demo/agi-governance/alpha-v15/tsconfig.json demo/agi-governance/alpha-v15/scripts/ownerDiagnostics.ts",
-    "demo:agi-governance:alpha-v15:full": "ts-node --project demo/agi-governance/alpha-v15/tsconfig.json demo/agi-governance/alpha-v15/scripts/fullPipeline.ts"
+    "demo:agi-governance:alpha-v15:full": "ts-node --project demo/agi-governance/alpha-v15/tsconfig.json demo/agi-governance/alpha-v15/scripts/fullPipeline.ts",
+    "demo:agi-governance:alpha-v16": "ts-node --project demo/agi-governance/alpha-v16/tsconfig.json demo/agi-governance/alpha-v16/scripts/runMission.ts",
+    "demo:agi-governance:alpha-v16:validate": "ts-node --project demo/agi-governance/alpha-v16/tsconfig.json demo/agi-governance/alpha-v16/scripts/validateMission.ts",
+    "demo:agi-governance:alpha-v16:ci": "ts-node --project demo/agi-governance/alpha-v16/tsconfig.json demo/agi-governance/alpha-v16/scripts/verifyCi.ts",
+    "demo:agi-governance:alpha-v16:owner-diagnostics": "ts-node --project demo/agi-governance/alpha-v16/tsconfig.json demo/agi-governance/alpha-v16/scripts/ownerDiagnostics.ts",
+    "demo:agi-governance:alpha-v16:full": "ts-node --project demo/agi-governance/alpha-v16/tsconfig.json demo/agi-governance/alpha-v16/scripts/fullPipeline.ts"
   },
   "keywords": [],
   "author": "",
