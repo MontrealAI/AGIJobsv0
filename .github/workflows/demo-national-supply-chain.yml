@@ -50,6 +50,9 @@ jobs:
       - name: Run national supply chain export
         run: npm run demo:national-supply-chain:export
 
+      - name: Cross-verify transcript with schema auditor
+        run: npm run demo:national-supply-chain:cross-verify
+
       - name: Validate supply chain transcript
         run: npm run demo:national-supply-chain:validate
 

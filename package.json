@@ -240,6 +240,7 @@
     "demo:national-supply-chain": "npx hardhat run --no-compile --network hardhat scripts/v2/nationalSupplyChainGrandDemo.ts",
     "demo:national-supply-chain:export": "AGI_JOBS_DEMO_EXPORT=demo/National-Supply-Chain-v0/ui/export/latest.json npx hardhat run --no-compile --network hardhat scripts/v2/nationalSupplyChainGrandDemo.ts",
     "demo:national-supply-chain:validate": "ts-node --transpile-only scripts/v2/validateNationalSupplyChainTranscript.ts",
+    "demo:national-supply-chain:cross-verify": "ts-node --transpile-only scripts/v2/crossValidateNationalSupplyChainTranscript.ts",
     "demo:national-supply-chain:control-room": "ts-node --transpile-only scripts/v2/launchNationalSupplyChainControlRoom.ts"
   },
   "keywords": [],

@@ -104,10 +104,13 @@ npm run demo:national-supply-chain
 # 2. Export a transcript for the mission control UI
 npm run demo:national-supply-chain:export
 
-# 3. Validate the transcript against unstoppable governance invariants
+# 3. Cross-verify the transcript with dual validation engines
+npm run demo:national-supply-chain:cross-verify
+
+# 4. Validate the transcript against unstoppable governance invariants
 npm run demo:national-supply-chain:validate
 
-# 4. Launch the static UI and autoreplay loop
+# 5. Launch the static UI and autoreplay loop
 npm run demo:national-supply-chain:control-room
 ```
 
@@ -144,6 +147,12 @@ and performs the following sequence end to end:
 The transcript (`demo/National-Supply-Chain-v0/ui/export/latest.json`) contains
 rich context for non-technical reviewers – every timeline event, owner action,
 scenario summary, minted credential, and treasury snapshot.
+
+[`scripts/v2/crossValidateNationalSupplyChainTranscript.ts`](../../scripts/v2/crossValidateNationalSupplyChainTranscript.ts)
+performs a second, schema-driven verification pass. It uses a Zod schema to
+assert structural guarantees, validates chronological ordering, and checks that
+every minted credential maps to a scenario. Cross-verifying with an entirely
+separate engine ensures no single validation approach can silently fail.
 
 [`scripts/v2/validateNationalSupplyChainTranscript.ts`](../../scripts/v2/validateNationalSupplyChainTranscript.ts)
 enforces the unstoppable transcript contract. It asserts timeline depth,
@@ -183,8 +192,10 @@ GitHub Actions workflow
 [`.github/workflows/demo-national-supply-chain.yml`](../../.github/workflows/demo-national-supply-chain.yml)
 replays the export on every pull request touching this demo. The job fails if
 any timeline, owner action, scenario, or telemetry array is empty, or if the UI
-JSON artefact is missing. This guarantees the demo never silently regresses and
-remains launchable by a single non-technical operator.
+JSON artefact is missing. It now runs both validation passes so the exported
+transcript must satisfy the imperative and schema-based auditors. This
+guarantees the demo never silently regresses and remains launchable by a single
+non-technical operator.
 
 ## Emergency controls and sovereignty
 
