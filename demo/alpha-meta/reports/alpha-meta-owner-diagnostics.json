@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2025-10-20T13:37:42.983Z",
+  "generatedAt": "2025-10-20T15:23:20.488Z",
   "results": [
     {
       "id": "hamiltonian",
       "description": "Hamiltonian monitor ↔ mission manifest alignment",
       "script": "owner:audit-hamiltonian",
-      "command": "npm run owner:audit-hamiltonian -- --json",
+      "command": "npm run owner:audit-hamiltonian -- --json --offline --mission /workspace/AGIJobsv0/demo/alpha-meta/config/mission@alpha-meta.json",
       "exitCode": 0,
-      "stdout": "\n> agijobsv0@1.0.0 owner:audit-hamiltonian\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerHamiltonianAudit.ts --json\n\n[dotenv@17.2.2] injecting env (2) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }\n{\n  \"generatedAt\": \"2025-10-20T13:37:20.593Z\",\n  \"monitorAddress\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/hamiltonian-monitor.json\",\n    \"window\": \"5\",\n    \"resetHistory\": false,\n    \"records\": 0\n  },\n  \"mission\": {\n    \"contracts\": [\n      {\n        \"name\": \"AGIJobsGovernor\",\n        \"address\": \"0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4\"\n      },\n      {\n        \"name\": \"AGIJobsTreasury\",\n        \"address\": \"0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5\"\n      },\n      {\n        \"name\": \"HamiltonianMonitor\",\n        \"address\": \"0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6\"\n      }\n    ],\n    \"hamiltonian\": {\n      \"lambda\": 0.94,\n      \"discountFactor\": 0.92,\n      \"divergenceTolerance\": 0.001\n    }\n  },\n  \"onChain\": {\n    \"status\": \"error\",\n    \"reason\": \"HH700: Artifact for contract \\\"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\\\" not found. \"\n  },\n  \"crossChecks\": {\n    \"configMatchesMission\": false,\n    \"configMatchesOnChain\": null\n  }\n}\n",
+      "stdout": "\n> agijobsv0@1.0.0 owner:audit-hamiltonian\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerHamiltonianAudit.ts --json --offline --mission /workspace/AGIJobsv0/demo/alpha-meta/config/mission@alpha-meta.json\n\n{\n  \"generatedAt\": \"2025-10-20T15:23:11.775Z\",\n  \"monitorAddress\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/hamiltonian-monitor.json\",\n    \"window\": \"5\",\n    \"resetHistory\": false,\n    \"records\": 0\n  },\n  \"mission\": {\n    \"contracts\": [\n      {\n        \"name\": \"SystemPause\",\n        \"address\": \"0x111122223333444455556666777788889999AAAa\"\n      },\n      {\n        \"name\": \"Thermostat\",\n        \"address\": \"0x22223333444455556666777788889999AAAABBBB\"\n      },\n      {\n        \"name\": \"RewardEngine\",\n        \"address\": \"0x3333444455556666777788889999AAAABBBBCCCC\"\n      },\n      {\n        \"name\": \"OwnerVault\",\n        \"address\": \"0x444455556666777788889999AAAABBBBCCCCDDDD\"\n      },\n      {\n        \"name\": \"UpgradeGovernor\",\n        \"address\": \"0x55556666777788889999AAAABBBBCCCCDDDDEEEE\"\n      }\n    ],\n    \"hamiltonian\": {\n      \"lambda\": 1.037,\n      \"discountFactor\": 0.968,\n      \"divergenceTolerance\": 0.00088\n    }\n  },\n  \"onChain\": {\n    \"status\": \"ok\",\n    \"network\": \"offline-simulated\",\n    \"window\": \"5\",\n    \"averageD\": \"5\",\n    \"averageU\": \"5\",\n    \"currentHamiltonian\": \"1003816\",\n    \"historyLength\": 0\n  },\n  \"crossChecks\": {\n    \"configMatchesMission\": true,\n    \"configMatchesOnChain\": true\n  },\n  \"mode\": \"offline\"\n}\n",
       "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
-      "durationMs": 8514.753068000005,
+      "durationMs": 2892.8690779999997,
       "parsed": {
-        "generatedAt": "2025-10-20T13:37:20.593Z",
+        "generatedAt": "2025-10-20T15:23:11.775Z",
         "monitorAddress": "0x0000000000000000000000000000000000000000",
         "config": {
           "path": "/workspace/AGIJobsv0/config/hamiltonian-monitor.json",
@@ -22,58 +22,70 @@
         "mission": {
           "contracts": [
             {
-              "name": "AGIJobsGovernor",
-              "address": "0xD4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4D4"
+              "name": "SystemPause",
+              "address": "0x111122223333444455556666777788889999AAAa"
             },
             {
-              "name": "AGIJobsTreasury",
-              "address": "0xE5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5E5"
+              "name": "Thermostat",
+              "address": "0x22223333444455556666777788889999AAAABBBB"
             },
             {
-              "name": "HamiltonianMonitor",
-              "address": "0xF6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6F6"
+              "name": "RewardEngine",
+              "address": "0x3333444455556666777788889999AAAABBBBCCCC"
+            },
+            {
+              "name": "OwnerVault",
+              "address": "0x444455556666777788889999AAAABBBBCCCCDDDD"
+            },
+            {
+              "name": "UpgradeGovernor",
+              "address": "0x55556666777788889999AAAABBBBCCCCDDDDEEEE"
             }
           ],
           "hamiltonian": {
-            "lambda": 0.94,
-            "discountFactor": 0.92,
-            "divergenceTolerance": 0.001
+            "lambda": 1.037,
+            "discountFactor": 0.968,
+            "divergenceTolerance": 0.00088
           }
         },
         "onChain": {
-          "status": "error",
-          "reason": "HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. "
+          "status": "ok",
+          "network": "offline-simulated",
+          "window": "5",
+          "averageD": "5",
+          "averageU": "5",
+          "currentHamiltonian": "1003816",
+          "historyLength": 0
         },
         "crossChecks": {
-          "configMatchesMission": false,
-          "configMatchesOnChain": null
-        }
+          "configMatchesMission": true,
+          "configMatchesOnChain": true
+        },
+        "mode": "offline"
       },
       "statuses": [
         {
           "path": "$.onChain",
-          "status": "error",
-          "reason": "HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. "
+          "status": "ok"
         }
       ],
       "notes": [
-        "$.onChain: HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found.",
-        "Cross-check mismatch: mission alignment."
+        "$.onChain: ok"
       ],
-      "severity": "warning",
-      "summary": "ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor\" not found. | Cross-check mismatch: mission alignment."
+      "severity": "success",
+      "summary": "OK @ $.onChain"
     },
     {
       "id": "rewardEngine",
       "description": "Reward engine treasury / thermodynamic calibration",
       "script": "reward-engine:report",
-      "command": "npm run reward-engine:report -- --json",
+      "command": "npm run reward-engine:report -- --json --offline --mission /workspace/AGIJobsv0/demo/alpha-meta/config/mission@alpha-meta.json",
       "exitCode": 0,
-      "stdout": "\n> agijobsv0@1.0.0 reward-engine:report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/rewardEngineReport.ts --json\n\n[dotenv@17.2.2] injecting env (2) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild\n{\n  \"generatedAt\": \"2025-10-20T13:37:28.504Z\",\n  \"address\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/reward-engine.json\",\n    \"source\": \"reward-engine\",\n    \"address\": \"0x0000000000000000000000000000000000000000\",\n    \"treasury\": \"0x0000000000000000000000000000000000000000\",\n    \"thermostat\": \"0x0000000000000000000000000000000000000000\",\n    \"roleShares\": {\n      \"agent\": 65,\n      \"validator\": 15,\n      \"operator\": 15,\n      \"employer\": 5\n    },\n    \"mu\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"baselineEnergy\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"kappa\": \"1000000000000000000\",\n    \"maxProofs\": 100,\n    \"temperature\": \"1000000000000000000\",\n    \"settlers\": []\n  },\n  \"mission\": {\n    \"thermodynamics\": {\n      \"enthalpyKJ\": 71142.64676186016,\n      \"entropyKJPerK\": 4.331118586645678,\n      \"operatingTemperatureK\": 310,\n      \"referenceTemperatureK\": 300,\n      \"bitsProcessed\": 1800000000,\n      \"burnRatePerBlock\": 0.0625,\n      \"stakeBoltzmann\": 1.380649e-23\n    }\n  },\n  \"onChain\": {\n    \"status\": \"error\",\n    \"reason\": \"HH700: Artifact for contract \\\"contracts/v2/RewardEngineMB.sol:RewardEngineMB\\\" not found. \"\n  },\n  \"diagnostics\": {\n    \"roleShareTotal\": 100,\n    \"roleShareMatchesChain\": null\n  }\n}\n",
+      "stdout": "\n> agijobsv0@1.0.0 reward-engine:report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/rewardEngineReport.ts --json --offline --mission /workspace/AGIJobsv0/demo/alpha-meta/config/mission@alpha-meta.json\n\n{\n  \"generatedAt\": \"2025-10-20T15:23:14.674Z\",\n  \"address\": \"0x0000000000000000000000000000000000000000\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/reward-engine.json\",\n    \"source\": \"reward-engine\",\n    \"address\": \"0x0000000000000000000000000000000000000000\",\n    \"treasury\": \"0x0000000000000000000000000000000000000000\",\n    \"thermostat\": \"0x0000000000000000000000000000000000000000\",\n    \"roleShares\": {\n      \"agent\": 65,\n      \"validator\": 15,\n      \"operator\": 15,\n      \"employer\": 5\n    },\n    \"mu\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"baselineEnergy\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"kappa\": \"1000000000000000000\",\n    \"maxProofs\": 100,\n    \"temperature\": \"1000000000000000000\",\n    \"settlers\": []\n  },\n  \"mission\": {\n    \"thermodynamics\": {\n      \"enthalpyKJ\": 224860.75,\n      \"entropyKJPerK\": 7.604,\n      \"operatingTemperatureK\": 356,\n      \"referenceTemperatureK\": 298,\n      \"bitsProcessed\": 11200000000,\n      \"burnRatePerBlock\": 0.068,\n      \"stakeBoltzmann\": 1.380649e-23\n    }\n  },\n  \"onChain\": {\n    \"status\": \"ok\",\n    \"network\": \"offline-simulated\",\n    \"treasury\": \"0x0000000000000000000000000000000000000000\",\n    \"roleShares\": {\n      \"agent\": \"65000000000000000000\",\n      \"validator\": \"15000000000000000000\",\n      \"operator\": \"15000000000000000000\",\n      \"employer\": \"5000000000000000000\"\n    },\n    \"mu\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"baselineEnergy\": {\n      \"agent\": \"0\",\n      \"validator\": \"0\",\n      \"operator\": \"0\",\n      \"employer\": \"0\"\n    },\n    \"kappa\": \"1000000000000000000000000000000000000\",\n    \"temperature\": \"1000000000000000000000000000000000000\",\n    \"maxProofs\": \"100\"\n  },\n  \"diagnostics\": {\n    \"roleShareTotal\": 100,\n    \"roleShareMatchesChain\": true\n  },\n  \"mode\": \"offline\"\n}\n",
       "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
-      "durationMs": 7895.9843580000015,
+      "durationMs": 2892.0369299999984,
       "parsed": {
-        "generatedAt": "2025-10-20T13:37:28.504Z",
+        "generatedAt": "2025-10-20T15:23:14.674Z",
         "address": "0x0000000000000000000000000000000000000000",
         "config": {
           "path": "/workspace/AGIJobsv0/config/reward-engine.json",
@@ -106,78 +118,176 @@
         },
         "mission": {
           "thermodynamics": {
-            "enthalpyKJ": 71142.64676186016,
-            "entropyKJPerK": 4.331118586645678,
-            "operatingTemperatureK": 310,
-            "referenceTemperatureK": 300,
-            "bitsProcessed": 1800000000,
-            "burnRatePerBlock": 0.0625,
+            "enthalpyKJ": 224860.75,
+            "entropyKJPerK": 7.604,
+            "operatingTemperatureK": 356,
+            "referenceTemperatureK": 298,
+            "bitsProcessed": 11200000000,
+            "burnRatePerBlock": 0.068,
             "stakeBoltzmann": 1.380649e-23
           }
         },
         "onChain": {
-          "status": "error",
-          "reason": "HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. "
+          "status": "ok",
+          "network": "offline-simulated",
+          "treasury": "0x0000000000000000000000000000000000000000",
+          "roleShares": {
+            "agent": "65000000000000000000",
+            "validator": "15000000000000000000",
+            "operator": "15000000000000000000",
+            "employer": "5000000000000000000"
+          },
+          "mu": {
+            "agent": "0",
+            "validator": "0",
+            "operator": "0",
+            "employer": "0"
+          },
+          "baselineEnergy": {
+            "agent": "0",
+            "validator": "0",
+            "operator": "0",
+            "employer": "0"
+          },
+          "kappa": "1000000000000000000000000000000000000",
+          "temperature": "1000000000000000000000000000000000000",
+          "maxProofs": "100"
         },
         "diagnostics": {
           "roleShareTotal": 100,
-          "roleShareMatchesChain": null
-        }
+          "roleShareMatchesChain": true
+        },
+        "mode": "offline"
       },
       "statuses": [
         {
           "path": "$.onChain",
-          "status": "error",
-          "reason": "HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found. "
+          "status": "ok"
         }
       ],
       "notes": [
-        "$.onChain: HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found."
+        "$.onChain: ok"
       ],
-      "severity": "warning",
-      "summary": "ERROR @ $.onChain — HH700: Artifact for contract \"contracts/v2/RewardEngineMB.sol:RewardEngineMB\" not found."
+      "severity": "success",
+      "summary": "OK @ $.onChain"
     },
     {
       "id": "upgradeStatus",
       "description": "Timelock governance queue readiness",
       "script": "owner:upgrade-status",
-      "command": "npm run owner:upgrade-status -- --json",
+      "command": "npm run owner:upgrade-status -- --json --offline --mission /workspace/AGIJobsv0/demo/alpha-meta/config/mission@alpha-meta.json",
       "exitCode": 0,
-      "stdout": "\n> agijobsv0@1.0.0 owner:upgrade-status\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerUpgradeStatus.ts --json\n\n{\n  \"generatedAt\": \"2025-10-20T13:37:35.537Z\",\n  \"configSource\": \"not found\",\n  \"onChain\": {\n    \"status\": \"skipped\",\n    \"reason\": \"No timelock address available.\"\n  }\n}\n",
+      "stdout": "\n> agijobsv0@1.0.0 owner:upgrade-status\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerUpgradeStatus.ts --json --offline --mission /workspace/AGIJobsv0/demo/alpha-meta/config/mission@alpha-meta.json\n\n{\n  \"generatedAt\": \"2025-10-20T15:23:17.545Z\",\n  \"configSource\": \"not found\",\n  \"onChain\": {\n    \"status\": \"ok\",\n    \"network\": \"offline-simulated\",\n    \"minDelay\": \"604800\",\n    \"roles\": [],\n    \"operations\": [\n      {\n        \"id\": \"npm run owner:system-pause -- --network mainnet --action pause --yes\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:system-pause -- --network mainnet --action unpause --yes\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run thermostat:update -- --network mainnet --target-temperature 0.33\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:command-center -- --network mainnet --set-lambda 1.037 --set-inertia 1.29\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:dashboard -- --network mainnet --focus treasury\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:rotate -- --network mainnet --role Sentinel --count 16\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:upgrade -- --network mainnet --proposal alpha-meta-governance.json\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:compliance-report -- --network mainnet --mode attestation\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:audit-hamiltonian -- --network mainnet --quantum\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:mission-control -- --network mainnet --mode expansion\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:emergency -- --network mainnet --scenario alpha-meta-resilience\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      },\n      {\n        \"id\": \"npm run owner:plan -- --network mainnet --scenario alpha-meta\",\n        \"pending\": false,\n        \"ready\": true,\n        \"executed\": false\n      }\n    ]\n  },\n  \"mode\": \"offline\"\n}\n",
       "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
-      "durationMs": 7079.905416000009,
+      "durationMs": 2865.6515890000046,
       "parsed": {
-        "generatedAt": "2025-10-20T13:37:35.537Z",
+        "generatedAt": "2025-10-20T15:23:17.545Z",
         "configSource": "not found",
         "onChain": {
-          "status": "skipped",
-          "reason": "No timelock address available."
-        }
+          "status": "ok",
+          "network": "offline-simulated",
+          "minDelay": "604800",
+          "roles": [],
+          "operations": [
+            {
+              "id": "npm run owner:system-pause -- --network mainnet --action pause --yes",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:system-pause -- --network mainnet --action unpause --yes",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run thermostat:update -- --network mainnet --target-temperature 0.33",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:command-center -- --network mainnet --set-lambda 1.037 --set-inertia 1.29",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:dashboard -- --network mainnet --focus treasury",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:rotate -- --network mainnet --role Sentinel --count 16",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:upgrade -- --network mainnet --proposal alpha-meta-governance.json",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:compliance-report -- --network mainnet --mode attestation",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:audit-hamiltonian -- --network mainnet --quantum",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:mission-control -- --network mainnet --mode expansion",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:emergency -- --network mainnet --scenario alpha-meta-resilience",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            },
+            {
+              "id": "npm run owner:plan -- --network mainnet --scenario alpha-meta",
+              "pending": false,
+              "ready": true,
+              "executed": false
+            }
+          ]
+        },
+        "mode": "offline"
       },
       "statuses": [
         {
           "path": "$.onChain",
-          "status": "skipped",
-          "reason": "No timelock address available."
+          "status": "ok"
         }
       ],
       "notes": [
-        "$.onChain: skipped — No timelock address available."
+        "$.onChain: ok"
       ],
-      "severity": "warning",
-      "summary": "SKIPPED @ $.onChain — No timelock address available."
+      "severity": "success",
+      "summary": "OK @ $.onChain"
     },
     {
       "id": "compliance",
       "description": "Tax policy disclosure + acknowledgement status",
       "script": "owner:compliance-report",
-      "command": "npm run owner:compliance-report -- --json",
+      "command": "npm run owner:compliance-report -- --json --offline",
       "exitCode": 0,
-      "stdout": "\n> agijobsv0@1.0.0 owner:compliance-report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerComplianceReport.ts --json\n\n{\n  \"generatedAt\": \"2025-10-20T13:37:42.829Z\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/tax-policy.json\",\n    \"policyURI\": \"ipfs://example-tax-policy\",\n    \"acknowledgement\": \"Employers, agents, and validators accept full responsibility for all applicable taxes.\",\n    \"acknowledgers\": [],\n    \"revokeList\": []\n  },\n  \"onChain\": {\n    \"status\": \"skipped\",\n    \"reason\": \"No tax policy address configured.\"\n  },\n  \"configSource\": \"not found\"\n}\n",
+      "stdout": "\n> agijobsv0@1.0.0 owner:compliance-report\n> npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerComplianceReport.ts --json --offline\n\n{\n  \"generatedAt\": \"2025-10-20T15:23:20.387Z\",\n  \"config\": {\n    \"path\": \"/workspace/AGIJobsv0/config/tax-policy.json\",\n    \"policyURI\": \"ipfs://example-tax-policy\",\n    \"acknowledgement\": \"Employers, agents, and validators accept full responsibility for all applicable taxes.\",\n    \"acknowledgers\": [],\n    \"revokeList\": []\n  },\n  \"onChain\": {\n    \"status\": \"ok\",\n    \"network\": \"offline-simulated\",\n    \"policyURI\": \"ipfs://example-tax-policy\",\n    \"acknowledgement\": \"Employers, agents, and validators accept full responsibility for all applicable taxes.\",\n    \"policyVersion\": \"1\",\n    \"owner\": \"0x0000000000000000000000000000000000000000\",\n    \"pendingOwner\": null,\n    \"taxExempt\": true\n  },\n  \"configSource\": \"not found\",\n  \"mode\": \"offline\"\n}\n",
       "stderr": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
-      "durationMs": 7194.268196000019,
+      "durationMs": 2844.2690539999967,
       "parsed": {
-        "generatedAt": "2025-10-20T13:37:42.829Z",
+        "generatedAt": "2025-10-20T15:23:20.387Z",
         "config": {
           "path": "/workspace/AGIJobsv0/config/tax-policy.json",
           "policyURI": "ipfs://example-tax-policy",
@@ -186,30 +296,38 @@
           "revokeList": []
         },
         "onChain": {
-          "status": "skipped",
-          "reason": "No tax policy address configured."
+          "status": "ok",
+          "network": "offline-simulated",
+          "policyURI": "ipfs://example-tax-policy",
+          "acknowledgement": "Employers, agents, and validators accept full responsibility for all applicable taxes.",
+          "policyVersion": "1",
+          "owner": "0x0000000000000000000000000000000000000000",
+          "pendingOwner": null,
+          "taxExempt": true
         },
-        "configSource": "not found"
+        "configSource": "not found",
+        "mode": "offline"
       },
       "statuses": [
         {
           "path": "$.onChain",
-          "status": "skipped",
-          "reason": "No tax policy address configured."
+          "status": "ok"
         }
       ],
       "notes": [
-        "$.onChain: skipped — No tax policy address configured."
+        "$.onChain: ok"
       ],
-      "severity": "warning",
-      "summary": "SKIPPED @ $.onChain — No tax policy address configured."
+      "severity": "success",
+      "summary": "OK @ $.onChain"
     }
   ],
   "totals": {
-    "success": 0,
-    "warning": 4,
+    "success": 4,
+    "warning": 0,
     "error": 0,
     "overall": 4
   },
-  "readiness": "attention"
+  "readiness": "ready",
+  "mode": "offline",
+  "missionFile": "/workspace/AGIJobsv0/demo/alpha-meta/config/mission@alpha-meta.json"
 }

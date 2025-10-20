@@ -235,7 +235,8 @@
     "demo:alpha-meta:validate": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/validateMission.ts",
     "demo:alpha-meta:ci": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/verifyCi.ts",
     "demo:alpha-meta:owner": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/ownerDiagnostics.ts",
-    "demo:alpha-meta:full": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/fullPipeline.ts"
+    "demo:alpha-meta:full": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/fullPipeline.ts",
+    "demo:alpha-meta:triangulate": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/triangulateMission.ts"
   },
   "keywords": [],
   "author": "",

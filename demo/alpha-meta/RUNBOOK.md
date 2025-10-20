@@ -134,7 +134,19 @@ shasum -a 256 demo/alpha-meta/reports/alpha-meta-governance-report.md
 
 Store the manifest alongside the artefacts or publish to IPFS for external attestations.
 
-## 8. CI and branch protection parity
+## 8. Triple triangulation audit
+
+Run the recomputation guardrail to prove that stored artefacts match fresh calculations and that the CI/owner diagnostics hashes
+align with disk:
+
+```bash
+npm run demo:alpha-meta:triangulate
+```
+
+Inspect `demo/alpha-meta/reports/alpha-meta-triangulation.md` for the hash register and Mermaid diagram. Any drift is surfaced as a
+blocking error.
+
+## 9. CI and branch protection parity
 
 Before opening a PR, ensure local runs match the enforced CI shield:
 
@@ -149,13 +161,13 @@ npm run ci:verify-branch-protection
 
 All commands must exit with code 0. Any drift (e.g. missing CI jobs or coverage thresholds) is reported immediately.
 
-## 9. Targeting Sepolia/Mainnet
+## 10. Targeting Sepolia/Mainnet
 
 - Export RPC URLs and funded keys (`export HARDHAT_NETWORK=sepolia`).
 - Launch with `demo/alpha-meta/bin/launch.sh --network sepolia --auto-yes`.
 - Confirm timelocks before executing queued upgrades; the generated owner diagnostics include queue status.
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Symptom | Resolution |
 | --- | --- |
