@@ -1,0 +1,193 @@
+{
+  "generatedAt": "2025-10-20T17:36:41.995Z",
+  "durationMs": 14363.258185999992,
+  "checks": [
+    {
+      "id": "summary-closed-form",
+      "label": "Summary closed-form equilibrium",
+      "passed": true,
+      "delta": 0,
+      "tolerance": 0.000001,
+      "details": "Max deviation 0.000000 (tol=0.000001)"
+    },
+    {
+      "id": "replicator-summary",
+      "label": "Summary replicator equilibrium",
+      "passed": true,
+      "delta": 0,
+      "tolerance": 0.000001,
+      "details": "Max deviation 0.000000 (tol=0.000001)"
+    },
+    {
+      "id": "replicator-independent",
+      "label": "Independent replicator vs closed-form",
+      "passed": true,
+      "delta": 0,
+      "tolerance": 0.000001,
+      "details": "Deviation 0.000000"
+    },
+    {
+      "id": "replicator-stress",
+      "label": "Stress replicator max deviation",
+      "passed": true,
+      "delta": 0.6933278830362193,
+      "tolerance": 0.935,
+      "details": "Stress seeds max Δ=0.693328 (tol=0.935000)"
+    },
+    {
+      "id": "eigenvector-summary",
+      "label": "Summary eigenvector match",
+      "passed": true,
+      "delta": 0,
+      "tolerance": 0.935,
+      "details": "Max deviation 0.000000 (tol=0.935000)"
+    },
+    {
+      "id": "eigenvector-independent",
+      "label": "Independent eigenvector vs closed-form",
+      "passed": true,
+      "delta": 0.027424130146681158,
+      "tolerance": 0.935,
+      "details": "Deviation 0.027424"
+    },
+    {
+      "id": "gibbs",
+      "label": "Gibbs free energy cross-check",
+      "passed": true,
+      "delta": 0,
+      "tolerance": 0.000001,
+      "details": "Summary 222153.726000 vs recomputed 222153.726000"
+    },
+    {
+      "id": "jarzynski",
+      "label": "Jarzynski log expectation cross-check",
+      "passed": true,
+      "delta": 0,
+      "tolerance": 0.7582305215341308,
+      "details": "Summary -38.414394 vs recomputed -38.414394"
+    },
+    {
+      "id": "jarzynski-consistency",
+      "label": "Jarzynski self-consistency",
+      "passed": true,
+      "delta": 0.5028684074431666,
+      "tolerance": 0.7582305215341308,
+      "details": "Expectation vs theoretical Δ=0.502868 (tol=0.758231)"
+    }
+  ],
+  "success": true,
+  "maxDeviation": 0.6933278830362193,
+  "replicator": {
+    "profile": [
+      0.30667172100075735,
+      0.3328278999241852,
+      0.36050037907505755
+    ],
+    "independentState": [
+      0.30667172100075735,
+      0.3328278999241852,
+      0.36050037907505755
+    ],
+    "independentIterations": 1,
+    "independentDeviation": 0,
+    "stressSeeds": [
+      [
+        0.36,
+        0.34,
+        0.3
+      ],
+      [
+        0.30667172100075735,
+        0.3328278999241852,
+        0.36050037907505755
+      ],
+      [
+        0.30667172100075735,
+        0.3328278999241852,
+        0.36050037907505755
+      ],
+      [
+        0.3028249664428767,
+        0.34009521471857374,
+        0.35707981883854956
+      ],
+      [
+        0.2908986760829153,
+        0.35560793979848193,
+        0.3534933841186028
+      ],
+      [
+        0.31865671232296894,
+        0.3322941408023464,
+        0.34904914687468463
+      ]
+    ],
+    "stressStates": [
+      [
+        0.9999996040369766,
+        2.210350465045117e-7,
+        1.7492797687534622e-7
+      ],
+      [
+        0.30667172100075735,
+        0.3328278999241852,
+        0.36050037907505755
+      ],
+      [
+        0.30667172100075735,
+        0.3328278999241852,
+        0.36050037907505755
+      ],
+      [
+        1.3064974205822575e-7,
+        0.999999525100521,
+        3.4424973694246606e-7
+      ],
+      [
+        1.0878588140727318e-7,
+        0.9999995313379736,
+        3.5987614504511526e-7
+      ],
+      [
+        0.9999996032297807,
+        1.7733861042283259e-7,
+        2.1943160893401252e-7
+      ]
+    ],
+    "stressMaxDeviation": 0.6933278830362193
+  },
+  "eigenvector": {
+    "summary": [
+      0.33362756573819385,
+      0.3332961853334298,
+      0.3330762489283764
+    ],
+    "independent": [
+      0.33362756573819385,
+      0.3332961853334298,
+      0.3330762489283764
+    ],
+    "deviation": 0.027424130146681158,
+    "iterations": 5
+  },
+  "baseline": {
+    "closedForm": [
+      0.30667172100075735,
+      0.3328278999241852,
+      0.36050037907505755
+    ],
+    "gibbsFreeEnergyKJ": 222153.726,
+    "jarzynskiLogExpectation": -38.41439448414971,
+    "jarzynskiLogTheoretical": -37.911526076706544
+  },
+  "comparison": {
+    "summaryPath": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-summary.json",
+    "gibbsDelta": 0,
+    "jarzynskiDelta": 0,
+    "closedFormDelta": 0
+  },
+  "outputs": {
+    "json": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-triangulation.json",
+    "markdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-triangulation.md"
+  }
+}

@@ -1,5 +1,11 @@
+import { readFile, writeFile } from "fs/promises";
 import path from "path";
 import { runFullDemo, type FullDemoOptions } from "../../agi-governance/scripts/runFullDemo";
+import {
+  executeTriangulation,
+  type TriangulationOptions,
+  type TriangulationResult,
+} from "./triangulateMission";
 
 const BASE_DIR = path.resolve(__dirname, "..");
 const REPORT_DIR = path.join(BASE_DIR, "reports");
@@ -18,6 +24,110 @@ const OWNER_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-owner-diagnostics.md");
 const FULL_JSON = path.join(REPORT_DIR, "alpha-meta-full-run.json");
 const FULL_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-full-run.md");
 const MANIFEST = path.join(REPORT_DIR, "alpha-meta-manifest.json");
+const TRIANGULATION_JSON = path.join(REPORT_DIR, "alpha-meta-triangulation.json");
+const TRIANGULATION_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-triangulation.md");
+
+function formatSeconds(durationMs: number): string {
+  if (!Number.isFinite(durationMs)) {
+    return "n/a";
+  }
+  return `${(durationMs / 1000).toFixed(2)} s`;
+}
+
+function formatDelta(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "n/a";
+  }
+  if (Math.abs(value) >= 1e-3) {
+    return value.toFixed(6);
+  }
+  return value.toExponential(3);
+}
+
+async function updateFullRunArtifacts(triangulation: TriangulationResult): Promise<void> {
+  try {
+    const raw = await readFile(FULL_JSON, "utf8");
+    const document = JSON.parse(raw) as Record<string, unknown> & {
+      steps?: Array<Record<string, unknown>>;
+      artifacts?: Record<string, unknown>;
+    };
+
+    const step = {
+      id: "triangulation",
+      label: "Triangulation cross-check",
+      status: triangulation.success ? "success" : "error",
+      durationMs: triangulation.durationMs,
+      details: triangulation.success
+        ? `All checks satisfied (max Δ=${formatDelta(triangulation.maxDeviation)})`
+        : `Deviations detected (max Δ=${formatDelta(triangulation.maxDeviation)})`,
+    };
+
+    if (!Array.isArray(document.steps)) {
+      document.steps = [];
+    }
+    const existingIndex = document.steps.findIndex((entry) => entry && entry.id === "triangulation");
+    if (existingIndex >= 0) {
+      document.steps[existingIndex] = step;
+    } else {
+      document.steps.push(step);
+    }
+
+    document.artifacts = {
+      ...(document.artifacts ?? {}),
+      triangulationJson: triangulation.outputs.json,
+      triangulationMarkdown: triangulation.outputs.markdown,
+    };
+
+    await writeFile(FULL_JSON, JSON.stringify(document, null, 2), "utf8");
+  } catch (error) {
+    console.warn("⚠️ Unable to update Alpha-Meta full-run JSON with triangulation results:", error);
+  }
+
+  try {
+    let markdown = await readFile(FULL_MARKDOWN, "utf8");
+
+    const lines = markdown.split("\n");
+    const tableHeaderIndex = lines.findIndex((line) => line.trim().startsWith("| Step |"));
+    const separatorIndex = lines.findIndex((line, index) => index > tableHeaderIndex && line.trim().startsWith("| ---"));
+    if (tableHeaderIndex !== -1 && separatorIndex !== -1) {
+      let cursor = separatorIndex + 1;
+      while (cursor < lines.length && lines[cursor].startsWith("|")) {
+        if (lines[cursor].includes("Triangulation cross-check")) {
+          lines.splice(cursor, 1);
+        } else {
+          cursor += 1;
+        }
+      }
+      const status = triangulation.success ? "✅" : "❌";
+      const details = triangulation.success
+        ? `All checks satisfied (max Δ=${formatDelta(triangulation.maxDeviation)})`
+        : `Deviations detected (max Δ=${formatDelta(triangulation.maxDeviation)})`;
+      const row = `| Triangulation cross-check | ${status} | ${formatSeconds(
+        triangulation.durationMs,
+      )} | ${details} |`;
+      lines.splice(cursor, 0, row);
+    }
+
+    const filtered = lines.filter(
+      (line) =>
+        !line.includes("Triangulation JSON:") && !line.includes("Triangulation Markdown:"),
+    );
+    const fullRunIndex = filtered.findIndex((line) => line.includes("- Full-run Markdown:"));
+    if (fullRunIndex !== -1) {
+      filtered.splice(
+        fullRunIndex + 1,
+        0,
+        `- Triangulation JSON: \`${triangulation.outputs.json}\``,
+        `- Triangulation Markdown: \`${triangulation.outputs.markdown}\``,
+      );
+    }
+
+    markdown = filtered.join("\n");
+    await writeFile(FULL_MARKDOWN, markdown, "utf8");
+  } catch (error) {
+    console.warn("⚠️ Unable to update Alpha-Meta full-run Markdown with triangulation results:", error);
+  }
+}
 
 async function main(): Promise<void> {
   const options: FullDemoOptions = {
@@ -54,10 +164,23 @@ async function main(): Promise<void> {
 
   const summary = await runFullDemo(options);
 
+  const triangulationOptions: TriangulationOptions = {
+    missionFile: MISSION_FILE,
+    summaryFile: SUMMARY_FILE,
+    outputJson: TRIANGULATION_JSON,
+    outputMarkdown: TRIANGULATION_MARKDOWN,
+    manifestFile: MANIFEST,
+  };
+
+  const triangulation = await executeTriangulation(triangulationOptions);
+  await updateFullRunArtifacts(triangulation);
+
   const hasError = summary.steps.some((step) => step.status === "error");
   const hasWarning = summary.steps.some((step) => step.status === "warning");
 
-  if (hasError) {
+  const triangulationFailed = !triangulation.success;
+
+  if (hasError || triangulationFailed) {
     console.error("❌ Alpha-Meta full pipeline completed with errors.");
     process.exitCode = 1;
   } else if (hasWarning) {
@@ -69,6 +192,9 @@ async function main(): Promise<void> {
   console.log(`   Aggregated JSON: ${FULL_JSON}`);
   console.log(`   Aggregated Markdown: ${FULL_MARKDOWN}`);
   console.log(`   Manifest: ${MANIFEST}`);
+  const statusEmoji = triangulation.success ? "✅" : "❌";
+  console.log(`${statusEmoji} Triangulation dossier: ${TRIANGULATION_JSON}`);
+  console.log(`   Triangulation Markdown: ${TRIANGULATION_MARKDOWN}`);
 }
 
 if (require.main === module) {

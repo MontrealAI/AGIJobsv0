@@ -17,7 +17,7 @@ cd "${ROOT_DIR}"
 # 1. Execute the first-class operating system drill with unstoppable owner supremacy.
 npm run demo:agi-os:first-class -- --auto-yes "$@"
 
-# 2. Generate the Alpha-Meta governance dossier, CI audit, and owner diagnostics bundle.
+# 2. Generate the Alpha-Meta governance dossier, CI audit, owner diagnostics, and triangulation bundle.
 npm run demo:alpha-meta:full
 
 # 3. Replay the ASI take-off harness using the alpha-meta constellation mission plan.
