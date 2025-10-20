@@ -11,6 +11,7 @@ import {
   type OwnerSupremacyOptions,
   type OwnerSupremacyAudit,
 } from "./auditOwnerSupremacy";
+import { updateManifest } from "./manifestUtils";
 
 const BASE_DIR = path.resolve(__dirname, "..");
 const REPORT_DIR = path.join(BASE_DIR, "reports");
@@ -226,6 +227,7 @@ async function main(): Promise<void> {
   };
   const ownerSupremacy = await auditOwnerSupremacy(ownerSupremacyOptions);
   await updateFullRunArtifacts(triangulation, ownerSupremacy);
+  await updateManifest(MANIFEST, [FULL_JSON, FULL_MARKDOWN]);
 
   const hasError = summary.steps.some((step) => step.status === "error");
   const hasWarning = summary.steps.some((step) => step.status === "warning");
