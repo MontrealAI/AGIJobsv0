@@ -40,6 +40,8 @@ Verify the bundle:
 - `demo/alpha-meta/reports/alpha-meta-owner-diagnostics.json`
 - `demo/alpha-meta/reports/alpha-meta-owner-matrix.md`
 - `demo/alpha-meta/reports/alpha-meta-owner-matrix.json`
+- `demo/alpha-meta/reports/alpha-meta-owner-supremacy.json`
+- `demo/alpha-meta/reports/alpha-meta-owner-supremacy.md`
 - `demo/alpha-meta/reports/alpha-meta-triangulation.json`
 - `demo/alpha-meta/reports/alpha-meta-triangulation.md`
 - `demo/alpha-meta/reports/alpha-meta-manifest.json`
@@ -80,6 +82,9 @@ HARDHAT_NETWORK=localhost npm run owner:system-pause -- --action unpause --yes
 
 # Regenerate Alpha-Meta owner diagnostics bundle
 npm run demo:alpha-meta:owner
+
+# Execute owner supremacy coverage audit
+npm run demo:alpha-meta:owner-audit
 ```
 
 The generated diagnostics Markdown lists each automation command, exit code, and JSON payload. Any warning or error is highlighted.
@@ -122,6 +127,7 @@ Review the outputs written by the dossier generator:
 - `demo/alpha-meta/reports/alpha-meta-governance-summary.json`
 - `demo/alpha-meta/reports/alpha-meta-governance-report.md`
 - `demo/alpha-meta/reports/alpha-meta-triangulation.md`
+- `demo/alpha-meta/reports/alpha-meta-owner-supremacy.md`
 - `reports/asi-takeoff/thermodynamics.json`
 
 Focus on:
@@ -139,6 +145,7 @@ Alpha-Meta is designed to behave as an owner-directed superintelligence. Confirm
 - `alphaField.energyMarginKJ` ≥ `alphaField.verification.energyMarginFloorKJ`
 - `alphaField.quantumConfidence` ≥ `alphaField.verification.quantumConfidenceMinimum`
 - Triangulation checks (`summary-closed-form`, `replicator-independent`, `jarzynski-consistency`) all report `"passed": true`
+- `ownerSupremacy.verdict.ok` is `true` in `alpha-meta-owner-supremacy.json`
 
 When all metrics satisfy their thresholds, the owner holds provable command over the civilisation-scale intelligence surface. Any deviation produces explicit failure text in both JSON and Markdown dossiers so the operator can halt, retune, or redeploy immediately.
 
@@ -167,6 +174,7 @@ npm test
 npm run coverage:check
 npm run demo:alpha-meta:ci
 npm run demo:alpha-meta:triangulate
+npm run demo:alpha-meta:owner-audit
 npm run owner:verify-control
 npm run ci:verify-branch-protection
 ```

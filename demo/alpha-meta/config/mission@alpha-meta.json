@@ -324,6 +324,12 @@
         "category": "compliance"
       },
       {
+        "label": "Monitoring sentinel sweep",
+        "command": "npm run monitoring:validate -- --network mainnet --all",
+        "impact": "Validates and refreshes every monitoring sentinel hook under owner command.",
+        "category": "monitoring"
+      },
+      {
         "label": "Quantum lattice audit",
         "command": "npm run owner:audit-hamiltonian -- --network mainnet --quantum",
         "impact": "Captures quantum coherence proofs for the evidence vault.",

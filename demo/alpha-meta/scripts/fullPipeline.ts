@@ -6,6 +6,12 @@ import {
   type TriangulationOptions,
   type TriangulationResult,
 } from "./triangulateMission";
+import {
+  auditOwnerSupremacy,
+  type OwnerSupremacyOptions,
+  type OwnerSupremacyAudit,
+} from "./auditOwnerSupremacy";
+import { updateManifest } from "./manifestUtils";
 
 const BASE_DIR = path.resolve(__dirname, "..");
 const REPORT_DIR = path.join(BASE_DIR, "reports");
@@ -21,6 +27,8 @@ const VALIDATION_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-governance-validat
 const CI_REPORT = path.join(REPORT_DIR, "alpha-meta-ci-verification.json");
 const OWNER_JSON = path.join(REPORT_DIR, "alpha-meta-owner-diagnostics.json");
 const OWNER_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-owner-diagnostics.md");
+const OWNER_SUPREMACY_JSON = path.join(REPORT_DIR, "alpha-meta-owner-supremacy.json");
+const OWNER_SUPREMACY_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-owner-supremacy.md");
 const FULL_JSON = path.join(REPORT_DIR, "alpha-meta-full-run.json");
 const FULL_MARKDOWN = path.join(REPORT_DIR, "alpha-meta-full-run.md");
 const MANIFEST = path.join(REPORT_DIR, "alpha-meta-manifest.json");
@@ -44,7 +52,10 @@ function formatDelta(value: number): string {
   return value.toExponential(3);
 }
 
-async function updateFullRunArtifacts(triangulation: TriangulationResult): Promise<void> {
+async function updateFullRunArtifacts(
+  triangulation: TriangulationResult,
+  ownerAudit: OwnerSupremacyAudit,
+): Promise<void> {
   try {
     const raw = await readFile(FULL_JSON, "utf8");
     const document = JSON.parse(raw) as Record<string, unknown> & {
@@ -52,7 +63,7 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
       artifacts?: Record<string, unknown>;
     };
 
-    const step = {
+    const triangulationStep = {
       id: "triangulation",
       label: "Triangulation cross-check",
       status: triangulation.success ? "success" : "error",
@@ -62,20 +73,43 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
         : `Deviations detected (max Δ=${formatDelta(triangulation.maxDeviation)})`,
     };
 
+    const ownerStatus = ownerAudit.verdict.ok ? "success" : ownerAudit.coverage.ok ? "warning" : "error";
+    const ownerDetails = ownerAudit.verdict.ok
+      ? "All critical categories and sentinels confirmed."
+      : ownerAudit.coverage.missingCategories.length > 0
+        ? `Remediate categories: ${ownerAudit.coverage.missingCategories.join(", ")}`
+        : "Extend sentinel coverage to satisfy monitoring requirements.";
+    const ownerStep = {
+      id: "owner-supremacy",
+      label: "Owner supremacy audit",
+      status: ownerStatus,
+      durationMs: ownerAudit.durationMs,
+      details: ownerDetails,
+    };
+
     if (!Array.isArray(document.steps)) {
       document.steps = [];
     }
     const existingIndex = document.steps.findIndex((entry) => entry && entry.id === "triangulation");
     if (existingIndex >= 0) {
-      document.steps[existingIndex] = step;
+      document.steps[existingIndex] = triangulationStep;
     } else {
-      document.steps.push(step);
+      document.steps.push(triangulationStep);
+    }
+
+    const ownerIndex = document.steps.findIndex((entry) => entry && entry.id === "owner-supremacy");
+    if (ownerIndex >= 0) {
+      document.steps[ownerIndex] = ownerStep;
+    } else {
+      document.steps.push(ownerStep);
     }
 
     document.artifacts = {
       ...(document.artifacts ?? {}),
       triangulationJson: triangulation.outputs.json,
       triangulationMarkdown: triangulation.outputs.markdown,
+      ownerSupremacyJson: ownerAudit.outputs.json,
+      ownerSupremacyMarkdown: ownerAudit.outputs.markdown,
     };
 
     await writeFile(FULL_JSON, JSON.stringify(document, null, 2), "utf8");
@@ -92,7 +126,7 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
     if (tableHeaderIndex !== -1 && separatorIndex !== -1) {
       let cursor = separatorIndex + 1;
       while (cursor < lines.length && lines[cursor].startsWith("|")) {
-        if (lines[cursor].includes("Triangulation cross-check")) {
+        if (lines[cursor].includes("Triangulation cross-check") || lines[cursor].includes("Owner supremacy audit")) {
           lines.splice(cursor, 1);
         } else {
           cursor += 1;
@@ -102,15 +136,25 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
       const details = triangulation.success
         ? `All checks satisfied (max Δ=${formatDelta(triangulation.maxDeviation)})`
         : `Deviations detected (max Δ=${formatDelta(triangulation.maxDeviation)})`;
-      const row = `| Triangulation cross-check | ${status} | ${formatSeconds(
-        triangulation.durationMs,
-      )} | ${details} |`;
-      lines.splice(cursor, 0, row);
+      const ownerStatusMark = ownerAudit.verdict.ok ? "✅" : ownerAudit.coverage.ok ? "⚠️" : "❌";
+      const ownerDetailsText = ownerAudit.verdict.ok
+        ? "All governance categories instrumented."
+        : ownerAudit.coverage.missingCategories.length > 0
+          ? `Remediate categories: ${ownerAudit.coverage.missingCategories.join(", ")}`
+          : "Expand monitoring sentinels before production.";
+      const rows = [
+        `| Triangulation cross-check | ${status} | ${formatSeconds(triangulation.durationMs)} | ${details} |`,
+        `| Owner supremacy audit | ${ownerStatusMark} | ${formatSeconds(ownerAudit.durationMs)} | ${ownerDetailsText} |`,
+      ];
+      lines.splice(cursor, 0, ...rows);
     }
 
     const filtered = lines.filter(
       (line) =>
-        !line.includes("Triangulation JSON:") && !line.includes("Triangulation Markdown:"),
+        !line.includes("Triangulation JSON:") &&
+        !line.includes("Triangulation Markdown:") &&
+        !line.includes("Owner supremacy JSON:") &&
+        !line.includes("Owner supremacy Markdown:"),
     );
     const fullRunIndex = filtered.findIndex((line) => line.includes("- Full-run Markdown:"));
     if (fullRunIndex !== -1) {
@@ -119,6 +163,8 @@ async function updateFullRunArtifacts(triangulation: TriangulationResult): Promi
         0,
         `- Triangulation JSON: \`${triangulation.outputs.json}\``,
         `- Triangulation Markdown: \`${triangulation.outputs.markdown}\``,
+        `- Owner supremacy JSON: \`${ownerAudit.outputs.json}\``,
+        `- Owner supremacy Markdown: \`${ownerAudit.outputs.markdown}\``,
       );
     }
 
@@ -173,14 +219,23 @@ async function main(): Promise<void> {
   };
 
   const triangulation = await executeTriangulation(triangulationOptions);
-  await updateFullRunArtifacts(triangulation);
+  const ownerSupremacyOptions: OwnerSupremacyOptions = {
+    missionFile: MISSION_FILE,
+    outputJson: OWNER_SUPREMACY_JSON,
+    outputMarkdown: OWNER_SUPREMACY_MARKDOWN,
+    manifestFile: MANIFEST,
+  };
+  const ownerSupremacy = await auditOwnerSupremacy(ownerSupremacyOptions);
+  await updateFullRunArtifacts(triangulation, ownerSupremacy);
+  await updateManifest(MANIFEST, [FULL_JSON, FULL_MARKDOWN]);
 
   const hasError = summary.steps.some((step) => step.status === "error");
   const hasWarning = summary.steps.some((step) => step.status === "warning");
 
   const triangulationFailed = !triangulation.success;
+  const ownerAuditFailed = !ownerSupremacy.verdict.ok;
 
-  if (hasError || triangulationFailed) {
+  if (hasError || triangulationFailed || ownerAuditFailed) {
     console.error("❌ Alpha-Meta full pipeline completed with errors.");
     process.exitCode = 1;
   } else if (hasWarning) {
@@ -195,6 +250,9 @@ async function main(): Promise<void> {
   const statusEmoji = triangulation.success ? "✅" : "❌";
   console.log(`${statusEmoji} Triangulation dossier: ${TRIANGULATION_JSON}`);
   console.log(`   Triangulation Markdown: ${TRIANGULATION_MARKDOWN}`);
+  const ownerEmoji = ownerSupremacy.verdict.ok ? "✅" : ownerSupremacy.coverage.ok ? "⚠️" : "❌";
+  console.log(`${ownerEmoji} Owner supremacy audit: ${OWNER_SUPREMACY_JSON}`);
+  console.log(`   Owner supremacy Markdown: ${OWNER_SUPREMACY_MARKDOWN}`);
 }
 
 if (require.main === module) {
