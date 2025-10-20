@@ -29,7 +29,7 @@ demo/meta-agentic-alpha-agi/bin/launch.sh
 What happens:
 
 1. `npm run demo:agi-os:first-class -- --auto-yes` deploys/refreshes contracts, runs the Astral Omnidominion OS demo, generates the Owner Control Matrix, produces `grand-summary.{md,json,html}`, and writes the first-class manifest under `reports/agi-os/first-class/`.
-2. `npm run demo:asi-takeoff:local` replays the ASI take-off harness with `project-plan.meta-alpha.json`, populating mission receipts for the nation + wallet coalition.
+2. `npm run demo:asi-takeoff` replays the ASI take-off harness with `project-plan.meta-alpha.json`, populating mission receipts for the nation + wallet coalition.
 
 Confirm the bundle:
 
