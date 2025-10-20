@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2025-10-20T15:22:44.752Z",
+  "missionFile": "/workspace/AGIJobsv0/demo/alpha-meta/config/mission@alpha-meta.json",
+  "artefacts": {
+    "summary": {
+      "path": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-summary.json",
+      "exists": true,
+      "hash": "1f5354f9279fa8ed9e68d11820bcba708c6bf7923534d75a8ce6bddcacbbb825"
+    },
+    "validation": {
+      "computedHash": "26302de6b1e7e7a92279029c5ca06c56708872f76efe1225cec3b76b46d5f757",
+      "disk": {
+        "path": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-validation.json",
+        "exists": true,
+        "hash": "f3b7e2a21e3af0e20fd92bb8f0796032344a96ad44c4df3fcbe0766f94a9f67d"
+      },
+      "consistent": true
+    },
+    "ci": {
+      "computedHash": "5e9a8a7e827f1e79f77f79f4caa5f5f1f604eb14a62e1c42b19c1a4036cb3bb6",
+      "disk": {
+        "path": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-ci-verification.json",
+        "exists": true,
+        "hash": "96d62ca8c956d1bca25a42f8983072f0ce512e3d17fae4dac9f067f18442849f"
+      },
+      "consistent": true,
+      "ok": true,
+      "issues": []
+    },
+    "owner": {
+      "computedHash": "5cf6deca1a0306e6ba784e3f8d05578ad51c0229d3ac394ea4207776e11c33d5",
+      "disk": {
+        "path": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-diagnostics.json",
+        "exists": true,
+        "hash": "462070cb407938dd4f373333c35143fcc4b9387870cb40acd63f6d0535dc0375"
+      },
+      "consistent": true,
+      "totals": {
+        "success": 4,
+        "warning": 0,
+        "error": 0,
+        "overall": 4
+      },
+      "readiness": "ready"
+    },
+    "fullRun": {
+      "path": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-full-run.json",
+      "exists": true,
+      "hash": "b36ede3e37ce4b01d1b4f07b985c0aee1b151dfa8533195634e330cec3b266c3"
+    }
+  },
+  "validationTotals": {
+    "passed": 58,
+    "failed": 0
+  },
+  "ownerTotals": {
+    "success": 4,
+    "warning": 0,
+    "error": 0,
+    "overall": 4
+  },
+  "ownerReadiness": "ready",
+  "notes": [],
+  "digest": "8f24260db136eaddc0807653ab29ca8b18f950757bd3872b867d612c10bf7bf0"
+}
