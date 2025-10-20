@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2025-10-20T16:25:26.917Z",
+  "owner": "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1",
+  "pauser": "0xB2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2B2",
+  "treasury": "0xC3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3C3",
+  "timelockSeconds": 691200,
+  "timelockHours": 192,
+  "coverage": {
+    "fullCoverage": true,
+    "allCommandsPresent": true,
+    "allVerificationsPresent": true,
+    "satisfiedCategories": [
+      "pause",
+      "resume",
+      "parameter",
+      "treasury",
+      "sentinel",
+      "upgrade",
+      "compliance"
+    ],
+    "missingCategories": []
+  },
+  "capabilities": [
+    {
+      "category": "pause",
+      "label": "Global pause switch",
+      "description": "Immediate halt for the entire AGI Jobs execution surface via the owner guardian.",
+      "command": "npm run owner:system-pause -- --network mainnet --pause true",
+      "commandScript": "owner:system-pause",
+      "commandStatus": "available",
+      "verification": "npm run owner:verify-control",
+      "verificationScript": "owner:verify-control",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "resume",
+      "label": "Resume operations",
+      "description": "Restores production flows after remediation and confirms health checks.",
+      "command": "npm run owner:system-pause -- --network mainnet --pause false",
+      "commandScript": "owner:system-pause",
+      "commandStatus": "available",
+      "verification": "npm run owner:verify-control",
+      "verificationScript": "owner:verify-control",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "parameter",
+      "label": "Tune Hamiltonian parameters",
+      "description": "Applies Hamiltonian monitor adjustments to lock λ and inertial metrics at the computed optimum.",
+      "command": "npm run owner:command-center -- --network mainnet --target HamiltonianMonitor --set-lambda 0.94 --set-inertia 1.08",
+      "commandScript": "owner:command-center",
+      "commandStatus": "available",
+      "verification": "npm run owner:audit-hamiltonian",
+      "verificationScript": "owner:audit-hamiltonian",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "treasury",
+      "label": "Reward engine burn curve",
+      "description": "Aligns mint/burn ratios with thermodynamic constraints and treasury splits.",
+      "command": "npm run reward-engine:update -- --network mainnet --burn-bps 600 --treasury-bps 200",
+      "commandScript": "reward-engine:update",
+      "commandStatus": "available",
+      "verification": "npm run reward-engine:report",
+      "verificationScript": "reward-engine:report",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "sentinel",
+      "label": "Sentinel rotation",
+      "description": "Refreshes enforcement guardians to maintain antifragile coverage.",
+      "command": "npm run owner:rotate -- --network mainnet --role Sentinel --count 3",
+      "commandScript": "owner:rotate",
+      "commandStatus": "available",
+      "verification": "npm run monitoring:sentinels",
+      "verificationScript": "monitoring:sentinels",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "upgrade",
+      "label": "Timelocked upgrade queue",
+      "description": "Queues upgrade bundle into the timelock for deterministic rollout.",
+      "command": "npm run owner:upgrade -- --network mainnet --proposal governance_bundle.json",
+      "commandScript": "owner:upgrade",
+      "commandStatus": "available",
+      "verification": "npm run owner:upgrade-status",
+      "verificationScript": "owner:upgrade-status",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "compliance",
+      "label": "Regulatory disclosure",
+      "description": "Publishes mandatory statements to participants and regulators.",
+      "command": "npm run owner:update-all -- --network mainnet --module TaxPolicy --acknowledgement \"Participants accept AGI Jobs v2 tax terms.\"",
+      "commandScript": "owner:update-all",
+      "commandStatus": "available",
+      "verification": "npm run owner:compliance-report",
+      "verificationScript": "owner:compliance-report",
+      "verificationStatus": "available"
+    }
+  ],
+  "monitoringSentinels": [
+    "Grafana circuit-breakers watching governance divergence",
+    "On-chain staking slash monitors",
+    "Adaptive fuzz oracle with spectral drift alerts"
+  ]
+}
