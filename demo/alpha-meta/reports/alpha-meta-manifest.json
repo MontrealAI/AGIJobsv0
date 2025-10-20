@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2025-10-20T17:36:42.010Z",
+  "generatedAt": "2025-10-20T20:00:04.811Z",
   "root": "/workspace/AGIJobsv0",
   "files": 15,
   "entries": [
     {
       "path": "demo/alpha-meta/config/mission@alpha-meta.json",
-      "sha256": "8603981e101b0b63d5ddb0d56f71792c7910bb6dc3f6ecf422321333432b9b17",
-      "bytes": 16596
+      "sha256": "e25ff3c4b4b310cd67a5375d1a5f9ab1cf2566bc9a1cba05c687d69349cbf511",
+      "bytes": 16640
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-ci-verification.json",
@@ -15,68 +15,68 @@
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-full-run.json",
-      "sha256": "1e76f87b64fcca9e9d75765430c62cbe784eb67c5d205520e70475fee50ab390",
-      "bytes": 3394
+      "sha256": "778edfb13995413f17f9d13ffb830b76bb6b1959a001c0ab611ab175698c2e70",
+      "bytes": 3402
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-full-run.md",
-      "sha256": "803d80f589c9e3765b89ac3208e29bf447171661392b3311854ca60da16e2fd8",
-      "bytes": 3617
+      "sha256": "3789afcb6a6b3fd7b438bc87fc0ae57b87a8bcd95bf1f6d402430c11202500ca",
+      "bytes": 3614
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-governance-dashboard.html",
-      "sha256": "d07335b353db2313bfad165d57b065384775f29251d5792782ea13db282e41ad",
-      "bytes": 27078
+      "sha256": "f92209a88c686dd31c1eb357873f7ab74d7df5a75322890f2a67f4e334222a0f",
+      "bytes": 27115
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-governance-report.md",
-      "sha256": "9e12f53971b44b119cccd3d03f89fbad2d578373080402a0d3ecb6e8256b7142",
-      "bytes": 18066
+      "sha256": "57a83c27b991f7e1b74deac3cdec525db5ad65e9aaa1bbd61c04b0e47aaa5a24",
+      "bytes": 18093
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-governance-summary.json",
-      "sha256": "08c278cc478107a1cf09dbcadfa078367b696f09ccb474decf2a6ac8a987906b",
-      "bytes": 21517
+      "sha256": "6d76320465e23fe91156b56769c6ec27db5321de5e2a98a79f60eda5d1b066a2",
+      "bytes": 21519
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-governance-validation.json",
-      "sha256": "39e8659504cec4f807aba78dac916b2ff7cf7408b39aa836c6d5bcbcd5416e9d",
-      "bytes": 13466
+      "sha256": "0392bf2a618d371e24cade72f40e19204372e1a23357cba2bf569e600d608dec",
+      "bytes": 13460
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-governance-validation.md",
-      "sha256": "3ebd24796629c8370051413a6df1852233a3094c5e3aa9b2ab5ba01d57a5dc31",
-      "bytes": 11987
+      "sha256": "2263dd3aa60632cee063fb1ec76b0987b304fd0498a0ec97171eff13f04e1761",
+      "bytes": 11969
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-owner-diagnostics.json",
-      "sha256": "5e438359c145b8824d2e9e507766ef819f54f67a04c5304e37f0aa41cd6a2fc5",
-      "bytes": 19396
+      "sha256": "110b94889f4556c0b98dba985308dc39ec018ea5b69d057ed945e029e5f677eb",
+      "bytes": 19399
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-owner-diagnostics.md",
-      "sha256": "ad00a160e96ce1accd53e4cec295e4762284b3d01bd910376400b9a638ca3657",
-      "bytes": 949
+      "sha256": "0c2544786db89fcf7674422f2dbdc16cb9c8a7d33aaea9d7134c764a47d88bde",
+      "bytes": 945
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-owner-matrix.json",
-      "sha256": "c07c6a1e48e9b7f8625283a6ea02e2a01abb6e80d185d739de8f50e87ba11d70",
+      "sha256": "971f446730855d6c3c2c4763bae7929e8737325b8d0c249a094eb98984fccbff",
       "bytes": 5205
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-owner-matrix.md",
-      "sha256": "9f4b7a42e929d7c8f3d21e7fa7def32f559baff9b70877feb4481a07bd001a96",
+      "sha256": "cf5e01602d73541374345c7f0b5cc66d699b6302a1269be5af0b5fc88a52cdbc",
       "bytes": 1814
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-triangulation.json",
-      "sha256": "6598afa3ddb7188b6a6303dd4589695910e23be4dedfd3448340714d11b76009",
-      "bytes": 4774
+      "sha256": "86ca809a927272be850ee4af96c4e00ea3d445d2cacfb20e9ee612e04e284205",
+      "bytes": 4773
     },
     {
       "path": "demo/alpha-meta/reports/alpha-meta-triangulation.md",
-      "sha256": "256efc47ed3d55f477e3c768ef209774ed8b8f1da6206bfd6531346fe9a08dfb",
-      "bytes": 1946
+      "sha256": "e7b946656c765130b6460792bceb32ff5577c10c0c7e41036620c68ccb9fe21c",
+      "bytes": 1945
     }
   ]
 }

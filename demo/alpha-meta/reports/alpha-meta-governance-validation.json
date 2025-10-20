@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-10-20T17:35:43.558Z",
-  "summaryTimestamp": "2025-10-20T17:34:21.964Z",
+  "generatedAt": "2025-10-20T19:59:26.388Z",
+  "summaryTimestamp": "2025-10-20T19:58:34.400Z",
   "missionVersion": "2.0.0",
   "results": [
     {
@@ -163,7 +163,7 @@
       "id": "alpha-field:confidence",
       "description": "Alpha-field confidence score",
       "passed": true,
-      "details": "expected 0.828806 vs actual 0.828806 (Δ=0.000000, tol=0.000001)",
+      "details": "expected 0.905729 vs actual 0.905729 (Δ=0.000000, tol=0.000001)",
       "delta": 0,
       "tolerance": 0.000001
     },
@@ -199,7 +199,7 @@
       "id": "alpha-field:gibbs-within",
       "description": "Gibbs delta within tolerance",
       "passed": true,
-      "details": "expected false, actual false"
+      "details": "expected true, actual true"
     },
     {
       "id": "alpha-field:divergence",
@@ -247,13 +247,13 @@
       "id": "alpha-field:quantum-confidence-floor",
       "description": "Quantum confidence floor satisfied",
       "passed": true,
-      "details": "expected false, actual false"
+      "details": "expected true, actual true"
     },
     {
       "id": "alpha-field:thermo-quantum-alignment",
       "description": "Thermo ↔ quantum alignment satisfied",
       "passed": true,
-      "details": "expected false, actual false"
+      "details": "expected true, actual true"
     },
     {
       "id": "quantum:coherence",

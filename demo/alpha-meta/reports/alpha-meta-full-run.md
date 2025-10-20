@@ -1,6 +1,6 @@
 # Full Governance Demonstration Run
-*Generated at:* 2025-10-20T17:36:27.566Z
-*Total runtime:* 205.52 s
+*Generated at:* 2025-10-20T19:59:55.314Z
+*Total runtime:* 131.57 s
 
 ```mermaid
 graph LR
@@ -19,11 +19,11 @@ graph LR
 
 | Step | Status | Duration | Details |
 | --- | --- | --- | --- |
-| Generate dossier | ✅ | 79.94 s | \|F\|r\|e\|e\|-\|e\|n\|e\|r\|g\|y\| \|m\|a\|r\|g\|i\|n\| \|2\|2\|2\|1\|5\|3\|.\|7\|3\| \|k\|J\| \|·\| \|M\|a\|x\| \|m\|e\|t\|h\|o\|d\| \|d\|e\|v\|i\|a\|t\|i\|o\|n\| \|0\|.\|8\|4\|9\|3\|7\|4\| |
-| Validate physics | ✅ | 81.60 s | \|A\|l\|l\| \|5\|8\| \|c\|h\|e\|c\|k\|s\| \|p\|a\|s\|s\|e\|d\| |
+| Generate dossier | ✅ | 50.67 s | \|F\|r\|e\|e\|-\|e\|n\|e\|r\|g\|y\| \|m\|a\|r\|g\|i\|n\| \|2\|2\|2\|1\|5\|3\|.\|7\|3\| \|k\|J\| \|·\| \|M\|a\|x\| \|m\|e\|t\|h\|o\|d\| \|d\|e\|v\|i\|a\|t\|i\|o\|n\| \|0\|.\|8\|4\|9\|3\|7\|4\| |
+| Validate physics | ✅ | 52.04 s | \|A\|l\|l\| \|5\|8\| \|c\|h\|e\|c\|k\|s\| \|p\|a\|s\|s\|e\|d\| |
 | Audit CI shield | ✅ | 0.06 s | \|A\|l\|l\| \|e\|n\|f\|o\|r\|c\|e\|m\|e\|n\|t\| \|g\|u\|a\|r\|d\|s\| \|l\|o\|c\|k\|e\|d\|.\| |
-| Owner diagnostics | ✅ | 43.91 s | \|A\|l\|l\| \|o\|w\|n\|e\|r\| \|a\|u\|t\|o\|m\|a\|t\|i\|o\|n\| \|c\|o\|m\|m\|a\|n\|d\|s\| \|e\|x\|e\|c\|u\|t\|e\|d\| \|s\|u\|c\|c\|e\|s\|s\|f\|u\|l\|l\|y\|.\| |
-| Triangulation cross-check | ✅ | 14.36 s | All checks satisfied (max Δ=0.693328) |
+| Owner diagnostics | ✅ | 28.79 s | \|A\|l\|l\| \|o\|w\|n\|e\|r\| \|a\|u\|t\|o\|m\|a\|t\|i\|o\|n\| \|c\|o\|m\|m\|a\|n\|d\|s\| \|e\|x\|e\|c\|u\|t\|e\|d\| \|s\|u\|c\|c\|e\|s\|s\|f\|u\|l\|l\|y\|.\| |
+| Triangulation cross-check | ✅ | 9.43 s | All checks satisfied (max Δ=0.693328) |
 
 ## Key Metrics
 - Gibbs free energy: 222153.73 kJ
@@ -31,7 +31,7 @@ graph LR
 - Antifragility curvature (2a): 9.20e-1
 - Equilibrium max deviation: 0.849374
 - Risk portfolio residual: 0.013
-- Alpha-field confidence: 82.9%
+- Alpha-field confidence: 90.6%
 - Superintelligence index: 95.8% (✅)
 - Stackelberg bound respected: ✅
 - Thermodynamic assurance: 100.0%
@@ -40,7 +40,7 @@ graph LR
 - Owner assurance: 100.0%
 - Quantum coherence: 75.9% (aligned charge)
 - Quantum free-energy delta: 2.222e+5 kJ
-- Thermo ↔ quantum alignment: ⚠️ (limit 1.800e-1 kJ)
+- Thermo ↔ quantum alignment: ✅ (limit 2.500e+5 kJ)
 - Quantum state entropy: 2.237 bits
 - Energy margin floor met: ✅
 - Jacobian stable: ❌

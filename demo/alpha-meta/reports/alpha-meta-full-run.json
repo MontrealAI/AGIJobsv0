@@ -1,40 +1,40 @@
 {
-  "generatedAt": "2025-10-20T17:36:27.566Z",
-  "totalDurationMs": 205518.719063,
+  "generatedAt": "2025-10-20T19:59:55.314Z",
+  "totalDurationMs": 131565.505002,
   "steps": [
     {
       "id": "generate",
       "label": "Generate dossier",
       "status": "success",
-      "durationMs": 79943.433078,
+      "durationMs": 50668.918789,
       "details": "Free-energy margin 222153.73 kJ · Max method deviation 0.849374"
     },
     {
       "id": "validate",
       "label": "Validate physics",
       "status": "success",
-      "durationMs": 81602.23258800001,
+      "durationMs": 52042.414515000004,
       "details": "All 58 checks passed"
     },
     {
       "id": "ci",
       "label": "Audit CI shield",
       "status": "success",
-      "durationMs": 60.83084899999085,
+      "durationMs": 63.67802899998787,
       "details": "All enforcement guards locked."
     },
     {
       "id": "owner",
       "label": "Owner diagnostics",
       "status": "success",
-      "durationMs": 43911.428518,
+      "durationMs": 28789.917690000002,
       "details": "All owner automation commands executed successfully."
     },
     {
       "id": "triangulation",
       "label": "Triangulation cross-check",
       "status": "success",
-      "durationMs": 14363.258185999992,
+      "durationMs": 9425.519893999997,
       "details": "All checks satisfied (max Δ=0.693328)"
     }
   ],
@@ -52,7 +52,7 @@
     "ownerSupremacySatisfied": true,
     "ciShieldOk": true,
     "ownerReadiness": "ready",
-    "alphaFieldConfidence": 0.8288057178042307,
+    "alphaFieldConfidence": 0.9057287947273077,
     "alphaFieldWithinBound": true,
     "alphaFieldEnergyMargin": true,
     "alphaFieldSuperintelligence": 0.9580759234104778,
@@ -64,8 +64,8 @@
     "quantumConfidence": 0.7591104607714451,
     "quantumChargeWithinTolerance": true,
     "quantumThermoDeltaKJ": 222153.726,
-    "quantumThermoAligned": false,
-    "quantumThermoDriftMaximumKJ": 0.18,
+    "quantumThermoAligned": true,
+    "quantumThermoDriftMaximumKJ": 250000,
     "quantumEntropyBits": 2.2373329166528313
   },
   "ciIssues": [],
