@@ -2,7 +2,7 @@
 
 import { strict as assert } from 'node:assert';
 
-import type { InterfaceAbi } from 'ethers';
+import type { ContractTransactionReceipt, InterfaceAbi } from 'ethers';
 import { ethers } from 'hardhat';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -113,6 +113,33 @@ interface MarketSummary {
   mintedCertificates: MintedCertificate[];
   agentPortfolios: AgentPortfolioEntry[];
   validatorCouncil: ValidatorPortfolioEntry[];
+}
+
+function extractJobIdFromReceipt(
+  registry: ethers.Contract,
+  receipt: ContractTransactionReceipt | null
+): bigint {
+  if (!receipt) {
+    throw new Error('Job creation transaction did not produce a receipt');
+  }
+
+  for (const log of receipt.logs) {
+    try {
+      const parsed = registry.interface.parseLog(log);
+      if (parsed?.name === 'JobCreated') {
+        const jobId = (parsed.args?.jobId ?? parsed.args?.[0]) as
+          | bigint
+          | undefined;
+        if (jobId !== undefined) {
+          return jobId;
+        }
+      }
+    } catch {
+      // ignore unrelated logs
+    }
+  }
+
+  throw new Error('Unable to locate JobCreated event for the new job');
 }
 
 interface PauseStatus {
@@ -2530,10 +2557,11 @@ async function runHappyPath(env: DemoEnvironment): Promise<void> {
     .approve(await stake.getAddress(), reward + fee);
   const specHash = ethers.id('ipfs://specs/arctic-resilience-corridor');
   const deadline = BigInt((await time.latest()) + 3600);
-  await registry
+  const createArcticJobTx = await registry
     .connect(arcticDirectorate)
     .createJob(reward, deadline, specHash, 'ipfs://jobs/arctic-resilience');
-  const jobId = (await registry.nextJobId()) - 1n;
+  const arcticJobReceipt = await createArcticJobTx.wait();
+  const jobId = extractJobIdFromReceipt(registry, arcticJobReceipt);
   const createdMetadata = await logJobSummary(registry, jobId, 'after posting');
   expectJobProgress(jobId, createdMetadata, {
     context: 'after posting',
@@ -2722,10 +2750,11 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
     .approve(await stake.getAddress(), reward + fee);
   const specHash = ethers.id('ipfs://specs/pacific-relief-corridor');
   const deadline = BigInt((await time.latest()) + 3600);
-  await registry
+  const createPacificJobTx = await registry
     .connect(pacificAuthority)
     .createJob(reward, deadline, specHash, 'ipfs://jobs/pacific-relief');
-  const jobId = (await registry.nextJobId()) - 1n;
+  const pacificJobReceipt = await createPacificJobTx.wait();
+  const jobId = extractJobIdFromReceipt(registry, pacificJobReceipt);
   const createdMetadata = await logJobSummary(registry, jobId, 'after posting');
   expectJobProgress(jobId, createdMetadata, {
     context: 'after posting',
