@@ -18,6 +18,7 @@ import certificateNftArtifact from './lib/prebuilt/CertificateNFT.json';
 import jobRegistryArtifact from './lib/prebuilt/JobRegistry.json';
 import disputeModuleArtifact from './lib/prebuilt/DisputeModule.json';
 import feePoolArtifact from './lib/prebuilt/FeePool.json';
+import quadraticVotingArtifact from './lib/prebuilt/QuadraticVoting.json';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { decodeJobMetadata } = require('../../test/utils/jobMetadata');
@@ -191,6 +192,7 @@ interface ModuleAddresses {
   certificate: string;
   reputation: string;
   identity: string;
+  quadraticVoting: string;
 }
 
 interface OwnerControlSnapshot {
@@ -398,12 +400,13 @@ function recordInsight(
   return timelineIndex;
 }
 
-function registerScenario(title: string, jobId: bigint): void {
+function registerScenario(title: string, jobId: bigint | string): void {
   const timelineIndices = timeline
     .map((entry, index) => ({ entry, index }))
     .filter((item) => item.entry.scenario === title)
     .map((item) => item.index);
-  scenarios.push({ title, jobId: jobId.toString(), timelineIndices });
+  const jobLabel = typeof jobId === 'bigint' ? jobId.toString() : jobId;
+  scenarios.push({ title, jobId: jobLabel, timelineIndices });
 }
 
 function isValidatorsAlreadySelectedError(error: unknown): boolean {
@@ -446,6 +449,7 @@ interface DemoEnvironment {
   identity: ethers.Contract;
   certificate: ethers.Contract;
   feePool: ethers.Contract;
+  quadraticVoting: ethers.Contract;
   initialSupply: bigint;
   actors: ActorProfile[];
 }
@@ -965,12 +969,12 @@ function computeResilienceScore(context: {
   return { resilienceScore, unstoppableScore };
 }
 
-function buildAutomationPlan(
+async function buildAutomationPlan(
   env: DemoEnvironment,
   market: MarketSummary,
   ownerControl: OwnerControlSnapshot,
   context: { scenarios: ScenarioExport[]; ownerActions: OwnerActionRecord[]; insights: DemoInsight[]; timeline: TimelineEntry[] }
-): AutomationPlaybook {
+): Promise<AutomationPlaybook> {
   const mintedCount = market.mintedCertificates.length;
   const { resilienceScore, unstoppableScore } = computeResilienceScore({
     ownerControl,
@@ -983,6 +987,12 @@ function buildAutomationPlan(
   const actorNameByAddress = new Map(
     env.actors.map((actor) => [toAddressKey(actor.address), actor.name])
   );
+
+  const [quadraticExecutor, quadraticTreasury, quadraticAddress] = await Promise.all([
+    env.quadraticVoting.proposalExecutor(),
+    env.quadraticVoting.treasury(),
+    env.quadraticVoting.getAddress(),
+  ]);
 
   const ownerDirectives: AutomationDirective[] = [
     {
@@ -1019,6 +1029,19 @@ function buildAutomationPlan(
       metrics: {
         burnPct: `${ownerControl.restored.burnPct}%`,
         validatorReward: `${ownerControl.restored.validatorRewardPct}%`,
+      },
+    },
+    {
+      id: 'quadratic-governance',
+      title: 'Review quadratic voting treasury controls',
+      summary:
+        'Inspect the quadratic voting ledger, confirm the delegated executor, and stage new appropriations for regional missions.',
+      priority: 'normal',
+      recommendedAction: 'npm run demo:national-supply-chain:export',
+      metrics: {
+        executor: quadraticExecutor,
+        treasury: quadraticTreasury,
+        contract: quadraticAddress,
       },
     },
   ];
@@ -1446,6 +1469,12 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     FeePool,
     [stakeAddress, 0n, ethers.ZeroAddress, ethers.ZeroAddress]
   );
+  const QuadraticVotingFactory = createFactory(quadraticVotingArtifact, owner);
+  const quadraticVoting = await deployPrebuiltContract(
+    'QuadraticVoting',
+    QuadraticVotingFactory,
+    [await token.getAddress(), await owner.getAddress()]
+  );
   const reputationAddress = await reputation.getAddress();
   const identityAddress = await identity.getAddress();
   const validationAddress = await validation.getAddress();
@@ -1453,6 +1482,25 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
   const registryAddress = await registry.getAddress();
   const disputeAddress = await dispute.getAddress();
   const feePoolAddress = await feePool.getAddress();
+  const quadraticVotingAddress = await quadraticVoting.getAddress();
+  await token.connect(owner).mint(quadraticVotingAddress, 0n);
+
+  await quadraticVoting
+    .connect(owner)
+    .setProposalExecutor(ownerAddress);
+  recordOwnerAction(
+    'Quadratic voting executor initialised',
+    `QuadraticVoting@${quadraticVotingAddress}`,
+    'setProposalExecutor',
+    { executor: ownerAddress }
+  );
+  await quadraticVoting.connect(owner).setTreasury(ownerAddress);
+  recordOwnerAction(
+    'Quadratic voting treasury anchored to owner',
+    `QuadraticVoting@${quadraticVotingAddress}`,
+    'setTreasury',
+    { treasury: ownerAddress }
+  );
 
   await token.connect(owner).mint(feePoolAddress, 0n);
 
@@ -1646,6 +1694,7 @@ async function deployEnvironment(): Promise<DemoEnvironment> {
     identity,
     certificate,
     feePool,
+    quadraticVoting,
     initialSupply,
     actors,
   };
@@ -1667,6 +1716,7 @@ async function ownerCommandCenterDrill(
     certificate,
     reputation,
     identity,
+    quadraticVoting,
   } = env;
   const [
     registryAddress,
@@ -1677,6 +1727,7 @@ async function ownerCommandCenterDrill(
     certificateAddress,
     reputationAddress,
     identityAddress,
+    quadraticVotingAddress,
     ownerAddress,
     moderatorAddress,
   ] = await Promise.all([
@@ -1688,8 +1739,13 @@ async function ownerCommandCenterDrill(
     certificate.getAddress(),
     reputation.getAddress(),
     identity.getAddress(),
+    quadraticVoting.getAddress(),
     owner.getAddress(),
     moderator.getAddress(),
+  ]);
+  const [quadraticExecutor, quadraticTreasury] = await Promise.all([
+    quadraticVoting.proposalExecutor(),
+    quadraticVoting.treasury(),
   ]);
 
   const baseline = await readOwnerControlParameters(
@@ -2460,6 +2516,17 @@ async function ownerCommandCenterDrill(
       ],
       status: 'Reputation states captured in telemetry dashboard',
     },
+    {
+      module: 'QuadraticVoting',
+      address: quadraticVotingAddress,
+      delegatedTo: quadraticExecutor,
+      capabilities: [
+        'Run identity-gated quadratic ballots for sovereign appropriations',
+        'Stream refunds proportional to sqrt(cost) back to voters',
+        `Sweep leftover voting escrow to the treasury (${quadraticTreasury})`,
+      ],
+      status: `Executor ${quadraticExecutor} with treasury ${quadraticTreasury} (owner can reclaim instantly)`,
+    },
   ];
 
   return {
@@ -2474,6 +2541,7 @@ async function ownerCommandCenterDrill(
       certificate: certificateAddress,
       reputation: reputationAddress,
       identity: identityAddress,
+      quadraticVoting: quadraticVotingAddress,
     },
     baseline,
     upgraded,
@@ -2922,6 +2990,181 @@ async function runDisputeScenario(env: DemoEnvironment): Promise<void> {
   );
 }
 
+async function runQuadraticVotingScenario(env: DemoEnvironment): Promise<void> {
+  const scenarioTitle = 'Scenario 3 – Quadratic vote rebalances emergency treasuries';
+  logSection(scenarioTitle);
+
+  const {
+    owner,
+    moderator,
+    arcticDirectorate,
+    pacificAuthority,
+    validatorPolaris,
+    token,
+    quadraticVoting,
+  } = env;
+
+  const [
+    ownerAddress,
+    moderatorAddress,
+    arcticAddress,
+    pacificAddress,
+    validatorAddress,
+    quadraticVotingAddress,
+  ] = await Promise.all([
+    owner.getAddress(),
+    moderator.getAddress(),
+    arcticDirectorate.getAddress(),
+    pacificAuthority.getAddress(),
+    validatorPolaris.getAddress(),
+    quadraticVoting.getAddress(),
+  ]);
+
+  const proposalId = 1n;
+  const voteScale = 10n ** 9n;
+
+  logStep('Owner delegates quadratic vote executor and routes treasury for emergency appropriation');
+  await quadraticVoting.connect(owner).setProposalExecutor(moderatorAddress);
+  recordOwnerAction(
+    'Quadratic voting executor delegated',
+    `QuadraticVoting@${quadraticVotingAddress}`,
+    'setProposalExecutor',
+    { executor: moderatorAddress }
+  );
+  await quadraticVoting.connect(owner).setTreasury(pacificAddress);
+  recordOwnerAction(
+    'Quadratic voting treasury rerouted to relief authority',
+    `QuadraticVoting@${quadraticVotingAddress}`,
+    'setTreasury',
+    { treasury: pacificAddress }
+  );
+
+  const deadline = BigInt((await time.latest()) + 1800);
+  logStep('Sovereign stakeholders cast quadratic votes with treasury tokens at risk');
+  const voters: Array<{
+    label: string;
+    signer: ethers.Signer;
+    votes: number;
+    address: string;
+    scaledVotes: bigint;
+    cost: bigint;
+  }> = [];
+  for (const entry of [
+    { label: 'Arctic Climate Directorate', signer: arcticDirectorate, votes: 4 },
+    { label: 'Pacific Infrastructure Authority', signer: pacificAuthority, votes: 3 },
+    { label: 'Validator Polaris (validator)', signer: validatorPolaris, votes: 1 },
+  ]) {
+    const scaledVotes = BigInt(entry.votes) * voteScale;
+    const cost = scaledVotes * scaledVotes;
+    const address = await entry.signer.getAddress();
+    await token.connect(entry.signer).approve(quadraticVotingAddress, cost);
+    await quadraticVoting
+      .connect(entry.signer)
+      .castVote(proposalId, scaledVotes, deadline);
+    voters.push({
+      label: entry.label,
+      signer: entry.signer,
+      votes: entry.votes,
+      address,
+      scaledVotes,
+      cost,
+    });
+  }
+
+  const [totalCost, totalSqrtCost] = await Promise.all([
+    quadraticVoting.totalCost(proposalId),
+    quadraticVoting.totalSqrtCost(proposalId),
+  ]);
+  recordTimeline('summary', 'Quadratic voting ballots committed', {
+    proposalId: proposalId.toString(),
+    totalCost: formatTokens(totalCost),
+    totalSqrtCost: totalSqrtCost.toString(),
+    voters: voters.map((entry) => ({
+      actor: entry.label,
+      votes: entry.votes,
+      scaledVotes: entry.scaledVotes.toString(),
+      cost: formatTokens(entry.cost),
+      address: entry.address,
+    })),
+  });
+
+  logStep('Delegated moderator executes the quadratic appropriation and opens reward claims');
+  await quadraticVoting.connect(moderator).execute(proposalId);
+  recordOwnerAction(
+    'Quadratic vote executed',
+    `QuadraticVoting@${quadraticVotingAddress}`,
+    'execute',
+    { proposalId: proposalId.toString(), executor: moderatorAddress }
+  );
+
+  const rewardRecords: Array<{ actor: string; reward: string; address: string }> = [];
+  for (const voter of voters) {
+    const before = await token.balanceOf(voter.address);
+    await quadraticVoting
+      .connect(voter.signer)
+      .claimReward(proposalId);
+    const after = await token.balanceOf(voter.address);
+    const delta = after - before;
+    rewardRecords.push({
+      actor: voter.label,
+      reward: formatTokens(delta),
+      address: voter.address,
+    });
+  }
+
+  const contractBalance = await token.balanceOf(quadraticVotingAddress);
+  logStep('Owner sweeps remaining governance balance and restores executor control');
+  if (contractBalance > 0n) {
+    await quadraticVoting.connect(owner).sweepTreasury();
+    recordOwnerAction(
+      'Quadratic voting escrow swept',
+      `QuadraticVoting@${quadraticVotingAddress}`,
+      'sweepTreasury',
+      { recipient: pacificAddress, amount: formatTokens(contractBalance) }
+    );
+  }
+  await quadraticVoting.connect(owner).setProposalExecutor(ownerAddress);
+  recordOwnerAction(
+    'Quadratic voting executor restored',
+    `QuadraticVoting@${quadraticVotingAddress}`,
+    'setProposalExecutor',
+    { executor: ownerAddress }
+  );
+  await quadraticVoting.connect(owner).setTreasury(ownerAddress);
+  recordOwnerAction(
+    'Quadratic voting treasury restored',
+    `QuadraticVoting@${quadraticVotingAddress}`,
+    'setTreasury',
+    { treasury: ownerAddress }
+  );
+
+  await showBalances('Post-quadratic vote governance balances', token, [
+    { name: 'AGI Jobs Sovereign Orchestrator', address: ownerAddress },
+    { name: 'Arctic Climate Directorate', address: arcticAddress },
+    { name: 'Pacific Infrastructure Authority', address: pacificAddress },
+    { name: 'Validator Polaris (validator)', address: validatorAddress },
+  ]);
+
+  recordTimeline('summary', 'Quadratic voting rewards distributed', {
+    proposalId: proposalId.toString(),
+    totalCost: formatTokens(totalCost),
+    rewards: rewardRecords,
+  });
+  recordInsight(
+    'Owner',
+    'Quadratic vote enacted unstoppable treasury reallocation',
+    'Delegated execution proved the sovereign owner can route treasury inflows through quadratic ballots, refund voters proportionally, and immediately reclaim executor authority.',
+    {
+      proposalId: proposalId.toString(),
+      executor: moderatorAddress,
+      treasury: pacificAddress,
+      totalCost: formatTokens(totalCost),
+    }
+  );
+
+  registerScenario(scenarioTitle, 'governance-quadratic-1');
+}
+
 async function main(): Promise<void> {
   const env = await deployEnvironment();
   await showBalances('Initial treasury state', env.token, [
@@ -2938,8 +3181,9 @@ async function main(): Promise<void> {
 
   await runHappyPath(env);
   await runDisputeScenario(env);
+  await runQuadraticVotingScenario(env);
   const market = await summarizeMarketState(env);
-  const automation = buildAutomationPlan(env, market, ownerControl, {
+  const automation = await buildAutomationPlan(env, market, ownerControl, {
     scenarios,
     ownerActions,
     insights,
