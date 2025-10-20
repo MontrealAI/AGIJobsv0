@@ -230,7 +230,12 @@
     "demo:agi-governance:alpha-v17:validate": "ts-node --project demo/agi-governance/alpha-v17/tsconfig.json demo/agi-governance/alpha-v17/scripts/validateMission.ts",
     "demo:agi-governance:alpha-v17:ci": "ts-node --project demo/agi-governance/alpha-v17/tsconfig.json demo/agi-governance/alpha-v17/scripts/verifyCi.ts",
     "demo:agi-governance:alpha-v17:owner-diagnostics": "ts-node --project demo/agi-governance/alpha-v17/tsconfig.json demo/agi-governance/alpha-v17/scripts/ownerDiagnostics.ts",
-    "demo:agi-governance:alpha-v17:full": "ts-node --project demo/agi-governance/alpha-v17/tsconfig.json demo/agi-governance/alpha-v17/scripts/fullPipeline.ts"
+    "demo:agi-governance:alpha-v17:full": "ts-node --project demo/agi-governance/alpha-v17/tsconfig.json demo/agi-governance/alpha-v17/scripts/fullPipeline.ts",
+    "demo:alpha-meta": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/runMission.ts",
+    "demo:alpha-meta:validate": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/validateMission.ts",
+    "demo:alpha-meta:ci": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/verifyCi.ts",
+    "demo:alpha-meta:owner": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/ownerDiagnostics.ts",
+    "demo:alpha-meta:full": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/fullPipeline.ts"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,153 @@
+{
+  "initiative": "Alpha-Meta Sovereign Hypergraph Mission",
+  "objective": "Empower a non-technical owner to command a civilisation-scale AGI labour federation using only AGI Jobs v0 (v2) first-class tooling.",
+  "budget": {
+    "currency": "AGIALPHA",
+    "total": "980000"
+  },
+  "governance": {
+    "owner": "0xAAAABBBBCCCCDDDDEEEEFFFF0000111122223333",
+    "pauseAuthority": "SystemPause",
+    "treasury": "0xCCCCDDDDEEEEFFFF000011112222333344445555",
+    "thermostat": {
+      "initialTemperature": "0.28",
+      "emergencyTemperature": "0.47",
+      "updateScript": "scripts/v2/updateThermostat.ts"
+    }
+  },
+  "participants": {
+    "agents": [
+      {
+        "handle": "aurora.meta.agi.eth",
+        "role": "Aurora Federation Antifragility Office",
+        "capabilities": [
+          "Atmospheric seeding",
+          "Hydrodynamic modelling",
+          "Thermostat tuning"
+        ],
+        "wallet": "0xfA11ed0000000000000000000000000000000A1"
+      },
+      {
+        "handle": "pacific.meta.agi.eth",
+        "role": "Pacific Renewal Sovereign Council",
+        "capabilities": [
+          "Maritime logistics",
+          "Orbital lift construction",
+          "Energy corridor design"
+        ],
+        "wallet": "0xfA11ed0000000000000000000000000000000B2"
+      },
+      {
+        "handle": "atlas.guild.agi.eth",
+        "role": "Owner Praetorian Council (multisig)",
+        "capabilities": [
+          "Owner automation",
+          "Upgrade queue curation",
+          "Evidence generation"
+        ],
+        "wallet": "0xF9eD00000000000000000000000000000000C3"
+      },
+      {
+        "handle": "solidarity.mesh.agi.eth",
+        "role": "Humanitarian Mesh Treasury",
+        "capabilities": [
+          "Drone relief",
+          "On-chain procurement",
+          "Community validator coordination"
+        ],
+        "wallet": "0xF9eD00000000000000000000000000000000D4"
+      }
+    ],
+    "validators": [
+      {
+        "handle": "gaia.meta.validator.eth",
+        "stake": "165000",
+        "mandate": "Planetary thermodynamic audits",
+        "wallet": "0xVAL1d0000000000000000000000000000000AA"
+      },
+      {
+        "handle": "celestia.meta.validator.eth",
+        "stake": "134000",
+        "mandate": "Cross-nation compliance and ethics",
+        "wallet": "0xVAL1d0000000000000000000000000000000BB"
+      },
+      {
+        "handle": "horizon.meta.validator.eth",
+        "stake": "108000",
+        "mandate": "Emergency pause sentinel & dispute triage",
+        "wallet": "0xVAL1d0000000000000000000000000000000CC"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "CLIMATE-ALPHA",
+      "title": "Deploy autonomous reforestation swarms across Aurora Federation tundra",
+      "reward": "142000",
+      "deadlineDays": 42,
+      "dependencies": [],
+      "energyBudget": "62000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.21",
+        "adjustmentOnDelay": "raise-temperature"
+      }
+    },
+    {
+      "id": "PACIFIC-SHIELD",
+      "title": "Construct modular floating logistics hubs for Pacific alliance",
+      "reward": "188000",
+      "deadlineDays": 128,
+      "dependencies": [
+        "CLIMATE-ALPHA"
+      ],
+      "energyBudget": "148000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.29",
+        "adjustmentOnDelay": "double-validator-bonus"
+      }
+    },
+    {
+      "id": "ORBITAL-RESEARCH",
+      "title": "Commission orbital AI research station via multisig treasury",
+      "reward": "126000",
+      "deadlineDays": 96,
+      "dependencies": [
+        "CLIMATE-ALPHA"
+      ],
+      "energyBudget": "83000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.16",
+        "adjustmentOnDelay": "increase-agent-share"
+      }
+    },
+    {
+      "id": "HUMANITARIAN-WAVE",
+      "title": "Deploy humanitarian mesh operations across coastal megacities",
+      "reward": "168000",
+      "deadlineDays": 74,
+      "dependencies": [
+        "CLIMATE-ALPHA",
+        "PACIFIC-SHIELD"
+      ],
+      "energyBudget": "91000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.25",
+        "adjustmentOnDelay": "trigger-pause-check"
+      }
+    },
+    {
+      "id": "TREASURY-AUTOMATION",
+      "title": "Deploy owner automation guild for unstoppable treasury mirrors",
+      "reward": "126000",
+      "deadlineDays": 58,
+      "dependencies": [
+        "ORBITAL-RESEARCH"
+      ],
+      "energyBudget": "78000",
+      "thermodynamicProfile": {
+        "expectedEntropy": "0.18",
+        "adjustmentOnDelay": "owner-recalibrate"
+      }
+    }
+  ]
+}

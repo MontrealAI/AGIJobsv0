@@ -1,0 +1,764 @@
+{
+  "generatedAt": "2025-10-20T13:36:19.247Z",
+  "version": "2.0.0",
+  "thermodynamics": {
+    "gibbsFreeEnergyKJ": 222153.726,
+    "gibbsFreeEnergyJ": 222153726,
+    "landauerKJ": 3.8157223368619624e-14,
+    "freeEnergyMarginKJ": 222153.726,
+    "burnEnergyPerBlockKJ": 15106.453368,
+    "gibbsAgreementDelta": 0,
+    "stakeBoltzmannEnvelope": 3.8157223368619624e-11,
+    "gibbsCrossCheckKJ": 222153.726,
+    "freeEnergyMarginPercent": 1,
+    "landauerWithinMargin": true
+  },
+  "statisticalPhysics": {
+    "beta": 0.0485,
+    "energyScaling": 284.2,
+    "toleranceKJ": 312.4,
+    "partitionFunction": 6.25237885355884e-17,
+    "logPartitionFunction": -37.310984572997164,
+    "expectedEnergy": 792.2789961760959,
+    "expectedEnergyKJ": 225165.69071324644,
+    "freeEnergy": 769.2986509896322,
+    "freeEnergyKJ": 218634.67661125344,
+    "entropy": 1.1145467415433643,
+    "entropyKJPerK": 18.34554523031742,
+    "variance": 32.43091538455337,
+    "heatCapacity": 0.07628562071331567,
+    "probabilities": [
+      {
+        "energy": 792,
+        "degeneracy": 3,
+        "probability": 0.9975997468905389
+      },
+      {
+        "energy": 908,
+        "degeneracy": 2,
+        "probability": 0.0023962069090107596
+      },
+      {
+        "energy": 1048,
+        "degeneracy": 3,
+        "probability": 0.0000040434869236486515
+      },
+      {
+        "energy": 1176,
+        "degeneracy": 1,
+        "probability": 2.7135301075953067e-9
+      }
+    ],
+    "freeEnergyConsistencyDelta": 2.6147972675971687e-12,
+    "gibbsDeltaKJ": 3519.0493887465564,
+    "withinTolerance": false
+  },
+  "jarzynski": {
+    "beta": 0.0485,
+    "landauerKJ": 3.8157223368619624e-14,
+    "gibbsFreeEnergyKJ": 222153.726,
+    "deltaFreeEnergyKJ": 222153.726,
+    "landauerScaled": 1.3426186969957644e-16,
+    "gibbsFreeEnergyScaled": 781.6809500351865,
+    "deltaFreeEnergyScaled": 781.6809500351865,
+    "logExpectation": -38.41439448414971,
+    "logTheoretical": -37.911526076706544,
+    "expectation": 2.0741513804414803e-17,
+    "theoretical": 3.429520667035184e-17,
+    "difference": 0.5028684074431666,
+    "tolerance": 0.7582305215341308,
+    "satisfied": true
+  },
+  "hamiltonian": {
+    "kineticTerm": 112188701836.88872,
+    "potentialTerm": 713663.3999999999,
+    "hamiltonianValue": 112187988173.48872,
+    "alternativeHamiltonian": 112187988173.48872,
+    "difference": 0
+  },
+  "equilibrium": {
+    "labels": [
+      "Hypergraph Vanguard",
+      "Quantum Concord Syndicate",
+      "Sentinel Surge Mesh"
+    ],
+    "replicator": [
+      0.30667172100075735,
+      0.3328278999241852,
+      0.36050037907505755
+    ],
+    "closedForm": [
+      0.30667172100075735,
+      0.3328278999241852,
+      0.36050037907505755
+    ],
+    "closedFormPayoff": 1.0180663381349508,
+    "kktResiduals": [
+      0,
+      0,
+      0
+    ],
+    "kktMaxResidual": 0,
+    "kktCertified": true,
+    "simplexResidual": 2.220446049250313e-16,
+    "monteCarlo": [
+      0.4441666666666669,
+      0.3083333333308329,
+      0.24750000000250014
+    ],
+    "continuous": [
+      0.999998828665862,
+      6.622884901178316e-7,
+      5.090456477553856e-7
+    ],
+    "eigenvector": [
+      0.33362756573819385,
+      0.3332961853334298,
+      0.3330762489283764
+    ],
+    "replicatorIterations": 0,
+    "continuousIterations": 2809,
+    "eigenvectorIterations": 5,
+    "monteCarloRmsError": 0.8238107836844932,
+    "payoffAtEquilibrium": 1.0180663381349508,
+    "divergenceAtEquilibrium": 0,
+    "discountFactor": 0.968,
+    "replicatorDeviation": 0,
+    "maxMethodDeviation": 0.8493742429734307,
+    "methodConsistency": true
+  },
+  "antifragility": {
+    "samples": [
+      {
+        "sigma": 0,
+        "welfare": -3.9688232795947656,
+        "averagePayoff": 1.03865962539259,
+        "divergence": 0.03134906580204096
+      },
+      {
+        "sigma": 0.17,
+        "welfare": 9.474493359118387,
+        "averagePayoff": 1.0386413353967685,
+        "divergence": 0.03132554355550455
+      },
+      {
+        "sigma": 0.33,
+        "welfare": 22.151297005111758,
+        "averagePayoff": 1.0386465865515342,
+        "divergence": 0.031326466062053075
+      },
+      {
+        "sigma": 0.49,
+        "welfare": 34.85169227839211,
+        "averagePayoff": 1.038581608549804,
+        "divergence": 0.031264252681548484
+      },
+      {
+        "sigma": 0.65,
+        "welfare": 47.57561844561537,
+        "averagePayoff": 1.0385575517014187,
+        "divergence": 0.03123768712313176
+      }
+    ],
+    "quadraticSecondDerivative": 0.9202218914909679,
+    "monotonicIncrease": true
+  },
+  "quantum": {
+    "planckConstant": 6.62607015e-34,
+    "superpositionWeights": [
+      0.31,
+      0.24,
+      0.19,
+      0.14,
+      0.12
+    ],
+    "normalizedWeights": [
+      0.31,
+      0.24,
+      0.19,
+      0.14,
+      0.12
+    ],
+    "energyLevelsEv": [
+      0.41,
+      0.52,
+      0.63,
+      0.75,
+      0.88
+    ],
+    "weightSumDelta": 0,
+    "stateEntropyBits": 2.2373329166528313,
+    "effectiveDimension": 4.7152455969144595,
+    "expectedEnergyEv": 0.5822,
+    "expectedEnergyKJ": 9.327872363148e-23,
+    "coherenceEnergyKJ": 8.216326986000001e-25,
+    "quantumFreeEnergyKJ": 9.245709093288e-23,
+    "energyVarianceEv": 0.02513916,
+    "spectralGapEv": 0.47000000000000003,
+    "measurementVariance": 0.008,
+    "measurementStdDev": 0.08944271909999159,
+    "fisherInformation": 0.82,
+    "coherenceScore": 0.6982209215428902,
+    "quantumConfidence": 0.7591104607714451,
+    "decoherenceTimeNs": 420,
+    "coherenceHalfLifeNs": 880,
+    "coherenceFrequencyThz": 1.24,
+    "entanglementFidelity": 0.972,
+    "noetherCharge": 1.38,
+    "targetCharge": 1.35,
+    "allowableChargeDrift": 0.07,
+    "chargeDelta": 0.029999999999999805,
+    "chargeWithinTolerance": true,
+    "thermoMarginDeltaKJ": 222153.726
+  },
+  "alphaField": {
+    "stackelbergAdvantage": 0.14,
+    "stackelbergBound": 0.885,
+    "stackelbergWithinBound": true,
+    "stackelbergAdvantageSatisfiesFloor": true,
+    "stackelbergAdvantageFloor": 0.11,
+    "gibbsTargetKJ": 182600,
+    "gibbsDeltaKJ": 39553.725999999995,
+    "gibbsWithinTolerance": false,
+    "gibbsToleranceKJ": 340,
+    "divergenceLimit": 0.0068,
+    "equilibriumDivergence": 0,
+    "divergenceWithinLimit": true,
+    "entropyFloor": 6.8,
+    "entropyKJPerK": 18.34554523031742,
+    "entropyAboveFloor": true,
+    "antifragilitySecondDerivative": 0.9202218914909679,
+    "antifragilityMinimum": 0.00042,
+    "antifragilityMeetsMinimum": true,
+    "sigmaGain": 51.544441725210135,
+    "sigmaGainMinimum": 0.064,
+    "sigmaGainSatisfied": true,
+    "ownerCoverageRatio": 1,
+    "ownerCoverageMinimum": 0.96,
+    "ownerCoverageSatisfied": true,
+    "ownerSupremacyIndex": 1,
+    "ownerSupremacyMinimum": 0.95,
+    "ownerSupremacySatisfied": true,
+    "energyMarginKJ": 222153.726,
+    "energyMarginFloorKJ": 4200,
+    "energyMarginSatisfied": true,
+    "thermoQuantumDeltaKJ": 222153.726,
+    "thermoQuantumDriftMaximumKJ": 0.18,
+    "thermoQuantumAligned": false,
+    "confidenceScore": 0.8288057178042307,
+    "thermodynamicAssurance": 1,
+    "governanceAssurance": 0.9256869888888889,
+    "antifragilityAssurance": 1,
+    "ownerAssurance": 1,
+    "quantumAssurance": 0.7591104607714451,
+    "quantumConfidenceMinimum": 0.9,
+    "quantumConfidenceSatisfied": false,
+    "superintelligenceIndex": 0.9580759234104778,
+    "superintelligenceMinimum": 0.91,
+    "superintelligenceSatisfied": true,
+    "riskResidual": 0.013376342
+  },
+  "risk": {
+    "weights": {
+      "staking": 0.31,
+      "formal": 0.45,
+      "fuzz": 0.24
+    },
+    "classes": [
+      {
+        "id": "spec",
+        "label": "Specification Drift",
+        "probability": 0.017,
+        "impact": 0.76,
+        "coverage": 0.9261,
+        "residual": 0.0009547879999999996,
+        "mitigations": {
+          "staking": 0.93,
+          "formal": 0.98,
+          "fuzz": 0.82
+        }
+      },
+      {
+        "id": "economic",
+        "label": "Economic Exploit",
+        "probability": 0.013,
+        "impact": 0.69,
+        "coverage": 0.7650000000000001,
+        "residual": 0.0021079499999999986,
+        "mitigations": {
+          "staking": 0.9,
+          "formal": 0.68,
+          "fuzz": 0.75
+        }
+      },
+      {
+        "id": "protocol",
+        "label": "Protocol Breach",
+        "probability": 0.012,
+        "impact": 0.86,
+        "coverage": 0.9446,
+        "residual": 0.000571728,
+        "mitigations": {
+          "staking": 0.95,
+          "formal": 0.97,
+          "fuzz": 0.89
+        }
+      },
+      {
+        "id": "model",
+        "label": "Model Misalignment",
+        "probability": 0.025,
+        "impact": 0.64,
+        "coverage": 0.8627,
+        "residual": 0.0021967999999999996,
+        "mitigations": {
+          "staking": 0.83,
+          "formal": 0.86,
+          "fuzz": 0.91
+        }
+      },
+      {
+        "id": "externality",
+        "label": "Societal Externality",
+        "probability": 0.014,
+        "impact": 0.77,
+        "coverage": 0.6919,
+        "residual": 0.003321318,
+        "mitigations": {
+          "staking": 0.76,
+          "formal": 0.63,
+          "fuzz": 0.72
+        }
+      },
+      {
+        "id": "expansion",
+        "label": "Expansion Sweep Failure",
+        "probability": 0.017,
+        "impact": 0.6,
+        "coverage": 0.7305,
+        "residual": 0.0027489,
+        "mitigations": {
+          "staking": 0.81,
+          "formal": 0.66,
+          "fuzz": 0.76
+        }
+      },
+      {
+        "id": "temporal",
+        "label": "Temporal Desynchronisation",
+        "probability": 0.011,
+        "impact": 0.61,
+        "coverage": 0.7802,
+        "residual": 0.001474858,
+        "mitigations": {
+          "staking": 0.86,
+          "formal": 0.72,
+          "fuzz": 0.79
+        }
+      }
+    ],
+    "portfolioResidual": 0.013376342,
+    "portfolioResidualCrossCheck": 0.013376341999999986,
+    "threshold": 0.18,
+    "withinBounds": true
+  },
+  "incentives": {
+    "mint": {
+      "eta": 0.981,
+      "deltaValue": 612000,
+      "totalMinted": 600372,
+      "treasuryMirrorShare": 0.55,
+      "agentShare": 0.55,
+      "mintedAgent": 330204.60000000003,
+      "mintedTreasury": 330204.60000000003,
+      "equalityDelta": 0,
+      "equalityRatio": 0,
+      "equalityOk": true,
+      "tolerance": 0.004,
+      "dust": -1.1641532182693481e-10,
+      "roles": [
+        {
+          "role": "Agent",
+          "share": 0.55,
+          "minted": 330204.60000000003
+        },
+        {
+          "role": "Validator",
+          "share": 0.18,
+          "minted": 108066.95999999999
+        },
+        {
+          "role": "Operator",
+          "share": 0.1,
+          "minted": 60037.200000000004
+        },
+        {
+          "role": "Sentinel",
+          "share": 0.09,
+          "minted": 54033.479999999996
+        },
+        {
+          "role": "Owner Atlas Guild",
+          "share": 0.08,
+          "minted": 48029.76
+        }
+      ]
+    },
+    "burn": {
+      "jobEscrow": 352000,
+      "burnBps": 680,
+      "treasuryBps": 260,
+      "employerBps": 60,
+      "burned": 23936,
+      "treasury": 9152,
+      "employer": 2112,
+      "retained": 316800
+    },
+    "slashing": {
+      "stakeExample": 158000,
+      "minStake": {
+        "agent": 6200,
+        "validator": 12600,
+        "operator": 10400
+      },
+      "severities": [
+        {
+          "label": "Entropy jitter",
+          "description": "Minor delivery drift resolved before antifragility decay.",
+          "fraction": 0.16,
+          "slashAmount": 25280,
+          "treasuryAmount": 14662.4,
+          "employerAmount": 6320,
+          "burnAmount": 4297.6
+        },
+        {
+          "label": "Thermostat bypass attempt",
+          "description": "Coordinated deviation requiring sentinel override and owner review.",
+          "fraction": 0.48,
+          "slashAmount": 75840,
+          "treasuryAmount": 62188.799999999996,
+          "employerAmount": 8342.4,
+          "burnAmount": 5308.800000000005
+        },
+        {
+          "label": "Hypergraph breach",
+          "description": "Catastrophic violation of timelocked constraints — total seizure.",
+          "fraction": 1,
+          "slashAmount": 158000,
+          "treasuryAmount": 145360,
+          "employerAmount": 0,
+          "burnAmount": 12640
+        }
+      ]
+    }
+  },
+  "owner": {
+    "owner": "0xAAAABBBBCCCCDDDDEEEEFFFF0000111122223333",
+    "pauser": "0xBBBBCCCCDDDDEEEEFFFF00001111222233334444",
+    "treasury": "0xCCCCDDDDEEEEFFFF000011112222333344445555",
+    "timelockSeconds": 604800,
+    "capabilities": [
+      {
+        "category": "pause",
+        "label": "Pause orchestrator",
+        "description": "Instantly halt AGI Jobs orchestration if divergence spikes.",
+        "command": "npm run owner:system-pause",
+        "verification": "npm run owner:verify-control",
+        "present": true,
+        "scriptName": "owner:system-pause",
+        "scriptExists": true,
+        "verificationScriptName": "owner:verify-control",
+        "verificationScriptExists": true
+      },
+      {
+        "category": "resume",
+        "label": "Resume orchestrator",
+        "description": "Restart execution after antifragility recovery.",
+        "command": "npm run owner:system-pause -- --action unpause",
+        "verification": "npm run owner:verify-control",
+        "present": true,
+        "scriptName": "owner:system-pause",
+        "scriptExists": true,
+        "verificationScriptName": "owner:verify-control",
+        "verificationScriptExists": true
+      },
+      {
+        "category": "parameter",
+        "label": "Thermostat update",
+        "description": "Adjust the macro temperature to stabilise energy flux.",
+        "command": "npm run thermostat:update",
+        "verification": "npm run reward-engine:report",
+        "present": true,
+        "scriptName": "thermostat:update",
+        "scriptExists": true,
+        "verificationScriptName": "reward-engine:report",
+        "verificationScriptExists": true
+      },
+      {
+        "category": "governance",
+        "label": "Hamiltonian rewrite",
+        "description": "Push updated λ/inertia parameters from physics computation.",
+        "command": "npm run owner:command-center",
+        "verification": "npm run owner:audit-hamiltonian",
+        "present": true,
+        "scriptName": "owner:command-center",
+        "scriptExists": true,
+        "verificationScriptName": "owner:audit-hamiltonian",
+        "verificationScriptExists": true
+      },
+      {
+        "category": "treasury",
+        "label": "Treasury surge router",
+        "description": "Route treasury flows via owner-specified channels.",
+        "command": "npm run owner:dashboard -- --focus treasury",
+        "verification": "npm run owner:compliance-report",
+        "present": true,
+        "scriptName": "owner:dashboard",
+        "scriptExists": true,
+        "verificationScriptName": "owner:compliance-report",
+        "verificationScriptExists": true
+      },
+      {
+        "category": "sentinel",
+        "label": "Sentinel refresh",
+        "description": "Rotate enforcement guardians before antifragility decay.",
+        "command": "npm run owner:rotate -- --role Sentinel --count 16",
+        "verification": "npm run monitoring:sentinels",
+        "present": true,
+        "scriptName": "owner:rotate",
+        "scriptExists": true,
+        "verificationScriptName": "monitoring:sentinels",
+        "verificationScriptExists": true
+      },
+      {
+        "category": "upgrade",
+        "label": "Upgrade queue",
+        "description": "Submit unstoppable upgrade bundles to the timelock queue.",
+        "command": "npm run owner:upgrade",
+        "verification": "npm run owner:upgrade-status",
+        "present": true,
+        "scriptName": "owner:upgrade",
+        "scriptExists": true,
+        "verificationScriptName": "owner:upgrade-status",
+        "verificationScriptExists": true
+      },
+      {
+        "category": "compliance",
+        "label": "Compliance broadcast",
+        "description": "Publish policy acknowledgements with evidence.",
+        "command": "npm run owner:compliance-report",
+        "verification": "npm run owner:doctor",
+        "present": true,
+        "scriptName": "owner:compliance-report",
+        "scriptExists": true,
+        "verificationScriptName": "owner:doctor",
+        "verificationScriptExists": true
+      },
+      {
+        "category": "plan",
+        "label": "Mission plan",
+        "description": "Deploy new labour missions via owner plan tooling.",
+        "command": "npm run owner:plan",
+        "verification": "npm run owner:plan:safe",
+        "present": true,
+        "scriptName": "owner:plan",
+        "scriptExists": true,
+        "verificationScriptName": "owner:plan:safe",
+        "verificationScriptExists": true
+      },
+      {
+        "category": "monitoring",
+        "label": "Sentinel validation",
+        "description": "Validate monitoring sentinels and hooks.",
+        "command": "npm run monitoring:validate",
+        "verification": "npm run monitoring:sentinels",
+        "present": true,
+        "scriptName": "monitoring:validate",
+        "scriptExists": true,
+        "verificationScriptName": "monitoring:sentinels",
+        "verificationScriptExists": true
+      }
+    ],
+    "requiredCoverage": [
+      {
+        "category": "pause",
+        "satisfied": true
+      },
+      {
+        "category": "resume",
+        "satisfied": true
+      },
+      {
+        "category": "parameter",
+        "satisfied": true
+      },
+      {
+        "category": "governance",
+        "satisfied": true
+      },
+      {
+        "category": "treasury",
+        "satisfied": true
+      },
+      {
+        "category": "sentinel",
+        "satisfied": true
+      },
+      {
+        "category": "upgrade",
+        "satisfied": true
+      },
+      {
+        "category": "compliance",
+        "satisfied": true
+      },
+      {
+        "category": "plan",
+        "satisfied": true
+      },
+      {
+        "category": "monitoring",
+        "satisfied": true
+      }
+    ],
+    "monitoringSentinels": [
+      "sentinel://alpha-meta/thermostat",
+      "sentinel://alpha-meta/treasury",
+      "sentinel://alpha-meta/quantum",
+      "sentinel://alpha-meta/owner",
+      "sentinel://alpha-meta/antifragility"
+    ],
+    "fullCoverage": true,
+    "allCommandsPresent": true,
+    "allVerificationsPresent": true
+  },
+  "jacobian": {
+    "analytic": [
+      [
+        -0.304880865101585,
+        -0.31528270952159454,
+        -0.31561391033021124
+      ],
+      [
+        -0.3425332775593892,
+        -0.33252131470931967,
+        -0.3415342891925962
+      ],
+      [
+        -0.3706521954739768,
+        -0.3702623139040372,
+        -0.36091813861214345
+      ]
+    ],
+    "numeric": [
+      [
+        0.007331290914622531,
+        -0.0030705534822287354,
+        -0.0034017543038210567
+      ],
+      [
+        -0.0036923962494233445,
+        0.006319566577524034,
+        -0.0026934078967647402
+      ],
+      [
+        -0.003638894657545387,
+        -0.0032490130971008957,
+        0.006095162184391072
+      ]
+    ],
+    "maxDifference": 0.3670133008164314,
+    "gershgorinUpperBound": 0.3799963707658706,
+    "spectralRadius": 1.018066338134951,
+    "stable": false
+  },
+  "blockchain": {
+    "network": "mainnet-grade",
+    "chainId": 1,
+    "rpcProvider": "https://alpha-meta.rpc",
+    "gasTargetGwei": 32,
+    "confirmations": 2,
+    "upgradeDelaySeconds": 604800,
+    "contracts": [
+      {
+        "name": "SystemPause",
+        "address": "0x111122223333444455556666777788889999AAAa",
+        "role": "Pauser"
+      },
+      {
+        "name": "Thermostat",
+        "address": "0x22223333444455556666777788889999AAAABBBB",
+        "role": "Parameter"
+      },
+      {
+        "name": "RewardEngine",
+        "address": "0x3333444455556666777788889999AAAABBBBCCCC",
+        "role": "Treasury"
+      },
+      {
+        "name": "OwnerVault",
+        "address": "0x444455556666777788889999AAAABBBBCCCCDDDD",
+        "role": "Owner"
+      },
+      {
+        "name": "UpgradeGovernor",
+        "address": "0x55556666777788889999AAAABBBBCCCCDDDDEEEE",
+        "role": "Upgrade"
+      }
+    ],
+    "pausableFunctions": [
+      {
+        "contract": "JobController",
+        "function": "pauseJobs",
+        "selector": "0x7c1d7a8f",
+        "description": "Stops job lifecycle transitions instantly."
+      },
+      {
+        "contract": "RewardEngine",
+        "function": "pauseRewards",
+        "selector": "0x2a3b9f1c",
+        "description": "Locks token flows while the owner inspects anomalies."
+      },
+      {
+        "contract": "Thermostat",
+        "function": "pauseAdjustments",
+        "selector": "0x3d0e4f6a",
+        "description": "Freezes thermostat drift when energy variance spikes."
+      }
+    ],
+    "safeModules": [
+      "GnosisSafe://alpha-meta/owner",
+      "GnosisSafe://alpha-meta/treasury",
+      "GnosisSafe://alpha-meta/sentinels"
+    ],
+    "safeForMainnet": true,
+    "upgradeDelayHours": 168
+  },
+  "ci": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      {
+        "id": "lint",
+        "name": "Lint & static checks"
+      },
+      {
+        "id": "tests",
+        "name": "Tests"
+      },
+      {
+        "id": "foundry",
+        "name": "Foundry"
+      },
+      {
+        "id": "coverage",
+        "name": "Coverage thresholds"
+      },
+      {
+        "id": "summary",
+        "name": "CI summary"
+      }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  }
+}
