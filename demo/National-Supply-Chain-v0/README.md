@@ -34,67 +34,58 @@ flowchart TD
     classDef contract fill:#ecfdf3,stroke:#047857,stroke-width:1.5px,color:#064e3b
     classDef control fill:#ffe4e6,stroke:#db2777,stroke-width:1.5px,color:#881337
 
-    %% L1 - On-Chain Core
     subgraph L1[AGI Jobs v0 (v2) On-Chain Core]
-        JR["JobRegistry\n(task escrow)"]:::contract
-        SM["StakeManager\n(staking + burns)"]:::contract
-        VM["ValidationModule\n(commit / reveal)"]:::contract
-        DM["DisputeModule\n(governance court)"]:::contract
-        RE["ReputationEngine\n(performance tracking)"]:::contract
-        IR["IdentityRegistry\n(sovereign allowlist)"]:::contract
-        FP["FeePool\n(treasury routing)"]:::contract
-        CN["CertificateNFT\n(mission badges)"]:::contract
+        JR[JobRegistry
+        (task escrow)]:::contract
+        SM[StakeManager
+        (staking + burns)]:::contract
+        VM[ValidationModule
+        (commit/reveal)]:::contract
+        DM[DisputeModule
+        (governance court)]:::contract
+        RE[ReputationEngine
+        (performance tracking)]:::contract
+        IR[IdentityRegistry
+        (sovereign allowlist)]:::contract
+        FP[FeePool
+        (treasury routing)]:::contract
+        CN[CertificateNFT
+        (mission badges)]:::contract
     end
 
-    %% L2 - Meta-Agentic Supply Mesh
     subgraph L2[Meta-Agentic Supply Mesh]
-        OC["Orchestrator AI\n(mission planner)"]:::agent
-        AL["Aurora Logistics AI\n(Arctic corridor)"]:::agent
-        ZS["Zephyr Relief Swarm\n(Pacific response)"]:::agent
+        OC[Orchestrator AI
+        (mission planner)]:::agent
+        AL[Aurora Logistics AI
+        (Arctic corridor)]:::agent
+        ZS[Zephyr Relief Swarm
+        (Pacific response)]:::agent
         VP[Validator Polaris]:::agent
         VMd[Validator Meridian]:::agent
         VH[Validator Horizon]:::agent
         GOV[Owner / Moderator Council]:::human
     end
 
-    %% L3 - Sovereign Mission Control
     subgraph L3[Sovereign Mission Control]
-        Dash["Mission Control UI\n(timeline + telemetry)"]:::control
-        Runbook["Runbook Automation\n(CI verified)"]:::control
+        Dash[Mission Control UI
+        (timeline + telemetry)]:::control
+        Runbook[Runbook Automation
+        (CI verified)]:::control
     end
 
-    %% Connections (single edge per line; no '&' in labels)
-    OC -->|posts mission DAG| JR
-    AL -->|stakes + submits proofs| JR
-    ZS -->|submits relief manifests| JR
-
-    VP -->|commit / reveal| VM
-    VMd -->|commit / reveal| VM
-    VH -->|commit / reveal| VM
-
+    OC -- posts mission DAG --> JR
+    AL -- stakes + submits proofs --> JR
+    ZS -- submits relief manifests --> JR
+    VP & VMd & VH -- commit/reveal --> VM
     VM --> JR
     JR --> SM
     SM --> FP
     JR --> CN
-    DM -->|arbitrates disputes| JR
+    DM -- arbitrates disputes --> JR
     RE -. reputation feeds .-> OC
-
-    IR -->|identity gating| JR
-    IR -->|identity gating| SM
-    IR -->|identity gating| VM
-    IR -->|identity gating| DM
-
-    GOV -->|owner override + pause| JR
-    GOV -->|owner override + pause| SM
-    GOV -->|owner override + pause| VM
-    GOV -->|owner override + pause| DM
-    GOV -->|owner override + pause| FP
-
-    Dash -. event ingest .-> JR
-    Dash -. event ingest .-> VM
-    Dash -. event ingest .-> DM
-    Dash -. event ingest .-> FP
-
+    IR -- identity gating --> JR & SM & VM & DM
+    GOV -- owner overrides & pausing --> JR & SM & VM & DM & FP
+    Dash -. event ingest .-> JR & VM & DM & FP
     Runbook -. CI replay .-> Dash
 ```
 
