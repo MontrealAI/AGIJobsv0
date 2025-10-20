@@ -34,20 +34,20 @@ flowchart TD
   classDef contract fill:#ecfdf3,stroke:#047857,stroke-width:1.5px,color:#064e3b
   classDef control fill:#ffe4e6,stroke:#db2777,stroke-width:1.5px,color:#881337
 
-  %% L1 — On-Chain Core
-  subgraph L1["AGI Jobs v0 (v2) – On-Chain Core"]
+  %% L1 — On‑Chain Core
+  subgraph L1["AGI Jobs v0 (v2) — On‑Chain Core"]
     JR[JobRegistry<br/>(task escrow)]:::contract
     SM[StakeManager<br/>(staking + burns)]:::contract
-    VM[ValidationModule<br/>(commit/reveal)]:::contract
+    VM[ValidationModule<br/>(commit / reveal)]:::contract
     DM[DisputeModule<br/>(governance court)]:::contract
     RE[ReputationEngine<br/>(performance tracking)]:::contract
-    IR[IdentityRegistry<br/>(sovereign allow-list)]:::contract
+    IR[IdentityRegistry<br/>(sovereign allowlist)]:::contract
     FP[FeePool<br/>(treasury routing)]:::contract
     CN[CertificateNFT<br/>(mission badges)]:::contract
   end
 
-  %% L2 — Meta-Agentic Supply Mesh
-  subgraph L2["Meta-Agentic Supply Mesh"]
+  %% L2 — Meta‑Agentic Supply Mesh
+  subgraph L2["Meta‑Agentic Supply Mesh"]
     OC[Orchestrator AI<br/>(mission planner)]:::agent
     AL[Aurora Logistics AI<br/>(Arctic corridor)]:::agent
     ZS[Zephyr Relief Swarm<br/>(Pacific response)]:::agent
@@ -63,19 +63,38 @@ flowchart TD
     Runbook[Runbook Automation<br/>(CI verified)]:::control
   end
 
-  %% Connections
+  %% Connections (single edge per line; no '&' in labels)
   OC -->|posts mission DAG| JR
-  AL -->|stakes + proofs| JR
-  ZS -->|relief manifests| JR
-  VP & VMd & VH -->|commit/reveal| VM
+  AL -->|stakes + submits proofs| JR
+  ZS -->|submits relief manifests| JR
+
+  VP -->|commit / reveal| VM
+  VMd -->|commit / reveal| VM
+  VH -->|commit / reveal| VM
+
   VM --> JR
-  JR --> SM --> FP
+  JR --> SM
+  SM --> FP
   JR --> CN
-  DM -->|arbitrates| JR
+  DM -->|arbitrates disputes| JR
   RE -. reputation feeds .-> OC
-  IR -->|identity gating| JR & SM & VM & DM
-  GOV -->|owner override/pause| JR & SM & VM & DM & FP
-  Dash -. event ingest .-> JR & VM & DM & FP
+
+  IR -->|identity gating| JR
+  IR -->|identity gating| SM
+  IR -->|identity gating| VM
+  IR -->|identity gating| DM
+
+  GOV -->|owner override + pause| JR
+  GOV -->|owner override + pause| SM
+  GOV -->|owner override + pause| VM
+  GOV -->|owner override + pause| DM
+  GOV -->|owner override + pause| FP
+
+  Dash -. event ingest .-> JR
+  Dash -. event ingest .-> VM
+  Dash -. event ingest .-> DM
+  Dash -. event ingest .-> FP
+
   Runbook -. CI replay .-> Dash
 ```
 
