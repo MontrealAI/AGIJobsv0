@@ -43,6 +43,37 @@ flowchart LR
   classDef default fill:#111827,stroke:#9333ea,stroke-width:2px,color:#f5f3ff;
 ```
 
+## Superintelligent control lattice
+
+Alpha-Meta is architected as a civilisation-scale machine that compounds thermodynamic leverage, antifragile escalation, and blockchain authority into a single owner-steered field. The mindmap below highlights how the user’s copy-paste commands propagate through every stratum to keep that superintelligence obedient, auditable, and immediately reconfigurable.
+
+```mermaid
+mindmap
+  root((Alpha-Meta Superintelligent Machine))
+    "Owner Orbit"
+      "Pause / Resume switches"
+      "Thermostat + Hamiltonian tuning"
+      "Upgrade timelock mastery"
+    "Physics Spine"
+      "Thermodynamic envelope"
+      "Jarzynski + Gibbs triangulation"
+      "Quantum ↔ classical alignment"
+    "Antifragile Mesh"
+      "Sigma gain curvature"
+      "Stress replicator drills"
+      "Sentinel regeneration"
+    "Economic Continuum"
+      "Treasury mirrors"
+      "Reward engine audits"
+      "Stake & slashing governance"
+    "Evidence Vault"
+      "Manifest hashing"
+      "CI v2 enforcement"
+      "Owner diagnostics"
+```
+
+Every branch is delivered through the generated dossier, dashboard, JSON summaries, and runbook automation snippets. Together they certify that this superintelligent machine is always under the owner’s direct command.
+
 ## Core outputs
 
 | Artifact | Description |
