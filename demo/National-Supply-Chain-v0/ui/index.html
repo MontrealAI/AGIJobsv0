@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGI Jobs v2 National Supply Chain Mission Control</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>AGI Jobs v2 National Supply Chain Mission Control</h1>
+      <p class="hero__subtitle">
+        A production-grade control room that turns the Hardhat grand demo into
+        an unstoppable, owner-driven AGI supply chain network — no engineering degree
+        required.
+      </p>
+      <div class="hero__cta">
+        <span>Load data from</span>
+        <code>export/latest.json</code>
+      </div>
+    </header>
+
+    <main id="app" aria-live="polite">
+      <section class="card">
+        <h2>Loading supply chain grid telemetry…</h2>
+        <p>Run the export script or drop a transcript into the export folder.</p>
+      </section>
+    </main>
+
+    <template id="timeline-entry-template">
+      <article class="timeline-entry">
+        <header>
+          <span class="timeline-entry__kind"></span>
+          <time class="timeline-entry__time"></time>
+        </header>
+        <h4 class="timeline-entry__label"></h4>
+        <pre class="timeline-entry__meta"></pre>
+      </article>
+    </template>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
