@@ -29,7 +29,7 @@ The launcher performs the complete sovereign orchestration:
 4. **CI enforcement** – `npm run demo:alpha-meta:ci` inspects `.github/workflows/ci.yml`, confirms the five v2 checks are enforced,
    and stores `reports/alpha-meta/ci-verification-alpha-meta.json`.
 5. **ASI take-off replay** – the launcher binds `ASI_TAKEOFF_PLAN_PATH=demo/alpha-meta/project-plan.alpha-meta.json` and runs the
-   stock `npm run demo:asi-takeoff:local` harness so the mission receipts, thermodynamic telemetry, and pause drills are replayed
+   plan-aware `npm run demo:asi-takeoff` harness so the mission receipts, thermodynamic telemetry, and pause drills are replayed
    with the alpha-meta actors.
 6. **Audit bundle** – `npm run demo:alpha-meta:full` glues every step into `reports/alpha-meta/meta-governance-full-run.json`
    / `.md`, giving auditors a single hashable digest.

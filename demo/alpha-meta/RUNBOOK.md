@@ -30,7 +30,7 @@ steps sequentially to reproduce the superintelligent mission, exercise owner con
    - Sets `NODE_ENV=production` if unset and binds `ASI_TAKEOFF_PLAN_PATH=demo/alpha-meta/project-plan.alpha-meta.json`.
    - Runs `npm run demo:alpha-meta` (governance dossier), `npm run demo:alpha-meta:validate`,
      `npm run demo:alpha-meta:owner-diagnostics`, `npm run demo:alpha-meta:ci`,
-     `npm run demo:alpha-meta:full`, and finally `npm run demo:asi-takeoff:local`.
+    `npm run demo:alpha-meta:full`, and finally the plan-aware `npm run demo:asi-takeoff`.
    - Prints absolute paths to every artefact produced under `reports/alpha-meta/` and `reports/asi-takeoff/`.
 3. Confirm the script exits with `✅ Alpha Meta sovereign lattice complete`.
 
