@@ -5,7 +5,12 @@ import yaml from "js-yaml";
 const REPORT_DIR = path.join(__dirname, "..", "reports");
 export const OUTPUT_FILE = path.join(REPORT_DIR, "ci-verification.json");
 const WORKFLOW_FILE = path.join(__dirname, "..", "..", "..", ".github", "workflows", "ci.yml");
-const MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
+const DEFAULT_MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
+
+export interface VerifyCiOptions {
+  missionFile?: string;
+  outputFile?: string;
+}
 
 export type MissionCi = {
   workflow: string;
@@ -26,8 +31,9 @@ export type VerificationResult = {
   envCoverageMatches: boolean;
 };
 
-async function loadMissionCi(): Promise<MissionCi> {
-  const configRaw = await readFile(MISSION_FILE, "utf8");
+async function loadMissionCi(customPath?: string): Promise<MissionCi> {
+  const missionPath = path.resolve(customPath ?? DEFAULT_MISSION_FILE);
+  const configRaw = await readFile(missionPath, "utf8");
   const mission = JSON.parse(configRaw) as { ci: MissionCi };
   return mission.ci;
 }
@@ -158,14 +164,21 @@ export function assessCiShield(
   return { ok, issues };
 }
 
-export async function verifyCiShield(): Promise<{ ciConfig: MissionCi; verification: VerificationResult }> {
-  const ciConfig = await loadMissionCi();
+export async function verifyCiShield(
+  options: VerifyCiOptions = {},
+): Promise<{ ciConfig: MissionCi; verification: VerificationResult; outputFile: string }> {
+  const ciConfig = await loadMissionCi(options.missionFile);
   const verification = await verifyWorkflow(ciConfig);
 
-  await mkdir(REPORT_DIR, { recursive: true });
-  await writeFile(OUTPUT_FILE, JSON.stringify({ ciConfig, verification }, null, 2), "utf8");
+  const outputFile = path.resolve(options.outputFile ?? OUTPUT_FILE);
+  await mkdir(path.dirname(outputFile), { recursive: true });
+  await writeFile(outputFile, JSON.stringify({ ciConfig, verification }, null, 2), "utf8");
 
-  return { ciConfig, verification };
+  if (!process.env.CI) {
+    console.log(`↳ CI verification written to ${outputFile}`);
+  }
+
+  return { ciConfig, verification, outputFile };
 }
 
 async function main(): Promise<void> {

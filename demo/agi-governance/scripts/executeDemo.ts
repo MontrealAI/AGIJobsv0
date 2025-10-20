@@ -5,8 +5,21 @@ export const REPORT_DIR = path.join(__dirname, "..", "reports");
 export const REPORT_FILE = path.join(REPORT_DIR, "governance-demo-report.md");
 export const SUMMARY_FILE = path.join(REPORT_DIR, "governance-demo-summary.json");
 export const DASHBOARD_FILE = path.join(REPORT_DIR, "governance-demo-dashboard.html");
-const MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
+const DEFAULT_MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
 const PACKAGE_JSON = path.join(__dirname, "..", "..", "..", "package.json");
+
+export interface GovernanceDemoOptions {
+  missionFile?: string;
+  reportDir?: string;
+  reportFile?: string;
+  summaryFile?: string;
+  dashboardFile?: string;
+}
+
+function resolveMissionFile(customPath?: string): string {
+  const override = customPath ?? process.env.AGI_GOVERNANCE_MISSION_FILE;
+  return path.resolve(override ?? DEFAULT_MISSION_FILE);
+}
 
 const BOLTZMANN = 1.380649e-23; // Boltzmann constant (J/K)
 const LN2 = Math.log(2);
@@ -718,8 +731,9 @@ function assertValidConfig(config: MissionConfig): void {
   }
 }
 
-async function loadMission(): Promise<MissionConfig> {
-  const buffer = await readFile(MISSION_FILE, "utf8");
+export async function loadMission(customPath?: string): Promise<MissionConfig> {
+  const missionPath = resolveMissionFile(customPath);
+  const buffer = await readFile(missionPath, "utf8");
   const config = JSON.parse(buffer) as MissionConfig;
   assertValidConfig(config);
   return config;
@@ -3375,7 +3389,6 @@ function buildSummary(bundle: ReportBundle): Record<string, unknown> {
 
 export {
   assertValidConfig,
-  loadMission,
   loadPackageScripts,
   computeThermodynamics,
   computeStatisticalPhysics,
@@ -3392,8 +3405,8 @@ export {
   computeQuantumReport,
 };
 
-export async function generateGovernanceDemo(): Promise<ReportBundle> {
-  const mission = await loadMission();
+export async function generateGovernanceDemo(options: GovernanceDemoOptions = {}): Promise<ReportBundle> {
+  const mission = await loadMission(options.missionFile);
   const thermodynamics = computeThermodynamics(mission);
   const statisticalPhysics = computeStatisticalPhysics(mission, thermodynamics);
   const jarzynski = computeJarzynski(mission, thermodynamics, statisticalPhysics);
@@ -3438,10 +3451,30 @@ export async function generateGovernanceDemo(): Promise<ReportBundle> {
     divergenceTolerance: mission.hamiltonian.divergenceTolerance,
   };
 
-  await mkdir(REPORT_DIR, { recursive: true });
-  await writeFile(REPORT_FILE, buildMarkdown(bundle), "utf8");
-  await writeFile(SUMMARY_FILE, JSON.stringify(buildSummary(bundle), null, 2), "utf8");
-  await writeFile(DASHBOARD_FILE, buildDashboardHtml(bundle), "utf8");
+  const reportDir = path.resolve(options.reportDir ?? path.dirname(options.reportFile ?? REPORT_FILE));
+  const reportFile = path.resolve(
+    options.reportFile ?? path.join(reportDir, path.basename(REPORT_FILE)),
+  );
+  const summaryFile = path.resolve(
+    options.summaryFile ?? path.join(reportDir, path.basename(SUMMARY_FILE)),
+  );
+  const dashboardFile = path.resolve(
+    options.dashboardFile ?? path.join(reportDir, path.basename(DASHBOARD_FILE)),
+  );
+
+  await mkdir(path.dirname(reportFile), { recursive: true });
+  await mkdir(path.dirname(summaryFile), { recursive: true });
+  await mkdir(path.dirname(dashboardFile), { recursive: true });
+
+  await writeFile(reportFile, buildMarkdown(bundle), "utf8");
+  await writeFile(summaryFile, JSON.stringify(buildSummary(bundle), null, 2), "utf8");
+  await writeFile(dashboardFile, buildDashboardHtml(bundle), "utf8");
+
+  if (!process.env.CI) {
+    console.log(`↳ Report written to ${reportFile}`);
+    console.log(`↳ Summary JSON written to ${summaryFile}`);
+    console.log(`↳ Dashboard written to ${dashboardFile}`);
+  }
 
   return bundle;
 }

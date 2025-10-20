@@ -205,7 +205,17 @@
     "demo:agi-governance:validate": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/validateReport.ts",
     "demo:agi-governance:ci": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/verifyCiStatus.ts",
     "demo:agi-governance:owner-diagnostics": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/collectOwnerDiagnostics.ts",
-    "demo:agi-governance:full": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/runFullDemo.ts"
+    "demo:agi-governance:full": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/runFullDemo.ts",
+    "demo:agi-governance:alpha-v13": "ts-node --project demo/agi-governance/alpha-v13/tsconfig.json demo/agi-governance/alpha-v13/scripts/runMission.ts",
+    "demo:agi-governance:alpha-v13:validate": "ts-node --project demo/agi-governance/alpha-v13/tsconfig.json demo/agi-governance/alpha-v13/scripts/validateMission.ts",
+    "demo:agi-governance:alpha-v13:ci": "ts-node --project demo/agi-governance/alpha-v13/tsconfig.json demo/agi-governance/alpha-v13/scripts/verifyCi.ts",
+    "demo:agi-governance:alpha-v13:owner-diagnostics": "ts-node --project demo/agi-governance/alpha-v13/tsconfig.json demo/agi-governance/alpha-v13/scripts/ownerDiagnostics.ts",
+    "demo:agi-governance:alpha-v13:full": "ts-node --project demo/agi-governance/alpha-v13/tsconfig.json demo/agi-governance/alpha-v13/scripts/fullPipeline.ts",
+    "demo:agi-governance:alpha-v14": "ts-node --project demo/agi-governance/alpha-v14/tsconfig.json demo/agi-governance/alpha-v14/scripts/runMission.ts",
+    "demo:agi-governance:alpha-v14:validate": "ts-node --project demo/agi-governance/alpha-v14/tsconfig.json demo/agi-governance/alpha-v14/scripts/validateMission.ts",
+    "demo:agi-governance:alpha-v14:ci": "ts-node --project demo/agi-governance/alpha-v14/tsconfig.json demo/agi-governance/alpha-v14/scripts/verifyCi.ts",
+    "demo:agi-governance:alpha-v14:owner-diagnostics": "ts-node --project demo/agi-governance/alpha-v14/tsconfig.json demo/agi-governance/alpha-v14/scripts/ownerDiagnostics.ts",
+    "demo:agi-governance:alpha-v14:full": "ts-node --project demo/agi-governance/alpha-v14/tsconfig.json demo/agi-governance/alpha-v14/scripts/fullPipeline.ts"
   },
   "keywords": [],
   "author": "",
