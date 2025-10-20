@@ -28,7 +28,7 @@ demo/alpha-meta/bin/launch.sh
 The launcher orchestrates:
 
 1. First-class operating system rehearsal (`demo:agi-os:first-class`).
-2. Alpha-Meta dossier computation (`demo:alpha-meta:full`).
+2. Alpha-Meta dossier computation (`demo:alpha-meta:full`, now auto-runs the triangulation cross-check).
 3. ASI take-off replay with `config/project-plan.alpha-meta.json`.
 
 Artifacts appear under `demo/alpha-meta/reports/`, `reports/agi-os/`, and `reports/asi-takeoff/`.
@@ -40,6 +40,8 @@ Verify the bundle:
 - `demo/alpha-meta/reports/alpha-meta-owner-diagnostics.json`
 - `demo/alpha-meta/reports/alpha-meta-owner-matrix.md`
 - `demo/alpha-meta/reports/alpha-meta-owner-matrix.json`
+- `demo/alpha-meta/reports/alpha-meta-triangulation.json`
+- `demo/alpha-meta/reports/alpha-meta-triangulation.md`
 - `demo/alpha-meta/reports/alpha-meta-manifest.json`
 - `reports/agi-os/grand-summary.html`
 - `reports/asi-takeoff/mission-bundle/mission.json`
@@ -117,6 +119,7 @@ Review the outputs written by the dossier generator:
 
 - `demo/alpha-meta/reports/alpha-meta-governance-summary.json`
 - `demo/alpha-meta/reports/alpha-meta-governance-report.md`
+- `demo/alpha-meta/reports/alpha-meta-triangulation.md`
 - `reports/asi-takeoff/thermodynamics.json`
 
 Focus on:
@@ -149,6 +152,7 @@ npm run lint:check
 npm test
 npm run coverage:check
 npm run demo:alpha-meta:ci
+npm run demo:alpha-meta:triangulate
 npm run owner:verify-control
 npm run ci:verify-branch-protection
 ```

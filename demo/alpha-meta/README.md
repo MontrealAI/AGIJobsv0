@@ -5,6 +5,7 @@ The **Alpha-Meta Sovereign Hypergraph** packages the most ambitious AGI Jobs v0 
 - **Meta-agentic orchestration** – an upper-tier agent coordinates deployment, thermodynamics, antifragility, game theory, quantum coherence, and blockchain levers across subordinate AGI swarms.
 - **Owner supremacy by design** – every pause switch, thermostat dial, treasury mirror, upgrade queue, and compliance beacon is surfaced through copy-paste commands and audited by the generated owner control matrix.
 - **CI parity and auditability** – the run emits CI verification, validation, and owner diagnostic artefacts identical to the mandatory v2 GitHub Actions shield. If any guard drifts, the demo fails loudly.
+- **Triple triangulation** – an independent solver suite replays equilibria (replicator, eigenvector), thermodynamics, and Jarzynski analyses to disprove the dossier before certifying it.
 - **First-class UX** – executive dashboards, HTML dossiers with rendered Mermaid diagrams, and machine-readable JSON enable instant comprehension for non-technical stewards.
 
 ## One-command ignition
@@ -29,10 +30,12 @@ flowchart LR
   A[Non-technical Owner]:::role -->|Launch| B[Alpha-Meta Launcher]
   B -->|Deploy & Refresh| C[First-Class OS Demo]
   B -->|Compute Physics & Governance| D[Alpha-Meta Dossier Engine]
+  D -->|Triangulate & Disprove| I[Independent Triangulation Suite]
   B -->|Replay Mission Plan| E[ASI Take-Off Harness]
   D -->|Owner Matrix & Reports| F[Evidence Vault]
   D -->|CI Shield Audit| G[Branch Protection Proof]
   D -->|Mermaid Dashboard| H[Interactive HTML Console]
+  I -->|Redundant Checks & Jarzynski Proof| F
   E -->|Telemetry & Receipts| F
   F -->|Copy-Paste Commands| A
   G -->|PR Gatekeepers| A
@@ -51,7 +54,8 @@ flowchart LR
 | `alpha-meta-ci-verification.json` | CI parity proof showing lint, tests, foundry, coverage, and summary guards enforced on `main`. |
 | `alpha-meta-owner-diagnostics.{json,md}` | Results from automated owner command scripts (Hamiltonian audit, reward engine report, upgrade queue status, compliance disclosure). |
 | `alpha-meta-owner-matrix.{json,md}` | Authoritative owner control matrix detailing every governance capability, script availability, and verification hook. |
-| `alpha-meta-full-run.{json,md}` | Timeline of the full pipeline with Mermaid timeline, metrics, and aggregated health verdict. |
+| `alpha-meta-triangulation.{json,md}` | Independent cross-check (replicator, eigenvector, thermodynamics, Jarzynski) verifying the mission dossier with redundant solvers. |
+| `alpha-meta-full-run.{json,md}` | Timeline of the full pipeline with Mermaid timeline, metrics, triangulation status, and aggregated health verdict. |
 | `alpha-meta-manifest.json` | SHA-256 manifest covering the mission config and every dossier artefact produced by the run. |
 
 ## Mission manifest and plan
@@ -69,6 +73,9 @@ npm run demo:alpha-meta
 
 # Re-run validation/Jarzynski/owner coverage checks
 npm run demo:alpha-meta:validate
+
+# Execute independent triangulation (replicator, eigenvector, Gibbs/Jarzynski cross-checks)
+npm run demo:alpha-meta:triangulate
 
 # Confirm CI branch protection and GitHub workflow parity
 npm run demo:alpha-meta:ci

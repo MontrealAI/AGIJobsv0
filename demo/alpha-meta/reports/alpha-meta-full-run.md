@@ -1,6 +1,6 @@
 # Full Governance Demonstration Run
-*Generated at:* 2025-10-20T16:59:45.529Z
-*Total runtime:* 82.81 s
+*Generated at:* 2025-10-20T17:36:27.566Z
+*Total runtime:* 205.52 s
 
 ```mermaid
 graph LR
@@ -19,10 +19,11 @@ graph LR
 
 | Step | Status | Duration | Details |
 | --- | --- | --- | --- |
-| Generate dossier | ✅ | 31.83 s | \|F\|r\|e\|e\|-\|e\|n\|e\|r\|g\|y\| \|m\|a\|r\|g\|i\|n\| \|2\|2\|2\|1\|5\|3\|.\|7\|3\| \|k\|J\| \|·\| \|M\|a\|x\| \|m\|e\|t\|h\|o\|d\| \|d\|e\|v\|i\|a\|t\|i\|o\|n\| \|0\|.\|8\|4\|9\|3\|7\|4\| |
-| Validate physics | ✅ | 33.10 s | \|A\|l\|l\| \|5\|8\| \|c\|h\|e\|c\|k\|s\| \|p\|a\|s\|s\|e\|d\| |
-| Audit CI shield | ✅ | 0.02 s | \|A\|l\|l\| \|e\|n\|f\|o\|r\|c\|e\|m\|e\|n\|t\| \|g\|u\|a\|r\|d\|s\| \|l\|o\|c\|k\|e\|d\|.\| |
-| Owner diagnostics | ✅ | 17.87 s | \|A\|l\|l\| \|o\|w\|n\|e\|r\| \|a\|u\|t\|o\|m\|a\|t\|i\|o\|n\| \|c\|o\|m\|m\|a\|n\|d\|s\| \|e\|x\|e\|c\|u\|t\|e\|d\| \|s\|u\|c\|c\|e\|s\|s\|f\|u\|l\|l\|y\|.\| |
+| Generate dossier | ✅ | 79.94 s | \|F\|r\|e\|e\|-\|e\|n\|e\|r\|g\|y\| \|m\|a\|r\|g\|i\|n\| \|2\|2\|2\|1\|5\|3\|.\|7\|3\| \|k\|J\| \|·\| \|M\|a\|x\| \|m\|e\|t\|h\|o\|d\| \|d\|e\|v\|i\|a\|t\|i\|o\|n\| \|0\|.\|8\|4\|9\|3\|7\|4\| |
+| Validate physics | ✅ | 81.60 s | \|A\|l\|l\| \|5\|8\| \|c\|h\|e\|c\|k\|s\| \|p\|a\|s\|s\|e\|d\| |
+| Audit CI shield | ✅ | 0.06 s | \|A\|l\|l\| \|e\|n\|f\|o\|r\|c\|e\|m\|e\|n\|t\| \|g\|u\|a\|r\|d\|s\| \|l\|o\|c\|k\|e\|d\|.\| |
+| Owner diagnostics | ✅ | 43.91 s | \|A\|l\|l\| \|o\|w\|n\|e\|r\| \|a\|u\|t\|o\|m\|a\|t\|i\|o\|n\| \|c\|o\|m\|m\|a\|n\|d\|s\| \|e\|x\|e\|c\|u\|t\|e\|d\| \|s\|u\|c\|c\|e\|s\|s\|f\|u\|l\|l\|y\|.\| |
+| Triangulation cross-check | ✅ | 14.36 s | All checks satisfied (max Δ=0.693328) |
 
 ## Key Metrics
 - Gibbs free energy: 222153.73 kJ
@@ -63,6 +64,8 @@ graph LR
 - Owner diagnostics Markdown: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-diagnostics.md`
 - Full-run JSON: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-full-run.json`
 - Full-run Markdown: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-full-run.md`
+- Triangulation JSON: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-triangulation.json`
+- Triangulation Markdown: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-triangulation.md`
 - Manifest: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-manifest.json`
 
 > ✅ CI shield verified with all guards active.
