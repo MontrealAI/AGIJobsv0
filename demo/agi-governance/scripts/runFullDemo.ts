@@ -70,6 +70,8 @@ type FullRunSummary = {
     ownerFullCoverage: boolean;
     ownerAllCommandsPresent: boolean;
     ownerAllVerificationsPresent: boolean;
+    ownerSupremacyIndex: number;
+    ownerSupremacySatisfied: boolean;
     ciShieldOk: boolean;
     ownerReadiness: AggregatedReport["readiness"];
     alphaFieldConfidence: number;
@@ -84,6 +86,8 @@ type FullRunSummary = {
     quantumConfidence: number;
     quantumChargeWithinTolerance: boolean;
     quantumThermoDeltaKJ: number;
+    quantumThermoAligned: boolean;
+    quantumThermoDriftMaximumKJ: number;
     quantumEntropyBits: number;
   };
   ciIssues: string[];
@@ -342,9 +346,11 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
       equilibriumMaxDeviation: bundle.equilibrium.maxMethodDeviation,
       riskPortfolioResidual: bundle.risk.portfolioResidual,
       jacobianStable: bundle.jacobian.stable,
-    ownerFullCoverage: bundle.owner.fullCoverage,
-    ownerAllCommandsPresent: bundle.owner.allCommandsPresent,
-    ownerAllVerificationsPresent: bundle.owner.allVerificationsPresent,
+      ownerFullCoverage: bundle.owner.fullCoverage,
+      ownerAllCommandsPresent: bundle.owner.allCommandsPresent,
+      ownerAllVerificationsPresent: bundle.owner.allVerificationsPresent,
+      ownerSupremacyIndex: bundle.alphaField.ownerSupremacyIndex,
+      ownerSupremacySatisfied: bundle.alphaField.ownerSupremacySatisfied,
       ciShieldOk: ciAssessment.ok,
       ownerReadiness: diagnostics.readiness,
       alphaFieldConfidence: bundle.alphaField.confidenceScore,
@@ -358,7 +364,9 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
       alphaFieldOwnerAssurance: bundle.alphaField.ownerAssurance,
       quantumConfidence: bundle.quantum.quantumConfidence,
       quantumChargeWithinTolerance: bundle.quantum.chargeWithinTolerance,
-      quantumThermoDeltaKJ: bundle.quantum.thermoMarginDeltaKJ,
+      quantumThermoDeltaKJ: bundle.alphaField.thermoQuantumDeltaKJ,
+      quantumThermoAligned: bundle.alphaField.thermoQuantumAligned,
+      quantumThermoDriftMaximumKJ: bundle.alphaField.thermoQuantumDriftMaximumKJ,
       quantumEntropyBits: bundle.quantum.stateEntropyBits,
     },
     ciIssues: ciAssessment.issues,
@@ -402,12 +410,14 @@ export async function runFullDemo(options: FullDemoOptions = {}): Promise<FullRu
     `- Owner assurance: ${(summary.metrics.alphaFieldOwnerAssurance * 100).toFixed(1)}%`,
     `- Quantum coherence: ${(summary.metrics.quantumConfidence * 100).toFixed(1)}% (${summary.metrics.quantumChargeWithinTolerance ? "aligned charge" : "⚠️ charge drift"})`,
     `- Quantum free-energy delta: ${summary.metrics.quantumThermoDeltaKJ.toExponential(3)} kJ`,
+    `- Thermo ↔ quantum alignment: ${summary.metrics.quantumThermoAligned ? "✅" : "⚠️"} (limit ${summary.metrics.quantumThermoDriftMaximumKJ.toExponential(3)} kJ)`,
     `- Quantum state entropy: ${summary.metrics.quantumEntropyBits.toFixed(3)} bits`,
     `- Energy margin floor met: ${summary.metrics.alphaFieldEnergyMargin ? "✅" : "⚠️"}`,
     `- Jacobian stable: ${summary.metrics.jacobianStable ? "✅" : "❌"}`,
     `- Owner capability coverage: ${summary.metrics.ownerFullCoverage ? "✅" : "⚠️"}`,
     `- All owner commands present: ${summary.metrics.ownerAllCommandsPresent ? "✅" : "⚠️"}`,
     `- All owner verification scripts present: ${summary.metrics.ownerAllVerificationsPresent ? "✅" : "⚠️"}`,
+    `- Owner supremacy index: ${(summary.metrics.ownerSupremacyIndex * 100).toFixed(1)}% (${summary.metrics.ownerSupremacySatisfied ? "✅" : "⚠️"})`,
     `- CI shield: ${summary.metrics.ciShieldOk ? "✅ enforced" : "❌ drift detected"}`,
     `- Owner readiness: ${summary.metrics.ownerReadiness}`,
   ].join("\n");

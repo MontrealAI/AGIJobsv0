@@ -175,6 +175,8 @@ export interface MissionConfig {
       ownerCoverageMinimum: number;
       superintelligenceMinimum: number;
       quantumConfidenceMinimum: number;
+      ownerSupremacyMinimum: number;
+      thermoQuantumDriftMaximumKJ: number;
     };
     signatureWeights: {
       thermodynamic: number;
@@ -450,6 +452,12 @@ export type AlphaFieldReport = {
   energyMarginKJ: number;
   energyMarginFloorKJ: number;
   energyMarginSatisfied: boolean;
+  ownerSupremacyIndex: number;
+  ownerSupremacyMinimum: number;
+  ownerSupremacySatisfied: boolean;
+  thermoQuantumDeltaKJ: number;
+  thermoQuantumDriftMaximumKJ: number;
+  thermoQuantumAligned: boolean;
   confidenceScore: number;
   thermodynamicAssurance: number;
   governanceAssurance: number;
@@ -636,6 +644,15 @@ function assertValidConfig(config: MissionConfig): void {
     config.alphaField.verification.quantumConfidenceMinimum > 1
   ) {
     throw new Error("alphaField.verification.quantumConfidenceMinimum must be within [0,1]");
+  }
+  if (
+    config.alphaField.verification.ownerSupremacyMinimum < 0 ||
+    config.alphaField.verification.ownerSupremacyMinimum > 1
+  ) {
+    throw new Error("alphaField.verification.ownerSupremacyMinimum must be within [0,1]");
+  }
+  if (config.alphaField.verification.thermoQuantumDriftMaximumKJ < 0) {
+    throw new Error("alphaField.verification.thermoQuantumDriftMaximumKJ must be non-negative");
   }
   const signatureWeights = config.alphaField.signatureWeights;
   const signatureWeightSum = Object.values(signatureWeights).reduce((sum, weight) => sum + weight, 0);
@@ -1860,6 +1877,18 @@ function computeAlphaField(
   const ownerCoverageSatisfied =
     ownerCoverageRatio >= config.alphaField.verification.ownerCoverageMinimum - 1e-9;
 
+  const ownerSupremacyIndex = clamp(
+    (ownerCoverageRatio +
+      (owner.fullCoverage ? 1 : ownerCoverageRatio) +
+      (owner.allCommandsPresent ? 1 : ownerCoverageRatio) +
+      (owner.allVerificationsPresent ? 1 : ownerCoverageRatio)) /
+      4,
+    0,
+    1,
+  );
+  const ownerSupremacyMinimum = config.alphaField.verification.ownerSupremacyMinimum;
+  const ownerSupremacySatisfied = ownerSupremacyIndex >= ownerSupremacyMinimum - 1e-9;
+
   const energyMarginSatisfied =
     thermodynamics.freeEnergyMarginKJ >= config.alphaField.verification.energyMarginFloorKJ - 1e-9;
 
@@ -1884,8 +1913,12 @@ function computeAlphaField(
     0,
     1,
   );
-  const ownerAssurance = clamp(ownerCoverageRatio, 0, 1);
+  const ownerAssurance = ownerSupremacyIndex;
   const quantumAssurance = clamp(quantum.quantumConfidence, 0, 1);
+
+  const thermoQuantumDeltaKJ = Math.abs(quantum.thermoMarginDeltaKJ);
+  const thermoQuantumDriftMaximumKJ = config.alphaField.verification.thermoQuantumDriftMaximumKJ;
+  const thermoQuantumAligned = thermoQuantumDeltaKJ <= thermoQuantumDriftMaximumKJ + 1e-9;
 
   const weights = config.alphaField.signatureWeights;
   const weightTotal =
@@ -1911,9 +1944,11 @@ function computeAlphaField(
     antifragilityMeetsMinimum,
     sigmaGainSatisfied,
     ownerCoverageSatisfied,
+    ownerSupremacySatisfied,
     energyMarginSatisfied,
     superintelligenceSatisfied,
     quantumConfidenceSatisfied,
+    thermoQuantumAligned,
   ];
   const binaryScore = totalSignals.filter(Boolean).length / totalSignals.length;
   const confidenceScore = clamp((binaryScore + superintelligenceIndex + quantumAssurance) / 3, 0, 1);
@@ -1943,9 +1978,15 @@ function computeAlphaField(
     ownerCoverageRatio,
     ownerCoverageMinimum: config.alphaField.verification.ownerCoverageMinimum,
     ownerCoverageSatisfied,
+    ownerSupremacyIndex,
+    ownerSupremacyMinimum,
+    ownerSupremacySatisfied,
     energyMarginKJ: thermodynamics.freeEnergyMarginKJ,
     energyMarginFloorKJ: config.alphaField.verification.energyMarginFloorKJ,
     energyMarginSatisfied,
+    thermoQuantumDeltaKJ,
+    thermoQuantumDriftMaximumKJ,
+    thermoQuantumAligned,
     confidenceScore,
     thermodynamicAssurance,
     governanceAssurance,
@@ -2036,10 +2077,13 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
   const thermoAssurance = `${Math.round(alphaField.thermodynamicAssurance * 100)}%`;
   const governanceAssurance = `${Math.round(alphaField.governanceAssurance * 100)}%`;
   const antifragilityAssurance = `${Math.round(alphaField.antifragilityAssurance * 100)}%`;
-  const ownerAssurance = `${Math.round(alphaField.ownerAssurance * 100)}%`;
+  const ownerSupremacy = `${Math.round(alphaField.ownerSupremacyIndex * 100)}%`;
   const quantumAssurance = `${Math.round(alphaField.quantumAssurance * 100)}%`;
   const quantumCoherence = `${Math.round(quantum.quantumConfidence * 100)}%`;
   const quantumFreeEnergy = `${quantum.quantumFreeEnergyKJ.toExponential(2)} kJ`;
+  const quantumAlignment = `${formatNumber(alphaField.thermoQuantumDeltaKJ)} kJ Δ (≤ ${formatNumber(
+    alphaField.thermoQuantumDriftMaximumKJ,
+  )} kJ)`;
   return [
     "```mermaid",
     "flowchart LR",
@@ -2073,9 +2117,10 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     `    ThermoSignal[Thermo Assurance ${thermoAssurance}]`,
     `    GovernanceSignal[Governance Assurance ${governanceAssurance}]`,
     `    AntifragileSignal[Antifragility Assurance ${antifragilityAssurance}]`,
-    `    OwnerSignal[Owner Command ${ownerAssurance}]`,
+    `    OwnerSignal[Owner Supremacy ${ownerSupremacy}]`,
     `    QuantumSignal[Quantum Assurance ${quantumAssurance}]`,
     `    CoherenceSignal[Coherence ${quantumCoherence}]`,
+    `    QuantumAlign[Quantum Alignment ${quantumAlignment}]`,
     `    EnergyFloor[Energy Margin ${formatNumber(alphaField.energyMarginKJ)} kJ]`,
     "    Stackelberg --> Confidence",
     "    EnergyFloor --> ThermoSignal",
@@ -2084,7 +2129,8 @@ function buildMermaidFlowchart(bundle: ReportBundle): string {
     "    AntifragileSignal --> Confidence",
     "    OwnerSignal --> Confidence",
     "    QuantumSignal --> Confidence",
-    "    CoherenceSignal --> QuantumSignal",
+    "    QuantumAlign --> QuantumSignal",
+    "    CoherenceSignal --> QuantumAlign",
     "  end",
     "  subgraph Control[Owner Command Surface]",
     `    Owner((Owner ${ownerLabel}))`,
@@ -2157,9 +2203,11 @@ function buildAntifragilityMindmap(bundle: ReportBundle): string {
     "    \"Quantum Lattice\":::core",
     `      \"Coherence ${Math.round(bundle.quantum.quantumConfidence * 100)}%\":::sigma`,
     `      \"Charge Δ ${bundle.quantum.chargeDelta.toExponential(2)} (tol ${bundle.quantum.allowableChargeDrift.toExponential(2)})\":::welfare`,
+    `      \"Alignment Δ ${formatNumber(bundle.alphaField.thermoQuantumDeltaKJ)} kJ\":::sigma`,
     "    \"Owner Actions\":::core",
     `      \"Mint Mirror ${formatPercent(bundle.incentives.mint.treasuryMirrorShare)}\"`,
     `      \"Residual Risk ${bundle.risk.portfolioResidual.toFixed(3)}\"`,
+    `      \"Supremacy ${(bundle.alphaField.ownerSupremacyIndex * 100).toFixed(1)}%\":::core`,
     "  classDef core fill:#111827,stroke:#38bdf8,stroke-width:2px,color:#f9fafb,font-weight:600;",
     "  classDef sigma fill:#1f2937,stroke:#f97316,stroke-width:2px,color:#fef3c7;font-weight:600;",
     "  classDef welfare fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#ecfeff;font-weight:600;",
@@ -2247,9 +2295,11 @@ function buildMarkdown(bundle: ReportBundle): string {
     ["Antifragility curvature", alphaField.antifragilityMeetsMinimum],
     ["Sigma welfare gain", alphaField.sigmaGainSatisfied],
     ["Owner coverage", alphaField.ownerCoverageSatisfied],
+    ["Owner supremacy", alphaField.ownerSupremacySatisfied],
     ["Energy margin", alphaField.energyMarginSatisfied],
     ["Superintelligence threshold", alphaField.superintelligenceSatisfied],
     ["Quantum confidence floor", alphaField.quantumConfidenceSatisfied],
+    ["Thermo ↔ quantum alignment", alphaField.thermoQuantumAligned],
   ]
     .map(([label, ok]) => `| ${label} | ${ok ? "✅" : "⚠️"} |`)
     .join("\n");
@@ -2528,6 +2578,9 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Owner coverage ratio:** ${(alphaField.ownerCoverageRatio * 100).toFixed(2)}% (threshold ${(
       alphaField.ownerCoverageMinimum * 100
     ).toFixed(2)}%)`,
+    `- **Owner supremacy index:** ${(alphaField.ownerSupremacyIndex * 100).toFixed(2)}% (minimum ${(
+      alphaField.ownerSupremacyMinimum * 100
+    ).toFixed(2)}% — ${alphaField.ownerSupremacySatisfied ? "✅" : "⚠️"})`,
     `- **Energy margin:** ${formatNumber(alphaField.energyMarginKJ)} kJ (floor ${formatNumber(
       alphaField.energyMarginFloorKJ,
     )} kJ — ${alphaField.energyMarginSatisfied ? "✅" : "⚠️"})`,
@@ -2537,7 +2590,9 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Quantum coherence confidence:** ${(quantum.quantumConfidence * 100).toFixed(1)}% (minimum ${(
       alphaField.quantumConfidenceMinimum * 100
     ).toFixed(1)}% — ${alphaField.quantumConfidenceSatisfied ? "✅" : "⚠️"})`,
-    `- **Quantum free-energy delta vs thermodynamic margin:** ${quantum.thermoMarginDeltaKJ.toExponential(3)} kJ`,
+    `- **Thermo ↔ quantum free-energy delta:** ${alphaField.thermoQuantumDeltaKJ.toExponential(3)} kJ (limit ${
+      alphaField.thermoQuantumDriftMaximumKJ.toExponential(3)
+    } — ${alphaField.thermoQuantumAligned ? "✅" : "⚠️"})`,
     `- **Noether charge alignment:** Δ${quantum.chargeDelta.toExponential(3)} (tolerance ${quantum.allowableChargeDrift.toExponential(
       3,
     )} — ${quantum.chargeWithinTolerance ? "✅" : "⚠️"})`,
@@ -2576,6 +2631,9 @@ function buildMarkdown(bundle: ReportBundle): string {
     `- **Treasury:** ${owner.treasury}`,
     `- **Timelock:** ${owner.timelockSeconds} seconds`,
     `- **Coverage achieved:** ${owner.fullCoverage ? "all critical capabilities accounted for" : "⚠️ gaps detected"}`,
+    `- **Owner supremacy index:** ${(alphaField.ownerSupremacyIndex * 100).toFixed(2)}% (minimum ${(
+      alphaField.ownerSupremacyMinimum * 100
+    ).toFixed(2)}% — ${alphaField.ownerSupremacySatisfied ? "✅" : "⚠️"})`,
     `- **Command surfaces wired:** ${owner.allCommandsPresent ? "✅ all npm scripts present" : "⚠️ missing scripts"}`,
     `- **Verification surfaces wired:** ${
       owner.allVerificationsPresent ? "✅ all verifier scripts present" : "⚠️ verifier gaps detected"
@@ -2826,6 +2884,11 @@ function buildDashboardHtml(bundle: ReportBundle): string {
       status: alphaField.ownerCoverageSatisfied ? "✅" : "⚠️",
     },
     {
+      label: "Owner supremacy",
+      value: `${(alphaField.ownerSupremacyIndex * 100).toFixed(2)}% ≥ ${(alphaField.ownerSupremacyMinimum * 100).toFixed(2)}%`,
+      status: alphaField.ownerSupremacySatisfied ? "✅" : "⚠️",
+    },
+    {
       label: "Energy margin",
       value: `${formatNumber(alphaField.energyMarginKJ)} ≥ ${formatNumber(alphaField.energyMarginFloorKJ)} kJ`,
       status: alphaField.energyMarginSatisfied ? "✅" : "⚠️",
@@ -2844,8 +2907,8 @@ function buildDashboardHtml(bundle: ReportBundle): string {
     },
     {
       label: "Quantum free-energy δ",
-      value: `${quantum.thermoMarginDeltaKJ.toExponential(3)} kJ`,
-      status: quantum.thermoMarginDeltaKJ <= alphaField.energyMarginFloorKJ ? "✅" : "⚠️",
+      value: `${alphaField.thermoQuantumDeltaKJ.toExponential(3)} kJ ≤ ${alphaField.thermoQuantumDriftMaximumKJ.toExponential(3)} kJ`,
+      status: alphaField.thermoQuantumAligned ? "✅" : "⚠️",
     },
     {
       label: "Noether charge",
