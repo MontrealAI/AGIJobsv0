@@ -28,65 +28,55 @@ rights – live during a national-scale logistics surge.
 
 ```mermaid
 flowchart TD
-    classDef chain fill:#e7f0fe,stroke:#1f6feb,stroke-width:2px,color:#04133b
-    classDef agent fill:#fdf5ff,stroke:#7e22ce,stroke-width:1.5px,color:#2b0b57
-    classDef human fill:#fffbe6,stroke:#b45309,stroke-width:1.5px,color:#3f2f0c
-    classDef contract fill:#ecfdf3,stroke:#047857,stroke-width:1.5px,color:#064e3b
-    classDef control fill:#ffe4e6,stroke:#db2777,stroke-width:1.5px,color:#881337
+  classDef chain fill:#e7f0fe,stroke:#1f6feb,stroke-width:2px,color:#04133b
+  classDef agent fill:#fdf5ff,stroke:#7e22ce,stroke-width:1.5px,color:#2b0b57
+  classDef human fill:#fffbe6,stroke:#b45309,stroke-width:1.5px,color:#3f2f0c
+  classDef contract fill:#ecfdf3,stroke:#047857,stroke-width:1.5px,color:#064e3b
+  classDef control fill:#ffe4e6,stroke:#db2777,stroke-width:1.5px,color:#881337
 
-    subgraph L1[AGI Jobs v0 (v2) On-Chain Core]
-        JR[JobRegistry
-        (task escrow)]:::contract
-        SM[StakeManager
-        (staking + burns)]:::contract
-        VM[ValidationModule
-        (commit/reveal)]:::contract
-        DM[DisputeModule
-        (governance court)]:::contract
-        RE[ReputationEngine
-        (performance tracking)]:::contract
-        IR[IdentityRegistry
-        (sovereign allowlist)]:::contract
-        FP[FeePool
-        (treasury routing)]:::contract
-        CN[CertificateNFT
-        (mission badges)]:::contract
-    end
+  %% L1 — On-Chain Core
+  subgraph L1["AGI Jobs v0 (v2) – On-Chain Core"]
+    JR[JobRegistry<br/>(task escrow)]:::contract
+    SM[StakeManager<br/>(staking + burns)]:::contract
+    VM[ValidationModule<br/>(commit/reveal)]:::contract
+    DM[DisputeModule<br/>(governance court)]:::contract
+    RE[ReputationEngine<br/>(performance tracking)]:::contract
+    IR[IdentityRegistry<br/>(sovereign allow-list)]:::contract
+    FP[FeePool<br/>(treasury routing)]:::contract
+    CN[CertificateNFT<br/>(mission badges)]:::contract
+  end
 
-    subgraph L2[Meta-Agentic Supply Mesh]
-        OC[Orchestrator AI
-        (mission planner)]:::agent
-        AL[Aurora Logistics AI
-        (Arctic corridor)]:::agent
-        ZS[Zephyr Relief Swarm
-        (Pacific response)]:::agent
-        VP[Validator Polaris]:::agent
-        VMd[Validator Meridian]:::agent
-        VH[Validator Horizon]:::agent
-        GOV[Owner / Moderator Council]:::human
-    end
+  %% L2 — Meta-Agentic Supply Mesh
+  subgraph L2["Meta-Agentic Supply Mesh"]
+    OC[Orchestrator AI<br/>(mission planner)]:::agent
+    AL[Aurora Logistics AI<br/>(Arctic corridor)]:::agent
+    ZS[Zephyr Relief Swarm<br/>(Pacific response)]:::agent
+    VP[Validator Polaris]:::agent
+    VMd[Validator Meridian]:::agent
+    VH[Validator Horizon]:::agent
+    GOV[Owner / Moderator Council]:::human
+  end
 
-    subgraph L3[Sovereign Mission Control]
-        Dash[Mission Control UI
-        (timeline + telemetry)]:::control
-        Runbook[Runbook Automation
-        (CI verified)]:::control
-    end
+  %% L3 — Mission Control
+  subgraph L3["Sovereign Mission Control"]
+    Dash[Mission Control UI<br/>(timeline + telemetry)]:::control
+    Runbook[Runbook Automation<br/>(CI verified)]:::control
+  end
 
-    OC -- posts mission DAG --> JR
-    AL -- stakes + submits proofs --> JR
-    ZS -- submits relief manifests --> JR
-    VP & VMd & VH -- commit/reveal --> VM
-    VM --> JR
-    JR --> SM
-    SM --> FP
-    JR --> CN
-    DM -- arbitrates disputes --> JR
-    RE -. reputation feeds .-> OC
-    IR -- identity gating --> JR & SM & VM & DM
-    GOV -- owner overrides & pausing --> JR & SM & VM & DM & FP
-    Dash -. event ingest .-> JR & VM & DM & FP
-    Runbook -. CI replay .-> Dash
+  %% Connections
+  OC -->|posts mission DAG| JR
+  AL -->|stakes + proofs| JR
+  ZS -->|relief manifests| JR
+  VP & VMd & VH -->|commit/reveal| VM
+  VM --> JR
+  JR --> SM --> FP
+  JR --> CN
+  DM -->|arbitrates| JR
+  RE -. reputation feeds .-> OC
+  IR -->|identity gating| JR & SM & VM & DM
+  GOV -->|owner override/pause| JR & SM & VM & DM & FP
+  Dash -. event ingest .-> JR & VM & DM & FP
+  Runbook -. CI replay .-> Dash
 ```
 
 ## Quickstart
