@@ -57,6 +57,8 @@ Open the printed URL. You will see:
 - Token movement snapshots.
 - Owner parameter changes and pause drills.
 - Automation recommendations for the next operator.
+- Copy buttons next to every command so you can paste into the terminal without
+  typing.
 
 ## 5. Autoreplay + UI loop (optional)
 

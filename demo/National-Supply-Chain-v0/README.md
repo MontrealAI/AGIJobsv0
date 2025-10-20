@@ -161,6 +161,8 @@ The dashboard renders:
   dispute windows, and pause drills.
 - **Automation recommendations** with one-click commands to replay the demo,
   export transcripts, and open the control room loop.
+- **Copy-to-clipboard controls** beside every recommended command so executives
+  can trigger scripted actions without retyping anything.
 - **Mermaid diagrams** that visualise the live agent mesh and scenario DAG.
 
 The UI fetches only the JSON transcript and requires **no build step**, keeping

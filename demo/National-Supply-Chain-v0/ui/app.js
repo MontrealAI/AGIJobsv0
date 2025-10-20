@@ -6,6 +6,85 @@ const state = {
   data: null,
 };
 
+const FEEDBACK_RESET_DELAY = 2000;
+
+const resetClipboardFeedback = (button, timer) => {
+  if (timer.current) {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+  }
+  button.textContent = button.dataset.originalLabel || 'Copy';
+  button.classList.remove('is-success', 'is-error');
+};
+
+const fallbackCopyText = (text) => {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (error) {
+    console.warn('Fallback clipboard copy failed:', error);
+    copied = false;
+  }
+  document.body.removeChild(textarea);
+  return copied;
+};
+
+const copyTextToClipboard = async (text) => {
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      console.warn('Clipboard API copy failed, falling back to execCommand:', error);
+    }
+  }
+  return fallbackCopyText(text);
+};
+
+function createCopyButton(text, label) {
+  const command = `${text}`;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'copy-button';
+  button.dataset.originalLabel = 'Copy';
+  button.textContent = button.dataset.originalLabel;
+  button.setAttribute('aria-label', label ? `Copy ${label}` : 'Copy command to clipboard');
+
+  const timer = { current: undefined };
+
+  button.addEventListener('click', async () => {
+    resetClipboardFeedback(button, timer);
+    button.disabled = true;
+
+    const success = await copyTextToClipboard(command);
+
+    button.classList.remove('is-success', 'is-error');
+    if (success) {
+      button.textContent = 'Copied!';
+      button.classList.add('is-success');
+    } else {
+      button.textContent = 'Copy failed';
+      button.classList.add('is-error');
+    }
+
+    button.disabled = false;
+
+    timer.current = window.setTimeout(() => {
+      resetClipboardFeedback(button, timer);
+    }, FEEDBACK_RESET_DELAY);
+  });
+
+  return button;
+}
+
 const formatTime = (iso) =>
   new Date(iso).toLocaleString(undefined, {
     hour12: false,
@@ -252,10 +331,19 @@ function renderDirectiveGroup(container, title, directives, emptyCopy) {
     card.appendChild(summary);
 
     if (directive.recommendedAction) {
+      const actionWrapper = document.createElement('div');
+      actionWrapper.className = 'copyable copyable--inline';
       const action = document.createElement('code');
       action.className = 'directive-action';
       action.textContent = directive.recommendedAction;
-      card.appendChild(action);
+      actionWrapper.appendChild(action);
+      actionWrapper.appendChild(
+        createCopyButton(
+          directive.recommendedAction,
+          `${directive.title} recommended command`
+        )
+      );
+      card.appendChild(actionWrapper);
     }
 
     if (directive.metrics && Object.keys(directive.metrics).length) {
@@ -352,10 +440,14 @@ function renderAutomation(container, automation) {
     const li = document.createElement('li');
     const strong = document.createElement('strong');
     strong.textContent = entry.label;
+    li.appendChild(strong);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'copyable copyable--block';
     const code = document.createElement('code');
     code.textContent = entry.value;
-    li.appendChild(strong);
-    li.appendChild(code);
+    wrapper.appendChild(code);
+    wrapper.appendChild(createCopyButton(entry.value, `${entry.label} command`));
+    li.appendChild(wrapper);
     list.appendChild(li);
   }
   commands.appendChild(list);
@@ -378,9 +470,13 @@ function renderAutomation(container, automation) {
   commandList.className = 'verification-commands';
   for (const cmd of automation.verification.recommendedCommands) {
     const li = document.createElement('li');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'copyable copyable--block';
     const code = document.createElement('code');
     code.textContent = cmd;
-    li.appendChild(code);
+    wrapper.appendChild(code);
+    wrapper.appendChild(createCopyButton(cmd, 'verification command'));
+    li.appendChild(wrapper);
     commandList.appendChild(li);
   }
   verification.appendChild(commandList);
