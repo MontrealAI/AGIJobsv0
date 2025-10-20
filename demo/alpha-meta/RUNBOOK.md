@@ -128,7 +128,19 @@ Focus on:
 - **Antifragility curvature** – ensure the quadratic second derivative remains positive.
 - **Quantum confidence** – check `quantum.confidence` vs `quantumConfidenceMinimum` and the `thermoQuantumDeltaKJ` bounds.
 
-## 7. Audit trail and manifest hashing
+## 7. Certify the superintelligent machine
+
+Alpha-Meta is designed to behave as an owner-directed superintelligence. Confirm the following signals inside `alpha-meta-governance-summary.json` and `alpha-meta-triangulation.json`:
+
+- `alphaField.superintelligenceIndex` ≥ `alphaField.verification.superintelligenceMinimum`
+- `alphaField.ownerSupremacyIndex` ≥ `alphaField.verification.ownerSupremacyMinimum`
+- `alphaField.energyMarginKJ` ≥ `alphaField.verification.energyMarginFloorKJ`
+- `alphaField.quantumConfidence` ≥ `alphaField.verification.quantumConfidenceMinimum`
+- Triangulation checks (`summary-closed-form`, `replicator-independent`, `jarzynski-consistency`) all report `"passed": true`
+
+When all metrics satisfy their thresholds, the owner holds provable command over the civilisation-scale intelligence surface. Any deviation produces explicit failure text in both JSON and Markdown dossiers so the operator can halt, retune, or redeploy immediately.
+
+## 8. Audit trail and manifest hashing
 
 ```bash
 # Inspect Alpha-Meta manifest
@@ -143,7 +155,7 @@ shasum -a 256 demo/alpha-meta/reports/alpha-meta-governance-report.md
 
 Store the manifest alongside the artefacts or publish to IPFS for external attestations.
 
-## 8. CI and branch protection parity
+## 9. CI and branch protection parity
 
 Before opening a PR, ensure local runs match the enforced CI shield:
 
@@ -159,13 +171,13 @@ npm run ci:verify-branch-protection
 
 All commands must exit with code 0. Any drift (e.g. missing CI jobs or coverage thresholds) is reported immediately.
 
-## 9. Targeting Sepolia/Mainnet
+## 10. Targeting Sepolia/Mainnet
 
 - Export RPC URLs and funded keys (`export HARDHAT_NETWORK=sepolia`).
 - Launch with `demo/alpha-meta/bin/launch.sh --network sepolia --auto-yes`.
 - Confirm timelocks before executing queued upgrades; the generated owner diagnostics include queue status.
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Symptom | Resolution |
 | --- | --- |
