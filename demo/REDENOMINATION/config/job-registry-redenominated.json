@@ -1,0 +1,9 @@
+{
+  "jobStakeTokens": "0.001",
+  "minAgentStakeTokens": "0.1",
+  "maxJobRewardTokens": "1.0",
+  "jobDurationLimitSeconds": 604800,
+  "maxActiveJobsPerAgent": 3,
+  "feePct": 5,
+  "validatorRewardPct": 10
+}

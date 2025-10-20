@@ -1,0 +1,18 @@
+{
+  "minStakeTokens": "0.1",
+  "roleMinimums": {
+    "agentTokens": "0.1",
+    "validatorTokens": "1.0",
+    "platformTokens": "0.0"
+  },
+  "stakeRecommendations": {
+    "minTokens": "0.1",
+    "maxTokens": "0.0"
+  },
+  "feePct": 5,
+  "burnPct": 1,
+  "validatorRewardPct": 10,
+  "employerSlashPct": 50,
+  "treasurySlashPct": 50,
+  "unbondingPeriodSeconds": 604800
+}

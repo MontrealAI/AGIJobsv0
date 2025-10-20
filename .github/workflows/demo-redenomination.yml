@@ -1,0 +1,83 @@
+name: demo-redenomination
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/v2/redenominationPlaybook.ts'
+      - 'scripts/v2/launchRedenominationControlRoom.ts'
+      - 'demo/REDENOMINATION/**'
+      - '.github/workflows/demo-redenomination.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  redenomination-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Generate redenomination playbook
+        run: npm run demo:redenomination:export -- --current-supply 42000000
+
+      - name: Validate playbook structure
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'demo/REDENOMINATION/ui/export/latest.json';
+          if (!fs.existsSync(path)) {
+            throw new Error('Playbook export missing');
+          }
+          const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+          if (!data.meta || !data.meta.generatedAt) {
+            throw new Error('meta.generatedAt missing');
+          }
+          if (!data.token || !data.token.redenominationFactor) {
+            throw new Error('token.redenominationFactor missing');
+          }
+          if (!Array.isArray(data.timeline) || data.timeline.length < 3) {
+            throw new Error('timeline must contain at least three steps');
+          }
+          if (!Array.isArray(data.invariants) || data.invariants.length === 0) {
+            throw new Error('invariants missing');
+          }
+          if (!Array.isArray(data.verification) || data.verification.length === 0) {
+            throw new Error('verification commands missing');
+          }
+          console.log(`Playbook validated with ${data.timeline.length} timeline steps.`);
+          NODE
+
+      - name: Upload playbook artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redenomination-playbook
+          path: demo/REDENOMINATION/ui/export/latest.json
