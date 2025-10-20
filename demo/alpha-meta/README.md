@@ -50,6 +50,7 @@ flowchart LR
 | `alpha-meta-governance-validation.{json,md}` | Deterministic recomputation of every metric with Jarzynski, Hamiltonian, Jacobian, and owner coverage checks. |
 | `alpha-meta-ci-verification.json` | CI parity proof showing lint, tests, foundry, coverage, and summary guards enforced on `main`. |
 | `alpha-meta-owner-diagnostics.{json,md}` | Results from automated owner command scripts (Hamiltonian audit, reward engine report, upgrade queue status, compliance disclosure). |
+| `alpha-meta-owner-matrix.{json,md}` | Authoritative owner control matrix detailing every governance capability, script availability, and verification hook. |
 | `alpha-meta-full-run.{json,md}` | Timeline of the full pipeline with Mermaid timeline, metrics, and aggregated health verdict. |
 
 ## Mission manifest and plan

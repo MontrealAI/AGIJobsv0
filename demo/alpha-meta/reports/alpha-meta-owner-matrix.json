@@ -1,0 +1,145 @@
+{
+  "generatedAt": "2025-10-20T15:57:10.273Z",
+  "owner": "0xAAAABBBBCCCCDDDDEEEEFFFF0000111122223333",
+  "pauser": "0xBBBBCCCCDDDDEEEEFFFF00001111222233334444",
+  "treasury": "0xCCCCDDDDEEEEFFFF000011112222333344445555",
+  "timelockSeconds": 604800,
+  "timelockHours": 168,
+  "coverage": {
+    "fullCoverage": true,
+    "allCommandsPresent": true,
+    "allVerificationsPresent": true,
+    "satisfiedCategories": [
+      "pause",
+      "resume",
+      "parameter",
+      "governance",
+      "treasury",
+      "sentinel",
+      "upgrade",
+      "compliance",
+      "plan",
+      "monitoring"
+    ],
+    "missingCategories": []
+  },
+  "capabilities": [
+    {
+      "category": "pause",
+      "label": "Pause orchestrator",
+      "description": "Instantly halt AGI Jobs orchestration if divergence spikes.",
+      "command": "npm run owner:system-pause",
+      "commandScript": "owner:system-pause",
+      "commandStatus": "available",
+      "verification": "npm run owner:verify-control",
+      "verificationScript": "owner:verify-control",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "resume",
+      "label": "Resume orchestrator",
+      "description": "Restart execution after antifragility recovery.",
+      "command": "npm run owner:system-pause -- --action unpause",
+      "commandScript": "owner:system-pause",
+      "commandStatus": "available",
+      "verification": "npm run owner:verify-control",
+      "verificationScript": "owner:verify-control",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "parameter",
+      "label": "Thermostat update",
+      "description": "Adjust the macro temperature to stabilise energy flux.",
+      "command": "npm run thermostat:update",
+      "commandScript": "thermostat:update",
+      "commandStatus": "available",
+      "verification": "npm run reward-engine:report",
+      "verificationScript": "reward-engine:report",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "governance",
+      "label": "Hamiltonian rewrite",
+      "description": "Push updated λ/inertia parameters from physics computation.",
+      "command": "npm run owner:command-center",
+      "commandScript": "owner:command-center",
+      "commandStatus": "available",
+      "verification": "npm run owner:audit-hamiltonian",
+      "verificationScript": "owner:audit-hamiltonian",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "treasury",
+      "label": "Treasury surge router",
+      "description": "Route treasury flows via owner-specified channels.",
+      "command": "npm run owner:dashboard -- --focus treasury",
+      "commandScript": "owner:dashboard",
+      "commandStatus": "available",
+      "verification": "npm run owner:compliance-report",
+      "verificationScript": "owner:compliance-report",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "sentinel",
+      "label": "Sentinel refresh",
+      "description": "Rotate enforcement guardians before antifragility decay.",
+      "command": "npm run owner:rotate -- --role Sentinel --count 16",
+      "commandScript": "owner:rotate",
+      "commandStatus": "available",
+      "verification": "npm run monitoring:sentinels",
+      "verificationScript": "monitoring:sentinels",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "upgrade",
+      "label": "Upgrade queue",
+      "description": "Submit unstoppable upgrade bundles to the timelock queue.",
+      "command": "npm run owner:upgrade",
+      "commandScript": "owner:upgrade",
+      "commandStatus": "available",
+      "verification": "npm run owner:upgrade-status",
+      "verificationScript": "owner:upgrade-status",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "compliance",
+      "label": "Compliance broadcast",
+      "description": "Publish policy acknowledgements with evidence.",
+      "command": "npm run owner:compliance-report",
+      "commandScript": "owner:compliance-report",
+      "commandStatus": "available",
+      "verification": "npm run owner:doctor",
+      "verificationScript": "owner:doctor",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "plan",
+      "label": "Mission plan",
+      "description": "Deploy new labour missions via owner plan tooling.",
+      "command": "npm run owner:plan",
+      "commandScript": "owner:plan",
+      "commandStatus": "available",
+      "verification": "npm run owner:plan:safe",
+      "verificationScript": "owner:plan:safe",
+      "verificationStatus": "available"
+    },
+    {
+      "category": "monitoring",
+      "label": "Sentinel validation",
+      "description": "Validate monitoring sentinels and hooks.",
+      "command": "npm run monitoring:validate",
+      "commandScript": "monitoring:validate",
+      "commandStatus": "available",
+      "verification": "npm run monitoring:sentinels",
+      "verificationScript": "monitoring:sentinels",
+      "verificationStatus": "available"
+    }
+  ],
+  "monitoringSentinels": [
+    "sentinel://alpha-meta/thermostat",
+    "sentinel://alpha-meta/treasury",
+    "sentinel://alpha-meta/quantum",
+    "sentinel://alpha-meta/owner",
+    "sentinel://alpha-meta/antifragility"
+  ]
+}

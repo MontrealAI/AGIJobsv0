@@ -38,6 +38,8 @@ Verify the bundle:
 - `demo/alpha-meta/reports/alpha-meta-governance-report.md`
 - `demo/alpha-meta/reports/alpha-meta-governance-dashboard.html`
 - `demo/alpha-meta/reports/alpha-meta-owner-diagnostics.json`
+- `demo/alpha-meta/reports/alpha-meta-owner-matrix.md`
+- `demo/alpha-meta/reports/alpha-meta-owner-matrix.json`
 - `reports/agi-os/grand-summary.html`
 - `reports/asi-takeoff/mission-bundle/mission.json`
 

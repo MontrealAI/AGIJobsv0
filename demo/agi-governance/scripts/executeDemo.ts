@@ -5,6 +5,8 @@ export const REPORT_DIR = path.join(__dirname, "..", "reports");
 export const REPORT_FILE = path.join(REPORT_DIR, "governance-demo-report.md");
 export const SUMMARY_FILE = path.join(REPORT_DIR, "governance-demo-summary.json");
 export const DASHBOARD_FILE = path.join(REPORT_DIR, "governance-demo-dashboard.html");
+export const OWNER_MATRIX_JSON_FILE = path.join(REPORT_DIR, "governance-demo-owner-matrix.json");
+export const OWNER_MATRIX_MARKDOWN_FILE = path.join(REPORT_DIR, "governance-demo-owner-matrix.md");
 const DEFAULT_MISSION_FILE = path.join(__dirname, "..", "config", "mission@v1.json");
 const PACKAGE_JSON = path.join(__dirname, "..", "..", "..", "package.json");
 
@@ -14,6 +16,8 @@ export interface GovernanceDemoOptions {
   reportFile?: string;
   summaryFile?: string;
   dashboardFile?: string;
+  ownerMatrixJsonFile?: string;
+  ownerMatrixMarkdownFile?: string;
 }
 
 function resolveMissionFile(customPath?: string): string {
@@ -384,6 +388,43 @@ export type OwnerControlReport = {
   fullCoverage: boolean;
   allCommandsPresent: boolean;
   allVerificationsPresent: boolean;
+};
+
+type OwnerMatrixCapabilityStatus =
+  | "available"
+  | "manual"
+  | "missing-script"
+  | "not-configured"
+  | "missing-capability";
+
+type OwnerMatrixCapability = {
+  category: string;
+  label: string;
+  description: string;
+  command: string;
+  commandScript: string | null;
+  commandStatus: OwnerMatrixCapabilityStatus;
+  verification: string;
+  verificationScript: string | null;
+  verificationStatus: OwnerMatrixCapabilityStatus;
+};
+
+type OwnerMatrixJson = {
+  generatedAt: string;
+  owner: string;
+  pauser: string;
+  treasury: string;
+  timelockSeconds: number;
+  timelockHours: number;
+  coverage: {
+    fullCoverage: boolean;
+    allCommandsPresent: boolean;
+    allVerificationsPresent: boolean;
+    satisfiedCategories: string[];
+    missingCategories: string[];
+  };
+  capabilities: OwnerMatrixCapability[];
+  monitoringSentinels: string[];
 };
 
 export type JacobianReport = {
@@ -2024,6 +2065,183 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
 }
 
+function secondsToHours(value: number): number {
+  return value / 3_600;
+}
+
+function escapeMarkdownCell(value: string): string {
+  return value.replace(/\|/g, "\\|");
+}
+
+function ownerCapabilityStatus(capability: OwnerControlCapability): {
+  commandStatus: OwnerMatrixCapabilityStatus;
+  verificationStatus: OwnerMatrixCapabilityStatus;
+  commandLabel: string;
+  verificationLabel: string;
+} {
+  const commandLabel = capability.scriptName ?? (capability.command.trim().length > 0 ? "manual" : "n/a");
+  let commandStatus: OwnerMatrixCapabilityStatus;
+  if (!capability.present) {
+    commandStatus = "missing-capability";
+  } else if (capability.scriptName) {
+    commandStatus = capability.scriptExists ? "available" : "missing-script";
+  } else if (capability.command.trim().length > 0) {
+    commandStatus = "manual";
+  } else {
+    commandStatus = "not-configured";
+  }
+
+  const verificationLabel = capability.verificationScriptName
+    ? capability.verificationScriptName
+    : capability.verification.trim().length > 0
+      ? "manual"
+      : "n/a";
+  let verificationStatus: OwnerMatrixCapabilityStatus;
+  if (!capability.present) {
+    verificationStatus = "missing-capability";
+  } else if (capability.verificationScriptName) {
+    verificationStatus = capability.verificationScriptExists ? "available" : "missing-script";
+  } else if (capability.verification.trim().length > 0) {
+    verificationStatus = "manual";
+  } else {
+    verificationStatus = "not-configured";
+  }
+
+  return { commandStatus, verificationStatus, commandLabel, verificationLabel };
+}
+
+function buildOwnerMatrixJson(bundle: ReportBundle): OwnerMatrixJson {
+  const satisfiedCategories = bundle.owner.requiredCoverage
+    .filter((item) => item.satisfied)
+    .map((item) => item.category);
+  const missingCategories = bundle.owner.requiredCoverage
+    .filter((item) => !item.satisfied)
+    .map((item) => item.category);
+
+  const capabilities: OwnerMatrixCapability[] = bundle.owner.capabilities.map((capability) => {
+    const status = ownerCapabilityStatus(capability);
+    return {
+      category: capability.category,
+      label: capability.label,
+      description: capability.description,
+      command: capability.command,
+      commandScript: capability.scriptName,
+      commandStatus: status.commandStatus,
+      verification: capability.verification,
+      verificationScript: capability.verificationScriptName,
+      verificationStatus: status.verificationStatus,
+    };
+  });
+
+  return {
+    generatedAt: bundle.generatedAt,
+    owner: bundle.owner.owner,
+    pauser: bundle.owner.pauser,
+    treasury: bundle.owner.treasury,
+    timelockSeconds: bundle.owner.timelockSeconds,
+    timelockHours: secondsToHours(bundle.owner.timelockSeconds),
+    coverage: {
+      fullCoverage: bundle.owner.fullCoverage,
+      allCommandsPresent: bundle.owner.allCommandsPresent,
+      allVerificationsPresent: bundle.owner.allVerificationsPresent,
+      satisfiedCategories,
+      missingCategories,
+    },
+    capabilities,
+    monitoringSentinels: bundle.owner.monitoringSentinels,
+  };
+}
+
+function ownerStatusIcon(status: OwnerMatrixCapabilityStatus): string {
+  switch (status) {
+    case "available":
+      return "✅";
+    case "manual":
+      return "ℹ️";
+    case "missing-script":
+      return "⚠️";
+    case "not-configured":
+      return "⚠️";
+    case "missing-capability":
+      return "❌";
+    default:
+      return "⚠️";
+  }
+}
+
+function ownerStatusLabel(status: OwnerMatrixCapabilityStatus): string {
+  switch (status) {
+    case "available":
+      return "ready";
+    case "manual":
+      return "manual";
+    case "missing-script":
+      return "script missing";
+    case "not-configured":
+      return "configure";
+    case "missing-capability":
+      return "capability missing";
+    default:
+      return status;
+  }
+}
+
+function buildOwnerMatrixMarkdown(bundle: ReportBundle): string {
+  const { owner } = bundle;
+  const satisfied = owner.requiredCoverage.filter((item) => item.satisfied);
+  const missing = owner.requiredCoverage.filter((item) => !item.satisfied);
+
+  const rows = owner.capabilities
+    .map((capability) => {
+      const status = ownerCapabilityStatus(capability);
+      const commandCell = capability.scriptName ?? (capability.command.trim().length > 0 ? "manual" : "n/a");
+      return `| ${escapeMarkdownCell(capability.category)} | ${escapeMarkdownCell(capability.label)} | ${escapeMarkdownCell(commandCell)} | ${
+        ownerStatusIcon(status.commandStatus)
+      } ${ownerStatusLabel(status.commandStatus)} | ${escapeMarkdownCell(status.verificationLabel)} | ${
+        ownerStatusIcon(status.verificationStatus)
+      } ${ownerStatusLabel(status.verificationStatus)} |`;
+    })
+    .join("\n");
+
+  const sentinelList = owner.monitoringSentinels.length
+    ? owner.monitoringSentinels.map((sentinel) => `- ${sentinel}`).join("\n")
+    : "- (none configured)";
+
+  const coverageLines = [
+    `- Full coverage: ${owner.fullCoverage ? "✅" : "⚠️"}`,
+    `- Command scripts present: ${owner.allCommandsPresent ? "✅" : "⚠️"}`,
+    `- Verification scripts present: ${owner.allVerificationsPresent ? "✅" : "⚠️"}`,
+  ];
+
+  if (satisfied.length > 0) {
+    coverageLines.push(`- Satisfied categories: ${satisfied.map((item) => item.category).join(", ")}`);
+  }
+  if (missing.length > 0) {
+    coverageLines.push(`- Missing categories: ${missing.map((item) => item.category).join(", ")}`);
+  }
+
+  return [
+    "# Owner Control Matrix",
+    `*Generated at:* ${bundle.generatedAt}`,
+    `*Owner:* ${owner.owner}`,
+    `*Pauser:* ${owner.pauser}`,
+    `*Treasury:* ${owner.treasury}`,
+    `*Timelock:* ${owner.timelockSeconds} seconds (${secondsToHours(owner.timelockSeconds).toFixed(2)} hours)`,
+    "",
+    "## Coverage",
+    ...coverageLines,
+    "",
+    "## Capabilities",
+    "| Category | Capability | Command | Command status | Verification | Verification status |",
+    "| --- | --- | --- | --- | --- | --- |",
+    rows || "| (none) | | | | | |",
+    "",
+    "## Monitoring Sentinels",
+    sentinelList,
+    "",
+  ].join("\n");
+}
+
 function formatBps(value: number): string {
   return `${(value / 100).toFixed(2)}%`;
 }
@@ -3534,19 +3752,31 @@ export async function generateGovernanceDemo(options: GovernanceDemoOptions = {}
   const dashboardFile = path.resolve(
     options.dashboardFile ?? path.join(reportDir, path.basename(DASHBOARD_FILE)),
   );
+  const ownerMatrixJsonFile = path.resolve(
+    options.ownerMatrixJsonFile ?? path.join(reportDir, path.basename(OWNER_MATRIX_JSON_FILE)),
+  );
+  const ownerMatrixMarkdownFile = path.resolve(
+    options.ownerMatrixMarkdownFile ?? path.join(reportDir, path.basename(OWNER_MATRIX_MARKDOWN_FILE)),
+  );
 
   await mkdir(path.dirname(reportFile), { recursive: true });
   await mkdir(path.dirname(summaryFile), { recursive: true });
   await mkdir(path.dirname(dashboardFile), { recursive: true });
+  await mkdir(path.dirname(ownerMatrixJsonFile), { recursive: true });
+  await mkdir(path.dirname(ownerMatrixMarkdownFile), { recursive: true });
 
   await writeFile(reportFile, buildMarkdown(bundle), "utf8");
   await writeFile(summaryFile, JSON.stringify(buildSummary(bundle), null, 2), "utf8");
   await writeFile(dashboardFile, buildDashboardHtml(bundle), "utf8");
+  await writeFile(ownerMatrixJsonFile, JSON.stringify(buildOwnerMatrixJson(bundle), null, 2), "utf8");
+  await writeFile(ownerMatrixMarkdownFile, buildOwnerMatrixMarkdown(bundle), "utf8");
 
   if (!process.env.CI) {
     console.log(`↳ Report written to ${reportFile}`);
     console.log(`↳ Summary JSON written to ${summaryFile}`);
     console.log(`↳ Dashboard written to ${dashboardFile}`);
+    console.log(`↳ Owner matrix JSON written to ${ownerMatrixJsonFile}`);
+    console.log(`↳ Owner matrix Markdown written to ${ownerMatrixMarkdownFile}`);
   }
 
   return bundle;
