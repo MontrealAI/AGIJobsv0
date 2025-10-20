@@ -14,6 +14,7 @@ type CliOptions = {
   network?: string;
   address?: string;
   format: OutputFormat;
+  offline?: boolean;
 };
 
 type ConfigSnapshot = {
@@ -75,11 +76,22 @@ function parseArgs(argv: string[]): CliOptions {
       case '--human':
         options.format = 'human';
         break;
+      case '--offline':
+        options.offline = true;
+        break;
       default:
         throw new Error(`Unknown argument: ${arg}`);
     }
   }
   return options;
+}
+
+function isTruthyFlag(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+  const normalised = value.trim().toLowerCase();
+  return ["1", "true", "yes", "on", "offline"].includes(normalised);
 }
 
 function summariseConfig(
@@ -147,8 +159,22 @@ function formatPreview(text?: string, limit = 140): string {
 
 async function fetchOnChainSnapshot(
   address: string | undefined,
-  network?: string,
+  network: string | undefined,
+  context: { offline: boolean; config: ConfigSnapshot },
 ): Promise<OnChainSnapshot> {
+  if (context.offline) {
+    return {
+      status: 'ok',
+      network: network ?? 'offline-simulated',
+      policyURI: context.config.policyURI,
+      acknowledgement: context.config.acknowledgement,
+      policyVersion: 1n,
+      owner: context.config.acknowledgers[0] ?? ethers.ZeroAddress,
+      pendingOwner: null,
+      taxExempt: context.config.revokeList.length === 0,
+    };
+  }
+
   if (!address) {
     return { status: 'skipped', reason: 'No tax policy address configured.' };
   }
@@ -276,7 +302,14 @@ async function main(): Promise<void> {
   const { config, path: configPath, network } = loadTaxPolicyConfig({ network: cli.network });
   const configSnapshot = summariseConfig(config, configPath, network);
   const resolved = determinePolicyAddress(cli);
-  const onChain = await fetchOnChainSnapshot(resolved.address, cli.network ?? network);
+  const offlineEnv =
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_OFFLINE) ||
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_MODE);
+  const offline = Boolean(cli.offline ?? offlineEnv);
+  const onChain = await fetchOnChainSnapshot(resolved.address, cli.network ?? network, {
+    offline,
+    config: configSnapshot,
+  });
 
   let normalised: string | undefined;
   if (resolved.address) {
@@ -291,13 +324,17 @@ async function main(): Promise<void> {
     configSource: resolved.source,
   };
 
+  if (offline) {
+    (report as Record<string, unknown>).mode = 'offline';
+  }
+
   if (cli.format === 'json') {
     console.log(stringifyWithBigint(report));
   } else {
     renderHuman(report);
   }
 
-  if (onChain.status === 'error') {
+  if (!offline && onChain.status === 'error') {
     process.exitCode = 1;
   }
 }

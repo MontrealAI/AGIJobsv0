@@ -18,6 +18,7 @@ type CliOptions = {
   address?: string;
   format: OutputFormat;
   missionPath?: string;
+  offline?: boolean;
 };
 
 type RoleKey = 'agent' | 'validator' | 'operator' | 'employer';
@@ -128,11 +129,22 @@ function parseArgs(argv: string[]): CliOptions {
       case '--human':
         options.format = 'human';
         break;
+      case '--offline':
+        options.offline = true;
+        break;
       default:
         throw new Error(`Unknown argument: ${arg}`);
     }
   }
   return options;
+}
+
+function isTruthyFlag(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+  const normalised = value.trim().toLowerCase();
+  return ["1", "true", "yes", "on", "offline"].includes(normalised);
 }
 
 async function loadMissionSnapshot(missionPath?: string): Promise<MissionSnapshot | null> {
@@ -256,10 +268,72 @@ function sumRoleShares(roleShares: Record<RoleKey, number | null>): number | nul
   return total;
 }
 
+function parseToBigInt(value: string | number | null | undefined, decimals = 18): bigint | undefined {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+  const text = typeof value === 'string' ? value.trim() : value.toString();
+  if (!text) {
+    return undefined;
+  }
+  try {
+    return ethers.parseUnits(text, decimals);
+  } catch (error) {
+    const numeric = Number(text);
+    if (!Number.isFinite(numeric)) {
+      return undefined;
+    }
+    return BigInt(Math.round(numeric));
+  }
+}
+
 async function fetchOnChainSnapshot(
   address: string | undefined,
-  network?: string,
+  network: string | undefined,
+  context: { offline: boolean; config: ConfigSnapshot; mission: MissionSnapshot | null },
 ): Promise<OnChainSnapshot> {
+  if (context.offline) {
+    const roleShares: Record<RoleKey, bigint> = {
+      agent: BigInt(Math.round((context.config.roleShares.agent ?? 0) * 1e18)),
+      validator: BigInt(Math.round((context.config.roleShares.validator ?? 0) * 1e18)),
+      operator: BigInt(Math.round((context.config.roleShares.operator ?? 0) * 1e18)),
+      employer: BigInt(Math.round((context.config.roleShares.employer ?? 0) * 1e18)),
+    };
+
+    const mu: Record<RoleKey, bigint> = {
+      agent: parseToBigInt(context.config.mu.agent) ?? 0n,
+      validator: parseToBigInt(context.config.mu.validator) ?? 0n,
+      operator: parseToBigInt(context.config.mu.operator) ?? 0n,
+      employer: parseToBigInt(context.config.mu.employer) ?? 0n,
+    };
+
+    const baselineEnergy: Record<RoleKey, bigint> = {
+      agent: parseToBigInt(context.config.baselineEnergy.agent) ?? 0n,
+      validator: parseToBigInt(context.config.baselineEnergy.validator) ?? 0n,
+      operator: parseToBigInt(context.config.baselineEnergy.operator) ?? 0n,
+      employer: parseToBigInt(context.config.baselineEnergy.employer) ?? 0n,
+    };
+
+    const kappa = parseToBigInt(context.config.kappa) ?? 0n;
+    const temperature = parseToBigInt(context.config.temperature) ?? 0n;
+    const maxProofs =
+      context.config.maxProofs !== undefined
+        ? BigInt(Math.max(Math.floor(context.config.maxProofs), 0))
+        : undefined;
+
+    return {
+      status: 'ok',
+      network: network ?? 'offline-simulated',
+      treasury: context.config.treasury,
+      roleShares,
+      mu,
+      baselineEnergy,
+      kappa,
+      temperature,
+      maxProofs,
+    };
+  }
+
   if (!address) {
     return { status: 'skipped', reason: 'No reward engine address configured.' };
   }
@@ -496,11 +570,19 @@ async function main(): Promise<void> {
 
   const rewardEngineAddress = determineRewardEngineAddress(cli, config);
   const configSnapshot = summariseConfig(config, configPath, network, source);
-  const onChain = await fetchOnChainSnapshot(rewardEngineAddress, cli.network ?? network);
+  const offlineEnv =
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_OFFLINE) ||
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_MODE);
+  const offline = Boolean(cli.offline ?? offlineEnv);
+  const onChain = await fetchOnChainSnapshot(rewardEngineAddress, cli.network ?? network, {
+    offline,
+    config: configSnapshot,
+    mission,
+  });
   const roleShareTotal = sumRoleShares(configSnapshot.roleShares);
   const diagnostics = {
     roleShareTotal,
-    roleShareMatchesChain: compareShares(configSnapshot.roleShares, onChain.roleShares),
+    roleShareMatchesChain: offline ? true : compareShares(configSnapshot.roleShares, onChain.roleShares),
   };
 
   let normalisedAddress: string | undefined;
@@ -521,6 +603,10 @@ async function main(): Promise<void> {
     diagnostics,
   };
 
+  if (offline) {
+    (report as Record<string, unknown>).mode = 'offline';
+  }
+
   if (configLoadWarning && cli.format === 'human') {
     console.warn(`⚠️ ${configLoadWarning}`);
   }
@@ -531,7 +617,7 @@ async function main(): Promise<void> {
     renderHuman(report);
   }
 
-  if (diagnostics.roleShareMatchesChain === false) {
+  if (!offline && diagnostics.roleShareMatchesChain === false) {
     process.exitCode = 1;
   }
 }

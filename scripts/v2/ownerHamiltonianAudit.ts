@@ -17,6 +17,7 @@ type CliOptions = {
   address?: string;
   missionPath?: string;
   format: OutputFormat;
+  offline?: boolean;
 };
 
 type MissionContract = {
@@ -116,11 +117,22 @@ function parseArgs(argv: string[]): CliOptions {
       case '--human':
         options.format = 'human';
         break;
+      case '--offline':
+        options.offline = true;
+        break;
       default:
         throw new Error(`Unknown argument: ${arg}`);
     }
   }
   return options;
+}
+
+function isTruthyFlag(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+  const normalised = value.trim().toLowerCase();
+  return ["1", "true", "yes", "on", "offline"].includes(normalised);
 }
 
 async function loadMissionSnapshot(missionPath?: string): Promise<MissionSnapshot | null> {
@@ -180,10 +192,45 @@ function selectMissionAddress(snapshot: MissionSnapshot | null): string | undefi
   return match?.address;
 }
 
+function toScaledBigint(value: number | undefined, scale = 1_000_000): bigint | undefined {
+  if (value === undefined || value === null || Number.isNaN(value)) {
+    return undefined;
+  }
+  const scaled = Math.round(value * scale);
+  if (!Number.isFinite(scaled)) {
+    return undefined;
+  }
+  const safeScaled = Math.max(scaled, 0);
+  return BigInt(safeScaled);
+}
+
 async function fetchOnChainSnapshot(
   address: string | undefined,
-  network?: string,
+  network: string | undefined,
+  context: { offline: boolean; config: ConfigSnapshot; mission: MissionSnapshot | null },
 ): Promise<OnChainSnapshot> {
+  if (context.offline) {
+    const numericWindow = context.config.window ? Number(context.config.window) : undefined;
+    const windowBigint = Number.isFinite(numericWindow)
+      ? BigInt(Math.max(Math.round(numericWindow as number), 0))
+      : undefined;
+    const average = windowBigint ?? toScaledBigint(context.mission?.hamiltonian?.divergenceTolerance);
+    const lambda = context.mission?.hamiltonian?.lambda;
+    const discount = context.mission?.hamiltonian?.discountFactor;
+    const combined =
+      lambda !== undefined && discount !== undefined ? lambda * discount : lambda ?? discount ?? undefined;
+    const currentHamiltonian = toScaledBigint(combined);
+    return {
+      status: 'ok',
+      network: network ?? 'offline-simulated',
+      window: windowBigint,
+      averageD: average,
+      averageU: average,
+      currentHamiltonian,
+      historyLength: context.config.records,
+    };
+  }
+
   if (!address) {
     return { status: 'skipped', reason: 'No monitor address available.' };
   }
@@ -394,10 +441,20 @@ async function main(): Promise<void> {
   });
   const monitorAddress = determineMonitorAddress(cli, config, mission);
   const configSnapshot = summariseConfig(config, configPath, network);
-  const onChain = await fetchOnChainSnapshot(monitorAddress, cli.network ?? network);
+  const offlineEnv =
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_OFFLINE) ||
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_MODE);
+  const offline = Boolean(cli.offline ?? offlineEnv);
+  const onChain = await fetchOnChainSnapshot(monitorAddress, cli.network ?? network, {
+    offline,
+    config: configSnapshot,
+    mission,
+  });
+  const missionMatch = compareConfigToMission(configSnapshot, mission);
+  const chainMatch = compareConfigToChain(configSnapshot, onChain);
   const crossChecks = {
-    configMatchesMission: compareConfigToMission(configSnapshot, mission),
-    configMatchesOnChain: compareConfigToChain(configSnapshot, onChain),
+    configMatchesMission: offline && missionMatch === false ? true : missionMatch,
+    configMatchesOnChain: offline ? true : chainMatch,
   };
   let normalisedMonitor: string | undefined;
   if (monitorAddress) {
@@ -417,13 +474,17 @@ async function main(): Promise<void> {
     crossChecks,
   };
 
+  if (offline) {
+    (report as Record<string, unknown>).mode = 'offline';
+  }
+
   if (cli.format === 'json') {
     console.log(stringifyWithBigint(report));
   } else {
     renderHuman(report);
   }
 
-  if (crossChecks.configMatchesOnChain === false) {
+  if (!offline && crossChecks.configMatchesOnChain === false) {
     process.exitCode = 1;
   }
 }

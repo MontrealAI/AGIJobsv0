@@ -13,6 +13,9 @@ export interface OwnerDiagnosticsOptions {
   reportDir?: string;
   jsonFile?: string;
   markdownFile?: string;
+  missionFile?: string;
+  offline?: boolean;
+  env?: Record<string, string | undefined>;
 }
 
 const COMMANDS = [
@@ -21,28 +24,42 @@ const COMMANDS = [
     script: "owner:audit-hamiltonian",
     args: ["--json"],
     description: "Hamiltonian monitor ↔ mission manifest alignment",
+    supportsMission: true,
+    supportsOffline: true,
   },
   {
     id: "rewardEngine",
     script: "reward-engine:report",
     args: ["--json"],
     description: "Reward engine treasury / thermodynamic calibration",
+    supportsMission: true,
+    supportsOffline: true,
   },
   {
     id: "upgradeStatus",
     script: "owner:upgrade-status",
     args: ["--json"],
     description: "Timelock governance queue readiness",
+    supportsMission: true,
+    supportsOffline: true,
   },
   {
     id: "compliance",
     script: "owner:compliance-report",
     args: ["--json"],
     description: "Tax policy disclosure + acknowledgement status",
+    supportsMission: false,
+    supportsOffline: true,
   },
 ] as const;
 
 type CommandSpec = (typeof COMMANDS)[number];
+
+type NormalisedOptions = {
+  offline: boolean;
+  missionFile?: string;
+  env: Record<string, string | undefined>;
+};
 
 type StatusProbe = {
   path: string;
@@ -78,6 +95,14 @@ export type AggregatedReport = {
 
 function npmCommand(): string {
   return process.platform === "win32" ? "npm.cmd" : "npm";
+}
+
+function isTruthyFlag(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+  const normalised = value.trim().toLowerCase();
+  return ["1", "true", "yes", "on", "offline"].includes(normalised);
 }
 
 function extractJson(stdout: string): { data?: unknown; error?: string } {
@@ -350,14 +375,21 @@ function renderMarkdown(report: AggregatedReport): string {
   return lines.join("\n");
 }
 
-async function runCommand(spec: CommandSpec): Promise<CommandResult> {
-  const args = ["run", spec.script, "--", ...spec.args];
-  const command = `${npmCommand()} ${["run", spec.script, "--", ...spec.args].join(" ")}`;
+async function runCommand(spec: CommandSpec, options: NormalisedOptions): Promise<CommandResult> {
+  const dynamicArgs: string[] = [...spec.args];
+  if (options.offline && spec.supportsOffline) {
+    dynamicArgs.push("--offline");
+  }
+  if (options.missionFile && spec.supportsMission) {
+    dynamicArgs.push("--mission", options.missionFile);
+  }
+  const args = ["run", spec.script, "--", ...dynamicArgs];
+  const command = `${npmCommand()} ${args.join(" ")}`;
   return new Promise((resolve) => {
     const start = performance.now();
     const child = spawn(npmCommand(), args, {
       cwd: ROOT_DIR,
-      env: { ...process.env, FORCE_COLOR: "0" },
+      env: { ...process.env, ...options.env, FORCE_COLOR: "0" },
     });
 
     let stdout = "";
@@ -430,9 +462,24 @@ export async function collectOwnerDiagnostics(options: OwnerDiagnosticsOptions =
   await mkdir(path.dirname(jsonPath), { recursive: true });
   await mkdir(path.dirname(markdownPath), { recursive: true });
 
+  const offlineEnv =
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_OFFLINE) ||
+    isTruthyFlag(process.env.AGI_OWNER_DIAGNOSTICS_MODE);
+  const offline = Boolean(options.offline ?? offlineEnv);
+  const missionCandidate =
+    options.missionFile ??
+    process.env.AGI_OWNER_DIAGNOSTICS_MISSION ??
+    process.env.AGI_GOVERNANCE_MISSION_FILE;
+  const missionFile = missionCandidate ? path.resolve(missionCandidate) : undefined;
+  const normalisedOptions: NormalisedOptions = {
+    offline,
+    missionFile,
+    env: options.env ?? {},
+  };
+
   const results: CommandResult[] = [];
   for (const command of COMMANDS) {
-    const result = await runCommand(command);
+    const result = await runCommand(command, normalisedOptions);
     results.push(result);
     if (!silent) {
       const label = `${emojiForSeverity(result.severity)} [${command.script}] ${result.summary}`;
@@ -460,6 +507,15 @@ export async function collectOwnerDiagnostics(options: OwnerDiagnosticsOptions =
     totals,
     readiness,
   };
+
+  if (offline) {
+    (report as Record<string, unknown>).mode = 'offline';
+    if (missionFile) {
+      (report as Record<string, unknown>).missionFile = missionFile;
+    }
+  } else if (missionFile) {
+    (report as Record<string, unknown>).missionFile = missionFile;
+  }
 
   await writeFile(jsonPath, JSON.stringify(report, null, 2), "utf8");
   await writeFile(markdownPath, renderMarkdown(report), "utf8");
