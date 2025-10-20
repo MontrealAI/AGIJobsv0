@@ -276,7 +276,7 @@ function formatDate(iso: string): string {
 }
 
 function escapeLabel(label: string): string {
-  return label.replace(/"/g, '\"');
+  return label.replace(/"/g, '\\"');
 }
 
 function sanitizeNodeId(prefix: string, value: string): string {
