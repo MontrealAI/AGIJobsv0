@@ -391,7 +391,9 @@
       "energyMarginFloorKJ": 25200,
       "ownerCoverageMinimum": 0.96,
       "superintelligenceMinimum": 0.95,
-      "quantumConfidenceMinimum": 0.952
+      "quantumConfidenceMinimum": 0.952,
+      "ownerSupremacyMinimum": 0.975,
+      "thermoQuantumDriftMaximumKJ": 400
     },
     "signatureWeights": {
       "thermodynamic": 0.26,

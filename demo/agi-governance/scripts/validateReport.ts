@@ -418,6 +418,24 @@ export async function validateGovernanceDemo(options: ValidationOptions = {}): P
     ),
   );
   results.push(
+    buildNumericCheck(
+      "alpha-field:owner-supremacy",
+      "Owner supremacy index",
+      alphaField.ownerSupremacyIndex,
+      summary.alphaField.ownerSupremacyIndex,
+      1e-6,
+    ),
+  );
+  results.push(
+    buildNumericCheck(
+      "alpha-field:thermo-quantum-delta",
+      "Thermo ↔ quantum delta",
+      alphaField.thermoQuantumDeltaKJ,
+      summary.alphaField.thermoQuantumDeltaKJ,
+      1e-6,
+    ),
+  );
+  results.push(
     buildBooleanCheck(
       "alpha-field:stackelberg-bound",
       "Stackelberg advantage within bound",
@@ -483,6 +501,14 @@ export async function validateGovernanceDemo(options: ValidationOptions = {}): P
   );
   results.push(
     buildBooleanCheck(
+      "alpha-field:owner-supremacy-minimum",
+      "Owner supremacy minimum met",
+      alphaField.ownerSupremacySatisfied,
+      summary.alphaField.ownerSupremacySatisfied,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
       "alpha-field:energy-margin",
       "Energy margin floor met",
       alphaField.energyMarginSatisfied,
@@ -495,6 +521,14 @@ export async function validateGovernanceDemo(options: ValidationOptions = {}): P
       "Quantum confidence floor satisfied",
       alphaField.quantumConfidenceSatisfied,
       summary.alphaField.quantumConfidenceSatisfied,
+    ),
+  );
+  results.push(
+    buildBooleanCheck(
+      "alpha-field:thermo-quantum-alignment",
+      "Thermo ↔ quantum alignment satisfied",
+      alphaField.thermoQuantumAligned,
+      summary.alphaField.thermoQuantumAligned,
     ),
   );
   results.push(
