@@ -203,6 +203,7 @@
     "demo:sovereign-constellation:victory": "node demo/sovereign-constellation/bin/asi-victory-plan.mjs",
     "demo:agi-governance": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/executeDemo.ts",
     "demo:agi-governance:validate": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/validateReport.ts",
+    "demo:alpha-meta": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/orchestrateAlphaMeta.ts",
     "demo:agi-governance:ci": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/verifyCiStatus.ts",
     "demo:agi-governance:owner-diagnostics": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/collectOwnerDiagnostics.ts",
     "demo:agi-governance:full": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/runFullDemo.ts",
