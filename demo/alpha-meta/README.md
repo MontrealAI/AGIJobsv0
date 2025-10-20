@@ -102,6 +102,9 @@ Modify either file to rehearse new constellations without touching TypeScript.
 # Regenerate dossier only
 npm run demo:alpha-meta
 
+# Deterministic invariants/manifest audit
+npm run demo:alpha-meta:consistency
+
 # Re-run validation/Jarzynski/owner coverage checks
 npm run demo:alpha-meta:validate
 

@@ -1,0 +1,149 @@
+{
+  "generatedAt": "2025-10-20T18:38:18.557Z",
+  "durationMs": 28700.754701000027,
+  "baseline": {
+    "gibbsFreeEnergyKJ": 222153.726,
+    "jarzynskiLogExpectation": -38.41439448414971,
+    "jarzynskiLogTheoretical": -37.911526076706544,
+    "equilibriumProfile": [
+      0.30667172100075735,
+      0.3328278999241852,
+      0.36050037907505755
+    ]
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "gibbsFreeEnergyKJ": 222153.726,
+      "gibbsDelta": 0,
+      "jarzynskiLogExpectation": -38.41439448414971,
+      "jarzynskiExpectationDelta": 0,
+      "jarzynskiLogTheoretical": -37.911526076706544,
+      "jarzynskiTheoreticalDelta": 0,
+      "equilibriumProfile": [
+        0.30667172100075735,
+        0.3328278999241852,
+        0.36050037907505755
+      ],
+      "equilibriumDelta": 0,
+      "durationMs": 9717.991832
+    },
+    {
+      "iteration": 2,
+      "gibbsFreeEnergyKJ": 222153.726,
+      "gibbsDelta": 0,
+      "jarzynskiLogExpectation": -38.41439448414971,
+      "jarzynskiExpectationDelta": 0,
+      "jarzynskiLogTheoretical": -37.911526076706544,
+      "jarzynskiTheoreticalDelta": 0,
+      "equilibriumProfile": [
+        0.30667172100075735,
+        0.3328278999241852,
+        0.36050037907505755
+      ],
+      "equilibriumDelta": 0,
+      "durationMs": 9331.521796000015
+    },
+    {
+      "iteration": 3,
+      "gibbsFreeEnergyKJ": 222153.726,
+      "gibbsDelta": 0,
+      "jarzynskiLogExpectation": -38.41439448414971,
+      "jarzynskiExpectationDelta": 0,
+      "jarzynskiLogTheoretical": -37.911526076706544,
+      "jarzynskiTheoreticalDelta": 0,
+      "equilibriumProfile": [
+        0.30667172100075735,
+        0.3328278999241852,
+        0.36050037907505755
+      ],
+      "equilibriumDelta": 0,
+      "durationMs": 9650.901511000004
+    }
+  ],
+  "manifest": {
+    "checked": [
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-governance-summary.json",
+        "sha256Matches": true,
+        "bytesMatch": true,
+        "expectedSha256": "6510458b5968b08eb02a5f2a6df352d3e5d5a7c8215891ac0ada2d5c8e7da73c",
+        "actualSha256": "6510458b5968b08eb02a5f2a6df352d3e5d5a7c8215891ac0ada2d5c8e7da73c",
+        "expectedBytes": 21517,
+        "actualBytes": 21517
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-governance-report.md",
+        "sha256Matches": true,
+        "bytesMatch": true,
+        "expectedSha256": "f368708b6532e19f29b946ab7bdfc4cd0a4691c56fa378462042072facc3d432",
+        "actualSha256": "f368708b6532e19f29b946ab7bdfc4cd0a4691c56fa378462042072facc3d432",
+        "expectedBytes": 18066,
+        "actualBytes": 18066
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-governance-dashboard.html",
+        "sha256Matches": true,
+        "bytesMatch": true,
+        "expectedSha256": "889f7e88316fbe6e91b7195e1224db9df1ec4383154d16cae963bf0ed0a8900d",
+        "actualSha256": "889f7e88316fbe6e91b7195e1224db9df1ec4383154d16cae963bf0ed0a8900d",
+        "expectedBytes": 27078,
+        "actualBytes": 27078
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-owner-matrix.json",
+        "sha256Matches": true,
+        "bytesMatch": true,
+        "expectedSha256": "77ec0e5d13efaaebf00d6de6a49792ed7d9a0a8bf6637ad40c7f5cf4c8575047",
+        "actualSha256": "77ec0e5d13efaaebf00d6de6a49792ed7d9a0a8bf6637ad40c7f5cf4c8575047",
+        "expectedBytes": 5205,
+        "actualBytes": 5205
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-owner-matrix.md",
+        "sha256Matches": true,
+        "bytesMatch": true,
+        "expectedSha256": "c08ece43d8adbc20fe2a1882c912f51636a7d5e7d57fdb4fbdbf77cbc4c53889",
+        "actualSha256": "c08ece43d8adbc20fe2a1882c912f51636a7d5e7d57fdb4fbdbf77cbc4c53889",
+        "expectedBytes": 1814,
+        "actualBytes": 1814
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-consistency.json",
+        "sha256Matches": true,
+        "bytesMatch": true,
+        "expectedSha256": "3a2af7aee6ca0a5171269afbfd593be03d5c6cbe9fcbbef92b7dbf162b9f237a",
+        "actualSha256": "3a2af7aee6ca0a5171269afbfd593be03d5c6cbe9fcbbef92b7dbf162b9f237a",
+        "expectedBytes": 5098,
+        "actualBytes": 5098
+      },
+      {
+        "path": "demo/alpha-meta/reports/alpha-meta-consistency.md",
+        "sha256Matches": true,
+        "bytesMatch": true,
+        "expectedSha256": "4ab3a7a5e1e42f4891b9cf83cab564d7c4f33e88c2abbd664f4881d8000a3d66",
+        "actualSha256": "4ab3a7a5e1e42f4891b9cf83cab564d7c4f33e88c2abbd664f4881d8000a3d66",
+        "expectedBytes": 1140,
+        "actualBytes": 1140
+      }
+    ],
+    "missing": []
+  },
+  "tolerances": {
+    "gibbsFreeEnergyKJ": 0.000001,
+    "jarzynskiLog": 1e-9,
+    "equilibrium": 1e-9
+  },
+  "maxDeviation": {
+    "gibbsFreeEnergyKJ": 0,
+    "jarzynskiLogExpectation": 0,
+    "jarzynskiLogTheoretical": 0,
+    "equilibrium": 0
+  },
+  "success": true,
+  "warnings": [],
+  "outputs": {
+    "json": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-consistency.json",
+    "markdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-consistency.md"
+  }
+}

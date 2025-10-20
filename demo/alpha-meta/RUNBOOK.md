@@ -166,6 +166,7 @@ npm run lint:check
 npm test
 npm run coverage:check
 npm run demo:alpha-meta:ci
+npm run demo:alpha-meta:consistency
 npm run demo:alpha-meta:triangulate
 npm run owner:verify-control
 npm run ci:verify-branch-protection
