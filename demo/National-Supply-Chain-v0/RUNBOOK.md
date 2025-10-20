@@ -46,6 +46,13 @@ npm run demo:national-supply-chain:export
 ```
 This writes `demo/National-Supply-Chain-v0/ui/export/latest.json`.
 
+Cross-check the export with both validation engines:
+```bash
+npm run demo:national-supply-chain:cross-verify
+```
+The cross-validator enforces the Zod schema, verifies chronological ordering,
+and confirms that every minted credential maps to an orchestrated scenario.
+
 Immediately validate the invariants that prove unstoppable governance:
 ```bash
 npm run demo:national-supply-chain:validate
@@ -80,8 +87,9 @@ npm run demo:national-supply-chain:control-room
 ## 6. Continuous verification (CI)
 
 The repository runs `.github/workflows/demo-national-supply-chain.yml` on every
-relevant pull request. The workflow executes the export command, validates that
-`timeline`, `ownerActions`, `scenarios`, `market.agentPortfolios`, and
+relevant pull request. The workflow executes the export command, runs both the
+cross-verifier and the imperative validator, checks that `timeline`,
+`ownerActions`, `scenarios`, `market.agentPortfolios`, and
 `ownerControl.baseline` are populated, and uploads the transcript artefact. A
 failed workflow blocks merges, ensuring the demo always remains executable.
 
