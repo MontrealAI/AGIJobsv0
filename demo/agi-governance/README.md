@@ -25,6 +25,7 @@ The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stac
 | [`scripts/validateReport.ts`](scripts/validateReport.ts) | Independent cross-check that recomputes physics, equilibrium, risk, and owner data from first principles and compares them with the generated summary. |
 | [`reports/`](reports) | Generated artefacts (`governance-demo-report.md`, `ci-verification.json`, etc.) are written here so they can be archived from CI. |
 | [`reports/governance-demo-dashboard.html`](reports/governance-demo-dashboard.html) | Immersive, mermaid-rich web console that renders the mission as an interactive UI for non-technical owners. |
+| [`alpha-v16/`](alpha-v16) | ChronoSovereign α-field v16 mission pack with thermodynamic clocking, quantum alignment, and CI(v2) enforcement tuned for owner-dominant control. |
 | [`alpha-v15/`](alpha-v15) | OmegaSovereign α-field v15 mission pack with expansion governance, resilience drills, and the most aggressive physics/game-theory instrumentation yet. |
 | [`alpha-v14/`](alpha-v14) | HyperSovereign α-field v14 mission pack with unstoppable owner supremacy, quantum lattice instrumentation, and CI hardening. |
 | [`alpha-v13/`](alpha-v13) | Self-contained α-field v13 mission pack derived from the governance paper; includes its own manifest, scripts, and runbook for non-technical execution. |
@@ -105,6 +106,10 @@ The command writes `reports/governance-demo-full-run.json` and `.md`, each summa
 1. Edit `config/mission@v1.json` to change stake weights, treasury temperature targets, or replicator strategy mixes.
 2. Re-run `npm run demo:agi-governance` to produce a new report. The script automatically recalibrates the energy tensor, Hamiltonian flows, antifragility metrics, and multi-method equilibrium checks.
 3. For on-chain execution, follow the `RUNBOOK.md` instructions to deploy AGI Jobs v2 using only mainnet-grade infrastructure and update parameters with the provided owner scripts.
+
+### α-field v16 ChronoSovereign mission pack
+
+Need thermodynamic clocking, quantum alignment guarantees, and CI(v2) enforcement tuned for unstoppable owner dominance? Launch [`alpha-v16/`](alpha-v16). It ships with the ChronoSovereign manifest, cinematic dashboard, and the full suite of orchestrators (`runMission`, `validateMission`, `verifyCi`, `ownerDiagnostics`, `fullPipeline`) exposed through `npm run demo:agi-governance:alpha-v16*` so a non-technical owner can execute, verify, and archive the mission with a handful of copy-paste commands.
 
 ### α-field v15 OmegaSovereign mission pack
 
