@@ -1,33 +1,33 @@
 {
-  "generatedAt": "2025-10-20T16:26:22.774Z",
-  "totalDurationMs": 90904.811383,
+  "generatedAt": "2025-10-20T16:59:45.529Z",
+  "totalDurationMs": 82810.295389,
   "steps": [
     {
       "id": "generate",
       "label": "Generate dossier",
       "status": "success",
-      "durationMs": 35063.398479999996,
+      "durationMs": 31831.381075999998,
       "details": "Free-energy margin 222153.73 kJ · Max method deviation 0.849374"
     },
     {
       "id": "validate",
       "label": "Validate physics",
       "status": "success",
-      "durationMs": 36627.888058,
+      "durationMs": 33096.511555000005,
       "details": "All 58 checks passed"
     },
     {
       "id": "ci",
       "label": "Audit CI shield",
       "status": "success",
-      "durationMs": 15.47746900000493,
+      "durationMs": 15.987780000010389,
       "details": "All enforcement guards locked."
     },
     {
       "id": "owner",
       "label": "Owner diagnostics",
       "status": "success",
-      "durationMs": 19197.678577,
+      "durationMs": 17866.071792999996,
       "details": "All owner automation commands executed successfully."
     }
   ],
@@ -74,6 +74,9 @@
     "validationMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-governance-validation.md",
     "ciReport": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-ci-verification.json",
     "ownerJson": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-diagnostics.json",
-    "ownerMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-diagnostics.md"
+    "ownerMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-diagnostics.md",
+    "fullRunJson": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-full-run.json",
+    "fullRunMarkdown": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-full-run.md",
+    "manifest": "/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-manifest.json"
   }
 }

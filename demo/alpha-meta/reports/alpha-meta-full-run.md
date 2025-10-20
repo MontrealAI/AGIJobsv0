@@ -1,6 +1,6 @@
 # Full Governance Demonstration Run
-*Generated at:* 2025-10-20T16:26:22.774Z
-*Total runtime:* 90.90 s
+*Generated at:* 2025-10-20T16:59:45.529Z
+*Total runtime:* 82.81 s
 
 ```mermaid
 graph LR
@@ -19,10 +19,10 @@ graph LR
 
 | Step | Status | Duration | Details |
 | --- | --- | --- | --- |
-| Generate dossier | ✅ | 35.06 s | \|F\|r\|e\|e\|-\|e\|n\|e\|r\|g\|y\| \|m\|a\|r\|g\|i\|n\| \|2\|2\|2\|1\|5\|3\|.\|7\|3\| \|k\|J\| \|·\| \|M\|a\|x\| \|m\|e\|t\|h\|o\|d\| \|d\|e\|v\|i\|a\|t\|i\|o\|n\| \|0\|.\|8\|4\|9\|3\|7\|4\| |
-| Validate physics | ✅ | 36.63 s | \|A\|l\|l\| \|5\|8\| \|c\|h\|e\|c\|k\|s\| \|p\|a\|s\|s\|e\|d\| |
+| Generate dossier | ✅ | 31.83 s | \|F\|r\|e\|e\|-\|e\|n\|e\|r\|g\|y\| \|m\|a\|r\|g\|i\|n\| \|2\|2\|2\|1\|5\|3\|.\|7\|3\| \|k\|J\| \|·\| \|M\|a\|x\| \|m\|e\|t\|h\|o\|d\| \|d\|e\|v\|i\|a\|t\|i\|o\|n\| \|0\|.\|8\|4\|9\|3\|7\|4\| |
+| Validate physics | ✅ | 33.10 s | \|A\|l\|l\| \|5\|8\| \|c\|h\|e\|c\|k\|s\| \|p\|a\|s\|s\|e\|d\| |
 | Audit CI shield | ✅ | 0.02 s | \|A\|l\|l\| \|e\|n\|f\|o\|r\|c\|e\|m\|e\|n\|t\| \|g\|u\|a\|r\|d\|s\| \|l\|o\|c\|k\|e\|d\|.\| |
-| Owner diagnostics | ✅ | 19.20 s | \|A\|l\|l\| \|o\|w\|n\|e\|r\| \|a\|u\|t\|o\|m\|a\|t\|i\|o\|n\| \|c\|o\|m\|m\|a\|n\|d\|s\| \|e\|x\|e\|c\|u\|t\|e\|d\| \|s\|u\|c\|c\|e\|s\|s\|f\|u\|l\|l\|y\|.\| |
+| Owner diagnostics | ✅ | 17.87 s | \|A\|l\|l\| \|o\|w\|n\|e\|r\| \|a\|u\|t\|o\|m\|a\|t\|i\|o\|n\| \|c\|o\|m\|m\|a\|n\|d\|s\| \|e\|x\|e\|c\|u\|t\|e\|d\| \|s\|u\|c\|c\|e\|s\|s\|f\|u\|l\|l\|y\|.\| |
 
 ## Key Metrics
 - Gibbs free energy: 222153.73 kJ
@@ -61,6 +61,9 @@ graph LR
 - CI verification: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-ci-verification.json`
 - Owner diagnostics JSON: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-diagnostics.json`
 - Owner diagnostics Markdown: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-owner-diagnostics.md`
+- Full-run JSON: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-full-run.json`
+- Full-run Markdown: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-full-run.md`
+- Manifest: `/workspace/AGIJobsv0/demo/alpha-meta/reports/alpha-meta-manifest.json`
 
 > ✅ CI shield verified with all guards active.
 > ✅ Owner automation ready without warnings.

@@ -1,0 +1,72 @@
+{
+  "generatedAt": "2025-10-20T16:59:46.655Z",
+  "root": "/workspace/AGIJobsv0",
+  "files": 13,
+  "entries": [
+    {
+      "path": "demo/agi-governance/config/mission@v1.json",
+      "sha256": "6b62cb88625631f0e3233747d8dc327df487285fe1fcd7230146380b87a638de",
+      "bytes": 12395
+    },
+    {
+      "path": "demo/agi-governance/reports/ci-verification.json",
+      "sha256": "96d62ca8c956d1bca25a42f8983072f0ce512e3d17fae4dac9f067f18442849f",
+      "bytes": 1493
+    },
+    {
+      "path": "demo/agi-governance/reports/governance-demo-dashboard.html",
+      "sha256": "d259f50f32db73da1cb211a82e761745b309a1035ab14410eb2dd90bdc389796",
+      "bytes": 25589
+    },
+    {
+      "path": "demo/agi-governance/reports/governance-demo-full-run.json",
+      "sha256": "07971100caf4052546d69b344525d0176abce93e95cf2208faf779a4a7880999",
+      "bytes": 3853
+    },
+    {
+      "path": "demo/agi-governance/reports/governance-demo-full-run.md",
+      "sha256": "6fbba8c6b6d86acb0bfe2462ec3f947f877a84f69054b5bf2567a5d1fe5008bf",
+      "bytes": 4962
+    },
+    {
+      "path": "demo/agi-governance/reports/governance-demo-owner-matrix.json",
+      "sha256": "17558c4007c0341a68c5387d6d63b2f616239d69d684441ea8fa93bfd2227ec3",
+      "bytes": 4388
+    },
+    {
+      "path": "demo/agi-governance/reports/governance-demo-owner-matrix.md",
+      "sha256": "e7307524f627246a94f0426fc605adf86f9b583e568162460b418714669d38f2",
+      "bytes": 1500
+    },
+    {
+      "path": "demo/agi-governance/reports/governance-demo-report.md",
+      "sha256": "93a01784d9c48e29dd24b53e841f84e1ffff5f7eda9ef295adcebea9a24f72c9",
+      "bytes": 16766
+    },
+    {
+      "path": "demo/agi-governance/reports/governance-demo-summary.json",
+      "sha256": "57d9ba5a7d177a7b103c181bb2f00c473ee0827a4f4f41de1164aea5c933d096",
+      "bytes": 18687
+    },
+    {
+      "path": "demo/agi-governance/reports/governance-demo-validation.json",
+      "sha256": "a74469b476bfa37bae7f553889097e54b2af1b82d4d59ac62b5dcafee2ac09e5",
+      "bytes": 13462
+    },
+    {
+      "path": "demo/agi-governance/reports/governance-demo-validation.md",
+      "sha256": "64b1f1917502af05e2e99bfd5d7f342cc0d0a3bc98577b889b26c169c58b79f3",
+      "bytes": 11933
+    },
+    {
+      "path": "demo/agi-governance/reports/owner-diagnostics.json",
+      "sha256": "8c4bf11218525be0fdd094225b0f4e1a6e65102bc415edf0ee54f098f4d879d9",
+      "bytes": 12184
+    },
+    {
+      "path": "demo/agi-governance/reports/owner-diagnostics.md",
+      "sha256": "7fa6e6841c331249ad04edcd943b8fdfde38caafa06eff0ecf16a88096c921fa",
+      "bytes": 1599
+    }
+  ]
+}
