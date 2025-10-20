@@ -235,6 +235,7 @@
     "demo:alpha-meta:validate": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/validateMission.ts",
     "demo:alpha-meta:ci": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/verifyCi.ts",
     "demo:alpha-meta:owner": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/ownerDiagnostics.ts",
+    "demo:alpha-meta:owner-audit": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/auditOwnerSupremacy.ts",
     "demo:alpha-meta:triangulate": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/triangulateMission.ts",
     "demo:alpha-meta:full": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/fullPipeline.ts",
     "demo:national-supply-chain": "npx hardhat run --no-compile --network hardhat scripts/v2/nationalSupplyChainGrandDemo.ts",
