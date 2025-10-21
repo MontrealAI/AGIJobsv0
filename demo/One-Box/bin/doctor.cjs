@@ -4,8 +4,9 @@ const {
   loadEnvironment,
   resolveConfig,
   createDemoUrl,
+  isUnsetEnvValue,
 } = require('../lib/launcher.js');
-const { probeRpc } = require('../lib/rpc.js');
+const { probeRpc, fetchAccountBalance } = require('../lib/rpc.js');
 
 function formatStatus(label, value) {
   const padded = label.padEnd(24, ' ');
@@ -17,6 +18,16 @@ function formatStatus(label, value) {
   const demoDir = __dirname;
   const env = loadEnvironment({ rootDir, demoDir });
   const config = resolveConfig(env, { allowPartial: true });
+  const relayerKeyConfigured = !isUnsetEnvValue(env.ONEBOX_RELAYER_PRIVATE_KEY);
+  let relayerAddress = null;
+  if (relayerKeyConfigured) {
+    try {
+      const { Wallet } = await import('ethers');
+      relayerAddress = new Wallet(env.ONEBOX_RELAYER_PRIVATE_KEY).address;
+    } catch (error) {
+      console.log('⚠️  Unable to derive relayer address from provided key.');
+    }
+  }
 
   console.log('AGI Jobs One-Box configuration check');
   console.log('====================================');
@@ -31,9 +42,20 @@ function formatStatus(label, value) {
   }
 
   console.log('Runtime summary:');
-  formatStatus('RPC_URL', env.RPC_URL ?? '(unset)');
-  formatStatus('JOB_REGISTRY_ADDRESS', env.JOB_REGISTRY_ADDRESS ?? '(unset)');
-  formatStatus('ONEBOX_RELAYER_PRIVATE_KEY', env.ONEBOX_RELAYER_PRIVATE_KEY ? '(set)' : '(unset)');
+  const rpcDisplay = env.RPC_URL
+    ? `${env.RPC_URL}${isUnsetEnvValue(env.RPC_URL, { treatZeroAddress: false }) ? ' (placeholder)' : ''}`
+    : '(unset)';
+  const jobDisplay = env.JOB_REGISTRY_ADDRESS
+    ? `${env.JOB_REGISTRY_ADDRESS}${isUnsetEnvValue(env.JOB_REGISTRY_ADDRESS) ? ' (placeholder)' : ''}`
+    : '(unset)';
+  formatStatus('RPC_URL', rpcDisplay);
+  formatStatus('JOB_REGISTRY_ADDRESS', jobDisplay);
+  const relayerKeyStatus = !env.ONEBOX_RELAYER_PRIVATE_KEY
+    ? '(unset)'
+    : relayerKeyConfigured
+    ? '(set)'
+    : '(placeholder)';
+  formatStatus('ONEBOX_RELAYER_PRIVATE_KEY', relayerKeyStatus);
   formatStatus('Orchestrator port', String(config.orchestratorPort));
   formatStatus('UI port', String(config.uiPort));
   formatStatus('Prefix', config.prefix || '(root)');
@@ -41,6 +63,13 @@ function formatStatus(label, value) {
   formatStatus('Public orchestrator', config.publicOrchestratorUrl);
   if (config.apiToken) {
     formatStatus('API token', 'provided');
+  }
+  if (relayerAddress) {
+    formatStatus('Relayer address', relayerAddress);
+  } else if (relayerKeyConfigured) {
+    formatStatus('Relayer address', '⚠️  Unable to derive from supplied key.');
+  } else {
+    formatStatus('Relayer address', '(not configured)');
   }
   console.log('');
 
@@ -88,10 +117,38 @@ function formatStatus(label, value) {
     } else {
       formatStatus('Job registry', '⚠️  Address not provided.');
     }
+    if (relayerAddress) {
+      const balance = await fetchAccountBalance({
+        rpcUrl: env.RPC_URL,
+        address: relayerAddress,
+      });
+      if (balance.status === 'ok') {
+        formatStatus('Relayer balance', `${balance.balanceEther} ETH`);
+      } else {
+        formatStatus(
+          'Relayer balance',
+          `⚠️  ${balance.error ?? 'Unable to fetch balance.'}`
+        );
+      }
+    } else if (relayerKeyConfigured) {
+      formatStatus('Relayer balance', '⚠️  Provide a valid relayer key to inspect funding.');
+    } else {
+      formatStatus('Relayer balance', '⚠️  Configure ONEBOX_RELAYER_PRIVATE_KEY to evaluate funding.');
+    }
   } else if (rpcProbe.status === 'missing') {
     formatStatus('Job registry', '⚠️  Set JOB_REGISTRY_ADDRESS once deployment is live.');
+    if (relayerAddress) {
+      formatStatus('Relayer balance', '⚠️  RPC_URL missing. Balance check skipped.');
+    } else if (!relayerKeyConfigured) {
+      formatStatus('Relayer balance', '⚠️  Configure ONEBOX_RELAYER_PRIVATE_KEY to evaluate funding.');
+    }
   } else {
     formatStatus('Job registry', '⚠️  RPC unreachable. Bytecode verification skipped.');
+    if (relayerAddress) {
+      formatStatus('Relayer balance', '⚠️  RPC unreachable. Balance check skipped.');
+    } else if (!relayerKeyConfigured) {
+      formatStatus('Relayer balance', '⚠️  Configure ONEBOX_RELAYER_PRIVATE_KEY to evaluate funding.');
+    }
   }
   console.log('');
 

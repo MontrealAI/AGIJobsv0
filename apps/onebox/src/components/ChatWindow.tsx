@@ -16,6 +16,7 @@ import type {
   StatusResponse,
 } from '@agijobs/onebox-sdk';
 import { defaultMessages } from '../lib/defaultMessages';
+import { MissionPulse } from './MissionPulse';
 import { ReceiptsPanel } from './ReceiptsPanel';
 import type { ExecutionReceipt } from './receiptTypes';
 import {
@@ -65,7 +66,7 @@ type StatusMessage = {
 
 type ChatMessage = TextMessage | PlanMessage | SimulationMessage | StatusMessage;
 
-type ChatStage =
+export type ChatStage =
   | 'idle'
   | 'planning'
   | 'planned'
@@ -691,6 +692,8 @@ export function ChatWindow({
     return lines.join(' ');
   }, [runStatusMessage]);
 
+  const runState = runStatusMessage?.status.run.state ?? null;
+
   return (
     <div className="chat-wrapper">
       <div className="chat-shell">
@@ -724,6 +727,17 @@ export function ChatWindow({
             ))}
           </div>
         </div>
+        <MissionPulse
+          stage={stage}
+          orchestratorReady={orchestratorReady}
+          planError={planError}
+          simulateError={simulateError}
+          executeError={executeError}
+          hasPlan={Boolean(activePlan)}
+          hasSimulation={Boolean(activeSimulation)}
+          statusSummary={statusSummary}
+          runState={runState}
+        />
         <div className="chat-history" role="log" aria-live="polite">
           {messages.map((message) => {
             if (message.kind === 'plan') {

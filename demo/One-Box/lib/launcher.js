@@ -6,6 +6,13 @@ const { once } = require('node:events');
 const dotenv = require('dotenv');
 
 const REQUIRED_ENV_KEYS = ['RPC_URL', 'JOB_REGISTRY_ADDRESS', 'ONEBOX_RELAYER_PRIVATE_KEY'];
+const PLACEHOLDER_TOKENS = [
+  'your-key',
+  'your_private_key',
+  'your-private-key',
+  'changeme',
+  'change-me',
+];
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
@@ -31,6 +38,24 @@ function normalisePrefix(value, fallback = '/onebox') {
   }
   const withLeading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
   return withLeading.replace(/\/+$/, '');
+}
+
+function isUnsetEnvValue(value, { treatZeroAddress = true } = {}) {
+  if (value === undefined || value === null) {
+    return true;
+  }
+  const trimmed = String(value).trim();
+  if (!trimmed) {
+    return true;
+  }
+  const lowered = trimmed.toLowerCase();
+  if (PLACEHOLDER_TOKENS.some((token) => lowered.includes(token))) {
+    return true;
+  }
+  if (treatZeroAddress && /^0x0{40}$/.test(lowered)) {
+    return true;
+  }
+  return false;
 }
 
 function loadEnvironment({ rootDir, demoDir } = {}) {
@@ -65,7 +90,8 @@ function resolveConfig(env, options = {}) {
   const missing = [];
   for (const key of REQUIRED_ENV_KEYS) {
     const value = env[key];
-    if (value === undefined || value === null || String(value).trim() === '') {
+    const treatZeroAddress = key !== 'RPC_URL';
+    if (isUnsetEnvValue(value, { treatZeroAddress })) {
       missing.push(key);
     }
   }
@@ -295,6 +321,7 @@ async function runDemo(options = {}) {
 module.exports = {
   REQUIRED_ENV_KEYS,
   normalisePrefix,
+  isUnsetEnvValue,
   loadEnvironment,
   resolveConfig,
   createDemoUrl,
