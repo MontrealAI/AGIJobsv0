@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2025-10-21T00:37:12.126Z",
+  "readiness": "ready",
+  "statuses": [
+    {
+      "capability": {
+        "category": "Emergency Pause",
+        "label": "Circuit breaker engage",
+        "command": "npm run owner:system-pause -- --action pause",
+        "verification": "npm run owner:system-pause -- --action status"
+      },
+      "commandAvailable": true,
+      "verificationAvailable": true
+    },
+    {
+      "capability": {
+        "category": "Thermostat",
+        "label": "Recalibrate reward engine temperature",
+        "command": "npm run thermostat:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "verification": "npm run thermodynamics:report"
+      },
+      "commandAvailable": true,
+      "verificationAvailable": true
+    },
+    {
+      "capability": {
+        "category": "Upgrade",
+        "label": "Queue sovereign upgrade",
+        "command": "npm run owner:upgrade -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "verification": "npm run owner:upgrade-status"
+      },
+      "commandAvailable": true,
+      "verificationAvailable": true
+    },
+    {
+      "capability": {
+        "category": "Treasury",
+        "label": "Mirror treasury share",
+        "command": "npm run reward-engine:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "verification": "npm run reward-engine:report"
+      },
+      "commandAvailable": true,
+      "verificationAvailable": true
+    },
+    {
+      "capability": {
+        "category": "Compliance",
+        "label": "Refresh compliance dossier",
+        "command": "npm run owner:compliance-report",
+        "verification": "npm run owner:doctor"
+      },
+      "commandAvailable": true,
+      "verificationAvailable": true
+    }
+  ]
+}
