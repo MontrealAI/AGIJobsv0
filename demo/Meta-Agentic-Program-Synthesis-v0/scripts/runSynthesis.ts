@@ -1,6 +1,7 @@
 import path from "path";
 import { loadMissionConfig, runMetaSynthesis } from "./synthesisEngine";
 import { writeReports } from "./reporting";
+import { auditOwnerScripts } from "./commandValidation";
 import { updateManifest } from "./manifest";
 import type { MissionConfig, OwnerControlCoverage, SynthesisRun } from "./types";
 
@@ -51,14 +52,7 @@ export async function executeSynthesis(options: RunOptions = {}): Promise<Synthe
   const { mission, coverage }: { mission: MissionConfig; coverage: OwnerControlCoverage } =
     await loadMissionConfig(resolved.missionFile);
   const run = runMetaSynthesis(mission, coverage);
-  const { files, ownerScripts } = await writeReports(run, {
-    reportDir: resolved.reportDir,
-    markdownFile: resolved.reportFile,
-    jsonFile: resolved.summaryFile,
-    htmlFile: resolved.dashboardFile,
-    triangulationFile: resolved.triangulationFile,
-    briefingFile: resolved.briefingFile,
-  });
+  const ownerScripts = await auditOwnerScripts(run.mission);
   run.ownerScriptsAudit = ownerScripts;
   const declaredScripts = run.mission.meta.governance?.ownerScripts?.length ?? ownerScripts.length;
   const availableScripts = ownerScripts.filter((entry) => entry.available).length;
@@ -69,6 +63,15 @@ export async function executeSynthesis(options: RunOptions = {}): Promise<Synthe
     availableScripts,
     scriptAvailability,
   };
+  const { files } = await writeReports(run, {
+    reportDir: resolved.reportDir,
+    markdownFile: resolved.reportFile,
+    jsonFile: resolved.summaryFile,
+    htmlFile: resolved.dashboardFile,
+    triangulationFile: resolved.triangulationFile,
+    briefingFile: resolved.briefingFile,
+    ownerScripts,
+  });
   run.ownerBriefingPath = resolved.briefingFile;
   await updateManifest(resolved.manifestFile, files);
   return run;
