@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Mapping
 
 from .config import DemoConfig, EvolutionPolicy, RewardPolicy, StakePolicy
+from .entities import OwnerAction
 
 
 class OwnerConsole:
@@ -27,6 +28,7 @@ class OwnerConsole:
     def __init__(self, config: DemoConfig) -> None:
         self._config = config
         self._paused = False
+        self._events: list[OwnerAction] = []
 
     # ------------------------------------------------------------------
     # Public API
@@ -39,17 +41,29 @@ class OwnerConsole:
         return self._paused
 
     def pause(self) -> None:
-        self._paused = True
+        if not self._paused:
+            self._paused = True
+            self._record_event("pause", {"value": True})
 
     def resume(self) -> None:
-        self._paused = False
+        if self._paused:
+            self._paused = False
+            self._record_event("resume", {"value": False})
 
     def set_paused(self, value: bool) -> None:
-        self._paused = bool(value)
+        value = bool(value)
+        if self._paused == value:
+            return
+        self._paused = value
+        self._record_event("set_paused", {"value": value})
 
     def require_active(self) -> None:
         if self._paused:
             raise RuntimeError("operations are paused by the contract owner")
+
+    @property
+    def events(self) -> tuple[OwnerAction, ...]:
+        return tuple(self._events)
 
     def update_reward_policy(self, **kwargs: float) -> None:
         overrides = self._validate_kwargs("reward_policy", kwargs, self._REWARD_KEYS)
@@ -58,6 +72,7 @@ class OwnerConsole:
         policy = replace(self._config.reward_policy, **overrides)
         self._validate_reward_policy(policy)
         self._config = replace(self._config, reward_policy=policy)
+        self._record_event("update_reward_policy", overrides)
 
     def update_stake_policy(self, **kwargs: float) -> None:
         overrides = self._validate_kwargs("stake_policy", kwargs, self._STAKE_KEYS)
@@ -75,6 +90,7 @@ class OwnerConsole:
         policy = replace(self._config.stake_policy, **mapped)
         self._validate_stake_policy(policy)
         self._config = replace(self._config, stake_policy=policy)
+        self._record_event("update_stake_policy", overrides)
 
     def update_evolution_policy(self, **kwargs: float) -> None:
         overrides = self._validate_kwargs("evolution_policy", kwargs, self._EVOLUTION_KEYS)
@@ -83,6 +99,7 @@ class OwnerConsole:
         policy = replace(self._config.evolution_policy, **overrides)
         self._validate_evolution_policy(policy)
         self._config = replace(self._config, evolution_policy=policy)
+        self._record_event("update_evolution_policy", overrides)
 
     def apply_overrides(self, overrides: Mapping[str, Any]) -> None:
         """Apply overrides loaded from configuration files or CLI mappings."""
@@ -98,6 +115,17 @@ class OwnerConsole:
             self.update_evolution_policy(**evolution_overrides)
         if "paused" in overrides:
             self.set_paused(bool(overrides["paused"]))
+
+    # ------------------------------------------------------------------
+    # Event recording
+    def _record_event(self, action: str, payload: Mapping[str, Any]) -> None:
+        self._events.append(
+            OwnerAction(
+                timestamp=datetime.now(UTC),
+                action=action,
+                payload=dict(payload),
+            )
+        )
 
     # ------------------------------------------------------------------
     # Validation helpers

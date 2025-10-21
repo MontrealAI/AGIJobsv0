@@ -192,6 +192,25 @@ def main() -> None:
     print("\n🏁 Final program:")
     print(indent(artefacts.final_program, prefix="  "))
     print(f"Composite score: {artefacts.final_score:.4f}")
+    print(f"Improvement vs first generation: {artefacts.improvement_over_first:.4f}")
+    if artefacts.first_success_generation is not None:
+        print(
+            "Success threshold achieved at generation",
+            artefacts.first_success_generation,
+        )
+    else:
+        print("Success threshold not reached within configured generations.")
+    if owner_console.events:
+        print("\n🛡️ Owner interventions during run:")
+        for event in owner_console.events:
+            print(
+                indent(
+                    f"{event.timestamp.isoformat()} • {event.action} → {json.dumps(event.payload, sort_keys=True)}",
+                    prefix="  - ",
+                )
+            )
+    else:
+        print("\n🛡️ Owner interventions during run: none required.")
 
 
 if __name__ == "__main__":

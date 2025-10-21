@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass
-from statistics import mean
+from statistics import mean, pvariance
 from typing import Callable, Iterable, List, Sequence, Tuple
 
 from .entities import EvolutionRecord
@@ -65,23 +65,30 @@ class EvolutionaryProgramSynthesizer:
 
         population = self.initialise_population()
         history: List[EvolutionRecord] = []
+        previous_best: float | None = None
 
         for generation in range(1, generations + 1):
             evaluated = [ProgramEvaluation(program, evaluator(program)) for program in population]
             evaluated.sort(key=lambda entry: entry.score, reverse=True)
             elites = [entry.program for entry in evaluated[: self.elite_count]]
-            best_score = evaluated[0].score
-            avg_score = mean(entry.score for entry in evaluated)
+            scores = [entry.score for entry in evaluated]
+            best_score = scores[0]
+            avg_score = mean(scores)
+            variance = pvariance(scores)
+            delta = None if previous_best is None else best_score - previous_best
             record = EvolutionRecord(
                 generation=generation,
                 best_score=best_score,
                 average_score=avg_score,
+                score_variance=variance,
+                best_score_delta=delta,
                 winning_program=self.render_program(evaluated[0].program),
                 notes=self._generation_notes(evaluated),
             )
             history.append(record)
             if telemetry_hook:
                 telemetry_hook(record)
+            previous_best = best_score
 
             next_population = elites.copy()
             while len(next_population) < self.population_size:
