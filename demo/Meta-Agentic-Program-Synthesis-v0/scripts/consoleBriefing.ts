@@ -34,6 +34,9 @@ async function main(): Promise<void> {
   console.log(`Owner readiness: ${run.ownerCoverage.readiness}`);
   console.log(`Accuracy: ${(run.aggregate.averageAccuracy * 100).toFixed(2)}% | Novelty: ${(run.aggregate.noveltyScore * 100).toFixed(2)}%`);
   console.log(`Thermodynamic alignment: ${(run.aggregate.thermodynamics.averageAlignment * 100).toFixed(2)}%`);
+  console.log(
+    `Owner supremacy → coverage ${(run.aggregate.ownerSupremacy.coverageRatio * 100).toFixed(2)}% | scripts ${(run.aggregate.ownerSupremacy.scriptAvailability * 100).toFixed(2)}% (${run.aggregate.ownerSupremacy.availableScripts}/${run.aggregate.ownerSupremacy.declaredScripts}) | readiness ${run.aggregate.ownerSupremacy.readiness}`,
+  );
   console.log("");
   printDivider("Owner Controls");
   for (const capability of run.mission.ownerControls.capabilities) {

@@ -269,6 +269,7 @@ function renderMermaidTimeline(task: TaskResult): string {
 function renderOwnerBriefing(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]): string {
   const lines: string[] = [];
   const ownerScriptsVerdict = renderOwnerScriptVerdict(ownerScripts);
+  const ownerSupremacy = run.aggregate.ownerSupremacy;
   lines.push(`# Owner Briefing – ${run.mission.meta.title}`);
   lines.push("");
   lines.push(
@@ -311,6 +312,9 @@ function renderOwnerBriefing(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]
   );
   lines.push(
     `- **Owner controls readiness:** ${run.ownerCoverage.readiness.toUpperCase()} – satisfied: ${run.ownerCoverage.satisfiedCategories.join(", ") || "None"}`,
+  );
+  lines.push(
+    `- **Owner supremacy:** readiness ${ownerSupremacy.readiness.toUpperCase()} • coverage ${formatPercent(ownerSupremacy.coverageRatio)} • scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts})`,
   );
   lines.push(`- **Owner scripts:** ${ownerScriptsVerdict}`);
   lines.push("");
@@ -360,6 +364,7 @@ function renderOwnerBriefing(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]
 
 export function renderMarkdownReport(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]): string {
   const { mission } = run;
+  const ownerSupremacy = run.aggregate.ownerSupremacy;
   const lines: string[] = [];
   lines.push(`# ${mission.meta.title}`);
   if (mission.meta.subtitle) {
@@ -385,7 +390,7 @@ export function renderMarkdownReport(run: SynthesisRun, ownerScripts: OwnerScrip
       `(mean Δ ${formatNumber(run.aggregate.thermodynamics.meanDelta)} | max Δ ${formatNumber(run.aggregate.thermodynamics.maxDelta)} | ${formatThermoStatus(run.aggregate.thermodynamics.statusCounts)}).`,
   );
   lines.push(
-    "- **Owner supremacy:** every control remains copy-paste accessible (pause, thermostat, upgrades, treasury mirrors, compliance dossier).",
+    `- **Owner supremacy:** readiness ${ownerSupremacy.readiness} | coverage ${formatPercent(ownerSupremacy.coverageRatio)} | scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts}).`,
   );
   lines.push(
     `- **Coverage readiness:** ${run.ownerCoverage.readiness} (${run.ownerCoverage.satisfiedCategories.length}/${run.ownerCoverage.requiredCategories.length} controls satisfied).`,
@@ -575,6 +580,7 @@ export function renderHtmlDashboard(run: SynthesisRun, ownerScripts: OwnerScript
   const summary = buildJsonSummary(run, ownerScripts);
   const triangulationDigest = buildTriangulationDigest(run);
   const mermaidFlow = renderMermaidFlow(run.mission, run);
+  const ownerSupremacy = run.aggregate.ownerSupremacy;
   const taskSections = run.tasks
     .map((task) => {
       const pipeline = escapeHtml(renderPipeline(task.bestCandidate));
@@ -623,6 +629,7 @@ export function renderHtmlDashboard(run: SynthesisRun, ownerScripts: OwnerScript
   const ownerScriptsVerdict = missingScripts.length
     ? `⚠️ ${missingScripts.length} script(s) missing`
     : "✅ all scripts available";
+  const ownerSupremacySummary = `${formatPercent(ownerSupremacy.coverageRatio)} coverage • scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts}) • readiness ${ownerSupremacy.readiness}`;
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -670,6 +677,7 @@ export function renderHtmlDashboard(run: SynthesisRun, ownerScripts: OwnerScript
         <div class="metric-card"><strong>Coverage</strong><br />${formatPercent(run.aggregate.coverageScore)}</div>
         <div class="metric-card"><strong>Triangulation confidence</strong><br />${formatPercent(run.aggregate.triangulationConfidence)}</div>
         <div class="metric-card"><strong>Thermodynamic alignment</strong><br />${formatPercent(run.aggregate.thermodynamics.averageAlignment)}<span class="metric-sub">Δ̄ ${formatNumber(run.aggregate.thermodynamics.meanDelta, 2)} • Δmax ${formatNumber(run.aggregate.thermodynamics.maxDelta, 2)} • ${escapeHtml(formatThermoStatus(run.aggregate.thermodynamics.statusCounts))}</span></div>
+        <div class="metric-card"><strong>Owner supremacy</strong><br />${formatPercent(ownerSupremacy.coverageRatio)} coverage<span class="metric-sub">Scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts}) • Readiness ${escapeHtml(ownerSupremacy.readiness.toUpperCase())}</span></div>
       </div>
     </header>
     <section>
@@ -693,6 +701,7 @@ export function renderHtmlDashboard(run: SynthesisRun, ownerScripts: OwnerScript
       <h3>Owner Script Audit</h3>
       ${ownerScriptsHtml}
       <p>${ownerScriptsVerdict}</p>
+      <p><strong>Owner supremacy:</strong> ${ownerSupremacySummary}</p>
     </section>
     ${taskSections}
     <section>

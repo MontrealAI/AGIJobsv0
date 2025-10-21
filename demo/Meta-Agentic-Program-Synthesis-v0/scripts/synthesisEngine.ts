@@ -670,6 +670,12 @@ export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControl
     },
   );
 
+  const declaredScripts = mission.meta.governance?.ownerScripts?.length ?? 0;
+  const declaredCategories = ownerCoverage.requiredCategories.length;
+  const satisfiedCategories = ownerCoverage.satisfiedCategories.length;
+  const coverageRatio = declaredCategories > 0 ? satisfiedCategories / declaredCategories : 1;
+  const capabilityDeclarations = mission.ownerControls.capabilities.length;
+
   return {
     mission,
     generatedAt,
@@ -690,6 +696,16 @@ export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControl
         meanDelta: thermodynamicStats.deltaSum / Math.max(1, tasks.length),
         maxDelta: thermodynamicStats.maxDelta,
         statusCounts: thermodynamicStats.counts,
+      },
+      ownerSupremacy: {
+        readiness: ownerCoverage.readiness,
+        coverageRatio,
+        declaredCategories,
+        satisfiedCategories,
+        capabilityDeclarations,
+        declaredScripts,
+        availableScripts: 0,
+        scriptAvailability: declaredScripts > 0 ? 0 : 1,
       },
     },
   };
