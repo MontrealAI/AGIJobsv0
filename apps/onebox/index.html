@@ -23,10 +23,47 @@
   <body>
     <div class="wrap">
       <header class="header">
-        <h1>AGI Jobs — One‑Box</h1>
-        <span class="badge" id="mode">Mode: Guest (walletless)</span>
-        <span class="badge">Ask → Confirm → Done + Receipt</span>
+        <div class="header-title">
+          <h1>AGI Jobs — One‑Box</h1>
+          <p class="header-subtitle">Conversational command of institutional-grade on-chain labour.</p>
+        </div>
+        <div class="header-badges">
+          <span class="badge" id="mode">Mode: Guest (walletless)</span>
+          <span class="badge">Ask → Confirm → Done + Receipt</span>
+        </div>
       </header>
+
+      <section class="hero">
+        <div class="hero-card">
+          <h2>Launch a mission in three lines of chat</h2>
+          <p>
+            Describe your outcome, confirm the plan, and we do the rest — staking, escrow, IPFS logistics, and on-chain audit
+            trails happen automatically.
+          </p>
+          <ul class="hero-points">
+            <li><strong>Wallet optional.</strong> Relayer handles gas and escrow while respecting your policy caps.</li>
+            <li><strong>Owner-first.</strong> Pause, retune fees, and rotate keys in seconds via the standard control scripts.</li>
+            <li><strong>Proof on arrival.</strong> Every step yields signed receipts with explorer links and CID anchors.</li>
+          </ul>
+        </div>
+        <aside class="hero-status">
+          <div class="status-chip">Real-time planner ↔ simulator ↔ executor telemetry</div>
+          <dl>
+            <div>
+              <dt>Planner latency (avg)</dt>
+              <dd id="stat-planner">—</dd>
+            </div>
+            <div>
+              <dt>Simulation guardrails</dt>
+              <dd id="stat-guardrails">Budget, burn, risk, pause</dd>
+            </div>
+            <div>
+              <dt>Relayer</dt>
+              <dd id="stat-relayer">Policy limited, auditable</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
 
       <section class="chat-shell">
         <div id="chat" class="chat-history" role="log" aria-live="polite">
