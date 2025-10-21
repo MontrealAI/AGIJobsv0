@@ -1,8 +1,13 @@
 {
-  "generatedAt": "2025-10-21T04:26:14.622Z",
+  "generatedAt": "2025-10-21T12:18:34.833Z",
   "root": "/workspace/AGIJobsv0",
-  "files": 9,
+  "files": 10,
   "entries": [
+    {
+      "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-briefing.md",
+      "sha256": "6f674051be79c9052f1b6d9603be1d1d81af34e525af4ea802db09179e62c641",
+      "bytes": 3741
+    },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json",
       "sha256": "cf7c86b71363271db89bd786f29a1c4fad913c49c9380e60cbcd94d4f8dcbdac",
@@ -10,7 +15,7 @@
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-dashboard.html",
-      "sha256": "7ea9cf7366feb0241e242ccc0b01ab8ab5439ee1f1ad8e8125f6970adb694897",
+      "sha256": "14fdb0c02e896775e2d1260804f80d1ad7bc6a4c5ab0d9f8ae7422b243c3ef10",
       "bytes": 73187
     },
     {
@@ -35,17 +40,17 @@
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md",
-      "sha256": "ed8d44ed936fc7f0684935ab725d50e9ffbf74bf342187fbe98e5b3e312d26e2",
+      "sha256": "6eb01613adcab58cd0e8131febc95f9abca44db2c3fb511c52bc24a1ccac193f",
       "bytes": 14195
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-summary.json",
-      "sha256": "847c973d3faf6b93899d2338e0a444ad5cd648ccb67192bebe4c5258f0bddfad",
+      "sha256": "6a1aabe210aec01e505283daa1d8a90d332cf0923d03ad68207b9e1a22ddd8b6",
       "bytes": 35281
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-triangulation.json",
-      "sha256": "c894788661ad4151480f4b1ea9a4df6ca1e31c086962c6e26b24428baf5807dc",
+      "sha256": "5310f77edead66fac2302c31a72c36d438cfa2b77acf76dfa7d408daad1e2030",
       "bytes": 5041
     }
   ]

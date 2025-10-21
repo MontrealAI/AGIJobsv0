@@ -26,6 +26,8 @@ The launcher performs:
    hashes them into a manifest.
 2. `npm run demo:meta-agentic-program-synthesis:full` – replays the run, verifies CI (v2) enforcement, runs owner diagnostics in
    offline mode, and compiles a full-run bundle.
+3. `npm run demo:meta-agentic-program-synthesis:briefing` – prints a console-native owner briefing while regenerating artefacts,
+   perfect for executive war rooms or quick remote updates.
 
 All artefacts land in `demo/Meta-Agentic-Program-Synthesis-v0/reports/` with deterministic SHA-256 fingerprints.
 
@@ -93,6 +95,7 @@ flowchart LR
 | `meta-agentic-program-synthesis-dashboard.html` | Executive UI with live Mermaid rendering and embedded JSON manifest. |
 | `meta-agentic-program-synthesis-triangulation.json` | Multi-perspective verification digest (consensus, confidences, per-perspective evidence). |
 | `meta-agentic-program-synthesis-manifest.json` | SHA-256 manifest of every artefact for audit trails. |
+| `meta-agentic-program-synthesis-briefing.md` | Two-page executive briefing with commands, task highlights, and triple-verification recap. |
 | `meta-agentic-program-synthesis-ci.json` | CI workflow verification report (lint/tests/foundry/coverage). |
 | `meta-agentic-program-synthesis-owner-diagnostics.{json,md}` | Owner readiness, command outputs, and sentinel status. |
 | `meta-agentic-program-synthesis-full.{json,md}` | Aggregate timeline of the run, CI verdict, diagnostics, and artefact index. |
@@ -139,6 +142,9 @@ The digest exported in `meta-agentic-program-synthesis-triangulation.json` lists
 ```bash
 # Regenerate synthesis dossier only
 npm run demo:meta-agentic-program-synthesis
+
+# Console-first owner briefing (regenerates artefacts if needed)
+npm run demo:meta-agentic-program-synthesis:briefing
 
 # Full pipeline with CI + owner diagnostics
 npm run demo:meta-agentic-program-synthesis:full
