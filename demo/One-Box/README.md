@@ -88,6 +88,7 @@ demo/One-Box/
 
 - The chat window opens with a **mission control banner** showing readiness, orchestrator status, and one-click templates for common missions.
 - The mission panel renders a **Mermaid system diagram**, configuration checklist, and owner command shortcuts so stakeholders can visualise the entire workflow.
+- A **live contract map** pulls the active network name, chain ID, and every critical module address straight from `deployment-config/oneclick.env`, complete with copy-to-clipboard buttons for audits and incident response drills.
 - Quick prompts in both the panel and chat header prefill the input box—launch global research sprints, treasury dry runs, or escrow finalisations instantly.
 - Explorer links and IPFS previews are auto-linked when `EXPLORER_TX_BASE` and/or `IPFS_GATEWAY_BASE` are set in the environment.
 

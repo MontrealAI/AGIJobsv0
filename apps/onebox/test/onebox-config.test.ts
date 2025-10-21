@@ -67,3 +67,59 @@ test('resolveOrchestratorBase normalises URLs', () => {
   );
   assert.equal(resolveOrchestratorBase(undefined), undefined);
 });
+
+test('readOneboxConfig returns runtime deployment metadata when available', () => {
+  const originalWindow = (globalThis as Record<string, unknown>).window;
+  const runtimeWindow = {
+    __ONEBOX_CONFIG__: {
+      networkName: 'OmniNet',
+      chainId: '9999',
+      contracts: [
+        { id: 'jobRegistry', label: 'Job Registry', address: '0x1234' },
+        { id: 'token', label: 'Token', address: '   ' },
+      ],
+    },
+  } as unknown;
+
+  (globalThis as Record<string, unknown>).window = runtimeWindow;
+
+  try {
+    const config = readOneboxConfig();
+    assert.equal(config.networkName, 'OmniNet');
+    assert.equal(config.chainId, '9999');
+    assert.deepEqual(config.contracts, [
+      { id: 'jobRegistry', label: 'Job Registry', address: '0x1234' },
+    ]);
+  } finally {
+    if (originalWindow === undefined) {
+      delete (globalThis as Record<string, unknown>).window;
+    } else {
+      (globalThis as Record<string, unknown>).window = originalWindow;
+    }
+  }
+});
+
+test('readOneboxConfig falls back to NEXT_PUBLIC contract descriptors', () => {
+  const originalEnv = {
+    agialpha: process.env.NEXT_PUBLIC_AGIALPHA_TOKEN_ADDRESS,
+    registry: process.env.NEXT_PUBLIC_JOB_REGISTRY_ADDRESS,
+    pause: process.env.NEXT_PUBLIC_SYSTEM_PAUSE_ADDRESS,
+  };
+
+  process.env.NEXT_PUBLIC_AGIALPHA_TOKEN_ADDRESS = '0xaabb';
+  process.env.NEXT_PUBLIC_JOB_REGISTRY_ADDRESS = '0xccdd';
+  process.env.NEXT_PUBLIC_SYSTEM_PAUSE_ADDRESS = '  ';
+
+  try {
+    const config = readOneboxConfig();
+    assert.equal(config.contracts?.length, 2);
+    assert.deepEqual(config.contracts, [
+      { id: 'agialphaToken', label: 'AGI-Alpha token', address: '0xaabb' },
+      { id: 'jobRegistry', label: 'Job Registry', address: '0xccdd' },
+    ]);
+  } finally {
+    process.env.NEXT_PUBLIC_AGIALPHA_TOKEN_ADDRESS = originalEnv.agialpha;
+    process.env.NEXT_PUBLIC_JOB_REGISTRY_ADDRESS = originalEnv.registry;
+    process.env.NEXT_PUBLIC_SYSTEM_PAUSE_ADDRESS = originalEnv.pause;
+  }
+});

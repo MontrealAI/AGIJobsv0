@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './OneBoxMissionPanel.module.css';
 import { MermaidDiagram } from './MermaidDiagram';
 import { readOneboxConfig, resolveOrchestratorBase } from '../lib/environment';
@@ -41,10 +41,15 @@ flowchart LR
 `;
 
 export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) {
-  const { orchestratorUrl, apiToken, explorerTxBase, ipfsGatewayBase } = useMemo(
-    () => readOneboxConfig(),
-    []
-  );
+  const {
+    orchestratorUrl,
+    apiToken,
+    explorerTxBase,
+    ipfsGatewayBase,
+    networkName,
+    chainId,
+    contracts,
+  } = useMemo(() => readOneboxConfig(), []);
   const orchestratorBase = useMemo(
     () => resolveOrchestratorBase(orchestratorUrl) ?? null,
     [orchestratorUrl]
@@ -55,6 +60,8 @@ export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) 
   );
   const [lastChecked, setLastChecked] = useState<number | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
+  const [copiedContractId, setCopiedContractId] = useState<string | null>(null);
+  const copyResetRef = useRef<number | null>(null);
 
   const runHealthCheck = useCallback(async () => {
     if (!orchestratorBase) {
@@ -88,6 +95,12 @@ export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) 
   useEffect(() => {
     void runHealthCheck();
   }, [runHealthCheck]);
+
+  useEffect(() => () => {
+    if (copyResetRef.current !== null && typeof window !== 'undefined') {
+      window.clearTimeout(copyResetRef.current);
+    }
+  }, []);
 
   const formattedLastChecked = useMemo(() => {
     if (!lastChecked) {
@@ -156,6 +169,52 @@ export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) 
     [onPromptSelect]
   );
 
+  const networkSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (networkName) {
+      parts.push(networkName);
+    }
+    if (chainId) {
+      parts.push(`Chain ID ${chainId}`);
+    }
+    return parts.join(' • ');
+  }, [chainId, networkName]);
+
+  const contractEntries = useMemo(
+    () => (contracts ?? []).filter((entry) => entry.address.length > 0),
+    [contracts]
+  );
+
+  const handleCopyAddress = useCallback(async (id: string, address: string) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(address);
+      } else if (typeof document !== 'undefined') {
+        const textarea = document.createElement('textarea');
+        textarea.value = address;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedContractId(id);
+      if (copyResetRef.current !== null && typeof window !== 'undefined') {
+        window.clearTimeout(copyResetRef.current);
+      }
+      if (typeof window !== 'undefined') {
+        copyResetRef.current = window.setTimeout(() => {
+          setCopiedContractId(null);
+          copyResetRef.current = null;
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Failed to copy address', error);
+    }
+  }, []);
+
   return (
     <aside className={styles.panel}>
       <header className={styles.header}>
@@ -216,6 +275,48 @@ export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) 
           className={styles.diagram}
         />
       </section>
+
+      {(networkSummary || contractEntries.length > 0) && (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Live contract map</h2>
+            <p className={styles.sectionSubtitle}>
+              Verify the deployment footprint before dispatching capital. All endpoints remain owner-governed.
+            </p>
+          </div>
+          {networkSummary ? (
+            <div className={styles.networkSummary}>
+              <span className={styles.networkBadge}>Network</span>
+              <span>{networkSummary}</span>
+            </div>
+          ) : null}
+          {contractEntries.length > 0 ? (
+            <ul className={styles.contractList}>
+              {contractEntries.map((entry) => (
+                <li key={entry.id} className={styles.contractItem}>
+                  <div className={styles.contractHeader}>
+                    <span className={styles.contractLabel}>{entry.label}</span>
+                    <button
+                      type="button"
+                      className={styles.copyButton}
+                      onClick={() => {
+                        void handleCopyAddress(entry.id, entry.address);
+                      }}
+                    >
+                      {copiedContractId === entry.id ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <code className={styles.contractAddress}>{entry.address}</code>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.contractEmpty}>
+              Provide contract addresses through deployment-config/oneclick.env or NEXT_PUBLIC overrides to surface the full map.
+            </p>
+          )}
+        </section>
+      )}
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>

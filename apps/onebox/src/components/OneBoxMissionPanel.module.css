@@ -138,6 +138,95 @@
   overflow: hidden;
 }
 
+.networkSummary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.12);
+  color: rgba(45, 212, 191, 0.95);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.networkBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(13, 148, 136, 0.25);
+  color: rgba(13, 148, 136, 0.95);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.contractList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.contractItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.95rem;
+  border-radius: 0.85rem;
+  background: rgba(2, 6, 23, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.contractHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.contractLabel {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.contractAddress {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Consolas,
+    'Liberation Mono', Menlo, monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+  color: rgba(226, 232, 240, 0.88);
+}
+
+.copyButton {
+  border-radius: 999px;
+  border: 1px solid rgba(94, 234, 212, 0.45);
+  background: rgba(94, 234, 212, 0.12);
+  color: rgba(94, 234, 212, 0.95);
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.copyButton:hover,
+.copyButton:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(94, 234, 212, 0.25);
+  outline: none;
+}
+
+.contractEmpty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(203, 213, 225, 0.75);
+}
+
 .promptGrid {
   display: grid;
   gap: 0.85rem;
