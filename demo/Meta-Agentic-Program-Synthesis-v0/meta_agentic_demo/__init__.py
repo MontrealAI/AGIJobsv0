@@ -2,7 +2,7 @@
 
 from .admin import OwnerConsole, load_owner_overrides
 from .config import DemoConfig, DemoScenario, EvolutionPolicy, RewardPolicy, StakePolicy
-from .entities import DemoRunArtifacts
+from .entities import DemoRunArtifacts, RewardSummary
 from .governance import GovernanceTimelock, TimelockedAction
 from .orchestrator import SovereignArchitect, generate_dataset
 from .report import export_report, render_html
@@ -11,6 +11,7 @@ __all__ = [
     "DemoConfig",
     "DemoScenario",
     "DemoRunArtifacts",
+    "RewardSummary",
     "EvolutionPolicy",
     "RewardPolicy",
     "StakePolicy",

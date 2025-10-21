@@ -23,6 +23,7 @@ from .ledger import (
     StakeManager,
     ValidationModule,
     aggregate_performance,
+    summarise_rewards,
 )
 
 
@@ -93,6 +94,7 @@ class SovereignArchitect:
             telemetry_hook=telemetry.append,
         )
         jobs, rewards = self._execute_on_chain(best_program, telemetry)
+        reward_summary = summarise_rewards(rewards)
         performances = aggregate_performance(rewards, self.stake_manager)
         final_score = self._score_program(best_program)
         improvement_over_first = (
@@ -107,6 +109,7 @@ class SovereignArchitect:
             jobs=jobs,
             performances=performances,
             rewards=rewards,
+            reward_summary=reward_summary,
             evolution=history,
             final_program=synthesizer.render_program(best_program),
             final_score=final_score,

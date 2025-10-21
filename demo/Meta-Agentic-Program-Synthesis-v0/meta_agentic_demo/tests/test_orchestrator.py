@@ -19,6 +19,9 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert len(artefacts.jobs) == config.evolution_policy.generations
     assert artefacts.rewards
     assert artefacts.performances
+    summary = artefacts.reward_summary
+    assert summary.total_reward > 0
+    assert summary.top_solver is not None
     assert artefacts.improvement_over_first >= 0
     assert artefacts.owner_actions == []
     assert artefacts.timelock_actions == []

@@ -95,6 +95,28 @@ class RewardBreakdown:
 
 
 @dataclass
+class RewardSummary:
+    """Aggregated reward telemetry across an entire demo run."""
+
+    total_reward: float
+    architect_total: float
+    solver_totals: Dict[str, float]
+    validator_totals: Dict[str, float]
+    top_solver: Optional[str] = None
+    top_validator: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "total_reward": self.total_reward,
+            "architect_total": self.architect_total,
+            "solver_totals": dict(self.solver_totals),
+            "validator_totals": dict(self.validator_totals),
+            "top_solver": self.top_solver,
+            "top_validator": self.top_validator,
+        }
+
+
+@dataclass
 class OwnerAction:
     """Structured record of privileged actions taken by the platform owner."""
 
@@ -131,6 +153,7 @@ class DemoRunArtifacts:
     jobs: List[Job]
     performances: List[AgentPerformance]
     rewards: List[RewardBreakdown]
+    reward_summary: RewardSummary
     evolution: List[EvolutionRecord]
     final_program: str
     final_score: float
@@ -157,6 +180,7 @@ class DemoRunArtifacts:
                 }
                 for breakdown in self.rewards
             ],
+            "reward_summary": self.reward_summary.to_dict(),
             "evolution": [
                 {
                     "generation": record.generation,

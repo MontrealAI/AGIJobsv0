@@ -9,7 +9,13 @@ from datetime import UTC, datetime, timedelta
 from typing import Dict, Iterable, List, Tuple
 
 from .config import RewardPolicy, StakePolicy
-from .entities import AgentPerformance, Job, JobStatus, RewardBreakdown
+from .entities import (
+    AgentPerformance,
+    Job,
+    JobStatus,
+    RewardBreakdown,
+    RewardSummary,
+)
 
 
 @dataclass
@@ -200,3 +206,44 @@ def aggregate_performance(
                 entry.energy += reward.validator_energy.get(address, 0.0)
                 entry.stake_after = account.balance
     return list(performances.values())
+
+
+def summarise_rewards(rewards: Iterable[RewardBreakdown]) -> RewardSummary:
+    """Aggregate reward totals and surface top contributors."""
+
+    solver_totals: Dict[str, float] = defaultdict(float)
+    validator_totals: Dict[str, float] = defaultdict(float)
+    total_reward = 0.0
+    architect_total = 0.0
+    for breakdown in rewards:
+        total_reward += breakdown.total_reward
+        architect_total += breakdown.architect_reward
+        for address, amount in breakdown.solver_rewards.items():
+            solver_totals[address] += amount
+        for address, amount in breakdown.validator_rewards.items():
+            validator_totals[address] += amount
+    solver_totals_dict = dict(solver_totals)
+    validator_totals_dict = dict(validator_totals)
+    top_solver = max(solver_totals_dict, key=solver_totals_dict.get) if solver_totals_dict else None
+    top_validator = (
+        max(validator_totals_dict, key=validator_totals_dict.get)
+        if validator_totals_dict
+        else None
+    )
+    return RewardSummary(
+        total_reward=total_reward,
+        architect_total=architect_total,
+        solver_totals=solver_totals_dict,
+        validator_totals=validator_totals_dict,
+        top_solver=top_solver,
+        top_validator=top_validator,
+    )
+
+
+__all__ = [
+    "RewardEngine",
+    "StakeManager",
+    "ValidationModule",
+    "aggregate_performance",
+    "summarise_rewards",
+]
