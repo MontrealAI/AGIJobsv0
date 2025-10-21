@@ -10,12 +10,15 @@ export function Scoreboard({ data }: Props) {
   }
 
   return (
-    <div className="card">
-      <h2>Arena Telemetry</h2>
-      <p>Current difficulty: {data.currentDifficulty}</p>
+    <section className="card">
+      <h2>Telemetry snapshot</h2>
+      <p className="subtitle">
+        Difficulty {data.currentDifficulty.toFixed(2)} • Success {(data.currentSuccessRate * 100).toFixed(1)}% • Target{' '}
+        {(data.ownerControls.targetSuccessRate * 100).toFixed(0)}%
+      </p>
       <div className="grid two-columns">
         <div>
-          <h3>Elo Rankings</h3>
+          <h3>Elo rankings</h3>
           <table>
             <thead>
               <tr>
@@ -40,17 +43,17 @@ export function Scoreboard({ data }: Props) {
           </table>
         </div>
         <div>
-          <h3>Recent Rounds</h3>
+          <h3>Recent rounds</h3>
           <ul>
             {data.rounds.slice(-5).map((round) => (
               <li key={round.id}>
-                Round {round.id}: diff {round.difficulty} (Δ {round.difficultyDelta}), success{' '}
-                {(round.successRate * 100).toFixed(1)}%
+                Round {round.id}: diff {round.difficulty.toFixed(2)} (Δ {round.difficultyDelta.toFixed(2)}), success{' '}
+                {(round.successRate * 100).toFixed(1)}% — {round.status}
               </li>
             ))}
           </ul>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
