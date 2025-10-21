@@ -20,6 +20,9 @@ const expertContract = $('#expert-contract');
 const expertPlanJson = $('#expert-plan-json');
 const expertExecuteRequestJson = $('#expert-execute-request');
 const expertExecuteResponseJson = $('#expert-execute-response');
+const statPlanner = $('#stat-planner');
+const statGuardrails = $('#stat-guardrails');
+const statRelayer = $('#stat-relayer');
 
 const formatLatency = (ms) => {
   if (typeof ms !== 'number' || Number.isNaN(ms) || !Number.isFinite(ms)) {
@@ -219,14 +222,123 @@ const ERRORS = errorsCatalog;
 
 const STORAGE_KEYS = {
   orch: 'ONEBOX_ORCH_URL',
-  token: 'ONEBOX_ORCH_TOKEN',
   receipts: 'ONEBOX_RECEIPTS_V1',
 };
+
+try {
+  localStorage.removeItem('ONEBOX_ORCH_TOKEN');
+} catch (error) {
+  console.warn('Unable to clear legacy API token storage', error);
+}
+
+const runtimeConfig = typeof window !== 'undefined' ? window.__ONEBOX_CONFIG__ || {} : {};
 
 let expertMode = false;
 let ethereum = null;
 let orchestrator = localStorage.getItem(STORAGE_KEYS.orch) || '';
-let apiToken = localStorage.getItem(STORAGE_KEYS.token) || '';
+let apiToken = '';
+
+const plannerLatencySamples = [];
+
+function updatePlannerStat(sample) {
+  if (!statPlanner || typeof sample !== 'number' || Number.isNaN(sample)) return;
+  plannerLatencySamples.push(sample);
+  if (plannerLatencySamples.length > 8) {
+    plannerLatencySamples.shift();
+  }
+  const average = plannerLatencySamples.reduce((sum, value) => sum + value, 0) / plannerLatencySamples.length;
+  const formatted = formatLatency(average);
+  statPlanner.textContent = formatted ?? '—';
+}
+
+function updateGuardrailStat(simulation, state = 'success', details = {}) {
+  if (!statGuardrails) return;
+  if (state === 'pending') {
+    statGuardrails.textContent = 'Awaiting simulation';
+    return;
+  }
+  if (state === 'executing') {
+    statGuardrails.textContent = 'Executing orchestrated plan';
+    return;
+  }
+  if (state === 'executed') {
+    const jobId = details?.jobId;
+    statGuardrails.textContent = jobId ? `Execution succeeded (job #${jobId})` : 'Execution succeeded';
+    return;
+  }
+  if (state === 'error') {
+    statGuardrails.textContent = 'Guardrail check failed';
+    return;
+  }
+  if (!simulation) {
+    statGuardrails.textContent = 'Awaiting simulation';
+    return;
+  }
+  const segments = [];
+  if (simulation.estimatedBudget) {
+    const token = simulation.budgetToken || (lastPlanResponse?.plan?.budget?.token ?? 'AGIALPHA');
+    segments.push(`Budget ${simulation.estimatedBudget} ${token}`);
+  }
+  if (simulation.feeAmount) {
+    segments.push(
+      `Fee ${simulation.feeAmount}${
+        simulation.feePct !== undefined && simulation.feePct !== null ? ` (${simulation.feePct}%)` : ''
+      }`,
+    );
+  } else if (simulation.feePct !== undefined && simulation.feePct !== null) {
+    segments.push(`Fee ${simulation.feePct}%`);
+  }
+  if (simulation.burnAmount) {
+    segments.push(
+      `Burn ${simulation.burnAmount}${
+        simulation.burnPct !== undefined && simulation.burnPct !== null ? ` (${simulation.burnPct}%)` : ''
+      }`,
+    );
+  } else if (simulation.burnPct !== undefined && simulation.burnPct !== null) {
+    segments.push(`Burn ${simulation.burnPct}%`);
+  }
+  const risks = Array.isArray(simulation.risks) && simulation.risks.length ? simulation.risks.join(', ') : 'None';
+  segments.push(`Risks: ${risks}`);
+  statGuardrails.textContent = segments.join(' · ');
+}
+
+function renderRelayerStatus() {
+  if (!statRelayer) return;
+  if (expertMode) {
+    statRelayer.textContent = 'Expert wallet signing';
+    return;
+  }
+  if (!orchestrator) {
+    statRelayer.textContent = 'Set orchestrator endpoint';
+    return;
+  }
+  let host;
+  try {
+    const base = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const parsed = base ? new URL(orchestrator, base) : new URL(orchestrator);
+    host = parsed.host || parsed.href;
+  } catch (_) {
+    host = orchestrator;
+  }
+  if (!apiToken) {
+    statRelayer.textContent = `API token required (${host})`;
+    return;
+  }
+  statRelayer.textContent = `Guest relayer online via ${host}`;
+}
+
+if (!orchestrator && runtimeConfig.orchestratorUrl) {
+  orchestrator = runtimeConfig.orchestratorUrl;
+  try {
+    localStorage.setItem(STORAGE_KEYS.orch, orchestrator);
+  } catch (error) {
+    console.warn('Unable to persist orchestrator URL from runtime config', error);
+  }
+}
+
+if (!apiToken && runtimeConfig.apiToken) {
+  apiToken = runtimeConfig.apiToken;
+}
 let receipts = loadReceipts();
 let isSubmitting = false;
 let lastPlanResponse = null;
@@ -240,6 +352,8 @@ tokenInput.value = apiToken;
 renderReceipts();
 setModeLabel();
 renderExpertDetails();
+renderRelayerStatus();
+updateGuardrailStat(null, 'pending');
 
 function addMessage(role, html) {
   const node = document.createElement('div');
@@ -410,6 +524,8 @@ async function planRequest(text) {
   const response = await api('/onebox/plan', { input_text: text });
   const ended = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const latencyMs = Math.max(0, ended - started);
+  updatePlannerStat(latencyMs);
+  updateGuardrailStat(null, 'pending');
   if (response && typeof response === 'object') {
     response.__meta = { ...(response.__meta || {}), latencyMs };
   }
@@ -428,6 +544,7 @@ async function simulatePlanRequest(plan) {
   }
   lastSimulationResponse = response ?? null;
   renderExpertDetails();
+  updateGuardrailStat(response ?? null);
   return response;
 }
 
@@ -468,12 +585,14 @@ function renderRunSteps(status) {
 async function executePlanWithUi(plan, progress, statusNode) {
   try {
     statusNode.innerHTML = `${COPY.executing}`;
+    updateGuardrailStat(null, 'executing');
     const response = await executePlanRequest(plan);
     const runStatus = await pollRunStatus(response.run_id, (status) => {
       statusNode.innerHTML = `${COPY.executing}<br>${renderRunSteps(status)}`;
     });
     if (runStatus && runStatus.run && runStatus.run.state === 'succeeded') {
       progress.complete();
+      updateGuardrailStat(null, 'executed', { jobId: runStatus.receipts?.job_id ?? null });
       const receipt = buildReceipt({
         jobId: runStatus.receipts?.job_id ?? null,
         planHash: runStatus.run.plan_id,
@@ -494,6 +613,7 @@ async function executePlanWithUi(plan, progress, statusNode) {
     }
   } catch (error) {
     progress.fail();
+    updateGuardrailStat(null, 'error');
     statusNode.innerHTML = `<span class="error-text">⚠️ ${error?.message || 'Execution failed.'}</span>`;
     handleError(error);
   }
@@ -636,6 +756,7 @@ form.addEventListener('submit', async (event) => {
       return;
     }
     if (Array.isArray(plan.missing_fields) && plan.missing_fields.length) {
+      updateGuardrailStat(null, 'pending');
       addMessage('assist', COPY.missing(plan.missing_fields));
       return;
     }
@@ -675,23 +796,27 @@ form.addEventListener('submit', async (event) => {
             simCancel.disabled = true;
             progress.fail();
             disableForm(false);
+            updateGuardrailStat(null, 'pending');
             addMessage('assist', COPY.cancelled);
           });
         } catch (error) {
           progress.fail();
           simulationMsg.innerHTML = `<span class="error-text">⚠️ Simulation failed.</span>`;
+          updateGuardrailStat(null, 'error');
           disableForm(false);
           handleError(error);
         }
       })();
-    });
-    noBtn?.addEventListener('click', () => {
-      yesBtn.disabled = true;
-      noBtn.disabled = true;
-      addMessage('assist', COPY.cancelled);
-    });
+  });
+  noBtn?.addEventListener('click', () => {
+    yesBtn.disabled = true;
+    noBtn.disabled = true;
+    updateGuardrailStat(null, 'pending');
+    addMessage('assist', COPY.cancelled);
+  });
   } catch (error) {
     disableForm(false);
+    updateGuardrailStat(null, 'error');
     handleError(error);
   }
 });
@@ -702,14 +827,15 @@ expertBtn.addEventListener('click', () => {
   if (expertMode) {
     renderExpertDetails();
   }
+  renderRelayerStatus();
 });
 
 saveBtn.addEventListener('click', () => {
   orchestrator = orchInput.value.trim();
   apiToken = tokenInput.value.trim();
   localStorage.setItem(STORAGE_KEYS.orch, orchestrator);
-  localStorage.setItem(STORAGE_KEYS.token, apiToken);
-  addMessage('assist', '✅ Saved advanced settings.');
+  addMessage('assist', '✅ Saved advanced settings. API token stays in this session only.');
+  renderRelayerStatus();
 });
 
 connectBtn.addEventListener('click', async () => {

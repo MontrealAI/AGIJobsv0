@@ -1,0 +1,57 @@
+version: '3.9'
+
+x-shared-env: &shared-env
+  env_file:
+    - ../../deployment-config/oneclick.env
+    - .env
+
+services:
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    command:
+      ["anvil", "--host", "0.0.0.0", "--port", "8545", "--chain-id", "31337", "--block-time", "2"]
+    ports:
+      - "8545:8545"
+    networks:
+      - onebox
+
+  orchestrator:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/orchestrator.Dockerfile
+    <<: *shared-env
+    environment:
+      ONEBOX_PORT: ${ONEBOX_PORT-8080}
+      ONEBOX_CORS_ALLOW: ${ONEBOX_CORS_ALLOW-http://localhost:4173}
+      ORCHESTRATOR_STATE_BACKEND: ${ORCHESTRATOR_STATE_BACKEND-file}
+      ORCHESTRATOR_STATE_DIR: /data/orchestrator
+      ORCHESTRATOR_STATE_URL: ${ORCHESTRATOR_STATE_URL-}
+    volumes:
+      - orchestrator_state:/data/orchestrator
+    ports:
+      - "8080:8080"
+    depends_on:
+      - anvil
+    networks:
+      - onebox
+
+  onebox-ui:
+    build:
+      context: ../..
+      dockerfile: demo/One-Box/Dockerfile.ui
+    environment:
+      ORCHESTRATOR_URL: ${ORCHESTRATOR_URL-http://orchestrator:8080/onebox}
+      ONEBOX_API_TOKEN: ${ONEBOX_API_TOKEN-change-me}
+    ports:
+      - "4173:4173"
+    depends_on:
+      - orchestrator
+    networks:
+      - onebox
+
+volumes:
+  orchestrator_state:
+
+networks:
+  onebox:
+    driver: bridge

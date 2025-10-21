@@ -1,0 +1,35 @@
+FROM node:20-alpine AS build
+WORKDIR /srv/app
+
+ENV \
+  NPM_CONFIG_FETCH_RETRIES=10 \
+  NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
+  NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000 \
+  NPM_CONFIG_FETCH_TIMEOUT=600000
+
+RUN apk add --no-cache python3 make g++
+
+COPY package*.json .npmrc ./
+RUN npm ci
+
+COPY . .
+RUN npm run onebox:build
+
+FROM node:20-alpine
+WORKDIR /srv/www
+
+RUN npm install -g serve@14.2.3
+
+COPY --from=build /srv/app/apps/onebox/dist ./
+
+ENV PORT=4173
+EXPOSE 4173
+
+ENV ORCHESTRATOR_URL="http://orchestrator:8080/onebox" \
+    ONEBOX_API_TOKEN=""
+
+COPY demo/One-Box/scripts/entrypoint.sh /usr/local/bin/onebox-entrypoint.sh
+RUN chmod +x /usr/local/bin/onebox-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/onebox-entrypoint.sh"]
+CMD ["serve", "-s", ".", "-l", "0.0.0.0:${PORT}"]
