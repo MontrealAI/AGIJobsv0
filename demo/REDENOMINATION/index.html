@@ -112,6 +112,20 @@
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 24px;
       }
+      .definition-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px 16px;
+        margin: 0;
+      }
+      .definition-list dt {
+        font-weight: 600;
+        margin: 0;
+      }
+      .definition-list dd {
+        margin: 0;
+        color: var(--text-muted);
+      }
       .card {
         background: rgba(16, 22, 44, 0.75);
         border-radius: 18px;
@@ -220,6 +234,23 @@
         border: 1px solid rgba(124, 92, 255, 0.18);
         overflow-x: auto;
       }
+      .muted {
+        color: var(--text-muted);
+      }
+      #owner-commands {
+        margin: 16px 0 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 10px;
+      }
+      #owner-commands code {
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        display: inline-block;
+        padding: 6px 10px;
+        background: rgba(124, 92, 255, 0.1);
+        border-radius: 10px;
+        border: 1px solid rgba(124, 92, 255, 0.2);
+      }
       footer {
         text-align: center;
         padding: 48px 32px 64px;
@@ -264,6 +295,9 @@
 
       const scenarioPath = './scenario.json';
       const translationsPath = './i18n/strings.json';
+      const jobRegistryConfigPath = './config/job-registry-redenominated.json';
+      const stakeManagerConfigPath = './config/stake-manager-redenominated.json';
+      const exportDataPath = './ui/export/latest.json';
 
       const actorsContainer = document.querySelector('#actors');
       const flowContainer = document.querySelector('#flow-content');
@@ -274,9 +308,36 @@
       const phaseDetail = document.querySelector('#phase-detail');
       const mermaidContainer = document.querySelector('#mermaid-diagram');
       const languageSelect = document.querySelector('#language-select');
+      const ownerStakeParams = document.querySelector('#owner-stake-params');
+      const ownerJobParams = document.querySelector('#owner-job-params');
+      const ownerPrimaryCommand = document.querySelector('#owner-primary-command');
+      const ownerCommandsList = document.querySelector('#owner-commands');
+      const ownerCommandsEmpty = document.querySelector('#owner-commands-empty');
 
       const translationState = { languages: ['en'], strings: { en: {} } };
       let activeLanguage = 'en';
+      const state = { scenario: null, jobConfig: null, stakeConfig: null, exportData: null };
+
+      async function fetchJson(url) {
+        const response = await fetch(url, { cache: 'no-cache' });
+        if (!response.ok) {
+          throw new Error(`${url} responded with status ${response.status}`);
+        }
+        return response.json();
+      }
+
+      async function fetchJsonOptional(url) {
+        try {
+          const response = await fetch(url, { cache: 'no-cache' });
+          if (!response.ok) {
+            throw new Error(`${response.status}`);
+          }
+          return response.json();
+        } catch (error) {
+          console.warn(`Optional resource unavailable: ${url}`, error);
+          return null;
+        }
+      }
 
       function getTranslation(key) {
         return (
@@ -338,6 +399,125 @@
       languageSelect?.addEventListener('change', (event) => {
         setLanguage(event.target.value);
       });
+
+      function formatTokenDisplay(value) {
+        if (value === undefined || value === null || value === '') {
+          return '—';
+        }
+        const numeric = Number(value);
+        if (Number.isFinite(numeric)) {
+          const maximumFractionDigits = numeric < 1 ? 6 : 2;
+          return `${numeric.toLocaleString(undefined, { maximumFractionDigits })} AGIΩ`;
+        }
+        return `${value} AGIΩ`;
+      }
+
+      function formatSecondsDisplay(value) {
+        if (value === undefined || value === null || value === '') {
+          return '—';
+        }
+        const seconds = Number(value);
+        if (!Number.isFinite(seconds)) {
+          return `${value}`;
+        }
+        if (seconds >= 86400) {
+          return `${seconds.toLocaleString()} s (${(seconds / 86400).toFixed(2)} days)`;
+        }
+        if (seconds >= 3600) {
+          return `${seconds.toLocaleString()} s (${(seconds / 3600).toFixed(2)} hours)`;
+        }
+        return `${seconds.toLocaleString()} s`;
+      }
+
+      function renderDefinition(container, entries) {
+        if (!container) return;
+        container.innerHTML = entries
+          .map((entry) => `<dt>${entry.label}</dt><dd>${entry.value}</dd>`)
+          .join('');
+      }
+
+      function collectOwnerCommands(scenario, exportData) {
+        const commands = new Set();
+        (scenario?.resources?.scripts ?? []).forEach((script) => {
+          if (typeof script === 'string' && script.includes('owner')) {
+            commands.add(script);
+          }
+        });
+        (exportData?.timeline ?? []).forEach((step) => {
+          if (!Array.isArray(step?.commands)) return;
+          const highlighted = ['pause', 'resume', 'update-parameters', 'snapshot', 'migrate-ledgers'];
+          if (highlighted.includes(step.id)) {
+            step.commands.forEach((command) => commands.add(command));
+          }
+        });
+        return Array.from(commands);
+      }
+
+      function renderOwnerConsole(jobConfig, stakeConfig, exportData, scenario) {
+        if (!ownerStakeParams || !ownerJobParams || !ownerPrimaryCommand || !ownerCommandsList) {
+          return;
+        }
+
+        const stakeEntries = [
+          { label: 'Global minimum stake', value: formatTokenDisplay(stakeConfig?.minStakeTokens) },
+          { label: 'Agent role minimum', value: formatTokenDisplay(stakeConfig?.roleMinimums?.agentTokens) },
+          { label: 'Validator role minimum', value: formatTokenDisplay(stakeConfig?.roleMinimums?.validatorTokens) },
+          { label: 'Platform role minimum', value: formatTokenDisplay(stakeConfig?.roleMinimums?.platformTokens) },
+          { label: 'Recommended minimum stake', value: formatTokenDisplay(stakeConfig?.stakeRecommendations?.minTokens) },
+          { label: 'Unbonding period', value: formatSecondsDisplay(stakeConfig?.unbondingPeriodSeconds) },
+          {
+            label: 'Validator reward',
+            value: stakeConfig?.validatorRewardPct !== undefined ? `${stakeConfig.validatorRewardPct}%` : '—',
+          },
+          {
+            label: 'Slashing (employer / treasury)',
+            value:
+              stakeConfig?.employerSlashPct !== undefined && stakeConfig?.treasurySlashPct !== undefined
+                ? `${stakeConfig.employerSlashPct}% / ${stakeConfig.treasurySlashPct}%`
+                : '—',
+          },
+        ];
+
+        const jobEntries = [
+          { label: 'Job stake requirement', value: formatTokenDisplay(jobConfig?.jobStakeTokens) },
+          { label: 'Minimum agent stake', value: formatTokenDisplay(jobConfig?.minAgentStakeTokens) },
+          { label: 'Maximum job reward', value: formatTokenDisplay(jobConfig?.maxJobRewardTokens) },
+          { label: 'Job duration limit', value: formatSecondsDisplay(jobConfig?.jobDurationLimitSeconds) },
+          {
+            label: 'Max active jobs per agent',
+            value:
+              jobConfig?.maxActiveJobsPerAgent !== undefined
+                ? Number(jobConfig.maxActiveJobsPerAgent).toLocaleString()
+                : '—',
+          },
+          {
+            label: 'Protocol fee',
+            value: jobConfig?.feePct !== undefined ? `${jobConfig.feePct}%` : '—',
+          },
+          {
+            label: 'Validator reward',
+            value: jobConfig?.validatorRewardPct !== undefined ? `${jobConfig.validatorRewardPct}%` : '—',
+          },
+        ];
+
+        renderDefinition(ownerStakeParams, stakeEntries);
+        renderDefinition(ownerJobParams, jobEntries);
+
+        let commands = collectOwnerCommands(scenario, exportData);
+        if (!commands.length) {
+          ownerPrimaryCommand.textContent = 'npm run demo:redenomination:owner-console';
+          ownerCommandsEmpty?.removeAttribute('hidden');
+          ownerCommandsList.innerHTML = '';
+          return;
+        }
+
+        ownerPrimaryCommand.textContent = commands[0];
+        ownerCommandsEmpty?.setAttribute('hidden', 'hidden');
+        const rest = commands.slice(1);
+        ownerCommandsList.innerHTML = rest
+          .map((command) => `<li><code>${command}</code></li>`)
+          .join('');
+      }
 
       function renderActors(actors = []) {
         actorsContainer.innerHTML = actors
@@ -431,52 +611,41 @@
       }
 
       function renderScenario(scenario) {
+        state.scenario = scenario;
         renderActors(scenario.actors ?? []);
         renderFlow(scenario.flow ?? []);
         renderMetrics(scenario.metrics ?? {});
         renderResources(scenario.resources ?? {});
         renderPhaseNavigator(scenario.flow ?? []);
         renderMermaidDiagram(scenario.mermaid ?? '');
+        renderOwnerConsole(state.jobConfig, state.stakeConfig, state.exportData, scenario);
       }
 
-      async function loadScenario() {
-        const response = await fetch(scenarioPath);
-        if (!response.ok) {
-          throw new Error(`Unable to load scenario (${response.status})`);
-        }
-        return response.json();
-      }
-
-      async function loadTranslations() {
-        try {
-          const response = await fetch(translationsPath);
-          if (!response.ok) {
-            throw new Error(`status ${response.status}`);
-          }
-          const payload = await response.json();
-          if (!Array.isArray(payload.languages) || typeof payload.strings !== 'object') {
-            throw new Error('Invalid translation payload');
-          }
-          return payload;
-        } catch (error) {
+      Promise.all([
+        fetchJson(scenarioPath),
+        fetchJson(translationsPath).catch((error) => {
           console.error('Failed to load translations', error);
           return { languages: ['en'], strings: { en: {} } };
-        }
-      }
-
-      Promise.all([loadScenario(), loadTranslations()])
-        .then(([scenario, translations]) => {
-          translationState.languages = translations.languages;
-          translationState.strings = translations.strings;
-          const preferred =
-            translations.languages.find((lang) => navigator.language?.toLowerCase().startsWith(lang.toLowerCase())) ??
-            'en';
+        }),
+        fetchJsonOptional(jobRegistryConfigPath),
+        fetchJsonOptional(stakeManagerConfigPath),
+        fetchJsonOptional(exportDataPath),
+      ])
+        .then(([scenario, translations, jobConfig, stakeConfig, exportData]) => {
+          translationState.languages = translations.languages ?? ['en'];
+          translationState.strings = translations.strings ?? { en: {} };
+          state.jobConfig = jobConfig ?? null;
+          state.stakeConfig = stakeConfig ?? null;
+          state.exportData = exportData ?? {};
+          const navigatorLang = navigator.language?.slice(0, 2).toLowerCase();
+          const preferred = translationState.languages.find((lang) => navigatorLang?.startsWith(lang.toLowerCase())) ?? 'en';
           activeLanguage = preferred;
-          populateLanguageSelector(translations.languages);
+          populateLanguageSelector(translationState.languages);
           setLanguage(preferred);
           renderScenario(scenario);
         })
         .catch((error) => {
+          console.error('Failed to load REDENOMINATION scenario assets', error);
           actorsContainer.innerHTML = `<p style="color: var(--danger)">Failed to load scenario: ${
             error instanceof Error ? error.message : 'Unknown error'
           }</p>`;
@@ -545,6 +714,32 @@
       <section>
         <h2 data-i18n="sectionGuardrails">Operational Guardrails</h2>
         <div class="grid-2" id="metrics"></div>
+      </section>
+
+      <section id="owner-console">
+        <span class="pill" data-i18n="ownerConsolePill">Owner controls</span>
+        <h2 data-i18n="sectionOwner">Owner Command Console</h2>
+        <div class="grid-2">
+          <article class="card">
+            <h3 data-i18n="ownerStakeTitle">Stake guardrails</h3>
+            <dl class="definition-list" id="owner-stake-params"></dl>
+          </article>
+          <article class="card">
+            <h3 data-i18n="ownerJobTitle">Job registry guardrails</h3>
+            <dl class="definition-list" id="owner-job-params"></dl>
+          </article>
+        </div>
+        <p class="muted" data-i18n="ownerCommandsHint">
+          Commands below execute parameter updates, pause windows, and telemetry drills.
+        </p>
+        <h3 class="muted" data-i18n="ownerPrimaryCommandTitle">Primary automation</h3>
+        <div class="code-block" aria-live="polite">
+          <code id="owner-primary-command">npm run demo:redenomination:owner-console</code>
+        </div>
+        <p class="muted" id="owner-commands-empty" data-i18n="ownerCommandsEmpty">
+          Generate the playbook export to populate owner automation commands.
+        </p>
+        <ul id="owner-commands"></ul>
       </section>
 
       <section id="runbook">
