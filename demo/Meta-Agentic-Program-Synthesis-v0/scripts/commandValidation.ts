@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import path from "path";
-import type { MissionConfig } from "./types";
+import type { MissionConfig, OwnerCapabilityAudit } from "./types";
 
 export type PackageScripts = Record<string, string | undefined>;
 
@@ -69,4 +69,24 @@ export async function auditOwnerScripts(
   const scripts = options.scripts ?? (await loadPackageScripts(options.repoRoot));
   const commands = mission.meta.governance?.ownerScripts ?? [];
   return evaluateOwnerScripts(commands, scripts);
+}
+
+export function auditOwnerCapabilities(
+  mission: MissionConfig,
+  options: { scripts: PackageScripts },
+): OwnerCapabilityAudit[] {
+  const { scripts } = options;
+  return mission.ownerControls.capabilities.map((capability) => ({
+    capability,
+    commandAvailable: inspectCommand(capability.command, scripts),
+    verificationAvailable: inspectCommand(capability.verification, scripts),
+  }));
+}
+
+export async function loadOwnerCapabilities(
+  mission: MissionConfig,
+  options: { repoRoot?: string; scripts?: PackageScripts } = {},
+): Promise<OwnerCapabilityAudit[]> {
+  const scripts = options.scripts ?? (await loadPackageScripts(options.repoRoot));
+  return auditOwnerCapabilities(mission, { scripts });
 }

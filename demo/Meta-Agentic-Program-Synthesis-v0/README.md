@@ -85,14 +85,17 @@ flowchart LR
   owner control categories (pause, thermostat, upgrade, treasury, compliance) before any synthesis can start.
 - **Owner script audit** – every mission-declared governance script is resolved against `package.json`, producing ✅/❌ tables in
   the Markdown, JSON, and HTML artefacts so operators immediately spot missing tooling.
+- **Owner capability audit** – every declared pause/thermostat/upgrade/treasury/compliance command _and_ verification script is
+  linted against the repository, surfacing ✅/❌ coverage ratios for command execution and read-back checks directly in the
+  briefing, Markdown dossier, JSON summary, and dashboard.
 
 ## Generated artefacts
 
 | File | Purpose |
 | --- | --- |
 | `meta-agentic-program-synthesis-report.md` | Narrative dossier with Mermaid diagrams, tables, and mission metadata. |
-| `meta-agentic-program-synthesis-summary.json` | Machine-readable synthesis metrics, pipelines, and archive excerpts. |
-| `meta-agentic-program-synthesis-dashboard.html` | Executive UI with live Mermaid rendering and embedded JSON manifest. |
+| `meta-agentic-program-synthesis-summary.json` | Machine-readable synthesis metrics, pipelines, archive excerpts, and ✅/❌ owner command & verification coverage. |
+| `meta-agentic-program-synthesis-dashboard.html` | Executive UI with live Mermaid rendering, owner command/verification verdicts, and embedded JSON manifest. |
 | `meta-agentic-program-synthesis-triangulation.json` | Multi-perspective verification digest (consensus, confidences, per-perspective evidence). |
 | `meta-agentic-program-synthesis-manifest.json` | SHA-256 manifest of every artefact for audit trails. |
 | `meta-agentic-program-synthesis-briefing.md` | Two-page executive briefing with commands, task highlights, and triple-verification recap. |

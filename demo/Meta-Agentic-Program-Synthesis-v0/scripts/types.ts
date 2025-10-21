@@ -91,6 +91,12 @@ export interface MissionOwnerControls {
   capabilities: OwnerCapability[];
 }
 
+export interface OwnerCapabilityAudit {
+  capability: OwnerCapability;
+  commandAvailable: boolean;
+  verificationAvailable: boolean;
+}
+
 export interface OwnerControlCoverage {
   requiredCategories: string[];
   satisfiedCategories: string[];
@@ -109,6 +115,12 @@ export interface OwnerSupremacyMetrics {
   declaredCategories: number;
   satisfiedCategories: number;
   capabilityDeclarations: number;
+  commandDeclared: number;
+  commandAvailable: number;
+  commandAvailability: number;
+  verificationDeclared: number;
+  verificationAvailable: number;
+  verificationAvailability: number;
   declaredScripts: number;
   availableScripts: number;
   scriptAvailability: number;
@@ -195,6 +207,7 @@ export interface SynthesisRun {
   parameters: MissionParameters;
   tasks: TaskResult[];
   ownerCoverage: OwnerControlCoverage;
+  ownerCapabilitiesAudit: OwnerCapabilityAudit[];
   ownerScriptsAudit: OwnerScriptAudit[];
   ownerBriefingPath?: string;
   aggregate: {

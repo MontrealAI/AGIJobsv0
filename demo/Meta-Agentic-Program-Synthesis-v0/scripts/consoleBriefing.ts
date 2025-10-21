@@ -35,13 +35,14 @@ async function main(): Promise<void> {
   console.log(`Accuracy: ${(run.aggregate.averageAccuracy * 100).toFixed(2)}% | Novelty: ${(run.aggregate.noveltyScore * 100).toFixed(2)}%`);
   console.log(`Thermodynamic alignment: ${(run.aggregate.thermodynamics.averageAlignment * 100).toFixed(2)}%`);
   console.log(
-    `Owner supremacy → coverage ${(run.aggregate.ownerSupremacy.coverageRatio * 100).toFixed(2)}% | scripts ${(run.aggregate.ownerSupremacy.scriptAvailability * 100).toFixed(2)}% (${run.aggregate.ownerSupremacy.availableScripts}/${run.aggregate.ownerSupremacy.declaredScripts}) | readiness ${run.aggregate.ownerSupremacy.readiness}`,
+    `Owner supremacy → coverage ${(run.aggregate.ownerSupremacy.coverageRatio * 100).toFixed(2)}% | scripts ${(run.aggregate.ownerSupremacy.scriptAvailability * 100).toFixed(2)}% (${run.aggregate.ownerSupremacy.availableScripts}/${run.aggregate.ownerSupremacy.declaredScripts}) | commands ${(run.aggregate.ownerSupremacy.commandAvailability * 100).toFixed(2)}% (${run.aggregate.ownerSupremacy.commandAvailable}/${run.aggregate.ownerSupremacy.commandDeclared}) | verifications ${(run.aggregate.ownerSupremacy.verificationAvailability * 100).toFixed(2)}% (${run.aggregate.ownerSupremacy.verificationAvailable}/${run.aggregate.ownerSupremacy.verificationDeclared}) | readiness ${run.aggregate.ownerSupremacy.readiness}`,
   );
   console.log("");
   printDivider("Owner Controls");
   for (const capability of run.mission.ownerControls.capabilities) {
-    const status = inspectCommand(capability.command, scripts) ? "✅" : "❌";
-    console.log(`${status} ${capability.category} → ${capability.command}`);
+    const commandStatus = inspectCommand(capability.command, scripts) ? "✅" : "❌";
+    const verificationStatus = inspectCommand(capability.verification, scripts) ? "✅" : "❌";
+    console.log(`${commandStatus}/${verificationStatus} ${capability.category} → ${capability.command} | verify ${capability.verification}`);
   }
   console.log("");
   printDivider("Task Highlights");
