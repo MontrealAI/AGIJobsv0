@@ -62,6 +62,24 @@ class EvolutionPolicy:
 
 
 @dataclass(frozen=True)
+class VerificationPolicy:
+    """Parameters driving multi-angle verification of evolved programs."""
+
+    holdout_threshold: float = 0.75
+    residual_mean_tolerance: float = 0.05
+    residual_std_minimum: float = 0.02
+    divergence_tolerance: float = 0.2
+
+    def to_dict(self) -> Dict[str, float]:
+        return {
+            "holdout_threshold": self.holdout_threshold,
+            "residual_mean_tolerance": self.residual_mean_tolerance,
+            "residual_std_minimum": self.residual_std_minimum,
+            "divergence_tolerance": self.divergence_tolerance,
+        }
+
+
+@dataclass(frozen=True)
 class DemoScenario:
     """Scenario definition surfaced to the non-technical user."""
 
@@ -79,6 +97,7 @@ class DemoConfig:
     reward_policy: RewardPolicy = field(default_factory=RewardPolicy)
     stake_policy: StakePolicy = field(default_factory=StakePolicy)
     evolution_policy: EvolutionPolicy = field(default_factory=EvolutionPolicy)
+    verification_policy: VerificationPolicy = field(default_factory=VerificationPolicy)
     scenarios: List[DemoScenario] = field(default_factory=list)
 
     def as_summary(self) -> Dict[str, object]:
@@ -86,5 +105,6 @@ class DemoConfig:
             "reward_policy": self.reward_policy.to_dict(),
             "stake_policy": self.stake_policy.to_dict(),
             "evolution_policy": self.evolution_policy.to_dict(),
+            "verification_policy": self.verification_policy.to_dict(),
             "scenarios": [scenario.__dict__ for scenario in self.scenarios],
         }

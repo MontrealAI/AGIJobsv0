@@ -15,6 +15,7 @@ from .entities import (
     Job,
     JobStatus,
     RewardBreakdown,
+    VerificationDigest,
 )
 from .evolutionary import EvolutionaryProgramSynthesizer, Program
 from .governance import GovernanceTimelock
@@ -40,8 +41,10 @@ class SyntheticDataset:
         return zip(self.baseline, self.trend, self.cyclical, self.target)
 
 
-def generate_dataset(length: int = 64, noise: float = 0.05) -> SyntheticDataset:
-    rng = random.Random(1337)
+def generate_dataset(
+    length: int = 64, noise: float = 0.05, *, seed: int = 1337
+) -> SyntheticDataset:
+    rng = random.Random(seed)
     baseline = [rng.uniform(0.5, 1.5) for _ in range(length)]
     trend = [0.3 * i / length for i in range(length)]
     cyclical = [math.sin(i / 6.0) for i in range(length)]
@@ -97,6 +100,7 @@ class SovereignArchitect:
         reward_summary = summarise_rewards(rewards)
         performances = aggregate_performance(rewards, self.stake_manager)
         final_score = self._score_program(best_program)
+        verification = self._cross_verify_program(best_program, final_score)
         improvement_over_first = (
             telemetry[-1].best_score - telemetry[0].best_score if telemetry else 0.0
         )
@@ -113,6 +117,7 @@ class SovereignArchitect:
             evolution=history,
             final_program=synthesizer.render_program(best_program),
             final_score=final_score,
+            verification=verification,
             owner_actions=list(self.owner_console.events),
             timelock_actions=list(self.timelock.pending()),
             improvement_over_first=improvement_over_first,
@@ -122,11 +127,7 @@ class SovereignArchitect:
     # --- Internals ---------------------------------------------------------
 
     def _score_program(self, program: Program) -> float:
-        a, b, c = program
-        predictions: List[float] = []
-        for base, slope, cycle, _ in self.dataset.iter_rows():
-            value = (base * a) + (slope * b) + math.sin(cycle * c)
-            predictions.append(value)
+        predictions = self._predict(program, self.dataset)
         mse = self._mean_squared_error(predictions, self.dataset.target)
         normalised = 1.0 - min(mse / max(self.baseline_error, 1e-9), 1.0)
         reward = max(normalised, 0.0) ** 0.5
@@ -141,11 +142,67 @@ class SovereignArchitect:
             count += 1
         return total / max(count, 1)
 
+    def _predict(self, program: Program, dataset: SyntheticDataset) -> List[float]:
+        a, b, c = program
+        predictions: List[float] = []
+        for base, slope, cycle, _ in dataset.iter_rows():
+            value = (base * a) + (slope * b) + math.sin(cycle * c)
+            predictions.append(value)
+        return predictions
+
     def _refresh_runtime_components(self) -> None:
         self.config = self.owner_console.config
         self.reward_engine = RewardEngine(self.config.reward_policy)
         self.stake_manager = StakeManager(self.config.stake_policy)
         self.validation_module = ValidationModule()
+
+    def _cross_verify_program(
+        self, program: Program, primary_score: float
+    ) -> VerificationDigest:
+        policy = self.config.verification_policy
+        base_predictions = self._predict(program, self.dataset)
+        residuals = [actual - prediction for prediction, actual in zip(base_predictions, self.dataset.target)]
+        residual_mean = sum(residuals) / max(len(residuals), 1)
+        variance = sum((value - residual_mean) ** 2 for value in residuals) / max(
+            len(residuals), 1
+        )
+        residual_std = math.sqrt(max(variance, 0.0))
+        holdout_specs = {
+            "holdout_low_noise": {"noise": 0.04, "seed": 8_675_309},
+            "holdout_high_noise": {"noise": 0.08, "seed": 424_242},
+        }
+        holdout_scores: Dict[str, float] = {}
+        for name, spec in holdout_specs.items():
+            dataset = generate_dataset(
+                length=len(self.dataset.target), noise=spec["noise"], seed=spec["seed"]
+            )
+            predictions = self._predict(program, dataset)
+            mse = self._mean_squared_error(predictions, dataset.target)
+            normalised = 1.0 - min(mse / max(self.baseline_error, 1e-9), 1.0)
+            holdout_scores[name] = max(normalised, 0.0) ** 0.5
+        divergence = (
+            max(holdout_scores.values()) - min(holdout_scores.values())
+            if holdout_scores
+            else 0.0
+        )
+        pass_holdout = all(
+            score >= policy.holdout_threshold for score in holdout_scores.values()
+        )
+        pass_residual_balance = (
+            abs(residual_mean) <= policy.residual_mean_tolerance
+            and residual_std >= policy.residual_std_minimum
+        )
+        pass_divergence = divergence <= policy.divergence_tolerance
+        return VerificationDigest(
+            primary_score=primary_score,
+            holdout_scores=holdout_scores,
+            residual_mean=residual_mean,
+            residual_std=residual_std,
+            divergence=divergence,
+            pass_holdout=pass_holdout,
+            pass_residual_balance=pass_residual_balance,
+            pass_divergence=pass_divergence,
+        )
 
     def _execute_on_chain(
         self, best_program: Program, telemetry: List[EvolutionRecord]

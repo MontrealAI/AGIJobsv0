@@ -121,6 +121,27 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Pause operations before they begin (no jobs executed)",
     )
+    verification_group = parser.add_argument_group("Verification policy")
+    verification_group.add_argument(
+        "--verification-holdout-threshold",
+        type=float,
+        help="Override minimum acceptable holdout score",
+    )
+    verification_group.add_argument(
+        "--verification-residual-mean",
+        type=float,
+        help="Override residual mean tolerance",
+    )
+    verification_group.add_argument(
+        "--verification-residual-std",
+        type=float,
+        help="Override residual standard deviation minimum",
+    )
+    verification_group.add_argument(
+        "--verification-divergence",
+        type=float,
+        help="Override maximum allowed holdout divergence",
+    )
     governance_group = parser.add_argument_group("Governance timelock")
     governance_group.add_argument(
         "--timelock-delay",
@@ -173,6 +194,11 @@ def main() -> None:
                 "update_evolution_policy", evolution_overrides
             ):
                 return
+            verification_overrides = overrides.get("verification_policy", {})
+            if verification_overrides and not queue_timelock(
+                "update_verification_policy", verification_overrides
+            ):
+                return
             if "paused" in overrides:
                 if not queue_timelock("set_paused", {"value": bool(overrides["paused"]) }):
                     return
@@ -212,6 +238,20 @@ def main() -> None:
         }
         if evolution_overrides and not queue_timelock(
             "update_evolution_policy", evolution_overrides
+        ):
+            return
+        verification_overrides = {
+            key: value
+            for key, value in {
+                "holdout_threshold": args.verification_holdout_threshold,
+                "residual_mean_tolerance": args.verification_residual_mean,
+                "residual_std_minimum": args.verification_residual_std,
+                "divergence_tolerance": args.verification_divergence,
+            }.items()
+            if value is not None
+        }
+        if verification_overrides and not queue_timelock(
+            "update_verification_policy", verification_overrides
         ):
             return
         if args.pause and not queue_timelock("set_paused", {"value": True}):
@@ -292,6 +332,22 @@ def main() -> None:
         )
     else:
         print("  • Top validator: N/A")
+    verification = artefacts.verification
+    print("\n🔍 Multi-angle verification checks:")
+    for name, score in sorted(verification.holdout_scores.items()):
+        print(f"  • {name}: {score:.4f}")
+    print(
+        f"  • Residual mean {verification.residual_mean:+.4f} | std {verification.residual_std:.4f}"
+    )
+    print(
+        f"  • Holdout divergence {verification.divergence:.4f}"
+        f" | pass gates: holdout={verification.pass_holdout}, residual={verification.pass_residual_balance},"
+        f" divergence={verification.pass_divergence}"
+    )
+    print(
+        "  • Overall verification verdict:",
+        "PASS" if verification.overall_pass else "ATTENTION REQUIRED",
+    )
     if owner_console.events:
         print("\n🛡️ Owner interventions during run:")
         for event in owner_console.events:

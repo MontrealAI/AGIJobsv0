@@ -71,11 +71,11 @@ stateDiagram-v2
    python start_demo.py alpha
    ```
 4. **Open the generated artefacts:**
-   * `demo_output/report.html` – cinematic dashboard with live Mermaid diagrams (architecture atlas, reward flows, evolution timeline), owner command ledger, telemetry, and the evolved program.
-   * `demo_output/report.json` – machine-readable export for downstream automation.
+   * `demo_output/report.html` – cinematic dashboard with live Mermaid diagrams (architecture atlas, reward flows, evolution timeline), multi-angle verification verdicts, owner command ledger, telemetry, and the evolved program.
+   * `demo_output/report.json` – machine-readable export for downstream automation (including verification metrics and pass/fail gates).
 
 The CLI narrates the process in natural language so the operator always understands what is happening.
-It now also prints a reward distribution digest summarising total payouts, architect retention, and the top solver/validator so executives can confirm value capture instantly.
+It now also prints a reward distribution digest summarising total payouts, architect retention, and the top solver/validator so executives can confirm value capture instantly. Immediately afterwards the CLI shares a triple-check verification digest (holdout scores, residual balance, divergence), flagging whether every gate passed.
 
 ---
 
@@ -93,11 +93,18 @@ python start_demo.py alpha \
   --reward-validator-weight 0.25 \
   --stake-minimum 750 \
   --stake-timeout 120 \
-  --evolution-generations 16
+  --evolution-generations 16 \
+  --verification-holdout-threshold 0.82 \
+  --verification-residual-mean 0.04 \
+  --verification-residual-std 0.02 \
+  --verification-divergence 0.15
 ```
 
 Use `--pause` to halt execution instantly. The orchestrator will refuse to launch jobs while paused and will explain the status
 in the CLI output. Re-run without `--pause` (or with a different override set) to resume operations.
+
+Verification overrides keep the sovereign architect honest: tighten holdout thresholds for ultra-conservative validation or
+relax divergence tolerances when exploring frontier scenarios.
 
 ### Timelocked governance
 
@@ -124,6 +131,12 @@ For executive operators, overrides can be pre-packaged in a JSON file:
   "reward_policy": {"total_reward": 3200, "temperature": 1.1},
   "stake_policy": {"minimum_stake": 900, "slash_fraction": 0.15},
   "evolution_policy": {"generations": 18, "mutation_rate": 0.28},
+  "verification_policy": {
+    "holdout_threshold": 0.8,
+    "residual_mean_tolerance": 0.05,
+    "residual_std_minimum": 0.02,
+    "divergence_tolerance": 0.18
+  },
   "paused": false
 }
 ```
@@ -138,6 +151,7 @@ Run the demo with `python start_demo.py alpha --config-file config/owner-overrid
 * `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests` verifies the evolutionary loop, on-chain security primitives, and orchestration pipeline.
 * `.github/workflows/demo-meta-agentic-program-synthesis.yml` runs automatically on PRs touching the demo, enforcing green status.
 * Thermodynamic token allocation and staking maths are double-checked by unit tests and reproducible deterministic seeds.
+* Multi-angle verification tests confirm holdout gating, residual balance, and divergence tolerances across independent datasets.
 
 ---
 
