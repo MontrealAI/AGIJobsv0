@@ -58,6 +58,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <h2>Multi-Angle Verification</h2>
     <p class=\"badge {verification_badge}\">{verification_status}</p>
     <div class=\"grid\">{verification_cards}</div>
+    <div class=\"mermaid\">{verification_mermaid}</div>
     {verification_table}
   </section>
   <section>
@@ -311,6 +312,18 @@ def format_verification_cards(verification: VerificationDigest) -> str:
         f"  <h3>Holdout Divergence</h3><p>{verification.divergence:.4f}</p>",
         f"  <p>Status: {'PASS' if verification.pass_divergence else 'ALERT'}</p>",
         "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>MAE Consistency</h3><p>{verification.mae_score:.4f}</p>",
+        f"  <p>Status: {'PASS' if verification.pass_mae else 'ALERT'}</p>",
+        "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>Confidence Interval</h3><p>{verification.bootstrap_interval[0]:.4f} → {verification.bootstrap_interval[1]:.4f}</p>",
+        f"  <p>Status: {'PASS' if verification.pass_confidence else 'ALERT'}</p>",
+        "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>Monotonicity</h3><p>Violations: {verification.monotonic_violations}</p>",
+        f"  <p>Status: {'PASS' if verification.monotonic_pass else 'ALERT'}</p>",
+        "</div>",
     ]
     return build_rows(cards)
 
@@ -322,9 +335,39 @@ def format_verification_table(verification: VerificationDigest) -> str:
         f"<tr><td>{escape(name)}</td><td>{score:.4f}</td><td>{score - verification.primary_score:+.4f}</td></tr>"
         for name, score in sorted(verification.holdout_scores.items())
     )
+    gates = "".join(
+        [
+            f"<tr><td>MAE Consistency</td><td>{verification.mae_score:.4f}</td><td>{'PASS' if verification.pass_mae else 'ALERT'}</td></tr>",
+            f"<tr><td>Bootstrap Interval</td><td>{verification.bootstrap_interval[0]:.4f} → {verification.bootstrap_interval[1]:.4f}</td><td>{'PASS' if verification.pass_confidence else 'ALERT'}</td></tr>",
+            f"<tr><td>Monotonicity</td><td>{verification.monotonic_violations} violation(s)</td><td>{'PASS' if verification.monotonic_pass else 'ALERT'}</td></tr>",
+        ]
+    )
     return (
         "<table><thead><tr><th>Holdout</th><th>Score</th><th>Δ vs primary</th></tr></thead>"
         f"<tbody>{rows}</tbody></table>"
+        "<table><thead><tr><th>Gate</th><th>Metric</th><th>Status</th></tr></thead>"
+        f"<tbody>{gates}</tbody></table>"
+    )
+
+
+def build_verification_mermaid(verification: VerificationDigest) -> str:
+    lower, upper = verification.bootstrap_interval
+    return "\n".join(
+        [
+            "flowchart LR",
+            "    primary[Primary score] --> residual[Residual balance]",
+            "    primary --> holdout[Holdout suite]",
+            "    primary --> mae[MAE score]",
+            "    mae --> bootstrap[Bootstrap CI]",
+            "    holdout --> monotonic[Monotonic audit]",
+            f"    mae:::status -- {'PASS' if verification.pass_mae else 'ALERT'} --> bootstrap",
+            f"    residual:::status -- {'PASS' if verification.pass_residual_balance else 'ALERT'} --> monotonic",
+            f"    holdout:::status -- {'PASS' if verification.pass_holdout else 'ALERT'} --> monotonic",
+            f"    bootstrap:::status -- {lower:.3f}→{upper:.3f} --> verdict[Final verdict]",
+            f"    monotonic:::status -- {'PASS' if verification.monotonic_pass else 'ALERT'} --> verdict",
+            "    classDef status fill:#0f172a,color:#f8fafc,stroke:#38bdf8,stroke-width:2px",
+            "    class primary,residual,holdout,mae,bootstrap,monotonic,verdict status",
+        ]
     )
 
 
@@ -341,6 +384,7 @@ def render_html(report: DemoRunArtifacts) -> str:
     reward_summary_cards = format_reward_summary(report.reward_summary)
     verification_cards = format_verification_cards(report.verification)
     verification_table = format_verification_table(report.verification)
+    verification_mermaid = build_verification_mermaid(report.verification)
     verification_badge = "pass" if report.verification.overall_pass else "alert"
     verification_status = (
         "All verification gates passed"
@@ -361,6 +405,7 @@ def render_html(report: DemoRunArtifacts) -> str:
         verification_status=verification_status,
         verification_cards=verification_cards,
         verification_table=verification_table,
+        verification_mermaid=verification_mermaid,
         owner_rows=owner_rows,
         timelock_rows=timelock_rows,
         evolution_rows=evolution_rows,

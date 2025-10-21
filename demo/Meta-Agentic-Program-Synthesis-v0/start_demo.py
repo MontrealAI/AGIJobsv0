@@ -142,6 +142,26 @@ def parse_args() -> argparse.Namespace:
         type=float,
         help="Override maximum allowed holdout divergence",
     )
+    verification_group.add_argument(
+        "--verification-mae-threshold",
+        type=float,
+        help="Override acceptable MAE-derived score threshold",
+    )
+    verification_group.add_argument(
+        "--verification-monotonic",
+        type=float,
+        help="Override tolerance for monotonic improvement checks",
+    )
+    verification_group.add_argument(
+        "--verification-bootstrap",
+        type=int,
+        help="Override bootstrap iteration count",
+    )
+    verification_group.add_argument(
+        "--verification-confidence",
+        type=float,
+        help="Override bootstrap confidence level (0-1)",
+    )
     governance_group = parser.add_argument_group("Governance timelock")
     governance_group.add_argument(
         "--timelock-delay",
@@ -247,6 +267,10 @@ def main() -> None:
                 "residual_mean_tolerance": args.verification_residual_mean,
                 "residual_std_minimum": args.verification_residual_std,
                 "divergence_tolerance": args.verification_divergence,
+                "mae_threshold": args.verification_mae_threshold,
+                "monotonic_tolerance": args.verification_monotonic,
+                "bootstrap_iterations": args.verification_bootstrap,
+                "confidence_level": args.verification_confidence,
             }.items()
             if value is not None
         }
@@ -343,6 +367,16 @@ def main() -> None:
         f"  • Holdout divergence {verification.divergence:.4f}"
         f" | pass gates: holdout={verification.pass_holdout}, residual={verification.pass_residual_balance},"
         f" divergence={verification.pass_divergence}"
+    )
+    print(
+        f"  • MAE score {verification.mae_score:.4f} | pass {verification.pass_mae}"
+    )
+    lower, upper = verification.bootstrap_interval
+    print(
+        f"  • Bootstrap CI [{lower:.4f}, {upper:.4f}] | pass {verification.pass_confidence}"
+    )
+    print(
+        f"  • Monotonic violations {verification.monotonic_violations} | pass {verification.monotonic_pass}"
     )
     print(
         "  • Overall verification verdict:",

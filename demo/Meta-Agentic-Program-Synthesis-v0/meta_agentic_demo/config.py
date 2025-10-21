@@ -16,7 +16,7 @@ class RewardPolicy:
     validator_weight: float = 0.15
     architect_weight: float = 0.1
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> Dict[str, float | int]:
         return {
             "total_reward": self.total_reward,
             "temperature": self.temperature,
@@ -33,7 +33,7 @@ class StakePolicy:
     slash_fraction: float = 0.1
     inactivity_timeout: timedelta = timedelta(seconds=30)
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> Dict[str, float | int]:
         return {
             "minimum_stake": self.minimum_stake,
             "slash_fraction": self.slash_fraction,
@@ -51,7 +51,7 @@ class EvolutionPolicy:
     mutation_rate: float = 0.35
     crossover_rate: float = 0.4
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> Dict[str, float | int]:
         return {
             "generations": self.generations,
             "population_size": self.population_size,
@@ -69,13 +69,21 @@ class VerificationPolicy:
     residual_mean_tolerance: float = 0.05
     residual_std_minimum: float = 0.02
     divergence_tolerance: float = 0.2
+    mae_threshold: float = 0.7
+    monotonic_tolerance: float = 0.025
+    bootstrap_iterations: int = 256
+    confidence_level: float = 0.95
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> Dict[str, float | int]:
         return {
             "holdout_threshold": self.holdout_threshold,
             "residual_mean_tolerance": self.residual_mean_tolerance,
             "residual_std_minimum": self.residual_std_minimum,
             "divergence_tolerance": self.divergence_tolerance,
+            "mae_threshold": self.mae_threshold,
+            "monotonic_tolerance": self.monotonic_tolerance,
+            "bootstrap_iterations": self.bootstrap_iterations,
+            "confidence_level": self.confidence_level,
         }
 
 

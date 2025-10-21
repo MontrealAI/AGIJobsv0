@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum, auto
 from hashlib import sha256
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:  # pragma: no cover - only for typing purposes
     from .governance import TimelockedAction
@@ -157,10 +157,23 @@ class VerificationDigest:
     pass_holdout: bool
     pass_residual_balance: bool
     pass_divergence: bool
+    mae_score: float
+    pass_mae: bool
+    bootstrap_interval: Tuple[float, float]
+    pass_confidence: bool
+    monotonic_pass: bool
+    monotonic_violations: int
 
     @property
     def overall_pass(self) -> bool:
-        return self.pass_holdout and self.pass_residual_balance and self.pass_divergence
+        return (
+            self.pass_holdout
+            and self.pass_residual_balance
+            and self.pass_divergence
+            and self.pass_mae
+            and self.pass_confidence
+            and self.monotonic_pass
+        )
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -172,6 +185,12 @@ class VerificationDigest:
             "pass_holdout": self.pass_holdout,
             "pass_residual_balance": self.pass_residual_balance,
             "pass_divergence": self.pass_divergence,
+            "mae_score": self.mae_score,
+            "pass_mae": self.pass_mae,
+            "bootstrap_interval": list(self.bootstrap_interval),
+            "pass_confidence": self.pass_confidence,
+            "monotonic_pass": self.monotonic_pass,
+            "monotonic_violations": self.monotonic_violations,
             "overall_pass": self.overall_pass,
         }
 

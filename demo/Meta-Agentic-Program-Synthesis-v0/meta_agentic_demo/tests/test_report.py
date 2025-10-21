@@ -25,13 +25,17 @@ def test_render_html_embeds_mermaid(tmp_path: Path) -> None:
     html = render_html(artefacts)
     assert "mermaid.initialize" in html
     assert "Architecture Atlas" in html
-    assert html.count("class=\"mermaid\"") >= 3
+    assert html.count("class=\"mermaid\"") >= 4
     assert "Owner Command Ledger" in html
     assert "Governance Timelock" in html
     assert "Evolutionary Trajectory" in html
     assert "Total Rewards" in html
     assert "Multi-Angle Verification" in html
     assert "Holdout" in html
+    assert "MAE Consistency" in html
+    assert "Bootstrap Interval" in html
+    assert "Monotonicity" in html
+    assert "Holdout suite" in html
     assert artefacts.final_program in html
 
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Sequence, Tuple
 
 from .admin import OwnerConsole
 from .config import DemoConfig, DemoScenario
@@ -77,6 +77,9 @@ class SovereignArchitect:
         self.random = random.Random(random_seed)
         zero_predictions = [0.0 for _ in self.dataset.target]
         self.baseline_error = self._mean_squared_error(zero_predictions, self.dataset.target)
+        self.baseline_absolute_error = self._mean_absolute_error(
+            zero_predictions, self.dataset.target
+        )
 
     def run(self, scenario: DemoScenario) -> DemoRunArtifacts:
         # Apply any timelocked actions that have matured before execution starts.
@@ -100,7 +103,7 @@ class SovereignArchitect:
         reward_summary = summarise_rewards(rewards)
         performances = aggregate_performance(rewards, self.stake_manager)
         final_score = self._score_program(best_program)
-        verification = self._cross_verify_program(best_program, final_score)
+        verification = self._cross_verify_program(best_program, final_score, telemetry)
         improvement_over_first = (
             telemetry[-1].best_score - telemetry[0].best_score if telemetry else 0.0
         )
@@ -142,6 +145,14 @@ class SovereignArchitect:
             count += 1
         return total / max(count, 1)
 
+    def _mean_absolute_error(self, predictions: Iterable[float], actuals: Iterable[float]) -> float:
+        total = 0.0
+        count = 0
+        for prediction, actual in zip(predictions, actuals):
+            total += abs(prediction - actual)
+            count += 1
+        return total / max(count, 1)
+
     def _predict(self, program: Program, dataset: SyntheticDataset) -> List[float]:
         a, b, c = program
         predictions: List[float] = []
@@ -157,7 +168,7 @@ class SovereignArchitect:
         self.validation_module = ValidationModule()
 
     def _cross_verify_program(
-        self, program: Program, primary_score: float
+        self, program: Program, primary_score: float, telemetry: Sequence[EvolutionRecord]
     ) -> VerificationDigest:
         policy = self.config.verification_policy
         base_predictions = self._predict(program, self.dataset)
@@ -167,6 +178,10 @@ class SovereignArchitect:
             len(residuals), 1
         )
         residual_std = math.sqrt(max(variance, 0.0))
+        mae = self._mean_absolute_error(base_predictions, self.dataset.target)
+        baseline_mae = max(self.baseline_absolute_error, 1e-9)
+        mae_score = max(1.0 - min(mae / baseline_mae, 1.0), 0.0)
+        pass_mae = mae_score >= policy.mae_threshold
         holdout_specs = {
             "holdout_low_noise": {"noise": 0.04, "seed": 8_675_309},
             "holdout_high_noise": {"noise": 0.08, "seed": 424_242},
@@ -193,6 +208,13 @@ class SovereignArchitect:
             and residual_std >= policy.residual_std_minimum
         )
         pass_divergence = divergence <= policy.divergence_tolerance
+        bootstrap_interval = self._bootstrap_interval(program)
+        pass_confidence = bootstrap_interval[0] >= max(
+            policy.holdout_threshold - policy.monotonic_tolerance, 0.0
+        )
+        monotonic_pass, violations = self._assess_monotonicity(
+            [record.best_score for record in telemetry], policy.monotonic_tolerance
+        )
         return VerificationDigest(
             primary_score=primary_score,
             holdout_scores=holdout_scores,
@@ -202,7 +224,55 @@ class SovereignArchitect:
             pass_holdout=pass_holdout,
             pass_residual_balance=pass_residual_balance,
             pass_divergence=pass_divergence,
+            mae_score=mae_score,
+            pass_mae=pass_mae,
+            bootstrap_interval=bootstrap_interval,
+            pass_confidence=pass_confidence,
+            monotonic_pass=monotonic_pass,
+            monotonic_violations=violations,
         )
+
+    def _bootstrap_interval(self, program: Program) -> Tuple[float, float]:
+        policy = self.config.verification_policy
+        rows = list(zip(self.dataset.baseline, self.dataset.trend, self.dataset.cyclical, self.dataset.target))
+        if not rows:
+            return (0.0, 0.0)
+        rng = random.Random(9876)
+        scores: List[float] = []
+        indices = list(range(len(rows)))
+        a, b, c = program
+        for _ in range(max(policy.bootstrap_iterations, 1)):
+            sample_predictions: List[float] = []
+            sample_targets: List[float] = []
+            for index in (rng.choice(indices) for _ in indices):
+                base, slope, cycle, target = rows[index]
+                value = (base * a) + (slope * b) + math.sin(cycle * c)
+                sample_predictions.append(value)
+                sample_targets.append(target)
+            mse = self._mean_squared_error(sample_predictions, sample_targets)
+            normalised = 1.0 - min(mse / max(self.baseline_error, 1e-9), 1.0)
+            scores.append(max(normalised, 0.0) ** 0.5)
+        scores.sort()
+        if not scores:
+            return (0.0, 0.0)
+        alpha = max(min(1.0 - policy.confidence_level, 0.999), 0.0)
+        lower_index = int(alpha / 2 * (len(scores) - 1))
+        upper_index = int((1 - alpha / 2) * (len(scores) - 1))
+        return (scores[lower_index], scores[upper_index])
+
+    def _assess_monotonicity(
+        self, scores: Sequence[float], tolerance: float
+    ) -> Tuple[bool, int]:
+        if not scores:
+            return True, 0
+        violations = 0
+        best_so_far = scores[0]
+        for score in scores[1:]:
+            if score + tolerance < best_so_far:
+                violations += 1
+            else:
+                best_so_far = max(best_so_far, score)
+        return violations == 0, violations
 
     def _execute_on_chain(
         self, best_program: Program, telemetry: List[EvolutionRecord]
