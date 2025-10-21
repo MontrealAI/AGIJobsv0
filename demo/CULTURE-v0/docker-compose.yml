@@ -1,54 +1,52 @@
 version: "3.9"
-
 services:
+  culture-chain:
+    image: ghcr.io/foundry-rs/foundry:latest
+    command: ["anvil", "--host", "0.0.0.0", "--chain-id", "31337"]
+    ports:
+      - "8545:8545"
+
   culture-contracts:
-    image: node:20
-    working_dir: /app
-    command: ["sh", "-c", "if [ ! -d node_modules ]; then npm install; fi; npx hardhat node --hostname 0.0.0.0 --port ${CULTURE_RPC_PORT:-8545}"]
-    ports:
-      - "${CULTURE_RPC_PORT:-8545}:8545"
+    image: node:20.18.1
+    depends_on:
+      - culture-chain
+    working_dir: /workspace
     volumes:
-      - ./:/app
+      - ..:/workspace
+    command: ["npx", "hardhat", "run", "demo/CULTURE-v0/scripts/deploy.culture.ts", "--network", "localhost"]
     environment:
-      - CULTURE_RPC_PORT=${CULTURE_RPC_PORT:-8545}
-  arena-orchestrator:
-    image: node:20
-    working_dir: /app
+      - RPC_URL=http://culture-chain:8545
+      - DEPLOYER_PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY}
+      - OWNER_ADDRESS=${OWNER_ADDRESS}
+      - AGI_JOBS_CORE_ADDRESSES=${AGI_JOBS_CORE_ADDRESSES}
+
+  culture-orchestrator:
+    build:
+      context: ..
+      dockerfile: demo/CULTURE-v0/backend/arena-orchestrator/Dockerfile
+    env_file: .env
     depends_on:
       - culture-contracts
-    command: ["sh", "-c", "if [ ! -d node_modules ]; then npm install; fi; node demo/CULTURE-v0/backend/arena-orchestrator/server.mjs"]
     ports:
-      - "${ARENA_ORCHESTRATOR_PORT:-8080}:8080"
-    volumes:
-      - ./:/app
-    environment:
-      - ARENA_ORCHESTRATOR_PORT=${ARENA_ORCHESTRATOR_PORT:-8080}
-      - CULTURE_RPC_URL=${CULTURE_RPC_URL:-http://culture-contracts:8545}
-  culture-graph-indexer:
-    image: node:20
-    working_dir: /app
+      - "${ORCHESTRATOR_PORT:-4005}:4005"
+
+  culture-indexer:
+    build:
+      context: ..
+      dockerfile: demo/CULTURE-v0/indexers/culture-graph-indexer/Dockerfile
+    env_file: .env
     depends_on:
       - culture-contracts
-    command: ["sh", "-c", "if [ ! -d demo/CULTURE-v0/indexers/culture-graph-indexer/node_modules ]; then npm install --prefix demo/CULTURE-v0/indexers/culture-graph-indexer; fi; node demo/CULTURE-v0/indexers/culture-graph-indexer/server.mjs"]
     ports:
-      - "${CULTURE_INDEXER_PORT:-8000}:8000"
-    volumes:
-      - ./:/app
-    environment:
-      - CULTURE_INDEXER_PORT=${CULTURE_INDEXER_PORT:-8000}
+      - "${INDEXER_PORT:-4100}:4100"
+
   culture-studio:
-    image: node:20
-    working_dir: /app
+    build:
+      context: ..
+      dockerfile: demo/CULTURE-v0/apps/culture-studio/Dockerfile
+    env_file: .env
     depends_on:
-      - arena-orchestrator
-      - culture-graph-indexer
-    command: ["sh", "-c", "node demo/CULTURE-v0/apps/culture-studio/server.mjs"]
+      - culture-orchestrator
+      - culture-indexer
     ports:
-      - "${CULTURE_UI_PORT:-3000}:3000"
-    volumes:
-      - ./:/app
-    environment:
-      - CULTURE_UI_PORT=${CULTURE_UI_PORT:-3000}
-      - CULTURE_ORCHESTRATOR_PORT=${ARENA_ORCHESTRATOR_PORT:-8080}
-      - CULTURE_INDEXER_PORT=${CULTURE_INDEXER_PORT:-8000}
-      - CULTURE_RPC_PORT=${CULTURE_RPC_PORT:-8545}
+      - "4173:4173"

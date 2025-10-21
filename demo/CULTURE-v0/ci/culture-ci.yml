@@ -1,4 +1,4 @@
-name: CULTURE Demo
+name: CULTURE Demo CI
 
 on:
   push:
@@ -9,16 +9,48 @@ on:
       - 'demo/CULTURE-v0/**'
 
 jobs:
-  culture:
+  contracts:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install orchestrator deps
-        run: npm install
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: Install Node dependencies
+        run: npm install --legacy-peer-deps
+      - name: Run forge tests
+        working-directory: demo/CULTURE-v0
+        run: forge test
+
+  orchestrator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
         working-directory: demo/CULTURE-v0/backend/arena-orchestrator
-      - name: Run orchestrator unit tests
-        run: npx vitest run
+        run: npm install --legacy-peer-deps
+      - name: Run tests
         working-directory: demo/CULTURE-v0/backend/arena-orchestrator
-      - name: Smoke check UI lint placeholder
-        run: npm run lint
+        run: npm test
+
+  indexer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        working-directory: demo/CULTURE-v0/indexers/culture-graph-indexer
+        run: npm install --legacy-peer-deps
+      - name: Run tests
+        working-directory: demo/CULTURE-v0/indexers/culture-graph-indexer
+        run: npm test
+
+  studio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
         working-directory: demo/CULTURE-v0/apps/culture-studio
+        run: npm install --legacy-peer-deps
+      - name: Build UI
+        working-directory: demo/CULTURE-v0/apps/culture-studio
+        run: npm run build

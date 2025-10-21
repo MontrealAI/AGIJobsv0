@@ -1,0 +1,5 @@
+[
+  { "id": 1, "author": "0xowner", "kind": "book", "cid": "bagucultureseed1" },
+  { "id": 2, "author": "0xowner", "kind": "book", "cid": "bagucultureseed2", "parentId": 1, "cites": [1] },
+  { "id": 3, "author": "0xowner", "kind": "prompt", "cid": "bagucultureseed3", "cites": [1, 2] }
+]

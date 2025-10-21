@@ -1,51 +1,42 @@
-export interface DifficultyParams {
-  current: number;
-  targetSuccessRate: number; // expressed in basis points (0-10000)
-  observedSuccessRate: number; // basis points
-  minDifficulty: number;
-  maxDifficulty: number;
-  maxStep: number;
-  proportionalGain?: number;
+export interface DifficultyConfig {
+  readonly targetSuccessRate: number; // 0-1 range
+  readonly minDifficulty: number;
+  readonly maxDifficulty: number;
+  readonly maxStep: number;
+  readonly proportionalGain: number;
 }
 
-const DEFAULT_GAIN = 0.01;
-
-/**
- * Adaptive difficulty controller inspired by proportional-integral design.
- * For v0 we only implement proportional control with clamping and sanity checks.
- */
-export function nextDifficulty(params: DifficultyParams): number {
-  const {
-    current,
-    targetSuccessRate,
-    observedSuccessRate,
-    minDifficulty,
-    maxDifficulty,
-    maxStep,
-    proportionalGain = DEFAULT_GAIN,
-  } = params;
-
-  if (minDifficulty > maxDifficulty) {
-    throw new Error("Invalid difficulty bounds");
-  }
-
-  const error = observedSuccessRate - targetSuccessRate;
-  const rawDelta = error * proportionalGain;
-  const unclamped = current + rawDelta;
-
-  const clampedToBounds = Math.min(Math.max(unclamped, minDifficulty), maxDifficulty);
-  const upperBound = current + maxStep;
-  const lowerBound = current - maxStep;
-  const boundedStep = Math.min(Math.max(clampedToBounds, lowerBound), upperBound);
-
-  // Difficulty must be an integer for on-chain storage.
-  return Math.round(boundedStep);
+export interface DifficultyResult {
+  readonly nextDifficulty: number;
+  readonly delta: number;
 }
 
-export function successRateFromOutcomes(totalStudents: number, successful: number): number {
-  if (totalStudents <= 0) {
-    return 0;
-  }
-  const rate = (successful / totalStudents) * 10_000;
-  return Math.round(Math.min(Math.max(rate, 0), 10_000));
+export function computeNextDifficulty(
+  currentDifficulty: number,
+  observedSuccessRate: number,
+  config: DifficultyConfig
+): DifficultyResult {
+  const target = clamp01(config.targetSuccessRate);
+  const observed = clamp01(observedSuccessRate);
+  const error = observed - target;
+  const rawAdjustment = error * config.proportionalGain;
+  let adjusted = currentDifficulty + rawAdjustment;
+
+  const upperBound = currentDifficulty + config.maxStep;
+  const lowerBound = currentDifficulty - config.maxStep;
+
+  if (adjusted > upperBound) adjusted = upperBound;
+  if (adjusted < lowerBound) adjusted = lowerBound;
+
+  if (adjusted > config.maxDifficulty) adjusted = config.maxDifficulty;
+  if (adjusted < config.minDifficulty) adjusted = config.minDifficulty;
+
+  const nextDifficulty = Math.round(adjusted);
+  return { nextDifficulty, delta: nextDifficulty - currentDifficulty };
+}
+
+function clamp01(value: number): number {
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+  return value;
 }

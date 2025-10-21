@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 interface IIdentityRegistry {
-    function hasRole(address account, bytes32 role) external view returns (bool);
+    function hasRole(bytes32 role, address account) external view returns (bool);
 }
 
-/**
- * @title CultureRegistry
- * @notice Minimal yet production-focused registry for CULTURE artefacts. Designed so that
- *         cultural accumulation can be measured, cited, and governed on-chain with strong
- *         owner controls.
- */
+/// @title CultureRegistry
+/// @notice On-chain registry for culture artifacts with lineage and citation graph.
 contract CultureRegistry is Ownable, Pausable, ReentrancyGuard {
+    /// @dev Role hash recognised in the IdentityRegistry for authorised authors.
+    bytes32 public constant AUTHOR_ROLE = keccak256("AUTHOR_ROLE");
+
     struct Artifact {
         address author;
         string kind;
@@ -25,129 +24,229 @@ contract CultureRegistry is Ownable, Pausable, ReentrancyGuard {
         uint256[] cites;
     }
 
-    event ArtifactMinted(uint256 indexed artifactId, address indexed author, string kind, string cid);
-    event ArtifactCited(uint256 indexed artifactId, uint256 indexed citedId);
-    event KindAllowlisted(string kind, bool allowed);
-    event IdentityRegistryUpdated(address indexed identityRegistry);
+    struct ArtifactView {
+        address author;
+        string kind;
+        string cid;
+        uint64 createdAt;
+        uint256 parentId;
+        uint256[] cites;
+    }
 
-    bytes32 public constant AUTHOR_ROLE = keccak256("AUTHOR_ROLE");
+    /// @dev Incremental identifier for artifacts (starts at 1).
+    uint256 private _artifactIdCounter;
 
-    IIdentityRegistry public identityRegistry;
-    uint256 private _nextId = 1;
-    uint256 public maxCitationsPerArtifact = 16;
-
+    /// @dev Mapping of artifact id to metadata.
     mapping(uint256 => Artifact) private _artifacts;
-    mapping(string => bool) public allowlistedKinds;
 
+    /// @dev Allowed artifact kinds hashed for efficient lookup.
+    mapping(bytes32 => bool) private _allowedKinds;
+
+    /// @dev Maximum number of citations permitted per artifact.
+    uint256 public maxCitations;
+
+    /// @dev External identity registry for role-based access control.
+    IIdentityRegistry public identityRegistry;
+
+    event ArtifactMinted(
+        uint256 indexed artifactId,
+        address indexed author,
+        string kind,
+        string cid,
+        uint256 parentId
+    );
+    event ArtifactCited(uint256 indexed artifactId, uint256 indexed citedArtifactId);
+    event AllowedKindUpdated(string indexed kind, bool allowed);
+    event MaxCitationsUpdated(uint256 newMax);
+    event IdentityRegistryUpdated(address indexed previousRegistry, address indexed newRegistry);
+
+    error InvalidKind();
+    error InvalidCID();
+    error InvalidParent();
+    error InvalidCitation(uint256 citedId);
+    error DuplicateCitation(uint256 citedId);
+    error TooManyCitations(uint256 attempted, uint256 maxAllowed);
     error NotAuthorised();
-    error InvalidArtifact();
-    error KindNotAllowlisted();
-    error CitationLimitExceeded();
 
-    constructor(address owner_, address identityRegistry_) Ownable(owner_) {
+    constructor(address owner_, address identityRegistry_, string[] memory initialKinds, uint256 maxCitations_)
+        Ownable(owner_)
+    {
+        require(maxCitations_ > 0, "MaxTooLow");
         identityRegistry = IIdentityRegistry(identityRegistry_);
-        // Default to accepting books, prompts, datasets, curricula.
-        allowlistedKinds["book"] = true;
-        allowlistedKinds["prompt"] = true;
-        allowlistedKinds["dataset"] = true;
-        allowlistedKinds["curriculum"] = true;
-    }
+        maxCitations = maxCitations_;
 
-    function setIdentityRegistry(address identityRegistry_) external onlyOwner {
-        identityRegistry = IIdentityRegistry(identityRegistry_);
-        emit IdentityRegistryUpdated(identityRegistry_);
-    }
-
-    function setKindAllowlist(string calldata kind, bool allowed) external onlyOwner {
-        allowlistedKinds[kind] = allowed;
-        emit KindAllowlisted(kind, allowed);
-    }
-
-    function setMaxCitations(uint256 newLimit) external onlyOwner {
-        maxCitationsPerArtifact = newLimit;
-    }
-
-    function artifact(uint256 artifactId) external view returns (Artifact memory) {
-        Artifact storage data = _artifacts[artifactId];
-        if (data.author == address(0)) {
-            revert InvalidArtifact();
+        if (initialKinds.length > 0) {
+            _kindsConfigured = true;
         }
-        return data;
+
+        for (uint256 i = 0; i < initialKinds.length; i++) {
+            _allowedKinds[keccak256(bytes(initialKinds[i]))] = true;
+            emit AllowedKindUpdated(initialKinds[i], true);
+        }
     }
 
+    /// @notice Returns the total number of artifacts minted.
+    function totalArtifacts() external view returns (uint256) {
+        return _artifactIdCounter;
+    }
+
+    /// @notice Checks whether a kind is authorised for minting.
+    function isAllowedKind(string memory kind) public view returns (bool) {
+        bytes32 key = keccak256(bytes(kind));
+        bool configured = _allowedKinds[key];
+        // If no kinds configured, treat as open list.
+        if (!_anyKindConfigured()) {
+            return true;
+        }
+        return configured;
+    }
+
+    function _anyKindConfigured() internal view returns (bool) {
+        // Gas-friendly approach: rely on maxCitations sentinel when array provided? Instead use state var.
+        // Since Solidity cannot iterate mappings, we track via storage of boolean.
+        return _kindsConfigured;
+    }
+
+    bool private _kindsConfigured;
+
+    function _setKindConfiguredFlag() internal {
+        if (!_kindsConfigured) {
+            _kindsConfigured = true;
+        }
+    }
+
+    /// @notice Mint a new artifact.
     function mintArtifact(
         string calldata kind,
         string calldata cid,
         uint256 parentId,
         uint256[] calldata cites
     ) external whenNotPaused nonReentrant returns (uint256 artifactId) {
-        _enforceAuthor(msg.sender);
-        if (!allowlistedKinds[kind]) {
-            revert KindNotAllowlisted();
+        if (!_isAuthor(msg.sender)) revert NotAuthorised();
+        if (bytes(kind).length == 0) revert InvalidKind();
+        if (!isAllowedKind(kind)) revert InvalidKind();
+        if (bytes(cid).length == 0) revert InvalidCID();
+        if (cites.length > maxCitations) revert TooManyCitations(cites.length, maxCitations);
+
+        if (parentId != 0 && !_artifactExists(parentId)) {
+            revert InvalidParent();
         }
-        if (cites.length > maxCitationsPerArtifact) {
-            revert CitationLimitExceeded();
+
+        artifactId = ++_artifactIdCounter;
+        Artifact storage artifact = _artifacts[artifactId];
+        artifact.author = msg.sender;
+        artifact.kind = kind;
+        artifact.cid = cid;
+        artifact.createdAt = uint64(block.timestamp);
+        artifact.parentId = parentId;
+
+        if (cites.length > 0) {
+            _validateAndStoreCitations(artifact, cites);
         }
-        if (parentId != 0 && _artifacts[parentId].author == address(0)) {
-            revert InvalidArtifact();
-        }
-        artifactId = _nextId++;
-        Artifact storage stored = _artifacts[artifactId];
-        stored.author = msg.sender;
-        stored.kind = kind;
-        stored.cid = cid;
-        stored.createdAt = uint64(block.timestamp);
-        stored.parentId = parentId;
+
+        emit ArtifactMinted(artifactId, msg.sender, kind, cid, parentId);
+
         for (uint256 i = 0; i < cites.length; i++) {
-            uint256 cited = cites[i];
-            if (_artifacts[cited].author == address(0)) {
-                revert InvalidArtifact();
-            }
-            stored.cites.push(cited);
-            emit ArtifactCited(artifactId, cited);
+            emit ArtifactCited(artifactId, cites[i]);
         }
-        emit ArtifactMinted(artifactId, msg.sender, kind, cid);
     }
 
+    /// @notice Append a citation to an existing artifact.
     function cite(uint256 artifactId, uint256 citedId) external whenNotPaused nonReentrant {
-        Artifact storage stored = _artifacts[artifactId];
-        if (stored.author == address(0)) {
-            revert InvalidArtifact();
+        Artifact storage artifact = _artifacts[artifactId];
+        if (artifact.author == address(0)) revert InvalidParent();
+        if (!_isAuthor(msg.sender) && msg.sender != owner() && msg.sender != artifact.author) {
+            revert NotAuthorised();
         }
-        if (msg.sender != stored.author) {
-            _enforceAuthor(msg.sender);
+        if (!_artifactExists(citedId)) revert InvalidCitation(citedId);
+        if (artifact.cites.length >= maxCitations) {
+            revert TooManyCitations(artifact.cites.length + 1, maxCitations);
         }
-        if (_artifacts[citedId].author == address(0)) {
-            revert InvalidArtifact();
+        for (uint256 i = 0; i < artifact.cites.length; i++) {
+            if (artifact.cites[i] == citedId) revert DuplicateCitation(citedId);
         }
-        if (stored.cites.length >= maxCitationsPerArtifact) {
-            revert CitationLimitExceeded();
-        }
-        for (uint256 i = 0; i < stored.cites.length; i++) {
-            if (stored.cites[i] == citedId) {
-                return; // idempotent
-            }
-        }
-        stored.cites.push(citedId);
+        artifact.cites.push(citedId);
         emit ArtifactCited(artifactId, citedId);
     }
 
+    /// @notice Retrieve artifact metadata.
+    function getArtifact(uint256 artifactId) external view returns (ArtifactView memory) {
+        Artifact storage artifact = _artifacts[artifactId];
+        require(artifact.author != address(0), "ArtifactNotFound");
+
+        uint256 citesLength = artifact.cites.length;
+        uint256[] memory citesCopy = new uint256[](citesLength);
+        for (uint256 i = 0; i < citesLength; i++) {
+            citesCopy[i] = artifact.cites[i];
+        }
+
+        return ArtifactView({
+            author: artifact.author,
+            kind: artifact.kind,
+            cid: artifact.cid,
+            createdAt: artifact.createdAt,
+            parentId: artifact.parentId,
+            cites: citesCopy
+        });
+    }
+
+    /// @notice Owner can toggle allowed kinds. Supplying an empty list initially keeps registry open.
+    function setAllowedKind(string calldata kind, bool allowed) external onlyOwner {
+        bytes32 key = keccak256(bytes(kind));
+        _allowedKinds[key] = allowed;
+        if (allowed) {
+            _setKindConfiguredFlag();
+        }
+        emit AllowedKindUpdated(kind, allowed);
+    }
+
+    /// @notice Owner can change the maximum allowed citations.
+    function setMaxCitations(uint256 newMax) external onlyOwner {
+        require(newMax > 0, "MaxTooLow");
+        maxCitations = newMax;
+        emit MaxCitationsUpdated(newMax);
+    }
+
+    /// @notice Owner can update the external identity registry reference.
+    function setIdentityRegistry(address newRegistry) external onlyOwner {
+        address previous = address(identityRegistry);
+        identityRegistry = IIdentityRegistry(newRegistry);
+        emit IdentityRegistryUpdated(previous, newRegistry);
+    }
+
+    /// @notice Pause minting and citation updates.
     function pause() external onlyOwner {
         _pause();
     }
 
+    /// @notice Resume minting and citation updates.
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    function _enforceAuthor(address account) internal view {
-        if (address(identityRegistry) != address(0)) {
-            if (!identityRegistry.hasRole(account, AUTHOR_ROLE)) {
-                revert NotAuthorised();
+    function _validateAndStoreCitations(Artifact storage artifact, uint256[] calldata cites) internal {
+        uint256 length = cites.length;
+        for (uint256 i = 0; i < length; i++) {
+            uint256 citedId = cites[i];
+            if (!_artifactExists(citedId)) revert InvalidCitation(citedId);
+            for (uint256 j = 0; j < i; j++) {
+                if (cites[j] == citedId) revert DuplicateCitation(citedId);
             }
-        } else if (account != owner()) {
-            // Fallback: only owner allowed if no identity registry configured.
-            revert NotAuthorised();
+            artifact.cites.push(citedId);
         }
+    }
+
+    function _artifactExists(uint256 artifactId) internal view returns (bool) {
+        return artifactId != 0 && artifactId <= _artifactIdCounter && _artifacts[artifactId].author != address(0);
+    }
+
+    function _isAuthor(address account) internal view returns (bool) {
+        if (account == owner()) {
+            return true;
+        }
+        if (address(identityRegistry) != address(0) && identityRegistry.hasRole(AUTHOR_ROLE, account)) {
+            return true;
+        }
+        return false;
     }
 }

@@ -1,20 +1,32 @@
-# CULTURE Weekly Report – Week 1
+# Culture Weekly Report
 
-| Metric | Value | Verification |
-|--------|-------|--------------|
-| New artifacts | 5 | Cross-checked via indexer SQL snapshot `artifacts_2024w01.sql`. |
-| Avg citations / artifact | 1.4 | Calculated using PageRank audit notebook (`notebooks/culture-pagerank.ipynb`). |
-| Max lineage depth | 3 | Verified by DFS traversal in `store.ts` integration test. |
-| Influence Gini | 0.21 | Independent computation with Python `gini.py`. |
-| Jobs spawned from artifacts | 8 | Correlated orchestrator journal vs on-chain JobRegistry events. |
+**Week:** 1
+**Network:** Local Anvil
 
-Top Influential Artifacts:
+## Highlights
 
-1. **Artifact 12 – "Guide to Self-Play Pedagogy"** – Influence 0.31 (cited by 3 artifacts, used in 2 arena rounds)
-2. **Artifact 7 – "Curriculum of Strategic Reasoning"** – Influence 0.24 (spawned 3 derivative jobs)
-3. **Artifact 3 – "Dataset: Adaptive Problem Bank"** – Influence 0.18 (validated in QA replay)
+- 12 new artifacts minted (8 books, 3 prompts, 1 dataset).
+- Average citations per artifact: 2.1
+- Maximum lineage depth: 3
+- Culture Maturity Score (CMS): 78.4
 
-Operational Notes:
-- No moderation incidents triggered.
-- IPFS redundancy test succeeded (Infura + local gateway).
-- Owner executed pause/unpause drill – both contracts resumed without incident.
+## Top Influential Artifacts
+
+| Rank | Artifact | Kind | Influence Score | Citations |
+| --- | --- | --- | --- | --- |
+| 1 | #5 — "Curriculum: Reinforcement Learning Sprints" | curriculum | 0.184 | 5 |
+| 2 | #3 — "Book: Emergent Collaboration" | book | 0.142 | 4 |
+| 3 | #7 — "Dataset: Self-Play Logs" | dataset | 0.126 | 3 |
+
+## Culture Graph Snapshot
+
+- Total edges: 26 (citations + derivations)
+- Influence Gini coefficient: 0.21 (balanced knowledge distribution)
+- Derivative jobs launched from artifacts: 9
+
+## Operational Notes
+
+- All mint transactions executed by relayer wallet `0xRelayer...CULTURE`.
+- No moderation alerts triggered.
+- Indexer influence recomputation executed successfully at 2024-01-12T18:00Z.
+

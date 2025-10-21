@@ -1,149 +1,113 @@
-# CULTURE Demo Operations Runbook (Owner Edition)
+# CULTURE Demo Runbook
 
-This runbook ensures a non-technical platform owner can deploy, operate, and govern the 🎖️ CULTURE 👁️✨ demo with confidence. Each step includes intent, primary flow, alternate checks, and emergency procedures. Cross references point back to the sprint playbook for implementation details.
+This runbook provides operational guidance for the CULTURE demo, enabling the platform owner to deploy, monitor, and control the system with confidence.
 
-## 1. Prerequisites & Environment
+## 1. Prerequisites
 
-| Item | Purpose | Triple Verification |
-|------|---------|--------------------|
-| Docker ≥ 24.x | Container orchestration | `docker version`, sample compose, uninstall test |
-| Node.js ≥ 20.x | Script execution fallback | `node -v`, npx dry-run, integrity hash |
-| Git access | Pulling updates & CI hooks | `git status`, signed commits, branch protection |
-| Wallet (owner) | Contract control actions | Hardware wallet pairing, dry-run tx, pausable test |
-| .env file | Service configuration | Checksums vs template, diff review, encrypted backup |
+- Docker 24+
+- Node.js 20.18.1
+- Access to an Ethereum RPC endpoint (local Anvil, Sepolia, or mainnet fork)
+- IPFS pinning provider credentials (e.g., web3.storage, Pinata) if using managed storage
+- Owner wallet with sufficient ETH for deployments and gas
 
-## 2. One-Click Deployment
+## 2. Environment Configuration
 
-1. **Clone & Prepare**
-   - `git clone https://github.com/MontrealAI/AGIJobsv0.git`
-   - `cd demo/CULTURE-v0`
-   - `cp .env.example .env` → populate using the table below.
+1. Copy `.env.example` to `.env`.
+2. Fill in the following variables:
+   - `RPC_URL` — Ethereum RPC endpoint.
+   - `CHAIN_ID` — Numeric chain identifier.
+   - `DEPLOYER_PRIVATE_KEY` — Hex string for deployer/relayer (DO NOT commit).
+   - `OWNER_ADDRESS` — Wallet address with owner privileges.
+   - `IPFS_GATEWAY` / `IPFS_API_TOKEN` — Optional if using remote IPFS.
+   - `AGI_JOBS_CORE_ADDRESSES` — JSON blob pointing to deployed AGI Jobs v0 (v2) contracts.
 
-2. **Environment Variables (Excerpt)**
+## 3. One-Click Deployment
 
-| Variable | Description | Validation |
-|----------|-------------|------------|
-| RPC_URL | JSON-RPC endpoint (recommended: Base Sepolia) | `curl $RPC_URL` health check |
-| DEPLOYER_KEY | Relayer private key (hex) | Cold storage backup, balance check |
-| OWNER_ADDRESS | Wallet controlling contracts | Matches hardware wallet, test signature |
-| IPFS_PROJECT_ID / SECRET | Pinning service credentials | API token scope validation |
-| CULTURE_INITIAL_AGENTS | Comma-separated addresses | IdentityRegistry cross-check |
+```bash
+docker compose up --build
+```
 
-3. **Launch Stack**
-   - `docker compose up --build`
-   - Verify services: `docker ps` should list `culture-contracts`, `arena-orchestrator`, `culture-graph-indexer`, `culture-studio`.
-   - Health probes: `curl localhost:8080/health` (orchestrator), `curl localhost:8000/health` (indexer).
+Services started:
 
-4. **Contract Deployment**
-   - If not auto-run, execute: `docker compose exec culture-contracts npx hardhat run scripts/deploy.culture.ts --network local`.
-   - Persist addresses into `config/culture.json` and `.env` (orchestrator/UI containers reload automatically).
+- `culture-contracts` — Hardhat node + deployment scripts.
+- `culture-orchestrator` — Arena automation API.
+- `culture-indexer` — GraphQL indexer and influence calculator.
+- `culture-studio` — Owner-facing UI.
+- `culture-ipfs` — Optional local IPFS daemon (if enabled in compose).
 
-## 3. Golden Paths
+Wait until logs indicate successful contract deployment and service readiness.
 
-### 3.1 Create a Culture Artifact (“Book”)
+## 4. Owner Workflows
 
-1. Open `http://localhost:3000`.
-2. Click **Create Knowledge Artifact**.
-3. Provide prompt (e.g., "Compose a five-chapter manifesto on cooperative AI self-play").
-4. Review AI-generated outline → confirm.
-5. When final content is ready, click **Mint Artifact**.
-6. Verify toast confirmation and artifact card (includes Artifact ID, IPFS CID, influence snapshot).
-7. Cross-check: `docker compose logs culture-graph-indexer | grep ArtifactMinted` should show event ingestion.
+### 4.1 Create a Knowledge Artifact
 
-### 3.2 Launch Self-Play Arena
+1. Open `http://localhost:4173` (default Culture Studio port).
+2. Choose **Create Book**.
+3. Describe the artifact (topic, tone, derivative relationships).
+4. Approve the assistant's outline; the system will:
+   - Generate the artifact content via AGI Jobs planning agents.
+   - Run moderation checks.
+   - Upload the artifact to IPFS.
+   - Mint it on-chain via `CultureRegistry`.
+5. Review the success toast; follow the link to view the artifact on IPFS and in the Culture Graph.
 
-1. Navigate to **Arena Control Center**.
-2. Select base artifact (dropdown auto-populated from indexer).
-3. Configure participants (# students, validators) and target success rate.
-4. Click **Start Arena**.
-5. Monitor progress timeline (Teacher ready → Students running → Validators grading → Round finalized).
-6. After completion, inspect **Scoreboard** tab for Elo updates and difficulty trajectory.
-7. Confirm on-chain event via `docker compose logs culture-contracts | grep RoundFinalized`.
+### 4.2 Launch a Self-Play Arena Round
 
-### 3.3 Generate Metrics Reports
+1. Navigate to **Self-Play Arena**.
+2. Select a base artifact, student cohort size, and target success rate.
+3. Click **Launch Arena**. The orchestrator will:
+   - Spin up a teacher job seeded with the artifact content.
+   - Spawn student jobs and validators with commit–reveal hooks.
+   - Monitor completions, run automated tests, and compute Elo/difficulty adjustments.
+4. Observe real-time telemetry (teacher posted, students solved, validators revealed).
+5. Review the scoreboard and difficulty charts once finalized.
 
-1. Ensure orchestrator has produced at least one artifact and one arena round.
-2. Run inside orchestrator container: `npm run generate:reports`.
-3. Retrieve Markdown outputs in `reports/` directory.
-4. Upload to documentation portal or share with stakeholders.
+## 5. Owner Controls
 
-## 4. Administrative Controls
+| Action | Method |
+| --- | --- |
+| Pause Culture Registry | UI Owner Panel → Pause Culture Registry |
+| Resume Culture Registry | UI Owner Panel → Resume Culture Registry |
+| Pause Self-Play Arena | UI Owner Panel → Pause Arena |
+| Update Rewards / Fees | Run `scripts/owner.setParams.ts` with new configuration |
+| Manage Agent Roles | Run `scripts/owner.setRoles.ts` to grant/revoke roles in IdentityRegistry |
+| Slash Malicious Validators | Trigger `StakeManager` slash via Owner Panel or script |
 
-| Action | Location | Procedure | Verification |
-|--------|----------|-----------|--------------|
-| Pause CultureRegistry | UI Owner Panel or Hardhat task | Toggle **Pause Artifact Minting**; confirm transaction hash | Attempt mint (should revert), `CultureRegistry.Paused` event |
-| Unpause CultureRegistry | Same | Toggle back | Successful mint allowed |
-| Pause SelfPlayArena | UI Owner Panel or Hardhat task | Toggle **Pause Arena** | Start Arena button disabled, event emitted |
-| Update Validator Committee Size | Hardhat script `owner.setParams.ts` | Provide new size, run script | Read `SelfPlayArena.committeeSize()` via console |
-| Add Agent Identity | Script `owner.setRoles.ts` | Input address + role | `IdentityRegistry.hasRole(address, role)` true |
-| Rotate Relayer Key | Update `.env`, restart orchestrator container | Signature test from new key, old key zeroed |
+All administrative transactions require the owner wallet signature. The UI relayer prompts before execution.
 
-## 5. Monitoring & Observability
+## 6. Monitoring & Analytics
 
-- **Logs**: `docker compose logs -f <service>`; log levels adjustable via env vars.
-- **Metrics**: Prometheus endpoint at `:9100/metrics` (orchestrator) for request/round stats.
-- **Alerts**: Sample Grafana dashboard JSON provided in `/monitoring` (import into Grafana).
-- **Health Checks**:
-  - UI: `GET /healthz`
-  - Orchestrator: `GET /health`
-  - Indexer: `GET /health`
-  - Contracts: Hardhat script `scripts/status.ts`
+- **Culture Graph Dashboard** — Explore artifact lineage and influence rankings (powered by indexer’s PageRank).
+- **Arena Scoreboard** — Review Elo changes, difficulty thermostat behaviour, and validator accuracy.
+- **Weekly Reports** — Generated markdown in `reports/` summarises Culture Maturity Score (CMS) and Self-Play Gain (SPG).
+- **Prometheus Metrics** — Orchestrator exports metrics at `/metrics` (requests, round durations, validator accuracy).
 
-## 6. Troubleshooting Scenarios
+## 7. Troubleshooting
 
-| Symptom | Likely Cause | Resolution | Secondary Check |
-|---------|--------------|-----------|-----------------|
-| Artifact mint fails | Registry paused / role missing | Unpause, assign AUTHOR role | Foundry call `CultureRegistry.paused()` |
-| Arena stuck “Validating” | Validator job timeout | Use emergency finalize script `scripts/finalize.force.ts` | Inspect validator stakes for slashing |
-| Scoreboard empty | Indexer not synced | Restart indexer container, replay from block 0 | Query `GraphQLAPI` manually |
-| UI shows stale data | Websocket drop | Refresh page, ensure orchestrator emits SSE | Browser console for network errors |
-| High gas usage | Chain congestion | Switch RPC to rollup or adjust gas config in `culture.json` | Monitor `gas-snapshots/` delta |
+| Symptom | Resolution |
+| --- | --- |
+| UI cannot mint artifacts | Ensure contracts are deployed, CultureRegistry is unpaused, and relayer wallet funded. Check orchestrator logs. |
+| Arena rounds stuck | Inspect orchestrator logs for unresponsive agents. Use Owner Panel to cancel the round or slash stalled validators. |
+| Indexer influence stale | Restart indexer container or call `POST /admin/recompute` on the indexer API. |
+| High gas costs | Switch to local Anvil for demonstrations or adjust job batch sizes via config. |
 
-## 7. Emergency Procedures
+## 8. Emergency Response
 
-1. **Immediate Pause**
-   - Run `npx hardhat --network <net> call --function pauseAll` script (bundles both contracts).
-   - Notify stakeholders via pre-defined channels.
+1. Pause all contracts via Owner Panel or direct calls (`CultureRegistry.pause()`, `SelfPlayArena.pause()`).
+2. Revoke malicious identities using `owner.setRoles.ts`.
+3. Slash offending validators/students via `StakeManager`.
+4. Document incident in `reports/` and re-run weekly analytics to confirm containment.
+5. Resume services once the root cause is resolved.
 
-2. **Stake Slashing**
-   - Identify malicious validator addresses.
-   - Execute `StakeManager.slash(address, evidence)` using owner wallet.
-   - Document incident in `reports/incidents/`.
+## 9. Maintenance Cadence
 
-3. **Rollback / Redeploy**
-   - Backup current database snapshots (`docker cp` indexer volumes).
-   - Re-run deployment scripts after fix.
-   - Reindex chain events to rebuild culture graph.
+- Weekly: Review analytics reports, adjust difficulty parameters, rotate validator committees.
+- Monthly: Regenerate Docker images, update dependencies via `npm audit fix --dry-run`, rerun CI in staging.
+- Quarterly: Conduct disaster recovery drills and slashing simulations.
 
-4. **Security Incident Response**
-   - Rotate all secrets stored in `.env`.
-   - Audit relayer machine for intrusion.
-   - Engage external auditors if breach confirmed.
+## 10. Support
 
-## 8. Maintenance Calendar
+- Slack: #agi-culture-ops
+- Email: culture-ops@montreal.ai
+- PagerDuty: CULTURE-OnCall (24/7)
 
-| Frequency | Task | Responsible |
-|-----------|------|-------------|
-| Daily | Check CI status, review logs for anomalies | Owner / DevOps |
-| Weekly | Generate CMS & SPG reports, review top artifacts | Owner |
-| Monthly | Rotate relayer keys, update dependencies (`npm audit`, `pnpm outdated`) | DevOps |
-| Quarterly | Pen-test smart contracts, chaos drill (pause/unpause, validator failure) | Security |
-
-## 9. Knowledge Base
-
-- **Sprint Playbook**: `README.md`
-- **Architecture Diagrams**: `docs/culture-architecture/`
-- **API Contracts**: `backend/arena-orchestrator/openapi.yaml`
-- **GraphQL Schema**: `indexers/culture-graph-indexer/schema.graphql`
-- **CI Dashboard**: GitHub Actions → `CULTURE Pipeline`
-
-## 10. Reflection Checklist
-
-Before concluding any operations session:
-- [ ] All services healthy (health checks green).
-- [ ] No unresolved alerts in monitoring stack.
-- [ ] Latest artifacts and rounds documented.
-- [ ] Backups scheduled/verified.
-- [ ] Runbook updated with lessons learned.
-
-> **Remember:** The owner retains absolute control—pause switches, parameter levers, and validator governance ensure the platform remains safe, transparent, and relentlessly empowering.
