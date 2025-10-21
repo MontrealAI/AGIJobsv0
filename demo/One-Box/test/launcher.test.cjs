@@ -43,6 +43,9 @@ test('resolveConfig normalises prefix and derives defaults', () => {
   assert.equal(config.prefix, '/mission-control');
   assert.equal(config.apiToken, 'demo');
   assert.equal(config.publicOrchestratorUrl, 'http://127.0.0.1:9010');
+  assert.equal(config.maxJobBudgetAgia, undefined);
+  assert.equal(config.maxJobDurationDays, undefined);
+  assert.deepEqual(config.warnings, []);
 });
 
 test('resolveConfig allows explicit CLI overrides to win over environment', () => {
@@ -63,6 +66,8 @@ test('resolveConfig allows explicit CLI overrides to win over environment', () =
     defaultMode: 'expert',
     publicOrchestratorUrl: 'http://demo.internal:8088/onebox',
     explorerBase: 'https://scan.example/tx/',
+    maxJobBudgetAgia: '123.45',
+    maxJobDurationDays: 9,
   });
 
   assert.equal(config.orchestratorPort, 8088);
@@ -73,6 +78,37 @@ test('resolveConfig allows explicit CLI overrides to win over environment', () =
   assert.equal(config.defaultMode, 'expert');
   assert.equal(config.publicOrchestratorUrl, 'http://demo.internal:8088/onebox');
   assert.equal(config.explorerBase, 'https://scan.example/tx/');
+  assert.equal(config.maxJobBudgetAgia, '123.45');
+  assert.equal(config.maxJobDurationDays, 9);
+});
+
+test('resolveConfig parses guardrail environment variables', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: '0x1234',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_MAX_JOB_BUDGET_AGIA: '45.5',
+    ONEBOX_MAX_JOB_DURATION_DAYS: '7',
+  };
+  const config = resolveConfig(env);
+  assert.equal(config.maxJobBudgetAgia, '45.5');
+  assert.equal(config.maxJobDurationDays, 7);
+  assert.deepEqual(config.warnings, []);
+});
+
+test('resolveConfig collects warnings for malformed guardrails when allowPartial', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: '0x1234',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_MAX_JOB_BUDGET_AGIA: 'abc',
+    ONEBOX_MAX_JOB_DURATION_DAYS: '-1',
+  };
+  const config = resolveConfig(env, { allowPartial: true });
+  assert.equal(config.maxJobBudgetAgia, undefined);
+  assert.equal(config.maxJobDurationDays, undefined);
+  assert.ok(config.warnings.some((warning) => warning.includes('ONEBOX_MAX_JOB_BUDGET_AGIA')));
+  assert.ok(config.warnings.some((warning) => warning.includes('ONEBOX_MAX_JOB_DURATION_DAYS')));
 });
 
 test('createDemoUrl encodes orchestrator, prefix, token, and mode', () => {
@@ -143,6 +179,10 @@ test('parseCliArgs handles overrides and boolean flags', () => {
     'http://demo.internal:9090/onebox',
     '--explorer-base',
     'https://scan.example/tx/',
+    '--max-budget',
+    '77.5',
+    '--max-duration',
+    '6',
   ]);
 
   assert.equal(options.openBrowser, false);
@@ -154,9 +194,13 @@ test('parseCliArgs handles overrides and boolean flags', () => {
   assert.equal(options.defaultMode, 'expert');
   assert.equal(options.publicOrchestratorUrl, 'http://demo.internal:9090/onebox');
   assert.equal(options.explorerBase, 'https://scan.example/tx/');
+  assert.equal(options.maxJobBudgetAgia, '77.5');
+  assert.equal(options.maxJobDurationDays, 6);
 });
 
 test('parseCliArgs throws for invalid numeric or mode values', () => {
   assert.throws(() => parseCliArgs(['--ui-port', '-1']));
   assert.throws(() => parseCliArgs(['--mode', 'power']));
+  assert.throws(() => parseCliArgs(['--max-budget', 'abc']));
+  assert.throws(() => parseCliArgs(['--max-duration', '0']));
 });
