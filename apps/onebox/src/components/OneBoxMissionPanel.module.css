@@ -267,6 +267,100 @@
   color: rgba(203, 213, 225, 0.85);
 }
 
+.ownerSnapshotMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
+.ownerSnapshotSummary {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.92);
+}
+
+.ownerTelemetryHint {
+  font-size: 0.85rem;
+  color: rgba(203, 213, 225, 0.78);
+}
+
+.ownerTelemetryError {
+  font-size: 0.85rem;
+  color: #fca5a5;
+}
+
+.ownerTelemetryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.ownerTelemetryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.95rem;
+  background: rgba(2, 6, 23, 0.68);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.35);
+}
+
+.ownerTelemetryTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ownerTelemetryCaption {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.9);
+  line-height: 1.45;
+}
+
+.ownerTelemetryMetrics {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.ownerTelemetryMetric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ownerTelemetryMetric dt {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.ownerTelemetryMetric dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.92);
+  word-break: break-word;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Consolas,
+    'Liberation Mono', Menlo, monospace;
+}
+
+.ownerTelemetryFootnote {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(148, 163, 184, 0.85);
+  word-break: break-word;
+}
+
 .ownerList {
   margin: 0;
   padding-left: 1.1rem;

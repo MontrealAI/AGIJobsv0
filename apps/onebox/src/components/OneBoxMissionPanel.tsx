@@ -5,6 +5,10 @@ import styles from './OneBoxMissionPanel.module.css';
 import { MermaidDiagram } from './MermaidDiagram';
 import { readOneboxConfig, resolveOrchestratorBase } from '../lib/environment';
 import { checkOrchestratorHealth } from '../lib/orchestratorHealth';
+import {
+  buildOwnerTelemetryCards,
+  type GovernanceSnapshotResponse,
+} from '../lib/governanceSnapshot';
 
 type OneBoxMissionPanelProps = {
   onPromptSelect?: (prompt: string) => void;
@@ -13,6 +17,8 @@ type OneBoxMissionPanelProps = {
 type OrchestratorHealth = 'checking' | 'ready' | 'error' | 'missing';
 
 type ChecklistStatus = 'ready' | 'pending' | 'error' | 'checking';
+
+type GovernanceStatus = 'missing' | 'loading' | 'ready' | 'error';
 
 const statusIcon: Record<ChecklistStatus, string> = {
   ready: '✅',
@@ -26,6 +32,12 @@ const statusLabel: Record<ChecklistStatus, string> = {
   pending: 'Pending',
   error: 'Attention',
   checking: 'Checking',
+};
+
+const joinPath = (base: string, path: string): string => {
+  const normalisedBase = base.replace(/\/+$/, '');
+  const normalisedPath = path.replace(/^\/+/, '');
+  return `${normalisedBase}/${normalisedPath}`;
 };
 
 const diagramDefinition = `
@@ -62,6 +74,13 @@ export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) 
   const [healthError, setHealthError] = useState<string | null>(null);
   const [copiedContractId, setCopiedContractId] = useState<string | null>(null);
   const copyResetRef = useRef<number | null>(null);
+  const governanceAbortRef = useRef<AbortController | null>(null);
+  const [governanceStatus, setGovernanceStatus] = useState<GovernanceStatus>(
+    orchestratorBase ? 'loading' : 'missing'
+  );
+  const [governanceError, setGovernanceError] = useState<string | null>(null);
+  const [governanceSnapshot, setGovernanceSnapshot] =
+    useState<GovernanceSnapshotResponse | null>(null);
 
   const runHealthCheck = useCallback(async () => {
     if (!orchestratorBase) {
@@ -96,11 +115,79 @@ export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) 
     void runHealthCheck();
   }, [runHealthCheck]);
 
-  useEffect(() => () => {
-    if (copyResetRef.current !== null && typeof window !== 'undefined') {
-      window.clearTimeout(copyResetRef.current);
-    }
+  useEffect(() => {
+    return () => {
+      if (copyResetRef.current !== null && typeof window !== 'undefined') {
+        window.clearTimeout(copyResetRef.current);
+      }
+      if (governanceAbortRef.current) {
+        governanceAbortRef.current.abort();
+        governanceAbortRef.current = null;
+      }
+    };
   }, []);
+
+  const runGovernanceSnapshot = useCallback(async () => {
+    if (!orchestratorBase) {
+      setGovernanceStatus('missing');
+      setGovernanceSnapshot(null);
+      setGovernanceError(null);
+      if (governanceAbortRef.current) {
+        governanceAbortRef.current.abort();
+        governanceAbortRef.current = null;
+      }
+      return;
+    }
+
+    if (governanceAbortRef.current) {
+      governanceAbortRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    governanceAbortRef.current = controller;
+
+    setGovernanceStatus('loading');
+    setGovernanceError(null);
+
+    try {
+      const response = await fetch(joinPath(orchestratorBase, 'governance/snapshot'), {
+        method: 'GET',
+        headers: apiToken
+          ? {
+              Authorization: `Bearer ${apiToken}`,
+              Accept: 'application/json',
+            }
+          : { Accept: 'application/json' },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = (await response.json()) as GovernanceSnapshotResponse;
+      setGovernanceSnapshot(data);
+      setGovernanceStatus('ready');
+    } catch (error) {
+      if (controller.signal.aborted) {
+        return;
+      }
+      setGovernanceStatus('error');
+      setGovernanceError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load governance snapshot.'
+      );
+    } finally {
+      if (governanceAbortRef.current === controller) {
+        governanceAbortRef.current = null;
+      }
+    }
+  }, [apiToken, orchestratorBase]);
+
+  useEffect(() => {
+    void runGovernanceSnapshot();
+  }, [runGovernanceSnapshot]);
 
   const formattedLastChecked = useMemo(() => {
     if (!lastChecked) {
@@ -184,6 +271,31 @@ export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) 
     () => (contracts ?? []).filter((entry) => entry.address.length > 0),
     [contracts]
   );
+
+  const ownerTelemetryCards = useMemo(
+    () => buildOwnerTelemetryCards(governanceSnapshot),
+    [governanceSnapshot]
+  );
+
+  const ownerSnapshotTime = useMemo(() => {
+    if (!governanceSnapshot?.timestamp) {
+      return null;
+    }
+    const parsed = new Date(governanceSnapshot.timestamp);
+    if (Number.isNaN(parsed.getTime())) {
+      return governanceSnapshot.timestamp;
+    }
+    return parsed.toLocaleString();
+  }, [governanceSnapshot?.timestamp]);
+
+  const ownerSnapshotChain = useMemo(() => {
+    if (governanceSnapshot?.chainId === undefined) {
+      return null;
+    }
+    return typeof governanceSnapshot.chainId === 'number'
+      ? `Chain ID ${governanceSnapshot.chainId}`
+      : governanceSnapshot.chainId;
+  }, [governanceSnapshot?.chainId]);
 
   const handleCopyAddress = useCallback(async (id: string, address: string) => {
     try {
@@ -369,6 +481,78 @@ export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) 
             </span>
           </button>
         </div>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Owner telemetry</h2>
+          <p className={styles.sectionSubtitle}>
+            Live governance snapshot confirming that owner-controlled guardrails remain active.
+          </p>
+        </div>
+        <div className={styles.ownerSnapshotMeta}>
+          <div className={styles.ownerSnapshotSummary}>
+            <span>Last snapshot: {ownerSnapshotTime ?? 'Not yet collected'}</span>
+            {ownerSnapshotChain ? <span>{ownerSnapshotChain}</span> : null}
+          </div>
+          {orchestratorBase ? (
+            <button
+              type="button"
+              className={styles.refreshButton}
+              onClick={() => {
+                void runGovernanceSnapshot();
+              }}
+            >
+              Refresh owner metrics
+            </button>
+          ) : null}
+        </div>
+        {governanceStatus === 'loading' ? (
+          <p className={styles.ownerTelemetryHint}>
+            Collecting governance metrics from the orchestrator…
+          </p>
+        ) : null}
+        {governanceStatus === 'error' ? (
+          <p className={styles.ownerTelemetryError} role="alert">
+            ⚠️ {governanceError ?? 'Unable to load governance snapshot.'}
+          </p>
+        ) : null}
+        {governanceStatus === 'ready' && ownerTelemetryCards.length > 0 ? (
+          <div className={styles.ownerTelemetryGrid}>
+            {ownerTelemetryCards.map((card) => (
+              <article key={card.id} className={styles.ownerTelemetryCard}>
+                <h3 className={styles.ownerTelemetryTitle}>{card.title}</h3>
+                {card.caption ? (
+                  <p className={styles.ownerTelemetryCaption}>{card.caption}</p>
+                ) : null}
+                <dl className={styles.ownerTelemetryMetrics}>
+                  {card.metrics.map((metric) => (
+                    <div
+                      key={`${card.id}-${metric.label}`}
+                      className={styles.ownerTelemetryMetric}
+                    >
+                      <dt>{metric.label}</dt>
+                      <dd>{metric.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {card.footnote ? (
+                  <p className={styles.ownerTelemetryFootnote}>{card.footnote}</p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        ) : null}
+        {governanceStatus === 'ready' && ownerTelemetryCards.length === 0 ? (
+          <p className={styles.ownerTelemetryHint}>
+            Snapshot available but no owner policy metrics were published. Confirm governance tooling is configured.
+          </p>
+        ) : null}
+        {governanceStatus === 'missing' ? (
+          <p className={styles.ownerTelemetryHint}>
+            Configure the orchestrator URL and API token to surface live owner controls.
+          </p>
+        ) : null}
       </section>
 
       <section className={styles.section}>
