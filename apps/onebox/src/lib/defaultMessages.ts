@@ -3,22 +3,22 @@ export const defaultMessages = [
     id: 'intro-1',
     role: 'assistant' as const,
     kind: 'text' as const,
-    content: 'Ask → Confirm → Done + Receipt.',
+    content:
+      'Welcome to the AGI Jobs One‑Box. Describe the outcome you need and I will design, simulate, and execute the on-chain workflow for you.',
   },
   {
-    id: 'solving-alpha-agi-governance',
+    id: 'intro-2',
     role: 'assistant' as const,
     kind: 'text' as const,
     content:
-      'Welcome to the “Solving α‑AGI Governance” cockpit. Use the right-hand mission panel to stage actors, parameters, and prompts, then paste the generated instructions here to capture the policy proposal, validator commits, reveal votes, and finalise the on-chain outcome. Owner pause + parameter controls remain available via the mission bundle.',
-      'Welcome to the “Solving α‑AGI Governance” cockpit. Use this chat to capture a nation-scale policy proposal, request validator commits, reveal votes, and finalise the on-chain outcome. The owner retains pause + parameter controls via the generated mission bundle.',
+      'Example: “Create a data-labelling mission for 500 satellite images. Reward 45 AGIALPHA, require validator sign-off, deadline 7 days.”',
   },
   {
-    id: 'solving-alpha-agi-governance-actions',
+    id: 'intro-3',
     role: 'assistant' as const,
     kind: 'text' as const,
     content:
-      'Tip: paste the owner quickstart summary or validator CLI receipts here so non-technical stakeholders can follow along. Full runbook: demo/solving-alpha-agi-governance/README.md.',
+      'All owner safeguards remain active — pause switches, fee updates, validator rules, and relayer rotation are one command away via the owner console.',
   },
 ];
 

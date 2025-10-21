@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  orchestrator:
+    image: node:20.18.1
+    working_dir: /workspace
+    env_file:
+      - ./.env
+    command: >-
+      bash -lc "npm install && ONEBOX_ENV_FILE=/workspace/demo/AGI-Jobs-One-Box/.env npm run onebox:server"
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ..:/workspace
+  onebox-ui:
+    image: node:20.18.1
+    working_dir: /workspace
+    env_file:
+      - ./.env
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL: http://orchestrator:8080
+      NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_TOKEN: ${ONEBOX_API_TOKEN}
+      NEXT_PUBLIC_ONEBOX_EXPLORER_BASE: ${ONEBOX_EXPLORER_TX_BASE}
+    command: >-
+      bash -lc "npm install && npm run build --prefix apps/onebox && npm run start --prefix apps/onebox -- --hostname 0.0.0.0 --port 3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - orchestrator
+    volumes:
+      - ..:/workspace
