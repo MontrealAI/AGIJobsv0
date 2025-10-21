@@ -7,6 +7,7 @@ import random
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Tuple
 
+from .admin import OwnerConsole
 from .config import DemoConfig, DemoScenario
 from .entities import DemoRunArtifacts, EvolutionRecord, Job, JobStatus, RewardBreakdown
 from .evolutionary import EvolutionaryProgramSynthesizer, Program
@@ -52,17 +53,21 @@ class SovereignArchitect:
         config: DemoConfig,
         dataset: SyntheticDataset | None = None,
         random_seed: int | None = None,
+        owner_console: OwnerConsole | None = None,
     ) -> None:
-        self.config = config
+        self.owner_console = owner_console or OwnerConsole(config)
+        self.config = self.owner_console.config
         self.dataset = dataset or generate_dataset()
-        self.reward_engine = RewardEngine(config.reward_policy)
-        self.stake_manager = StakeManager(config.stake_policy)
+        self.reward_engine = RewardEngine(self.config.reward_policy)
+        self.stake_manager = StakeManager(self.config.stake_policy)
         self.validation_module = ValidationModule()
         self.random = random.Random(random_seed)
         zero_predictions = [0.0 for _ in self.dataset.target]
         self.baseline_error = self._mean_squared_error(zero_predictions, self.dataset.target)
 
     def run(self, scenario: DemoScenario) -> DemoRunArtifacts:
+        self.owner_console.require_active()
+        self._refresh_runtime_components()
         synthesizer = EvolutionaryProgramSynthesizer(
             population_size=self.config.evolution_policy.population_size,
             elite_count=self.config.evolution_policy.elite_count,
@@ -110,6 +115,12 @@ class SovereignArchitect:
             total += diff * diff
             count += 1
         return total / max(count, 1)
+
+    def _refresh_runtime_components(self) -> None:
+        self.config = self.owner_console.config
+        self.reward_engine = RewardEngine(self.config.reward_policy)
+        self.stake_manager = StakeManager(self.config.stake_policy)
+        self.validation_module = ValidationModule()
 
     def _execute_on_chain(
         self, best_program: Program, telemetry: List[EvolutionRecord]

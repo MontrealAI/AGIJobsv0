@@ -78,6 +78,44 @@ The CLI narrates the process in natural language so the operator always understa
 
 ---
 
+## 👑 Owner Command Console
+
+The demo now ships with an explicit owner console that mirrors the privileged controls of the on-chain deployment. Every policy
+knob – rewards, staking, evolution cadence, and pause state – can be adjusted at runtime without touching code.
+
+### Command-line overrides
+
+```bash
+python start_demo.py alpha \
+  --reward-total 2500 \
+  --reward-temperature 0.8 \
+  --reward-validator-weight 0.25 \
+  --stake-minimum 750 \
+  --stake-timeout 120 \
+  --evolution-generations 16
+```
+
+Use `--pause` to halt execution instantly. The orchestrator will refuse to launch jobs while paused and will explain the status
+in the CLI output. Re-run without `--pause` (or with a different override set) to resume operations.
+
+### JSON override files
+
+For executive operators, overrides can be pre-packaged in a JSON file:
+
+```json
+{
+  "reward_policy": {"total_reward": 3200, "temperature": 1.1},
+  "stake_policy": {"minimum_stake": 900, "slash_fraction": 0.15},
+  "evolution_policy": {"generations": 18, "mutation_rate": 0.28},
+  "paused": false
+}
+```
+
+Run the demo with `python start_demo.py alpha --config-file config/owner-overrides.sample.json` (a sample file is provided in
+`config/`). Invalid overrides are rejected gracefully with descriptive errors, guaranteeing the owner keeps uncompromised control.
+
+---
+
 ## 🧪 Validation & CI
 
 * `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests` verifies the evolutionary loop, on-chain security primitives, and orchestration pipeline.

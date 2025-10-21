@@ -1,0 +1,21 @@
+{
+  "reward_policy": {
+    "total_reward": 2800,
+    "temperature": 0.95,
+    "validator_weight": 0.22,
+    "architect_weight": 0.12
+  },
+  "stake_policy": {
+    "minimum_stake": 800,
+    "slash_fraction": 0.18,
+    "inactivity_timeout_seconds": 75
+  },
+  "evolution_policy": {
+    "generations": 14,
+    "population_size": 10,
+    "elite_count": 3,
+    "mutation_rate": 0.27,
+    "crossover_rate": 0.45
+  },
+  "paused": false
+}
