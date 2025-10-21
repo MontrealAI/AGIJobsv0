@@ -1,8 +1,29 @@
-# CULTURE Demo Scripts Roadmap
+# CULTURE Demo Automation Suite
 
-Scripts to be implemented during the sprint:
-- `deploy.culture.ts`: Deploys CultureRegistry & SelfPlayArena contracts with owner configuration.
-- `seed.culture.ts`: Registers canonical agent identities, seeds sample artifacts, and initializes difficulty baselines.
-- `run.arena.sample.ts`: Executes an end-to-end dry-run round against mocked agents for regression tests.
+The CULTURE toolkit ships with a set of Hardhat/TypeScript scripts that automate deployment, configuration, and analytics seedi
+ng.
 
-Each script will include argument validation, dry-run mode, and verbose logging consistent with the runbook.
+| Script | Purpose |
+| --- | --- |
+| `deploy.culture.ts` | Deploys `CultureRegistry` and `SelfPlayArena`, writes the resulting addresses to `config/deployments.loc
+al.json`, and patches `.env` so downstream services can boot without manual edits. |
+| `owner.setParams.ts` | Applies owner-governed parameters (allowed artifact kinds, citation limits, arena rewards, committee si
+ze, and thermostat targets) from `config/culture.json`. |
+| `owner.setRoles.ts` | Grants author/teacher/student/validator roles in the identity registry and whitelists orchestrator addre
+sses. |
+| `seed.culture.ts` | Mints the sample artifacts defined in `data/seed-artifacts.json` and primes the indexer via its admin API. |
+| `export.weekly.ts` | Generates reproducible weekly reports from the JSON exports in `data/analytics/`, writing Markdown files
+ to `reports/`. |
+
+All scripts validate environment variables with `zod` and are idempotent—they skip updates when the on-chain state already matc
+hes the desired configuration. Run them through Hardhat to reuse the configured accounts and RPC settings:
+
+```bash
+npx hardhat run demo/CULTURE-v0/scripts/deploy.culture.ts --network localhost
+npx hardhat run demo/CULTURE-v0/scripts/owner.setParams.ts --network localhost
+npx hardhat run demo/CULTURE-v0/scripts/owner.setRoles.ts --network localhost
+npx hardhat run demo/CULTURE-v0/scripts/seed.culture.ts --network localhost
+```
+
+The reporting export can be executed with `npm exec ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts` o
+r via the `culture-reports` compose profile.

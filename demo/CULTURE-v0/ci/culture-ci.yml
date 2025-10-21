@@ -9,48 +9,113 @@ on:
       - 'demo/CULTURE-v0/**'
 
 jobs:
-  contracts:
+  solidity:
+    name: Contracts (lint, tests, coverage)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.1
+          cache: npm
+      - name: Install npm dependencies
+        run: npm install --legacy-peer-deps
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
-      - name: Install Node dependencies
-        run: npm install --legacy-peer-deps
+      - name: Lint Solidity
+        run: npx solhint 'demo/CULTURE-v0/contracts/**/*.sol'
       - name: Run forge tests
         working-directory: demo/CULTURE-v0
         run: forge test
+      - name: Forge coverage
+        working-directory: demo/CULTURE-v0
+        run: forge coverage --report lcov
+      - name: Normalize coverage artifact
+        run: |
+          mkdir -p coverage
+          COVERAGE_FILE=$(find demo/CULTURE-v0 -maxdepth 1 -name 'lcov.info' -print -quit)
+          if [ -z "$COVERAGE_FILE" ]; then
+            echo "lcov.info not found"
+            exit 1
+          fi
+          cp "$COVERAGE_FILE" coverage/lcov.info
+      - name: Enforce 90% Solidity coverage
+        run: node scripts/check-coverage.js 90
 
-  orchestrator:
+  services:
+    name: \\${{ matrix.name }} package
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: arena-orchestrator
+            working-directory: demo/CULTURE-v0/backend/arena-orchestrator
+            lint-command: npm run lint
+            build-command: ''
+            test-command: npm test -- --coverage
+          - name: culture-graph-indexer
+            working-directory: demo/CULTURE-v0/indexers/culture-graph-indexer
+            lint-command: ''
+            build-command: npm run build
+            test-command: npm test -- --coverage
+          - name: culture-studio
+            working-directory: demo/CULTURE-v0/apps/culture-studio
+            lint-command: ''
+            build-command: npm run build
+            test-command: npm test -- --coverage
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.1
+          cache: npm
       - name: Install dependencies
-        working-directory: demo/CULTURE-v0/backend/arena-orchestrator
+        working-directory: \\${{ matrix.working-directory }}
         run: npm install --legacy-peer-deps
-      - name: Run tests
-        working-directory: demo/CULTURE-v0/backend/arena-orchestrator
-        run: npm test
+      - name: Lint
+        if: \\${{ matrix.lint-command != '' }}
+        working-directory: \\${{ matrix.working-directory }}
+        run: \\${{ matrix.lint-command }}
+      - name: Build
+        if: \\${{ matrix.build-command != '' }}
+        working-directory: \\${{ matrix.working-directory }}
+        run: \\${{ matrix.build-command }}
+      - name: Test with coverage
+        working-directory: \\${{ matrix.working-directory }}
+        run: \\${{ matrix.test-command }}
 
-  indexer:
+  e2e:
+    name: Cypress E2E
     runs-on: ubuntu-latest
+    needs:
+      - solidity
+      - services
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
-        working-directory: demo/CULTURE-v0/indexers/culture-graph-indexer
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.1
+          cache: npm
+      - name: Install root dependencies
         run: npm install --legacy-peer-deps
-      - name: Run tests
-        working-directory: demo/CULTURE-v0/indexers/culture-graph-indexer
-        run: npm test
-
-  studio:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
-        working-directory: demo/CULTURE-v0/apps/culture-studio
-        run: npm install --legacy-peer-deps
-      - name: Build UI
-        working-directory: demo/CULTURE-v0/apps/culture-studio
-        run: npm run build
+      - name: Prepare environment
+        run: cp demo/CULTURE-v0/.env.example demo/CULTURE-v0/.env
+      - name: Start core services
+        run: |
+          docker compose -f demo/CULTURE-v0/docker-compose.yml up -d culture-chain culture-ipfs
+          docker compose -f demo/CULTURE-v0/docker-compose.yml --profile setup run --rm culture-contracts
+          docker compose -f demo/CULTURE-v0/docker-compose.yml up -d culture-orchestrator culture-indexer culture-studio
+      - name: Wait for health checks
+        run: |
+          for attempt in {1..40}; do
+            curl -fsS http://localhost:4005/metrics >/dev/null 2>&1 && \
+            curl -fsS http://localhost:4100/healthz >/dev/null 2>&1 && \
+            curl -fsS http://localhost:4173 >/dev/null 2>&1 && break
+            sleep 5
+          done
+      - name: Run Cypress suite
+        run: npx cypress run --config-file demo/CULTURE-v0/cypress.config.ts
+      - name: Shutdown stack
+        if: always()
+        run: docker compose -f demo/CULTURE-v0/docker-compose.yml down -v

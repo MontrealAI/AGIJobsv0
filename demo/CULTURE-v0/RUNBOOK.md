@@ -13,29 +13,39 @@ This runbook provides operational guidance for the CULTURE demo, enabling the pl
 ## 2. Environment Configuration
 
 1. Copy `.env.example` to `.env`.
-2. Fill in the following variables:
-   - `RPC_URL` — Ethereum RPC endpoint.
-   - `CHAIN_ID` — Numeric chain identifier.
-   - `DEPLOYER_PRIVATE_KEY` — Hex string for deployer/relayer (DO NOT commit).
-   - `OWNER_ADDRESS` — Wallet address with owner privileges.
-   - `IPFS_GATEWAY` / `IPFS_API_TOKEN` — Optional if using remote IPFS.
-   - `AGI_JOBS_CORE_ADDRESSES` — JSON blob pointing to deployed AGI Jobs v0 (v2) contracts.
+2. Populate the mandatory variables:
+   - `RPC_URL` / `CHAIN_ID` — Ethereum RPC endpoint and network identifier (defaults assume local Anvil).
+   - `DEPLOYER_PRIVATE_KEY` — Account used for deployment and scripted transactions (local Hardhat key by default).
+   - `SEEDER_PRIVATE_KEY` — Optional account for seeding artifacts; falls back to the deployer.
+   - `OWNER_ADDRESS` — Address that will own CultureRegistry and SelfPlayArena post-deploy.
+   - `AGI_JOBS_CORE_ADDRESSES` — JSON blob pointing to upstream JobRegistry, ValidationModule, StakeManager, and IdentityRegistry.
+3. Optional overrides:
+   - `IPFS_GATEWAY` / `IPFS_API_ENDPOINT` / `IPFS_API_TOKEN` for remote pinning providers.
+   - `CULTURE_DEPLOY_OUTPUT` and `CULTURE_ENV_FILE` to adjust where deployment metadata is written.
+   - Orchestrator/indexer tuning knobs (ports, polling intervals, Elo storage path).
 
 ## 3. One-Click Deployment
 
-```bash
-docker compose up --build
-```
+1. Install dependencies: `npm install --legacy-peer-deps`.
+2. Compile contracts: `npx hardhat compile`.
+3. Execute the deployment + configuration pipeline:
+   ```bash
+   npx hardhat run demo/CULTURE-v0/scripts/deploy.culture.ts --network localhost
+   npx hardhat run demo/CULTURE-v0/scripts/owner.setParams.ts --network localhost
+   npx hardhat run demo/CULTURE-v0/scripts/owner.setRoles.ts --network localhost
+   npx hardhat run demo/CULTURE-v0/scripts/seed.culture.ts --network localhost
+   ```
+4. Start infrastructure via Docker Compose:
+   ```bash
+   docker compose -f demo/CULTURE-v0/docker-compose.yml up -d culture-chain culture-ipfs
+   docker compose -f demo/CULTURE-v0/docker-compose.yml --profile setup run --rm culture-contracts
+   docker compose -f demo/CULTURE-v0/docker-compose.yml up -d culture-orchestrator culture-indexer culture-studio
+   ```
+   Health checks on each container gate downstream services. Inspect `docker compose ps` to verify all statuses are `healthy`.
 
-Services started:
+Named volumes isolate chain state (`culture_chain_data`), orchestrator Elo snapshots (`culture_orchestrator_state`), indexer SQLite storage (`culture_indexer_db`), and IPFS data (`culture_ipfs_data`). Remove them only when a full reset is required.
 
-- `culture-contracts` — Hardhat node + deployment scripts.
-- `culture-orchestrator` — Arena automation API.
-- `culture-indexer` — GraphQL indexer and influence calculator.
-- `culture-studio` — Owner-facing UI.
-- `culture-ipfs` — Optional local IPFS daemon (if enabled in compose).
-
-Wait until logs indicate successful contract deployment and service readiness.
+5. (Optional) Generate weekly analytics: `docker compose --profile reports run --rm culture-reports`.
 
 ## 4. Owner Workflows
 
@@ -77,10 +87,11 @@ All administrative transactions require the owner wallet signature. The UI relay
 
 ## 6. Monitoring & Analytics
 
-- **Culture Graph Dashboard** — Explore artifact lineage and influence rankings (powered by indexer’s PageRank).
-- **Arena Scoreboard** — Review Elo changes, difficulty thermostat behaviour, and validator accuracy.
-- **Weekly Reports** — Generated markdown in `reports/` summarises Culture Maturity Score (CMS) and Self-Play Gain (SPG).
-- **Prometheus Metrics** — Orchestrator exports metrics at `/metrics` (requests, round durations, validator accuracy).
+- **Culture Graph Dashboard** — Explore artifact lineage and influence rankings (powered by indexer’s PageRank). Fallback data renders even if the indexer is offline so the UI remains demonstrable.
+- **Arena Scoreboard** — Review Elo changes, difficulty thermostat behaviour, and validator accuracy. Telemetry pulls from `GET /arena/scoreboard` every 5 seconds.
+- **Prometheus Metrics** — Orchestrator exports metrics at `http://localhost:4005/metrics` (requests, round durations, validator accuracy). Scrape into your monitoring stack or curl directly during incident response.
+- **Indexer Health** — `http://localhost:4100/healthz` returns JSON including a timestamp. Log tailing at `/var/log/culture-indexer` (volume) aids investigations.
+- **Weekly Reports** — Regenerate Markdown in `reports/` using `npm exec ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts`. Inputs are versioned JSON snapshots under `data/analytics/` for reproducibility.
 
 ## 7. Troubleshooting
 
@@ -88,7 +99,8 @@ All administrative transactions require the owner wallet signature. The UI relay
 | --- | --- |
 | UI cannot mint artifacts | Ensure contracts are deployed, CultureRegistry is unpaused, and relayer wallet funded. Check orchestrator logs. |
 | Arena rounds stuck | Inspect orchestrator logs for unresponsive agents. Use Owner Panel to cancel the round or slash stalled validators. |
-| Indexer influence stale | Restart indexer container or call `POST /admin/recompute` on the indexer API. |
+| Indexer influence stale | Restart `culture-indexer` or call `POST http://localhost:4100/admin/recompute`. Validate the container’s `/var/log/culture-indexer` volume for errors. |
+| Compose service stuck in `starting` | Inspect health check endpoint (see Section 6). For persistent failures run `docker compose logs <service>`; remove the associated named volume only after collecting diagnostics. |
 | High gas costs | Switch to local Anvil for demonstrations or adjust job batch sizes via config. |
 
 ## 8. Emergency Response
@@ -97,7 +109,7 @@ All administrative transactions require the owner wallet signature. The UI relay
 2. Revoke malicious identities using `owner.setRoles.ts`.
 3. Slash offending validators/students via `StakeManager`.
 4. Document incident in `reports/` and re-run weekly analytics to confirm containment.
-5. Resume services once the root cause is resolved.
+5. Resume services once the root cause is resolved (unpause contracts, restart docker services, rerun `owner.setRoles.ts` if identities changed).
 
 ## 9. Maintenance Cadence
 

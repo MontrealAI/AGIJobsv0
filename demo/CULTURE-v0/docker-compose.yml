@@ -1,52 +1,186 @@
 version: "3.9"
+
+x-default-env: &default-env
+  env_file:
+    - .env
+  environment:
+    RPC_URL: ${RPC_URL-http://culture-chain:8545}
+    CHAIN_ID: ${CHAIN_ID-31337}
+    CULTURE_REGISTRY_ADDRESS: ${CULTURE_REGISTRY_ADDRESS-}
+    SELF_PLAY_ARENA_ADDRESS: ${SELF_PLAY_ARENA_ADDRESS-}
+    IPFS_GATEWAY: ${IPFS_GATEWAY-http://culture-ipfs:8080}
+    IPFS_API_ENDPOINT: ${IPFS_API_ENDPOINT-http://culture-ipfs:5001}
+
 services:
   culture-chain:
     image: ghcr.io/foundry-rs/foundry:latest
-    command: ["anvil", "--host", "0.0.0.0", "--chain-id", "31337"]
+    command:
+      - anvil
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8545"
+      - --chain-id
+      - "31337"
+      - --block-time
+      - "2"
+    environment:
+      ETH_RPC_URL: http://127.0.0.1:8545
     ports:
       - "8545:8545"
+    volumes:
+      - culture_chain_data:/root/.anvil
+    healthcheck:
+      test: ["CMD", "cast", "block-number"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  culture-ipfs:
+    image: ipfs/kubo:latest
+    ports:
+      - "8080:8080"
+      - "5001:5001"
+    environment:
+      IPFS_PROFILE: server
+      LIBP2P_FORCE_PNET: "true"
+    volumes:
+      - culture_ipfs_data:/data/ipfs
+      - culture_ipfs_exports:/export
+    healthcheck:
+      test: ["CMD", "ipfs", "swarm", "peers"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 20s
 
   culture-contracts:
     image: node:20.18.1
-    depends_on:
-      - culture-chain
+    profiles: [setup]
     working_dir: /workspace
+    <<: *default-env
+    environment:
+      <<: *default-env.environment
+      RPC_URL: http://culture-chain:8545
+      CULTURE_DEPLOY_OUTPUT: ${CULTURE_DEPLOY_OUTPUT-/workspace/demo/CULTURE-v0/config/deployments.local.json}
+      CULTURE_ENV_FILE: ${CULTURE_ENV_FILE-/workspace/demo/CULTURE-v0/.env}
     volumes:
       - ..:/workspace
-    command: ["npx", "hardhat", "run", "demo/CULTURE-v0/scripts/deploy.culture.ts", "--network", "localhost"]
-    environment:
-      - RPC_URL=http://culture-chain:8545
-      - DEPLOYER_PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY}
-      - OWNER_ADDRESS=${OWNER_ADDRESS}
-      - AGI_JOBS_CORE_ADDRESSES=${AGI_JOBS_CORE_ADDRESSES}
+      - culture_node_modules:/workspace/node_modules
+      - culture_artifacts:/workspace/demo/CULTURE-v0/artifacts
+    command: >-
+      bash -lc "set -euo pipefail && npm install --legacy-peer-deps &&
+      npx hardhat compile &&
+      npx hardhat run --network localhost demo/CULTURE-v0/scripts/deploy.culture.ts &&
+      npx hardhat run --network localhost demo/CULTURE-v0/scripts/owner.setParams.ts &&
+      npx hardhat run --network localhost demo/CULTURE-v0/scripts/owner.setRoles.ts &&
+      npx hardhat run --network localhost demo/CULTURE-v0/scripts/seed.culture.ts"
+    depends_on:
+      culture-chain:
+        condition: service_healthy
 
   culture-orchestrator:
     build:
       context: ..
       dockerfile: demo/CULTURE-v0/backend/arena-orchestrator/Dockerfile
-    env_file: .env
+    <<: *default-env
+    environment:
+      <<: *default-env.environment
+      ORCHESTRATOR_PORT: ${ORCHESTRATOR_PORT-4005}
+      ELO_STATE_PATH: /data/elo/ratings.json
+      IPFS_GATEWAY: ${IPFS_GATEWAY-http://culture-ipfs:8080}
+      IPFS_API_ENDPOINT: ${IPFS_API_ENDPOINT-http://culture-ipfs:5001}
     depends_on:
-      - culture-contracts
+      culture-chain:
+        condition: service_healthy
+      culture-ipfs:
+        condition: service_healthy
     ports:
       - "${ORCHESTRATOR_PORT:-4005}:4005"
+    volumes:
+      - culture_orchestrator_state:/data/elo
+      - culture_orchestrator_logs:/var/log/culture-orchestrator
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4005/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   culture-indexer:
     build:
       context: ..
       dockerfile: demo/CULTURE-v0/indexers/culture-graph-indexer/Dockerfile
-    env_file: .env
+    <<: *default-env
+    environment:
+      <<: *default-env.environment
+      INDEXER_PORT: ${INDEXER_PORT-4100}
+      SQLITE_PATH: /data/db/culture-graph.db
     depends_on:
-      - culture-contracts
+      culture-chain:
+        condition: service_healthy
+      culture-orchestrator:
+        condition: service_started
     ports:
       - "${INDEXER_PORT:-4100}:4100"
+    volumes:
+      - culture_indexer_db:/data/db
+      - culture_indexer_logs:/var/log/culture-indexer
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4100/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   culture-studio:
     build:
       context: ..
       dockerfile: demo/CULTURE-v0/apps/culture-studio/Dockerfile
-    env_file: .env
+    <<: *default-env
     depends_on:
-      - culture-orchestrator
-      - culture-indexer
+      culture-orchestrator:
+        condition: service_healthy
+      culture-indexer:
+        condition: service_healthy
     ports:
       - "4173:4173"
+    environment:
+      <<: *default-env.environment
+      VITE_ORCHESTRATOR_URL: ${VITE_ORCHESTRATOR_URL-http://localhost:4005}
+      VITE_INDEXER_URL: ${VITE_INDEXER_URL-http://localhost:4100/graphql}
+      VITE_IPFS_GATEWAY: ${VITE_IPFS_GATEWAY-http://localhost:8080}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4173"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  culture-reports:
+    image: node:20.18.1
+    profiles: [reports]
+    working_dir: /workspace
+    <<: *default-env
+    volumes:
+      - ..:/workspace
+      - culture_node_modules:/workspace/node_modules
+    environment:
+      <<: *default-env.environment
+      CULTURE_REPORT_OUTPUT: ${CULTURE_REPORT_OUTPUT-/workspace/demo/CULTURE-v0/reports}
+    command: >-
+      bash -lc "set -euo pipefail && npm install --legacy-peer-deps &&
+      npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts"
+
+volumes:
+  culture_chain_data:
+  culture_ipfs_data:
+  culture_ipfs_exports:
+  culture_node_modules:
+  culture_artifacts:
+  culture_orchestrator_state:
+  culture_orchestrator_logs:
+  culture_indexer_db:
+  culture_indexer_logs:
+

@@ -1,14 +1,20 @@
 # Culture Weekly Report
 
-**Week:** 1
-**Network:** Local Anvil
+**Week:** 2025-W01
+**Network:** Anvil 31337
+**Generated:** 2025-01-12T18:00:00.000Z
 
 ## Highlights
 
-- 12 new artifacts minted (8 books, 3 prompts, 1 dataset).
+- 12 new artifacts minted (3 updates).
 - Average citations per artifact: 2.1
 - Maximum lineage depth: 3
 - Culture Maturity Score (CMS): 78.4
+
+### Artifact Mix
+  - book: 8
+  - prompt: 3
+  - dataset: 1
 
 ## Top Influential Artifacts
 
@@ -20,13 +26,9 @@
 
 ## Culture Graph Snapshot
 
-- Total edges: 26 (citations + derivations)
-- Influence Gini coefficient: 0.21 (balanced knowledge distribution)
-- Derivative jobs launched from artifacts: 9
+- Total derivatives launched: 9
+- Influence Gini coefficient: 0.21
 
-## Operational Notes
+## Alerts & Notes
 
-- All mint transactions executed by relayer wallet `0xRelayer...CULTURE`.
-- No moderation alerts triggered.
-- Indexer influence recomputation executed successfully at 2024-01-12T18:00Z.
-
+- None
