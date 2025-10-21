@@ -50,7 +50,7 @@ The orchestrator keeps ownership controls in the loop at every stage—jobs are 
    ```sh
    npm run demo:onebox:doctor
    ```
-   The doctor checks required environment variables, prints the launch URL, and reminds the operator of the core owner-control commands.
+   The doctor checks required environment variables, pings your RPC to confirm the active chain, verifies that `JOB_REGISTRY_ADDRESS` points to live bytecode, prints the launch URL, and reminds the operator of the core owner-control commands.
 4. **Launch the One-Box:**
    ```sh
    npm run demo:onebox:launch
