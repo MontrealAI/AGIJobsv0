@@ -10,7 +10,8 @@ const distDir = path.join(appDir, "dist");
 const templatePath = path.join(appDir, "index.html");
 const configModuleUrl = pathToFileURL(path.join(appDir, "config.mjs"));
 
-const assets = ["app.js", "styles.css"];
+const hashedAssets = ["app.js", "styles.css"];
+const passthroughAssets = ["url-overrides.js"];
 const errorCatalogSource = path.resolve(__dirname, "../../..", "storage", "errors", "onebox.json");
 
 const fingerprint = (buffer) =>
@@ -26,7 +27,7 @@ await fs.mkdir(distDir, { recursive: true });
 
 const manifest = {};
 
-for (const asset of assets) {
+for (const asset of hashedAssets) {
   const sourcePath = path.join(appDir, asset);
   const buffer = await fs.readFile(sourcePath);
   const ext = path.extname(asset);
@@ -37,6 +38,12 @@ for (const asset of assets) {
     file: hashedName,
     integrity: computeIntegrity(buffer),
   };
+}
+
+for (const asset of passthroughAssets) {
+  const sourcePath = path.join(appDir, asset);
+  const targetPath = path.join(distDir, asset);
+  await fs.copyFile(sourcePath, targetPath);
 }
 
 const errorCatalogTarget = path.join(distDir, "storage", "errors", "onebox.json");

@@ -1,154 +1,121 @@
-# 🎖️ AGI Jobs One‑Box 👁️✨ Demo
+# 🎖️ AGI Jobs One‑Box 👁️✨
 
-> **Mission:** Prove that a single conversational window can orchestrate institution-grade labour markets on-chain — without the user ever touching Solidity, wallets, or RPC jargon. This demo packages the AGI Jobs v0 (v2) stack into a launchable experience that even a first-time operator can run in minutes.
+The One‑Box demo turns AGI Jobs v0 (v2) into a single conversational surface where a non‑technical user can design, verify, and execute institutional-grade on-chain work. This directory packages the orchestrator server, the walletless One‑Box UI, and owner observability tooling into a launch kit that boots in under two minutes.
 
 ## Why this matters
 
-- **Non-technical mastery.** One chat box is all it takes to post, simulate, and settle complex AGI Jobs workflows. The assistant translates natural language directly into on-chain labour orchestration.
-- **Production discipline.** Every component ships with hardened defaults: strict CSP/SRI, deterministic builds, contract owner controls, pause switches, observability, and audited economic guardrails.
-- **Operator sovereignty.** The contract owner retains full command — fees, staking pressure, validator policy, and pause states can all be updated or halted instantly through the standard owner toolchain.
-- **Chain-agnostic execution.** Point the stack at any AGI Jobs v2 deployment (local Anvil, testnets, mainnet). The relayer model grants walletless UX while respecting the on-chain escrow model.
+* **One command, production power.** `npm run demo:onebox:launch` builds the static UI, starts the orchestrator with your relayer key, and serves a pre-configured chat interface that already knows where your contracts live.
+* **Planner → simulator → executor transparency.** The UI surfaces every stage (LLM plan, policy simulation, guarded execution) so that anyone can supervise decisions before a single wei is moved.
+* **Owner-first governance.** The orchestrator inherits the full AGI Jobs v2 owner surface—pause switches, fee tuning, staking limits, and ENS registry overrides. The demo ships with a doctor script that checks configuration health before launch.
+* **Demonstrably unstoppable.** Every successful run emits a CID for the attested receipt, explorer links for on-chain actions, and a risk trail that compliance teams can archive.
 
-## System map
+## System flow
 
 ```mermaid
-flowchart LR
-    subgraph User[User Experience]
-        U["👤 Non-technical operator"] -->|Describes goal| UI["🎛️ One‑Box chat interface"]
-        UI -->|Shows plan, asks confirmation| U
-    end
-
-    subgraph Brain[AI Orchestrator]
-        UI -->|/plan| Planner["🧠 LLM planner"]
-        Planner -->|Structured intent| UI
-        UI -->|/simulate & /execute| Executor["⚙️ Execution pipeline"]
-    end
-
-    subgraph Chain[On-chain & Storage]
-        Executor -->|Tx signed by relayer| JobRegistry{{"📜 Job Registry"}}
-        Executor -->|Uploads specs| IPFS[("🗂️ IPFS / pinning")]
-        JobRegistry -->|Events & receipts| Executor
-    end
-
-    subgraph Owner[Owner Command]
-        OwnerCLI["🛡️ Owner CLI"] -->|Update fees, pause, rotate keys| JobRegistry
-        OwnerCLI -->|Surface configuration| Planner
-    end
-
-    JobRegistry -->|Finalise payouts| Agent["🤖 / 👩‍💻 Agents"]
+sequenceDiagram
+    autonumber
+    participant User as 👤 Non-technical user
+    participant UI as 💬 One-Box UI
+    participant Orc as 🧠 Orchestrator
+    participant ETH as ⛓️ Ethereum
+    participant IPFS as 📦 IPFS
+    User->>UI: Describe mission ("Label 500 images, 5 AGIALPHA, 7 days")
+    UI->>Orc: POST /onebox/plan
+    Orc->>Orc: Plan intent + policy simulation
+    Orc-->>UI: Human-readable plan + guardrail status
+    User->>UI: Confirm with a single click
+    UI->>Orc: POST /onebox/execute
+    Orc->>IPFS: Pin spec + receipt bundle
+    Orc->>ETH: Escrow reward + create job
+    ETH-->>Orc: Transaction receipt
+    Orc-->>UI: Structured receipt + explorer link + CID
+    UI-->>User: ✅ Mission live, audit trail attached
 ```
 
-## Directory layout
+The orchestrator keeps ownership controls in the loop at every stage—jobs are blocked if organisational caps are exceeded, paused if the owner toggles SystemPause, and automatically documented through attested receipts.
 
-```
-demo/One-Box/
-├── Dockerfile.ui          # Builds the static One‑Box UI, injects runtime config at container start
-├── Makefile               # Friendly targets for bootstrap / launch / teardown
-├── README.md              # This guide
-├── config/                # Slot for future network presets (testnet, mainnet)
-├── docker-compose.yaml    # Minimal stack: Anvil + orchestrator + One‑Box UI
-├── scripts/
-│   └── entrypoint.sh      # Generates runtime-config.js so the browser knows the orchestrator endpoint
-└── .env.example           # Safe defaults (Anvil key, demo API token, CORS)
-```
+## Quickstart (non-technical friendly)
 
-## One-click launch (local Anvil)
-
-1. **Install prerequisites.** Docker ≥ 24, Docker Compose plugin, Node.js 20 (matches repo `engines`), GNU Make.
-2. **Bootstrap contracts + config.**
+1. **Install dependencies (one time):**
    ```sh
-   cp demo/One-Box/.env.example demo/One-Box/.env
-   make -C demo/One-Box bootstrap
+   npm ci
    ```
-   This runs the hardened `deploy:oneclick:auto` wizard: it spins Anvil, deploys the entire AGI Jobs v2 suite, and writes fresh addresses into `deployment-config/oneclick.env` for Compose to consume. The script exits once deployments and owner wiring checks pass.
-   Optional environment overrides:
-   - `EXPLORER_TX_BASE` adds “view on explorer” links for posted transactions.
-   - `IPFS_GATEWAY_BASE` points the UI at a custom IPFS gateway for specs and deliverables.
-3. **Launch the stack.**
+2. **Prepare configuration:**
    ```sh
-   make -C demo/One-Box up-detached
+   cd demo/One-Box
+   cp .env.example .env
+   # edit .env with your RPC, registry address, and relayer key
    ```
-   Services:
-   - `anvil`: local Ethereum with deterministic keys
-   - `orchestrator`: /onebox API + relayer using the key from `.env`
-   - `onebox-ui`: the static assistant hosted at http://localhost:4173/
-4. **Open the assistant.** Browse to `http://localhost:4173` and start chatting. The Advanced panel is already pre-filled with the orchestrator URL and API token, so you can immediately issue instructions like “Post a research job for 5 AGIALPHA, deadline 5 days.”
-5. **Shut down when finished.**
+3. **Verify readiness:**
    ```sh
-   make -C demo/One-Box down
+   npm run demo:onebox:doctor
    ```
+   The doctor checks required environment variables, prints the launch URL, and reminds the operator of the core owner-control commands.
+4. **Launch the One-Box:**
+   ```sh
+   npm run demo:onebox:launch
+   ```
+   * Builds the hardened static UI (`apps/onebox-static`).
+   * Boots the orchestrator on `ONEBOX_PORT` (default `8080`).
+   * Serves the UI on `ONEBOX_UI_PORT` (default `4173`) with the orchestrator URL, prefix, API token, and mode pre-filled through query overrides.
+   * Opens your browser pointing at `http://127.0.0.1:4173/?orchestrator=…&oneboxPrefix=…` so the first message can be sent immediately.
 
-### Operator cockpit
+That is all a non-technical operator needs: visit the chat, describe the job, confirm, and watch the receipt appear with an explorer link.
 
-- `make -C demo/One-Box logs` tails all containers (or add `service=orchestrator`).
-- `make -C demo/One-Box status` prints port bindings and health.
-- `make -C demo/One-Box clean` stops containers, prunes volumes, and removes the demo `.env` file.
+### Built-in safety rails
 
-### One‑Box mission control UI
+* **Walletless default.** Guest mode uses the relayer key supplied in `.env` to sponsor gas and escrow the reward. Expert mode can be toggled at any time to emit calldata for self-signing wallets.
+* **Policy enforcement.** The orchestrator reads organisational caps (`ONEBOX_MAX_JOB_BUDGET_AGIA`, `ONEBOX_MAX_JOB_DURATION_DAYS`) and halts execution with human-readable errors when limits are exceeded.
+* **Resumable context.** Query parameters automatically persist the orchestrator URL, `/onebox` prefix, mode, and API token. Refreshing the page or sharing the link keeps the session live.
+* **Audit artefacts.** Each execution stores a signed receipt CID. IPFS credentials in `.env` let the orchestrator pin specs and deliverables.
 
-- The chat window opens with a **mission control banner** showing readiness, orchestrator status, and one-click templates for common missions.
-- The mission panel renders a **Mermaid system diagram**, configuration checklist, and owner command shortcuts so stakeholders can visualise the entire workflow.
-- A **live contract map** pulls the active network name, chain ID, and every critical module address straight from `deployment-config/oneclick.env`, complete with copy-to-clipboard buttons for audits and incident response drills.
-- Quick prompts in both the panel and chat header prefill the input box—launch global research sprints, treasury dry runs, or escrow finalisations instantly.
-- Explorer links and IPFS previews are auto-linked when `EXPLORER_TX_BASE` and/or `IPFS_GATEWAY_BASE` are set in the environment.
+## Configuration reference
 
-## Manual controls (advanced)
-
-Prefer to run services individually?
-
-1. Deploy contracts via `npm run deploy:oneclick:wizard -- --no-compose --network localhost`.
-2. Start the orchestrator in a shell: `npm run onebox:server`.
-3. Build + serve the UI: `npm run onebox:build && cd apps/onebox/dist && python -m http.server 4173`.
-4. Point the Advanced panel to `http://localhost:8080/onebox` with the API token you configured.
-
-The Docker assets in this demo simply automate the same workflow for non-technical operators.
-
-## Conversational playbook
-
-| Step | Example user message | Behind the scenes |
-| --- | --- | --- |
-| 1 | “I need 250 product descriptions polished. Offer 12 AGIALPHA. Deadline 4 days.” | Planner converts narrative into a `JobIntent` JSON, summarises scope, budget, and deadlines. |
-| 2 | “Yes.” | Simulator validates funds, fee policy, burn schedule, staking requirements. Any blockers are surfaced as natural-language hints. |
-| 3 | “Finalize job 12.” | Executor anchors deliverable CIDs, calls `finalize` on the Job Registry, and returns a signed receipt plus explorer links. |
-
-Receipts are cached locally and link to the relevant transaction or IPFS CID so the operator has immediate proof-of-work.
-
-## Security & owner command
-
-- **Full pause authority.** After bootstrap, run `npm run owner:system-pause -- --pause` at any time to freeze job creation. Resume with `--unpause`. The demo UI surfaces pause errors as clear assistant responses.
-- **Parameter agility.** Use the owner toolkit to tweak fees, burns, staking, validator mixes, or network throttles:
-  ```sh
-  npm run owner:surface
-  npm run owner:parameters
-  npm run owner:update-all
-  ```
-  These scripts introspect the deployed addresses written during bootstrap, ensuring owner updates stay in sync with the live contracts.
-- **Relayer hygiene.** The `.env.example` ships with the first Anvil key (full balance). Swap in a dedicated private key for production and rotate regularly. The orchestrator enforces policy caps via `ONEBOX_MAX_JOB_BUDGET_AGIA`, `ONEBOX_MAX_JOB_DURATION_DAYS`, and other env guards.
-- **Audit trail.** Every plan/execute request is logged with correlation IDs. `make logs` reveals structured JSON for compliance or debugging.
-
-## CI & quality gates
-
-The repository already enforces the V2 pipeline (`.github/workflows/ci.yml`). A green PR requires:
-
-- Solidity lint (`solhint`), enterprise portal linting, and static analysis.
-- Hardhat unit tests, Foundry fuzzing, and coverage ≥ 90%.
-- CI summary aggregation with branch protections.
-
-This demo integrates with those pipelines automatically — Dockerfiles reuse the pinned Node 20 toolchain, and no checks are skipped. Run `npm run lint` and `npm run test` locally before opening a PR.
-
-## Troubleshooting
-
-| Symptom | Fix |
+| Variable | Purpose |
 | --- | --- |
-| UI reports “Orchestrator not configured” | Check that `.env` contains `ONEBOX_API_TOKEN` and `ORCHESTRATOR_URL`, then `make up-detached` again. |
-| Simulation says “Insufficient balance” | Fund the relayer (from Anvil account `0xf39…`) with AGIALPHA or reduce the reward. |
-| `deploy:oneclick:auto` fails | Inspect the wizard output; rerun after `make clean` to reset state. |
-| Need a fresh slate | `make -C demo/One-Box clean` and rerun the bootstrap. |
+| `RPC_URL` | JSON-RPC endpoint used by the orchestrator provider. |
+| `JOB_REGISTRY_ADDRESS` | Address of the deployed AGI Jobs job registry. |
+| `ONEBOX_RELAYER_PRIVATE_KEY` | EOA key that signs transactions on the user’s behalf. Fund with ETH + AGIALPHA. |
+| `ONEBOX_API_TOKEN` | Optional bearer token protecting `/onebox/*`. Leave empty for local demos. |
+| `ONEBOX_PORT` / `ONEBOX_UI_PORT` | Ports for the orchestrator API and UI server. |
+| `ONEBOX_PUBLIC_ONEBOX_PREFIX` | Prefix inserted before planner/simulator endpoints (defaults to `/onebox`). |
+| `ONEBOX_PUBLIC_ORCHESTRATOR_URL` | Public base URL announced to the UI. Defaults to `http://127.0.0.1:${ONEBOX_PORT}`. |
+| `ONEBOX_UI_DEFAULT_MODE` | `guest` for relayer mode, `expert` for wallet calldata generation. |
+| `PINNER_*` | Optional IPFS pinning credentials to persist specs/receipts. |
 
-## Next steps
+## Owner control & observability
 
-- Swap the RPC target in `.env` to a production endpoint and redeploy contracts with multisig ownership.
-- Connect real operators by exposing the One‑Box UI through an ENS name or IPFS gateway (`npm run onebox:publish`).
-- Extend the chat playbook with new intents (disputes, staking, validator onboarding) — the planner already supports them via the orchestrator SDK.
+The demo never bypasses AGI Jobs v2 governance. Operators retain full control:
 
-Unleash the assistant, and show stakeholders how AGI Jobs v0 (v2) makes institutional-grade automation accessible to anyone with a browser.
+* `npm run owner:surface` — inspect every module’s owner address and governance target before going live.
+* `npm run owner:update-all` — apply updated fee, stake, and policy parameters from `config/`.
+* `npm run owner:system-pause` — exercise the emergency pause drill; the One-Box will surface the pause status to end users immediately.
+* `npm run ci:verify-branch-protection` — confirm branch protection and CI checks before promoting changes.
+
+`demo/One-Box/bin/doctor.cjs` bundles these reminders and verifies environment health. It is written for business operators who need confidence without touching Solidity or Hardhat.
+
+## Continuous integration alignment
+
+The root `pretest` script now bundles One-Box URL override tests and the launcher configuration tests. CI remains “fully green” when:
+
+* `apps/onebox/test/query-overrides.test.ts` confirms the query override bridge between CLI and UI.
+* `demo/One-Box/test/launcher.test.cjs` validates environment merging and launch URL synthesis.
+* Existing Solidity, Foundry, and E2E suites continue to run unchanged.
+
+## Extending the demo
+
+* **Deploy to staging:** point `ONEBOX_PUBLIC_ORCHESTRATOR_URL` at a remote host, open the UI port, and the same static assets work from IPFS, S3, or ENS gateways.
+* **Custom prefixes:** set `ONEBOX_PUBLIC_ONEBOX_PREFIX=/sovereign` and the CLI will reconfigure the UI through query overrides, keeping the chat experience seamless.
+* **Expert-only launches:** set `ONEBOX_UI_DEFAULT_MODE=expert` to have the chat default to calldata generation for compliance-sensitive workflows.
+
+## Frequently asked questions
+
+**Can multiple operators share one relayer?** Yes. Use a low-privilege relayer account, rotate keys via `.env`, and pin receipts for every run. The orchestrator enforces job ownership and can be paused instantly.
+
+**Does the UI expose ENS/stake requirements?** Planner warnings and guardrail badges describe missing identity requirements, stake levels, and budget caps. The operator never sees raw revert reasons.
+
+**How do I export transcripts?** Receipts include IPFS CIDs plus explorer URLs. Combine them with the structured logs (`onebox.plan.*`, `onebox.execute.*`) emitted by the orchestrator for full audits.
+
+---
+
+Launch it, describe the mission, confirm, and experience institutional-grade AGI orchestration in a single box.

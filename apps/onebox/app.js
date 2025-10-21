@@ -1,5 +1,6 @@
 // apps/onebox/app.js
 import errorsCatalog from '../../backend/errors/catalog.json' assert { type: 'json' };
+import { buildOneboxUrl, normalisePrefix, parseOverrideParams } from './url-overrides.js';
 const $ = (selector) => document.querySelector(selector);
 const chat = $('#chat');
 const box = $('#onebox-input');
@@ -8,6 +9,7 @@ const sendBtn = $('#send');
 const expertBtn = $('#expert');
 const orchInput = $('#orch');
 const tokenInput = $('#tok');
+const prefixInput = $('#orch-prefix');
 const saveBtn = $('#save');
 const connectBtn = $('#connect');
 const modeBadge = $('#mode');
@@ -220,9 +222,16 @@ const ERROR_PATTERNS = [
 
 const ERRORS = errorsCatalog;
 
+const DEFAULT_PREFIX = '/onebox';
+
 const STORAGE_KEYS = {
   orch: 'ONEBOX_ORCH_URL',
+  prefix: 'ONEBOX_ORCH_PREFIX',
   receipts: 'ONEBOX_RECEIPTS_V1',
+};
+
+const SESSION_KEYS = {
+  token: 'ONEBOX_API_SESSION_TOKEN',
 };
 
 try {
@@ -236,7 +245,79 @@ const runtimeConfig = typeof window !== 'undefined' ? window.__ONEBOX_CONFIG__ |
 let expertMode = false;
 let ethereum = null;
 let orchestrator = localStorage.getItem(STORAGE_KEYS.orch) || '';
+let orchestratorPrefix = DEFAULT_PREFIX;
 let apiToken = '';
+
+try {
+  const storedPrefix = localStorage.getItem(STORAGE_KEYS.prefix);
+  if (storedPrefix !== null && storedPrefix !== undefined) {
+    const normalised = normalisePrefix(storedPrefix);
+    orchestratorPrefix = normalised || '';
+  }
+} catch (error) {
+  console.warn('Unable to restore orchestrator prefix from storage', error);
+}
+
+try {
+  const sessionToken = sessionStorage.getItem(SESSION_KEYS.token);
+  if (sessionToken && sessionToken.trim()) {
+    apiToken = sessionToken.trim();
+  }
+} catch (error) {
+  console.warn('Unable to restore session API token', error);
+}
+
+if (typeof window !== 'undefined') {
+  const overrides = parseOverrideParams(window.location.href);
+  if (overrides.orchestrator !== undefined) {
+    orchestrator = overrides.orchestrator || '';
+    try {
+      if (orchestrator) {
+        localStorage.setItem(STORAGE_KEYS.orch, orchestrator);
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.orch);
+      }
+    } catch (error) {
+      console.warn('Unable to persist orchestrator override', error);
+    }
+  }
+  if (overrides.prefix !== undefined) {
+    orchestratorPrefix = overrides.prefix || '';
+    try {
+      localStorage.setItem(STORAGE_KEYS.prefix, orchestratorPrefix);
+    } catch (error) {
+      console.warn('Unable to persist prefix override', error);
+    }
+  }
+  if (overrides.token !== undefined) {
+    apiToken = overrides.token || '';
+    try {
+      if (apiToken) {
+        sessionStorage.setItem(SESSION_KEYS.token, apiToken);
+      } else {
+        sessionStorage.removeItem(SESSION_KEYS.token);
+      }
+    } catch (error) {
+      console.warn('Unable to persist API token override', error);
+    }
+  }
+  if (overrides.mode) {
+    expertMode = overrides.mode === 'expert';
+  }
+  if (overrides.appliedParams.length && window.history && typeof window.history.replaceState === 'function') {
+    try {
+      const url = new URL(window.location.href);
+      for (const key of overrides.appliedParams) {
+        url.searchParams.delete(key === 'oneboxPrefix' ? 'oneboxPrefix' : key);
+      }
+      const nextSearch = url.searchParams.toString();
+      const nextUrl = nextSearch ? `${url.pathname}?${nextSearch}${url.hash}` : `${url.pathname}${url.hash}`;
+      window.history.replaceState({}, document.title, nextUrl);
+    } catch (error) {
+      console.warn('Unable to clean URL overrides', error);
+    }
+  }
+}
 
 const plannerLatencySamples = [];
 
@@ -302,6 +383,16 @@ function updateGuardrailStat(simulation, state = 'success', details = {}) {
   statGuardrails.textContent = segments.join(' · ');
 }
 
+function resolveOrchestratorDisplay() {
+  const base = orchestrator ? orchestrator.trim() : '';
+  if (!base) {
+    return '';
+  }
+  const trimmedBase = base.replace(/\/+$/, '');
+  const prefix = normalisePrefix(orchestratorPrefix);
+  return prefix ? `${trimmedBase}${prefix}` : trimmedBase;
+}
+
 function renderRelayerStatus() {
   if (!statRelayer) return;
   if (expertMode) {
@@ -315,10 +406,11 @@ function renderRelayerStatus() {
   let host;
   try {
     const base = typeof window !== 'undefined' ? window.location.origin : undefined;
-    const parsed = base ? new URL(orchestrator, base) : new URL(orchestrator);
+    const display = resolveOrchestratorDisplay();
+    const parsed = base ? new URL(display || orchestrator, base) : new URL(display || orchestrator);
     host = parsed.host || parsed.href;
   } catch (_) {
-    host = orchestrator;
+    host = resolveOrchestratorDisplay() || orchestrator;
   }
   if (!apiToken) {
     statRelayer.textContent = `API token required (${host})`;
@@ -349,6 +441,12 @@ let lastRunStatus = null;
 
 orchInput.value = orchestrator;
 tokenInput.value = apiToken;
+if (prefixInput) {
+  prefixInput.value = orchestratorPrefix || '';
+  if (!prefixInput.placeholder) {
+    prefixInput.placeholder = DEFAULT_PREFIX;
+  }
+}
 renderReceipts();
 setModeLabel();
 renderExpertDetails();
@@ -461,11 +559,12 @@ function storeReceipt(data) {
 }
 
 async function api(path, body) {
-  const base = orchestrator.trim();
-  if (!base) {
+  let url;
+  try {
+    url = buildOneboxUrl(orchestrator, orchestratorPrefix, path);
+  } catch (error) {
     throw new Error('ORCH_NOT_SET');
   }
-  const url = `${base ? base.replace(/\/$/, '') : ''}${path}`;
   const headers = {};
   if (body) {
     headers['Content-Type'] = 'application/json';
@@ -833,7 +932,26 @@ expertBtn.addEventListener('click', () => {
 saveBtn.addEventListener('click', () => {
   orchestrator = orchInput.value.trim();
   apiToken = tokenInput.value.trim();
-  localStorage.setItem(STORAGE_KEYS.orch, orchestrator);
+  orchestratorPrefix = prefixInput ? normalisePrefix(prefixInput.value) : orchestratorPrefix;
+  try {
+    if (orchestrator) {
+      localStorage.setItem(STORAGE_KEYS.orch, orchestrator);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.orch);
+    }
+    localStorage.setItem(STORAGE_KEYS.prefix, orchestratorPrefix || '');
+  } catch (error) {
+    console.warn('Unable to persist advanced settings', error);
+  }
+  try {
+    if (apiToken) {
+      sessionStorage.setItem(SESSION_KEYS.token, apiToken);
+    } else {
+      sessionStorage.removeItem(SESSION_KEYS.token);
+    }
+  } catch (error) {
+    console.warn('Unable to persist API token in session storage', error);
+  }
   addMessage('assist', '✅ Saved advanced settings. API token stays in this session only.');
   renderRelayerStatus();
 });
