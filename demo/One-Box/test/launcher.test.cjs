@@ -80,6 +80,12 @@ test('resolveConfig allows explicit CLI overrides to win over environment', () =
   assert.equal(config.explorerBase, 'https://scan.example/tx/');
   assert.equal(config.maxJobBudgetAgia, '123.45');
   assert.equal(config.maxJobDurationDays, 9);
+  assert.ok(
+    config.warnings.some((warning) =>
+      warning.includes('HTTP on a non-loopback host'),
+    ),
+    'Expected HTTP exposure warning for non-loopback host',
+  );
 });
 
 test('resolveConfig parses guardrail environment variables', () => {
@@ -94,6 +100,36 @@ test('resolveConfig parses guardrail environment variables', () => {
   assert.equal(config.maxJobBudgetAgia, '45.5');
   assert.equal(config.maxJobDurationDays, 7);
   assert.deepEqual(config.warnings, []);
+});
+
+test('resolveConfig warns when exposing orchestrator without API token', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: '0x000000000000000000000000000000000000c0de',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
+    ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'https://demo.example/onebox',
+  };
+  const config = resolveConfig(env);
+  assert.ok(
+    config.warnings.some((warning) =>
+      warning.includes('No API token configured while exposing the orchestrator beyond loopback'),
+    ),
+  );
+});
+
+test('resolveConfig warns when the orchestrator URL cannot be parsed', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: '0x000000000000000000000000000000000000c0de',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
+    ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'not-a-url',
+  };
+  const config = resolveConfig(env);
+  assert.ok(
+    config.warnings.some((warning) =>
+      warning.includes("is not a valid absolute URL"),
+    ),
+  );
 });
 
 test('resolveConfig collects warnings for malformed guardrails when allowPartial', () => {

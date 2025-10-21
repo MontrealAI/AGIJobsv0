@@ -83,7 +83,7 @@ function formatStatus(label, value) {
     config.maxJobDurationDays ? `${config.maxJobDurationDays} day(s)` : '(not configured)'
   );
   if (config.warnings.length > 0) {
-    console.log('   Guardrail warnings:');
+    console.log('   Configuration warnings:');
     for (const warning of config.warnings) {
       console.log(`     • ${warning}`);
     }
