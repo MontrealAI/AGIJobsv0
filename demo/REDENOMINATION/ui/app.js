@@ -1,6 +1,7 @@
 const EXPORT_PATH = './export/latest.json';
 const JOB_CONFIG_PATH = '../config/job-registry-redenominated.json';
 const STAKE_CONFIG_PATH = '../config/stake-manager-redenominated.json';
+const SCENARIO_PATH = '../scenario.json';
 
 async function fetchJson(path, { optional = false } = {}) {
   const url = `${path}${path.includes('?') ? '&' : '?'}t=${Date.now()}`;
@@ -372,16 +373,62 @@ function renderModules(modules = {}) {
   return moduleContainer;
 }
 
+function renderPillars(container, pillars = []) {
+  if (!container) return;
+  if (!Array.isArray(pillars) || pillars.length === 0) {
+    container.innerHTML = '<p class="muted">Scenario pillar catalogue unavailable.</p>';
+    return;
+  }
+
+  const renderColumn = (title, items = []) => {
+    if (!Array.isArray(items) || items.length === 0) return '';
+    const list = items
+      .map((item) => `<li><code>${item}</code></li>`)
+      .join('');
+    return `
+      <div class="pillar-card__column">
+        <h4>${title}</h4>
+        <ul>${list}</ul>
+      </div>
+    `;
+  };
+
+  container.innerHTML = pillars
+    .map((pillar, index) => {
+      const evidence = pillar.evidence ?? {};
+      const columns = [
+        renderColumn('Documentation', evidence.docs),
+        renderColumn('Automation scripts', evidence.scripts),
+        renderColumn('Configuration baselines', evidence.configs),
+        renderColumn('Dashboards & telemetry', evidence.dashboards)
+      ]
+        .filter(Boolean)
+        .join('');
+      return `
+        <article class="pillar-card">
+          <header class="pillar-card__header">
+            <span class="pillar-card__index">${String(index + 1).padStart(2, '0')}</span>
+            <h3>${pillar.title}</h3>
+          </header>
+          <p class="pillar-card__outcome"><strong>Outcome</strong> ${pillar.outcome}</p>
+          <div class="pillar-card__columns">${columns}</div>
+        </article>
+      `;
+    })
+    .join('');
+}
+
 async function loadPlaybook() {
-  const [playbook, jobConfig, stakeConfig] = await Promise.all([
+  const [playbook, jobConfig, stakeConfig, scenario] = await Promise.all([
     fetchJson(EXPORT_PATH),
     fetchJson(JOB_CONFIG_PATH, { optional: true }),
     fetchJson(STAKE_CONFIG_PATH, { optional: true }),
+    fetchJson(SCENARIO_PATH, { optional: true }),
   ]);
-  return { playbook, jobConfig, stakeConfig };
+  return { playbook, jobConfig, stakeConfig, scenario };
 }
 
-function render({ playbook, jobConfig, stakeConfig }) {
+function render({ playbook, jobConfig, stakeConfig, scenario }) {
   appEl.innerHTML = '';
 
   const banner = document.createElement('section');
@@ -420,6 +467,23 @@ function render({ playbook, jobConfig, stakeConfig }) {
 
   const ownerCard = renderOwnerControls(playbook, jobConfig ?? {}, stakeConfig ?? {});
   if (ownerCard) appEl.appendChild(ownerCard);
+
+  const pillarsCard = document.createElement('section');
+  pillarsCard.className = 'card pillars-card';
+  const pillarsHeading = document.createElement('h2');
+  pillarsHeading.textContent = 'Superintelligence pillars';
+  pillarsCard.appendChild(pillarsHeading);
+  const pillarsDescription = document.createElement('p');
+  pillarsDescription.className = 'muted';
+  pillarsDescription.textContent =
+    'Cross-verify governed autonomy, verifiable compute, observability, and operational empowerment artefacts.';
+  pillarsCard.appendChild(pillarsDescription);
+  const pillarsContainer = document.createElement('div');
+  pillarsContainer.className = 'pillars-grid';
+  pillarsCard.appendChild(pillarsContainer);
+  appEl.appendChild(pillarsCard);
+
+  renderPillars(pillarsContainer, scenario?.pillars ?? []);
 
   const timelineCard = renderTimeline(playbook.timeline);
   if (timelineCard) appEl.appendChild(timelineCard);

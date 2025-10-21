@@ -130,6 +130,79 @@ main {
   gap: 1rem;
 }
 
+.pillars-card {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.pillar-card {
+  background: rgba(20, 30, 60, 0.88);
+  border: 1px solid rgba(72, 247, 207, 0.25);
+  border-radius: 1.25rem;
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: inset 0 0 0 1px rgba(72, 247, 207, 0.08), 0 24px 40px rgba(0, 0, 0, 0.35);
+}
+
+.pillar-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.pillar-card__index {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(72, 247, 207, 0.18);
+  border: 1px solid rgba(72, 247, 207, 0.32);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.pillar-card__outcome {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.pillar-card__outcome strong {
+  color: var(--text);
+  margin-right: 0.5rem;
+}
+
+.pillar-card__columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.pillar-card__column ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.pillar-card__column code {
+  background: rgba(72, 247, 207, 0.12);
+  border-radius: 0.6rem;
+  padding: 0.25rem 0.5rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+}
+
 .owner-controls {
   display: grid;
   gap: 1rem;

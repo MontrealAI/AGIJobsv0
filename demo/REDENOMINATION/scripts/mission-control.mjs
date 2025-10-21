@@ -87,13 +87,40 @@ function printResources() {
   printHeading('Automation & Documentation');
   if (scenario.resources?.scripts?.length) {
     console.log(`${COLOR.bright}${COLOR.cyan}Launch scripts:${COLOR.reset}`);
-    console.log(formatList(scenario.resources.scripts, '▶')); 
+    console.log(formatList(scenario.resources.scripts, '▶'));
   }
   if (scenario.resources?.docs?.length) {
     console.log(`\n${COLOR.bright}${COLOR.cyan}Documentation:${COLOR.reset}`);
     console.log(formatList(scenario.resources.docs, '📘'));
   }
   console.log();
+}
+
+function printPillars() {
+  printHeading('Superintelligence Pillars');
+  if (!Array.isArray(scenario.pillars) || scenario.pillars.length === 0) {
+    console.log(`${COLOR.yellow}Scenario has no pillar definitions. Run npm run demo:redenomination:verify to rebuild artefacts.${COLOR.reset}`);
+    return;
+  }
+  scenario.pillars.forEach((pillar, index) => {
+    console.log(`${COLOR.bright}${COLOR.yellow}${String(index + 1).padStart(2, '0')} — ${pillar.title}${COLOR.reset}`);
+    if (pillar.outcome) {
+      console.log(`   ${COLOR.gray}${pillar.outcome}${COLOR.reset}`);
+    }
+    const evidence = pillar.evidence ?? {};
+    const show = (label, values, color) => {
+      if (!Array.isArray(values) || values.length === 0) return;
+      console.log(`   ${color}${label}:${COLOR.reset}`);
+      values.forEach((value) => {
+        console.log(`     ${COLOR.gray}${value}${COLOR.reset}`);
+      });
+    };
+    show('Docs', evidence.docs, COLOR.cyan);
+    show('Scripts', evidence.scripts, COLOR.green);
+    show('Configs', evidence.configs, COLOR.magenta);
+    show('Dashboards', evidence.dashboards, COLOR.blue);
+    console.log();
+  });
 }
 
 function printGovernance() {
@@ -193,11 +220,12 @@ const actions = [
   { key: '1', label: 'Mission summary', handler: printSummary },
   { key: '2', label: 'Lifecycle phases', handler: printPhases },
   { key: '3', label: 'Automation & documentation', handler: printResources },
-  { key: '4', label: 'Governance surfaces', handler: printGovernance },
-  { key: '5', label: 'Operational timeline', handler: printTimeline },
-  { key: '6', label: 'Assurance invariants', handler: printInvariants },
-  { key: '7', label: 'Mermaid orchestration', handler: printMermaid },
-  { key: '8', label: 'Verification checklist', handler: printVerification },
+  { key: '4', label: 'Superintelligence pillars', handler: printPillars },
+  { key: '5', label: 'Governance surfaces', handler: printGovernance },
+  { key: '6', label: 'Operational timeline', handler: printTimeline },
+  { key: '7', label: 'Assurance invariants', handler: printInvariants },
+  { key: '8', label: 'Mermaid orchestration', handler: printMermaid },
+  { key: '9', label: 'Verification checklist', handler: printVerification },
   { key: 'x', label: 'Exit mission control', handler: null }
 ];
 
