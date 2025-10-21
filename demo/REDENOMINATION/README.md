@@ -79,7 +79,16 @@ a live ground truth.
    Navigate the governed lifecycle, governance surfaces, verification invariants, and the shared Mermaid graph from a
    conversational prompt designed for decision makers.
 
-6. Open the immersive UI storyboard in any browser:
+6. Run the **Guardian emergency drill** to rehearse pause, parameter, and dispute authority:
+
+   ```bash
+   npm run demo:redenomination:guardian-drill
+   ```
+
+   The drill validates core staking/timelock invariants and presents interactive or non-interactive playbooks for
+   moderators, governance signers, and platform owners.
+
+7. Open the immersive UI storyboard in any browser:
 
    ```bash
    npx serve demo/REDENOMINATION

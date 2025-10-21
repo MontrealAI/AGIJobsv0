@@ -27,6 +27,7 @@ const exportPath = path.join(demoRoot, 'ui', 'export', 'latest.json');
 const translationsPath = path.join(demoRoot, 'i18n', 'strings.json');
 const missionControlPath = path.join(demoRoot, 'scripts', 'mission-control.mjs');
 const ownerConsolePath = path.join(demoRoot, 'scripts', 'owner-console.mjs');
+const guardianDrillPath = path.join(demoRoot, 'scripts', 'guardian-drill.mjs');
 const jobRegistryConfigPath = path.join(demoRoot, 'config', 'job-registry-redenominated.json');
 const stakeManagerConfigPath = path.join(demoRoot, 'config', 'stake-manager-redenominated.json');
 
@@ -335,6 +336,22 @@ if (stakeManagerConfig.stakeRecommendations) {
   });
 }
 
+const jobStake = Number(jobRegistryConfig.jobStakeTokens);
+const maxReward = Number(jobRegistryConfig.maxJobRewardTokens);
+const minAgentStake = Number(stakeManagerConfig.roleMinimums?.agentTokens ?? NaN);
+const minValidatorStake = Number(stakeManagerConfig.roleMinimums?.validatorTokens ?? NaN);
+const unbondingPeriod = Number(stakeManagerConfig.unbondingPeriodSeconds);
+
+expect(!Number.isNaN(jobStake) && jobStake > 0, 'Job bond numeric & positive', 'Job bond invalid or non-positive');
+expect(!Number.isNaN(maxReward) && maxReward >= jobStake, 'Reward cap ≥ job bond', 'Reward cap missing or below bond');
+expect(!Number.isNaN(minAgentStake) && minAgentStake >= jobStake, 'Agent stake ≥ job bond', 'Agent stake below job bond');
+expect(
+  !Number.isNaN(minValidatorStake) && minValidatorStake >= minAgentStake,
+  'Validator stake ≥ agent stake',
+  'Validator stake below agent stake',
+);
+expect(!Number.isNaN(unbondingPeriod) && unbondingPeriod > 0, 'Unbonding period > 0', 'Unbonding period invalid');
+
 const uiStoryboard = readFileSync(uiStoryboardPath, 'utf8');
 expect(
   uiStoryboard.includes('export/latest.json'),
@@ -391,6 +408,26 @@ if (existsSync(ownerConsolePath)) {
     expect((stats.mode & 0o111) !== 0, 'Owner command console marked executable', 'Owner command console not executable');
   } catch (error) {
     record('warn', `Unable to read owner console permissions (${error instanceof Error ? error.message : error})`);
+  }
+}
+
+expect(
+  existsSync(guardianDrillPath),
+  'Guardian drill console present',
+  'Guardian drill console missing',
+);
+if (existsSync(guardianDrillPath)) {
+  const guardianSource = readFileSync(guardianDrillPath, 'utf8');
+  expect(
+    guardianSource.startsWith('#!/usr/bin/env node'),
+    'Guardian drill console has executable shebang',
+    'Guardian drill console missing Node shebang',
+  );
+  try {
+    const stats = statSync(guardianDrillPath);
+    expect((stats.mode & 0o111) !== 0, 'Guardian drill console marked executable', 'Guardian drill console not executable');
+  } catch (error) {
+    record('warn', `Unable to read guardian drill permissions (${error instanceof Error ? error.message : error})`);
   }
 }
 

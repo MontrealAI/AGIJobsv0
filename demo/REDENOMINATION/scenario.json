@@ -80,6 +80,7 @@
       "npm run deploy:oneclick:auto",
       "npm run owner:command-center",
       "npm run demo:redenomination:owner-console",
+      "npm run demo:redenomination:guardian-drill",
       "npm run monitoring:validate",
       "npm run demo:redenomination:mission-control"
     ]

@@ -250,7 +250,8 @@
     "demo:redenomination": "node demo/REDENOMINATION/scripts/run-demo.mjs",
     "demo:redenomination:mission-control": "node demo/REDENOMINATION/scripts/mission-control.mjs",
     "demo:redenomination:verify": "node demo/REDENOMINATION/scripts/verify-scenario.mjs",
-    "demo:redenomination:owner-console": "node demo/REDENOMINATION/scripts/owner-console.mjs"
+    "demo:redenomination:owner-console": "node demo/REDENOMINATION/scripts/owner-console.mjs",
+    "demo:redenomination:guardian-drill": "node demo/REDENOMINATION/scripts/guardian-drill.mjs"
   },
   "keywords": [],
   "author": "",
