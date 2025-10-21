@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from textwrap import indent
+from typing import Mapping
 
 from meta_agentic_demo.admin import OwnerConsole, load_owner_overrides
 from meta_agentic_demo.config import DemoConfig, DemoScenario
+from meta_agentic_demo.governance import GovernanceTimelock
 from meta_agentic_demo.orchestrator import SovereignArchitect
 from meta_agentic_demo.report import export_report
 
@@ -118,6 +121,19 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Pause operations before they begin (no jobs executed)",
     )
+    governance_group = parser.add_argument_group("Governance timelock")
+    governance_group.add_argument(
+        "--timelock-delay",
+        type=float,
+        default=0.0,
+        help="Seconds to delay owner overrides via the governance timelock",
+    )
+    governance_group.add_argument(
+        "--timelock-fast-forward",
+        type=float,
+        default=0.0,
+        help="Advance the timelock clock by N seconds before execution",
+    )
     return parser.parse_args()
 
 
@@ -130,10 +146,36 @@ def main() -> None:
     args = parse_args()
     scenario = next(s for s in SCENARIOS if s.identifier == args.scenario)
     owner_console = OwnerConsole(DemoConfig(scenarios=SCENARIOS))
+    timelock = GovernanceTimelock(
+        default_delay=timedelta(seconds=max(args.timelock_delay, 0.0))
+    )
+    scheduled_actions = []
+
+    def queue_timelock(action: str, payload: Mapping[str, object]) -> bool:
+        try:
+            scheduled_actions.append(timelock.schedule(action, payload))
+            return True
+        except (ValueError, KeyError) as error:
+            print("❌ Owner override error:", error)
+            return False
+
     try:
         if args.config_file:
             overrides = load_owner_overrides(args.config_file)
-            owner_console.apply_overrides(overrides)
+            reward_overrides = overrides.get("reward_policy", {})
+            if reward_overrides and not queue_timelock("update_reward_policy", reward_overrides):
+                return
+            stake_overrides = overrides.get("stake_policy", {})
+            if stake_overrides and not queue_timelock("update_stake_policy", stake_overrides):
+                return
+            evolution_overrides = overrides.get("evolution_policy", {})
+            if evolution_overrides and not queue_timelock(
+                "update_evolution_policy", evolution_overrides
+            ):
+                return
+            if "paused" in overrides:
+                if not queue_timelock("set_paused", {"value": bool(overrides["paused"]) }):
+                    return
         reward_overrides = {
             key: value
             for key, value in {
@@ -144,8 +186,8 @@ def main() -> None:
             }.items()
             if value is not None
         }
-        if reward_overrides:
-            owner_console.update_reward_policy(**reward_overrides)
+        if reward_overrides and not queue_timelock("update_reward_policy", reward_overrides):
+            return
         stake_overrides = {
             key: value
             for key, value in {
@@ -155,8 +197,8 @@ def main() -> None:
             }.items()
             if value is not None
         }
-        if stake_overrides:
-            owner_console.update_stake_policy(**stake_overrides)
+        if stake_overrides and not queue_timelock("update_stake_policy", stake_overrides):
+            return
         evolution_overrides = {
             key: value
             for key, value in {
@@ -168,15 +210,47 @@ def main() -> None:
             }.items()
             if value is not None
         }
-        if evolution_overrides:
-            owner_console.update_evolution_policy(**evolution_overrides)
-        if args.pause:
-            owner_console.pause()
+        if evolution_overrides and not queue_timelock(
+            "update_evolution_policy", evolution_overrides
+        ):
+            return
+        if args.pause and not queue_timelock("set_paused", {"value": True}):
+            return
     except ValueError as error:
         print("❌ Owner override error:", error)
         return
+
+    fast_forward_seconds = max(args.timelock_fast_forward, 0.0)
+    execution_time = datetime.now(UTC) + timedelta(seconds=fast_forward_seconds)
+    try:
+        executed_actions = tuple(timelock.execute_due(owner_console, now=execution_time))
+    except ValueError as error:
+        print("❌ Timelock execution error:", error)
+        return
+
+    if scheduled_actions:
+        print("\n🛡️ Governance timelock queue:")
+        for action in timelock.pending():
+            eta = action.eta.isoformat(timespec="seconds")
+            status = action.status
+            if action.executed_at:
+                status = f"{status} at {action.executed_at.isoformat(timespec='seconds')}"
+            print(
+                f"  • {action.name} -> {dict(action.payload)} (ETA {eta}) :: {status}"
+            )
+        if fast_forward_seconds > 0:
+            print(
+                f"  • Timelock fast-forward applied: +{fast_forward_seconds:.1f} seconds"
+            )
+        if executed_actions:
+            print(f"  • Executed {len(executed_actions)} action(s) ready for execution")
+
     config = owner_console.config
-    architect = SovereignArchitect(config=config, owner_console=owner_console)
+    architect = SovereignArchitect(
+        config=config,
+        owner_console=owner_console,
+        timelock=timelock,
+    )
     print("🚀 Initiating sovereign architect for scenario:", scenario.title)
     print(indent(scenario.description, prefix="  > "))
     print("\n🧭 Configuration:")

@@ -27,6 +27,7 @@ def test_render_html_embeds_mermaid(tmp_path: Path) -> None:
     assert "Architecture Atlas" in html
     assert html.count("class=\"mermaid\"") >= 3
     assert "Owner Command Ledger" in html
+    assert "Governance Timelock" in html
     assert "Evolutionary Trajectory" in html
     assert artefacts.final_program in html
 
