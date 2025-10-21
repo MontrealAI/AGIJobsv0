@@ -9,7 +9,7 @@ from .config import (
     StakePolicy,
     VerificationPolicy,
 )
-from .entities import DemoRunArtifacts, RewardSummary
+from .entities import DemoRunArtifacts, OpportunitySynopsis, RewardSummary
 from .governance import GovernanceTimelock, TimelockedAction
 from .orchestrator import SovereignArchitect, generate_dataset
 from .report import export_report, render_html
@@ -18,6 +18,7 @@ __all__ = [
     "DemoConfig",
     "DemoScenario",
     "DemoRunArtifacts",
+    "OpportunitySynopsis",
     "RewardSummary",
     "EvolutionPolicy",
     "RewardPolicy",

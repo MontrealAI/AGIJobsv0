@@ -169,6 +169,18 @@ Run the demo with `python start_demo.py alpha --config-file config/owner-overrid
 
 ---
 
+## 🌌 Opportunity Intelligence Dashboard
+
+Every sovereign execution now concludes with a cinematic opportunity briefing distilled for non-technical leaders:
+
+* **Impact × Confidence analytics** – each opportunity blends evolutionary uplift, verification verdicts, and treasury responsiveness into headline percentages.
+* **Capital & energy allocations** – instantly see which fraction of the thermodynamic reward pool and energy budget an opportunity commands.
+* **Mermaid intelligence map** – a dark-mode flowchart showing how the Sovereign Architect routes capital into each opportunity node, annotating impact, confidence, and energy ratios.
+
+The CLI narrates these insights, and the HTML artefact renders them as interactive cards plus the strategy graph, so executives can redeploy capital or greenlight the next AGI campaign within seconds.
+
+---
+
 ## 🧪 Validation & CI
 
 * `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests` verifies the evolutionary loop, on-chain security primitives, and orchestration pipeline.

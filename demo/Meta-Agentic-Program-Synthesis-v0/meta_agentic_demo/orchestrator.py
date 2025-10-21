@@ -14,7 +14,10 @@ from .entities import (
     EvolutionRecord,
     Job,
     JobStatus,
+    OpportunitySynopsis,
+    OwnerAction,
     RewardBreakdown,
+    RewardSummary,
     VerificationDigest,
 )
 from .evolutionary import EvolutionaryProgramSynthesizer, Program
@@ -111,6 +114,19 @@ class SovereignArchitect:
             (record.generation for record in telemetry if record.best_score >= scenario.success_threshold),
             None,
         )
+        owner_actions = list(self.owner_console.events)
+        timelock_actions = list(self.timelock.pending())
+        opportunities = self._derive_opportunities(
+            scenario=scenario,
+            telemetry=telemetry,
+            rewards=rewards,
+            verification=verification,
+            reward_summary=reward_summary,
+            final_score=final_score,
+            improvement=improvement_over_first,
+            owner_actions=owner_actions,
+            timelock_actions=timelock_actions,
+        )
         return DemoRunArtifacts(
             scenario=scenario.title,
             jobs=jobs,
@@ -121,8 +137,9 @@ class SovereignArchitect:
             final_program=synthesizer.render_program(best_program),
             final_score=final_score,
             verification=verification,
-            owner_actions=list(self.owner_console.events),
-            timelock_actions=list(self.timelock.pending()),
+            owner_actions=owner_actions,
+            timelock_actions=timelock_actions,
+            opportunities=opportunities,
             improvement_over_first=improvement_over_first,
             first_success_generation=first_success_generation,
         )
@@ -273,6 +290,131 @@ class SovereignArchitect:
             else:
                 best_so_far = max(best_so_far, score)
         return violations == 0, violations
+
+    def _derive_opportunities(
+        self,
+        *,
+        scenario: DemoScenario,
+        telemetry: Sequence[EvolutionRecord],
+        rewards: Sequence[RewardBreakdown],
+        verification: VerificationDigest,
+        reward_summary: RewardSummary,
+        final_score: float,
+        improvement: float,
+        owner_actions: Sequence[OwnerAction],
+        timelock_actions: Sequence["TimelockedAction"],
+    ) -> List[OpportunitySynopsis]:
+        def clamp(value: float) -> float:
+            return max(0.0, min(value, 1.0))
+
+        total_solver_energy = sum(
+            sum(breakdown.solver_energy.values()) for breakdown in rewards
+        )
+        total_validator_energy = sum(
+            sum(breakdown.validator_energy.values()) for breakdown in rewards
+        )
+        total_energy = total_solver_energy + total_validator_energy
+        solver_energy_ratio = (
+            total_solver_energy / total_energy if total_energy else 0.0
+        )
+        validator_energy_ratio = (
+            total_validator_energy / total_energy if total_energy else 0.0
+        )
+        architect_energy_ratio = clamp(
+            1.0 - solver_energy_ratio - validator_energy_ratio
+        )
+        total_reward = max(reward_summary.total_reward, 1e-9)
+        solver_reward_total = sum(reward_summary.solver_totals.values())
+        validator_reward_total = sum(reward_summary.validator_totals.values())
+        architect_allocation = reward_summary.architect_total / total_reward
+        solver_reward_ratio = solver_reward_total / total_reward
+        validator_reward_ratio = validator_reward_total / total_reward
+        improvement_score = clamp(improvement)
+        bootstrap_floor, _ = verification.bootstrap_interval
+        opportunity_cards: List[OpportunitySynopsis] = []
+
+        solver_confidence = clamp(
+            0.4 * (1.0 if verification.pass_holdout else 0.0)
+            + 0.3 * (1.0 if verification.pass_mae else 0.0)
+            + 0.3 * (1.0 if verification.pass_confidence else 0.0)
+        )
+        solver_impact = clamp(0.6 * final_score + 0.4 * improvement_score)
+        opportunity_cards.append(
+            OpportunitySynopsis(
+                name="Alpha Streamliner",
+                impact_score=solver_impact,
+                confidence=solver_confidence,
+                narrative=(
+                    f"Evolved execution kernels within {scenario.title} now compress solver "
+                    "latency and unlock deeper alpha harvesting."
+                ),
+                energy_ratio=solver_energy_ratio,
+                capital_allocation=solver_reward_ratio,
+            )
+        )
+
+        divergence_component = clamp(1.0 - min(verification.divergence, 1.0))
+        monotonic_component = clamp(
+            1.0
+            - (
+                verification.monotonic_violations
+                / max(len(telemetry) - 1, 1) if telemetry else 0.0
+            )
+        )
+        validator_impact = clamp(
+            0.55 * divergence_component + 0.45 * monotonic_component
+        )
+        validator_confidence = clamp(
+            0.5 * (1.0 if verification.pass_divergence else 0.0)
+            + 0.5 * (1.0 if verification.pass_residual_balance else 0.0)
+        )
+        opportunity_cards.append(
+            OpportunitySynopsis(
+                name="Validator Sentience Network",
+                impact_score=validator_impact,
+                confidence=validator_confidence,
+                narrative=(
+                    "Commit–reveal validators achieved thermodynamic harmony, holding consensus "
+                    "tight even under synthetic noise injections."
+                ),
+                energy_ratio=validator_energy_ratio,
+                capital_allocation=validator_reward_ratio,
+            )
+        )
+
+        queued_timelock = sum(1 for action in timelock_actions if action.status == "QUEUED")
+        governance_factor = clamp(1.0 - min(queued_timelock / 5.0, 0.6))
+        owner_intervention_factor = clamp(1.0 - min(len(owner_actions) / 6.0, 0.5))
+        reward_uplift_ratio = clamp(
+            len(rewards)
+            * self.config.reward_policy.total_reward
+            / (len(telemetry) * self.config.reward_policy.total_reward or 1)
+            if telemetry
+            else 0.0
+        )
+        treasury_impact = clamp(
+            0.45 * architect_allocation + 0.35 * final_score + 0.2 * reward_uplift_ratio
+        )
+        treasury_confidence = clamp(
+            0.5 * (1.0 if verification.overall_pass else bootstrap_floor)
+            + 0.3 * governance_factor
+            + 0.2 * owner_intervention_factor
+        )
+        opportunity_cards.append(
+            OpportunitySynopsis(
+                name="Treasury Resonance Engine",
+                impact_score=treasury_impact,
+                confidence=treasury_confidence,
+                narrative=(
+                    "Owner-governed treasury controls remain responsive; capital can be "
+                    "redeployed instantly into the next sovereign campaign."
+                ),
+                energy_ratio=architect_energy_ratio,
+                capital_allocation=architect_allocation,
+            )
+        )
+
+        return opportunity_cards
 
     def _execute_on_chain(
         self, best_program: Program, telemetry: List[EvolutionRecord]

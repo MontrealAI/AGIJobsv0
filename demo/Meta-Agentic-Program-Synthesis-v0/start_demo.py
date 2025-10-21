@@ -382,6 +382,23 @@ def main() -> None:
         "  • Overall verification verdict:",
         "PASS" if verification.overall_pass else "ATTENTION REQUIRED",
     )
+    if artefacts.opportunities:
+        print("\n🌌 Opportunity intelligence:")
+        for opportunity in artefacts.opportunities:
+            print(
+                indent(
+                    (
+                        f"{opportunity.name} → impact {opportunity.impact_score * 100:.1f}% | "
+                        f"confidence {opportunity.confidence * 100:.1f}% | "
+                        f"capital {opportunity.capital_allocation * 100:.1f}% | "
+                        f"energy {opportunity.energy_ratio * 100:.1f}%"
+                    ),
+                    prefix="  • ",
+                )
+            )
+            print(indent(opportunity.narrative, prefix="      ↳ "))
+    else:
+        print("\n🌌 Opportunity intelligence: no actionable missions surfaced.")
     if owner_console.events:
         print("\n🛡️ Owner interventions during run:")
         for event in owner_console.events:

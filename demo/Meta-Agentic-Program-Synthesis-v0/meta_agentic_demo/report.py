@@ -62,6 +62,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     {verification_table}
   </section>
   <section>
+    <h2>Opportunity Intelligence</h2>
+    <p class=\"note\">Strategic ventures unlocked by this sovereign cycle.</p>
+    <div class=\"grid\">{opportunity_cards}</div>
+    <div class=\"mermaid\">{opportunity_mermaid}</div>
+  </section>
+  <section>
     <h2>Architecture Atlas</h2>
     <p class=\"note\">Live architecture graph distilled from this run.</p>
     <div class=\"mermaid\">{architecture_mermaid}</div>
@@ -297,6 +303,45 @@ def format_reward_summary(summary: RewardSummary) -> str:
     )
 
 
+def format_opportunity_cards(report: DemoRunArtifacts) -> str:
+    if not report.opportunities:
+        return "<div class=\"summary-card\"><p>No actionable opportunities detected.</p></div>"
+    cards: list[str] = []
+    for opportunity in report.opportunities:
+        cards.append(
+            "<div class=\"summary-card\">"
+            f"  <h3>{escape(opportunity.name)}</h3>"
+            f"  <p>Impact score: {opportunity.impact_score * 100:.1f}%</p>"
+            f"  <p>Confidence: {opportunity.confidence * 100:.1f}%</p>"
+            f"  <p>Capital share: {opportunity.capital_allocation * 100:.1f}%</p>"
+            f"  <p>Energy ratio: {opportunity.energy_ratio * 100:.1f}%</p>"
+            f"  <p class=\"note\">{escape(opportunity.narrative)}</p>"
+            "</div>"
+        )
+    return build_rows(cards)
+
+
+def build_opportunity_mermaid(report: DemoRunArtifacts) -> str:
+    if not report.opportunities:
+        return "graph TD\n  empty[No opportunities surfaced this cycle]"
+    lines = [
+        "graph TD",
+        "    architect[[Sovereign Architect]]",
+        "    treasury((Treasury))",
+    ]
+    for index, opportunity in enumerate(report.opportunities, start=1):
+        node_id = f"opp{index}"
+        label = mermaid_escape(
+            f"{opportunity.name}\\nImpact {opportunity.impact_score * 100:.1f}% | Confidence {opportunity.confidence * 100:.1f}%"
+        )
+        capital_label = mermaid_escape(
+            f"Capital {opportunity.capital_allocation * 100:.1f}% | Energy {opportunity.energy_ratio * 100:.1f}%"
+        )
+        lines.append(f"    architect --> {node_id}[\"{label}\"]")
+        lines.append(f"    {node_id} --> treasury{{\"{capital_label}\"}}")
+    return "\n".join(lines)
+
+
 def format_verification_cards(verification: VerificationDigest) -> str:
     cards = [
         "<div class=\"summary-card\">",
@@ -382,6 +427,8 @@ def render_html(report: DemoRunArtifacts) -> str:
     timeline_mermaid = build_timeline_mermaid(report)
     reward_mermaid = build_reward_mermaid(report)
     reward_summary_cards = format_reward_summary(report.reward_summary)
+    opportunity_cards = format_opportunity_cards(report)
+    opportunity_mermaid = build_opportunity_mermaid(report)
     verification_cards = format_verification_cards(report.verification)
     verification_table = format_verification_table(report.verification)
     verification_mermaid = build_verification_mermaid(report.verification)
@@ -412,6 +459,8 @@ def render_html(report: DemoRunArtifacts) -> str:
         job_rows=job_rows,
         reward_tables=reward_tables,
         performance_cards=performance_cards,
+        opportunity_cards=opportunity_cards,
+        opportunity_mermaid=opportunity_mermaid,
         architecture_mermaid=architecture_mermaid,
         timeline_mermaid=timeline_mermaid,
         reward_mermaid=reward_mermaid,
