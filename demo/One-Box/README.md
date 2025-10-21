@@ -50,7 +50,7 @@ The orchestrator keeps ownership controls in the loop at every stage—jobs are 
    ```sh
    npm run demo:onebox:doctor
    ```
-   The doctor checks required environment variables, pings your RPC to confirm the active chain, verifies that `JOB_REGISTRY_ADDRESS` points to live bytecode, prints the launch URL, and reminds the operator of the core owner-control commands.
+   The doctor checks required environment variables, pings your RPC to confirm the active chain, verifies that `JOB_REGISTRY_ADDRESS` points to live bytecode, surfaces active guardrail caps, prints the launch URL, and reminds the operator of the core owner-control commands.
 4. **Launch the One-Box:**
    ```sh
    npm run demo:onebox:launch
@@ -72,6 +72,8 @@ npm run demo:onebox:launch -- \
   --ui-host 0.0.0.0 \
   --ui-port 5050 \
   --orchestrator-port 9090 \
+  --max-budget 120 \
+  --max-duration 14 \
   --orchestrator-url http://demo.internal:9090/onebox \
   --prefix /mission \
   --token demo-api-token \
@@ -80,6 +82,8 @@ npm run demo:onebox:launch -- \
 ```
 
 Only the flags you specify are overridden; everything else continues to flow from `.env`. Invalid flag values (for example, a negative port) are rejected up front so operators catch mistakes before the orchestrator boots.
+
+`--max-budget` and `--max-duration` provide on-the-fly organisational guardrails, mirroring the `ONEBOX_MAX_JOB_BUDGET_AGIA` and `ONEBOX_MAX_JOB_DURATION_DAYS` environment variables. Use them to demo how the contract owner can ratchet limits without redeploying.
 
 ### Built-in safety rails
 
@@ -101,6 +105,8 @@ Only the flags you specify are overridden; everything else continues to flow fro
 | `ONEBOX_PUBLIC_ONEBOX_PREFIX` | Prefix inserted before planner/simulator endpoints (defaults to `/onebox`). |
 | `ONEBOX_PUBLIC_ORCHESTRATOR_URL` | Public base URL announced to the UI. Defaults to `http://127.0.0.1:${ONEBOX_PORT}`. |
 | `ONEBOX_UI_DEFAULT_MODE` | `guest` for relayer mode, `expert` for wallet calldata generation. |
+| `ONEBOX_MAX_JOB_BUDGET_AGIA` | Optional per-job reward ceiling enforced before execution. Blank disables the cap. |
+| `ONEBOX_MAX_JOB_DURATION_DAYS` | Optional lifecycle limit in days; jobs exceeding it are blocked before funding. |
 | `PINNER_*` | Optional IPFS pinning credentials to persist specs/receipts. |
 
 ## Owner control & observability
