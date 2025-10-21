@@ -18,17 +18,12 @@ import type {
 import { defaultMessages } from '../lib/defaultMessages';
 import { ReceiptsPanel } from './ReceiptsPanel';
 import type { ExecutionReceipt } from './receiptTypes';
-
-const ORCHESTRATOR_BASE_URL = (
-  process.env.NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL ??
-  process.env.NEXT_PUBLIC_ALPHA_ORCHESTRATOR_URL ??
-  ''
-).replace(/\/?$/, '');
-
-const ORCHESTRATOR_TOKEN =
-  process.env.NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_TOKEN ??
-  process.env.NEXT_PUBLIC_ALPHA_ORCHESTRATOR_TOKEN ??
-  '';
+import {
+  createExplorerUrl,
+  createIpfsGatewayUrl,
+  readOneboxConfig,
+  resolveOrchestratorBase,
+} from '../lib/environment';
 
 const RECEIPTS_STORAGE_KEY = 'onebox:receipts';
 const RECEIPT_HISTORY_LIMIT = 5;
@@ -82,13 +77,26 @@ type ChatStage =
 
 const createMessageId = () => crypto.randomUUID();
 
-const mapStatusToReceipt = (status: StatusResponse): ExecutionReceipt | null => {
+type PrefillRequest = {
+  id: string;
+  text: string;
+};
+
+type ChatWindowProps = {
+  prefillRequest?: PrefillRequest | null;
+  onPrefillConsumed?: () => void;
+};
+
+const mapStatusToReceipt = (
+  status: StatusResponse,
+  options: { explorerTxBase?: string; ipfsGatewayBase?: string }
+): ExecutionReceipt | null => {
   const receipt = status.receipts;
   if (!receipt) {
     return null;
   }
 
-  const firstCid = receipt.cids?.[0];
+  const [specCid, deliverableCid, receiptCid] = receipt.cids ?? [];
   const firstTx = receipt.txes?.[0];
 
   return {
@@ -97,12 +105,18 @@ const mapStatusToReceipt = (status: StatusResponse): ExecutionReceipt | null => 
     planHash: receipt.plan_id ?? status.run.plan_id,
     txHash: firstTx ?? undefined,
     txHashes: receipt.txes?.length ? receipt.txes : undefined,
-    specCid: firstCid ?? undefined,
+    specCid: specCid ?? undefined,
+    specUrl: createIpfsGatewayUrl(specCid, options.ipfsGatewayBase) ?? undefined,
+    deliverableCid: deliverableCid ?? undefined,
+    deliverableUrl:
+      createIpfsGatewayUrl(deliverableCid, options.ipfsGatewayBase) ?? undefined,
     createdAt: Date.now(),
-    receiptCid: receipt.plan_id ?? undefined,
+    receiptCid: receiptCid ?? undefined,
+    receiptUri:
+      createIpfsGatewayUrl(receiptCid, options.ipfsGatewayBase) ?? undefined,
     reward: undefined,
     token: undefined,
-    explorerUrl: undefined,
+    explorerUrl: createExplorerUrl(firstTx, options.explorerTxBase),
     netPayout: undefined,
   };
 };
@@ -151,7 +165,62 @@ const formatSimulationSummary = (simulation: SimulationResponse) => {
 const hasBlockingRisks = (simulation: SimulationResponse) =>
   simulation.blockers.length > 0 || simulation.risks.includes('OVER_BUDGET');
 
-export function ChatWindow() {
+const QUICK_PROMPTS: ReadonlyArray<{
+  id: string;
+  label: string;
+  description: string;
+  text: string;
+}> = [
+  {
+    id: 'prompt-label-ops',
+    label: 'Global research sprint',
+    description: 'Draft, label, and synthesise 500 market reports with 48h SLA.',
+    text:
+      'Coordinate a global research sprint producing 500 polished market briefs. Budget 45 AGIALPHA, deadline 48 hours, insist on validator review before final release.',
+  },
+  {
+    id: 'prompt-engineering',
+    label: 'Machine learning audit',
+    description: 'Spin up an adversarial red-team for a vision pipeline.',
+    text:
+      'Launch a machine learning audit: recruit three vetted agents to red-team our latest vision model, reward 32 AGIALPHA, include deliverable CID for findings, finalise within 5 days.',
+  },
+  {
+    id: 'prompt-finance',
+    label: 'Reconciliation swarm',
+    description: 'Close 2,500 ledger anomalies with immutable receipts.',
+    text:
+      'Create a finance reconciliation mission to close 2,500 ledger anomalies. Reward pool 60 AGIALPHA, milestone-based payouts allowed, require validators to approve before final release.',
+  },
+  {
+    id: 'prompt-finalize',
+    label: 'Finalize job #42',
+    description: 'Release escrow once validators sign off.',
+    text:
+      'Finalize job 42 and release escrow if validator attestations confirm completion. Provide a closing receipt.',
+  },
+];
+
+export function ChatWindow({
+  prefillRequest = null,
+  onPrefillConsumed,
+}: ChatWindowProps = {}) {
+  const { orchestratorUrl, apiToken, explorerTxBase, ipfsGatewayBase } = useMemo(
+    () => readOneboxConfig(),
+    []
+  );
+  const orchestratorBase = useMemo(
+    () => resolveOrchestratorBase(orchestratorUrl) ?? null,
+    [orchestratorUrl]
+  );
+  const authHeaders = useMemo<Record<string, string> | undefined>(
+    () => (apiToken ? { Authorization: `Bearer ${apiToken}` } : undefined),
+    [apiToken]
+  );
+  const receiptOptions = useMemo(
+    () => ({ explorerTxBase, ipfsGatewayBase }),
+    [explorerTxBase, ipfsGatewayBase]
+  );
   const [messages, setMessages] = useState<ChatMessage[]>(
     defaultMessages as ChatMessage[]
   );
@@ -170,7 +239,11 @@ export function ChatWindow() {
   const [receipts, setReceipts] = useState<ExecutionReceipt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const isMountedRef = useRef(true);
+  const focusInput = useCallback(() => {
+    textareaRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -181,6 +254,30 @@ export function ChatWindow() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (!prefillRequest) {
+      return;
+    }
+    setInput(prefillRequest.text);
+    const focusInput = () => {
+      if (!textareaRef.current) {
+        return;
+      }
+      const length = prefillRequest.text.length;
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(length, length);
+    };
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.requestAnimationFrame === 'function'
+    ) {
+      window.requestAnimationFrame(focusInput);
+    } else {
+      setTimeout(focusInput, 0);
+    }
+    onPrefillConsumed?.();
+  }, [prefillRequest, onPrefillConsumed]);
 
   useEffect(() => {
     try {
@@ -309,105 +406,107 @@ export function ChatWindow() {
     [addMessage]
   );
 
-  const callPlan = useCallback(async (payload: PlanRequest) => {
-    if (!ORCHESTRATOR_BASE_URL) {
-      throw new Error(
-        'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
-      );
-    }
-    const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/plan`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(ORCHESTRATOR_TOKEN
-          ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
-          : {}),
-      },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      throw new Error(`Plan failed with status ${response.status}`);
-    }
-    return parsePlanResponse(await response.json());
-  }, []);
-
-  const callSimulate = useCallback(async (plan: PlanResponse['plan']) => {
-    if (!ORCHESTRATOR_BASE_URL) {
-      throw new Error(
-        'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
-      );
-    }
-    const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/simulate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(ORCHESTRATOR_TOKEN
-          ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
-          : {}),
-      },
-      body: JSON.stringify({ plan }),
-    });
-    if (!response.ok) {
-      if (response.status === 422) {
-        const detail = await response.json();
-        const blockers = Array.isArray(detail?.blockers)
-          ? detail.blockers.join(', ')
-          : 'Blocked by guardrails.';
-        throw new Error(blockers);
+  const callPlan = useCallback(
+    async (payload: PlanRequest) => {
+      if (!orchestratorBase) {
+        throw new Error(
+          'Configure the orchestrator endpoint in the mission panel before requesting a plan.'
+        );
       }
-      throw new Error(`Simulation failed with status ${response.status}`);
-    }
-    return parseSimulationResponse(await response.json());
-  }, []);
-
-  const callExecute = useCallback(async (plan: PlanResponse['plan']) => {
-    if (!ORCHESTRATOR_BASE_URL) {
-      throw new Error(
-        'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
-      );
-    }
-    const executePayload: ExecuteRequest = {
-      plan,
-      approvals: [],
-    };
-    const response = await fetch(`${ORCHESTRATOR_BASE_URL}/onebox/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(ORCHESTRATOR_TOKEN
-          ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
-          : {}),
-      },
-      body: JSON.stringify(executePayload),
-    });
-    if (!response.ok) {
-      throw new Error(`Execution failed with status ${response.status}`);
-    }
-    return parseExecuteResponse(await response.json());
-  }, []);
-
-  const callStatus = useCallback(async (runId: string) => {
-    if (!ORCHESTRATOR_BASE_URL) {
-      throw new Error(
-        'Set NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL to call the orchestrator.'
-      );
-    }
-    const response = await fetch(
-      `${ORCHESTRATOR_BASE_URL}/onebox/status?run_id=${encodeURIComponent(runId)}`,
-      {
-        method: 'GET',
+      const response = await fetch(`${orchestratorBase}/plan`, {
+        method: 'POST',
         headers: {
-          ...(ORCHESTRATOR_TOKEN
-            ? { Authorization: `Bearer ${ORCHESTRATOR_TOKEN}` }
-            : {}),
+          'Content-Type': 'application/json',
+          ...(authHeaders ?? {}),
         },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error(`Plan failed with status ${response.status}`);
       }
-    );
-    if (!response.ok) {
-      throw new Error(`Status failed with status ${response.status}`);
-    }
-    return parseStatusResponse(await response.json());
-  }, []);
+      return parsePlanResponse(await response.json());
+    },
+    [authHeaders, orchestratorBase]
+  );
+
+  const callSimulate = useCallback(
+    async (plan: PlanResponse['plan']) => {
+      if (!orchestratorBase) {
+        throw new Error(
+          'Configure the orchestrator endpoint before running a simulation.'
+        );
+      }
+      const response = await fetch(`${orchestratorBase}/simulate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authHeaders ?? {}),
+        },
+        body: JSON.stringify({ plan }),
+      });
+      if (!response.ok) {
+        if (response.status === 422) {
+          const detail = await response.json();
+          const blockers = Array.isArray(detail?.blockers)
+            ? detail.blockers.join(', ')
+            : 'Blocked by guardrails.';
+          throw new Error(blockers);
+        }
+        throw new Error(`Simulation failed with status ${response.status}`);
+      }
+      return parseSimulationResponse(await response.json());
+    },
+    [authHeaders, orchestratorBase]
+  );
+
+  const callExecute = useCallback(
+    async (plan: PlanResponse['plan']) => {
+      if (!orchestratorBase) {
+        throw new Error(
+          'Configure the orchestrator endpoint before executing plans.'
+        );
+      }
+      const executePayload: ExecuteRequest = {
+        plan,
+        approvals: [],
+      };
+      const response = await fetch(`${orchestratorBase}/execute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authHeaders ?? {}),
+        },
+        body: JSON.stringify(executePayload),
+      });
+      if (!response.ok) {
+        throw new Error(`Execution failed with status ${response.status}`);
+      }
+      return parseExecuteResponse(await response.json());
+    },
+    [authHeaders, orchestratorBase]
+  );
+
+  const callStatus = useCallback(
+    async (runId: string) => {
+      if (!orchestratorBase) {
+        throw new Error(
+          'Configure the orchestrator endpoint before checking run status.'
+        );
+      }
+      const response = await fetch(
+        `${orchestratorBase}/status?run_id=${encodeURIComponent(runId)}`,
+        {
+          method: 'GET',
+          headers: authHeaders,
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`Status failed with status ${response.status}`);
+      }
+      return parseStatusResponse(await response.json());
+    },
+    [authHeaders, orchestratorBase]
+  );
 
   const pollStatus = useCallback(
     async (runId: string) => {
@@ -431,7 +530,7 @@ export function ChatWindow() {
             statusMessage,
           ]);
           if (status.run.state === 'succeeded') {
-            const receipt = mapStatusToReceipt(status);
+            const receipt = mapStatusToReceipt(status, receiptOptions);
             if (receipt) {
               setReceipts((current) => [receipt, ...current]);
             }
@@ -453,7 +552,7 @@ export function ChatWindow() {
         setStage('error');
       }
     },
-    [callStatus]
+    [callStatus, receiptOptions]
   );
 
   const submitMessage = useCallback(
@@ -566,6 +665,15 @@ export function ChatWindow() {
   const pendingPlanId = activePlan?.id;
   const canSimulate = stage === 'planned' && !!activePlan;
   const canExecute = stage === 'awaiting_execute' && !!activePlan && !!activeSimulation;
+  const orchestratorReady = !!orchestratorBase;
+
+  const handleQuickPrompt = useCallback(
+    (text: string) => {
+      setInput(text);
+      focusInput();
+    },
+    [focusInput]
+  );
 
   const statusSummary = useMemo(() => {
     if (!runStatusMessage) {
@@ -586,6 +694,36 @@ export function ChatWindow() {
   return (
     <div className="chat-wrapper">
       <div className="chat-shell">
+        <div className="chat-intro">
+          <div className="chat-intro-copy">
+            <h2 className="chat-intro-title">🎖️ One‑Box Mission Control</h2>
+            <p className="chat-intro-subtitle">
+              Describe what you need and the orchestrator will model the budget, execute on-chain, and archive the receipts for you.
+            </p>
+            {orchestratorReady ? (
+              <p className="chat-intro-success" role="status">
+                ✅ Orchestrator channel armed. Draft a mission or tap a quick template to begin.
+              </p>
+            ) : (
+              <p className="chat-intro-warning" role="status">
+                🔧 Point the mission panel at a live orchestrator endpoint to unlock execution.
+              </p>
+            )}
+          </div>
+          <div className="chat-quick-grid" role="list">
+            {QUICK_PROMPTS.map((prompt) => (
+              <button
+                key={prompt.id}
+                type="button"
+                className="chat-quick-item"
+                onClick={() => handleQuickPrompt(prompt.text)}
+              >
+                <span className="chat-quick-label">{prompt.label}</span>
+                <span className="chat-quick-description">{prompt.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="chat-history" role="log" aria-live="polite">
           {messages.map((message) => {
             if (message.kind === 'plan') {
@@ -715,6 +853,7 @@ export function ChatWindow() {
           <div className="chat-input-row">
             <textarea
               id="onebox-input"
+              ref={textareaRef}
               rows={2}
               value={input}
               onChange={(event) => setInput(event.target.value)}

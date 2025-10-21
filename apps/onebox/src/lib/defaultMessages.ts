@@ -3,22 +3,22 @@ export const defaultMessages = [
     id: 'intro-1',
     role: 'assistant' as const,
     kind: 'text' as const,
-    content: 'Ask → Confirm → Done + Receipt.',
+    content:
+      'Welcome to AGI Jobs One‑Box. Describe a mission in natural language and I will orchestrate the on-chain workflow end-to-end.',
   },
   {
-    id: 'solving-alpha-agi-governance',
+    id: 'onebox-clarity',
     role: 'assistant' as const,
     kind: 'text' as const,
     content:
-      'Welcome to the “Solving α‑AGI Governance” cockpit. Use the right-hand mission panel to stage actors, parameters, and prompts, then paste the generated instructions here to capture the policy proposal, validator commits, reveal votes, and finalise the on-chain outcome. Owner pause + parameter controls remain available via the mission bundle.',
-      'Welcome to the “Solving α‑AGI Governance” cockpit. Use this chat to capture a nation-scale policy proposal, request validator commits, reveal votes, and finalise the on-chain outcome. The owner retains pause + parameter controls via the generated mission bundle.',
+      'Every plan is simulated for cost, risk, and guardrails. Confirm when ready and the orchestrator will sign, pin to IPFS, and post receipts automatically.',
   },
   {
-    id: 'solving-alpha-agi-governance-actions',
+    id: 'onebox-ownership',
     role: 'assistant' as const,
     kind: 'text' as const,
     content:
-      'Tip: paste the owner quickstart summary or validator CLI receipts here so non-technical stakeholders can follow along. Full runbook: demo/solving-alpha-agi-governance/README.md.',
+      'Owner controls stay in your hands: pause switches, fee tuning, validator policy, and deployment rollouts are reachable through the owner toolchain at any time.',
   },
 ];
 

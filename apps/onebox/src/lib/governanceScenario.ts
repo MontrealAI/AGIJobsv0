@@ -359,25 +359,24 @@ export function sanitiseActors(value: unknown): GovernanceActor[] {
     }
     return 'validator';
   };
-  const filtered = value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') {
-        return null;
-      }
-      const candidate = entry as Partial<GovernanceActor>;
-      if (!candidate.id || !candidate.name || !candidate.icon || !candidate.mission) {
-        return null;
-      }
-      return {
-        id: String(candidate.id),
-        role: mapRole(candidate.role),
-        name: String(candidate.name),
-        icon: String(candidate.icon),
-        mission: String(candidate.mission),
-        wallet: typeof candidate.wallet === 'string' ? candidate.wallet : undefined,
-      } satisfies GovernanceActor;
-    })
-    .filter((actor): actor is GovernanceActor => Boolean(actor));
+  const filtered = (value as unknown[]).reduce<GovernanceActor[]>((acc, entry) => {
+    if (!entry || typeof entry !== 'object') {
+      return acc;
+    }
+    const candidate = entry as Partial<GovernanceActor>;
+    if (!candidate.id || !candidate.name || !candidate.icon || !candidate.mission) {
+      return acc;
+    }
+    acc.push({
+      id: String(candidate.id),
+      role: mapRole(candidate.role),
+      name: String(candidate.name),
+      icon: String(candidate.icon),
+      mission: String(candidate.mission),
+      wallet: typeof candidate.wallet === 'string' ? candidate.wallet : undefined,
+    });
+    return acc;
+  }, []);
   if (filtered.length === 0) {
     return cloneActors(DEFAULT_ACTORS);
   }

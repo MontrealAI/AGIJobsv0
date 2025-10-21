@@ -8,6 +8,8 @@ const path = require('path');
 const config = {
   orchestratorUrl: process.env.ORCHESTRATOR_URL ?? '',
   apiToken: process.env.ONEBOX_API_TOKEN ?? '',
+  explorerTxBase: process.env.EXPLORER_TX_BASE ?? '',
+  ipfsGatewayBase: process.env.IPFS_GATEWAY_BASE ?? '',
 };
 
 const target = path.join(process.cwd(), 'runtime-config.js');

@@ -42,6 +42,8 @@ services:
     environment:
       ORCHESTRATOR_URL: ${ORCHESTRATOR_URL-http://orchestrator:8080/onebox}
       ONEBOX_API_TOKEN: ${ONEBOX_API_TOKEN-change-me}
+      EXPLORER_TX_BASE: ${EXPLORER_TX_BASE-}
+      IPFS_GATEWAY_BASE: ${IPFS_GATEWAY_BASE-}
     ports:
       - "4173:4173"
     depends_on:
