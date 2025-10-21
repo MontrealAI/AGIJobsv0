@@ -1,6 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import { ArenaService } from './arena.service.js';
+import { buildStructuredLogRecord } from '../../../../../shared/structuredLogger.js';
 
 const startSchema = z.object({
   artifactId: z.number().int().nonnegative(),
@@ -12,6 +13,11 @@ const startSchema = z.object({
 
 const finalizeSchema = z.object({
   winners: z.array(z.string().min(1)).default([])
+});
+
+const submissionSchema = z.object({
+  participant: z.string().min(1),
+  cid: z.string().min(5)
 });
 
 export function buildRouter(service: ArenaService) {
@@ -41,6 +47,17 @@ export function buildRouter(service: ArenaService) {
     }
   });
 
+  router.post('/arena/submit/:roundId', async (req, res, next) => {
+    try {
+      const roundId = Number(req.params.roundId);
+      const payload = submissionSchema.parse(req.body);
+      await service.recordSubmission(roundId, payload.participant, payload.cid);
+      res.json({ status: 'ok' });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.post('/arena/finalize/:roundId', async (req, res, next) => {
     try {
       const roundId = Number(req.params.roundId);
@@ -65,7 +82,20 @@ export function buildRouter(service: ArenaService) {
     }
   });
 
-  router.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  router.use((error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const log = buildStructuredLogRecord({
+      component: 'arena-router',
+      action: 'error',
+      level: 'error',
+      details: {
+        path: req.path,
+        method: req.method,
+        message: error instanceof Error ? error.message : 'unknown',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    console.error(JSON.stringify(log));
+
     if (error instanceof z.ZodError) {
       res.status(400).json({ error: 'validation_error', details: error.flatten() });
       return;
