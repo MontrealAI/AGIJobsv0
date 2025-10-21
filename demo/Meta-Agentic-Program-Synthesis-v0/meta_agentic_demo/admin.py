@@ -8,7 +8,13 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Mapping
 
-from .config import DemoConfig, EvolutionPolicy, RewardPolicy, StakePolicy
+from .config import (
+    DemoConfig,
+    EvolutionPolicy,
+    RewardPolicy,
+    StakePolicy,
+    VerificationPolicy,
+)
 from .entities import OwnerAction
 
 
@@ -23,6 +29,12 @@ class OwnerConsole:
         "elite_count",
         "mutation_rate",
         "crossover_rate",
+    }
+    _VERIFICATION_KEYS = {
+        "holdout_threshold",
+        "residual_mean_tolerance",
+        "residual_std_minimum",
+        "divergence_tolerance",
     }
 
     def __init__(self, config: DemoConfig) -> None:
@@ -101,6 +113,17 @@ class OwnerConsole:
         self._config = replace(self._config, evolution_policy=policy)
         self._record_event("update_evolution_policy", overrides)
 
+    def update_verification_policy(self, **kwargs: float) -> None:
+        overrides = self._validate_kwargs(
+            "verification_policy", kwargs, self._VERIFICATION_KEYS
+        )
+        if not overrides:
+            return
+        policy = replace(self._config.verification_policy, **overrides)
+        self._validate_verification_policy(policy)
+        self._config = replace(self._config, verification_policy=policy)
+        self._record_event("update_verification_policy", overrides)
+
     def apply_overrides(self, overrides: Mapping[str, Any]) -> None:
         """Apply overrides loaded from configuration files or CLI mappings."""
 
@@ -113,6 +136,9 @@ class OwnerConsole:
         evolution_overrides = overrides.get("evolution_policy", {})
         if evolution_overrides:
             self.update_evolution_policy(**evolution_overrides)
+        verification_overrides = overrides.get("verification_policy", {})
+        if verification_overrides:
+            self.update_verification_policy(**verification_overrides)
         if "paused" in overrides:
             self.set_paused(bool(overrides["paused"]))
 
@@ -168,6 +194,16 @@ class OwnerConsole:
             raise ValueError("mutation_rate must be between 0 and 1")
         if not 0 <= policy.crossover_rate <= 1:
             raise ValueError("crossover_rate must be between 0 and 1")
+
+    def _validate_verification_policy(self, policy: VerificationPolicy) -> None:
+        if not 0 <= policy.holdout_threshold <= 1:
+            raise ValueError("holdout_threshold must be between 0 and 1")
+        if policy.residual_mean_tolerance < 0:
+            raise ValueError("residual_mean_tolerance must be non-negative")
+        if policy.residual_std_minimum < 0:
+            raise ValueError("residual_std_minimum must be non-negative")
+        if policy.divergence_tolerance < 0:
+            raise ValueError("divergence_tolerance must be non-negative")
 
 
 def load_owner_overrides(path: Path) -> Mapping[str, Any]:

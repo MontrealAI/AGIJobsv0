@@ -17,5 +17,11 @@
     "mutation_rate": 0.27,
     "crossover_rate": 0.45
   },
+  "verification_policy": {
+    "holdout_threshold": 0.78,
+    "residual_mean_tolerance": 0.04,
+    "residual_std_minimum": 0.015,
+    "divergence_tolerance": 0.12
+  },
   "paused": false
 }

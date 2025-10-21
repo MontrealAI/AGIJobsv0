@@ -36,3 +36,18 @@ def test_timelock_rejects_unknown_action() -> None:
     timelock = GovernanceTimelock()
     with pytest.raises(ValueError):
         timelock.schedule("unknown", {})
+
+
+def test_timelock_handles_verification_override() -> None:
+    console = OwnerConsole(DemoConfig())
+    timelock = GovernanceTimelock()
+    action = timelock.schedule(
+        "update_verification_policy",
+        {"holdout_threshold": 0.9, "divergence_tolerance": 0.1},
+    )
+    assert action.status == "QUEUED"
+    executed = list(timelock.execute_due(console, now=action.eta))
+    assert executed and executed[0].status == "EXECUTED"
+    policy = console.config.verification_policy
+    assert pytest.approx(policy.holdout_threshold) == 0.9
+    assert pytest.approx(policy.divergence_tolerance) == 0.1

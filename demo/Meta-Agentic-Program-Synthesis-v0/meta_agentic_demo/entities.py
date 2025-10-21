@@ -146,6 +146,37 @@ class EvolutionRecord:
 
 
 @dataclass
+class VerificationDigest:
+    """Aggregates cross-checks validating the evolved program."""
+
+    primary_score: float
+    holdout_scores: Dict[str, float]
+    residual_mean: float
+    residual_std: float
+    divergence: float
+    pass_holdout: bool
+    pass_residual_balance: bool
+    pass_divergence: bool
+
+    @property
+    def overall_pass(self) -> bool:
+        return self.pass_holdout and self.pass_residual_balance and self.pass_divergence
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "primary_score": self.primary_score,
+            "holdout_scores": dict(self.holdout_scores),
+            "residual_mean": self.residual_mean,
+            "residual_std": self.residual_std,
+            "divergence": self.divergence,
+            "pass_holdout": self.pass_holdout,
+            "pass_residual_balance": self.pass_residual_balance,
+            "pass_divergence": self.pass_divergence,
+            "overall_pass": self.overall_pass,
+        }
+
+
+@dataclass
 class DemoRunArtifacts:
     """Aggregated trace produced at the end of a simulation."""
 
@@ -157,6 +188,7 @@ class DemoRunArtifacts:
     evolution: List[EvolutionRecord]
     final_program: str
     final_score: float
+    verification: VerificationDigest
     owner_actions: List[OwnerAction]
     timelock_actions: List["TimelockedAction"]
     improvement_over_first: float
@@ -195,6 +227,7 @@ class DemoRunArtifacts:
             ],
             "final_program": self.final_program,
             "final_score": self.final_score,
+            "verification": self.verification.to_dict(),
             "owner_actions": [action.to_dict() for action in self.owner_actions],
             "timelock_actions": [action.to_dict() for action in self.timelock_actions],
             "improvement_over_first": self.improvement_over_first,

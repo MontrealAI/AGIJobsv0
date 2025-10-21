@@ -67,12 +67,37 @@ def test_owner_console_updates_stake_and_evolution() -> None:
     assert "update_evolution_policy" in actions
 
 
+def test_owner_console_updates_verification_policy() -> None:
+    console = create_console()
+    console.update_verification_policy(
+        holdout_threshold=0.85,
+        residual_mean_tolerance=0.03,
+        residual_std_minimum=0.01,
+        divergence_tolerance=0.12,
+    )
+    policy = console.config.verification_policy
+    assert pytest.approx(policy.holdout_threshold) == 0.85
+    assert pytest.approx(policy.residual_mean_tolerance) == 0.03
+    assert pytest.approx(policy.residual_std_minimum) == 0.01
+    assert pytest.approx(policy.divergence_tolerance) == 0.12
+    assert console.events[-1].action == "update_verification_policy"
+
+
+def test_owner_console_rejects_invalid_verification_policy() -> None:
+    console = create_console()
+    with pytest.raises(ValueError):
+        console.update_verification_policy(holdout_threshold=1.5)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(residual_mean_tolerance=-0.1)
+
+
 def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
     console = create_console()
     overrides = {
         "reward_policy": {"total_reward": 2000},
         "stake_policy": {"slash_fraction": 0.2},
         "evolution_policy": {"mutation_rate": 0.25},
+        "verification_policy": {"divergence_tolerance": 0.14},
         "paused": True,
     }
     file_path = tmp_path / "overrides.json"
@@ -83,6 +108,7 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
     assert pytest.approx(console.config.reward_policy.total_reward) == 2000
     assert pytest.approx(console.config.stake_policy.slash_fraction) == 0.2
     assert pytest.approx(console.config.evolution_policy.mutation_rate) == 0.25
+    assert pytest.approx(console.config.verification_policy.divergence_tolerance) == 0.14
     assert any(event.action == "set_paused" for event in console.events)
 
 

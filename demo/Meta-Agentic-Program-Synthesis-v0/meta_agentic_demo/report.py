@@ -9,7 +9,7 @@ from html import escape
 from pathlib import Path
 from typing import Dict, Iterable
 
-from .entities import DemoRunArtifacts, OwnerAction, RewardSummary
+from .entities import DemoRunArtifacts, OwnerAction, RewardSummary, VerificationDigest
 
 
 @dataclass
@@ -32,6 +32,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     table {{ width:100%; border-collapse: collapse; margin-top:1rem; }}
     th, td {{ text-align:left; padding:0.75rem; border-bottom:1px solid rgba(255,255,255,0.1); }}
     .badge {{ display:inline-block; padding:0.35rem 0.75rem; border-radius:999px; background:linear-gradient(90deg,#00d1ff,#a855f7); color:#05071a; font-weight:600; }}
+    .badge.pass {{ background:linear-gradient(90deg,#24ff8f,#1dd3b0); color:#01230f; }}
+    .badge.alert {{ background:linear-gradient(90deg,#ff7b00,#ff3a3a); color:#1a0404; }}
     .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; }}
     .summary-card {{ padding:1rem; border-radius:14px; background:linear-gradient(135deg,rgba(125,249,255,0.18),rgba(168,85,247,0.16)); box-shadow:0 18px 32px rgba(0,0,0,0.32); }}
     .summary-card h3 {{ margin-top:0; color:#ffffff; }}
@@ -51,6 +53,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <p>Composite fitness score: <strong>{score:.4f}</strong></p>
     <p>Improvement vs first generation: <strong>{improvement:.4f}</strong></p>
     <p>First success generation: <strong>{first_success}</strong></p>
+  </section>
+  <section>
+    <h2>Multi-Angle Verification</h2>
+    <p class=\"badge {verification_badge}\">{verification_status}</p>
+    <div class=\"grid\">{verification_cards}</div>
+    {verification_table}
   </section>
   <section>
     <h2>Architecture Atlas</h2>
@@ -288,6 +296,38 @@ def format_reward_summary(summary: RewardSummary) -> str:
     )
 
 
+def format_verification_cards(verification: VerificationDigest) -> str:
+    cards = [
+        "<div class=\"summary-card\">",
+        f"  <h3>Primary Score</h3><p>{verification.primary_score:.4f}</p>",
+        f"  <p>Overall verdict: {'PASS' if verification.overall_pass else 'ATTENTION'}</p>",
+        "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>Residual Balance</h3><p>Mean {verification.residual_mean:+.4f}</p>",
+        f"  <p>Std {verification.residual_std:.4f}</p>",
+        f"  <p>Status: {'PASS' if verification.pass_residual_balance else 'ALERT'}</p>",
+        "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>Holdout Divergence</h3><p>{verification.divergence:.4f}</p>",
+        f"  <p>Status: {'PASS' if verification.pass_divergence else 'ALERT'}</p>",
+        "</div>",
+    ]
+    return build_rows(cards)
+
+
+def format_verification_table(verification: VerificationDigest) -> str:
+    if not verification.holdout_scores:
+        return "<p class=\"note\">No holdout evaluations were executed.</p>"
+    rows = "".join(
+        f"<tr><td>{escape(name)}</td><td>{score:.4f}</td><td>{score - verification.primary_score:+.4f}</td></tr>"
+        for name, score in sorted(verification.holdout_scores.items())
+    )
+    return (
+        "<table><thead><tr><th>Holdout</th><th>Score</th><th>Δ vs primary</th></tr></thead>"
+        f"<tbody>{rows}</tbody></table>"
+    )
+
+
 def render_html(report: DemoRunArtifacts) -> str:
     owner_rows = format_owner_rows(report.owner_actions)
     timelock_rows = format_timelock_rows(report.timelock_actions)
@@ -299,6 +339,14 @@ def render_html(report: DemoRunArtifacts) -> str:
     timeline_mermaid = build_timeline_mermaid(report)
     reward_mermaid = build_reward_mermaid(report)
     reward_summary_cards = format_reward_summary(report.reward_summary)
+    verification_cards = format_verification_cards(report.verification)
+    verification_table = format_verification_table(report.verification)
+    verification_badge = "pass" if report.verification.overall_pass else "alert"
+    verification_status = (
+        "All verification gates passed"
+        if report.verification.overall_pass
+        else "Verification attention required"
+    )
     first_success = (
         report.first_success_generation if report.first_success_generation is not None else "Not reached"
     )
@@ -309,6 +357,10 @@ def render_html(report: DemoRunArtifacts) -> str:
         score=report.final_score,
         improvement=report.improvement_over_first,
         first_success=first_success,
+        verification_badge=verification_badge,
+        verification_status=verification_status,
+        verification_cards=verification_cards,
+        verification_table=verification_table,
         owner_rows=owner_rows,
         timelock_rows=timelock_rows,
         evolution_rows=evolution_rows,

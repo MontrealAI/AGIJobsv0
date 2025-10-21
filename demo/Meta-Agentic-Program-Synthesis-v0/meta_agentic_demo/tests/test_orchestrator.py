@@ -25,3 +25,8 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert artefacts.improvement_over_first >= 0
     assert artefacts.owner_actions == []
     assert artefacts.timelock_actions == []
+    verification = artefacts.verification
+    assert isinstance(verification.holdout_scores, dict)
+    assert verification.holdout_scores
+    assert verification.residual_std >= 0
+    assert verification.divergence >= 0
