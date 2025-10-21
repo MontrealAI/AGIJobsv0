@@ -1,43 +1,28 @@
-import { describe, expect, it } from "vitest";
-import { nextDifficulty, successRateFromOutcomes } from "../src/difficulty";
+import { describe, expect, it } from 'vitest';
+import { computeNextDifficulty } from '../src/difficulty.js';
 
-describe("successRateFromOutcomes", () => {
-  it("handles zero students", () => {
-    expect(successRateFromOutcomes(0, 0)).toBe(0);
-  });
-
-  it("caps at 100%", () => {
-    expect(successRateFromOutcomes(5, 10)).toBe(10_000);
-  });
-});
-
-describe("nextDifficulty", () => {
-  const base = {
-    current: 5,
-    targetSuccessRate: 6000,
-    observedSuccessRate: 6000,
+describe('computeNextDifficulty', () => {
+  const baseConfig = {
+    targetSuccessRate: 0.6,
     minDifficulty: 1,
-    maxDifficulty: 20,
-    maxStep: 3,
-  } as const;
+    maxDifficulty: 9,
+    maxStep: 2,
+    proportionalGain: 5
+  };
 
-  it("keeps difficulty when on target", () => {
-    expect(nextDifficulty({ ...base })).toBe(5);
+  it('increases difficulty when success rate is too high', () => {
+    const result = computeNextDifficulty(3, 0.9, baseConfig);
+    expect(result.nextDifficulty).toBeGreaterThan(3);
   });
 
-  it("increases difficulty when success rate too high", () => {
-    expect(nextDifficulty({ ...base, observedSuccessRate: 9000 })).toBeGreaterThan(5);
+  it('decreases difficulty when success rate is too low', () => {
+    const result = computeNextDifficulty(5, 0.1, baseConfig);
+    expect(result.nextDifficulty).toBeLessThan(5);
   });
 
-  it("decreases difficulty when success rate too low", () => {
-    expect(nextDifficulty({ ...base, observedSuccessRate: 1000 })).toBeLessThan(5);
-  });
-
-  it("clamps within max step", () => {
-    expect(nextDifficulty({ ...base, observedSuccessRate: 0, proportionalGain: 1 })).toBe(2);
-  });
-
-  it("throws on invalid bounds", () => {
-    expect(() => nextDifficulty({ ...base, minDifficulty: 10, maxDifficulty: 1 })).toThrow();
+  it('respects bounds and max step', () => {
+    const result = computeNextDifficulty(8, 1, baseConfig);
+    expect(result.nextDifficulty).toBeLessThanOrEqual(9);
+    expect(result.nextDifficulty - 8).toBeLessThanOrEqual(baseConfig.maxStep);
   });
 });

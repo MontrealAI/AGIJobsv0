@@ -1,32 +1,56 @@
-import React from "react";
+import type { ScoreboardResponse } from '../lib/api.js';
 
-export interface ScoreboardAgent {
-  id: string;
-  rating: number;
+interface Props {
+  readonly data: ScoreboardResponse | null;
 }
 
-export interface ScoreboardProps {
-  agents: ScoreboardAgent[];
-  difficulty: number;
-}
+export function Scoreboard({ data }: Props) {
+  if (!data) {
+    return null;
+  }
 
-export const Scoreboard: React.FC<ScoreboardProps> = ({ agents, difficulty }) => {
   return (
-    <section aria-labelledby="scoreboard-heading" className="rounded-lg border border-purple-400 p-6 shadow-xl bg-slate-950/60 text-white">
-      <div className="flex items-center justify-between">
-        <h2 id="scoreboard-heading" className="text-2xl font-bold tracking-wide">
-          CULTURE Self-Play Scoreboard
-        </h2>
-        <span className="text-sm uppercase tracking-widest text-purple-200">Difficulty {difficulty}</span>
+    <div className="card">
+      <h2>Arena Telemetry</h2>
+      <p>Current difficulty: {data.currentDifficulty}</p>
+      <div className="grid two-columns">
+        <div>
+          <h3>Elo Rankings</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Agent</th>
+                <th>Role</th>
+                <th>Elo</th>
+                <th>W</th>
+                <th>L</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.agents.map((agent) => (
+                <tr key={agent.address}>
+                  <td>{agent.address}</td>
+                  <td>{agent.role}</td>
+                  <td>{agent.rating}</td>
+                  <td>{agent.wins}</td>
+                  <td>{agent.losses}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>Recent Rounds</h3>
+          <ul>
+            {data.rounds.slice(-5).map((round) => (
+              <li key={round.id}>
+                Round {round.id}: diff {round.difficulty} (Δ {round.difficultyDelta}), success{' '}
+                {(round.successRate * 100).toFixed(1)}%
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-      <ol className="mt-4 space-y-2">
-        {agents.map((agent) => (
-          <li key={agent.id} className="flex items-center justify-between rounded-md bg-white/5 px-4 py-2">
-            <span className="font-semibold">{agent.id}</span>
-            <span className="text-purple-200">{agent.rating}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
+    </div>
   );
-};
+}
