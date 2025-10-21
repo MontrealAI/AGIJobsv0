@@ -13,6 +13,10 @@ New in this iteration:
   non-technical sponsor rehearse each lifecycle checkpoint step-by-step.
 - **Artefact integrity verification** – scenario validation now inspects translation catalogues and UI anchors to
   guarantee nothing drifts out of sync before the automation scripts are executed.
+- **Console mission control** – a guided CLI (`npm run demo:redenomination:mission-control`) lets non-technical leaders
+  explore governance levers, audit invariants, and export-ready Mermaid diagrams interactively.
+- **Scenario-driven orchestration graph** – the Mermaid topology now lives inside `scenario.json`, powering the web
+  storyboard, CLI, and printable runbooks from a single source of truth.
 
 ---
 
@@ -57,7 +61,16 @@ a live ground truth.
    This command prints the governed scenario using `scenario.json`, highlighting actors, phases, operational guardrails, and
    follow-up automation hooks that a non-technical operator can trigger verbatim.
 
-4. Open the immersive UI storyboard in any browser:
+4. Open the interactive **Mission Control** console:
+
+   ```bash
+   npm run demo:redenomination:mission-control
+   ```
+
+   Navigate the governed lifecycle, governance surfaces, verification invariants, and the shared Mermaid graph from a
+   conversational prompt designed for decision makers.
+
+5. Open the immersive UI storyboard in any browser:
 
    ```bash
    npx serve demo/REDENOMINATION
@@ -102,8 +115,10 @@ rate) without modifying scripts.
 3. **Onboard identities** – `npm run identity:register` to bind ENS subdomains to agent and validator nodes.
 4. **Set guardrails** – `npm run owner:parameters` to review and update stake thresholds, policy categories, and slashing
    rules.
-5. **Launch job** – follow the chat-style UI prompts to post the redenomination job and watch validator commits stream in.
-6. **Review telemetry** – open the Grafana dashboards defined in `monitoring/dashboards/` to monitor throughput, validator
+5. **Simulate governance** – `npm run demo:redenomination:mission-control` to rehearse the live operational sequence before
+   scheduling mainnet actions.
+6. **Launch job** – follow the chat-style UI prompts to post the redenomination job and watch validator commits stream in.
+7. **Review telemetry** – open the Grafana dashboards defined in `monitoring/dashboards/` to monitor throughput, validator
    participation, and anomaly alerts in real time.
 
 ---

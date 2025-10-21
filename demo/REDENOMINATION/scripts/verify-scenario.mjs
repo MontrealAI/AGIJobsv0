@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +25,7 @@ const storyboardPath = path.join(demoRoot, 'index.html');
 const uiStoryboardPath = path.join(demoRoot, 'ui', 'index.html');
 const exportPath = path.join(demoRoot, 'ui', 'export', 'latest.json');
 const translationsPath = path.join(demoRoot, 'i18n', 'strings.json');
+const missionControlPath = path.join(demoRoot, 'scripts', 'mission-control.mjs');
 
 function readJson(filePath, label) {
   try {
@@ -69,6 +70,11 @@ function isNonEmptyString(value) {
 
 expect(isNonEmptyString(scenario.name), 'Scenario name present', 'Scenario name missing or empty');
 expect(isNonEmptyString(scenario.description), 'Scenario description present', 'Scenario description missing or empty');
+expect(
+  typeof scenario.mermaid === 'string' && scenario.mermaid.includes('graph TD'),
+  'Scenario Mermaid diagram provided',
+  'Scenario Mermaid diagram missing or invalid',
+);
 
 expect(Array.isArray(scenario.actors) && scenario.actors.length >= 3, 'Actors list populated', 'Actors list missing or too small');
 if (Array.isArray(scenario.actors)) {
@@ -214,11 +220,6 @@ requiredLanguages.forEach((lang) => {
 
 const storyboard = readFileSync(storyboardPath, 'utf8');
 expect(
-  storyboard.includes('mermaid') && storyboard.includes('graph TD'),
-  'Storyboard contains Mermaid orchestration diagram',
-  'Storyboard missing Mermaid orchestration diagram'
-);
-expect(
   storyboard.includes('id="flow-content"') && storyboard.includes('id="phase-navigator"'),
   'Storyboard exposes enhanced flow + navigator anchors',
   'Storyboard missing flow or navigator anchors',
@@ -227,6 +228,16 @@ expect(
   storyboard.includes('data-i18n="title"') && storyboard.includes('data-i18n="missionWizardTitle"'),
   'Storyboard wired for multilingual content',
   'Storyboard missing multilingual hooks',
+);
+expect(
+  storyboard.includes('id="mermaid-diagram"'),
+  'Storyboard provides Mermaid container anchor',
+  'Storyboard missing Mermaid container anchor',
+);
+expect(
+  storyboard.includes('renderMermaidDiagram'),
+  'Storyboard renders Mermaid diagram from scenario',
+  'Storyboard missing dynamic Mermaid renderer',
 );
 
 const uiStoryboard = readFileSync(uiStoryboardPath, 'utf8');
@@ -247,6 +258,26 @@ expect(
   'Exported invariants recorded',
   'Exported invariants missing or empty'
 );
+
+expect(
+  existsSync(missionControlPath),
+  'Mission control CLI present',
+  'Mission control CLI missing',
+);
+if (existsSync(missionControlPath)) {
+  const missionControlSource = readFileSync(missionControlPath, 'utf8');
+  expect(
+    missionControlSource.startsWith('#!/usr/bin/env node'),
+    'Mission control CLI has executable shebang',
+    'Mission control CLI missing Node shebang',
+  );
+  try {
+    const stats = statSync(missionControlPath);
+    expect((stats.mode & 0o111) !== 0, 'Mission control CLI marked executable', 'Mission control CLI not executable');
+  } catch (error) {
+    record('warn', `Unable to read mission control permissions (${error instanceof Error ? error.message : error})`);
+  }
+}
 
 const failures = results.filter((entry) => entry.status === 'fail');
 const warnings = results.filter((entry) => entry.status === 'warn');

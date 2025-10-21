@@ -83,6 +83,18 @@ function printResources(resources) {
   console.log();
 }
 
+function printMermaid(diagram) {
+  console.log(`${COLOR.bright}${COLOR.magenta}Mermaid Orchestration${COLOR.reset}`);
+  if (typeof diagram !== 'string' || diagram.trim().length === 0) {
+    console.log(`${COLOR.magenta}Diagram unavailable — run verification to regenerate scenario artefacts.${COLOR.reset}\n`);
+    return;
+  }
+  console.log(`${COLOR.gray}Embed the following graph in any markdown or dashboard to narrate the governed flow:${COLOR.reset}`);
+  console.log(`${COLOR.cyan}\n\`\`\`mermaid${COLOR.reset}`);
+  console.log(diagram.trim());
+  console.log(`${COLOR.cyan}\`\`\`${COLOR.reset}\n`);
+}
+
 function printCallToAction() {
   console.log(`${COLOR.bright}${COLOR.green}Preflight:${COLOR.reset} Confirm artefacts with ${COLOR.bright}npm run demo:redenomination:verify${COLOR.reset} before touching mainnet controls.`);
   console.log(`${COLOR.bright}${COLOR.green}Next Step:${COLOR.reset} Run ${COLOR.bright}npm run deploy:oneclick:auto${COLOR.reset} to materialize the full stack with governance defaults.`);
@@ -95,4 +107,5 @@ printActors(scenario.actors);
 printFlow(scenario.flow);
 printMetrics(scenario.metrics);
 printResources(scenario.resources);
+printMermaid(scenario.mermaid);
 printCallToAction();
