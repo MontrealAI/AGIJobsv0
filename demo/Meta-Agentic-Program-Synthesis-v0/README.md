@@ -60,7 +60,11 @@ stateDiagram-v2
 ## 🚀 Quickstart (Non-Technical Operator)
 
 1. **Install Python 3.10+** (already available in the development container). Optional: create a virtual environment.
-2. **Install dependencies** (only standard library is required, so there is no external package to install).
+2. **Install dependencies**
+   ```bash
+   python -m pip install --upgrade pip
+   python -m pip install -r demo/Meta-Agentic-Program-Synthesis-v0/requirements.txt
+   ```
 3. **Run the sovereign architect:**
    ```bash
    cd demo/Meta-Agentic-Program-Synthesis-v0
