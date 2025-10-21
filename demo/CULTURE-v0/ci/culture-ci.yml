@@ -1,0 +1,24 @@
+name: CULTURE Demo
+
+on:
+  push:
+    paths:
+      - 'demo/CULTURE-v0/**'
+  pull_request:
+    paths:
+      - 'demo/CULTURE-v0/**'
+
+jobs:
+  culture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install orchestrator deps
+        run: npm install
+        working-directory: demo/CULTURE-v0/backend/arena-orchestrator
+      - name: Run orchestrator unit tests
+        run: npx vitest run
+        working-directory: demo/CULTURE-v0/backend/arena-orchestrator
+      - name: Smoke check UI lint placeholder
+        run: npm run lint
+        working-directory: demo/CULTURE-v0/apps/culture-studio
