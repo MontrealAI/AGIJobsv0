@@ -40,8 +40,18 @@ export const checkOrchestratorHealth = async (
     controller.abort();
   }, timeoutMs);
 
+  const sanitiseMetricsBase = (base: string): string => {
+    const trimmed = base.replace(/\/+$/, '');
+    if (trimmed.endsWith('/onebox')) {
+      return trimmed.slice(0, -'/onebox'.length);
+    }
+    return trimmed;
+  };
+
+  const metricsUrl = `${sanitiseMetricsBase(orchestratorBase)}/metrics`;
+
   try {
-    const response = await fetchImpl(`${orchestratorBase}/metrics`, {
+    const response = await fetchImpl(metricsUrl, {
       method: 'GET',
       headers: buildHeaders(apiToken),
       signal: controller.signal,

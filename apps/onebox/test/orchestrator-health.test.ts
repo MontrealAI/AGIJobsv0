@@ -34,6 +34,22 @@ test('checkOrchestratorHealth hits metrics endpoint with token', async () => {
   assert.ok(calls[0]?.init?.signal instanceof AbortSignal);
 });
 
+test('checkOrchestratorHealth strips trailing /onebox before hitting metrics', async () => {
+  const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
+  const fetchMock: typeof fetch = async (input, init) => {
+    calls.push({ input, init });
+    return responseOk();
+  };
+
+  await checkOrchestratorHealth({
+    orchestratorBase: 'https://demo.example/orchestrator/onebox',
+    fetchImpl: fetchMock,
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0]?.input, 'https://demo.example/orchestrator/metrics');
+});
+
 test('checkOrchestratorHealth surfaces HTTP errors', async () => {
   const fetchMock: typeof fetch = async () => responseError(503);
 
