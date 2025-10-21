@@ -25,6 +25,13 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert artefacts.improvement_over_first >= 0
     assert artefacts.owner_actions == []
     assert artefacts.timelock_actions == []
+    assert artefacts.opportunities
+    for opportunity in artefacts.opportunities:
+        assert 0.0 <= opportunity.impact_score <= 1.0
+        assert 0.0 <= opportunity.confidence <= 1.0
+        assert 0.0 <= opportunity.energy_ratio <= 1.0
+        assert 0.0 <= opportunity.capital_allocation <= 1.0
+        assert opportunity.narrative
     verification = artefacts.verification
     assert isinstance(verification.holdout_scores, dict)
     assert verification.holdout_scores

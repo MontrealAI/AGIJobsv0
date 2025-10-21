@@ -117,6 +117,28 @@ class RewardSummary:
 
 
 @dataclass
+class OpportunitySynopsis:
+    """High-level opportunity surfaced to the platform owner."""
+
+    name: str
+    impact_score: float
+    confidence: float
+    narrative: str
+    energy_ratio: float
+    capital_allocation: float
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "impact_score": self.impact_score,
+            "confidence": self.confidence,
+            "narrative": self.narrative,
+            "energy_ratio": self.energy_ratio,
+            "capital_allocation": self.capital_allocation,
+        }
+
+
+@dataclass
 class OwnerAction:
     """Structured record of privileged actions taken by the platform owner."""
 
@@ -210,6 +232,7 @@ class DemoRunArtifacts:
     verification: VerificationDigest
     owner_actions: List[OwnerAction]
     timelock_actions: List["TimelockedAction"]
+    opportunities: List[OpportunitySynopsis]
     improvement_over_first: float
     first_success_generation: int | None
     generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -249,6 +272,7 @@ class DemoRunArtifacts:
             "verification": self.verification.to_dict(),
             "owner_actions": [action.to_dict() for action in self.owner_actions],
             "timelock_actions": [action.to_dict() for action in self.timelock_actions],
+            "opportunities": [opportunity.to_dict() for opportunity in self.opportunities],
             "improvement_over_first": self.improvement_over_first,
             "first_success_generation": self.first_success_generation,
             "generated_at": self.generated_at.isoformat(),
