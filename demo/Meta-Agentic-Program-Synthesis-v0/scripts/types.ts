@@ -185,6 +185,7 @@ export interface SynthesisRun {
   tasks: TaskResult[];
   ownerCoverage: OwnerControlCoverage;
   ownerScriptsAudit: OwnerScriptAudit[];
+  ownerBriefingPath?: string;
   aggregate: {
     globalBestScore: number;
     averageAccuracy: number;

@@ -12,6 +12,7 @@ const SUMMARY_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-summa
 const DASHBOARD_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-dashboard.html");
 const MANIFEST_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-manifest.json");
 const TRIANGULATION_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-triangulation.json");
+const BRIEFING_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-briefing.md");
 
 export interface RunOptions {
   missionFile?: string;
@@ -21,9 +22,10 @@ export interface RunOptions {
   dashboardFile?: string;
   manifestFile?: string;
   triangulationFile?: string;
+  briefingFile?: string;
 }
 
-function resolveOptions(options: RunOptions = {}): Required<RunOptions> {
+export function resolveRunOptions(options: RunOptions = {}): Required<RunOptions> {
   const missionFile = path.resolve(options.missionFile ?? process.env.AGI_META_PROGRAM_MISSION ?? DEFAULT_MISSION);
   const reportDir = path.resolve(options.reportDir ?? REPORT_DIR);
   const reportFile = path.resolve(options.reportFile ?? REPORT_FILE);
@@ -31,11 +33,21 @@ function resolveOptions(options: RunOptions = {}): Required<RunOptions> {
   const dashboardFile = path.resolve(options.dashboardFile ?? DASHBOARD_FILE);
   const manifestFile = path.resolve(options.manifestFile ?? MANIFEST_FILE);
   const triangulationFile = path.resolve(options.triangulationFile ?? TRIANGULATION_FILE);
-  return { missionFile, reportDir, reportFile, summaryFile, dashboardFile, manifestFile, triangulationFile };
+  const briefingFile = path.resolve(options.briefingFile ?? BRIEFING_FILE);
+  return {
+    missionFile,
+    reportDir,
+    reportFile,
+    summaryFile,
+    dashboardFile,
+    manifestFile,
+    triangulationFile,
+    briefingFile,
+  };
 }
 
 export async function executeSynthesis(options: RunOptions = {}): Promise<SynthesisRun> {
-  const resolved = resolveOptions(options);
+  const resolved = resolveRunOptions(options);
   const { mission, coverage }: { mission: MissionConfig; coverage: OwnerControlCoverage } =
     await loadMissionConfig(resolved.missionFile);
   const run = runMetaSynthesis(mission, coverage);
@@ -45,8 +57,10 @@ export async function executeSynthesis(options: RunOptions = {}): Promise<Synthe
     jsonFile: resolved.summaryFile,
     htmlFile: resolved.dashboardFile,
     triangulationFile: resolved.triangulationFile,
+    briefingFile: resolved.briefingFile,
   });
   run.ownerScriptsAudit = ownerScripts;
+  run.ownerBriefingPath = resolved.briefingFile;
   await updateManifest(resolved.manifestFile, files);
   return run;
 }
@@ -73,12 +87,14 @@ async function main(): Promise<void> {
   const cliOptions = parseArgs(process.argv.slice(2));
   const run = await executeSynthesis(cliOptions);
   console.log("✅ Meta-Agentic Program Synthesis dossier generated.");
-  console.log(`   Mission: ${resolveOptions(cliOptions).missionFile}`);
-  console.log(`   Markdown report: ${resolveOptions(cliOptions).reportFile}`);
-  console.log(`   JSON summary: ${resolveOptions(cliOptions).summaryFile}`);
-  console.log(`   Dashboard: ${resolveOptions(cliOptions).dashboardFile}`);
-  console.log(`   Triangulation digest: ${resolveOptions(cliOptions).triangulationFile}`);
-  console.log(`   Manifest: ${resolveOptions(cliOptions).manifestFile}`);
+  const resolved = resolveRunOptions(cliOptions);
+  console.log(`   Mission: ${resolved.missionFile}`);
+  console.log(`   Markdown report: ${resolved.reportFile}`);
+  console.log(`   JSON summary: ${resolved.summaryFile}`);
+  console.log(`   Dashboard: ${resolved.dashboardFile}`);
+  console.log(`   Owner briefing: ${resolved.briefingFile}`);
+  console.log(`   Triangulation digest: ${resolved.triangulationFile}`);
+  console.log(`   Manifest: ${resolved.manifestFile}`);
   console.log(
     `   Aggregate → score ${run.aggregate.globalBestScore.toFixed(2)}, accuracy ${(run.aggregate.averageAccuracy * 100).toFixed(2)}%, novelty ${(run.aggregate.noveltyScore * 100).toFixed(1)}%`,
   );

@@ -381,7 +381,7 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
     "utf8",
   );
 
-  const artifacts = {
+  const artifacts: Record<string, string> = {
     "Mission manifest": missionFile,
     "Markdown report": path.join(reportDir, "meta-agentic-program-synthesis-report.md"),
     "JSON summary": path.join(reportDir, "meta-agentic-program-synthesis-summary.json"),
@@ -393,9 +393,14 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
     "Owner diagnostics (Markdown)": OWNER_MARKDOWN,
   };
 
+  if (run.ownerBriefingPath) {
+    artifacts["Owner briefing"] = run.ownerBriefingPath;
+  }
+
   const fullSummary = {
     generatedAt: new Date().toISOString(),
     aggregate: run.aggregate,
+    ownerBriefing: run.ownerBriefingPath ?? null,
     triangulation: {
       confidence: run.aggregate.triangulationConfidence,
       consensus: run.aggregate.consensus,
