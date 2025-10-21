@@ -18,6 +18,13 @@ import type {
 import { defaultMessages } from '../lib/defaultMessages';
 import { ReceiptsPanel } from './ReceiptsPanel';
 import type { ExecutionReceipt } from './receiptTypes';
+import {
+  missingFieldsToError,
+  resolveFriendlyError,
+  responseToError,
+  simulationBlockersToError,
+} from '../lib/errorCatalog';
+import { summarisePlanIntent, summariseSimulation } from '../lib/planSummaries';
 
 const ORCHESTRATOR_BASE_URL = (
   process.env.NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL ??
@@ -30,15 +37,19 @@ const ORCHESTRATOR_TOKEN =
   process.env.NEXT_PUBLIC_ALPHA_ORCHESTRATOR_TOKEN ??
   '';
 
+const EXPLORER_BASE_URL = (
+  process.env.NEXT_PUBLIC_ONEBOX_EXPLORER_BASE ??
+  process.env.NEXT_PUBLIC_ONEBOX_EXPLORER_TX_BASE ??
+  process.env.NEXT_PUBLIC_ALPHA_EXPLORER_TX_BASE ??
+  ''
+).replace(/\/?$/, '');
+
 const RECEIPTS_STORAGE_KEY = 'onebox:receipts';
 const RECEIPT_HISTORY_LIMIT = 5;
 const POLL_INTERVAL_MS = 1500;
 const MAX_POLL_ATTEMPTS = 40;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const toErrorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : 'Unknown error';
 
 type TextMessage = {
   id: string;
@@ -82,6 +93,76 @@ type ChatStage =
 
 const createMessageId = () => crypto.randomUUID();
 
+const STAGE_LABELS: Record<ChatStage, string> = {
+  idle: 'Ready for instructions',
+  planning: 'Designing the orchestration plan',
+  planned: 'Plan generated – awaiting simulation',
+  simulating: 'Simulating budget and guardrails',
+  awaiting_execute: 'Awaiting your confirmation',
+  executing: 'Executing on-chain steps',
+  completed: 'Run completed – receipts available',
+  error: 'Attention required',
+};
+
+const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
+  idle: 'Describe the outcome you need and the assistant will plan it end-to-end.',
+  planning:
+    'The planner is translating your intent into structured steps, policies, and artifacts.',
+  planned:
+    'Review the generated intent. Provide any missing details or simulate to estimate costs.',
+  simulating:
+    'Guardrails are validating budget, fees, and policy compliance prior to execution.',
+  awaiting_execute:
+    'Confirm to let the relayer escrow funds and post the job to AGI Jobs.',
+  executing:
+    'Transactions are being submitted; receipts will appear once confirmed.',
+  completed:
+    'Success! Share the explorer links or finalize jobs directly from your receipts panel.',
+  error:
+    'An issue occurred. Review the guidance below to resolve and try again.',
+};
+
+type QuickPrompt = {
+  label: string;
+  prompt: string;
+};
+
+const QUICK_PROMPTS: QuickPrompt[] = [
+  {
+    label: 'AI data labeling mission',
+    prompt:
+      'Post a job to label 500 satellite images with bounding boxes. Reward 45 AGIALPHA, deadline 7 days, deliver geojson files.',
+  },
+  {
+    label: 'Model fine-tuning sprint',
+    prompt:
+      'Launch a job to fine-tune a sentiment classifier on 2,000 chat transcripts. Offer 120 AGIALPHA, require weekly progress notes, 10 day deadline.',
+  },
+  {
+    label: 'Validator review',
+    prompt:
+      'Finalize job 128 after verifying the submitted evaluation report meets the acceptance criteria.',
+  },
+];
+
+const createExplorerUrl = (hash?: string) => {
+  if (!hash || hash.length === 0 || !EXPLORER_BASE_URL) {
+    return undefined;
+  }
+  const normalized = hash.startsWith('0x') ? hash : `0x${hash}`;
+  return `${EXPLORER_BASE_URL}/${normalized}`;
+};
+
+const coerceString = (value: unknown) => {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value.toString();
+  }
+  return undefined;
+};
+
 const mapStatusToReceipt = (status: StatusResponse): ExecutionReceipt | null => {
   const receipt = status.receipts;
   if (!receipt) {
@@ -90,6 +171,27 @@ const mapStatusToReceipt = (status: StatusResponse): ExecutionReceipt | null => 
 
   const firstCid = receipt.cids?.[0];
   const firstTx = receipt.txes?.[0];
+  const firstPayout = Array.isArray(receipt.payouts)
+    ? receipt.payouts.find((entry) => entry && typeof entry === 'object')
+    : undefined;
+  const payoutRecord =
+    firstPayout && typeof firstPayout === 'object'
+      ? (firstPayout as Record<string, unknown>)
+      : undefined;
+  const rewardAmount = payoutRecord
+    ? coerceString(
+        payoutRecord.amount ??
+          payoutRecord.value ??
+          payoutRecord.gross ??
+          payoutRecord.reward
+      )
+    : undefined;
+  const rewardToken = payoutRecord
+    ? coerceString(payoutRecord.token ?? payoutRecord.symbol)
+    : undefined;
+  const netPayout = payoutRecord
+    ? coerceString(payoutRecord.net ?? payoutRecord.net_amount ?? payoutRecord.paid)
+    : undefined;
 
   return {
     id: status.run.id,
@@ -100,52 +202,11 @@ const mapStatusToReceipt = (status: StatusResponse): ExecutionReceipt | null => 
     specCid: firstCid ?? undefined,
     createdAt: Date.now(),
     receiptCid: receipt.plan_id ?? undefined,
-    reward: undefined,
-    token: undefined,
-    explorerUrl: undefined,
-    netPayout: undefined,
+    reward: rewardAmount,
+    token: rewardToken,
+    explorerUrl: createExplorerUrl(firstTx),
+    netPayout: netPayout,
   };
-};
-
-const formatSimulationSummary = (simulation: SimulationResponse) => {
-  const budgetParts: string[] = [`Est. budget: ${simulation.estimatedBudget ?? '—'}`];
-  const feeSegments: string[] = [];
-  if (simulation.feeAmount) {
-    feeSegments.push(
-      `protocol fee ${simulation.feeAmount} AGIALPHA${
-        simulation.feePct !== undefined && simulation.feePct !== null
-          ? ` (${simulation.feePct}%)`
-          : ''
-      }`
-    );
-  } else if (simulation.feePct !== undefined && simulation.feePct !== null) {
-    feeSegments.push(`protocol fee ${simulation.feePct}%`);
-  }
-  if (simulation.burnAmount) {
-    feeSegments.push(
-      `burn ${simulation.burnAmount} AGIALPHA${
-        simulation.burnPct !== undefined && simulation.burnPct !== null
-          ? ` (${simulation.burnPct}%)`
-          : ''
-      }`
-    );
-  } else if (simulation.burnPct !== undefined && simulation.burnPct !== null) {
-    feeSegments.push(`burn ${simulation.burnPct}%`);
-  }
-  if (feeSegments.length > 0) {
-    budgetParts.push(`Fee projections: ${feeSegments.join('; ')}`);
-  }
-  const lines = [`${budgetParts.join('. ')}.`];
-  if (typeof simulation.est_duration === 'number') {
-    lines.push(`Est. duration: ${simulation.est_duration} hour(s).`);
-  }
-  if (simulation.risks.length > 0) {
-    lines.push(`Risks: ${simulation.risks.join(', ')}.`);
-  }
-  if (simulation.confirmations.length > 0) {
-    lines.push(simulation.confirmations.join(' '));
-  }
-  return lines.join(' ');
 };
 
 const hasBlockingRisks = (simulation: SimulationResponse) =>
@@ -169,6 +230,8 @@ export function ChatWindow() {
   );
   const [receipts, setReceipts] = useState<ExecutionReceipt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const stageLabel = STAGE_LABELS[stage];
+  const stageDescription = STAGE_DESCRIPTIONS[stage];
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const isMountedRef = useRef(true);
 
@@ -309,6 +372,13 @@ export function ChatWindow() {
     [addMessage]
   );
 
+  const handleQuickPrompt = useCallback(
+    (prompt: string) => {
+      setInput(prompt);
+    },
+    [setInput]
+  );
+
   const callPlan = useCallback(async (payload: PlanRequest) => {
     if (!ORCHESTRATOR_BASE_URL) {
       throw new Error(
@@ -326,7 +396,7 @@ export function ChatWindow() {
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
-      throw new Error(`Plan failed with status ${response.status}`);
+      await responseToError(response);
     }
     return parsePlanResponse(await response.json());
   }, []);
@@ -351,11 +421,11 @@ export function ChatWindow() {
       if (response.status === 422) {
         const detail = await response.json();
         const blockers = Array.isArray(detail?.blockers)
-          ? detail.blockers.join(', ')
-          : 'Blocked by guardrails.';
-        throw new Error(blockers);
+          ? detail.blockers.filter((value: unknown): value is string => typeof value === 'string')
+          : [];
+        throw simulationBlockersToError(blockers);
       }
-      throw new Error(`Simulation failed with status ${response.status}`);
+      await responseToError(response);
     }
     return parseSimulationResponse(await response.json());
   }, []);
@@ -381,7 +451,7 @@ export function ChatWindow() {
       body: JSON.stringify(executePayload),
     });
     if (!response.ok) {
-      throw new Error(`Execution failed with status ${response.status}`);
+      await responseToError(response);
     }
     return parseExecuteResponse(await response.json());
   }, []);
@@ -404,7 +474,7 @@ export function ChatWindow() {
       }
     );
     if (!response.ok) {
-      throw new Error(`Status failed with status ${response.status}`);
+      await responseToError(response);
     }
     return parseStatusResponse(await response.json());
   }, []);
@@ -486,23 +556,25 @@ export function ChatWindow() {
         addMessage(planMessage);
         setActivePlan(planMessage);
         if (result.missing_fields.length > 0) {
-          const missingList = result.missing_fields.join(', ');
+          const missingError = missingFieldsToError(result.missing_fields);
+          const friendly = resolveFriendlyError(missingError);
           addTextMessage(
             'assistant',
-            `I still need the following details before I can simulate: ${missingList}.`
+            `${friendly} Missing: ${result.missing_fields.join(', ')}.`
           );
+          setPlanError(friendly);
           setStage('idle');
         } else {
-          addTextMessage(
-            'assistant',
-            result.preview_summary || 'Plan ready. Run simulation to continue.'
-          );
+          const friendly =
+            result.preview_summary ||
+            'Plan ready. Run simulation to continue.';
+          addTextMessage('assistant', friendly);
           setStage('planned');
         }
       } catch (error) {
-        const message = toErrorMessage(error);
-        addTextMessage('assistant', `⚠️ ${message}`);
-        setPlanError(message);
+        const friendly = resolveFriendlyError(error);
+        addTextMessage('assistant', `⚠️ ${friendly}`);
+        setPlanError(friendly);
         setStage('error');
       } finally {
         setIsLoading(false);
@@ -527,17 +599,21 @@ export function ChatWindow() {
       };
       addMessage(message);
       setActiveSimulation(message);
-      addTextMessage('assistant', formatSimulationSummary(simulation));
       if (hasBlockingRisks(simulation)) {
-        setSimulateError('Simulation flagged blockers. Adjust the plan and retry.');
+        const guardrailError = simulationBlockersToError(simulation.risks);
+        const friendly = resolveFriendlyError(
+          guardrailError,
+          'Simulation flagged blockers. Adjust the plan and retry.'
+        );
+        setSimulateError(friendly);
         setStage('error');
         return;
       }
       setStage('awaiting_execute');
     } catch (error) {
-      const message = toErrorMessage(error);
-      addTextMessage('assistant', `⚠️ ${message}`);
-      setSimulateError(message);
+      const friendly = resolveFriendlyError(error);
+      addTextMessage('assistant', `⚠️ ${friendly}`);
+      setSimulateError(friendly);
       setStage('error');
     }
   }, [activePlan, addMessage, addTextMessage, callSimulate]);
@@ -556,9 +632,9 @@ export function ChatWindow() {
       );
       await pollStatus(execution.run_id);
     } catch (error) {
-      const message = toErrorMessage(error);
-      addTextMessage('assistant', `⚠️ ${message}`);
-      setExecuteError(message);
+      const friendly = resolveFriendlyError(error);
+      addTextMessage('assistant', `⚠️ ${friendly}`);
+      setExecuteError(friendly);
       setStage('error');
     }
   }, [activePlan, addTextMessage, callExecute, pollStatus]);
@@ -574,6 +650,11 @@ export function ChatWindow() {
     const { status } = runStatusMessage;
     const state = status.run.state;
     const lines = [`Run ${status.run.id} is ${state}.`];
+    const totalSteps = status.steps.length;
+    const completedSteps = status.steps.filter((step) => step.state === 'completed').length;
+    if (totalSteps > 0) {
+      lines.push(`${completedSteps}/${totalSteps} orchestration steps completed.`);
+    }
     if (status.current) {
       lines.push(`Current step: ${status.current}.`);
     }
@@ -585,22 +666,68 @@ export function ChatWindow() {
 
   return (
     <div className="chat-wrapper">
+      <header className="chat-hero">
+        <div className="chat-hero-titles">
+          <h1 className="chat-hero-title">🎖️ AGI Jobs One‑Box</h1>
+          <p className="chat-hero-subtitle">
+            A single conversation controls the entire AGI labour platform — plan, simulate,
+            and execute production jobs instantly.
+          </p>
+        </div>
+        <div className="chat-stage" role="status" aria-live="polite">
+          <span className="chat-stage-label">{stageLabel}</span>
+          <span className="chat-stage-detail">{stageDescription}</span>
+        </div>
+      </header>
+      <div className="chat-quick-prompts" aria-label="Quick prompts">
+        {QUICK_PROMPTS.map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            className="chat-quick-button"
+            onClick={() => {
+              handleQuickPrompt(item.prompt);
+            }}
+            disabled={isLoading}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
       <div className="chat-shell">
         <div className="chat-history" role="log" aria-live="polite">
           {messages.map((message) => {
             if (message.kind === 'plan') {
-              const summary =
-                message.plan.preview_summary || 'Plan generated. Ready to simulate.';
+              const highlights = summarisePlanIntent(message.plan);
               return (
                 <div key={message.id} className="chat-message">
                   <span className="chat-message-role">{message.role}</span>
                   <div className="chat-bubble">
                     <div className="plan-summary">
-                      <p>{summary}</p>
+                      <h3 className="plan-heading">Plan preview</h3>
+                      <p className="plan-headline">{highlights.headline}</p>
+                      {highlights.bullets.length > 0 ? (
+                        <ul className="plan-list">
+                          {highlights.bullets.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : null}
                       {message.plan.missing_fields.length > 0 ? (
-                        <p>
-                          Missing fields: {message.plan.missing_fields.join(', ')}
-                        </p>
+                        <div className="plan-callout plan-callout-warning">
+                          <strong>Provide before continuing:</strong>
+                          <span>{message.plan.missing_fields.join(', ')}</span>
+                        </div>
+                      ) : null}
+                      {highlights.warnings.length > 0 ? (
+                        <div className="plan-callout plan-callout-warning">
+                          <strong>Warnings</strong>
+                          <ul>
+                            {highlights.warnings.map((warning) => (
+                              <li key={warning}>{warning}</li>
+                            ))}
+                          </ul>
+                        </div>
                       ) : null}
                       {pendingPlanId === message.id && canSimulate ? (
                         <div className="plan-actions">
@@ -633,13 +760,43 @@ export function ChatWindow() {
               );
             }
             if (message.kind === 'simulation') {
+              const highlights = summariseSimulation(message.simulation);
               return (
                 <div key={message.id} className="chat-message">
                   <span className="chat-message-role">{message.role}</span>
                   <div className="chat-bubble">
                     <div className="plan-summary">
-                      <p>{formatSimulationSummary(message.simulation)}</p>
-                      {pendingPlanId === activePlan?.id && message.id === activeSimulation?.id &&
+                      <h3 className="plan-heading">Simulation results</h3>
+                      <p className="plan-headline">{highlights.headline}</p>
+                      {highlights.bullets.length > 0 ? (
+                        <ul className="plan-list">
+                          {highlights.bullets.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      {highlights.confirmations.length > 0 ? (
+                        <div className="plan-callout plan-callout-success">
+                          <strong>Confirmations</strong>
+                          <ul>
+                            {highlights.confirmations.map((confirmation) => (
+                              <li key={confirmation}>{confirmation}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                      {highlights.risks.length > 0 ? (
+                        <div className="plan-callout plan-callout-warning">
+                          <strong>Risks</strong>
+                          <ul>
+                            {highlights.risks.map((risk) => (
+                              <li key={risk}>{risk}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                      {pendingPlanId === activePlan?.id &&
+                      message.id === activeSimulation?.id &&
                       canExecute ? (
                         <div className="plan-actions">
                           <button

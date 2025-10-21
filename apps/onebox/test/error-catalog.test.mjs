@@ -23,7 +23,13 @@ test('friendly error catalog exposes orchestrator UI guidance', async () => {
     'API_TOKEN_MISSING',
     'API_TOKEN_INVALID',
     'ESCROW_BALANCE_LOW',
-    'RUN_FAILED'
+    'RUN_FAILED',
+    'SYSTEM_PAUSED',
+    'PLAN_GUARDRAILS',
+    'PLAN_MISSING_INFO',
+    'SIMULATION_BLOCKED',
+    'EXECUTION_REVERTED',
+    'STATUS_UNREACHABLE'
   ]) {
     assert.equal(
       typeof catalog[key],
