@@ -40,6 +40,7 @@ class OwnerConsole:
         "bootstrap_iterations",
         "confidence_level",
         "stress_threshold",
+        "entropy_floor",
     }
 
     def __init__(self, config: DemoConfig) -> None:
@@ -219,6 +220,8 @@ class OwnerConsole:
             raise ValueError("confidence_level must be between 0 and 1")
         if not 0 <= policy.stress_threshold <= 1:
             raise ValueError("stress_threshold must be between 0 and 1")
+        if not 0 <= policy.entropy_floor <= 1:
+            raise ValueError("entropy_floor must be between 0 and 1")
 
 
 def load_owner_overrides(path: Path) -> Mapping[str, Any]:

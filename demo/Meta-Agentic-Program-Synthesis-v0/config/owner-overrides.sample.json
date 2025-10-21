@@ -25,7 +25,9 @@
     "mae_threshold": 0.74,
     "monotonic_tolerance": 0.02,
     "bootstrap_iterations": 320,
-    "confidence_level": 0.975
+    "confidence_level": 0.975,
+    "stress_threshold": 0.76,
+    "entropy_floor": 0.4
   },
   "paused": false
 }

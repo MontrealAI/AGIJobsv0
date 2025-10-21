@@ -40,6 +40,9 @@ def test_render_html_embeds_mermaid(tmp_path: Path) -> None:
     assert "Stress Suite" in html
     assert "Stress Scenario" in html
     assert "Holdout suite" in html
+    assert "Entropy Shield" in html
+    assert "Entropy shield" in html
+    assert "Entropy Shield Array" in html
     assert artefacts.final_program in html
 
 

@@ -188,6 +188,9 @@ class VerificationDigest:
     stress_scores: Dict[str, float]
     pass_stress: bool
     stress_threshold: float
+    entropy_score: float
+    pass_entropy: bool
+    entropy_floor: float
 
     @property
     def overall_pass(self) -> bool:
@@ -199,6 +202,7 @@ class VerificationDigest:
             and self.pass_confidence
             and self.monotonic_pass
             and self.pass_stress
+            and self.pass_entropy
         )
 
     def to_dict(self) -> Dict[str, object]:
@@ -220,6 +224,9 @@ class VerificationDigest:
             "stress_scores": dict(self.stress_scores),
             "pass_stress": self.pass_stress,
             "stress_threshold": self.stress_threshold,
+            "entropy_score": self.entropy_score,
+            "pass_entropy": self.pass_entropy,
+            "entropy_floor": self.entropy_floor,
             "overall_pass": self.overall_pass,
         }
 

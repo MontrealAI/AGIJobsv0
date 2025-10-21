@@ -224,6 +224,8 @@ class SovereignArchitect:
         pass_stress = all(
             score >= policy.stress_threshold for score in stress_scores.values()
         ) if stress_scores else True
+        entropy_score = self._entropy_score(base_predictions)
+        pass_entropy = entropy_score >= policy.entropy_floor
         pass_residual_balance = (
             abs(residual_mean) <= policy.residual_mean_tolerance
             and residual_std >= policy.residual_std_minimum
@@ -254,6 +256,9 @@ class SovereignArchitect:
             stress_scores=stress_scores,
             pass_stress=pass_stress,
             stress_threshold=policy.stress_threshold,
+            entropy_score=entropy_score,
+            pass_entropy=pass_entropy,
+            entropy_floor=policy.entropy_floor,
         )
 
     def _stress_test_program(self, program: Program) -> Dict[str, float]:
@@ -356,6 +361,34 @@ class SovereignArchitect:
         upper_index = int((1 - alpha / 2) * (len(scores) - 1))
         return (scores[lower_index], scores[upper_index])
 
+    def _entropy_score(self, predictions: Sequence[float], bins: int = 16) -> float:
+        """Compute a normalised Shannon entropy proxy for solver diversity."""
+
+        values = list(predictions)
+        if not values:
+            return 0.0
+        minimum = min(values)
+        maximum = max(values)
+        if math.isclose(maximum, minimum):
+            return 0.0
+        width = maximum - minimum or 1.0
+        histogram = [0 for _ in range(max(bins, 2))]
+        for value in values:
+            index = int(((value - minimum) / width) * len(histogram))
+            index = max(0, min(len(histogram) - 1, index))
+            histogram[index] += 1
+        total = sum(histogram)
+        if total == 0:
+            return 0.0
+        probabilities = [count / total for count in histogram if count]
+        if not probabilities:
+            return 0.0
+        entropy = -sum(prob * math.log(prob, 2) for prob in probabilities)
+        max_entropy = math.log(len(histogram), 2)
+        if max_entropy <= 0:
+            return 0.0
+        return max(0.0, min(entropy / max_entropy, 1.0))
+
     def _assess_monotonicity(
         self, scores: Sequence[float], tolerance: float
     ) -> Tuple[bool, int]:
@@ -429,6 +462,30 @@ class SovereignArchitect:
                 ),
                 energy_ratio=solver_energy_ratio,
                 capital_allocation=solver_reward_ratio,
+            )
+        )
+
+        entropy_confidence = clamp(
+            0.5 * verification.entropy_score
+            + 0.5 * (1.0 if verification.pass_entropy else 0.0)
+        )
+        entropy_impact = clamp(
+            0.55 * verification.entropy_score
+            + 0.45 * (1.0 if verification.pass_stress else 0.0)
+        )
+        opportunity_cards.append(
+            OpportunitySynopsis(
+                name="Entropy Shield Array",
+                impact_score=entropy_impact,
+                confidence=entropy_confidence,
+                narrative=(
+                    "Solver diversity remains thermodynamically balanced; adaptive hedges "
+                    "preserve creativity while the owner controls the envelope."
+                ),
+                energy_ratio=clamp(verification.entropy_score),
+                capital_allocation=clamp(
+                    (verification.entropy_score + architect_allocation) / 2.0
+                ),
             )
         )
 
