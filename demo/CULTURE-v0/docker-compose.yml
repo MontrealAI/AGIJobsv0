@@ -1,39 +1,54 @@
 version: "3.9"
 
-# Placeholder compose file documenting intended services for the CULTURE demo.
-# Full implementation to be completed per sprint plan.
-
 services:
   culture-contracts:
     image: node:20
     working_dir: /app
-    command: ["tail", "-f", "/dev/null"]
+    command: ["sh", "-c", "if [ ! -d node_modules ]; then npm install; fi; npx hardhat node --hostname 0.0.0.0 --port ${CULTURE_RPC_PORT:-8545}"]
+    ports:
+      - "${CULTURE_RPC_PORT:-8545}:8545"
     volumes:
       - ./:/app
     environment:
-      - RPC_URL=${RPC_URL}
-      - CHAIN_ID=${CHAIN_ID}
+      - CULTURE_RPC_PORT=${CULTURE_RPC_PORT:-8545}
   arena-orchestrator:
     image: node:20
-    working_dir: /app/backend/arena-orchestrator
-    command: ["tail", "-f", "/dev/null"]
+    working_dir: /app
+    depends_on:
+      - culture-contracts
+    command: ["sh", "-c", "if [ ! -d node_modules ]; then npm install; fi; node demo/CULTURE-v0/backend/arena-orchestrator/server.mjs"]
+    ports:
+      - "${ARENA_ORCHESTRATOR_PORT:-8080}:8080"
     volumes:
       - ./:/app
     environment:
-      - ARENA_ORCHESTRATOR_PORT=${ARENA_ORCHESTRATOR_PORT}
+      - ARENA_ORCHESTRATOR_PORT=${ARENA_ORCHESTRATOR_PORT:-8080}
+      - CULTURE_RPC_URL=${CULTURE_RPC_URL:-http://culture-contracts:8545}
   culture-graph-indexer:
     image: node:20
-    working_dir: /app/indexers/culture-graph-indexer
-    command: ["tail", "-f", "/dev/null"]
+    working_dir: /app
+    depends_on:
+      - culture-contracts
+    command: ["sh", "-c", "if [ ! -d demo/CULTURE-v0/indexers/culture-graph-indexer/node_modules ]; then npm install --prefix demo/CULTURE-v0/indexers/culture-graph-indexer; fi; node demo/CULTURE-v0/indexers/culture-graph-indexer/server.mjs"]
+    ports:
+      - "${CULTURE_INDEXER_PORT:-8000}:8000"
     volumes:
       - ./:/app
     environment:
-      - CULTURE_INDEXER_PORT=${CULTURE_INDEXER_PORT}
+      - CULTURE_INDEXER_PORT=${CULTURE_INDEXER_PORT:-8000}
   culture-studio:
     image: node:20
-    working_dir: /app/apps/culture-studio
-    command: ["tail", "-f", "/dev/null"]
+    working_dir: /app
+    depends_on:
+      - arena-orchestrator
+      - culture-graph-indexer
+    command: ["sh", "-c", "node demo/CULTURE-v0/apps/culture-studio/server.mjs"]
+    ports:
+      - "${CULTURE_UI_PORT:-3000}:3000"
     volumes:
       - ./:/app
     environment:
-      - CULTURE_UI_PORT=${CULTURE_UI_PORT}
+      - CULTURE_UI_PORT=${CULTURE_UI_PORT:-3000}
+      - CULTURE_ORCHESTRATOR_PORT=${ARENA_ORCHESTRATOR_PORT:-8080}
+      - CULTURE_INDEXER_PORT=${CULTURE_INDEXER_PORT:-8000}
+      - CULTURE_RPC_PORT=${CULTURE_RPC_PORT:-8545}
