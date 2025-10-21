@@ -28,6 +28,31 @@ const MIME_TYPES = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
+function parseAbsoluteUrl(value) {
+  if (!value) {
+    return null;
+  }
+  try {
+    return new URL(value);
+  } catch (error) {
+    return null;
+  }
+}
+
+function isLoopbackHostname(hostname) {
+  if (!hostname) {
+    return false;
+  }
+  const lowered = hostname.toLowerCase();
+  return (
+    lowered === 'localhost' ||
+    lowered === '127.0.0.1' ||
+    lowered === '::1' ||
+    lowered.endsWith('.localhost') ||
+    lowered.endsWith('.local')
+  );
+}
+
 function normalisePrefix(value, fallback = '/onebox') {
   if (value === undefined || value === null) {
     return fallback;
@@ -146,6 +171,25 @@ function resolveConfig(env, options = {}) {
     env.ONEBOX_PUBLIC_ORCHESTRATOR_URL ??
     `http://${uiHost}:${orchestratorPort}`;
   const explorerBase = (options.explorerBase ?? env.ONEBOX_EXPLORER_TX_BASE ?? env.NEXT_PUBLIC_ONEBOX_EXPLORER_TX_BASE ?? '').trim();
+
+  const parsedPublicUrl = parseAbsoluteUrl(publicOrchestratorUrl);
+  if (!parsedPublicUrl) {
+    warnings.push(
+      `Public orchestrator URL '${publicOrchestratorUrl}' is not a valid absolute URL. Update ONEBOX_PUBLIC_ORCHESTRATOR_URL or supply --orchestrator-url.`,
+    );
+  }
+
+  const isLoopback = parsedPublicUrl ? isLoopbackHostname(parsedPublicUrl.hostname) : false;
+  if (parsedPublicUrl && parsedPublicUrl.protocol === 'http:' && !isLoopback) {
+    warnings.push(
+      `Public orchestrator URL ${publicOrchestratorUrl} uses HTTP on a non-loopback host. Use HTTPS or a trusted tunnel before sharing the demo.`,
+    );
+  }
+  if (!apiToken && parsedPublicUrl && !isLoopback) {
+    warnings.push(
+      'No API token configured while exposing the orchestrator beyond loopback. Set ONEBOX_API_TOKEN or provide --token to keep the surface restricted.',
+    );
+  }
 
   let maxJobBudgetAgia;
   const budgetSource = options.maxJobBudgetAgia ?? env.ONEBOX_MAX_JOB_BUDGET_AGIA;
