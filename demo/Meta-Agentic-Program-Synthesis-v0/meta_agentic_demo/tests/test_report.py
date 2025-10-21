@@ -37,6 +37,8 @@ def test_render_html_embeds_mermaid(tmp_path: Path) -> None:
     assert "MAE Consistency" in html
     assert "Bootstrap Interval" in html
     assert "Monotonicity" in html
+    assert "Stress Suite" in html
+    assert "Stress Scenario" in html
     assert "Holdout suite" in html
     assert artefacts.final_program in html
 

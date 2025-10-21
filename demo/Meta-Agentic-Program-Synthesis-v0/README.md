@@ -49,6 +49,16 @@ flowchart TD
 
 ### Evolutionary loop
 
+#### Adversarial stress battery
+
+The verification stack now includes an explicit stress battery that intentionally perturbs the sovereign's data environment:
+
+* **Regime shift** — applies structural trend and baseline shifts to mimic macroeconomic realignments.
+* **Volatility spike** — injects sharp noise bursts and transient outliers to test control under chaos.
+* **Signal dropout** — removes swathes of signal and damps cyclical structure to simulate degraded telemetry.
+
+Every evolved program must clear a configurable stress threshold (default `0.72`). The new CLI flag `--verification-stress-threshold` lets the contract owner ratchet this bar up or down without touching code.
+
 ```mermaid
 stateDiagram-v2
     [*] --> SeedPopulation: bootstrap diverse codelets
@@ -118,6 +128,7 @@ knob – rewards, staking, evolution cadence, and pause state – can be adjuste
       --verification-monotonic 0.02 \
       --verification-bootstrap 400 \
       --verification-confidence 0.975
+      --verification-stress-threshold 0.74
 ```
 
 Use `--pause` to halt execution instantly. The orchestrator will refuse to launch jobs while paused and will explain the status

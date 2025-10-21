@@ -39,6 +39,7 @@ class OwnerConsole:
         "monotonic_tolerance",
         "bootstrap_iterations",
         "confidence_level",
+        "stress_threshold",
     }
 
     def __init__(self, config: DemoConfig) -> None:
@@ -216,6 +217,8 @@ class OwnerConsole:
             raise ValueError("bootstrap_iterations must be at least 1")
         if not 0 < policy.confidence_level < 1:
             raise ValueError("confidence_level must be between 0 and 1")
+        if not 0 <= policy.stress_threshold <= 1:
+            raise ValueError("stress_threshold must be between 0 and 1")
 
 
 def load_owner_overrides(path: Path) -> Mapping[str, Any]:

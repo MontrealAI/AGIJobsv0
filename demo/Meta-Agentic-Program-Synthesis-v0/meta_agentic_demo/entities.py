@@ -185,6 +185,9 @@ class VerificationDigest:
     pass_confidence: bool
     monotonic_pass: bool
     monotonic_violations: int
+    stress_scores: Dict[str, float]
+    pass_stress: bool
+    stress_threshold: float
 
     @property
     def overall_pass(self) -> bool:
@@ -195,6 +198,7 @@ class VerificationDigest:
             and self.pass_mae
             and self.pass_confidence
             and self.monotonic_pass
+            and self.pass_stress
         )
 
     def to_dict(self) -> Dict[str, object]:
@@ -213,6 +217,9 @@ class VerificationDigest:
             "pass_confidence": self.pass_confidence,
             "monotonic_pass": self.monotonic_pass,
             "monotonic_violations": self.monotonic_violations,
+            "stress_scores": dict(self.stress_scores),
+            "pass_stress": self.pass_stress,
+            "stress_threshold": self.stress_threshold,
             "overall_pass": self.overall_pass,
         }
 
