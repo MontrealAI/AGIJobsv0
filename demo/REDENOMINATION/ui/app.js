@@ -1,4 +1,23 @@
 const EXPORT_PATH = './export/latest.json';
+const JOB_CONFIG_PATH = '../config/job-registry-redenominated.json';
+const STAKE_CONFIG_PATH = '../config/stake-manager-redenominated.json';
+
+async function fetchJson(path, { optional = false } = {}) {
+  const url = `${path}${path.includes('?') ? '&' : '?'}t=${Date.now()}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`status ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    if (optional) {
+      console.warn(`Optional resource unavailable: ${path}`, error);
+      return null;
+    }
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
 
 const appEl = document.getElementById('app');
 const refreshButton = document.getElementById('refresh-button');
@@ -23,6 +42,42 @@ function formatNumber(value) {
   });
 }
 
+function formatTokens(value) {
+  if (value === undefined || value === null || value === '') {
+    return '—';
+  }
+  const number = Number(value);
+  if (Number.isFinite(number)) {
+    const maximumFractionDigits = number < 1 ? 6 : 2;
+    return `${number.toLocaleString(undefined, { maximumFractionDigits })} AGIΩ`;
+  }
+  return `${value} AGIΩ`;
+}
+
+function formatSeconds(value) {
+  if (value === undefined || value === null || value === '') {
+    return '—';
+  }
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds)) {
+    return String(value);
+  }
+  if (seconds >= 86400) {
+    return `${seconds.toLocaleString()} s (${(seconds / 86400).toFixed(2)} days)`;
+  }
+  if (seconds >= 3600) {
+    return `${seconds.toLocaleString()} s (${(seconds / 3600).toFixed(2)} hours)`;
+  }
+  return `${seconds.toLocaleString()} s`;
+}
+
+function formatPercent(value) {
+  if (value === undefined || value === null || value === '') {
+    return '—';
+  }
+  return `${value}%`;
+}
+
 function createCard(title, content) {
   const card = document.createElement('section');
   card.className = 'card';
@@ -42,6 +97,120 @@ function createList(items, className) {
     ul.appendChild(li);
   }
   return ul;
+}
+
+function createDefinitionCard(title, entries) {
+  const article = document.createElement('article');
+  article.className = 'card owner-subcard';
+  const heading = document.createElement('h3');
+  heading.textContent = title;
+  article.appendChild(heading);
+  const dl = document.createElement('dl');
+  dl.className = 'owner-definition-list';
+  entries.forEach((entry) => {
+    const dt = document.createElement('dt');
+    dt.textContent = entry.label;
+    const dd = document.createElement('dd');
+    dd.textContent = entry.value;
+    dl.appendChild(dt);
+    dl.appendChild(dd);
+  });
+  article.appendChild(dl);
+  return article;
+}
+
+function collectOwnerCommands(playbook = {}) {
+  const commands = new Set();
+  (playbook.timeline ?? []).forEach((step) => {
+    if (!Array.isArray(step?.commands)) return;
+    const highlighted = ['pause', 'resume', 'update-parameters', 'snapshot', 'migrate-ledgers'];
+    if (highlighted.includes(step.id)) {
+      step.commands.forEach((command) => commands.add(command));
+    }
+  });
+  if (commands.size === 0) {
+    commands.add('npm run demo:redenomination:owner-console');
+  }
+  return Array.from(commands);
+}
+
+function renderOwnerControls(playbook = {}, jobConfig = {}, stakeConfig = {}) {
+  const container = document.createElement('section');
+  container.className = 'card owner-controls';
+  const heading = document.createElement('h2');
+  heading.textContent = 'Owner guardrails';
+  container.appendChild(heading);
+
+  const grid = document.createElement('div');
+  grid.className = 'owner-grid';
+
+  const stakeEntries = [
+    { label: 'Global minimum stake', value: formatTokens(stakeConfig?.minStakeTokens) },
+    { label: 'Agent role minimum', value: formatTokens(stakeConfig?.roleMinimums?.agentTokens) },
+    { label: 'Validator role minimum', value: formatTokens(stakeConfig?.roleMinimums?.validatorTokens) },
+    { label: 'Platform role minimum', value: formatTokens(stakeConfig?.roleMinimums?.platformTokens) },
+    { label: 'Recommended minimum stake', value: formatTokens(stakeConfig?.stakeRecommendations?.minTokens) },
+    { label: 'Unbonding period', value: formatSeconds(stakeConfig?.unbondingPeriodSeconds) },
+    {
+      label: 'Validator reward',
+      value: formatPercent(stakeConfig?.validatorRewardPct),
+    },
+    {
+      label: 'Slashing (employer / treasury)',
+      value:
+        stakeConfig?.employerSlashPct !== undefined && stakeConfig?.treasurySlashPct !== undefined
+          ? `${stakeConfig.employerSlashPct}% / ${stakeConfig.treasurySlashPct}%`
+          : '—',
+    },
+  ];
+
+  const jobEntries = [
+    { label: 'Job stake requirement', value: formatTokens(jobConfig?.jobStakeTokens) },
+    { label: 'Minimum agent stake', value: formatTokens(jobConfig?.minAgentStakeTokens) },
+    { label: 'Maximum job reward', value: formatTokens(jobConfig?.maxJobRewardTokens) },
+    { label: 'Job duration limit', value: formatSeconds(jobConfig?.jobDurationLimitSeconds) },
+    {
+      label: 'Max active jobs per agent',
+      value:
+        jobConfig?.maxActiveJobsPerAgent !== undefined
+          ? Number(jobConfig.maxActiveJobsPerAgent).toLocaleString()
+          : '—',
+    },
+    { label: 'Protocol fee', value: formatPercent(jobConfig?.feePct) },
+    { label: 'Validator reward', value: formatPercent(jobConfig?.validatorRewardPct) },
+  ];
+
+  grid.appendChild(createDefinitionCard('Stake guardrails', stakeEntries));
+  grid.appendChild(createDefinitionCard('Job registry guardrails', jobEntries));
+  container.appendChild(grid);
+
+  const hint = document.createElement('p');
+  hint.className = 'muted';
+  hint.textContent = 'Automation to apply updates, pause windows, and telemetry drills.';
+  container.appendChild(hint);
+
+  const commands = collectOwnerCommands(playbook);
+  const primaryWrapper = document.createElement('div');
+  primaryWrapper.className = 'owner-primary';
+  const primaryCode = document.createElement('code');
+  primaryCode.textContent = commands[0];
+  primaryWrapper.appendChild(primaryCode);
+  container.appendChild(primaryWrapper);
+
+  if (commands.length > 1) {
+    const list = document.createElement('ul');
+    list.className = 'owner-command-list';
+    commands.slice(1).forEach((command) => {
+      const li = document.createElement('li');
+      const code = document.createElement('code');
+      code.textContent = command;
+      li.appendChild(code);
+      list.appendChild(li);
+    });
+    container.appendChild(list);
+  }
+
+  return container;
 }
 
 function renderGovernance(governance = []) {
@@ -204,14 +373,15 @@ function renderModules(modules = {}) {
 }
 
 async function loadPlaybook() {
-  const response = await fetch(`${EXPORT_PATH}?t=${Date.now()}`);
-  if (!response.ok) {
-    throw new Error(`Unable to load playbook (${response.status})`);
-  }
-  return response.json();
+  const [playbook, jobConfig, stakeConfig] = await Promise.all([
+    fetchJson(EXPORT_PATH),
+    fetchJson(JOB_CONFIG_PATH, { optional: true }),
+    fetchJson(STAKE_CONFIG_PATH, { optional: true }),
+  ]);
+  return { playbook, jobConfig, stakeConfig };
 }
 
-function render(playbook) {
+function render({ playbook, jobConfig, stakeConfig }) {
   appEl.innerHTML = '';
 
   const banner = document.createElement('section');
@@ -248,6 +418,9 @@ function render(playbook) {
   const modulesCard = renderModules(playbook.modules ?? {});
   if (modulesCard) appEl.appendChild(modulesCard);
 
+  const ownerCard = renderOwnerControls(playbook, jobConfig ?? {}, stakeConfig ?? {});
+  if (ownerCard) appEl.appendChild(ownerCard);
+
   const timelineCard = renderTimeline(playbook.timeline);
   if (timelineCard) appEl.appendChild(timelineCard);
 
@@ -272,8 +445,8 @@ async function refreshPlaybook() {
   loading.innerHTML = '<h2>Refreshing playbook…</h2><p>Please wait.</p>';
   appEl.appendChild(loading);
   try {
-    const playbook = await loadPlaybook();
-    render(playbook);
+    const data = await loadPlaybook();
+    render(data);
   } catch (error) {
     const card = document.createElement('section');
     card.className = 'card';

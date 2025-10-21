@@ -26,6 +26,9 @@ const uiStoryboardPath = path.join(demoRoot, 'ui', 'index.html');
 const exportPath = path.join(demoRoot, 'ui', 'export', 'latest.json');
 const translationsPath = path.join(demoRoot, 'i18n', 'strings.json');
 const missionControlPath = path.join(demoRoot, 'scripts', 'mission-control.mjs');
+const ownerConsolePath = path.join(demoRoot, 'scripts', 'owner-console.mjs');
+const jobRegistryConfigPath = path.join(demoRoot, 'config', 'job-registry-redenominated.json');
+const stakeManagerConfigPath = path.join(demoRoot, 'config', 'stake-manager-redenominated.json');
 
 function readJson(filePath, label) {
   try {
@@ -41,6 +44,8 @@ const scenario = readJson(scenarioPath, 'scenario.json');
 const packageJson = readJson(packagePath, 'package.json');
 const exportData = readJson(exportPath, 'ui/export/latest.json');
 const translations = readJson(translationsPath, 'i18n/strings.json');
+const jobRegistryConfig = readJson(jobRegistryConfigPath, 'config/job-registry-redenominated.json');
+const stakeManagerConfig = readJson(stakeManagerConfigPath, 'config/stake-manager-redenominated.json');
 
 const results = [];
 
@@ -198,6 +203,13 @@ const requiredTranslationKeys = [
   'assuranceObservability',
   'assuranceUX',
   'languageLabel',
+  'sectionOwner',
+  'ownerConsolePill',
+  'ownerStakeTitle',
+  'ownerJobTitle',
+  'ownerCommandsHint',
+  'ownerPrimaryCommandTitle',
+  'ownerCommandsEmpty',
 ];
 
 requiredLanguages.forEach((lang) => {
@@ -239,6 +251,89 @@ expect(
   'Storyboard renders Mermaid diagram from scenario',
   'Storyboard missing dynamic Mermaid renderer',
 );
+expect(
+  storyboard.includes('id="owner-console"') &&
+    storyboard.includes('id="owner-stake-params"') &&
+    storyboard.includes('id="owner-primary-command"'),
+  'Storyboard includes owner console section anchors',
+  'Storyboard missing owner console anchors',
+);
+
+expect(
+  typeof jobRegistryConfig === 'object' && jobRegistryConfig !== null,
+  'Job registry config loaded',
+  'Job registry config missing or invalid',
+);
+const jobRegistryKeys = [
+  'jobStakeTokens',
+  'minAgentStakeTokens',
+  'maxJobRewardTokens',
+  'jobDurationLimitSeconds',
+  'maxActiveJobsPerAgent',
+  'feePct',
+  'validatorRewardPct'
+];
+jobRegistryKeys.forEach((key) => {
+  expect(
+    jobRegistryConfig && key in jobRegistryConfig && jobRegistryConfig[key] !== undefined,
+    `Job registry config includes “${key}”`,
+    `Job registry config missing “${key}”`,
+  );
+});
+
+expect(
+  typeof stakeManagerConfig === 'object' && stakeManagerConfig !== null,
+  'Stake manager config loaded',
+  'Stake manager config missing or invalid',
+);
+const stakeManagerKeys = [
+  'minStakeTokens',
+  'roleMinimums',
+  'stakeRecommendations',
+  'feePct',
+  'burnPct',
+  'validatorRewardPct',
+  'employerSlashPct',
+  'treasurySlashPct',
+  'unbondingPeriodSeconds'
+];
+stakeManagerKeys.forEach((key) => {
+  expect(
+    stakeManagerConfig && key in stakeManagerConfig && stakeManagerConfig[key] !== undefined,
+    `Stake manager config includes “${key}”`,
+    `Stake manager config missing “${key}”`,
+  );
+});
+expect(
+  typeof stakeManagerConfig.roleMinimums === 'object' && stakeManagerConfig.roleMinimums !== null,
+  'Stake manager role minimums provided',
+  'Stake manager role minimums missing',
+);
+if (stakeManagerConfig.roleMinimums) {
+  ['agentTokens', 'validatorTokens', 'platformTokens'].forEach((roleKey) => {
+    expect(
+      stakeManagerConfig.roleMinimums && stakeManagerConfig.roleMinimums[roleKey] !== undefined,
+      `Role minimum provided → ${roleKey}`,
+      `Role minimum missing → ${roleKey}`,
+    );
+  });
+}
+expect(
+  typeof stakeManagerConfig.stakeRecommendations === 'object' &&
+    stakeManagerConfig.stakeRecommendations !== null,
+  'Stake manager recommendations provided',
+  'Stake manager recommendations missing',
+);
+if (stakeManagerConfig.stakeRecommendations) {
+  ['minTokens', 'maxTokens'].forEach((recKey) => {
+    expect(
+      stakeManagerConfig.stakeRecommendations &&
+        stakeManagerConfig.stakeRecommendations[recKey] !== undefined,
+      `Stake recommendation provided → ${recKey}`,
+      `Stake recommendation missing → ${recKey}`,
+    );
+  });
+}
 
 const uiStoryboard = readFileSync(uiStoryboardPath, 'utf8');
 expect(
@@ -276,6 +371,26 @@ if (existsSync(missionControlPath)) {
     expect((stats.mode & 0o111) !== 0, 'Mission control CLI marked executable', 'Mission control CLI not executable');
   } catch (error) {
     record('warn', `Unable to read mission control permissions (${error instanceof Error ? error.message : error})`);
+  }
+}
+
+expect(
+  existsSync(ownerConsolePath),
+  'Owner command console present',
+  'Owner command console missing',
+);
+if (existsSync(ownerConsolePath)) {
+  const ownerConsoleSource = readFileSync(ownerConsolePath, 'utf8');
+  expect(
+    ownerConsoleSource.startsWith('#!/usr/bin/env node'),
+    'Owner command console has executable shebang',
+    'Owner command console missing Node shebang',
+  );
+  try {
+    const stats = statSync(ownerConsolePath);
+    expect((stats.mode & 0o111) !== 0, 'Owner command console marked executable', 'Owner command console not executable');
+  } catch (error) {
+    record('warn', `Unable to read owner console permissions (${error instanceof Error ? error.message : error})`);
   }
 }
 

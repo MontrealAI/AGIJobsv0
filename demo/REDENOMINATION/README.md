@@ -61,7 +61,16 @@ a live ground truth.
    This command prints the governed scenario using `scenario.json`, highlighting actors, phases, operational guardrails, and
    follow-up automation hooks that a non-technical operator can trigger verbatim.
 
-4. Open the interactive **Mission Control** console:
+4. Launch the **Owner Command Console** to review live guardrails and emergency levers:
+
+   ```bash
+   npm run demo:redenomination:owner-console
+   ```
+
+   This guided CLI inspects the redenominated stake and job registry parameters, surfaces governance automation commands, and
+   rehearses emergency pause and moderation playbooks so the owner can exercise absolute control.
+
+5. Open the interactive **Mission Control** console:
 
    ```bash
    npm run demo:redenomination:mission-control
@@ -70,7 +79,7 @@ a live ground truth.
    Navigate the governed lifecycle, governance surfaces, verification invariants, and the shared Mermaid graph from a
    conversational prompt designed for decision makers.
 
-5. Open the immersive UI storyboard in any browser:
+6. Open the immersive UI storyboard in any browser:
 
    ```bash
    npx serve demo/REDENOMINATION

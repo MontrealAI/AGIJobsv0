@@ -120,10 +120,68 @@ main {
   font-size: 0.85rem;
 }
 
+.muted {
+  color: var(--text-muted);
+}
+
 .governance-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
+}
+
+.owner-controls {
+  display: grid;
+  gap: 1rem;
+}
+
+.owner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.owner-definition-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 0.75rem;
+}
+
+.owner-definition-list dt {
+  font-weight: 600;
+}
+
+.owner-definition-list dd {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.owner-primary {
+  display: inline-block;
+  background: rgba(72, 247, 207, 0.12);
+  border: 1px solid rgba(72, 247, 207, 0.3);
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+  color: var(--text);
+  box-shadow: 0 12px 30px rgba(72, 247, 207, 0.15);
+}
+
+.owner-command-list {
+  margin: 0;
+  margin-top: 1rem;
+  padding-left: 1.4rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.owner-command-list code {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0.6rem;
+  padding: 0.35rem 0.65rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 .governance-card__role {
