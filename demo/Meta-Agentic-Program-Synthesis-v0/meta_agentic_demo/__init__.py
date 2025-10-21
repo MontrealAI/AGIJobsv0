@@ -1,5 +1,6 @@
 """Public package interface for the Meta-Agentic Program Synthesis demo."""
 
+from .admin import OwnerConsole, load_owner_overrides
 from .config import DemoConfig, DemoScenario, EvolutionPolicy, RewardPolicy, StakePolicy
 from .entities import DemoRunArtifacts
 from .orchestrator import SovereignArchitect, generate_dataset
@@ -12,8 +13,10 @@ __all__ = [
     "EvolutionPolicy",
     "RewardPolicy",
     "StakePolicy",
+    "OwnerConsole",
     "SovereignArchitect",
     "generate_dataset",
     "export_report",
     "render_html",
+    "load_owner_overrides",
 ]
