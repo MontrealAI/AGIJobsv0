@@ -9,6 +9,7 @@ const {
   resolveConfig,
   createDemoUrl,
   normalisePrefix,
+  isUnsetEnvValue,
 } = require('../lib/launcher.js');
 
 test('loadEnvironment merges root and demo .env files with demo taking precedence', () => {
@@ -65,4 +66,30 @@ test('normalisePrefix respects explicit blank overrides and fallback defaults', 
   assert.equal(normalisePrefix(undefined), '/onebox');
   assert.equal(normalisePrefix('', '/onebox'), '');
   assert.equal(normalisePrefix(' /deep/ops/ '), '/deep/ops');
+});
+
+test('resolveConfig flags placeholder environment values', () => {
+  const env = {
+    RPC_URL: 'https://sepolia.infura.io/v3/your-key',
+    JOB_REGISTRY_ADDRESS: '0x0000000000000000000000000000000000000000',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xYOUR_PRIVATE_KEY',
+  };
+
+  assert.throws(() => resolveConfig(env), /Missing required environment variables/);
+  const partial = resolveConfig(env, { allowPartial: true });
+  const sortedMissing = [...partial.missing].sort();
+  assert.deepEqual(sortedMissing, [
+    'JOB_REGISTRY_ADDRESS',
+    'ONEBOX_RELAYER_PRIVATE_KEY',
+    'RPC_URL',
+  ].sort());
+});
+
+test('isUnsetEnvValue detects placeholders and zero addresses', () => {
+  assert.equal(isUnsetEnvValue(''), true);
+  assert.equal(isUnsetEnvValue('  '), true);
+  assert.equal(isUnsetEnvValue('0x0000000000000000000000000000000000000000'), true);
+  assert.equal(isUnsetEnvValue('https://sepolia.infura.io/v3/your-key', { treatZeroAddress: false }), true);
+  assert.equal(isUnsetEnvValue('0x000000000000000000000000000000000000abcd'), false);
+  assert.equal(isUnsetEnvValue('https://rpc.valid', { treatZeroAddress: false }), false);
 });

@@ -14,6 +14,7 @@ const NETWORK_NAMES = new Map([
 ]);
 
 const ZERO_ADDRESS_REGEX = /^0x0{40}$/i;
+const WEI_PER_ETHER = 10n ** 18n;
 
 function toHex(value) {
   if (typeof value === 'string') {
@@ -134,9 +135,69 @@ async function probeRpc({
   };
 }
 
+function formatEtherFromHex(hexValue) {
+  if (typeof hexValue !== 'string') {
+    throw new TypeError('Balance must be a hex string.');
+  }
+  const normalized = hexValue === '0x' ? '0x0' : hexValue;
+  const value = BigInt(normalized);
+  const whole = value / WEI_PER_ETHER;
+  const remainder = value % WEI_PER_ETHER;
+  if (remainder === 0n) {
+    return whole.toString();
+  }
+  let fractional = remainder.toString().padStart(18, '0');
+  fractional = fractional.replace(/0+$/, '');
+  return `${whole.toString()}.${fractional}`;
+}
+
+async function fetchAccountBalance({
+  rpcUrl,
+  address,
+  fetchImpl = globalThis.fetch,
+  timeoutMs,
+} = {}) {
+  if (!rpcUrl || typeof rpcUrl !== 'string') {
+    return {
+      status: 'missing_rpc',
+      error: 'RPC_URL missing',
+    };
+  }
+  const trimmedAddress = typeof address === 'string' ? address.trim() : '';
+  if (!/^0x[0-9a-fA-F]{40}$/.test(trimmedAddress)) {
+    return {
+      status: 'invalid_address',
+      error: 'Invalid address format',
+    };
+  }
+
+  try {
+    const balanceHex = await jsonRpcRequest(
+      fetchImpl,
+      rpcUrl,
+      'eth_getBalance',
+      [trimmedAddress, 'latest'],
+      { timeoutMs }
+    );
+    const formatted = formatEtherFromHex(typeof balanceHex === 'string' ? balanceHex : '0x0');
+    return {
+      status: 'ok',
+      balanceHex: typeof balanceHex === 'string' ? balanceHex : '0x0',
+      balanceEther: formatted,
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Unknown RPC error',
+    };
+  }
+}
+
 module.exports = {
   NETWORK_NAMES,
   parseChainId,
   probeRpc,
   toHex,
+  formatEtherFromHex,
+  fetchAccountBalance,
 };

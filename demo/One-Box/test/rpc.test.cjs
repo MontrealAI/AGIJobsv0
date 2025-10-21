@@ -2,7 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 
-const { probeRpc, parseChainId } = require('../lib/rpc.js');
+const {
+  probeRpc,
+  parseChainId,
+  fetchAccountBalance,
+  formatEtherFromHex,
+} = require('../lib/rpc.js');
 
 function createRpcServer(handlers) {
   const server = http.createServer((req, res) => {
@@ -132,4 +137,39 @@ test('probeRpc surfaces RPC errors', async () => {
   } finally {
     server.close();
   }
+});
+
+test('formatEtherFromHex renders decimal balances', () => {
+  assert.equal(formatEtherFromHex('0x0'), '0');
+  assert.equal(formatEtherFromHex('0xde0b6b3a7640000'), '1');
+  assert.equal(formatEtherFromHex('0x1'), '0.000000000000000001');
+});
+
+test('fetchAccountBalance returns formatted ether values', async () => {
+  const server = createRpcServer({
+    eth_getBalance: () => '0x4563918244f40000',
+  });
+  await new Promise((resolve) => server.listen(0, resolve));
+  const { port } = server.address();
+  const rpcUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    const balance = await fetchAccountBalance({
+      rpcUrl,
+      address: '0x000000000000000000000000000000000000c0de',
+    });
+    assert.equal(balance.status, 'ok');
+    assert.equal(balance.balanceHex, '0x4563918244f40000');
+    assert.equal(balance.balanceEther, '5');
+  } finally {
+    server.close();
+  }
+});
+
+test('fetchAccountBalance validates address input', async () => {
+  const balance = await fetchAccountBalance({
+    rpcUrl: 'http://127.0.0.1:8545',
+    address: 'not-an-address',
+  });
+  assert.equal(balance.status, 'invalid_address');
 });
