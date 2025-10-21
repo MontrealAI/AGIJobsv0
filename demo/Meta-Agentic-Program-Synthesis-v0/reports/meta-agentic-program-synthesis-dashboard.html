@@ -31,6 +31,8 @@
       .owner-table { margin-top: 1rem; }
       ul.coverage { list-style: none; padding-left: 0; margin-top: 1rem; }
       ul.coverage li { margin-bottom: 0.35rem; }
+      ul.ledger-summary { list-style: disc; margin-left: 1.5rem; color: rgba(226, 232, 240, 0.9); }
+      ul.ledger-summary li { margin-bottom: 0.25rem; }
     </style>
   </head>
   <body>
@@ -45,6 +47,7 @@
         <div class="metric-card"><strong>Coverage</strong><br />100.00%</div>
         <div class="metric-card"><strong>Triangulation confidence</strong><br />53.33%</div>
         <div class="metric-card"><strong>Thermodynamic alignment</strong><br />100.00%<span class="metric-sub">Δ̄ 0.00 • Δmax 0.00 • 3 aligned / 0 monitor / 0 drift</span></div>
+        <div class="metric-card"><strong>Ledger rewards</strong><br />1,461,700<span class="metric-sub">Slashed 52,800 • Validators 186,600 • Treasury 93,300 • Participation 95.8%</span></div>
       </div>
     </header>
     <section>
@@ -81,6 +84,11 @@
   "Attention" : 0
   "Rejected" : 2
 </pre>
+    </section>
+    <section>
+      <h2>Ledger Economy</h2>
+      <p>Total rewards 1,461,700 • Slashed 52,800 • Validators 186,600 • Treasury 93,300</p>
+      <p>Average participation 95.8% • Average latency 250.2s • Consensus alerts 0</p>
     </section>
     <section>
       <h2>Owner Capabilities</h2>
@@ -200,16 +208,242 @@
     <summary>Evolution Timeline</summary>
     <pre class="mermaid">timeline
   title Evolutionary improvements for ARC Sentinel Edge Lift
-  2025-10-21T02:47:22.567Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
-  2025-10-21T02:47:22.568Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
-  2025-10-21T02:47:22.569Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
-  2025-10-21T02:47:22.570Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
-  2025-10-21T02:47:22.571Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
-  2025-10-21T02:47:22.573Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T02:47:22.574Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T02:47:22.574Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
-  2025-10-21T02:47:22.575Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
-  2025-10-21T02:47:22.576Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%</pre>
+  2025-10-21T03:23:20.682Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
+  2025-10-21T03:23:20.683Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
+  2025-10-21T03:23:20.684Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
+  2025-10-21T03:23:20.685Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
+  2025-10-21T03:23:20.686Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
+  2025-10-21T03:23:20.696Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T03:23:20.699Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T03:23:20.700Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
+  2025-10-21T03:23:20.704Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
+  2025-10-21T03:23:20.705Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%</pre>
+  </details>
+  <details>
+    <summary>On-chain Ledger</summary>
+    <ul class="ledger-summary"><li>Consensus: **ACCEPTED** across 2 attempts</li><li>Rewards paid: 394,800 (validators 50,400 | treasury 25,200)</li><li>Slashed stake: 14,400 | Participation 87.5%</li><li>Commit–reveal integrity: verified • Avg latency 247.0 seconds</li></ul>
+    <div class="table">
+<table class="ledger-validators">
+  <thead>
+    <tr>
+      <th>Validator</th>
+      <th>Stake (before)</th>
+      <th>Stake (after)</th>
+      <th>Rewards</th>
+      <th>Slashed</th>
+      <th>Participation</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+        <tr>
+          <td>validator-195a5d4bfbdae573</td>
+          <td>52,687</td>
+          <td>65,287</td>
+          <td>12,600</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+        <tr>
+          <td>validator-76bf560baa38ba87</td>
+          <td>53,186</td>
+          <td>65,786</td>
+          <td>12,600</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+        <tr>
+          <td>validator-79c9d91afd1ddf92</td>
+          <td>60,772</td>
+          <td>73,372</td>
+          <td>12,600</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+        <tr>
+          <td>validator-a93d1e2a9c0e3a2a</td>
+          <td>49,970</td>
+          <td>62,570</td>
+          <td>12,600</td>
+          <td>0</td>
+          <td>50.0%</td>
+        </tr>
+      
+  </tbody>
+</table></div>
+    <div class="table">
+<table class="ledger">
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Event</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+        <tr>
+          <td>2042-01-01T08:54:24.000Z</td>
+          <td>job_posted</td>
+          <td>jobId=ARC-SYN-001; reward=420,000; stakeRequired=120,000; description=Detect latent pixel edges, amplify discovery, and route high-confidence transformations back into the shared skill graph.</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:55:09.000Z</td>
+          <td>solver_selected</td>
+          <td>solverId=solver-834077d2c7cd0093; stakePosted=120,000</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:55:44.000Z</td>
+          <td>result_committed</td>
+          <td>solverId=solver-834077d2c7cd0093; commit=cdccfe1d1ecc488574b306b0afa622e76d4619196d444d00ed36bc17317dba16</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:55:54.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-195a5d4bfbdae573; commitment=6a13cc921e0d27d543a1f1a7b80eb4fa2b75c0525449b8f73a219358fdeb5116</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:56:09.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-195a5d4bfbdae573; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:56:20.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-76bf560baa38ba87; commitment=ff5cf0e04b2467375ef805362e542c143abea25b2bb7bb443515daa8dc3f1354</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:56:31.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-76bf560baa38ba87; vote=no</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:56:42.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-79c9d91afd1ddf92; commitment=95fe40173c0a29a739e2d0fa2d0105c755fb04b43e3532d8c310c35ce472c1d2</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:56:52.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-79c9d91afd1ddf92; vote=no</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:57:08.000Z</td>
+          <td>consensus_finalised</td>
+          <td>attempt=1; solverId=solver-834077d2c7cd0093; consensus=rejected; yesWeight=52,687</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:57:14.000Z</td>
+          <td>slash_applied</td>
+          <td>solverId=solver-834077d2c7cd0093; amount=14,400; reason=Failed consensus</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:57:26.000Z</td>
+          <td>requeue</td>
+          <td>solverId=solver-85b7571cb9684c4c; reason=Meta-architect escalated to evolved agent</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:57:30.000Z</td>
+          <td>solver_selected</td>
+          <td>solverId=solver-85b7571cb9684c4c; stakePosted=120,000</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:58:02.000Z</td>
+          <td>result_committed</td>
+          <td>solverId=solver-85b7571cb9684c4c; commit=a71fc6a4d27f9928547e7c9286a86675979d6854026355e0559ce8baf2e50211; operations=4</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:58:13.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-195a5d4bfbdae573; commitment=c0e7ac904a95f3b6b07a2d8458d1be1ea31b81714501555ef6da2be49ddaadce</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:58:24.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-195a5d4bfbdae573; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:58:33.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-76bf560baa38ba87; commitment=ba808148dada8a23c0977f5798f313954ad76c389605df96d26cab84f14ea32a</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:58:46.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-76bf560baa38ba87; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:58:55.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-79c9d91afd1ddf92; commitment=9d1ce6a17520b9b429f727eeb800908b5a13200a307782f3a8874baf70f96c11</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:59:08.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-79c9d91afd1ddf92; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:59:16.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-a93d1e2a9c0e3a2a; commitment=d112ff2b6d9545978359f988200e0c135e6b7c05e0812b51815198a85b53a97f</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:59:28.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-a93d1e2a9c0e3a2a; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:59:42.000Z</td>
+          <td>consensus_finalised</td>
+          <td>attempt=2; solverId=solver-85b7571cb9684c4c; consensus=accepted; yesWeight=216,615</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T08:59:54.000Z</td>
+          <td>reward_distributed</td>
+          <td>solverId=solver-85b7571cb9684c4c; solverReward=344,400; validatorRewards=50,400; treasuryReturn=25,200</td>
+        </tr>
+      
+  </tbody>
+</table></div>
+    <pre class="mermaid">flowchart LR
+  Job((Job ARC-SYN-001)):::core --> AttemptA[Attempt 1\nsolver-834077d2c7cd0093]:::warn
+  AttemptA -->|Consensus rejected| Slash[(Slash)]:::warn
+  AttemptA -->|Requeue| AttemptB[Attempt 2\nsolver-85b7571cb9684c4c]:::core
+  AttemptB -->|Validators| Consensus{Final consensus}:::verify
+  Consensus --> Reward[(Reward Distribution)]:::core
+  Reward --> Treasury[Treasury Return]:::governance
+  Reward --> Validators[Validator Rewards]:::governance
+  Reward --> Solver[Evolved Solver Payout]:::core
+  classDef core fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;
+  classDef warn fill:#7f1d1d,stroke:#fecaca,stroke-width:2px,color:#fecaca;
+  classDef verify fill:#0b7285,stroke:#66d9e8,stroke-width:2px,color:#e6fcf5;
+  classDef governance fill:#1f2937,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;</pre>
   </details>
 </section>
 
@@ -312,16 +546,254 @@
     <summary>Evolution Timeline</summary>
     <pre class="mermaid">timeline
   title Evolutionary improvements for Ledger Harmonics Sequencer
-  2025-10-21T02:47:22.578Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
-  2025-10-21T02:47:22.579Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
-  2025-10-21T02:47:22.580Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
-  2025-10-21T02:47:22.581Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T02:47:22.581Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T02:47:22.582Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T02:47:22.583Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T02:47:22.584Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T02:47:22.585Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T02:47:22.585Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%</pre>
+  2025-10-21T03:23:20.716Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
+  2025-10-21T03:23:20.717Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
+  2025-10-21T03:23:20.718Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
+  2025-10-21T03:23:20.719Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T03:23:20.725Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T03:23:20.726Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T03:23:20.727Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T03:23:20.727Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T03:23:20.728Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T03:23:20.728Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%</pre>
+  </details>
+  <details>
+    <summary>On-chain Ledger</summary>
+    <ul class="ledger-summary"><li>Consensus: **ACCEPTED** across 2 attempts</li><li>Rewards paid: 493,500 (validators 63,000 | treasury 31,500)</li><li>Slashed stake: 18,600 | Participation 100.0%</li><li>Commit–reveal integrity: verified • Avg latency 270.0 seconds</li></ul>
+    <div class="table">
+<table class="ledger-validators">
+  <thead>
+    <tr>
+      <th>Validator</th>
+      <th>Stake (before)</th>
+      <th>Stake (after)</th>
+      <th>Rewards</th>
+      <th>Slashed</th>
+      <th>Participation</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+        <tr>
+          <td>validator-02b303e331d093d1</td>
+          <td>60,555</td>
+          <td>76,305</td>
+          <td>15,750</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+        <tr>
+          <td>validator-8fb387f22ab17dbb</td>
+          <td>77,689</td>
+          <td>93,439</td>
+          <td>15,750</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+        <tr>
+          <td>validator-b48c4f3bd017c796</td>
+          <td>60,967</td>
+          <td>76,717</td>
+          <td>15,750</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+        <tr>
+          <td>validator-f3cbd6e75978a4b6</td>
+          <td>78,620</td>
+          <td>94,370</td>
+          <td>15,750</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+  </tbody>
+</table></div>
+    <div class="table">
+<table class="ledger">
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Event</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+        <tr>
+          <td>2042-01-01T13:16:24.000Z</td>
+          <td>job_posted</td>
+          <td>jobId=LEDGER-SYN-007; reward=525,000; stakeRequired=155,000; description=Absorb asynchronous cash-flow deltas, stabilise them against the thermodynamic ledger, and emit rebalanced incentive curves for validator coalitions.</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:17:09.000Z</td>
+          <td>solver_selected</td>
+          <td>solverId=solver-424046f71a035fe6; stakePosted=155,000</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:17:44.000Z</td>
+          <td>result_committed</td>
+          <td>solverId=solver-424046f71a035fe6; commit=3a489a39a4ac760eea4e21600c7db814fc7ef4e73499a6f0e7c200e447c856d5</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:17:55.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-02b303e331d093d1; commitment=386876e8b46f541afba7e9ba7981dc0e41940b840db1165200b4fc64be00fa49</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:18:08.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-02b303e331d093d1; vote=no</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:18:17.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-8fb387f22ab17dbb; commitment=d26aaf535bef21fa45371b67e612ecbf4724c3beceefe3b1a7c4771a699ff16c</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:18:31.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-8fb387f22ab17dbb; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:18:41.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-b48c4f3bd017c796; commitment=811943ed1d5afdf34e266be81f71f2fddee8d3426f4d5f4ae04b55056f5f3021</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:18:53.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-b48c4f3bd017c796; vote=no</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:19:05.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-f3cbd6e75978a4b6; commitment=df4080472bf5202c53c8cb11c5b947306a9a14c0bf8db697cf7d132e6fe4329d</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:19:17.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-f3cbd6e75978a4b6; vote=no</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:19:33.000Z</td>
+          <td>consensus_finalised</td>
+          <td>attempt=1; solverId=solver-424046f71a035fe6; consensus=rejected; yesWeight=77,689</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:19:39.000Z</td>
+          <td>slash_applied</td>
+          <td>solverId=solver-424046f71a035fe6; amount=18,600; reason=Failed consensus</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:19:51.000Z</td>
+          <td>requeue</td>
+          <td>solverId=solver-04c1f887eae22b1e; reason=Meta-architect escalated to evolved agent</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:19:55.000Z</td>
+          <td>solver_selected</td>
+          <td>solverId=solver-04c1f887eae22b1e; stakePosted=155,000</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:20:27.000Z</td>
+          <td>result_committed</td>
+          <td>solverId=solver-04c1f887eae22b1e; commit=ebda15b38d5047ceaade3779010231933171b8cdb316da86dbb9e61379be79fa; operations=3</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:20:37.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-02b303e331d093d1; commitment=a9ff81a696c9a6329240f07cca03b7d28a3d6b7674cf7706e5c465ec3e792d4e</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:20:50.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-02b303e331d093d1; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:21:01.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-8fb387f22ab17dbb; commitment=781a3ed0c6d16a9f5f6540199d91856aacd60d7ebbc832febf25e052a62f4f5c</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:21:10.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-8fb387f22ab17dbb; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:21:19.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-b48c4f3bd017c796; commitment=39593093be96192e274a31d636936a404d09f149af4366a54a2b4b2fd463bb23</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:21:28.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-b48c4f3bd017c796; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:21:38.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-f3cbd6e75978a4b6; commitment=a1ead23f0685e364f8d70ef43d00c2e91a83cfda9a907ba1fa0b75579202cc58</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:21:49.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-f3cbd6e75978a4b6; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:22:03.000Z</td>
+          <td>consensus_finalised</td>
+          <td>attempt=2; solverId=solver-04c1f887eae22b1e; consensus=accepted; yesWeight=277,831</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T13:22:15.000Z</td>
+          <td>reward_distributed</td>
+          <td>solverId=solver-04c1f887eae22b1e; solverReward=430,500; validatorRewards=63,000; treasuryReturn=31,500</td>
+        </tr>
+      
+  </tbody>
+</table></div>
+    <pre class="mermaid">flowchart LR
+  Job((Job LEDGER-SYN-007)):::core --> AttemptA[Attempt 1\nsolver-424046f71a035fe6]:::warn
+  AttemptA -->|Consensus rejected| Slash[(Slash)]:::warn
+  AttemptA -->|Requeue| AttemptB[Attempt 2\nsolver-04c1f887eae22b1e]:::core
+  AttemptB -->|Validators| Consensus{Final consensus}:::verify
+  Consensus --> Reward[(Reward Distribution)]:::core
+  Reward --> Treasury[Treasury Return]:::governance
+  Reward --> Validators[Validator Rewards]:::governance
+  Reward --> Solver[Evolved Solver Payout]:::core
+  classDef core fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;
+  classDef warn fill:#7f1d1d,stroke:#fecaca,stroke-width:2px,color:#fecaca;
+  classDef verify fill:#0b7285,stroke:#66d9e8,stroke-width:2px,color:#e6fcf5;
+  classDef governance fill:#1f2937,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;</pre>
   </details>
 </section>
 
@@ -424,16 +896,221 @@
     <summary>Evolution Timeline</summary>
     <pre class="mermaid">timeline
   title Evolutionary improvements for Nova Weave Sequence Optimiser
-  2025-10-21T02:47:22.586Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
-  2025-10-21T02:47:22.587Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
-  2025-10-21T02:47:22.587Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
-  2025-10-21T02:47:22.588Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
-  2025-10-21T02:47:22.589Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
-  2025-10-21T02:47:22.589Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
-  2025-10-21T02:47:22.597Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
-  2025-10-21T02:47:22.598Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
-  2025-10-21T02:47:22.598Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
-  2025-10-21T02:47:22.599Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%</pre>
+  2025-10-21T03:23:20.730Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
+  2025-10-21T03:23:20.731Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
+  2025-10-21T03:23:20.731Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
+  2025-10-21T03:23:20.732Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
+  2025-10-21T03:23:20.733Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
+  2025-10-21T03:23:20.733Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
+  2025-10-21T03:23:20.734Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
+  2025-10-21T03:23:20.734Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
+  2025-10-21T03:23:20.735Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
+  2025-10-21T03:23:20.736Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%</pre>
+  </details>
+  <details>
+    <summary>On-chain Ledger</summary>
+    <ul class="ledger-summary"><li>Consensus: **ACCEPTED** across 2 attempts</li><li>Rewards paid: 573,400 (validators 73,200 | treasury 36,600)</li><li>Slashed stake: 19,800 | Participation 100.0%</li><li>Commit–reveal integrity: verified • Avg latency 233.5 seconds</li></ul>
+    <div class="table">
+<table class="ledger-validators">
+  <thead>
+    <tr>
+      <th>Validator</th>
+      <th>Stake (before)</th>
+      <th>Stake (after)</th>
+      <th>Rewards</th>
+      <th>Slashed</th>
+      <th>Participation</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+        <tr>
+          <td>validator-998a4f56b41c1653</td>
+          <td>85,872</td>
+          <td>110,272</td>
+          <td>24,400</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+        <tr>
+          <td>validator-9d05a69084156cb4</td>
+          <td>68,211</td>
+          <td>92,611</td>
+          <td>24,400</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+        <tr>
+          <td>validator-d3dc9de91651750d</td>
+          <td>58,085</td>
+          <td>82,485</td>
+          <td>24,400</td>
+          <td>0</td>
+          <td>100.0%</td>
+        </tr>
+      
+  </tbody>
+</table></div>
+    <div class="table">
+<table class="ledger">
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Event</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+        <tr>
+          <td>2042-01-01T07:29:20.000Z</td>
+          <td>job_posted</td>
+          <td>jobId=NOVA-SYN-009; reward=610,000; stakeRequired=165,000; description=Elevate alpha sequences into deterministic blueprints that compile into on-chain production payloads with zero manual edits.</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:30:05.000Z</td>
+          <td>solver_selected</td>
+          <td>solverId=solver-df8d72feae9e0558; stakePosted=165,000</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:30:40.000Z</td>
+          <td>result_committed</td>
+          <td>solverId=solver-df8d72feae9e0558; commit=53ccd0481295cff8b777e9e746537f782210d0d6634463a6ee45af55c9df399c</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:30:49.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-998a4f56b41c1653; commitment=b1c8d5fb8311d466fe88c58b0121b6c45662d842bf31bfe7485ceae3038ccd8c</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:31:00.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-998a4f56b41c1653; vote=no</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:31:10.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-9d05a69084156cb4; commitment=4657fd854d9a91e5f21ab296f043f3cb95e3e701e4a80fb5c7fc3a5bfef81729</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:31:23.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-9d05a69084156cb4; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:31:32.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-d3dc9de91651750d; commitment=b4affd948c6de5ef384077b29023dd77a88c6af547d1f8308a27ad6a0895ced4</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:31:47.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-d3dc9de91651750d; vote=no</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:32:03.000Z</td>
+          <td>consensus_finalised</td>
+          <td>attempt=1; solverId=solver-df8d72feae9e0558; consensus=rejected; yesWeight=68,211</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:32:09.000Z</td>
+          <td>slash_applied</td>
+          <td>solverId=solver-df8d72feae9e0558; amount=19,800; reason=Failed consensus</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:32:21.000Z</td>
+          <td>requeue</td>
+          <td>solverId=solver-b0ce6e46ec6aee31; reason=Meta-architect escalated to evolved agent</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:32:25.000Z</td>
+          <td>solver_selected</td>
+          <td>solverId=solver-b0ce6e46ec6aee31; stakePosted=165,000</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:32:57.000Z</td>
+          <td>result_committed</td>
+          <td>solverId=solver-b0ce6e46ec6aee31; commit=ec051e8ee05f18e96d72bcc879d6325db1bba43c808cc42dfbe7895eabdea108; operations=3</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:33:04.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-998a4f56b41c1653; commitment=76f6ee53383c2999cbe79913a5f6167c4ca686cdc3e266a2e28c96fea559c37a</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:33:15.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-998a4f56b41c1653; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:33:25.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-9d05a69084156cb4; commitment=8976703d78e5c6073ca9f883c7e6593a311201bf7e021cdfd02726cb0d218003</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:33:35.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-9d05a69084156cb4; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:33:46.000Z</td>
+          <td>vote_commit</td>
+          <td>validator=validator-d3dc9de91651750d; commitment=3cb52a63d7218a3eaa12727a77ed6b8e3c2261ed8db9007f22ec5ce0849c7d8d</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:33:58.000Z</td>
+          <td>vote_reveal</td>
+          <td>validator=validator-d3dc9de91651750d; vote=yes</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:34:12.000Z</td>
+          <td>consensus_finalised</td>
+          <td>attempt=2; solverId=solver-b0ce6e46ec6aee31; consensus=accepted; yesWeight=212,168</td>
+        </tr>
+      
+        <tr>
+          <td>2042-01-01T07:34:24.000Z</td>
+          <td>reward_distributed</td>
+          <td>solverId=solver-b0ce6e46ec6aee31; solverReward=500,200; validatorRewards=73,200; treasuryReturn=36,600</td>
+        </tr>
+      
+  </tbody>
+</table></div>
+    <pre class="mermaid">flowchart LR
+  Job((Job NOVA-SYN-009)):::core --> AttemptA[Attempt 1\nsolver-df8d72feae9e0558]:::warn
+  AttemptA -->|Consensus rejected| Slash[(Slash)]:::warn
+  AttemptA -->|Requeue| AttemptB[Attempt 2\nsolver-b0ce6e46ec6aee31]:::core
+  AttemptB -->|Validators| Consensus{Final consensus}:::verify
+  Consensus --> Reward[(Reward Distribution)]:::core
+  Reward --> Treasury[Treasury Return]:::governance
+  Reward --> Validators[Validator Rewards]:::governance
+  Reward --> Solver[Evolved Solver Payout]:::core
+  classDef core fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;
+  classDef warn fill:#7f1d1d,stroke:#fecaca,stroke-width:2px,color:#fecaca;
+  classDef verify fill:#0b7285,stroke:#66d9e8,stroke-width:2px,color:#e6fcf5;
+  classDef governance fill:#1f2937,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;</pre>
   </details>
 </section>
     <section>
@@ -441,9 +1118,9 @@
       <p>Workflow <code>ci (v2)</code> | Required jobs: Lint &amp; static checks, Tests, Foundry, Coverage thresholds</p>
       <p>Coverage ≥ 90% | Concurrency group <code>ci-${{ github.workflow }}-${{ github.ref }}</code></p>
     </section>
-    <footer>Generated 2025-10-21T02:47:22.562Z • JSON summary embedded below</footer>
+    <footer>Generated 2025-10-21T03:23:20.678Z • JSON summary embedded below</footer>
     <script id="meta-agentic-summary" type="application/json">{
-  &quot;generatedAt&quot;: &quot;2025-10-21T02:47:22.562Z&quot;,
+  &quot;generatedAt&quot;: &quot;2025-10-21T03:23:20.678Z&quot;,
   &quot;mission&quot;: {
     &quot;title&quot;: &quot;Meta-Agentic Program Synthesis Sovereign Mission&quot;,
     &quot;version&quot;: &quot;0.1.0&quot;,
@@ -492,6 +1169,16 @@
         &quot;monitor&quot;: 0,
         &quot;drift&quot;: 0
       }
+    },
+    &quot;ledger&quot;: {
+      &quot;totalRewardPaid&quot;: 1461700,
+      &quot;totalSlashed&quot;: 52800,
+      &quot;validatorRewards&quot;: 186600,
+      &quot;treasuryReturn&quot;: 93300,
+      &quot;averageParticipationRate&quot;: 0.9583333333333334,
+      &quot;averageLatencySeconds&quot;: 250.16666666666666,
+      &quot;accepted&quot;: 3,
+      &quot;consensusAlerts&quot;: 0
     }
   },
   &quot;ownerCoverage&quot;: {
@@ -738,7 +1425,7 @@
           &quot;medianScore&quot;: 56.19020618556701,
           &quot;diversity&quot;: 0.9444444444444444,
           &quot;eliteScore&quot;: 110.36140657817333,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.567Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.682Z&quot;
         },
         {
           &quot;generation&quot;: 1,
@@ -747,7 +1434,7 @@
           &quot;medianScore&quot;: 65.75277564301642,
           &quot;diversity&quot;: 0.75,
           &quot;eliteScore&quot;: 136.39087455307794,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.568Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.683Z&quot;
         },
         {
           &quot;generation&quot;: 2,
@@ -756,7 +1443,7 @@
           &quot;medianScore&quot;: 73.64584551701412,
           &quot;diversity&quot;: 0.75,
           &quot;eliteScore&quot;: 138.12283331596453,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.569Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.684Z&quot;
         },
         {
           &quot;generation&quot;: 3,
@@ -765,7 +1452,7 @@
           &quot;medianScore&quot;: 100.49230198051038,
           &quot;diversity&quot;: 0.8333333333333334,
           &quot;eliteScore&quot;: 138.41149310977895,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.570Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.685Z&quot;
         },
         {
           &quot;generation&quot;: 4,
@@ -774,7 +1461,7 @@
           &quot;medianScore&quot;: 138.05804842234437,
           &quot;diversity&quot;: 0.6944444444444444,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.571Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.686Z&quot;
         },
         {
           &quot;generation&quot;: 5,
@@ -783,7 +1470,7 @@
           &quot;medianScore&quot;: 138.05804842234437,
           &quot;diversity&quot;: 0.7777777777777778,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.573Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.696Z&quot;
         },
         {
           &quot;generation&quot;: 6,
@@ -792,7 +1479,7 @@
           &quot;medianScore&quot;: 138.05804842234437,
           &quot;diversity&quot;: 0.7777777777777778,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.574Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.699Z&quot;
         },
         {
           &quot;generation&quot;: 7,
@@ -801,7 +1488,7 @@
           &quot;medianScore&quot;: 138.05804842234437,
           &quot;diversity&quot;: 0.7222222222222222,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.574Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.700Z&quot;
         },
         {
           &quot;generation&quot;: 8,
@@ -810,7 +1497,7 @@
           &quot;medianScore&quot;: 116.57704853345733,
           &quot;diversity&quot;: 0.8055555555555556,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.575Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.704Z&quot;
         },
         {
           &quot;generation&quot;: 9,
@@ -819,7 +1506,7 @@
           &quot;medianScore&quot;: 137.1920690409011,
           &quot;diversity&quot;: 0.75,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.576Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.705Z&quot;
         }
       ],
       &quot;triangulation&quot;: {
@@ -866,6 +1553,351 @@
             &quot;confidence&quot;: 0.2,
             &quot;energyDelta&quot;: 8,
             &quot;notes&quot;: &quot;Peer median 140.38 • energy delta 8.00 (≤ 33.60)&quot;
+          }
+        ]
+      },
+      &quot;ledger&quot;: {
+        &quot;summary&quot;: {
+          &quot;finalConsensus&quot;: &quot;accepted&quot;,
+          &quot;totalRewardPaid&quot;: 394800,
+          &quot;totalSlashed&quot;: 14400,
+          &quot;validatorRewards&quot;: 50400,
+          &quot;treasuryReturn&quot;: 25200,
+          &quot;averageLatencySeconds&quot;: 247,
+          &quot;participationRate&quot;: 0.875,
+          &quot;commitRevealIntegrity&quot;: &quot;verified&quot;,
+          &quot;attempts&quot;: 2
+        },
+        &quot;validators&quot;: [
+          {
+            &quot;validatorId&quot;: &quot;validator-195a5d4bfbdae573&quot;,
+            &quot;stakeBefore&quot;: 52687,
+            &quot;stakeAfter&quot;: 65287,
+            &quot;rewardEarned&quot;: 12600,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          },
+          {
+            &quot;validatorId&quot;: &quot;validator-76bf560baa38ba87&quot;,
+            &quot;stakeBefore&quot;: 53186,
+            &quot;stakeAfter&quot;: 65786,
+            &quot;rewardEarned&quot;: 12600,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          },
+          {
+            &quot;validatorId&quot;: &quot;validator-79c9d91afd1ddf92&quot;,
+            &quot;stakeBefore&quot;: 60772,
+            &quot;stakeAfter&quot;: 73372,
+            &quot;rewardEarned&quot;: 12600,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          },
+          {
+            &quot;validatorId&quot;: &quot;validator-a93d1e2a9c0e3a2a&quot;,
+            &quot;stakeBefore&quot;: 49970,
+            &quot;stakeAfter&quot;: 62570,
+            &quot;rewardEarned&quot;: 12600,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 0.5
+          }
+        ],
+        &quot;attempts&quot;: [
+          {
+            &quot;attemptId&quot;: &quot;arc-sentinel-attempt-1&quot;,
+            &quot;solverId&quot;: &quot;solver-834077d2c7cd0093&quot;,
+            &quot;status&quot;: &quot;slashed&quot;,
+            &quot;commitHash&quot;: &quot;cdccfe1d1ecc488574b306b0afa622e76d4619196d444d00ed36bc17317dba16&quot;,
+            &quot;reveal&quot;: &quot;insufficient-delta&quot;,
+            &quot;consensus&quot;: &quot;rejected&quot;,
+            &quot;rewardEarned&quot;: 0,
+            &quot;slashApplied&quot;: 14400,
+            &quot;latencySeconds&quot;: 164,
+            &quot;energyObserved&quot;: 70.4,
+            &quot;notes&quot;: &quot;Consensus rejected misaligned agent – stake partially slashed and job requeued.&quot;,
+            &quot;votes&quot;: [
+              {
+                &quot;validatorId&quot;: &quot;validator-195a5d4bfbdae573&quot;,
+                &quot;commitment&quot;: &quot;6a13cc921e0d27d543a1f1a7b80eb4fa2b75c0525449b8f73a219358fdeb5116&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 52687,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-76bf560baa38ba87&quot;,
+                &quot;commitment&quot;: &quot;ff5cf0e04b2467375ef805362e542c143abea25b2bb7bb443515daa8dc3f1354&quot;,
+                &quot;revealed&quot;: &quot;no&quot;,
+                &quot;weight&quot;: 53186,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Detected thermodynamic drift&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-79c9d91afd1ddf92&quot;,
+                &quot;commitment&quot;: &quot;95fe40173c0a29a739e2d0fa2d0105c755fb04b43e3532d8c310c35ce472c1d2&quot;,
+                &quot;revealed&quot;: &quot;no&quot;,
+                &quot;weight&quot;: 60772,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Detected thermodynamic drift&quot;
+              }
+            ]
+          },
+          {
+            &quot;attemptId&quot;: &quot;arc-sentinel-attempt-2&quot;,
+            &quot;solverId&quot;: &quot;solver-85b7571cb9684c4c&quot;,
+            &quot;status&quot;: &quot;accepted&quot;,
+            &quot;commitHash&quot;: &quot;a71fc6a4d27f9928547e7c9286a86675979d6854026355e0559ce8baf2e50211&quot;,
+            &quot;reveal&quot;: &quot;arc-sentinel-g4-c166&quot;,
+            &quot;consensus&quot;: &quot;accepted&quot;,
+            &quot;rewardEarned&quot;: 344400,
+            &quot;slashApplied&quot;: 0,
+            &quot;latencySeconds&quot;: 330,
+            &quot;energyObserved&quot;: 88,
+            &quot;notes&quot;: &quot;Meta-agentic evolved solver achieved consensus and claimed rewards.&quot;,
+            &quot;votes&quot;: [
+              {
+                &quot;validatorId&quot;: &quot;validator-195a5d4bfbdae573&quot;,
+                &quot;commitment&quot;: &quot;c0e7ac904a95f3b6b07a2d8458d1be1ea31b81714501555ef6da2be49ddaadce&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 52687,
+                &quot;rewardEarned&quot;: 12600,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-76bf560baa38ba87&quot;,
+                &quot;commitment&quot;: &quot;ba808148dada8a23c0977f5798f313954ad76c389605df96d26cab84f14ea32a&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 53186,
+                &quot;rewardEarned&quot;: 12600,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-79c9d91afd1ddf92&quot;,
+                &quot;commitment&quot;: &quot;9d1ce6a17520b9b429f727eeb800908b5a13200a307782f3a8874baf70f96c11&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 60772,
+                &quot;rewardEarned&quot;: 12600,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-a93d1e2a9c0e3a2a&quot;,
+                &quot;commitment&quot;: &quot;d112ff2b6d9545978359f988200e0c135e6b7c05e0812b51815198a85b53a97f&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 49970,
+                &quot;rewardEarned&quot;: 12600,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              }
+            ]
+          }
+        ],
+        &quot;timeline&quot;: [
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:54:24.000Z&quot;,
+            &quot;type&quot;: &quot;job_posted&quot;,
+            &quot;details&quot;: {
+              &quot;jobId&quot;: &quot;ARC-SYN-001&quot;,
+              &quot;reward&quot;: 420000,
+              &quot;stakeRequired&quot;: 120000,
+              &quot;description&quot;: &quot;Detect latent pixel edges, amplify discovery, and route high-confidence transformations back into the shared skill graph.&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:55:09.000Z&quot;,
+            &quot;type&quot;: &quot;solver_selected&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-834077d2c7cd0093&quot;,
+              &quot;stakePosted&quot;: 120000
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:55:44.000Z&quot;,
+            &quot;type&quot;: &quot;result_committed&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-834077d2c7cd0093&quot;,
+              &quot;commit&quot;: &quot;cdccfe1d1ecc488574b306b0afa622e76d4619196d444d00ed36bc17317dba16&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:55:54.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-195a5d4bfbdae573&quot;,
+              &quot;commitment&quot;: &quot;6a13cc921e0d27d543a1f1a7b80eb4fa2b75c0525449b8f73a219358fdeb5116&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:56:09.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-195a5d4bfbdae573&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:56:20.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-76bf560baa38ba87&quot;,
+              &quot;commitment&quot;: &quot;ff5cf0e04b2467375ef805362e542c143abea25b2bb7bb443515daa8dc3f1354&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:56:31.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-76bf560baa38ba87&quot;,
+              &quot;vote&quot;: &quot;no&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:56:42.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-79c9d91afd1ddf92&quot;,
+              &quot;commitment&quot;: &quot;95fe40173c0a29a739e2d0fa2d0105c755fb04b43e3532d8c310c35ce472c1d2&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:56:52.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-79c9d91afd1ddf92&quot;,
+              &quot;vote&quot;: &quot;no&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:57:08.000Z&quot;,
+            &quot;type&quot;: &quot;consensus_finalised&quot;,
+            &quot;details&quot;: {
+              &quot;attempt&quot;: 1,
+              &quot;solverId&quot;: &quot;solver-834077d2c7cd0093&quot;,
+              &quot;consensus&quot;: &quot;rejected&quot;,
+              &quot;yesWeight&quot;: 52687
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:57:14.000Z&quot;,
+            &quot;type&quot;: &quot;slash_applied&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-834077d2c7cd0093&quot;,
+              &quot;amount&quot;: 14400,
+              &quot;reason&quot;: &quot;Failed consensus&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:57:26.000Z&quot;,
+            &quot;type&quot;: &quot;requeue&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-85b7571cb9684c4c&quot;,
+              &quot;reason&quot;: &quot;Meta-architect escalated to evolved agent&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:57:30.000Z&quot;,
+            &quot;type&quot;: &quot;solver_selected&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-85b7571cb9684c4c&quot;,
+              &quot;stakePosted&quot;: 120000
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:58:02.000Z&quot;,
+            &quot;type&quot;: &quot;result_committed&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-85b7571cb9684c4c&quot;,
+              &quot;commit&quot;: &quot;a71fc6a4d27f9928547e7c9286a86675979d6854026355e0559ce8baf2e50211&quot;,
+              &quot;operations&quot;: 4
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:58:13.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-195a5d4bfbdae573&quot;,
+              &quot;commitment&quot;: &quot;c0e7ac904a95f3b6b07a2d8458d1be1ea31b81714501555ef6da2be49ddaadce&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:58:24.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-195a5d4bfbdae573&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:58:33.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-76bf560baa38ba87&quot;,
+              &quot;commitment&quot;: &quot;ba808148dada8a23c0977f5798f313954ad76c389605df96d26cab84f14ea32a&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:58:46.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-76bf560baa38ba87&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:58:55.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-79c9d91afd1ddf92&quot;,
+              &quot;commitment&quot;: &quot;9d1ce6a17520b9b429f727eeb800908b5a13200a307782f3a8874baf70f96c11&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:59:08.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-79c9d91afd1ddf92&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:59:16.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-a93d1e2a9c0e3a2a&quot;,
+              &quot;commitment&quot;: &quot;d112ff2b6d9545978359f988200e0c135e6b7c05e0812b51815198a85b53a97f&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:59:28.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-a93d1e2a9c0e3a2a&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:59:42.000Z&quot;,
+            &quot;type&quot;: &quot;consensus_finalised&quot;,
+            &quot;details&quot;: {
+              &quot;attempt&quot;: 2,
+              &quot;solverId&quot;: &quot;solver-85b7571cb9684c4c&quot;,
+              &quot;consensus&quot;: &quot;accepted&quot;,
+              &quot;yesWeight&quot;: 216615
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T08:59:54.000Z&quot;,
+            &quot;type&quot;: &quot;reward_distributed&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-85b7571cb9684c4c&quot;,
+              &quot;solverReward&quot;: 344400,
+              &quot;validatorRewards&quot;: 50400,
+              &quot;treasuryReturn&quot;: 25200
+            }
           }
         ]
       }
@@ -1114,7 +2146,7 @@
           &quot;medianScore&quot;: 41.03751524896436,
           &quot;diversity&quot;: 0.9722222222222222,
           &quot;eliteScore&quot;: 96.0918022581709,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.578Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.716Z&quot;
         },
         {
           &quot;generation&quot;: 1,
@@ -1123,7 +2155,7 @@
           &quot;medianScore&quot;: 62.99975060567376,
           &quot;diversity&quot;: 0.9444444444444444,
           &quot;eliteScore&quot;: 98.43691088683215,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.579Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.717Z&quot;
         },
         {
           &quot;generation&quot;: 2,
@@ -1132,7 +2164,7 @@
           &quot;medianScore&quot;: 76.53115760829131,
           &quot;diversity&quot;: 0.75,
           &quot;eliteScore&quot;: 132.5084085000921,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.580Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.718Z&quot;
         },
         {
           &quot;generation&quot;: 3,
@@ -1141,7 +2173,7 @@
           &quot;medianScore&quot;: 77.95296283436663,
           &quot;diversity&quot;: 0.7222222222222222,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.581Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.719Z&quot;
         },
         {
           &quot;generation&quot;: 4,
@@ -1150,7 +2182,7 @@
           &quot;medianScore&quot;: 86.94000111220245,
           &quot;diversity&quot;: 0.7222222222222222,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.581Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.725Z&quot;
         },
         {
           &quot;generation&quot;: 5,
@@ -1159,7 +2191,7 @@
           &quot;medianScore&quot;: 88.99300139019402,
           &quot;diversity&quot;: 0.6111111111111112,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.582Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.726Z&quot;
         },
         {
           &quot;generation&quot;: 6,
@@ -1168,7 +2200,7 @@
           &quot;medianScore&quot;: 83.23985249780515,
           &quot;diversity&quot;: 0.6666666666666666,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.583Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.727Z&quot;
         },
         {
           &quot;generation&quot;: 7,
@@ -1177,7 +2209,7 @@
           &quot;medianScore&quot;: 82.9194778065494,
           &quot;diversity&quot;: 0.6111111111111112,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.584Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.727Z&quot;
         },
         {
           &quot;generation&quot;: 8,
@@ -1186,7 +2218,7 @@
           &quot;medianScore&quot;: 86.367830024997,
           &quot;diversity&quot;: 0.6666666666666666,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.585Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.728Z&quot;
         },
         {
           &quot;generation&quot;: 9,
@@ -1195,7 +2227,7 @@
           &quot;medianScore&quot;: 85.09002044220831,
           &quot;diversity&quot;: 0.6666666666666666,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.585Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.728Z&quot;
         }
       ],
       &quot;triangulation&quot;: {
@@ -1242,6 +2274,376 @@
             &quot;confidence&quot;: 0.2,
             &quot;energyDelta&quot;: 64,
             &quot;notes&quot;: &quot;Peer median 133.04 • energy delta 64.00 (≤ 44.80)&quot;
+          }
+        ]
+      },
+      &quot;ledger&quot;: {
+        &quot;summary&quot;: {
+          &quot;finalConsensus&quot;: &quot;accepted&quot;,
+          &quot;totalRewardPaid&quot;: 493500,
+          &quot;totalSlashed&quot;: 18600,
+          &quot;validatorRewards&quot;: 63000,
+          &quot;treasuryReturn&quot;: 31500,
+          &quot;averageLatencySeconds&quot;: 270,
+          &quot;participationRate&quot;: 1,
+          &quot;commitRevealIntegrity&quot;: &quot;verified&quot;,
+          &quot;attempts&quot;: 2
+        },
+        &quot;validators&quot;: [
+          {
+            &quot;validatorId&quot;: &quot;validator-02b303e331d093d1&quot;,
+            &quot;stakeBefore&quot;: 60555,
+            &quot;stakeAfter&quot;: 76305,
+            &quot;rewardEarned&quot;: 15750,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          },
+          {
+            &quot;validatorId&quot;: &quot;validator-8fb387f22ab17dbb&quot;,
+            &quot;stakeBefore&quot;: 77689,
+            &quot;stakeAfter&quot;: 93439,
+            &quot;rewardEarned&quot;: 15750,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          },
+          {
+            &quot;validatorId&quot;: &quot;validator-b48c4f3bd017c796&quot;,
+            &quot;stakeBefore&quot;: 60967,
+            &quot;stakeAfter&quot;: 76717,
+            &quot;rewardEarned&quot;: 15750,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          },
+          {
+            &quot;validatorId&quot;: &quot;validator-f3cbd6e75978a4b6&quot;,
+            &quot;stakeBefore&quot;: 78620,
+            &quot;stakeAfter&quot;: 94370,
+            &quot;rewardEarned&quot;: 15750,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          }
+        ],
+        &quot;attempts&quot;: [
+          {
+            &quot;attemptId&quot;: &quot;ledger-harmonics-attempt-1&quot;,
+            &quot;solverId&quot;: &quot;solver-424046f71a035fe6&quot;,
+            &quot;status&quot;: &quot;slashed&quot;,
+            &quot;commitHash&quot;: &quot;3a489a39a4ac760eea4e21600c7db814fc7ef4e73499a6f0e7c200e447c856d5&quot;,
+            &quot;reveal&quot;: &quot;insufficient-delta&quot;,
+            &quot;consensus&quot;: &quot;rejected&quot;,
+            &quot;rewardEarned&quot;: 0,
+            &quot;slashApplied&quot;: 18600,
+            &quot;latencySeconds&quot;: 189,
+            &quot;energyObserved&quot;: 51.2,
+            &quot;notes&quot;: &quot;Consensus rejected misaligned agent – stake partially slashed and job requeued.&quot;,
+            &quot;votes&quot;: [
+              {
+                &quot;validatorId&quot;: &quot;validator-02b303e331d093d1&quot;,
+                &quot;commitment&quot;: &quot;386876e8b46f541afba7e9ba7981dc0e41940b840db1165200b4fc64be00fa49&quot;,
+                &quot;revealed&quot;: &quot;no&quot;,
+                &quot;weight&quot;: 60555,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Detected thermodynamic drift&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-8fb387f22ab17dbb&quot;,
+                &quot;commitment&quot;: &quot;d26aaf535bef21fa45371b67e612ecbf4724c3beceefe3b1a7c4771a699ff16c&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 77689,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-b48c4f3bd017c796&quot;,
+                &quot;commitment&quot;: &quot;811943ed1d5afdf34e266be81f71f2fddee8d3426f4d5f4ae04b55056f5f3021&quot;,
+                &quot;revealed&quot;: &quot;no&quot;,
+                &quot;weight&quot;: 60967,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Detected thermodynamic drift&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-f3cbd6e75978a4b6&quot;,
+                &quot;commitment&quot;: &quot;df4080472bf5202c53c8cb11c5b947306a9a14c0bf8db697cf7d132e6fe4329d&quot;,
+                &quot;revealed&quot;: &quot;no&quot;,
+                &quot;weight&quot;: 78620,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Detected thermodynamic drift&quot;
+              }
+            ]
+          },
+          {
+            &quot;attemptId&quot;: &quot;ledger-harmonics-attempt-2&quot;,
+            &quot;solverId&quot;: &quot;solver-04c1f887eae22b1e&quot;,
+            &quot;status&quot;: &quot;accepted&quot;,
+            &quot;commitHash&quot;: &quot;ebda15b38d5047ceaade3779010231933171b8cdb316da86dbb9e61379be79fa&quot;,
+            &quot;reveal&quot;: &quot;ledger-harmonics-g0-c361&quot;,
+            &quot;consensus&quot;: &quot;accepted&quot;,
+            &quot;rewardEarned&quot;: 430500,
+            &quot;slashApplied&quot;: 0,
+            &quot;latencySeconds&quot;: 351,
+            &quot;energyObserved&quot;: 64,
+            &quot;notes&quot;: &quot;Meta-agentic evolved solver achieved consensus and claimed rewards.&quot;,
+            &quot;votes&quot;: [
+              {
+                &quot;validatorId&quot;: &quot;validator-02b303e331d093d1&quot;,
+                &quot;commitment&quot;: &quot;a9ff81a696c9a6329240f07cca03b7d28a3d6b7674cf7706e5c465ec3e792d4e&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 60555,
+                &quot;rewardEarned&quot;: 15750,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-8fb387f22ab17dbb&quot;,
+                &quot;commitment&quot;: &quot;781a3ed0c6d16a9f5f6540199d91856aacd60d7ebbc832febf25e052a62f4f5c&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 77689,
+                &quot;rewardEarned&quot;: 15750,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-b48c4f3bd017c796&quot;,
+                &quot;commitment&quot;: &quot;39593093be96192e274a31d636936a404d09f149af4366a54a2b4b2fd463bb23&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 60967,
+                &quot;rewardEarned&quot;: 15750,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-f3cbd6e75978a4b6&quot;,
+                &quot;commitment&quot;: &quot;a1ead23f0685e364f8d70ef43d00c2e91a83cfda9a907ba1fa0b75579202cc58&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 78620,
+                &quot;rewardEarned&quot;: 15750,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              }
+            ]
+          }
+        ],
+        &quot;timeline&quot;: [
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:16:24.000Z&quot;,
+            &quot;type&quot;: &quot;job_posted&quot;,
+            &quot;details&quot;: {
+              &quot;jobId&quot;: &quot;LEDGER-SYN-007&quot;,
+              &quot;reward&quot;: 525000,
+              &quot;stakeRequired&quot;: 155000,
+              &quot;description&quot;: &quot;Absorb asynchronous cash-flow deltas, stabilise them against the thermodynamic ledger, and emit rebalanced incentive curves for validator coalitions.&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:17:09.000Z&quot;,
+            &quot;type&quot;: &quot;solver_selected&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-424046f71a035fe6&quot;,
+              &quot;stakePosted&quot;: 155000
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:17:44.000Z&quot;,
+            &quot;type&quot;: &quot;result_committed&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-424046f71a035fe6&quot;,
+              &quot;commit&quot;: &quot;3a489a39a4ac760eea4e21600c7db814fc7ef4e73499a6f0e7c200e447c856d5&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:17:55.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-02b303e331d093d1&quot;,
+              &quot;commitment&quot;: &quot;386876e8b46f541afba7e9ba7981dc0e41940b840db1165200b4fc64be00fa49&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:18:08.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-02b303e331d093d1&quot;,
+              &quot;vote&quot;: &quot;no&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:18:17.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-8fb387f22ab17dbb&quot;,
+              &quot;commitment&quot;: &quot;d26aaf535bef21fa45371b67e612ecbf4724c3beceefe3b1a7c4771a699ff16c&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:18:31.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-8fb387f22ab17dbb&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:18:41.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-b48c4f3bd017c796&quot;,
+              &quot;commitment&quot;: &quot;811943ed1d5afdf34e266be81f71f2fddee8d3426f4d5f4ae04b55056f5f3021&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:18:53.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-b48c4f3bd017c796&quot;,
+              &quot;vote&quot;: &quot;no&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:19:05.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-f3cbd6e75978a4b6&quot;,
+              &quot;commitment&quot;: &quot;df4080472bf5202c53c8cb11c5b947306a9a14c0bf8db697cf7d132e6fe4329d&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:19:17.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-f3cbd6e75978a4b6&quot;,
+              &quot;vote&quot;: &quot;no&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:19:33.000Z&quot;,
+            &quot;type&quot;: &quot;consensus_finalised&quot;,
+            &quot;details&quot;: {
+              &quot;attempt&quot;: 1,
+              &quot;solverId&quot;: &quot;solver-424046f71a035fe6&quot;,
+              &quot;consensus&quot;: &quot;rejected&quot;,
+              &quot;yesWeight&quot;: 77689
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:19:39.000Z&quot;,
+            &quot;type&quot;: &quot;slash_applied&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-424046f71a035fe6&quot;,
+              &quot;amount&quot;: 18600,
+              &quot;reason&quot;: &quot;Failed consensus&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:19:51.000Z&quot;,
+            &quot;type&quot;: &quot;requeue&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-04c1f887eae22b1e&quot;,
+              &quot;reason&quot;: &quot;Meta-architect escalated to evolved agent&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:19:55.000Z&quot;,
+            &quot;type&quot;: &quot;solver_selected&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-04c1f887eae22b1e&quot;,
+              &quot;stakePosted&quot;: 155000
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:20:27.000Z&quot;,
+            &quot;type&quot;: &quot;result_committed&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-04c1f887eae22b1e&quot;,
+              &quot;commit&quot;: &quot;ebda15b38d5047ceaade3779010231933171b8cdb316da86dbb9e61379be79fa&quot;,
+              &quot;operations&quot;: 3
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:20:37.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-02b303e331d093d1&quot;,
+              &quot;commitment&quot;: &quot;a9ff81a696c9a6329240f07cca03b7d28a3d6b7674cf7706e5c465ec3e792d4e&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:20:50.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-02b303e331d093d1&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:21:01.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-8fb387f22ab17dbb&quot;,
+              &quot;commitment&quot;: &quot;781a3ed0c6d16a9f5f6540199d91856aacd60d7ebbc832febf25e052a62f4f5c&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:21:10.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-8fb387f22ab17dbb&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:21:19.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-b48c4f3bd017c796&quot;,
+              &quot;commitment&quot;: &quot;39593093be96192e274a31d636936a404d09f149af4366a54a2b4b2fd463bb23&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:21:28.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-b48c4f3bd017c796&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:21:38.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-f3cbd6e75978a4b6&quot;,
+              &quot;commitment&quot;: &quot;a1ead23f0685e364f8d70ef43d00c2e91a83cfda9a907ba1fa0b75579202cc58&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:21:49.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-f3cbd6e75978a4b6&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:22:03.000Z&quot;,
+            &quot;type&quot;: &quot;consensus_finalised&quot;,
+            &quot;details&quot;: {
+              &quot;attempt&quot;: 2,
+              &quot;solverId&quot;: &quot;solver-04c1f887eae22b1e&quot;,
+              &quot;consensus&quot;: &quot;accepted&quot;,
+              &quot;yesWeight&quot;: 277831
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T13:22:15.000Z&quot;,
+            &quot;type&quot;: &quot;reward_distributed&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-04c1f887eae22b1e&quot;,
+              &quot;solverReward&quot;: 430500,
+              &quot;validatorRewards&quot;: 63000,
+              &quot;treasuryReturn&quot;: 31500
+            }
           }
         ]
       }
@@ -1519,7 +2921,7 @@
           &quot;medianScore&quot;: 23.447749293641056,
           &quot;diversity&quot;: 1,
           &quot;eliteScore&quot;: 97.42746077012889,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.586Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.730Z&quot;
         },
         {
           &quot;generation&quot;: 1,
@@ -1528,7 +2930,7 @@
           &quot;medianScore&quot;: 33.23577114240753,
           &quot;diversity&quot;: 1,
           &quot;eliteScore&quot;: 101.68095349725729,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.587Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.731Z&quot;
         },
         {
           &quot;generation&quot;: 2,
@@ -1537,7 +2939,7 @@
           &quot;medianScore&quot;: 64.46743238768931,
           &quot;diversity&quot;: 0.8888888888888888,
           &quot;eliteScore&quot;: 125.76131787031291,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.587Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.731Z&quot;
         },
         {
           &quot;generation&quot;: 3,
@@ -1546,7 +2948,7 @@
           &quot;medianScore&quot;: 70.39942915911845,
           &quot;diversity&quot;: 0.8611111111111112,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.588Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.732Z&quot;
         },
         {
           &quot;generation&quot;: 4,
@@ -1555,7 +2957,7 @@
           &quot;medianScore&quot;: 71.05162669292856,
           &quot;diversity&quot;: 0.8333333333333334,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.589Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.733Z&quot;
         },
         {
           &quot;generation&quot;: 5,
@@ -1564,7 +2966,7 @@
           &quot;medianScore&quot;: 53.843889930604206,
           &quot;diversity&quot;: 0.7777777777777778,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.589Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.733Z&quot;
         },
         {
           &quot;generation&quot;: 6,
@@ -1573,7 +2975,7 @@
           &quot;medianScore&quot;: 78.25900854278035,
           &quot;diversity&quot;: 0.6666666666666666,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.597Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.734Z&quot;
         },
         {
           &quot;generation&quot;: 7,
@@ -1582,7 +2984,7 @@
           &quot;medianScore&quot;: 91.68021852282594,
           &quot;diversity&quot;: 0.5,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.598Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.734Z&quot;
         },
         {
           &quot;generation&quot;: 8,
@@ -1591,7 +2993,7 @@
           &quot;medianScore&quot;: 84.52984866490183,
           &quot;diversity&quot;: 0.6388888888888888,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.598Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.735Z&quot;
         },
         {
           &quot;generation&quot;: 9,
@@ -1600,7 +3002,7 @@
           &quot;medianScore&quot;: 90.34258929546631,
           &quot;diversity&quot;: 0.6388888888888888,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.599Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T03:23:20.736Z&quot;
         }
       ],
       &quot;triangulation&quot;: {
@@ -1647,6 +3049,318 @@
             &quot;confidence&quot;: 0.2,
             &quot;energyDelta&quot;: 76,
             &quot;notes&quot;: &quot;Peer median 136.05 • energy delta 76.00 (≤ 50.40)&quot;
+          }
+        ]
+      },
+      &quot;ledger&quot;: {
+        &quot;summary&quot;: {
+          &quot;finalConsensus&quot;: &quot;accepted&quot;,
+          &quot;totalRewardPaid&quot;: 573400,
+          &quot;totalSlashed&quot;: 19800,
+          &quot;validatorRewards&quot;: 73200,
+          &quot;treasuryReturn&quot;: 36600,
+          &quot;averageLatencySeconds&quot;: 233.5,
+          &quot;participationRate&quot;: 1,
+          &quot;commitRevealIntegrity&quot;: &quot;verified&quot;,
+          &quot;attempts&quot;: 2
+        },
+        &quot;validators&quot;: [
+          {
+            &quot;validatorId&quot;: &quot;validator-998a4f56b41c1653&quot;,
+            &quot;stakeBefore&quot;: 85872,
+            &quot;stakeAfter&quot;: 110272,
+            &quot;rewardEarned&quot;: 24400,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          },
+          {
+            &quot;validatorId&quot;: &quot;validator-9d05a69084156cb4&quot;,
+            &quot;stakeBefore&quot;: 68211,
+            &quot;stakeAfter&quot;: 92611,
+            &quot;rewardEarned&quot;: 24400,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          },
+          {
+            &quot;validatorId&quot;: &quot;validator-d3dc9de91651750d&quot;,
+            &quot;stakeBefore&quot;: 58085,
+            &quot;stakeAfter&quot;: 82485,
+            &quot;rewardEarned&quot;: 24400,
+            &quot;slashed&quot;: 0,
+            &quot;participationRate&quot;: 1
+          }
+        ],
+        &quot;attempts&quot;: [
+          {
+            &quot;attemptId&quot;: &quot;nova-weave-attempt-1&quot;,
+            &quot;solverId&quot;: &quot;solver-df8d72feae9e0558&quot;,
+            &quot;status&quot;: &quot;slashed&quot;,
+            &quot;commitHash&quot;: &quot;53ccd0481295cff8b777e9e746537f782210d0d6634463a6ee45af55c9df399c&quot;,
+            &quot;reveal&quot;: &quot;insufficient-delta&quot;,
+            &quot;consensus&quot;: &quot;rejected&quot;,
+            &quot;rewardEarned&quot;: 0,
+            &quot;slashApplied&quot;: 19800,
+            &quot;latencySeconds&quot;: 163,
+            &quot;energyObserved&quot;: 54.400000000000006,
+            &quot;notes&quot;: &quot;Consensus rejected misaligned agent – stake partially slashed and job requeued.&quot;,
+            &quot;votes&quot;: [
+              {
+                &quot;validatorId&quot;: &quot;validator-998a4f56b41c1653&quot;,
+                &quot;commitment&quot;: &quot;b1c8d5fb8311d466fe88c58b0121b6c45662d842bf31bfe7485ceae3038ccd8c&quot;,
+                &quot;revealed&quot;: &quot;no&quot;,
+                &quot;weight&quot;: 85872,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Detected thermodynamic drift&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-9d05a69084156cb4&quot;,
+                &quot;commitment&quot;: &quot;4657fd854d9a91e5f21ab296f043f3cb95e3e701e4a80fb5c7fc3a5bfef81729&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 68211,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-d3dc9de91651750d&quot;,
+                &quot;commitment&quot;: &quot;b4affd948c6de5ef384077b29023dd77a88c6af547d1f8308a27ad6a0895ced4&quot;,
+                &quot;revealed&quot;: &quot;no&quot;,
+                &quot;weight&quot;: 58085,
+                &quot;rewardEarned&quot;: 0,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Detected thermodynamic drift&quot;
+              }
+            ]
+          },
+          {
+            &quot;attemptId&quot;: &quot;nova-weave-attempt-2&quot;,
+            &quot;solverId&quot;: &quot;solver-b0ce6e46ec6aee31&quot;,
+            &quot;status&quot;: &quot;accepted&quot;,
+            &quot;commitHash&quot;: &quot;ec051e8ee05f18e96d72bcc879d6325db1bba43c808cc42dfbe7895eabdea108&quot;,
+            &quot;reveal&quot;: &quot;nova-weave-g0-c721&quot;,
+            &quot;consensus&quot;: &quot;accepted&quot;,
+            &quot;rewardEarned&quot;: 500200,
+            &quot;slashApplied&quot;: 0,
+            &quot;latencySeconds&quot;: 304,
+            &quot;energyObserved&quot;: 68,
+            &quot;notes&quot;: &quot;Meta-agentic evolved solver achieved consensus and claimed rewards.&quot;,
+            &quot;votes&quot;: [
+              {
+                &quot;validatorId&quot;: &quot;validator-998a4f56b41c1653&quot;,
+                &quot;commitment&quot;: &quot;76f6ee53383c2999cbe79913a5f6167c4ca686cdc3e266a2e28c96fea559c37a&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 85872,
+                &quot;rewardEarned&quot;: 24400,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-9d05a69084156cb4&quot;,
+                &quot;commitment&quot;: &quot;8976703d78e5c6073ca9f883c7e6593a311201bf7e021cdfd02726cb0d218003&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 68211,
+                &quot;rewardEarned&quot;: 24400,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              },
+              {
+                &quot;validatorId&quot;: &quot;validator-d3dc9de91651750d&quot;,
+                &quot;commitment&quot;: &quot;3cb52a63d7218a3eaa12727a77ed6b8e3c2261ed8db9007f22ec5ce0849c7d8d&quot;,
+                &quot;revealed&quot;: &quot;yes&quot;,
+                &quot;weight&quot;: 58085,
+                &quot;rewardEarned&quot;: 24400,
+                &quot;slashed&quot;: 0,
+                &quot;notes&quot;: &quot;Validated evolved solver output&quot;
+              }
+            ]
+          }
+        ],
+        &quot;timeline&quot;: [
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:29:20.000Z&quot;,
+            &quot;type&quot;: &quot;job_posted&quot;,
+            &quot;details&quot;: {
+              &quot;jobId&quot;: &quot;NOVA-SYN-009&quot;,
+              &quot;reward&quot;: 610000,
+              &quot;stakeRequired&quot;: 165000,
+              &quot;description&quot;: &quot;Elevate alpha sequences into deterministic blueprints that compile into on-chain production payloads with zero manual edits.&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:30:05.000Z&quot;,
+            &quot;type&quot;: &quot;solver_selected&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-df8d72feae9e0558&quot;,
+              &quot;stakePosted&quot;: 165000
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:30:40.000Z&quot;,
+            &quot;type&quot;: &quot;result_committed&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-df8d72feae9e0558&quot;,
+              &quot;commit&quot;: &quot;53ccd0481295cff8b777e9e746537f782210d0d6634463a6ee45af55c9df399c&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:30:49.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-998a4f56b41c1653&quot;,
+              &quot;commitment&quot;: &quot;b1c8d5fb8311d466fe88c58b0121b6c45662d842bf31bfe7485ceae3038ccd8c&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:31:00.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-998a4f56b41c1653&quot;,
+              &quot;vote&quot;: &quot;no&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:31:10.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-9d05a69084156cb4&quot;,
+              &quot;commitment&quot;: &quot;4657fd854d9a91e5f21ab296f043f3cb95e3e701e4a80fb5c7fc3a5bfef81729&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:31:23.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-9d05a69084156cb4&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:31:32.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-d3dc9de91651750d&quot;,
+              &quot;commitment&quot;: &quot;b4affd948c6de5ef384077b29023dd77a88c6af547d1f8308a27ad6a0895ced4&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:31:47.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-d3dc9de91651750d&quot;,
+              &quot;vote&quot;: &quot;no&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:32:03.000Z&quot;,
+            &quot;type&quot;: &quot;consensus_finalised&quot;,
+            &quot;details&quot;: {
+              &quot;attempt&quot;: 1,
+              &quot;solverId&quot;: &quot;solver-df8d72feae9e0558&quot;,
+              &quot;consensus&quot;: &quot;rejected&quot;,
+              &quot;yesWeight&quot;: 68211
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:32:09.000Z&quot;,
+            &quot;type&quot;: &quot;slash_applied&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-df8d72feae9e0558&quot;,
+              &quot;amount&quot;: 19800,
+              &quot;reason&quot;: &quot;Failed consensus&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:32:21.000Z&quot;,
+            &quot;type&quot;: &quot;requeue&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-b0ce6e46ec6aee31&quot;,
+              &quot;reason&quot;: &quot;Meta-architect escalated to evolved agent&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:32:25.000Z&quot;,
+            &quot;type&quot;: &quot;solver_selected&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-b0ce6e46ec6aee31&quot;,
+              &quot;stakePosted&quot;: 165000
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:32:57.000Z&quot;,
+            &quot;type&quot;: &quot;result_committed&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-b0ce6e46ec6aee31&quot;,
+              &quot;commit&quot;: &quot;ec051e8ee05f18e96d72bcc879d6325db1bba43c808cc42dfbe7895eabdea108&quot;,
+              &quot;operations&quot;: 3
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:33:04.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-998a4f56b41c1653&quot;,
+              &quot;commitment&quot;: &quot;76f6ee53383c2999cbe79913a5f6167c4ca686cdc3e266a2e28c96fea559c37a&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:33:15.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-998a4f56b41c1653&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:33:25.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-9d05a69084156cb4&quot;,
+              &quot;commitment&quot;: &quot;8976703d78e5c6073ca9f883c7e6593a311201bf7e021cdfd02726cb0d218003&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:33:35.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-9d05a69084156cb4&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:33:46.000Z&quot;,
+            &quot;type&quot;: &quot;vote_commit&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-d3dc9de91651750d&quot;,
+              &quot;commitment&quot;: &quot;3cb52a63d7218a3eaa12727a77ed6b8e3c2261ed8db9007f22ec5ce0849c7d8d&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:33:58.000Z&quot;,
+            &quot;type&quot;: &quot;vote_reveal&quot;,
+            &quot;details&quot;: {
+              &quot;validator&quot;: &quot;validator-d3dc9de91651750d&quot;,
+              &quot;vote&quot;: &quot;yes&quot;
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:34:12.000Z&quot;,
+            &quot;type&quot;: &quot;consensus_finalised&quot;,
+            &quot;details&quot;: {
+              &quot;attempt&quot;: 2,
+              &quot;solverId&quot;: &quot;solver-b0ce6e46ec6aee31&quot;,
+              &quot;consensus&quot;: &quot;accepted&quot;,
+              &quot;yesWeight&quot;: 212168
+            }
+          },
+          {
+            &quot;timestamp&quot;: &quot;2042-01-01T07:34:24.000Z&quot;,
+            &quot;type&quot;: &quot;reward_distributed&quot;,
+            &quot;details&quot;: {
+              &quot;solverId&quot;: &quot;solver-b0ce6e46ec6aee31&quot;,
+              &quot;solverReward&quot;: 500200,
+              &quot;validatorRewards&quot;: 73200,
+              &quot;treasuryReturn&quot;: 36600
+            }
           }
         ]
       }
@@ -1711,7 +3425,7 @@
   }
 }</script>
     <script id="meta-agentic-triangulation" type="application/json">{
-  &quot;generatedAt&quot;: &quot;2025-10-21T02:47:22.562Z&quot;,
+  &quot;generatedAt&quot;: &quot;2025-10-21T03:23:20.678Z&quot;,
   &quot;confidence&quot;: 0.5333333333333333,
   &quot;consensus&quot;: {
     &quot;confirmed&quot;: 1,

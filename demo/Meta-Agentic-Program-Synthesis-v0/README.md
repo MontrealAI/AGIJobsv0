@@ -68,6 +68,8 @@ flowchart LR
   mission manifest.
 - **Thermodynamic sentinel** – aggregate alignment telemetry quantifies per-task energy drift and surfaces green/yellow/red
   status directly in the Markdown dossier and executive dashboard.
+- **Commit–reveal ledger** – every task ships with a deterministic staking, validation, and reward transcript so owners can audit
+  slashing, treasury returns, and validator payouts.
 
 ## Owner supremacy proof points
 
@@ -94,6 +96,7 @@ flowchart LR
 | `meta-agentic-program-synthesis-ci.json` | CI workflow verification report (lint/tests/foundry/coverage). |
 | `meta-agentic-program-synthesis-owner-diagnostics.{json,md}` | Owner readiness, command outputs, and sentinel status. |
 | `meta-agentic-program-synthesis-full.{json,md}` | Aggregate timeline of the run, CI verdict, diagnostics, and artefact index. |
+| `meta-agentic-program-synthesis-summary.json` → `ledger` | Commit–reveal attempts, validator rewards, and treasury routing (embedded section). |
 
 ## Triple-verification sentinel
 
@@ -120,8 +123,34 @@ flowchart TD
 - **Baseline dominance** proves the evolved agent beats the deterministic mission seeds by a material margin.
 - **Adversarial jitter** injects bounded noise to ensure the pipeline remains stable under perturbations.
 - **Governance guard** enforces allowlisted operations, thermodynamic expectations, and elite peer dominance before the owner accepts the result.
+- **Ledger consensus** verifies validator-weighted commit–reveal paths and slashing outcomes before rewards move on-chain.
 
 The digest exported in `meta-agentic-program-synthesis-triangulation.json` lists every perspective, delta, and confidence score so auditors can replay the verdict independently.
+
+## Commit–reveal orchestration
+
+```mermaid
+flowchart LR
+  Owner((Owner)):::role --> JobRegistry{Job Registry}:::core
+  JobRegistry -->|Stake requirement| SolverA[Attempt 1 – legacy solver]:::warn
+  SolverA --> Validators[Validator Council]:::governance
+  Validators -->|Reject + slash| Slash[(Stake slashed)]:::warn
+  Slash --> JobRegistry
+  JobRegistry --> SolverB[Attempt 2 – evolved solver]:::core
+  SolverB --> Validators
+  Validators -->|Commit → reveal → approve| Consensus{{Consensus Finalised}}:::verify
+  Consensus --> Rewards[(Thermodynamic Rewards)]:::core
+  Rewards --> SolverB
+  Rewards --> Validators
+  Rewards --> Treasury[[Treasury return]]:::governance
+  classDef role fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+  classDef core fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;
+  classDef warn fill:#7f1d1d,stroke:#fecaca,stroke-width:2px,color:#fee2e2;
+  classDef governance fill:#1f2937,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;
+  classDef verify fill:#0b7285,stroke:#66d9e8,stroke-width:2px,color:#e6fcf5;
+```
+
+Every generated report embeds the ledger validator table, commit/reveal timeline, and reward breakdown so auditors can inspect stake movements without touching TypeScript.
 
 ## Power knobs for operators
 
@@ -140,6 +169,12 @@ npm run demo:meta-agentic-program-synthesis
 
 # Full pipeline with CI + owner diagnostics
 npm run demo:meta-agentic-program-synthesis:full
+
+# Validate ledger simulation invariants
+npm run demo:meta-agentic-program-synthesis:test
+
+# Inspect ledger section quickly
+jq '.tasks[0].ledger.summary' demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-summary.json
 ```
 
 Set `AGI_META_PROGRAM_MISSION=/path/to/custom.json` to target a modified mission file.

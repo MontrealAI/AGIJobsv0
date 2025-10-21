@@ -29,6 +29,7 @@ The launcher exports `AGI_META_PROGRAM_MISSION` and `AGI_OWNER_DIAGNOSTICS_OFFLI
 - Markdown dossier: `demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md`
 - Executive dashboard: `.../meta-agentic-program-synthesis-dashboard.html`
 - JSON summary: `.../meta-agentic-program-synthesis-summary.json`
+- Ledger transcript: `jq '.tasks[].ledger' .../meta-agentic-program-synthesis-summary.json`
 - Full-run bundle: `.../meta-agentic-program-synthesis-full.{json,md}`
 - CI verification: `.../meta-agentic-program-synthesis-ci.json`
 - Owner diagnostics: `.../meta-agentic-program-synthesis-owner-diagnostics.{json,md}`
@@ -66,10 +67,14 @@ All commands are idempotent offline. Point `HARDHAT_NETWORK` to a live network t
 npm run demo:meta-agentic-program-synthesis
 npm run demo:meta-agentic-program-synthesis:full
 jq '.' demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json
+npm run demo:meta-agentic-program-synthesis:test
+jq '.tasks[0].ledger.summary' demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-summary.json
 ```
 
 The CI report must confirm the workflow name `ci (v2)`, jobs `lint/tests/foundry/coverage`, `cancel-in-progress: true`, and
 coverage ≥90.
+
+The ledger test run asserts deterministic commit–reveal sequences, validator participation, and slashing behaviour before rewards move.
 
 ## 6. Custom missions
 

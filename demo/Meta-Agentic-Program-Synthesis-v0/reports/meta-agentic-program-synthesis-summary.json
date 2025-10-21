@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-21T02:47:22.562Z",
+  "generatedAt": "2025-10-21T03:23:20.678Z",
   "mission": {
     "title": "Meta-Agentic Program Synthesis Sovereign Mission",
     "version": "0.1.0",
@@ -48,6 +48,16 @@
         "monitor": 0,
         "drift": 0
       }
+    },
+    "ledger": {
+      "totalRewardPaid": 1461700,
+      "totalSlashed": 52800,
+      "validatorRewards": 186600,
+      "treasuryReturn": 93300,
+      "averageParticipationRate": 0.9583333333333334,
+      "averageLatencySeconds": 250.16666666666666,
+      "accepted": 3,
+      "consensusAlerts": 0
     }
   },
   "ownerCoverage": {
@@ -294,7 +304,7 @@
           "medianScore": 56.19020618556701,
           "diversity": 0.9444444444444444,
           "eliteScore": 110.36140657817333,
-          "timestamp": "2025-10-21T02:47:22.567Z"
+          "timestamp": "2025-10-21T03:23:20.682Z"
         },
         {
           "generation": 1,
@@ -303,7 +313,7 @@
           "medianScore": 65.75277564301642,
           "diversity": 0.75,
           "eliteScore": 136.39087455307794,
-          "timestamp": "2025-10-21T02:47:22.568Z"
+          "timestamp": "2025-10-21T03:23:20.683Z"
         },
         {
           "generation": 2,
@@ -312,7 +322,7 @@
           "medianScore": 73.64584551701412,
           "diversity": 0.75,
           "eliteScore": 138.12283331596453,
-          "timestamp": "2025-10-21T02:47:22.569Z"
+          "timestamp": "2025-10-21T03:23:20.684Z"
         },
         {
           "generation": 3,
@@ -321,7 +331,7 @@
           "medianScore": 100.49230198051038,
           "diversity": 0.8333333333333334,
           "eliteScore": 138.41149310977895,
-          "timestamp": "2025-10-21T02:47:22.570Z"
+          "timestamp": "2025-10-21T03:23:20.685Z"
         },
         {
           "generation": 4,
@@ -330,7 +340,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.6944444444444444,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.571Z"
+          "timestamp": "2025-10-21T03:23:20.686Z"
         },
         {
           "generation": 5,
@@ -339,7 +349,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7777777777777778,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.573Z"
+          "timestamp": "2025-10-21T03:23:20.696Z"
         },
         {
           "generation": 6,
@@ -348,7 +358,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7777777777777778,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.574Z"
+          "timestamp": "2025-10-21T03:23:20.699Z"
         },
         {
           "generation": 7,
@@ -357,7 +367,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7222222222222222,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.574Z"
+          "timestamp": "2025-10-21T03:23:20.700Z"
         },
         {
           "generation": 8,
@@ -366,7 +376,7 @@
           "medianScore": 116.57704853345733,
           "diversity": 0.8055555555555556,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.575Z"
+          "timestamp": "2025-10-21T03:23:20.704Z"
         },
         {
           "generation": 9,
@@ -375,7 +385,7 @@
           "medianScore": 137.1920690409011,
           "diversity": 0.75,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.576Z"
+          "timestamp": "2025-10-21T03:23:20.705Z"
         }
       ],
       "triangulation": {
@@ -422,6 +432,351 @@
             "confidence": 0.2,
             "energyDelta": 8,
             "notes": "Peer median 140.38 • energy delta 8.00 (≤ 33.60)"
+          }
+        ]
+      },
+      "ledger": {
+        "summary": {
+          "finalConsensus": "accepted",
+          "totalRewardPaid": 394800,
+          "totalSlashed": 14400,
+          "validatorRewards": 50400,
+          "treasuryReturn": 25200,
+          "averageLatencySeconds": 247,
+          "participationRate": 0.875,
+          "commitRevealIntegrity": "verified",
+          "attempts": 2
+        },
+        "validators": [
+          {
+            "validatorId": "validator-195a5d4bfbdae573",
+            "stakeBefore": 52687,
+            "stakeAfter": 65287,
+            "rewardEarned": 12600,
+            "slashed": 0,
+            "participationRate": 1
+          },
+          {
+            "validatorId": "validator-76bf560baa38ba87",
+            "stakeBefore": 53186,
+            "stakeAfter": 65786,
+            "rewardEarned": 12600,
+            "slashed": 0,
+            "participationRate": 1
+          },
+          {
+            "validatorId": "validator-79c9d91afd1ddf92",
+            "stakeBefore": 60772,
+            "stakeAfter": 73372,
+            "rewardEarned": 12600,
+            "slashed": 0,
+            "participationRate": 1
+          },
+          {
+            "validatorId": "validator-a93d1e2a9c0e3a2a",
+            "stakeBefore": 49970,
+            "stakeAfter": 62570,
+            "rewardEarned": 12600,
+            "slashed": 0,
+            "participationRate": 0.5
+          }
+        ],
+        "attempts": [
+          {
+            "attemptId": "arc-sentinel-attempt-1",
+            "solverId": "solver-834077d2c7cd0093",
+            "status": "slashed",
+            "commitHash": "cdccfe1d1ecc488574b306b0afa622e76d4619196d444d00ed36bc17317dba16",
+            "reveal": "insufficient-delta",
+            "consensus": "rejected",
+            "rewardEarned": 0,
+            "slashApplied": 14400,
+            "latencySeconds": 164,
+            "energyObserved": 70.4,
+            "notes": "Consensus rejected misaligned agent – stake partially slashed and job requeued.",
+            "votes": [
+              {
+                "validatorId": "validator-195a5d4bfbdae573",
+                "commitment": "6a13cc921e0d27d543a1f1a7b80eb4fa2b75c0525449b8f73a219358fdeb5116",
+                "revealed": "yes",
+                "weight": 52687,
+                "rewardEarned": 0,
+                "slashed": 0
+              },
+              {
+                "validatorId": "validator-76bf560baa38ba87",
+                "commitment": "ff5cf0e04b2467375ef805362e542c143abea25b2bb7bb443515daa8dc3f1354",
+                "revealed": "no",
+                "weight": 53186,
+                "rewardEarned": 0,
+                "slashed": 0,
+                "notes": "Detected thermodynamic drift"
+              },
+              {
+                "validatorId": "validator-79c9d91afd1ddf92",
+                "commitment": "95fe40173c0a29a739e2d0fa2d0105c755fb04b43e3532d8c310c35ce472c1d2",
+                "revealed": "no",
+                "weight": 60772,
+                "rewardEarned": 0,
+                "slashed": 0,
+                "notes": "Detected thermodynamic drift"
+              }
+            ]
+          },
+          {
+            "attemptId": "arc-sentinel-attempt-2",
+            "solverId": "solver-85b7571cb9684c4c",
+            "status": "accepted",
+            "commitHash": "a71fc6a4d27f9928547e7c9286a86675979d6854026355e0559ce8baf2e50211",
+            "reveal": "arc-sentinel-g4-c166",
+            "consensus": "accepted",
+            "rewardEarned": 344400,
+            "slashApplied": 0,
+            "latencySeconds": 330,
+            "energyObserved": 88,
+            "notes": "Meta-agentic evolved solver achieved consensus and claimed rewards.",
+            "votes": [
+              {
+                "validatorId": "validator-195a5d4bfbdae573",
+                "commitment": "c0e7ac904a95f3b6b07a2d8458d1be1ea31b81714501555ef6da2be49ddaadce",
+                "revealed": "yes",
+                "weight": 52687,
+                "rewardEarned": 12600,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              },
+              {
+                "validatorId": "validator-76bf560baa38ba87",
+                "commitment": "ba808148dada8a23c0977f5798f313954ad76c389605df96d26cab84f14ea32a",
+                "revealed": "yes",
+                "weight": 53186,
+                "rewardEarned": 12600,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              },
+              {
+                "validatorId": "validator-79c9d91afd1ddf92",
+                "commitment": "9d1ce6a17520b9b429f727eeb800908b5a13200a307782f3a8874baf70f96c11",
+                "revealed": "yes",
+                "weight": 60772,
+                "rewardEarned": 12600,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              },
+              {
+                "validatorId": "validator-a93d1e2a9c0e3a2a",
+                "commitment": "d112ff2b6d9545978359f988200e0c135e6b7c05e0812b51815198a85b53a97f",
+                "revealed": "yes",
+                "weight": 49970,
+                "rewardEarned": 12600,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              }
+            ]
+          }
+        ],
+        "timeline": [
+          {
+            "timestamp": "2042-01-01T08:54:24.000Z",
+            "type": "job_posted",
+            "details": {
+              "jobId": "ARC-SYN-001",
+              "reward": 420000,
+              "stakeRequired": 120000,
+              "description": "Detect latent pixel edges, amplify discovery, and route high-confidence transformations back into the shared skill graph."
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:55:09.000Z",
+            "type": "solver_selected",
+            "details": {
+              "solverId": "solver-834077d2c7cd0093",
+              "stakePosted": 120000
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:55:44.000Z",
+            "type": "result_committed",
+            "details": {
+              "solverId": "solver-834077d2c7cd0093",
+              "commit": "cdccfe1d1ecc488574b306b0afa622e76d4619196d444d00ed36bc17317dba16"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:55:54.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-195a5d4bfbdae573",
+              "commitment": "6a13cc921e0d27d543a1f1a7b80eb4fa2b75c0525449b8f73a219358fdeb5116"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:56:09.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-195a5d4bfbdae573",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:56:20.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-76bf560baa38ba87",
+              "commitment": "ff5cf0e04b2467375ef805362e542c143abea25b2bb7bb443515daa8dc3f1354"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:56:31.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-76bf560baa38ba87",
+              "vote": "no"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:56:42.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-79c9d91afd1ddf92",
+              "commitment": "95fe40173c0a29a739e2d0fa2d0105c755fb04b43e3532d8c310c35ce472c1d2"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:56:52.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-79c9d91afd1ddf92",
+              "vote": "no"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:57:08.000Z",
+            "type": "consensus_finalised",
+            "details": {
+              "attempt": 1,
+              "solverId": "solver-834077d2c7cd0093",
+              "consensus": "rejected",
+              "yesWeight": 52687
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:57:14.000Z",
+            "type": "slash_applied",
+            "details": {
+              "solverId": "solver-834077d2c7cd0093",
+              "amount": 14400,
+              "reason": "Failed consensus"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:57:26.000Z",
+            "type": "requeue",
+            "details": {
+              "solverId": "solver-85b7571cb9684c4c",
+              "reason": "Meta-architect escalated to evolved agent"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:57:30.000Z",
+            "type": "solver_selected",
+            "details": {
+              "solverId": "solver-85b7571cb9684c4c",
+              "stakePosted": 120000
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:58:02.000Z",
+            "type": "result_committed",
+            "details": {
+              "solverId": "solver-85b7571cb9684c4c",
+              "commit": "a71fc6a4d27f9928547e7c9286a86675979d6854026355e0559ce8baf2e50211",
+              "operations": 4
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:58:13.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-195a5d4bfbdae573",
+              "commitment": "c0e7ac904a95f3b6b07a2d8458d1be1ea31b81714501555ef6da2be49ddaadce"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:58:24.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-195a5d4bfbdae573",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:58:33.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-76bf560baa38ba87",
+              "commitment": "ba808148dada8a23c0977f5798f313954ad76c389605df96d26cab84f14ea32a"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:58:46.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-76bf560baa38ba87",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:58:55.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-79c9d91afd1ddf92",
+              "commitment": "9d1ce6a17520b9b429f727eeb800908b5a13200a307782f3a8874baf70f96c11"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:59:08.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-79c9d91afd1ddf92",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:59:16.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-a93d1e2a9c0e3a2a",
+              "commitment": "d112ff2b6d9545978359f988200e0c135e6b7c05e0812b51815198a85b53a97f"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:59:28.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-a93d1e2a9c0e3a2a",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:59:42.000Z",
+            "type": "consensus_finalised",
+            "details": {
+              "attempt": 2,
+              "solverId": "solver-85b7571cb9684c4c",
+              "consensus": "accepted",
+              "yesWeight": 216615
+            }
+          },
+          {
+            "timestamp": "2042-01-01T08:59:54.000Z",
+            "type": "reward_distributed",
+            "details": {
+              "solverId": "solver-85b7571cb9684c4c",
+              "solverReward": 344400,
+              "validatorRewards": 50400,
+              "treasuryReturn": 25200
+            }
           }
         ]
       }
@@ -670,7 +1025,7 @@
           "medianScore": 41.03751524896436,
           "diversity": 0.9722222222222222,
           "eliteScore": 96.0918022581709,
-          "timestamp": "2025-10-21T02:47:22.578Z"
+          "timestamp": "2025-10-21T03:23:20.716Z"
         },
         {
           "generation": 1,
@@ -679,7 +1034,7 @@
           "medianScore": 62.99975060567376,
           "diversity": 0.9444444444444444,
           "eliteScore": 98.43691088683215,
-          "timestamp": "2025-10-21T02:47:22.579Z"
+          "timestamp": "2025-10-21T03:23:20.717Z"
         },
         {
           "generation": 2,
@@ -688,7 +1043,7 @@
           "medianScore": 76.53115760829131,
           "diversity": 0.75,
           "eliteScore": 132.5084085000921,
-          "timestamp": "2025-10-21T02:47:22.580Z"
+          "timestamp": "2025-10-21T03:23:20.718Z"
         },
         {
           "generation": 3,
@@ -697,7 +1052,7 @@
           "medianScore": 77.95296283436663,
           "diversity": 0.7222222222222222,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.581Z"
+          "timestamp": "2025-10-21T03:23:20.719Z"
         },
         {
           "generation": 4,
@@ -706,7 +1061,7 @@
           "medianScore": 86.94000111220245,
           "diversity": 0.7222222222222222,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.581Z"
+          "timestamp": "2025-10-21T03:23:20.725Z"
         },
         {
           "generation": 5,
@@ -715,7 +1070,7 @@
           "medianScore": 88.99300139019402,
           "diversity": 0.6111111111111112,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.582Z"
+          "timestamp": "2025-10-21T03:23:20.726Z"
         },
         {
           "generation": 6,
@@ -724,7 +1079,7 @@
           "medianScore": 83.23985249780515,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.583Z"
+          "timestamp": "2025-10-21T03:23:20.727Z"
         },
         {
           "generation": 7,
@@ -733,7 +1088,7 @@
           "medianScore": 82.9194778065494,
           "diversity": 0.6111111111111112,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.584Z"
+          "timestamp": "2025-10-21T03:23:20.727Z"
         },
         {
           "generation": 8,
@@ -742,7 +1097,7 @@
           "medianScore": 86.367830024997,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.585Z"
+          "timestamp": "2025-10-21T03:23:20.728Z"
         },
         {
           "generation": 9,
@@ -751,7 +1106,7 @@
           "medianScore": 85.09002044220831,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.585Z"
+          "timestamp": "2025-10-21T03:23:20.728Z"
         }
       ],
       "triangulation": {
@@ -798,6 +1153,376 @@
             "confidence": 0.2,
             "energyDelta": 64,
             "notes": "Peer median 133.04 • energy delta 64.00 (≤ 44.80)"
+          }
+        ]
+      },
+      "ledger": {
+        "summary": {
+          "finalConsensus": "accepted",
+          "totalRewardPaid": 493500,
+          "totalSlashed": 18600,
+          "validatorRewards": 63000,
+          "treasuryReturn": 31500,
+          "averageLatencySeconds": 270,
+          "participationRate": 1,
+          "commitRevealIntegrity": "verified",
+          "attempts": 2
+        },
+        "validators": [
+          {
+            "validatorId": "validator-02b303e331d093d1",
+            "stakeBefore": 60555,
+            "stakeAfter": 76305,
+            "rewardEarned": 15750,
+            "slashed": 0,
+            "participationRate": 1
+          },
+          {
+            "validatorId": "validator-8fb387f22ab17dbb",
+            "stakeBefore": 77689,
+            "stakeAfter": 93439,
+            "rewardEarned": 15750,
+            "slashed": 0,
+            "participationRate": 1
+          },
+          {
+            "validatorId": "validator-b48c4f3bd017c796",
+            "stakeBefore": 60967,
+            "stakeAfter": 76717,
+            "rewardEarned": 15750,
+            "slashed": 0,
+            "participationRate": 1
+          },
+          {
+            "validatorId": "validator-f3cbd6e75978a4b6",
+            "stakeBefore": 78620,
+            "stakeAfter": 94370,
+            "rewardEarned": 15750,
+            "slashed": 0,
+            "participationRate": 1
+          }
+        ],
+        "attempts": [
+          {
+            "attemptId": "ledger-harmonics-attempt-1",
+            "solverId": "solver-424046f71a035fe6",
+            "status": "slashed",
+            "commitHash": "3a489a39a4ac760eea4e21600c7db814fc7ef4e73499a6f0e7c200e447c856d5",
+            "reveal": "insufficient-delta",
+            "consensus": "rejected",
+            "rewardEarned": 0,
+            "slashApplied": 18600,
+            "latencySeconds": 189,
+            "energyObserved": 51.2,
+            "notes": "Consensus rejected misaligned agent – stake partially slashed and job requeued.",
+            "votes": [
+              {
+                "validatorId": "validator-02b303e331d093d1",
+                "commitment": "386876e8b46f541afba7e9ba7981dc0e41940b840db1165200b4fc64be00fa49",
+                "revealed": "no",
+                "weight": 60555,
+                "rewardEarned": 0,
+                "slashed": 0,
+                "notes": "Detected thermodynamic drift"
+              },
+              {
+                "validatorId": "validator-8fb387f22ab17dbb",
+                "commitment": "d26aaf535bef21fa45371b67e612ecbf4724c3beceefe3b1a7c4771a699ff16c",
+                "revealed": "yes",
+                "weight": 77689,
+                "rewardEarned": 0,
+                "slashed": 0
+              },
+              {
+                "validatorId": "validator-b48c4f3bd017c796",
+                "commitment": "811943ed1d5afdf34e266be81f71f2fddee8d3426f4d5f4ae04b55056f5f3021",
+                "revealed": "no",
+                "weight": 60967,
+                "rewardEarned": 0,
+                "slashed": 0,
+                "notes": "Detected thermodynamic drift"
+              },
+              {
+                "validatorId": "validator-f3cbd6e75978a4b6",
+                "commitment": "df4080472bf5202c53c8cb11c5b947306a9a14c0bf8db697cf7d132e6fe4329d",
+                "revealed": "no",
+                "weight": 78620,
+                "rewardEarned": 0,
+                "slashed": 0,
+                "notes": "Detected thermodynamic drift"
+              }
+            ]
+          },
+          {
+            "attemptId": "ledger-harmonics-attempt-2",
+            "solverId": "solver-04c1f887eae22b1e",
+            "status": "accepted",
+            "commitHash": "ebda15b38d5047ceaade3779010231933171b8cdb316da86dbb9e61379be79fa",
+            "reveal": "ledger-harmonics-g0-c361",
+            "consensus": "accepted",
+            "rewardEarned": 430500,
+            "slashApplied": 0,
+            "latencySeconds": 351,
+            "energyObserved": 64,
+            "notes": "Meta-agentic evolved solver achieved consensus and claimed rewards.",
+            "votes": [
+              {
+                "validatorId": "validator-02b303e331d093d1",
+                "commitment": "a9ff81a696c9a6329240f07cca03b7d28a3d6b7674cf7706e5c465ec3e792d4e",
+                "revealed": "yes",
+                "weight": 60555,
+                "rewardEarned": 15750,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              },
+              {
+                "validatorId": "validator-8fb387f22ab17dbb",
+                "commitment": "781a3ed0c6d16a9f5f6540199d91856aacd60d7ebbc832febf25e052a62f4f5c",
+                "revealed": "yes",
+                "weight": 77689,
+                "rewardEarned": 15750,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              },
+              {
+                "validatorId": "validator-b48c4f3bd017c796",
+                "commitment": "39593093be96192e274a31d636936a404d09f149af4366a54a2b4b2fd463bb23",
+                "revealed": "yes",
+                "weight": 60967,
+                "rewardEarned": 15750,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              },
+              {
+                "validatorId": "validator-f3cbd6e75978a4b6",
+                "commitment": "a1ead23f0685e364f8d70ef43d00c2e91a83cfda9a907ba1fa0b75579202cc58",
+                "revealed": "yes",
+                "weight": 78620,
+                "rewardEarned": 15750,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              }
+            ]
+          }
+        ],
+        "timeline": [
+          {
+            "timestamp": "2042-01-01T13:16:24.000Z",
+            "type": "job_posted",
+            "details": {
+              "jobId": "LEDGER-SYN-007",
+              "reward": 525000,
+              "stakeRequired": 155000,
+              "description": "Absorb asynchronous cash-flow deltas, stabilise them against the thermodynamic ledger, and emit rebalanced incentive curves for validator coalitions."
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:17:09.000Z",
+            "type": "solver_selected",
+            "details": {
+              "solverId": "solver-424046f71a035fe6",
+              "stakePosted": 155000
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:17:44.000Z",
+            "type": "result_committed",
+            "details": {
+              "solverId": "solver-424046f71a035fe6",
+              "commit": "3a489a39a4ac760eea4e21600c7db814fc7ef4e73499a6f0e7c200e447c856d5"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:17:55.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-02b303e331d093d1",
+              "commitment": "386876e8b46f541afba7e9ba7981dc0e41940b840db1165200b4fc64be00fa49"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:18:08.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-02b303e331d093d1",
+              "vote": "no"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:18:17.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-8fb387f22ab17dbb",
+              "commitment": "d26aaf535bef21fa45371b67e612ecbf4724c3beceefe3b1a7c4771a699ff16c"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:18:31.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-8fb387f22ab17dbb",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:18:41.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-b48c4f3bd017c796",
+              "commitment": "811943ed1d5afdf34e266be81f71f2fddee8d3426f4d5f4ae04b55056f5f3021"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:18:53.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-b48c4f3bd017c796",
+              "vote": "no"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:19:05.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-f3cbd6e75978a4b6",
+              "commitment": "df4080472bf5202c53c8cb11c5b947306a9a14c0bf8db697cf7d132e6fe4329d"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:19:17.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-f3cbd6e75978a4b6",
+              "vote": "no"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:19:33.000Z",
+            "type": "consensus_finalised",
+            "details": {
+              "attempt": 1,
+              "solverId": "solver-424046f71a035fe6",
+              "consensus": "rejected",
+              "yesWeight": 77689
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:19:39.000Z",
+            "type": "slash_applied",
+            "details": {
+              "solverId": "solver-424046f71a035fe6",
+              "amount": 18600,
+              "reason": "Failed consensus"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:19:51.000Z",
+            "type": "requeue",
+            "details": {
+              "solverId": "solver-04c1f887eae22b1e",
+              "reason": "Meta-architect escalated to evolved agent"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:19:55.000Z",
+            "type": "solver_selected",
+            "details": {
+              "solverId": "solver-04c1f887eae22b1e",
+              "stakePosted": 155000
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:20:27.000Z",
+            "type": "result_committed",
+            "details": {
+              "solverId": "solver-04c1f887eae22b1e",
+              "commit": "ebda15b38d5047ceaade3779010231933171b8cdb316da86dbb9e61379be79fa",
+              "operations": 3
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:20:37.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-02b303e331d093d1",
+              "commitment": "a9ff81a696c9a6329240f07cca03b7d28a3d6b7674cf7706e5c465ec3e792d4e"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:20:50.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-02b303e331d093d1",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:21:01.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-8fb387f22ab17dbb",
+              "commitment": "781a3ed0c6d16a9f5f6540199d91856aacd60d7ebbc832febf25e052a62f4f5c"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:21:10.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-8fb387f22ab17dbb",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:21:19.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-b48c4f3bd017c796",
+              "commitment": "39593093be96192e274a31d636936a404d09f149af4366a54a2b4b2fd463bb23"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:21:28.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-b48c4f3bd017c796",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:21:38.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-f3cbd6e75978a4b6",
+              "commitment": "a1ead23f0685e364f8d70ef43d00c2e91a83cfda9a907ba1fa0b75579202cc58"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:21:49.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-f3cbd6e75978a4b6",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:22:03.000Z",
+            "type": "consensus_finalised",
+            "details": {
+              "attempt": 2,
+              "solverId": "solver-04c1f887eae22b1e",
+              "consensus": "accepted",
+              "yesWeight": 277831
+            }
+          },
+          {
+            "timestamp": "2042-01-01T13:22:15.000Z",
+            "type": "reward_distributed",
+            "details": {
+              "solverId": "solver-04c1f887eae22b1e",
+              "solverReward": 430500,
+              "validatorRewards": 63000,
+              "treasuryReturn": 31500
+            }
           }
         ]
       }
@@ -1075,7 +1800,7 @@
           "medianScore": 23.447749293641056,
           "diversity": 1,
           "eliteScore": 97.42746077012889,
-          "timestamp": "2025-10-21T02:47:22.586Z"
+          "timestamp": "2025-10-21T03:23:20.730Z"
         },
         {
           "generation": 1,
@@ -1084,7 +1809,7 @@
           "medianScore": 33.23577114240753,
           "diversity": 1,
           "eliteScore": 101.68095349725729,
-          "timestamp": "2025-10-21T02:47:22.587Z"
+          "timestamp": "2025-10-21T03:23:20.731Z"
         },
         {
           "generation": 2,
@@ -1093,7 +1818,7 @@
           "medianScore": 64.46743238768931,
           "diversity": 0.8888888888888888,
           "eliteScore": 125.76131787031291,
-          "timestamp": "2025-10-21T02:47:22.587Z"
+          "timestamp": "2025-10-21T03:23:20.731Z"
         },
         {
           "generation": 3,
@@ -1102,7 +1827,7 @@
           "medianScore": 70.39942915911845,
           "diversity": 0.8611111111111112,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.588Z"
+          "timestamp": "2025-10-21T03:23:20.732Z"
         },
         {
           "generation": 4,
@@ -1111,7 +1836,7 @@
           "medianScore": 71.05162669292856,
           "diversity": 0.8333333333333334,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.589Z"
+          "timestamp": "2025-10-21T03:23:20.733Z"
         },
         {
           "generation": 5,
@@ -1120,7 +1845,7 @@
           "medianScore": 53.843889930604206,
           "diversity": 0.7777777777777778,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.589Z"
+          "timestamp": "2025-10-21T03:23:20.733Z"
         },
         {
           "generation": 6,
@@ -1129,7 +1854,7 @@
           "medianScore": 78.25900854278035,
           "diversity": 0.6666666666666666,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.597Z"
+          "timestamp": "2025-10-21T03:23:20.734Z"
         },
         {
           "generation": 7,
@@ -1138,7 +1863,7 @@
           "medianScore": 91.68021852282594,
           "diversity": 0.5,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.598Z"
+          "timestamp": "2025-10-21T03:23:20.734Z"
         },
         {
           "generation": 8,
@@ -1147,7 +1872,7 @@
           "medianScore": 84.52984866490183,
           "diversity": 0.6388888888888888,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.598Z"
+          "timestamp": "2025-10-21T03:23:20.735Z"
         },
         {
           "generation": 9,
@@ -1156,7 +1881,7 @@
           "medianScore": 90.34258929546631,
           "diversity": 0.6388888888888888,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.599Z"
+          "timestamp": "2025-10-21T03:23:20.736Z"
         }
       ],
       "triangulation": {
@@ -1203,6 +1928,318 @@
             "confidence": 0.2,
             "energyDelta": 76,
             "notes": "Peer median 136.05 • energy delta 76.00 (≤ 50.40)"
+          }
+        ]
+      },
+      "ledger": {
+        "summary": {
+          "finalConsensus": "accepted",
+          "totalRewardPaid": 573400,
+          "totalSlashed": 19800,
+          "validatorRewards": 73200,
+          "treasuryReturn": 36600,
+          "averageLatencySeconds": 233.5,
+          "participationRate": 1,
+          "commitRevealIntegrity": "verified",
+          "attempts": 2
+        },
+        "validators": [
+          {
+            "validatorId": "validator-998a4f56b41c1653",
+            "stakeBefore": 85872,
+            "stakeAfter": 110272,
+            "rewardEarned": 24400,
+            "slashed": 0,
+            "participationRate": 1
+          },
+          {
+            "validatorId": "validator-9d05a69084156cb4",
+            "stakeBefore": 68211,
+            "stakeAfter": 92611,
+            "rewardEarned": 24400,
+            "slashed": 0,
+            "participationRate": 1
+          },
+          {
+            "validatorId": "validator-d3dc9de91651750d",
+            "stakeBefore": 58085,
+            "stakeAfter": 82485,
+            "rewardEarned": 24400,
+            "slashed": 0,
+            "participationRate": 1
+          }
+        ],
+        "attempts": [
+          {
+            "attemptId": "nova-weave-attempt-1",
+            "solverId": "solver-df8d72feae9e0558",
+            "status": "slashed",
+            "commitHash": "53ccd0481295cff8b777e9e746537f782210d0d6634463a6ee45af55c9df399c",
+            "reveal": "insufficient-delta",
+            "consensus": "rejected",
+            "rewardEarned": 0,
+            "slashApplied": 19800,
+            "latencySeconds": 163,
+            "energyObserved": 54.400000000000006,
+            "notes": "Consensus rejected misaligned agent – stake partially slashed and job requeued.",
+            "votes": [
+              {
+                "validatorId": "validator-998a4f56b41c1653",
+                "commitment": "b1c8d5fb8311d466fe88c58b0121b6c45662d842bf31bfe7485ceae3038ccd8c",
+                "revealed": "no",
+                "weight": 85872,
+                "rewardEarned": 0,
+                "slashed": 0,
+                "notes": "Detected thermodynamic drift"
+              },
+              {
+                "validatorId": "validator-9d05a69084156cb4",
+                "commitment": "4657fd854d9a91e5f21ab296f043f3cb95e3e701e4a80fb5c7fc3a5bfef81729",
+                "revealed": "yes",
+                "weight": 68211,
+                "rewardEarned": 0,
+                "slashed": 0
+              },
+              {
+                "validatorId": "validator-d3dc9de91651750d",
+                "commitment": "b4affd948c6de5ef384077b29023dd77a88c6af547d1f8308a27ad6a0895ced4",
+                "revealed": "no",
+                "weight": 58085,
+                "rewardEarned": 0,
+                "slashed": 0,
+                "notes": "Detected thermodynamic drift"
+              }
+            ]
+          },
+          {
+            "attemptId": "nova-weave-attempt-2",
+            "solverId": "solver-b0ce6e46ec6aee31",
+            "status": "accepted",
+            "commitHash": "ec051e8ee05f18e96d72bcc879d6325db1bba43c808cc42dfbe7895eabdea108",
+            "reveal": "nova-weave-g0-c721",
+            "consensus": "accepted",
+            "rewardEarned": 500200,
+            "slashApplied": 0,
+            "latencySeconds": 304,
+            "energyObserved": 68,
+            "notes": "Meta-agentic evolved solver achieved consensus and claimed rewards.",
+            "votes": [
+              {
+                "validatorId": "validator-998a4f56b41c1653",
+                "commitment": "76f6ee53383c2999cbe79913a5f6167c4ca686cdc3e266a2e28c96fea559c37a",
+                "revealed": "yes",
+                "weight": 85872,
+                "rewardEarned": 24400,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              },
+              {
+                "validatorId": "validator-9d05a69084156cb4",
+                "commitment": "8976703d78e5c6073ca9f883c7e6593a311201bf7e021cdfd02726cb0d218003",
+                "revealed": "yes",
+                "weight": 68211,
+                "rewardEarned": 24400,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              },
+              {
+                "validatorId": "validator-d3dc9de91651750d",
+                "commitment": "3cb52a63d7218a3eaa12727a77ed6b8e3c2261ed8db9007f22ec5ce0849c7d8d",
+                "revealed": "yes",
+                "weight": 58085,
+                "rewardEarned": 24400,
+                "slashed": 0,
+                "notes": "Validated evolved solver output"
+              }
+            ]
+          }
+        ],
+        "timeline": [
+          {
+            "timestamp": "2042-01-01T07:29:20.000Z",
+            "type": "job_posted",
+            "details": {
+              "jobId": "NOVA-SYN-009",
+              "reward": 610000,
+              "stakeRequired": 165000,
+              "description": "Elevate alpha sequences into deterministic blueprints that compile into on-chain production payloads with zero manual edits."
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:30:05.000Z",
+            "type": "solver_selected",
+            "details": {
+              "solverId": "solver-df8d72feae9e0558",
+              "stakePosted": 165000
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:30:40.000Z",
+            "type": "result_committed",
+            "details": {
+              "solverId": "solver-df8d72feae9e0558",
+              "commit": "53ccd0481295cff8b777e9e746537f782210d0d6634463a6ee45af55c9df399c"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:30:49.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-998a4f56b41c1653",
+              "commitment": "b1c8d5fb8311d466fe88c58b0121b6c45662d842bf31bfe7485ceae3038ccd8c"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:31:00.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-998a4f56b41c1653",
+              "vote": "no"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:31:10.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-9d05a69084156cb4",
+              "commitment": "4657fd854d9a91e5f21ab296f043f3cb95e3e701e4a80fb5c7fc3a5bfef81729"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:31:23.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-9d05a69084156cb4",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:31:32.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-d3dc9de91651750d",
+              "commitment": "b4affd948c6de5ef384077b29023dd77a88c6af547d1f8308a27ad6a0895ced4"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:31:47.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-d3dc9de91651750d",
+              "vote": "no"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:32:03.000Z",
+            "type": "consensus_finalised",
+            "details": {
+              "attempt": 1,
+              "solverId": "solver-df8d72feae9e0558",
+              "consensus": "rejected",
+              "yesWeight": 68211
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:32:09.000Z",
+            "type": "slash_applied",
+            "details": {
+              "solverId": "solver-df8d72feae9e0558",
+              "amount": 19800,
+              "reason": "Failed consensus"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:32:21.000Z",
+            "type": "requeue",
+            "details": {
+              "solverId": "solver-b0ce6e46ec6aee31",
+              "reason": "Meta-architect escalated to evolved agent"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:32:25.000Z",
+            "type": "solver_selected",
+            "details": {
+              "solverId": "solver-b0ce6e46ec6aee31",
+              "stakePosted": 165000
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:32:57.000Z",
+            "type": "result_committed",
+            "details": {
+              "solverId": "solver-b0ce6e46ec6aee31",
+              "commit": "ec051e8ee05f18e96d72bcc879d6325db1bba43c808cc42dfbe7895eabdea108",
+              "operations": 3
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:33:04.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-998a4f56b41c1653",
+              "commitment": "76f6ee53383c2999cbe79913a5f6167c4ca686cdc3e266a2e28c96fea559c37a"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:33:15.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-998a4f56b41c1653",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:33:25.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-9d05a69084156cb4",
+              "commitment": "8976703d78e5c6073ca9f883c7e6593a311201bf7e021cdfd02726cb0d218003"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:33:35.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-9d05a69084156cb4",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:33:46.000Z",
+            "type": "vote_commit",
+            "details": {
+              "validator": "validator-d3dc9de91651750d",
+              "commitment": "3cb52a63d7218a3eaa12727a77ed6b8e3c2261ed8db9007f22ec5ce0849c7d8d"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:33:58.000Z",
+            "type": "vote_reveal",
+            "details": {
+              "validator": "validator-d3dc9de91651750d",
+              "vote": "yes"
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:34:12.000Z",
+            "type": "consensus_finalised",
+            "details": {
+              "attempt": 2,
+              "solverId": "solver-b0ce6e46ec6aee31",
+              "consensus": "accepted",
+              "yesWeight": 212168
+            }
+          },
+          {
+            "timestamp": "2042-01-01T07:34:24.000Z",
+            "type": "reward_distributed",
+            "details": {
+              "solverId": "solver-b0ce6e46ec6aee31",
+              "solverReward": 500200,
+              "validatorRewards": 73200,
+              "treasuryReturn": 36600
+            }
           }
         ]
       }

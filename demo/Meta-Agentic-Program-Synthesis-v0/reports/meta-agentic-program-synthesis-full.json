@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-21T02:47:22.635Z",
+  "generatedAt": "2025-10-21T03:23:20.777Z",
   "aggregate": {
     "globalBestScore": 140.38164328854776,
     "averageAccuracy": 1,
@@ -21,6 +21,16 @@
         "monitor": 0,
         "drift": 0
       }
+    },
+    "ledger": {
+      "totalRewardPaid": 1461700,
+      "totalSlashed": 52800,
+      "validatorRewards": 186600,
+      "treasuryReturn": 93300,
+      "averageParticipationRate": 0.9583333333333334,
+      "averageLatencySeconds": 250.16666666666666,
+      "accepted": 3,
+      "consensusAlerts": 0
     }
   },
   "triangulation": {
@@ -92,7 +102,7 @@
     "report": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json"
   },
   "ownerDiagnostics": {
-    "generatedAt": "2025-10-21T02:47:22.634Z",
+    "generatedAt": "2025-10-21T03:23:20.776Z",
     "readiness": "ready",
     "commandReadiness": "ready",
     "coverage": {
