@@ -86,8 +86,42 @@ function resolveNumber(value, fallback) {
   return fallback;
 }
 
+function parsePositiveDecimal(value, { allowZero = false, label = 'value' } = {}) {
+  const trimmed = String(value ?? '').trim();
+  if (!trimmed) {
+    throw new Error(`${label} must be provided`);
+  }
+  if (!/^\d+(?:\.\d+)?$/.test(trimmed)) {
+    throw new Error(`${label} must be a positive decimal number`);
+  }
+  const numeric = Number.parseFloat(trimmed);
+  if (!Number.isFinite(numeric)) {
+    throw new Error(`${label} is not a finite number`);
+  }
+  if (numeric < 0 || (!allowZero && numeric === 0)) {
+    throw new Error(`${label} must be ${allowZero ? 'non-negative' : 'greater than zero'}`);
+  }
+  return trimmed;
+}
+
+function parsePositiveInteger(value, { label = 'value' } = {}) {
+  const trimmed = String(value ?? '').trim();
+  if (!trimmed) {
+    throw new Error(`${label} must be provided`);
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    throw new Error(`${label} must be a positive integer`);
+  }
+  const numeric = Number.parseInt(trimmed, 10);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    throw new Error(`${label} must be greater than zero`);
+  }
+  return numeric;
+}
+
 function resolveConfig(env, options = {}) {
   const missing = [];
+  const warnings = [];
   for (const key of REQUIRED_ENV_KEYS) {
     const value = env[key];
     const treatZeroAddress = key !== 'RPC_URL';
@@ -113,6 +147,50 @@ function resolveConfig(env, options = {}) {
     `http://${uiHost}:${orchestratorPort}`;
   const explorerBase = (options.explorerBase ?? env.ONEBOX_EXPLORER_TX_BASE ?? env.NEXT_PUBLIC_ONEBOX_EXPLORER_TX_BASE ?? '').trim();
 
+  let maxJobBudgetAgia;
+  const budgetSource = options.maxJobBudgetAgia ?? env.ONEBOX_MAX_JOB_BUDGET_AGIA;
+  if (!isUnsetEnvValue(budgetSource, { treatZeroAddress: false })) {
+    try {
+      maxJobBudgetAgia = parsePositiveDecimal(budgetSource, {
+        label: 'ONEBOX_MAX_JOB_BUDGET_AGIA',
+      });
+    } catch (error) {
+      if (options.allowPartial) {
+        warnings.push(
+          error instanceof Error
+            ? error.message
+            : 'Invalid ONEBOX_MAX_JOB_BUDGET_AGIA configuration'
+        );
+      } else {
+        throw error instanceof Error
+          ? error
+          : new Error('Invalid ONEBOX_MAX_JOB_BUDGET_AGIA configuration');
+      }
+    }
+  }
+
+  let maxJobDurationDays;
+  const durationSource = options.maxJobDurationDays ?? env.ONEBOX_MAX_JOB_DURATION_DAYS;
+  if (!isUnsetEnvValue(durationSource, { treatZeroAddress: false })) {
+    try {
+      maxJobDurationDays = parsePositiveInteger(durationSource, {
+        label: 'ONEBOX_MAX_JOB_DURATION_DAYS',
+      });
+    } catch (error) {
+      if (options.allowPartial) {
+        warnings.push(
+          error instanceof Error
+            ? error.message
+            : 'Invalid ONEBOX_MAX_JOB_DURATION_DAYS configuration'
+        );
+      } else {
+        throw error instanceof Error
+          ? error
+          : new Error('Invalid ONEBOX_MAX_JOB_DURATION_DAYS configuration');
+      }
+    }
+  }
+
   return {
     env,
     orchestratorPort,
@@ -124,6 +202,9 @@ function resolveConfig(env, options = {}) {
     publicOrchestratorUrl,
     explorerBase,
     missing,
+    warnings,
+    maxJobBudgetAgia,
+    maxJobDurationDays,
   };
 }
 
@@ -177,6 +258,12 @@ function startOrchestrator(rootDir, env, config) {
   };
   if (config.explorerBase) {
     orchestratorEnv.ONEBOX_EXPLORER_TX_BASE = config.explorerBase;
+  }
+  if (config.maxJobBudgetAgia) {
+    orchestratorEnv.ONEBOX_MAX_JOB_BUDGET_AGIA = String(config.maxJobBudgetAgia);
+  }
+  if (config.maxJobDurationDays) {
+    orchestratorEnv.ONEBOX_MAX_JOB_DURATION_DAYS = String(config.maxJobDurationDays);
   }
   const command = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const child = spawn(command, ['run', 'onebox:server'], {
@@ -332,6 +419,16 @@ function parseCliArgs(argv = process.argv.slice(2)) {
       case '--explorer-base':
         options.explorerBase = requireValue(flag, value);
         break;
+      case '--max-budget':
+        options.maxJobBudgetAgia = parsePositiveDecimal(requireValue(flag, value), {
+          label: '--max-budget',
+        });
+        break;
+      case '--max-duration':
+        options.maxJobDurationDays = parsePositiveInteger(requireValue(flag, value), {
+          label: '--max-duration',
+        });
+        break;
       default:
         // Unrecognised flag – ignore so scripts remain forward compatible.
         break;
@@ -358,6 +455,21 @@ async function runDemo(options = {}) {
   console.log('🎖️  AGI Jobs One-Box demo ready');
   console.log(`   • UI:        ${demoUrl}`);
   console.log(`   • Orchestrator API: http://${config.uiHost}:${config.orchestratorPort}/onebox`);
+  if (config.maxJobBudgetAgia || config.maxJobDurationDays) {
+    console.log('   • Guardrails:');
+    if (config.maxJobBudgetAgia) {
+      console.log(`       – Max job budget: ${config.maxJobBudgetAgia} AGIALPHA`);
+    }
+    if (config.maxJobDurationDays) {
+      console.log(`       – Max job duration: ${config.maxJobDurationDays} day(s)`);
+    }
+  }
+  if (config.warnings.length > 0) {
+    console.log('   • Warnings:');
+    for (const warning of config.warnings) {
+      console.log(`       – ${warning}`);
+    }
+  }
   if (config.apiToken) {
     console.log('   • API token: supplied via query parameter (kept in-memory only)');
   }
@@ -410,5 +522,7 @@ module.exports = {
   startStaticServer,
   openBrowser,
   parseCliArgs,
+  parsePositiveDecimal,
+  parsePositiveInteger,
   runDemo,
 };

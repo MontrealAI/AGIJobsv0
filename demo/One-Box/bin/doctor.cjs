@@ -73,6 +73,23 @@ function formatStatus(label, value) {
   }
   console.log('');
 
+  console.log('Organisational guardrails:');
+  formatStatus(
+    'Max job budget',
+    config.maxJobBudgetAgia ? `${config.maxJobBudgetAgia} AGIALPHA` : '(not configured)'
+  );
+  formatStatus(
+    'Max job duration',
+    config.maxJobDurationDays ? `${config.maxJobDurationDays} day(s)` : '(not configured)'
+  );
+  if (config.warnings.length > 0) {
+    console.log('   Guardrail warnings:');
+    for (const warning of config.warnings) {
+      console.log(`     • ${warning}`);
+    }
+  }
+  console.log('');
+
   console.log('Launch URL preview:');
   console.log(`   ${createDemoUrl(config)}`);
   console.log('');
