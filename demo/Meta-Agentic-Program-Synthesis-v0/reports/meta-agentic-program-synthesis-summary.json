@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-21T02:47:22.562Z",
+  "generatedAt": "2025-10-21T04:26:14.545Z",
   "mission": {
     "title": "Meta-Agentic Program Synthesis Sovereign Mission",
     "version": "0.1.0",
@@ -294,7 +294,7 @@
           "medianScore": 56.19020618556701,
           "diversity": 0.9444444444444444,
           "eliteScore": 110.36140657817333,
-          "timestamp": "2025-10-21T02:47:22.567Z"
+          "timestamp": "2025-10-21T04:26:14.549Z"
         },
         {
           "generation": 1,
@@ -303,7 +303,7 @@
           "medianScore": 65.75277564301642,
           "diversity": 0.75,
           "eliteScore": 136.39087455307794,
-          "timestamp": "2025-10-21T02:47:22.568Z"
+          "timestamp": "2025-10-21T04:26:14.551Z"
         },
         {
           "generation": 2,
@@ -312,7 +312,7 @@
           "medianScore": 73.64584551701412,
           "diversity": 0.75,
           "eliteScore": 138.12283331596453,
-          "timestamp": "2025-10-21T02:47:22.569Z"
+          "timestamp": "2025-10-21T04:26:14.552Z"
         },
         {
           "generation": 3,
@@ -321,7 +321,7 @@
           "medianScore": 100.49230198051038,
           "diversity": 0.8333333333333334,
           "eliteScore": 138.41149310977895,
-          "timestamp": "2025-10-21T02:47:22.570Z"
+          "timestamp": "2025-10-21T04:26:14.552Z"
         },
         {
           "generation": 4,
@@ -330,7 +330,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.6944444444444444,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.571Z"
+          "timestamp": "2025-10-21T04:26:14.553Z"
         },
         {
           "generation": 5,
@@ -339,7 +339,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7777777777777778,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.573Z"
+          "timestamp": "2025-10-21T04:26:14.555Z"
         },
         {
           "generation": 6,
@@ -348,7 +348,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7777777777777778,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.574Z"
+          "timestamp": "2025-10-21T04:26:14.556Z"
         },
         {
           "generation": 7,
@@ -357,7 +357,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7222222222222222,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.574Z"
+          "timestamp": "2025-10-21T04:26:14.557Z"
         },
         {
           "generation": 8,
@@ -366,7 +366,7 @@
           "medianScore": 116.57704853345733,
           "diversity": 0.8055555555555556,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.575Z"
+          "timestamp": "2025-10-21T04:26:14.558Z"
         },
         {
           "generation": 9,
@@ -375,7 +375,7 @@
           "medianScore": 137.1920690409011,
           "diversity": 0.75,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T02:47:22.576Z"
+          "timestamp": "2025-10-21T04:26:14.558Z"
         }
       ],
       "triangulation": {
@@ -670,7 +670,7 @@
           "medianScore": 41.03751524896436,
           "diversity": 0.9722222222222222,
           "eliteScore": 96.0918022581709,
-          "timestamp": "2025-10-21T02:47:22.578Z"
+          "timestamp": "2025-10-21T04:26:14.561Z"
         },
         {
           "generation": 1,
@@ -679,7 +679,7 @@
           "medianScore": 62.99975060567376,
           "diversity": 0.9444444444444444,
           "eliteScore": 98.43691088683215,
-          "timestamp": "2025-10-21T02:47:22.579Z"
+          "timestamp": "2025-10-21T04:26:14.561Z"
         },
         {
           "generation": 2,
@@ -688,7 +688,7 @@
           "medianScore": 76.53115760829131,
           "diversity": 0.75,
           "eliteScore": 132.5084085000921,
-          "timestamp": "2025-10-21T02:47:22.580Z"
+          "timestamp": "2025-10-21T04:26:14.562Z"
         },
         {
           "generation": 3,
@@ -697,7 +697,7 @@
           "medianScore": 77.95296283436663,
           "diversity": 0.7222222222222222,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.581Z"
+          "timestamp": "2025-10-21T04:26:14.563Z"
         },
         {
           "generation": 4,
@@ -706,7 +706,7 @@
           "medianScore": 86.94000111220245,
           "diversity": 0.7222222222222222,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.581Z"
+          "timestamp": "2025-10-21T04:26:14.564Z"
         },
         {
           "generation": 5,
@@ -715,7 +715,7 @@
           "medianScore": 88.99300139019402,
           "diversity": 0.6111111111111112,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.582Z"
+          "timestamp": "2025-10-21T04:26:14.565Z"
         },
         {
           "generation": 6,
@@ -724,7 +724,7 @@
           "medianScore": 83.23985249780515,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.583Z"
+          "timestamp": "2025-10-21T04:26:14.570Z"
         },
         {
           "generation": 7,
@@ -733,7 +733,7 @@
           "medianScore": 82.9194778065494,
           "diversity": 0.6111111111111112,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.584Z"
+          "timestamp": "2025-10-21T04:26:14.571Z"
         },
         {
           "generation": 8,
@@ -742,7 +742,7 @@
           "medianScore": 86.367830024997,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.585Z"
+          "timestamp": "2025-10-21T04:26:14.572Z"
         },
         {
           "generation": 9,
@@ -751,7 +751,7 @@
           "medianScore": 85.09002044220831,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T02:47:22.585Z"
+          "timestamp": "2025-10-21T04:26:14.572Z"
         }
       ],
       "triangulation": {
@@ -1075,7 +1075,7 @@
           "medianScore": 23.447749293641056,
           "diversity": 1,
           "eliteScore": 97.42746077012889,
-          "timestamp": "2025-10-21T02:47:22.586Z"
+          "timestamp": "2025-10-21T04:26:14.573Z"
         },
         {
           "generation": 1,
@@ -1084,7 +1084,7 @@
           "medianScore": 33.23577114240753,
           "diversity": 1,
           "eliteScore": 101.68095349725729,
-          "timestamp": "2025-10-21T02:47:22.587Z"
+          "timestamp": "2025-10-21T04:26:14.574Z"
         },
         {
           "generation": 2,
@@ -1093,7 +1093,7 @@
           "medianScore": 64.46743238768931,
           "diversity": 0.8888888888888888,
           "eliteScore": 125.76131787031291,
-          "timestamp": "2025-10-21T02:47:22.587Z"
+          "timestamp": "2025-10-21T04:26:14.575Z"
         },
         {
           "generation": 3,
@@ -1102,7 +1102,7 @@
           "medianScore": 70.39942915911845,
           "diversity": 0.8611111111111112,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.588Z"
+          "timestamp": "2025-10-21T04:26:14.575Z"
         },
         {
           "generation": 4,
@@ -1111,7 +1111,7 @@
           "medianScore": 71.05162669292856,
           "diversity": 0.8333333333333334,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.589Z"
+          "timestamp": "2025-10-21T04:26:14.576Z"
         },
         {
           "generation": 5,
@@ -1120,7 +1120,7 @@
           "medianScore": 53.843889930604206,
           "diversity": 0.7777777777777778,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.589Z"
+          "timestamp": "2025-10-21T04:26:14.577Z"
         },
         {
           "generation": 6,
@@ -1129,7 +1129,7 @@
           "medianScore": 78.25900854278035,
           "diversity": 0.6666666666666666,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.597Z"
+          "timestamp": "2025-10-21T04:26:14.577Z"
         },
         {
           "generation": 7,
@@ -1138,7 +1138,7 @@
           "medianScore": 91.68021852282594,
           "diversity": 0.5,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.598Z"
+          "timestamp": "2025-10-21T04:26:14.578Z"
         },
         {
           "generation": 8,
@@ -1147,7 +1147,7 @@
           "medianScore": 84.52984866490183,
           "diversity": 0.6388888888888888,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.598Z"
+          "timestamp": "2025-10-21T04:26:14.578Z"
         },
         {
           "generation": 9,
@@ -1156,7 +1156,7 @@
           "medianScore": 90.34258929546631,
           "diversity": 0.6388888888888888,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T02:47:22.599Z"
+          "timestamp": "2025-10-21T04:26:14.579Z"
         }
       ],
       "triangulation": {
@@ -1264,5 +1264,31 @@
         "verification": "npm run owner:doctor"
       }
     ]
+  },
+  "ownerScripts": [
+    {
+      "script": "npm run owner:command-center",
+      "available": true
+    },
+    {
+      "script": "npm run owner:atlas",
+      "available": true
+    },
+    {
+      "script": "npm run owner:system-pause",
+      "available": true
+    },
+    {
+      "script": "npm run owner:upgrade-status",
+      "available": true
+    },
+    {
+      "script": "npm run owner:change-ticket",
+      "available": true
+    }
+  ],
+  "ownerScriptsVerdict": {
+    "total": 5,
+    "missing": []
   }
 }

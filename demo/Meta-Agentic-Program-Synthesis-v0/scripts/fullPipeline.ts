@@ -3,13 +3,19 @@ import path from "path";
 import yaml from "js-yaml";
 import { executeSynthesis, type RunOptions } from "./runSynthesis";
 import { updateManifest } from "./manifest";
-import type { MissionConfig, OwnerCapability, OwnerControlCoverage, SynthesisRun } from "./types";
+import { evaluateOwnerScripts, inspectCommand, loadPackageScripts } from "./commandValidation";
+import type {
+  MissionConfig,
+  OwnerCapability,
+  OwnerControlCoverage,
+  OwnerScriptAudit,
+  SynthesisRun,
+} from "./types";
 
 const BASE_DIR = path.resolve(__dirname, "..");
 const REPO_ROOT = path.resolve(BASE_DIR, "..", "..");
 const REPORT_DIR = path.join(BASE_DIR, "reports");
 const WORKFLOW_FILE = path.join(REPO_ROOT, ".github", "workflows", "ci.yml");
-const PACKAGE_JSON = path.join(REPO_ROOT, "package.json");
 
 const FULL_JSON = path.join(REPORT_DIR, "meta-agentic-program-synthesis-full.json");
 const FULL_MARKDOWN = path.join(REPORT_DIR, "meta-agentic-program-synthesis-full.md");
@@ -191,32 +197,6 @@ async function verifyCi(mission: MissionConfig): Promise<{
   return { ok, issues, report };
 }
 
-function inspectCommand(command: string, scripts: Record<string, string | undefined>): boolean {
-  const trimmed = command.trim();
-  const tokens = trimmed.split(/\s+/).filter((token) => token.length > 0);
-  if (tokens.length >= 2 && tokens[0] === "npm" && tokens[1] === "run") {
-    let index = 2;
-    while (index < tokens.length && tokens[index].startsWith("-") && tokens[index] !== "--") {
-      index += 1;
-    }
-    if (index < tokens.length && tokens[index] === "--") {
-      index += 1;
-    }
-    if (index >= tokens.length) {
-      return false;
-    }
-    const scriptName = tokens[index];
-    return Boolean(scriptName && scripts[scriptName]);
-  }
-  if (trimmed.startsWith("npx ")) {
-    return true;
-  }
-  if (trimmed.startsWith("node ") || trimmed.startsWith("ts-node ")) {
-    return true;
-  }
-  return trimmed.length > 0;
-}
-
 async function evaluateOwnerControls(
   mission: MissionConfig,
   coverage: OwnerControlCoverage,
@@ -228,16 +208,17 @@ async function evaluateOwnerControls(
     commandAvailable: boolean;
     verificationAvailable: boolean;
   }>;
+  scriptStatuses: OwnerScriptAudit[];
 }> {
-  const pkgRaw = await readFile(PACKAGE_JSON, "utf8");
-  const pkg = JSON.parse(pkgRaw) as { scripts?: Record<string, string> };
-  const scripts = pkg.scripts ?? {};
+  const scripts = await loadPackageScripts(REPO_ROOT);
 
   const statuses = mission.ownerControls.capabilities.map((capability) => {
     const commandAvailable = inspectCommand(capability.command, scripts);
     const verificationAvailable = inspectCommand(capability.verification, scripts);
     return { capability, commandAvailable, verificationAvailable };
   });
+
+  const ownerScripts = evaluateOwnerScripts(mission.meta.governance?.ownerScripts ?? [], scripts);
 
   const anyError = statuses.some((status) => !status.commandAvailable && !status.verificationAvailable);
   const anyWarning = statuses.some(
@@ -260,12 +241,18 @@ async function evaluateOwnerControls(
         return 0;
     }
   };
+  const scriptReadiness: "ready" | "attention" | "blocked" = ownerScripts.every((status) => status.available)
+    ? "ready"
+    : "blocked";
   let readiness = commandReadiness;
   if (rank(coverage.readiness) > rank(readiness)) {
     readiness = coverage.readiness;
   }
+  if (rank(scriptReadiness) > rank(readiness)) {
+    readiness = scriptReadiness;
+  }
 
-  return { readiness, commandReadiness, statuses };
+  return { readiness, commandReadiness, statuses, scriptStatuses: ownerScripts };
 }
 
 function renderOwnerMarkdown(
@@ -276,6 +263,9 @@ function renderOwnerMarkdown(
     commandAvailable: boolean;
     verificationAvailable: boolean;
   }>,
+  scripts: OwnerScriptAudit[],
+  auditMatches: boolean,
+  discrepancies: string[],
 ): string {
   const lines: string[] = [];
   lines.push("# Owner Diagnostics (Static Verification)");
@@ -301,6 +291,23 @@ function renderOwnerMarkdown(
     );
   }
   lines.push("");
+  lines.push("## Owner Script Audit");
+  lines.push("");
+  if (scripts.length === 0) {
+    lines.push("No owner scripts declared.");
+  } else {
+    lines.push("| Script | Status |");
+    lines.push("| --- | --- |");
+    for (const script of scripts) {
+      lines.push(`| \`${script.script}\` | ${script.available ? "✅ Available" : "❌ Missing"} |`);
+    }
+  }
+  lines.push("");
+  lines.push(auditMatches ? "Audit comparison: ✅ match." : "Audit comparison: ⚠️ divergence detected.");
+  for (const note of discrepancies) {
+    lines.push(`- ${note}`);
+  }
+  lines.push("");
   return lines.join("\n");
 }
 
@@ -312,18 +319,65 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
   const ciAssessment = await verifyCi(run.mission);
   const ownerAssessment = await evaluateOwnerControls(run.mission, run.ownerCoverage);
 
+  const normaliseAudit = (audit: OwnerScriptAudit[]): OwnerScriptAudit[] =>
+    [...audit]
+      .map((entry) => ({ script: entry.script.trim(), available: Boolean(entry.available) }))
+      .sort((a, b) => a.script.localeCompare(b.script));
+
+  const reportedAudit = normaliseAudit(run.ownerScriptsAudit);
+  const assessedAudit = normaliseAudit(ownerAssessment.scriptStatuses);
+  let auditMatches = reportedAudit.length === assessedAudit.length;
+  const discrepancies: string[] = [];
+  if (auditMatches) {
+    for (let index = 0; index < reportedAudit.length; index += 1) {
+      const reported = reportedAudit[index];
+      const assessed = assessedAudit[index];
+      if (reported.script !== assessed.script || reported.available !== assessed.available) {
+        auditMatches = false;
+        discrepancies.push(`Mismatch for ${assessed.script}: report ${reported.available ? "available" : "missing"} vs audit ${assessed.available ? "available" : "missing"}`);
+      }
+    }
+  } else {
+    discrepancies.push(
+      `Script audit counts differ: reports ${reportedAudit.length}, owner assessment ${assessedAudit.length}.`,
+    );
+  }
+
+  run.ownerScriptsAudit = assessedAudit;
+
   const ownerReport = {
     generatedAt: new Date().toISOString(),
     readiness: ownerAssessment.readiness,
     commandReadiness: ownerAssessment.commandReadiness,
     coverage: run.ownerCoverage,
     statuses: ownerAssessment.statuses,
+    scripts: ownerAssessment.scriptStatuses,
+    scriptAudit: {
+      matches: auditMatches,
+      discrepancies,
+      reported: reportedAudit,
+      assessed: assessedAudit,
+    },
   };
+
+  if (!auditMatches) {
+    console.warn("⚠️ Owner script audit mismatch detected between synthesis report and live package scripts.");
+    for (const discrepancy of discrepancies) {
+      console.warn(`   - ${discrepancy}`);
+    }
+  }
 
   await writeFile(OWNER_JSON, JSON.stringify(ownerReport, null, 2), "utf8");
   await writeFile(
     OWNER_MARKDOWN,
-    renderOwnerMarkdown(ownerAssessment.readiness, run.ownerCoverage, ownerAssessment.statuses),
+    renderOwnerMarkdown(
+      ownerAssessment.readiness,
+      run.ownerCoverage,
+      ownerAssessment.statuses,
+      ownerAssessment.scriptStatuses,
+      ownerReport.scriptAudit.matches,
+      ownerReport.scriptAudit.discrepancies,
+    ),
     "utf8",
   );
 
@@ -362,6 +416,7 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
     },
     ownerDiagnostics: ownerReport,
     ownerCoverage: run.ownerCoverage,
+    ownerScriptsAudit: run.ownerScriptsAudit,
     artifacts,
   };
 

@@ -81,6 +81,18 @@ pie title System-wide verification consensus
 - **Satisfied controls:** Emergency Pause, Thermostat, Upgrade, Treasury, Compliance
 - **Missing controls:** None
 
+## Owner Script Audit
+
+| Script | Status |
+| --- | --- |
+| `npm run owner:command-center` | ✅ Available |
+| `npm run owner:atlas` | ✅ Available |
+| `npm run owner:system-pause` | ✅ Available |
+| `npm run owner:upgrade-status` | ✅ Available |
+| `npm run owner:change-ticket` | ✅ Available |
+
+Audit verdict: ✅ all declared scripts available in package.json.
+
 ## ARC Sentinel Edge Lift
 
 Detect latent pixel edges, amplify discovery, and route high-confidence transformations back into the shared skill graph.
@@ -149,16 +161,16 @@ pie title Verification consensus
 ```mermaid
 timeline
   title Evolutionary improvements for ARC Sentinel Edge Lift
-  2025-10-21T02:47:22.567Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
-  2025-10-21T02:47:22.568Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
-  2025-10-21T02:47:22.569Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
-  2025-10-21T02:47:22.570Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
-  2025-10-21T02:47:22.571Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
-  2025-10-21T02:47:22.573Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T02:47:22.574Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T02:47:22.574Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
-  2025-10-21T02:47:22.575Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
-  2025-10-21T02:47:22.576Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%
+  2025-10-21T04:26:14.549Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
+  2025-10-21T04:26:14.551Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
+  2025-10-21T04:26:14.552Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
+  2025-10-21T04:26:14.552Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
+  2025-10-21T04:26:14.553Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
+  2025-10-21T04:26:14.555Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T04:26:14.556Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T04:26:14.557Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
+  2025-10-21T04:26:14.558Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
+  2025-10-21T04:26:14.558Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%
 ```
 
 ## Ledger Harmonics Sequencer
@@ -228,16 +240,16 @@ pie title Verification consensus
 ```mermaid
 timeline
   title Evolutionary improvements for Ledger Harmonics Sequencer
-  2025-10-21T02:47:22.578Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
-  2025-10-21T02:47:22.579Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
-  2025-10-21T02:47:22.580Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
-  2025-10-21T02:47:22.581Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T02:47:22.581Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T02:47:22.582Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T02:47:22.583Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T02:47:22.584Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T02:47:22.585Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T02:47:22.585Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T04:26:14.561Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
+  2025-10-21T04:26:14.561Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
+  2025-10-21T04:26:14.562Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
+  2025-10-21T04:26:14.563Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T04:26:14.564Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T04:26:14.565Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T04:26:14.570Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T04:26:14.571Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T04:26:14.572Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T04:26:14.572Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
 ```
 
 ## Nova Weave Sequence Optimiser
@@ -307,16 +319,16 @@ pie title Verification consensus
 ```mermaid
 timeline
   title Evolutionary improvements for Nova Weave Sequence Optimiser
-  2025-10-21T02:47:22.586Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
-  2025-10-21T02:47:22.587Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
-  2025-10-21T02:47:22.587Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
-  2025-10-21T02:47:22.588Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
-  2025-10-21T02:47:22.589Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
-  2025-10-21T02:47:22.589Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
-  2025-10-21T02:47:22.597Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
-  2025-10-21T02:47:22.598Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
-  2025-10-21T02:47:22.598Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
-  2025-10-21T02:47:22.599Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
+  2025-10-21T04:26:14.573Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
+  2025-10-21T04:26:14.574Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
+  2025-10-21T04:26:14.575Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
+  2025-10-21T04:26:14.575Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
+  2025-10-21T04:26:14.576Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
+  2025-10-21T04:26:14.577Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
+  2025-10-21T04:26:14.577Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
+  2025-10-21T04:26:14.578Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
+  2025-10-21T04:26:14.578Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
+  2025-10-21T04:26:14.579Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
 ```
 
 ## CI Shield Alignment
@@ -326,4 +338,4 @@ timeline
 
 ## Generated At
 
-2025-10-21T02:47:22.562Z
+2025-10-21T04:26:14.545Z

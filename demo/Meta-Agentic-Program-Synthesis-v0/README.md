@@ -81,6 +81,8 @@ flowchart LR
   command and emit Markdown/JSON ready for regulators.
 - **Owner coverage sentinel** – mission loading now enforces Ethereum address formats, thermodynamic budgets, and 5/5 mandatory
   owner control categories (pause, thermostat, upgrade, treasury, compliance) before any synthesis can start.
+- **Owner script audit** – every mission-declared governance script is resolved against `package.json`, producing ✅/❌ tables in
+  the Markdown, JSON, and HTML artefacts so operators immediately spot missing tooling.
 
 ## Generated artefacts
 

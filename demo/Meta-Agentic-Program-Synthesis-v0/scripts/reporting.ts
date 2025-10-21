@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { readFileSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import { auditOwnerScripts } from "./commandValidation";
 import type {
   ArchiveCell,
   CandidateRecord,
@@ -11,6 +12,7 @@ import type {
   SynthesisRun,
   TaskResult,
   TriangulationReport,
+  OwnerScriptAudit,
 } from "./types";
 
 function formatPercent(value: number, digits = 2): string {
@@ -84,6 +86,40 @@ function renderOwnerCoverageHtml(coverage: OwnerControlCoverage): string {
   <li><strong>Satisfied controls:</strong> ${satisfied}</li>
   <li><strong>Missing controls:</strong> ${missing}</li>
 </ul>`;
+}
+
+function renderOwnerScriptsMarkdown(scripts: OwnerScriptAudit[]): string {
+  if (scripts.length === 0) {
+    return "| Script | Status |\n| --- | --- |\n| _(none declared)_ | n/a |";
+  }
+  const rows = scripts
+    .map((status) => `| \`${status.script}\` | ${status.available ? "✅ Available" : "❌ Missing"} |`)
+    .join("\n");
+  return `| Script | Status |\n| --- | --- |\n${rows}`;
+}
+
+function renderOwnerScriptsHtml(scripts: OwnerScriptAudit[]): string {
+  if (scripts.length === 0) {
+    return "<p>No owner scripts declared.</p>";
+  }
+  const rows = scripts
+    .map(
+      (status) =>
+        `        <tr><td><code>${escapeHtml(status.script)}</code></td><td>${status.available ? "✅" : "❌"}</td></tr>`,
+    )
+    .join("\n");
+  return `
+<table class="owner-scripts">
+  <thead>
+    <tr>
+      <th>Script</th>
+      <th>Available</th>
+    </tr>
+  </thead>
+  <tbody>
+${rows}
+  </tbody>
+</table>`;
 }
 
 function renderTriangulationTable(report: TriangulationReport): string {
@@ -219,7 +255,7 @@ function renderMermaidTimeline(task: TaskResult): string {
   ].join("\n");
 }
 
-export function renderMarkdownReport(run: SynthesisRun): string {
+export function renderMarkdownReport(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]): string {
   const { mission } = run;
   const lines: string[] = [];
   lines.push(`# ${mission.meta.title}`);
@@ -295,6 +331,20 @@ export function renderMarkdownReport(run: SynthesisRun): string {
   lines.push(renderOwnerCoverage(run.ownerCoverage));
   lines.push("");
 
+  lines.push("## Owner Script Audit");
+  lines.push("");
+  lines.push(renderOwnerScriptsMarkdown(ownerScripts));
+  const unavailable = ownerScripts.filter((entry) => !entry.available);
+  lines.push("");
+  lines.push(
+    unavailable.length === 0
+      ? "Audit verdict: ✅ all declared scripts available in package.json."
+      : `Audit verdict: ⚠️ ${unavailable.length} script(s) missing (${unavailable
+          .map((entry) => `\`${entry.script}\``)
+          .join(", ")}).`,
+  );
+  lines.push("");
+
   for (const task of run.tasks) {
     lines.push(`## ${task.task.label}`);
     lines.push("");
@@ -351,7 +401,7 @@ export function renderMarkdownReport(run: SynthesisRun): string {
   return lines.join("\n");
 }
 
-export function buildJsonSummary(run: SynthesisRun): Record<string, unknown> {
+export function buildJsonSummary(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]): Record<string, unknown> {
   return {
     generatedAt: run.generatedAt,
     mission: {
@@ -382,6 +432,11 @@ export function buildJsonSummary(run: SynthesisRun): Record<string, unknown> {
     })),
     ci: run.mission.ci,
     ownerControls: run.mission.ownerControls,
+    ownerScripts,
+    ownerScriptsVerdict: {
+      total: ownerScripts.length,
+      missing: ownerScripts.filter((entry) => !entry.available).map((entry) => entry.script),
+    },
   };
 }
 
@@ -413,8 +468,8 @@ export function buildTriangulationDigest(run: SynthesisRun): Record<string, unkn
   };
 }
 
-export function renderHtmlDashboard(run: SynthesisRun): string {
-  const summary = buildJsonSummary(run);
+export function renderHtmlDashboard(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]): string {
+  const summary = buildJsonSummary(run, ownerScripts);
   const triangulationDigest = buildTriangulationDigest(run);
   const mermaidFlow = renderMermaidFlow(run.mission, run);
   const taskSections = run.tasks
@@ -460,6 +515,11 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
 
   const ownerTable = renderOwnerCapabilities(run.mission.ownerControls.capabilities);
   const coverageHtml = renderOwnerCoverageHtml(run.ownerCoverage);
+  const ownerScriptsHtml = renderOwnerScriptsHtml(ownerScripts);
+  const missingScripts = ownerScripts.filter((entry) => !entry.available);
+  const ownerScriptsVerdict = missingScripts.length
+    ? `⚠️ ${missingScripts.length} script(s) missing`
+    : "✅ all scripts available";
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -527,6 +587,9 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
       <div class="table">${ownerTable}</div>
       <h3>Coverage Readiness</h3>
       ${coverageHtml}
+      <h3>Owner Script Audit</h3>
+      ${ownerScriptsHtml}
+      <p>${ownerScriptsVerdict}</p>
     </section>
     ${taskSections}
     <section>
@@ -551,19 +614,21 @@ export async function writeReports(
     jsonFile: string;
     htmlFile: string;
     triangulationFile: string;
+    ownerScripts?: OwnerScriptAudit[];
   },
-): Promise<{ files: string[] }> {
-  const { reportDir, markdownFile, jsonFile, htmlFile, triangulationFile } = options;
+): Promise<{ files: string[]; ownerScripts: OwnerScriptAudit[] }> {
+  const { reportDir, markdownFile, jsonFile, htmlFile, triangulationFile, ownerScripts: providedScripts } = options;
+  const ownerScripts = providedScripts ?? (await auditOwnerScripts(run.mission));
   await mkdir(reportDir, { recursive: true });
-  const markdown = renderMarkdownReport(run);
-  const summary = buildJsonSummary(run);
+  const markdown = renderMarkdownReport(run, ownerScripts);
+  const summary = buildJsonSummary(run, ownerScripts);
   const triangulation = buildTriangulationDigest(run);
-  const html = renderHtmlDashboard(run);
+  const html = renderHtmlDashboard(run, ownerScripts);
   await writeFile(markdownFile, markdown, "utf8");
   await writeFile(jsonFile, JSON.stringify(summary, null, 2), "utf8");
   await writeFile(htmlFile, html, "utf8");
   await writeFile(triangulationFile, JSON.stringify(triangulation, null, 2), "utf8");
-  return { files: [markdownFile, jsonFile, htmlFile, triangulationFile] };
+  return { files: [markdownFile, jsonFile, htmlFile, triangulationFile], ownerScripts };
 }
 
 export function generateManifest(entries: string[]): Record<string, string> {

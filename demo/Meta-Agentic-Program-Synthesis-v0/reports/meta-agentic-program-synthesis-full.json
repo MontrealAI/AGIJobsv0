@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-21T02:47:22.635Z",
+  "generatedAt": "2025-10-21T04:26:14.620Z",
   "aggregate": {
     "globalBestScore": 140.38164328854776,
     "averageAccuracy": 1,
@@ -92,7 +92,7 @@
     "report": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json"
   },
   "ownerDiagnostics": {
-    "generatedAt": "2025-10-21T02:47:22.634Z",
+    "generatedAt": "2025-10-21T04:26:14.619Z",
     "readiness": "ready",
     "commandReadiness": "ready",
     "coverage": {
@@ -164,7 +164,77 @@
         "commandAvailable": true,
         "verificationAvailable": true
       }
-    ]
+    ],
+    "scripts": [
+      {
+        "script": "npm run owner:command-center",
+        "available": true
+      },
+      {
+        "script": "npm run owner:atlas",
+        "available": true
+      },
+      {
+        "script": "npm run owner:system-pause",
+        "available": true
+      },
+      {
+        "script": "npm run owner:upgrade-status",
+        "available": true
+      },
+      {
+        "script": "npm run owner:change-ticket",
+        "available": true
+      }
+    ],
+    "scriptAudit": {
+      "matches": true,
+      "discrepancies": [],
+      "reported": [
+        {
+          "script": "npm run owner:atlas",
+          "available": true
+        },
+        {
+          "script": "npm run owner:change-ticket",
+          "available": true
+        },
+        {
+          "script": "npm run owner:command-center",
+          "available": true
+        },
+        {
+          "script": "npm run owner:system-pause",
+          "available": true
+        },
+        {
+          "script": "npm run owner:upgrade-status",
+          "available": true
+        }
+      ],
+      "assessed": [
+        {
+          "script": "npm run owner:atlas",
+          "available": true
+        },
+        {
+          "script": "npm run owner:change-ticket",
+          "available": true
+        },
+        {
+          "script": "npm run owner:command-center",
+          "available": true
+        },
+        {
+          "script": "npm run owner:system-pause",
+          "available": true
+        },
+        {
+          "script": "npm run owner:upgrade-status",
+          "available": true
+        }
+      ]
+    }
   },
   "ownerCoverage": {
     "requiredCategories": [
@@ -184,6 +254,28 @@
     "missingCategories": [],
     "readiness": "ready"
   },
+  "ownerScriptsAudit": [
+    {
+      "script": "npm run owner:atlas",
+      "available": true
+    },
+    {
+      "script": "npm run owner:change-ticket",
+      "available": true
+    },
+    {
+      "script": "npm run owner:command-center",
+      "available": true
+    },
+    {
+      "script": "npm run owner:system-pause",
+      "available": true
+    },
+    {
+      "script": "npm run owner:upgrade-status",
+      "available": true
+    }
+  ],
   "artifacts": {
     "Mission manifest": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
     "Markdown report": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md",
