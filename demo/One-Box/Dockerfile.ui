@@ -26,7 +26,9 @@ ENV PORT=4173
 EXPOSE 4173
 
 ENV ORCHESTRATOR_URL="http://orchestrator:8080/onebox" \
-    ONEBOX_API_TOKEN=""
+    ONEBOX_API_TOKEN="" \
+    EXPLORER_TX_BASE="" \
+    IPFS_GATEWAY_BASE=""
 
 COPY demo/One-Box/scripts/entrypoint.sh /usr/local/bin/onebox-entrypoint.sh
 RUN chmod +x /usr/local/bin/onebox-entrypoint.sh

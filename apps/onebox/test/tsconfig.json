@@ -8,6 +8,8 @@
   },
   "include": [
     "../src/lib/governanceScenario.ts",
-    "./governance-scenario.test.ts"
+    "../src/lib/environment.ts",
+    "./governance-scenario.test.ts",
+    "./onebox-config.test.ts"
   ]
 }

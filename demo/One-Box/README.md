@@ -61,6 +61,9 @@ demo/One-Box/
    make -C demo/One-Box bootstrap
    ```
    This runs the hardened `deploy:oneclick:auto` wizard: it spins Anvil, deploys the entire AGI Jobs v2 suite, and writes fresh addresses into `deployment-config/oneclick.env` for Compose to consume. The script exits once deployments and owner wiring checks pass.
+   Optional environment overrides:
+   - `EXPLORER_TX_BASE` adds “view on explorer” links for posted transactions.
+   - `IPFS_GATEWAY_BASE` points the UI at a custom IPFS gateway for specs and deliverables.
 3. **Launch the stack.**
    ```sh
    make -C demo/One-Box up-detached
@@ -80,6 +83,13 @@ demo/One-Box/
 - `make -C demo/One-Box logs` tails all containers (or add `service=orchestrator`).
 - `make -C demo/One-Box status` prints port bindings and health.
 - `make -C demo/One-Box clean` stops containers, prunes volumes, and removes the demo `.env` file.
+
+### One‑Box mission control UI
+
+- The chat window opens with a **mission control banner** showing readiness, orchestrator status, and one-click templates for common missions.
+- The mission panel renders a **Mermaid system diagram**, configuration checklist, and owner command shortcuts so stakeholders can visualise the entire workflow.
+- Quick prompts in both the panel and chat header prefill the input box—launch global research sprints, treasury dry runs, or escrow finalisations instantly.
+- Explorer links and IPFS previews are auto-linked when `EXPLORER_TX_BASE` and/or `IPFS_GATEWAY_BASE` are set in the environment.
 
 ## Manual controls (advanced)
 
