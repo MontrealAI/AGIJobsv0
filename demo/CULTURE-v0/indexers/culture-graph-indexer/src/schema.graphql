@@ -3,14 +3,45 @@ type Artifact {
   author: String!
   kind: String!
   cid: String!
-  createdAt: String!
   parentId: ID
-  cites: [ID!]!
-  influence: Float!
+  parent: Artifact
+  createdAt: String!
+  influenceScore: Float!
+  citationCount: Int!
+  lineageDepth: Int!
+  citations: [Citation!]!
+  citedBy: [Citation!]!
+}
+
+type Citation {
+  id: ID!
+  fromId: ID!
+  toId: ID!
+}
+
+type LineagePath {
+  depth: Int!
+  artifacts: [Artifact!]!
+}
+
+type ArenaWinCount {
+  artifactId: ID!
+  wins: Int!
+  losses: Int!
+  draws: Int!
+}
+
+type ArenaUsageStats {
+  totalMatches: Int!
+  uniqueArtifacts: Int!
+  winCounts: [ArenaWinCount!]!
 }
 
 type Query {
   artifact(id: ID!): Artifact
   artifacts(kind: String, limit: Int = 25, offset: Int = 0): [Artifact!]!
-  topInfluential(limit: Int = 10): [Artifact!]!
+  topInfluencers(limit: Int = 10): [Artifact!]!
+  lineage(id: ID!): LineagePath
+  citations(fromId: ID, toId: ID): [Citation!]!
+  arenaUsage: ArenaUsageStats!
 }
