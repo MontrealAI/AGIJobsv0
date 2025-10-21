@@ -1,13 +1,27 @@
 {
   "owner": {
-    "address": "0x0000000000000000000000000000000000000000",
-    "pauseGuardian": "0x0000000000000000000000000000000000000000"
+    "address": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "pauseGuardian": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
   },
   "roles": {
-    "authors": [],
-    "teachers": [],
-    "students": [],
-    "validators": []
+    "authors": [
+      "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "0x90f79bf6eb2c4f870365e785982e1f101e93b906"
+    ],
+    "teachers": [
+      "0x90f79bf6eb2c4f870365e785982e1f101e93b906"
+    ],
+    "students": [
+      "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+      "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65"
+    ],
+    "validators": [
+      "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
+      "0xcd3b766ccdd6ae721141f452c550ca635964ce71"
+    ],
+    "orchestrators": [
+      "0xfabb0ac9d68b0b445fb7357272ff202c5651694a"
+    ]
   },
   "arena": {
     "targetSuccessRate": 0.6,
@@ -21,7 +35,13 @@
     },
     "committeeSize": 3,
     "roundTimeout": 900,
-    "validatorStake": "1000000000000000000"
+    "validatorStake": "1000000000000000000",
+    "elo": {
+      "defaultRating": 1200,
+      "kFactor": 32,
+      "floor": 800,
+      "ceiling": 2000
+    }
   },
   "culture": {
     "kinds": ["book", "prompt", "dataset", "curriculum"],

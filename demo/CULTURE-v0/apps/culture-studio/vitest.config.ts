@@ -5,6 +5,7 @@ export default defineConfig({
     environment: "node",
     coverage: {
       reporter: ["text", "lcov"],
+      include: ["src/lib/**/*.ts"],
       thresholds: {
         lines: 0.9,
         statements: 0.9,

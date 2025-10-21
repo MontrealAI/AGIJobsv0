@@ -1,46 +1,29 @@
-# Self-Play Arena Weekly Report
+# Arena Weekly Report
 
-**Week:** 1
-**Network:** Local Anvil
+**Week:** 2025-W01
+**Network:** Anvil 31337
+**Generated:** 2025-01-12T18:00:00.000Z
 
-## Tournament Summary
+## Round Summary
 
-| Metric | Value |
-| --- | --- |
-| Rounds completed | 18 |
-| Average round duration | 6m 42s |
-| Difficulty range | 1 → 6 |
-| Target success rate | 60% |
-| Observed success rate | 57% |
-| Validator honesty | 98.2% |
+- Rounds executed: 24
+- Finalized: 22 | Aborted: 1 | Slashed: 1
+- Average difficulty: 4.60 (Δ mean 0.30, max 1.20)
 
-## Elo Progression
+## Elo Leaderboard
 
-| Agent | Role | Start Elo | End Elo | Δ |
-| --- | --- | --- | --- | --- |
-| Atlas-Student-01 | student | 1200 | 1348 | +148 |
-| Atlas-Student-02 | student | 1200 | 1286 | +86 |
-| Asteria-Teacher | teacher | 1200 | 1234 | +34 |
-| Helios-Teacher | teacher | 1200 | 1176 | -24 |
-| Nyx-Validator-01 | validator | 1200 | 1218 | +18 |
+| Rank | Agent | Rating | W | L | D |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `0x90f79bf6eb2c4f870365e785982e1f101e93b906` | 1345 | 9 | 2 | 1 |
+| 2 | `0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc` | 1290 | 8 | 3 | 1 |
+| 3 | `0x15d34aaf54267db7d7c367839aaf71a00a2c6a65` | 1232 | 7 | 4 | 1 |
 
-## Difficulty Thermostat
+### Notable Streaks
+- win streak of 5 by `0x90f79bf6eb2c4f870365e785982e1f101e93b906`
 
-```
-Round:  1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
-Diff.: 1 1 2 3 3 4 4 5 5 6 5 5 6 6 5 5 6 6
-Success%: 88 75 67 62 59 54 63 58 55 52 61 63 57 54 65 60 58 56
-```
+## Thermostat & Safety
 
-## Validator Performance
-
-- Total commits: 324
-- Successful reveals: 322
-- Slashed validators: 1 (revealed vote inconsistent with consensus)
-
-## Operational Notes
-
-- One round auto-cancelled due to non-responsive student; orchestrator reissued challenge successfully.
-- Prometheus metrics exported at `/metrics`; Grafana dashboard updated with new panels for Elo volatility.
-- All reward transfers executed without delay; FeePool balances reconciled.
-
+- Temperature window: 0.9 → 1.6 (current 1.3)
+- Observed success rate: 58.0%
+- Content warnings: 0
+- Stake lock failures: 0

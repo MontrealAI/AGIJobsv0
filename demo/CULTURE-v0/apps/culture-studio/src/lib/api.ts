@@ -325,7 +325,8 @@ export async function updateOwnerControls(update: Partial<OwnerControlState>): P
 
 function generateTxHash(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `0x${crypto.randomUUID().replace(/-/g, '').slice(0, 64)}`;
+    const hex = crypto.randomUUID().replace(/-/g, '');
+    return `0x${hex.padEnd(64, '0')}`;
   }
   return `0x${Math.random().toString(16).slice(2).padEnd(64, '0')}`;
 }

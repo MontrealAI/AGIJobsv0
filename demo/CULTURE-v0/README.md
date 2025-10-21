@@ -17,11 +17,64 @@ Every component is documented, modular, and integrates with the AGI Jobs v0 (v2)
 
 ## Getting Started
 
-1. Copy `.env.example` to `.env` and fill in the required variables (RPC URLs, deployer key, IPFS credentials, etc.).
-2. Run `docker compose up` from this directory to launch a fully wired local stack.
-3. Visit the Culture Studio UI to mint artifacts, launch arenas, and explore the Culture Graph.
+1. **Bootstrap configuration** — Copy `.env.example` to `.env` and adjust RPC URLs, private keys, and optional IPFS credentials.
+2. **Install dependencies** — Run `npm install --legacy-peer-deps` from the repository root.
+3. **Compile contracts** — Execute `npx hardhat compile` to ensure `CultureRegistry` and `SelfPlayArena` artifacts are current.
+4. **Deploy & configure**
+   ```bash
+   npx hardhat run demo/CULTURE-v0/scripts/deploy.culture.ts --network localhost
+   npx hardhat run demo/CULTURE-v0/scripts/owner.setParams.ts --network localhost
+   npx hardhat run demo/CULTURE-v0/scripts/owner.setRoles.ts --network localhost
+   npx hardhat run demo/CULTURE-v0/scripts/seed.culture.ts --network localhost
+   ```
+   These scripts emit a deployment manifest at `config/deployments.local.json` and patch `.env` with fresh addresses.
+5. **Launch the stack**
+   ```bash
+   docker compose -f demo/CULTURE-v0/docker-compose.yml up -d culture-chain culture-ipfs
+   docker compose -f demo/CULTURE-v0/docker-compose.yml --profile setup run --rm culture-contracts
+   docker compose -f demo/CULTURE-v0/docker-compose.yml up -d culture-orchestrator culture-indexer culture-studio
+   ```
+   Health checks ensure each service is reachable before dependants start.
+6. **Explore the studio** — Visit `http://localhost:4173` to mint artifacts, run self-play arenas, and inspect the culture graph.
+7. **Generate analytics (optional)** — Produce reproducible weekly reports via `npm exec ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts` or `docker compose --profile reports run --rm culture-reports`.
 
 Refer to [RUNBOOK.md](RUNBOOK.md) for production operations, owner controls, and troubleshooting guidance.
+
+## Service Topology
+
+| Service | Purpose | Health Check | Isolated Volumes |
+| --- | --- | --- | --- |
+| `culture-chain` | Anvil local Ethereum network for testing | `cast block-number` | `culture_chain_data` |
+| `culture-ipfs` | Local IPFS daemon for artifact storage | `ipfs swarm peers` | `culture_ipfs_data`, `culture_ipfs_exports` |
+| `culture-contracts` (profile `setup`) | One-shot deployment + seeding pipeline | exits on success | `culture_node_modules`, `culture_artifacts` |
+| `culture-orchestrator` | Arena automation API & telemetry | `GET /metrics` | `culture_orchestrator_state`, `culture_orchestrator_logs` |
+| `culture-indexer` | GraphQL indexer + influence analytics | `GET /healthz` | `culture_indexer_db`, `culture_indexer_logs` |
+| `culture-studio` | Owner-facing UI | `GET /` | — |
+| `culture-reports` (profile `reports`) | Generates weekly Markdown reports | exits on success | `culture_node_modules` |
+
+## Automation Scripts
+
+- `deploy.culture.ts` — Deploys CultureRegistry & SelfPlayArena, writes manifests, and patches `.env` addresses.
+- `owner.setParams.ts` — Applies arena rewards, committee sizing, success targets, and allowed artifact kinds from `config/culture.json`.
+- `owner.setRoles.ts` — Grants author/teacher/student/validator roles via the identity registry and whitelists orchestrators.
+- `seed.culture.ts` — Mints demo artifacts on-chain and seeds the indexer API.
+- `export.weekly.ts` — Renders deterministic analytics from `data/analytics/*` into Markdown under `reports/`.
+
+See [scripts/README.md](scripts/README.md) for additional details.
+
+## Weekly Analytics
+
+Run `npm exec ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts` (or the `culture-reports` compose profile) to regenerate `reports/culture-weekly.md` and `reports/arena-weekly.md`. The inputs live in `data/analytics/` so the reports can be audited and reproduced at any time.
+
+## Continuous Integration
+
+The dedicated workflow in `ci/culture-ci.yml` enforces:
+
+- Solidity linting with `solhint`, Forge unit tests, and coverage ≥90%.
+- Package-level lint/tests/coverage for the arena orchestrator, graph indexer, and Culture Studio UI (Vitest with thresholds enforced).
+- Cypress end-to-end smoke tests against the docker-compose stack (contracts, orchestrator, indexer, UI).
+
+The pipeline runs on every PR and push touching `demo/CULTURE-v0/**`, blocking merges that do not meet the quality bar.
 
 ## Repository Layout
 
