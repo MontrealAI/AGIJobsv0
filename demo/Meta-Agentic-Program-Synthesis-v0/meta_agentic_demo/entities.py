@@ -92,12 +92,30 @@ class RewardBreakdown:
 
 
 @dataclass
+class OwnerAction:
+    """Structured record of privileged actions taken by the platform owner."""
+
+    timestamp: datetime
+    action: str
+    payload: Dict[str, object]
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "timestamp": self.timestamp.isoformat(),
+            "action": self.action,
+            "payload": self.payload,
+        }
+
+
+@dataclass
 class EvolutionRecord:
     """Captures the outcome of a generation in the synthesis loop."""
 
     generation: int
     best_score: float
     average_score: float
+    score_variance: float
+    best_score_delta: float | None
     winning_program: str
     notes: str
 
@@ -113,6 +131,9 @@ class DemoRunArtifacts:
     evolution: List[EvolutionRecord]
     final_program: str
     final_score: float
+    owner_actions: List[OwnerAction]
+    improvement_over_first: float
+    first_success_generation: int | None
     generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> Dict[str, object]:
@@ -132,8 +153,22 @@ class DemoRunArtifacts:
                 }
                 for breakdown in self.rewards
             ],
-            "evolution": [record.__dict__ for record in self.evolution],
+            "evolution": [
+                {
+                    "generation": record.generation,
+                    "best_score": record.best_score,
+                    "average_score": record.average_score,
+                    "score_variance": record.score_variance,
+                    "best_score_delta": record.best_score_delta,
+                    "winning_program": record.winning_program,
+                    "notes": record.notes,
+                }
+                for record in self.evolution
+            ],
             "final_program": self.final_program,
             "final_score": self.final_score,
+            "owner_actions": [action.to_dict() for action in self.owner_actions],
+            "improvement_over_first": self.improvement_over_first,
+            "first_success_generation": self.first_success_generation,
             "generated_at": self.generated_at.isoformat(),
         }

@@ -9,7 +9,13 @@ from typing import Dict, Iterable, List, Tuple
 
 from .admin import OwnerConsole
 from .config import DemoConfig, DemoScenario
-from .entities import DemoRunArtifacts, EvolutionRecord, Job, JobStatus, RewardBreakdown
+from .entities import (
+    DemoRunArtifacts,
+    EvolutionRecord,
+    Job,
+    JobStatus,
+    RewardBreakdown,
+)
 from .evolutionary import EvolutionaryProgramSynthesizer, Program
 from .ledger import (
     RewardEngine,
@@ -84,6 +90,13 @@ class SovereignArchitect:
         jobs, rewards = self._execute_on_chain(best_program, telemetry)
         performances = aggregate_performance(rewards, self.stake_manager)
         final_score = self._score_program(best_program)
+        improvement_over_first = (
+            telemetry[-1].best_score - telemetry[0].best_score if telemetry else 0.0
+        )
+        first_success_generation = next(
+            (record.generation for record in telemetry if record.best_score >= scenario.success_threshold),
+            None,
+        )
         return DemoRunArtifacts(
             scenario=scenario.title,
             jobs=jobs,
@@ -92,6 +105,9 @@ class SovereignArchitect:
             evolution=history,
             final_program=synthesizer.render_program(best_program),
             final_score=final_score,
+            owner_actions=list(self.owner_console.events),
+            improvement_over_first=improvement_over_first,
+            first_success_generation=first_success_generation,
         )
 
     # --- Internals ---------------------------------------------------------

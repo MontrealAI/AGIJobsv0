@@ -25,3 +25,6 @@ def test_evolutionary_loop_improves_score() -> None:
     best_program, history = synthesizer.evolve(generations=4, evaluator=evaluator)
     assert history[-1].best_score > baseline
     assert evaluator(best_program) == history[-1].best_score
+    assert history[0].best_score_delta is None
+    assert all(record.score_variance >= 0 for record in history)
+    assert any(record.best_score_delta and record.best_score_delta > 0 for record in history[1:])

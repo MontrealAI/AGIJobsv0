@@ -23,11 +23,13 @@ def create_console() -> OwnerConsole:
 
 def test_owner_console_updates_reward_policy() -> None:
     console = create_console()
+    assert console.events == ()
     console.update_reward_policy(total_reward=1500.0, validator_weight=0.2, architect_weight=0.1)
     config = console.config
     assert pytest.approx(config.reward_policy.total_reward) == 1500.0
     assert pytest.approx(config.reward_policy.validator_weight) == 0.2
     assert pytest.approx(config.reward_policy.architect_weight) == 0.1
+    assert console.events[-1].action == "update_reward_policy"
 
 
 def test_owner_console_rejects_invalid_reward_policy() -> None:
@@ -45,6 +47,9 @@ def test_owner_console_pause_and_resume_blocks_execution() -> None:
     console.resume()
     artefacts = architect.run(console.config.scenarios[0])
     assert artefacts.final_score > 0
+    actions = [event.action for event in console.events]
+    assert actions.count("pause") == 1
+    assert actions.count("resume") == 1
 
 
 def test_owner_console_updates_stake_and_evolution() -> None:
@@ -57,6 +62,9 @@ def test_owner_console_updates_stake_and_evolution() -> None:
     assert config.evolution_policy.generations == 6
     assert config.evolution_policy.population_size == 8
     assert config.evolution_policy.elite_count == 2
+    actions = [event.action for event in console.events]
+    assert "update_stake_policy" in actions
+    assert "update_evolution_policy" in actions
 
 
 def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
@@ -75,6 +83,7 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
     assert pytest.approx(console.config.reward_policy.total_reward) == 2000
     assert pytest.approx(console.config.stake_policy.slash_fraction) == 0.2
     assert pytest.approx(console.config.evolution_policy.mutation_rate) == 0.25
+    assert any(event.action == "set_paused" for event in console.events)
 
 
 def test_owner_console_rejects_unknown_keys() -> None:

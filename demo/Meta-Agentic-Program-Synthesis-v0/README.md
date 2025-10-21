@@ -71,7 +71,7 @@ stateDiagram-v2
    python start_demo.py alpha
    ```
 4. **Open the generated artefacts:**
-   * `demo_output/report.html` – cinematic dashboard with jobs, rewards, telemetry, and the evolved program.
+   * `demo_output/report.html` – cinematic dashboard with live Mermaid diagrams (architecture atlas, reward flows, evolution timeline), owner command ledger, telemetry, and the evolved program.
    * `demo_output/report.json` – machine-readable export for downstream automation.
 
 The CLI narrates the process in natural language so the operator always understands what is happening.
@@ -138,9 +138,12 @@ Run the demo with `python start_demo.py alpha --config-file config/owner-overrid
 The HTML report blends narrative storytelling with quantitative telemetry:
 
 * **Mission summary** – scenario description, winning program, and composite score.
-* **Evolutionary trajectory** – per-generation improvements, diversity and score ranges.
+* **Architecture atlas (Mermaid)** – flowchart of user → architect → marketplace → validators/solvers → rewards, rendered entirely client-side via the bundled Mermaid runtime.
+* **Evolution timeline (Mermaid)** – timeline view of per-generation fitness with delta tracking.
+* **Owner command ledger** – auditable table of every privileged action captured in real time.
+* **Evolutionary trajectory** – per-generation improvements, score variance, and diversity notes.
 * **On-chain jobs** – each validation cycle with commitments and rewards.
-* **Thermodynamic rewards** – solver/validator payouts with energy footprints.
+* **Thermodynamic rewards (Mermaid + tables)** – aggregated reward graph plus per-job energy footprints.
 * **Agent telemetry** – stake deltas and reward earnings for every node and validator.
 
 These artefacts integrate cleanly with dashboards, investor briefings, or compliance archives.
@@ -157,7 +160,7 @@ These artefacts integrate cleanly with dashboards, investor briefings, or compli
 
 ## ✅ Guarantee of Production Readiness
 
-* Fully deterministic – runs identically on CI, local machines, and containerised environments.
+* Fully deterministic – runs identically on CI, local machines, and containerised environments, with all Mermaid assets bundled locally (no external CDNs).
 * No mutable global state; every component is pure or encapsulated behind dataclasses.
 * Exhaustive docstrings and type hints for immediate maintainability.
 * Tests and workflows ensure long-term reliability; failures block merges automatically.
