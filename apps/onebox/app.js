@@ -230,10 +230,6 @@ const STORAGE_KEYS = {
   receipts: 'ONEBOX_RECEIPTS_V1',
 };
 
-const SESSION_KEYS = {
-  token: 'ONEBOX_API_SESSION_TOKEN',
-};
-
 try {
   localStorage.removeItem('ONEBOX_ORCH_TOKEN');
 } catch (error) {
@@ -256,15 +252,6 @@ try {
   }
 } catch (error) {
   console.warn('Unable to restore orchestrator prefix from storage', error);
-}
-
-try {
-  const sessionToken = sessionStorage.getItem(SESSION_KEYS.token);
-  if (sessionToken && sessionToken.trim()) {
-    apiToken = sessionToken.trim();
-  }
-} catch (error) {
-  console.warn('Unable to restore session API token', error);
 }
 
 if (typeof window !== 'undefined') {
@@ -291,15 +278,6 @@ if (typeof window !== 'undefined') {
   }
   if (overrides.token !== undefined) {
     apiToken = overrides.token || '';
-    try {
-      if (apiToken) {
-        sessionStorage.setItem(SESSION_KEYS.token, apiToken);
-      } else {
-        sessionStorage.removeItem(SESSION_KEYS.token);
-      }
-    } catch (error) {
-      console.warn('Unable to persist API token override', error);
-    }
   }
   if (overrides.mode) {
     expertMode = overrides.mode === 'expert';
@@ -943,16 +921,7 @@ saveBtn.addEventListener('click', () => {
   } catch (error) {
     console.warn('Unable to persist advanced settings', error);
   }
-  try {
-    if (apiToken) {
-      sessionStorage.setItem(SESSION_KEYS.token, apiToken);
-    } else {
-      sessionStorage.removeItem(SESSION_KEYS.token);
-    }
-  } catch (error) {
-    console.warn('Unable to persist API token in session storage', error);
-  }
-  addMessage('assist', '✅ Saved advanced settings. API token stays in this session only.');
+  addMessage('assist', '✅ Saved advanced settings. API token kept in memory until you close this tab.');
   renderRelayerStatus();
 });
 

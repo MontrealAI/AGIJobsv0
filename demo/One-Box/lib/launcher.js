@@ -254,7 +254,7 @@ async function runDemo(options = {}) {
   console.log(`   • UI:        ${demoUrl}`);
   console.log(`   • Orchestrator API: http://${config.uiHost}:${config.orchestratorPort}/onebox`);
   if (config.apiToken) {
-    console.log('   • API token: supplied via query parameter and session storage');
+    console.log('   • API token: supplied via query parameter (kept in-memory only)');
   }
   console.log('   • Press Ctrl+C to stop');
   console.log('');

@@ -66,7 +66,7 @@ That is all a non-technical operator needs: visit the chat, describe the job, co
 
 * **Walletless default.** Guest mode uses the relayer key supplied in `.env` to sponsor gas and escrow the reward. Expert mode can be toggled at any time to emit calldata for self-signing wallets.
 * **Policy enforcement.** The orchestrator reads organisational caps (`ONEBOX_MAX_JOB_BUDGET_AGIA`, `ONEBOX_MAX_JOB_DURATION_DAYS`) and halts execution with human-readable errors when limits are exceeded.
-* **Resumable context.** Query parameters automatically persist the orchestrator URL, `/onebox` prefix, mode, and API token. Refreshing the page or sharing the link keeps the session live.
+* **Resumable context.** Query parameters automatically persist the orchestrator URL, `/onebox` prefix, and mode. API tokens are applied for the current tab only so they are never written to storage.
 * **Audit artefacts.** Each execution stores a signed receipt CID. IPFS credentials in `.env` let the orchestrator pin specs and deliverables.
 
 ## Configuration reference
