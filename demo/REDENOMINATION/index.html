@@ -272,6 +272,7 @@
       const docsList = document.querySelector('#docs');
       const phaseButtonsContainer = document.querySelector('#phase-buttons');
       const phaseDetail = document.querySelector('#phase-detail');
+      const mermaidContainer = document.querySelector('#mermaid-diagram');
       const languageSelect = document.querySelector('#language-select');
 
       const translationState = { languages: ['en'], strings: { en: {} } };
@@ -414,12 +415,28 @@
         applyTranslations();
       }
 
+      function renderMermaidDiagram(diagram) {
+        if (!mermaidContainer) return;
+        if (typeof diagram !== 'string' || diagram.trim().length === 0) {
+          mermaidContainer.textContent =
+            'Mermaid diagram unavailable — run npm run demo:redenomination:verify to regenerate artefacts.';
+          return;
+        }
+        mermaidContainer.textContent = diagram.trim();
+        try {
+          mermaid.init(undefined, mermaidContainer);
+        } catch (error) {
+          console.error('Failed to render Mermaid diagram', error);
+        }
+      }
+
       function renderScenario(scenario) {
         renderActors(scenario.actors ?? []);
         renderFlow(scenario.flow ?? []);
         renderMetrics(scenario.metrics ?? {});
         renderResources(scenario.resources ?? {});
         renderPhaseNavigator(scenario.flow ?? []);
+        renderMermaidDiagram(scenario.mermaid ?? '');
       }
 
       async function loadScenario() {
@@ -494,27 +511,15 @@
         <div class="pill">Autonomous job lifecycle</div>
         <h2 data-i18n="sectionMermaid">Mermaid Systems Orchestration</h2>
         <div class="card" style="padding: 24px; background: rgba(8, 12, 28, 0.95);">
-          <pre class="mermaid">
-          graph TD;
-            A[Employer Alice posts redenomination job] --> B[JobRegistry records specification & policy tags];
-            B --> C{AGI Agent Selection};
-            C -->|Stake + ENS verified| D[Agent Hyperion-9 claims assignment];
-            D --> E[Off-chain AI pipelines produce redenomination dossier];
-            E --> F[Result hash + signature submitted on-chain];
-            F --> G[Chainlink VRF seeds validator committee];
-            G --> H[Commit window opens & validators encrypt verdict];
-            H --> I[Reveal window enforces accountability];
-            I --> J{Majority approves?};
-            J -->|Yes| K[Certificate NFT + payout released];
-            J -->|No| L[Dispute escalates to Sentinel moderators];
-            L --> M{Moderator quorum};
-            M -->|Override| N[System pause & slashing executed];
-            M -->|Uphold| K;
-            K --> O[Observability index updated];
-            O --> P[Prometheus & Grafana dashboards refresh];
-            O --> Q[On-chain audit log immutably sealed];
-            Q --> R[One-click deployment audit trail completed];
-          </pre>
+          <div
+            class="mermaid"
+            id="mermaid-diagram"
+            role="img"
+            aria-live="polite"
+            aria-label="Governed redenomination orchestration graph"
+          >
+            Loading Mermaid orchestration…
+          </div>
         </div>
       </section>
 

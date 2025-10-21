@@ -1,6 +1,7 @@
 {
   "name": "REDENOMINATION",
   "description": "End-to-end governed AGI labor market demo showcasing redenomination-safe upgrade controls, verifiable compute, and institutional observability.",
+  "mermaid": "graph TD;\n    A[Employer Alice posts redenomination job] --> B[JobRegistry records specification & policy tags];\n    B --> C{AGI Agent Selection};\n    C -->|Stake + ENS verified| D[Agent Hyperion-9 claims assignment];\n    D --> E[Off-chain AI pipelines produce redenomination dossier];\n    E --> F[Result hash + signature submitted on-chain];\n    F --> G[Chainlink VRF seeds validator committee];\n    G --> H[Commit window opens & validators encrypt verdict];\n    H --> I[Reveal window enforces accountability];\n    I --> J{Majority approves?};\n    J -->|Yes| K[Certificate NFT + payout released];\n    J -->|No| L[Dispute escalates to Sentinel moderators];\n    L --> M{Moderator quorum};\n    M -->|Override| N[System pause & slashing executed];\n    M -->|Uphold| K;\n    K --> O[Observability index updated];\n    O --> P[Prometheus & Grafana dashboards refresh];\n    O --> Q[On-chain audit log immutably sealed];\n    Q --> R[One-click deployment audit trail completed];",
   "actors": [
     {
       "role": "Employer",
@@ -78,7 +79,8 @@
       "npm run demo:redenomination:verify",
       "npm run deploy:oneclick:auto",
       "npm run owner:command-center",
-      "npm run monitoring:validate"
+      "npm run monitoring:validate",
+      "npm run demo:redenomination:mission-control"
     ]
   }
 }
