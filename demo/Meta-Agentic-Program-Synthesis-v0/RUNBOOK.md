@@ -63,13 +63,16 @@ All commands are idempotent offline. Point `HARDHAT_NETWORK` to a live network t
 ## 5. Verify CI shield manually (optional)
 
 ```bash
+npm run demo:meta-agentic-program-synthesis:test
 npm run demo:meta-agentic-program-synthesis
 npm run demo:meta-agentic-program-synthesis:full
 jq '.' demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json
 ```
 
-The CI report must confirm the workflow name `ci (v2)`, jobs `lint/tests/foundry/coverage`, `cancel-in-progress: true`, and
-coverage ≥90.
+The deterministic test replays the seeded mission and fails fast if mission invariants or aggregate metrics drift. The CI
+report must confirm the workflow name `ci (v2)`, jobs `lint/tests/foundry/coverage`, `cancel-in-progress: true`, and coverage ≥90.
+The GitHub Actions workflow `demo-meta-agentic-program-synthesis` executes the same sequence on every pull request so owners can
+rely on reproducible dossiers.
 
 ## 6. Custom missions
 

@@ -144,6 +144,17 @@ npm run demo:meta-agentic-program-synthesis
 npm run demo:meta-agentic-program-synthesis:full
 ```
 
+## Deterministic verification suite
+
+```bash
+npm run demo:meta-agentic-program-synthesis:test
+```
+
+The test harness imports the mission manifest, replays the seeded evolutionary run, and asserts that owner-control coverage,
+thermodynamic telemetry, consensus counts, and aggregate metrics match the published dossiers. The `demo-meta-agentic-program-
+synthesis` GitHub Actions workflow executes this test and the full pipeline on every pull request touching the demo, keeping
+the sovereign forge reproducible and audit-ready.
+
 Set `AGI_META_PROGRAM_MISSION=/path/to/custom.json` to target a modified mission file.
 
 ## Production readiness checklist

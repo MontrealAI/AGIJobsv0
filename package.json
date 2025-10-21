@@ -241,6 +241,7 @@
     "demo:alpha-meta:triangulate": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/triangulateMission.ts",
     "demo:alpha-meta:full": "ts-node --project demo/alpha-meta/tsconfig.json demo/alpha-meta/scripts/fullPipeline.ts",
     "demo:meta-agentic-program-synthesis": "ts-node --project demo/Meta-Agentic-Program-Synthesis-v0/tsconfig.json demo/Meta-Agentic-Program-Synthesis-v0/scripts/runSynthesis.ts",
+    "demo:meta-agentic-program-synthesis:test": "node -r ts-node/register --test demo/Meta-Agentic-Program-Synthesis-v0/scripts/__tests__/metaAgentic.test.ts",
     "demo:meta-agentic-program-synthesis:full": "ts-node --project demo/Meta-Agentic-Program-Synthesis-v0/tsconfig.json demo/Meta-Agentic-Program-Synthesis-v0/scripts/fullPipeline.ts",
     "demo:national-supply-chain": "npx hardhat run --no-compile --network hardhat scripts/v2/nationalSupplyChainGrandDemo.ts",
     "demo:national-supply-chain:export": "AGI_JOBS_DEMO_EXPORT=demo/National-Supply-Chain-v0/ui/export/latest.json npx hardhat run --no-compile --network hardhat scripts/v2/nationalSupplyChainGrandDemo.ts",
