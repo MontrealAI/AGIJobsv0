@@ -1,6 +1,25 @@
 {
-  "generatedAt": "2025-10-21T00:37:12.126Z",
+  "generatedAt": "2025-10-21T01:17:45.964Z",
   "readiness": "ready",
+  "commandReadiness": "ready",
+  "coverage": {
+    "requiredCategories": [
+      "Emergency Pause",
+      "Thermostat",
+      "Upgrade",
+      "Treasury",
+      "Compliance"
+    ],
+    "satisfiedCategories": [
+      "Emergency Pause",
+      "Thermostat",
+      "Upgrade",
+      "Treasury",
+      "Compliance"
+    ],
+    "missingCategories": [],
+    "readiness": "ready"
+  },
   "statuses": [
     {
       "capability": {

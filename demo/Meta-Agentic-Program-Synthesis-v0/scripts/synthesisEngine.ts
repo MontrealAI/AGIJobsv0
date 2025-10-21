@@ -20,11 +20,13 @@ import type {
   GenerationSnapshot,
   MissionConfig,
   MissionParameters,
+  OwnerControlCoverage,
   SynthesisRun,
   TaskDefinition,
   TaskResult,
   TaskExample,
 } from "./types";
+import { ensureMissionValidity } from "./validation";
 
 const SEED_LIBRARY: Record<string, OperationInstance[]> = {
   "arc-sentinel": [
@@ -364,16 +366,20 @@ function runTask(
   };
 }
 
-export async function loadMissionConfig(filePath: string): Promise<MissionConfig> {
+export async function loadMissionConfig(
+  filePath: string,
+): Promise<{ mission: MissionConfig; coverage: OwnerControlCoverage }> {
   const resolved = path.resolve(filePath);
   const raw = await readFile(resolved, "utf8");
   const parsed = JSON.parse(raw) as MissionConfig;
-  return parsed;
+  const coverage = ensureMissionValidity(parsed);
+  return { mission: parsed, coverage };
 }
 
-export function runMetaSynthesis(mission: MissionConfig): SynthesisRun {
+export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControlCoverage): SynthesisRun {
   const generatedAt = new Date().toISOString();
   candidateIdCounter = 0;
+  const ownerCoverage = coverage ?? ensureMissionValidity(mission);
 
   const tasks: TaskResult[] = mission.tasks.map((task, index) => {
     const seedOffset = mission.parameters.seed + index * 9973;
@@ -397,6 +403,7 @@ export function runMetaSynthesis(mission: MissionConfig): SynthesisRun {
     generatedAt,
     parameters: mission.parameters,
     tasks,
+    ownerCoverage,
     aggregate: {
       globalBestScore: globalBest,
       averageAccuracy,

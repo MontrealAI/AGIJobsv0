@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-21T00:37:12.127Z",
+  "generatedAt": "2025-10-21T01:17:45.964Z",
   "aggregate": {
     "globalBestScore": 140.38164328854776,
     "averageAccuracy": 1,
@@ -42,8 +42,27 @@
     "report": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json"
   },
   "ownerDiagnostics": {
-    "generatedAt": "2025-10-21T00:37:12.126Z",
+    "generatedAt": "2025-10-21T01:17:45.964Z",
     "readiness": "ready",
+    "commandReadiness": "ready",
+    "coverage": {
+      "requiredCategories": [
+        "Emergency Pause",
+        "Thermostat",
+        "Upgrade",
+        "Treasury",
+        "Compliance"
+      ],
+      "satisfiedCategories": [
+        "Emergency Pause",
+        "Thermostat",
+        "Upgrade",
+        "Treasury",
+        "Compliance"
+      ],
+      "missingCategories": [],
+      "readiness": "ready"
+    },
     "statuses": [
       {
         "capability": {
@@ -96,6 +115,24 @@
         "verificationAvailable": true
       }
     ]
+  },
+  "ownerCoverage": {
+    "requiredCategories": [
+      "Emergency Pause",
+      "Thermostat",
+      "Upgrade",
+      "Treasury",
+      "Compliance"
+    ],
+    "satisfiedCategories": [
+      "Emergency Pause",
+      "Thermostat",
+      "Upgrade",
+      "Treasury",
+      "Compliance"
+    ],
+    "missingCategories": [],
+    "readiness": "ready"
   },
   "artifacts": {
     "Mission manifest": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",

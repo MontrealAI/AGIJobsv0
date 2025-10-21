@@ -2,7 +2,15 @@ import { createHash } from "crypto";
 import { readFileSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
-import type { ArchiveCell, CandidateRecord, MissionConfig, OwnerCapability, SynthesisRun, TaskResult } from "./types";
+import type {
+  ArchiveCell,
+  CandidateRecord,
+  MissionConfig,
+  OwnerCapability,
+  OwnerControlCoverage,
+  SynthesisRun,
+  TaskResult,
+} from "./types";
 
 function formatPercent(value: number, digits = 2): string {
   return `${(value * 100).toFixed(digits)}%`;
@@ -44,6 +52,33 @@ function renderOwnerCapabilities(capabilities: OwnerCapability[]): string {
     )
     .join("\n");
   return `| Category | Command | Verification |\n| --- | --- | --- |\n${rows}`;
+}
+
+function renderOwnerCoverage(coverage: OwnerControlCoverage): string {
+  const satisfied = coverage.satisfiedCategories.length
+    ? coverage.satisfiedCategories.join(", ")
+    : "None";
+  const missing = coverage.missingCategories.length ? coverage.missingCategories.join(", ") : "None";
+  return [
+    `- **Readiness:** ${coverage.readiness}`,
+    `- **Satisfied controls:** ${satisfied}`,
+    `- **Missing controls:** ${missing}`,
+  ].join("\n");
+}
+
+function renderOwnerCoverageHtml(coverage: OwnerControlCoverage): string {
+  const satisfied = coverage.satisfiedCategories.length
+    ? escapeHtml(coverage.satisfiedCategories.join(", "))
+    : "None";
+  const missing = coverage.missingCategories.length
+    ? escapeHtml(coverage.missingCategories.join(", "))
+    : "None";
+  return `
+<ul class="coverage">
+  <li><strong>Readiness:</strong> ${escapeHtml(coverage.readiness)}</li>
+  <li><strong>Satisfied controls:</strong> ${satisfied}</li>
+  <li><strong>Missing controls:</strong> ${missing}</li>
+</ul>`;
 }
 
 function renderPipeline(candidate: CandidateRecord): string {
@@ -144,6 +179,9 @@ export function renderMarkdownReport(run: SynthesisRun): string {
   lines.push(
     "- **Owner supremacy:** every control remains copy-paste accessible (pause, thermostat, upgrades, treasury mirrors, compliance dossier).",
   );
+  lines.push(
+    `- **Coverage readiness:** ${run.ownerCoverage.readiness} (${run.ownerCoverage.satisfiedCategories.length}/${run.ownerCoverage.requiredCategories.length} controls satisfied).`,
+  );
   lines.push("");
 
   lines.push("## Mission Metadata");
@@ -168,6 +206,11 @@ export function renderMarkdownReport(run: SynthesisRun): string {
   lines.push("## Owner Capabilities");
   lines.push("");
   lines.push(renderOwnerCapabilities(mission.ownerControls.capabilities));
+  lines.push("");
+
+  lines.push("## Owner Coverage Readiness");
+  lines.push("");
+  lines.push(renderOwnerCoverage(run.ownerCoverage));
   lines.push("");
 
   for (const task of run.tasks) {
@@ -226,6 +269,7 @@ export function buildJsonSummary(run: SynthesisRun): Record<string, unknown> {
       governance: run.mission.meta.governance,
     },
     aggregate: run.aggregate,
+    ownerCoverage: run.ownerCoverage,
     tasks: run.tasks.map((task) => ({
       id: task.task.id,
       label: task.task.label,
@@ -283,6 +327,7 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
     .join("\n");
 
   const ownerTable = renderOwnerCapabilities(run.mission.ownerControls.capabilities);
+  const coverageHtml = renderOwnerCoverageHtml(run.ownerCoverage);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -313,6 +358,8 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
       .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
       .metric-card { padding: 1rem; border-radius: 0.75rem; background: rgba(15, 118, 110, 0.35); box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.25); }
       .owner-table { margin-top: 1rem; }
+      ul.coverage { list-style: none; padding-left: 0; margin-top: 1rem; }
+      ul.coverage li { margin-bottom: 0.35rem; }
     </style>
   </head>
   <body>
@@ -334,6 +381,8 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
     <section>
       <h2>Owner Capabilities</h2>
       <div class="table">${ownerTable}</div>
+      <h3>Coverage Readiness</h3>
+      ${coverageHtml}
     </section>
     ${taskSections}
     <section>

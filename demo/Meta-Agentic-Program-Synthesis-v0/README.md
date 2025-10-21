@@ -76,6 +76,8 @@ flowchart LR
   (`ci (v2)` with lint/tests/foundry/coverage gates and `cancel-in-progress: true`).
 - **Owner diagnostics bundle** – Hamiltonian audit, reward engine report, upgrade queue, and compliance health checks run in one
   command and emit Markdown/JSON ready for regulators.
+- **Owner coverage sentinel** – mission loading now enforces Ethereum address formats, thermodynamic budgets, and 5/5 mandatory
+  owner control categories (pause, thermostat, upgrade, treasury, compliance) before any synthesis can start.
 
 ## Generated artefacts
 
@@ -115,7 +117,8 @@ Set `AGI_META_PROGRAM_MISSION=/path/to/custom.json` to target a modified mission
 1. Run `npm run demo:meta-agentic-program-synthesis:full` – should finish green with CI and owner diagnostics.
 2. Review `meta-agentic-program-synthesis-dashboard.html` for the executive view.
 3. Share `meta-agentic-program-synthesis-manifest.json` + reports with partners/regulators.
-4. Exercise owner commands directly (pause, thermostat, upgrade) using the copy-paste scripts printed in the report.
+4. Exercise owner commands directly (pause, thermostat, upgrade) using the copy-paste scripts printed in the report and confirm the
+   **Coverage Readiness** panel reports 5/5 satisfied controls.
 
 With this demo, AGI Jobs v0 (v2) proves that a single non-technical steward can commission, audit, and redeploy a civilisation-scale
 program synthesis machine in minutes – fully instrumented, branch-protected, and economically aligned.
