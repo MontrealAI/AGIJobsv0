@@ -10,6 +10,7 @@ Deterministic rehearsal proving that AGI Jobs v0 (v2) lets a non-technical owner
 - **Novelty signal:** 77.76% average.
 - **Coverage:** 100.00% task-level perfect matches.
 - **Owner supremacy:** every control remains copy-paste accessible (pause, thermostat, upgrades, treasury mirrors, compliance dossier).
+- **Coverage readiness:** ready (5/5 controls satisfied).
 
 ## Mission Metadata
 
@@ -62,6 +63,12 @@ flowchart LR
 | Treasury | `npm run reward-engine:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json` | `npm run reward-engine:report` |
 | Compliance | `npm run owner:compliance-report` | `npm run owner:doctor` |
 
+## Owner Coverage Readiness
+
+- **Readiness:** ready
+- **Satisfied controls:** Emergency Pause, Thermostat, Upgrade, Treasury, Compliance
+- **Missing controls:** None
+
 ## ARC Sentinel Edge Lift
 
 Detect latent pixel edges, amplify discovery, and route high-confidence transformations back into the shared skill graph.
@@ -113,16 +120,16 @@ Detect latent pixel edges, amplify discovery, and route high-confidence transfor
 ```mermaid
 timeline
   title Evolutionary improvements for ARC Sentinel Edge Lift
-  2025-10-21T00:37:12.031Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
-  2025-10-21T00:37:12.033Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
-  2025-10-21T00:37:12.035Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
-  2025-10-21T00:37:12.036Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
-  2025-10-21T00:37:12.037Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
-  2025-10-21T00:37:12.038Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T00:37:12.040Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T00:37:12.041Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
-  2025-10-21T00:37:12.042Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
-  2025-10-21T00:37:12.043Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%
+  2025-10-21T01:17:45.900Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
+  2025-10-21T01:17:45.902Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
+  2025-10-21T01:17:45.903Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
+  2025-10-21T01:17:45.904Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
+  2025-10-21T01:17:45.905Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
+  2025-10-21T01:17:45.905Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T01:17:45.912Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T01:17:45.913Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
+  2025-10-21T01:17:45.915Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
+  2025-10-21T01:17:45.916Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%
 ```
 
 ## Ledger Harmonics Sequencer
@@ -175,16 +182,16 @@ Absorb asynchronous cash-flow deltas, stabilise them against the thermodynamic l
 ```mermaid
 timeline
   title Evolutionary improvements for Ledger Harmonics Sequencer
-  2025-10-21T00:37:12.045Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
-  2025-10-21T00:37:12.046Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
-  2025-10-21T00:37:12.047Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
-  2025-10-21T00:37:12.061Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T00:37:12.062Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T00:37:12.063Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T00:37:12.064Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T00:37:12.065Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T00:37:12.066Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T00:37:12.067Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T01:17:45.918Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
+  2025-10-21T01:17:45.919Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
+  2025-10-21T01:17:45.920Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
+  2025-10-21T01:17:45.921Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T01:17:45.921Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T01:17:45.922Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T01:17:45.923Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T01:17:45.923Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T01:17:45.924Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T01:17:45.924Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
 ```
 
 ## Nova Weave Sequence Optimiser
@@ -237,16 +244,16 @@ Elevate alpha sequences into deterministic blueprints that compile into on-chain
 ```mermaid
 timeline
   title Evolutionary improvements for Nova Weave Sequence Optimiser
-  2025-10-21T00:37:12.068Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
-  2025-10-21T00:37:12.069Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
-  2025-10-21T00:37:12.070Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
-  2025-10-21T00:37:12.071Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
-  2025-10-21T00:37:12.072Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
-  2025-10-21T00:37:12.073Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
-  2025-10-21T00:37:12.073Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
-  2025-10-21T00:37:12.074Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
-  2025-10-21T00:37:12.075Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
-  2025-10-21T00:37:12.076Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
+  2025-10-21T01:17:45.925Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
+  2025-10-21T01:17:45.926Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
+  2025-10-21T01:17:45.926Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
+  2025-10-21T01:17:45.927Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
+  2025-10-21T01:17:45.928Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
+  2025-10-21T01:17:45.928Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
+  2025-10-21T01:17:45.929Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
+  2025-10-21T01:17:45.930Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
+  2025-10-21T01:17:45.930Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
+  2025-10-21T01:17:45.931Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
 ```
 
 ## CI Shield Alignment
@@ -256,4 +263,4 @@ timeline
 
 ## Generated At
 
-2025-10-21T00:37:12.026Z
+2025-10-21T01:17:45.896Z

@@ -2,6 +2,8 @@
 
 Readiness: ready
 
+Coverage readiness: ready (5/5 controls satisfied)
+
 | Capability | Command | Verification | Status |
 | --- | --- | --- | --- |
 | Circuit breaker engage | `npm run owner:system-pause -- --action pause` (✅) | `npm run owner:system-pause -- --action status` (✅) | Ready |

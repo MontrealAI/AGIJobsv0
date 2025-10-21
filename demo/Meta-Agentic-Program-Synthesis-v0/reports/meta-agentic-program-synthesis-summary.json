@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-21T00:37:12.026Z",
+  "generatedAt": "2025-10-21T01:17:45.896Z",
   "mission": {
     "title": "Meta-Agentic Program Synthesis Sovereign Mission",
     "version": "0.1.0",
@@ -33,6 +33,24 @@
     "energyUsage": 73.33333333333333,
     "noveltyScore": 0.7776289047454377,
     "coverageScore": 1
+  },
+  "ownerCoverage": {
+    "requiredCategories": [
+      "Emergency Pause",
+      "Thermostat",
+      "Upgrade",
+      "Treasury",
+      "Compliance"
+    ],
+    "satisfiedCategories": [
+      "Emergency Pause",
+      "Thermostat",
+      "Upgrade",
+      "Treasury",
+      "Compliance"
+    ],
+    "missingCategories": [],
+    "readiness": "ready"
   },
   "tasks": [
     {
@@ -252,7 +270,7 @@
           "medianScore": 56.19020618556701,
           "diversity": 0.9444444444444444,
           "eliteScore": 110.36140657817333,
-          "timestamp": "2025-10-21T00:37:12.031Z"
+          "timestamp": "2025-10-21T01:17:45.900Z"
         },
         {
           "generation": 1,
@@ -261,7 +279,7 @@
           "medianScore": 65.75277564301642,
           "diversity": 0.75,
           "eliteScore": 136.39087455307794,
-          "timestamp": "2025-10-21T00:37:12.033Z"
+          "timestamp": "2025-10-21T01:17:45.902Z"
         },
         {
           "generation": 2,
@@ -270,7 +288,7 @@
           "medianScore": 73.64584551701412,
           "diversity": 0.75,
           "eliteScore": 138.12283331596453,
-          "timestamp": "2025-10-21T00:37:12.035Z"
+          "timestamp": "2025-10-21T01:17:45.903Z"
         },
         {
           "generation": 3,
@@ -279,7 +297,7 @@
           "medianScore": 100.49230198051038,
           "diversity": 0.8333333333333334,
           "eliteScore": 138.41149310977895,
-          "timestamp": "2025-10-21T00:37:12.036Z"
+          "timestamp": "2025-10-21T01:17:45.904Z"
         },
         {
           "generation": 4,
@@ -288,7 +306,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.6944444444444444,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T00:37:12.037Z"
+          "timestamp": "2025-10-21T01:17:45.905Z"
         },
         {
           "generation": 5,
@@ -297,7 +315,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7777777777777778,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T00:37:12.038Z"
+          "timestamp": "2025-10-21T01:17:45.905Z"
         },
         {
           "generation": 6,
@@ -306,7 +324,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7777777777777778,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T00:37:12.040Z"
+          "timestamp": "2025-10-21T01:17:45.912Z"
         },
         {
           "generation": 7,
@@ -315,7 +333,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7222222222222222,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T00:37:12.041Z"
+          "timestamp": "2025-10-21T01:17:45.913Z"
         },
         {
           "generation": 8,
@@ -324,7 +342,7 @@
           "medianScore": 116.57704853345733,
           "diversity": 0.8055555555555556,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T00:37:12.042Z"
+          "timestamp": "2025-10-21T01:17:45.915Z"
         },
         {
           "generation": 9,
@@ -333,7 +351,7 @@
           "medianScore": 137.1920690409011,
           "diversity": 0.75,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T00:37:12.043Z"
+          "timestamp": "2025-10-21T01:17:45.916Z"
         }
       ]
     },
@@ -573,7 +591,7 @@
           "medianScore": 41.03751524896436,
           "diversity": 0.9722222222222222,
           "eliteScore": 96.0918022581709,
-          "timestamp": "2025-10-21T00:37:12.045Z"
+          "timestamp": "2025-10-21T01:17:45.918Z"
         },
         {
           "generation": 1,
@@ -582,7 +600,7 @@
           "medianScore": 62.99975060567376,
           "diversity": 0.9444444444444444,
           "eliteScore": 98.43691088683215,
-          "timestamp": "2025-10-21T00:37:12.046Z"
+          "timestamp": "2025-10-21T01:17:45.919Z"
         },
         {
           "generation": 2,
@@ -591,7 +609,7 @@
           "medianScore": 76.53115760829131,
           "diversity": 0.75,
           "eliteScore": 132.5084085000921,
-          "timestamp": "2025-10-21T00:37:12.047Z"
+          "timestamp": "2025-10-21T01:17:45.920Z"
         },
         {
           "generation": 3,
@@ -600,7 +618,7 @@
           "medianScore": 77.95296283436663,
           "diversity": 0.7222222222222222,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T00:37:12.061Z"
+          "timestamp": "2025-10-21T01:17:45.921Z"
         },
         {
           "generation": 4,
@@ -609,7 +627,7 @@
           "medianScore": 86.94000111220245,
           "diversity": 0.7222222222222222,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T00:37:12.062Z"
+          "timestamp": "2025-10-21T01:17:45.921Z"
         },
         {
           "generation": 5,
@@ -618,7 +636,7 @@
           "medianScore": 88.99300139019402,
           "diversity": 0.6111111111111112,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T00:37:12.063Z"
+          "timestamp": "2025-10-21T01:17:45.922Z"
         },
         {
           "generation": 6,
@@ -627,7 +645,7 @@
           "medianScore": 83.23985249780515,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T00:37:12.064Z"
+          "timestamp": "2025-10-21T01:17:45.923Z"
         },
         {
           "generation": 7,
@@ -636,7 +654,7 @@
           "medianScore": 82.9194778065494,
           "diversity": 0.6111111111111112,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T00:37:12.065Z"
+          "timestamp": "2025-10-21T01:17:45.923Z"
         },
         {
           "generation": 8,
@@ -645,7 +663,7 @@
           "medianScore": 86.367830024997,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T00:37:12.066Z"
+          "timestamp": "2025-10-21T01:17:45.924Z"
         },
         {
           "generation": 9,
@@ -654,7 +672,7 @@
           "medianScore": 85.09002044220831,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T00:37:12.067Z"
+          "timestamp": "2025-10-21T01:17:45.924Z"
         }
       ]
     },
@@ -923,7 +941,7 @@
           "medianScore": 23.447749293641056,
           "diversity": 1,
           "eliteScore": 97.42746077012889,
-          "timestamp": "2025-10-21T00:37:12.068Z"
+          "timestamp": "2025-10-21T01:17:45.925Z"
         },
         {
           "generation": 1,
@@ -932,7 +950,7 @@
           "medianScore": 33.23577114240753,
           "diversity": 1,
           "eliteScore": 101.68095349725729,
-          "timestamp": "2025-10-21T00:37:12.069Z"
+          "timestamp": "2025-10-21T01:17:45.926Z"
         },
         {
           "generation": 2,
@@ -941,7 +959,7 @@
           "medianScore": 64.46743238768931,
           "diversity": 0.8888888888888888,
           "eliteScore": 125.76131787031291,
-          "timestamp": "2025-10-21T00:37:12.070Z"
+          "timestamp": "2025-10-21T01:17:45.926Z"
         },
         {
           "generation": 3,
@@ -950,7 +968,7 @@
           "medianScore": 70.39942915911845,
           "diversity": 0.8611111111111112,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T00:37:12.071Z"
+          "timestamp": "2025-10-21T01:17:45.927Z"
         },
         {
           "generation": 4,
@@ -959,7 +977,7 @@
           "medianScore": 71.05162669292856,
           "diversity": 0.8333333333333334,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T00:37:12.072Z"
+          "timestamp": "2025-10-21T01:17:45.928Z"
         },
         {
           "generation": 5,
@@ -968,7 +986,7 @@
           "medianScore": 53.843889930604206,
           "diversity": 0.7777777777777778,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T00:37:12.073Z"
+          "timestamp": "2025-10-21T01:17:45.928Z"
         },
         {
           "generation": 6,
@@ -977,7 +995,7 @@
           "medianScore": 78.25900854278035,
           "diversity": 0.6666666666666666,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T00:37:12.073Z"
+          "timestamp": "2025-10-21T01:17:45.929Z"
         },
         {
           "generation": 7,
@@ -986,7 +1004,7 @@
           "medianScore": 91.68021852282594,
           "diversity": 0.5,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T00:37:12.074Z"
+          "timestamp": "2025-10-21T01:17:45.930Z"
         },
         {
           "generation": 8,
@@ -995,7 +1013,7 @@
           "medianScore": 84.52984866490183,
           "diversity": 0.6388888888888888,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T00:37:12.075Z"
+          "timestamp": "2025-10-21T01:17:45.930Z"
         },
         {
           "generation": 9,
@@ -1004,7 +1022,7 @@
           "medianScore": 90.34258929546631,
           "diversity": 0.6388888888888888,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T00:37:12.076Z"
+          "timestamp": "2025-10-21T01:17:45.931Z"
         }
       ]
     }

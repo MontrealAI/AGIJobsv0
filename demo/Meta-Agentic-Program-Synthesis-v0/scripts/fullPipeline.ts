@@ -3,7 +3,7 @@ import path from "path";
 import yaml from "js-yaml";
 import { executeSynthesis, type RunOptions } from "./runSynthesis";
 import { updateManifest } from "./manifest";
-import type { MissionConfig, OwnerCapability, SynthesisRun } from "./types";
+import type { MissionConfig, OwnerCapability, OwnerControlCoverage, SynthesisRun } from "./types";
 
 const BASE_DIR = path.resolve(__dirname, "..");
 const REPO_ROOT = path.resolve(BASE_DIR, "..", "..");
@@ -189,8 +189,12 @@ function inspectCommand(command: string, scripts: Record<string, string | undefi
   return trimmed.length > 0;
 }
 
-async function evaluateOwnerControls(mission: MissionConfig): Promise<{
+async function evaluateOwnerControls(
+  mission: MissionConfig,
+  coverage: OwnerControlCoverage,
+): Promise<{
   readiness: "ready" | "attention" | "blocked";
+  commandReadiness: "ready" | "attention" | "blocked";
   statuses: Array<{
     capability: OwnerCapability;
     commandAvailable: boolean;
@@ -207,29 +211,52 @@ async function evaluateOwnerControls(mission: MissionConfig): Promise<{
     return { capability, commandAvailable, verificationAvailable };
   });
 
-  let readiness: "ready" | "attention" | "blocked" = "ready";
   const anyError = statuses.some((status) => !status.commandAvailable && !status.verificationAvailable);
   const anyWarning = statuses.some(
     (status) => status.commandAvailable !== status.verificationAvailable,
   );
+  let commandReadiness: "ready" | "attention" | "blocked" = "ready";
   if (anyError) {
-    readiness = "blocked";
+    commandReadiness = "blocked";
   } else if (anyWarning) {
-    readiness = "attention";
+    commandReadiness = "attention";
   }
 
-  return { readiness, statuses };
+  const rank = (value: "ready" | "attention" | "blocked"): number => {
+    switch (value) {
+      case "blocked":
+        return 2;
+      case "attention":
+        return 1;
+      default:
+        return 0;
+    }
+  };
+  let readiness = commandReadiness;
+  if (rank(coverage.readiness) > rank(readiness)) {
+    readiness = coverage.readiness;
+  }
+
+  return { readiness, commandReadiness, statuses };
 }
 
-function renderOwnerMarkdown(readiness: string, statuses: Array<{
-  capability: OwnerCapability;
-  commandAvailable: boolean;
-  verificationAvailable: boolean;
-}>): string {
+function renderOwnerMarkdown(
+  readiness: string,
+  coverage: OwnerControlCoverage,
+  statuses: Array<{
+    capability: OwnerCapability;
+    commandAvailable: boolean;
+    verificationAvailable: boolean;
+  }>,
+): string {
   const lines: string[] = [];
   lines.push("# Owner Diagnostics (Static Verification)");
   lines.push("");
   lines.push(`Readiness: ${readiness}`);
+  lines.push("");
+  lines.push(
+    `Coverage readiness: ${coverage.readiness} (${coverage.satisfiedCategories.length}/${coverage.requiredCategories.length} controls satisfied)`,
+  );
   lines.push("");
   lines.push("| Capability | Command | Verification | Status |");
   lines.push("| --- | --- | --- | --- |");
@@ -255,16 +282,22 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
   const reportDir = path.resolve(options.reportDir ?? REPORT_DIR);
 
   const ciAssessment = await verifyCi(run.mission);
-  const ownerAssessment = await evaluateOwnerControls(run.mission);
+  const ownerAssessment = await evaluateOwnerControls(run.mission, run.ownerCoverage);
 
   const ownerReport = {
     generatedAt: new Date().toISOString(),
     readiness: ownerAssessment.readiness,
+    commandReadiness: ownerAssessment.commandReadiness,
+    coverage: run.ownerCoverage,
     statuses: ownerAssessment.statuses,
   };
 
   await writeFile(OWNER_JSON, JSON.stringify(ownerReport, null, 2), "utf8");
-  await writeFile(OWNER_MARKDOWN, renderOwnerMarkdown(ownerAssessment.readiness, ownerAssessment.statuses), "utf8");
+  await writeFile(
+    OWNER_MARKDOWN,
+    renderOwnerMarkdown(ownerAssessment.readiness, run.ownerCoverage, ownerAssessment.statuses),
+    "utf8",
+  );
 
   const artifacts = {
     "Mission manifest": missionFile,
@@ -287,6 +320,7 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
       report: CI_REPORT,
     },
     ownerDiagnostics: ownerReport,
+    ownerCoverage: run.ownerCoverage,
     artifacts,
   };
 

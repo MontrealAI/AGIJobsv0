@@ -82,6 +82,13 @@ export interface MissionOwnerControls {
   capabilities: OwnerCapability[];
 }
 
+export interface OwnerControlCoverage {
+  requiredCategories: string[];
+  satisfiedCategories: string[];
+  missingCategories: string[];
+  readiness: "ready" | "attention" | "blocked";
+}
+
 export interface MissionConfig {
   meta: MissionMeta;
   parameters: MissionParameters;
@@ -138,6 +145,7 @@ export interface SynthesisRun {
   generatedAt: string;
   parameters: MissionParameters;
   tasks: TaskResult[];
+  ownerCoverage: OwnerControlCoverage;
   aggregate: {
     globalBestScore: number;
     averageAccuracy: number;

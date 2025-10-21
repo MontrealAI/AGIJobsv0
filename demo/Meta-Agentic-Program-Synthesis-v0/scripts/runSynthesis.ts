@@ -2,7 +2,7 @@ import path from "path";
 import { loadMissionConfig, runMetaSynthesis } from "./synthesisEngine";
 import { writeReports } from "./reporting";
 import { updateManifest } from "./manifest";
-import type { MissionConfig, SynthesisRun } from "./types";
+import type { MissionConfig, OwnerControlCoverage, SynthesisRun } from "./types";
 
 const BASE_DIR = path.resolve(__dirname, "..");
 const REPORT_DIR = path.join(BASE_DIR, "reports");
@@ -33,8 +33,9 @@ function resolveOptions(options: RunOptions = {}): Required<RunOptions> {
 
 export async function executeSynthesis(options: RunOptions = {}): Promise<SynthesisRun> {
   const resolved = resolveOptions(options);
-  const mission: MissionConfig = await loadMissionConfig(resolved.missionFile);
-  const run = runMetaSynthesis(mission);
+  const { mission, coverage }: { mission: MissionConfig; coverage: OwnerControlCoverage } =
+    await loadMissionConfig(resolved.missionFile);
+  const run = runMetaSynthesis(mission, coverage);
   const { files } = await writeReports(run, {
     reportDir: resolved.reportDir,
     markdownFile: resolved.reportFile,
