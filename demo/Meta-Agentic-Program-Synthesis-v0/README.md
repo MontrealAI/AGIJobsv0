@@ -98,6 +98,22 @@ python start_demo.py alpha \
 Use `--pause` to halt execution instantly. The orchestrator will refuse to launch jobs while paused and will explain the status
 in the CLI output. Re-run without `--pause` (or with a different override set) to resume operations.
 
+### Timelocked governance
+
+Mirror production multi-sig timelocks without touching Solidity. Any override can be routed through the governance scheduler with two simple flags:
+
+```bash
+python start_demo.py alpha \
+  --reward-total 3200 \
+  --timelock-delay 45 \
+  --timelock-fast-forward 60
+```
+
+* `--timelock-delay` queues policy changes with an enforced delay (seconds).
+* `--timelock-fast-forward` simulates time passing before execution so you can demonstrate queue + execution in a single run.
+
+The CLI announces scheduled items, the HTML report plots them, and the JSON export preserves the timeline for compliance archives.
+
 ### JSON override files
 
 For executive operators, overrides can be pre-packaged in a JSON file:
@@ -129,6 +145,7 @@ Run the demo with `python start_demo.py alpha --config-file config/owner-overrid
 * **StakeManager** simulates minimum stake, inactivity slashing, and penalty accounting so owners retain full control over participating agents.
 * **ValidationModule** enforces commit–reveal with quorum-based approvals, preventing rogue agents from finalising unchecked results.
 * **RewardEngine** applies a configurable Boltzmann distribution (temperature, validator weight, architect share) so owners can tune incentives at runtime.
+* **GovernanceTimelock** simulates multi-sig, time-delayed policy enforcement so operators can queue, audit, fast-forward, or cancel overrides safely.
 * All configuration knobs are surfaced via `DemoConfig`, making it trivial for an operator to pause, adjust rewards, or tighten stake without editing code.
 
 ---
@@ -141,6 +158,7 @@ The HTML report blends narrative storytelling with quantitative telemetry:
 * **Architecture atlas (Mermaid)** – flowchart of user → architect → marketplace → validators/solvers → rewards, rendered entirely client-side via the bundled Mermaid runtime.
 * **Evolution timeline (Mermaid)** – timeline view of per-generation fitness with delta tracking.
 * **Owner command ledger** – auditable table of every privileged action captured in real time.
+* **Governance timelock** – queue with ETA, payload, and execution status for each scheduled override.
 * **Evolutionary trajectory** – per-generation improvements, score variance, and diversity notes.
 * **On-chain jobs** – each validation cycle with commitments and rewards.
 * **Thermodynamic rewards (Mermaid + tables)** – aggregated reward graph plus per-job energy footprints.

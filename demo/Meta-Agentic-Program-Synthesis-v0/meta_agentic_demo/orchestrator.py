@@ -17,6 +17,7 @@ from .entities import (
     RewardBreakdown,
 )
 from .evolutionary import EvolutionaryProgramSynthesizer, Program
+from .governance import GovernanceTimelock
 from .ledger import (
     RewardEngine,
     StakeManager,
@@ -60,6 +61,7 @@ class SovereignArchitect:
         dataset: SyntheticDataset | None = None,
         random_seed: int | None = None,
         owner_console: OwnerConsole | None = None,
+        timelock: GovernanceTimelock | None = None,
     ) -> None:
         self.owner_console = owner_console or OwnerConsole(config)
         self.config = self.owner_console.config
@@ -67,11 +69,14 @@ class SovereignArchitect:
         self.reward_engine = RewardEngine(self.config.reward_policy)
         self.stake_manager = StakeManager(self.config.stake_policy)
         self.validation_module = ValidationModule()
+        self.timelock = timelock or GovernanceTimelock()
         self.random = random.Random(random_seed)
         zero_predictions = [0.0 for _ in self.dataset.target]
         self.baseline_error = self._mean_squared_error(zero_predictions, self.dataset.target)
 
     def run(self, scenario: DemoScenario) -> DemoRunArtifacts:
+        # Apply any timelocked actions that have matured before execution starts.
+        self.timelock.execute_due(self.owner_console)
         self.owner_console.require_active()
         self._refresh_runtime_components()
         synthesizer = EvolutionaryProgramSynthesizer(
@@ -106,6 +111,7 @@ class SovereignArchitect:
             final_program=synthesizer.render_program(best_program),
             final_score=final_score,
             owner_actions=list(self.owner_console.events),
+            timelock_actions=list(self.timelock.pending()),
             improvement_over_first=improvement_over_first,
             first_success_generation=first_success_generation,
         )

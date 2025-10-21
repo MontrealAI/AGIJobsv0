@@ -21,3 +21,4 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert artefacts.performances
     assert artefacts.improvement_over_first >= 0
     assert artefacts.owner_actions == []
+    assert artefacts.timelock_actions == []

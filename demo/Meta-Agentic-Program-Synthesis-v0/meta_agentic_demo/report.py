@@ -71,6 +71,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </table>
   </section>
   <section>
+    <h2>Governance Timelock</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Action</th><th>ETA</th><th>Status</th><th>Payload</th></tr>
+      </thead>
+      <tbody>
+        {timelock_rows}
+      </tbody>
+    </table>
+  </section>
+  <section>
     <h2>Evolutionary Trajectory</h2>
     <table>
       <thead>
@@ -129,6 +140,19 @@ def format_owner_rows(actions: Iterable[OwnerAction]) -> str:
     return build_rows(
         f"<tr><td>{index}</td><td>{escape(action.timestamp.isoformat())}</td>"
         f"<td>{escape(action.action)}</td><td>{escape(json.dumps(action.payload, sort_keys=True))}</td></tr>"
+        for index, action in enumerate(entries, start=1)
+    )
+
+
+def format_timelock_rows(actions: Iterable[object]) -> str:
+    entries = list(actions)
+    if not entries:
+        return "<tr><td colspan=5>No timelocked actions were scheduled.</td></tr>"
+    return build_rows(
+        f"<tr><td>{index}</td><td>{escape(action.name)}</td>"
+        f"<td>{escape(action.eta.isoformat(timespec='seconds'))}</td>"
+        f"<td>{escape(action.status)}</td>"
+        f"<td>{escape(json.dumps(dict(action.payload), sort_keys=True))}</td></tr>"
         for index, action in enumerate(entries, start=1)
     )
 
@@ -251,6 +275,7 @@ def build_reward_mermaid(report: DemoRunArtifacts) -> str:
 
 def render_html(report: DemoRunArtifacts) -> str:
     owner_rows = format_owner_rows(report.owner_actions)
+    timelock_rows = format_timelock_rows(report.timelock_actions)
     evolution_rows = format_evolution_rows(report)
     job_rows = format_job_rows(report)
     reward_tables = format_reward_tables(report)
@@ -269,6 +294,7 @@ def render_html(report: DemoRunArtifacts) -> str:
         improvement=report.improvement_over_first,
         first_success=first_success,
         owner_rows=owner_rows,
+        timelock_rows=timelock_rows,
         evolution_rows=evolution_rows,
         job_rows=job_rows,
         reward_tables=reward_tables,

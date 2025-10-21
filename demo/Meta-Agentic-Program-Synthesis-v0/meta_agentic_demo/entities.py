@@ -6,7 +6,10 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum, auto
 from hashlib import sha256
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
+
+if TYPE_CHECKING:  # pragma: no cover - only for typing purposes
+    from .governance import TimelockedAction
 
 
 class JobStatus(Enum):
@@ -132,6 +135,7 @@ class DemoRunArtifacts:
     final_program: str
     final_score: float
     owner_actions: List[OwnerAction]
+    timelock_actions: List["TimelockedAction"]
     improvement_over_first: float
     first_success_generation: int | None
     generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -168,6 +172,7 @@ class DemoRunArtifacts:
             "final_program": self.final_program,
             "final_score": self.final_score,
             "owner_actions": [action.to_dict() for action in self.owner_actions],
+            "timelock_actions": [action.to_dict() for action in self.timelock_actions],
             "improvement_over_first": self.improvement_over_first,
             "first_success_generation": self.first_success_generation,
             "generated_at": self.generated_at.isoformat(),
