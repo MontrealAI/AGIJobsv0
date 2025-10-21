@@ -62,6 +62,25 @@ The orchestrator keeps ownership controls in the loop at every stage—jobs are 
 
 That is all a non-technical operator needs: visit the chat, describe the job, confirm, and watch the receipt appear with an explorer link.
 
+#### Command-line overrides
+
+Need to tweak ports or skip automatically opening a browser tab? The launcher accepts friendly flags:
+
+```sh
+npm run demo:onebox:launch -- \
+  --no-browser \
+  --ui-host 0.0.0.0 \
+  --ui-port 5050 \
+  --orchestrator-port 9090 \
+  --orchestrator-url http://demo.internal:9090/onebox \
+  --prefix /mission \
+  --token demo-api-token \
+  --mode expert \
+  --explorer-base https://sepolia.etherscan.io/tx/
+```
+
+Only the flags you specify are overridden; everything else continues to flow from `.env`. Invalid flag values (for example, a negative port) are rejected up front so operators catch mistakes before the orchestrator boots.
+
 ### Built-in safety rails
 
 * **Walletless default.** Guest mode uses the relayer key supplied in `.env` to sponsor gas and escrow the reward. Expert mode can be toggled at any time to emit calldata for self-signing wallets.

@@ -10,6 +10,7 @@ const {
   createDemoUrl,
   normalisePrefix,
   isUnsetEnvValue,
+  parseCliArgs,
 } = require('../lib/launcher.js');
 
 test('loadEnvironment merges root and demo .env files with demo taking precedence', () => {
@@ -42,6 +43,36 @@ test('resolveConfig normalises prefix and derives defaults', () => {
   assert.equal(config.prefix, '/mission-control');
   assert.equal(config.apiToken, 'demo');
   assert.equal(config.publicOrchestratorUrl, 'http://127.0.0.1:9010');
+});
+
+test('resolveConfig allows explicit CLI overrides to win over environment', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: '0x1234',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_PORT: '9999',
+    ONEBOX_UI_PORT: '4444',
+    ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'http://example.invalid',
+  };
+  const config = resolveConfig(env, {
+    orchestratorPort: 8088,
+    uiPort: 5050,
+    uiHost: '0.0.0.0',
+    prefix: '/mission',
+    apiToken: 'cli-token',
+    defaultMode: 'expert',
+    publicOrchestratorUrl: 'http://demo.internal:8088/onebox',
+    explorerBase: 'https://scan.example/tx/',
+  });
+
+  assert.equal(config.orchestratorPort, 8088);
+  assert.equal(config.uiPort, 5050);
+  assert.equal(config.uiHost, '0.0.0.0');
+  assert.equal(config.prefix, '/mission');
+  assert.equal(config.apiToken, 'cli-token');
+  assert.equal(config.defaultMode, 'expert');
+  assert.equal(config.publicOrchestratorUrl, 'http://demo.internal:8088/onebox');
+  assert.equal(config.explorerBase, 'https://scan.example/tx/');
 });
 
 test('createDemoUrl encodes orchestrator, prefix, token, and mode', () => {
@@ -92,4 +123,40 @@ test('isUnsetEnvValue detects placeholders and zero addresses', () => {
   assert.equal(isUnsetEnvValue('https://sepolia.infura.io/v3/your-key', { treatZeroAddress: false }), true);
   assert.equal(isUnsetEnvValue('0x000000000000000000000000000000000000abcd'), false);
   assert.equal(isUnsetEnvValue('https://rpc.valid', { treatZeroAddress: false }), false);
+});
+
+test('parseCliArgs handles overrides and boolean flags', () => {
+  const options = parseCliArgs([
+    '--no-browser',
+    '--ui-port',
+    '5050',
+    '--orchestrator-port=9090',
+    '--ui-host',
+    '0.0.0.0',
+    '--prefix',
+    '/mission',
+    '--token',
+    'secret',
+    '--mode',
+    'expert',
+    '--orchestrator-url',
+    'http://demo.internal:9090/onebox',
+    '--explorer-base',
+    'https://scan.example/tx/',
+  ]);
+
+  assert.equal(options.openBrowser, false);
+  assert.equal(options.uiPort, 5050);
+  assert.equal(options.orchestratorPort, 9090);
+  assert.equal(options.uiHost, '0.0.0.0');
+  assert.equal(options.prefix, '/mission');
+  assert.equal(options.apiToken, 'secret');
+  assert.equal(options.defaultMode, 'expert');
+  assert.equal(options.publicOrchestratorUrl, 'http://demo.internal:9090/onebox');
+  assert.equal(options.explorerBase, 'https://scan.example/tx/');
+});
+
+test('parseCliArgs throws for invalid numeric or mode values', () => {
+  assert.throws(() => parseCliArgs(['--ui-port', '-1']));
+  assert.throws(() => parseCliArgs(['--mode', 'power']));
 });
