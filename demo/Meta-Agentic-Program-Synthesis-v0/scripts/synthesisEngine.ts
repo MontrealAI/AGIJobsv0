@@ -676,6 +676,7 @@ export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControl
     parameters: mission.parameters,
     tasks,
     ownerCoverage,
+    ownerScriptsAudit: [],
     aggregate: {
       globalBestScore: globalBest,
       averageAccuracy,

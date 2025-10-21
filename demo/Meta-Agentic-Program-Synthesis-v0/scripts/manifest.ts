@@ -40,7 +40,8 @@ export async function updateManifest(manifestPath: string, files: string[]): Pro
     }
   }
 
-  const root = document?.root ? path.resolve(document.root) : process.cwd();
+  const defaultRoot = path.dirname(absoluteManifest);
+  const root = document?.root ? path.resolve(document.root) : defaultRoot;
   const entries = new Map<string, ManifestEntry>();
 
   if (document) {

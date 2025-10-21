@@ -39,13 +39,14 @@ export async function executeSynthesis(options: RunOptions = {}): Promise<Synthe
   const { mission, coverage }: { mission: MissionConfig; coverage: OwnerControlCoverage } =
     await loadMissionConfig(resolved.missionFile);
   const run = runMetaSynthesis(mission, coverage);
-  const { files } = await writeReports(run, {
+  const { files, ownerScripts } = await writeReports(run, {
     reportDir: resolved.reportDir,
     markdownFile: resolved.reportFile,
     jsonFile: resolved.summaryFile,
     htmlFile: resolved.dashboardFile,
     triangulationFile: resolved.triangulationFile,
   });
+  run.ownerScriptsAudit = ownerScripts;
   await updateManifest(resolved.manifestFile, files);
   return run;
 }

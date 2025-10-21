@@ -98,6 +98,11 @@ export interface OwnerControlCoverage {
   readiness: "ready" | "attention" | "blocked";
 }
 
+export interface OwnerScriptAudit {
+  script: string;
+  available: boolean;
+}
+
 export interface MissionConfig {
   meta: MissionMeta;
   parameters: MissionParameters;
@@ -179,6 +184,7 @@ export interface SynthesisRun {
   parameters: MissionParameters;
   tasks: TaskResult[];
   ownerCoverage: OwnerControlCoverage;
+  ownerScriptsAudit: OwnerScriptAudit[];
   aggregate: {
     globalBestScore: number;
     averageAccuracy: number;

@@ -11,3 +11,15 @@ Coverage readiness: ready (5/5 controls satisfied)
 | Queue sovereign upgrade | `npm run owner:upgrade -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json` (✅) | `npm run owner:upgrade-status` (✅) | Ready |
 | Mirror treasury share | `npm run reward-engine:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json` (✅) | `npm run reward-engine:report` (✅) | Ready |
 | Refresh compliance dossier | `npm run owner:compliance-report` (✅) | `npm run owner:doctor` (✅) | Ready |
+
+## Owner Script Audit
+
+| Script | Status |
+| --- | --- |
+| `npm run owner:command-center` | ✅ Available |
+| `npm run owner:atlas` | ✅ Available |
+| `npm run owner:system-pause` | ✅ Available |
+| `npm run owner:upgrade-status` | ✅ Available |
+| `npm run owner:change-ticket` | ✅ Available |
+
+Audit comparison: ✅ match.
