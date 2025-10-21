@@ -54,6 +54,9 @@ function renderMarkdown(
   lines.push(
     `- Thermodynamic alignment: ${formatPercent(run.aggregate.thermodynamics.averageAlignment)} (mean Δ ${formatNumber(run.aggregate.thermodynamics.meanDelta)} | max Δ ${formatNumber(run.aggregate.thermodynamics.maxDelta)} | ${formatThermoStatus(run.aggregate.thermodynamics.statusCounts)})`,
   );
+  lines.push(
+    `- Ledger economy: rewards ${run.aggregate.ledger.totalRewardPaid.toLocaleString()} | slashed ${run.aggregate.ledger.totalSlashed.toLocaleString()} | validator rewards ${run.aggregate.ledger.validatorRewards.toLocaleString()} | treasury ${run.aggregate.ledger.treasuryReturn.toLocaleString()} | participation ${(run.aggregate.ledger.averageParticipationRate * 100).toFixed(1)}% | latency ${run.aggregate.ledger.averageLatencySeconds.toFixed(1)}s | alerts ${run.aggregate.ledger.consensusAlerts}`,
+  );
   lines.push("");
   lines.push("## Verification Consensus");
   lines.push("");

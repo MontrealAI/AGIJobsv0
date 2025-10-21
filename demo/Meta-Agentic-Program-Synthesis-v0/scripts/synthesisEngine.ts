@@ -14,6 +14,7 @@ import {
   type OperationType,
 } from "./operations";
 import { DeterministicRandom } from "./random";
+import { simulateLedger } from "./ledgerSimulation";
 import type {
   ArchiveCell,
   CandidateMetrics,
@@ -594,6 +595,7 @@ function runTask(
   const elites = finalSorted.slice(0, Math.max(3, mission.parameters.eliteCount));
   const triangulation = triangulateCandidate(globalBest, task, mission, elites, globalSeed);
   const thermodynamics = evaluateThermodynamics(globalBest, task);
+  const ledger = simulateLedger(task, mission, globalBest, globalSeed);
 
   return {
     task,
@@ -603,6 +605,7 @@ function runTask(
     archive: Array.from(archive.values()).sort((a, b) => b.candidate.metrics.score - a.candidate.metrics.score),
     triangulation,
     thermodynamics,
+    ledger,
   };
 }
 
@@ -670,6 +673,42 @@ export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControl
     },
   );
 
+  const ledgerAggregate = tasks.reduce(
+    (
+      acc,
+      task,
+    ): {
+      totalReward: number;
+      totalSlashed: number;
+      validatorRewards: number;
+      treasuryReturn: number;
+      participation: number;
+      latency: number;
+      accepted: number;
+      alerts: number;
+    } => {
+      acc.totalReward += task.ledger.summary.totalRewardPaid;
+      acc.totalSlashed += task.ledger.summary.totalSlashed;
+      acc.validatorRewards += task.ledger.summary.validatorRewards;
+      acc.treasuryReturn += task.ledger.summary.treasuryReturn;
+      acc.participation += task.ledger.summary.participationRate;
+      acc.latency += task.ledger.summary.averageLatencySeconds;
+      acc.accepted += task.ledger.summary.finalConsensus === "accepted" ? 1 : 0;
+      acc.alerts += task.ledger.summary.commitRevealIntegrity === "attention" ? 1 : 0;
+      return acc;
+    },
+    {
+      totalReward: 0,
+      totalSlashed: 0,
+      validatorRewards: 0,
+      treasuryReturn: 0,
+      participation: 0,
+      latency: 0,
+      accepted: 0,
+      alerts: 0,
+    },
+  );
+
   return {
     mission,
     generatedAt,
@@ -689,6 +728,16 @@ export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControl
         meanDelta: thermodynamicStats.deltaSum / Math.max(1, tasks.length),
         maxDelta: thermodynamicStats.maxDelta,
         statusCounts: thermodynamicStats.counts,
+      },
+      ledger: {
+        totalRewardPaid: ledgerAggregate.totalReward,
+        totalSlashed: ledgerAggregate.totalSlashed,
+        validatorRewards: ledgerAggregate.validatorRewards,
+        treasuryReturn: ledgerAggregate.treasuryReturn,
+        averageParticipationRate: tasks.length === 0 ? 0 : ledgerAggregate.participation / tasks.length,
+        averageLatencySeconds: tasks.length === 0 ? 0 : ledgerAggregate.latency / tasks.length,
+        accepted: ledgerAggregate.accepted,
+        consensusAlerts: ledgerAggregate.alerts,
       },
     },
   };

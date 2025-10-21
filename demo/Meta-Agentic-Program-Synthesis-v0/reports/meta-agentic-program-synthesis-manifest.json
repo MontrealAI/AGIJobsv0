@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-21T02:47:22.637Z",
+  "generatedAt": "2025-10-21T03:23:20.779Z",
   "root": "/workspace/AGIJobsv0",
   "files": 9,
   "entries": [
@@ -10,22 +10,22 @@
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-dashboard.html",
-      "sha256": "1276405e6930eeb35e9c4fcfee958933b7d9e42505ca9270ef895771d71c4bac",
-      "bytes": 71879
+      "sha256": "df5ae5075aba8058bc9567f8912f20b15332ae6b0284bf2234e7befa1ad1d85b",
+      "bytes": 143365
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-full.json",
-      "sha256": "a3a74f65118e95e4a40549031c10c09cf2d4c841d5b2e60a918f8fbec23cfae2",
-      "bytes": 6686
+      "sha256": "c9b29d056e3f2225238d85ebc70244e72dadea59c1093aa25f7313a14d6b480b",
+      "bytes": 6990
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-full.md",
-      "sha256": "1c67c9019cce248d17587b6783cb1611bde03f746d2aa55f2a324015b5e679bf",
-      "bytes": 1842
+      "sha256": "fbb3adf6f3033ac490bdf5fd8ac55e1c6f3db66ef492037e3923a909c3664219",
+      "bytes": 1991
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-owner-diagnostics.json",
-      "sha256": "153c98fc9ae97d7af1cdb24bc1bd3c3879fbf2942cbc0edcf3c5bbadf519b3f2",
+      "sha256": "1f81c9823e6d08f02634f5033f53c3edc52588e8a6aa0ce0b00d0243447e2d2b",
       "bytes": 2288
     },
     {
@@ -35,17 +35,17 @@
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md",
-      "sha256": "d5d52c45583e803e976607ac8c724bba10ed49d16208cb87b27899ec1cc52355",
-      "bytes": 13826
+      "sha256": "64cbda7cd3dbd119906357e2af5cd90630da914dbc1ec0caa449c5ea635cd0b0",
+      "bytes": 28295
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-summary.json",
-      "sha256": "1f6f506015040e6991bdf4a7aa02f3c2a1a99cfad326d0cca781cf6440325d23",
-      "bytes": 34778
+      "sha256": "8dd6646818722c44e14b31d869ecc8f560b5da6d94d803a358ef5ea92a13cbcf",
+      "bytes": 71318
     },
     {
       "path": "demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-triangulation.json",
-      "sha256": "c62c762e1877d8a8bb15dfd3c121bf78aac8ec92e8d7279cc5be98a3a13fbe40",
+      "sha256": "19aa146fa485ab7bdf423c6fc3ee6fc2c6006ae17de62b55be7aca5a4c8a14fe",
       "bytes": 5041
     }
   ]

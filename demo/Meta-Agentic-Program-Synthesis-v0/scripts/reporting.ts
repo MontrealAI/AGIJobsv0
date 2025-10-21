@@ -9,6 +9,7 @@ import type {
   OwnerCapability,
   OwnerControlCoverage,
   SynthesisRun,
+  TaskLedger,
   TaskResult,
   TriangulationReport,
 } from "./types";
@@ -175,6 +176,136 @@ function renderArchive(archive: ArchiveCell[]): string {
   return `| Cell | Complexity | Novelty | Energy | Score |\n| --- | --- | --- | --- | --- |\n${rows}`;
 }
 
+function formatLedgerDetails(details: Record<string, unknown>): string {
+  return Object.entries(details)
+    .map(([key, value]) => {
+      if (typeof value === "number") {
+        return `${key}=${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+      }
+      if (Array.isArray(value)) {
+        return `${key}=[${value.join(", ")}]`;
+      }
+      return `${key}=${String(value)}`;
+    })
+    .join("; ");
+}
+
+function renderLedgerSummary(ledger: TaskLedger): string {
+  return [
+    `- Consensus: **${ledger.summary.finalConsensus.toUpperCase()}** across ${ledger.summary.attempts} attempts`,
+    `- Rewards paid: ${ledger.summary.totalRewardPaid.toLocaleString()} (validators ${ledger.summary.validatorRewards.toLocaleString()} | treasury ${ledger.summary.treasuryReturn.toLocaleString()})`,
+    `- Slashed stake: ${ledger.summary.totalSlashed.toLocaleString()} | Participation ${(ledger.summary.participationRate * 100).toFixed(1)}%`,
+    `- Commit–reveal integrity: ${ledger.summary.commitRevealIntegrity} • Avg latency ${ledger.summary.averageLatencySeconds.toFixed(1)} seconds`,
+  ].join("\n");
+}
+
+function renderLedgerTimeline(ledger: TaskLedger): string {
+  if (ledger.timeline.length === 0) {
+    return "| Timestamp | Event | Details |\n| --- | --- | --- |\n| n/a | n/a | n/a |";
+  }
+  const rows = ledger.timeline
+    .map((event) => `| ${event.timestamp} | ${event.type} | ${formatLedgerDetails(event.details)} |`)
+    .join("\n");
+  return `| Timestamp | Event | Details |\n| --- | --- | --- |\n${rows}`;
+}
+
+function renderLedgerMermaid(ledger: TaskLedger): string {
+  const successAttempt = ledger.attempts.findIndex((attempt) => attempt.status === "accepted");
+  const failAttempt = ledger.attempts.findIndex((attempt) => attempt.status === "slashed");
+  const successLabel = successAttempt >= 0 ? ledger.attempts[successAttempt].solverId : "success";
+  const failLabel = failAttempt >= 0 ? ledger.attempts[failAttempt].solverId : "initial";
+  return [
+    "```mermaid",
+    "flowchart LR",
+    `  Job((Job ${ledger.jobId})):::core --> AttemptA[Attempt 1\\n${failLabel}]:::warn`,
+    failAttempt >= 0 ? "  AttemptA -->|Consensus rejected| Slash[(Slash)]:::warn" : "  AttemptA --> Archive",
+    `  AttemptA -->|Requeue| AttemptB[Attempt 2\\n${successLabel}]:::core`,
+    "  AttemptB -->|Validators| Consensus{Final consensus}:::verify",
+    "  Consensus --> Reward[(Reward Distribution)]:::core",
+    "  Reward --> Treasury[Treasury Return]:::governance",
+    "  Reward --> Validators[Validator Rewards]:::governance",
+    "  Reward --> Solver[Evolved Solver Payout]:::core",
+    "  classDef core fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;",
+    "  classDef warn fill:#7f1d1d,stroke:#fecaca,stroke-width:2px,color:#fecaca;",
+    "  classDef verify fill:#0b7285,stroke:#66d9e8,stroke-width:2px,color:#e6fcf5;",
+    "  classDef governance fill:#1f2937,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;",
+    "```",
+  ].join("\n");
+}
+
+function renderLedgerValidators(ledger: TaskLedger): string {
+  if (ledger.validators.length === 0) {
+    return "| Validator | Stake (before) | Stake (after) | Rewards | Slashed | Participation |\n| --- | --- | --- | --- | --- | --- |\n| n/a | n/a | n/a | n/a | n/a | n/a |";
+  }
+  const rows = ledger.validators
+    .map(
+      (validator) =>
+        `| ${validator.validatorId} | ${validator.stakeBefore.toLocaleString()} | ${validator.stakeAfter.toLocaleString()} | ${validator.rewardEarned.toLocaleString()} | ${validator.slashed.toLocaleString()} | ${(validator.participationRate * 100).toFixed(1)}% |`,
+    )
+    .join("\n");
+  return `| Validator | Stake (before) | Stake (after) | Rewards | Slashed | Participation |\n| --- | --- | --- | --- | --- | --- |\n${rows}`;
+}
+
+function renderLedgerTimelineHtml(ledger: TaskLedger): string {
+  const rows = ledger.timeline
+    .map(
+      (event) => `
+        <tr>
+          <td>${escapeHtml(event.timestamp)}</td>
+          <td>${escapeHtml(event.type)}</td>
+          <td>${escapeHtml(formatLedgerDetails(event.details))}</td>
+        </tr>
+      `,
+    )
+    .join("");
+  return `
+<table class="ledger">
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Event</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rows}
+  </tbody>
+</table>`;
+}
+
+function renderLedgerValidatorsHtml(ledger: TaskLedger): string {
+  const rows = ledger.validators
+    .map(
+      (validator) => `
+        <tr>
+          <td>${escapeHtml(validator.validatorId)}</td>
+          <td>${validator.stakeBefore.toLocaleString()}</td>
+          <td>${validator.stakeAfter.toLocaleString()}</td>
+          <td>${validator.rewardEarned.toLocaleString()}</td>
+          <td>${validator.slashed.toLocaleString()}</td>
+          <td>${(validator.participationRate * 100).toFixed(1)}%</td>
+        </tr>
+      `,
+    )
+    .join("");
+  return `
+<table class="ledger-validators">
+  <thead>
+    <tr>
+      <th>Validator</th>
+      <th>Stake (before)</th>
+      <th>Stake (after)</th>
+      <th>Rewards</th>
+      <th>Slashed</th>
+      <th>Participation</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rows}
+  </tbody>
+</table>`;
+}
+
 function renderMermaidFlow(mission: MissionConfig, run: SynthesisRun): string {
   const council = mission.meta.governance?.council?.join("\\n") ?? "Validator Council";
   const sentinels = mission.meta.governance?.sentinels?.join("\\n") ?? "Sentinel Mesh";
@@ -244,6 +375,10 @@ export function renderMarkdownReport(run: SynthesisRun): string {
   lines.push(
     `- **Thermodynamic alignment:** ${formatPercent(run.aggregate.thermodynamics.averageAlignment)} ` +
       `(mean Δ ${formatNumber(run.aggregate.thermodynamics.meanDelta)} | max Δ ${formatNumber(run.aggregate.thermodynamics.maxDelta)} | ${formatThermoStatus(run.aggregate.thermodynamics.statusCounts)}).`,
+  );
+  lines.push(
+    `- **Ledger economy:** ${run.aggregate.ledger.totalRewardPaid.toLocaleString()} rewards / ${run.aggregate.ledger.totalSlashed.toLocaleString()} slashed / validators ${run.aggregate.ledger.validatorRewards.toLocaleString()} / treasury ${run.aggregate.ledger.treasuryReturn.toLocaleString()} ` +
+      `(participation ${(run.aggregate.ledger.averageParticipationRate * 100).toFixed(1)}% • latency ${run.aggregate.ledger.averageLatencySeconds.toFixed(1)}s • alerts ${run.aggregate.ledger.consensusAlerts}).`,
   );
   lines.push(
     "- **Owner supremacy:** every control remains copy-paste accessible (pause, thermostat, upgrades, treasury mirrors, compliance dossier).",
@@ -335,6 +470,20 @@ export function renderMarkdownReport(run: SynthesisRun): string {
     lines.push("");
     lines.push(renderMermaidTimeline(task));
     lines.push("");
+    lines.push("### On-chain Ledger Synthesis");
+    lines.push("");
+    lines.push(renderLedgerSummary(task.ledger));
+    lines.push("");
+    lines.push("#### Validator Performance");
+    lines.push("");
+    lines.push(renderLedgerValidators(task.ledger));
+    lines.push("");
+    lines.push("#### Timeline");
+    lines.push("");
+    lines.push(renderLedgerTimeline(task.ledger));
+    lines.push("");
+    lines.push(renderLedgerMermaid(task.ledger));
+    lines.push("");
   }
 
   lines.push("## CI Shield Alignment");
@@ -379,6 +528,12 @@ export function buildJsonSummary(run: SynthesisRun): Record<string, unknown> {
       })),
       history: task.history,
       triangulation: task.triangulation,
+      ledger: {
+        summary: task.ledger.summary,
+        validators: task.ledger.validators,
+        attempts: task.ledger.attempts,
+        timeline: task.ledger.timeline.slice(0, 48),
+      },
     })),
     ci: run.mission.ci,
     ownerControls: run.mission.ownerControls,
@@ -423,6 +578,13 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
       const archiveTable = renderArchive(task.archive.slice(0, 12));
       const historyTable = renderHistory(task.history);
       const timeline = renderMermaidTimeline(task);
+      const ledgerSummaryList = renderLedgerSummary(task.ledger)
+        .split("\n")
+        .map((line) => `<li>${escapeHtml(line.replace(/^[-•]\s*/, ""))}</li>`)
+        .join("");
+      const ledgerValidatorsTable = renderLedgerValidatorsHtml(task.ledger);
+      const ledgerTimeline = renderLedgerTimelineHtml(task.ledger);
+      const ledgerMermaid = renderLedgerMermaid(task.ledger).replace(/```mermaid|```/g, "").trim();
       return `
 <section class="task">
   <h2>${escapeHtml(task.task.label)}</h2>
@@ -453,6 +615,13 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
   <details>
     <summary>Evolution Timeline</summary>
     <pre class="mermaid">${timeline.replace(/```mermaid|```/g, "").trim()}</pre>
+  </details>
+  <details>
+    <summary>On-chain Ledger</summary>
+    <ul class="ledger-summary">${ledgerSummaryList}</ul>
+    <div class="table">${ledgerValidatorsTable}</div>
+    <div class="table">${ledgerTimeline}</div>
+    <pre class="mermaid">${ledgerMermaid}</pre>
   </details>
 </section>`;
     })
@@ -493,6 +662,8 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
       .owner-table { margin-top: 1rem; }
       ul.coverage { list-style: none; padding-left: 0; margin-top: 1rem; }
       ul.coverage li { margin-bottom: 0.35rem; }
+      ul.ledger-summary { list-style: disc; margin-left: 1.5rem; color: rgba(226, 232, 240, 0.9); }
+      ul.ledger-summary li { margin-bottom: 0.25rem; }
     </style>
   </head>
   <body>
@@ -507,6 +678,7 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
         <div class="metric-card"><strong>Coverage</strong><br />${formatPercent(run.aggregate.coverageScore)}</div>
         <div class="metric-card"><strong>Triangulation confidence</strong><br />${formatPercent(run.aggregate.triangulationConfidence)}</div>
         <div class="metric-card"><strong>Thermodynamic alignment</strong><br />${formatPercent(run.aggregate.thermodynamics.averageAlignment)}<span class="metric-sub">Δ̄ ${formatNumber(run.aggregate.thermodynamics.meanDelta, 2)} • Δmax ${formatNumber(run.aggregate.thermodynamics.maxDelta, 2)} • ${escapeHtml(formatThermoStatus(run.aggregate.thermodynamics.statusCounts))}</span></div>
+        <div class="metric-card"><strong>Ledger rewards</strong><br />${run.aggregate.ledger.totalRewardPaid.toLocaleString()}<span class="metric-sub">Slashed ${run.aggregate.ledger.totalSlashed.toLocaleString()} • Validators ${run.aggregate.ledger.validatorRewards.toLocaleString()} • Treasury ${run.aggregate.ledger.treasuryReturn.toLocaleString()} • Participation ${(run.aggregate.ledger.averageParticipationRate * 100).toFixed(1)}%</span></div>
       </div>
     </header>
     <section>
@@ -521,6 +693,11 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
   "Attention" : ${run.aggregate.consensus.attention}
   "Rejected" : ${run.aggregate.consensus.rejected}
 </pre>
+    </section>
+    <section>
+      <h2>Ledger Economy</h2>
+      <p>Total rewards ${run.aggregate.ledger.totalRewardPaid.toLocaleString()} • Slashed ${run.aggregate.ledger.totalSlashed.toLocaleString()} • Validators ${run.aggregate.ledger.validatorRewards.toLocaleString()} • Treasury ${run.aggregate.ledger.treasuryReturn.toLocaleString()}</p>
+      <p>Average participation ${(run.aggregate.ledger.averageParticipationRate * 100).toFixed(1)}% • Average latency ${run.aggregate.ledger.averageLatencySeconds.toFixed(1)}s • Consensus alerts ${run.aggregate.ledger.consensusAlerts}</p>
     </section>
     <section>
       <h2>Owner Capabilities</h2>

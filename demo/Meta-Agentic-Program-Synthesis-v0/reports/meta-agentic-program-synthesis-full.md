@@ -1,6 +1,6 @@
 # Meta-Agentic Program Synthesis – Full Run
 
-Generated: 2025-10-21T02:47:22.562Z
+Generated: 2025-10-21T03:23:20.678Z
 
 ## Aggregate Metrics
 
@@ -11,6 +11,7 @@ Generated: 2025-10-21T02:47:22.562Z
 - Coverage: 100.00%
 - Triangulation confidence: 53.33% (1/0/2)
 - Thermodynamic alignment: 100.00% (mean Δ 0.00 | max Δ 0.00 | 3 aligned/0 monitor/0 drift)
+- Ledger economy: rewards 1,461,700 | slashed 52,800 | validator rewards 186,600 | treasury 93,300 | participation 95.8% | latency 250.2s | alerts 0
 
 ## Verification Consensus
 

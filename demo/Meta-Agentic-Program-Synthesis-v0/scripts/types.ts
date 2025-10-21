@@ -53,6 +53,78 @@ export interface TaskOwnerMeta {
   thermodynamicTarget: number;
 }
 
+export interface LedgerVote {
+  validatorId: string;
+  commitment: string;
+  revealed: "yes" | "no";
+  weight: number;
+  rewardEarned: number;
+  slashed: number;
+  notes?: string;
+}
+
+export interface LedgerAttempt {
+  attemptId: string;
+  solverId: string;
+  status: "accepted" | "slashed";
+  commitHash: string;
+  reveal: string;
+  consensus: "accepted" | "rejected";
+  rewardEarned: number;
+  slashApplied: number;
+  latencySeconds: number;
+  energyObserved: number;
+  notes?: string;
+  votes: LedgerVote[];
+}
+
+export interface LedgerEvent {
+  timestamp: string;
+  type:
+    | "job_posted"
+    | "solver_selected"
+    | "result_committed"
+    | "vote_commit"
+    | "vote_reveal"
+    | "consensus_finalised"
+    | "reward_distributed"
+    | "slash_applied"
+    | "requeue";
+  details: Record<string, unknown>;
+}
+
+export interface LedgerValidatorSummary {
+  validatorId: string;
+  stakeBefore: number;
+  stakeAfter: number;
+  rewardEarned: number;
+  slashed: number;
+  participationRate: number;
+}
+
+export interface TaskLedgerSummary {
+  finalConsensus: "accepted" | "rejected";
+  totalRewardPaid: number;
+  totalSlashed: number;
+  validatorRewards: number;
+  treasuryReturn: number;
+  averageLatencySeconds: number;
+  participationRate: number;
+  commitRevealIntegrity: "verified" | "attention";
+  attempts: number;
+}
+
+export interface TaskLedger {
+  jobId: string;
+  missionSeed: number;
+  requiredStake: number;
+  reward: number;
+  attempts: LedgerAttempt[];
+  timeline: LedgerEvent[];
+  validators: LedgerValidatorSummary[];
+  summary: TaskLedgerSummary;
+}
+
 export interface TaskDefinition {
   id: string;
   label: string;
@@ -171,6 +243,7 @@ export interface TaskResult {
   archive: ArchiveCell[];
   triangulation: TriangulationReport;
   thermodynamics: TaskThermodynamics;
+  ledger: TaskLedger;
 }
 
 export interface SynthesisRun {
@@ -200,6 +273,16 @@ export interface SynthesisRun {
         monitor: number;
         drift: number;
       };
+    };
+    ledger: {
+      totalRewardPaid: number;
+      totalSlashed: number;
+      validatorRewards: number;
+      treasuryReturn: number;
+      averageParticipationRate: number;
+      averageLatencySeconds: number;
+      accepted: number;
+      consensusAlerts: number;
     };
   };
 }
