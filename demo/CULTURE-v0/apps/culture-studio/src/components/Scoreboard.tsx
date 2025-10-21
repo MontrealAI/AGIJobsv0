@@ -9,13 +9,36 @@ export function Scoreboard({ data }: Props) {
     return null;
   }
 
+  const safeNumber = (value: unknown, fallback: number) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+  };
+
+  const latestRound = data.rounds.at(-1);
+  const difficulty = safeNumber(data.currentDifficulty, latestRound?.difficulty ?? 0);
+  const successRate = safeNumber(data.currentSuccessRate, latestRound?.successRate ?? 0);
+  const ownerControls = {
+    paused: false,
+    autoDifficulty: true,
+    maxConcurrentJobs: 3,
+    targetSuccessRate: successRate,
+    ...(data.ownerControls ?? {})
+  };
+  const targetSuccessRate = safeNumber(ownerControls.targetSuccessRate, successRate);
+
   return (
-    <div className="card">
-      <h2>Arena Telemetry</h2>
-      <p>Current difficulty: {data.currentDifficulty}</p>
+    <section className="card">
+      <h2>Telemetry snapshot</h2>
+      <p className="subtitle">
+        Difficulty {difficulty.toFixed(2)} • Success {(successRate * 100).toFixed(1)}% • Target{' '}
+        {(targetSuccessRate * 100).toFixed(0)}%
+      </p>
       <div className="grid two-columns">
         <div>
-          <h3>Elo Rankings</h3>
+          <h3>Elo rankings</h3>
           <table>
             <thead>
               <tr>
@@ -40,17 +63,17 @@ export function Scoreboard({ data }: Props) {
           </table>
         </div>
         <div>
-          <h3>Recent Rounds</h3>
+          <h3>Recent rounds</h3>
           <ul>
             {data.rounds.slice(-5).map((round) => (
               <li key={round.id}>
-                Round {round.id}: diff {round.difficulty} (Δ {round.difficultyDelta}), success{' '}
-                {(round.successRate * 100).toFixed(1)}%
+                Round {round.id}: diff {round.difficulty.toFixed(2)} (Δ {round.difficultyDelta.toFixed(2)}), success{' '}
+                {(round.successRate * 100).toFixed(1)}% — {round.status}
               </li>
             ))}
           </ul>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

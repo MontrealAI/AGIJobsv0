@@ -3,29 +3,26 @@ import { CreateBook } from '../components/CreateBook.js';
 import { StartArena } from '../components/StartArena.js';
 import { ArtifactGraph } from '../components/ArtifactGraph.js';
 import { Scoreboard } from '../components/Scoreboard.js';
-import { fetchScoreboard, type ScoreboardResponse } from '../lib/api.js';
+import type { ScoreboardResponse, ArenaSummary } from '../lib/api.js';
 
-const tabs = ['Create Artifact', 'Self-Play Arena', 'Culture Graph'];
+const tabs = ['Create Artifact', 'Self-Play Arena', 'Culture Graph'] as const;
+type Tab = (typeof tabs)[number];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState(tabs[0]);
+  const [activeTab, setActiveTab] = useState<Tab>(tabs[0]);
   const [scoreboard, setScoreboard] = useState<ScoreboardResponse | null>(null);
-
-  const handleRefreshScoreboard = async () => {
-    const data = await fetchScoreboard();
-    setScoreboard(data);
-  };
+  const [latestRound, setLatestRound] = useState<ArenaSummary | null>(null);
 
   return (
     <main>
       <header>
         <h1>🎖️ CULTURE 👁️✨ Control Studio</h1>
         <p>
-          Orchestrate cultural knowledge creation and autonomous self-play curricula with AGI Jobs v0 (v2). Launch agent swarms,
-          track influence propagation, and govern your platform with a single click.
+          Orchestrate cultural knowledge creation and autonomous self-play curricula with AGI Jobs v0. Launch agent swarms,
+          track influence propagation, and steer the platform from one friendly control room.
         </p>
       </header>
-      <div className="tabs">
+      <nav className="tabs" aria-label="Studio sections">
         {tabs.map((tab) => (
           <button
             key={tab}
@@ -36,22 +33,31 @@ export default function App() {
             {tab}
           </button>
         ))}
-      </div>
+      </nav>
+
       {activeTab === 'Create Artifact' && (
         <>
           <CreateBook />
           <ArtifactGraph />
         </>
       )}
+
       {activeTab === 'Self-Play Arena' && (
         <>
-          <StartArena onRoundCompleted={() => handleRefreshScoreboard()} onScoreboardUpdated={setScoreboard} />
-          <button type="button" onClick={handleRefreshScoreboard}>
-            Refresh Scoreboard
-          </button>
+          <StartArena onRoundCompleted={setLatestRound} onScoreboardUpdated={setScoreboard} />
+          {latestRound && (
+            <section className="card">
+              <h2>Latest round recap</h2>
+              <p className="subtitle">
+                Round {latestRound.roundId} closed at difficulty {latestRound.difficulty.toFixed(2)} with success{' '}
+                {(latestRound.observedSuccessRate * 100).toFixed(1)}%.
+              </p>
+            </section>
+          )}
           <Scoreboard data={scoreboard} />
         </>
       )}
+
       {activeTab === 'Culture Graph' && <ArtifactGraph />}
     </main>
   );
