@@ -29,7 +29,17 @@ a live ground truth.
    npm run compile
    ```
 
-2. Launch the **REDENOMINATION** mission transcript:
+2. Prove the artefacts are production-grade:
+
+   ```bash
+   npm run demo:redenomination:verify
+   ```
+
+   The verifier inspects `scenario.json`, validates referenced documentation paths, cross-checks automation commands against
+   `package.json`, and confirms the storyboard ships with a Mermaid orchestration graph and exportable control-room dataset. If
+   anything drifts, the script fails fast with explicit remediation guidance.
+
+3. Launch the **REDENOMINATION** mission transcript:
 
    ```bash
    npm run demo:redenomination
@@ -38,7 +48,7 @@ a live ground truth.
    This command prints the governed scenario using `scenario.json`, highlighting actors, phases, operational guardrails, and
    follow-up automation hooks that a non-technical operator can trigger verbatim.
 
-3. Open the immersive UI storyboard in any browser:
+4. Open the immersive UI storyboard in any browser:
 
    ```bash
    npx serve demo/REDENOMINATION
@@ -54,7 +64,7 @@ a live ground truth.
 | Component        | Description                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------- |
 | `scenario.json`  | Canonical description of actors, lifecycle phases, operational metrics, and authoritative runbook references. |
-| `scripts/`       | Automation entry points. `run-demo.mjs` streams a narrated transcript that mirrors the real deployment plan.  |
+| `scripts/`       | Automation entry points. `verify-scenario.mjs` hardens artefacts, while `run-demo.mjs` streams a narrated transcript mirroring the real deployment plan.  |
 | `index.html`     | All-in-one web storyboard with mermaid diagrams, responsive cards, and actionable CTAs for stakeholders.      |
 
 The JSON file is intentionally minimal so that governance can amend parameters (stake requirements, committee size, audit
@@ -64,6 +74,8 @@ rate) without modifying scripts.
 
 ## Extend the mission
 
+- **Regenerate confidence:** run `npm run demo:redenomination:verify` after editing the scenario or UI assets to reconfirm every
+  reference remains production-safe.
 - **Connect to live infrastructure:** export `NETWORK=sepolia` and supply deployed contract addresses through `deployment-config/`
   before invoking the normal deployment scripts.
 - **Update policy controls:** run `npm run owner:command-center` to propose allow/deny list changes in the Policy Registry.

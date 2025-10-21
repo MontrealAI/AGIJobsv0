@@ -70,11 +70,12 @@
   },
   "resources": {
     "docs": [
-      "docs/governance/overview.md",
-      "docs/operations/runbooks/system-pause.md",
-      "docs/observability/monitoring-playbook.md"
+      "docs/governance.md",
+      "docs/system-pause.md",
+      "docs/institutional-observability.md"
     ],
     "scripts": [
+      "npm run demo:redenomination:verify",
       "npm run deploy:oneclick:auto",
       "npm run owner:command-center",
       "npm run monitoring:validate"
