@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎖️ REDENOMINATION 👁️✨ Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050714;
+        --bg-alt: #0a1024;
+        --accent: #7c5cff;
+        --accent-soft: rgba(124, 92, 255, 0.18);
+        --text: #f2f5ff;
+        --text-muted: #94a3ff;
+        --card-border: rgba(124, 92, 255, 0.25);
+        --success: #30d5a3;
+        --warning: #f5a524;
+        --danger: #ff5f87;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: 'Space Grotesk', system-ui, sans-serif;
+        background: radial-gradient(circle at top left, rgba(124, 92, 255, 0.15), transparent 35%),
+          radial-gradient(circle at bottom right, rgba(48, 213, 163, 0.1), transparent 40%), var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+        min-height: 100vh;
+      }
+      header {
+        padding: 64px 32px 32px;
+        text-align: center;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 4vw, 3.8rem);
+        margin-bottom: 16px;
+        letter-spacing: -1px;
+      }
+      header p {
+        max-width: 860px;
+        margin: 0 auto;
+        color: var(--text-muted);
+        font-size: 1.05rem;
+      }
+      main {
+        display: grid;
+        gap: 32px;
+        padding: 0 32px 96px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      section {
+        background: linear-gradient(135deg, rgba(10, 16, 36, 0.9), rgba(8, 11, 24, 0.8));
+        border: 1px solid var(--card-border);
+        border-radius: 24px;
+        padding: 32px;
+        box-shadow: 0 30px 60px rgba(5, 7, 20, 0.4);
+        backdrop-filter: blur(18px);
+      }
+      section h2 {
+        margin-top: 0;
+        font-size: 1.8rem;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--accent-soft);
+        border: 1px solid var(--card-border);
+        border-radius: 999px;
+        padding: 8px 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 24px;
+      }
+      .card {
+        background: rgba(16, 22, 44, 0.75);
+        border-radius: 18px;
+        padding: 20px;
+        border: 1px solid rgba(124, 92, 255, 0.12);
+        height: 100%;
+      }
+      .card h3 {
+        margin-top: 0;
+        font-size: 1.2rem;
+      }
+      .timeline {
+        position: relative;
+        margin-top: 32px;
+        padding-left: 24px;
+      }
+      .timeline::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 6px;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(var(--accent), rgba(124, 92, 255, 0.05));
+      }
+      .timeline-step {
+        position: relative;
+        padding: 18px 20px 18px 36px;
+        margin-bottom: 12px;
+        border-radius: 16px;
+        background: rgba(12, 18, 38, 0.8);
+        border: 1px solid rgba(124, 92, 255, 0.14);
+      }
+      .timeline-step::before {
+        content: '';
+        position: absolute;
+        left: -22px;
+        top: 24px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.25);
+      }
+      .timeline-step strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--text);
+      }
+      .code-block {
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        background: rgba(7, 10, 24, 0.95);
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid rgba(124, 92, 255, 0.18);
+        overflow-x: auto;
+      }
+      footer {
+        text-align: center;
+        padding: 48px 32px 64px;
+        color: var(--text-muted);
+      }
+      .cta {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--accent), #9f75ff);
+        color: var(--bg);
+        font-weight: 700;
+        padding: 14px 28px;
+        border-radius: 999px;
+        text-decoration: none;
+        box-shadow: 0 15px 30px rgba(124, 92, 255, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .cta:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 35px rgba(124, 92, 255, 0.4);
+      }
+      @media (max-width: 680px) {
+        header {
+          padding: 48px 24px 24px;
+        }
+        main {
+          padding: 0 24px 80px;
+        }
+        section {
+          padding: 24px;
+        }
+      }
+    </style>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: 'dark', fontFamily: 'Space Grotesk' });
+      fetch('./scenario.json')
+        .then((response) => response.json())
+        .then((scenario) => {
+          const actorsContainer = document.querySelector('#actors');
+          actorsContainer.innerHTML = scenario.actors
+            .map(
+              (actor) => `
+              <article class="card">
+                <h3>${actor.label} <span style="color: var(--accent); font-weight: 500;">${actor.role}</span></h3>
+                <p>${actor.goal}</p>
+              </article>`
+            )
+            .join('');
+
+          const flowContainer = document.querySelector('#flow');
+          flowContainer.innerHTML = scenario.flow
+            .map(
+              (phase) => `
+              <div>
+                <span class="pill">${phase.phase}</span>
+                <div class="timeline">
+                  ${phase.steps
+                    .map(
+                      (step, index) => `
+                        <div class="timeline-step">
+                          <strong>${String(index + 1).padStart(2, '0')}</strong>
+                          <span>${step}</span>
+                        </div>`
+                    )
+                    .join('')}
+                </div>
+              </div>`
+            )
+            .join('');
+
+          const metricsList = document.querySelector('#metrics');
+          metricsList.innerHTML = Object.entries(scenario.metrics)
+            .map(([key, value]) => {
+              const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+              return `<div class="card"><h3>${label}</h3><p>${value}</p></div>`;
+            })
+            .join('');
+
+          const scriptsList = document.querySelector('#scripts');
+          scriptsList.innerHTML = scenario.resources.scripts
+            .map((script) => `<li><code>${script}</code></li>`)
+            .join('');
+
+          const docsList = document.querySelector('#docs');
+          docsList.innerHTML = scenario.resources.docs
+            .map((doc) => `<li><code>${doc}</code></li>`)
+            .join('');
+        })
+        .catch((error) => {
+          document.querySelector('#actors').innerHTML = `<p style="color: var(--danger)">Failed to load scenario: ${error.message}</p>`;
+        });
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>🎖️ REDENOMINATION 👁️✨</h1>
+      <p>
+        A sovereign-grade redenomination control room that a non-technical leader can activate in minutes. Harness multi-signature
+        governance, verifiable compute, collusion-resistant validation, and institutional observability — all orchestrated by AGI
+        Jobs v0 (v2).
+      </p>
+      <div style="margin-top: 24px; display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        <a class="cta" href="#runbook">Run the scripted mission</a>
+        <a class="cta" href="#architecture">View architecture map</a>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <h2>Empowered Personas</h2>
+        <div class="grid-2" id="actors"></div>
+      </section>
+
+      <section id="architecture">
+        <div class="pill">Autonomous job lifecycle</div>
+        <h2>Mermaid Systems Orchestration</h2>
+        <div class="card" style="padding: 24px; background: rgba(8, 12, 28, 0.95);">
+          <pre class="mermaid">
+          graph TD;
+            A[Employer Alice posts redenomination job] --> B[JobRegistry records specification & policy tags];
+            B --> C{AGI Agent Selection};
+            C -->|Stake + ENS verified| D[Agent Hyperion-9 claims assignment];
+            D --> E[Off-chain AI pipelines produce redenomination dossier];
+            E --> F[Result hash + signature submitted on-chain];
+            F --> G[Chainlink VRF seeds validator committee];
+            G --> H[Commit window opens & validators encrypt verdict];
+            H --> I[Reveal window enforces accountability];
+            I --> J{Majority approves?};
+            J -->|Yes| K[Certificate NFT + payout released];
+            J -->|No| L[Dispute escalates to Sentinel moderators];
+            L --> M{Moderator quorum};
+            M -->|Override| N[System pause & slashing executed];
+            M -->|Uphold| K;
+            K --> O[Observability index updated];
+            O --> P[Prometheus & Grafana dashboards refresh];
+            O --> Q[On-chain audit log immutably sealed];
+            Q --> R[One-click deployment audit trail completed];
+          </pre>
+        </div>
+      </section>
+
+      <section id="flow">
+        <h2>Mission Timeline</h2>
+      </section>
+
+      <section>
+        <h2>Operational Guardrails</h2>
+        <div class="grid-2" id="metrics"></div>
+      </section>
+
+      <section id="runbook">
+        <h2>One-Command Runbook</h2>
+        <p>Execute the scripted mission on a local fork or preferred testnet:</p>
+        <div class="code-block">
+          <code>npm install\nexport NETWORK=anvil\nnpm run demo:redenomination</code>
+        </div>
+        <p>Then follow with infrastructure activation and validation scripts:</p>
+        <ul id="scripts"></ul>
+        <p>Reference documentation for governance and observability programs:</p>
+        <ul id="docs"></ul>
+      </section>
+
+      <section>
+        <h2>Enterprise-Grade Assurance</h2>
+        <div class="grid-2">
+          <article class="card">
+            <h3>Governed Autonomy</h3>
+            <p>All privileged updates routed through a timelock-controlled multi-signature wallet with transparent proposal flows.</p>
+          </article>
+          <article class="card">
+            <h3>Verifiable Compute</h3>
+            <p>Commit-reveal validation, signed result hashes, and Certificate NFTs ensure tamper-evident outputs.</p>
+          </article>
+          <article class="card">
+            <h3>Institutional Observability</h3>
+            <p>Prometheus + Grafana dashboards, audit logs, and anomaly alerts keep every stakeholder informed in real time.</p>
+          </article>
+          <article class="card">
+            <h3>Operational UX</h3>
+            <p>One-click deployment, AI-guided chat workflows, and multilingual responsive interfaces welcome non-technical leaders.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>AGI Jobs v0 (v2) • REDENOMINATION mission control • Deploy responsibly.</p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,83 @@
+{
+  "name": "REDENOMINATION",
+  "description": "End-to-end governed AGI labor market demo showcasing redenomination-safe upgrade controls, verifiable compute, and institutional observability.",
+  "actors": [
+    {
+      "role": "Employer",
+      "label": "Alice",
+      "goal": "Publish redenomination-sensitive treasury modeling task with strict compliance requirements."
+    },
+    {
+      "role": "AGI Agent",
+      "label": "Hyperion-9",
+      "goal": "Execute sovereign-grade redenomination analysis using on-chain configuration and off-chain AI stack."
+    },
+    {
+      "role": "Validator",
+      "label": "Validator Guild",
+      "goal": "Run commit-reveal validation, sign attestations, and guard against collusion."
+    },
+    {
+      "role": "Moderator Council",
+      "label": "Sentinel Multisig",
+      "goal": "Provide emergency pause and dispute overrides when policy violations emerge."
+    },
+    {
+      "role": "Governance",
+      "label": "Timelock DAO",
+      "goal": "Owns all privileged levers, updates parameters, and enforces redenomination risk policies."
+    }
+  ],
+  "flow": [
+    {
+      "phase": "Initialization",
+      "steps": [
+        "Governance multisig deploys contracts via deploy:oneclick:auto and migrates ownership to timelock.",
+        "Identity registry whitelists ENS namespaces *.agent.agi.eth and *.club.agi.eth.",
+        "Stake thresholds configured for agents and validators; platform starts paused for audit.",
+        "Moderators, policy registry, and monitoring sentinels activated with baseline alerts."
+      ]
+    },
+    {
+      "phase": "Job Lifecycle",
+      "steps": [
+        "Employer Alice uses chat UI to describe redenomination treasury modeling brief.",
+        "Policy registry auto-tags the job as \"macro-finance\" and checks allow lists.",
+        "Randomized validator committee sealed; Hyperion-9 agent proves stake + ENS ownership and accepts.",
+        "Agent executes task using orchestrator + AI pipelines; uploads report hash to IPFS and signs payload.",
+        "Validators receive encrypted commit instructions, submit commitments, then reveal signed verdicts.",
+        "Majority approval triggers payouts, reputation boost, and Certificate NFT issuance.",
+        "Monitoring dashboards update metrics; audit log pipeline stores full trail.",
+        "Random audit sample escalates to moderators, verifying compliance and slashing logic readiness."
+      ]
+    },
+    {
+      "phase": "Emergency Drill",
+      "steps": [
+        "Simulated anomalous validator triggers alert; Alertmanager notifies governance + moderators.",
+        "Governance executes system pause via timelock -> pause action; orchestrator enters safe mode.",
+        "Moderator council reviews dispute ledger, resolves flagged issue, and unpauses platform.",
+        "Deployment checklist re-verified; stakeholder dashboard confirms system healthy."        
+      ]
+    }
+  ],
+  "metrics": {
+    "validationCommitteeSize": 3,
+    "stakeRequirementAgent": "10,000 AGI",
+    "stakeRequirementValidator": "50,000 AGI",
+    "auditSampleRate": "25% of high-value jobs",
+    "governanceTimelock": "24 hours"
+  },
+  "resources": {
+    "docs": [
+      "docs/governance/overview.md",
+      "docs/operations/runbooks/system-pause.md",
+      "docs/observability/monitoring-playbook.md"
+    ],
+    "scripts": [
+      "npm run deploy:oneclick:auto",
+      "npm run owner:command-center",
+      "npm run monitoring:validate"
+    ]
+  }
+}
