@@ -1,0 +1,13 @@
+{
+  "name": "culture-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "echo 'Cypress tests executed via root pipeline'",
+    "lint": "echo 'Lint placeholder'"
+  },
+  "dependencies": {
+    "react": "^18.2.0"
+  }
+}
