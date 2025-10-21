@@ -364,15 +364,18 @@ export class ArenaService extends ArenaEmitter {
     isTeacher = false
   ): Promise<void> {
     const hasWon = winnerSet.has(participant.address);
-    if (participant.status === 'pending' && !isTeacher) {
-      participant.status = 'timeout';
-      await slashStake({
-        roundId: round.id,
-        participant: participant.address,
-        role: isTeacher ? 'teacher' : 'student',
-        amount: BigInt(1),
-        reason: 'No submission before deadline'
-      });
+    if (!isTeacher && participant.status !== 'submitted') {
+      if (participant.status === 'pending') {
+        participant.status = 'timeout';
+        await slashStake({
+          roundId: round.id,
+          participant: participant.address,
+          role: 'student',
+          amount: BigInt(1),
+          reason: 'No submission before deadline'
+        });
+      }
+      return;
     }
     await jobRegistry.finalizeJob(participant.jobId);
     if (!isTeacher) {
