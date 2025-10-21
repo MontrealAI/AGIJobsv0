@@ -75,9 +75,9 @@ class SovereignArchitect:
         self.baseline_error = self._mean_squared_error(zero_predictions, self.dataset.target)
 
     def run(self, scenario: DemoScenario) -> DemoRunArtifacts:
-        self.owner_console.require_active()
         # Apply any timelocked actions that have matured before execution starts.
         self.timelock.execute_due(self.owner_console)
+        self.owner_console.require_active()
         self._refresh_runtime_components()
         synthesizer = EvolutionaryProgramSynthesizer(
             population_size=self.config.evolution_policy.population_size,
