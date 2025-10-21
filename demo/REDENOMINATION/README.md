@@ -1,148 +1,105 @@
-# AGI Jobs v2 – "REDENOMINATION" Superintelligence Control Room
+# 🎖️ REDENOMINATION 👁️✨ Demo
 
-The **REDENOMINATION** demonstration shows a non-technical operator how to execute a
-network-wide unit-of-account rebasing for AGI Jobs v2 in minutes. By combining the
-`redenominationPlaybook` generator, curated configuration bundles, and a browser-based
-mission control, the operator pauses production, converts every treasury balance,
-and resumes the platform with audited proofs — **without writing a single line of
-code**.
+Welcome to the sovereign-grade redenomination showcase for **AGI Jobs v0 (v2)**. This directory packages an end-to-end,
+non-technical mission that demonstrates how a single command invokes the platform’s governed autonomy, verifiable compute,
+and institutional observability. It is designed to convince even the most risk-averse stakeholder that AGI Jobs v0 (v2) is the
+superintelligent control room for global-scale labor markets.
 
-> **Purpose** – prove that AGI Jobs v2 turns macro-monetary maintenance into a
-> guided, deterministic workflow run by policy teams rather than protocol
-> engineers. The playbook maps every governance, validation, and audit action to a
-> click-or-copy command while preserving the protocol's safety guarantees.
+---
 
-## Key capabilities
+## Why this demo matters
 
-- **Governed autonomy** – the playbook enumerates all multisig checkpoints and
-  pause/resume guards so community governors maintain final authority while
-  automation handles the mechanics.
-- **Verifiable compute** – each redenomination step emits structured artefacts
-  (`ui/export/latest.json`, config bundles, ledger snapshots) that the control room
-  surfaces for independent validation.
-- **Anti-collusion validation** – validators remain staked at identical real-world
-  amounts post-rebasing; the UI highlights committee quorum checks and
-  post-migration dispute gates.
-- **Institutional observability** – live dashboards render the before/after
-  economics, recommended commands, and audit trails for regulators and operators.
-- **One-command deployment** – `npm run demo:redenomination:control-room` generates
-  the plan, rewrites module configs, serves the UI, and guides the operator through
-  every click.
+- **Governance-first** – every privileged action routes through the multi-signature timelock and the moderator council can
+  pause or arbitrate at any time.
+- **Provable execution** – agents sign and hash every deliverable, validators run commit–reveal voting, and certificate NFTs
+  enshrine results on-chain.
+- **Institutional telemetry** – audit events, Prometheus metrics, and Grafana dashboards ensure regulators and executives share
+a live ground truth.
+- **One-click empowerment** – run a single npm script and receive a narrated simulation plus UI assets that explain each
+  subsystem without requiring developer knowledge.
 
-```mermaid
-graph LR
-  A[Owner invokes playbook] --> B[Playbook exports redenomination bundle]
-  B --> C[Governance multisig pauses modules]
-  C --> D[Ledger migration script applies factor]
-  D --> E[Stake manager + Job registry configs updated]
-  E --> F[Validators attest supply invariants]
-  F --> G[Pause lifted and certificates minted]
-  G --> H[Observability dashboard confirms parity]
-```
+---
 
 ## Quickstart
 
-From the repository root:
+1. Install dependencies and compile the protocol (optional but recommended for first-time setup).
 
-```bash
-npm run demo:redenomination:export
-```
+   ```bash
+   npm install
+   npm run compile
+   ```
 
-The command performs the following:
+2. Launch the **REDENOMINATION** mission transcript:
 
-1. Reads the production defaults from `config/`.
-2. Computes a 1:1000 redenomination (`AGIALPHA` → `AGIΩ`).
-3. Writes the human-readable playbook to
-   `demo/REDENOMINATION/ui/export/latest.json`.
-4. Produces ready-to-execute module configs inside `demo/REDENOMINATION/config/`.
+   ```bash
+   npm run demo:redenomination
+   ```
 
-To launch the guided control room that refreshes the export and serves the
-visual dashboard:
+   This command prints the governed scenario using `scenario.json`, highlighting actors, phases, operational guardrails, and
+   follow-up automation hooks that a non-technical operator can trigger verbatim.
 
-```bash
-npm run demo:redenomination:control-room
-```
+3. Open the immersive UI storyboard in any browser:
 
-The CLI refreshes the playbook, hosts the UI at `http://127.0.0.1:4174`, and
-listens for **Enter** to replay the redenomination drill on demand.
+   ```bash
+   npx serve demo/REDENOMINATION
+   ```
 
-## What the operator receives
+   The `index.html` page auto-loads the shared scenario, renders the mermaid architecture graph, and provides a responsive
+   timeline, guardrails view, and a one-command runbook. No bundlers or build steps required.
 
-- **Mission playbook** – exhaustive JSON describing all governance actors,
-  timeline checkpoints, and invariants.
-- **Redenomination configs** – drop-in Hardhat configs for
-  `updateStakeManager.ts` and `updateJobRegistry.ts` so policy teams can copy-paste
-  the new parameters.
-- **Audit artefacts** – pre/post supply numbers, timeline checkpoints, and required
-  verification commands embed into the export for off-chain or on-chain attestors.
-- **Narrated UI** – `ui/index.html` renders the plan with accessibility-first
-  layouts, mermaid schematics, and multilingual-ready copy.
+---
 
-## Files & structure
+## Scenario anatomy
 
-```
-REDENOMINATION/
-├── README.md                       ← this document
-├── config/                         ← redenominated module configs
-│   ├── job-registry-redenominated.json
-│   └── stake-manager-redenominated.json
-└── ui/
-    ├── app.js                      ← renders the plan in-browser
-    ├── export/latest.json          ← regenerated by the playbook
-    ├── index.html                  ← responsive dashboard shell
-    ├── sample.json                 ← static snapshot for offline review
-    └── styles.css                  ← typography and layout system
-```
+| Component        | Description                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- |
+| `scenario.json`  | Canonical description of actors, lifecycle phases, operational metrics, and authoritative runbook references. |
+| `scripts/`       | Automation entry points. `run-demo.mjs` streams a narrated transcript that mirrors the real deployment plan.  |
+| `index.html`     | All-in-one web storyboard with mermaid diagrams, responsive cards, and actionable CTAs for stakeholders.      |
 
-## Alignment and safety guarantees
+The JSON file is intentionally minimal so that governance can amend parameters (stake requirements, committee size, audit
+rate) without modifying scripts.
 
-```mermaid
-sequenceDiagram
-  participant Gov as Governance Multisig
-  participant Owner as Protocol Owner
-  participant Validators as Validator Council
-  participant Playbook as Redenomination Playbook
-  participant Registry as Job Registry
-  participant Stake as Stake Manager
+---
 
-  Gov->>Playbook: Request redenomination snapshot
-  Playbook-->>Owner: Provide commands + configs
-  Owner->>Gov: Submit pause proposal
-  Gov-->>Registry: pause()
-  Gov-->>Stake: pause()
-  Owner->>Stake: apply redenominated thresholds
-  Owner->>Registry: update reward/escrow bounds
-  Validators->>Stake: verify stake == historical * factor
-  Gov-->>Registry: unpause()
-  Registry-->>Owner: emit audit events
-  Playbook-->>Gov: Export invariants + references
-```
+## Extend the mission
 
-- **Owner control** – the generated plan explicitly lists the module owners,
-  governance safes, and policy levers they control so business operators keep
-  full agency over treasury, staking, and pause mechanisms.
-- **Dispute resilience** – validators are instructed to re-run commit-reveal
-  checks immediately after the pause is lifted; discrepancies revert to the
-  emergency pause via the same workflow.
-- **Observability** – the playbook references the CI workflow and required
-  verification commands so every pull request proves the demo still works.
+- **Connect to live infrastructure:** export `NETWORK=sepolia` and supply deployed contract addresses through `deployment-config/`
+  before invoking the normal deployment scripts.
+- **Update policy controls:** run `npm run owner:command-center` to propose allow/deny list changes in the Policy Registry.
+- **Trigger safety drills:** execute `npm run owner:system-pause` followed by `npm run owner:command-center` to walk through the
+  full emergency-stop playbook.
+- **Instrument monitoring:** run `npm run monitoring:validate` to ensure Prometheus + Grafana dashboards are healthy before
+  switching to mainnet scale.
 
-## Continuous verification
+---
 
-A dedicated GitHub Actions workflow (`demo-redenomination.yml`) regenerates the
-playbook, validates the JSON schema, and uploads the artefact for reviewers. Any
-regression or mismatch between the checked-in configs and generated output fails
-CI, guaranteeing the demo stays production-ready.
+## Non-technical operator checklist
 
-## Next steps
+1. **Deploy stack** – `npm run deploy:oneclick:auto` (accept defaults or point to mainnet addresses).
+2. **Transfer control** – approve the generated governance proposal to move ownership to the timelock multi-sig.
+3. **Onboard identities** – `npm run identity:register` to bind ENS subdomains to agent and validator nodes.
+4. **Set guardrails** – `npm run owner:parameters` to review and update stake thresholds, policy categories, and slashing
+   rules.
+5. **Launch job** – follow the chat-style UI prompts to post the redenomination job and watch validator commits stream in.
+6. **Review telemetry** – open the Grafana dashboards defined in `monitoring/dashboards/` to monitor throughput, validator
+   participation, and anomaly alerts in real time.
 
-1. **Modify the factor** – run `npm run demo:redenomination:export -- --ratio 100`
-   to explore alternative headline unit conversions.
-2. **Plug in real supply data** – append `--current-supply 42000000` to build
-   proof-ready before/after numbers.
-3. **Wire to mainnet** – point the Hardhat commands at an Ethereum RPC endpoint
-   and execute the plan with production safes and validators.
+---
 
-By packaging all protocol levers into a scripted plan and friendly UI, the
-**REDENOMINATION** demo showcases how AGI Jobs v2 empowers institutions to steer
-superintelligent labour markets with confidence.
+## Verifiability & compliance hooks
+
+- **Audit trail:** every transaction emits audit events consumed by the subgraph and surfaced through the `observability:smoke`
+  script.
+- **Security posture:** see `SECURITY.md` plus the bug bounty program to invite third-party testing.
+- **Formal assurances:** run `npm run echidna` and `npm run coverage` to regenerate the formal checks behind the commit–reveal
+  and staking invariants.
+
+---
+
+## Inspiration to build further
+
+This demo is intentionally opinionated. Fork `scenario.json`, adjust guardrails, and iterate on the UI to produce verticalized
+missions (e.g., national debt redesign, universal carbon credit issuance). AGI Jobs v0 (v2) gives non-technical leaders the
+superintelligent command surface they need to redesign economies with confidence.
+
