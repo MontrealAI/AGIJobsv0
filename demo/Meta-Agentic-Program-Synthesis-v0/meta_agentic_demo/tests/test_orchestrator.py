@@ -30,3 +30,7 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert verification.holdout_scores
     assert verification.residual_std >= 0
     assert verification.divergence >= 0
+    assert verification.mae_score >= 0
+    assert isinstance(verification.bootstrap_interval, tuple)
+    assert len(verification.bootstrap_interval) == 2
+    assert verification.monotonic_violations >= 0

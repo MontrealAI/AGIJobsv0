@@ -35,6 +35,10 @@ class OwnerConsole:
         "residual_mean_tolerance",
         "residual_std_minimum",
         "divergence_tolerance",
+        "mae_threshold",
+        "monotonic_tolerance",
+        "bootstrap_iterations",
+        "confidence_level",
     }
 
     def __init__(self, config: DemoConfig) -> None:
@@ -204,6 +208,14 @@ class OwnerConsole:
             raise ValueError("residual_std_minimum must be non-negative")
         if policy.divergence_tolerance < 0:
             raise ValueError("divergence_tolerance must be non-negative")
+        if not 0 <= policy.mae_threshold <= 1:
+            raise ValueError("mae_threshold must be between 0 and 1")
+        if policy.monotonic_tolerance < 0:
+            raise ValueError("monotonic_tolerance must be non-negative")
+        if policy.bootstrap_iterations < 1:
+            raise ValueError("bootstrap_iterations must be at least 1")
+        if not 0 < policy.confidence_level < 1:
+            raise ValueError("confidence_level must be between 0 and 1")
 
 
 def load_owner_overrides(path: Path) -> Mapping[str, Any]:

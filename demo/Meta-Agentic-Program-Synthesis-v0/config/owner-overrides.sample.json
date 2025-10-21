@@ -21,7 +21,11 @@
     "holdout_threshold": 0.78,
     "residual_mean_tolerance": 0.04,
     "residual_std_minimum": 0.015,
-    "divergence_tolerance": 0.12
+    "divergence_tolerance": 0.12,
+    "mae_threshold": 0.74,
+    "monotonic_tolerance": 0.02,
+    "bootstrap_iterations": 320,
+    "confidence_level": 0.975
   },
   "paused": false
 }

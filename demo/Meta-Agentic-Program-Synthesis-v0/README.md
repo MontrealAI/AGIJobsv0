@@ -31,6 +31,22 @@ flowchart LR
     Telemetry --> User
 ```
 
+### Triple-verification lattice
+
+```mermaid
+flowchart TD
+    Primary[Primary fitness score] --> Residual[Residual balance audit]
+    Primary --> Holdouts[Noise-conditioned holdouts]
+    Primary --> MAE[MAE consistency check]
+    MAE --> Bootstrap[Bootstrap confidence band]
+    Holdouts --> Monotonic[Monotonic trajectory scan]
+    Residual --> Monotonic
+    Bootstrap --> Verdict[Final verdict]
+    Monotonic --> Verdict
+    classDef pass fill:#04364c,color:#d1f7ff,stroke:#38bdf8,stroke-width:2px
+    class Primary,Residual,Holdouts,MAE,Bootstrap,Monotonic,Verdict pass
+```
+
 ### Evolutionary loop
 
 ```mermaid
@@ -86,25 +102,28 @@ knob – rewards, staking, evolution cadence, and pause state – can be adjuste
 
 ### Command-line overrides
 
-```bash
-python start_demo.py alpha \
-  --reward-total 2500 \
-  --reward-temperature 0.8 \
-  --reward-validator-weight 0.25 \
+    ```bash
+    python start_demo.py alpha \
+      --reward-total 2500 \
+      --reward-temperature 0.8 \
+      --reward-validator-weight 0.25 \
   --stake-minimum 750 \
   --stake-timeout 120 \
   --evolution-generations 16 \
-  --verification-holdout-threshold 0.82 \
-  --verification-residual-mean 0.04 \
-  --verification-residual-std 0.02 \
-  --verification-divergence 0.15
+      --verification-holdout-threshold 0.82 \
+      --verification-residual-mean 0.04 \
+      --verification-residual-std 0.02 \
+      --verification-divergence 0.15 \
+      --verification-mae-threshold 0.76 \
+      --verification-monotonic 0.02 \
+      --verification-bootstrap 400 \
+      --verification-confidence 0.975
 ```
 
 Use `--pause` to halt execution instantly. The orchestrator will refuse to launch jobs while paused and will explain the status
 in the CLI output. Re-run without `--pause` (or with a different override set) to resume operations.
 
-Verification overrides keep the sovereign architect honest: tighten holdout thresholds for ultra-conservative validation or
-relax divergence tolerances when exploring frontier scenarios.
+Verification overrides keep the sovereign architect honest: tighten holdout thresholds for ultra-conservative validation, raise MAE expectations for stricter fit, expand bootstrap iterations for deeper statistical certainty, or relax divergence tolerances when exploring frontier scenarios.
 
 ### Timelocked governance
 
@@ -135,7 +154,11 @@ For executive operators, overrides can be pre-packaged in a JSON file:
     "holdout_threshold": 0.8,
     "residual_mean_tolerance": 0.05,
     "residual_std_minimum": 0.02,
-    "divergence_tolerance": 0.18
+    "divergence_tolerance": 0.18,
+    "mae_threshold": 0.75,
+    "monotonic_tolerance": 0.02,
+    "bootstrap_iterations": 320,
+    "confidence_level": 0.97
   },
   "paused": false
 }
@@ -151,7 +174,7 @@ Run the demo with `python start_demo.py alpha --config-file config/owner-overrid
 * `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests` verifies the evolutionary loop, on-chain security primitives, and orchestration pipeline.
 * `.github/workflows/demo-meta-agentic-program-synthesis.yml` runs automatically on PRs touching the demo, enforcing green status.
 * Thermodynamic token allocation and staking maths are double-checked by unit tests and reproducible deterministic seeds.
-* Multi-angle verification tests confirm holdout gating, residual balance, and divergence tolerances across independent datasets.
+* Multi-angle verification tests confirm holdout gating, residual balance, MAE thresholds, bootstrap confidence intervals, and monotonic consistency across independent datasets.
 
 ---
 
@@ -161,7 +184,7 @@ Run the demo with `python start_demo.py alpha --config-file config/owner-overrid
 * **ValidationModule** enforces commit–reveal with quorum-based approvals, preventing rogue agents from finalising unchecked results.
 * **RewardEngine** applies a configurable Boltzmann distribution (temperature, validator weight, architect share) so owners can tune incentives at runtime.
 * **GovernanceTimelock** simulates multi-sig, time-delayed policy enforcement so operators can queue, audit, fast-forward, or cancel overrides safely.
-* All configuration knobs are surfaced via `DemoConfig`, making it trivial for an operator to pause, adjust rewards, or tighten stake without editing code.
+* All configuration knobs – including MAE thresholds, monotonic tolerances, bootstrap iteration counts, and confidence levels – are surfaced via `DemoConfig`, making it trivial for an operator to pause, adjust rewards, or tighten verification gates without editing code.
 
 ---
 

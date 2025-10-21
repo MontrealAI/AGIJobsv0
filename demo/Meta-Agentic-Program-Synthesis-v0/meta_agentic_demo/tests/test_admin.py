@@ -74,12 +74,20 @@ def test_owner_console_updates_verification_policy() -> None:
         residual_mean_tolerance=0.03,
         residual_std_minimum=0.01,
         divergence_tolerance=0.12,
+        mae_threshold=0.74,
+        monotonic_tolerance=0.015,
+        bootstrap_iterations=300,
+        confidence_level=0.9,
     )
     policy = console.config.verification_policy
     assert pytest.approx(policy.holdout_threshold) == 0.85
     assert pytest.approx(policy.residual_mean_tolerance) == 0.03
     assert pytest.approx(policy.residual_std_minimum) == 0.01
     assert pytest.approx(policy.divergence_tolerance) == 0.12
+    assert pytest.approx(policy.mae_threshold) == 0.74
+    assert pytest.approx(policy.monotonic_tolerance) == 0.015
+    assert policy.bootstrap_iterations == 300
+    assert pytest.approx(policy.confidence_level) == 0.9
     assert console.events[-1].action == "update_verification_policy"
 
 
@@ -89,6 +97,12 @@ def test_owner_console_rejects_invalid_verification_policy() -> None:
         console.update_verification_policy(holdout_threshold=1.5)
     with pytest.raises(ValueError):
         console.update_verification_policy(residual_mean_tolerance=-0.1)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(mae_threshold=-0.1)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(bootstrap_iterations=0)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(confidence_level=1.2)
 
 
 def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
@@ -97,7 +111,11 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
         "reward_policy": {"total_reward": 2000},
         "stake_policy": {"slash_fraction": 0.2},
         "evolution_policy": {"mutation_rate": 0.25},
-        "verification_policy": {"divergence_tolerance": 0.14},
+        "verification_policy": {
+            "divergence_tolerance": 0.14,
+            "mae_threshold": 0.7,
+            "bootstrap_iterations": 280,
+        },
         "paused": True,
     }
     file_path = tmp_path / "overrides.json"
@@ -108,7 +126,10 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
     assert pytest.approx(console.config.reward_policy.total_reward) == 2000
     assert pytest.approx(console.config.stake_policy.slash_fraction) == 0.2
     assert pytest.approx(console.config.evolution_policy.mutation_rate) == 0.25
-    assert pytest.approx(console.config.verification_policy.divergence_tolerance) == 0.14
+    verification_policy = console.config.verification_policy
+    assert pytest.approx(verification_policy.divergence_tolerance) == 0.14
+    assert pytest.approx(verification_policy.mae_threshold) == 0.7
+    assert verification_policy.bootstrap_iterations == 280
     assert any(event.action == "set_paused" for event in console.events)
 
 
