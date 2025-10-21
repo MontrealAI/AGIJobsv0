@@ -1,0 +1,200 @@
+{
+  "meta": {
+    "version": "0.1.0",
+    "title": "Meta-Agentic Program Synthesis Sovereign Mission",
+    "subtitle": "Evolutionary Intelligence Forge",
+    "description": "Deterministic rehearsal proving that AGI Jobs v0 (v2) lets a non-technical owner conjure, govern, and redeploy an autonomous meta-agent that designs and verifies production-ready code modules in minutes.",
+    "ownerAddress": "0x1111111111111111111111111111111111111111",
+    "treasuryAddress": "0x2222222222222222222222222222222222222222",
+    "timelockSeconds": 604800,
+    "governance": {
+      "council": [
+        "sovereign.validator.eth",
+        "thermostat.guardian.eth",
+        "alpha.operator.eth"
+      ],
+      "sentinels": [
+        "sentinel.quantum",
+        "sentinel.reward-engine",
+        "sentinel.timelock",
+        "sentinel.contract-size"
+      ],
+      "ownerScripts": [
+        "npm run owner:command-center",
+        "npm run owner:atlas",
+        "npm run owner:system-pause",
+        "npm run owner:upgrade-status",
+        "npm run owner:change-ticket"
+      ]
+    }
+  },
+  "parameters": {
+    "seed": 133742,
+    "generations": 9,
+    "populationSize": 36,
+    "eliteCount": 6,
+    "crossoverRate": 0.45,
+    "mutationRate": 0.32,
+    "maxOperations": 6,
+    "energyBudget": 480,
+    "successThreshold": 0.965,
+    "noveltyTarget": 0.72
+  },
+  "qualityDiversity": {
+    "complexityBuckets": [1, 2, 3, 4, 5, 6],
+    "noveltyBuckets": [0.1, 0.25, 0.5, 0.75, 0.9, 1.0],
+    "energyBuckets": [60, 120, 180, 240, 360, 480]
+  },
+  "tasks": [
+    {
+      "id": "arc-sentinel",
+      "label": "ARC Sentinel Edge Lift",
+      "narrative": "Detect latent pixel edges, amplify discovery, and route high-confidence transformations back into the shared skill graph.",
+      "mode": "vector",
+      "pipelineHint": ["difference", "threshold", "scale"],
+      "constraints": {
+        "maxOperations": 5,
+        "preferredOperations": ["difference", "threshold", "scale", "mirror"],
+        "expectedEnergy": 96
+      },
+      "examples": [
+        {
+          "label": "Dual-edge pattern",
+          "input": [0, 0, 1, 1, 0, 0],
+          "expected": [0, 0, 3, 0, 3, 0]
+        },
+        {
+          "label": "Shoulder uplift",
+          "input": [0, 1, 1, 1, 0, 0],
+          "expected": [0, 3, 0, 0, 3, 0]
+        },
+        {
+          "label": "Symmetric shell",
+          "input": [1, 1, 0, 0, 1, 1],
+          "expected": [0, 0, 3, 0, 3, 0]
+        }
+      ],
+      "owner": {
+        "jobId": "ARC-SYN-001",
+        "stake": 120000,
+        "reward": 420000,
+        "thermodynamicTarget": 18.4
+      }
+    },
+    {
+      "id": "ledger-harmonics",
+      "label": "Ledger Harmonics Sequencer",
+      "narrative": "Absorb asynchronous cash-flow deltas, stabilise them against the thermodynamic ledger, and emit rebalanced incentive curves for validator coalitions.",
+      "mode": "vector",
+      "pipelineHint": ["cumulative", "mod", "offset"],
+      "constraints": {
+        "maxOperations": 5,
+        "preferredOperations": ["cumulative", "mod", "offset", "scale"],
+        "expectedEnergy": 128
+      },
+      "examples": [
+        {
+          "label": "Staggered settlement",
+          "input": [5, -3, 4, -2],
+          "expected": [2, 4, 3, 6]
+        },
+        {
+          "label": "Equilibrium climb",
+          "input": [1, 1, 1, 1],
+          "expected": [3, 4, 5, 6]
+        },
+        {
+          "label": "Validator correction",
+          "input": [7, -4, 2, -3],
+          "expected": [4, 5, 2, 4]
+        }
+      ],
+      "owner": {
+        "jobId": "LEDGER-SYN-007",
+        "stake": 155000,
+        "reward": 525000,
+        "thermodynamicTarget": 22.1
+      }
+    },
+    {
+      "id": "nova-weave",
+      "label": "Nova Weave Sequence Optimiser",
+      "narrative": "Elevate alpha sequences into deterministic blueprints that compile into on-chain production payloads with zero manual edits.",
+      "mode": "vector",
+      "pipelineHint": ["power", "offset", "scale"],
+      "constraints": {
+        "maxOperations": 6,
+        "preferredOperations": ["power", "offset", "scale", "mod"],
+        "expectedEnergy": 144
+      },
+      "examples": [
+        {
+          "label": "Prime harmonic",
+          "input": [2, 3, 4],
+          "expected": [10, 20, 34]
+        },
+        {
+          "label": "Token feedback",
+          "input": [1, 5, 2],
+          "expected": [4, 52, 10]
+        },
+        {
+          "label": "Validator lattice",
+          "input": [3, 6, 1],
+          "expected": [20, 74, 4]
+        }
+      ],
+      "owner": {
+        "jobId": "NOVA-SYN-009",
+        "stake": 165000,
+        "reward": 610000,
+        "thermodynamicTarget": 25.7
+      }
+    }
+  ],
+  "ci": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      { "id": "lint", "name": "Lint & static checks" },
+      { "id": "tests", "name": "Tests" },
+      { "id": "foundry", "name": "Foundry" },
+      { "id": "coverage", "name": "Coverage thresholds" }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  },
+  "ownerControls": {
+    "capabilities": [
+      {
+        "category": "Emergency Pause",
+        "label": "Circuit breaker engage",
+        "command": "npm run owner:system-pause -- --action pause",
+        "verification": "npm run owner:system-pause -- --action status"
+      },
+      {
+        "category": "Thermostat",
+        "label": "Recalibrate reward engine temperature",
+        "command": "npm run thermostat:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "verification": "npm run thermodynamics:report"
+      },
+      {
+        "category": "Upgrade",
+        "label": "Queue sovereign upgrade",
+        "command": "npm run owner:upgrade -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "verification": "npm run owner:upgrade-status"
+      },
+      {
+        "category": "Treasury",
+        "label": "Mirror treasury share",
+        "command": "npm run reward-engine:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "verification": "npm run reward-engine:report"
+      },
+      {
+        "category": "Compliance",
+        "label": "Refresh compliance dossier",
+        "command": "npm run owner:compliance-report",
+        "verification": "npm run owner:doctor"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1069 @@
+{
+  "generatedAt": "2025-10-21T00:37:12.026Z",
+  "mission": {
+    "title": "Meta-Agentic Program Synthesis Sovereign Mission",
+    "version": "0.1.0",
+    "owner": "0x1111111111111111111111111111111111111111",
+    "treasury": "0x2222222222222222222222222222222222222222",
+    "timelockSeconds": 604800,
+    "governance": {
+      "council": [
+        "sovereign.validator.eth",
+        "thermostat.guardian.eth",
+        "alpha.operator.eth"
+      ],
+      "sentinels": [
+        "sentinel.quantum",
+        "sentinel.reward-engine",
+        "sentinel.timelock",
+        "sentinel.contract-size"
+      ],
+      "ownerScripts": [
+        "npm run owner:command-center",
+        "npm run owner:atlas",
+        "npm run owner:system-pause",
+        "npm run owner:upgrade-status",
+        "npm run owner:change-ticket"
+      ]
+    }
+  },
+  "aggregate": {
+    "globalBestScore": 140.38164328854776,
+    "averageAccuracy": 1,
+    "energyUsage": 73.33333333333333,
+    "noveltyScore": 0.7776289047454377,
+    "coverageScore": 1
+  },
+  "tasks": [
+    {
+      "id": "arc-sentinel",
+      "label": "ARC Sentinel Edge Lift",
+      "narrative": "Detect latent pixel edges, amplify discovery, and route high-confidence transformations back into the shared skill graph.",
+      "metrics": {
+        "score": 140.38164328854776,
+        "accuracy": 1,
+        "error": 0,
+        "energy": 88,
+        "novelty": 0.7306980515339465,
+        "coverage": 1,
+        "operationsUsed": 4
+      },
+      "job": {
+        "jobId": "ARC-SYN-001",
+        "stake": 120000,
+        "reward": 420000,
+        "thermodynamicTarget": 18.4
+      },
+      "pipeline": [
+        {
+          "type": "scale",
+          "params": {
+            "factor": 2.3221410580548185
+          }
+        },
+        {
+          "type": "difference",
+          "params": {}
+        },
+        {
+          "type": "threshold",
+          "params": {
+            "threshold": 0.5,
+            "high": 3
+          }
+        },
+        {
+          "type": "threshold",
+          "params": {
+            "threshold": 0.5,
+            "high": 3
+          }
+        }
+      ],
+      "archive": [
+        {
+          "key": "4|0.75|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 140.38164328854776
+        },
+        {
+          "key": "5|0.75|120",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 138.92402780378768
+        },
+        {
+          "key": "3|0.9|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.9,
+            "energy": 120
+          },
+          "score": 138.1552257627746
+        },
+        {
+          "key": "3|0.75|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 136.73877007182892
+        },
+        {
+          "key": "2|0.9|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 0.9,
+            "energy": 60
+          },
+          "score": 135.55728761844472
+        },
+        {
+          "key": "4|0.9|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.9,
+            "energy": 120
+          },
+          "score": 108.5913962821674
+        },
+        {
+          "key": "3|1|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 1,
+            "energy": 120
+          },
+          "score": 103.39083868583107
+        },
+        {
+          "key": "3|0.75|60",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.75,
+            "energy": 60
+          },
+          "score": 99.14104110465671
+        },
+        {
+          "key": "1|0.75|60",
+          "features": {
+            "complexity": 1,
+            "novelty": 0.75,
+            "energy": 60
+          },
+          "score": 75.13192799124093
+        },
+        {
+          "key": "2|0.75|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 0.75,
+            "energy": 60
+          },
+          "score": 65.75277564301642
+        },
+        {
+          "key": "4|0.5|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.5,
+            "energy": 120
+          },
+          "score": 62.575245339982175
+        },
+        {
+          "key": "4|0.5|60",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.5,
+            "energy": 60
+          },
+          "score": 61.79169316878961
+        },
+        {
+          "key": "5|0.5|120",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.5,
+            "energy": 120
+          },
+          "score": 61.30268041237114
+        },
+        {
+          "key": "5|0.9|120",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.9,
+            "energy": 120
+          },
+          "score": 61.295922069355555
+        },
+        {
+          "key": "3|0.5|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.5,
+            "energy": 120
+          },
+          "score": 55.570103092783505
+        },
+        {
+          "key": "2|0.5|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 0.5,
+            "energy": 60
+          },
+          "score": 53.35638431739136
+        },
+        {
+          "key": "3|0.9|60",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.9,
+            "energy": 60
+          },
+          "score": 51.15773558544731
+        },
+        {
+          "key": "1|0.9|60",
+          "features": {
+            "complexity": 1,
+            "novelty": 0.9,
+            "energy": 60
+          },
+          "score": 44.94043310832666
+        }
+      ],
+      "history": [
+        {
+          "generation": 0,
+          "bestScore": 135.55728761844472,
+          "meanScore": 54.14557613103299,
+          "medianScore": 56.19020618556701,
+          "diversity": 0.9444444444444444,
+          "eliteScore": 110.36140657817333,
+          "timestamp": "2025-10-21T00:37:12.031Z"
+        },
+        {
+          "generation": 1,
+          "bestScore": 138.05804842234437,
+          "meanScore": 74.05261987011421,
+          "medianScore": 65.75277564301642,
+          "diversity": 0.75,
+          "eliteScore": 136.39087455307794,
+          "timestamp": "2025-10-21T00:37:12.033Z"
+        },
+        {
+          "generation": 2,
+          "bestScore": 138.1552257627746,
+          "meanScore": 83.09200194208387,
+          "medianScore": 73.64584551701412,
+          "diversity": 0.75,
+          "eliteScore": 138.12283331596453,
+          "timestamp": "2025-10-21T00:37:12.035Z"
+        },
+        {
+          "generation": 3,
+          "bestScore": 138.92402780378768,
+          "meanScore": 93.10985693012628,
+          "medianScore": 100.49230198051038,
+          "diversity": 0.8333333333333334,
+          "eliteScore": 138.41149310977895,
+          "timestamp": "2025-10-21T00:37:12.036Z"
+        },
+        {
+          "generation": 4,
+          "bestScore": 140.38164328854776,
+          "meanScore": 104.21527850605014,
+          "medianScore": 138.05804842234437,
+          "diversity": 0.6944444444444444,
+          "eliteScore": 140.38164328854776,
+          "timestamp": "2025-10-21T00:37:12.037Z"
+        },
+        {
+          "generation": 5,
+          "bestScore": 140.38164328854776,
+          "meanScore": 100.27483103804106,
+          "medianScore": 138.05804842234437,
+          "diversity": 0.7777777777777778,
+          "eliteScore": 140.38164328854776,
+          "timestamp": "2025-10-21T00:37:12.038Z"
+        },
+        {
+          "generation": 6,
+          "bestScore": 140.38164328854776,
+          "meanScore": 116.86158488399214,
+          "medianScore": 138.05804842234437,
+          "diversity": 0.7777777777777778,
+          "eliteScore": 140.38164328854776,
+          "timestamp": "2025-10-21T00:37:12.040Z"
+        },
+        {
+          "generation": 7,
+          "bestScore": 140.38164328854776,
+          "meanScore": 116.9762493711129,
+          "medianScore": 138.05804842234437,
+          "diversity": 0.7222222222222222,
+          "eliteScore": 140.38164328854776,
+          "timestamp": "2025-10-21T00:37:12.041Z"
+        },
+        {
+          "generation": 8,
+          "bestScore": 140.38164328854776,
+          "meanScore": 106.84453592002353,
+          "medianScore": 116.57704853345733,
+          "diversity": 0.8055555555555556,
+          "eliteScore": 140.38164328854776,
+          "timestamp": "2025-10-21T00:37:12.042Z"
+        },
+        {
+          "generation": 9,
+          "bestScore": 140.38164328854776,
+          "meanScore": 113.36376368689753,
+          "medianScore": 137.1920690409011,
+          "diversity": 0.75,
+          "eliteScore": 140.38164328854776,
+          "timestamp": "2025-10-21T00:37:12.043Z"
+        }
+      ]
+    },
+    {
+      "id": "ledger-harmonics",
+      "label": "Ledger Harmonics Sequencer",
+      "narrative": "Absorb asynchronous cash-flow deltas, stabilise them against the thermodynamic ledger, and emit rebalanced incentive curves for validator coalitions.",
+      "metrics": {
+        "score": 133.04138007631948,
+        "accuracy": 1,
+        "error": 0,
+        "energy": 64,
+        "novelty": 0.6661895003862226,
+        "coverage": 1,
+        "operationsUsed": 3
+      },
+      "job": {
+        "jobId": "LEDGER-SYN-007",
+        "stake": 155000,
+        "reward": 525000,
+        "thermodynamicTarget": 22.1
+      },
+      "pipeline": [
+        {
+          "type": "cumulative",
+          "params": {}
+        },
+        {
+          "type": "mod",
+          "params": {
+            "modulus": 5
+          }
+        },
+        {
+          "type": "offset",
+          "params": {
+            "value": 2
+          }
+        }
+      ],
+      "archive": [
+        {
+          "key": "3|0.75|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 133.04138007631948
+        },
+        {
+          "key": "4|0.75|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 131.4994227119784
+        },
+        {
+          "key": "5|0.5|120",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.5,
+            "energy": 120
+          },
+          "score": 131.4424653476373
+        },
+        {
+          "key": "5|0.75|120",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 109.71966878371302
+        },
+        {
+          "key": "4|0.5|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.5,
+            "energy": 120
+          },
+          "score": 86.367830024997
+        },
+        {
+          "key": "2|0.75|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 0.75,
+            "energy": 60
+          },
+          "score": 82.9194778065494
+        },
+        {
+          "key": "3|0.9|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.9,
+            "energy": 120
+          },
+          "score": 79.34987477762755
+        },
+        {
+          "key": "3|0.75|60",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.75,
+            "energy": 60
+          },
+          "score": 76.53115760829131
+        },
+        {
+          "key": "2|0.9|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 0.9,
+            "energy": 60
+          },
+          "score": 65.15383918518569
+        },
+        {
+          "key": "5|0.5|180",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.5,
+            "energy": 180
+          },
+          "score": 63.67207284966683
+        },
+        {
+          "key": "1|0.75|60",
+          "features": {
+            "complexity": 1,
+            "novelty": 0.75,
+            "energy": 60
+          },
+          "score": 61.88170140691995
+        },
+        {
+          "key": "3|0.5|60",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.5,
+            "energy": 60
+          },
+          "score": 46.356523581645924
+        },
+        {
+          "key": "4|0.9|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.9,
+            "energy": 120
+          },
+          "score": 44.216325714116195
+        },
+        {
+          "key": "1|0.9|60",
+          "features": {
+            "complexity": 1,
+            "novelty": 0.9,
+            "energy": 60
+          },
+          "score": 36.84655241316891
+        },
+        {
+          "key": "3|1|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 1,
+            "energy": 120
+          },
+          "score": 30.587363565891486
+        },
+        {
+          "key": "4|1|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 1,
+            "energy": 120
+          },
+          "score": 26.111205271317836
+        },
+        {
+          "key": "5|0.75|180",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.75,
+            "energy": 180
+          },
+          "score": 16.808666804900643
+        },
+        {
+          "key": "2|0.5|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 0.5,
+            "energy": 60
+          },
+          "score": 16.473629337560965
+        },
+        {
+          "key": "3|0.9|60",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.9,
+            "energy": 60
+          },
+          "score": 12.061937984496122
+        },
+        {
+          "key": "2|1|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 1,
+            "energy": 60
+          },
+          "score": 11.7584496124031
+        },
+        {
+          "key": "1|1|60",
+          "features": {
+            "complexity": 1,
+            "novelty": 1,
+            "energy": 60
+          },
+          "score": 10.022015503875968
+        }
+      ],
+      "history": [
+        {
+          "generation": 0,
+          "bestScore": 133.04138007631948,
+          "meanScore": 41.06116264692415,
+          "medianScore": 41.03751524896436,
+          "diversity": 0.9722222222222222,
+          "eliteScore": 96.0918022581709,
+          "timestamp": "2025-10-21T00:37:12.045Z"
+        },
+        {
+          "generation": 1,
+          "bestScore": 133.04138007631948,
+          "meanScore": 55.523022368491816,
+          "medianScore": 62.99975060567376,
+          "diversity": 0.9444444444444444,
+          "eliteScore": 98.43691088683215,
+          "timestamp": "2025-10-21T00:37:12.046Z"
+        },
+        {
+          "generation": 2,
+          "bestScore": 133.04138007631948,
+          "meanScore": 70.04027607667524,
+          "medianScore": 76.53115760829131,
+          "diversity": 0.75,
+          "eliteScore": 132.5084085000921,
+          "timestamp": "2025-10-21T00:37:12.047Z"
+        },
+        {
+          "generation": 3,
+          "bestScore": 133.04138007631948,
+          "meanScore": 83.52655555973811,
+          "medianScore": 77.95296283436663,
+          "diversity": 0.7222222222222222,
+          "eliteScore": 133.04138007631948,
+          "timestamp": "2025-10-21T00:37:12.061Z"
+        },
+        {
+          "generation": 4,
+          "bestScore": 133.04138007631948,
+          "meanScore": 95.58810182345249,
+          "medianScore": 86.94000111220245,
+          "diversity": 0.7222222222222222,
+          "eliteScore": 133.04138007631948,
+          "timestamp": "2025-10-21T00:37:12.062Z"
+        },
+        {
+          "generation": 5,
+          "bestScore": 133.04138007631948,
+          "meanScore": 98.68812607592503,
+          "medianScore": 88.99300139019402,
+          "diversity": 0.6111111111111112,
+          "eliteScore": 133.04138007631948,
+          "timestamp": "2025-10-21T00:37:12.063Z"
+        },
+        {
+          "generation": 6,
+          "bestScore": 133.04138007631948,
+          "meanScore": 93.27769214468407,
+          "medianScore": 83.23985249780515,
+          "diversity": 0.6666666666666666,
+          "eliteScore": 133.04138007631948,
+          "timestamp": "2025-10-21T00:37:12.064Z"
+        },
+        {
+          "generation": 7,
+          "bestScore": 133.04138007631948,
+          "meanScore": 91.36677672380898,
+          "medianScore": 82.9194778065494,
+          "diversity": 0.6111111111111112,
+          "eliteScore": 133.04138007631948,
+          "timestamp": "2025-10-21T00:37:12.065Z"
+        },
+        {
+          "generation": 8,
+          "bestScore": 133.04138007631948,
+          "meanScore": 92.38205887534772,
+          "medianScore": 86.367830024997,
+          "diversity": 0.6666666666666666,
+          "eliteScore": 133.04138007631948,
+          "timestamp": "2025-10-21T00:37:12.066Z"
+        },
+        {
+          "generation": 9,
+          "bestScore": 133.04138007631948,
+          "meanScore": 87.42323671575394,
+          "medianScore": 85.09002044220831,
+          "diversity": 0.6666666666666666,
+          "eliteScore": 133.04138007631948,
+          "timestamp": "2025-10-21T00:37:12.067Z"
+        }
+      ]
+    },
+    {
+      "id": "nova-weave",
+      "label": "Nova Weave Sequence Optimiser",
+      "narrative": "Elevate alpha sequences into deterministic blueprints that compile into on-chain production payloads with zero manual edits.",
+      "metrics": {
+        "score": 136.04606142636254,
+        "accuracy": 1,
+        "error": 0,
+        "energy": 68,
+        "novelty": 0.9359991623161438,
+        "coverage": 1,
+        "operationsUsed": 3
+      },
+      "job": {
+        "jobId": "NOVA-SYN-009",
+        "stake": 165000,
+        "reward": 610000,
+        "thermodynamicTarget": 25.7
+      },
+      "pipeline": [
+        {
+          "type": "power",
+          "params": {
+            "exponent": 2
+          }
+        },
+        {
+          "type": "offset",
+          "params": {
+            "value": 1
+          }
+        },
+        {
+          "type": "scale",
+          "params": {
+            "factor": 2
+          }
+        }
+      ],
+      "archive": [
+        {
+          "key": "3|1|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 1,
+            "energy": 120
+          },
+          "score": 136.04606142636254
+        },
+        {
+          "key": "4|0.9|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.9,
+            "energy": 120
+          },
+          "score": 113.03098710751419
+        },
+        {
+          "key": "5|0.75|120",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 109.50484759532472
+        },
+        {
+          "key": "2|1|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 1,
+            "energy": 60
+          },
+          "score": 106.14151669450104
+        },
+        {
+          "key": "3|0.9|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.9,
+            "energy": 120
+          },
+          "score": 103.29744757274669
+        },
+        {
+          "key": "4|0.75|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 95.68328875001927
+        },
+        {
+          "key": "5|0.9|120",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.9,
+            "energy": 120
+          },
+          "score": 91.07310135312092
+        },
+        {
+          "key": "3|0.75|60",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.75,
+            "energy": 60
+          },
+          "score": 75.5667318877012
+        },
+        {
+          "key": "2|0.75|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 0.75,
+            "energy": 60
+          },
+          "score": 75.22048457798724
+        },
+        {
+          "key": "3|0.5|60",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.5,
+            "energy": 60
+          },
+          "score": 74.18059094095335
+        },
+        {
+          "key": "2|0.9|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 0.9,
+            "energy": 60
+          },
+          "score": 63.89786853853315
+        },
+        {
+          "key": "2|0.5|60",
+          "features": {
+            "complexity": 2,
+            "novelty": 0.5,
+            "energy": 60
+          },
+          "score": 61.18955680866028
+        },
+        {
+          "key": "5|0.5|120",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.5,
+            "energy": 120
+          },
+          "score": 58.123147718451214
+        },
+        {
+          "key": "1|1|60",
+          "features": {
+            "complexity": 1,
+            "novelty": 1,
+            "energy": 60
+          },
+          "score": 57.90343410333563
+        },
+        {
+          "key": "1|0.9|60",
+          "features": {
+            "complexity": 1,
+            "novelty": 0.9,
+            "energy": 60
+          },
+          "score": 50.92305595228717
+        },
+        {
+          "key": "3|0.75|120",
+          "features": {
+            "complexity": 3,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 46.300719573320826
+        },
+        {
+          "key": "6|0.75|120",
+          "features": {
+            "complexity": 6,
+            "novelty": 0.75,
+            "energy": 120
+          },
+          "score": 42.95480919982074
+        },
+        {
+          "key": "6|0.5|180",
+          "features": {
+            "complexity": 6,
+            "novelty": 0.5,
+            "energy": 180
+          },
+          "score": 40.77318118461412
+        },
+        {
+          "key": "1|0.75|60",
+          "features": {
+            "complexity": 1,
+            "novelty": 0.75,
+            "energy": 60
+          },
+          "score": 40.558575325054996
+        },
+        {
+          "key": "6|0.75|180",
+          "features": {
+            "complexity": 6,
+            "novelty": 0.75,
+            "energy": 180
+          },
+          "score": 33.23577114240753
+        },
+        {
+          "key": "4|1|120",
+          "features": {
+            "complexity": 4,
+            "novelty": 1,
+            "energy": 120
+          },
+          "score": 30.072694548239824
+        },
+        {
+          "key": "5|0.75|180",
+          "features": {
+            "complexity": 5,
+            "novelty": 0.75,
+            "energy": 180
+          },
+          "score": 29.51983453840556
+        },
+        {
+          "key": "6|0.5|120",
+          "features": {
+            "complexity": 6,
+            "novelty": 0.5,
+            "energy": 120
+          },
+          "score": 27.25020535085531
+        },
+        {
+          "key": "4|0.75|180",
+          "features": {
+            "complexity": 4,
+            "novelty": 0.75,
+            "energy": 180
+          },
+          "score": 15.090086206896554
+        }
+      ],
+      "history": [
+        {
+          "generation": 0,
+          "bestScore": 136.04606142636254,
+          "meanScore": 30.67751990924897,
+          "medianScore": 23.447749293641056,
+          "diversity": 1,
+          "eliteScore": 97.42746077012889,
+          "timestamp": "2025-10-21T00:37:12.068Z"
+        },
+        {
+          "generation": 1,
+          "bestScore": 136.04606142636254,
+          "meanScore": 42.858724221567364,
+          "medianScore": 33.23577114240753,
+          "diversity": 1,
+          "eliteScore": 101.68095349725729,
+          "timestamp": "2025-10-21T00:37:12.069Z"
+        },
+        {
+          "generation": 2,
+          "bestScore": 136.04606142636254,
+          "meanScore": 60.91609316311379,
+          "medianScore": 64.46743238768931,
+          "diversity": 0.8888888888888888,
+          "eliteScore": 125.76131787031291,
+          "timestamp": "2025-10-21T00:37:12.070Z"
+        },
+        {
+          "generation": 3,
+          "bestScore": 136.04606142636254,
+          "meanScore": 69.54885850633089,
+          "medianScore": 70.39942915911845,
+          "diversity": 0.8611111111111112,
+          "eliteScore": 136.04606142636254,
+          "timestamp": "2025-10-21T00:37:12.071Z"
+        },
+        {
+          "generation": 4,
+          "bestScore": 136.04606142636254,
+          "meanScore": 66.69582159309468,
+          "medianScore": 71.05162669292856,
+          "diversity": 0.8333333333333334,
+          "eliteScore": 136.04606142636254,
+          "timestamp": "2025-10-21T00:37:12.072Z"
+        },
+        {
+          "generation": 5,
+          "bestScore": 136.04606142636254,
+          "meanScore": 65.9370693500315,
+          "medianScore": 53.843889930604206,
+          "diversity": 0.7777777777777778,
+          "eliteScore": 136.04606142636254,
+          "timestamp": "2025-10-21T00:37:12.073Z"
+        },
+        {
+          "generation": 6,
+          "bestScore": 136.04606142636254,
+          "meanScore": 75.37264374625573,
+          "medianScore": 78.25900854278035,
+          "diversity": 0.6666666666666666,
+          "eliteScore": 136.04606142636254,
+          "timestamp": "2025-10-21T00:37:12.073Z"
+        },
+        {
+          "generation": 7,
+          "bestScore": 136.04606142636254,
+          "meanScore": 74.05342340442252,
+          "medianScore": 91.68021852282594,
+          "diversity": 0.5,
+          "eliteScore": 136.04606142636254,
+          "timestamp": "2025-10-21T00:37:12.074Z"
+        },
+        {
+          "generation": 8,
+          "bestScore": 136.04606142636254,
+          "meanScore": 79.42677430689193,
+          "medianScore": 84.52984866490183,
+          "diversity": 0.6388888888888888,
+          "eliteScore": 136.04606142636254,
+          "timestamp": "2025-10-21T00:37:12.075Z"
+        },
+        {
+          "generation": 9,
+          "bestScore": 136.04606142636254,
+          "meanScore": 75.1978188071127,
+          "medianScore": 90.34258929546631,
+          "diversity": 0.6388888888888888,
+          "eliteScore": 136.04606142636254,
+          "timestamp": "2025-10-21T00:37:12.076Z"
+        }
+      ]
+    }
+  ],
+  "ci": {
+    "workflow": "ci (v2)",
+    "requiredJobs": [
+      {
+        "id": "lint",
+        "name": "Lint & static checks"
+      },
+      {
+        "id": "tests",
+        "name": "Tests"
+      },
+      {
+        "id": "foundry",
+        "name": "Foundry"
+      },
+      {
+        "id": "coverage",
+        "name": "Coverage thresholds"
+      }
+    ],
+    "minCoverage": 90,
+    "concurrency": "ci-${{ github.workflow }}-${{ github.ref }}"
+  },
+  "ownerControls": {
+    "capabilities": [
+      {
+        "category": "Emergency Pause",
+        "label": "Circuit breaker engage",
+        "command": "npm run owner:system-pause -- --action pause",
+        "verification": "npm run owner:system-pause -- --action status"
+      },
+      {
+        "category": "Thermostat",
+        "label": "Recalibrate reward engine temperature",
+        "command": "npm run thermostat:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "verification": "npm run thermodynamics:report"
+      },
+      {
+        "category": "Upgrade",
+        "label": "Queue sovereign upgrade",
+        "command": "npm run owner:upgrade -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "verification": "npm run owner:upgrade-status"
+      },
+      {
+        "category": "Treasury",
+        "label": "Mirror treasury share",
+        "command": "npm run reward-engine:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+        "verification": "npm run reward-engine:report"
+      },
+      {
+        "category": "Compliance",
+        "label": "Refresh compliance dossier",
+        "command": "npm run owner:compliance-report",
+        "verification": "npm run owner:doctor"
+      }
+    ]
+  }
+}

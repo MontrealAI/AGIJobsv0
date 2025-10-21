@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2025-10-21T00:37:12.127Z",
+  "aggregate": {
+    "globalBestScore": 140.38164328854776,
+    "averageAccuracy": 1,
+    "energyUsage": 73.33333333333333,
+    "noveltyScore": 0.7776289047454377,
+    "coverageScore": 1
+  },
+  "mission": {
+    "version": "0.1.0",
+    "title": "Meta-Agentic Program Synthesis Sovereign Mission",
+    "subtitle": "Evolutionary Intelligence Forge",
+    "description": "Deterministic rehearsal proving that AGI Jobs v0 (v2) lets a non-technical owner conjure, govern, and redeploy an autonomous meta-agent that designs and verifies production-ready code modules in minutes.",
+    "ownerAddress": "0x1111111111111111111111111111111111111111",
+    "treasuryAddress": "0x2222222222222222222222222222222222222222",
+    "timelockSeconds": 604800,
+    "governance": {
+      "council": [
+        "sovereign.validator.eth",
+        "thermostat.guardian.eth",
+        "alpha.operator.eth"
+      ],
+      "sentinels": [
+        "sentinel.quantum",
+        "sentinel.reward-engine",
+        "sentinel.timelock",
+        "sentinel.contract-size"
+      ],
+      "ownerScripts": [
+        "npm run owner:command-center",
+        "npm run owner:atlas",
+        "npm run owner:system-pause",
+        "npm run owner:upgrade-status",
+        "npm run owner:change-ticket"
+      ]
+    }
+  },
+  "ci": {
+    "ok": true,
+    "issues": [],
+    "report": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json"
+  },
+  "ownerDiagnostics": {
+    "generatedAt": "2025-10-21T00:37:12.126Z",
+    "readiness": "ready",
+    "statuses": [
+      {
+        "capability": {
+          "category": "Emergency Pause",
+          "label": "Circuit breaker engage",
+          "command": "npm run owner:system-pause -- --action pause",
+          "verification": "npm run owner:system-pause -- --action status"
+        },
+        "commandAvailable": true,
+        "verificationAvailable": true
+      },
+      {
+        "capability": {
+          "category": "Thermostat",
+          "label": "Recalibrate reward engine temperature",
+          "command": "npm run thermostat:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+          "verification": "npm run thermodynamics:report"
+        },
+        "commandAvailable": true,
+        "verificationAvailable": true
+      },
+      {
+        "capability": {
+          "category": "Upgrade",
+          "label": "Queue sovereign upgrade",
+          "command": "npm run owner:upgrade -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+          "verification": "npm run owner:upgrade-status"
+        },
+        "commandAvailable": true,
+        "verificationAvailable": true
+      },
+      {
+        "capability": {
+          "category": "Treasury",
+          "label": "Mirror treasury share",
+          "command": "npm run reward-engine:update -- --mission demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+          "verification": "npm run reward-engine:report"
+        },
+        "commandAvailable": true,
+        "verificationAvailable": true
+      },
+      {
+        "capability": {
+          "category": "Compliance",
+          "label": "Refresh compliance dossier",
+          "command": "npm run owner:compliance-report",
+          "verification": "npm run owner:doctor"
+        },
+        "commandAvailable": true,
+        "verificationAvailable": true
+      }
+    ]
+  },
+  "artifacts": {
+    "Mission manifest": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+    "Markdown report": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md",
+    "JSON summary": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-summary.json",
+    "Dashboard": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-dashboard.html",
+    "Manifest": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-manifest.json",
+    "CI verification": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json",
+    "Owner diagnostics (JSON)": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-owner-diagnostics.json",
+    "Owner diagnostics (Markdown)": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-owner-diagnostics.md"
+  }
+}
