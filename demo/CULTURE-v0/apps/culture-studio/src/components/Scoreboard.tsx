@@ -9,12 +9,32 @@ export function Scoreboard({ data }: Props) {
     return null;
   }
 
+  const safeNumber = (value: unknown, fallback: number) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+  };
+
+  const latestRound = data.rounds.at(-1);
+  const difficulty = safeNumber(data.currentDifficulty, latestRound?.difficulty ?? 0);
+  const successRate = safeNumber(data.currentSuccessRate, latestRound?.successRate ?? 0);
+  const ownerControls = {
+    paused: false,
+    autoDifficulty: true,
+    maxConcurrentJobs: 3,
+    targetSuccessRate: successRate,
+    ...(data.ownerControls ?? {})
+  };
+  const targetSuccessRate = safeNumber(ownerControls.targetSuccessRate, successRate);
+
   return (
     <section className="card">
       <h2>Telemetry snapshot</h2>
       <p className="subtitle">
-        Difficulty {data.currentDifficulty.toFixed(2)} • Success {(data.currentSuccessRate * 100).toFixed(1)}% • Target{' '}
-        {(data.ownerControls.targetSuccessRate * 100).toFixed(0)}%
+        Difficulty {difficulty.toFixed(2)} • Success {(successRate * 100).toFixed(1)}% • Target{' '}
+        {(targetSuccessRate * 100).toFixed(0)}%
       </p>
       <div className="grid two-columns">
         <div>
