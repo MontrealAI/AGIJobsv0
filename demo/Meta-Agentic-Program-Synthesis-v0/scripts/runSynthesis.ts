@@ -1,7 +1,7 @@
 import path from "path";
 import { loadMissionConfig, runMetaSynthesis } from "./synthesisEngine";
 import { writeReports } from "./reporting";
-import { auditOwnerScripts } from "./commandValidation";
+import { auditOwnerScripts, loadOwnerCapabilities } from "./commandValidation";
 import { updateManifest } from "./manifest";
 import type { MissionConfig, OwnerControlCoverage, SynthesisRun } from "./types";
 
@@ -52,16 +52,28 @@ export async function executeSynthesis(options: RunOptions = {}): Promise<Synthe
   const { mission, coverage }: { mission: MissionConfig; coverage: OwnerControlCoverage } =
     await loadMissionConfig(resolved.missionFile);
   const run = runMetaSynthesis(mission, coverage);
+  const ownerCapabilities = await loadOwnerCapabilities(run.mission);
   const ownerScripts = await auditOwnerScripts(run.mission);
+  run.ownerCapabilitiesAudit = ownerCapabilities;
   run.ownerScriptsAudit = ownerScripts;
   const declaredScripts = run.mission.meta.governance?.ownerScripts?.length ?? ownerScripts.length;
   const availableScripts = ownerScripts.filter((entry) => entry.available).length;
   const scriptAvailability = declaredScripts > 0 ? availableScripts / declaredScripts : 1;
+  const commandDeclared = ownerCapabilities.length;
+  const availableCommands = ownerCapabilities.filter((entry) => entry.commandAvailable).length;
+  const availableVerifications = ownerCapabilities.filter((entry) => entry.verificationAvailable).length;
   run.aggregate.ownerSupremacy = {
     ...run.aggregate.ownerSupremacy,
     declaredScripts,
     availableScripts,
     scriptAvailability,
+    capabilityDeclarations: commandDeclared,
+    commandDeclared,
+    commandAvailable: availableCommands,
+    commandAvailability: commandDeclared > 0 ? availableCommands / commandDeclared : 1,
+    verificationDeclared: commandDeclared,
+    verificationAvailable: availableVerifications,
+    verificationAvailability: commandDeclared > 0 ? availableVerifications / commandDeclared : 1,
   };
   const { files } = await writeReports(run, {
     reportDir: resolved.reportDir,
@@ -71,6 +83,7 @@ export async function executeSynthesis(options: RunOptions = {}): Promise<Synthe
     triangulationFile: resolved.triangulationFile,
     briefingFile: resolved.briefingFile,
     ownerScripts,
+    ownerCapabilities,
   });
   run.ownerBriefingPath = resolved.briefingFile;
   await updateManifest(resolved.manifestFile, files);

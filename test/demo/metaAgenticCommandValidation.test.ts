@@ -5,7 +5,10 @@ import {
   evaluateOwnerScripts,
   inspectCommand,
   loadPackageScripts,
+  loadOwnerCapabilities,
 } from "../../demo/Meta-Agentic-Program-Synthesis-v0/scripts/commandValidation";
+import { loadMissionConfig } from "../../demo/Meta-Agentic-Program-Synthesis-v0/scripts/synthesisEngine";
+import type { MissionConfig } from "../../demo/Meta-Agentic-Program-Synthesis-v0/scripts/types";
 
 describe("Meta-Agentic owner command validation", function () {
   this.timeout(10000);
@@ -40,5 +43,19 @@ describe("Meta-Agentic owner command validation", function () {
     expect(statuses).to.have.lengthOf(commands.length);
     expect(statuses[0].available).to.equal(true);
     expect(statuses[1].available).to.equal(false);
+  });
+
+  it("audits mission owner capabilities", async function () {
+    const missionPath = path.resolve(
+      __dirname,
+      "../../demo/Meta-Agentic-Program-Synthesis-v0/config/mission.meta-agentic-program-synthesis.json",
+    );
+    const { mission }: { mission: MissionConfig } = await loadMissionConfig(missionPath);
+    const capabilities = await loadOwnerCapabilities(mission, { scripts });
+    expect(capabilities).to.have.lengthOf(mission.ownerControls.capabilities.length);
+    for (const entry of capabilities) {
+      expect(entry.commandAvailable, entry.capability.command).to.equal(true);
+      expect(entry.verificationAvailable, entry.capability.verification).to.equal(true);
+    }
   });
 });

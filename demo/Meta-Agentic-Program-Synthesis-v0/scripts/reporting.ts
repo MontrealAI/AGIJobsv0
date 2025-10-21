@@ -8,6 +8,7 @@ import type {
   CandidateRecord,
   MissionConfig,
   OwnerCapability,
+  OwnerCapabilityAudit,
   OwnerControlCoverage,
   SynthesisRun,
   TaskResult,
@@ -60,16 +61,22 @@ function escapeHtml(value: string): string {
   });
 }
 
-function renderOwnerCapabilities(capabilities: OwnerCapability[]): string {
+function renderOwnerCapabilities(
+  capabilities: OwnerCapability[],
+  audit: OwnerCapabilityAudit[] = [],
+): string {
   if (capabilities.length === 0) {
-    return "| Category | Command | Verification |\n| --- | --- | --- |\n| n/a | n/a | n/a |";
+    return "| Category | Command | Cmd Status | Verification | Verify Status |\n| --- | --- | --- | --- | --- |\n| n/a | n/a | n/a | n/a | n/a |";
   }
   const rows = capabilities
-    .map((capability) =>
-      `| ${capability.category} | \`${capability.command}\` | \`${capability.verification}\` |`,
-    )
+    .map((capability) => {
+      const status = audit.find((entry) => entry.capability === capability);
+      const commandStatus = status?.commandAvailable ? "✅" : "❌";
+      const verificationStatus = status?.verificationAvailable ? "✅" : "❌";
+      return `| ${capability.category} | \`${capability.command}\` | ${commandStatus} | \`${capability.verification}\` | ${verificationStatus} |`;
+    })
     .join("\n");
-  return `| Category | Command | Verification |\n| --- | --- | --- |\n${rows}`;
+  return "| Category | Command | Cmd Status | Verification | Verify Status |\n| --- | --- | --- | --- | --- |\n" + rows;
 }
 
 function renderOwnerCoverage(coverage: OwnerControlCoverage): string {
@@ -266,7 +273,11 @@ function renderMermaidTimeline(task: TaskResult): string {
   ].join("\n");
 }
 
-function renderOwnerBriefing(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]): string {
+function renderOwnerBriefing(
+  run: SynthesisRun,
+  ownerScripts: OwnerScriptAudit[],
+  ownerCapabilities: OwnerCapabilityAudit[],
+): string {
   const lines: string[] = [];
   const ownerScriptsVerdict = renderOwnerScriptVerdict(ownerScripts);
   const ownerSupremacy = run.aggregate.ownerSupremacy;
@@ -316,6 +327,9 @@ function renderOwnerBriefing(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]
   lines.push(
     `- **Owner supremacy:** readiness ${ownerSupremacy.readiness.toUpperCase()} • coverage ${formatPercent(ownerSupremacy.coverageRatio)} • scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts})`,
   );
+  lines.push(
+    `- **Owner command readiness:** ${formatPercent(ownerSupremacy.commandAvailability)} (${ownerSupremacy.commandAvailable}/${ownerSupremacy.commandDeclared}) • verifications ${formatPercent(ownerSupremacy.verificationAvailability)} (${ownerSupremacy.verificationAvailable}/${ownerSupremacy.verificationDeclared})`,
+  );
   lines.push(`- **Owner scripts:** ${ownerScriptsVerdict}`);
   lines.push("");
   lines.push("## Task Highlights");
@@ -331,13 +345,7 @@ function renderOwnerBriefing(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]
   lines.push("");
   lines.push("## Owner Control Panel");
   lines.push("");
-  lines.push("| Category | Command | Status |");
-  lines.push("| --- | --- | --- |");
-  const satisfiedCategories = new Set(run.ownerCoverage.satisfiedCategories);
-  for (const capability of run.mission.ownerControls.capabilities) {
-    const status = satisfiedCategories.has(capability.category) ? "✅" : "⚠️";
-    lines.push(`| ${capability.category} | \`${capability.command}\` | ${status} |`);
-  }
+  lines.push(renderOwnerCapabilities(run.mission.ownerControls.capabilities, ownerCapabilities));
   lines.push("");
   lines.push("## Immediate Next Actions");
   lines.push("");
@@ -362,7 +370,11 @@ function renderOwnerBriefing(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]
   return lines.join("\n");
 }
 
-export function renderMarkdownReport(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]): string {
+export function renderMarkdownReport(
+  run: SynthesisRun,
+  ownerScripts: OwnerScriptAudit[],
+  ownerCapabilities: OwnerCapabilityAudit[],
+): string {
   const { mission } = run;
   const ownerSupremacy = run.aggregate.ownerSupremacy;
   const lines: string[] = [];
@@ -390,7 +402,7 @@ export function renderMarkdownReport(run: SynthesisRun, ownerScripts: OwnerScrip
       `(mean Δ ${formatNumber(run.aggregate.thermodynamics.meanDelta)} | max Δ ${formatNumber(run.aggregate.thermodynamics.maxDelta)} | ${formatThermoStatus(run.aggregate.thermodynamics.statusCounts)}).`,
   );
   lines.push(
-    `- **Owner supremacy:** readiness ${ownerSupremacy.readiness} | coverage ${formatPercent(ownerSupremacy.coverageRatio)} | scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts}).`,
+    `- **Owner supremacy:** readiness ${ownerSupremacy.readiness} | coverage ${formatPercent(ownerSupremacy.coverageRatio)} | scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts}) | commands ${formatPercent(ownerSupremacy.commandAvailability)} (${ownerSupremacy.commandAvailable}/${ownerSupremacy.commandDeclared}) | verifications ${formatPercent(ownerSupremacy.verificationAvailability)} (${ownerSupremacy.verificationAvailable}/${ownerSupremacy.verificationDeclared}).`,
   );
   lines.push(
     `- **Coverage readiness:** ${run.ownerCoverage.readiness} (${run.ownerCoverage.satisfiedCategories.length}/${run.ownerCoverage.requiredCategories.length} controls satisfied).`,
@@ -431,7 +443,7 @@ export function renderMarkdownReport(run: SynthesisRun, ownerScripts: OwnerScrip
 
   lines.push("## Owner Capabilities");
   lines.push("");
-  lines.push(renderOwnerCapabilities(mission.ownerControls.capabilities));
+  lines.push(renderOwnerCapabilities(mission.ownerControls.capabilities, ownerCapabilities));
   lines.push("");
 
   lines.push("## Owner Coverage Readiness");
@@ -509,7 +521,11 @@ export function renderMarkdownReport(run: SynthesisRun, ownerScripts: OwnerScrip
   return lines.join("\n");
 }
 
-export function buildJsonSummary(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]): Record<string, unknown> {
+export function buildJsonSummary(
+  run: SynthesisRun,
+  ownerScripts: OwnerScriptAudit[],
+  ownerCapabilities: OwnerCapabilityAudit[],
+): Record<string, unknown> {
   return {
     generatedAt: run.generatedAt,
     mission: {
@@ -545,6 +561,22 @@ export function buildJsonSummary(run: SynthesisRun, ownerScripts: OwnerScriptAud
       total: ownerScripts.length,
       missing: ownerScripts.filter((entry) => !entry.available).map((entry) => entry.script),
     },
+    ownerCapabilities: ownerCapabilities.map((entry) => ({
+      category: entry.capability.category,
+      command: entry.capability.command,
+      verification: entry.capability.verification,
+      commandAvailable: entry.commandAvailable,
+      verificationAvailable: entry.verificationAvailable,
+    })),
+    ownerCapabilitiesVerdict: {
+      total: ownerCapabilities.length,
+      commandsMissing: ownerCapabilities
+        .filter((entry) => !entry.commandAvailable)
+        .map((entry) => entry.capability.category),
+      verificationsMissing: ownerCapabilities
+        .filter((entry) => !entry.verificationAvailable)
+        .map((entry) => entry.capability.category),
+    },
   };
 }
 
@@ -576,8 +608,12 @@ export function buildTriangulationDigest(run: SynthesisRun): Record<string, unkn
   };
 }
 
-export function renderHtmlDashboard(run: SynthesisRun, ownerScripts: OwnerScriptAudit[]): string {
-  const summary = buildJsonSummary(run, ownerScripts);
+export function renderHtmlDashboard(
+  run: SynthesisRun,
+  ownerScripts: OwnerScriptAudit[],
+  ownerCapabilities: OwnerCapabilityAudit[],
+): string {
+  const summary = buildJsonSummary(run, ownerScripts, ownerCapabilities);
   const triangulationDigest = buildTriangulationDigest(run);
   const mermaidFlow = renderMermaidFlow(run.mission, run);
   const ownerSupremacy = run.aggregate.ownerSupremacy;
@@ -622,14 +658,24 @@ export function renderHtmlDashboard(run: SynthesisRun, ownerScripts: OwnerScript
     })
     .join("\n");
 
-  const ownerTable = renderOwnerCapabilities(run.mission.ownerControls.capabilities);
+  const ownerTable = renderOwnerCapabilities(run.mission.ownerControls.capabilities, ownerCapabilities);
   const coverageHtml = renderOwnerCoverageHtml(run.ownerCoverage);
   const ownerScriptsHtml = renderOwnerScriptsHtml(ownerScripts);
   const missingScripts = ownerScripts.filter((entry) => !entry.available);
   const ownerScriptsVerdict = missingScripts.length
     ? `⚠️ ${missingScripts.length} script(s) missing`
     : "✅ all scripts available";
-  const ownerSupremacySummary = `${formatPercent(ownerSupremacy.coverageRatio)} coverage • scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts}) • readiness ${ownerSupremacy.readiness}`;
+  const missingCommands = ownerCapabilities.filter((entry) => !entry.commandAvailable);
+  const missingVerifications = ownerCapabilities.filter((entry) => !entry.verificationAvailable);
+  const ownerCapabilitiesVerdict =
+    missingCommands.length === 0 && missingVerifications.length === 0
+      ? "✅ all owner commands verified"
+      : `⚠️ ${missingCommands.length} command(s) + ${missingVerifications.length} verification(s) need attention`;
+  const ownerSupremacySummary =
+    `${formatPercent(ownerSupremacy.coverageRatio)} coverage • scripts ${formatPercent(ownerSupremacy.scriptAvailability)} ` +
+    `(${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts}) • commands ${formatPercent(ownerSupremacy.commandAvailability)} ` +
+    `(${ownerSupremacy.commandAvailable}/${ownerSupremacy.commandDeclared}) • verifications ${formatPercent(ownerSupremacy.verificationAvailability)} ` +
+    `(${ownerSupremacy.verificationAvailable}/${ownerSupremacy.verificationDeclared}) • readiness ${ownerSupremacy.readiness}`;
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -677,7 +723,7 @@ export function renderHtmlDashboard(run: SynthesisRun, ownerScripts: OwnerScript
         <div class="metric-card"><strong>Coverage</strong><br />${formatPercent(run.aggregate.coverageScore)}</div>
         <div class="metric-card"><strong>Triangulation confidence</strong><br />${formatPercent(run.aggregate.triangulationConfidence)}</div>
         <div class="metric-card"><strong>Thermodynamic alignment</strong><br />${formatPercent(run.aggregate.thermodynamics.averageAlignment)}<span class="metric-sub">Δ̄ ${formatNumber(run.aggregate.thermodynamics.meanDelta, 2)} • Δmax ${formatNumber(run.aggregate.thermodynamics.maxDelta, 2)} • ${escapeHtml(formatThermoStatus(run.aggregate.thermodynamics.statusCounts))}</span></div>
-        <div class="metric-card"><strong>Owner supremacy</strong><br />${formatPercent(ownerSupremacy.coverageRatio)} coverage<span class="metric-sub">Scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts}) • Readiness ${escapeHtml(ownerSupremacy.readiness.toUpperCase())}</span></div>
+        <div class="metric-card"><strong>Owner supremacy</strong><br />${formatPercent(ownerSupremacy.coverageRatio)} coverage<span class="metric-sub">Scripts ${formatPercent(ownerSupremacy.scriptAvailability)} (${ownerSupremacy.availableScripts}/${ownerSupremacy.declaredScripts}) • Commands ${formatPercent(ownerSupremacy.commandAvailability)} (${ownerSupremacy.commandAvailable}/${ownerSupremacy.commandDeclared}) • Verifications ${formatPercent(ownerSupremacy.verificationAvailability)} (${ownerSupremacy.verificationAvailable}/${ownerSupremacy.verificationDeclared}) • Readiness ${escapeHtml(ownerSupremacy.readiness.toUpperCase())}</span></div>
       </div>
     </header>
     <section>
@@ -696,6 +742,7 @@ export function renderHtmlDashboard(run: SynthesisRun, ownerScripts: OwnerScript
     <section>
       <h2>Owner Capabilities</h2>
       <div class="table">${ownerTable}</div>
+      <p>${ownerCapabilitiesVerdict}</p>
       <h3>Coverage Readiness</h3>
       ${coverageHtml}
       <h3>Owner Script Audit</h3>
@@ -728,8 +775,9 @@ export async function writeReports(
     triangulationFile: string;
     briefingFile: string;
     ownerScripts?: OwnerScriptAudit[];
+    ownerCapabilities?: OwnerCapabilityAudit[];
   },
-): Promise<{ files: string[]; ownerScripts: OwnerScriptAudit[] }> {
+): Promise<{ files: string[]; ownerScripts: OwnerScriptAudit[]; ownerCapabilities: OwnerCapabilityAudit[] }> {
   const {
     reportDir,
     markdownFile,
@@ -738,20 +786,26 @@ export async function writeReports(
     triangulationFile,
     briefingFile,
     ownerScripts: providedScripts,
+    ownerCapabilities: providedCapabilities,
   } = options;
   const ownerScripts = providedScripts ?? (await auditOwnerScripts(run.mission));
+  const ownerCapabilities = providedCapabilities ?? run.ownerCapabilitiesAudit;
   await mkdir(reportDir, { recursive: true });
-  const markdown = renderMarkdownReport(run, ownerScripts);
-  const summary = buildJsonSummary(run, ownerScripts);
+  const markdown = renderMarkdownReport(run, ownerScripts, ownerCapabilities);
+  const summary = buildJsonSummary(run, ownerScripts, ownerCapabilities);
   const triangulation = buildTriangulationDigest(run);
-  const html = renderHtmlDashboard(run, ownerScripts);
-  const briefing = renderOwnerBriefing(run, ownerScripts);
+  const html = renderHtmlDashboard(run, ownerScripts, ownerCapabilities);
+  const briefing = renderOwnerBriefing(run, ownerScripts, ownerCapabilities);
   await writeFile(markdownFile, markdown, "utf8");
   await writeFile(jsonFile, JSON.stringify(summary, null, 2), "utf8");
   await writeFile(htmlFile, html, "utf8");
   await writeFile(triangulationFile, JSON.stringify(triangulation, null, 2), "utf8");
   await writeFile(briefingFile, briefing, "utf8");
-  return { files: [markdownFile, jsonFile, htmlFile, triangulationFile, briefingFile], ownerScripts };
+  return {
+    files: [markdownFile, jsonFile, htmlFile, triangulationFile, briefingFile],
+    ownerScripts,
+    ownerCapabilities,
+  };
 }
 
 export function generateManifest(entries: string[]): Record<string, string> {

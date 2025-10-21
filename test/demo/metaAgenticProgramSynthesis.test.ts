@@ -63,6 +63,18 @@ describe("Meta-Agentic Program Synthesis Sovereign mission", function () {
     expect(run.aggregate.ownerSupremacy.declaredScripts).to.be.greaterThan(0);
     expect(run.aggregate.ownerSupremacy.availableScripts).to.equal(0);
     expect(run.aggregate.ownerSupremacy.scriptAvailability).to.equal(0);
+    expect(run.aggregate.ownerSupremacy.capabilityDeclarations).to.be.greaterThan(0);
+    expect(run.aggregate.ownerSupremacy.commandDeclared).to.equal(
+      run.aggregate.ownerSupremacy.capabilityDeclarations,
+    );
+    expect(run.aggregate.ownerSupremacy.commandAvailable).to.equal(0);
+    expect(run.aggregate.ownerSupremacy.commandAvailability).to.equal(0);
+    expect(run.aggregate.ownerSupremacy.verificationDeclared).to.equal(
+      run.aggregate.ownerSupremacy.capabilityDeclarations,
+    );
+    expect(run.aggregate.ownerSupremacy.verificationAvailable).to.equal(0);
+    expect(run.aggregate.ownerSupremacy.verificationAvailability).to.equal(0);
+    expect(run.ownerCapabilitiesAudit).to.be.an("array").that.is.empty;
 
     const rerun = runMetaSynthesis(mission, coverage);
     expect(rerun.aggregate.globalBestScore).to.be.closeTo(run.aggregate.globalBestScore, 1e-9);
@@ -118,6 +130,10 @@ describe("Meta-Agentic Program Synthesis Sovereign mission", function () {
       );
       expect(runWithReports.aggregate.ownerSupremacy.scriptAvailability).to.equal(1);
       expect(runWithReports.aggregate.ownerSupremacy.readiness).to.equal("ready");
+      expect(runWithReports.aggregate.ownerSupremacy.commandAvailability).to.equal(1);
+      expect(runWithReports.aggregate.ownerSupremacy.verificationAvailability).to.equal(1);
+      expect(runWithReports.ownerCapabilitiesAudit.every((entry) => entry.commandAvailable)).to.equal(true);
+      expect(runWithReports.ownerCapabilitiesAudit.every((entry) => entry.verificationAvailable)).to.equal(true);
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
