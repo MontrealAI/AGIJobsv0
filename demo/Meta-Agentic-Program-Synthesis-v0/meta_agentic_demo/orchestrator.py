@@ -220,6 +220,10 @@ class SovereignArchitect:
         pass_holdout = all(
             score >= policy.holdout_threshold for score in holdout_scores.values()
         )
+        stress_scores = self._stress_test_program(program)
+        pass_stress = all(
+            score >= policy.stress_threshold for score in stress_scores.values()
+        ) if stress_scores else True
         pass_residual_balance = (
             abs(residual_mean) <= policy.residual_mean_tolerance
             and residual_std >= policy.residual_std_minimum
@@ -247,7 +251,82 @@ class SovereignArchitect:
             pass_confidence=pass_confidence,
             monotonic_pass=monotonic_pass,
             monotonic_violations=violations,
+            stress_scores=stress_scores,
+            pass_stress=pass_stress,
+            stress_threshold=policy.stress_threshold,
         )
+
+    def _stress_test_program(self, program: Program) -> Dict[str, float]:
+        length = len(self.dataset.target)
+        specs = {
+            "regime_shift": {
+                "seed": 101_010,
+                "noise": 0.065,
+                "baseline_scale": 1.12,
+                "trend_shift": 0.28,
+            },
+            "volatility_spike": {
+                "seed": 202_020,
+                "noise": 0.095,
+                "spike": (8, 14, 1.2),
+                "noise_scale": 0.22,
+            },
+            "signal_dropout": {
+                "seed": 303_030,
+                "noise": 0.05,
+                "dropout_window": (20, 28),
+                "dropout_scale": 0.22,
+                "damp_cycle": 0.45,
+            },
+        }
+        scores: Dict[str, float] = {}
+        for name, spec in specs.items():
+            dataset = generate_dataset(
+                length=length, noise=spec["noise"], seed=spec["seed"]
+            )
+            self._apply_stress_spec(dataset, spec)
+            predictions = self._predict(program, dataset)
+            mse = self._mean_squared_error(predictions, dataset.target)
+            normalised = 1.0 - min(mse / max(self.baseline_error, 1e-9), 1.0)
+            scores[name] = max(normalised, 0.0) ** 0.5
+        return scores
+
+    def _apply_stress_spec(self, dataset: SyntheticDataset, spec: Dict[str, object]) -> None:
+        length = len(dataset.target)
+        if "baseline_scale" in spec:
+            scale = float(spec["baseline_scale"])
+            dataset.baseline = [value * scale for value in dataset.baseline]
+            dataset.target = [
+                target * (1 + (scale - 1) * 0.6) for target in dataset.target
+            ]
+        if "trend_shift" in spec:
+            shift = float(spec["trend_shift"])
+            dataset.trend = [value + shift for value in dataset.trend]
+            dataset.target = [value + shift for value in dataset.target]
+        if "damp_cycle" in spec:
+            factor = float(spec["damp_cycle"])
+            dataset.cyclical = [value * factor for value in dataset.cyclical]
+        if "spike" in spec:
+            start, end, magnitude = spec["spike"]
+            start_index = max(int(start), 0)
+            end_index = min(int(end), length)
+            for index in range(start_index, end_index):
+                dataset.target[index] += float(magnitude)
+        if "dropout_window" in spec:
+            start, end = spec["dropout_window"]
+            scale = float(spec.get("dropout_scale", 0.1))
+            start_index = max(int(start), 0)
+            end_index = min(int(end), length)
+            for index in range(start_index, end_index):
+                dataset.baseline[index] *= scale
+                dataset.trend[index] *= scale
+                dataset.target[index] *= scale
+        if "noise_scale" in spec:
+            seed = int(spec.get("noise_seed", spec["seed"] + 1))
+            rng = random.Random(seed)
+            amplitude = float(spec["noise_scale"])
+            for index in range(length):
+                dataset.target[index] += rng.uniform(-amplitude, amplitude)
 
     def _bootstrap_interval(self, program: Program) -> Tuple[float, float]:
         policy = self.config.verification_policy

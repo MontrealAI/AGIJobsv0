@@ -369,6 +369,10 @@ def format_verification_cards(verification: VerificationDigest) -> str:
         f"  <h3>Monotonicity</h3><p>Violations: {verification.monotonic_violations}</p>",
         f"  <p>Status: {'PASS' if verification.monotonic_pass else 'ALERT'}</p>",
         "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>Stress Suite</h3><p>Min {(min(verification.stress_scores.values()) if verification.stress_scores else 0.0):.4f}</p>",
+        f"  <p>Status: {'PASS' if verification.pass_stress else 'ALERT'}</p>",
+        "</div>",
     ]
     return build_rows(cards)
 
@@ -380,6 +384,10 @@ def format_verification_table(verification: VerificationDigest) -> str:
         f"<tr><td>{escape(name)}</td><td>{score:.4f}</td><td>{score - verification.primary_score:+.4f}</td></tr>"
         for name, score in sorted(verification.holdout_scores.items())
     )
+    stress_rows = "".join(
+        f"<tr><td>{escape(name)}</td><td>{score:.4f}</td><td>{'PASS' if score >= verification.stress_threshold else 'ALERT'}</td></tr>"
+        for name, score in sorted(verification.stress_scores.items())
+    )
     gates = "".join(
         [
             f"<tr><td>MAE Consistency</td><td>{verification.mae_score:.4f}</td><td>{'PASS' if verification.pass_mae else 'ALERT'}</td></tr>",
@@ -390,6 +398,8 @@ def format_verification_table(verification: VerificationDigest) -> str:
     return (
         "<table><thead><tr><th>Holdout</th><th>Score</th><th>Δ vs primary</th></tr></thead>"
         f"<tbody>{rows}</tbody></table>"
+        "<table><thead><tr><th>Stress Scenario</th><th>Score</th><th>Status</th></tr></thead>"
+        f"<tbody>{stress_rows or '<tr><td colspan=3>No stress scenarios executed.</td></tr>'}</tbody></table>"
         "<table><thead><tr><th>Gate</th><th>Metric</th><th>Status</th></tr></thead>"
         f"<tbody>{gates}</tbody></table>"
     )
@@ -403,15 +413,17 @@ def build_verification_mermaid(verification: VerificationDigest) -> str:
             "    primary[Primary score] --> residual[Residual balance]",
             "    primary --> holdout[Holdout suite]",
             "    primary --> mae[MAE score]",
+            "    primary --> stress[Stress battery]",
             "    mae --> bootstrap[Bootstrap CI]",
             "    holdout --> monotonic[Monotonic audit]",
             f"    mae:::status -- {'PASS' if verification.pass_mae else 'ALERT'} --> bootstrap",
             f"    residual:::status -- {'PASS' if verification.pass_residual_balance else 'ALERT'} --> monotonic",
             f"    holdout:::status -- {'PASS' if verification.pass_holdout else 'ALERT'} --> monotonic",
+            f"    stress:::status -- {('≥' if verification.pass_stress else '<')} {verification.stress_threshold:.2f} --> verdict[Final verdict]",
             f"    bootstrap:::status -- {lower:.3f}→{upper:.3f} --> verdict[Final verdict]",
             f"    monotonic:::status -- {'PASS' if verification.monotonic_pass else 'ALERT'} --> verdict",
             "    classDef status fill:#0f172a,color:#f8fafc,stroke:#38bdf8,stroke-width:2px",
-            "    class primary,residual,holdout,mae,bootstrap,monotonic,verdict status",
+            "    class primary,residual,holdout,mae,stress,bootstrap,monotonic,verdict status",
         ]
     )
 

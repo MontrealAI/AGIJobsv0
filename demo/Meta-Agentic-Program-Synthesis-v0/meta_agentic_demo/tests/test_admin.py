@@ -78,6 +78,7 @@ def test_owner_console_updates_verification_policy() -> None:
         monotonic_tolerance=0.015,
         bootstrap_iterations=300,
         confidence_level=0.9,
+        stress_threshold=0.73,
     )
     policy = console.config.verification_policy
     assert pytest.approx(policy.holdout_threshold) == 0.85
@@ -88,6 +89,7 @@ def test_owner_console_updates_verification_policy() -> None:
     assert pytest.approx(policy.monotonic_tolerance) == 0.015
     assert policy.bootstrap_iterations == 300
     assert pytest.approx(policy.confidence_level) == 0.9
+    assert pytest.approx(policy.stress_threshold) == 0.73
     assert console.events[-1].action == "update_verification_policy"
 
 
@@ -103,6 +105,10 @@ def test_owner_console_rejects_invalid_verification_policy() -> None:
         console.update_verification_policy(bootstrap_iterations=0)
     with pytest.raises(ValueError):
         console.update_verification_policy(confidence_level=1.2)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(stress_threshold=-0.2)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(stress_threshold=1.2)
 
 
 def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
@@ -115,6 +121,7 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
             "divergence_tolerance": 0.14,
             "mae_threshold": 0.7,
             "bootstrap_iterations": 280,
+            "stress_threshold": 0.69,
         },
         "paused": True,
     }
@@ -130,6 +137,7 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
     assert pytest.approx(verification_policy.divergence_tolerance) == 0.14
     assert pytest.approx(verification_policy.mae_threshold) == 0.7
     assert verification_policy.bootstrap_iterations == 280
+    assert pytest.approx(verification_policy.stress_threshold) == 0.69
     assert any(event.action == "set_paused" for event in console.events)
 
 

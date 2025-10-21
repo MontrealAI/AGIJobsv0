@@ -41,3 +41,6 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert isinstance(verification.bootstrap_interval, tuple)
     assert len(verification.bootstrap_interval) == 2
     assert verification.monotonic_violations >= 0
+    assert isinstance(verification.stress_scores, dict)
+    assert verification.stress_scores
+    assert 0 <= verification.stress_threshold <= 1

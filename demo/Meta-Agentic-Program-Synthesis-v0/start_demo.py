@@ -162,6 +162,11 @@ def parse_args() -> argparse.Namespace:
         type=float,
         help="Override bootstrap confidence level (0-1)",
     )
+    verification_group.add_argument(
+        "--verification-stress-threshold",
+        type=float,
+        help="Override minimum acceptable stress test score",
+    )
     governance_group = parser.add_argument_group("Governance timelock")
     governance_group.add_argument(
         "--timelock-delay",
@@ -271,6 +276,7 @@ def main() -> None:
                 "monotonic_tolerance": args.verification_monotonic,
                 "bootstrap_iterations": args.verification_bootstrap,
                 "confidence_level": args.verification_confidence,
+                "stress_threshold": args.verification_stress_threshold,
             }.items()
             if value is not None
         }
@@ -360,6 +366,17 @@ def main() -> None:
     print("\n🔍 Multi-angle verification checks:")
     for name, score in sorted(verification.holdout_scores.items()):
         print(f"  • {name}: {score:.4f}")
+    if verification.stress_scores:
+        print(
+            f"  • Stress threshold {verification.stress_threshold:.2f} | pass {verification.pass_stress}"
+        )
+        for name, score in sorted(verification.stress_scores.items()):
+            status = "PASS" if score >= verification.stress_threshold else "ALERT"
+            print(
+                f"      - {name}: {score:.4f} ({status})"
+            )
+    else:
+        print("  • Stress suite: no adversarial scenarios executed")
     print(
         f"  • Residual mean {verification.residual_mean:+.4f} | std {verification.residual_std:.4f}"
     )
