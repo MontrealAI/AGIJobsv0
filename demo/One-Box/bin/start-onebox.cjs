@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-const { runDemo } = require('../lib/launcher.js');
+const { runDemo, parseCliArgs } = require('../lib/launcher.js');
 
 (async () => {
   try {
-    await runDemo();
+    const cliOptions = parseCliArgs(process.argv.slice(2));
+    await runDemo(cliOptions);
   } catch (error) {
     console.error('Failed to launch AGI Jobs One-Box demo:', error.message);
     if (process.env.DEBUG) {

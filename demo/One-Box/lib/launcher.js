@@ -262,11 +262,90 @@ function openBrowser(url) {
   child.unref();
 }
 
+function parseCliArgs(argv = process.argv.slice(2)) {
+  const options = {};
+  const requireValue = (flag, value) => {
+    if (value === undefined || value === null || String(value).startsWith('--')) {
+      throw new Error(`Missing value for ${flag}`);
+    }
+    return String(value);
+  };
+  const parseNumber = (flag, value) => {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      throw new Error(`Invalid value for ${flag}: ${value}`);
+    }
+    return parsed;
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (!arg.startsWith('--')) {
+      continue;
+    }
+
+    if (arg === '--no-browser') {
+      options.openBrowser = false;
+      continue;
+    }
+    if (arg === '--browser' || arg === '--open-browser') {
+      options.openBrowser = true;
+      continue;
+    }
+
+    const [flag, inlineValue] = arg.split('=');
+    let value = inlineValue;
+    if (value === undefined) {
+      value = argv[index + 1];
+      if (value !== undefined) {
+        index += 1;
+      }
+    }
+
+    switch (flag) {
+      case '--ui-port':
+        options.uiPort = parseNumber(flag, requireValue(flag, value));
+        break;
+      case '--orchestrator-port':
+        options.orchestratorPort = parseNumber(flag, requireValue(flag, value));
+        break;
+      case '--ui-host':
+        options.uiHost = requireValue(flag, value);
+        break;
+      case '--prefix':
+        options.prefix = requireValue(flag, value);
+        break;
+      case '--token':
+        options.apiToken = requireValue(flag, value);
+        break;
+      case '--mode': {
+        const mode = requireValue(flag, value).toLowerCase();
+        if (mode !== 'guest' && mode !== 'expert') {
+          throw new Error(`Invalid value for --mode: ${mode}`);
+        }
+        options.defaultMode = mode;
+        break;
+      }
+      case '--orchestrator-url':
+        options.publicOrchestratorUrl = requireValue(flag, value);
+        break;
+      case '--explorer-base':
+        options.explorerBase = requireValue(flag, value);
+        break;
+      default:
+        // Unrecognised flag – ignore so scripts remain forward compatible.
+        break;
+    }
+  }
+
+  return options;
+}
+
 async function runDemo(options = {}) {
   const rootDir = options.rootDir ?? path.resolve(__dirname, '../../');
   const demoDir = options.demoDir ?? __dirname;
   const env = loadEnvironment({ rootDir, demoDir });
-  const config = resolveConfig(env);
+  const config = resolveConfig(env, options);
 
   await ensureInstall(rootDir);
   await buildStaticAssets(rootDir, env);
@@ -330,5 +409,6 @@ module.exports = {
   startOrchestrator,
   startStaticServer,
   openBrowser,
+  parseCliArgs,
   runDemo,
 };
