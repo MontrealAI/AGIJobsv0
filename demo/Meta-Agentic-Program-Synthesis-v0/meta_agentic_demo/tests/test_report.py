@@ -29,6 +29,7 @@ def test_render_html_embeds_mermaid(tmp_path: Path) -> None:
     assert "Owner Command Ledger" in html
     assert "Governance Timelock" in html
     assert "Evolutionary Trajectory" in html
+    assert "Total Rewards" in html
     assert artefacts.final_program in html
 
 

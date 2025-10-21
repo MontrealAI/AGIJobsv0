@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import json
-from collections import defaultdict
 from dataclasses import dataclass
 from functools import lru_cache
 from html import escape
 from pathlib import Path
 from typing import Dict, Iterable
 
-from .entities import DemoRunArtifacts, OwnerAction
+from .entities import DemoRunArtifacts, OwnerAction, RewardSummary
 
 
 @dataclass
@@ -34,6 +33,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     th, td {{ text-align:left; padding:0.75rem; border-bottom:1px solid rgba(255,255,255,0.1); }}
     .badge {{ display:inline-block; padding:0.35rem 0.75rem; border-radius:999px; background:linear-gradient(90deg,#00d1ff,#a855f7); color:#05071a; font-weight:600; }}
     .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; }}
+    .summary-card {{ padding:1rem; border-radius:14px; background:linear-gradient(135deg,rgba(125,249,255,0.18),rgba(168,85,247,0.16)); box-shadow:0 18px 32px rgba(0,0,0,0.32); }}
+    .summary-card h3 {{ margin-top:0; color:#ffffff; }}
+    .summary-card p {{ margin:0.25rem 0; color:#dbe7ff; }}
     .mermaid {{ margin-top:1rem; border-radius:16px; background:rgba(0,0,0,0.35); padding:1.25rem; }}
     .note {{ font-size:0.9rem; color:#b3c7f9; }}
   </style>
@@ -105,6 +107,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </section>
   <section>
     <h2>Thermodynamic Reward Flow</h2>
+    <div class=\"grid\">
+      {reward_summary_cards}
+    </div>
     <div class=\"mermaid\">{reward_mermaid}</div>
     {reward_tables}
   </section>
@@ -200,24 +205,9 @@ def format_performance_cards(report: DemoRunArtifacts) -> str:
     )
 
 
-def collect_reward_totals(report: DemoRunArtifacts) -> tuple[Dict[str, float], Dict[str, float], float, float]:
-    solver_totals: Dict[str, float] = defaultdict(float)
-    validator_totals: Dict[str, float] = defaultdict(float)
-    total_reward = 0.0
-    architect_total = 0.0
-    for breakdown in report.rewards:
-        total_reward += breakdown.total_reward
-        architect_total += breakdown.architect_reward
-        for address, amount in breakdown.solver_rewards.items():
-            solver_totals[address] += amount
-        for address, amount in breakdown.validator_rewards.items():
-            validator_totals[address] += amount
-    return solver_totals, validator_totals, total_reward, architect_total
-
-
 def build_architecture_mermaid(report: DemoRunArtifacts) -> str:
-    solver_addresses = sorted({address for reward in report.rewards for address in reward.solver_rewards})
-    validator_addresses = sorted({address for reward in report.rewards for address in reward.validator_rewards})
+    solver_addresses = sorted(report.reward_summary.solver_totals)
+    validator_addresses = sorted(report.reward_summary.validator_totals)
     lines = [
         "flowchart LR",
         "    user((Non-technical Visionary))",
@@ -252,25 +242,50 @@ def build_timeline_mermaid(report: DemoRunArtifacts) -> str:
 
 
 def build_reward_mermaid(report: DemoRunArtifacts) -> str:
-    solver_totals, validator_totals, total_reward, architect_total = collect_reward_totals(report)
+    summary = report.reward_summary
     lines = [
         "graph TD",
-        f"    pool[\"Reward Pool {total_reward:.2f}\"]",
-        f"    pool --> architectShare[\"Architect {architect_total:.2f}\"]",
+        f"    pool[\"Reward Pool {summary.total_reward:.2f}\"]",
+        f"    pool --> architectShare[\"Architect {summary.architect_total:.2f}\"]",
     ]
-    if solver_totals:
+    if summary.solver_totals:
         lines.append("    pool --> solvers[Solvers]")
-        for index, (address, amount) in enumerate(sorted(solver_totals.items()), start=1):
+        for index, (address, amount) in enumerate(sorted(summary.solver_totals.items()), start=1):
             safe_id = f"solver{index}"
             label = mermaid_escape(f"{address} ({amount:.2f})")
             lines.append(f"    solvers --> {safe_id}[\"{label}\"]")
-    if validator_totals:
+    if summary.validator_totals:
         lines.append("    pool --> validators[Validators]")
-        for index, (address, amount) in enumerate(sorted(validator_totals.items()), start=1):
+        for index, (address, amount) in enumerate(sorted(summary.validator_totals.items()), start=1):
             safe_id = f"validator{index}"
             label = mermaid_escape(f"{address} ({amount:.2f})")
             lines.append(f"    validators --> {safe_id}[\"{label}\"]")
     return "\n".join(lines)
+
+
+def format_reward_summary(summary: RewardSummary) -> str:
+    if summary.total_reward == 0:
+        return "<div class=\"summary-card\"><p>No rewards were distributed.</p></div>"
+    solver_leader = (
+        f"Top solver: {escape(summary.top_solver)} ({summary.solver_totals[summary.top_solver]:.2f})"
+        if summary.top_solver
+        else "Top solver: N/A"
+    )
+    validator_leader = (
+        f"Top validator: {escape(summary.top_validator)} ({summary.validator_totals[summary.top_validator]:.2f})"
+        if summary.top_validator
+        else "Top validator: N/A"
+    )
+    return build_rows(
+        [
+            "<div class=\"summary-card\">",
+            f"  <h3>Total Rewards</h3><p>{summary.total_reward:.2f} $AGIα distributed</p>",
+            f"  <p>Architect retained {summary.architect_total:.2f}</p>",
+            f"  <p>{solver_leader}</p>",
+            f"  <p>{validator_leader}</p>",
+            "</div>",
+        ]
+    )
 
 
 def render_html(report: DemoRunArtifacts) -> str:
@@ -283,6 +298,7 @@ def render_html(report: DemoRunArtifacts) -> str:
     architecture_mermaid = build_architecture_mermaid(report)
     timeline_mermaid = build_timeline_mermaid(report)
     reward_mermaid = build_reward_mermaid(report)
+    reward_summary_cards = format_reward_summary(report.reward_summary)
     first_success = (
         report.first_success_generation if report.first_success_generation is not None else "Not reached"
     )
@@ -302,6 +318,7 @@ def render_html(report: DemoRunArtifacts) -> str:
         architecture_mermaid=architecture_mermaid,
         timeline_mermaid=timeline_mermaid,
         reward_mermaid=reward_mermaid,
+        reward_summary_cards=reward_summary_cards,
         mermaid_js=load_mermaid_js(),
     )
 

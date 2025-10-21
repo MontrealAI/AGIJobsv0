@@ -274,6 +274,24 @@ def main() -> None:
         )
     else:
         print("Success threshold not reached within configured generations.")
+    summary = artefacts.reward_summary
+    print("\n💠 Reward distribution overview:")
+    print(f"  • Total disbursed: {summary.total_reward:.2f} $AGIα")
+    print(f"  • Architect retained: {summary.architect_total:.2f} $AGIα")
+    if summary.top_solver:
+        print(
+            f"  • Top solver: {summary.top_solver} "
+            f"({summary.solver_totals[summary.top_solver]:.2f} $AGIα)"
+        )
+    else:
+        print("  • Top solver: N/A")
+    if summary.top_validator:
+        print(
+            f"  • Top validator: {summary.top_validator} "
+            f"({summary.validator_totals[summary.top_validator]:.2f} $AGIα)"
+        )
+    else:
+        print("  • Top validator: N/A")
     if owner_console.events:
         print("\n🛡️ Owner interventions during run:")
         for event in owner_console.events:

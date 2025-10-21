@@ -75,6 +75,7 @@ stateDiagram-v2
    * `demo_output/report.json` – machine-readable export for downstream automation.
 
 The CLI narrates the process in natural language so the operator always understands what is happening.
+It now also prints a reward distribution digest summarising total payouts, architect retention, and the top solver/validator so executives can confirm value capture instantly.
 
 ---
 
@@ -162,6 +163,7 @@ The HTML report blends narrative storytelling with quantitative telemetry:
 * **Evolutionary trajectory** – per-generation improvements, score variance, and diversity notes.
 * **On-chain jobs** – each validation cycle with commitments and rewards.
 * **Thermodynamic rewards (Mermaid + tables)** – aggregated reward graph plus per-job energy footprints.
+* **Reward synthesis overview** – luminous cards highlighting total distribution, architect share, and top-performing solvers/validators.
 * **Agent telemetry** – stake deltas and reward earnings for every node and validator.
 
 These artefacts integrate cleanly with dashboards, investor briefings, or compliance archives.

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from meta_agentic_demo.config import RewardPolicy, StakePolicy
 from meta_agentic_demo.entities import Job
-from meta_agentic_demo.ledger import RewardEngine, StakeManager, ValidationModule
+from meta_agentic_demo.ledger import (
+    RewardEngine,
+    StakeManager,
+    ValidationModule,
+    summarise_rewards,
+)
 
 
 def make_job(job_id: int = 1) -> Job:
@@ -49,3 +54,20 @@ def test_stake_manager_enforces_inactivity_slash() -> None:
     penalties = manager.enforce_timeouts()
     assert penalties["node-1"] == 20.0
     assert manager.accounts["node-1"].balance == 80.0
+
+
+def test_reward_summary_surfaces_leaders() -> None:
+    engine = RewardEngine(
+        RewardPolicy(total_reward=300.0, temperature=1.1, validator_weight=0.2)
+    )
+    job = make_job()
+    breakdown = engine.allocate(
+        job,
+        solver_energy={"node-1": 15.0, "node-2": 5.0},
+        validator_energy={"validator-a": 1.0, "validator-b": 3.0},
+    )
+    summary = summarise_rewards([breakdown])
+    assert summary.total_reward == breakdown.total_reward
+    assert summary.top_solver == "node-1"
+    assert summary.solver_totals["node-1"] > summary.solver_totals["node-2"]
+    assert summary.top_validator in {"validator-a", "validator-b"}
