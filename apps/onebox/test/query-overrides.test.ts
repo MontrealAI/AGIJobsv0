@@ -30,6 +30,8 @@ test('parseOverrideParams extracts orchestrator, prefix, token, and mode', () =>
   assert.equal(overrides.prefix, '/bridge');
   assert.equal(overrides.token, 'demo-key');
   assert.equal(overrides.mode, 'expert');
+  assert.equal(overrides.welcome, undefined);
+  assert.equal(overrides.examples, undefined);
   assert.deepEqual(overrides.appliedParams.sort(), ['mode', 'oneboxPrefix', 'orchestrator', 'token'].sort());
 });
 
@@ -38,4 +40,18 @@ test('parseOverrideParams handles demo reset and empty values', () => {
   assert.equal(overrides.orchestrator, '');
   assert.equal(overrides.prefix, '');
   assert.equal(overrides.token, '');
+});
+
+test('parseOverrideParams supports welcome and examples overrides', () => {
+  const encoded = encodeURIComponent(JSON.stringify(['Label 500 images, 5 AGIALPHA, 7 days', 'Finalize job 12']));
+  const overrides = parseOverrideParams(`https://demo.local/?welcome=Hello%20World&examples=${encoded}`);
+  assert.equal(overrides.welcome, 'Hello World');
+  assert.deepEqual(overrides.examples, ['Label 500 images, 5 AGIALPHA, 7 days', 'Finalize job 12']);
+  assert(overrides.appliedParams.includes('welcome'));
+  assert(overrides.appliedParams.includes('examples'));
+});
+
+test('parseOverrideParams falls back to delimiter parsing for examples', () => {
+  const overrides = parseOverrideParams('https://demo.local/?examples=Research%20mission%20|%20Finalize%20job%20123');
+  assert.deepEqual(overrides.examples, ['Research mission', 'Finalize job 123']);
 });

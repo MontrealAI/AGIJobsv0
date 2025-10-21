@@ -47,6 +47,8 @@ export function parseOverrideParams(href) {
     prefix: undefined,
     token: undefined,
     mode: undefined,
+    welcome: undefined,
+    examples: undefined,
     appliedParams: [],
   };
   if (!href) {
@@ -78,6 +80,34 @@ export function parseOverrideParams(href) {
       result.appliedParams.push('mode');
       const rawMode = url.searchParams.get('mode');
       result.mode = rawMode ? rawMode.trim().toLowerCase() : '';
+    }
+    if (url.searchParams.has('welcome')) {
+      result.appliedParams.push('welcome');
+      const rawWelcome = url.searchParams.get('welcome');
+      result.welcome = rawWelcome ? rawWelcome.trim() : '';
+    }
+    if (url.searchParams.has('examples')) {
+      result.appliedParams.push('examples');
+      const rawExamples = url.searchParams.get('examples');
+      if (rawExamples) {
+        let parsedExamples = [];
+        try {
+          const parsed = JSON.parse(rawExamples);
+          if (Array.isArray(parsed)) {
+            parsedExamples = parsed.filter((value) => typeof value === 'string' && value.trim()).map((value) => value.trim());
+          } else if (typeof parsed === 'string' && parsed.trim()) {
+            parsedExamples = [parsed.trim()];
+          }
+        } catch (error) {
+          parsedExamples = rawExamples
+            .split(/[\n\r]+|\s*\|\s*/)
+            .map((segment) => segment.trim())
+            .filter(Boolean);
+        }
+        result.examples = [...new Set(parsedExamples)];
+      } else {
+        result.examples = [];
+      }
     }
   } catch (error) {
     // ignore malformed URLs but surface them for debugging in non-production contexts

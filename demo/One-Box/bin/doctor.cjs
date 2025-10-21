@@ -61,6 +61,12 @@ function formatStatus(label, value) {
   formatStatus('Prefix', config.prefix || '(root)');
   formatStatus('Default mode', config.defaultMode);
   formatStatus('Public orchestrator', config.publicOrchestratorUrl);
+  if (config.welcomeMessage) {
+    formatStatus('Welcome prompt', config.welcomeMessage);
+  }
+  if (config.shortcutExamples.length > 0) {
+    formatStatus('Shortcuts', config.shortcutExamples.join(' | '));
+  }
   if (config.apiToken) {
     formatStatus('API token', 'provided');
   }
