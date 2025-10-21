@@ -245,7 +245,8 @@
     "demo:national-supply-chain:validate": "ts-node --transpile-only scripts/v2/validateNationalSupplyChainTranscript.ts",
     "demo:national-supply-chain:cross-verify": "ts-node --transpile-only scripts/v2/crossValidateNationalSupplyChainTranscript.ts",
     "demo:national-supply-chain:control-room": "ts-node --transpile-only scripts/v2/launchNationalSupplyChainControlRoom.ts",
-    "demo:redenomination": "node demo/REDENOMINATION/scripts/run-demo.mjs"
+    "demo:redenomination": "node demo/REDENOMINATION/scripts/run-demo.mjs",
+    "demo:redenomination:verify": "node demo/REDENOMINATION/scripts/verify-scenario.mjs"
   },
   "keywords": [],
   "author": "",

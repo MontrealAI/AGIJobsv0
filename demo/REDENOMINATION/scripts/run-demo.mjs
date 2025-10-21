@@ -84,6 +84,7 @@ function printResources(resources) {
 }
 
 function printCallToAction() {
+  console.log(`${COLOR.bright}${COLOR.green}Preflight:${COLOR.reset} Confirm artefacts with ${COLOR.bright}npm run demo:redenomination:verify${COLOR.reset} before touching mainnet controls.`);
   console.log(`${COLOR.bright}${COLOR.green}Next Step:${COLOR.reset} Run ${COLOR.bright}npm run deploy:oneclick:auto${COLOR.reset} to materialize the full stack with governance defaults.`);
   console.log(`${COLOR.gray}The demo output is a guided transcript that mirrors the automated pipelines shipped with AGI Jobs v0 (v2).${COLOR.reset}`);
 }
