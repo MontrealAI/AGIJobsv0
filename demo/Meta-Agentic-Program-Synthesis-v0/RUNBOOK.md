@@ -32,6 +32,8 @@ The launcher exports `AGI_META_PROGRAM_MISSION` and `AGI_OWNER_DIAGNOSTICS_OFFLI
 - Full-run bundle: `.../meta-agentic-program-synthesis-full.{json,md}`
 - CI verification: `.../meta-agentic-program-synthesis-ci.json`
 - Owner diagnostics: `.../meta-agentic-program-synthesis-owner-diagnostics.{json,md}`
+- Thermodynamic sentinel: check the executive dashboard or Markdown dossier for alignment ratios (aligned/monitor/drift) and
+  mean/max Δ energy telemetry.
 - Manifest: `.../meta-agentic-program-synthesis-manifest.json`
 
 ## 4. Exercise owner controls (copy-paste ready)

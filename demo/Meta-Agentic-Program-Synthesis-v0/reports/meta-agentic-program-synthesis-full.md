@@ -1,6 +1,6 @@
 # Meta-Agentic Program Synthesis – Full Run
 
-Generated: 2025-10-21T01:17:45.896Z
+Generated: 2025-10-21T02:47:22.562Z
 
 ## Aggregate Metrics
 
@@ -9,6 +9,12 @@ Generated: 2025-10-21T01:17:45.896Z
 - Energy envelope: 73.33
 - Novelty signal: 77.76%
 - Coverage: 100.00%
+- Triangulation confidence: 53.33% (1/0/2)
+- Thermodynamic alignment: 100.00% (mean Δ 0.00 | max Δ 0.00 | 3 aligned/0 monitor/0 drift)
+
+## Verification Consensus
+
+- Confirmed: 1 | Attention: 0 | Rejected: 2
 
 ## CI Shield Assessment
 
@@ -26,6 +32,7 @@ Generated: 2025-10-21T01:17:45.896Z
 | Markdown report | `/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md` |
 | JSON summary | `/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-summary.json` |
 | Dashboard | `/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-dashboard.html` |
+| Triangulation digest | `/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-triangulation.json` |
 | Manifest | `/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-manifest.json` |
 | CI verification | `/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json` |
 | Owner diagnostics (JSON) | `/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-owner-diagnostics.json` |

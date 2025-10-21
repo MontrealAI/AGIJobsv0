@@ -9,6 +9,8 @@ Deterministic rehearsal proving that AGI Jobs v0 (v2) lets a non-technical owner
 - **Energy envelope:** 73.33 average operations energy.
 - **Novelty signal:** 77.76% average.
 - **Coverage:** 100.00% task-level perfect matches.
+- **Triangulation confidence:** 53.33% consensus (1 confirmed / 0 attention / 2 flagged).
+- **Thermodynamic alignment:** 100.00% (mean Δ 0.00 | max Δ 0.00 | 3 aligned / 0 monitor / 0 drift).
 - **Owner supremacy:** every control remains copy-paste accessible (pause, thermostat, upgrades, treasury mirrors, compliance dossier).
 - **Coverage readiness:** ready (5/5 controls satisfied).
 
@@ -53,6 +55,16 @@ flowchart LR
   classDef archive fill:#1e3a8a,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;
 ```
 
+## Verification Consensus
+
+- Confirmed: 1 | Attention: 0 | Flagged: 2
+```mermaid
+pie title System-wide verification consensus
+  "Confirmed" : 1
+  "Attention" : 0
+  "Rejected" : 2
+```
+
 ## Owner Capabilities
 
 | Category | Command | Verification |
@@ -73,14 +85,31 @@ flowchart LR
 
 Detect latent pixel edges, amplify discovery, and route high-confidence transformations back into the shared skill graph.
 
-- Job ID: ARC-SYN-001 | Stake: 120,000 | Reward: 420,000 | Thermodynamic target: 18.4
+- Job ID: ARC-SYN-001 | Stake: 120,000 | Reward: 420,000 | Thermodynamic target: 88
 - Best candidate score: 140.38 (accuracy 100.00%, novelty 73.1%, coverage 100.0%)
+- Thermodynamic status: **ALIGNED** (target 88.00 • energy 88.00 • Δ 0.00 • tolerance ≤ 13.20).
 - Pipeline blueprint:
 ```
 1. scale (factor=2.322)
 2. difference ()
 3. threshold (threshold=0.500, high=3.000)
 4. threshold (threshold=0.500, high=3.000)
+```
+
+### Triangulated Verification
+
+- Consensus: **CONFIRMED** (100.0% confidence, 4/4 perspectives).
+| Perspective | Verdict | Confidence | Notes |
+| --- | --- | --- | --- |
+| Deterministic replay | ✅ | 30.0% |  |
+| Baseline dominance | ✅ | 25.0% | Seed score 135.56 → improvement 4.82 |
+| Adversarial jitter | ✅ | 25.0% | Average deviation 0.250, max 3.000 across 72 samples |
+| Constraint & peer safety | ✅ | 20.0% | Peer median 140.38 • energy delta 8.00 (≤ 33.60) |
+
+```mermaid
+pie title Verification consensus
+  "Passed" : 4
+  "Review" : 0
 ```
 
 ### Evolutionary History
@@ -120,29 +149,46 @@ Detect latent pixel edges, amplify discovery, and route high-confidence transfor
 ```mermaid
 timeline
   title Evolutionary improvements for ARC Sentinel Edge Lift
-  2025-10-21T01:17:45.900Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
-  2025-10-21T01:17:45.902Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
-  2025-10-21T01:17:45.903Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
-  2025-10-21T01:17:45.904Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
-  2025-10-21T01:17:45.905Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
-  2025-10-21T01:17:45.905Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T01:17:45.912Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T01:17:45.913Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
-  2025-10-21T01:17:45.915Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
-  2025-10-21T01:17:45.916Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%
+  2025-10-21T02:47:22.567Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
+  2025-10-21T02:47:22.568Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
+  2025-10-21T02:47:22.569Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
+  2025-10-21T02:47:22.570Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
+  2025-10-21T02:47:22.571Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
+  2025-10-21T02:47:22.573Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T02:47:22.574Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T02:47:22.574Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
+  2025-10-21T02:47:22.575Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
+  2025-10-21T02:47:22.576Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%
 ```
 
 ## Ledger Harmonics Sequencer
 
 Absorb asynchronous cash-flow deltas, stabilise them against the thermodynamic ledger, and emit rebalanced incentive curves for validator coalitions.
 
-- Job ID: LEDGER-SYN-007 | Stake: 155,000 | Reward: 525,000 | Thermodynamic target: 22.1
+- Job ID: LEDGER-SYN-007 | Stake: 155,000 | Reward: 525,000 | Thermodynamic target: 64
 - Best candidate score: 133.04 (accuracy 100.00%, novelty 66.6%, coverage 100.0%)
+- Thermodynamic status: **ALIGNED** (target 64.00 • energy 64.00 • Δ 0.00 • tolerance ≤ 9.60).
 - Pipeline blueprint:
 ```
 1. cumulative ()
 2. mod (modulus=5.000)
 3. offset (value=2.000)
+```
+
+### Triangulated Verification
+
+- Consensus: **REJECTED** (30.0% confidence, 1/4 perspectives).
+| Perspective | Verdict | Confidence | Notes |
+| --- | --- | --- | --- |
+| Deterministic replay | ✅ | 30.0% |  |
+| Baseline dominance | ⚠️ | 25.0% | Seed score 133.04 → improvement 0.00 |
+| Adversarial jitter | ⚠️ | 25.0% | Average deviation 0.722, max 4.762 across 48 samples |
+| Constraint & peer safety | ⚠️ | 20.0% | Peer median 133.04 • energy delta 64.00 (≤ 44.80) |
+
+```mermaid
+pie title Verification consensus
+  "Passed" : 1
+  "Review" : 3
 ```
 
 ### Evolutionary History
@@ -182,29 +228,46 @@ Absorb asynchronous cash-flow deltas, stabilise them against the thermodynamic l
 ```mermaid
 timeline
   title Evolutionary improvements for Ledger Harmonics Sequencer
-  2025-10-21T01:17:45.918Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
-  2025-10-21T01:17:45.919Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
-  2025-10-21T01:17:45.920Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
-  2025-10-21T01:17:45.921Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T01:17:45.921Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T01:17:45.922Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T01:17:45.923Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T01:17:45.923Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T01:17:45.924Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T01:17:45.924Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T02:47:22.578Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
+  2025-10-21T02:47:22.579Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
+  2025-10-21T02:47:22.580Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
+  2025-10-21T02:47:22.581Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T02:47:22.581Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T02:47:22.582Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T02:47:22.583Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T02:47:22.584Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T02:47:22.585Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T02:47:22.585Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
 ```
 
 ## Nova Weave Sequence Optimiser
 
 Elevate alpha sequences into deterministic blueprints that compile into on-chain production payloads with zero manual edits.
 
-- Job ID: NOVA-SYN-009 | Stake: 165,000 | Reward: 610,000 | Thermodynamic target: 25.7
+- Job ID: NOVA-SYN-009 | Stake: 165,000 | Reward: 610,000 | Thermodynamic target: 68
 - Best candidate score: 136.05 (accuracy 100.00%, novelty 93.6%, coverage 100.0%)
+- Thermodynamic status: **ALIGNED** (target 68.00 • energy 68.00 • Δ 0.00 • tolerance ≤ 10.20).
 - Pipeline blueprint:
 ```
 1. power (exponent=2.000)
 2. offset (value=1.000)
 3. scale (factor=2.000)
+```
+
+### Triangulated Verification
+
+- Consensus: **REJECTED** (30.0% confidence, 1/4 perspectives).
+| Perspective | Verdict | Confidence | Notes |
+| --- | --- | --- | --- |
+| Deterministic replay | ✅ | 30.0% |  |
+| Baseline dominance | ⚠️ | 25.0% | Seed score 136.05 → improvement 0.00 |
+| Adversarial jitter | ⚠️ | 25.0% | Average deviation 3.494, max 16.010 across 36 samples |
+| Constraint & peer safety | ⚠️ | 20.0% | Peer median 136.05 • energy delta 76.00 (≤ 50.40) |
+
+```mermaid
+pie title Verification consensus
+  "Passed" : 1
+  "Review" : 3
 ```
 
 ### Evolutionary History
@@ -244,16 +307,16 @@ Elevate alpha sequences into deterministic blueprints that compile into on-chain
 ```mermaid
 timeline
   title Evolutionary improvements for Nova Weave Sequence Optimiser
-  2025-10-21T01:17:45.925Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
-  2025-10-21T01:17:45.926Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
-  2025-10-21T01:17:45.926Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
-  2025-10-21T01:17:45.927Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
-  2025-10-21T01:17:45.928Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
-  2025-10-21T01:17:45.928Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
-  2025-10-21T01:17:45.929Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
-  2025-10-21T01:17:45.930Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
-  2025-10-21T01:17:45.930Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
-  2025-10-21T01:17:45.931Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
+  2025-10-21T02:47:22.586Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
+  2025-10-21T02:47:22.587Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
+  2025-10-21T02:47:22.587Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
+  2025-10-21T02:47:22.588Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
+  2025-10-21T02:47:22.589Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
+  2025-10-21T02:47:22.589Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
+  2025-10-21T02:47:22.597Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
+  2025-10-21T02:47:22.598Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
+  2025-10-21T02:47:22.598Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
+  2025-10-21T02:47:22.599Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
 ```
 
 ## CI Shield Alignment
@@ -263,4 +326,4 @@ timeline
 
 ## Generated At
 
-2025-10-21T01:17:45.896Z
+2025-10-21T02:47:22.562Z

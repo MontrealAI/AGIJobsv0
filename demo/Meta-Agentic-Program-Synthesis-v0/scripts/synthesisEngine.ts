@@ -26,6 +26,7 @@ import type {
   TaskDefinition,
   TaskResult,
   TaskExample,
+  TaskThermodynamics,
   TriangulationReport,
   VerificationPerspective,
 } from "./types";
@@ -387,6 +388,24 @@ function triangulateCandidate(
   };
 }
 
+function evaluateThermodynamics(candidate: CandidateRecord, task: TaskDefinition): TaskThermodynamics {
+  const target = Math.max(0, task.owner.thermodynamicTarget);
+  const actualEnergy = candidate.metrics.energy;
+  const delta = Math.abs(actualEnergy - target);
+  const tolerance = Math.max(target * 0.15, 8);
+  const normaliser = target + tolerance + 1;
+  const alignment = normaliser > 0 ? Math.max(0, 1 - delta / normaliser) : 1;
+  let status: TaskThermodynamics["status"];
+  if (delta <= tolerance) {
+    status = "aligned";
+  } else if (delta <= tolerance * 1.75) {
+    status = "monitor";
+  } else {
+    status = "drift";
+  }
+  return { target, actualEnergy, delta, tolerance, alignment, status };
+}
+
 function crossoverPipeline(
   parentA: OperationInstance[],
   parentB: OperationInstance[],
@@ -574,6 +593,7 @@ function runTask(
   const finalSorted = [...evaluated].sort((a, b) => b.metrics.score - a.metrics.score);
   const elites = finalSorted.slice(0, Math.max(3, mission.parameters.eliteCount));
   const triangulation = triangulateCandidate(globalBest, task, mission, elites, globalSeed);
+  const thermodynamics = evaluateThermodynamics(globalBest, task);
 
   return {
     task,
@@ -582,6 +602,7 @@ function runTask(
     history,
     archive: Array.from(archive.values()).sort((a, b) => b.candidate.metrics.score - a.candidate.metrics.score),
     triangulation,
+    thermodynamics,
   };
 }
 
@@ -625,6 +646,29 @@ export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControl
     },
     { confirmed: 0, attention: 0, rejected: 0 },
   );
+  const thermodynamicStats = tasks.reduce(
+    (
+      acc,
+      task,
+    ): {
+      alignmentSum: number;
+      deltaSum: number;
+      maxDelta: number;
+      counts: { aligned: number; monitor: number; drift: number };
+    } => {
+      acc.alignmentSum += task.thermodynamics.alignment;
+      acc.deltaSum += task.thermodynamics.delta;
+      acc.maxDelta = Math.max(acc.maxDelta, task.thermodynamics.delta);
+      acc.counts[task.thermodynamics.status] += 1;
+      return acc;
+    },
+    {
+      alignmentSum: 0,
+      deltaSum: 0,
+      maxDelta: 0,
+      counts: { aligned: 0, monitor: 0, drift: 0 },
+    },
+  );
 
   return {
     mission,
@@ -640,6 +684,12 @@ export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControl
       coverageScore,
       triangulationConfidence,
       consensus: consensusCounts,
+      thermodynamics: {
+        averageAlignment: thermodynamicStats.alignmentSum / Math.max(1, tasks.length),
+        meanDelta: thermodynamicStats.deltaSum / Math.max(1, tasks.length),
+        maxDelta: thermodynamicStats.maxDelta,
+        statusCounts: thermodynamicStats.counts,
+      },
     },
   };
 }

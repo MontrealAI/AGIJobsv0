@@ -26,6 +26,10 @@ function formatNumber(value: number): string {
   return value.toFixed(2);
 }
 
+function formatThermoStatus(counts: { aligned: number; monitor: number; drift: number }): string {
+  return `${counts.aligned} aligned/${counts.monitor} monitor/${counts.drift} drift`;
+}
+
 function renderMarkdown(
   run: SynthesisRun,
   ciAssessment: { ok: boolean; issues: string[] },
@@ -46,6 +50,9 @@ function renderMarkdown(
   lines.push(`- Coverage: ${formatPercent(run.aggregate.coverageScore)}`);
   lines.push(
     `- Triangulation confidence: ${formatPercent(run.aggregate.triangulationConfidence)} (${run.aggregate.consensus.confirmed}/${run.aggregate.consensus.attention}/${run.aggregate.consensus.rejected})`,
+  );
+  lines.push(
+    `- Thermodynamic alignment: ${formatPercent(run.aggregate.thermodynamics.averageAlignment)} (mean Δ ${formatNumber(run.aggregate.thermodynamics.meanDelta)} | max Δ ${formatNumber(run.aggregate.thermodynamics.maxDelta)} | ${formatThermoStatus(run.aggregate.thermodynamics.statusCounts)})`,
   );
   lines.push("");
   lines.push("## Verification Consensus");

@@ -1,0 +1,155 @@
+{
+  "generatedAt": "2025-10-21T02:47:22.562Z",
+  "confidence": 0.5333333333333333,
+  "consensus": {
+    "confirmed": 1,
+    "attention": 0,
+    "rejected": 2
+  },
+  "tasks": [
+    {
+      "id": "arc-sentinel",
+      "label": "ARC Sentinel Edge Lift",
+      "consensus": "confirmed",
+      "confidence": 1,
+      "passed": 4,
+      "total": 4,
+      "perspectives": [
+        {
+          "id": "consistency",
+          "label": "Deterministic replay",
+          "method": "Independent recomputation of pipeline metrics to detect hidden state drift.",
+          "passed": true,
+          "confidence": 0.3,
+          "scoreDelta": 0,
+          "accuracyDelta": 0,
+          "noveltyDelta": 0,
+          "energyDelta": 0
+        },
+        {
+          "id": "baseline",
+          "label": "Baseline dominance",
+          "method": "Compare against deterministic seed pipeline from mission hints.",
+          "passed": true,
+          "confidence": 0.25,
+          "scoreDelta": 4.824355670103046,
+          "notes": "Seed score 135.56 → improvement 4.82"
+        },
+        {
+          "id": "stability",
+          "label": "Adversarial jitter",
+          "method": "Inject bounded noise into inputs and compare to baseline outputs for resilience.",
+          "passed": true,
+          "confidence": 0.25,
+          "scoreDelta": 0.25,
+          "notes": "Average deviation 0.250, max 3.000 across 72 samples"
+        },
+        {
+          "id": "governance",
+          "label": "Constraint & peer safety",
+          "method": "Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.",
+          "passed": true,
+          "confidence": 0.2,
+          "energyDelta": 8,
+          "notes": "Peer median 140.38 • energy delta 8.00 (≤ 33.60)"
+        }
+      ]
+    },
+    {
+      "id": "ledger-harmonics",
+      "label": "Ledger Harmonics Sequencer",
+      "consensus": "rejected",
+      "confidence": 0.3,
+      "passed": 1,
+      "total": 4,
+      "perspectives": [
+        {
+          "id": "consistency",
+          "label": "Deterministic replay",
+          "method": "Independent recomputation of pipeline metrics to detect hidden state drift.",
+          "passed": true,
+          "confidence": 0.3,
+          "scoreDelta": 0,
+          "accuracyDelta": 0,
+          "noveltyDelta": 0,
+          "energyDelta": 0
+        },
+        {
+          "id": "baseline",
+          "label": "Baseline dominance",
+          "method": "Compare against deterministic seed pipeline from mission hints.",
+          "passed": false,
+          "confidence": 0.25,
+          "scoreDelta": 0,
+          "notes": "Seed score 133.04 → improvement 0.00"
+        },
+        {
+          "id": "stability",
+          "label": "Adversarial jitter",
+          "method": "Inject bounded noise into inputs and compare to baseline outputs for resilience.",
+          "passed": false,
+          "confidence": 0.25,
+          "scoreDelta": 0.7225,
+          "notes": "Average deviation 0.722, max 4.762 across 48 samples"
+        },
+        {
+          "id": "governance",
+          "label": "Constraint & peer safety",
+          "method": "Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.",
+          "passed": false,
+          "confidence": 0.2,
+          "energyDelta": 64,
+          "notes": "Peer median 133.04 • energy delta 64.00 (≤ 44.80)"
+        }
+      ]
+    },
+    {
+      "id": "nova-weave",
+      "label": "Nova Weave Sequence Optimiser",
+      "consensus": "rejected",
+      "confidence": 0.3,
+      "passed": 1,
+      "total": 4,
+      "perspectives": [
+        {
+          "id": "consistency",
+          "label": "Deterministic replay",
+          "method": "Independent recomputation of pipeline metrics to detect hidden state drift.",
+          "passed": true,
+          "confidence": 0.3,
+          "scoreDelta": 0,
+          "accuracyDelta": 0,
+          "noveltyDelta": 0,
+          "energyDelta": 0
+        },
+        {
+          "id": "baseline",
+          "label": "Baseline dominance",
+          "method": "Compare against deterministic seed pipeline from mission hints.",
+          "passed": false,
+          "confidence": 0.25,
+          "scoreDelta": 0,
+          "notes": "Seed score 136.05 → improvement 0.00"
+        },
+        {
+          "id": "stability",
+          "label": "Adversarial jitter",
+          "method": "Inject bounded noise into inputs and compare to baseline outputs for resilience.",
+          "passed": false,
+          "confidence": 0.25,
+          "scoreDelta": 3.4937,
+          "notes": "Average deviation 3.494, max 16.010 across 36 samples"
+        },
+        {
+          "id": "governance",
+          "label": "Constraint & peer safety",
+          "method": "Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.",
+          "passed": false,
+          "confidence": 0.2,
+          "energyDelta": 76,
+          "notes": "Peer median 136.05 • energy delta 76.00 (≤ 50.40)"
+        }
+      ]
+    }
+  ]
+}

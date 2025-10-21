@@ -78,7 +78,7 @@
         "jobId": "ARC-SYN-001",
         "stake": 120000,
         "reward": 420000,
-        "thermodynamicTarget": 18.4
+        "thermodynamicTarget": 88.0
       }
     },
     {
@@ -113,7 +113,7 @@
         "jobId": "LEDGER-SYN-007",
         "stake": 155000,
         "reward": 525000,
-        "thermodynamicTarget": 22.1
+        "thermodynamicTarget": 64.0
       }
     },
     {
@@ -148,7 +148,7 @@
         "jobId": "NOVA-SYN-009",
         "stake": 165000,
         "reward": 610000,
-        "thermodynamicTarget": 25.7
+        "thermodynamicTarget": 68.0
       }
     }
   ],

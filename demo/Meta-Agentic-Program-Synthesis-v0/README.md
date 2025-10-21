@@ -66,6 +66,8 @@ flowchart LR
   or exotic agents on demand.
 - **Energy discipline** – each program pays energy costs, keeping the synthesis loop within thermodynamic budgets defined by the
   mission manifest.
+- **Thermodynamic sentinel** – aggregate alignment telemetry quantifies per-task energy drift and surfaces green/yellow/red
+  status directly in the Markdown dossier and executive dashboard.
 
 ## Owner supremacy proof points
 

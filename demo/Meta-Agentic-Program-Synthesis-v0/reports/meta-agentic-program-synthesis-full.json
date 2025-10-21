@@ -1,11 +1,61 @@
 {
-  "generatedAt": "2025-10-21T01:17:45.964Z",
+  "generatedAt": "2025-10-21T02:47:22.635Z",
   "aggregate": {
     "globalBestScore": 140.38164328854776,
     "averageAccuracy": 1,
     "energyUsage": 73.33333333333333,
     "noveltyScore": 0.7776289047454377,
-    "coverageScore": 1
+    "coverageScore": 1,
+    "triangulationConfidence": 0.5333333333333333,
+    "consensus": {
+      "confirmed": 1,
+      "attention": 0,
+      "rejected": 2
+    },
+    "thermodynamics": {
+      "averageAlignment": 1,
+      "meanDelta": 0,
+      "maxDelta": 0,
+      "statusCounts": {
+        "aligned": 3,
+        "monitor": 0,
+        "drift": 0
+      }
+    }
+  },
+  "triangulation": {
+    "confidence": 0.5333333333333333,
+    "consensus": {
+      "confirmed": 1,
+      "attention": 0,
+      "rejected": 2
+    },
+    "tasks": [
+      {
+        "id": "arc-sentinel",
+        "label": "ARC Sentinel Edge Lift",
+        "consensus": "confirmed",
+        "confidence": 1,
+        "passed": 4,
+        "total": 4
+      },
+      {
+        "id": "ledger-harmonics",
+        "label": "Ledger Harmonics Sequencer",
+        "consensus": "rejected",
+        "confidence": 0.3,
+        "passed": 1,
+        "total": 4
+      },
+      {
+        "id": "nova-weave",
+        "label": "Nova Weave Sequence Optimiser",
+        "consensus": "rejected",
+        "confidence": 0.3,
+        "passed": 1,
+        "total": 4
+      }
+    ]
   },
   "mission": {
     "version": "0.1.0",
@@ -42,7 +92,7 @@
     "report": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json"
   },
   "ownerDiagnostics": {
-    "generatedAt": "2025-10-21T01:17:45.964Z",
+    "generatedAt": "2025-10-21T02:47:22.634Z",
     "readiness": "ready",
     "commandReadiness": "ready",
     "coverage": {
@@ -139,6 +189,7 @@
     "Markdown report": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md",
     "JSON summary": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-summary.json",
     "Dashboard": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-dashboard.html",
+    "Triangulation digest": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-triangulation.json",
     "Manifest": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-manifest.json",
     "CI verification": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-ci.json",
     "Owner diagnostics (JSON)": "/workspace/AGIJobsv0/demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-owner-diagnostics.json",

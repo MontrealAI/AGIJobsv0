@@ -27,6 +27,7 @@
       footer { margin-top: 3rem; text-align: center; color: rgba(148, 163, 184, 0.75); }
       .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
       .metric-card { padding: 1rem; border-radius: 0.75rem; background: rgba(15, 118, 110, 0.35); box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.25); }
+      .metric-card .metric-sub { display: block; margin-top: 0.35rem; font-size: 0.85rem; color: rgba(226, 232, 240, 0.7); }
       .owner-table { margin-top: 1rem; }
       ul.coverage { list-style: none; padding-left: 0; margin-top: 1rem; }
       ul.coverage li { margin-bottom: 0.35rem; }
@@ -42,6 +43,8 @@
         <div class="metric-card"><strong>Energy envelope</strong><br />73.33</div>
         <div class="metric-card"><strong>Novelty signal</strong><br />77.76%</div>
         <div class="metric-card"><strong>Coverage</strong><br />100.00%</div>
+        <div class="metric-card"><strong>Triangulation confidence</strong><br />53.33%</div>
+        <div class="metric-card"><strong>Thermodynamic alignment</strong><br />100.00%<span class="metric-sub">Δ̄ 0.00 • Δmax 0.00 • 3 aligned / 0 monitor / 0 drift</span></div>
       </div>
     </header>
     <section>
@@ -71,6 +74,15 @@
   classDef archive fill:#1e3a8a,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;</pre>
     </section>
     <section>
+      <h2>Verification Consensus</h2>
+      <p>Confirmed 1 • Attention 0 • Flagged 2</p>
+      <pre class="mermaid">pie title System-wide verification consensus
+  "Confirmed" : 1
+  "Attention" : 0
+  "Rejected" : 2
+</pre>
+    </section>
+    <section>
       <h2>Owner Capabilities</h2>
       <div class="table">| Category | Command | Verification |
 | --- | --- | --- |
@@ -92,8 +104,9 @@
   <h2>ARC Sentinel Edge Lift</h2>
   <p>Detect latent pixel edges, amplify discovery, and route high-confidence transformations back into the shared skill graph.</p>
   <ul>
-    <li><strong>Job:</strong> ARC-SYN-001 | Stake: 120,000 | Reward: 420,000 | Thermodynamic target: 18.4</li>
+    <li><strong>Job:</strong> ARC-SYN-001 | Stake: 120,000 | Reward: 420,000 | Thermodynamic target: 88</li>
     <li><strong>Score:</strong> 140.38 | Accuracy 100.00% | Novelty 73.07% | Coverage 100.00%</li>
+    <li><strong>Thermodynamics:</strong> ALIGNED • target 88.00 • energy 88.00 • Δ 0.00 • tolerance ≤ 13.20</li>
   </ul>
   <details open>
     <summary>Pipeline Blueprint</summary>
@@ -101,6 +114,55 @@
 2. difference ()
 3. threshold (threshold=0.500, high=3.000)
 4. threshold (threshold=0.500, high=3.000)</pre>
+  </details>
+  <details>
+    <summary>Triangulated Verification</summary>
+    <p><strong>Consensus:</strong> confirmed • Confidence 100.00%</p>
+    <div class="table">
+<table class="triangulation">
+  <thead>
+    <tr>
+      <th>Perspective</th>
+      <th>Verdict</th>
+      <th>Confidence</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+        <tr>
+          <td>Deterministic replay</td>
+          <td>✅</td>
+          <td>30.0%</td>
+          <td></td>
+        </tr>
+      
+        <tr>
+          <td>Baseline dominance</td>
+          <td>✅</td>
+          <td>25.0%</td>
+          <td>Seed score 135.56 → improvement 4.82</td>
+        </tr>
+      
+        <tr>
+          <td>Adversarial jitter</td>
+          <td>✅</td>
+          <td>25.0%</td>
+          <td>Average deviation 0.250, max 3.000 across 72 samples</td>
+        </tr>
+      
+        <tr>
+          <td>Constraint &amp; peer safety</td>
+          <td>✅</td>
+          <td>20.0%</td>
+          <td>Peer median 140.38 • energy delta 8.00 (≤ 33.60)</td>
+        </tr>
+      
+  </tbody>
+</table></div>
+    <pre class="mermaid">pie title Verification consensus
+  "Passed" : 4
+  "Review" : 0</pre>
   </details>
   <details>
     <summary>Evolutionary History</summary>
@@ -138,16 +200,16 @@
     <summary>Evolution Timeline</summary>
     <pre class="mermaid">timeline
   title Evolutionary improvements for ARC Sentinel Edge Lift
-  2025-10-21T01:17:45.900Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
-  2025-10-21T01:17:45.902Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
-  2025-10-21T01:17:45.903Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
-  2025-10-21T01:17:45.904Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
-  2025-10-21T01:17:45.905Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
-  2025-10-21T01:17:45.905Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T01:17:45.912Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
-  2025-10-21T01:17:45.913Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
-  2025-10-21T01:17:45.915Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
-  2025-10-21T01:17:45.916Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%</pre>
+  2025-10-21T02:47:22.567Z : score 135.56 • elite 110.36 • diversity 0.94 • novelty 73.1%
+  2025-10-21T02:47:22.568Z : score 138.06 • elite 136.39 • diversity 0.75 • novelty 73.1%
+  2025-10-21T02:47:22.569Z : score 138.16 • elite 138.12 • diversity 0.75 • novelty 73.1%
+  2025-10-21T02:47:22.570Z : score 138.92 • elite 138.41 • diversity 0.83 • novelty 73.1%
+  2025-10-21T02:47:22.571Z : score 140.38 • elite 140.38 • diversity 0.69 • novelty 73.1%
+  2025-10-21T02:47:22.573Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T02:47:22.574Z : score 140.38 • elite 140.38 • diversity 0.78 • novelty 73.1%
+  2025-10-21T02:47:22.574Z : score 140.38 • elite 140.38 • diversity 0.72 • novelty 73.1%
+  2025-10-21T02:47:22.575Z : score 140.38 • elite 140.38 • diversity 0.81 • novelty 73.1%
+  2025-10-21T02:47:22.576Z : score 140.38 • elite 140.38 • diversity 0.75 • novelty 73.1%</pre>
   </details>
 </section>
 
@@ -155,14 +217,64 @@
   <h2>Ledger Harmonics Sequencer</h2>
   <p>Absorb asynchronous cash-flow deltas, stabilise them against the thermodynamic ledger, and emit rebalanced incentive curves for validator coalitions.</p>
   <ul>
-    <li><strong>Job:</strong> LEDGER-SYN-007 | Stake: 155,000 | Reward: 525,000 | Thermodynamic target: 22.1</li>
+    <li><strong>Job:</strong> LEDGER-SYN-007 | Stake: 155,000 | Reward: 525,000 | Thermodynamic target: 64</li>
     <li><strong>Score:</strong> 133.04 | Accuracy 100.00% | Novelty 66.62% | Coverage 100.00%</li>
+    <li><strong>Thermodynamics:</strong> ALIGNED • target 64.00 • energy 64.00 • Δ 0.00 • tolerance ≤ 9.60</li>
   </ul>
   <details open>
     <summary>Pipeline Blueprint</summary>
     <pre>1. cumulative ()
 2. mod (modulus=5.000)
 3. offset (value=2.000)</pre>
+  </details>
+  <details>
+    <summary>Triangulated Verification</summary>
+    <p><strong>Consensus:</strong> rejected • Confidence 30.00%</p>
+    <div class="table">
+<table class="triangulation">
+  <thead>
+    <tr>
+      <th>Perspective</th>
+      <th>Verdict</th>
+      <th>Confidence</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+        <tr>
+          <td>Deterministic replay</td>
+          <td>✅</td>
+          <td>30.0%</td>
+          <td></td>
+        </tr>
+      
+        <tr>
+          <td>Baseline dominance</td>
+          <td>⚠️</td>
+          <td>25.0%</td>
+          <td>Seed score 133.04 → improvement 0.00</td>
+        </tr>
+      
+        <tr>
+          <td>Adversarial jitter</td>
+          <td>⚠️</td>
+          <td>25.0%</td>
+          <td>Average deviation 0.722, max 4.762 across 48 samples</td>
+        </tr>
+      
+        <tr>
+          <td>Constraint &amp; peer safety</td>
+          <td>⚠️</td>
+          <td>20.0%</td>
+          <td>Peer median 133.04 • energy delta 64.00 (≤ 44.80)</td>
+        </tr>
+      
+  </tbody>
+</table></div>
+    <pre class="mermaid">pie title Verification consensus
+  "Passed" : 1
+  "Review" : 3</pre>
   </details>
   <details>
     <summary>Evolutionary History</summary>
@@ -200,16 +312,16 @@
     <summary>Evolution Timeline</summary>
     <pre class="mermaid">timeline
   title Evolutionary improvements for Ledger Harmonics Sequencer
-  2025-10-21T01:17:45.918Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
-  2025-10-21T01:17:45.919Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
-  2025-10-21T01:17:45.920Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
-  2025-10-21T01:17:45.921Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T01:17:45.921Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
-  2025-10-21T01:17:45.922Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T01:17:45.923Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T01:17:45.923Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
-  2025-10-21T01:17:45.924Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
-  2025-10-21T01:17:45.924Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%</pre>
+  2025-10-21T02:47:22.578Z : score 133.04 • elite 96.09 • diversity 0.97 • novelty 66.6%
+  2025-10-21T02:47:22.579Z : score 133.04 • elite 98.44 • diversity 0.94 • novelty 66.6%
+  2025-10-21T02:47:22.580Z : score 133.04 • elite 132.51 • diversity 0.75 • novelty 66.6%
+  2025-10-21T02:47:22.581Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T02:47:22.581Z : score 133.04 • elite 133.04 • diversity 0.72 • novelty 66.6%
+  2025-10-21T02:47:22.582Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T02:47:22.583Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T02:47:22.584Z : score 133.04 • elite 133.04 • diversity 0.61 • novelty 66.6%
+  2025-10-21T02:47:22.585Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%
+  2025-10-21T02:47:22.585Z : score 133.04 • elite 133.04 • diversity 0.67 • novelty 66.6%</pre>
   </details>
 </section>
 
@@ -217,14 +329,64 @@
   <h2>Nova Weave Sequence Optimiser</h2>
   <p>Elevate alpha sequences into deterministic blueprints that compile into on-chain production payloads with zero manual edits.</p>
   <ul>
-    <li><strong>Job:</strong> NOVA-SYN-009 | Stake: 165,000 | Reward: 610,000 | Thermodynamic target: 25.7</li>
+    <li><strong>Job:</strong> NOVA-SYN-009 | Stake: 165,000 | Reward: 610,000 | Thermodynamic target: 68</li>
     <li><strong>Score:</strong> 136.05 | Accuracy 100.00% | Novelty 93.60% | Coverage 100.00%</li>
+    <li><strong>Thermodynamics:</strong> ALIGNED • target 68.00 • energy 68.00 • Δ 0.00 • tolerance ≤ 10.20</li>
   </ul>
   <details open>
     <summary>Pipeline Blueprint</summary>
     <pre>1. power (exponent=2.000)
 2. offset (value=1.000)
 3. scale (factor=2.000)</pre>
+  </details>
+  <details>
+    <summary>Triangulated Verification</summary>
+    <p><strong>Consensus:</strong> rejected • Confidence 30.00%</p>
+    <div class="table">
+<table class="triangulation">
+  <thead>
+    <tr>
+      <th>Perspective</th>
+      <th>Verdict</th>
+      <th>Confidence</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+        <tr>
+          <td>Deterministic replay</td>
+          <td>✅</td>
+          <td>30.0%</td>
+          <td></td>
+        </tr>
+      
+        <tr>
+          <td>Baseline dominance</td>
+          <td>⚠️</td>
+          <td>25.0%</td>
+          <td>Seed score 136.05 → improvement 0.00</td>
+        </tr>
+      
+        <tr>
+          <td>Adversarial jitter</td>
+          <td>⚠️</td>
+          <td>25.0%</td>
+          <td>Average deviation 3.494, max 16.010 across 36 samples</td>
+        </tr>
+      
+        <tr>
+          <td>Constraint &amp; peer safety</td>
+          <td>⚠️</td>
+          <td>20.0%</td>
+          <td>Peer median 136.05 • energy delta 76.00 (≤ 50.40)</td>
+        </tr>
+      
+  </tbody>
+</table></div>
+    <pre class="mermaid">pie title Verification consensus
+  "Passed" : 1
+  "Review" : 3</pre>
   </details>
   <details>
     <summary>Evolutionary History</summary>
@@ -262,16 +424,16 @@
     <summary>Evolution Timeline</summary>
     <pre class="mermaid">timeline
   title Evolutionary improvements for Nova Weave Sequence Optimiser
-  2025-10-21T01:17:45.925Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
-  2025-10-21T01:17:45.926Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
-  2025-10-21T01:17:45.926Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
-  2025-10-21T01:17:45.927Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
-  2025-10-21T01:17:45.928Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
-  2025-10-21T01:17:45.928Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
-  2025-10-21T01:17:45.929Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
-  2025-10-21T01:17:45.930Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
-  2025-10-21T01:17:45.930Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
-  2025-10-21T01:17:45.931Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%</pre>
+  2025-10-21T02:47:22.586Z : score 136.05 • elite 97.43 • diversity 1.00 • novelty 93.6%
+  2025-10-21T02:47:22.587Z : score 136.05 • elite 101.68 • diversity 1.00 • novelty 93.6%
+  2025-10-21T02:47:22.587Z : score 136.05 • elite 125.76 • diversity 0.89 • novelty 93.6%
+  2025-10-21T02:47:22.588Z : score 136.05 • elite 136.05 • diversity 0.86 • novelty 93.6%
+  2025-10-21T02:47:22.589Z : score 136.05 • elite 136.05 • diversity 0.83 • novelty 93.6%
+  2025-10-21T02:47:22.589Z : score 136.05 • elite 136.05 • diversity 0.78 • novelty 93.6%
+  2025-10-21T02:47:22.597Z : score 136.05 • elite 136.05 • diversity 0.67 • novelty 93.6%
+  2025-10-21T02:47:22.598Z : score 136.05 • elite 136.05 • diversity 0.50 • novelty 93.6%
+  2025-10-21T02:47:22.598Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%
+  2025-10-21T02:47:22.599Z : score 136.05 • elite 136.05 • diversity 0.64 • novelty 93.6%</pre>
   </details>
 </section>
     <section>
@@ -279,9 +441,9 @@
       <p>Workflow <code>ci (v2)</code> | Required jobs: Lint &amp; static checks, Tests, Foundry, Coverage thresholds</p>
       <p>Coverage ≥ 90% | Concurrency group <code>ci-${{ github.workflow }}-${{ github.ref }}</code></p>
     </section>
-    <footer>Generated 2025-10-21T01:17:45.896Z • JSON summary embedded below</footer>
+    <footer>Generated 2025-10-21T02:47:22.562Z • JSON summary embedded below</footer>
     <script id="meta-agentic-summary" type="application/json">{
-  &quot;generatedAt&quot;: &quot;2025-10-21T01:17:45.896Z&quot;,
+  &quot;generatedAt&quot;: &quot;2025-10-21T02:47:22.562Z&quot;,
   &quot;mission&quot;: {
     &quot;title&quot;: &quot;Meta-Agentic Program Synthesis Sovereign Mission&quot;,
     &quot;version&quot;: &quot;0.1.0&quot;,
@@ -314,7 +476,23 @@
     &quot;averageAccuracy&quot;: 1,
     &quot;energyUsage&quot;: 73.33333333333333,
     &quot;noveltyScore&quot;: 0.7776289047454377,
-    &quot;coverageScore&quot;: 1
+    &quot;coverageScore&quot;: 1,
+    &quot;triangulationConfidence&quot;: 0.5333333333333333,
+    &quot;consensus&quot;: {
+      &quot;confirmed&quot;: 1,
+      &quot;attention&quot;: 0,
+      &quot;rejected&quot;: 2
+    },
+    &quot;thermodynamics&quot;: {
+      &quot;averageAlignment&quot;: 1,
+      &quot;meanDelta&quot;: 0,
+      &quot;maxDelta&quot;: 0,
+      &quot;statusCounts&quot;: {
+        &quot;aligned&quot;: 3,
+        &quot;monitor&quot;: 0,
+        &quot;drift&quot;: 0
+      }
+    }
   },
   &quot;ownerCoverage&quot;: {
     &quot;requiredCategories&quot;: [
@@ -352,7 +530,7 @@
         &quot;jobId&quot;: &quot;ARC-SYN-001&quot;,
         &quot;stake&quot;: 120000,
         &quot;reward&quot;: 420000,
-        &quot;thermodynamicTarget&quot;: 18.4
+        &quot;thermodynamicTarget&quot;: 88
       },
       &quot;pipeline&quot;: [
         {
@@ -380,6 +558,14 @@
           }
         }
       ],
+      &quot;thermodynamics&quot;: {
+        &quot;target&quot;: 88,
+        &quot;actualEnergy&quot;: 88,
+        &quot;delta&quot;: 0,
+        &quot;tolerance&quot;: 13.2,
+        &quot;alignment&quot;: 1,
+        &quot;status&quot;: &quot;aligned&quot;
+      },
       &quot;archive&quot;: [
         {
           &quot;key&quot;: &quot;4|0.75|120&quot;,
@@ -552,7 +738,7 @@
           &quot;medianScore&quot;: 56.19020618556701,
           &quot;diversity&quot;: 0.9444444444444444,
           &quot;eliteScore&quot;: 110.36140657817333,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.900Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.567Z&quot;
         },
         {
           &quot;generation&quot;: 1,
@@ -561,7 +747,7 @@
           &quot;medianScore&quot;: 65.75277564301642,
           &quot;diversity&quot;: 0.75,
           &quot;eliteScore&quot;: 136.39087455307794,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.902Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.568Z&quot;
         },
         {
           &quot;generation&quot;: 2,
@@ -570,7 +756,7 @@
           &quot;medianScore&quot;: 73.64584551701412,
           &quot;diversity&quot;: 0.75,
           &quot;eliteScore&quot;: 138.12283331596453,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.903Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.569Z&quot;
         },
         {
           &quot;generation&quot;: 3,
@@ -579,7 +765,7 @@
           &quot;medianScore&quot;: 100.49230198051038,
           &quot;diversity&quot;: 0.8333333333333334,
           &quot;eliteScore&quot;: 138.41149310977895,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.904Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.570Z&quot;
         },
         {
           &quot;generation&quot;: 4,
@@ -588,7 +774,7 @@
           &quot;medianScore&quot;: 138.05804842234437,
           &quot;diversity&quot;: 0.6944444444444444,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.905Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.571Z&quot;
         },
         {
           &quot;generation&quot;: 5,
@@ -597,7 +783,7 @@
           &quot;medianScore&quot;: 138.05804842234437,
           &quot;diversity&quot;: 0.7777777777777778,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.905Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.573Z&quot;
         },
         {
           &quot;generation&quot;: 6,
@@ -606,7 +792,7 @@
           &quot;medianScore&quot;: 138.05804842234437,
           &quot;diversity&quot;: 0.7777777777777778,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.912Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.574Z&quot;
         },
         {
           &quot;generation&quot;: 7,
@@ -615,7 +801,7 @@
           &quot;medianScore&quot;: 138.05804842234437,
           &quot;diversity&quot;: 0.7222222222222222,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.913Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.574Z&quot;
         },
         {
           &quot;generation&quot;: 8,
@@ -624,7 +810,7 @@
           &quot;medianScore&quot;: 116.57704853345733,
           &quot;diversity&quot;: 0.8055555555555556,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.915Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.575Z&quot;
         },
         {
           &quot;generation&quot;: 9,
@@ -633,9 +819,56 @@
           &quot;medianScore&quot;: 137.1920690409011,
           &quot;diversity&quot;: 0.75,
           &quot;eliteScore&quot;: 140.38164328854776,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.916Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.576Z&quot;
         }
-      ]
+      ],
+      &quot;triangulation&quot;: {
+        &quot;candidateId&quot;: &quot;arc-sentinel-g4-c166&quot;,
+        &quot;consensus&quot;: &quot;confirmed&quot;,
+        &quot;confidence&quot;: 1,
+        &quot;passed&quot;: 4,
+        &quot;total&quot;: 4,
+        &quot;perspectives&quot;: [
+          {
+            &quot;id&quot;: &quot;consistency&quot;,
+            &quot;label&quot;: &quot;Deterministic replay&quot;,
+            &quot;method&quot;: &quot;Independent recomputation of pipeline metrics to detect hidden state drift.&quot;,
+            &quot;passed&quot;: true,
+            &quot;confidence&quot;: 0.3,
+            &quot;scoreDelta&quot;: 0,
+            &quot;accuracyDelta&quot;: 0,
+            &quot;noveltyDelta&quot;: 0,
+            &quot;energyDelta&quot;: 0
+          },
+          {
+            &quot;id&quot;: &quot;baseline&quot;,
+            &quot;label&quot;: &quot;Baseline dominance&quot;,
+            &quot;method&quot;: &quot;Compare against deterministic seed pipeline from mission hints.&quot;,
+            &quot;passed&quot;: true,
+            &quot;confidence&quot;: 0.25,
+            &quot;scoreDelta&quot;: 4.824355670103046,
+            &quot;notes&quot;: &quot;Seed score 135.56 → improvement 4.82&quot;
+          },
+          {
+            &quot;id&quot;: &quot;stability&quot;,
+            &quot;label&quot;: &quot;Adversarial jitter&quot;,
+            &quot;method&quot;: &quot;Inject bounded noise into inputs and compare to baseline outputs for resilience.&quot;,
+            &quot;passed&quot;: true,
+            &quot;confidence&quot;: 0.25,
+            &quot;scoreDelta&quot;: 0.25,
+            &quot;notes&quot;: &quot;Average deviation 0.250, max 3.000 across 72 samples&quot;
+          },
+          {
+            &quot;id&quot;: &quot;governance&quot;,
+            &quot;label&quot;: &quot;Constraint &amp; peer safety&quot;,
+            &quot;method&quot;: &quot;Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.&quot;,
+            &quot;passed&quot;: true,
+            &quot;confidence&quot;: 0.2,
+            &quot;energyDelta&quot;: 8,
+            &quot;notes&quot;: &quot;Peer median 140.38 • energy delta 8.00 (≤ 33.60)&quot;
+          }
+        ]
+      }
     },
     {
       &quot;id&quot;: &quot;ledger-harmonics&quot;,
@@ -654,7 +887,7 @@
         &quot;jobId&quot;: &quot;LEDGER-SYN-007&quot;,
         &quot;stake&quot;: 155000,
         &quot;reward&quot;: 525000,
-        &quot;thermodynamicTarget&quot;: 22.1
+        &quot;thermodynamicTarget&quot;: 64
       },
       &quot;pipeline&quot;: [
         {
@@ -674,6 +907,14 @@
           }
         }
       ],
+      &quot;thermodynamics&quot;: {
+        &quot;target&quot;: 64,
+        &quot;actualEnergy&quot;: 64,
+        &quot;delta&quot;: 0,
+        &quot;tolerance&quot;: 9.6,
+        &quot;alignment&quot;: 1,
+        &quot;status&quot;: &quot;aligned&quot;
+      },
       &quot;archive&quot;: [
         {
           &quot;key&quot;: &quot;3|0.75|120&quot;,
@@ -873,7 +1114,7 @@
           &quot;medianScore&quot;: 41.03751524896436,
           &quot;diversity&quot;: 0.9722222222222222,
           &quot;eliteScore&quot;: 96.0918022581709,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.918Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.578Z&quot;
         },
         {
           &quot;generation&quot;: 1,
@@ -882,7 +1123,7 @@
           &quot;medianScore&quot;: 62.99975060567376,
           &quot;diversity&quot;: 0.9444444444444444,
           &quot;eliteScore&quot;: 98.43691088683215,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.919Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.579Z&quot;
         },
         {
           &quot;generation&quot;: 2,
@@ -891,7 +1132,7 @@
           &quot;medianScore&quot;: 76.53115760829131,
           &quot;diversity&quot;: 0.75,
           &quot;eliteScore&quot;: 132.5084085000921,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.920Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.580Z&quot;
         },
         {
           &quot;generation&quot;: 3,
@@ -900,7 +1141,7 @@
           &quot;medianScore&quot;: 77.95296283436663,
           &quot;diversity&quot;: 0.7222222222222222,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.921Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.581Z&quot;
         },
         {
           &quot;generation&quot;: 4,
@@ -909,7 +1150,7 @@
           &quot;medianScore&quot;: 86.94000111220245,
           &quot;diversity&quot;: 0.7222222222222222,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.921Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.581Z&quot;
         },
         {
           &quot;generation&quot;: 5,
@@ -918,7 +1159,7 @@
           &quot;medianScore&quot;: 88.99300139019402,
           &quot;diversity&quot;: 0.6111111111111112,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.922Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.582Z&quot;
         },
         {
           &quot;generation&quot;: 6,
@@ -927,7 +1168,7 @@
           &quot;medianScore&quot;: 83.23985249780515,
           &quot;diversity&quot;: 0.6666666666666666,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.923Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.583Z&quot;
         },
         {
           &quot;generation&quot;: 7,
@@ -936,7 +1177,7 @@
           &quot;medianScore&quot;: 82.9194778065494,
           &quot;diversity&quot;: 0.6111111111111112,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.923Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.584Z&quot;
         },
         {
           &quot;generation&quot;: 8,
@@ -945,7 +1186,7 @@
           &quot;medianScore&quot;: 86.367830024997,
           &quot;diversity&quot;: 0.6666666666666666,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.924Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.585Z&quot;
         },
         {
           &quot;generation&quot;: 9,
@@ -954,9 +1195,56 @@
           &quot;medianScore&quot;: 85.09002044220831,
           &quot;diversity&quot;: 0.6666666666666666,
           &quot;eliteScore&quot;: 133.04138007631948,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.924Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.585Z&quot;
         }
-      ]
+      ],
+      &quot;triangulation&quot;: {
+        &quot;candidateId&quot;: &quot;ledger-harmonics-g0-c361&quot;,
+        &quot;consensus&quot;: &quot;rejected&quot;,
+        &quot;confidence&quot;: 0.3,
+        &quot;passed&quot;: 1,
+        &quot;total&quot;: 4,
+        &quot;perspectives&quot;: [
+          {
+            &quot;id&quot;: &quot;consistency&quot;,
+            &quot;label&quot;: &quot;Deterministic replay&quot;,
+            &quot;method&quot;: &quot;Independent recomputation of pipeline metrics to detect hidden state drift.&quot;,
+            &quot;passed&quot;: true,
+            &quot;confidence&quot;: 0.3,
+            &quot;scoreDelta&quot;: 0,
+            &quot;accuracyDelta&quot;: 0,
+            &quot;noveltyDelta&quot;: 0,
+            &quot;energyDelta&quot;: 0
+          },
+          {
+            &quot;id&quot;: &quot;baseline&quot;,
+            &quot;label&quot;: &quot;Baseline dominance&quot;,
+            &quot;method&quot;: &quot;Compare against deterministic seed pipeline from mission hints.&quot;,
+            &quot;passed&quot;: false,
+            &quot;confidence&quot;: 0.25,
+            &quot;scoreDelta&quot;: 0,
+            &quot;notes&quot;: &quot;Seed score 133.04 → improvement 0.00&quot;
+          },
+          {
+            &quot;id&quot;: &quot;stability&quot;,
+            &quot;label&quot;: &quot;Adversarial jitter&quot;,
+            &quot;method&quot;: &quot;Inject bounded noise into inputs and compare to baseline outputs for resilience.&quot;,
+            &quot;passed&quot;: false,
+            &quot;confidence&quot;: 0.25,
+            &quot;scoreDelta&quot;: 0.7225,
+            &quot;notes&quot;: &quot;Average deviation 0.722, max 4.762 across 48 samples&quot;
+          },
+          {
+            &quot;id&quot;: &quot;governance&quot;,
+            &quot;label&quot;: &quot;Constraint &amp; peer safety&quot;,
+            &quot;method&quot;: &quot;Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.&quot;,
+            &quot;passed&quot;: false,
+            &quot;confidence&quot;: 0.2,
+            &quot;energyDelta&quot;: 64,
+            &quot;notes&quot;: &quot;Peer median 133.04 • energy delta 64.00 (≤ 44.80)&quot;
+          }
+        ]
+      }
     },
     {
       &quot;id&quot;: &quot;nova-weave&quot;,
@@ -975,7 +1263,7 @@
         &quot;jobId&quot;: &quot;NOVA-SYN-009&quot;,
         &quot;stake&quot;: 165000,
         &quot;reward&quot;: 610000,
-        &quot;thermodynamicTarget&quot;: 25.7
+        &quot;thermodynamicTarget&quot;: 68
       },
       &quot;pipeline&quot;: [
         {
@@ -997,6 +1285,14 @@
           }
         }
       ],
+      &quot;thermodynamics&quot;: {
+        &quot;target&quot;: 68,
+        &quot;actualEnergy&quot;: 68,
+        &quot;delta&quot;: 0,
+        &quot;tolerance&quot;: 10.2,
+        &quot;alignment&quot;: 1,
+        &quot;status&quot;: &quot;aligned&quot;
+      },
       &quot;archive&quot;: [
         {
           &quot;key&quot;: &quot;3|1|120&quot;,
@@ -1223,7 +1519,7 @@
           &quot;medianScore&quot;: 23.447749293641056,
           &quot;diversity&quot;: 1,
           &quot;eliteScore&quot;: 97.42746077012889,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.925Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.586Z&quot;
         },
         {
           &quot;generation&quot;: 1,
@@ -1232,7 +1528,7 @@
           &quot;medianScore&quot;: 33.23577114240753,
           &quot;diversity&quot;: 1,
           &quot;eliteScore&quot;: 101.68095349725729,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.926Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.587Z&quot;
         },
         {
           &quot;generation&quot;: 2,
@@ -1241,7 +1537,7 @@
           &quot;medianScore&quot;: 64.46743238768931,
           &quot;diversity&quot;: 0.8888888888888888,
           &quot;eliteScore&quot;: 125.76131787031291,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.926Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.587Z&quot;
         },
         {
           &quot;generation&quot;: 3,
@@ -1250,7 +1546,7 @@
           &quot;medianScore&quot;: 70.39942915911845,
           &quot;diversity&quot;: 0.8611111111111112,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.927Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.588Z&quot;
         },
         {
           &quot;generation&quot;: 4,
@@ -1259,7 +1555,7 @@
           &quot;medianScore&quot;: 71.05162669292856,
           &quot;diversity&quot;: 0.8333333333333334,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.928Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.589Z&quot;
         },
         {
           &quot;generation&quot;: 5,
@@ -1268,7 +1564,7 @@
           &quot;medianScore&quot;: 53.843889930604206,
           &quot;diversity&quot;: 0.7777777777777778,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.928Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.589Z&quot;
         },
         {
           &quot;generation&quot;: 6,
@@ -1277,7 +1573,7 @@
           &quot;medianScore&quot;: 78.25900854278035,
           &quot;diversity&quot;: 0.6666666666666666,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.929Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.597Z&quot;
         },
         {
           &quot;generation&quot;: 7,
@@ -1286,7 +1582,7 @@
           &quot;medianScore&quot;: 91.68021852282594,
           &quot;diversity&quot;: 0.5,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.930Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.598Z&quot;
         },
         {
           &quot;generation&quot;: 8,
@@ -1295,7 +1591,7 @@
           &quot;medianScore&quot;: 84.52984866490183,
           &quot;diversity&quot;: 0.6388888888888888,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.930Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.598Z&quot;
         },
         {
           &quot;generation&quot;: 9,
@@ -1304,9 +1600,56 @@
           &quot;medianScore&quot;: 90.34258929546631,
           &quot;diversity&quot;: 0.6388888888888888,
           &quot;eliteScore&quot;: 136.04606142636254,
-          &quot;timestamp&quot;: &quot;2025-10-21T01:17:45.931Z&quot;
+          &quot;timestamp&quot;: &quot;2025-10-21T02:47:22.599Z&quot;
         }
-      ]
+      ],
+      &quot;triangulation&quot;: {
+        &quot;candidateId&quot;: &quot;nova-weave-g0-c721&quot;,
+        &quot;consensus&quot;: &quot;rejected&quot;,
+        &quot;confidence&quot;: 0.3,
+        &quot;passed&quot;: 1,
+        &quot;total&quot;: 4,
+        &quot;perspectives&quot;: [
+          {
+            &quot;id&quot;: &quot;consistency&quot;,
+            &quot;label&quot;: &quot;Deterministic replay&quot;,
+            &quot;method&quot;: &quot;Independent recomputation of pipeline metrics to detect hidden state drift.&quot;,
+            &quot;passed&quot;: true,
+            &quot;confidence&quot;: 0.3,
+            &quot;scoreDelta&quot;: 0,
+            &quot;accuracyDelta&quot;: 0,
+            &quot;noveltyDelta&quot;: 0,
+            &quot;energyDelta&quot;: 0
+          },
+          {
+            &quot;id&quot;: &quot;baseline&quot;,
+            &quot;label&quot;: &quot;Baseline dominance&quot;,
+            &quot;method&quot;: &quot;Compare against deterministic seed pipeline from mission hints.&quot;,
+            &quot;passed&quot;: false,
+            &quot;confidence&quot;: 0.25,
+            &quot;scoreDelta&quot;: 0,
+            &quot;notes&quot;: &quot;Seed score 136.05 → improvement 0.00&quot;
+          },
+          {
+            &quot;id&quot;: &quot;stability&quot;,
+            &quot;label&quot;: &quot;Adversarial jitter&quot;,
+            &quot;method&quot;: &quot;Inject bounded noise into inputs and compare to baseline outputs for resilience.&quot;,
+            &quot;passed&quot;: false,
+            &quot;confidence&quot;: 0.25,
+            &quot;scoreDelta&quot;: 3.4937,
+            &quot;notes&quot;: &quot;Average deviation 3.494, max 16.010 across 36 samples&quot;
+          },
+          {
+            &quot;id&quot;: &quot;governance&quot;,
+            &quot;label&quot;: &quot;Constraint &amp; peer safety&quot;,
+            &quot;method&quot;: &quot;Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.&quot;,
+            &quot;passed&quot;: false,
+            &quot;confidence&quot;: 0.2,
+            &quot;energyDelta&quot;: 76,
+            &quot;notes&quot;: &quot;Peer median 136.05 • energy delta 76.00 (≤ 50.40)&quot;
+          }
+        ]
+      }
     }
   ],
   &quot;ci&quot;: {
@@ -1366,6 +1709,161 @@
       }
     ]
   }
+}</script>
+    <script id="meta-agentic-triangulation" type="application/json">{
+  &quot;generatedAt&quot;: &quot;2025-10-21T02:47:22.562Z&quot;,
+  &quot;confidence&quot;: 0.5333333333333333,
+  &quot;consensus&quot;: {
+    &quot;confirmed&quot;: 1,
+    &quot;attention&quot;: 0,
+    &quot;rejected&quot;: 2
+  },
+  &quot;tasks&quot;: [
+    {
+      &quot;id&quot;: &quot;arc-sentinel&quot;,
+      &quot;label&quot;: &quot;ARC Sentinel Edge Lift&quot;,
+      &quot;consensus&quot;: &quot;confirmed&quot;,
+      &quot;confidence&quot;: 1,
+      &quot;passed&quot;: 4,
+      &quot;total&quot;: 4,
+      &quot;perspectives&quot;: [
+        {
+          &quot;id&quot;: &quot;consistency&quot;,
+          &quot;label&quot;: &quot;Deterministic replay&quot;,
+          &quot;method&quot;: &quot;Independent recomputation of pipeline metrics to detect hidden state drift.&quot;,
+          &quot;passed&quot;: true,
+          &quot;confidence&quot;: 0.3,
+          &quot;scoreDelta&quot;: 0,
+          &quot;accuracyDelta&quot;: 0,
+          &quot;noveltyDelta&quot;: 0,
+          &quot;energyDelta&quot;: 0
+        },
+        {
+          &quot;id&quot;: &quot;baseline&quot;,
+          &quot;label&quot;: &quot;Baseline dominance&quot;,
+          &quot;method&quot;: &quot;Compare against deterministic seed pipeline from mission hints.&quot;,
+          &quot;passed&quot;: true,
+          &quot;confidence&quot;: 0.25,
+          &quot;scoreDelta&quot;: 4.824355670103046,
+          &quot;notes&quot;: &quot;Seed score 135.56 → improvement 4.82&quot;
+        },
+        {
+          &quot;id&quot;: &quot;stability&quot;,
+          &quot;label&quot;: &quot;Adversarial jitter&quot;,
+          &quot;method&quot;: &quot;Inject bounded noise into inputs and compare to baseline outputs for resilience.&quot;,
+          &quot;passed&quot;: true,
+          &quot;confidence&quot;: 0.25,
+          &quot;scoreDelta&quot;: 0.25,
+          &quot;notes&quot;: &quot;Average deviation 0.250, max 3.000 across 72 samples&quot;
+        },
+        {
+          &quot;id&quot;: &quot;governance&quot;,
+          &quot;label&quot;: &quot;Constraint &amp; peer safety&quot;,
+          &quot;method&quot;: &quot;Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.&quot;,
+          &quot;passed&quot;: true,
+          &quot;confidence&quot;: 0.2,
+          &quot;energyDelta&quot;: 8,
+          &quot;notes&quot;: &quot;Peer median 140.38 • energy delta 8.00 (≤ 33.60)&quot;
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;ledger-harmonics&quot;,
+      &quot;label&quot;: &quot;Ledger Harmonics Sequencer&quot;,
+      &quot;consensus&quot;: &quot;rejected&quot;,
+      &quot;confidence&quot;: 0.3,
+      &quot;passed&quot;: 1,
+      &quot;total&quot;: 4,
+      &quot;perspectives&quot;: [
+        {
+          &quot;id&quot;: &quot;consistency&quot;,
+          &quot;label&quot;: &quot;Deterministic replay&quot;,
+          &quot;method&quot;: &quot;Independent recomputation of pipeline metrics to detect hidden state drift.&quot;,
+          &quot;passed&quot;: true,
+          &quot;confidence&quot;: 0.3,
+          &quot;scoreDelta&quot;: 0,
+          &quot;accuracyDelta&quot;: 0,
+          &quot;noveltyDelta&quot;: 0,
+          &quot;energyDelta&quot;: 0
+        },
+        {
+          &quot;id&quot;: &quot;baseline&quot;,
+          &quot;label&quot;: &quot;Baseline dominance&quot;,
+          &quot;method&quot;: &quot;Compare against deterministic seed pipeline from mission hints.&quot;,
+          &quot;passed&quot;: false,
+          &quot;confidence&quot;: 0.25,
+          &quot;scoreDelta&quot;: 0,
+          &quot;notes&quot;: &quot;Seed score 133.04 → improvement 0.00&quot;
+        },
+        {
+          &quot;id&quot;: &quot;stability&quot;,
+          &quot;label&quot;: &quot;Adversarial jitter&quot;,
+          &quot;method&quot;: &quot;Inject bounded noise into inputs and compare to baseline outputs for resilience.&quot;,
+          &quot;passed&quot;: false,
+          &quot;confidence&quot;: 0.25,
+          &quot;scoreDelta&quot;: 0.7225,
+          &quot;notes&quot;: &quot;Average deviation 0.722, max 4.762 across 48 samples&quot;
+        },
+        {
+          &quot;id&quot;: &quot;governance&quot;,
+          &quot;label&quot;: &quot;Constraint &amp; peer safety&quot;,
+          &quot;method&quot;: &quot;Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.&quot;,
+          &quot;passed&quot;: false,
+          &quot;confidence&quot;: 0.2,
+          &quot;energyDelta&quot;: 64,
+          &quot;notes&quot;: &quot;Peer median 133.04 • energy delta 64.00 (≤ 44.80)&quot;
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;nova-weave&quot;,
+      &quot;label&quot;: &quot;Nova Weave Sequence Optimiser&quot;,
+      &quot;consensus&quot;: &quot;rejected&quot;,
+      &quot;confidence&quot;: 0.3,
+      &quot;passed&quot;: 1,
+      &quot;total&quot;: 4,
+      &quot;perspectives&quot;: [
+        {
+          &quot;id&quot;: &quot;consistency&quot;,
+          &quot;label&quot;: &quot;Deterministic replay&quot;,
+          &quot;method&quot;: &quot;Independent recomputation of pipeline metrics to detect hidden state drift.&quot;,
+          &quot;passed&quot;: true,
+          &quot;confidence&quot;: 0.3,
+          &quot;scoreDelta&quot;: 0,
+          &quot;accuracyDelta&quot;: 0,
+          &quot;noveltyDelta&quot;: 0,
+          &quot;energyDelta&quot;: 0
+        },
+        {
+          &quot;id&quot;: &quot;baseline&quot;,
+          &quot;label&quot;: &quot;Baseline dominance&quot;,
+          &quot;method&quot;: &quot;Compare against deterministic seed pipeline from mission hints.&quot;,
+          &quot;passed&quot;: false,
+          &quot;confidence&quot;: 0.25,
+          &quot;scoreDelta&quot;: 0,
+          &quot;notes&quot;: &quot;Seed score 136.05 → improvement 0.00&quot;
+        },
+        {
+          &quot;id&quot;: &quot;stability&quot;,
+          &quot;label&quot;: &quot;Adversarial jitter&quot;,
+          &quot;method&quot;: &quot;Inject bounded noise into inputs and compare to baseline outputs for resilience.&quot;,
+          &quot;passed&quot;: false,
+          &quot;confidence&quot;: 0.25,
+          &quot;scoreDelta&quot;: 3.4937,
+          &quot;notes&quot;: &quot;Average deviation 3.494, max 16.010 across 36 samples&quot;
+        },
+        {
+          &quot;id&quot;: &quot;governance&quot;,
+          &quot;label&quot;: &quot;Constraint &amp; peer safety&quot;,
+          &quot;method&quot;: &quot;Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.&quot;,
+          &quot;passed&quot;: false,
+          &quot;confidence&quot;: 0.2,
+          &quot;energyDelta&quot;: 76,
+          &quot;notes&quot;: &quot;Peer median 136.05 • energy delta 76.00 (≤ 50.40)&quot;
+        }
+      ]
+    }
+  ]
 }</script>
   </body>
 </html>
