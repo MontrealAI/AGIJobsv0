@@ -24,6 +24,10 @@ function formatNumber(value: number, digits = 2): string {
   return value.toFixed(digits);
 }
 
+function formatThermoStatus(counts: { aligned: number; monitor: number; drift: number }): string {
+  return `${counts.aligned} aligned / ${counts.monitor} monitor / ${counts.drift} drift`;
+}
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => {
     switch (char) {
@@ -238,6 +242,10 @@ export function renderMarkdownReport(run: SynthesisRun): string {
       `(${run.aggregate.consensus.confirmed} confirmed / ${run.aggregate.consensus.attention} attention / ${run.aggregate.consensus.rejected} flagged).`,
   );
   lines.push(
+    `- **Thermodynamic alignment:** ${formatPercent(run.aggregate.thermodynamics.averageAlignment)} ` +
+      `(mean Δ ${formatNumber(run.aggregate.thermodynamics.meanDelta)} | max Δ ${formatNumber(run.aggregate.thermodynamics.maxDelta)} | ${formatThermoStatus(run.aggregate.thermodynamics.statusCounts)}).`,
+  );
+  lines.push(
     "- **Owner supremacy:** every control remains copy-paste accessible (pause, thermostat, upgrades, treasury mirrors, compliance dossier).",
   );
   lines.push(
@@ -297,6 +305,9 @@ export function renderMarkdownReport(run: SynthesisRun): string {
     );
     lines.push(
       `- Best candidate score: ${formatNumber(task.bestCandidate.metrics.score, 2)} (accuracy ${formatPercent(task.bestCandidate.metrics.accuracy)}, novelty ${formatPercent(task.bestCandidate.metrics.novelty, 1)}, coverage ${formatPercent(task.bestCandidate.metrics.coverage, 1)})`,
+    );
+    lines.push(
+      `- Thermodynamic status: **${task.thermodynamics.status.toUpperCase()}** (target ${formatNumber(task.thermodynamics.target, 2)} • energy ${formatNumber(task.thermodynamics.actualEnergy, 2)} • Δ ${formatNumber(task.thermodynamics.delta, 2)} • tolerance ≤ ${formatNumber(task.thermodynamics.tolerance, 2)}).`,
     );
     lines.push("- Pipeline blueprint:");
     lines.push("```");
@@ -360,6 +371,7 @@ export function buildJsonSummary(run: SynthesisRun): Record<string, unknown> {
       metrics: task.bestCandidate.metrics,
       job: task.task.owner,
       pipeline: task.bestCandidate.operations,
+      thermodynamics: task.thermodynamics,
       archive: task.archive.slice(0, 24).map((cell) => ({
         key: cell.key,
         features: cell.features,
@@ -418,6 +430,7 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
   <ul>
     <li><strong>Job:</strong> ${escapeHtml(task.task.owner.jobId)} | Stake: ${task.task.owner.stake.toLocaleString()} | Reward: ${task.task.owner.reward.toLocaleString()} | Thermodynamic target: ${task.task.owner.thermodynamicTarget}</li>
     <li><strong>Score:</strong> ${formatNumber(task.bestCandidate.metrics.score, 2)} | Accuracy ${formatPercent(task.bestCandidate.metrics.accuracy)} | Novelty ${formatPercent(task.bestCandidate.metrics.novelty)} | Coverage ${formatPercent(task.bestCandidate.metrics.coverage)}</li>
+    <li><strong>Thermodynamics:</strong> ${escapeHtml(task.thermodynamics.status.toUpperCase())} • target ${formatNumber(task.thermodynamics.target, 2)} • energy ${formatNumber(task.thermodynamics.actualEnergy, 2)} • Δ ${formatNumber(task.thermodynamics.delta, 2)} • tolerance ≤ ${formatNumber(task.thermodynamics.tolerance, 2)}</li>
   </ul>
   <details open>
     <summary>Pipeline Blueprint</summary>
@@ -476,6 +489,7 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
       footer { margin-top: 3rem; text-align: center; color: rgba(148, 163, 184, 0.75); }
       .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
       .metric-card { padding: 1rem; border-radius: 0.75rem; background: rgba(15, 118, 110, 0.35); box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.25); }
+      .metric-card .metric-sub { display: block; margin-top: 0.35rem; font-size: 0.85rem; color: rgba(226, 232, 240, 0.7); }
       .owner-table { margin-top: 1rem; }
       ul.coverage { list-style: none; padding-left: 0; margin-top: 1rem; }
       ul.coverage li { margin-bottom: 0.35rem; }
@@ -492,6 +506,7 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
         <div class="metric-card"><strong>Novelty signal</strong><br />${formatPercent(run.aggregate.noveltyScore)}</div>
         <div class="metric-card"><strong>Coverage</strong><br />${formatPercent(run.aggregate.coverageScore)}</div>
         <div class="metric-card"><strong>Triangulation confidence</strong><br />${formatPercent(run.aggregate.triangulationConfidence)}</div>
+        <div class="metric-card"><strong>Thermodynamic alignment</strong><br />${formatPercent(run.aggregate.thermodynamics.averageAlignment)}<span class="metric-sub">Δ̄ ${formatNumber(run.aggregate.thermodynamics.meanDelta, 2)} • Δmax ${formatNumber(run.aggregate.thermodynamics.maxDelta, 2)} • ${escapeHtml(formatThermoStatus(run.aggregate.thermodynamics.statusCounts))}</span></div>
       </div>
     </header>
     <section>

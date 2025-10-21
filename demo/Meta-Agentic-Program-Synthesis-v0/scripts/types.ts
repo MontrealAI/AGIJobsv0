@@ -64,6 +64,15 @@ export interface TaskDefinition {
   owner: TaskOwnerMeta;
 }
 
+export interface TaskThermodynamics {
+  target: number;
+  actualEnergy: number;
+  delta: number;
+  tolerance: number;
+  alignment: number;
+  status: "aligned" | "monitor" | "drift";
+}
+
 export interface CiRequirement {
   workflow: string;
   requiredJobs: Array<{ id: string; name: string }>;
@@ -161,6 +170,7 @@ export interface TaskResult {
   history: GenerationSnapshot[];
   archive: ArchiveCell[];
   triangulation: TriangulationReport;
+  thermodynamics: TaskThermodynamics;
 }
 
 export interface SynthesisRun {
@@ -180,6 +190,16 @@ export interface SynthesisRun {
       confirmed: number;
       attention: number;
       rejected: number;
+    };
+    thermodynamics: {
+      averageAlignment: number;
+      meanDelta: number;
+      maxDelta: number;
+      statusCounts: {
+        aligned: number;
+        monitor: number;
+        drift: number;
+      };
     };
   };
 }

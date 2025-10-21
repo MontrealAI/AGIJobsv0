@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-21T01:17:45.896Z",
+  "generatedAt": "2025-10-21T02:47:22.562Z",
   "mission": {
     "title": "Meta-Agentic Program Synthesis Sovereign Mission",
     "version": "0.1.0",
@@ -32,7 +32,23 @@
     "averageAccuracy": 1,
     "energyUsage": 73.33333333333333,
     "noveltyScore": 0.7776289047454377,
-    "coverageScore": 1
+    "coverageScore": 1,
+    "triangulationConfidence": 0.5333333333333333,
+    "consensus": {
+      "confirmed": 1,
+      "attention": 0,
+      "rejected": 2
+    },
+    "thermodynamics": {
+      "averageAlignment": 1,
+      "meanDelta": 0,
+      "maxDelta": 0,
+      "statusCounts": {
+        "aligned": 3,
+        "monitor": 0,
+        "drift": 0
+      }
+    }
   },
   "ownerCoverage": {
     "requiredCategories": [
@@ -70,7 +86,7 @@
         "jobId": "ARC-SYN-001",
         "stake": 120000,
         "reward": 420000,
-        "thermodynamicTarget": 18.4
+        "thermodynamicTarget": 88
       },
       "pipeline": [
         {
@@ -98,6 +114,14 @@
           }
         }
       ],
+      "thermodynamics": {
+        "target": 88,
+        "actualEnergy": 88,
+        "delta": 0,
+        "tolerance": 13.2,
+        "alignment": 1,
+        "status": "aligned"
+      },
       "archive": [
         {
           "key": "4|0.75|120",
@@ -270,7 +294,7 @@
           "medianScore": 56.19020618556701,
           "diversity": 0.9444444444444444,
           "eliteScore": 110.36140657817333,
-          "timestamp": "2025-10-21T01:17:45.900Z"
+          "timestamp": "2025-10-21T02:47:22.567Z"
         },
         {
           "generation": 1,
@@ -279,7 +303,7 @@
           "medianScore": 65.75277564301642,
           "diversity": 0.75,
           "eliteScore": 136.39087455307794,
-          "timestamp": "2025-10-21T01:17:45.902Z"
+          "timestamp": "2025-10-21T02:47:22.568Z"
         },
         {
           "generation": 2,
@@ -288,7 +312,7 @@
           "medianScore": 73.64584551701412,
           "diversity": 0.75,
           "eliteScore": 138.12283331596453,
-          "timestamp": "2025-10-21T01:17:45.903Z"
+          "timestamp": "2025-10-21T02:47:22.569Z"
         },
         {
           "generation": 3,
@@ -297,7 +321,7 @@
           "medianScore": 100.49230198051038,
           "diversity": 0.8333333333333334,
           "eliteScore": 138.41149310977895,
-          "timestamp": "2025-10-21T01:17:45.904Z"
+          "timestamp": "2025-10-21T02:47:22.570Z"
         },
         {
           "generation": 4,
@@ -306,7 +330,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.6944444444444444,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T01:17:45.905Z"
+          "timestamp": "2025-10-21T02:47:22.571Z"
         },
         {
           "generation": 5,
@@ -315,7 +339,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7777777777777778,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T01:17:45.905Z"
+          "timestamp": "2025-10-21T02:47:22.573Z"
         },
         {
           "generation": 6,
@@ -324,7 +348,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7777777777777778,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T01:17:45.912Z"
+          "timestamp": "2025-10-21T02:47:22.574Z"
         },
         {
           "generation": 7,
@@ -333,7 +357,7 @@
           "medianScore": 138.05804842234437,
           "diversity": 0.7222222222222222,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T01:17:45.913Z"
+          "timestamp": "2025-10-21T02:47:22.574Z"
         },
         {
           "generation": 8,
@@ -342,7 +366,7 @@
           "medianScore": 116.57704853345733,
           "diversity": 0.8055555555555556,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T01:17:45.915Z"
+          "timestamp": "2025-10-21T02:47:22.575Z"
         },
         {
           "generation": 9,
@@ -351,9 +375,56 @@
           "medianScore": 137.1920690409011,
           "diversity": 0.75,
           "eliteScore": 140.38164328854776,
-          "timestamp": "2025-10-21T01:17:45.916Z"
+          "timestamp": "2025-10-21T02:47:22.576Z"
         }
-      ]
+      ],
+      "triangulation": {
+        "candidateId": "arc-sentinel-g4-c166",
+        "consensus": "confirmed",
+        "confidence": 1,
+        "passed": 4,
+        "total": 4,
+        "perspectives": [
+          {
+            "id": "consistency",
+            "label": "Deterministic replay",
+            "method": "Independent recomputation of pipeline metrics to detect hidden state drift.",
+            "passed": true,
+            "confidence": 0.3,
+            "scoreDelta": 0,
+            "accuracyDelta": 0,
+            "noveltyDelta": 0,
+            "energyDelta": 0
+          },
+          {
+            "id": "baseline",
+            "label": "Baseline dominance",
+            "method": "Compare against deterministic seed pipeline from mission hints.",
+            "passed": true,
+            "confidence": 0.25,
+            "scoreDelta": 4.824355670103046,
+            "notes": "Seed score 135.56 → improvement 4.82"
+          },
+          {
+            "id": "stability",
+            "label": "Adversarial jitter",
+            "method": "Inject bounded noise into inputs and compare to baseline outputs for resilience.",
+            "passed": true,
+            "confidence": 0.25,
+            "scoreDelta": 0.25,
+            "notes": "Average deviation 0.250, max 3.000 across 72 samples"
+          },
+          {
+            "id": "governance",
+            "label": "Constraint & peer safety",
+            "method": "Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.",
+            "passed": true,
+            "confidence": 0.2,
+            "energyDelta": 8,
+            "notes": "Peer median 140.38 • energy delta 8.00 (≤ 33.60)"
+          }
+        ]
+      }
     },
     {
       "id": "ledger-harmonics",
@@ -372,7 +443,7 @@
         "jobId": "LEDGER-SYN-007",
         "stake": 155000,
         "reward": 525000,
-        "thermodynamicTarget": 22.1
+        "thermodynamicTarget": 64
       },
       "pipeline": [
         {
@@ -392,6 +463,14 @@
           }
         }
       ],
+      "thermodynamics": {
+        "target": 64,
+        "actualEnergy": 64,
+        "delta": 0,
+        "tolerance": 9.6,
+        "alignment": 1,
+        "status": "aligned"
+      },
       "archive": [
         {
           "key": "3|0.75|120",
@@ -591,7 +670,7 @@
           "medianScore": 41.03751524896436,
           "diversity": 0.9722222222222222,
           "eliteScore": 96.0918022581709,
-          "timestamp": "2025-10-21T01:17:45.918Z"
+          "timestamp": "2025-10-21T02:47:22.578Z"
         },
         {
           "generation": 1,
@@ -600,7 +679,7 @@
           "medianScore": 62.99975060567376,
           "diversity": 0.9444444444444444,
           "eliteScore": 98.43691088683215,
-          "timestamp": "2025-10-21T01:17:45.919Z"
+          "timestamp": "2025-10-21T02:47:22.579Z"
         },
         {
           "generation": 2,
@@ -609,7 +688,7 @@
           "medianScore": 76.53115760829131,
           "diversity": 0.75,
           "eliteScore": 132.5084085000921,
-          "timestamp": "2025-10-21T01:17:45.920Z"
+          "timestamp": "2025-10-21T02:47:22.580Z"
         },
         {
           "generation": 3,
@@ -618,7 +697,7 @@
           "medianScore": 77.95296283436663,
           "diversity": 0.7222222222222222,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T01:17:45.921Z"
+          "timestamp": "2025-10-21T02:47:22.581Z"
         },
         {
           "generation": 4,
@@ -627,7 +706,7 @@
           "medianScore": 86.94000111220245,
           "diversity": 0.7222222222222222,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T01:17:45.921Z"
+          "timestamp": "2025-10-21T02:47:22.581Z"
         },
         {
           "generation": 5,
@@ -636,7 +715,7 @@
           "medianScore": 88.99300139019402,
           "diversity": 0.6111111111111112,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T01:17:45.922Z"
+          "timestamp": "2025-10-21T02:47:22.582Z"
         },
         {
           "generation": 6,
@@ -645,7 +724,7 @@
           "medianScore": 83.23985249780515,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T01:17:45.923Z"
+          "timestamp": "2025-10-21T02:47:22.583Z"
         },
         {
           "generation": 7,
@@ -654,7 +733,7 @@
           "medianScore": 82.9194778065494,
           "diversity": 0.6111111111111112,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T01:17:45.923Z"
+          "timestamp": "2025-10-21T02:47:22.584Z"
         },
         {
           "generation": 8,
@@ -663,7 +742,7 @@
           "medianScore": 86.367830024997,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T01:17:45.924Z"
+          "timestamp": "2025-10-21T02:47:22.585Z"
         },
         {
           "generation": 9,
@@ -672,9 +751,56 @@
           "medianScore": 85.09002044220831,
           "diversity": 0.6666666666666666,
           "eliteScore": 133.04138007631948,
-          "timestamp": "2025-10-21T01:17:45.924Z"
+          "timestamp": "2025-10-21T02:47:22.585Z"
         }
-      ]
+      ],
+      "triangulation": {
+        "candidateId": "ledger-harmonics-g0-c361",
+        "consensus": "rejected",
+        "confidence": 0.3,
+        "passed": 1,
+        "total": 4,
+        "perspectives": [
+          {
+            "id": "consistency",
+            "label": "Deterministic replay",
+            "method": "Independent recomputation of pipeline metrics to detect hidden state drift.",
+            "passed": true,
+            "confidence": 0.3,
+            "scoreDelta": 0,
+            "accuracyDelta": 0,
+            "noveltyDelta": 0,
+            "energyDelta": 0
+          },
+          {
+            "id": "baseline",
+            "label": "Baseline dominance",
+            "method": "Compare against deterministic seed pipeline from mission hints.",
+            "passed": false,
+            "confidence": 0.25,
+            "scoreDelta": 0,
+            "notes": "Seed score 133.04 → improvement 0.00"
+          },
+          {
+            "id": "stability",
+            "label": "Adversarial jitter",
+            "method": "Inject bounded noise into inputs and compare to baseline outputs for resilience.",
+            "passed": false,
+            "confidence": 0.25,
+            "scoreDelta": 0.7225,
+            "notes": "Average deviation 0.722, max 4.762 across 48 samples"
+          },
+          {
+            "id": "governance",
+            "label": "Constraint & peer safety",
+            "method": "Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.",
+            "passed": false,
+            "confidence": 0.2,
+            "energyDelta": 64,
+            "notes": "Peer median 133.04 • energy delta 64.00 (≤ 44.80)"
+          }
+        ]
+      }
     },
     {
       "id": "nova-weave",
@@ -693,7 +819,7 @@
         "jobId": "NOVA-SYN-009",
         "stake": 165000,
         "reward": 610000,
-        "thermodynamicTarget": 25.7
+        "thermodynamicTarget": 68
       },
       "pipeline": [
         {
@@ -715,6 +841,14 @@
           }
         }
       ],
+      "thermodynamics": {
+        "target": 68,
+        "actualEnergy": 68,
+        "delta": 0,
+        "tolerance": 10.2,
+        "alignment": 1,
+        "status": "aligned"
+      },
       "archive": [
         {
           "key": "3|1|120",
@@ -941,7 +1075,7 @@
           "medianScore": 23.447749293641056,
           "diversity": 1,
           "eliteScore": 97.42746077012889,
-          "timestamp": "2025-10-21T01:17:45.925Z"
+          "timestamp": "2025-10-21T02:47:22.586Z"
         },
         {
           "generation": 1,
@@ -950,7 +1084,7 @@
           "medianScore": 33.23577114240753,
           "diversity": 1,
           "eliteScore": 101.68095349725729,
-          "timestamp": "2025-10-21T01:17:45.926Z"
+          "timestamp": "2025-10-21T02:47:22.587Z"
         },
         {
           "generation": 2,
@@ -959,7 +1093,7 @@
           "medianScore": 64.46743238768931,
           "diversity": 0.8888888888888888,
           "eliteScore": 125.76131787031291,
-          "timestamp": "2025-10-21T01:17:45.926Z"
+          "timestamp": "2025-10-21T02:47:22.587Z"
         },
         {
           "generation": 3,
@@ -968,7 +1102,7 @@
           "medianScore": 70.39942915911845,
           "diversity": 0.8611111111111112,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T01:17:45.927Z"
+          "timestamp": "2025-10-21T02:47:22.588Z"
         },
         {
           "generation": 4,
@@ -977,7 +1111,7 @@
           "medianScore": 71.05162669292856,
           "diversity": 0.8333333333333334,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T01:17:45.928Z"
+          "timestamp": "2025-10-21T02:47:22.589Z"
         },
         {
           "generation": 5,
@@ -986,7 +1120,7 @@
           "medianScore": 53.843889930604206,
           "diversity": 0.7777777777777778,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T01:17:45.928Z"
+          "timestamp": "2025-10-21T02:47:22.589Z"
         },
         {
           "generation": 6,
@@ -995,7 +1129,7 @@
           "medianScore": 78.25900854278035,
           "diversity": 0.6666666666666666,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T01:17:45.929Z"
+          "timestamp": "2025-10-21T02:47:22.597Z"
         },
         {
           "generation": 7,
@@ -1004,7 +1138,7 @@
           "medianScore": 91.68021852282594,
           "diversity": 0.5,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T01:17:45.930Z"
+          "timestamp": "2025-10-21T02:47:22.598Z"
         },
         {
           "generation": 8,
@@ -1013,7 +1147,7 @@
           "medianScore": 84.52984866490183,
           "diversity": 0.6388888888888888,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T01:17:45.930Z"
+          "timestamp": "2025-10-21T02:47:22.598Z"
         },
         {
           "generation": 9,
@@ -1022,9 +1156,56 @@
           "medianScore": 90.34258929546631,
           "diversity": 0.6388888888888888,
           "eliteScore": 136.04606142636254,
-          "timestamp": "2025-10-21T01:17:45.931Z"
+          "timestamp": "2025-10-21T02:47:22.599Z"
         }
-      ]
+      ],
+      "triangulation": {
+        "candidateId": "nova-weave-g0-c721",
+        "consensus": "rejected",
+        "confidence": 0.3,
+        "passed": 1,
+        "total": 4,
+        "perspectives": [
+          {
+            "id": "consistency",
+            "label": "Deterministic replay",
+            "method": "Independent recomputation of pipeline metrics to detect hidden state drift.",
+            "passed": true,
+            "confidence": 0.3,
+            "scoreDelta": 0,
+            "accuracyDelta": 0,
+            "noveltyDelta": 0,
+            "energyDelta": 0
+          },
+          {
+            "id": "baseline",
+            "label": "Baseline dominance",
+            "method": "Compare against deterministic seed pipeline from mission hints.",
+            "passed": false,
+            "confidence": 0.25,
+            "scoreDelta": 0,
+            "notes": "Seed score 136.05 → improvement 0.00"
+          },
+          {
+            "id": "stability",
+            "label": "Adversarial jitter",
+            "method": "Inject bounded noise into inputs and compare to baseline outputs for resilience.",
+            "passed": false,
+            "confidence": 0.25,
+            "scoreDelta": 3.4937,
+            "notes": "Average deviation 3.494, max 16.010 across 36 samples"
+          },
+          {
+            "id": "governance",
+            "label": "Constraint & peer safety",
+            "method": "Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.",
+            "passed": false,
+            "confidence": 0.2,
+            "energyDelta": 76,
+            "notes": "Peer median 136.05 • energy delta 76.00 (≤ 50.40)"
+          }
+        ]
+      }
     }
   ],
   "ci": {
