@@ -6,6 +6,7 @@ import {
   isOperationType,
   mutateOperation,
   operationEnergy,
+  createOperation,
   randomOperation,
   signature,
   summarisePipeline,
@@ -25,6 +26,8 @@ import type {
   TaskDefinition,
   TaskResult,
   TaskExample,
+  TriangulationReport,
+  VerificationPerspective,
 } from "./types";
 import { ensureMissionValidity } from "./validation";
 
@@ -60,8 +63,47 @@ function nextCandidateId(taskId: string, generation: number): string {
   return `${taskId}-g${generation}-c${candidateIdCounter}`;
 }
 
+interface PipelineAssessment {
+  metrics: CandidateMetrics;
+  produced: number[][];
+}
+
 function clonePipeline(operations: OperationInstance[]): OperationInstance[] {
   return operations.map((operation) => ({ type: operation.type, params: { ...operation.params } }));
+}
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) % 2147483647;
+  }
+  return hash === 0 ? 1 : hash;
+}
+
+function deterministicOperation(type: OperationType, seed: number): OperationInstance {
+  const rng = new DeterministicRandom(Math.abs(seed) + 137);
+  return createOperation(type, rng);
+}
+
+function buildBaselinePipeline(task: TaskDefinition, mission: MissionConfig): OperationInstance[] {
+  const seeded = SEED_LIBRARY[task.id];
+  if (seeded && seeded.length > 0) {
+    return clonePipeline(seeded);
+  }
+
+  const hints = (task.pipelineHint ?? []).filter(isOperationType);
+  if (hints.length === 0) {
+    return [];
+  }
+
+  const maxOperations = Math.max(
+    1,
+    Math.min(mission.parameters.maxOperations, task.constraints?.maxOperations ?? mission.parameters.maxOperations),
+  );
+  const baseSeed =
+    hashString(`${task.id}|${mission.meta.title}|${mission.meta.ownerAddress}|${mission.parameters.seed}`) +
+    mission.parameters.generations * 97;
+  return hints.slice(0, maxOperations).map((type, index) => deterministicOperation(type, baseSeed + index * 131));
 }
 
 function bucketValue(value: number, buckets: number[]): number {
@@ -74,6 +116,18 @@ function bucketValue(value: number, buckets: number[]): number {
     }
   }
   return buckets[buckets.length - 1];
+}
+
+function computeMedian(values: number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+  return sorted[middle];
 }
 
 function flattenExamples(examples: TaskExample[]): number[] {
@@ -92,12 +146,11 @@ function computeNormalizer(values: number[]): number {
   return Math.max(1, sum + values.length);
 }
 
-function evaluateCandidate(
+function assessPipeline(
   operations: OperationInstance[],
   task: TaskDefinition,
   mission: MissionParameters,
-  generation: number,
-): CandidateRecord {
+): PipelineAssessment {
   const produced: number[][] = [];
   let totalError = 0;
   let comparisons = 0;
@@ -161,12 +214,176 @@ function evaluateCandidate(
     operationsUsed: operations.length,
   };
 
+  return { metrics, produced };
+}
+
+function evaluateStability(
+  operations: OperationInstance[],
+  task: TaskDefinition,
+  rng: DeterministicRandom,
+): { averageDeviation: number; maxDeviation: number; samples: number } {
+  const baselineOutputs = task.examples.map((example) => applyPipeline(operations, example.input));
+  let totalDeviation = 0;
+  let maxDeviation = 0;
+  let samples = 0;
+
+  for (let exampleIndex = 0; exampleIndex < task.examples.length; exampleIndex += 1) {
+    const example = task.examples[exampleIndex];
+    const baseline = baselineOutputs[exampleIndex] ?? [];
+    for (let trial = 0; trial < 4; trial += 1) {
+      const jitteredInput = example.input.map((value) => {
+        const amplitude = Math.max(0.08, Math.abs(value) * 0.12 + 0.08);
+        return rng.perturb(value, amplitude, {
+          min: value - amplitude * 1.25,
+          max: value + amplitude * 1.25,
+        });
+      });
+      const jitteredOutput = applyPipeline(operations, jitteredInput);
+      const length = Math.max(jitteredOutput.length, baseline.length);
+      for (let index = 0; index < length; index += 1) {
+        const baseValue = Number.isFinite(baseline[index]) ? baseline[index] : 0;
+        const jitterValue = Number.isFinite(jitteredOutput[index]) ? jitteredOutput[index] : 0;
+        const deviation = Math.abs(jitterValue - baseValue);
+        totalDeviation += deviation;
+        maxDeviation = Math.max(maxDeviation, deviation);
+        samples += 1;
+      }
+    }
+  }
+
+  const averageDeviation = samples > 0 ? totalDeviation / samples : 0;
+  return { averageDeviation, maxDeviation, samples };
+}
+
+function evaluateCandidate(
+  operations: OperationInstance[],
+  task: TaskDefinition,
+  mission: MissionParameters,
+  generation: number,
+): CandidateRecord {
+  const assessment = assessPipeline(operations, task, mission);
   return {
     id: nextCandidateId(task.id, generation),
-    operations,
-    metrics,
-    produced,
+    operations: clonePipeline(operations),
+    metrics: assessment.metrics,
+    produced: assessment.produced,
     generation,
+  };
+}
+
+function triangulateCandidate(
+  candidate: CandidateRecord,
+  task: TaskDefinition,
+  mission: MissionConfig,
+  elites: CandidateRecord[],
+  seed: number,
+): TriangulationReport {
+  const perspectiveRng = new DeterministicRandom(Math.abs(seed) + hashString(candidate.id));
+  const perspectives: VerificationPerspective[] = [];
+
+  const replay = assessPipeline(candidate.operations, task, mission.parameters);
+  const scoreDelta = Math.abs(replay.metrics.score - candidate.metrics.score);
+  const accuracyDelta = Math.abs(replay.metrics.accuracy - candidate.metrics.accuracy);
+  const noveltyDelta = Math.abs(replay.metrics.novelty - candidate.metrics.novelty);
+  const energyDelta = Math.abs(replay.metrics.energy - candidate.metrics.energy);
+  const consistencyPass =
+    scoreDelta <= 0.05 && accuracyDelta <= 0.001 && noveltyDelta <= 0.005 && energyDelta <= 1.5;
+  perspectives.push({
+    id: "consistency",
+    label: "Deterministic replay",
+    method: "Independent recomputation of pipeline metrics to detect hidden state drift.",
+    passed: consistencyPass,
+    confidence: 0.3,
+    scoreDelta,
+    accuracyDelta,
+    noveltyDelta,
+    energyDelta,
+    notes: consistencyPass ? undefined : "Replay metrics deviated beyond tolerance bounds.",
+  });
+
+  const baselinePipeline = buildBaselinePipeline(task, mission);
+  let baselineImprovement = candidate.metrics.score;
+  let baselineScore = 0;
+  let baselineNotes = "Baseline unavailable; mission seeds satisfied by evolved pipeline.";
+  if (baselinePipeline.length > 0) {
+    const baselineAssessment = assessPipeline(baselinePipeline, task, mission.parameters);
+    baselineScore = baselineAssessment.metrics.score;
+    baselineImprovement = candidate.metrics.score - baselineScore;
+    baselineNotes = `Seed score ${baselineScore.toFixed(2)} → improvement ${baselineImprovement.toFixed(2)}`;
+  }
+  const baselinePass =
+    baselinePipeline.length === 0 || baselineImprovement >= Math.max(3, baselineScore * 0.03);
+  perspectives.push({
+    id: "baseline",
+    label: "Baseline dominance",
+    method: "Compare against deterministic seed pipeline from mission hints.",
+    passed: baselinePass,
+    confidence: 0.25,
+    scoreDelta: baselineImprovement,
+    notes: baselineNotes,
+  });
+
+  const stability = evaluateStability(candidate.operations, task, perspectiveRng);
+  const stabilityPass = stability.averageDeviation <= 0.85 && stability.maxDeviation <= 4.5;
+  perspectives.push({
+    id: "stability",
+    label: "Adversarial jitter",
+    method: "Inject bounded noise into inputs and compare to baseline outputs for resilience.",
+    passed: stabilityPass,
+    confidence: 0.25,
+    scoreDelta: Number.parseFloat(stability.averageDeviation.toFixed(4)),
+    notes: `Average deviation ${stability.averageDeviation.toFixed(3)}, max ${stability.maxDeviation.toFixed(
+      3,
+    )} across ${stability.samples} samples`,
+  });
+
+  const allowedTypes =
+    task.constraints?.preferredOperations?.filter(isOperationType) ??
+    OPERATION_ALLOWLIST[task.id] ??
+    OPERATION_TYPES;
+  const disallowed = candidate.operations.find((operation) => !allowedTypes.includes(operation.type));
+  const expectedEnergy =
+    task.constraints?.expectedEnergy ?? mission.parameters.energyBudget / Math.max(1, mission.parameters.generations);
+  const guardEnergyDelta = Math.abs(candidate.metrics.energy - expectedEnergy);
+  const energyTolerance = Math.max(expectedEnergy * 0.35, 18);
+  const peerScores = elites.map((peer) => peer.metrics.score);
+  const peerMedian = computeMedian(peerScores.length ? peerScores : [candidate.metrics.score]);
+  const guardPass =
+    !disallowed && guardEnergyDelta <= energyTolerance && candidate.metrics.score >= peerMedian - 0.5;
+  perspectives.push({
+    id: "governance",
+    label: "Constraint & peer safety",
+    method: "Enforce allowlisted operations, thermodynamic alignment, and elite dominance checks.",
+    passed: guardPass,
+    confidence: 0.2,
+    energyDelta: guardEnergyDelta,
+    notes: disallowed
+      ? `Operation ${disallowed.type} outside allowlist`
+      : `Peer median ${peerMedian.toFixed(2)} • energy delta ${guardEnergyDelta.toFixed(2)} (≤ ${energyTolerance.toFixed(2)})`,
+  });
+
+  const totalWeight = perspectives.reduce((acc, perspective) => acc + perspective.confidence, 0);
+  const achievedWeight = perspectives
+    .filter((perspective) => perspective.passed)
+    .reduce((acc, perspective) => acc + perspective.confidence, 0);
+  const confidence = totalWeight > 0 ? achievedWeight / totalWeight : 0;
+  const passed = perspectives.filter((perspective) => perspective.passed).length;
+  let consensus: TriangulationReport["consensus"];
+  if (passed === perspectives.length) {
+    consensus = "confirmed";
+  } else if (confidence >= 0.65 && passed >= perspectives.length - 1) {
+    consensus = "attention";
+  } else {
+    consensus = "rejected";
+  }
+
+  return {
+    candidateId: candidate.id,
+    consensus,
+    confidence,
+    passed,
+    total: perspectives.length,
+    perspectives,
   };
 }
 
@@ -356,6 +573,7 @@ function runTask(
 
   const finalSorted = [...evaluated].sort((a, b) => b.metrics.score - a.metrics.score);
   const elites = finalSorted.slice(0, Math.max(3, mission.parameters.eliteCount));
+  const triangulation = triangulateCandidate(globalBest, task, mission, elites, globalSeed);
 
   return {
     task,
@@ -363,6 +581,7 @@ function runTask(
     elites,
     history,
     archive: Array.from(archive.values()).sort((a, b) => b.candidate.metrics.score - a.candidate.metrics.score),
+    triangulation,
   };
 }
 
@@ -397,6 +616,15 @@ export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControl
     tasks.reduce((acc, task) => acc + task.bestCandidate.metrics.novelty, 0) / Math.max(1, tasks.length);
   const coverageScore =
     tasks.reduce((acc, task) => acc + task.bestCandidate.metrics.coverage, 0) / Math.max(1, tasks.length);
+  const triangulationConfidence =
+    tasks.reduce((acc, task) => acc + task.triangulation.confidence, 0) / Math.max(1, tasks.length);
+  const consensusCounts = tasks.reduce<Record<"confirmed" | "attention" | "rejected", number>>(
+    (acc, task) => {
+      acc[task.triangulation.consensus] += 1;
+      return acc;
+    },
+    { confirmed: 0, attention: 0, rejected: 0 },
+  );
 
   return {
     mission,
@@ -410,6 +638,8 @@ export function runMetaSynthesis(mission: MissionConfig, coverage?: OwnerControl
       energyUsage,
       noveltyScore,
       coverageScore,
+      triangulationConfidence,
+      consensus: consensusCounts,
     },
   };
 }

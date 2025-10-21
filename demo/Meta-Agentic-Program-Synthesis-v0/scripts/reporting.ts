@@ -10,6 +10,7 @@ import type {
   OwnerControlCoverage,
   SynthesisRun,
   TaskResult,
+  TriangulationReport,
 } from "./types";
 
 function formatPercent(value: number, digits = 2): string {
@@ -79,6 +80,62 @@ function renderOwnerCoverageHtml(coverage: OwnerControlCoverage): string {
   <li><strong>Satisfied controls:</strong> ${satisfied}</li>
   <li><strong>Missing controls:</strong> ${missing}</li>
 </ul>`;
+}
+
+function renderTriangulationTable(report: TriangulationReport): string {
+  if (report.perspectives.length === 0) {
+    return "| Perspective | Verdict | Confidence | Notes |\n| --- | --- | --- | --- |\n| n/a | n/a | n/a | n/a |";
+  }
+  const rows = report.perspectives
+    .map((perspective) => {
+      const verdict = perspective.passed ? "✅" : "⚠️";
+      const confidence = formatPercent(perspective.confidence, 1);
+      const note = perspective.notes ? perspective.notes : "";
+      return `| ${perspective.label} | ${verdict} | ${confidence} | ${note.replace(/\n/g, "<br/>")} |`;
+    })
+    .join("\n");
+  return `| Perspective | Verdict | Confidence | Notes |\n| --- | --- | --- | --- |\n${rows}`;
+}
+
+function renderTriangulationHtml(report: TriangulationReport): string {
+  const rows = report.perspectives
+    .map(
+      (perspective) => `
+        <tr>
+          <td>${escapeHtml(perspective.label)}</td>
+          <td>${perspective.passed ? "✅" : "⚠️"}</td>
+          <td>${formatPercent(perspective.confidence, 1)}</td>
+          <td>${escapeHtml(perspective.notes ?? "")}</td>
+        </tr>
+      `,
+    )
+    .join("");
+  return `
+<table class="triangulation">
+  <thead>
+    <tr>
+      <th>Perspective</th>
+      <th>Verdict</th>
+      <th>Confidence</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rows}
+  </tbody>
+</table>`;
+}
+
+function renderTriangulationMermaid(report: TriangulationReport): string {
+  const passed = report.perspectives.filter((perspective) => perspective.passed).length;
+  const failed = report.perspectives.length - passed;
+  return [
+    "```mermaid",
+    "pie title Verification consensus",
+    `  \"Passed\" : ${passed}`,
+    `  \"Review\" : ${Math.max(0, failed)}`,
+    "```",
+  ].join("\n");
 }
 
 function renderPipeline(candidate: CandidateRecord): string {
@@ -177,6 +234,10 @@ export function renderMarkdownReport(run: SynthesisRun): string {
   lines.push(`- **Novelty signal:** ${formatPercent(run.aggregate.noveltyScore)} average.`);
   lines.push(`- **Coverage:** ${formatPercent(run.aggregate.coverageScore)} task-level perfect matches.`);
   lines.push(
+    `- **Triangulation confidence:** ${formatPercent(run.aggregate.triangulationConfidence)} consensus ` +
+      `(${run.aggregate.consensus.confirmed} confirmed / ${run.aggregate.consensus.attention} attention / ${run.aggregate.consensus.rejected} flagged).`,
+  );
+  lines.push(
     "- **Owner supremacy:** every control remains copy-paste accessible (pause, thermostat, upgrades, treasury mirrors, compliance dossier).",
   );
   lines.push(
@@ -201,6 +262,19 @@ export function renderMarkdownReport(run: SynthesisRun): string {
   lines.push("## Meta-Agentic Control Surface");
   lines.push("");
   lines.push(renderMermaidFlow(mission, run));
+  lines.push("");
+
+  lines.push("## Verification Consensus");
+  lines.push("");
+  lines.push(
+    `- Confirmed: ${run.aggregate.consensus.confirmed} | Attention: ${run.aggregate.consensus.attention} | Flagged: ${run.aggregate.consensus.rejected}`,
+  );
+  lines.push("```mermaid");
+  lines.push("pie title System-wide verification consensus");
+  lines.push(`  \"Confirmed\" : ${run.aggregate.consensus.confirmed}`);
+  lines.push(`  \"Attention\" : ${run.aggregate.consensus.attention}`);
+  lines.push(`  \"Rejected\" : ${run.aggregate.consensus.rejected}`);
+  lines.push("```");
   lines.push("");
 
   lines.push("## Owner Capabilities");
@@ -228,6 +302,15 @@ export function renderMarkdownReport(run: SynthesisRun): string {
     lines.push("```");
     lines.push(renderPipeline(task.bestCandidate));
     lines.push("```");
+    lines.push("");
+    lines.push("### Triangulated Verification");
+    lines.push("");
+    lines.push(
+      `- Consensus: **${task.triangulation.consensus.toUpperCase()}** (${formatPercent(task.triangulation.confidence, 1)} confidence, ${task.triangulation.passed}/${task.triangulation.total} perspectives).`,
+    );
+    lines.push(renderTriangulationTable(task.triangulation));
+    lines.push("");
+    lines.push(renderTriangulationMermaid(task.triangulation));
     lines.push("");
     lines.push("### Evolutionary History");
     lines.push("");
@@ -283,14 +366,44 @@ export function buildJsonSummary(run: SynthesisRun): Record<string, unknown> {
         score: cell.candidate.metrics.score,
       })),
       history: task.history,
+      triangulation: task.triangulation,
     })),
     ci: run.mission.ci,
     ownerControls: run.mission.ownerControls,
   };
 }
 
+export function buildTriangulationDigest(run: SynthesisRun): Record<string, unknown> {
+  return {
+    generatedAt: run.generatedAt,
+    confidence: run.aggregate.triangulationConfidence,
+    consensus: run.aggregate.consensus,
+    tasks: run.tasks.map((task) => ({
+      id: task.task.id,
+      label: task.task.label,
+      consensus: task.triangulation.consensus,
+      confidence: task.triangulation.confidence,
+      passed: task.triangulation.passed,
+      total: task.triangulation.total,
+      perspectives: task.triangulation.perspectives.map((perspective) => ({
+        id: perspective.id,
+        label: perspective.label,
+        method: perspective.method,
+        passed: perspective.passed,
+        confidence: perspective.confidence,
+        scoreDelta: perspective.scoreDelta,
+        accuracyDelta: perspective.accuracyDelta,
+        noveltyDelta: perspective.noveltyDelta,
+        energyDelta: perspective.energyDelta,
+        notes: perspective.notes,
+      })),
+    })),
+  };
+}
+
 export function renderHtmlDashboard(run: SynthesisRun): string {
   const summary = buildJsonSummary(run);
+  const triangulationDigest = buildTriangulationDigest(run);
   const mermaidFlow = renderMermaidFlow(run.mission, run);
   const taskSections = run.tasks
     .map((task) => {
@@ -309,6 +422,12 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
   <details open>
     <summary>Pipeline Blueprint</summary>
     <pre>${pipeline}</pre>
+  </details>
+  <details>
+    <summary>Triangulated Verification</summary>
+    <p><strong>Consensus:</strong> ${escapeHtml(task.triangulation.consensus)} • Confidence ${formatPercent(task.triangulation.confidence)}</p>
+    <div class="table">${renderTriangulationHtml(task.triangulation)}</div>
+    <pre class="mermaid">${renderTriangulationMermaid(task.triangulation).replace(/```mermaid|```/g, "").trim()}</pre>
   </details>
   <details>
     <summary>Evolutionary History</summary>
@@ -372,11 +491,21 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
         <div class="metric-card"><strong>Energy envelope</strong><br />${formatNumber(run.aggregate.energyUsage, 2)}</div>
         <div class="metric-card"><strong>Novelty signal</strong><br />${formatPercent(run.aggregate.noveltyScore)}</div>
         <div class="metric-card"><strong>Coverage</strong><br />${formatPercent(run.aggregate.coverageScore)}</div>
+        <div class="metric-card"><strong>Triangulation confidence</strong><br />${formatPercent(run.aggregate.triangulationConfidence)}</div>
       </div>
     </header>
     <section>
       <h2>Meta-Agentic Control Surface</h2>
       <pre class="mermaid">${mermaidFlow.replace(/```mermaid|```/g, "").trim()}</pre>
+    </section>
+    <section>
+      <h2>Verification Consensus</h2>
+      <p>Confirmed ${run.aggregate.consensus.confirmed} • Attention ${run.aggregate.consensus.attention} • Flagged ${run.aggregate.consensus.rejected}</p>
+      <pre class="mermaid">pie title System-wide verification consensus
+  "Confirmed" : ${run.aggregate.consensus.confirmed}
+  "Attention" : ${run.aggregate.consensus.attention}
+  "Rejected" : ${run.aggregate.consensus.rejected}
+</pre>
     </section>
     <section>
       <h2>Owner Capabilities</h2>
@@ -394,6 +523,7 @@ export function renderHtmlDashboard(run: SynthesisRun): string {
     </section>
     <footer>Generated ${escapeHtml(run.generatedAt)} • JSON summary embedded below</footer>
     <script id="meta-agentic-summary" type="application/json">${escapeHtml(JSON.stringify(summary, null, 2))}</script>
+    <script id="meta-agentic-triangulation" type="application/json">${escapeHtml(JSON.stringify(triangulationDigest, null, 2))}</script>
   </body>
 </html>`;
 }
@@ -405,17 +535,20 @@ export async function writeReports(
     markdownFile: string;
     jsonFile: string;
     htmlFile: string;
+    triangulationFile: string;
   },
 ): Promise<{ files: string[] }> {
-  const { reportDir, markdownFile, jsonFile, htmlFile } = options;
+  const { reportDir, markdownFile, jsonFile, htmlFile, triangulationFile } = options;
   await mkdir(reportDir, { recursive: true });
   const markdown = renderMarkdownReport(run);
   const summary = buildJsonSummary(run);
+  const triangulation = buildTriangulationDigest(run);
   const html = renderHtmlDashboard(run);
   await writeFile(markdownFile, markdown, "utf8");
   await writeFile(jsonFile, JSON.stringify(summary, null, 2), "utf8");
   await writeFile(htmlFile, html, "utf8");
-  return { files: [markdownFile, jsonFile, htmlFile] };
+  await writeFile(triangulationFile, JSON.stringify(triangulation, null, 2), "utf8");
+  return { files: [markdownFile, jsonFile, htmlFile, triangulationFile] };
 }
 
 export function generateManifest(entries: string[]): Record<string, string> {

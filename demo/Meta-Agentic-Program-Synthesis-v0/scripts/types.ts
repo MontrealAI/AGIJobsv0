@@ -116,6 +116,28 @@ export interface CandidateRecord {
   generation: number;
 }
 
+export interface VerificationPerspective {
+  id: string;
+  label: string;
+  method: string;
+  passed: boolean;
+  confidence: number;
+  scoreDelta?: number;
+  accuracyDelta?: number;
+  noveltyDelta?: number;
+  energyDelta?: number;
+  notes?: string;
+}
+
+export interface TriangulationReport {
+  candidateId: string;
+  consensus: "confirmed" | "attention" | "rejected";
+  confidence: number;
+  passed: number;
+  total: number;
+  perspectives: VerificationPerspective[];
+}
+
 export interface GenerationSnapshot {
   generation: number;
   bestScore: number;
@@ -138,6 +160,7 @@ export interface TaskResult {
   elites: CandidateRecord[];
   history: GenerationSnapshot[];
   archive: ArchiveCell[];
+  triangulation: TriangulationReport;
 }
 
 export interface SynthesisRun {
@@ -152,5 +175,11 @@ export interface SynthesisRun {
     energyUsage: number;
     noveltyScore: number;
     coverageScore: number;
+    triangulationConfidence: number;
+    consensus: {
+      confirmed: number;
+      attention: number;
+      rejected: number;
+    };
   };
 }

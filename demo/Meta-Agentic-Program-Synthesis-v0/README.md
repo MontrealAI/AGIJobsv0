@@ -5,6 +5,7 @@ owner launches a single command and receives:
 
 - An evolutionary program synthesis loop that breeds agent code for ARC-style perception, ledger equilibria, and on-chain payload
   weaving – all governed by thermodynamic budgets and quality-diversity archives.
+- A multi-angle verification lattice that replay-scores, baseline-compares, stress-jitters, and governance-audits every elite pipeline so owners see a consensus verdict rather than a single unchecked metric.
 - A governance dossier proving that the owner retains absolute command: pause switches, thermostat calibrations, upgrade queues,
   treasury mirrors, and compliance beacons are exported with copy-paste commands.
 - CI v2 branch-protection verification and owner diagnostics so that the generated machine matches production branch policies and
@@ -86,10 +87,39 @@ flowchart LR
 | `meta-agentic-program-synthesis-report.md` | Narrative dossier with Mermaid diagrams, tables, and mission metadata. |
 | `meta-agentic-program-synthesis-summary.json` | Machine-readable synthesis metrics, pipelines, and archive excerpts. |
 | `meta-agentic-program-synthesis-dashboard.html` | Executive UI with live Mermaid rendering and embedded JSON manifest. |
+| `meta-agentic-program-synthesis-triangulation.json` | Multi-perspective verification digest (consensus, confidences, per-perspective evidence). |
 | `meta-agentic-program-synthesis-manifest.json` | SHA-256 manifest of every artefact for audit trails. |
 | `meta-agentic-program-synthesis-ci.json` | CI workflow verification report (lint/tests/foundry/coverage). |
 | `meta-agentic-program-synthesis-owner-diagnostics.{json,md}` | Owner readiness, command outputs, and sentinel status. |
 | `meta-agentic-program-synthesis-full.{json,md}` | Aggregate timeline of the run, CI verdict, diagnostics, and artefact index. |
+
+## Triple-verification sentinel
+
+```mermaid
+flowchart TD
+  Candidate[[Elite Agent Pipeline]]:::core --> Replay[Deterministic Replay]:::verify
+  Candidate --> Baseline[Baseline Dominance]:::verify
+  Candidate --> Stability[Adversarial Jitter]:::verify
+  Candidate --> Governance[Governance & Thermodynamics]:::verify
+  Replay --> Verdict{Consensus Engine}:::decision
+  Baseline --> Verdict
+  Stability --> Verdict
+  Governance --> Verdict
+  Verdict -->|Confidence & alerts| Owner((Owner Command Surface)):::role
+  Verdict --> Archive[[Triangulation Digest]]:::archive
+  classDef core fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;
+  classDef verify fill:#0b7285,stroke:#66d9e8,stroke-width:2px,color:#e6fcf5;
+  classDef decision fill:#1f2933,stroke:#fcd34d,stroke-width:2px,color:#fef08a;
+  classDef role fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+  classDef archive fill:#1e3a8a,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;
+```
+
+- **Replay** checks for deterministic agreement with the scoring engine and exposes hidden state drift.
+- **Baseline dominance** proves the evolved agent beats the deterministic mission seeds by a material margin.
+- **Adversarial jitter** injects bounded noise to ensure the pipeline remains stable under perturbations.
+- **Governance guard** enforces allowlisted operations, thermodynamic expectations, and elite peer dominance before the owner accepts the result.
+
+The digest exported in `meta-agentic-program-synthesis-triangulation.json` lists every perspective, delta, and confidence score so auditors can replay the verdict independently.
 
 ## Power knobs for operators
 

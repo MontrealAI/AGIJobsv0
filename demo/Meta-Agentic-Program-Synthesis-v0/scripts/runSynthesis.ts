@@ -11,6 +11,7 @@ const REPORT_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-report
 const SUMMARY_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-summary.json");
 const DASHBOARD_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-dashboard.html");
 const MANIFEST_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-manifest.json");
+const TRIANGULATION_FILE = path.join(REPORT_DIR, "meta-agentic-program-synthesis-triangulation.json");
 
 export interface RunOptions {
   missionFile?: string;
@@ -19,6 +20,7 @@ export interface RunOptions {
   summaryFile?: string;
   dashboardFile?: string;
   manifestFile?: string;
+  triangulationFile?: string;
 }
 
 function resolveOptions(options: RunOptions = {}): Required<RunOptions> {
@@ -28,7 +30,8 @@ function resolveOptions(options: RunOptions = {}): Required<RunOptions> {
   const summaryFile = path.resolve(options.summaryFile ?? SUMMARY_FILE);
   const dashboardFile = path.resolve(options.dashboardFile ?? DASHBOARD_FILE);
   const manifestFile = path.resolve(options.manifestFile ?? MANIFEST_FILE);
-  return { missionFile, reportDir, reportFile, summaryFile, dashboardFile, manifestFile };
+  const triangulationFile = path.resolve(options.triangulationFile ?? TRIANGULATION_FILE);
+  return { missionFile, reportDir, reportFile, summaryFile, dashboardFile, manifestFile, triangulationFile };
 }
 
 export async function executeSynthesis(options: RunOptions = {}): Promise<SynthesisRun> {
@@ -41,6 +44,7 @@ export async function executeSynthesis(options: RunOptions = {}): Promise<Synthe
     markdownFile: resolved.reportFile,
     jsonFile: resolved.summaryFile,
     htmlFile: resolved.dashboardFile,
+    triangulationFile: resolved.triangulationFile,
   });
   await updateManifest(resolved.manifestFile, files);
   return run;
@@ -72,6 +76,7 @@ async function main(): Promise<void> {
   console.log(`   Markdown report: ${resolveOptions(cliOptions).reportFile}`);
   console.log(`   JSON summary: ${resolveOptions(cliOptions).summaryFile}`);
   console.log(`   Dashboard: ${resolveOptions(cliOptions).dashboardFile}`);
+  console.log(`   Triangulation digest: ${resolveOptions(cliOptions).triangulationFile}`);
   console.log(`   Manifest: ${resolveOptions(cliOptions).manifestFile}`);
   console.log(
     `   Aggregate → score ${run.aggregate.globalBestScore.toFixed(2)}, accuracy ${(run.aggregate.averageAccuracy * 100).toFixed(2)}%, novelty ${(run.aggregate.noveltyScore * 100).toFixed(1)}%`,

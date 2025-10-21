@@ -16,6 +16,7 @@ const FULL_MARKDOWN = path.join(REPORT_DIR, "meta-agentic-program-synthesis-full
 const CI_REPORT = path.join(REPORT_DIR, "meta-agentic-program-synthesis-ci.json");
 const OWNER_JSON = path.join(REPORT_DIR, "meta-agentic-program-synthesis-owner-diagnostics.json");
 const OWNER_MARKDOWN = path.join(REPORT_DIR, "meta-agentic-program-synthesis-owner-diagnostics.md");
+const TRIANGULATION_JSON = path.join(REPORT_DIR, "meta-agentic-program-synthesis-triangulation.json");
 
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
@@ -43,6 +44,15 @@ function renderMarkdown(
   lines.push(`- Energy envelope: ${formatNumber(run.aggregate.energyUsage)}`);
   lines.push(`- Novelty signal: ${formatPercent(run.aggregate.noveltyScore)}`);
   lines.push(`- Coverage: ${formatPercent(run.aggregate.coverageScore)}`);
+  lines.push(
+    `- Triangulation confidence: ${formatPercent(run.aggregate.triangulationConfidence)} (${run.aggregate.consensus.confirmed}/${run.aggregate.consensus.attention}/${run.aggregate.consensus.rejected})`,
+  );
+  lines.push("");
+  lines.push("## Verification Consensus");
+  lines.push("");
+  lines.push(
+    `- Confirmed: ${run.aggregate.consensus.confirmed} | Attention: ${run.aggregate.consensus.attention} | Rejected: ${run.aggregate.consensus.rejected}`,
+  );
   lines.push("");
   lines.push("## CI Shield Assessment");
   lines.push("");
@@ -304,6 +314,7 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
     "Markdown report": path.join(reportDir, "meta-agentic-program-synthesis-report.md"),
     "JSON summary": path.join(reportDir, "meta-agentic-program-synthesis-summary.json"),
     "Dashboard": path.join(reportDir, "meta-agentic-program-synthesis-dashboard.html"),
+    "Triangulation digest": TRIANGULATION_JSON,
     "Manifest": path.join(reportDir, "meta-agentic-program-synthesis-manifest.json"),
     "CI verification": CI_REPORT,
     "Owner diagnostics (JSON)": OWNER_JSON,
@@ -313,6 +324,18 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
   const fullSummary = {
     generatedAt: new Date().toISOString(),
     aggregate: run.aggregate,
+    triangulation: {
+      confidence: run.aggregate.triangulationConfidence,
+      consensus: run.aggregate.consensus,
+      tasks: run.tasks.map((task) => ({
+        id: task.task.id,
+        label: task.task.label,
+        consensus: task.triangulation.consensus,
+        confidence: task.triangulation.confidence,
+        passed: task.triangulation.passed,
+        total: task.triangulation.total,
+      })),
+    },
     mission: run.mission.meta,
     ci: {
       ok: ciAssessment.ok,
@@ -335,6 +358,7 @@ export async function runFullPipeline(options: RunOptions = {}): Promise<void> {
     CI_REPORT,
     OWNER_JSON,
     OWNER_MARKDOWN,
+    TRIANGULATION_JSON,
     FULL_JSON,
     FULL_MARKDOWN,
   ]);
