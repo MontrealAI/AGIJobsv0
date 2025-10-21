@@ -103,6 +103,17 @@ export interface OwnerScriptAudit {
   available: boolean;
 }
 
+export interface OwnerSupremacyMetrics {
+  readiness: OwnerControlCoverage["readiness"];
+  coverageRatio: number;
+  declaredCategories: number;
+  satisfiedCategories: number;
+  capabilityDeclarations: number;
+  declaredScripts: number;
+  availableScripts: number;
+  scriptAvailability: number;
+}
+
 export interface MissionConfig {
   meta: MissionMeta;
   parameters: MissionParameters;
@@ -208,5 +219,6 @@ export interface SynthesisRun {
         drift: number;
       };
     };
+    ownerSupremacy: OwnerSupremacyMetrics;
   };
 }

@@ -1,10 +1,13 @@
 import path from "path";
+import os from "os";
+import { mkdtemp, rm } from "fs/promises";
 import { expect } from "chai";
 
 import {
   loadMissionConfig,
   runMetaSynthesis,
 } from "../../demo/Meta-Agentic-Program-Synthesis-v0/scripts/synthesisEngine";
+import { executeSynthesis } from "../../demo/Meta-Agentic-Program-Synthesis-v0/scripts/runSynthesis";
 import { ensureMissionValidity } from "../../demo/Meta-Agentic-Program-Synthesis-v0/scripts/validation";
 import { signature } from "../../demo/Meta-Agentic-Program-Synthesis-v0/scripts/operations";
 import type {
@@ -55,6 +58,12 @@ describe("Meta-Agentic Program Synthesis Sovereign mission", function () {
       expect(task.triangulation.perspectives).to.have.lengthOf(4);
     }
 
+    expect(run.aggregate.ownerSupremacy.readiness).to.equal("ready");
+    expect(run.aggregate.ownerSupremacy.coverageRatio).to.equal(1);
+    expect(run.aggregate.ownerSupremacy.declaredScripts).to.be.greaterThan(0);
+    expect(run.aggregate.ownerSupremacy.availableScripts).to.equal(0);
+    expect(run.aggregate.ownerSupremacy.scriptAvailability).to.equal(0);
+
     const rerun = runMetaSynthesis(mission, coverage);
     expect(rerun.aggregate.globalBestScore).to.be.closeTo(run.aggregate.globalBestScore, 1e-9);
     expect(rerun.aggregate.energyUsage).to.equal(run.aggregate.energyUsage);
@@ -86,6 +95,31 @@ describe("Meta-Agentic Program Synthesis Sovereign mission", function () {
       expect(task.archive.length).to.be.greaterThan(0);
       expect(task.triangulation.passed).to.be.at.least(1);
       expect(task.triangulation.confidence).to.be.at.least(0.3);
+    }
+  });
+
+  it("updates owner supremacy ratios after report generation", async function () {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "meta-agentic-synthesis-"));
+    try {
+      const runWithReports = await executeSynthesis({
+        missionFile: missionPath,
+        reportDir: tempDir,
+        reportFile: path.join(tempDir, "report.md"),
+        summaryFile: path.join(tempDir, "summary.json"),
+        dashboardFile: path.join(tempDir, "dashboard.html"),
+        manifestFile: path.join(tempDir, "manifest.json"),
+        triangulationFile: path.join(tempDir, "triangulation.json"),
+        briefingFile: path.join(tempDir, "briefing.md"),
+      });
+
+      expect(runWithReports.ownerScriptsAudit).to.have.length.greaterThan(0);
+      expect(runWithReports.aggregate.ownerSupremacy.availableScripts).to.equal(
+        runWithReports.aggregate.ownerSupremacy.declaredScripts,
+      );
+      expect(runWithReports.aggregate.ownerSupremacy.scriptAvailability).to.equal(1);
+      expect(runWithReports.aggregate.ownerSupremacy.readiness).to.equal("ready");
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
     }
   });
 });

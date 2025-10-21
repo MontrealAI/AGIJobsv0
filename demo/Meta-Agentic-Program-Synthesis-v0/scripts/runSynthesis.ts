@@ -60,6 +60,15 @@ export async function executeSynthesis(options: RunOptions = {}): Promise<Synthe
     briefingFile: resolved.briefingFile,
   });
   run.ownerScriptsAudit = ownerScripts;
+  const declaredScripts = run.mission.meta.governance?.ownerScripts?.length ?? ownerScripts.length;
+  const availableScripts = ownerScripts.filter((entry) => entry.available).length;
+  const scriptAvailability = declaredScripts > 0 ? availableScripts / declaredScripts : 1;
+  run.aggregate.ownerSupremacy = {
+    ...run.aggregate.ownerSupremacy,
+    declaredScripts,
+    availableScripts,
+    scriptAvailability,
+  };
   run.ownerBriefingPath = resolved.briefingFile;
   await updateManifest(resolved.manifestFile, files);
   return run;

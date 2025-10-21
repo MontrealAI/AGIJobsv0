@@ -60,6 +60,9 @@ function renderMarkdown(
   lines.push(
     `- Thermodynamic alignment: ${formatPercent(run.aggregate.thermodynamics.averageAlignment)} (mean Δ ${formatNumber(run.aggregate.thermodynamics.meanDelta)} | max Δ ${formatNumber(run.aggregate.thermodynamics.maxDelta)} | ${formatThermoStatus(run.aggregate.thermodynamics.statusCounts)})`,
   );
+  lines.push(
+    `- Owner supremacy: coverage ${formatPercent(run.aggregate.ownerSupremacy.coverageRatio)} | scripts ${formatPercent(run.aggregate.ownerSupremacy.scriptAvailability)} (${run.aggregate.ownerSupremacy.availableScripts}/${run.aggregate.ownerSupremacy.declaredScripts}) | readiness ${run.aggregate.ownerSupremacy.readiness}`,
+  );
   lines.push("");
   lines.push("## Verification Consensus");
   lines.push("");
