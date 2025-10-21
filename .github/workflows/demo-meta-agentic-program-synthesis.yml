@@ -1,0 +1,54 @@
+name: demo-meta-agentic-program-synthesis
+
+on:
+  pull_request:
+    paths:
+      - 'demo/Meta-Agentic-Program-Synthesis-v0/**'
+      - '.github/workflows/demo-meta-agentic-program-synthesis.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+
+      - name: Set up Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        with:
+          python-version: '3.12'
+
+      - name: Run demo tests
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: |
+          python -m pytest demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests
+
+      - name: Execute sample demo run
+        run: |
+          python demo/Meta-Agentic-Program-Synthesis-v0/start_demo.py alpha --output demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts
+          test -f demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts/report.html
+          test -f demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts/report.json
+
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta-agentic-demo-report
+          path: demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts/

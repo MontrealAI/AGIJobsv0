@@ -1,167 +1,131 @@
-# Meta-Agentic Program Synthesis Sovereign Demo
+# 🎖️ Meta-Agentic Program Synthesis 👁️✨ Demo (v0)
 
-The **Meta-Agentic Program Synthesis Sovereign Demo** turns AGI Jobs v0 (v2) into a turnkey superintelligent forge. A non-technical
-owner launches a single command and receives:
+> "Meta-Agentic program synthesis" is delivered here as a fully scripted, production-ready demonstration that a non-technical user can execute to witness AGI Jobs v0 (v2) behaving like an autonomous sovereign architect. The demo bundles a self-improving agent economy, a thermodynamic reward layer, and polished artefacts that showcase how AGI Jobs v0 lets anyone deploy systems of unprecedented scale and capability.
 
-- An evolutionary program synthesis loop that breeds agent code for ARC-style perception, ledger equilibria, and on-chain payload
-  weaving – all governed by thermodynamic budgets and quality-diversity archives.
-- A multi-angle verification lattice that replay-scores, baseline-compares, stress-jitters, and governance-audits every elite pipeline so owners see a consensus verdict rather than a single unchecked metric.
-- A governance dossier proving that the owner retains absolute command: pause switches, thermostat calibrations, upgrade queues,
-  treasury mirrors, and compliance beacons are exported with copy-paste commands.
-- CI v2 branch-protection verification and owner diagnostics so that the generated machine matches production branch policies and
-  governance readiness without manual intervention.
+---
 
-The demo lives entirely inside this repository. No bespoke contracts or external services are required.
+## 🧠 Purpose
 
-## One-command launch (non-technical friendly)
+* Give any stakeholder – even without coding experience – a “launch button” for a sovereign architect that decomposes their ambition into jobs, evolves specialised agents, and validates everything on-chain.
+* Exhibit the **collective second-order intelligence** that AGI Jobs v0 (v2) unlocks: evolutionary self-improvement, decentralised validation, tokenised incentives, and transparent reporting.
+* Ship code that is **robust, documented, tested, and immediately deployable** in a production-critical environment. The repository already wires the demo into CI so every pull request proves it stays green.
 
-```bash
-# from repository root
-./demo/Meta-Agentic-Program-Synthesis-v0/bin/launch.sh
-```
+---
 
-The launcher performs:
-
-1. `npm run demo:meta-agentic-program-synthesis` – executes the evolutionary forge, produces Markdown/JSON/HTML dossiers, and
-   hashes them into a manifest.
-2. `npm run demo:meta-agentic-program-synthesis:full` – replays the run, verifies CI (v2) enforcement, runs owner diagnostics in
-   offline mode, and compiles a full-run bundle.
-3. `npm run demo:meta-agentic-program-synthesis:briefing` – prints a console-native owner briefing while regenerating artefacts,
-   perfect for executive war rooms or quick remote updates.
-
-All artefacts land in `demo/Meta-Agentic-Program-Synthesis-v0/reports/` with deterministic SHA-256 fingerprints.
-
-## Cinematic orchestration map
+## 🏗️ Architecture Snapshot
 
 ```mermaid
 flowchart LR
-  Owner((Non-technical Owner)):::role --> Sovereign[[Meta-Agentic Architect]]:::core
-  Sovereign --> Forge((Evolutionary Forge)):::core
-  Forge -->|Spawn+mutate| ARC[ARC Sentinel Edge Lift]
-  Forge -->|Spawn+mutate| Ledger[Ledger Harmonics Sequencer]
-  Forge -->|Spawn+mutate| Nova[Nova Weave Optimiser]
-  ARC --> Archive[Quality-Diversity Archive]:::archive
-  Ledger --> Archive
-  Nova --> Archive
-  Archive --> Owner
-  Owner -->|Pause/thermostat/upgrade| Control[Owner Control Surface]:::governance
-  Control --> Sovereign
-  SentinelMesh[Sentinel Mesh<br/>timelock/thermostat/reward-engine]:::governance --> Archive
-  Council[Validator Council<br/>multisig guardians]:::governance --> Sovereign
-  classDef role fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
-  classDef core fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;
-  classDef archive fill:#1e3a8a,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;
-  classDef governance fill:#1f2937,stroke:#22d3ee,stroke-width:2px,color:#e0f2fe;
+    User[("Non-technical visionary")] -->|Nova-seed| SovereignArchitect["**Sovereign Architect**\n(meta-orchestrator)"]
+    subgraph MetaLoop[Meta-agentic synthesis loop]
+        SovereignArchitect --> Evolver["Evolutionary Program Synthesiser"]
+        Evolver -->|generate + evaluate| CandidatePool{{"Candidate programs"}}
+        CandidatePool -->|best-of-breed| SovereignArchitect
+    end
+    SovereignArchitect -->|post jobs| JobRegistry[["Simulated AGI Jobs marketplace"]]
+    JobRegistry --> Nodes["α-AGI Nodes\n(simulated execution clusters)"]
+    Nodes -->|commit outputs| Validation["Commit–reveal validators"]
+    Validation -->|thermodynamic clearance| RewardEngine[["Boltzmann reward engine"]]
+    RewardEngine -->|$AGIα flow| Treasury(("Architect & operators"))
+    RewardEngine --> Telemetry["Stake telemetry & dashboards"]
+    Telemetry --> User
 ```
 
-## Evolutionary program synthesis at a glance
-
-| Task ID | Mission | Seeds | Owner economics | Best score | Accuracy | Novelty | Coverage |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `arc-sentinel` | Detect latent pixel edges and amplify | Difference → Threshold | Stake 120,000 / Reward 420,000 | ≈100.00 | 100% | 68% | 100% |
-| `ledger-harmonics` | Stabilise cash-flow deltas | Cumulative → Modulo → Offset | Stake 155,000 / Reward 525,000 | ≈99.60 | 99% | 72% | 100% |
-| `nova-weave` | Compile alpha sequences | Power → Offset → Scale | Stake 165,000 / Reward 610,000 | ≈99.12 | 99% | 74% | 100% |
-
-- **Deterministic reproducibility** – the forge uses a seeded PRNG so every rerun produces the same elite pipelines unless the
-  owner tweaks parameters.
-- **Quality-diversity archive** – hundreds of cells preserve dissimilar high performers; owners can choose conservative, energetic,
-  or exotic agents on demand.
-- **Energy discipline** – each program pays energy costs, keeping the synthesis loop within thermodynamic budgets defined by the
-  mission manifest.
-- **Thermodynamic sentinel** – aggregate alignment telemetry quantifies per-task energy drift and surfaces green/yellow/red
-  status directly in the Markdown dossier and executive dashboard.
-
-## Owner supremacy proof points
-
-- **Pause in seconds** – `npm run owner:system-pause -- --action pause` (and `status` to confirm) ships with the generated dossier.
-- **Thermostat & Hamiltonian controls** – `npm run thermostat:update` + `npm run thermodynamics:report` align reward engines with the
-  synthesis outputs.
-- **Upgrade & treasury workflows** – queue upgrades, mirror reward splits, and export compliance dossiers with a single copy-paste.
-- **CI v2 enforcement** – `verifyCiShield` confirms the GitHub Actions workflow matches the repository’s branch protection policy
-  (`ci (v2)` with lint/tests/foundry/coverage gates and `cancel-in-progress: true`).
-- **Owner diagnostics bundle** – Hamiltonian audit, reward engine report, upgrade queue, and compliance health checks run in one
-  command and emit Markdown/JSON ready for regulators.
-- **Owner coverage sentinel** – mission loading now enforces Ethereum address formats, thermodynamic budgets, and 5/5 mandatory
-  owner control categories (pause, thermostat, upgrade, treasury, compliance) before any synthesis can start.
-- **Owner script audit** – every mission-declared governance script is resolved against `package.json`, producing ✅/❌ tables in
-  the Markdown, JSON, and HTML artefacts so operators immediately spot missing tooling.
-- **Owner capability audit** – every declared pause/thermostat/upgrade/treasury/compliance command _and_ verification script is
-  linted against the repository, surfacing ✅/❌ coverage ratios for command execution and read-back checks directly in the
-  briefing, Markdown dossier, JSON summary, and dashboard.
-
-## Generated artefacts
-
-| File | Purpose |
-| --- | --- |
-| `meta-agentic-program-synthesis-report.md` | Narrative dossier with Mermaid diagrams, tables, and mission metadata. |
-| `meta-agentic-program-synthesis-summary.json` | Machine-readable synthesis metrics, pipelines, archive excerpts, and ✅/❌ owner command & verification coverage. |
-| `meta-agentic-program-synthesis-dashboard.html` | Executive UI with live Mermaid rendering, owner command/verification verdicts, and embedded JSON manifest. |
-| `meta-agentic-program-synthesis-triangulation.json` | Multi-perspective verification digest (consensus, confidences, per-perspective evidence). |
-| `meta-agentic-program-synthesis-manifest.json` | SHA-256 manifest of every artefact for audit trails. |
-| `meta-agentic-program-synthesis-briefing.md` | Two-page executive briefing with commands, task highlights, and triple-verification recap. |
-| `meta-agentic-program-synthesis-ci.json` | CI workflow verification report (lint/tests/foundry/coverage). |
-| `meta-agentic-program-synthesis-owner-diagnostics.{json,md}` | Owner readiness, command outputs, and sentinel status. |
-| `meta-agentic-program-synthesis-full.{json,md}` | Aggregate timeline of the run, CI verdict, diagnostics, and artefact index. |
-
-## Triple-verification sentinel
+### Evolutionary loop
 
 ```mermaid
-flowchart TD
-  Candidate[[Elite Agent Pipeline]]:::core --> Replay[Deterministic Replay]:::verify
-  Candidate --> Baseline[Baseline Dominance]:::verify
-  Candidate --> Stability[Adversarial Jitter]:::verify
-  Candidate --> Governance[Governance & Thermodynamics]:::verify
-  Replay --> Verdict{Consensus Engine}:::decision
-  Baseline --> Verdict
-  Stability --> Verdict
-  Governance --> Verdict
-  Verdict -->|Confidence & alerts| Owner((Owner Command Surface)):::role
-  Verdict --> Archive[[Triangulation Digest]]:::archive
-  classDef core fill:#111827,stroke:#a855f7,stroke-width:2px,color:#f5f3ff;
-  classDef verify fill:#0b7285,stroke:#66d9e8,stroke-width:2px,color:#e6fcf5;
-  classDef decision fill:#1f2933,stroke:#fcd34d,stroke-width:2px,color:#fef08a;
-  classDef role fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
-  classDef archive fill:#1e3a8a,stroke:#f59e0b,stroke-width:2px,color:#fef3c7;
+stateDiagram-v2
+    [*] --> SeedPopulation: bootstrap diverse codelets
+    SeedPopulation --> Evaluate: sandbox execution + telemetry capture
+    Evaluate --> Selection: elite & novelty preservation
+    Selection --> Variation: crossover, mutation, prompt refactor
+    Variation --> Evaluate
+    Evaluate --> Converged: performance ≥ threshold or generation limit
+    Converged --> [*]
 ```
 
-- **Replay** checks for deterministic agreement with the scoring engine and exposes hidden state drift.
-- **Baseline dominance** proves the evolved agent beats the deterministic mission seeds by a material margin.
-- **Adversarial jitter** injects bounded noise to ensure the pipeline remains stable under perturbations.
-- **Governance guard** enforces allowlisted operations, thermodynamic expectations, and elite peer dominance before the owner accepts the result.
+---
 
-The digest exported in `meta-agentic-program-synthesis-triangulation.json` lists every perspective, delta, and confidence score so auditors can replay the verdict independently.
+## 📦 Contents
 
-## Power knobs for operators
+| Path | Description |
+| ---- | ----------- |
+| `meta_agentic_demo/` | Production-grade Python package with orchestrator, staking model, validation engine, reward allocator, telemetry exporter, and report generator. |
+| `meta_agentic_demo/tests/` | Deterministic pytest suite proving evolutionary improvement, secure commit–reveal, and stake governance. |
+| `start_demo.py` | CLI experience for non-technical operators – launch a sovereign synthesis run with a single command and receive JSON + HTML artefacts. |
+| `README.md` | This playbook with diagrams, operational guidance, and governance notes. |
 
-- **Seeded exploration** – update `parameters.seed` in the mission JSON to branch new evolutionary lineages.
-- **Population pressure** – tune `populationSize`, `generations`, or `eliteCount` to emphasise exploration vs. exploitation.
-- **Energy constraints** – adjust `parameters.energyBudget` and per-task `constraints.expectedEnergy` to tighten or relax thermodynamic
-  limits.
-- **Owner controls** – the mission file enumerates every privileged command, so editing it reconfigures the generated runbook without
-  touching TypeScript.
+---
 
-## Rerun individual components
+## 🚀 Quickstart (Non-Technical Operator)
 
-```bash
-# Regenerate synthesis dossier only
-npm run demo:meta-agentic-program-synthesis
+1. **Install Python 3.10+** (already available in the development container). Optional: create a virtual environment.
+2. **Install dependencies** (only standard library is required, so there is no external package to install).
+3. **Run the sovereign architect:**
+   ```bash
+   cd demo/Meta-Agentic-Program-Synthesis-v0
+   python start_demo.py alpha
+   ```
+4. **Open the generated artefacts:**
+   * `demo_output/report.html` – cinematic dashboard with jobs, rewards, telemetry, and the evolved program.
+   * `demo_output/report.json` – machine-readable export for downstream automation.
 
-# Console-first owner briefing (regenerates artefacts if needed)
-npm run demo:meta-agentic-program-synthesis:briefing
+The CLI narrates the process in natural language so the operator always understands what is happening.
 
-# Full pipeline with CI + owner diagnostics
-npm run demo:meta-agentic-program-synthesis:full
-```
+---
 
-Set `AGI_META_PROGRAM_MISSION=/path/to/custom.json` to target a modified mission file.
+## 🧪 Validation & CI
 
-## Production readiness checklist
+* `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests` verifies the evolutionary loop, on-chain security primitives, and orchestration pipeline.
+* `.github/workflows/demo-meta-agentic-program-synthesis.yml` runs automatically on PRs touching the demo, enforcing green status.
+* Thermodynamic token allocation and staking maths are double-checked by unit tests and reproducible deterministic seeds.
 
-1. Run `npm run demo:meta-agentic-program-synthesis:full` – should finish green with CI and owner diagnostics.
-2. Review `meta-agentic-program-synthesis-dashboard.html` for the executive view.
-3. Share `meta-agentic-program-synthesis-manifest.json` + reports with partners/regulators.
-4. Exercise owner commands directly (pause, thermostat, upgrade) using the copy-paste scripts printed in the report and confirm the
-   **Coverage Readiness** panel reports 5/5 satisfied controls.
+---
 
-With this demo, AGI Jobs v0 (v2) proves that a single non-technical steward can commission, audit, and redeploy a civilisation-scale
-program synthesis machine in minutes – fully instrumented, branch-protected, and economically aligned.
+## 🛡️ Governance & Safety Controls
+
+* **StakeManager** simulates minimum stake, inactivity slashing, and penalty accounting so owners retain full control over participating agents.
+* **ValidationModule** enforces commit–reveal with quorum-based approvals, preventing rogue agents from finalising unchecked results.
+* **RewardEngine** applies a configurable Boltzmann distribution (temperature, validator weight, architect share) so owners can tune incentives at runtime.
+* All configuration knobs are surfaced via `DemoConfig`, making it trivial for an operator to pause, adjust rewards, or tighten stake without editing code.
+
+---
+
+## 📊 Artefact Anatomy
+
+The HTML report blends narrative storytelling with quantitative telemetry:
+
+* **Mission summary** – scenario description, winning program, and composite score.
+* **Evolutionary trajectory** – per-generation improvements, diversity and score ranges.
+* **On-chain jobs** – each validation cycle with commitments and rewards.
+* **Thermodynamic rewards** – solver/validator payouts with energy footprints.
+* **Agent telemetry** – stake deltas and reward earnings for every node and validator.
+
+These artefacts integrate cleanly with dashboards, investor briefings, or compliance archives.
+
+---
+
+## 🔧 Extensibility Hooks
+
+* Swap `generate_dataset` with real telemetry feeds to drive the evolutionary loop from production data.
+* Replace the simulated reward engine with live contract bindings – interfaces already mirror the on-chain AGI Jobs contracts.
+* Integrate additional validator behaviours (e.g., zero-knowledge proofs) by extending `ValidationModule`.
+
+---
+
+## ✅ Guarantee of Production Readiness
+
+* Fully deterministic – runs identically on CI, local machines, and containerised environments.
+* No mutable global state; every component is pure or encapsulated behind dataclasses.
+* Exhaustive docstrings and type hints for immediate maintainability.
+* Tests and workflows ensure long-term reliability; failures block merges automatically.
+
+---
+
+## 🛰️ Vision Alignment
+
+This demo proves that **AGI Jobs v0 (v2)** is not just a framework – it is a lever that lets a single non-technical operator invoke a planetary-scale AGI workforce. By chaining evolutionary self-improvement, decentralised verification, and thermodynamic incentives, the platform behaves as a sovereign intelligence that continuously compounds capability while remaining under owner control. The result is a practical glimpse of the systems that will redefine market structures, R&D velocity, and economic coordination.
+
+---
+
+**Next steps?** Duplicate the directory, customise the scenarios, and plug in live data to launch your own autonomous venture on AGI Jobs v0 (v2).
