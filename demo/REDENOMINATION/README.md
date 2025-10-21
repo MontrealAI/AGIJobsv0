@@ -5,6 +5,15 @@ non-technical mission that demonstrates how a single command invokes the platfor
 and institutional observability. It is designed to convince even the most risk-averse stakeholder that AGI Jobs v0 (v2) is the
 superintelligent control room for global-scale labor markets.
 
+New in this iteration:
+
+- **Multilingual mission control** – all storyboard copy is available in English and French, with instant toggles so
+  executive teams across jurisdictions can run the drill together.
+- **Interactive phase navigator** – the primary storyboard now ships with an adaptive phase selector that lets a
+  non-technical sponsor rehearse each lifecycle checkpoint step-by-step.
+- **Artefact integrity verification** – scenario validation now inspects translation catalogues and UI anchors to
+  guarantee nothing drifts out of sync before the automation scripts are executed.
+
 ---
 
 ## Why this demo matters

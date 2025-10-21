@@ -24,6 +24,7 @@ const packagePath = path.join(repoRoot, 'package.json');
 const storyboardPath = path.join(demoRoot, 'index.html');
 const uiStoryboardPath = path.join(demoRoot, 'ui', 'index.html');
 const exportPath = path.join(demoRoot, 'ui', 'export', 'latest.json');
+const translationsPath = path.join(demoRoot, 'i18n', 'strings.json');
 
 function readJson(filePath, label) {
   try {
@@ -38,6 +39,7 @@ function readJson(filePath, label) {
 const scenario = readJson(scenarioPath, 'scenario.json');
 const packageJson = readJson(packagePath, 'package.json');
 const exportData = readJson(exportPath, 'ui/export/latest.json');
+const translations = readJson(translationsPath, 'i18n/strings.json');
 
 const results = [];
 
@@ -152,11 +154,79 @@ if (Array.isArray(scenario.resources?.scripts)) {
   });
 }
 
+expect(
+  Array.isArray(translations.languages) && translations.languages.length > 0,
+  'Translations languages declared',
+  'Translations languages missing',
+);
+
+const requiredLanguages = ['en', 'fr'];
+requiredLanguages.forEach((lang) => {
+  expect(
+    translations.languages?.includes(lang),
+    `Language available → ${lang}`,
+    `Language missing from catalogue → ${lang}`,
+  );
+});
+
+const requiredTranslationKeys = [
+  'title',
+  'subtitle',
+  'ctaRun',
+  'ctaArchitecture',
+  'sectionActors',
+  'sectionMermaid',
+  'sectionTimeline',
+  'sectionGuardrails',
+  'sectionRunbook',
+  'sectionAssurance',
+  'phaseNavigator',
+  'missionWizardTitle',
+  'phaseNavigatorHint',
+  'missionWizardEmpty',
+  'runbookIntro',
+  'runbookFollow',
+  'runbookDocs',
+  'assuranceGovernance',
+  'assuranceCompute',
+  'assuranceObservability',
+  'assuranceUX',
+  'languageLabel',
+];
+
+requiredLanguages.forEach((lang) => {
+  const dictionary = translations.strings?.[lang];
+  expect(
+    dictionary && typeof dictionary === 'object',
+    `Translation map available → ${lang}`,
+    `Translation map missing → ${lang}`,
+  );
+  if (dictionary) {
+    requiredTranslationKeys.forEach((key) => {
+      expect(
+        isNonEmptyString(dictionary[key]),
+        `Key “${key}” provided for ${lang}`,
+        `Missing key “${key}” for ${lang}`,
+      );
+    });
+  }
+});
+
 const storyboard = readFileSync(storyboardPath, 'utf8');
 expect(
   storyboard.includes('mermaid') && storyboard.includes('graph TD'),
   'Storyboard contains Mermaid orchestration diagram',
   'Storyboard missing Mermaid orchestration diagram'
+);
+expect(
+  storyboard.includes('id="flow-content"') && storyboard.includes('id="phase-navigator"'),
+  'Storyboard exposes enhanced flow + navigator anchors',
+  'Storyboard missing flow or navigator anchors',
+);
+expect(
+  storyboard.includes('data-i18n="title"') && storyboard.includes('data-i18n="missionWizardTitle"'),
+  'Storyboard wired for multilingual content',
+  'Storyboard missing multilingual hooks',
 );
 
 const uiStoryboard = readFileSync(uiStoryboardPath, 'utf8');
