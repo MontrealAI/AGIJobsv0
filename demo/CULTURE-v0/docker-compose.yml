@@ -73,6 +73,8 @@ services:
       bash -lc "set -euo pipefail && npm install --legacy-peer-deps &&
       npx hardhat compile &&
       npx hardhat run --network localhost demo/CULTURE-v0/scripts/deploy.culture.ts &&
+      export CULTURE_REGISTRY_ADDRESS=$(node -e 'const fs=require("fs"); const path=process.env.CULTURE_DEPLOY_OUTPUT || "/workspace/demo/CULTURE-v0/config/deployments.local.json"; const data=JSON.parse(fs.readFileSync(path, "utf8")); if(!data.cultureRegistry) throw new Error(`Missing cultureRegistry in ${path}`); process.stdout.write(data.cultureRegistry);') &&
+      export SELF_PLAY_ARENA_ADDRESS=$(node -e 'const fs=require("fs"); const path=process.env.CULTURE_DEPLOY_OUTPUT || "/workspace/demo/CULTURE-v0/config/deployments.local.json"; const data=JSON.parse(fs.readFileSync(path, "utf8")); if(!data.selfPlayArena) throw new Error(`Missing selfPlayArena in ${path}`); process.stdout.write(data.selfPlayArena);') &&
       npx hardhat run --network localhost demo/CULTURE-v0/scripts/owner.setParams.ts &&
       npx hardhat run --network localhost demo/CULTURE-v0/scripts/owner.setRoles.ts &&
       npx hardhat run --network localhost demo/CULTURE-v0/scripts/seed.culture.ts"
