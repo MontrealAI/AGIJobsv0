@@ -222,16 +222,21 @@ const ERRORS = errorsCatalog;
 
 const STORAGE_KEYS = {
   orch: 'ONEBOX_ORCH_URL',
-  token: 'ONEBOX_ORCH_TOKEN',
   receipts: 'ONEBOX_RECEIPTS_V1',
 };
+
+try {
+  localStorage.removeItem('ONEBOX_ORCH_TOKEN');
+} catch (error) {
+  console.warn('Unable to clear legacy API token storage', error);
+}
 
 const runtimeConfig = typeof window !== 'undefined' ? window.__ONEBOX_CONFIG__ || {} : {};
 
 let expertMode = false;
 let ethereum = null;
 let orchestrator = localStorage.getItem(STORAGE_KEYS.orch) || '';
-let apiToken = localStorage.getItem(STORAGE_KEYS.token) || '';
+let apiToken = '';
 
 const plannerLatencySamples = [];
 
@@ -307,7 +312,7 @@ function renderRelayerStatus() {
     statRelayer.textContent = 'Set orchestrator endpoint';
     return;
   }
-  let host = orchestrator;
+  let host;
   try {
     const base = typeof window !== 'undefined' ? window.location.origin : undefined;
     const parsed = base ? new URL(orchestrator, base) : new URL(orchestrator);
@@ -333,11 +338,6 @@ if (!orchestrator && runtimeConfig.orchestratorUrl) {
 
 if (!apiToken && runtimeConfig.apiToken) {
   apiToken = runtimeConfig.apiToken;
-  try {
-    localStorage.setItem(STORAGE_KEYS.token, apiToken);
-  } catch (error) {
-    console.warn('Unable to persist API token from runtime config', error);
-  }
 }
 let receipts = loadReceipts();
 let isSubmitting = false;
@@ -834,8 +834,7 @@ saveBtn.addEventListener('click', () => {
   orchestrator = orchInput.value.trim();
   apiToken = tokenInput.value.trim();
   localStorage.setItem(STORAGE_KEYS.orch, orchestrator);
-  localStorage.setItem(STORAGE_KEYS.token, apiToken);
-  addMessage('assist', '✅ Saved advanced settings.');
+  addMessage('assist', '✅ Saved advanced settings. API token stays in this session only.');
   renderRelayerStatus();
 });
 
