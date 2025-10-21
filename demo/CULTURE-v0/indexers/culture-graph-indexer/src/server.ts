@@ -28,7 +28,23 @@ createServer(async (req, res) => {
   for await (const chunk of req) {
     chunks.push(chunk as Buffer);
   }
-  const payload = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  const rawBody = Buffer.concat(chunks).toString("utf8");
+  let payload: { query: string; variables?: Record<string, unknown> };
+  try {
+    payload = JSON.parse(rawBody);
+  } catch (error) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        errors: [
+          {
+            message: "Invalid JSON body",
+          },
+        ],
+      })
+    );
+    return;
+  }
   const result = await graphql({ schema, source: payload.query, rootValue, variableValues: payload.variables });
   res.writeHead(200, { "content-type": "application/json" });
   res.end(JSON.stringify(result));
