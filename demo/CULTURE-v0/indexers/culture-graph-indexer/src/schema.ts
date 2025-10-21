@@ -1,61 +1,88 @@
-import {
-  GraphQLFloat,
-  GraphQLInt,
-  GraphQLList,
-  GraphQLNonNull,
-  GraphQLObjectType,
-  GraphQLSchema,
-  GraphQLString
-} from 'graphql';
-import { GraphStore } from './graph.js';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+import { makeExecutableSchema } from '@graphql-tools/schema';
+import type { GraphQLSchema } from 'graphql';
+import type {
+  GraphStore,
+  ArtifactRecord,
+  LineagePath,
+  ArenaUsageStats,
+  CitationRecord
+} from './graph.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+function toGraphQLArtifact(record: ArtifactRecord) {
+  return {
+    ...record,
+    createdAt: new Date(record.createdAt).toISOString()
+  };
+}
+
+type GraphQLArtifact = ReturnType<typeof toGraphQLArtifact>;
+
+function toGraphQLCitation(record: CitationRecord) {
+  return {
+    id: record.id,
+    fromId: record.fromId,
+    toId: record.toId
+  };
+}
+
+function toGraphQLLineage(path: LineagePath | null) {
+  if (!path) return null;
+  return {
+    depth: path.depth,
+    artifacts: path.artifacts.map(toGraphQLArtifact)
+  };
+}
 
 export function buildSchema(store: GraphStore): GraphQLSchema {
-  const artifactType = new GraphQLObjectType({
-    name: 'Artifact',
-    fields: () => ({
-      id: { type: new GraphQLNonNull(GraphQLInt) },
-      author: { type: new GraphQLNonNull(GraphQLString) },
-      kind: { type: new GraphQLNonNull(GraphQLString) },
-      cid: { type: new GraphQLNonNull(GraphQLString) },
-      parentId: { type: GraphQLInt },
-      cites: { type: new GraphQLList(GraphQLInt) },
-      citedBy: { type: new GraphQLList(GraphQLInt) },
-      createdAt: { type: new GraphQLNonNull(GraphQLInt) },
-      influence: { type: new GraphQLNonNull(GraphQLFloat) }
-    })
-  });
+  const typeDefs = readFileSync(join(__dirname, 'schema.graphql'), 'utf8');
 
-  const queryType = new GraphQLObjectType({
-    name: 'Query',
-    fields: () => ({
-      artifact: {
-        type: artifactType,
-        args: { id: { type: new GraphQLNonNull(GraphQLInt) } },
-        resolve: (_root, args: { id: number }) => store.getArtifact(args.id)
+  const resolvers = {
+    Query: {
+      artifact: (_: unknown, args: { id: string }) => {
+        const record = store.getArtifact(String(args.id));
+        return record ? toGraphQLArtifact(record) : null;
       },
-      artifacts: {
-        type: new GraphQLList(artifactType),
-        args: { limit: { type: GraphQLInt } },
-        resolve: (_root, args: { limit?: number }) => {
-          const list = store.listArtifacts();
-          if (args.limit) {
-            return list.slice(0, args.limit);
-          }
-          return list;
-        }
+      artifacts: (
+        _: unknown,
+        args: { kind?: string; limit?: number; offset?: number }
+      ) => store.listArtifacts(args).map(toGraphQLArtifact),
+      topInfluencers: (_: unknown, args: { limit?: number }) =>
+        store.getTopInfluencers(args.limit ?? 10).map(toGraphQLArtifact),
+      lineage: (_: unknown, args: { id: string }) => toGraphQLLineage(store.getLineage(String(args.id))),
+      citations: (
+        _: unknown,
+        args: { fromId?: string; toId?: string }
+      ) => store.getCitations({
+        fromId: args.fromId ? String(args.fromId) : undefined,
+        toId: args.toId ? String(args.toId) : undefined
+      }).map(toGraphQLCitation),
+      arenaUsage: () => store.getArenaUsage()
+    },
+    Artifact: {
+      parent: (artifact: GraphQLArtifact) => {
+        if (!artifact.parentId) return null;
+        const record = store.getArtifact(artifact.parentId);
+        return record ? toGraphQLArtifact(record) : null;
       },
-      topInfluential: {
-        type: new GraphQLList(artifactType),
-        args: { limit: { type: GraphQLInt } },
-        resolve: (_root, args: { limit?: number }) => store.getTopInfluential(args.limit ?? 10)
-      },
-      lineage: {
-        type: new GraphQLList(artifactType),
-        args: { id: { type: new GraphQLNonNull(GraphQLInt) } },
-        resolve: (_root, args: { id: number }) => store.getLineage(args.id)
-      }
-    })
-  });
+      createdAt: (artifact: GraphQLArtifact) => artifact.createdAt,
+      citations: (artifact: GraphQLArtifact) =>
+        store.getOutgoingCitations(artifact.id).map(toGraphQLCitation),
+      citedBy: (artifact: GraphQLArtifact) =>
+        store.getIncomingCitations(artifact.id).map(toGraphQLCitation)
+    },
+    LineagePath: {
+      artifacts: (path: LineagePath) => path.artifacts.map(toGraphQLArtifact)
+    },
+    ArenaUsageStats: {
+      winCounts: (stats: ArenaUsageStats) => stats.winCounts
+    }
+  };
 
-  return new GraphQLSchema({ query: queryType });
+  return makeExecutableSchema({ typeDefs, resolvers });
 }
