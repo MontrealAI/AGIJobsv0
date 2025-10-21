@@ -186,8 +186,19 @@ async function verifyCi(mission: MissionConfig): Promise<{
 
 function inspectCommand(command: string, scripts: Record<string, string | undefined>): boolean {
   const trimmed = command.trim();
-  if (trimmed.startsWith("npm run ")) {
-    const [, , scriptName] = trimmed.split(/\s+/, 3);
+  const tokens = trimmed.split(/\s+/).filter((token) => token.length > 0);
+  if (tokens.length >= 2 && tokens[0] === "npm" && tokens[1] === "run") {
+    let index = 2;
+    while (index < tokens.length && tokens[index].startsWith("-") && tokens[index] !== "--") {
+      index += 1;
+    }
+    if (index < tokens.length && tokens[index] === "--") {
+      index += 1;
+    }
+    if (index >= tokens.length) {
+      return false;
+    }
+    const scriptName = tokens[index];
     return Boolean(scriptName && scripts[scriptName]);
   }
   if (trimmed.startsWith("npx ")) {
