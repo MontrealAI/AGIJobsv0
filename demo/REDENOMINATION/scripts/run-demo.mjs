@@ -66,6 +66,33 @@ function printMetrics(metrics) {
   console.log();
 }
 
+function printPillars(pillars) {
+  if (!Array.isArray(pillars) || pillars.length === 0) {
+    return;
+  }
+  console.log(`${COLOR.bright}${COLOR.yellow}Superintelligence Pillars${COLOR.reset}`);
+  pillars.forEach((pillar, index) => {
+    const prefix = `${index + 1}`.padStart(2, '0');
+    console.log(`${COLOR.yellow}[${prefix}]${COLOR.reset} ${COLOR.bright}${pillar.title}${COLOR.reset}`);
+    if (pillar.outcome) {
+      console.log(`     ${COLOR.gray}${pillar.outcome}${COLOR.reset}`);
+    }
+    const evidence = pillar.evidence ?? {};
+    const renderEvidence = (label, values, color) => {
+      if (!Array.isArray(values) || values.length === 0) return;
+      console.log(`       ${color}${label}:${COLOR.reset}`);
+      values.forEach((value) => {
+        console.log(`         ${COLOR.gray}${value}${COLOR.reset}`);
+      });
+    };
+    renderEvidence('Docs', evidence.docs, COLOR.cyan);
+    renderEvidence('Scripts', evidence.scripts, COLOR.green);
+    renderEvidence('Configs', evidence.configs, COLOR.magenta);
+    renderEvidence('Dashboards', evidence.dashboards, COLOR.blue);
+  });
+  console.log();
+}
+
 function printResources(resources) {
   console.log(`${COLOR.bright}${COLOR.cyan}Follow-up Commands & References${COLOR.reset}`);
   if (resources.scripts?.length) {
@@ -106,6 +133,7 @@ printHeader(`REDENOMINATION Demo`, scenario.description);
 printActors(scenario.actors);
 printFlow(scenario.flow);
 printMetrics(scenario.metrics);
+printPillars(scenario.pillars);
 printResources(scenario.resources);
 printMermaid(scenario.mermaid);
 printCallToAction();

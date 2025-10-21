@@ -69,6 +69,100 @@
     "auditSampleRate": "25% of high-value jobs",
     "governanceTimelock": "24 hours"
   },
+  "pillars": [
+    {
+      "id": "governed-autonomy",
+      "title": "Governed Autonomy",
+      "outcome": "Multi-signature timelock governance with moderator council overrides keeps redenomination under human-in-the-loop control.",
+      "evidence": {
+        "docs": [
+          "docs/governance.md",
+          "docs/governance/emergency-runbook.md"
+        ],
+        "scripts": [
+          "npm run owner:command-center",
+          "npm run owner:system-pause",
+          "npm run owner:parameters"
+        ],
+        "configs": [
+          "demo/REDENOMINATION/config/stake-manager-redenominated.json",
+          "demo/REDENOMINATION/config/job-registry-redenominated.json"
+        ],
+        "dashboards": [
+          "monitoring/grafana/dashboard-agi-ops.json"
+        ]
+      }
+    },
+    {
+      "id": "verifiable-compute",
+      "title": "Verifiable Compute",
+      "outcome": "Commit–reveal validation, signed result hashes, and Certificate NFTs generate tamper-evident labour proofs.",
+      "evidence": {
+        "docs": [
+          "docs/AUDIT_DOSSIER.md",
+          "docs/institutional-observability.md"
+        ],
+        "scripts": [
+          "npm run demo:redenomination:verify",
+          "npm run echidna",
+          "npm run coverage"
+        ],
+        "configs": [
+          "contracts/v2/ValidationModule.sol",
+          "contracts/v2/ReputationEngine.sol"
+        ],
+        "dashboards": [
+          "monitoring/prometheus/prometheus.yml"
+        ]
+      }
+    },
+    {
+      "id": "institutional-observability",
+      "title": "Institutional Observability",
+      "outcome": "Real-time metrics, anomaly detection, and immutable audit logs align regulators, operators, and validators.",
+      "evidence": {
+        "docs": [
+          "docs/institutional-readiness-status.md",
+          "docs/institutional-observability.md"
+        ],
+        "scripts": [
+          "npm run monitoring:validate",
+          "npm run observability:smoke",
+          "npm run demo:redenomination:mission-control"
+        ],
+        "configs": [
+          "monitoring/prometheus/rules.yaml",
+          "monitoring/alertmanager/alerts.yaml"
+        ],
+        "dashboards": [
+          "monitoring/grafana/dashboard-agi-ops.json"
+        ]
+      }
+    },
+    {
+      "id": "operational-empowerment",
+      "title": "Operational Empowerment",
+      "outcome": "One-click deployment, multilingual chat surfaces, and scripted rehearsals let non-technical leaders run the AGI workforce.",
+      "evidence": {
+        "docs": [
+          "docs/AGIJobs-v2-Mainnet-Guide.md",
+          "docs/AGENTIC_QUICKSTART.md"
+        ],
+        "scripts": [
+          "npm run demo:redenomination",
+          "npm run demo:redenomination:mission-control",
+          "npm run deploy:oneclick:auto"
+        ],
+        "configs": [
+          "compose.yaml",
+          "demo/REDENOMINATION/ui/index.html"
+        ],
+        "dashboards": [
+          "demo/REDENOMINATION/ui/export/latest.json"
+        ]
+      }
+    }
+  ],
   "resources": {
     "docs": [
       "docs/governance.md",
@@ -81,7 +175,8 @@
       "npm run owner:command-center",
       "npm run demo:redenomination:owner-console",
       "npm run monitoring:validate",
-      "npm run demo:redenomination:mission-control"
+      "npm run demo:redenomination:mission-control",
+      "npm run demo:redenomination:pillars"
     ]
   }
 }

@@ -61,7 +61,16 @@ a live ground truth.
    This command prints the governed scenario using `scenario.json`, highlighting actors, phases, operational guardrails, and
    follow-up automation hooks that a non-technical operator can trigger verbatim.
 
-4. Launch the **Owner Command Console** to review live guardrails and emergency levers:
+4. Run the **Pillars Readiness Radar** to confirm every governance, compute, observability, and empowerment artefact is live:
+
+   ```bash
+   npm run demo:redenomination:pillars
+   ```
+
+   The radar scores each pillar, verifying documentation, automation scripts, configuration baselines, and dashboards exist for
+   the redenomination drill.
+
+5. Launch the **Owner Command Console** to review live guardrails and emergency levers:
 
    ```bash
    npm run demo:redenomination:owner-console
@@ -70,7 +79,7 @@ a live ground truth.
    This guided CLI inspects the redenominated stake and job registry parameters, surfaces governance automation commands, and
    rehearses emergency pause and moderation playbooks so the owner can exercise absolute control.
 
-5. Open the interactive **Mission Control** console:
+6. Open the interactive **Mission Control** console:
 
    ```bash
    npm run demo:redenomination:mission-control
@@ -79,7 +88,7 @@ a live ground truth.
    Navigate the governed lifecycle, governance surfaces, verification invariants, and the shared Mermaid graph from a
    conversational prompt designed for decision makers.
 
-6. Open the immersive UI storyboard in any browser:
+7. Open the immersive UI storyboard in any browser:
 
    ```bash
    npx serve demo/REDENOMINATION
@@ -94,8 +103,8 @@ a live ground truth.
 
 | Component        | Description                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------- |
-| `scenario.json`  | Canonical description of actors, lifecycle phases, operational metrics, and authoritative runbook references. |
-| `scripts/`       | Automation entry points. `verify-scenario.mjs` hardens artefacts, while `run-demo.mjs` streams a narrated transcript mirroring the real deployment plan.  |
+| `scenario.json`  | Canonical description of actors, lifecycle phases, operational metrics, pillar evidence catalogues, and authoritative runbook references. |
+| `scripts/`       | Automation entry points. `verify-scenario.mjs` hardens artefacts, `run-demo.mjs` streams a narrated transcript, and `pillars-radar.mjs` scores governance/compute/observability empowerment readiness.  |
 | `index.html`     | All-in-one web storyboard with mermaid diagrams, responsive cards, and actionable CTAs for stakeholders.      |
 
 The JSON file is intentionally minimal so that governance can amend parameters (stake requirements, committee size, audit

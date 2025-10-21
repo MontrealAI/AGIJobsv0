@@ -112,6 +112,73 @@
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 24px;
       }
+
+      .pillars-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 24px;
+      }
+
+      .pillar-card {
+        background: rgba(16, 22, 44, 0.78);
+        border-radius: 20px;
+        border: 1px solid rgba(124, 92, 255, 0.2);
+        padding: 24px;
+        box-shadow: 0 30px 60px rgba(5, 7, 20, 0.4);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .pillar-card__header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .pillar-card__index {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: rgba(124, 92, 255, 0.25);
+        border: 1px solid rgba(124, 92, 255, 0.4);
+        font-weight: 600;
+        color: var(--accent);
+      }
+
+      .pillar-card__outcome {
+        margin: 0;
+        color: var(--text-muted);
+        line-height: 1.6;
+      }
+
+      .pillar-card__outcome strong {
+        margin-right: 8px;
+        color: var(--text);
+      }
+
+      .pillar-card__columns {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+      }
+
+      .pillar-card__column ul {
+        margin: 0;
+        padding-left: 1.2rem;
+        display: grid;
+        gap: 6px;
+      }
+
+      .pillar-card__column code {
+        background: rgba(124, 92, 255, 0.15);
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-size: 0.85rem;
+      }
       .definition-list {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -304,6 +371,7 @@
       const metricsList = document.querySelector('#metrics');
       const scriptsList = document.querySelector('#scripts');
       const docsList = document.querySelector('#docs');
+      const pillarsContainer = document.querySelector('#pillars-grid');
       const phaseButtonsContainer = document.querySelector('#phase-buttons');
       const phaseDetail = document.querySelector('#phase-detail');
       const mermaidContainer = document.querySelector('#mermaid-diagram');
@@ -562,6 +630,60 @@
           .join('');
       }
 
+      function renderPillars(pillars = []) {
+        if (!pillarsContainer) return;
+        if (!Array.isArray(pillars) || pillars.length === 0) {
+          pillarsContainer.innerHTML = '<p class="muted">Scenario pillars unavailable.</p>';
+          return;
+        }
+        const columnLabels = {
+          docs: { key: 'pillarsEvidenceDocs', fallback: 'Documentation' },
+          scripts: { key: 'pillarsEvidenceScripts', fallback: 'Automation scripts' },
+          configs: { key: 'pillarsEvidenceConfigs', fallback: 'Configurations' },
+          dashboards: { key: 'pillarsEvidenceDashboards', fallback: 'Dashboards & telemetry' }
+        };
+
+        const renderColumn = (type, items) => {
+          if (!Array.isArray(items) || items.length === 0) return '';
+          const { key, fallback } = columnLabels[type];
+          const list = items
+            .map((item) => `<li><code>${item}</code></li>`)
+            .join('');
+          return `
+            <div class="pillar-card__column">
+              <h4 data-i18n="${key}">${fallback}</h4>
+              <ul>${list}</ul>
+            </div>
+          `;
+        };
+
+        pillarsContainer.innerHTML = pillars
+          .map((pillar, index) => {
+            const evidence = pillar.evidence ?? {};
+            const columns = ['docs', 'scripts', 'configs', 'dashboards']
+              .map((type) => renderColumn(type, evidence[type]))
+              .filter(Boolean)
+              .join('');
+            return `
+              <article class="pillar-card">
+                <header class="pillar-card__header">
+                  <span class="pillar-card__index">${String(index + 1).padStart(2, '0')}</span>
+                  <h3>${pillar.title}</h3>
+                </header>
+                <p class="pillar-card__outcome">
+                  <strong data-i18n="pillarsOutcomeLabel">Outcome</strong>
+                  ${pillar.outcome}
+                </p>
+                <div class="pillar-card__columns">
+                  ${columns}
+                </div>
+              </article>
+            `;
+          })
+          .join('');
+        applyTranslations();
+      }
+
       function renderResources(resources = {}) {
         scriptsList.innerHTML = (resources.scripts ?? [])
           .map((script) => `<li><code>${script}</code></li>`)
@@ -615,6 +737,7 @@
         renderActors(scenario.actors ?? []);
         renderFlow(scenario.flow ?? []);
         renderMetrics(scenario.metrics ?? {});
+        renderPillars(scenario.pillars ?? []);
         renderResources(scenario.resources ?? {});
         renderPhaseNavigator(scenario.flow ?? []);
         renderMermaidDiagram(scenario.mermaid ?? '');
@@ -714,6 +837,14 @@
       <section>
         <h2 data-i18n="sectionGuardrails">Operational Guardrails</h2>
         <div class="grid-2" id="metrics"></div>
+      </section>
+
+      <section id="pillars">
+        <h2 data-i18n="sectionPillars">Superintelligence Pillars</h2>
+        <p class="muted" data-i18n="pillarsSubtitle" id="pillars-subtitle">
+          Cross-verify the governed autonomy, verifiable compute, observability, and operational empowerment artefacts.
+        </p>
+        <div class="pillars-grid" id="pillars-grid" aria-live="polite"></div>
       </section>
 
       <section id="owner-console">

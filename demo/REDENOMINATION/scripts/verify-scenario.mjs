@@ -27,6 +27,7 @@ const exportPath = path.join(demoRoot, 'ui', 'export', 'latest.json');
 const translationsPath = path.join(demoRoot, 'i18n', 'strings.json');
 const missionControlPath = path.join(demoRoot, 'scripts', 'mission-control.mjs');
 const ownerConsolePath = path.join(demoRoot, 'scripts', 'owner-console.mjs');
+const pillarsRadarPath = path.join(demoRoot, 'scripts', 'pillars-radar.mjs');
 const jobRegistryConfigPath = path.join(demoRoot, 'config', 'job-registry-redenominated.json');
 const stakeManagerConfigPath = path.join(demoRoot, 'config', 'stake-manager-redenominated.json');
 
@@ -42,6 +43,7 @@ function readJson(filePath, label) {
 
 const scenario = readJson(scenarioPath, 'scenario.json');
 const packageJson = readJson(packagePath, 'package.json');
+const packageScripts = packageJson.scripts ?? {};
 const exportData = readJson(exportPath, 'ui/export/latest.json');
 const translations = readJson(translationsPath, 'i18n/strings.json');
 const jobRegistryConfig = readJson(jobRegistryConfigPath, 'config/job-registry-redenominated.json');
@@ -111,6 +113,78 @@ if (scenario.metrics) {
   });
 }
 
+expect(
+  Array.isArray(scenario.pillars) && scenario.pillars.length >= 4,
+  'Pillars catalogue defined',
+  'Pillars catalogue missing or too small',
+);
+if (Array.isArray(scenario.pillars)) {
+  scenario.pillars.forEach((pillar, index) => {
+    expect(
+      isNonEmptyString(pillar.id) && isNonEmptyString(pillar.title) && isNonEmptyString(pillar.outcome),
+      `Pillar ${index + 1} metadata complete`,
+      `Pillar ${index + 1} missing id/title/outcome`,
+    );
+    const evidence = pillar.evidence;
+    expect(
+      typeof evidence === 'object' && evidence !== null,
+      `Pillar ${index + 1} evidence block present`,
+      `Pillar ${index + 1} evidence block missing`,
+    );
+    if (evidence && typeof evidence === 'object') {
+      ['docs', 'scripts', 'configs', 'dashboards'].forEach((key) => {
+        expect(
+          Array.isArray(evidence[key]) && evidence[key].length > 0,
+          `Pillar ${index + 1} evidence includes ${key}`,
+          `Pillar ${index + 1} evidence missing ${key}`,
+        );
+      });
+      if (Array.isArray(evidence.docs)) {
+        evidence.docs.forEach((docPath) => {
+          expect(
+            existsSync(path.join(repoRoot, docPath)),
+            `Pillar ${index + 1} doc exists → ${docPath}`,
+            `Pillar ${index + 1} doc missing → ${docPath}`,
+          );
+        });
+      }
+      if (Array.isArray(evidence.configs)) {
+        evidence.configs.forEach((configPath) => {
+          expect(
+            existsSync(path.join(repoRoot, configPath)),
+            `Pillar ${index + 1} config exists → ${configPath}`,
+            `Pillar ${index + 1} config missing → ${configPath}`,
+          );
+        });
+      }
+      if (Array.isArray(evidence.dashboards)) {
+        evidence.dashboards.forEach((dashPath) => {
+          expect(
+            existsSync(path.join(repoRoot, dashPath)),
+            `Pillar ${index + 1} dashboard exists → ${dashPath}`,
+            `Pillar ${index + 1} dashboard missing → ${dashPath}`,
+          );
+        });
+      }
+      if (Array.isArray(evidence.scripts)) {
+        evidence.scripts.forEach((command) => {
+          const match = /^npm run ([^\s]+)/.exec(command);
+          if (match) {
+            const scriptName = match[1];
+            expect(
+              Object.prototype.hasOwnProperty.call(packageScripts, scriptName),
+              `Pillar ${index + 1} script registered → ${scriptName}`,
+              `Pillar ${index + 1} missing npm script → ${scriptName}`,
+            );
+          } else {
+            expectWarn(false, '', `Pillar ${index + 1} uses manual command → ${command}`);
+          }
+        });
+      }
+    }
+  });
+}
+
 expect(Array.isArray(scenario.flow) && scenario.flow.length > 0, 'Lifecycle phases defined', 'Lifecycle phases missing');
 if (Array.isArray(scenario.flow)) {
   scenario.flow.forEach((phase, index) => {
@@ -147,8 +221,6 @@ expect(
   'Automation commands listed',
   'Automation commands missing'
 );
-
-const packageScripts = packageJson.scripts ?? {};
 if (Array.isArray(scenario.resources?.scripts)) {
   scenario.resources.scripts.forEach((command) => {
     const match = /^npm run ([^\s]+)/.exec(command.trim());
@@ -210,6 +282,13 @@ const requiredTranslationKeys = [
   'ownerCommandsHint',
   'ownerPrimaryCommandTitle',
   'ownerCommandsEmpty',
+  'sectionPillars',
+  'pillarsSubtitle',
+  'pillarsOutcomeLabel',
+  'pillarsEvidenceDocs',
+  'pillarsEvidenceScripts',
+  'pillarsEvidenceConfigs',
+  'pillarsEvidenceDashboards',
 ];
 
 requiredLanguages.forEach((lang) => {
@@ -240,6 +319,11 @@ expect(
   storyboard.includes('data-i18n="title"') && storyboard.includes('data-i18n="missionWizardTitle"'),
   'Storyboard wired for multilingual content',
   'Storyboard missing multilingual hooks',
+);
+expect(
+  storyboard.includes('id="pillars-grid"') && storyboard.includes('data-i18n="sectionPillars"'),
+  'Storyboard includes pillars section anchors',
+  'Storyboard missing pillars section anchors',
 );
 expect(
   storyboard.includes('id="mermaid-diagram"'),
@@ -391,6 +475,22 @@ if (existsSync(ownerConsolePath)) {
     expect((stats.mode & 0o111) !== 0, 'Owner command console marked executable', 'Owner command console not executable');
   } catch (error) {
     record('warn', `Unable to read owner console permissions (${error instanceof Error ? error.message : error})`);
+  }
+}
+
+expect(existsSync(pillarsRadarPath), 'Pillars radar CLI present', 'Pillars radar CLI missing');
+if (existsSync(pillarsRadarPath)) {
+  const pillarsRadarSource = readFileSync(pillarsRadarPath, 'utf8');
+  expect(
+    pillarsRadarSource.startsWith('#!/usr/bin/env node'),
+    'Pillars radar CLI has executable shebang',
+    'Pillars radar CLI missing Node shebang',
+  );
+  try {
+    const stats = statSync(pillarsRadarPath);
+    expect((stats.mode & 0o111) !== 0, 'Pillars radar CLI marked executable', 'Pillars radar CLI not executable');
+  } catch (error) {
+    record('warn', `Unable to read pillars radar permissions (${error instanceof Error ? error.message : error})`);
   }
 }
 
