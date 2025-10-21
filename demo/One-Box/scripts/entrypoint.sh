@@ -17,7 +17,12 @@ fs.writeFileSync(target, payload, 'utf8');
 const indexPath = path.join(process.cwd(), 'index.html');
 const html = fs.readFileSync(indexPath, 'utf8');
 if (!html.includes('runtime-config.js')) {
-  const patched = html.replace('</body>', '  <script src="./runtime-config.js" defer></script>\n</body>');
+  const runtimeTag = '    <script src="./runtime-config.js"></script>\n';
+  const moduleIndex = html.indexOf('<script');
+  const patched =
+    moduleIndex >= 0
+      ? html.slice(0, moduleIndex) + runtimeTag + html.slice(moduleIndex)
+      : html.replace('</body>', `${runtimeTag}</body>`);
   fs.writeFileSync(indexPath, patched, 'utf8');
 }
 NODE
