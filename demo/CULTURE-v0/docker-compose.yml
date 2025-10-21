@@ -1,101 +1,54 @@
 version: "3.9"
 
-x-environment: &default-env
-  RPC_URL: ${RPC_URL}
-  CHAIN_ID: ${CHAIN_ID}
-  JOB_REGISTRY_ADDRESS: ${JOB_REGISTRY_ADDRESS}
-  VALIDATION_MODULE_ADDRESS: ${VALIDATION_MODULE_ADDRESS}
-  STAKE_MANAGER_ADDRESS: ${STAKE_MANAGER_ADDRESS}
-  IDENTITY_REGISTRY_ADDRESS: ${IDENTITY_REGISTRY_ADDRESS}
-  FEE_POOL_ADDRESS: ${FEE_POOL_ADDRESS}
-  CULTURE_REGISTRY_ADDRESS: ${CULTURE_REGISTRY_ADDRESS}
-  SELF_PLAY_ARENA_ADDRESS: ${SELF_PLAY_ARENA_ADDRESS}
-  IPFS_API_URL: ${IPFS_API_URL}
-  IPFS_PROJECT_ID: ${IPFS_PROJECT_ID}
-  IPFS_PROJECT_SECRET: ${IPFS_PROJECT_SECRET}
-  SENTRY_DSN: ${SENTRY_DSN}
-  SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
-
 services:
-  hardhat-node:
-    image: node:20-alpine
-    working_dir: /opt/agi
-    command: ["sh", "-c", "pnpm install && pnpm hardhat node"]
-    volumes:
-      - ../..:/opt/agi
+  culture-contracts:
+    image: node:20
+    working_dir: /app
+    command: ["sh", "-c", "if [ ! -d node_modules ]; then npm install; fi; npx hardhat node --hostname 0.0.0.0 --port ${CULTURE_RPC_PORT:-8545}"]
     ports:
-      - "8545:8545"
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:8545').catch(()=>process.exit(1))"]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-
-  contracts-deployer:
-    image: node:20-alpine
-    working_dir: /opt/agi
-    depends_on:
-      hardhat-node:
-        condition: service_healthy
-    command: ["sh", "-c", "pnpm install && pnpm hardhat run demo/CULTURE-v0/scripts/deploy.culture.ts --network localhost"]
+      - "${CULTURE_RPC_PORT:-8545}:8545"
+    volumes:
+      - ./:/app
     environment:
-      <<: *default-env
-      DEPLOYER_PRIVATE_KEY: ${DEPLOYER_PRIVATE_KEY}
-    volumes:
-      - ../..:/opt/agi
-
+      - CULTURE_RPC_PORT=${CULTURE_RPC_PORT:-8545}
   arena-orchestrator:
-    build:
-      context: ./backend/arena-orchestrator
-    env_file: .env
+    image: node:20
+    working_dir: /app
     depends_on:
-      hardhat-node:
-        condition: service_healthy
-      contracts-deployer:
-        condition: service_completed_successfully
+      - culture-contracts
+    command: ["sh", "-c", "if [ ! -d node_modules ]; then npm install; fi; node demo/CULTURE-v0/backend/arena-orchestrator/server.mjs"]
     ports:
-      - "${ORCHESTRATOR_PORT:-4000}:4000"
-    healthcheck:
-      test: ["CMD", "node", "healthcheck.js"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-
-  culture-indexer:
-    build:
-      context: ./indexers/culture-graph-indexer
-    env_file: .env
+      - "${ARENA_ORCHESTRATOR_PORT:-8080}:8080"
+    volumes:
+      - ./:/app
+    environment:
+      - ARENA_ORCHESTRATOR_PORT=${ARENA_ORCHESTRATOR_PORT:-8080}
+      - CULTURE_RPC_URL=${CULTURE_RPC_URL:-http://culture-contracts:8545}
+  culture-graph-indexer:
+    image: node:20
+    working_dir: /app
     depends_on:
-      contracts-deployer:
-        condition: service_completed_successfully
+      - culture-contracts
+    command: ["sh", "-c", "if [ ! -d demo/CULTURE-v0/indexers/culture-graph-indexer/node_modules ]; then npm install --prefix demo/CULTURE-v0/indexers/culture-graph-indexer; fi; node demo/CULTURE-v0/indexers/culture-graph-indexer/server.mjs"]
     ports:
-      - "${INDEXER_PORT:-4100}:4100"
-
+      - "${CULTURE_INDEXER_PORT:-8000}:8000"
+    volumes:
+      - ./:/app
+    environment:
+      - CULTURE_INDEXER_PORT=${CULTURE_INDEXER_PORT:-8000}
   culture-studio:
-    build:
-      context: ./apps/culture-studio
-    env_file: .env
+    image: node:20
+    working_dir: /app
     depends_on:
-      arena-orchestrator:
-        condition: service_healthy
-      culture-indexer:
-        condition: service_started
+      - arena-orchestrator
+      - culture-graph-indexer
+    command: ["sh", "-c", "node demo/CULTURE-v0/apps/culture-studio/server.mjs"]
     ports:
-      - "${UI_PORT:-3000}:3000"
-
-  prometheus:
-    image: prom/prometheus:latest
+      - "${CULTURE_UI_PORT:-3000}:3000"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
-
-  grafana:
-    image: grafana/grafana:10.4.2
-    ports:
-      - "${GRAFANA_PORT:-3100}:3000"
-    volumes:
-      - ./monitoring/grafana:/var/lib/grafana
-    depends_on:
-      prometheus:
-        condition: service_started
+      - ./:/app
+    environment:
+      - CULTURE_UI_PORT=${CULTURE_UI_PORT:-3000}
+      - CULTURE_ORCHESTRATOR_PORT=${ARENA_ORCHESTRATOR_PORT:-8080}
+      - CULTURE_INDEXER_PORT=${CULTURE_INDEXER_PORT:-8000}
+      - CULTURE_RPC_PORT=${CULTURE_RPC_PORT:-8545}

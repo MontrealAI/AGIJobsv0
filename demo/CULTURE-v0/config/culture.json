@@ -1,0 +1,18 @@
+{
+  "owner": "0xOWNER_WALLET_ADDRESS",
+  "targetSuccessRate": 0.6,
+  "minDifficulty": 1,
+  "maxDifficulty": 15,
+  "maxDifficultyStep": 2,
+  "validatorCommitteeSize": 5,
+  "validatorStake": "1000000000000000000",
+  "teacherReward": "500000000000000000",
+  "studentReward": "250000000000000000",
+  "validatorReward": "100000000000000000",
+  "allowedArtifactKinds": ["book", "prompt", "dataset", "curriculum"],
+  "ipfsGateway": "https://ipfs.io/ipfs/",
+  "reports": {
+    "cms": "reports/culture-weekly.md",
+    "spg": "reports/arena-weekly.md"
+  }
+}
