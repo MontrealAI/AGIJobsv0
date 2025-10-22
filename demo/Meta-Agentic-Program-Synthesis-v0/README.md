@@ -126,6 +126,17 @@ The CLI narrates the process in natural language so the operator always understa
 It now also prints a reward distribution digest summarising total payouts, architect retention, and the top solver/validator so executives can confirm value capture instantly. Immediately afterwards the CLI shares a triple-check verification digest (holdout scores, residual balance, divergence), flagging whether every gate passed.
 The digest now highlights the **entropy shield** so the owner can confirm that solver diversity stayed above the configurable floor – proving the sovereign architect remained creative and unstoppable while under explicit owner control.
 
+### 🔧 Scenario governance console
+
+The demo now ships with a first-class scenario governance interface so non-technical owners can reshape the mission catalogue live:
+
+* Inspect the active catalogue at any time with `python start_demo.py --list-scenarios`. The command respects every override and timelock action, surfacing identifiers, stress multipliers, and dataset specs.
+* Drop a JSON file on disk and pass it to `--scenario-file path/to/scenarios.json` to merge or replace scenarios. Each file can specify a `mode` (`"merge"` or `"replace"`) and a `scenarios` array – every definition supports dataset profiles, thresholds, and stress multipliers.
+* Prefer inline tweaks? Use `--scenario-json '{"mode": "merge", "scenarios": [{"identifier": "alpha", "stress_multiplier": 1.3}]}'` to raise the stress profile without editing source code.
+* Configuration bundles loaded through `--config-file` may also include a `scenarios` block; the governance timelock enforces delayed execution so operators can stage catalogue changes, audit them, and then fast-forward the clock when ready.
+
+All scenario updates are recorded as `update_scenarios` events and pass through the same timelocked, multi-sig workflow as reward or stake adjustments, keeping the owner firmly in control of the sovereign theatre.
+
 ### 🌌 Featured scenarios (non-technical friendly)
 
 | Identifier | Mission | Dataset profile | Stress battery |

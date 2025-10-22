@@ -17,11 +17,16 @@ from meta_agentic_demo.entities import DemoRunArtifacts
 from meta_agentic_demo.governance import GovernanceTimelock
 from meta_agentic_demo.orchestrator import SovereignArchitect
 from meta_agentic_demo.report import ReportBundle, export_report
+from meta_agentic_demo.scenarios import (
+    ScenarioValidationError,
+    resolve_scenarios,
+    serialise_scenarios,
+)
 
 
 ALL_SCENARIOS_IDENTIFIER = "all"
 
-SCENARIOS = [
+DEFAULT_SCENARIOS = [
     DemoScenario(
         identifier="alpha",
         title="Alpha Efficiency Sweep",
@@ -71,15 +76,14 @@ SCENARIOS = [
     ),
 ]
 
-SCENARIO_LOOKUP = {scenario.identifier: scenario for scenario in SCENARIOS}
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "scenario",
-        choices=[*SCENARIO_LOOKUP, ALL_SCENARIOS_IDENTIFIER],
-        help="Identifier of the narrative to execute",
+        nargs="?",
+        default=ALL_SCENARIOS_IDENTIFIER,
+        help="Identifier of the narrative to execute or 'all' for the full constellation",
     )
     parser.add_argument(
         "--output",
@@ -91,6 +95,22 @@ def parse_args() -> argparse.Namespace:
         "--config-file",
         type=Path,
         help="Optional JSON file containing owner overrides",
+    )
+    parser.add_argument(
+        "--scenario-file",
+        type=Path,
+        action="append",
+        help="Path to a JSON file defining scenario overrides",
+    )
+    parser.add_argument(
+        "--scenario-json",
+        action="append",
+        help="Inline JSON payload describing scenario overrides",
+    )
+    parser.add_argument(
+        "--list-scenarios",
+        action="store_true",
+        help="List the configured scenarios after applying overrides and exit",
     )
 
     owner_group = parser.add_argument_group("Owner overrides")
@@ -237,6 +257,20 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def normalise_scenario_payload(data: object) -> dict[str, object]:
+    """Normalise user-provided scenario payloads into a standard mapping."""
+
+    if isinstance(data, Mapping):
+        payload = dict(data)
+        if "definitions" in payload and "scenarios" not in payload:
+            payload["scenarios"] = payload.pop("definitions")
+        if "scenarios" not in payload:
+            return {"mode": "merge", "scenarios": data}
+        mode = str(payload.get("mode", "merge"))
+        return {"mode": mode, "scenarios": payload["scenarios"]}
+    return {"mode": "merge", "scenarios": data}
+
+
 def describe_config(config: DemoConfig) -> str:
     summary = config.as_summary()
     return json.dumps(summary, indent=2)
@@ -244,17 +278,12 @@ def describe_config(config: DemoConfig) -> str:
 
 def main() -> None:
     args = parse_args()
-    selected_scenarios = (
-        list(SCENARIOS)
-        if args.scenario == ALL_SCENARIOS_IDENTIFIER
-        else [SCENARIO_LOOKUP[args.scenario]]
-    )
-    multi_run = len(selected_scenarios) > 1
-    owner_console = OwnerConsole(DemoConfig(scenarios=SCENARIOS))
+    owner_console = OwnerConsole(DemoConfig(scenarios=list(DEFAULT_SCENARIOS)))
     timelock = GovernanceTimelock(
         default_delay=timedelta(seconds=max(args.timelock_delay, 0.0))
     )
-    scheduled_actions = []
+    scheduled_actions: list = []
+    scenario_payload_queue: list[dict[str, object]] = []
 
     def queue_timelock(action: str, payload: Mapping[str, object]) -> bool:
         try:
@@ -264,11 +293,26 @@ def main() -> None:
             print("❌ Owner override error:", error)
             return False
 
+    def enqueue_scenario_payload(data: object, *, source: str) -> bool:
+        try:
+            scenario_payload_queue.append(normalise_scenario_payload(data))
+            return True
+        except Exception as error:  # pragma: no cover - defensive path
+            print(f"❌ Scenario override error ({source}):", error)
+            return False
+
     try:
         if args.config_file:
             overrides = load_owner_overrides(args.config_file)
+            scenario_override = overrides.pop("scenarios", None)
+            if scenario_override is not None and not enqueue_scenario_payload(
+                scenario_override, source=str(args.config_file)
+            ):
+                return
             reward_overrides = overrides.get("reward_policy", {})
-            if reward_overrides and not queue_timelock("update_reward_policy", reward_overrides):
+            if reward_overrides and not queue_timelock(
+                "update_reward_policy", reward_overrides
+            ):
                 return
             stake_overrides = overrides.get("stake_policy", {})
             if stake_overrides and not queue_timelock("update_stake_policy", stake_overrides):
@@ -350,9 +394,49 @@ def main() -> None:
             return
         if args.pause and not queue_timelock("set_paused", {"value": True}):
             return
+        if args.scenario_file:
+            for path in args.scenario_file:
+                try:
+                    payload_data = json.loads(path.read_text(encoding="utf-8"))
+                except OSError as error:
+                    print(f"❌ Unable to read scenario file {path}:", error)
+                    return
+                except json.JSONDecodeError as error:
+                    print(f"❌ Scenario file {path} is not valid JSON:", error)
+                    return
+                if not enqueue_scenario_payload(payload_data, source=str(path)):
+                    return
+        if args.scenario_json:
+            for index, raw in enumerate(args.scenario_json, start=1):
+                try:
+                    payload_data = json.loads(raw)
+                except json.JSONDecodeError as error:
+                    print(f"❌ Scenario JSON override #{index} is invalid:", error)
+                    return
+                if not enqueue_scenario_payload(payload_data, source=f"cli:{index}"):
+                    return
     except ValueError as error:
         print("❌ Owner override error:", error)
         return
+
+    if scenario_payload_queue:
+        effective_scenarios = list(owner_console.config.scenarios)
+        try:
+            for payload in scenario_payload_queue:
+                effective_scenarios = resolve_scenarios(
+                    effective_scenarios,
+                    payload["scenarios"],
+                    mode=payload.get("mode", "merge"),
+                )
+        except ScenarioValidationError as error:
+            print("❌ Scenario override error:", error)
+            return
+        final_payload = {
+            "mode": "replace",
+            "scenarios": serialise_scenarios(effective_scenarios),
+        }
+        if not queue_timelock("set_scenarios", final_payload):
+            return
 
     fast_forward_seconds = max(args.timelock_fast_forward, 0.0)
     execution_time = datetime.now(UTC) + timedelta(seconds=fast_forward_seconds)
@@ -380,6 +464,37 @@ def main() -> None:
             print(f"  • Executed {len(executed_actions)} action(s) ready for execution")
 
     config = owner_console.config
+    scenario_lookup = {scenario.identifier: scenario for scenario in config.scenarios}
+    if not scenario_lookup:
+        print("❌ Scenario catalogue is empty after applying overrides.")
+        return
+    if args.list_scenarios:
+        print("\n📋 Scenario catalogue:")
+        for scenario in config.scenarios:
+            if scenario.dataset_profile:
+                profile = scenario.dataset_profile
+                dataset_summary = (
+                    f"length={profile.length}, noise={profile.noise:.3f}, seed={profile.seed}"
+                )
+            else:
+                dataset_summary = "default dataset"
+            print(
+                "  •",
+                f"{scenario.identifier}: {scenario.title}",
+                f"(threshold={scenario.success_threshold:.2f},",
+                f"stress={scenario.stress_multiplier:.2f}×,",
+                f"{dataset_summary})",
+            )
+        return
+    if args.scenario == ALL_SCENARIOS_IDENTIFIER:
+        selected_scenarios = list(config.scenarios)
+    else:
+        if args.scenario not in scenario_lookup:
+            print(f"❌ Unknown scenario identifier: {args.scenario}")
+            print("   Available:", ", ".join(sorted(scenario_lookup)))
+            return
+        selected_scenarios = [scenario_lookup[args.scenario]]
+    multi_run = len(selected_scenarios) > 1
     aggregated_results: dict[str, DemoRunArtifacts] = {}
     bundles: dict[str, ReportBundle] = {}
     batch_bundle: ReportBundle | None = None

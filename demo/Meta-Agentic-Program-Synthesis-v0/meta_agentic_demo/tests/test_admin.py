@@ -169,6 +169,71 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
     assert any(event.action == "set_paused" for event in console.events)
 
 
+def test_owner_console_updates_scenarios_merge() -> None:
+    console = create_console()
+    console.update_scenarios_from_payload(
+        {
+            "mode": "merge",
+            "scenarios": [
+                {
+                    "identifier": "alpha",
+                    "title": "Alpha Reforged",
+                    "stress_multiplier": 1.25,
+                },
+                {
+                    "identifier": "nova",
+                    "title": "Nova",
+                    "description": "New sovereign arena",
+                    "target_metric": "resilience",
+                    "success_threshold": 0.72,
+                    "dataset_profile": {
+                        "length": 48,
+                        "noise": 0.04,
+                        "seed": 777,
+                    },
+                    "stress_multiplier": 1.4,
+                },
+            ],
+        }
+    )
+    scenarios = console.config.scenarios
+    assert len(scenarios) == 2
+    assert scenarios[0].title == "Alpha Reforged"
+    assert pytest.approx(scenarios[0].stress_multiplier) == 1.25
+    assert scenarios[1].identifier == "nova"
+    assert scenarios[1].dataset_profile and scenarios[1].dataset_profile.length == 48
+    assert console.events[-1].action == "update_scenarios"
+
+
+def test_owner_console_updates_scenarios_replace() -> None:
+    console = create_console()
+    console.update_scenarios_from_payload(
+        {
+            "mode": "replace",
+            "scenarios": [
+                {
+                    "identifier": "beta",
+                    "title": "Beta Vanguard",
+                    "description": "Fresh initiative",
+                    "target_metric": "velocity",
+                    "success_threshold": 0.68,
+                    "stress_multiplier": 1.05,
+                }
+            ],
+        }
+    )
+    scenarios = console.config.scenarios
+    assert len(scenarios) == 1
+    assert scenarios[0].identifier == "beta"
+    assert scenarios[0].title == "Beta Vanguard"
+
+
+def test_owner_console_rejects_invalid_scenario_payload() -> None:
+    console = create_console()
+    with pytest.raises(ValueError):
+        console.update_scenarios_from_payload({"scenarios": [{"title": "Invalid"}]})
+
+
 def test_owner_console_rejects_unknown_keys() -> None:
     console = create_console()
     with pytest.raises(ValueError):
