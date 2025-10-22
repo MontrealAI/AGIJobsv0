@@ -50,7 +50,7 @@ The orchestrator keeps ownership controls in the loop at every stage—jobs are 
    ```sh
    npm run demo:onebox:doctor
    ```
-   The doctor checks required environment variables, pings your RPC to confirm the active chain, verifies that `JOB_REGISTRY_ADDRESS` points to live bytecode, inspects port availability before launch, surfaces active guardrail caps, prints the launch URL, and reminds the operator of the core owner-control commands.
+   The doctor checks required environment variables, pings your RPC to confirm the active chain, verifies that `JOB_REGISTRY_ADDRESS`, `STAKE_MANAGER_ADDRESS`, and `SYSTEM_PAUSE_ADDRESS` resolve to deployed bytecode, inspects port availability before launch, surfaces active guardrail caps, prints the launch URL, and reminds the operator of the core owner-control commands. It also classifies the configured agent identity (EOA or ENS) so operators know which wallet will auto-respond to jobs.
 4. **Launch the One-Box:**
    ```sh
    npm run demo:onebox:launch
@@ -114,6 +114,8 @@ The launcher merges CLI flags and environment variables, de-duplicates prompts, 
 | --- | --- |
 | `RPC_URL` | JSON-RPC endpoint used by the orchestrator provider. |
 | `JOB_REGISTRY_ADDRESS` | Address of the deployed AGI Jobs job registry. |
+| `STAKE_MANAGER_ADDRESS` | Address of the staking manager contract controlling agent collateral. |
+| `SYSTEM_PAUSE_ADDRESS` | Address of the `SystemPause` contract that can halt the platform. |
 | `ONEBOX_RELAYER_PRIVATE_KEY` | EOA key that signs transactions on the user’s behalf. Fund with ETH + AGIALPHA. |
 | `ONEBOX_API_TOKEN` | Optional bearer token protecting `/onebox/*`. Leave empty for local demos. |
 | `ONEBOX_PORT` / `ONEBOX_UI_PORT` | Ports for the orchestrator API and UI server. |
@@ -125,6 +127,7 @@ The launcher merges CLI flags and environment variables, de-duplicates prompts, 
 | `ONEBOX_MAX_JOB_BUDGET_AGIA` | Optional per-job reward ceiling enforced before execution. Blank disables the cap. |
 | `ONEBOX_MAX_JOB_DURATION_DAYS` | Optional lifecycle limit in days; jobs exceeding it are blocked before funding. |
 | `PINNER_*` | Optional IPFS pinning credentials to persist specs/receipts. |
+| `AGENT_ADDRESS` | Optional agent identity (EOA or ENS) monitored by the gateway utilities. |
 
 ## Owner control & observability
 

@@ -318,6 +318,11 @@ function resolveConfig(env, options = {}) {
   const explorerBase = (options.explorerBase ?? env.ONEBOX_EXPLORER_TX_BASE ?? env.NEXT_PUBLIC_ONEBOX_EXPLORER_TX_BASE ?? '').trim();
   const welcomeMessage = (options.welcomeMessage ?? env.ONEBOX_UI_WELCOME ?? '').toString().trim();
 
+  const jobRegistryAddress = (env.JOB_REGISTRY_ADDRESS ?? '').trim();
+  const stakeManagerAddress = (env.STAKE_MANAGER_ADDRESS ?? '').trim();
+  const systemPauseAddress = (env.SYSTEM_PAUSE_ADDRESS ?? '').trim();
+  const agentAddress = (env.AGENT_ADDRESS ?? '').trim();
+
   const exampleSources = [];
   if (env.ONEBOX_UI_SHORTCUTS !== undefined) {
     exampleSources.push(env.ONEBOX_UI_SHORTCUTS);
@@ -406,6 +411,10 @@ function resolveConfig(env, options = {}) {
     maxJobDurationDays,
     welcomeMessage,
     shortcutExamples,
+    jobRegistryAddress,
+    stakeManagerAddress,
+    systemPauseAddress,
+    agentAddress,
   };
 }
 

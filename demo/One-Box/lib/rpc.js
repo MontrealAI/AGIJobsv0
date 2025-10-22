@@ -75,9 +75,55 @@ async function jsonRpcRequest(fetchImpl, url, method, params, { timeoutMs = 8000
   }
 }
 
+function normaliseAddress(address) {
+  if (typeof address !== 'string') {
+    return '';
+  }
+  return address.trim();
+}
+
+function evaluateAddressShape(address) {
+  if (!address) {
+    return 'missing';
+  }
+  if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+    return 'invalid';
+  }
+  if (ZERO_ADDRESS_REGEX.test(address)) {
+    return 'placeholder';
+  }
+  return 'candidate';
+}
+
+async function evaluateContractPresence({ rpcUrl, address, fetchImpl, timeoutMs }) {
+  const shape = evaluateAddressShape(address);
+  if (shape === 'missing' || shape === 'invalid' || shape === 'placeholder') {
+    return { address: address || null, status: shape };
+  }
+
+  try {
+    const code = await jsonRpcRequest(fetchImpl, rpcUrl, 'eth_getCode', [address, 'latest'], {
+      timeoutMs,
+    });
+    const hasCode = typeof code === 'string' && code !== '0x';
+    return {
+      address,
+      status: hasCode ? 'ok' : 'no_code',
+    };
+  } catch (error) {
+    return {
+      address,
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Unknown RPC error',
+    };
+  }
+}
+
 async function probeRpc({
   rpcUrl,
   jobRegistryAddress,
+  stakeManagerAddress,
+  systemPauseAddress,
   fetchImpl = globalThis.fetch,
   timeoutMs,
 } = {}) {
@@ -101,37 +147,33 @@ async function probeRpc({
     };
   }
 
-  let jobRegistryStatus = 'missing';
-  const normalisedAddress = typeof jobRegistryAddress === 'string' ? jobRegistryAddress.trim() : '';
-  if (normalisedAddress) {
-    if (!/^0x[0-9a-fA-F]{40}$/.test(normalisedAddress)) {
-      jobRegistryStatus = 'invalid';
-    } else if (ZERO_ADDRESS_REGEX.test(normalisedAddress)) {
-      jobRegistryStatus = 'placeholder';
-    } else {
-      try {
-        const code = await jsonRpcRequest(
-          fetchImpl,
-          rpcUrl,
-          'eth_getCode',
-          [normalisedAddress, 'latest'],
-          { timeoutMs }
-        );
-        const hasCode = typeof code === 'string' && code !== '0x';
-        jobRegistryStatus = hasCode ? 'ok' : 'no_code';
-      } catch (error) {
-        jobRegistryStatus = 'error';
-      }
-    }
-  }
+  const jobRegistry = await evaluateContractPresence({
+    rpcUrl,
+    address: normaliseAddress(jobRegistryAddress),
+    fetchImpl,
+    timeoutMs,
+  });
+
+  const stakeManager = await evaluateContractPresence({
+    rpcUrl,
+    address: normaliseAddress(stakeManagerAddress),
+    fetchImpl,
+    timeoutMs,
+  });
+
+  const systemPause = await evaluateContractPresence({
+    rpcUrl,
+    address: normaliseAddress(systemPauseAddress),
+    fetchImpl,
+    timeoutMs,
+  });
 
   return {
     status: 'ready',
     chain,
-    jobRegistry: {
-      address: normalisedAddress || null,
-      status: jobRegistryStatus,
-    },
+    jobRegistry,
+    stakeManager,
+    systemPause,
   };
 }
 
@@ -195,6 +237,9 @@ async function fetchAccountBalance({
 
 module.exports = {
   NETWORK_NAMES,
+  normaliseAddress,
+  evaluateAddressShape,
+  evaluateContractPresence,
   parseChainId,
   probeRpc,
   toHex,

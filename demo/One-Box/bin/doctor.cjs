@@ -7,11 +7,53 @@ const {
   isUnsetEnvValue,
   collectPortDiagnostics,
 } = require('../lib/launcher.js');
-const { probeRpc, fetchAccountBalance } = require('../lib/rpc.js');
+const { probeRpc, fetchAccountBalance, evaluateAddressShape } = require('../lib/rpc.js');
 
 function formatStatus(label, value) {
   const padded = label.padEnd(24, ' ');
   console.log(`   ${padded} ${value}`);
+}
+
+function describeContractStatus(probeEntry, { allowMissing = false } = {}) {
+  if (!probeEntry || typeof probeEntry !== 'object') {
+    return '⚠️  No probe result available.';
+  }
+  switch (probeEntry.status) {
+    case 'ok':
+      return '✅ Contract bytecode detected.';
+    case 'no_code':
+      return '⚠️  No bytecode at configured address.';
+    case 'invalid':
+      return '⚠️  Invalid address format.';
+    case 'placeholder':
+      return '⚠️  Placeholder address detected. Update configuration.';
+    case 'error':
+      return `⚠️  RPC error while fetching bytecode${probeEntry.error ? `: ${probeEntry.error}` : ''}`;
+    case 'missing':
+      return allowMissing ? '(not configured)' : '⚠️  Address not provided.';
+    default:
+      return `⚠️  Unrecognised status: ${String(probeEntry.status)}`;
+  }
+}
+
+function describeAgentAddress(address) {
+  if (!address) {
+    return '(not configured)';
+  }
+  const trimmed = address.trim();
+  if (!trimmed) {
+    return '(not configured)';
+  }
+  if (/^0x[0-9a-fA-F]{40}$/.test(trimmed)) {
+    if (/^0x0{40}$/i.test(trimmed)) {
+      return '⚠️  Placeholder 0x00… address.';
+    }
+    return `${trimmed} (EOA/contract)`;
+  }
+  if (evaluateAddressShape(trimmed) === 'invalid' && trimmed.includes('.')) {
+    return `${trimmed} (likely ENS name)`;
+  }
+  return `${trimmed} (custom identifier)`;
 }
 
 (async () => {
@@ -46,11 +88,22 @@ function formatStatus(label, value) {
   const rpcDisplay = env.RPC_URL
     ? `${env.RPC_URL}${isUnsetEnvValue(env.RPC_URL, { treatZeroAddress: false }) ? ' (placeholder)' : ''}`
     : '(unset)';
-  const jobDisplay = env.JOB_REGISTRY_ADDRESS
-    ? `${env.JOB_REGISTRY_ADDRESS}${isUnsetEnvValue(env.JOB_REGISTRY_ADDRESS) ? ' (placeholder)' : ''}`
+  const jobDisplay = config.jobRegistryAddress
+    ? `${config.jobRegistryAddress}${isUnsetEnvValue(config.jobRegistryAddress) ? ' (placeholder)' : ''}`
+    : '(unset)';
+  const stakeDisplay = config.stakeManagerAddress
+    ? `${config.stakeManagerAddress}${isUnsetEnvValue(config.stakeManagerAddress) ? ' (placeholder)' : ''}`
+    : '(unset)';
+  const pauseDisplay = config.systemPauseAddress
+    ? `${config.systemPauseAddress}${isUnsetEnvValue(config.systemPauseAddress) ? ' (placeholder)' : ''}`
     : '(unset)';
   formatStatus('RPC_URL', rpcDisplay);
   formatStatus('JOB_REGISTRY_ADDRESS', jobDisplay);
+  formatStatus('STAKE_MANAGER_ADDRESS', stakeDisplay);
+  formatStatus('SYSTEM_PAUSE_ADDRESS', pauseDisplay);
+  if (config.agentAddress) {
+    formatStatus('AGENT_ADDRESS', config.agentAddress);
+  }
   const relayerKeyStatus = !env.ONEBOX_RELAYER_PRIVATE_KEY
     ? '(unset)'
     : relayerKeyConfigured
@@ -124,7 +177,9 @@ function formatStatus(label, value) {
 
   const rpcProbe = await probeRpc({
     rpcUrl: env.RPC_URL,
-    jobRegistryAddress: env.JOB_REGISTRY_ADDRESS,
+    jobRegistryAddress: config.jobRegistryAddress,
+    stakeManagerAddress: config.stakeManagerAddress,
+    systemPauseAddress: config.systemPauseAddress,
   });
 
   console.log('Network diagnostics:');
@@ -144,24 +199,9 @@ function formatStatus(label, value) {
   }
 
   if (rpcProbe.status === 'ready') {
-    if (rpcProbe.jobRegistry?.address) {
-      const { status } = rpcProbe.jobRegistry;
-      const detail =
-        status === 'ok'
-          ? '✅ Contract bytecode detected.'
-          : status === 'no_code'
-          ? '⚠️  No bytecode at JOB_REGISTRY_ADDRESS.'
-          : status === 'placeholder'
-          ? '⚠️  Placeholder address detected. Update JOB_REGISTRY_ADDRESS.'
-          : status === 'invalid'
-          ? '⚠️  Invalid address format.'
-          : status === 'error'
-          ? '⚠️  RPC error while fetching bytecode.'
-          : '⚠️  Address not provided.';
-      formatStatus('Job registry', detail);
-    } else {
-      formatStatus('Job registry', '⚠️  Address not provided.');
-    }
+    formatStatus('Job registry', describeContractStatus(rpcProbe.jobRegistry));
+    formatStatus('Stake manager', describeContractStatus(rpcProbe.stakeManager));
+    formatStatus('System pause', describeContractStatus(rpcProbe.systemPause, { allowMissing: true }));
     if (relayerAddress) {
       const balance = await fetchAccountBalance({
         rpcUrl: env.RPC_URL,
@@ -182,6 +222,8 @@ function formatStatus(label, value) {
     }
   } else if (rpcProbe.status === 'missing') {
     formatStatus('Job registry', '⚠️  Set JOB_REGISTRY_ADDRESS once deployment is live.');
+    formatStatus('Stake manager', '⚠️  Configure STAKE_MANAGER_ADDRESS once available.');
+    formatStatus('System pause', '⚠️  Configure SYSTEM_PAUSE_ADDRESS once available.');
     if (relayerAddress) {
       formatStatus('Relayer balance', '⚠️  RPC_URL missing. Balance check skipped.');
     } else if (!relayerKeyConfigured) {
@@ -189,6 +231,8 @@ function formatStatus(label, value) {
     }
   } else {
     formatStatus('Job registry', '⚠️  RPC unreachable. Bytecode verification skipped.');
+    formatStatus('Stake manager', '⚠️  RPC unreachable. Bytecode verification skipped.');
+    formatStatus('System pause', '⚠️  RPC unreachable. Bytecode verification skipped.');
     if (relayerAddress) {
       formatStatus('Relayer balance', '⚠️  RPC unreachable. Balance check skipped.');
     } else if (!relayerKeyConfigured) {
@@ -196,6 +240,11 @@ function formatStatus(label, value) {
     }
   }
   console.log('');
+
+  if (config.agentAddress) {
+    formatStatus('Agent identifier', describeAgentAddress(config.agentAddress));
+    console.log('');
+  }
 
   console.log('Owner control checklist:');
   console.log('   • npm run owner:surface          # Snapshot control surfaces');

@@ -43,6 +43,9 @@ test('resolveConfig normalises prefix and derives defaults', () => {
     ONEBOX_UI_PORT: '4400',
     ONEBOX_PUBLIC_ONEBOX_PREFIX: 'mission-control/',
     ONEBOX_API_TOKEN: 'demo',
+    STAKE_MANAGER_ADDRESS: '0xabc',
+    SYSTEM_PAUSE_ADDRESS: '0xdef',
+    AGENT_ADDRESS: 'agent.example.eth',
   };
   const config = resolveConfig(env);
   assert.equal(config.orchestratorPort, 9010);
@@ -55,6 +58,10 @@ test('resolveConfig normalises prefix and derives defaults', () => {
   assert.equal(config.welcomeMessage, '');
   assert.deepEqual(config.shortcutExamples, []);
   assert.deepEqual(config.warnings, []);
+  assert.equal(config.jobRegistryAddress, '0x1234');
+  assert.equal(config.stakeManagerAddress, '0xabc');
+  assert.equal(config.systemPauseAddress, '0xdef');
+  assert.equal(config.agentAddress, 'agent.example.eth');
 });
 
 test('resolveConfig allows explicit CLI overrides to win over environment', () => {
@@ -106,6 +113,9 @@ test('resolveConfig parses guardrail environment variables', () => {
     RPC_URL: 'http://localhost:8545',
     JOB_REGISTRY_ADDRESS: '0x1234',
     ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    STAKE_MANAGER_ADDRESS: '   0x4567   ',
+    SYSTEM_PAUSE_ADDRESS: '   ',
+    AGENT_ADDRESS: ' 0x000000000000000000000000000000000000abcd ',
     ONEBOX_MAX_JOB_BUDGET_AGIA: '45.5',
     ONEBOX_MAX_JOB_DURATION_DAYS: '7',
     ONEBOX_UI_WELCOME: 'Hello operator',
@@ -117,6 +127,9 @@ test('resolveConfig parses guardrail environment variables', () => {
   assert.equal(config.welcomeMessage, 'Hello operator');
   assert.deepEqual(config.shortcutExamples, ['Research', 'Finalize job 12']);
   assert.deepEqual(config.warnings, []);
+  assert.equal(config.stakeManagerAddress, '0x4567');
+  assert.equal(config.systemPauseAddress, '');
+  assert.equal(config.agentAddress, '0x000000000000000000000000000000000000abcd');
 });
 
 test('resolveConfig merges CLI example overrides with environment shortcuts', () => {
