@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1.7
+
+FROM node:20.18.1-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY demo/CULTURE-v0/.npmrc .npmrc
+COPY .npmrc /app/.npmrc.root
+COPY demo/CULTURE-v0/scripts/smoke-test.mjs ./smoke-test.mjs
+
+RUN groupadd --system app \
+  && useradd --system --create-home --gid app app \
+  && chown -R app:app /app
+USER app
+
+CMD ["node", "smoke-test.mjs"]

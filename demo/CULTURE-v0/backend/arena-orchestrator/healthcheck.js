@@ -2,7 +2,7 @@ import http from "http";
 
 const req = http.request({
   hostname: "localhost",
-  port: process.env.ORCHESTRATOR_PORT || 4000,
+  port: Number.parseInt(process.env.ORCHESTRATOR_PORT ?? '4005', 10),
   path: "/healthz",
   method: "GET",
   timeout: 2000,

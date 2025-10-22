@@ -138,6 +138,10 @@ services:
     build:
       context: ..
       dockerfile: demo/CULTURE-v0/apps/culture-studio/Dockerfile
+      args:
+        VITE_ORCHESTRATOR_URL: ${VITE_ORCHESTRATOR_URL-http://localhost:4005}
+        VITE_INDEXER_URL: ${VITE_INDEXER_URL-http://localhost:4100/graphql}
+        VITE_IPFS_GATEWAY: ${VITE_IPFS_GATEWAY-http://localhost:8080}
     <<: *default-env
     depends_on:
       culture-orchestrator:
@@ -146,17 +150,30 @@ services:
         condition: service_healthy
     ports:
       - "4173:4173"
-    environment:
-      <<: *default-env.environment
-      VITE_ORCHESTRATOR_URL: ${VITE_ORCHESTRATOR_URL-http://localhost:4005}
-      VITE_INDEXER_URL: ${VITE_INDEXER_URL-http://localhost:4100/graphql}
-      VITE_IPFS_GATEWAY: ${VITE_IPFS_GATEWAY-http://localhost:8080}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4173"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:4173/healthz"]
       interval: 15s
       timeout: 5s
       retries: 10
       start_period: 20s
+
+  culture-smoke-tests:
+    build:
+      context: ..
+      dockerfile: demo/CULTURE-v0/scripts/Dockerfile.smoke-tests
+    profiles: [test]
+    <<: *default-env
+    depends_on:
+      culture-chain:
+        condition: service_healthy
+      culture-ipfs:
+        condition: service_healthy
+      culture-orchestrator:
+        condition: service_healthy
+      culture-indexer:
+        condition: service_healthy
+      culture-studio:
+        condition: service_healthy
 
   culture-reports:
     image: node:20.18.1

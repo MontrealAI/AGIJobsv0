@@ -17,8 +17,8 @@ Every component is documented, modular, and integrates with the AGI Jobs v0 (v2)
 
 ## Getting Started
 
-1. **Bootstrap configuration** — Copy `.env.example` to `.env` and adjust RPC URLs, private keys, and optional IPFS credentials.
-2. **Install dependencies** — Run `npm install --legacy-peer-deps` from the repository root.
+1. **Bootstrap configuration** — Copy `.env.example` to `.env`, fill in contract addresses + API keys, and validate with `npm run culture:env:check` (or `node demo/CULTURE-v0/scripts/check-env.mjs demo/CULTURE-v0/.env`).
+2. **Install dependencies** — Run `npm install --legacy-peer-deps` from the repository root. The shared `.npmrc` keeps installs reproducible across packages and Docker builds.
 3. **Compile contracts** — Execute `npx hardhat compile` to ensure `CultureRegistry` and `SelfPlayArena` artifacts are current.
 4. **Deploy & configure**
    ```bash
@@ -35,8 +35,9 @@ Every component is documented, modular, and integrates with the AGI Jobs v0 (v2)
    docker compose -f demo/CULTURE-v0/docker-compose.yml up -d culture-orchestrator culture-indexer culture-studio
    ```
    Health checks ensure each service is reachable before dependants start.
-6. **Explore the studio** — Visit `http://localhost:4173` to mint artifacts, run self-play arenas, and inspect the culture graph.
-7. **Generate analytics (optional)** — Produce reproducible weekly reports via `npm exec ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts` or `docker compose --profile reports run --rm culture-reports`.
+6. **Run smoke tests** — `npm run culture:smoke` (or `docker compose -f demo/CULTURE-v0/docker-compose.yml --profile test up culture-smoke-tests --abort-on-container-exit --exit-code-from culture-smoke-tests`) exercises the RPC node, IPFS API, orchestrator, indexer, and UI before manual QA.
+7. **Explore the studio** — Visit `http://localhost:4173` to mint artifacts, run self-play arenas, and inspect the culture graph.
+8. **Generate analytics (optional)** — Produce reproducible weekly reports via `npm exec ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts` or `docker compose --profile reports run --rm culture-reports`.
 
 Refer to [RUNBOOK.md](RUNBOOK.md) for production operations, owner controls, and troubleshooting guidance.
 
@@ -51,6 +52,27 @@ Refer to [RUNBOOK.md](RUNBOOK.md) for production operations, owner controls, and
 | `culture-indexer` | GraphQL indexer + influence analytics | `GET /healthz` | `culture_indexer_db`, `culture_indexer_logs` |
 | `culture-studio` | Owner-facing UI | `GET /` | — |
 | `culture-reports` (profile `reports`) | Generates weekly Markdown reports | exits on success | `culture_node_modules` |
+
+## Resource requirements & troubleshooting
+
+**Baseline resources**
+
+- 4 CPU cores (or 2 performance + 2 efficiency cores) to keep the orchestrator + indexer responsive while Anvil and IPFS mine blocks.
+- 8 GB RAM to accommodate Node.js services, Prisma, and IPFS caching without swapping.
+- 10 GB free disk for contract artifacts, IPFS blocks, and SQLite snapshots stored in the named volumes.
+
+**Smoke test workflow**
+
+1. Ensure Docker Desktop (macOS/Windows) or Docker Engine (Linux) is running with the resources above allocated.
+2. Execute `npm run culture:smoke` from a clean clone. The command builds all service images, boots dependencies, and waits for healthy responses before exiting.
+3. If `culture-smoke-tests` fails, inspect `docker compose logs culture-smoke-tests` plus the service listed in the error message; health checks surface HTTP status codes and RPC errors for quick triage.
+
+**Common recovery paths**
+
+- **Docker not available** — Install Docker, or run `npm run culture:env:check` + `npx hardhat node`/`npx hardhat run ...` manually for a partial verification flow.
+- **Port conflicts** — Override `ORCHESTRATOR_PORT`, `INDEXER_PORT`, and `IPFS_*` in `.env` and re-run `npm run culture:env:check` before rebuilding images.
+- **Slow startups** — Increase `SMOKE_MAX_ATTEMPTS`/`SMOKE_BACKOFF_MS` when invoking `npm run culture:smoke` to accommodate low-resource laptops.
+- **IPFS bootstrap failures** — Remove the `culture_ipfs_*` volumes (`docker volume rm culture_ipfs_data culture_ipfs_exports`) and re-run the compose stack to recreate a clean repo.
 
 ## Automation Scripts
 
