@@ -1,4 +1,9 @@
 import { Artifact, Citation, Prisma, PrismaClient } from '@prisma/client';
+import type {
+  InfluenceValidationGraph,
+  InfluenceValidationReport,
+  InfluenceValidator,
+} from './networkx-validator.js';
 
 export interface InfluenceComputationConfig {
   readonly dampingFactor?: number;
@@ -16,11 +21,18 @@ export class InfluenceService {
   private readonly dampingFactor: number;
   private readonly maxIterations: number;
   private readonly tolerance: number;
+  private readonly validator: InfluenceValidator | null;
+  private lastValidationReport: InfluenceValidationReport | null = null;
 
-  constructor(private readonly prisma: PrismaClient, config: InfluenceComputationConfig = {}) {
+  constructor(
+    private readonly prisma: PrismaClient,
+    config: InfluenceComputationConfig = {},
+    validator?: InfluenceValidator | null
+  ) {
     this.dampingFactor = config.dampingFactor ?? 0.85;
     this.maxIterations = config.maxIterations ?? 25;
     this.tolerance = config.tolerance ?? 1e-6;
+    this.validator = validator ?? null;
   }
 
   async recompute(_affectedArtifacts?: readonly string[]): Promise<InfluenceComputationResult | null> {
@@ -43,7 +55,13 @@ export class InfluenceService {
 
     await this.persistMetrics(artifacts, scores, citationCounts, lineageDepths);
 
+    await this.runValidation(artifacts, scores);
+
     return { scores, citationCounts, lineageDepths };
+  }
+
+  getLastValidation(): InfluenceValidationReport | null {
+    return this.lastValidationReport;
   }
 
   private computePageRank(artifacts: ArtifactWithGraph[]): Map<string, number> {
@@ -179,6 +197,53 @@ export class InfluenceService {
     }
 
     await this.prisma.$transaction(operations);
+  }
+
+  private async runValidation(
+    artifacts: ArtifactWithGraph[],
+    scores: Map<string, number>
+  ): Promise<void> {
+    if (!this.validator) {
+      this.lastValidationReport = null;
+      return;
+    }
+
+    const graph: InfluenceValidationGraph = {
+      nodes: artifacts.map((artifact) => artifact.id),
+      edges: artifacts.flatMap((artifact) =>
+        artifact.citationsFrom.map((citation) => [artifact.id, citation.toId] as [string, string])
+      ),
+    };
+
+    let report: InfluenceValidationReport;
+    try {
+      report = await this.validator.validate(graph, scores, {
+        dampingFactor: this.dampingFactor,
+        maxIterations: this.maxIterations,
+        tolerance: this.tolerance,
+      });
+    } catch (error) {
+      this.lastValidationReport = {
+        ok: false,
+        skipped: true,
+        engine: null,
+        maxDelta: 0,
+        externalScores: null,
+        error: error instanceof Error ? error.message : 'Unknown influence validation error',
+      };
+      if (error instanceof Error) {
+        console.warn('Influence validation skipped:', error.message);
+      } else {
+        console.warn('Influence validation skipped due to unknown error');
+      }
+      return;
+    }
+
+    this.lastValidationReport = report;
+
+    if (!report.skipped && !report.ok) {
+      throw new Error(report.error ?? 'Influence validation failed');
+    }
   }
 }
 

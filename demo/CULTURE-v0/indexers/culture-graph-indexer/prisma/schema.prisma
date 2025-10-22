@@ -20,6 +20,8 @@ model Artifact {
   citationsFrom Citation[] @relation("CitationsFrom")
   citationsTo   Citation[] @relation("CitationsTo")
   influence     InfluenceMetric?
+
+  @@index([parentId])
 }
 
 model Citation {
@@ -34,6 +36,8 @@ model Citation {
   to          Artifact @relation("CitationsTo", fields: [toId], references: [id], onDelete: Cascade)
 
   @@unique([fromId, toId, blockNumber, logIndex])
+  @@index([fromId])
+  @@index([toId])
 }
 
 model RoundFinalization {
@@ -63,4 +67,10 @@ model EventCursor {
   id          Int @id @default(1)
   blockNumber Int
   logIndex    Int
+}
+
+model DatasetChecksum {
+  key       String   @id
+  hash      String
+  updatedAt DateTime @updatedAt
 }

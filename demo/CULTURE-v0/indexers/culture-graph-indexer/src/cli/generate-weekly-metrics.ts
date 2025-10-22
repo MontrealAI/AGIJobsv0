@@ -5,6 +5,7 @@ import { hideBin } from 'yargs/helpers';
 import { prisma } from '../db/prisma.js';
 import { loadConfig } from '../config.js';
 import { InfluenceService } from '../services/influence-service.js';
+import { NetworkXInfluenceValidator } from '../services/networkx-validator.js';
 
 interface WeeklyMetrics {
   readonly week: string;
@@ -47,7 +48,7 @@ async function main(): Promise<void> {
     .parseAsync();
 
   const config = loadConfig();
-  const influence = new InfluenceService(prisma);
+  const influence = new InfluenceService(prisma, {}, new NetworkXInfluenceValidator());
   await influence.recompute();
 
   const outputPath = resolve(argv.output ?? config.weeklyMetricsOutput);

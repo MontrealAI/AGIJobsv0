@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { createPrismaTestContext } from './helpers.js';
 import { InfluenceService } from '../src/services/influence-service.js';
+import { NoopInfluenceValidator } from '../src/services/networkx-validator.js';
 
 describe('InfluenceService', () => {
   it('computes stable PageRank scores and lineage depths', async () => {
     const { prisma } = createPrismaTestContext();
-    const influence = new InfluenceService(prisma, { maxIterations: 30, tolerance: 1e-9 });
+    const influence = new InfluenceService(
+      prisma,
+      { maxIterations: 30, tolerance: 1e-9 },
+      new NoopInfluenceValidator()
+    );
 
     const baseTime = new Date();
     await prisma.artifact.createMany({

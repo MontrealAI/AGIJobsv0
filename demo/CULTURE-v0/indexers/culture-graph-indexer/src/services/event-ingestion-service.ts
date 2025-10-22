@@ -24,6 +24,7 @@ export class EventIngestionService {
   private readonly artifactMintedTopic: string;
   private readonly artifactCitedTopic: string;
   private readonly roundFinalizedTopic: string;
+  private backfillInFlight: Promise<void> | null = null;
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -267,7 +268,20 @@ export class EventIngestionService {
     };
   }
 
-  private async backfillHistoricalEvents(): Promise<void> {
+  async backfillHistoricalEvents(options: { force?: boolean } = {}): Promise<void> {
+    if (this.backfillInFlight) {
+      await this.backfillInFlight;
+      return;
+    }
+
+    this.backfillInFlight = this.performBackfill(options).finally(() => {
+      this.backfillInFlight = null;
+    });
+
+    await this.backfillInFlight;
+  }
+
+  private async performBackfill(options: { force?: boolean }): Promise<void> {
     if (!this.provider || !this.config.cultureRegistryAddress) {
       return;
     }
@@ -286,7 +300,7 @@ export class EventIngestionService {
       return;
     }
 
-    const shouldSkipDuplicates = !reorgBuffer && cursor;
+    const shouldSkipDuplicates = !options.force && !reorgBuffer && cursor;
     const cultureAddress = this.config.cultureRegistryAddress.toLowerCase();
     const arenaAddress = this.config.selfPlayArenaAddress?.toLowerCase();
 

@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { createPrismaTestContext } from './helpers.js';
 import { InfluenceService } from '../src/services/influence-service.js';
+import { NoopInfluenceValidator } from '../src/services/networkx-validator.js';
 import { EventIngestionService } from '../src/services/event-ingestion-service.js';
 
 describe('Event ingestion', () => {
   it('persists artifacts, citations, and recomputes influence metrics', async () => {
     const { prisma } = createPrismaTestContext();
-    const influence = new InfluenceService(prisma, { maxIterations: 10, tolerance: 1e-8 });
+    const influence = new InfluenceService(
+      prisma,
+      { maxIterations: 10, tolerance: 1e-8 },
+      new NoopInfluenceValidator()
+    );
     const ingestion = new EventIngestionService(prisma, influence, {});
 
     const now = new Date();

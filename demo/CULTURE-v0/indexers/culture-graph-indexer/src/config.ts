@@ -44,8 +44,29 @@ const configSchema = z.object({
     .transform((value) => Number.parseFloat(value))
     .pipe(z.number().positive())
     .optional(),
+  influenceValidationMultiplier: z
+    .string()
+    .transform((value) => Number.parseFloat(value))
+    .pipe(z.number().positive())
+    .optional(),
   weeklyMetricsOutput: z.string().default('demo/CULTURE-v0/data/analytics/culture-graph-indexer.latest.json'),
   networkName: z.string().default('local'),
+  rateLimitMax: z
+    .string()
+    .transform((value) => Number.parseInt(value, 10))
+    .pipe(z.number().int().positive())
+    .optional(),
+  rateLimitWindow: z.string().optional(),
+  backfillIntervalMs: z
+    .string()
+    .transform((value) => Number.parseInt(value, 10))
+    .pipe(z.number().int().positive())
+    .optional(),
+  checksumIntervalMs: z
+    .string()
+    .transform((value) => Number.parseInt(value, 10))
+    .pipe(z.number().int().positive())
+    .optional(),
 });
 
 export type IndexerConfig = z.infer<typeof configSchema>;
@@ -63,8 +84,13 @@ export function loadConfig(): IndexerConfig {
     influenceDampingFactor: process.env.INFLUENCE_DAMPING_FACTOR,
     influenceIterations: process.env.INFLUENCE_ITERATIONS,
     influenceTolerance: process.env.INFLUENCE_TOLERANCE,
+    influenceValidationMultiplier: process.env.INFLUENCE_VALIDATION_MULTIPLIER,
     weeklyMetricsOutput: process.env.CULTURE_WEEKLY_METRICS ?? process.env.CULTURE_ANALYTICS_EXPORT,
     networkName: process.env.CULTURE_NETWORK ?? process.env.HARDHAT_NETWORK ?? 'local',
+    rateLimitMax: process.env.API_RATE_LIMIT_MAX,
+    rateLimitWindow: process.env.API_RATE_LIMIT_WINDOW,
+    backfillIntervalMs: process.env.BACKFILL_INTERVAL_MS,
+    checksumIntervalMs: process.env.CHECKSUM_INTERVAL_MS,
   });
 
   if (!result.success) {
