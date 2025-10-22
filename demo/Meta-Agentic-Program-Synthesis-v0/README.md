@@ -72,6 +72,10 @@ Triple verification now runs in lockstep with an **Independent Assurance Weave**
 
 All three thresholds are owner-governed and surfaced through the CLI / JSON overrides, ensuring governance can harden or relax the assurance net instantly.
 
+#### Resilience index
+
+Every sovereign cycle now reports a **Resilience Index** – a bounded \[0,1] signal that fuses four orthogonal safety rails: the primary composite score, the harshest stress battery outcome, the entropy shield, and the bootstrap confidence centre. The index quantifies how unstoppable-yet-controllable the meta-architecture is, surfacing to owners whenever resilience slips below the configured stress threshold. Batch constellations aggregate this statistic to highlight the most unshakeable mission and the fleet's average resilience so non-technical leaders can judge when the machine is ready to deploy live capital.
+
 ```mermaid
 stateDiagram-v2
     [*] --> SeedPopulation: bootstrap diverse codelets

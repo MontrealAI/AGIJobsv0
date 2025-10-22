@@ -55,6 +55,7 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert isinstance(verification.pass_variance_ratio, bool)
     assert 0 <= verification.spectral_ratio <= 1
     assert isinstance(verification.pass_spectral_ratio, bool)
+    assert 0 <= verification.resilience_index <= 1
 
 
 def test_orchestrator_respects_dataset_profile() -> None:

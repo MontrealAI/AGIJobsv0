@@ -451,6 +451,9 @@ def main() -> None:
             f"  • Stress battery: {json.dumps(digest.stress_scores)} (threshold={digest.stress_threshold:.2f}, pass={digest.pass_stress})"
         )
         print(
+            f"  • Resilience index: {digest.resilience_index:.4f} (harmonised stress/entropy/confidence)"
+        )
+        print(
             f"  • Entropy shield: score={digest.entropy_score:.4f} (floor={digest.entropy_floor:.2f}, pass={digest.pass_entropy})"
         )
         print(

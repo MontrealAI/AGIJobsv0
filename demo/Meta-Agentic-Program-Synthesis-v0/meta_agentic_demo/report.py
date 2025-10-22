@@ -165,12 +165,13 @@ BATCH_HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
   <h1>Meta-Agentic Mission Constellation</h1>
-  <section>
+    <section>
     <h2>Constellation Overview</h2>
     <p>
       <span class=\"badge\">Missions: {scenario_count}</span>
       <span class=\"badge\">Pass rate: {pass_rate:.1f}%</span>
       <span class=\"badge\">Owner touchpoints: {owner_touchpoints}</span>
+      <span class=\"badge\">Avg resilience: {average_resilience:.3f}</span>
     </p>
     <div class=\"grid\">{summary_cards}</div>
   </section>
@@ -178,7 +179,7 @@ BATCH_HTML_TEMPLATE = """<!DOCTYPE html>
     <h2>Mission Ledger</h2>
     <table>
       <thead>
-        <tr><th>Scenario</th><th>Composite Score</th><th>Δ vs Genesis</th><th>Entropy</th><th>Stress</th><th>Verification</th><th>Top Solver</th></tr>
+        <tr><th>Scenario</th><th>Composite Score</th><th>Δ vs Genesis</th><th>Entropy</th><th>Stress</th><th>Resilience</th><th>Verification</th><th>Top Solver</th></tr>
       </thead>
       <tbody>{table_rows}</tbody>
     </table>
@@ -289,6 +290,7 @@ def _summarise_batch(reports: Mapping[str, DemoRunArtifacts]) -> Dict[str, objec
             "pass_rate": 0.0,
             "average_score": 0.0,
             "average_improvement": 0.0,
+            "average_resilience": 0.0,
             "owner_touchpoints": 0,
             "best_identifier": None,
             "best_title": "—",
@@ -299,10 +301,14 @@ def _summarise_batch(reports: Mapping[str, DemoRunArtifacts]) -> Dict[str, objec
             "entropy_identifier": None,
             "entropy_title": "—",
             "entropy_score": 0.0,
+            "resilience_identifier": None,
+            "resilience_title": "—",
+            "resilience_score": 0.0,
         }
     pass_count = sum(1 for report in reports.values() if report.verification.overall_pass)
     total_score = sum(report.final_score for report in reports.values())
     total_improvement = sum(report.improvement_over_first for report in reports.values())
+    total_resilience = sum(report.verification.resilience_index for report in reports.values())
     owner_actions = sum(len(report.owner_actions) for report in reports.values())
     timelock_actions = sum(len(report.timelock_actions) for report in reports.values())
     best_identifier, best_report = max(
@@ -314,12 +320,16 @@ def _summarise_batch(reports: Mapping[str, DemoRunArtifacts]) -> Dict[str, objec
     entropy_identifier, entropy_report = max(
         reports.items(), key=lambda item: item[1].verification.entropy_score
     )
+    resilience_identifier, resilience_report = max(
+        reports.items(), key=lambda item: item[1].verification.resilience_index
+    )
     return {
         "completed": total,
         "pass_count": pass_count,
         "pass_rate": pass_count / total if total else 0.0,
         "average_score": total_score / total,
         "average_improvement": total_improvement / total,
+        "average_resilience": total_resilience / total,
         "owner_touchpoints": owner_actions + timelock_actions,
         "best_identifier": best_identifier,
         "best_title": best_report.scenario,
@@ -330,6 +340,9 @@ def _summarise_batch(reports: Mapping[str, DemoRunArtifacts]) -> Dict[str, objec
         "entropy_identifier": entropy_identifier,
         "entropy_title": entropy_report.scenario,
         "entropy_score": entropy_report.verification.entropy_score,
+        "resilience_identifier": resilience_identifier,
+        "resilience_title": resilience_report.scenario,
+        "resilience_score": resilience_report.verification.resilience_index,
     }
 
 
@@ -346,6 +359,10 @@ def _build_summary_cards(summary: Mapping[str, object]) -> str:
         f"<p>{float(summary['average_improvement']):.4f}</p>"
         "</div>",
         "<div class=\"summary-card\">"
+        "<h3>Average Resilience</h3>"
+        f"<p>{float(summary['average_resilience']):.3f}</p>"
+        "</div>",
+        "<div class=\"summary-card\">"
         "<h3>Highest Score</h3>"
         f"<p>{escape(str(summary['best_title']))}<br/><span>{float(summary['best_score']):.4f}</span></p>"
         "</div>",
@@ -356,6 +373,10 @@ def _build_summary_cards(summary: Mapping[str, object]) -> str:
         "<div class=\"summary-card\">"
         "<h3>Entropy Apex</h3>"
         f"<p>{escape(str(summary['entropy_title']))}<br/><span>{float(summary['entropy_score']):.3f}</span></p>"
+        "</div>",
+        "<div class=\"summary-card\">"
+        "<h3>Resilience Apex</h3>"
+        f"<p>{escape(str(summary['resilience_title']))}<br/><span>{float(summary['resilience_score']):.3f}</span></p>"
         "</div>",
     ]
     return build_rows(cards)
@@ -382,12 +403,13 @@ def _build_table_rows(
             f"<td>{report.improvement_over_first:.4f}</td>"
             f"<td>{report.verification.entropy_score:.3f}</td>"
             f"<td>{stress:.2f}×</td>"
+            f"<td>{report.verification.resilience_index:.3f}</td>"
             f"<td>{'PASS' if report.verification.overall_pass else 'ATTENTION'}</td>"
             f"<td>{escape(solver)}</td>"
             "</tr>"
         )
     if not rows:
-        return "<tr><td colspan=7>No missions executed.</td></tr>"
+        return "<tr><td colspan=8>No missions executed.</td></tr>"
     return build_rows(rows)
 
 
@@ -551,6 +573,10 @@ def format_verification_cards(verification: VerificationDigest) -> str:
         f"  <p>Overall verdict: {'PASS' if verification.overall_pass else 'ATTENTION'}</p>",
         "</div>",
         "<div class=\"summary-card\">",
+        f"  <h3>Resilience Index</h3><p>{verification.resilience_index:.4f}</p>",
+        "  <p>Stress × entropy × confidence composite</p>",
+        "</div>",
+        "<div class=\"summary-card\">",
         f"  <h3>Residual Balance</h3><p>Mean {verification.residual_mean:+.4f}</p>",
         f"  <p>Std {verification.residual_std:.4f}</p>",
         f"  <p>Status: {'PASS' if verification.pass_residual_balance else 'ALERT'}</p>",
@@ -608,6 +634,7 @@ def format_verification_table(verification: VerificationDigest) -> str:
     )
     gates = "".join(
         [
+            f"<tr><td>Resilience Index</td><td>{verification.resilience_index:.4f}</td><td>{'PASS' if verification.resilience_index >= verification.stress_threshold else 'INSIGHT'}</td></tr>",
             f"<tr><td>MAE Consistency</td><td>{verification.mae_score:.4f}</td><td>{'PASS' if verification.pass_mae else 'ALERT'}</td></tr>",
             f"<tr><td>Bootstrap Interval</td><td>{verification.bootstrap_interval[0]:.4f} → {verification.bootstrap_interval[1]:.4f}</td><td>{'PASS' if verification.pass_confidence else 'ALERT'}</td></tr>",
             f"<tr><td>Monotonicity</td><td>{verification.monotonic_violations} violation(s)</td><td>{'PASS' if verification.monotonic_pass else 'ALERT'}</td></tr>",
@@ -729,6 +756,7 @@ def render_batch_html(
         scenario_count=int(summary.get("completed", 0)),
         pass_rate=float(summary.get("pass_rate", 0.0)) * 100.0,
         owner_touchpoints=int(summary.get("owner_touchpoints", 0)),
+        average_resilience=float(summary.get("average_resilience", 0.0)),
         summary_cards=summary_cards,
         table_rows=table_rows,
         mermaid_graph=mermaid_graph,
