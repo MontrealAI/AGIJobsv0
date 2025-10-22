@@ -9,6 +9,7 @@ from typing import Dict, Iterable, List, Optional
 
 from .events import reconcile as reconcile_receipt
 from .models import OrchestrationPlan, Receipt, RunInfo, StatusOut, Step, StepStatus
+from .scoreboard import get_scoreboard
 from .state import RunStateError, RunStateStore, get_store
 from .tools import StepExecutor
 
@@ -109,6 +110,7 @@ def _finalize_receipt(plan: OrchestrationPlan, status: StatusOut) -> Receipt:
         payouts=[],
         timings={"completed_at": time.time()},
     )
+    receipt.timings["scoreboard"] = get_scoreboard().snapshot()
     status.receipts = receipt
     return reconcile_receipt(status)
 

@@ -67,10 +67,32 @@ contract MockStakeManager {
     }
 }
 
+contract MockFeePool {
+    struct Payout {
+        address to;
+        uint256 amount;
+    }
+
+    Payout[] internal _payouts;
+
+    function reward(address to, uint256 amount) external {
+        _payouts.push(Payout({to: to, amount: amount}));
+    }
+
+    function payoutCount() external view returns (uint256) {
+        return _payouts.length;
+    }
+
+    function payout(uint256 index) external view returns (Payout memory) {
+        return _payouts[index];
+    }
+}
+
 contract SelfPlayArenaTest is Test {
     MockIdentityRegistry internal identity;
     MockJobRegistry internal jobRegistry;
     MockStakeManager internal stakeManager;
+    MockFeePool internal feePool;
     SelfPlayArena internal arena;
 
     address internal owner = address(this);
@@ -88,6 +110,7 @@ contract SelfPlayArenaTest is Test {
         identity = new MockIdentityRegistry();
         jobRegistry = new MockJobRegistry();
         stakeManager = new MockStakeManager();
+        feePool = new MockFeePool();
 
         identity.setAgent(teacher, true);
         identity.setAgent(student, true);
@@ -111,6 +134,7 @@ contract SelfPlayArenaTest is Test {
         );
 
         arena.setOrchestrator(orchestrator, true);
+        arena.setFeePool(address(feePool));
     }
 
     function _startRound() internal returns (uint256 roundId) {
@@ -141,6 +165,91 @@ contract SelfPlayArenaTest is Test {
         assertEq(viewData.validators.length, 1);
         assertEq(viewData.winners.length, 1);
         assertEq(viewData.finalised, true);
+    }
+
+    function testFinaliseDistributesRewards() public {
+        uint256 roundId = _startRound();
+
+        vm.prank(orchestrator);
+        arena.registerStudentJob(roundId, 2, student, STUDENT_SUBDOMAIN, new bytes32[](0));
+
+        vm.prank(orchestrator);
+        arena.registerValidatorJob(roundId, 3, validator, VALIDATOR_SUBDOMAIN, new bytes32[](0));
+
+        vm.prank(orchestrator);
+        arena.closeRound(roundId);
+
+        address[] memory winners = new address[](1);
+        winners[0] = validator;
+
+        vm.prank(orchestrator);
+        vm.expectEmit(true, false, false, true);
+        emit SelfPlayArena.RewardsDistributed(roundId, 100 ether, 50 ether, 25 ether);
+        arena.finaliseRound(roundId, winners, 0);
+
+        assertEq(feePool.payoutCount(), 3);
+        MockFeePool.Payout memory teacherReward = feePool.payout(0);
+        assertEq(teacherReward.to, teacher);
+        assertEq(teacherReward.amount, 100 ether);
+        MockFeePool.Payout memory studentReward = feePool.payout(1);
+        assertEq(studentReward.to, student);
+        assertEq(studentReward.amount, 50 ether);
+        MockFeePool.Payout memory validatorReward = feePool.payout(2);
+        assertEq(validatorReward.to, validator);
+        assertEq(validatorReward.amount, 25 ether);
+    }
+
+    function testFinaliseRequiresFeePool() public {
+        arena.setFeePool(address(0));
+        uint256 roundId = _startRound();
+
+        vm.prank(orchestrator);
+        arena.registerValidatorJob(roundId, 3, validator, VALIDATOR_SUBDOMAIN, new bytes32[](0));
+
+        vm.prank(orchestrator);
+        arena.closeRound(roundId);
+
+        address[] memory winners = new address[](1);
+        winners[0] = validator;
+
+        vm.prank(orchestrator);
+        vm.expectRevert(SelfPlayArena.FeePoolNotConfigured.selector);
+        arena.finaliseRound(roundId, winners, 0);
+    }
+
+    function testSetRewardSplitsEmitsParameters() public {
+        vm.expectEmit(false, false, false, true);
+        emit SelfPlayArena.RewardSplitsUpdated(5_000, 3_000, 2_000);
+        arena.setRewardSplits(5_000, 3_000, 2_000);
+        assertEq(arena.teacherRewardSplitBps(), 5_000);
+        assertEq(arena.studentRewardSplitBps(), 3_000);
+        assertEq(arena.validatorRewardSplitBps(), 2_000);
+    }
+
+    function testRewardSplitsScalePayouts() public {
+        arena.setRewardSplits(5_000, 2_500, 2_500);
+
+        uint256 roundId = _startRound();
+        vm.prank(orchestrator);
+        arena.registerStudentJob(roundId, 2, student, STUDENT_SUBDOMAIN, new bytes32[](0));
+        vm.prank(orchestrator);
+        arena.registerValidatorJob(roundId, 3, validator, VALIDATOR_SUBDOMAIN, new bytes32[](0));
+        vm.prank(orchestrator);
+        arena.closeRound(roundId);
+
+        address[] memory winners = new address[](1);
+        winners[0] = validator;
+
+        vm.prank(orchestrator);
+        arena.finaliseRound(roundId, winners, 0);
+
+        assertEq(feePool.payoutCount(), 3);
+        MockFeePool.Payout memory teacherReward = feePool.payout(0);
+        assertEq(teacherReward.amount, 50 ether);
+        MockFeePool.Payout memory studentReward = feePool.payout(1);
+        assertEq(studentReward.amount, 12.5 ether);
+        MockFeePool.Payout memory validatorReward = feePool.payout(2);
+        assertEq(validatorReward.amount, 6.25 ether);
     }
 
     function testStartRoundRequiresIdentity() public {

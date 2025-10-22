@@ -8,6 +8,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {IFeePool} from "./interfaces/IFeePool.sol";
 
 /// @title SelfPlayArena
 /// @notice Coordinates self-play rounds between teacher, student, and validator agents.
@@ -58,6 +59,8 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
     IJobRegistry public jobRegistry;
     /// @notice Stake manager utilised to slash misbehaving validators.
     IStakeManager public stakeManager;
+    /// @notice Fee pool used as the funding source for arena payouts.
+    IFeePool public feePool;
 
     /// @notice Configured orchestrators allowed to manage rounds.
     mapping(address => bool) public orchestrators;
@@ -69,6 +72,12 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
     uint256 public committeeSize;
     uint256 public validatorStake;
     uint256 public targetSuccessRateBps;
+    /// @notice Scaling factors (in basis points) applied to base rewards.
+    uint16 public teacherRewardSplitBps = 10_000;
+    uint16 public studentRewardSplitBps = 10_000;
+    uint16 public validatorRewardSplitBps = 10_000;
+
+    uint256 private constant _BPS_DENOMINATOR = 10_000;
 
     uint256 private _roundIdCounter;
     mapping(uint256 => Round) private _rounds;
@@ -80,6 +89,20 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
     event RewardsUpdated(uint256 teacherReward, uint256 studentReward, uint256 validatorReward);
     event CommitteeParametersUpdated(uint256 committeeSize, uint256 validatorStake);
     event TargetSuccessRateUpdated(uint256 targetSuccessRateBps);
+    event FeePoolUpdated(address indexed previousFeePool, address indexed newFeePool);
+    event RewardSplitsUpdated(uint16 teacherSplitBps, uint16 studentSplitBps, uint16 validatorSplitBps);
+    event ParametersUpdated(
+        uint256 teacherReward,
+        uint256 studentReward,
+        uint256 validatorReward,
+        uint256 committeeSize,
+        uint256 validatorStake,
+        uint256 targetSuccessRateBps,
+        uint16 teacherSplitBps,
+        uint16 studentSplitBps,
+        uint16 validatorSplitBps,
+        address feePool
+    );
     event RoundStarted(
         uint256 indexed roundId,
         uint32 difficulty,
@@ -101,6 +124,12 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
     );
     event RoundClosed(uint256 indexed roundId, uint64 closedAt);
     event RoundFinalised(uint256 indexed roundId, address[] winners, int32 difficultyDelta);
+    event RewardsDistributed(
+        uint256 indexed roundId,
+        uint256 teacherReward,
+        uint256 studentRewardTotal,
+        uint256 validatorRewardTotal
+    );
     event ValidatorMisconduct(
         uint256 indexed roundId,
         address indexed validator,
@@ -124,6 +153,8 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
     error CommitteeFull(uint256 roundId);
     error StakeManagerNotConfigured();
     error InvalidAmount();
+    error FeePoolNotConfigured();
+    error InvalidSplit();
 
     modifier onlyOperator() {
         if (msg.sender != owner() && !orchestrators[msg.sender]) {
@@ -167,6 +198,18 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
         committeeSize = committeeSize_;
         validatorStake = validatorStake_;
         targetSuccessRateBps = targetSuccessRateBps_;
+        emit ParametersUpdated(
+            teacherReward,
+            studentReward,
+            validatorReward,
+            committeeSize_,
+            validatorStake_,
+            targetSuccessRateBps_,
+            teacherRewardSplitBps,
+            studentRewardSplitBps,
+            validatorRewardSplitBps,
+            address(0)
+        );
     }
 
     /// @notice Configure or revoke an orchestrator address.
@@ -205,6 +248,25 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
         emit StakeManagerUpdated(previous, newManager);
     }
 
+    /// @notice Update the FeePool utilised for arena payouts.
+    function setFeePool(address newFeePool) external onlyOwner {
+        address previous = address(feePool);
+        feePool = IFeePool(newFeePool);
+        emit FeePoolUpdated(previous, newFeePool);
+        emit ParametersUpdated(
+            baseTeacherReward,
+            baseStudentReward,
+            baseValidatorReward,
+            committeeSize,
+            validatorStake,
+            targetSuccessRateBps,
+            teacherRewardSplitBps,
+            studentRewardSplitBps,
+            validatorRewardSplitBps,
+            newFeePool
+        );
+    }
+
     /// @notice Update baseline rewards that downstream automation references.
     function setRewards(uint256 teacherReward, uint256 studentReward, uint256 validatorReward)
         external
@@ -217,6 +279,18 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
         baseStudentReward = studentReward;
         baseValidatorReward = validatorReward;
         emit RewardsUpdated(teacherReward, studentReward, validatorReward);
+        emit ParametersUpdated(
+            teacherReward,
+            studentReward,
+            validatorReward,
+            committeeSize,
+            validatorStake,
+            targetSuccessRateBps,
+            teacherRewardSplitBps,
+            studentRewardSplitBps,
+            validatorRewardSplitBps,
+            address(feePool)
+        );
     }
 
     /// @notice Update validator committee size and minimum stake signal.
@@ -230,6 +304,18 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
         committeeSize = committeeSize_;
         validatorStake = validatorStake_;
         emit CommitteeParametersUpdated(committeeSize_, validatorStake_);
+        emit ParametersUpdated(
+            baseTeacherReward,
+            baseStudentReward,
+            baseValidatorReward,
+            committeeSize_,
+            validatorStake_,
+            targetSuccessRateBps,
+            teacherRewardSplitBps,
+            studentRewardSplitBps,
+            validatorRewardSplitBps,
+            address(feePool)
+        );
     }
 
     /// @notice Update the target success rate used for adaptive difficulty.
@@ -239,6 +325,45 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
         }
         targetSuccessRateBps = targetSuccessRateBps_;
         emit TargetSuccessRateUpdated(targetSuccessRateBps_);
+        emit ParametersUpdated(
+            baseTeacherReward,
+            baseStudentReward,
+            baseValidatorReward,
+            committeeSize,
+            validatorStake,
+            targetSuccessRateBps_,
+            teacherRewardSplitBps,
+            studentRewardSplitBps,
+            validatorRewardSplitBps,
+            address(feePool)
+        );
+    }
+
+    /// @notice Update the basis point multipliers applied to base rewards.
+    function setRewardSplits(uint16 teacherSplitBps, uint16 studentSplitBps, uint16 validatorSplitBps)
+        external
+        onlyOwner
+    {
+        uint256 total = uint256(teacherSplitBps) + uint256(studentSplitBps) + uint256(validatorSplitBps);
+        if (total == 0 || total > _BPS_DENOMINATOR) {
+            revert InvalidSplit();
+        }
+        teacherRewardSplitBps = teacherSplitBps;
+        studentRewardSplitBps = studentSplitBps;
+        validatorRewardSplitBps = validatorSplitBps;
+        emit RewardSplitsUpdated(teacherSplitBps, studentSplitBps, validatorSplitBps);
+        emit ParametersUpdated(
+            baseTeacherReward,
+            baseStudentReward,
+            baseValidatorReward,
+            committeeSize,
+            validatorStake,
+            targetSuccessRateBps,
+            teacherSplitBps,
+            studentSplitBps,
+            validatorSplitBps,
+            address(feePool)
+        );
     }
 
     /// @notice Pause round lifecycle operations.
@@ -349,6 +474,7 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
             round.winners.push(winners[i]);
         }
         emit RoundFinalised(roundId, winners, difficultyDelta);
+        _distributeRewards(roundId, round, winners);
     }
 
     /// @notice Slash a validator involved in a round for misbehaviour.
@@ -376,6 +502,49 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
         }
         manager.slash(validator, amount, recipient);
         emit ValidatorMisconduct(roundId, validator, amount, recipient, reason);
+    }
+
+    function _distributeRewards(
+        uint256 roundId,
+        Round storage round,
+        address[] calldata winners
+    ) internal {
+        IFeePool pool = feePool;
+        if (address(pool) == address(0)) {
+            revert FeePoolNotConfigured();
+        }
+        uint256 teacherReward = (baseTeacherReward * teacherRewardSplitBps) / _BPS_DENOMINATOR;
+        uint256 studentReward = (baseStudentReward * studentRewardSplitBps) / _BPS_DENOMINATOR;
+        uint256 validatorReward = (baseValidatorReward * validatorRewardSplitBps) / _BPS_DENOMINATOR;
+
+        uint256 totalStudentPayout;
+        uint256 totalValidatorPayout;
+
+        if (teacherReward > 0 && round.teacher != address(0)) {
+            pool.reward(round.teacher, teacherReward);
+        }
+
+        uint256 studentLength = round.students.length;
+        for (uint256 i; i < studentLength; ++i) {
+            if (studentReward == 0) {
+                break;
+            }
+            address student = round.students[i];
+            pool.reward(student, studentReward);
+            totalStudentPayout += studentReward;
+        }
+
+        uint256 winnerLength = winners.length;
+        for (uint256 i; i < winnerLength; ++i) {
+            if (validatorReward == 0) {
+                break;
+            }
+            address winner = winners[i];
+            pool.reward(winner, validatorReward);
+            totalValidatorPayout += validatorReward;
+        }
+
+        emit RewardsDistributed(roundId, teacherReward, totalStudentPayout, totalValidatorPayout);
     }
 
     /// @notice Retrieve round data including dynamic arrays in memory.

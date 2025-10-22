@@ -13,6 +13,7 @@ from typing import Dict, Iterable, List, Optional
 
 from ..models import Attachment, Step
 from ..moderation import ModerationReport, evaluate_step
+from ..scoreboard import get_scoreboard
 
 _ROUTER_PATH = Path("packages/orchestrator/src/router.ts")
 
@@ -120,6 +121,7 @@ class _NodeBridge:
 
 
 _NODE_BRIDGE = _NodeBridge()
+_SCOREBOARD = get_scoreboard()
 
 
 def _build_payload(step: Step) -> Dict[str, object]:
@@ -137,6 +139,47 @@ def _simulate_adapter(intent: str, step: Step) -> Iterable[str]:
         yield f"• Prepared payload: {json.dumps(_build_payload(step))}" if reward else "• Prepared payload."  # pragma: no branch
     else:
         yield "• Ready to dispatch payload."
+
+
+def _extract_agents(step: Step) -> List[str]:
+    agents: List[str] = []
+    if isinstance(step.params, dict):
+        for key in (
+            "agent",
+            "agentId",
+            "agentAddress",
+            "validator",
+            "student",
+            "teacher",
+            "recipient",
+        ):
+            value = step.params.get(key)
+            if isinstance(value, str) and value:
+                agents.append(value)
+    # deduplicate while preserving order
+    seen: set[str] = set()
+    deduped: List[str] = []
+    for agent in agents:
+        if agent in seen:
+            continue
+        seen.add(agent)
+        deduped.append(agent)
+    return deduped
+
+
+def _detect_slash(logs: Iterable[str], step: Step, errors: Iterable[str] | None = None) -> tuple[bool, str | None]:
+    combined: List[str] = [str(entry) for entry in logs]
+    if errors:
+        combined.extend(str(entry) for entry in errors)
+    for entry in combined:
+        lowered = entry.lower()
+        if "slash" in lowered or "misconduct" in lowered:
+            return True, entry
+    if step.tool:
+        lowered_tool = step.tool.lower()
+        if "slash" in lowered_tool or "dispute" in lowered_tool:
+            return True, step.tool
+    return False, None
 
 
 @dataclass
@@ -198,13 +241,25 @@ class StepExecutor:
     def execute(self, step: Step) -> StepResult:
         start = time.time()
         errors: List[str] = []
+        agents = _extract_agents(step)
+        context = step.name or step.tool or step.id
         for attempt in range(1, self.retry.attempts + 1):
             try:
                 logs = self._attempt(step, attempt)
+                _SCOREBOARD.record_result(agents, success=True, context=context)
+                slash_detected, descriptor = _detect_slash(logs, step)
+                if slash_detected:
+                    message = _SCOREBOARD.record_slash(agents, reason=descriptor or "slash")
+                    if message:
+                        logs.append(message)
                 return StepResult(True, logs, attempt, time.time() - start)
             except ModerationRejected as exc:
                 failure_logs = list(exc.logs)
                 failure_logs.append("Moderation gate blocked execution; escalation required.")
+                _SCOREBOARD.record_result(agents, success=False, context=context)
+                message = _SCOREBOARD.record_slash(agents, reason="moderation block")
+                if message:
+                    failure_logs.append(message)
                 return StepResult(False, failure_logs, attempt, time.time() - start)
             except StepExecutionError as exc:
                 errors.append(str(exc))
@@ -212,6 +267,12 @@ class StepExecutor:
                     break
                 time.sleep(self.retry.backoff * attempt)
         compensate_logs = self.compensate(step, errors)
+        _SCOREBOARD.record_result(agents, success=False, context=context)
+        slash_detected, descriptor = _detect_slash(compensate_logs, step, errors)
+        if slash_detected:
+            message = _SCOREBOARD.record_slash(agents, reason=descriptor or (step.tool or "slash"))
+            if message:
+                compensate_logs.append(message)
         return StepResult(False, compensate_logs, len(errors), time.time() - start)
 
     def compensate(self, step: Step, errors: List[str]) -> List[str]:

@@ -3,6 +3,7 @@ import { trace } from '@opentelemetry/api';
 import { DifficultyController } from './difficulty.js';
 import { Snapshotter } from './ipfs.js';
 import { JobsClient } from './jobs.client.js';
+import { MonitoringClient, monitoringClient } from './monitoring.js';
 import { ModerationService } from './moderation.js';
 import { calculateQDScore, aggregateQD } from './qd.js';
 import { updateRating } from './elo.js';
@@ -16,12 +17,14 @@ export interface ArenaServiceOptions {
   commitWindowSeconds?: number;
   revealWindowSeconds?: number;
   moderationEndpoint?: string;
+  monitoringClient?: MonitoringClient;
 }
 
 export class ArenaService {
   private readonly commitWindowSeconds: number;
   private readonly revealWindowSeconds: number;
   private readonly moderation: ModerationService;
+  private readonly monitoring: MonitoringClient;
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -33,6 +36,7 @@ export class ArenaService {
     this.commitWindowSeconds = options.commitWindowSeconds ?? 300;
     this.revealWindowSeconds = options.revealWindowSeconds ?? 300;
     this.moderation = new ModerationService(options.moderationEndpoint);
+    this.monitoring = options.monitoringClient ?? monitoringClient;
   }
 
   async startRound(input: StartRoundInput): Promise<ArenaState> {
@@ -197,6 +201,7 @@ export class ArenaService {
             context: { agentId: input.agentId, reason: moderation.reason }
           }
         });
+        await this.monitoring.recordFailure(round.id, `moderation:${moderation.reason}`);
         throw new Error(`Submission rejected: ${moderation.reason}`);
       }
 
@@ -219,6 +224,7 @@ export class ArenaService {
 
       span.setAttribute('round.id', round.id);
       span.setAttribute('agent.id', input.agentId);
+      this.monitoring.recordSuccess(round.id);
     });
   }
 
@@ -277,6 +283,13 @@ export class ArenaService {
         };
       });
       const aggregate = aggregateQD(contestantScores.map((entry) => entry.score));
+      const totalInfractions =
+        validators.filter((v) => v.slashed).length + contestants.filter((c) => c.slashed).length;
+      if (totalInfractions > 0) {
+        await this.monitoring.recordFailure(round.id, `auto-slash:${totalInfractions}`);
+      } else {
+        this.monitoring.recordSuccess(round.id);
+      }
 
       const validatorAverageRating =
         validators.reduce((acc, member) => acc + (member.agent?.rating ?? 1500), 0) / Math.max(validators.length, 1);

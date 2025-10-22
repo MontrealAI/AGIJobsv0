@@ -7,6 +7,7 @@ import { DifficultyController } from './difficulty.js';
 import { Snapshotter } from './ipfs.js';
 import { JobsClient } from './jobs.client.js';
 import { ArenaService } from './arena.service.js';
+import { monitoringClient } from './monitoring.js';
 import { startRoundSchema, commitSchema, revealSchema } from './validators.js';
 
 initObservability();
@@ -21,7 +22,8 @@ export function buildArenaService(): ArenaService {
   const snapshotter = new Snapshotter(true);
   const jobsClient = new JobsClient({ endpoint: process.env.AGI_JOBS_ENDPOINT ?? 'https://jobs.invalid' });
   return new ArenaService(prisma, difficulty, snapshotter, jobsClient, {
-    moderationEndpoint: process.env.MODERATION_ENDPOINT
+    moderationEndpoint: process.env.MODERATION_ENDPOINT,
+    monitoringClient,
   });
 }
 
