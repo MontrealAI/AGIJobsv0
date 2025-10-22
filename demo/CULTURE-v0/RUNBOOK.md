@@ -79,6 +79,8 @@ Named volumes isolate chain state (`culture_chain_data`), orchestrator Elo snaps
 | Pause Culture Registry | UI Owner Panel → Pause Culture Registry |
 | Resume Culture Registry | UI Owner Panel → Resume Culture Registry |
 | Pause Self-Play Arena | UI Owner Panel → Pause Arena |
+| Configure Allowed Artifact Kinds | Call `CultureRegistry.setAllowedKinds(["kind"], true/false)` with owner wallet |
+| Update Citation Fan-Out | Call `CultureRegistry.setMaxCitations(newMax)` with owner wallet |
 | Update Rewards / Fees | Run `scripts/owner.setParams.ts` with new configuration |
 | Manage Agent Roles | Run `scripts/owner.setRoles.ts` to grant/revoke roles in IdentityRegistry |
 | Slash Malicious Validators | Trigger `StakeManager` slash via Owner Panel or script |

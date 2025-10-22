@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {CultureRegistry, IIdentityRegistry} from "../contracts/CultureRegistry.sol";
 
 contract MockIdentityRegistry is IIdentityRegistry {
@@ -64,6 +65,19 @@ contract CultureRegistryTest is Test {
         assertEq(child.cites[0], parentId);
     }
 
+    function testMintArtifactRejectsDuplicateCitations() public {
+        vm.prank(author);
+        uint256 parentId = registry.mintArtifact("book", "cid://parent", 0, new uint256[](0));
+
+        uint256[] memory cites = new uint256[](2);
+        cites[0] = parentId;
+        cites[1] = parentId;
+
+        vm.expectRevert(abi.encodeWithSelector(CultureRegistry.DuplicateCitation.selector, parentId));
+        vm.prank(author);
+        registry.mintArtifact("prompt", "cid://child", parentId, cites);
+    }
+
     function testMintArtifactRevertsForNonAuthor() public {
         vm.prank(stranger);
         vm.expectRevert(CultureRegistry.NotAuthorised.selector);
@@ -84,9 +98,11 @@ contract CultureRegistryTest is Test {
         assertEq(artifactB.cites[0], a);
     }
 
-    function testSetAllowedKind() public {
+    function testSetAllowedKinds() public {
         vm.prank(owner);
-        registry.setAllowedKind("dataset", true);
+        string[] memory newKinds = new string[](1);
+        newKinds[0] = "dataset";
+        registry.setAllowedKinds(newKinds, true);
 
         vm.prank(author);
         uint256 id = registry.mintArtifact("dataset", "cid://dataset", 0, new uint256[](0));
@@ -105,5 +121,108 @@ contract CultureRegistryTest is Test {
         vm.expectRevert(abi.encodeWithSelector(CultureRegistry.DuplicateCitation.selector, a));
         vm.prank(author);
         registry.cite(b, a);
+    }
+
+    function testCiteRequiresAuthorRole() public {
+        vm.prank(author);
+        uint256 artifactId = registry.mintArtifact("book", "cid://artifact", 0, new uint256[](0));
+        vm.prank(author);
+        uint256 citedId = registry.mintArtifact("book", "cid://cited", 0, new uint256[](0));
+
+        vm.expectRevert(CultureRegistry.NotAuthorised.selector);
+        vm.prank(stranger);
+        registry.cite(artifactId, citedId);
+    }
+
+    function testCiteRejectsSelfCitation() public {
+        vm.prank(author);
+        uint256 artifactId = registry.mintArtifact("book", "cid://artifact", 0, new uint256[](0));
+
+        vm.expectRevert(abi.encodeWithSelector(CultureRegistry.SelfCitation.selector, artifactId));
+        vm.prank(author);
+        registry.cite(artifactId, artifactId);
+    }
+
+    function testMintArtifactRejectsUnknownCitation() public {
+        vm.prank(author);
+        registry.mintArtifact("book", "cid://artifact", 0, new uint256[](0));
+
+        uint256[] memory cites = new uint256[](1);
+        cites[0] = 99;
+
+        vm.expectRevert(abi.encodeWithSelector(CultureRegistry.InvalidCitation.selector, 99));
+        vm.prank(author);
+        registry.mintArtifact("book", "cid://child", 1, cites);
+    }
+
+    function testMintArtifactRevertsWhenPaused() public {
+        vm.prank(owner);
+        registry.pause();
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(author);
+        registry.mintArtifact("book", "cid://artifact", 0, new uint256[](0));
+    }
+
+    function testCiteRevertsWhenPaused() public {
+        vm.prank(author);
+        uint256 a = registry.mintArtifact("book", "cid://a", 0, new uint256[](0));
+        vm.prank(author);
+        uint256 b = registry.mintArtifact("book", "cid://b", 0, new uint256[](0));
+
+        vm.prank(owner);
+        registry.pause();
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(author);
+        registry.cite(b, a);
+    }
+
+    function testOwnerCanConfigureMaxCitations() public {
+        vm.prank(owner);
+        registry.setMaxCitations(2);
+
+        vm.prank(author);
+        uint256 first = registry.mintArtifact("book", "cid://a", 0, new uint256[](0));
+        vm.prank(author);
+        uint256 second = registry.mintArtifact("book", "cid://b", 0, new uint256[](0));
+        vm.prank(author);
+        uint256 third = registry.mintArtifact("book", "cid://c", 0, new uint256[](0));
+        vm.prank(author);
+        uint256 fourth = registry.mintArtifact("book", "cid://d", 0, new uint256[](0));
+
+        vm.prank(author);
+        registry.cite(second, first);
+        vm.prank(author);
+        registry.cite(second, third);
+
+        vm.expectRevert(abi.encodeWithSelector(CultureRegistry.TooManyCitations.selector, 3, 2));
+        vm.prank(author);
+        registry.cite(second, fourth);
+    }
+
+    function testFuzzMintArtifactRejectsUnknownCitations(uint256 bogusId) public {
+        vm.prank(author);
+        uint256 existingId = registry.mintArtifact("book", "cid://existing", 0, new uint256[](0));
+
+        vm.assume(bogusId != 0 && bogusId != existingId);
+
+        uint256[] memory cites = new uint256[](1);
+        cites[0] = bogusId;
+
+        vm.expectRevert(abi.encodeWithSelector(CultureRegistry.InvalidCitation.selector, bogusId));
+        vm.prank(author);
+        registry.mintArtifact("book", "cid://child", existingId, cites);
+    }
+
+    function testFuzzCiteRejectsUnknownCitations(uint256 bogusId) public {
+        vm.prank(author);
+        uint256 artifactId = registry.mintArtifact("book", "cid://artifact", 0, new uint256[](0));
+
+        vm.assume(bogusId != 0 && bogusId != artifactId);
+
+        vm.expectRevert(abi.encodeWithSelector(CultureRegistry.InvalidCitation.selector, bogusId));
+        vm.prank(author);
+        registry.cite(artifactId, bogusId);
     }
 }
