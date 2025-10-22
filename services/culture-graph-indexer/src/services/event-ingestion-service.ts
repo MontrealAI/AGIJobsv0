@@ -211,6 +211,33 @@ export class EventIngestionService {
     });
   }
 
+  private async purgeOrphanedRecords(startingBlock: number): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.citation.deleteMany({
+        where: { blockNumber: { gte: startingBlock } },
+      }),
+      this.prisma.roundFinalization.deleteMany({
+        where: { blockNumber: { gte: startingBlock } },
+      }),
+      this.prisma.artifact.deleteMany({
+        where: { blockNumber: { gte: startingBlock } },
+      }),
+      this.prisma.eventCursor.upsert({
+        where: { id: 1 },
+        create: {
+          blockNumber: startingBlock,
+          logIndex: -1,
+        },
+        update: {
+          blockNumber: startingBlock,
+          logIndex: -1,
+        },
+      }),
+    ]);
+
+    await this.influence.recompute();
+  }
+
   private async parseArtifactMinted(log: Log): Promise<ArtifactMintedEvent> {
     if (!this.provider) {
       throw new Error('Provider not initialised');
@@ -303,6 +330,10 @@ export class EventIngestionService {
     const shouldSkipDuplicates = !options.force && !reorgBuffer && cursor;
     const cultureAddress = this.config.cultureRegistryAddress.toLowerCase();
     const arenaAddress = this.config.selfPlayArenaAddress?.toLowerCase();
+
+    if (cursor && (options.force || reorgBuffer > 0)) {
+      await this.purgeOrphanedRecords(startingBlock);
+    }
 
     for (let fromBlock = startingBlock; fromBlock <= targetBlock; fromBlock += batchSize) {
       const toBlock = Math.min(fromBlock + batchSize - 1, targetBlock);
