@@ -1,4 +1,3 @@
-import type { Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 import {
   ArtifactSeed,
@@ -8,7 +7,7 @@ import {
   loadCultureConfig,
   saveCultureConfig,
   resolvePrivateKey,
-  resolveSigner,
+  resolveSignerForAddress,
   toBytes32Array,
 } from './culture/utils';
 
@@ -156,20 +155,6 @@ async function fundFeePool(
   console.log('🎉 FeePool funded successfully');
 }
 
-async function resolveSignerForAddress(
-  expected: string,
-  options: { envVar: string; vaultVar: string; fallbackIndex?: number; label: string }
-): Promise<Wallet> {
-  const signer = await resolveSigner(ethers.provider, options);
-  const signerAddress = await signer.getAddress();
-  if (signerAddress.toLowerCase() !== expected.toLowerCase()) {
-    throw new Error(
-      `${options.label} signer (${signerAddress}) does not match expected address ${expected}. Provide the correct key via environment variables.`
-    );
-  }
-  return signer;
-}
-
 async function main(): Promise<void> {
   const config = await loadCultureConfig();
   const cultureAddress = config.contracts?.cultureRegistry ?? (config.dependencies as any).cultureRegistry;
@@ -189,7 +174,7 @@ async function main(): Promise<void> {
   await confirmBytecode('FeePool', feePoolAddress);
 
   const ownerAddress = ensureAddress('owner.address', config.owner.address);
-  const ownerSigner = await resolveSignerForAddress(ownerAddress, {
+  const ownerSigner = await resolveSignerForAddress(ethers.provider, ownerAddress, {
     envVar: 'CULTURE_OWNER_KEY',
     vaultVar: 'CULTURE_OWNER_VAULT_PATH',
     fallbackIndex: 0,

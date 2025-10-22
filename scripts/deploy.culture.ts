@@ -5,6 +5,7 @@ import {
   loadCultureConfig,
   saveCultureConfig,
   resolveSigner,
+  resolveSignerForAddress,
 } from './culture/utils';
 
 interface VerificationArgs {
@@ -114,6 +115,8 @@ async function main(): Promise<void> {
     label: 'Culture deployment',
   });
 
+  const deployerAddress = await deployer.getAddress();
+
   const ownerAddress = ensureAddress('owner.address', config.owner.address);
   const identityRegistry = ensureAddress('dependencies.identityRegistry', config.dependencies.identityRegistry);
   const jobRegistry = ensureAddress('dependencies.jobRegistry', config.dependencies.jobRegistry);
@@ -171,7 +174,17 @@ async function main(): Promise<void> {
     targetSuccessRateBps
   );
 
-  const arena = arenaFactory.attach(arenaAddress).connect(deployer);
+  const ownerSigner =
+    deployerAddress.toLowerCase() === ownerAddress.toLowerCase()
+      ? deployer
+      : await resolveSignerForAddress(provider, ownerAddress, {
+          envVar: 'CULTURE_OWNER_KEY',
+          vaultVar: 'CULTURE_OWNER_VAULT_PATH',
+          fallbackIndex: 0,
+          label: 'Culture owner',
+        });
+
+  const arena = arenaFactory.attach(arenaAddress).connect(ownerSigner);
   const feePoolTx = await arena.setFeePool(feePool);
   const feePoolReceipt = await feePoolTx.wait(1);
   if (!feePoolReceipt || feePoolReceipt.status !== 1) {
@@ -195,7 +208,7 @@ async function main(): Promise<void> {
   const feePoolContract = await ethers.getContractAt(
     'contracts/v2/FeePool.sol:FeePool',
     feePool,
-    deployer
+    ownerSigner
   );
   try {
     const rewarderTx = await feePoolContract.setRewarder(arenaAddress, true);

@@ -181,6 +181,21 @@ export async function resolveSigner(
   return signers[index] as Wallet;
 }
 
+export async function resolveSignerForAddress(
+  provider: JsonRpcProvider,
+  expected: string,
+  options: { envVar: string; vaultVar: string; fallbackIndex?: number; label: string }
+): Promise<Wallet> {
+  const signer = await resolveSigner(provider, options);
+  const signerAddress = await signer.getAddress();
+  if (signerAddress.toLowerCase() !== expected.toLowerCase()) {
+    throw new Error(
+      `${options.label} signer (${signerAddress}) does not match expected address ${expected}. Provide the correct key via environment variables.`
+    );
+  }
+  return signer;
+}
+
 export function ensureAddress(label: string, value: string | undefined): string {
   if (!value) {
     throw new Error(`${label} must be configured in config/culture.json`);
