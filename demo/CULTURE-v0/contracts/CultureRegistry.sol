@@ -67,6 +67,7 @@ contract CultureRegistry is Ownable, Pausable, ReentrancyGuard {
     error DuplicateCitation(uint256 citedId);
     error TooManyCitations(uint256 attempted, uint256 maxAllowed);
     error NotAuthorised();
+    error SelfCitation(uint256 artifactId);
 
     constructor(address owner_, address identityRegistry_, string[] memory initialKinds, uint256 maxCitations_)
         Ownable(owner_)
@@ -141,7 +142,7 @@ contract CultureRegistry is Ownable, Pausable, ReentrancyGuard {
         artifact.parentId = parentId;
 
         if (cites.length > 0) {
-            _validateAndStoreCitations(artifact, cites);
+            _validateAndStoreCitations(artifactId, artifact, cites);
         }
 
         emit ArtifactMinted(artifactId, msg.sender, kind, cid, parentId);
@@ -155,9 +156,8 @@ contract CultureRegistry is Ownable, Pausable, ReentrancyGuard {
     function cite(uint256 artifactId, uint256 citedId) external whenNotPaused nonReentrant {
         Artifact storage artifact = _artifacts[artifactId];
         if (artifact.author == address(0)) revert InvalidParent();
-        if (!_isAuthor(msg.sender) && msg.sender != owner() && msg.sender != artifact.author) {
-            revert NotAuthorised();
-        }
+        if (!_isAuthor(msg.sender)) revert NotAuthorised();
+        if (artifactId == citedId) revert SelfCitation(artifactId);
         if (!_artifactExists(citedId)) revert InvalidCitation(citedId);
         if (artifact.cites.length >= maxCitations) {
             revert TooManyCitations(artifact.cites.length + 1, maxCitations);
@@ -191,13 +191,18 @@ contract CultureRegistry is Ownable, Pausable, ReentrancyGuard {
     }
 
     /// @notice Owner can toggle allowed kinds. Supplying an empty list initially keeps registry open.
-    function setAllowedKind(string calldata kind, bool allowed) external onlyOwner {
-        bytes32 key = keccak256(bytes(kind));
-        _allowedKinds[key] = allowed;
+    function setAllowedKinds(string[] calldata kinds, bool allowed) external onlyOwner {
+        uint256 length = kinds.length;
+        require(length > 0, "NoKindsSupplied");
         if (allowed) {
             _setKindConfiguredFlag();
         }
-        emit AllowedKindUpdated(kind, allowed);
+        for (uint256 i = 0; i < length; i++) {
+            string calldata kind = kinds[i];
+            bytes32 key = keccak256(bytes(kind));
+            _allowedKinds[key] = allowed;
+            emit AllowedKindUpdated(kind, allowed);
+        }
     }
 
     /// @notice Owner can change the maximum allowed citations.
@@ -224,10 +229,15 @@ contract CultureRegistry is Ownable, Pausable, ReentrancyGuard {
         _unpause();
     }
 
-    function _validateAndStoreCitations(Artifact storage artifact, uint256[] calldata cites) internal {
+    function _validateAndStoreCitations(
+        uint256 artifactId,
+        Artifact storage artifact,
+        uint256[] calldata cites
+    ) internal {
         uint256 length = cites.length;
         for (uint256 i = 0; i < length; i++) {
             uint256 citedId = cites[i];
+            if (citedId == artifactId) revert SelfCitation(artifactId);
             if (!_artifactExists(citedId)) revert InvalidCitation(citedId);
             for (uint256 j = 0; j < i; j++) {
                 if (cites[j] == citedId) revert DuplicateCitation(citedId);
