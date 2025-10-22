@@ -104,7 +104,11 @@ export function OnboardingModal({ open, onClose, onPromptSelect }: OnboardingMod
             Every mission flows through a verifiable pipeline with contract-owner guardrails enforced at each step.
           </p>
           <div className={styles.diagramWrapper}>
-            <MermaidDiagram definition={diagramDefinition} />
+            <MermaidDiagram
+              chartId="onboarding-mission-lifecycle"
+              ariaLabel="Mission lifecycle flowchart"
+              definition={diagramDefinition}
+            />
           </div>
         </section>
         <section className={styles.section}>
