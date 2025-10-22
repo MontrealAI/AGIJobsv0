@@ -35,6 +35,13 @@ def test_render_dashboard_html_contains_constellation_details(tmp_path: Path) ->
                 "stress": artefacts.verification.pass_stress,
                 "entropy": artefacts.verification.entropy_score,
                 "entropy_pass": artefacts.verification.pass_entropy,
+                "skewness": artefacts.verification.residual_skewness,
+                "skewness_pass": artefacts.verification.pass_skewness,
+                "kurtosis": artefacts.verification.residual_kurtosis,
+                "kurtosis_pass": artefacts.verification.pass_kurtosis,
+                "jackknife_floor": artefacts.verification.jackknife_interval[0],
+                "jackknife_ceiling": artefacts.verification.jackknife_interval[1],
+                "jackknife_pass": artefacts.verification.pass_jackknife,
                 "rewards": artefacts.reward_summary.total_reward,
                 "architect": artefacts.reward_summary.architect_total,
                 "top_solver": artefacts.reward_summary.top_solver,
@@ -75,6 +82,9 @@ def test_render_dashboard_html_contains_constellation_details(tmp_path: Path) ->
     assert "batch.html" in html
     assert "batch.json" in html
     assert "mermaid.initialize" in html
+    assert "Jackknife" in html
+    assert "Skewness" in html
+    assert "Kurtosis" in html
 
 
 def test_export_dashboard_generates_html_and_json(tmp_path: Path) -> None:

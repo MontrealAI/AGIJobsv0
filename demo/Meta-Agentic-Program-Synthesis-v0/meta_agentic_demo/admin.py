@@ -46,6 +46,9 @@ class OwnerConsole:
         "precision_replay_tolerance",
         "variance_ratio_ceiling",
         "spectral_energy_ceiling",
+        "skewness_ceiling",
+        "kurtosis_ceiling",
+        "jackknife_tolerance",
     }
 
     def __init__(self, config: DemoConfig) -> None:
@@ -241,6 +244,12 @@ class OwnerConsole:
             raise ValueError("variance_ratio_ceiling must be positive")
         if not 0 < policy.spectral_energy_ceiling <= 1:
             raise ValueError("spectral_energy_ceiling must be within (0, 1]")
+        if policy.skewness_ceiling <= 0:
+            raise ValueError("skewness_ceiling must be positive")
+        if policy.kurtosis_ceiling <= 0:
+            raise ValueError("kurtosis_ceiling must be positive")
+        if policy.jackknife_tolerance < 0:
+            raise ValueError("jackknife_tolerance must be non-negative")
 
     def update_scenarios_from_payload(self, payload: Mapping[str, Any]) -> None:
         """Update the scenario catalogue using a governance payload."""

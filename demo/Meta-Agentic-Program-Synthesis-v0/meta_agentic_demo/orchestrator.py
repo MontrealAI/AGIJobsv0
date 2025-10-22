@@ -218,6 +218,9 @@ class SovereignArchitect:
             len(residuals), 1
         )
         residual_std = math.sqrt(max(variance, 0.0))
+        skewness, kurtosis = self._distribution_moments(residuals)
+        pass_skewness = abs(skewness) <= policy.skewness_ceiling
+        pass_kurtosis = kurtosis <= policy.kurtosis_ceiling
         mae = self._mean_absolute_error(base_predictions, self.dataset.target)
         baseline_mae = max(self.baseline_absolute_error, 1e-9)
         mae_score = max(1.0 - min(mae / baseline_mae, 1.0), 0.0)
@@ -249,6 +252,12 @@ class SovereignArchitect:
         ) if stress_scores else True
         entropy_score = self._entropy_score(base_predictions)
         pass_entropy = entropy_score >= policy.entropy_floor
+        jackknife_interval = self._jackknife_interval(base_predictions, self.dataset.target)
+        jackknife_floor = max(0.0, min(jackknife_interval[0], 1.0))
+        pass_jackknife = (
+            policy.jackknife_tolerance
+            >= max(0.0, self._safe_difference(primary_score, jackknife_interval[0]))
+        )
         auditor = IndependentAuditor(
             baseline_error=self.baseline_error,
             precision_tolerance=policy.precision_replay_tolerance,
@@ -277,10 +286,11 @@ class SovereignArchitect:
         )
         confidence_centre = sum(bootstrap_interval) / 2.0
         resilience_components = (
-            0.4 * primary_score,
-            0.3 * stress_anchor,
+            0.3 * primary_score,
+            0.25 * stress_anchor,
             0.2 * entropy_score,
-            0.1 * confidence_centre,
+            0.15 * confidence_centre,
+            0.1 * jackknife_floor,
         )
         resilience_index = max(0.0, min(sum(resilience_components), 1.0))
 
@@ -289,6 +299,10 @@ class SovereignArchitect:
             holdout_scores=holdout_scores,
             residual_mean=residual_mean,
             residual_std=residual_std,
+            residual_skewness=skewness,
+            pass_skewness=pass_skewness,
+            residual_kurtosis=kurtosis,
+            pass_kurtosis=pass_kurtosis,
             divergence=divergence,
             pass_holdout=pass_holdout,
             pass_residual_balance=pass_residual_balance,
@@ -305,6 +319,8 @@ class SovereignArchitect:
             entropy_score=entropy_score,
             pass_entropy=pass_entropy,
             entropy_floor=policy.entropy_floor,
+            jackknife_interval=jackknife_interval,
+            pass_jackknife=pass_jackknife,
             precision_replay_score=audit.precision_score,
             pass_precision_replay=audit.pass_precision,
             variance_ratio=audit.variance_ratio,
@@ -439,6 +455,58 @@ class SovereignArchitect:
         upper_index = int((1 - alpha / 2) * (len(scores) - 1))
         return (scores[lower_index], scores[upper_index])
 
+    def _jackknife_interval(
+        self, predictions: Sequence[float], targets: Sequence[float]
+    ) -> Tuple[float, float]:
+        values = list(zip(predictions, targets))
+        n = len(values)
+        if n <= 1:
+            return (0.0, 0.0)
+        squared_errors = []
+        target_energy = []
+        for prediction, target in values:
+            diff = prediction - target
+            squared_errors.append(diff * diff)
+            target_energy.append(target * target)
+        total_error = sum(squared_errors)
+        total_energy = sum(target_energy)
+        if total_energy <= 0:
+            total_energy = 1e-9 * n
+        jackknife_scores: List[float] = []
+        denom = max(n - 1, 1)
+        for index, squared_error in enumerate(squared_errors):
+            error_sum = max(total_error - squared_error, 0.0)
+            baseline_sum = max(total_energy - target_energy[index], 1e-9)
+            mse = error_sum / denom
+            baseline_mse = baseline_sum / denom
+            normalised = 1.0 - min(mse / max(baseline_mse, 1e-9), 1.0)
+            jackknife_scores.append(max(normalised, 0.0) ** 0.5)
+        if not jackknife_scores:
+            return (0.0, 0.0)
+        return (min(jackknife_scores), max(jackknife_scores))
+
+    def _distribution_moments(
+        self, residuals: Sequence[float]
+    ) -> Tuple[float, float]:
+        values = list(residuals)
+        n = len(values)
+        if n == 0:
+            return (0.0, 0.0)
+        mean = sum(values) / n
+        centred = [value - mean for value in values]
+        second = sum(value * value for value in centred) / n
+        if second <= 1e-12:
+            return (0.0, 0.0)
+        third = sum(value ** 3 for value in centred) / n
+        fourth = sum(value ** 4 for value in centred) / n
+        skewness = third / max(second ** 1.5, 1e-12)
+        kurtosis = fourth / max(second * second, 1e-12)
+        return (skewness, kurtosis)
+
+    @staticmethod
+    def _safe_difference(a: float, b: float) -> float:
+        return abs(a - b)
+
     def _entropy_score(self, predictions: Sequence[float], bins: int = 16) -> float:
         """Compute a normalised Shannon entropy proxy for solver diversity."""
 
@@ -521,6 +589,8 @@ class SovereignArchitect:
         validator_reward_ratio = validator_reward_total / total_reward
         improvement_score = clamp(improvement)
         bootstrap_floor, _ = verification.bootstrap_interval
+        jackknife_floor, jackknife_ceiling = verification.jackknife_interval
+        stability_floor = min(bootstrap_floor, jackknife_floor)
         opportunity_cards: List[OpportunitySynopsis] = []
 
         solver_confidence = clamp(
@@ -567,6 +637,36 @@ class SovereignArchitect:
             )
         )
 
+        distribution_confidence = clamp(
+            0.5 * (1.0 if verification.pass_skewness else 0.0)
+            + 0.5 * (1.0 if verification.pass_kurtosis else 0.0)
+        )
+        distribution_impact = clamp(
+            0.6
+            * (
+                1.0
+                - min(
+                    abs(verification.residual_skewness)
+                    / max(self.config.verification_policy.skewness_ceiling, 1e-9),
+                    1.0,
+                )
+            )
+            + 0.4 * clamp(jackknife_floor)
+        )
+        opportunity_cards.append(
+            OpportunitySynopsis(
+                name="Distribution Integrity Council",
+                impact_score=distribution_impact,
+                confidence=distribution_confidence,
+                narrative=(
+                    "Residual distributions remain under sovereign governance; skew, kurtosis, "
+                    "and jackknife stability keep probabilistic control in human hands."
+                ),
+                energy_ratio=clamp(jackknife_floor),
+                capital_allocation=clamp((jackknife_floor + jackknife_ceiling) / 2.0),
+            )
+        )
+
         divergence_component = clamp(1.0 - min(verification.divergence, 1.0))
         monotonic_component = clamp(
             1.0
@@ -610,7 +710,7 @@ class SovereignArchitect:
             0.45 * architect_allocation + 0.35 * final_score + 0.2 * reward_uplift_ratio
         )
         treasury_confidence = clamp(
-            0.5 * (1.0 if verification.overall_pass else bootstrap_floor)
+            0.5 * (1.0 if verification.overall_pass else stability_floor)
             + 0.3 * governance_factor
             + 0.2 * owner_intervention_factor
         )

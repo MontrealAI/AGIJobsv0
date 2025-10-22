@@ -78,6 +78,9 @@ class VerificationPolicy:
     precision_replay_tolerance: float = 0.025
     variance_ratio_ceiling: float = 1.25
     spectral_energy_ceiling: float = 0.55
+    skewness_ceiling: float = 1.35
+    kurtosis_ceiling: float = 4.25
+    jackknife_tolerance: float = 0.05
 
     def to_dict(self) -> Dict[str, float | int]:
         return {
@@ -94,6 +97,9 @@ class VerificationPolicy:
             "precision_replay_tolerance": self.precision_replay_tolerance,
             "variance_ratio_ceiling": self.variance_ratio_ceiling,
             "spectral_energy_ceiling": self.spectral_energy_ceiling,
+            "skewness_ceiling": self.skewness_ceiling,
+            "kurtosis_ceiling": self.kurtosis_ceiling,
+            "jackknife_tolerance": self.jackknife_tolerance,
         }
 
 
