@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from meta_agentic_demo.admin import OwnerConsole
-from meta_agentic_demo.config import DemoConfig
+from meta_agentic_demo.config import DemoConfig, DemoScenario
 from meta_agentic_demo.governance import GovernanceTimelock
 
 
@@ -51,3 +51,36 @@ def test_timelock_handles_verification_override() -> None:
     policy = console.config.verification_policy
     assert pytest.approx(policy.holdout_threshold) == 0.9
     assert pytest.approx(policy.divergence_tolerance) == 0.1
+
+
+def test_timelock_applies_scenario_update() -> None:
+    base_scenario = DemoScenario(
+        identifier="alpha",
+        title="Alpha",
+        description="",
+        target_metric="score",
+        success_threshold=0.5,
+    )
+    console = OwnerConsole(DemoConfig(scenarios=[base_scenario]))
+    timelock = GovernanceTimelock()
+    payload = {
+        "mode": "replace",
+        "scenarios": [
+            {
+                "identifier": "gamma",
+                "title": "Gamma Horizon",
+                "description": "Autonomous expansion initiative",
+                "target_metric": "expansion",
+                "success_threshold": 0.74,
+                "dataset_profile": {"length": 40, "noise": 0.05, "seed": 808},
+                "stress_multiplier": 1.3,
+            }
+        ],
+    }
+    action = timelock.schedule("set_scenarios", payload)
+    executed = list(timelock.execute_due(console, now=action.eta))
+    assert executed and executed[0].status == "EXECUTED"
+    scenarios = console.config.scenarios
+    assert len(scenarios) == 1
+    assert scenarios[0].identifier == "gamma"
+    assert pytest.approx(scenarios[0].success_threshold) == 0.74

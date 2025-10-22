@@ -16,6 +16,7 @@ from .entities import DemoRunArtifacts, OpportunitySynopsis, RewardSummary
 from .governance import GovernanceTimelock, TimelockedAction
 from .orchestrator import SovereignArchitect, generate_dataset
 from .report import export_batch_report, export_report, render_batch_html, render_html
+from .scenarios import resolve_scenarios, serialise_scenarios
 
 __all__ = [
     "DatasetProfile",
@@ -42,4 +43,6 @@ __all__ = [
     "GovernanceTimelock",
     "TimelockedAction",
     "DashboardBundle",
+    "resolve_scenarios",
+    "serialise_scenarios",
 ]

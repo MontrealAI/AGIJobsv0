@@ -51,6 +51,7 @@ class GovernanceTimelock:
         "update_stake_policy": lambda console, payload: console.update_stake_policy(**payload),
         "update_evolution_policy": lambda console, payload: console.update_evolution_policy(**payload),
         "update_verification_policy": lambda console, payload: console.update_verification_policy(**payload),
+        "set_scenarios": lambda console, payload: console.update_scenarios_from_payload(payload),
         "set_paused": lambda console, payload: console.set_paused(bool(payload["value"])),
         "pause": lambda console, payload: console.pause(),
         "resume": lambda console, payload: console.resume(),

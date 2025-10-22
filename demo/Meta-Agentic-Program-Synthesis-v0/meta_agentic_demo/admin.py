@@ -6,16 +6,18 @@ import json
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from .config import (
     DemoConfig,
+    DemoScenario,
     EvolutionPolicy,
     RewardPolicy,
     StakePolicy,
     VerificationPolicy,
 )
 from .entities import OwnerAction
+from .scenarios import ScenarioValidationError, resolve_scenarios
 
 
 class OwnerConsole:
@@ -150,6 +152,14 @@ class OwnerConsole:
             self.update_verification_policy(**verification_overrides)
         if "paused" in overrides:
             self.set_paused(bool(overrides["paused"]))
+        if "scenarios" in overrides:
+            scenario_payload = overrides["scenarios"]
+            payload_mapping: dict[str, Any]
+            if isinstance(scenario_payload, Mapping) and "scenarios" in scenario_payload:
+                payload_mapping = dict(scenario_payload)
+            else:
+                payload_mapping = {"scenarios": scenario_payload}
+            self.update_scenarios_from_payload(payload_mapping)
 
     # ------------------------------------------------------------------
     # Event recording
@@ -231,6 +241,53 @@ class OwnerConsole:
             raise ValueError("variance_ratio_ceiling must be positive")
         if not 0 < policy.spectral_energy_ceiling <= 1:
             raise ValueError("spectral_energy_ceiling must be within (0, 1]")
+
+    def update_scenarios_from_payload(self, payload: Mapping[str, Any]) -> None:
+        """Update the scenario catalogue using a governance payload."""
+
+        if "scenarios" not in payload:
+            raise ValueError("scenario payload must contain a 'scenarios' key")
+        mode = str(payload.get("mode", "merge"))
+        try:
+            scenarios = resolve_scenarios(
+                self._config.scenarios,
+                payload["scenarios"],
+                mode=mode,
+            )
+        except ScenarioValidationError as error:
+            raise ValueError(str(error)) from error
+        self._validate_scenario_catalogue(scenarios)
+        self._config = replace(self._config, scenarios=scenarios)
+        self._record_event(
+            "update_scenarios",
+            {
+                "mode": mode,
+                "count": len(scenarios),
+                "identifiers": [scenario.identifier for scenario in scenarios],
+            },
+        )
+
+    # ------------------------------------------------------------------
+    def _validate_scenario_catalogue(self, scenarios: Sequence[DemoScenario]) -> None:
+        if not scenarios:
+            raise ValueError("at least one scenario must remain configured")
+        seen: set[str] = set()
+        for scenario in scenarios:
+            if scenario.identifier in seen:
+                raise ValueError(
+                    f"duplicate scenario identifier detected: {scenario.identifier}"
+                )
+            seen.add(scenario.identifier)
+            if not 0 <= scenario.success_threshold <= 1:
+                raise ValueError(
+                    "scenario success_threshold must remain within [0, 1]"
+                )
+            if scenario.dataset_profile:
+                profile = scenario.dataset_profile
+                if profile.length <= 0:
+                    raise ValueError("dataset length must be positive")
+                if profile.noise < 0:
+                    raise ValueError("dataset noise must be non-negative")
 
 
 def load_owner_overrides(path: Path) -> Mapping[str, Any]:
