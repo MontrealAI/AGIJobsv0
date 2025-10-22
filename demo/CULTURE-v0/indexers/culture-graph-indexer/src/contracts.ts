@@ -4,20 +4,5 @@ export const cultureRegistryAbi = [
 ];
 
 export const selfPlayArenaAbi = [
-  'event ArenaMatchRecorded(bytes32 indexed matchId, uint256 indexed artifactId, bytes32 indexed opponentId, uint8 result)'
+  'event RoundFinalized(uint256 indexed roundId, uint32 previousDifficulty, int32 difficultyDelta, uint32 newDifficulty, uint64 finalizedAt)'
 ];
-
-export type ArenaMatchResult = 'WIN' | 'LOSS' | 'DRAW';
-
-export function decodeArenaResult(value: number): ArenaMatchResult {
-  switch (value) {
-    case 0:
-      return 'DRAW';
-    case 1:
-      return 'WIN';
-    case 2:
-      return 'LOSS';
-    default:
-      return 'DRAW';
-  }
-}
