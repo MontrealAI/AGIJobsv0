@@ -272,6 +272,18 @@ class SovereignArchitect:
         monotonic_pass, violations = self._assess_monotonicity(
             [record.best_score for record in telemetry], policy.monotonic_tolerance
         )
+        stress_anchor = (
+            min(stress_scores.values()) if stress_scores else primary_score
+        )
+        confidence_centre = sum(bootstrap_interval) / 2.0
+        resilience_components = (
+            0.4 * primary_score,
+            0.3 * stress_anchor,
+            0.2 * entropy_score,
+            0.1 * confidence_centre,
+        )
+        resilience_index = max(0.0, min(sum(resilience_components), 1.0))
+
         return VerificationDigest(
             primary_score=primary_score,
             holdout_scores=holdout_scores,
@@ -299,6 +311,7 @@ class SovereignArchitect:
             pass_variance_ratio=audit.pass_variance,
             spectral_ratio=audit.spectral_ratio,
             pass_spectral_ratio=audit.pass_spectral,
+            resilience_index=resilience_index,
         )
 
     def _stress_test_program(self, program: Program) -> Dict[str, float]:

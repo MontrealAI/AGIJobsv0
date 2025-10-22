@@ -197,6 +197,7 @@ class VerificationDigest:
     pass_variance_ratio: bool
     spectral_ratio: float
     pass_spectral_ratio: bool
+    resilience_index: float
 
     @property
     def overall_pass(self) -> bool:
@@ -242,6 +243,7 @@ class VerificationDigest:
             "pass_variance_ratio": self.pass_variance_ratio,
             "spectral_ratio": self.spectral_ratio,
             "pass_spectral_ratio": self.pass_spectral_ratio,
+            "resilience_index": self.resilience_index,
             "overall_pass": self.overall_pass,
         }
 

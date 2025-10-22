@@ -50,6 +50,7 @@ def test_render_html_embeds_mermaid(tmp_path: Path) -> None:
     assert "Entropy Shield" in html
     assert "Entropy shield" in html
     assert "Entropy Shield Array" in html
+    assert "Resilience Index" in html
     assert artefacts.final_program in html
 
 
@@ -75,10 +76,13 @@ def test_export_batch_report_includes_constellation_dashboard(tmp_path: Path) ->
     payload = json.loads(batch_bundle.json_path.read_text(encoding="utf-8"))
     assert payload["summary"]["completed"] == 1
     assert payload["summary"]["best_identifier"] == scenario.identifier
+    assert payload["summary"]["resilience_identifier"] == scenario.identifier
+    assert "average_resilience" in payload["summary"]
     html = batch_bundle.html_path.read_text(encoding="utf-8")
     assert "Mission Constellation" in html
     assert scenario.title in html
     assert "Meridian Flow" in html
+    assert "Resilience" in html
     inline_html = render_batch_html(
         {scenario.identifier: artefacts},
         payload["summary"],
@@ -87,3 +91,4 @@ def test_export_batch_report_includes_constellation_dashboard(tmp_path: Path) ->
         {scenario.identifier: scenario},
     )
     assert "Pass rate" in inline_html
+    assert "Average Resilience" in inline_html
