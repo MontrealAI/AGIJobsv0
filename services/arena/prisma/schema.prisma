@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum RoundState {
+  PENDING
+  ACTIVE
+  COMMIT
+  REVEAL
+  FINALIZED
+  CLOSED
+}
+
+enum CommitteeRole {
+  CONTESTANT
+  VALIDATOR
+}
+
+model Round {
+  id              String        @id @default(cuid())
+  state           RoundState    @default(PENDING)
+  targetDuration  Int           @default(300)
+  difficultyScore Float         @default(1.0)
+  commitDeadline  DateTime?
+  revealDeadline  DateTime?
+  startedAt       DateTime?     @map("started_at")
+  closedAt        DateTime?     @map("closed_at")
+  metadata        Json?
+  ipfsSnapshotCid String?       @map("ipfs_snapshot_cid")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  committee       CommitteeMember[]
+  logs            RoundLog[]
+}
+
+model Agent {
+  id        String  @id
+  rating    Float   @default(1500)
+  rd        Float   @default(350)
+  kFactor   Float   @default(32)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  committee CommitteeMember[]
+}
+
+model CommitteeMember {
+  id             String        @id @default(cuid())
+  round          Round         @relation(fields: [roundId], references: [id])
+  roundId        String
+  agent          Agent         @relation(fields: [agentId], references: [id])
+  agentId        String
+  role           CommitteeRole
+  commitHash     String?       @map("commit_hash")
+  commitAt       DateTime?     @map("commit_at")
+  revealPayload  Json?         @map("reveal_payload")
+  revealAt       DateTime?     @map("reveal_at")
+  slashed        Boolean       @default(false)
+  moderationNote String?       @map("moderation_note")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+}
+
+model RoundLog {
+  id        String   @id @default(cuid())
+  round     Round    @relation(fields: [roundId], references: [id])
+  roundId   String
+  level     String
+  message   String
+  context   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+}
