@@ -78,12 +78,26 @@ npm run demo:onebox:launch -- \
   --prefix /mission \
   --token demo-api-token \
   --mode expert \
-  --explorer-base https://sepolia.etherscan.io/tx/
+  --explorer-base https://sepolia.etherscan.io/tx/ \
+  --welcome "Welcome to AGI Jobs Mission Control" \
+  --examples "Deploy data labeling | Finalize job 77"
 ```
 
 Only the flags you specify are overridden; everything else continues to flow from `.env`. Invalid flag values (for example, a negative port) are rejected up front so operators catch mistakes before the orchestrator boots.
 
 `--max-budget` and `--max-duration` provide on-the-fly organisational guardrails, mirroring the `ONEBOX_MAX_JOB_BUDGET_AGIA` and `ONEBOX_MAX_JOB_DURATION_DAYS` environment variables. Use them to demo how the contract owner can ratchet limits without redeploying.
+
+#### Personalise the assistant surface
+
+Set `ONEBOX_UI_WELCOME` to change the first assistant banner (for example `Welcome to AGI Jobs Mission Control`) and `ONEBOX_UI_SHORTCUTS` to seed ready-made prompts. Shortcuts accept pipe-separated strings, newline-delimited lists, or a JSON array, so operators can ship curated demos like:
+
+```sh
+ONEBOX_UI_WELCOME="Deploy your sovereign AGI workforce in one chat." \
+ONEBOX_UI_SHORTCUTS='["Spin up 500-image labeling run", "Finalize job 128", "Audit receipts for job 77"]' \
+npm run demo:onebox:launch -- --example "Schedule weekly research digest, 8 AGIALPHA" --welcome "Mission deck armed and ready."
+```
+
+The launcher merges CLI flags and environment variables, de-duplicates prompts, and forwards them to the static UI via query overrides so the non-technical operator lands on a perfectly staged experience every time.
 
 ### Built-in safety rails
 
@@ -106,6 +120,8 @@ Only the flags you specify are overridden; everything else continues to flow fro
 | `ONEBOX_PUBLIC_ONEBOX_PREFIX` | Prefix inserted before planner/simulator endpoints (defaults to `/onebox`). |
 | `ONEBOX_PUBLIC_ORCHESTRATOR_URL` | Public base URL announced to the UI. Defaults to `http://127.0.0.1:${ONEBOX_PORT}`. |
 | `ONEBOX_UI_DEFAULT_MODE` | `guest` for relayer mode, `expert` for wallet calldata generation. |
+| `ONEBOX_UI_WELCOME` | Optional welcome banner rendered as the first assistant message. |
+| `ONEBOX_UI_SHORTCUTS` | Optional shortcut prompts (`|`/newline separated or JSON array) rendered as preset pills. |
 | `ONEBOX_MAX_JOB_BUDGET_AGIA` | Optional per-job reward ceiling enforced before execution. Blank disables the cap. |
 | `ONEBOX_MAX_JOB_DURATION_DAYS` | Optional lifecycle limit in days; jobs exceeding it are blocked before funding. |
 | `PINNER_*` | Optional IPFS pinning credentials to persist specs/receipts. |

@@ -4,6 +4,7 @@ import { buildOneboxUrl, normalisePrefix, parseOverrideParams } from './url-over
 const $ = (selector) => document.querySelector(selector);
 const chat = $('#chat');
 const box = $('#onebox-input');
+const defaultPlaceholder = box ? box.getAttribute('placeholder') : '';
 const form = $('#onebox-form');
 const sendBtn = $('#send');
 const expertBtn = $('#expert');
@@ -25,6 +26,7 @@ const expertExecuteResponseJson = $('#expert-execute-response');
 const statPlanner = $('#stat-planner');
 const statGuardrails = $('#stat-guardrails');
 const statRelayer = $('#stat-relayer');
+const shortcutsContainer = document.querySelector('.pill-row');
 
 const formatLatency = (ms) => {
   if (typeof ms !== 'number' || Number.isNaN(ms) || !Number.isFinite(ms)) {
@@ -42,6 +44,28 @@ const renderRiskBadges = (risks) => {
   return `<div class="risk-badges">${risks
     .map((risk) => `<span class="risk-badge">${risk}</span>`)
     .join('')}</div>`;
+};
+
+const renderShortcutExamples = (examples) => {
+  if (!shortcutsContainer) return;
+  if (!Array.isArray(examples)) return;
+  shortcutsContainer.innerHTML = '';
+  if (box) {
+    box.setAttribute('placeholder', examples.length > 0 ? examples[0] : defaultPlaceholder || '');
+  }
+  if (examples.length === 0) {
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  examples.forEach((example) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pill';
+    button.dataset.example = example;
+    button.textContent = example;
+    fragment.appendChild(button);
+  });
+  shortcutsContainer.appendChild(fragment);
 };
 
 const COPY = {
@@ -281,6 +305,15 @@ if (typeof window !== 'undefined') {
   }
   if (overrides.mode) {
     expertMode = overrides.mode === 'expert';
+  }
+  if (overrides.welcome !== undefined) {
+    const intro = chat?.querySelector('.msg.m-assist');
+    if (intro) {
+      intro.textContent = overrides.welcome || 'Ask → Confirm → Done + Receipt.';
+    }
+  }
+  if (Array.isArray(overrides.examples)) {
+    renderShortcutExamples(overrides.examples);
   }
   if (overrides.appliedParams.length && window.history && typeof window.history.replaceState === 'function') {
     try {
@@ -945,13 +978,20 @@ clearReceiptsBtn.addEventListener('click', () => {
   renderReceipts();
 });
 
-Array.from(document.querySelectorAll('.pill')).forEach((pill) => {
-  pill.addEventListener('click', () => {
-    const example = pill.dataset.example || '';
+if (shortcutsContainer) {
+  shortcutsContainer.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) {
+      return;
+    }
+    if (!target.classList.contains('pill')) {
+      return;
+    }
+    const example = target.dataset.example || target.textContent || '';
     box.value = example;
     box.focus();
   });
-});
+}
 
 if (window.ethereum) {
   ethereum = window.ethereum;

@@ -144,6 +144,60 @@ function parsePositiveInteger(value, { label = 'value' } = {}) {
   return numeric;
 }
 
+function parseShortcutExamples(input) {
+  const collected = [];
+
+  const addExample = (value) => {
+    if (typeof value !== 'string') {
+      return;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return;
+    }
+    collected.push(trimmed);
+  };
+
+  const process = (candidate) => {
+    if (candidate === undefined || candidate === null) {
+      return;
+    }
+    if (Array.isArray(candidate)) {
+      for (const item of candidate) {
+        process(item);
+      }
+      return;
+    }
+    if (typeof candidate !== 'string') {
+      return;
+    }
+    const trimmed = candidate.trim();
+    if (!trimmed) {
+      return;
+    }
+    const looksJsonArray = trimmed.startsWith('[') && trimmed.endsWith(']');
+    if (looksJsonArray) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        process(parsed);
+        return;
+      } catch (error) {
+        // Fallback to delimiter parsing when JSON is invalid.
+      }
+    }
+    const segments = trimmed
+      .split(/[\n\r]+|\s*\|\s*/)
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+    for (const segment of segments) {
+      addExample(segment);
+    }
+  };
+
+  process(input);
+  return [...new Set(collected)];
+}
+
 function resolveConfig(env, options = {}) {
   const missing = [];
   const warnings = [];
@@ -171,6 +225,16 @@ function resolveConfig(env, options = {}) {
     env.ONEBOX_PUBLIC_ORCHESTRATOR_URL ??
     `http://${uiHost}:${orchestratorPort}`;
   const explorerBase = (options.explorerBase ?? env.ONEBOX_EXPLORER_TX_BASE ?? env.NEXT_PUBLIC_ONEBOX_EXPLORER_TX_BASE ?? '').trim();
+  const welcomeMessage = (options.welcomeMessage ?? env.ONEBOX_UI_WELCOME ?? '').toString().trim();
+
+  const exampleSources = [];
+  if (env.ONEBOX_UI_SHORTCUTS !== undefined) {
+    exampleSources.push(env.ONEBOX_UI_SHORTCUTS);
+  }
+  if (options.examples !== undefined) {
+    exampleSources.push(options.examples);
+  }
+  const shortcutExamples = parseShortcutExamples(exampleSources);
 
   const parsedPublicUrl = parseAbsoluteUrl(publicOrchestratorUrl);
   if (!parsedPublicUrl) {
@@ -249,6 +313,8 @@ function resolveConfig(env, options = {}) {
     warnings,
     maxJobBudgetAgia,
     maxJobDurationDays,
+    welcomeMessage,
+    shortcutExamples,
   };
 }
 
@@ -263,6 +329,12 @@ function createDemoUrl(config) {
     params.set('token', config.apiToken);
   }
   params.set('mode', config.defaultMode);
+  if (config.welcomeMessage) {
+    params.set('welcome', config.welcomeMessage);
+  }
+  if (Array.isArray(config.shortcutExamples) && config.shortcutExamples.length > 0) {
+    params.set('examples', JSON.stringify(config.shortcutExamples));
+  }
   return `${base}?${params.toString()}`;
 }
 
@@ -473,6 +545,17 @@ function parseCliArgs(argv = process.argv.slice(2)) {
           label: '--max-duration',
         });
         break;
+      case '--welcome':
+        options.welcomeMessage = requireValue(flag, value);
+        break;
+      case '--example':
+      case '--examples': {
+        const parsedExamples = parseShortcutExamples(requireValue(flag, value));
+        if (parsedExamples.length > 0) {
+          options.examples = [...(options.examples ?? []), ...parsedExamples];
+        }
+        break;
+      }
       default:
         // Unrecognised flag – ignore so scripts remain forward compatible.
         break;
@@ -506,6 +589,15 @@ async function runDemo(options = {}) {
     }
     if (config.maxJobDurationDays) {
       console.log(`       – Max job duration: ${config.maxJobDurationDays} day(s)`);
+    }
+  }
+  if (config.welcomeMessage) {
+    console.log(`   • Welcome prompt: ${config.welcomeMessage}`);
+  }
+  if (config.shortcutExamples.length > 0) {
+    console.log('   • Shortcuts:');
+    for (const shortcut of config.shortcutExamples) {
+      console.log(`       – ${shortcut}`);
     }
   }
   if (config.warnings.length > 0) {
@@ -568,5 +660,6 @@ module.exports = {
   parseCliArgs,
   parsePositiveDecimal,
   parsePositiveInteger,
+  parseShortcutExamples,
   runDemo,
 };

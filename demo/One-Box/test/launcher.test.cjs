@@ -11,6 +11,7 @@ const {
   normalisePrefix,
   isUnsetEnvValue,
   parseCliArgs,
+  parseShortcutExamples,
 } = require('../lib/launcher.js');
 
 test('loadEnvironment merges root and demo .env files with demo taking precedence', () => {
@@ -45,6 +46,8 @@ test('resolveConfig normalises prefix and derives defaults', () => {
   assert.equal(config.publicOrchestratorUrl, 'http://127.0.0.1:9010');
   assert.equal(config.maxJobBudgetAgia, undefined);
   assert.equal(config.maxJobDurationDays, undefined);
+  assert.equal(config.welcomeMessage, '');
+  assert.deepEqual(config.shortcutExamples, []);
   assert.deepEqual(config.warnings, []);
 });
 
@@ -68,6 +71,8 @@ test('resolveConfig allows explicit CLI overrides to win over environment', () =
     explorerBase: 'https://scan.example/tx/',
     maxJobBudgetAgia: '123.45',
     maxJobDurationDays: 9,
+    welcomeMessage: 'Custom welcome',
+    examples: ['Mission one', 'Mission two'],
   });
 
   assert.equal(config.orchestratorPort, 8088);
@@ -80,6 +85,8 @@ test('resolveConfig allows explicit CLI overrides to win over environment', () =
   assert.equal(config.explorerBase, 'https://scan.example/tx/');
   assert.equal(config.maxJobBudgetAgia, '123.45');
   assert.equal(config.maxJobDurationDays, 9);
+  assert.equal(config.welcomeMessage, 'Custom welcome');
+  assert.deepEqual(config.shortcutExamples, ['Mission one', 'Mission two']);
   assert.ok(
     config.warnings.some((warning) =>
       warning.includes('HTTP on a non-loopback host'),
@@ -95,11 +102,26 @@ test('resolveConfig parses guardrail environment variables', () => {
     ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
     ONEBOX_MAX_JOB_BUDGET_AGIA: '45.5',
     ONEBOX_MAX_JOB_DURATION_DAYS: '7',
+    ONEBOX_UI_WELCOME: 'Hello operator',
+    ONEBOX_UI_SHORTCUTS: 'Research | Finalize job 12',
   };
   const config = resolveConfig(env);
   assert.equal(config.maxJobBudgetAgia, '45.5');
   assert.equal(config.maxJobDurationDays, 7);
+  assert.equal(config.welcomeMessage, 'Hello operator');
+  assert.deepEqual(config.shortcutExamples, ['Research', 'Finalize job 12']);
   assert.deepEqual(config.warnings, []);
+});
+
+test('resolveConfig merges CLI example overrides with environment shortcuts', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: '0x1234',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_UI_SHORTCUTS: 'Research | Finalize job 12',
+  };
+  const config = resolveConfig(env, { examples: ['Diagnose agent', 'Finalize job 12'] });
+  assert.deepEqual(config.shortcutExamples, ['Research', 'Finalize job 12', 'Diagnose agent']);
 });
 
 test('resolveConfig warns when exposing orchestrator without API token', () => {
@@ -163,6 +185,26 @@ test('createDemoUrl encodes orchestrator, prefix, token, and mode', () => {
   assert.equal(parsed.searchParams.get('oneboxPrefix'), config.prefix);
   assert.equal(parsed.searchParams.get('token'), 'secret');
   assert.equal(parsed.searchParams.get('mode'), 'expert');
+  assert.equal(parsed.searchParams.get('welcome'), null);
+  assert.equal(parsed.searchParams.get('examples'), null);
+});
+
+test('createDemoUrl includes welcome and examples when provided', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: '0x1234',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
+    ONEBOX_UI_WELCOME: 'Hello operator',
+    ONEBOX_UI_SHORTCUTS: '["Spin up research mission", "Finalize job 42"]',
+  };
+  const config = resolveConfig(env);
+  const url = createDemoUrl(config);
+  const parsed = new URL(url);
+  assert.equal(parsed.searchParams.get('welcome'), 'Hello operator');
+  assert.deepEqual(JSON.parse(parsed.searchParams.get('examples')), [
+    'Spin up research mission',
+    'Finalize job 42',
+  ]);
 });
 
 test('normalisePrefix respects explicit blank overrides and fallback defaults', () => {
@@ -219,6 +261,10 @@ test('parseCliArgs handles overrides and boolean flags', () => {
     '77.5',
     '--max-duration',
     '6',
+    '--welcome',
+    'Hello world',
+    '--examples',
+    'Alpha mission | Beta mission',
   ]);
 
   assert.equal(options.openBrowser, false);
@@ -232,6 +278,14 @@ test('parseCliArgs handles overrides and boolean flags', () => {
   assert.equal(options.explorerBase, 'https://scan.example/tx/');
   assert.equal(options.maxJobBudgetAgia, '77.5');
   assert.equal(options.maxJobDurationDays, 6);
+  assert.equal(options.welcomeMessage, 'Hello world');
+  assert.deepEqual(options.examples, ['Alpha mission', 'Beta mission']);
+});
+
+test('parseShortcutExamples accepts JSON arrays and deduplicates', () => {
+  assert.deepEqual(parseShortcutExamples('["Mission", "Mission"]'), ['Mission']);
+  assert.deepEqual(parseShortcutExamples('One | Two\nThree'), ['One', 'Two', 'Three']);
+  assert.deepEqual(parseShortcutExamples(['Alpha', 'Beta']), ['Alpha', 'Beta']);
 });
 
 test('parseCliArgs throws for invalid numeric or mode values', () => {
