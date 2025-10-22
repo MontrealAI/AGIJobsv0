@@ -1,0 +1,15 @@
+{
+  "name": "@agijobs/mission-control",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "cypress": "cypress run --config-file cypress.config.ts",
+    "cypress:open": "cypress open --config-file cypress.config.ts"
+  }
+}
