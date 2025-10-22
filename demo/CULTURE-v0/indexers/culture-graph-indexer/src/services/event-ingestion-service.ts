@@ -52,6 +52,8 @@ export class EventIngestionService {
       this.provider.pollingInterval = this.config.pollIntervalMs;
     }
 
+    await this.backfillHistoricalEvents();
+
     const mintedFilter = {
       address: this.config.cultureRegistryAddress,
       topics: [this.artifactMintedTopic],
@@ -263,5 +265,92 @@ export class EventIngestionService {
       blockHash: log.blockHash ?? '',
       logIndex: Number(log.index ?? 0),
     };
+  }
+
+  private async backfillHistoricalEvents(): Promise<void> {
+    if (!this.provider || !this.config.cultureRegistryAddress) {
+      return;
+    }
+
+    const cursor = await this.prisma.eventCursor.findUnique({ where: { id: 1 } });
+    const reorgBuffer = this.config.finalityDepth ?? 0;
+    const batchSize = this.config.blockBatchSize ?? 1_000;
+    const latestBlock = await this.provider.getBlockNumber();
+    const targetBlock = Math.max(latestBlock - reorgBuffer, 0);
+
+    const startingBlock = cursor
+      ? Math.max(cursor.blockNumber - reorgBuffer, 0)
+      : 0;
+
+    if (startingBlock > targetBlock) {
+      return;
+    }
+
+    const shouldSkipDuplicates = !reorgBuffer && cursor;
+    const cultureAddress = this.config.cultureRegistryAddress.toLowerCase();
+    const arenaAddress = this.config.selfPlayArenaAddress?.toLowerCase();
+
+    for (let fromBlock = startingBlock; fromBlock <= targetBlock; fromBlock += batchSize) {
+      const toBlock = Math.min(fromBlock + batchSize - 1, targetBlock);
+
+      const mintedLogs = await this.provider.getLogs({
+        address: this.config.cultureRegistryAddress,
+        topics: [this.artifactMintedTopic],
+        fromBlock,
+        toBlock,
+      });
+
+      const citedLogs = await this.provider.getLogs({
+        address: this.config.cultureRegistryAddress,
+        topics: [this.artifactCitedTopic],
+        fromBlock,
+        toBlock,
+      });
+
+      const finalizedLogs = arenaAddress
+        ? await this.provider.getLogs({
+            address: this.config.selfPlayArenaAddress,
+            topics: [this.roundFinalizedTopic],
+            fromBlock,
+            toBlock,
+          })
+        : [];
+
+      const orderedLogs = [
+        ...mintedLogs.map((log) => ({ kind: 'minted' as const, log })),
+        ...citedLogs.map((log) => ({ kind: 'cited' as const, log })),
+        ...finalizedLogs.map((log) => ({ kind: 'finalized' as const, log })),
+      ].sort((a, b) => {
+        const blockDelta = Number(a.log.blockNumber ?? 0) - Number(b.log.blockNumber ?? 0);
+        if (blockDelta !== 0) {
+          return blockDelta;
+        }
+        return Number(a.log.index ?? 0) - Number(b.log.index ?? 0);
+      });
+
+      for (const { kind, log } of orderedLogs) {
+        const blockNumber = Number(log.blockNumber ?? 0);
+        const logIndex = Number(log.index ?? 0);
+
+        if (shouldSkipDuplicates && blockNumber === cursor?.blockNumber && logIndex <= (cursor?.logIndex ?? -1)) {
+          continue;
+        }
+
+        try {
+          if (kind === 'minted') {
+            const event = await this.parseArtifactMinted(log);
+            await this.handleArtifactMinted(event);
+          } else if (kind === 'cited') {
+            const event = await this.parseArtifactCited(log);
+            await this.handleArtifactCited(event);
+          } else if (kind === 'finalized' && arenaAddress && log.address?.toLowerCase() === arenaAddress) {
+            const event = await this.parseRoundFinalized(log);
+            await this.handleRoundFinalized(event);
+          }
+        } catch (error) {
+          console.error('Failed to backfill log', error);
+        }
+      }
+    }
   }
 }
