@@ -5,6 +5,7 @@ const {
   resolveConfig,
   createDemoUrl,
   isUnsetEnvValue,
+  collectPortDiagnostics,
 } = require('../lib/launcher.js');
 const { probeRpc, fetchAccountBalance } = require('../lib/rpc.js');
 
@@ -92,6 +93,27 @@ function formatStatus(label, value) {
     console.log('   Configuration warnings:');
     for (const warning of config.warnings) {
       console.log(`     • ${warning}`);
+    }
+  }
+  console.log('');
+
+  const portDiagnostics = await collectPortDiagnostics(config);
+  config.portDiagnostics = portDiagnostics;
+
+  console.log('Port availability:');
+  for (const diag of portDiagnostics) {
+    const label = `${diag.label} (${diag.host}:${diag.port})`.padEnd(24, ' ');
+    const status =
+      diag.status === 'available'
+        ? '✅ available'
+        : diag.status === 'blocked'
+        ? '⚠️  in use'
+        : '⚠️  unknown';
+    console.log(`   ${label} ${status}`);
+    if (diag.status === 'blocked' && diag.error instanceof Error) {
+      console.log(`      • Close the conflicting process and re-run the launch.`);
+    } else if (diag.status === 'unknown' && diag.error instanceof Error) {
+      console.log(`      • ${diag.error.message}`);
     }
   }
   console.log('');

@@ -12,7 +12,13 @@ const {
   isUnsetEnvValue,
   parseCliArgs,
   parseShortcutExamples,
+  detectPortAvailability,
+  collectPortDiagnostics,
+  assertPortsAvailable,
 } = require('../lib/launcher.js');
+
+const net = require('node:net');
+const { once } = require('node:events');
 
 test('loadEnvironment merges root and demo .env files with demo taking precedence', () => {
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'onebox-root-'));
@@ -293,4 +299,86 @@ test('parseCliArgs throws for invalid numeric or mode values', () => {
   assert.throws(() => parseCliArgs(['--mode', 'power']));
   assert.throws(() => parseCliArgs(['--max-budget', 'abc']));
   assert.throws(() => parseCliArgs(['--max-duration', '0']));
+});
+
+async function getAvailablePort(host) {
+  const server = net.createServer();
+  server.listen({ port: 0, host });
+  await once(server, 'listening');
+  const address = server.address();
+  const port = typeof address === 'object' && address ? address.port : 0;
+  await new Promise((resolve) => server.close(resolve));
+  return port;
+}
+
+test('detectPortAvailability reports available ports', async () => {
+  const host = '127.0.0.1';
+  const port = await getAvailablePort(host);
+  const result = await detectPortAvailability({ port, host });
+  assert.equal(result.status, 'available');
+});
+
+test('detectPortAvailability reports blocked ports', async () => {
+  const host = '127.0.0.1';
+  const server = net.createServer();
+  server.listen({ port: 0, host });
+  await once(server, 'listening');
+  const address = server.address();
+  const port = typeof address === 'object' && address ? address.port : 0;
+  const result = await detectPortAvailability({ port, host });
+  assert.equal(result.status, 'blocked');
+  await new Promise((resolve) => server.close(resolve));
+});
+
+test('collectPortDiagnostics flags blocked and available ports', async () => {
+  const uiServer = net.createServer();
+  uiServer.listen({ port: 0, host: '127.0.0.1' });
+  await once(uiServer, 'listening');
+  const uiAddress = uiServer.address();
+  const uiPort = typeof uiAddress === 'object' && uiAddress ? uiAddress.port : 0;
+
+  const orchestratorServer = net.createServer();
+  orchestratorServer.listen({ port: 0, host: '0.0.0.0' });
+  await once(orchestratorServer, 'listening');
+  const orchestratorAddress = orchestratorServer.address();
+  const orchestratorPort =
+    typeof orchestratorAddress === 'object' && orchestratorAddress ? orchestratorAddress.port : 0;
+
+  const config = {
+    orchestratorPort,
+    uiPort,
+    uiHost: '127.0.0.1',
+  };
+
+  const diagnostics = await collectPortDiagnostics(config);
+  const uiDiag = diagnostics.find((entry) => entry.id === 'ui');
+  const orchestratorDiag = diagnostics.find((entry) => entry.id === 'orchestrator');
+  assert.ok(uiDiag);
+  assert.ok(orchestratorDiag);
+  assert.equal(uiDiag.status, 'blocked');
+  assert.equal(orchestratorDiag.status, 'blocked');
+
+  await new Promise((resolve) => uiServer.close(resolve));
+  await new Promise((resolve) => orchestratorServer.close(resolve));
+
+  const freeDiagnostics = await collectPortDiagnostics({
+    orchestratorPort,
+    uiPort,
+    uiHost: '127.0.0.1',
+  });
+  const uiFree = freeDiagnostics.find((entry) => entry.id === 'ui');
+  const orchestratorFree = freeDiagnostics.find((entry) => entry.id === 'orchestrator');
+  assert.equal(uiFree.status, 'available');
+  assert.equal(orchestratorFree.status, 'available');
+});
+
+test('assertPortsAvailable throws when a port is blocked', async () => {
+  const server = net.createServer();
+  server.listen({ port: 0, host: '127.0.0.1' });
+  await once(server, 'listening');
+  const address = server.address();
+  const port = typeof address === 'object' && address ? address.port : 0;
+  const config = { orchestratorPort: port, uiPort: port, uiHost: '127.0.0.1' };
+  await assert.rejects(() => assertPortsAvailable(config), /Ports already in use/);
+  await new Promise((resolve) => server.close(resolve));
 });
