@@ -73,22 +73,21 @@ class SovereignArchitect:
     ) -> None:
         self.owner_console = owner_console or OwnerConsole(config)
         self.config = self.owner_console.config
+        self._dataset_override = dataset
         self.dataset = dataset or generate_dataset()
         self.reward_engine = RewardEngine(self.config.reward_policy)
         self.stake_manager = StakeManager(self.config.stake_policy)
         self.validation_module = ValidationModule()
         self.timelock = timelock or GovernanceTimelock()
         self.random = random.Random(random_seed)
-        zero_predictions = [0.0 for _ in self.dataset.target]
-        self.baseline_error = self._mean_squared_error(zero_predictions, self.dataset.target)
-        self.baseline_absolute_error = self._mean_absolute_error(
-            zero_predictions, self.dataset.target
-        )
+        self._stress_multiplier = 1.0
+        self._recompute_baselines()
 
     def run(self, scenario: DemoScenario) -> DemoRunArtifacts:
         # Apply any timelocked actions that have matured before execution starts.
         self.timelock.execute_due(self.owner_console)
         self.owner_console.require_active()
+        self._prepare_dataset(scenario)
         self._refresh_runtime_components()
         synthesizer = EvolutionaryProgramSynthesizer(
             population_size=self.config.evolution_policy.population_size,
@@ -184,6 +183,29 @@ class SovereignArchitect:
         self.reward_engine = RewardEngine(self.config.reward_policy)
         self.stake_manager = StakeManager(self.config.stake_policy)
         self.validation_module = ValidationModule()
+
+    def _recompute_baselines(self) -> None:
+        zero_predictions = [0.0 for _ in self.dataset.target]
+        self.baseline_error = self._mean_squared_error(zero_predictions, self.dataset.target)
+        self.baseline_absolute_error = self._mean_absolute_error(
+            zero_predictions, self.dataset.target
+        )
+
+    def _prepare_dataset(self, scenario: DemoScenario) -> None:
+        profile = scenario.dataset_profile
+        if self._dataset_override is not None:
+            dataset = self._dataset_override
+        elif profile is not None:
+            dataset = generate_dataset(
+                length=max(profile.length, 1),
+                noise=max(profile.noise, 0.0),
+                seed=profile.seed,
+            )
+        else:
+            dataset = generate_dataset()
+        self.dataset = dataset
+        self._stress_multiplier = max(scenario.stress_multiplier, 0.0)
+        self._recompute_baselines()
 
     def _cross_verify_program(
         self, program: Program, primary_score: float, telemetry: Sequence[EvolutionRecord]
@@ -304,10 +326,11 @@ class SovereignArchitect:
         }
         scores: Dict[str, float] = {}
         for name, spec in specs.items():
+            scaled_spec = self._scale_stress_spec(spec, self._stress_multiplier)
             dataset = generate_dataset(
-                length=length, noise=spec["noise"], seed=spec["seed"]
+                length=length, noise=scaled_spec["noise"], seed=scaled_spec["seed"]
             )
-            self._apply_stress_spec(dataset, spec)
+            self._apply_stress_spec(dataset, scaled_spec)
             predictions = self._predict(program, dataset)
             mse = self._mean_squared_error(predictions, dataset.target)
             normalised = 1.0 - min(mse / max(self.baseline_error, 1e-9), 1.0)
@@ -350,6 +373,30 @@ class SovereignArchitect:
             amplitude = float(spec["noise_scale"])
             for index in range(length):
                 dataset.target[index] += rng.uniform(-amplitude, amplitude)
+
+    def _scale_stress_spec(self, spec: Dict[str, object], multiplier: float) -> Dict[str, object]:
+        if math.isclose(multiplier, 1.0):
+            return dict(spec)
+        scaled = dict(spec)
+        if "baseline_scale" in scaled:
+            scale = float(scaled["baseline_scale"])
+            scaled["baseline_scale"] = 1.0 + (scale - 1.0) * multiplier
+        if "trend_shift" in scaled:
+            scaled["trend_shift"] = float(scaled["trend_shift"]) * multiplier
+        if "noise" in scaled:
+            scaled["noise"] = max(0.0, float(scaled["noise"]) * multiplier)
+        if "noise_scale" in scaled:
+            scaled["noise_scale"] = float(scaled["noise_scale"]) * multiplier
+        if "dropout_scale" in scaled:
+            scaled["dropout_scale"] = float(scaled["dropout_scale"]) * multiplier
+        if "spike" in scaled:
+            start, end, magnitude = scaled["spike"]
+            scaled["spike"] = (start, end, float(magnitude) * multiplier)
+        return scaled
+
+    @property
+    def stress_multiplier(self) -> float:
+        return self._stress_multiplier
 
     def _bootstrap_interval(self, program: Program) -> Tuple[float, float]:
         policy = self.config.verification_policy

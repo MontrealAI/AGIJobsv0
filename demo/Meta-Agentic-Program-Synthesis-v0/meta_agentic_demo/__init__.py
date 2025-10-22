@@ -3,6 +3,7 @@
 from .admin import OwnerConsole, load_owner_overrides
 from .assurance import IndependentAuditor
 from .config import (
+    DatasetProfile,
     DemoConfig,
     DemoScenario,
     EvolutionPolicy,
@@ -16,6 +17,7 @@ from .orchestrator import SovereignArchitect, generate_dataset
 from .report import export_report, render_html
 
 __all__ = [
+    "DatasetProfile",
     "DemoConfig",
     "DemoScenario",
     "DemoRunArtifacts",

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from textwrap import indent
 from typing import Mapping
 
 from meta_agentic_demo.admin import OwnerConsole, load_owner_overrides
-from meta_agentic_demo.config import DemoConfig, DemoScenario
+from meta_agentic_demo.config import DatasetProfile, DemoConfig, DemoScenario
 from meta_agentic_demo.governance import GovernanceTimelock
 from meta_agentic_demo.orchestrator import SovereignArchitect
 from meta_agentic_demo.report import export_report
@@ -26,6 +27,7 @@ SCENARIOS = [
         ),
         target_metric="Workflow productivity uplift",
         success_threshold=0.82,
+        dataset_profile=DatasetProfile(length=64, noise=0.05, seed=1_337),
     ),
     DemoScenario(
         identifier="atlas",
@@ -36,6 +38,20 @@ SCENARIOS = [
         ),
         target_metric="Information ratio",
         success_threshold=0.78,
+        dataset_profile=DatasetProfile(length=72, noise=0.06, seed=4_242),
+        stress_multiplier=1.1,
+    ),
+    DemoScenario(
+        identifier="sovereign",
+        title="Sovereign Hyperdrive Forge",
+        description=(
+            "Let the sovereign architect synthesise breakthrough control kernels across "
+            "markets, operations, and intelligence — compressing cycles to minutes."
+        ),
+        target_metric="Hyperdrive innovation index",
+        success_threshold=0.85,
+        dataset_profile=DatasetProfile(length=96, noise=0.07, seed=90_900),
+        stress_multiplier=1.35,
     ),
 ]
 
@@ -349,6 +365,16 @@ def main() -> None:
     print(indent(scenario.description, prefix="  > "))
     print("\n🧭 Configuration:")
     print(indent(describe_config(config), prefix="  "))
+    if scenario.dataset_profile:
+        profile = scenario.dataset_profile
+        print(
+            "\n🧪 Scenario dataset profile:",
+            f"length={profile.length}, noise={profile.noise:.3f}, seed={profile.seed}",
+        )
+    if not math.isclose(scenario.stress_multiplier, 1.0):
+        print(
+            f"\n🌡️ Stress profile amplified: {scenario.stress_multiplier:.2f}× thermodynamic stress battery",
+        )
     if owner_console.is_paused:
         print("\n⏸️ Operations paused by owner. Resume to execute jobs.")
         return
@@ -361,6 +387,7 @@ def main() -> None:
     print(indent(artefacts.final_program, prefix="  "))
     print(f"Composite score: {artefacts.final_score:.4f}")
     print(f"Improvement vs first generation: {artefacts.improvement_over_first:.4f}")
+    print(f"Stress multiplier applied: {architect.stress_multiplier:.2f}×")
     if artefacts.first_success_generation is not None:
         print(
             "Success threshold achieved at generation",

@@ -117,6 +117,16 @@ The CLI narrates the process in natural language so the operator always understa
 It now also prints a reward distribution digest summarising total payouts, architect retention, and the top solver/validator so executives can confirm value capture instantly. Immediately afterwards the CLI shares a triple-check verification digest (holdout scores, residual balance, divergence), flagging whether every gate passed.
 The digest now highlights the **entropy shield** so the owner can confirm that solver diversity stayed above the configurable floor – proving the sovereign architect remained creative and unstoppable while under explicit owner control.
 
+### 🌌 Featured scenarios (non-technical friendly)
+
+| Identifier | Mission | Dataset profile | Stress battery |
+| ---------- | ------- | --------------- | -------------- |
+| `alpha` | **Alpha Efficiency Sweep** – refines an internal automation workflow into a compounding control signal that continuously improves productivity. | 64 samples · baseline noise `0.05` · deterministic seed `1337`. | Baseline thermodynamic profile (`1.0×`). |
+| `atlas` | **Atlas Market Sentinel** – deploys a forecasting kernel that seeks hidden cross-market inefficiencies and synthesises actionable alpha streams. | 72 samples · adaptive noise `0.06` · seed `4242`. | Balanced `1.1×` multiplier keeps validators sharp without overfitting. |
+| `sovereign` | **Sovereign Hyperdrive Forge** – spins up a self-improving sovereign enterprise that welds together market, operational, and intelligence kernels in minutes. | 96 samples · exploratory noise `0.07` · seed `90900`. | Elevated `1.35×` multiplier intensifies the stress battery to prove resilience under regime shifts. |
+
+Each scenario is configurable at runtime. Override any parameter (rewards, staking, evolution cadence, verification tolerances, dataset length/noise, stress multiplier) through the owner console CLI or a JSON override file – the contract owner retains absolute control.
+
 ---
 
 ## 👑 Owner Command Console
