@@ -80,6 +80,9 @@ def test_owner_console_updates_verification_policy() -> None:
         confidence_level=0.9,
         stress_threshold=0.73,
         entropy_floor=0.45,
+        precision_replay_tolerance=0.012,
+        variance_ratio_ceiling=1.1,
+        spectral_energy_ceiling=0.48,
     )
     policy = console.config.verification_policy
     assert pytest.approx(policy.holdout_threshold) == 0.85
@@ -92,6 +95,9 @@ def test_owner_console_updates_verification_policy() -> None:
     assert pytest.approx(policy.confidence_level) == 0.9
     assert pytest.approx(policy.stress_threshold) == 0.73
     assert pytest.approx(policy.entropy_floor) == 0.45
+    assert pytest.approx(policy.precision_replay_tolerance) == 0.012
+    assert pytest.approx(policy.variance_ratio_ceiling) == 1.1
+    assert pytest.approx(policy.spectral_energy_ceiling) == 0.48
     assert console.events[-1].action == "update_verification_policy"
 
 
@@ -115,6 +121,14 @@ def test_owner_console_rejects_invalid_verification_policy() -> None:
         console.update_verification_policy(entropy_floor=-0.1)
     with pytest.raises(ValueError):
         console.update_verification_policy(entropy_floor=1.5)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(precision_replay_tolerance=-0.1)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(variance_ratio_ceiling=0)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(spectral_energy_ceiling=0)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(spectral_energy_ceiling=1.5)
 
 
 def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
@@ -129,6 +143,9 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
             "bootstrap_iterations": 280,
             "stress_threshold": 0.69,
             "entropy_floor": 0.41,
+            "precision_replay_tolerance": 0.02,
+            "variance_ratio_ceiling": 1.3,
+            "spectral_energy_ceiling": 0.52,
         },
         "paused": True,
     }
@@ -146,6 +163,9 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
     assert verification_policy.bootstrap_iterations == 280
     assert pytest.approx(verification_policy.stress_threshold) == 0.69
     assert pytest.approx(verification_policy.entropy_floor) == 0.41
+    assert pytest.approx(verification_policy.precision_replay_tolerance) == 0.02
+    assert pytest.approx(verification_policy.variance_ratio_ceiling) == 1.3
+    assert pytest.approx(verification_policy.spectral_energy_ceiling) == 0.52
     assert any(event.action == "set_paused" for event in console.events)
 
 

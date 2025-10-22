@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Dict, Iterable, List, Sequence, Tuple
 
 from .admin import OwnerConsole
+from .assurance import IndependentAuditor
 from .config import DemoConfig, DemoScenario
 from .entities import (
     DemoRunArtifacts,
@@ -226,6 +227,17 @@ class SovereignArchitect:
         ) if stress_scores else True
         entropy_score = self._entropy_score(base_predictions)
         pass_entropy = entropy_score >= policy.entropy_floor
+        auditor = IndependentAuditor(
+            baseline_error=self.baseline_error,
+            precision_tolerance=policy.precision_replay_tolerance,
+            variance_ratio_ceiling=policy.variance_ratio_ceiling,
+            spectral_energy_ceiling=policy.spectral_energy_ceiling,
+        )
+        audit = auditor.audit(
+            predictions=base_predictions,
+            targets=self.dataset.target,
+            primary_score=primary_score,
+        )
         pass_residual_balance = (
             abs(residual_mean) <= policy.residual_mean_tolerance
             and residual_std >= policy.residual_std_minimum
@@ -259,6 +271,12 @@ class SovereignArchitect:
             entropy_score=entropy_score,
             pass_entropy=pass_entropy,
             entropy_floor=policy.entropy_floor,
+            precision_replay_score=audit.precision_score,
+            pass_precision_replay=audit.pass_precision,
+            variance_ratio=audit.variance_ratio,
+            pass_variance_ratio=audit.pass_variance,
+            spectral_ratio=audit.spectral_ratio,
+            pass_spectral_ratio=audit.pass_spectral,
         )
 
     def _stress_test_program(self, program: Program) -> Dict[str, float]:

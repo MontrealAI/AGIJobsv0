@@ -62,6 +62,16 @@ The verification stack now includes an explicit stress battery that intentionall
 
 Every evolved program must clear a configurable stress threshold (default `0.72`). The new CLI flag `--verification-stress-threshold` lets the contract owner ratchet this bar up or down without touching code.
 
+#### Independent assurance weave
+
+Triple verification now runs in lockstep with an **Independent Assurance Weave** – a second auditor that recomputes the sovereign's score using high-precision Decimal arithmetic, variance forensics, and a spectral leak detector. The weave refuses to sign off unless:
+
+* The Decimal replay stays within a configurable tolerance of the primary score.
+* Residual variance remains below an owner-set ceiling, protecting against unbounded drift.
+* Spectral energy across harmonics stays under a limit, preventing hidden oscillations or regime exploits.
+
+All three thresholds are owner-governed and surfaced through the CLI / JSON overrides, ensuring governance can harden or relax the assurance net instantly.
+
 ```mermaid
 stateDiagram-v2
     [*] --> SeedPopulation: bootstrap diverse codelets
@@ -134,12 +144,15 @@ knob – rewards, staking, evolution cadence, and pause state – can be adjuste
       --verification-confidence 0.975
       --verification-stress-threshold 0.74
       --verification-entropy 0.38
+      --verification-precision-tolerance 0.02
+      --verification-variance-ceiling 1.2
+      --verification-spectral-ceiling 0.5
 ```
 
 Use `--pause` to halt execution instantly. The orchestrator will refuse to launch jobs while paused and will explain the status
 in the CLI output. Re-run without `--pause` (or with a different override set) to resume operations.
 
-Verification overrides keep the sovereign architect honest: tighten holdout thresholds for ultra-conservative validation, raise MAE expectations for stricter fit, expand bootstrap iterations for deeper statistical certainty, or relax divergence tolerances when exploring frontier scenarios.
+Verification overrides keep the sovereign architect honest: tighten holdout thresholds for ultra-conservative validation, raise MAE expectations for stricter fit, expand bootstrap iterations for deeper statistical certainty, clamp precision tolerances for the Decimal replay, or harden variance/spectral ceilings when exploring frontier scenarios.
 
 ### Timelocked governance
 

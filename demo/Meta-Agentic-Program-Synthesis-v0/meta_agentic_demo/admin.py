@@ -41,6 +41,9 @@ class OwnerConsole:
         "confidence_level",
         "stress_threshold",
         "entropy_floor",
+        "precision_replay_tolerance",
+        "variance_ratio_ceiling",
+        "spectral_energy_ceiling",
     }
 
     def __init__(self, config: DemoConfig) -> None:
@@ -222,6 +225,12 @@ class OwnerConsole:
             raise ValueError("stress_threshold must be between 0 and 1")
         if not 0 <= policy.entropy_floor <= 1:
             raise ValueError("entropy_floor must be between 0 and 1")
+        if policy.precision_replay_tolerance < 0:
+            raise ValueError("precision_replay_tolerance must be non-negative")
+        if policy.variance_ratio_ceiling <= 0:
+            raise ValueError("variance_ratio_ceiling must be positive")
+        if not 0 < policy.spectral_energy_ceiling <= 1:
+            raise ValueError("spectral_energy_ceiling must be within (0, 1]")
 
 
 def load_owner_overrides(path: Path) -> Mapping[str, Any]:

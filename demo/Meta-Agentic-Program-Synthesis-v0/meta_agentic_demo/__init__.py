@@ -1,6 +1,7 @@
 """Public package interface for the Meta-Agentic Program Synthesis demo."""
 
 from .admin import OwnerConsole, load_owner_overrides
+from .assurance import IndependentAuditor
 from .config import (
     DemoConfig,
     DemoScenario,
@@ -25,6 +26,7 @@ __all__ = [
     "StakePolicy",
     "VerificationPolicy",
     "OwnerConsole",
+    "IndependentAuditor",
     "SovereignArchitect",
     "generate_dataset",
     "export_report",

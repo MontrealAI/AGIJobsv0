@@ -172,6 +172,21 @@ def parse_args() -> argparse.Namespace:
         type=float,
         help="Override minimum acceptable entropy score",
     )
+    verification_group.add_argument(
+        "--verification-precision-tolerance",
+        type=float,
+        help="Override tolerance for decimal replay consistency",
+    )
+    verification_group.add_argument(
+        "--verification-variance-ceiling",
+        type=float,
+        help="Override maximum acceptable variance ratio",
+    )
+    verification_group.add_argument(
+        "--verification-spectral-ceiling",
+        type=float,
+        help="Override maximum acceptable spectral energy ratio",
+    )
     governance_group = parser.add_argument_group("Governance timelock")
     governance_group.add_argument(
         "--timelock-delay",
@@ -283,6 +298,9 @@ def main() -> None:
                 "confidence_level": args.verification_confidence,
                 "stress_threshold": args.verification_stress_threshold,
                 "entropy_floor": args.verification_entropy,
+                "precision_replay_tolerance": args.verification_precision_tolerance,
+                "variance_ratio_ceiling": args.verification_variance_ceiling,
+                "spectral_energy_ceiling": args.verification_spectral_ceiling,
             }.items()
             if value is not None
         }
@@ -397,6 +415,19 @@ def main() -> None:
     lower, upper = verification.bootstrap_interval
     print(
         f"  • Bootstrap CI [{lower:.4f}, {upper:.4f}] | pass {verification.pass_confidence}"
+    )
+    print(
+        f"  • Decimal replay {verification.precision_replay_score:.4f}"
+        f" (Δ {verification.precision_replay_score - verification.primary_score:+.4f})"
+        f" | pass {verification.pass_precision_replay}"
+    )
+    print(
+        f"  • Variance ratio {verification.variance_ratio:.4f}"
+        f" | pass {verification.pass_variance_ratio}"
+    )
+    print(
+        f"  • Spectral ratio {verification.spectral_ratio:.4f}"
+        f" | pass {verification.pass_spectral_ratio}"
     )
     print(
         f"  • Monotonic violations {verification.monotonic_violations} | pass {verification.monotonic_pass}"
