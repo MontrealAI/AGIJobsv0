@@ -1,0 +1,171 @@
+{
+  "artifacts": [
+    {
+      "id": "5",
+      "kind": "curriculum",
+      "parentId": null,
+      "createdAt": "2025-01-08T10:00:00Z",
+      "influenceScore": 0.184,
+      "citationCount": 5,
+      "lineageDepth": 3,
+      "title": "Curriculum: Reinforcement Learning Sprints"
+    },
+    {
+      "id": "3",
+      "kind": "book",
+      "parentId": null,
+      "createdAt": "2025-01-06T15:00:00Z",
+      "influenceScore": 0.142,
+      "citationCount": 4,
+      "lineageDepth": 2,
+      "title": "Book: Emergent Collaboration"
+    },
+    {
+      "id": "7",
+      "kind": "dataset",
+      "parentId": "3",
+      "createdAt": "2025-01-07T18:30:00Z",
+      "influenceScore": 0.126,
+      "citationCount": 3,
+      "lineageDepth": 1,
+      "title": "Dataset: Self-Play Logs"
+    },
+    {
+      "id": "9",
+      "kind": "prompt",
+      "parentId": "5",
+      "createdAt": "2025-01-09T09:15:00Z",
+      "influenceScore": 0.098,
+      "citationCount": 2,
+      "lineageDepth": 2,
+      "title": "Prompt: Validator Uplift"
+    },
+    {
+      "id": "11",
+      "kind": "book",
+      "parentId": "3",
+      "createdAt": "2025-01-09T17:45:00Z",
+      "influenceScore": 0.087,
+      "citationCount": 1,
+      "lineageDepth": 3,
+      "title": "Book: Adaptive Moderation"
+    }
+  ],
+  "scoreboard": {
+    "agents": [
+      {
+        "address": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+        "rating": 1345,
+        "stats": { "games": 12, "wins": 9, "losses": 2, "draws": 1 }
+      },
+      {
+        "address": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+        "rating": 1290,
+        "stats": { "games": 12, "wins": 8, "losses": 3, "draws": 1 }
+      },
+      {
+        "address": "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65",
+        "rating": 1232,
+        "stats": { "games": 12, "wins": 7, "losses": 4, "draws": 1 }
+      }
+    ],
+    "rounds": [
+      {
+        "id": 41,
+        "difficulty": 4.2,
+        "difficultyDelta": 0.2,
+        "successRate": 0.64,
+        "status": "finalized",
+        "winners": ["0x90f79bf6eb2c4f870365e785982e1f101e93b906"]
+      },
+      {
+        "id": 42,
+        "difficulty": 4.5,
+        "difficultyDelta": 0.3,
+        "successRate": 0.58,
+        "status": "finalized",
+        "winners": [
+          "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+          "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
+        ]
+      },
+      {
+        "id": 43,
+        "difficulty": 4.8,
+        "difficultyDelta": 0.4,
+        "successRate": 0,
+        "status": "failed",
+        "winners": []
+      },
+      {
+        "id": 44,
+        "difficulty": 4.9,
+        "difficultyDelta": 0.1,
+        "successRate": 0,
+        "status": "failed",
+        "winners": []
+      },
+      {
+        "id": 45,
+        "difficulty": 5.1,
+        "difficultyDelta": 0.2,
+        "successRate": 0.52,
+        "status": "finalized",
+        "winners": [
+          "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+          "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65"
+        ]
+      }
+    ],
+    "currentDifficulty": 5.1,
+    "difficultyWindow": {
+      "minDifficulty": 1,
+      "maxDifficulty": 9,
+      "targetSuccessRate": 0.6
+    },
+    "updatedAt": "2025-01-11T23:59:00Z"
+  },
+  "logs": [
+    {
+      "timestamp": "2025-01-09T20:15:00Z",
+      "component": "stake-manager",
+      "action": "slash",
+      "level": "warn",
+      "details": { "role": "validator", "roundId": 43, "amount": "1" }
+    },
+    {
+      "timestamp": "2025-01-10T08:45:00Z",
+      "component": "stake-manager",
+      "action": "slash",
+      "level": "warn",
+      "details": { "role": "validator", "roundId": 44, "amount": "1" }
+    },
+    {
+      "timestamp": "2025-01-07T09:10:00Z",
+      "component": "stake-manager",
+      "action": "lock",
+      "level": "info",
+      "details": { "role": "student", "roundId": 41 }
+    }
+  ],
+  "moderation": [
+    {
+      "timestamp": "2025-01-09T12:00:00Z",
+      "blocked": false,
+      "flaggedTerms": ["propaganda"],
+      "flaggedPassages": []
+    },
+    {
+      "timestamp": "2025-01-10T16:30:00Z",
+      "blocked": true,
+      "flaggedTerms": [],
+      "flaggedPassages": [
+        "copy this manifesto verbatim"
+      ]
+    }
+  ],
+  "expected": {
+    "cultureMaturityScore": 78.4,
+    "selfPlayGrowth": 82.1
+  }
+}
