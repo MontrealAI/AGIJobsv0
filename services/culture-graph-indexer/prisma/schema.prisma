@@ -1,0 +1,76 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Artifact {
+  id          String              @id
+  author      String
+  kind        String
+  cid         String
+  parentId    String?
+  blockNumber Int
+  blockHash   String
+  logIndex    Int
+  timestamp   DateTime
+  citationsFrom Citation[] @relation("CitationsFrom")
+  citationsTo   Citation[] @relation("CitationsTo")
+  influence     InfluenceMetric?
+
+  @@index([parentId])
+}
+
+model Citation {
+  id          Int     @id @default(autoincrement())
+  fromId      String
+  toId        String
+  blockNumber Int
+  blockHash   String
+  logIndex    Int
+  createdAt   DateTime @default(now())
+  from        Artifact @relation("CitationsFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to          Artifact @relation("CitationsTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId, blockNumber, logIndex])
+  @@index([fromId])
+  @@index([toId])
+}
+
+model RoundFinalization {
+  id                Int      @id @default(autoincrement())
+  roundId           String
+  previousDifficulty Int
+  difficultyDelta   Int
+  newDifficulty     Int
+  finalizedAt       DateTime
+  blockNumber       Int
+  blockHash         String
+  logIndex          Int
+
+  @@unique([roundId, blockNumber, logIndex])
+}
+
+model InfluenceMetric {
+  artifactId    String   @id
+  artifact      Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  score         Float
+  citationCount Int
+  lineageDepth  Int
+  updatedAt     DateTime @updatedAt
+}
+
+model EventCursor {
+  id          Int @id @default(1)
+  blockNumber Int
+  logIndex    Int
+}
+
+model DatasetChecksum {
+  key       String   @id
+  hash      String
+  updatedAt DateTime @updatedAt
+}
