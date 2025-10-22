@@ -37,10 +37,10 @@ export function buildRouter(service: ArenaService) {
     }
   });
 
-  router.post('/arena/close/:roundId', (req, res, next) => {
+  router.post('/arena/close/:roundId', async (req, res, next) => {
     try {
       const roundId = Number(req.params.roundId);
-      const round = service.closeRound(roundId);
+      const round = await service.closeRound(roundId);
       res.json({ round });
     } catch (error) {
       next(error);

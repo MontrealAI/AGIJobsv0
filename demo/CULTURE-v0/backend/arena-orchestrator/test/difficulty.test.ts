@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it } from 'vitest';
 import { computeNextDifficulty, DifficultyController } from '../src/difficulty.js';
 
 describe('computeNextDifficulty', () => {
