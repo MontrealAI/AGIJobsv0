@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { computeAuthHeaders, parseShortcutExamplesInput } from '../app.mjs';
+import { computeAuthHeaders, maskTokenTail, parseShortcutExamplesInput } from '../app.mjs';
 
 const { Headers } = globalThis;
 
@@ -49,4 +49,14 @@ test('parseShortcutExamplesInput accepts JSON, newline, and pipe separated forma
 test('parseShortcutExamplesInput de-duplicates and trims prompts', () => {
   const parsed = parseShortcutExamplesInput(['  Deploy  ', 'Deploy', 'Review report']);
   assert.deepEqual(parsed, ['Deploy', 'Review report']);
+});
+
+test('maskTokenTail obscures short tokens and shows tail for long tokens', () => {
+  assert.equal(maskTokenTail('abcd'), '••••');
+  assert.equal(maskTokenTail('abcdefgh'), '••••efgh');
+});
+
+test('maskTokenTail returns placeholder when token missing', () => {
+  assert.equal(maskTokenTail('', { placeholder: 'Empty' }), 'Empty');
+  assert.equal(maskTokenTail(null, { placeholder: 'Empty' }), 'Empty');
 });

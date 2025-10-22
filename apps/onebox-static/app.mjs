@@ -59,6 +59,7 @@ let currentWelcomeMessage = DEFAULT_WELCOME_MESSAGE;
 const ORCHESTRATOR_TOKEN_STORAGE_KEY = 'AGIJOBS_ONEBOX_ORCHESTRATOR_TOKEN';
 const pendingAnnouncements = [];
 let currentShortcutExamples = [];
+let pendingTokenCandidate = null;
 
 const IPFS_GATEWAYS = Array.isArray(Config.IPFS_GATEWAYS) && Config.IPFS_GATEWAYS.length
   ? Config.IPFS_GATEWAYS
@@ -249,6 +250,14 @@ function queueAnnouncement(message) {
   pendingAnnouncements.push(trimmed);
 }
 
+export function maskTokenTail(token, { placeholder = "Not set", shortPlaceholder = "••••" } = {}) {
+  if (typeof token !== "string") return placeholder;
+  const trimmed = token.trim();
+  if (!trimmed) return placeholder;
+  if (trimmed.length <= 4) return shortPlaceholder;
+  return `••••${trimmed.slice(-4)}`;
+}
+
 function flushPendingAnnouncements() {
   if (!pendingAnnouncements.length) return;
   for (const message of pendingAnnouncements) {
@@ -353,26 +362,26 @@ function getStoredApiToken() {
 }
 
 function setStoredApiToken(value) {
-  if (!storage || typeof storage.setItem !== "function") return;
   const trimmed = typeof value === "string" ? value.trim() : "";
   try {
     if (trimmed) {
-      storage.setItem(ORCHESTRATOR_TOKEN_STORAGE_KEY, trimmed);
+      storage?.setItem?.(ORCHESTRATOR_TOKEN_STORAGE_KEY, trimmed);
     } else {
-      storage.removeItem(ORCHESTRATOR_TOKEN_STORAGE_KEY);
+      storage?.removeItem?.(ORCHESTRATOR_TOKEN_STORAGE_KEY);
     }
   } catch (err) {
     // ignore storage failures
   }
+  pendingTokenCandidate = null;
 }
 
 function clearStoredApiToken() {
-  if (!storage || typeof storage.removeItem !== "function") return;
   try {
-    storage.removeItem(ORCHESTRATOR_TOKEN_STORAGE_KEY);
+    storage?.removeItem?.(ORCHESTRATOR_TOKEN_STORAGE_KEY);
   } catch (err) {
     // ignore
   }
+  pendingTokenCandidate = null;
 }
 
 function clearStoredOrchestrator() {
@@ -504,11 +513,18 @@ function applyUrlOverrides() {
       const rawToken = url.searchParams.get("token");
       const trimmed = rawToken ? rawToken.trim() : "";
       if (trimmed) {
-        setStoredApiToken(trimmed);
-        queueAnnouncement("🔐 API token applied for orchestrator requests.");
+        pendingTokenCandidate = trimmed;
+        queueAnnouncement(
+          "🔐 Link provided an orchestrator API token. Review it in the Advanced panel before applying."
+        );
       } else {
-        clearStoredApiToken();
-        queueAnnouncement("🔓 Cleared orchestrator API token.");
+        pendingTokenCandidate = null;
+        queueAnnouncement(
+          "🔓 Link requested clearing the orchestrator API token. Use the Advanced panel to confirm."
+        );
+      }
+      if (advancedPanel) {
+        renderAdvancedPanel();
       }
       tokenHandled = true;
       changed = true;
@@ -832,9 +848,12 @@ function gatewayUrlsFor(cid) {
 function renderAdvancedPanel() {
   if (!advancedPanel) return;
   const token = storage?.getItem?.(IPFS_TOKEN_STORAGE_KEY) || "";
-  const maskedToken = token ? `••••${token.slice(-4)}` : "Not set";
+  const maskedToken = maskTokenTail(token);
   const orchestratorToken = getStoredApiToken();
-  const maskedOrchestratorToken = orchestratorToken ? `••••${orchestratorToken.slice(-4)}` : "Not set";
+  const maskedOrchestratorToken = maskTokenTail(orchestratorToken);
+  const pendingTokenMask = pendingTokenCandidate
+    ? maskTokenTail(pendingTokenCandidate, { placeholder: "••••" })
+    : "";
   const aaSummary = summarizeAAMode(AA_MODE);
   const orchestratorMode = isDemoModeActive() ? "Demo mode" : "Live orchestrator";
   const base = getOrchestratorBase();
@@ -862,6 +881,13 @@ function renderAdvancedPanel() {
       <p class="status">Execute: ${execMarkup}</p>
       <p class="status">Status: ${statusMarkup}</p>
       <p class="status">API token: ${escapeHtml(maskedOrchestratorToken)}</p>
+      ${
+        pendingTokenCandidate
+          ? `<p class="status notice">Pending token from link: ${escapeHtml(
+              pendingTokenMask
+            )}. Choose “Apply pending token” to confirm.</p>`
+          : ""
+      }
       <div>
         <button type="button" class="inline" data-action="set-orchestrator">Set base URL</button>
         <button type="button" class="inline" data-action="set-prefix">Set prefix</button>
@@ -874,6 +900,11 @@ function renderAdvancedPanel() {
         ${
           orchestratorToken
             ? '<button type="button" class="inline" data-action="clear-api-token">Clear API token</button>'
+            : ""
+        }
+        ${
+          pendingTokenCandidate
+            ? '<button type="button" class="inline" data-action="apply-pending-token">Apply pending token</button>'
             : ""
         }
       </div>
@@ -1079,7 +1110,8 @@ if (advancedPanel) {
       renderAdvancedPanel();
     } else if (action === "set-api-token") {
       const currentToken = getStoredApiToken();
-      const value = window.prompt("Enter the orchestrator API token", currentToken);
+      const seed = pendingTokenCandidate || currentToken || "";
+      const value = window.prompt("Enter the orchestrator API token", seed);
       if (value !== null) {
         const trimmed = value.trim();
         if (trimmed) {
@@ -1100,6 +1132,20 @@ if (advancedPanel) {
       flushPendingAnnouncements();
       renderAdvancedPanel();
       refreshOwnerSnapshot();
+    } else if (action === "apply-pending-token") {
+      if (!pendingTokenCandidate) return;
+      const masked = maskTokenTail(pendingTokenCandidate, { placeholder: "••••" });
+      const confirmed = window.confirm(
+        `Apply the orchestrator API token (${masked}) supplied by this link?`
+      );
+      if (confirmed) {
+        setStoredApiToken(pendingTokenCandidate);
+        queueAnnouncement("🔐 API token applied for orchestrator requests.");
+        pushMessage("assistant", "Stored orchestrator API token from pending link.");
+        flushPendingAnnouncements();
+        renderAdvancedPanel();
+        refreshOwnerSnapshot();
+      }
     }
   });
 }

@@ -320,6 +320,16 @@ body.advanced #advanced-panel {
   overflow-x: auto;
 }
 
+.status.notice {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: rgba(250, 204, 21, 0.14);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 #shortcuts,
 .shortcuts {
   display: flex;
