@@ -54,8 +54,24 @@ CREATE TABLE "EventCursor" (
     "logIndex" INTEGER NOT NULL
 );
 
+-- CreateTable
+CREATE TABLE "DatasetChecksum" (
+    "key" TEXT NOT NULL PRIMARY KEY,
+    "hash" TEXT NOT NULL,
+    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Citation_fromId_toId_blockNumber_logIndex_key" ON "Citation"("fromId", "toId", "blockNumber", "logIndex");
+
+-- CreateIndex
+CREATE INDEX "Artifact_parentId_idx" ON "Artifact"("parentId");
+
+-- CreateIndex
+CREATE INDEX "Citation_fromId_idx" ON "Citation"("fromId");
+
+-- CreateIndex
+CREATE INDEX "Citation_toId_idx" ON "Citation"("toId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "RoundFinalization_roundId_blockNumber_logIndex_key" ON "RoundFinalization"("roundId", "blockNumber", "logIndex");
