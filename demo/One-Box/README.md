@@ -107,6 +107,7 @@ The launcher merges CLI flags and environment variables, de-duplicates prompts, 
 * **Audit artefacts.** Each execution stores a signed receipt CID. IPFS credentials in `.env` let the orchestrator pin specs and deliverables.
 * **Owner telemetry.** The One‑Box mission panel now calls `/onebox/governance/snapshot` to render live fee, stake, and identity guardrails so operators can confirm the owner surface is in control before releasing funds.
 * **Automatic hardening hints.** The launch kit flags unsafe configurations—such as sharing an HTTP endpoint or omitting an API token when the orchestrator is public—and now blocks port collisions before the orchestrator boots so operators can correct issues in seconds.
+* **On-chain owner probes.** `npm run demo:onebox:doctor` queries each configured contract’s `owner()` and `paused()` state so operators can prove governance custody and live subsystem status before funding missions.
 
 ## Configuration reference
 
