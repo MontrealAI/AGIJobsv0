@@ -29,6 +29,8 @@ const MIME_TYPES = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
+const ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/;
+
 function parseAbsoluteUrl(value) {
   if (!value) {
     return null;
@@ -318,10 +320,46 @@ function resolveConfig(env, options = {}) {
   const explorerBase = (options.explorerBase ?? env.ONEBOX_EXPLORER_TX_BASE ?? env.NEXT_PUBLIC_ONEBOX_EXPLORER_TX_BASE ?? '').trim();
   const welcomeMessage = (options.welcomeMessage ?? env.ONEBOX_UI_WELCOME ?? '').toString().trim();
 
-  const jobRegistryAddress = (env.JOB_REGISTRY_ADDRESS ?? '').trim();
-  const stakeManagerAddress = (env.STAKE_MANAGER_ADDRESS ?? '').trim();
-  const systemPauseAddress = (env.SYSTEM_PAUSE_ADDRESS ?? '').trim();
-  const agentAddress = (env.AGENT_ADDRESS ?? '').trim();
+  let jobRegistryAddress = (env.JOB_REGISTRY_ADDRESS ?? '').trim();
+  let stakeManagerAddress = (env.STAKE_MANAGER_ADDRESS ?? '').trim();
+  let systemPauseAddress = (env.SYSTEM_PAUSE_ADDRESS ?? '').trim();
+  let agentAddress = (env.AGENT_ADDRESS ?? '').trim();
+
+  if (!isUnsetEnvValue(jobRegistryAddress) && !ADDRESS_REGEX.test(jobRegistryAddress)) {
+    const message = 'JOB_REGISTRY_ADDRESS must be a 0x-prefixed 40-character address.';
+    if (options.allowPartial) {
+      warnings.push(message);
+    } else {
+      throw new Error(message);
+    }
+  }
+
+  if (isUnsetEnvValue(stakeManagerAddress)) {
+    warnings.push(
+      'Stake manager address not configured. Ensure STAKE_MANAGER_ADDRESS is set or provided by network metadata so owner staking guardrails remain enforceable.',
+    );
+    stakeManagerAddress = '';
+  } else if (!ADDRESS_REGEX.test(stakeManagerAddress)) {
+    warnings.push('Stake manager address must be a 0x-prefixed 40-character address. Update STAKE_MANAGER_ADDRESS.');
+  }
+
+  if (isUnsetEnvValue(systemPauseAddress)) {
+    warnings.push(
+      'System pause address not configured. Set SYSTEM_PAUSE_ADDRESS to preserve emergency pause control for the contract owner.',
+    );
+    systemPauseAddress = '';
+  } else if (!ADDRESS_REGEX.test(systemPauseAddress)) {
+    warnings.push('System pause address must be a 0x-prefixed 40-character address. Update SYSTEM_PAUSE_ADDRESS.');
+  }
+
+  if (agentAddress) {
+    if (agentAddress.startsWith('0x') && !ADDRESS_REGEX.test(agentAddress)) {
+      warnings.push('AGENT_ADDRESS must be a 0x-prefixed 40-character address or a valid ENS name.');
+    }
+    if (/^0x0{40}$/i.test(agentAddress)) {
+      warnings.push('AGENT_ADDRESS is the zero address placeholder. Update it or clear the variable.');
+    }
+  }
 
   const exampleSources = [];
   if (env.ONEBOX_UI_SHORTCUTS !== undefined) {
