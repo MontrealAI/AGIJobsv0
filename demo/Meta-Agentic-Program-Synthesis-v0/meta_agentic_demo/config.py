@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 @dataclass(frozen=True)
@@ -98,6 +98,18 @@ class VerificationPolicy:
 
 
 @dataclass(frozen=True)
+class DatasetProfile:
+    """Shape parameters used to generate scenario-specific datasets."""
+
+    length: int = 64
+    noise: float = 0.05
+    seed: int = 1_337
+
+    def to_dict(self) -> Dict[str, float | int]:
+        return {"length": self.length, "noise": self.noise, "seed": self.seed}
+
+
+@dataclass(frozen=True)
 class DemoScenario:
     """Scenario definition surfaced to the non-technical user."""
 
@@ -106,6 +118,21 @@ class DemoScenario:
     description: str
     target_metric: str
     success_threshold: float
+    dataset_profile: Optional[DatasetProfile] = None
+    stress_multiplier: float = 1.0
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "identifier": self.identifier,
+            "title": self.title,
+            "description": self.description,
+            "target_metric": self.target_metric,
+            "success_threshold": self.success_threshold,
+            "dataset_profile": self.dataset_profile.to_dict()
+            if self.dataset_profile
+            else None,
+            "stress_multiplier": self.stress_multiplier,
+        }
 
 
 @dataclass
@@ -124,5 +151,5 @@ class DemoConfig:
             "stake_policy": self.stake_policy.to_dict(),
             "evolution_policy": self.evolution_policy.to_dict(),
             "verification_policy": self.verification_policy.to_dict(),
-            "scenarios": [scenario.__dict__ for scenario in self.scenarios],
+            "scenarios": [scenario.to_dict() for scenario in self.scenarios],
         }

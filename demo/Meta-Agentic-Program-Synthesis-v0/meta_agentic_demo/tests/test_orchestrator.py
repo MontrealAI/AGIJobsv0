@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from meta_agentic_demo.config import DemoConfig, DemoScenario
+import math
+
+from meta_agentic_demo.config import DatasetProfile, DemoConfig, DemoScenario
 from meta_agentic_demo.orchestrator import SovereignArchitect
 
 
@@ -53,3 +55,21 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert isinstance(verification.pass_variance_ratio, bool)
     assert 0 <= verification.spectral_ratio <= 1
     assert isinstance(verification.pass_spectral_ratio, bool)
+
+
+def test_orchestrator_respects_dataset_profile() -> None:
+    scenario = DemoScenario(
+        identifier="hyper",
+        title="Hyper",
+        description="",
+        target_metric="score",
+        success_threshold=0.6,
+        dataset_profile=DatasetProfile(length=48, noise=0.09, seed=7_777),
+        stress_multiplier=1.5,
+    )
+    config = DemoConfig(scenarios=[scenario])
+    architect = SovereignArchitect(config=config)
+    artefacts = architect.run(scenario)
+    assert len(architect.dataset.baseline) == 48
+    assert math.isclose(architect.stress_multiplier, 1.5, rel_tol=1e-9)
+    assert artefacts.jobs
