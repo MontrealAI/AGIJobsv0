@@ -725,7 +725,7 @@ def render_batch_html(
     mermaid_graph = _build_mermaid_graph(items, scenarios)
     return BATCH_HTML_TEMPLATE.format(
         title="Meta-Agentic Mission Constellation",
-        mermaid_js=mermaid_escape(load_mermaid_js()),
+        mermaid_js=load_mermaid_js(),
         scenario_count=int(summary.get("completed", 0)),
         pass_rate=float(summary.get("pass_rate", 0.0)) * 100.0,
         owner_touchpoints=int(summary.get("owner_touchpoints", 0)),
