@@ -164,6 +164,19 @@ contract SelfPlayArena is Ownable, AccessControl, Pausable, ReentrancyGuard {
         _;
     }
 
+    /// @dev Keeps AccessControl admin role in sync with ownership changes.
+    function _transferOwnership(address newOwner) internal virtual override {
+        address previousOwner = owner();
+        super._transferOwnership(newOwner);
+
+        if (previousOwner != address(0) && previousOwner != newOwner) {
+            _revokeRole(DEFAULT_ADMIN_ROLE, previousOwner);
+        }
+        if (newOwner != address(0)) {
+            _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
+        }
+    }
+
     constructor(
         address owner_,
         address orchestrator_,
