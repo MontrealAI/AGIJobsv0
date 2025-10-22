@@ -2,11 +2,30 @@ import 'dotenv/config';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import Database from 'better-sqlite3';
+import type BetterSqlite3 from 'better-sqlite3';
 import { setTimeout as delay } from 'node:timers/promises';
 import { z } from 'zod';
 
 import { buildStructuredLogRecord } from '../../../shared/structuredLogger';
+
+type BetterSqlite3Constructor = typeof BetterSqlite3;
+
+let betterSqlite3Module: BetterSqlite3Constructor | null = null;
+
+function resolveDatabase(): BetterSqlite3Constructor | null {
+  if (betterSqlite3Module !== null) {
+    return betterSqlite3Module;
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    betterSqlite3Module = require('better-sqlite3') as BetterSqlite3Constructor;
+  } catch (error: any) {
+    const reason = error?.message ?? error;
+    console.warn('better-sqlite3 module unavailable; skipping indexer reads:', reason);
+    betterSqlite3Module = null;
+  }
+  return betterSqlite3Module;
+}
 
 type ArtifactDatum = {
   id: string;
@@ -318,42 +337,45 @@ async function loadLiveData(env: z.infer<typeof EnvSchema>, period: Period): Pro
 }> {
   const dbPath = env.CULTURE_ANALYTICS_DB ?? path.resolve('demo/CULTURE-v0/data/culture-graph.db');
   const artifacts: ArtifactDatum[] = [];
-  try {
-    const db = new Database(dbPath, { readonly: true });
-    const stmt = db.prepare(
-      `SELECT a.id, a.kind, a.parent_id AS parentId, a.created_at AS createdAt,
-              COALESCE(i.score, 0) AS influenceScore,
-              COALESCE(i.citation_count, 0) AS citationCount,
-              COALESCE(i.lineage_depth, 0) AS lineageDepth
-         FROM artifacts a
-         LEFT JOIN influence_scores i ON i.artifact_id = a.id
-        WHERE a.created_at BETWEEN ? AND ?
-        ORDER BY a.created_at ASC`
-    );
-    const rows = stmt.all(period.start.getTime(), period.end.getTime()) as Array<{
-      id: string;
-      kind: string;
-      parentId: string | null;
-      createdAt: number;
-      influenceScore: number;
-      citationCount: number;
-      lineageDepth: number;
-    }>;
-    for (const row of rows) {
-      artifacts.push({
-        id: row.id,
-        kind: row.kind,
-        parentId: row.parentId,
-        createdAt: row.createdAt,
-        influenceScore: row.influenceScore,
-        citationCount: row.citationCount,
-        lineageDepth: row.lineageDepth,
-      });
-    }
-    db.close();
-  } catch (error: any) {
-    if (error?.code !== 'ENOENT') {
-      console.warn('Failed to read indexer database:', error);
+  const Database = resolveDatabase();
+  if (Database) {
+    try {
+      const db = new Database(dbPath, { readonly: true });
+      const stmt = db.prepare(
+        `SELECT a.id, a.kind, a.parent_id AS parentId, a.created_at AS createdAt,
+                COALESCE(i.score, 0) AS influenceScore,
+                COALESCE(i.citation_count, 0) AS citationCount,
+                COALESCE(i.lineage_depth, 0) AS lineageDepth
+           FROM artifacts a
+           LEFT JOIN influence_scores i ON i.artifact_id = a.id
+          WHERE a.created_at BETWEEN ? AND ?
+          ORDER BY a.created_at ASC`
+      );
+      const rows = stmt.all(period.start.getTime(), period.end.getTime()) as Array<{
+        id: string;
+        kind: string;
+        parentId: string | null;
+        createdAt: number;
+        influenceScore: number;
+        citationCount: number;
+        lineageDepth: number;
+      }>;
+      for (const row of rows) {
+        artifacts.push({
+          id: row.id,
+          kind: row.kind,
+          parentId: row.parentId,
+          createdAt: row.createdAt,
+          influenceScore: row.influenceScore,
+          citationCount: row.citationCount,
+          lineageDepth: row.lineageDepth,
+        });
+      }
+      db.close();
+    } catch (error: any) {
+      if (error?.code !== 'ENOENT') {
+        console.warn('Failed to read indexer database:', error);
+      }
     }
   }
 
