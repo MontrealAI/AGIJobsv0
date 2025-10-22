@@ -38,10 +38,17 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert isinstance(verification.holdout_scores, dict)
     assert verification.holdout_scores
     assert verification.residual_std >= 0
+    assert isinstance(verification.residual_skewness, float)
+    assert isinstance(verification.pass_skewness, bool)
+    assert isinstance(verification.residual_kurtosis, float)
+    assert isinstance(verification.pass_kurtosis, bool)
     assert verification.divergence >= 0
     assert verification.mae_score >= 0
     assert isinstance(verification.bootstrap_interval, tuple)
     assert len(verification.bootstrap_interval) == 2
+    assert isinstance(verification.jackknife_interval, tuple)
+    assert len(verification.jackknife_interval) == 2
+    assert isinstance(verification.pass_jackknife, bool)
     assert verification.monotonic_violations >= 0
     assert isinstance(verification.stress_scores, dict)
     assert verification.stress_scores

@@ -241,6 +241,21 @@ def parse_args() -> argparse.Namespace:
         type=float,
         help="Override maximum acceptable spectral energy ratio",
     )
+    verification_group.add_argument(
+        "--verification-skewness-ceiling",
+        type=float,
+        help="Override maximum acceptable residual skewness",
+    )
+    verification_group.add_argument(
+        "--verification-kurtosis-ceiling",
+        type=float,
+        help="Override maximum acceptable residual kurtosis",
+    )
+    verification_group.add_argument(
+        "--verification-jackknife-tolerance",
+        type=float,
+        help="Override jackknife stability tolerance",
+    )
     governance_group = parser.add_argument_group("Governance timelock")
     governance_group.add_argument(
         "--timelock-delay",
@@ -385,6 +400,9 @@ def main() -> None:
                 "precision_replay_tolerance": args.verification_precision_tolerance,
                 "variance_ratio_ceiling": args.verification_variance_ceiling,
                 "spectral_energy_ceiling": args.verification_spectral_ceiling,
+                "skewness_ceiling": args.verification_skewness_ceiling,
+                "kurtosis_ceiling": args.verification_kurtosis_ceiling,
+                "jackknife_tolerance": args.verification_jackknife_tolerance,
             }.items()
             if value is not None
         }
@@ -584,6 +602,18 @@ def main() -> None:
         )
         print(
             f"  • Entropy shield: score={digest.entropy_score:.4f} (floor={digest.entropy_floor:.2f}, pass={digest.pass_entropy})"
+        )
+        print(
+            f"  • Residual skewness: {digest.residual_skewness:+.4f}"
+            f" (ceiling={owner_console.config.verification_policy.skewness_ceiling:.2f}, pass={digest.pass_skewness})"
+        )
+        print(
+            f"  • Residual kurtosis: {digest.residual_kurtosis:.4f}"
+            f" (ceiling={owner_console.config.verification_policy.kurtosis_ceiling:.2f}, pass={digest.pass_kurtosis})"
+        )
+        print(
+            f"  • Jackknife stability: {digest.jackknife_interval[0]:.4f}-{digest.jackknife_interval[1]:.4f}"
+            f" (tolerance={owner_console.config.verification_policy.jackknife_tolerance:.4f}, pass={digest.pass_jackknife})"
         )
         print(
             f"  • Precision replay: score={digest.precision_replay_score:.4f}"

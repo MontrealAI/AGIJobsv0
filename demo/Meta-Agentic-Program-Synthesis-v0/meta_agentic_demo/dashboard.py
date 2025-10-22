@@ -219,6 +219,13 @@ def _summarise_constellation(
                 "stress": verification.pass_stress,
                 "entropy": verification.entropy_score,
                 "entropy_pass": verification.pass_entropy,
+                "skewness": verification.residual_skewness,
+                "skewness_pass": verification.pass_skewness,
+                "kurtosis": verification.residual_kurtosis,
+                "kurtosis_pass": verification.pass_kurtosis,
+                "jackknife_floor": verification.jackknife_interval[0],
+                "jackknife_ceiling": verification.jackknife_interval[1],
+                "jackknife_pass": verification.pass_jackknife,
                 "rewards": reward.total_reward,
                 "architect": reward.architect_total,
                 "top_solver": reward.top_solver,
@@ -281,6 +288,9 @@ def _render_mission_card(entry: Mapping[str, object]) -> str:
         f"<p>Composite score: {entry['score']:.4f}</p>"
         f"<p>Resilience index: {entry['resilience']:.4f}</p>"
         f"<p>Entropy shield: {entry['entropy']:.4f} (pass={entry['entropy_pass']})</p>"
+        f"<p>Skewness: {entry['skewness']:+.3f} (pass={entry['skewness_pass']})</p>"
+        f"<p>Kurtosis: {entry['kurtosis']:.3f} (pass={entry['kurtosis_pass']})</p>"
+        f"<p>Jackknife: {entry['jackknife_floor']:.3f}→{entry['jackknife_ceiling']:.3f} (pass={entry['jackknife_pass']})</p>"
         f"<p>Total rewards: {entry['rewards']:.2f} $AGIα</p>"
         f"<p>Owner touchpoints: {entry['owner_actions']}</p>"
         f"<p>Timelock actions: {entry['timelock_actions']}</p>"

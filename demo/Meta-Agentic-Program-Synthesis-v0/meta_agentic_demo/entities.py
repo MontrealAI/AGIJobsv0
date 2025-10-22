@@ -175,6 +175,10 @@ class VerificationDigest:
     holdout_scores: Dict[str, float]
     residual_mean: float
     residual_std: float
+    residual_skewness: float
+    pass_skewness: bool
+    residual_kurtosis: float
+    pass_kurtosis: bool
     divergence: float
     pass_holdout: bool
     pass_residual_balance: bool
@@ -191,6 +195,8 @@ class VerificationDigest:
     entropy_score: float
     pass_entropy: bool
     entropy_floor: float
+    jackknife_interval: Tuple[float, float]
+    pass_jackknife: bool
     precision_replay_score: float
     pass_precision_replay: bool
     variance_ratio: float
@@ -210,6 +216,9 @@ class VerificationDigest:
             and self.monotonic_pass
             and self.pass_stress
             and self.pass_entropy
+            and self.pass_skewness
+            and self.pass_kurtosis
+            and self.pass_jackknife
             and self.pass_precision_replay
             and self.pass_variance_ratio
             and self.pass_spectral_ratio
@@ -221,6 +230,10 @@ class VerificationDigest:
             "holdout_scores": dict(self.holdout_scores),
             "residual_mean": self.residual_mean,
             "residual_std": self.residual_std,
+            "residual_skewness": self.residual_skewness,
+            "pass_skewness": self.pass_skewness,
+            "residual_kurtosis": self.residual_kurtosis,
+            "pass_kurtosis": self.pass_kurtosis,
             "divergence": self.divergence,
             "pass_holdout": self.pass_holdout,
             "pass_residual_balance": self.pass_residual_balance,
@@ -237,6 +250,8 @@ class VerificationDigest:
             "entropy_score": self.entropy_score,
             "pass_entropy": self.pass_entropy,
             "entropy_floor": self.entropy_floor,
+            "jackknife_interval": list(self.jackknife_interval),
+            "pass_jackknife": self.pass_jackknife,
             "precision_replay_score": self.precision_replay_score,
             "pass_precision_replay": self.pass_precision_replay,
             "variance_ratio": self.variance_ratio,

@@ -50,6 +50,10 @@ def test_render_html_embeds_mermaid(tmp_path: Path) -> None:
     assert "Entropy Shield" in html
     assert "Entropy shield" in html
     assert "Entropy Shield Array" in html
+    assert "Residual Skewness" in html
+    assert "Residual Kurtosis" in html
+    assert "Jackknife Stability" in html
+    assert "Distribution Integrity Council" in html
     assert "Resilience Index" in html
     assert artefacts.final_program in html
 

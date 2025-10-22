@@ -39,14 +39,20 @@ flowchart TD
     Primary --> Holdouts[Noise-conditioned holdouts]
     Primary --> MAE[MAE consistency check]
     Primary --> Entropy[Entropy shield]
+    Primary --> Jackknife[Jackknife stability band]
+    Primary --> Skewness[Skewness sentinel]
+    Primary --> Kurtosis[Kurtosis sentinel]
     MAE --> Bootstrap[Bootstrap confidence band]
     Holdouts --> Monotonic[Monotonic trajectory scan]
     Residual --> Monotonic
+    Jackknife --> Verdict
+    Skewness --> Verdict
+    Kurtosis --> Verdict
     Entropy --> Verdict
     Bootstrap --> Verdict[Final verdict]
     Monotonic --> Verdict
     classDef pass fill:#04364c,color:#d1f7ff,stroke:#38bdf8,stroke-width:2px
-    class Primary,Residual,Holdouts,MAE,Bootstrap,Monotonic,Entropy,Verdict pass
+    class Primary,Residual,Holdouts,MAE,Bootstrap,Monotonic,Entropy,Jackknife,Skewness,Kurtosis,Verdict pass
 ```
 
 ### Evolutionary loop
@@ -71,6 +77,10 @@ Triple verification now runs in lockstep with an **Independent Assurance Weave**
 * Spectral energy across harmonics stays under a limit, preventing hidden oscillations or regime exploits.
 
 All three thresholds are owner-governed and surfaced through the CLI / JSON overrides, ensuring governance can harden or relax the assurance net instantly.
+
+#### Distribution forensics envelope
+
+New **distribution forensics** controls lock residual dynamics inside owner-set guardrails. The sovereign now measures skewness, kurtosis, and a jackknife stability band on every cycle. The contract owner can harden these rails in real time (via CLI flags or JSON overrides) and the demo surfaces each metric across the dashboard, HTML report, and CLI summary. The additional `--verification-skewness-ceiling`, `--verification-kurtosis-ceiling`, and `--verification-jackknife-tolerance` overrides ensure the operator can squeeze or relax creativity envelopes without redeploying code.
 
 #### Resilience index
 
@@ -266,6 +276,7 @@ Every sovereign execution now concludes with a cinematic opportunity briefing di
 * **Impact × Confidence analytics** – each opportunity blends evolutionary uplift, verification verdicts, and treasury responsiveness into headline percentages.
 * **Capital & energy allocations** – instantly see which fraction of the thermodynamic reward pool and energy budget an opportunity commands.
 * **Mermaid intelligence map** – a dark-mode flowchart showing how the Sovereign Architect routes capital into each opportunity node, annotating impact, confidence, and energy ratios.
+* **Distribution Integrity Council** – a new card translating skewness, kurtosis, and jackknife telemetry into an executive-ready action item so governance can immediately greenlight or defer capital deployment.
 
 The CLI narrates these insights, and the HTML artefact renders them as interactive cards plus the strategy graph, so executives can redeploy capital or greenlight the next AGI campaign within seconds.
 

@@ -83,6 +83,9 @@ def test_owner_console_updates_verification_policy() -> None:
         precision_replay_tolerance=0.012,
         variance_ratio_ceiling=1.1,
         spectral_energy_ceiling=0.48,
+        skewness_ceiling=1.25,
+        kurtosis_ceiling=4.0,
+        jackknife_tolerance=0.03,
     )
     policy = console.config.verification_policy
     assert pytest.approx(policy.holdout_threshold) == 0.85
@@ -98,6 +101,9 @@ def test_owner_console_updates_verification_policy() -> None:
     assert pytest.approx(policy.precision_replay_tolerance) == 0.012
     assert pytest.approx(policy.variance_ratio_ceiling) == 1.1
     assert pytest.approx(policy.spectral_energy_ceiling) == 0.48
+    assert pytest.approx(policy.skewness_ceiling) == 1.25
+    assert pytest.approx(policy.kurtosis_ceiling) == 4.0
+    assert pytest.approx(policy.jackknife_tolerance) == 0.03
     assert console.events[-1].action == "update_verification_policy"
 
 
@@ -129,6 +135,12 @@ def test_owner_console_rejects_invalid_verification_policy() -> None:
         console.update_verification_policy(spectral_energy_ceiling=0)
     with pytest.raises(ValueError):
         console.update_verification_policy(spectral_energy_ceiling=1.5)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(skewness_ceiling=0)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(kurtosis_ceiling=0)
+    with pytest.raises(ValueError):
+        console.update_verification_policy(jackknife_tolerance=-0.1)
 
 
 def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
@@ -146,6 +158,9 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
             "precision_replay_tolerance": 0.02,
             "variance_ratio_ceiling": 1.3,
             "spectral_energy_ceiling": 0.52,
+            "skewness_ceiling": 1.4,
+            "kurtosis_ceiling": 4.5,
+            "jackknife_tolerance": 0.04,
         },
         "paused": True,
     }
@@ -166,6 +181,9 @@ def test_owner_console_apply_overrides_and_load(tmp_path: Path) -> None:
     assert pytest.approx(verification_policy.precision_replay_tolerance) == 0.02
     assert pytest.approx(verification_policy.variance_ratio_ceiling) == 1.3
     assert pytest.approx(verification_policy.spectral_energy_ceiling) == 0.52
+    assert pytest.approx(verification_policy.skewness_ceiling) == 1.4
+    assert pytest.approx(verification_policy.kurtosis_ceiling) == 4.5
+    assert pytest.approx(verification_policy.jackknife_tolerance) == 0.04
     assert any(event.action == "set_paused" for event in console.events)
 
 
