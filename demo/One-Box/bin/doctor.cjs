@@ -13,6 +13,10 @@ const {
   evaluateAddressShape,
   inspectOwnerSurface,
 } = require('../lib/rpc.js');
+const {
+  collectOwnerAssignments,
+  collectPausedContracts,
+} = require('../lib/diagnostics.js');
 
 function formatStatus(label, value) {
   const padded = label.padEnd(24, ' ');
@@ -313,6 +317,26 @@ function describePauseResult(result) {
     formatStatus('Stake manager pause', describePauseResult(ownerSurface.stakeManager.paused));
     formatStatus('System pause owner', describeOwnerResult(ownerSurface.systemPause.owner));
     formatStatus('System pause state', describePauseResult(ownerSurface.systemPause.paused));
+    const ownerAssignments = collectOwnerAssignments(ownerSurface);
+    console.log('Owner consolidation:');
+    if (ownerAssignments.length === 0) {
+      console.log('   • Unable to resolve owner custody from RPC responses.');
+    } else {
+      for (const assignment of ownerAssignments) {
+        console.log(
+          `   • ${assignment.owner} controls ${assignment.contracts.join(', ')}`
+        );
+      }
+    }
+    const pausedContracts = collectPausedContracts(ownerSurface);
+    console.log('Paused subsystems:');
+    if (pausedContracts.length === 0) {
+      console.log('   • None detected.');
+    } else {
+      for (const label of pausedContracts) {
+        console.log(`   • ${label}`);
+      }
+    }
     console.log('');
   }
 
