@@ -329,6 +329,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
     /// @notice Emitted when the operator reward pool balance changes.
     event RewardPoolUpdated(uint256 balance);
+    event ParametersUpdated(
+        uint256 minStake,
+        uint256 employerSlashPct,
+        uint256 treasurySlashPct,
+        uint256 operatorSlashPct,
+        uint256 validatorSlashRewardPct,
+        uint256 burnSlashPct,
+        uint256 feePct,
+        uint256 burnPct,
+        uint256 validatorRewardPct
+    );
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
@@ -677,6 +688,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
+        _emitParametersUpdate();
         uint16 employerPctBps = _toBps(_employerSlashPct);
         uint16 treasuryPctBps = _toBps(_treasurySlashPct);
         if (employerPctBps + treasuryPctBps == 0) {
@@ -691,6 +703,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         burnSlashPct = 0;
         emit SlashingPercentagesUpdated(employerSlashPct, treasurySlashPct);
+        _emitParametersUpdate();
 
         if (_treasury != address(0) && _treasury == owner()) {
             revert InvalidTreasury();
@@ -733,6 +746,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param amount minimum stake in 18 decimal tokens (0 disables the override)
     function setRoleMinimum(Role role, uint256 amount) external onlyGovernance {
         _setRoleMinimum(role, amount);
+        _emitParametersUpdate();
     }
 
     /// @notice update minimum stake overrides for all roles in a single call
@@ -743,12 +757,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _setRoleMinimum(Role.Agent, agent);
         _setRoleMinimum(Role.Validator, validator);
         _setRoleMinimum(Role.Platform, platform);
+        _emitParametersUpdate();
     }
 
     /// @notice update the minimum stake required
     /// @param _minStake minimum token amount with 18 decimals
     function setMinStake(uint256 _minStake) external onlyGovernance {
         _setMinStake(_minStake);
+        _emitParametersUpdate();
     }
 
     /// @dev normalise a percentage value into basis points.
@@ -805,6 +821,21 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             _validatorSlashPct,
             _operatorSlashPct,
             _burnSlashPct
+        );
+        _emitParametersUpdate();
+    }
+
+    function _emitParametersUpdate() internal {
+        emit ParametersUpdated(
+            minStake,
+            employerSlashPct,
+            treasurySlashPct,
+            operatorSlashPct,
+            validatorSlashRewardPct,
+            burnSlashPct,
+            feePct,
+            burnPct,
+            validatorRewardPct
         );
     }
 
@@ -1326,20 +1357,27 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (newFeePct + newBurnPct + newValidatorRewardPct > 100) {
             revert InvalidPercentage();
         }
+        bool changed;
         if (updateFee && newFeePct != feePct) {
             feePct = newFeePct;
             emit FeePctUpdated(newFeePct);
             feeChanged = true;
+            changed = true;
         }
         if (updateBurn && newBurnPct != burnPct) {
             burnPct = newBurnPct;
             emit BurnPctUpdated(newBurnPct);
             burnChanged = true;
+            changed = true;
         }
         if (updateValidator && newValidatorRewardPct != validatorRewardPct) {
             validatorRewardPct = newValidatorRewardPct;
             emit ValidatorRewardPctUpdated(newValidatorRewardPct);
             validatorChanged = true;
+            changed = true;
+        }
+        if (changed) {
+            _emitParametersUpdate();
         }
     }
 

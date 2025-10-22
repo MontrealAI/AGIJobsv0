@@ -1,23 +1,26 @@
-"""Content moderation and plagiarism checks for orchestration plans."""
+"""Moderation heuristics with manual override support."""
 
-from __future__ import annotations
-
+import hashlib
 import json
 import os
 import re
 import string
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Sequence
+from typing import Iterable, List, Optional, Sequence
 
 from .models import Attachment, Step
-
 
 _DEFAULT_AUDIT_PATH = Path(
     os.environ.get("ORCHESTRATOR_MODERATION_AUDIT", "storage/validation/moderation.log")
 )
-
+_DEFAULT_OVERRIDE_PATH = Path(
+    os.environ.get(
+        "ORCHESTRATOR_MODERATION_OVERRIDES", "storage/validation/moderation_overrides.json"
+    )
+)
 
 _FLAGGED_TERMS = {
     "exploit",
@@ -46,6 +49,92 @@ class ModerationConfig:
     toxicity_threshold: float
     plagiarism_threshold: float
     audit_path: Path = _DEFAULT_AUDIT_PATH
+
+
+@dataclass
+class ManualOverride:
+    """Manual moderation decision keyed by content fingerprint."""
+
+    fingerprint: str
+    action: str
+    note: Optional[str] = None
+    applied_at: Optional[float] = None
+
+    def to_json(self) -> dict:
+        payload = {"fingerprint": self.fingerprint, "action": self.action}
+        if self.note is not None:
+            payload["note"] = self.note
+        if self.applied_at is not None:
+            payload["appliedAt"] = self.applied_at
+        return payload
+
+
+class ManualOverrideQueue:
+    """Thread-safe helper for moderation override decisions."""
+
+    def __init__(self, path: Path | None = None) -> None:
+        self._path = (path or _DEFAULT_OVERRIDE_PATH).resolve()
+        self._lock = threading.Lock()
+        self._overrides: List[ManualOverride] = []
+        self._load()
+
+    def _load(self) -> None:
+        if not self._path.exists():
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            self._overrides = []
+            return
+        try:
+            data = json.loads(self._path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):  # pragma: no cover - corrupted file
+            self._overrides = []
+            return
+        overrides: List[ManualOverride] = []
+        if isinstance(data, list):
+            for entry in data:
+                fingerprint = entry.get("fingerprint")
+                action = entry.get("action")
+                if not isinstance(fingerprint, str) or not isinstance(action, str):
+                    continue
+                applied_raw = entry.get("appliedAt")
+                applied_at: Optional[float] = None
+                if applied_raw not in (None, ""):
+                    try:
+                        parsed = float(applied_raw)
+                    except (TypeError, ValueError):
+                        parsed = None
+                    if parsed:
+                        applied_at = parsed
+
+                overrides.append(
+                    ManualOverride(
+                        fingerprint=fingerprint,
+                        action=action,
+                        note=entry.get("note") if isinstance(entry.get("note"), str) else None,
+                        applied_at=applied_at,
+                    )
+                )
+        self._overrides = overrides
+
+    def _persist(self) -> None:
+        payload = [override.to_json() for override in self._overrides]
+        tmp_path = self._path.with_suffix(".tmp")
+        with tmp_path.open("w", encoding="utf-8") as handle:
+            json.dump(payload, handle, ensure_ascii=False, sort_keys=True, indent=2)
+        tmp_path.replace(self._path)
+
+    def resolve(self, fingerprint: str) -> Optional[ManualOverride]:
+        with self._lock:
+            for override in self._overrides:
+                if override.fingerprint == fingerprint:
+                    override.applied_at = time.time()
+                    self._persist()
+                    return override
+        return None
+
+    def enqueue(self, override: ManualOverride) -> None:
+        with self._lock:
+            self._overrides.append(override)
+            self._persist()
 
 
 @dataclass
@@ -101,7 +190,6 @@ def _toxicity_score(texts: Sequence[str]) -> tuple[float, List[str]]:
         return 0.0, []
     flagged = [token for token in tokens if token in _FLAGGED_TERMS]
     score = len(flagged) / max(len(tokens), 1)
-    # remove duplicates while preserving order
     seen: set[str] = set()
     flagged_unique: List[str] = []
     for token in flagged:
@@ -129,7 +217,7 @@ def _plagiarism_score(texts: Sequence[str]) -> tuple[float, List[str]]:
     seen: dict[str, int] = {}
     duplicates: List[str] = []
     for sentence in cleaned:
-        if len(sentence.split()) < 6:  # ignore very short fragments
+        if len(sentence.split()) < 6:
             continue
         count = seen.get(sentence, 0) + 1
         seen[sentence] = count
@@ -164,7 +252,22 @@ def _attachments_to_text(attachments: Iterable[Attachment]) -> List[str]:
     return texts
 
 
-def evaluate_step(step: Step, *, attachments: Iterable[Attachment]) -> ModerationReport:
+def _fingerprint(texts: Sequence[str]) -> str:
+    payload = "||".join(segment.strip() for segment in texts if isinstance(segment, str) and segment.strip())
+    if not payload:
+        return "0"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+_OVERRIDE_QUEUE = ManualOverrideQueue()
+
+
+def evaluate_step(
+    step: Step,
+    *,
+    attachments: Iterable[Attachment],
+    arena_content: Iterable[str] | None = None,
+) -> ModerationReport:
     """Evaluate a moderation step and persist an audit log entry."""
 
     config = load_config()
@@ -173,11 +276,20 @@ def evaluate_step(step: Step, *, attachments: Iterable[Attachment]) -> Moderatio
 
     text_segments: List[str] = [segment for segment in (title, description) if isinstance(segment, str)]
     text_segments.extend(_attachments_to_text(attachments))
+    if arena_content is not None:
+        text_segments.extend([entry for entry in arena_content if isinstance(entry, str) and entry.strip()])
 
     toxicity, flagged_terms = _toxicity_score(text_segments)
     plagiarism, flagged_sentences = _plagiarism_score(text_segments)
 
     blocked = toxicity > config.toxicity_threshold or plagiarism > config.plagiarism_threshold
+
+    fingerprint = _fingerprint(text_segments)
+    override = _OVERRIDE_QUEUE.resolve(fingerprint)
+    override_context: dict | None = None
+    if override:
+        blocked = override.action.lower() == "block"
+        override_context = override.to_json()
 
     report = ModerationReport(
         toxicity_score=toxicity,
@@ -192,11 +304,28 @@ def evaluate_step(step: Step, *, attachments: Iterable[Attachment]) -> Moderatio
             "stepName": step.name,
             "tool": step.tool,
             "attachments": [attachment.model_dump(exclude_none=True) for attachment in attachments],
+            "fingerprint": fingerprint,
         },
     )
+    if override_context:
+        report.context["override"] = override_context
 
     _write_audit_log(report, config.audit_path)
     return report
+
+
+def evaluate_content(content: Sequence[str]) -> ModerationReport:
+    """Moderate arbitrary arena content outside of a plan step."""
+
+    dummy_step = Step(
+        id="arena-content",
+        name="arena-content",
+        kind="validate",
+        tool="arena.moderation",
+        params={"description": "arena content"},
+        needs=[],
+    )
+    return evaluate_step(dummy_step, attachments=[], arena_content=content)
 
 
 def _write_audit_log(report: ModerationReport, path: Path) -> None:
@@ -216,5 +345,13 @@ def _write_audit_log(report: ModerationReport, path: Path) -> None:
         handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
-__all__ = ["ModerationConfig", "ModerationReport", "evaluate_step", "load_config"]
+__all__ = [
+    "ManualOverride",
+    "ManualOverrideQueue",
+    "ModerationConfig",
+    "ModerationReport",
+    "evaluate_content",
+    "evaluate_step",
+    "load_config",
+]
 

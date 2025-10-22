@@ -95,6 +95,17 @@ interface IStakeManager {
     event AGITypeUpdated(address indexed nft, uint256 payoutPct);
     event AGITypeRemoved(address indexed nft);
     event MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax);
+    event ParametersUpdated(
+        uint256 minStake,
+        uint256 employerSlashPct,
+        uint256 treasurySlashPct,
+        uint256 operatorSlashPct,
+        uint256 validatorSlashRewardPct,
+        uint256 burnSlashPct,
+        uint256 feePct,
+        uint256 burnPct,
+        uint256 validatorRewardPct
+    );
     event AutoStakeTuningEnabled(bool enabled);
     event AutoStakeConfigUpdated(
         uint256 threshold,
