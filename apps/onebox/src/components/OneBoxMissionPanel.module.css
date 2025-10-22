@@ -26,6 +26,25 @@
   color: rgba(226, 232, 240, 0.85);
 }
 
+.onboardingButton {
+  align-self: flex-start;
+  margin-top: 0.4rem;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 46, 22, 0.65));
+  color: rgba(167, 243, 208, 0.95);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.onboardingButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(16, 185, 129, 0.28);
+}
+
 .section {
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.2);
