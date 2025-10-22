@@ -320,6 +320,40 @@ body.advanced #advanced-panel {
   overflow-x: auto;
 }
 
+#shortcuts,
+.shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.shortcuts[hidden] {
+  display: none;
+}
+
+.shortcut-btn {
+  border: 1px solid var(--border-strong);
+  background: rgba(16, 82, 214, 0.12);
+  color: inherit;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease, border 0.2s ease, transform 0.15s ease;
+}
+
+.shortcut-btn:hover {
+  background: rgba(16, 82, 214, 0.2);
+  border-color: var(--accent);
+}
+
+.shortcut-btn:active {
+  transform: translateY(1px);
+}
+
 #composer {
   border-radius: var(--radius);
   border: 1px solid var(--border);
