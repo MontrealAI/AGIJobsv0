@@ -44,3 +44,6 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert isinstance(verification.stress_scores, dict)
     assert verification.stress_scores
     assert 0 <= verification.stress_threshold <= 1
+    assert 0 <= verification.entropy_score <= 1
+    assert isinstance(verification.pass_entropy, bool)
+    assert 0 <= verification.entropy_floor <= 1

@@ -373,6 +373,10 @@ def format_verification_cards(verification: VerificationDigest) -> str:
         f"  <h3>Stress Suite</h3><p>Min {(min(verification.stress_scores.values()) if verification.stress_scores else 0.0):.4f}</p>",
         f"  <p>Status: {'PASS' if verification.pass_stress else 'ALERT'}</p>",
         "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>Entropy Shield</h3><p>{verification.entropy_score:.4f}</p>",
+        f"  <p>Status: {'PASS' if verification.pass_entropy else 'ALERT'}</p>",
+        "</div>",
     ]
     return build_rows(cards)
 
@@ -393,6 +397,7 @@ def format_verification_table(verification: VerificationDigest) -> str:
             f"<tr><td>MAE Consistency</td><td>{verification.mae_score:.4f}</td><td>{'PASS' if verification.pass_mae else 'ALERT'}</td></tr>",
             f"<tr><td>Bootstrap Interval</td><td>{verification.bootstrap_interval[0]:.4f} → {verification.bootstrap_interval[1]:.4f}</td><td>{'PASS' if verification.pass_confidence else 'ALERT'}</td></tr>",
             f"<tr><td>Monotonicity</td><td>{verification.monotonic_violations} violation(s)</td><td>{'PASS' if verification.monotonic_pass else 'ALERT'}</td></tr>",
+            f"<tr><td>Entropy Shield</td><td>{verification.entropy_score:.4f} (floor {verification.entropy_floor:.2f})</td><td>{'PASS' if verification.pass_entropy else 'ALERT'}</td></tr>",
         ]
     )
     return (
@@ -414,16 +419,18 @@ def build_verification_mermaid(verification: VerificationDigest) -> str:
             "    primary --> holdout[Holdout suite]",
             "    primary --> mae[MAE score]",
             "    primary --> stress[Stress battery]",
+            "    primary --> entropy[Entropy shield]",
             "    mae --> bootstrap[Bootstrap CI]",
             "    holdout --> monotonic[Monotonic audit]",
             f"    mae:::status -- {'PASS' if verification.pass_mae else 'ALERT'} --> bootstrap",
             f"    residual:::status -- {'PASS' if verification.pass_residual_balance else 'ALERT'} --> monotonic",
             f"    holdout:::status -- {'PASS' if verification.pass_holdout else 'ALERT'} --> monotonic",
             f"    stress:::status -- {('≥' if verification.pass_stress else '<')} {verification.stress_threshold:.2f} --> verdict[Final verdict]",
+            f"    entropy:::status -- {('≥' if verification.pass_entropy else '<')} {verification.entropy_floor:.2f} --> verdict",
             f"    bootstrap:::status -- {lower:.3f}→{upper:.3f} --> verdict[Final verdict]",
             f"    monotonic:::status -- {'PASS' if verification.monotonic_pass else 'ALERT'} --> verdict",
             "    classDef status fill:#0f172a,color:#f8fafc,stroke:#38bdf8,stroke-width:2px",
-            "    class primary,residual,holdout,mae,stress,bootstrap,monotonic,verdict status",
+            "    class primary,residual,holdout,mae,stress,entropy,bootstrap,monotonic,verdict status",
         ]
     )
 

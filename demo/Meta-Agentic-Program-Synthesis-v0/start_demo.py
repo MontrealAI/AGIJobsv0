@@ -167,6 +167,11 @@ def parse_args() -> argparse.Namespace:
         type=float,
         help="Override minimum acceptable stress test score",
     )
+    verification_group.add_argument(
+        "--verification-entropy",
+        type=float,
+        help="Override minimum acceptable entropy score",
+    )
     governance_group = parser.add_argument_group("Governance timelock")
     governance_group.add_argument(
         "--timelock-delay",
@@ -277,6 +282,7 @@ def main() -> None:
                 "bootstrap_iterations": args.verification_bootstrap,
                 "confidence_level": args.verification_confidence,
                 "stress_threshold": args.verification_stress_threshold,
+                "entropy_floor": args.verification_entropy,
             }.items()
             if value is not None
         }

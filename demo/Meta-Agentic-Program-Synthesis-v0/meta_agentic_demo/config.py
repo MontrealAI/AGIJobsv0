@@ -74,6 +74,7 @@ class VerificationPolicy:
     bootstrap_iterations: int = 256
     confidence_level: float = 0.95
     stress_threshold: float = 0.72
+    entropy_floor: float = 0.35
 
     def to_dict(self) -> Dict[str, float | int]:
         return {
@@ -86,6 +87,7 @@ class VerificationPolicy:
             "bootstrap_iterations": self.bootstrap_iterations,
             "confidence_level": self.confidence_level,
             "stress_threshold": self.stress_threshold,
+            "entropy_floor": self.entropy_floor,
         }
 
 

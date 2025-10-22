@@ -38,13 +38,15 @@ flowchart TD
     Primary[Primary fitness score] --> Residual[Residual balance audit]
     Primary --> Holdouts[Noise-conditioned holdouts]
     Primary --> MAE[MAE consistency check]
+    Primary --> Entropy[Entropy shield]
     MAE --> Bootstrap[Bootstrap confidence band]
     Holdouts --> Monotonic[Monotonic trajectory scan]
     Residual --> Monotonic
+    Entropy --> Verdict
     Bootstrap --> Verdict[Final verdict]
     Monotonic --> Verdict
     classDef pass fill:#04364c,color:#d1f7ff,stroke:#38bdf8,stroke-width:2px
-    class Primary,Residual,Holdouts,MAE,Bootstrap,Monotonic,Verdict pass
+    class Primary,Residual,Holdouts,MAE,Bootstrap,Monotonic,Entropy,Verdict pass
 ```
 
 ### Evolutionary loop
@@ -56,6 +58,7 @@ The verification stack now includes an explicit stress battery that intentionall
 * **Regime shift** — applies structural trend and baseline shifts to mimic macroeconomic realignments.
 * **Volatility spike** — injects sharp noise bursts and transient outliers to test control under chaos.
 * **Signal dropout** — removes swathes of signal and damps cyclical structure to simulate degraded telemetry.
+* **Entropy shield** — enforces solver diversity by measuring the Shannon entropy of generated control kernels; if creativity collapses, the owner is alerted before capital is deployed.
 
 Every evolved program must clear a configurable stress threshold (default `0.72`). The new CLI flag `--verification-stress-threshold` lets the contract owner ratchet this bar up or down without touching code.
 
@@ -102,6 +105,7 @@ stateDiagram-v2
 
 The CLI narrates the process in natural language so the operator always understands what is happening.
 It now also prints a reward distribution digest summarising total payouts, architect retention, and the top solver/validator so executives can confirm value capture instantly. Immediately afterwards the CLI shares a triple-check verification digest (holdout scores, residual balance, divergence), flagging whether every gate passed.
+The digest now highlights the **entropy shield** so the owner can confirm that solver diversity stayed above the configurable floor – proving the sovereign architect remained creative and unstoppable while under explicit owner control.
 
 ---
 
@@ -129,6 +133,7 @@ knob – rewards, staking, evolution cadence, and pause state – can be adjuste
       --verification-bootstrap 400 \
       --verification-confidence 0.975
       --verification-stress-threshold 0.74
+      --verification-entropy 0.38
 ```
 
 Use `--pause` to halt execution instantly. The orchestrator will refuse to launch jobs while paused and will explain the status
