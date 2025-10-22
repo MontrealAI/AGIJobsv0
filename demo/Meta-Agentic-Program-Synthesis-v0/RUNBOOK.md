@@ -28,6 +28,7 @@ The launcher exports `AGI_META_PROGRAM_MISSION` and `AGI_OWNER_DIAGNOSTICS_OFFLI
 
 - Markdown dossier: `demo/Meta-Agentic-Program-Synthesis-v0/reports/meta-agentic-program-synthesis-report.md`
 - Executive dashboard: `.../meta-agentic-program-synthesis-dashboard.html`
+- Command theatre: `demo/Meta-Agentic-Program-Synthesis-v0/demo_output/index.html`
 - JSON summary: `.../meta-agentic-program-synthesis-summary.json`
 - Full-run bundle: `.../meta-agentic-program-synthesis-full.{json,md}`
 - CI verification: `.../meta-agentic-program-synthesis-ci.json`

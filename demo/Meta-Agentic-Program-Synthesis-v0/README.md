@@ -118,6 +118,7 @@ stateDiagram-v2
 4. **Open the generated artefacts:**
    * Single mission runs write to `demo_output/` (e.g. `report.html`, `report.json`).
    * Constellation runs create per-scenario folders (for example `demo_output/alpha/report.html`) **and** an aggregated `demo_output/batch.html` / `batch.json` with the mission constellation dashboard, comparative metrics, and links to each sovereign campaign.
+   * Every run mints an **interactive command theatre** at `demo_output/index.html` with a matching `index.json` payload so owners can drop the artefacts into downstream pipelines or host the dashboard instantly.
 
 The batch report distils pass-rate, average composite fitness, entropy apex, governance touchpoints, and an auto-generated Mermaid constellation map so executives can assess the entire sovereign fleet at a glance.
 
@@ -135,6 +136,36 @@ The digest now highlights the **entropy shield** so the owner can confirm that s
 | `imperium` | **Imperium Continuum Grid** – fuses liquidity, logistics, and intelligence theatres into a perpetual command lattice that rewrites itself to seize emerging frontiers. | 112 samples · cross-domain noise `0.085` · seed `808808`. | Hyper-energised `1.55×` multiplier stress-tests the thermodynamic lattice under sustained assault. |
 
 Each scenario is configurable at runtime. Override any parameter (rewards, staking, evolution cadence, verification tolerances, dataset length/noise, stress multiplier) through the owner console CLI or a JSON override file – the contract owner retains absolute control.
+
+### 🛰️ Command theatre dashboard
+
+Every sovereign launch now assembles a **Meta-Agentic Command Theatre** – a panoramic web dashboard that stitches together the entire mission fleet, verification lattice, and thermodynamic capital flow.
+
+```mermaid
+flowchart LR
+    User((Visionary)) --> Console["Owner Console"]
+    Console --> Architect["Sovereign Architect"]
+    Architect --> Mission1[["Mission α"]]
+    Architect --> Mission2[["Mission Atlas"]]
+    Architect --> Mission3[["Mission Sovereign"]]
+    Mission1 --> Capital1(("$AGIα rewards"))
+    Mission2 --> Capital2(("$AGIα rewards"))
+    Mission3 --> Capital3(("$AGIα rewards"))
+    Capital1 --> Dashboard["Command Theatre"]
+    Capital2 --> Dashboard
+    Capital3 --> Dashboard
+    Dashboard --> OwnerReport["index.html & index.json"]
+    Dashboard --> Operators["Stakeholder briefings"]
+```
+
+The dashboard exposes:
+
+* Mission fleet cards summarising composite scores, resilience indices, entropy shields, capital splits, and governance touchpoints.
+* A live Mermaid map wiring the sovereign architect to each mission, the rewards they unlocked, and the opportunities surfaced.
+* Capital & verification ledgers capturing total disbursements, slashing outcomes, and deep links to every per-scenario report.
+* An opportunity intelligence table detailing impact, confidence, and narrative for every venture the sovereign uncovered.
+
+Both `index.html` and `index.json` are written alongside the scenario artefacts so non-technical leaders can double-click the dashboard locally, sync it to a CDN, or feed the JSON into analytics systems without additional tooling.
 
 ---
 

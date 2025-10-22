@@ -12,6 +12,7 @@ from typing import Mapping
 
 from meta_agentic_demo.admin import OwnerConsole, load_owner_overrides
 from meta_agentic_demo.config import DatasetProfile, DemoConfig, DemoScenario
+from meta_agentic_demo.dashboard import export_dashboard
 from meta_agentic_demo.entities import DemoRunArtifacts
 from meta_agentic_demo.governance import GovernanceTimelock
 from meta_agentic_demo.orchestrator import SovereignArchitect
@@ -381,6 +382,7 @@ def main() -> None:
     config = owner_console.config
     aggregated_results: dict[str, DemoRunArtifacts] = {}
     bundles: dict[str, ReportBundle] = {}
+    batch_bundle: ReportBundle | None = None
 
     for index, scenario in enumerate(selected_scenarios, start=1):
         architect = SovereignArchitect(
@@ -520,6 +522,17 @@ def main() -> None:
         print("\n🌌 Mission constellation synthesised:")
         print(f"  • JSON: {batch_bundle.json_path}")
         print(f"  • HTML: {batch_bundle.html_path}")
+
+    dashboard_bundle = export_dashboard(
+        aggregated_results,
+        output_dir=args.output,
+        bundles=bundles,
+        scenarios={scenario.identifier: scenario for scenario in selected_scenarios},
+        batch_bundle=batch_bundle,
+    )
+    print("\n🛰️ Command theatre assembled:")
+    print(f"  • Dashboard: {dashboard_bundle.html_path}")
+    print(f"  • Data: {dashboard_bundle.json_path}")
 
 
 if __name__ == "__main__":

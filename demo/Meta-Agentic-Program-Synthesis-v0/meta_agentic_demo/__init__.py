@@ -11,6 +11,7 @@ from .config import (
     StakePolicy,
     VerificationPolicy,
 )
+from .dashboard import DashboardBundle, export_dashboard, render_dashboard_html
 from .entities import DemoRunArtifacts, OpportunitySynopsis, RewardSummary
 from .governance import GovernanceTimelock, TimelockedAction
 from .orchestrator import SovereignArchitect, generate_dataset
@@ -33,9 +34,12 @@ __all__ = [
     "generate_dataset",
     "export_report",
     "export_batch_report",
+    "export_dashboard",
     "render_html",
     "render_batch_html",
+    "render_dashboard_html",
     "load_owner_overrides",
     "GovernanceTimelock",
     "TimelockedAction",
+    "DashboardBundle",
 ]
