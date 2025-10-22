@@ -123,10 +123,25 @@ Execute the following **as Safe‑approved transactions**:
 
 Do these on a regular cadence (weekly/monthly):
 
-- **No direct EOAs for admin:** all changes proposed through Defender and approved by the **Safe**.  
-- **Keep a change‑log:** attach the Safe transaction hash and a one‑paragraph rationale for each parameter change.  
-- **Run a quick owner health check** (see Appendix A) to ensure the governance wiring hasn’t drifted.  
+- **No direct EOAs for admin:** all changes proposed through Defender and approved by the **Safe**.
+- **Keep a change‑log:** attach the Safe transaction hash and a one‑paragraph rationale for each parameter change.
+- **Run a quick owner health check** (see Appendix A) to ensure the governance wiring hasn’t drifted.
 - **Monitor** fees/treasury flows and consider alerts for abnormal activity.
+
+### Culture arena monitoring & mitigations
+
+- **Dashboards:** open the “AGI Ops” Grafana dashboard (`monitoring/grafana/dashboard-agi-ops.json`) and the
+  culture analytics view (loads `culture-week-*.json` and `arena-week-*.json`). Ensure the `culture-analytics`
+  compose service is healthy (`docker compose ps culture-analytics`).
+- **Structured alerts:** tail `demo/CULTURE-v0/logs/analytics.alerts.jsonl` for anomaly records (component
+  `culture-analytics`). Pair this with the orchestrator’s structured log (`culture_orchestrator_logs` volume) when
+  investigating validator slash bursts.
+- **Moderation audit:** review `storage/validation/moderation.log` when the analytics service reports content warnings
+  or blocked requests. Thresholds are controlled via `ORCHESTRATOR_MAX_TOXICITY` and `ORCHESTRATOR_MAX_PLAGIARISM`.
+- **Slash mitigation:** if validator slashes spike, immediately pause the arena by calling the SystemPause contract
+  (Safe-approved) and inspect stake-manager logs. Resume once the root cause is fixed and slashed stake has been reviewed.
+- **Dry-run calibration:** run `npm run culture:analytics:dry-run` after changing heuristics to compare the expected CMS/SPG
+  deltas recorded in the fixture. Document any variance >2 points and adjust alert thresholds if needed.
 
 ---
 

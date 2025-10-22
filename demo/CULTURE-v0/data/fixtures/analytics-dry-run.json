@@ -1,0 +1,135 @@
+{
+  "artifacts": [
+    {
+      "id": 101,
+      "title": "Foundational Charter",
+      "kind": "charter",
+      "createdAt": "2025-01-06T09:30:00Z",
+      "citations": 4,
+      "lineageDepth": 1,
+      "influenceScore": 0.24
+    },
+    {
+      "id": 102,
+      "title": "Derivative Playbook",
+      "kind": "playbook",
+      "createdAt": "2025-01-06T12:15:00Z",
+      "parentId": 101,
+      "citations": 3,
+      "lineageDepth": 2,
+      "influenceScore": 0.19
+    },
+    {
+      "id": 103,
+      "title": "Arena Warmups",
+      "kind": "curriculum",
+      "createdAt": "2025-01-07T08:05:00Z",
+      "updatedAt": "2025-01-08T08:05:00Z",
+      "parentId": 102,
+      "citations": 2,
+      "lineageDepth": 3,
+      "influenceScore": 0.16
+    },
+    {
+      "id": 104,
+      "title": "Validator Handbook",
+      "kind": "guide",
+      "createdAt": "2025-01-07T15:40:00Z",
+      "citations": 1,
+      "lineageDepth": 1,
+      "influenceScore": 0.12
+    },
+    {
+      "id": 105,
+      "title": "Self-Play Dataset",
+      "kind": "dataset",
+      "createdAt": "2025-01-08T11:55:00Z",
+      "parentId": 101,
+      "citations": 5,
+      "lineageDepth": 2,
+      "influenceScore": 0.21
+    },
+    {
+      "id": 106,
+      "title": "Town Hall Summary",
+      "kind": "recap",
+      "createdAt": "2025-01-09T17:25:00Z",
+      "updatedAt": "2025-01-10T09:10:00Z",
+      "citations": 2,
+      "lineageDepth": 1,
+      "influenceScore": 0.1
+    }
+  ],
+  "rounds": [
+    {
+      "status": "finalized",
+      "difficulty": 0.58,
+      "successRate": 0.82,
+      "slashes": 0,
+      "completedAt": "2025-01-06T18:00:00Z"
+    },
+    {
+      "status": "finalized",
+      "difficulty": 0.61,
+      "successRate": 0.9,
+      "slashes": 1,
+      "completedAt": "2025-01-07T18:00:00Z"
+    },
+    {
+      "status": "finalized",
+      "difficulty": 0.64,
+      "successRate": 0.0,
+      "slashes": 0,
+      "completedAt": "2025-01-08T18:00:00Z"
+    },
+    {
+      "status": "aborted",
+      "difficulty": 0.66,
+      "successRate": 0.7,
+      "slashes": 0,
+      "completedAt": "2025-01-09T18:00:00Z"
+    }
+  ],
+  "thermostat": {
+    "min": 0.35,
+    "max": 0.85,
+    "current": 0.62
+  },
+  "leaderboard": [
+    {
+      "address": "0xvalidator1",
+      "rating": 1512,
+      "wins": 8,
+      "losses": 2,
+      "draws": 0
+    },
+    {
+      "address": "0xvalidator2",
+      "rating": 1488,
+      "wins": 6,
+      "losses": 3,
+      "draws": 1
+    }
+  ],
+  "streaks": [
+    {
+      "address": "0xvalidator1",
+      "length": 4,
+      "type": "winning"
+    }
+  ],
+  "moderation": [
+    {
+      "timestamp": "2025-01-07T10:00:00Z",
+      "blocked": false
+    },
+    {
+      "timestamp": "2025-01-08T13:30:00Z",
+      "blocked": true
+    }
+  ],
+  "expected": {
+    "cms": 71.9,
+    "spg": 60.4
+  }
+}

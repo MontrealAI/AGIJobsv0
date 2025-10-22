@@ -11,13 +11,23 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
-from ..models import Step
+from ..models import Attachment, Step
+from ..moderation import ModerationReport, evaluate_step
 
 _ROUTER_PATH = Path("packages/orchestrator/src/router.ts")
 
 
 class StepExecutionError(RuntimeError):
     """Raised when the adapter is unable to complete a step."""
+
+
+class ModerationRejected(StepExecutionError):
+    """Raised when moderation blocks a step."""
+
+    def __init__(self, report: ModerationReport, logs: List[str]) -> None:
+        super().__init__("Moderation gate rejected the plan input.")
+        self.report = report
+        self.logs = logs
 
 
 @dataclass
@@ -142,6 +152,29 @@ class StepExecutor:
         self.retry = retry or RetryPolicy()
 
     def _attempt(self, step: Step, attempt: int) -> List[str]:
+        if step.tool == "safety.moderation":
+            attachments: List[Attachment] = []
+            if isinstance(step.params, dict):
+                raw_attachments = step.params.get("attachments", [])
+                if isinstance(raw_attachments, list):
+                    for entry in raw_attachments:
+                        if isinstance(entry, Attachment):
+                            attachments.append(entry)
+                        elif isinstance(entry, dict):
+                            try:
+                                attachments.append(Attachment.model_validate(entry))
+                            except Exception:
+                                continue
+            report = evaluate_step(step, attachments=attachments)
+            logs = [report.summary]
+            for term in report.flagged_terms:
+                logs.append(f"Flagged term: `{term}`")
+            for snippet in report.flagged_passages:
+                logs.append(f"Repeated passage: {snippet[:120]}{'…' if len(snippet) > 120 else ''}")
+            if report.blocked:
+                raise ModerationRejected(report, logs)
+            return logs
+
         intent = _STEP_TO_INTENT.get(step.tool or "")
         if not intent:
             return [f"No executor registered for tool `{step.tool}`; marking as no-op."]
@@ -169,6 +202,10 @@ class StepExecutor:
             try:
                 logs = self._attempt(step, attempt)
                 return StepResult(True, logs, attempt, time.time() - start)
+            except ModerationRejected as exc:
+                failure_logs = list(exc.logs)
+                failure_logs.append("Moderation gate blocked execution; escalation required.")
+                return StepResult(False, failure_logs, attempt, time.time() - start)
             except StepExecutionError as exc:
                 errors.append(str(exc))
                 if attempt >= self.retry.attempts:
