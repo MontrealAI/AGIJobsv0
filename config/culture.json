@@ -1,0 +1,130 @@
+{
+  "network": "anvil",
+  "owner": {
+    "address": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "pauseGuardian": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
+  },
+  "dependencies": {
+    "identityRegistry": "0x1111111111111111111111111111111111111111",
+    "jobRegistry": "0x2222222222222222222222222222222222222222",
+    "stakeManager": "0x3333333333333333333333333333333333333333",
+    "feePool": "0x4444444444444444444444444444444444444444"
+  },
+  "culture": {
+    "kinds": ["book", "prompt", "dataset", "curriculum"],
+    "maxCitations": 16
+  },
+  "arena": {
+    "teacherReward": "1000000000000000000",
+    "studentReward": "500000000000000000",
+    "validatorReward": "250000000000000000",
+    "committeeSize": 3,
+    "validatorStake": "2000000000000000000",
+    "targetSuccessRateBps": 6500,
+    "defaultDifficulty": 5
+  },
+  "orchestrators": [
+    "0xfabb0ac9d68b0b445fb7357272ff202c5651694a"
+  ],
+  "contracts": {
+    "cultureRegistry": "",
+    "selfPlayArena": ""
+  },
+  "seed": {
+    "agents": {
+      "authors": [
+        {
+          "address": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+          "subdomain": "author-alpha",
+          "profileURI": "ipfs://bafybeigdyrzt6sampleprofilealpha"
+        },
+        {
+          "address": "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65",
+          "subdomain": "author-beta",
+          "profileURI": "ipfs://bafybeigdyrzt6sampleprofilebeta"
+        }
+      ],
+      "teachers": [
+        {
+          "address": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+          "subdomain": "teacher-alpha"
+        }
+      ],
+      "students": [
+        {
+          "address": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+          "subdomain": "student-alpha"
+        },
+        {
+          "address": "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65",
+          "subdomain": "student-beta"
+        }
+      ],
+      "validators": [
+        {
+          "address": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
+          "subdomain": "validator-alpha"
+        },
+        {
+          "address": "0xcd3b766ccdd6ae721141f452c550ca635964ce71",
+          "subdomain": "validator-beta"
+        }
+      ],
+      "orchestrators": [
+        "0xfabb0ac9d68b0b445fb7357272ff202c5651694a"
+      ]
+    },
+    "artifacts": [
+      {
+        "kind": "book",
+        "uri": "ipfs://bafybeigdyrzt6cultureartifactalpha",
+        "parentId": 0,
+        "citations": [],
+        "subdomain": "author-alpha"
+      },
+      {
+        "kind": "dataset",
+        "uri": "ipfs://bafybeigdyrzt6cultureartifactbeta",
+        "parentId": 1,
+        "citations": [1],
+        "subdomain": "author-beta"
+      }
+    ],
+    "feePool": {
+      "contributor": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "amount": "250000000000000000000",
+      "token": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA"
+    }
+  },
+  "sampleRound": {
+    "mode": "stub",
+    "difficulty": 5,
+    "teacher": {
+      "address": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "jobId": 42001,
+      "subdomain": "teacher-alpha"
+    },
+    "students": [
+      {
+        "address": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+        "jobId": 42002,
+        "subdomain": "student-alpha"
+      },
+      {
+        "address": "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65",
+        "jobId": 42003,
+        "subdomain": "student-beta"
+      }
+    ],
+    "validators": [
+      {
+        "address": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
+        "jobId": 43001,
+        "subdomain": "validator-alpha"
+      }
+    ],
+    "winners": [
+      "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
+    ]
+  }
+}
