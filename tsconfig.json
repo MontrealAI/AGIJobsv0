@@ -13,6 +13,7 @@
   "include": [
     "hardhat.config.ts",
     "scripts/**/*.ts",
+    "demo/**/*.ts",
     "test/**/*.ts",
     "docs/**/*.ts",
     "packages/**/*.ts"
