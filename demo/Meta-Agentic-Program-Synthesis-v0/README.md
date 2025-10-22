@@ -108,10 +108,14 @@ stateDiagram-v2
    ```bash
    cd demo/Meta-Agentic-Program-Synthesis-v0
    python start_demo.py alpha
+   # or orchestrate the entire constellation in one command
+   python start_demo.py all --output demo_output
    ```
 4. **Open the generated artefacts:**
-   * `demo_output/report.html` – cinematic dashboard with live Mermaid diagrams (architecture atlas, reward flows, evolution timeline), multi-angle verification verdicts, owner command ledger, telemetry, and the evolved program.
-   * `demo_output/report.json` – machine-readable export for downstream automation (including verification metrics and pass/fail gates).
+   * Single mission runs write to `demo_output/` (e.g. `report.html`, `report.json`).
+   * Constellation runs create per-scenario folders (for example `demo_output/alpha/report.html`) **and** an aggregated `demo_output/batch.html` / `batch.json` with the mission constellation dashboard, comparative metrics, and links to each sovereign campaign.
+
+The batch report distils pass-rate, average composite fitness, entropy apex, governance touchpoints, and an auto-generated Mermaid constellation map so executives can assess the entire sovereign fleet at a glance.
 
 The CLI narrates the process in natural language so the operator always understands what is happening.
 It now also prints a reward distribution digest summarising total payouts, architect retention, and the top solver/validator so executives can confirm value capture instantly. Immediately afterwards the CLI shares a triple-check verification digest (holdout scores, residual balance, divergence), flagging whether every gate passed.
