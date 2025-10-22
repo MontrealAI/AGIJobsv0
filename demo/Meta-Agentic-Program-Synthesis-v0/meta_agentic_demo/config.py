@@ -75,6 +75,9 @@ class VerificationPolicy:
     confidence_level: float = 0.95
     stress_threshold: float = 0.72
     entropy_floor: float = 0.35
+    precision_replay_tolerance: float = 0.025
+    variance_ratio_ceiling: float = 1.25
+    spectral_energy_ceiling: float = 0.55
 
     def to_dict(self) -> Dict[str, float | int]:
         return {
@@ -88,6 +91,9 @@ class VerificationPolicy:
             "confidence_level": self.confidence_level,
             "stress_threshold": self.stress_threshold,
             "entropy_floor": self.entropy_floor,
+            "precision_replay_tolerance": self.precision_replay_tolerance,
+            "variance_ratio_ceiling": self.variance_ratio_ceiling,
+            "spectral_energy_ceiling": self.spectral_energy_ceiling,
         }
 
 

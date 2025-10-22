@@ -191,6 +191,12 @@ class VerificationDigest:
     entropy_score: float
     pass_entropy: bool
     entropy_floor: float
+    precision_replay_score: float
+    pass_precision_replay: bool
+    variance_ratio: float
+    pass_variance_ratio: bool
+    spectral_ratio: float
+    pass_spectral_ratio: bool
 
     @property
     def overall_pass(self) -> bool:
@@ -203,6 +209,9 @@ class VerificationDigest:
             and self.monotonic_pass
             and self.pass_stress
             and self.pass_entropy
+            and self.pass_precision_replay
+            and self.pass_variance_ratio
+            and self.pass_spectral_ratio
         )
 
     def to_dict(self) -> Dict[str, object]:
@@ -227,6 +236,12 @@ class VerificationDigest:
             "entropy_score": self.entropy_score,
             "pass_entropy": self.pass_entropy,
             "entropy_floor": self.entropy_floor,
+            "precision_replay_score": self.precision_replay_score,
+            "pass_precision_replay": self.pass_precision_replay,
+            "variance_ratio": self.variance_ratio,
+            "pass_variance_ratio": self.pass_variance_ratio,
+            "spectral_ratio": self.spectral_ratio,
+            "pass_spectral_ratio": self.pass_spectral_ratio,
             "overall_pass": self.overall_pass,
         }
 

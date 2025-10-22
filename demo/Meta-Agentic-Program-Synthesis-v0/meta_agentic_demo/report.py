@@ -377,6 +377,18 @@ def format_verification_cards(verification: VerificationDigest) -> str:
         f"  <h3>Entropy Shield</h3><p>{verification.entropy_score:.4f}</p>",
         f"  <p>Status: {'PASS' if verification.pass_entropy else 'ALERT'}</p>",
         "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>Decimal Replay</h3><p>{verification.precision_replay_score:.4f}</p>",
+        f"  <p>Status: {'PASS' if verification.pass_precision_replay else 'ALERT'}</p>",
+        "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>Variance Ratio</h3><p>{verification.variance_ratio:.4f}</p>",
+        f"  <p>Status: {'PASS' if verification.pass_variance_ratio else 'ALERT'}</p>",
+        "</div>",
+        "<div class=\"summary-card\">",
+        f"  <h3>Spectral Energy</h3><p>{verification.spectral_ratio:.4f}</p>",
+        f"  <p>Status: {'PASS' if verification.pass_spectral_ratio else 'ALERT'}</p>",
+        "</div>",
     ]
     return build_rows(cards)
 
@@ -398,6 +410,9 @@ def format_verification_table(verification: VerificationDigest) -> str:
             f"<tr><td>Bootstrap Interval</td><td>{verification.bootstrap_interval[0]:.4f} → {verification.bootstrap_interval[1]:.4f}</td><td>{'PASS' if verification.pass_confidence else 'ALERT'}</td></tr>",
             f"<tr><td>Monotonicity</td><td>{verification.monotonic_violations} violation(s)</td><td>{'PASS' if verification.monotonic_pass else 'ALERT'}</td></tr>",
             f"<tr><td>Entropy Shield</td><td>{verification.entropy_score:.4f} (floor {verification.entropy_floor:.2f})</td><td>{'PASS' if verification.pass_entropy else 'ALERT'}</td></tr>",
+            f"<tr><td>Decimal Replay</td><td>{verification.precision_replay_score:.4f} (Δ {verification.precision_replay_score - verification.primary_score:+.4f})</td><td>{'PASS' if verification.pass_precision_replay else 'ALERT'}</td></tr>",
+            f"<tr><td>Variance Ratio</td><td>{verification.variance_ratio:.4f}</td><td>{'PASS' if verification.pass_variance_ratio else 'ALERT'}</td></tr>",
+            f"<tr><td>Spectral Energy</td><td>{verification.spectral_ratio:.4f}</td><td>{'PASS' if verification.pass_spectral_ratio else 'ALERT'}</td></tr>",
         ]
     )
     return (
@@ -420,6 +435,9 @@ def build_verification_mermaid(verification: VerificationDigest) -> str:
             "    primary --> mae[MAE score]",
             "    primary --> stress[Stress battery]",
             "    primary --> entropy[Entropy shield]",
+            "    primary --> precision[Decimal replay]",
+            "    primary --> variance[Variance ratio]",
+            "    primary --> spectral[Spectral scan]",
             "    mae --> bootstrap[Bootstrap CI]",
             "    holdout --> monotonic[Monotonic audit]",
             f"    mae:::status -- {'PASS' if verification.pass_mae else 'ALERT'} --> bootstrap",
@@ -427,10 +445,13 @@ def build_verification_mermaid(verification: VerificationDigest) -> str:
             f"    holdout:::status -- {'PASS' if verification.pass_holdout else 'ALERT'} --> monotonic",
             f"    stress:::status -- {('≥' if verification.pass_stress else '<')} {verification.stress_threshold:.2f} --> verdict[Final verdict]",
             f"    entropy:::status -- {('≥' if verification.pass_entropy else '<')} {verification.entropy_floor:.2f} --> verdict",
+            f"    precision:::status -- {'PASS' if verification.pass_precision_replay else 'ALERT'} --> verdict",
+            f"    variance:::status -- {'PASS' if verification.pass_variance_ratio else 'ALERT'} --> verdict",
+            f"    spectral:::status -- {'PASS' if verification.pass_spectral_ratio else 'ALERT'} --> verdict",
             f"    bootstrap:::status -- {lower:.3f}→{upper:.3f} --> verdict[Final verdict]",
             f"    monotonic:::status -- {'PASS' if verification.monotonic_pass else 'ALERT'} --> verdict",
             "    classDef status fill:#0f172a,color:#f8fafc,stroke:#38bdf8,stroke-width:2px",
-            "    class primary,residual,holdout,mae,stress,entropy,bootstrap,monotonic,verdict status",
+            "    class primary,residual,holdout,mae,stress,entropy,precision,variance,spectral,bootstrap,monotonic,verdict status",
         ]
     )
 

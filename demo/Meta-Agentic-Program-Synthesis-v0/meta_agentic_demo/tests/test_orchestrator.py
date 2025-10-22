@@ -47,3 +47,9 @@ def test_orchestrator_generates_artifacts(tmp_path) -> None:
     assert 0 <= verification.entropy_score <= 1
     assert isinstance(verification.pass_entropy, bool)
     assert 0 <= verification.entropy_floor <= 1
+    assert verification.precision_replay_score >= 0
+    assert isinstance(verification.pass_precision_replay, bool)
+    assert verification.variance_ratio >= 0
+    assert isinstance(verification.pass_variance_ratio, bool)
+    assert 0 <= verification.spectral_ratio <= 1
+    assert isinstance(verification.pass_spectral_ratio, bool)
