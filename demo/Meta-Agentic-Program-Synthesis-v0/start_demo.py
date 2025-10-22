@@ -56,6 +56,18 @@ SCENARIOS = [
         dataset_profile=DatasetProfile(length=96, noise=0.07, seed=90_900),
         stress_multiplier=1.35,
     ),
+    DemoScenario(
+        identifier="imperium",
+        title="Imperium Continuum Grid",
+        description=(
+            "Launch a cross-domain command lattice that unifies liquidity, logistics, "
+            "and intelligence theatres into a continuously self-rewriting engine."
+        ),
+        target_metric="Continuum dominance quotient",
+        success_threshold=0.9,
+        dataset_profile=DatasetProfile(length=112, noise=0.085, seed=808_808),
+        stress_multiplier=1.55,
+    ),
 ]
 
 SCENARIO_LOOKUP = {scenario.identifier: scenario for scenario in SCENARIOS}
