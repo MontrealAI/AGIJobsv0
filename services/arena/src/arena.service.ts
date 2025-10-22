@@ -242,6 +242,7 @@ export class ArenaService {
 
       for (const validator of validators) {
         if (!validator.commitHash) {
+          validator.slashed = true;
           committeeUpdates.push(
             this.prisma.committeeMember.update({
               where: { id: validator.id },
@@ -253,6 +254,7 @@ export class ArenaService {
 
       for (const contestant of contestants) {
         if (!contestant.revealPayload) {
+          contestant.slashed = true;
           committeeUpdates.push(
             this.prisma.committeeMember.update({
               where: { id: contestant.id },
