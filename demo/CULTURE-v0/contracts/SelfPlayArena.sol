@@ -48,6 +48,9 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
     /// @notice Thrown when a slashing operation is requested but no StakeManager is configured.
     error StakeManagerNotSet();
 
+    /// @notice Thrown when attempting to slash a validator that was not registered for the round.
+    error ValidatorNotRegistered(address validator);
+
     struct Round {
         uint256 teacherJobId;
         uint32 difficulty;
@@ -261,7 +264,7 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
             if (slashAmount == 0) revert InvalidSlashAmount();
             if (slashRecipient == address(0)) revert InvalidAddress();
             if (address(stakeManager) == address(0)) revert StakeManagerNotSet();
-            _slashValidators(roundId, slashedValidators, slashAmount, slashRecipient);
+            _slashValidators(roundId, round, slashedValidators, slashAmount, slashRecipient);
         }
 
         emit RoundFinalized(roundId, previousDifficulty, difficultyDelta, newDifficulty, round.finalizedAt);
@@ -330,6 +333,7 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
 
     function _slashValidators(
         uint256 roundId,
+        Round storage round,
         address[] calldata validators,
         uint256 slashAmount,
         address slashRecipient
@@ -337,9 +341,19 @@ contract SelfPlayArena is Ownable, Pausable, ReentrancyGuard {
         for (uint256 i = 0; i < validators.length; i++) {
             address validator = validators[i];
             if (validator == address(0)) revert InvalidAddress();
+            _requireRoundValidator(round, validator);
             stakeManager.slash(validator, slashAmount, slashRecipient);
             emit ValidatorSlashed(roundId, validator, slashAmount, slashRecipient);
         }
+    }
+
+    function _requireRoundValidator(Round storage round, address validator) internal view {
+        for (uint256 i = 0; i < round.validators.length; i++) {
+            if (round.validators[i] == validator) {
+                return;
+            }
+        }
+        revert ValidatorNotRegistered(validator);
     }
 
     function _copyUintArray(uint256[] storage source) internal view returns (uint256[] memory copy) {
