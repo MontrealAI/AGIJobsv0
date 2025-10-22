@@ -6,7 +6,7 @@ export type JobStatus = 'created' | 'submitted' | 'finalized';
 
 export interface CreateJobInput {
   readonly description: string;
-  readonly roundId: number;
+  roundId: number;
   readonly role: 'teacher' | 'student' | 'validator';
   readonly participant: string;
   readonly artifactId: number;
@@ -19,7 +19,7 @@ export interface JobHandle {
 
 export interface JobRecord extends JobHandle {
   readonly description: string;
-  readonly roundId: number;
+  roundId: number;
   readonly role: CreateJobInput['role'];
   readonly participant: string;
   readonly artifactId: number;
@@ -55,6 +55,7 @@ class TypedEmitter extends EventEmitter {
 
 let nextJobId = 1;
 const records = new Map<number, JobRecord>();
+const submissionWaiters = new Map<number, Array<(update: SubmissionUpdate) => void>>();
 
 export class JobRegistryClient extends TypedEmitter {
   async createJob(input: CreateJobInput): Promise<JobHandle> {
@@ -84,18 +85,25 @@ export class JobRegistryClient extends TypedEmitter {
     record.updatedAt = new Date();
     const update: SubmissionUpdate = { jobId, cid, submittedAt: record.updatedAt };
     this.emit('job:submitted', update);
+    this.notifyWaiters(jobId, update);
     this.log('submitted', record, { cid });
   }
 
   async finalizeJob(jobId: number): Promise<void> {
     const record = this.requireJob(jobId);
-    if (record.status !== 'submitted' && record.role !== 'teacher') {
+    if (record.status === 'created') {
       throw new Error(`Job ${jobId} has not been submitted`);
     }
     record.status = 'finalized';
     record.updatedAt = new Date();
     this.emit('job:finalized', record);
     this.log('finalized', record);
+  }
+
+  updateRound(jobId: number, roundId: number): void {
+    const record = this.requireJob(jobId);
+    record.roundId = roundId;
+    record.updatedAt = new Date();
   }
 
   getJob(jobId: number): JobRecord {
@@ -106,12 +114,73 @@ export class JobRegistryClient extends TypedEmitter {
     return Array.from(records.values()).filter((record) => record.roundId === roundId);
   }
 
+  async waitForSubmission(jobId: number, timeoutMs: number): Promise<SubmissionUpdate> {
+    const record = this.requireJob(jobId);
+    if (record.status !== 'created' && record.submissionCid) {
+      return {
+        jobId,
+        cid: record.submissionCid,
+        submittedAt: record.updatedAt
+      };
+    }
+
+    return await new Promise<SubmissionUpdate>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error(`Job ${jobId} submission timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+
+      const handler = (update: SubmissionUpdate) => {
+        cleanup();
+        resolve(update);
+      };
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        const waiters = submissionWaiters.get(jobId);
+        if (!waiters) return;
+        const index = waiters.indexOf(handler);
+        if (index >= 0) {
+          waiters.splice(index, 1);
+        }
+        if (waiters.length === 0) {
+          submissionWaiters.delete(jobId);
+        }
+      };
+
+      const waiters = submissionWaiters.get(jobId) ?? [];
+      waiters.push(handler);
+      submissionWaiters.set(jobId, waiters);
+    });
+  }
+
+  reset(): void {
+    records.clear();
+    submissionWaiters.clear();
+    nextJobId = 1;
+  }
+
   private requireJob(jobId: number): JobRecord {
     const record = records.get(jobId);
     if (!record) {
       throw new Error(`Job ${jobId} not found`);
     }
     return record;
+  }
+
+  private notifyWaiters(jobId: number, update: SubmissionUpdate): void {
+    const waiters = submissionWaiters.get(jobId);
+    if (!waiters) {
+      return;
+    }
+    submissionWaiters.delete(jobId);
+    for (const waiter of waiters) {
+      try {
+        waiter(update);
+      } catch (error) {
+        console.warn('Job submission waiter threw', error);
+      }
+    }
   }
 
   private log(action: string, record: JobRecord, extra: Record<string, unknown> = {}): void {
