@@ -12,6 +12,7 @@ import {
 
 type OneBoxMissionPanelProps = {
   onPromptSelect?: (prompt: string) => void;
+  onOpenOnboarding?: () => void;
 };
 
 type OrchestratorHealth = 'checking' | 'ready' | 'error' | 'missing';
@@ -52,7 +53,10 @@ flowchart LR
     receipts --> finalise["Finalize + payout"]
 `;
 
-export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) {
+export function OneBoxMissionPanel({
+  onPromptSelect,
+  onOpenOnboarding,
+}: OneBoxMissionPanelProps) {
   const {
     orchestratorUrl,
     apiToken,
@@ -334,6 +338,15 @@ export function OneBoxMissionPanel({ onPromptSelect }: OneBoxMissionPanelProps) 
         <p className={styles.subtitle}>
           A single conversational surface that lets non-technical operators launch, simulate, and settle institution-grade labour missions on-chain.
         </p>
+        <button
+          type="button"
+          className={styles.onboardingButton}
+          onClick={() => {
+            onOpenOnboarding?.();
+          }}
+        >
+          🚀 Guided walkthrough
+        </button>
       </header>
 
       <section className={styles.section}>

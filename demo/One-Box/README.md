@@ -59,6 +59,7 @@ The orchestrator keeps ownership controls in the loop at every stage—jobs are 
    * Boots the orchestrator on `ONEBOX_PORT` (default `8080`).
    * Serves the UI on `ONEBOX_UI_PORT` (default `4173`) with the orchestrator URL, prefix, API token, and mode pre-filled through query overrides.
    * Opens your browser pointing at `http://127.0.0.1:4173/?orchestrator=…&oneboxPrefix=…` so the first message can be sent immediately.
+   * Presents the new **Guided Walkthrough** overlay so first-time operators can tour the mission lifecycle, governance guardrails, and ready-made prompts before sending a single instruction.
 
 That is all a non-technical operator needs: visit the chat, describe the job, confirm, and watch the receipt appear with an explorer link.
 
@@ -97,7 +98,7 @@ ONEBOX_UI_SHORTCUTS='["Spin up 500-image labeling run", "Finalize job 128", "Aud
 npm run demo:onebox:launch -- --example "Schedule weekly research digest, 8 AGIALPHA" --welcome "Mission deck armed and ready."
 ```
 
-The launcher merges CLI flags and environment variables, de-duplicates prompts, and forwards them to the static UI via query overrides so the non-technical operator lands on a perfectly staged experience every time.
+The launcher merges CLI flags and environment variables, de-duplicates prompts, and forwards them to the static UI via query overrides so the non-technical operator lands on a perfectly staged experience every time. The on-page Guided Walkthrough modal mirrors these prompts so business stakeholders can discover curated missions without reading documentation.
 
 ### Built-in safety rails
 
