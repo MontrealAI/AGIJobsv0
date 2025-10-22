@@ -7,7 +7,12 @@ const {
   isUnsetEnvValue,
   collectPortDiagnostics,
 } = require('../lib/launcher.js');
-const { probeRpc, fetchAccountBalance, evaluateAddressShape } = require('../lib/rpc.js');
+const {
+  probeRpc,
+  fetchAccountBalance,
+  evaluateAddressShape,
+  inspectOwnerSurface,
+} = require('../lib/rpc.js');
 
 function formatStatus(label, value) {
   const padded = label.padEnd(24, ' ');
@@ -56,6 +61,56 @@ function describeAgentAddress(address) {
     return `${trimmed} (likely ENS name)`;
   }
   return `${trimmed} (custom identifier)`;
+}
+
+function describeOwnerResult(result) {
+  if (!result || typeof result !== 'object') {
+    return '⚠️  Owner probe unavailable.';
+  }
+  switch (result.status) {
+    case 'ok':
+      return result.owner;
+    case 'missing':
+      return '⚠️  Address not configured.';
+    case 'invalid':
+      return '⚠️  Invalid address format.';
+    case 'placeholder':
+      return '⚠️  Placeholder 0x00… address configured.';
+    case 'missing_rpc':
+      return '⚠️  RPC_URL missing; unable to fetch owner.';
+    case 'unsupported':
+      return '⚠️  Contract does not expose owner() in a compatible form.';
+    case 'reverted':
+      return `⚠️  Call reverted${result.error ? `: ${result.error}` : ''}`;
+    case 'error':
+      return `⚠️  Unable to fetch owner${result.error ? `: ${result.error}` : ''}`;
+    default:
+      return `⚠️  Owner probe status: ${String(result.status)}`;
+  }
+}
+
+function describePauseResult(result) {
+  if (!result || typeof result !== 'object') {
+    return '⚠️  Pause probe unavailable.';
+  }
+  switch (result.status) {
+    case 'ok':
+      return result.paused ? '⏸️  Paused' : '▶️  Active';
+    case 'missing':
+      return '⚠️  Address not configured.';
+    case 'invalid':
+      return '⚠️  Invalid address format.';
+    case 'placeholder':
+      return '⚠️  Placeholder 0x00… address configured.';
+    case 'missing_rpc':
+      return '⚠️  RPC_URL missing; unable to read pause state.';
+    case 'unsupported':
+      return '⚠️  Contract does not expose paused() or reverted on call.';
+    case 'error':
+      return `⚠️  Unable to fetch pause state${result.error ? `: ${result.error}` : ''}`;
+    default:
+      return `⚠️  Pause probe status: ${String(result.status)}`;
+  }
 }
 
 (async () => {
@@ -242,6 +297,24 @@ function describeAgentAddress(address) {
     }
   }
   console.log('');
+
+  if (rpcProbe.status === 'ready') {
+    const ownerSurface = await inspectOwnerSurface({
+      rpcUrl: env.RPC_URL,
+      jobRegistryAddress: config.jobRegistryAddress,
+      stakeManagerAddress: config.stakeManagerAddress,
+      systemPauseAddress: config.systemPauseAddress,
+    });
+
+    console.log('Governance ownership surface:');
+    formatStatus('Job registry owner', describeOwnerResult(ownerSurface.jobRegistry.owner));
+    formatStatus('Job registry pause', describePauseResult(ownerSurface.jobRegistry.paused));
+    formatStatus('Stake manager owner', describeOwnerResult(ownerSurface.stakeManager.owner));
+    formatStatus('Stake manager pause', describePauseResult(ownerSurface.stakeManager.paused));
+    formatStatus('System pause owner', describeOwnerResult(ownerSurface.systemPause.owner));
+    formatStatus('System pause state', describePauseResult(ownerSurface.systemPause.paused));
+    console.log('');
+  }
 
   if (config.agentAddress) {
     formatStatus('Agent identifier', describeAgentAddress(config.agentAddress));

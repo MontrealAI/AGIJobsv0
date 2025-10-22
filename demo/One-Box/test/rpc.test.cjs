@@ -9,6 +9,9 @@ const {
   formatEtherFromHex,
   evaluateAddressShape,
   normaliseAddress,
+  fetchContractOwner,
+  fetchPauseStatus,
+  inspectOwnerSurface,
 } = require('../lib/rpc.js');
 
 function createRpcServer(handlers) {
@@ -189,6 +192,92 @@ test('fetchAccountBalance validates address input', async () => {
     address: 'not-an-address',
   });
   assert.equal(balance.status, 'invalid_address');
+});
+
+test('fetchContractOwner decodes owner address from eth_call responses', async () => {
+  const expectedOwner = '0x000000000000000000000000000000000000c0de';
+  const server = createRpcServer({
+    eth_call: ([call]) => {
+      if (!call || call.data !== '0x8da5cb5b') {
+        throw new Error('Unexpected call payload');
+      }
+      return `0x${'0'.repeat(24)}c0de`;
+    },
+  });
+  await new Promise((resolve) => server.listen(0, resolve));
+  const { port } = server.address();
+  const rpcUrl = `http://127.0.0.1:${port}`;
+  try {
+    const owner = await fetchContractOwner({
+      rpcUrl,
+      address: expectedOwner,
+    });
+    assert.equal(owner.status, 'ok');
+    assert.equal(owner.owner, expectedOwner.toLowerCase());
+  } finally {
+    server.close();
+  }
+});
+
+test('fetchPauseStatus decodes boolean pause state', async () => {
+  const server = createRpcServer({
+    eth_call: ([call]) => {
+      if (!call || call.data !== '0x5c975abb') {
+        throw new Error('Unexpected call payload');
+      }
+      return `0x${'0'.repeat(63)}1`;
+    },
+  });
+  await new Promise((resolve) => server.listen(0, resolve));
+  const { port } = server.address();
+  const rpcUrl = `http://127.0.0.1:${port}`;
+  try {
+    const paused = await fetchPauseStatus({
+      rpcUrl,
+      address: '0x000000000000000000000000000000000000babe',
+    });
+    assert.equal(paused.status, 'ok');
+    assert.equal(paused.paused, true);
+  } finally {
+    server.close();
+  }
+});
+
+test('inspectOwnerSurface aggregates owner and pause status', async () => {
+  const server = createRpcServer({
+    eth_call: ([call]) => {
+      if (!call || !call.to) {
+        throw new Error('Missing call target');
+      }
+      if (call.data === '0x8da5cb5b') {
+        return `0x${'0'.repeat(24)}${call.to.slice(-4)}`;
+      }
+      if (call.data === '0x5c975abb') {
+        return call.to.endsWith('c0de') ? `0x${'0'.repeat(64)}` : `0x${'0'.repeat(63)}1`;
+      }
+      throw new Error('Unexpected selector');
+    },
+  });
+  await new Promise((resolve) => server.listen(0, resolve));
+  const { port } = server.address();
+  const rpcUrl = `http://127.0.0.1:${port}`;
+  try {
+    const surface = await inspectOwnerSurface({
+      rpcUrl,
+      jobRegistryAddress: '0x000000000000000000000000000000000000c0de',
+      stakeManagerAddress: '0x000000000000000000000000000000000000f00d',
+      systemPauseAddress: '0x000000000000000000000000000000000000babe',
+    });
+    assert.equal(surface.jobRegistry.owner.status, 'ok');
+    assert.equal(surface.jobRegistry.owner.owner, '0x000000000000000000000000000000000000c0de');
+    assert.equal(surface.jobRegistry.paused.status, 'ok');
+    assert.equal(surface.jobRegistry.paused.paused, false);
+    assert.equal(surface.stakeManager.paused.paused, true);
+    assert.equal(surface.systemPause.owner.status, 'ok');
+    assert.equal(surface.systemPause.paused.status, 'unsupported');
+  } finally {
+    server.close();
+  }
 });
 
 test('normaliseAddress trims strings and guards non-string values', () => {

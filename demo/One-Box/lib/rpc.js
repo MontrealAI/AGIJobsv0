@@ -15,6 +15,8 @@ const NETWORK_NAMES = new Map([
 
 const ZERO_ADDRESS_REGEX = /^0x0{40}$/i;
 const WEI_PER_ETHER = 10n ** 18n;
+const OWNER_SELECTOR = '0x8da5cb5b';
+const PAUSED_SELECTOR = '0x5c975abb';
 
 function toHex(value) {
   if (typeof value === 'string') {
@@ -235,6 +237,194 @@ async function fetchAccountBalance({
   }
 }
 
+function decodeAddressFromCallResult(result) {
+  if (typeof result !== 'string' || !result.startsWith('0x')) {
+    throw new Error('Call result is not a hex string');
+  }
+  if (result === '0x') {
+    throw new Error('Call result empty');
+  }
+  const raw = result.slice(2);
+  if (raw.length > 64) {
+    throw new Error('Call result length unexpected');
+  }
+  const body = raw.padStart(64, '0');
+  const candidate = `0x${body.slice(-40)}`;
+  if (!/^0x[0-9a-fA-F]{40}$/.test(candidate)) {
+    throw new Error('Call result did not encode an address');
+  }
+  return candidate;
+}
+
+function decodeBooleanFromCallResult(result) {
+  if (typeof result !== 'string' || !result.startsWith('0x')) {
+    throw new Error('Call result is not a hex string');
+  }
+  if (result === '0x') {
+    throw new Error('Call result empty');
+  }
+  const body = result.slice(2);
+  if (body.length > 64) {
+    throw new Error('Call result length unexpected');
+  }
+  const lastNibble = body.slice(-1);
+  if (!/[0-9a-f]/i.test(lastNibble)) {
+    throw new Error('Call result did not encode a boolean');
+  }
+  return parseInt(lastNibble, 16) !== 0;
+}
+
+async function fetchContractOwner({
+  rpcUrl,
+  address,
+  fetchImpl = globalThis.fetch,
+  timeoutMs,
+} = {}) {
+  if (!rpcUrl || typeof rpcUrl !== 'string') {
+    return {
+      status: 'missing_rpc',
+      error: 'RPC_URL missing',
+    };
+  }
+  const normalised = normaliseAddress(address);
+  const shape = evaluateAddressShape(normalised);
+  if (shape !== 'candidate') {
+    return { status: shape };
+  }
+  try {
+    const result = await jsonRpcRequest(
+      fetchImpl,
+      rpcUrl,
+      'eth_call',
+      [
+        {
+          to: normalised,
+          data: OWNER_SELECTOR,
+        },
+        'latest',
+      ],
+      { timeoutMs }
+    );
+    const owner = decodeAddressFromCallResult(result);
+    return {
+      status: 'ok',
+      owner,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown RPC error';
+    if (/revert/i.test(message)) {
+      return { status: 'reverted', error: message };
+    }
+    if (/Call result empty/i.test(message) || /did not encode/i.test(message)) {
+      return { status: 'unsupported', error: message };
+    }
+    return { status: 'error', error: message };
+  }
+}
+
+async function fetchPauseStatus({
+  rpcUrl,
+  address,
+  fetchImpl = globalThis.fetch,
+  timeoutMs,
+} = {}) {
+  if (!rpcUrl || typeof rpcUrl !== 'string') {
+    return {
+      status: 'missing_rpc',
+      error: 'RPC_URL missing',
+    };
+  }
+  const normalised = normaliseAddress(address);
+  const shape = evaluateAddressShape(normalised);
+  if (shape !== 'candidate') {
+    return { status: shape };
+  }
+  try {
+    const result = await jsonRpcRequest(
+      fetchImpl,
+      rpcUrl,
+      'eth_call',
+      [
+        {
+          to: normalised,
+          data: PAUSED_SELECTOR,
+        },
+        'latest',
+      ],
+      { timeoutMs }
+    );
+    const paused = decodeBooleanFromCallResult(result);
+    return {
+      status: 'ok',
+      paused,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown RPC error';
+    if (/revert/i.test(message)) {
+      return { status: 'unsupported', error: message };
+    }
+    if (/Call result empty/i.test(message) || /did not encode/i.test(message)) {
+      return { status: 'unsupported', error: message };
+    }
+    return { status: 'error', error: message };
+  }
+}
+
+async function inspectOwnerSurface({
+  rpcUrl,
+  jobRegistryAddress,
+  stakeManagerAddress,
+  systemPauseAddress,
+  fetchImpl = globalThis.fetch,
+  timeoutMs,
+} = {}) {
+  const jobRegistry = {
+    owner: await fetchContractOwner({
+      rpcUrl,
+      address: jobRegistryAddress,
+      fetchImpl,
+      timeoutMs,
+    }),
+    paused: await fetchPauseStatus({
+      rpcUrl,
+      address: jobRegistryAddress,
+      fetchImpl,
+      timeoutMs,
+    }),
+  };
+
+  const stakeManager = {
+    owner: await fetchContractOwner({
+      rpcUrl,
+      address: stakeManagerAddress,
+      fetchImpl,
+      timeoutMs,
+    }),
+    paused: await fetchPauseStatus({
+      rpcUrl,
+      address: stakeManagerAddress,
+      fetchImpl,
+      timeoutMs,
+    }),
+  };
+
+  const systemPause = {
+    owner: await fetchContractOwner({
+      rpcUrl,
+      address: systemPauseAddress,
+      fetchImpl,
+      timeoutMs,
+    }),
+    paused: { status: 'unsupported' },
+  };
+
+  return {
+    jobRegistry,
+    stakeManager,
+    systemPause,
+  };
+}
+
 module.exports = {
   NETWORK_NAMES,
   normaliseAddress,
@@ -245,4 +435,7 @@ module.exports = {
   toHex,
   formatEtherFromHex,
   fetchAccountBalance,
+  fetchContractOwner,
+  fetchPauseStatus,
+  inspectOwnerSurface,
 };
