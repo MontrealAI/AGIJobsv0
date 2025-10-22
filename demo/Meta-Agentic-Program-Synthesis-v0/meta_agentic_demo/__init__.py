@@ -14,7 +14,7 @@ from .config import (
 from .entities import DemoRunArtifacts, OpportunitySynopsis, RewardSummary
 from .governance import GovernanceTimelock, TimelockedAction
 from .orchestrator import SovereignArchitect, generate_dataset
-from .report import export_report, render_html
+from .report import export_batch_report, export_report, render_batch_html, render_html
 
 __all__ = [
     "DatasetProfile",
@@ -32,7 +32,9 @@ __all__ = [
     "SovereignArchitect",
     "generate_dataset",
     "export_report",
+    "export_batch_report",
     "render_html",
+    "render_batch_html",
     "load_owner_overrides",
     "GovernanceTimelock",
     "TimelockedAction",

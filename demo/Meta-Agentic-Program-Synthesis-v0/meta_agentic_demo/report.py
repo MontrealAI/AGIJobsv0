@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from functools import lru_cache
 from html import escape
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Mapping
 
+from .config import DemoScenario
 from .entities import DemoRunArtifacts, OwnerAction, RewardSummary, VerificationDigest
 
 
@@ -138,6 +139,58 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
+BATCH_HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"utf-8\" />
+  <title>{title}</title>
+  <style>
+    body {{ font-family: 'Inter', Arial, sans-serif; background:#040714; color:#f5f9ff; margin:0; padding:2rem; }}
+    h1, h2 {{ color:#9bf6ff; }}
+    section {{ margin-bottom:2rem; background:rgba(255,255,255,0.04); padding:1.5rem; border-radius:18px; box-shadow:0 16px 40px rgba(0,0,0,0.45); }}
+    table {{ width:100%; border-collapse: collapse; margin-top:1rem; }}
+    th, td {{ text-align:left; padding:0.75rem; border-bottom:1px solid rgba(255,255,255,0.12); }}
+    th {{ color:#7df9ff; text-transform:uppercase; letter-spacing:0.05em; font-size:0.85rem; }}
+    .badge {{ display:inline-block; padding:0.35rem 0.75rem; border-radius:999px; background:linear-gradient(90deg,#00c9ff,#92fe9d); color:#051d11; font-weight:600; margin-right:0.5rem; }}
+    .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; }}
+    .summary-card {{ padding:1rem; border-radius:16px; background:linear-gradient(135deg,rgba(0,201,255,0.18),rgba(146,254,157,0.16)); box-shadow:0 14px 32px rgba(0,0,0,0.28); }}
+    .summary-card h3 {{ margin:0; color:#ffffff; font-size:1.05rem; }}
+    .summary-card p {{ margin:0.35rem 0 0; color:#dbe7ff; font-size:1.1rem; font-weight:600; }}
+    .mermaid {{ margin-top:1rem; border-radius:16px; background:rgba(0,0,0,0.35); padding:1.25rem; }}
+    a {{ color:#7df9ff; text-decoration:none; }}
+    a:hover {{ text-decoration:underline; }}
+  </style>
+  <script>{mermaid_js}</script>
+  <script>mermaid.initialize({{ startOnLoad: true, theme: "dark", securityLevel: "strict" }});</script>
+</head>
+<body>
+  <h1>Meta-Agentic Mission Constellation</h1>
+  <section>
+    <h2>Constellation Overview</h2>
+    <p>
+      <span class=\"badge\">Missions: {scenario_count}</span>
+      <span class=\"badge\">Pass rate: {pass_rate:.1f}%</span>
+      <span class=\"badge\">Owner touchpoints: {owner_touchpoints}</span>
+    </p>
+    <div class=\"grid\">{summary_cards}</div>
+  </section>
+  <section>
+    <h2>Mission Ledger</h2>
+    <table>
+      <thead>
+        <tr><th>Scenario</th><th>Composite Score</th><th>Δ vs Genesis</th><th>Entropy</th><th>Stress</th><th>Verification</th><th>Top Solver</th></tr>
+      </thead>
+      <tbody>{table_rows}</tbody>
+    </table>
+  </section>
+  <section>
+    <h2>Meridian Flow</h2>
+    <div class=\"mermaid\">{mermaid_graph}</div>
+  </section>
+</body>
+</html>
+"""
+
 
 def build_rows(items: Iterable[str]) -> str:
     return "".join(items)
@@ -220,6 +273,124 @@ def format_performance_cards(report: DemoRunArtifacts) -> str:
     )
 
 
+def _relative_path(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.resolve().as_posix()
+
+
+def _summarise_batch(reports: Mapping[str, DemoRunArtifacts]) -> Dict[str, object]:
+    total = len(reports)
+    if total == 0:
+        return {
+            "completed": 0,
+            "pass_count": 0,
+            "pass_rate": 0.0,
+            "average_score": 0.0,
+            "average_improvement": 0.0,
+            "owner_touchpoints": 0,
+            "best_identifier": None,
+            "best_title": "—",
+            "best_score": 0.0,
+            "breakthrough_identifier": None,
+            "breakthrough_title": "—",
+            "breakthrough_improvement": 0.0,
+            "entropy_identifier": None,
+            "entropy_title": "—",
+            "entropy_score": 0.0,
+        }
+    pass_count = sum(1 for report in reports.values() if report.verification.overall_pass)
+    total_score = sum(report.final_score for report in reports.values())
+    total_improvement = sum(report.improvement_over_first for report in reports.values())
+    owner_actions = sum(len(report.owner_actions) for report in reports.values())
+    timelock_actions = sum(len(report.timelock_actions) for report in reports.values())
+    best_identifier, best_report = max(
+        reports.items(), key=lambda item: item[1].final_score
+    )
+    breakthrough_identifier, breakthrough_report = max(
+        reports.items(), key=lambda item: item[1].improvement_over_first
+    )
+    entropy_identifier, entropy_report = max(
+        reports.items(), key=lambda item: item[1].verification.entropy_score
+    )
+    return {
+        "completed": total,
+        "pass_count": pass_count,
+        "pass_rate": pass_count / total if total else 0.0,
+        "average_score": total_score / total,
+        "average_improvement": total_improvement / total,
+        "owner_touchpoints": owner_actions + timelock_actions,
+        "best_identifier": best_identifier,
+        "best_title": best_report.scenario,
+        "best_score": best_report.final_score,
+        "breakthrough_identifier": breakthrough_identifier,
+        "breakthrough_title": breakthrough_report.scenario,
+        "breakthrough_improvement": breakthrough_report.improvement_over_first,
+        "entropy_identifier": entropy_identifier,
+        "entropy_title": entropy_report.scenario,
+        "entropy_score": entropy_report.verification.entropy_score,
+    }
+
+
+def _build_summary_cards(summary: Mapping[str, object]) -> str:
+    if summary.get("completed", 0) == 0:
+        return "<p>No missions executed.</p>"
+    cards = [
+        "<div class=\"summary-card\">"
+        "<h3>Average Composite Score</h3>"
+        f"<p>{float(summary['average_score']):.4f}</p>"
+        "</div>",
+        "<div class=\"summary-card\">"
+        "<h3>Average Improvement</h3>"
+        f"<p>{float(summary['average_improvement']):.4f}</p>"
+        "</div>",
+        "<div class=\"summary-card\">"
+        "<h3>Highest Score</h3>"
+        f"<p>{escape(str(summary['best_title']))}<br/><span>{float(summary['best_score']):.4f}</span></p>"
+        "</div>",
+        "<div class=\"summary-card\">"
+        "<h3>Strongest Breakthrough</h3>"
+        f"<p>{escape(str(summary['breakthrough_title']))}<br/><span>Δ {float(summary['breakthrough_improvement']):.4f}</span></p>"
+        "</div>",
+        "<div class=\"summary-card\">"
+        "<h3>Entropy Apex</h3>"
+        f"<p>{escape(str(summary['entropy_title']))}<br/><span>{float(summary['entropy_score']):.3f}</span></p>"
+        "</div>",
+    ]
+    return build_rows(cards)
+
+
+def _build_table_rows(
+    items: Iterable[tuple[str, DemoRunArtifacts]],
+    bundles: Mapping[str, ReportBundle],
+    output_dir: Path,
+    scenarios: Mapping[str, DemoScenario] | None,
+) -> str:
+    rows = []
+    for identifier, report in items:
+        bundle = bundles.get(identifier)
+        link = _relative_path(bundle.html_path, output_dir) if bundle else "#"
+        stress = 1.0
+        if scenarios and identifier in scenarios:
+            stress = max(scenarios[identifier].stress_multiplier, 0.0)
+        solver = report.reward_summary.top_solver or "—"
+        rows.append(
+            "<tr>"
+            f"<td><a href=\"{escape(link)}\">{escape(report.scenario)}</a></td>"
+            f"<td>{report.final_score:.4f}</td>"
+            f"<td>{report.improvement_over_first:.4f}</td>"
+            f"<td>{report.verification.entropy_score:.3f}</td>"
+            f"<td>{stress:.2f}×</td>"
+            f"<td>{'PASS' if report.verification.overall_pass else 'ATTENTION'}</td>"
+            f"<td>{escape(solver)}</td>"
+            "</tr>"
+        )
+    if not rows:
+        return "<tr><td colspan=7>No missions executed.</td></tr>"
+    return build_rows(rows)
+
+
 def build_architecture_mermaid(report: DemoRunArtifacts) -> str:
     solver_addresses = sorted(report.reward_summary.solver_totals)
     validator_addresses = sorted(report.reward_summary.validator_totals)
@@ -244,6 +415,37 @@ def build_architecture_mermaid(report: DemoRunArtifacts) -> str:
     if report.owner_actions:
         lines.append(f"    owner -. {len(report.owner_actions)} interventions .-> architect")
     return "\n".join(lines)
+
+def _build_mermaid_graph(
+    items: Iterable[tuple[str, DemoRunArtifacts]],
+    scenarios: Mapping[str, DemoScenario] | None,
+) -> str:
+    items = list(items)
+    if not items:
+        return "graph TD\n    A[No missions executed]"
+    lines = ["flowchart LR"]
+    node_names: list[str] = []
+    for index, (identifier, report) in enumerate(items):
+        node = f"S{index}"
+        node_names.append(node)
+        stress = (
+            scenarios[identifier].stress_multiplier
+            if scenarios and identifier in scenarios
+            else 1.0
+        )
+        label = mermaid_escape(
+            f"{report.scenario}\\nscore {report.final_score:.3f}\\nΔ {report.improvement_over_first:.3f}\\nstress {stress:.2f}×"
+        )
+        lines.append(f"    {node}[\"{label}\"]")
+    for index in range(len(node_names) - 1):
+        lines.append(f"    {node_names[index]} --> {node_names[index + 1]}")
+    lines.append("    classDef pass fill:#16f2b3,stroke:#013220,color:#01230f;")
+    lines.append("    classDef alert fill:#ff6f61,stroke:#7f1d1d,color:#1a0404;")
+    for index, (_, report) in enumerate(items):
+        css = "pass" if report.verification.overall_pass else "alert"
+        lines.append(f"    class {node_names[index]} {css};")
+    return "\n".join(lines)
+
 
 
 def build_timeline_mermaid(report: DemoRunArtifacts) -> str:
@@ -509,6 +711,62 @@ def render_html(report: DemoRunArtifacts) -> str:
     )
 
 
+
+def render_batch_html(
+    reports: Mapping[str, DemoRunArtifacts],
+    summary: Mapping[str, object],
+    bundles: Mapping[str, ReportBundle],
+    output_dir: Path,
+    scenarios: Mapping[str, DemoScenario] | None,
+) -> str:
+    items = sorted(reports.items(), key=lambda item: item[1].final_score, reverse=True)
+    summary_cards = _build_summary_cards(summary)
+    table_rows = _build_table_rows(items, bundles, output_dir, scenarios)
+    mermaid_graph = _build_mermaid_graph(items, scenarios)
+    return BATCH_HTML_TEMPLATE.format(
+        title="Meta-Agentic Mission Constellation",
+        mermaid_js=load_mermaid_js(),
+        scenario_count=int(summary.get("completed", 0)),
+        pass_rate=float(summary.get("pass_rate", 0.0)) * 100.0,
+        owner_touchpoints=int(summary.get("owner_touchpoints", 0)),
+        summary_cards=summary_cards,
+        table_rows=table_rows,
+        mermaid_graph=mermaid_graph,
+    )
+
+
+def export_batch_report(
+    reports: Mapping[str, DemoRunArtifacts],
+    output_dir: Path,
+    bundles: Mapping[str, ReportBundle],
+    *,
+    scenarios: Mapping[str, DemoScenario] | None = None,
+) -> ReportBundle:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    summary = _summarise_batch(reports)
+    payload: Dict[str, object] = {"summary": summary, "scenarios": {}}
+    scenario_payload = payload["scenarios"]
+    for identifier, report in reports.items():
+        bundle = bundles.get(identifier)
+        artefact_paths = {}
+        if bundle is not None:
+            artefact_paths = {
+                "json": _relative_path(bundle.json_path, output_dir),
+                "html": _relative_path(bundle.html_path, output_dir),
+            }
+        entry: Dict[str, object] = {"report": report.to_dict(), "artefacts": artefact_paths}
+        if scenarios and identifier in scenarios:
+            entry["scenario"] = scenarios[identifier].to_dict()
+        scenario_payload[identifier] = entry
+    json_path = output_dir / 'batch.json'
+    html_path = output_dir / 'batch.html'
+    json_path.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+    html_path.write_text(
+        render_batch_html(reports, summary, bundles, output_dir, scenarios),
+        encoding='utf-8',
+    )
+    return ReportBundle(json_path=json_path, html_path=html_path)
+
 def export_report(report: DemoRunArtifacts, output_dir: Path) -> ReportBundle:
     output_dir.mkdir(parents=True, exist_ok=True)
     json_path = output_dir / "report.json"
@@ -518,4 +776,11 @@ def export_report(report: DemoRunArtifacts, output_dir: Path) -> ReportBundle:
     return ReportBundle(json_path=json_path, html_path=html_path)
 
 
-__all__ = ["export_report", "render_html", "ReportBundle", "load_mermaid_js"]
+__all__ = [
+    "export_report",
+    "export_batch_report",
+    "render_html",
+    "render_batch_html",
+    "ReportBundle",
+    "load_mermaid_js",
+]

@@ -12,10 +12,13 @@ from typing import Mapping
 
 from meta_agentic_demo.admin import OwnerConsole, load_owner_overrides
 from meta_agentic_demo.config import DatasetProfile, DemoConfig, DemoScenario
+from meta_agentic_demo.entities import DemoRunArtifacts
 from meta_agentic_demo.governance import GovernanceTimelock
 from meta_agentic_demo.orchestrator import SovereignArchitect
-from meta_agentic_demo.report import export_report
+from meta_agentic_demo.report import ReportBundle, export_report
 
+
+ALL_SCENARIOS_IDENTIFIER = "all"
 
 SCENARIOS = [
     DemoScenario(
@@ -55,12 +58,14 @@ SCENARIOS = [
     ),
 ]
 
+SCENARIO_LOOKUP = {scenario.identifier: scenario for scenario in SCENARIOS}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "scenario",
-        choices=[scenario.identifier for scenario in SCENARIOS],
+        choices=[*SCENARIO_LOOKUP, ALL_SCENARIOS_IDENTIFIER],
         help="Identifier of the narrative to execute",
     )
     parser.add_argument(
@@ -226,7 +231,12 @@ def describe_config(config: DemoConfig) -> str:
 
 def main() -> None:
     args = parse_args()
-    scenario = next(s for s in SCENARIOS if s.identifier == args.scenario)
+    selected_scenarios = (
+        list(SCENARIOS)
+        if args.scenario == ALL_SCENARIOS_IDENTIFIER
+        else [SCENARIO_LOOKUP[args.scenario]]
+    )
+    multi_run = len(selected_scenarios) > 1
     owner_console = OwnerConsole(DemoConfig(scenarios=SCENARIOS))
     timelock = GovernanceTimelock(
         default_delay=timedelta(seconds=max(args.timelock_delay, 0.0))
@@ -260,9 +270,10 @@ def main() -> None:
                 "update_verification_policy", verification_overrides
             ):
                 return
-            if "paused" in overrides:
-                if not queue_timelock("set_paused", {"value": bool(overrides["paused"]) }):
-                    return
+            if "paused" in overrides and not queue_timelock(
+                "set_paused", {"value": bool(overrides["paused"]) }
+            ):
+                return
         reward_overrides = {
             key: value
             for key, value in {
@@ -356,141 +367,144 @@ def main() -> None:
             print(f"  • Executed {len(executed_actions)} action(s) ready for execution")
 
     config = owner_console.config
-    architect = SovereignArchitect(
-        config=config,
-        owner_console=owner_console,
-        timelock=timelock,
-    )
-    print("🚀 Initiating sovereign architect for scenario:", scenario.title)
-    print(indent(scenario.description, prefix="  > "))
-    print("\n🧭 Configuration:")
-    print(indent(describe_config(config), prefix="  "))
-    if scenario.dataset_profile:
-        profile = scenario.dataset_profile
-        print(
-            "\n🧪 Scenario dataset profile:",
-            f"length={profile.length}, noise={profile.noise:.3f}, seed={profile.seed}",
+    aggregated_results: dict[str, DemoRunArtifacts] = {}
+    bundles: dict[str, ReportBundle] = {}
+
+    for index, scenario in enumerate(selected_scenarios, start=1):
+        architect = SovereignArchitect(
+            config=config,
+            owner_console=owner_console,
+            timelock=timelock,
         )
-    if not math.isclose(scenario.stress_multiplier, 1.0):
-        print(
-            f"\n🌡️ Stress profile amplified: {scenario.stress_multiplier:.2f}× thermodynamic stress battery",
-        )
-    if owner_console.is_paused:
-        print("\n⏸️ Operations paused by owner. Resume to execute jobs.")
-        return
-    artefacts = architect.run(scenario)
-    bundle = export_report(artefacts, args.output)
-    print("\n✅ Demo complete. Artefacts written to:")
-    print(f"  • JSON: {bundle.json_path}")
-    print(f"  • HTML: {bundle.html_path}")
-    print("\n🏁 Final program:")
-    print(indent(artefacts.final_program, prefix="  "))
-    print(f"Composite score: {artefacts.final_score:.4f}")
-    print(f"Improvement vs first generation: {artefacts.improvement_over_first:.4f}")
-    print(f"Stress multiplier applied: {architect.stress_multiplier:.2f}×")
-    if artefacts.first_success_generation is not None:
-        print(
-            "Success threshold achieved at generation",
-            artefacts.first_success_generation,
-        )
-    else:
-        print("Success threshold not reached within configured generations.")
-    summary = artefacts.reward_summary
-    print("\n💠 Reward distribution overview:")
-    print(f"  • Total disbursed: {summary.total_reward:.2f} $AGIα")
-    print(f"  • Architect retained: {summary.architect_total:.2f} $AGIα")
-    if summary.top_solver:
-        print(
-            f"  • Top solver: {summary.top_solver} "
-            f"({summary.solver_totals[summary.top_solver]:.2f} $AGIα)"
-        )
-    else:
-        print("  • Top solver: N/A")
-    if summary.top_validator:
-        print(
-            f"  • Top validator: {summary.top_validator} "
-            f"({summary.validator_totals[summary.top_validator]:.2f} $AGIα)"
-        )
-    else:
-        print("  • Top validator: N/A")
-    verification = artefacts.verification
-    print("\n🔍 Multi-angle verification checks:")
-    for name, score in sorted(verification.holdout_scores.items()):
-        print(f"  • {name}: {score:.4f}")
-    if verification.stress_scores:
-        print(
-            f"  • Stress threshold {verification.stress_threshold:.2f} | pass {verification.pass_stress}"
-        )
-        for name, score in sorted(verification.stress_scores.items()):
-            status = "PASS" if score >= verification.stress_threshold else "ALERT"
+        header = f"Scenario {index}/{len(selected_scenarios)}" if multi_run else "Scenario"
+        print(f"\n🚀 {header}: {scenario.title}")
+        print(indent(scenario.description, prefix="  > "))
+        print("\n🧭 Configuration:")
+        print(indent(describe_config(config), prefix="  "))
+        if scenario.dataset_profile:
+            profile = scenario.dataset_profile
             print(
-                f"      - {name}: {score:.4f} ({status})"
+                "\n🧪 Scenario dataset profile:",
+                f"length={profile.length}, noise={profile.noise:.3f}, seed={profile.seed}",
             )
-    else:
-        print("  • Stress suite: no adversarial scenarios executed")
-    print(
-        f"  • Residual mean {verification.residual_mean:+.4f} | std {verification.residual_std:.4f}"
-    )
-    print(
-        f"  • Holdout divergence {verification.divergence:.4f}"
-        f" | pass gates: holdout={verification.pass_holdout}, residual={verification.pass_residual_balance},"
-        f" divergence={verification.pass_divergence}"
-    )
-    print(
-        f"  • MAE score {verification.mae_score:.4f} | pass {verification.pass_mae}"
-    )
-    lower, upper = verification.bootstrap_interval
-    print(
-        f"  • Bootstrap CI [{lower:.4f}, {upper:.4f}] | pass {verification.pass_confidence}"
-    )
-    print(
-        f"  • Decimal replay {verification.precision_replay_score:.4f}"
-        f" (Δ {verification.precision_replay_score - verification.primary_score:+.4f})"
-        f" | pass {verification.pass_precision_replay}"
-    )
-    print(
-        f"  • Variance ratio {verification.variance_ratio:.4f}"
-        f" | pass {verification.pass_variance_ratio}"
-    )
-    print(
-        f"  • Spectral ratio {verification.spectral_ratio:.4f}"
-        f" | pass {verification.pass_spectral_ratio}"
-    )
-    print(
-        f"  • Monotonic violations {verification.monotonic_violations} | pass {verification.monotonic_pass}"
-    )
-    print(
-        "  • Overall verification verdict:",
-        "PASS" if verification.overall_pass else "ATTENTION REQUIRED",
-    )
-    if artefacts.opportunities:
-        print("\n🌌 Opportunity intelligence:")
-        for opportunity in artefacts.opportunities:
+        if not math.isclose(scenario.stress_multiplier, 1.0):
             print(
-                indent(
-                    (
-                        f"{opportunity.name} → impact {opportunity.impact_score * 100:.1f}% | "
-                        f"confidence {opportunity.confidence * 100:.1f}% | "
-                        f"capital {opportunity.capital_allocation * 100:.1f}% | "
-                        f"energy {opportunity.energy_ratio * 100:.1f}%"
-                    ),
-                    prefix="  • ",
+                f"\n🌡️ Stress profile amplified: {scenario.stress_multiplier:.2f}× thermodynamic stress battery",
+            )
+        if owner_console.is_paused:
+            print("\n⏸️ Operations paused by owner. Resume to execute jobs.")
+            return
+        artefacts = architect.run(scenario)
+        output_dir = args.output / scenario.identifier if multi_run else args.output
+        bundle = export_report(artefacts, output_dir)
+        aggregated_results[scenario.identifier] = artefacts
+        bundles[scenario.identifier] = bundle
+        print("\n✅ Demo complete. Artefacts written to:")
+        print(f"  • JSON: {bundle.json_path}")
+        print(f"  • HTML: {bundle.html_path}")
+        print("\n🏁 Final program:")
+        print(indent(artefacts.final_program, prefix="  "))
+        print(f"Composite score: {artefacts.final_score:.4f}")
+        print(f"Improvement vs first generation: {artefacts.improvement_over_first:.4f}")
+        print(f"Stress multiplier applied: {architect.stress_multiplier:.2f}×")
+        if artefacts.first_success_generation is not None:
+            print(
+                "Success threshold achieved at generation",
+                artefacts.first_success_generation,
+            )
+        else:
+            print("Success threshold not reached within configured generations.")
+        summary = artefacts.reward_summary
+        print("\n💠 Reward distribution overview:")
+        print(f"  • Total disbursed: {summary.total_reward:.2f} $AGIα")
+        print(f"  • Architect retained: {summary.architect_total:.2f} $AGIα")
+        if summary.top_solver:
+            print(
+                f"  • Top solver: {summary.top_solver} -> {summary.solver_totals[summary.top_solver]:.2f} $AGIα"
+            )
+        if summary.top_validator:
+            print(
+                "  • Top validator:",
+                summary.top_validator,
+                "->",
+                f"{summary.validator_totals[summary.top_validator]:.2f} $AGIα",
+            )
+        print("\n🧵 Triple-verification digest:")
+        digest = artefacts.verification
+        print(
+            f"  • Holdout pass: {digest.pass_holdout} (scores={json.dumps(digest.holdout_scores)})"
+        )
+        print(
+            f"  • Residual balance: mean={digest.residual_mean:.4f}, std={digest.residual_std:.4f}, pass={digest.pass_residual_balance}"
+        )
+        print(
+            f"  • Divergence tolerance: {digest.divergence:.4f} (pass={digest.pass_divergence})"
+        )
+        print(
+            f"  • MAE shield: score={digest.mae_score:.4f} (pass={digest.pass_mae})"
+        )
+        print(
+            f"  • Bootstrap confidence: {digest.bootstrap_interval[0]:.4f}-{digest.bootstrap_interval[1]:.4f}"
+            f" @ {digest.pass_confidence}"
+        )
+        print(
+            f"  • Stress battery: {json.dumps(digest.stress_scores)} (threshold={digest.stress_threshold:.2f}, pass={digest.pass_stress})"
+        )
+        print(
+            f"  • Entropy shield: score={digest.entropy_score:.4f} (floor={digest.entropy_floor:.2f}, pass={digest.pass_entropy})"
+        )
+        print(
+            f"  • Precision replay: score={digest.precision_replay_score:.4f}"
+            f" (tolerance={owner_console.config.verification_policy.precision_replay_tolerance:.4f}, pass={digest.pass_precision_replay})"
+        )
+        print(
+            f"  • Variance ratio: {digest.variance_ratio:.4f} (ceiling={owner_console.config.verification_policy.variance_ratio_ceiling:.2f}, pass={digest.pass_variance_ratio})"
+        )
+        print(
+            f"  • Spectral leak: {digest.spectral_ratio:.4f} (ceiling={owner_console.config.verification_policy.spectral_energy_ceiling:.2f}, pass={digest.pass_spectral_ratio})"
+        )
+        print("  • Overall verdict:", "PASS" if digest.overall_pass else "ATTENTION")
+
+        if artefacts.opportunities:
+            print("\n📈 Opportunity intelligence cues:")
+            for opportunity in artefacts.opportunities:
+                print(
+                    f"  • {opportunity.name}: impact={opportunity.impact_score:.2f},"
+                    f" confidence={opportunity.confidence:.2f} :: {opportunity.narrative}"
                 )
-            )
-            print(indent(opportunity.narrative, prefix="      ↳ "))
-    else:
-        print("\n🌌 Opportunity intelligence: no actionable missions surfaced.")
-    if owner_console.events:
-        print("\n🛡️ Owner interventions during run:")
-        for event in owner_console.events:
-            print(
-                indent(
-                    f"{event.timestamp.isoformat()} • {event.action} → {json.dumps(event.payload, sort_keys=True)}",
-                    prefix="  - ",
+        else:
+            print("\n📈 No opportunities surfaced during this run.")
+
+        if artefacts.timelock_actions:
+            print("\n⏱️ Governance timelock ledger:")
+            for action in artefacts.timelock_actions:
+                print(
+                    f"  • {action.name} (status={action.status}, ETA={action.eta.isoformat(timespec='seconds')})"
                 )
-            )
-    else:
-        print("\n🛡️ Owner interventions during run: none required.")
+        else:
+            print("\n⏱️ Governance timelock ledger is empty – sovereign operated in real-time.")
+
+        if artefacts.owner_actions:
+            print("\n🛡️ Owner interventions recorded:")
+            for action in artefacts.owner_actions:
+                print(
+                    f"  • {action.timestamp.isoformat(timespec='seconds')} :: {action.action} -> {json.dumps(action.payload)}"
+                )
+        else:
+            print("\n🛡️ Owner interventions not required – configuration remained stable.")
+
+    if multi_run:
+        from meta_agentic_demo.report import export_batch_report
+
+        batch_bundle = export_batch_report(
+            aggregated_results,
+            args.output,
+            bundles,
+            scenarios={scenario.identifier: scenario for scenario in selected_scenarios},
+        )
+        print("\n🌌 Mission constellation synthesised:")
+        print(f"  • JSON: {batch_bundle.json_path}")
+        print(f"  • HTML: {batch_bundle.html_path}")
 
 
 if __name__ == "__main__":
