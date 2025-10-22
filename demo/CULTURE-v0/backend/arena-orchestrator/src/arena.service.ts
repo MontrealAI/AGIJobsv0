@@ -324,7 +324,9 @@ export class ArenaService extends ArenaEmitter {
       throw new Error('Round must be closed before finalisation');
     }
 
-    const winnerSet = new Set((winners && winners.length > 0 ? winners : this.computeAutomaticWinners(round)).map((w) => w.toLowerCase()));
+    const resolvedWinners =
+      winners === undefined ? this.computeAutomaticWinners(round) : winners;
+    const winnerSet = new Set(resolvedWinners.map((w) => w.toLowerCase()));
     round.winners = Array.from(winnerSet);
 
     await Promise.all(
