@@ -240,8 +240,27 @@ def _detect_intent_kind(text: str) -> str:
 def _build_steps(intent: JobIntent) -> List[Step]:
     """Create a minimal DAG for the provided intent."""
 
+    moderation_params = {
+        "title": intent.title,
+        "description": intent.description,
+        "attachments": [attachment.model_dump(exclude_none=True) for attachment in intent.attachments],
+    }
+
     steps: List[Step] = [
-        Step(id="pin_spec", name="Pin job specification", kind="pin", tool="ipfs.pin"),
+        Step(
+            id="moderation_gate",
+            name="Moderation and plagiarism screening",
+            kind="validate",
+            tool="safety.moderation",
+            params=moderation_params,
+        ),
+        Step(
+            id="pin_spec",
+            name="Pin job specification",
+            kind="pin",
+            tool="ipfs.pin",
+            needs=["moderation_gate"],
+        ),
         Step(
             id="post_job",
             name="Post job on-chain",
@@ -277,7 +296,7 @@ def _build_steps(intent: JobIntent) -> List[Step]:
     if intent.kind == "finalize":
         trimmed_steps = steps[-1:]
     elif intent.kind == "submit":
-        trimmed_steps = steps[2:]
+        trimmed_steps = steps[3:]
 
     if trimmed_steps is not None:
         remaining_ids = {step.id for step in trimmed_steps}

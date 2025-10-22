@@ -7,11 +7,13 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "types": ["node", "hardhat"],
+    "typeRoots": ["./node_modules/@types", "./scripts/types"],
     "skipLibCheck": true
   },
   "include": [
     "hardhat.config.ts",
     "scripts/**/*.ts",
+    "demo/**/*.ts",
     "test/**/*.ts",
     "docs/**/*.ts",
     "packages/**/*.ts"

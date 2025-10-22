@@ -173,6 +173,33 @@ services:
       bash -lc "set -euo pipefail && npm install --legacy-peer-deps &&
       npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts"
 
+  culture-analytics:
+    image: node:20.18.1
+    working_dir: /workspace
+    <<: *default-env
+    environment:
+      <<: *default-env.environment
+      CULTURE_ANALYTICS_OUTPUT: ${CULTURE_ANALYTICS_OUTPUT-/workspace/demo/CULTURE-v0/data/analytics}
+      CULTURE_ANALYTICS_ALERT_LOG: ${CULTURE_ANALYTICS_ALERT_LOG-/workspace/demo/CULTURE-v0/logs/analytics.alerts.jsonl}
+      CULTURE_ANALYTICS_DB: /data/db/culture-graph.db
+      CULTURE_ORCHESTRATOR_URL: ${CULTURE_ORCHESTRATOR_URL-http://culture-orchestrator:4005}
+      CULTURE_ANALYTICS_INTERVAL: ${CULTURE_ANALYTICS_INTERVAL-3600}
+      ORCHESTRATOR_MODERATION_AUDIT: ${ORCHESTRATOR_MODERATION_AUDIT-/workspace/storage/validation/moderation.log}
+      CULTURE_ORCHESTRATOR_LOG: ${CULTURE_ORCHESTRATOR_LOG-/var/log/culture-orchestrator/structured.log}
+    command: >-
+      bash -lc "set -euo pipefail && npm install --legacy-peer-deps &&
+      npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/generate.analytics.ts --interval ${CULTURE_ANALYTICS_INTERVAL:-3600}"
+    depends_on:
+      culture-indexer:
+        condition: service_healthy
+      culture-orchestrator:
+        condition: service_healthy
+    volumes:
+      - ..:/workspace
+      - culture_node_modules:/workspace/node_modules
+      - culture_indexer_db:/data/db
+      - culture_orchestrator_logs:/var/log/culture-orchestrator
+
 volumes:
   culture_chain_data:
   culture_ipfs_data:

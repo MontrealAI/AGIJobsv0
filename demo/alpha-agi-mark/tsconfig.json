@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./",
-    "types": ["hardhat"],
+    "types": ["node", "hardhat"],
     "resolveJsonModule": true,
     "esModuleInterop": true
   },
