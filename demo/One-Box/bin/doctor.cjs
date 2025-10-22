@@ -30,7 +30,9 @@ function describeContractStatus(probeEntry, { allowMissing = false } = {}) {
     case 'error':
       return `⚠️  RPC error while fetching bytecode${probeEntry.error ? `: ${probeEntry.error}` : ''}`;
     case 'missing':
-      return allowMissing ? '(not configured)' : '⚠️  Address not provided.';
+      return allowMissing
+        ? '⚠️  Address not configured. Configure it to keep owner pause controls active.'
+        : '⚠️  Address not provided.';
     default:
       return `⚠️  Unrecognised status: ${String(probeEntry.status)}`;
   }

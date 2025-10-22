@@ -20,6 +20,10 @@ const {
 const net = require('node:net');
 const { once } = require('node:events');
 
+const VALID_JOB_REGISTRY = '0x000000000000000000000000000000000000c0de';
+const VALID_STAKE_MANAGER = '0x0000000000000000000000000000000000000abc';
+const VALID_SYSTEM_PAUSE = '0x0000000000000000000000000000000000000def';
+
 test('loadEnvironment merges root and demo .env files with demo taking precedence', () => {
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'onebox-root-'));
   const tmpDemo = path.join(tmpRoot, 'demo', 'One-Box');
@@ -37,14 +41,14 @@ test('loadEnvironment merges root and demo .env files with demo taking precedenc
 test('resolveConfig normalises prefix and derives defaults', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: '0x1234',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
     ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
     ONEBOX_PORT: '9010',
     ONEBOX_UI_PORT: '4400',
     ONEBOX_PUBLIC_ONEBOX_PREFIX: 'mission-control/',
     ONEBOX_API_TOKEN: 'demo',
-    STAKE_MANAGER_ADDRESS: '0xabc',
-    SYSTEM_PAUSE_ADDRESS: '0xdef',
+    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
+    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
     AGENT_ADDRESS: 'agent.example.eth',
   };
   const config = resolveConfig(env);
@@ -58,20 +62,22 @@ test('resolveConfig normalises prefix and derives defaults', () => {
   assert.equal(config.welcomeMessage, '');
   assert.deepEqual(config.shortcutExamples, []);
   assert.deepEqual(config.warnings, []);
-  assert.equal(config.jobRegistryAddress, '0x1234');
-  assert.equal(config.stakeManagerAddress, '0xabc');
-  assert.equal(config.systemPauseAddress, '0xdef');
+  assert.equal(config.jobRegistryAddress, VALID_JOB_REGISTRY);
+  assert.equal(config.stakeManagerAddress, VALID_STAKE_MANAGER);
+  assert.equal(config.systemPauseAddress, VALID_SYSTEM_PAUSE);
   assert.equal(config.agentAddress, 'agent.example.eth');
 });
 
 test('resolveConfig allows explicit CLI overrides to win over environment', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: '0x1234',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
     ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
     ONEBOX_PORT: '9999',
     ONEBOX_UI_PORT: '4444',
     ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'http://example.invalid',
+    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
+    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
   };
   const config = resolveConfig(env, {
     orchestratorPort: 8088,
@@ -111,9 +117,9 @@ test('resolveConfig allows explicit CLI overrides to win over environment', () =
 test('resolveConfig parses guardrail environment variables', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: '0x1234',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
     ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
-    STAKE_MANAGER_ADDRESS: '   0x4567   ',
+    STAKE_MANAGER_ADDRESS: '   0x0000000000000000000000000000000000004567   ',
     SYSTEM_PAUSE_ADDRESS: '   ',
     AGENT_ADDRESS: ' 0x000000000000000000000000000000000000abcd ',
     ONEBOX_MAX_JOB_BUDGET_AGIA: '45.5',
@@ -126,8 +132,11 @@ test('resolveConfig parses guardrail environment variables', () => {
   assert.equal(config.maxJobDurationDays, 7);
   assert.equal(config.welcomeMessage, 'Hello operator');
   assert.deepEqual(config.shortcutExamples, ['Research', 'Finalize job 12']);
-  assert.deepEqual(config.warnings, []);
-  assert.equal(config.stakeManagerAddress, '0x4567');
+  assert.ok(
+    config.warnings.some((warning) => warning.includes('System pause address not configured')),
+    'Expected warning about missing SYSTEM_PAUSE_ADDRESS',
+  );
+  assert.equal(config.stakeManagerAddress, '0x0000000000000000000000000000000000004567');
   assert.equal(config.systemPauseAddress, '');
   assert.equal(config.agentAddress, '0x000000000000000000000000000000000000abcd');
 });
@@ -135,20 +144,76 @@ test('resolveConfig parses guardrail environment variables', () => {
 test('resolveConfig merges CLI example overrides with environment shortcuts', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: '0x1234',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
     ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
     ONEBOX_UI_SHORTCUTS: 'Research | Finalize job 12',
+    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
+    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
   };
   const config = resolveConfig(env, { examples: ['Diagnose agent', 'Finalize job 12'] });
   assert.deepEqual(config.shortcutExamples, ['Research', 'Finalize job 12', 'Diagnose agent']);
 });
 
+test('resolveConfig surfaces warnings when governance control addresses are omitted', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
+  };
+  const config = resolveConfig(env);
+  assert.ok(
+    config.warnings.some((warning) => warning.includes('Stake manager address not configured')),
+    'Expected stake manager warning when unset',
+  );
+  assert.ok(
+    config.warnings.some((warning) => warning.includes('System pause address not configured')),
+    'Expected system pause warning when unset',
+  );
+});
+
+test('resolveConfig reports invalid governance control addresses', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
+    STAKE_MANAGER_ADDRESS: 'invalid-stake',
+    SYSTEM_PAUSE_ADDRESS: '0x1234',
+    AGENT_ADDRESS: '0x0',
+  };
+  const config = resolveConfig(env, { allowPartial: true });
+  assert.ok(
+    config.warnings.some((warning) => warning.includes('Stake manager address must be a 0x-prefixed 40-character address')),
+    'Expected stake manager validation warning',
+  );
+  assert.ok(
+    config.warnings.some((warning) => warning.includes('System pause address must be a 0x-prefixed 40-character address')),
+    'Expected system pause validation warning',
+  );
+  assert.ok(
+    config.warnings.some((warning) => warning.includes('AGENT_ADDRESS')),
+    'Expected agent placeholder/format warning',
+  );
+});
+
+test('resolveConfig rejects invalid job registry addresses when strict', () => {
+  const env = {
+    RPC_URL: 'http://localhost:8545',
+    JOB_REGISTRY_ADDRESS: '0x1234',
+    ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
+    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
+    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
+  };
+  assert.throws(() => resolveConfig(env), /JOB_REGISTRY_ADDRESS must be a 0x-prefixed 40-character address/);
+});
+
 test('resolveConfig warns when exposing orchestrator without API token', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: '0x000000000000000000000000000000000000c0de',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
     ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
     ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'https://demo.example/onebox',
+    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
+    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
   };
   const config = resolveConfig(env);
   assert.ok(
@@ -161,9 +226,11 @@ test('resolveConfig warns when exposing orchestrator without API token', () => {
 test('resolveConfig warns when the orchestrator URL cannot be parsed', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: '0x000000000000000000000000000000000000c0de',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
     ONEBOX_RELAYER_PRIVATE_KEY: '0xbeef',
     ONEBOX_PUBLIC_ORCHESTRATOR_URL: 'not-a-url',
+    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
+    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
   };
   const config = resolveConfig(env);
   assert.ok(
@@ -176,10 +243,12 @@ test('resolveConfig warns when the orchestrator URL cannot be parsed', () => {
 test('resolveConfig collects warnings for malformed guardrails when allowPartial', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: '0x1234',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
     ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
     ONEBOX_MAX_JOB_BUDGET_AGIA: 'abc',
     ONEBOX_MAX_JOB_DURATION_DAYS: '-1',
+    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
+    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
   };
   const config = resolveConfig(env, { allowPartial: true });
   assert.equal(config.maxJobBudgetAgia, undefined);
@@ -191,10 +260,12 @@ test('resolveConfig collects warnings for malformed guardrails when allowPartial
 test('createDemoUrl encodes orchestrator, prefix, token, and mode', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: '0x1234',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
     ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
     ONEBOX_API_TOKEN: 'secret',
     ONEBOX_UI_DEFAULT_MODE: 'expert',
+    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
+    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
   };
   const config = resolveConfig(env);
   const url = createDemoUrl(config);
@@ -211,10 +282,12 @@ test('createDemoUrl encodes orchestrator, prefix, token, and mode', () => {
 test('createDemoUrl includes welcome and examples when provided', () => {
   const env = {
     RPC_URL: 'http://localhost:8545',
-    JOB_REGISTRY_ADDRESS: '0x1234',
+    JOB_REGISTRY_ADDRESS: VALID_JOB_REGISTRY,
     ONEBOX_RELAYER_PRIVATE_KEY: '0xdead',
     ONEBOX_UI_WELCOME: 'Hello operator',
     ONEBOX_UI_SHORTCUTS: '["Spin up research mission", "Finalize job 42"]',
+    STAKE_MANAGER_ADDRESS: VALID_STAKE_MANAGER,
+    SYSTEM_PAUSE_ADDRESS: VALID_SYSTEM_PAUSE,
   };
   const config = resolveConfig(env);
   const url = createDemoUrl(config);
