@@ -2,6 +2,7 @@ const http = require('node:http');
 const path = require('node:path');
 const fs = require('node:fs');
 const { spawn } = require('node:child_process');
+const net = require('node:net');
 const { once } = require('node:events');
 const dotenv = require('dotenv');
 
@@ -196,6 +197,96 @@ function parseShortcutExamples(input) {
 
   process(input);
   return [...new Set(collected)];
+}
+
+async function detectPortAvailability({ port, host }) {
+  if (!Number.isFinite(port) || port <= 0) {
+    throw new Error('Port must be a positive integer');
+  }
+  const listenHost = host && String(host).trim() ? host.trim() : '0.0.0.0';
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.unref();
+
+    const finish = (status, error) => {
+      try {
+        server.close();
+      } catch (closeError) {
+        // ignore close errors because we already captured the state we care about
+      }
+      resolve({ status, error: error ?? null, host: listenHost, port });
+    };
+
+    server.once('error', (error) => {
+      if (error && (error.code === 'EADDRINUSE' || error.code === 'EACCES')) {
+        finish('blocked', error);
+        return;
+      }
+      if (error && error.code === 'EADDRNOTAVAIL') {
+        finish('unknown', error);
+        return;
+      }
+      finish('unknown', error);
+    });
+
+    server.once('listening', () => {
+      finish('available');
+    });
+
+    try {
+      server.listen({ port, host: listenHost, exclusive: true });
+    } catch (error) {
+      finish('unknown', error);
+    }
+  });
+}
+
+async function collectPortDiagnostics(config) {
+  const checks = [
+    {
+      id: 'orchestrator',
+      label: 'Orchestrator API',
+      port: config.orchestratorPort,
+      host: config.uiHost ?? '0.0.0.0',
+      listenHost: '0.0.0.0',
+    },
+    {
+      id: 'ui',
+      label: 'UI server',
+      port: config.uiPort,
+      host: config.uiHost,
+      listenHost: config.uiHost,
+    },
+  ];
+
+  const results = [];
+  for (const check of checks) {
+    const result = await detectPortAvailability({ port: check.port, host: check.listenHost });
+    results.push({
+      id: check.id,
+      label: check.label,
+      port: check.port,
+      host: check.listenHost,
+      status: result.status,
+      error: result.error,
+    });
+  }
+
+  return results;
+}
+
+async function assertPortsAvailable(config) {
+  const diagnostics = await collectPortDiagnostics(config);
+  const conflicts = diagnostics.filter((entry) => entry.status === 'blocked');
+  if (conflicts.length > 0) {
+    const message = conflicts
+      .map((entry) => `${entry.label} port ${entry.port} (${entry.host})`)
+      .join(', ');
+    const error = new Error(`Ports already in use: ${message}`);
+    error.diagnostics = diagnostics;
+    throw error;
+  }
+  return diagnostics;
 }
 
 function resolveConfig(env, options = {}) {
@@ -571,6 +662,19 @@ async function runDemo(options = {}) {
   const env = loadEnvironment({ rootDir, demoDir });
   const config = resolveConfig(env, options);
 
+  const portDiagnostics = await assertPortsAvailable(config);
+  const additionalWarnings = portDiagnostics
+    .filter((entry) => entry.status === 'unknown' && entry.error)
+    .map((entry) =>
+      entry.error instanceof Error
+        ? `Unable to verify ${entry.label} port ${entry.port} (${entry.host}): ${entry.error.message}`
+        : `Unable to verify ${entry.label} port ${entry.port} (${entry.host}).`
+    );
+  config.portDiagnostics = portDiagnostics;
+  if (additionalWarnings.length > 0) {
+    config.warnings = [...config.warnings, ...additionalWarnings];
+  }
+
   await ensureInstall(rootDir);
   await buildStaticAssets(rootDir, env);
 
@@ -608,6 +712,18 @@ async function runDemo(options = {}) {
   }
   if (config.apiToken) {
     console.log('   • API token: supplied via query parameter (kept in-memory only)');
+  }
+  if (config.portDiagnostics) {
+    console.log('   • Port diagnostics:');
+    for (const diag of config.portDiagnostics) {
+      const statusLabel =
+        diag.status === 'available'
+          ? 'available'
+          : diag.status === 'blocked'
+          ? 'in use'
+          : 'unknown';
+      console.log(`       – ${diag.label}: ${statusLabel} on ${diag.host}:${diag.port}`);
+    }
   }
   console.log('   • Press Ctrl+C to stop');
   console.log('');
@@ -661,5 +777,8 @@ module.exports = {
   parsePositiveDecimal,
   parsePositiveInteger,
   parseShortcutExamples,
+  detectPortAvailability,
+  collectPortDiagnostics,
+  assertPortsAvailable,
   runDemo,
 };

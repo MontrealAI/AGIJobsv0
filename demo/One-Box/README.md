@@ -50,7 +50,7 @@ The orchestrator keeps ownership controls in the loop at every stage—jobs are 
    ```sh
    npm run demo:onebox:doctor
    ```
-   The doctor checks required environment variables, pings your RPC to confirm the active chain, verifies that `JOB_REGISTRY_ADDRESS` points to live bytecode, surfaces active guardrail caps, prints the launch URL, and reminds the operator of the core owner-control commands.
+   The doctor checks required environment variables, pings your RPC to confirm the active chain, verifies that `JOB_REGISTRY_ADDRESS` points to live bytecode, inspects port availability before launch, surfaces active guardrail caps, prints the launch URL, and reminds the operator of the core owner-control commands.
 4. **Launch the One-Box:**
    ```sh
    npm run demo:onebox:launch
@@ -106,7 +106,7 @@ The launcher merges CLI flags and environment variables, de-duplicates prompts, 
 * **Resumable context.** Query parameters automatically persist the orchestrator URL, `/onebox` prefix, and mode. API tokens are applied for the current tab only so they are never written to storage.
 * **Audit artefacts.** Each execution stores a signed receipt CID. IPFS credentials in `.env` let the orchestrator pin specs and deliverables.
 * **Owner telemetry.** The One‑Box mission panel now calls `/onebox/governance/snapshot` to render live fee, stake, and identity guardrails so operators can confirm the owner surface is in control before releasing funds.
-* **Automatic hardening hints.** The launch kit flags unsafe configurations—such as sharing an HTTP endpoint or omitting an API token when the orchestrator is public—so operators correct them before a live demo.
+* **Automatic hardening hints.** The launch kit flags unsafe configurations—such as sharing an HTTP endpoint or omitting an API token when the orchestrator is public—and now blocks port collisions before the orchestrator boots so operators can correct issues in seconds.
 
 ## Configuration reference
 
