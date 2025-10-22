@@ -52,6 +52,15 @@ const DEFAULT_ENDPOINTS = {
   status: sanitizeUrlCandidate(STATUS_URL),
 };
 
+const DEFAULT_WELCOME_MESSAGE =
+  'Welcome! Describe what you want to do (e.g. "Post a job for 500 images rewarded 50 AGIALPHA").';
+let currentWelcomeMessage = DEFAULT_WELCOME_MESSAGE;
+
+const ORCHESTRATOR_TOKEN_STORAGE_KEY = 'AGIJOBS_ONEBOX_ORCHESTRATOR_TOKEN';
+const pendingAnnouncements = [];
+let currentShortcutExamples = [];
+let pendingTokenCandidate = null;
+
 const IPFS_GATEWAYS = Array.isArray(Config.IPFS_GATEWAYS) && Config.IPFS_GATEWAYS.length
   ? Config.IPFS_GATEWAYS
   : ["https://w3s.link/ipfs/"];
@@ -86,6 +95,7 @@ const ownerForm = hasDocument ? document.getElementById("owner-form") : null;
 const ownerKeySelect = hasDocument ? document.getElementById("owner-key") : null;
 const ownerValueInput = hasDocument ? document.getElementById("owner-value") : null;
 const ownerValueHint = hasDocument ? document.getElementById("owner-value-hint") : null;
+const shortcutsContainer = hasDocument ? document.getElementById("shortcuts") : null;
 
 const storage = (() => {
   try {
@@ -189,6 +199,95 @@ function sanitizePrefixSegment(value) {
   return trimmed.replace(/^\/+|\/+$/g, "");
 }
 
+export function parseShortcutExamplesInput(input) {
+  const collected = [];
+
+  const addExample = (value) => {
+    if (typeof value !== "string") return;
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    collected.push(trimmed);
+  };
+
+  const process = (candidate) => {
+    if (candidate === undefined || candidate === null) return;
+    if (Array.isArray(candidate)) {
+      for (const entry of candidate) {
+        process(entry);
+      }
+      return;
+    }
+    if (typeof candidate !== "string") return;
+    const trimmed = candidate.trim();
+    if (!trimmed) return;
+    const looksJson = trimmed.startsWith("[") && trimmed.endsWith("]");
+    if (looksJson) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        process(parsed);
+        return;
+      } catch (error) {
+        // fall through to delimiter parsing when JSON fails
+      }
+    }
+    const segments = trimmed
+      .split(/[\n\r]+|\s*\|\s*/)
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+    for (const segment of segments) {
+      addExample(segment);
+    }
+  };
+
+  process(input);
+  return [...new Set(collected)];
+}
+
+function queueAnnouncement(message) {
+  if (typeof message !== "string") return;
+  const trimmed = message.trim();
+  if (!trimmed) return;
+  pendingAnnouncements.push(trimmed);
+}
+
+export function maskTokenTail(token, { placeholder = "Not set", shortPlaceholder = "••••" } = {}) {
+  if (typeof token !== "string") return placeholder;
+  const trimmed = token.trim();
+  if (!trimmed) return placeholder;
+  if (trimmed.length <= 4) return shortPlaceholder;
+  return `••••${trimmed.slice(-4)}`;
+}
+
+function flushPendingAnnouncements() {
+  if (!pendingAnnouncements.length) return;
+  for (const message of pendingAnnouncements) {
+    pushMessage("assistant", message);
+  }
+  pendingAnnouncements.length = 0;
+}
+
+function renderShortcutExamples(examples) {
+  if (!shortcutsContainer) return;
+  const normalized = Array.isArray(examples)
+    ? examples.filter((value) => typeof value === "string" && value.trim()).map((value) => value.trim())
+    : [];
+  currentShortcutExamples = [...new Set(normalized)];
+  shortcutsContainer.innerHTML = "";
+  if (!currentShortcutExamples.length) {
+    shortcutsContainer.hidden = true;
+    return;
+  }
+  shortcutsContainer.hidden = false;
+  for (const example of currentShortcutExamples) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "shortcut-btn";
+    button.dataset.example = example;
+    button.textContent = example;
+    shortcutsContainer.appendChild(button);
+  }
+}
+
 function joinUrlSegments(base, ...segments) {
   if (!base) return "";
   let normalized = base.replace(/\/+$/, "");
@@ -251,6 +350,40 @@ function setStoredPrefix(value) {
   }
 }
 
+function getStoredApiToken() {
+  if (!storage || typeof storage.getItem !== "function") return "";
+  try {
+    const raw = storage.getItem(ORCHESTRATOR_TOKEN_STORAGE_KEY);
+    if (typeof raw !== "string") return "";
+    return raw.trim();
+  } catch (err) {
+    return "";
+  }
+}
+
+function setStoredApiToken(value) {
+  const trimmed = typeof value === "string" ? value.trim() : "";
+  try {
+    if (trimmed) {
+      storage?.setItem?.(ORCHESTRATOR_TOKEN_STORAGE_KEY, trimmed);
+    } else {
+      storage?.removeItem?.(ORCHESTRATOR_TOKEN_STORAGE_KEY);
+    }
+  } catch (err) {
+    // ignore storage failures
+  }
+  pendingTokenCandidate = null;
+}
+
+function clearStoredApiToken() {
+  try {
+    storage?.removeItem?.(ORCHESTRATOR_TOKEN_STORAGE_KEY);
+  } catch (err) {
+    // ignore
+  }
+  pendingTokenCandidate = null;
+}
+
 function clearStoredOrchestrator() {
   if (!storage) return;
   try {
@@ -259,6 +392,61 @@ function clearStoredOrchestrator() {
   } catch (err) {
     // ignore
   }
+}
+
+export function computeAuthHeaders(base, token) {
+  if (base instanceof Headers) {
+    const headers = new Headers(base);
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    } else {
+      headers.delete("Authorization");
+    }
+    return headers;
+  }
+  if (Array.isArray(base)) {
+    const entries = base.filter((entry) => {
+      if (!Array.isArray(entry) || entry.length < 1) return false;
+      const [key] = entry;
+      return typeof key === "string" && key.toLowerCase() !== "authorization";
+    });
+    if (token) {
+      entries.push(["Authorization", `Bearer ${token}`]);
+    }
+    return entries;
+  }
+  if (!token) {
+    if (base && typeof base === "object") {
+      return { ...base };
+    }
+    return base;
+  }
+  const headers = base && typeof base === "object" ? { ...base } : {};
+  headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+function buildAuthHeaders(base) {
+  const token = getStoredApiToken();
+  if (!token) {
+    if (base instanceof Headers) {
+      return new Headers(base);
+    }
+    if (Array.isArray(base)) {
+      return [...base];
+    }
+    if (base && typeof base === "object") {
+      return { ...base };
+    }
+    return base;
+  }
+  return computeAuthHeaders(base, token);
+}
+
+function withAuth(options = {}) {
+  const next = { ...options };
+  next.headers = buildAuthHeaders(options.headers);
+  return next;
 }
 
 function computeEndpointsFromBase(base, prefix) {
@@ -303,6 +491,7 @@ function applyUrlOverrides() {
   try {
     const url = new URL(window.location.href);
     let changed = false;
+    let tokenHandled = false;
     if (url.searchParams.has(URL_PARAMS.base)) {
       const baseValue = url.searchParams.get(URL_PARAMS.base);
       if (baseValue && baseValue.toLowerCase() !== "demo") {
@@ -320,12 +509,65 @@ function applyUrlOverrides() {
       setStoredPrefix(prefixValue || "");
       changed = true;
     }
+    if (url.searchParams.has("token")) {
+      const rawToken = url.searchParams.get("token");
+      const trimmed = rawToken ? rawToken.trim() : "";
+      if (trimmed) {
+        pendingTokenCandidate = trimmed;
+        queueAnnouncement(
+          "🔐 Link provided an orchestrator API token. Review it in the Advanced panel before applying."
+        );
+      } else {
+        pendingTokenCandidate = null;
+        queueAnnouncement(
+          "🔓 Link requested clearing the orchestrator API token. Use the Advanced panel to confirm."
+        );
+      }
+      if (advancedPanel) {
+        renderAdvancedPanel();
+      }
+      tokenHandled = true;
+      changed = true;
+    }
+    if (url.searchParams.has("welcome")) {
+      const rawWelcome = url.searchParams.get("welcome");
+      currentWelcomeMessage = rawWelcome && rawWelcome.trim() ? rawWelcome.trim() : DEFAULT_WELCOME_MESSAGE;
+      changed = true;
+    }
+    if (url.searchParams.has("examples")) {
+      const rawExamples = url.searchParams.get("examples");
+      const parsedExamples = parseShortcutExamplesInput(rawExamples);
+      renderShortcutExamples(parsedExamples);
+      changed = true;
+    }
+    if (url.searchParams.has("mode")) {
+      const rawMode = url.searchParams.get("mode");
+      const lowered = rawMode ? rawMode.trim().toLowerCase() : "";
+      if (lowered === "expert") {
+        AA_MODE.enabled = false;
+        queueAnnouncement("🛡️ Expert mode armed. Wallet calldata will be generated instead of relayer execution.");
+      } else if (lowered === "guest") {
+        AA_MODE.enabled = true;
+        queueAnnouncement("🤝 Guest mode active. The relayer will sponsor orchestrated transactions.");
+      }
+      changed = true;
+    }
     if (changed && typeof window.history?.replaceState === "function") {
       url.searchParams.delete(URL_PARAMS.base);
       url.searchParams.delete(URL_PARAMS.prefix);
+      url.searchParams.delete("token");
+      url.searchParams.delete("welcome");
+      url.searchParams.delete("examples");
+      url.searchParams.delete("mode");
       const nextSearch = url.searchParams.toString();
       const nextUrl = nextSearch ? `${url.pathname}?${nextSearch}${url.hash}` : `${url.pathname}${url.hash}`;
       window.history.replaceState({}, document.title, nextUrl);
+    }
+    if (!tokenHandled) {
+      const token = getStoredApiToken();
+      if (token) {
+        queueAnnouncement("🔐 API token applied for orchestrator requests.");
+      }
     }
   } catch (err) {
     // ignore invalid URL parsing
@@ -606,7 +848,12 @@ function gatewayUrlsFor(cid) {
 function renderAdvancedPanel() {
   if (!advancedPanel) return;
   const token = storage?.getItem?.(IPFS_TOKEN_STORAGE_KEY) || "";
-  const maskedToken = token ? `••••${token.slice(-4)}` : "Not set";
+  const maskedToken = maskTokenTail(token);
+  const orchestratorToken = getStoredApiToken();
+  const maskedOrchestratorToken = maskTokenTail(orchestratorToken);
+  const pendingTokenMask = pendingTokenCandidate
+    ? maskTokenTail(pendingTokenCandidate, { placeholder: "••••" })
+    : "";
   const aaSummary = summarizeAAMode(AA_MODE);
   const orchestratorMode = isDemoModeActive() ? "Demo mode" : "Live orchestrator";
   const base = getOrchestratorBase();
@@ -633,12 +880,31 @@ function renderAdvancedPanel() {
       <p class="status">Plan: ${planMarkup}</p>
       <p class="status">Execute: ${execMarkup}</p>
       <p class="status">Status: ${statusMarkup}</p>
+      <p class="status">API token: ${escapeHtml(maskedOrchestratorToken)}</p>
+      ${
+        pendingTokenCandidate
+          ? `<p class="status notice">Pending token from link: ${escapeHtml(
+              pendingTokenMask
+            )}. Choose “Apply pending token” to confirm.</p>`
+          : ""
+      }
       <div>
         <button type="button" class="inline" data-action="set-orchestrator">Set base URL</button>
         <button type="button" class="inline" data-action="set-prefix">Set prefix</button>
         ${
           hasOverrides
             ? '<button type="button" class="inline" data-action="clear-orchestrator">Clear overrides</button>'
+            : ""
+        }
+        <button type="button" class="inline" data-action="set-api-token">Set API token</button>
+        ${
+          orchestratorToken
+            ? '<button type="button" class="inline" data-action="clear-api-token">Clear API token</button>'
+            : ""
+        }
+        ${
+          pendingTokenCandidate
+            ? '<button type="button" class="inline" data-action="apply-pending-token">Apply pending token</button>'
             : ""
         }
       </div>
@@ -842,7 +1108,56 @@ if (advancedPanel) {
       storage?.removeItem?.(IPFS_TOKEN_STORAGE_KEY);
       pushMessage("assistant", "Cleared stored web3.storage token.");
       renderAdvancedPanel();
+    } else if (action === "set-api-token") {
+      const currentToken = getStoredApiToken();
+      const seed = pendingTokenCandidate || currentToken || "";
+      const value = window.prompt("Enter the orchestrator API token", seed);
+      if (value !== null) {
+        const trimmed = value.trim();
+        if (trimmed) {
+          setStoredApiToken(trimmed);
+          queueAnnouncement("🔐 API token applied for orchestrator requests.");
+          pushMessage("assistant", "Stored orchestrator API token locally.");
+        } else {
+          clearStoredApiToken();
+          pushMessage("assistant", "Cleared orchestrator API token.");
+        }
+        flushPendingAnnouncements();
+        renderAdvancedPanel();
+        refreshOwnerSnapshot();
+      }
+    } else if (action === "clear-api-token") {
+      clearStoredApiToken();
+      pushMessage("assistant", "Cleared orchestrator API token.");
+      flushPendingAnnouncements();
+      renderAdvancedPanel();
+      refreshOwnerSnapshot();
+    } else if (action === "apply-pending-token") {
+      if (!pendingTokenCandidate) return;
+      const masked = maskTokenTail(pendingTokenCandidate, { placeholder: "••••" });
+      const confirmed = window.confirm(
+        `Apply the orchestrator API token (${masked}) supplied by this link?`
+      );
+      if (confirmed) {
+        setStoredApiToken(pendingTokenCandidate);
+        queueAnnouncement("🔐 API token applied for orchestrator requests.");
+        pushMessage("assistant", "Stored orchestrator API token from pending link.");
+        flushPendingAnnouncements();
+        renderAdvancedPanel();
+        refreshOwnerSnapshot();
+      }
     }
+  });
+}
+
+if (shortcutsContainer) {
+  shortcutsContainer.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-example]");
+    if (!button) return;
+    const example = button.dataset.example;
+    if (!example || !questionInput) return;
+    questionInput.value = example;
+    questionInput.focus();
   });
 }
 
@@ -1031,7 +1346,10 @@ async function refreshOwnerSnapshot() {
   }
   ownerSnapshotEl.textContent = 'Loading snapshot…';
   try {
-    const response = await fetch(url, { method: 'GET' });
+    const response = await fetch(
+      url,
+      withAuth({ method: 'GET', headers: { Accept: 'application/json' } })
+    );
     if (!response.ok) {
       throw new Error(`Snapshot error (${response.status})`);
     }
@@ -1071,15 +1389,18 @@ async function submitOwnerPreview(event) {
   }
   ownerPreviewEl.textContent = 'Preparing preview…';
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key,
-        value,
-        meta: { traceId: crypto.randomUUID?.() },
-      }),
-    });
+    const response = await fetch(
+      url,
+      withAuth({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key,
+          value,
+          meta: { traceId: crypto.randomUUID?.() },
+        }),
+      })
+    );
     if (!response.ok) {
       throw new Error(`Preview error (${response.status})`);
     }
@@ -1114,11 +1435,14 @@ async function plannerRequest(prompt) {
     text: prompt,
     history,
   };
-  const response = await fetch(planUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody),
-  });
+  const response = await fetch(
+    planUrl,
+    withAuth({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    })
+  );
   if (!response.ok) {
     throw new Error(`Planner unavailable (${response.status})`);
   }
@@ -1237,11 +1561,14 @@ async function executeICS(ics) {
       : "Executor endpoint not configured";
     throw new Error(message);
   }
-  const response = await fetch(execUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ics, aa: AA_MODE }),
-  });
+  const response = await fetch(
+    execUrl,
+    withAuth({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ics, aa: AA_MODE }),
+    })
+  );
   if (!response.ok || !response.body) {
     throw new Error(`Executor error (${response.status})`);
   }
@@ -1322,11 +1649,14 @@ async function executeJobIntent(intent, { raw } = {}) {
     }
     throw new Error("Executor endpoint not configured");
   }
-  const response = await fetch(execUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ intent, mode: executionMode }),
-  });
+  const response = await fetch(
+    execUrl,
+    withAuth({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ intent, mode: executionMode }),
+    })
+  );
 
   let payload = null;
   try {
@@ -1600,10 +1930,10 @@ async function refreshStatus() {
   if (statusLoading) return;
   statusLoading = true;
   try {
-    const response = await fetch(statusUrl, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-    });
+    const response = await fetch(
+      statusUrl,
+      withAuth({ method: "GET", headers: { Accept: "application/json" } })
+    );
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -1747,9 +2077,10 @@ if (composer) {
 }
 
 if (hasDocument) {
-  pushMessage(
-    "assistant",
-    'Welcome! Describe what you want to do (e.g. "Post a job for 500 images rewarded 50 AGIALPHA").'
-  );
+  pushMessage("assistant", currentWelcomeMessage);
   maybeAnnounceMode({ force: true });
+  flushPendingAnnouncements();
+  if (!currentShortcutExamples.length) {
+    renderShortcutExamples([]);
+  }
 }
