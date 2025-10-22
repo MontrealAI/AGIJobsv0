@@ -95,12 +95,22 @@ class ManualOverrideQueue:
                 action = entry.get("action")
                 if not isinstance(fingerprint, str) or not isinstance(action, str):
                     continue
+                applied_raw = entry.get("appliedAt")
+                applied_at: Optional[float] = None
+                if applied_raw not in (None, ""):
+                    try:
+                        parsed = float(applied_raw)
+                    except (TypeError, ValueError):
+                        parsed = None
+                    if parsed:
+                        applied_at = parsed
+
                 overrides.append(
                     ManualOverride(
                         fingerprint=fingerprint,
                         action=action,
                         note=entry.get("note") if isinstance(entry.get("note"), str) else None,
-                        applied_at=float(entry.get("appliedAt", 0)) or None,
+                        applied_at=applied_at,
                     )
                 )
         self._overrides = overrides
