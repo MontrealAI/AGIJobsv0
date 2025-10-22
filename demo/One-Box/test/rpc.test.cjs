@@ -7,6 +7,8 @@ const {
   parseChainId,
   fetchAccountBalance,
   formatEtherFromHex,
+  evaluateAddressShape,
+  normaliseAddress,
 } = require('../lib/rpc.js');
 
 function createRpcServer(handlers) {
@@ -57,10 +59,14 @@ test('probeRpc reports chain information and contract bytecode presence', async 
     const probe = await probeRpc({
       rpcUrl,
       jobRegistryAddress: '0x000000000000000000000000000000000000c0de',
+      stakeManagerAddress: '0x000000000000000000000000000000000000c0de',
+      systemPauseAddress: '0x000000000000000000000000000000000000c0de',
     });
     assert.equal(probe.status, 'ready');
     assert.equal(probe.chain?.decimal, 11155111);
     assert.equal(probe.jobRegistry?.status, 'ok');
+    assert.equal(probe.stakeManager?.status, 'ok');
+    assert.equal(probe.systemPause?.status, 'ok');
   } finally {
     server.close();
   }
@@ -80,10 +86,13 @@ test('probeRpc reports invalid address formats immediately', async () => {
   const probe = await probeRpc({
     rpcUrl: 'http://example.invalid',
     jobRegistryAddress: 'not-an-address',
+    stakeManagerAddress: '0x0000000000000000000000000000000000000000',
     fetchImpl,
   });
   assert.equal(probe.status, 'ready');
   assert.equal(probe.jobRegistry.status, 'invalid');
+  assert.equal(probe.stakeManager.status, 'placeholder');
+  assert.equal(probe.systemPause.status, 'missing');
 });
 
 test('probeRpc flags placeholder and missing addresses without fetching bytecode', async () => {
@@ -106,18 +115,26 @@ test('probeRpc flags placeholder and missing addresses without fetching bytecode
   const probePlaceholder = await probeRpc({
     rpcUrl: 'http://example.invalid',
     jobRegistryAddress: '0x0000000000000000000000000000000000000000',
+    stakeManagerAddress: '0x0000000000000000000000000000000000000000',
+    systemPauseAddress: '',
     fetchImpl,
   });
   assert.equal(probePlaceholder.status, 'ready');
   assert.equal(probePlaceholder.jobRegistry.status, 'placeholder');
+  assert.equal(probePlaceholder.stakeManager.status, 'placeholder');
+  assert.equal(probePlaceholder.systemPause.status, 'missing');
 
   const probeMissing = await probeRpc({
     rpcUrl: 'http://example.invalid',
     jobRegistryAddress: '',
+    stakeManagerAddress: undefined,
+    systemPauseAddress: undefined,
     fetchImpl,
   });
   assert.equal(probeMissing.status, 'ready');
   assert.equal(probeMissing.jobRegistry.status, 'missing');
+  assert.equal(probeMissing.stakeManager.status, 'missing');
+  assert.equal(probeMissing.systemPause.status, 'missing');
 });
 
 test('probeRpc surfaces RPC errors', async () => {
@@ -172,4 +189,20 @@ test('fetchAccountBalance validates address input', async () => {
     address: 'not-an-address',
   });
   assert.equal(balance.status, 'invalid_address');
+});
+
+test('normaliseAddress trims strings and guards non-string values', () => {
+  assert.equal(normaliseAddress(' 0xabc '), '0xabc');
+  assert.equal(normaliseAddress(null), '');
+  assert.equal(normaliseAddress(undefined), '');
+});
+
+test('evaluateAddressShape classifies different address forms', () => {
+  assert.equal(evaluateAddressShape(''), 'missing');
+  assert.equal(evaluateAddressShape('0x0'), 'invalid');
+  assert.equal(evaluateAddressShape('0x0000000000000000000000000000000000000000'), 'placeholder');
+  assert.equal(
+    evaluateAddressShape('0x000000000000000000000000000000000000c0de'),
+    'candidate'
+  );
 });
