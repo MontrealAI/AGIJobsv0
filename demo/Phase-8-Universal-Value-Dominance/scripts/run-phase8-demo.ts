@@ -5,11 +5,38 @@
  * ready-to-copy runbook for non-technical operators.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Interface, keccak256, toUtf8Bytes } from "ethers";
 
 const CONFIG_PATH = join(__dirname, "..", "config", "universal.value.manifest.json");
+const OUTPUT_DIR = join(__dirname, "..", "output");
+const ENV_CHAIN_ID = Number(process.env.PHASE8_CHAIN_ID ?? "1");
+const DEFAULT_CHAIN_ID = Number.isFinite(ENV_CHAIN_ID) && ENV_CHAIN_ID > 0 ? ENV_CHAIN_ID : 1;
+const ENV_MANAGER = process.env.PHASE8_MANAGER_ADDRESS ?? "";
+const MANAGER_ADDRESS = /^0x[a-fA-F0-9]{40}$/.test(ENV_MANAGER)
+  ? ENV_MANAGER.toLowerCase()
+  : "0x0000000000000000000000000000000000000000";
+const SKIP_SINGLE_CALL_KEYS = new Set([
+  "registerDomain",
+  "registerSentinel",
+  "registerCapitalStream",
+  "removeDomain",
+  "removeSentinel",
+  "removeCapitalStream",
+  "setSentinelDomains",
+  "setCapitalStreamDomains",
+]);
+const LABEL_MAP: Record<string, string> = {
+  registerDomains: "registerDomain",
+  registerSentinels: "registerSentinel",
+  registerCapitalStreams: "registerCapitalStream",
+  sentinelDomainCalls: "setSentinelDomains",
+  streamDomainCalls: "setCapitalStreamDomains",
+  removeDomains: "removeDomain",
+  removeSentinels: "removeSentinel",
+  removeCapitalStreams: "removeCapitalStream",
+};
 
 function loadConfig() {
   return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -260,6 +287,202 @@ function calldata(config: any) {
   };
 }
 
+type CalldataEntry = { label: string; slug?: string; data: string };
+
+function flattenCalldataEntries(data: Record<string, any>): CalldataEntry[] {
+  const entries: CalldataEntry[] = [];
+  for (const [label, payload] of Object.entries(data)) {
+    if (!payload || SKIP_SINGLE_CALL_KEYS.has(label)) continue;
+    if (Array.isArray(payload)) {
+      for (const item of payload) {
+        if (!item || typeof item !== "object" || !item.data) continue;
+        entries.push({ label: LABEL_MAP[label] ?? label, slug: item.slug, data: item.data });
+      }
+      continue;
+    }
+    if (typeof payload === "object" && (payload as any).data) {
+      entries.push({ label, data: (payload as any).data, slug: (payload as any).slug });
+      continue;
+    }
+    if (typeof payload === "string") {
+      entries.push({ label, data: payload });
+    }
+  }
+  return entries;
+}
+
+function ensureOutputDirectory() {
+  if (!existsSync(OUTPUT_DIR)) {
+    mkdirSync(OUTPUT_DIR, { recursive: true });
+  }
+}
+
+function telemetryMarkdown(config: any, metrics: ReturnType<typeof computeMetrics>): string {
+  const sentinelCoverageMap = new Map<string, string[]>();
+  for (const sentinel of config.sentinels ?? []) {
+    for (const domain of sentinel.domains ?? []) {
+      const key = String(domain).toLowerCase();
+      const list = sentinelCoverageMap.get(key) ?? [];
+      list.push(sentinel.name ?? sentinel.slug ?? "sentinel");
+      sentinelCoverageMap.set(key, list);
+    }
+  }
+
+  const streamDomainMap = new Map<string, string[]>();
+  for (const stream of config.capitalStreams ?? []) {
+    for (const domain of stream.domains ?? []) {
+      const key = String(domain).toLowerCase();
+      const list = streamDomainMap.get(key) ?? [];
+      list.push(stream.name ?? stream.slug ?? "stream");
+      streamDomainMap.set(key, list);
+    }
+  }
+
+  const lines: string[] = [];
+  lines.push(`# Phase 8 — Universal Value Dominance Telemetry`);
+  lines.push(`Generated: ${new Date().toISOString()}`);
+  lines.push("");
+  lines.push(`## Global Metrics`);
+  lines.push(`- Total monthly value flow: ${usd(metrics.totalMonthlyUSD)}`);
+  lines.push(`- Annual capital allocation: ${usd(metrics.annualBudget)}`);
+  lines.push(`- Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
+  lines.push(`- Sentinel coverage per guardian cycle: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes`);
+  lines.push(`- Domains covered by sentinels: ${metrics.coverageRatio.toFixed(1)}%`);
+  lines.push(`- Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
+  if (metrics.cadenceHours) {
+    lines.push(`- Self-improvement cadence: every ${metrics.cadenceHours.toFixed(2)} hours`);
+  }
+  if (metrics.lastExecutedAt) {
+    lines.push(`- Last self-improvement execution: ${new Date(metrics.lastExecutedAt * 1000).toISOString()}`);
+  }
+  lines.push("");
+
+  lines.push(`## Governance Control Surface`);
+  lines.push(`- Treasury: ${config.global?.treasury}`);
+  lines.push(`- Universal vault: ${config.global?.universalVault}`);
+  lines.push(`- Upgrade coordinator: ${config.global?.upgradeCoordinator}`);
+  lines.push(`- Validator registry: ${config.global?.validatorRegistry}`);
+  lines.push(`- Mission control: ${config.global?.missionControl}`);
+  lines.push(`- Knowledge graph: ${config.global?.knowledgeGraph}`);
+  lines.push(`- Guardian council: ${config.global?.guardianCouncil}`);
+  lines.push(`- System pause: ${config.global?.systemPause}`);
+  lines.push(`- Manifest URI: ${config.global?.manifestoURI}`);
+  lines.push(`- Max drawdown guard: ${config.global?.maxDrawdownBps} bps`);
+  lines.push("");
+
+  lines.push(`## Domains`);
+  lines.push(`| Domain | Autonomy (bps) | Resilience | Heartbeat (s) | TVL cap | Monthly value | Sentinels | Capital streams |`);
+  lines.push(`| --- | --- | --- | --- | --- | --- | --- | --- |`);
+  for (const domain of config.domains ?? []) {
+    const slug = String(domain.slug ?? "").toLowerCase();
+    const sentinelList = (sentinelCoverageMap.get(slug) ?? ["—"]).join(", ");
+    const streamList = (streamDomainMap.get(slug) ?? ["—"]).join(", ");
+    lines.push(
+      `| ${domain.name} | ${domain.autonomyLevelBps} | ${(domain.resilienceIndex ?? 0).toFixed(3)} | ${domain.heartbeatSeconds} | ${formatAmount(domain.tvlLimit)} | ${usd(Number(domain.valueFlowMonthlyUSD ?? 0))} | ${sentinelList} | ${streamList} |`,
+    );
+  }
+  lines.push("");
+
+  lines.push(`## Sentinel Lattice`);
+  for (const sentinel of config.sentinels ?? []) {
+    lines.push(
+      `- ${sentinel.name} · coverage ${sentinel.coverageSeconds}s · sensitivity ${sentinel.sensitivityBps} bps · guarding ${(sentinel.domains || []).join(", ")}`,
+    );
+  }
+  lines.push("");
+
+  lines.push(`## Capital Streams`);
+  for (const stream of config.capitalStreams ?? []) {
+    lines.push(
+      `- ${stream.name} · ${usd(Number(stream.annualBudget ?? 0))}/yr · expansion ${stream.expansionBps} bps · targets ${(stream.domains || []).join(", ")}`,
+    );
+  }
+  lines.push("");
+
+  lines.push(`## Self-Improvement Kernel`);
+  const plan = config.selfImprovement?.plan;
+  if (plan) {
+    lines.push(
+      `- Strategic plan: cadence ${plan.cadenceSeconds}s (${(Number(plan.cadenceSeconds ?? 0) / 3600).toFixed(2)} h) · hash ${plan.planHash} · last report ${plan.lastReportURI}`,
+    );
+  }
+  for (const playbook of config.selfImprovement?.playbooks ?? []) {
+    lines.push(`- Playbook ${playbook.name} (${playbook.automation}) · owner ${playbook.owner} · guardrails ${playbook.guardrails.join(", ")}`);
+  }
+  if (config.selfImprovement?.autonomyGuards) {
+    const guard = config.selfImprovement.autonomyGuards;
+    lines.push(
+      `- Autonomy guard: ≤${guard.maxAutonomyBps} bps · override window ${guard.humanOverrideMinutes} minutes · escalation ${(guard.escalationChannels || []).join(" → ")}`,
+    );
+  }
+
+  return lines.join("\n");
+}
+
+function buildSafeTransactions(entries: CalldataEntry[], managerAddress: string) {
+  return entries.map((entry) => ({
+    to: managerAddress,
+    value: "0",
+    data: entry.data,
+    contractMethod: {
+      name: entry.slug ? `${entry.label}(${entry.slug})` : entry.label,
+      payable: false,
+      inputs: [],
+    },
+    contractInputsValues: {},
+  }));
+}
+
+function writeArtifacts(config: any, metrics: ReturnType<typeof computeMetrics>, data: Record<string, any>) {
+  ensureOutputDirectory();
+  const generatedAt = new Date().toISOString();
+  const entries = flattenCalldataEntries(data);
+  const callManifest = {
+    generatedAt,
+    managerAddress: MANAGER_ADDRESS,
+    chainId: DEFAULT_CHAIN_ID,
+    metrics: {
+      totalMonthlyUSD: metrics.totalMonthlyUSD,
+      annualBudgetUSD: metrics.annualBudget,
+      averageResilience: metrics.averageResilience,
+      guardianCoverageMinutes: metrics.guardianCoverageMinutes,
+    },
+    calls: entries,
+  };
+  const callManifestPath = join(OUTPUT_DIR, "phase8-governance-calldata.json");
+  writeFileSync(callManifestPath, JSON.stringify(callManifest, null, 2));
+
+  const safeBatch = {
+    version: "1.0",
+    chainId: String(DEFAULT_CHAIN_ID),
+    createdAt: Date.now(),
+    meta: {
+      name: "Phase 8 — Universal Value Dominance",
+      description: `Generated by AGI Jobs v0 (v2) on ${generatedAt}`,
+      txBuilderVersion: "1.16.1",
+      createdFromSafeAddress: MANAGER_ADDRESS,
+      createdFromOwnerAddress: "",
+      checksum: "",
+    },
+    transactions: buildSafeTransactions(entries, MANAGER_ADDRESS),
+  };
+  const safePath = join(OUTPUT_DIR, "phase8-safe-transaction-batch.json");
+  writeFileSync(safePath, JSON.stringify(safeBatch, null, 2));
+
+  const mermaidPath = join(OUTPUT_DIR, "phase8-mermaid-diagram.mmd");
+  writeFileSync(mermaidPath, mermaid(config));
+
+  const reportPath = join(OUTPUT_DIR, "phase8-telemetry-report.md");
+  writeFileSync(reportPath, telemetryMarkdown(config, metrics));
+
+  return [
+    { label: "Calldata manifest", path: callManifestPath },
+    { label: "Safe transaction batch", path: safePath },
+    { label: "Mermaid diagram", path: mermaidPath },
+    { label: "Telemetry report", path: reportPath },
+  ];
+}
+
 function printDomainTable(config: any) {
   const rows = config.domains?.map((domain: any) => {
     const slug = String(domain.slug ?? "");
@@ -380,6 +603,12 @@ function printDomainTable(config: any) {
       return;
     }
     console.log(`  ${label}: ${payload}`);
+  });
+
+  const exports = writeArtifacts(config, metrics, data);
+  banner("Exports");
+  exports.forEach((entry) => {
+    console.log(`  ${entry.label}: ${entry.path}`);
   });
 
   banner("How to run");
