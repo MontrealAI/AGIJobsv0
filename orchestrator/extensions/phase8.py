@@ -15,6 +15,20 @@ _LOG = logging.getLogger(__name__)
 _DEFAULT_MANIFEST = Path("demo/Phase-8-Universal-Value-Dominance/config/universal.value.manifest.json")
 
 
+def _coerce_active(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "n", "off"}:
+            return False
+    return bool(value)
+
+
 @dataclass(slots=True)
 class DominionProfile:
     slug: str
@@ -31,6 +45,7 @@ class DominionProfile:
     value_flow_usd: float
     skill_tags: Tuple[str, ...] = field(default_factory=tuple)
     autonomy_narrative: Optional[str] = None
+    active: bool = True
 
     def score(self, tags: Iterable[str]) -> float:
         tags_lower = {tag.lower() for tag in tags}
@@ -63,6 +78,7 @@ class SentinelProfile:
     coverage_seconds: float
     sensitivity_bps: int
     domains: Tuple[str, ...] = field(default_factory=tuple)
+    active: bool = True
 
     def describe(self) -> str:
         return (
@@ -77,6 +93,7 @@ class CapitalStreamProfile:
     annual_budget: float
     expansion_bps: int
     domains: Tuple[str, ...] = field(default_factory=tuple)
+    active: bool = True
 
     def describe(self) -> str:
         return (
@@ -107,9 +124,9 @@ class Phase8DominionRuntime:
         global_parameters: GlobalParameters,
         source: Optional[Path] = None,
     ) -> None:
-        self._dominions: Dict[str, DominionProfile] = {dom.slug: dom for dom in dominions}
-        self._sentinels = {s.slug: s for s in sentinels}
-        self._streams = {s.slug: s for s in streams}
+        self._dominions: Dict[str, DominionProfile] = {dom.slug: dom for dom in dominions if dom.active}
+        self._sentinels = {s.slug: s for s in sentinels if s.active}
+        self._streams = {s.slug: s for s in streams if s.active}
         self._global = global_parameters
         self._source = source
         _LOG.debug("Loaded Phase 8 manifest %s", source or "<in-memory>")
@@ -146,6 +163,7 @@ class Phase8DominionRuntime:
                 value_flow_usd=float(entry.get("valueFlowMonthlyUSD", 0)),
                 skill_tags=tuple(tag.lower() for tag in entry.get("skillTags", []) if isinstance(tag, str)),
                 autonomy_narrative=str(entry.get("autonomyNarrative", "")) or None,
+                active=_coerce_active(entry.get("active", True)),
             )
             for entry in payload.get("domains", [])
             if isinstance(entry, dict)
@@ -158,6 +176,7 @@ class Phase8DominionRuntime:
                 coverage_seconds=float(entry.get("coverageSeconds", 0)),
                 sensitivity_bps=int(entry.get("sensitivityBps", 0)),
                 domains=tuple(str(domain).lower() for domain in entry.get("domains", []) if isinstance(domain, str)),
+                active=_coerce_active(entry.get("active", True)),
             )
             for entry in payload.get("sentinels", [])
             if isinstance(entry, dict)
@@ -170,6 +189,7 @@ class Phase8DominionRuntime:
                 annual_budget=float(entry.get("annualBudget", 0)),
                 expansion_bps=int(entry.get("expansionBps", 0)),
                 domains=tuple(str(domain).lower() for domain in entry.get("domains", []) if isinstance(domain, str)),
+                active=_coerce_active(entry.get("active", True)),
             )
             for entry in payload.get("capitalStreams", [])
             if isinstance(entry, dict)
