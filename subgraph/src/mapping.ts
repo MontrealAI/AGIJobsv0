@@ -1,4 +1,4 @@
-import { Address, BigInt, ethereum } from '@graphprotocol/graph-ts';
+import { Address, BigInt, Bytes, ethereum } from '@graphprotocol/graph-ts';
 
 import { JobCreated, JobFinalized } from '../generated/JobRegistry/JobRegistry';
 import {
@@ -349,6 +349,18 @@ function phase6DomainId(idValue: ethereum.Value): string {
   return idValue.toBytes().toHexString();
 }
 
+function getOrCreatePhase6Global(event: ethereum.Event): Phase6GlobalConfig {
+  let global = Phase6GlobalConfig.load(PHASE6_GLOBAL_ID);
+  if (global == null) {
+    global = new Phase6GlobalConfig(PHASE6_GLOBAL_ID);
+    global.l2SyncCadence = 0;
+    global.manifestURI = '';
+    global.updatedAtBlock = event.block.number;
+    global.updatedAtTimestamp = event.block.timestamp;
+  }
+  return global as Phase6GlobalConfig;
+}
+
 function upsertPhase6Domain(id: string, event: ethereum.Event): Phase6Domain {
   let domain = Phase6Domain.load(id);
   if (domain == null) {
@@ -411,16 +423,52 @@ export function handlePhase6DomainStatusChanged(event: ethereum.Event): void {
 
 export function handlePhase6GlobalConfigUpdated(event: ethereum.Event): void {
   const params = event.parameters;
-  let global = Phase6GlobalConfig.load(PHASE6_GLOBAL_ID);
-  if (global == null) {
-    global = new Phase6GlobalConfig(PHASE6_GLOBAL_ID);
-  }
+  const global = getOrCreatePhase6Global(event);
   global.iotOracleRouter = params[0].value.toAddress();
   global.defaultL2Gateway = params[1].value.toAddress();
   global.didRegistry = params[2].value.toAddress();
   global.treasuryBridge = params[3].value.toAddress();
   global.l2SyncCadence = params[4].value.toBigInt().toI32();
   global.manifestURI = params[5].value.toString();
+  global.updatedAtBlock = event.block.number;
+  global.updatedAtTimestamp = event.block.timestamp;
+  global.save();
+}
+
+export function handlePhase6SystemPauseUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  const global = getOrCreatePhase6Global(event);
+  global.systemPause = params[0].value.toAddress();
+  global.updatedAtBlock = event.block.number;
+  global.updatedAtTimestamp = event.block.timestamp;
+  global.save();
+}
+
+export function handlePhase6EscalationBridgeUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  const global = getOrCreatePhase6Global(event);
+  global.escalationBridge = params[0].value.toAddress();
+  global.updatedAtBlock = event.block.number;
+  global.updatedAtTimestamp = event.block.timestamp;
+  global.save();
+}
+
+export function handlePhase6EscalationForwarded(event: ethereum.Event): void {
+  const params = event.parameters;
+  const global = getOrCreatePhase6Global(event);
+  const target = params[0].value.toAddress();
+  global.lastEscalationTarget = target;
+  global.lastEscalationData = params[1].value.toBytes();
+  global.lastEscalationResponse = params[2].value.toBytes();
+  if (global.systemPause != null && Address.fromBytes(global.systemPause as Bytes).equals(target)) {
+    global.lastEscalationKind = 'SystemPause';
+  } else if (global.escalationBridge != null && Address.fromBytes(global.escalationBridge as Bytes).equals(target)) {
+    global.lastEscalationKind = 'EscalationBridge';
+  } else {
+    global.lastEscalationKind = 'Unknown';
+  }
+  global.lastEscalationAtBlock = event.block.number;
+  global.lastEscalationAtTimestamp = event.block.timestamp;
   global.updatedAtBlock = event.block.number;
   global.updatedAtTimestamp = event.block.timestamp;
   global.save();

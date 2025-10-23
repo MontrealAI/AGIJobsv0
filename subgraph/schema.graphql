@@ -108,6 +108,14 @@ type Phase6GlobalConfig @entity {
   treasuryBridge: Bytes
   l2SyncCadence: Int!
   manifestURI: String!
+  systemPause: Bytes
+  escalationBridge: Bytes
+  lastEscalationTarget: Bytes
+  lastEscalationData: Bytes
+  lastEscalationResponse: Bytes
+  lastEscalationKind: String
+  lastEscalationAtBlock: BigInt
+  lastEscalationAtTimestamp: BigInt
   updatedAtBlock: BigInt!
   updatedAtTimestamp: BigInt!
 }

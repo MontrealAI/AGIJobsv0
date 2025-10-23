@@ -76,6 +76,8 @@ class GlobalControls:
     treasury_bridge: Optional[str] = None
     l2_sync_cadence: float = 120.0
     manifest_uri: Optional[str] = None
+    system_pause: Optional[str] = None
+    escalation_bridge: Optional[str] = None
 
 
 class DomainExpansionRuntime:
@@ -156,6 +158,8 @@ class DomainExpansionRuntime:
                 global_payload.get("manifestURI", global_payload.get("manifestUri", ""))
             ).strip()
             or None,
+            system_pause=_normalize_address(global_payload.get("systemPause")),
+            escalation_bridge=_normalize_address(global_payload.get("escalationBridge")),
         )
         return cls(domains, controls, source=source)
 
@@ -206,6 +210,11 @@ class DomainExpansionRuntime:
             logs.append(f"• IoT oracle router: {self._global.iot_oracle_router}")
         if self._global.manifest_uri:
             logs.append(f"• global manifest: {self._global.manifest_uri}")
+        if self._global.system_pause or self._global.escalation_bridge:
+            logs.append(
+                "• emergency levers: pause="
+                f"{self._global.system_pause or '—'} / escalation={self._global.escalation_bridge or '—'}"
+            )
         if profile.resilience_index:
             logs.append(f"• resilience index: {profile.resilience_index:.3f}")
         if profile.value_flow_display or profile.value_flow_usd is not None:
