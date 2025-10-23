@@ -256,7 +256,7 @@
       const zeroAddress = '0x0000000000000000000000000000000000000000';
       const configPath = './config/domains.phase6.json';
       const abi = await fetch('../subgraph/abis/Phase6ExpansionManager.json').then((res) => res.json());
-      const { Interface, keccak256, toUtf8Bytes } = await import('https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm');
+      const { Interface, keccak256, toUtf8Bytes, formatEther } = await import('https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm');
       const iface = new Interface(abi);
 
       const state = { config: null, mermaidSource: '', calldata: [], metrics: null };
@@ -284,6 +284,38 @@
           BigInt(domain.heartbeatSeconds ?? 120),
           true,
         ];
+      }
+
+      function buildDomainOperationsTuple(domain) {
+        const ops = domain.operations ?? {};
+        const minStakeRaw = ops.minStake ?? 0;
+        const minStake =
+          typeof minStakeRaw === 'string'
+            ? BigInt(minStakeRaw)
+            : BigInt(Math.trunc(Number(minStakeRaw)));
+        return [
+          BigInt(Math.trunc(Number(ops.maxActiveJobs ?? 0))),
+          BigInt(Math.trunc(Number(ops.maxQueueDepth ?? 0))),
+          minStake,
+          Number(ops.treasuryShareBps ?? 0),
+          Number(ops.circuitBreakerBps ?? 0),
+          Boolean(ops.requiresHumanValidation),
+        ];
+      }
+
+      function formatBps(value) {
+        if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+        return `${(value / 100).toFixed(2)}% (${value} bps)`;
+      }
+
+      function formatStake(value) {
+        try {
+          if (value === undefined || value === null) return '—';
+          const big = typeof value === 'bigint' ? value : BigInt(value);
+          return `${formatEther(big)} ETH`;
+        } catch (error) {
+          return String(value ?? '—');
+        }
       }
 
       function formatUSD(value) {
@@ -348,7 +380,12 @@
           `DID registry: ${formatAddress(config.global.didRegistry)}`,
           `System pause: ${formatAddress(config.global.systemPause)}`,
           `Escalation bridge: ${formatAddress(config.global.escalationBridge)}`,
-          `Network cadence baseline: ${config.global.l2SyncCadence}s`
+          `Network cadence baseline: ${config.global.l2SyncCadence}s`,
+          `Treasury buffer: ${formatBps(config.global.guards?.treasuryBufferBps)}`,
+          `Circuit breaker: ${formatBps(config.global.guards?.circuitBreakerBps)}`,
+          `Anomaly grace: ${config.global.guards?.anomalyGracePeriod ?? '—'}s`,
+          `Auto-pause: ${String(config.global.guards?.autoPauseEnabled ?? false)}`,
+          `Oversight council: ${formatAddress(config.global.guards?.oversightCouncil)}`
         ];
         if (state.metrics) {
           const { averageResilience, minResilience, maxResilience, totalValueFlow, sentinelCount } = state.metrics;
@@ -404,6 +441,12 @@
             <span>Monthly value flow: ${metadata.valueFlowDisplay ?? formatUSD(metadata.valueFlowMonthlyUSD)}</span>
             <span>Domain sentinel: ${metadata.sentinel ?? '—'}</span>
             <span>Uptime: ${metadata.uptime ?? '—'}</span>
+            <span>Max active jobs: ${domain.operations?.maxActiveJobs ?? '—'}</span>
+            <span>Queue depth: ${domain.operations?.maxQueueDepth ?? '—'}</span>
+            <span>Min stake: ${formatStake(domain.operations?.minStake)}</span>
+            <span>Treasury share: ${formatBps(domain.operations?.treasuryShareBps)}</span>
+            <span>Circuit breaker: ${formatBps(domain.operations?.circuitBreakerBps)}</span>
+            <span>Requires human validation: ${domain.operations?.requiresHumanValidation ? 'Yes' : 'No'}</span>
           `;
           card.appendChild(metrics);
           grid.appendChild(card);
@@ -437,6 +480,9 @@
               <span>${bridge.cadence}</span>
               <span>Resilience index: ${bridge.resilience}</span>
               <span>Sentinel coverage: ${bridge.sentinel}</span>
+              <span>Max active jobs: ${domain.operations?.maxActiveJobs ?? '—'}</span>
+              <span>Min stake: ${formatStake(domain.operations?.minStake)}</span>
+              <span>Treasury share: ${formatBps(domain.operations?.treasuryShareBps)}</span>
             </div>
           `;
           grid.appendChild(div);
@@ -469,9 +515,20 @@
           BigInt(config.global.l2SyncCadence ?? 180),
           config.global.manifestURI,
         ];
+        const guardTuple = [
+          Number(config.global.guards?.treasuryBufferBps ?? 0),
+          Number(config.global.guards?.circuitBreakerBps ?? 0),
+          Number(config.global.guards?.anomalyGracePeriod ?? 0),
+          Boolean(config.global.guards?.autoPauseEnabled ?? false),
+          config.global.guards?.oversightCouncil ?? zeroAddress,
+        ];
         calldata.push({
           label: 'setGlobalConfig(GlobalConfig)',
           data: iface.encodeFunctionData('setGlobalConfig', [globalTuple]),
+        });
+        calldata.push({
+          label: 'setGlobalGuards(GlobalGuards)',
+          data: iface.encodeFunctionData('setGlobalGuards', [guardTuple]),
         });
         if (config.global.systemPause && config.global.systemPause !== zeroAddress) {
           calldata.push({
@@ -487,6 +544,8 @@
         }
         config.domains.forEach((domain) => {
           const tuple = buildDomainTuple(domain);
+          const domainId = keccak256(toUtf8Bytes(domain.slug.toLowerCase()));
+          const opsTuple = buildDomainOperationsTuple(domain);
           calldata.push({
             label: `registerDomain(${domain.slug})`,
             data: iface.encodeFunctionData('registerDomain', [tuple]),
@@ -494,9 +553,13 @@
           calldata.push({
             label: `updateDomain(${domain.slug})`,
             data: iface.encodeFunctionData('updateDomain', [
-              keccak256(toUtf8Bytes(domain.slug.toLowerCase())),
+              domainId,
               tuple,
             ]),
+          });
+          calldata.push({
+            label: `setDomainOperations(${domain.slug})`,
+            data: iface.encodeFunctionData('setDomainOperations', [domainId, opsTuple]),
           });
         });
         state.calldata = calldata;

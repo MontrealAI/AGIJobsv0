@@ -98,6 +98,12 @@ type Phase6Domain @entity {
   registeredAtTimestamp: BigInt!
   updatedAtBlock: BigInt!
   updatedAtTimestamp: BigInt!
+  maxActiveJobs: Int!
+  maxQueueDepth: Int!
+  minStake: BigInt!
+  treasuryShareBps: Int!
+  circuitBreakerBps: Int!
+  requiresHumanValidation: Boolean!
 }
 
 type Phase6GlobalConfig @entity {
@@ -118,4 +124,9 @@ type Phase6GlobalConfig @entity {
   lastEscalationAtTimestamp: BigInt
   updatedAtBlock: BigInt!
   updatedAtTimestamp: BigInt!
+  treasuryBufferBps: Int!
+  circuitBreakerBps: Int!
+  anomalyGracePeriod: Int!
+  autoPauseEnabled: Boolean!
+  oversightCouncil: Bytes
 }

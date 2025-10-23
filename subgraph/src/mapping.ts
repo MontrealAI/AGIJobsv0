@@ -357,6 +357,11 @@ function getOrCreatePhase6Global(event: ethereum.Event): Phase6GlobalConfig {
     global.manifestURI = '';
     global.updatedAtBlock = event.block.number;
     global.updatedAtTimestamp = event.block.timestamp;
+    global.treasuryBufferBps = 0;
+    global.circuitBreakerBps = 0;
+    global.anomalyGracePeriod = 0;
+    global.autoPauseEnabled = false;
+    global.oversightCouncil = Address.zero();
   }
   return global as Phase6GlobalConfig;
 }
@@ -392,6 +397,12 @@ export function handlePhase6DomainRegistered(event: ethereum.Event): void {
   domain.registeredAtTimestamp = event.block.timestamp;
   domain.updatedAtBlock = event.block.number;
   domain.updatedAtTimestamp = event.block.timestamp;
+  domain.maxActiveJobs = 0;
+  domain.maxQueueDepth = 0;
+  domain.minStake = ZERO;
+  domain.treasuryShareBps = 0;
+  domain.circuitBreakerBps = 0;
+  domain.requiresHumanValidation = false;
   domain.save();
 }
 
@@ -421,6 +432,19 @@ export function handlePhase6DomainStatusChanged(event: ethereum.Event): void {
   domain.save();
 }
 
+export function handlePhase6DomainOperationsUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  const id = phase6DomainId(params[0].value);
+  const domain = upsertPhase6Domain(id, event);
+  domain.maxActiveJobs = params[1].value.toBigInt().toI32();
+  domain.maxQueueDepth = params[2].value.toBigInt().toI32();
+  domain.minStake = params[3].value.toBigInt();
+  domain.treasuryShareBps = params[4].value.toI32();
+  domain.circuitBreakerBps = params[5].value.toI32();
+  domain.requiresHumanValidation = params[6].value.toBoolean();
+  domain.save();
+}
+
 export function handlePhase6GlobalConfigUpdated(event: ethereum.Event): void {
   const params = event.parameters;
   const global = getOrCreatePhase6Global(event);
@@ -430,6 +454,19 @@ export function handlePhase6GlobalConfigUpdated(event: ethereum.Event): void {
   global.treasuryBridge = params[3].value.toAddress();
   global.l2SyncCadence = params[4].value.toBigInt().toI32();
   global.manifestURI = params[5].value.toString();
+  global.updatedAtBlock = event.block.number;
+  global.updatedAtTimestamp = event.block.timestamp;
+  global.save();
+}
+
+export function handlePhase6GlobalGuardsUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  const global = getOrCreatePhase6Global(event);
+  global.treasuryBufferBps = params[0].value.toI32();
+  global.circuitBreakerBps = params[1].value.toI32();
+  global.anomalyGracePeriod = params[2].value.toI32();
+  global.autoPauseEnabled = params[3].value.toBoolean();
+  global.oversightCouncil = params[4].value.toAddress();
   global.updatedAtBlock = event.block.number;
   global.updatedAtTimestamp = event.block.timestamp;
   global.save();

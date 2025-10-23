@@ -9,10 +9,10 @@ async function deploy(name, ...args) {
 }
 
 function domainStruct(overrides = {}) {
-  return {
-    slug: "finance",
-    name: "Global Finance Swarm",
-    metadataURI: "ipfs://phase6/finance",
+    return {
+        slug: "finance",
+        name: "Global Finance Swarm",
+        metadataURI: "ipfs://phase6/finance",
     validationModule: ethers.ZeroAddress,
     dataOracle: ethers.ZeroAddress,
     l2Gateway: ethers.ZeroAddress,
@@ -20,8 +20,20 @@ function domainStruct(overrides = {}) {
     executionRouter: ethers.ZeroAddress,
     heartbeatSeconds: 120,
     active: true,
-    ...overrides,
-  };
+        ...overrides,
+    };
+}
+
+function operationsStruct(overrides = {}) {
+    return {
+        maxActiveJobs: 48,
+        maxQueueDepth: 240,
+        minStake: ethers.parseEther("100"),
+        treasuryShareBps: 250,
+        circuitBreakerBps: 7500,
+        requiresHumanValidation: false,
+        ...overrides,
+    };
 }
 
 describe("Phase6ExpansionManager", function () {
@@ -231,6 +243,142 @@ describe("Phase6ExpansionManager", function () {
     expect(await escalationBridge.callCount()).to.equal(1n);
 
     await expect(manager.connect(governance).getDomain(id)).to.not.be.reverted;
+  });
+
+  it("configures domain operations and global guard rails", async function () {
+    const config = domainStruct({ validationModule: validationStub.target });
+    await manager.connect(governance).registerDomain(config);
+    const id = await manager.domainId(config.slug);
+
+    const ops = operationsStruct({ requiresHumanValidation: true });
+    await expect(manager.connect(governance).setDomainOperations(id, ops))
+      .to.emit(manager, "DomainOperationsUpdated")
+      .withArgs(
+        id,
+        ops.maxActiveJobs,
+        ops.maxQueueDepth,
+        ops.minStake,
+        ops.treasuryShareBps,
+        ops.circuitBreakerBps,
+        true,
+      );
+
+    const storedOps = await manager.getDomainOperations(id);
+    expect(storedOps.maxActiveJobs).to.equal(ops.maxActiveJobs);
+    expect(storedOps.maxQueueDepth).to.equal(ops.maxQueueDepth);
+    expect(storedOps.minStake).to.equal(ops.minStake);
+    expect(storedOps.requiresHumanValidation).to.equal(true);
+
+    await expect(manager.connect(outsider).setDomainOperations(id, ops)).to.be.revertedWithCustomError(
+      manager,
+      "NotGovernance",
+    );
+
+    const guards = {
+      treasuryBufferBps: 400,
+      circuitBreakerBps: 6400,
+      anomalyGracePeriod: 180,
+      autoPauseEnabled: true,
+      oversightCouncil: pauseHarness.target,
+    };
+
+    await expect(manager.connect(governance).setGlobalGuards(guards))
+      .to.emit(manager, "GlobalGuardsUpdated")
+      .withArgs(
+        guards.treasuryBufferBps,
+        guards.circuitBreakerBps,
+        guards.anomalyGracePeriod,
+        guards.autoPauseEnabled,
+        guards.oversightCouncil,
+      );
+
+    const storedGuards = await manager.globalGuards();
+    expect(storedGuards.treasuryBufferBps).to.equal(guards.treasuryBufferBps);
+    expect(storedGuards.circuitBreakerBps).to.equal(guards.circuitBreakerBps);
+    expect(storedGuards.anomalyGracePeriod).to.equal(guards.anomalyGracePeriod);
+    expect(storedGuards.autoPauseEnabled).to.equal(true);
+    expect(storedGuards.oversightCouncil).to.equal(guards.oversightCouncil);
+  });
+
+  it("enforces operational guard rail invariants", async function () {
+    const config = domainStruct({ validationModule: validationStub.target });
+    await manager.connect(governance).registerDomain(config);
+    const id = await manager.domainId(config.slug);
+
+    await expect(
+      manager.connect(governance).setDomainOperations(
+        id,
+        operationsStruct({ maxActiveJobs: 0 }),
+      ),
+    ).to.be.revertedWithCustomError(manager, "InvalidOperationsValue").withArgs("maxActiveJobs");
+
+    await expect(
+      manager.connect(governance).setDomainOperations(
+        id,
+        operationsStruct({ maxQueueDepth: 10, maxActiveJobs: 20 }),
+      ),
+    ).to.be.revertedWithCustomError(manager, "InvalidOperationsValue").withArgs("maxQueueDepth");
+
+    await expect(
+      manager.connect(governance).setDomainOperations(
+        id,
+        operationsStruct({ minStake: 0 }),
+      ),
+    ).to.be.revertedWithCustomError(manager, "InvalidOperationsValue").withArgs("minStake");
+
+    await expect(
+      manager.connect(governance).setDomainOperations(
+        id,
+        operationsStruct({ treasuryShareBps: 12_000 }),
+      ),
+    ).to.be.revertedWithCustomError(manager, "InvalidBps").withArgs("treasuryShareBps", 12_000);
+
+    await expect(
+      manager.connect(governance).setDomainOperations(
+        id,
+        operationsStruct({ circuitBreakerBps: 11_000 }),
+      ),
+    ).to.be.revertedWithCustomError(manager, "InvalidBps").withArgs("circuitBreakerBps", 11_000);
+
+    await expect(
+      manager.connect(governance).setGlobalGuards({
+        treasuryBufferBps: 11_000,
+        circuitBreakerBps: 100,
+        anomalyGracePeriod: 180,
+        autoPauseEnabled: true,
+        oversightCouncil: pauseHarness.target,
+      }),
+    ).to.be.revertedWithCustomError(manager, "InvalidBps").withArgs("treasuryBufferBps", 11_000);
+
+    await expect(
+      manager.connect(governance).setGlobalGuards({
+        treasuryBufferBps: 500,
+        circuitBreakerBps: 11_000,
+        anomalyGracePeriod: 180,
+        autoPauseEnabled: true,
+        oversightCouncil: pauseHarness.target,
+      }),
+    ).to.be.revertedWithCustomError(manager, "InvalidBps").withArgs("circuitBreakerBps", 11_000);
+
+    await expect(
+      manager.connect(governance).setGlobalGuards({
+        treasuryBufferBps: 500,
+        circuitBreakerBps: 400,
+        anomalyGracePeriod: 10,
+        autoPauseEnabled: false,
+        oversightCouncil: pauseHarness.target,
+      }),
+    ).to.be.revertedWithCustomError(manager, "InvalidAnomalyGracePeriod");
+
+    await expect(
+      manager.connect(governance).setGlobalGuards({
+        treasuryBufferBps: 500,
+        circuitBreakerBps: 400,
+        anomalyGracePeriod: 120,
+        autoPauseEnabled: false,
+        oversightCouncil: ethers.ZeroAddress,
+      }),
+    ).to.emit(manager, "GlobalGuardsUpdated");
   });
 
   it("guards configuration invariants", async function () {

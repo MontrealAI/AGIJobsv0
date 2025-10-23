@@ -81,6 +81,27 @@
   },
   {
     "inputs": [],
+    "name": "InvalidAnomalyGracePeriod",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "field",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "provided",
+        "type": "uint256"
+      }
+    ],
+    "name": "InvalidBps",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidHeartbeat",
     "type": "error"
   },
@@ -92,6 +113,17 @@
   {
     "inputs": [],
     "name": "InvalidMetadataURI",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "field",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidOperationsValue",
     "type": "error"
   },
   {
@@ -135,6 +167,55 @@
     "inputs": [],
     "name": "ZeroAddress",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint48",
+        "name": "maxActiveJobs",
+        "type": "uint48"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint48",
+        "name": "maxQueueDepth",
+        "type": "uint48"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint96",
+        "name": "minStake",
+        "type": "uint96"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "treasuryShareBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "circuitBreakerBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "requiresHumanValidation",
+        "type": "bool"
+      }
+    ],
+    "name": "DomainOperationsUpdated",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -380,6 +461,43 @@
       }
     ],
     "name": "GlobalConfigUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "treasuryBufferBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "circuitBreakerBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "anomalyGracePeriod",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "autoPauseEnabled",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "oversightCouncil",
+        "type": "address"
+      }
+    ],
+    "name": "GlobalGuardsUpdated",
     "type": "event"
   },
   {
@@ -638,6 +756,57 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getDomainOperations",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint48",
+            "name": "maxActiveJobs",
+            "type": "uint48"
+          },
+          {
+            "internalType": "uint48",
+            "name": "maxQueueDepth",
+            "type": "uint48"
+          },
+          {
+            "internalType": "uint96",
+            "name": "minStake",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint16",
+            "name": "treasuryShareBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "circuitBreakerBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bool",
+            "name": "requiresHumanValidation",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainOperations",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "globalConfig",
     "outputs": [
@@ -670,6 +839,39 @@
         "internalType": "string",
         "name": "manifestURI",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "globalGuards",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "treasuryBufferBps",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "circuitBreakerBps",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "anomalyGracePeriod",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bool",
+        "name": "autoPauseEnabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "address",
+        "name": "oversightCouncil",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -857,6 +1059,56 @@
         "type": "bytes32"
       },
       {
+        "components": [
+          {
+            "internalType": "uint48",
+            "name": "maxActiveJobs",
+            "type": "uint48"
+          },
+          {
+            "internalType": "uint48",
+            "name": "maxQueueDepth",
+            "type": "uint48"
+          },
+          {
+            "internalType": "uint96",
+            "name": "minStake",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint16",
+            "name": "treasuryShareBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "circuitBreakerBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bool",
+            "name": "requiresHumanValidation",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainOperations",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "setDomainOperations",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
         "internalType": "bool",
         "name": "active",
         "type": "bool"
@@ -921,6 +1173,46 @@
       }
     ],
     "name": "setGlobalConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint16",
+            "name": "treasuryBufferBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "circuitBreakerBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint32",
+            "name": "anomalyGracePeriod",
+            "type": "uint32"
+          },
+          {
+            "internalType": "bool",
+            "name": "autoPauseEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "oversightCouncil",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.GlobalGuards",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "setGlobalGuards",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
