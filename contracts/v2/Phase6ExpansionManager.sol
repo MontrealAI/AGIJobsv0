@@ -74,6 +74,7 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     error InvalidManifestURI();
     error InvalidMetadataURI();
     error InvalidPauseTarget(address target);
+    error InvalidSubgraphEndpoint();
 
     /// -----------------------------------------------------------------------
     /// Events
@@ -335,6 +336,7 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         if (bytes(config.slug).length == 0) revert EmptySlug();
         if (bytes(config.name).length == 0) revert EmptyName();
         if (bytes(config.metadataURI).length == 0) revert InvalidMetadataURI();
+        if (bytes(config.subgraphEndpoint).length == 0) revert InvalidSubgraphEndpoint();
         if (config.heartbeatSeconds < 30) revert InvalidHeartbeat();
         _requireContract(config.validationModule, "validationModule");
         if (config.dataOracle != address(0)) {

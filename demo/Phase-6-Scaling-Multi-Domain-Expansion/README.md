@@ -51,6 +51,7 @@
 * `registerDomain`, `updateDomain`, `configureDomainConnectors`, `setDomainStatus`
 * `setGlobalConfig`, `setSystemPause`, `setEscalationBridge`, `forwardPauseCall`, `forwardEscalation`
 * Deterministic `domainId` helper & `listDomains()` enumeration for tooling.
+* Rejects missing telemetry targets – `subgraphEndpoint` is now mandatory on every domain mutation so dashboards never lose visibility.
 
 Emergency response: governance can forward any encoded call to the shared `SystemPause` contract or to an arbitrary escalation bridge. Pausing, routing, and redeployments remain one-click actions for the owner.
 
