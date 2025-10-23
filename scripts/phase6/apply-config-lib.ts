@@ -28,6 +28,7 @@ export type DomainConfigInput = {
   heartbeatSeconds?: number;
   active?: boolean;
   operations?: DomainOperationsInput;
+  telemetry?: DomainTelemetryInput;
 };
 
 export type DomainOperationsInput = {
@@ -39,6 +40,18 @@ export type DomainOperationsInput = {
   requiresHumanValidation?: boolean;
 };
 
+export type DomainTelemetryInput = {
+  resilienceBps: number;
+  automationBps: number;
+  complianceBps: number;
+  settlementLatencySeconds: number;
+  usesL2Settlement: boolean;
+  sentinelOracle?: string;
+  settlementAsset?: string;
+  metricsDigest: string;
+  manifestHash: string;
+};
+
 export type GlobalGuardsInput = {
   treasuryBufferBps: number;
   circuitBreakerBps: number;
@@ -47,8 +60,16 @@ export type GlobalGuardsInput = {
   oversightCouncil?: string;
 };
 
+export type GlobalTelemetryInput = {
+  manifestHash: string;
+  metricsDigest: string;
+  resilienceFloorBps: number;
+  automationFloorBps: number;
+  oversightWeightBps: number;
+};
+
 export type Phase6Config = {
-  global: GlobalConfigInput & { guards?: GlobalGuardsInput };
+  global: GlobalConfigInput & { guards?: GlobalGuardsInput; telemetry?: GlobalTelemetryInput };
   domains: DomainConfigInput[];
 };
 
@@ -87,12 +108,32 @@ export type DomainOperationsStruct = {
   requiresHumanValidation: boolean;
 };
 
+export type DomainTelemetryStruct = {
+  resilienceBps: number;
+  automationBps: number;
+  complianceBps: number;
+  settlementLatencySeconds: number;
+  usesL2Settlement: boolean;
+  sentinelOracle: string;
+  settlementAsset: string;
+  metricsDigest: string;
+  manifestHash: string;
+};
+
 export type GlobalGuardsStruct = {
   treasuryBufferBps: number;
   circuitBreakerBps: number;
   anomalyGracePeriod: number;
   autoPauseEnabled: boolean;
   oversightCouncil: string;
+};
+
+export type GlobalTelemetryStruct = {
+  manifestHash: string;
+  metricsDigest: string;
+  resilienceFloorBps: number;
+  automationFloorBps: number;
+  oversightWeightBps: number;
 };
 
 export type Phase6State = {
@@ -102,6 +143,8 @@ export type Phase6State = {
   domains: ChainDomain[];
   domainOperations: Record<string, DomainOperationsStruct>;
   globalGuards: GlobalGuardsStruct;
+  domainTelemetry: Record<string, DomainTelemetryStruct>;
+  globalTelemetry: GlobalTelemetryStruct;
 };
 
 export type GlobalPlan = {
@@ -131,6 +174,14 @@ export type DomainOperationsPlan = {
   diffs: string[];
 };
 
+export type DomainTelemetryPlan = {
+  action: 'setDomainTelemetry';
+  id: string;
+  slug: string;
+  config: DomainTelemetryStruct;
+  diffs: string[];
+};
+
 export type GlobalGuardsPlan = {
   action: 'setGlobalGuards';
   config: GlobalGuardsStruct;
@@ -144,6 +195,12 @@ export type Phase6Plan = {
   domains: DomainPlan[];
   domainOperations: DomainOperationsPlan[];
   globalGuards?: GlobalGuardsPlan;
+  domainTelemetry: DomainTelemetryPlan[];
+  globalTelemetry?: {
+    action: 'setGlobalTelemetry';
+    config: GlobalTelemetryStruct;
+    diffs: string[];
+  };
   warnings: string[];
 };
 
@@ -189,6 +246,30 @@ function normalizeGlobalGuards(raw: any): GlobalGuardsStruct {
     anomalyGracePeriod: Number(raw?.anomalyGracePeriod ?? raw?.[2] ?? 0),
     autoPauseEnabled: Boolean(raw?.autoPauseEnabled ?? raw?.[3] ?? false),
     oversightCouncil: String(raw?.oversightCouncil ?? raw?.[4] ?? ZERO_ADDRESS),
+  };
+}
+
+function normalizeDomainTelemetry(raw: any): DomainTelemetryStruct {
+  return {
+    resilienceBps: Number(raw?.resilienceBps ?? raw?.[0] ?? 0),
+    automationBps: Number(raw?.automationBps ?? raw?.[1] ?? 0),
+    complianceBps: Number(raw?.complianceBps ?? raw?.[2] ?? 0),
+    settlementLatencySeconds: Number(raw?.settlementLatencySeconds ?? raw?.[3] ?? 0),
+    usesL2Settlement: Boolean(raw?.usesL2Settlement ?? raw?.[4] ?? false),
+    sentinelOracle: String(raw?.sentinelOracle ?? raw?.[5] ?? ZERO_ADDRESS),
+    settlementAsset: String(raw?.settlementAsset ?? raw?.[6] ?? ZERO_ADDRESS),
+    metricsDigest: String(raw?.metricsDigest ?? raw?.[7] ?? '').toLowerCase(),
+    manifestHash: String(raw?.manifestHash ?? raw?.[8] ?? '').toLowerCase(),
+  };
+}
+
+function normalizeGlobalTelemetry(raw: any): GlobalTelemetryStruct {
+  return {
+    manifestHash: String(raw?.manifestHash ?? raw?.[0] ?? '').toLowerCase(),
+    metricsDigest: String(raw?.metricsDigest ?? raw?.[1] ?? '').toLowerCase(),
+    resilienceFloorBps: Number(raw?.resilienceFloorBps ?? raw?.[2] ?? 0),
+    automationFloorBps: Number(raw?.automationFloorBps ?? raw?.[3] ?? 0),
+    oversightWeightBps: Number(raw?.oversightWeightBps ?? raw?.[4] ?? 0),
   };
 }
 
@@ -239,6 +320,25 @@ function buildDomainOperationsStruct(
   };
 }
 
+function buildDomainTelemetryStruct(
+  input: DomainTelemetryInput,
+  previous?: DomainTelemetryStruct,
+): DomainTelemetryStruct {
+  return {
+    resilienceBps: Math.trunc(input.resilienceBps ?? previous?.resilienceBps ?? 0),
+    automationBps: Math.trunc(input.automationBps ?? previous?.automationBps ?? 0),
+    complianceBps: Math.trunc(input.complianceBps ?? previous?.complianceBps ?? 0),
+    settlementLatencySeconds: Math.trunc(
+      input.settlementLatencySeconds ?? previous?.settlementLatencySeconds ?? 0,
+    ),
+    usesL2Settlement: Boolean(input.usesL2Settlement ?? previous?.usesL2Settlement ?? false),
+    sentinelOracle: (input.sentinelOracle ?? previous?.sentinelOracle ?? ZERO_ADDRESS).toLowerCase(),
+    settlementAsset: (input.settlementAsset ?? previous?.settlementAsset ?? ZERO_ADDRESS).toLowerCase(),
+    metricsDigest: (input.metricsDigest ?? previous?.metricsDigest ?? '').toLowerCase(),
+    manifestHash: (input.manifestHash ?? previous?.manifestHash ?? '').toLowerCase(),
+  };
+}
+
 function diffDomainOperations(
   current: DomainOperationsStruct | undefined,
   target: DomainOperationsStruct,
@@ -264,6 +364,41 @@ function diffDomainOperations(
   return diffs;
 }
 
+function diffDomainTelemetry(
+  current: DomainTelemetryStruct | undefined,
+  target: DomainTelemetryStruct,
+): string[] {
+  if (!current) {
+    return [
+      'resilienceBps',
+      'automationBps',
+      'complianceBps',
+      'settlementLatencySeconds',
+      'usesL2Settlement',
+      'sentinelOracle',
+      'settlementAsset',
+      'metricsDigest',
+      'manifestHash',
+    ];
+  }
+  const diffs: string[] = [];
+  if (current.resilienceBps !== target.resilienceBps) diffs.push('resilienceBps');
+  if (current.automationBps !== target.automationBps) diffs.push('automationBps');
+  if (current.complianceBps !== target.complianceBps) diffs.push('complianceBps');
+  if (current.settlementLatencySeconds !== target.settlementLatencySeconds)
+    diffs.push('settlementLatencySeconds');
+  if (current.usesL2Settlement !== target.usesL2Settlement) diffs.push('usesL2Settlement');
+  if (current.sentinelOracle.toLowerCase() !== target.sentinelOracle.toLowerCase())
+    diffs.push('sentinelOracle');
+  if (current.settlementAsset.toLowerCase() !== target.settlementAsset.toLowerCase())
+    diffs.push('settlementAsset');
+  if (current.metricsDigest.toLowerCase() !== target.metricsDigest.toLowerCase())
+    diffs.push('metricsDigest');
+  if (current.manifestHash.toLowerCase() !== target.manifestHash.toLowerCase())
+    diffs.push('manifestHash');
+  return diffs;
+}
+
 function diffGlobalGuards(
   current: GlobalGuardsStruct,
   target: GlobalGuardsStruct,
@@ -275,6 +410,32 @@ function diffGlobalGuards(
   if (current.autoPauseEnabled !== target.autoPauseEnabled) diffs.push('autoPauseEnabled');
   if (current.oversightCouncil.toLowerCase() !== target.oversightCouncil.toLowerCase())
     diffs.push('oversightCouncil');
+  return diffs;
+}
+
+function buildGlobalTelemetryStruct(
+  input: GlobalTelemetryInput,
+  previous?: GlobalTelemetryStruct,
+): GlobalTelemetryStruct {
+  return {
+    manifestHash: (input.manifestHash ?? previous?.manifestHash ?? '').toLowerCase(),
+    metricsDigest: (input.metricsDigest ?? previous?.metricsDigest ?? '').toLowerCase(),
+    resilienceFloorBps: Math.trunc(input.resilienceFloorBps ?? previous?.resilienceFloorBps ?? 0),
+    automationFloorBps: Math.trunc(input.automationFloorBps ?? previous?.automationFloorBps ?? 0),
+    oversightWeightBps: Math.trunc(input.oversightWeightBps ?? previous?.oversightWeightBps ?? 0),
+  };
+}
+
+function diffGlobalTelemetry(
+  current: GlobalTelemetryStruct,
+  target: GlobalTelemetryStruct,
+): string[] {
+  const diffs: string[] = [];
+  if (current.manifestHash.toLowerCase() !== target.manifestHash.toLowerCase()) diffs.push('manifestHash');
+  if (current.metricsDigest.toLowerCase() !== target.metricsDigest.toLowerCase()) diffs.push('metricsDigest');
+  if (current.resilienceFloorBps !== target.resilienceFloorBps) diffs.push('resilienceFloorBps');
+  if (current.automationFloorBps !== target.automationFloorBps) diffs.push('automationFloorBps');
+  if (current.oversightWeightBps !== target.oversightWeightBps) diffs.push('oversightWeightBps');
   return diffs;
 }
 
@@ -295,7 +456,9 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
   const warnings: string[] = [];
   const domains: DomainPlan[] = [];
   const domainOperationsPlans: DomainOperationsPlan[] = [];
+  const domainTelemetryPlans: DomainTelemetryPlan[] = [];
   const touchedOperations = new Set<string>();
+  const touchedTelemetry = new Set<string>();
 
   const manifestURI = desired.global.manifestURI?.trim();
   if (!manifestURI) {
@@ -334,6 +497,7 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
   const plan: Phase6Plan = {
     domains,
     domainOperations: domainOperationsPlans,
+    domainTelemetry: domainTelemetryPlans,
     warnings,
   };
 
@@ -365,6 +529,24 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
     currentGuards.oversightCouncil.toLowerCase() !== ZERO_ADDRESS.toLowerCase()
   ) {
     warnings.push('Configuration omits global.guards; existing guard rails remain unchanged.');
+  }
+
+  const targetGlobalTelemetryInput = desired.global.telemetry;
+  if (targetGlobalTelemetryInput) {
+    const targetTelemetry = buildGlobalTelemetryStruct(
+      targetGlobalTelemetryInput,
+      current.globalTelemetry,
+    );
+    const telemetryDiffs = diffGlobalTelemetry(current.globalTelemetry, targetTelemetry);
+    if (telemetryDiffs.length > 0) {
+      plan.globalTelemetry = {
+        action: 'setGlobalTelemetry',
+        config: targetTelemetry,
+        diffs: telemetryDiffs,
+      };
+    }
+  } else {
+    warnings.push('Configuration omits global.telemetry; existing on-chain telemetry retained.');
   }
 
   const desiredPause = desired.global.systemPause;
@@ -417,6 +599,27 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
         config: struct,
         diffs: ['slug', 'metadataURI', 'validationModule', 'subgraphEndpoint', 'heartbeatSeconds'],
       });
+      if (input.telemetry) {
+        const telemetryTarget = buildDomainTelemetryStruct(input.telemetry);
+        domainTelemetryPlans.push({
+          action: 'setDomainTelemetry',
+          id: domainIdFromSlug(slug),
+          slug,
+          config: telemetryTarget,
+          diffs: [
+            'resilienceBps',
+            'automationBps',
+            'complianceBps',
+            'settlementLatencySeconds',
+            'usesL2Settlement',
+            'sentinelOracle',
+            'settlementAsset',
+            'metricsDigest',
+            'manifestHash',
+          ],
+        });
+        touchedTelemetry.add(key);
+      }
       continue;
     }
 
@@ -457,6 +660,24 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
     } else {
       warnings.push(`Domain ${slug} missing operations config; retaining on-chain values.`);
     }
+
+    if (input.telemetry) {
+      const existingTelemetry = current.domainTelemetry[key];
+      const targetTelemetry = buildDomainTelemetryStruct(input.telemetry, existingTelemetry);
+      const telemetryDiffs = diffDomainTelemetry(existingTelemetry, targetTelemetry);
+      if (telemetryDiffs.length > 0) {
+        domainTelemetryPlans.push({
+          action: 'setDomainTelemetry',
+          id: existing.id,
+          slug,
+          config: targetTelemetry,
+          diffs: telemetryDiffs,
+        });
+        touchedTelemetry.add(key);
+      }
+    } else if (!touchedTelemetry.has(key)) {
+      warnings.push(`Domain ${slug} missing telemetry config; retaining on-chain metrics.`);
+    }
   }
 
   for (const input of desired.domains) {
@@ -476,6 +697,23 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
         touchedOperations.add(key);
       }
     }
+    if (!touchedTelemetry.has(key) && input.telemetry) {
+      const targetTelemetry = buildDomainTelemetryStruct(
+        input.telemetry,
+        current.domainTelemetry[key],
+      );
+      const telemetryDiffs = diffDomainTelemetry(current.domainTelemetry[key], targetTelemetry);
+      if (telemetryDiffs.length > 0) {
+        domainTelemetryPlans.push({
+          action: 'setDomainTelemetry',
+          id: domainIdFromSlug(input.slug),
+          slug: input.slug,
+          config: targetTelemetry,
+          diffs: telemetryDiffs,
+        });
+        touchedTelemetry.add(key);
+      }
+    }
   }
 
   for (const [slug, existing] of currentMap.entries()) {
@@ -488,12 +726,13 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
 }
 
 export async function fetchPhase6State(manager: Contract): Promise<Phase6State> {
-  const [globalRaw, systemPause, escalationBridge, domainViews, guardsRaw] = await Promise.all([
+  const [globalRaw, systemPause, escalationBridge, domainViews, guardsRaw, globalTelemetryRaw] = await Promise.all([
     manager.globalConfig(),
     manager.systemPause(),
     manager.escalationBridge(),
     manager.listDomains(),
     manager.globalGuards(),
+    manager.globalTelemetry(),
   ]);
 
   const global: GlobalConfigStruct = {
@@ -515,6 +754,17 @@ export async function fetchPhase6State(manager: Contract): Promise<Phase6State> 
     domainOperations[slugKey] = normalizeDomainOperations(ops);
   });
 
+  const telemetryEntries = await Promise.all(
+    domains.map((domain) => manager.getDomainTelemetry(domain.id).catch(() => null)),
+  );
+  const domainTelemetry: Record<string, DomainTelemetryStruct> = {};
+  telemetryEntries.forEach((telemetry, idx) => {
+    const slugKey = domains[idx].slug.toLowerCase();
+    if (telemetry) {
+      domainTelemetry[slugKey] = normalizeDomainTelemetry(telemetry);
+    }
+  });
+
   return {
     global,
     systemPause: String(systemPause ?? ZERO_ADDRESS),
@@ -522,6 +772,8 @@ export async function fetchPhase6State(manager: Contract): Promise<Phase6State> 
     domains,
     domainOperations,
     globalGuards: normalizeGlobalGuards(guardsRaw),
+    domainTelemetry,
+    globalTelemetry: normalizeGlobalTelemetry(globalTelemetryRaw),
   };
 }
 

@@ -55,6 +55,28 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         bool requiresHumanValidation;
     }
 
+    /// @notice Telemetry emitted by governance to describe live readiness metrics for a domain.
+    struct DomainTelemetry {
+        uint32 resilienceBps;
+        uint32 automationBps;
+        uint32 complianceBps;
+        uint32 settlementLatencySeconds;
+        bool usesL2Settlement;
+        address sentinelOracle;
+        address settlementAsset;
+        bytes32 metricsDigest;
+        bytes32 manifestHash;
+    }
+
+    /// @notice Global telemetry thresholds informing downstream governance automation.
+    struct GlobalTelemetry {
+        bytes32 manifestHash;
+        bytes32 metricsDigest;
+        uint32 resilienceFloorBps;
+        uint32 automationFloorBps;
+        uint32 oversightWeightBps;
+    }
+
     /// @notice Global guard rails applied across all domains.
     struct GlobalGuards {
         uint16 treasuryBufferBps;
@@ -82,7 +104,11 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     mapping(bytes32 => Domain) private _domains;
     mapping(bytes32 => bool) private _known;
     mapping(bytes32 => DomainOperations) private _domainOperations;
+    mapping(bytes32 => DomainTelemetry) private _domainTelemetry;
     bytes32[] private _domainIndex;
+
+    /// @notice Governance authored telemetry baseline shared across the network.
+    GlobalTelemetry public globalTelemetry;
 
     uint256 private constant _MAX_BPS = 10_000;
 
@@ -103,6 +129,8 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     error InvalidBps(string field, uint256 provided);
     error InvalidOperationsValue(string field);
     error InvalidAnomalyGracePeriod();
+    error InvalidTelemetryValue(string field);
+    error InvalidDigest(string field);
 
     /// -----------------------------------------------------------------------
     /// Events
@@ -161,6 +189,25 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         uint32 anomalyGracePeriod,
         bool autoPauseEnabled,
         address oversightCouncil
+    );
+    event DomainTelemetryUpdated(
+        bytes32 indexed id,
+        uint32 resilienceBps,
+        uint32 automationBps,
+        uint32 complianceBps,
+        uint32 settlementLatencySeconds,
+        bool usesL2Settlement,
+        address sentinelOracle,
+        address settlementAsset,
+        bytes32 metricsDigest,
+        bytes32 manifestHash
+    );
+    event GlobalTelemetryUpdated(
+        bytes32 manifestHash,
+        bytes32 metricsDigest,
+        uint32 resilienceFloorBps,
+        uint32 automationFloorBps,
+        uint32 oversightWeightBps
     );
 
     constructor(address initialGovernance) Governable(initialGovernance) {}
@@ -292,6 +339,25 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         );
     }
 
+    /// @notice Updates governance-authored telemetry for a specific domain.
+    function setDomainTelemetry(bytes32 id, DomainTelemetry calldata telemetry) external onlyGovernance {
+        if (!_known[id]) revert UnknownDomain(id);
+        _validateDomainTelemetry(telemetry);
+        _domainTelemetry[id] = telemetry;
+        emit DomainTelemetryUpdated(
+            id,
+            telemetry.resilienceBps,
+            telemetry.automationBps,
+            telemetry.complianceBps,
+            telemetry.settlementLatencySeconds,
+            telemetry.usesL2Settlement,
+            telemetry.sentinelOracle,
+            telemetry.settlementAsset,
+            telemetry.metricsDigest,
+            telemetry.manifestHash
+        );
+    }
+
     /// -----------------------------------------------------------------------
     /// Global configuration
     /// -----------------------------------------------------------------------
@@ -374,6 +440,19 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         );
     }
 
+    /// @notice Updates the network-wide telemetry thresholds.
+    function setGlobalTelemetry(GlobalTelemetry calldata telemetry) external onlyGovernance {
+        _validateGlobalTelemetry(telemetry);
+        globalTelemetry = telemetry;
+        emit GlobalTelemetryUpdated(
+            telemetry.manifestHash,
+            telemetry.metricsDigest,
+            telemetry.resilienceFloorBps,
+            telemetry.automationFloorBps,
+            telemetry.oversightWeightBps
+        );
+    }
+
     /// -----------------------------------------------------------------------
     /// View helpers
     /// -----------------------------------------------------------------------
@@ -390,6 +469,11 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     function getDomainOperations(bytes32 id) external view returns (DomainOperations memory) {
         if (!_known[id]) revert UnknownDomain(id);
         return _domainOperations[id];
+    }
+
+    function getDomainTelemetry(bytes32 id) external view returns (DomainTelemetry memory) {
+        if (!_known[id]) revert UnknownDomain(id);
+        return _domainTelemetry[id];
     }
 
     function listDomains() external view returns (DomainView[] memory results) {
@@ -448,6 +532,31 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         if (config.oversightCouncil != address(0)) {
             _requireContract(config.oversightCouncil, "oversightCouncil");
         }
+    }
+
+    function _validateDomainTelemetry(DomainTelemetry calldata telemetry) private view {
+        if (telemetry.resilienceBps > _MAX_BPS) revert InvalidBps("resilienceBps", telemetry.resilienceBps);
+        if (telemetry.automationBps > _MAX_BPS) revert InvalidBps("automationBps", telemetry.automationBps);
+        if (telemetry.complianceBps > _MAX_BPS) revert InvalidBps("complianceBps", telemetry.complianceBps);
+        if (telemetry.metricsDigest == bytes32(0)) revert InvalidDigest("metricsDigest");
+        if (telemetry.manifestHash == bytes32(0)) revert InvalidDigest("manifestHash");
+        if (telemetry.settlementLatencySeconds != 0 && telemetry.settlementLatencySeconds < 5) {
+            revert InvalidTelemetryValue("settlementLatencySeconds");
+        }
+        if (telemetry.sentinelOracle != address(0)) {
+            _requireContract(telemetry.sentinelOracle, "sentinelOracle");
+        }
+        if (telemetry.settlementAsset != address(0)) {
+            _requireContract(telemetry.settlementAsset, "settlementAsset");
+        }
+    }
+
+    function _validateGlobalTelemetry(GlobalTelemetry calldata telemetry) private pure {
+        if (telemetry.metricsDigest == bytes32(0)) revert InvalidDigest("metricsDigest");
+        if (telemetry.manifestHash == bytes32(0)) revert InvalidDigest("manifestHash");
+        if (telemetry.resilienceFloorBps > _MAX_BPS) revert InvalidBps("resilienceFloorBps", telemetry.resilienceFloorBps);
+        if (telemetry.automationFloorBps > _MAX_BPS) revert InvalidBps("automationFloorBps", telemetry.automationFloorBps);
+        if (telemetry.oversightWeightBps > _MAX_BPS) revert InvalidBps("oversightWeightBps", telemetry.oversightWeightBps);
     }
 
     function _idFor(string memory slug) private pure returns (bytes32) {

@@ -10,6 +10,7 @@ import { Interface, formatEther, keccak256, toUtf8Bytes } from 'ethers';
 
 const CONFIG_PATH = join(__dirname, '..', 'config', 'domains.phase6.json');
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ZERO_BYTES32 = '0x' + '0'.repeat(64);
 
 function loadJson(path: string) {
   return JSON.parse(readFileSync(path, 'utf-8'));
@@ -94,6 +95,27 @@ function buildDomainOperationsTuple(domain: any) {
   ];
 }
 
+function buildDomainTelemetryTuple(domain: any) {
+  const telemetry = domain.telemetry ?? {};
+  const toBytes32 = (value: any) => {
+    if (typeof value === 'string' && value.startsWith('0x') && value.length === 66) {
+      return value;
+    }
+    return ZERO_BYTES32;
+  };
+  return [
+    Number(telemetry.resilienceBps ?? 0),
+    Number(telemetry.automationBps ?? 0),
+    Number(telemetry.complianceBps ?? 0),
+    Number(telemetry.settlementLatencySeconds ?? 0),
+    Boolean(telemetry.usesL2Settlement ?? false),
+    telemetry.sentinelOracle ?? ZERO_ADDRESS,
+    telemetry.settlementAsset ?? ZERO_ADDRESS,
+    toBytes32(telemetry.metricsDigest),
+    toBytes32(telemetry.manifestHash),
+  ];
+}
+
 function formatUSD(value?: number | null): string {
   if (value === undefined || value === null || Number.isNaN(Number(value))) {
     return '—';
@@ -124,6 +146,10 @@ function toNumber(value: any): number | undefined {
 
 function computeNetworkMetrics(config: any) {
   const resilience: number[] = [];
+  const automation: number[] = [];
+  const compliance: number[] = [];
+  const latency: number[] = [];
+  let l2Settlements = 0;
   const valueFlows: number[] = [];
   const sentinels = new Set<string>();
   for (const domain of config.domains) {
@@ -131,6 +157,24 @@ function computeNetworkMetrics(config: any) {
     const resilienceIndex = toNumber(meta.resilienceIndex);
     if (resilienceIndex !== undefined) {
       resilience.push(resilienceIndex);
+    }
+    if (domain.telemetry) {
+      const telemetry = domain.telemetry;
+      const auto = toNumber(telemetry.automationBps);
+      const comp = toNumber(telemetry.complianceBps);
+      const latencySeconds = toNumber(telemetry.settlementLatencySeconds);
+      if (auto !== undefined) {
+        automation.push(auto);
+      }
+      if (comp !== undefined) {
+        compliance.push(comp);
+      }
+      if (latencySeconds !== undefined) {
+        latency.push(latencySeconds);
+      }
+      if (telemetry.usesL2Settlement) {
+        l2Settlements += 1;
+      }
     }
     const valueFlow = toNumber(meta.valueFlowMonthlyUSD);
     if (valueFlow !== undefined) {
@@ -145,7 +189,26 @@ function computeNetworkMetrics(config: any) {
   const minResilience = resilience.length > 0 ? Math.min(...resilience) : undefined;
   const maxResilience = resilience.length > 0 ? Math.max(...resilience) : undefined;
   const totalValueFlow = valueFlows.reduce((acc, cur) => acc + cur, 0);
-  return { averageResilience, minResilience, maxResilience, totalValueFlow, sentinelCount: sentinels.size };
+  const averageAutomation = automation.length
+    ? automation.reduce((acc, cur) => acc + cur, 0) / automation.length
+    : undefined;
+  const averageCompliance = compliance.length
+    ? compliance.reduce((acc, cur) => acc + cur, 0) / compliance.length
+    : undefined;
+  const averageLatency = latency.length
+    ? latency.reduce((acc, cur) => acc + cur, 0) / latency.length
+    : undefined;
+  return {
+    averageResilience,
+    minResilience,
+    maxResilience,
+    totalValueFlow,
+    sentinelCount: sentinels.size,
+    averageAutomation,
+    averageCompliance,
+    averageLatency,
+    l2SettlementCoverage: config.domains.length ? l2Settlements / config.domains.length : 0,
+  };
 }
 
 function mermaid(config: any) {
@@ -171,11 +234,13 @@ function heartbeatSummary(domain: any, global: any) {
   const fragments = [
     'function setGlobalConfig((address,address,address,address,uint64,string) config)',
     'function setGlobalGuards((uint16,uint16,uint32,bool,address) config)',
+    'function setGlobalTelemetry((bytes32,bytes32,uint32,uint32,uint32) telemetry)',
     'function setSystemPause(address newPause)',
     'function setEscalationBridge(address newBridge)',
     'function registerDomain((string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
     'function updateDomain(bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
-    'function setDomainOperations(bytes32 id,(uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation) config)'
+    'function setDomainOperations(bytes32 id,(uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation) config)',
+    'function setDomainTelemetry(bytes32 id,(uint32,uint32,uint32,uint32,bool,address,address,bytes32,bytes32) telemetry)'
   ];
   const iface = new Interface(fragments);
 
@@ -202,6 +267,18 @@ function heartbeatSummary(domain: any, global: any) {
   } else {
     console.log('Resilience (avg/min/max): —');
   }
+  if (metrics.averageAutomation !== undefined) {
+    console.log(`Automation maturity: ${formatBps(metrics.averageAutomation)} avg`);
+  }
+  if (metrics.averageCompliance !== undefined) {
+    console.log(`Compliance assurance: ${formatBps(metrics.averageCompliance)} avg`);
+  }
+  if (metrics.averageLatency !== undefined) {
+    console.log(`Settlement latency (avg): ${metrics.averageLatency.toFixed(1)}s`);
+  }
+  console.log(
+    `L2 settlement coverage: ${(metrics.l2SettlementCoverage * 100).toFixed(1)}% of domains`,
+  );
   console.log(`Monthly value flow across domains: ${formatUSD(metrics.totalValueFlow)}`);
   console.log(`Active sentinel families: ${metrics.sentinelCount}`);
   console.log(`Global infra integrations: ${globalInfraCount}`);
@@ -213,6 +290,7 @@ function heartbeatSummary(domain: any, global: any) {
   );
 
   banner('Global controls');
+  const globalTelemetry = config.global.telemetry ?? {};
   renderTable([
     ['Manifest URI', config.global.manifestURI],
     summarizeAddress('IoT oracle router', config.global.iotOracleRouter).split(': '),
@@ -227,6 +305,11 @@ function heartbeatSummary(domain: any, global: any) {
     ['Anomaly grace', guards.anomalyGracePeriod ? `${guards.anomalyGracePeriod}s` : '—'],
     ['Auto-pause enabled', String(guards.autoPauseEnabled ?? false)],
     summarizeAddress('Oversight council', guards.oversightCouncil).split(': '),
+    ['Telemetry manifest hash', globalTelemetry.manifestHash ?? '—'],
+    ['Telemetry metrics digest', globalTelemetry.metricsDigest ?? '—'],
+    ['Telemetry resilience floor', formatBps(globalTelemetry.resilienceFloorBps)],
+    ['Telemetry automation floor', formatBps(globalTelemetry.automationFloorBps)],
+    ['Telemetry oversight weight', formatBps(globalTelemetry.oversightWeightBps)],
   ] as unknown as Array<[string, string]>);
 
   banner('Emergency levers');
@@ -264,6 +347,15 @@ function heartbeatSummary(domain: any, global: any) {
   console.log(iface.encodeFunctionData('setGlobalConfig', [globalTuple]));
   console.log('setGlobalGuards calldata:');
   console.log(iface.encodeFunctionData('setGlobalGuards', [guardTuple]));
+  const telemetryTuple = [
+    globalTelemetry.manifestHash ?? ZERO_BYTES32,
+    globalTelemetry.metricsDigest ?? ZERO_BYTES32,
+    Number(globalTelemetry.resilienceFloorBps ?? 0),
+    Number(globalTelemetry.automationFloorBps ?? 0),
+    Number(globalTelemetry.oversightWeightBps ?? 0),
+  ];
+  console.log('setGlobalTelemetry calldata:');
+  console.log(iface.encodeFunctionData('setGlobalTelemetry', [telemetryTuple]));
 
   banner('Decentralized infrastructure mesh');
   const globalInfra = config.global.decentralizedInfra ?? [];
@@ -305,10 +397,30 @@ function heartbeatSummary(domain: any, global: any) {
       ['Monthly value flow', valueFlowDisplay],
       ['Domain sentinel', metadata.sentinel ?? '—'],
       ['Uptime', metadata.uptime ?? '—'],
+      ['Telemetry resilience', formatBps(domain.telemetry?.resilienceBps)],
+      ['Telemetry automation', formatBps(domain.telemetry?.automationBps)],
+      ['Telemetry compliance', formatBps(domain.telemetry?.complianceBps)],
+      [
+        'Telemetry settlement latency',
+        domain.telemetry?.settlementLatencySeconds !== undefined
+          ? `${domain.telemetry.settlementLatencySeconds}s`
+          : '—',
+      ],
+      [
+        'Uses L2 settlement',
+        domain.telemetry?.usesL2Settlement === undefined
+          ? '—'
+          : domain.telemetry.usesL2Settlement
+            ? 'yes'
+            : 'no',
+      ],
+      ['Telemetry metrics digest', domain.telemetry?.metricsDigest ?? '—'],
+      ['Telemetry manifest hash', domain.telemetry?.manifestHash ?? '—'],
     ] as unknown as Array<[string, string]>);
 
     const tuple = buildDomainTuple(domain);
     const opsTuple = buildDomainOperationsTuple(domain);
+    const telemetryTupleDomain = buildDomainTelemetryTuple(domain);
     const ops = domain.operations ?? {};
     console.log('  registerDomain calldata:');
     console.log(`    ${iface.encodeFunctionData('registerDomain', [tuple])}`);
@@ -323,6 +435,8 @@ function heartbeatSummary(domain: any, global: any) {
     );
     console.log('  setDomainOperations calldata:');
     console.log(`    ${iface.encodeFunctionData('setDomainOperations', [domainId, opsTuple])}`);
+    console.log('  setDomainTelemetry calldata:');
+    console.log(`    ${iface.encodeFunctionData('setDomainTelemetry', [domainId, telemetryTupleDomain])}`);
   });
 
   banner('Mermaid system map (copy/paste into dashboards)');

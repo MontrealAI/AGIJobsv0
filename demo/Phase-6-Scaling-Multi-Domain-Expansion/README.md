@@ -8,10 +8,10 @@
 
 * **Instant global expansion** – governance can register, pause, or rewire entire industry stacks with a single `Phase6ExpansionManager` transaction.
 * **Non-technical empowerment** – a single command (`npm run demo:phase6:orchestrate`) emits pre-validated calldata, bridge plans, and AI orchestration summaries.
-* **Planetary telemetry** – the subgraph now indexes `Phase6Domain` & `Phase6GlobalConfig`, letting dashboards stream readiness, resilience indices, and upgrade intents in real time.
-* **Bullet-proof governance** – every parameter is updatable by the contract owner (timelock/multisig) including emergency pause delegates and cross-chain bridges.
+* **Planetary telemetry** – the subgraph now indexes `Phase6Domain`, `Phase6GlobalConfig`, and the new telemetry events so dashboards stream readiness, resilience, automation, compliance, and settlement posture in real time.
+* **Bullet-proof governance** – every parameter is updatable by the contract owner (timelock/multisig) including emergency pause delegates, cross-chain bridges, and per-domain telemetry digests.
 * **CI as a guardian** – the `ci (v2) / Phase 6 readiness` job enforces configuration drift detection on every PR and on `main`.
-* **Resilience telemetry** – the demo computes average/min/max resilience, sentinel coverage, and value flow across finance, health, logistics, climate, and the new education lattice.
+* **Resilience & automation telemetry** – the demo computes average/min/max resilience, automation/compliance BPS, settlement latency, sentinel coverage, and value flow across finance, health, logistics, climate, and the new education lattice.
 * **Mesh-level infrastructure clarity** – a new decentralized infra registry renders every Layer-2, storage, identity, oracle, and compute touchpoint for Phase 6 so governance can audit the rails instantly.
 
 ---
@@ -57,8 +57,9 @@
 `contracts/v2/Phase6ExpansionManager.sol` introduces a governance-only control plane that keeps the owner in absolute command:
 
 * `registerDomain`, `updateDomain`, `configureDomainConnectors`, `setDomainStatus`
-* `setGlobalConfig`, `setGlobalGuards`, `setSystemPause`, `setEscalationBridge`, `forwardPauseCall`, `forwardEscalation`
+* `setGlobalConfig`, `setGlobalGuards`, `setGlobalTelemetry`, `setSystemPause`, `setEscalationBridge`, `forwardPauseCall`, `forwardEscalation`
 * `setDomainOperations` locks in per-domain max concurrency, staking floors, revenue share, circuit breakers, and human validation toggles.
+* `setDomainTelemetry` publishes resilience/automation/compliance BPS, settlement latency, sentinel oracle, and manifest/metrics digests for every industry vertical.
 * Deterministic `domainId` helper & `listDomains()` enumeration for tooling.
 * Rejects missing telemetry targets – `subgraphEndpoint` is now mandatory on every domain mutation so dashboards never lose visibility.
 
@@ -90,11 +91,11 @@ flowchart TD
 
 The Graph mapping indexes the new events so dashboards, analytics, and governance tooling have live insight:
 
-* `Phase6Domain` entity tracks metadata, routing addresses, heartbeat SLAs, and pause status.
-* `Phase6GlobalConfig` entity exposes the canonical IoT router, L2 cadence, DID registry, manifest URI, and the active system pause & escalation bridges.
+* `Phase6Domain` entity tracks metadata, routing addresses, heartbeat SLAs, pause status **and** telemetry BPS/latency digests from `DomainTelemetryUpdated`.
+* `Phase6GlobalConfig` entity exposes the canonical IoT router, L2 cadence, DID registry, manifest URI, emergency bridges, and the telemetry floor signals emitted by `GlobalTelemetryUpdated`.
 * Every `EscalationForwarded` event is indexed with payload/response metadata so dashboards can surface the last emergency action and whether it targeted the pause contract or the escalation bridge.
-* Each event (`DomainRegistered`, `DomainUpdated`, `DomainStatusChanged`, `GlobalConfigUpdated`) updates the store instantly.
-* New handlers capture `DomainOperationsUpdated` & `GlobalGuardsUpdated` so analysts can graph staking floors, queue depth, treasury share, circuit breaker thresholds, and global auto-pause policy over time.
+* Each event (`DomainRegistered`, `DomainUpdated`, `DomainStatusChanged`, `GlobalConfigUpdated`, `DomainTelemetryUpdated`, `GlobalTelemetryUpdated`) updates the store instantly.
+* New handlers capture `DomainOperationsUpdated` & `GlobalGuardsUpdated` so analysts can graph staking floors, queue depth, treasury share, circuit breaker thresholds, global auto-pause policy, and telemetry floors over time.
 
 These additions power UI cards, CI validation, and off-chain monitoring (e.g., the Resilience Index).
 
@@ -103,7 +104,7 @@ These additions power UI cards, CI validation, and off-chain monitoring (e.g., t
 ## 🕸️ Decentralized infrastructure mesh
 
 * `config/domains.phase6.json` now includes a **global `decentralizedInfra` array** and per-domain `infrastructure` inventories. Each entry captures layer, provider, role, status, and optional endpoint.
-* `scripts/run-phase6-demo.ts` surfaces mesh telemetry – global integration counts, per-domain touchpoints, and copy-paste friendly summaries for multi-sig review.
+* `scripts/run-phase6-demo.ts` surfaces mesh + telemetry data – global integration counts, per-domain touchpoints, resilience/automation/compliance BPS, settlement latencies, and copy-paste friendly summaries for multi-sig review.
 * `index.html` renders the infra mesh alongside bridge plans so non-technical operators see exactly which L2s, storage rails, DID registries, and compute meshes come online.
 * `scripts/ci-check.mjs` enforces structural integrity: at least three integrations per domain and valid metadata for every mesh element.
 * `orchestrator/extensions/phase6.py` consumes the infra map to annotate runtime logs (`infra mesh: Layer-2:Linea(active)`) and to expose integration hints to IoT signal handlers.
@@ -150,7 +151,7 @@ Open `index.html` to explore:
 
 ## ✅ Deliverables included
 
-* Smart-contract upgrade: `Phase6ExpansionManager` + tests + mocks (global guard rails + domain operations control).
+* Smart-contract upgrade: `Phase6ExpansionManager` + tests + mocks (global guard rails, telemetry control, and domain operations control).
 * Python runtime extension with domain routing, IoT signal ingestion, guard-rail annotation, and bridge planning.
 * Subgraph schema & mapping updates for Phase 6 telemetry including guard/operations snapshots.
 * Static UI + JSON config + orchestration scripts for non-technical operators.

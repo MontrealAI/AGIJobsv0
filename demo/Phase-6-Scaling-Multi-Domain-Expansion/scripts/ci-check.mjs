@@ -92,6 +92,23 @@ config.global.decentralizedInfra.forEach((entry, idx) => {
   }
 });
 
+const globalTelemetry = config.global.telemetry;
+if (!globalTelemetry || typeof globalTelemetry !== 'object') {
+  fail('Global telemetry configuration is required.');
+}
+['manifestHash', 'metricsDigest'].forEach((field) => {
+  const value = globalTelemetry[field];
+  if (!value || typeof value !== 'string' || value.length !== 66 || !value.startsWith('0x')) {
+    fail(`global.telemetry.${field} must be a bytes32 hex string.`);
+  }
+});
+['resilienceFloorBps', 'automationFloorBps', 'oversightWeightBps'].forEach((field) => {
+  const value = globalTelemetry[field];
+  if (typeof value !== 'number' || value < 0 || value > 10000) {
+    fail(`global.telemetry.${field} must be a number between 0 and 10000.`);
+  }
+});
+
 if (!Array.isArray(config.domains) || config.domains.length === 0) {
   fail('At least one domain must be configured.');
 }
@@ -159,6 +176,37 @@ config.domains.forEach((domain, idx) => {
   if (!metadata || typeof metadata !== 'object') {
     fail(`${context}: metadata object is required.`);
   }
+  if (!domain.telemetry || typeof domain.telemetry !== 'object') {
+    fail(`${context}: telemetry object is required.`);
+  }
+  const telemetry = domain.telemetry;
+  ['resilienceBps', 'automationBps', 'complianceBps'].forEach((field) => {
+    const value = telemetry[field];
+    if (typeof value !== 'number' || value < 0 || value > 10000) {
+      fail(`${context}: telemetry.${field} must be between 0 and 10000.`);
+    }
+  });
+  if (
+    typeof telemetry.settlementLatencySeconds !== 'number' ||
+    telemetry.settlementLatencySeconds < 0
+  ) {
+    fail(`${context}: telemetry.settlementLatencySeconds must be >= 0.`);
+  }
+  if (typeof telemetry.usesL2Settlement !== 'boolean') {
+    fail(`${context}: telemetry.usesL2Settlement must be boolean.`);
+  }
+  ['sentinelOracle', 'settlementAsset'].forEach((field) => {
+    const value = telemetry[field];
+    if (value && (!addressPattern.test(value) || /^0x0{40}$/i.test(value))) {
+      fail(`${context}: telemetry.${field} must be a valid 0x-prefixed address when provided.`);
+    }
+  });
+  ['metricsDigest', 'manifestHash'].forEach((field) => {
+    const value = telemetry[field];
+    if (!value || typeof value !== 'string' || value.length !== 66 || !value.startsWith('0x')) {
+      fail(`${context}: telemetry.${field} must be a bytes32 hex string.`);
+    }
+  });
   ['domain', 'l2', 'sentinel', 'uptime'].forEach((key) => {
     if (!metadata[key] || typeof metadata[key] !== 'string') {
       fail(`${context}: metadata.${key} must be a non-empty string.`);

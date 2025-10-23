@@ -98,10 +98,14 @@ dataSources:
           handler: handlePhase6DomainStatusChanged
         - event: DomainOperationsUpdated(indexed bytes32,uint48,uint48,uint96,uint16,uint16,bool)
           handler: handlePhase6DomainOperationsUpdated
+        - event: DomainTelemetryUpdated(indexed bytes32,uint32,uint32,uint32,uint32,bool,address,address,bytes32,bytes32)
+          handler: handlePhase6DomainTelemetryUpdated
         - event: GlobalConfigUpdated(indexed address,indexed address,address,address,uint64,string)
           handler: handlePhase6GlobalConfigUpdated
         - event: GlobalGuardsUpdated(uint16,uint16,uint32,bool,address)
           handler: handlePhase6GlobalGuardsUpdated
+        - event: GlobalTelemetryUpdated(bytes32,bytes32,uint32,uint32,uint32)
+          handler: handlePhase6GlobalTelemetryUpdated
         - event: SystemPauseUpdated(indexed address)
           handler: handlePhase6SystemPauseUpdated
         - event: EscalationBridgeUpdated(indexed address)

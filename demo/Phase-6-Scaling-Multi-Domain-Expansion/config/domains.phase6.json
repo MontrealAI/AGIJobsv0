@@ -40,7 +40,14 @@
         "status": "armed",
         "endpoint": "https://mesh.agi.jobs/lit-threshold"
       }
-    ]
+    ],
+    "telemetry": {
+      "manifestHash": "0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa",
+      "metricsDigest": "0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+      "resilienceFloorBps": 9300,
+      "automationFloorBps": 9050,
+      "oversightWeightBps": 7200
+    }
   },
   "domains": [
     {
@@ -60,6 +67,17 @@
         "treasuryShareBps": 280,
         "circuitBreakerBps": 7200,
         "requiresHumanValidation": false
+      },
+      "telemetry": {
+        "resilienceBps": 9820,
+        "automationBps": 9475,
+        "complianceBps": 9650,
+        "settlementLatencySeconds": 32,
+        "usesL2Settlement": true,
+        "sentinelOracle": "0xc101010101010101010101010101010101010101",
+        "settlementAsset": "0xd202020202020202020202020202020202020202",
+        "metricsDigest": "0x2eebf13ed4594d4f83586ed0eb1d91c898861aa027d5fce841139f2cc4ff0d33",
+        "manifestHash": "0x2a3411c416ed4423c23e0e02d341ec8437d66c5385a83ee326a5524d222dfc17"
       },
       "skillTags": [
         "finance",
@@ -130,6 +148,17 @@
         "circuitBreakerBps": 6800,
         "requiresHumanValidation": true
       },
+      "telemetry": {
+        "resilienceBps": 9750,
+        "automationBps": 9310,
+        "complianceBps": 9890,
+        "settlementLatencySeconds": 44,
+        "usesL2Settlement": true,
+        "sentinelOracle": "0xc202020202020202020202020202020202020202",
+        "settlementAsset": "0xd303030303030303030303030303030303030303",
+        "metricsDigest": "0xc742f109b6ccb76e9e0da2b9a0066eaec70cd15247cd3d9d61ccd69174a0a57c",
+        "manifestHash": "0x1d5c15acbc09b4a0c1ff3a45be44b9016b78261ef652f480d89b5b281ac9f2dd"
+      },
       "skillTags": [
         "healthcare",
         "diagnostics",
@@ -197,6 +226,17 @@
         "treasuryShareBps": 300,
         "circuitBreakerBps": 7000,
         "requiresHumanValidation": false
+      },
+      "telemetry": {
+        "resilienceBps": 9680,
+        "automationBps": 9120,
+        "complianceBps": 9410,
+        "settlementLatencySeconds": 38,
+        "usesL2Settlement": true,
+        "sentinelOracle": "0xc303030303030303030303030303030303030303",
+        "settlementAsset": "0xd404040404040404040404040404040404040404",
+        "metricsDigest": "0x0f0730f130f09ec28a4f1979a06d6bc62cf2dd251af495f6ad953a8f8d3e562f",
+        "manifestHash": "0x112bebd20f5b4a430d951c1b7b3783d375dc72e71b9fb24df79aca77e2371a14"
       },
       "skillTags": [
         "logistics",
@@ -268,6 +308,17 @@
         "circuitBreakerBps": 6600,
         "requiresHumanValidation": true
       },
+      "telemetry": {
+        "resilienceBps": 9420,
+        "automationBps": 8840,
+        "complianceBps": 9125,
+        "settlementLatencySeconds": 56,
+        "usesL2Settlement": false,
+        "sentinelOracle": "0xc404040404040404040404040404040404040404",
+        "settlementAsset": "0xd505050505050505050505050505050505050505",
+        "metricsDigest": "0x545a606dc7a79eabf30db4432149a962decdf29b6cb5d3136b46ee87a3e020da",
+        "manifestHash": "0x5ab7ec8ed296a9fd0e30f8f6ac80de6026465593d4e823f9eb8e279d3d10bad8"
+      },
       "skillTags": [
         "climate",
         "sustainability",
@@ -336,6 +387,17 @@
         "treasuryShareBps": 240,
         "circuitBreakerBps": 6500,
         "requiresHumanValidation": true
+      },
+      "telemetry": {
+        "resilienceBps": 9570,
+        "automationBps": 9040,
+        "complianceBps": 9350,
+        "settlementLatencySeconds": 41,
+        "usesL2Settlement": true,
+        "sentinelOracle": "0xc505050505050505050505050505050505050505",
+        "settlementAsset": "0xd606060606060606060606060606060606060606",
+        "metricsDigest": "0xc7fead15d3fef8d6c5f63b8d2d5e53c583264a213178eea1fef3c23133507fc0",
+        "manifestHash": "0xfdbc03878183a69c2462afacd96eff4ee1ed3a7c6582e81550a3c05aa407aefc"
       },
       "skillTags": [
         "education",

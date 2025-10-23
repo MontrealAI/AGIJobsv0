@@ -254,6 +254,7 @@
 
     <script type="module">
       const zeroAddress = '0x0000000000000000000000000000000000000000';
+      const zeroBytes32 = '0x' + '0'.repeat(64);
       const configPath = './config/domains.phase6.json';
       const abi = await fetch('../subgraph/abis/Phase6ExpansionManager.json').then((res) => res.json());
       const { Interface, keccak256, toUtf8Bytes, formatEther } = await import('https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm');
@@ -293,13 +294,30 @@
           typeof minStakeRaw === 'string'
             ? BigInt(minStakeRaw)
             : BigInt(Math.trunc(Number(minStakeRaw)));
+      return [
+        BigInt(Math.trunc(Number(ops.maxActiveJobs ?? 0))),
+        BigInt(Math.trunc(Number(ops.maxQueueDepth ?? 0))),
+        minStake,
+        Number(ops.treasuryShareBps ?? 0),
+        Number(ops.circuitBreakerBps ?? 0),
+        Boolean(ops.requiresHumanValidation),
+      ];
+      }
+
+      function buildDomainTelemetryTuple(domain) {
+        const telemetry = domain.telemetry ?? {};
+        const toBytes32 = (value) =>
+          typeof value === 'string' && value.startsWith('0x') && value.length === 66 ? value : zeroBytes32;
         return [
-          BigInt(Math.trunc(Number(ops.maxActiveJobs ?? 0))),
-          BigInt(Math.trunc(Number(ops.maxQueueDepth ?? 0))),
-          minStake,
-          Number(ops.treasuryShareBps ?? 0),
-          Number(ops.circuitBreakerBps ?? 0),
-          Boolean(ops.requiresHumanValidation),
+          Number(telemetry.resilienceBps ?? 0),
+          Number(telemetry.automationBps ?? 0),
+          Number(telemetry.complianceBps ?? 0),
+          Number(telemetry.settlementLatencySeconds ?? 0),
+          Boolean(telemetry.usesL2Settlement ?? false),
+          telemetry.sentinelOracle ?? zeroAddress,
+          telemetry.settlementAsset ?? zeroAddress,
+          toBytes32(telemetry.metricsDigest),
+          toBytes32(telemetry.manifestHash),
         ];
       }
 
@@ -340,12 +358,34 @@
 
       function computeMetrics(config) {
         const resilience = [];
+        const automation = [];
+        const compliance = [];
+        const latency = [];
+        let l2Coverage = 0;
         const valueFlows = [];
         const sentinels = new Set();
         config.domains.forEach((domain) => {
           const idx = Number.parseFloat(domain.metadata?.resilienceIndex ?? '');
           if (!Number.isNaN(idx)) {
             resilience.push(idx);
+          }
+          if (domain.telemetry) {
+            const telemetry = domain.telemetry;
+            const auto = Number(telemetry.automationBps ?? NaN);
+            const comp = Number(telemetry.complianceBps ?? NaN);
+            const latencySeconds = Number(telemetry.settlementLatencySeconds ?? NaN);
+            if (!Number.isNaN(auto)) {
+              automation.push(auto);
+            }
+            if (!Number.isNaN(comp)) {
+              compliance.push(comp);
+            }
+            if (!Number.isNaN(latencySeconds)) {
+              latency.push(latencySeconds);
+            }
+            if (telemetry.usesL2Settlement) {
+              l2Coverage += 1;
+            }
           }
           const value = domain.metadata?.valueFlowMonthlyUSD;
           if (typeof value === 'number' && Number.isFinite(value)) {
@@ -366,12 +406,21 @@
           maxResilience,
           totalValueFlow,
           sentinelCount: sentinels.size,
+          averageAutomation: automation.length
+            ? automation.reduce((acc, cur) => acc + cur, 0) / automation.length
+            : null,
+          averageCompliance: compliance.length
+            ? compliance.reduce((acc, cur) => acc + cur, 0) / compliance.length
+            : null,
+          averageLatency: latency.length ? latency.reduce((acc, cur) => acc + cur, 0) / latency.length : null,
+          l2Coverage: config.domains.length ? l2Coverage / config.domains.length : 0,
         };
       }
 
       function renderGlobal(config) {
         const target = document.getElementById('global-summary');
         target.innerHTML = '';
+        const telemetry = config.global.telemetry || {};
         const items = [
           `Global manifest: ${config.global.manifestURI}`,
           `IoT oracle router: ${formatAddress(config.global.iotOracleRouter)}`,
@@ -385,13 +434,38 @@
           `Circuit breaker: ${formatBps(config.global.guards?.circuitBreakerBps)}`,
           `Anomaly grace: ${config.global.guards?.anomalyGracePeriod ?? '—'}s`,
           `Auto-pause: ${String(config.global.guards?.autoPauseEnabled ?? false)}`,
-          `Oversight council: ${formatAddress(config.global.guards?.oversightCouncil)}`
+          `Oversight council: ${formatAddress(config.global.guards?.oversightCouncil)}`,
+          `Telemetry manifest hash: ${telemetry.manifestHash ?? '—'}`,
+          `Telemetry metrics digest: ${telemetry.metricsDigest ?? '—'}`,
+          `Telemetry resilience floor: ${formatBps(telemetry.resilienceFloorBps)}`,
+          `Telemetry automation floor: ${formatBps(telemetry.automationFloorBps)}`,
+          `Telemetry oversight weight: ${formatBps(telemetry.oversightWeightBps)}`,
         ];
         if (state.metrics) {
-          const { averageResilience, minResilience, maxResilience, totalValueFlow, sentinelCount } = state.metrics;
+          const {
+            averageResilience,
+            minResilience,
+            maxResilience,
+            totalValueFlow,
+            sentinelCount,
+            averageAutomation,
+            averageCompliance,
+            averageLatency,
+            l2Coverage,
+          } = state.metrics;
           if (averageResilience !== null) {
             items.push(`Network resilience: avg ${averageResilience.toFixed(3)} (min ${minResilience?.toFixed(3)}, max ${maxResilience?.toFixed(3)})`);
           }
+          if (averageAutomation !== null) {
+            items.push(`Automation maturity: ${formatBps(averageAutomation)}`);
+          }
+          if (averageCompliance !== null) {
+            items.push(`Compliance assurance: ${formatBps(averageCompliance)}`);
+          }
+          if (averageLatency !== null) {
+            items.push(`Average settlement latency: ${averageLatency.toFixed(1)}s`);
+          }
+          items.push(`L2 settlement coverage: ${(l2Coverage * 100).toFixed(1)}% of domains`);
           if (totalValueFlow) {
             items.push(`Monthly value flow across domains: ${formatUSD(totalValueFlow)}`);
           }
@@ -428,6 +502,7 @@
           const metrics = document.createElement('div');
           metrics.className = 'metrics';
           const metadata = domain.metadata || {};
+          const telemetry = domain.telemetry || {};
           const resilience = metadata.resilienceIndex !== undefined ? Number(metadata.resilienceIndex).toFixed(3) : '—';
           metrics.innerHTML = `
             <span>Manifest URI: ${domain.manifestURI}</span>
@@ -440,6 +515,7 @@
             <span>Resilience index: ${resilience}</span>
             <span>Monthly value flow: ${metadata.valueFlowDisplay ?? formatUSD(metadata.valueFlowMonthlyUSD)}</span>
             <span>Domain sentinel: ${metadata.sentinel ?? '—'}</span>
+            <span>Sentinel oracle: ${formatAddress(telemetry.sentinelOracle)}</span>
             <span>Uptime: ${metadata.uptime ?? '—'}</span>
             <span>Max active jobs: ${domain.operations?.maxActiveJobs ?? '—'}</span>
             <span>Queue depth: ${domain.operations?.maxQueueDepth ?? '—'}</span>
@@ -447,6 +523,12 @@
             <span>Treasury share: ${formatBps(domain.operations?.treasuryShareBps)}</span>
             <span>Circuit breaker: ${formatBps(domain.operations?.circuitBreakerBps)}</span>
             <span>Requires human validation: ${domain.operations?.requiresHumanValidation ? 'Yes' : 'No'}</span>
+            <span>Telemetry resilience: ${formatBps(telemetry.resilienceBps)}</span>
+            <span>Telemetry automation: ${formatBps(telemetry.automationBps)}</span>
+            <span>Telemetry compliance: ${formatBps(telemetry.complianceBps)}</span>
+            <span>Settlement latency: ${telemetry.settlementLatencySeconds ?? '—'}s (L2 ${telemetry.usesL2Settlement ? 'enabled' : 'disabled'})</span>
+            <span>Telemetry metrics digest: ${telemetry.metricsDigest ?? '—'}</span>
+            <span>Telemetry manifest hash: ${telemetry.manifestHash ?? '—'}</span>
           `;
           card.appendChild(metrics);
           grid.appendChild(card);
@@ -460,6 +542,7 @@
           const div = document.createElement('div');
           div.className = 'domain-card';
           const metadata = domain.metadata || {};
+          const telemetry = domain.telemetry || {};
           const bridge = {
             domain: domain.slug,
             l2Gateway: domain.l2Gateway || config.global.defaultL2Gateway,
@@ -469,6 +552,11 @@
             cadence: heartbeatSummary(domain, config.global),
             sentinel: metadata.sentinel || '—',
             resilience: metadata.resilienceIndex !== undefined ? Number(metadata.resilienceIndex).toFixed(3) : '—',
+            telemetryResilience: telemetry.resilienceBps ?? null,
+            telemetryAutomation: telemetry.automationBps ?? null,
+            telemetryCompliance: telemetry.complianceBps ?? null,
+            settlementLatency: telemetry.settlementLatencySeconds ?? null,
+            usesL2: telemetry.usesL2Settlement ?? false,
           };
           div.innerHTML = `
             <h3>${domain.name}</h3>
@@ -483,6 +571,10 @@
               <span>Max active jobs: ${domain.operations?.maxActiveJobs ?? '—'}</span>
               <span>Min stake: ${formatStake(domain.operations?.minStake)}</span>
               <span>Treasury share: ${formatBps(domain.operations?.treasuryShareBps)}</span>
+              <span>Telemetry resilience: ${bridge.telemetryResilience !== null ? formatBps(Number(bridge.telemetryResilience)) : '—'}</span>
+              <span>Telemetry automation: ${bridge.telemetryAutomation !== null ? formatBps(Number(bridge.telemetryAutomation)) : '—'}</span>
+              <span>Telemetry compliance: ${bridge.telemetryCompliance !== null ? formatBps(Number(bridge.telemetryCompliance)) : '—'}</span>
+              <span>Settlement latency: ${bridge.settlementLatency ?? '—'}s (L2 ${bridge.usesL2 ? 'enabled' : 'disabled'})</span>
             </div>
           `;
           grid.appendChild(div);
@@ -522,6 +614,17 @@
           Boolean(config.global.guards?.autoPauseEnabled ?? false),
           config.global.guards?.oversightCouncil ?? zeroAddress,
         ];
+        const telemetryTuple = [
+          (config.global.telemetry?.manifestHash && config.global.telemetry.manifestHash.length === 66)
+            ? config.global.telemetry.manifestHash
+            : zeroBytes32,
+          (config.global.telemetry?.metricsDigest && config.global.telemetry.metricsDigest.length === 66)
+            ? config.global.telemetry.metricsDigest
+            : zeroBytes32,
+          Number(config.global.telemetry?.resilienceFloorBps ?? 0),
+          Number(config.global.telemetry?.automationFloorBps ?? 0),
+          Number(config.global.telemetry?.oversightWeightBps ?? 0),
+        ];
         calldata.push({
           label: 'setGlobalConfig(GlobalConfig)',
           data: iface.encodeFunctionData('setGlobalConfig', [globalTuple]),
@@ -529,6 +632,10 @@
         calldata.push({
           label: 'setGlobalGuards(GlobalGuards)',
           data: iface.encodeFunctionData('setGlobalGuards', [guardTuple]),
+        });
+        calldata.push({
+          label: 'setGlobalTelemetry(GlobalTelemetry)',
+          data: iface.encodeFunctionData('setGlobalTelemetry', [telemetryTuple]),
         });
         if (config.global.systemPause && config.global.systemPause !== zeroAddress) {
           calldata.push({
@@ -546,6 +653,7 @@
           const tuple = buildDomainTuple(domain);
           const domainId = keccak256(toUtf8Bytes(domain.slug.toLowerCase()));
           const opsTuple = buildDomainOperationsTuple(domain);
+          const telemetryTupleDomain = buildDomainTelemetryTuple(domain);
           calldata.push({
             label: `registerDomain(${domain.slug})`,
             data: iface.encodeFunctionData('registerDomain', [tuple]),
@@ -560,6 +668,10 @@
           calldata.push({
             label: `setDomainOperations(${domain.slug})`,
             data: iface.encodeFunctionData('setDomainOperations', [domainId, opsTuple]),
+          });
+          calldata.push({
+            label: `setDomainTelemetry(${domain.slug})`,
+            data: iface.encodeFunctionData('setDomainTelemetry', [domainId, telemetryTupleDomain]),
           });
         });
         state.calldata = calldata;

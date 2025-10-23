@@ -362,6 +362,11 @@ function getOrCreatePhase6Global(event: ethereum.Event): Phase6GlobalConfig {
     global.anomalyGracePeriod = 0;
     global.autoPauseEnabled = false;
     global.oversightCouncil = Address.zero();
+    global.telemetryManifestHash = null;
+    global.telemetryMetricsDigest = null;
+    global.telemetryResilienceFloorBps = 0;
+    global.telemetryAutomationFloorBps = 0;
+    global.telemetryOversightWeightBps = 0;
   }
   return global as Phase6GlobalConfig;
 }
@@ -403,6 +408,15 @@ export function handlePhase6DomainRegistered(event: ethereum.Event): void {
   domain.treasuryShareBps = 0;
   domain.circuitBreakerBps = 0;
   domain.requiresHumanValidation = false;
+  domain.telemetryResilienceBps = 0;
+  domain.telemetryAutomationBps = 0;
+  domain.telemetryComplianceBps = 0;
+  domain.settlementLatencySeconds = 0;
+  domain.usesL2Settlement = false;
+  domain.sentinelOracle = null;
+  domain.settlementAsset = null;
+  domain.telemetryMetricsDigest = null;
+  domain.telemetryManifestHash = null;
   domain.save();
 }
 
@@ -445,6 +459,22 @@ export function handlePhase6DomainOperationsUpdated(event: ethereum.Event): void
   domain.save();
 }
 
+export function handlePhase6DomainTelemetryUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  const id = phase6DomainId(params[0].value);
+  const domain = upsertPhase6Domain(id, event);
+  domain.telemetryResilienceBps = params[1].value.toI32();
+  domain.telemetryAutomationBps = params[2].value.toI32();
+  domain.telemetryComplianceBps = params[3].value.toI32();
+  domain.settlementLatencySeconds = params[4].value.toBigInt().toI32();
+  domain.usesL2Settlement = params[5].value.toBoolean();
+  domain.sentinelOracle = params[6].value.toAddress();
+  domain.settlementAsset = params[7].value.toAddress();
+  domain.telemetryMetricsDigest = params[8].value.toBytes();
+  domain.telemetryManifestHash = params[9].value.toBytes();
+  domain.save();
+}
+
 export function handlePhase6GlobalConfigUpdated(event: ethereum.Event): void {
   const params = event.parameters;
   const global = getOrCreatePhase6Global(event);
@@ -454,6 +484,19 @@ export function handlePhase6GlobalConfigUpdated(event: ethereum.Event): void {
   global.treasuryBridge = params[3].value.toAddress();
   global.l2SyncCadence = params[4].value.toBigInt().toI32();
   global.manifestURI = params[5].value.toString();
+  global.updatedAtBlock = event.block.number;
+  global.updatedAtTimestamp = event.block.timestamp;
+  global.save();
+}
+
+export function handlePhase6GlobalTelemetryUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  const global = getOrCreatePhase6Global(event);
+  global.telemetryManifestHash = params[0].value.toBytes();
+  global.telemetryMetricsDigest = params[1].value.toBytes();
+  global.telemetryResilienceFloorBps = params[2].value.toI32();
+  global.telemetryAutomationFloorBps = params[3].value.toI32();
+  global.telemetryOversightWeightBps = params[4].value.toI32();
   global.updatedAtBlock = event.block.number;
   global.updatedAtTimestamp = event.block.timestamp;
   global.save();
