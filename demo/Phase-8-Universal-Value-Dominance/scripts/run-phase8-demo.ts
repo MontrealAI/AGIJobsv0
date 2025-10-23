@@ -32,6 +32,7 @@ function computeMetrics(config: any) {
   const domains = config.domains ?? [];
   const sentinels = config.sentinels ?? [];
   const streams = config.capitalStreams ?? [];
+  const plan = config.selfImprovement?.plan ?? {};
   const totalMonthlyUSD = domains.reduce((acc: number, d: any) => acc + Number(d.valueFlowMonthlyUSD ?? 0), 0);
   const maxAutonomy = domains.reduce((acc: number, d: any) => Math.max(acc, Number(d.autonomyLevelBps ?? 0)), 0);
   const averageResilience =
@@ -47,7 +48,18 @@ function computeMetrics(config: any) {
     }
   }
   const coverageRatio = domains.length === 0 ? 0 : (coverageSet.size / domains.length) * 100;
-  return { totalMonthlyUSD, maxAutonomy, averageResilience, guardianCoverageMinutes, annualBudget, coverageRatio };
+  const cadenceHours = Number(plan.cadenceSeconds ?? 0) / 3600;
+  const lastExecutedAt = Number(plan.lastExecutedAt ?? 0);
+  return {
+    totalMonthlyUSD,
+    maxAutonomy,
+    averageResilience,
+    guardianCoverageMinutes,
+    annualBudget,
+    coverageRatio,
+    cadenceHours,
+    lastExecutedAt,
+  };
 }
 
 function usd(value: number) {
@@ -103,6 +115,8 @@ function calldata(config: any) {
     "function registerCapitalStream((string slug,string name,string uri,address vault,uint256 annualBudget,uint256 expansionBps,bool active) stream)",
     "function setSentinelDomains(bytes32 id, bytes32[] domainIds)",
     "function setCapitalStreamDomains(bytes32 id, bytes32[] domainIds)",
+    "function setSelfImprovementPlan((string planURI,bytes32 planHash,uint64 cadenceSeconds,uint64 lastExecutedAt,string lastReportURI) plan)",
+    "function recordSelfImprovementExecution(uint64 executedAt,string reportURI)",
     "function removeDomain(bytes32 id)",
     "function removeSentinel(bytes32 id)",
     "function removeCapitalStream(bytes32 id)"
@@ -112,6 +126,7 @@ function calldata(config: any) {
   const firstDomain = config.domains?.[0];
   const firstSentinel = config.sentinels?.[0];
   const firstStream = config.capitalStreams?.[0];
+  const plan = config.selfImprovement?.plan ?? {};
   const sentinelDomains = (config.sentinels ?? []).map((entry: any) => ({
     slug: entry.slug,
     id: slugId(String(entry.slug || "")),
@@ -175,8 +190,19 @@ function calldata(config: any) {
           Boolean(firstStream.active),
         ]
       : undefined,
+    plan: [
+      String(plan.planURI ?? ""),
+      String(plan.planHash ?? "0x0000000000000000000000000000000000000000000000000000000000000000"),
+      BigInt(plan.cadenceSeconds ?? 0),
+      BigInt(plan.lastExecutedAt ?? 0),
+      String(plan.lastReportURI ?? ""),
+    ],
   };
 
+  const nextExecution =
+    plan && plan.cadenceSeconds
+      ? BigInt(plan.lastExecutedAt ?? 0) + BigInt(plan.cadenceSeconds ?? 0)
+      : undefined;
   const domainRemoval = firstDomain ? iface.encodeFunctionData("removeDomain", [slugId(String(firstDomain.slug || ""))]) : undefined;
   const sentinelRemoval = firstSentinel
     ? iface.encodeFunctionData("removeSentinel", [slugId(String(firstSentinel.slug || ""))])
@@ -199,6 +225,11 @@ function calldata(config: any) {
     setCapitalStreamDomains:
       streamDomains.length > 0
         ? iface.encodeFunctionData("setCapitalStreamDomains", [streamDomains[0].id, streamDomains[0].domains])
+        : undefined,
+    setSelfImprovementPlan: iface.encodeFunctionData("setSelfImprovementPlan", [tuples.plan]),
+    recordSelfImprovementExecution:
+      nextExecution && plan.lastReportURI
+        ? iface.encodeFunctionData("recordSelfImprovementExecution", [nextExecution, plan.lastReportURI])
         : undefined,
     removeDomain: domainRemoval,
     removeSentinel: sentinelRemoval,
@@ -251,6 +282,12 @@ function printDomainTable(config: any) {
   console.log(`Guardian sentinel coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes per cycle`);
   console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
   console.log(`Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
+  if (metrics.cadenceHours) {
+    console.log(`Self-improvement cadence: every ${metrics.cadenceHours.toFixed(2)} hours`);
+  }
+  if (metrics.lastExecutedAt) {
+    console.log(`Last self-improvement execution: ${new Date(metrics.lastExecutedAt * 1000).toISOString()}`);
+  }
 
   banner("Governance control surface");
   console.log(shortAddress("Treasury", config.global?.treasury));
@@ -283,6 +320,17 @@ function printDomainTable(config: any) {
   }
 
   banner("Self-improvement kernel");
+  const planDetails = config.selfImprovement?.plan;
+  if (planDetails) {
+    const cadenceHours = (Number(planDetails.cadenceSeconds ?? 0) / 3600).toFixed(2);
+    console.log(`  Plan URI: ${planDetails.planURI}`);
+    console.log(`  Plan hash: ${planDetails.planHash}`);
+    console.log(`  Cadence: ${planDetails.cadenceSeconds}s (${cadenceHours}h)`);
+    if (planDetails.lastExecutedAt) {
+      console.log(`  Last executed at: ${new Date(Number(planDetails.lastExecutedAt) * 1000).toISOString()}`);
+      console.log(`  Last report: ${planDetails.lastReportURI}`);
+    }
+  }
   for (const playbook of config.selfImprovement?.playbooks ?? []) {
     console.log(`  • ${playbook.name} (${playbook.automation}): ${playbook.description}`);
   }

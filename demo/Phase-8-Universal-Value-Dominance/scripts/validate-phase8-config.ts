@@ -52,6 +52,18 @@ const streamSchema = z.object({
   active: z.boolean(),
 });
 
+const planSchema = z
+  .object({
+    planURI: z.string().min(1),
+    planHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
+    cadenceSeconds: z.number().int().positive(),
+    lastExecutedAt: z.number().int().min(0),
+    lastReportURI: z.string().default(""),
+  })
+  .refine((value) => value.lastExecutedAt === 0 || value.lastReportURI.length > 0, {
+    message: "selfImprovement.plan.lastReportURI required when lastExecutedAt > 0",
+  });
+
 const configSchema = z.object({
   global: z.object({
     treasury: address,
@@ -71,6 +83,7 @@ const configSchema = z.object({
   sentinels: z.array(sentinelSchema).min(1),
   capitalStreams: z.array(streamSchema).min(1),
   selfImprovement: z.object({
+    plan: planSchema,
     playbooks: z
       .array(
         z.object({
@@ -152,12 +165,27 @@ function main() {
     throw new Error("Domain autonomy exceeds guardrail maximum");
   }
 
+  if (config.selfImprovement.plan.cadenceSeconds < config.global.heartbeatSeconds) {
+    throw new Error("Self-improvement cadence must not be shorter than global heartbeat");
+  }
+
+  if (
+    config.selfImprovement.plan.cadenceSeconds < config.global.guardianReviewWindow &&
+    config.selfImprovement.plan.cadenceSeconds % config.global.guardianReviewWindow !== 0
+  ) {
+    console.warn("Self-improvement cadence is shorter than guardian review window; ensure oversight readiness.");
+  }
+
   console.log("Phase 8 manifest validated ✔");
   console.log(`  Domains: ${config.domains.length}`);
   console.log(`  Sentinels: ${config.sentinels.length}`);
   console.log(`  Capital streams: ${config.capitalStreams.length}`);
   console.log(`  Total sentinel coverage: ${sentinelCoverage}s`);
   console.log(`  Domains with sentinel coverage: ${sentinelDomains.size}`);
+  console.log(`  Self-improvement cadence: ${config.selfImprovement.plan.cadenceSeconds}s`);
+  if (config.selfImprovement.plan.lastExecutedAt) {
+    console.log(`  Last self-improvement execution: ${config.selfImprovement.plan.lastExecutedAt}`);
+  }
 }
 
 main();

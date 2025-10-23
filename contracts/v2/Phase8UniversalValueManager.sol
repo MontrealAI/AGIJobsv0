@@ -76,11 +76,20 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         CapitalStream stream;
     }
 
+    struct SelfImprovementPlan {
+        string planURI;
+        bytes32 planHash;
+        uint64 cadenceSeconds;
+        uint64 lastExecutedAt;
+        string lastReportURI;
+    }
+
     string public constant SPEC_VERSION = "phase8.universal-value.v1";
 
     GlobalParameters public globalParameters;
     address public guardianCouncil;
     SystemPause public systemPause;
+    SelfImprovementPlan public selfImprovementPlan;
 
     mapping(bytes32 => ValueDomain) private _domains;
     mapping(bytes32 => bool) private _knownDomain;
@@ -113,6 +122,10 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     error InvalidBps(uint256 provided);
     error InvalidURI(string field);
     error ManifestRequired();
+    error InvalidCadence(uint64 provided);
+    error InvalidPlanHash();
+    error InvalidExecutionTimestamp(uint64 provided);
+    error SelfImprovementPlanUnset();
 
     /// ---------------------------------------------------------------------
     /// Events
@@ -141,6 +154,15 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     event CapitalStreamRemoved(bytes32 indexed id);
 
     event DomainRemoved(bytes32 indexed id);
+
+    event SelfImprovementPlanUpdated(
+        string planURI,
+        bytes32 indexed planHash,
+        uint64 cadenceSeconds,
+        uint64 lastExecutedAt,
+        string lastReportURI
+    );
+    event SelfImprovementExecutionRecorded(uint64 executedAt, string reportURI, bytes32 indexed planHash);
 
     constructor(address initialGovernance) Governable(initialGovernance) {}
 
@@ -196,6 +218,32 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         bytes memory response = pauseTarget.functionCall(data);
         emit PauseCallForwarded(pauseTarget, data, response);
         return response;
+    }
+
+    function setSelfImprovementPlan(SelfImprovementPlan calldata plan) external onlyGovernance {
+        _validateSelfImprovementPlan(plan);
+        selfImprovementPlan = plan;
+        emit SelfImprovementPlanUpdated(
+            plan.planURI,
+            plan.planHash,
+            plan.cadenceSeconds,
+            plan.lastExecutedAt,
+            plan.lastReportURI
+        );
+    }
+
+    function recordSelfImprovementExecution(uint64 executedAt, string calldata reportURI) external onlyGovernance {
+        if (bytes(reportURI).length == 0) revert InvalidURI("reportURI");
+        if (executedAt == 0) revert InvalidExecutionTimestamp(executedAt);
+
+        SelfImprovementPlan memory plan = selfImprovementPlan;
+        if (plan.planHash == bytes32(0)) revert SelfImprovementPlanUnset();
+        if (executedAt < plan.lastExecutedAt) revert InvalidExecutionTimestamp(executedAt);
+
+        plan.lastExecutedAt = executedAt;
+        plan.lastReportURI = reportURI;
+        selfImprovementPlan = plan;
+        emit SelfImprovementExecutionRecorded(executedAt, reportURI, plan.planHash);
     }
 
     /// ---------------------------------------------------------------------
@@ -458,6 +506,18 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         if (bytes(stream.uri).length == 0) revert InvalidURI("uri");
         if (stream.vault == address(0)) revert InvalidAddress("vault", stream.vault);
         if (stream.expansionBps > 10_000) revert InvalidBps(stream.expansionBps);
+    }
+
+    function _validateSelfImprovementPlan(SelfImprovementPlan calldata plan) private pure {
+        if (bytes(plan.planURI).length == 0) revert InvalidURI("planURI");
+        if (plan.planHash == bytes32(0)) revert InvalidPlanHash();
+        if (plan.cadenceSeconds == 0) revert InvalidCadence(plan.cadenceSeconds);
+        if (plan.lastExecutedAt != 0 && plan.lastExecutedAt > type(uint64).max) {
+            revert InvalidExecutionTimestamp(plan.lastExecutedAt);
+        }
+        if (bytes(plan.lastReportURI).length == 0 && plan.lastExecutedAt != 0) {
+            revert InvalidURI("lastReportURI");
+        }
     }
 
     function _idFor(string memory slug) private pure returns (bytes32) {
