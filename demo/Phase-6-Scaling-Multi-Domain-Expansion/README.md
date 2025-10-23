@@ -36,7 +36,14 @@
    npm run demo:phase6:ci
    ```
    The script validates JSON schema, address hygiene, ABI sync, and UI artifacts before the CI job signs off.
-4. **Open the control surface UI**:
+4. **Push the manifest on-chain (dry-run by default)**:
+   ```bash
+   npx hardhat run --no-compile scripts/phase6/apply-config.ts --network <network> -- --manager <Phase6ExpansionManager>
+   ```
+   * Prints the governance plan, global diffs, and each domain action.
+   * Defaults to a dry-run – add `--apply` to execute transactions once reviewed.
+   * Scope updates with `--domain finance,health` or skip globals via `--skip-global`.
+5. **Open the control surface UI**:
    *Serve locally or open directly in the repo*
    ```bash
    npx serve demo/Phase-6-Scaling-Multi-Domain-Expansion
@@ -132,7 +139,8 @@ Open `index.html` to explore:
 1. **Edit** `config/domains.phase6.json` – tweak addresses, manifests, skills, or heartbeat cadences.
 2. **Regenerate** plans with `npm run demo:phase6:orchestrate` (no build step needed).
 3. **Commit** the change. CI will block if a field is missing or malformed.
-4. **Ship** – governance can copy the calldata into a multi-sig, or run through the existing owner scripts.
+4. **Dry-run or apply on-chain** with `npx hardhat run --no-compile scripts/phase6/apply-config.ts --network <network> -- --manager <Phase6ExpansionManager> [--apply]`.
+5. **Ship** – governance can copy the calldata into a multi-sig, or run through the existing owner scripts.
 
 > Tip: pair this demo with `npm run owner:mission-control` to script the actual transaction bundle from the same console.
 
