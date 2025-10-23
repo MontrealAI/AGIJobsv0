@@ -259,6 +259,8 @@ class Phase8DominionRuntime:
         ]
         if sentinel_links:
             notes.append("• sentinel coverage: " + " | ".join(sentinel_links))
+        else:
+            notes.append("• sentinel coverage: none — configure sentinel lattice for this dominion")
         stream_links = [
             stream.describe()
             for stream in self._streams.values()
@@ -266,6 +268,8 @@ class Phase8DominionRuntime:
         ]
         if stream_links:
             notes.append("• capital streams: " + " | ".join(stream_links))
+        else:
+            notes.append("• capital streams: none mapped — review capital allocation for this dominion")
         notes.append("• guardian summary: " + self.guardian_summary())
         if self._source:
             notes.append(f"• manifest source: {self._source}")
