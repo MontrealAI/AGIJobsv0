@@ -257,6 +257,7 @@
     "demo:redenomination:guardian-drill": "node demo/REDENOMINATION/scripts/guardian-drill.mjs",
     "demo:phase6:orchestrate": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/run-phase6-demo.ts",
     "demo:phase6:ci": "node demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/ci-check.mjs",
+    "demo:phase6:apply": "npx hardhat run --no-compile scripts/phase6/apply-config.ts",
     "demo:phase8:orchestrate": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-8-Universal-Value-Dominance/scripts/run-phase8-demo.ts",
     "demo:phase8:ci": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-8-Universal-Value-Dominance/scripts/validate-phase8-config.ts",
     "culture:deploy": "npx hardhat run --no-compile scripts/deploy.culture.ts",
