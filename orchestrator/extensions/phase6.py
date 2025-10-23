@@ -41,7 +41,12 @@ class DomainProfile:
     skill_tags: Set[str] = field(default_factory=set)
     capability_matrix: Dict[str, float] = field(default_factory=dict)
     priority: float = 0.0
-    metadata: Dict[str, str] = field(default_factory=dict)
+    metadata: Dict[str, object] = field(default_factory=dict)
+    resilience_index: float = 0.0
+    value_flow_usd: Optional[float] = None
+    value_flow_display: Optional[str] = None
+    uptime: Optional[str] = None
+    sentinel: Optional[str] = None
 
     def score(self, tags: Iterable[str]) -> float:
         if not tags:
@@ -104,6 +109,18 @@ class DomainExpansionRuntime:
             slug = str(entry.get("slug", "")).strip()
             if not slug:
                 raise ValueError("domain.slug is required")
+            metadata_raw = entry.get("metadata") or {}
+            if metadata_raw and not isinstance(metadata_raw, dict):
+                raise ValueError(f"domain {slug} metadata must be an object")
+            metadata = {str(k): v for k, v in metadata_raw.items() if isinstance(k, str)}
+            resilience = _parse_float(metadata.get("resilienceIndex")) or 0.0
+            value_flow_usd = _parse_float(metadata.get("valueFlowMonthlyUSD"))
+            value_flow_display_raw = metadata.get("valueFlowDisplay")
+            value_flow_display = str(value_flow_display_raw) if value_flow_display_raw is not None else None
+            uptime_raw = metadata.get("uptime")
+            uptime = str(uptime_raw) if uptime_raw is not None else None
+            sentinel_raw = metadata.get("sentinel")
+            sentinel = str(sentinel_raw) if sentinel_raw is not None else None
             profile = DomainProfile(
                 slug=slug.lower(),
                 name=str(entry.get("name", slug)).strip(),
@@ -116,7 +133,12 @@ class DomainExpansionRuntime:
                 skill_tags={tag.lower() for tag in entry.get("skillTags", []) if isinstance(tag, str)},
                 capability_matrix={k.lower(): float(v) for k, v in (entry.get("capabilities") or {}).items()},
                 priority=float(entry.get("priority", 0)),
-                metadata={k: str(v) for k, v in (entry.get("metadata") or {}).items()},
+                metadata=metadata,
+                resilience_index=resilience,
+                value_flow_usd=value_flow_usd,
+                value_flow_display=value_flow_display,
+                uptime=uptime,
+                sentinel=sentinel,
             )
             if not profile.manifest_uri:
                 raise ValueError(f"domain {slug} missing manifestURI")
@@ -184,6 +206,17 @@ class DomainExpansionRuntime:
             logs.append(f"• IoT oracle router: {self._global.iot_oracle_router}")
         if self._global.manifest_uri:
             logs.append(f"• global manifest: {self._global.manifest_uri}")
+        if profile.resilience_index:
+            logs.append(f"• resilience index: {profile.resilience_index:.3f}")
+        if profile.value_flow_display or profile.value_flow_usd is not None:
+            display = profile.value_flow_display
+            if not display and profile.value_flow_usd is not None:
+                display = f"${profile.value_flow_usd:,.0f}"
+            logs.append(f"• monthly value flow: {display}")
+        if profile.uptime:
+            logs.append(f"• uptime: {profile.uptime}")
+        if profile.sentinel:
+            logs.append(f"• sentinel: {profile.sentinel}")
         return logs
 
     def build_bridge_plan(self, slug: str) -> Dict[str, object]:
@@ -199,6 +232,10 @@ class DomainExpansionRuntime:
             "syncCadenceSeconds": cadence,
             "manifest": profile.manifest_uri,
             "subgraph": profile.subgraph,
+            "resilienceIndex": profile.resilience_index,
+            "sentinel": profile.sentinel,
+            "uptime": profile.uptime,
+            "valueFlowMonthlyUSD": profile.value_flow_usd,
         }
 
     def ingest_iot_signal(self, signal: Dict[str, object]) -> Tuple[str, List[str]]:
@@ -211,6 +248,12 @@ class DomainExpansionRuntime:
         ]
         if resolved_tags:
             logs.append(f"• matched {', '.join(sorted(resolved_tags))}")
+        if slug and slug in self._domains:
+            profile = self._domains[slug]
+            if profile.sentinel:
+                logs.append(f"• sentinel on watch: {profile.sentinel}")
+            if profile.resilience_index:
+                logs.append(f"• resilience index: {profile.resilience_index:.3f}")
         return slug, logs
 
     # ------------------------------------------------------------------
@@ -247,6 +290,20 @@ def _normalize_address(value: object) -> Optional[str]:
     if text == "0x0000000000000000000000000000000000000000":
         return None
     return text
+
+
+def _parse_float(value: object) -> Optional[float]:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    text = str(value).strip().rstrip("%")
+    if not text:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
 
 
 def _extract_domain_hint(step: "Step") -> Tuple[Optional[str], Set[str]]:

@@ -234,7 +234,7 @@
       const { Interface, keccak256, toUtf8Bytes } = await import('https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm');
       const iface = new Interface(abi);
 
-      const state = { config: null, mermaidSource: '', calldata: [] };
+      const state = { config: null, mermaidSource: '', calldata: [], metrics: null };
 
       function formatAddress(addr) {
         if (!addr || addr === zeroAddress) return '—';
@@ -261,6 +261,57 @@
         ];
       }
 
+      function formatUSD(value) {
+        if (value === undefined || value === null || Number.isNaN(Number(value))) {
+          return '—';
+        }
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) {
+          return '—';
+        }
+        if (numeric >= 1e12) {
+          return `$${(numeric / 1e12).toFixed(2)}T`;
+        }
+        if (numeric >= 1e9) {
+          return `$${(numeric / 1e9).toFixed(2)}B`;
+        }
+        if (numeric >= 1e6) {
+          return `$${(numeric / 1e6).toFixed(2)}M`;
+        }
+        return `$${numeric.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+      }
+
+      function computeMetrics(config) {
+        const resilience = [];
+        const valueFlows = [];
+        const sentinels = new Set();
+        config.domains.forEach((domain) => {
+          const idx = Number.parseFloat(domain.metadata?.resilienceIndex ?? '');
+          if (!Number.isNaN(idx)) {
+            resilience.push(idx);
+          }
+          const value = domain.metadata?.valueFlowMonthlyUSD;
+          if (typeof value === 'number' && Number.isFinite(value)) {
+            valueFlows.push(value);
+          }
+          if (domain.metadata?.sentinel) {
+            sentinels.add(String(domain.metadata.sentinel));
+          }
+        });
+        const averageResilience =
+          resilience.length > 0 ? resilience.reduce((acc, cur) => acc + cur, 0) / resilience.length : null;
+        const minResilience = resilience.length > 0 ? Math.min(...resilience) : null;
+        const maxResilience = resilience.length > 0 ? Math.max(...resilience) : null;
+        const totalValueFlow = valueFlows.reduce((acc, cur) => acc + cur, 0);
+        return {
+          averageResilience,
+          minResilience,
+          maxResilience,
+          totalValueFlow,
+          sentinelCount: sentinels.size,
+        };
+      }
+
       function renderGlobal(config) {
         const target = document.getElementById('global-summary');
         target.innerHTML = '';
@@ -272,6 +323,16 @@
           `DID registry: ${formatAddress(config.global.didRegistry)}`,
           `Network cadence baseline: ${config.global.l2SyncCadence}s`
         ];
+        if (state.metrics) {
+          const { averageResilience, minResilience, maxResilience, totalValueFlow, sentinelCount } = state.metrics;
+          if (averageResilience !== null) {
+            items.push(`Network resilience: avg ${averageResilience.toFixed(3)} (min ${minResilience?.toFixed(3)}, max ${maxResilience?.toFixed(3)})`);
+          }
+          if (totalValueFlow) {
+            items.push(`Monthly value flow across domains: ${formatUSD(totalValueFlow)}`);
+          }
+          items.push(`Active sentinels: ${sentinelCount}`);
+        }
         items.forEach((text) => {
           const span = document.createElement('span');
           span.textContent = `• ${text}`;
@@ -302,6 +363,8 @@
 
           const metrics = document.createElement('div');
           metrics.className = 'metrics';
+          const metadata = domain.metadata || {};
+          const resilience = metadata.resilienceIndex !== undefined ? Number(metadata.resilienceIndex).toFixed(3) : '—';
           metrics.innerHTML = `
             <span>Manifest URI: ${domain.manifestURI}</span>
             <span>Subgraph: ${domain.subgraph}</span>
@@ -310,6 +373,10 @@
             <span>Execution router: ${formatAddress(domain.executionRouter)}</span>
             <span>Heartbeat: ${heartbeatSummary(domain, config.global)}</span>
             <span>Skill tags: ${domain.skillTags.join(', ')}</span>
+            <span>Resilience index: ${resilience}</span>
+            <span>Monthly value flow: ${metadata.valueFlowDisplay ?? formatUSD(metadata.valueFlowMonthlyUSD)}</span>
+            <span>Domain sentinel: ${metadata.sentinel ?? '—'}</span>
+            <span>Uptime: ${metadata.uptime ?? '—'}</span>
           `;
           card.appendChild(metrics);
           grid.appendChild(card);
@@ -322,12 +389,15 @@
         config.domains.forEach((domain) => {
           const div = document.createElement('div');
           div.className = 'domain-card';
+          const metadata = domain.metadata || {};
           const bridge = {
             domain: domain.slug,
             l2Gateway: domain.l2Gateway || config.global.defaultL2Gateway,
             oracle: domain.oracle || config.global.iotOracleRouter,
             executionRouter: domain.executionRouter || zeroAddress,
             cadence: heartbeatSummary(domain, config.global),
+            sentinel: metadata.sentinel || '—',
+            resilience: metadata.resilienceIndex !== undefined ? Number(metadata.resilienceIndex).toFixed(3) : '—',
           };
           div.innerHTML = `
             <h3>${domain.name}</h3>
@@ -336,6 +406,8 @@
               <span>IoT oracle router: ${formatAddress(bridge.oracle)}</span>
               <span>Execution router: ${formatAddress(bridge.executionRouter)}</span>
               <span>${bridge.cadence}</span>
+              <span>Resilience index: ${bridge.resilience}</span>
+              <span>Sentinel coverage: ${bridge.sentinel}</span>
             </div>
           `;
           grid.appendChild(div);
@@ -393,6 +465,7 @@
         const response = await fetch(configPath);
         const cfg = await response.json();
         state.config = cfg;
+        state.metrics = computeMetrics(cfg);
         renderGlobal(cfg);
         renderDomains(cfg);
         renderBridgePlans(cfg);

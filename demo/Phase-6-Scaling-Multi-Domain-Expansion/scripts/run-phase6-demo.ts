@@ -50,6 +50,60 @@ function renderTable(rows: Array<[string, string]>) {
   });
 }
 
+function formatUSD(value?: number | null): string {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) {
+    return '—';
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return '—';
+  }
+  if (numeric >= 1e12) {
+    return `$${(numeric / 1e12).toFixed(2)}T`;
+  }
+  if (numeric >= 1e9) {
+    return `$${(numeric / 1e9).toFixed(2)}B`;
+  }
+  if (numeric >= 1e6) {
+    return `$${(numeric / 1e6).toFixed(2)}M`;
+  }
+  return `$${numeric.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+}
+
+function toNumber(value: any): number | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : undefined;
+}
+
+function computeNetworkMetrics(config: any) {
+  const resilience: number[] = [];
+  const valueFlows: number[] = [];
+  const sentinels = new Set<string>();
+  for (const domain of config.domains) {
+    const meta = domain.metadata ?? {};
+    const resilienceIndex = toNumber(meta.resilienceIndex);
+    if (resilienceIndex !== undefined) {
+      resilience.push(resilienceIndex);
+    }
+    const valueFlow = toNumber(meta.valueFlowMonthlyUSD);
+    if (valueFlow !== undefined) {
+      valueFlows.push(valueFlow);
+    }
+    if (meta.sentinel) {
+      sentinels.add(String(meta.sentinel));
+    }
+  }
+  const averageResilience =
+    resilience.length > 0 ? resilience.reduce((acc, cur) => acc + cur, 0) / resilience.length : undefined;
+  const minResilience = resilience.length > 0 ? Math.min(...resilience) : undefined;
+  const maxResilience = resilience.length > 0 ? Math.max(...resilience) : undefined;
+  const totalValueFlow = valueFlows.reduce((acc, cur) => acc + cur, 0);
+  return { averageResilience, minResilience, maxResilience, totalValueFlow, sentinelCount: sentinels.size };
+}
+
 function mermaid(config: any) {
   const lines = ['graph TD', '  Owner[[Governance]] --> Expansion(Phase6ExpansionManager)'];
   config.domains.forEach((domain: any) => {
@@ -81,6 +135,19 @@ function heartbeatSummary(domain: any, global: any) {
   console.log('Configuration file:', CONFIG_PATH);
   console.log('ABI fragments:', fragments.join(' | '));
 
+  const metrics = computeNetworkMetrics(config);
+
+  banner('Network telemetry');
+  if (metrics.averageResilience !== undefined) {
+    console.log(
+      `Resilience (avg/min/max): ${metrics.averageResilience.toFixed(3)} / ${metrics.minResilience?.toFixed(3)} / ${metrics.maxResilience?.toFixed(3)}`,
+    );
+  } else {
+    console.log('Resilience (avg/min/max): —');
+  }
+  console.log(`Monthly value flow across domains: ${formatUSD(metrics.totalValueFlow)}`);
+  console.log(`Active sentinel families: ${metrics.sentinelCount}`);
+
   banner('Global controls');
   renderTable([
     ['Manifest URI', config.global.manifestURI],
@@ -106,6 +173,10 @@ function heartbeatSummary(domain: any, global: any) {
 
   banner('Domain registrations');
   config.domains.forEach((domain: any) => {
+    const metadata = domain.metadata ?? {};
+    const resilienceIndex = toNumber(metadata.resilienceIndex);
+    const valueFlowUSD = toNumber(metadata.valueFlowMonthlyUSD);
+    const valueFlowDisplay = metadata.valueFlowDisplay ?? formatUSD(valueFlowUSD);
     const domainId = keccak256(toUtf8Bytes(String(domain.slug).toLowerCase()));
     console.log(`\n\x1b[35m${domain.name} (${domain.slug})\x1b[0m`);
     renderTable([
@@ -120,6 +191,10 @@ function heartbeatSummary(domain: any, global: any) {
       summarizeAddress('Oracle', domain.oracle).split(': '),
       summarizeAddress('L2 gateway', domain.l2Gateway).split(': '),
       summarizeAddress('Execution router', domain.executionRouter).split(': '),
+      ['Resilience index', resilienceIndex !== undefined ? resilienceIndex.toFixed(3) : '—'],
+      ['Monthly value flow', valueFlowDisplay],
+      ['Domain sentinel', metadata.sentinel ?? '—'],
+      ['Uptime', metadata.uptime ?? '—'],
     ] as unknown as Array<[string, string]>);
 
     const tuple = buildDomainTuple(domain);
