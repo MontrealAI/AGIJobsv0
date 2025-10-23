@@ -244,6 +244,25 @@ describe("Phase6ExpansionManager", function () {
     ).to.be.revertedWithCustomError(manager, "InvalidAddress");
 
     await expect(
+      manager.connect(governance).registerDomain(
+        domainStruct({
+          subgraphEndpoint: "",
+          validationModule: validationStub.target,
+        }),
+      ),
+    ).to.be.revertedWithCustomError(manager, "InvalidSubgraphEndpoint");
+
+    const valid = domainStruct({ validationModule: validationStub.target });
+    await manager.connect(governance).registerDomain(valid);
+    const id = await manager.domainId(valid.slug);
+    await expect(
+      manager.connect(governance).updateDomain(id, {
+        ...valid,
+        subgraphEndpoint: "",
+      }),
+    ).to.be.revertedWithCustomError(manager, "InvalidSubgraphEndpoint");
+
+    await expect(
       manager.connect(governance).setGlobalConfig({
         iotOracleRouter: ethers.ZeroAddress,
         defaultL2Gateway: ethers.ZeroAddress,
