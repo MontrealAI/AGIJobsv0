@@ -101,6 +101,21 @@
         padding: 1.75rem;
         background: linear-gradient(135deg, rgba(16, 40, 76, 0.8), rgba(7, 14, 24, 0.92));
       }
+      .domain-card.no-coverage {
+        border-color: rgba(255, 96, 110, 0.6);
+        box-shadow: 0 0 0 1px rgba(255, 96, 110, 0.35);
+      }
+      .domain-card.no-coverage::after {
+        content: "Sentinel coverage required";
+        display: inline-block;
+        margin-top: 0.8rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        background: rgba(255, 96, 110, 0.18);
+        border: 1px solid rgba(255, 96, 110, 0.5);
+        color: #ffccd3;
+      }
       .domain-card h3 {
         margin: 0;
         font-size: 1.35rem;
@@ -285,12 +300,20 @@
           </div>
         `;
 
+        const coverageMap = new Map();
+        data.sentinels.forEach((sentinel) => {
+          (sentinel.domains || []).forEach((slug) => {
+            coverageMap.set(String(slug).toLowerCase(), true);
+          });
+        });
+
         const domains = document.getElementById("domains");
         domains.innerHTML = data.domains
           .map((domain) => {
             const tags = (domain.skillTags || []).map((tag) => `<span class="chip">${tag}</span>`).join(" ");
+            const covered = coverageMap.has(String(domain.slug).toLowerCase());
             return `
-              <article class="domain-card">
+              <article class="domain-card${covered ? "" : " no-coverage"}">
                 <h3>${domain.name}</h3>
                 <p>${domain.autonomyNarrative || "Autonomy narrative pending."}</p>
                 <div class="domain-meta">

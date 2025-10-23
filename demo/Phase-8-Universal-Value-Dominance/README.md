@@ -55,11 +55,13 @@
 * **Global parameters** – `setGlobalParameters`, `updateManifesto`, and `updateRiskParameters` let the owner reshape treasury,
   vaults, knowledge graphs, and risk tolerances atomically.
 * **Sentinel lattice** – register, update, and toggle sentinels that monitor domains. Each sentinel enforces coverage windows
-  and can be routed through the shared `SystemPause` via `forwardPauseCall`.
-* **Capital streams** – register autonomous treasury programs with annual budgets and expansion curves. Governance can pause or
-  re-target any stream instantly.
+  and can be routed through the shared `SystemPause` via `forwardPauseCall`. Domain bindings are configured via
+  `setSentinelDomains` so every sentinel only monitors approved dominions.
+* **Capital streams** – register autonomous treasury programs with annual budgets and expansion curves. Governance can pause,
+  re-target, or re-bind the domain list at any time with `setCapitalStreamDomains`.
 * **Domain dominion** – configure orchestration endpoints, vault limits, and autonomy bps per domain while guaranteeing slug
-  uniqueness and heartbeat invariants.
+  uniqueness and heartbeat invariants. Domains, sentinels, and streams can also be removed entirely (`removeDomain`,
+  `removeSentinel`, `removeCapitalStream`) with automatic pruning of bindings.
 
 The contract emits deterministic events so dashboards, subgraphs, and auditors can stream changes. All mutative calls remain
 `onlyGovernance`, satisfying the requirement that the owner can reconfigure everything – including pausing – at will.
@@ -87,8 +89,8 @@ Open [`index.html`](./index.html) to explore the fully client-side control room:
 
 * Planetary stats (value flow, budget, resilience, sentinel coverage).
 * Domain cards with autonomy bps, resilience, heartbeat, and skill badges.
-* Sentinel lattice view with live coverage, sensitivity, and domain bindings.
-* Capital stream portfolio with annual budgets and vault routing.
+* Sentinel lattice view with live coverage, sensitivity, and domain bindings (auto-highlighted when a domain loses coverage).
+* Capital stream portfolio with annual budgets, vault routing, and linked dominions.
 * Self-improvement playbooks and guardrails rendered with owner addresses.
 * An auto-generated Mermaid diagram illustrating governance, sentinels, and capital flow.
 
@@ -128,7 +130,8 @@ graph TD
 ## 📚 Related orchestration hooks
 
 * [`demo/Phase-8-Universal-Value-Dominance/scripts/run-phase8-demo.ts`](./scripts/run-phase8-demo.ts) – generates calldata,
-  telemetry, and the mermaid diagram.
+  telemetry, and the mermaid diagram. Outputs include per-sentinel and per-stream domain binding calls plus deterministic
+  removal calldata so governors can rehearse reconfigurations.
 * [`demo/Phase-8-Universal-Value-Dominance/scripts/validate-phase8-config.ts`](./scripts/validate-phase8-config.ts) – schema
   validation enforced by CI.
 * [`orchestrator/extensions/phase8.py`](../../orchestrator/extensions/phase8.py) – runtime adapter so Python orchestrators can

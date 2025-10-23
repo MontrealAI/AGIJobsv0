@@ -104,6 +104,26 @@ function main() {
     slugs.add(slug);
   }
 
+  const sentinelDomains = new Set<string>();
+  for (const sentinel of config.sentinels) {
+    for (const domain of sentinel.domains ?? []) {
+      const normalized = domain.toLowerCase();
+      if (!slugs.has(normalized)) {
+        throw new Error(`Sentinel ${sentinel.slug} references unknown domain ${domain}`);
+      }
+      sentinelDomains.add(normalized);
+    }
+  }
+
+  for (const stream of config.capitalStreams) {
+    for (const domain of stream.domains ?? []) {
+      const normalized = domain.toLowerCase();
+      if (!slugs.has(normalized)) {
+        throw new Error(`Capital stream ${stream.slug} references unknown domain ${domain}`);
+      }
+    }
+  }
+
   const sentinelCoverage = config.sentinels.reduce((acc, s) => acc + s.coverageSeconds, 0);
   if (sentinelCoverage < config.global.guardianReviewWindow) {
     throw new Error(
@@ -137,6 +157,7 @@ function main() {
   console.log(`  Sentinels: ${config.sentinels.length}`);
   console.log(`  Capital streams: ${config.capitalStreams.length}`);
   console.log(`  Total sentinel coverage: ${sentinelCoverage}s`);
+  console.log(`  Domains with sentinel coverage: ${sentinelDomains.size}`);
 }
 
 main();
