@@ -6,7 +6,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Interface, keccak256, toUtf8Bytes } from 'ethers';
+import { Interface, formatEther, keccak256, toUtf8Bytes } from 'ethers';
 
 const CONFIG_PATH = join(__dirname, '..', 'config', 'domains.phase6.json');
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -58,6 +58,40 @@ function summariseInfra(entry: Record<string, string | undefined>) {
   const endpoint = entry.endpoint || entry.uri;
   const endpointSummary = endpoint ? ` @ ${endpoint}` : '';
   return `${layer}: ${name} — ${role} ${status}${endpointSummary}`.trim();
+}
+
+function formatStake(value: string | number | bigint | undefined): string {
+  try {
+    if (value === undefined) return '—';
+    const big = typeof value === 'bigint' ? value : BigInt(value);
+    return `${formatEther(big)} ETH`;
+  } catch (error) {
+    return String(value ?? '—');
+  }
+}
+
+function formatBps(value: number | undefined): string {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return '—';
+  }
+  return `${(value / 100).toFixed(2)}% (${value} bps)`;
+}
+
+function buildDomainOperationsTuple(domain: any) {
+  const ops = domain.operations ?? {};
+  const minStakeRaw = ops.minStake ?? 0;
+  const minStake =
+    typeof minStakeRaw === 'string'
+      ? BigInt(minStakeRaw)
+      : BigInt(Math.trunc(Number(minStakeRaw)));
+  return [
+    BigInt(Math.trunc(Number(ops.maxActiveJobs ?? 0))),
+    BigInt(Math.trunc(Number(ops.maxQueueDepth ?? 0))),
+    minStake,
+    Number(ops.treasuryShareBps ?? 0),
+    Number(ops.circuitBreakerBps ?? 0),
+    Boolean(ops.requiresHumanValidation),
+  ];
 }
 
 function formatUSD(value?: number | null): string {
@@ -136,10 +170,12 @@ function heartbeatSummary(domain: any, global: any) {
   const config = loadJson(CONFIG_PATH);
   const fragments = [
     'function setGlobalConfig((address,address,address,address,uint64,string) config)',
+    'function setGlobalGuards((uint16,uint16,uint32,bool,address) config)',
     'function setSystemPause(address newPause)',
     'function setEscalationBridge(address newBridge)',
     'function registerDomain((string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
-    'function updateDomain(bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)'
+    'function updateDomain(bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
+    'function setDomainOperations(bytes32 id,(uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation) config)'
   ];
   const iface = new Interface(fragments);
 
@@ -156,6 +192,8 @@ function heartbeatSummary(domain: any, global: any) {
     0,
   );
 
+  const guards = config.global.guards ?? {};
+
   banner('Network telemetry');
   if (metrics.averageResilience !== undefined) {
     console.log(
@@ -168,6 +206,11 @@ function heartbeatSummary(domain: any, global: any) {
   console.log(`Active sentinel families: ${metrics.sentinelCount}`);
   console.log(`Global infra integrations: ${globalInfraCount}`);
   console.log(`Domain infra touchpoints: ${domainInfraCount}`);
+  console.log(
+    `Guard rails: treasuryBuffer=${formatBps(guards.treasuryBufferBps)} | ` +
+      `circuitBreaker=${formatBps(guards.circuitBreakerBps)} | grace=${guards.anomalyGracePeriod ?? 0}s | ` +
+      `autoPause=${guards.autoPauseEnabled ? 'on' : 'off'}`,
+  );
 
   banner('Global controls');
   renderTable([
@@ -179,6 +222,11 @@ function heartbeatSummary(domain: any, global: any) {
     summarizeAddress('System pause', config.global.systemPause).split(': '),
     summarizeAddress('Escalation bridge', config.global.escalationBridge).split(': '),
     ['L2 sync cadence', `${config.global.l2SyncCadence}s`],
+    ['Treasury buffer', formatBps(guards.treasuryBufferBps)],
+    ['Circuit breaker', formatBps(guards.circuitBreakerBps)],
+    ['Anomaly grace', guards.anomalyGracePeriod ? `${guards.anomalyGracePeriod}s` : '—'],
+    ['Auto-pause enabled', String(guards.autoPauseEnabled ?? false)],
+    summarizeAddress('Oversight council', guards.oversightCouncil).split(': '),
   ] as unknown as Array<[string, string]>);
 
   banner('Emergency levers');
@@ -203,10 +251,19 @@ function heartbeatSummary(domain: any, global: any) {
     BigInt(config.global.l2SyncCadence ?? 180),
     config.global.manifestURI,
   ];
+  const guardTuple = [
+    Number(guards.treasuryBufferBps ?? 0),
+    Number(guards.circuitBreakerBps ?? 0),
+    Number(guards.anomalyGracePeriod ?? 0),
+    Boolean(guards.autoPauseEnabled ?? false),
+    guards.oversightCouncil ?? ZERO_ADDRESS,
+  ];
 
   console.log();
   console.log('setGlobalConfig calldata:');
   console.log(iface.encodeFunctionData('setGlobalConfig', [globalTuple]));
+  console.log('setGlobalGuards calldata:');
+  console.log(iface.encodeFunctionData('setGlobalGuards', [guardTuple]));
 
   banner('Decentralized infrastructure mesh');
   const globalInfra = config.global.decentralizedInfra ?? [];
@@ -251,10 +308,21 @@ function heartbeatSummary(domain: any, global: any) {
     ] as unknown as Array<[string, string]>);
 
     const tuple = buildDomainTuple(domain);
+    const opsTuple = buildDomainOperationsTuple(domain);
+    const ops = domain.operations ?? {};
     console.log('  registerDomain calldata:');
     console.log(`    ${iface.encodeFunctionData('registerDomain', [tuple])}`);
     console.log('  updateDomain calldata:');
     console.log(`    ${iface.encodeFunctionData('updateDomain', [domainId, tuple])}`);
+    console.log('  Operations guard rails:');
+    console.log(
+      `    maxActiveJobs=${ops.maxActiveJobs ?? '—'} | maxQueueDepth=${ops.maxQueueDepth ?? '—'} | minStake=${formatStake(ops.minStake)}`,
+    );
+    console.log(
+      `    treasuryShare=${formatBps(ops.treasuryShareBps)} | circuitBreaker=${formatBps(ops.circuitBreakerBps)} | requiresHumanValidation=${ops.requiresHumanValidation ? 'yes' : 'no'}`,
+    );
+    console.log('  setDomainOperations calldata:');
+    console.log(`    ${iface.encodeFunctionData('setDomainOperations', [domainId, opsTuple])}`);
   });
 
   banner('Mermaid system map (copy/paste into dashboards)');

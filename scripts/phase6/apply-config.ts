@@ -11,14 +11,18 @@ const MANAGER_ABI = [
   'function SPEC_VERSION() view returns (string)',
   'function governance() view returns (address)',
   'function globalConfig() view returns (address,address,address,address,uint64,string)',
+  'function globalGuards() view returns (uint16,uint16,uint32,bool,address)',
   'function systemPause() view returns (address)',
   'function escalationBridge() view returns (address)',
   'function listDomains() view returns ((bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)[])',
   'function setGlobalConfig((address,address,address,address,uint64,string) config)',
+  'function setGlobalGuards((uint16,uint16,uint32,bool,address) config)',
   'function setSystemPause(address newPause)',
   'function setEscalationBridge(address newBridge)',
   'function registerDomain((string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
   'function updateDomain(bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
+  'function setDomainOperations(bytes32 id,(uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation) config)',
+  'function getDomainOperations(bytes32 id) view returns (uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation)',
 ];
 
 interface CliArgs {
@@ -160,12 +164,51 @@ function assertConfig(config: Phase6Config): void {
   if (!config.global.manifestURI) {
     throw new Error('Configuration global.manifestURI must be set.');
   }
+  if (!config.global.guards) {
+    throw new Error('Configuration global.guards must be provided.');
+  }
+  const guards = config.global.guards;
+  ['treasuryBufferBps', 'circuitBreakerBps', 'anomalyGracePeriod'].forEach((key) => {
+    const value = (guards as any)[key];
+    if (typeof value !== 'number' || value < 0) {
+      throw new Error(`global.guards.${key} must be a non-negative number.`);
+    }
+  });
+  if (guards.treasuryBufferBps > 10000) {
+    throw new Error('global.guards.treasuryBufferBps must be <= 10000.');
+  }
+  if (guards.circuitBreakerBps > 10000) {
+    throw new Error('global.guards.circuitBreakerBps must be <= 10000.');
+  }
+  if (guards.anomalyGracePeriod !== 0 && guards.anomalyGracePeriod < 30) {
+    throw new Error('global.guards.anomalyGracePeriod must be 0 or >= 30 seconds.');
+  }
+  if (typeof guards.autoPauseEnabled !== 'boolean') {
+    throw new Error('global.guards.autoPauseEnabled must be a boolean.');
+  }
+  if (!guards.oversightCouncil || !guards.oversightCouncil.startsWith('0x')) {
+    throw new Error('global.guards.oversightCouncil must be a 0x-prefixed address.');
+  }
   if (!config.domains.length) {
     throw new Error('Configuration must include at least one domain.');
   }
   for (const domain of config.domains) {
     if (!domain.slug || !domain.validationModule) {
       throw new Error(`Domain ${domain.slug || '<unnamed>'} missing slug or validationModule.`);
+    }
+    if (!domain.operations) {
+      throw new Error(`Domain ${domain.slug} missing operations configuration.`);
+    }
+    const ops = domain.operations;
+    if (typeof ops.maxActiveJobs !== 'number' || ops.maxActiveJobs <= 0) {
+      throw new Error(`Domain ${domain.slug} operations.maxActiveJobs must be a positive number.`);
+    }
+    if (typeof ops.maxQueueDepth !== 'number' || ops.maxQueueDepth < ops.maxActiveJobs) {
+      throw new Error(`Domain ${domain.slug} operations.maxQueueDepth must be >= maxActiveJobs.`);
+    }
+    const minStake = typeof ops.minStake === 'string' ? ops.minStake : Number(ops.minStake ?? 0);
+    if (!minStake || Number(minStake) <= 0) {
+      throw new Error(`Domain ${domain.slug} operations.minStake must be > 0.`);
     }
   }
 }
@@ -238,6 +281,18 @@ async function main(): Promise<void> {
     });
   }
 
+  if (plan.globalGuards) {
+    actions.push({
+      label: `setGlobalGuards → ${plan.globalGuards.diffs.join(', ')}`,
+      run: async () => {
+        const tx = await manager.setGlobalGuards(plan.globalGuards!.config);
+        console.log(`⏳ setGlobalGuards submitted: ${tx.hash}`);
+        await tx.wait();
+        console.log('✅ setGlobalGuards confirmed');
+      },
+    });
+  }
+
   for (const domainPlan of plan.domains) {
     if (args.onlyDomains.size > 0 && !args.onlyDomains.has(domainPlan.slug.toLowerCase())) {
       continue;
@@ -263,6 +318,21 @@ async function main(): Promise<void> {
         },
       });
     }
+  }
+
+  for (const opsPlan of plan.domainOperations) {
+    if (args.onlyDomains.size > 0 && !args.onlyDomains.has(opsPlan.slug.toLowerCase())) {
+      continue;
+    }
+    actions.push({
+      label: `setDomainOperations(${opsPlan.slug}) → ${opsPlan.diffs.join(', ')}`,
+      run: async () => {
+        const tx = await manager.setDomainOperations(opsPlan.id, opsPlan.config);
+        console.log(`⏳ setDomainOperations ${opsPlan.slug} submitted: ${tx.hash}`);
+        await tx.wait();
+        console.log('✅ setDomainOperations confirmed');
+      },
+    });
   }
 
   if (actions.length === 0) {

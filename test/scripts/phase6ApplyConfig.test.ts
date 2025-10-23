@@ -42,6 +42,13 @@ describe('Phase6 apply-config planner', function () {
         l2SyncCadence: 180,
         systemPause: pause.target as string,
         escalationBridge: escalation.target as string,
+        guards: {
+          treasuryBufferBps: 400,
+          circuitBreakerBps: 6400,
+          anomalyGracePeriod: 180,
+          autoPauseEnabled: true,
+          oversightCouncil: pause.target as string,
+        },
       },
       domains: [
         {
@@ -55,6 +62,14 @@ describe('Phase6 apply-config planner', function () {
           executionRouter: ZERO_ADDRESS,
           heartbeatSeconds: 120,
           active: true,
+          operations: {
+            maxActiveJobs: 48,
+            maxQueueDepth: 240,
+            minStake: ethers.parseEther('100').toString(),
+            treasuryShareBps: 250,
+            circuitBreakerBps: 7200,
+            requiresHumanValidation: false,
+          },
         },
       ],
     };
@@ -66,6 +81,8 @@ describe('Phase6 apply-config planner', function () {
     expect(initialPlan.escalationBridge?.target).to.equal(escalation.target);
     expect(initialPlan.domains).to.have.lengthOf(1);
     expect(initialPlan.domains[0].action).to.equal('registerDomain');
+    expect(initialPlan.domainOperations).to.have.lengthOf(1);
+    expect(initialPlan.globalGuards?.diffs).to.include('treasuryBufferBps');
 
     const managerGov = manager.connect(governance);
     await expect(managerGov.setGlobalConfig(initialPlan.global!.config)).to.emit(manager, 'GlobalConfigUpdated');
@@ -75,11 +92,22 @@ describe('Phase6 apply-config planner', function () {
       'EscalationBridgeUpdated',
     );
     await expect(managerGov.registerDomain(initialPlan.domains[0].config)).to.emit(manager, 'DomainRegistered');
+    await expect(managerGov.setGlobalGuards(initialPlan.globalGuards!.config)).to.emit(
+      manager,
+      'GlobalGuardsUpdated',
+    );
+    await expect(
+      managerGov.setDomainOperations(
+        initialPlan.domainOperations[0].id,
+        initialPlan.domainOperations[0].config,
+      ),
+    ).to.emit(manager, 'DomainOperationsUpdated');
 
     const afterRegistration = await fetchPhase6State(manager);
     const postPlan = planPhase6Changes(afterRegistration, config);
     expect(postPlan.global).to.be.undefined;
     expect(postPlan.domains).to.be.empty;
+    expect(postPlan.domainOperations).to.be.empty;
 
     const tweaked: Phase6Config = {
       ...config,
@@ -89,6 +117,11 @@ describe('Phase6 apply-config planner', function () {
           heartbeatSeconds: 240,
           manifestURI: 'ipfs://phase6/domains/finance-v2.json',
           active: false,
+          operations: {
+            ...config.domains[0].operations!,
+            maxActiveJobs: 64,
+            requiresHumanValidation: true,
+          },
         },
       ],
     };
@@ -96,14 +129,23 @@ describe('Phase6 apply-config planner', function () {
     const updatedPlan = planPhase6Changes(afterRegistration, tweaked);
     expect(updatedPlan.domains).to.have.lengthOf(1);
     expect(updatedPlan.domains[0].diffs).to.include.members(['heartbeatSeconds', 'metadataURI', 'active']);
+    expect(updatedPlan.domainOperations).to.have.lengthOf(1);
+    expect(updatedPlan.domainOperations[0].diffs).to.include('maxActiveJobs');
 
     await expect(
       managerGov.updateDomain(updatedPlan.domains[0].id, updatedPlan.domains[0].config),
     ).to.emit(manager, 'DomainUpdated');
+    await expect(
+      managerGov.setDomainOperations(
+        updatedPlan.domainOperations[0].id,
+        updatedPlan.domainOperations[0].config,
+      ),
+    ).to.emit(manager, 'DomainOperationsUpdated');
 
     const finalState = await fetchPhase6State(manager);
     const finalPlan = planPhase6Changes(finalState, tweaked);
     expect(finalPlan.domains).to.be.empty;
+    expect(finalPlan.domainOperations).to.be.empty;
     expect(finalPlan.global).to.be.undefined;
   });
 });

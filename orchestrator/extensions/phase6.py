@@ -48,6 +48,12 @@ class DomainProfile:
     uptime: Optional[str] = None
     sentinel: Optional[str] = None
     infrastructure: List[Dict[str, str]] = field(default_factory=list)
+    max_active_jobs: int = 0
+    max_queue_depth: int = 0
+    min_stake: int = 0
+    treasury_share_bps: int = 0
+    circuit_breaker_bps: int = 0
+    requires_human_validation: bool = False
 
     def score(self, tags: Iterable[str]) -> float:
         if not tags:
@@ -68,6 +74,14 @@ class DomainProfile:
             parts.append(f"oracle={self.oracle}")
         return ", ".join(parts)
 
+    def operations_summary(self) -> str:
+        stake_eth = self.min_stake / 1e18 if self.min_stake else 0.0
+        return (
+            f"maxActive={self.max_active_jobs} queue={self.max_queue_depth} "
+            f"minStake={stake_eth:.2f} ETH treasuryShare={self.treasury_share_bps / 100:.2f}% "
+            f"circuitBreaker={self.circuit_breaker_bps / 100:.2f}% humanValidation={'yes' if self.requires_human_validation else 'no'}"
+        )
+
 
 @dataclass(slots=True)
 class GlobalControls:
@@ -79,6 +93,11 @@ class GlobalControls:
     manifest_uri: Optional[str] = None
     system_pause: Optional[str] = None
     escalation_bridge: Optional[str] = None
+    treasury_buffer_bps: int = 0
+    circuit_breaker_bps: int = 0
+    anomaly_grace_period: float = 0.0
+    auto_pause_enabled: bool = False
+    oversight_council: Optional[str] = None
 
 
 class DomainExpansionRuntime:
@@ -147,6 +166,13 @@ class DomainExpansionRuntime:
                 if endpoint:
                     entry_norm["endpoint"] = str(endpoint)
                 infrastructure.append(entry_norm)
+            operations_payload = entry.get("operations") or {}
+            if operations_payload and not isinstance(operations_payload, dict):
+                raise ValueError(f"domain {slug} operations must be an object")
+            try:
+                min_stake = int(str(operations_payload.get("minStake", "0")))
+            except (ValueError, TypeError) as exc:
+                raise ValueError(f"domain {slug} operations.minStake must be an integer-compatible string") from exc
             profile = DomainProfile(
                 slug=slug.lower(),
                 name=str(entry.get("name", slug)).strip(),
@@ -166,6 +192,12 @@ class DomainExpansionRuntime:
                 uptime=uptime,
                 sentinel=sentinel,
                 infrastructure=infrastructure,
+                max_active_jobs=int(operations_payload.get("maxActiveJobs", 0)),
+                max_queue_depth=int(operations_payload.get("maxQueueDepth", 0)),
+                min_stake=min_stake,
+                treasury_share_bps=int(operations_payload.get("treasuryShareBps", 0)),
+                circuit_breaker_bps=int(operations_payload.get("circuitBreakerBps", 0)),
+                requires_human_validation=bool(operations_payload.get("requiresHumanValidation", False)),
             )
             if not profile.manifest_uri:
                 raise ValueError(f"domain {slug} missing manifestURI")
@@ -173,6 +205,9 @@ class DomainExpansionRuntime:
         global_payload = payload.get("global", {})
         if not isinstance(global_payload, dict):
             raise ValueError("global payload must be an object")
+        guards_payload = global_payload.get("guards") or {}
+        if guards_payload and not isinstance(guards_payload, dict):
+            raise ValueError("global.guards must be an object")
         controls = GlobalControls(
             iot_oracle_router=_normalize_address(global_payload.get("iotOracleRouter")),
             default_l2_gateway=_normalize_address(global_payload.get("defaultL2Gateway")),
@@ -185,6 +220,11 @@ class DomainExpansionRuntime:
             or None,
             system_pause=_normalize_address(global_payload.get("systemPause")),
             escalation_bridge=_normalize_address(global_payload.get("escalationBridge")),
+            treasury_buffer_bps=int(guards_payload.get("treasuryBufferBps", 0)),
+            circuit_breaker_bps=int(guards_payload.get("circuitBreakerBps", 0)),
+            anomaly_grace_period=float(guards_payload.get("anomalyGracePeriod", 0)),
+            auto_pause_enabled=bool(guards_payload.get("autoPauseEnabled", False)),
+            oversight_council=_normalize_address(guards_payload.get("oversightCouncil")),
         )
         return cls(domains, controls, source=source)
 
@@ -240,6 +280,20 @@ class DomainExpansionRuntime:
                 "• emergency levers: pause="
                 f"{self._global.system_pause or '—'} / escalation={self._global.escalation_bridge or '—'}"
             )
+        if (
+            self._global.treasury_buffer_bps
+            or self._global.circuit_breaker_bps
+            or self._global.anomaly_grace_period
+        ):
+            logs.append(
+                "• guard rails: "
+                f"treasuryBuffer={self._global.treasury_buffer_bps / 100:.2f}% "
+                f"circuitBreaker={self._global.circuit_breaker_bps / 100:.2f}% "
+                f"grace={self._global.anomaly_grace_period:.0f}s "
+                f"autoPause={'on' if self._global.auto_pause_enabled else 'off'}"
+            )
+        if self._global.oversight_council:
+            logs.append(f"• oversight council: {self._global.oversight_council}")
         if profile.resilience_index:
             logs.append(f"• resilience index: {profile.resilience_index:.3f}")
         if profile.value_flow_display or profile.value_flow_usd is not None:
@@ -257,6 +311,7 @@ class DomainExpansionRuntime:
                 for item in profile.infrastructure[:3]
             )
             logs.append(f"• infra mesh: {preview}")
+        logs.append(f"• operations: {profile.operations_summary()}")
         return logs
 
     def build_bridge_plan(self, slug: str) -> Dict[str, object]:
@@ -277,6 +332,12 @@ class DomainExpansionRuntime:
             "uptime": profile.uptime,
             "valueFlowMonthlyUSD": profile.value_flow_usd,
             "infrastructure": profile.infrastructure,
+            "maxActiveJobs": profile.max_active_jobs,
+            "maxQueueDepth": profile.max_queue_depth,
+            "minStake": str(profile.min_stake),
+            "treasuryShareBps": profile.treasury_share_bps,
+            "circuitBreakerBps": profile.circuit_breaker_bps,
+            "requiresHumanValidation": profile.requires_human_validation,
         }
 
     def ingest_iot_signal(self, signal: Dict[str, object]) -> Tuple[str, List[str]]:
@@ -301,6 +362,7 @@ class DomainExpansionRuntime:
                     "• primary infra: "
                     f"{primary.get('layer', 'layer')} / {primary.get('name', 'service')} ({primary.get('status', '-')})"
                 )
+            logs.append(f"• operations: {profile.operations_summary()}")
         return slug, logs
 
     # ------------------------------------------------------------------

@@ -45,6 +45,25 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         Domain config;
     }
 
+    /// @notice Domain level operational constraints surfaced to orchestrators and subgraphs.
+    struct DomainOperations {
+        uint48 maxActiveJobs;
+        uint48 maxQueueDepth;
+        uint96 minStake;
+        uint16 treasuryShareBps;
+        uint16 circuitBreakerBps;
+        bool requiresHumanValidation;
+    }
+
+    /// @notice Global guard rails applied across all domains.
+    struct GlobalGuards {
+        uint16 treasuryBufferBps;
+        uint16 circuitBreakerBps;
+        uint32 anomalyGracePeriod;
+        bool autoPauseEnabled;
+        address oversightCouncil;
+    }
+
     /// @notice Governance controlled anomaly escalation target.
     address public escalationBridge;
 
@@ -52,14 +71,20 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     SystemPause public systemPause;
 
     /// @notice Captured immutable identifier for off-chain tooling versioning.
-    string public constant SPEC_VERSION = "phase6.expansion.v1";
+    string public constant SPEC_VERSION = "phase6.expansion.v2";
 
     /// @notice Current global configuration shared by all domains.
     GlobalConfig public globalConfig;
 
+    /// @notice Global guard rails impacting all domains.
+    GlobalGuards public globalGuards;
+
     mapping(bytes32 => Domain) private _domains;
     mapping(bytes32 => bool) private _known;
+    mapping(bytes32 => DomainOperations) private _domainOperations;
     bytes32[] private _domainIndex;
+
+    uint256 private constant _MAX_BPS = 10_000;
 
     /// -----------------------------------------------------------------------
     /// Errors
@@ -75,6 +100,9 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     error InvalidMetadataURI();
     error InvalidPauseTarget(address target);
     error InvalidSubgraphEndpoint();
+    error InvalidBps(string field, uint256 provided);
+    error InvalidOperationsValue(string field);
+    error InvalidAnomalyGracePeriod();
 
     /// -----------------------------------------------------------------------
     /// Events
@@ -118,6 +146,22 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     event SystemPauseUpdated(address indexed newSystemPause);
     event EscalationBridgeUpdated(address indexed newEscalationBridge);
     event EscalationForwarded(address indexed target, bytes data, bytes response);
+    event DomainOperationsUpdated(
+        bytes32 indexed id,
+        uint48 maxActiveJobs,
+        uint48 maxQueueDepth,
+        uint96 minStake,
+        uint16 treasuryShareBps,
+        uint16 circuitBreakerBps,
+        bool requiresHumanValidation
+    );
+    event GlobalGuardsUpdated(
+        uint16 treasuryBufferBps,
+        uint16 circuitBreakerBps,
+        uint32 anomalyGracePeriod,
+        bool autoPauseEnabled,
+        address oversightCouncil
+    );
 
     constructor(address initialGovernance) Governable(initialGovernance) {}
 
@@ -232,6 +276,22 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         );
     }
 
+    /// @notice Configures operational guard rails for a domain.
+    function setDomainOperations(bytes32 id, DomainOperations calldata config) external onlyGovernance {
+        if (!_known[id]) revert UnknownDomain(id);
+        _validateDomainOperations(config);
+        _domainOperations[id] = config;
+        emit DomainOperationsUpdated(
+            id,
+            config.maxActiveJobs,
+            config.maxQueueDepth,
+            config.minStake,
+            config.treasuryShareBps,
+            config.circuitBreakerBps,
+            config.requiresHumanValidation
+        );
+    }
+
     /// -----------------------------------------------------------------------
     /// Global configuration
     /// -----------------------------------------------------------------------
@@ -302,6 +362,18 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         return response;
     }
 
+    function setGlobalGuards(GlobalGuards calldata config) external onlyGovernance {
+        _validateGlobalGuards(config);
+        globalGuards = config;
+        emit GlobalGuardsUpdated(
+            config.treasuryBufferBps,
+            config.circuitBreakerBps,
+            config.anomalyGracePeriod,
+            config.autoPauseEnabled,
+            config.oversightCouncil
+        );
+    }
+
     /// -----------------------------------------------------------------------
     /// View helpers
     /// -----------------------------------------------------------------------
@@ -313,6 +385,11 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     function getDomain(bytes32 id) external view returns (Domain memory) {
         if (!_known[id]) revert UnknownDomain(id);
         return _domains[id];
+    }
+
+    function getDomainOperations(bytes32 id) external view returns (DomainOperations memory) {
+        if (!_known[id]) revert UnknownDomain(id);
+        return _domainOperations[id];
     }
 
     function listDomains() external view returns (DomainView[] memory results) {
@@ -353,6 +430,23 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     function _requireContract(address candidate, string memory field) private view {
         if (candidate == address(0) || candidate.code.length == 0) {
             revert InvalidAddress(field, candidate);
+        }
+    }
+
+    function _validateDomainOperations(DomainOperations calldata config) private pure {
+        if (config.maxActiveJobs == 0) revert InvalidOperationsValue("maxActiveJobs");
+        if (config.maxQueueDepth < config.maxActiveJobs) revert InvalidOperationsValue("maxQueueDepth");
+        if (config.minStake == 0) revert InvalidOperationsValue("minStake");
+        if (config.treasuryShareBps > _MAX_BPS) revert InvalidBps("treasuryShareBps", config.treasuryShareBps);
+        if (config.circuitBreakerBps > _MAX_BPS) revert InvalidBps("circuitBreakerBps", config.circuitBreakerBps);
+    }
+
+    function _validateGlobalGuards(GlobalGuards calldata config) private view {
+        if (config.treasuryBufferBps > _MAX_BPS) revert InvalidBps("treasuryBufferBps", config.treasuryBufferBps);
+        if (config.circuitBreakerBps > _MAX_BPS) revert InvalidBps("circuitBreakerBps", config.circuitBreakerBps);
+        if (config.anomalyGracePeriod != 0 && config.anomalyGracePeriod < 30) revert InvalidAnomalyGracePeriod();
+        if (config.oversightCouncil != address(0)) {
+            _requireContract(config.oversightCouncil, "oversightCouncil");
         }
     }
 

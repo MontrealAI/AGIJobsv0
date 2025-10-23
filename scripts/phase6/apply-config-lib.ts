@@ -27,10 +27,28 @@ export type DomainConfigInput = {
   executionRouter?: string;
   heartbeatSeconds?: number;
   active?: boolean;
+  operations?: DomainOperationsInput;
+};
+
+export type DomainOperationsInput = {
+  maxActiveJobs: number;
+  maxQueueDepth: number;
+  minStake: string | number;
+  treasuryShareBps: number;
+  circuitBreakerBps: number;
+  requiresHumanValidation?: boolean;
+};
+
+export type GlobalGuardsInput = {
+  treasuryBufferBps: number;
+  circuitBreakerBps: number;
+  anomalyGracePeriod: number;
+  autoPauseEnabled: boolean;
+  oversightCouncil?: string;
 };
 
 export type Phase6Config = {
-  global: GlobalConfigInput;
+  global: GlobalConfigInput & { guards?: GlobalGuardsInput };
   domains: DomainConfigInput[];
 };
 
@@ -60,11 +78,30 @@ export type ChainDomain = DomainStruct & {
   id: string;
 };
 
+export type DomainOperationsStruct = {
+  maxActiveJobs: bigint;
+  maxQueueDepth: bigint;
+  minStake: bigint;
+  treasuryShareBps: number;
+  circuitBreakerBps: number;
+  requiresHumanValidation: boolean;
+};
+
+export type GlobalGuardsStruct = {
+  treasuryBufferBps: number;
+  circuitBreakerBps: number;
+  anomalyGracePeriod: number;
+  autoPauseEnabled: boolean;
+  oversightCouncil: string;
+};
+
 export type Phase6State = {
   global: GlobalConfigStruct;
   systemPause: string;
   escalationBridge: string;
   domains: ChainDomain[];
+  domainOperations: Record<string, DomainOperationsStruct>;
+  globalGuards: GlobalGuardsStruct;
 };
 
 export type GlobalPlan = {
@@ -86,11 +123,27 @@ export type DomainPlan = {
   diffs: string[];
 };
 
+export type DomainOperationsPlan = {
+  action: 'setDomainOperations';
+  id: string;
+  slug: string;
+  config: DomainOperationsStruct;
+  diffs: string[];
+};
+
+export type GlobalGuardsPlan = {
+  action: 'setGlobalGuards';
+  config: GlobalGuardsStruct;
+  diffs: string[];
+};
+
 export type Phase6Plan = {
   global?: GlobalPlan;
   systemPause?: AddressPlan;
   escalationBridge?: AddressPlan;
   domains: DomainPlan[];
+  domainOperations: DomainOperationsPlan[];
+  globalGuards?: GlobalGuardsPlan;
   warnings: string[];
 };
 
@@ -115,6 +168,27 @@ export function normalizeDomainView(view: any): ChainDomain {
     executionRouter: String(config?.executionRouter ?? ZERO_ADDRESS),
     heartbeatSeconds: BigInt(config?.heartbeatSeconds ?? 0),
     active: Boolean(config?.active ?? false),
+  };
+}
+
+function normalizeDomainOperations(raw: any): DomainOperationsStruct {
+  return {
+    maxActiveJobs: BigInt(raw?.maxActiveJobs ?? raw?.[0] ?? 0),
+    maxQueueDepth: BigInt(raw?.maxQueueDepth ?? raw?.[1] ?? 0),
+    minStake: BigInt(raw?.minStake ?? raw?.[2] ?? 0),
+    treasuryShareBps: Number(raw?.treasuryShareBps ?? raw?.[3] ?? 0),
+    circuitBreakerBps: Number(raw?.circuitBreakerBps ?? raw?.[4] ?? 0),
+    requiresHumanValidation: Boolean(raw?.requiresHumanValidation ?? raw?.[5] ?? false),
+  };
+}
+
+function normalizeGlobalGuards(raw: any): GlobalGuardsStruct {
+  return {
+    treasuryBufferBps: Number(raw?.treasuryBufferBps ?? raw?.[0] ?? 0),
+    circuitBreakerBps: Number(raw?.circuitBreakerBps ?? raw?.[1] ?? 0),
+    anomalyGracePeriod: Number(raw?.anomalyGracePeriod ?? raw?.[2] ?? 0),
+    autoPauseEnabled: Boolean(raw?.autoPauseEnabled ?? raw?.[3] ?? false),
+    oversightCouncil: String(raw?.oversightCouncil ?? raw?.[4] ?? ZERO_ADDRESS),
   };
 }
 
@@ -144,9 +218,84 @@ function buildDomainStruct(input: DomainConfigInput, currentActive?: boolean): D
   };
 }
 
+function buildDomainOperationsStruct(
+  input: DomainOperationsInput,
+  previous?: DomainOperationsStruct,
+): DomainOperationsStruct {
+  const minStakeRaw = input.minStake;
+  const minStakeBigInt =
+    typeof minStakeRaw === 'string'
+      ? BigInt(minStakeRaw)
+      : BigInt(Math.trunc(Number(minStakeRaw)));
+  return {
+    maxActiveJobs: BigInt(Math.trunc(input.maxActiveJobs)),
+    maxQueueDepth: BigInt(Math.trunc(input.maxQueueDepth)),
+    minStake: minStakeBigInt,
+    treasuryShareBps: Math.trunc(input.treasuryShareBps),
+    circuitBreakerBps: Math.trunc(input.circuitBreakerBps),
+    requiresHumanValidation: Boolean(
+      input.requiresHumanValidation ?? previous?.requiresHumanValidation ?? false,
+    ),
+  };
+}
+
+function diffDomainOperations(
+  current: DomainOperationsStruct | undefined,
+  target: DomainOperationsStruct,
+): string[] {
+  const diffs: string[] = [];
+  if (!current) {
+    return [
+      'maxActiveJobs',
+      'maxQueueDepth',
+      'minStake',
+      'treasuryShareBps',
+      'circuitBreakerBps',
+      'requiresHumanValidation',
+    ];
+  }
+  if (current.maxActiveJobs !== target.maxActiveJobs) diffs.push('maxActiveJobs');
+  if (current.maxQueueDepth !== target.maxQueueDepth) diffs.push('maxQueueDepth');
+  if (current.minStake !== target.minStake) diffs.push('minStake');
+  if (current.treasuryShareBps !== target.treasuryShareBps) diffs.push('treasuryShareBps');
+  if (current.circuitBreakerBps !== target.circuitBreakerBps) diffs.push('circuitBreakerBps');
+  if (current.requiresHumanValidation !== target.requiresHumanValidation)
+    diffs.push('requiresHumanValidation');
+  return diffs;
+}
+
+function diffGlobalGuards(
+  current: GlobalGuardsStruct,
+  target: GlobalGuardsStruct,
+): string[] {
+  const diffs: string[] = [];
+  if (current.treasuryBufferBps !== target.treasuryBufferBps) diffs.push('treasuryBufferBps');
+  if (current.circuitBreakerBps !== target.circuitBreakerBps) diffs.push('circuitBreakerBps');
+  if (current.anomalyGracePeriod !== target.anomalyGracePeriod) diffs.push('anomalyGracePeriod');
+  if (current.autoPauseEnabled !== target.autoPauseEnabled) diffs.push('autoPauseEnabled');
+  if (current.oversightCouncil.toLowerCase() !== target.oversightCouncil.toLowerCase())
+    diffs.push('oversightCouncil');
+  return diffs;
+}
+
+function buildGlobalGuardsStruct(
+  input: GlobalGuardsInput,
+  previous?: GlobalGuardsStruct,
+): GlobalGuardsStruct {
+  return {
+    treasuryBufferBps: Math.trunc(input.treasuryBufferBps ?? previous?.treasuryBufferBps ?? 0),
+    circuitBreakerBps: Math.trunc(input.circuitBreakerBps ?? previous?.circuitBreakerBps ?? 0),
+    anomalyGracePeriod: Math.trunc(input.anomalyGracePeriod ?? previous?.anomalyGracePeriod ?? 0),
+    autoPauseEnabled: Boolean(input.autoPauseEnabled ?? previous?.autoPauseEnabled ?? false),
+    oversightCouncil: input.oversightCouncil ?? previous?.oversightCouncil ?? ZERO_ADDRESS,
+  };
+}
+
 export function planPhase6Changes(current: Phase6State, desired: Phase6Config): Phase6Plan {
   const warnings: string[] = [];
   const domains: DomainPlan[] = [];
+  const domainOperationsPlans: DomainOperationsPlan[] = [];
+  const touchedOperations = new Set<string>();
 
   const manifestURI = desired.global.manifestURI?.trim();
   if (!manifestURI) {
@@ -184,6 +333,7 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
 
   const plan: Phase6Plan = {
     domains,
+    domainOperations: domainOperationsPlans,
     warnings,
   };
 
@@ -193,6 +343,28 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
       config: targetGlobal,
       diffs: globalDiffs,
     };
+  }
+
+  const targetGuardsInput = desired.global.guards;
+  const currentGuards = current.globalGuards;
+  if (targetGuardsInput) {
+    const targetGuards = buildGlobalGuardsStruct(targetGuardsInput, currentGuards);
+    const guardDiffs = diffGlobalGuards(currentGuards, targetGuards);
+    if (guardDiffs.length > 0) {
+      plan.globalGuards = {
+        action: 'setGlobalGuards',
+        config: targetGuards,
+        diffs: guardDiffs,
+      };
+    }
+  } else if (
+    currentGuards.treasuryBufferBps !== 0 ||
+    currentGuards.circuitBreakerBps !== 0 ||
+    currentGuards.anomalyGracePeriod !== 0 ||
+    currentGuards.autoPauseEnabled ||
+    currentGuards.oversightCouncil.toLowerCase() !== ZERO_ADDRESS.toLowerCase()
+  ) {
+    warnings.push('Configuration omits global.guards; existing guard rails remain unchanged.');
   }
 
   const desiredPause = desired.global.systemPause;
@@ -235,6 +407,7 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
     const key = slug.toLowerCase();
     desiredSlugs.add(key);
     const existing = currentMap.get(key);
+    const existingOps = current.domainOperations[key];
     const struct = buildDomainStruct(input, existing?.active);
     if (!existing) {
       domains.push({
@@ -267,6 +440,42 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
         diffs,
       });
     }
+
+    if (input.operations) {
+      const targetOps = buildDomainOperationsStruct(input.operations, existingOps);
+      const opDiffs = diffDomainOperations(existingOps, targetOps);
+      if (opDiffs.length > 0) {
+        domainOperationsPlans.push({
+          action: 'setDomainOperations',
+          id: existing.id,
+          slug,
+          config: targetOps,
+          diffs: opDiffs,
+        });
+        touchedOperations.add(key);
+      }
+    } else {
+      warnings.push(`Domain ${slug} missing operations config; retaining on-chain values.`);
+    }
+  }
+
+  for (const input of desired.domains) {
+    const key = input.slug.trim().toLowerCase();
+    if (!touchedOperations.has(key) && input.operations) {
+      const existingOps = current.domainOperations[key];
+      const targetOps = buildDomainOperationsStruct(input.operations, existingOps);
+      const opDiffs = diffDomainOperations(existingOps, targetOps);
+      if (opDiffs.length > 0) {
+        domainOperationsPlans.push({
+          action: 'setDomainOperations',
+          id: domainIdFromSlug(input.slug),
+          slug: input.slug,
+          config: targetOps,
+          diffs: opDiffs,
+        });
+        touchedOperations.add(key);
+      }
+    }
   }
 
   for (const [slug, existing] of currentMap.entries()) {
@@ -279,11 +488,12 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
 }
 
 export async function fetchPhase6State(manager: Contract): Promise<Phase6State> {
-  const [globalRaw, systemPause, escalationBridge, domainViews] = await Promise.all([
+  const [globalRaw, systemPause, escalationBridge, domainViews, guardsRaw] = await Promise.all([
     manager.globalConfig(),
     manager.systemPause(),
     manager.escalationBridge(),
     manager.listDomains(),
+    manager.globalGuards(),
   ]);
 
   const global: GlobalConfigStruct = {
@@ -296,12 +506,22 @@ export async function fetchPhase6State(manager: Contract): Promise<Phase6State> 
   };
 
   const domains = (domainViews as any[]).map((view) => normalizeDomainView(view));
+  const operationsEntries = await Promise.all(
+    domains.map((domain) => manager.getDomainOperations(domain.id)),
+  );
+  const domainOperations: Record<string, DomainOperationsStruct> = {};
+  operationsEntries.forEach((ops, idx) => {
+    const slugKey = domains[idx].slug.toLowerCase();
+    domainOperations[slugKey] = normalizeDomainOperations(ops);
+  });
 
   return {
     global,
     systemPause: String(systemPause ?? ZERO_ADDRESS),
     escalationBridge: String(escalationBridge ?? ZERO_ADDRESS),
     domains,
+    domainOperations,
+    globalGuards: normalizeGlobalGuards(guardsRaw),
   };
 }
 

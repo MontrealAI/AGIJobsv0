@@ -48,6 +48,31 @@ const addressPattern = /^0x[0-9a-fA-F]{40}$/;
   },
 );
 
+const guards = config.global.guards;
+if (!guards || typeof guards !== 'object') {
+  fail('Global guards configuration is required.');
+}
+['treasuryBufferBps', 'circuitBreakerBps', 'anomalyGracePeriod'].forEach((key) => {
+  if (typeof guards[key] !== 'number' || guards[key] < 0) {
+    fail(`global.guards.${key} must be a non-negative number.`);
+  }
+});
+if (guards.treasuryBufferBps > 10000) {
+  fail('global.guards.treasuryBufferBps must be <= 10000.');
+}
+if (guards.circuitBreakerBps > 10000) {
+  fail('global.guards.circuitBreakerBps must be <= 10000.');
+}
+if (guards.anomalyGracePeriod !== 0 && guards.anomalyGracePeriod < 30) {
+  fail('global.guards.anomalyGracePeriod must be 0 or >= 30 seconds.');
+}
+if (typeof guards.autoPauseEnabled !== 'boolean') {
+  fail('global.guards.autoPauseEnabled must be a boolean.');
+}
+if (!guards.oversightCouncil || !addressPattern.test(guards.oversightCouncil) || /^0x0{40}$/i.test(guards.oversightCouncil)) {
+  fail('global.guards.oversightCouncil must be a non-zero 0x-prefixed address.');
+}
+
 if (!Array.isArray(config.global.decentralizedInfra) || config.global.decentralizedInfra.length < 3) {
   fail('Global decentralizedInfra must include at least three integrations.');
 }
@@ -101,6 +126,31 @@ config.domains.forEach((domain, idx) => {
   });
   if (typeof domain.heartbeatSeconds !== 'number' || domain.heartbeatSeconds < 30) {
     fail(`${context}: heartbeatSeconds must be >= 30 seconds.`);
+  }
+  if (!domain.operations || typeof domain.operations !== 'object') {
+    fail(`${context}: operations configuration is required.`);
+  }
+  const ops = domain.operations;
+  ['maxActiveJobs', 'maxQueueDepth', 'treasuryShareBps', 'circuitBreakerBps'].forEach((key) => {
+    if (typeof ops[key] !== 'number' || ops[key] <= 0) {
+      fail(`${context}: operations.${key} must be a positive number.`);
+    }
+  });
+  if (ops.maxQueueDepth < ops.maxActiveJobs) {
+    fail(`${context}: operations.maxQueueDepth must be >= operations.maxActiveJobs.`);
+  }
+  if (ops.treasuryShareBps > 10000 || ops.circuitBreakerBps > 10000) {
+    fail(`${context}: operations treasury/circuit breaker BPS must be <= 10000.`);
+  }
+  if (typeof ops.requiresHumanValidation !== 'boolean') {
+    fail(`${context}: operations.requiresHumanValidation must be boolean.`);
+  }
+  const minStakeValue = ops.minStake;
+  if (
+    (typeof minStakeValue !== 'string' && typeof minStakeValue !== 'number') ||
+    BigInt(minStakeValue) <= 0n
+  ) {
+    fail(`${context}: operations.minStake must be > 0 (string or number).`);
   }
   if (!Array.isArray(domain.skillTags) || domain.skillTags.length === 0) {
     fail(`${context}: skillTags must include at least one entry.`);

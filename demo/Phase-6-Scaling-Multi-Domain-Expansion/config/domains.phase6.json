@@ -8,6 +8,13 @@
     "systemPause": "0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
     "escalationBridge": "0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
     "l2SyncCadence": 180,
+    "guards": {
+      "treasuryBufferBps": 750,
+      "circuitBreakerBps": 7200,
+      "anomalyGracePeriod": 300,
+      "autoPauseEnabled": true,
+      "oversightCouncil": "0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3"
+    },
     "decentralizedInfra": [
       {
         "name": "EigenLayer Risk Shield AVS",
@@ -46,6 +53,14 @@
       "oracle": "0x6666666666666666666666666666666666666666",
       "executionRouter": "0x7777777777777777777777777777777777777777",
       "heartbeatSeconds": 90,
+      "operations": {
+        "maxActiveJobs": 640,
+        "maxQueueDepth": 1600,
+        "minStake": "750000000000000000000",
+        "treasuryShareBps": 280,
+        "circuitBreakerBps": 7200,
+        "requiresHumanValidation": false
+      },
       "skillTags": [
         "finance",
         "risk",
@@ -107,6 +122,14 @@
       "oracle": "0x9999999999999999999999999999999999999999",
       "executionRouter": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "heartbeatSeconds": 120,
+      "operations": {
+        "maxActiveJobs": 420,
+        "maxQueueDepth": 900,
+        "minStake": "520000000000000000000",
+        "treasuryShareBps": 320,
+        "circuitBreakerBps": 6800,
+        "requiresHumanValidation": true
+      },
       "skillTags": [
         "healthcare",
         "diagnostics",
@@ -167,6 +190,14 @@
       "oracle": "0xcccccccccccccccccccccccccccccccccccccccc",
       "executionRouter": "0xdddddddddddddddddddddddddddddddddddddddd",
       "heartbeatSeconds": 75,
+      "operations": {
+        "maxActiveJobs": 520,
+        "maxQueueDepth": 1400,
+        "minStake": "460000000000000000000",
+        "treasuryShareBps": 300,
+        "circuitBreakerBps": 7000,
+        "requiresHumanValidation": false
+      },
       "skillTags": [
         "logistics",
         "iot",
@@ -229,6 +260,14 @@
       "oracle": "0xffffffffffffffffffffffffffffffffffffffff",
       "executionRouter": "0x1234567890123456789012345678901234567890",
       "heartbeatSeconds": 210,
+      "operations": {
+        "maxActiveJobs": 360,
+        "maxQueueDepth": 960,
+        "minStake": "380000000000000000000",
+        "treasuryShareBps": 260,
+        "circuitBreakerBps": 6600,
+        "requiresHumanValidation": true
+      },
       "skillTags": [
         "climate",
         "sustainability",
@@ -290,6 +329,14 @@
       "oracle": "0x2468246824682468246824682468246824682468",
       "executionRouter": "0x3579357935793579357935793579357935793579",
       "heartbeatSeconds": 150,
+      "operations": {
+        "maxActiveJobs": 280,
+        "maxQueueDepth": 720,
+        "minStake": "240000000000000000000",
+        "treasuryShareBps": 240,
+        "circuitBreakerBps": 6500,
+        "requiresHumanValidation": true
+      },
       "skillTags": [
         "education",
         "research",
