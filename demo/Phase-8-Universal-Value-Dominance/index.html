@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phase 8 — Universal Value Dominance Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: radial-gradient(circle at top, rgba(45, 127, 220, 0.25), rgba(6, 12, 24, 0.95));
+        --panel: rgba(15, 25, 55, 0.75);
+        --panel-border: rgba(108, 192, 255, 0.35);
+        --accent: #5ad2ff;
+        --accent-strong: #ffa94d;
+        --text: #e8f4ff;
+        --muted: #9bbad8;
+        font-family: "Inter", system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        padding: 4rem 2rem 2rem;
+        text-align: center;
+      }
+      header h1 {
+        margin: 0;
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      header p {
+        max-width: 720px;
+        margin: 1rem auto 0;
+        line-height: 1.6;
+        color: var(--muted);
+        font-size: 1.1rem;
+      }
+      main {
+        width: min(1120px, 92vw);
+        margin: 0 auto 5rem;
+        display: grid;
+        gap: 2.5rem;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+      }
+      .stat-card {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 18px;
+        padding: 1.75rem;
+        box-shadow: 0 18px 40px rgba(5, 12, 22, 0.4);
+      }
+      .stat-card h2 {
+        margin: 0 0 0.6rem;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+      }
+      .stat-card p {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+      section {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 24px;
+        padding: 2.4rem;
+        box-shadow: 0 22px 42px rgba(5, 12, 22, 0.35);
+      }
+      section h2 {
+        margin: 0 0 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+      }
+      .domain-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
+      }
+      .domain-card {
+        border: 1px solid rgba(90, 210, 255, 0.4);
+        border-radius: 20px;
+        padding: 1.75rem;
+        background: linear-gradient(135deg, rgba(16, 40, 76, 0.8), rgba(7, 14, 24, 0.92));
+      }
+      .domain-card h3 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+      .domain-meta {
+        margin-top: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .chip {
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        background: rgba(90, 210, 255, 0.12);
+        border: 1px solid rgba(90, 210, 255, 0.35);
+      }
+      .sentinel-list,
+      .stream-list,
+      .playbook-list {
+        display: grid;
+        gap: 1rem;
+      }
+      .sentinel-item,
+      .stream-item,
+      .playbook-item {
+        padding: 1.25rem;
+        border-radius: 18px;
+        border: 1px solid rgba(90, 210, 255, 0.25);
+        background: rgba(12, 20, 38, 0.72);
+      }
+      .mermaid-wrapper {
+        background: rgba(12, 20, 38, 0.82);
+        border-radius: 18px;
+        padding: 1.25rem;
+        border: 1px solid rgba(90, 210, 255, 0.2);
+        overflow-x: auto;
+      }
+      footer {
+        text-align: center;
+        padding: 2rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      @media (max-width: 720px) {
+        header {
+          padding-top: 3rem;
+        }
+        section {
+          padding: 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Phase 8 · Universal Value Dominance</h1>
+      <p>
+        This console proves a non-technical operator can marshal a superintelligent, DAO-governed economy. Load the manifest,
+        execute the suggested governance transactions, and watch AGI Jobs v0 (v2) orchestrate planetary-scale value with safe,
+        transparent guardrails.
+      </p>
+    </header>
+    <main>
+      <div class="stats-grid" id="stats"></div>
+      <section>
+        <h2>Governance Control Surface</h2>
+        <div class="sentinel-list" id="controls"></div>
+      </section>
+      <section>
+        <h2>Dominion Registry</h2>
+        <div class="domain-grid" id="domains"></div>
+      </section>
+      <section>
+        <h2>Sentinel Lattice</h2>
+        <div class="sentinel-list" id="sentinels"></div>
+      </section>
+      <section>
+        <h2>Capital Streams</h2>
+        <div class="stream-list" id="streams"></div>
+      </section>
+      <section>
+        <h2>Self-Improvement Kernel</h2>
+        <div class="playbook-list" id="playbooks"></div>
+      </section>
+      <section>
+        <h2>Mermaid · Universal Value Mesh</h2>
+        <div class="mermaid-wrapper">
+          <div class="mermaid" id="mermaid-diagram">graph TD; Loading --> Manifest</div>
+        </div>
+      </section>
+      <section>
+        <h2>Operator Runbook</h2>
+        <ol id="runbook"></ol>
+      </section>
+    </main>
+    <footer>
+      <span>AGI Jobs v0 (v2) — Universal Value Dominance demo. Everything you need to command a trillion-dollar superintelligence.</span>
+    </footer>
+    <script type="module">
+      const configPath = new URL("./config/universal.value.manifest.json", import.meta.url);
+      const formatUSD = (value) => {
+        if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+        if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+        if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+        return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+      };
+      const short = (addr) => `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+
+      function formatAmount(value) {
+        try {
+          const big = BigInt(value ?? 0);
+          if (big === BigInt(0)) return "0";
+          const str = big.toString();
+          if (str.length <= 6) return str;
+          return `${str.slice(0, 3)}… (10^${str.length - 3})`;
+        } catch (err) {
+          return String(value ?? "0");
+        }
+      }
+
+      async function load() {
+        const res = await fetch(configPath);
+        if (!res.ok) throw new Error(`Failed to load manifest: ${res.status}`);
+        const data = await res.json();
+        render(data);
+      }
+
+      function render(data) {
+        const stats = document.getElementById("stats");
+        const totalMonthly = data.domains.reduce((acc, d) => acc + Number(d.valueFlowMonthlyUSD ?? 0), 0);
+        const annualBudget = data.capitalStreams.reduce((acc, s) => acc + Number(s.annualBudget ?? 0), 0);
+        const resilience =
+          data.domains.length === 0
+            ? 0
+            : data.domains.reduce((acc, d) => acc + Number(d.resilienceIndex ?? 0), 0) / data.domains.length;
+        const coverage = data.sentinels.reduce((acc, s) => acc + Number(s.coverageSeconds ?? 0), 0) / 60;
+
+        const statItems = [
+          { label: "Monthly value flow", value: formatUSD(totalMonthly) },
+          { label: "Annual capital budget", value: formatUSD(annualBudget) },
+          { label: "Average resilience", value: resilience.toFixed(3) },
+          { label: "Sentinel coverage", value: `${coverage.toFixed(1)} min/cycle` },
+        ];
+        stats.innerHTML = statItems
+          .map(
+            (item) => `
+            <article class="stat-card">
+              <h2>${item.label}</h2>
+              <p>${item.value}</p>
+            </article>
+          `,
+          )
+          .join("");
+
+        const controls = document.getElementById("controls");
+        controls.innerHTML = `
+          <div class="sentinel-item">
+            <strong>Treasury</strong>: ${short(data.global.treasury)} · <strong>Vault</strong>: ${short(
+          data.global.universalVault,
+        )}
+          </div>
+          <div class="sentinel-item">
+            <strong>Upgrade coordinator</strong>: ${short(data.global.upgradeCoordinator)} · <strong>Validator registry</strong>: ${short(
+          data.global.validatorRegistry,
+        )}
+          </div>
+          <div class="sentinel-item">
+            <strong>Mission control</strong>: ${short(data.global.missionControl)} · <strong>Knowledge graph</strong>: ${short(
+          data.global.knowledgeGraph,
+        )}
+          </div>
+          <div class="sentinel-item">
+            <strong>Guardian council</strong>: ${short(data.global.guardianCouncil)} · <strong>System pause</strong>: ${short(
+          data.global.systemPause,
+        )}
+          </div>
+          <div class="sentinel-item">
+            <strong>Manifest</strong>: ${data.global.manifestoURI} · <strong>Drawdown guard</strong>: ${
+          data.global.maxDrawdownBps
+        } bps
+          </div>
+        `;
+
+        const domains = document.getElementById("domains");
+        domains.innerHTML = data.domains
+          .map((domain) => {
+            const tags = (domain.skillTags || []).map((tag) => `<span class="chip">${tag}</span>`).join(" ");
+            return `
+              <article class="domain-card">
+                <h3>${domain.name}</h3>
+                <p>${domain.autonomyNarrative || "Autonomy narrative pending."}</p>
+                <div class="domain-meta">
+                  <span class="chip">ID ${domain.slug}</span>
+                  <span class="chip">Autonomy ${domain.autonomyLevelBps} bps</span>
+                  <span class="chip">Resilience ${(domain.resilienceIndex ?? 0).toFixed(3)}</span>
+                  <span class="chip">TVL ≤ ${formatAmount(domain.tvlLimit)}</span>
+                  <span class="chip">Heartbeat ${domain.heartbeatSeconds}s</span>
+                </div>
+                <div class="domain-meta">${tags}</div>
+              </article>
+            `;
+          })
+          .join("");
+
+        const sentinels = document.getElementById("sentinels");
+        sentinels.innerHTML = data.sentinels
+          .map((sentinel) => `
+            <article class="sentinel-item">
+              <strong>${sentinel.name}</strong>
+              <p>Coverage ${sentinel.coverageSeconds}s · Sensitivity ${sentinel.sensitivityBps} bps · Domains ${
+                sentinel.domains.join(" · ")
+              }</p>
+              <p>Agent ${short(sentinel.agent)} · Policy file ${sentinel.uri}</p>
+            </article>
+          `)
+          .join("");
+
+        const streams = document.getElementById("streams");
+        streams.innerHTML = data.capitalStreams
+          .map((stream) => `
+            <article class="stream-item">
+              <strong>${stream.name}</strong>
+              <p>${formatUSD(stream.annualBudget)}/yr · Expansion ${stream.expansionBps} bps · Domains ${
+                stream.domains.join(" · ")
+              }</p>
+              <p>Vault ${short(stream.vault)} · Manifest ${stream.uri}</p>
+            </article>
+          `)
+          .join("");
+
+        const playbooks = document.getElementById("playbooks");
+        playbooks.innerHTML = [
+          ...data.selfImprovement.playbooks.map(
+            (playbook) => `
+              <article class="playbook-item">
+                <strong>${playbook.name}</strong>
+                <p>${playbook.description}</p>
+                <p>Owner ${short(playbook.owner)} · Automation ${playbook.automation} · Guardrails ${
+                  playbook.guardrails.join(" · ")
+                }</p>
+              </article>
+            `,
+          ),
+          `
+            <article class="playbook-item">
+              <strong>Autonomy guard</strong>
+              <p>
+                ≤${data.selfImprovement.autonomyGuards.maxAutonomyBps} bps · Override window ${
+            data.selfImprovement.autonomyGuards.humanOverrideMinutes
+          } minutes · Escalation ${data.selfImprovement.autonomyGuards.escalationChannels.join(" → ")}
+              </p>
+            </article>
+          `,
+        ].join("");
+
+        const runbook = document.getElementById("runbook");
+        runbook.innerHTML = `
+          <li>Install dependencies once: <code>npm ci</code></li>
+          <li>Generate calldata + telemetry: <code>npm run demo:phase8:orchestrate</code></li>
+          <li>Apply transactions via your governance Safe / Timelock</li>
+          <li>Stream live telemetry from this console and the orchestrator runtime</li>
+          <li>Trigger self-improvement playbooks as needed (see guardrails above)</li>
+        `;
+
+        const mermaidNodes = [
+          "graph TD",
+          "  Governance[[Guardian Council]] --> Manager(Phase8UniversalValueManager)",
+          "  Manager --> Treasury[[Universal Treasury]]",
+          "  Manager --> Pause[System Pause Controller]",
+          "  Manager --> Streams[[Capital Streams]]",
+        ];
+        data.domains.forEach((domain) => {
+          const id = domain.slug.replace(/[^a-z0-9]/gi, "");
+          mermaidNodes.push(`  Manager --> ${id}([${domain.name}])`);
+        });
+        data.sentinels.forEach((sentinel) => {
+          const id = sentinel.slug.replace(/[^a-z0-9]/gi, "");
+          mermaidNodes.push(`  ${id}Sentinel{${sentinel.name}} --> Pause`);
+          sentinel.domains.forEach((domain) => {
+            const domainId = domain.replace(/[^a-z0-9]/gi, "");
+            mermaidNodes.push(`  ${id}Sentinel --> ${domainId}`);
+          });
+        });
+        data.capitalStreams.forEach((stream) => {
+          const id = stream.slug.replace(/[^a-z0-9]/gi, "");
+          mermaidNodes.push(`  Streams --> ${id}Stream[[${stream.name}]]`);
+          stream.domains.forEach((domain) => {
+            const domainId = domain.replace(/[^a-z0-9]/gi, "");
+            mermaidNodes.push(`  ${id}Stream --> ${domainId}`);
+          });
+        });
+
+        const mermaidDiagram = document.getElementById("mermaid-diagram");
+        mermaidDiagram.textContent = mermaidNodes.join("\n");
+        if (window.mermaid) {
+          window.mermaid.initialize({ startOnLoad: false, theme: "dark" });
+          window.mermaid.run({ nodes: [mermaidDiagram] });
+        }
+      }
+
+      load().catch((error) => {
+        document.body.innerHTML = `<div style="padding:3rem;text-align:center">Failed to load Phase 8 manifest: ${error}</div>`;
+        console.error(error);
+      });
+    </script>
+  </body>
+</html>

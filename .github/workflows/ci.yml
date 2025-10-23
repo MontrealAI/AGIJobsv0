@@ -234,6 +234,35 @@ jobs:
       - name: Validate Phase 6 manifest & UI
         run: npm run demo:phase6:ci
 
+  phase8:
+    name: Phase 8 readiness
+    needs:
+      - lint
+      - tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Validate Phase 8 manifest & UI
+        run: npm run demo:phase8:ci
+
   asi_takeoff_demo:
     name: ASI Take-Off Demonstration
     needs: tests
@@ -556,6 +585,7 @@ jobs:
       - tests
       - foundry
       - coverage
+      - phase8
       - asi_takeoff_demo
       - zenith_demo
       - agi_labor_market_demo
@@ -580,6 +610,7 @@ jobs:
             tests: 'Tests',
             foundry: 'Foundry',
             coverage: 'Coverage thresholds',
+            phase8: 'Phase 8 readiness',
             asi_takeoff_demo: 'ASI Take-Off Demo',
             zenith_demo: 'Zenith Sapience Demo',
             agi_labor_market_demo: 'AGI Labor Market Demo',

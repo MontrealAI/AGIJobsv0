@@ -1,0 +1,239 @@
+{
+  "global": {
+    "treasury": "0x8a1f8f5e3b9d9b2a7b6c5e4f3d2c1b0a9f8e7d6c",
+    "universalVault": "0xb5c7fe65f0c84a22330a3e913450b1214cc0a8f9",
+    "upgradeCoordinator": "0x3e8b71da4c5e981a2d4facfe97b53bd2736d1d10",
+    "validatorRegistry": "0x21f49cff41f9e69a13a3d6cef7b1a92d9c4e0d8e",
+    "missionControl": "0xe9a6b9b6c6a53382e5e7d1b8e0f93c5f4a32e1a4",
+    "knowledgeGraph": "0x9b2b5f9c4d4e58a63e934f52aa4c3f62f6c4b672",
+    "guardianCouncil": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+    "systemPause": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+    "heartbeatSeconds": 540,
+    "guardianReviewWindow": 720,
+    "maxDrawdownBps": 3200,
+    "manifestoURI": "ipfs://agi-jobs/phase8/manifest.json"
+  },
+  "domains": [
+    {
+      "slug": "planetary-finance",
+      "name": "Planetary Finance Mesh",
+      "metadataURI": "ipfs://agi-jobs/phase8/domains/planetary-finance.json",
+      "orchestrator": "0x6a9b3f8c4e1d2f5a7b9c3d6e8f1a2b4c6d8e0f12",
+      "capitalVault": "0xb5c7fe65f0c84a22330a3e913450b1214cc0a8f9",
+      "validatorModule": "0x21f49cff41f9e69a13a3d6cef7b1a92d9c4e0d8e",
+      "policyKernel": "0xe9a6b9b6c6a53382e5e7d1b8e0f93c5f4a32e1a4",
+      "heartbeatSeconds": 300,
+      "tvlLimit": "420000000000000000000000000",
+      "autonomyLevelBps": 7800,
+      "skillTags": [
+        "macro",
+        "liquidity",
+        "derivatives"
+      ],
+      "resilienceIndex": 0.96,
+      "valueFlowMonthlyUSD": 245000000000,
+      "autonomyNarrative": "Fully automated liquidity routing with human guardian veto windows.",
+      "active": true
+    },
+    {
+      "slug": "climate-harmonizer",
+      "name": "Climate Harmonizer Array",
+      "metadataURI": "ipfs://agi-jobs/phase8/domains/climate-harmonizer.json",
+      "orchestrator": "0x7f1e29a3c4b58f6d7e92c1a543ed2f7b8c9a0e1f",
+      "capitalVault": "0x2f9e47b6d3e4f8c9a0e1f2a3b4c5d6e7f8a9b0c1",
+      "validatorModule": "0x9a82f7c5d4e3b2a1f0e9d8c7b6a5f4e3d2c1b0a9",
+      "policyKernel": "0x3f4a7c6d5e8b9a0c1d2e3f4a5b6c7d8e9f0a1b2c",
+      "heartbeatSeconds": 180,
+      "tvlLimit": "185000000000000000000000000",
+      "autonomyLevelBps": 7400,
+      "skillTags": [
+        "climate",
+        "energy",
+        "materials"
+      ],
+      "resilienceIndex": 0.94,
+      "valueFlowMonthlyUSD": 128000000000,
+      "autonomyNarrative": "Self-optimizing geoengineering with sentinel enforced carbon ceilings.",
+      "active": true
+    },
+    {
+      "slug": "health-sovereign",
+      "name": "Health Sovereign Continuum",
+      "metadataURI": "ipfs://agi-jobs/phase8/domains/health-sovereign.json",
+      "orchestrator": "0x8b3ef4c1d2a596c7e8f9a0b1c2d3e4f5a6b7c8d9",
+      "capitalVault": "0xc1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0",
+      "validatorModule": "0x5a7c9e8f0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e",
+      "policyKernel": "0x4b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c",
+      "heartbeatSeconds": 240,
+      "tvlLimit": "92000000000000000000000000",
+      "autonomyLevelBps": 7000,
+      "skillTags": [
+        "healthcare",
+        "pharma",
+        "biosecurity"
+      ],
+      "resilienceIndex": 0.91,
+      "valueFlowMonthlyUSD": 94000000000,
+      "autonomyNarrative": "Autonomous biomedical deployments with validator supervised approvals.",
+      "active": true
+    },
+    {
+      "slug": "infrastructure-synthesis",
+      "name": "Infrastructure Synthesis Grid",
+      "metadataURI": "ipfs://agi-jobs/phase8/domains/infrastructure-synthesis.json",
+      "orchestrator": "0x2e4f6a8b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f",
+      "capitalVault": "0x5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a",
+      "validatorModule": "0xa7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6",
+      "policyKernel": "0x6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d",
+      "heartbeatSeconds": 210,
+      "tvlLimit": "215000000000000000000000000",
+      "autonomyLevelBps": 7600,
+      "skillTags": [
+        "logistics",
+        "manufacturing",
+        "space"
+      ],
+      "resilienceIndex": 0.915,
+      "valueFlowMonthlyUSD": 167000000000,
+      "autonomyNarrative": "Orbital to terrestrial fabrication orchestrated through universal vaults.",
+      "active": true
+    },
+    {
+      "slug": "knowledge-lattice",
+      "name": "Knowledge Lattice Nexus",
+      "metadataURI": "ipfs://agi-jobs/phase8/domains/knowledge-lattice.json",
+      "orchestrator": "0x1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a",
+      "capitalVault": "0x7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+      "validatorModule": "0xb1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0",
+      "policyKernel": "0xd3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2",
+      "heartbeatSeconds": 150,
+      "tvlLimit": "68000000000000000000000000",
+      "autonomyLevelBps": 6900,
+      "skillTags": [
+        "education",
+        "research",
+        "culture"
+      ],
+      "resilienceIndex": 0.902,
+      "valueFlowMonthlyUSD": 54000000000,
+      "autonomyNarrative": "Rapid knowledge diffusion with DAO-signed epistemic guardrails.",
+      "active": true
+    }
+  ],
+  "sentinels": [
+    {
+      "slug": "solar-shield",
+      "name": "Solar Shield Guardian",
+      "uri": "ipfs://agi-jobs/phase8/sentinels/solar-shield.json",
+      "agent": "0x5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e",
+      "coverageSeconds": 420,
+      "sensitivityBps": 450,
+      "domains": [
+        "climate-harmonizer",
+        "infrastructure-synthesis"
+      ],
+      "active": true
+    },
+    {
+      "slug": "capital-watch",
+      "name": "Capital Watch Exocomptroller",
+      "uri": "ipfs://agi-jobs/phase8/sentinels/capital-watch.json",
+      "agent": "0x3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
+      "coverageSeconds": 360,
+      "sensitivityBps": 380,
+      "domains": [
+        "planetary-finance",
+        "knowledge-lattice"
+      ],
+      "active": true
+    },
+    {
+      "slug": "bio-sentinel",
+      "name": "Bio Sentinel Continuity",
+      "uri": "ipfs://agi-jobs/phase8/sentinels/bio-sentinel.json",
+      "agent": "0x8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f",
+      "coverageSeconds": 300,
+      "sensitivityBps": 420,
+      "domains": [
+        "health-sovereign"
+      ],
+      "active": true
+    }
+  ],
+  "capitalStreams": [
+    {
+      "slug": "climate-stabilization",
+      "name": "Climate Stabilization Endowment",
+      "uri": "ipfs://agi-jobs/phase8/streams/climate.json",
+      "vault": "0x2f9e47b6d3e4f8c9a0e1f2a3b4c5d6e7f8a9b0c1",
+      "annualBudget": 720000000000,
+      "expansionBps": 1300,
+      "domains": [
+        "climate-harmonizer",
+        "infrastructure-synthesis"
+      ],
+      "active": true
+    },
+    {
+      "slug": "planetary-resilience",
+      "name": "Planetary Resilience Fund",
+      "uri": "ipfs://agi-jobs/phase8/streams/planetary-resilience.json",
+      "vault": "0xb5c7fe65f0c84a22330a3e913450b1214cc0a8f9",
+      "annualBudget": 890000000000,
+      "expansionBps": 1250,
+      "domains": [
+        "planetary-finance",
+        "health-sovereign",
+        "knowledge-lattice"
+      ],
+      "active": true
+    },
+    {
+      "slug": "innovation-thrust",
+      "name": "Innovation Thrust Catalyst",
+      "uri": "ipfs://agi-jobs/phase8/streams/innovation-thrust.json",
+      "vault": "0x7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+      "annualBudget": 360000000000,
+      "expansionBps": 1600,
+      "domains": [
+        "knowledge-lattice",
+        "infrastructure-synthesis"
+      ],
+      "active": true
+    }
+  ],
+  "selfImprovement": {
+    "playbooks": [
+      {
+        "name": "Hyperparameter Evolution",
+        "description": "Agents automatically retrain on validated receipts with sentinel-reviewed diffs.",
+        "owner": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+        "automation": "weekly",
+        "guardrails": [
+          "checksum-verification",
+          "zk-proof-of-alignment"
+        ]
+      },
+      {
+        "name": "Universal Value Mesh Stress Tests",
+        "description": "Continuous adversarial load testing of treasury, governance, and policy kernels.",
+        "owner": "0x3e8b71da4c5e981a2d4facfe97b53bd2736d1d10",
+        "automation": "hourly",
+        "guardrails": [
+          "branch-protected-ci",
+          "multi-agent-cross-check"
+        ]
+      }
+    ],
+    "autonomyGuards": {
+      "maxAutonomyBps": 8000,
+      "humanOverrideMinutes": 15,
+      "pausable": true,
+      "escalationChannels": [
+        "guardian-council",
+        "dao-emergency",
+        "sentinel-lockdown"
+      ]
+    }
+  }
+}

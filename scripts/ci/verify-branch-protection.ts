@@ -21,6 +21,7 @@ const EXPECTED_CONTEXTS = [
   "ci (v2) / Foundry",
   "ci (v2) / Coverage thresholds",
   "ci (v2) / Phase 6 readiness",
+  "ci (v2) / Phase 8 readiness",
   "ci (v2) / CI summary",
 ] as const;
 
