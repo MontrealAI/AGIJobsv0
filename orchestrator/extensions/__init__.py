@@ -12,6 +12,7 @@ from .phase8 import (
 __all__ = [
     "DomainExpansionRuntime",
     "DomainProfile",
+    "load_runtime",
     "load_phase6_runtime",
     "Phase8DominionRuntime",
     "Phase8DominionProfile",
@@ -19,3 +20,5 @@ __all__ = [
     "CapitalStreamProfile",
     "load_phase8_runtime",
 ]
+
+load_runtime = load_phase6_runtime

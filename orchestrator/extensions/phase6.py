@@ -98,6 +98,7 @@ class GlobalControls:
     anomaly_grace_period: float = 0.0
     auto_pause_enabled: bool = False
     oversight_council: Optional[str] = None
+    decentralized_infra: List[Dict[str, str]] = field(default_factory=list)
 
 
 class DomainExpansionRuntime:
@@ -143,29 +144,11 @@ class DomainExpansionRuntime:
             uptime = str(uptime_raw) if uptime_raw is not None else None
             sentinel_raw = metadata.get("sentinel")
             sentinel = str(sentinel_raw) if sentinel_raw is not None else None
-            infra_payload = entry.get("infrastructure") or []
-            if infra_payload and not isinstance(infra_payload, list):
-                raise ValueError(f"domain {slug} infrastructure must be an array")
-            infrastructure: List[Dict[str, str]] = []
-            for idx, infra_entry in enumerate(infra_payload):
-                if not isinstance(infra_entry, dict):
-                    raise ValueError(f"domain {slug} infrastructure[{idx}] must be an object")
-                layer = str(infra_entry.get("layer", "")).strip()
-                name = str(infra_entry.get("name", "")).strip()
-                role = str(infra_entry.get("role", "")).strip()
-                status = str(infra_entry.get("status", "")).strip()
-                if not layer or not name or not role or not status:
-                    raise ValueError(f"domain {slug} infrastructure[{idx}] missing required fields")
-                entry_norm: Dict[str, str] = {
-                    "layer": layer,
-                    "name": name,
-                    "role": role,
-                    "status": status,
-                }
-                endpoint = infra_entry.get("endpoint") or infra_entry.get("uri")
-                if endpoint:
-                    entry_norm["endpoint"] = str(endpoint)
-                infrastructure.append(entry_norm)
+            infrastructure = _normalize_infrastructure(
+                entry.get("infrastructure"),
+                f"domain {slug}",
+                require_layer=True,
+            )
             operations_payload = entry.get("operations") or {}
             if operations_payload and not isinstance(operations_payload, dict):
                 raise ValueError(f"domain {slug} operations must be an object")
@@ -208,6 +191,8 @@ class DomainExpansionRuntime:
         guards_payload = global_payload.get("guards") or {}
         if guards_payload and not isinstance(guards_payload, dict):
             raise ValueError("global.guards must be an object")
+        infra_payload = global_payload.get("decentralizedInfra")
+        global_infra = _normalize_infrastructure(infra_payload, "global", require_layer=False)
         controls = GlobalControls(
             iot_oracle_router=_normalize_address(global_payload.get("iotOracleRouter")),
             default_l2_gateway=_normalize_address(global_payload.get("defaultL2Gateway")),
@@ -225,6 +210,7 @@ class DomainExpansionRuntime:
             anomaly_grace_period=float(guards_payload.get("anomalyGracePeriod", 0)),
             auto_pause_enabled=bool(guards_payload.get("autoPauseEnabled", False)),
             oversight_council=_normalize_address(guards_payload.get("oversightCouncil")),
+            decentralized_infra=global_infra,
         )
         return cls(domains, controls, source=source)
 
@@ -248,6 +234,10 @@ class DomainExpansionRuntime:
     @property
     def domains(self) -> Sequence[DomainProfile]:
         return list(self._domains.values())
+
+    @property
+    def global_infrastructure(self) -> Sequence[Dict[str, str]]:
+        return list(self._global.decentralized_infra)
 
     def annotate_step(self, step: "Step") -> List[str]:
         if not self._domains:
@@ -294,6 +284,14 @@ class DomainExpansionRuntime:
             )
         if self._global.oversight_council:
             logs.append(f"• oversight council: {self._global.oversight_council}")
+        if self._global.decentralized_infra:
+            preview = ", ".join(
+                f"{item.get('name', 'mesh')}({item.get('status', '-')})"
+                for item in self._global.decentralized_infra[:2]
+            )
+            if len(self._global.decentralized_infra) > 2:
+                preview += ", …"
+            logs.append(f"• global infra mesh: {preview}")
         if profile.resilience_index:
             logs.append(f"• resilience index: {profile.resilience_index:.3f}")
         if profile.value_flow_display or profile.value_flow_usd is not None:
@@ -332,6 +330,7 @@ class DomainExpansionRuntime:
             "uptime": profile.uptime,
             "valueFlowMonthlyUSD": profile.value_flow_usd,
             "infrastructure": profile.infrastructure,
+            "globalInfrastructure": self.global_infrastructure,
             "maxActiveJobs": profile.max_active_jobs,
             "maxQueueDepth": profile.max_queue_depth,
             "minStake": str(profile.min_stake),
@@ -363,6 +362,21 @@ class DomainExpansionRuntime:
                     f"{primary.get('layer', 'layer')} / {primary.get('name', 'service')} ({primary.get('status', '-')})"
                 )
             logs.append(f"• operations: {profile.operations_summary()}")
+        elif self._global.decentralized_infra:
+            primary = self._global.decentralized_infra[0]
+            mesh_hint = " / ".join(
+                filter(
+                    None,
+                    (
+                        primary.get("layer"),
+                        primary.get("name"),
+                    ),
+                )
+            )
+            logs.append(
+                "• global infra mesh ready: "
+                f"{mesh_hint or primary.get('name', 'mesh')} ({primary.get('status', '-')})"
+            )
         return slug, logs
 
     # ------------------------------------------------------------------
@@ -388,6 +402,49 @@ class DomainExpansionRuntime:
         if best_profile is None:
             return None, float("nan"), set()
         return best_profile, best_score, normalized_tags.intersection(best_profile.skill_tags)
+
+
+def _normalize_infrastructure(
+    payload: object,
+    context: str,
+    *,
+    require_layer: bool,
+) -> List[Dict[str, str]]:
+    if payload is None:
+        return []
+    if not isinstance(payload, list):
+        raise ValueError(f"{context} infrastructure must be an array")
+    normalized: List[Dict[str, str]] = []
+    for idx, infra_entry in enumerate(payload):
+        if not isinstance(infra_entry, dict):
+            raise ValueError(f"{context} infrastructure[{idx}] must be an object")
+        layer = str(infra_entry.get("layer", "")).strip()
+        name = str(infra_entry.get("name", "")).strip()
+        role = str(infra_entry.get("role", "")).strip()
+        status = str(infra_entry.get("status", "")).strip()
+        if require_layer and not layer:
+            raise ValueError(f"{context} infrastructure[{idx}] missing required fields")
+        if not name or not role or not status:
+            raise ValueError(f"{context} infrastructure[{idx}] missing required fields")
+        entry_norm: Dict[str, str] = {
+            "name": name,
+            "role": role,
+            "status": status,
+        }
+        if layer:
+            entry_norm["layer"] = layer
+        provider = infra_entry.get("provider")
+        if provider is not None:
+            provider_text = str(provider).strip()
+            if provider_text:
+                entry_norm["provider"] = provider_text
+        endpoint = infra_entry.get("endpoint") or infra_entry.get("uri")
+        if endpoint is not None:
+            endpoint_text = str(endpoint).strip()
+            if endpoint_text:
+                entry_norm["endpoint"] = endpoint_text
+        normalized.append(entry_norm)
+    return normalized
 
 
 def _normalize_address(value: object) -> Optional[str]:
