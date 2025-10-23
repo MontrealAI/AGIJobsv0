@@ -9,49 +9,59 @@ export const DeploymentsSchema = z.object({
   chainId: z.number(),
   cultureRegistry: z.string().optional(),
   selfPlayArena: z.string().optional(),
-  identityRegistry: z.string().optional()
+  identityRegistry: z.string().optional(),
+  jobRegistry: z.string().optional(),
+  stakeManager: z.string().optional(),
+  validationModule: z.string().optional()
 });
 
 export type DeploymentsRecord = z.infer<typeof DeploymentsSchema>;
 
 export const CultureConfigSchema = z.object({
+  network: z.string(),
   owner: z.object({
     address: z.string(),
     pauseGuardian: z.string().optional()
   }),
-  roles: z.object({
-    authors: z.array(z.string()).default([]),
-    teachers: z.array(z.string()).default([]),
-    students: z.array(z.string()).default([]),
-    validators: z.array(z.string()).default([]),
-    orchestrators: z.array(z.string()).default([])
-  }),
-  arena: z.object({
-    targetSuccessRate: z.number(),
-    minDifficulty: z.number(),
-    maxDifficulty: z.number(),
-    maxDifficultyStep: z.number(),
-    baseRewards: z.object({
-      teacher: z.string(),
-      student: z.string(),
-      validator: z.string()
-    }),
-    committeeSize: z.number(),
-    roundTimeout: z.number(),
-    validatorStake: z.string(),
-    elo: z
-      .object({
-        defaultRating: z.number(),
-        kFactor: z.number(),
-        floor: z.number().optional(),
-        ceiling: z.number().optional()
-      })
-      .default({ defaultRating: 1200, kFactor: 32 })
+  dependencies: z.object({
+    identityRegistry: z.string(),
+    jobRegistry: z.string(),
+    stakeManager: z.string(),
+    validationModule: z.string().optional(),
+    feePool: z.string().optional()
   }),
   culture: z.object({
     kinds: z.array(z.string()),
     maxCitations: z.number()
-  })
+  }),
+  arena: z.object({
+    teacherReward: z.string(),
+    studentReward: z.string(),
+    validatorReward: z.string(),
+    committeeSize: z.number(),
+    validatorStake: z.string(),
+    targetSuccessRateBps: z.number(),
+    maxDifficultyStep: z.number().default(1),
+    defaultDifficulty: z.number().default(1)
+  }),
+  orchestrators: z.array(z.string()).default([]),
+  roles: z
+    .object({
+      authors: z.array(z.string()).default([]),
+      teachers: z.array(z.string()).default([]),
+      students: z.array(z.string()).default([]),
+      validators: z.array(z.string()).default([]),
+      orchestrators: z.array(z.string()).default([])
+    })
+    .default({ authors: [], teachers: [], students: [], validators: [], orchestrators: [] }),
+  contracts: z
+    .object({
+      cultureRegistry: z.string().optional(),
+      selfPlayArena: z.string().optional()
+    })
+    .default({}),
+  seed: z.record(z.any()).optional(),
+  sampleRound: z.record(z.any()).optional()
 });
 
 export type CultureConfig = z.infer<typeof CultureConfigSchema>;
