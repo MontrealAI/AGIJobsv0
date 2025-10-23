@@ -8,6 +8,8 @@ import {
 import { ValidationRevealed } from '../generated/ValidationModule/ValidationModule';
 import {
   Job,
+  Phase6Domain,
+  Phase6GlobalConfig,
   ProtocolStats,
   Stake,
   StakeAggregate,
@@ -17,6 +19,7 @@ import {
 
 const ZERO = BigInt.zero();
 const PROTOCOL_ID = 'agi-jobs';
+const PHASE6_GLOBAL_ID = 'phase6-global';
 
 function safeDecrement(value: i32): i32 {
   return value > 0 ? value - 1 : 0;
@@ -340,4 +343,85 @@ export function handleValidatorVoted(event: ValidationRevealed): void {
   }
   touchProtocol(stats, event);
   stats.save();
+}
+
+function phase6DomainId(idValue: ethereum.Value): string {
+  return idValue.toBytes().toHexString();
+}
+
+function upsertPhase6Domain(id: string, event: ethereum.Event): Phase6Domain {
+  let domain = Phase6Domain.load(id);
+  if (domain == null) {
+    domain = new Phase6Domain(id);
+    domain.registeredAtBlock = event.block.number;
+    domain.registeredAtTimestamp = event.block.timestamp;
+  }
+  domain.updatedAtBlock = event.block.number;
+  domain.updatedAtTimestamp = event.block.timestamp;
+  return domain as Phase6Domain;
+}
+
+export function handlePhase6DomainRegistered(event: ethereum.Event): void {
+  const params = event.parameters;
+  const id = phase6DomainId(params[0].value);
+  const domain = new Phase6Domain(id);
+  domain.slug = params[1].value.toString();
+  domain.name = params[2].value.toString();
+  domain.metadataURI = params[3].value.toString();
+  domain.subgraphEndpoint = params[7].value.toString();
+  domain.validationModule = params[4].value.toAddress();
+  domain.dataOracle = params[5].value.toAddress();
+  domain.l2Gateway = params[6].value.toAddress();
+  domain.executionRouter = params[8].value.toAddress();
+  domain.heartbeatSeconds = params[9].value.toBigInt().toI32();
+  domain.active = params[10].value.toBoolean();
+  domain.manifestURI = params[3].value.toString();
+  domain.registeredAtBlock = event.block.number;
+  domain.registeredAtTimestamp = event.block.timestamp;
+  domain.updatedAtBlock = event.block.number;
+  domain.updatedAtTimestamp = event.block.timestamp;
+  domain.save();
+}
+
+export function handlePhase6DomainUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  const id = phase6DomainId(params[0].value);
+  const domain = upsertPhase6Domain(id, event);
+  domain.slug = params[1].value.toString();
+  domain.name = params[2].value.toString();
+  domain.metadataURI = params[3].value.toString();
+  domain.validationModule = params[4].value.toAddress();
+  domain.dataOracle = params[5].value.toAddress();
+  domain.l2Gateway = params[6].value.toAddress();
+  domain.subgraphEndpoint = params[7].value.toString();
+  domain.executionRouter = params[8].value.toAddress();
+  domain.heartbeatSeconds = params[9].value.toBigInt().toI32();
+  domain.active = params[10].value.toBoolean();
+  domain.manifestURI = params[3].value.toString();
+  domain.save();
+}
+
+export function handlePhase6DomainStatusChanged(event: ethereum.Event): void {
+  const params = event.parameters;
+  const id = phase6DomainId(params[0].value);
+  const domain = upsertPhase6Domain(id, event);
+  domain.active = params[1].value.toBoolean();
+  domain.save();
+}
+
+export function handlePhase6GlobalConfigUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  let global = Phase6GlobalConfig.load(PHASE6_GLOBAL_ID);
+  if (global == null) {
+    global = new Phase6GlobalConfig(PHASE6_GLOBAL_ID);
+  }
+  global.iotOracleRouter = params[0].value.toAddress();
+  global.defaultL2Gateway = params[1].value.toAddress();
+  global.didRegistry = params[2].value.toAddress();
+  global.treasuryBridge = params[3].value.toAddress();
+  global.l2SyncCadence = params[4].value.toBigInt().toI32();
+  global.manifestURI = params[5].value.toString();
+  global.updatedAtBlock = event.block.number;
+  global.updatedAtTimestamp = event.block.timestamp;
+  global.save();
 }

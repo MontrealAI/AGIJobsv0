@@ -1,0 +1,60 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" },
+      { "indexed": false, "internalType": "string", "name": "slug", "type": "string" },
+      { "indexed": false, "internalType": "string", "name": "name", "type": "string" },
+      { "indexed": false, "internalType": "string", "name": "metadataURI", "type": "string" },
+      { "indexed": false, "internalType": "address", "name": "validationModule", "type": "address" },
+      { "indexed": false, "internalType": "address", "name": "dataOracle", "type": "address" },
+      { "indexed": false, "internalType": "address", "name": "l2Gateway", "type": "address" },
+      { "indexed": false, "internalType": "string", "name": "subgraphEndpoint", "type": "string" },
+      { "indexed": false, "internalType": "address", "name": "executionRouter", "type": "address" },
+      { "indexed": false, "internalType": "uint64", "name": "heartbeatSeconds", "type": "uint64" },
+      { "indexed": false, "internalType": "bool", "name": "active", "type": "bool" }
+    ],
+    "name": "DomainRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" },
+      { "indexed": false, "internalType": "string", "name": "slug", "type": "string" },
+      { "indexed": false, "internalType": "string", "name": "name", "type": "string" },
+      { "indexed": false, "internalType": "string", "name": "metadataURI", "type": "string" },
+      { "indexed": false, "internalType": "address", "name": "validationModule", "type": "address" },
+      { "indexed": false, "internalType": "address", "name": "dataOracle", "type": "address" },
+      { "indexed": false, "internalType": "address", "name": "l2Gateway", "type": "address" },
+      { "indexed": false, "internalType": "string", "name": "subgraphEndpoint", "type": "string" },
+      { "indexed": false, "internalType": "address", "name": "executionRouter", "type": "address" },
+      { "indexed": false, "internalType": "uint64", "name": "heartbeatSeconds", "type": "uint64" },
+      { "indexed": false, "internalType": "bool", "name": "active", "type": "bool" }
+    ],
+    "name": "DomainUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "id", "type": "bytes32" },
+      { "indexed": false, "internalType": "bool", "name": "active", "type": "bool" }
+    ],
+    "name": "DomainStatusChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "iotOracleRouter", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "defaultL2Gateway", "type": "address" },
+      { "indexed": false, "internalType": "address", "name": "didRegistry", "type": "address" },
+      { "indexed": false, "internalType": "address", "name": "treasuryBridge", "type": "address" },
+      { "indexed": false, "internalType": "uint64", "name": "l2SyncCadence", "type": "uint64" },
+      { "indexed": false, "internalType": "string", "name": "manifestURI", "type": "string" }
+    ],
+    "name": "GlobalConfigUpdated",
+    "type": "event"
+  }
+]
