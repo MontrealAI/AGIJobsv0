@@ -89,10 +89,12 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     mapping(bytes32 => SentinelProfile) private _sentinels;
     mapping(bytes32 => bool) private _knownSentinel;
     bytes32[] private _sentinelIndex;
+    mapping(bytes32 => bytes32[]) private _sentinelDomainBindings;
 
     mapping(bytes32 => CapitalStream) private _capitalStreams;
     mapping(bytes32 => bool) private _knownStream;
     bytes32[] private _streamIndex;
+    mapping(bytes32 => bytes32[]) private _streamDomainBindings;
 
     /// ---------------------------------------------------------------------
     /// Errors
@@ -129,10 +131,16 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     event SentinelRegistered(bytes32 indexed id, SentinelProfile profile);
     event SentinelUpdated(bytes32 indexed id, SentinelProfile profile);
     event SentinelStatusChanged(bytes32 indexed id, bool active);
+    event SentinelDomainsUpdated(bytes32 indexed id, bytes32[] domainIds);
+    event SentinelRemoved(bytes32 indexed id);
 
     event CapitalStreamRegistered(bytes32 indexed id, CapitalStream stream);
     event CapitalStreamUpdated(bytes32 indexed id, CapitalStream stream);
     event CapitalStreamStatusChanged(bytes32 indexed id, bool active);
+    event CapitalStreamDomainsUpdated(bytes32 indexed id, bytes32[] domainIds);
+    event CapitalStreamRemoved(bytes32 indexed id);
+
+    event DomainRemoved(bytes32 indexed id);
 
     constructor(address initialGovernance) Governable(initialGovernance) {}
 
@@ -214,6 +222,16 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit DomainUpdated(id, config);
     }
 
+    function removeDomain(bytes32 id) external onlyGovernance {
+        if (!_knownDomain[id]) revert UnknownDomain(id);
+        delete _domains[id];
+        _knownDomain[id] = false;
+        _removeIndexEntry(_domainIndex, id);
+        _pruneBindings(_sentinelDomainBindings, _sentinelIndex, id);
+        _pruneBindings(_streamDomainBindings, _streamIndex, id);
+        emit DomainRemoved(id);
+    }
+
     function setDomainStatus(bytes32 id, bool active) external onlyGovernance {
         if (!_knownDomain[id]) revert UnknownDomain(id);
         ValueDomain storage domain = _domains[id];
@@ -287,6 +305,28 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit SentinelStatusChanged(id, active);
     }
 
+    function setSentinelDomains(bytes32 id, bytes32[] calldata domainIds) external onlyGovernance {
+        if (!_knownSentinel[id]) revert UnknownSentinel(id);
+        for (uint256 i = 0; i < domainIds.length; i++) {
+            if (!_knownDomain[domainIds[i]]) revert UnknownDomain(domainIds[i]);
+        }
+        delete _sentinelDomainBindings[id];
+        bytes32[] storage bindings = _sentinelDomainBindings[id];
+        for (uint256 i = 0; i < domainIds.length; i++) {
+            bindings.push(domainIds[i]);
+        }
+        emit SentinelDomainsUpdated(id, domainIds);
+    }
+
+    function removeSentinel(bytes32 id) external onlyGovernance {
+        if (!_knownSentinel[id]) revert UnknownSentinel(id);
+        delete _sentinels[id];
+        delete _sentinelDomainBindings[id];
+        _knownSentinel[id] = false;
+        _removeIndexEntry(_sentinelIndex, id);
+        emit SentinelRemoved(id);
+    }
+
     function listSentinels() external view returns (SentinelView[] memory) {
         uint256 length = _sentinelIndex.length;
         SentinelView[] memory result = new SentinelView[](length);
@@ -295,6 +335,11 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
             result[i] = SentinelView({id: id, profile: _sentinels[id]});
         }
         return result;
+    }
+
+    function getSentinelDomains(bytes32 id) external view returns (bytes32[] memory) {
+        if (!_knownSentinel[id]) revert UnknownSentinel(id);
+        return _sentinelDomainBindings[id];
     }
 
     /// ---------------------------------------------------------------------
@@ -331,6 +376,28 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit CapitalStreamStatusChanged(id, active);
     }
 
+    function setCapitalStreamDomains(bytes32 id, bytes32[] calldata domainIds) external onlyGovernance {
+        if (!_knownStream[id]) revert UnknownStream(id);
+        for (uint256 i = 0; i < domainIds.length; i++) {
+            if (!_knownDomain[domainIds[i]]) revert UnknownDomain(domainIds[i]);
+        }
+        delete _streamDomainBindings[id];
+        bytes32[] storage bindings = _streamDomainBindings[id];
+        for (uint256 i = 0; i < domainIds.length; i++) {
+            bindings.push(domainIds[i]);
+        }
+        emit CapitalStreamDomainsUpdated(id, domainIds);
+    }
+
+    function removeCapitalStream(bytes32 id) external onlyGovernance {
+        if (!_knownStream[id]) revert UnknownStream(id);
+        delete _capitalStreams[id];
+        delete _streamDomainBindings[id];
+        _knownStream[id] = false;
+        _removeIndexEntry(_streamIndex, id);
+        emit CapitalStreamRemoved(id);
+    }
+
     function listCapitalStreams() external view returns (CapitalStreamView[] memory) {
         uint256 length = _streamIndex.length;
         CapitalStreamView[] memory result = new CapitalStreamView[](length);
@@ -339,6 +406,11 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
             result[i] = CapitalStreamView({id: id, stream: _capitalStreams[id]});
         }
         return result;
+    }
+
+    function getCapitalStreamDomains(bytes32 id) external view returns (bytes32[] memory) {
+        if (!_knownStream[id]) revert UnknownStream(id);
+        return _streamDomainBindings[id];
     }
 
     /// ---------------------------------------------------------------------
@@ -401,5 +473,41 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
             }
         }
         return string(input);
+    }
+
+    function _removeIndexEntry(bytes32[] storage index, bytes32 id) private {
+        uint256 length = index.length;
+        for (uint256 i = 0; i < length; i++) {
+            if (index[i] == id) {
+                if (i != length - 1) {
+                    index[i] = index[length - 1];
+                }
+                index.pop();
+                break;
+            }
+        }
+    }
+
+    function _pruneBindings(
+        mapping(bytes32 => bytes32[]) storage bindings,
+        bytes32[] storage index,
+        bytes32 domainId
+    ) private {
+        uint256 length = index.length;
+        for (uint256 i = 0; i < length; i++) {
+            bytes32 key = index[i];
+            bytes32[] storage domains = bindings[key];
+            uint256 j = 0;
+            while (j < domains.length) {
+                if (domains[j] == domainId) {
+                    domains[j] = domains[domains.length - 1];
+                    domains.pop();
+                } else {
+                    unchecked {
+                        j++;
+                    }
+                }
+            }
+        }
     }
 }

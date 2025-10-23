@@ -40,7 +40,14 @@ function computeMetrics(config: any) {
       : domains.reduce((acc: number, d: any) => acc + Number(d.resilienceIndex ?? 0), 0) / domains.length;
   const guardianCoverageMinutes = sentinels.reduce((acc: number, s: any) => acc + Number(s.coverageSeconds ?? 0), 0) / 60;
   const annualBudget = streams.reduce((acc: number, s: any) => acc + Number(s.annualBudget ?? 0), 0);
-  return { totalMonthlyUSD, maxAutonomy, averageResilience, guardianCoverageMinutes, annualBudget };
+  const coverageSet = new Set<string>();
+  for (const sentinel of sentinels) {
+    for (const domain of sentinel.domains ?? []) {
+      coverageSet.add(String(domain).toLowerCase());
+    }
+  }
+  const coverageRatio = domains.length === 0 ? 0 : (coverageSet.size / domains.length) * 100;
+  return { totalMonthlyUSD, maxAutonomy, averageResilience, guardianCoverageMinutes, annualBudget, coverageRatio };
 }
 
 function usd(value: number) {
@@ -62,6 +69,10 @@ function formatAmount(value: any) {
   } catch (error) {
     return String(value ?? "0");
   }
+}
+
+function slugId(slug: string): string {
+  return keccak256(toUtf8Bytes(slug.toLowerCase()));
 }
 
 function mermaid(config: any) {
@@ -89,10 +100,29 @@ function calldata(config: any) {
     "function setSystemPause(address newPause)",
     "function registerDomain((string slug,string name,string metadataURI,address orchestrator,address capitalVault,address validatorModule,address policyKernel,uint64 heartbeatSeconds,uint256 tvlLimit,uint256 autonomyLevelBps,bool active) config)",
     "function registerSentinel((string slug,string name,string uri,address agent,uint64 coverageSeconds,uint256 sensitivityBps,bool active) profile)",
-    "function registerCapitalStream((string slug,string name,string uri,address vault,uint256 annualBudget,uint256 expansionBps,bool active) stream)"
+    "function registerCapitalStream((string slug,string name,string uri,address vault,uint256 annualBudget,uint256 expansionBps,bool active) stream)",
+    "function setSentinelDomains(bytes32 id, bytes32[] domainIds)",
+    "function setCapitalStreamDomains(bytes32 id, bytes32[] domainIds)",
+    "function removeDomain(bytes32 id)",
+    "function removeSentinel(bytes32 id)",
+    "function removeCapitalStream(bytes32 id)"
   ]);
 
   const global = config.global ?? {};
+  const firstDomain = config.domains?.[0];
+  const firstSentinel = config.sentinels?.[0];
+  const firstStream = config.capitalStreams?.[0];
+  const sentinelDomains = (config.sentinels ?? []).map((entry: any) => ({
+    slug: entry.slug,
+    id: slugId(String(entry.slug || "")),
+    domains: (entry.domains ?? []).map((domain: string) => slugId(String(domain || ""))),
+  }));
+  const streamDomains = (config.capitalStreams ?? []).map((entry: any) => ({
+    slug: entry.slug,
+    id: slugId(String(entry.slug || "")),
+    domains: (entry.domains ?? []).map((domain: string) => slugId(String(domain || ""))),
+  }));
+
   const tuples = {
     global: [
       global.treasury,
@@ -108,44 +138,52 @@ function calldata(config: any) {
     ],
     guardian: global.guardianCouncil,
     pause: global.systemPause,
-    domain: config.domains?.[0]
+    domain: firstDomain
       ? [
-          config.domains[0].slug,
-          config.domains[0].name,
-          config.domains[0].metadataURI,
-          config.domains[0].orchestrator,
-          config.domains[0].capitalVault,
-          config.domains[0].validatorModule,
-          config.domains[0].policyKernel,
-          BigInt(config.domains[0].heartbeatSeconds ?? 0),
-          BigInt(config.domains[0].tvlLimit ?? 0),
-          BigInt(config.domains[0].autonomyLevelBps ?? 0),
-          Boolean(config.domains[0].active),
+          firstDomain.slug,
+          firstDomain.name,
+          firstDomain.metadataURI,
+          firstDomain.orchestrator,
+          firstDomain.capitalVault,
+          firstDomain.validatorModule,
+          firstDomain.policyKernel,
+          BigInt(firstDomain.heartbeatSeconds ?? 0),
+          BigInt(firstDomain.tvlLimit ?? 0),
+          BigInt(firstDomain.autonomyLevelBps ?? 0),
+          Boolean(firstDomain.active),
         ]
       : undefined,
-    sentinel: config.sentinels?.[0]
+    sentinel: firstSentinel
       ? [
-          config.sentinels[0].slug,
-          config.sentinels[0].name,
-          config.sentinels[0].uri,
-          config.sentinels[0].agent,
-          BigInt(config.sentinels[0].coverageSeconds ?? 0),
-          BigInt(config.sentinels[0].sensitivityBps ?? 0),
-          Boolean(config.sentinels[0].active),
+          firstSentinel.slug,
+          firstSentinel.name,
+          firstSentinel.uri,
+          firstSentinel.agent,
+          BigInt(firstSentinel.coverageSeconds ?? 0),
+          BigInt(firstSentinel.sensitivityBps ?? 0),
+          Boolean(firstSentinel.active),
         ]
       : undefined,
-    stream: config.capitalStreams?.[0]
+    stream: firstStream
       ? [
-          config.capitalStreams[0].slug,
-          config.capitalStreams[0].name,
-          config.capitalStreams[0].uri,
-          config.capitalStreams[0].vault,
-          BigInt(config.capitalStreams[0].annualBudget ?? 0),
-          BigInt(config.capitalStreams[0].expansionBps ?? 0),
-          Boolean(config.capitalStreams[0].active),
+          firstStream.slug,
+          firstStream.name,
+          firstStream.uri,
+          firstStream.vault,
+          BigInt(firstStream.annualBudget ?? 0),
+          BigInt(firstStream.expansionBps ?? 0),
+          Boolean(firstStream.active),
         ]
       : undefined,
   };
+
+  const domainRemoval = firstDomain ? iface.encodeFunctionData("removeDomain", [slugId(String(firstDomain.slug || ""))]) : undefined;
+  const sentinelRemoval = firstSentinel
+    ? iface.encodeFunctionData("removeSentinel", [slugId(String(firstSentinel.slug || ""))])
+    : undefined;
+  const streamRemoval = firstStream
+    ? iface.encodeFunctionData("removeCapitalStream", [slugId(String(firstStream.slug || ""))])
+    : undefined;
 
   return {
     setGlobalParameters: iface.encodeFunctionData("setGlobalParameters", [tuples.global]),
@@ -154,6 +192,25 @@ function calldata(config: any) {
     registerDomain: tuples.domain ? iface.encodeFunctionData("registerDomain", [tuples.domain]) : undefined,
     registerSentinel: tuples.sentinel ? iface.encodeFunctionData("registerSentinel", [tuples.sentinel]) : undefined,
     registerCapitalStream: tuples.stream ? iface.encodeFunctionData("registerCapitalStream", [tuples.stream]) : undefined,
+    setSentinelDomains:
+      sentinelDomains.length > 0
+        ? iface.encodeFunctionData("setSentinelDomains", [sentinelDomains[0].id, sentinelDomains[0].domains])
+        : undefined,
+    setCapitalStreamDomains:
+      streamDomains.length > 0
+        ? iface.encodeFunctionData("setCapitalStreamDomains", [streamDomains[0].id, streamDomains[0].domains])
+        : undefined,
+    removeDomain: domainRemoval,
+    removeSentinel: sentinelRemoval,
+    removeCapitalStream: streamRemoval,
+    sentinelDomainCalls: sentinelDomains.map((entry: any) => ({
+      slug: entry.slug,
+      data: iface.encodeFunctionData("setSentinelDomains", [entry.id, entry.domains]),
+    })),
+    streamDomainCalls: streamDomains.map((entry: any) => ({
+      slug: entry.slug,
+      data: iface.encodeFunctionData("setCapitalStreamDomains", [entry.id, entry.domains]),
+    })),
   };
 }
 
@@ -192,6 +249,7 @@ function printDomainTable(config: any) {
   console.log(`Annual capital allocation: ${usd(metrics.annualBudget)}`);
   console.log(`Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
   console.log(`Guardian sentinel coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes per cycle`);
+  console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
   console.log(`Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
 
   banner("Governance control surface");
@@ -246,6 +304,18 @@ function printDomainTable(config: any) {
   const data = calldata(config);
   Object.entries(data).forEach(([label, payload]) => {
     if (!payload) return;
+    if (Array.isArray(payload)) {
+      payload
+        .filter((entry) => entry && typeof entry === "object" && entry.data)
+        .forEach((entry) => {
+          console.log(`  ${label} (${entry.slug}): ${entry.data}`);
+        });
+      return;
+    }
+    if (typeof payload === "object" && (payload as any).data) {
+      console.log(`  ${label}: ${(payload as any).data}`);
+      return;
+    }
     console.log(`  ${label}: ${payload}`);
   });
 

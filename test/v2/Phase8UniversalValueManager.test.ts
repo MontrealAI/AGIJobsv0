@@ -124,6 +124,16 @@ describe("Phase8UniversalValueManager", function () {
       "SentinelRegistered",
     );
 
+    await expect(manager.connect(governance).setSentinelDomains(sentinelId, [domainId]))
+      .to.emit(manager, "SentinelDomainsUpdated")
+      .withArgs(sentinelId, [domainId]);
+
+    expect(await manager.getSentinelDomains(sentinelId)).to.deep.equal([domainId]);
+
+    await expect(
+      manager.connect(governance).setSentinelDomains(sentinelId, [ethers.id("unknown-domain")]),
+    ).to.be.revertedWithCustomError(manager, "UnknownDomain");
+
     const updatedSentinel = { ...sentinelProfile, coverageSeconds: 90, sensitivityBps: 500, active: false };
     await expect(manager.connect(governance).updateSentinel(sentinelId, updatedSentinel)).to.emit(
       manager,
@@ -154,6 +164,16 @@ describe("Phase8UniversalValueManager", function () {
       "CapitalStreamRegistered",
     );
 
+    await expect(manager.connect(governance).setCapitalStreamDomains(streamId, [domainId]))
+      .to.emit(manager, "CapitalStreamDomainsUpdated")
+      .withArgs(streamId, [domainId]);
+
+    expect(await manager.getCapitalStreamDomains(streamId)).to.deep.equal([domainId]);
+
+    await expect(
+      manager.connect(governance).setCapitalStreamDomains(streamId, [ethers.id("unknown-domain")]),
+    ).to.be.revertedWithCustomError(manager, "UnknownDomain");
+
     const updatedStream = { ...stream, annualBudget: ethers.parseUnits("750000000", 6), active: false };
     await expect(manager.connect(governance).updateCapitalStream(streamId, updatedStream)).to.emit(
       manager,
@@ -167,6 +187,21 @@ describe("Phase8UniversalValueManager", function () {
     const streams = await manager.listCapitalStreams();
     expect(streams).to.have.lengthOf(1);
     expect(streams[0].id).to.equal(streamId);
+
+    await expect(manager.connect(governance).removeDomain(domainId)).to.emit(manager, "DomainRemoved");
+    expect(await manager.listDomains()).to.have.lengthOf(0);
+    expect(await manager.getSentinelDomains(sentinelId)).to.have.lengthOf(0);
+    expect(await manager.getCapitalStreamDomains(streamId)).to.have.lengthOf(0);
+
+    await expect(manager.connect(governance).removeSentinel(sentinelId))
+      .to.emit(manager, "SentinelRemoved")
+      .withArgs(sentinelId);
+    expect(await manager.listSentinels()).to.have.lengthOf(0);
+
+    await expect(manager.connect(governance).removeCapitalStream(streamId))
+      .to.emit(manager, "CapitalStreamRemoved")
+      .withArgs(streamId);
+    expect(await manager.listCapitalStreams()).to.have.lengthOf(0);
 
     const pauseData = pauseHarness.interface.encodeFunctionData("pauseAll", []);
     await expect(manager.connect(governance).forwardPauseCall(pauseData))
