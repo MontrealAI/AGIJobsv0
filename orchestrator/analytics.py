@@ -112,9 +112,13 @@ class AnalyticsEngine:
                 payload = json.loads(file.read_text(encoding="utf-8"))
             except json.JSONDecodeError as exc:  # pragma: no cover - invalid snapshot
                 raise AnalyticsError(f"Snapshot {file} is not valid JSON: {exc}") from exc
-            week = str(payload.get("week"))
-            if not week:
+            raw_week = payload.get("week")
+            if raw_week is None:
                 week = file.stem.split("-")[-1]
+            else:
+                week = str(raw_week).strip()
+                if not week:
+                    week = file.stem.split("-")[-1]
             yield week, payload
 
     def _load_snapshots(self) -> Tuple[Dict[str, Mapping[str, object]], Dict[str, Mapping[str, object]]]:
