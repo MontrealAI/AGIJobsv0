@@ -93,6 +93,9 @@ function parseCookies(rawHeader?: string): Record<string, string> {
     if (!key) continue;
     const name = key.trim();
     if (!name) continue;
+    if (name === '__proto__' || name === 'constructor' || name === 'prototype') {
+      continue;
+    }
     const value = rest.join('=').trim();
     cookies[name] = decodeURIComponent(value || '');
   }
