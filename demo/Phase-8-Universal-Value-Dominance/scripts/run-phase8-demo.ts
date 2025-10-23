@@ -123,9 +123,37 @@ function calldata(config: any) {
   ]);
 
   const global = config.global ?? {};
-  const firstDomain = config.domains?.[0];
-  const firstSentinel = config.sentinels?.[0];
-  const firstStream = config.capitalStreams?.[0];
+  const domainTuples = (config.domains ?? []).map((domain: any) => [
+    domain.slug,
+    domain.name,
+    domain.metadataURI,
+    domain.orchestrator,
+    domain.capitalVault,
+    domain.validatorModule,
+    domain.policyKernel,
+    BigInt(domain.heartbeatSeconds ?? 0),
+    BigInt(domain.tvlLimit ?? 0),
+    BigInt(domain.autonomyLevelBps ?? 0),
+    Boolean(domain.active),
+  ]);
+  const sentinelTuples = (config.sentinels ?? []).map((sentinel: any) => [
+    sentinel.slug,
+    sentinel.name,
+    sentinel.uri,
+    sentinel.agent,
+    BigInt(sentinel.coverageSeconds ?? 0),
+    BigInt(sentinel.sensitivityBps ?? 0),
+    Boolean(sentinel.active),
+  ]);
+  const streamTuples = (config.capitalStreams ?? []).map((stream: any) => [
+    stream.slug,
+    stream.name,
+    stream.uri,
+    stream.vault,
+    BigInt(stream.annualBudget ?? 0),
+    BigInt(stream.expansionBps ?? 0),
+    Boolean(stream.active),
+  ]);
   const plan = config.selfImprovement?.plan ?? {};
   const sentinelDomains = (config.sentinels ?? []).map((entry: any) => ({
     slug: entry.slug,
@@ -153,43 +181,6 @@ function calldata(config: any) {
     ],
     guardian: global.guardianCouncil,
     pause: global.systemPause,
-    domain: firstDomain
-      ? [
-          firstDomain.slug,
-          firstDomain.name,
-          firstDomain.metadataURI,
-          firstDomain.orchestrator,
-          firstDomain.capitalVault,
-          firstDomain.validatorModule,
-          firstDomain.policyKernel,
-          BigInt(firstDomain.heartbeatSeconds ?? 0),
-          BigInt(firstDomain.tvlLimit ?? 0),
-          BigInt(firstDomain.autonomyLevelBps ?? 0),
-          Boolean(firstDomain.active),
-        ]
-      : undefined,
-    sentinel: firstSentinel
-      ? [
-          firstSentinel.slug,
-          firstSentinel.name,
-          firstSentinel.uri,
-          firstSentinel.agent,
-          BigInt(firstSentinel.coverageSeconds ?? 0),
-          BigInt(firstSentinel.sensitivityBps ?? 0),
-          Boolean(firstSentinel.active),
-        ]
-      : undefined,
-    stream: firstStream
-      ? [
-          firstStream.slug,
-          firstStream.name,
-          firstStream.uri,
-          firstStream.vault,
-          BigInt(firstStream.annualBudget ?? 0),
-          BigInt(firstStream.expansionBps ?? 0),
-          Boolean(firstStream.active),
-        ]
-      : undefined,
     plan: [
       String(plan.planURI ?? ""),
       String(plan.planHash ?? "0x0000000000000000000000000000000000000000000000000000000000000000"),
@@ -203,21 +194,42 @@ function calldata(config: any) {
     plan && plan.cadenceSeconds
       ? BigInt(plan.lastExecutedAt ?? 0) + BigInt(plan.cadenceSeconds ?? 0)
       : undefined;
-  const domainRemoval = firstDomain ? iface.encodeFunctionData("removeDomain", [slugId(String(firstDomain.slug || ""))]) : undefined;
-  const sentinelRemoval = firstSentinel
-    ? iface.encodeFunctionData("removeSentinel", [slugId(String(firstSentinel.slug || ""))])
-    : undefined;
-  const streamRemoval = firstStream
-    ? iface.encodeFunctionData("removeCapitalStream", [slugId(String(firstStream.slug || ""))])
-    : undefined;
+  const registerDomainCalls = domainTuples.map((tuple: any, index: number) => ({
+    slug: config.domains[index]?.slug,
+    data: iface.encodeFunctionData("registerDomain", [tuple]),
+  }));
+  const registerSentinelCalls = sentinelTuples.map((tuple: any, index: number) => ({
+    slug: config.sentinels[index]?.slug,
+    data: iface.encodeFunctionData("registerSentinel", [tuple]),
+  }));
+  const registerStreamCalls = streamTuples.map((tuple: any, index: number) => ({
+    slug: config.capitalStreams[index]?.slug,
+    data: iface.encodeFunctionData("registerCapitalStream", [tuple]),
+  }));
+
+  const removeDomainCalls = (config.domains ?? []).map((domain: any) => ({
+    slug: domain.slug,
+    data: iface.encodeFunctionData("removeDomain", [slugId(String(domain.slug || ""))]),
+  }));
+  const removeSentinelCalls = (config.sentinels ?? []).map((sentinel: any) => ({
+    slug: sentinel.slug,
+    data: iface.encodeFunctionData("removeSentinel", [slugId(String(sentinel.slug || ""))]),
+  }));
+  const removeStreamCalls = (config.capitalStreams ?? []).map((stream: any) => ({
+    slug: stream.slug,
+    data: iface.encodeFunctionData("removeCapitalStream", [slugId(String(stream.slug || ""))]),
+  }));
 
   return {
     setGlobalParameters: iface.encodeFunctionData("setGlobalParameters", [tuples.global]),
     setGuardianCouncil: iface.encodeFunctionData("setGuardianCouncil", [tuples.guardian ?? "0x0000000000000000000000000000000000000000"]),
     setSystemPause: iface.encodeFunctionData("setSystemPause", [tuples.pause ?? "0x0000000000000000000000000000000000000000"]),
-    registerDomain: tuples.domain ? iface.encodeFunctionData("registerDomain", [tuples.domain]) : undefined,
-    registerSentinel: tuples.sentinel ? iface.encodeFunctionData("registerSentinel", [tuples.sentinel]) : undefined,
-    registerCapitalStream: tuples.stream ? iface.encodeFunctionData("registerCapitalStream", [tuples.stream]) : undefined,
+    registerDomain: registerDomainCalls[0]?.data,
+    registerSentinel: registerSentinelCalls[0]?.data,
+    registerCapitalStream: registerStreamCalls[0]?.data,
+    registerDomains: registerDomainCalls,
+    registerSentinels: registerSentinelCalls,
+    registerCapitalStreams: registerStreamCalls,
     setSentinelDomains:
       sentinelDomains.length > 0
         ? iface.encodeFunctionData("setSentinelDomains", [sentinelDomains[0].id, sentinelDomains[0].domains])
@@ -231,9 +243,12 @@ function calldata(config: any) {
       nextExecution && plan.lastReportURI
         ? iface.encodeFunctionData("recordSelfImprovementExecution", [nextExecution, plan.lastReportURI])
         : undefined,
-    removeDomain: domainRemoval,
-    removeSentinel: sentinelRemoval,
-    removeCapitalStream: streamRemoval,
+    removeDomain: removeDomainCalls[0]?.data,
+    removeSentinel: removeSentinelCalls[0]?.data,
+    removeCapitalStream: removeStreamCalls[0]?.data,
+    removeDomains: removeDomainCalls,
+    removeSentinels: removeSentinelCalls,
+    removeCapitalStreams: removeStreamCalls,
     sentinelDomainCalls: sentinelDomains.map((entry: any) => ({
       slug: entry.slug,
       data: iface.encodeFunctionData("setSentinelDomains", [entry.id, entry.domains]),

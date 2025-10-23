@@ -128,6 +128,12 @@ function main() {
     }
   }
 
+  const uncoveredDomains = config.domains.filter((domain) => !sentinelDomains.has(domain.slug.toLowerCase()));
+  if (uncoveredDomains.length > 0) {
+    const list = uncoveredDomains.map((domain) => domain.slug).join(", ");
+    throw new Error(`All domains require sentinel coverage — missing: ${list}`);
+  }
+
   for (const stream of config.capitalStreams) {
     for (const domain of stream.domains ?? []) {
       const normalized = domain.toLowerCase();
@@ -182,6 +188,7 @@ function main() {
   console.log(`  Capital streams: ${config.capitalStreams.length}`);
   console.log(`  Total sentinel coverage: ${sentinelCoverage}s`);
   console.log(`  Domains with sentinel coverage: ${sentinelDomains.size}`);
+  console.log("  Sentinel coverage guard: PASS");
   console.log(`  Self-improvement cadence: ${config.selfImprovement.plan.cadenceSeconds}s`);
   if (config.selfImprovement.plan.lastExecutedAt) {
     console.log(`  Last self-improvement execution: ${config.selfImprovement.plan.lastExecutedAt}`);
