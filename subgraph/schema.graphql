@@ -32,7 +32,52 @@ type Job @entity {
   rejections: Int!
   uri: String
   specHash: Bytes
+  domain: Domain
+  domainKey: Bytes
   votes: [ValidatorVote!]! @derivedFrom(field: "job")
+}
+
+type Domain @entity {
+  id: ID!
+  slug: String!
+  name: String!
+  metadataURI: String
+  credentialSchema: Bytes
+  l2Network: Bytes
+  dispatcher: Bytes
+  oracle: Bytes
+  bridge: Bytes
+  l2Gateway: Bytes
+  minStake: BigInt!
+  resilienceFloor: Int!
+  maxConcurrentJobs: Int!
+  requiresHumanReview: Boolean!
+  active: Boolean!
+  paused: Boolean!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+  jobs: [Job!]! @derivedFrom(field: "domain")
+  metric: DomainMetric
+}
+
+type DomainMetric @entity {
+  id: ID!
+  domain: Domain!
+  totalJobs: Int!
+  activeJobs: Int!
+  resilienceFloor: Int!
+  requiresHumanReview: Boolean!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+}
+
+type DomainRegistryState @entity {
+  id: ID!
+  paused: Boolean!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
 }
 
 type Stake @entity {

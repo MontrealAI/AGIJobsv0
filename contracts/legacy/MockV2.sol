@@ -12,6 +12,7 @@ import "../v2/interfaces/IDisputeModule.sol";
 import "../v2/interfaces/IValidationModule.sol";
 import "../v2/interfaces/ICertificateNFT.sol";
 import "../v2/interfaces/ITaxPolicy.sol";
+import "../v2/interfaces/IDomainRegistry.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MockStakeManager is IStakeManager {
@@ -267,6 +268,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     IReputationEngine public reputationEngine;
     ICertificateNFT public certificateNFT;
     IDisputeModule public disputeModule;
+    IDomainRegistry public domainRegistry;
 
     uint256 public jobStake;
     uint256 public maxJobReward;
@@ -278,6 +280,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     mapping(uint256 => uint256) public deadlines;
     mapping(uint256 => mapping(bytes32 => bool)) public burnReceiptMap;
     mapping(uint256 => bool) public reputationProcessed;
+    mapping(uint256 => uint256) private _jobDomains;
 
     event JobCreated(
         uint256 indexed jobId,
@@ -403,8 +406,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         return _jobs[jobId];
     }
 
-    function getSpecHash(uint256) external pure override returns (bytes32) {
-        return bytes32(0);
+    function getSpecHash(uint256 jobId) external view override returns (bytes32) {
+        return _jobs[jobId].specHash;
     }
 
     function getJobValidators(uint256)
@@ -470,7 +473,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             (decodeJobMetadata(_jobs[jobId].packedMetadata).burnConfirmed);
     }
 
-    function acknowledgeTaxPolicy() external {
+    function acknowledgeTaxPolicy() public {
         if (address(taxPolicy) != address(0)) {
             taxPolicy.acknowledge();
         }
@@ -513,6 +516,10 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         disputeModule = IDisputeModule(module);
     }
 
+    function setDomainRegistry(IDomainRegistry registry) external override {
+        domainRegistry = registry;
+    }
+
     function setIdentityRegistry(address) external override {}
 
     function setAgentRootNode(bytes32) external override {}
@@ -548,19 +555,21 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         validatorRewardPct = pct;
     }
 
-    function createJob(
+    function _createJobInternal(
+        address employer,
         uint256 reward,
         uint64 deadline,
-        bytes32 /*specHash*/,
-        string calldata uri
-    ) external override returns (uint256 jobId) {
+        bytes32 specHash,
+        string calldata uri,
+        uint8 agentTypes
+    ) internal returns (uint256 jobId) {
         require(
-            taxAcknowledgedVersion[msg.sender] == taxPolicyVersion,
+            taxAcknowledgedVersion[employer] == taxPolicyVersion,
             "acknowledge tax policy"
         );
         if (address(taxPolicy) != address(0)) {
             require(
-                taxPolicy.hasAcknowledged(msg.sender),
+                taxPolicy.hasAcknowledged(employer),
                 "acknowledge tax policy"
             );
         }
@@ -576,28 +585,133 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             status: Status.Created,
             success: false,
             burnConfirmed: false,
-            agentTypes: 0,
+            agentTypes: agentTypes,
             feePct: uint32(feePct),
             agentPct: 0,
             deadline: deadline,
             assignedAt: 0
         });
         _jobs[jobId] = Job({
-            employer: msg.sender,
+            employer: employer,
             agent: address(0),
             reward: uint128(reward),
             stake: uint96(jobStake),
             burnReceiptAmount: 0,
             uriHash: uriHash,
             resultHash: bytes32(0),
-            specHash: bytes32(0),
+            specHash: specHash,
             packedMetadata: _encodeMetadata(metadata)
         });
         deadlines[jobId] = deadline;
         if (address(_stakeManager) != address(0) && reward > 0) {
-            _stakeManager.lock(msg.sender, reward);
+            _stakeManager.lock(employer, reward);
         }
-        emit JobCreated(jobId, msg.sender, reward, deadline);
+        emit JobCreated(jobId, employer, reward, deadline);
+    }
+
+    function createJob(
+        uint256 reward,
+        uint64 deadline,
+        bytes32 specHash,
+        string calldata uri
+    ) external override returns (uint256 jobId) {
+        return
+            _createJobInternal(
+                msg.sender,
+                reward,
+                deadline,
+                specHash,
+                uri,
+                0
+            );
+    }
+
+    function createDomainJob(
+        uint256 reward,
+        uint64 deadline,
+        bytes32 specHash,
+        string calldata uri,
+        uint256 domainId
+    ) public override returns (uint256 jobId) {
+        jobId = _createJobInternal(
+            msg.sender,
+            reward,
+            deadline,
+            specHash,
+            uri,
+            0
+        );
+        _jobDomains[jobId] = domainId;
+    }
+
+    function createDomainJobWithAgentTypes(
+        uint256 reward,
+        uint64 deadline,
+        uint8 agentTypes,
+        bytes32 specHash,
+        string calldata uri,
+        uint256 domainId
+    ) public override returns (uint256 jobId) {
+        jobId = _createJobInternal(
+            msg.sender,
+            reward,
+            deadline,
+            specHash,
+            uri,
+            agentTypes
+        );
+        _jobDomains[jobId] = domainId;
+    }
+
+    function acknowledgeAndCreateDomainJob(
+        uint256 reward,
+        uint64 deadline,
+        bytes32 specHash,
+        string calldata uri,
+        uint256 domainId
+    ) external override returns (uint256 jobId) {
+        acknowledgeTaxPolicy();
+        return createDomainJob(reward, deadline, specHash, uri, domainId);
+    }
+
+    function acknowledgeAndCreateDomainJobWithAgentTypes(
+        uint256 reward,
+        uint64 deadline,
+        uint8 agentTypes,
+        bytes32 specHash,
+        string calldata uri,
+        uint256 domainId
+    ) external override returns (uint256 jobId) {
+        acknowledgeTaxPolicy();
+        return
+            createDomainJobWithAgentTypes(
+                reward,
+                deadline,
+                agentTypes,
+                specHash,
+                uri,
+                domainId
+            );
+    }
+
+    function overrideJobDomain(uint256 jobId, uint256 domainId) external override {
+        _jobDomains[jobId] = domainId;
+    }
+
+    function jobDomain(uint256 jobId) external view override returns (uint256) {
+        return _jobDomains[jobId];
+    }
+
+    function jobDomainDetails(uint256 jobId)
+        external
+        view
+        override
+        returns (IDomainRegistry.DomainView memory)
+    {
+        uint256 domainId = _jobDomains[jobId];
+        require(address(domainRegistry) != address(0), "domain registry");
+        require(domainId != 0, "domain not set");
+        return domainRegistry.getDomain(domainId);
     }
 
     function applyForJob(

@@ -2,11 +2,36 @@
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "uint256", "name": "jobId", "type": "uint256" },
-      { "indexed": true, "internalType": "address", "name": "validator", "type": "address" },
-      { "indexed": false, "internalType": "bool", "name": "approve", "type": "bool" },
-      { "indexed": false, "internalType": "bytes32", "name": "burnTxHash", "type": "bytes32" },
-      { "indexed": false, "internalType": "string", "name": "subdomain", "type": "string" }
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "jobId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "validator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "approve",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "burnTxHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "subdomain",
+        "type": "string"
+      }
     ],
     "name": "ValidationRevealed",
     "type": "event"

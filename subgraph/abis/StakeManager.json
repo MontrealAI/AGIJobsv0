@@ -2,9 +2,24 @@
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
-      { "indexed": true, "internalType": "uint8", "name": "role", "type": "uint8" },
-      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "enum StakeManager.Role",
+        "name": "role",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
     ],
     "name": "StakeDeposited",
     "type": "event"
@@ -12,15 +27,60 @@
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
-      { "indexed": false, "internalType": "uint8", "name": "role", "type": "uint8" },
-      { "indexed": true, "internalType": "address", "name": "employer", "type": "address" },
-      { "indexed": true, "internalType": "address", "name": "treasury", "type": "address" },
-      { "indexed": false, "internalType": "uint256", "name": "employerShare", "type": "uint256" },
-      { "indexed": false, "internalType": "uint256", "name": "treasuryShare", "type": "uint256" },
-      { "indexed": false, "internalType": "uint256", "name": "operatorShare", "type": "uint256" },
-      { "indexed": false, "internalType": "uint256", "name": "validatorShare", "type": "uint256" },
-      { "indexed": false, "internalType": "uint256", "name": "burnShare", "type": "uint256" }
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum StakeManager.Role",
+        "name": "role",
+        "type": "uint8"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "employer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "treasury",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "employerShare",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "treasuryShare",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "operatorShare",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "validatorShare",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "burnShare",
+        "type": "uint256"
+      }
     ],
     "name": "StakeSlashed",
     "type": "event"

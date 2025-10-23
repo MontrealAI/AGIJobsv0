@@ -16,6 +16,8 @@ dataSources:
       entities:
         - Job
         - ProtocolStats
+        - Domain
+        - DomainMetric
       abis:
         - name: JobRegistry
           file: ./abis/JobRegistry.json
@@ -24,6 +26,10 @@ dataSources:
           handler: handleJobCreated
         - event: JobFinalized(indexed uint256,indexed address)
           handler: handleJobFinalized
+        - event: JobDomainTagged(indexed uint256,indexed uint256,indexed bytes32,string,address,address,address,address,bytes32,uint96,uint32,bool)
+          handler: handleJobDomainTagged
+        - event: JobDomainCleared(indexed uint256)
+          handler: handleJobDomainCleared
       file: ./src/mapping.ts
   - kind: ethereum
     name: StakeManager
@@ -71,4 +77,43 @@ dataSources:
       eventHandlers:
         - event: ValidationRevealed(indexed uint256,indexed address,bool,bytes32,string)
           handler: handleValidatorVoted
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: DomainRegistry
+    network: hardhat
+    source:
+      abi: DomainRegistry
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Domain
+        - DomainMetric
+        - DomainRegistryState
+      abis:
+        - name: DomainRegistry
+          file: ./abis/DomainRegistry.json
+      eventHandlers:
+        - event: DomainRegistered(indexed uint256,string,string)
+          handler: handleDomainRegistered
+        - event: DomainMetadataUpdated(indexed uint256,string,string,bytes32)
+          handler: handleDomainMetadataUpdated
+        - event: DomainRuntimeUpdated(indexed uint256,address,address,address,address,bytes32)
+          handler: handleDomainRuntimeUpdated
+        - event: DomainCapsUpdated(indexed uint256,uint96,uint32,uint32,bool)
+          handler: handleDomainCapsUpdated
+        - event: DomainStatusUpdated(indexed uint256,bool)
+          handler: handleDomainStatusUpdated
+        - event: DomainPaused(indexed uint256)
+          handler: handleDomainPaused
+        - event: DomainResumed(indexed uint256)
+          handler: handleDomainResumed
+        - event: SlugReassigned(indexed uint256,string)
+          handler: handleSlugReassigned
+        - event: Paused(address)
+          handler: handleRegistryPaused
+        - event: Unpaused(address)
+          handler: handleRegistryUnpaused
       file: ./src/mapping.ts
