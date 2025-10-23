@@ -1,0 +1,4 @@
+packages:
+  - backend/arena-orchestrator
+  - indexers/culture-graph-indexer
+  - apps/culture-studio

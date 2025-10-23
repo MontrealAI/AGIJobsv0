@@ -1,0 +1,32 @@
+{
+  "name": "culture-demo",
+  "private": true,
+  "packageManager": "pnpm@10.5.2",
+  "scripts": {
+    "lint": "pnpm -r run lint",
+    "lint:fix": "pnpm -r run lint -- --fix",
+    "format": "pnpm -r run format",
+    "test:contracts": "pnpm exec forge test --ffi --gas-report",
+    "test:contracts:coverage": "pnpm exec forge coverage --report lcov --report summary",
+    "test:contracts:hardhat": "pnpm exec hardhat test --config hardhat.config.ts",
+    "test:contracts:coverage:hardhat": "pnpm exec hardhat coverage --config hardhat.coverage.config.ts",
+    "test:services": "pnpm -r --filter ./backend/arena-orchestrator test:coverage && pnpm -r --filter ./indexers/culture-graph-indexer test:coverage && pnpm -r --filter ./apps/culture-studio test:coverage",
+    "test:e2e": "pnpm run e2e:compose",
+    "e2e:compose": "docker compose -f docker-compose.yml --profile setup up --build -d culture-chain culture-ipfs && docker compose -f docker-compose.yml --profile setup run --rm culture-contracts && docker compose -f docker-compose.yml up -d culture-orchestrator culture-indexer culture-studio && pnpm exec cypress run --config-file cypress.config.ts",
+    "e2e:down": "docker compose -f docker-compose.yml down -v",
+    "check:coverage": "node scripts/check-coverage-thresholds.mjs",
+    "check:budgets": "pnpm exec ts-node --project tsconfig.json scripts/check-budgets.ts",
+    "test": "pnpm run lint && pnpm run test:contracts && pnpm run test:contracts:hardhat && pnpm run test:services && pnpm run check:coverage && pnpm run check:budgets"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "cypress": "^13.15.0",
+    "hardhat": "^2.26.1",
+    "hardhat-contract-sizer": "^2.10.0",
+    "hardhat-gas-reporter": "^2.3.0",
+    "solhint": "^6.0.0",
+    "solidity-coverage": "^0.8.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
