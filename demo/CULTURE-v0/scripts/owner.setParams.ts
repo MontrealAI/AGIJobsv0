@@ -34,14 +34,19 @@ async function configureCultureParameters(cultureAddress: string, wallet: ethers
   } else {
     console.log('ℹ️  Max citations already matches configuration.');
   }
+  const pendingKinds: string[] = [];
   for (const kind of config.culture.kinds) {
     const allowed = await culture.isAllowedKind(kind);
-    if (allowed) {
-      continue;
+    if (!allowed) {
+      pendingKinds.push(kind);
     }
-    const tx = await culture.setAllowedKind(kind, true);
+  }
+  if (pendingKinds.length > 0) {
+    const tx = await culture.setAllowedKinds(pendingKinds, true);
     await tx.wait();
-    console.log(`✅ Enabled kind '${kind}'`);
+    console.log(`✅ Enabled ${pendingKinds.length} artifact kinds`);
+  } else {
+    console.log('ℹ️  All configured kinds already enabled.');
   }
 }
 
@@ -52,9 +57,9 @@ async function configureArenaParameters(arenaAddress: string, wallet: ethers.Wal
   const currentTeacher = await arena.baseTeacherReward();
   const currentStudent = await arena.baseStudentReward();
   const currentValidator = await arena.baseValidatorReward();
-  const desiredTeacher = BigInt(config.arena.baseRewards.teacher);
-  const desiredStudent = BigInt(config.arena.baseRewards.student);
-  const desiredValidator = BigInt(config.arena.baseRewards.validator);
+  const desiredTeacher = BigInt(config.arena.teacherReward);
+  const desiredStudent = BigInt(config.arena.studentReward);
+  const desiredValidator = BigInt(config.arena.validatorReward);
 
   if (
     currentTeacher !== desiredTeacher ||
@@ -81,13 +86,23 @@ async function configureArenaParameters(arenaAddress: string, wallet: ethers.Wal
   }
 
   const targetSuccessRate = await arena.targetSuccessRateBps();
-  const desiredSuccessRate = BigInt(Math.round(config.arena.targetSuccessRate * 10_000));
+  const desiredSuccessRate = BigInt(config.arena.targetSuccessRateBps);
   if (targetSuccessRate !== desiredSuccessRate) {
     const tx = await arena.setTargetSuccessRateBps(desiredSuccessRate);
     await tx.wait();
     console.log(`✅ Updated target success rate to ${desiredSuccessRate} bps`);
   } else {
     console.log('ℹ️  Target success rate already aligned');
+  }
+
+  const currentMaxStep = await arena.maxDifficultyStep();
+  const desiredMaxStep = BigInt(config.arena.maxDifficultyStep);
+  if (currentMaxStep !== desiredMaxStep) {
+    const tx = await arena.setMaxDifficultyStep(desiredMaxStep);
+    await tx.wait();
+    console.log(`✅ Updated max difficulty step to ${desiredMaxStep}`);
+  } else {
+    console.log('ℹ️  Max difficulty step already aligned');
   }
 }
 

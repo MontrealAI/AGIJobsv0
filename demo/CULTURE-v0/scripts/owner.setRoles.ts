@@ -23,6 +23,7 @@ const ROLE_HASHES = {
   student: ethers.id('STUDENT_ROLE'),
   validator: ethers.id('VALIDATOR_ROLE')
 };
+const RELAYER_ROLE = ethers.id('RELAYER_ROLE');
 
 const IDENTITY_ABI = [
   'function setRole(bytes32 role, address account, bool allowed) external',
@@ -71,12 +72,12 @@ async function configureOrchestrators(arenaAddress: string, wallet: ethers.Walle
   const artifact = await loadContractArtifact(ARENA_ARTIFACT);
   const arena = new ethers.Contract(arenaAddress, artifact.abi, wallet);
   for (const orchestrator of orchestrators) {
-    const already = await arena.orchestrators(orchestrator);
+    const already = await arena.hasRole(RELAYER_ROLE, orchestrator);
     if (already) {
       console.log(`ℹ️  Orchestrator ${orchestrator} already authorised.`);
       continue;
     }
-    const tx = await arena.setOrchestrator(orchestrator, true);
+    const tx = await arena.setRelayerAuthorization(orchestrator, true);
     await tx.wait();
     console.log(`✅ Added orchestrator ${orchestrator}`);
   }
@@ -95,7 +96,7 @@ async function main() {
   console.log(`🔐 Executing owner role configuration with ${wallet.address}`);
 
   await configureIdentity(addresses.identityRegistry ?? ethers.ZeroAddress, wallet, config);
-  await configureOrchestrators(env.SELF_PLAY_ARENA_ADDRESS, wallet, config.roles.orchestrators);
+  await configureOrchestrators(env.SELF_PLAY_ARENA_ADDRESS, wallet, config.orchestrators ?? []);
 }
 
 main().catch((error) => {

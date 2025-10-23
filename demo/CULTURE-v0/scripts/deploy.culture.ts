@@ -30,7 +30,14 @@ async function main() {
   const wallet = new ethers.Wallet(env.DEPLOYER_PRIVATE_KEY, provider);
 
   console.log(`📦 Deploying CULTURE stack from ${wallet.address}`);
-  const identityRegistry = parseAddressesBlob(env.AGI_JOBS_CORE_ADDRESSES).identityRegistry ?? ethers.ZeroAddress;
+  const overrides = parseAddressesBlob(env.AGI_JOBS_CORE_ADDRESSES);
+  const identityRegistry = overrides.identityRegistry ?? config.dependencies.identityRegistry;
+  const jobRegistry = overrides.jobRegistry ?? config.dependencies.jobRegistry;
+  const stakeManager = overrides.stakeManager ?? config.dependencies.stakeManager;
+  const validationModule = overrides.validationModule ?? config.dependencies.validationModule;
+  if (!identityRegistry || !jobRegistry || !stakeManager || !validationModule) {
+    throw new Error('IdentityRegistry, JobRegistry, StakeManager, and ValidationModule addresses must be configured.');
+  }
 
   const cultureArtifact = await loadContractArtifact(CULTURE_ARTIFACT);
   const cultureFactory = new ethers.ContractFactory(cultureArtifact.abi, cultureArtifact.bytecode, wallet);
@@ -48,13 +55,20 @@ async function main() {
   const arenaFactory = new ethers.ContractFactory(arenaArtifact.abi, arenaArtifact.bytecode, wallet);
   const arena = await arenaFactory.deploy(
     config.owner.address,
+    config.orchestrators[0] ?? env.OWNER_ADDRESS,
     identityRegistry,
-    config.arena.baseRewards.teacher,
-    config.arena.baseRewards.student,
-    config.arena.baseRewards.validator,
+    jobRegistry,
+    stakeManager,
+    validationModule,
     config.arena.committeeSize,
-    config.arena.validatorStake,
-    Math.round(config.arena.targetSuccessRate * 10_000)
+    BigInt(config.arena.validatorStake),
+    {
+      teacher: BigInt(config.arena.teacherReward),
+      student: BigInt(config.arena.studentReward),
+      validator: BigInt(config.arena.validatorReward)
+    },
+    config.arena.targetSuccessRateBps,
+    config.arena.maxDifficultyStep
   );
   await arena.waitForDeployment();
   const arenaAddress = await arena.getAddress();
@@ -66,7 +80,10 @@ async function main() {
     chainId: await wallet.provider.getChainId(),
     cultureRegistry: cultureAddress,
     selfPlayArena: arenaAddress,
-    identityRegistry
+    identityRegistry,
+    jobRegistry,
+    stakeManager,
+    validationModule
   });
   console.log(`📝 Deployment manifest written to ${outputPath}`);
 

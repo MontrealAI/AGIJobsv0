@@ -8,6 +8,7 @@
     "identityRegistry": "0x1111111111111111111111111111111111111111",
     "jobRegistry": "0x2222222222222222222222222222222222222222",
     "stakeManager": "0x3333333333333333333333333333333333333333",
+    "validationModule": "0x5555555555555555555555555555555555555555",
     "feePool": "0x4444444444444444444444444444444444444444"
   },
   "culture": {
@@ -21,6 +22,7 @@
     "committeeSize": 3,
     "validatorStake": "2000000000000000000",
     "targetSuccessRateBps": 6500,
+    "maxDifficultyStep": 5,
     "defaultDifficulty": 5
   },
   "orchestrators": [

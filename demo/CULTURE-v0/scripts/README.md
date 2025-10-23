@@ -11,6 +11,8 @@ al.json`, and patches `.env` so downstream services can boot without manual edit
 ze, and thermostat targets) from `config/culture.json`. |
 | `owner.setRoles.ts` | Grants author/teacher/student/validator roles in the identity registry and whitelists orchestrator addre
 sses. |
+| `register.contracts.ts` | Verifies deployed contract bytecode on the target RPC and records the addresses in `config/culture.jso
+n`. |
 | `seed.culture.ts` | Mints the sample artifacts defined in `data/seed-artifacts.json` and primes the indexer via its admin API. |
 | `export.weekly.ts` | Generates reproducible weekly reports from the JSON exports in `data/analytics/`, writing Markdown files
  to `reports/`. |

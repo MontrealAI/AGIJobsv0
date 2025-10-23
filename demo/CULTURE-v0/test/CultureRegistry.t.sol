@@ -226,4 +226,28 @@ contract CultureRegistryTest is Test {
         vm.prank(author);
         registry.cite(artifactId, bogusId);
     }
+
+    function testFuzzCitationChain(uint8 depthRaw) public {
+        uint256 depth = bound(uint256(depthRaw), 1, 12);
+        uint256 parentId = 0;
+        for (uint256 i = 0; i < depth; i++) {
+            string memory cid = string(abi.encodePacked("cid://node-", vm.toString(i)));
+            uint256[] memory cites = parentId == 0 ? new uint256[](0) : _single(parentId);
+            vm.prank(author);
+            parentId = registry.mintArtifact("book", cid, parentId, cites);
+        }
+
+        CultureRegistry.ArtifactView memory lastArtifact = registry.getArtifact(parentId);
+        if (depth == 1) {
+            assertEq(lastArtifact.cites.length, 0);
+        } else {
+            assertEq(lastArtifact.cites.length, 1);
+            assertLt(lastArtifact.cites[0], parentId);
+        }
+    }
+
+    function _single(uint256 value) internal pure returns (uint256[] memory arr) {
+        arr = new uint256[](1);
+        arr[0] = value;
+    }
 }
