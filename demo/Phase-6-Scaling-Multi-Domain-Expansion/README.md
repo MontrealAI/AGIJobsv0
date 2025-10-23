@@ -12,6 +12,7 @@
 * **Bullet-proof governance** – every parameter is updatable by the contract owner (timelock/multisig) including emergency pause delegates and cross-chain bridges.
 * **CI as a guardian** – the `ci (v2) / Phase 6 readiness` job enforces configuration drift detection on every PR and on `main`.
 * **Resilience telemetry** – the demo computes average/min/max resilience, sentinel coverage, and value flow across finance, health, logistics, climate, and the new education lattice.
+* **Mesh-level infrastructure clarity** – a new decentralized infra registry renders every Layer-2, storage, identity, oracle, and compute touchpoint for Phase 6 so governance can audit the rails instantly.
 
 ---
 
@@ -87,6 +88,16 @@ The Graph mapping indexes the new events so dashboards, analytics, and governanc
 * Each event (`DomainRegistered`, `DomainUpdated`, `DomainStatusChanged`, `GlobalConfigUpdated`) updates the store instantly.
 
 These additions power UI cards, CI validation, and off-chain monitoring (e.g., the Resilience Index).
+
+---
+
+## 🕸️ Decentralized infrastructure mesh
+
+* `config/domains.phase6.json` now includes a **global `decentralizedInfra` array** and per-domain `infrastructure` inventories. Each entry captures layer, provider, role, status, and optional endpoint.
+* `scripts/run-phase6-demo.ts` surfaces mesh telemetry – global integration counts, per-domain touchpoints, and copy-paste friendly summaries for multi-sig review.
+* `index.html` renders the infra mesh alongside bridge plans so non-technical operators see exactly which L2s, storage rails, DID registries, and compute meshes come online.
+* `scripts/ci-check.mjs` enforces structural integrity: at least three integrations per domain and valid metadata for every mesh element.
+* `orchestrator/extensions/phase6.py` consumes the infra map to annotate runtime logs (`infra mesh: Layer-2:Linea(active)`) and to expose integration hints to IoT signal handlers.
 
 ---
 

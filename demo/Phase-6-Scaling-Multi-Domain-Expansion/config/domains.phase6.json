@@ -7,7 +7,33 @@
     "treasuryBridge": "0x4444444444444444444444444444444444444444",
     "systemPause": "0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
     "escalationBridge": "0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
-    "l2SyncCadence": 180
+    "l2SyncCadence": 180,
+    "decentralizedInfra": [
+      {
+        "name": "EigenLayer Risk Shield AVS",
+        "role": "Continuously scores cross-domain performance and streams slashable alerts to governance",
+        "status": "active",
+        "endpoint": "https://mesh.agi.jobs/eigenlayer-risk-shield"
+      },
+      {
+        "name": "Filecoin Saturn Compute Mesh",
+        "role": "Distributed compute and state channels for domain-specific AI copilots",
+        "status": "ready",
+        "endpoint": "https://mesh.agi.jobs/filecoin-saturn"
+      },
+      {
+        "name": "Arweave / IPFS Hybrid Archive",
+        "role": "Immutable manifest + verifiable credential anchor for Phase 6 manifests",
+        "status": "active",
+        "endpoint": "ar://phase6/manifest"
+      },
+      {
+        "name": "Lit Protocol Threshold Control",
+        "role": "Automated pause + escalation key ceremony synced with the Phase6ExpansionManager",
+        "status": "armed",
+        "endpoint": "https://mesh.agi.jobs/lit-threshold"
+      }
+    ]
   },
   "domains": [
     {
@@ -20,8 +46,17 @@
       "oracle": "0x6666666666666666666666666666666666666666",
       "executionRouter": "0x7777777777777777777777777777777777777777",
       "heartbeatSeconds": 90,
-      "skillTags": ["finance", "risk", "credit", "defi"],
-      "capabilities": { "credit": 4.0, "treasury": 3.5, "defi": 3.0 },
+      "skillTags": [
+        "finance",
+        "risk",
+        "credit",
+        "defi"
+      ],
+      "capabilities": {
+        "credit": 4.0,
+        "treasury": 3.5,
+        "defi": 3.0
+      },
       "priority": 95,
       "metadata": {
         "domain": "Capital markets synthesis, real-time liquidity engineering",
@@ -31,7 +66,36 @@
         "uptime": "99.982%",
         "valueFlowMonthlyUSD": 28400000000,
         "valueFlowDisplay": "$28.4B"
-      }
+      },
+      "infrastructure": [
+        {
+          "layer": "Settlement",
+          "name": "Ethereum Mainnet",
+          "role": "Final value settlement + treasury escrow",
+          "status": "anchor"
+        },
+        {
+          "layer": "Layer-2",
+          "name": "Linea",
+          "role": "High-frequency trade routing + compliance attestations",
+          "status": "active",
+          "endpoint": "https://linea.build"
+        },
+        {
+          "layer": "Storage",
+          "name": "Arweave",
+          "role": "Immutable portfolio manifests & pricing curves",
+          "status": "active",
+          "endpoint": "ar://phase6/finance"
+        },
+        {
+          "layer": "Compute",
+          "name": "EigenLayer AVS",
+          "role": "On-demand stress testing + liquidation sentinels",
+          "status": "ready",
+          "endpoint": "https://avs.agi.jobs/finance"
+        }
+      ]
     },
     {
       "slug": "health",
@@ -43,8 +107,16 @@
       "oracle": "0x9999999999999999999999999999999999999999",
       "executionRouter": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "heartbeatSeconds": 120,
-      "skillTags": ["healthcare", "diagnostics", "compliance", "bio"],
-      "capabilities": { "diagnostics": 4.5, "compliance": 4.0 },
+      "skillTags": [
+        "healthcare",
+        "diagnostics",
+        "compliance",
+        "bio"
+      ],
+      "capabilities": {
+        "diagnostics": 4.5,
+        "compliance": 4.0
+      },
       "priority": 92,
       "metadata": {
         "domain": "Precision diagnostics, clinical validation, regulatory co-pilots",
@@ -54,7 +126,36 @@
         "uptime": "99.961%",
         "valueFlowMonthlyUSD": 18600000000,
         "valueFlowDisplay": "$18.6B"
-      }
+      },
+      "infrastructure": [
+        {
+          "layer": "Settlement",
+          "name": "Ethereum Mainnet",
+          "role": "Clinical payout + credential settlement",
+          "status": "anchor"
+        },
+        {
+          "layer": "Layer-2",
+          "name": "Arbitrum One",
+          "role": "Low-latency care coordination and model fine-tuning",
+          "status": "active",
+          "endpoint": "https://arbitrum.foundation"
+        },
+        {
+          "layer": "Storage",
+          "name": "Ceramic DID Graph",
+          "role": "Encrypted patient DID wallets + verifiable credentials",
+          "status": "active",
+          "endpoint": "https://ceramic.network"
+        },
+        {
+          "layer": "Compute",
+          "name": "Filecoin Saturn",
+          "role": "Federated radiology model execution",
+          "status": "ready",
+          "endpoint": "https://saturn.tech/health"
+        }
+      ]
     },
     {
       "slug": "logistics",
@@ -66,8 +167,18 @@
       "oracle": "0xcccccccccccccccccccccccccccccccccccccccc",
       "executionRouter": "0xdddddddddddddddddddddddddddddddddddddddd",
       "heartbeatSeconds": 75,
-      "skillTags": ["logistics", "iot", "supply", "routing", "manufacturing"],
-      "capabilities": { "routing": 4.2, "supply": 4.0, "manufacturing": 3.8 },
+      "skillTags": [
+        "logistics",
+        "iot",
+        "supply",
+        "routing",
+        "manufacturing"
+      ],
+      "capabilities": {
+        "routing": 4.2,
+        "supply": 4.0,
+        "manufacturing": 3.8
+      },
       "priority": 94,
       "metadata": {
         "domain": "Planetary logistics, IoT coordination, smart city fulfillment",
@@ -77,7 +188,36 @@
         "uptime": "99.947%",
         "valueFlowMonthlyUSD": 22400000000,
         "valueFlowDisplay": "$22.4B"
-      }
+      },
+      "infrastructure": [
+        {
+          "layer": "Settlement",
+          "name": "Ethereum Mainnet",
+          "role": "Escrow for freight commitments",
+          "status": "anchor"
+        },
+        {
+          "layer": "Layer-2",
+          "name": "Base",
+          "role": "Route auctions + IoT event batching",
+          "status": "active",
+          "endpoint": "https://base.org"
+        },
+        {
+          "layer": "Oracle",
+          "name": "Chainlink CCIP",
+          "role": "Global shipment telemetry & compliance feeds",
+          "status": "active",
+          "endpoint": "https://chain.link"
+        },
+        {
+          "layer": "Compute",
+          "name": "EigenLayer AVS",
+          "role": "Autonomous dispatch heuristics + resilience scoring",
+          "status": "ready",
+          "endpoint": "https://avs.agi.jobs/logistics"
+        }
+      ]
     },
     {
       "slug": "climate",
@@ -89,8 +229,17 @@
       "oracle": "0xffffffffffffffffffffffffffffffffffffffff",
       "executionRouter": "0x1234567890123456789012345678901234567890",
       "heartbeatSeconds": 210,
-      "skillTags": ["climate", "sustainability", "energy", "carbon"],
-      "capabilities": { "carbon": 4.4, "energy": 4.1, "modeling": 3.9 },
+      "skillTags": [
+        "climate",
+        "sustainability",
+        "energy",
+        "carbon"
+      ],
+      "capabilities": {
+        "carbon": 4.4,
+        "energy": 4.1,
+        "modeling": 3.9
+      },
       "priority": 88,
       "metadata": {
         "domain": "Global decarbonization, adaptive grid intelligence",
@@ -100,7 +249,36 @@
         "uptime": "99.923%",
         "valueFlowMonthlyUSD": 11200000000,
         "valueFlowDisplay": "$11.2B"
-      }
+      },
+      "infrastructure": [
+        {
+          "layer": "Settlement",
+          "name": "Ethereum Mainnet",
+          "role": "Carbon credit issuance + retirement",
+          "status": "anchor"
+        },
+        {
+          "layer": "Layer-2",
+          "name": "Polygon zkEVM",
+          "role": "Climate derivative hedging + micro-escrow",
+          "status": "active",
+          "endpoint": "https://polygon.technology"
+        },
+        {
+          "layer": "Data Lake",
+          "name": "IPFS / Filecoin",
+          "role": "Satellite telemetry + climate oracle backing",
+          "status": "active",
+          "endpoint": "ipfs://phase6/climate"
+        },
+        {
+          "layer": "Compute",
+          "name": "Akash Network",
+          "role": "High-resolution climate simulation bursts",
+          "status": "ready",
+          "endpoint": "https://akash.network"
+        }
+      ]
     },
     {
       "slug": "education",
@@ -112,8 +290,17 @@
       "oracle": "0x2468246824682468246824682468246824682468",
       "executionRouter": "0x3579357935793579357935793579357935793579",
       "heartbeatSeconds": 150,
-      "skillTags": ["education", "research", "training", "governance"],
-      "capabilities": { "curriculum": 4.1, "compliance": 3.9, "simulation": 4.2 },
+      "skillTags": [
+        "education",
+        "research",
+        "training",
+        "governance"
+      ],
+      "capabilities": {
+        "curriculum": 4.1,
+        "compliance": 3.9,
+        "simulation": 4.2
+      },
       "priority": 91,
       "metadata": {
         "domain": "Lifelong learning, institutional onboarding, policy education",
@@ -123,7 +310,36 @@
         "uptime": "99.938%",
         "valueFlowMonthlyUSD": 9800000000,
         "valueFlowDisplay": "$9.8B"
-      }
+      },
+      "infrastructure": [
+        {
+          "layer": "Settlement",
+          "name": "Ethereum Mainnet",
+          "role": "Certification issuance + staking",
+          "status": "anchor"
+        },
+        {
+          "layer": "Layer-2",
+          "name": "Optimism",
+          "role": "Adaptive learning credit settlement",
+          "status": "active",
+          "endpoint": "https://optimism.io"
+        },
+        {
+          "layer": "Storage",
+          "name": "Arweave",
+          "role": "Curriculum manifest + credential audit logs",
+          "status": "active",
+          "endpoint": "ar://phase6/education"
+        },
+        {
+          "layer": "Identity",
+          "name": "Spruce DID Kit",
+          "role": "Verifiable credential issuance + KYC proofs",
+          "status": "ready",
+          "endpoint": "https://spruceid.com"
+        }
+      ]
     }
   ]
 }

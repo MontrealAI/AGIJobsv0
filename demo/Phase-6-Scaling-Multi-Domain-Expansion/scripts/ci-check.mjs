@@ -48,6 +48,25 @@ const addressPattern = /^0x[0-9a-fA-F]{40}$/;
   },
 );
 
+if (!Array.isArray(config.global.decentralizedInfra) || config.global.decentralizedInfra.length < 3) {
+  fail('Global decentralizedInfra must include at least three integrations.');
+}
+
+config.global.decentralizedInfra.forEach((entry, idx) => {
+  const context = `global.decentralizedInfra[${idx}]`;
+  if (!entry || typeof entry !== 'object') {
+    fail(`${context}: entry must be an object.`);
+  }
+  ['name', 'role', 'status'].forEach((key) => {
+    if (!entry[key] || typeof entry[key] !== 'string') {
+      fail(`${context}: ${key} must be a non-empty string.`);
+    }
+  });
+  if (entry.endpoint && typeof entry.endpoint !== 'string') {
+    fail(`${context}: endpoint must be a string when provided.`);
+  }
+});
+
 if (!Array.isArray(config.domains) || config.domains.length === 0) {
   fail('At least one domain must be configured.');
 }
@@ -106,6 +125,25 @@ config.domains.forEach((domain, idx) => {
   if (metadata.valueFlowDisplay && typeof metadata.valueFlowDisplay !== 'string') {
     fail(`${context}: metadata.valueFlowDisplay must be a string when provided.`);
   }
+  if (!Array.isArray(domain.infrastructure) || domain.infrastructure.length < 3) {
+    fail(`${context}: infrastructure must define at least three integrations.`);
+  }
+  domain.infrastructure.forEach((integration, infraIdx) => {
+    const infraContext = `${context}.infrastructure[${infraIdx}]`;
+    if (!integration || typeof integration !== 'object') {
+      fail(`${infraContext}: entry must be an object.`);
+    }
+    ['layer', 'name', 'role', 'status'].forEach((key) => {
+      if (!integration[key] || typeof integration[key] !== 'string') {
+        fail(`${infraContext}: ${key} must be a non-empty string.`);
+      }
+    });
+    ['endpoint', 'uri'].forEach((key) => {
+      if (integration[key] && typeof integration[key] !== 'string') {
+        fail(`${infraContext}: ${key} must be a string when provided.`);
+      }
+    });
+  });
 });
 
 if (!html.includes('mermaid')) {

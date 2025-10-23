@@ -28,6 +28,21 @@ def sample_payload():
                 "skillTags": ["finance", "risk", "credit"],
                 "capabilities": {"credit": 3.0},
                 "priority": 50,
+                "infrastructure": [
+                    {
+                        "layer": "Layer-2",
+                        "name": "Linea",
+                        "role": "High frequency settlements",
+                        "status": "active",
+                        "endpoint": "https://linea.build",
+                    },
+                    {
+                        "layer": "Storage",
+                        "name": "Arweave",
+                        "role": "Portfolio manifest archive",
+                        "status": "active",
+                    },
+                ],
             },
             {
                 "slug": "health",
@@ -37,6 +52,14 @@ def sample_payload():
                 "heartbeatSeconds": 150,
                 "skillTags": ["healthcare", "compliance"],
                 "priority": 40,
+                "infrastructure": [
+                    {
+                        "layer": "Layer-2",
+                        "name": "Arbitrum",
+                        "role": "Clinical coordination",
+                        "status": "active",
+                    }
+                ],
             },
         ],
     }
@@ -60,11 +83,14 @@ def test_runtime_selects_domain_and_builds_bridge(sample_payload):
     step = make_step(params={"tags": ["credit", "analysis"]})
     logs = runtime.annotate_step(step)
     assert any("finance" in line for line in logs)
+    assert any("infra mesh" in line for line in logs)
     bridge_plan = runtime.build_bridge_plan("finance")
     assert bridge_plan["domain"] == "finance"
     assert bridge_plan["l2Gateway"].lower().endswith("3333")
     assert bridge_plan["iotOracle"].lower().endswith("4444")
     assert bridge_plan["syncCadenceSeconds"] == pytest.approx(180)
+    assert bridge_plan["infrastructure"]
+    assert bridge_plan["infrastructure"][0]["layer"] == "Layer-2"
 
 
 def test_runtime_hints_and_iot_signals(tmp_path: Path, sample_payload):
@@ -81,7 +107,15 @@ def test_runtime_hints_and_iot_signals(tmp_path: Path, sample_payload):
           "manifestURI": "ipfs://phase6/logistics.json",
           "subgraph": "https://phase6.montreal.ai/subgraphs/logistics",
           "skillTags": ["logistics", "iot", "supply"],
-          "priority": 55
+          "priority": 55,
+          "infrastructure": [
+            {
+              "layer": "Layer-2",
+              "name": "Base",
+              "role": "Logistics orchestration",
+              "status": "active"
+            }
+          ]
         }
       ]
     }
