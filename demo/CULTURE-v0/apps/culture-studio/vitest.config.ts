@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     environment: "node",
     coverage: {
-      reporter: ["text", "lcov"],
+      reporter: ["text", "lcov", "json-summary"],
       include: ["src/lib/**/*.ts"],
       thresholds: {
         lines: 0.9,

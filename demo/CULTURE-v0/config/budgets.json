@@ -1,0 +1,12 @@
+{
+  "bytecode": {
+    "CultureRegistry": 24000,
+    "SelfPlayArena": 24000
+  },
+  "gas": {
+    "CultureRegistryTest:testOwnerCanConfigureMaxCitations()": 560000,
+    "SelfPlayArenaTest:testRandomisedOperationSequence()": 900000,
+    "SelfPlayArenaTest:testRoundLifecycleHappyPath()": 500000,
+    "SelfPlayArenaTest:testValidatorMisconductReportsSlash()": 520000
+  }
+}

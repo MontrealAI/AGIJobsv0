@@ -206,6 +206,7 @@ contract CultureRegistryTest is Test {
         uint256 existingId = registry.mintArtifact("book", "cid://existing", 0, new uint256[](0));
 
         vm.assume(bogusId != 0 && bogusId != existingId);
+        vm.assume(bogusId != registry.totalArtifacts() + 1);
 
         uint256[] memory cites = new uint256[](1);
         cites[0] = bogusId;

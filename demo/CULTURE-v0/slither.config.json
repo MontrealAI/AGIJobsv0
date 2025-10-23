@@ -1,0 +1,7 @@
+{
+  "solc": "0.8.25",
+  "detectors_to_exclude": ["arbitrary-send", "reentrancy-events"],
+  "filter_paths": "contracts/test",
+  "exclude_informational": true,
+  "exclude_low": false
+}

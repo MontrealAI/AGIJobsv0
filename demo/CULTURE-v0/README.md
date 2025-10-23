@@ -90,13 +90,24 @@ Run `npm exec ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.wee
 
 ## Continuous Integration
 
-The dedicated workflow in `ci/culture-ci.yml` enforces:
+The dedicated workflow in `ci/culture-ci.yml` (mirrored under `.github/workflows/culture-ci.yml`) enforces:
 
-- Solidity linting with `solhint`, Forge unit tests, and coverage ≥90%.
-- Package-level lint/tests/coverage for the arena orchestrator, graph indexer, and Culture Studio UI (Vitest with thresholds enforced).
-- Cypress end-to-end smoke tests against the docker-compose stack (contracts, orchestrator, indexer, UI).
+- `lint`: pnpm-installed ESLint/Prettier for all TypeScript packages.
+- `solidity`: Solhint linting, Foundry + Hardhat test suites, gas snapshot enforcement, bytecode budgets, and coverage ≥90% for contracts.
+- `static-analysis`: Slither analysis and optional MythX scans when `MYTHX_API_KEY` is provided.
+- `services`: Jest/Vitest coverage suites for the orchestrator, indexer, and Culture Studio UI (each ≥90% line coverage enforced via `nyc`/`vitest`).
+- `e2e`: Cypress headless smoke tests against the Docker stack with deterministic network intercepts.
 
-The pipeline runs on every PR and push touching `demo/CULTURE-v0/**`, blocking merges that do not meet the quality bar.
+All jobs execute with Node.js 20.18.1 and `pnpm`, and they publish coverage reports as artifacts. Branch protection must require the five job names above so that regressions cannot merge unnoticed.
+
+For local parity run:
+
+```sh
+cd demo/CULTURE-v0
+make test
+```
+
+The `Makefile` target mirrors CI (lint → contracts → services → coverage → budget checks). Use `make e2e` to run the Cypress suite locally after Docker dependencies are available, and `make down` to tear the stack down.
 
 ## Repository Layout
 

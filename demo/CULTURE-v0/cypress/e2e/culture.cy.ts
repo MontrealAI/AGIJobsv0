@@ -1,7 +1,26 @@
 describe('Culture Studio smoke test', () => {
   it('navigates through primary workflows', () => {
+    cy.intercept('POST', /graphql$/, {
+      body: {
+        data: {
+          artifacts: [
+            { id: 1, kind: 'book', cid: 'bafybookdemo', parentId: null, cites: [], influence: 0.92, mintedAt: null }
+          ]
+        }
+      }
+    }).as('artifacts');
+    cy.intercept('POST', '**/llm/generate', {
+      segments: ['Deterministic outline segment one. ', 'Deterministic outline segment two. ']
+    }).as('llm');
+    cy.intercept('POST', '**/ipfs/upload', {
+      cid: 'bafyfixedcid',
+      bytes: 128
+    }).as('ipfs');
+
     cy.visit('/');
     cy.contains('h1', 'CULTURE').should('be.visible');
+
+    cy.wait('@artifacts');
 
     // Create artifact tab is active by default
     cy.contains('h2', 'Create knowledge artifact').should('be.visible');
