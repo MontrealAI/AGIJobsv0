@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Governable} from "./Governable.sol";
 import {SystemPause} from "./SystemPause.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title Phase6ExpansionManager
 /// @notice Governance owned control surface coordinating cross-domain rollout for Phase 6.
@@ -11,7 +12,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 ///      deterministically route requests. The contract is intentionally simple and immutable
 ///      aside from governance controlled setters so that the owner retains complete authority
 ///      over the expansion plan.
-contract Phase6ExpansionManager is Governable {
+contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     using Address for address;
 
     /// @notice Tracks high level global configuration applied across all domains.
@@ -117,7 +118,7 @@ contract Phase6ExpansionManager is Governable {
     event EscalationBridgeUpdated(address indexed newEscalationBridge);
     event EscalationForwarded(address indexed target, bytes data, bytes response);
 
-    constructor(address governance) Governable(governance) {}
+    constructor(address initialGovernance) Governable(initialGovernance) {}
 
     /// -----------------------------------------------------------------------
     /// Domain management
@@ -274,7 +275,12 @@ contract Phase6ExpansionManager is Governable {
         emit EscalationBridgeUpdated(newBridge);
     }
 
-    function forwardPauseCall(bytes calldata data) external onlyGovernance returns (bytes memory) {
+    function forwardPauseCall(bytes calldata data)
+        external
+        onlyGovernance
+        nonReentrant
+        returns (bytes memory)
+    {
         address target = address(systemPause);
         if (target == address(0)) revert InvalidPauseTarget(target);
         bytes memory response = Address.functionCall(target, data);
@@ -282,7 +288,12 @@ contract Phase6ExpansionManager is Governable {
         return response;
     }
 
-    function forwardEscalation(bytes calldata data) external onlyGovernance returns (bytes memory) {
+    function forwardEscalation(bytes calldata data)
+        external
+        onlyGovernance
+        nonReentrant
+        returns (bytes memory)
+    {
         address target = escalationBridge;
         if (target == address(0)) revert InvalidPauseTarget(target);
         bytes memory response = Address.functionCall(target, data);
