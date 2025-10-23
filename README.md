@@ -1059,3 +1059,35 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - **Metrics endpoint**: both routers expose `GET /onebox/metrics`, returning Prometheus counters for plan, execute, and status requests (including per-intent execution labels).
 - **Planner → simulator → runner pipeline**: review [`docs/orchestration.md`](docs/orchestration.md) for field-by-field request/response references, blocker/risk semantics, and production readiness checklists that keep the orchestrator deployable under institutional controls.
 - **Integration guide**: see [`docs/onebox-ux.md`](docs/onebox-ux.md) for FastAPI stubs and deployment notes.
+
+## Analytics methodology & limitations
+
+The meta-orchestrator now aggregates **Culture Maturity Score (CMS)** and **Self-Play Governance (SPG)** telemetry on a fixed cadence. The Python engine in [`orchestrator/analytics.py`](orchestrator/analytics.py) ingests the deterministic weekly exports under `demo/CULTURE-v0/data/analytics/` and produces derived metrics:
+
+- **CMS metrics**
+  - **Artifact count** – total artifacts minted in the window.
+  - **Citation depth** – maximum lineage depth observed across artifacts.
+  - **Influence dispersion** – Gini coefficient of influence share (lower ⇒ more equitable).
+  - **Reuse** – count of derivative jobs referencing upstream artifacts.
+- **SPG metrics**
+  - **Elo deltas** – per-validator rating deltas against the previous week.
+  - **Difficulty trend** – mean change in arena difficulty (`rounds.difficultyDelta.mean`).
+  - **Validator honesty** – 1 − (slashes ÷ finalized rounds).
+
+Every scheduler tick writes:
+
+1. `storage/analytics/latest.json` – cached CMS/SPG bundle.
+2. `storage/analytics/history.csv` (+ `.parquet` when `pyarrow` is available) – longitudinal snapshots for BI tools.
+3. `reports/culture-weekly.md` and `reports/arena-weekly.md` – Markdown reports with Mermaid charts for dashboards.
+
+Set `ANALYTICS_IPFS_PIN=true` to push generated artifacts to IPFS via [`scripts/pin_to_ipfs.mjs`](scripts/pin_to_ipfs.mjs). Uploads honour the existing `IPFS_*` environment variables and optionally mirror to Arweave (`ANALYTICS_MIRROR_ARWEAVE=true`).
+
+### Validation workflow
+
+Run `python -m orchestrator.analytics` or hit `POST /analytics/refresh` to regenerate the cache, then cross-check the output with `python tools/analytics_validation.py`. When `pandas` is installed the script computes max deltas against the raw JSON; it falls back to the standard library otherwise. Divergences > 1e-3 indicate underlying fixture drift.
+
+### Known limitations
+
+- `history.parquet` requires `pyarrow`; environments without it will serve CSV only.
+- IPFS pinning depends on Node.js and configured providers; failures are logged but non-fatal.
+- Elo deltas default to the current rating when no prior week exists, so the first snapshot represents an absolute baseline.

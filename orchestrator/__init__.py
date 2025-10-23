@@ -17,6 +17,7 @@ _MODULES = [
     "events",
     "state",
     "aa",
+    "analytics",
 ]
 __all__ = list(_MODULES)
 
