@@ -131,6 +131,22 @@
         font-size: 0.95rem;
         color: var(--muted);
       }
+      ul.mesh-list {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 0 0;
+        display: grid;
+        gap: 8px;
+      }
+      ul.mesh-list li {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 10px 14px;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
       pre {
         background: rgba(15, 23, 42, 0.78);
         border-radius: 18px;
@@ -187,6 +203,15 @@
       <section class="card">
         <h2>Layer-2 bridge & oracle plan</h2>
         <div class="grid columns-2" id="bridge-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Decentralized infrastructure mesh</h2>
+        <p style="color: var(--muted); margin-top: 0;">
+          Transparent view of the cross-chain, storage, identity, and compute rails the runtime activates per domain.
+          Every integration is pre-approved for automated governance overrides.
+        </p>
+        <div class="grid columns-2" id="infra-grid"></div>
       </section>
 
       <section class="card">
@@ -485,6 +510,7 @@
         renderGlobal(cfg);
         renderDomains(cfg);
         renderBridgePlans(cfg);
+        renderInfrastructure(cfg);
         buildCalldata(cfg);
         renderCalldata();
         updateMermaid();
@@ -507,6 +533,49 @@
         if (window.mermaid) {
           window.mermaid.run({ querySelector: '#mermaid-diagram' });
         }
+      }
+
+      function renderInfrastructure(config) {
+        const grid = document.getElementById('infra-grid');
+        grid.innerHTML = '';
+
+        const globalCard = document.createElement('div');
+        globalCard.className = 'domain-card';
+        const globalIntegrations = config.global.decentralizedInfra || [];
+        globalCard.innerHTML = `
+          <h3>Global control mesh</h3>
+          <div class="metrics">
+            <span>Total integrations: ${globalIntegrations.length}</span>
+            <span>Manifest anchor: ${config.global.manifestURI}</span>
+          </div>
+        `;
+        const globalList = document.createElement('ul');
+        globalList.className = 'mesh-list';
+        globalIntegrations.forEach((entry, idx) => {
+          const li = document.createElement('li');
+          const endpoint = entry.endpoint ? ` → ${entry.endpoint}` : '';
+          li.textContent = `[G${idx + 1}] ${entry.name} · ${entry.role} · status ${entry.status}${endpoint}`;
+          globalList.appendChild(li);
+        });
+        globalCard.appendChild(globalList);
+        grid.appendChild(globalCard);
+
+        config.domains.forEach((domain) => {
+          const card = document.createElement('div');
+          card.className = 'domain-card';
+          card.innerHTML = `<h3>${domain.name}</h3>`;
+          const list = document.createElement('ul');
+          list.className = 'mesh-list';
+          domain.infrastructure.forEach((entry, idx) => {
+            const endpoint = entry.endpoint || entry.uri;
+            const meta = endpoint ? ` → ${endpoint}` : '';
+            const item = document.createElement('li');
+            item.textContent = `[${idx + 1}] ${entry.layer}: ${entry.name} · ${entry.role} · status ${entry.status}${meta}`;
+            list.appendChild(item);
+          });
+          card.appendChild(list);
+          grid.appendChild(card);
+        });
       }
 
       document.getElementById('launch-demo').addEventListener('click', () => {

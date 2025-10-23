@@ -47,6 +47,7 @@ class DomainProfile:
     value_flow_display: Optional[str] = None
     uptime: Optional[str] = None
     sentinel: Optional[str] = None
+    infrastructure: List[Dict[str, str]] = field(default_factory=list)
 
     def score(self, tags: Iterable[str]) -> float:
         if not tags:
@@ -123,6 +124,29 @@ class DomainExpansionRuntime:
             uptime = str(uptime_raw) if uptime_raw is not None else None
             sentinel_raw = metadata.get("sentinel")
             sentinel = str(sentinel_raw) if sentinel_raw is not None else None
+            infra_payload = entry.get("infrastructure") or []
+            if infra_payload and not isinstance(infra_payload, list):
+                raise ValueError(f"domain {slug} infrastructure must be an array")
+            infrastructure: List[Dict[str, str]] = []
+            for idx, infra_entry in enumerate(infra_payload):
+                if not isinstance(infra_entry, dict):
+                    raise ValueError(f"domain {slug} infrastructure[{idx}] must be an object")
+                layer = str(infra_entry.get("layer", "")).strip()
+                name = str(infra_entry.get("name", "")).strip()
+                role = str(infra_entry.get("role", "")).strip()
+                status = str(infra_entry.get("status", "")).strip()
+                if not layer or not name or not role or not status:
+                    raise ValueError(f"domain {slug} infrastructure[{idx}] missing required fields")
+                entry_norm: Dict[str, str] = {
+                    "layer": layer,
+                    "name": name,
+                    "role": role,
+                    "status": status,
+                }
+                endpoint = infra_entry.get("endpoint") or infra_entry.get("uri")
+                if endpoint:
+                    entry_norm["endpoint"] = str(endpoint)
+                infrastructure.append(entry_norm)
             profile = DomainProfile(
                 slug=slug.lower(),
                 name=str(entry.get("name", slug)).strip(),
@@ -141,6 +165,7 @@ class DomainExpansionRuntime:
                 value_flow_display=value_flow_display,
                 uptime=uptime,
                 sentinel=sentinel,
+                infrastructure=infrastructure,
             )
             if not profile.manifest_uri:
                 raise ValueError(f"domain {slug} missing manifestURI")
@@ -226,6 +251,12 @@ class DomainExpansionRuntime:
             logs.append(f"• uptime: {profile.uptime}")
         if profile.sentinel:
             logs.append(f"• sentinel: {profile.sentinel}")
+        if profile.infrastructure:
+            preview = ", ".join(
+                f"{item.get('layer', 'layer')}:{item.get('name', 'service')}({item.get('status', '-')})"
+                for item in profile.infrastructure[:3]
+            )
+            logs.append(f"• infra mesh: {preview}")
         return logs
 
     def build_bridge_plan(self, slug: str) -> Dict[str, object]:
@@ -245,6 +276,7 @@ class DomainExpansionRuntime:
             "sentinel": profile.sentinel,
             "uptime": profile.uptime,
             "valueFlowMonthlyUSD": profile.value_flow_usd,
+            "infrastructure": profile.infrastructure,
         }
 
     def ingest_iot_signal(self, signal: Dict[str, object]) -> Tuple[str, List[str]]:
@@ -263,6 +295,12 @@ class DomainExpansionRuntime:
                 logs.append(f"• sentinel on watch: {profile.sentinel}")
             if profile.resilience_index:
                 logs.append(f"• resilience index: {profile.resilience_index:.3f}")
+            if profile.infrastructure:
+                primary = profile.infrastructure[0]
+                logs.append(
+                    "• primary infra: "
+                    f"{primary.get('layer', 'layer')} / {primary.get('name', 'service')} ({primary.get('status', '-')})"
+                )
         return slug, logs
 
     # ------------------------------------------------------------------

@@ -50,6 +50,16 @@ function renderTable(rows: Array<[string, string]>) {
   });
 }
 
+function summariseInfra(entry: Record<string, string | undefined>) {
+  const layer = entry.layer ?? '—';
+  const name = entry.name ?? '—';
+  const role = entry.role ?? '—';
+  const status = entry.status ? `status=${entry.status}` : '';
+  const endpoint = entry.endpoint || entry.uri;
+  const endpointSummary = endpoint ? ` @ ${endpoint}` : '';
+  return `${layer}: ${name} — ${role} ${status}${endpointSummary}`.trim();
+}
+
 function formatUSD(value?: number | null): string {
   if (value === undefined || value === null || Number.isNaN(Number(value))) {
     return '—';
@@ -138,6 +148,13 @@ function heartbeatSummary(domain: any, global: any) {
   console.log('ABI fragments:', fragments.join(' | '));
 
   const metrics = computeNetworkMetrics(config);
+  const globalInfraCount = Array.isArray(config.global.decentralizedInfra)
+    ? config.global.decentralizedInfra.length
+    : 0;
+  const domainInfraCount = config.domains.reduce(
+    (acc: number, domain: any) => acc + (Array.isArray(domain.infrastructure) ? domain.infrastructure.length : 0),
+    0,
+  );
 
   banner('Network telemetry');
   if (metrics.averageResilience !== undefined) {
@@ -149,6 +166,8 @@ function heartbeatSummary(domain: any, global: any) {
   }
   console.log(`Monthly value flow across domains: ${formatUSD(metrics.totalValueFlow)}`);
   console.log(`Active sentinel families: ${metrics.sentinelCount}`);
+  console.log(`Global infra integrations: ${globalInfraCount}`);
+  console.log(`Domain infra touchpoints: ${domainInfraCount}`);
 
   banner('Global controls');
   renderTable([
@@ -188,6 +207,22 @@ function heartbeatSummary(domain: any, global: any) {
   console.log();
   console.log('setGlobalConfig calldata:');
   console.log(iface.encodeFunctionData('setGlobalConfig', [globalTuple]));
+
+  banner('Decentralized infrastructure mesh');
+  const globalInfra = config.global.decentralizedInfra ?? [];
+  if (globalInfra.length) {
+    console.log('Global mesh:');
+    globalInfra.forEach((entry: Record<string, string | undefined>, idx: number) => {
+      console.log(`  [G${idx + 1}] ${summariseInfra(entry)}`);
+    });
+  }
+  config.domains.forEach((domain: any) => {
+    const infra = domain.infrastructure ?? [];
+    console.log(`Domain ${domain.name} (${domain.slug}) integrations:`);
+    infra.forEach((entry: Record<string, string | undefined>, idx: number) => {
+      console.log(`  [${idx + 1}] ${summariseInfra(entry)}`);
+    });
+  });
 
   banner('Domain registrations');
   config.domains.forEach((domain: any) => {
