@@ -46,6 +46,52 @@ function printUsage(): void {
     `  --help                    Show this message\n`);
 }
 
+function getScriptArgv(): string[] {
+  const rawArgv = process.argv.slice(2);
+
+  const separatorIdx = rawArgv.indexOf('--');
+  if (separatorIdx !== -1) {
+    return rawArgv.slice(separatorIdx + 1);
+  }
+
+  const scriptIdx = rawArgv.findIndex((value) => {
+    return value.endsWith('apply-config.ts') || value.endsWith('apply-config.js');
+  });
+  const afterScript = scriptIdx !== -1 ? rawArgv.slice(scriptIdx + 1) : rawArgv;
+
+  const hardhatFlagsWithValues = new Set(['--network', '--config', '--tsconfig']);
+  const hardhatBooleanFlags = new Set(['--no-compile', '--show-stack-traces', '--verbose']);
+
+  const argv: string[] = [];
+  for (let i = 0; i < afterScript.length; i += 1) {
+    const value = afterScript[i];
+    if (value === '--') {
+      argv.push(...afterScript.slice(i + 1));
+      break;
+    }
+    if (hardhatFlagsWithValues.has(value)) {
+      i += 1;
+      continue;
+    }
+    const [flagName] = value.split('=');
+    if (hardhatFlagsWithValues.has(flagName)) {
+      continue;
+    }
+    if (hardhatBooleanFlags.has(value)) {
+      continue;
+    }
+    if (value === 'run') {
+      continue;
+    }
+    if (value.endsWith('apply-config.ts') || value.endsWith('apply-config.js')) {
+      continue;
+    }
+    argv.push(value);
+  }
+
+  return argv;
+}
+
 function parseArgs(): CliArgs {
   const args: CliArgs = {
     configPath: DEFAULT_CONFIG,
@@ -55,7 +101,7 @@ function parseArgs(): CliArgs {
     skipSystemPause: false,
     skipEscalation: false,
   };
-  const argv = process.argv.slice(2);
+  const argv = getScriptArgv();
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     const next = argv[i + 1];
