@@ -117,6 +117,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     error UnknownSentinel(bytes32 id);
     error DuplicateStream(bytes32 id);
     error UnknownStream(bytes32 id);
+    error DuplicateBinding(bytes32 id);
     error InvalidAddress(string field, address provided);
     error InvalidHeartbeat();
     error InvalidBps(uint256 provided);
@@ -131,30 +132,84 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     /// Events
     /// ---------------------------------------------------------------------
 
+    /// @notice Emitted when the global parameter struct is replaced.
+    /// @dev Dashboards should treat the entire struct as authoritative and refresh cached copies.
     event GlobalParametersUpdated(GlobalParameters params);
+
+    /// @notice Emitted when the guardian council controlling emergency actions changes.
+    /// @dev Allows subgraphs to maintain the currently empowered guardian address.
     event GuardianCouncilUpdated(address indexed council);
+
+    /// @notice Emitted when the pause contract receiving forwarded calls is updated.
+    /// @dev Off-chain systems should refresh pause-call routing using this address.
     event SystemPauseUpdated(address indexed systemPause);
+
+    /// @notice Emitted after governance forwards calldata to the configured pause contract.
+    /// @dev `response` captures the return data allowing dashboards to surface execution results.
     event PauseCallForwarded(address indexed target, bytes data, bytes response);
 
+    /// @notice Emitted when a new value domain configuration is created.
+    /// @dev Signals dashboards to index the freshly registered domain struct.
     event DomainRegistered(bytes32 indexed id, ValueDomain domain);
+
+    /// @notice Emitted after an existing value domain configuration is mutated.
+    /// @dev Observers should re-ingest the full struct as all fields are rewriteable.
     event DomainUpdated(bytes32 indexed id, ValueDomain domain);
+
+    /// @notice Emitted when the active flag for a domain toggles.
+    /// @dev Downstream automation may pause integrations when `active` becomes false.
     event DomainStatusChanged(bytes32 indexed id, bool active);
+
+    /// @notice Emitted when governance adjusts domain capacity or heartbeat tolerances.
+    /// @dev The event captures the normalized values so indexers need not fetch storage.
     event DomainLimitsUpdated(bytes32 indexed id, uint256 tvlLimit, uint256 autonomyLevelBps, uint64 heartbeatSeconds);
 
+    /// @notice Emitted when a new sentinel profile joins the registry.
+    /// @dev Use to map slugs to guardian monitoring metadata.
     event SentinelRegistered(bytes32 indexed id, SentinelProfile profile);
+
+    /// @notice Emitted when an existing sentinel profile is rewritten.
+    /// @dev Indicates that capabilities or links changed and cached views should refresh.
     event SentinelUpdated(bytes32 indexed id, SentinelProfile profile);
+
+    /// @notice Emitted when a sentinel's active status flips.
+    /// @dev Downstream automation should halt delegated duties when inactive.
     event SentinelStatusChanged(bytes32 indexed id, bool active);
+
+    /// @notice Emitted after governance replaces the set of domains a sentinel oversees.
+    /// @dev Bindings are rewritten wholesale so indexers should replace previous associations.
     event SentinelDomainsUpdated(bytes32 indexed id, bytes32[] domainIds);
+
+    /// @notice Emitted when a sentinel is permanently removed.
+    /// @dev Indicates that associated bindings should be purged from caches.
     event SentinelRemoved(bytes32 indexed id);
 
+    /// @notice Emitted when a capital stream is registered.
+    /// @dev Downstream systems should treat the payload as authoritative capital allocation metadata.
     event CapitalStreamRegistered(bytes32 indexed id, CapitalStream stream);
+
+    /// @notice Emitted when an existing capital stream configuration is updated.
+    /// @dev All fields can change, so indexers should overwrite cached copies.
     event CapitalStreamUpdated(bytes32 indexed id, CapitalStream stream);
+
+    /// @notice Emitted when a capital stream's active flag toggles.
+    /// @dev Off-chain accounting may pause disbursements when the stream is inactive.
     event CapitalStreamStatusChanged(bytes32 indexed id, bool active);
+
+    /// @notice Emitted when governance rewrites the domain bindings for a capital stream.
+    /// @dev Bindings are a full replacement and downstream consumers should rebuild associations.
     event CapitalStreamDomainsUpdated(bytes32 indexed id, bytes32[] domainIds);
+
+    /// @notice Emitted when a capital stream is removed from the registry.
+    /// @dev Notifies indexers to purge associated metadata and bindings.
     event CapitalStreamRemoved(bytes32 indexed id);
 
+    /// @notice Emitted when a value domain is removed and all bindings are pruned.
+    /// @dev Off-chain caches should delete the domain and recompute sentinel/stream relationships.
     event DomainRemoved(bytes32 indexed id);
 
+    /// @notice Emitted when the self-improvement plan configuration is updated.
+    /// @dev Captures the entire struct so observers can mirror cadence, plan hash and context.
     event SelfImprovementPlanUpdated(
         string planURI,
         bytes32 indexed planHash,
@@ -162,6 +217,9 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         uint64 lastExecutedAt,
         string lastReportURI
     );
+
+    /// @notice Emitted when a self-improvement execution is logged.
+    /// @dev Dashboards can thread execution reports per `planHash` via this event.
     event SelfImprovementExecutionRecorded(uint64 executedAt, string reportURI, bytes32 indexed planHash);
 
     constructor(address initialGovernance) Governable(initialGovernance) {}
@@ -170,18 +228,24 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     /// Global configuration management
     /// ---------------------------------------------------------------------
 
+    /// @notice Replaces the global parameter envelope governing Phase 8 operations.
+    /// @dev Emits {GlobalParametersUpdated} with the sanitized `params` struct.
     function setGlobalParameters(GlobalParameters calldata params) external onlyGovernance {
         _validateGlobalParameters(params);
         globalParameters = params;
         emit GlobalParametersUpdated(params);
     }
 
+    /// @notice Updates the guardian council responsible for accelerated emergency actions.
+    /// @dev Emits {GuardianCouncilUpdated} whenever the council changes.
     function setGuardianCouncil(address council) external onlyGovernance {
         if (council == address(0)) revert InvalidAddress("guardianCouncil", council);
         guardianCouncil = council;
         emit GuardianCouncilUpdated(council);
     }
 
+    /// @notice Points the manager at a new {SystemPause} contract for forwarding emergency calls.
+    /// @dev Emits {SystemPauseUpdated} and rejects EOAs or contracts without code deployed.
     function setSystemPause(address newPause) external onlyGovernance {
         if (newPause == address(0) || newPause.code.length == 0) {
             revert InvalidAddress("systemPause", newPause);
@@ -190,6 +254,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit SystemPauseUpdated(newPause);
     }
 
+    /// @notice Refreshes the manifesto URI without touching the rest of the global parameters.
+    /// @dev Emits {GlobalParametersUpdated} so indexers can capture the new manifesto hash.
     function updateManifesto(string calldata newManifestoURI) external onlyGovernance {
         if (bytes(newManifestoURI).length == 0) revert ManifestRequired();
         GlobalParameters memory params = globalParameters;
@@ -198,6 +264,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit GlobalParametersUpdated(params);
     }
 
+    /// @notice Tunes the heartbeat, guardian review window and max drawdown safeguards.
+    /// @dev Emits {GlobalParametersUpdated} once the sanitized parameters are stored.
     function updateRiskParameters(uint64 heartbeatSeconds, uint64 guardianReviewWindow, uint256 maxDrawdownBps)
         external
         onlyGovernance
@@ -212,6 +280,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit GlobalParametersUpdated(params);
     }
 
+    /// @notice Forwards a governance-authorised call to the configured {SystemPause} contract.
+    /// @dev Emits {PauseCallForwarded} echoing the calldata and return data for observability.
     function forwardPauseCall(bytes calldata data) external onlyGovernance nonReentrant returns (bytes memory) {
         address pauseTarget = address(systemPause);
         if (pauseTarget == address(0)) revert InvalidAddress("systemPause", pauseTarget);
@@ -220,6 +290,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         return response;
     }
 
+    /// @notice Installs or replaces the self-improvement plan tracked on-chain.
+    /// @dev Emits {SelfImprovementPlanUpdated} with the canonical cadence and plan hash.
     function setSelfImprovementPlan(SelfImprovementPlan calldata plan) external onlyGovernance {
         _validateSelfImprovementPlan(plan);
         selfImprovementPlan = plan;
@@ -232,6 +304,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         );
     }
 
+    /// @notice Records a successful execution aligned with the configured self-improvement plan.
+    /// @dev Emits {SelfImprovementExecutionRecorded} including the execution timestamp and report URI.
     function recordSelfImprovementExecution(uint64 executedAt, string calldata reportURI) external onlyGovernance {
         if (bytes(reportURI).length == 0) revert InvalidURI("reportURI");
         if (executedAt == 0) revert InvalidExecutionTimestamp(executedAt);
@@ -250,6 +324,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     /// Domain registry management
     /// ---------------------------------------------------------------------
 
+    /// @notice Registers a new value domain and emits the canonical configuration payload.
+    /// @dev Returns the keccak256 hash of the normalized slug and emits {DomainRegistered}.
     function registerDomain(ValueDomain calldata config) external onlyGovernance returns (bytes32 id) {
         _validateDomain(config);
         id = _idFor(config.slug);
@@ -260,6 +336,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit DomainRegistered(id, config);
     }
 
+    /// @notice Updates an existing domain configuration in-place.
+    /// @dev Reverts if the slug maps to a different identifier to prevent accidental re-keys.
     function updateDomain(bytes32 id, ValueDomain calldata config) external onlyGovernance {
         if (!_knownDomain[id]) revert UnknownDomain(id);
         _validateDomain(config);
@@ -270,6 +348,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit DomainUpdated(id, config);
     }
 
+    /// @notice Deletes a domain and prunes all sentinel/stream bindings pointing at it.
+    /// @dev Emits {DomainRemoved} and cleans up auxiliary indexes to avoid dangling references.
     function removeDomain(bytes32 id) external onlyGovernance {
         if (!_knownDomain[id]) revert UnknownDomain(id);
         delete _domains[id];
@@ -280,6 +360,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit DomainRemoved(id);
     }
 
+    /// @notice Flips the active flag for a registered domain.
+    /// @dev Emits {DomainStatusChanged} only when the flag actually transitions.
     function setDomainStatus(bytes32 id, bool active) external onlyGovernance {
         if (!_knownDomain[id]) revert UnknownDomain(id);
         ValueDomain storage domain = _domains[id];
@@ -290,6 +372,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit DomainStatusChanged(id, active);
     }
 
+    /// @notice Updates capacity, autonomy and heartbeat settings for a domain.
+    /// @dev Emits {DomainLimitsUpdated} so indexers can capture fresh risk thresholds.
     function configureDomainLimits(bytes32 id, uint256 tvlLimit, uint256 autonomyLevelBps, uint64 heartbeatSeconds)
         external
         onlyGovernance
@@ -304,6 +388,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit DomainLimitsUpdated(id, tvlLimit, autonomyLevelBps, heartbeatSeconds);
     }
 
+    /// @notice Lists all registered domains with their storage identifiers.
+    /// @dev Order matches insertion order and is suitable for read-only pagination in off-chain clients.
     function listDomains() external view returns (DomainView[] memory) {
         uint256 length = _domainIndex.length;
         DomainView[] memory result = new DomainView[](length);
@@ -314,6 +400,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         return result;
     }
 
+    /// @notice Fetches a domain configuration by its deterministic identifier.
+    /// @dev Reverts with {UnknownDomain} when the domain has never been registered or was removed.
     function getDomain(bytes32 id) external view returns (ValueDomain memory) {
         if (!_knownDomain[id]) revert UnknownDomain(id);
         return _domains[id];
@@ -323,6 +411,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     /// Sentinel registry management
     /// ---------------------------------------------------------------------
 
+    /// @notice Adds a sentinel profile responsible for monitoring specific domains.
+    /// @dev Emits {SentinelRegistered} and returns the deterministic identifier derived from the slug.
     function registerSentinel(SentinelProfile calldata profile) external onlyGovernance returns (bytes32 id) {
         _validateSentinel(profile);
         id = _idFor(profile.slug);
@@ -333,6 +423,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit SentinelRegistered(id, profile);
     }
 
+    /// @notice Replaces the stored metadata for an existing sentinel.
+    /// @dev Prevents accidental re-keying by requiring the slug to hash to `id`.
     function updateSentinel(bytes32 id, SentinelProfile calldata profile) external onlyGovernance {
         if (!_knownSentinel[id]) revert UnknownSentinel(id);
         _validateSentinel(profile);
@@ -343,6 +435,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit SentinelUpdated(id, profile);
     }
 
+    /// @notice Toggles the active flag for a sentinel.
+    /// @dev Emits {SentinelStatusChanged} only when the value changes to avoid noisy events.
     function setSentinelStatus(bytes32 id, bool active) external onlyGovernance {
         if (!_knownSentinel[id]) revert UnknownSentinel(id);
         SentinelProfile storage sentinel = _sentinels[id];
@@ -353,11 +447,11 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit SentinelStatusChanged(id, active);
     }
 
+    /// @notice Replaces the domains a sentinel monitors.
+    /// @dev Emits {SentinelDomainsUpdated} with the full set of bindings to simplify indexing.
     function setSentinelDomains(bytes32 id, bytes32[] calldata domainIds) external onlyGovernance {
         if (!_knownSentinel[id]) revert UnknownSentinel(id);
-        for (uint256 i = 0; i < domainIds.length; i++) {
-            if (!_knownDomain[domainIds[i]]) revert UnknownDomain(domainIds[i]);
-        }
+        _validateBindingSet(domainIds);
         delete _sentinelDomainBindings[id];
         bytes32[] storage bindings = _sentinelDomainBindings[id];
         for (uint256 i = 0; i < domainIds.length; i++) {
@@ -366,6 +460,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit SentinelDomainsUpdated(id, domainIds);
     }
 
+    /// @notice Removes a sentinel from the registry and clears domain bindings.
+    /// @dev Emits {SentinelRemoved} and prunes indexes to keep iteration efficient.
     function removeSentinel(bytes32 id) external onlyGovernance {
         if (!_knownSentinel[id]) revert UnknownSentinel(id);
         delete _sentinels[id];
@@ -375,6 +471,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit SentinelRemoved(id);
     }
 
+    /// @notice Enumerates all sentinel profiles and their identifiers.
+    /// @dev Order follows insertion order which keeps responses stable for pagination.
     function listSentinels() external view returns (SentinelView[] memory) {
         uint256 length = _sentinelIndex.length;
         SentinelView[] memory result = new SentinelView[](length);
@@ -385,6 +483,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         return result;
     }
 
+    /// @notice Returns the domains assigned to a sentinel identifier.
+    /// @dev Reverts with {UnknownSentinel} to prevent leaking empty arrays for invalid IDs.
     function getSentinelDomains(bytes32 id) external view returns (bytes32[] memory) {
         if (!_knownSentinel[id]) revert UnknownSentinel(id);
         return _sentinelDomainBindings[id];
@@ -394,6 +494,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     /// Capital stream management
     /// ---------------------------------------------------------------------
 
+    /// @notice Registers a capital stream describing treasury allocations for a domain cluster.
+    /// @dev Emits {CapitalStreamRegistered} and returns the deterministic identifier derived from the slug.
     function registerCapitalStream(CapitalStream calldata stream) external onlyGovernance returns (bytes32 id) {
         _validateStream(stream);
         id = _idFor(stream.slug);
@@ -404,6 +506,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit CapitalStreamRegistered(id, stream);
     }
 
+    /// @notice Rewrites an existing capital stream configuration.
+    /// @dev Enforces slug stability so governance cannot accidentally re-key streams.
     function updateCapitalStream(bytes32 id, CapitalStream calldata stream) external onlyGovernance {
         if (!_knownStream[id]) revert UnknownStream(id);
         _validateStream(stream);
@@ -414,6 +518,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit CapitalStreamUpdated(id, stream);
     }
 
+    /// @notice Toggles whether a capital stream is actively distributing funds.
+    /// @dev Emits {CapitalStreamStatusChanged} when the state flips.
     function setCapitalStreamStatus(bytes32 id, bool active) external onlyGovernance {
         if (!_knownStream[id]) revert UnknownStream(id);
         CapitalStream storage stream = _capitalStreams[id];
@@ -424,11 +530,11 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit CapitalStreamStatusChanged(id, active);
     }
 
+    /// @notice Assigns the domains a capital stream supplies.
+    /// @dev Emits {CapitalStreamDomainsUpdated} with the complete set for deterministic indexing.
     function setCapitalStreamDomains(bytes32 id, bytes32[] calldata domainIds) external onlyGovernance {
         if (!_knownStream[id]) revert UnknownStream(id);
-        for (uint256 i = 0; i < domainIds.length; i++) {
-            if (!_knownDomain[domainIds[i]]) revert UnknownDomain(domainIds[i]);
-        }
+        _validateBindingSet(domainIds);
         delete _streamDomainBindings[id];
         bytes32[] storage bindings = _streamDomainBindings[id];
         for (uint256 i = 0; i < domainIds.length; i++) {
@@ -437,6 +543,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit CapitalStreamDomainsUpdated(id, domainIds);
     }
 
+    /// @notice Removes a capital stream and clears all associated domain bindings.
+    /// @dev Emits {CapitalStreamRemoved} and cleans up indexes to keep enumeration tight.
     function removeCapitalStream(bytes32 id) external onlyGovernance {
         if (!_knownStream[id]) revert UnknownStream(id);
         delete _capitalStreams[id];
@@ -446,6 +554,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit CapitalStreamRemoved(id);
     }
 
+    /// @notice Enumerates all capital streams and their identifiers.
+    /// @dev Consumers should treat the returned array as authoritative ordering for pagination.
     function listCapitalStreams() external view returns (CapitalStreamView[] memory) {
         uint256 length = _streamIndex.length;
         CapitalStreamView[] memory result = new CapitalStreamView[](length);
@@ -456,6 +566,8 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         return result;
     }
 
+    /// @notice Fetches the domain bindings for a capital stream identifier.
+    /// @dev Reverts with {UnknownStream} so callers avoid relying on empty arrays for validation.
     function getCapitalStreamDomains(bytes32 id) external view returns (bytes32[] memory) {
         if (!_knownStream[id]) revert UnknownStream(id);
         return _streamDomainBindings[id];
@@ -544,6 +656,16 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
                 }
                 index.pop();
                 break;
+            }
+        }
+    }
+
+    function _validateBindingSet(bytes32[] calldata domainIds) private view {
+        for (uint256 i = 0; i < domainIds.length; i++) {
+            bytes32 domainId = domainIds[i];
+            if (!_knownDomain[domainId]) revert UnknownDomain(domainId);
+            for (uint256 j = 0; j < i; j++) {
+                if (domainIds[j] == domainId) revert DuplicateBinding(domainId);
             }
         }
     }
