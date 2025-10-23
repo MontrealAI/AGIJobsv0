@@ -14,6 +14,21 @@ def sample_payload():
             "defaultL2Gateway": "0x2222222222222222222222222222222222222222",
             "manifestURI": "ipfs://phase6/global.json",
             "l2SyncCadence": 180,
+            "decentralizedInfra": [
+                {
+                    "name": "EigenLayer Risk Shield",
+                    "role": "Cross-domain resilience scoring",
+                    "status": "active",
+                    "layer": "Security",
+                    "endpoint": "https://mesh.agi.jobs/eigenlayer",
+                },
+                {
+                    "name": "Filecoin Saturn Mesh",
+                    "role": "Distributed compute fabric",
+                    "status": "ready",
+                    "endpoint": "https://mesh.agi.jobs/saturn",
+                },
+            ],
         },
         "domains": [
             {
@@ -84,6 +99,7 @@ def test_runtime_selects_domain_and_builds_bridge(sample_payload):
     logs = runtime.annotate_step(step)
     assert any("finance" in line for line in logs)
     assert any("infra mesh" in line for line in logs)
+    assert runtime.global_infrastructure[0]["name"] == "EigenLayer Risk Shield"
     bridge_plan = runtime.build_bridge_plan("finance")
     assert bridge_plan["domain"] == "finance"
     assert bridge_plan["l2Gateway"].lower().endswith("3333")
@@ -91,6 +107,7 @@ def test_runtime_selects_domain_and_builds_bridge(sample_payload):
     assert bridge_plan["syncCadenceSeconds"] == pytest.approx(180)
     assert bridge_plan["infrastructure"]
     assert bridge_plan["infrastructure"][0]["layer"] == "Layer-2"
+    assert bridge_plan["globalInfrastructure"]
 
 
 def test_runtime_hints_and_iot_signals(tmp_path: Path, sample_payload):
