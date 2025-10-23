@@ -1,6 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import {
+  hasEncryptionKey,
+  maybeDecryptEnvelope,
+  maybeEncryptSerialized,
+  scrubForPrivacy,
+  type EncryptionEnvelope,
+} from './privacy';
+
 export type ReceiptKind = 'PLAN' | 'EXECUTION';
 
 export interface StoredReceiptEntry {
@@ -14,6 +22,11 @@ export interface StoredReceiptEntry {
   attestationCid?: string | null;
   receipt?: Record<string, unknown> | null;
   payload?: Record<string, unknown> | null;
+}
+
+interface EncryptedReceiptFile {
+  version: 1;
+  encrypted: EncryptionEnvelope;
 }
 
 const RECEIPT_DIR = path.resolve(process.cwd(), 'storage', 'receipts');
@@ -30,8 +43,15 @@ function safeFilename(entry: StoredReceiptEntry): string {
 
 export async function saveReceipt(entry: StoredReceiptEntry): Promise<void> {
   await ensureDirectory();
-  const filePath = path.join(RECEIPT_DIR, safeFilename(entry));
-  const payload = JSON.stringify(entry, null, 2);
+  const sanitized = scrubForPrivacy(entry);
+  const filePath = path.join(RECEIPT_DIR, safeFilename(sanitized));
+  const payload = JSON.stringify(sanitized, null, 2);
+  const encrypted = maybeEncryptSerialized(payload);
+  if (encrypted) {
+    const wrapper: EncryptedReceiptFile = { version: 1, encrypted };
+    await fs.writeFile(filePath, JSON.stringify(wrapper, null, 2), 'utf8');
+    return;
+  }
   await fs.writeFile(filePath, payload, 'utf8');
 }
 
@@ -51,14 +71,35 @@ export async function listReceipts(options: {
       const filePath = path.join(RECEIPT_DIR, file);
       try {
         const raw = await fs.readFile(filePath, 'utf8');
-        const parsed = JSON.parse(raw) as StoredReceiptEntry;
+        const parsed = JSON.parse(raw) as StoredReceiptEntry | EncryptedReceiptFile;
+        let record: StoredReceiptEntry | null = null;
+        if ((parsed as EncryptedReceiptFile).encrypted) {
+          if (!hasEncryptionKey()) {
+            continue;
+          }
+          try {
+            const decrypted = maybeDecryptEnvelope((parsed as EncryptedReceiptFile).encrypted);
+            if (!decrypted) {
+              continue;
+            }
+            record = JSON.parse(decrypted) as StoredReceiptEntry;
+          } catch (decryptError) {
+            console.warn(`Failed to decrypt stored receipt ${file}`, decryptError);
+            continue;
+          }
+        } else {
+          record = parsed as StoredReceiptEntry;
+        }
+        if (!record) {
+          continue;
+        }
         if (
-          (options.planHash && parsed.planHash !== options.planHash) ||
-          (options.jobId !== undefined && parsed.jobId !== options.jobId)
+          (options.planHash && record.planHash !== options.planHash) ||
+          (options.jobId !== undefined && record.jobId !== options.jobId)
         ) {
           continue;
         }
-        entries.push(parsed);
+        entries.push(record);
         if (entries.length >= limit) {
           break;
         }

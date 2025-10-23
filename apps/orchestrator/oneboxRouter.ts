@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHmac, createHash, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHmac, createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import express from 'express';
 import {
   Contract,
@@ -38,6 +38,7 @@ import {
 import { decorateReceipt } from './attestation';
 import { ownerGovernanceSnapshot, ownerPreviewAction } from './ownerConsole';
 import { listReceipts, saveReceipt } from './receiptStore';
+import { scrubForPrivacy } from './privacy';
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -46,6 +47,57 @@ declare module 'express-serve-static-core' {
 }
 
 type LogLevel = 'info' | 'warn' | 'error';
+
+const SAFE_HTTP_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
+const CSRF_COOKIE_NAME = 'onebox_csrf_token';
+const CSRF_HEADER_NAME = 'x-csrf-token';
+const CONTROL_CHAR_PATTERN = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
+const MAX_PLAN_TEXT_LENGTH = (() => {
+  const raw = process.env.ONEBOX_MAX_PLAN_INPUT_LENGTH;
+  const parsed = raw ? Number(raw) : 4000;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 16000) : 4000;
+})();
+
+interface RateLimitConfig {
+  windowMs: number;
+  maxRequests: number;
+}
+
+function parseRateLimitConfig(): RateLimitConfig | null {
+  const windowRaw = process.env.ONEBOX_RATE_LIMIT_WINDOW_MS ?? process.env.ONEBOX_SERVER_RATE_LIMIT_WINDOW_MS;
+  const maxRaw = process.env.ONEBOX_RATE_LIMIT_MAX_REQUESTS ?? process.env.ONEBOX_SERVER_RATE_LIMIT_MAX_REQUESTS;
+  const windowMs = Number(windowRaw ?? 60000);
+  const maxRequests = Number(maxRaw ?? 120);
+  if (!Number.isFinite(windowMs) || windowMs <= 0) {
+    console.warn('Invalid ONEBOX_RATE_LIMIT_WINDOW_MS value', windowRaw);
+    return null;
+  }
+  if (!Number.isFinite(maxRequests) || maxRequests <= 0) {
+    console.warn('Invalid ONEBOX_RATE_LIMIT_MAX_REQUESTS value', maxRaw);
+    return null;
+  }
+  return { windowMs, maxRequests };
+}
+
+const rateLimitConfig = parseRateLimitConfig();
+const rateLimiter = new Map<string, number[]>();
+
+function parseCookies(rawHeader?: string): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  if (!rawHeader) {
+    return cookies;
+  }
+  const pairs = rawHeader.split(';');
+  for (const pair of pairs) {
+    const [key, ...rest] = pair.split('=');
+    if (!key) continue;
+    const name = key.trim();
+    if (!name) continue;
+    const value = rest.join('=').trim();
+    cookies[name] = decodeURIComponent(value || '');
+  }
+  return cookies;
+}
 
 function logEvent(level: LogLevel, event: string, fields: Record<string, unknown>): void {
   const entry = {
@@ -93,6 +145,93 @@ function timingSafeStringCompare(a: string, b: string): boolean {
     return false;
   }
   return timingSafeEqual(aBuffer, bBuffer);
+}
+
+function buildRateLimitKey(req: express.Request): string {
+  const auth = typeof req.headers.authorization === 'string' ? req.headers.authorization : '';
+  const clientHeader = typeof req.headers['x-api-client'] === 'string' ? req.headers['x-api-client'] : '';
+  const remote = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+  const key = [clientHeader.trim(), auth.trim(), remote.trim()].filter(Boolean).join(':');
+  return key || remote;
+}
+
+function enforceRateLimit(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  if (!rateLimitConfig) {
+    next();
+    return;
+  }
+  const now = Date.now();
+  const key = buildRateLimitKey(req);
+  const existing = rateLimiter.get(key) ?? [];
+  const cutoff = now - rateLimitConfig.windowMs;
+  const recent = existing.filter((ts) => ts >= cutoff);
+  if (recent.length >= rateLimitConfig.maxRequests) {
+    const retryMs = recent[0] + rateLimitConfig.windowMs - now;
+    const retrySeconds = Math.max(1, Math.ceil(retryMs / 1000));
+    res.setHeader('Retry-After', retrySeconds.toString());
+    logEvent('warn', 'onebox.rate_limited', {
+      correlationId: getCorrelationId(req),
+      retryMs: Math.max(retryMs, 0),
+    });
+    res.status(429).json({ error: 'Too many requests. Please retry later.' });
+    return;
+  }
+  recent.push(now);
+  rateLimiter.set(key, recent);
+  next();
+}
+
+function ensureCsrfProtection(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  const cookies = parseCookies(typeof req.headers.cookie === 'string' ? req.headers.cookie : undefined);
+  const method = req.method.toUpperCase();
+  if (SAFE_HTTP_METHODS.has(method)) {
+    const existing = cookies[CSRF_COOKIE_NAME];
+    if (!existing) {
+      const token = randomBytes(32).toString('hex');
+      res.cookie(CSRF_COOKIE_NAME, token, {
+        httpOnly: false,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 8 * 60 * 60 * 1000,
+      });
+      res.setHeader('X-CSRF-Token', token);
+    } else {
+      res.setHeader('X-CSRF-Token', existing);
+    }
+    next();
+    return;
+  }
+
+  const headerRaw = req.headers[CSRF_HEADER_NAME] ?? req.headers[CSRF_HEADER_NAME.toUpperCase() as keyof typeof req.headers];
+  const header = Array.isArray(headerRaw) ? headerRaw[0] : headerRaw;
+  const headerToken = typeof header === 'string' ? header.trim() : '';
+  const cookieToken = cookies[CSRF_COOKIE_NAME]?.trim();
+  if (!headerToken || !cookieToken || !timingSafeStringCompare(headerToken, cookieToken)) {
+    logEvent('warn', 'onebox.csrf.rejected', {
+      correlationId: getCorrelationId(req),
+      method,
+    });
+    res.status(403).json({ error: 'CSRF token missing or invalid.' });
+    return;
+  }
+  next();
+}
+
+function sanitizePlanText(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new HttpError(400, 'Plan text must be a string.');
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new HttpError(400, 'Plan text is required.');
+  }
+  if (trimmed.length > MAX_PLAN_TEXT_LENGTH) {
+    throw new HttpError(400, `Plan text exceeds ${MAX_PLAN_TEXT_LENGTH} characters.`);
+  }
+  if (CONTROL_CHAR_PATTERN.test(trimmed)) {
+    throw new HttpError(400, 'Plan text contains unsupported control characters.');
+  }
+  return trimmed;
 }
 
 function isValidBearer(header: string, secret: string): boolean {
@@ -804,6 +943,9 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
   const expectedSecret = (process.env.ONEBOX_API_TOKEN ?? process.env.API_TOKEN ?? '').trim();
   const router = express.Router();
 
+  router.use(enforceRateLimit);
+  router.use(ensureCsrfProtection);
+
   router.use((req, res, next) => {
     if (!expectedSecret) {
       logEvent('warn', 'onebox.auth.missing_secret', {
@@ -846,7 +988,7 @@ export function createOneboxRouter(service: OneboxService = new DefaultOneboxSer
     let intentType = 'unknown';
     let httpStatus = 200;
     try {
-      const text = typeof req.body?.text === 'string' ? req.body.text : '';
+      const text = sanitizePlanText(req.body?.text);
       const expert = Boolean(req.body?.expert);
       const response = await service.plan(text, expert);
       const decorated = await decoratePlanResponse(response);
@@ -1137,8 +1279,9 @@ async function decoratePlanResponse(response: OneboxPlanResponse): Promise<PlanR
   if (Array.isArray((response as any).missingFields)) {
     metadata.missingFields = (response as any).missingFields;
   }
+  const sanitizedMetadata = scrubForPrivacy(metadata);
   const createdAt = new Date().toISOString();
-  const attested = await decorateReceipt('PLAN', metadata, {
+  const attested = await decorateReceipt('PLAN', sanitizedMetadata, {
     context: {
       planHash: response.planHash,
     },
@@ -1164,10 +1307,12 @@ async function decoratePlanResponse(response: OneboxPlanResponse): Promise<PlanR
       attestationCid: decorated.receiptAttestationCid ?? null,
       receipt: decorated.receipt ?? null,
       payload: {
-        summary: response.summary,
-        warnings: response.warnings,
-      },
-    });
+        summary: scrubForPrivacy(response.summary),
+        warnings: Array.isArray(response.warnings)
+          ? (scrubForPrivacy(response.warnings) as string[])
+          : [],
+    },
+  });
   } catch (error) {
     console.warn('Failed to persist plan receipt', error);
   }
@@ -1353,7 +1498,7 @@ function normaliseExecuteReceipt(
   if (!(record as { timings?: unknown }).timings) {
     (record as { timings?: Record<string, unknown> }).timings = { executed_at: createdAt };
   }
-  return record;
+  return scrubForPrivacy(record);
 }
 
 function buildReceiptRecord(
@@ -1413,7 +1558,7 @@ function buildReceiptRecord(
     record.fees = fees;
   }
 
-  return record;
+  return scrubForPrivacy(record);
 }
 
 interface FeeBreakdown {

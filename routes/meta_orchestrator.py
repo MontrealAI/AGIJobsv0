@@ -69,7 +69,11 @@ def execute(req: ExecIn) -> dict:
 
 
 @router.get("/status", response_model=StatusOut)
-def status(run_id: str = Query(..., alias="run_id")) -> StatusOut:
+def status(
+    run_id: str = Query(
+        ..., alias="run_id", min_length=8, max_length=128, pattern=r"^[A-Za-z0-9._-]+$"
+    )
+) -> StatusOut:
     try:
         status_obj = get_status(run_id)
     except KeyError as exc:  # pragma: no cover - defensive

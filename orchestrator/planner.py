@@ -382,11 +382,14 @@ def make_plan(req: PlanIn) -> PlanOut:
         missing.append("job_id")
 
     title = _infer_title(text)
+    description = text
+    if title and description and title.strip().lower() == description.strip().lower():
+        description = f"{description.strip()} (auto-generated brief)"
 
     intent = JobIntent(
         kind=intent_kind,  # type: ignore[arg-type]
         title=title,
-        description=text,
+        description=description,
         reward_agialpha=reward,
         deadline_days=deadline,
         job_id=job_id,

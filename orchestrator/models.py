@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import time
 from typing import Any, Dict, List, Literal, Optional
 
@@ -120,9 +121,22 @@ class OrchestrationPlan(BaseModel):
         )
 
 
+_CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
 class PlanIn(BaseModel):
-    input_text: str = Field(..., min_length=1)
+    input_text: str = Field(..., min_length=1, max_length=4000)
     attachments: List[Attachment] = Field(default_factory=list)
+
+    @field_validator("input_text")
+    @classmethod
+    def _sanitize_input_text(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Input text cannot be empty")
+        if _CONTROL_CHAR_PATTERN.search(cleaned):
+            raise ValueError("Input text contains disallowed control characters")
+        return cleaned
 
 
 class PlanOut(BaseModel):
