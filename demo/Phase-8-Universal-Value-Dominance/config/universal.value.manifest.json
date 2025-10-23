@@ -203,6 +203,13 @@
     }
   ],
   "selfImprovement": {
+    "plan": {
+      "planURI": "ipfs://agi-jobs/phase8/self-improvement/plan.json",
+      "planHash": "0x7d2556f5ae0a7dd2e9c3c5e29377b7af168e2b2f42a3e08d96b9f8e32d4b9f10",
+      "cadenceSeconds": 7200,
+      "lastExecutedAt": 1700000400,
+      "lastReportURI": "ipfs://agi-jobs/phase8/self-improvement/reports/epoch-144.json"
+    },
     "playbooks": [
       {
         "name": "Hyperparameter Evolution",

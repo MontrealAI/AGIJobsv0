@@ -225,5 +225,49 @@ describe("Phase8UniversalValueManager", function () {
     expect(refreshedGlobals.heartbeatSeconds).to.equal(700);
     expect(refreshedGlobals.guardianReviewWindow).to.equal(1000);
     expect(refreshedGlobals.maxDrawdownBps).to.equal(4200);
+
+    const plan = {
+      planURI: "ipfs://phase8/self-improvement/plan.json",
+      planHash: ethers.id("phase8-self-improvement"),
+      cadenceSeconds: 7200,
+      lastExecutedAt: 0,
+      lastReportURI: "",
+    } as const;
+
+    await expect(manager.connect(governance).setSelfImprovementPlan(plan))
+      .to.emit(manager, "SelfImprovementPlanUpdated")
+      .withArgs(plan.planURI, plan.planHash, plan.cadenceSeconds, plan.lastExecutedAt, plan.lastReportURI);
+
+    const storedPlan = await manager.selfImprovementPlan();
+    expect(storedPlan.planURI).to.equal(plan.planURI);
+    expect(storedPlan.planHash).to.equal(plan.planHash);
+    expect(storedPlan.cadenceSeconds).to.equal(plan.cadenceSeconds);
+    expect(storedPlan.lastExecutedAt).to.equal(plan.lastExecutedAt);
+
+    await expect(
+      manager.connect(operator).setSelfImprovementPlan({ ...plan, planHash: ethers.ZeroHash }),
+    ).to.be.revertedWithCustomError(manager, "NotGovernance");
+
+    await expect(
+      manager.connect(governance).setSelfImprovementPlan({ ...plan, planHash: ethers.ZeroHash }),
+    ).to.be.revertedWithCustomError(manager, "InvalidPlanHash");
+
+    const executionTimestamp = 1_700_000_000;
+    const executionReport = "ipfs://phase8/self-improvement/report-1.json";
+    await expect(manager.connect(governance).recordSelfImprovementExecution(executionTimestamp, executionReport))
+      .to.emit(manager, "SelfImprovementExecutionRecorded")
+      .withArgs(executionTimestamp, executionReport, plan.planHash);
+
+    const executedPlan = await manager.selfImprovementPlan();
+    expect(executedPlan.lastExecutedAt).to.equal(executionTimestamp);
+    expect(executedPlan.lastReportURI).to.equal(executionReport);
+
+    await expect(
+      manager.connect(governance).recordSelfImprovementExecution(executionTimestamp - 1, executionReport),
+    ).to.be.revertedWithCustomError(manager, "InvalidExecutionTimestamp");
+
+    await expect(
+      manager.connect(operator).recordSelfImprovementExecution(executionTimestamp + 1, executionReport),
+    ).to.be.revertedWithCustomError(manager, "NotGovernance");
   });
 });

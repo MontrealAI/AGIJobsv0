@@ -254,12 +254,20 @@
             : data.domains.reduce((acc, d) => acc + Number(d.resilienceIndex ?? 0), 0) / data.domains.length;
         const coverage = data.sentinels.reduce((acc, s) => acc + Number(s.coverageSeconds ?? 0), 0) / 60;
 
+        const plan = data.selfImprovement?.plan;
         const statItems = [
           { label: "Monthly value flow", value: formatUSD(totalMonthly) },
           { label: "Annual capital budget", value: formatUSD(annualBudget) },
           { label: "Average resilience", value: resilience.toFixed(3) },
           { label: "Sentinel coverage", value: `${coverage.toFixed(1)} min/cycle` },
         ];
+        if (plan?.cadenceSeconds) {
+          statItems.push({ label: "Improvement cadence", value: `${(plan.cadenceSeconds / 3600).toFixed(2)} h` });
+        }
+        if (plan?.lastExecutedAt) {
+          const executed = new Date(Number(plan.lastExecutedAt) * 1000).toISOString().replace("T", " · ");
+          statItems.push({ label: "Last improvement", value: executed });
+        }
         stats.innerHTML = statItems
           .map(
             (item) => `
@@ -356,7 +364,23 @@
           .join("");
 
         const playbooks = document.getElementById("playbooks");
+        const planCard = plan
+          ? `
+            <article class="playbook-item">
+              <strong>Strategic plan</strong>
+              <p>Cadence ${(plan.cadenceSeconds / 3600).toFixed(2)} h · Hash ${plan.planHash}</p>
+              <p>Manifest ${plan.planURI}${
+                plan.lastExecutedAt
+                  ? ` · Last execution ${new Date(Number(plan.lastExecutedAt) * 1000).toISOString()}`
+                  : ""
+              }</p>
+              <p>Latest report ${plan.lastReportURI || "—"}</p>
+            </article>
+          `
+          : "";
+
         playbooks.innerHTML = [
+          planCard,
           ...data.selfImprovement.playbooks.map(
             (playbook) => `
               <article class="playbook-item">
@@ -385,6 +409,8 @@
           <li>Install dependencies once: <code>npm ci</code></li>
           <li>Generate calldata + telemetry: <code>npm run demo:phase8:orchestrate</code></li>
           <li>Apply transactions via your governance Safe / Timelock</li>
+          <li>Update the self-improvement plan hash + cadence via <code>setSelfImprovementPlan</code></li>
+          <li>Record each improvement cycle with <code>recordSelfImprovementExecution</code> and archive the report URI</li>
           <li>Stream live telemetry from this console and the orchestrator runtime</li>
           <li>Trigger self-improvement playbooks as needed (see guardrails above)</li>
         `;

@@ -41,8 +41,8 @@
   control of domains, sentinel policies, capital streams, and emergency pause forwarding.
 * **Planetary telemetry in one command** – governance can read resilience, autonomy, value flow, and sentinel coverage from the
   CLI and UI without touching Solidity or Hardhat.
-* **Self-improving and self-checking** – playbooks and guardrails encoded in the manifest let the operator launch automated
-  retraining and adversarial stress-tests while ensuring autonomy stays bounded.
+* **Self-improving and self-checking** – an on-chain self-improvement charter (plan hash + cadence) plus manifest playbooks let
+  the operator launch automated retraining and adversarial stress-tests while ensuring autonomy stays bounded.
 * **Mermaid-first storytelling** – every run emits a rich diagram to explain how trillions in value flow through the
   superintelligent mesh.
 
@@ -62,6 +62,8 @@
 * **Domain dominion** – configure orchestration endpoints, vault limits, and autonomy bps per domain while guaranteeing slug
   uniqueness and heartbeat invariants. Domains, sentinels, and streams can also be removed entirely (`removeDomain`,
   `removeSentinel`, `removeCapitalStream`) with automatic pruning of bindings.
+* **Self-improvement charter** – `setSelfImprovementPlan` and `recordSelfImprovementExecution` keep the cadence, plan hash,
+  and audit trail of upgrades under direct governance control.
 
 The contract emits deterministic events so dashboards, subgraphs, and auditors can stream changes. All mutative calls remain
 `onlyGovernance`, satisfying the requirement that the owner can reconfigure everything – including pausing – at will.
@@ -70,10 +72,14 @@ The contract emits deterministic events so dashboards, subgraphs, and auditors c
 
 ## 🧠 Self-improvement kernel
 
-The manifest encodes a self-improvement plan:
+The manifest + contract encode a self-improvement plan:
 
-* **Playbooks** trigger weekly hyperparameter evolution and hourly stress-tests, each bound by cryptographic guardrails (checksums,
-  zk-proof-of-alignment, multi-agent cross-checks).
+* **Charter hash + cadence** – `setSelfImprovementPlan` writes the plan URI, cadence, and cryptographic hash on-chain so every
+  upgrade is pre-committed and auditable.
+* **Execution receipts** – `recordSelfImprovementExecution(executedAt, reportURI)` appends a tamper-evident log of each training
+  and evaluation cycle, binding it to an IPFS report.
+* **Playbooks** trigger weekly hyperparameter evolution and hourly stress-tests, each bound by cryptographic guardrails
+  (checksum verification, zk-proof-of-alignment, multi-agent cross-checks).
 * **Autonomy guard** enforces ≤8,000 bps autonomy, a 15-minute human override window, and escalations through guardian council,
   DAO emergency levers, and sentinel lockdown.
 * **Validator feedback loops** reward resilient domains (resilience >0.9) with higher capital allocation while surfacing low
@@ -91,7 +97,7 @@ Open [`index.html`](./index.html) to explore the fully client-side control room:
 * Domain cards with autonomy bps, resilience, heartbeat, and skill badges.
 * Sentinel lattice view with live coverage, sensitivity, and domain bindings (auto-highlighted when a domain loses coverage).
 * Capital stream portfolio with annual budgets, vault routing, and linked dominions.
-* Self-improvement playbooks and guardrails rendered with owner addresses.
+* Self-improvement plan (hash, cadence, report URI) plus playbooks and guardrails rendered with owner addresses.
 * An auto-generated Mermaid diagram illustrating governance, sentinels, and capital flow.
 
 ---
