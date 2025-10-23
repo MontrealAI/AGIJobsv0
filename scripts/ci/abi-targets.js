@@ -27,6 +27,61 @@ const ABI_TARGETS = [
       { type: 'event', name: 'JobCreated' },
     ],
   },
+  {
+    name: 'JobRegistrySubgraph',
+    artifact: path.join(
+      'artifacts',
+      'contracts/v2/JobRegistry.sol/JobRegistry.json'
+    ),
+    output: path.join('subgraph', 'abis', 'JobRegistry.json'),
+    fragments: [
+      { type: 'event', name: 'JobCreated' },
+      { type: 'event', name: 'JobFinalized' },
+      { type: 'event', name: 'JobDomainTagged' },
+      { type: 'event', name: 'JobDomainCleared' },
+    ],
+  },
+  {
+    name: 'StakeManagerSubgraph',
+    artifact: path.join(
+      'artifacts',
+      'contracts/v2/StakeManager.sol/StakeManager.json'
+    ),
+    output: path.join('subgraph', 'abis', 'StakeManager.json'),
+    fragments: [
+      { type: 'event', name: 'StakeDeposited' },
+      { type: 'event', name: 'StakeSlashed' },
+    ],
+  },
+  {
+    name: 'ValidationModuleSubgraph',
+    artifact: path.join(
+      'artifacts',
+      'contracts/v2/ValidationModule.sol/ValidationModule.json'
+    ),
+    output: path.join('subgraph', 'abis', 'ValidationModule.json'),
+    fragments: [{ type: 'event', name: 'ValidationRevealed' }],
+  },
+  {
+    name: 'DomainRegistrySubgraph',
+    artifact: path.join(
+      'artifacts',
+      'contracts/v2/DomainRegistry.sol/DomainRegistry.json'
+    ),
+    output: path.join('subgraph', 'abis', 'DomainRegistry.json'),
+    fragments: [
+      { type: 'event', name: 'DomainRegistered' },
+      { type: 'event', name: 'DomainMetadataUpdated' },
+      { type: 'event', name: 'DomainRuntimeUpdated' },
+      { type: 'event', name: 'DomainCapsUpdated' },
+      { type: 'event', name: 'DomainStatusUpdated' },
+      { type: 'event', name: 'DomainPaused' },
+      { type: 'event', name: 'DomainResumed' },
+      { type: 'event', name: 'SlugReassigned' },
+      { type: 'event', name: 'Paused', inputs: ['address'] },
+      { type: 'event', name: 'Unpaused', inputs: ['address'] },
+    ],
+  },
 ];
 
 module.exports = { ABI_TARGETS };

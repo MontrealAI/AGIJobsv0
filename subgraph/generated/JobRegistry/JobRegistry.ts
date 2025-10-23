@@ -78,6 +78,86 @@ export class JobFinalized__Params {
   }
 }
 
+export class JobDomainTagged extends ethereum.Event {
+  get params(): JobDomainTagged__Params {
+    return new JobDomainTagged__Params(this);
+  }
+}
+
+export class JobDomainTagged__Params {
+  _event: JobDomainTagged;
+
+  constructor(event: JobDomainTagged) {
+    this._event = event;
+  }
+
+  get jobId(): BigInt {
+    return this._event.parameters[0].value.toBigInt();
+  }
+
+  get domainId(): BigInt {
+    return this._event.parameters[1].value.toBigInt();
+  }
+
+  get domainKey(): Bytes {
+    return this._event.parameters[2].value.toBytes();
+  }
+
+  get metadataURI(): string {
+    return this._event.parameters[3].value.toString();
+  }
+
+  get dispatcher(): Address {
+    return this._event.parameters[4].value.toAddress();
+  }
+
+  get oracle(): Address {
+    return this._event.parameters[5].value.toAddress();
+  }
+
+  get bridge(): Address {
+    return this._event.parameters[6].value.toAddress();
+  }
+
+  get l2Gateway(): Address {
+    return this._event.parameters[7].value.toAddress();
+  }
+
+  get credentialSchema(): Bytes {
+    return this._event.parameters[8].value.toBytes();
+  }
+
+  get minStake(): BigInt {
+    return this._event.parameters[9].value.toBigInt();
+  }
+
+  get maxConcurrentJobs(): BigInt {
+    return this._event.parameters[10].value.toBigInt();
+  }
+
+  get requiresHumanReview(): boolean {
+    return this._event.parameters[11].value.toBoolean();
+  }
+}
+
+export class JobDomainCleared extends ethereum.Event {
+  get params(): JobDomainCleared__Params {
+    return new JobDomainCleared__Params(this);
+  }
+}
+
+export class JobDomainCleared__Params {
+  _event: JobDomainCleared;
+
+  constructor(event: JobDomainCleared) {
+    this._event = event;
+  }
+
+  get jobId(): BigInt {
+    return this._event.parameters[0].value.toBigInt();
+  }
+}
+
 export class JobRegistry extends ethereum.SmartContract {
   static bind(address: Address): JobRegistry {
     return new JobRegistry("JobRegistry", address);
