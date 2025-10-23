@@ -71,6 +71,26 @@ config.domains.forEach((domain, idx) => {
   if (!Array.isArray(domain.skillTags) || domain.skillTags.length === 0) {
     fail(`${context}: skillTags must include at least one entry.`);
   }
+  const metadata = domain.metadata;
+  if (!metadata || typeof metadata !== 'object') {
+    fail(`${context}: metadata object is required.`);
+  }
+  ['domain', 'l2', 'sentinel', 'uptime'].forEach((key) => {
+    if (!metadata[key] || typeof metadata[key] !== 'string') {
+      fail(`${context}: metadata.${key} must be a non-empty string.`);
+    }
+  });
+  const resilienceIndex = Number.parseFloat(metadata.resilienceIndex);
+  if (!Number.isFinite(resilienceIndex) || resilienceIndex <= 0 || resilienceIndex > 1) {
+    fail(`${context}: metadata.resilienceIndex must be a number between 0 and 1.`);
+  }
+  const valueFlow = metadata.valueFlowMonthlyUSD;
+  if (typeof valueFlow !== 'number' || !Number.isFinite(valueFlow) || valueFlow < 0) {
+    fail(`${context}: metadata.valueFlowMonthlyUSD must be a positive number.`);
+  }
+  if (metadata.valueFlowDisplay && typeof metadata.valueFlowDisplay !== 'string') {
+    fail(`${context}: metadata.valueFlowDisplay must be a string when provided.`);
+  }
 });
 
 if (!html.includes('mermaid')) {

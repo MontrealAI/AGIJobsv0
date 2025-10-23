@@ -23,7 +23,11 @@
       "metadata": {
         "domain": "Capital markets synthesis, real-time liquidity engineering",
         "l2": "Linea",
-        "sentinel": "Resilience-Index-Finance"
+        "sentinel": "Resilience-Index-Finance",
+        "resilienceIndex": 0.982,
+        "uptime": "99.982%",
+        "valueFlowMonthlyUSD": 28400000000,
+        "valueFlowDisplay": "$28.4B"
       }
     },
     {
@@ -41,7 +45,11 @@
       "metadata": {
         "domain": "Precision diagnostics, clinical validation, regulatory co-pilots",
         "l2": "Arbitrum",
-        "sentinel": "Resilience-Index-Health"
+        "sentinel": "Resilience-Index-Health",
+        "resilienceIndex": 0.975,
+        "uptime": "99.961%",
+        "valueFlowMonthlyUSD": 18600000000,
+        "valueFlowDisplay": "$18.6B"
       }
     },
     {
@@ -59,7 +67,11 @@
       "metadata": {
         "domain": "Planetary logistics, IoT coordination, smart city fulfillment",
         "l2": "Base",
-        "sentinel": "Resilience-Index-Logistics"
+        "sentinel": "Resilience-Index-Logistics",
+        "resilienceIndex": 0.968,
+        "uptime": "99.947%",
+        "valueFlowMonthlyUSD": 22400000000,
+        "valueFlowDisplay": "$22.4B"
       }
     },
     {
@@ -77,7 +89,33 @@
       "metadata": {
         "domain": "Global decarbonization, adaptive grid intelligence",
         "l2": "Polygon",
-        "sentinel": "Resilience-Index-Climate"
+        "sentinel": "Resilience-Index-Climate",
+        "resilienceIndex": 0.942,
+        "uptime": "99.923%",
+        "valueFlowMonthlyUSD": 11200000000,
+        "valueFlowDisplay": "$11.2B"
+      }
+    },
+    {
+      "slug": "education",
+      "name": "Omniversal Knowledge Cooperative",
+      "manifestURI": "ipfs://phase6/domains/education.json",
+      "subgraph": "https://phase6.montreal.ai/subgraphs/education",
+      "l2Gateway": "0x1357135713571357135713571357135713571357",
+      "oracle": "0x2468246824682468246824682468246824682468",
+      "executionRouter": "0x3579357935793579357935793579357935793579",
+      "heartbeatSeconds": 150,
+      "skillTags": ["education", "research", "training", "governance"],
+      "capabilities": { "curriculum": 4.1, "compliance": 3.9, "simulation": 4.2 },
+      "priority": 91,
+      "metadata": {
+        "domain": "Lifelong learning, institutional onboarding, policy education",
+        "l2": "Optimism",
+        "sentinel": "Resilience-Index-Education",
+        "resilienceIndex": 0.957,
+        "uptime": "99.938%",
+        "valueFlowMonthlyUSD": 9800000000,
+        "valueFlowDisplay": "$9.8B"
       }
     }
   ]

@@ -11,6 +11,7 @@
 * **Planetary telemetry** – the subgraph now indexes `Phase6Domain` & `Phase6GlobalConfig`, letting dashboards stream readiness, resilience indices, and upgrade intents in real time.
 * **Bullet-proof governance** – every parameter is updatable by the contract owner (timelock/multisig) including emergency pause delegates and cross-chain bridges.
 * **CI as a guardian** – the `ci (v2) / Phase 6 readiness` job enforces configuration drift detection on every PR and on `main`.
+* **Resilience telemetry** – the demo computes average/min/max resilience, sentinel coverage, and value flow across finance, health, logistics, climate, and the new education lattice.
 
 ---
 
@@ -105,10 +106,10 @@ A new job in `.github/workflows/ci.yml` named **Phase 6 readiness** runs on ever
 
 Open `index.html` to explore:
 
-* Dynamic domain cards with L2 cadence, oracle routes, and skill matrices.
+* Dynamic domain cards with L2 cadence, oracle routes, resilience indices, and skill matrices.
 * Embedded mermaid system map.
 * Copyable calldata panes (auto-updated from the JSON config).
-* “One-click ready” states for finance, health, logistics, climate, plus global manifest metadata.
+* “One-click ready” states for finance, health, logistics, climate, education, plus global manifest metadata.
 
 ---
 
