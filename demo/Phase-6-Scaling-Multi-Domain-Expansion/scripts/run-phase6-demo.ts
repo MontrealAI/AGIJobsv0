@@ -192,6 +192,8 @@ function heartbeatSummary(domain: any, global: any) {
     0,
   );
 
+  const guards = config.global.guards ?? {};
+
   banner('Network telemetry');
   if (metrics.averageResilience !== undefined) {
     console.log(
@@ -211,7 +213,6 @@ function heartbeatSummary(domain: any, global: any) {
   );
 
   banner('Global controls');
-  const guards = config.global.guards ?? {};
   renderTable([
     ['Manifest URI', config.global.manifestURI],
     summarizeAddress('IoT oracle router', config.global.iotOracleRouter).split(': '),
