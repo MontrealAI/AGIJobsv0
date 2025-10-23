@@ -14,6 +14,7 @@ from typing import Dict, Iterable, List, Optional
 from ..models import Attachment, Step
 from ..moderation import ModerationReport, evaluate_step
 from ..scoreboard import get_scoreboard
+from ..extensions import load_runtime as _load_phase6_runtime
 
 _ROUTER_PATH = Path("packages/orchestrator/src/router.ts")
 
@@ -122,6 +123,7 @@ class _NodeBridge:
 
 _NODE_BRIDGE = _NodeBridge()
 _SCOREBOARD = get_scoreboard()
+_PHASE6_RUNTIME = _load_phase6_runtime()
 
 
 def _build_payload(step: Step) -> Dict[str, object]:
@@ -195,6 +197,8 @@ class StepExecutor:
         self.retry = retry or RetryPolicy()
 
     def _attempt(self, step: Step, attempt: int) -> List[str]:
+        runtime_logs = _PHASE6_RUNTIME.annotate_step(step)
+
         if step.tool == "safety.moderation":
             attachments: List[Attachment] = []
             if isinstance(step.params, dict):
@@ -216,13 +220,16 @@ class StepExecutor:
                 logs.append(f"Repeated passage: {snippet[:120]}{'…' if len(snippet) > 120 else ''}")
             if report.blocked:
                 raise ModerationRejected(report, logs)
-            return logs
+            return list(runtime_logs) + logs
 
         intent = _STEP_TO_INTENT.get(step.tool or "")
         if not intent:
-            return [f"No executor registered for tool `{step.tool}`; marking as no-op."]
+            return list(runtime_logs) + [
+                f"No executor registered for tool `{step.tool}`; marking as no-op."
+            ]
         payload = _build_payload(step)
-        logs: List[str] = [f"Dispatching intent `{intent}` (attempt {attempt})."]
+        logs: List[str] = list(runtime_logs)
+        logs.append(f"Dispatching intent `{intent}` (attempt {attempt}).")
         bridge_preference = os.environ.get("ORCHESTRATOR_BRIDGE_MODE", "auto")
         if bridge_preference == "node":
             logs.extend(_NODE_BRIDGE.run(intent, payload))

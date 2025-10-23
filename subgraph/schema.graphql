@@ -80,3 +80,34 @@ type ValidatorVote @entity {
   revealedAtBlock: BigInt!
   revealedAtTimestamp: BigInt!
 }
+
+type Phase6Domain @entity {
+  id: ID!
+  slug: String!
+  name: String!
+  metadataURI: String!
+  subgraphEndpoint: String!
+  validationModule: Bytes
+  dataOracle: Bytes
+  l2Gateway: Bytes
+  executionRouter: Bytes
+  heartbeatSeconds: Int!
+  active: Boolean!
+  manifestURI: String!
+  registeredAtBlock: BigInt!
+  registeredAtTimestamp: BigInt!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+}
+
+type Phase6GlobalConfig @entity {
+  id: ID!
+  iotOracleRouter: Bytes
+  defaultL2Gateway: Bytes
+  didRegistry: Bytes
+  treasuryBridge: Bytes
+  l2SyncCadence: Int!
+  manifestURI: String!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+}

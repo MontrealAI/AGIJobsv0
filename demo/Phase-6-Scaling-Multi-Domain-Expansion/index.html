@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AGI Jobs Phase 6 Control Surface</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #030712;
+        --card: rgba(20, 24, 35, 0.78);
+        --accent: #7f5bff;
+        --accent-soft: rgba(127, 91, 255, 0.18);
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at 10% 10%, rgba(127, 91, 255, 0.25), transparent 60%),
+          radial-gradient(circle at 90% 15%, rgba(34, 211, 238, 0.2), transparent 55%),
+          var(--bg);
+        font-family: 'Space Grotesk', system-ui, sans-serif;
+        color: var(--text);
+      }
+      header {
+        padding: 64px 5vw 32px;
+        text-align: center;
+      }
+      header h1 {
+        font-size: clamp(2.5rem, 5vw, 3.75rem);
+        margin: 0;
+        letter-spacing: -0.04em;
+      }
+      header p {
+        max-width: 720px;
+        margin: 16px auto 32px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .hero-actions {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      button.primary {
+        background: linear-gradient(135deg, #7f5bff, #22d3ee);
+        border: none;
+        color: #0b1120;
+        padding: 14px 28px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+        box-shadow: 0 18px 45px rgba(127, 91, 255, 0.35);
+      }
+      button.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 48px rgba(127, 91, 255, 0.45);
+      }
+      main {
+        padding: 0 5vw 96px;
+        display: grid;
+        gap: 40px;
+      }
+      section.card {
+        background: var(--card);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        border-radius: 24px;
+        padding: 32px;
+        backdrop-filter: blur(18px);
+        box-shadow: 0 24px 64px rgba(2, 6, 23, 0.55);
+      }
+      .grid {
+        display: grid;
+        gap: 24px;
+      }
+      @media (min-width: 900px) {
+        .grid.columns-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      .domain-card {
+        border-radius: 20px;
+        border: 1px solid rgba(127, 91, 255, 0.22);
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.72);
+        position: relative;
+        overflow: hidden;
+      }
+      .domain-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at 80% 0%, rgba(34, 211, 238, 0.15), transparent 55%);
+      }
+      .domain-card h3 {
+        margin: 0 0 12px;
+        font-size: 1.5rem;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(127, 91, 255, 0.18);
+        border: 1px solid rgba(127, 91, 255, 0.35);
+        font-size: 0.82rem;
+        color: var(--text);
+        margin-right: 8px;
+      }
+      .metrics {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .metrics span {
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      pre {
+        background: rgba(15, 23, 42, 0.78);
+        border-radius: 18px;
+        padding: 20px;
+        overflow-x: auto;
+        font-size: 0.85rem;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+      }
+      .mermaid-container {
+        background: rgba(15, 23, 42, 0.78);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+      }
+      footer {
+        text-align: center;
+        color: var(--muted);
+        padding: 24px 5vw 64px;
+      }
+      .hidden {
+        display: none !important;
+      }
+    </style>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.mermaid) {
+          window.mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>AGI Jobs Phase 6 Control Surface</h1>
+      <p>
+        Operate civilization-scale agent fleets across finance, healthcare, logistics, and climate systems. One run of
+        AGI Jobs v0/v2 deploys or updates every domain, routes IoT signals, and verifies DID-controlled access – without
+        writing a single line of code.
+      </p>
+      <div class="hero-actions">
+        <button id="launch-demo" class="primary">Launch orchestration preview</button>
+        <button id="copy-mermaid" class="primary" style="background: rgba(34,211,238,0.18); color: var(--text); box-shadow: none;">
+          Copy mermaid diagram
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Global readiness dashboard</h2>
+        <div class="metrics" id="global-summary"></div>
+      </section>
+
+      <section class="card">
+        <h2>Layer-2 bridge & oracle plan</h2>
+        <div class="grid columns-2" id="bridge-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Domain control modules</h2>
+        <div class="grid columns-2" id="domain-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Phase 6 systems map</h2>
+        <div class="mermaid-container">
+          <pre class="mermaid" id="mermaid-diagram">graph TD
+  Owner[[Timelock / Owner]] -->|governs| Expansion(Phase6ExpansionManager)
+  Expansion -->|registers| Domains{{Multi-domain registry}}
+  Domains -->|events| Subgraph[(Phase6 Subgraph)]
+  Subgraph --> Dashboards
+  Expansion -->|pause| SystemPause
+  Expansion -->|escalate| EscalationBridge
+  Domains -->|routes| Runtime[Phase6 Runtime]
+  Runtime --> Agents[Autonomous agent fleets]
+  Agents --> IoT[IoT & External Oracles]
+  Runtime --> L2Gateways[Layer-2 Executors]
+  L2Gateways --> Settlement[Ethereum Mainnet]
+</pre>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Calldata clipboard</h2>
+        <p style="color: var(--muted); margin-top: 0;">
+          Ready-to-execute calldata for `registerDomain`, `updateDomain`, and `setGlobalConfig`. Paste straight into your
+          multisig or timelock UI.
+        </p>
+        <div class="grid" id="calldata-grid"></div>
+      </section>
+    </main>
+
+    <footer>
+      Phase 6 readiness courtesy of AGI Jobs v0/v2. Governance retains full control, agents gain infinite reach.
+    </footer>
+
+    <script type="module">
+      const zeroAddress = '0x0000000000000000000000000000000000000000';
+      const configPath = './config/domains.phase6.json';
+      const abi = await fetch('../subgraph/abis/Phase6ExpansionManager.json').then((res) => res.json());
+      const { Interface, keccak256, toUtf8Bytes } = await import('https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm');
+      const iface = new Interface(abi);
+
+      const state = { config: null, mermaidSource: '', calldata: [] };
+
+      function formatAddress(addr) {
+        if (!addr || addr === zeroAddress) return '—';
+        return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+      }
+
+      function heartbeatSummary(domain, global) {
+        const cadence = Math.max(domain.heartbeatSeconds ?? 0, global.l2SyncCadence ?? 0);
+        return `${cadence}s sync cadence (domain ${domain.heartbeatSeconds}s, global ${global.l2SyncCadence}s)`;
+      }
+
+      function buildDomainTuple(domain) {
+        return [
+          domain.slug,
+          domain.name,
+          domain.manifestURI,
+          domain.validationModule ?? zeroAddress,
+          domain.oracle ?? zeroAddress,
+          domain.l2Gateway ?? zeroAddress,
+          domain.subgraph,
+          domain.executionRouter ?? zeroAddress,
+          BigInt(domain.heartbeatSeconds ?? 120),
+          true,
+        ];
+      }
+
+      function renderGlobal(config) {
+        const target = document.getElementById('global-summary');
+        target.innerHTML = '';
+        const items = [
+          `Global manifest: ${config.global.manifestURI}`,
+          `IoT oracle router: ${formatAddress(config.global.iotOracleRouter)}`,
+          `Default L2 gateway: ${formatAddress(config.global.defaultL2Gateway)}`,
+          `Treasury bridge: ${formatAddress(config.global.treasuryBridge)}`,
+          `DID registry: ${formatAddress(config.global.didRegistry)}`,
+          `Network cadence baseline: ${config.global.l2SyncCadence}s`
+        ];
+        items.forEach((text) => {
+          const span = document.createElement('span');
+          span.textContent = `• ${text}`;
+          target.appendChild(span);
+        });
+      }
+
+      function renderDomains(config) {
+        const grid = document.getElementById('domain-grid');
+        grid.innerHTML = '';
+        config.domains.forEach((domain) => {
+          const card = document.createElement('article');
+          card.className = 'domain-card';
+
+          const title = document.createElement('h3');
+          title.textContent = domain.name;
+          card.appendChild(title);
+
+          const slug = document.createElement('span');
+          slug.className = 'badge';
+          slug.textContent = `slug: ${domain.slug}`;
+          card.appendChild(slug);
+
+          const priority = document.createElement('span');
+          priority.className = 'badge';
+          priority.textContent = `priority ${domain.priority}`;
+          card.appendChild(priority);
+
+          const metrics = document.createElement('div');
+          metrics.className = 'metrics';
+          metrics.innerHTML = `
+            <span>Manifest URI: ${domain.manifestURI}</span>
+            <span>Subgraph: ${domain.subgraph}</span>
+            <span>Validation module: ${formatAddress(domain.validationModule)}</span>
+            <span>IoT oracle: ${formatAddress(domain.oracle)}</span>
+            <span>Execution router: ${formatAddress(domain.executionRouter)}</span>
+            <span>Heartbeat: ${heartbeatSummary(domain, config.global)}</span>
+            <span>Skill tags: ${domain.skillTags.join(', ')}</span>
+          `;
+          card.appendChild(metrics);
+          grid.appendChild(card);
+        });
+      }
+
+      function renderBridgePlans(config) {
+        const grid = document.getElementById('bridge-grid');
+        grid.innerHTML = '';
+        config.domains.forEach((domain) => {
+          const div = document.createElement('div');
+          div.className = 'domain-card';
+          const bridge = {
+            domain: domain.slug,
+            l2Gateway: domain.l2Gateway || config.global.defaultL2Gateway,
+            oracle: domain.oracle || config.global.iotOracleRouter,
+            executionRouter: domain.executionRouter || zeroAddress,
+            cadence: heartbeatSummary(domain, config.global),
+          };
+          div.innerHTML = `
+            <h3>${domain.name}</h3>
+            <div class="metrics">
+              <span>Target L2 gateway: ${formatAddress(bridge.l2Gateway)}</span>
+              <span>IoT oracle router: ${formatAddress(bridge.oracle)}</span>
+              <span>Execution router: ${formatAddress(bridge.executionRouter)}</span>
+              <span>${bridge.cadence}</span>
+            </div>
+          `;
+          grid.appendChild(div);
+        });
+      }
+
+      function renderCalldata() {
+        const grid = document.getElementById('calldata-grid');
+        grid.innerHTML = '';
+        state.calldata.forEach((entry) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'domain-card';
+          const title = document.createElement('h3');
+          title.textContent = entry.label;
+          wrapper.appendChild(title);
+          const pre = document.createElement('pre');
+          pre.textContent = entry.data;
+          wrapper.appendChild(pre);
+          grid.appendChild(wrapper);
+        });
+      }
+
+      function buildCalldata(config) {
+        const calldata = [];
+        const globalTuple = [
+          config.global.iotOracleRouter ?? zeroAddress,
+          config.global.defaultL2Gateway ?? zeroAddress,
+          config.global.didRegistry ?? zeroAddress,
+          config.global.treasuryBridge ?? zeroAddress,
+          BigInt(config.global.l2SyncCadence ?? 180),
+          config.global.manifestURI,
+        ];
+        calldata.push({
+          label: 'setGlobalConfig(GlobalConfig)',
+          data: iface.encodeFunctionData('setGlobalConfig', [globalTuple]),
+        });
+        config.domains.forEach((domain) => {
+          const tuple = buildDomainTuple(domain);
+          calldata.push({
+            label: `registerDomain(${domain.slug})`,
+            data: iface.encodeFunctionData('registerDomain', [tuple]),
+          });
+          calldata.push({
+            label: `updateDomain(${domain.slug})`,
+            data: iface.encodeFunctionData('updateDomain', [
+              keccak256(toUtf8Bytes(domain.slug.toLowerCase())),
+              tuple,
+            ]),
+          });
+        });
+        state.calldata = calldata;
+      }
+
+      async function initialise() {
+        const response = await fetch(configPath);
+        const cfg = await response.json();
+        state.config = cfg;
+        renderGlobal(cfg);
+        renderDomains(cfg);
+        renderBridgePlans(cfg);
+        buildCalldata(cfg);
+        renderCalldata();
+        updateMermaid();
+      }
+
+      function updateMermaid() {
+        const lines = ['graph TD'];
+        lines.push('  Owner[[Governance]] --> Expansion(Phase6ExpansionManager)');
+        state.config.domains.forEach((domain) => {
+          lines.push(`  Expansion --> ${domain.slug.replace(/[^a-z0-9]/gi, '')}([${domain.name}])`);
+          lines.push(`  ${domain.slug.replace(/[^a-z0-9]/gi, '')} --> RuntimePhase6`);
+        });
+        lines.push('  RuntimePhase6[Phase6 Runtime] --> IoTSignal[IoT/Oracle Feeds]');
+        lines.push('  RuntimePhase6 --> L2Fabric[Layer-2 Fabric]');
+        lines.push('  L2Fabric --> Settlement');
+        const diagram = lines.join('\n');
+        state.mermaidSource = diagram;
+        const el = document.getElementById('mermaid-diagram');
+        el.textContent = diagram;
+        if (window.mermaid) {
+          window.mermaid.run({ querySelector: '#mermaid-diagram' });
+        }
+      }
+
+      document.getElementById('launch-demo').addEventListener('click', () => {
+        initialise();
+      });
+
+      document.getElementById('copy-mermaid').addEventListener('click', async () => {
+        if (!state.mermaidSource) {
+          await initialise();
+        }
+        await navigator.clipboard.writeText(state.mermaidSource);
+        document.getElementById('copy-mermaid').textContent = 'Copied diagram ✓';
+        setTimeout(() => {
+          document.getElementById('copy-mermaid').textContent = 'Copy mermaid diagram';
+        }, 3000);
+      });
+
+      // Auto-load for convenience
+      initialise();
+    </script>
+  </body>
+</html>

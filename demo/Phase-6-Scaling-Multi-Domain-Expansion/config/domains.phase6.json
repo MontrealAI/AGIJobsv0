@@ -1,0 +1,84 @@
+{
+  "global": {
+    "manifestURI": "ipfs://phase6/global-control-surface.json",
+    "iotOracleRouter": "0x1111111111111111111111111111111111111111",
+    "defaultL2Gateway": "0x2222222222222222222222222222222222222222",
+    "didRegistry": "0x3333333333333333333333333333333333333333",
+    "treasuryBridge": "0x4444444444444444444444444444444444444444",
+    "l2SyncCadence": 180
+  },
+  "domains": [
+    {
+      "slug": "finance",
+      "name": "Sovereign Finance Hypergrid",
+      "manifestURI": "ipfs://phase6/domains/finance.json",
+      "subgraph": "https://phase6.montreal.ai/subgraphs/finance",
+      "l2Gateway": "0x5555555555555555555555555555555555555555",
+      "oracle": "0x6666666666666666666666666666666666666666",
+      "executionRouter": "0x7777777777777777777777777777777777777777",
+      "heartbeatSeconds": 90,
+      "skillTags": ["finance", "risk", "credit", "defi"],
+      "capabilities": { "credit": 4.0, "treasury": 3.5, "defi": 3.0 },
+      "priority": 95,
+      "metadata": {
+        "domain": "Capital markets synthesis, real-time liquidity engineering",
+        "l2": "Linea",
+        "sentinel": "Resilience-Index-Finance"
+      }
+    },
+    {
+      "slug": "health",
+      "name": "Interplanetary Health Mesh",
+      "manifestURI": "ipfs://phase6/domains/health.json",
+      "subgraph": "https://phase6.montreal.ai/subgraphs/health",
+      "l2Gateway": "0x8888888888888888888888888888888888888888",
+      "oracle": "0x9999999999999999999999999999999999999999",
+      "executionRouter": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "heartbeatSeconds": 120,
+      "skillTags": ["healthcare", "diagnostics", "compliance", "bio"],
+      "capabilities": { "diagnostics": 4.5, "compliance": 4.0 },
+      "priority": 92,
+      "metadata": {
+        "domain": "Precision diagnostics, clinical validation, regulatory co-pilots",
+        "l2": "Arbitrum",
+        "sentinel": "Resilience-Index-Health"
+      }
+    },
+    {
+      "slug": "logistics",
+      "name": "Autonomous Supply Lattice",
+      "manifestURI": "ipfs://phase6/domains/logistics.json",
+      "subgraph": "https://phase6.montreal.ai/subgraphs/logistics",
+      "l2Gateway": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "oracle": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "executionRouter": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "heartbeatSeconds": 75,
+      "skillTags": ["logistics", "iot", "supply", "routing", "manufacturing"],
+      "capabilities": { "routing": 4.2, "supply": 4.0, "manufacturing": 3.8 },
+      "priority": 94,
+      "metadata": {
+        "domain": "Planetary logistics, IoT coordination, smart city fulfillment",
+        "l2": "Base",
+        "sentinel": "Resilience-Index-Logistics"
+      }
+    },
+    {
+      "slug": "climate",
+      "name": "Climate Resilience Nexus",
+      "manifestURI": "ipfs://phase6/domains/climate.json",
+      "subgraph": "https://phase6.montreal.ai/subgraphs/climate",
+      "l2Gateway": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "oracle": "0xffffffffffffffffffffffffffffffffffffffff",
+      "executionRouter": "0x1234567890123456789012345678901234567890",
+      "heartbeatSeconds": 210,
+      "skillTags": ["climate", "sustainability", "energy", "carbon"],
+      "capabilities": { "carbon": 4.4, "energy": 4.1, "modeling": 3.9 },
+      "priority": 88,
+      "metadata": {
+        "domain": "Global decarbonization, adaptive grid intelligence",
+        "l2": "Polygon",
+        "sentinel": "Resilience-Index-Climate"
+      }
+    }
+  ]
+}

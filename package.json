@@ -255,6 +255,8 @@
     "demo:redenomination:verify": "node demo/REDENOMINATION/scripts/verify-scenario.mjs",
     "demo:redenomination:owner-console": "node demo/REDENOMINATION/scripts/owner-console.mjs",
     "demo:redenomination:guardian-drill": "node demo/REDENOMINATION/scripts/guardian-drill.mjs",
+    "demo:phase6:orchestrate": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/run-phase6-demo.ts",
+    "demo:phase6:ci": "node demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/ci-check.mjs",
     "culture:deploy": "npx hardhat run --no-compile scripts/deploy.culture.ts",
     "culture:seed": "npx hardhat run --no-compile scripts/seed.culture.ts",
     "culture:arena:sample": "npx hardhat run --no-compile scripts/run.arena.sample.ts",
