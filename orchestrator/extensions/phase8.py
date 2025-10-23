@@ -29,6 +29,56 @@ def _coerce_active(value: object) -> bool:
     return bool(value)
 
 
+def _extract_preferences(step: "Step") -> Tuple[Optional[str], Tuple[str, ...]]:
+    """Collect a preferred dominion slug and capability tags from a step."""
+
+    domain_hint: Optional[str] = None
+    tags: List[str] = []
+    seen: set[str] = set()
+
+    def _push_tag(value: str) -> None:
+        normalized = value.strip()
+        if not normalized:
+            return
+        lowered = normalized.lower()
+        if lowered in seen:
+            return
+        seen.add(lowered)
+        tags.append(normalized)
+
+    params = getattr(step, "params", None)
+    if isinstance(params, dict):
+        for key in ("domain", "phase8Domain", "targetDomain", "industry"):
+            value = params.get(key)
+            if isinstance(value, str) and value.strip():
+                domain_hint = value
+                break
+        for key in ("tags", "skills", "capabilities", "industries"):
+            value = params.get(key)
+            if isinstance(value, (list, tuple, set)):
+                for entry in value:
+                    if isinstance(entry, str):
+                        _push_tag(entry)
+    metadata = getattr(step, "metadata", None)
+    if isinstance(metadata, dict):
+        hint = metadata.get("domain")
+        if isinstance(hint, str) and hint.strip():
+            domain_hint = hint
+        meta_tags = metadata.get("tags")
+        if isinstance(meta_tags, (list, tuple, set)):
+            for entry in meta_tags:
+                if isinstance(entry, str):
+                    _push_tag(entry)
+
+    capabilities = getattr(step, "capabilities", None)
+    if isinstance(capabilities, (list, tuple, set)):
+        for entry in capabilities:
+            if isinstance(entry, str):
+                _push_tag(entry)
+
+    return (domain_hint, tuple(tags))
+
+
 @dataclass(slots=True)
 class DominionProfile:
     slug: str
@@ -229,9 +279,18 @@ class Phase8DominionRuntime:
             f"coverage={sentinel_minutes:.1f}m window={self._global.guardian_window_seconds/60:.1f}m drawdown={self._global.max_drawdown_bps}bps"
         )
 
-    def select_dominion(self, tags: Sequence[str]) -> Optional[DominionProfile]:
+    def select_dominion(
+        self,
+        tags: Sequence[str],
+        domain_hint: Optional[str] = None,
+    ) -> Optional[DominionProfile]:
         if not self._dominions:
             return None
+        if domain_hint:
+            hint_key = domain_hint.lower()
+            hinted = self._dominions.get(hint_key)
+            if hinted:
+                return hinted
         best: Optional[DominionProfile] = None
         best_score = float("-inf")
         for domain in self._dominions.values():
@@ -242,15 +301,35 @@ class Phase8DominionRuntime:
         return best
 
     def annotate_step(self, step: "Step") -> List[str]:
-        tags = list(getattr(step, "capabilities", []) or [])
-        chosen = self.select_dominion(tags)
+        domain_hint, tags = _extract_preferences(step)
+        normalized_hint = domain_hint.lower() if domain_hint else None
+        hint_known = bool(normalized_hint and normalized_hint in self._dominions)
+        chosen = self.select_dominion(tags, domain_hint if hint_known else None)
         notes: List[str] = []
+        source = self._source or "<in-memory>"
+        if domain_hint and not hint_known:
+            if chosen:
+                notes.append(
+                    f"Phase8 runtime: dominion `{domain_hint}` not found in configuration from {source}; "
+                    "falling back to highest scoring profile."
+                )
+            else:
+                notes.append(
+                    f"Phase8 runtime: dominion `{domain_hint}` not found in configuration from {source}"
+                )
         if not chosen:
+            if notes:
+                return notes
             notes.append("Phase8 runtime: no dominion selected (check manifest)")
             return notes
         notes.append(
             "Phase8 runtime routed to `%(slug)s` — %(name)s" % {"slug": chosen.slug, "name": chosen.name}
         )
+        if domain_hint:
+            notes.append(f"• domain hint: {domain_hint}")
+        if tags:
+            joined = ", ".join(sorted({tag.lower() for tag in tags}))
+            notes.append(f"• matched tags: {joined}")
         notes.append(f"• profile: {chosen.describe()}")
         sentinel_links = [
             sentinel.describe()
