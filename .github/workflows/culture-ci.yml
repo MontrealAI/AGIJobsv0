@@ -80,11 +80,6 @@ jobs:
         run: |
           pnpm run test:contracts:coverage
           pnpm run test:contracts:coverage:hardhat
-      - name: Coverage & budget enforcement
-        working-directory: demo/CULTURE-v0
-        run: |
-          pnpm run check:coverage
-          pnpm run check:budgets
       - name: Upload coverage artifact
         if: success()
         uses: actions/upload-artifact@v4
@@ -92,9 +87,7 @@ jobs:
           name: culture-contract-coverage
           path: |
             demo/CULTURE-v0/coverage
-            demo/CULTURE-v0/backend/arena-orchestrator/coverage
-            demo/CULTURE-v0/indexers/culture-graph-indexer/coverage
-            demo/CULTURE-v0/apps/culture-studio/coverage
+            demo/CULTURE-v0/lcov.info
 
   static-analysis:
     name: Static analyzers
@@ -158,6 +151,51 @@ jobs:
       - name: Service coverage
         working-directory: demo/CULTURE-v0
         run: pnpm run test:services
+      - name: Upload service coverage artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: culture-service-coverage
+          path: |
+            demo/CULTURE-v0/backend/arena-orchestrator/coverage
+            demo/CULTURE-v0/indexers/culture-graph-indexer/coverage
+            demo/CULTURE-v0/apps/culture-studio/coverage
+
+  coverage-enforcement:
+    name: Coverage & budget enforcement
+    runs-on: ubuntu-24.04
+    needs:
+      - solidity
+      - services
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download contract coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: culture-contract-coverage
+          path: demo/CULTURE-v0
+      - name: Download service coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: culture-service-coverage
+          path: demo/CULTURE-v0
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.1
+          cache: 'pnpm'
+          cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
+      - name: Install dependencies
+        working-directory: demo/CULTURE-v0
+        run: pnpm install --frozen-lockfile
+      - name: Coverage & budget enforcement
+        working-directory: demo/CULTURE-v0
+        run: |
+          pnpm run check:coverage
+          pnpm run check:budgets
 
   e2e:
     name: Cypress smoke
