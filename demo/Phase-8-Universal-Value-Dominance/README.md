@@ -17,8 +17,9 @@
    npm run demo:phase8:orchestrate
    ```
    You will receive:
-   * Encoded `setGlobalParameters`, `setGuardianCouncil`, `setSystemPause`, `registerDomain`, `registerSentinel`, and
-     `registerCapitalStream` calldata.
+   * Encoded `setGlobalParameters`, `setGuardianCouncil`, `setSystemPause`, and self-improvement plan calldata.
+   * A full register/remove multi-call manifest for **every** domain, sentinel, and capital stream — copy/paste ready for
+     Safe / timelock batching.
    * A human-readable network telemetry report with resilience, value flow, sentinel coverage, and self-improvement guards.
    * A copy/paste mermaid system map for status updates and incident briefings.
 3. **Launch the control surface UI** (no build step required):
@@ -108,7 +109,9 @@ A new job in `.github/workflows/ci.yml` named **Phase 8 readiness** runs on ever
 
 1. Installs dependencies via `npm ci`.
 2. Executes `npm run demo:phase8:ci` to validate the manifest, README, and UI hooks.
-3. Publishes a summary in the GitHub Checks UI so branch protection (`ci (v2) / Phase 8 readiness`) must be green before
+3. Asserts that **every** domain has sentinel coverage and surfaces the coverage totals. If any dominion slips without a
+   watchdog, the build fails instantly.
+4. Publishes a summary in the GitHub Checks UI so branch protection (`ci (v2) / Phase 8 readiness`) must be green before
    merging.
 
 ---
@@ -136,8 +139,8 @@ graph TD
 ## 📚 Related orchestration hooks
 
 * [`demo/Phase-8-Universal-Value-Dominance/scripts/run-phase8-demo.ts`](./scripts/run-phase8-demo.ts) – generates calldata,
-  telemetry, and the mermaid diagram. Outputs include per-sentinel and per-stream domain binding calls plus deterministic
-  removal calldata so governors can rehearse reconfigurations.
+  telemetry, and the mermaid diagram. Outputs now include full multi-call batches for registering or removing every domain,
+  sentinel, and capital stream so governors can rehearse or execute reconfigurations without editing code.
 * [`demo/Phase-8-Universal-Value-Dominance/scripts/validate-phase8-config.ts`](./scripts/validate-phase8-config.ts) – schema
   validation enforced by CI.
 * [`orchestrator/extensions/phase8.py`](../../orchestrator/extensions/phase8.py) – runtime adapter so Python orchestrators can
