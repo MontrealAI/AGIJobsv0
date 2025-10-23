@@ -29,6 +29,7 @@
    * Domain IDs and encoded `registerDomain` / `updateDomain` payloads.
    * Layer-2 bridge plans synthesized from the config and the on-chain ABI.
    * A ready-to-copy mermaid system diagram and runtime routing commentary from the Python orchestrator.
+   * Encoded `setSystemPause` / `setEscalationBridge` transactions so governance can pivot or halt instantly.
 3. **Verify readiness in CI** (runs automatically, can be triggered locally):
    ```bash
    npm run demo:phase6:ci
@@ -80,7 +81,8 @@ flowchart TD
 The Graph mapping indexes the new events so dashboards, analytics, and governance tooling have live insight:
 
 * `Phase6Domain` entity tracks metadata, routing addresses, heartbeat SLAs, and pause status.
-* `Phase6GlobalConfig` entity exposes the canonical IoT router, L2 cadence, DID registry, and manifest URI.
+* `Phase6GlobalConfig` entity exposes the canonical IoT router, L2 cadence, DID registry, manifest URI, and the active system pause & escalation bridges.
+* Every `EscalationForwarded` event is indexed with payload/response metadata so dashboards can surface the last emergency action and whether it targeted the pause contract or the escalation bridge.
 * Each event (`DomainRegistered`, `DomainUpdated`, `DomainStatusChanged`, `GlobalConfigUpdated`) updates the store instantly.
 
 These additions power UI cards, CI validation, and off-chain monitoring (e.g., the Resilience Index).

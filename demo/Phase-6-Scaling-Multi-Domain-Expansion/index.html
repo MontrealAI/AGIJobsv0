@@ -321,6 +321,8 @@
           `Default L2 gateway: ${formatAddress(config.global.defaultL2Gateway)}`,
           `Treasury bridge: ${formatAddress(config.global.treasuryBridge)}`,
           `DID registry: ${formatAddress(config.global.didRegistry)}`,
+          `System pause: ${formatAddress(config.global.systemPause)}`,
+          `Escalation bridge: ${formatAddress(config.global.escalationBridge)}`,
           `Network cadence baseline: ${config.global.l2SyncCadence}s`
         ];
         if (state.metrics) {
@@ -395,6 +397,7 @@
             l2Gateway: domain.l2Gateway || config.global.defaultL2Gateway,
             oracle: domain.oracle || config.global.iotOracleRouter,
             executionRouter: domain.executionRouter || zeroAddress,
+            validationModule: domain.validationModule || zeroAddress,
             cadence: heartbeatSummary(domain, config.global),
             sentinel: metadata.sentinel || '—',
             resilience: metadata.resilienceIndex !== undefined ? Number(metadata.resilienceIndex).toFixed(3) : '—',
@@ -405,6 +408,7 @@
               <span>Target L2 gateway: ${formatAddress(bridge.l2Gateway)}</span>
               <span>IoT oracle router: ${formatAddress(bridge.oracle)}</span>
               <span>Execution router: ${formatAddress(bridge.executionRouter)}</span>
+              <span>Validation module: ${formatAddress(bridge.validationModule)}</span>
               <span>${bridge.cadence}</span>
               <span>Resilience index: ${bridge.resilience}</span>
               <span>Sentinel coverage: ${bridge.sentinel}</span>
@@ -444,6 +448,18 @@
           label: 'setGlobalConfig(GlobalConfig)',
           data: iface.encodeFunctionData('setGlobalConfig', [globalTuple]),
         });
+        if (config.global.systemPause && config.global.systemPause !== zeroAddress) {
+          calldata.push({
+            label: 'setSystemPause(address)',
+            data: iface.encodeFunctionData('setSystemPause', [config.global.systemPause]),
+          });
+        }
+        if (config.global.escalationBridge && config.global.escalationBridge !== zeroAddress) {
+          calldata.push({
+            label: 'setEscalationBridge(address)',
+            data: iface.encodeFunctionData('setEscalationBridge', [config.global.escalationBridge]),
+          });
+        }
         config.domains.forEach((domain) => {
           const tuple = buildDomainTuple(domain);
           calldata.push({

@@ -38,12 +38,21 @@ if (!config.global || !config.global.manifestURI) {
   fail('Global manifestURI must be defined.');
 }
 
+const addressPattern = /^0x[0-9a-fA-F]{40}$/;
+['iotOracleRouter', 'defaultL2Gateway', 'didRegistry', 'treasuryBridge', 'systemPause', 'escalationBridge'].forEach(
+  (key) => {
+    const value = config.global[key];
+    if (!value || typeof value !== 'string' || !addressPattern.test(value) || /^0x0{40}$/i.test(value)) {
+      fail(`Global ${key} must be a non-zero 0x-prefixed address.`);
+    }
+  },
+);
+
 if (!Array.isArray(config.domains) || config.domains.length === 0) {
   fail('At least one domain must be configured.');
 }
 
 const seen = new Set();
-const addressPattern = /^0x[0-9a-fA-F]{40}$/;
 
 config.domains.forEach((domain, idx) => {
   const context = `domain[${idx}] (${domain.slug})`;
@@ -61,7 +70,13 @@ config.domains.forEach((domain, idx) => {
   });
   ['validationModule', 'oracle', 'l2Gateway', 'executionRouter'].forEach((key) => {
     const value = domain[key];
-    if (value && !addressPattern.test(value)) {
+    if (key === 'validationModule') {
+      if (!value || !addressPattern.test(value) || /^0x0{40}$/i.test(value)) {
+        fail(`${context}: validationModule must be a non-zero 0x-prefixed address.`);
+      }
+      return;
+    }
+    if (value && (!addressPattern.test(value) || /^0x0{40}$/i.test(value))) {
       fail(`${context}: ${key} must be a 0x-prefixed address when provided.`);
     }
   });

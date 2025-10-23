@@ -98,4 +98,10 @@ dataSources:
           handler: handlePhase6DomainStatusChanged
         - event: GlobalConfigUpdated(indexed address,indexed address,address,address,uint64,string)
           handler: handlePhase6GlobalConfigUpdated
+        - event: SystemPauseUpdated(indexed address)
+          handler: handlePhase6SystemPauseUpdated
+        - event: EscalationBridgeUpdated(indexed address)
+          handler: handlePhase6EscalationBridgeUpdated
+        - event: EscalationForwarded(indexed address,bytes,bytes)
+          handler: handlePhase6EscalationForwarded
       file: ./src/mapping.ts

@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { Interface, keccak256, toUtf8Bytes } from 'ethers';
 
 const CONFIG_PATH = join(__dirname, '..', 'config', 'domains.phase6.json');
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 function loadJson(path: string) {
   return JSON.parse(readFileSync(path, 'utf-8'));
@@ -27,16 +28,15 @@ function summarizeAddress(label: string, addr?: string | null) {
 }
 
 function buildDomainTuple(domain: any) {
-  const zero = '0x0000000000000000000000000000000000000000';
   return [
     domain.slug,
     domain.name,
     domain.manifestURI,
-    domain.validationModule ?? zero,
-    domain.oracle ?? zero,
-    domain.l2Gateway ?? zero,
+    domain.validationModule ?? ZERO_ADDRESS,
+    domain.oracle ?? ZERO_ADDRESS,
+    domain.l2Gateway ?? ZERO_ADDRESS,
     domain.subgraph,
-    domain.executionRouter ?? zero,
+    domain.executionRouter ?? ZERO_ADDRESS,
     BigInt(domain.heartbeatSeconds ?? 120),
     true,
   ];
@@ -126,6 +126,8 @@ function heartbeatSummary(domain: any, global: any) {
   const config = loadJson(CONFIG_PATH);
   const fragments = [
     'function setGlobalConfig((address,address,address,address,uint64,string) config)',
+    'function setSystemPause(address newPause)',
+    'function setEscalationBridge(address newBridge)',
     'function registerDomain((string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
     'function updateDomain(bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)'
   ];
@@ -155,14 +157,30 @@ function heartbeatSummary(domain: any, global: any) {
     summarizeAddress('Default L2 gateway', config.global.defaultL2Gateway).split(': '),
     summarizeAddress('Treasury bridge', config.global.treasuryBridge).split(': '),
     summarizeAddress('DID registry', config.global.didRegistry).split(': '),
+    summarizeAddress('System pause', config.global.systemPause).split(': '),
+    summarizeAddress('Escalation bridge', config.global.escalationBridge).split(': '),
     ['L2 sync cadence', `${config.global.l2SyncCadence}s`],
   ] as unknown as Array<[string, string]>);
 
+  banner('Emergency levers');
+  if (config.global.systemPause) {
+    console.log(`System pause calldata: ${iface.encodeFunctionData('setSystemPause', [config.global.systemPause])}`);
+  } else {
+    console.log('System pause calldata: —');
+  }
+  if (config.global.escalationBridge) {
+    console.log(
+      `Escalation bridge calldata: ${iface.encodeFunctionData('setEscalationBridge', [config.global.escalationBridge])}`,
+    );
+  } else {
+    console.log('Escalation bridge calldata: —');
+  }
+
   const globalTuple = [
-    config.global.iotOracleRouter ?? '0x0000000000000000000000000000000000000000',
-    config.global.defaultL2Gateway ?? '0x0000000000000000000000000000000000000000',
-    config.global.didRegistry ?? '0x0000000000000000000000000000000000000000',
-    config.global.treasuryBridge ?? '0x0000000000000000000000000000000000000000',
+    config.global.iotOracleRouter ?? ZERO_ADDRESS,
+    config.global.defaultL2Gateway ?? ZERO_ADDRESS,
+    config.global.didRegistry ?? ZERO_ADDRESS,
+    config.global.treasuryBridge ?? ZERO_ADDRESS,
     BigInt(config.global.l2SyncCadence ?? 180),
     config.global.manifestURI,
   ];
