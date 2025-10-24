@@ -80,7 +80,7 @@ latest run. Safe imports should always display the chain ID and manager address 
 * **Mermaid-first storytelling** – every run emits a rich diagram to explain how trillions in value flow through the
   superintelligent mesh.
 
-> With the default manifest, the console reports ~$688B in monthly value flow, ~$1.97T annual capital allocation, an average resilience index of 0.925, 45.0 minutes of sentinel coverage per guardian cycle, **100% dominion funding with a $720B/yr floor**, and a Universal Dominance Score of 96.9 / 100 — a direct signal that the network is outperforming its guardrails while staying within human override windows.
+> With the default manifest, the console reports ~$688B in monthly value flow, ~$1.97T annual capital allocation, an average resilience index of 0.925, 45.0 minutes of sentinel coverage per guardian cycle, **100% dominion funding with a $720B/yr floor**, and a Universal Dominance Score of 97.1 / 100 — a direct signal that the network is outperforming its guardrails while staying within human override windows.
 
 ---
 
@@ -176,7 +176,7 @@ Running `npm run demo:phase8:orchestrate` surfaces these guardrails alongside ca
 
 Open [`index.html`](./index.html) to explore the fully client-side control room:
 
-* Planetary stats (value flow, budget, resilience, sentinel coverage) plus a **Universal Dominance Score** composite (96.9 / 100 in the demo manifest) blending value flow, resilience, autonomy discipline, sentinel saturation, and self-improvement cadence.
+* Planetary stats (value flow, budget, resilience, sentinel coverage) plus a **Universal Dominance Score** composite (97.1 / 100 in the demo manifest) blending value flow, resilience, autonomy discipline, sentinel saturation, and self-improvement cadence.
 * Domain cards with autonomy bps, resilience, heartbeat, skill badges, **per-domain capital coverage**, and linked funding streams.
 * Sentinel lattice view with live coverage, sensitivity, and domain bindings (auto-highlighted when a domain loses coverage).
 * Capital stream portfolio with annual budgets, vault routing, and linked dominions.
