@@ -56,7 +56,17 @@ describe("Phase 8 orchestration console", () => {
       coverageSeconds: 10,
     }));
     expect(() => parseManifest(coverageBreach)).toThrowError(
-      /sentinels: Total sentinel coverage 30s is below guardian review window 720s/, 
+      /sentinels: Total sentinel coverage 30s is below guardian review window 720s/,
+    );
+
+    const domainCoverageBreach = JSON.parse(JSON.stringify(config));
+    domainCoverageBreach.sentinels = domainCoverageBreach.sentinels.map((entry: any) =>
+      entry.slug === "solar-shield"
+        ? { ...entry, coverageSeconds: 600 }
+        : entry,
+    );
+    expect(() => parseManifest(domainCoverageBreach)).toThrowError(
+      /Domains below guardian window 720s: climate-harmonizer, infrastructure-synthesis/,
     );
   });
 
@@ -109,6 +119,9 @@ describe("Phase 8 orchestration console", () => {
     try {
       const outputs = writeArtifacts(config, metrics, data, env, { outputDir: tempDir });
       expect(outputs).toHaveLength(4);
+
+      expect(metrics.minDomainCoverageSeconds).toBeGreaterThan(0);
+      expect(metrics.minimumCoverageAdequacy).toBeGreaterThan(1);
 
       const telemetryPath = join(tempDir, "phase8-telemetry-report.md");
       const mermaidPath = join(tempDir, "phase8-mermaid-diagram.mmd");

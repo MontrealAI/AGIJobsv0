@@ -11,6 +11,7 @@ Generated: <timestamp>
 - Universal dominance score: 96.9 / 100
 - Sentinel coverage per guardian cycle: 45.0 minutes
 - Domains covered by sentinels: 100.0%
+- Minimum sentinel coverage per domain: 900s (requirement 720s, adequacy 125.0%)
 - Maximum encoded autonomy: 7800 bps
 - Self-improvement cadence: every 2.00 hours
 - Last self-improvement execution: 2023-11-14T22:20:00.000Z

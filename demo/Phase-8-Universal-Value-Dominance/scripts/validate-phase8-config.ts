@@ -150,6 +150,35 @@ function main() {
     );
   }
 
+  const guardianWindow = config.global.guardianReviewWindow;
+  if (guardianWindow > 0) {
+    const domainCoverage = new Map<string, number>();
+    const domainList = Array.from(slugs.values());
+    if (domainList.length !== config.domains.length) {
+      // Defer to slug validation errors before enforcing coverage-specific diagnostics.
+      return;
+    }
+
+    for (const sentinel of config.sentinels) {
+      const coverage = sentinel.coverageSeconds;
+      if (!Number.isFinite(coverage) || coverage <= 0) continue;
+
+      const sentinelDomains = (sentinel.domains ?? []).map((domain) => domain.toLowerCase());
+      const targets = sentinelDomains.length > 0 ? sentinelDomains : domainList;
+
+      for (const domain of targets) {
+        if (!slugs.has(domain)) continue;
+        domainCoverage.set(domain, (domainCoverage.get(domain) ?? 0) + coverage);
+      }
+    }
+
+    const insufficient = domainList.filter((domain) => (domainCoverage.get(domain) ?? 0) < guardianWindow);
+    if (insufficient.length > 0) {
+      const formatted = insufficient.join(", ");
+      throw new Error(`Domains below guardian window ${guardianWindow}s: ${formatted}`);
+    }
+  }
+
   const html = readFileSync(HTML, "utf-8");
   if (!html.includes("Phase 8")) {
     throw new Error("index.html must mention Phase 8 to guide operators");
