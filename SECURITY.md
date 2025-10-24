@@ -58,3 +58,22 @@ published patched releases:
 
 The audit report is stored in `audit-ci.json` together with the allowlist so that
 any future pipeline run will fail immediately when new advisories appear.
+
+## CULTURE Deployment Addendum
+
+The CULTURE arena introduces collaborative validators, cultural moderators, and
+community artefacts. The following mitigations reinforce those workflows:
+
+- **Meta-orchestrator threat model** – See
+  [`docs/security/threat-model-meta-orchestrator.md`](docs/security/threat-model-meta-orchestrator.md)
+  for relayer compromise, validator collusion, and content-abuse scenarios tied
+  to CULTURE’s collaborative governance.
+- **UI hardening** – Rate limiting and CSRF protection now cover the operator
+  console (`services/meta_api/app/main.py`, `apps/orchestrator/oneboxRouter.ts`),
+  ensuring validator actions cannot be forged via external websites.
+- **Privacy-first receipts** – Artefacts produced in CULTURE events are scrubbed
+  of PII and optionally encrypted at rest
+  (`apps/orchestrator/privacy.ts`, `apps/orchestrator/receiptStore.ts`).
+- **Secrets rotation** – Follow the process outlined in
+  [`docs/security/secrets-rotation.md`](docs/security/secrets-rotation.md) to
+  rotate relayer keys and API tokens whenever validator cohorts change.
