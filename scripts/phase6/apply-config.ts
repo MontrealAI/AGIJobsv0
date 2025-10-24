@@ -1,5 +1,5 @@
 #!/usr/bin/env ts-node
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import hre from 'hardhat';
 import { Contract } from 'ethers';
@@ -8,6 +8,7 @@ import {
   loadPhase6Config,
   planPhase6Changes,
   Phase6Config,
+  buildPlanSummary,
 } from './apply-config-lib';
 
 const DEFAULT_CONFIG = 'demo/Phase-6-Scaling-Multi-Domain-Expansion/config/domains.phase6.json';
@@ -89,6 +90,7 @@ interface CliArgs {
   skipGlobal: boolean;
   skipSystemPause: boolean;
   skipEscalation: boolean;
+  exportPath?: string;
 }
 
 function printUsage(): void {
@@ -103,6 +105,7 @@ function printUsage(): void {
     `  --skip-global             Do not call setGlobalConfig even if differences exist\n` +
     `  --skip-pause              Skip setSystemPause even if address differs\n` +
     `  --skip-escalation         Skip setEscalationBridge even if address differs\n` +
+    `  --export-plan <path>      Write a JSON summary of the planned actions to <path>\n` +
     `  --help                    Show this message\n`);
 }
 
@@ -198,6 +201,12 @@ function parseArgs(): CliArgs {
         break;
       case '--skip-escalation':
         args.skipEscalation = true;
+        break;
+      case '--export-plan':
+      case '--export':
+        if (!next) throw new Error(`${arg} <path> required`);
+        args.exportPath = next;
+        i += 1;
         break;
       case '--help':
         printUsage();
@@ -414,21 +423,43 @@ async function main(): Promise<void> {
   const [signer] = await ethers.getSigners();
   const manager: Contract = new ethers.Contract(args.manager, MANAGER_ABI, signer);
 
-  const [network, chainId] = await Promise.all([hre.network.name, signer.provider?.getNetwork()]);
+  const [networkName, networkInfo] = await Promise.all([hre.network.name, signer.provider?.getNetwork()]);
   const specVersion = await manager.SPEC_VERSION();
   const governance = await manager.governance();
+  const resolvedExportPath = args.exportPath ? resolve(args.exportPath) : undefined;
+  const resolvedConfigPath = configPath;
+  const chainId = networkInfo?.chainId !== undefined ? Number(networkInfo.chainId) : undefined;
 
-  console.log(`\n🚀 Phase 6 apply-config (network=${network}, chainId=${chainId?.chainId ?? 'unknown'})`);
+  console.log(`\n🚀 Phase 6 apply-config (network=${networkName}, chainId=${chainId ?? 'unknown'})`);
   console.log(`Manager: ${args.manager}`);
   console.log(`Spec version: ${specVersion}`);
   console.log(`Signer: ${await signer.getAddress()}`);
   console.log(`Governance (owner): ${governance}`);
-  console.log(`Config: ${configPath}`);
+  console.log(`Config: ${resolvedConfigPath}`);
 
   const state = await fetchPhase6State(manager);
   const plan = planPhase6Changes(state, config);
 
   plan.warnings.forEach((warning) => console.warn(`⚠️  ${warning}`));
+
+  if (resolvedExportPath) {
+    const summary = buildPlanSummary(plan, {
+      manager: args.manager,
+      governance,
+      specVersion,
+      network: { name: networkName, chainId },
+      configPath: resolvedConfigPath,
+      dryRun: args.dryRun,
+      filters: {
+        skipGlobal: args.skipGlobal,
+        skipSystemPause: args.skipSystemPause,
+        skipEscalation: args.skipEscalation,
+        onlyDomains: args.onlyDomains,
+      },
+    });
+    writeFileSync(resolvedExportPath, JSON.stringify(summary, null, 2));
+    console.log(`🗂️  Plan summary exported to ${resolvedExportPath}`);
+  }
 
   const actions: Array<{ label: string; run: () => Promise<void> }> = [];
 

@@ -43,6 +43,7 @@
    * Prints the governance plan, global diffs, and each domain action.
    * Defaults to a dry-run – add `--apply` to execute transactions once reviewed.
    * Scope updates with `--domain finance,health` or skip globals via `--skip-global`.
+   * Append `--export-plan plan.json` to emit a JSON manifest of the actions for multisig or council review.
 5. **Open the control surface UI**:
    *Serve locally or open directly in the repo*
    ```bash
@@ -144,6 +145,7 @@ Open `index.html` to explore:
 3. **Commit** the change. CI will block if a field is missing or malformed.
 4. **Dry-run or apply on-chain** with `npx hardhat run --no-compile scripts/phase6/apply-config.ts --network <network> -- --manager <Phase6ExpansionManager> [--apply]`.
    * Hard-validates telemetry digests, decentralized infra coverage, metadata, and infrastructure maps before emitting any calldata.
+   * Add `--export-plan plan.json` to store a versioned summary alongside your PR or governance packet.
 5. **Ship** – governance can copy the calldata into a multi-sig, or run through the existing owner scripts.
 
 > Tip: pair this demo with `npm run owner:mission-control` to script the actual transaction bundle from the same console.

@@ -238,6 +238,54 @@ export type Phase6Plan = {
   warnings: string[];
 };
 
+export type Phase6PlanSummary = {
+  generatedAt: string;
+  manager: string;
+  governance: string;
+  specVersion: string;
+  network: { name: string; chainId?: number | null };
+  configPath?: string;
+  dryRun: boolean;
+  filters: {
+    skipGlobal: boolean;
+    skipSystemPause: boolean;
+    skipEscalation: boolean;
+    onlyDomains: string[];
+  };
+  warnings: string[];
+  counts: {
+    total: number;
+    global: number;
+    domains: number;
+    domainOperations: number;
+    domainTelemetry: number;
+  };
+  actions: {
+    global?: { diffs: string[]; config: Record<string, unknown> };
+    globalGuards?: { diffs: string[]; config: Record<string, unknown> };
+    globalTelemetry?: { diffs: string[]; config: Record<string, unknown> };
+    systemPause?: { target: string };
+    escalationBridge?: { target: string };
+    domains: Array<{
+      action: DomainPlan['action'];
+      slug: string;
+      id: string;
+      diffs: string[];
+      config: Record<string, unknown>;
+    }>;
+    domainOperations: Array<{
+      slug: string;
+      diffs: string[];
+      config: Record<string, unknown>;
+    }>;
+    domainTelemetry: Array<{
+      slug: string;
+      diffs: string[];
+      config: Record<string, unknown>;
+    }>;
+  };
+};
+
 export function domainIdFromSlug(slug: string): string {
   const normalized = slug.trim().toLowerCase();
   return keccak256(toUtf8Bytes(normalized));
@@ -757,6 +805,142 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
   }
 
   return plan;
+}
+
+type SummaryOptions = {
+  manager: string;
+  governance: string;
+  specVersion: string;
+  network: { name: string; chainId?: number | null };
+  configPath?: string;
+  dryRun: boolean;
+  filters: {
+    skipGlobal: boolean;
+    skipSystemPause: boolean;
+    skipEscalation: boolean;
+    onlyDomains: Iterable<string>;
+  };
+};
+
+function serialize(value: unknown): unknown {
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => serialize(entry));
+  }
+  if (value && typeof value === 'object') {
+    const output: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      output[key] = serialize(entry);
+    }
+    return output;
+  }
+  return value;
+}
+
+export function buildPlanSummary(plan: Phase6Plan, options: SummaryOptions): Phase6PlanSummary {
+  const onlyDomains = new Set(
+    Array.from(options.filters.onlyDomains ?? []).map((slug) => slug.toLowerCase()),
+  );
+  const domainFilter = (slug: string) =>
+    onlyDomains.size === 0 || onlyDomains.has(slug.toLowerCase());
+
+  const summaryDomains = plan.domains
+    .filter((domain) => domainFilter(domain.slug))
+    .map((domain) => ({
+      action: domain.action,
+      slug: domain.slug,
+      id: domain.id,
+      diffs: [...domain.diffs],
+      config: serialize(domain.config) as Record<string, unknown>,
+    }));
+
+  const summaryOps = plan.domainOperations
+    .filter((domain) => domainFilter(domain.slug))
+    .map((entry) => ({
+      slug: entry.slug,
+      diffs: [...entry.diffs],
+      config: serialize(entry.config) as Record<string, unknown>,
+    }));
+
+  const summaryTelemetry = plan.domainTelemetry
+    .filter((domain) => domainFilter(domain.slug))
+    .map((entry) => ({
+      slug: entry.slug,
+      diffs: [...entry.diffs],
+      config: serialize(entry.config) as Record<string, unknown>,
+    }));
+
+  const actions: Phase6PlanSummary['actions'] = {
+    domains: summaryDomains,
+    domainOperations: summaryOps,
+    domainTelemetry: summaryTelemetry,
+  };
+
+  if (!options.filters.skipGlobal && plan.global) {
+    actions.global = {
+      diffs: [...plan.global.diffs],
+      config: serialize(plan.global.config) as Record<string, unknown>,
+    };
+  }
+
+  if (plan.globalGuards) {
+    actions.globalGuards = {
+      diffs: [...plan.globalGuards.diffs],
+      config: serialize(plan.globalGuards.config) as Record<string, unknown>,
+    };
+  }
+
+  if (plan.globalTelemetry) {
+    actions.globalTelemetry = {
+      diffs: [...plan.globalTelemetry.diffs],
+      config: serialize(plan.globalTelemetry.config) as Record<string, unknown>,
+    };
+  }
+
+  if (!options.filters.skipSystemPause && plan.systemPause) {
+    actions.systemPause = { target: plan.systemPause.target };
+  }
+
+  if (!options.filters.skipEscalation && plan.escalationBridge) {
+    actions.escalationBridge = { target: plan.escalationBridge.target };
+  }
+
+  const globalActions = [
+    actions.global,
+    actions.globalGuards,
+    actions.globalTelemetry,
+    actions.systemPause,
+    actions.escalationBridge,
+  ].filter(Boolean).length;
+
+  const counts = {
+    global: globalActions,
+    domains: actions.domains.length,
+    domainOperations: actions.domainOperations.length,
+    domainTelemetry: actions.domainTelemetry.length,
+  };
+  counts.total = counts.global + counts.domains + counts.domainOperations + counts.domainTelemetry;
+
+  return {
+    generatedAt: new Date().toISOString(),
+    manager: options.manager,
+    governance: options.governance,
+    specVersion: options.specVersion,
+    network: options.network,
+    configPath: options.configPath,
+    dryRun: options.dryRun,
+    filters: {
+      skipGlobal: options.filters.skipGlobal,
+      skipSystemPause: options.filters.skipSystemPause,
+      skipEscalation: options.filters.skipEscalation,
+      onlyDomains: Array.from(onlyDomains),
+    },
+    warnings: [...plan.warnings],
+    counts,
+    actions,
+  };
 }
 
 export async function fetchPhase6State(manager: Contract): Promise<Phase6State> {
