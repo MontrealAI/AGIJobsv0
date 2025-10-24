@@ -1,0 +1,64 @@
+name: demo-phase6-scaling
+
+on:
+  pull_request:
+    paths:
+      - 'demo/Phase-6-Scaling-Multi-Domain-Expansion/**'
+      - 'scripts/v2/phase6ExpansionPlaybook.ts'
+      - 'package.json'
+      - '.github/workflows/demo-phase6-scaling.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase6-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Validate Phase 6 manifest and assets
+        run: npm run demo:phase6:ci
+
+      - name: Generate telemetry snapshot
+        run: npm run demo:phase6:report
+
+      - name: Render owner playbook (markdown)
+        run: npm run owner:phase6:playbook -- --format markdown --network ci --out reports/phase6/playbook.md
+
+      - name: Upload Phase 6 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase6-scaling-demo
+          path: |
+            demo/Phase-6-Scaling-Multi-Domain-Expansion/output/phase6-telemetry.json
+            reports/phase6/playbook.md
