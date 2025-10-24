@@ -26,7 +26,7 @@
    ```bash
    npm run demo:phase6:orchestrate
    ```
-   This prints:
+   Add `-- --json plan.json` to emit a machine-readable blueprint (use `-- --json -` to stream JSON to stdout). This prints:
    * Domain IDs and encoded `registerDomain` / `updateDomain` payloads.
    * Layer-2 bridge plans synthesized from the config and the on-chain ABI.
    * A ready-to-copy mermaid system diagram and runtime routing commentary from the Python orchestrator.
