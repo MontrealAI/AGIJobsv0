@@ -85,9 +85,11 @@ latest run. Safe imports should always display the chain ID and manager address 
   vaults, knowledge graphs, and risk tolerances atomically.
 * **Sentinel lattice** – register, update, and toggle sentinels that monitor domains. Each sentinel enforces coverage windows
   and can be routed through the shared `SystemPause` via `forwardPauseCall`. Domain bindings are configured via
-  `setSentinelDomains` so every sentinel only monitors approved dominions.
+  `setSentinelDomains` so every sentinel only monitors approved dominions, and dashboards can query individual profiles with
+  `getSentinel`.
 * **Capital streams** – register autonomous treasury programs with annual budgets and expansion curves. Governance can pause,
-  re-target, or re-bind the domain list at any time with `setCapitalStreamDomains`.
+  re-target, or re-bind the domain list at any time with `setCapitalStreamDomains`, while analytics surfaces can fetch a
+  single stream’s configuration instantly through `getCapitalStream`.
 * **Domain dominion** – configure orchestration endpoints, vault limits, and autonomy bps per domain while guaranteeing slug
   uniqueness and heartbeat invariants. Domains, sentinels, and streams can also be removed entirely (`removeDomain`,
   `removeSentinel`, `removeCapitalStream`) with automatic pruning of bindings.

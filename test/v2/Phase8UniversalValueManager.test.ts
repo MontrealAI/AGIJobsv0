@@ -147,6 +147,12 @@ describe("Phase8UniversalValueManager", function () {
     const sentinelListing = await manager.listSentinels();
     expect(sentinelListing).to.have.lengthOf(1);
     expect(sentinelListing[0].id).to.equal(sentinelId);
+    const sentinelView = await manager.getSentinel(sentinelId);
+    expect(sentinelView.uri).to.equal(sentinelProfile.uri);
+    await expect(manager.getSentinel(ethers.id("unknown-sentinel"))).to.be.revertedWithCustomError(
+      manager,
+      "UnknownSentinel",
+    );
 
     const stream = {
       slug: "climate-stabilization",
@@ -187,6 +193,12 @@ describe("Phase8UniversalValueManager", function () {
     const streams = await manager.listCapitalStreams();
     expect(streams).to.have.lengthOf(1);
     expect(streams[0].id).to.equal(streamId);
+    const streamView = await manager.getCapitalStream(streamId);
+    expect(streamView.uri).to.equal(stream.uri);
+    await expect(manager.getCapitalStream(ethers.id("unknown-stream"))).to.be.revertedWithCustomError(
+      manager,
+      "UnknownStream",
+    );
 
     await expect(manager.connect(governance).removeDomain(domainId)).to.emit(manager, "DomainRemoved");
     expect(await manager.listDomains()).to.have.lengthOf(0);

@@ -141,6 +141,11 @@ contract Phase8UniversalValueManagerTest is Test {
         manager.setSentinelStatus(sentinelId, true);
         Phase8UniversalValueManager.SentinelProfile memory sentinelState = manager.listSentinels()[0].profile;
         assertTrue(sentinelState.active);
+        Phase8UniversalValueManager.SentinelProfile memory sentinelConfig = manager.getSentinel(sentinelId);
+        assertEq(sentinelConfig.uri, sentinel.uri);
+        bytes32 unknownSentinelId = keccak256(abi.encodePacked("unknown-sentinel"));
+        vm.expectRevert(abi.encodeWithSelector(Phase8UniversalValueManager.UnknownSentinel.selector, unknownSentinelId));
+        manager.getSentinel(unknownSentinelId);
 
         Phase8UniversalValueManager.CapitalStream memory stream = Phase8UniversalValueManager.CapitalStream({
             slug: "climate-stabilization",
@@ -186,6 +191,11 @@ contract Phase8UniversalValueManagerTest is Test {
         manager.setCapitalStreamStatus(streamId, true);
         Phase8UniversalValueManager.CapitalStream memory streamState = manager.listCapitalStreams()[0].stream;
         assertTrue(streamState.active);
+        Phase8UniversalValueManager.CapitalStream memory streamConfig = manager.getCapitalStream(streamId);
+        assertEq(streamConfig.uri, stream.uri);
+        bytes32 unknownStreamId = keccak256(abi.encodePacked("unknown-stream"));
+        vm.expectRevert(abi.encodeWithSelector(Phase8UniversalValueManager.UnknownStream.selector, unknownStreamId));
+        manager.getCapitalStream(unknownStreamId);
 
         vm.prank(GOVERNANCE);
         manager.removeDomain(domainId);
