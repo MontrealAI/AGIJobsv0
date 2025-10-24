@@ -47,6 +47,14 @@
       "resilienceFloorBps": 9300,
       "automationFloorBps": 9050,
       "oversightWeightBps": 7200
+    },
+    "infrastructure": {
+      "meshCoordinator": "0xdeaddeaddeaddeaddeaddeaddeaddeaddeaddead",
+      "dataLake": "0xfacefacefacefacefacefacefacefacefaceface",
+      "identityBridge": "0xcafebabecafebabecafebabecafebabecafebabe",
+      "topologyURI": "ipfs://phase6/global/infrastructure.json",
+      "autopilotCadence": 900,
+      "enforceDecentralizedInfra": true
     }
   },
   "domains": [
@@ -128,7 +136,16 @@
           "status": "ready",
           "endpoint": "https://avs.agi.jobs/finance"
         }
-      ]
+      ],
+      "infrastructureControl": {
+        "agentOps": "0xfeedfeedfeedfeedfeedfeedfeedfeedfeedfeed",
+        "dataPipeline": "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
+        "credentialVerifier": "0xadd1add1add1add1add1add1add1add1add1add1",
+        "fallbackOperator": "0x1111222233334444555566667777888899990000",
+        "controlPlaneURI": "ipfs://phase6/domains/finance/control.json",
+        "autopilotCadence": 240,
+        "autopilotEnabled": true
+      }
     },
     {
       "slug": "health",
@@ -207,7 +224,16 @@
           "status": "ready",
           "endpoint": "https://saturn.tech/health"
         }
-      ]
+      ],
+      "infrastructureControl": {
+        "agentOps": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        "dataPipeline": "0xbadc0ffee0ddf00dbadc0ffee0ddf00dbadc0ffe",
+        "credentialVerifier": "0x9999888877776666555544443333222211110000",
+        "fallbackOperator": "0x22223333444455556666777788889999aaaabbbb",
+        "controlPlaneURI": "ipfs://phase6/domains/health/control.json",
+        "autopilotCadence": 300,
+        "autopilotEnabled": true
+      }
     },
     {
       "slug": "logistics",
@@ -288,7 +314,16 @@
           "status": "ready",
           "endpoint": "https://avs.agi.jobs/logistics"
         }
-      ]
+      ],
+      "infrastructureControl": {
+        "agentOps": "0x0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a",
+        "dataPipeline": "0x0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
+        "credentialVerifier": "0x0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
+        "fallbackOperator": "0x3333444455556666777788889999aaaabbbbcccc",
+        "controlPlaneURI": "ipfs://phase6/domains/logistics/control.json",
+        "autopilotCadence": 180,
+        "autopilotEnabled": true
+      }
     },
     {
       "slug": "climate",
@@ -368,7 +403,16 @@
           "status": "ready",
           "endpoint": "https://akash.network"
         }
-      ]
+      ],
+      "infrastructureControl": {
+        "agentOps": "0x444455556666777788889999aaaabbbbccccdddd",
+        "dataPipeline": "0x55556666777788889999aaaabbbbccccddddeeee",
+        "credentialVerifier": "0x6666777788889999aaaabbbbccccddddeeeeffff",
+        "fallbackOperator": "0x1234123412341234123412341234123412341234",
+        "controlPlaneURI": "ipfs://phase6/domains/climate/control.json",
+        "autopilotCadence": 420,
+        "autopilotEnabled": true
+      }
     },
     {
       "slug": "education",
@@ -448,7 +492,16 @@
           "status": "ready",
           "endpoint": "https://spruceid.com"
         }
-      ]
+      ],
+      "infrastructureControl": {
+        "agentOps": "0x777788889999aaaabbbbccccddddeeeeffff0000",
+        "dataPipeline": "0x88889999aaaabbbbccccddddeeeeffff00001111",
+        "credentialVerifier": "0x9999aaaabbbbccccddddeeeeffff000011112222",
+        "fallbackOperator": "0x5555777788889999aaaabbbbccccddddeeeeff00",
+        "controlPlaneURI": "ipfs://phase6/domains/education/control.json",
+        "autopilotCadence": 210,
+        "autopilotEnabled": true
+      }
     }
   ]
 }

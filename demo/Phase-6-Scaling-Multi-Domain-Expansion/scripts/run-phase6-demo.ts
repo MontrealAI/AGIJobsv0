@@ -135,6 +135,21 @@ function formatUSD(value?: number | null): string {
   return `$${numeric.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 }
 
+function formatCadenceSeconds(value: number | undefined | null): string {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) {
+    return '—';
+  }
+  if (value === 0) {
+    return 'manual';
+  }
+  return `${value}s`;
+}
+
+function formatAutopilotSummary(enabled: boolean, cadenceSeconds: number): string {
+  const cadence = formatCadenceSeconds(cadenceSeconds);
+  return `${enabled ? 'enabled' : 'standby'} @ ${cadence}`;
+}
+
 function heartbeatSummary(domain: DomainBlueprint, globalCadenceSeconds: number) {
   const cadence = Math.max(domain.heartbeatSeconds, globalCadenceSeconds);
   return `${cadence}s sync cadence (domain ${domain.heartbeatSeconds}s, global ${globalCadenceSeconds}s)`;
@@ -173,6 +188,10 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
   console.log(`Global infra integrations: ${metrics.globalInfraCount}`);
   console.log(`Domain infra touchpoints: ${metrics.domainInfraCount}`);
   console.log(
+    `Autopilot coverage: ${(metrics.autopilotCoverage * 100).toFixed(1)}% ` +
+      `(${metrics.autopilotEnabledCount}/${metrics.domainCount} domains)`,
+  );
+  console.log(
     `Guard rails: treasuryBuffer=${formatBps(blueprint.guards.treasuryBufferBps)} | ` +
       `circuitBreaker=${formatBps(blueprint.guards.circuitBreakerBps)} | grace=${blueprint.guards.anomalyGracePeriod}s | ` +
       `autoPause=${blueprint.guards.autoPauseEnabled ? 'on' : 'off'}`,
@@ -187,7 +206,13 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
     summarizeAddress('DID registry', blueprint.global.didRegistry).split(': '),
     summarizeAddress('System pause', blueprint.global.systemPause).split(': '),
     summarizeAddress('Escalation bridge', blueprint.global.escalationBridge).split(': '),
+    summarizeAddress('Mesh coordinator', blueprint.global.meshCoordinator).split(': '),
+    summarizeAddress('Data lake', blueprint.global.dataLake).split(': '),
+    summarizeAddress('Identity bridge', blueprint.global.identityBridge).split(': '),
     ['L2 sync cadence', `${blueprint.global.l2SyncCadenceSeconds}s`],
+    ['Infra topology URI', blueprint.global.topologyURI ?? '—'],
+    ['Infra autopilot cadence', formatCadenceSeconds(blueprint.global.autopilotCadenceSeconds)],
+    ['Infra enforcement', blueprint.global.enforceDecentralizedInfra ? 'enforced' : 'advisory'],
     ['Treasury buffer', formatBps(blueprint.guards.treasuryBufferBps)],
     ['Circuit breaker', formatBps(blueprint.guards.circuitBreakerBps)],
     ['Anomaly grace', blueprint.guards.anomalyGracePeriod ? `${blueprint.guards.anomalyGracePeriod}s` : '—'],
@@ -220,6 +245,13 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
       console.log(`  [G${idx + 1}] ${summariseInfra(entry)}`);
     });
   }
+  console.log(
+    `Global control plane: ${blueprint.global.topologyURI ?? '—'} | ` +
+      `autopilot ${formatAutopilotSummary(
+        blueprint.global.autopilotCadenceSeconds > 0,
+        blueprint.global.autopilotCadenceSeconds,
+      )} | enforcement=${blueprint.global.enforceDecentralizedInfra ? 'strict' : 'advisory'}`,
+  );
   for (const domain of blueprint.domains) {
     const infra = blueprint.infrastructure.domains[domain.slug] ?? [];
     console.log(`Domain ${domain.name} (${domain.slug}) integrations:`);
@@ -232,6 +264,7 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
   blueprint.domains.forEach((domain) => {
     const metadata = domain.metadata;
     const valueFlowDisplay = metadata.valueFlowDisplay ?? formatUSD(metadata.valueFlowMonthlyUSD);
+    const control = domain.infrastructureControl;
     console.log(`\n\x1b[35m${domain.name} (${domain.slug})\x1b[0m`);
     renderTable([
       ['Domain ID', domain.domainId],
@@ -271,6 +304,12 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
       ['Uses L2 settlement', domain.telemetry.usesL2Settlement ? 'yes' : 'no'],
       ['Telemetry metrics digest', domain.telemetry.metricsDigest],
       ['Telemetry manifest hash', domain.telemetry.manifestHash],
+      summarizeAddress('Agent ops coordinator', control.agentOps).split(': '),
+      summarizeAddress('Data pipeline', control.dataPipeline).split(': '),
+      summarizeAddress('Credential verifier', control.credentialVerifier).split(': '),
+      summarizeAddress('Fallback operator', control.fallbackOperator).split(': '),
+      ['Control plane URI', control.controlPlaneURI],
+      ['Autopilot posture', formatAutopilotSummary(control.autopilotEnabled, control.autopilotCadenceSeconds)],
     ] as unknown as Array<[string, string]>);
 
     console.log('  registerDomain calldata:');
@@ -288,6 +327,8 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
     console.log(`    ${domain.calldata.setDomainOperations}`);
     console.log('  setDomainTelemetry calldata:');
     console.log(`    ${domain.calldata.setDomainTelemetry}`);
+    console.log('  setDomainInfrastructure calldata:');
+    console.log(`    ${domain.calldata.setDomainInfrastructure}`);
   });
 
   banner('Mermaid system map (copy/paste into dashboards)');

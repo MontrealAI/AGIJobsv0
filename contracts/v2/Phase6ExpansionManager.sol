@@ -68,6 +68,16 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         bytes32 manifestHash;
     }
 
+    struct DomainInfrastructure {
+        address agentOps;
+        address dataPipeline;
+        address credentialVerifier;
+        address fallbackOperator;
+        string controlPlaneURI;
+        uint64 autopilotCadence;
+        bool autopilotEnabled;
+    }
+
     /// @notice Global telemetry thresholds informing downstream governance automation.
     struct GlobalTelemetry {
         bytes32 manifestHash;
@@ -75,6 +85,15 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         uint32 resilienceFloorBps;
         uint32 automationFloorBps;
         uint32 oversightWeightBps;
+    }
+
+    struct GlobalInfrastructure {
+        address meshCoordinator;
+        address dataLake;
+        address identityBridge;
+        string topologyURI;
+        uint64 autopilotCadence;
+        bool enforceDecentralizedInfra;
     }
 
     /// @notice Global guard rails applied across all domains.
@@ -105,10 +124,14 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     mapping(bytes32 => bool) private _known;
     mapping(bytes32 => DomainOperations) private _domainOperations;
     mapping(bytes32 => DomainTelemetry) private _domainTelemetry;
+    mapping(bytes32 => DomainInfrastructure) private _domainInfrastructure;
     bytes32[] private _domainIndex;
 
     /// @notice Governance authored telemetry baseline shared across the network.
     GlobalTelemetry public globalTelemetry;
+
+    /// @notice Global infrastructure wiring used by orchestrators and off-chain services.
+    GlobalInfrastructure public globalInfrastructure;
 
     uint256 private constant _MAX_BPS = 10_000;
 
@@ -131,6 +154,8 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     error InvalidAnomalyGracePeriod();
     error InvalidTelemetryValue(string field);
     error InvalidDigest(string field);
+    error InvalidInfrastructureURI();
+    error InvalidAutopilotCadence();
 
     /// -----------------------------------------------------------------------
     /// Events
@@ -202,12 +227,30 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         bytes32 metricsDigest,
         bytes32 manifestHash
     );
+    event DomainInfrastructureUpdated(
+        bytes32 indexed id,
+        address agentOps,
+        address dataPipeline,
+        address credentialVerifier,
+        address fallbackOperator,
+        string controlPlaneURI,
+        uint64 autopilotCadence,
+        bool autopilotEnabled
+    );
     event GlobalTelemetryUpdated(
         bytes32 manifestHash,
         bytes32 metricsDigest,
         uint32 resilienceFloorBps,
         uint32 automationFloorBps,
         uint32 oversightWeightBps
+    );
+    event GlobalInfrastructureUpdated(
+        address indexed meshCoordinator,
+        address indexed dataLake,
+        address identityBridge,
+        string topologyURI,
+        uint64 autopilotCadence,
+        bool enforceDecentralizedInfra
     );
 
     constructor(address initialGovernance) Governable(initialGovernance) {}
@@ -358,6 +401,26 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         );
     }
 
+    /// @notice Publishes infrastructure wiring metadata for a domain.
+    function setDomainInfrastructure(bytes32 id, DomainInfrastructure calldata infrastructure)
+        external
+        onlyGovernance
+    {
+        if (!_known[id]) revert UnknownDomain(id);
+        _validateDomainInfrastructure(infrastructure);
+        _domainInfrastructure[id] = infrastructure;
+        emit DomainInfrastructureUpdated(
+            id,
+            infrastructure.agentOps,
+            infrastructure.dataPipeline,
+            infrastructure.credentialVerifier,
+            infrastructure.fallbackOperator,
+            infrastructure.controlPlaneURI,
+            infrastructure.autopilotCadence,
+            infrastructure.autopilotEnabled
+        );
+    }
+
     /// -----------------------------------------------------------------------
     /// Global configuration
     /// -----------------------------------------------------------------------
@@ -453,6 +516,20 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         );
     }
 
+    /// @notice Updates the shared infrastructure mesh description.
+    function setGlobalInfrastructure(GlobalInfrastructure calldata infrastructure) external onlyGovernance {
+        _validateGlobalInfrastructure(infrastructure);
+        globalInfrastructure = infrastructure;
+        emit GlobalInfrastructureUpdated(
+            infrastructure.meshCoordinator,
+            infrastructure.dataLake,
+            infrastructure.identityBridge,
+            infrastructure.topologyURI,
+            infrastructure.autopilotCadence,
+            infrastructure.enforceDecentralizedInfra
+        );
+    }
+
     /// -----------------------------------------------------------------------
     /// View helpers
     /// -----------------------------------------------------------------------
@@ -474,6 +551,11 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     function getDomainTelemetry(bytes32 id) external view returns (DomainTelemetry memory) {
         if (!_known[id]) revert UnknownDomain(id);
         return _domainTelemetry[id];
+    }
+
+    function getDomainInfrastructure(bytes32 id) external view returns (DomainInfrastructure memory) {
+        if (!_known[id]) revert UnknownDomain(id);
+        return _domainInfrastructure[id];
     }
 
     function listDomains() external view returns (DomainView[] memory results) {
@@ -557,6 +639,45 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         if (telemetry.resilienceFloorBps > _MAX_BPS) revert InvalidBps("resilienceFloorBps", telemetry.resilienceFloorBps);
         if (telemetry.automationFloorBps > _MAX_BPS) revert InvalidBps("automationFloorBps", telemetry.automationFloorBps);
         if (telemetry.oversightWeightBps > _MAX_BPS) revert InvalidBps("oversightWeightBps", telemetry.oversightWeightBps);
+    }
+
+    function _validateDomainInfrastructure(DomainInfrastructure calldata infrastructure) private view {
+        if (bytes(infrastructure.controlPlaneURI).length == 0) {
+            revert InvalidInfrastructureURI();
+        }
+        if (infrastructure.agentOps != address(0)) {
+            _requireContract(infrastructure.agentOps, "agentOps");
+        }
+        if (infrastructure.dataPipeline != address(0)) {
+            _requireContract(infrastructure.dataPipeline, "dataPipeline");
+        }
+        if (infrastructure.credentialVerifier != address(0)) {
+            _requireContract(infrastructure.credentialVerifier, "credentialVerifier");
+        }
+        if (infrastructure.autopilotCadence != 0 && infrastructure.autopilotCadence < 30) {
+            revert InvalidAutopilotCadence();
+        }
+        if (infrastructure.autopilotEnabled && infrastructure.autopilotCadence < 30) {
+            revert InvalidAutopilotCadence();
+        }
+    }
+
+    function _validateGlobalInfrastructure(GlobalInfrastructure calldata infrastructure) private view {
+        if (bytes(infrastructure.topologyURI).length == 0) {
+            revert InvalidInfrastructureURI();
+        }
+        if (infrastructure.meshCoordinator != address(0)) {
+            _requireContract(infrastructure.meshCoordinator, "meshCoordinator");
+        }
+        if (infrastructure.dataLake != address(0)) {
+            _requireContract(infrastructure.dataLake, "dataLake");
+        }
+        if (infrastructure.identityBridge != address(0)) {
+            _requireContract(infrastructure.identityBridge, "identityBridge");
+        }
+        if (infrastructure.autopilotCadence != 0 && infrastructure.autopilotCadence < 30) {
+            revert InvalidAutopilotCadence();
+        }
     }
 
     function _idFor(string memory slug) private pure returns (bytes32) {

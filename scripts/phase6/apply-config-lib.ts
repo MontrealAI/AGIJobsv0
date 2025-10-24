@@ -63,6 +63,7 @@ export type DomainConfigInput = {
   priority?: number;
   metadata?: DomainMetadata;
   infrastructure?: InfrastructureEntry[];
+  infrastructureControl?: DomainInfrastructureControlInput;
 };
 
 export type DomainOperationsInput = {
@@ -102,8 +103,31 @@ export type GlobalTelemetryInput = {
   oversightWeightBps: number;
 };
 
+export type DomainInfrastructureControlInput = {
+  agentOps?: string;
+  dataPipeline?: string;
+  credentialVerifier?: string;
+  fallbackOperator?: string;
+  controlPlaneURI: string;
+  autopilotEnabled?: boolean;
+  autopilotCadence?: number;
+};
+
+export type GlobalInfrastructureInput = {
+  meshCoordinator?: string;
+  dataLake?: string;
+  identityBridge?: string;
+  topologyURI: string;
+  autopilotCadence?: number;
+  enforceDecentralizedInfra?: boolean;
+};
+
 export type Phase6Config = {
-  global: GlobalConfigInput & { guards?: GlobalGuardsInput; telemetry?: GlobalTelemetryInput };
+  global: GlobalConfigInput & {
+    guards?: GlobalGuardsInput;
+    telemetry?: GlobalTelemetryInput;
+    infrastructure?: GlobalInfrastructureInput;
+  };
   domains: DomainConfigInput[];
 };
 
@@ -154,6 +178,16 @@ export type DomainTelemetryStruct = {
   manifestHash: string;
 };
 
+export type DomainInfrastructureStruct = {
+  agentOps: string;
+  dataPipeline: string;
+  credentialVerifier: string;
+  fallbackOperator: string;
+  controlPlaneURI: string;
+  autopilotCadence: bigint;
+  autopilotEnabled: boolean;
+};
+
 export type GlobalGuardsStruct = {
   treasuryBufferBps: number;
   circuitBreakerBps: number;
@@ -170,6 +204,15 @@ export type GlobalTelemetryStruct = {
   oversightWeightBps: number;
 };
 
+export type GlobalInfrastructureStruct = {
+  meshCoordinator: string;
+  dataLake: string;
+  identityBridge: string;
+  topologyURI: string;
+  autopilotCadence: bigint;
+  enforceDecentralizedInfra: boolean;
+};
+
 export type Phase6State = {
   global: GlobalConfigStruct;
   systemPause: string;
@@ -179,6 +222,8 @@ export type Phase6State = {
   globalGuards: GlobalGuardsStruct;
   domainTelemetry: Record<string, DomainTelemetryStruct>;
   globalTelemetry: GlobalTelemetryStruct;
+  domainInfrastructure: Record<string, DomainInfrastructureStruct>;
+  globalInfrastructure: GlobalInfrastructureStruct;
 };
 
 export type GlobalPlan = {
@@ -222,12 +267,27 @@ export type GlobalGuardsPlan = {
   diffs: string[];
 };
 
+export type DomainInfrastructurePlan = {
+  action: 'setDomainInfrastructure';
+  id: string;
+  slug: string;
+  config: DomainInfrastructureStruct;
+  diffs: string[];
+};
+
+export type GlobalInfrastructurePlan = {
+  action: 'setGlobalInfrastructure';
+  config: GlobalInfrastructureStruct;
+  diffs: string[];
+};
+
 export type Phase6Plan = {
   global?: GlobalPlan;
   systemPause?: AddressPlan;
   escalationBridge?: AddressPlan;
   domains: DomainPlan[];
   domainOperations: DomainOperationsPlan[];
+  domainInfrastructure: DomainInfrastructurePlan[];
   globalGuards?: GlobalGuardsPlan;
   domainTelemetry: DomainTelemetryPlan[];
   globalTelemetry?: {
@@ -235,6 +295,7 @@ export type Phase6Plan = {
     config: GlobalTelemetryStruct;
     diffs: string[];
   };
+  globalInfrastructure?: GlobalInfrastructurePlan;
   warnings: string[];
 };
 
@@ -259,11 +320,13 @@ export type Phase6PlanSummary = {
     domains: number;
     domainOperations: number;
     domainTelemetry: number;
+    domainInfrastructure: number;
   };
   actions: {
     global?: { diffs: string[]; config: Record<string, unknown> };
     globalGuards?: { diffs: string[]; config: Record<string, unknown> };
     globalTelemetry?: { diffs: string[]; config: Record<string, unknown> };
+    globalInfrastructure?: { diffs: string[]; config: Record<string, unknown> };
     systemPause?: { target: string };
     escalationBridge?: { target: string };
     domains: Array<{
@@ -279,6 +342,11 @@ export type Phase6PlanSummary = {
       config: Record<string, unknown>;
     }>;
     domainTelemetry: Array<{
+      slug: string;
+      diffs: string[];
+      config: Record<string, unknown>;
+    }>;
+    domainInfrastructure: Array<{
       slug: string;
       diffs: string[];
       config: Record<string, unknown>;
@@ -355,6 +423,29 @@ function normalizeGlobalTelemetry(raw: any): GlobalTelemetryStruct {
   };
 }
 
+function normalizeDomainInfrastructure(raw: any): DomainInfrastructureStruct {
+  return {
+    agentOps: String(raw?.agentOps ?? raw?.[0] ?? ZERO_ADDRESS),
+    dataPipeline: String(raw?.dataPipeline ?? raw?.[1] ?? ZERO_ADDRESS),
+    credentialVerifier: String(raw?.credentialVerifier ?? raw?.[2] ?? ZERO_ADDRESS),
+    fallbackOperator: String(raw?.fallbackOperator ?? raw?.[3] ?? ZERO_ADDRESS),
+    controlPlaneURI: String(raw?.controlPlaneURI ?? raw?.[4] ?? ''),
+    autopilotCadence: BigInt(raw?.autopilotCadence ?? raw?.[5] ?? 0),
+    autopilotEnabled: Boolean(raw?.autopilotEnabled ?? raw?.[6] ?? false),
+  };
+}
+
+function normalizeGlobalInfrastructure(raw: any): GlobalInfrastructureStruct {
+  return {
+    meshCoordinator: String(raw?.meshCoordinator ?? raw?.[0] ?? ZERO_ADDRESS),
+    dataLake: String(raw?.dataLake ?? raw?.[1] ?? ZERO_ADDRESS),
+    identityBridge: String(raw?.identityBridge ?? raw?.[2] ?? ZERO_ADDRESS),
+    topologyURI: String(raw?.topologyURI ?? raw?.[3] ?? ''),
+    autopilotCadence: BigInt(raw?.autopilotCadence ?? raw?.[4] ?? 0),
+    enforceDecentralizedInfra: Boolean(raw?.enforceDecentralizedInfra ?? raw?.[5] ?? false),
+  };
+}
+
 function eqAddress(a?: string | null, b?: string | null): boolean {
   const norm = (value?: string | null) => (value ? value.toLowerCase() : ZERO_ADDRESS);
   return norm(a) === norm(b);
@@ -421,6 +512,49 @@ function buildDomainTelemetryStruct(
   };
 }
 
+function buildDomainInfrastructureStruct(
+  input: DomainInfrastructureControlInput,
+  previous?: DomainInfrastructureStruct,
+): DomainInfrastructureStruct {
+  const controlPlaneURI = input.controlPlaneURI?.trim() || previous?.controlPlaneURI || '';
+  const autopilotCadence = BigInt(
+    Math.trunc(input.autopilotCadence ?? Number(previous?.autopilotCadence ?? 0n)),
+  );
+  return {
+    agentOps: (input.agentOps ?? previous?.agentOps ?? ZERO_ADDRESS).toLowerCase(),
+    dataPipeline: (input.dataPipeline ?? previous?.dataPipeline ?? ZERO_ADDRESS).toLowerCase(),
+    credentialVerifier: (
+      input.credentialVerifier ?? previous?.credentialVerifier ?? ZERO_ADDRESS
+    ).toLowerCase(),
+    fallbackOperator: (
+      input.fallbackOperator ?? previous?.fallbackOperator ?? ZERO_ADDRESS
+    ).toLowerCase(),
+    controlPlaneURI,
+    autopilotCadence,
+    autopilotEnabled: Boolean(input.autopilotEnabled ?? previous?.autopilotEnabled ?? false),
+  };
+}
+
+function buildGlobalInfrastructureStruct(
+  input: GlobalInfrastructureInput,
+  previous?: GlobalInfrastructureStruct,
+): GlobalInfrastructureStruct {
+  const topologyURI = input.topologyURI?.trim() || previous?.topologyURI || '';
+  const cadence = BigInt(
+    Math.trunc(input.autopilotCadence ?? Number(previous?.autopilotCadence ?? 0n)),
+  );
+  return {
+    meshCoordinator: (input.meshCoordinator ?? previous?.meshCoordinator ?? ZERO_ADDRESS).toLowerCase(),
+    dataLake: (input.dataLake ?? previous?.dataLake ?? ZERO_ADDRESS).toLowerCase(),
+    identityBridge: (input.identityBridge ?? previous?.identityBridge ?? ZERO_ADDRESS).toLowerCase(),
+    topologyURI,
+    autopilotCadence: cadence,
+    enforceDecentralizedInfra: Boolean(
+      input.enforceDecentralizedInfra ?? previous?.enforceDecentralizedInfra ?? false,
+    ),
+  };
+}
+
 function diffDomainOperations(
   current: DomainOperationsStruct | undefined,
   target: DomainOperationsStruct,
@@ -478,6 +612,62 @@ function diffDomainTelemetry(
     diffs.push('metricsDigest');
   if (current.manifestHash.toLowerCase() !== target.manifestHash.toLowerCase())
     diffs.push('manifestHash');
+  return diffs;
+}
+
+function diffDomainInfrastructure(
+  current: DomainInfrastructureStruct | undefined,
+  target: DomainInfrastructureStruct,
+): string[] {
+  const fields = [
+    'agentOps',
+    'dataPipeline',
+    'credentialVerifier',
+    'fallbackOperator',
+    'controlPlaneURI',
+    'autopilotCadence',
+    'autopilotEnabled',
+  ] as const;
+  if (!current) {
+    return [...fields];
+  }
+  const diffs: string[] = [];
+  if (!eqAddress(current.agentOps, target.agentOps)) diffs.push('agentOps');
+  if (!eqAddress(current.dataPipeline, target.dataPipeline)) diffs.push('dataPipeline');
+  if (!eqAddress(current.credentialVerifier, target.credentialVerifier))
+    diffs.push('credentialVerifier');
+  if (!eqAddress(current.fallbackOperator, target.fallbackOperator))
+    diffs.push('fallbackOperator');
+  if ((current.controlPlaneURI || '').trim() !== (target.controlPlaneURI || '').trim())
+    diffs.push('controlPlaneURI');
+  if (current.autopilotCadence !== target.autopilotCadence) diffs.push('autopilotCadence');
+  if (current.autopilotEnabled !== target.autopilotEnabled) diffs.push('autopilotEnabled');
+  return diffs;
+}
+
+function diffGlobalInfrastructure(
+  current: GlobalInfrastructureStruct | undefined,
+  target: GlobalInfrastructureStruct,
+): string[] {
+  const diffs: string[] = [];
+  if (!current) {
+    return [
+      'meshCoordinator',
+      'dataLake',
+      'identityBridge',
+      'topologyURI',
+      'autopilotCadence',
+      'enforceDecentralizedInfra',
+    ];
+  }
+  if (!eqAddress(current.meshCoordinator, target.meshCoordinator)) diffs.push('meshCoordinator');
+  if (!eqAddress(current.dataLake, target.dataLake)) diffs.push('dataLake');
+  if (!eqAddress(current.identityBridge, target.identityBridge)) diffs.push('identityBridge');
+  if ((current.topologyURI || '').trim() !== (target.topologyURI || '').trim())
+    diffs.push('topologyURI');
+  if (current.autopilotCadence !== target.autopilotCadence) diffs.push('autopilotCadence');
+  if (current.enforceDecentralizedInfra !== target.enforceDecentralizedInfra)
+    diffs.push('enforceDecentralizedInfra');
   return diffs;
 }
 
@@ -539,8 +729,10 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
   const domains: DomainPlan[] = [];
   const domainOperationsPlans: DomainOperationsPlan[] = [];
   const domainTelemetryPlans: DomainTelemetryPlan[] = [];
+  const domainInfrastructurePlans: DomainInfrastructurePlan[] = [];
   const touchedOperations = new Set<string>();
   const touchedTelemetry = new Set<string>();
+  const touchedInfrastructure = new Set<string>();
 
   const manifestURI = desired.global.manifestURI?.trim();
   if (!manifestURI) {
@@ -579,6 +771,7 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
   const plan: Phase6Plan = {
     domains,
     domainOperations: domainOperationsPlans,
+    domainInfrastructure: domainInfrastructurePlans,
     domainTelemetry: domainTelemetryPlans,
     warnings,
   };
@@ -631,6 +824,24 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
     warnings.push('Configuration omits global.telemetry; existing on-chain telemetry retained.');
   }
 
+  const targetGlobalInfrastructureInput = desired.global.infrastructure;
+  if (targetGlobalInfrastructureInput) {
+    const targetInfrastructure = buildGlobalInfrastructureStruct(
+      targetGlobalInfrastructureInput,
+      current.globalInfrastructure,
+    );
+    const infraDiffs = diffGlobalInfrastructure(current.globalInfrastructure, targetInfrastructure);
+    if (infraDiffs.length > 0) {
+      plan.globalInfrastructure = {
+        action: 'setGlobalInfrastructure',
+        config: targetInfrastructure,
+        diffs: infraDiffs,
+      };
+    }
+  } else if ((current.globalInfrastructure.topologyURI ?? '').trim() !== '') {
+    warnings.push('Configuration omits global.infrastructure; existing mesh topology retained.');
+  }
+
   const desiredPause = desired.global.systemPause;
   if (desiredPause) {
     if (!eqAddress(current.systemPause, desiredPause)) {
@@ -672,6 +883,7 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
     desiredSlugs.add(key);
     const existing = currentMap.get(key);
     const existingOps = current.domainOperations[key];
+    const existingInfra = current.domainInfrastructure[key];
     const struct = buildDomainStruct(input, existing?.active);
     if (!existing) {
       domains.push({
@@ -701,6 +913,25 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
           ],
         });
         touchedTelemetry.add(key);
+      }
+      if (input.infrastructureControl) {
+        const infraTarget = buildDomainInfrastructureStruct(input.infrastructureControl);
+        domainInfrastructurePlans.push({
+          action: 'setDomainInfrastructure',
+          id: domainIdFromSlug(slug),
+          slug,
+          config: infraTarget,
+          diffs: [
+            'agentOps',
+            'dataPipeline',
+            'credentialVerifier',
+            'fallbackOperator',
+            'controlPlaneURI',
+            'autopilotCadence',
+            'autopilotEnabled',
+          ],
+        });
+        touchedInfrastructure.add(key);
       }
       continue;
     }
@@ -759,6 +990,30 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
       }
     } else if (!touchedTelemetry.has(key)) {
       warnings.push(`Domain ${slug} missing telemetry config; retaining on-chain metrics.`);
+    }
+
+    if (input.infrastructureControl) {
+      const targetInfra = buildDomainInfrastructureStruct(
+        input.infrastructureControl,
+        existingInfra,
+      );
+      const infraDiffs = diffDomainInfrastructure(existingInfra, targetInfra);
+      if (infraDiffs.length > 0) {
+        domainInfrastructurePlans.push({
+          action: 'setDomainInfrastructure',
+          id: existing.id,
+          slug,
+          config: targetInfra,
+          diffs: infraDiffs,
+        });
+        touchedInfrastructure.add(key);
+      }
+    } else if (!touchedInfrastructure.has(key) && existingInfra) {
+      const hasExistingInfra =
+        existingInfra.controlPlaneURI.trim().length > 0 || existingInfra.autopilotCadence !== 0n;
+      if (hasExistingInfra) {
+        warnings.push(`Domain ${slug} missing infrastructureControl config; retaining on-chain wiring.`);
+      }
     }
   }
 
@@ -872,10 +1127,19 @@ export function buildPlanSummary(plan: Phase6Plan, options: SummaryOptions): Pha
       config: serialize(entry.config) as Record<string, unknown>,
     }));
 
+  const summaryInfrastructure = plan.domainInfrastructure
+    .filter((domain) => domainFilter(domain.slug))
+    .map((entry) => ({
+      slug: entry.slug,
+      diffs: [...entry.diffs],
+      config: serialize(entry.config) as Record<string, unknown>,
+    }));
+
   const actions: Phase6PlanSummary['actions'] = {
     domains: summaryDomains,
     domainOperations: summaryOps,
     domainTelemetry: summaryTelemetry,
+    domainInfrastructure: summaryInfrastructure,
   };
 
   if (!options.filters.skipGlobal && plan.global) {
@@ -899,6 +1163,13 @@ export function buildPlanSummary(plan: Phase6Plan, options: SummaryOptions): Pha
     };
   }
 
+  if (plan.globalInfrastructure) {
+    actions.globalInfrastructure = {
+      diffs: [...plan.globalInfrastructure.diffs],
+      config: serialize(plan.globalInfrastructure.config) as Record<string, unknown>,
+    };
+  }
+
   if (!options.filters.skipSystemPause && plan.systemPause) {
     actions.systemPause = { target: plan.systemPause.target };
   }
@@ -911,6 +1182,7 @@ export function buildPlanSummary(plan: Phase6Plan, options: SummaryOptions): Pha
     actions.global,
     actions.globalGuards,
     actions.globalTelemetry,
+    actions.globalInfrastructure,
     actions.systemPause,
     actions.escalationBridge,
   ].filter(Boolean).length;
@@ -920,8 +1192,14 @@ export function buildPlanSummary(plan: Phase6Plan, options: SummaryOptions): Pha
     domains: actions.domains.length,
     domainOperations: actions.domainOperations.length,
     domainTelemetry: actions.domainTelemetry.length,
+    domainInfrastructure: actions.domainInfrastructure.length,
   };
-  counts.total = counts.global + counts.domains + counts.domainOperations + counts.domainTelemetry;
+  counts.total =
+    counts.global +
+    counts.domains +
+    counts.domainOperations +
+    counts.domainTelemetry +
+    counts.domainInfrastructure;
 
   return {
     generatedAt: new Date().toISOString(),
@@ -944,13 +1222,22 @@ export function buildPlanSummary(plan: Phase6Plan, options: SummaryOptions): Pha
 }
 
 export async function fetchPhase6State(manager: Contract): Promise<Phase6State> {
-  const [globalRaw, systemPause, escalationBridge, domainViews, guardsRaw, globalTelemetryRaw] = await Promise.all([
+  const [
+    globalRaw,
+    systemPause,
+    escalationBridge,
+    domainViews,
+    guardsRaw,
+    globalTelemetryRaw,
+    globalInfrastructureRaw,
+  ] = await Promise.all([
     manager.globalConfig(),
     manager.systemPause(),
     manager.escalationBridge(),
     manager.listDomains(),
     manager.globalGuards(),
     manager.globalTelemetry(),
+    manager.globalInfrastructure(),
   ]);
 
   const global: GlobalConfigStruct = {
@@ -983,6 +1270,17 @@ export async function fetchPhase6State(manager: Contract): Promise<Phase6State> 
     }
   });
 
+  const infrastructureEntries = await Promise.all(
+    domains.map((domain) => manager.getDomainInfrastructure(domain.id).catch(() => null)),
+  );
+  const domainInfrastructure: Record<string, DomainInfrastructureStruct> = {};
+  infrastructureEntries.forEach((infra, idx) => {
+    const slugKey = domains[idx].slug.toLowerCase();
+    if (infra) {
+      domainInfrastructure[slugKey] = normalizeDomainInfrastructure(infra);
+    }
+  });
+
   return {
     global,
     systemPause: String(systemPause ?? ZERO_ADDRESS),
@@ -992,6 +1290,8 @@ export async function fetchPhase6State(manager: Contract): Promise<Phase6State> 
     globalGuards: normalizeGlobalGuards(guardsRaw),
     domainTelemetry,
     globalTelemetry: normalizeGlobalTelemetry(globalTelemetryRaw),
+    domainInfrastructure,
+    globalInfrastructure: normalizeGlobalInfrastructure(globalInfrastructureRaw),
   };
 }
 
