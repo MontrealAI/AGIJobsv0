@@ -400,6 +400,37 @@ function coverageMap(sentinels: SentinelRecord[], domainSlugs: string[]): Map<st
   return map;
 }
 
+type CapitalStreamRecord = {
+  slug?: string | null;
+  annualBudget?: number;
+  domains?: string[];
+};
+
+function capitalCoverageMap(streams: CapitalStreamRecord[], domainSlugs: string[]): Map<string, number> {
+  const map = new Map<string, number>();
+  const normalizedDomains = Array.from(
+    new Set(domainSlugs.map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
+  );
+
+  for (const stream of streams) {
+    const budget = Number(stream.annualBudget ?? 0);
+    if (!Number.isFinite(budget) || budget <= 0) continue;
+
+    const streamDomains = Array.from(
+      new Set((stream.domains ?? []).map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
+    );
+
+    const targets = streamDomains.length > 0 ? streamDomains : normalizedDomains;
+    if (targets.length === 0) continue;
+
+    for (const domain of targets) {
+      map.set(domain, (map.get(domain) ?? 0) + budget);
+    }
+  }
+
+  return map;
+}
+
 export type ScheduledPlaybook = {
   name: string;
   automation: string;
@@ -449,10 +480,15 @@ export function guardrailDiagnostics(config: Phase8Config): string[] {
     config.sentinels ?? [],
     domains.map((domain) => String(domain.slug ?? "")),
   );
+  const fundingCoverage = capitalCoverageMap(
+    config.capitalStreams ?? [],
+    domains.map((domain) => String(domain.slug ?? "")),
+  );
 
   for (const domain of domains) {
     const slug = String(domain.slug ?? "").toLowerCase();
     const coverage = sentinelCoverage.get(slug) ?? 0;
+    const funding = fundingCoverage.get(slug) ?? 0;
     if (guardianWindow > 0 && coverage < guardianWindow) {
       diagnostics.push(
         `${domain.name ?? slug} has ${coverage}s of sentinel coverage but guardian review window requires ${guardianWindow}s`,
@@ -475,6 +511,9 @@ export function guardrailDiagnostics(config: Phase8Config): string[] {
       diagnostics.push(
         `${domain.name ?? slug} autonomy ${autonomy}bps exceeds guardrail cap ${guardrailCap}bps`,
       );
+    }
+    if (funding <= 0) {
+      diagnostics.push(`${domain.name ?? slug} lacks active capital stream funding`);
     }
   }
 
@@ -525,6 +564,7 @@ export function computeMetrics(config: Phase8Config) {
   const plan = config.selfImprovement?.plan ?? {};
   const domainSlugs = domains.map((domain) => String(domain.slug ?? ""));
   const domainCoverageMap = coverageMap(sentinels, domainSlugs);
+  const domainFundingMap = capitalCoverageMap(streams, domainSlugs);
   const totalMonthlyUSD = domains.reduce((acc: number, d: any) => acc + Number(d.valueFlowMonthlyUSD ?? 0), 0);
   const maxAutonomy = domains.reduce((acc: number, d: any) => Math.max(acc, Number(d.autonomyLevelBps ?? 0)), 0);
   const averageResilience =
@@ -534,24 +574,37 @@ export function computeMetrics(config: Phase8Config) {
   const guardianCoverageMinutes = sentinels.reduce((acc: number, s: any) => acc + Number(s.coverageSeconds ?? 0), 0) / 60;
   const annualBudget = streams.reduce((acc: number, s: any) => acc + Number(s.annualBudget ?? 0), 0);
   const coverageSet = new Set<string>();
+  const fundedSet = new Set<string>();
   let totalDomainCoverageSeconds = 0;
   let minDomainCoverageSeconds = domains.length === 0 ? 0 : Number.POSITIVE_INFINITY;
+  let minDomainFundingUSD = domains.length === 0 ? 0 : Number.POSITIVE_INFINITY;
   for (const slug of domainSlugs) {
     const normalized = slug.toLowerCase();
     const coverage = domainCoverageMap.get(normalized) ?? 0;
+    const funding = domainFundingMap.get(normalized) ?? 0;
     if (coverage > 0) {
       coverageSet.add(normalized);
+    }
+    if (funding > 0) {
+      fundedSet.add(normalized);
     }
     totalDomainCoverageSeconds += coverage;
     if (coverage < minDomainCoverageSeconds) {
       minDomainCoverageSeconds = coverage;
     }
+    if (funding < minDomainFundingUSD) {
+      minDomainFundingUSD = funding;
+    }
   }
   const coverageRatio = domains.length === 0 ? 0 : (coverageSet.size / domains.length);
+  const fundingRatio = domains.length === 0 ? 0 : fundedSet.size / domains.length;
   const guardianWindowSeconds = Number(config.global?.guardianReviewWindow ?? 0);
   const averageDomainCoverageSeconds = domains.length === 0 ? 0 : totalDomainCoverageSeconds / domains.length;
   if (!Number.isFinite(minDomainCoverageSeconds)) {
     minDomainCoverageSeconds = 0;
+  }
+  if (!Number.isFinite(minDomainFundingUSD)) {
+    minDomainFundingUSD = 0;
   }
   const minimumCoverageAdequacy =
     guardianWindowSeconds > 0 && Number.isFinite(minDomainCoverageSeconds)
@@ -569,6 +622,11 @@ export function computeMetrics(config: Phase8Config) {
     autonomyGuardCapBps: Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0),
     cadenceSeconds: Number(plan.cadenceSeconds ?? 0),
   });
+  const fundingObject: Record<string, number> = {};
+  for (const domain of domains) {
+    const normalized = String(domain.slug ?? "").toLowerCase();
+    fundingObject[normalized] = domainFundingMap.get(normalized) ?? 0;
+  }
   return {
     totalMonthlyUSD,
     maxAutonomy,
@@ -576,6 +634,7 @@ export function computeMetrics(config: Phase8Config) {
     guardianCoverageMinutes,
     annualBudget,
     coverageRatio: coverageRatio * 100,
+    fundedDomainRatio: fundingRatio * 100,
     cadenceHours,
     lastExecutedAt,
     dominanceScore,
@@ -583,6 +642,8 @@ export function computeMetrics(config: Phase8Config) {
     guardianWindowSeconds,
     minDomainCoverageSeconds,
     minimumCoverageAdequacy,
+    minDomainFundingUSD,
+    domainFundingMap: fundingObject,
   };
 }
 
@@ -849,6 +910,7 @@ export function telemetryMarkdown(
   lines.push(`- Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
   lines.push(`- Sentinel coverage per guardian cycle: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes`);
   lines.push(`- Domains covered by sentinels: ${metrics.coverageRatio.toFixed(1)}%`);
+  lines.push(`- Domains with capital funding: ${metrics.fundedDomainRatio.toFixed(1)}%`);
   if (metrics.guardianWindowSeconds) {
     const adequacyPercent = metrics.minimumCoverageAdequacy * 100;
     lines.push(
@@ -856,6 +918,7 @@ export function telemetryMarkdown(
     );
   }
   lines.push(`- Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
+  lines.push(`- Minimum per-domain capital coverage: ${usd(metrics.minDomainFundingUSD ?? 0)} / yr`);
   if (metrics.cadenceHours) {
     lines.push(`- Self-improvement cadence: every ${metrics.cadenceHours.toFixed(2)} hours`);
   }
@@ -889,14 +952,17 @@ export function telemetryMarkdown(
   lines.push("");
 
   lines.push(`## Domains`);
-  lines.push(`| Domain | Autonomy (bps) | Resilience | Heartbeat (s) | TVL cap | Monthly value | Sentinels | Capital streams |`);
-  lines.push(`| --- | --- | --- | --- | --- | --- | --- | --- |`);
+  lines.push(
+    `| Domain | Autonomy (bps) | Resilience | Heartbeat (s) | TVL cap | Monthly value | Capital coverage | Sentinels | Capital streams |`,
+  );
+  lines.push(`| --- | --- | --- | --- | --- | --- | --- | --- | --- |`);
   for (const domain of config.domains ?? []) {
     const slug = String(domain.slug ?? "").toLowerCase();
     const sentinelList = (sentinelCoverageMap.get(slug) ?? ["—"]).join(", ");
     const streamList = (streamDomainMap.get(slug) ?? ["—"]).join(", ");
+    const capitalCoverageUSD = usd(Number((metrics.domainFundingMap ?? {})[slug] ?? 0));
     lines.push(
-      `| ${domain.name} | ${domain.autonomyLevelBps} | ${(domain.resilienceIndex ?? 0).toFixed(3)} | ${domain.heartbeatSeconds} | ${formatAmount(domain.tvlLimit)} | ${usd(Number(domain.valueFlowMonthlyUSD ?? 0))} | ${sentinelList} | ${streamList} |`,
+      `| ${domain.name} | ${domain.autonomyLevelBps} | ${(domain.resilienceIndex ?? 0).toFixed(3)} | ${domain.heartbeatSeconds} | ${formatAmount(domain.tvlLimit)} | ${usd(Number(domain.valueFlowMonthlyUSD ?? 0))} | ${capitalCoverageUSD} | ${sentinelList} | ${streamList} |`,
     );
   }
   lines.push("");
@@ -984,6 +1050,9 @@ export function writeArtifacts(
       guardianReviewWindowSeconds: metrics.guardianWindowSeconds,
       minDomainCoverageSeconds: metrics.minDomainCoverageSeconds,
       minimumCoverageAdequacyPercent: metrics.minimumCoverageAdequacy * 100,
+      fundedDomainRatio: metrics.fundedDomainRatio,
+      minDomainFundingUSD: metrics.minDomainFundingUSD,
+      domainFundingUSD: metrics.domainFundingMap,
     },
     calls: entries,
   };
@@ -1067,6 +1136,9 @@ export function main() {
       );
     }
     console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
+    console.log(
+      `Domains funded by capital streams: ${metrics.fundedDomainRatio.toFixed(1)}% (minimum coverage ${usd(metrics.minDomainFundingUSD)} / yr)`,
+    );
     console.log(`Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
     if (metrics.cadenceHours) {
       console.log(`Self-improvement cadence: every ${metrics.cadenceHours.toFixed(2)} hours`);

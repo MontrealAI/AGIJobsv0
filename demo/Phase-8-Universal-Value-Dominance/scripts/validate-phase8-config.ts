@@ -143,6 +143,22 @@ function main() {
     }
   }
 
+  const streamCoverage = new Map<string, number>();
+  for (const stream of config.capitalStreams) {
+    const budget = Number(stream.annualBudget ?? 0);
+    if (!Number.isFinite(budget) || budget <= 0) continue;
+    const targets = (stream.domains ?? []).map((domain) => domain.toLowerCase());
+    const normalizedTargets = targets.length > 0 ? targets : Array.from(slugs.values());
+    for (const domain of normalizedTargets) {
+      if (!slugs.has(domain)) continue;
+      streamCoverage.set(domain, (streamCoverage.get(domain) ?? 0) + budget);
+    }
+  }
+  const unfunded = Array.from(slugs.values()).filter((slug) => (streamCoverage.get(slug) ?? 0) <= 0);
+  if (unfunded.length > 0) {
+    throw new Error(`All domains require capital stream funding — missing: ${unfunded.join(", ")}`);
+  }
+
   const sentinelCoverage = config.sentinels.reduce((acc, s) => acc + s.coverageSeconds, 0);
   if (sentinelCoverage < config.global.guardianReviewWindow) {
     throw new Error(
@@ -219,6 +235,8 @@ function main() {
   console.log(`  Domains with sentinel coverage: ${sentinelDomains.size}`);
   console.log("  Sentinel coverage guard: PASS");
   console.log(`  Self-improvement cadence: ${config.selfImprovement.plan.cadenceSeconds}s`);
+  const fundedDomains = Array.from(streamCoverage.entries()).filter(([, budget]) => budget > 0).length;
+  console.log(`  Domains with capital funding: ${fundedDomains}`);
   if (config.selfImprovement.plan.lastExecutedAt) {
     console.log(`  Last self-improvement execution: ${config.selfImprovement.plan.lastExecutedAt}`);
   }

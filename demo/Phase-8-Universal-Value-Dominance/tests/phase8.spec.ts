@@ -20,6 +20,11 @@ test('renders strategic metrics from manifest schema', async ({ page }) => {
   const cadence = page.locator('[data-test-id="stat-card"][data-stat-key="improvement-cadence"]');
   await expect(cadence).toContainText('Improvement cadence');
   await expect(cadence).toContainText('2.00 h');
+
+  const funding = page.locator('[data-test-id="stat-card"][data-stat-key="capital-coverage"]');
+  await expect(funding).toContainText('Dominions funded');
+  await expect(funding).toContainText('100.0%');
+  await expect(funding).toContainText('$720.00B/yr');
 });
 
 test('renders sentinel lattice and capital streams from manifest', async ({ page }) => {
@@ -30,6 +35,11 @@ test('renders sentinel lattice and capital streams from manifest', async ({ page
   const streamCards = page.locator('[data-test-id="stream-card"]');
   await expect(streamCards).toHaveCount(3);
   await expect(streamCards.first()).toContainText('Climate Stabilization Endowment');
+
+  const financeDomain = page.locator('[data-domain-slug="planetary-finance"]');
+  await expect(financeDomain).toContainText('Funding $890.00B/yr');
+  const financeStreams = financeDomain.locator('[data-test-id="domain-stream"]');
+  await expect(financeStreams).toContainText('Planetary Resilience Fund');
 });
 
 test('renders mermaid diagram once manifest loads', async ({ page }) => {
