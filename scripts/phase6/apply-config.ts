@@ -31,10 +31,12 @@ const MANAGER_ABI = [
   'function setEscalationBridge(address newBridge)',
   'function registerDomain((string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
   'function updateDomain(bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
+  'function removeDomain(bytes32 id)',
   'function setDomainOperations(bytes32 id,(uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation) config)',
   'function setDomainTelemetry(bytes32 id,(uint32 resilienceBps,uint32 automationBps,uint32 complianceBps,uint32 settlementLatencySeconds,bool usesL2Settlement,address sentinelOracle,address settlementAsset,bytes32 metricsDigest,bytes32 manifestHash) telemetry)',
   'function setDomainInfrastructure(bytes32 id,(address agentOps,address dataPipeline,address credentialVerifier,address fallbackOperator,string controlPlaneURI,uint64 autopilotCadence,bool autopilotEnabled) infrastructure)',
   'function getDomainOperations(bytes32 id) view returns (uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation)',
+  'function domainExists(bytes32 id) view returns (bool)',
   'function getDomainTelemetry(bytes32 id) view returns (uint32,uint32,uint32,uint32,bool,address,address,bytes32,bytes32)',
   'function getDomainInfrastructure(bytes32 id) view returns (address,address,address,address,string,uint64,bool)',
 ];
@@ -316,6 +318,37 @@ function assertConfig(config: Phase6Config): void {
       throw new Error(`Domain ${domain.slug} is defined multiple times.`);
     }
     seenSlugs.add(slug);
+    const lifecycle = String(domain.lifecycle ?? 'active').toLowerCase();
+    if (!['active', 'sunset', 'experimental'].includes(lifecycle)) {
+      throw new Error(`domain ${domain.slug} lifecycle must be active, sunset, or experimental.`);
+    }
+    if (domain.sunsetPlan !== undefined && (domain.sunsetPlan === null || typeof domain.sunsetPlan !== 'object')) {
+      throw new Error(`domain ${domain.slug} sunsetPlan must be an object when provided.`);
+    }
+    if (lifecycle === 'sunset') {
+      const sunsetPlan = domain.sunsetPlan || {};
+      const reason = sunsetPlan.reason;
+      if (typeof reason !== 'string' || reason.trim().length === 0) {
+        throw new Error(`domain ${domain.slug} sunsetPlan.reason must be a non-empty string.`);
+      }
+      const retirementBlock = sunsetPlan.retirementBlock;
+      if (
+        retirementBlock !== undefined &&
+        (!Number.isFinite(Number(retirementBlock)) || Number(retirementBlock) <= 0)
+      ) {
+        throw new Error(`domain ${domain.slug} sunsetPlan.retirementBlock must be a positive number when provided.`);
+      }
+      const handoffDomains = sunsetPlan.handoffDomains;
+      if (!Array.isArray(handoffDomains) || handoffDomains.length === 0) {
+        throw new Error(`domain ${domain.slug} sunsetPlan.handoffDomains must be a non-empty array.`);
+      }
+      handoffDomains.forEach((target: unknown, idx: number) => {
+        assertNonEmptyString(target, `domain ${domain.slug} sunsetPlan.handoffDomains[${idx}]`);
+      });
+      if (sunsetPlan.notes !== undefined && typeof sunsetPlan.notes !== 'string') {
+        throw new Error(`domain ${domain.slug} sunsetPlan.notes must be a string when provided.`);
+      }
+    }
     assertNonEmptyString(domain.name, `domain ${domain.slug} name`);
     assertNonEmptyString(domain.manifestURI, `domain ${domain.slug} manifestURI`);
     assertNonEmptyString(domain.subgraph, `domain ${domain.slug} subgraph`);
@@ -617,7 +650,7 @@ async function main(): Promise<void> {
           console.log('✅ registerDomain confirmed');
         },
       });
-    } else {
+    } else if (domainPlan.action === 'updateDomain') {
       actions.push({
         label: `updateDomain(${domainPlan.slug}) → ${domainPlan.diffs.join(', ')}`,
         run: async () => {
@@ -625,6 +658,16 @@ async function main(): Promise<void> {
           console.log(`⏳ updateDomain ${domainPlan.slug} submitted: ${tx.hash}`);
           await tx.wait();
           console.log('✅ updateDomain confirmed');
+        },
+      });
+    } else if (domainPlan.action === 'removeDomain') {
+      actions.push({
+        label: `removeDomain(${domainPlan.slug})`,
+        run: async () => {
+          const tx = await manager.removeDomain(domainPlan.id);
+          console.log(`⏳ removeDomain ${domainPlan.slug} submitted: ${tx.hash}`);
+          await tx.wait();
+          console.log('✅ removeDomain confirmed');
         },
       });
     }
