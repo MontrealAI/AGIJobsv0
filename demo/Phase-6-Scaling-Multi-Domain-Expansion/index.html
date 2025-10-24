@@ -256,7 +256,7 @@
       const zeroAddress = '0x0000000000000000000000000000000000000000';
       const zeroBytes32 = '0x' + '0'.repeat(64);
       const configPath = './config/domains.phase6.json';
-      const abi = await fetch('../subgraph/abis/Phase6ExpansionManager.json').then((res) => res.json());
+      const abi = await fetch('./abi/Phase6ExpansionManager.json').then((res) => res.json());
       const { Interface, keccak256, toUtf8Bytes, formatEther } = await import('https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm');
       const iface = new Interface(abi);
 

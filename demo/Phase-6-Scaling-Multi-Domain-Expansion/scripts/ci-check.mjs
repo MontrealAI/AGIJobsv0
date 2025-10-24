@@ -8,7 +8,8 @@ const __dirname = dirname(__filename);
 
 const root = join(__dirname, '..');
 const configPath = join(root, 'config', 'domains.phase6.json');
-const abiPath = join(__dirname, '..', '..', '..', 'subgraph', 'abis', 'Phase6ExpansionManager.json');
+const repoAbiPath = join(__dirname, '..', '..', '..', 'subgraph', 'abis', 'Phase6ExpansionManager.json');
+const demoAbiPath = join(root, 'abi', 'Phase6ExpansionManager.json');
 const htmlPath = join(root, 'index.html');
 
 function fail(message) {
@@ -19,19 +20,27 @@ function fail(message) {
 if (!existsSync(configPath)) {
   fail(`Config file missing: ${configPath}`);
 }
-if (!existsSync(abiPath)) {
-  fail(`ABI file missing: ${abiPath}`);
+if (!existsSync(repoAbiPath)) {
+  fail(`ABI file missing: ${repoAbiPath}`);
+}
+if (!existsSync(demoAbiPath)) {
+  fail(`Demo ABI file missing: ${demoAbiPath}`);
 }
 if (!existsSync(htmlPath)) {
   fail(`UI file missing: ${htmlPath}`);
 }
 
 const config = JSON.parse(readFileSync(configPath, 'utf-8'));
-const abi = JSON.parse(readFileSync(abiPath, 'utf-8'));
+const repoAbi = JSON.parse(readFileSync(repoAbiPath, 'utf-8'));
+const demoAbi = JSON.parse(readFileSync(demoAbiPath, 'utf-8'));
 const html = readFileSync(htmlPath, 'utf-8');
 
-if (!Array.isArray(abi) || !abi.length) {
+if (!Array.isArray(repoAbi) || !repoAbi.length) {
   fail('ABI file is empty or invalid.');
+}
+
+if (JSON.stringify(repoAbi) !== JSON.stringify(demoAbi)) {
+  fail('Demo ABI file is out of sync with subgraph ABI. Run `cp subgraph/abis/Phase6ExpansionManager.json demo/Phase-6-Scaling-Multi-Domain-Expansion/abi/`');
 }
 
 if (!config.global || !config.global.manifestURI) {

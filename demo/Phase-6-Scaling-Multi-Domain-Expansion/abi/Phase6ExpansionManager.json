@@ -1,0 +1,1672 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "initialGovernance",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DuplicateDomain",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EmptyName",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EmptySlug",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "balance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "needed",
+        "type": "uint256"
+      }
+    ],
+    "name": "InsufficientBalance",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "field",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "provided",
+        "type": "address"
+      }
+    ],
+    "name": "InvalidAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAnomalyGracePeriod",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "field",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "provided",
+        "type": "uint256"
+      }
+    ],
+    "name": "InvalidBps",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "field",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidDigest",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidHeartbeat",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidManifestURI",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMetadataURI",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "field",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidOperationsValue",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "InvalidPauseTarget",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSubgraphEndpoint",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "field",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidTelemetryValue",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotGovernance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "UnknownDomain",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAddress",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint48",
+        "name": "maxActiveJobs",
+        "type": "uint48"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint48",
+        "name": "maxQueueDepth",
+        "type": "uint48"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint96",
+        "name": "minStake",
+        "type": "uint96"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "treasuryShareBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "circuitBreakerBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "requiresHumanValidation",
+        "type": "bool"
+      }
+    ],
+    "name": "DomainOperationsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "slug",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "metadataURI",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "validationModule",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "dataOracle",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "l2Gateway",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "subgraphEndpoint",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "executionRouter",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "heartbeatSeconds",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "DomainRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "DomainStatusChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "resilienceBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "automationBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "complianceBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "settlementLatencySeconds",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "usesL2Settlement",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "sentinelOracle",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "settlementAsset",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "metricsDigest",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "manifestHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DomainTelemetryUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "slug",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "metadataURI",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "validationModule",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "dataOracle",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "l2Gateway",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "subgraphEndpoint",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "executionRouter",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "heartbeatSeconds",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "DomainUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newEscalationBridge",
+        "type": "address"
+      }
+    ],
+    "name": "EscalationBridgeUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "response",
+        "type": "bytes"
+      }
+    ],
+    "name": "EscalationForwarded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "iotOracleRouter",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "defaultL2Gateway",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "didRegistry",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "treasuryBridge",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "l2SyncCadence",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "manifestURI",
+        "type": "string"
+      }
+    ],
+    "name": "GlobalConfigUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "treasuryBufferBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "circuitBreakerBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "anomalyGracePeriod",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "autoPauseEnabled",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "oversightCouncil",
+        "type": "address"
+      }
+    ],
+    "name": "GlobalGuardsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "manifestHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "metricsDigest",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "resilienceFloorBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "automationFloorBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "oversightWeightBps",
+        "type": "uint32"
+      }
+    ],
+    "name": "GlobalTelemetryUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newGovernance",
+        "type": "address"
+      }
+    ],
+    "name": "GovernanceUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newSystemPause",
+        "type": "address"
+      }
+    ],
+    "name": "SystemPauseUpdated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "SPEC_VERSION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "validationModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "dataOracle",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "l2Gateway",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "subgraphEndpoint",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "executionRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "heartbeatSeconds",
+        "type": "uint64"
+      }
+    ],
+    "name": "configureDomainConnectors",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "domainCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "slug",
+        "type": "string"
+      }
+    ],
+    "name": "domainId",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "escalationBridge",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "forwardEscalation",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "forwardPauseCall",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getDomain",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "slug",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "validationModule",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dataOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "l2Gateway",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "subgraphEndpoint",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "executionRouter",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "heartbeatSeconds",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.Domain",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getDomainOperations",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint48",
+            "name": "maxActiveJobs",
+            "type": "uint48"
+          },
+          {
+            "internalType": "uint48",
+            "name": "maxQueueDepth",
+            "type": "uint48"
+          },
+          {
+            "internalType": "uint96",
+            "name": "minStake",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint16",
+            "name": "treasuryShareBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "circuitBreakerBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bool",
+            "name": "requiresHumanValidation",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainOperations",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getDomainTelemetry",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "resilienceBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "automationBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "complianceBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "settlementLatencySeconds",
+            "type": "uint32"
+          },
+          {
+            "internalType": "bool",
+            "name": "usesL2Settlement",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "sentinelOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settlementAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metricsDigest",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "manifestHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainTelemetry",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "globalConfig",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "iotOracleRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "defaultL2Gateway",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "didRegistry",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "treasuryBridge",
+        "type": "address"
+      },
+      {
+        "internalType": "uint64",
+        "name": "l2SyncCadence",
+        "type": "uint64"
+      },
+      {
+        "internalType": "string",
+        "name": "manifestURI",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "globalGuards",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "treasuryBufferBps",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "circuitBreakerBps",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint32",
+        "name": "anomalyGracePeriod",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bool",
+        "name": "autoPauseEnabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "address",
+        "name": "oversightCouncil",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "globalTelemetry",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "manifestHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "metricsDigest",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "resilienceFloorBps",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "automationFloorBps",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "oversightWeightBps",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "governance",
+    "outputs": [
+      {
+        "internalType": "contract TimelockController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "listDomains",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "id",
+            "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "slug",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "metadataURI",
+                "type": "string"
+              },
+              {
+                "internalType": "address",
+                "name": "validationModule",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "dataOracle",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "l2Gateway",
+                "type": "address"
+              },
+              {
+                "internalType": "string",
+                "name": "subgraphEndpoint",
+                "type": "string"
+              },
+              {
+                "internalType": "address",
+                "name": "executionRouter",
+                "type": "address"
+              },
+              {
+                "internalType": "uint64",
+                "name": "heartbeatSeconds",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bool",
+                "name": "active",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct Phase6ExpansionManager.Domain",
+            "name": "config",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainView[]",
+        "name": "results",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "slug",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "validationModule",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dataOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "l2Gateway",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "subgraphEndpoint",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "executionRouter",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "heartbeatSeconds",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.Domain",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerDomain",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint48",
+            "name": "maxActiveJobs",
+            "type": "uint48"
+          },
+          {
+            "internalType": "uint48",
+            "name": "maxQueueDepth",
+            "type": "uint48"
+          },
+          {
+            "internalType": "uint96",
+            "name": "minStake",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint16",
+            "name": "treasuryShareBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "circuitBreakerBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bool",
+            "name": "requiresHumanValidation",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainOperations",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "setDomainOperations",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "setDomainStatus",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "resilienceBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "automationBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "complianceBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "settlementLatencySeconds",
+            "type": "uint32"
+          },
+          {
+            "internalType": "bool",
+            "name": "usesL2Settlement",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "sentinelOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settlementAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metricsDigest",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "manifestHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainTelemetry",
+        "name": "telemetry",
+        "type": "tuple"
+      }
+    ],
+    "name": "setDomainTelemetry",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newBridge",
+        "type": "address"
+      }
+    ],
+    "name": "setEscalationBridge",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "iotOracleRouter",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "defaultL2Gateway",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "didRegistry",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "treasuryBridge",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "l2SyncCadence",
+            "type": "uint64"
+          },
+          {
+            "internalType": "string",
+            "name": "manifestURI",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.GlobalConfig",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "setGlobalConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint16",
+            "name": "treasuryBufferBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "circuitBreakerBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint32",
+            "name": "anomalyGracePeriod",
+            "type": "uint32"
+          },
+          {
+            "internalType": "bool",
+            "name": "autoPauseEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "oversightCouncil",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.GlobalGuards",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "setGlobalGuards",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "manifestHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metricsDigest",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "resilienceFloorBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "automationFloorBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "oversightWeightBps",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.GlobalTelemetry",
+        "name": "telemetry",
+        "type": "tuple"
+      }
+    ],
+    "name": "setGlobalTelemetry",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_governance",
+        "type": "address"
+      }
+    ],
+    "name": "setGovernance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract SystemPause",
+        "name": "newPause",
+        "type": "address"
+      }
+    ],
+    "name": "setSystemPause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "systemPause",
+    "outputs": [
+      {
+        "internalType": "contract SystemPause",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "slug",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "validationModule",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dataOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "l2Gateway",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "subgraphEndpoint",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "executionRouter",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "heartbeatSeconds",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.Domain",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "updateDomain",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
