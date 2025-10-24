@@ -27,6 +27,91 @@ describe("Phase 8 orchestration console", () => {
     config = loadConfig();
   });
 
+  it("matches telemetry metrics with an independent calculation", () => {
+    const metrics = computeMetrics(config);
+    const domains = config.domains ?? [];
+    const sentinels = config.sentinels ?? [];
+    const streams = config.capitalStreams ?? [];
+
+    const totalMonthly = domains.reduce((acc, domain) => acc + Number(domain.valueFlowMonthlyUSD ?? 0), 0);
+    expect(metrics.totalMonthlyUSD).toBe(totalMonthly);
+
+    const averageResilience =
+      domains.length === 0
+        ? 0
+        : domains.reduce((acc, domain) => acc + Number(domain.resilienceIndex ?? 0), 0) / domains.length;
+    expect(metrics.averageResilience).toBeCloseTo(averageResilience, 10);
+
+    const guardianCoverageMinutes = sentinels.reduce(
+      (acc, sentinel) => acc + Number(sentinel.coverageSeconds ?? 0),
+      0,
+    ) / 60;
+    expect(metrics.guardianCoverageMinutes).toBeCloseTo(guardianCoverageMinutes, 10);
+
+    const domainSlugs = domains.map((domain) => String(domain.slug ?? "").toLowerCase());
+    const coverageMap = new Map();
+    for (const sentinel of sentinels) {
+      const coverage = Number(sentinel.coverageSeconds ?? 0);
+      if (!Number.isFinite(coverage) || coverage <= 0) continue;
+      const sentinelDomains = Array.from(
+        new Set((sentinel.domains ?? []).map((domain) => String(domain ?? "").toLowerCase()).filter(Boolean)),
+      );
+      const targets = sentinelDomains.length > 0 ? sentinelDomains : domainSlugs;
+      for (const target of targets) {
+        coverageMap.set(target, (coverageMap.get(target) ?? 0) + coverage);
+      }
+    }
+    const coverageValues = domainSlugs.map((slug) => coverageMap.get(slug) ?? 0);
+    const minCoverage = coverageValues.length > 0 ? Math.min(...coverageValues) : 0;
+    const coverageRatio =
+      domainSlugs.length === 0
+        ? 0
+        : (coverageValues.filter((value) => value > 0).length / domainSlugs.length) * 100;
+    const averageDomainCoverage =
+      coverageValues.length === 0
+        ? 0
+        : coverageValues.reduce((acc, value) => acc + value, 0) / coverageValues.length;
+
+    expect(metrics.minDomainCoverageSeconds).toBe(minCoverage);
+    expect(metrics.coverageRatio).toBeCloseTo(coverageRatio, 10);
+    expect(metrics.averageDomainCoverageSeconds).toBeCloseTo(averageDomainCoverage, 10);
+
+    const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
+    const adequacy = guardianWindow > 0 ? minCoverage / guardianWindow : 0;
+    expect(metrics.guardianWindowSeconds).toBe(guardianWindow);
+    expect(metrics.minimumCoverageAdequacy).toBeCloseTo(adequacy, 10);
+
+    const fundingMap = new Map();
+    for (const stream of streams) {
+      const budget = Number(stream.annualBudget ?? 0);
+      if (!Number.isFinite(budget) || budget <= 0) continue;
+      const streamDomains = Array.from(
+        new Set((stream.domains ?? []).map((domain) => String(domain ?? "").toLowerCase()).filter(Boolean)),
+      );
+      const targets = streamDomains.length > 0 ? streamDomains : domainSlugs;
+      for (const target of targets) {
+        fundingMap.set(target, (fundingMap.get(target) ?? 0) + budget);
+      }
+    }
+    const fundingValues = domainSlugs.map((slug) => fundingMap.get(slug) ?? 0);
+    const minFunding = fundingValues.length > 0 ? Math.min(...fundingValues) : 0;
+    const fundedRatio =
+      domainSlugs.length === 0
+        ? 0
+        : (fundingValues.filter((value) => value > 0).length / domainSlugs.length) * 100;
+    expect(metrics.minDomainFundingUSD).toBe(minFunding);
+    expect(metrics.fundedDomainRatio).toBeCloseTo(fundedRatio, 10);
+
+    const annualBudget = streams.reduce((acc, stream) => acc + Number(stream.annualBudget ?? 0), 0);
+    expect(metrics.annualBudget).toBe(annualBudget);
+
+    const maxAutonomy = domains.reduce(
+      (acc, domain) => Math.max(acc, Number(domain.autonomyLevelBps ?? 0)),
+      0,
+    );
+    expect(metrics.maxAutonomy).toBe(maxAutonomy);
+  });
+
   it("parses the manifest with strict validation", () => {
     expect(config.domains).toHaveLength(5);
     expect(config.sentinels).toHaveLength(3);
@@ -86,6 +171,17 @@ describe("Phase 8 orchestration console", () => {
     expect(() => parseManifest(sentinelReference)).toThrowError(
       /sentinels\.0\.domains\.0: Sentinel solar-shield references unknown domain unknown-domain/,
     );
+  });
+
+  it("fails CI if guardrail thresholds regress", () => {
+    const metrics = computeMetrics(config);
+    const guardrail = config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? Number.POSITIVE_INFINITY;
+    expect(guardrail).toBeLessThan(8000);
+    const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
+    expect(metrics.minDomainCoverageSeconds).toBeGreaterThanOrEqual(guardianWindow);
+    if (guardianWindow > 0) {
+      expect(metrics.minimumCoverageAdequacy).toBeGreaterThanOrEqual(1);
+    }
   });
 
   it("encodes calldata and flattens manifests deterministically", () => {
@@ -194,6 +290,17 @@ describe("Phase 8 orchestration console", () => {
       expect(typeof planPayload.generatedAt).toBe("string");
       expect(planPayload.playbooks.length).toBeGreaterThan(0);
       expect(planPayload.autonomyGuards).toMatchObject({ maxAutonomyBps: expect.any(Number) });
+      expect(planPayload.guardrails).toMatchObject({
+        checksum: {
+          algorithm: expect.any(String),
+          value: expect.stringMatching(/^0x[0-9a-f]{64}$/),
+        },
+        zkProof: expect.objectContaining({
+          circuit: expect.any(String),
+          status: expect.any(String),
+          artifactURI: expect.stringContaining("ipfs://"),
+        }),
+      });
 
       const cycleReport = readFileSync(artifactPaths.cycleReport, "utf-8");
       expect(cycleReport).toContain(

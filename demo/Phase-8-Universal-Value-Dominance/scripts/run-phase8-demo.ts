@@ -183,6 +183,41 @@ const StreamSchema = z.object({
   active: z.boolean().default(true),
 });
 
+const KernelChecksumSchema = z.object({
+  algorithm: z
+    .string({ required_error: "Guardrail checksum algorithm is required" })
+    .min(1, "Guardrail checksum algorithm is required"),
+  value: z
+    .string({ required_error: "Guardrail checksum value is required" })
+    .regex(/^0x[a-fA-F0-9]{64}$/, "Guardrail checksum must be a 32-byte hex value"),
+});
+
+const KernelZkProofSchema = z.object({
+  circuit: z
+    .string({ required_error: "Guardrail zk-proof circuit label is required" })
+    .min(1, "Guardrail zk-proof circuit label is required"),
+  artifactURI: z
+    .string({ required_error: "Guardrail zk-proof artifact URI is required" })
+    .min(1, "Guardrail zk-proof artifact URI is required"),
+  status: z
+    .enum(["pending", "verified", "disabled"], {
+      required_error: "Guardrail zk-proof status must be provided",
+      invalid_type_error: "Guardrail zk-proof status must be pending, verified, or disabled",
+    })
+    .default("pending"),
+  notes: z.string().optional(),
+  lastVerifiedAt: z
+    .number({ invalid_type_error: "Guardrail zk-proof lastVerifiedAt must be a number" })
+    .int("Guardrail zk-proof lastVerifiedAt must be an integer")
+    .nonnegative("Guardrail zk-proof lastVerifiedAt cannot be negative")
+    .optional(),
+});
+
+const KernelGuardrailsSchema = z.object({
+  checksum: KernelChecksumSchema,
+  zkProof: KernelZkProofSchema,
+});
+
 const SelfImprovementSchema = z.object({
   plan: z
     .object({
@@ -227,6 +262,7 @@ const SelfImprovementSchema = z.object({
       escalationChannels: z.array(z.string()).default([]),
     })
     .optional(),
+  guardrails: KernelGuardrailsSchema,
 });
 
 const ManifestSchema = z
@@ -1067,9 +1103,19 @@ export function telemetryMarkdown(
 
   lines.push(`## Self-Improvement Kernel`);
   const plan = config.selfImprovement?.plan;
+  const kernelGuardrails = config.selfImprovement?.guardrails;
   if (plan) {
     lines.push(
       `- Strategic plan: cadence ${plan.cadenceSeconds}s (${(Number(plan.cadenceSeconds ?? 0) / 3600).toFixed(2)} h) · hash ${plan.planHash} · last report ${plan.lastReportURI}`,
+    );
+  }
+  if (kernelGuardrails) {
+    lines.push(
+      `- Kernel checksum: ${kernelGuardrails.checksum.algorithm} ${kernelGuardrails.checksum.value}`,
+    );
+    const zkNotes = kernelGuardrails.zkProof.notes ? ` · notes ${kernelGuardrails.zkProof.notes}` : "";
+    lines.push(
+      `- Kernel zk-proof: ${kernelGuardrails.zkProof.circuit} · status ${kernelGuardrails.zkProof.status} · artifact ${kernelGuardrails.zkProof.artifactURI}${zkNotes}`,
     );
   }
   const schedules = schedulePlaybooks(config);
@@ -1165,6 +1211,7 @@ function generateOperatorRunbook(
   lines.push("");
   lines.push("Self-improvement kernel:");
   const plan = config.selfImprovement?.plan;
+  const kernelGuardrails = config.selfImprovement?.guardrails;
   if (plan) {
     lines.push(`• Plan URI ${plan.planURI}`);
     lines.push(`• Plan hash ${plan.planHash}`);
@@ -1172,6 +1219,21 @@ function generateOperatorRunbook(
     if (plan.lastExecutedAt) {
       lines.push(`• Last execution ${new Date(Number(plan.lastExecutedAt) * 1000).toISOString()}`);
     }
+  }
+  if (kernelGuardrails) {
+    lines.push(`• Kernel checksum ${kernelGuardrails.checksum.algorithm} ${kernelGuardrails.checksum.value}`);
+    const zkMeta = [
+      `circuit ${kernelGuardrails.zkProof.circuit}`,
+      `status ${kernelGuardrails.zkProof.status}`,
+      `artifact ${kernelGuardrails.zkProof.artifactURI}`,
+    ];
+    if (kernelGuardrails.zkProof.notes) {
+      zkMeta.push(`notes ${kernelGuardrails.zkProof.notes}`);
+    }
+    if (kernelGuardrails.zkProof.lastVerifiedAt && kernelGuardrails.zkProof.status === "verified") {
+      zkMeta.push(`verified ${new Date(kernelGuardrails.zkProof.lastVerifiedAt * 1000).toISOString()}`);
+    }
+    lines.push(`• Kernel zk-proof ${zkMeta.join(" · ")}`);
   }
   const schedule = schedulePlaybooks(config);
   for (const playbook of schedule) {
@@ -1206,6 +1268,7 @@ function generateSelfImprovementPlanPayload(
 ) {
   const plan = config.selfImprovement?.plan ?? {};
   const guards = config.selfImprovement?.autonomyGuards ?? null;
+  const kernelGuardrails = config.selfImprovement?.guardrails ?? null;
   const scheduled = schedulePlaybooks(config);
   return {
     generatedAt,
@@ -1220,6 +1283,7 @@ function generateSelfImprovementPlanPayload(
       lastReportURI: plan.lastReportURI ?? "",
     },
     autonomyGuards: guards,
+    guardrails: kernelGuardrails,
     playbooks: scheduled.map((entry) => ({
       name: entry.name,
       owner: entry.owner,
@@ -1478,6 +1542,18 @@ export function main() {
         console.log(`  Last executed at: ${new Date(Number(planDetails.lastExecutedAt) * 1000).toISOString()}`);
         console.log(`  Last report: ${planDetails.lastReportURI}`);
       }
+    }
+    const guardrails = config.selfImprovement?.guardrails;
+    if (guardrails) {
+      console.log(`  Kernel checksum: ${guardrails.checksum.algorithm} ${guardrails.checksum.value}`);
+      const notes = guardrails.zkProof.notes ? ` · notes ${guardrails.zkProof.notes}` : "";
+      const verifiedAt =
+        guardrails.zkProof.lastVerifiedAt && guardrails.zkProof.status === "verified"
+          ? ` · verified ${new Date(guardrails.zkProof.lastVerifiedAt * 1000).toISOString()}`
+          : "";
+      console.log(
+        `  Kernel zk-proof: ${guardrails.zkProof.circuit} · status ${guardrails.zkProof.status} · artifact ${guardrails.zkProof.artifactURI}${verifiedAt}${notes}`,
+      );
     }
     for (const playbook of config.selfImprovement?.playbooks ?? []) {
       console.log(`  • ${playbook.name} (${playbook.automation}): ${playbook.description}`);

@@ -114,12 +114,57 @@ The manifest + contract encode a self-improvement plan:
   and evaluation cycle, binding it to an IPFS report.
 * **Playbooks** trigger weekly hyperparameter evolution and hourly stress-tests, each bound by cryptographic guardrails
   (checksum verification, zk-proof-of-alignment, multi-agent cross-checks).
-* **Autonomy guard** enforces ≤8,000 bps autonomy, a 15-minute human override window, and escalations through guardian council,
+* **Autonomy guard** enforces ≤7,900 bps autonomy, a 15-minute human override window, and escalations through guardian council,
   DAO emergency levers, and sentinel lockdown.
 * **Validator feedback loops** reward resilient domains (resilience >0.9) with higher capital allocation while surfacing low
   resilience for governance review.
 
 Running `npm run demo:phase8:orchestrate` surfaces these guardrails alongside calldata so operators never miss a safety step.
+
+---
+
+## 🛡️ Self-improvement cycle operations
+
+### Execute a new cycle
+
+1. **Synthesize the payload** – run `npm run demo:phase8:orchestrate` to regenerate `output/phase8-self-improvement-plan.json`.
+   The payload now includes `guardrails.checksum` (sha3-256 digest) and `guardrails.zkProof` (placeholder commitment + URI) so
+   every run is tied to a tamper-evident manifest.
+2. **Distribute calldata** – load `phase8-governance-calldata.json` into Safe or your timelock. The encoded
+   `setSelfImprovementPlan` call already references the checksum + zk-proof placeholders.
+3. **Record execution** – after automation completes, capture the execution timestamp and IPFS report URI, then append it via
+   `recordSelfImprovementExecution` (present in the generated Safe batch) or the `owner:plan` helpers.
+
+### Monitor guardrails continuously
+
+* **CLI telemetry** – rerun `npm run demo:phase8:orchestrate` or `npx ts-node demo/Phase-8-Universal-Value-Dominance/scripts/run-phase8-demo.ts`
+  and confirm the console emits:
+  * `Kernel checksum: sha3-256 …` and `Kernel zk-proof: … status pending` so governors know the manifest hash and placeholder proof.
+  * `Guardian sentinel coverage` ≥ 12 minutes (720 seconds) with `Minimum coverage per domain` meeting or exceeding the guardian
+    review window.
+  * `Maximum encoded autonomy` bounded below the guardrail (≤ 7,900 bps).
+* **Telemetry markdown** – ship `output/phase8-telemetry-report.md` to ops chat. The Self-Improvement Kernel section includes the
+  checksum + zk-proof metadata for passive monitoring and audit trails.
+* **Machine checks** – programmatic systems can tail `phase8-self-improvement-plan.json` to verify:
+
+  ```bash
+  jq '.guardrails' demo/Phase-8-Universal-Value-Dominance/output/phase8-self-improvement-plan.json
+  ```
+
+  The checksum value should match the manifest commit you expect to execute; the zk-proof status remains `pending` until the
+  guardian council publishes a proof artifact.
+
+### Emergency rollback & overrides
+
+1. **Freeze automation** – run `npm run owner:system-pause` (or execute the generated Safe call) to forward the pause signal to
+   the configured `SystemPause` contract. Guardians retain immediate pause authority as a backstop.
+2. **Revert the plan** – rerun the orchestrator with a known-good manifest (e.g., previous git tag) to emit a replacement
+   `phase8-self-improvement-plan.json`, then submit the encoded `setSelfImprovementPlan` transaction to restore trusted cadence
+   and guardrails.
+3. **Audit sentinels** – execute `npm run monitoring:sentinels` to dump current coverage assignments and confirm every domain
+   still receives ≥ guardian window coverage before resuming automation.
+4. **Document the rollback** – append an emergency note to the next `recordSelfImprovementExecution` report so downstream
+   analytics capture the interruption and checksum transition.
 
 ---
 
