@@ -24,6 +24,7 @@ if TYPE_CHECKING:  # pragma: no cover - imported during type checking only
 
 _LOG = logging.getLogger(__name__)
 _DEFAULT_CONFIG = Path("demo/Phase-6-Scaling-Multi-Domain-Expansion/config/domains.phase6.json")
+_ZERO_BYTES32 = "0x" + "0" * 64
 
 
 @dataclass(slots=True)
@@ -54,6 +55,15 @@ class DomainProfile:
     treasury_share_bps: int = 0
     circuit_breaker_bps: int = 0
     requires_human_validation: bool = False
+    telemetry_resilience_bps: int = 0
+    telemetry_automation_bps: int = 0
+    telemetry_compliance_bps: int = 0
+    settlement_latency_seconds: float = 0.0
+    uses_l2_settlement: bool = False
+    sentinel_oracle: Optional[str] = None
+    settlement_asset: Optional[str] = None
+    telemetry_metrics_digest: Optional[str] = None
+    telemetry_manifest_hash: Optional[str] = None
 
     def score(self, tags: Iterable[str]) -> float:
         if not tags:
@@ -99,6 +109,11 @@ class GlobalControls:
     auto_pause_enabled: bool = False
     oversight_council: Optional[str] = None
     decentralized_infra: List[Dict[str, str]] = field(default_factory=list)
+    telemetry_manifest_hash: Optional[str] = None
+    telemetry_metrics_digest: Optional[str] = None
+    telemetry_resilience_floor_bps: int = 0
+    telemetry_automation_floor_bps: int = 0
+    telemetry_oversight_weight_bps: int = 0
 
 
 class DomainExpansionRuntime:
@@ -152,10 +167,18 @@ class DomainExpansionRuntime:
             operations_payload = entry.get("operations") or {}
             if operations_payload and not isinstance(operations_payload, dict):
                 raise ValueError(f"domain {slug} operations must be an object")
+            telemetry_payload = entry.get("telemetry") or {}
+            if telemetry_payload and not isinstance(telemetry_payload, dict):
+                raise ValueError(f"domain {slug} telemetry must be an object")
             try:
                 min_stake = int(str(operations_payload.get("minStake", "0")))
             except (ValueError, TypeError) as exc:
                 raise ValueError(f"domain {slug} operations.minStake must be an integer-compatible string") from exc
+            telemetry_resilience = int(float(telemetry_payload.get("resilienceBps", 0)))
+            telemetry_automation = int(float(telemetry_payload.get("automationBps", 0)))
+            telemetry_compliance = int(float(telemetry_payload.get("complianceBps", 0)))
+            settlement_latency = float(telemetry_payload.get("settlementLatencySeconds", 0))
+            uses_l2_settlement = bool(telemetry_payload.get("usesL2Settlement", False))
             profile = DomainProfile(
                 slug=slug.lower(),
                 name=str(entry.get("name", slug)).strip(),
@@ -181,6 +204,15 @@ class DomainExpansionRuntime:
                 treasury_share_bps=int(operations_payload.get("treasuryShareBps", 0)),
                 circuit_breaker_bps=int(operations_payload.get("circuitBreakerBps", 0)),
                 requires_human_validation=bool(operations_payload.get("requiresHumanValidation", False)),
+                telemetry_resilience_bps=telemetry_resilience,
+                telemetry_automation_bps=telemetry_automation,
+                telemetry_compliance_bps=telemetry_compliance,
+                settlement_latency_seconds=settlement_latency,
+                uses_l2_settlement=uses_l2_settlement,
+                sentinel_oracle=_normalize_address(telemetry_payload.get("sentinelOracle")),
+                settlement_asset=_normalize_address(telemetry_payload.get("settlementAsset")),
+                telemetry_metrics_digest=_normalize_bytes32(telemetry_payload.get("metricsDigest")),
+                telemetry_manifest_hash=_normalize_bytes32(telemetry_payload.get("manifestHash")),
             )
             if not profile.manifest_uri:
                 raise ValueError(f"domain {slug} missing manifestURI")
@@ -193,6 +225,9 @@ class DomainExpansionRuntime:
             raise ValueError("global.guards must be an object")
         infra_payload = global_payload.get("decentralizedInfra")
         global_infra = _normalize_infrastructure(infra_payload, "global", require_layer=False)
+        telemetry_payload = global_payload.get("telemetry") or {}
+        if telemetry_payload and not isinstance(telemetry_payload, dict):
+            raise ValueError("global.telemetry must be an object")
         controls = GlobalControls(
             iot_oracle_router=_normalize_address(global_payload.get("iotOracleRouter")),
             default_l2_gateway=_normalize_address(global_payload.get("defaultL2Gateway")),
@@ -211,6 +246,11 @@ class DomainExpansionRuntime:
             auto_pause_enabled=bool(guards_payload.get("autoPauseEnabled", False)),
             oversight_council=_normalize_address(guards_payload.get("oversightCouncil")),
             decentralized_infra=global_infra,
+            telemetry_manifest_hash=_normalize_bytes32(telemetry_payload.get("manifestHash")),
+            telemetry_metrics_digest=_normalize_bytes32(telemetry_payload.get("metricsDigest")),
+            telemetry_resilience_floor_bps=int(telemetry_payload.get("resilienceFloorBps", 0)),
+            telemetry_automation_floor_bps=int(telemetry_payload.get("automationFloorBps", 0)),
+            telemetry_oversight_weight_bps=int(telemetry_payload.get("oversightWeightBps", 0)),
         )
         return cls(domains, controls, source=source)
 
@@ -284,6 +324,19 @@ class DomainExpansionRuntime:
             )
         if self._global.oversight_council:
             logs.append(f"• oversight council: {self._global.oversight_council}")
+        if self._global.telemetry_resilience_floor_bps:
+            logs.append(
+                "• telemetry floors: "
+                f"resilience {self._global.telemetry_resilience_floor_bps / 100:.2f}% "
+                f"automation {self._global.telemetry_automation_floor_bps / 100:.2f}% "
+                f"oversight {self._global.telemetry_oversight_weight_bps / 100:.2f}%"
+            )
+        if self._global.telemetry_manifest_hash or self._global.telemetry_metrics_digest:
+            logs.append(
+                "• telemetry manifests: "
+                f"manifest={self._global.telemetry_manifest_hash or '—'} "
+                f"metrics={self._global.telemetry_metrics_digest or '—'}"
+            )
         if self._global.decentralized_infra:
             preview = ", ".join(
                 f"{item.get('name', 'mesh')}({item.get('status', '-')})"
@@ -294,6 +347,23 @@ class DomainExpansionRuntime:
             logs.append(f"• global infra mesh: {preview}")
         if profile.resilience_index:
             logs.append(f"• resilience index: {profile.resilience_index:.3f}")
+        if profile.telemetry_resilience_bps or profile.telemetry_automation_bps:
+            logs.append(
+                "• telemetry: "
+                f"resilience {profile.telemetry_resilience_bps / 100:.2f}% "
+                f"automation {profile.telemetry_automation_bps / 100:.2f}% "
+                f"compliance {profile.telemetry_compliance_bps / 100:.2f}%"
+            )
+        if profile.settlement_latency_seconds:
+            settlement_hint = (
+                f"{profile.settlement_latency_seconds:.0f}s"
+                if profile.settlement_latency_seconds.is_integer()
+                else f"{profile.settlement_latency_seconds:.1f}s"
+            )
+            logs.append(
+                "• settlement cadence: "
+                f"{settlement_hint} / L2={'yes' if profile.uses_l2_settlement else 'no'}"
+            )
         if profile.value_flow_display or profile.value_flow_usd is not None:
             display = profile.value_flow_display
             if not display and profile.value_flow_usd is not None:
@@ -303,6 +373,8 @@ class DomainExpansionRuntime:
             logs.append(f"• uptime: {profile.uptime}")
         if profile.sentinel:
             logs.append(f"• sentinel: {profile.sentinel}")
+        if profile.sentinel_oracle:
+            logs.append(f"• sentinel oracle: {profile.sentinel_oracle}")
         if profile.infrastructure:
             preview = ", ".join(
                 f"{item.get('layer', 'layer')}:{item.get('name', 'service')}({item.get('status', '-')})"
@@ -337,6 +409,17 @@ class DomainExpansionRuntime:
             "treasuryShareBps": profile.treasury_share_bps,
             "circuitBreakerBps": profile.circuit_breaker_bps,
             "requiresHumanValidation": profile.requires_human_validation,
+            "telemetry": {
+                "resilienceBps": profile.telemetry_resilience_bps,
+                "automationBps": profile.telemetry_automation_bps,
+                "complianceBps": profile.telemetry_compliance_bps,
+                "settlementLatencySeconds": profile.settlement_latency_seconds,
+                "usesL2Settlement": profile.uses_l2_settlement,
+                "sentinelOracle": profile.sentinel_oracle,
+                "settlementAsset": profile.settlement_asset,
+                "metricsDigest": profile.telemetry_metrics_digest,
+                "manifestHash": profile.telemetry_manifest_hash,
+            },
         }
 
     def ingest_iot_signal(self, signal: Dict[str, object]) -> Tuple[str, List[str]]:
@@ -355,11 +438,23 @@ class DomainExpansionRuntime:
                 logs.append(f"• sentinel on watch: {profile.sentinel}")
             if profile.resilience_index:
                 logs.append(f"• resilience index: {profile.resilience_index:.3f}")
+            if profile.telemetry_resilience_bps or profile.telemetry_automation_bps:
+                logs.append(
+                    "• telemetry: "
+                    f"resilience {profile.telemetry_resilience_bps / 100:.2f}% "
+                    f"automation {profile.telemetry_automation_bps / 100:.2f}% "
+                    f"compliance {profile.telemetry_compliance_bps / 100:.2f}%"
+                )
             if profile.infrastructure:
                 primary = profile.infrastructure[0]
                 logs.append(
                     "• primary infra: "
                     f"{primary.get('layer', 'layer')} / {primary.get('name', 'service')} ({primary.get('status', '-')})"
+                )
+            if profile.settlement_latency_seconds:
+                logs.append(
+                    "• settlement latency: "
+                    f"{profile.settlement_latency_seconds:.1f}s | L2={'yes' if profile.uses_l2_settlement else 'no'}"
                 )
             logs.append(f"• operations: {profile.operations_summary()}")
         elif self._global.decentralized_infra:
@@ -445,6 +540,19 @@ def _normalize_infrastructure(
                 entry_norm["endpoint"] = endpoint_text
         normalized.append(entry_norm)
     return normalized
+
+
+def _normalize_bytes32(value: object) -> Optional[str]:
+    if not value:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if not text.startswith("0x") or len(text) != 66:
+        raise ValueError(f"invalid bytes32 value: {value}")
+    if text == _ZERO_BYTES32:
+        return None
+    return text
 
 
 def _normalize_address(value: object) -> Optional[str]:

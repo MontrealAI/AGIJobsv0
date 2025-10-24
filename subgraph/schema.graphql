@@ -104,6 +104,15 @@ type Phase6Domain @entity {
   treasuryShareBps: Int!
   circuitBreakerBps: Int!
   requiresHumanValidation: Boolean!
+  telemetryResilienceBps: Int!
+  telemetryAutomationBps: Int!
+  telemetryComplianceBps: Int!
+  settlementLatencySeconds: Int!
+  usesL2Settlement: Boolean!
+  sentinelOracle: Bytes
+  settlementAsset: Bytes
+  telemetryMetricsDigest: Bytes
+  telemetryManifestHash: Bytes
 }
 
 type Phase6GlobalConfig @entity {
@@ -129,4 +138,9 @@ type Phase6GlobalConfig @entity {
   anomalyGracePeriod: Int!
   autoPauseEnabled: Boolean!
   oversightCouncil: Bytes
+  telemetryManifestHash: Bytes
+  telemetryMetricsDigest: Bytes
+  telemetryResilienceFloorBps: Int!
+  telemetryAutomationFloorBps: Int!
+  telemetryOversightWeightBps: Int!
 }

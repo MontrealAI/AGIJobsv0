@@ -36,6 +36,21 @@ function operationsStruct(overrides = {}) {
     };
 }
 
+function telemetryStruct(overrides = {}) {
+    return {
+        resilienceBps: 9200,
+        automationBps: 8800,
+        complianceBps: 9100,
+        settlementLatencySeconds: 45,
+        usesL2Settlement: true,
+        sentinelOracle: ethers.ZeroAddress,
+        settlementAsset: ethers.ZeroAddress,
+        metricsDigest: ethers.id("metrics"),
+        manifestHash: ethers.id("manifest"),
+        ...overrides,
+    };
+}
+
 describe("Phase6ExpansionManager", function () {
   let governance;
   let outsider;
@@ -298,6 +313,98 @@ describe("Phase6ExpansionManager", function () {
     expect(storedGuards.anomalyGracePeriod).to.equal(guards.anomalyGracePeriod);
     expect(storedGuards.autoPauseEnabled).to.equal(true);
     expect(storedGuards.oversightCouncil).to.equal(guards.oversightCouncil);
+  });
+
+  it("tracks telemetry for domains and global thresholds", async function () {
+    const config = domainStruct({ validationModule: validationStub.target });
+    await manager.connect(governance).registerDomain(config);
+    const id = await manager.domainId(config.slug);
+
+    const telemetry = telemetryStruct({ sentinelOracle: validationStub.target });
+    await expect(manager.connect(outsider).setDomainTelemetry(id, telemetry)).to.be.revertedWithCustomError(
+      manager,
+      "NotGovernance",
+    );
+
+    await expect(manager.connect(governance).setDomainTelemetry(id, telemetry))
+      .to.emit(manager, "DomainTelemetryUpdated")
+      .withArgs(
+        id,
+        telemetry.resilienceBps,
+        telemetry.automationBps,
+        telemetry.complianceBps,
+        telemetry.settlementLatencySeconds,
+        telemetry.usesL2Settlement,
+        telemetry.sentinelOracle,
+        telemetry.settlementAsset,
+        telemetry.metricsDigest,
+        telemetry.manifestHash,
+      );
+
+    const storedTelemetry = await manager.getDomainTelemetry(id);
+    expect(storedTelemetry.resilienceBps).to.equal(telemetry.resilienceBps);
+    expect(storedTelemetry.usesL2Settlement).to.equal(true);
+    expect(storedTelemetry.metricsDigest).to.equal(telemetry.metricsDigest);
+
+    const telemetryUpdate = telemetryStruct({
+      resilienceBps: 9500,
+      settlementLatencySeconds: 120,
+      usesL2Settlement: false,
+      settlementAsset: pauseHarness.target,
+      manifestHash: ethers.id("manifest-v2"),
+      metricsDigest: ethers.id("metrics-v2"),
+    });
+
+    await expect(manager.connect(governance).setDomainTelemetry(id, telemetryUpdate))
+      .to.emit(manager, "DomainTelemetryUpdated")
+      .withArgs(
+        id,
+        telemetryUpdate.resilienceBps,
+        telemetryUpdate.automationBps,
+        telemetryUpdate.complianceBps,
+        telemetryUpdate.settlementLatencySeconds,
+        telemetryUpdate.usesL2Settlement,
+        telemetryUpdate.sentinelOracle,
+        telemetryUpdate.settlementAsset,
+        telemetryUpdate.metricsDigest,
+        telemetryUpdate.manifestHash,
+      );
+
+    const globalTelemetry = {
+      manifestHash: ethers.id("global-manifest"),
+      metricsDigest: ethers.id("global-digest"),
+      resilienceFloorBps: 9000,
+      automationFloorBps: 8700,
+      oversightWeightBps: 6400,
+    };
+
+    await expect(manager.connect(outsider).setGlobalTelemetry(globalTelemetry)).to.be.revertedWithCustomError(
+      manager,
+      "NotGovernance",
+    );
+
+    await expect(manager.connect(governance).setGlobalTelemetry(globalTelemetry))
+      .to.emit(manager, "GlobalTelemetryUpdated")
+      .withArgs(
+        globalTelemetry.manifestHash,
+        globalTelemetry.metricsDigest,
+        globalTelemetry.resilienceFloorBps,
+        globalTelemetry.automationFloorBps,
+        globalTelemetry.oversightWeightBps,
+      );
+
+    const storedGlobal = await manager.globalTelemetry();
+    expect(storedGlobal.manifestHash).to.equal(globalTelemetry.manifestHash);
+    expect(storedGlobal.resilienceFloorBps).to.equal(globalTelemetry.resilienceFloorBps);
+
+    await expect(
+      manager.connect(governance).setDomainTelemetry(
+        id,
+        telemetryStruct({ metricsDigest: ethers.ZeroHash }),
+      ),
+    )
+      .to.be.revertedWithCustomError(manager, "InvalidDigest")
+      .withArgs("metricsDigest");
   });
 
   it("enforces operational guard rail invariants", async function () {

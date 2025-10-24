@@ -12,17 +12,21 @@ const MANAGER_ABI = [
   'function governance() view returns (address)',
   'function globalConfig() view returns (address,address,address,address,uint64,string)',
   'function globalGuards() view returns (uint16,uint16,uint32,bool,address)',
+  'function globalTelemetry() view returns (bytes32,bytes32,uint32,uint32,uint32)',
   'function systemPause() view returns (address)',
   'function escalationBridge() view returns (address)',
   'function listDomains() view returns ((bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)[])',
   'function setGlobalConfig((address,address,address,address,uint64,string) config)',
   'function setGlobalGuards((uint16,uint16,uint32,bool,address) config)',
+  'function setGlobalTelemetry((bytes32 manifestHash,bytes32 metricsDigest,uint32 resilienceFloorBps,uint32 automationFloorBps,uint32 oversightWeightBps) telemetry)',
   'function setSystemPause(address newPause)',
   'function setEscalationBridge(address newBridge)',
   'function registerDomain((string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
   'function updateDomain(bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
   'function setDomainOperations(bytes32 id,(uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation) config)',
+  'function setDomainTelemetry(bytes32 id,(uint32 resilienceBps,uint32 automationBps,uint32 complianceBps,uint32 settlementLatencySeconds,bool usesL2Settlement,address sentinelOracle,address settlementAsset,bytes32 metricsDigest,bytes32 manifestHash) telemetry)',
   'function getDomainOperations(bytes32 id) view returns (uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation)',
+  'function getDomainTelemetry(bytes32 id) view returns (uint32,uint32,uint32,uint32,bool,address,address,bytes32,bytes32)',
 ];
 
 interface CliArgs {
@@ -210,6 +214,48 @@ function assertConfig(config: Phase6Config): void {
     if (!minStake || Number(minStake) <= 0) {
       throw new Error(`Domain ${domain.slug} operations.minStake must be > 0.`);
     }
+    if (domain.telemetry) {
+      const telemetry = domain.telemetry;
+      ['resilienceBps', 'automationBps', 'complianceBps'].forEach((field) => {
+        const value = (telemetry as any)[field];
+        if (typeof value !== 'number' || value < 0 || value > 10000) {
+          throw new Error(`Domain ${domain.slug} telemetry.${field} must be 0-10000.`);
+        }
+      });
+      if (
+        typeof telemetry.settlementLatencySeconds !== 'number' ||
+        telemetry.settlementLatencySeconds < 0
+      ) {
+        throw new Error(
+          `Domain ${domain.slug} telemetry.settlementLatencySeconds must be >= 0.`,
+        );
+      }
+      if (typeof telemetry.usesL2Settlement !== 'boolean') {
+        throw new Error(`Domain ${domain.slug} telemetry.usesL2Settlement must be boolean.`);
+      }
+      if (!telemetry.metricsDigest || !telemetry.metricsDigest.startsWith('0x')) {
+        throw new Error(`Domain ${domain.slug} telemetry.metricsDigest must be a bytes32 hex string.`);
+      }
+      if (!telemetry.manifestHash || !telemetry.manifestHash.startsWith('0x')) {
+        throw new Error(`Domain ${domain.slug} telemetry.manifestHash must be a bytes32 hex string.`);
+      }
+    }
+  }
+
+  if (config.global.telemetry) {
+    const telemetry = config.global.telemetry;
+    ['resilienceFloorBps', 'automationFloorBps', 'oversightWeightBps'].forEach((field) => {
+      const value = (telemetry as any)[field];
+      if (typeof value !== 'number' || value < 0 || value > 10000) {
+        throw new Error(`global.telemetry.${field} must be 0-10000.`);
+      }
+    });
+    ['manifestHash', 'metricsDigest'].forEach((field) => {
+      const value = (telemetry as any)[field];
+      if (!value || typeof value !== 'string' || !value.startsWith('0x')) {
+        throw new Error(`global.telemetry.${field} must be a bytes32 hex string.`);
+      }
+    });
   }
 }
 
@@ -293,6 +339,18 @@ async function main(): Promise<void> {
     });
   }
 
+  if (plan.globalTelemetry) {
+    actions.push({
+      label: `setGlobalTelemetry → ${plan.globalTelemetry.diffs.join(', ')}`,
+      run: async () => {
+        const tx = await manager.setGlobalTelemetry(plan.globalTelemetry!.config);
+        console.log(`⏳ setGlobalTelemetry submitted: ${tx.hash}`);
+        await tx.wait();
+        console.log('✅ setGlobalTelemetry confirmed');
+      },
+    });
+  }
+
   for (const domainPlan of plan.domains) {
     if (args.onlyDomains.size > 0 && !args.onlyDomains.has(domainPlan.slug.toLowerCase())) {
       continue;
@@ -331,6 +389,21 @@ async function main(): Promise<void> {
         console.log(`⏳ setDomainOperations ${opsPlan.slug} submitted: ${tx.hash}`);
         await tx.wait();
         console.log('✅ setDomainOperations confirmed');
+      },
+    });
+  }
+
+  for (const telemetryPlan of plan.domainTelemetry) {
+    if (args.onlyDomains.size > 0 && !args.onlyDomains.has(telemetryPlan.slug.toLowerCase())) {
+      continue;
+    }
+    actions.push({
+      label: `setDomainTelemetry(${telemetryPlan.slug}) → ${telemetryPlan.diffs.join(', ')}`,
+      run: async () => {
+        const tx = await manager.setDomainTelemetry(telemetryPlan.id, telemetryPlan.config);
+        console.log(`⏳ setDomainTelemetry ${telemetryPlan.slug} submitted: ${tx.hash}`);
+        await tx.wait();
+        console.log('✅ setDomainTelemetry confirmed');
       },
     });
   }

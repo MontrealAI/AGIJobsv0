@@ -101,6 +101,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "field",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidDigest",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "InvalidHeartbeat",
     "type": "error"
@@ -140,6 +151,17 @@
   {
     "inputs": [],
     "name": "InvalidSubgraphEndpoint",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "field",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidTelemetryValue",
     "type": "error"
   },
   {
@@ -307,6 +329,73 @@
       }
     ],
     "name": "DomainStatusChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "resilienceBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "automationBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "complianceBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "settlementLatencySeconds",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "usesL2Settlement",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "sentinelOracle",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "settlementAsset",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "metricsDigest",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "manifestHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DomainTelemetryUpdated",
     "type": "event"
   },
   {
@@ -498,6 +587,43 @@
       }
     ],
     "name": "GlobalGuardsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "manifestHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "metricsDigest",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "resilienceFloorBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "automationFloorBps",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "oversightWeightBps",
+        "type": "uint32"
+      }
+    ],
+    "name": "GlobalTelemetryUpdated",
     "type": "event"
   },
   {
@@ -807,6 +933,72 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getDomainTelemetry",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "resilienceBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "automationBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "complianceBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "settlementLatencySeconds",
+            "type": "uint32"
+          },
+          {
+            "internalType": "bool",
+            "name": "usesL2Settlement",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "sentinelOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settlementAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metricsDigest",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "manifestHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainTelemetry",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "globalConfig",
     "outputs": [
@@ -872,6 +1064,39 @@
         "internalType": "address",
         "name": "oversightCouncil",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "globalTelemetry",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "manifestHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "metricsDigest",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "resilienceFloorBps",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "automationFloorBps",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "oversightWeightBps",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -1122,6 +1347,71 @@
   {
     "inputs": [
       {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "resilienceBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "automationBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "complianceBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "settlementLatencySeconds",
+            "type": "uint32"
+          },
+          {
+            "internalType": "bool",
+            "name": "usesL2Settlement",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "sentinelOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settlementAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metricsDigest",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "manifestHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.DomainTelemetry",
+        "name": "telemetry",
+        "type": "tuple"
+      }
+    ],
+    "name": "setDomainTelemetry",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "newBridge",
         "type": "address"
@@ -1213,6 +1503,46 @@
       }
     ],
     "name": "setGlobalGuards",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "manifestHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "metricsDigest",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "resilienceFloorBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "automationFloorBps",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "oversightWeightBps",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.GlobalTelemetry",
+        "name": "telemetry",
+        "type": "tuple"
+      }
+    ],
+    "name": "setGlobalTelemetry",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
