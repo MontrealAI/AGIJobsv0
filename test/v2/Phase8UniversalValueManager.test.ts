@@ -28,6 +28,7 @@ describe("Phase8UniversalValueManager", function () {
       guardianReviewWindow: 900,
       maxDrawdownBps: 3500,
       manifestoURI: "ipfs://phase8/manifest/universal.json",
+      manifestoHash: ethers.id("phase8-manifesto"),
     };
 
     await expect(manager.connect(governance).setGlobalParameters(globalParams)).to.emit(
@@ -40,6 +41,7 @@ describe("Phase8UniversalValueManager", function () {
     expect(storedGlobals.universalVault).to.equal(globalParams.universalVault);
     expect(storedGlobals.maxDrawdownBps).to.equal(globalParams.maxDrawdownBps);
     expect(storedGlobals.manifestoURI).to.equal(globalParams.manifestoURI);
+    expect(storedGlobals.manifestoHash).to.equal(globalParams.manifestoHash);
 
     await expect(manager.connect(governance).setGuardianCouncil(operator.address))
       .to.emit(manager, "GuardianCouncilUpdated")
@@ -113,7 +115,7 @@ describe("Phase8UniversalValueManager", function () {
       name: "Solar Shield Guardian",
       uri: "ipfs://phase8/sentinels/solar-shield.json",
       agent: sentinelAgent.address,
-      coverageSeconds: 60,
+      coverageSeconds: 1200,
       sensitivityBps: 250,
       active: true,
     };
@@ -134,7 +136,7 @@ describe("Phase8UniversalValueManager", function () {
       manager.connect(governance).setSentinelDomains(sentinelId, [ethers.id("unknown-domain")]),
     ).to.be.revertedWithCustomError(manager, "UnknownDomain");
 
-    const updatedSentinel = { ...sentinelProfile, coverageSeconds: 90, sensitivityBps: 500, active: false };
+    const updatedSentinel = { ...sentinelProfile, coverageSeconds: 1800, sensitivityBps: 500, active: false };
     await expect(manager.connect(governance).updateSentinel(sentinelId, updatedSentinel)).to.emit(
       manager,
       "SentinelUpdated",
@@ -222,7 +224,9 @@ describe("Phase8UniversalValueManager", function () {
 
     expect(await pauseHarness.paused()).to.equal(true);
 
-    await expect(manager.connect(governance).updateManifesto("ipfs://phase8/manifest/v2.json")).to.emit(
+    await expect(
+      manager.connect(governance).updateManifesto("ipfs://phase8/manifest/v2.json", ethers.id("phase8-manifesto-v2")),
+    ).to.emit(
       manager,
       "GlobalParametersUpdated",
     );
@@ -234,6 +238,7 @@ describe("Phase8UniversalValueManager", function () {
 
     const refreshedGlobals = await manager.globalParameters();
     expect(refreshedGlobals.manifestoURI).to.equal("ipfs://phase8/manifest/v2.json");
+    expect(refreshedGlobals.manifestoHash).to.equal(ethers.id("phase8-manifesto-v2"));
     expect(refreshedGlobals.heartbeatSeconds).to.equal(700);
     expect(refreshedGlobals.guardianReviewWindow).to.equal(1000);
     expect(refreshedGlobals.maxDrawdownBps).to.equal(4200);

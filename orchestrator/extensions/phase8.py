@@ -159,6 +159,7 @@ class GlobalParameters:
     guardian_council: str
     system_pause: str
     manifest_uri: str
+    manifest_hash: str
     heartbeat_seconds: float
     guardian_window_seconds: float
     max_drawdown_bps: int
@@ -193,6 +194,7 @@ class Phase8DominionRuntime:
             guardian_council=str(global_payload.get("guardianCouncil", "")),
             system_pause=str(global_payload.get("systemPause", "")),
             manifest_uri=str(global_payload.get("manifestoURI", "")),
+            manifest_hash=str(global_payload.get("manifestoHash", "")),
             heartbeat_seconds=float(global_payload.get("heartbeatSeconds", 0)),
             guardian_window_seconds=float(global_payload.get("guardianReviewWindow", 0)),
             max_drawdown_bps=int(global_payload.get("maxDrawdownBps", 0)),
