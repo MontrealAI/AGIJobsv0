@@ -31,12 +31,17 @@
    * Layer-2 bridge plans synthesized from the config and the on-chain ABI.
    * A ready-to-copy mermaid system diagram and runtime routing commentary from the Python orchestrator.
    * Encoded `setSystemPause` / `setEscalationBridge` transactions so governance can pivot or halt instantly.
-3. **Verify readiness in CI** (runs automatically, can be triggered locally):
+3. **Produce a governance-ready Markdown runbook** (optional):
+   ```bash
+   npm run demo:phase6:runbook -- --output phase6-runbook.md
+   ```
+   The output file bundles the executive summary, emergency calldata, per-domain guard rails, decentralized infra mesh, and the mermaid map for instant stakeholder distribution.
+4. **Verify readiness in CI** (runs automatically, can be triggered locally):
    ```bash
    npm run demo:phase6:ci
    ```
    The script validates JSON schema, address hygiene, ABI sync, and UI artifacts before the CI job signs off.
-4. **Push the manifest on-chain (dry-run by default)**:
+5. **Push the manifest on-chain (dry-run by default)**:
    ```bash
    npx hardhat run --no-compile scripts/phase6/apply-config.ts --network <network> -- --manager <Phase6ExpansionManager>
    ```
@@ -44,7 +49,7 @@
    * Defaults to a dry-run – add `--apply` to execute transactions once reviewed.
    * Scope updates with `--domain finance,health` or skip globals via `--skip-global`.
    * Append `--export-plan plan.json` to emit a JSON manifest of the actions for multisig or council review.
-5. **Open the control surface UI**:
+6. **Open the control surface UI**:
    *Serve locally or open directly in the repo*
    ```bash
    npx serve demo/Phase-6-Scaling-Multi-Domain-Expansion
