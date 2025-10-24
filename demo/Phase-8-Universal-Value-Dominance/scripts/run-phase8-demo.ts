@@ -315,17 +315,28 @@ type SentinelRecord = {
   domains?: string[];
 };
 
-function coverageMap(sentinels: SentinelRecord[]): Map<string, number> {
+function coverageMap(sentinels: SentinelRecord[], domainSlugs: string[]): Map<string, number> {
   const map = new Map<string, number>();
+  const normalizedDomains = Array.from(
+    new Set(domainSlugs.map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
+  );
+
   for (const sentinel of sentinels) {
     const coverage = Number(sentinel.coverageSeconds ?? 0);
     if (!Number.isFinite(coverage) || coverage <= 0) continue;
-    for (const domain of sentinel.domains ?? []) {
-      const key = String(domain || "").toLowerCase();
-      if (!key) continue;
-      map.set(key, (map.get(key) ?? 0) + coverage);
+
+    const sentinelDomains = Array.from(
+      new Set((sentinel.domains ?? []).map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
+    );
+
+    const targets = sentinelDomains.length > 0 ? sentinelDomains : normalizedDomains;
+    if (targets.length === 0) continue;
+
+    for (const domain of targets) {
+      map.set(domain, (map.get(domain) ?? 0) + coverage);
     }
   }
+
   return map;
 }
 
@@ -374,7 +385,10 @@ export function guardrailDiagnostics(config: Phase8Config): string[] {
   const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
   const globalHeartbeat = Number(config.global?.heartbeatSeconds ?? 0);
   const guardrailCap = Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? NaN);
-  const sentinelCoverage = coverageMap(config.sentinels ?? []);
+  const sentinelCoverage = coverageMap(
+    config.sentinels ?? [],
+    domains.map((domain) => String(domain.slug ?? "")),
+  );
 
   for (const domain of domains) {
     const slug = String(domain.slug ?? "").toLowerCase();
