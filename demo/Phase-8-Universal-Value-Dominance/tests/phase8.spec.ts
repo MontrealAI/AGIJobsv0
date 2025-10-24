@@ -65,6 +65,8 @@ test('shows coverage alert and runbook enhancements', async ({ page }) => {
 
   const downloadLink = page.locator('[data-test-id="runbook-download"]').first();
   await expect(downloadLink).toHaveAttribute('href', './output/phase8-orchestration-report.txt');
+  const operatorKitLink = page.locator('[data-test-id="runbook-download"]').nth(1);
+  await expect(operatorKitLink).toHaveAttribute('href', './output/phase8-operator-kit.tar.gz');
 });
 
 test('has no detectable accessibility violations', async ({ page }) => {
