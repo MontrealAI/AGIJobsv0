@@ -4,6 +4,34 @@ import { Contract } from 'ethers';
 import { keccak256, toUtf8Bytes } from 'ethers';
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
+
+export interface DecentralizedInfraEntry {
+  name: string;
+  role: string;
+  status: string;
+  endpoint?: string;
+}
+
+export interface InfrastructureEntry {
+  layer: string;
+  name: string;
+  role: string;
+  status: string;
+  endpoint?: string;
+  uri?: string;
+}
+
+export interface DomainMetadata {
+  domain: string;
+  l2: string;
+  sentinel: string;
+  resilienceIndex: number;
+  uptime: string;
+  valueFlowMonthlyUSD: number;
+  valueFlowDisplay?: string;
+  [key: string]: unknown;
+}
 
 export type GlobalConfigInput = {
   manifestURI: string;
@@ -14,6 +42,7 @@ export type GlobalConfigInput = {
   l2SyncCadence?: number;
   systemPause?: string;
   escalationBridge?: string;
+  decentralizedInfra?: DecentralizedInfraEntry[];
 };
 
 export type DomainConfigInput = {
@@ -29,6 +58,11 @@ export type DomainConfigInput = {
   active?: boolean;
   operations?: DomainOperationsInput;
   telemetry?: DomainTelemetryInput;
+  skillTags?: string[];
+  capabilities?: Record<string, number>;
+  priority?: number;
+  metadata?: DomainMetadata;
+  infrastructure?: InfrastructureEntry[];
 };
 
 export type DomainOperationsInput = {

@@ -3,7 +3,12 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import hre from 'hardhat';
 import { Contract } from 'ethers';
-import { fetchPhase6State, loadPhase6Config, planPhase6Changes, Phase6Config } from './apply-config-lib';
+import {
+  fetchPhase6State,
+  loadPhase6Config,
+  planPhase6Changes,
+  Phase6Config,
+} from './apply-config-lib';
 
 const DEFAULT_CONFIG = 'demo/Phase-6-Scaling-Multi-Domain-Expansion/config/domains.phase6.json';
 
@@ -28,6 +33,53 @@ const MANAGER_ABI = [
   'function getDomainOperations(bytes32 id) view returns (uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation)',
   'function getDomainTelemetry(bytes32 id) view returns (uint32,uint32,uint32,uint32,bool,address,address,bytes32,bytes32)',
 ];
+
+const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
+
+function assertNonZeroAddress(value: unknown, field: string): asserts value is string {
+  if (typeof value !== 'string' || !ADDRESS_PATTERN.test(value) || /^0x0{40}$/i.test(value)) {
+    throw new Error(`${field} must be a non-zero 0x-prefixed address.`);
+  }
+}
+
+function assertOptionalAddress(value: unknown, field: string): void {
+  if (value === undefined || value === null) {
+    return;
+  }
+  if (typeof value !== 'string' || !ADDRESS_PATTERN.test(value) || /^0x0{40}$/i.test(value)) {
+    throw new Error(`${field} must be a valid 0x-prefixed address when provided.`);
+  }
+}
+
+function assertBytes32(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.length !== 66 || !value.startsWith('0x')) {
+    throw new Error(`${field} must be a bytes32 hex string.`);
+  }
+  return value;
+}
+
+function assertNonEmptyString(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`${field} must be a non-empty string.`);
+  }
+  return value;
+}
+
+function toFiniteNumber(value: unknown, field: string): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    throw new Error(`${field} must be a finite number.`);
+  }
+  return numeric;
+}
+
+function assertBps(value: unknown, field: string): number {
+  const numeric = toFiniteNumber(value, field);
+  if (numeric < 0 || numeric > 10000) {
+    throw new Error(`${field} must be between 0 and 10000.`);
+  }
+  return numeric;
+}
 
 interface CliArgs {
   manager?: string;
@@ -165,95 +217,184 @@ function parseArgs(): CliArgs {
 }
 
 function assertConfig(config: Phase6Config): void {
-  if (!config.global.manifestURI) {
-    throw new Error('Configuration global.manifestURI must be set.');
+  const global = config.global;
+  assertNonEmptyString(global.manifestURI, 'Configuration global.manifestURI');
+  ['iotOracleRouter', 'defaultL2Gateway', 'didRegistry', 'treasuryBridge', 'systemPause', 'escalationBridge'].forEach((key) => {
+    assertNonZeroAddress((global as any)[key], `global.${key}`);
+  });
+  if (global.l2SyncCadence !== undefined && global.l2SyncCadence !== null) {
+    const cadence = Number(global.l2SyncCadence);
+    if (!Number.isFinite(cadence) || cadence < 30) {
+      throw new Error('global.l2SyncCadence must be >= 30 seconds when defined.');
+    }
   }
-  if (!config.global.guards) {
+
+  if (!global.guards) {
     throw new Error('Configuration global.guards must be provided.');
   }
-  const guards = config.global.guards;
-  ['treasuryBufferBps', 'circuitBreakerBps', 'anomalyGracePeriod'].forEach((key) => {
-    const value = (guards as any)[key];
-    if (typeof value !== 'number' || value < 0) {
-      throw new Error(`global.guards.${key} must be a non-negative number.`);
-    }
-  });
-  if (guards.treasuryBufferBps > 10000) {
-    throw new Error('global.guards.treasuryBufferBps must be <= 10000.');
-  }
-  if (guards.circuitBreakerBps > 10000) {
-    throw new Error('global.guards.circuitBreakerBps must be <= 10000.');
-  }
-  if (guards.anomalyGracePeriod !== 0 && guards.anomalyGracePeriod < 30) {
+  const guards = global.guards;
+  assertBps(guards.treasuryBufferBps, 'global.guards.treasuryBufferBps');
+  assertBps(guards.circuitBreakerBps, 'global.guards.circuitBreakerBps');
+  const anomalyGrace = toFiniteNumber(guards.anomalyGracePeriod, 'global.guards.anomalyGracePeriod');
+  if (anomalyGrace !== 0 && anomalyGrace < 30) {
     throw new Error('global.guards.anomalyGracePeriod must be 0 or >= 30 seconds.');
   }
   if (typeof guards.autoPauseEnabled !== 'boolean') {
     throw new Error('global.guards.autoPauseEnabled must be a boolean.');
   }
-  if (!guards.oversightCouncil || !guards.oversightCouncil.startsWith('0x')) {
-    throw new Error('global.guards.oversightCouncil must be a 0x-prefixed address.');
+  assertNonZeroAddress(guards.oversightCouncil, 'global.guards.oversightCouncil');
+
+  if (!Array.isArray(global.decentralizedInfra) || global.decentralizedInfra.length < 3) {
+    throw new Error('global.decentralizedInfra must include at least three integrations.');
   }
-  if (!config.domains.length) {
+  global.decentralizedInfra.forEach((entry, index) => {
+    if (!entry || typeof entry !== 'object') {
+      throw new Error(`global.decentralizedInfra[${index}] must be an object.`);
+    }
+    assertNonEmptyString(entry.name, `global.decentralizedInfra[${index}].name`);
+    assertNonEmptyString(entry.role, `global.decentralizedInfra[${index}].role`);
+    assertNonEmptyString(entry.status, `global.decentralizedInfra[${index}].status`);
+    if (entry.endpoint !== undefined && typeof entry.endpoint !== 'string') {
+      throw new Error(`global.decentralizedInfra[${index}].endpoint must be a string when provided.`);
+    }
+  });
+
+  if (!global.telemetry) {
+    throw new Error('Configuration global.telemetry must be provided.');
+  }
+  const globalTelemetry = global.telemetry;
+  assertBytes32(globalTelemetry.manifestHash, 'global.telemetry.manifestHash');
+  assertBytes32(globalTelemetry.metricsDigest, 'global.telemetry.metricsDigest');
+  assertBps(globalTelemetry.resilienceFloorBps, 'global.telemetry.resilienceFloorBps');
+  assertBps(globalTelemetry.automationFloorBps, 'global.telemetry.automationFloorBps');
+  assertBps(globalTelemetry.oversightWeightBps, 'global.telemetry.oversightWeightBps');
+
+  if (!Array.isArray(config.domains) || config.domains.length === 0) {
     throw new Error('Configuration must include at least one domain.');
   }
+  const seenSlugs = new Set<string>();
+
   for (const domain of config.domains) {
-    if (!domain.slug || !domain.validationModule) {
-      throw new Error(`Domain ${domain.slug || '<unnamed>'} missing slug or validationModule.`);
+    const slug = assertNonEmptyString(domain.slug, 'domain.slug').toLowerCase();
+    if (seenSlugs.has(slug)) {
+      throw new Error(`Domain ${domain.slug} is defined multiple times.`);
     }
+    seenSlugs.add(slug);
+    assertNonEmptyString(domain.name, `domain ${domain.slug} name`);
+    assertNonEmptyString(domain.manifestURI, `domain ${domain.slug} manifestURI`);
+    assertNonEmptyString(domain.subgraph, `domain ${domain.slug} subgraph`);
+    assertNonZeroAddress(domain.validationModule, `domain ${domain.slug} validationModule`);
+    assertOptionalAddress(domain.oracle, `domain ${domain.slug} oracle`);
+    assertOptionalAddress(domain.l2Gateway, `domain ${domain.slug} l2Gateway`);
+    assertOptionalAddress(domain.executionRouter, `domain ${domain.slug} executionRouter`);
+    if (domain.heartbeatSeconds !== undefined && domain.heartbeatSeconds < 30) {
+      throw new Error(`domain ${domain.slug} heartbeatSeconds must be >= 30.`);
+    }
+
+    if (!Array.isArray(domain.skillTags) || domain.skillTags.length === 0) {
+      throw new Error(`domain ${domain.slug} must define at least one skill tag.`);
+    }
+    domain.skillTags.forEach((tag, idx) => {
+      assertNonEmptyString(tag, `domain ${domain.slug} skillTags[${idx}]`);
+    });
+
+    if (domain.capabilities !== undefined) {
+      if (domain.capabilities === null || typeof domain.capabilities !== 'object') {
+        throw new Error(`domain ${domain.slug} capabilities must be an object when provided.`);
+      }
+      Object.entries(domain.capabilities).forEach(([key, value]) => {
+        toFiniteNumber(value, `domain ${domain.slug} capabilities.${key}`);
+      });
+    }
+
+    if (domain.priority !== undefined) {
+      const priority = toFiniteNumber(domain.priority, `domain ${domain.slug} priority`);
+      if (priority < 0) {
+        throw new Error(`domain ${domain.slug} priority must be >= 0.`);
+      }
+    }
+
+    if (!domain.metadata || typeof domain.metadata !== 'object') {
+      throw new Error(`domain ${domain.slug} metadata must be provided.`);
+    }
+    const metadata: Record<string, unknown> = domain.metadata;
+    assertNonEmptyString(metadata.domain, `domain ${domain.slug} metadata.domain`);
+    assertNonEmptyString(metadata.l2, `domain ${domain.slug} metadata.l2`);
+    assertNonEmptyString(metadata.sentinel, `domain ${domain.slug} metadata.sentinel`);
+    assertNonEmptyString(metadata.uptime, `domain ${domain.slug} metadata.uptime`);
+    const resilienceIndex = toFiniteNumber(metadata.resilienceIndex, `domain ${domain.slug} metadata.resilienceIndex`);
+    if (resilienceIndex <= 0 || resilienceIndex > 1) {
+      throw new Error(`domain ${domain.slug} metadata.resilienceIndex must be between 0 and 1.`);
+    }
+    const valueFlow = toFiniteNumber(metadata.valueFlowMonthlyUSD, `domain ${domain.slug} metadata.valueFlowMonthlyUSD`);
+    if (valueFlow <= 0) {
+      throw new Error(`domain ${domain.slug} metadata.valueFlowMonthlyUSD must be > 0.`);
+    }
+    if (metadata.valueFlowDisplay !== undefined && typeof metadata.valueFlowDisplay !== 'string') {
+      throw new Error(`domain ${domain.slug} metadata.valueFlowDisplay must be a string when provided.`);
+    }
+
     if (!domain.operations) {
       throw new Error(`Domain ${domain.slug} missing operations configuration.`);
     }
     const ops = domain.operations;
-    if (typeof ops.maxActiveJobs !== 'number' || ops.maxActiveJobs <= 0) {
-      throw new Error(`Domain ${domain.slug} operations.maxActiveJobs must be a positive number.`);
+    toFiniteNumber(ops.maxActiveJobs, `domain ${domain.slug} operations.maxActiveJobs`);
+    if (ops.maxActiveJobs <= 0) {
+      throw new Error(`domain ${domain.slug} operations.maxActiveJobs must be > 0.`);
     }
-    if (typeof ops.maxQueueDepth !== 'number' || ops.maxQueueDepth < ops.maxActiveJobs) {
-      throw new Error(`Domain ${domain.slug} operations.maxQueueDepth must be >= maxActiveJobs.`);
+    toFiniteNumber(ops.maxQueueDepth, `domain ${domain.slug} operations.maxQueueDepth`);
+    if (ops.maxQueueDepth < ops.maxActiveJobs) {
+      throw new Error(`domain ${domain.slug} operations.maxQueueDepth must be >= maxActiveJobs.`);
     }
-    const minStake = typeof ops.minStake === 'string' ? ops.minStake : Number(ops.minStake ?? 0);
-    if (!minStake || Number(minStake) <= 0) {
-      throw new Error(`Domain ${domain.slug} operations.minStake must be > 0.`);
+    try {
+      const minStakeValue = typeof ops.minStake === 'string' ? ops.minStake : String(ops.minStake ?? '0');
+      if (BigInt(minStakeValue) <= 0n) {
+        throw new Error();
+      }
+    } catch (error) {
+      throw new Error(`domain ${domain.slug} operations.minStake must be a positive integer string.`);
     }
-    if (domain.telemetry) {
-      const telemetry = domain.telemetry;
-      ['resilienceBps', 'automationBps', 'complianceBps'].forEach((field) => {
-        const value = (telemetry as any)[field];
-        if (typeof value !== 'number' || value < 0 || value > 10000) {
-          throw new Error(`Domain ${domain.slug} telemetry.${field} must be 0-10000.`);
-        }
-      });
-      if (
-        typeof telemetry.settlementLatencySeconds !== 'number' ||
-        telemetry.settlementLatencySeconds < 0
-      ) {
-        throw new Error(
-          `Domain ${domain.slug} telemetry.settlementLatencySeconds must be >= 0.`,
-        );
-      }
-      if (typeof telemetry.usesL2Settlement !== 'boolean') {
-        throw new Error(`Domain ${domain.slug} telemetry.usesL2Settlement must be boolean.`);
-      }
-      if (!telemetry.metricsDigest || !telemetry.metricsDigest.startsWith('0x')) {
-        throw new Error(`Domain ${domain.slug} telemetry.metricsDigest must be a bytes32 hex string.`);
-      }
-      if (!telemetry.manifestHash || !telemetry.manifestHash.startsWith('0x')) {
-        throw new Error(`Domain ${domain.slug} telemetry.manifestHash must be a bytes32 hex string.`);
-      }
+    assertBps(ops.treasuryShareBps, `domain ${domain.slug} operations.treasuryShareBps`);
+    assertBps(ops.circuitBreakerBps, `domain ${domain.slug} operations.circuitBreakerBps`);
+    if (typeof ops.requiresHumanValidation !== 'boolean') {
+      throw new Error(`domain ${domain.slug} operations.requiresHumanValidation must be boolean.`);
     }
-  }
 
-  if (config.global.telemetry) {
-    const telemetry = config.global.telemetry;
-    ['resilienceFloorBps', 'automationFloorBps', 'oversightWeightBps'].forEach((field) => {
-      const value = (telemetry as any)[field];
-      if (typeof value !== 'number' || value < 0 || value > 10000) {
-        throw new Error(`global.telemetry.${field} must be 0-10000.`);
+    if (!domain.telemetry) {
+      throw new Error(`domain ${domain.slug} telemetry must be provided.`);
+    }
+    const telemetry = domain.telemetry;
+    assertBps(telemetry.resilienceBps, `domain ${domain.slug} telemetry.resilienceBps`);
+    assertBps(telemetry.automationBps, `domain ${domain.slug} telemetry.automationBps`);
+    assertBps(telemetry.complianceBps, `domain ${domain.slug} telemetry.complianceBps`);
+    const latency = toFiniteNumber(telemetry.settlementLatencySeconds, `domain ${domain.slug} telemetry.settlementLatencySeconds`);
+    if (latency < 0) {
+      throw new Error(`domain ${domain.slug} telemetry.settlementLatencySeconds must be >= 0.`);
+    }
+    if (typeof telemetry.usesL2Settlement !== 'boolean') {
+      throw new Error(`domain ${domain.slug} telemetry.usesL2Settlement must be boolean.`);
+    }
+    assertOptionalAddress(telemetry.sentinelOracle, `domain ${domain.slug} telemetry.sentinelOracle`);
+    assertOptionalAddress(telemetry.settlementAsset, `domain ${domain.slug} telemetry.settlementAsset`);
+    assertBytes32(telemetry.metricsDigest, `domain ${domain.slug} telemetry.metricsDigest`);
+    assertBytes32(telemetry.manifestHash, `domain ${domain.slug} telemetry.manifestHash`);
+
+    if (!Array.isArray(domain.infrastructure) || domain.infrastructure.length < 3) {
+      throw new Error(`domain ${domain.slug} infrastructure must include at least three integrations.`);
+    }
+    domain.infrastructure.forEach((integration, infraIndex) => {
+      if (!integration || typeof integration !== 'object') {
+        throw new Error(`domain ${domain.slug} infrastructure[${infraIndex}] must be an object.`);
       }
-    });
-    ['manifestHash', 'metricsDigest'].forEach((field) => {
-      const value = (telemetry as any)[field];
-      if (!value || typeof value !== 'string' || !value.startsWith('0x')) {
-        throw new Error(`global.telemetry.${field} must be a bytes32 hex string.`);
+      assertNonEmptyString(integration.layer, `domain ${domain.slug} infrastructure[${infraIndex}].layer`);
+      assertNonEmptyString(integration.name, `domain ${domain.slug} infrastructure[${infraIndex}].name`);
+      assertNonEmptyString(integration.role, `domain ${domain.slug} infrastructure[${infraIndex}].role`);
+      assertNonEmptyString(integration.status, `domain ${domain.slug} infrastructure[${infraIndex}].status`);
+      if (integration.endpoint !== undefined && typeof integration.endpoint !== 'string') {
+        throw new Error(`domain ${domain.slug} infrastructure[${infraIndex}].endpoint must be a string when provided.`);
+      }
+      if (integration.uri !== undefined && typeof integration.uri !== 'string') {
+        throw new Error(`domain ${domain.slug} infrastructure[${infraIndex}].uri must be a string when provided.`);
       }
     });
   }

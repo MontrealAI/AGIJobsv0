@@ -143,6 +143,7 @@ Open `index.html` to explore:
 2. **Regenerate** plans with `npm run demo:phase6:orchestrate` (no build step needed).
 3. **Commit** the change. CI will block if a field is missing or malformed.
 4. **Dry-run or apply on-chain** with `npx hardhat run --no-compile scripts/phase6/apply-config.ts --network <network> -- --manager <Phase6ExpansionManager> [--apply]`.
+   * Hard-validates telemetry digests, decentralized infra coverage, metadata, and infrastructure maps before emitting any calldata.
 5. **Ship** – governance can copy the calldata into a multi-sig, or run through the existing owner scripts.
 
 > Tip: pair this demo with `npm run owner:mission-control` to script the actual transaction bundle from the same console.
