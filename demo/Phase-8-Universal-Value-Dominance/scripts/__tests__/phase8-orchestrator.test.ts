@@ -35,6 +35,18 @@ describe("Phase 8 orchestration console", () => {
     const broken = JSON.parse(JSON.stringify(config));
     broken.domains[0].slug = "";
     expect(() => parseManifest(broken)).toThrowError(/domains\.0\.slug: Domain slug is required/);
+
+    const duplicateDomain = JSON.parse(JSON.stringify(config));
+    duplicateDomain.domains.push({ ...duplicateDomain.domains[0], slug: duplicateDomain.domains[1].slug });
+    expect(() => parseManifest(duplicateDomain)).toThrowError(/domains\.5\.slug: Duplicate domain slug detected/i);
+
+    const duplicateSentinel = JSON.parse(JSON.stringify(config));
+    duplicateSentinel.sentinels.push({ ...duplicateSentinel.sentinels[0], slug: duplicateSentinel.sentinels[1].slug });
+    expect(() => parseManifest(duplicateSentinel)).toThrowError(/sentinels\.3\.slug: Duplicate sentinel slug detected/i);
+
+    const duplicateStream = JSON.parse(JSON.stringify(config));
+    duplicateStream.capitalStreams.push({ ...duplicateStream.capitalStreams[0], slug: duplicateStream.capitalStreams[1].slug });
+    expect(() => parseManifest(duplicateStream)).toThrowError(/capitalStreams\.3\.slug: Duplicate capital stream slug detected/i);
   });
 
   it("enforces guardian coverage and autonomy guardrails in the manifest", () => {
@@ -67,6 +79,12 @@ describe("Phase 8 orchestration console", () => {
     );
     expect(() => parseManifest(domainCoverageBreach)).toThrowError(
       /Domains below guardian window 720s: climate-harmonizer, infrastructure-synthesis/,
+    );
+
+    const sentinelReference = JSON.parse(JSON.stringify(config));
+    sentinelReference.sentinels[0].domains = ["unknown-domain"];
+    expect(() => parseManifest(sentinelReference)).toThrowError(
+      /sentinels\.0\.domains\.0: Sentinel solar-shield references unknown domain unknown-domain/,
     );
   });
 
@@ -158,6 +176,15 @@ describe("Phase 8 orchestration console", () => {
       const safeBatch = JSON.parse(readFileSync(artifactPaths.safeBatch, "utf-8"));
       expect(safeBatch.chainId).toBe(String(env.chainId));
       expect(safeBatch.meta.createdFromSafeAddress).toBe(env.managerAddress);
+      const stableSafeBatch = {
+        ...safeBatch,
+        createdAt: "<timestamp>",
+        meta: {
+          ...safeBatch.meta,
+          createdAt: "<timestamp>",
+        },
+      };
+      expect(stableSafeBatch).toMatchSnapshot("phase8-safe-batch");
 
       const operatorRunbook = readFileSync(artifactPaths.runbook, "utf-8");
       expect(operatorRunbook).toContain("OPERATOR RUNBOOK");

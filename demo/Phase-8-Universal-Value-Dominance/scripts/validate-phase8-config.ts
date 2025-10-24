@@ -117,8 +117,14 @@ function main() {
     slugs.add(slug);
   }
 
+  const sentinelSlugs = new Set<string>();
   const sentinelDomains = new Set<string>();
   for (const sentinel of config.sentinels) {
+    const slug = sentinel.slug.toLowerCase();
+    if (sentinelSlugs.has(slug)) {
+      throw new Error(`Duplicate sentinel slug detected: ${slug}`);
+    }
+    sentinelSlugs.add(slug);
     for (const domain of sentinel.domains ?? []) {
       const normalized = domain.toLowerCase();
       if (!slugs.has(normalized)) {
@@ -134,7 +140,13 @@ function main() {
     throw new Error(`All domains require sentinel coverage — missing: ${list}`);
   }
 
+  const streamSlugs = new Set<string>();
   for (const stream of config.capitalStreams) {
+    const slug = stream.slug.toLowerCase();
+    if (streamSlugs.has(slug)) {
+      throw new Error(`Duplicate capital stream slug detected: ${slug}`);
+    }
+    streamSlugs.add(slug);
     for (const domain of stream.domains ?? []) {
       const normalized = domain.toLowerCase();
       if (!slugs.has(normalized)) {
@@ -202,6 +214,9 @@ function main() {
   if (!html.includes("mermaid")) {
     throw new Error("index.html must embed a mermaid diagram placeholder");
   }
+  if (!html.includes('id="mermaid-diagram"')) {
+    throw new Error("index.html must provide a mermaid container with id=\"mermaid-diagram\"");
+  }
 
   const readme = readFileSync(README, "utf-8");
   const requiredSections = ["Quickstart", "Smart contract", "Mermaid", "Self-improvement"];
@@ -209,6 +224,9 @@ function main() {
     if (!readme.toLowerCase().includes(section.toLowerCase())) {
       throw new Error(`README missing required section: ${section}`);
     }
+  }
+  if (!readme.includes("```mermaid")) {
+    throw new Error("README must include a mermaid code block for the architecture blueprint");
   }
 
   const requiredArtifacts = [

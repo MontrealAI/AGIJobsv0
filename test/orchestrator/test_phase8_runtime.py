@@ -87,6 +87,13 @@ def manifest_payload() -> dict:
                 "active": True,
             }
         ],
+        "selfImprovement": {
+            "autonomyGuards": {
+                "maxAutonomyBps": 8000,
+                "humanOverrideMinutes": 15,
+                "escalationChannels": ["Guardian Council"],
+            }
+        },
     }
 
 
@@ -117,7 +124,7 @@ def test_runtime_selects_domain_via_tags(runtime: Phase8DominionRuntime) -> None
     assert any("Solar Guardian" in line for line in logs)
     assert any("capital streams" in line and "Planetary Fund" in line for line in logs)
     assert any("guardian summary" in line and "treasury=0x1111" in line for line in logs)
-    assert any("guardrail alert" in line for line in logs)
+    assert any("governance: autonomy cap" in line for line in logs)
 
 
 def test_runtime_honours_domain_hint(runtime: Phase8DominionRuntime) -> None:
@@ -126,6 +133,7 @@ def test_runtime_honours_domain_hint(runtime: Phase8DominionRuntime) -> None:
     assert logs and "`planetary-finance`" in logs[0]
     assert any("domain hint" in line for line in logs)
     assert any("sentinel coverage: none" in line.lower() for line in logs)
+    assert any("governance: autonomy cap" in line for line in logs)
     assert any("guardrail alert" in line for line in logs)
 
 
@@ -151,6 +159,7 @@ def test_runtime_flags_guardrails(runtime: Phase8DominionRuntime, manifest_paylo
     stressed_payload["domains"][0]["resilienceIndex"] = 0.4
     stressed_payload["domains"][0]["heartbeatSeconds"] = stressed_payload["global"]["heartbeatSeconds"] + 300
     stressed_payload["sentinels"][0]["coverageSeconds"] = 60
+    stressed_payload["selfImprovement"]["autonomyGuards"]["maxAutonomyBps"] = 5000
     stressed_runtime = Phase8DominionRuntime.from_payload(stressed_payload)
 
     step = make_step(tags=["Climate"])

@@ -165,6 +165,13 @@ class GlobalParameters:
     max_drawdown_bps: int
 
 
+@dataclass(slots=True)
+class AutonomyGuardrails:
+    cap_bps: int
+    override_minutes: Optional[int] = None
+    escalation_channels: Tuple[str, ...] = field(default_factory=tuple)
+
+
 class Phase8DominionRuntime:
     """Runtime helper that selects Phase 8 dominions and surfaces guardrails."""
 
@@ -175,12 +182,14 @@ class Phase8DominionRuntime:
         streams: Sequence[CapitalStreamProfile],
         global_parameters: GlobalParameters,
         source: Optional[Path] = None,
+        guardrails: Optional[AutonomyGuardrails] = None,
     ) -> None:
         self._dominions: Dict[str, DominionProfile] = {dom.slug: dom for dom in dominions if dom.active}
         self._sentinels = {s.slug: s for s in sentinels if s.active}
         self._streams = {s.slug: s for s in streams if s.active}
         self._global = global_parameters
         self._source = source
+        self._guardrails = guardrails
         _LOG.debug("Loaded Phase 8 manifest %s", source or "<in-memory>")
 
     @classmethod
@@ -248,7 +257,28 @@ class Phase8DominionRuntime:
             if isinstance(entry, dict)
         ]
 
-        return cls(dominions, sentinels, streams, global_parameters, source=source)
+        guardrails: Optional[AutonomyGuardrails] = None
+        self_improvement = payload.get("selfImprovement")
+        if isinstance(self_improvement, dict):
+            guard_payload = self_improvement.get("autonomyGuards")
+            if isinstance(guard_payload, dict):
+                try:
+                    cap = int(guard_payload.get("maxAutonomyBps", 0))
+                except (TypeError, ValueError):
+                    cap = 0
+                override_raw = guard_payload.get("humanOverrideMinutes")
+                override_minutes: Optional[int] = None
+                if isinstance(override_raw, (int, float)) and override_raw >= 0:
+                    override_minutes = int(override_raw)
+                channels = tuple(
+                    str(channel).strip()
+                    for channel in guard_payload.get("escalationChannels", [])
+                    if isinstance(channel, str) and channel.strip()
+                )
+                if cap > 0:
+                    guardrails = AutonomyGuardrails(cap_bps=cap, override_minutes=override_minutes, escalation_channels=channels)
+
+        return cls(dominions, sentinels, streams, global_parameters, source=source, guardrails=guardrails)
 
     @classmethod
     def from_file(cls, path: Path) -> "Phase8DominionRuntime":
@@ -277,10 +307,13 @@ class Phase8DominionRuntime:
 
     def guardian_summary(self) -> str:
         sentinel_minutes = sum(s.coverage_seconds for s in self._sentinels.values()) / 60.0
-        return (
+        summary = (
             f"treasury={self._global.treasury} pause={self._global.system_pause} guardians={self._global.guardian_council} "
             f"coverage={sentinel_minutes:.1f}m window={self._global.guardian_window_seconds/60:.1f}m drawdown={self._global.max_drawdown_bps}bps"
         )
+        if self._guardrails:
+            summary += f" autonomy_cap={self._guardrails.cap_bps}bps"
+        return summary
 
     def select_dominion(
         self,
@@ -355,6 +388,13 @@ class Phase8DominionRuntime:
         else:
             notes.append("• capital streams: none mapped — review capital allocation for this dominion")
         notes.append("• guardian summary: " + self.guardian_summary())
+        if self._guardrails:
+            governance = f"• governance: autonomy cap ≤{self._guardrails.cap_bps}bps"
+            if self._guardrails.override_minutes is not None:
+                governance += f", human override {self._guardrails.override_minutes}m"
+            if self._guardrails.escalation_channels:
+                governance += " — escalate via " + " → ".join(self._guardrails.escalation_channels)
+            notes.append(governance)
         if self._global.heartbeat_seconds and chosen.heartbeat_seconds > self._global.heartbeat_seconds:
             notes.append(
                 "• heartbeat alert: domain heartbeat %.0fs exceeds global heartbeat %.0fs — trigger watchdog escalation"
@@ -372,6 +412,11 @@ class Phase8DominionRuntime:
             notes.append(
                 "• guardrail alert: sentinel coverage %.0fs below guardian review window %.0fs — escalate to guardian council"
                 % (coverage_seconds, self._global.guardian_window_seconds)
+            )
+        if self._guardrails and chosen.autonomy_bps > self._guardrails.cap_bps:
+            notes.append(
+                "• guardrail alert: domain autonomy %.0fbps exceeds autonomy guard %.0fbps — escalate to guardian council"
+                % (chosen.autonomy_bps, self._guardrails.cap_bps)
             )
         if self._source:
             notes.append(f"• manifest source: {self._source}")
