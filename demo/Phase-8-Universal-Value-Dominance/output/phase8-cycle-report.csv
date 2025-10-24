@@ -1,3 +1,6 @@
-cycle,executedAt,reportUri
-144,1700000400,ipfs://agi-jobs/phase8/self-improvement/reports/epoch-144.json
-145,1700004000,ipfs://agi-jobs/phase8/self-improvement/reports/epoch-145.json
+slug,name,resilience_index,autonomy_bps,monthly_value_usd,sentinel_coverage_seconds,guardian_window_seconds,coverage_adequacy_percent,capital_coverage_usd,capital_share_percent,resilience_status
+planetary-finance,"Planetary Finance Mesh",0.960,7800,245000000000,900,720,125.0,890000000000,45.2,stable
+climate-harmonizer,"Climate Harmonizer Array",0.940,7400,128000000000,900,720,125.0,720000000000,36.5,stable
+health-sovereign,"Health Sovereign Continuum",0.910,7000,94000000000,900,720,125.0,890000000000,45.2,stable
+infrastructure-synthesis,"Infrastructure Synthesis Grid",0.915,7600,167000000000,900,720,125.0,1080000000000,54.8,stable
+knowledge-lattice,"Knowledge Lattice Nexus",0.902,6900,54000000000,900,720,125.0,1250000000000,63.5,stable

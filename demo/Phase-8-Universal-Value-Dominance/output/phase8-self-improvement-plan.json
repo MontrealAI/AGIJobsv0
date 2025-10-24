@@ -1,6 +1,49 @@
 {
-  "planURI": "ipfs://agi-jobs/phase8/self-improvement/plan.json",
-  "planHash": "0x7d2556f5ae0a7dd2e9c3c5e29377b7af168e2b2f42a3e08d96b9f8e32d4b9f10",
-  "cadenceSeconds": 7200,
-  "description": "Serialized payload downloaded from the orchestrator runbook for redeploying the self-improvement kernel."
+  "generatedAt": "2025-10-24T15:30:45.042Z",
+  "dominanceScore": 96.9,
+  "sentinelCoverageMinutes": 45,
+  "fundedDomainRatio": 100,
+  "plan": {
+    "uri": "ipfs://agi-jobs/phase8/self-improvement/plan.json",
+    "hash": "0x7d2556f5ae0a7dd2e9c3c5e29377b7af168e2b2f42a3e08d96b9f8e32d4b9f10",
+    "cadenceSeconds": 7200,
+    "lastExecutedAt": 1700000400,
+    "lastReportURI": "ipfs://agi-jobs/phase8/self-improvement/reports/epoch-144.json"
+  },
+  "autonomyGuards": {
+    "maxAutonomyBps": 8000,
+    "humanOverrideMinutes": 15,
+    "pausable": true,
+    "escalationChannels": [
+      "guardian-council",
+      "dao-emergency",
+      "sentinel-lockdown"
+    ]
+  },
+  "playbooks": [
+    {
+      "name": "Hyperparameter Evolution",
+      "owner": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+      "automation": "weekly",
+      "guardrails": [
+        "checksum-verification",
+        "zk-proof-of-alignment"
+      ],
+      "requiresManualScheduling": false,
+      "nextRun": "2023-11-21T22:20:00.000Z",
+      "intervalSeconds": 604800
+    },
+    {
+      "name": "Universal Value Mesh Stress Tests",
+      "owner": "0x3e8b71da4c5e981a2d4facfe97b53bd2736d1d10",
+      "automation": "hourly",
+      "guardrails": [
+        "branch-protected-ci",
+        "multi-agent-cross-check"
+      ],
+      "requiresManualScheduling": false,
+      "nextRun": "2023-11-14T23:20:00.000Z",
+      "intervalSeconds": 3600
+    }
+  ]
 }

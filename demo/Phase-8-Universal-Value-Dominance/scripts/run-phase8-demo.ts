@@ -687,7 +687,7 @@ export function mermaid(config: Phase8Config) {
     lines.push(`  Streams --> ${slug}Stream([${stream.name ?? slug}])`);
   }
   lines.push("  Streams --> Domains([Autonomous domains])");
-  return lines.join("\n");
+  return `${lines.join("\n")}\n`;
 }
 
 export function calldata(config: Phase8Config) {
@@ -1005,7 +1005,200 @@ export function telemetryMarkdown(
     );
   }
 
-  return lines.join("\n");
+  return `${lines.join("\n")}\n`;
+}
+
+function escapeCsv(value: unknown): string {
+  const stringValue = String(value ?? "");
+  if (stringValue.includes(",") || stringValue.includes("\"") || /\s/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+  return stringValue;
+}
+
+function generateOperatorRunbook(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  environment: EnvironmentConfig,
+  generatedAt: string,
+): string {
+  const lines: string[] = [];
+  lines.push("PHASE 8 — UNIVERSAL VALUE DOMINANCE :: OPERATOR RUNBOOK");
+  lines.push(`Generated at ${generatedAt}`);
+  lines.push("");
+  lines.push("Key telemetry snapshot:");
+  lines.push(`• Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
+  lines.push(`• Total monthly value flow: ${usd(metrics.totalMonthlyUSD)}`);
+  lines.push(`• Annual capital allocation: ${usd(metrics.annualBudget)}`);
+  lines.push(`• Sentinel lattice coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes / cycle`);
+  lines.push(
+    `• Domains funded: ${metrics.fundedDomainRatio.toFixed(1)}% · Minimum funding floor ${usd(metrics.minDomainFundingUSD)}`,
+  );
+  if (metrics.guardianWindowSeconds) {
+    lines.push(
+      `• Minimum sentinel coverage: ${metrics.minDomainCoverageSeconds.toFixed(0)}s vs guardian window ${metrics.guardianWindowSeconds}s`,
+    );
+  }
+  lines.push("");
+  lines.push("Command ribbon (execute sequentially):");
+  lines.push("1. npm ci                                 # lockfile enforced setup");
+  lines.push("2. npm run demo:phase8:orchestrate        # synthesize calldata + exports");
+  lines.push("3. Submit calldata via Safe / timelock    # governance executes encoded plan");
+  lines.push("4. npx serve demo/Phase-8-Universal-Value-Dominance  # launch control surface");
+  lines.push("");
+  lines.push("Governance control points:");
+  lines.push(shortAddress("Guardian council", config.global?.guardianCouncil));
+  const managerConfigured =
+    environment.managerAddress && environment.managerAddress !== ZERO_ADDRESS
+      ? shortAddress("Phase 8 manager", environment.managerAddress)
+      : "Phase 8 manager: set PHASE8_MANAGER_ADDRESS before execution";
+  lines.push(managerConfigured);
+  lines.push(shortAddress("Treasury", config.global?.treasury));
+  lines.push(shortAddress("Universal vault", config.global?.universalVault));
+  lines.push(shortAddress("System pause", config.global?.systemPause));
+  lines.push(shortAddress("Mission control", config.global?.missionControl));
+  lines.push(`Manifesto URI: ${config.global?.manifestoURI ?? "—"}`);
+  lines.push("");
+
+  lines.push("Dominion readiness checks:");
+  const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
+  const coverage = coverageMap(config.sentinels ?? [], (config.domains ?? []).map((d) => String(d.slug ?? "")));
+  const funding = capitalCoverageMap(
+    config.capitalStreams ?? [],
+    (config.domains ?? []).map((d) => String(d.slug ?? "")),
+  );
+  for (const domain of config.domains ?? []) {
+    const slug = String(domain.slug ?? "").toLowerCase();
+    const domainCoverage = coverage.get(slug) ?? 0;
+    const coverageStatus = guardianWindow > 0 ? `${(domainCoverage / guardianWindow * 100).toFixed(1)}% of window` : "n/a";
+    const fundingUSD = funding.get(slug) ?? 0;
+    const resilience = Number(domain.resilienceIndex ?? 0);
+    const resilienceFlag =
+      resilience < RESILIENCE_ALERT_THRESHOLD ? `ALERT resilience ${(resilience).toFixed(3)}` : `Resilience ${(resilience).toFixed(3)}`;
+    lines.push(
+      `• ${domain.name}: ${resilienceFlag} · Autonomy ${domain.autonomyLevelBps} bps · Sentinel coverage ${domainCoverage.toFixed(0)}s (${coverageStatus}) · Funding ${usd(fundingUSD)}/yr`,
+    );
+  }
+  lines.push("");
+  lines.push("Self-improvement kernel:");
+  const plan = config.selfImprovement?.plan;
+  if (plan) {
+    lines.push(`• Plan URI ${plan.planURI}`);
+    lines.push(`• Plan hash ${plan.planHash}`);
+    lines.push(`• Cadence ${plan.cadenceSeconds}s (${(Number(plan.cadenceSeconds ?? 0) / 3600).toFixed(2)}h)`);
+    if (plan.lastExecutedAt) {
+      lines.push(`• Last execution ${new Date(Number(plan.lastExecutedAt) * 1000).toISOString()}`);
+    }
+  }
+  const schedule = schedulePlaybooks(config);
+  for (const playbook of schedule) {
+    const cadence = playbook.intervalSeconds ? `${playbook.intervalSeconds / 3600}h cadence` : "manual";
+    lines.push(`  - ${playbook.name} :: ${cadence} :: next ${playbook.nextRun ?? "—"}`);
+  }
+  if (config.selfImprovement?.autonomyGuards) {
+    const guard = config.selfImprovement.autonomyGuards;
+    lines.push(
+      `• Autonomy guard ≤${guard.maxAutonomyBps}bps · Override ${guard.humanOverrideMinutes}m · Escalation ${(guard.escalationChannels ?? []).join(
+        " → ",
+      )}`,
+    );
+  }
+  lines.push("");
+  lines.push("Emergency stops:");
+  const pauseTarget =
+    environment.managerAddress && environment.managerAddress !== ZERO_ADDRESS
+      ? environment.managerAddress
+      : "configure PHASE8_MANAGER_ADDRESS to route pause calls";
+  lines.push(`• Invoke SystemPause via forwardPauseCall → ${pauseTarget}`);
+  lines.push("• Guardian council retains immediate pause authority");
+  lines.push("");
+
+  return `${lines.join("\n")}\n`;
+}
+
+function generateSelfImprovementPlanPayload(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  generatedAt: string,
+) {
+  const plan = config.selfImprovement?.plan ?? {};
+  const guards = config.selfImprovement?.autonomyGuards ?? null;
+  const scheduled = schedulePlaybooks(config);
+  return {
+    generatedAt,
+    dominanceScore: Number(metrics.dominanceScore.toFixed(1)),
+    sentinelCoverageMinutes: Number(metrics.guardianCoverageMinutes.toFixed(2)),
+    fundedDomainRatio: Number(metrics.fundedDomainRatio.toFixed(1)),
+    plan: {
+      uri: plan.planURI ?? "",
+      hash: plan.planHash ?? "",
+      cadenceSeconds: Number(plan.cadenceSeconds ?? 0),
+      lastExecutedAt: Number(plan.lastExecutedAt ?? 0),
+      lastReportURI: plan.lastReportURI ?? "",
+    },
+    autonomyGuards: guards,
+    playbooks: scheduled.map((entry) => ({
+      name: entry.name,
+      owner: entry.owner,
+      automation: entry.automation,
+      guardrails: entry.guardrails,
+      requiresManualScheduling: entry.requiresManualScheduling,
+      nextRun: entry.nextRun ?? null,
+      intervalSeconds: entry.intervalSeconds ?? null,
+    })),
+  };
+}
+
+function generateCycleReportCsv(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+): string {
+  const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
+  const domains = config.domains ?? [];
+  const coverage = coverageMap(config.sentinels ?? [], domains.map((domain) => String(domain.slug ?? "")));
+  const funding = capitalCoverageMap(
+    config.capitalStreams ?? [],
+    domains.map((domain) => String(domain.slug ?? "")),
+  );
+  const header = [
+    "slug",
+    "name",
+    "resilience_index",
+    "autonomy_bps",
+    "monthly_value_usd",
+    "sentinel_coverage_seconds",
+    "guardian_window_seconds",
+    "coverage_adequacy_percent",
+    "capital_coverage_usd",
+    "capital_share_percent",
+    "resilience_status",
+  ];
+  const lines: string[] = [header.map(escapeCsv).join(",")];
+  for (const domain of domains) {
+    const slug = String(domain.slug ?? "");
+    const normalized = slug.toLowerCase();
+    const coverageSeconds = coverage.get(normalized) ?? 0;
+    const coverageAdequacy = guardianWindow > 0 ? (coverageSeconds / guardianWindow) * 100 : 0;
+    const fundingUSD = funding.get(normalized) ?? 0;
+    const capitalShare = metrics.annualBudget > 0 ? (fundingUSD / metrics.annualBudget) * 100 : 0;
+    const resilience = Number(domain.resilienceIndex ?? 0);
+    const resilienceStatus = resilience < RESILIENCE_ALERT_THRESHOLD ? "review" : "stable";
+    const row = [
+      slug,
+      domain.name ?? slug,
+      resilience.toFixed(3),
+      Number(domain.autonomyLevelBps ?? 0).toString(),
+      Number(domain.valueFlowMonthlyUSD ?? 0).toString(),
+      coverageSeconds.toFixed(0),
+      guardianWindow.toString(),
+      coverageAdequacy.toFixed(1),
+      fundingUSD.toFixed(0),
+      capitalShare.toFixed(1),
+      resilienceStatus,
+    ];
+    lines.push(row.map(escapeCsv).join(","));
+  }
+  return `${lines.join("\n")}\n`;
 }
 
 export function buildSafeTransactions(entries: CalldataEntry[], managerAddress: string) {
@@ -1082,11 +1275,26 @@ export function writeArtifacts(
   const reportPath = join(outputDir, "phase8-telemetry-report.md");
   writeFileSync(reportPath, telemetryMarkdown(config, metrics));
 
+  const operatorRunbookPath = join(outputDir, "phase8-orchestration-report.txt");
+  writeFileSync(operatorRunbookPath, generateOperatorRunbook(config, metrics, environment, generatedAt));
+
+  const planPayloadPath = join(outputDir, "phase8-self-improvement-plan.json");
+  writeFileSync(
+    planPayloadPath,
+    `${JSON.stringify(generateSelfImprovementPlanPayload(config, metrics, generatedAt), null, 2)}\n`,
+  );
+
+  const cycleReportPath = join(outputDir, "phase8-cycle-report.csv");
+  writeFileSync(cycleReportPath, generateCycleReportCsv(config, metrics));
+
   return [
     { label: "Calldata manifest", path: callManifestPath },
     { label: "Safe transaction batch", path: safePath },
     { label: "Mermaid diagram", path: mermaidPath },
     { label: "Telemetry report", path: reportPath },
+    { label: "Operator runbook", path: operatorRunbookPath },
+    { label: "Self-improvement payload", path: planPayloadPath },
+    { label: "Cycle report", path: cycleReportPath },
   ];
 }
 

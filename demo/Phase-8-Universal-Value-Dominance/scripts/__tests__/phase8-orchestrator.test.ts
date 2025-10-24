@@ -118,15 +118,31 @@ describe("Phase 8 orchestration console", () => {
 
     try {
       const outputs = writeArtifacts(config, metrics, data, env, { outputDir: tempDir });
-      expect(outputs).toHaveLength(4);
+      const artifactPaths = {
+        manifest: join(tempDir, "phase8-governance-calldata.json"),
+        safeBatch: join(tempDir, "phase8-safe-transaction-batch.json"),
+        mermaid: join(tempDir, "phase8-mermaid-diagram.mmd"),
+        telemetry: join(tempDir, "phase8-telemetry-report.md"),
+        runbook: join(tempDir, "phase8-orchestration-report.txt"),
+        planPayload: join(tempDir, "phase8-self-improvement-plan.json"),
+        cycleReport: join(tempDir, "phase8-cycle-report.csv"),
+      };
+
+      expect(outputs).toEqual([
+        { label: "Calldata manifest", path: artifactPaths.manifest },
+        { label: "Safe transaction batch", path: artifactPaths.safeBatch },
+        { label: "Mermaid diagram", path: artifactPaths.mermaid },
+        { label: "Telemetry report", path: artifactPaths.telemetry },
+        { label: "Operator runbook", path: artifactPaths.runbook },
+        { label: "Self-improvement payload", path: artifactPaths.planPayload },
+        { label: "Cycle report", path: artifactPaths.cycleReport },
+      ]);
 
       expect(metrics.minDomainCoverageSeconds).toBeGreaterThan(0);
       expect(metrics.minimumCoverageAdequacy).toBeGreaterThan(1);
 
-      const telemetryPath = join(tempDir, "phase8-telemetry-report.md");
-      const mermaidPath = join(tempDir, "phase8-mermaid-diagram.mmd");
-      const telemetry = readFileSync(telemetryPath, "utf-8");
-      const diagram = readFileSync(mermaidPath, "utf-8");
+      const telemetry = readFileSync(artifactPaths.telemetry, "utf-8");
+      const diagram = readFileSync(artifactPaths.mermaid, "utf-8");
 
       expect(telemetryMarkdown(config, metrics)).toContain("Phase 8 — Universal Value Dominance Telemetry");
       const stableTelemetry = telemetry.replace(/Generated: .*/u, "Generated: <timestamp>");
@@ -134,9 +150,31 @@ describe("Phase 8 orchestration console", () => {
       expect(mermaid(config)).toEqual(diagram);
       expect(diagram).toMatchSnapshot();
 
-      const safeBatch = JSON.parse(readFileSync(join(tempDir, "phase8-safe-transaction-batch.json"), "utf-8"));
+      const manifest = JSON.parse(readFileSync(artifactPaths.manifest, "utf-8"));
+      expect(manifest.metrics.minimumCoverageAdequacyPercent).toBeGreaterThan(0);
+      expect(Array.isArray(manifest.calls)).toBe(true);
+      expect(manifest.calls).toHaveLength(flattenCalldataEntries(data).length);
+
+      const safeBatch = JSON.parse(readFileSync(artifactPaths.safeBatch, "utf-8"));
       expect(safeBatch.chainId).toBe(String(env.chainId));
       expect(safeBatch.meta.createdFromSafeAddress).toBe(env.managerAddress);
+
+      const operatorRunbook = readFileSync(artifactPaths.runbook, "utf-8");
+      expect(operatorRunbook).toContain("OPERATOR RUNBOOK");
+      expect(operatorRunbook).toContain("Self-improvement kernel");
+
+      const planPayload = JSON.parse(readFileSync(artifactPaths.planPayload, "utf-8"));
+      expect(typeof planPayload.generatedAt).toBe("string");
+      expect(planPayload.playbooks.length).toBeGreaterThan(0);
+      expect(planPayload.autonomyGuards).toMatchObject({ maxAutonomyBps: expect.any(Number) });
+
+      const cycleReport = readFileSync(artifactPaths.cycleReport, "utf-8");
+      expect(cycleReport).toContain(
+        "slug,name,resilience_index,autonomy_bps,monthly_value_usd,sentinel_coverage_seconds,guardian_window_seconds,coverage_adequacy_percent,capital_coverage_usd,capital_share_percent,resilience_status",
+      );
+      const cycleReportLines = cycleReport.trim().split("\n");
+      expect(cycleReportLines).toHaveLength((config.domains?.length ?? 0) + 1);
+      expect(cycleReportLines[1]).toContain(String(config.domains?.[0]?.slug ?? ""));
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
