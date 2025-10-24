@@ -92,6 +92,48 @@
         gap: 1rem;
       }
 
+      .error-panel {
+        width: min(1120px, 95vw);
+        margin: 0 auto 1.5rem;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 107, 107, 0.35);
+        padding: 1.75rem 2rem;
+        box-shadow: 0 18px 40px rgba(5, 12, 22, 0.45);
+        display: none;
+      }
+
+      .error-panel[data-state="visible"] {
+        display: block;
+      }
+
+      .error-panel h2 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--critical);
+      }
+
+      .error-panel ol {
+        margin: 0.75rem 0 0;
+        padding-left: 1.25rem;
+        color: var(--muted);
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .error-panel a {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .error-panel .error-detail {
+        margin: 0.5rem 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
       .alert {
         background: rgba(255, 255, 255, 0.04);
         border-left: 4px solid var(--accent);
@@ -283,6 +325,10 @@
         background: rgba(12, 20, 38, 0.72);
       }
 
+      .runbook-step[data-has-code="true"] {
+        gap: 0.85rem;
+      }
+
       .runbook-step-header {
         display: flex;
         flex-wrap: wrap;
@@ -312,6 +358,90 @@
         outline-offset: 4px;
       }
 
+      .copy-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .command-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1rem;
+        align-items: center;
+      }
+
+      .command-row code {
+        flex: 1 1 auto;
+      }
+
+      .copy-button {
+        appearance: none;
+        border: 1px solid rgba(90, 210, 255, 0.4);
+        background: rgba(90, 210, 255, 0.12);
+        color: var(--text);
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 150ms ease;
+      }
+
+      .copy-button:hover,
+      .copy-button:focus-visible {
+        background: rgba(90, 210, 255, 0.22);
+      }
+
+      .copy-button[data-copy-state="copied"] {
+        background: rgba(90, 255, 180, 0.22);
+        border-color: rgba(90, 255, 180, 0.4);
+      }
+
+      .copy-button[data-copy-state="error"] {
+        background: rgba(255, 107, 107, 0.18);
+        border-color: rgba(255, 107, 107, 0.45);
+      }
+
+      .copy-feedback {
+        color: var(--muted);
+        font-size: 0.78rem;
+        min-height: 0.9rem;
+        display: none;
+      }
+
+      .copy-feedback[data-visible="true"] {
+        display: inline-block;
+      }
+
+      .control-card {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .control-value {
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .control-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+      }
+
+      .control-value-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.75rem;
+        align-items: center;
+      }
+
+      .control-value-text {
+        font-family: "Inter", ui-monospace, SFMono-Regular, SFMono, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        letter-spacing: 0.02em;
+      }
+
       .tooltip {
         position: absolute;
         inset-inline-start: 1.25rem;
@@ -330,8 +460,7 @@
         z-index: 5;
       }
 
-      .info-button:focus + .tooltip,
-      .info-button:hover + .tooltip {
+      .tooltip[data-visible="true"] {
         opacity: 1;
         visibility: visible;
       }
@@ -373,9 +502,10 @@
           position: static;
           inset-inline-start: auto;
           bottom: auto;
+        }
+
+        .tooltip[data-visible="true"] {
           margin-top: 0.25rem;
-          visibility: visible;
-          opacity: 1;
         }
       }
 
@@ -394,47 +524,56 @@
   <body>
     <a class="skip-link" href="#main">Skip to main content</a>
     <header>
-      <h1>Phase 8 · Universal Value Dominance</h1>
-      <p>
+      <h1 data-i18n-key="headings.hero">Phase 8 · Universal Value Dominance</h1>
+      <p data-i18n-key="copy.hero">
         This console proves a non-technical operator can marshal a superintelligent, DAO-governed economy. Load the manifest,
         execute the suggested governance transactions, and watch AGI Jobs v0 (v2) orchestrate planetary-scale value with safe,
         transparent guardrails.
       </p>
     </header>
+    <section
+      class="error-panel"
+      id="error-panel"
+      role="alert"
+      aria-live="assertive"
+      data-role="error-panel"
+      data-test-id="error-panel"
+      hidden
+    ></section>
     <div class="alert-container" id="alerts" role="region" aria-live="polite"></div>
     <main id="main">
       <section aria-labelledby="stats-heading">
-        <h2 id="stats-heading">Strategic Metrics</h2>
+        <h2 id="stats-heading" data-i18n-key="headings.stats">Strategic Metrics</h2>
         <div class="stats-grid" id="stats" role="list"></div>
       </section>
       <section aria-labelledby="controls-heading">
-        <h2 id="controls-heading">Governance Control Surface</h2>
+        <h2 id="controls-heading" data-i18n-key="headings.controls">Governance Control Surface</h2>
         <div class="sentinel-list" id="controls"></div>
       </section>
       <section aria-labelledby="domains-heading">
-        <h2 id="domains-heading">Dominion Registry</h2>
+        <h2 id="domains-heading" data-i18n-key="headings.domains">Dominion Registry</h2>
         <div class="domain-grid" id="domains"></div>
       </section>
       <section aria-labelledby="sentinels-heading">
-        <h2 id="sentinels-heading">Sentinel Lattice</h2>
+        <h2 id="sentinels-heading" data-i18n-key="headings.sentinels">Sentinel Lattice</h2>
         <div class="sentinel-list" id="sentinels"></div>
       </section>
       <section aria-labelledby="streams-heading">
-        <h2 id="streams-heading">Capital Streams</h2>
+        <h2 id="streams-heading" data-i18n-key="headings.streams">Capital Streams</h2>
         <div class="stream-list" id="streams"></div>
       </section>
       <section aria-labelledby="playbooks-heading">
-        <h2 id="playbooks-heading">Self-Improvement Kernel</h2>
+        <h2 id="playbooks-heading" data-i18n-key="headings.playbooks">Self-Improvement Kernel</h2>
         <div class="playbook-list" id="playbooks"></div>
       </section>
       <section aria-labelledby="mermaid-heading">
-        <h2 id="mermaid-heading">Mermaid · Universal Value Mesh</h2>
+        <h2 id="mermaid-heading" data-i18n-key="headings.mermaid">Mermaid · Universal Value Mesh</h2>
         <div class="mermaid-wrapper" aria-live="polite">
           <div class="mermaid" id="mermaid-diagram" data-test-id="mermaid-diagram">graph TD; Loading --> Manifest</div>
         </div>
       </section>
       <section aria-labelledby="runbook-heading">
-        <h2 id="runbook-heading">Operator Runbook</h2>
+        <h2 id="runbook-heading" data-i18n-key="headings.runbook">Operator Runbook</h2>
         <ol class="runbook-steps" id="runbook"></ol>
       </section>
     </main>
@@ -448,6 +587,283 @@
         timeStyle: "short",
         timeZone: "UTC",
       });
+
+      const TEXT = {
+        copy: {
+          action: "Copy",
+          ariaDefault: "Copy to clipboard",
+          commandAria: "Copy command for step {step}",
+          controlAria: "Copy value for {label}",
+          success: "Copied to clipboard.",
+          error: "Copy failed. Use manual copy.",
+        },
+        errors: {
+          loadTitle: "Manifest unavailable",
+          loadBody:
+            "The Universal Value manifest could not be loaded from config/universal.value.manifest.json.",
+          stepsIntro: "Troubleshooting steps",
+          stepCheckPath:
+            "Confirm the manifest file exists at demo/Phase-8-Universal-Value-Dominance/config/universal.value.manifest.json.",
+          stepRebuild:
+            "Regenerate the manifest with npm run demo:phase8:orchestrate so outputs and calldata stay in sync.",
+          stepDocs: "Consult the dashboard operations guide for recovery playbooks.",
+          docsLabel: "Open dashboard operations guide",
+          docsHref: "../../docs/phase8-dashboard-operations.md",
+        },
+        runbook: {
+          tooltipAria: "Show additional guidance for step {step}",
+          steps: {
+            install: {
+              text: "Install dependencies once",
+              tooltip:
+                "Ensures deterministic installs for the orchestrator and demo console using the pinned lockfile.",
+              copyLabel: "npm ci command",
+            },
+            orchestrate: {
+              text: "Generate calldata + telemetry",
+              tooltip: "Synthesizes Phase 8 governance transactions alongside telemetry bundles.",
+              downloadLabel: "Download orchestration report",
+              copyLabel: "phase8 orchestration command",
+            },
+            apply: {
+              text: "Apply transactions via your governance Safe / Timelock",
+              tooltip:
+                "Stage and execute the generated calldata through your guardian-controlled Safe or timelock queue.",
+            },
+            plan: {
+              text: "Update the self-improvement plan hash + cadence",
+              tooltip:
+                "Call the manager contract with the new cadence, plan hash, and plan URI produced by the orchestrator run.",
+              downloadLabel: "Download latest plan payload",
+              copyLabel: "Self-improvement plan command",
+            },
+            record: {
+              text: "Record each improvement cycle and archive reports",
+              tooltip: "Log every cycle execution and file the generated report URIs for auditability.",
+              downloadLabel: "Download cycle report",
+              copyLabel: "Cycle logging command",
+            },
+            telemetry: {
+              text: "Stream live telemetry from this console and the orchestrator runtime",
+              tooltip: "Pin the dashboards inside Mission Control to watch sentinel coverage and stream health in real-time.",
+            },
+            trigger: {
+              text: "Trigger self-improvement playbooks as needed",
+              tooltip: "Follow guardrails and escalation paths before invoking automation routines.",
+            },
+          },
+        },
+        controls: {
+          treasury: "Treasury",
+          vault: "Vault",
+          upgradeCoordinator: "Upgrade coordinator",
+          validatorRegistry: "Validator registry",
+          missionControl: "Mission control",
+          knowledgeGraph: "Knowledge graph",
+          guardianCouncil: "Guardian council",
+          systemPause: "System pause",
+          manifest: "Manifest",
+          drawdown: "Drawdown guard",
+        },
+        fallbacks: {
+          missingManifest: "Manifest URI not provided.",
+          noDominions: "No dominions configured.",
+          autonomyPending: "Autonomy narrative pending.",
+          coverageRequired: "Capital stream required",
+          noSentinels: "No sentinels configured.",
+          noStreams: "No capital streams configured.",
+          noPlaybooks: "No self-improvement playbooks recorded yet.",
+          playbookPending: "Playbook description pending.",
+        },
+        mermaid: {
+          fallback: "Mermaid rendering fell back to text mode. Review console logs for diagram errors.",
+        },
+      };
+
+      const copyButtonTimers = new WeakMap();
+
+      const t = (key) =>
+        key.split(".").reduce((value, segment) => {
+          if (value && Object.prototype.hasOwnProperty.call(value, segment)) {
+            return value[segment];
+          }
+          return undefined;
+        }, TEXT) ?? key;
+
+      const escapeHtml = (value) =>
+        String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+      const escapeSelector = (value) => {
+        if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+          return CSS.escape(value);
+        }
+        return String(value ?? "").replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+      };
+
+      const copyButtonMarkup = (payload, { ariaLabel, feedbackId, testId, copyLabel, type } = {}) => {
+        if (!payload) return "";
+        const encoded = encodeURIComponent(String(payload));
+        const attributes = [
+          'type="button"',
+          'class="copy-button"',
+          `data-copy-payload="${encoded}"`,
+        ];
+        if (feedbackId) {
+          attributes.push(`data-feedback-id="${escapeHtml(feedbackId)}"`);
+        }
+        if (copyLabel) {
+          attributes.push(`data-copy-label="${escapeHtml(copyLabel)}"`);
+        }
+        if (testId) {
+          attributes.push(`data-test-id="${testId}"`);
+        }
+        if (type) {
+          attributes.push(`data-copy-type="${escapeHtml(type)}"`);
+        }
+        const resolvedAria = escapeHtml(ariaLabel || t("copy.ariaDefault"));
+        attributes.push(`aria-label="${resolvedAria}"`);
+        return `<button ${attributes.join(" ")}>${t("copy.action")}</button>`;
+      };
+
+      const getCopyFeedback = (button) => {
+        const id = button.dataset.feedbackId;
+        if (!id) return undefined;
+        return document.querySelector(`.copy-feedback[data-feedback-for="${escapeSelector(id)}"]`);
+      };
+
+      const resetCopyFeedback = (button, feedback) => {
+        button.removeAttribute("data-copy-state");
+        if (feedback) {
+          feedback.textContent = "";
+          feedback.removeAttribute("data-visible");
+        }
+      };
+
+      const hideAllTooltips = (exception) => {
+        document.querySelectorAll('.info-button[aria-controls]').forEach((btn) => {
+          if (exception && btn === exception) return;
+          const id = btn.getAttribute('aria-controls');
+          if (!id) return;
+          const tooltip = document.getElementById(id);
+          if (tooltip) {
+            tooltip.setAttribute('data-visible', 'false');
+          }
+          btn.setAttribute('aria-expanded', 'false');
+        });
+      };
+
+      const toggleTooltip = (button, visible) => {
+        const id = button.getAttribute('aria-controls');
+        if (!id) return;
+        const tooltip = document.getElementById(id);
+        if (!tooltip) return;
+        const next = visible ?? tooltip.getAttribute('data-visible') !== 'true';
+        tooltip.setAttribute('data-visible', next ? 'true' : 'false');
+        button.setAttribute('aria-expanded', next ? 'true' : 'false');
+      };
+
+      const writeToClipboard = async (value) => {
+        if (!value) return false;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(value);
+            return true;
+          }
+        } catch (error) {
+          console.warn('Clipboard API failed, falling back to execCommand', error);
+        }
+        try {
+          const textArea = document.createElement('textarea');
+          textArea.value = value;
+          textArea.setAttribute('aria-hidden', 'true');
+          textArea.style.position = 'fixed';
+          textArea.style.opacity = '0';
+          document.body.appendChild(textArea);
+          textArea.select();
+          const succeeded = document.execCommand('copy');
+          document.body.removeChild(textArea);
+          return succeeded;
+        } catch (error) {
+          console.warn('execCommand copy fallback failed', error);
+          return false;
+        }
+      };
+
+      const handleCopy = async (button) => {
+        const payload = button.dataset.copyPayload ? decodeURIComponent(button.dataset.copyPayload) : "";
+        if (!payload) return;
+        const feedback = getCopyFeedback(button);
+        if (copyButtonTimers.has(button)) {
+          window.clearTimeout(copyButtonTimers.get(button));
+        }
+        const success = await writeToClipboard(payload);
+        const label = button.dataset.copyLabel || "";
+        button.setAttribute("data-copy-state", success ? "copied" : "error");
+        if (feedback) {
+          const template = success ? t("copy.success") : t("copy.error");
+          const message = label ? `${template} ${label}` : template;
+          feedback.textContent = message;
+          feedback.setAttribute("data-visible", "true");
+        }
+        const timer = window.setTimeout(() => {
+          resetCopyFeedback(button, feedback);
+          copyButtonTimers.delete(button);
+        }, success ? 3500 : 5500);
+        copyButtonTimers.set(button, timer);
+      };
+
+      const mainContent = document.getElementById("main");
+      const alertsRegion = document.getElementById("alerts");
+      const errorPanel = document.querySelector('[data-role="error-panel"]');
+
+      const clearErrorState = () => {
+        if (errorPanel) {
+          errorPanel.hidden = true;
+          errorPanel.removeAttribute("data-state");
+          errorPanel.innerHTML = "";
+        }
+        if (alertsRegion) {
+          alertsRegion.removeAttribute("hidden");
+        }
+        if (mainContent) {
+          mainContent.removeAttribute("hidden");
+          mainContent.removeAttribute("aria-hidden");
+        }
+      };
+
+      const showErrorPanel = ({ message, steps = [] } = {}) => {
+        if (!errorPanel) return;
+        const troubleshooting = steps.length
+          ? `<h3 data-i18n-key="errors.stepsIntro">${t("errors.stepsIntro")}</h3>
+             <ol>${steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>`
+          : "";
+        const docsLink = TEXT.errors.docsHref
+          ? `<p><a href="${TEXT.errors.docsHref}" data-i18n-key="errors.docsLabel">${t("errors.docsLabel")}</a></p>`
+          : "";
+        const detail = message ? `<p class="error-detail">${escapeHtml(message)}</p>` : "";
+        errorPanel.innerHTML = `
+          <h2 data-i18n-key="errors.loadTitle">${t("errors.loadTitle")}</h2>
+          <p data-i18n-key="errors.loadBody">${t("errors.loadBody")}</p>
+          ${detail}
+          ${troubleshooting}
+          ${docsLink}
+        `;
+        errorPanel.hidden = false;
+        errorPanel.setAttribute("data-state", "visible");
+        if (alertsRegion) {
+          alertsRegion.setAttribute("hidden", "true");
+          alertsRegion.innerHTML = "";
+        }
+        if (mainContent) {
+          mainContent.setAttribute("hidden", "true");
+          mainContent.setAttribute("aria-hidden", "true");
+        }
+      };
 
       const DEFAULT_MANIFEST = {
         global: {
@@ -481,48 +897,59 @@
 
       const RUNBOOK_STEPS = [
         {
-          text: "Install dependencies once",
+          key: "install",
+          text: t("runbook.steps.install.text"),
           code: "npm ci",
-          tooltip: "Ensures deterministic installs for the orchestrator and demo console using the pinned lockfile.",
+          tooltip: t("runbook.steps.install.tooltip"),
+          copyLabel: TEXT.runbook.steps.install.copyLabel,
         },
         {
-          text: "Generate calldata + telemetry",
+          key: "orchestrate",
+          text: t("runbook.steps.orchestrate.text"),
           code: "npm run demo:phase8:orchestrate",
-          tooltip: "Synthesizes Phase 8 governance transactions alongside telemetry bundles.",
+          tooltip: t("runbook.steps.orchestrate.tooltip"),
+          copyLabel: TEXT.runbook.steps.orchestrate.copyLabel,
           download: {
             href: "./output/phase8-orchestration-report.txt",
-            label: "Download orchestration report",
+            label: t("runbook.steps.orchestrate.downloadLabel"),
           },
         },
         {
-          text: "Apply transactions via your governance Safe / Timelock",
-          tooltip: "Stage and execute the generated calldata through your guardian-controlled Safe or timelock queue.",
+          key: "apply",
+          text: t("runbook.steps.apply.text"),
+          tooltip: t("runbook.steps.apply.tooltip"),
         },
         {
-          text: "Update the self-improvement plan hash + cadence",
+          key: "plan",
+          text: t("runbook.steps.plan.text"),
           code: "setSelfImprovementPlan",
-          tooltip: "Call the manager contract with the new cadence, plan hash, and plan URI produced by the orchestrator run.",
+          tooltip: t("runbook.steps.plan.tooltip"),
+          copyLabel: TEXT.runbook.steps.plan.copyLabel,
           download: {
             href: "./output/phase8-self-improvement-plan.json",
-            label: "Download latest plan payload",
+            label: t("runbook.steps.plan.downloadLabel"),
           },
         },
         {
-          text: "Record each improvement cycle and archive reports",
+          key: "record",
+          text: t("runbook.steps.record.text"),
           code: "recordSelfImprovementExecution",
-          tooltip: "Log every cycle execution and file the generated report URIs for auditability.",
+          tooltip: t("runbook.steps.record.tooltip"),
+          copyLabel: TEXT.runbook.steps.record.copyLabel,
           download: {
             href: "./output/phase8-cycle-report.csv",
-            label: "Download cycle report",
+            label: t("runbook.steps.record.downloadLabel"),
           },
         },
         {
-          text: "Stream live telemetry from this console and the orchestrator runtime",
-          tooltip: "Pin the dashboards inside Mission Control to watch sentinel coverage and stream health in real-time.",
+          key: "telemetry",
+          text: t("runbook.steps.telemetry.text"),
+          tooltip: t("runbook.steps.telemetry.tooltip"),
         },
         {
-          text: "Trigger self-improvement playbooks as needed",
-          tooltip: "Follow guardrails and escalation paths before invoking automation routines.",
+          key: "trigger",
+          text: t("runbook.steps.trigger.text"),
+          tooltip: t("runbook.steps.trigger.tooltip"),
         },
       ];
 
@@ -852,44 +1279,137 @@
 
       function renderControls(container, manifest) {
         const global = manifest.global || {};
-        const entries = [
+        const controlCards = [
           {
-            label: "Treasury",
-            value: shortAddress(global.treasury),
-            secondaryLabel: "Vault",
-            secondaryValue: shortAddress(global.universalVault),
+            key: "treasury",
+            segments: [
+              {
+                key: "treasury",
+                label: t("controls.treasury"),
+                display: shortAddress(global.treasury),
+                copyValue: global.treasury,
+                type: "address",
+              },
+              {
+                key: "vault",
+                label: t("controls.vault"),
+                display: shortAddress(global.universalVault),
+                copyValue: global.universalVault,
+                type: "address",
+              },
+            ],
           },
           {
-            label: "Upgrade coordinator",
-            value: shortAddress(global.upgradeCoordinator),
-            secondaryLabel: "Validator registry",
-            secondaryValue: shortAddress(global.validatorRegistry),
+            key: "upgrade",
+            segments: [
+              {
+                key: "upgradeCoordinator",
+                label: t("controls.upgradeCoordinator"),
+                display: shortAddress(global.upgradeCoordinator),
+                copyValue: global.upgradeCoordinator,
+                type: "address",
+              },
+              {
+                key: "validatorRegistry",
+                label: t("controls.validatorRegistry"),
+                display: shortAddress(global.validatorRegistry),
+                copyValue: global.validatorRegistry,
+                type: "address",
+              },
+            ],
           },
           {
-            label: "Mission control",
-            value: shortAddress(global.missionControl),
-            secondaryLabel: "Knowledge graph",
-            secondaryValue: shortAddress(global.knowledgeGraph),
+            key: "mission",
+            segments: [
+              {
+                key: "missionControl",
+                label: t("controls.missionControl"),
+                display: shortAddress(global.missionControl),
+                copyValue: global.missionControl,
+                type: "address",
+              },
+              {
+                key: "knowledgeGraph",
+                label: t("controls.knowledgeGraph"),
+                display: shortAddress(global.knowledgeGraph),
+                copyValue: global.knowledgeGraph,
+                type: "address",
+              },
+            ],
           },
           {
-            label: "Guardian council",
-            value: shortAddress(global.guardianCouncil),
-            secondaryLabel: "System pause",
-            secondaryValue: shortAddress(global.systemPause),
+            key: "guardian",
+            segments: [
+              {
+                key: "guardianCouncil",
+                label: t("controls.guardianCouncil"),
+                display: shortAddress(global.guardianCouncil),
+                copyValue: global.guardianCouncil,
+                type: "address",
+              },
+              {
+                key: "systemPause",
+                label: t("controls.systemPause"),
+                display: shortAddress(global.systemPause),
+                copyValue: global.systemPause,
+                type: "address",
+              },
+            ],
           },
           {
-            label: "Manifest",
-            value: global.manifestoURI || "—",
-            secondaryLabel: "Drawdown guard",
-            secondaryValue: `${toNumber(global.maxDrawdownBps, 0)} bps`,
+            key: "manifest",
+            segments: [
+              {
+                key: "manifest",
+                label: t("controls.manifest"),
+                display: global.manifestoURI || t("fallbacks.missingManifest"),
+                copyValue: global.manifestoURI || "",
+                type: global.manifestoURI ? "uri" : undefined,
+              },
+              {
+                key: "drawdown",
+                label: t("controls.drawdown"),
+                display: `${toNumber(global.maxDrawdownBps, 0)} bps`,
+              },
+            ],
           },
         ];
 
-        container.innerHTML = entries
+        const renderSegment = (segment) => {
+          const display = segment.display ?? segment.copyValue ?? "—";
+          const payload = segment.copyValue && segment.copyValue !== "—" ? segment.copyValue : "";
+          const feedbackId = `control-${segment.key}`;
+          const ariaLabel = t("copy.controlAria").replace("{label}", segment.label);
+          const copyMarkup = payload
+            ? `
+                <div class="copy-controls">
+                  ${copyButtonMarkup(payload, {
+                    ariaLabel,
+                    feedbackId,
+                    testId: segment.type === "address" ? "copy-address" : "copy-control",
+                    copyLabel: segment.label,
+                    type: segment.type || "value",
+                  })}
+                  <span class="copy-feedback" data-feedback-for="${feedbackId}" data-test-id="copy-feedback" role="status" aria-live="polite"></span>
+                </div>
+              `
+            : "";
+          return `
+            <div class="control-value" data-control-segment="${segment.key}">
+              <strong class="control-label" data-i18n-key="controls.${segment.key}">${segment.label}</strong>
+              <div class="control-value-inner">
+                <span class="control-value-text">${escapeHtml(display)}</span>
+                ${copyMarkup}
+              </div>
+            </div>
+          `;
+        };
+
+        container.innerHTML = controlCards
           .map(
             (entry, index) => `
-              <article class="sentinel-item" data-test-id="control-card" data-control-index="${index}">
-                <p><strong>${entry.label}</strong>: ${entry.value} · <strong>${entry.secondaryLabel}</strong>: ${entry.secondaryValue}</p>
+              <article class="sentinel-item control-card" data-test-id="control-card" data-control-index="${index}">
+                ${entry.segments.map(renderSegment).join("")}
               </article>
             `,
           )
@@ -899,7 +1419,7 @@
       function renderDomains(container, manifest, context) {
         const domains = asArray(manifest.domains);
         if (!domains.length) {
-          container.innerHTML = '<p>No dominions configured.</p>';
+          container.innerHTML = `<p data-i18n-key="fallbacks.noDominions">${t("fallbacks.noDominions")}</p>`;
           return;
         }
 
@@ -919,7 +1439,7 @@
               .map((stream) => `<span class="chip alt" data-test-id="domain-stream">${stream}</span>`)
               .join(" ");
             const warnings = [];
-            if (!fundingUSD) warnings.push("Capital stream required");
+            if (!fundingUSD) warnings.push(t("fallbacks.coverageRequired"));
             const warningMarkup = warnings.length
               ? `<div class="domain-warnings">${warnings
                   .map((warning) => `<span class="chip warning">${warning}</span>`)
@@ -928,7 +1448,7 @@
             return `
               <article class="${classNames.join(" ")}" data-test-id="domain-card" data-domain-slug="${domain.slug}">
                 <h3>${domain.name || domain.slug}</h3>
-                <p>${domain.autonomyNarrative || "Autonomy narrative pending."}</p>
+                <p>${domain.autonomyNarrative || t("fallbacks.autonomyPending")}</p>
                 <div class="domain-meta">
                   <span class="chip">ID ${domain.slug || "n/a"}</span>
                   <span class="chip">Autonomy ${toNumber(domain.autonomyLevelBps, 0)} bps</span>
@@ -949,7 +1469,7 @@
       function renderSentinels(container, manifest) {
         const sentinels = asArray(manifest.sentinels);
         if (!sentinels.length) {
-          container.innerHTML = '<p>No sentinels registered.</p>';
+          container.innerHTML = `<p data-i18n-key="fallbacks.noSentinels">${t("fallbacks.noSentinels")}</p>`;
           return;
         }
 
@@ -971,7 +1491,7 @@
       function renderStreams(container, manifest) {
         const streams = asArray(manifest.capitalStreams);
         if (!streams.length) {
-          container.innerHTML = '<p>No capital streams defined.</p>';
+          container.innerHTML = `<p data-i18n-key="fallbacks.noStreams">${t("fallbacks.noStreams")}</p>`;
           return;
         }
 
@@ -1010,7 +1530,7 @@
           entries.push(`
             <article class="playbook-item" data-test-id="playbook-card" data-playbook-name="${playbook.name}">
               <strong>${playbook.name}</strong>
-              <p>${playbook.description || "Playbook description pending."}</p>
+              <p>${playbook.description || t("fallbacks.playbookPending")}</p>
               <p>Owner ${shortAddress(playbook.owner)} · Automation ${playbook.automation || "manual"} · Guardrails ${
                 asArray(playbook.guardrails).join(" · ") || "—"
               }</p>
@@ -1035,22 +1555,49 @@
       function renderRunbook(container) {
         container.innerHTML = RUNBOOK_STEPS.map((step, index) => {
           const tooltipId = `runbook-tooltip-${index}`;
+          const tooltipLabel = t("runbook.tooltipAria").replace("{step}", index + 1);
           const tooltipControls = step.tooltip
             ? `
-              <button type="button" class="info-button" aria-describedby="${tooltipId}" aria-label="More info for step ${
-                index + 1
-              }">ℹ️</button>
-              <span class="tooltip" role="tooltip" id="${tooltipId}">${step.tooltip}</span>
+              <button
+                type="button"
+                class="info-button"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-controls="${tooltipId}"
+                aria-label="${escapeHtml(tooltipLabel)}"
+              >ℹ️</button>
+              <span class="tooltip" role="tooltip" id="${tooltipId}" data-i18n-key="runbook.steps.${step.key}.tooltip">${
+                step.tooltip
+              }</span>
             `
             : "";
-          const code = step.code ? `<code>${step.code}</code>` : "";
+          const hasCode = Boolean(step.code);
+          const feedbackId = `runbook-${index}`;
+          const commandAria = t("copy.commandAria").replace("{step}", index + 1);
+          const code = hasCode
+            ? `
+              <div class="command-row" data-test-id="runbook-command">
+                <code>${escapeHtml(step.code)}</code>
+                <div class="copy-controls">
+                  ${copyButtonMarkup(step.code, {
+                    ariaLabel: commandAria,
+                    feedbackId,
+                    testId: "copy-command",
+                    copyLabel: step.copyLabel || step.text,
+                    type: "runbook",
+                  })}
+                  <span class="copy-feedback" data-feedback-for="${feedbackId}" data-test-id="copy-feedback" role="status" aria-live="polite"></span>
+                </div>
+              </div>
+            `
+            : "";
           const download = step.download
-            ? `<a class="download-link" href="${step.download.href}" download data-test-id="runbook-download">${step.download.label}</a>`
+            ? `<a class="download-link" href="${step.download.href}" download data-test-id="runbook-download" data-i18n-key="runbook.steps.${step.key}.download">${step.download.label}</a>`
             : "";
           return `
-            <li class="runbook-step" data-test-id="runbook-step">
+            <li class="runbook-step" data-test-id="runbook-step" data-has-code="${hasCode}" data-runbook-key="${step.key}">
               <div class="runbook-step-header">
-                <span class="step-text">${step.text}</span>
+                <span class="step-text" data-i18n-key="runbook.steps.${step.key}.text">${step.text}</span>
                 ${tooltipControls}
               </div>
               ${code}
@@ -1101,6 +1648,8 @@
 
         const markFallback = (error) => {
           container.setAttribute("data-rendered", "fallback");
+          container.setAttribute("aria-label", t("mermaid.fallback"));
+          container.textContent = `${t("mermaid.fallback")}\n${diagramText}`;
           if (error) {
             console.warn("Rendering mermaid fallback", error);
           }
@@ -1123,11 +1672,65 @@
         }
       }
 
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const copyButton = target.closest('.copy-button');
+        if (copyButton) {
+          event.preventDefault();
+          handleCopy(copyButton);
+          return;
+        }
+
+        const infoButton = target.closest('.info-button');
+        if (infoButton) {
+          event.preventDefault();
+          const expanded = infoButton.getAttribute('aria-expanded') === 'true';
+          hideAllTooltips(infoButton);
+          toggleTooltip(infoButton, !expanded);
+          return;
+        }
+
+        if (!target.closest('.tooltip')) {
+          hideAllTooltips();
+        }
+      });
+
+      document.addEventListener('focusin', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const infoButton = target.closest('.info-button');
+        if (infoButton) {
+          hideAllTooltips(infoButton);
+          toggleTooltip(infoButton, true);
+        }
+      });
+
+      document.addEventListener('focusout', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const infoButton = target.closest('.info-button');
+        if (infoButton) {
+          window.setTimeout(() => {
+            if (document.activeElement && infoButton.contains(document.activeElement)) return;
+            toggleTooltip(infoButton, false);
+          }, 0);
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          hideAllTooltips();
+        }
+      });
+
       async function load() {
         const response = await fetch(configPath);
         if (!response.ok) throw new Error(`Failed to load manifest: ${response.status}`);
         const data = await response.json();
         const manifest = applyDefaults(data, DEFAULT_MANIFEST);
+        clearErrorState();
         const context = buildContext(manifest);
         renderAlerts(context.alerts);
         for (const section of SECTION_SCHEMA) {
@@ -1138,8 +1741,11 @@
       }
 
       load().catch((error) => {
-        document.body.innerHTML = `<div style="padding:3rem;text-align:center">Failed to load Phase 8 manifest: ${error}</div>`;
         console.error(error);
+        showErrorPanel({
+          message: error?.message || String(error),
+          steps: [t("errors.stepCheckPath"), t("errors.stepRebuild"), t("errors.stepDocs")],
+        });
       });
     </script>
   </body>
