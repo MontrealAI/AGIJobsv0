@@ -689,10 +689,21 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         bytes32 id
     ) private {
         uint256 position = positions[id];
+        uint256 idx;
         if (position == 0) {
-            return;
+            uint256 length = index.length;
+            for (uint256 i = 0; i < length; i++) {
+                if (index[i] == id) {
+                    idx = i;
+                    break;
+                }
+            }
+            if (index.length == 0 || index[idx] != id) {
+                return;
+            }
+        } else {
+            idx = position - 1;
         }
-        uint256 idx = position - 1;
         uint256 lastIdx = index.length - 1;
         if (idx != lastIdx) {
             bytes32 lastId = index[lastIdx];
