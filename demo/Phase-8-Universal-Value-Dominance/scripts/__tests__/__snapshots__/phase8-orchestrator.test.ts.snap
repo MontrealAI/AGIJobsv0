@@ -11,8 +11,10 @@ Generated: <timestamp>
 - Universal dominance score: 96.9 / 100
 - Sentinel coverage per guardian cycle: 45.0 minutes
 - Domains covered by sentinels: 100.0%
+- Domains with capital funding: 100.0%
 - Minimum sentinel coverage per domain: 900s (requirement 720s, adequacy 125.0%)
 - Maximum encoded autonomy: 7800 bps
+- Minimum per-domain capital coverage: $720.00B / yr
 - Self-improvement cadence: every 2.00 hours
 - Last self-improvement execution: 2023-11-14T22:20:00.000Z
 
@@ -32,13 +34,13 @@ Generated: <timestamp>
 - Max drawdown guard: 3200 bps
 
 ## Domains
-| Domain | Autonomy (bps) | Resilience | Heartbeat (s) | TVL cap | Monthly value | Sentinels | Capital streams |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Planetary Finance Mesh | 7800 | 0.960 | 300 | 420… (10^24) | $245.00B | Capital Watch Exocomptroller | Planetary Resilience Fund |
-| Climate Harmonizer Array | 7400 | 0.940 | 180 | 185… (10^24) | $128.00B | Solar Shield Guardian | Climate Stabilization Endowment |
-| Health Sovereign Continuum | 7000 | 0.910 | 240 | 920… (10^23) | $94.00B | Bio Sentinel Continuity | Planetary Resilience Fund |
-| Infrastructure Synthesis Grid | 7600 | 0.915 | 210 | 215… (10^24) | $167.00B | Solar Shield Guardian | Climate Stabilization Endowment, Innovation Thrust Catalyst |
-| Knowledge Lattice Nexus | 6900 | 0.902 | 150 | 680… (10^23) | $54.00B | Capital Watch Exocomptroller | Planetary Resilience Fund, Innovation Thrust Catalyst |
+| Domain | Autonomy (bps) | Resilience | Heartbeat (s) | TVL cap | Monthly value | Capital coverage | Sentinels | Capital streams |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Planetary Finance Mesh | 7800 | 0.960 | 300 | 420… (10^24) | $245.00B | $890.00B | Capital Watch Exocomptroller | Planetary Resilience Fund |
+| Climate Harmonizer Array | 7400 | 0.940 | 180 | 185… (10^24) | $128.00B | $720.00B | Solar Shield Guardian | Climate Stabilization Endowment |
+| Health Sovereign Continuum | 7000 | 0.910 | 240 | 920… (10^23) | $94.00B | $890.00B | Bio Sentinel Continuity | Planetary Resilience Fund |
+| Infrastructure Synthesis Grid | 7600 | 0.915 | 210 | 215… (10^24) | $167.00B | $1.08T | Solar Shield Guardian | Climate Stabilization Endowment, Innovation Thrust Catalyst |
+| Knowledge Lattice Nexus | 6900 | 0.902 | 150 | 680… (10^23) | $54.00B | $1.25T | Capital Watch Exocomptroller | Planetary Resilience Fund, Innovation Thrust Catalyst |
 
 ## Sentinel Lattice
 - Solar Shield Guardian · coverage 900s · sensitivity 450 bps · guarding climate-harmonizer, infrastructure-synthesis

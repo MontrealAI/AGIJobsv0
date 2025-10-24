@@ -28,12 +28,18 @@
      * `phase8-telemetry-report.md` — executive briefing markdown for stakeholder distribution.
      * `phase8-mermaid-diagram.mmd` — raw Mermaid blueprint for design docs.
    > **Tip**: export `PHASE8_MANAGER_ADDRESS=0x…` and `PHASE8_CHAIN_ID=1` (or your deployment chain) before running the script to pre-fill the Safe transaction batch with production parameters.
-3. **Launch the control surface UI** (no build step required):
+3. **Assemble the operator kit** (shareable tarball for guardians):
+   ```bash
+   npm run demo:phase8:bundle
+   ```
+   This refreshes the orchestrated artifacts, adds `phase8-operator-kit-manifest.json`, and packages everything into
+   `output/phase8-operator-kit.tar.gz` — ready for Safe import, executive briefings, or archival snapshots.
+4. **Launch the control surface UI** (no build step required):
    ```bash
    npx serve demo/Phase-8-Universal-Value-Dominance
    ```
    Navigate to `http://localhost:3000` to view the live dashboard.
-4. **Enforce readiness in CI**:
+5. **Enforce readiness in CI**:
    ```bash
    npm run demo:phase8:ci
    ```

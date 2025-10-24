@@ -210,6 +210,9 @@ function main() {
       throw new Error(`README missing required section: ${section}`);
     }
   }
+  if (!readme.includes("demo:phase8:bundle")) {
+    throw new Error("README must document the Phase 8 operator kit bundling flow");
+  }
 
   const maxDomainAutonomy = Math.max(...config.domains.map((d) => d.autonomyLevelBps));
   if (maxDomainAutonomy > config.selfImprovement.autonomyGuards.maxAutonomyBps) {
