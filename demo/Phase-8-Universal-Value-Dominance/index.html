@@ -494,6 +494,18 @@
         background: rgba(12, 20, 38, 0.72);
       }
 
+      .mermaid-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+      }
+
+      .mermaid-actions[data-visible="false"] {
+        display: none;
+      }
+
       .mermaid-wrapper {
         background: rgba(12, 20, 38, 0.82);
         border-radius: 18px;
@@ -873,6 +885,16 @@
       </section>
       <section aria-labelledby="mermaid-heading">
         <h2 id="mermaid-heading" data-i18n-key="headings.mermaid">Mermaid · Universal Value Mesh</h2>
+        <div class="mermaid-actions" data-role="mermaid-controls" data-visible="false">
+          <div class="copy-controls" data-role="mermaid-copy-controls"></div>
+          <span
+            class="copy-feedback"
+            data-feedback-for="mermaid-diagram"
+            data-test-id="copy-feedback"
+            role="status"
+            aria-live="polite"
+          ></span>
+        </div>
         <div class="mermaid-wrapper" aria-live="polite">
           <div class="mermaid" id="mermaid-diagram" data-test-id="mermaid-diagram">graph TD; Loading --> Manifest</div>
         </div>
@@ -912,6 +934,8 @@
           ariaDefault: "Copy to clipboard",
           commandAria: "Copy command for step {step}",
           controlAria: "Copy value for {label}",
+          diagramLabel: "Mermaid blueprint",
+          diagramAria: "Copy Mermaid architecture to clipboard",
           success: "Copied to clipboard.",
           error: "Copy failed. Use manual copy.",
         },
@@ -2233,6 +2257,31 @@
 
         const diagramText = lines.join("\n");
         container.textContent = diagramText;
+
+        const mermaidWrapper = document.querySelector('[data-role="mermaid-controls"]');
+        const mermaidControls = document.querySelector('[data-role="mermaid-copy-controls"]');
+        const mermaidFeedback = document.querySelector('.copy-feedback[data-feedback-for="mermaid-diagram"]');
+
+        if (mermaidWrapper && mermaidControls) {
+          const existingButton = mermaidControls.querySelector('.copy-button');
+          if (existingButton && copyButtonTimers.has(existingButton)) {
+            window.clearTimeout(copyButtonTimers.get(existingButton));
+            copyButtonTimers.delete(existingButton);
+          }
+          const buttonMarkup = copyButtonMarkup(diagramText, {
+            ariaLabel: t("copy.diagramAria"),
+            feedbackId: "mermaid-diagram",
+            testId: "copy-mermaid",
+            copyLabel: t("copy.diagramLabel"),
+            type: "mermaid",
+          });
+          mermaidControls.innerHTML = buttonMarkup;
+          mermaidWrapper.setAttribute("data-visible", buttonMarkup ? "true" : "false");
+          if (mermaidFeedback) {
+            mermaidFeedback.textContent = "";
+            mermaidFeedback.removeAttribute("data-visible");
+          }
+        }
 
         const markFallback = (error) => {
           container.setAttribute("data-rendered", "fallback");
