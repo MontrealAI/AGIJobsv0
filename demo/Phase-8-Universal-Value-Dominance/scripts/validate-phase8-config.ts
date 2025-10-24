@@ -237,6 +237,7 @@ function main() {
     "phase8-orchestration-report.txt",
     "phase8-self-improvement-plan.json",
     "phase8-cycle-report.csv",
+    "phase8-invariant-audit.md",
   ];
   for (const artifact of requiredArtifacts) {
     if (!readme.includes(artifact)) {
