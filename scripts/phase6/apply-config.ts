@@ -278,6 +278,29 @@ function assertConfig(config: Phase6Config): void {
   assertBps(globalTelemetry.automationFloorBps, 'global.telemetry.automationFloorBps');
   assertBps(globalTelemetry.oversightWeightBps, 'global.telemetry.oversightWeightBps');
 
+  if (global.infrastructure) {
+    const infra = global.infrastructure;
+    assertNonEmptyString(infra.topologyURI, 'global.infrastructure.topologyURI');
+    assertOptionalAddress(infra.meshCoordinator, 'global.infrastructure.meshCoordinator');
+    assertOptionalAddress(infra.dataLake, 'global.infrastructure.dataLake');
+    assertOptionalAddress(infra.identityBridge, 'global.infrastructure.identityBridge');
+    if (infra.autopilotCadence !== undefined) {
+      const cadence = toFiniteNumber(infra.autopilotCadence, 'global.infrastructure.autopilotCadence');
+      if (cadence < 0) {
+        throw new Error('global.infrastructure.autopilotCadence must be >= 0.');
+      }
+      if (cadence !== 0 && cadence < 30) {
+        throw new Error('global.infrastructure.autopilotCadence must be 0 or >= 30 seconds.');
+      }
+    }
+    if (
+      infra.enforceDecentralizedInfra !== undefined &&
+      typeof infra.enforceDecentralizedInfra !== 'boolean'
+    ) {
+      throw new Error('global.infrastructure.enforceDecentralizedInfra must be boolean when provided.');
+    }
+  }
+
   if (!Array.isArray(config.domains) || config.domains.length === 0) {
     throw new Error('Configuration must include at least one domain.');
   }
@@ -406,6 +429,47 @@ function assertConfig(config: Phase6Config): void {
         throw new Error(`domain ${domain.slug} infrastructure[${infraIndex}].uri must be a string when provided.`);
       }
     });
+
+    if (domain.infrastructureControl) {
+      const control = domain.infrastructureControl;
+      assertNonEmptyString(control.controlPlaneURI, `domain ${domain.slug} infrastructureControl.controlPlaneURI`);
+      assertOptionalAddress(control.agentOps, `domain ${domain.slug} infrastructureControl.agentOps`);
+      assertOptionalAddress(control.dataPipeline, `domain ${domain.slug} infrastructureControl.dataPipeline`);
+      assertOptionalAddress(
+        control.credentialVerifier,
+        `domain ${domain.slug} infrastructureControl.credentialVerifier`,
+      );
+      assertOptionalAddress(
+        control.fallbackOperator,
+        `domain ${domain.slug} infrastructureControl.fallbackOperator`,
+      );
+      if (control.autopilotEnabled !== undefined && typeof control.autopilotEnabled !== 'boolean') {
+        throw new Error(`domain ${domain.slug} infrastructureControl.autopilotEnabled must be boolean.`);
+      }
+      if (control.autopilotCadence !== undefined) {
+        const cadence = toFiniteNumber(
+          control.autopilotCadence,
+          `domain ${domain.slug} infrastructureControl.autopilotCadence`,
+        );
+        if (cadence < 0) {
+          throw new Error(`domain ${domain.slug} infrastructureControl.autopilotCadence must be >= 0.`);
+        }
+        if (cadence !== 0 && cadence < 30) {
+          throw new Error(
+            `domain ${domain.slug} infrastructureControl.autopilotCadence must be 0 or >= 30 seconds.`,
+          );
+        }
+        if (control.autopilotEnabled && cadence < 30) {
+          throw new Error(
+            `domain ${domain.slug} infrastructureControl.autopilotCadence must be >= 30 seconds when autopilotEnabled is true.`,
+          );
+        }
+      } else if (control.autopilotEnabled) {
+        throw new Error(
+          `domain ${domain.slug} infrastructureControl.autopilotCadence must be provided when autopilotEnabled is true.`,
+        );
+      }
+    }
   }
 }
 
@@ -523,6 +587,18 @@ async function main(): Promise<void> {
     });
   }
 
+  if (plan.globalInfrastructure) {
+    actions.push({
+      label: `setGlobalInfrastructure → ${plan.globalInfrastructure.diffs.join(', ')}`,
+      run: async () => {
+        const tx = await manager.setGlobalInfrastructure(plan.globalInfrastructure!.config);
+        console.log(`⏳ setGlobalInfrastructure submitted: ${tx.hash}`);
+        await tx.wait();
+        console.log('✅ setGlobalInfrastructure confirmed');
+      },
+    });
+  }
+
   for (const domainPlan of plan.domains) {
     if (args.onlyDomains.size > 0 && !args.onlyDomains.has(domainPlan.slug.toLowerCase())) {
       continue;
@@ -576,6 +652,21 @@ async function main(): Promise<void> {
         console.log(`⏳ setDomainTelemetry ${telemetryPlan.slug} submitted: ${tx.hash}`);
         await tx.wait();
         console.log('✅ setDomainTelemetry confirmed');
+      },
+    });
+  }
+
+  for (const infraPlan of plan.domainInfrastructure) {
+    if (args.onlyDomains.size > 0 && !args.onlyDomains.has(infraPlan.slug.toLowerCase())) {
+      continue;
+    }
+    actions.push({
+      label: `setDomainInfrastructure(${infraPlan.slug}) → ${infraPlan.diffs.join(', ')}`,
+      run: async () => {
+        const tx = await manager.setDomainInfrastructure(infraPlan.id, infraPlan.config);
+        console.log(`⏳ setDomainInfrastructure ${infraPlan.slug} submitted: ${tx.hash}`);
+        await tx.wait();
+        console.log('✅ setDomainInfrastructure confirmed');
       },
     });
   }

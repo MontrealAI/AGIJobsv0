@@ -367,6 +367,12 @@ function getOrCreatePhase6Global(event: ethereum.Event): Phase6GlobalConfig {
     global.telemetryResilienceFloorBps = 0;
     global.telemetryAutomationFloorBps = 0;
     global.telemetryOversightWeightBps = 0;
+    global.meshCoordinator = Address.zero();
+    global.dataLake = Address.zero();
+    global.identityBridge = Address.zero();
+    global.infrastructureTopologyURI = '';
+    global.infrastructureAutopilotCadence = 0;
+    global.enforceDecentralizedInfra = false;
   }
   return global as Phase6GlobalConfig;
 }
@@ -398,6 +404,13 @@ export function handlePhase6DomainRegistered(event: ethereum.Event): void {
   domain.heartbeatSeconds = params[9].value.toBigInt().toI32();
   domain.active = params[10].value.toBoolean();
   domain.manifestURI = params[3].value.toString();
+  domain.agentOps = Address.zero();
+  domain.dataPipeline = Address.zero();
+  domain.credentialVerifier = Address.zero();
+  domain.fallbackOperator = Address.zero();
+  domain.controlPlaneURI = '';
+  domain.autopilotCadenceSeconds = 0;
+  domain.autopilotEnabled = false;
   domain.registeredAtBlock = event.block.number;
   domain.registeredAtTimestamp = event.block.timestamp;
   domain.updatedAtBlock = event.block.number;
@@ -435,6 +448,20 @@ export function handlePhase6DomainUpdated(event: ethereum.Event): void {
   domain.heartbeatSeconds = params[9].value.toBigInt().toI32();
   domain.active = params[10].value.toBoolean();
   domain.manifestURI = params[3].value.toString();
+  domain.save();
+}
+
+export function handlePhase6DomainInfrastructureUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  const id = phase6DomainId(params[0].value);
+  const domain = upsertPhase6Domain(id, event);
+  domain.agentOps = params[1].value.toAddress();
+  domain.dataPipeline = params[2].value.toAddress();
+  domain.credentialVerifier = params[3].value.toAddress();
+  domain.fallbackOperator = params[4].value.toAddress();
+  domain.controlPlaneURI = params[5].value.toString();
+  domain.autopilotCadenceSeconds = params[6].value.toBigInt().toI32();
+  domain.autopilotEnabled = params[7].value.toBoolean();
   domain.save();
 }
 
@@ -497,6 +524,20 @@ export function handlePhase6GlobalTelemetryUpdated(event: ethereum.Event): void 
   global.telemetryResilienceFloorBps = params[2].value.toI32();
   global.telemetryAutomationFloorBps = params[3].value.toI32();
   global.telemetryOversightWeightBps = params[4].value.toI32();
+  global.updatedAtBlock = event.block.number;
+  global.updatedAtTimestamp = event.block.timestamp;
+  global.save();
+}
+
+export function handlePhase6GlobalInfrastructureUpdated(event: ethereum.Event): void {
+  const params = event.parameters;
+  const global = getOrCreatePhase6Global(event);
+  global.meshCoordinator = params[0].value.toAddress();
+  global.dataLake = params[1].value.toAddress();
+  global.identityBridge = params[2].value.toAddress();
+  global.infrastructureTopologyURI = params[3].value.toString();
+  global.infrastructureAutopilotCadence = params[4].value.toBigInt().toI32();
+  global.enforceDecentralizedInfra = params[5].value.toBoolean();
   global.updatedAtBlock = event.block.number;
   global.updatedAtTimestamp = event.block.timestamp;
   global.save();

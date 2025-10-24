@@ -51,6 +51,19 @@ function telemetryStruct(overrides = {}) {
     };
 }
 
+function infrastructureStruct(overrides = {}) {
+    return {
+        agentOps: ethers.ZeroAddress,
+        dataPipeline: ethers.ZeroAddress,
+        credentialVerifier: ethers.ZeroAddress,
+        fallbackOperator: ethers.ZeroAddress,
+        controlPlaneURI: "ipfs://phase6/domains/finance/autopilot.json",
+        autopilotCadence: 180,
+        autopilotEnabled: true,
+        ...overrides,
+    };
+}
+
 describe("Phase6ExpansionManager", function () {
   let governance;
   let outsider;
@@ -313,6 +326,94 @@ describe("Phase6ExpansionManager", function () {
     expect(storedGuards.anomalyGracePeriod).to.equal(guards.anomalyGracePeriod);
     expect(storedGuards.autoPauseEnabled).to.equal(true);
     expect(storedGuards.oversightCouncil).to.equal(guards.oversightCouncil);
+  });
+
+  it("manages domain and global infrastructure wiring", async function () {
+    const config = domainStruct({ validationModule: validationStub.target });
+    await manager.connect(governance).registerDomain(config);
+    const id = await manager.domainId(config.slug);
+
+    const infrastructure = infrastructureStruct({
+      agentOps: validationStub.target,
+      dataPipeline: pauseHarness.target,
+      credentialVerifier: escalationBridge.target,
+      fallbackOperator: governance.address,
+      controlPlaneURI: "ipfs://phase6/domains/finance/infrastructure.json",
+      autopilotCadence: 240,
+    });
+
+    await expect(manager.connect(governance).setDomainInfrastructure(id, infrastructure))
+      .to.emit(manager, "DomainInfrastructureUpdated")
+      .withArgs(
+        id,
+        infrastructure.agentOps,
+        infrastructure.dataPipeline,
+        infrastructure.credentialVerifier,
+        infrastructure.fallbackOperator,
+        infrastructure.controlPlaneURI,
+        BigInt(infrastructure.autopilotCadence),
+        infrastructure.autopilotEnabled,
+      );
+
+    const storedInfra = await manager.getDomainInfrastructure(id);
+    expect(storedInfra.agentOps).to.equal(infrastructure.agentOps);
+    expect(storedInfra.controlPlaneURI).to.equal("ipfs://phase6/domains/finance/infrastructure.json");
+    expect(storedInfra.autopilotCadence).to.equal(240n);
+    expect(storedInfra.autopilotEnabled).to.equal(true);
+
+    await expect(
+      manager.connect(governance).setDomainInfrastructure(
+        id,
+        infrastructureStruct({
+          controlPlaneURI: "",
+        }),
+      ),
+    ).to.be.revertedWithCustomError(manager, "InvalidInfrastructureURI");
+
+    await expect(
+      manager.connect(governance).setDomainInfrastructure(
+        id,
+        infrastructureStruct({
+          autopilotCadence: 15,
+        }),
+      ),
+    ).to.be.revertedWithCustomError(manager, "InvalidAutopilotCadence");
+
+    const globalInfra = {
+      meshCoordinator: validationStub.target,
+      dataLake: pauseHarness.target,
+      identityBridge: escalationBridge.target,
+      topologyURI: "ipfs://phase6/topology.json",
+      autopilotCadence: 360,
+      enforceDecentralizedInfra: true,
+    };
+
+    await expect(manager.connect(governance).setGlobalInfrastructure(globalInfra))
+      .to.emit(manager, "GlobalInfrastructureUpdated")
+      .withArgs(
+        globalInfra.meshCoordinator,
+        globalInfra.dataLake,
+        globalInfra.identityBridge,
+        globalInfra.topologyURI,
+        BigInt(globalInfra.autopilotCadence),
+        globalInfra.enforceDecentralizedInfra,
+      );
+
+    const storedGlobalInfra = await manager.globalInfrastructure();
+    expect(storedGlobalInfra.meshCoordinator).to.equal(globalInfra.meshCoordinator);
+    expect(storedGlobalInfra.topologyURI).to.equal(globalInfra.topologyURI);
+    expect(storedGlobalInfra.autopilotCadence).to.equal(BigInt(globalInfra.autopilotCadence));
+
+    await expect(
+      manager.connect(governance).setGlobalInfrastructure({
+        ...globalInfra,
+        autopilotCadence: 10,
+      }),
+    ).to.be.revertedWithCustomError(manager, "InvalidAutopilotCadence");
+
+    await expect(
+      manager.connect(outsider).setDomainInfrastructure(id, infrastructure),
+    ).to.be.revertedWithCustomError(manager, "NotGovernance");
   });
 
   it("tracks telemetry for domains and global thresholds", async function () {

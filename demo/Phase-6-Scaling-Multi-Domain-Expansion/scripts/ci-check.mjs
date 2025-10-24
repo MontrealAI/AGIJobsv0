@@ -118,6 +118,35 @@ if (!globalTelemetry || typeof globalTelemetry !== 'object') {
   }
 });
 
+const globalInfrastructure = config.global.infrastructure;
+if (!globalInfrastructure || typeof globalInfrastructure !== 'object') {
+  fail('Global infrastructure configuration is required.');
+}
+['meshCoordinator', 'dataLake', 'identityBridge'].forEach((field) => {
+  const value = globalInfrastructure[field];
+  if (!value || typeof value !== 'string' || !addressPattern.test(value) || /^0x0{40}$/i.test(value)) {
+    fail(`global.infrastructure.${field} must be a non-zero 0x-prefixed address.`);
+  }
+});
+if (!globalInfrastructure.topologyURI || typeof globalInfrastructure.topologyURI !== 'string') {
+  fail('global.infrastructure.topologyURI must be a non-empty string.');
+}
+if (
+  typeof globalInfrastructure.autopilotCadence !== 'number' ||
+  globalInfrastructure.autopilotCadence < 0
+) {
+  fail('global.infrastructure.autopilotCadence must be a non-negative number.');
+}
+if (
+  globalInfrastructure.autopilotCadence !== 0 &&
+  globalInfrastructure.autopilotCadence < 30
+) {
+  fail('global.infrastructure.autopilotCadence must be 0 or >= 30 seconds.');
+}
+if (typeof globalInfrastructure.enforceDecentralizedInfra !== 'boolean') {
+  fail('global.infrastructure.enforceDecentralizedInfra must be boolean.');
+}
+
 if (!Array.isArray(config.domains) || config.domains.length === 0) {
   fail('At least one domain must be configured.');
 }
@@ -251,6 +280,46 @@ config.domains.forEach((domain, idx) => {
       }
     });
   });
+
+  if (!domain.infrastructureControl || typeof domain.infrastructureControl !== 'object') {
+    fail(`${context}: infrastructureControl configuration is required.`);
+  }
+
+  const control = domain.infrastructureControl;
+  if (
+    !control.controlPlaneURI ||
+    typeof control.controlPlaneURI !== 'string' ||
+    control.controlPlaneURI.trim().length === 0
+  ) {
+    fail(`${context}: infrastructureControl.controlPlaneURI must be a non-empty string.`);
+  }
+
+  ['agentOps', 'dataPipeline', 'credentialVerifier', 'fallbackOperator'].forEach((field) => {
+    const value = control[field];
+    if (value === undefined || value === null || value === '') {
+      return;
+    }
+    if (typeof value !== 'string' || !addressPattern.test(value) || /^0x0{40}$/i.test(value)) {
+      fail(`${context}: infrastructureControl.${field} must be a valid 0x-prefixed address when provided.`);
+    }
+  });
+
+  if (control.autopilotEnabled !== undefined && typeof control.autopilotEnabled !== 'boolean') {
+    fail(`${context}: infrastructureControl.autopilotEnabled must be boolean when provided.`);
+  }
+
+  if (control.autopilotCadence !== undefined) {
+    const cadence = Number(control.autopilotCadence);
+    if (!Number.isFinite(cadence)) {
+      fail(`${context}: infrastructureControl.autopilotCadence must be a finite number.`);
+    }
+    if (cadence < 0) {
+      fail(`${context}: infrastructureControl.autopilotCadence must be >= 0.`);
+    }
+    if (cadence !== 0 && cadence < 30) {
+      fail(`${context}: infrastructureControl.autopilotCadence must be 0 or >= 30 seconds.`);
+    }
+  }
 });
 
 if (!html.includes('mermaid')) {

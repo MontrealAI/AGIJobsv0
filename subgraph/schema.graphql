@@ -94,6 +94,13 @@ type Phase6Domain @entity {
   heartbeatSeconds: Int!
   active: Boolean!
   manifestURI: String!
+  agentOps: Bytes
+  dataPipeline: Bytes
+  credentialVerifier: Bytes
+  fallbackOperator: Bytes
+  controlPlaneURI: String!
+  autopilotCadenceSeconds: Int!
+  autopilotEnabled: Boolean!
   registeredAtBlock: BigInt!
   registeredAtTimestamp: BigInt!
   updatedAtBlock: BigInt!
@@ -143,4 +150,10 @@ type Phase6GlobalConfig @entity {
   telemetryResilienceFloorBps: Int!
   telemetryAutomationFloorBps: Int!
   telemetryOversightWeightBps: Int!
+  meshCoordinator: Bytes
+  dataLake: Bytes
+  identityBridge: Bytes
+  infrastructureTopologyURI: String!
+  infrastructureAutopilotCadence: Int!
+  enforceDecentralizedInfra: Boolean!
 }

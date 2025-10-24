@@ -75,6 +75,14 @@ export interface Phase6DemoConfig {
       automationFloorBps: number;
       oversightWeightBps: number;
     };
+    infrastructure?: {
+      meshCoordinator?: string;
+      dataLake?: string;
+      identityBridge?: string;
+      topologyURI: string;
+      autopilotCadence?: number;
+      enforceDecentralizedInfra?: boolean;
+    };
   };
   domains: Array<{
     slug: string;
@@ -93,6 +101,15 @@ export interface Phase6DemoConfig {
     priority?: number;
     metadata?: DomainMetadataConfig;
     infrastructure?: DomainInfrastructureEntry[];
+    infrastructureControl?: {
+      agentOps?: string;
+      dataPipeline?: string;
+      credentialVerifier?: string;
+      fallbackOperator?: string;
+      controlPlaneURI: string;
+      autopilotCadence?: number;
+      autopilotEnabled?: boolean;
+    };
   }>;
 }
 
@@ -141,11 +158,21 @@ export interface DomainBlueprint {
     raw: Record<string, unknown>;
   };
   infrastructure: DomainInfrastructureEntry[];
+  infrastructureControl: {
+    agentOps: string | null;
+    dataPipeline: string | null;
+    credentialVerifier: string | null;
+    fallbackOperator: string | null;
+    controlPlaneURI: string;
+    autopilotCadenceSeconds: number;
+    autopilotEnabled: boolean;
+  };
   calldata: {
     registerDomain: string;
     updateDomain: string;
     setDomainOperations: string;
     setDomainTelemetry: string;
+    setDomainInfrastructure?: string;
   };
 }
 
@@ -168,6 +195,8 @@ export interface Phase6Blueprint {
     sentinelFamilies: number;
     globalInfraCount: number;
     domainInfraCount: number;
+    autopilotEnabledCount: number;
+    autopilotCoverage: number;
   };
   global: {
     manifestURI: string;
@@ -178,6 +207,12 @@ export interface Phase6Blueprint {
     systemPause: string | null;
     escalationBridge: string | null;
     l2SyncCadenceSeconds: number;
+    meshCoordinator: string | null;
+    dataLake: string | null;
+    identityBridge: string | null;
+    topologyURI: string | null;
+    autopilotCadenceSeconds: number;
+    enforceDecentralizedInfra: boolean;
   };
   guards: {
     treasuryBufferBps: number;
@@ -201,6 +236,7 @@ export interface Phase6Blueprint {
     globalConfig: string;
     globalGuards: string;
     globalTelemetry: string;
+    globalInfrastructure?: string;
     systemPause?: string;
     escalationBridge?: string;
   };
@@ -215,12 +251,14 @@ export const ABI_FRAGMENTS = [
   'function setGlobalConfig((address,address,address,address,uint64,string) config)',
   'function setGlobalGuards((uint16,uint16,uint32,bool,address) config)',
   'function setGlobalTelemetry((bytes32,bytes32,uint32,uint32,uint32) telemetry)',
+  'function setGlobalInfrastructure((address,address,address,string,uint64,bool) infrastructure)',
   'function setSystemPause(address newPause)',
   'function setEscalationBridge(address newBridge)',
   'function registerDomain((string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
   'function updateDomain(bytes32 id,(string slug,string name,string metadataURI,address validationModule,address dataOracle,address l2Gateway,string subgraphEndpoint,address executionRouter,uint64 heartbeatSeconds,bool active) config)',
   'function setDomainOperations(bytes32 id,(uint48 maxActiveJobs,uint48 maxQueueDepth,uint96 minStake,uint16 treasuryShareBps,uint16 circuitBreakerBps,bool requiresHumanValidation) config)',
   'function setDomainTelemetry(bytes32 id,(uint32,uint32,uint32,uint32,bool,address,address,bytes32,bytes32) telemetry)',
+  'function setDomainInfrastructure(bytes32 id,(address,address,address,address,string,uint64,bool) infrastructure)',
 ];
 
 const ABI_INTERFACE = new Interface(ABI_FRAGMENTS);
@@ -277,6 +315,7 @@ function computeMetrics(config: Phase6DemoConfig) {
   const sentinels = new Set<string>();
   let l2Settlements = 0;
   let totalValueFlow = 0;
+  let autopilotEnabled = 0;
 
   for (const domain of config.domains) {
     const metadata = domain.metadata;
@@ -312,6 +351,9 @@ function computeMetrics(config: Phase6DemoConfig) {
         l2Settlements += 1;
       }
     }
+    if (domain.infrastructureControl?.autopilotEnabled) {
+      autopilotEnabled += 1;
+    }
   }
 
   const average = (values: number[]): number | undefined => {
@@ -335,6 +377,8 @@ function computeMetrics(config: Phase6DemoConfig) {
       (acc, domain) => acc + ensureArray(domain.infrastructure).length,
       0,
     ),
+    autopilotEnabledCount: autopilotEnabled,
+    autopilotCoverage: config.domains.length ? autopilotEnabled / config.domains.length : 0,
   };
 }
 
@@ -396,7 +440,18 @@ function buildDomainTuples(domain: Phase6DemoConfig['domains'][number]) {
       : ZERO_BYTES32,
   ];
 
-  return { tuple, opsTuple, telemetryTuple };
+  const control = domain.infrastructureControl;
+  const infraTuple = [
+    control?.agentOps ?? ZERO_ADDRESS,
+    control?.dataPipeline ?? ZERO_ADDRESS,
+    control?.credentialVerifier ?? ZERO_ADDRESS,
+    control?.fallbackOperator ?? ZERO_ADDRESS,
+    control?.controlPlaneURI ?? domain.manifestURI,
+    BigInt(Math.trunc(Number(control?.autopilotCadence ?? 0))),
+    Boolean(control?.autopilotEnabled ?? false),
+  ];
+
+  return { tuple, opsTuple, telemetryTuple, infraTuple };
 }
 
 export function loadPhase6Config(path: string): Phase6DemoConfig {
@@ -421,6 +476,7 @@ export function buildPhase6Blueprint(
   };
 
   const globalTelemetry = config.global.telemetry ?? null;
+  const globalInfrastructure = config.global.infrastructure ?? null;
 
   const globalTuple = [
     config.global.iotOracleRouter ?? ZERO_ADDRESS,
@@ -447,12 +503,22 @@ export function buildPhase6Blueprint(
     Number(globalTelemetry?.oversightWeightBps ?? 0),
   ];
 
+  const globalInfraTuple = [
+    globalInfrastructure?.meshCoordinator ?? ZERO_ADDRESS,
+    globalInfrastructure?.dataLake ?? ZERO_ADDRESS,
+    globalInfrastructure?.identityBridge ?? ZERO_ADDRESS,
+    globalInfrastructure?.topologyURI ?? config.global.manifestURI,
+    BigInt(Math.trunc(Number(globalInfrastructure?.autopilotCadence ?? 0))),
+    Boolean(globalInfrastructure?.enforceDecentralizedInfra ?? false),
+  ];
+
   const domains: DomainBlueprint[] = config.domains.map((domain) => {
     const domainId = keccak256(toUtf8Bytes(String(domain.slug).toLowerCase()));
     const tuples = buildDomainTuples(domain);
     const metadata = domain.metadata ?? ({} as DomainMetadataConfig);
     const telemetry = domain.telemetry ?? ({} as DomainTelemetryConfig);
     const operations = domain.operations ?? ({} as DomainOperationsConfig);
+    const control = domain.infrastructureControl;
 
     return {
       slug: domain.slug,
@@ -501,11 +567,24 @@ export function buildPhase6Blueprint(
         raw: metadata as Record<string, unknown>,
       },
       infrastructure: ensureArray(domain.infrastructure),
+      infrastructureControl: {
+        agentOps: normaliseAddress(control?.agentOps),
+        dataPipeline: normaliseAddress(control?.dataPipeline),
+        credentialVerifier: normaliseAddress(control?.credentialVerifier),
+        fallbackOperator: normaliseAddress(control?.fallbackOperator),
+        controlPlaneURI: control?.controlPlaneURI ?? domain.manifestURI,
+        autopilotCadenceSeconds: Number(control?.autopilotCadence ?? 0),
+        autopilotEnabled: Boolean(control?.autopilotEnabled ?? false),
+      },
       calldata: {
         registerDomain: ABI_INTERFACE.encodeFunctionData('registerDomain', [tuples.tuple]),
         updateDomain: ABI_INTERFACE.encodeFunctionData('updateDomain', [domainId, tuples.tuple]),
         setDomainOperations: ABI_INTERFACE.encodeFunctionData('setDomainOperations', [domainId, tuples.opsTuple]),
         setDomainTelemetry: ABI_INTERFACE.encodeFunctionData('setDomainTelemetry', [domainId, tuples.telemetryTuple]),
+        setDomainInfrastructure: ABI_INTERFACE.encodeFunctionData(
+          'setDomainInfrastructure',
+          [domainId, tuples.infraTuple],
+        ),
       },
     };
   });
@@ -520,6 +599,9 @@ export function buildPhase6Blueprint(
     globalConfig: ABI_INTERFACE.encodeFunctionData('setGlobalConfig', [globalTuple]),
     globalGuards: ABI_INTERFACE.encodeFunctionData('setGlobalGuards', [guardTuple]),
     globalTelemetry: ABI_INTERFACE.encodeFunctionData('setGlobalTelemetry', [telemetryTuple]),
+    globalInfrastructure: globalInfrastructure
+      ? ABI_INTERFACE.encodeFunctionData('setGlobalInfrastructure', [globalInfraTuple])
+      : undefined,
     systemPause: config.global.systemPause
       ? ABI_INTERFACE.encodeFunctionData('setSystemPause', [config.global.systemPause])
       : undefined,
@@ -544,6 +626,12 @@ export function buildPhase6Blueprint(
       systemPause: normaliseAddress(config.global.systemPause),
       escalationBridge: normaliseAddress(config.global.escalationBridge),
       l2SyncCadenceSeconds: Number(config.global.l2SyncCadence ?? 0),
+      meshCoordinator: normaliseAddress(globalInfrastructure?.meshCoordinator),
+      dataLake: normaliseAddress(globalInfrastructure?.dataLake),
+      identityBridge: normaliseAddress(globalInfrastructure?.identityBridge),
+      topologyURI: globalInfrastructure?.topologyURI ?? null,
+      autopilotCadenceSeconds: Number(globalInfrastructure?.autopilotCadence ?? 0),
+      enforceDecentralizedInfra: Boolean(globalInfrastructure?.enforceDecentralizedInfra ?? false),
     },
     guards: {
       treasuryBufferBps: Number(globalGuards.treasuryBufferBps ?? 0),

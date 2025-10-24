@@ -267,6 +267,22 @@
         return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
       }
 
+      function formatCadence(value) {
+        if (value === undefined || value === null || Number.isNaN(Number(value))) {
+          return '—';
+        }
+        if (Number(value) === 0) {
+          return 'manual';
+        }
+        return `${value}s`;
+      }
+
+      function formatAutopilot(control = {}) {
+        const enabled = Boolean(control.autopilotEnabled);
+        const cadence = formatCadence(control.autopilotCadence);
+        return `${enabled ? 'enabled' : 'standby'} @ ${cadence}`;
+      }
+
       function heartbeatSummary(domain, global) {
         const cadence = Math.max(domain.heartbeatSeconds ?? 0, global.l2SyncCadence ?? 0);
         return `${cadence}s sync cadence (domain ${domain.heartbeatSeconds}s, global ${global.l2SyncCadence}s)`;
@@ -318,6 +334,21 @@
           telemetry.settlementAsset ?? zeroAddress,
           toBytes32(telemetry.metricsDigest),
           toBytes32(telemetry.manifestHash),
+        ];
+      }
+
+      function buildDomainInfrastructureTuple(domain) {
+        const control = domain.infrastructureControl ?? {};
+        const cadence = Number(control.autopilotCadence ?? 0);
+        const safeCadence = Number.isFinite(cadence) ? Math.trunc(cadence) : 0;
+        return [
+          control.agentOps ?? zeroAddress,
+          control.dataPipeline ?? zeroAddress,
+          control.credentialVerifier ?? zeroAddress,
+          control.fallbackOperator ?? zeroAddress,
+          control.controlPlaneURI ?? domain.manifestURI,
+          BigInt(safeCadence),
+          Boolean(control.autopilotEnabled ?? false),
         ];
       }
 
@@ -414,6 +445,10 @@
             : null,
           averageLatency: latency.length ? latency.reduce((acc, cur) => acc + cur, 0) / latency.length : null,
           l2Coverage: config.domains.length ? l2Coverage / config.domains.length : 0,
+          autopilotEnabled: config.domains.reduce(
+            (acc, domain) => (domain.infrastructureControl?.autopilotEnabled ? acc + 1 : acc),
+            0,
+          ),
         };
       }
 
@@ -421,6 +456,7 @@
         const target = document.getElementById('global-summary');
         target.innerHTML = '';
         const telemetry = config.global.telemetry || {};
+        const infra = config.global.infrastructure || {};
         const items = [
           `Global manifest: ${config.global.manifestURI}`,
           `IoT oracle router: ${formatAddress(config.global.iotOracleRouter)}`,
@@ -430,6 +466,15 @@
           `System pause: ${formatAddress(config.global.systemPause)}`,
           `Escalation bridge: ${formatAddress(config.global.escalationBridge)}`,
           `Network cadence baseline: ${config.global.l2SyncCadence}s`,
+          `Mesh coordinator: ${formatAddress(infra.meshCoordinator)}`,
+          `Data lake: ${formatAddress(infra.dataLake)}`,
+          `Identity bridge: ${formatAddress(infra.identityBridge)}`,
+          `Infra topology: ${infra.topologyURI ?? '—'}`,
+          `Infra autopilot: ${formatAutopilot({
+            autopilotEnabled: Number(infra.autopilotCadence ?? 0) > 0,
+            autopilotCadence: infra.autopilotCadence,
+          })}`,
+          `Infra enforcement: ${infra.enforceDecentralizedInfra ? 'enforced' : 'advisory'}`,
           `Treasury buffer: ${formatBps(config.global.guards?.treasuryBufferBps)}`,
           `Circuit breaker: ${formatBps(config.global.guards?.circuitBreakerBps)}`,
           `Anomaly grace: ${config.global.guards?.anomalyGracePeriod ?? '—'}s`,
@@ -470,6 +515,13 @@
             items.push(`Monthly value flow across domains: ${formatUSD(totalValueFlow)}`);
           }
           items.push(`Active sentinels: ${sentinelCount}`);
+          if (config.domains.length) {
+            items.push(
+              `Autopilot coverage: ${(
+                (state.metrics.autopilotEnabled / config.domains.length) * 100
+              ).toFixed(1)}% (${state.metrics.autopilotEnabled}/${config.domains.length} domains)`,
+            );
+          }
         }
         items.forEach((text) => {
           const span = document.createElement('span');
@@ -503,6 +555,7 @@
           metrics.className = 'metrics';
           const metadata = domain.metadata || {};
           const telemetry = domain.telemetry || {};
+          const control = domain.infrastructureControl || {};
           const resilience = metadata.resilienceIndex !== undefined ? Number(metadata.resilienceIndex).toFixed(3) : '—';
           metrics.innerHTML = `
             <span>Manifest URI: ${domain.manifestURI}</span>
@@ -529,6 +582,12 @@
             <span>Settlement latency: ${telemetry.settlementLatencySeconds ?? '—'}s (L2 ${telemetry.usesL2Settlement ? 'enabled' : 'disabled'})</span>
             <span>Telemetry metrics digest: ${telemetry.metricsDigest ?? '—'}</span>
             <span>Telemetry manifest hash: ${telemetry.manifestHash ?? '—'}</span>
+            <span>Agent ops coordinator: ${formatAddress(control.agentOps)}</span>
+            <span>Data pipeline: ${formatAddress(control.dataPipeline)}</span>
+            <span>Credential verifier: ${formatAddress(control.credentialVerifier)}</span>
+            <span>Fallback operator: ${formatAddress(control.fallbackOperator)}</span>
+            <span>Control plane URI: ${control.controlPlaneURI ?? '—'}</span>
+            <span>Autopilot posture: ${formatAutopilot(control)}</span>
           `;
           card.appendChild(metrics);
           grid.appendChild(card);
@@ -543,6 +602,7 @@
           div.className = 'domain-card';
           const metadata = domain.metadata || {};
           const telemetry = domain.telemetry || {};
+          const control = domain.infrastructureControl || {};
           const bridge = {
             domain: domain.slug,
             l2Gateway: domain.l2Gateway || config.global.defaultL2Gateway,
@@ -557,6 +617,9 @@
             telemetryCompliance: telemetry.complianceBps ?? null,
             settlementLatency: telemetry.settlementLatencySeconds ?? null,
             usesL2: telemetry.usesL2Settlement ?? false,
+            autopilot: formatAutopilot(control),
+            controlPlane: control.controlPlaneURI ?? '—',
+            agentOps: formatAddress(control.agentOps),
           };
           div.innerHTML = `
             <h3>${domain.name}</h3>
@@ -575,6 +638,9 @@
               <span>Telemetry automation: ${bridge.telemetryAutomation !== null ? formatBps(Number(bridge.telemetryAutomation)) : '—'}</span>
               <span>Telemetry compliance: ${bridge.telemetryCompliance !== null ? formatBps(Number(bridge.telemetryCompliance)) : '—'}</span>
               <span>Settlement latency: ${bridge.settlementLatency ?? '—'}s (L2 ${bridge.usesL2 ? 'enabled' : 'disabled'})</span>
+              <span>Agent ops coordinator: ${bridge.agentOps}</span>
+              <span>Control plane: ${bridge.controlPlane}</span>
+              <span>Autopilot posture: ${bridge.autopilot}</span>
             </div>
           `;
           grid.appendChild(div);
@@ -625,6 +691,18 @@
           Number(config.global.telemetry?.automationFloorBps ?? 0),
           Number(config.global.telemetry?.oversightWeightBps ?? 0),
         ];
+        const infrastructureTuple = config.global.infrastructure
+          ? [
+              config.global.infrastructure.meshCoordinator ?? zeroAddress,
+              config.global.infrastructure.dataLake ?? zeroAddress,
+              config.global.infrastructure.identityBridge ?? zeroAddress,
+              config.global.infrastructure.topologyURI ?? config.global.manifestURI,
+              BigInt(Number.isFinite(Number(config.global.infrastructure.autopilotCadence))
+                ? Math.trunc(Number(config.global.infrastructure.autopilotCadence))
+                : 0),
+              Boolean(config.global.infrastructure.enforceDecentralizedInfra ?? false),
+            ]
+          : null;
         calldata.push({
           label: 'setGlobalConfig(GlobalConfig)',
           data: iface.encodeFunctionData('setGlobalConfig', [globalTuple]),
@@ -637,6 +715,12 @@
           label: 'setGlobalTelemetry(GlobalTelemetry)',
           data: iface.encodeFunctionData('setGlobalTelemetry', [telemetryTuple]),
         });
+        if (infrastructureTuple) {
+          calldata.push({
+            label: 'setGlobalInfrastructure(GlobalInfrastructure)',
+            data: iface.encodeFunctionData('setGlobalInfrastructure', [infrastructureTuple]),
+          });
+        }
         if (config.global.systemPause && config.global.systemPause !== zeroAddress) {
           calldata.push({
             label: 'setSystemPause(address)',
@@ -654,6 +738,7 @@
           const domainId = keccak256(toUtf8Bytes(domain.slug.toLowerCase()));
           const opsTuple = buildDomainOperationsTuple(domain);
           const telemetryTupleDomain = buildDomainTelemetryTuple(domain);
+          const infraTuple = buildDomainInfrastructureTuple(domain);
           calldata.push({
             label: `registerDomain(${domain.slug})`,
             data: iface.encodeFunctionData('registerDomain', [tuple]),
@@ -672,6 +757,10 @@
           calldata.push({
             label: `setDomainTelemetry(${domain.slug})`,
             data: iface.encodeFunctionData('setDomainTelemetry', [domainId, telemetryTupleDomain]),
+          });
+          calldata.push({
+            label: `setDomainInfrastructure(${domain.slug})`,
+            data: iface.encodeFunctionData('setDomainInfrastructure', [domainId, infraTuple]),
           });
         });
         state.calldata = calldata;
@@ -717,11 +806,21 @@
         const globalCard = document.createElement('div');
         globalCard.className = 'domain-card';
         const globalIntegrations = config.global.decentralizedInfra || [];
+        const globalControl = config.global.infrastructure || {};
         globalCard.innerHTML = `
           <h3>Global control mesh</h3>
           <div class="metrics">
             <span>Total integrations: ${globalIntegrations.length}</span>
             <span>Manifest anchor: ${config.global.manifestURI}</span>
+            <span>Mesh coordinator: ${formatAddress(globalControl.meshCoordinator)}</span>
+            <span>Data lake: ${formatAddress(globalControl.dataLake)}</span>
+            <span>Identity bridge: ${formatAddress(globalControl.identityBridge)}</span>
+            <span>Control plane: ${globalControl.topologyURI ?? '—'}</span>
+            <span>Autopilot posture: ${formatAutopilot({
+              autopilotEnabled: Number(globalControl.autopilotCadence ?? 0) > 0,
+              autopilotCadence: globalControl.autopilotCadence,
+            })}</span>
+            <span>Infra enforcement: ${globalControl.enforceDecentralizedInfra ? 'enforced' : 'advisory'}</span>
           </div>
         `;
         const globalList = document.createElement('ul');
@@ -738,7 +837,18 @@
         config.domains.forEach((domain) => {
           const card = document.createElement('div');
           card.className = 'domain-card';
-          card.innerHTML = `<h3>${domain.name}</h3>`;
+          const control = domain.infrastructureControl || {};
+          card.innerHTML = `
+            <h3>${domain.name}</h3>
+            <div class="metrics">
+              <span>Control plane: ${control.controlPlaneURI ?? '—'}</span>
+              <span>Autopilot posture: ${formatAutopilot(control)}</span>
+              <span>Agent ops: ${formatAddress(control.agentOps)}</span>
+              <span>Data pipeline: ${formatAddress(control.dataPipeline)}</span>
+              <span>Credential verifier: ${formatAddress(control.credentialVerifier)}</span>
+              <span>Fallback operator: ${formatAddress(control.fallbackOperator)}</span>
+            </div>
+          `;
           const list = document.createElement('ul');
           list.className = 'mesh-list';
           domain.infrastructure.forEach((entry, idx) => {
