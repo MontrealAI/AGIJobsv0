@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "[githook] Running Prettier check"
+npm run format:check
+
+echo "[githook] Running lint suite"
+npm run lint:ci

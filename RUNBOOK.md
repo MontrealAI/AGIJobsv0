@@ -116,3 +116,44 @@ committee stakes or modifying fee distribution):
 Maintaining these procedures ensures rapid containment of slashing anomalies
 while keeping governance parameters aligned with production requirements.
 
+
+## 6. Phase 8 readiness validation
+
+The Phase 8 control room is now a required release gate. Use the CI harness to
+rerun the validations locally whenever Phase 8 files change or when CI
+reports a regression.
+
+1. **Execute the readiness suite.** From the repository root run:
+
+   ```bash
+   npm run demo:phase8:ci
+   ```
+
+   The script mirrors the `ci (v2) / Phase 8 readiness` job. It validates the
+   manifest schema, README heading order, UI markers in `index.html`, and the
+   exported plan/checksum artifacts under `demo/Phase-8-Universal-Value-
+   Dominance/output/`.
+
+2. **Interpret failures quickly.** The output highlights the failing guardrail:
+
+   * `README missing required heading` – the operator guide lost a mandated
+     section or the headings are out of order. Restore the canonical structure
+     so non-technical maintainers can follow the hand-off checklist.
+   * `index.html missing required UI marker` – the dashboard dropped a `data-
+     test-id` hook, orchestration download link, or the mermaid placeholder.
+     Reintroduce the markup to keep automated smoke tests stable.
+   * `Manifest planHash does not match exported plan JSON` (or cadence/URI
+     mismatches) – rerun `npm run demo:phase8:orchestrate` to regenerate the
+     plan export and commit the refreshed files so CI and on-call operators see
+     the same checksum.
+   * Schema errors (duplicate slugs, missing sentinel coverage) map directly to
+     the offending path in `config/universal.value.manifest.json`. Fix the data
+     and rerun the command until it reports ✅.
+
+3. **Escalate stubborn issues.** If the suite passes locally but fails in CI,
+   clear `~/.npm` (or rerun with `DEBUG=phase8`), then attach the transcript to
+   the incident log. The CI summary gate blocks merges until this job is green.
+
+Keeping this drill documented ensures responders can refresh the checks during
+incident response or after large merges without waiting for the remote
+workflow.
