@@ -8,15 +8,219 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Interface, keccak256, toUtf8Bytes } from "ethers";
+import { z, ZodError } from "zod";
 
 const CONFIG_PATH = join(__dirname, "..", "config", "universal.value.manifest.json");
 const OUTPUT_DIR = join(__dirname, "..", "output");
-const ENV_CHAIN_ID = Number(process.env.PHASE8_CHAIN_ID ?? "1");
-const DEFAULT_CHAIN_ID = Number.isFinite(ENV_CHAIN_ID) && ENV_CHAIN_ID > 0 ? ENV_CHAIN_ID : 1;
-const ENV_MANAGER = process.env.PHASE8_MANAGER_ADDRESS ?? "";
-const MANAGER_ADDRESS = /^0x[a-fA-F0-9]{40}$/.test(ENV_MANAGER)
-  ? ENV_MANAGER.toLowerCase()
-  : "0x0000000000000000000000000000000000000000";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+const AddressSchema = z
+  .string({ invalid_type_error: "Address must be provided as a string" })
+  .regex(/^0x[a-fA-F0-9]{40}$/, "Must be a valid 20-byte hex address")
+  .transform((value) => value.toLowerCase());
+
+const BigNumberishSchema = z
+  .union([z.string(), z.number(), z.bigint(), z.undefined(), z.null()])
+  .transform((value) => {
+    if (value === undefined || value === null) return "0";
+    if (typeof value === "bigint") return value.toString();
+    if (typeof value === "number") {
+      if (!Number.isFinite(value) || value < 0) {
+        throw new Error("BigInt fields must be finite and non-negative");
+      }
+      return Math.trunc(value).toString();
+    }
+    if (typeof value !== "string") {
+      throw new Error("BigInt fields must be provided as a string, number, or bigint");
+    }
+    const trimmed = value.trim();
+    if (trimmed === "") return "0";
+    if (!/^\d+$/.test(trimmed)) {
+      throw new Error("BigInt fields must be provided as a base-10 string");
+    }
+    return trimmed;
+  });
+
+const ChainIdSchema = z
+  .preprocess((value) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (typeof value === "bigint") return Number(value);
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed === "") return undefined;
+      const parsed = Number(trimmed);
+      return Number.isFinite(parsed) ? parsed : trimmed;
+    }
+    return value;
+  }, z
+    .number({ invalid_type_error: "Chain ID must be a number" })
+    .int("Chain ID must be a whole number")
+    .positive("Chain ID must be positive")
+    .optional())
+  .default(1);
+
+const EnvironmentSchema = z
+  .object({
+    chainId: ChainIdSchema,
+    managerAddress: z
+      .union([z.string(), z.undefined(), z.null()])
+      .transform((value) => {
+        if (value === undefined || value === null || value === "") return ZERO_ADDRESS;
+        return value;
+      })
+      .refine((value) => /^0x[a-fA-F0-9]{40}$/.test(value), {
+        message: "Manager address must be a valid 20-byte hex string",
+      })
+      .transform((value) => value.toLowerCase()),
+  })
+  .transform((value) => ({
+    chainId: value.chainId,
+    managerAddress: value.managerAddress,
+  }));
+
+const DomainSchema = z.object({
+  slug: z.string({ required_error: "Domain slug is required" }).min(1, "Domain slug is required"),
+  name: z.string({ required_error: "Domain name is required" }).min(1, "Domain name is required"),
+  metadataURI: z.string({ required_error: "Domain metadataURI is required" }).min(1, "Domain metadataURI is required"),
+  orchestrator: AddressSchema,
+  capitalVault: AddressSchema,
+  validatorModule: AddressSchema,
+  policyKernel: AddressSchema,
+  heartbeatSeconds: z
+    .number({ invalid_type_error: "Domain heartbeatSeconds must be a number" })
+    .int("Domain heartbeatSeconds must be an integer")
+    .positive("Domain heartbeatSeconds must be positive"),
+  tvlLimit: BigNumberishSchema,
+  autonomyLevelBps: z
+    .number({ invalid_type_error: "Domain autonomyLevelBps must be a number" })
+    .int("Domain autonomyLevelBps must be an integer")
+    .nonnegative("Domain autonomyLevelBps cannot be negative"),
+  skillTags: z.array(z.string()).default([]),
+  resilienceIndex: z
+    .number({ invalid_type_error: "Domain resilienceIndex must be a number" })
+    .min(0, "Domain resilienceIndex cannot be negative"),
+  valueFlowMonthlyUSD: z
+    .number({ invalid_type_error: "Domain valueFlowMonthlyUSD must be a number" })
+    .nonnegative("Domain valueFlowMonthlyUSD cannot be negative")
+    .default(0),
+  autonomyNarrative: z.string().optional(),
+  active: z.boolean().default(true),
+});
+
+const SentinelSchema = z.object({
+  slug: z.string({ required_error: "Sentinel slug is required" }).min(1, "Sentinel slug is required"),
+  name: z.string({ required_error: "Sentinel name is required" }).min(1, "Sentinel name is required"),
+  uri: z.string({ required_error: "Sentinel uri is required" }).min(1, "Sentinel uri is required"),
+  agent: AddressSchema,
+  coverageSeconds: z
+    .number({ invalid_type_error: "Sentinel coverageSeconds must be a number" })
+    .int("Sentinel coverageSeconds must be an integer")
+    .positive("Sentinel coverageSeconds must be positive"),
+  sensitivityBps: z
+    .number({ invalid_type_error: "Sentinel sensitivityBps must be a number" })
+    .int("Sentinel sensitivityBps must be an integer")
+    .nonnegative("Sentinel sensitivityBps cannot be negative"),
+  domains: z.array(z.string()).default([]),
+  active: z.boolean().default(true),
+});
+
+const StreamSchema = z.object({
+  slug: z.string({ required_error: "Capital stream slug is required" }).min(1, "Capital stream slug is required"),
+  name: z.string({ required_error: "Capital stream name is required" }).min(1, "Capital stream name is required"),
+  uri: z.string({ required_error: "Capital stream uri is required" }).min(1, "Capital stream uri is required"),
+  vault: AddressSchema,
+  annualBudget: z
+    .number({ invalid_type_error: "Capital stream annualBudget must be a number" })
+    .nonnegative("Capital stream annualBudget cannot be negative")
+    .default(0),
+  expansionBps: z
+    .number({ invalid_type_error: "Capital stream expansionBps must be a number" })
+    .int("Capital stream expansionBps must be an integer")
+    .nonnegative("Capital stream expansionBps cannot be negative"),
+  domains: z.array(z.string()).default([]),
+  active: z.boolean().default(true),
+});
+
+const SelfImprovementSchema = z.object({
+  plan: z
+    .object({
+      planURI: z.string({ required_error: "Self-improvement planURI is required" }).min(1, "Self-improvement planURI is required"),
+      planHash: z
+        .string({ required_error: "Self-improvement planHash is required" })
+        .regex(/^0x[a-fA-F0-9]{64}$/, "Self-improvement planHash must be a 32-byte hex value"),
+      cadenceSeconds: z
+        .number({ invalid_type_error: "Self-improvement cadenceSeconds must be a number" })
+        .int("Self-improvement cadenceSeconds must be an integer")
+        .positive("Self-improvement cadenceSeconds must be positive"),
+      lastExecutedAt: z
+        .number({ invalid_type_error: "Self-improvement lastExecutedAt must be a number" })
+        .int("Self-improvement lastExecutedAt must be an integer")
+        .nonnegative("Self-improvement lastExecutedAt cannot be negative")
+        .optional(),
+      lastReportURI: z.string().optional(),
+    })
+    .optional(),
+  playbooks: z
+    .array(
+      z.object({
+        name: z.string({ required_error: "Playbook name is required" }).min(1, "Playbook name is required"),
+        description: z.string({ required_error: "Playbook description is required" }).min(1, "Playbook description is required"),
+        owner: AddressSchema,
+        automation: z.string({ required_error: "Playbook automation cadence is required" }).min(1, "Playbook automation cadence is required"),
+        guardrails: z.array(z.string()).default([]),
+      })
+    )
+    .default([]),
+  autonomyGuards: z
+    .object({
+      maxAutonomyBps: z
+        .number({ invalid_type_error: "Autonomy guard maxAutonomyBps must be a number" })
+        .int("Autonomy guard maxAutonomyBps must be an integer")
+        .nonnegative("Autonomy guard maxAutonomyBps cannot be negative"),
+      humanOverrideMinutes: z
+        .number({ invalid_type_error: "Autonomy guard humanOverrideMinutes must be a number" })
+        .int("Autonomy guard humanOverrideMinutes must be an integer")
+        .nonnegative("Autonomy guard humanOverrideMinutes cannot be negative"),
+      pausable: z.boolean().default(false),
+      escalationChannels: z.array(z.string()).default([]),
+    })
+    .optional(),
+});
+
+const ManifestSchema = z.object({
+  global: z.object({
+    treasury: AddressSchema,
+    universalVault: AddressSchema,
+    upgradeCoordinator: AddressSchema,
+    validatorRegistry: AddressSchema,
+    missionControl: AddressSchema,
+    knowledgeGraph: AddressSchema,
+    guardianCouncil: AddressSchema,
+    systemPause: AddressSchema,
+    heartbeatSeconds: z
+      .number({ invalid_type_error: "Global heartbeatSeconds must be a number" })
+      .int("Global heartbeatSeconds must be an integer")
+      .positive("Global heartbeatSeconds must be positive"),
+    guardianReviewWindow: z
+      .number({ invalid_type_error: "Global guardianReviewWindow must be a number" })
+      .int("Global guardianReviewWindow must be an integer")
+      .nonnegative("Global guardianReviewWindow cannot be negative"),
+    maxDrawdownBps: z
+      .number({ invalid_type_error: "Global maxDrawdownBps must be a number" })
+      .int("Global maxDrawdownBps must be an integer")
+      .nonnegative("Global maxDrawdownBps cannot be negative"),
+    manifestoURI: z.string({ required_error: "Global manifestoURI is required" }).min(1, "Global manifestoURI is required"),
+    guardianCouncilLabel: z.string().optional(),
+  }),
+  domains: z.array(DomainSchema).default([]),
+  sentinels: z.array(SentinelSchema).default([]),
+  capitalStreams: z.array(StreamSchema).default([]),
+  selfImprovement: SelfImprovementSchema.optional(),
+});
+
+export type Phase8Config = z.infer<typeof ManifestSchema>;
+export type EnvironmentConfig = z.infer<typeof EnvironmentSchema>;
 const SKIP_SINGLE_CALL_KEYS = new Set([
   "registerDomain",
   "registerSentinel",
@@ -38,8 +242,46 @@ const LABEL_MAP: Record<string, string> = {
   removeCapitalStreams: "removeCapitalStream",
 };
 
-function loadConfig() {
-  return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
+function formatZodError(context: string, error: ZodError) {
+  const issues = error.issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join(".") : "(root)";
+      return `  • ${path}: ${issue.message}`;
+    })
+    .join("\n");
+  return `${context}:\n${issues}`;
+}
+
+export function parseManifest(raw: unknown): Phase8Config {
+  const result = ManifestSchema.safeParse(raw);
+  if (!result.success) {
+    throw new Error(formatZodError("Manifest validation failed", result.error));
+  }
+  return result.data;
+}
+
+export function loadConfig(path: string = CONFIG_PATH): Phase8Config {
+  try {
+    const file = readFileSync(path, "utf-8");
+    const json = JSON.parse(file);
+    return parseManifest(json);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error(`Failed to parse manifest JSON at ${path}: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
+export function resolveEnvironment(env: NodeJS.ProcessEnv = process.env): EnvironmentConfig {
+  const result = EnvironmentSchema.safeParse({
+    chainId: env.PHASE8_CHAIN_ID,
+    managerAddress: env.PHASE8_MANAGER_ADDRESS,
+  });
+  if (!result.success) {
+    throw new Error(formatZodError("Environment validation failed", result.error));
+  }
+  return result.data;
 }
 
 function banner(title: string) {
@@ -55,7 +297,7 @@ function shortAddress(label: string, address?: string) {
   return `${label}: ${address.slice(0, 8)}…${address.slice(-6)}`;
 }
 
-function computeMetrics(config: any) {
+export function computeMetrics(config: Phase8Config) {
   const domains = config.domains ?? [];
   const sentinels = config.sentinels ?? [];
   const streams = config.capitalStreams ?? [];
@@ -114,7 +356,7 @@ function slugId(slug: string): string {
   return keccak256(toUtf8Bytes(slug.toLowerCase()));
 }
 
-function mermaid(config: any) {
+export function mermaid(config: Phase8Config) {
   const lines = ["graph TD", "  Governance[[Guardian DAO]] --> Manager(Phase8UniversalValueManager)"];
   for (const domain of config.domains ?? []) {
     const slug = String(domain.slug || "domain").replace(/[^a-z0-9]/gi, "");
@@ -132,7 +374,7 @@ function mermaid(config: any) {
   return lines.join("\n");
 }
 
-function calldata(config: any) {
+export function calldata(config: Phase8Config) {
   const iface = new Interface([
     "function setGlobalParameters((address,address,address,address,address,address,uint64,uint64,uint256,string) params)",
     "function setGuardianCouncil(address council)",
@@ -150,7 +392,7 @@ function calldata(config: any) {
   ]);
 
   const global = config.global ?? {};
-  const domainTuples = (config.domains ?? []).map((domain: any) => [
+  const domainTuples = (config.domains ?? []).map((domain) => [
     domain.slug,
     domain.name,
     domain.metadataURI,
@@ -163,7 +405,7 @@ function calldata(config: any) {
     BigInt(domain.autonomyLevelBps ?? 0),
     Boolean(domain.active),
   ]);
-  const sentinelTuples = (config.sentinels ?? []).map((sentinel: any) => [
+  const sentinelTuples = (config.sentinels ?? []).map((sentinel) => [
     sentinel.slug,
     sentinel.name,
     sentinel.uri,
@@ -172,7 +414,7 @@ function calldata(config: any) {
     BigInt(sentinel.sensitivityBps ?? 0),
     Boolean(sentinel.active),
   ]);
-  const streamTuples = (config.capitalStreams ?? []).map((stream: any) => [
+  const streamTuples = (config.capitalStreams ?? []).map((stream) => [
     stream.slug,
     stream.name,
     stream.uri,
@@ -181,13 +423,13 @@ function calldata(config: any) {
     BigInt(stream.expansionBps ?? 0),
     Boolean(stream.active),
   ]);
-  const plan = config.selfImprovement?.plan ?? {};
-  const sentinelDomains = (config.sentinels ?? []).map((entry: any) => ({
+  const plan = config.selfImprovement?.plan;
+  const sentinelDomains = (config.sentinels ?? []).map((entry) => ({
     slug: entry.slug,
     id: slugId(String(entry.slug || "")),
     domains: (entry.domains ?? []).map((domain: string) => slugId(String(domain || ""))),
   }));
-  const streamDomains = (config.capitalStreams ?? []).map((entry: any) => ({
+  const streamDomains = (config.capitalStreams ?? []).map((entry) => ({
     slug: entry.slug,
     id: slugId(String(entry.slug || "")),
     domains: (entry.domains ?? []).map((domain: string) => slugId(String(domain || ""))),
@@ -209,11 +451,11 @@ function calldata(config: any) {
     guardian: global.guardianCouncil,
     pause: global.systemPause,
     plan: [
-      String(plan.planURI ?? ""),
-      String(plan.planHash ?? "0x0000000000000000000000000000000000000000000000000000000000000000"),
-      BigInt(plan.cadenceSeconds ?? 0),
-      BigInt(plan.lastExecutedAt ?? 0),
-      String(plan.lastReportURI ?? ""),
+      String(plan?.planURI ?? ""),
+      String(plan?.planHash ?? "0x0000000000000000000000000000000000000000000000000000000000000000"),
+      BigInt(plan?.cadenceSeconds ?? 0),
+      BigInt(plan?.lastExecutedAt ?? 0),
+      String(plan?.lastReportURI ?? ""),
     ],
   };
 
@@ -221,28 +463,28 @@ function calldata(config: any) {
     plan && plan.cadenceSeconds
       ? BigInt(plan.lastExecutedAt ?? 0) + BigInt(plan.cadenceSeconds ?? 0)
       : undefined;
-  const registerDomainCalls = domainTuples.map((tuple: any, index: number) => ({
+  const registerDomainCalls = domainTuples.map((tuple, index) => ({
     slug: config.domains[index]?.slug,
     data: iface.encodeFunctionData("registerDomain", [tuple]),
   }));
-  const registerSentinelCalls = sentinelTuples.map((tuple: any, index: number) => ({
+  const registerSentinelCalls = sentinelTuples.map((tuple, index) => ({
     slug: config.sentinels[index]?.slug,
     data: iface.encodeFunctionData("registerSentinel", [tuple]),
   }));
-  const registerStreamCalls = streamTuples.map((tuple: any, index: number) => ({
+  const registerStreamCalls = streamTuples.map((tuple, index) => ({
     slug: config.capitalStreams[index]?.slug,
     data: iface.encodeFunctionData("registerCapitalStream", [tuple]),
   }));
 
-  const removeDomainCalls = (config.domains ?? []).map((domain: any) => ({
+  const removeDomainCalls = (config.domains ?? []).map((domain) => ({
     slug: domain.slug,
     data: iface.encodeFunctionData("removeDomain", [slugId(String(domain.slug || ""))]),
   }));
-  const removeSentinelCalls = (config.sentinels ?? []).map((sentinel: any) => ({
+  const removeSentinelCalls = (config.sentinels ?? []).map((sentinel) => ({
     slug: sentinel.slug,
     data: iface.encodeFunctionData("removeSentinel", [slugId(String(sentinel.slug || ""))]),
   }));
-  const removeStreamCalls = (config.capitalStreams ?? []).map((stream: any) => ({
+  const removeStreamCalls = (config.capitalStreams ?? []).map((stream) => ({
     slug: stream.slug,
     data: iface.encodeFunctionData("removeCapitalStream", [slugId(String(stream.slug || ""))]),
   }));
@@ -267,7 +509,7 @@ function calldata(config: any) {
         : undefined,
     setSelfImprovementPlan: iface.encodeFunctionData("setSelfImprovementPlan", [tuples.plan]),
     recordSelfImprovementExecution:
-      nextExecution && plan.lastReportURI
+      nextExecution && plan?.lastReportURI
         ? iface.encodeFunctionData("recordSelfImprovementExecution", [nextExecution, plan.lastReportURI])
         : undefined,
     removeDomain: removeDomainCalls[0]?.data,
@@ -276,20 +518,20 @@ function calldata(config: any) {
     removeDomains: removeDomainCalls,
     removeSentinels: removeSentinelCalls,
     removeCapitalStreams: removeStreamCalls,
-    sentinelDomainCalls: sentinelDomains.map((entry: any) => ({
+    sentinelDomainCalls: sentinelDomains.map((entry) => ({
       slug: entry.slug,
       data: iface.encodeFunctionData("setSentinelDomains", [entry.id, entry.domains]),
     })),
-    streamDomainCalls: streamDomains.map((entry: any) => ({
+    streamDomainCalls: streamDomains.map((entry) => ({
       slug: entry.slug,
       data: iface.encodeFunctionData("setCapitalStreamDomains", [entry.id, entry.domains]),
     })),
   };
 }
 
-type CalldataEntry = { label: string; slug?: string; data: string };
+export type CalldataEntry = { label: string; slug?: string; data: string };
 
-function flattenCalldataEntries(data: Record<string, any>): CalldataEntry[] {
+export function flattenCalldataEntries(data: Record<string, any>): CalldataEntry[] {
   const entries: CalldataEntry[] = [];
   for (const [label, payload] of Object.entries(data)) {
     if (!payload || SKIP_SINGLE_CALL_KEYS.has(label)) continue;
@@ -311,13 +553,16 @@ function flattenCalldataEntries(data: Record<string, any>): CalldataEntry[] {
   return entries;
 }
 
-function ensureOutputDirectory() {
-  if (!existsSync(OUTPUT_DIR)) {
-    mkdirSync(OUTPUT_DIR, { recursive: true });
+function ensureOutputDirectory(dir: string) {
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
 }
 
-function telemetryMarkdown(config: any, metrics: ReturnType<typeof computeMetrics>): string {
+export function telemetryMarkdown(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+): string {
   const sentinelCoverageMap = new Map<string, string[]>();
   for (const sentinel of config.sentinels ?? []) {
     for (const domain of sentinel.domains ?? []) {
@@ -419,7 +664,7 @@ function telemetryMarkdown(config: any, metrics: ReturnType<typeof computeMetric
   return lines.join("\n");
 }
 
-function buildSafeTransactions(entries: CalldataEntry[], managerAddress: string) {
+export function buildSafeTransactions(entries: CalldataEntry[], managerAddress: string) {
   return entries.map((entry) => ({
     to: managerAddress,
     value: "0",
@@ -433,14 +678,23 @@ function buildSafeTransactions(entries: CalldataEntry[], managerAddress: string)
   }));
 }
 
-function writeArtifacts(config: any, metrics: ReturnType<typeof computeMetrics>, data: Record<string, any>) {
-  ensureOutputDirectory();
+export function writeArtifacts(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  data: ReturnType<typeof calldata>,
+  environment: EnvironmentConfig,
+  overrides: { outputDir?: string; managerAddress?: string; chainId?: number } = {},
+) {
+  const outputDir = overrides.outputDir ?? OUTPUT_DIR;
+  ensureOutputDirectory(outputDir);
   const generatedAt = new Date().toISOString();
   const entries = flattenCalldataEntries(data);
+  const managerAddress = overrides.managerAddress ?? environment.managerAddress;
+  const chainId = overrides.chainId ?? environment.chainId;
   const callManifest = {
     generatedAt,
-    managerAddress: MANAGER_ADDRESS,
-    chainId: DEFAULT_CHAIN_ID,
+    managerAddress,
+    chainId,
     metrics: {
       totalMonthlyUSD: metrics.totalMonthlyUSD,
       annualBudgetUSD: metrics.annualBudget,
@@ -449,30 +703,30 @@ function writeArtifacts(config: any, metrics: ReturnType<typeof computeMetrics>,
     },
     calls: entries,
   };
-  const callManifestPath = join(OUTPUT_DIR, "phase8-governance-calldata.json");
+  const callManifestPath = join(outputDir, "phase8-governance-calldata.json");
   writeFileSync(callManifestPath, JSON.stringify(callManifest, null, 2));
 
   const safeBatch = {
     version: "1.0",
-    chainId: String(DEFAULT_CHAIN_ID),
+    chainId: String(chainId),
     createdAt: Date.now(),
     meta: {
       name: "Phase 8 — Universal Value Dominance",
       description: `Generated by AGI Jobs v0 (v2) on ${generatedAt}`,
       txBuilderVersion: "1.16.1",
-      createdFromSafeAddress: MANAGER_ADDRESS,
+      createdFromSafeAddress: managerAddress,
       createdFromOwnerAddress: "",
       checksum: "",
     },
-    transactions: buildSafeTransactions(entries, MANAGER_ADDRESS),
+    transactions: buildSafeTransactions(entries, managerAddress),
   };
-  const safePath = join(OUTPUT_DIR, "phase8-safe-transaction-batch.json");
+  const safePath = join(outputDir, "phase8-safe-transaction-batch.json");
   writeFileSync(safePath, JSON.stringify(safeBatch, null, 2));
 
-  const mermaidPath = join(OUTPUT_DIR, "phase8-mermaid-diagram.mmd");
+  const mermaidPath = join(outputDir, "phase8-mermaid-diagram.mmd");
   writeFileSync(mermaidPath, mermaid(config));
 
-  const reportPath = join(OUTPUT_DIR, "phase8-telemetry-report.md");
+  const reportPath = join(outputDir, "phase8-telemetry-report.md");
   writeFileSync(reportPath, telemetryMarkdown(config, metrics));
 
   return [
@@ -483,8 +737,8 @@ function writeArtifacts(config: any, metrics: ReturnType<typeof computeMetrics>,
   ];
 }
 
-function printDomainTable(config: any) {
-  const rows = config.domains?.map((domain: any) => {
+function printDomainTable(config: Phase8Config) {
+  const rows = config.domains?.map((domain) => {
     const slug = String(domain.slug ?? "");
     const id = keccak256(toUtf8Bytes(slug.toLowerCase())).slice(0, 10);
     return [
@@ -507,113 +761,126 @@ function printDomainTable(config: any) {
   }
 }
 
-(function main() {
-  const config = loadConfig();
-  banner("Phase 8 — Universal Value Dominance");
-  console.log("Configuration:", CONFIG_PATH);
+export function main() {
+  try {
+    const environment = resolveEnvironment();
+    const config = loadConfig();
+    banner("Phase 8 — Universal Value Dominance");
+    console.log("Configuration:", CONFIG_PATH);
+    console.log(`Environment overrides → manager: ${environment.managerAddress}, chainId: ${environment.chainId}`);
 
-  const metrics = computeMetrics(config);
-  banner("Network telemetry");
-  console.log(`Total monthly on-chain value: ${usd(metrics.totalMonthlyUSD)}`);
-  console.log(`Annual capital allocation: ${usd(metrics.annualBudget)}`);
-  console.log(`Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
-  console.log(`Guardian sentinel coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes per cycle`);
-  console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
-  console.log(`Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
-  if (metrics.cadenceHours) {
-    console.log(`Self-improvement cadence: every ${metrics.cadenceHours.toFixed(2)} hours`);
-  }
-  if (metrics.lastExecutedAt) {
-    console.log(`Last self-improvement execution: ${new Date(metrics.lastExecutedAt * 1000).toISOString()}`);
-  }
-
-  banner("Governance control surface");
-  console.log(shortAddress("Treasury", config.global?.treasury));
-  console.log(shortAddress("Universal vault", config.global?.universalVault));
-  console.log(shortAddress("Upgrade coordinator", config.global?.upgradeCoordinator));
-  console.log(shortAddress("Validator registry", config.global?.validatorRegistry));
-  console.log(shortAddress("Mission control", config.global?.missionControl));
-  console.log(shortAddress("Knowledge graph", config.global?.knowledgeGraph));
-  console.log(shortAddress("Guardian council", config.global?.guardianCouncil));
-  console.log(shortAddress("System pause", config.global?.systemPause));
-  console.log(`Manifest URI: ${config.global?.manifestoURI}`);
-
-  banner("Domain registry summary");
-  printDomainTable(config);
-
-  banner("Sentinel lattice");
-  for (const sentinel of config.sentinels ?? []) {
-    console.log(
-      `  ${sentinel.name}: coverage ${sentinel.coverageSeconds}s, sensitivity ${sentinel.sensitivityBps}bps → ${(
-        sentinel.domains || []
-      ).join(", ")}`,
-    );
-  }
-
-  banner("Capital stream governance");
-  for (const stream of config.capitalStreams ?? []) {
-    console.log(
-      `  ${stream.name}: ${usd(Number(stream.annualBudget ?? 0))}/yr, expansion ${stream.expansionBps}bps → ${(stream.domains || []).join(", ")}`,
-    );
-  }
-
-  banner("Self-improvement kernel");
-  const planDetails = config.selfImprovement?.plan;
-  if (planDetails) {
-    const cadenceHours = (Number(planDetails.cadenceSeconds ?? 0) / 3600).toFixed(2);
-    console.log(`  Plan URI: ${planDetails.planURI}`);
-    console.log(`  Plan hash: ${planDetails.planHash}`);
-    console.log(`  Cadence: ${planDetails.cadenceSeconds}s (${cadenceHours}h)`);
-    if (planDetails.lastExecutedAt) {
-      console.log(`  Last executed at: ${new Date(Number(planDetails.lastExecutedAt) * 1000).toISOString()}`);
-      console.log(`  Last report: ${planDetails.lastReportURI}`);
+    const metrics = computeMetrics(config);
+    banner("Network telemetry");
+    console.log(`Total monthly on-chain value: ${usd(metrics.totalMonthlyUSD)}`);
+    console.log(`Annual capital allocation: ${usd(metrics.annualBudget)}`);
+    console.log(`Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
+    console.log(`Guardian sentinel coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes per cycle`);
+    console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
+    console.log(`Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
+    if (metrics.cadenceHours) {
+      console.log(`Self-improvement cadence: every ${metrics.cadenceHours.toFixed(2)} hours`);
     }
-  }
-  for (const playbook of config.selfImprovement?.playbooks ?? []) {
-    console.log(`  • ${playbook.name} (${playbook.automation}): ${playbook.description}`);
-  }
-  if (config.selfImprovement?.autonomyGuards) {
-    const guards = config.selfImprovement.autonomyGuards;
-    console.log(
-      `  Autonomy guard: ≤${guards.maxAutonomyBps}bps autonomy, override ${guards.humanOverrideMinutes}m, escalation ${
-        (guards.escalationChannels || []).join(" → ")
-      }`,
-    );
-  }
-
-  banner("Mermaid system map");
-  console.log("```mermaid");
-  console.log(mermaid(config));
-  console.log("```");
-
-  banner("Calldata");
-  const data = calldata(config);
-  Object.entries(data).forEach(([label, payload]) => {
-    if (!payload) return;
-    if (Array.isArray(payload)) {
-      payload
-        .filter((entry) => entry && typeof entry === "object" && entry.data)
-        .forEach((entry) => {
-          console.log(`  ${label} (${entry.slug}): ${entry.data}`);
-        });
-      return;
+    if (metrics.lastExecutedAt) {
+      console.log(`Last self-improvement execution: ${new Date(metrics.lastExecutedAt * 1000).toISOString()}`);
     }
-    if (typeof payload === "object" && (payload as any).data) {
-      console.log(`  ${label}: ${(payload as any).data}`);
-      return;
+
+    banner("Governance control surface");
+    console.log(shortAddress("Treasury", config.global?.treasury));
+    console.log(shortAddress("Universal vault", config.global?.universalVault));
+    console.log(shortAddress("Upgrade coordinator", config.global?.upgradeCoordinator));
+    console.log(shortAddress("Validator registry", config.global?.validatorRegistry));
+    console.log(shortAddress("Mission control", config.global?.missionControl));
+    console.log(shortAddress("Knowledge graph", config.global?.knowledgeGraph));
+    console.log(shortAddress("Guardian council", config.global?.guardianCouncil));
+    console.log(shortAddress("System pause", config.global?.systemPause));
+    console.log(`Manifest URI: ${config.global?.manifestoURI}`);
+
+    banner("Domain registry summary");
+    printDomainTable(config);
+
+    banner("Sentinel lattice");
+    for (const sentinel of config.sentinels ?? []) {
+      console.log(
+        `  ${sentinel.name}: coverage ${sentinel.coverageSeconds}s, sensitivity ${sentinel.sensitivityBps}bps → ${(sentinel.domains || []).join(", ")}`
+      );
     }
-    console.log(`  ${label}: ${payload}`);
-  });
 
-  const exports = writeArtifacts(config, metrics, data);
-  banner("Exports");
-  exports.forEach((entry) => {
-    console.log(`  ${entry.label}: ${entry.path}`);
-  });
+    banner("Capital stream governance");
+    for (const stream of config.capitalStreams ?? []) {
+      console.log(
+        `  ${stream.name}: ${usd(Number(stream.annualBudget ?? 0))}/yr, expansion ${stream.expansionBps}bps → ${(stream.domains || []).join(", ")}`
+      );
+    }
 
-  banner("How to run");
-  console.log("  1. Execute `npm ci` (first run only)");
-  console.log("  2. Run `npm run demo:phase8:orchestrate`");
-  console.log("  3. Paste emitted calldata into the governance console / Safe");
-  console.log("  4. Open demo UI via `npx serve demo/Phase-8-Universal-Value-Dominance`");
-})();
+    banner("Self-improvement kernel");
+    const planDetails = config.selfImprovement?.plan;
+    if (planDetails) {
+      const cadenceHours = (Number(planDetails.cadenceSeconds ?? 0) / 3600).toFixed(2);
+      console.log(`  Plan URI: ${planDetails.planURI}`);
+      console.log(`  Plan hash: ${planDetails.planHash}`);
+      console.log(`  Cadence: ${planDetails.cadenceSeconds}s (${cadenceHours}h)`);
+      if (planDetails.lastExecutedAt) {
+        console.log(`  Last executed at: ${new Date(Number(planDetails.lastExecutedAt) * 1000).toISOString()}`);
+        console.log(`  Last report: ${planDetails.lastReportURI}`);
+      }
+    }
+    for (const playbook of config.selfImprovement?.playbooks ?? []) {
+      console.log(`  • ${playbook.name} (${playbook.automation}): ${playbook.description}`);
+    }
+    if (config.selfImprovement?.autonomyGuards) {
+      const guards = config.selfImprovement.autonomyGuards;
+      console.log(
+        `  Autonomy guard: ≤${guards.maxAutonomyBps}bps autonomy, override ${guards.humanOverrideMinutes}m, escalation ${(guards.escalationChannels || []).join(" → ")}`
+      );
+    }
+
+    banner("Mermaid system map");
+    console.log("```mermaid");
+    console.log(mermaid(config));
+    console.log("```");
+
+    banner("Calldata");
+    const data = calldata(config);
+    Object.entries(data).forEach(([label, payload]) => {
+      if (!payload) return;
+      if (Array.isArray(payload)) {
+        payload
+          .filter((entry) => entry && typeof entry === "object" && (entry as CalldataEntry).data)
+          .forEach((entry) => {
+            const item = entry as CalldataEntry;
+            console.log(`  ${label} (${item.slug}): ${item.data}`);
+          });
+        return;
+      }
+      if (typeof payload === "object" && (payload as CalldataEntry).data) {
+        console.log(`  ${label}: ${(payload as CalldataEntry).data}`);
+        return;
+      }
+      console.log(`  ${label}: ${payload}`);
+    });
+
+    const exportsList = writeArtifacts(config, metrics, data, environment);
+    banner("Exports");
+    exportsList.forEach((entry) => {
+      console.log(`  ${entry.label}: ${entry.path}`);
+    });
+
+    banner("How to run");
+    console.log("  1. Execute `npm ci` (first run only)");
+    console.log("  2. Run `npm run demo:phase8:orchestrate`");
+    console.log("  3. Paste emitted calldata into the governance console / Safe");
+    console.log("  4. Open demo UI via `npx serve demo/Phase-8-Universal-Value-Dominance`");
+  } catch (error) {
+    console.error("\n\x1b[31mPhase 8 orchestration failed\x1b[0m");
+    if (error instanceof Error) {
+      console.error(error.message);
+    } else {
+      console.error(error);
+    }
+    process.exitCode = 1;
+  }
+}
+
+if (require.main === module) {
+  main();
+}

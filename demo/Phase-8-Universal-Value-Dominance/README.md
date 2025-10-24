@@ -42,6 +42,25 @@
 
 ---
 
+## ⚙️ Orchestration flow & troubleshooting
+
+1. **Load + validate** – the CLI parses `config/universal.value.manifest.json` through a strict Zod schema. Any missing slug,
+   malformed address, or negative cadence halts execution with a red `Phase 8 orchestration failed` banner and a bullet list of
+   the offending paths. Fix the manifest and rerun.
+2. **Encode governance calls** – calldata is generated with deterministic `ethers.Interface` encoders. If you see an encoding
+   failure, double-check that every address is a 20-byte hex string and that large integers (for TVL or budgets) are expressed
+   as base-10 strings or safe integers.
+3. **Export artifacts** – the script writes Safe templates, telemetry, and Mermaid diagrams into `output/`. Override
+   destinations via `PHASE8_MANAGER_ADDRESS` / `PHASE8_CHAIN_ID`; invalid overrides trigger validation errors instead of
+   silently falling back to defaults.
+4. **Troubleshoot quickly** – rerun with `DEBUG=*` to inspect encoded calldata, or delete the generated `output/` directory to
+   force a clean regeneration if filesystem permissions or stale files cause issues.
+
+> **Tip**: When copying telemetry into wikis, reference the timestamped header in `phase8-telemetry-report.md` to confirm the
+latest run. Safe imports should always display the chain ID and manager address injected by the environment variables above.
+
+---
+
 ## 🧭 Why this demo matters
 
 * **Universal authority with hard guardrails** – the new `Phase8UniversalValueManager` contract keeps the owner in absolute

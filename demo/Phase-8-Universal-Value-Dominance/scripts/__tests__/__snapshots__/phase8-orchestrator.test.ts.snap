@@ -1,0 +1,71 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Phase 8 orchestration console writes artifact kit with telemetry and mermaid snapshots 1`] = `
+"# Phase 8 — Universal Value Dominance Telemetry
+Generated: <timestamp>
+
+## Global Metrics
+- Total monthly value flow: $688.00B
+- Annual capital allocation: $1.97T
+- Average resilience index: 0.925
+- Sentinel coverage per guardian cycle: 18.0 minutes
+- Domains covered by sentinels: 100.0%
+- Maximum encoded autonomy: 7800 bps
+- Self-improvement cadence: every 2.00 hours
+- Last self-improvement execution: 2023-11-14T22:20:00.000Z
+
+## Governance Control Surface
+- Treasury: 0x8a1f8f5e3b9d9b2a7b6c5e4f3d2c1b0a9f8e7d6c
+- Universal vault: 0xb5c7fe65f0c84a22330a3e913450b1214cc0a8f9
+- Upgrade coordinator: 0x3e8b71da4c5e981a2d4facfe97b53bd2736d1d10
+- Validator registry: 0x21f49cff41f9e69a13a3d6cef7b1a92d9c4e0d8e
+- Mission control: 0xe9a6b9b6c6a53382e5e7d1b8e0f93c5f4a32e1a4
+- Knowledge graph: 0x9b2b5f9c4d4e58a63e934f52aa4c3f62f6c4b672
+- Guardian council: 0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87
+- System pause: 0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c
+- Manifest URI: ipfs://agi-jobs/phase8/manifest.json
+- Max drawdown guard: 3200 bps
+
+## Domains
+| Domain | Autonomy (bps) | Resilience | Heartbeat (s) | TVL cap | Monthly value | Sentinels | Capital streams |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Planetary Finance Mesh | 7800 | 0.960 | 300 | 420… (10^24) | $245.00B | Capital Watch Exocomptroller | Planetary Resilience Fund |
+| Climate Harmonizer Array | 7400 | 0.940 | 180 | 185… (10^24) | $128.00B | Solar Shield Guardian | Climate Stabilization Endowment |
+| Health Sovereign Continuum | 7000 | 0.910 | 240 | 920… (10^23) | $94.00B | Bio Sentinel Continuity | Planetary Resilience Fund |
+| Infrastructure Synthesis Grid | 7600 | 0.915 | 210 | 215… (10^24) | $167.00B | Solar Shield Guardian | Climate Stabilization Endowment, Innovation Thrust Catalyst |
+| Knowledge Lattice Nexus | 6900 | 0.902 | 150 | 680… (10^23) | $54.00B | Capital Watch Exocomptroller | Planetary Resilience Fund, Innovation Thrust Catalyst |
+
+## Sentinel Lattice
+- Solar Shield Guardian · coverage 420s · sensitivity 450 bps · guarding climate-harmonizer, infrastructure-synthesis
+- Capital Watch Exocomptroller · coverage 360s · sensitivity 380 bps · guarding planetary-finance, knowledge-lattice
+- Bio Sentinel Continuity · coverage 300s · sensitivity 420 bps · guarding health-sovereign
+
+## Capital Streams
+- Climate Stabilization Endowment · $720.00B/yr · expansion 1300 bps · targets climate-harmonizer, infrastructure-synthesis
+- Planetary Resilience Fund · $890.00B/yr · expansion 1250 bps · targets planetary-finance, health-sovereign, knowledge-lattice
+- Innovation Thrust Catalyst · $360.00B/yr · expansion 1600 bps · targets knowledge-lattice, infrastructure-synthesis
+
+## Self-Improvement Kernel
+- Strategic plan: cadence 7200s (2.00 h) · hash 0x7d2556f5ae0a7dd2e9c3c5e29377b7af168e2b2f42a3e08d96b9f8e32d4b9f10 · last report ipfs://agi-jobs/phase8/self-improvement/reports/epoch-144.json
+- Playbook Hyperparameter Evolution (weekly) · owner 0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87 · guardrails checksum-verification, zk-proof-of-alignment
+- Playbook Universal Value Mesh Stress Tests (hourly) · owner 0x3e8b71da4c5e981a2d4facfe97b53bd2736d1d10 · guardrails branch-protected-ci, multi-agent-cross-check
+- Autonomy guard: ≤8000 bps · override window 15 minutes · escalation guardian-council → dao-emergency → sentinel-lockdown"
+`;
+
+exports[`Phase 8 orchestration console writes artifact kit with telemetry and mermaid snapshots 2`] = `
+"graph TD
+  Governance[[Guardian DAO]] --> Manager(Phase8UniversalValueManager)
+  Manager --> planetaryfinance([Planetary Finance Mesh])
+  Manager --> climateharmonizer([Climate Harmonizer Array])
+  Manager --> healthsovereign([Health Sovereign Continuum])
+  Manager --> infrastructuresynthesis([Infrastructure Synthesis Grid])
+  Manager --> knowledgelattice([Knowledge Lattice Nexus])
+  Manager --> Treasury[[Universal Treasury]]
+  Manager --> Sentinels{Sentinel lattice}
+  Sentinels --> Pause[System pause]
+  Manager --> Streams[[Capital Streams]]
+  Streams --> climatestabilizationStream([Climate Stabilization Endowment])
+  Streams --> planetaryresilienceStream([Planetary Resilience Fund])
+  Streams --> innovationthrustStream([Innovation Thrust Catalyst])
+  Streams --> Domains([Autonomous domains])"
+`;
