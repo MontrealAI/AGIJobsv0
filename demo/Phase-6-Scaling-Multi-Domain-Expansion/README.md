@@ -1,160 +1,159 @@
-# Phase 6 — Scaling & Multi-Domain Expansion Demo
+# Phase 6 — Scaling & Multi-Domain Expansion Command Demo
 
-> **Mission**: prove to a non-technical operator that AGI Jobs v0/v2 can be the command console for civilization-scale autonomy. This demo couples smart-contract level controls, cross-domain agent routing, subgraph telemetry, and Layer-2 deployment plans into a single, copy-paste friendly experience.
+> _"The open superintelligence operations stack that bends global productivity to humane coordination."_
 
----
+## Purpose
 
-## 🌐 Why this demo matters
+This demonstration shows a non-technical operator using **AGI Jobs v0/v2** to instantiate, supervise, and audit a civilization-scale expansion program. Everything here runs on the public repository — no proprietary tooling required — yet it coordinates:
 
-* **Instant global expansion** – governance can register, pause, or rewire entire industry stacks with a single `Phase6ExpansionManager` transaction.
-* **Non-technical empowerment** – a single command (`npm run demo:phase6:orchestrate`) emits pre-validated calldata, bridge plans, and AI orchestration summaries.
-* **Planetary telemetry** – the subgraph now indexes `Phase6Domain`, `Phase6GlobalConfig`, and the new telemetry events so dashboards stream readiness, resilience, automation, compliance, and settlement posture in real time.
-* **Bullet-proof governance** – every parameter is updatable by the contract owner (timelock/multisig) including emergency pause delegates, cross-chain bridges, and per-domain telemetry digests.
-* **CI as a guardian** – the `ci (v2) / Phase 6 readiness` job enforces configuration drift detection on every PR and on `main`.
-* **Resilience & automation telemetry** – the demo computes average/min/max resilience, automation/compliance BPS, settlement latency, sentinel coverage, and value flow across finance, health, logistics, climate, and the new education lattice.
-* **Mesh-level infrastructure clarity** – a new decentralized infra registry renders every Layer-2, storage, identity, oracle, and compute touchpoint for Phase 6 so governance can audit the rails instantly.
+- Layer-2 rollups tuned for autonomous service markets
+- Domain-specialized AGI teams with verifiable credentials
+- Oracle-linked IoT feedback loops that drive physical logistics
+- Governance controls that keep the owner fully in command at all times
 
----
+The demo is designed so that a newcomer can provision the entire Phase 6 stack in minutes while retaining production-grade safety nets.
 
-## 🧭 Quickstart (non-technical operator)
+## Table of Contents
 
-1. **Install dependencies** (once):
-   ```bash
-   npm ci
-   ```
-2. **Generate Phase 6 runbook & calldata**:
-   ```bash
-   npm run demo:phase6:orchestrate
-   ```
-   This prints:
-   * Domain IDs and encoded `registerDomain` / `updateDomain` payloads.
-   * Layer-2 bridge plans synthesized from the config and the on-chain ABI.
-   * A ready-to-copy mermaid system diagram and runtime routing commentary from the Python orchestrator.
-   * Encoded `setSystemPause` / `setEscalationBridge` transactions so governance can pivot or halt instantly.
-3. **Verify readiness in CI** (runs automatically, can be triggered locally):
+1. [Architecture at a Glance](#architecture-at-a-glance)
+2. [Quickstart for Non-Technical Operators](#quickstart-for-non-technical-operators)
+3. [Owner Control Surface](#owner-control-surface)
+4. [Telemetry & Oversight](#telemetry--oversight)
+5. [Subgraph & Data Fabric Enhancements](#subgraph--data-fabric-enhancements)
+6. [Decentralized Infrastructure Blueprint](#decentralized-infrastructure-blueprint)
+7. [Appendix: Manifest & Schema](#appendix-manifest--schema)
+
+## Architecture at a Glance
+
+```mermaid
+mindmap
+  root((Phase 6 Nexus))
+    Governance
+      Owner Safe
+      Oversight Council
+      Emergency Escalation Bridge
+    Execution
+      Phase6ExpansionManager
+      Domain Routers
+      Layer-2 Gateways
+    Intelligence
+      Domain Agent Swarms
+      DID / VC Verification Mesh
+      Knowledge Graph Subgraphs
+    Trust Fabric
+      SystemPause Delegates
+      Treasury Buffer Vaults
+      Sentinel Oracles
+```
+
+### Domain Control Mesh
+
+```mermaid
+flowchart LR
+  Owner((Owner Safe)) -->|configures| ExpansionManager{{Phase6ExpansionManager}}
+  ExpansionManager -->|registers| Finance[Global Financial Autonomy Grid]
+  ExpansionManager -->|registers| Health[Precision Health Continuum]
+  ExpansionManager -->|registers| Logistics[Planetary Supply Intelligence Mesh]
+  Finance -->|routes jobs| L2Finance[[Celestia Sovereign Rollup]]
+  Health -->|routes jobs| L2Health[[StarkNet Autonomous Fabric]]
+  Logistics -->|routes jobs| L2Logistics[[Celestia Sovereign Rollup]]
+  Finance -->|reports telemetry| FinanceSubgraph[(Subgraph Finance)]
+  Health -->|reports telemetry| HealthSubgraph[(Subgraph Health)]
+  Logistics -->|reports telemetry| LogisticsSubgraph[(Subgraph Logistics)]
+  SystemPause[[SystemPause]] --> ExpansionManager
+  Owner -->|pause/resume| SystemPause
+```
+
+### Agent Team Telemetry Loop
+
+```mermaid
+sequenceDiagram
+  participant IoT as IoT Sentinel Oracle
+  participant Router as Expansion Router
+  participant Agent as Domain AGI Team
+  participant Human as Human Overseer
+  participant Owner as Owner Safe
+  IoT->>Router: Publish anomaly digest (20s cadence)
+  Router->>Agent: Dispatch mitigation job (auto)
+  Agent-->>IoT: Adjust control parameters
+  Agent->>Human: Request signed override (if compliance gate triggered)
+  Human-->>Owner: Approve override via DID credential
+  Owner->>Router: Push governance directive / escalate pause
+```
+
+## Quickstart for Non-Technical Operators
+
+The entire demo is automated through npm scripts — no Solidity coding, no manual JSON editing.
+
+1. **Validate the manifest and assets**
    ```bash
    npm run demo:phase6:ci
    ```
-   The script validates JSON schema, address hygiene, ABI sync, and UI artifacts before the CI job signs off.
-4. **Push the manifest on-chain (dry-run by default)**:
+   This ensures the manifest schema, HTML UX, and runbooks are synchronized.
+
+2. **Generate the owner playbook for your target network**
    ```bash
-   npx hardhat run --no-compile scripts/phase6/apply-config.ts --network <network> -- --manager <Phase6ExpansionManager>
+   npm run owner:phase6:playbook -- --network sepolia
    ```
-   * Prints the governance plan, global diffs, and each domain action.
-   * Defaults to a dry-run – add `--apply` to execute transactions once reviewed.
-   * Scope updates with `--domain finance,health` or skip globals via `--skip-global`.
-5. **Open the control surface UI**:
-   *Serve locally or open directly in the repo*
+   - Produces a markdown + mermaid playbook in `reports/phase6/playbook-<timestamp>.md`
+   - Resolves contract addresses, verifies governance powers, and simulates pause/resume flows.
+
+3. **Preview the Command Nexus UI**
+   Open [`demo/Phase-6-Scaling-Multi-Domain-Expansion/index.html`](./index.html) in any modern browser. It includes:
+   - Layer-2 settlement radar charts
+   - Domain readiness scorecards linked to the manifest
+   - Click-to-copy owner transactions for emergency operations
+
+4. **Broadcast live readiness metrics**
    ```bash
-   npx serve demo/Phase-6-Scaling-Multi-Domain-Expansion
+   npm run demo:phase6:report -- --network sepolia
    ```
-   Navigate to `http://localhost:3000` (default). The page renders interactive domain cards, live bridge plans, and a mermaid map.
+   - Streams manifest digest + telemetry summary to stdout
+   - Produces a JSON snapshot in `demo/Phase-6-Scaling-Multi-Domain-Expansion/output/phase6-telemetry.json`
 
----
+5. **Integrate with existing workflows**
+   Use the manifest to wire custom orchestrators or integrate with ERP/IoT platforms via the provided `oracleFeeds` entries. Each entry supplies the trusted oracle endpoint, maintainer, and heartbeat.
 
-## 🧱 Smart contract authority
+## Owner Control Surface
 
-`contracts/v2/Phase6ExpansionManager.sol` introduces a governance-only control plane that keeps the owner in absolute command:
+The **Phase6ExpansionManager** contract already ships with governance-controlled setters, and this demo layers additional guardrails for total control:
 
-* `registerDomain`, `updateDomain`, `configureDomainConnectors`, `setDomainStatus`
-* `setGlobalConfig`, `setGlobalGuards`, `setGlobalTelemetry`, `setSystemPause`, `setEscalationBridge`, `forwardPauseCall`, `forwardEscalation`
-* `setDomainOperations` locks in per-domain max concurrency, staking floors, revenue share, circuit breakers, and human validation toggles.
-* `setDomainTelemetry` publishes resilience/automation/compliance BPS, settlement latency, sentinel oracle, and manifest/metrics digests for every industry vertical.
-* Deterministic `domainId` helper & `listDomains()` enumeration for tooling.
-* Rejects missing telemetry targets – `subgraphEndpoint` is now mandatory on every domain mutation so dashboards never lose visibility.
+- **Full domain lifecycle management:** Register, update, deactivate, or reconfigure any domain without redeploying core contracts.
+- **System-wide circuit breakers:** `SystemPause` integration ensures the owner can halt every downstream module instantly.
+- **Escalation bridge forwarding:** Owner-triggered escalations send signed payloads to dedicated incident response systems.
+- **Guard rail verification:** The validation script enforces BPS limits, ensures domain sentinels cover every surface, and checks that every domain meets telemetry floors before activation.
 
-Emergency response: governance can forward any encoded call to the shared `SystemPause` contract or to an arbitrary escalation bridge. Pausing, routing, and redeployments remain one-click actions for the owner.
+Run the following to print a human-friendly summary of all owner levers:
 
----
-
-## 🧠 Agent runtime extension
-
-`orchestrator/extensions/phase6.py` + the runtime hook inside `StepExecutor` bring Phase 6 awareness to every orchestration step:
-
-```mermaid
-flowchart TD
-  Intent[User intent / IoT signal] --> Runtime[Phase6Runtime]
-  Runtime -->|scores domains, merges global manifest| Domain[Selected domain profile]
-  Domain --> Executor[StepExecutor]
-  Executor --> BridgePlan[Bridge & oracle plan]
-  Executor --> Logs[Annotated run log \n(heartbeat, routers, DID checks)]
+```bash
+npm run owner:phase6:playbook -- --format human
 ```
 
-* Reads the JSON snapshot generated by this demo (`config/domains.phase6.json`) or a subgraph export.
-* Scores domains by skill tags, capability weights, and governance priority.
-* Annotates every orchestration log with manifest URIs, heartbeat cadences, IoT routers, execution routers, and the guard-rail summary for the selected domain (min stake, capacity, treasury share, circuit breaker, human validation toggle).
-* Provides `build_bridge_plan` & `ingest_iot_signal` helpers for Layer-2 routing and IoT-triggered job creation.
+## Telemetry & Oversight
 
----
+- **Resilience Index** — aggregated from all domains; ensures automation never drops below the global floor.
+- **Automation Saturation** — tracks how much work is executed entirely by AGI swarms vs. human approvals.
+- **Compliance BPS** — ensures regulated industries (health, finance) keep human oversight thresholds.
+- **Anomaly Escalation Matrix** — every domain references escalation topics resolved to ENS mailboxes + secure comms.
 
-## 🛰️ Subgraph telemetry upgrades
+Anomaly detection integrates with `oracleFeeds` and `dashboards` to ensure transparency for governance participants.
 
-The Graph mapping indexes the new events so dashboards, analytics, and governance tooling have live insight:
+## Subgraph & Data Fabric Enhancements
 
-* `Phase6Domain` entity tracks metadata, routing addresses, heartbeat SLAs, pause status **and** telemetry BPS/latency digests from `DomainTelemetryUpdated`.
-* `Phase6GlobalConfig` entity exposes the canonical IoT router, L2 cadence, DID registry, manifest URI, emergency bridges, and the telemetry floor signals emitted by `GlobalTelemetryUpdated`.
-* Every `EscalationForwarded` event is indexed with payload/response metadata so dashboards can surface the last emergency action and whether it targeted the pause contract or the escalation bridge.
-* Each event (`DomainRegistered`, `DomainUpdated`, `DomainStatusChanged`, `GlobalConfigUpdated`, `DomainTelemetryUpdated`, `GlobalTelemetryUpdated`) updates the store instantly.
-* New handlers capture `DomainOperationsUpdated` & `GlobalGuardsUpdated` so analysts can graph staking floors, queue depth, treasury share, circuit breaker thresholds, global auto-pause policy, and telemetry floors over time.
+Each domain references a live subgraph endpoint; this demo includes sample GraphQL queries in [`index.html`](./index.html) so operators can test data latency. The manifest ties every dataset to the domain slug, guaranteeing compatibility with the AGI Jobs data plane.
 
-These additions power UI cards, CI validation, and off-chain monitoring (e.g., the Resilience Index).
+## Decentralized Infrastructure Blueprint
 
----
+- **Layer-2 Strategy** — Mix of optimistic and zk rollups, each defined in `l2Networks` with RPC + bridge details.
+- **Bridged Treasury** — Owner-managed `treasuryBridge` ensures capital mobility across settlement layers.
+- **DID / VC Layer** — `didRegistry` reference ensures every human override is tied to a verifiable credential.
+- **IoT Edge** — `iotOracleRouter` binds hardware telemetry into the blockchain event loop with <30s total latency.
 
-## 🕸️ Decentralized infrastructure mesh
+## Appendix: Manifest & Schema
 
-* `config/domains.phase6.json` now includes a **global `decentralizedInfra` array** and per-domain `infrastructure` inventories. Each entry captures layer, provider, role, status, and optional endpoint.
-* `scripts/run-phase6-demo.ts` surfaces mesh + telemetry data – global integration counts, per-domain touchpoints, resilience/automation/compliance BPS, settlement latencies, and copy-paste friendly summaries for multi-sig review.
-* `index.html` renders the infra mesh alongside bridge plans so non-technical operators see exactly which L2s, storage rails, DID registries, and compute meshes come online.
-* `scripts/ci-check.mjs` enforces structural integrity: at least three integrations per domain and valid metadata for every mesh element.
-* `orchestrator/extensions/phase6.py` consumes the infra map to annotate runtime logs (`infra mesh: Layer-2:Linea(active)`) and to expose integration hints to IoT signal handlers.
+- Manifest: [`config/phase6.manifest.json`](./config/phase6.manifest.json)
+- Schema enforcement: [`scripts/validate-phase6-config.ts`](./scripts/validate-phase6-config.ts)
+- Owner playbook generator: [`../../scripts/v2/phase6ExpansionPlaybook.ts`](../../scripts/v2/phase6ExpansionPlaybook.ts)
+- GitHub Actions coverage: [`.github/workflows/demo-phase6-scaling.yml`](../../.github/workflows/demo-phase6-scaling.yml)
 
----
-
-## 🔁 CI enforcement
-
-A new job in `.github/workflows/ci.yml` named **Phase 6 readiness** runs on every PR/main push:
-
-1. Installs dependencies (cached).
-2. Validates the Phase 6 domain manifest via `npm run demo:phase6:ci`.
-3. Asserts the mermaid UI, ABI files, and config schema stay in sync.
-4. Publishes a short status summary to the GitHub Checks UI.
-
-`EXPECTED_CONTEXTS` in `scripts/ci/verify-branch-protection.ts` is updated so branch protection refuses merges without this signal.
-
----
-
-## 🖥️ Demo UI snapshot
-
-![Phase 6 control surface](./index.html)
-
-Open `index.html` to explore:
-
-* Dynamic domain cards with L2 cadence, oracle routes, resilience indices, and skill matrices.
-* Embedded mermaid system map.
-* Copyable calldata panes (auto-updated from the JSON config).
-* “One-click ready” states for finance, health, logistics, climate, education, plus global manifest metadata.
-
----
-
-## 🛠️ Customising your rollout
-
-1. **Edit** `config/domains.phase6.json` – tweak addresses, manifests, skills, or heartbeat cadences.
-2. **Regenerate** plans with `npm run demo:phase6:orchestrate` (no build step needed).
-3. **Commit** the change. CI will block if a field is missing or malformed.
-4. **Dry-run or apply on-chain** with `npx hardhat run --no-compile scripts/phase6/apply-config.ts --network <network> -- --manager <Phase6ExpansionManager> [--apply]`.
-5. **Ship** – governance can copy the calldata into a multi-sig, or run through the existing owner scripts.
-
-> Tip: pair this demo with `npm run owner:mission-control` to script the actual transaction bundle from the same console.
-
----
-
-## ✅ Deliverables included
-
-* Smart-contract upgrade: `Phase6ExpansionManager` + tests + mocks (global guard rails, telemetry control, and domain operations control).
-* Python runtime extension with domain routing, IoT signal ingestion, guard-rail annotation, and bridge planning.
-* Subgraph schema & mapping updates for Phase 6 telemetry including guard/operations snapshots.
-* Static UI + JSON config + orchestration scripts for non-technical operators.
-* CI guardrail + branch-protection expectation updates.
-
-Welcome to Phase 6.
+This stack is production ready. Every safety interlock — from domain telemetry to emergency pause flows — is validated automatically, empowering any operator to command a planetary-scale AGI workforce with confidence.
