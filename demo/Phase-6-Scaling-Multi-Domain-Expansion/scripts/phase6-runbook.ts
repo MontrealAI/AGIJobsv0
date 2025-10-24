@@ -136,6 +136,21 @@ export function createPhase6Runbook(blueprint: Phase6Blueprint): string {
   if (typeof blueprint.metrics.averageCompliance === 'number') {
     lines.push(`- Compliance (avg): ${formatBps(blueprint.metrics.averageCompliance)}`);
   }
+  if (typeof blueprint.metrics.resilienceStdDev === 'number') {
+    lines.push(`- Resilience Deviation: ±${blueprint.metrics.resilienceStdDev.toFixed(4)}`);
+  }
+  if (typeof blueprint.metrics.resilienceFloorCoverage === 'number') {
+    lines.push(
+      `- Resilience Floor Coverage: ${(blueprint.metrics.resilienceFloorCoverage * 100).toFixed(1)}% ` +
+        `(breaches ${blueprint.metrics.resilienceFloorBreaches ?? 0})`,
+    );
+  }
+  if (typeof blueprint.metrics.automationFloorCoverage === 'number') {
+    lines.push(
+      `- Automation Floor Coverage: ${(blueprint.metrics.automationFloorCoverage * 100).toFixed(1)}% ` +
+        `(breaches ${blueprint.metrics.automationFloorBreaches ?? 0})`,
+    );
+  }
   lines.push(`- L2 Settlement Coverage: ${(blueprint.metrics.l2SettlementCoverage * 100).toFixed(1)}%`);
   lines.push(`- Sentinel Families: ${blueprint.metrics.sentinelFamilies}`);
   lines.push(`- Global Infra Touchpoints: ${blueprint.metrics.globalInfraCount}`);

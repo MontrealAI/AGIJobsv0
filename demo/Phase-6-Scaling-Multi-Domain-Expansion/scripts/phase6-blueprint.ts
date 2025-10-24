@@ -187,6 +187,7 @@ export interface Phase6Blueprint {
     averageResilience?: number;
     minResilience?: number;
     maxResilience?: number;
+    resilienceStdDev?: number;
     averageAutomation?: number;
     averageCompliance?: number;
     averageLatency?: number;
@@ -197,6 +198,10 @@ export interface Phase6Blueprint {
     domainInfraCount: number;
     autopilotEnabledCount: number;
     autopilotCoverage: number;
+    resilienceFloorBreaches?: number;
+    resilienceFloorCoverage?: number;
+    automationFloorBreaches?: number;
+    automationFloorCoverage?: number;
   };
   global: {
     manifestURI: string;
@@ -316,6 +321,10 @@ function computeMetrics(config: Phase6DemoConfig) {
   let l2Settlements = 0;
   let totalValueFlow = 0;
   let autopilotEnabled = 0;
+  const resilienceFloor = toNumber(config.global.telemetry?.resilienceFloorBps);
+  const automationFloor = toNumber(config.global.telemetry?.automationFloorBps);
+  let resilienceFloorBreaches = 0;
+  let automationFloorBreaches = 0;
 
   for (const domain of config.domains) {
     const metadata = domain.metadata;
@@ -335,9 +344,16 @@ function computeMetrics(config: Phase6DemoConfig) {
     }
     const telemetry = domain.telemetry;
     if (telemetry) {
+      const resilienceBps = toNumber(telemetry.resilienceBps);
+      if (resilienceBps !== null && resilienceFloor !== null && resilienceBps < resilienceFloor) {
+        resilienceFloorBreaches += 1;
+      }
       const auto = toNumber(telemetry.automationBps);
       if (auto !== null) {
         automation.push(auto);
+        if (automationFloor !== null && auto < automationFloor) {
+          automationFloorBreaches += 1;
+        }
       }
       const comp = toNumber(telemetry.complianceBps);
       if (comp !== null) {
@@ -361,15 +377,38 @@ function computeMetrics(config: Phase6DemoConfig) {
     return values.reduce((acc, cur) => acc + cur, 0) / values.length;
   };
 
+  const domainCount = config.domains.length;
+  const averageResilience = average(resilience);
+  const resilienceStdDev =
+    averageResilience !== undefined && resilience.length
+      ? Math.sqrt(
+          resilience.reduce((acc, value) => {
+            const diff = value - averageResilience;
+            return acc + diff * diff;
+          }, 0) / resilience.length,
+        )
+      : undefined;
+
+  const computeCoverage = (breaches: number, floor: number | null): number | undefined => {
+    if (floor === null) {
+      return undefined;
+    }
+    if (!domainCount) {
+      return 1;
+    }
+    return (domainCount - breaches) / domainCount;
+  };
+
   return {
-    domainCount: config.domains.length,
-    averageResilience: average(resilience),
+    domainCount,
+    averageResilience,
     minResilience: resilience.length ? Math.min(...resilience) : undefined,
     maxResilience: resilience.length ? Math.max(...resilience) : undefined,
+    resilienceStdDev,
     averageAutomation: average(automation),
     averageCompliance: average(compliance),
     averageLatency: average(latency),
-    l2SettlementCoverage: config.domains.length ? l2Settlements / config.domains.length : 0,
+    l2SettlementCoverage: domainCount ? l2Settlements / domainCount : 0,
     totalValueFlowUSD: totalValueFlow,
     sentinelFamilies: sentinels.size,
     globalInfraCount: ensureArray(config.global.decentralizedInfra).length,
@@ -378,7 +417,11 @@ function computeMetrics(config: Phase6DemoConfig) {
       0,
     ),
     autopilotEnabledCount: autopilotEnabled,
-    autopilotCoverage: config.domains.length ? autopilotEnabled / config.domains.length : 0,
+    autopilotCoverage: domainCount ? autopilotEnabled / domainCount : 0,
+    resilienceFloorBreaches: resilienceFloor !== null ? resilienceFloorBreaches : undefined,
+    resilienceFloorCoverage: computeCoverage(resilienceFloorBreaches, resilienceFloor),
+    automationFloorBreaches: automationFloor !== null ? automationFloorBreaches : undefined,
+    automationFloorCoverage: computeCoverage(automationFloorBreaches, automationFloor),
   };
 }
 

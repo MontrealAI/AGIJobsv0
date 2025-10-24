@@ -17,5 +17,7 @@ describe('Phase 6 runbook generator', function () {
     expect(markdown).to.contain('## Domain: Sovereign Finance Hypergrid');
     expect(markdown).to.contain('setGlobalConfig');
     expect(markdown).to.contain('registerDomain: 0x');
+    expect(markdown).to.contain('Resilience Floor Coverage');
+    expect(markdown).to.contain('Automation Floor Coverage');
   });
 });
