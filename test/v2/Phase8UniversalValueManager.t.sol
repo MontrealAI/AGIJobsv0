@@ -238,6 +238,16 @@ contract Phase8UniversalValueManagerTest is Test {
         assertEq(storedLastExecutedAt, executionTimestamp);
         assertEq(storedLastReportURI, reportURI);
 
+        vm.expectRevert(abi.encodeWithSelector(Phase8UniversalValueManager.InvalidURI.selector, "reportURI"));
+        vm.prank(GOVERNANCE);
+        manager.recordSelfImprovementExecution(executionTimestamp + 3600, "report.json");
+
+        vm.prank(GOVERNANCE);
+        manager.recordSelfImprovementExecution(
+            executionTimestamp + 3600,
+            "https://phase8.example/self-improvement/report-2.json"
+        );
+
         vm.expectRevert(abi.encodeWithSelector(Phase8UniversalValueManager.InvalidExecutionTimestamp.selector, executionTimestamp - 1));
         vm.prank(GOVERNANCE);
         manager.recordSelfImprovementExecution(executionTimestamp - 1, reportURI);

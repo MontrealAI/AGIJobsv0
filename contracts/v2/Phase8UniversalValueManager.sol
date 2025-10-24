@@ -307,7 +307,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     /// @notice Records a successful execution aligned with the configured self-improvement plan.
     /// @dev Emits {SelfImprovementExecutionRecorded} including the execution timestamp and report URI.
     function recordSelfImprovementExecution(uint64 executedAt, string calldata reportURI) external onlyGovernance {
-        if (bytes(reportURI).length == 0) revert InvalidURI("reportURI");
+        _requireUriPrefix(bytes(reportURI), "reportURI");
         if (executedAt == 0) revert InvalidExecutionTimestamp(executedAt);
 
         SelfImprovementPlan memory plan = selfImprovementPlan;
@@ -621,14 +621,14 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     }
 
     function _validateSelfImprovementPlan(SelfImprovementPlan calldata plan) private pure {
-        if (bytes(plan.planURI).length == 0) revert InvalidURI("planURI");
+        _requireUriPrefix(bytes(plan.planURI), "planURI");
         if (plan.planHash == bytes32(0)) revert InvalidPlanHash();
         if (plan.cadenceSeconds == 0) revert InvalidCadence(plan.cadenceSeconds);
         if (plan.lastExecutedAt != 0 && plan.lastExecutedAt > type(uint64).max) {
             revert InvalidExecutionTimestamp(plan.lastExecutedAt);
         }
-        if (bytes(plan.lastReportURI).length == 0 && plan.lastExecutedAt != 0) {
-            revert InvalidURI("lastReportURI");
+        if (plan.lastExecutedAt != 0) {
+            _requireUriPrefix(bytes(plan.lastReportURI), "lastReportURI");
         }
     }
 
@@ -668,6 +668,23 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
                 if (domainIds[j] == domainId) revert DuplicateBinding(domainId);
             }
         }
+    }
+
+    function _requireUriPrefix(bytes memory data, string memory field) private pure {
+        if (data.length == 0) revert InvalidURI(field);
+        bytes memory ipfs = bytes("ipfs://");
+        bytes memory https = bytes("https://");
+        if (!_hasPrefix(data, ipfs) && !_hasPrefix(data, https)) {
+            revert InvalidURI(field);
+        }
+    }
+
+    function _hasPrefix(bytes memory data, bytes memory prefix) private pure returns (bool) {
+        if (data.length < prefix.length) return false;
+        for (uint256 i = 0; i < prefix.length; i++) {
+            if (data[i] != prefix[i]) return false;
+        }
+        return true;
     }
 
     function _pruneBindings(

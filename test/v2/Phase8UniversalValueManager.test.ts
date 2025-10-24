@@ -263,6 +263,15 @@ describe("Phase8UniversalValueManager", function () {
     expect(executedPlan.lastReportURI).to.equal(executionReport);
 
     await expect(
+      manager.connect(governance).recordSelfImprovementExecution(executionTimestamp + 3600, "report.json"),
+    ).to.be.revertedWithCustomError(manager, "InvalidURI").withArgs("reportURI");
+
+    const httpsReport = "https://phase8.example/self-improvement/report-2.json";
+    await expect(manager.connect(governance).recordSelfImprovementExecution(executionTimestamp + 3600, httpsReport))
+      .to.emit(manager, "SelfImprovementExecutionRecorded")
+      .withArgs(executionTimestamp + 3600, httpsReport, plan.planHash);
+
+    await expect(
       manager.connect(governance).recordSelfImprovementExecution(executionTimestamp - 1, executionReport),
     ).to.be.revertedWithCustomError(manager, "InvalidExecutionTimestamp");
 

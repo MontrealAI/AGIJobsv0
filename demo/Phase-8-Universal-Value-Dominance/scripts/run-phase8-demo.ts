@@ -13,6 +13,14 @@ import { z, ZodError } from "zod";
 const CONFIG_PATH = join(__dirname, "..", "config", "universal.value.manifest.json");
 const OUTPUT_DIR = join(__dirname, "..", "output");
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const RESILIENCE_ALERT_THRESHOLD = 0.9;
+
+const AUTOMATION_INTERVALS: Record<string, number> = {
+  hourly: 60 * 60,
+  daily: 24 * 60 * 60,
+  weekly: 7 * 24 * 60 * 60,
+  monthly: 30 * 24 * 60 * 60,
+};
 
 const AddressSchema = z
   .string({ invalid_type_error: "Address must be provided as a string" })
@@ -188,36 +196,77 @@ const SelfImprovementSchema = z.object({
     .optional(),
 });
 
-const ManifestSchema = z.object({
-  global: z.object({
-    treasury: AddressSchema,
-    universalVault: AddressSchema,
-    upgradeCoordinator: AddressSchema,
-    validatorRegistry: AddressSchema,
-    missionControl: AddressSchema,
-    knowledgeGraph: AddressSchema,
-    guardianCouncil: AddressSchema,
-    systemPause: AddressSchema,
-    heartbeatSeconds: z
-      .number({ invalid_type_error: "Global heartbeatSeconds must be a number" })
-      .int("Global heartbeatSeconds must be an integer")
-      .positive("Global heartbeatSeconds must be positive"),
-    guardianReviewWindow: z
-      .number({ invalid_type_error: "Global guardianReviewWindow must be a number" })
-      .int("Global guardianReviewWindow must be an integer")
-      .nonnegative("Global guardianReviewWindow cannot be negative"),
-    maxDrawdownBps: z
-      .number({ invalid_type_error: "Global maxDrawdownBps must be a number" })
-      .int("Global maxDrawdownBps must be an integer")
-      .nonnegative("Global maxDrawdownBps cannot be negative"),
-    manifestoURI: z.string({ required_error: "Global manifestoURI is required" }).min(1, "Global manifestoURI is required"),
-    guardianCouncilLabel: z.string().optional(),
-  }),
-  domains: z.array(DomainSchema).default([]),
-  sentinels: z.array(SentinelSchema).default([]),
-  capitalStreams: z.array(StreamSchema).default([]),
-  selfImprovement: SelfImprovementSchema.optional(),
-});
+const ManifestSchema = z
+  .object({
+    global: z.object({
+      treasury: AddressSchema,
+      universalVault: AddressSchema,
+      upgradeCoordinator: AddressSchema,
+      validatorRegistry: AddressSchema,
+      missionControl: AddressSchema,
+      knowledgeGraph: AddressSchema,
+      guardianCouncil: AddressSchema,
+      systemPause: AddressSchema,
+      heartbeatSeconds: z
+        .number({ invalid_type_error: "Global heartbeatSeconds must be a number" })
+        .int("Global heartbeatSeconds must be an integer")
+        .positive("Global heartbeatSeconds must be positive"),
+      guardianReviewWindow: z
+        .number({ invalid_type_error: "Global guardianReviewWindow must be a number" })
+        .int("Global guardianReviewWindow must be an integer")
+        .nonnegative("Global guardianReviewWindow cannot be negative"),
+      maxDrawdownBps: z
+        .number({ invalid_type_error: "Global maxDrawdownBps must be a number" })
+        .int("Global maxDrawdownBps must be an integer")
+        .nonnegative("Global maxDrawdownBps cannot be negative"),
+      manifestoURI: z
+        .string({ required_error: "Global manifestoURI is required" })
+        .min(1, "Global manifestoURI is required"),
+      guardianCouncilLabel: z.string().optional(),
+    }),
+    domains: z.array(DomainSchema).default([]),
+    sentinels: z.array(SentinelSchema).default([]),
+    capitalStreams: z.array(StreamSchema).default([]),
+    selfImprovement: SelfImprovementSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    const domains = value.domains ?? [];
+    const guardrail = value.selfImprovement?.autonomyGuards?.maxAutonomyBps;
+    if (domains.length > 0 && guardrail === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Autonomy guard maxAutonomyBps is required when domains are defined",
+        path: ["selfImprovement", "autonomyGuards", "maxAutonomyBps"],
+      });
+    }
+    if (guardrail !== undefined) {
+      domains.forEach((domain, index) => {
+        const autonomy = Number(domain?.autonomyLevelBps ?? 0);
+        if (autonomy > guardrail) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Domain autonomy ${autonomy}bps exceeds guardrail cap ${guardrail}bps — reduce autonomy or raise the guard before shipping`,
+            path: ["domains", index, "autonomyLevelBps"],
+          });
+        }
+      });
+    }
+
+    const guardianWindow = Number(value.global?.guardianReviewWindow ?? 0);
+    if (guardianWindow > 0) {
+      const coverage = (value.sentinels ?? []).reduce((acc, sentinel) => {
+        const raw = Number(sentinel?.coverageSeconds ?? 0);
+        return acc + (Number.isFinite(raw) && raw > 0 ? raw : 0);
+      }, 0);
+      if (coverage < guardianWindow) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Total sentinel coverage ${coverage}s is below guardian review window ${guardianWindow}s — expand monitoring lattice for CI to pass`,
+          path: ["sentinels"],
+        });
+      }
+    }
+  });
 
 export type Phase8Config = z.infer<typeof ManifestSchema>;
 export type EnvironmentConfig = z.infer<typeof EnvironmentSchema>;
@@ -258,6 +307,118 @@ export function parseManifest(raw: unknown): Phase8Config {
     throw new Error(formatZodError("Manifest validation failed", result.error));
   }
   return result.data;
+}
+
+type SentinelRecord = {
+  slug?: string | null;
+  coverageSeconds?: number;
+  domains?: string[];
+};
+
+function coverageMap(sentinels: SentinelRecord[], domainSlugs: string[]): Map<string, number> {
+  const map = new Map<string, number>();
+  const normalizedDomains = Array.from(
+    new Set(domainSlugs.map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
+  );
+
+  for (const sentinel of sentinels) {
+    const coverage = Number(sentinel.coverageSeconds ?? 0);
+    if (!Number.isFinite(coverage) || coverage <= 0) continue;
+
+    const sentinelDomains = Array.from(
+      new Set((sentinel.domains ?? []).map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
+    );
+
+    const targets = sentinelDomains.length > 0 ? sentinelDomains : normalizedDomains;
+    if (targets.length === 0) continue;
+
+    for (const domain of targets) {
+      map.set(domain, (map.get(domain) ?? 0) + coverage);
+    }
+  }
+
+  return map;
+}
+
+export type ScheduledPlaybook = {
+  name: string;
+  automation: string;
+  owner: string;
+  guardrails: string[];
+  nextRun?: string;
+  intervalSeconds?: number;
+  requiresManualScheduling: boolean;
+};
+
+export function schedulePlaybooks(config: Phase8Config, now: number = Math.floor(Date.now() / 1000)): ScheduledPlaybook[] {
+  const plan = config.selfImprovement?.plan;
+  const anchor = Number(plan?.lastExecutedAt ?? 0) > 0 ? Number(plan?.lastExecutedAt ?? 0) : now;
+  const playbooks = config.selfImprovement?.playbooks ?? [];
+  return playbooks.map((playbook) => {
+    const automation = String(playbook.automation ?? "").toLowerCase();
+    const interval = AUTOMATION_INTERVALS[automation];
+    if (!interval) {
+      return {
+        name: playbook.name,
+        automation: playbook.automation ?? "unspecified",
+        owner: playbook.owner,
+        guardrails: playbook.guardrails ?? [],
+        requiresManualScheduling: true,
+      };
+    }
+    const nextRunEpoch = anchor + interval;
+    return {
+      name: playbook.name,
+      automation: playbook.automation ?? automation,
+      owner: playbook.owner,
+      guardrails: playbook.guardrails ?? [],
+      intervalSeconds: interval,
+      nextRun: new Date(nextRunEpoch * 1000).toISOString(),
+      requiresManualScheduling: false,
+    };
+  });
+}
+
+export function guardrailDiagnostics(config: Phase8Config): string[] {
+  const diagnostics: string[] = [];
+  const domains = config.domains ?? [];
+  const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
+  const globalHeartbeat = Number(config.global?.heartbeatSeconds ?? 0);
+  const guardrailCap = Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? NaN);
+  const sentinelCoverage = coverageMap(
+    config.sentinels ?? [],
+    domains.map((domain) => String(domain.slug ?? "")),
+  );
+
+  for (const domain of domains) {
+    const slug = String(domain.slug ?? "").toLowerCase();
+    const coverage = sentinelCoverage.get(slug) ?? 0;
+    if (guardianWindow > 0 && coverage < guardianWindow) {
+      diagnostics.push(
+        `${domain.name ?? slug} has ${coverage}s of sentinel coverage but guardian review window requires ${guardianWindow}s`,
+      );
+    }
+    const resilience = Number(domain.resilienceIndex ?? 0);
+    if (resilience > 0 && resilience < RESILIENCE_ALERT_THRESHOLD) {
+      diagnostics.push(
+        `${domain.name ?? slug} resilience ${resilience.toFixed(3)} is below threshold ${RESILIENCE_ALERT_THRESHOLD.toFixed(3)}`,
+      );
+    }
+    const heartbeat = Number(domain.heartbeatSeconds ?? 0);
+    if (globalHeartbeat > 0 && heartbeat > globalHeartbeat) {
+      diagnostics.push(
+        `${domain.name ?? slug} heartbeat ${heartbeat}s exceeds global heartbeat ${globalHeartbeat}s — review watchdog readiness`,
+      );
+    }
+    const autonomy = Number(domain.autonomyLevelBps ?? 0);
+    if (Number.isFinite(guardrailCap) && guardrailCap >= 0 && autonomy > guardrailCap) {
+      diagnostics.push(
+        `${domain.name ?? slug} autonomy ${autonomy}bps exceeds guardrail cap ${guardrailCap}bps`,
+      );
+    }
+  }
+
+  return diagnostics;
 }
 
 export function loadConfig(path: string = CONFIG_PATH): Phase8Config {
@@ -602,6 +763,17 @@ export function telemetryMarkdown(
   }
   lines.push("");
 
+  const diagnostics = guardrailDiagnostics(config);
+  lines.push("## Diagnostics");
+  if (diagnostics.length === 0) {
+    lines.push("- All guardrails nominal across monitored domains.");
+  } else {
+    for (const diagnostic of diagnostics) {
+      lines.push(`- ${diagnostic}`);
+    }
+  }
+  lines.push("");
+
   lines.push(`## Governance Control Surface`);
   lines.push(`- Treasury: ${config.global?.treasury}`);
   lines.push(`- Universal vault: ${config.global?.universalVault}`);
@@ -651,8 +823,13 @@ export function telemetryMarkdown(
       `- Strategic plan: cadence ${plan.cadenceSeconds}s (${(Number(plan.cadenceSeconds ?? 0) / 3600).toFixed(2)} h) · hash ${plan.planHash} · last report ${plan.lastReportURI}`,
     );
   }
-  for (const playbook of config.selfImprovement?.playbooks ?? []) {
-    lines.push(`- Playbook ${playbook.name} (${playbook.automation}) · owner ${playbook.owner} · guardrails ${playbook.guardrails.join(", ")}`);
+  const schedules = schedulePlaybooks(config);
+  for (const schedule of schedules) {
+    const guardrails = schedule.guardrails.length > 0 ? schedule.guardrails.join(", ") : "none";
+    const cadence = schedule.requiresManualScheduling
+      ? "Next run: manual scheduling required"
+      : `Next run: ${schedule.nextRun}`;
+    lines.push(`- Playbook ${schedule.name} (${schedule.automation}) · owner ${schedule.owner} · guardrails ${guardrails} · ${cadence}`);
   }
   if (config.selfImprovement?.autonomyGuards) {
     const guard = config.selfImprovement.autonomyGuards;

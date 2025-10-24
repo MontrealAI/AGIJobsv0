@@ -13,6 +13,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 _LOG = logging.getLogger(__name__)
 _DEFAULT_MANIFEST = Path("demo/Phase-8-Universal-Value-Dominance/config/universal.value.manifest.json")
+_RESILIENCE_ALERT_THRESHOLD = 0.9
 
 
 def _coerce_active(value: object) -> bool:
@@ -331,11 +332,13 @@ class Phase8DominionRuntime:
             joined = ", ".join(sorted({tag.lower() for tag in tags}))
             notes.append(f"• matched tags: {joined}")
         notes.append(f"• profile: {chosen.describe()}")
-        sentinel_links = [
-            sentinel.describe()
+        matched_sentinels = [
+            sentinel
             for sentinel in self._sentinels.values()
             if chosen.slug in sentinel.domains or not sentinel.domains
         ]
+        sentinel_links = [sentinel.describe() for sentinel in matched_sentinels]
+        coverage_seconds = sum(sentinel.coverage_seconds for sentinel in matched_sentinels)
         if sentinel_links:
             notes.append("• sentinel coverage: " + " | ".join(sentinel_links))
         else:
@@ -350,6 +353,24 @@ class Phase8DominionRuntime:
         else:
             notes.append("• capital streams: none mapped — review capital allocation for this dominion")
         notes.append("• guardian summary: " + self.guardian_summary())
+        if self._global.heartbeat_seconds and chosen.heartbeat_seconds > self._global.heartbeat_seconds:
+            notes.append(
+                "• heartbeat alert: domain heartbeat %.0fs exceeds global heartbeat %.0fs — trigger watchdog escalation"
+                % (chosen.heartbeat_seconds, self._global.heartbeat_seconds)
+            )
+        if chosen.resilience_index and chosen.resilience_index < _RESILIENCE_ALERT_THRESHOLD:
+            notes.append(
+                "• resilience alert: %.3f below %.3f — route to guardians for reinforcement"
+                % (chosen.resilience_index, _RESILIENCE_ALERT_THRESHOLD)
+            )
+        if (
+            self._global.guardian_window_seconds
+            and coverage_seconds < self._global.guardian_window_seconds
+        ):
+            notes.append(
+                "• guardrail alert: sentinel coverage %.0fs below guardian review window %.0fs — escalate to guardian council"
+                % (coverage_seconds, self._global.guardian_window_seconds)
+            )
         if self._source:
             notes.append(f"• manifest source: {self._source}")
         return notes
