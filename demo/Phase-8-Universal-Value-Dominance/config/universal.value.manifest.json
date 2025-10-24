@@ -234,7 +234,7 @@
       }
     ],
     "autonomyGuards": {
-      "maxAutonomyBps": 8000,
+      "maxAutonomyBps": 7900,
       "humanOverrideMinutes": 15,
       "pausable": true,
       "escalationChannels": [
@@ -242,6 +242,18 @@
         "dao-emergency",
         "sentinel-lockdown"
       ]
+    },
+    "guardrails": {
+      "checksum": {
+        "algorithm": "sha3-256",
+        "value": "0xf37c9df49d3b7b2b40fd1c7ed49f59f450e8e6afc3d93f0a1d7c5e3ab4f2c1d0"
+      },
+      "zkProof": {
+        "circuit": "phase8-alignment-v1",
+        "artifactURI": "ipfs://agi-jobs/phase8/self-improvement/zk-proof-placeholder.json",
+        "status": "pending",
+        "notes": "Placeholder commitment until guardian-signed proof is published"
+      }
     }
   }
 }
