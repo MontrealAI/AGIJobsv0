@@ -267,6 +267,53 @@ const ManifestSchema = z
   })
   .superRefine((value, ctx) => {
     const domains = value.domains ?? [];
+    const domainSlugMap = new Map<string, number>();
+    domains.forEach((domain, index) => {
+      const slug = String(domain?.slug ?? "").toLowerCase();
+      if (!slug) return;
+      if (domainSlugMap.has(slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate domain slug detected: ${slug}`,
+          path: ["domains", index, "slug"],
+        });
+        return;
+      }
+      domainSlugMap.set(slug, index);
+    });
+
+    const sentinels = value.sentinels ?? [];
+    const sentinelSlugMap = new Map<string, number>();
+    sentinels.forEach((sentinel, index) => {
+      const slug = String(sentinel?.slug ?? "").toLowerCase();
+      if (!slug) return;
+      if (sentinelSlugMap.has(slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate sentinel slug detected: ${slug}`,
+          path: ["sentinels", index, "slug"],
+        });
+        return;
+      }
+      sentinelSlugMap.set(slug, index);
+    });
+
+    const streams = value.capitalStreams ?? [];
+    const streamSlugMap = new Map<string, number>();
+    streams.forEach((stream, index) => {
+      const slug = String(stream?.slug ?? "").toLowerCase();
+      if (!slug) return;
+      if (streamSlugMap.has(slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate capital stream slug detected: ${slug}`,
+          path: ["capitalStreams", index, "slug"],
+        });
+        return;
+      }
+      streamSlugMap.set(slug, index);
+    });
+
     const guardrail = value.selfImprovement?.autonomyGuards?.maxAutonomyBps;
     if (domains.length > 0 && guardrail === undefined) {
       ctx.addIssue({
@@ -289,6 +336,36 @@ const ManifestSchema = z
     }
 
     const guardianWindow = Number(value.global?.guardianReviewWindow ?? 0);
+    const domainSlugs = Array.from(domainSlugMap.keys());
+
+    sentinels.forEach((sentinel, index) => {
+      (sentinel.domains ?? []).forEach((domain, domainIndex) => {
+        const normalized = String(domain || "").toLowerCase();
+        if (!normalized) return;
+        if (!domainSlugMap.has(normalized)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Sentinel ${sentinel.slug ?? index} references unknown domain ${domain}`,
+            path: ["sentinels", index, "domains", domainIndex],
+          });
+        }
+      });
+    });
+
+    streams.forEach((stream, index) => {
+      (stream.domains ?? []).forEach((domain, domainIndex) => {
+        const normalized = String(domain || "").toLowerCase();
+        if (!normalized) return;
+        if (!domainSlugMap.has(normalized)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Capital stream ${stream.slug ?? index} references unknown domain ${domain}`,
+            path: ["capitalStreams", index, "domains", domainIndex],
+          });
+        }
+      });
+    });
+
     if (guardianWindow > 0) {
       const coverage = (value.sentinels ?? []).reduce((acc, sentinel) => {
         const raw = Number(sentinel?.coverageSeconds ?? 0);
@@ -303,7 +380,6 @@ const ManifestSchema = z
       }
 
       const domainCoverage = new Map<string, number>();
-      const domainSlugs = domains.map((domain) => String(domain?.slug ?? "").toLowerCase()).filter(Boolean);
       if (domainSlugs.length !== domains.length) {
         return;
       }
