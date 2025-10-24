@@ -297,6 +297,34 @@ const ManifestSchema = z
           path: ["sentinels"],
         });
       }
+
+      const domainCoverage = new Map<string, number>();
+      const domainSlugs = domains.map((domain) => String(domain?.slug ?? "").toLowerCase()).filter(Boolean);
+      if (domainSlugs.length !== domains.length) {
+        return;
+      }
+      const domainSlugSet = new Set(domainSlugs);
+      for (const sentinel of value.sentinels ?? []) {
+        const sentinelCoverage = Number(sentinel?.coverageSeconds ?? 0);
+        if (!Number.isFinite(sentinelCoverage) || sentinelCoverage <= 0) continue;
+        const sentinelDomains = Array.from(
+          new Set((sentinel.domains ?? []).map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
+        );
+        const targets = sentinelDomains.length > 0 ? sentinelDomains : domainSlugs;
+        for (const target of targets) {
+          if (!domainSlugSet.has(target)) continue;
+          domainCoverage.set(target, (domainCoverage.get(target) ?? 0) + sentinelCoverage);
+        }
+      }
+
+      const insufficient = domainSlugs.filter((slug) => (domainCoverage.get(slug) ?? 0) < guardianWindow);
+      if (insufficient.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Domains below guardian window ${guardianWindow}s: ${insufficient.join(", ")}`,
+          path: ["sentinels"],
+        });
+      }
     }
   });
 
@@ -507,6 +535,7 @@ export function computeMetrics(config: Phase8Config) {
   const annualBudget = streams.reduce((acc: number, s: any) => acc + Number(s.annualBudget ?? 0), 0);
   const coverageSet = new Set<string>();
   let totalDomainCoverageSeconds = 0;
+  let minDomainCoverageSeconds = domains.length === 0 ? 0 : Number.POSITIVE_INFINITY;
   for (const slug of domainSlugs) {
     const normalized = slug.toLowerCase();
     const coverage = domainCoverageMap.get(normalized) ?? 0;
@@ -514,10 +543,20 @@ export function computeMetrics(config: Phase8Config) {
       coverageSet.add(normalized);
     }
     totalDomainCoverageSeconds += coverage;
+    if (coverage < minDomainCoverageSeconds) {
+      minDomainCoverageSeconds = coverage;
+    }
   }
   const coverageRatio = domains.length === 0 ? 0 : (coverageSet.size / domains.length);
   const guardianWindowSeconds = Number(config.global?.guardianReviewWindow ?? 0);
   const averageDomainCoverageSeconds = domains.length === 0 ? 0 : totalDomainCoverageSeconds / domains.length;
+  if (!Number.isFinite(minDomainCoverageSeconds)) {
+    minDomainCoverageSeconds = 0;
+  }
+  const minimumCoverageAdequacy =
+    guardianWindowSeconds > 0 && Number.isFinite(minDomainCoverageSeconds)
+      ? minDomainCoverageSeconds / guardianWindowSeconds
+      : 0;
   const cadenceHours = Number(plan.cadenceSeconds ?? 0) / 3600;
   const lastExecutedAt = Number(plan.lastExecutedAt ?? 0);
   const dominanceScore = computeDominanceScore({
@@ -542,6 +581,8 @@ export function computeMetrics(config: Phase8Config) {
     dominanceScore,
     averageDomainCoverageSeconds,
     guardianWindowSeconds,
+    minDomainCoverageSeconds,
+    minimumCoverageAdequacy,
   };
 }
 
@@ -808,6 +849,12 @@ export function telemetryMarkdown(
   lines.push(`- Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
   lines.push(`- Sentinel coverage per guardian cycle: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes`);
   lines.push(`- Domains covered by sentinels: ${metrics.coverageRatio.toFixed(1)}%`);
+  if (metrics.guardianWindowSeconds) {
+    const adequacyPercent = metrics.minimumCoverageAdequacy * 100;
+    lines.push(
+      `- Minimum sentinel coverage per domain: ${metrics.minDomainCoverageSeconds.toFixed(0)}s (requirement ${metrics.guardianWindowSeconds}s, adequacy ${adequacyPercent.toFixed(1)}%)`,
+    );
+  }
   lines.push(`- Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
   if (metrics.cadenceHours) {
     lines.push(`- Self-improvement cadence: every ${metrics.cadenceHours.toFixed(2)} hours`);
@@ -935,6 +982,8 @@ export function writeArtifacts(
       dominanceScore: metrics.dominanceScore,
       averageDomainCoverageSeconds: metrics.averageDomainCoverageSeconds,
       guardianReviewWindowSeconds: metrics.guardianWindowSeconds,
+      minDomainCoverageSeconds: metrics.minDomainCoverageSeconds,
+      minimumCoverageAdequacyPercent: metrics.minimumCoverageAdequacy * 100,
     },
     calls: entries,
   };
@@ -1013,6 +1062,9 @@ export function main() {
     console.log(`Guardian sentinel coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes per cycle`);
     if (metrics.guardianWindowSeconds) {
       console.log(`Average coverage per domain: ${metrics.averageDomainCoverageSeconds.toFixed(0)}s (guardian window ${metrics.guardianWindowSeconds}s)`);
+      console.log(
+        `Minimum coverage per domain: ${metrics.minDomainCoverageSeconds.toFixed(0)}s (requirement ${metrics.guardianWindowSeconds}s, adequacy ${(metrics.minimumCoverageAdequacy * 100).toFixed(1)}%)`,
+      );
     }
     console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
     console.log(`Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
