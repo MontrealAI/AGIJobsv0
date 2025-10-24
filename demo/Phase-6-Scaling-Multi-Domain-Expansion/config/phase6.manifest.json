@@ -89,7 +89,7 @@
       "active": true,
       "operations": {
         "maxActiveJobs": 48000,
-        "maxQueueDepth": 12000,
+        "maxQueueDepth": 48000,
         "minStake": "5000000000000000000000",
         "treasuryShareBps": 1600,
         "circuitBreakerBps": 7800,
@@ -162,7 +162,7 @@
       "active": true,
       "operations": {
         "maxActiveJobs": 22000,
-        "maxQueueDepth": 6400,
+        "maxQueueDepth": 22000,
         "minStake": "3000000000000000000000",
         "treasuryShareBps": 2000,
         "circuitBreakerBps": 7000,
@@ -235,7 +235,7 @@
       "active": true,
       "operations": {
         "maxActiveJobs": 68000,
-        "maxQueueDepth": 20000,
+        "maxQueueDepth": 68000,
         "minStake": "4500000000000000000000",
         "treasuryShareBps": 1800,
         "circuitBreakerBps": 7600,

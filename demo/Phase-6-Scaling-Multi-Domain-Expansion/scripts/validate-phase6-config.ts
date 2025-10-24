@@ -29,6 +29,11 @@ function main() {
     );
 
     ensure(
+      domain.operations.maxQueueDepth >= domain.operations.maxActiveJobs,
+      `${domain.slug}: maxQueueDepth must be at least maxActiveJobs`,
+    );
+
+    ensure(
       domain.operations.autopauseThresholdBps <= domain.operations.circuitBreakerBps,
       `${domain.slug}: autopauseThresholdBps must be below circuit breaker`,
     );
