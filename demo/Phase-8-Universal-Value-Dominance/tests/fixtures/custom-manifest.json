@@ -1,0 +1,107 @@
+{
+  "global": {
+    "treasury": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "universalVault": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "upgradeCoordinator": "0xcccccccccccccccccccccccccccccccccccccccc",
+    "validatorRegistry": "0xdddddddddddddddddddddddddddddddddddddddd",
+    "missionControl": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "knowledgeGraph": "0xffffffffffffffffffffffffffffffffffffffff",
+    "guardianCouncil": "0x1111111111111111111111111111111111111111",
+    "systemPause": "0x2222222222222222222222222222222222222222",
+    "heartbeatSeconds": 600,
+    "guardianReviewWindow": 900,
+    "maxDrawdownBps": 2800,
+    "manifestoURI": "ipfs://phase8/demo/custom-manifest.json"
+  },
+  "domains": [
+    {
+      "slug": "alpha-dominion",
+      "name": "Alpha Dominion",
+      "metadataURI": "ipfs://phase8/demo/domains/alpha-dominion.json",
+      "orchestrator": "0x3333333333333333333333333333333333333333",
+      "capitalVault": "0x4444444444444444444444444444444444444444",
+      "validatorModule": "0x5555555555555555555555555555555555555555",
+      "policyKernel": "0x6666666666666666666666666666666666666666",
+      "heartbeatSeconds": 480,
+      "tvlLimit": "5000000000000000000000",
+      "autonomyLevelBps": 4200,
+      "skillTags": [
+        "resilience",
+        "micro-economies"
+      ],
+      "resilienceIndex": 0.88,
+      "valueFlowMonthlyUSD": 2000000,
+      "autonomyNarrative": "Agile multi-sector dominion orchestrating pilot value loops.",
+      "active": true
+    }
+  ],
+  "sentinels": [
+    {
+      "slug": "alpha-sentinel",
+      "name": "Alpha Sentinel",
+      "uri": "ipfs://phase8/demo/sentinels/alpha-sentinel.json",
+      "agent": "0x7777777777777777777777777777777777777777",
+      "coverageSeconds": 1200,
+      "sensitivityBps": 450,
+      "domains": [
+        "alpha-dominion"
+      ],
+      "active": true
+    }
+  ],
+  "capitalStreams": [
+    {
+      "slug": "alpha-stream",
+      "name": "Alpha Stream",
+      "uri": "ipfs://phase8/demo/streams/alpha-stream.json",
+      "vault": "0x8888888888888888888888888888888888888888",
+      "annualBudget": 150000000,
+      "expansionBps": 800,
+      "domains": [
+        "alpha-dominion"
+      ],
+      "active": true
+    }
+  ],
+  "selfImprovement": {
+    "plan": {
+      "planURI": "ipfs://phase8/demo/self-improvement/plan.json",
+      "planHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "cadenceSeconds": 3600,
+      "lastExecutedAt": 0,
+      "lastReportURI": ""
+    },
+    "playbooks": [
+      {
+        "name": "Focused Retraining",
+        "description": "Weekly retraining on alpha dominion receipts under guardian supervision.",
+        "owner": "0x1111111111111111111111111111111111111111",
+        "automation": "weekly",
+        "guardrails": [
+          "checksum-verification",
+          "dual-guardian-signoff"
+        ]
+      }
+    ],
+    "autonomyGuards": {
+      "maxAutonomyBps": 5000,
+      "humanOverrideMinutes": 10,
+      "pausable": true,
+      "escalationChannels": [
+        "guardian-council",
+        "dao-emergency"
+      ]
+    },
+    "guardrails": {
+      "checksum": {
+        "algorithm": "sha3-256",
+        "value": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+      },
+      "zkProof": {
+        "circuit": "alpha-alignment-v1",
+        "artifactURI": "ipfs://phase8/demo/self-improvement/zk-proof.json",
+        "status": "pending"
+      }
+    }
+  }
+}

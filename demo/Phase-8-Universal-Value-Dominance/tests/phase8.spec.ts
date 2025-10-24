@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import path from 'path';
 import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Phase 8 dashboard happy path', () => {
@@ -73,6 +74,21 @@ test.describe('Phase 8 dashboard happy path', () => {
 
     const downloadLink = page.locator('[data-test-id="runbook-download"]').first();
     await expect(downloadLink).toHaveAttribute('href', './output/phase8-orchestration-report.txt');
+  });
+
+  test('allows operators to swap manifests via upload', async ({ page }) => {
+    const fixturePath = path.join(__dirname, 'fixtures', 'custom-manifest.json');
+    await page.setInputFiles('[data-test-id="manifest-upload-input"]', fixturePath);
+
+    const status = page.locator('[data-manifest-status]');
+    await expect(status).toContainText('uploaded file');
+    await expect(status).toContainText('custom-manifest.json');
+
+    const monthlyFlow = page.locator('[data-test-id="stat-card"][data-stat-key="monthly-flow"]');
+    await expect(monthlyFlow).toContainText('$2.00M');
+
+    const feedback = page.locator('[data-manifest-feedback]');
+    await expect(feedback).toContainText('Uploaded manifest applied to dashboard.');
   });
 
   test('has no detectable accessibility violations', async ({ page }) => {

@@ -168,6 +168,199 @@
         font-size: 0.95rem;
       }
 
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .manifest-console {
+        width: min(1120px, 95vw);
+        margin: 0 auto 2rem;
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 20px;
+        padding: 1.75rem 2rem;
+        box-shadow: 0 22px 50px rgba(5, 12, 22, 0.5);
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      .manifest-console__header {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .manifest-console__header h2 {
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 1rem;
+        color: var(--muted);
+      }
+
+      .manifest-console__header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .manifest-console__status {
+        margin: 0;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--accent);
+      }
+
+      .manifest-console__status[data-status="error"] {
+        color: var(--critical);
+      }
+
+      .manifest-console__status[data-status="loading"] {
+        color: var(--warning);
+      }
+
+      .manifest-console__grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+
+      .manifest-console__card {
+        position: relative;
+        background: rgba(20, 40, 72, 0.65);
+        border: 1px solid rgba(108, 192, 255, 0.2);
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: inset 0 0 0 1px rgba(92, 150, 220, 0.08);
+        display: grid;
+        gap: 0.65rem;
+      }
+
+      .manifest-console__card-title {
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .manifest-console__card-description,
+      .manifest-console__helper {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .manifest-console__upload {
+        cursor: pointer;
+        overflow: hidden;
+      }
+
+      .manifest-console__upload input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      .manifest-console__input-row {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      .manifest-console__input-row input[type="url"] {
+        flex: 1;
+        padding: 0.65rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid rgba(108, 192, 255, 0.35);
+        background: rgba(8, 20, 40, 0.75);
+        color: var(--text);
+        font-size: 0.95rem;
+        outline: none;
+      }
+
+      .manifest-console__input-row input[type="url"]:focus-visible {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(90, 210, 255, 0.35);
+      }
+
+      .manifest-console__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .console-button {
+        padding: 0.6rem 1.1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(90, 210, 255, 0.45);
+        background: linear-gradient(135deg, rgba(90, 210, 255, 0.25), rgba(90, 210, 255, 0.08));
+        color: var(--text);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: transform 150ms ease, box-shadow 150ms ease;
+      }
+
+      .console-button:hover,
+      .console-button:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(25, 120, 215, 0.35);
+        outline: none;
+      }
+
+      .console-button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .manifest-console__feedback {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .manifest-console__feedback[data-visible="false"] {
+        display: none;
+      }
+
+      .manifest-console__feedback[data-tone="success"] {
+        color: #7ff5d0;
+      }
+
+      .manifest-console__feedback[data-tone="error"] {
+        color: var(--critical);
+      }
+
+      .manifest-console__feedback[data-tone="warning"] {
+        color: var(--warning);
+      }
+
+      .manifest-console__feedback[data-tone="info"] {
+        color: var(--muted);
+      }
+
+      @media (max-width: 640px) {
+        .manifest-console__input-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .console-button {
+          width: 100%;
+          text-align: center;
+        }
+      }
+
       .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -531,6 +724,118 @@
         transparent guardrails.
       </p>
     </header>
+    <section class="manifest-console" aria-labelledby="manifest-console-heading" data-test-id="manifest-console">
+      <div class="manifest-console__header">
+        <h2 id="manifest-console-heading" data-i18n-key="manifestConsole.heading">Manifest command console</h2>
+        <p data-i18n-key="manifestConsole.description">
+          Drop in a new Phase 8 manifest or fetch one from a remote URL and the entire dashboard will reconfigure instantly — no rebuild, no redeploy.
+        </p>
+        <p
+          class="manifest-console__status"
+          data-manifest-status
+          data-status="loading"
+          aria-live="polite"
+          data-i18n-key="manifestConsole.status.loading"
+        >
+          Loading manifest…
+        </p>
+      </div>
+      <div class="manifest-console__grid">
+        <label class="manifest-console__card manifest-console__upload" data-test-id="manifest-upload">
+          <span
+            class="manifest-console__card-title"
+            id="manifest-upload-title"
+            data-i18n-key="manifestConsole.uploadTitle"
+          >
+            Upload manifest
+          </span>
+          <span
+            class="manifest-console__card-description"
+            id="manifest-upload-hint"
+            data-i18n-key="manifestConsole.uploadHint"
+          >
+            Click or drop a JSON manifest generated by AGI Jobs v0 (v2). The console will preview it instantly.
+          </span>
+          <input
+            type="file"
+            accept="application/json"
+            id="manifest-upload-input"
+            aria-labelledby="manifest-upload-title manifest-upload-hint"
+            data-test-id="manifest-upload-input"
+          />
+        </label>
+        <form
+          class="manifest-console__card"
+          id="manifest-url-form"
+          data-test-id="manifest-url-form"
+          novalidate
+        >
+          <span class="manifest-console__card-title" id="manifest-url-title" data-i18n-key="manifestConsole.urlTitle">
+            Load from URL
+          </span>
+          <p class="sr-only" id="manifest-url-description" data-i18n-key="manifestConsole.urlDescription">
+            Enter a URL that returns a Phase 8 manifest JSON. The dashboard will fetch and render it.
+          </p>
+          <div class="manifest-console__input-row">
+            <input
+              type="url"
+              id="manifest-url-input"
+              name="manifest-url"
+              placeholder="https://example.com/manifest.json"
+              aria-labelledby="manifest-url-title"
+              aria-describedby="manifest-url-description manifest-url-hint"
+              data-test-id="manifest-url-input"
+            />
+            <button
+              type="submit"
+              class="console-button"
+              data-test-id="manifest-url-submit"
+              data-i18n-key="manifestConsole.urlButton"
+            >
+              Load
+            </button>
+          </div>
+          <p class="manifest-console__helper" id="manifest-url-hint" data-i18n-key="manifestConsole.urlHint">
+            Supports HTTPS endpoints, IPFS gateways, or signed object storage with permissive CORS.
+          </p>
+        </form>
+        <div class="manifest-console__card" data-test-id="manifest-session-card">
+          <span class="manifest-console__card-title" data-i18n-key="manifestConsole.sessionTitle">
+            Session controls
+          </span>
+          <div class="manifest-console__actions">
+            <button
+              type="button"
+              class="console-button"
+              id="manifest-reset"
+              data-test-id="manifest-reset"
+              data-i18n-key="manifestConsole.resetButton"
+            >
+              Use baseline manifest
+            </button>
+            <button
+              type="button"
+              class="console-button"
+              id="manifest-refresh"
+              data-test-id="manifest-refresh"
+              data-i18n-key="manifestConsole.refreshButton"
+            >
+              Refetch baseline
+            </button>
+          </div>
+          <p class="manifest-console__helper" data-i18n-key="manifestConsole.sessionHint">
+            Snap back to the orchestrator’s manifest or pull a fresh copy from disk to sync with your repo.
+          </p>
+        </div>
+      </div>
+      <p
+        class="manifest-console__feedback"
+        data-manifest-feedback
+        data-visible="false"
+        aria-live="polite"
+        data-i18n-key="manifestConsole.feedback.ready"
+      ></p>
+    </section>
     <section
       class="error-panel"
       id="error-panel"
@@ -581,7 +886,20 @@
       <span>AGI Jobs v0 (v2) — Universal Value Dominance demo. Everything you need to command a trillion-dollar superintelligence.</span>
     </footer>
     <script type="module">
-      const configPath = new URL("./config/universal.value.manifest.json", import.meta.url);
+      let configPath = new URL("./config/universal.value.manifest.json", import.meta.url);
+      const params = new URLSearchParams(window.location.search);
+      const manifestOverride = params.get("manifest");
+      let baselineSourceType = "default";
+      if (manifestOverride) {
+        try {
+          configPath = new URL(manifestOverride, window.location.href);
+          baselineSourceType = "param";
+        } catch (error) {
+          console.warn("Invalid ?manifest override", error);
+        }
+      }
+      const baselineLabel =
+        baselineSourceType === "default" ? "config/universal.value.manifest.json" : configPath.href;
       const dateFormatter = new Intl.DateTimeFormat("en-US", {
         dateStyle: "medium",
         timeStyle: "short",
@@ -664,6 +982,43 @@
           systemPause: "System pause",
           manifest: "Manifest",
           drawdown: "Drawdown guard",
+        },
+        manifestConsole: {
+          heading: "Manifest command console",
+          description:
+            "Drop in a new Phase 8 manifest or fetch one from a remote URL and the entire dashboard will reconfigure instantly.",
+          uploadTitle: "Upload manifest",
+          uploadHint: "Click or drop a JSON manifest generated by AGI Jobs v0 (v2). The console will preview it instantly.",
+          urlTitle: "Load from URL",
+          urlDescription: "Enter a manifest URL and the dashboard will fetch and render it.",
+          urlHint: "Supports HTTPS endpoints, IPFS gateways, or signed object storage with permissive CORS.",
+          urlButton: "Load",
+          sessionTitle: "Session controls",
+          sessionHint: "Return to the orchestrator output or refetch the baseline manifest from disk.",
+          resetButton: "Use baseline manifest",
+          refreshButton: "Refetch baseline",
+          status: {
+            loading: "Loading manifest…",
+            default: "Active manifest: default — {path}",
+            param: "Active manifest: query override — {url}",
+            upload: "Active manifest: uploaded file — {name}",
+            url: "Active manifest: remote manifest — {url}",
+            custom: "Active manifest: custom manifest",
+            error: "Manifest status unknown — review the last load attempt.",
+          },
+          feedback: {
+            ready: "",
+            successUpload: "Uploaded manifest applied to dashboard.",
+            successUrl: "Remote manifest loaded successfully.",
+            refresh: "Baseline manifest refreshed from disk.",
+            reset: "Baseline manifest restored.",
+            paramOverride: "Loaded manifest from ?manifest= override.",
+            errorInvalidJson: "Manifest could not be parsed. Verify it matches the Phase 8 schema.",
+            errorFetch: "Unable to load manifest from the provided source.",
+            errorEmptyUrl: "Enter a manifest URL to load.",
+            errorInvalidUrl: "The provided manifest URL is invalid.",
+            errorUpload: "Manifest upload failed. Retry with a valid JSON file.",
+          },
         },
         fallbacks: {
           missingManifest: "Manifest URI not provided.",
@@ -893,6 +1248,57 @@
             escalationChannels: [],
           },
         },
+      };
+
+      const cloneManifest = (value) => JSON.parse(JSON.stringify(value ?? {}));
+
+      const manifestStatusNode = document.querySelector("[data-manifest-status]");
+      const manifestFeedbackNode = document.querySelector("[data-manifest-feedback]");
+      const manifestUploadInput = document.querySelector("[data-test-id=\"manifest-upload-input\"]");
+      const manifestResetButton = document.getElementById("manifest-reset");
+      const manifestRefreshButton = document.getElementById("manifest-refresh");
+      const manifestUrlForm = document.getElementById("manifest-url-form");
+      const manifestUrlInput = document.getElementById("manifest-url-input");
+
+      let defaultManifest = null;
+      let defaultManifestSource = null;
+      let currentManifest = null;
+      let currentSource = null;
+
+      const setManifestFeedback = (message, tone = "info") => {
+        if (!manifestFeedbackNode) return;
+        const content = String(message ?? "").trim();
+        if (!content) {
+          manifestFeedbackNode.textContent = "";
+          manifestFeedbackNode.setAttribute("data-visible", "false");
+          manifestFeedbackNode.removeAttribute("data-tone");
+          return;
+        }
+        manifestFeedbackNode.textContent = content;
+        manifestFeedbackNode.setAttribute("data-visible", "true");
+        manifestFeedbackNode.setAttribute("data-tone", tone);
+      };
+
+      const formatStatusMessage = (template, replacements) => {
+        let output = template;
+        for (const [key, value] of Object.entries(replacements ?? {})) {
+          output = output.replace(new RegExp(`\\{${key}\\}`, "g"), value ?? "");
+        }
+        return output;
+      };
+
+      const setManifestStatus = (source) => {
+        if (!manifestStatusNode) return;
+        const normalized = source ? { ...source } : { type: "custom" };
+        const type = normalized.type ?? "custom";
+        const template = t(`manifestConsole.status.${type}`) || t("manifestConsole.status.custom");
+        const replacements = {
+          path: normalized.label ?? normalized.path ?? "config/universal.value.manifest.json",
+          url: normalized.href ?? normalized.label ?? "",
+          name: normalized.name ?? normalized.label ?? "manifest.json",
+        };
+        manifestStatusNode.textContent = formatStatusMessage(template, replacements);
+        manifestStatusNode.setAttribute("data-status", type);
       };
 
       const RUNBOOK_STEPS = [
@@ -1224,6 +1630,188 @@
           alerts,
         };
       };
+
+      function renderManifest(manifest) {
+        clearErrorState();
+        const context = buildContext(manifest);
+        renderAlerts(context.alerts);
+        for (const section of SECTION_SCHEMA) {
+          const node = document.querySelector(section.target);
+          if (!node) continue;
+          section.renderer(node, manifest, context);
+        }
+      }
+
+      function applyManifest(manifest, source, options = {}) {
+        const normalized = applyDefaults(cloneManifest(manifest), DEFAULT_MANIFEST);
+        currentManifest = cloneManifest(normalized);
+        const normalizedSource = { ...(source ?? {}), type: source?.type ?? "custom" };
+        currentSource = normalizedSource;
+        renderManifest(normalized);
+        setManifestStatus(normalizedSource);
+        if (options.storeAsDefault) {
+          defaultManifest = cloneManifest(normalized);
+          defaultManifestSource = { ...normalizedSource };
+        }
+        const feedback = options.feedback ?? "";
+        if (feedback) {
+          setManifestFeedback(feedback, options.feedbackTone ?? "success");
+        } else {
+          setManifestFeedback("");
+        }
+        return normalized;
+      }
+
+      async function fetchManifestFromUrl(href) {
+        const response = await fetch(href, { cache: "no-cache" });
+        if (!response.ok) {
+          const error = new Error(`Failed to load manifest: ${response.status}`);
+          error.name = "FetchError";
+          throw error;
+        }
+        const text = await response.text();
+        try {
+          return JSON.parse(text);
+        } catch (cause) {
+          const error = new Error("Invalid manifest JSON");
+          error.name = "ParseError";
+          error.cause = cause;
+          throw error;
+        }
+      }
+
+      async function loadManifestFromUrl(href, options = {}) {
+        const {
+          sourceType = "url",
+          label,
+          storeAsDefault = false,
+          feedbackKey,
+          showErrorsInPanel = false,
+        } = options;
+        setManifestStatus({ type: "loading" });
+        try {
+          const data = await fetchManifestFromUrl(href);
+          const source = {
+            type: sourceType,
+            href,
+            label: label ?? (sourceType === "default" ? "config/universal.value.manifest.json" : href),
+          };
+          const feedback = feedbackKey ? t(feedbackKey) : "";
+          applyManifest(data, source, {
+            storeAsDefault,
+            feedback,
+            feedbackTone: feedback ? "success" : "info",
+          });
+          return true;
+        } catch (error) {
+          console.error(error);
+          const messageKey =
+            error?.name === "ParseError"
+              ? "manifestConsole.feedback.errorInvalidJson"
+              : "manifestConsole.feedback.errorFetch";
+          const message = t(messageKey);
+          if (showErrorsInPanel) {
+            showErrorPanel({
+              message,
+              steps: [t("errors.stepCheckPath"), t("errors.stepRebuild"), t("errors.stepDocs")],
+            });
+          } else {
+            setManifestFeedback(message, "error");
+            if (currentSource) {
+              setManifestStatus(currentSource);
+            } else {
+              setManifestStatus({ type: "error" });
+            }
+          }
+          return false;
+        }
+      }
+
+      async function handleManifestUpload(event) {
+        const input = event.currentTarget;
+        if (!(input instanceof HTMLInputElement) || !input.files || !input.files.length) return;
+        const [file] = input.files;
+        try {
+          const text = await file.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (cause) {
+            const parseError = new Error("Invalid manifest JSON");
+            parseError.name = "ParseError";
+            parseError.cause = cause;
+            throw parseError;
+          }
+          applyManifest(
+            data,
+            { type: "upload", name: file?.name || "manifest.json" },
+            {
+              feedback: t("manifestConsole.feedback.successUpload"),
+              feedbackTone: "success",
+            },
+          );
+        } catch (error) {
+          console.error(error);
+          const messageKey =
+            error?.name === "ParseError"
+              ? "manifestConsole.feedback.errorInvalidJson"
+              : "manifestConsole.feedback.errorUpload";
+          setManifestFeedback(t(messageKey), "error");
+          if (currentSource) {
+            setManifestStatus(currentSource);
+          }
+        } finally {
+          input.value = "";
+        }
+      }
+
+      function handleManifestReset() {
+        if (defaultManifest && defaultManifestSource) {
+          applyManifest(defaultManifest, defaultManifestSource, {
+            feedback: t("manifestConsole.feedback.reset"),
+            feedbackTone: "success",
+          });
+        } else {
+          loadManifestFromUrl(configPath.href, {
+            sourceType: baselineSourceType,
+            label: baselineLabel,
+            storeAsDefault: true,
+            feedbackKey: "manifestConsole.feedback.reset",
+          });
+        }
+      }
+
+      function handleManifestRefresh() {
+        loadManifestFromUrl(configPath.href, {
+          sourceType: baselineSourceType,
+          label: baselineLabel,
+          storeAsDefault: true,
+          feedbackKey: "manifestConsole.feedback.refresh",
+        });
+      }
+
+      async function handleManifestUrlSubmit(event) {
+        event.preventDefault();
+        if (!(manifestUrlInput instanceof HTMLInputElement)) return;
+        const raw = manifestUrlInput.value.trim();
+        if (!raw) {
+          setManifestFeedback(t("manifestConsole.feedback.errorEmptyUrl"), "warning");
+          return;
+        }
+        let resolved;
+        try {
+          resolved = new URL(raw, window.location.href);
+        } catch (error) {
+          setManifestFeedback(t("manifestConsole.feedback.errorInvalidUrl"), "error");
+          return;
+        }
+        manifestUrlInput.value = resolved.href;
+        await loadManifestFromUrl(resolved.href, {
+          sourceType: "url",
+          label: resolved.href,
+          feedbackKey: "manifestConsole.feedback.successUrl",
+        });
+      }
 
       function renderStats(container, manifest, context) {
         const stats = [
@@ -1672,6 +2260,19 @@
         }
       }
 
+      if (manifestUploadInput instanceof HTMLInputElement) {
+        manifestUploadInput.addEventListener('change', handleManifestUpload);
+      }
+      if (manifestResetButton instanceof HTMLElement) {
+        manifestResetButton.addEventListener('click', handleManifestReset);
+      }
+      if (manifestRefreshButton instanceof HTMLElement) {
+        manifestRefreshButton.addEventListener('click', handleManifestRefresh);
+      }
+      if (manifestUrlForm instanceof HTMLFormElement) {
+        manifestUrlForm.addEventListener('submit', handleManifestUrlSubmit);
+      }
+
       document.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
@@ -1725,27 +2326,14 @@
         }
       });
 
-      async function load() {
-        const response = await fetch(configPath);
-        if (!response.ok) throw new Error(`Failed to load manifest: ${response.status}`);
-        const data = await response.json();
-        const manifest = applyDefaults(data, DEFAULT_MANIFEST);
-        clearErrorState();
-        const context = buildContext(manifest);
-        renderAlerts(context.alerts);
-        for (const section of SECTION_SCHEMA) {
-          const node = document.querySelector(section.target);
-          if (!node) continue;
-          section.renderer(node, manifest, context);
-        }
-      }
-
-      load().catch((error) => {
-        console.error(error);
-        showErrorPanel({
-          message: error?.message || String(error),
-          steps: [t("errors.stepCheckPath"), t("errors.stepRebuild"), t("errors.stepDocs")],
-        });
+      const initialFeedbackKey =
+        baselineSourceType === "param" ? "manifestConsole.feedback.paramOverride" : undefined;
+      loadManifestFromUrl(configPath.href, {
+        sourceType: baselineSourceType,
+        label: baselineLabel,
+        storeAsDefault: true,
+        feedbackKey: initialFeedbackKey,
+        showErrorsInPanel: true,
       });
     </script>
   </body>
