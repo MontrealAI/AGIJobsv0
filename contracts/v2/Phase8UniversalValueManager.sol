@@ -483,6 +483,13 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         return result;
     }
 
+    /// @notice Fetches a sentinel profile by its deterministic identifier.
+    /// @dev Reverts with {UnknownSentinel} when the sentinel is unregistered or removed.
+    function getSentinel(bytes32 id) external view returns (SentinelProfile memory) {
+        if (!_knownSentinel[id]) revert UnknownSentinel(id);
+        return _sentinels[id];
+    }
+
     /// @notice Returns the domains assigned to a sentinel identifier.
     /// @dev Reverts with {UnknownSentinel} to prevent leaking empty arrays for invalid IDs.
     function getSentinelDomains(bytes32 id) external view returns (bytes32[] memory) {
@@ -564,6 +571,13 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
             result[i] = CapitalStreamView({id: id, stream: _capitalStreams[id]});
         }
         return result;
+    }
+
+    /// @notice Fetches a capital stream configuration by its deterministic identifier.
+    /// @dev Reverts with {UnknownStream} when the stream is unregistered or removed.
+    function getCapitalStream(bytes32 id) external view returns (CapitalStream memory) {
+        if (!_knownStream[id]) revert UnknownStream(id);
+        return _capitalStreams[id];
     }
 
     /// @notice Fetches the domain bindings for a capital stream identifier.
