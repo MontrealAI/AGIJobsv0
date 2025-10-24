@@ -1,6 +1,13 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { domainIdFromSlug, fetchPhase6State, planPhase6Changes, Phase6Config } from '../../scripts/phase6/apply-config-lib';
+import {
+  buildPlanSummary,
+  domainIdFromSlug,
+  fetchPhase6State,
+  planPhase6Changes,
+  Phase6Config,
+  Phase6Plan,
+} from '../../scripts/phase6/apply-config-lib';
 
 async function deploy(name: string, ...args: unknown[]) {
   const factory = await ethers.getContractFactory(name);
@@ -216,5 +223,149 @@ describe('Phase6 apply-config planner', function () {
     expect(finalPlan.domains).to.be.empty;
     expect(finalPlan.domainOperations).to.be.empty;
     expect(finalPlan.global).to.be.undefined;
+  });
+
+  it('builds deterministic plan summaries for export', function () {
+    const plan: Phase6Plan = {
+      global: {
+        action: 'setGlobalConfig',
+        config: {
+          iotOracleRouter: '0x1111111111111111111111111111111111111111',
+          defaultL2Gateway: '0x2222222222222222222222222222222222222222',
+          didRegistry: '0x3333333333333333333333333333333333333333',
+          treasuryBridge: '0x4444444444444444444444444444444444444444',
+          l2SyncCadence: 180n,
+          manifestURI: 'ipfs://phase6/global.json',
+        },
+        diffs: ['manifestURI'],
+      },
+      systemPause: { action: 'setSystemPause', target: '0x5555555555555555555555555555555555555555' },
+      escalationBridge: {
+        action: 'setEscalationBridge',
+        target: '0x6666666666666666666666666666666666666666',
+      },
+      domains: [
+        {
+          action: 'updateDomain',
+          id: domainIdFromSlug('finance'),
+          slug: 'finance',
+          diffs: ['metadataURI'],
+          config: {
+            slug: 'finance',
+            name: 'Finance Domain',
+            metadataURI: 'ipfs://phase6/domains/finance.json',
+            validationModule: '0x7777777777777777777777777777777777777777',
+            dataOracle: '0x8888888888888888888888888888888888888888',
+            l2Gateway: '0x9999999999999999999999999999999999999999',
+            subgraphEndpoint: 'https://phase6.example/subgraphs/finance',
+            executionRouter: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            heartbeatSeconds: 120n,
+            active: true,
+          },
+        },
+      ],
+      domainOperations: [
+        {
+          action: 'setDomainOperations',
+          id: domainIdFromSlug('finance'),
+          slug: 'finance',
+          diffs: ['minStake'],
+          config: {
+            maxActiveJobs: 100n,
+            maxQueueDepth: 240n,
+            minStake: 1234567890000000000n,
+            treasuryShareBps: 280,
+            circuitBreakerBps: 7200,
+            requiresHumanValidation: false,
+          },
+        },
+      ],
+      globalGuards: {
+        action: 'setGlobalGuards',
+        config: {
+          treasuryBufferBps: 400,
+          circuitBreakerBps: 6400,
+          anomalyGracePeriod: 180,
+          autoPauseEnabled: true,
+          oversightCouncil: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        },
+        diffs: ['treasuryBufferBps'],
+      },
+      domainTelemetry: [
+        {
+          action: 'setDomainTelemetry',
+          id: domainIdFromSlug('finance'),
+          slug: 'finance',
+          diffs: ['resilienceBps'],
+          config: {
+            resilienceBps: 9200,
+            automationBps: 8800,
+            complianceBps: 9100,
+            settlementLatencySeconds: 42,
+            usesL2Settlement: true,
+            sentinelOracle: '0xcccccccccccccccccccccccccccccccccccccccc',
+            settlementAsset: '0xdddddddddddddddddddddddddddddddddddddddd',
+            metricsDigest: `0x${'1'.repeat(64)}`,
+            manifestHash: `0x${'2'.repeat(64)}`,
+          },
+        },
+      ],
+      globalTelemetry: {
+        action: 'setGlobalTelemetry',
+        config: {
+          manifestHash: `0x${'3'.repeat(64)}`,
+          metricsDigest: `0x${'4'.repeat(64)}`,
+          resilienceFloorBps: 9300,
+          automationFloorBps: 9050,
+          oversightWeightBps: 7200,
+        },
+        diffs: ['manifestHash'],
+      },
+      warnings: ['review system pause escalation playbook'],
+    };
+
+    const summary = buildPlanSummary(plan, {
+      manager: '0x1234567890123456789012345678901234567890',
+      governance: '0x0987654321098765432109876543210987654321',
+      specVersion: 'phase6.expansion.v2',
+      network: { name: 'hardhat', chainId: 31337 },
+      configPath: '/tmp/domains.json',
+      dryRun: true,
+      filters: {
+        skipGlobal: false,
+        skipSystemPause: false,
+        skipEscalation: false,
+        onlyDomains: ['finance'],
+      },
+    });
+
+    expect(new Date(summary.generatedAt).getTime()).to.be.a('number');
+    expect(summary.counts).to.deep.equal({ global: 5, domains: 1, domainOperations: 1, domainTelemetry: 1, total: 8 });
+    expect(summary.actions.domains[0].config.heartbeatSeconds).to.equal('120');
+    expect(summary.actions.domainOperations[0].config.minStake).to.equal('1234567890000000000');
+    expect(summary.actions.global?.config.l2SyncCadence).to.equal('180');
+    expect(summary.actions.globalTelemetry?.config.resilienceFloorBps).to.equal(9300);
+    expect(summary.filters.onlyDomains).to.deep.equal(['finance']);
+    expect(summary.warnings).to.deep.equal(['review system pause escalation playbook']);
+
+    const filtered = buildPlanSummary(plan, {
+      manager: '0x1234567890123456789012345678901234567890',
+      governance: '0x0987654321098765432109876543210987654321',
+      specVersion: 'phase6.expansion.v2',
+      network: { name: 'hardhat', chainId: 31337 },
+      configPath: '/tmp/domains.json',
+      dryRun: false,
+      filters: {
+        skipGlobal: true,
+        skipSystemPause: true,
+        skipEscalation: true,
+        onlyDomains: [],
+      },
+    });
+
+    expect(filtered.actions.global).to.be.undefined;
+    expect(filtered.actions.systemPause).to.be.undefined;
+    expect(filtered.actions.escalationBridge).to.be.undefined;
+    expect(filtered.counts.global).to.equal(2);
   });
 });
