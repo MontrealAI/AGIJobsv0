@@ -201,6 +201,11 @@
         width: fit-content;
       }
 
+      .domain-card.no-funding {
+        border-color: rgba(255, 212, 59, 0.6);
+        box-shadow: 0 0 0 1px rgba(255, 212, 59, 0.3);
+      }
+
       .domain-card h3 {
         margin: 0;
         font-size: 1.35rem;
@@ -218,6 +223,24 @@
         font-size: 0.75rem;
         background: rgba(90, 210, 255, 0.12);
         border: 1px solid rgba(90, 210, 255, 0.35);
+      }
+
+      .chip.alt {
+        background: rgba(255, 169, 77, 0.14);
+        border-color: rgba(255, 169, 77, 0.5);
+        color: #ffd9b0;
+      }
+
+      .chip.warning {
+        background: rgba(255, 107, 107, 0.18);
+        border-color: rgba(255, 107, 107, 0.4);
+        color: #ffccd3;
+      }
+
+      .domain-warnings {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
       }
 
       .sentinel-list,
@@ -628,6 +651,8 @@
         const domainSlugs = domains.map((domain) => String(domain.slug ?? ""));
 
         const coverageMap = new Map();
+        const fundingMap = new Map();
+        const streamBindings = new Map();
         const defaultTargets = domainSlugs.length ? domainSlugs : ["*"];
         for (const sentinel of sentinels) {
           const coverageSeconds = toNumber(sentinel.coverageSeconds, 0);
@@ -635,6 +660,22 @@
           for (const target of targets) {
             const normalized = String(target || "").toLowerCase();
             coverageMap.set(normalized, (coverageMap.get(normalized) || 0) + coverageSeconds);
+          }
+        }
+        for (const stream of streams) {
+          const budget = toNumber(stream.annualBudget, 0);
+          if (!Number.isFinite(budget) || budget <= 0) continue;
+          const streamName = stream.name || stream.slug || "Stream";
+          const targets = asArray(stream.domains).length ? asArray(stream.domains) : defaultTargets;
+          for (const target of targets) {
+            const normalized = String(target || "").toLowerCase();
+            if (!normalized) continue;
+            fundingMap.set(normalized, (fundingMap.get(normalized) || 0) + budget);
+            const list = streamBindings.get(normalized) || [];
+            if (!list.includes(streamName)) {
+              list.push(streamName);
+              streamBindings.set(normalized, list);
+            }
           }
         }
 
@@ -645,12 +686,21 @@
           : 0;
         let totalCoverageSeconds = 0;
         let coveredDomains = 0;
+        let fundedDomains = 0;
+        let minFundingUSD = domains.length ? Number.POSITIVE_INFINITY : 0;
         for (const domain of domains) {
           const key = String(domain.slug ?? "").toLowerCase();
           const coverageSeconds = coverageMap.get(key) || 0;
+          const fundingUSD = fundingMap.get(key) || 0;
           totalCoverageSeconds += coverageSeconds;
           if (coverageSeconds > 0) {
             coveredDomains += 1;
+          }
+          if (fundingUSD > 0) {
+            fundedDomains += 1;
+          }
+          if (fundingUSD < minFundingUSD) {
+            minFundingUSD = fundingUSD;
           }
         }
         const averageCoverageSeconds = domains.length ? totalCoverageSeconds / domains.length : 0;
@@ -672,6 +722,9 @@
         const uncoveredDomains = domains.filter(
           (domain) => !(coverageMap.get(String(domain.slug ?? "").toLowerCase()) > 0),
         );
+        const unfundedDomains = domains.filter(
+          (domain) => !(fundingMap.get(String(domain.slug ?? "").toLowerCase()) > 0),
+        );
 
         const alerts = [];
         if (!domains.length) {
@@ -686,6 +739,13 @@
             level: "warning",
             title: "Domains missing sentinel coverage",
             description: `Assign sentinel guardians to: ${uncoveredDomains.map((d) => d.name || d.slug).join(", " )}.`,
+          });
+        }
+        if (unfundedDomains.length) {
+          alerts.push({
+            level: "warning",
+            title: "Domains missing capital coverage",
+            description: `Attach capital streams to: ${unfundedDomains.map((d) => d.name || d.slug).join(", " )}.`,
           });
         }
         if (domains.length && guardianWindowSeconds && averageCoverageSeconds < guardianWindowSeconds) {
@@ -715,7 +775,10 @@
 
         return {
           coverageMap,
+          fundingMap,
+          streamBindings,
           uncoveredDomains,
+          unfundedDomains,
           totals: {
             totalMonthly,
             annualBudget,
@@ -725,9 +788,11 @@
             guardianWindowSeconds,
             dominanceScore,
             coverageRatio: domains.length ? coveredDomains / domains.length : 0,
+            fundingRatio: domains.length ? fundedDomains / domains.length : 0,
             maxAutonomy,
             autonomyCap,
             cadenceSeconds,
+            minDomainFundingUSD: Number.isFinite(minFundingUSD) ? minFundingUSD : 0,
           },
           alerts,
         };
@@ -747,6 +812,13 @@
             key: "sentinel-coverage",
             label: "Sentinel coverage",
             value: `${formatDuration(context.totals.averageCoverageSeconds || 0)} per dominion`,
+          },
+          {
+            key: "capital-coverage",
+            label: "Dominions funded",
+            value: `${(context.totals.fundingRatio * 100).toFixed(1)}% · floor ${formatUSD(
+              context.totals.minDomainFundingUSD || 0,
+            )}/yr`,
           },
         ];
 
@@ -836,9 +908,25 @@
             const tags = asArray(domain.skillTags)
               .map((tag) => `<span class="chip">${tag}</span>`)
               .join(" ");
-            const covered = context.coverageMap.get(String(domain.slug ?? "").toLowerCase());
+            const slugKey = String(domain.slug ?? "").toLowerCase();
+            const covered = context.coverageMap.get(slugKey);
+            const fundingUSD = context.fundingMap.get(slugKey) || 0;
+            const streamNames = context.streamBindings.get(slugKey) || [];
+            const classNames = ["domain-card"];
+            if (!covered) classNames.push("no-coverage");
+            if (!fundingUSD) classNames.push("no-funding");
+            const streams = streamNames
+              .map((stream) => `<span class="chip alt" data-test-id="domain-stream">${stream}</span>`)
+              .join(" ");
+            const warnings = [];
+            if (!fundingUSD) warnings.push("Capital stream required");
+            const warningMarkup = warnings.length
+              ? `<div class="domain-warnings">${warnings
+                  .map((warning) => `<span class="chip warning">${warning}</span>`)
+                  .join(" ")}</div>`
+              : "";
             return `
-              <article class="domain-card${covered ? "" : " no-coverage"}" data-test-id="domain-card" data-domain-slug="${domain.slug}">
+              <article class="${classNames.join(" ")}" data-test-id="domain-card" data-domain-slug="${domain.slug}">
                 <h3>${domain.name || domain.slug}</h3>
                 <p>${domain.autonomyNarrative || "Autonomy narrative pending."}</p>
                 <div class="domain-meta">
@@ -847,8 +935,11 @@
                   <span class="chip">Resilience ${(toNumber(domain.resilienceIndex, 0)).toFixed(3)}</span>
                   <span class="chip">TVL ≤ ${formatAmount(domain.tvlLimit)}</span>
                   <span class="chip">Heartbeat ${formatSeconds(domain.heartbeatSeconds)}</span>
+                  <span class="chip alt">Funding ${formatUSD(fundingUSD)}/yr</span>
                 </div>
                 <div class="domain-meta">${tags}</div>
+                ${streams ? `<div class="domain-meta">${streams}</div>` : ""}
+                ${warningMarkup}
               </article>
             `;
           })
