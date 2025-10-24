@@ -211,6 +211,21 @@ function main() {
     }
   }
 
+  const requiredArtifacts = [
+    "phase8-governance-calldata.json",
+    "phase8-safe-transaction-batch.json",
+    "phase8-telemetry-report.md",
+    "phase8-mermaid-diagram.mmd",
+    "phase8-orchestration-report.txt",
+    "phase8-self-improvement-plan.json",
+    "phase8-cycle-report.csv",
+  ];
+  for (const artifact of requiredArtifacts) {
+    if (!readme.includes(artifact)) {
+      throw new Error(`README must describe exported artifact ${artifact}`);
+    }
+  }
+
   const maxDomainAutonomy = Math.max(...config.domains.map((d) => d.autonomyLevelBps));
   if (maxDomainAutonomy > config.selfImprovement.autonomyGuards.maxAutonomyBps) {
     throw new Error("Domain autonomy exceeds guardrail maximum");
