@@ -1,12 +1,6 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import {
-  domainIdFromSlug,
-  fetchPhase6State,
-  planPhase6Changes,
-  Phase6Config,
-  ZERO_ADDRESS,
-} from '../../scripts/phase6/apply-config-lib';
+import { domainIdFromSlug, fetchPhase6State, planPhase6Changes, Phase6Config } from '../../scripts/phase6/apply-config-lib';
 
 async function deploy(name: string, ...args: unknown[]) {
   const factory = await ethers.getContractFactory(name);
@@ -49,6 +43,33 @@ describe('Phase6 apply-config planner', function () {
           autoPauseEnabled: true,
           oversightCouncil: pause.target as string,
         },
+        decentralizedInfra: [
+          {
+            name: 'EigenLayer Risk Shield AVS',
+            role: 'Cross-domain telemetry attestation',
+            status: 'active',
+            endpoint: 'https://mesh.test/avs',
+          },
+          {
+            name: 'Filecoin Saturn Compute Mesh',
+            role: 'Burst compute layer',
+            status: 'ready',
+            endpoint: 'https://mesh.test/compute',
+          },
+          {
+            name: 'Arweave/IPFS Archive',
+            role: 'Manifest anchoring',
+            status: 'active',
+            endpoint: 'ar://phase6/demo',
+          },
+        ],
+        telemetry: {
+          manifestHash: ethers.id('phase6-global-manifest'),
+          metricsDigest: ethers.id('phase6-global-digest'),
+          resilienceFloorBps: 9000,
+          automationFloorBps: 8700,
+          oversightWeightBps: 6400,
+        },
       },
       domains: [
         {
@@ -57,9 +78,9 @@ describe('Phase6 apply-config planner', function () {
           manifestURI: 'ipfs://phase6/domains/finance.json',
           subgraph: 'https://phase6.example/subgraphs/finance',
           validationModule: validation.target as string,
-          oracle: ZERO_ADDRESS,
-          l2Gateway: ZERO_ADDRESS,
-          executionRouter: ZERO_ADDRESS,
+          oracle: router.target as string,
+          l2Gateway: gateway.target as string,
+          executionRouter: validation.target as string,
           heartbeatSeconds: 120,
           active: true,
           operations: {
@@ -70,6 +91,54 @@ describe('Phase6 apply-config planner', function () {
             circuitBreakerBps: 7200,
             requiresHumanValidation: false,
           },
+          telemetry: {
+            resilienceBps: 9200,
+            automationBps: 8800,
+            complianceBps: 9100,
+            settlementLatencySeconds: 45,
+            usesL2Settlement: true,
+            sentinelOracle: validation.target as string,
+            settlementAsset: treasury.target as string,
+            metricsDigest: ethers.id('finance-metrics'),
+            manifestHash: ethers.id('finance-manifest'),
+          },
+          skillTags: ['finance', 'risk'],
+          capabilities: {
+            credit: 4.0,
+            treasury: 3.5,
+          },
+          priority: 95,
+          metadata: {
+            domain: 'Capital markets synthesis',
+            l2: 'Linea',
+            sentinel: 'Resilience-Index-Finance',
+            resilienceIndex: 0.982,
+            uptime: '99.982%',
+            valueFlowMonthlyUSD: 1_200_000_000,
+            valueFlowDisplay: '$1.2B',
+          },
+          infrastructure: [
+            {
+              layer: 'Settlement',
+              name: 'Ethereum Mainnet',
+              role: 'Final settlement',
+              status: 'anchor',
+            },
+            {
+              layer: 'Layer-2',
+              name: 'Linea',
+              role: 'High-frequency execution',
+              status: 'active',
+              endpoint: 'https://linea.build',
+            },
+            {
+              layer: 'Storage',
+              name: 'Arweave',
+              role: 'Portfolio manifests',
+              status: 'active',
+              endpoint: 'ar://phase6/finance',
+            },
+          ],
         },
       ],
     };
