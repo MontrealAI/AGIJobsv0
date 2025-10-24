@@ -1,5 +1,5 @@
 PHASE 8 — UNIVERSAL VALUE DOMINANCE :: OPERATOR RUNBOOK
-Generated at 2025-10-24T19:17:20.783Z
+Generated at 2025-10-24T21:34:02.536Z
 
 Key telemetry snapshot:
 • Universal dominance score: 97.1 / 100
@@ -46,4 +46,8 @@ Self-improvement kernel:
 Emergency stops:
 • Invoke SystemPause via forwardPauseCall → configure PHASE8_MANAGER_ADDRESS to route pause calls
 • Guardian council retains immediate pause authority
+
+Console shortcuts:
+• Manifest console: drop a manifest JSON or paste a URL to preview alternate dominions instantly. Use 'Use baseline manifest' to revert.
+• Dashboard URL accepts ?manifest=<url> for shareable guardian or auditor review sessions.
 

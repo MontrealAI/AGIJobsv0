@@ -74,6 +74,12 @@ test.describe('Phase 8 dashboard happy path', () => {
 
     const downloadLink = page.locator('[data-test-id="runbook-download"]').first();
     await expect(downloadLink).toHaveAttribute('href', './output/phase8-orchestration-report.txt');
+
+    const directivesLink = page.locator('[data-runbook-key="brief"] [data-test-id="runbook-download"]');
+    await expect(directivesLink).toHaveAttribute('href', './output/phase8-governance-directives.md');
+
+    const scorecardLink = page.locator('[data-runbook-key="scorecard"] [data-test-id="runbook-download"]');
+    await expect(scorecardLink).toHaveAttribute('href', './output/phase8-dominance-scorecard.json');
   });
 
   test('allows operators to swap manifests via upload', async ({ page }) => {

@@ -1,11 +1,14 @@
 #!/usr/bin/env ts-node
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
 const ROOT = join(__dirname, "..", "config", "universal.value.manifest.json");
 const HTML = join(__dirname, "..", "index.html");
 const README = join(__dirname, "..", "README.md");
+const OUTPUT_DIR = join(__dirname, "..", "output");
+const SCORECARD = join(OUTPUT_DIR, "phase8-dominance-scorecard.json");
+const DIRECTIVES = join(OUTPUT_DIR, "phase8-governance-directives.md");
 
 const address = z
   .string()
@@ -235,13 +238,37 @@ function main() {
     "phase8-telemetry-report.md",
     "phase8-mermaid-diagram.mmd",
     "phase8-orchestration-report.txt",
+    "phase8-governance-directives.md",
     "phase8-self-improvement-plan.json",
     "phase8-cycle-report.csv",
+    "phase8-dominance-scorecard.json",
   ];
   for (const artifact of requiredArtifacts) {
     if (!readme.includes(artifact)) {
       throw new Error(`README must describe exported artifact ${artifact}`);
     }
+  }
+
+  if (!existsSync(DIRECTIVES)) {
+    throw new Error("Governance directives file missing. Run npm run demo:phase8:orchestrate to regenerate outputs.");
+  }
+  const directives = readFileSync(DIRECTIVES, "utf-8");
+  if (!directives.includes("Immediate directives") || !directives.includes("Oversight priorities")) {
+    throw new Error("Governance directives must include Immediate directives and Oversight priorities sections.");
+  }
+
+  if (!existsSync(SCORECARD)) {
+    throw new Error("Dominance scorecard file missing. Run npm run demo:phase8:orchestrate to regenerate outputs.");
+  }
+  const scorecardRaw = JSON.parse(readFileSync(SCORECARD, "utf-8"));
+  if (typeof scorecardRaw?.metrics?.dominanceScore !== "number") {
+    throw new Error("Dominance scorecard must include metrics.dominanceScore numeric field.");
+  }
+  if (!Array.isArray(scorecardRaw?.domains) || scorecardRaw.domains.length === 0) {
+    throw new Error("Dominance scorecard must include at least one domain entry.");
+  }
+  if (!scorecardRaw?.chain?.manager) {
+    throw new Error("Dominance scorecard must specify chain.manager to guide multisig routing.");
   }
 
   const maxDomainAutonomy = Math.max(...config.domains.map((d) => d.autonomyLevelBps));

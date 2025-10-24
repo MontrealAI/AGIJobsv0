@@ -547,6 +547,40 @@ function capitalCoverageMap(streams: CapitalStreamRecord[], domainSlugs: string[
   return map;
 }
 
+function sentinelNameMap(config: Phase8Config): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const sentinel of config.sentinels ?? []) {
+    const label = sentinel.name ?? sentinel.slug ?? "sentinel";
+    for (const domain of sentinel.domains ?? []) {
+      const slug = String(domain || "").toLowerCase();
+      if (!slug) continue;
+      const entries = map.get(slug) ?? [];
+      if (!entries.includes(label)) {
+        entries.push(label);
+        map.set(slug, entries);
+      }
+    }
+  }
+  return map;
+}
+
+function streamNameMap(config: Phase8Config): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const stream of config.capitalStreams ?? []) {
+    const label = stream.name ?? stream.slug ?? "stream";
+    for (const domain of stream.domains ?? []) {
+      const slug = String(domain || "").toLowerCase();
+      if (!slug) continue;
+      const entries = map.get(slug) ?? [];
+      if (!entries.includes(label)) {
+        entries.push(label);
+        map.set(slug, entries);
+      }
+    }
+  }
+  return map;
+}
+
 export type ScheduledPlaybook = {
   name: string;
   automation: string;
@@ -996,25 +1030,8 @@ export function telemetryMarkdown(
   config: Phase8Config,
   metrics: ReturnType<typeof computeMetrics>,
 ): string {
-  const sentinelCoverageMap = new Map<string, string[]>();
-  for (const sentinel of config.sentinels ?? []) {
-    for (const domain of sentinel.domains ?? []) {
-      const key = String(domain).toLowerCase();
-      const list = sentinelCoverageMap.get(key) ?? [];
-      list.push(sentinel.name ?? sentinel.slug ?? "sentinel");
-      sentinelCoverageMap.set(key, list);
-    }
-  }
-
-  const streamDomainMap = new Map<string, string[]>();
-  for (const stream of config.capitalStreams ?? []) {
-    for (const domain of stream.domains ?? []) {
-      const key = String(domain).toLowerCase();
-      const list = streamDomainMap.get(key) ?? [];
-      list.push(stream.name ?? stream.slug ?? "stream");
-      streamDomainMap.set(key, list);
-    }
-  }
+  const sentinelCoverageMap = sentinelNameMap(config);
+  const streamDomainMap = streamNameMap(config);
 
   const lines: string[] = [];
   lines.push(`# Phase 8 — Universal Value Dominance Telemetry`);
@@ -1356,6 +1373,161 @@ function generateCycleReportCsv(
   return `${lines.join("\n")}\n`;
 }
 
+function generateGovernanceDirectives(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  environment: EnvironmentConfig,
+  generatedAt: string,
+): string {
+  const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
+  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).map((domain) => String(domain.slug ?? "")));
+  const fundingUSD = capitalCoverageMap(
+    config.capitalStreams ?? [],
+    (config.domains ?? []).map((domain) => String(domain.slug ?? "")),
+  );
+  const sentinelLabels = sentinelNameMap(config);
+  const streamLabels = streamNameMap(config);
+  const lines: string[] = [];
+  lines.push("# Phase 8 — Governance Directives");
+  lines.push(`Generated: ${generatedAt}`);
+  lines.push(`Chain ID: ${environment.chainId}`);
+  const managerLine =
+    environment.managerAddress && environment.managerAddress !== ZERO_ADDRESS
+      ? environment.managerAddress
+      : "Set PHASE8_MANAGER_ADDRESS before submitting calls";
+  lines.push(`Phase8 manager: ${managerLine}`);
+  lines.push("");
+  lines.push("## Immediate directives");
+  lines.push("1. Confirm npm dependencies remain locked via `npm ci` (step enforced by CI).");
+  lines.push(
+    "2. Run `npm run demo:phase8:orchestrate` to regenerate calldata, scorecard, and operator briefings.",
+  );
+  lines.push(
+    "3. Load `output/phase8-governance-calldata.json` or `output/phase8-safe-transaction-batch.json` into your multisig / timelock and execute the queued actions in sequence.",
+  );
+  lines.push(
+    "4. Distribute `output/phase8-governance-directives.md` and `output/phase8-dominance-scorecard.json` to guardian council and observers for sign-off.",
+  );
+  lines.push("5. Launch the dashboard with `npx serve demo/Phase-8-Universal-Value-Dominance` for live monitoring.");
+  lines.push("");
+  lines.push("## Oversight priorities");
+  for (const domain of config.domains ?? []) {
+    const slug = String(domain.slug ?? "").toLowerCase();
+    const coverage = coverageSeconds.get(slug) ?? 0;
+    const coveragePercent = guardianWindow > 0 ? (coverage / guardianWindow) * 100 : 0;
+    const funding = fundingUSD.get(slug) ?? 0;
+    const sentinelNames = sentinelLabels.get(slug) ?? ["—"];
+    const streamNames = streamLabels.get(slug) ?? ["—"];
+    lines.push(
+      `- ${domain.name}: resilience ${(Number(domain.resilienceIndex ?? 0)).toFixed(3)}, autonomy ${domain.autonomyLevelBps} bps, coverage ${coverage.toFixed(0)}s (${coveragePercent.toFixed(1)}% of guardian window), funding ${usd(funding)}/yr, sentinels ${sentinelNames.join(" · ")}, streams ${streamNames.join(" · ")}`,
+    );
+  }
+  lines.push("");
+  lines.push("## Safety instrumentation");
+  lines.push(
+    `- Autonomy guard ≤${config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0} bps · human override ${config.selfImprovement?.autonomyGuards?.humanOverrideMinutes ?? 0} minutes · escalation ${(config.selfImprovement?.autonomyGuards?.escalationChannels ?? []).join(" → ")}`,
+  );
+  lines.push(
+    `- Guardian review window ${guardianWindow}s with minimum sentinel coverage ${metrics.minDomainCoverageSeconds.toFixed(0)}s (adequacy ${(metrics.minimumCoverageAdequacy * 100).toFixed(1)}%).`,
+  );
+  lines.push(
+    `- Self-improvement cadence ${metrics.cadenceHours.toFixed(2)} h · last execution ${metrics.lastExecutedAt ? new Date(metrics.lastExecutedAt * 1000).toISOString() : "pending"}.`,
+  );
+  if (config.selfImprovement?.guardrails) {
+    lines.push(
+      `- Kernel checksum ${config.selfImprovement.guardrails.checksum.algorithm} ${config.selfImprovement.guardrails.checksum.value}`,
+    );
+    lines.push(
+      `- Kernel zk-proof ${config.selfImprovement.guardrails.zkProof.circuit} :: status ${config.selfImprovement.guardrails.zkProof.status} :: artifact ${config.selfImprovement.guardrails.zkProof.artifactURI}`,
+    );
+  }
+  lines.push("");
+  lines.push("## Reporting & distribution");
+  lines.push("- Share the dominance scorecard (JSON) with analytics teams for downstream automation.");
+  lines.push("- Provide the orchestration report and directives markdown to auditors for immutable records.");
+  lines.push("- Archive the telemetry markdown for board-level status updates.");
+  lines.push("");
+  lines.push("## Contacts");
+  lines.push(shortAddress("Guardian council", config.global?.guardianCouncil));
+  lines.push(shortAddress("System pause", config.global?.systemPause));
+  lines.push(shortAddress("Upgrade coordinator", config.global?.upgradeCoordinator));
+  lines.push(shortAddress("Validator registry", config.global?.validatorRegistry));
+
+  return `${lines.join("\n")}\n`;
+}
+
+function generateDominanceScorecard(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  environment: EnvironmentConfig,
+  generatedAt: string,
+) {
+  const coverageSeconds = coverageMap(config.sentinels ?? [], (config.domains ?? []).map((domain) => String(domain.slug ?? "")));
+  const fundingUSD = capitalCoverageMap(
+    config.capitalStreams ?? [],
+    (config.domains ?? []).map((domain) => String(domain.slug ?? "")),
+  );
+  const sentinelLabels = sentinelNameMap(config);
+  const streamLabels = streamNameMap(config);
+  return {
+    generatedAt,
+    chain: {
+      id: environment.chainId,
+      manager: environment.managerAddress,
+    },
+    metrics: {
+      dominanceScore: Number(metrics.dominanceScore.toFixed(1)),
+      monthlyValueUSD: metrics.totalMonthlyUSD,
+      annualBudgetUSD: metrics.annualBudget,
+      averageResilience: Number(metrics.averageResilience.toFixed(3)),
+      sentinelCoverageMinutes: Number(metrics.guardianCoverageMinutes.toFixed(2)),
+      coverageRatioPercent: Number(metrics.coverageRatio.toFixed(1)),
+      fundedDomainRatioPercent: Number(metrics.fundedDomainRatio.toFixed(1)),
+      maxAutonomyBps: metrics.maxAutonomy,
+      cadenceHours: Number(metrics.cadenceHours.toFixed(2)),
+      minimumCoverageSeconds: Number(metrics.minDomainCoverageSeconds.toFixed(0)),
+      guardianWindowSeconds: metrics.guardianWindowSeconds,
+      minimumCoverageAdequacyPercent: Number((metrics.minimumCoverageAdequacy * 100).toFixed(1)),
+    },
+    domains: (config.domains ?? []).map((domain) => {
+      const slug = String(domain.slug ?? "").toLowerCase();
+      return {
+        slug,
+        name: domain.name,
+        autonomyLevelBps: domain.autonomyLevelBps,
+        resilienceIndex: Number(domain.resilienceIndex ?? 0),
+        heartbeatSeconds: Number(domain.heartbeatSeconds ?? 0),
+        tvlLimit: String(domain.tvlLimit ?? "0"),
+        valueFlowMonthlyUSD: Number(domain.valueFlowMonthlyUSD ?? 0),
+        sentinelCoverageSeconds: Number((coverageSeconds.get(slug) ?? 0).toFixed(0)),
+        sentinelGuardians: sentinelLabels.get(slug) ?? [],
+        capitalSupportUSD: Number((fundingUSD.get(slug) ?? 0).toFixed(0)),
+        capitalStreams: streamLabels.get(slug) ?? [],
+      };
+    }),
+    sentinels: (config.sentinels ?? []).map((sentinel) => ({
+      slug: sentinel.slug,
+      name: sentinel.name,
+      coverageSeconds: Number(sentinel.coverageSeconds ?? 0),
+      sensitivityBps: Number(sentinel.sensitivityBps ?? 0),
+      domains: sentinel.domains ?? [],
+    })),
+    capitalStreams: (config.capitalStreams ?? []).map((stream) => ({
+      slug: stream.slug,
+      name: stream.name,
+      annualBudgetUSD: Number(stream.annualBudget ?? 0),
+      expansionBps: Number(stream.expansionBps ?? 0),
+      domains: stream.domains ?? [],
+    })),
+    guardrails: {
+      autonomy: config.selfImprovement?.autonomyGuards ?? null,
+      kernel: config.selfImprovement?.guardrails ?? null,
+      plan: config.selfImprovement?.plan ?? null,
+      maxDrawdownBps: config.global?.maxDrawdownBps ?? null,
+    },
+  };
+}
+
 export function buildSafeTransactions(entries: CalldataEntry[], managerAddress: string) {
   return entries.map((entry) => ({
     to: managerAddress,
@@ -1442,6 +1614,12 @@ export function writeArtifacts(
   const cycleReportPath = join(outputDir, "phase8-cycle-report.csv");
   writeFileSync(cycleReportPath, generateCycleReportCsv(config, metrics));
 
+  const directivesPath = join(outputDir, "phase8-governance-directives.md");
+  writeFileSync(directivesPath, generateGovernanceDirectives(config, metrics, environment, generatedAt));
+
+  const scorecardPath = join(outputDir, "phase8-dominance-scorecard.json");
+  writeFileSync(scorecardPath, `${JSON.stringify(generateDominanceScorecard(config, metrics, environment, generatedAt), null, 2)}\n`);
+
   return [
     { label: "Calldata manifest", path: callManifestPath },
     { label: "Safe transaction batch", path: safePath },
@@ -1450,6 +1628,8 @@ export function writeArtifacts(
     { label: "Operator runbook", path: operatorRunbookPath },
     { label: "Self-improvement payload", path: planPayloadPath },
     { label: "Cycle report", path: cycleReportPath },
+    { label: "Governance directives", path: directivesPath },
+    { label: "Dominance scorecard", path: scorecardPath },
   ];
 }
 
