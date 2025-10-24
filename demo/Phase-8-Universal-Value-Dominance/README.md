@@ -36,6 +36,8 @@
    npx serve demo/Phase-8-Universal-Value-Dominance
    ```
    Navigate to `http://localhost:3000` to view the live dashboard.
+   * The opening **Manifest Command Console** lets you drag-and-drop a custom Phase 8 manifest or paste a remote URL (HTTPS or IPFS gateway). The entire dashboard reconfigures instantly, and you can revert at any moment with the “Use baseline manifest” button.
+   * Shareable states are supported: append `?manifest=<url>` to the dashboard URL to preload an audited manifest for guardian review.
 4. **Enforce readiness in CI**:
    ```bash
    npm run demo:phase8:ci
@@ -178,6 +180,7 @@ Open [`index.html`](./index.html) to explore the fully client-side control room:
 * Capital stream portfolio with annual budgets, vault routing, and linked dominions.
 * Self-improvement plan (hash, cadence, report URI) plus playbooks and guardrails rendered with owner addresses.
 * An auto-generated Mermaid diagram illustrating governance, sentinels, and capital flow.
+* A **Manifest Command Console** that enables instant manifest swaps (file upload, remote URL, or query parameter). Non-technical operators can preview alternative governance states, refresh baselines, or roll back to the orchestrator output with one click.
 
 ---
 

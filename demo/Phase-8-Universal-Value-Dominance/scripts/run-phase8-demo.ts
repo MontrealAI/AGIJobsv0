@@ -1257,6 +1257,14 @@ function generateOperatorRunbook(
   lines.push(`• Invoke SystemPause via forwardPauseCall → ${pauseTarget}`);
   lines.push("• Guardian council retains immediate pause authority");
   lines.push("");
+  lines.push("Console shortcuts:");
+  lines.push(
+    "• Manifest console: drop a manifest JSON or paste a URL to preview alternate dominions instantly. Use 'Use baseline manifest' to revert.",
+  );
+  lines.push(
+    "• Dashboard URL accepts ?manifest=<url> for shareable guardian or auditor review sessions.",
+  );
+  lines.push("");
 
   return `${lines.join("\n")}\n`;
 }
