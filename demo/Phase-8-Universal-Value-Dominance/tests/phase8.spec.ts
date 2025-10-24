@@ -9,6 +9,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('renders strategic metrics from manifest schema', async ({ page }) => {
+  const dominance = page.locator('[data-test-id="stat-card"][data-stat-key="dominance-score"]');
+  await expect(dominance).toContainText('Universal dominance score');
+  await expect(dominance).toContainText('96.9 / 100');
+
   const monthlyFlow = page.locator('[data-test-id="stat-card"][data-stat-key="monthly-flow"]');
   await expect(monthlyFlow).toContainText('Monthly value flow');
   await expect(monthlyFlow).toContainText('$688.00B');
@@ -41,7 +45,8 @@ test('renders mermaid diagram once manifest loads', async ({ page }) => {
 
 test('shows coverage alert and runbook enhancements', async ({ page }) => {
   const alerts = page.locator('[data-test-id="alert"]');
-  await expect(alerts.first()).toContainText('Coverage shortfall detected');
+  await expect(alerts).toHaveCount(1);
+  await expect(alerts.first()).toContainText('Universal dominance secured');
 
   const tooltipButton = page.locator('[data-test-id="runbook-step"] .info-button').first();
   await tooltipButton.hover();

@@ -108,6 +108,10 @@
         border-color: var(--warning);
       }
 
+      .alert[data-level="success"] {
+        border-color: var(--accent-strong);
+      }
+
       .alert strong {
         display: block;
         font-size: 1rem;
@@ -576,6 +580,26 @@
         return `${dateFormatter.format(new Date(value * 1000))} UTC`;
       };
 
+      const computeDominanceScore = (input) => {
+        const valueScore = input.totalMonthlyUSD <= 0 ? 0 : Math.min(1, input.totalMonthlyUSD / 500_000_000_000);
+        const resilienceScore = Math.max(0, Math.min(1, input.averageResilience));
+        const coverageRatioScore = input.coverageRatio <= 0 ? 0 : Math.min(1, input.coverageRatio);
+        const coverageStrengthScore =
+          input.guardianReviewWindowSeconds > 0
+            ? Math.min(1, input.averageDomainCoverageSeconds / input.guardianReviewWindowSeconds)
+            : 1;
+        const coverageScore = Math.min(1, (coverageRatioScore + coverageStrengthScore) / 2);
+        const autonomyScore =
+          input.autonomyGuardCapBps > 0 ? Math.min(1, input.maxAutonomyBps / input.autonomyGuardCapBps) : 1;
+        const cadenceScore =
+          input.cadenceSeconds > 0
+            ? Math.max(0, 1 - Math.min(1, input.cadenceSeconds / (24 * 60 * 60)))
+            : 0.5;
+        const weighted =
+          0.3 * valueScore + 0.25 * resilienceScore + 0.2 * coverageScore + 0.15 * autonomyScore + 0.1 * cadenceScore;
+        return Math.min(100, Math.round(weighted * 1000) / 10);
+      };
+
       const renderAlerts = (alerts) => {
         const container = document.getElementById("alerts");
         if (!container) return;
@@ -598,28 +622,55 @@
       };
 
       const buildContext = (manifest) => {
-        const coverageMap = new Map();
-        for (const sentinel of asArray(manifest.sentinels)) {
-          for (const domain of asArray(sentinel.domains)) {
-            coverageMap.set(String(domain).toLowerCase(), true);
-          }
-        }
-
         const domains = asArray(manifest.domains);
         const sentinels = asArray(manifest.sentinels);
         const streams = asArray(manifest.capitalStreams);
+        const domainSlugs = domains.map((domain) => String(domain.slug ?? ""));
+
+        const coverageMap = new Map();
+        const defaultTargets = domainSlugs.length ? domainSlugs : ["*"];
+        for (const sentinel of sentinels) {
+          const coverageSeconds = toNumber(sentinel.coverageSeconds, 0);
+          const targets = asArray(sentinel.domains).length ? asArray(sentinel.domains) : defaultTargets;
+          for (const target of targets) {
+            const normalized = String(target || "").toLowerCase();
+            coverageMap.set(normalized, (coverageMap.get(normalized) || 0) + coverageSeconds);
+          }
+        }
 
         const totalMonthly = domains.reduce((acc, domain) => acc + toNumber(domain.valueFlowMonthlyUSD, 0), 0);
         const annualBudget = streams.reduce((acc, stream) => acc + toNumber(stream.annualBudget, 0), 0);
         const averageResilience = domains.length
           ? domains.reduce((acc, domain) => acc + toNumber(domain.resilienceIndex, 0), 0) / domains.length
           : 0;
-        const totalCoverageSeconds = sentinels.reduce((acc, sentinel) => acc + toNumber(sentinel.coverageSeconds, 0), 0);
+        let totalCoverageSeconds = 0;
+        let coveredDomains = 0;
+        for (const domain of domains) {
+          const key = String(domain.slug ?? "").toLowerCase();
+          const coverageSeconds = coverageMap.get(key) || 0;
+          totalCoverageSeconds += coverageSeconds;
+          if (coverageSeconds > 0) {
+            coveredDomains += 1;
+          }
+        }
         const averageCoverageSeconds = domains.length ? totalCoverageSeconds / domains.length : 0;
         const guardianWindowSeconds = toNumber(manifest.global?.guardianReviewWindow, 0);
+        const maxAutonomy = domains.reduce((acc, domain) => Math.max(acc, toNumber(domain.autonomyLevelBps, 0)), 0);
+        const autonomyCap = toNumber(manifest.selfImprovement?.autonomyGuards?.maxAutonomyBps, 0);
+        const cadenceSeconds = toNumber(manifest.selfImprovement?.plan?.cadenceSeconds, 0);
+        const dominanceScore = computeDominanceScore({
+          totalMonthlyUSD: totalMonthly,
+          averageResilience,
+          coverageRatio: domains.length ? coveredDomains / domains.length : 0,
+          averageDomainCoverageSeconds: averageCoverageSeconds,
+          guardianReviewWindowSeconds: guardianWindowSeconds,
+          maxAutonomyBps: maxAutonomy,
+          autonomyGuardCapBps: autonomyCap,
+          cadenceSeconds,
+        });
 
         const uncoveredDomains = domains.filter(
-          (domain) => !coverageMap.get(String(domain.slug ?? "").toLowerCase()),
+          (domain) => !(coverageMap.get(String(domain.slug ?? "").toLowerCase()) > 0),
         );
 
         const alerts = [];
@@ -646,6 +697,21 @@
             )}). Schedule additional sentinels or expand coverage windows.`,
           });
         }
+        if (dominanceScore >= 95) {
+          alerts.push({
+            level: "success",
+            title: "Universal dominance secured",
+            description: `Dominance score ${dominanceScore.toFixed(1)} / 100 with sentinel coverage ${formatDuration(
+              averageCoverageSeconds,
+            )} per dominion. Maintain guardian oversight windows to keep the lattice green.`,
+          });
+        } else if (domains.length && dominanceScore < 85) {
+          alerts.push({
+            level: "warning",
+            title: "Dominance score below target",
+            description: `Dominance score ${dominanceScore.toFixed(1)} / 100 — review autonomy caps, sentinel cadence, and domain resilience.`,
+          });
+        }
 
         return {
           coverageMap,
@@ -657,6 +723,11 @@
             totalCoverageSeconds,
             averageCoverageSeconds,
             guardianWindowSeconds,
+            dominanceScore,
+            coverageRatio: domains.length ? coveredDomains / domains.length : 0,
+            maxAutonomy,
+            autonomyCap,
+            cadenceSeconds,
           },
           alerts,
         };
@@ -664,6 +735,11 @@
 
       function renderStats(container, manifest, context) {
         const stats = [
+          {
+            key: "dominance-score",
+            label: "Universal dominance score",
+            value: `${context.totals.dominanceScore.toFixed(1)} / 100`,
+          },
           { key: "monthly-flow", label: "Monthly value flow", value: formatUSD(context.totals.totalMonthly) },
           { key: "annual-budget", label: "Annual capital budget", value: formatUSD(context.totals.annualBudget) },
           { key: "average-resilience", label: "Average resilience", value: context.totals.averageResilience.toFixed(3) },

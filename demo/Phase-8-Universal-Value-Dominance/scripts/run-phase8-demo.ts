@@ -22,6 +22,38 @@ const AUTOMATION_INTERVALS: Record<string, number> = {
   monthly: 30 * 24 * 60 * 60,
 };
 
+type DominanceScoreInput = {
+  totalMonthlyUSD: number;
+  averageResilience: number;
+  coverageRatio: number;
+  averageDomainCoverageSeconds: number;
+  guardianReviewWindowSeconds: number;
+  maxAutonomyBps: number;
+  autonomyGuardCapBps: number;
+  cadenceSeconds: number;
+};
+
+function computeDominanceScore(input: DominanceScoreInput): number {
+  const valueScore = input.totalMonthlyUSD <= 0 ? 0 : Math.min(1, input.totalMonthlyUSD / 500_000_000_000);
+  const resilienceScore = Math.max(0, Math.min(1, input.averageResilience));
+  const coverageRatioScore = input.coverageRatio <= 0 ? 0 : Math.min(1, input.coverageRatio);
+  const coverageStrengthScore =
+    input.guardianReviewWindowSeconds > 0
+      ? Math.min(1, input.averageDomainCoverageSeconds / input.guardianReviewWindowSeconds)
+      : 1;
+  const coverageScore = Math.min(1, (coverageRatioScore + coverageStrengthScore) / 2);
+  const autonomyScore =
+    input.autonomyGuardCapBps > 0 ? Math.min(1, input.maxAutonomyBps / input.autonomyGuardCapBps) : 1;
+  const cadenceScore =
+    input.cadenceSeconds > 0
+      ? Math.max(0, 1 - Math.min(1, input.cadenceSeconds / (24 * 60 * 60)))
+      : 0.5;
+
+  const weighted =
+    0.3 * valueScore + 0.25 * resilienceScore + 0.2 * coverageScore + 0.15 * autonomyScore + 0.1 * cadenceScore;
+  return Math.min(100, Math.round(weighted * 1000) / 10);
+}
+
 const AddressSchema = z
   .string({ invalid_type_error: "Address must be provided as a string" })
   .regex(/^0x[a-fA-F0-9]{40}$/, "Must be a valid 20-byte hex address")
@@ -463,6 +495,8 @@ export function computeMetrics(config: Phase8Config) {
   const sentinels = config.sentinels ?? [];
   const streams = config.capitalStreams ?? [];
   const plan = config.selfImprovement?.plan ?? {};
+  const domainSlugs = domains.map((domain) => String(domain.slug ?? ""));
+  const domainCoverageMap = coverageMap(sentinels, domainSlugs);
   const totalMonthlyUSD = domains.reduce((acc: number, d: any) => acc + Number(d.valueFlowMonthlyUSD ?? 0), 0);
   const maxAutonomy = domains.reduce((acc: number, d: any) => Math.max(acc, Number(d.autonomyLevelBps ?? 0)), 0);
   const averageResilience =
@@ -472,23 +506,42 @@ export function computeMetrics(config: Phase8Config) {
   const guardianCoverageMinutes = sentinels.reduce((acc: number, s: any) => acc + Number(s.coverageSeconds ?? 0), 0) / 60;
   const annualBudget = streams.reduce((acc: number, s: any) => acc + Number(s.annualBudget ?? 0), 0);
   const coverageSet = new Set<string>();
-  for (const sentinel of sentinels) {
-    for (const domain of sentinel.domains ?? []) {
-      coverageSet.add(String(domain).toLowerCase());
+  let totalDomainCoverageSeconds = 0;
+  for (const slug of domainSlugs) {
+    const normalized = slug.toLowerCase();
+    const coverage = domainCoverageMap.get(normalized) ?? 0;
+    if (coverage > 0) {
+      coverageSet.add(normalized);
     }
+    totalDomainCoverageSeconds += coverage;
   }
-  const coverageRatio = domains.length === 0 ? 0 : (coverageSet.size / domains.length) * 100;
+  const coverageRatio = domains.length === 0 ? 0 : (coverageSet.size / domains.length);
+  const guardianWindowSeconds = Number(config.global?.guardianReviewWindow ?? 0);
+  const averageDomainCoverageSeconds = domains.length === 0 ? 0 : totalDomainCoverageSeconds / domains.length;
   const cadenceHours = Number(plan.cadenceSeconds ?? 0) / 3600;
   const lastExecutedAt = Number(plan.lastExecutedAt ?? 0);
+  const dominanceScore = computeDominanceScore({
+    totalMonthlyUSD,
+    averageResilience,
+    coverageRatio,
+    averageDomainCoverageSeconds,
+    guardianReviewWindowSeconds: guardianWindowSeconds,
+    maxAutonomyBps: maxAutonomy,
+    autonomyGuardCapBps: Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0),
+    cadenceSeconds: Number(plan.cadenceSeconds ?? 0),
+  });
   return {
     totalMonthlyUSD,
     maxAutonomy,
     averageResilience,
     guardianCoverageMinutes,
     annualBudget,
-    coverageRatio,
+    coverageRatio: coverageRatio * 100,
     cadenceHours,
     lastExecutedAt,
+    dominanceScore,
+    averageDomainCoverageSeconds,
+    guardianWindowSeconds,
   };
 }
 
@@ -752,6 +805,7 @@ export function telemetryMarkdown(
   lines.push(`- Total monthly value flow: ${usd(metrics.totalMonthlyUSD)}`);
   lines.push(`- Annual capital allocation: ${usd(metrics.annualBudget)}`);
   lines.push(`- Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
+  lines.push(`- Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
   lines.push(`- Sentinel coverage per guardian cycle: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes`);
   lines.push(`- Domains covered by sentinels: ${metrics.coverageRatio.toFixed(1)}%`);
   lines.push(`- Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
@@ -877,6 +931,10 @@ export function writeArtifacts(
       annualBudgetUSD: metrics.annualBudget,
       averageResilience: metrics.averageResilience,
       guardianCoverageMinutes: metrics.guardianCoverageMinutes,
+      coverageRatio: metrics.coverageRatio,
+      dominanceScore: metrics.dominanceScore,
+      averageDomainCoverageSeconds: metrics.averageDomainCoverageSeconds,
+      guardianReviewWindowSeconds: metrics.guardianWindowSeconds,
     },
     calls: entries,
   };
@@ -951,7 +1009,11 @@ export function main() {
     console.log(`Total monthly on-chain value: ${usd(metrics.totalMonthlyUSD)}`);
     console.log(`Annual capital allocation: ${usd(metrics.annualBudget)}`);
     console.log(`Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
+    console.log(`Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
     console.log(`Guardian sentinel coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes per cycle`);
+    if (metrics.guardianWindowSeconds) {
+      console.log(`Average coverage per domain: ${metrics.averageDomainCoverageSeconds.toFixed(0)}s (guardian window ${metrics.guardianWindowSeconds}s)`);
+    }
     console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
     console.log(`Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
     if (metrics.cadenceHours) {
