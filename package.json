@@ -4,6 +4,7 @@
   "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=branch%3Amain)",
   "main": "index.js",
   "scripts": {
+    "prepare": "node scripts/setup-git-hooks.js",
     "build": "truffle compile",
     "compile": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && hardhat compile",
     "compile:mainnet": "npm run compile -- --network mainnet",

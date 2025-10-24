@@ -35,6 +35,7 @@ scripts/**/*.js
 !scripts/run-wire-verify.js
 !scripts/subgraph-e2e.js
 !scripts/docs/check-links.js
+!scripts/setup-git-hooks.js
 !scripts/observability-smoke-check.js
 !scripts/audit/check-freeze.js
 !scripts/release/generate-manifest.js

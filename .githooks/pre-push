@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "[githook] Validating Phase 8 readiness"
+npm run demo:phase8:ci
+
+echo "[githook] Running dependency audit"
+npm run security:audit
