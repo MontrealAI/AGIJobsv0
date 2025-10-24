@@ -262,6 +262,8 @@ jobs:
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Validate Phase 8 manifest & UI
         run: npm run demo:phase8:ci
+      - name: Audit Phase 8 invariants
+        run: npm run demo:phase8:audit
 
   asi_takeoff_demo:
     name: ASI Take-Off Demonstration
