@@ -275,6 +275,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^4.0.3",
+    "@axe-core/playwright": "^4.10.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
@@ -289,6 +290,7 @@
     "@types/node": "^20.12.12",
     "@types/ws": "^8.5.10",
     "@types/yargs": "^17.0.32",
+    "@playwright/test": "^1.49.0",
     "autoprefixer": "^10.4.20",
     "@typescript-eslint/eslint-plugin": "^8.13.0",
     "@typescript-eslint/parser": "^8.13.0",

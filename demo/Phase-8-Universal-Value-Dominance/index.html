@@ -15,14 +15,24 @@
       :root {
         color-scheme: dark;
         --bg: radial-gradient(circle at top, rgba(45, 127, 220, 0.25), rgba(6, 12, 24, 0.95));
-        --panel: rgba(15, 25, 55, 0.75);
+        --panel: rgba(15, 25, 55, 0.8);
         --panel-border: rgba(108, 192, 255, 0.35);
         --accent: #5ad2ff;
         --accent-strong: #ffa94d;
         --text: #e8f4ff;
         --muted: #9bbad8;
+        --critical: #ff6b6b;
+        --warning: #ffd43b;
         font-family: "Inter", system-ui, sans-serif;
+        line-height: 1.6;
       }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
         background: var(--bg);
@@ -31,34 +41,93 @@
         display: flex;
         flex-direction: column;
       }
+
+      a.skip-link {
+        position: absolute;
+        left: -999px;
+        top: 1rem;
+        background: var(--accent);
+        color: #02101f;
+        padding: 0.75rem 1.25rem;
+        border-radius: 999px;
+        font-weight: 600;
+        text-decoration: none;
+        z-index: 10;
+      }
+
+      a.skip-link:focus {
+        left: 1rem;
+      }
+
       header {
-        padding: 4rem 2rem 2rem;
+        padding: 4rem 1.5rem 2rem;
         text-align: center;
       }
+
       header h1 {
         margin: 0;
         font-size: clamp(2.5rem, 6vw, 4.5rem);
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
+
       header p {
         max-width: 720px;
         margin: 1rem auto 0;
-        line-height: 1.6;
         color: var(--muted);
         font-size: 1.1rem;
       }
+
       main {
-        width: min(1120px, 92vw);
-        margin: 0 auto 5rem;
+        width: min(1120px, 95vw);
+        margin: 0 auto 4rem;
         display: grid;
         gap: 2.5rem;
       }
+
+      .alert-container {
+        width: min(1120px, 95vw);
+        margin: 0 auto 1.5rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .alert {
+        background: rgba(255, 255, 255, 0.04);
+        border-left: 4px solid var(--accent);
+        border-radius: 18px;
+        padding: 1.25rem 1.75rem;
+        box-shadow: 0 18px 40px rgba(5, 12, 22, 0.4);
+      }
+
+      .alert[data-level="critical"] {
+        border-color: var(--critical);
+      }
+
+      .alert[data-level="warning"] {
+        border-color: var(--warning);
+      }
+
+      .alert strong {
+        display: block;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        margin-bottom: 0.35rem;
+      }
+
+      .alert p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
       .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 1.5rem;
       }
+
       .stat-card {
         background: var(--panel);
         border: 1px solid var(--panel-border);
@@ -66,6 +135,7 @@
         padding: 1.75rem;
         box-shadow: 0 18px 40px rgba(5, 12, 22, 0.4);
       }
+
       .stat-card h2 {
         margin: 0 0 0.6rem;
         font-size: 0.9rem;
@@ -73,11 +143,14 @@
         letter-spacing: 0.2em;
         color: var(--muted);
       }
+
       .stat-card p {
         margin: 0;
         font-size: 1.8rem;
         font-weight: 700;
+        word-break: break-word;
       }
+
       section {
         background: var(--panel);
         border: 1px solid var(--panel-border);
@@ -85,47 +158,56 @@
         padding: 2.4rem;
         box-shadow: 0 22px 42px rgba(5, 12, 22, 0.35);
       }
+
       section h2 {
         margin: 0 0 1.5rem;
         text-transform: uppercase;
         letter-spacing: 0.16em;
       }
+
       .domain-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 1.5rem;
       }
+
       .domain-card {
         border: 1px solid rgba(90, 210, 255, 0.4);
         border-radius: 20px;
         padding: 1.75rem;
         background: linear-gradient(135deg, rgba(16, 40, 76, 0.8), rgba(7, 14, 24, 0.92));
+        display: grid;
+        gap: 1rem;
       }
+
       .domain-card.no-coverage {
         border-color: rgba(255, 96, 110, 0.6);
         box-shadow: 0 0 0 1px rgba(255, 96, 110, 0.35);
       }
+
       .domain-card.no-coverage::after {
         content: "Sentinel coverage required";
         display: inline-block;
-        margin-top: 0.8rem;
         padding: 0.35rem 0.75rem;
         border-radius: 999px;
         font-size: 0.75rem;
         background: rgba(255, 96, 110, 0.18);
         border: 1px solid rgba(255, 96, 110, 0.5);
         color: #ffccd3;
+        width: fit-content;
       }
+
       .domain-card h3 {
         margin: 0;
         font-size: 1.35rem;
       }
+
       .domain-meta {
-        margin-top: 0.75rem;
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem;
       }
+
       .chip {
         padding: 0.35rem 0.75rem;
         border-radius: 999px;
@@ -133,12 +215,14 @@
         background: rgba(90, 210, 255, 0.12);
         border: 1px solid rgba(90, 210, 255, 0.35);
       }
+
       .sentinel-list,
       .stream-list,
       .playbook-list {
         display: grid;
         gap: 1rem;
       }
+
       .sentinel-item,
       .stream-item,
       .playbook-item {
@@ -147,6 +231,7 @@
         border: 1px solid rgba(90, 210, 255, 0.25);
         background: rgba(12, 20, 38, 0.72);
       }
+
       .mermaid-wrapper {
         background: rgba(12, 20, 38, 0.82);
         border-radius: 18px;
@@ -154,23 +239,133 @@
         border: 1px solid rgba(90, 210, 255, 0.2);
         overflow-x: auto;
       }
+
+      .runbook-steps {
+        display: grid;
+        gap: 1rem;
+        padding-left: 1.25rem;
+      }
+
+      .runbook-step {
+        position: relative;
+        display: grid;
+        gap: 0.5rem;
+        padding: 1.1rem 1.25rem;
+        border-radius: 18px;
+        border: 1px solid rgba(90, 210, 255, 0.25);
+        background: rgba(12, 20, 38, 0.72);
+      }
+
+      .runbook-step-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1rem;
+      }
+
+      .info-button {
+        appearance: none;
+        border: none;
+        background: rgba(90, 210, 255, 0.15);
+        border-radius: 999px;
+        color: var(--text);
+        font-weight: 700;
+        width: 1.85rem;
+        height: 1.85rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .info-button:focus-visible,
+      .download-link:focus-visible,
+      a:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 4px;
+      }
+
+      .tooltip {
+        position: absolute;
+        inset-inline-start: 1.25rem;
+        bottom: calc(100% + 0.75rem);
+        max-width: min(320px, 80vw);
+        padding: 0.65rem 0.9rem;
+        border-radius: 12px;
+        background: rgba(4, 10, 22, 0.92);
+        border: 1px solid rgba(90, 210, 255, 0.35);
+        box-shadow: 0 18px 30px rgba(5, 12, 22, 0.45);
+        color: var(--muted);
+        font-size: 0.85rem;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 150ms ease;
+        z-index: 5;
+      }
+
+      .info-button:focus + .tooltip,
+      .info-button:hover + .tooltip {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .download-link {
+        color: var(--accent);
+        font-weight: 600;
+        text-decoration: none;
+      }
+
       footer {
         text-align: center;
-        padding: 2rem;
+        padding: 2rem 1.5rem 3rem;
         color: var(--muted);
         font-size: 0.9rem;
       }
-      @media (max-width: 720px) {
+
+      @media (max-width: 960px) {
         header {
-          padding-top: 3rem;
+          padding-top: 3.2rem;
         }
+
         section {
           padding: 2rem;
+        }
+      }
+
+      @media (max-width: 600px) {
+        header p {
+          font-size: 1rem;
+        }
+
+        .runbook-step-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .tooltip {
+          position: static;
+          inset-inline-start: auto;
+          bottom: auto;
+          margin-top: 0.25rem;
+          visibility: visible;
+          opacity: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
         }
       }
     </style>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
     <header>
       <h1>Phase 8 · Universal Value Dominance</h1>
       <p>
@@ -179,37 +374,41 @@
         transparent guardrails.
       </p>
     </header>
-    <main>
-      <div class="stats-grid" id="stats"></div>
-      <section>
-        <h2>Governance Control Surface</h2>
+    <div class="alert-container" id="alerts" role="region" aria-live="polite"></div>
+    <main id="main">
+      <section aria-labelledby="stats-heading">
+        <h2 id="stats-heading">Strategic Metrics</h2>
+        <div class="stats-grid" id="stats" role="list"></div>
+      </section>
+      <section aria-labelledby="controls-heading">
+        <h2 id="controls-heading">Governance Control Surface</h2>
         <div class="sentinel-list" id="controls"></div>
       </section>
-      <section>
-        <h2>Dominion Registry</h2>
+      <section aria-labelledby="domains-heading">
+        <h2 id="domains-heading">Dominion Registry</h2>
         <div class="domain-grid" id="domains"></div>
       </section>
-      <section>
-        <h2>Sentinel Lattice</h2>
+      <section aria-labelledby="sentinels-heading">
+        <h2 id="sentinels-heading">Sentinel Lattice</h2>
         <div class="sentinel-list" id="sentinels"></div>
       </section>
-      <section>
-        <h2>Capital Streams</h2>
+      <section aria-labelledby="streams-heading">
+        <h2 id="streams-heading">Capital Streams</h2>
         <div class="stream-list" id="streams"></div>
       </section>
-      <section>
-        <h2>Self-Improvement Kernel</h2>
+      <section aria-labelledby="playbooks-heading">
+        <h2 id="playbooks-heading">Self-Improvement Kernel</h2>
         <div class="playbook-list" id="playbooks"></div>
       </section>
-      <section>
-        <h2>Mermaid · Universal Value Mesh</h2>
-        <div class="mermaid-wrapper">
-          <div class="mermaid" id="mermaid-diagram">graph TD; Loading --> Manifest</div>
+      <section aria-labelledby="mermaid-heading">
+        <h2 id="mermaid-heading">Mermaid · Universal Value Mesh</h2>
+        <div class="mermaid-wrapper" aria-live="polite">
+          <div class="mermaid" id="mermaid-diagram" data-test-id="mermaid-diagram">graph TD; Loading --> Manifest</div>
         </div>
       </section>
-      <section>
-        <h2>Operator Runbook</h2>
-        <ol id="runbook"></ol>
+      <section aria-labelledby="runbook-heading">
+        <h2 id="runbook-heading">Operator Runbook</h2>
+        <ol class="runbook-steps" id="runbook"></ol>
       </section>
     </main>
     <footer>
@@ -217,237 +416,557 @@
     </footer>
     <script type="module">
       const configPath = new URL("./config/universal.value.manifest.json", import.meta.url);
-      const formatUSD = (value) => {
-        if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-        if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-        if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-        return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-      };
-      const short = (addr) => `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+      const dateFormatter = new Intl.DateTimeFormat("en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "UTC",
+      });
 
-      function formatAmount(value) {
+      const DEFAULT_MANIFEST = {
+        global: {
+          treasury: "0x0000000000000000000000000000000000000000",
+          universalVault: "0x0000000000000000000000000000000000000000",
+          upgradeCoordinator: "0x0000000000000000000000000000000000000000",
+          validatorRegistry: "0x0000000000000000000000000000000000000000",
+          missionControl: "0x0000000000000000000000000000000000000000",
+          knowledgeGraph: "0x0000000000000000000000000000000000000000",
+          guardianCouncil: "0x0000000000000000000000000000000000000000",
+          systemPause: "0x0000000000000000000000000000000000000000",
+          heartbeatSeconds: 600,
+          guardianReviewWindow: 600,
+          maxDrawdownBps: 0,
+          manifestoURI: "—",
+        },
+        domains: [],
+        sentinels: [],
+        capitalStreams: [],
+        selfImprovement: {
+          plan: null,
+          playbooks: [],
+          autonomyGuards: {
+            maxAutonomyBps: 0,
+            humanOverrideMinutes: 0,
+            pausable: false,
+            escalationChannels: [],
+          },
+        },
+      };
+
+      const RUNBOOK_STEPS = [
+        {
+          text: "Install dependencies once",
+          code: "npm ci",
+          tooltip: "Ensures deterministic installs for the orchestrator and demo console using the pinned lockfile.",
+        },
+        {
+          text: "Generate calldata + telemetry",
+          code: "npm run demo:phase8:orchestrate",
+          tooltip: "Synthesizes Phase 8 governance transactions alongside telemetry bundles.",
+          download: {
+            href: "./output/phase8-orchestration-report.txt",
+            label: "Download orchestration report",
+          },
+        },
+        {
+          text: "Apply transactions via your governance Safe / Timelock",
+          tooltip: "Stage and execute the generated calldata through your guardian-controlled Safe or timelock queue.",
+        },
+        {
+          text: "Update the self-improvement plan hash + cadence",
+          code: "setSelfImprovementPlan",
+          tooltip: "Call the manager contract with the new cadence, plan hash, and plan URI produced by the orchestrator run.",
+          download: {
+            href: "./output/phase8-self-improvement-plan.json",
+            label: "Download latest plan payload",
+          },
+        },
+        {
+          text: "Record each improvement cycle and archive reports",
+          code: "recordSelfImprovementExecution",
+          tooltip: "Log every cycle execution and file the generated report URIs for auditability.",
+          download: {
+            href: "./output/phase8-cycle-report.csv",
+            label: "Download cycle report",
+          },
+        },
+        {
+          text: "Stream live telemetry from this console and the orchestrator runtime",
+          tooltip: "Pin the dashboards inside Mission Control to watch sentinel coverage and stream health in real-time.",
+        },
+        {
+          text: "Trigger self-improvement playbooks as needed",
+          tooltip: "Follow guardrails and escalation paths before invoking automation routines.",
+        },
+      ];
+
+      const SECTION_SCHEMA = [
+        { target: "#stats", renderer: renderStats },
+        { target: "#controls", renderer: renderControls },
+        { target: "#domains", renderer: renderDomains },
+        { target: "#sentinels", renderer: renderSentinels },
+        { target: "#streams", renderer: renderStreams },
+        { target: "#playbooks", renderer: renderPlaybooks },
+        { target: "#runbook", renderer: renderRunbook },
+        { target: "#mermaid-diagram", renderer: renderMermaid },
+      ];
+
+      const asArray = (value) => (Array.isArray(value) ? value : []);
+
+      const applyDefaults = (source, defaults) => {
+        if (Array.isArray(source)) return source;
+        if (Array.isArray(defaults)) return Array.isArray(source) ? source : defaults;
+        if (source && typeof source === "object") {
+          const result = { ...(defaults || {}) };
+          for (const [key, val] of Object.entries(source)) {
+            result[key] = applyDefaults(val, defaults ? defaults[key] : undefined);
+          }
+          return result;
+        }
+        return source ?? defaults;
+      };
+
+      const toNumber = (value, fallback = 0) => {
+        const num = Number(value);
+        return Number.isFinite(num) ? num : fallback;
+      };
+
+      const shortAddress = (value) => {
+        if (!value) return "—";
+        const addr = String(value);
+        if (addr.length <= 10) return addr;
+        return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+      };
+
+      const formatUSD = (value) => {
+        const amount = toNumber(value, 0);
+        const abs = Math.abs(amount);
+        if (abs >= 1e12) return `$${(amount / 1e12).toFixed(2)}T`;
+        if (abs >= 1e9) return `$${(amount / 1e9).toFixed(2)}B`;
+        if (abs >= 1e6) return `$${(amount / 1e6).toFixed(2)}M`;
+        return `$${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+      };
+
+      const formatAmount = (value) => {
         try {
-          const big = BigInt(value ?? 0);
+          if (value === null || value === undefined) return "0";
+          const big = BigInt(value);
           if (big === BigInt(0)) return "0";
-          const str = big.toString();
-          if (str.length <= 6) return str;
-          return `${str.slice(0, 3)}… (10^${str.length - 3})`;
-        } catch (err) {
+          const abs = big < 0 ? -big : big;
+          const str = abs.toString();
+          if (str.length <= 6) return big.toString();
+          return `${big < 0 ? "-" : ""}${str.slice(0, 3)}… (10^${str.length - 3})`;
+        } catch (error) {
           return String(value ?? "0");
         }
-      }
+      };
 
-      async function load() {
-        const res = await fetch(configPath);
-        if (!res.ok) throw new Error(`Failed to load manifest: ${res.status}`);
-        const data = await res.json();
-        render(data);
-      }
+      const formatDuration = (seconds) => {
+        const value = toNumber(seconds, 0);
+        if (value <= 0) return "0 s";
+        if (value >= 3600) return `${(value / 3600).toFixed(2)} h`;
+        if (value >= 60) return `${(value / 60).toFixed(1)} min`;
+        return `${value.toFixed(0)} s`;
+      };
 
-      function render(data) {
-        const stats = document.getElementById("stats");
-        const totalMonthly = data.domains.reduce((acc, d) => acc + Number(d.valueFlowMonthlyUSD ?? 0), 0);
-        const annualBudget = data.capitalStreams.reduce((acc, s) => acc + Number(s.annualBudget ?? 0), 0);
-        const resilience =
-          data.domains.length === 0
-            ? 0
-            : data.domains.reduce((acc, d) => acc + Number(d.resilienceIndex ?? 0), 0) / data.domains.length;
-        const coverage = data.sentinels.reduce((acc, s) => acc + Number(s.coverageSeconds ?? 0), 0) / 60;
+      const formatSeconds = (seconds) => `${toNumber(seconds, 0).toLocaleString()} s`;
 
-        const plan = data.selfImprovement?.plan;
-        const statItems = [
-          { label: "Monthly value flow", value: formatUSD(totalMonthly) },
-          { label: "Annual capital budget", value: formatUSD(annualBudget) },
-          { label: "Average resilience", value: resilience.toFixed(3) },
-          { label: "Sentinel coverage", value: `${coverage.toFixed(1)} min/cycle` },
-        ];
-        if (plan?.cadenceSeconds) {
-          statItems.push({ label: "Improvement cadence", value: `${(plan.cadenceSeconds / 3600).toFixed(2)} h` });
+      const formatTimestamp = (seconds) => {
+        const value = toNumber(seconds, 0);
+        if (!value) return "—";
+        return `${dateFormatter.format(new Date(value * 1000))} UTC`;
+      };
+
+      const renderAlerts = (alerts) => {
+        const container = document.getElementById("alerts");
+        if (!container) return;
+        if (!alerts.length) {
+          container.innerHTML = "";
+          container.setAttribute("hidden", "true");
+          return;
         }
-        if (plan?.lastExecutedAt) {
-          const executed = new Date(Number(plan.lastExecutedAt) * 1000).toISOString().replace("T", " · ");
-          statItems.push({ label: "Last improvement", value: executed });
-        }
-        stats.innerHTML = statItems
+        container.removeAttribute("hidden");
+        container.innerHTML = alerts
           .map(
-            (item) => `
-            <article class="stat-card">
-              <h2>${item.label}</h2>
-              <p>${item.value}</p>
-            </article>
-          `,
+            (alert, index) => `
+              <div class="alert" role="alert" data-level="${alert.level}" data-test-id="alert">
+                <strong id="alert-${index}">${alert.title}</strong>
+                <p aria-describedby="alert-${index}">${alert.description}</p>
+              </div>
+            `,
           )
           .join("");
+      };
 
-        const controls = document.getElementById("controls");
-        controls.innerHTML = `
-          <div class="sentinel-item">
-            <strong>Treasury</strong>: ${short(data.global.treasury)} · <strong>Vault</strong>: ${short(
-          data.global.universalVault,
-        )}
-          </div>
-          <div class="sentinel-item">
-            <strong>Upgrade coordinator</strong>: ${short(data.global.upgradeCoordinator)} · <strong>Validator registry</strong>: ${short(
-          data.global.validatorRegistry,
-        )}
-          </div>
-          <div class="sentinel-item">
-            <strong>Mission control</strong>: ${short(data.global.missionControl)} · <strong>Knowledge graph</strong>: ${short(
-          data.global.knowledgeGraph,
-        )}
-          </div>
-          <div class="sentinel-item">
-            <strong>Guardian council</strong>: ${short(data.global.guardianCouncil)} · <strong>System pause</strong>: ${short(
-          data.global.systemPause,
-        )}
-          </div>
-          <div class="sentinel-item">
-            <strong>Manifest</strong>: ${data.global.manifestoURI} · <strong>Drawdown guard</strong>: ${
-          data.global.maxDrawdownBps
-        } bps
-          </div>
-        `;
-
+      const buildContext = (manifest) => {
         const coverageMap = new Map();
-        data.sentinels.forEach((sentinel) => {
-          (sentinel.domains || []).forEach((slug) => {
-            coverageMap.set(String(slug).toLowerCase(), true);
-          });
-        });
+        for (const sentinel of asArray(manifest.sentinels)) {
+          for (const domain of asArray(sentinel.domains)) {
+            coverageMap.set(String(domain).toLowerCase(), true);
+          }
+        }
 
-        const domains = document.getElementById("domains");
-        domains.innerHTML = data.domains
+        const domains = asArray(manifest.domains);
+        const sentinels = asArray(manifest.sentinels);
+        const streams = asArray(manifest.capitalStreams);
+
+        const totalMonthly = domains.reduce((acc, domain) => acc + toNumber(domain.valueFlowMonthlyUSD, 0), 0);
+        const annualBudget = streams.reduce((acc, stream) => acc + toNumber(stream.annualBudget, 0), 0);
+        const averageResilience = domains.length
+          ? domains.reduce((acc, domain) => acc + toNumber(domain.resilienceIndex, 0), 0) / domains.length
+          : 0;
+        const totalCoverageSeconds = sentinels.reduce((acc, sentinel) => acc + toNumber(sentinel.coverageSeconds, 0), 0);
+        const averageCoverageSeconds = domains.length ? totalCoverageSeconds / domains.length : 0;
+        const guardianWindowSeconds = toNumber(manifest.global?.guardianReviewWindow, 0);
+
+        const uncoveredDomains = domains.filter(
+          (domain) => !coverageMap.get(String(domain.slug ?? "").toLowerCase()),
+        );
+
+        const alerts = [];
+        if (!domains.length) {
+          alerts.push({
+            level: "critical",
+            title: "No domains configured",
+            description: "Add at least one dominion to the manifest so capital streams and sentinels can be orchestrated.",
+          });
+        }
+        if (uncoveredDomains.length) {
+          alerts.push({
+            level: "warning",
+            title: "Domains missing sentinel coverage",
+            description: `Assign sentinel guardians to: ${uncoveredDomains.map((d) => d.name || d.slug).join(", " )}.`,
+          });
+        }
+        if (domains.length && guardianWindowSeconds && averageCoverageSeconds < guardianWindowSeconds) {
+          alerts.push({
+            level: "warning",
+            title: "Coverage shortfall detected",
+            description: `Average sentinel coverage (${formatDuration(averageCoverageSeconds)}) is below the guardian review window (${formatDuration(
+              guardianWindowSeconds,
+            )}). Schedule additional sentinels or expand coverage windows.`,
+          });
+        }
+
+        return {
+          coverageMap,
+          uncoveredDomains,
+          totals: {
+            totalMonthly,
+            annualBudget,
+            averageResilience,
+            totalCoverageSeconds,
+            averageCoverageSeconds,
+            guardianWindowSeconds,
+          },
+          alerts,
+        };
+      };
+
+      function renderStats(container, manifest, context) {
+        const stats = [
+          { key: "monthly-flow", label: "Monthly value flow", value: formatUSD(context.totals.totalMonthly) },
+          { key: "annual-budget", label: "Annual capital budget", value: formatUSD(context.totals.annualBudget) },
+          { key: "average-resilience", label: "Average resilience", value: context.totals.averageResilience.toFixed(3) },
+          {
+            key: "sentinel-coverage",
+            label: "Sentinel coverage",
+            value: `${formatDuration(context.totals.averageCoverageSeconds || 0)} per dominion`,
+          },
+        ];
+
+        const plan = manifest.selfImprovement?.plan;
+        if (plan?.cadenceSeconds) {
+          stats.push({
+            key: "improvement-cadence",
+            label: "Improvement cadence",
+            value: formatDuration(plan.cadenceSeconds),
+          });
+        }
+        if (plan?.lastExecutedAt) {
+          stats.push({
+            key: "last-improvement",
+            label: "Last improvement",
+            value: formatTimestamp(plan.lastExecutedAt),
+          });
+        }
+
+        container.innerHTML = stats
+          .map(
+            (item) => `
+              <article class="stat-card" role="listitem" data-test-id="stat-card" data-stat-key="${item.key}">
+                <h2>${item.label}</h2>
+                <p>${item.value}</p>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
+      function renderControls(container, manifest) {
+        const global = manifest.global || {};
+        const entries = [
+          {
+            label: "Treasury",
+            value: shortAddress(global.treasury),
+            secondaryLabel: "Vault",
+            secondaryValue: shortAddress(global.universalVault),
+          },
+          {
+            label: "Upgrade coordinator",
+            value: shortAddress(global.upgradeCoordinator),
+            secondaryLabel: "Validator registry",
+            secondaryValue: shortAddress(global.validatorRegistry),
+          },
+          {
+            label: "Mission control",
+            value: shortAddress(global.missionControl),
+            secondaryLabel: "Knowledge graph",
+            secondaryValue: shortAddress(global.knowledgeGraph),
+          },
+          {
+            label: "Guardian council",
+            value: shortAddress(global.guardianCouncil),
+            secondaryLabel: "System pause",
+            secondaryValue: shortAddress(global.systemPause),
+          },
+          {
+            label: "Manifest",
+            value: global.manifestoURI || "—",
+            secondaryLabel: "Drawdown guard",
+            secondaryValue: `${toNumber(global.maxDrawdownBps, 0)} bps`,
+          },
+        ];
+
+        container.innerHTML = entries
+          .map(
+            (entry, index) => `
+              <article class="sentinel-item" data-test-id="control-card" data-control-index="${index}">
+                <p><strong>${entry.label}</strong>: ${entry.value} · <strong>${entry.secondaryLabel}</strong>: ${entry.secondaryValue}</p>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
+      function renderDomains(container, manifest, context) {
+        const domains = asArray(manifest.domains);
+        if (!domains.length) {
+          container.innerHTML = '<p>No dominions configured.</p>';
+          return;
+        }
+
+        container.innerHTML = domains
           .map((domain) => {
-            const tags = (domain.skillTags || []).map((tag) => `<span class="chip">${tag}</span>`).join(" ");
-            const covered = coverageMap.has(String(domain.slug).toLowerCase());
+            const tags = asArray(domain.skillTags)
+              .map((tag) => `<span class="chip">${tag}</span>`)
+              .join(" ");
+            const covered = context.coverageMap.get(String(domain.slug ?? "").toLowerCase());
             return `
-              <article class="domain-card${covered ? "" : " no-coverage"}">
-                <h3>${domain.name}</h3>
+              <article class="domain-card${covered ? "" : " no-coverage"}" data-test-id="domain-card" data-domain-slug="${domain.slug}">
+                <h3>${domain.name || domain.slug}</h3>
                 <p>${domain.autonomyNarrative || "Autonomy narrative pending."}</p>
                 <div class="domain-meta">
-                  <span class="chip">ID ${domain.slug}</span>
-                  <span class="chip">Autonomy ${domain.autonomyLevelBps} bps</span>
-                  <span class="chip">Resilience ${(domain.resilienceIndex ?? 0).toFixed(3)}</span>
+                  <span class="chip">ID ${domain.slug || "n/a"}</span>
+                  <span class="chip">Autonomy ${toNumber(domain.autonomyLevelBps, 0)} bps</span>
+                  <span class="chip">Resilience ${(toNumber(domain.resilienceIndex, 0)).toFixed(3)}</span>
                   <span class="chip">TVL ≤ ${formatAmount(domain.tvlLimit)}</span>
-                  <span class="chip">Heartbeat ${domain.heartbeatSeconds}s</span>
+                  <span class="chip">Heartbeat ${formatSeconds(domain.heartbeatSeconds)}</span>
                 </div>
                 <div class="domain-meta">${tags}</div>
               </article>
             `;
           })
           .join("");
+      }
 
-        const sentinels = document.getElementById("sentinels");
-        sentinels.innerHTML = data.sentinels
-          .map((sentinel) => `
-            <article class="sentinel-item">
-              <strong>${sentinel.name}</strong>
-              <p>Coverage ${sentinel.coverageSeconds}s · Sensitivity ${sentinel.sensitivityBps} bps · Domains ${
-                sentinel.domains.join(" · ")
-              }</p>
-              <p>Agent ${short(sentinel.agent)} · Policy file ${sentinel.uri}</p>
-            </article>
-          `)
+      function renderSentinels(container, manifest) {
+        const sentinels = asArray(manifest.sentinels);
+        if (!sentinels.length) {
+          container.innerHTML = '<p>No sentinels registered.</p>';
+          return;
+        }
+
+        container.innerHTML = sentinels
+          .map(
+            (sentinel) => `
+              <article class="sentinel-item" data-test-id="sentinel-card" data-sentinel-slug="${sentinel.slug}">
+                <strong>${sentinel.name || sentinel.slug}</strong>
+                <p>Coverage ${formatDuration(sentinel.coverageSeconds)} · Sensitivity ${toNumber(sentinel.sensitivityBps, 0)} bps · Domains ${
+                  asArray(sentinel.domains).join(" · ") || "—"
+                }</p>
+                <p>Agent ${shortAddress(sentinel.agent)} · Policy ${sentinel.uri || "—"}</p>
+              </article>
+            `,
+          )
           .join("");
+      }
 
-        const streams = document.getElementById("streams");
-        streams.innerHTML = data.capitalStreams
-          .map((stream) => `
-            <article class="stream-item">
-              <strong>${stream.name}</strong>
-              <p>${formatUSD(stream.annualBudget)}/yr · Expansion ${stream.expansionBps} bps · Domains ${
-                stream.domains.join(" · ")
-              }</p>
-              <p>Vault ${short(stream.vault)} · Manifest ${stream.uri}</p>
-            </article>
-          `)
+      function renderStreams(container, manifest) {
+        const streams = asArray(manifest.capitalStreams);
+        if (!streams.length) {
+          container.innerHTML = '<p>No capital streams defined.</p>';
+          return;
+        }
+
+        container.innerHTML = streams
+          .map(
+            (stream) => `
+              <article class="stream-item" data-test-id="stream-card" data-stream-slug="${stream.slug}">
+                <strong>${stream.name || stream.slug}</strong>
+                <p>${formatUSD(stream.annualBudget)}/yr · Expansion ${toNumber(stream.expansionBps, 0)} bps · Domains ${
+                  asArray(stream.domains).join(" · ") || "—"
+                }</p>
+                <p>Vault ${shortAddress(stream.vault)} · Manifest ${stream.uri || "—"}</p>
+              </article>
+            `,
+          )
           .join("");
+      }
 
-        const playbooks = document.getElementById("playbooks");
-        const planCard = plan
-          ? `
-            <article class="playbook-item">
+      function renderPlaybooks(container, manifest) {
+        const entries = [];
+        const plan = manifest.selfImprovement?.plan;
+        if (plan && (plan.planURI || plan.planHash || plan.cadenceSeconds || plan.lastExecutedAt)) {
+          entries.push(`
+            <article class="playbook-item" data-test-id="playbook-card" data-playbook-type="plan">
               <strong>Strategic plan</strong>
-              <p>Cadence ${(plan.cadenceSeconds / 3600).toFixed(2)} h · Hash ${plan.planHash}</p>
-              <p>Manifest ${plan.planURI}${
-                plan.lastExecutedAt
-                  ? ` · Last execution ${new Date(Number(plan.lastExecutedAt) * 1000).toISOString()}`
-                  : ""
+              <p>Cadence ${formatDuration(plan.cadenceSeconds)} · Hash ${plan.planHash || "—"}</p>
+              <p>Manifest ${plan.planURI || "—"}${
+                plan.lastExecutedAt ? ` · Last execution ${formatTimestamp(plan.lastExecutedAt)}` : ""
               }</p>
               <p>Latest report ${plan.lastReportURI || "—"}</p>
             </article>
-          `
-          : "";
+          `);
+        }
 
-        playbooks.innerHTML = [
-          planCard,
-          ...data.selfImprovement.playbooks.map(
-            (playbook) => `
-              <article class="playbook-item">
-                <strong>${playbook.name}</strong>
-                <p>${playbook.description}</p>
-                <p>Owner ${short(playbook.owner)} · Automation ${playbook.automation} · Guardrails ${
-                  playbook.guardrails.join(" · ")
-                }</p>
-              </article>
-            `,
-          ),
-          `
-            <article class="playbook-item">
-              <strong>Autonomy guard</strong>
-              <p>
-                ≤${data.selfImprovement.autonomyGuards.maxAutonomyBps} bps · Override window ${
-            data.selfImprovement.autonomyGuards.humanOverrideMinutes
-          } minutes · Escalation ${data.selfImprovement.autonomyGuards.escalationChannels.join(" → ")}
-              </p>
+        for (const playbook of asArray(manifest.selfImprovement?.playbooks)) {
+          entries.push(`
+            <article class="playbook-item" data-test-id="playbook-card" data-playbook-name="${playbook.name}">
+              <strong>${playbook.name}</strong>
+              <p>${playbook.description || "Playbook description pending."}</p>
+              <p>Owner ${shortAddress(playbook.owner)} · Automation ${playbook.automation || "manual"} · Guardrails ${
+                asArray(playbook.guardrails).join(" · ") || "—"
+              }</p>
             </article>
-          `,
-        ].join("");
+          `);
+        }
 
-        const runbook = document.getElementById("runbook");
-        runbook.innerHTML = `
-          <li>Install dependencies once: <code>npm ci</code></li>
-          <li>Generate calldata + telemetry: <code>npm run demo:phase8:orchestrate</code></li>
-          <li>Apply transactions via your governance Safe / Timelock</li>
-          <li>Update the self-improvement plan hash + cadence via <code>setSelfImprovementPlan</code></li>
-          <li>Record each improvement cycle with <code>recordSelfImprovementExecution</code> and archive the report URI</li>
-          <li>Stream live telemetry from this console and the orchestrator runtime</li>
-          <li>Trigger self-improvement playbooks as needed (see guardrails above)</li>
-        `;
+        const guards = manifest.selfImprovement?.autonomyGuards || {};
+        entries.push(`
+          <article class="playbook-item" data-test-id="playbook-card" data-playbook-type="guard">
+            <strong>Autonomy guard</strong>
+            <p>≤${toNumber(guards.maxAutonomyBps, 0)} bps · Override window ${toNumber(guards.humanOverrideMinutes, 0)} minutes · Pausable ${
+              guards.pausable ? "yes" : "no"
+            }</p>
+            <p>Escalation ${asArray(guards.escalationChannels).join(" → ") || "—"}</p>
+          </article>
+        `);
 
-        const mermaidNodes = [
+        container.innerHTML = entries.join("");
+      }
+
+      function renderRunbook(container) {
+        container.innerHTML = RUNBOOK_STEPS.map((step, index) => {
+          const tooltipId = `runbook-tooltip-${index}`;
+          const tooltipControls = step.tooltip
+            ? `
+              <button type="button" class="info-button" aria-describedby="${tooltipId}" aria-label="More info for step ${
+                index + 1
+              }">ℹ️</button>
+              <span class="tooltip" role="tooltip" id="${tooltipId}">${step.tooltip}</span>
+            `
+            : "";
+          const code = step.code ? `<code>${step.code}</code>` : "";
+          const download = step.download
+            ? `<a class="download-link" href="${step.download.href}" download data-test-id="runbook-download">${step.download.label}</a>`
+            : "";
+          return `
+            <li class="runbook-step" data-test-id="runbook-step">
+              <div class="runbook-step-header">
+                <span class="step-text">${step.text}</span>
+                ${tooltipControls}
+              </div>
+              ${code}
+              ${download}
+            </li>
+          `;
+        }).join("");
+      }
+
+      function renderMermaid(container, manifest) {
+        const lines = [
           "graph TD",
           "  Governance[[Guardian Council]] --> Manager(Phase8UniversalValueManager)",
           "  Manager --> Treasury[[Universal Treasury]]",
           "  Manager --> Pause[System Pause Controller]",
           "  Manager --> Streams[[Capital Streams]]",
         ];
-        data.domains.forEach((domain) => {
-          const id = domain.slug.replace(/[^a-z0-9]/gi, "");
-          mermaidNodes.push(`  Manager --> ${id}([${domain.name}])`);
+
+        asArray(manifest.domains).forEach((domain, index) => {
+          const id = String(domain.slug || `domain${index}`).replace(/[^a-z0-9]/gi, "").toLowerCase() || `domain${index}`;
+          lines.push(`  Manager --> ${id}([${domain.name || domain.slug || "Domain"}])`);
         });
-        data.sentinels.forEach((sentinel) => {
-          const id = sentinel.slug.replace(/[^a-z0-9]/gi, "");
-          mermaidNodes.push(`  ${id}Sentinel{${sentinel.name}} --> Pause`);
-          sentinel.domains.forEach((domain) => {
-            const domainId = domain.replace(/[^a-z0-9]/gi, "");
-            mermaidNodes.push(`  ${id}Sentinel --> ${domainId}`);
-          });
-        });
-        data.capitalStreams.forEach((stream) => {
-          const id = stream.slug.replace(/[^a-z0-9]/gi, "");
-          mermaidNodes.push(`  Streams --> ${id}Stream[[${stream.name}]]`);
-          stream.domains.forEach((domain) => {
-            const domainId = domain.replace(/[^a-z0-9]/gi, "");
-            mermaidNodes.push(`  ${id}Stream --> ${domainId}`);
+
+        asArray(manifest.sentinels).forEach((sentinel, index) => {
+          const baseId = String(sentinel.slug || `sentinel${index}`).replace(/[^a-z0-9]/gi, "").toLowerCase() || `sentinel${index}`;
+          lines.push(`  ${baseId}Sentinel{${sentinel.name || sentinel.slug || "Sentinel"}} --> Pause`);
+          asArray(sentinel.domains).forEach((domain) => {
+            const domainId = String(domain || "domain").replace(/[^a-z0-9]/gi, "").toLowerCase();
+            if (domainId) {
+              lines.push(`  ${baseId}Sentinel --> ${domainId}`);
+            }
           });
         });
 
-        const mermaidDiagram = document.getElementById("mermaid-diagram");
-        mermaidDiagram.textContent = mermaidNodes.join("\n");
+        asArray(manifest.capitalStreams).forEach((stream, index) => {
+          const streamId = String(stream.slug || `stream${index}`).replace(/[^a-z0-9]/gi, "").toLowerCase() || `stream${index}`;
+          lines.push(`  Streams --> ${streamId}Stream[[${stream.name || stream.slug || "Stream"}]]`);
+          asArray(stream.domains).forEach((domain) => {
+            const domainId = String(domain || "domain").replace(/[^a-z0-9]/gi, "").toLowerCase();
+            if (domainId) {
+              lines.push(`  ${streamId}Stream --> ${domainId}`);
+            }
+          });
+        });
+
+        const diagramText = lines.join("\n");
+        container.textContent = diagramText;
+
+        const markFallback = (error) => {
+          container.setAttribute("data-rendered", "fallback");
+          if (error) {
+            console.warn("Rendering mermaid fallback", error);
+          }
+        };
+
         if (window.mermaid) {
-          window.mermaid.initialize({ startOnLoad: false, theme: "dark" });
-          window.mermaid.run({ nodes: [mermaidDiagram] });
+          try {
+            container.setAttribute("data-rendered", "pending");
+            window.mermaid.initialize({ startOnLoad: false, theme: "dark" });
+            Promise.resolve(window.mermaid.run({ nodes: [container] }))
+              .then(() => container.setAttribute("data-rendered", "true"))
+              .catch((error) => {
+                markFallback(error);
+              });
+          } catch (error) {
+            markFallback(error);
+          }
+        } else {
+          markFallback();
+        }
+      }
+
+      async function load() {
+        const response = await fetch(configPath);
+        if (!response.ok) throw new Error(`Failed to load manifest: ${response.status}`);
+        const data = await response.json();
+        const manifest = applyDefaults(data, DEFAULT_MANIFEST);
+        const context = buildContext(manifest);
+        renderAlerts(context.alerts);
+        for (const section of SECTION_SCHEMA) {
+          const node = document.querySelector(section.target);
+          if (!node) continue;
+          section.renderer(node, manifest, context);
         }
       }
 
