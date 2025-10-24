@@ -47,6 +47,7 @@ export type GlobalConfigInput = {
 
 export type DomainConfigInput = {
   slug: string;
+  lifecycle?: 'active' | 'sunset' | 'experimental';
   name: string;
   manifestURI: string;
   subgraph: string;
@@ -64,6 +65,14 @@ export type DomainConfigInput = {
   metadata?: DomainMetadata;
   infrastructure?: InfrastructureEntry[];
   infrastructureControl?: DomainInfrastructureControlInput;
+  sunsetPlan?: SunsetPlanInput;
+};
+
+export type SunsetPlanInput = {
+  reason?: string;
+  retirementBlock?: number;
+  handoffDomains?: string[];
+  notes?: string;
 };
 
 export type DomainOperationsInput = {
@@ -238,11 +247,13 @@ export type AddressPlan = {
 };
 
 export type DomainPlan = {
-  action: 'registerDomain' | 'updateDomain';
+  action: 'registerDomain' | 'updateDomain' | 'removeDomain';
   id: string;
   slug: string;
-  config: DomainStruct;
+  config?: DomainStruct;
   diffs: string[];
+  lifecycle: 'active' | 'sunset' | 'experimental';
+  sunsetPlan?: SunsetPlanInput | null;
 };
 
 export type DomainOperationsPlan = {
@@ -334,7 +345,9 @@ export type Phase6PlanSummary = {
       slug: string;
       id: string;
       diffs: string[];
-      config: Record<string, unknown>;
+      lifecycle: DomainPlan['lifecycle'];
+      sunsetPlan?: Record<string, unknown> | null;
+      config?: Record<string, unknown>;
     }>;
     domainOperations: Array<{
       slug: string;
@@ -884,6 +897,16 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
     const existing = currentMap.get(key);
     const existingOps = current.domainOperations[key];
     const existingInfra = current.domainInfrastructure[key];
+    const lifecycleRaw = String(input.lifecycle ?? 'active').toLowerCase();
+    const lifecycle: DomainPlan['lifecycle'] =
+      lifecycleRaw === 'sunset' || lifecycleRaw === 'experimental' ? (lifecycleRaw as DomainPlan['lifecycle']) : 'active';
+    if (!existing && lifecycle === 'sunset') {
+      warnings.push(`Domain ${slug} marked sunset in config but not found on-chain; skipping.`);
+      touchedOperations.add(key);
+      touchedTelemetry.add(key);
+      touchedInfrastructure.add(key);
+      continue;
+    }
     const struct = buildDomainStruct(input, existing?.active);
     if (!existing) {
       domains.push({
@@ -892,6 +915,8 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
         slug,
         config: struct,
         diffs: ['slug', 'metadataURI', 'validationModule', 'subgraphEndpoint', 'heartbeatSeconds'],
+        lifecycle,
+        sunsetPlan: lifecycle === 'sunset' ? cloneSunsetPlan(input.sunsetPlan) : null,
       });
       if (input.telemetry) {
         const telemetryTarget = buildDomainTelemetryStruct(input.telemetry);
@@ -936,6 +961,22 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
       continue;
     }
 
+    if (lifecycle === 'sunset') {
+      domains.push({
+        action: 'removeDomain',
+        id: existing.id,
+        slug,
+        config: existing,
+        diffs: ['lifecycle'],
+        lifecycle: 'sunset',
+        sunsetPlan: cloneSunsetPlan(input.sunsetPlan),
+      });
+      touchedOperations.add(key);
+      touchedTelemetry.add(key);
+      touchedInfrastructure.add(key);
+      continue;
+    }
+
     const diffs: string[] = [];
     if (existing.name !== struct.name) diffs.push('name');
     if (existing.metadataURI !== struct.metadataURI) diffs.push('metadataURI');
@@ -954,6 +995,8 @@ export function planPhase6Changes(current: Phase6State, desired: Phase6Config): 
         slug,
         config: struct,
         diffs,
+        lifecycle,
+        sunsetPlan: lifecycle === 'sunset' ? cloneSunsetPlan(input.sunsetPlan) : null,
       });
     }
 
@@ -1094,6 +1137,18 @@ function serialize(value: unknown): unknown {
   return value;
 }
 
+function cloneSunsetPlan(plan?: SunsetPlanInput | null): SunsetPlanInput | null {
+  if (!plan) {
+    return null;
+  }
+  const cloned: SunsetPlanInput = {};
+  if (plan.reason !== undefined) cloned.reason = plan.reason;
+  if (plan.retirementBlock !== undefined) cloned.retirementBlock = plan.retirementBlock;
+  if (Array.isArray(plan.handoffDomains)) cloned.handoffDomains = [...plan.handoffDomains];
+  if (plan.notes !== undefined) cloned.notes = plan.notes;
+  return cloned;
+}
+
 export function buildPlanSummary(plan: Phase6Plan, options: SummaryOptions): Phase6PlanSummary {
   const onlyDomains = new Set(
     Array.from(options.filters.onlyDomains ?? []).map((slug) => slug.toLowerCase()),
@@ -1108,7 +1163,12 @@ export function buildPlanSummary(plan: Phase6Plan, options: SummaryOptions): Pha
       slug: domain.slug,
       id: domain.id,
       diffs: [...domain.diffs],
-      config: serialize(domain.config) as Record<string, unknown>,
+      lifecycle: domain.lifecycle,
+      sunsetPlan:
+        domain.sunsetPlan && typeof domain.sunsetPlan === 'object'
+          ? (serialize(domain.sunsetPlan) as Record<string, unknown>)
+          : undefined,
+      config: domain.config ? (serialize(domain.config) as Record<string, unknown>) : undefined,
     }));
 
   const summaryOps = plan.domainOperations

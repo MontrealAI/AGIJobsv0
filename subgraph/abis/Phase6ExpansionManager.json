@@ -342,6 +342,25 @@
       },
       {
         "indexed": false,
+        "internalType": "string",
+        "name": "slug",
+        "type": "string"
+      }
+    ],
+    "name": "DomainRemoved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
         "internalType": "uint32",
         "name": "resilienceBps",
         "type": "uint32"
@@ -691,6 +710,103 @@
         "name": "id",
         "type": "bytes32"
       },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "slug",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "metadataURI",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "validationModule",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dataOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "l2Gateway",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "subgraphEndpoint",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "executionRouter",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "heartbeatSeconds",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Phase6ExpansionManager.Domain",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "name": "updateDomain",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "removeDomain",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "domainExists",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "address",
         "name": "validationModule",
@@ -1667,6 +1783,38 @@
     "name": "updateDomain",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "removeDomain",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "domainExists",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ]
