@@ -126,7 +126,7 @@
       "name": "Solar Shield Guardian",
       "uri": "ipfs://agi-jobs/phase8/sentinels/solar-shield.json",
       "agent": "0x5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e",
-      "coverageSeconds": 420,
+      "coverageSeconds": 900,
       "sensitivityBps": 450,
       "domains": [
         "climate-harmonizer",
@@ -139,7 +139,7 @@
       "name": "Capital Watch Exocomptroller",
       "uri": "ipfs://agi-jobs/phase8/sentinels/capital-watch.json",
       "agent": "0x3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
-      "coverageSeconds": 360,
+      "coverageSeconds": 900,
       "sensitivityBps": 380,
       "domains": [
         "planetary-finance",
@@ -152,7 +152,7 @@
       "name": "Bio Sentinel Continuity",
       "uri": "ipfs://agi-jobs/phase8/sentinels/bio-sentinel.json",
       "agent": "0x8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f",
-      "coverageSeconds": 300,
+      "coverageSeconds": 900,
       "sensitivityBps": 420,
       "domains": [
         "health-sovereign"

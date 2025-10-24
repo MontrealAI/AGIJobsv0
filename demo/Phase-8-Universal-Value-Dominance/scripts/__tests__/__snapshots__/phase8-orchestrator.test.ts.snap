@@ -8,18 +8,15 @@ Generated: <timestamp>
 - Total monthly value flow: $688.00B
 - Annual capital allocation: $1.97T
 - Average resilience index: 0.925
-- Sentinel coverage per guardian cycle: 18.0 minutes
+- Universal dominance score: 96.9 / 100
+- Sentinel coverage per guardian cycle: 45.0 minutes
 - Domains covered by sentinels: 100.0%
 - Maximum encoded autonomy: 7800 bps
 - Self-improvement cadence: every 2.00 hours
 - Last self-improvement execution: 2023-11-14T22:20:00.000Z
 
 ## Diagnostics
-- Planetary Finance Mesh has 360s of sentinel coverage but guardian review window requires 720s
-- Climate Harmonizer Array has 420s of sentinel coverage but guardian review window requires 720s
-- Health Sovereign Continuum has 300s of sentinel coverage but guardian review window requires 720s
-- Infrastructure Synthesis Grid has 420s of sentinel coverage but guardian review window requires 720s
-- Knowledge Lattice Nexus has 360s of sentinel coverage but guardian review window requires 720s
+- All guardrails nominal across monitored domains.
 
 ## Governance Control Surface
 - Treasury: 0x8a1f8f5e3b9d9b2a7b6c5e4f3d2c1b0a9f8e7d6c
@@ -43,9 +40,9 @@ Generated: <timestamp>
 | Knowledge Lattice Nexus | 6900 | 0.902 | 150 | 680… (10^23) | $54.00B | Capital Watch Exocomptroller | Planetary Resilience Fund, Innovation Thrust Catalyst |
 
 ## Sentinel Lattice
-- Solar Shield Guardian · coverage 420s · sensitivity 450 bps · guarding climate-harmonizer, infrastructure-synthesis
-- Capital Watch Exocomptroller · coverage 360s · sensitivity 380 bps · guarding planetary-finance, knowledge-lattice
-- Bio Sentinel Continuity · coverage 300s · sensitivity 420 bps · guarding health-sovereign
+- Solar Shield Guardian · coverage 900s · sensitivity 450 bps · guarding climate-harmonizer, infrastructure-synthesis
+- Capital Watch Exocomptroller · coverage 900s · sensitivity 380 bps · guarding planetary-finance, knowledge-lattice
+- Bio Sentinel Continuity · coverage 900s · sensitivity 420 bps · guarding health-sovereign
 
 ## Capital Streams
 - Climate Stabilization Endowment · $720.00B/yr · expansion 1300 bps · targets climate-harmonizer, infrastructure-synthesis
