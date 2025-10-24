@@ -25,6 +25,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         uint64 guardianReviewWindow;
         uint256 maxDrawdownBps;
         string manifestoURI;
+        bytes32 manifestoHash;
     }
 
     struct ValueDomain {
@@ -94,15 +95,18 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     mapping(bytes32 => ValueDomain) private _domains;
     mapping(bytes32 => bool) private _knownDomain;
     bytes32[] private _domainIndex;
+    mapping(bytes32 => uint256) private _domainIndexPosition;
 
     mapping(bytes32 => SentinelProfile) private _sentinels;
     mapping(bytes32 => bool) private _knownSentinel;
     bytes32[] private _sentinelIndex;
+    mapping(bytes32 => uint256) private _sentinelIndexPosition;
     mapping(bytes32 => bytes32[]) private _sentinelDomainBindings;
 
     mapping(bytes32 => CapitalStream) private _capitalStreams;
     mapping(bytes32 => bool) private _knownStream;
     bytes32[] private _streamIndex;
+    mapping(bytes32 => uint256) private _streamIndexPosition;
     mapping(bytes32 => bytes32[]) private _streamDomainBindings;
 
     /// ---------------------------------------------------------------------
@@ -123,10 +127,12 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     error InvalidBps(uint256 provided);
     error InvalidURI(string field);
     error ManifestRequired();
+    error ManifestHashRequired();
     error InvalidCadence(uint64 provided);
     error InvalidPlanHash();
     error InvalidExecutionTimestamp(uint64 provided);
     error SelfImprovementPlanUnset();
+    error SentinelCoverageTooShort(uint64 provided, uint64 minimum);
 
     /// ---------------------------------------------------------------------
     /// Events
@@ -254,12 +260,14 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         emit SystemPauseUpdated(newPause);
     }
 
-    /// @notice Refreshes the manifesto URI without touching the rest of the global parameters.
+    /// @notice Refreshes the manifesto URI and provenance hash without touching other global parameters.
     /// @dev Emits {GlobalParametersUpdated} so indexers can capture the new manifesto hash.
-    function updateManifesto(string calldata newManifestoURI) external onlyGovernance {
+    function updateManifesto(string calldata newManifestoURI, bytes32 newManifestoHash) external onlyGovernance {
         if (bytes(newManifestoURI).length == 0) revert ManifestRequired();
+        if (newManifestoHash == bytes32(0)) revert ManifestHashRequired();
         GlobalParameters memory params = globalParameters;
         params.manifestoURI = newManifestoURI;
+        params.manifestoHash = newManifestoHash;
         globalParameters = params;
         emit GlobalParametersUpdated(params);
     }
@@ -333,6 +341,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         _domains[id] = config;
         _knownDomain[id] = true;
         _domainIndex.push(id);
+        _domainIndexPosition[id] = _domainIndex.length;
         emit DomainRegistered(id, config);
     }
 
@@ -354,7 +363,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         if (!_knownDomain[id]) revert UnknownDomain(id);
         delete _domains[id];
         _knownDomain[id] = false;
-        _removeIndexEntry(_domainIndex, id);
+        _removeIndexEntry(_domainIndex, _domainIndexPosition, id);
         _pruneBindings(_sentinelDomainBindings, _sentinelIndex, id);
         _pruneBindings(_streamDomainBindings, _streamIndex, id);
         emit DomainRemoved(id);
@@ -412,14 +421,17 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     /// ---------------------------------------------------------------------
 
     /// @notice Adds a sentinel profile responsible for monitoring specific domains.
-    /// @dev Emits {SentinelRegistered} and returns the deterministic identifier derived from the slug.
+    /// @dev Emits {SentinelRegistered} and returns the deterministic identifier derived from the slug. The
+    /// coverage window must meet or exceed the guardian review window so emergency monitoring does not lapse.
     function registerSentinel(SentinelProfile calldata profile) external onlyGovernance returns (bytes32 id) {
         _validateSentinel(profile);
+        _enforceSentinelCoverage(profile.coverageSeconds);
         id = _idFor(profile.slug);
         if (_knownSentinel[id]) revert DuplicateSentinel(id);
         _sentinels[id] = profile;
         _knownSentinel[id] = true;
         _sentinelIndex.push(id);
+        _sentinelIndexPosition[id] = _sentinelIndex.length;
         emit SentinelRegistered(id, profile);
     }
 
@@ -428,6 +440,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
     function updateSentinel(bytes32 id, SentinelProfile calldata profile) external onlyGovernance {
         if (!_knownSentinel[id]) revert UnknownSentinel(id);
         _validateSentinel(profile);
+        _enforceSentinelCoverage(profile.coverageSeconds);
         if (id != _idFor(profile.slug)) {
             revert DuplicateSentinel(_idFor(profile.slug));
         }
@@ -467,7 +480,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         delete _sentinels[id];
         delete _sentinelDomainBindings[id];
         _knownSentinel[id] = false;
-        _removeIndexEntry(_sentinelIndex, id);
+        _removeIndexEntry(_sentinelIndex, _sentinelIndexPosition, id);
         emit SentinelRemoved(id);
     }
 
@@ -510,6 +523,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         _capitalStreams[id] = stream;
         _knownStream[id] = true;
         _streamIndex.push(id);
+        _streamIndexPosition[id] = _streamIndex.length;
         emit CapitalStreamRegistered(id, stream);
     }
 
@@ -557,7 +571,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         delete _capitalStreams[id];
         delete _streamDomainBindings[id];
         _knownStream[id] = false;
-        _removeIndexEntry(_streamIndex, id);
+        _removeIndexEntry(_streamIndex, _streamIndexPosition, id);
         emit CapitalStreamRemoved(id);
     }
 
@@ -603,6 +617,7 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         if (params.heartbeatSeconds == 0 || params.guardianReviewWindow == 0) revert InvalidHeartbeat();
         if (params.maxDrawdownBps > 10_000) revert InvalidBps(params.maxDrawdownBps);
         if (bytes(params.manifestoURI).length == 0) revert ManifestRequired();
+        if (params.manifestoHash == bytes32(0)) revert ManifestHashRequired();
     }
 
     function _validateDomain(ValueDomain calldata config) private pure {
@@ -624,6 +639,13 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         if (profile.agent == address(0)) revert InvalidAddress("agent", profile.agent);
         if (profile.coverageSeconds == 0) revert InvalidHeartbeat();
         if (profile.sensitivityBps > 10_000) revert InvalidBps(profile.sensitivityBps);
+    }
+
+    function _enforceSentinelCoverage(uint64 coverageSeconds) private view {
+        uint64 reviewWindow = globalParameters.guardianReviewWindow;
+        if (reviewWindow != 0 && coverageSeconds < reviewWindow) {
+            revert SentinelCoverageTooShort(coverageSeconds, reviewWindow);
+        }
     }
 
     function _validateStream(CapitalStream calldata stream) private pure {
@@ -661,17 +683,24 @@ contract Phase8UniversalValueManager is Governable, ReentrancyGuard {
         return string(input);
     }
 
-    function _removeIndexEntry(bytes32[] storage index, bytes32 id) private {
-        uint256 length = index.length;
-        for (uint256 i = 0; i < length; i++) {
-            if (index[i] == id) {
-                if (i != length - 1) {
-                    index[i] = index[length - 1];
-                }
-                index.pop();
-                break;
-            }
+    function _removeIndexEntry(
+        bytes32[] storage index,
+        mapping(bytes32 => uint256) storage positions,
+        bytes32 id
+    ) private {
+        uint256 position = positions[id];
+        if (position == 0) {
+            return;
         }
+        uint256 idx = position - 1;
+        uint256 lastIdx = index.length - 1;
+        if (idx != lastIdx) {
+            bytes32 lastId = index[lastIdx];
+            index[idx] = lastId;
+            positions[lastId] = idx + 1;
+        }
+        index.pop();
+        positions[id] = 0;
     }
 
     function _validateBindingSet(bytes32[] calldata domainIds) private view {

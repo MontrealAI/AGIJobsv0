@@ -13,6 +13,7 @@ import { z, ZodError } from "zod";
 const CONFIG_PATH = join(__dirname, "..", "config", "universal.value.manifest.json");
 const OUTPUT_DIR = join(__dirname, "..", "output");
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000";
 const RESILIENCE_ALERT_THRESHOLD = 0.9;
 
 const AUTOMATION_INTERVALS: Record<string, number> = {
@@ -254,6 +255,9 @@ const ManifestSchema = z
       manifestoURI: z
         .string({ required_error: "Global manifestoURI is required" })
         .min(1, "Global manifestoURI is required"),
+      manifestoHash: z
+        .string({ required_error: "Global manifestoHash is required" })
+        .regex(/^0x[a-fA-F0-9]{64}$/, "Global manifestoHash must be a 32-byte hex value"),
       guardianCouncilLabel: z.string().optional(),
     }),
     domains: z.array(DomainSchema).default([]),
@@ -692,7 +696,7 @@ export function mermaid(config: Phase8Config) {
 
 export function calldata(config: Phase8Config) {
   const iface = new Interface([
-    "function setGlobalParameters((address,address,address,address,address,address,uint64,uint64,uint256,string) params)",
+    "function setGlobalParameters((address,address,address,address,address,address,uint64,uint64,uint256,string,bytes32) params)",
     "function setGuardianCouncil(address council)",
     "function setSystemPause(address newPause)",
     "function registerDomain((string slug,string name,string metadataURI,address orchestrator,address capitalVault,address validatorModule,address policyKernel,uint64 heartbeatSeconds,uint256 tvlLimit,uint256 autonomyLevelBps,bool active) config)",
@@ -763,6 +767,7 @@ export function calldata(config: Phase8Config) {
       BigInt(global.guardianReviewWindow ?? 0),
       BigInt(global.maxDrawdownBps ?? 0),
       String(global.manifestoURI ?? ""),
+      String(global.manifestoHash ?? ZERO_HASH),
     ],
     guardian: global.guardianCouncil,
     pause: global.systemPause,
@@ -948,6 +953,7 @@ export function telemetryMarkdown(
   lines.push(`- Guardian council: ${config.global?.guardianCouncil}`);
   lines.push(`- System pause: ${config.global?.systemPause}`);
   lines.push(`- Manifest URI: ${config.global?.manifestoURI}`);
+  lines.push(`- Manifest Hash: ${config.global?.manifestoHash ?? "—"}`);
   lines.push(`- Max drawdown guard: ${config.global?.maxDrawdownBps} bps`);
   lines.push("");
 
@@ -1058,6 +1064,7 @@ function generateOperatorRunbook(
   lines.push(shortAddress("System pause", config.global?.systemPause));
   lines.push(shortAddress("Mission control", config.global?.missionControl));
   lines.push(`Manifesto URI: ${config.global?.manifestoURI ?? "—"}`);
+  lines.push(`Manifesto Hash: ${config.global?.manifestoHash ?? "—"}`);
   lines.push("");
 
   lines.push("Dominion readiness checks:");
@@ -1365,6 +1372,7 @@ export function main() {
     console.log(shortAddress("Guardian council", config.global?.guardianCouncil));
     console.log(shortAddress("System pause", config.global?.systemPause));
     console.log(`Manifest URI: ${config.global?.manifestoURI}`);
+    console.log(`Manifest Hash: ${config.global?.manifestoHash}`);
 
     banner("Domain registry summary");
     printDomainTable(config);

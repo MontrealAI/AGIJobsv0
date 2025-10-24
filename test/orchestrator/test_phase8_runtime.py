@@ -25,6 +25,7 @@ def manifest_payload() -> dict:
             "guardianReviewWindow": 720,
             "maxDrawdownBps": 3200,
             "manifestoURI": "ipfs://phase8/demo/manifest.json",
+            "manifestoHash": "0x3c0842c55548b2d2972b57504c6c582b7b4c8cd02b5113b122d2e825282a4b49",
         },
         "domains": [
             {
@@ -68,7 +69,7 @@ def manifest_payload() -> dict:
                 "name": "Solar Guardian",
                 "uri": "ipfs://phase8/sentinels/solar-guardian.json",
                 "agent": "0x9999AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-                "coverageSeconds": 540,
+                "coverageSeconds": 900,
                 "sensitivityBps": 420,
                 "domains": ["climate-array"],
                 "active": True,

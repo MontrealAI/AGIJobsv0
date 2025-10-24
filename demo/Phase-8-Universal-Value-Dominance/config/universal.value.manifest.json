@@ -11,7 +11,8 @@
     "heartbeatSeconds": 540,
     "guardianReviewWindow": 720,
     "maxDrawdownBps": 3200,
-    "manifestoURI": "ipfs://agi-jobs/phase8/manifest.json"
+    "manifestoURI": "ipfs://agi-jobs/phase8/manifest.json",
+    "manifestoHash": "0x3c0842c55548b2d2972b57504c6c582b7b4c8cd02b5113b122d2e825282a4b49"
   },
   "domains": [
     {

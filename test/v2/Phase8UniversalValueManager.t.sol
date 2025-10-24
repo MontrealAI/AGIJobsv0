@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 
+import {Governable} from "../../contracts/v2/Governable.sol";
 import {Phase8UniversalValueManager} from "../../contracts/v2/Phase8UniversalValueManager.sol";
 import {Phase6MockSystemPause} from "../../contracts/v2/mocks/Phase6MockSystemPause.sol";
 
@@ -23,6 +24,7 @@ contract Phase8UniversalValueManagerTest is Test {
     address internal constant POLICY_KERNEL = address(0xA1B0);
     address internal constant SENTINEL_AGENT = address(0xA1C0);
     address internal constant STREAM_VAULT = address(0xA1D0);
+    bytes32 internal constant MANIFESTO_HASH = keccak256("phase8-manifesto");
 
     function setUp() public {
         manager = new Phase8UniversalValueManager(GOVERNANCE);
@@ -38,7 +40,8 @@ contract Phase8UniversalValueManagerTest is Test {
             heartbeatSeconds: 600,
             guardianReviewWindow: 900,
             maxDrawdownBps: 3500,
-            manifestoURI: "ipfs://phase8/manifest/universal.json"
+            manifestoURI: "ipfs://phase8/manifest/universal.json",
+            manifestoHash: MANIFESTO_HASH
         });
 
         vm.prank(GOVERNANCE);
@@ -46,6 +49,9 @@ contract Phase8UniversalValueManagerTest is Test {
 
         vm.prank(GOVERNANCE);
         manager.setSystemPause(address(pauseHarness));
+
+        Phase8UniversalValueManager.GlobalParameters memory stored = _readGlobals();
+        assertEq(stored.manifestoHash, MANIFESTO_HASH);
     }
 
     function testLifecycleAndGuards() public {
@@ -101,7 +107,7 @@ contract Phase8UniversalValueManagerTest is Test {
             name: "Solar Shield Guardian",
             uri: "ipfs://phase8/sentinels/solar-shield.json",
             agent: SENTINEL_AGENT,
-            coverageSeconds: 60,
+            coverageSeconds: 1_200,
             sensitivityBps: 250,
             active: true
         });
@@ -130,7 +136,7 @@ contract Phase8UniversalValueManagerTest is Test {
         manager.setSentinelDomains(sentinelId, missingDomain);
 
         Phase8UniversalValueManager.SentinelProfile memory sentinelUpdate = sentinel;
-        sentinelUpdate.coverageSeconds = 90;
+        sentinelUpdate.coverageSeconds = 1_800;
         sentinelUpdate.sensitivityBps = 500;
         sentinelUpdate.active = false;
 
@@ -261,6 +267,168 @@ contract Phase8UniversalValueManagerTest is Test {
         vm.expectRevert(abi.encodeWithSelector(Phase8UniversalValueManager.InvalidExecutionTimestamp.selector, executionTimestamp - 1));
         vm.prank(GOVERNANCE);
         manager.recordSelfImprovementExecution(executionTimestamp - 1, reportURI);
+    }
+
+    function testManifestoUpdatesRequireHash() public {
+        vm.expectRevert(abi.encodeWithSelector(Phase8UniversalValueManager.ManifestHashRequired.selector));
+        vm.prank(GOVERNANCE);
+        manager.updateManifesto("ipfs://phase8/manifest/refresh.json", bytes32(0));
+
+        bytes32 refreshedHash = keccak256("phase8-manifesto-refreshed");
+        vm.prank(GOVERNANCE);
+        manager.updateManifesto("ipfs://phase8/manifest/refresh.json", refreshedHash);
+
+        Phase8UniversalValueManager.GlobalParameters memory stored = _readGlobals();
+        assertEq(stored.manifestoHash, refreshedHash);
+        assertEq(stored.manifestoURI, "ipfs://phase8/manifest/refresh.json");
+    }
+
+    function testDomainSlugNormalizationPreventsCaseDuplicate() public {
+        Phase8UniversalValueManager.ValueDomain memory domain = Phase8UniversalValueManager.ValueDomain({
+            slug: "Orbital-Logistics",
+            name: "Orbital Logistics",
+            metadataURI: "ipfs://phase8/domains/orbital-logistics.json",
+            orchestrator: ORCHESTRATOR,
+            capitalVault: CAPITAL_VAULT,
+            validatorModule: VALIDATOR_MODULE,
+            policyKernel: POLICY_KERNEL,
+            heartbeatSeconds: 300,
+            tvlLimit: 500_000 ether,
+            autonomyLevelBps: 6000,
+            active: true
+        });
+
+        vm.prank(GOVERNANCE);
+        bytes32 domainId = manager.registerDomain(domain);
+        assertTrue(domainId != bytes32(0));
+
+        Phase8UniversalValueManager.ValueDomain memory lowerSlug = domain;
+        lowerSlug.slug = "orbital-logistics";
+
+        vm.expectRevert(abi.encodeWithSelector(Phase8UniversalValueManager.DuplicateDomain.selector, domainId));
+        vm.prank(GOVERNANCE);
+        manager.registerDomain(lowerSlug);
+    }
+
+    function testUnauthorizedCallsRevert() public {
+        Phase8UniversalValueManager.GlobalParameters memory globalsCopy = _readGlobals();
+
+        vm.expectRevert(abi.encodeWithSelector(Governable.NotGovernance.selector));
+        manager.setGlobalParameters(globalsCopy);
+
+        Phase8UniversalValueManager.ValueDomain memory domain = Phase8UniversalValueManager.ValueDomain({
+            slug: "forbidden",
+            name: "Forbidden",
+            metadataURI: "ipfs://phase8/domains/forbidden.json",
+            orchestrator: ORCHESTRATOR,
+            capitalVault: CAPITAL_VAULT,
+            validatorModule: VALIDATOR_MODULE,
+            policyKernel: POLICY_KERNEL,
+            heartbeatSeconds: 300,
+            tvlLimit: 10,
+            autonomyLevelBps: 5000,
+            active: true
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Governable.NotGovernance.selector));
+        manager.registerDomain(domain);
+    }
+
+    function testSentinelCoverageMustExceedReviewWindow() public {
+        Phase8UniversalValueManager.SentinelProfile memory sentinel = Phase8UniversalValueManager.SentinelProfile({
+            slug: "coverage-check",
+            name: "Coverage Check",
+            uri: "ipfs://phase8/sentinels/coverage.json",
+            agent: SENTINEL_AGENT,
+            coverageSeconds: 600,
+            sensitivityBps: 100,
+            active: true
+        });
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Phase8UniversalValueManager.SentinelCoverageTooShort.selector,
+                sentinel.coverageSeconds,
+                uint64(900)
+            )
+        );
+        vm.prank(GOVERNANCE);
+        manager.registerSentinel(sentinel);
+
+        sentinel.coverageSeconds = 1_200;
+        vm.prank(GOVERNANCE);
+        manager.registerSentinel(sentinel);
+    }
+
+    function testSelfImprovementReceiptsRequirePlan() public {
+        vm.expectRevert(abi.encodeWithSelector(Phase8UniversalValueManager.SelfImprovementPlanUnset.selector));
+        vm.prank(GOVERNANCE);
+        manager.recordSelfImprovementExecution(1_700_000_000, "ipfs://phase8/self-improvement/report-boot.json");
+
+        Phase8UniversalValueManager.SelfImprovementPlan memory plan = Phase8UniversalValueManager.SelfImprovementPlan({
+            planURI: "ipfs://phase8/self-improvement/base.json",
+            planHash: keccak256("phase8-self-improvement-base"),
+            cadenceSeconds: 3_600,
+            lastExecutedAt: 0,
+            lastReportURI: ""
+        });
+
+        vm.prank(GOVERNANCE);
+        manager.setSelfImprovementPlan(plan);
+
+        vm.prank(GOVERNANCE);
+        manager.recordSelfImprovementExecution(1_700_000_000, "https://phase8.example/self-improvement/report-boot.json");
+
+        vm.expectRevert(abi.encodeWithSelector(Phase8UniversalValueManager.InvalidExecutionTimestamp.selector, 1_699_999_999));
+        vm.prank(GOVERNANCE);
+        manager.recordSelfImprovementExecution(1_699_999_999, "https://phase8.example/self-improvement/report-2.json");
+    }
+
+    function testGovernanceRotationMaintainsAccessControl() public {
+        address newGovernance = address(0xBEEF);
+
+        vm.prank(GOVERNANCE);
+        manager.setGovernance(newGovernance);
+
+        vm.expectRevert(abi.encodeWithSelector(Governable.NotGovernance.selector));
+        vm.prank(GOVERNANCE);
+        manager.updateManifesto("ipfs://phase8/manifest/rogue.json", keccak256("rogue"));
+
+        vm.prank(newGovernance);
+        manager.updateManifesto("ipfs://phase8/manifest/final.json", keccak256("final"));
+
+        Phase8UniversalValueManager.GlobalParameters memory stored = _readGlobals();
+        assertEq(stored.manifestoURI, "ipfs://phase8/manifest/final.json");
+    }
+
+    function _readGlobals() private view returns (Phase8UniversalValueManager.GlobalParameters memory globals) {
+        (
+            address treasury,
+            address universalVault,
+            address upgradeCoordinator,
+            address validatorRegistry,
+            address missionControl,
+            address knowledgeGraph,
+            uint64 heartbeatSeconds,
+            uint64 guardianReviewWindow,
+            uint256 maxDrawdownBps,
+            string memory manifestoURI,
+            bytes32 manifestoHash
+        ) = manager.globalParameters();
+
+        globals = Phase8UniversalValueManager.GlobalParameters({
+            treasury: treasury,
+            universalVault: universalVault,
+            upgradeCoordinator: upgradeCoordinator,
+            validatorRegistry: validatorRegistry,
+            missionControl: missionControl,
+            knowledgeGraph: knowledgeGraph,
+            heartbeatSeconds: heartbeatSeconds,
+            guardianReviewWindow: guardianReviewWindow,
+            maxDrawdownBps: maxDrawdownBps,
+            manifestoURI: manifestoURI,
+            manifestoHash: manifestoHash
+        });
     }
 }
 
