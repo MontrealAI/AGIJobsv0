@@ -274,7 +274,8 @@
     "culture:analytics": "npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/generate.analytics.ts",
     "culture:analytics:dry-run": "npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/generate.analytics.ts --dry-run demo/CULTURE-v0/data/fixtures/analytics-dry-run.json",
     "culture:env:check": "node demo/CULTURE-v0/scripts/check-env.mjs demo/CULTURE-v0/.env",
-    "culture:smoke": "docker compose -f demo/CULTURE-v0/docker-compose.yml --profile test up culture-smoke-tests --abort-on-container-exit --exit-code-from culture-smoke-tests"
+    "culture:smoke": "docker compose -f demo/CULTURE-v0/docker-compose.yml --profile test up culture-smoke-tests --abort-on-container-exit --exit-code-from culture-smoke-tests",
+    "demo:kardashev": "node demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/run-demo.cjs"
   },
   "keywords": [],
   "author": "",

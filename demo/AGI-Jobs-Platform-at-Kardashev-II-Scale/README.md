@@ -279,3 +279,34 @@ Only sign the Safe transaction after all checks print green.
 ---
 
 **Result**: AGI Jobs v0 (v2) becomes the civilisation-scale operating system a Kardashev-II steward needs – with clarity, safety, and absolute control packaged for non-technical operators.
+
+---
+
+## ♾️ Autopilot dossier generator (`npm run demo:kardashev`)
+
+To empower stakeholders that prefer a **single command** over the multi-step orchestrator flow, the repo now bundles an autopilot helper under `demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/run-demo.cjs`.
+
+1. **Run the helper**
+   ```bash
+   npm run demo:kardashev
+   ```
+2. **Review artefacts**
+   * `output/kardashev-report.md` – mission-control dossier with resilience, energy, and Dyson metrics.
+   * `output/governance-playbook.md` – copy/paste checklist covering pause/unpause, guardian retuning, and manifesto updates.
+   * `output/telemetry.json` – machine-readable snapshot ready for Grafana / Kibana ingestion.
+   * `output/mermaid/*.mmd` – task hierarchy + cross-planet settlement diagrams that can be embedded directly into the console knowledge base.
+3. **Why it matters**
+   * Runs **entirely client-side**; no private keys or RPC access required for simulation mode.
+   * Mirrors the same guardrail set as the k2-stellar orchestrator (energy thermostat, sentinel drills, owner override proof).
+   * Produces governance copy exactly aligned with the Phase 8 manager calls so non-technical owners can execute levers confidently.
+
+Configuration files live under `config/`:
+
+- `fabric.json` – enumerates sharded registries, guardian councils, sentinels, and key contract addresses.
+- `energy-feeds.json` – pluggable energy telemetry endpoints and latency hints (solar, fusion, microwave swarms, …).
+
+Both configs are validated by the helper before any artefact is written; malformed entries abort the run with actionable errors.
+
+> **Tip:** run with `DEBUG=kardashev-demo npm run demo:kardashev` to surface intermediate reconciliation tables when preparing executive briefings.
+
+The autopilot path keeps all the heavyweight orchestration assets intact while giving executives a single-button path to the Kardashev-II proof deck.

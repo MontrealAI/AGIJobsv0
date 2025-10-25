@@ -1,0 +1,28 @@
+{
+  "feeds": [
+    {
+      "region": "earth-grid",
+      "telemetry": "https://energy.example/earth/live",
+      "type": "solar",
+      "nominalMw": 145000,
+      "bufferMw": 12000,
+      "latencyMs": 1200
+    },
+    {
+      "region": "mars-dome",
+      "telemetry": "https://energy.example/mars/live",
+      "type": "fusion",
+      "nominalMw": 18000,
+      "bufferMw": 2200,
+      "latencyMs": 720000
+    },
+    {
+      "region": "orbital-swarm",
+      "telemetry": "https://energy.example/orbital/live",
+      "type": "microwave-solar",
+      "nominalMw": 450000,
+      "bufferMw": 50000,
+      "latencyMs": 3200
+    }
+  ]
+}

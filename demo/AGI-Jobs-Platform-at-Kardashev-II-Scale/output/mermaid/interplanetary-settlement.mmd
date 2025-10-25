@@ -1,0 +1,18 @@
+---
+title Interplanetary Settlement
+---
+sequenceDiagram
+    participant EarthRegistry
+    participant MarsRegistry
+    participant Bridge
+    participant Treasury
+    participant Operator
+
+    EarthRegistry->>MarsRegistry: Broadcast cross-planet job manifest
+    MarsRegistry-->>Bridge: Submit validator quorum certificate
+    Bridge->>Treasury: Relay proof + settlement batch
+    Treasury-->>EarthRegistry: Release AGI token escrow
+    Treasury-->>MarsRegistry: Mint Mars credit equivalent
+    Operator->>Treasury: Confirm forex tolerance (≤ 0.3%)
+    MarsRegistry-->>Operator: Receipt + updated reputation NFT
+
