@@ -10,6 +10,7 @@ const OUTPUT_DIR = join(__dirname, "..", "output");
 const SCORECARD = join(OUTPUT_DIR, "phase8-dominance-scorecard.json");
 const DIRECTIVES = join(OUTPUT_DIR, "phase8-governance-directives.md");
 const EMERGENCY = join(OUTPUT_DIR, "phase8-emergency-overrides.json");
+const CALLDATA_MANIFEST = join(OUTPUT_DIR, "phase8-governance-calldata.json");
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -238,6 +239,50 @@ function main() {
   }
   if (!readme.includes("```mermaid")) {
     throw new Error("README must include a mermaid code block for the architecture blueprint");
+  }
+
+  if (!existsSync(CALLDATA_MANIFEST)) {
+    throw new Error(
+      "Governance calldata manifest missing. Run npm run demo:phase8:orchestrate to regenerate outputs.",
+    );
+  }
+  const calldataRaw = JSON.parse(readFileSync(CALLDATA_MANIFEST, "utf-8"));
+  if (!Array.isArray(calldataRaw?.calls) || calldataRaw.calls.length === 0) {
+    throw new Error("Governance calldata manifest must include at least one call entry.");
+  }
+  if (typeof calldataRaw.managerAddress !== "string" || !/^0x[a-fA-F0-9]{40}$/.test(calldataRaw.managerAddress)) {
+    throw new Error("Governance calldata manifest must specify managerAddress hex string.");
+  }
+  if (
+    calldataRaw.chainId === undefined ||
+    (typeof calldataRaw.chainId !== "number" && typeof calldataRaw.chainId !== "string")
+  ) {
+    throw new Error("Governance calldata manifest must specify numeric chainId.");
+  }
+  const calldataLabels = new Set<string>();
+  for (const entry of calldataRaw.calls) {
+    if (!entry?.data || typeof entry.data !== "string" || !/^0x[a-fA-F0-9]+$/.test(entry.data)) {
+      throw new Error("Governance calldata entries must include hex encoded data.");
+    }
+    if (entry?.label) {
+      calldataLabels.add(String(entry.label));
+    }
+  }
+  const requiredCalldataLabels = [
+    "setGlobalParameters",
+    "setGuardianCouncil",
+    "setSystemPause",
+    "registerDomain",
+    "registerSentinel",
+    "registerCapitalStream",
+    "setSentinelDomains",
+    "setCapitalStreamDomains",
+    "setSelfImprovementPlan",
+  ];
+  for (const label of requiredCalldataLabels) {
+    if (!calldataLabels.has(label)) {
+      throw new Error(`Governance calldata manifest missing required label: ${label}`);
+    }
   }
 
   const requiredArtifacts = [
