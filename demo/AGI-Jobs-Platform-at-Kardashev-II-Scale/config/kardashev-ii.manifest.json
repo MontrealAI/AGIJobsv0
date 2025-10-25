@@ -1,0 +1,314 @@
+{
+  "version": "agi-jobs.kardashev-ii.demo.v1",
+  "generatedAt": "2025-03-01T00:00:00Z",
+  "interstellarCouncil": {
+    "chainId": 1,
+    "managerAddress": "0x8F9C10b7D9a1Ed2F2fA9C42C0F2d4a5E3b7C2a10",
+    "systemPauseAddress": "0xb740E9E719f1a3F138cE7C36418495f5d9E6B4d2",
+    "guardianCouncil": "0x3eCb7D31B20d4A3bF59f7Ae8894d42bEe0B1A24b",
+    "manifestoURI": "ipfs://QmKardashevManifesto",
+    "manifestoHash": "0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033",
+    "knowledgeGraph": "0x1f0f8d19adda3b2f91b2b5c6a4c2b6f14a78c2b0",
+    "upgradeCoordinator": "0x4bD5D30f6E7c2182b7a4c8eD3b09724F7Db26491",
+    "validatorRegistry": "0x5a11B7Cd8E5b4618f2D3c602d3B378Ab9c0D9a6e",
+    "missionControl": "0x7774B2c09d1F4986b4ea1D475d1F26C4fFf42B21",
+    "treasury": "0x62F1A973B19E44F9c2A4650f0353A1E94Ae95c86",
+    "universalVault": "0x26b1d7E4A8c4fE93fA119BCEcbad8dA9F52F8D97",
+    "heartbeatSeconds": 720,
+    "guardianReviewWindow": 900,
+    "maxDrawdownBps": 1500,
+    "knowledgeGraphURI": "ipfs://QmUniversalKnowledgeMesh"
+  },
+  "selfImprovement": {
+    "planURI": "ipfs://QmDysonSwarmUpgradePlan",
+    "planHash": "0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d",
+    "cadenceSeconds": 43200,
+    "lastExecutedAt": 1730400000,
+    "lastReportURI": "ipfs://QmDysonSwarmQuarterlyReport"
+  },
+  "energyProtocols": {
+    "stellarLattice": {
+      "name": "Helios Dyson Swarm Alpha",
+      "baselineCapturedGw": 420000,
+      "expansionTargetsGw": [
+        420000,
+        560000,
+        710000,
+        920000
+      ],
+      "safetyMarginPct": 12.5
+    },
+    "thermostat": {
+      "minKelvin": 0.35,
+      "maxKelvin": 0.92,
+      "targetKelvin": 0.81
+    }
+  },
+  "federations": [
+    {
+      "slug": "earth",
+      "chainId": 1,
+      "governanceSafe": "0xAaCcFefb5b833B41c1A6ff1d4A20E2F91B9Fa5C2",
+      "energy": {
+        "availableGw": 82000,
+        "renewablePct": 0.87,
+        "storageGwh": 54000,
+        "latencyMs": 85
+      },
+      "compute": {
+        "agents": 2800000000,
+        "exaflops": 18.4,
+        "validatorNodes": 1480000,
+        "edgeNodes": 760000000
+      },
+      "domains": [
+        {
+          "slug": "earth.finance",
+          "name": "Earth Treasury Fusion",
+          "metadataURI": "ipfs://QmEarthFinanceMetadata",
+          "orchestrator": "0x3cF87a9F52f06A9f5303A1B447Dd71F4c912C2F1",
+          "capitalVault": "0x2B6EAA7f954567C905d857Ab0e0F60f4565b7E2A",
+          "validatorModule": "0xE5b51A0F4f041a64742F99532956543c1B0b71a1",
+          "policyKernel": "0xdE71a0fFCE40233A55d6598D99E7B6449F6c43cb",
+          "heartbeatSeconds": 420,
+          "tvlLimit": "890000000000000000000000000",
+          "autonomyLevelBps": 6100,
+          "active": true,
+          "resilience": 0.948,
+          "monthlyValueUSD": 428000000000,
+          "coverageSeconds": 1800
+        },
+        {
+          "slug": "earth.infrastructure",
+          "name": "Orbital Infrastructure Directorate",
+          "metadataURI": "ipfs://QmEarthInfrastructureMetadata",
+          "orchestrator": "0x92FD8C11F4866CB3c0A0cE2F3111337A2D7F8b51",
+          "capitalVault": "0x68bb3A2D5300a2c28E89A8b1B537F9a6C7b3c4D4",
+          "validatorModule": "0xb12f38F5E8c9fC5eD8424f766a8a30b5E6FaD197",
+          "policyKernel": "0x7f4cED8Ff9030b2476749bC2911ee2e22BF9891b",
+          "heartbeatSeconds": 600,
+          "tvlLimit": "1520000000000000000000000000",
+          "autonomyLevelBps": 6900,
+          "active": true,
+          "resilience": 0.942,
+          "monthlyValueUSD": 512000000000,
+          "coverageSeconds": 2100
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "gaia-energy-watch",
+          "name": "Gaia Energy Sentinel",
+          "uri": "ipfs://QmGaiaSentinel",
+          "agent": "0x9d7d49c1C0cE2709F50AF6b456B8a2a5D23Fd9A1",
+          "coverageSeconds": 1800,
+          "sensitivityBps": 420,
+          "active": true,
+          "domains": [
+            "earth.finance",
+            "earth.infrastructure"
+          ]
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "earth.capital-grid",
+          "name": "Earth Grid Endowment",
+          "uri": "ipfs://QmEarthCapitalGrid",
+          "vault": "0x5CB5aC4C763Dd4c69Ff6C7De57a4EB9D2F63A8b1",
+          "annualBudget": "3800000000000000000000000000",
+          "expansionBps": 480,
+          "active": true,
+          "domains": [
+            "earth.infrastructure"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "mars",
+      "chainId": 534352,
+      "governanceSafe": "0x7B0f87d532f43C4a0E7816d9D7806f48A9c3f2D1",
+      "energy": {
+        "availableGw": 24000,
+        "renewablePct": 0.93,
+        "storageGwh": 18000,
+        "latencyMs": 820
+      },
+      "compute": {
+        "agents": 720000000,
+        "exaflops": 6.1,
+        "validatorNodes": 420000,
+        "edgeNodes": 98000000
+      },
+      "domains": [
+        {
+          "slug": "mars.terraforming",
+          "name": "Mars Terraforming Directorate",
+          "metadataURI": "ipfs://QmMarsTerraformingMetadata",
+          "orchestrator": "0x8B4f3D2e965Ab438f47C0f5847fF3bA4A9D1E5F8",
+          "capitalVault": "0x4A3b9C58E2677a0DfD8A1c45F1BB8215853fB6A2",
+          "validatorModule": "0xCE2a0F3b174A98F757c5216e5f7C8D4e0b1f52c3",
+          "policyKernel": "0x5f8E9c77AA2139eF4d6F1aE8dF1c92C2714e8d4f",
+          "heartbeatSeconds": 900,
+          "tvlLimit": "720000000000000000000000000",
+          "autonomyLevelBps": 7400,
+          "active": true,
+          "resilience": 0.935,
+          "monthlyValueUSD": 298000000000,
+          "coverageSeconds": 2400
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "ares-habitat-guard",
+          "name": "Ares Habitat Guardian",
+          "uri": "ipfs://QmAresSentinel",
+          "agent": "0x71f3C9D8B9e7A0F3dC5B4215dF9E8f531c7c2F91",
+          "coverageSeconds": 2400,
+          "sensitivityBps": 360,
+          "active": true,
+          "domains": [
+            "mars.terraforming"
+          ]
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "mars.bio-regeneration",
+          "name": "Mars Bio-Regeneration Fund",
+          "uri": "ipfs://QmMarsBioFund",
+          "vault": "0x9dF8A4b6C7d8E9f3a1B2c4D5E6f7A8B9c0D1E2F3",
+          "annualBudget": "960000000000000000000000000",
+          "expansionBps": 650,
+          "active": true,
+          "domains": [
+            "mars.terraforming"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "orbital",
+      "chainId": 42161,
+      "governanceSafe": "0x1B3dA8f56E47c29E8cEafF4b2d9C8B5d7aE2c6F4",
+      "energy": {
+        "availableGw": 136000,
+        "renewablePct": 0.99,
+        "storageGwh": 128000,
+        "latencyMs": 42
+      },
+      "compute": {
+        "agents": 960000000,
+        "exaflops": 24.6,
+        "validatorNodes": 640000,
+        "edgeNodes": 220000000
+      },
+      "domains": [
+        {
+          "slug": "orbital.defense",
+          "name": "Orbital Defense Shield",
+          "metadataURI": "ipfs://QmOrbitalDefenseMetadata",
+          "orchestrator": "0x6c7e5F2a0bD4fC5E8d91A3b4c5f6D7e8F9a0B1c2",
+          "capitalVault": "0x4f6a8B0c2D3e4F5a6B7c8D9e0F1a2b3c4d5e6f7a",
+          "validatorModule": "0x7d8e9F0a1B2c3D4e5F6a7B8c9D0e1F2a3b4C5d6e",
+          "policyKernel": "0x3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f",
+          "heartbeatSeconds": 480,
+          "tvlLimit": "1650000000000000000000000000",
+          "autonomyLevelBps": 6800,
+          "active": true,
+          "resilience": 0.957,
+          "monthlyValueUSD": 618000000000,
+          "coverageSeconds": 1980
+        },
+        {
+          "slug": "orbital.research",
+          "name": "Interstellar Research Nexus",
+          "metadataURI": "ipfs://QmOrbitalResearchMetadata",
+          "orchestrator": "0x9b0c1D2e3F4a5B6c7D8e9F0a1B2c3D4e5F6a7B8c",
+          "capitalVault": "0x8d9e0F1a2B3c4D5e6F7a8B9c0D1e2F3a4b5C6d7e",
+          "validatorModule": "0x2f3a4B5c6D7e8F9a0B1c2D3e4F5a6B7c8D9e0F1a",
+          "policyKernel": "0x5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b",
+          "heartbeatSeconds": 360,
+          "tvlLimit": "980000000000000000000000000",
+          "autonomyLevelBps": 7200,
+          "active": true,
+          "resilience": 0.961,
+          "monthlyValueUSD": 452000000000,
+          "coverageSeconds": 1860
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "orbital-solar-shield",
+          "name": "Orbital Solar Shield Sentinel",
+          "uri": "ipfs://QmOrbitalShieldSentinel",
+          "agent": "0x4b6d8F0a1B2c3D4e5F6a7B8c9D0e1F2a3b4C5d6E",
+          "coverageSeconds": 2100,
+          "sensitivityBps": 400,
+          "active": true,
+          "domains": [
+            "orbital.defense",
+            "orbital.research"
+          ]
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "orbital.solar-lattice",
+          "name": "Orbital Solar Lattice Fund",
+          "uri": "ipfs://QmOrbitalSolarLattice",
+          "vault": "0x1c2d3E4f5A6b7C8d9E0f1A2b3C4d5E6f7A8b9C0d",
+          "annualBudget": "5200000000000000000000000000",
+          "expansionBps": 720,
+          "active": true,
+          "domains": [
+            "orbital.defense",
+            "orbital.research"
+          ]
+        }
+      ]
+    }
+  ],
+  "interplanetaryBridges": {
+    "earthToMars": {
+      "latencySeconds": 90,
+      "bandwidthGbps": 14.6,
+      "bridgeOperator": "0xB12d3E4F5A6b7C8D9E0f1A2B3C4d5E6F7A8b9C0D",
+      "protocol": "zk-light-client"
+    },
+    "earthToOrbital": {
+      "latencySeconds": 2,
+      "bandwidthGbps": 240,
+      "bridgeOperator": "0xD4e5F6a7B8c9D0e1F2a3B4c5D6e7F8a9B0c1D2e3",
+      "protocol": "optimistic-rollup"
+    }
+  },
+  "dysonProgram": {
+    "phases": [
+      {
+        "name": "Seed Swarm",
+        "durationDays": 120,
+        "satellites": 1200,
+        "energyYieldGw": 4800
+      },
+      {
+        "name": "Helios Halo",
+        "durationDays": 260,
+        "satellites": 6800,
+        "energyYieldGw": 64000
+      },
+      {
+        "name": "Crown Array",
+        "durationDays": 520,
+        "satellites": 24000,
+        "energyYieldGw": 420000
+      }
+    ],
+    "safety": {
+      "maxAutonomyBps": 7800,
+      "failsafeLatencySeconds": 120,
+      "redundantCoveragePct": 45
+    }
+  }
+}
