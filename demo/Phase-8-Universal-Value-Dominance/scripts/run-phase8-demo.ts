@@ -938,6 +938,245 @@ export function computeMetrics(config: Phase8Config) {
   };
 }
 
+type MetricToleranceOverrides = Partial<
+  Record<
+    | "totalMonthlyUSD"
+    | "averageResilience"
+    | "guardianCoverageMinutes"
+    | "annualBudget"
+    | "coverageRatio"
+    | "fundedDomainRatio"
+    | "averageDomainCoverageSeconds"
+    | "guardianWindowSeconds"
+    | "minDomainCoverageSeconds"
+    | "minimumCoverageAdequacy"
+    | "minDomainFundingUSD"
+    | "maxAutonomy"
+    | "cadenceHours"
+    | "lastExecutedAt"
+    | "dominanceScore"
+    | "guardianProtocolCount"
+    | "guardianProtocolCoverageRatio"
+    | "guardianProtocolSeverityScore"
+  , number>
+>;
+
+export function crossVerifyMetrics(config: Phase8Config, overrides: MetricToleranceOverrides = {}) {
+  const metrics = computeMetrics(config);
+  const domains = config.domains ?? [];
+  const sentinels = config.sentinels ?? [];
+  const streams = config.capitalStreams ?? [];
+  const protocols = config.guardianProtocols ?? [];
+
+  const severityWeights: Record<string, number> = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
+
+  const domainSlugs = domains
+    .map((domain) => String(domain.slug ?? "").toLowerCase())
+    .filter((slug) => slug.length > 0);
+  const domainSet = new Set(domainSlugs);
+
+  const coverageByDomain = new Map<string, number>();
+  let totalSentinelCoverageSeconds = 0;
+  for (const sentinel of sentinels) {
+    const coverage = Number(sentinel.coverageSeconds ?? 0);
+    if (!Number.isFinite(coverage) || coverage <= 0) continue;
+    totalSentinelCoverageSeconds += coverage;
+    const declaredTargets = Array.from(
+      new Set((sentinel.domains ?? []).map((entry) => String(entry ?? "").toLowerCase()).filter((entry) => domainSet.has(entry))),
+    );
+    const targets = declaredTargets.length > 0 ? declaredTargets : domainSlugs;
+    for (const target of targets) {
+      coverageByDomain.set(target, (coverageByDomain.get(target) ?? 0) + coverage);
+    }
+  }
+
+  const fundingByDomain = new Map<string, number>();
+  for (const slug of domainSlugs) {
+    fundingByDomain.set(slug, 0);
+  }
+  for (const stream of streams) {
+    const budgetRaw = Number(stream.annualBudget ?? 0);
+    if (!Number.isFinite(budgetRaw) || budgetRaw <= 0) continue;
+    const declaredTargets = Array.from(
+      new Set((stream.domains ?? []).map((entry) => String(entry ?? "").toLowerCase()).filter((entry) => domainSet.has(entry))),
+    );
+    const targets = declaredTargets.length > 0 ? declaredTargets : domainSlugs;
+    for (const target of targets) {
+      const current = fundingByDomain.get(target) ?? 0;
+      fundingByDomain.set(target, current + budgetRaw);
+    }
+  }
+
+  const guardianWindowSeconds = Number(config.global?.guardianReviewWindow ?? 0);
+  const autonomyGuardCap = Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0);
+  const cadenceSeconds = Number(config.selfImprovement?.plan?.cadenceSeconds ?? 0);
+
+  const coverageEntries = domainSlugs.map((slug) => coverageByDomain.get(slug) ?? 0);
+  const fundingEntries = domainSlugs.map((slug) => fundingByDomain.get(slug) ?? 0);
+
+  const coveredCount = coverageEntries.filter((value) => value > 0).length;
+  const fundedCount = fundingEntries.filter((value) => value > 0).length;
+  const totalCoverageSeconds = coverageEntries.reduce((acc, value) => acc + value, 0);
+  const minCoverageSeconds =
+    domainSlugs.length === 0 ? 0 : Math.min(...coverageEntries, Number.POSITIVE_INFINITY);
+  const minFundingUSD = domainSlugs.length === 0 ? 0 : Math.min(...fundingEntries, Number.POSITIVE_INFINITY);
+
+  const crossCheck = {
+    totalMonthlyUSD: domains.reduce(
+      (acc, domain) => acc + Number(domain.valueFlowMonthlyUSD ?? 0),
+      0,
+    ),
+    averageResilience:
+      domains.length === 0
+        ? 0
+        : domains.reduce((acc, domain) => acc + Number(domain.resilienceIndex ?? 0), 0) / domains.length,
+    guardianCoverageMinutes: totalSentinelCoverageSeconds / 60,
+    annualBudget: streams.reduce((acc, stream) => acc + Number(stream.annualBudget ?? 0), 0),
+    coverageRatioPercent: domainSlugs.length === 0 ? 0 : (coveredCount / domainSlugs.length) * 100,
+    fundedDomainRatioPercent: domainSlugs.length === 0 ? 0 : (fundedCount / domainSlugs.length) * 100,
+    averageDomainCoverageSeconds: domainSlugs.length === 0 ? 0 : totalCoverageSeconds / domainSlugs.length,
+    guardianWindowSeconds,
+    minDomainCoverageSeconds: minCoverageSeconds,
+    minimumCoverageAdequacy:
+      guardianWindowSeconds > 0 && coverageEntries.length > 0 ? minCoverageSeconds / guardianWindowSeconds : 0,
+    minDomainFundingUSD: minFundingUSD,
+    maxAutonomy: domains.reduce((acc, domain) => Math.max(acc, Number(domain.autonomyLevelBps ?? 0)), 0),
+    cadenceHours: cadenceSeconds / 3600,
+    lastExecutedAt: Number(config.selfImprovement?.plan?.lastExecutedAt ?? 0),
+    dominanceScore: computeDominanceScore({
+      totalMonthlyUSD: domains.reduce(
+        (acc, domain) => acc + Number(domain.valueFlowMonthlyUSD ?? 0),
+        0,
+      ),
+      averageResilience:
+        domains.length === 0
+          ? 0
+          : domains.reduce((acc, domain) => acc + Number(domain.resilienceIndex ?? 0), 0) / domains.length,
+      coverageRatio: domainSlugs.length === 0 ? 0 : coveredCount / domainSlugs.length,
+      averageDomainCoverageSeconds: domainSlugs.length === 0 ? 0 : totalCoverageSeconds / domainSlugs.length,
+      guardianReviewWindowSeconds: guardianWindowSeconds,
+      maxAutonomyBps: domains.reduce((acc, domain) => Math.max(acc, Number(domain.autonomyLevelBps ?? 0)), 0),
+      autonomyGuardCapBps: autonomyGuardCap,
+      cadenceSeconds,
+    }),
+    guardianProtocolCount: protocols.length,
+    guardianProtocolCoverageRatio:
+      domainSlugs.length === 0
+        ? 0
+        : (() => {
+            const coverageSet = new Set<string>();
+            for (const protocol of protocols) {
+              const declared = Array.from(
+                new Set(
+                  (protocol.linkedDomains ?? [])
+                    .map((entry) => String(entry ?? "").toLowerCase())
+                    .filter((entry) => domainSet.has(entry)),
+                ),
+              );
+              const targets = declared.length > 0 ? declared : domainSlugs;
+              for (const target of targets) {
+                coverageSet.add(target);
+              }
+            }
+            return (coverageSet.size / domainSlugs.length) * 100;
+          })(),
+    guardianProtocolSeverityScore:
+      protocols.length === 0
+        ? 0
+        : protocols.reduce((acc, protocol) => acc + (severityWeights[protocol.severity ?? "high"] ?? 0.5), 0) /
+          protocols.length,
+    domainFundingMap: Object.fromEntries(domainSlugs.map((slug) => [slug, fundingByDomain.get(slug) ?? 0])),
+  };
+
+  const defaultTolerance: Record<string, number> = {
+    totalMonthlyUSD: 0.5,
+    averageResilience: 1e-9,
+    guardianCoverageMinutes: 1e-6,
+    annualBudget: 0.5,
+    coverageRatio: 1e-6,
+    fundedDomainRatio: 1e-6,
+    averageDomainCoverageSeconds: 1e-6,
+    guardianWindowSeconds: 1e-9,
+    minDomainCoverageSeconds: 1e-6,
+    minimumCoverageAdequacy: 1e-6,
+    minDomainFundingUSD: 1e-6,
+    maxAutonomy: 1e-6,
+    cadenceHours: 1e-9,
+    lastExecutedAt: 1e-9,
+    dominanceScore: 1e-6,
+    guardianProtocolCount: 1e-9,
+    guardianProtocolCoverageRatio: 1e-6,
+    guardianProtocolSeverityScore: 1e-9,
+  };
+
+  const tolerance = { ...defaultTolerance, ...overrides };
+  const mismatches: string[] = [];
+
+  const comparisons: Array<{
+    key: keyof typeof tolerance;
+    baseline: number;
+    cross: number;
+  }> = [
+    { key: "totalMonthlyUSD", baseline: metrics.totalMonthlyUSD, cross: crossCheck.totalMonthlyUSD },
+    { key: "averageResilience", baseline: metrics.averageResilience, cross: crossCheck.averageResilience },
+    { key: "guardianCoverageMinutes", baseline: metrics.guardianCoverageMinutes, cross: crossCheck.guardianCoverageMinutes },
+    { key: "annualBudget", baseline: metrics.annualBudget, cross: crossCheck.annualBudget },
+    { key: "coverageRatio", baseline: metrics.coverageRatio, cross: crossCheck.coverageRatioPercent },
+    { key: "fundedDomainRatio", baseline: metrics.fundedDomainRatio, cross: crossCheck.fundedDomainRatioPercent },
+    {
+      key: "averageDomainCoverageSeconds",
+      baseline: metrics.averageDomainCoverageSeconds,
+      cross: crossCheck.averageDomainCoverageSeconds,
+    },
+    { key: "guardianWindowSeconds", baseline: metrics.guardianWindowSeconds, cross: crossCheck.guardianWindowSeconds },
+    { key: "minDomainCoverageSeconds", baseline: metrics.minDomainCoverageSeconds, cross: crossCheck.minDomainCoverageSeconds },
+    { key: "minimumCoverageAdequacy", baseline: metrics.minimumCoverageAdequacy, cross: crossCheck.minimumCoverageAdequacy },
+    { key: "minDomainFundingUSD", baseline: metrics.minDomainFundingUSD, cross: crossCheck.minDomainFundingUSD },
+    { key: "maxAutonomy", baseline: metrics.maxAutonomy, cross: crossCheck.maxAutonomy },
+    { key: "cadenceHours", baseline: metrics.cadenceHours, cross: crossCheck.cadenceHours },
+    { key: "lastExecutedAt", baseline: metrics.lastExecutedAt, cross: crossCheck.lastExecutedAt },
+    { key: "dominanceScore", baseline: metrics.dominanceScore, cross: crossCheck.dominanceScore },
+    { key: "guardianProtocolCount", baseline: metrics.guardianProtocolCount, cross: crossCheck.guardianProtocolCount },
+    {
+      key: "guardianProtocolCoverageRatio",
+      baseline: metrics.guardianProtocolCoverageRatio,
+      cross: crossCheck.guardianProtocolCoverageRatio,
+    },
+    {
+      key: "guardianProtocolSeverityScore",
+      baseline: metrics.guardianProtocolSeverityScore,
+      cross: crossCheck.guardianProtocolSeverityScore,
+    },
+  ];
+
+  for (const comparison of comparisons) {
+    const diff = Math.abs(comparison.baseline - comparison.cross);
+    if (diff > (tolerance[comparison.key] ?? 0)) {
+      mismatches.push(
+        `${String(comparison.key)}: baseline=${comparison.baseline.toString()} cross=${comparison.cross.toString()} diff=${diff.toString()}`,
+      );
+    }
+  }
+
+  const fundingKeys = new Set([
+    ...Object.keys(metrics.domainFundingMap ?? {}),
+    ...Object.keys(crossCheck.domainFundingMap ?? {}),
+  ]);
+  for (const key of fundingKeys) {
+    const baseline = Number(metrics.domainFundingMap?.[key] ?? 0);
+    const cross = Number(crossCheck.domainFundingMap?.[key] ?? 0);
+    if (Math.abs(baseline - cross) > 1e-6) {
+      mismatches.push(`domainFundingMap.${key}: baseline=${baseline} cross=${cross}`);
+    }
+  }
+
+  if (mismatches.length > 0) {
+    throw new Error(`Phase 8 metrics cross-check failed:\n${mismatches.map((entry) => ` - ${entry}`).join("\n")}`);
+  }
+
+  return { metrics, crossCheck };
+}
+
 function usd(value: number) {
   if (value === 0) return "$0";
   if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
@@ -2124,7 +2363,7 @@ export function main() {
       console.log("Warning: Phase 8 manager address not configured — emergency overrides will remain disabled.");
     }
 
-    const metrics = computeMetrics(config);
+    const { metrics } = crossVerifyMetrics(config);
     banner("Network telemetry");
     console.log(`Total monthly on-chain value: ${usd(metrics.totalMonthlyUSD)}`);
     console.log(`Annual capital allocation: ${usd(metrics.annualBudget)}`);

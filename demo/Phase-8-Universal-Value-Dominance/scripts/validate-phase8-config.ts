@@ -3,6 +3,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
+import { crossVerifyMetrics } from "./run-phase8-demo";
+
 const ROOT = join(__dirname, "..", "config", "universal.value.manifest.json");
 const HTML = join(__dirname, "..", "index.html");
 const README = join(__dirname, "..", "README.md");
@@ -139,7 +141,7 @@ const configSchema = z.object({
       zkProof: z.object({
         circuit: z.string().min(1),
         artifactURI: z.string().min(1),
-        status: z.string().min(1),
+        status: z.enum(["pending", "verified", "disabled"]),
         notes: z.string().optional(),
       }),
     }),
@@ -149,6 +151,7 @@ const configSchema = z.object({
 function main() {
   const configRaw = JSON.parse(readFileSync(ROOT, "utf-8"));
   const config = configSchema.parse(configRaw);
+  const { metrics: telemetryMetrics, crossCheck } = crossVerifyMetrics(config);
 
   if (config.global.phase8Manager === ZERO_ADDRESS) {
     throw new Error("global.phase8Manager must be a non-zero address to stage emergency overrides");
@@ -275,6 +278,42 @@ function main() {
       const formatted = insufficient.join(", ");
       throw new Error(`Domains below guardian window ${guardianWindow}s: ${formatted}`);
     }
+  }
+
+  const manualMinimumCoverage = domainList.length === 0 ? 0 : Math.min(...domainList.map((slug) => domainCoverage.get(slug) ?? 0));
+  if (Math.abs(manualMinimumCoverage - crossCheck.minDomainCoverageSeconds) > 1e-6) {
+    throw new Error("Manual sentinel coverage map diverges from cross-verified metrics.");
+  }
+  if (Math.abs(sentinelCoverage / 60 - crossCheck.guardianCoverageMinutes) > 1e-6) {
+    throw new Error("Sentinel coverage minutes mismatch against cross-verified metrics.");
+  }
+  const manualCoverageRatio = domainList.length === 0 ? 0 : (sentinelDomains.size / domainList.length) * 100;
+  if (Math.abs(manualCoverageRatio - crossCheck.coverageRatioPercent) > 1e-6) {
+    throw new Error("Sentinel coverage ratio mismatch against cross-verified metrics.");
+  }
+  const manualFundedRatio =
+    domainList.length === 0
+      ? 0
+      : (Array.from(streamCoverage.entries()).filter(([, budget]) => budget > 0).length / domainList.length) * 100;
+  if (Math.abs(manualFundedRatio - crossCheck.fundedDomainRatioPercent) > 1e-6) {
+    throw new Error("Capital funding ratio mismatch against cross-verified metrics.");
+  }
+  for (const slug of domainList) {
+    const manualFunding = streamCoverage.get(slug) ?? 0;
+    const telemetryFunding = Number(crossCheck.domainFundingMap?.[slug] ?? 0);
+    if (Math.abs(manualFunding - telemetryFunding) > 1e-6) {
+      throw new Error(`Capital funding ledger mismatch for domain ${slug}`);
+    }
+  }
+  if (Math.abs(protocolCoveragePercent - crossCheck.guardianProtocolCoverageRatio) > 1e-6) {
+    throw new Error("Guardian protocol coverage mismatch against cross-verified metrics.");
+  }
+  if (Math.abs(protocolSeverityScore - crossCheck.guardianProtocolSeverityScore) > 1e-6) {
+    throw new Error("Guardian protocol severity mismatch against cross-verified metrics.");
+  }
+
+  if (telemetryMetrics.minimumCoverageAdequacy < 1) {
+    throw new Error("Telemetry metrics indicate guardian coverage adequacy below 100%.");
   }
 
   const html = readFileSync(HTML, "utf-8");
@@ -767,6 +806,9 @@ function main() {
   console.log(`  Self-improvement cadence: ${config.selfImprovement.plan.cadenceSeconds}s`);
   const fundedDomains = Array.from(streamCoverage.entries()).filter(([, budget]) => budget > 0).length;
   console.log(`  Domains with capital funding: ${fundedDomains}`);
+  console.log(
+    `  Telemetry cross-check → dominance ${telemetryMetrics.dominanceScore.toFixed(1)} · coverage ${telemetryMetrics.coverageRatio.toFixed(1)}% · funding floor $${telemetryMetrics.minDomainFundingUSD.toFixed(0)}`,
+  );
   if (config.selfImprovement.plan.lastExecutedAt) {
     console.log(`  Last self-improvement execution: ${config.selfImprovement.plan.lastExecutedAt}`);
   }
