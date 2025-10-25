@@ -1,0 +1,96 @@
+{
+  "manifest": {
+    "version": "agi-jobs.kardashev-ii.demo.v1",
+    "generatedAt": "2025-03-01T00:00:00Z",
+    "hash": "0x432acfa7f0e9bd0b81a85d8318c0708f4c7d620fe739220dfdd995446828e390",
+    "manifestoHash": "0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033",
+    "manifestoHashMatches": true,
+    "planHash": "0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d",
+    "planHashMatches": true,
+    "knowledgeGraphAddress": "0x1f0f8d19adda3b2f91b2b5c6a4c2b6f14a78c2b0",
+    "knowledgeGraphURI": "ipfs://QmUniversalKnowledgeMesh"
+  },
+  "governance": {
+    "ownerOverridesReady": true,
+    "guardianReviewWindow": 900,
+    "averageCoverageSeconds": 2028,
+    "coverageOk": true
+  },
+  "energy": {
+    "capturedGw": 420000,
+    "dysonYield": 488800,
+    "utilisationPct": 0.5761904761904761,
+    "marginPct": 0.125,
+    "warnings": [],
+    "regional": [
+      {
+        "slug": "earth",
+        "availableGw": 82000,
+        "storageGwh": 54000,
+        "renewablePct": 0.87
+      },
+      {
+        "slug": "mars",
+        "availableGw": 24000,
+        "storageGwh": 18000,
+        "renewablePct": 0.93
+      },
+      {
+        "slug": "orbital",
+        "availableGw": 136000,
+        "storageGwh": 128000,
+        "renewablePct": 0.99
+      }
+    ],
+    "tripleCheck": true
+  },
+  "compute": {
+    "totalAgents": 4480000000,
+    "totalExaflops": 49.1,
+    "regional": [
+      {
+        "slug": "earth",
+        "agents": 2800000000,
+        "exaflops": 18.4,
+        "resilience": 0.945
+      },
+      {
+        "slug": "mars",
+        "agents": 720000000,
+        "exaflops": 6.1,
+        "resilience": 0.935
+      },
+      {
+        "slug": "orbital",
+        "agents": 960000000,
+        "exaflops": 24.6,
+        "resilience": 0.959
+      }
+    ],
+    "crossChecks": {
+      "sumAgainstCouncil": 439.7
+    }
+  },
+  "dominance": {
+    "monthlyValueUSD": 2308000000000,
+    "averageResilience": 0.9486000000000001,
+    "averageCoverage": 2028,
+    "score": 90
+  },
+  "bridges": {
+    "earthToMars": {
+      "latencySeconds": 90,
+      "bandwidthGbps": 14.6,
+      "bridgeOperator": "0xb12d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d",
+      "protocol": "zk-light-client",
+      "withinFailsafe": true
+    },
+    "earthToOrbital": {
+      "latencySeconds": 2,
+      "bandwidthGbps": 240,
+      "bridgeOperator": "0xd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3",
+      "protocol": "optimistic-rollup",
+      "withinFailsafe": true
+    }
+  }
+}
